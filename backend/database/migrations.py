@@ -102,6 +102,71 @@ def run_migrations(engine):
     _migrate_phase1_contrats_cadre(engine)
     # Phase 5 V2 — energy_invoices.annexe_site_id for cadre-aware shadow billing
     _migrate_phase5_invoice_annexe_site(engine)
+    # Sprint 1 CDC — Enedis Open Data benchmark tables
+    _create_enedis_opendata_tables(engine)
+    # Sprint 3 SF5 — Promotion pipeline tables
+    _create_sf5_promotion_tables(engine)
+    # Referentiel Sirene — tables isolees (DIAMANT)
+    _create_sirene_tables(engine)
+
+
+def _create_sirene_tables(engine):
+    """Create Sirene reference tables if missing (idempotent)."""
+    SIRENE_TABLES = (
+        "sirene_unites_legales",
+        "sirene_etablissements",
+        "sirene_doublons",
+        "sirene_sync_runs",
+        "customer_creation_traces",
+    )
+    insp = inspect(engine)
+    missing = [t for t in SIRENE_TABLES if not insp.has_table(t)]
+    if not missing:
+        return
+    import models.sirene  # noqa: F401
+    from models.base import Base
+
+    Base.metadata.create_all(
+        bind=engine,
+        tables=[Base.metadata.tables[t] for t in SIRENE_TABLES if t in Base.metadata.tables],
+        checkfirst=True,
+    )
+    logger.info("migration: created Sirene reference tables: %s", missing)
+
+
+def _create_sf5_promotion_tables(engine):
+    """Create SF5 promotion pipeline tables if missing."""
+    from data_staging.models import SF5_TABLES
+
+    insp = inspect(engine)
+    missing = [t for t in SF5_TABLES if not insp.has_table(t)]
+    if missing:
+        import data_staging.models  # noqa: F401
+        from models.base import Base
+
+        Base.metadata.create_all(
+            bind=engine,
+            tables=[Base.metadata.tables[t] for t in SF5_TABLES if t in Base.metadata.tables],
+            checkfirst=True,
+        )
+        logger.info("migration: created SF5 promotion tables: %s", missing)
+
+
+def _create_enedis_opendata_tables(engine):
+    """Create Enedis Open Data benchmark tables if missing."""
+    tables = ("enedis_opendata_conso_sup36", "enedis_opendata_conso_inf36")
+    insp = inspect(engine)
+    missing = [t for t in tables if not insp.has_table(t)]
+    if missing:
+        import models.enedis_opendata  # noqa: F401
+        from models.base import Base
+
+        Base.metadata.create_all(
+            bind=engine,
+            tables=[Base.metadata.tables[t] for t in tables if t in Base.metadata.tables],
+            checkfirst=True,
+        )
+        logger.info("migration: created Enedis Open Data tables: %s", missing)
 
 
 def _add_soft_delete_columns(engine):

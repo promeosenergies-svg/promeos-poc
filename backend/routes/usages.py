@@ -463,6 +463,86 @@ def api_energy_signature(
     return result
 
 
+# ── Signature avancée multi-modèles ──────────────────────────────────────
+
+
+@router.get("/energy-signature/{site_id}/advanced")
+def api_energy_signature_advanced(
+    site_id: int,
+    request: Request,
+    months: int = Query(12, ge=3, le=36),
+    model: str = Query("auto", pattern="^(auto|2p|3p_heat|3p_cool|4p|5p)$"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Signature énergétique avancée avec sélection de modèle 3P/4P/5P.
+    Retourne : modèle piecewise (Tb, Tc), classification, benchmark.
+    """
+    from services.energy_signature_service import compute_energy_signature_advanced
+
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
+    result = compute_energy_signature_advanced(db, site_id, months, model)
+    if result is None or (isinstance(result, dict) and "error" in result):
+        detail = result.get("error", "Site non trouvé") if isinstance(result, dict) else "Site non trouvé"
+        raise HTTPException(404, detail)
+    return result
+
+
+# ── Profil de charge (baseload, LF, ratios, qualité) ────────────────────
+
+
+@router.get("/load-profile/{site_id}")
+def api_load_profile(
+    site_id: int,
+    request: Request,
+    months: int = Query(12, ge=3, le=36),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Profil de charge complet : baseload P5, load factor, ratios nuit/jour
+    et semaine/WE, variabilité, score qualité, profil horaire type.
+    """
+    from services.load_profile_service import compute_load_profile
+
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
+    result = compute_load_profile(db, site_id, months)
+    if result is None or (isinstance(result, dict) and "error" in result):
+        detail = result.get("error", "Site non trouvé") if isinstance(result, dict) else "Site non trouvé"
+        raise HTTPException(404, detail)
+    return result
+
+
+# ── Benchmark sectoriel Enedis Open Data ─────────────────────────────────
+
+
+@router.get("/benchmark/{site_id}")
+def api_benchmark(
+    site_id: int,
+    request: Request,
+    months: int = Query(12, ge=3, le=36),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Benchmark sectoriel : compare le site aux agrégats Enedis Open Data
+    par secteur d'activité (NAF) × plage de puissance × région.
+    Retourne : score d'atypie, profil horaire comparé, disclaimer.
+    """
+    from services.enedis_benchmarks import compute_benchmark
+
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
+    result = compute_benchmark(db, site_id, months)
+    if result is None or (isinstance(result, dict) and "error" in result):
+        detail = result.get("error", "Site non trouvé") if isinstance(result, dict) else "Site non trouvé"
+        raise HTTPException(404, detail)
+    return result
+
+
 # ── Optimisation puissance souscrite ───────────────────────────────────────
 
 

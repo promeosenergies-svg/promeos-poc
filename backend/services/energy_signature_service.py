@@ -5,6 +5,13 @@ Signature énergétique : décomposition E = a × DJU + b.
 - a = thermosensibilité (kWh/DJU) — énergie par degré d'écart
 - R² = qualité du modèle (> 0.7 = bon, > 0.85 = excellent)
 
+Modèles supportés :
+- 2P : E = a × DJU_chauffage + b  (modèle linéaire simple, défaut)
+- 3P : E = b si T > T_break ; E = a × (T_break - T) + b sinon
+- 4P : idem + pente climatisation  E += c × (T - T_cool) si T > T_cool
+- 5P : zone morte [T_heat, T_cool] avec baseload constant entre les deux
+- auto : sélection automatique par BIC (parcimonie)
+
 Comparaison au benchmark archétype pour détecter :
 - Baseload excessif → serveurs, éclairage nuit, veille
 - Thermosensibilité élevée → isolation déficiente, GTB mal réglée
@@ -15,12 +22,10 @@ import random
 import time
 from datetime import date, timedelta, datetime
 
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 from models.site import Site
-from models.energy_models import Meter, MeterReading
 from services.weather_dju_service import get_site_coordinates, get_daily_temperatures, compute_dju
 
 logger = logging.getLogger(__name__)
@@ -70,36 +75,14 @@ def _compute_energy_signature(db: Session, site_id: int, months: int) -> dict | 
     end_date = date.today()
     start_date = end_date - timedelta(days=months * 30)
 
-    meters = (
-        db.query(Meter)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.parent_meter_id.is_(None),
-        )
-        .all()
-    )
+    from data_staging.bridge import get_site_meter_ids, get_daily_kwh as bridge_daily_kwh
 
-    if not meters:
+    meter_ids = get_site_meter_ids(db, site_id)
+    if not meter_ids:
         return {"error": "Aucun compteur principal", "site_id": site_id}
 
-    meter_ids = [m.id for m in meters]
-
-    # func.date compatible SQLite + PostgreSQL
-    day_expr = func.date(MeterReading.timestamp)
-    rows = (
-        db.query(
-            day_expr.label("day"),
-            func.sum(MeterReading.value_kwh).label("kwh"),
-        )
-        .filter(
-            MeterReading.meter_id.in_(meter_ids),
-            MeterReading.timestamp >= datetime(start_date.year, start_date.month, start_date.day),
-        )
-        .group_by(day_expr)
-        .all()
-    )
-
-    daily_kwh = {str(row.day): float(row.kwh or 0) for row in rows}
+    start_dt = datetime(start_date.year, start_date.month, start_date.day)
+    daily_kwh, data_source = bridge_daily_kwh(db, meter_ids, start_dt)
 
     if len(daily_kwh) < 60:
         return {"error": "Données insuffisantes", "days": len(daily_kwh), "min_required": 60}
@@ -179,6 +162,7 @@ def _compute_energy_signature(db: Session, site_id: int, months: int) -> dict | 
             "total_savings_kwh": round(savings_baseload + savings_thermo),
             "total_savings_eur": round((savings_baseload + savings_thermo) * DEFAULT_PRICE_ELEC_EUR_KWH),
         },
+        "data_source": data_source,
         "dju_summary": {
             "annual_dju_chauf": round(dju_annual_chauf),
             "annual_dju_clim": round(dju_annual_clim),
@@ -194,6 +178,159 @@ def _compute_energy_signature(db: Session, site_id: int, months: int) -> dict | 
             "y_at_x_max": round(a * max(x_vals) + b, 1) if x_vals else round(b, 1),
         },
     }
+
+
+# ── Signature avancée multi-modèles ────────────────────────────────────────
+
+
+def compute_energy_signature_advanced(
+    db: Session, site_id: int, months: int = 12, model_type: str = "auto"
+) -> dict | None:
+    """Signature avancée avec sélection de modèle 2P/3P/4P/5P.
+
+    model_type: "2p", "3p_heat", "3p_cool", "4p", "5p", "auto" (défaut)
+    Le mode "auto" teste tous les modèles et choisit le meilleur par BIC.
+    """
+    key = ("adv", site_id, months, model_type)
+    cached = _SIG_CACHE.get(key)
+    if cached and time.monotonic() < cached[1]:
+        return cached[0]
+
+    result = _compute_signature_advanced(db, site_id, months, model_type)
+    if result and "error" not in result:
+        _SIG_CACHE[key] = (result, time.monotonic() + _SIG_CACHE_TTL)
+    return result
+
+
+def _compute_signature_advanced(db: Session, site_id: int, months: int, model_type: str) -> dict | None:
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        return None
+
+    end_date = date.today()
+    start_date = end_date - timedelta(days=months * 30)
+
+    from data_staging.bridge import get_site_meter_ids, get_daily_kwh as bridge_daily_kwh
+
+    meter_ids = get_site_meter_ids(db, site_id)
+    if not meter_ids:
+        return {"error": "Aucun compteur principal", "site_id": site_id}
+
+    start_dt = datetime(start_date.year, start_date.month, start_date.day)
+    daily_kwh, adv_data_source = bridge_daily_kwh(db, meter_ids, start_dt)
+
+    min_days = 60 if model_type == "2p" else 120
+    if len(daily_kwh) < min_days:
+        return {"error": "Données insuffisantes", "days": len(daily_kwh), "min_required": min_days}
+
+    coords = get_site_coordinates(site)
+    if not coords:
+        return {"error": "Coordonnées GPS non disponibles"}
+
+    temperatures = get_daily_temperatures(coords[0], coords[1], start_date, end_date)
+    if len(temperatures) < min_days:
+        return {"error": "Données météo insuffisantes", "meteo_days": len(temperatures)}
+
+    dju_data = compute_dju(temperatures)
+    temp_by_date = {d["date"]: d["temp_mean"] for d in dju_data}
+
+    daily_pairs = []
+    for day_str, kwh in daily_kwh.items():
+        if day_str in temp_by_date:
+            daily_pairs.append({"date": day_str, "kwh": kwh, "temp": temp_by_date[day_str]})
+
+    if len(daily_pairs) < min_days:
+        return {"error": "Données alignées insuffisantes", "aligned_days": len(daily_pairs)}
+
+    kwh_list = [d["kwh"] for d in daily_pairs]
+    temp_list = [d["temp"] for d in daily_pairs]
+
+    # Appel au moteur piecewise
+    from services.ems.signature_service import run_signature
+
+    piecewise = run_signature(kwh_list, temp_list)
+
+    if "error" in piecewise:
+        return {"error": piecewise["error"], "site_id": site_id}
+
+    # Modèle 2P classique pour comparaison (réutilise dju_data déjà calculé)
+    dju_by_date = {d["date"]: d for d in dju_data}
+    x_dju = []
+    y_kwh = []
+    for d in daily_pairs:
+        if d["date"] in dju_by_date:
+            x_dju.append(dju_by_date[d["date"]]["dju_chauf"])
+            y_kwh.append(d["kwh"])
+    a_2p, b_2p, r2_2p = _linear_regression(x_dju, y_kwh) if x_dju else (0, 0, 0)
+
+    # Benchmark
+    surface = site.surface_m2 or getattr(site, "tertiaire_area_m2", None) or 1000
+    arch_code = site.type.value if site.type else "bureau"
+    benchmark = _get_signature_benchmark(arch_code, surface)
+
+    # Part thermosensible
+    base_kwh_day = piecewise["base_kwh"]
+    total_kwh = sum(kwh_list)
+    n_days = len(daily_pairs)
+    part_thermo_pct = max(0, (1 - (base_kwh_day * n_days) / total_kwh) * 100) if total_kwh > 0 else 0
+
+    # Classification du site
+    label = piecewise["label"]
+
+    # Scatter (max 150 points)
+    scatter_sample = daily_pairs[:150] if len(daily_pairs) <= 150 else random.sample(daily_pairs, 150)
+
+    return {
+        "site_id": site_id,
+        "site_name": site.nom,
+        "period_days": n_days,
+        "data_source": adv_data_source,
+        "model": {
+            "type": _label_to_model_type(label),
+            "base_kwh_day": piecewise["base_kwh"],
+            "a_heating_kwh_per_c": piecewise["a_heating"],
+            "b_cooling_kwh_per_c": piecewise["b_cooling"],
+            "t_heat_c": piecewise["Tb"],
+            "t_cool_c": piecewise["Tc"],
+            "r_squared": piecewise["r_squared"],
+            "label": label,
+            "quality": (
+                "excellent" if piecewise["r_squared"] > 0.85 else "bon" if piecewise["r_squared"] > 0.70 else "faible"
+            ),
+        },
+        "model_2p": {
+            "baseload_kwh_day": round(b_2p, 1),
+            "thermosensitivity_kwh_dju": round(a_2p, 2),
+            "r_squared": round(r2_2p, 3),
+        },
+        "thermosensitivity": {
+            "part_thermo_pct": round(part_thermo_pct, 1),
+            "classification": label,
+        },
+        "benchmark": {
+            "archetype": arch_code,
+            "surface_m2": round(surface),
+            "baseload_expected": benchmark["baseload_expected"],
+            "thermo_expected": benchmark["thermo_expected"],
+            "baseload_verdict": ("elevated" if base_kwh_day > benchmark["baseload_expected"] * 1.15 else "normal"),
+        },
+        "scatter_data": [
+            {"temp": round(d["temp"], 1), "kwh": round(d["kwh"], 1), "date": d["date"]} for d in scatter_sample
+        ],
+        "fit_line": piecewise.get("fit_line", []),
+        "n_points": n_days,
+    }
+
+
+def _label_to_model_type(label: str) -> str:
+    """Convertit le label EMS en type de modèle lisible."""
+    mapping = {
+        "heating_dominant": "3P chauffage",
+        "cooling_dominant": "3P climatisation",
+        "mixed": "5P (chauffage + climatisation)",
+        "flat": "2P (baseload constant)",
+    }
+    return mapping.get(label, label)
 
 
 # ── Régression linéaire ────────────────────────────────────────────────────

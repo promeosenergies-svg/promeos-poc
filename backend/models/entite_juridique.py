@@ -16,7 +16,7 @@ class EntiteJuridique(Base, TimestampMixin, SoftDeleteMixin):
     nom = Column(String, nullable=False)
     siren = Column(String(9), unique=True, nullable=False)
     siret = Column(String(14), nullable=True)
-    naf_code = Column(String(5), nullable=True, comment="Code NAF principal")
+    naf_code = Column(String(10), nullable=True, comment="Code NAF principal (ex: 47.11F)")
     region_code = Column(String(3), nullable=True, comment="Code region")
     insee_code = Column(String(5), nullable=True, comment="Code INSEE siege")
 

@@ -10,6 +10,9 @@ description: "Connecteurs données énergie France : Enedis SGE, DataConnect API
 | Contexte | Fichier |
 |---|---|
 | Webservices SGE, flux R4X/R6X, prestations F160/F300 | `references/sge-webservices.md` |
+| Courbes de charge, pipeline CDC, regles TZ, qualite, signatures batiment, roadmap exploitation | `references/courbes-charge-doctrine.md` |
+| Formules, KPI, baseload, LF, thermosensibilite, scores composites, anomaly detection, CMDPS | `references/formules-kpi-cdc.md` |
+| Benchmark sectoriel NAF, agregats >36 kVA, Open Data Enedis, score d'atypie | `references/benchmark-naf-opendata.md` |
 | Tout le reste (DataConnect, GRDF, consentement) | Ce SKILL.md suffit |
 
 ## Proactive triggers

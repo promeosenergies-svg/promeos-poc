@@ -64,7 +64,7 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
     # RegOps business identifiers
     siret = Column(String(14), nullable=True, comment="SIRET du site")
     insee_code = Column(String(5), nullable=True, comment="Code INSEE commune")
-    naf_code = Column(String(5), nullable=True, comment="Code NAF override")
+    naf_code = Column(String(10), nullable=True, comment="Code NAF override (ex: 47.11F)")
     tertiaire_area_m2 = Column(Float, nullable=True, comment="Surface tertiaire assujettie (m2)")
     roof_area_m2 = Column(Float, nullable=True, comment="Surface toiture (m2)")
     parking_area_m2 = Column(Float, nullable=True, comment="Surface parking (m2)")

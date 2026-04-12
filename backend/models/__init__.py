@@ -338,6 +338,15 @@ from .flex_models import (
     TariffWindow,
 )
 
+# Referentiel Sirene (DIAMANT — brique isolee)
+from .sirene import (
+    SireneUniteLegale,
+    SireneEtablissement,
+    SireneDoublon,
+    SireneSyncRun,
+    CustomerCreationTrace,
+)
+
 __all__ = [
     "Base",
     "TimestampMixin",
@@ -603,6 +612,12 @@ __all__ = [
     "TaxProfile",
     # Connector Tokens (Sprint F)
     "ConnectorToken",
+    # Referentiel Sirene (DIAMANT)
+    "SireneUniteLegale",
+    "SireneEtablissement",
+    "SireneDoublon",
+    "SireneSyncRun",
+    "CustomerCreationTrace",
     # Power Intelligence
     "PowerReading",
     "PowerContract",

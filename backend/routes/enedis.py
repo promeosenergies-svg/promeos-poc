@@ -36,6 +36,21 @@ logger = logging.getLogger("promeos.enedis.api")
 router = APIRouter(prefix="/api/enedis", tags=["Enedis SGE Flux"])
 
 
+def _require_auth():
+    """Gate auth pour endpoints de promotion (DEMO_MODE = pass-through)."""
+    import os
+
+    if os.getenv("DEMO_MODE", "").lower() == "true":
+        return None
+    try:
+        from middleware.auth import get_optional_auth
+
+        # En mode production, exiger un token valide
+        return Depends(get_optional_auth)
+    except ImportError:
+        return None
+
+
 # ========================================
 # Pydantic schemas — Ingestion
 # ========================================
@@ -385,3 +400,135 @@ def get_stats(db: Session = Depends(get_db)):
         ),
         last_ingestion=last_ingestion,
     )
+
+
+# ========================================
+# SF5 — Promotion Pipeline Endpoints
+# ========================================
+
+
+@router.post("/promotion/promote")
+def trigger_promotion(
+    mode: str = Query("incremental", pattern="^(incremental|full)$"),
+    flux_types: Optional[str] = Query(None, description="R4X,R50,R171,R151 (comma-sep)"),
+    dry_run: bool = Query(False),
+    db: Session = Depends(get_db),
+    _auth=Depends(_require_auth),
+):
+    """Déclenche un run de promotion staging → tables fonctionnelles."""
+    from data_staging.engine import run_promotion
+
+    ft = [f.strip().upper() for f in flux_types.split(",")] if flux_types else None
+    try:
+        run = run_promotion(db, mode=mode, triggered_by="api", flux_types=ft, dry_run=dry_run)
+        return {
+            "run_id": run.id,
+            "status": run.status,
+            "mode": run.mode,
+            "prms_total": run.prms_total,
+            "prms_matched": run.prms_matched,
+            "prms_unmatched": run.prms_unmatched,
+            "rows_load_curve": run.rows_load_curve,
+            "rows_energy_index": run.rows_energy_index,
+            "rows_power_peak": run.rows_power_peak,
+        }
+    except RuntimeError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+
+
+@router.get("/promotion/runs")
+def list_promotion_runs(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+):
+    """Liste les runs de promotion."""
+    from data_staging.models import PromotionRun
+
+    total = db.query(PromotionRun).count()
+    runs = db.query(PromotionRun).order_by(PromotionRun.id.desc()).offset(offset).limit(limit).all()
+    return {
+        "total": total,
+        "items": [
+            {
+                "id": r.id,
+                "status": r.status,
+                "mode": r.mode,
+                "triggered_by": r.triggered_by,
+                "started_at": r.started_at.isoformat() if r.started_at else None,
+                "finished_at": r.finished_at.isoformat() if r.finished_at else None,
+                "prms_total": r.prms_total,
+                "prms_matched": r.prms_matched,
+                "prms_unmatched": r.prms_unmatched,
+                "rows_load_curve": r.rows_load_curve,
+                "rows_energy_index": r.rows_energy_index,
+                "rows_power_peak": r.rows_power_peak,
+            }
+            for r in runs
+        ],
+    }
+
+
+@router.get("/promotion/runs/{run_id}")
+def get_promotion_run(run_id: int, db: Session = Depends(get_db)):
+    """Détail d'un run de promotion."""
+    from data_staging.models import PromotionRun
+
+    run = db.query(PromotionRun).filter(PromotionRun.id == run_id).first()
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return {
+        "id": run.id,
+        "status": run.status,
+        "mode": run.mode,
+        "triggered_by": run.triggered_by,
+        "scope_flux_types": run.scope_flux_types,
+        "started_at": run.started_at.isoformat() if run.started_at else None,
+        "finished_at": run.finished_at.isoformat() if run.finished_at else None,
+        "high_water_mark_before": run.high_water_mark_before,
+        "high_water_mark_after": run.high_water_mark_after,
+        "prms_total": run.prms_total,
+        "prms_matched": run.prms_matched,
+        "prms_unmatched": run.prms_unmatched,
+        "prms_promoted": run.prms_promoted,
+        "prms_failed": run.prms_failed,
+        "rows_load_curve": run.rows_load_curve,
+        "rows_energy_index": run.rows_energy_index,
+        "rows_power_peak": run.rows_power_peak,
+        "rows_skipped": run.rows_skipped,
+        "rows_flagged": run.rows_flagged,
+        "error_message": run.error_message,
+    }
+
+
+@router.get("/promotion/backlog")
+def get_promotion_backlog(
+    status: str = Query("pending", pattern="^(pending|resolved|ignored|all)$"),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    """Liste les PRM non résolus (backlog)."""
+    from data_staging.models import UnmatchedPrm
+
+    q = db.query(UnmatchedPrm)
+    if status != "all":
+        q = q.filter(UnmatchedPrm.status == status)
+
+    total = q.count()
+    items = q.order_by(UnmatchedPrm.last_seen_at.desc()).limit(limit).all()
+    return {
+        "total": total,
+        "items": [
+            {
+                "id": u.id,
+                "point_id": u.point_id,
+                "status": u.status,
+                "block_reason": u.block_reason,
+                "flux_types": u.flux_types,
+                "measures_count": u.measures_count,
+                "first_seen_at": u.first_seen_at.isoformat() if u.first_seen_at else None,
+                "last_seen_at": u.last_seen_at.isoformat() if u.last_seen_at else None,
+            }
+            for u in items
+        ],
+    }

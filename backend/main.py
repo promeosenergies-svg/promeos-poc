@@ -207,6 +207,11 @@ app.include_router(grdf_router)  # Sprint F: GRDF ADICT (consommation gaz PCE)
 app.include_router(bridge_router)  # Sprint F: Staging Bridge (flux Enedis → MeterReading)
 app.include_router(market_intelligence_router)  # Market Intelligence (articles, indicators, search)
 
+# Referentiel Sirene (DIAMANT — recherche, import, onboarding from-sirene)
+from routes.sirene import router as sirene_router
+
+app.include_router(sirene_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 
