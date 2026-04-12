@@ -5,6 +5,7 @@
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import NavRail from './NavRail';
 import NavPanel from './NavPanel';
 import { resolveModule, matchRouteToModule, ALL_NAV_ITEMS } from './NavRegistry';
@@ -13,6 +14,7 @@ import { addRecent } from '../utils/navRecent';
 import { resolveBreadcrumbLabel } from './Breadcrumb';
 
 const PINS_KEY = 'promeos_sidebar_pins';
+const COLLAPSED_KEY = 'promeos_sidebar_collapsed';
 const MAX_PINS = 5;
 
 function loadJSON(key, fallback) {
@@ -55,6 +57,16 @@ export default function Sidebar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeModule, navigate]
   );
+
+  /* ── Panel collapsed ── */
+  const [collapsed, setCollapsed] = useState(() => loadJSON(COLLAPSED_KEY, false));
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      saveJSON(COLLAPSED_KEY, next);
+      return next;
+    });
+  }, []);
 
   /* ── Pins ── */
   const [pins, setPins] = useState(() => loadJSON(PINS_KEY, []));
@@ -120,9 +132,29 @@ export default function Sidebar() {
     // z-[210]  Nested modals   (confirm dialogs inside modals — PatrimoineWizard)
     // z-[250]  Toasts          (always on top — ToastProvider.jsx)
     // ─────────────────────────────────────────────────────────────────────────
-    <aside className="flex h-full z-30 shrink-0 overflow-y-auto" aria-label="Navigation principale">
+    <aside
+      className="flex h-full z-30 shrink-0 overflow-y-auto relative"
+      aria-label="Navigation principale"
+    >
       <NavRail activeModule={displayModule} onSelectModule={handleSelectModule} />
-      <NavPanel activeModule={displayModule} pins={pins} onTogglePin={togglePin} badges={badges} />
+      {!collapsed && (
+        <NavPanel
+          activeModule={displayModule}
+          pins={pins}
+          onTogglePin={togglePin}
+          badges={badges}
+        />
+      )}
+      {/* Collapse/expand toggle — anchored at panel edge */}
+      <button
+        onClick={toggleCollapsed}
+        aria-label={collapsed ? 'Ouvrir le panneau' : 'Réduire le panneau'}
+        className="absolute top-3 -right-3 z-40 w-6 h-6 flex items-center justify-center
+          bg-white border border-slate-200 rounded-full shadow-sm
+          text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all"
+      >
+        {collapsed ? <ChevronsRight size={12} /> : <ChevronsLeft size={12} />}
+      </button>
     </aside>
   );
 }
