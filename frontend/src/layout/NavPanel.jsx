@@ -367,8 +367,22 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
         </div>
       )}
 
-      {/* Scrollable content */}
-      <nav className="flex-1 overflow-y-auto py-2 px-2" aria-label={`Navigation ${mod.label}`}>
+      {/* Scrollable content — keyboard nav (Arrow up/down moves focus between links) */}
+      <nav
+        className="flex-1 overflow-y-auto py-2 px-2"
+        aria-label={`Navigation ${mod.label}`}
+        onKeyDown={(e) => {
+          if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+          const links = e.currentTarget.querySelectorAll('a[href]');
+          if (!links.length) return;
+          const idx = Array.from(links).indexOf(document.activeElement);
+          if (idx === -1) return;
+          e.preventDefault();
+          const next =
+            e.key === 'ArrowDown' ? Math.min(idx + 1, links.length - 1) : Math.max(idx - 1, 0);
+          links[next].focus();
+        }}
+      >
         {/* Pinned items */}
         {pinnedItems.length > 0 && (
           <div className="pb-2 mb-1 border-b border-slate-200/40">
