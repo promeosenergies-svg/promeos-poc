@@ -163,7 +163,10 @@ export default function Breadcrumb() {
 
 function BreadcrumbNav({ crumbs, tintText }) {
   return (
-    <nav className="flex items-center gap-1 text-sm text-gray-500">
+    <nav
+      key={crumbs.map((c) => c.to).join('/')}
+      className="flex items-center gap-1 text-sm text-gray-500 animate-[fadeIn_0.2s_ease-out]"
+    >
       {crumbs.map((c, i) => (
         <span key={`${c.to}-${i}`} className="flex items-center gap-1">
           {i > 0 && <ChevronRight size={14} className="text-gray-300" />}

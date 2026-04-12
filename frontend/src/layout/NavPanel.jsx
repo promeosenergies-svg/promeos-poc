@@ -325,9 +325,10 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
       role="navigation"
       aria-label={`Module ${mod.label}`}
     >
-      {/* Module header — tinted gradient */}
+      {/* Module header — tinted gradient, animated on module change */}
       <div
-        className={`px-3 pt-3 pb-2 border-b border-slate-200/50 bg-gradient-to-b ${t.panelHeader}`}
+        key={`header-${activeModule}`}
+        className={`px-3 pt-3 pb-2 border-b border-slate-200/50 bg-gradient-to-b ${t.panelHeader} animate-[fadeIn_0.2s_ease-out]`}
       >
         <div className="flex items-center gap-2">
           <mod.icon size={16} className={t.icon} />
@@ -367,9 +368,10 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
         </div>
       )}
 
-      {/* Scrollable content — keyboard nav (Arrow up/down moves focus between links) */}
+      {/* Scrollable content — animated on module change + keyboard nav */}
       <nav
-        className="flex-1 overflow-y-auto py-2 px-2"
+        key={`nav-${activeModule}`}
+        className="flex-1 overflow-y-auto py-2 px-2 animate-[fadeIn_0.15s_ease-out]"
         aria-label={`Navigation ${mod.label}`}
         onKeyDown={(e) => {
           if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -513,35 +515,57 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
                     )}
                     {/* Item contextuel : site actif (entre Registre et Conformité) */}
                     {idx === 0 && section.key === 'patrimoine' && activeSiteCtx && (
-                      <div
-                        className={`group flex items-center gap-2 px-3.5 py-1.5 mx-1 rounded-md cursor-pointer text-[12px] transition-all ${
-                          isOnSite360
-                            ? 'bg-emerald-50 text-emerald-700 font-medium border-l-2 border-emerald-600'
-                            : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
-                        }`}
-                        onClick={() => _navigate(`/sites/${activeSiteCtx.id}`)}
-                      >
-                        <span
-                          className="w-1.5 h-1.5 rounded-full shrink-0"
-                          style={{
-                            backgroundColor: STATUT_DOT_COLOR[activeSiteCtx.statut] || '#888',
-                          }}
-                        />
-                        <span className="truncate flex-1">{activeSiteCtx.nom}</span>
-                        <button
-                          type="button"
-                          aria-label="Fermer la fiche site"
-                          className="opacity-0 group-hover:opacity-100 hover:bg-slate-200 rounded p-0.5 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            clearActiveSite();
-                            setActiveSiteCtx(null);
-                            if (isOnSite360) _navigate('/patrimoine');
-                          }}
-                          title="Fermer la fiche site"
+                      <div className="mx-1 mb-1">
+                        <div
+                          className={`group flex items-center gap-2 px-3.5 py-1.5 rounded-md cursor-pointer text-[12px] transition-all ${
+                            isOnSite360
+                              ? 'bg-emerald-50 text-emerald-700 font-medium border-l-2 border-emerald-600'
+                              : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                          }`}
+                          onClick={() => _navigate(`/sites/${activeSiteCtx.id}`)}
                         >
-                          <X size={12} />
-                        </button>
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{
+                              backgroundColor: STATUT_DOT_COLOR[activeSiteCtx.statut] || '#888',
+                            }}
+                          />
+                          <span className="truncate flex-1">{activeSiteCtx.nom}</span>
+                          <button
+                            type="button"
+                            aria-label="Fermer la fiche site"
+                            className="opacity-0 group-hover:opacity-100 hover:bg-slate-200 rounded p-0.5 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearActiveSite();
+                              setActiveSiteCtx(null);
+                              if (isOnSite360) _navigate('/patrimoine');
+                            }}
+                            title="Fermer la fiche site"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                        {/* Contextual quick actions for active site */}
+                        {isOnSite360 && (
+                          <div className="flex flex-wrap gap-1 px-3 mt-1">
+                            {[
+                              { label: 'Conso', tab: 'conso' },
+                              { label: 'Factures', tab: 'factures' },
+                              { label: 'Conformité', tab: 'conformite' },
+                              { label: 'Actions', tab: 'actions' },
+                            ].map((a) => (
+                              <button
+                                key={a.tab}
+                                type="button"
+                                onClick={() => _navigate(`/sites/${activeSiteCtx.id}?tab=${a.tab}`)}
+                                className="px-1.5 py-0.5 text-[10px] text-emerald-600 bg-emerald-50 rounded hover:bg-emerald-100 transition"
+                              >
+                                {a.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </Fragment>

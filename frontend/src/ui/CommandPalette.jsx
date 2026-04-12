@@ -15,15 +15,37 @@ import {
 } from '../layout/NavRegistry';
 import { useScope } from '../contexts/ScopeContext';
 
+const HITS_KEY = 'promeos_cmd_hits';
+
+function loadHits() {
+  try {
+    return JSON.parse(localStorage.getItem(HITS_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function recordHit(path) {
+  const hits = loadHits();
+  hits[path] = (hits[path] || 0) + 1;
+  try {
+    localStorage.setItem(HITS_KEY, JSON.stringify(hits));
+  } catch {
+    /* noop */
+  }
+}
+
 export default function CommandPalette({ open, onClose, onToggleExpert }) {
   const { orgSites: scopedSites = [] } = useScope();
   const [query, setQuery] = useState('');
   const [selectedIdx, setSelectedIdx] = useState(0);
   const inputRef = useRef(null);
   const navigate = useNavigate();
+  const hitsRef = useRef(loadHits());
 
   useEffect(() => {
     if (open) {
+      hitsRef.current = loadHits();
       setQuery('');
       setSelectedIdx(0);
       requestAnimationFrame(() => inputRef.current?.focus());
@@ -32,9 +54,16 @@ export default function CommandPalette({ open, onClose, onToggleExpert }) {
 
   const results = useMemo(() => {
     const q = query.toLowerCase().trim();
+    const hits = hitsRef.current;
     if (!q) {
-      // Default: pages grouped by section + shortcuts
-      const pages = ALL_MAIN_ITEMS.slice(0, 8).map((item) => ({ type: 'page', ...item }));
+      // Default: pages ranked by frequency, then shortcuts
+      const pages = ALL_MAIN_ITEMS.map((item) => ({
+        type: 'page',
+        ...item,
+        _score: hits[item.to] || 0,
+      }))
+        .sort((a, b) => b._score - a._score)
+        .slice(0, 8);
       const shortcuts = COMMAND_SHORTCUTS.map((a) => ({ type: 'shortcut', ...a }));
       return [...pages, ...shortcuts];
     }
@@ -88,7 +117,11 @@ export default function CommandPalette({ open, onClose, onToggleExpert }) {
         subtitle: [s.ville, s.usage].filter(Boolean).join(' · '),
       }));
 
-    return [...siteResults, ...pages, ...legacyPages, ...actions, ...shortcuts];
+    // Boost pages by frequency (frequent pages float to top)
+    const allPages = [...pages, ...legacyPages].sort(
+      (a, b) => (hits[b.to] || 0) - (hits[a.to] || 0)
+    );
+    return [...siteResults, ...allPages, ...actions, ...shortcuts];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
@@ -102,6 +135,7 @@ export default function CommandPalette({ open, onClose, onToggleExpert }) {
       onClose();
       return;
     }
+    recordHit(item.to);
     navigate(item.to);
     onClose();
   };
