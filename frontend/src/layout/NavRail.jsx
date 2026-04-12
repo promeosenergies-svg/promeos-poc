@@ -27,7 +27,7 @@ function RailIcon({ mod, isActive, onClick, badgeCount }) {
           ${
             isActive
               ? `${t.railActiveBg} ring-1 ${t.railActiveRing} ${t.railActiveText}`
-              : 'text-slate-400 hover:bg-slate-100/60 hover:text-slate-600'
+              : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
           }`}
         aria-label={mod.label}
         aria-current={isActive ? 'true' : undefined}
