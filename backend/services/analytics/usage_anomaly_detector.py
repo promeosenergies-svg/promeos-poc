@@ -468,6 +468,176 @@ def detect_usage_anomalies(
                 )
             )
 
+    # === Detecteur 14 : Pic midi absent (bureaux avec cantine) ===
+    if archetype in ("BUREAU_STANDARD", "ENSEIGNEMENT", "ENSEIGNEMENT_SUP", "COLLECTIVITE"):
+        biz_mean = temporal.get("biz_mean_kw", 0)
+        baseload = temporal.get("baseload_kw", 0)
+        if biz_mean > 0 and baseload > 0:
+            # Si le profil est tres plat (faible increment jour vs nuit) -> pas de pic midi
+            increment_ratio = (biz_mean - baseload) / biz_mean if biz_mean > 0 else 0
+            if increment_ratio < 0.20:
+                anomalies.append(
+                    UsageAnomaly(
+                        usage_code="GLOBAL",
+                        usage_label="Profil occupation",
+                        anomaly_type="PIC_MIDI_ABSENT",
+                        severity="low",
+                        message=f"Profil tres plat (increment jour/nuit {increment_ratio:.0%})",
+                        detail="Le profil de consommation ne montre pas de variation significative entre nuit et jour. "
+                        "Possible : occupation faible (teletravail), ou equipements tournant 24/7.",
+                        gain_kwh_an=0,
+                        gain_eur_an=0,
+                        action="Verifier le taux d'occupation reel. Adapter les horaires CVC/eclairage.",
+                        confidence="low",
+                        metric_observed=round(increment_ratio, 3),
+                        metric_threshold=0.20,
+                    )
+                )
+
+    # === Detecteur 15 : Creux nuit trop faible (equipements oublies) ===
+    if temporal.get("baseload_kw", 0) > 0 and temporal.get("biz_mean_kw", 0) > 0:
+        night_ratio_abs = temporal["baseload_kw"] / temporal["biz_mean_kw"]
+        expected_night_max = thresholds.get("ANOM_BASE_NUIT_ELEVEE", 0.20)
+        # Inverse : si night_ratio < 2% = suspect (compteur defaillant ?)
+        if night_ratio_abs < 0.02 and temporal.get("n_night_readings", 0) > 10:
+            anomalies.append(
+                UsageAnomaly(
+                    usage_code="GLOBAL",
+                    usage_label="Qualite donnees",
+                    anomaly_type="CREUX_NUIT_SUSPECT",
+                    severity="high",
+                    message=f"Baseload nuit quasi nul ({night_ratio_abs:.1%}) — compteur defaillant ?",
+                    detail="La consommation nocturne est < 2% du jour. Possible panne compteur, "
+                    "coupure alimentation, ou site reellement vide (verifier).",
+                    gain_kwh_an=0,
+                    gain_eur_an=0,
+                    action="Verifier le compteur et l'alimentation electrique du site.",
+                    confidence="medium",
+                    metric_observed=round(night_ratio_abs, 4),
+                    metric_threshold=0.02,
+                )
+            )
+
+    # === Detecteur 16 : Chauffage collectif nuit (bailleurs) ===
+    if archetype in ("COPROPRIETE", "COLLECTIVITE") and cvc and cvc.pct > 30:
+        night_base_ratio = _compute_night_base_ratio(temporal)
+        # Pour copro, le chauffage nuit devrait etre reduit (16-17°C vs 19-20°C jour)
+        if night_base_ratio > 0.70:
+            excess_kwh = round(cvc.kwh * (night_base_ratio - 0.50) * 0.5, 0)
+            if excess_kwh > 500:
+                anomalies.append(
+                    UsageAnomaly(
+                        usage_code="CVC_HVAC",
+                        usage_label=cvc.label,
+                        anomaly_type="CHAUFFAGE_COLLECTIF_NUIT",
+                        severity="medium",
+                        message=f"Chauffage collectif nuit eleve ({night_base_ratio:.0%}) — pas de reduction nocturne",
+                        detail="Le chauffage semble fonctionner a puissance constante jour et nuit. "
+                        "Programmer un abaissement nocturne (16-17 degres C) economiserait 15-20%.",
+                        gain_kwh_an=excess_kwh,
+                        gain_eur_an=round(excess_kwh * PRIX_MOY_EUR_KWH, 0),
+                        action="Installer un programmateur horaire sur la chaudiere/PAC. Consigne nuit 16 degres C.",
+                        confidence="medium",
+                        metric_observed=round(night_base_ratio, 3),
+                        metric_threshold=0.70,
+                    )
+                )
+
+    # === Detecteur 17 : ECS circulation 24/7 (boucle antilégionellose non programmee) ===
+    if ecs and ecs.pct > 5 and archetype in ("COPROPRIETE", "SANTE", "HOTEL_HEBERGEMENT", "SPORT_LOISIR"):
+        # ECS devrait avoir un arret circulateur nuit (sauf sterilisation mardi/samedi)
+        if temporal.get("baseload_kw", 0) > 0:
+            ecs_night_proxy = temporal["baseload_kw"] * (ecs.pct / 100)
+            if ecs_night_proxy > 0.3:  # > 300W nuit pour ECS = circulateur actif
+                ecs_save_kwh = round(ecs_night_proxy * 8 * 365 * 0.6, 0)  # 8h nuit, 60% economisable
+                anomalies.append(
+                    UsageAnomaly(
+                        usage_code="ECS",
+                        usage_label=ecs.label,
+                        anomaly_type="ECS_CIRCULATION_24_7",
+                        severity="low",
+                        message="Circulateur ECS probablement actif 24/7 (boucle antilégionellose non programmee)",
+                        detail="Le circulateur de la boucle ECS semble tourner jour et nuit. "
+                        "Programmer un arret 0h-6h (sauf mardi/samedi sterilisation) economise 30-40%.",
+                        gain_kwh_an=ecs_save_kwh,
+                        gain_eur_an=round(ecs_save_kwh * PRIX_MOY_EUR_KWH, 0),
+                        action="Programmer arret circulateur ECS 0h-6h. Maintenir sterilisation 60 degres C mardi+samedi.",
+                        confidence="low",
+                        metric_observed=round(ecs_night_proxy, 2),
+                        metric_threshold=0.3,
+                    )
+                )
+
+    # === Detecteur 18 : Variance horaire extreme (equipement instable) ===
+    if temporal.get("biz_mean_kw", 0) > 0 and temporal.get("baseload_kw", 0) > 0:
+        # Coefficient de variation simplifie = (biz_mean - baseload) / baseload
+        cv = (
+            (temporal["biz_mean_kw"] - temporal["baseload_kw"]) / temporal["baseload_kw"]
+            if temporal["baseload_kw"] > 0
+            else 0
+        )
+        if cv > 5.0:  # variation > 5x le baseload = tres instable
+            anomalies.append(
+                UsageAnomaly(
+                    usage_code="GLOBAL",
+                    usage_label="Stabilite profil",
+                    anomaly_type="VARIANCE_HORAIRE_EXTREME",
+                    severity="low",
+                    message=f"Profil tres variable (ratio pic/base {cv:.1f}x)",
+                    detail="Le ratio entre la puissance moyenne jour et le baseload nuit est tres eleve. "
+                    "Possible : equipements a demarrage violent, charges tres intermittentes.",
+                    gain_kwh_an=0,
+                    gain_eur_an=0,
+                    action="Lisser les demarrages d'equipements. Evaluer un ecretage de pointe.",
+                    confidence="low",
+                    metric_observed=round(cv, 1),
+                    metric_threshold=5.0,
+                )
+            )
+
+    # === Detecteur 19 : Froid hopital/sante excessif ===
+    if archetype == "SANTE" and froid and froid.pct > 15:
+        anomalies.append(
+            UsageAnomaly(
+                usage_code=froid.code,
+                usage_label=froid.label,
+                anomaly_type="FROID_SANTE_EXCESSIF",
+                severity="medium",
+                message=f"Froid {froid.pct:.0f}% sur site sante (seuil 15%)",
+                detail="La part du froid depasse le seuil attendu pour un site sante. "
+                "Verifier pharmacie froide, blocs operatoires, et free-cooling si disponible.",
+                gain_kwh_an=round(froid.kwh * 0.15, 0),
+                gain_eur_an=round(froid.kwh * 0.15 * PRIX_MOY_EUR_KWH, 0),
+                action="Deployer le free-cooling quand T_ext < 18 degres C. Verifier maintenance groupes froids.",
+                confidence="medium",
+                metric_observed=froid.pct,
+                metric_threshold=15.0,
+            )
+        )
+
+    # === Detecteur 20 : Restaurant ECS post-service excessive ===
+    if archetype == "RESTAURANT" and ecs and ecs.pct > 8:
+        # ECS elevee pour un restaurant = lavage excessif ou fuites
+        if ecs.pct > 15:
+            excess_kwh = round(ecs.kwh * (ecs.pct - 10) / 100, 0)
+            anomalies.append(
+                UsageAnomaly(
+                    usage_code="ECS",
+                    usage_label=ecs.label,
+                    anomaly_type="ECS_RESTAURANT_EXCESSIVE",
+                    severity="low",
+                    message=f"ECS {ecs.pct:.0f}% pour restaurant (attendu 8-12%)",
+                    detail="La part ECS depasse le seuil restaurant. Verifier debit lavage, "
+                    "fuites circulation, isolation tuyauterie.",
+                    gain_kwh_an=excess_kwh,
+                    gain_eur_an=round(excess_kwh * PRIX_MOY_EUR_KWH, 0),
+                    action="Audit sanitaire : debit robinets, isolation tuyauterie ECS, detartrage.",
+                    confidence="low",
+                    metric_observed=ecs.pct,
+                    metric_threshold=15.0,
+                )
+            )
+
     # Trier par gain EUR decroissant
     anomalies.sort(key=lambda a: -a.gain_eur_an)
 

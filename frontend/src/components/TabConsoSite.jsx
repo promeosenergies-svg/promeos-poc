@@ -20,6 +20,7 @@ import { SkeletonCard } from '../ui/Skeleton';
 import { getEmsTimeseries, getAnalyticsFullReport } from '../services/api';
 import { fmtNum } from '../utils/format';
 import CarpetPlot from './CarpetPlot';
+import ForecastCard from './analytics/ForecastCard';
 import UsageBreakdownCard from './analytics/UsageBreakdownCard';
 import UsageAnomaliesCard from './analytics/UsageAnomaliesCard';
 import OptimizationPlanCard from './analytics/OptimizationPlanCard';
@@ -263,6 +264,9 @@ export default function TabConsoSite({ siteId }) {
           )}
         </CardBody>
       </Card>
+
+      {/* Prevision J+1 a J+7 */}
+      <ForecastCard siteId={siteId} />
 
       {/* Analytics usages : 1 seul appel backend via full-report */}
       <UsageBreakdownCard siteId={siteId} preloadedData={analyticsReport?.breakdown} />

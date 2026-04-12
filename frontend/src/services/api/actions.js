@@ -227,6 +227,11 @@ export const getAnalyticsFullReport = (siteId, days = 365) =>
     (r) => r.data
   );
 
+export const getSiteForecast = (siteId, horizon = 7) =>
+  cachedGet(`/analytics/sites/${siteId}/forecast`, { params: { horizon } }, 60000).then(
+    (r) => r.data
+  );
+
 // ── Billing Usage Ventilation ──
 export const getBillingUsageVentilation = (siteId) =>
   cachedGet(`/billing/usage-ventilation/sites/${siteId}`, {}, 60000).then((r) => r.data);

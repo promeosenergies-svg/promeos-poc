@@ -3,7 +3,8 @@ PROMEOS - Analytics Routes
 GET /api/analytics/sites/{site_id}/usage-breakdown    — decomposition CDC en usages (3 couches)
 GET /api/analytics/sites/{site_id}/usage-anomalies    — anomalies par usage (contextualisees)
 GET /api/analytics/sites/{site_id}/optimization-plan  — plan d'optimisation ROI chiffre (etage 3)
-GET /api/analytics/sites/{site_id}/full-report        — 3 etages en 1 appel (1 seule decomposition CDC)
+GET /api/analytics/sites/{site_id}/full-report        — 3 etages en 1 appel
+GET /api/analytics/sites/{site_id}/forecast           — prevision J+1 a J+7 (signature thermique)
 """
 
 from dataclasses import asdict
@@ -173,3 +174,24 @@ def get_site_full_report(
         "anomalies": asdict(anomalies),
         "optimization": asdict(plan),
     }
+
+
+@router.get("/sites/{site_id}/forecast")
+def get_site_forecast(
+    site_id: int,
+    horizon: int = Query(7, ge=1, le=14, description="Horizon en jours"),
+    db: Session = Depends(get_db),
+):
+    """
+    Prevision energetique J+1 a J+horizon via signature thermique + meteo prevue.
+    Methode : E(j) = base + a_heating*max(0, Tb-T(j)) + b_cooling*max(0, T(j)-Tc)
+              ajuste par facteur jour ouvre / weekend / ferie.
+    """
+    from services.analytics.forecast_service import forecast_site
+
+    try:
+        result = forecast_site(db, site_id, horizon)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+    return asdict(result)
