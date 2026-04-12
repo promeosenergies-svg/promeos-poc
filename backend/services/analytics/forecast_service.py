@@ -71,21 +71,42 @@ WEEKEND_FACTOR = {
     "DEFAULT": 0.40,
 }
 
-# Jours feries France 2026 (fixes + Paques/Ascension/Pentecote)
-JOURS_FERIES_2026 = {
-    date(2026, 1, 1),
-    date(2026, 4, 6),
-    date(2026, 4, 7),  # Nouvel An, Lundi Paques
-    date(2026, 5, 1),
-    date(2026, 5, 8),
-    date(2026, 5, 14),  # 1er Mai, Victoire, Ascension
-    date(2026, 5, 25),  # Lundi Pentecote
-    date(2026, 7, 14),
-    date(2026, 8, 15),  # 14 Juillet, Assomption
-    date(2026, 11, 1),
-    date(2026, 11, 11),
-    date(2026, 12, 25),  # Toussaint, Armistice, Noel
-}
+
+def _compute_easter(year: int) -> date:
+    """Algorithme de Meeus/Jones/Butcher pour calculer Paques."""
+    a = year % 19
+    b, c = divmod(year, 100)
+    d, e = divmod(b, 4)
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = divmod(c, 4)
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    month, day = divmod(h + l - 7 * m + 114, 31)
+    return date(year, month, day + 1)
+
+
+def _jours_feries_france(year: int) -> set[date]:
+    """Jours feries France metropolitaine pour une annee donnee."""
+    easter = _compute_easter(year)
+    return {
+        date(year, 1, 1),  # Nouvel An
+        easter + timedelta(days=1),  # Lundi de Paques
+        date(year, 5, 1),  # Fete du Travail
+        date(year, 5, 8),  # Victoire 1945
+        easter + timedelta(days=39),  # Ascension
+        easter + timedelta(days=50),  # Lundi de Pentecote
+        date(year, 7, 14),  # Fete nationale
+        date(year, 8, 15),  # Assomption
+        date(year, 11, 1),  # Toussaint
+        date(year, 11, 11),  # Armistice
+        date(year, 12, 25),  # Noel
+    }
+
+
+# Cache annuel des jours feries
+_feries_cache: dict[int, set[date]] = {}
 
 
 def forecast_site(
@@ -130,7 +151,8 @@ def forecast_site(
     b_cool = sig.get("b_cooling", 0) or 0
     tb = sig.get("Tb", 15.0) or 15.0
     tc = sig.get("Tc", 22.0) or 22.0
-    r2 = sig.get("r_squared", 0) or sig.get("r2", 0) or 0
+    r2_val = sig.get("r_squared")
+    r2 = r2_val if r2_val is not None else (sig.get("r2") or 0)
 
     # Residual std pour intervalle de confiance (~15% si R2 bon, ~30% sinon)
     residual_pct = 0.12 if r2 > 0.7 else 0.20 if r2 > 0.4 else 0.30
@@ -200,10 +222,25 @@ def forecast_site(
 # === Helpers ===
 
 
+# Cache signature thermique par meter/jour (evite de relire 365j a chaque requete)
+_signature_cache: dict[tuple[int, date], dict] = {}
+_signature_cache_date: date | None = None
+
+
 def _get_or_compute_signature(db: Session, site, meter) -> Optional[dict]:
-    """Calcule ou recupere la signature thermique."""
+    """Calcule ou recupere la signature thermique (cache journalier)."""
+    global _signature_cache, _signature_cache_date
     if not meter:
         return None
+
+    today = date.today()
+    if _signature_cache_date != today:
+        _signature_cache = {}
+        _signature_cache_date = today
+
+    key = (meter.id, today)
+    if key in _signature_cache:
+        return _signature_cache[key]
     try:
         from models.power import PowerReading
         from services.weather_dju_service import get_daily_temperatures
@@ -248,7 +285,10 @@ def _get_or_compute_signature(db: Session, site, meter) -> Optional[dict]:
         daily_kwh = [daily_kwh_map[d] for d in common]
         daily_temp = [temp_by_date[d] for d in common]
 
-        return run_signature(daily_kwh, daily_temp)
+        result = run_signature(daily_kwh, daily_temp)
+        if result and not result.get("error"):
+            _signature_cache[key] = result
+        return result
 
     except Exception as exc:
         logger.debug("signature compute failed: %s", exc)
@@ -276,9 +316,10 @@ def _is_business_day(d: date) -> bool:
     """Jour ouvre en France (hors weekends et feries)."""
     if d.weekday() >= 5:
         return False
-    if d in JOURS_FERIES_2026:
-        return False
-    return True
+    year = d.year
+    if year not in _feries_cache:
+        _feries_cache[year] = _jours_feries_france(year)
+    return d not in _feries_cache[year]
 
 
 def _fallback_forecast(
