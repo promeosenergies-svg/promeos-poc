@@ -5,8 +5,10 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Search, LogOut, ChevronDown, Building2, Command, Bell } from 'lucide-react';
+import { Search, LogOut, ChevronDown, Building2, Command, Bell, Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
+import Drawer from '../ui/Drawer';
+import useMediaQuery from '../hooks/useMediaQuery';
 import Breadcrumb from './Breadcrumb';
 import ScopeSwitcher from './ScopeSwitcher';
 import DataReadinessBadge from '../components/DataReadinessBadge';
@@ -183,6 +185,13 @@ export default function AppShell() {
   const [actionCenterTab, setActionCenterTab] = useState('actions');
   const [actionCenterBadge, setActionCenterBadge] = useState({ count: null, color: 'gray' });
   const { isExpert, toggleExpert } = useExpertMode();
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Close mobile nav on route change
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     trackRouteChange(location.pathname);
@@ -246,11 +255,30 @@ export default function AppShell() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50/80">
-      <Sidebar />
+      {/* Desktop: persistent sidebar */}
+      {isDesktop && <Sidebar />}
+
+      {/* Mobile: sidebar in drawer */}
+      {!isDesktop && (
+        <Drawer open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} side="left" title="Navigation" noPadding>
+          <Sidebar />
+        </Drawer>
+      )}
+
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header — glass surface */}
         <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/70 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
           <div className="flex items-center gap-4">
+            {/* Mobile hamburger */}
+            {!isDesktop && (
+              <button
+                onClick={() => setMobileNavOpen(true)}
+                aria-label="Ouvrir le menu"
+                className="p-2 -ml-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition"
+              >
+                <Menu size={20} />
+              </button>
+            )}
             <Breadcrumb />
             <div className="relative">
               <ScopeSwitcher />

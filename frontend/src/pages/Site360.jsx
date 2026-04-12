@@ -3,7 +3,7 @@
  * Header + badges + 3 mini KPIs + tabs (Resume, Conso, Factures, Conformite, Actions)
  */
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   ShieldCheck,
@@ -1495,6 +1495,17 @@ function TabConformite({ site }) {
 
       {/* Flex pilotability link */}
       <BacsFlexLink siteId={site.id} />
+
+      {/* Exit link → full conformité module */}
+      <div className="pt-4 border-t border-gray-100 mt-4">
+        <Link
+          to="/conformite"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:underline transition"
+        >
+          <ShieldCheck size={13} /> Voir la conformité complète du portefeuille
+          <ExternalLink size={11} />
+        </Link>
+      </div>
     </div>
   );
 }
@@ -1604,15 +1615,15 @@ export default function Site360() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { scopedSites, sitesLoading, scope } = useScope();
-  // Persist active tab in URL hash so it survives navigation
+  // Persist active tab in URL ?tab= so deep links are shareable
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => {
-    const hash = window.location.hash.replace('#', '');
-    return hash || 'resume';
+    return searchParams.get('tab') || window.location.hash.replace('#', '') || 'resume';
   });
   const handleSetTab = useCallback((tab) => {
     setActiveTab(tab);
-    window.history.replaceState(null, '', `#${tab}`);
-  }, []);
+    setSearchParams((prev) => { prev.set('tab', tab); return prev; }, { replace: true });
+  }, [setSearchParams]);
   const [showIntake, setShowIntake] = useState(false);
   const [showBacs, setShowBacs] = useState(false);
   const [showSegModal, setShowSegModal] = useState(false);
