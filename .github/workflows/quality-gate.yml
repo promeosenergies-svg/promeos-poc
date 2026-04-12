@@ -134,6 +134,10 @@ jobs:
     name: E2E Smoke (Playwright)
     runs-on: ubuntu-latest
     needs: [frontend, backend]
+    env:
+      PROMEOS_JWT_SECRET: test-secret-key-not-for-production-use-only
+      PROMEOS_DEMO_MODE: "true"
+      DATABASE_URL: sqlite:///./data/promeos_demo.db
     steps:
       - uses: actions/checkout@v4
 
@@ -163,10 +167,6 @@ jobs:
       - name: Start backend
         working-directory: backend
         run: python main.py &
-        env:
-          DATABASE_URL: sqlite:///./data/promeos_demo.db
-          PROMEOS_JWT_SECRET: test-secret-key-not-for-production-use-only
-          PROMEOS_DEMO_MODE: "true"
 
       - name: Start frontend
         working-directory: frontend
