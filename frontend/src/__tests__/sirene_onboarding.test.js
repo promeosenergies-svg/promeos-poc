@@ -71,6 +71,34 @@ describe('API Sirene service — structure', () => {
   });
 });
 
+describe('NextStepsHub — strategic wedge V115', () => {
+  const pagePath = resolve(SRC, 'pages/SireneOnboardingPage.jsx');
+
+  it('contient le composant NextStepsHub', () => {
+    const src = readFileSync(pagePath, 'utf-8');
+    expect(src).toContain('function NextStepsHub');
+  });
+
+  it('guide vers les 4 CTA strategiques (connecteurs, billing, conformite, patrimoine)', () => {
+    const src = readFileSync(pagePath, 'utf-8');
+    expect(src).toContain("navigate('/connectors')");
+    expect(src).toContain("navigate('/billing')");
+    expect(src).toContain("navigate('/conformite')");
+  });
+
+  it('classe les CTA par impact business (Critique > Eleve > Normal)', () => {
+    const src = readFileSync(pagePath, 'utf-8');
+    expect(src).toContain("impact: 'Critique'");
+    expect(src).toContain("impact: 'Eleve'");
+    expect(src).toContain("impact: 'Normal'");
+  });
+
+  it('affiche le claim strategique TTFI "3 min"', () => {
+    const src = readFileSync(pagePath, 'utf-8');
+    expect(src).toContain('3 min');
+  });
+});
+
 describe('App.jsx — route sirene', () => {
   const appPath = resolve(SRC, 'App.jsx');
 

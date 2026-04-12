@@ -428,6 +428,18 @@ def onboarding_from_sirene(
         correlation_id=correlation_id,
     )
     db.add(trace)
+
+    # Funnel onboarding — best-effort, ne doit pas bloquer la creation.
+    # TODO(V116): extraire _get_or_create/_auto_detect vers services/onboarding_stepper
+    # pour eviter le route-to-route import (leaky abstraction).
+    try:
+        from routes.onboarding_stepper import _get_or_create, _auto_detect
+
+        progress = _get_or_create(db, org.id)
+        _auto_detect(db, org.id, progress)
+    except Exception as e:
+        logger.warning("onboarding_progress wiring failed [%s]: %s", correlation_id, e)
+
     db.commit()
 
     logger.info(

@@ -27,6 +27,89 @@ const STEPS = [
   { id: 'confirm', label: 'Confirmer', icon: CheckCircle2 },
 ];
 
+// NextStepsHub — transforme la vallee morte post-Sirene en funnel actif vers le premier insight.
+// Ordre = impact business decroissant (connecteurs > facture > conformite > patrimoine).
+function NextStepsHub({ result, navigate }) {
+  const firstSiteId = result.sites[0]?.id;
+  const cards = [
+    {
+      icon: '⚡',
+      title: 'Connecter Enedis / GRDF',
+      desc: 'Donnees de consommation reelles en J+1',
+      cta: 'Activer les connecteurs',
+      impact: 'Critique',
+      impactStatus: 'crit',
+      onClick: () => navigate('/connectors'),
+    },
+    {
+      icon: '🧾',
+      title: 'Uploader une facture',
+      desc: 'Shadow billing immediat + detection anomalies',
+      cta: 'Importer une facture',
+      impact: 'Eleve',
+      impactStatus: 'warn',
+      onClick: () => navigate('/billing'),
+    },
+    {
+      icon: '📋',
+      title: 'Verifier la conformite',
+      desc: 'Scoring Decret Tertiaire / BACS / APER',
+      cta: 'Voir le diagnostic',
+      impact: 'Eleve',
+      impactStatus: 'warn',
+      onClick: () => navigate('/conformite'),
+    },
+    {
+      icon: '🏢',
+      title: 'Completer le patrimoine',
+      desc: 'Batiments, compteurs, surfaces',
+      cta: 'Editer le patrimoine',
+      impact: 'Normal',
+      impactStatus: 'info',
+      onClick: () => navigate(firstSiteId ? `/sites/${firstSiteId}` : '/patrimoine'),
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">
+          Maximisez votre valeur en 3 min
+        </h3>
+        <p className="text-xs text-gray-500">
+          Patrimoine cree. Prochaine etape : connecter vos donnees energie pour obtenir votre
+          premier insight.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {cards.map((c) => (
+          <button
+            key={c.title}
+            onClick={c.onClick}
+            className="text-left p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors group"
+          >
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <span className="text-2xl">{c.icon}</span>
+              <Badge status={c.impactStatus}>{c.impact}</Badge>
+            </div>
+            <div className="font-medium text-gray-900 text-sm">{c.title}</div>
+            <div className="text-xs text-gray-500 mt-0.5 mb-2">{c.desc}</div>
+            <div className="text-xs text-indigo-600 font-medium group-hover:underline">
+              {c.cta} →
+            </div>
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={() => navigate('/onboarding')}
+        className="w-full text-center text-xs text-gray-400 hover:text-gray-600 pt-2"
+      >
+        Plus tard — aller au tableau de bord d'activation
+      </button>
+    </div>
+  );
+}
+
 // ── Step indicator ──
 function StepIndicator({ steps, current }) {
   return (
@@ -406,32 +489,7 @@ function ConfirmStep({ uniteLegale, selectedSirets, onBack }) {
           </p>
         </div>
 
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-          <p className="font-medium mb-1">Prochaines etapes</p>
-          <ul className="text-xs space-y-0.5">
-            <li>· Completez les batiments et compteurs dans le patrimoine</li>
-            <li>· Connectez les donnees energie (Enedis, GRDF)</li>
-            <li>· Ajoutez les contrats et factures</li>
-            <li>· Verifiez la conformite reglementaire</li>
-          </ul>
-        </div>
-
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            onClick={() => navigate('/patrimoine')}
-            className="flex-1 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 text-center"
-          >
-            Aller au patrimoine
-          </button>
-          {result.sites.length > 0 && (
-            <button
-              onClick={() => navigate(`/sites/${result.sites[0].id}`)}
-              className="px-4 py-2.5 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 text-center"
-            >
-              Voir le premier site
-            </button>
-          )}
-        </div>
+        <NextStepsHub result={result} navigate={navigate} />
       </div>
     );
   }

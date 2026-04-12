@@ -720,6 +720,118 @@ class TestOnboardingFromSirene:
         assert data["prenom1"] == "JEAN"
 
 
+class TestFunnelIntegration:
+    """V115 : cablage onboarding_from_sirene -> OnboardingProgress."""
+
+    def _seed_sirene(self, db, sample_ul_csv, sample_etab_csv):
+        run = SireneSyncRun(sync_type="full", started_at=datetime.now(timezone.utc), status="running")
+        db.add(run)
+        db.flush()
+        import_full_unites_legales(db, sample_ul_csv, SNAPSHOT, run)
+        import_full_etablissements(db, sample_etab_csv, SNAPSHOT, run)
+
+    def test_onboarding_progress_cree_apres_sirene(self, app_client, sample_ul_csv, sample_etab_csv):
+        """Apres creation Sirene, OnboardingProgress est auto-cree avec step_org_created et step_sites_added."""
+        from models.onboarding_progress import OnboardingProgress
+
+        client, db = app_client
+        self._seed_sirene(db, sample_ul_csv, sample_etab_csv)
+
+        resp = client.post(
+            "/api/onboarding/from-sirene",
+            json={
+                "siren": "552032534",
+                "etablissement_sirets": ["55203253400017", "55203253401234"],
+            },
+        )
+        assert resp.status_code == 200
+        org_id = resp.json()["organisation_id"]
+
+        progress = db.query(OnboardingProgress).filter(OnboardingProgress.org_id == org_id).first()
+        assert progress is not None, "OnboardingProgress doit etre cree"
+        assert progress.step_org_created is True, "step_org_created doit etre True"
+        assert progress.step_sites_added is True, "step_sites_added doit etre True"
+        # Pas de compteur ni facture → ces steps restent False
+        assert progress.step_meters_connected is False
+        assert progress.step_invoices_imported is False
+
+
+class TestRgpdHardening:
+    """V115 : exclusion statut_diffusion=P + purge payload_brut."""
+
+    def test_statut_diffusion_p_exclu_a_import(self, db, tmp_path):
+        """Les lignes avec statut_diffusion=P ne doivent pas etre inserees."""
+        csv_path = tmp_path / "stock_p.csv"
+        import csv as csvmod
+
+        rows = [
+            {
+                "siren": "111111111",
+                "statutDiffusionUniteLegale": "O",  # OK
+                "denominationUniteLegale": "ENTREPRISE OUVERTE",
+                "etatAdministratifUniteLegale": "A",
+                "dateDernierTraitementUniteLegale": "2025-12-01T10:00:00",
+                "activitePrincipaleUniteLegale": "47.11F",
+            },
+            {
+                "siren": "222222222",
+                "statutDiffusionUniteLegale": "P",  # A exclure
+                "denominationUniteLegale": "ENTREPRISE PROTEGEE",
+                "etatAdministratifUniteLegale": "A",
+                "dateDernierTraitementUniteLegale": "2025-12-01T10:00:00",
+                "activitePrincipaleUniteLegale": "47.11F",
+            },
+        ]
+        with open(csv_path, "w", encoding="utf-8-sig", newline="") as f:
+            writer = csvmod.DictWriter(f, fieldnames=rows[0].keys())
+            writer.writeheader()
+            writer.writerows(rows)
+
+        stats = import_full_unites_legales(db, str(csv_path), SNAPSHOT)
+        assert stats["read"] == 2
+        assert stats["inserted"] == 1, "Seule l'entreprise O doit etre inseree"
+        assert stats["skipped"] == 1, "La P doit etre skipped"
+
+        # Verify DB state
+        assert db.query(SireneUniteLegale).filter_by(siren="111111111").first() is not None
+        assert db.query(SireneUniteLegale).filter_by(siren="222222222").first() is None
+
+    def test_purge_old_payloads(self, db):
+        """purge_old_payloads efface payload_brut apres max_age_days."""
+        from services.sirene_import import purge_old_payloads
+        from datetime import timedelta
+
+        old_snapshot = datetime.now(timezone.utc) - timedelta(days=200)
+        recent_snapshot = datetime.now(timezone.utc) - timedelta(days=30)
+
+        ul_old = SireneUniteLegale(
+            siren="333333333",
+            denomination="OLD",
+            etat_administratif="A",
+            statut_diffusion="O",
+            snapshot_date=old_snapshot,
+            payload_brut='{"data":"old"}',
+        )
+        ul_recent = SireneUniteLegale(
+            siren="444444444",
+            denomination="RECENT",
+            etat_administratif="A",
+            statut_diffusion="O",
+            snapshot_date=recent_snapshot,
+            payload_brut='{"data":"recent"}',
+        )
+        db.add_all([ul_old, ul_recent])
+        db.commit()
+
+        result = purge_old_payloads(db, max_age_days=180)
+        assert result["unites_legales_purged"] == 1
+
+        db.refresh(ul_old)
+        db.refresh(ul_recent)
+        assert ul_old.payload_brut is None, "payload_brut vieux doit etre efface"
+        assert ul_recent.payload_brut is not None, "payload_brut recent doit etre conserve"
+
+
 class TestSchemaValidation:
     def test_path_traversal_rejected(self):
         """Les chemins avec .. sont rejetes par le schema."""
