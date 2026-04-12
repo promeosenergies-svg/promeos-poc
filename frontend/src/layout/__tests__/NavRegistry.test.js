@@ -146,10 +146,11 @@ describe('NAV_SECTIONS V7', () => {
     expect(energie.items.find((i) => i.label === 'Facturation')).toBeUndefined();
   });
 
-  it('facturation is expertOnly', () => {
+  it('facturation is visible in normal mode (promoted from expertOnly)', () => {
     const patrimoine = NAV_SECTIONS.find((s) => s.module === 'patrimoine');
     const facturation = patrimoine.items.find((i) => i.label === 'Facturation');
-    expect(facturation.expertOnly).toBe(true);
+    expect(facturation).toBeDefined();
+    expect(facturation.expertOnly).toBeFalsy();
   });
 
   it('usages is visible in normal mode (not expertOnly)', () => {
@@ -172,27 +173,27 @@ describe('NAV_SECTIONS V7', () => {
 
 /* ── Expert filtering (item level) ── */
 describe('Expert filtering V7', () => {
-  it('normal mode: 13 visible items across all modules', () => {
+  it('normal mode: 15 visible items across all modules', () => {
     const normal = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, false)
     );
-    expect(normal).toHaveLength(13);
+    expect(normal).toHaveLength(15);
   });
 
-  it('expert mode: 17 visible items (+4 : audit-sme, diagnostics, facturation, simulateur)', () => {
+  it('expert mode: 17 visible items (+2 : audit-sme, simulateur)', () => {
     const expert = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, true)
     );
     expect(expert).toHaveLength(17);
   });
 
-  it('the 4 expert-only items are: audit-sme, diagnostics, facturation, simulateur', () => {
+  it('the 2 expert-only items are: audit-sme, simulateur', () => {
     const expertItems = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       s.items.filter((i) => i.expertOnly)
     );
     const labels = expertItems.map((i) => i.label).sort();
     expect(labels).toEqual(
-      ['Audit SMÉ', 'Diagnostics', 'Facturation', "Simulateur d'achat"].sort()
+      ['Audit SMÉ', "Simulateur d'achat"].sort()
     );
   });
 

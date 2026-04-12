@@ -136,7 +136,7 @@ export default function Sidebar() {
       className="flex h-full z-30 shrink-0 overflow-y-auto relative"
       aria-label="Navigation principale"
     >
-      <NavRail activeModule={displayModule} onSelectModule={handleSelectModule} />
+      <NavRail activeModule={displayModule} onSelectModule={handleSelectModule} badges={badges} />
       {!collapsed && (
         <NavPanel
           activeModule={displayModule}

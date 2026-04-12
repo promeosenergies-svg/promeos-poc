@@ -7,8 +7,14 @@ import { TooltipPortal } from '../ui';
 import { NAV_MODULES, TINT_PALETTE } from './NavRegistry';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 
+/* ── Module → badge key mapping ── */
+const MODULE_BADGE_KEY = {
+  conformite: 'alerts',
+  energie: 'monitoring',
+};
+
 /* ── Rail icon button for one module ── */
-function RailIcon({ mod, isActive, onClick }) {
+function RailIcon({ mod, isActive, onClick, badgeCount }) {
   const t = TINT_PALETTE[mod.tint] || TINT_PALETTE.slate;
   const Icon = mod.icon;
 
@@ -27,6 +33,11 @@ function RailIcon({ mod, isActive, onClick }) {
         aria-current={isActive ? 'true' : undefined}
       >
         <Icon size={20} />
+        {badgeCount > 0 && (
+          <span className="absolute top-1 right-1 w-4 h-4 flex items-center justify-center text-[8px] font-bold bg-red-500 text-white rounded-full leading-none">
+            {badgeCount > 9 ? '9+' : badgeCount}
+          </span>
+        )}
         <span className="text-[10px] mt-0.5 leading-tight opacity-80">{mod.label}</span>
       </button>
     </TooltipPortal>
@@ -34,7 +45,7 @@ function RailIcon({ mod, isActive, onClick }) {
 }
 
 /* ── Main Rail ── */
-export default function NavRail({ activeModule, onSelectModule }) {
+export default function NavRail({ activeModule, onSelectModule, badges = {} }) {
   const { isExpert } = useExpertMode();
 
   const visibleModules = isExpert ? NAV_MODULES : NAV_MODULES.filter((m) => !m.expertOnly);
@@ -58,6 +69,7 @@ export default function NavRail({ activeModule, onSelectModule }) {
             mod={mod}
             isActive={activeModule === mod.key}
             onClick={onSelectModule}
+            badgeCount={badges[MODULE_BADGE_KEY[mod.key]] || 0}
           />
         ))}
       </div>

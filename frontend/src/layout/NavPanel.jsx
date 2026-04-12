@@ -61,12 +61,14 @@ function PanelLink({
     ? BADGE_STYLES[badgeKey] || BADGE_STYLES._default
     : BADGE_STYLES._default;
   const tipText = longLabel || label;
+  const descId = desc ? `nav-desc-${to.replace(/[^a-z0-9]/gi, '-')}` : undefined;
 
   return (
     <NavLink
       to={to}
       end={to === '/'}
       aria-label={tipText}
+      aria-describedby={descId}
       title={desc || undefined}
       className={({ isActive }) =>
         `group/link flex items-center gap-1.5 h-7 rounded-lg text-[12.5px] leading-5 transition-all duration-150 relative py-0.5 px-2${indent ? ' ml-3' : ''}
@@ -85,6 +87,11 @@ function PanelLink({
             className={`shrink-0 transition-colors duration-150 ${isActive ? t.icon : 'text-slate-400'}`}
           />
           <span className="flex-1 truncate">{label}</span>
+          {descId && (
+            <span id={descId} className="sr-only">
+              {desc}
+            </span>
+          )}
           {badge > 0 && (
             <span
               className={`ml-auto px-1 py-px text-[9px] font-semibold rounded-full min-w-[16px] text-center ${badgeStyle}`}

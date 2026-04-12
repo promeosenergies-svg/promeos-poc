@@ -403,7 +403,7 @@ export default function ContractRadarPage() {
   return (
     <PageShell
       icon={CalendarRange}
-      title="Renouvellements contrats"
+      title="Échéances"
       subtitle="Radar des échéances et scénarios d'achat"
     >
       <div className="flex items-center gap-3 mb-1">
