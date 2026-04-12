@@ -68,8 +68,8 @@ export default function Drawer({
         ref={ref}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className={`absolute ${sideClass} top-0 h-full ${widthClass} bg-white shadow-xl border-l border-gray-200
-          flex flex-col focus:outline-none animate-[slideInRight_0.25s_ease-out] ${className}`}
+        className={`absolute ${sideClass} top-0 h-full ${widthClass} bg-white shadow-xl ${side === 'left' ? 'border-r' : 'border-l'} border-gray-200
+          flex flex-col focus:outline-none ${side === 'left' ? 'animate-[slideInLeft_0.25s_ease-out]' : 'animate-[slideInRight_0.25s_ease-out]'} ${className}`}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
