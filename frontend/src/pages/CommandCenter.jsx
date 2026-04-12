@@ -92,21 +92,11 @@ function KpiJ1Card({ label, value, sub, accent = 'neutral', loading: isLoading }
   );
 }
 
-// ── CockpitTabs — navigation Vue exécutive / Tableau de bord ──
+// ── CockpitTabs — navigation Tableau de bord / Vue exécutive ──
 function CockpitTabs({ active }) {
   const nav = useNavigate();
   return (
     <div className="flex gap-6 border-b border-gray-200 mb-4 sticky top-0 z-10 bg-white -mx-6 px-6 pt-2">
-      <button
-        onClick={() => nav('/cockpit')}
-        className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
-          active === 'cockpit'
-            ? 'border-blue-600 text-blue-600'
-            : 'border-transparent text-gray-500 hover:text-gray-700'
-        }`}
-      >
-        Vue exécutive
-      </button>
       <button
         onClick={() => nav('/')}
         className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
@@ -116,6 +106,16 @@ function CockpitTabs({ active }) {
         }`}
       >
         Tableau de bord
+      </button>
+      <button
+        onClick={() => nav('/cockpit')}
+        className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+          active === 'cockpit'
+            ? 'border-blue-600 text-blue-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        Vue exécutive
       </button>
     </div>
   );
