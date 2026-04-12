@@ -192,9 +192,7 @@ describe('Expert filtering V7', () => {
       s.items.filter((i) => i.expertOnly)
     );
     const labels = expertItems.map((i) => i.label).sort();
-    expect(labels).toEqual(
-      ['Audit SMÉ', "Simulateur d'achat"].sort()
-    );
+    expect(labels).toEqual(['Audit SMÉ', "Simulateur d'achat"].sort());
   });
 
   it('getVisibleItems returns all items in expert mode', () => {
