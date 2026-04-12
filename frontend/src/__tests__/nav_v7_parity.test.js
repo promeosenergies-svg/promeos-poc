@@ -94,23 +94,23 @@ describe('Nav V7 — Structure', () => {
     expect(expertModules[0].key).toBe('admin');
   });
 
-  it('15 items visible in normal mode across main modules', () => {
+  it('13 items visible in normal mode (1 page per concept, no tab duplicates)', () => {
     const mainSections = NAV_SECTIONS.filter((s) => !s.expertOnly);
     const items = mainSections.flatMap((s) => getVisibleItems(s.items, false));
-    expect(items).toHaveLength(15);
+    expect(items).toHaveLength(13);
   });
 
-  it('17 items visible in expert mode across main modules', () => {
+  it('same count in expert mode (no expertOnly items left)', () => {
     const mainSections = NAV_SECTIONS.filter((s) => !s.expertOnly);
     const items = mainSections.flatMap((s) => getVisibleItems(s.items, true));
-    expect(items).toHaveLength(17);
+    expect(items).toHaveLength(13);
   });
 
-  it('2 expertOnly items total (audit-sme, simulateur)', () => {
+  it('zero expertOnly items in main modules (tabs merged into parent pages)', () => {
     const expertItems = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       s.items.filter((i) => i.expertOnly)
     );
-    expect(expertItems).toHaveLength(2);
+    expect(expertItems).toHaveLength(0);
   });
 });
 

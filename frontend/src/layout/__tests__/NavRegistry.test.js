@@ -124,18 +124,16 @@ describe('NAV_SECTIONS V7', () => {
     }
   });
 
-  it('conformite section exists and is autonomous', () => {
+  it('conformite section exists with 2 items (parent + APER)', () => {
     const conformite = NAV_SECTIONS.find((s) => s.module === 'conformite');
     expect(conformite).toBeDefined();
-    expect(conformite.items.length).toBeGreaterThanOrEqual(4);
+    expect(conformite.items).toHaveLength(2);
   });
 
-  it('conformite section contains DT, BACS, APER, audit items', () => {
+  it('conformite section contains Conformité and APER (tabs merged)', () => {
     const conformite = NAV_SECTIONS.find((s) => s.module === 'conformite');
     const labels = conformite.items.map((i) => i.label);
-    expect(labels).toContain("Vue d'ensemble");
-    expect(labels).toContain('Décret Tertiaire');
-    expect(labels).toContain('Pilotage bâtiment');
+    expect(labels).toContain('Conformité');
     expect(labels).toContain('Solarisation (APER)');
   });
 
@@ -165,34 +163,38 @@ describe('NAV_SECTIONS V7', () => {
     const labels = achat.items.map((i) => i.label);
     expect(labels).toContain('Échéances');
     expect(labels).toContain("Scénarios d'achat");
-    // Simulateur d'achat is expertOnly
-    const simul = achat.items.find((i) => i.label === "Simulateur d'achat");
-    expect(simul.expertOnly).toBe(true);
+  });
+
+  it('conformite has no tab-level items (DT/BACS/SMÉ merged into parent)', () => {
+    const conformite = NAV_SECTIONS.find((s) => s.module === 'conformite');
+    const labels = conformite.items.map((i) => i.label);
+    expect(labels).not.toContain('Décret Tertiaire');
+    expect(labels).not.toContain('Pilotage bâtiment');
+    expect(labels).not.toContain('Audit SMÉ');
   });
 });
 
 /* ── Expert filtering (item level) ── */
 describe('Expert filtering V7', () => {
-  it('normal mode: 15 visible items across all modules', () => {
+  it('normal mode: 13 visible items (1 page per concept)', () => {
     const normal = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, false)
     );
-    expect(normal).toHaveLength(15);
+    expect(normal).toHaveLength(13);
   });
 
-  it('expert mode: 17 visible items (+2 : audit-sme, simulateur)', () => {
+  it('expert mode: same 13 items (no expertOnly items left)', () => {
     const expert = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, true)
     );
-    expect(expert).toHaveLength(17);
+    expect(expert).toHaveLength(13);
   });
 
-  it('the 2 expert-only items are: audit-sme, simulateur', () => {
+  it('zero expert-only items (all tabs merged into parent pages)', () => {
     const expertItems = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       s.items.filter((i) => i.expertOnly)
     );
-    const labels = expertItems.map((i) => i.label).sort();
-    expect(labels).toEqual(['Audit SMÉ', "Simulateur d'achat"].sort());
+    expect(expertItems).toHaveLength(0);
   });
 
   it('getVisibleItems returns all items in expert mode', () => {
@@ -281,13 +283,11 @@ describe('Vocabulary V7', () => {
     expect(mod.label).toBe('Accueil');
   });
 
-  it('BACS is labeled "Pilotage bâtiment" (no acronyms in parentheses)', () => {
+  it('BACS keywords are in conformite parent item (merged from tab)', () => {
     const confo = NAV_SECTIONS.find((s) => s.module === 'conformite');
-    const bacs = confo.items.find((i) => i.label === 'Pilotage bâtiment');
-    expect(bacs).toBeDefined();
-    // Check the deprecated label is absent
-    const labels = confo.items.map((i) => i.label);
-    expect(labels).not.toContain('BACS (GTB/GTC)');
+    const parent = confo.items.find((i) => i.to === '/conformite');
+    expect(parent.keywords).toContain('bacs');
+    expect(parent.keywords).toContain('gtb');
   });
 
   it('Usages is labeled "Répartition par usage"', () => {
@@ -308,10 +308,11 @@ describe('Vocabulary V7', () => {
     expect(scenarios).toBeDefined();
   });
 
-  it("Assistant is labeled 'Simulateur d'achat'", () => {
+  it("Simulateur keywords are in Scénarios d'achat parent item (merged from tab)", () => {
     const achat = NAV_SECTIONS.find((s) => s.module === 'achat');
-    const simul = achat.items.find((i) => i.label === "Simulateur d'achat");
-    expect(simul).toBeDefined();
+    const scenarios = achat.items.find((i) => i.to === '/achat-energie');
+    expect(scenarios.keywords).toContain('simulateur');
+    expect(scenarios.keywords).toContain('assistant');
   });
 });
 

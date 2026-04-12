@@ -61,9 +61,10 @@ describe('B. Labels in new modules V7', () => {
     expect(item.label).toBe("Scénarios d'achat");
   });
 
-  it('/achat-energie?tab=assistant is in main nav (fused)', () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.to === '/achat-energie?tab=assistant');
+  it('simulateur keywords merged into /achat-energie item', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.to === '/achat-energie');
     expect(item).toBeDefined();
+    expect(item.keywords).toContain('simulateur');
   });
 
   it('/renouvellements is in main nav (canonical Échéances page)', () => {
