@@ -51,6 +51,27 @@ def _require_auth():
         return None
 
 
+# Rate limit : max 1 promotion démarrée par fenêtre de 60s par source
+_PROMOTION_RATE_LIMIT_WINDOW = 60.0
+_last_promotion_trigger: dict[str, float] = {}
+
+
+def _check_promotion_rate_limit(triggered_by: str = "api"):
+    """Rate limit : max 1 run démarré par fenêtre de 60s par source. Anti DoS."""
+    import time
+
+    now = time.monotonic()
+    last = _last_promotion_trigger.get(triggered_by, 0.0)
+    elapsed = now - last
+    if elapsed < _PROMOTION_RATE_LIMIT_WINDOW:
+        wait = int(_PROMOTION_RATE_LIMIT_WINDOW - elapsed)
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit : attendre {wait}s avant prochain run (source={triggered_by})",
+        )
+    _last_promotion_trigger[triggered_by] = now
+
+
 # ========================================
 # Pydantic schemas — Ingestion
 # ========================================
@@ -415,8 +436,15 @@ def trigger_promotion(
     db: Session = Depends(get_db),
     _auth=Depends(_require_auth),
 ):
-    """Déclenche un run de promotion staging → tables fonctionnelles."""
+    """Déclenche un run de promotion staging → tables fonctionnelles.
+
+    Rate limit : 1 run par fenêtre de 60s (anti DoS).
+    Dry-run : exempt du rate limit pour debug.
+    """
     from data_staging.engine import run_promotion
+
+    if not dry_run:
+        _check_promotion_rate_limit("api")
 
     ft = [f.strip().upper() for f in flux_types.split(",")] if flux_types else None
     try:
@@ -498,6 +526,266 @@ def get_promotion_run(run_id: int, db: Session = Depends(get_db)):
         "rows_skipped": run.rows_skipped,
         "rows_flagged": run.rows_flagged,
         "error_message": run.error_message,
+    }
+
+
+@router.get("/promotion/metrics")
+def get_promotion_metrics(db: Session = Depends(get_db)):
+    """Métriques du pipeline de promotion au format Prometheus-compatible.
+
+    Retourne un texte exposition format Prometheus. Scrapable par Prometheus
+    ou par un agent de monitoring sans dépendance externe.
+
+    Usage :
+        curl http://localhost:8001/api/enedis/promotion/metrics
+    """
+    from fastapi.responses import PlainTextResponse
+    from data_staging.models import PromotionRun, UnmatchedPrm, MeterLoadCurve
+    from sqlalchemy import func as sql_func
+
+    # Collecter les métriques
+    total_runs = db.query(PromotionRun).count()
+    completed_runs = db.query(PromotionRun).filter(PromotionRun.status == "completed").count()
+    failed_runs = db.query(PromotionRun).filter(PromotionRun.status == "failed").count()
+    running_runs = db.query(PromotionRun).filter(PromotionRun.status == "running").count()
+
+    last_completed = (
+        db.query(PromotionRun).filter(PromotionRun.status == "completed").order_by(PromotionRun.id.desc()).first()
+    )
+
+    # Backlog
+    backlog_pending = db.query(UnmatchedPrm).filter(UnmatchedPrm.status == "pending").count()
+    backlog_resolved = db.query(UnmatchedPrm).filter(UnmatchedPrm.status == "resolved").count()
+
+    # Volume tables fonctionnelles
+    mlc_total = db.query(MeterLoadCurve).count()
+
+    # Format Prometheus text exposition
+    lines = [
+        "# HELP promeos_promotion_runs_total Total promotion runs by status",
+        "# TYPE promeos_promotion_runs_total counter",
+        f'promeos_promotion_runs_total{{status="completed"}} {completed_runs}',
+        f'promeos_promotion_runs_total{{status="failed"}} {failed_runs}',
+        f'promeos_promotion_runs_total{{status="running"}} {running_runs}',
+        f'promeos_promotion_runs_total{{status="all"}} {total_runs}',
+        "",
+        "# HELP promeos_promotion_backlog_prms Number of unmatched PRMs in backlog",
+        "# TYPE promeos_promotion_backlog_prms gauge",
+        f'promeos_promotion_backlog_prms{{status="pending"}} {backlog_pending}',
+        f'promeos_promotion_backlog_prms{{status="resolved"}} {backlog_resolved}',
+        "",
+        "# HELP promeos_meter_load_curve_rows_total Total rows in meter_load_curve",
+        "# TYPE promeos_meter_load_curve_rows_total gauge",
+        f"promeos_meter_load_curve_rows_total {mlc_total}",
+    ]
+
+    if last_completed:
+        lines.extend(
+            [
+                "",
+                "# HELP promeos_last_promotion_prms_matched PRMs matched in last completed run",
+                "# TYPE promeos_last_promotion_prms_matched gauge",
+                f"promeos_last_promotion_prms_matched {last_completed.prms_matched or 0}",
+                "",
+                "# HELP promeos_last_promotion_prms_unmatched PRMs unmatched in last completed run",
+                "# TYPE promeos_last_promotion_prms_unmatched gauge",
+                f"promeos_last_promotion_prms_unmatched {last_completed.prms_unmatched or 0}",
+                "",
+                "# HELP promeos_last_promotion_rows_promoted Total rows promoted in last run",
+                "# TYPE promeos_last_promotion_rows_promoted gauge",
+                f"promeos_last_promotion_rows_promoted "
+                f"{(last_completed.rows_load_curve or 0) + (last_completed.rows_energy_index or 0) + (last_completed.rows_power_peak or 0)}",
+            ]
+        )
+
+        # Age du dernier run (secondes)
+        if last_completed.finished_at:
+            from datetime import datetime, timezone
+
+            finished = last_completed.finished_at
+            if finished.tzinfo is None:
+                finished = finished.replace(tzinfo=timezone.utc)
+            age_seconds = (datetime.now(timezone.utc) - finished).total_seconds()
+            lines.extend(
+                [
+                    "",
+                    "# HELP promeos_last_promotion_age_seconds Seconds since last completed run",
+                    "# TYPE promeos_last_promotion_age_seconds gauge",
+                    f"promeos_last_promotion_age_seconds {int(age_seconds)}",
+                ]
+            )
+
+    return PlainTextResponse("\n".join(lines) + "\n", media_type="text/plain; version=0.0.4")
+
+
+@router.post("/opendata/refresh")
+def refresh_opendata(
+    date_from: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    date_to: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    dataset: str = Query("sup36", pattern="^(sup36|inf36|all)$"),
+    db: Session = Depends(get_db),
+    _auth=Depends(_require_auth),
+):
+    """Import/refresh des agrégats Enedis Open Data.
+
+    Endpoint à appeler périodiquement (cron hebdomadaire recommandé) pour
+    maintenir les benchmarks NAF à jour. Rate-limité pour éviter surcharge ODS.
+    """
+    _check_promotion_rate_limit("opendata_refresh")
+
+    from connectors.registry import get_connector
+
+    connector = get_connector("enedis_opendata")
+    if not connector:
+        raise HTTPException(status_code=500, detail="Connector enedis_opendata non trouvé")
+
+    try:
+        results = connector.sync(db, object_type=dataset, date_from=date_from, date_to=date_to)
+        return {
+            "status": "completed",
+            "dataset": dataset,
+            "date_from": date_from,
+            "date_to": date_to,
+            "results": results,
+            "total_rows": sum(r.get("rows_imported", 0) for r in results),
+        }
+    except Exception as e:
+        logger.error("ODS refresh failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"ODS refresh failed: {e}")
+
+
+@router.get("/opendata/freshness")
+def get_opendata_freshness(db: Session = Depends(get_db)):
+    """Retourne l'état de fraîcheur des données Open Data.
+
+    Permet aux dashboards de savoir si les benchmarks sont à jour.
+    """
+    from models.enedis_opendata import EnedisConsoSup36, EnedisConsoInf36
+    from sqlalchemy import func as sql_func
+    from datetime import datetime, timezone
+
+    sup36_count = db.query(EnedisConsoSup36).count()
+    inf36_count = db.query(EnedisConsoInf36).count()
+
+    sup36_latest = db.query(sql_func.max(EnedisConsoSup36.created_at)).scalar()
+    inf36_latest = db.query(sql_func.max(EnedisConsoInf36.created_at)).scalar()
+
+    def _age_days(dt):
+        if not dt:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return round((datetime.now(timezone.utc) - dt).total_seconds() / 86400, 1)
+
+    sup36_age = _age_days(sup36_latest)
+    inf36_age = _age_days(inf36_latest)
+
+    status = "empty"
+    alerts = []
+    if sup36_count > 0:
+        if sup36_age is not None and sup36_age > 90:
+            status = "stale"
+            alerts.append(f"Agrégats sup36 vieux de {sup36_age} jours (seuil : 90)")
+        elif sup36_age is not None and sup36_age > 30:
+            status = "aging"
+        else:
+            status = "fresh"
+
+    return {
+        "status": status,
+        "alerts": alerts,
+        "sup36": {
+            "count": sup36_count,
+            "latest_import": sup36_latest.isoformat() if sup36_latest else None,
+            "age_days": sup36_age,
+        },
+        "inf36": {
+            "count": inf36_count,
+            "latest_import": inf36_latest.isoformat() if inf36_latest else None,
+            "age_days": inf36_age,
+        },
+    }
+
+
+@router.get("/promotion/health")
+def get_promotion_health(db: Session = Depends(get_db)):
+    """Health check du pipeline de promotion.
+
+    Retourne : status (healthy/stale/warning/error/never_ran/running),
+    dernier run, volumes, backlog, alertes actives.
+    """
+    from data_staging.models import PromotionRun, UnmatchedPrm, MeterLoadCurve
+    from datetime import datetime, timezone
+
+    last_run = db.query(PromotionRun).order_by(PromotionRun.id.desc()).first()
+    last_completed = (
+        db.query(PromotionRun).filter(PromotionRun.status == "completed").order_by(PromotionRun.id.desc()).first()
+    )
+    running = db.query(PromotionRun).filter(PromotionRun.status == "running").first()
+    pending_backlog = db.query(UnmatchedPrm).filter(UnmatchedPrm.status == "pending").count()
+    resolved_backlog = db.query(UnmatchedPrm).filter(UnmatchedPrm.status == "resolved").count()
+    promoted_rows_total = db.query(MeterLoadCurve).count()
+
+    alerts = []
+    now = datetime.now(timezone.utc)
+
+    if not last_run:
+        status = "never_ran"
+        alerts.append("Aucun run de promotion effectué")
+    elif running:
+        status = "running"
+    elif last_completed:
+        last_finished = last_completed.finished_at
+        if last_finished and last_finished.tzinfo is None:
+            last_finished = last_finished.replace(tzinfo=timezone.utc)
+
+        if last_finished:
+            age_hours = (now - last_finished).total_seconds() / 3600
+            if age_hours > 48:
+                status = "stale"
+                alerts.append(f"Dernier run il y a {int(age_hours)}h (seuil : 48h)")
+            elif age_hours > 24:
+                status = "warning"
+                alerts.append(f"Dernier run il y a {int(age_hours)}h (seuil warning : 24h)")
+            else:
+                status = "healthy"
+        else:
+            status = "unknown"
+    else:
+        status = "error"
+        alerts.append("Aucun run complété avec succès")
+
+    if pending_backlog > 100:
+        alerts.append(f"Backlog élevé : {pending_backlog} PRMs non résolus")
+
+    last_run_info = None
+    if last_run:
+        last_run_info = {
+            "id": last_run.id,
+            "status": last_run.status,
+            "mode": last_run.mode,
+            "triggered_by": last_run.triggered_by,
+            "started_at": last_run.started_at.isoformat() if last_run.started_at else None,
+            "finished_at": last_run.finished_at.isoformat() if last_run.finished_at else None,
+            "prms_total": last_run.prms_total,
+            "prms_matched": last_run.prms_matched,
+            "prms_unmatched": last_run.prms_unmatched,
+            "rows_promoted": (
+                (last_run.rows_load_curve or 0) + (last_run.rows_energy_index or 0) + (last_run.rows_power_peak or 0)
+            ),
+            "error_message": last_run.error_message,
+        }
+
+    return {
+        "status": status,
+        "alerts": alerts,
+        "last_run": last_run_info,
+        "volumes": {
+            "meter_load_curve_total": promoted_rows_total,
+            "backlog_pending": pending_backlog,
+            "backlog_resolved": resolved_backlog,
+        },
+        "checked_at": now.isoformat(),
     }
 
 

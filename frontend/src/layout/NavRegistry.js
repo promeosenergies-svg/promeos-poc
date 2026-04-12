@@ -59,6 +59,7 @@ import {
   Building,
   SearchCheck,
   PieChart,
+  Radio,
 } from 'lucide-react';
 
 /* ── Route → module mapping ── */
@@ -113,6 +114,9 @@ export const ROUTE_MODULE_MAP = {
   // Achat
   '/achat-energie': 'achat',
   '/renouvellements': 'achat',
+
+  // Flex
+  '/flex': 'flex',
 
   // Admin
   '/import': 'admin',
@@ -238,12 +242,21 @@ export const NAV_MODULES = [
     desc: 'Échéances & arbitrage énergie',
   },
   {
+    key: 'flex',
+    label: 'Flex',
+    icon: Radio,
+    tint: 'yellow',
+    expertOnly: false,
+    order: 6,
+    desc: 'Effacement & valorisation',
+  },
+  {
     key: 'admin',
     label: 'Administration',
     icon: Settings,
     tint: 'slate',
     expertOnly: true,
-    order: 6,
+    order: 7,
     desc: 'Import, utilisateurs et système',
   },
 ];
@@ -334,6 +347,23 @@ export const TINT_PALETTE = {
     pillBg: 'bg-violet-50',
     pillText: 'text-violet-700',
     pillRing: 'ring-violet-200/60',
+  },
+  yellow: {
+    headerBand: 'from-yellow-50/50 to-transparent',
+    panelHeader: 'from-yellow-50/30 to-transparent',
+    softBg: 'bg-yellow-50/40',
+    hoverBg: 'bg-yellow-50/30',
+    activeBg: 'bg-yellow-50/60',
+    activeText: 'text-yellow-700',
+    activeBorder: 'border-yellow-500',
+    railActiveBg: 'bg-yellow-50/70',
+    railActiveRing: 'ring-yellow-300/50',
+    railActiveText: 'text-yellow-600',
+    dot: 'bg-yellow-400',
+    icon: 'text-yellow-500',
+    pillBg: 'bg-yellow-50',
+    pillText: 'text-yellow-700',
+    pillRing: 'ring-yellow-200/60',
   },
   slate: {
     headerBand: 'from-slate-100/50 to-transparent',
@@ -646,13 +676,42 @@ export const NAV_SECTIONS = [
     ],
   },
 
+  // === FLEX (yellow) — valorisation effacement / NEBEF / Tempo ===
+  {
+    key: 'flex',
+    module: 'flex',
+    label: 'Flex',
+    expertOnly: false,
+    order: 6,
+    items: [
+      {
+        to: '/flex',
+        icon: Radio,
+        label: 'Flexibilité',
+        desc: 'Score, potentiel, effacement NEBEF',
+        keywords: [
+          'flex',
+          'flexibilite',
+          'nebef',
+          'effacement',
+          'tempo',
+          'capacite',
+          'fcr',
+          'afrr',
+          'valorisation',
+          'agregateur',
+        ],
+      },
+    ],
+  },
+
   // === ADMIN (slate) — module expertOnly ===
   {
     key: 'admin-data',
     module: 'admin',
     label: 'Données',
     expertOnly: true,
-    order: 6,
+    order: 7,
     items: [
       {
         to: '/import',

@@ -4,7 +4,17 @@
  */
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, ArrowRight, Search, AlertTriangle, Clock } from 'lucide-react';
+import {
+  FileText,
+  ArrowRight,
+  Search,
+  AlertTriangle,
+  Clock,
+  ShieldCheck,
+  ShoppingCart,
+  Radio,
+} from 'lucide-react';
+import CrossModuleCTA from '../components/CrossModuleCTA';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
@@ -453,6 +463,34 @@ const Cockpit = () => {
         </div>
       }
     >
+      {/* ── Cross-module funnel CTAs (stratégique : Accueil → modules valeur) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <CrossModuleCTA
+          icon={ShieldCheck}
+          title="Conformité"
+          desc="Score, obligations à traiter"
+          to="/conformite"
+          label="Voir"
+          tint="emerald"
+        />
+        <CrossModuleCTA
+          icon={ShoppingCart}
+          title="Arbitrer vos achats"
+          desc="Scénarios & échéances"
+          to="/achat-energie"
+          label="Achat"
+          tint="violet"
+        />
+        <CrossModuleCTA
+          icon={Radio}
+          title="Valoriser flex"
+          desc="Effacement, Tempo, capacité"
+          to="/flex"
+          label="Flex"
+          tint="yellow"
+        />
+      </div>
+
       {/* ── Error banner ── */}
       {error && (
         <ErrorState

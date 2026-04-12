@@ -84,8 +84,9 @@ def run_promotion(
     db.refresh(run)
 
     try:
-        # High-water marks
-        hwm_before = _get_high_water_marks(db, flux_types) if mode == "incremental" else {}
+        # High-water marks : lus du DERNIER RUN completed, pas du max(id) actuel
+        # (sinon les rows ajoutées depuis le dernier run seraient ignorées)
+        hwm_before = _load_last_hwm(db, flux_types) if mode == "incremental" else {}
         run.high_water_mark_before = json.dumps(hwm_before)
 
         # Discover : collecter tous les PRM distincts à traiter
@@ -252,27 +253,29 @@ def _upsert_quality_first(
     update_attrs: list[str],
     run_id: int,
 ) -> int:
-    """UPSERT batch avec quality-first overwrite via INSERT ON CONFLICT.
+    """UPSERT batch avec quality-first overwrite.
 
-    Utilise sqlite INSERT OR REPLACE pour les nouvelles rows,
-    et un pre-check batch pour respecter la règle quality-first
-    (ne pas écraser une row de meilleure qualité).
+    Par chunk :
+    1 query SELECT (batch fetch existing)
+    1 query INSERT (bulk_save_objects pour nouveaux)
+    1 query UPDATE (bulk_update_mappings pour existants avec meilleure qualité)
+
+    Total : 3 queries par chunk de 1000 rows (vs 2000+ dans l'ancienne version).
     """
     if not rows:
         return 0
 
     model_cls = type(rows[0])
-    table = model_cls.__table__
     count = 0
+    all_update_attrs = [*update_attrs, "quality_score", "is_estimated", "promotion_run_id"]
 
-    # Batch par chunks pour limiter la mémoire
     for chunk_start in range(0, len(rows), CHUNK_SIZE):
         chunk = rows[chunk_start : chunk_start + CHUNK_SIZE]
-
-        # Pre-fetch les rows existantes pour ce chunk (1 query par chunk, pas par row)
         existing_map = _batch_fetch_existing(db, model_cls, unique_key_attrs, chunk)
 
         to_insert = []
+        to_update_mappings: list[dict] = []
+
         for row in chunk:
             key = tuple(getattr(row, attr) for attr in unique_key_attrs)
             existing = existing_map.get(key)
@@ -280,21 +283,27 @@ def _upsert_quality_first(
             if existing:
                 # Quality-first : update seulement si >= (latest wins on tie)
                 if row.quality_score >= existing.quality_score:
+                    mapping = {"id": existing.id}
                     for attr in update_attrs:
                         new_val = getattr(row, attr)
                         if new_val is not None:
-                            setattr(existing, attr, new_val)
-                    existing.quality_score = row.quality_score
-                    existing.is_estimated = row.is_estimated
-                    existing.promotion_run_id = run_id
+                            mapping[attr] = new_val
+                    mapping["quality_score"] = row.quality_score
+                    mapping["is_estimated"] = row.is_estimated
+                    mapping["promotion_run_id"] = run_id
+                    to_update_mappings.append(mapping)
                     count += 1
             else:
                 to_insert.append(row)
 
-        # Batch insert des nouvelles rows
+        # Batch INSERT (1 query)
         if to_insert:
             db.bulk_save_objects(to_insert)
             count += len(to_insert)
+
+        # Batch UPDATE (1 query)
+        if to_update_mappings:
+            db.bulk_update_mappings(model_cls, to_update_mappings)
 
     return count
 
@@ -415,7 +424,7 @@ def _resolve_backlog(db: Session, prm_code: str, meter_id: int) -> None:
 
 
 def _get_high_water_marks(db: Session, flux_types: list[str]) -> dict[str, int]:
-    """Retourne le max(id) par table staging."""
+    """Retourne le max(id) par table staging (snapshot courant)."""
     hwm = {}
     for flux_key in flux_types:
         if flux_key not in _STAGING_TABLES:
@@ -425,3 +434,19 @@ def _get_high_water_marks(db: Session, flux_types: list[str]) -> dict[str, int]:
         if max_id is not None:
             hwm[flux_key] = max_id
     return hwm
+
+
+def _load_last_hwm(db: Session, flux_types: list[str]) -> dict[str, int]:
+    """Charge le HWM du dernier run COMPLETED (source de vérité pour incrémental).
+
+    Si aucun run précédent : retourne {} (= tout traiter).
+    """
+    last_run = (
+        db.query(PromotionRun).filter(PromotionRun.status == "completed").order_by(PromotionRun.id.desc()).first()
+    )
+    if not last_run or not last_run.high_water_mark_after:
+        return {}
+    try:
+        return json.loads(last_run.high_water_mark_after)
+    except (json.JSONDecodeError, TypeError):
+        return {}

@@ -46,6 +46,7 @@ const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
 const AdminRolesPage = lazy(() => import('./pages/AdminRolesPage'));
 const AdminAssignmentsPage = lazy(() => import('./pages/AdminAssignmentsPage'));
 const AdminAuditLogPage = lazy(() => import('./pages/AdminAuditLogPage'));
+const EnedisPromotionHealthPage = lazy(() => import('./pages/EnedisPromotionHealthPage'));
 const ConsumptionExplorerPage = lazy(() => import('./pages/ConsumptionExplorerPage'));
 // EnergyCopilotPage — dead code, no active route (Sprint B P0-7)
 // const EnergyCopilotPage = lazy(() => import('./pages/EnergyCopilotPage'));
@@ -67,6 +68,7 @@ const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const SireneOnboardingPage = lazy(() => import('./pages/SireneOnboardingPage'));
 const AperPage = lazy(() => import('./pages/AperPage'));
 const UsagesDashboardPage = lazy(() => import('./pages/UsagesDashboardPage'));
+const FlexPage = lazy(() => import('./pages/FlexPage'));
 
 function PageSuspense({ children }) {
   return (
@@ -476,6 +478,14 @@ function App() {
                       }
                     />
                     <Route
+                      path="/flex"
+                      element={
+                        <PageSuspense>
+                          <FlexPage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
                       path="/onboarding"
                       element={
                         <PageSuspense>
@@ -522,6 +532,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <AdminAuditLogPage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/enedis-health"
+                      element={
+                        <PageSuspense>
+                          <EnedisPromotionHealthPage />
                         </PageSuspense>
                       }
                     />

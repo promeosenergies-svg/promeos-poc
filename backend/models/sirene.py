@@ -62,6 +62,7 @@ class SireneUniteLegale(Base, TimestampMixin):
         Index("ix_sirene_ul_denomination", "denomination"),
         Index("ix_sirene_ul_etat", "etat_administratif"),
         Index("ix_sirene_ul_ddt", "date_dernier_traitement"),
+        Index("ix_sirene_ul_snapshot", "snapshot_date"),
     )
 
 
@@ -122,6 +123,7 @@ class SireneEtablissement(Base, TimestampMixin):
         Index("ix_sirene_etab_commune", "libelle_commune"),
         Index("ix_sirene_etab_etat", "etat_administratif"),
         Index("ix_sirene_etab_ddt", "date_dernier_traitement"),
+        Index("ix_sirene_etab_snapshot", "snapshot_date"),
     )
 
 

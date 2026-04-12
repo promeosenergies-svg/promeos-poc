@@ -7,7 +7,7 @@
  */
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, Plus, RotateCcw, RefreshCw, Coins } from 'lucide-react';
+import { ShieldCheck, Plus, RotateCcw, RefreshCw, Coins, ShoppingCart, Radio } from 'lucide-react';
 import { toUsages } from '../services/routes';
 import { Button, PageShell, ActiveFiltersBar, Explain } from '../ui';
 import ObligationsTab from './conformite-tabs/ObligationsTab';
@@ -34,6 +34,7 @@ import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
 import { buildWatchlist, buildBriefing, computeHealthState } from '../models/dashboardEssentials';
 import { computeObligationProfileTags } from '../models/complianceProfileRules';
 import HealthSummary from '../components/HealthSummary';
+import CrossModuleCTA from '../components/CrossModuleCTA';
 import DossierPrintView from '../components/DossierPrintView';
 import RegulatoryTimeline from '../components/compliance/RegulatoryTimeline';
 import { REG_LABELS, STATUT_LABELS, COCKPIT_TABS } from '../domain/compliance/complianceLabels.fr';
@@ -624,6 +625,26 @@ export default function ConformitePage() {
       {isExpert && complianceHealth && (
         <HealthSummary healthState={complianceHealth} onNavigate={navigate} compact />
       )}
+
+      {/* Cross-module CTAs — transforme la nav passive en funnel */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-4">
+        <CrossModuleCTA
+          icon={ShoppingCart}
+          title="Arbitrer vos contrats énergie"
+          desc="Comparer scénarios d'achat alignés avec vos obligations"
+          to="/achat-energie"
+          label="Scénarios"
+          tint="violet"
+        />
+        <CrossModuleCTA
+          icon={Radio}
+          title="Valoriser vos flexibilités"
+          desc="Effacement NEBEF, Tempo, capacité — gisements détectés"
+          to="/flex"
+          label="Flex"
+          tint="yellow"
+        />
+      </div>
 
       {/* Step 21: Compliance Summary Banner — messages actionnables */}
       {summary && (

@@ -190,6 +190,15 @@ def _import_csv(
                 if not mapped.get(key_field) or len(mapped[key_field]) != key_length:
                     stats["rejected"] += 1
                     continue
+                # RGPD : exclure a l'import les lignes a diffusion restreinte (statut P)
+                if mapped.get("statut_diffusion") == "P":
+                    stats["skipped"] += 1
+                    continue
+                # RGPD : ne pas stocker les prenoms/noms de personnes physiques
+                # (personnes morales ont denomination set, personnes physiques ont nom_unite_legale+prenom)
+                if mapped.get("nom_unite_legale") and not mapped.get("denomination"):
+                    mapped["nom_unite_legale"] = None
+                    mapped["prenom1"] = None
                 mapped["snapshot_date"] = snapshot_date
                 mapped["payload_brut"] = json.dumps(row, ensure_ascii=False)
                 batch.append(mapped)
@@ -321,6 +330,35 @@ def import_doublons(
     db.flush()
     logger.info("import_doublons: %s", stats)
     return stats
+
+
+# ======================================================================
+# RGPD — Purge policy
+# ======================================================================
+
+
+def purge_old_payloads(db: Session, max_age_days: int = 180) -> dict:
+    """RGPD : purge payload_brut des lignes > max_age_days (defaut 6 mois).
+
+    On garde les lignes mais on efface le JSON brut qui contient
+    potentiellement des donnees personnelles (prenoms, noms, adresses).
+    """
+    from datetime import timedelta
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
+    ul_purged = (
+        db.query(SireneUniteLegale)
+        .filter(SireneUniteLegale.snapshot_date < cutoff, SireneUniteLegale.payload_brut.isnot(None))
+        .update({SireneUniteLegale.payload_brut: None}, synchronize_session=False)
+    )
+    etab_purged = (
+        db.query(SireneEtablissement)
+        .filter(SireneEtablissement.snapshot_date < cutoff, SireneEtablissement.payload_brut.isnot(None))
+        .update({SireneEtablissement.payload_brut: None}, synchronize_session=False)
+    )
+    db.commit()
+    logger.info("rgpd_purge: ul=%d etab=%d cutoff=%s", ul_purged, etab_purged, cutoff.date())
+    return {"unites_legales_purged": ul_purged, "etablissements_purged": etab_purged, "cutoff": cutoff.isoformat()}
 
 
 # ======================================================================

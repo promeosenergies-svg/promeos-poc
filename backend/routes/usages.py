@@ -543,6 +543,95 @@ def api_benchmark(
     return result
 
 
+# ── Estimateur pré-consentement (NAF + puissance → courbe de référence) ─
+
+
+@router.get("/estimate/reference-curve")
+def api_estimate_reference_curve(
+    naf_code: str = Query(..., description="Code NAF (ex: 6201Z)"),
+    power_kva: float = Query(..., gt=0, description="Puissance souscrite en kVA"),
+    months: int = Query(12, ge=3, le=36),
+    db: Session = Depends(get_db),
+):
+    """Génère une courbe de référence pour un NAF + puissance, sans données client.
+
+    Source : agrégats Enedis Open Data (sup36 par NAF × puissance × région).
+    Usage : démonstration pré-vente, dimensionnement PV, estimation annuelle.
+    """
+    from services.naf_estimator import estimate_reference_curve
+
+    result = estimate_reference_curve(db, naf_code, power_kva, months)
+    if result is None or (isinstance(result, dict) and "error" in result):
+        detail = result.get("error", "Estimation impossible") if isinstance(result, dict) else "Estimation impossible"
+        raise HTTPException(404, detail)
+    return result
+
+
+@router.get("/estimate/sector-trend")
+def api_sector_trend(
+    naf_code: str = Query(..., description="Code NAF"),
+    power_kva: float | None = Query(None, description="Puissance souscrite (optionnel)"),
+    db: Session = Depends(get_db),
+):
+    """Tendance mensuelle d'un secteur : évolution, saisonnalité, écart moyen."""
+    from services.naf_estimator import compute_sector_trend
+
+    result = compute_sector_trend(db, naf_code, power_kva)
+    if result is None or "error" in result:
+        raise HTTPException(404, result.get("error", "Pas de tendance disponible") if result else "Pas de tendance")
+    return result
+
+
+@router.post("/recommendations/generate/{site_id}")
+def api_generate_recommendations(
+    site_id: int,
+    request: Request,
+    persist: bool = Query(True, description="Sauvegarde en DB"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Génère automatiquement les recommandations pour un site.
+
+    Parse tous les KPIs analytics (load profile, signature, benchmark)
+    et applique les règles métier pour produire des Anomaly + Recommendation
+    classées par ICE score.
+    """
+    from services.recommendation_engine import generate_recommendations_for_site
+
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
+    result = generate_recommendations_for_site(db, site_id, persist=persist)
+    if result is None or (isinstance(result, dict) and "error" in result):
+        detail = result.get("error", "Génération impossible") if isinstance(result, dict) else "Génération impossible"
+        raise HTTPException(404, detail)
+    return result
+
+
+@router.get("/compare/site-vs-sector/{site_id}")
+def api_site_vs_sector(
+    site_id: int,
+    request: Request,
+    months: int = Query(12, ge=3, le=36),
+    persist_alerts: bool = Query(False, description="Créer des Anomaly pour les mois atypiques"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Compare la consommation d'un site à la moyenne sectorielle mois par mois.
+
+    Détecte automatiquement les mois atypiques (>20% écart vs benchmark).
+    Si persist_alerts=true, crée des Anomaly visibles dans l'inbox cockpit.
+    """
+    from services.naf_estimator import compare_site_vs_sector
+
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
+    result = compare_site_vs_sector(db, site_id, months, persist_alerts=persist_alerts)
+    if result is None or (isinstance(result, dict) and "error" in result):
+        detail = result.get("error", "Comparaison impossible") if isinstance(result, dict) else "Comparaison impossible"
+        raise HTTPException(404, detail)
+    return result
+
+
 # ── Optimisation puissance souscrite ───────────────────────────────────────
 
 

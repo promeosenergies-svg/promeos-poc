@@ -49,6 +49,10 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Sirene"])
 
+# NAF 2025 entre en vigueur le 01/01/2027 (transition officielle INSEE).
+# Avant : on garde NAF Rev2. Apres : on bascule sur NAF25.
+_NAF25_EFFECTIVE = datetime(2027, 1, 1, tzinfo=timezone.utc)
+
 
 # ======================================================================
 # Recherche Sirene (referentiel local)
@@ -383,7 +387,7 @@ def onboarding_from_sirene(
         nom=ul.denomination or ul.nom_unite_legale or org_nom,
         siren=req.siren,
         siret=(req.siren + ul.nic_siege) if ul.nic_siege else None,
-        naf_code=ul.activite_principale,
+        naf_code=_resolve_naf(None, ul),
         insee_code=siege.code_commune if siege else None,
     )
     db.add(ej)
@@ -428,6 +432,18 @@ def onboarding_from_sirene(
         correlation_id=correlation_id,
     )
     db.add(trace)
+
+    # Funnel onboarding — best-effort, ne doit pas bloquer la creation.
+    # TODO(V116): extraire _get_or_create/_auto_detect vers services/onboarding_stepper
+    # pour eviter le route-to-route import (leaky abstraction).
+    try:
+        from routes.onboarding_stepper import _get_or_create, _auto_detect
+
+        progress = _get_or_create(db, org.id)
+        _auto_detect(db, org.id, progress)
+    except Exception as e:
+        logger.warning("onboarding_progress wiring failed [%s]: %s", correlation_id, e)
+
     db.commit()
 
     logger.info(
@@ -455,6 +471,19 @@ def onboarding_from_sirene(
 # ======================================================================
 
 
+def _resolve_naf(etab, ul) -> Optional[str]:
+    """Resout le code NAF en priorisant NAF25 apres 2027-01-01 (transition INSEE).
+
+    Fallback chain : NAF25 etab -> NAF25 ul -> NAF Rev2 etab -> NAF Rev2 ul.
+    Avant 2027, NAF Rev2 reste la reference officielle.
+    """
+    rev2 = (etab.activite_principale if etab else None) or ul.activite_principale
+    if datetime.now(timezone.utc) < _NAF25_EFFECTIVE:
+        return rev2
+    naf25 = (etab.activite_principale_naf25 if etab else None) or ul.activite_principale_naf25
+    return naf25 or rev2
+
+
 def _create_site_from_etab(db: Session, portefeuille_id: int, etab, ul, org_nom: str) -> tuple:
     """Cree un Site PROMEOS depuis un etablissement Sirene. Ne cree PAS de batiment/compteur."""
     site_nom = (
@@ -462,7 +491,7 @@ def _create_site_from_etab(db: Session, portefeuille_id: int, etab, ul, org_nom:
         or etab.denomination_usuelle
         or f"{org_nom} — {etab.libelle_commune or etab.code_postal or etab.siret}"
     )
-    naf = etab.activite_principale or ul.activite_principale
+    naf = _resolve_naf(etab, ul)
     try:
         type_site = classify_naf(naf) if naf else TypeSite.BUREAU
     except Exception:
