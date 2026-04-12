@@ -5,7 +5,7 @@
  */
 import { useState, useEffect, useMemo, useCallback, useRef, Fragment } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Star, X, Search } from 'lucide-react';
+import { Star, X, Search, Clock } from 'lucide-react';
 import {
   getActiveSite,
   clearActiveSite,
@@ -47,6 +47,7 @@ function PanelLink({
   to,
   icon: Icon,
   label,
+  desc,
   longLabel,
   badge,
   badgeKey,
@@ -66,6 +67,7 @@ function PanelLink({
       to={to}
       end={to === '/'}
       aria-label={tipText}
+      title={desc || undefined}
       className={({ isActive }) =>
         `group/link flex items-center gap-1.5 h-7 rounded-lg text-[12.5px] leading-5 transition-all duration-150 relative py-0.5 px-2${indent ? ' ml-3' : ''}
         ${
@@ -145,11 +147,39 @@ function highlightMatch(text, query) {
   );
 }
 
+/* ── Recents (last 5 visited nav pages, persisted in localStorage) ── */
+const RECENTS_KEY = 'promeos_nav_recents';
+const MAX_RECENTS = 5;
+
+function loadRecents() {
+  try {
+    return JSON.parse(localStorage.getItem(RECENTS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function pushRecent(path) {
+  const recents = loadRecents().filter((r) => r !== path);
+  recents.unshift(path);
+  localStorage.setItem(RECENTS_KEY, JSON.stringify(recents.slice(0, MAX_RECENTS)));
+}
+
 /* ── Main Panel ── */
 export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
   const _location = useLocation();
   const _navigate = useNavigate();
   const { isExpert } = useExpertMode();
+
+  // Track recent nav pages
+  const [recents, setRecents] = useState(loadRecents);
+  useEffect(() => {
+    const base = _location.pathname.split('?')[0].split('#')[0];
+    if (base !== '/' && !base.startsWith('/login')) {
+      pushRecent(base);
+      setRecents(loadRecents());
+    }
+  }, [_location.pathname]);
 
   // Active site context (for contextual nav item in patrimoine)
   const [activeSiteCtx, setActiveSiteCtx] = useState(() => getActiveSite());
@@ -348,6 +378,22 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
                 tint={tint}
               />
             ))}
+          </div>
+        )}
+
+        {/* Recents — last visited pages (across all modules) */}
+        {recents.length > 0 && pinnedItems.length === 0 && (
+          <div className="pb-2 mb-1 border-b border-slate-200/40">
+            <p className="px-2.5 pb-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              <Clock size={8} className="text-slate-400" /> Récents
+            </p>
+            {recents
+              .map((path) => allModuleItems.find((item) => item.to.split('?')[0] === path))
+              .filter(Boolean)
+              .slice(0, 3)
+              .map((item) => (
+                <PanelLink key={`recent-${item.to}`} {...item} badge={0} tint={tint} />
+              ))}
           </div>
         )}
 

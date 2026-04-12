@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { toConsoDiag, toPurchase } from '../services/routes';
 import {
   FileText,
   CalendarRange,
@@ -702,6 +703,22 @@ export default function BillingPage() {
         className="sr-only"
         onChange={handleContextualPdfImport}
       />
+
+      {/* Cross-module exit: diagnostic + achat */}
+      <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
+        <Link
+          to={toConsoDiag(siteFilter ? { site_id: siteFilter } : {})}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline transition"
+        >
+          <Zap size={13} /> Diagnostiquer la consommation
+        </Link>
+        <Link
+          to={toPurchase(siteFilter ? { site_id: siteFilter } : {})}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-600 hover:text-violet-700 hover:underline transition"
+        >
+          <Search size={13} /> Comparer les offres
+        </Link>
+      </div>
 
       {/* Action creation handled by ActionDrawerContext */}
     </div>

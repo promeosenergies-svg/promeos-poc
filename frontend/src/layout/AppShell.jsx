@@ -5,8 +5,10 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Search, LogOut, ChevronDown, Building2, Command, Bell } from 'lucide-react';
+import { Search, LogOut, ChevronDown, Building2, Command, Bell, Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
+import Drawer from '../ui/Drawer';
+import useMediaQuery from '../hooks/useMediaQuery';
 import Breadcrumb from './Breadcrumb';
 import ScopeSwitcher from './ScopeSwitcher';
 import DataReadinessBadge from '../components/DataReadinessBadge';
@@ -182,7 +184,14 @@ export default function AppShell() {
   const [actionCenterOpen, setActionCenterOpen] = useState(false);
   const [actionCenterTab, setActionCenterTab] = useState('actions');
   const [actionCenterBadge, setActionCenterBadge] = useState({ count: null, color: 'gray' });
-  const { isExpert, toggleExpert } = useExpertMode();
+  const { isExpert, toggleExpert, showOnboarding } = useExpertMode();
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Close mobile nav on route change
+  useEffect(() => {
+    if (mobileNavOpen) setMobileNavOpen(false);
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     trackRouteChange(location.pathname);
@@ -246,11 +255,35 @@ export default function AppShell() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50/80">
-      <Sidebar />
+      {/* Sidebar: persistent on desktop, in drawer on mobile */}
+      {isDesktop ? (
+        <Sidebar />
+      ) : (
+        <Drawer
+          open={mobileNavOpen}
+          onClose={() => setMobileNavOpen(false)}
+          side="left"
+          title="Navigation"
+          noPadding
+        >
+          <Sidebar />
+        </Drawer>
+      )}
+
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header — glass surface */}
         <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/70 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
           <div className="flex items-center gap-4">
+            {/* Mobile hamburger */}
+            {!isDesktop && (
+              <button
+                onClick={() => setMobileNavOpen(true)}
+                aria-label="Ouvrir le menu"
+                className="p-2 -ml-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition"
+              >
+                <Menu size={20} />
+              </button>
+            )}
             <Breadcrumb />
             <div className="relative">
               <ScopeSwitcher />
@@ -292,9 +325,19 @@ export default function AppShell() {
               )}
             </button>
 
-            {/* Expert Mode toggle */}
-            <div title="Affiche source, confiance et détails techniques">
+            {/* Expert Mode toggle + onboarding */}
+            <div className="relative" title="Affiche source, confiance et détails techniques">
               <Toggle checked={isExpert} onChange={toggleExpert} label="Expert" size="sm" />
+              {showOnboarding && (
+                <div className="absolute top-full right-0 mt-2 w-56 p-3 bg-indigo-600 text-white text-xs rounded-lg shadow-lg z-50 animate-[fadeIn_0.3s_ease-out]">
+                  <p className="font-semibold mb-1">Mode Expert activé</p>
+                  <p className="opacity-90">
+                    4 fonctions avancées débloquées : Audit SMÉ, Diagnostics, Facturation,
+                    Simulateur d'achat.
+                  </p>
+                  <div className="absolute -top-1.5 right-4 w-3 h-3 bg-indigo-600 rotate-45" />
+                </div>
+              )}
             </div>
             <UserMenu />
           </div>
