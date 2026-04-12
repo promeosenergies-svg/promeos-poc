@@ -832,6 +832,39 @@ class TestRgpdHardening:
         assert ul_recent.payload_brut is not None, "payload_brut recent doit etre conserve"
 
 
+class TestNaf25Resolver:
+    """V115 : time-aware NAF25 resolver (bascule 01/01/2027 INSEE)."""
+
+    def test_resolver_avant_2027_utilise_naf_rev2(self):
+        """Avant 2027-01-01, le resolver retourne activite_principale (NAF Rev2)."""
+        from routes.sirene import _resolve_naf
+        from types import SimpleNamespace
+
+        etab = SimpleNamespace(activite_principale="47.11F", activite_principale_naf25="47.11")
+        ul = SimpleNamespace(activite_principale="47.11F", activite_principale_naf25="47.11")
+        # Date courante (2026) < 2027 → NAF Rev2
+        result = _resolve_naf(etab, ul)
+        assert result == "47.11F", f"Avant 2027 doit retourner NAF Rev2, got {result}"
+
+    def test_resolver_fallback_chain(self):
+        """Si NAF etab absent, fallback sur NAF UL."""
+        from routes.sirene import _resolve_naf
+        from types import SimpleNamespace
+
+        etab = SimpleNamespace(activite_principale=None, activite_principale_naf25=None)
+        ul = SimpleNamespace(activite_principale="35.11Z", activite_principale_naf25=None)
+        assert _resolve_naf(etab, ul) == "35.11Z"
+
+    def test_resolver_retourne_none_si_aucune_source(self):
+        """Aucun NAF disponible → None."""
+        from routes.sirene import _resolve_naf
+        from types import SimpleNamespace
+
+        etab = SimpleNamespace(activite_principale=None, activite_principale_naf25=None)
+        ul = SimpleNamespace(activite_principale=None, activite_principale_naf25=None)
+        assert _resolve_naf(etab, ul) is None
+
+
 class TestSchemaValidation:
     def test_path_traversal_rejected(self):
         """Les chemins avec .. sont rejetes par le schema."""
