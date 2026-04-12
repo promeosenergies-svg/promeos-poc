@@ -309,6 +309,9 @@ from .recommendation_outcome import RecommendationOutcome, CalibrationVersion
 # Audit Energetique / SME (Loi 2025-391)
 from .audit_sme import AuditEnergetique
 
+# Usage Analytics
+from .usage_breakdown_snapshot import UsageBreakdownSnapshot
+
 # Contrats V2 Cadre+Annexe
 from .contract_v2_models import (
     ContratCadre,
@@ -586,6 +589,8 @@ __all__ = [
     "CalibrationVersion",
     # Audit Energetique / SME (Loi 2025-391)
     "AuditEnergetique",
+    # Usage Analytics
+    "UsageBreakdownSnapshot",
     # Flex Foundations (Sprint 21)
     "FlexAsset",
     "FlexAssessment",

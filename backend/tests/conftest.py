@@ -41,3 +41,42 @@ def _ensure_seeded():
 def ensure_demo_data():
     """Re-seed before each test module if the DB was wiped by a prior module."""
     _ensure_seeded()
+
+
+@pytest.fixture
+def app_client():
+    """
+    TestClient FastAPI avec DB in-memory SQLite.
+    Partage par tous les fichiers de test qui ont besoin d'un client HTTP isole.
+    """
+    import os
+    from fastapi.testclient import TestClient
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+    from models import Base
+
+    engine = create_engine(
+        "sqlite:///:memory:",
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    SessionLocal = sessionmaker(bind=engine)
+
+    from main import app
+    from database import get_db
+
+    def override():
+        db = SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override
+    os.environ["DEMO_MODE"] = "true"
+    client = TestClient(app, raise_server_exceptions=False)
+    yield client, SessionLocal
+    app.dependency_overrides.clear()

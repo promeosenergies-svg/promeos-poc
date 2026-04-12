@@ -17,9 +17,15 @@ import {
 import { Zap, TrendingUp, Activity, Grid3X3 } from 'lucide-react';
 import { Card, CardBody, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
-import { getEmsTimeseries } from '../services/api';
+import { getEmsTimeseries, getAnalyticsFullReport } from '../services/api';
 import { fmtNum } from '../utils/format';
 import CarpetPlot from './CarpetPlot';
+import ForecastCard from './analytics/ForecastCard';
+import UsageBreakdownCard from './analytics/UsageBreakdownCard';
+import UsageAnomaliesCard from './analytics/UsageAnomaliesCard';
+import OptimizationPlanCard from './analytics/OptimizationPlanCard';
+import BillingVentilationCard from './analytics/BillingVentilationCard';
+import PurchaseStrategyCard from './analytics/PurchaseStrategyCard';
 
 function formatDateLabel(isoStr) {
   if (!isoStr) return '';
@@ -46,6 +52,23 @@ export default function TabConsoSite({ siteId }) {
   const [meta, setMeta] = useState(null);
   const [hourlyData, setHourlyData] = useState(null);
   const [hourlyStatus, setHourlyStatus] = useState('loading');
+  const [analyticsReport, setAnalyticsReport] = useState(null);
+
+  // 1 seul appel pour breakdown + anomalies + optimization
+  useEffect(() => {
+    if (!siteId) return;
+    let stale = false;
+    getAnalyticsFullReport(siteId)
+      .then((d) => {
+        if (!stale) setAnalyticsReport(d);
+      })
+      .catch(() => {
+        if (!stale) setAnalyticsReport(null);
+      });
+    return () => {
+      stale = true;
+    };
+  }, [siteId]);
 
   useEffect(() => {
     if (!siteId) return;
@@ -243,6 +266,18 @@ export default function TabConsoSite({ siteId }) {
           )}
         </CardBody>
       </Card>
+
+      {/* Prevision J+1 a J+7 */}
+      <ForecastCard siteId={siteId} />
+
+      {/* Analytics usages : 1 seul appel backend via full-report */}
+      <UsageBreakdownCard siteId={siteId} preloadedData={analyticsReport?.breakdown} />
+      <UsageAnomaliesCard siteId={siteId} preloadedData={analyticsReport?.anomalies} />
+      <OptimizationPlanCard siteId={siteId} preloadedData={analyticsReport?.optimization} />
+
+      {/* Ventilation facture + Strategie achat */}
+      <BillingVentilationCard siteId={siteId} />
+      <PurchaseStrategyCard siteId={siteId} />
 
       {/* CTA Explorer */}
       <div className="flex justify-end">

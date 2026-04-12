@@ -32,6 +32,79 @@ def get_active_contract(db: Session, meter_id: int, as_of: date) -> PowerContrac
     )
 
 
+# Conversion kVA -> kW, cos phi tertiaire typique (TURPE 7 CRE)
+_COS_PHI_TERTIAIRE = 0.8
+# Heuristique P_max depuis conso annuelle : taux d'utilisation moyen
+_TAUX_UTILISATION_HEURISTIQUE = 0.25
+
+
+# Cache P_max par meter/jour — evite de relire 365j de CDC a chaque requete.
+# Se vide automatiquement quand la date change.
+_p_max_cache: dict[tuple[int, date], float] = {}
+_p_max_cache_date: date | None = None
+
+
+def resolve_p_max_kw(db: Session, meter, site=None) -> float:
+    """
+    Resolution P_max d'un site avec cascade de fallbacks :
+    1. PowerProfile CDC reelle (P_max_kw sur 365j)
+    2. PowerContract PS par poste (somme kVA x cos phi)
+    3. Estimation depuis conso annuelle (conso / 8760h / taux_utilisation)
+    4. 0.0 (fail-safe)
+    """
+    global _p_max_cache, _p_max_cache_date
+    today = date.today()
+
+    # Purge cache si jour change
+    if _p_max_cache_date != today:
+        _p_max_cache = {}
+        _p_max_cache_date = today
+
+    # Cache hit
+    if meter:
+        key = (meter.id, today)
+        if key in _p_max_cache:
+            return _p_max_cache[key]
+
+    result = _resolve_p_max_kw_uncached(db, meter, site)
+
+    # Ne cacher que les resultats > 0 — un 0.0 peut etre temporaire
+    # (donnees importees en cours de journee apres premiere resolution a vide)
+    if meter and result > 0:
+        _p_max_cache[(meter.id, today)] = result
+
+    return result
+
+
+def _resolve_p_max_kw_uncached(db: Session, meter, site=None) -> float:
+    """Impl sans cache — appele par resolve_p_max_kw."""
+    if meter:
+        try:
+            today = date.today()
+            profile = get_power_profile(db, meter.id, today - timedelta(days=365), today)
+            p_max = profile.get("kpis", {}).get("P_max_kw", 0.0) or 0.0
+            if p_max > 0:
+                return float(p_max)
+        except Exception:
+            pass
+
+        try:
+            contract = get_active_contract(db, meter.id, date.today())
+            if contract and contract.ps_par_poste_kva:
+                total_kva = sum(v for v in contract.ps_par_poste_kva.values() if isinstance(v, (int, float)))
+                if total_kva > 0:
+                    return round(total_kva * _COS_PHI_TERTIAIRE, 1)
+        except Exception:
+            pass
+
+    if site:
+        conso = getattr(site, "annual_kwh_total", None) or 0
+        if conso > 0:
+            return round(conso / (8760 * _TAUX_UTILISATION_HEURISTIQUE), 1)
+
+    return 0.0
+
+
 def get_power_profile(
     db: Session,
     meter_id: int,

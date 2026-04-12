@@ -207,6 +207,39 @@ export const getFlexPrixSignal = (prixSpot) =>
     (r) => r.data
   );
 
+// ── Analytics: Usage Disaggregation ──
+export const getUsageBreakdown = (siteId, days = 365) =>
+  cachedGet(`/analytics/sites/${siteId}/usage-breakdown`, { params: { days } }, 60000).then(
+    (r) => r.data
+  );
+
+export const getUsageAnomalies = (siteId, days = 365) =>
+  cachedGet(`/analytics/sites/${siteId}/usage-anomalies`, { params: { days } }, 60000).then(
+    (r) => r.data
+  );
+
+export const getOptimizationPlan = (siteId, days = 365) =>
+  cachedGet(`/analytics/sites/${siteId}/optimization-plan`, { params: { days } }, 60000).then(
+    (r) => r.data
+  );
+export const getAnalyticsFullReport = (siteId, days = 365) =>
+  cachedGet(`/analytics/sites/${siteId}/full-report`, { params: { days } }, 60000).then(
+    (r) => r.data
+  );
+
+export const getSiteForecast = (siteId, horizon = 7) =>
+  cachedGet(`/analytics/sites/${siteId}/forecast`, { params: { horizon } }, 60000).then(
+    (r) => r.data
+  );
+
+// ── Billing Usage Ventilation ──
+export const getBillingUsageVentilation = (siteId) =>
+  cachedGet(`/billing/usage-ventilation/sites/${siteId}`, {}, 60000).then((r) => r.data);
+
+// ── Purchase Strategy ──
+export const getPurchaseStrategy = (siteId) =>
+  cachedGet(`/purchase/strategy/sites/${siteId}`, {}, 60000).then((r) => r.data);
+
 // ── Flex v2 (Sprint 21 corrections) ──
 export const getRegulatoryOpportunities = (params = {}) =>
   cachedGet('/flex/regulatory-opportunities', { params }, 15000);

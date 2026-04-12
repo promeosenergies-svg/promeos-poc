@@ -15,43 +15,8 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
-from models import Base, Site, Batiment, not_deleted
-
-
-@pytest.fixture
-def app_client():
-    """TestClient with in-memory DB — meme pattern que test_quick_create_site.py."""
-    engine = create_engine(
-        "sqlite:///:memory:",
-        echo=False,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(bind=engine)
-    SessionLocal = sessionmaker(bind=engine)
-
-    from main import app
-    from database import get_db
-
-    def override_get_db():
-        db = SessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    app.dependency_overrides[get_db] = override_get_db
-    os.environ["DEMO_MODE"] = "true"
-
-    client = TestClient(app, raise_server_exceptions=False)
-    yield client, SessionLocal
-
-    app.dependency_overrides.clear()
+from models import Site, Batiment, not_deleted
 
 
 # ═══════════════════════════════════════════════════════════════════════════
