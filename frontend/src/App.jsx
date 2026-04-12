@@ -46,6 +46,7 @@ const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
 const AdminRolesPage = lazy(() => import('./pages/AdminRolesPage'));
 const AdminAssignmentsPage = lazy(() => import('./pages/AdminAssignmentsPage'));
 const AdminAuditLogPage = lazy(() => import('./pages/AdminAuditLogPage'));
+const EnedisPromotionHealthPage = lazy(() => import('./pages/EnedisPromotionHealthPage'));
 const ConsumptionExplorerPage = lazy(() => import('./pages/ConsumptionExplorerPage'));
 // EnergyCopilotPage — dead code, no active route (Sprint B P0-7)
 // const EnergyCopilotPage = lazy(() => import('./pages/EnergyCopilotPage'));
@@ -531,6 +532,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <AdminAuditLogPage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/enedis-health"
+                      element={
+                        <PageSuspense>
+                          <EnedisPromotionHealthPage />
                         </PageSuspense>
                       }
                     />
