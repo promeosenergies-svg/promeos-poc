@@ -190,8 +190,8 @@ export default function AppShell() {
 
   // Close mobile nav on route change
   useEffect(() => {
-    setMobileNavOpen(false);
-  }, [location.pathname]);
+    if (mobileNavOpen) setMobileNavOpen(false);
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     trackRouteChange(location.pathname);
@@ -255,11 +255,10 @@ export default function AppShell() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50/80">
-      {/* Desktop: persistent sidebar */}
-      {isDesktop && <Sidebar />}
-
-      {/* Mobile: sidebar in drawer */}
-      {!isDesktop && (
+      {/* Sidebar: persistent on desktop, in drawer on mobile */}
+      {isDesktop ? (
+        <Sidebar />
+      ) : (
         <Drawer open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} side="left" title="Navigation" noPadding>
           <Sidebar />
         </Drawer>

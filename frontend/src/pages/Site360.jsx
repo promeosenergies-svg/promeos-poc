@@ -1622,7 +1622,11 @@ export default function Site360() {
   });
   const handleSetTab = useCallback((tab) => {
     setActiveTab(tab);
-    setSearchParams((prev) => { prev.set('tab', tab); return prev; }, { replace: true });
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', tab);
+      return next;
+    }, { replace: true });
   }, [setSearchParams]);
   const [showIntake, setShowIntake] = useState(false);
   const [showBacs, setShowBacs] = useState(false);
