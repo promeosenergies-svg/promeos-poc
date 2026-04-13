@@ -141,35 +141,85 @@ def _extract_spot_indicators(page1_text: str, source_file: str, issue: str, sour
 def _extract_market_page_indicators(
     market_text: str, source_file: str, issue: str, source_date: datetime
 ) -> list[dict]:
-    """Extrait les données de la page marchés (forwards OTC, DA averages)."""
+    """Extrait les indicateurs de la page marchés (spot moyens, TTF, Brent, Cal-X)."""
+    # Normalise le texte : pdftotext -layout casse les phrases multi-colonnes
+    market_text = re.sub(r"\s+", " ", market_text)
     indicators = []
+    seen_names = set()
 
-    forward_pattern = re.compile(
-        r"((?:Janvier|F.vrier|Mars|Avril|Mai|Juin|Juillet|Ao.t|Septembre|Octobre|Novembre|D.cembre|"
-        r"T[1-4]|Cal-?\d{2})\s*\d{0,4})\s+"
-        r"([\d,]+)\s+([\d,]+)\s+([\d,]+)"
-    )
-
-    for m in forward_pattern.finditer(market_text):
-        label = m.group(1).strip()
-        val_low = parse_fr_number(m.group(2))
-        val_high = parse_fr_number(m.group(3))
-        val_close = parse_fr_number(m.group(4))
-
+    def _push(name: str, value: float | None, variation: float | None, unit: str = "EUR_MWH", label: str | None = None):
+        if value is None or name in seen_names:
+            return
+        seen_names.add(name)
         indicators.append(
             {
-                "indicator_name": f"FORWARD_BASELOAD_FR_{label.replace(' ', '_')}",
-                "period_label": label,
+                "indicator_name": name,
+                "period_label": label or source_date.strftime("%Y-%m"),
                 "period_start": source_date,
-                "value_eur_mwh": val_close,
-                "value_low": val_low,
-                "value_high": val_high,
-                "value_close": val_close,
-                "unit": "EUR_MWH",
+                "value_eur_mwh": value,
+                "variation_pct": variation,
+                "unit": unit,
                 "source_file": source_file,
                 "source_issue": issue,
             }
         )
+
+    # Spot électricité France (narratif) : "spot atteignant en moyenne 46,02 €/MWh, en baisse de 54 %"
+    m = re.search(
+        r"spot\s+atteignant\s+en\s+moyenne\s+([\d,]+)\s*€/MWh[^.]*?(hausse|baisse)\s+de\s+([\d,]+)",
+        market_text,
+        re.IGNORECASE,
+    )
+    if m:
+        val = parse_fr_number(m.group(1))
+        var = parse_fr_number(m.group(3))
+        if val is not None and var is not None and m.group(2).lower() == "baisse":
+            var = -var
+        _push("SPOT_DA_BASE_FR", val, var)
+
+    # Spot TTF : "TTF spot a terminé à 31,71 €/MWh... en baisse de 22 %"
+    m = re.search(
+        r"TTF\s+spot\s+a\s+termin.\s+.\s+([\d,]+)\s*€/\s*MWh[^.]*?(hausse|baisse)\s+de\s+([\d,]+)",
+        market_text,
+        re.IGNORECASE,
+    )
+    if m:
+        val = parse_fr_number(m.group(1))
+        var = parse_fr_number(m.group(3))
+        if val is not None and var is not None and m.group(2).lower() == "baisse":
+            var = -var
+        _push("GAZ_TTF_SPOT", val, var)
+
+    # Brent : "Brent dépasse les 110 euros/barils" ou "Brent a clôturé à 72,3 $/b"
+    m = re.search(r"Brent[^.]*?([\d,]+)\s*(?:€|euros?|\$)?\s*/?\s*(?:b(?:aril)?s?)", market_text, re.IGNORECASE)
+    if m:
+        _push("BRENT", parse_fr_number(m.group(1)), None, unit="USD_BBL")
+
+    # Forwards baseload FR : "Cal-27 ... à 50,04 €/MWh", "T2 a perdu 29 % à 21,54 €/MWh"
+    for fm in re.finditer(
+        r"Cal-?(\d{2})[^.]{0,200}?\b.?\s*([\d]{1,3}(?:,\d{1,2})?)\s*€/\s*MWh",
+        market_text,
+    ):
+        period = fm.group(1)
+        val = parse_fr_number(fm.group(2))
+        _push(f"FORWARD_BASELOAD_FR_CAL_{period}", val, None, label=f"Cal-{period}")
+
+    for fm in re.finditer(
+        r"\bT([1-4])\b[^.]{0,200}?\b.?\s*([\d]{1,3}(?:,\d{1,2})?)\s*€/\s*MWh",
+        market_text,
+    ):
+        period = fm.group(1)
+        val = parse_fr_number(fm.group(2))
+        _push(f"FORWARD_BASELOAD_FR_T{period}", val, None, label=f"T{period}")
+
+    # "contrat mars a chuté ... à 41,82 €/MWh" → front-month
+    m = re.search(
+        r"contrat\s+(\w+)\s+a\s+(?:chut.|recul.|perdu|progress.|gagn.)[^.]{0,120}?\b([\d]{1,3}(?:,\d{1,2})?)\s*€/\s*MWh",
+        market_text,
+        re.IGNORECASE,
+    )
+    if m:
+        _push(f"FRONT_MONTH_FR_{m.group(1).upper()}", parse_fr_number(m.group(2)), None, label=m.group(1))
 
     return indicators
 

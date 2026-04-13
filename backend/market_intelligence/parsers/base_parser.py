@@ -29,7 +29,16 @@ def extract_text_pypdf(pdf_path: str) -> str:
 
 
 def get_page_count(pdf_path: str) -> int:
-    """Get PDF page count via pypdf (pdfinfo not always available)."""
+    """Get PDF page count via pdfinfo (poppler-utils). Fallback to pypdf if absent."""
+    try:
+        result = subprocess.run(
+            ["pdfinfo", pdf_path], capture_output=True, text=True, timeout=10
+        )
+        for line in result.stdout.splitlines():
+            if line.startswith("Pages:"):
+                return int(line.split(":", 1)[1].strip())
+    except (FileNotFoundError, subprocess.SubprocessError, ValueError):
+        pass
     from pypdf import PdfReader
 
     return len(PdfReader(pdf_path).pages)

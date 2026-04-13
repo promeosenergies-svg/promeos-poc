@@ -108,6 +108,27 @@ def run_migrations(engine):
     _create_sf5_promotion_tables(engine)
     # Referentiel Sirene — tables isolees (DIAMANT)
     _create_sirene_tables(engine)
+    # Market Intelligence — articles & indicateurs veille marché (EuropEnergies)
+    _create_market_intelligence_tables(engine)
+
+
+def _create_market_intelligence_tables(engine):
+    """Create market_articles and market_indicators tables if missing (idempotent)."""
+    MI_TABLES = ("market_articles", "market_indicators")
+    insp = inspect(engine)
+    missing = [t for t in MI_TABLES if not insp.has_table(t)]
+    if not missing:
+        return
+    import models.market_article  # noqa: F401
+    import models.market_indicator  # noqa: F401
+    from models.base import Base
+
+    Base.metadata.create_all(
+        bind=engine,
+        tables=[Base.metadata.tables[t] for t in MI_TABLES if t in Base.metadata.tables],
+        checkfirst=True,
+    )
+    logger.info("migration: created Market Intelligence tables: %s", missing)
 
 
 def _create_sirene_tables(engine):
