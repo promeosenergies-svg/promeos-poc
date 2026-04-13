@@ -438,18 +438,58 @@ R171 does not carry a per-value quality indicator. All promotable R171 values ar
 
 ## 6. Routing & Cadence Mapping
 
-Each staging flux type routes to a specific functional table:
+Routing in SF5 is determined by the canonical target slot the source row can legally populate. A source row is promotable only if:
+- its PRM resolves to exactly one active electricity meter
+- it matches one of the accepted source quantity/unit contracts below
+- all target-identity guardrails required by that contract are present
 
-| Staging source | Flux type | Target table | Cadence / `pas_minutes` | Unit |
-|----------------|-----------|-------------|------------------------|------|
-| `enedis_flux_mesure_r4x` | R4H | **`meter_load_curve`** | parsed from raw `granularite` (`5` or `10`) | kW / kVAr / V |
-| `enedis_flux_mesure_r4x` | R4M | **`meter_load_curve`** | parsed from raw `granularite` (`5` or `10`) | kW / kVAr / V |
-| `enedis_flux_mesure_r4x` | R4Q | **`meter_load_curve`** | parsed from raw `granularite` (`5` or `10`) | kW / kVAr / V |
-| `enedis_flux_mesure_r50` | R50 | **`meter_load_curve`** | `30` | raw `W` -> promoted `kW` |
-| `enedis_flux_mesure_r171` | R171 (`EA`, `Wh` only) | **`meter_energy_index`** | Per `date_fin` reading date (daily J+1 index) | Wh |
-| `enedis_flux_mesure_r171` | R171 (other grandeurs) | **Raw staging only in SF5** | No safe promoted target yet | `s` / `VA` / `VArh` / `W` |
-| `enedis_flux_mesure_r151` | R151 (CT/CT_DIST) | **`meter_energy_index`** | Per `date_releve` | Wh |
-| `enedis_flux_mesure_r151` | R151 (PMAX) | **`meter_power_peak`** | Per `date_releve` | VA |
+If a row fails PRM resolution, promotion is **blocked** at PRM level. If it fails a supported row contract, it is **skipped** and remains in raw staging. If an R151 file declares header units incompatible with the routed family, promotion is **blocked** at file level.
+
+### 6.1 Strict Routing Matrix
+
+| Staging source | Flux type | Source quantity contract | Guardrails required before routing | Target table / canonical slot | Outcome if contract not met |
+|----------------|-----------|--------------------------|------------------------------------|-------------------------------|-----------------------------|
+| `enedis_flux_mesure_r4x` | `R4H` / `R4M` / `R4Q` | `grandeur_physique='EA'` and `unite_mesure='kW'` | `granularite` parses to `5` or `10`; timestamp/value parse | `meter_load_curve.active_power_kw` at `(meter_id, timestamp, pas_minutes)` | Skip row |
+| `enedis_flux_mesure_r4x` | `R4H` / `R4M` / `R4Q` | `grandeur_physique='ERI'` and `unite_mesure='kWr'` | `granularite` parses to `5` or `10`; timestamp/value parse | `meter_load_curve.reactive_inductive_kvar` at `(meter_id, timestamp, pas_minutes)` | Skip row |
+| `enedis_flux_mesure_r4x` | `R4H` / `R4M` / `R4Q` | `grandeur_physique='ERC'` and `unite_mesure='kWr'` | `granularite` parses to `5` or `10`; timestamp/value parse | `meter_load_curve.reactive_capacitive_kvar` at `(meter_id, timestamp, pas_minutes)` | Skip row |
+| `enedis_flux_mesure_r4x` | `R4H` / `R4M` / `R4Q` | `grandeur_physique='E'` and `unite_mesure='V'` | `granularite` parses to `5` or `10`; timestamp/value parse | `meter_load_curve.voltage_v` at `(meter_id, timestamp, pas_minutes)` | Skip row |
+| `enedis_flux_mesure_r50` | `R50` | raw CDC average active power in `W` | timestamp/value parse | `meter_load_curve.active_power_kw` at `(meter_id, horodatage-30min, 30)` | Skip row |
+| `enedis_flux_mesure_r171` | `R171` | `grandeur_metier='CONS'`, `grandeur_physique='EA'`, `unite='Wh'` | `type_mesure` belongs to the index family; `type_calendrier in {'D','F'}`; `code_classe_temporelle` present; `date_fin`/value parse | `meter_energy_index` at `(meter_id, date_releve, tariff_grid, tariff_class_code)` | Skip row |
+| `enedis_flux_mesure_r151` | `R151` + `type_donnee='CT'` | supplier energy index | file header `Unite_Mesure_Index='Wh'`; `id_classe_temporelle` present; `date_releve`/value parse | `meter_energy_index` at `(meter_id, date_releve, 'CT', tariff_class_code)` | Block file on bad header unit, otherwise skip row |
+| `enedis_flux_mesure_r151` | `R151` + `type_donnee='CT_DIST'` | distributor energy index | file header `Unite_Mesure_Index='Wh'`; `id_classe_temporelle` present; `date_releve`/value parse | `meter_energy_index` at `(meter_id, date_releve, 'CT_DIST', tariff_class_code)` | Block file on bad header unit, otherwise skip row |
+| `enedis_flux_mesure_r151` | `R151` + `type_donnee='PMAX'` | PMAX apparent power | file header `Unite_Mesure_Puissance='VA'`; `date_releve`/value parse | `meter_power_peak` at `(meter_id, date_releve)` | Block file on bad header unit, otherwise skip row |
+| any staging source | unsupported family | any other quantity/unit/type combination | none | no promoted target in SF5 | Skip row |
+
+### 6.2 Routing Guardrails
+
+- **PRM resolution guardrail**: a source row is routable only if `point_id` resolves to exactly one active electricity meter. `no_delivery_point`, `no_active_meter`, and `multiple_active_meters` all block promotion for that PRM.
+- **R4x quantity/unit allowlist**: only these raw pairs are promotable in SF5: `EA + kW`, `ERI + kWr`, `ERC + kWr`, `E + V`. Any other `grandeur_physique` or unit is unsupported and must be skipped.
+- **R171 direction guardrail**: only withdrawal-side rows are in scope. `R171` rows with `grandeur_metier!='CONS'` are not promotable in SF5 and must be skipped.
+- **Index identity guardrail**: `meter_energy_index` rows require full source-backed identity. Missing or unknown calendar/grid/class identity does **not** default to `CT`, `CT_DIST`, or `TOTAL`; the row must be skipped.
+- **R151 header-unit guardrail**: `type_donnee` chooses the target family, but routing is allowed only if the file header declares the expected unit for that family. A header-unit mismatch blocks the file because the source contract is internally inconsistent.
+- **Republication guardrail**: republication comparison occurs only among candidates competing for the same canonical target slot, not merely among rows sharing the same PRM and timestamp/date. In practice:
+  - `meter_load_curve`: competition is scoped to one promoted quantity column inside one `(meter_id, timestamp, pas_minutes)` interval row
+  - `meter_energy_index`: competition is scoped to one `(meter_id, date_releve, tariff_grid, tariff_class_code)` series point
+  - `meter_power_peak`: competition is scoped to one `(meter_id, date_releve)` PMAX point
+- **Unsupported-family guardrail**: unsupported rows are handled explicitly as `skipped` outcomes, not as implicit non-routing.
+
+### 6.3 Mechanical Decision Table
+
+Use the following contract mechanically:
+
+| If source row has... | Then... | Otherwise... |
+|----------------------|---------|--------------|
+| unresolved PRM or ambiguous meter match | block the PRM | continue |
+| `R4H` / `R4M` / `R4Q` with `EA + kW`, valid `granularite in {5,10}`, parseable timestamp/value | route to `meter_load_curve.active_power_kw` | skip row |
+| `R4H` / `R4M` / `R4Q` with `ERI + kWr`, valid `granularite in {5,10}`, parseable timestamp/value | route to `meter_load_curve.reactive_inductive_kvar` | skip row |
+| `R4H` / `R4M` / `R4Q` with `ERC + kWr`, valid `granularite in {5,10}`, parseable timestamp/value | route to `meter_load_curve.reactive_capacitive_kvar` | skip row |
+| `R4H` / `R4M` / `R4Q` with `E + V`, valid `granularite in {5,10}`, parseable timestamp/value | route to `meter_load_curve.voltage_v` | skip row |
+| `R50` with parseable timestamp/value | route to `meter_load_curve.active_power_kw` using `timestamp = horodatage - 30 minutes` and `pas_minutes = 30` | skip row |
+| `R171` with `grandeur_metier='CONS'`, `grandeur_physique='EA'`, `unite='Wh'`, accepted index `type_mesure`, known `type_calendrier`, present `code_classe_temporelle`, parseable `date_fin`/value | route to `meter_energy_index` with `D -> CT_DIST`, `F -> CT` | skip row |
+| `R151` with `type_donnee='CT'`, header `Unite_Mesure_Index='Wh'`, present `id_classe_temporelle`, parseable `date_releve`/value | route to `meter_energy_index` with `tariff_grid='CT'` | block file on bad header unit, otherwise skip row |
+| `R151` with `type_donnee='CT_DIST'`, header `Unite_Mesure_Index='Wh'`, present `id_classe_temporelle`, parseable `date_releve`/value | route to `meter_energy_index` with `tariff_grid='CT_DIST'` | block file on bad header unit, otherwise skip row |
+| `R151` with `type_donnee='PMAX'`, header `Unite_Mesure_Puissance='VA'`, parseable `date_releve`/value | route to `meter_power_peak` | block file on bad header unit, otherwise skip row |
+| any other source row shape | no promoted target in SF5 | skip row |
 
 > **Important**: R4x publication cadence (`R4H`, `R4M`, `R4Q`) is **not** the same as measurement cadence. The promoted CDC row stores the exact interval size in `pas_minutes`, not a shared `FrequencyType`.
 
@@ -494,7 +534,7 @@ Each staging flux type routes to a specific functional table:
 
 > **UX interpretation note**: charts, tables, and tooltips should describe a CDC point as "average power over `10:00-10:30`" or equivalent, not "power at 10:30". Step charts, bars, and interval labels are safer defaults than point-sample wording.
 
-### 6.1 Client-Facing CDC Semantics
+### 6.4 Client-Facing CDC Semantics
 
 The Enedis source formats do **not** share the same raw timestamp convention:
 - **R4x** raw `H` already points to the **start** of the covered interval
@@ -760,15 +800,23 @@ Confirmed official `grandeur_physique` scope includes `EA`, `PMA`, `ERC`, `ERI`,
 
 Observed real-corpus scope includes both `CONS` and `PROD`, with `EA`, `ERC`, `ERI`, `DD`, `DQ`, `TF`, and `PMA`. Units observed are `Wh`, `VArh`, `s`, `VA`, and `W`.
 
-Only the `EA` + `Wh` subset is safely promotable to `meter_energy_index` in SF5. Those rows are cumulative energy indexes per tariff class and are not consumption deltas.
+Only the withdrawal-side active-energy subset is safely promotable to `meter_energy_index` in SF5. Concretely, an `R171` row is promotable only if all of the following hold:
+- `grandeur_metier='CONS'`
+- `grandeur_physique='EA'`
+- `unite='Wh'`
+- `type_mesure` belongs to the index family accepted by SF5
+- `typeCalendrier` is known and maps cleanly to one tariff grid: `D -> CT_DIST`, `F -> CT`
+- `code_classe_temporelle` is present
+
+Those rows are cumulative energy indexes per tariff class and are not consumption deltas. `PROD` rows remain in raw staging in SF5 because `meter_energy_index` does not currently encode direction.
 
 `dateFin` must be interpreted as the local reading timestamp. Per the official guide, indexes for day `J` are read, dated, and sent on `J+1`, so downstream daily-consumption services must attribute deltas to the interval between two readings, not blindly label `dateFin` as "consumption for that date".
 
-**Decision**: Store only raw `EA`/`Wh` R171 rows in `meter_energy_index`. The `tariff_class_code` column preserves the per-class granularity and `tariff_grid` is derived from `typeCalendrier` (`D -> CT_DIST`, `F -> CT`). Downstream services compute consumption as `index[t] - index[t-1]` for each class separately, or sum all classes for total consumption.
+**Decision**: Store only raw `CONS + EA + Wh` R171 rows in `meter_energy_index`. The `tariff_class_code` column preserves the per-class granularity and `tariff_grid` is derived from `typeCalendrier` (`D -> CT_DIST`, `F -> CT`). Downstream services compute consumption as `index[t] - index[t-1]` for each class separately, or sum all classes for total consumption.
 
 Example promotion of one R171 row:
 ```
-Staging:  point_id=30001234567890, grandeur_physique=EA, type_calendrier=D,
+Staging:  point_id=30001234567890, grandeur_metier=CONS, grandeur_physique=EA, type_calendrier=D,
           code_classe_temporelle=HPE, date_fin=2024-06-15T00:41:20, valeur=12345678
     ↓
 meter_energy_index:  meter_id=42, date_releve=2024-06-15,
@@ -776,7 +824,14 @@ meter_energy_index:  meter_id=42, date_releve=2024-06-15,
                      value_wh=12345678.0, quality_score=0.90
 ```
 
-R171 rows with other physical quantities are **not** promoted in SF5:
+R171 rows that do not satisfy the routing contract are **not** promoted in SF5:
+- `PROD` rows are not promoted in SF5 because the current target model does not encode direction
+- rows with unknown or missing `typeCalendrier` are skipped because `tariff_grid` cannot be inferred safely
+- rows with missing `code_classe_temporelle` are skipped because the canonical target identity would be incomplete
+- rows outside the accepted index `type_mesure` family are skipped
+- rows with non-`EA` quantity or non-`Wh` unit are skipped
+
+R171 rows with other physical quantities are therefore outside the SF5 routing contract:
 - `DD` / `TF` are duration-like daily quantities (`s`)
 - `DQ` is not an energy index (`VA`)
 - `ERC` / `ERI` are reactive-energy counters (`VArh`) and need dedicated downstream semantics
@@ -784,15 +839,21 @@ R171 rows with other physical quantities are **not** promoted in SF5:
 
 ### 8.2 R151 — Index + Puissance max per tariff class (C5)
 
-R151 carries three data types via `type_donnee`, routed to **two different tables**:
+R151 carries three data types via `type_donnee`, routed to **two different tables**. `type_donnee` determines the candidate target family, but routing is allowed only if the file header also declares the expected unit for that family:
+- `Unite_Mesure_Index='Wh'` for `CT` and `CT_DIST`
+- `Unite_Mesure_Puissance='VA'` for `PMAX`
+
+If an R151 file declares a different header unit for one of those families, promotion is blocked for that file because the source contract is internally inconsistent.
 
 | `type_donnee` | Data | Target table | Description |
 |---------------|------|-------------|-------------|
-| `CT` | Supplier index | `meter_energy_index` | Energy index per supplier tariff class (HP/HC etc.) |
-| `CT_DIST` | Distributor index | `meter_energy_index` | Energy index per distributor grid class (TURPE) |
-| `PMAX` | Peak power | `meter_power_peak` | Maximum demand in VA for the period |
+| `CT` | Supplier index | `meter_energy_index` | Promotable only if header index unit is `Wh` and `id_classe_temporelle` is present |
+| `CT_DIST` | Distributor index | `meter_energy_index` | Promotable only if header index unit is `Wh` and `id_classe_temporelle` is present |
+| `PMAX` | Peak power | `meter_power_peak` | Promotable only if header power unit is `VA` |
 
-The `tariff_grid` column in `meter_energy_index` distinguishes CT from CT_DIST, allowing billing services to use the appropriate grid for their calculations (supplier billing uses CT, TURPE billing uses CT_DIST).
+The `tariff_grid` column in `meter_energy_index` distinguishes CT from CT_DIST, allowing billing services to use the appropriate grid for their calculations (supplier billing uses CT, TURPE billing uses CT_DIST). For index routing, `id_classe_temporelle` is mandatory; SF5 does not synthesize a fallback tariff class.
+
+R151 rows with `type_donnee` outside `CT`, `CT_DIST`, or `PMAX` are unsupported in SF5 and must be skipped explicitly.
 
 ### 8.3 PMAX — Subscribed Power Monitoring
 
@@ -801,7 +862,7 @@ PMAX values go to the dedicated `meter_power_peak` table (D16). This data feeds:
 - Depassement alerts (did demand exceed subscribed power?)
 - Contract renegotiation recommendations
 
-PMAX has no `indice_vraisemblance` in R151, so `quality_score` defaults to 0.90.
+PMAX has no `indice_vraisemblance` in R151, so `quality_score` defaults to 0.90. A PMAX row is promotable only when the file header declares `Unite_Mesure_Puissance='VA'`; otherwise the file is blocked rather than silently routed.
 
 ---
 
