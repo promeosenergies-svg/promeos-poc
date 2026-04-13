@@ -226,6 +226,49 @@ def get_lead_score(
 
 
 # ======================================================================
+# Admin — Hydratation per-SIREN (F1 V117)
+# ======================================================================
+
+
+@router.post("/api/admin/sirene/hydrate/{siren}")
+def admin_hydrate_siren(
+    siren: str,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Hydrate un SIREN depuis l'API recherche-entreprises.api.gouv.fr.
+
+    Bypass l'import CSV complet (2.6 GB) pour les cas demo/pilote/test.
+    Insere UL + tous les etablissements retournes par l'API.
+    """
+    _require_admin(auth, allow_demo=True)
+    from services.sirene_hydrate import hydrate_siren_from_api
+
+    try:
+        return hydrate_siren_from_api(db, siren)
+    except ValueError as e:
+        raise HTTPException(400, detail={"code": "INVALID_SIREN", "message": str(e)})
+    except LookupError as e:
+        raise HTTPException(
+            404,
+            detail={
+                "code": "SIREN_NOT_FOUND_API",
+                "message": str(e),
+                "hint": "Verifiez le numero SIREN sur annuaire-entreprises.data.gouv.fr",
+            },
+        )
+    except RuntimeError as e:
+        raise HTTPException(
+            503,
+            detail={
+                "code": "API_GOUV_UNAVAILABLE",
+                "message": str(e),
+                "hint": "L'API publique est indisponible. Reessayez ou utilisez l'import CSV.",
+            },
+        )
+
+
+# ======================================================================
 # Admin — Import Sirene
 # ======================================================================
 

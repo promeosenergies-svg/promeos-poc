@@ -2,7 +2,7 @@
  * PROMEOS - Onboarding depuis Sirene
  * Flow 3 etapes : Recherche → Selection → Confirmation
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -14,9 +14,14 @@ import {
   Loader2,
   MapPin,
   Hash,
-  X,
 } from 'lucide-react';
-import { searchSirene, getEtablissements, createClientFromSirene } from '../services/api/sirene';
+import {
+  searchSirene,
+  getEtablissements,
+  createClientFromSirene,
+  hydrateSirenFromApi,
+} from '../services/api/sirene';
+import { crudUpdateSite } from '../services/api/patrimoine';
 import { useToast } from '../ui/ToastProvider';
 import { PageShell } from '../ui';
 import Badge from '../ui/Badge';
@@ -26,6 +31,139 @@ const STEPS = [
   { id: 'select', label: 'Selectionner', icon: Building2 },
   { id: 'confirm', label: 'Confirmer', icon: CheckCircle2 },
 ];
+
+// SurfaceCapture — F3 V117 : capture la surface_m2 de chaque site nouvellement cree
+// pour debloquer le scoring Decret Tertiaire/BACS/APER (Sirene ne fournit pas cette donnee).
+// Un PATCH /api/patrimoine/crud/sites/{id} avec surface_m2 declenche auto le recompute.
+function SurfaceCapture({ sites }) {
+  const [surfaces, setSurfaces] = useState(() => Object.fromEntries(sites.map((s) => [s.id, ''])));
+  const [savingId, setSavingId] = useState(null);
+  const [savedIds, setSavedIds] = useState(new Set());
+  const { toast } = useToast();
+
+  const handleSave = async (siteId) => {
+    const value = parseFloat(surfaces[siteId]);
+    if (!value || value <= 0) {
+      toast('Saisissez une surface valide (m²)', 'error');
+      return;
+    }
+    setSavingId(siteId);
+    try {
+      await crudUpdateSite(siteId, { surface_m2: value });
+      setSavedIds((prev) => new Set(prev).add(siteId));
+      toast('Surface enregistrée — conformité recalculée', 'success');
+    } catch (err) {
+      toast('Erreur : ' + (err.response?.data?.message || err.message), 'error');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const allSaved = savedIds.size === sites.length;
+
+  return (
+    <div className="p-4 border border-indigo-200 bg-indigo-50/40 rounded-lg space-y-3">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h4 className="text-sm font-semibold text-gray-900">
+            Débloquer la conformité en 30 secondes
+          </h4>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Saisissez la surface de chaque site pour activer le scoring Décret Tertiaire / BACS /
+            APER.
+          </p>
+        </div>
+        {allSaved && <Badge status="ok">Terminé</Badge>}
+      </div>
+      <div className="space-y-2">
+        {sites.map((s) => {
+          const isSaved = savedIds.has(s.id);
+          return (
+            <div key={s.id} className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-gray-700 truncate">{s.nom}</div>
+                <div className="text-[10px] text-gray-400">
+                  {s.siret} · {s.code_postal} {s.ville}
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min="1"
+                  step="50"
+                  value={surfaces[s.id] || ''}
+                  onChange={(e) => setSurfaces((prev) => ({ ...prev, [s.id]: e.target.value }))}
+                  disabled={isSaved}
+                  placeholder="m²"
+                  className="w-20 px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-indigo-300 outline-none disabled:bg-gray-50"
+                />
+                <button
+                  onClick={() => handleSave(s.id)}
+                  disabled={isSaved || savingId === s.id}
+                  className="px-2 py-1 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:bg-emerald-600"
+                >
+                  {savingId === s.id ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : isSaved ? (
+                    <CheckCircle2 size={12} />
+                  ) : (
+                    'OK'
+                  )}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// HydrateFromApiButton — F1 V117 : charge 1 SIREN depuis l'API gouv a la volee
+// pour permettre demo/pilote sans import CSV complet.
+function HydrateFromApiButton({ siren, onHydrated }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+
+  const handleHydrate = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await hydrateSirenFromApi(siren);
+      setResult(data);
+      setTimeout(onHydrated, 500);
+    } catch (err) {
+      setError(err.response?.data?.detail?.message || err.message || 'Erreur hydratation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (result) {
+    return (
+      <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-3">
+        Hydrate depuis l'API gouv : {result.etablissements_hydrated}/
+        {result.etablissements_total_api} etablissement(s).
+        {result.warning && <div className="mt-1 text-amber-700">{result.warning}</div>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-center">
+      <button
+        onClick={handleHydrate}
+        disabled={loading}
+        className="px-4 py-2 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+      >
+        {loading ? <Loader2 size={12} className="animate-spin" /> : <ArrowRight size={12} />}
+        Charger {siren} depuis l'API gouv
+      </button>
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+    </div>
+  );
+}
 
 // NextStepsHub — transforme la vallee morte post-Sirene en funnel actif vers le premier insight.
 // Ordre = impact business decroissant (connecteurs > facture > conformite > patrimoine).
@@ -81,6 +219,7 @@ function NextStepsHub({ result, navigate }) {
           premier insight.
         </p>
       </div>
+      <SurfaceCapture sites={result.sites} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {cards.map((c) => (
           <button
@@ -210,10 +349,15 @@ function SearchStep({ onSelect }) {
           </p>
 
           {results.total === 0 && (
-            <div className="p-8 text-center text-gray-400">
-              <Building2 size={32} className="mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Aucune entreprise trouvee</p>
-              <p className="text-xs mt-1">Verifiez l'orthographe ou essayez un SIREN/SIRET</p>
+            <div className="p-6 border border-dashed border-gray-200 rounded-lg space-y-3">
+              <div className="text-center text-gray-400">
+                <Building2 size={32} className="mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Aucune entreprise trouvee localement</p>
+                <p className="text-xs mt-1">Le referentiel Sirene local est partiel.</p>
+              </div>
+              {/^\d{9}$/.test(query.trim()) && (
+                <HydrateFromApiButton siren={query.trim()} onHydrated={doSearch} />
+              )}
             </div>
           )}
 

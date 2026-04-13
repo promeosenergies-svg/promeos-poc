@@ -24,9 +24,11 @@ describe('SireneOnboardingPage — structure', () => {
 
   it('importe les fonctions API sirene', () => {
     const src = readFileSync(pagePath, 'utf-8');
-    expect(src).toMatch(/import.*searchSirene/);
-    expect(src).toMatch(/import.*getEtablissements/);
-    expect(src).toMatch(/import.*createClientFromSirene/);
+    expect(src).toContain('searchSirene');
+    expect(src).toContain('getEtablissements');
+    expect(src).toContain('createClientFromSirene');
+    expect(src).toContain('hydrateSirenFromApi'); // V117
+    expect(src).toContain('crudUpdateSite'); // V117 F3
   });
 
   it('ne cree PAS de batiment ni compteur', () => {
