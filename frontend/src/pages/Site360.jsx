@@ -75,6 +75,9 @@ import SiteContractsSummary from '../components/SiteContractsSummary';
 import SegmentationWidget from '../components/SegmentationWidget';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 import TabConsoSite from '../components/TabConsoSite';
+import LoadProfileCard from '../components/analytics/LoadProfileCard';
+import EnergySignatureCard from '../components/analytics/EnergySignatureCard';
+import RecommendationsCard from '../components/analytics/RecommendationsCard';
 import TabPuissance from '../components/power/TabPuissance';
 import TabActionsSite from '../components/TabActionsSite';
 import { fmtNum, fmtEurFull, fmtArea as _fmtArea } from '../utils/format';
@@ -104,6 +107,7 @@ const STATUT_BADGE = {
 const TABS = [
   { id: 'resume', label: 'Résumé' },
   { id: 'conso', label: 'Consommation' },
+  { id: 'analytics', label: 'Analytics' },
   { id: 'factures', label: 'Factures' },
   { id: 'reconciliation', label: 'Réconciliation' },
   { id: 'conformite', label: 'Conformité' },
@@ -1611,6 +1615,23 @@ function MiniSignaturePanel({ siteId, navigate }) {
   );
 }
 
+// ── TabAnalytics — Profil de charge + Signature énergétique + Recommendations ──
+// Les 3 cards exploitent les endpoints Sprint 1-8 :
+//   /api/usages/load-profile/{id}
+//   /api/usages/energy-signature/{id}/advanced
+//   /api/usages/recommendations/generate/{id}
+function TabAnalytics({ siteId }) {
+  return (
+    <div className="space-y-4 pt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <LoadProfileCard siteId={siteId} />
+        <EnergySignatureCard siteId={siteId} />
+      </div>
+      <RecommendationsCard siteId={siteId} />
+    </div>
+  );
+}
+
 export default function Site360() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -2134,6 +2155,7 @@ export default function Site360() {
         />
       )}
       {activeTab === 'conso' && <TabConsoSite siteId={site.id} />}
+      {activeTab === 'analytics' && <TabAnalytics siteId={site.id} />}
       {activeTab === 'factures' && (
         <div className="space-y-4 pt-6">
           <SiteContractsSummary siteId={site.id} />

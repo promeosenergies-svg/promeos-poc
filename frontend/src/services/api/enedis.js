@@ -35,3 +35,25 @@ export const refreshOpendata = (dataset = 'sup36', dateFrom = null, dateTo = nul
   if (dateTo) params.append('date_to', dateTo);
   return api.post(`/enedis/opendata/refresh?${params}`).then((r) => r.data);
 };
+
+// ── Site analytics (Sprint A — Cockpit Site360 enrichi) ──
+export const getLoadProfile = (siteId, months = 12) =>
+  api.get(`/usages/load-profile/${siteId}?months=${months}`).then((r) => r.data);
+
+export const getEnergySignatureAdvanced = (siteId, months = 12, model = 'auto') =>
+  api
+    .get(`/usages/energy-signature/${siteId}/advanced?months=${months}&model=${model}`)
+    .then((r) => r.data);
+
+export const getSiteBenchmark = (siteId, months = 12) =>
+  api.get(`/usages/benchmark/${siteId}?months=${months}`).then((r) => r.data);
+
+export const generateRecommendations = (siteId, persist = true) =>
+  api.post(`/usages/recommendations/generate/${siteId}?persist=${persist}`).then((r) => r.data);
+
+export const compareSiteVsSector = (siteId, months = 12, persistAlerts = false) =>
+  api
+    .get(
+      `/usages/compare/site-vs-sector/${siteId}?months=${months}&persist_alerts=${persistAlerts}`
+    )
+    .then((r) => r.data);
