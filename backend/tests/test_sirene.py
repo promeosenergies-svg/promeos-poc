@@ -832,6 +832,166 @@ class TestRgpdHardening:
         assert ul_recent.payload_brut is not None, "payload_brut recent doit etre conserve"
 
 
+class TestLeadScore:
+    """V116 Option B — Lead Score service (monetisation wedge)."""
+
+    def _seed(self, db, **kwargs):
+        defaults = dict(
+            siren="123456789",
+            denomination="TEST",
+            etat_administratif="A",
+            statut_diffusion="O",
+            snapshot_date=SNAPSHOT,
+        )
+        defaults.update(kwargs)
+        ul = SireneUniteLegale(**defaults)
+        db.add(ul)
+        db.flush()
+        return ul
+
+    def _seed_etabs(self, db, siren, n, etat="A"):
+        for i in range(n):
+            db.add(
+                SireneEtablissement(
+                    siret=f"{siren}{i:05d}",
+                    siren=siren,
+                    nic=f"{i:05d}",
+                    etat_administratif=etat,
+                    statut_diffusion="O",
+                    snapshot_date=SNAPSHOT,
+                )
+            )
+        db.flush()
+
+    def test_ge_retail_high_value(self, db):
+        """GE + NAF 47 (retail) + 50 sites = priorite A + MRR eleve."""
+        from services.lead_score import compute_lead_score
+
+        self._seed(
+            db, siren="451321335", denomination="CARREFOUR", categorie_entreprise="GE", activite_principale="47.11F"
+        )
+        self._seed_etabs(db, "451321335", 50)
+
+        score = compute_lead_score(db, "451321335")
+        assert score["segment"] == "GE"
+        assert score["priority"] == "A"
+        assert score["naf_value_tier"] == "high"
+        assert score["n_etablissements_actifs"] == 50
+        # GE base 6000 * multiplier 3.5 (21-100 sites) * 1.25 (high NAF) = ~26250
+        assert 20000 <= score["estimated_mrr_eur"] <= 35000
+        assert score["estimated_arr_eur"] == score["estimated_mrr_eur"] * 12
+
+    def test_pme_retail_medium(self, db):
+        """PME + retail + 3 sites = priorite B."""
+        from services.lead_score import compute_lead_score
+
+        self._seed(db, siren="222222222", categorie_entreprise="PME", activite_principale="47.25Z")
+        self._seed_etabs(db, "222222222", 3)
+
+        score = compute_lead_score(db, "222222222")
+        assert score["segment"] == "PME"
+        assert score["priority"] == "B"  # PME + high NAF
+        assert score["naf_value_tier"] == "high"
+
+    def test_tpe_agriculture_low(self, db):
+        """TPE + agriculture = priorite C + MRR faible."""
+        from services.lead_score import compute_lead_score
+
+        self._seed(db, siren="333333333", categorie_entreprise="PME", activite_principale="01.11Z")
+        self._seed_etabs(db, "333333333", 1)
+
+        score = compute_lead_score(db, "333333333")
+        assert score["segment"] == "TPE"  # PME avec <3 etabs -> TPE
+        assert score["priority"] == "C"
+        assert score["naf_value_tier"] == "low"
+        assert score["estimated_mrr_eur"] < 200  # TPE base 200 * 0.75 (low NAF) = 150
+
+    def test_fallback_segment_from_etabs_count(self, db):
+        """Categorie INSEE absente -> deduction par nb etablissements."""
+        from services.lead_score import compute_lead_score
+
+        self._seed(db, siren="444444444", categorie_entreprise=None, activite_principale="47.11F")
+        self._seed_etabs(db, "444444444", 150)
+
+        score = compute_lead_score(db, "444444444")
+        assert score["segment"] == "GE"  # fallback : >=100 etabs = GE
+        assert score["priority"] == "A"
+
+    def test_lookup_error_si_siren_absent(self, db):
+        from services.lead_score import compute_lead_score
+
+        with pytest.raises(LookupError):
+            compute_lead_score(db, "000000000")
+
+    def test_value_error_siren_invalide(self, db):
+        from services.lead_score import compute_lead_score
+
+        with pytest.raises(ValueError):
+            compute_lead_score(db, "ABC")
+
+    def test_endpoint_get_lead_score(self, app_client):
+        """GET /api/reference/sirene/lead-score/{siren}."""
+        client, db = app_client
+        ul = SireneUniteLegale(
+            siren="555555555",
+            denomination="ETI MEDIUM",
+            categorie_entreprise="ETI",
+            activite_principale="56.10A",
+            etat_administratif="A",
+            statut_diffusion="O",
+            snapshot_date=SNAPSHOT,
+        )
+        db.add(ul)
+        for i in range(15):
+            db.add(
+                SireneEtablissement(
+                    siret=f"555555555{i:05d}",
+                    siren="555555555",
+                    nic=f"{i:05d}",
+                    etat_administratif="A",
+                    statut_diffusion="O",
+                    snapshot_date=SNAPSHOT,
+                )
+            )
+        db.commit()
+
+        resp = client.get("/api/reference/sirene/lead-score/555555555")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["segment"] == "ETI"
+        assert data["priority"] == "A"  # ETI + high NAF restauration + 15 sites
+        assert data["estimated_mrr_eur"] > 0
+        assert len(data["drivers"]) >= 2
+
+    def test_endpoint_404_si_non_hydrate(self, app_client):
+        client, db = app_client
+        resp = client.get("/api/reference/sirene/lead-score/999999999")
+        assert resp.status_code == 404
+        assert "SIREN_NOT_HYDRATED" in str(resp.json())
+
+    def test_onboarding_from_sirene_inclut_lead_score(self, app_client, sample_ul_csv, sample_etab_csv):
+        """V116 : la reponse onboarding_from_sirene contient le lead_score calcule."""
+        client, db = app_client
+        run = SireneSyncRun(sync_type="full", started_at=datetime.now(timezone.utc), status="running")
+        db.add(run)
+        db.flush()
+        import_full_unites_legales(db, sample_ul_csv, SNAPSHOT, run)
+        import_full_etablissements(db, sample_etab_csv, SNAPSHOT, run)
+
+        resp = client.post(
+            "/api/onboarding/from-sirene",
+            json={
+                "siren": "552032534",
+                "etablissement_sirets": ["55203253400017"],
+            },
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["lead_score"] is not None
+        assert data["lead_score"]["segment"] == "GE"  # sample_ul_csv CARREFOUR categorie=GE
+        assert data["lead_score"]["priority"] in ("A", "B")
+
+
 class TestNaf25Resolver:
     """V115 : time-aware NAF25 resolver (bascule 01/01/2027 INSEE)."""
 

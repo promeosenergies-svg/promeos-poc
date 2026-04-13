@@ -118,6 +118,17 @@ class SiteCreatedOut(BaseModel):
     ville: Optional[str] = None
 
 
+class LeadScoreOut(BaseModel):
+    siren: str
+    segment: str  # TPE / PME / ETI / GE
+    estimated_mrr_eur: int
+    estimated_arr_eur: int
+    priority: str  # A / B / C
+    n_etablissements_actifs: int
+    naf_value_tier: str  # high / medium / low / unknown
+    drivers: List[str]
+
+
 class OnboardingFromSireneResponse(BaseModel):
     organisation_id: int
     entite_juridique_id: int
@@ -125,6 +136,7 @@ class OnboardingFromSireneResponse(BaseModel):
     sites: List[SiteCreatedOut]
     warnings: List[OnboardingFromSireneWarning]
     trace_id: str
+    lead_score: Optional[LeadScoreOut] = None
 
 
 # ======================================================================

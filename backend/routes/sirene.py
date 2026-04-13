@@ -41,6 +41,7 @@ from schemas.sirene import (
     OnboardingFromSireneResponse,
     OnboardingFromSireneWarning,
     SiteCreatedOut,
+    LeadScoreOut,
 )
 from services.naf_classifier import classify_naf
 from models.enums import TypeSite
@@ -189,6 +190,39 @@ def get_etablissement(
         raise HTTPException(404, detail={"code": "NOT_FOUND", "message": f"Etablissement {siret} non trouve"})
 
     return SireneEtablissementOut.model_validate(e)
+
+
+# ======================================================================
+# Lead Score (V116 — wedge monetisation)
+# ======================================================================
+
+
+@router.get("/api/reference/sirene/lead-score/{siren}", response_model=LeadScoreOut)
+def get_lead_score(
+    siren: str,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Calcule un score de lead depuis les donnees Sirene locales.
+
+    Pre-qualifie commercialement un SIREN avant meme l'inscription :
+    segment, MRR estime, priorite A/B/C.
+    """
+    from services.lead_score import compute_lead_score
+
+    try:
+        return LeadScoreOut(**compute_lead_score(db, siren))
+    except ValueError as e:
+        raise HTTPException(400, detail={"code": "INVALID_SIREN", "message": str(e)})
+    except LookupError as e:
+        raise HTTPException(
+            404,
+            detail={
+                "code": "SIREN_NOT_HYDRATED",
+                "message": str(e),
+                "hint": "Lancez un import Sirene ou appelez /hydrate/{siren}",
+            },
+        )
 
 
 # ======================================================================
@@ -444,6 +478,17 @@ def onboarding_from_sirene(
     except Exception as e:
         logger.warning("onboarding_progress wiring failed [%s]: %s", correlation_id, e)
 
+    # Lead score — best-effort, enrichit la reponse pour CRM/commercial.
+    # Utilise les donnees deja en scope (ul, etabs_by_siret) : zero query supplementaire.
+    lead_score_payload = None
+    try:
+        from services.lead_score import compute_lead_score_from_loaded
+
+        n_etabs_actifs = sum(1 for e in etabs_by_siret.values() if e.etat_administratif == "A")
+        lead_score_payload = LeadScoreOut(**compute_lead_score_from_loaded(ul, n_etabs_actifs))
+    except Exception as e:
+        logger.warning("lead_score computation failed [%s]: %s", correlation_id, e)
+
     db.commit()
 
     logger.info(
@@ -463,6 +508,7 @@ def onboarding_from_sirene(
         sites=sites_created,
         warnings=warnings,
         trace_id=correlation_id,
+        lead_score=lead_score_payload,
     )
 
 
