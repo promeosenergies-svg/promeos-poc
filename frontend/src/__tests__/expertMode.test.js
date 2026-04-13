@@ -98,9 +98,9 @@ describe('D. Navigation — expert-only filtering', () => {
     expect(src).toContain('isExpert');
   });
 
-  it('NavRail filtre les modules expertOnly', () => {
+  it('NavRail uses getOrderedModules (role-based + expert filtering)', () => {
     const src = readSrc('layout/NavRail.jsx');
-    expect(src).toContain('expertOnly');
+    expect(src).toContain('getOrderedModules');
     expect(src).toContain('isExpert');
   });
 
