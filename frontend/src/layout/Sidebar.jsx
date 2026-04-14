@@ -9,7 +9,7 @@ import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import NavRail from './NavRail';
 import NavPanel from './NavPanel';
 import { resolveModule, matchRouteToModule, ALL_NAV_ITEMS } from './NavRegistry';
-import { getNotificationsSummary, getMonitoringAlerts } from '../services/api';
+import { getNotificationsSummary, getMonitoringAlerts, getFlexPortfolio } from '../services/api';
 import { addRecent } from '../utils/navRecent';
 import { resolveBreadcrumbLabel } from './Breadcrumb';
 
@@ -86,25 +86,55 @@ export default function Sidebar() {
   /* ── Badges ── */
   const [alertBadge, setAlertBadge] = useState(0);
   const [monitoringBadge, setMonitoringBadge] = useState(0);
+  const [flexRevenueTeaser, setFlexRevenueTeaser] = useState(null);
 
   // Fetch badges on mount + auto-refresh every 2 minutes
   useEffect(() => {
+    let cancelled = false;
     const fetchBadges = () => {
       getNotificationsSummary()
-        .then((s) => setAlertBadge(s.new_critical + s.new_warn))
+        .then((s) => {
+          if (!cancelled) setAlertBadge(s.new_critical + s.new_warn);
+        })
         .catch(() => {});
       getMonitoringAlerts(null, 'open', 200)
-        .then((alerts) => setMonitoringBadge(Array.isArray(alerts) ? alerts.length : 0))
+        .then((alerts) => {
+          if (!cancelled) setMonitoringBadge(Array.isArray(alerts) ? alerts.length : 0);
+        })
         .catch(() => {});
     };
     fetchBadges();
     const interval = setInterval(fetchBadges, 2 * 60 * 1000);
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Fetch flex teaser once on mount (low-priority, rarely changes)
+  useEffect(() => {
+    let cancelled = false;
+    getFlexPortfolio()
+      .then((r) => {
+        if (cancelled) return;
+        const revEur = r?.total_annual_revenue_eur || 0;
+        if (revEur >= 1000) {
+          setFlexRevenueTeaser(`+${Math.round(revEur / 1000)}k€`);
+        } else {
+          setFlexRevenueTeaser(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setFlexRevenueTeaser(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const badges = useMemo(
-    () => ({ alerts: alertBadge, monitoring: monitoringBadge }),
-    [alertBadge, monitoringBadge]
+    () => ({ alerts: alertBadge, monitoring: monitoringBadge, flexRevenueTeaser }),
+    [alertBadge, monitoringBadge, flexRevenueTeaser]
   );
 
   /* ── Track recents on route change (V2: with label + module) ── */

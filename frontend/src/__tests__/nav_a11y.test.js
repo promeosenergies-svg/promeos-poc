@@ -43,7 +43,7 @@ describe('A11y — ARIA roles & labels', () => {
   });
 
   it('NavRail module buttons have aria-label', () => {
-    expect(navRail).toMatch(/aria-label=\{mod\.label\}/);
+    expect(navRail).toMatch(/aria-label=\{tipText\}/);
   });
 
   it('NavRail active module has aria-current', () => {
@@ -71,9 +71,10 @@ describe('A11y — Focus management', () => {
 });
 
 describe('A11y — Labels in French', () => {
-  it('NavRail aria labels are in French (module labels)', () => {
-    // Module labels are French (Accueil, Conformite, etc.) — checked via aria-label={mod.label}
-    expect(navRail).toMatch(/aria-label=\{mod\.label\}/);
+  it('NavRail aria labels are in French (module labels via tipText)', () => {
+    // tipText = mod.label (+ teaser if present) — module labels are French
+    expect(navRail).toMatch(/tipText.*mod\.label/);
+    expect(navRail).toMatch(/aria-label=\{tipText\}/);
   });
 
   it('AppShell skip link is in French', () => {
