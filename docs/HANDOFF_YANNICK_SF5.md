@@ -328,7 +328,7 @@ curl http://localhost:8001/api/enedis/opendata/freshness # Claude
 - **Owner code Sprint 1-8 (Claude)** : Amine Ben Amara
 - **Branche Yannick** : `feat/enedis-sge-ingestion`
 - **PR Sprint 1-8** : #203 (mergée)
-- **Spec SF5** : `docs/specs/feature-enedis-sge-5-data-staging.md`
+- **Spec SF5** : `docs/specs/feature-enedis-sge-6-data-staging.md`
 - **ADRs** : `docs/adr/006-008`
 
 En cas de doute sur un champ ou une dépendance, le test `tests/test_sf5_e2e.py` est la source de vérité — il insère des rows avec les noms exacts attendus par les promoters.

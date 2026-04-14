@@ -3,7 +3,7 @@
 > **Status**: PRD v2.5 — feature renumbered from SF5 to SF6 after inserting a new SF5 raw-ingestion wave
 > **Depends on**: SF1 (decrypt), SF2 (CDC ingestion), SF3 (index ingestion), SF4 (operationalization) — complete and merged; SF5 (R63/R64 R6X + C68 raw-ingestion extension) — upstream prerequisite
 > **Module**: `backend/data_staging/` (new, separate from `data_ingestion/`)
-> **Document note**: the file path stays `feature-enedis-sge-5-data-staging.md` for now, but the feature described here is now **SF6** on the roadmap.
+> **Document note**: this spec now lives at `feature-enedis-sge-6-data-staging.md` to match the new **SF6** roadmap numbering.
 
 ---
 

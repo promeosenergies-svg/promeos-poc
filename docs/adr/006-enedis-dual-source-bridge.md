@@ -103,5 +103,5 @@ Testes par :
 
 ## References
 
-- Spec SF5 : `docs/specs/feature-enedis-sge-5-data-staging.md`
+- Spec SF5 : `docs/specs/feature-enedis-sge-6-data-staging.md`
 - Bug corrige par ce pattern : P0 kW->kWh conversion (Sprint 4 audit)

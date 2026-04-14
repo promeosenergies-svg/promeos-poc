@@ -117,5 +117,5 @@ Testes par :
 
 ## References
 
-- Spec SF5 : `docs/specs/feature-enedis-sge-5-data-staging.md` (section D4)
+- Spec SF5 : `docs/specs/feature-enedis-sge-6-data-staging.md` (section D4)
 - Doctrine CDC : `.claude/skills/promeos-enedis/references/courbes-charge-doctrine.md`
