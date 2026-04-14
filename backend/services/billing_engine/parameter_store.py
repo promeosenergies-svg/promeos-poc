@@ -236,7 +236,11 @@ def _yaml_candidates(code: str, tarifs: dict) -> list[tuple[dict, str]]:
     if code == "ATRD_GAZ":
         return [(tarifs.get("atrd_gaz", {}), "rate_eur_kwh")]
     if code == "ATRT_GAZ":
-        return [(tarifs.get("atrt_gaz", {}), "rate_eur_kwh")]
+        # Deux sections chronologiques : atrt_gaz (2025) + atrt_gaz_2026 (+3,41%)
+        return [
+            (tarifs.get("atrt_gaz", {}), "rate_eur_kwh"),
+            (tarifs.get("atrt_gaz_2026", {}), "rate_eur_kwh"),
+        ]
 
     # ATRD7 détaillé par option (Vague 2)
     # Codes : ATRD_GAZ_{T1,T2,T3,T4,TP}_{ABO,PROP,CAPA,CAPA_GTE500,DISTANCE}

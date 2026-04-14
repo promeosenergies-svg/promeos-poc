@@ -719,6 +719,10 @@ export default function Patrimoine() {
               Action
             </Button>
           )}
+          <Button size="sm" variant="secondary" onClick={() => navigate('/onboarding/sirene')}>
+            <Search size={14} className="mr-1" />
+            Depuis Sirene
+          </Button>
           <Button size="sm" variant="secondary" onClick={() => setShowQuickCreate(true)}>
             <Plus size={14} className="mr-1" />
             Nouveau site
@@ -736,18 +740,22 @@ export default function Patrimoine() {
           variant="empty"
           icon={Building2}
           title="Aucun site dans le périmètre"
-          text="Créez ou importez un site pour commencer."
-          ctaLabel="Nouveau site"
-          onCta={() => setShowQuickCreate(true)}
+          text="Créez votre patrimoine à partir d'un SIREN ou importez un fichier."
+          ctaLabel="Depuis Sirene"
+          onCta={() => navigate('/onboarding/sirene')}
           actions={
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap justify-center">
+              <Button size="lg" onClick={() => navigate('/onboarding/sirene')}>
+                <Search size={16} className="mr-2" />
+                Depuis Sirene (recommandé)
+              </Button>
               <Button variant="secondary" size="lg" onClick={() => setShowQuickCreate(true)}>
                 <Plus size={16} className="mr-2" />
-                Nouveau site
+                Nouveau site manuel
               </Button>
               <Button variant="secondary" size="lg" onClick={() => setShowWizard(true)}>
                 <Upload size={16} className="mr-2" />
-                Importer un fichier
+                Importer CSV
               </Button>
             </div>
           }

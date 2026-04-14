@@ -393,7 +393,49 @@ atrt_gaz:
   rate_eur_kwh: 0.012
   source: "CRE ATRT8 2025"
   valid_from: "2025-01-01"
+  valid_to: "2026-03-31"
+
+# ATRT8 révision 2026 : hausse +3,41 % au 1er avril 2026
+# (inflation + régularisation CRCP, contexte -5,2% conso gaz 2024, -3% 2025)
+# Source : CRE ATRT8 2026, via SirEnergies "ATRT 8 2026 : impact réel sur la facture"
+atrt_gaz_2026:
+  rate_eur_kwh: 0.01240920          # 0.012 × 1.0341
+  source: "CRE ATRT8 2026 — révision +3,41% au 01/04/2026"
+  valid_from: "2026-04-01"
   valid_to: null
+
+# ── Prix repère gaz CRE (référence pour offres indexées B2C/B2B) ───────────
+# Indicateur mensuel CRE pour le marché particuliers mais utilisé en
+# référence d'indexation par certains fournisseurs B2B (offres variables).
+# Non directement consommé par le shadow billing (qui reconstitue la
+# décomposition ATRD+ATRT+fourniture), mais versionné ici pour le module
+# d'analyse de contrat et l'audit des offres indexées.
+# Source : CRE — prix repère de vente de gaz naturel, publié mensuellement.
+prix_repere_gaz:
+  # Dernière valeur publiée : +15,4 % au 1er mai 2026 (flambée gaz Iran)
+  rate_eur_mwh: 160.54
+  source: "CRE prix repère gaz particuliers au 01/05/2026 (+15,4% vs avril)"
+  source_url: "service-public.gouv.fr/particuliers/actualites/A17956"
+  valid_from: "2026-05-01"
+  valid_to: null
+  previous_rate_eur_mwh: 139.12     # pour calcul delta
+  previous_valid_from: "2026-04-01"
+
+# ── CBAM — Carbon Border Adjustment Mechanism (frontières UE) ──────────────
+# Premier prix officiel fixé par la Commission européenne le 7 avril 2026.
+# Applicable aux imports d'acier, ciment, aluminium, engrais, hydrogène,
+# électricité. Non encore consommé par une brique shadow billing (candidat
+# pour une future brique "compute_cbam" clients importateurs industriels).
+# Source : Commission européenne via Homaio, recalculé à partir de la
+# moyenne des enchères EU ETS.
+cbam_eu:
+  rate_eur_per_t_co2: 75.36
+  source: "Commission européenne — premier prix CBAM 07/04/2026"
+  source_url: "homaio.com/post/cbam-europe-sets-its-first-carbon-border-price-at-eu75-36-tco2"
+  valid_from: "2026-04-07"
+  valid_to: null
+  reference_ets_eur_per_t: 69.99    # EU ETS même jour, pour comparaison
+  scope: ["acier", "ciment", "aluminium", "engrais", "hydrogene", "electricite"]
 
 # ── TVA ──────────────────────────────────────────────────────────────────────
 tva:
