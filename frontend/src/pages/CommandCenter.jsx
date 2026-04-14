@@ -412,11 +412,7 @@ export default function CommandCenter() {
       <CockpitTabs active="dashboard" />
 
       {/* ── Morning Brief — ce qui a bougé depuis la dernière visite ── */}
-      <MorningBriefCard
-        alerts={alertsCount}
-        invoices={kpisJ1?.facturesAnomalies || 0}
-        actionsClosed={kpisJ1?.actionsClosedSinceVisit || 0}
-      />
+      <MorningBriefCard alerts={alertsCount} />
 
       {/* ── KPIs J-1 (maquette : section 1 après tabs) ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-testid="kpis-j1">
