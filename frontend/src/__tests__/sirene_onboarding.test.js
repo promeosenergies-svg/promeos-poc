@@ -101,6 +101,33 @@ describe('NextStepsHub — strategic wedge V115', () => {
   });
 });
 
+describe('Decouvrabilite Sirene V118 — entry points', () => {
+  it('Patrimoine.jsx contient un CTA "Depuis Sirene"', () => {
+    const src = readFileSync(resolve(SRC, 'pages/Patrimoine.jsx'), 'utf-8');
+    expect(src).toContain('Depuis Sirene');
+    expect(src).toContain("navigate('/onboarding/sirene')");
+  });
+
+  it('OnboardingPage.jsx pointe vers /onboarding/sirene pour step_sites_added', () => {
+    const src = readFileSync(resolve(SRC, 'pages/OnboardingPage.jsx'), 'utf-8');
+    expect(src).toContain("step_sites_added: '/onboarding/sirene'");
+  });
+
+  it('NavRegistry.js contient une entree "sirene" avec keywords SIREN/SIRET', () => {
+    const src = readFileSync(resolve(SRC, 'layout/NavRegistry.js'), 'utf-8');
+    expect(src).toContain("key: 'sirene'");
+    expect(src).toContain("to: '/onboarding/sirene'");
+    expect(src).toMatch(/'siren'/);
+    expect(src).toMatch(/'siret'/);
+  });
+
+  it('SiteCreationWizard.jsx propose un shortcut vers /onboarding/sirene', () => {
+    const src = readFileSync(resolve(SRC, 'components/SiteCreationWizard.jsx'), 'utf-8');
+    expect(src).toContain('/onboarding/sirene');
+    expect(src).toContain('Plus rapide');
+  });
+});
+
 describe('App.jsx — route sirene', () => {
   const appPath = resolve(SRC, 'App.jsx');
 
