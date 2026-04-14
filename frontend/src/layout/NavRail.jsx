@@ -4,8 +4,9 @@
  * Tooltip on hover. Logo at top, expert badge at bottom.
  */
 import { TooltipPortal } from '../ui';
-import { NAV_MODULES, TINT_PALETTE } from './NavRegistry';
+import { TINT_PALETTE, getOrderedModules } from './NavRegistry';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 /* ── Module → badge key mapping ── */
 const MODULE_BADGE_KEY = {
@@ -47,8 +48,10 @@ function RailIcon({ mod, isActive, onClick, badgeCount }) {
 /* ── Main Rail ── */
 export default function NavRail({ activeModule, onSelectModule, badges = {} }) {
   const { isExpert } = useExpertMode();
+  const { role } = useAuth();
 
-  const visibleModules = isExpert ? NAV_MODULES : NAV_MODULES.filter((m) => !m.expertOnly);
+  // Order modules based on user role (DG sees Achat first, EM sees Énergie first, etc.)
+  const visibleModules = getOrderedModules(role, isExpert);
 
   return (
     <div

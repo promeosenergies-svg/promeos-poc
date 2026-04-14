@@ -17,6 +17,97 @@ import { useScope } from '../contexts/ScopeContext';
 
 const HITS_KEY = 'promeos_cmd_hits';
 
+/* ── Smart queries — structured syntax with direct actions ──
+ * Syntax: <scope>:<verb>  e.g. "sites:non-conformes", "factures:retard"
+ * Each query resolves to a direct navigation with filter params.
+ */
+const SMART_QUERIES = [
+  {
+    match: /^sites?\s*:\s*non[-\s]?conformes?$/i,
+    label: 'Sites non conformes',
+    subtitle: 'Filtre conformité : statut "non conforme"',
+    to: '/patrimoine?filter=non-conformes',
+    section: 'Query',
+  },
+  {
+    match: /^sites?\s*:\s*a[-\s]?evaluer$/i,
+    label: 'Sites à évaluer',
+    subtitle: 'Filtre : statut "à évaluer"',
+    to: '/patrimoine?filter=a-evaluer',
+    section: 'Query',
+  },
+  {
+    match: /^factures?\s*:\s*(retard|impay)/i,
+    label: 'Factures en retard',
+    subtitle: 'Bill Intel filtré sur anomalies de paiement',
+    to: '/bill-intel?filter=retard',
+    section: 'Query',
+  },
+  {
+    match: /^factures?\s*:\s*anomalies?$/i,
+    label: 'Factures avec anomalies',
+    subtitle: 'Écarts détectés par shadow billing',
+    to: '/bill-intel?filter=anomalies',
+    section: 'Query',
+  },
+  {
+    match: /^actions?\s*:\s*urgent/i,
+    label: 'Actions urgentes',
+    subtitle: 'Actions P0 en cours',
+    to: '/anomalies?tab=actions&priority=urgent',
+    section: 'Query',
+  },
+  {
+    match: /^actions?\s*:\s*(retard|en[-\s]?retard)/i,
+    label: 'Actions en retard',
+    subtitle: 'Actions dont la date limite est dépassée',
+    to: '/anomalies?tab=actions&filter=late',
+    section: 'Query',
+  },
+  {
+    match: /^conso\s*:\s*anomalies?$/i,
+    label: 'Anomalies de consommation',
+    subtitle: 'Diagnostic conso — insights détectés',
+    to: '/diagnostic-conso?filter=anomalies',
+    section: 'Query',
+  },
+  {
+    match: /^contrats?\s*:\s*echeance/i,
+    label: 'Contrats à échéance',
+    subtitle: 'Radar renouvellements',
+    to: '/renouvellements',
+    section: 'Query',
+  },
+  {
+    match: /^flex\s*:\s*(potentiel|opportunit)/i,
+    label: 'Gisements flex détectés',
+    subtitle: 'Sites avec potentiel NEBEF / effacement',
+    to: '/flex',
+    section: 'Query',
+  },
+  {
+    match: /^conformite\s*:\s*dt$/i,
+    label: 'Décret Tertiaire',
+    subtitle: 'Obligations DT sur le portefeuille',
+    to: '/conformite?tab=obligations&regulation=dt',
+    section: 'Query',
+  },
+  {
+    match: /^conformite\s*:\s*bacs$/i,
+    label: 'Pilotage bâtiment (BACS)',
+    subtitle: 'Obligations GTB/GTC',
+    to: '/conformite?tab=obligations&regulation=bacs',
+    section: 'Query',
+  },
+];
+
+/** Try to match query against smart syntax. Returns array of results or null. */
+function matchSmartQueries(query) {
+  const matched = SMART_QUERIES.filter((sq) => sq.match.test(query));
+  if (matched.length === 0) return null;
+  return matched.map((sq) => ({ type: 'query', ...sq }));
+}
+
 function loadHits() {
   try {
     return JSON.parse(localStorage.getItem(HITS_KEY) || '{}');
@@ -55,6 +146,11 @@ export default function CommandPalette({ open, onClose, onToggleExpert }) {
   const results = useMemo(() => {
     const q = query.toLowerCase().trim();
     const hits = hitsRef.current;
+
+    // Smart queries first (structured syntax like "sites:non-conformes")
+    const smart = q ? matchSmartQueries(q) : null;
+    if (smart) return smart;
+
     if (!q) {
       // Default: pages ranked by frequency, then shortcuts
       const pages = ALL_MAIN_ITEMS.map((item) => ({
@@ -191,6 +287,19 @@ export default function CommandPalette({ open, onClose, onToggleExpert }) {
               <p className="text-xs text-gray-300 mt-2">
                 Essayez : conformité, actions, patrimoine, monitoring...
               </p>
+              <div className="mt-3 text-[10px] text-gray-400 space-y-0.5">
+                <p className="font-semibold text-gray-500">Smart queries :</p>
+                <p>
+                  <code className="text-violet-500">sites:non-conformes</code> ·{' '}
+                  <code className="text-violet-500">factures:retard</code> ·{' '}
+                  <code className="text-violet-500">actions:urgent</code>
+                </p>
+                <p>
+                  <code className="text-violet-500">flex:potentiel</code> ·{' '}
+                  <code className="text-violet-500">contrats:echeance</code> ·{' '}
+                  <code className="text-violet-500">conformite:dt</code>
+                </p>
+              </div>
             </div>
           )}
           {results.map((item, idx) => {

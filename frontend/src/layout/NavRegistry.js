@@ -792,6 +792,40 @@ export function getModuleTint(keyOrPath) {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+ * ROLE-BASED module ordering — each role sees its most relevant
+ * modules first on the rail. Fallback to default order.
+ * ══════════════════════════════════════════════════════════════════ */
+const ROLE_MODULE_ORDER = {
+  // Direction / finance : focus décisionnel
+  dg_owner: ['cockpit', 'achat', 'conformite', 'patrimoine', 'energie', 'flex'],
+  daf: ['cockpit', 'patrimoine', 'achat', 'conformite', 'energie', 'flex'],
+  acheteur: ['cockpit', 'achat', 'patrimoine', 'conformite', 'flex', 'energie'],
+
+  // Technique / opérationnel : focus données + action
+  energy_manager: ['cockpit', 'energie', 'flex', 'conformite', 'patrimoine', 'achat'],
+  resp_conformite: ['cockpit', 'conformite', 'patrimoine', 'energie', 'achat', 'flex'],
+  resp_immobilier: ['cockpit', 'patrimoine', 'conformite', 'energie', 'achat', 'flex'],
+  resp_site: ['cockpit', 'patrimoine', 'energie', 'conformite', 'achat', 'flex'],
+
+  // Default order (no role or unknown)
+  default: ['cockpit', 'conformite', 'energie', 'patrimoine', 'achat', 'flex'],
+};
+
+/**
+ * Reorders NAV_MODULES based on user role. Admin module always last.
+ * @param {string} role - User role key
+ * @param {boolean} isExpert - Expert mode (shows admin)
+ * @returns {Array} Ordered modules
+ */
+export function getOrderedModules(role, isExpert) {
+  const order = ROLE_MODULE_ORDER[role] || ROLE_MODULE_ORDER.default;
+  const byKey = Object.fromEntries(NAV_MODULES.map((m) => [m.key, m]));
+  const ordered = order.map((key) => byKey[key]).filter(Boolean);
+  if (isExpert && byKey.admin) ordered.push(byKey.admin);
+  return ordered;
+}
+
+/* ══════════════════════════════════════════════════════════════════
  * NAV_MAIN_SECTIONS — Miroir de NAV_SECTIONS utilisé par Breadcrumb.jsx.
  * Maintenu synchronisé avec NAV_SECTIONS (même labels, mêmes items).
  * ══════════════════════════════════════════════════════════════════ */
