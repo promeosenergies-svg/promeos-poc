@@ -37,6 +37,12 @@ export const createClientFromSirene = async (data) => {
   return response.data;
 };
 
+// ── Admin hydrate (F1 V117) ──
+export const hydrateSirenFromApi = async (siren) => {
+  const response = await api.post(`/admin/sirene/hydrate/${siren}`);
+  return response.data;
+};
+
 // ── Admin import ──
 export const importSireneFull = async (data) => {
   const response = await api.post('/admin/sirene/import-full', data);

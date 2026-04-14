@@ -455,7 +455,12 @@ def update_site_crud(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Met à jour un site."""
+    """Met à jour un site.
+
+    F3 V117 : si surface_m2/type/tertiaire_area_m2 changent, re-declenche
+    le scoring compliance (DT/BACS/APER) pour que le NextStepsHub post-Sirene
+    affiche des scores reels au lieu d'un ecran vide.
+    """
     site = db.query(Site).filter(Site.id == site_id, not_deleted(Site)).first()
     if not site:
         raise HTTPException(404, "Site introuvable")
@@ -465,8 +470,32 @@ def update_site_crud(
             updates["type"] = TypeSite(updates["type"])
         except ValueError:
             raise HTTPException(422, f"Type de site invalide : {updates['type']}")
+
+    compliance_impacting = {"surface_m2", "type", "tertiaire_area_m2"}
+    needs_recompute = bool(compliance_impacting & updates.keys())
+
     for field, value in updates.items():
         setattr(site, field, value)
+
+    # Propagation automatique tertiaire_area_m2 = surface_m2 si tertiaire + absent
+    if "surface_m2" in updates and site.surface_m2 and not site.tertiaire_area_m2:
+        from services.onboarding_service import is_tertiaire
+
+        if is_tertiaire(site.type):
+            site.tertiaire_area_m2 = site.surface_m2
+
+    db.flush()
+
+    if needs_recompute:
+        try:
+            from services.compliance_coordinator import recompute_site_full
+
+            recompute_site_full(db, site_id)
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).warning("compliance recompute failed for site %d: %s", site_id, e)
+
     db.commit()
     db.refresh(site)
     return _site_to_dict(site)

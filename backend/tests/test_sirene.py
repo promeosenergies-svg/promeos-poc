@@ -12,7 +12,6 @@ Couvre :
 
 import csv
 import io
-import json
 import os
 import tempfile
 from datetime import datetime, timezone
@@ -990,6 +989,87 @@ class TestLeadScore:
         assert data["lead_score"] is not None
         assert data["lead_score"]["segment"] == "GE"  # sample_ul_csv CARREFOUR categorie=GE
         assert data["lead_score"]["priority"] in ("A", "B")
+
+
+class TestV117Frictions:
+    """V117 : resolution des 3 frictions P0 identifiees par le walkthrough E2E V116."""
+
+    def test_f1_hydrate_endpoint_exists(self, app_client):
+        """F1 : L'endpoint POST /api/admin/sirene/hydrate/{siren} est enregistre."""
+        client, db = app_client
+        resp = client.post("/api/admin/sirene/hydrate/ABC")
+        assert resp.status_code == 400
+        assert "INVALID_SIREN" in str(resp.json())
+
+    def test_f2_hydrate_response_schema(self, db, monkeypatch):
+        """F2 : hydrate retourne etablissements_total_api + warning si missing."""
+        from services import sirene_hydrate
+
+        payload = {
+            "results": [
+                {
+                    "siren": "451321335",
+                    "nom_complet": "CARREFOUR HYPERMARCHES",
+                    "activite_principale": "47.11F",
+                    "categorie_entreprise": "GE",
+                    "etat_administratif": "A",
+                    "nombre_etablissements": 231,
+                    "siege": {
+                        "siret": "45132133500019",
+                        "nic": "00019",
+                        "code_postal": "91300",
+                        "libelle_commune": "MASSY",
+                    },
+                    "matching_etablissements": [],
+                }
+            ]
+        }
+
+        class FakeResp:
+            status_code = 200
+
+            def raise_for_status(self):
+                pass
+
+            def json(fake_self):
+                return payload
+
+        monkeypatch.setattr(sirene_hydrate.httpx, "get", lambda *a, **kw: FakeResp())
+
+        result = sirene_hydrate.hydrate_siren_from_api(db, "451321335")
+        assert result["etablissements_hydrated"] == 1
+        assert result["etablissements_total_api"] == 231
+        assert result["etablissements_missing"] == 230
+        assert result["warning"] is not None
+        assert "non hydrate" in result["warning"]
+
+    def test_f3_patch_site_surface_triggers_compliance(self, app_client, sample_ul_csv, sample_etab_csv):
+        """F3 : PATCH sites/{id} avec surface_m2 declenche auto-recompute compliance."""
+        client, db = app_client
+        run = SireneSyncRun(sync_type="full", started_at=datetime.now(timezone.utc), status="running")
+        db.add(run)
+        db.flush()
+        import_full_unites_legales(db, sample_ul_csv, SNAPSHOT, run)
+        import_full_etablissements(db, sample_etab_csv, SNAPSHOT, run)
+
+        resp = client.post(
+            "/api/onboarding/from-sirene",
+            json={
+                "siren": "552032534",
+                "etablissement_sirets": ["55203253400017"],
+            },
+        )
+        assert resp.status_code == 200
+        site_id = resp.json()["sites"][0]["id"]
+
+        site = db.query(Site).filter_by(id=site_id).first()
+        assert site.surface_m2 is None
+
+        patch = client.patch(f"/api/patrimoine/crud/sites/{site_id}", json={"surface_m2": 1500})
+        assert patch.status_code == 200
+
+        db.refresh(site)
+        assert site.surface_m2 == 1500
 
 
 class TestNaf25Resolver:

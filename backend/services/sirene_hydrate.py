@@ -39,10 +39,17 @@ def hydrate_siren_from_api(db: Session, siren: str) -> dict:
     if len(siren) != 9 or not siren.isdigit():
         raise ValueError(f"SIREN invalide : {siren}")
 
+    # matching_size : max d'etablissements retournes dans matching_etablissements.
+    # L'API ne retourne PAS tous les etabs d'un SIREN (c'est une recherche, pas un listing).
+    # Pour les groupes >100 etabs, seul l'import CSV complet est exhaustif.
     try:
         resp = httpx.get(
             _API_BASE,
-            params={"q": siren, "per_page": 5},
+            params={
+                "q": siren,
+                "per_page": 1,
+                "matching_size": 100,
+            },
             timeout=_TIMEOUT,
         )
         resp.raise_for_status()
@@ -139,17 +146,30 @@ def hydrate_siren_from_api(db: Session, siren: str) -> dict:
         existing.snapshot_date = now
 
     db.commit()
+    # Total reel d'etablissements selon l'API (peut etre >> etabs_payload pour les groupes)
+    nb_etabs_total_api = ent.get("nombre_etablissements") or len(etabs_payload)
+    missing = max(0, nb_etabs_total_api - len(etabs_payload))
+
     logger.info(
-        "hydrate_siren_from_api: siren=%s ul_inserted=%s etab_inserted=%d total=%d",
+        "hydrate_siren_from_api: siren=%s ul_inserted=%s etab_inserted=%d hydrated=%d total_api=%d",
         siren,
         ul_inserted,
         etab_inserted,
         len(etabs_payload),
+        nb_etabs_total_api,
     )
 
     return {
         "siren": siren,
         "ul_inserted": ul_inserted,
         "etablissements_inserted": etab_inserted,
-        "etablissements_total": len(etabs_payload),
+        "etablissements_hydrated": len(etabs_payload),
+        "etablissements_total_api": nb_etabs_total_api,
+        "etablissements_missing": missing,
+        "warning": (
+            f"{missing} etablissement(s) non hydrate(s) via l'API. "
+            "Pour un patrimoine exhaustif, utilisez l'import CSV INSEE."
+        )
+        if missing > 0
+        else None,
     }
