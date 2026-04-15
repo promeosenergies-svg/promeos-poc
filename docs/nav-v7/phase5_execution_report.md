@@ -151,7 +151,7 @@ Ces items ont été identifiés mais sont hors scope refonte nav :
 - Page `/priorites` (cockpit piloté par exception V103)
 - Différenciation produit `/` (perso) vs `/cockpit` (DG agrégée)
 - Full build frontend (évité en Phase 5 car ~65 min — le build baseline Phase 0 était vert)
-- Playwright screenshots visuels (à jouer manuellement avec `audit-screenshots/audit-agent.mjs`)
+- Playwright screenshots visuels (à jouer manuellement avec `tools/playwright/audit-agent.mjs`)
 - `/code-review:code-review` et `/simplify` (à jouer avant merge)
 
 ---

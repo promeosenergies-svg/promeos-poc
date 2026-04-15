@@ -1,0 +1,648 @@
+<?xml version="1.0"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<xsd:element name="Detail_Facturation" type="Detail"/>
+	<xsd:complexType name="Detail" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="En_Tete_Flux" type="En_Tete_Flux"/>
+			<xsd:element name="Rappel_En_Tete" type="Rappel_En_Tete"/>
+			<xsd:element name="Sous_Lot" type="Sous_Lot" maxOccurs="unbounded"/>
+			<xsd:element name="Sous_Total_Fichier" type="Sous_Total_Fichier"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="En_Tete_Flux" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Identifiant_Flux">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="20"/>
+						<xsd:minLength value="1"/>
+						<xsd:enumeration value="F12"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Libelle_Flux">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="250"/>
+						<xsd:minLength value="1"/>
+						<xsd:enumeration value="Flux de facture F12"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Version_XSD">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="10"/>
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Identifiant_Emetteur">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="20"/>
+						<xsd:minLength value="1"/>
+						<xsd:enumeration value="Enedis"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Identifiant_Destinataire" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="20"/>
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Date_Creation" type="xsd:dateTime"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Rappel_En_Tete" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Num_Facture">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="12"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Date_Facture" type="xsd:date"/>
+			<xsd:element name="Devise" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="3"/>
+						<xsd:enumeration value="EUR"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Agence_ERDF">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="4"/>
+						<xsd:pattern value="032[1-8]"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Gestionnaires" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Nom_Gestionnaire" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="40"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Telephone_Contact_ERDF" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="20"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Fax_Contact_ERDF" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="20"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="E_Mail_Contact_ERDF" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="60"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Sous_Lot" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Num_Sous_Lot">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="12"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Type_Facturation">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="EVNT"/>
+						<xsd:enumeration value="CYCL"/>
+						<xsd:enumeration value="RECT"/>
+						<xsd:enumeration value="ANNUL"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Id_PRM" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="14"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Id_Historique" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="10"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Commune" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Departement" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="3"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Date_Sous_Lot" type="xsd:date"/>
+			<xsd:element name="Code_Segmentation_ERDF" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="2"/>
+						<xsd:enumeration value="C2"/>
+						<xsd:enumeration value="C3"/>
+						<xsd:enumeration value="C4"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Type_Relation_Contractuelle" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="0"/>
+						<xsd:enumeration value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Type_Utilisateur_Reseau" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="PRO"/>
+						<xsd:enumeration value="PART"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Type_PRM" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="Hebergeur"/>
+						<xsd:enumeration value="Decomptant"/>
+						<xsd:enumeration value="Regroupement"/>
+						<xsd:enumeration value="Regroupement-Hebergeur"/>
+						<xsd:enumeration value="AutoconsommationCollective"/>
+						<xsd:enumeration value="Autoconso-Regroupement"/>
+						<xsd:enumeration value="Autoconso-Hebergeur"/>
+						<xsd:enumeration value="Autoconso-Regroup-Hebergeur"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Autoproducteur" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="Date_Anniversaire" type="xsd:date" minOccurs="0"/>
+			<xsd:element name="Puissance_Ponderee" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="8"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Periode_Observation_Active" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="Tarif_Souscrit" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="11"/>
+						<xsd:enumeration value="BTSUPLU"/>
+						<xsd:enumeration value="BTSUPMU"/>
+						<xsd:enumeration value="HTA5"/>
+						<xsd:enumeration value="HTA8"/>
+						<xsd:enumeration value="HTASansDiff"/>
+						<xsd:enumeration value="BTINFCUST"/>
+						<xsd:enumeration value="BTINFMUDT"/>
+						<xsd:enumeration value="BTINFLU"/>
+						<xsd:enumeration value="BTINFMUST"/>
+						<xsd:enumeration value="HTACU5"/>
+						<xsd:enumeration value="HTALU5"/>
+						<xsd:enumeration value="HTACUPM5"/>
+						<xsd:enumeration value="HTALUPM5"/>
+						<xsd:enumeration value="BTSUPLU4"/>
+						<xsd:enumeration value="BTSUPCU4"/>
+						<xsd:enumeration value="BTSUPLUACC"/>
+						<xsd:enumeration value="BTSUPCUACC"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Num_Depannage" type="xsd:string" minOccurs="0"/>
+			<xsd:element name="Motif_Rectif" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="MESURE_ERRONEE"/>
+						<xsd:enumeration value="PARAMETRE_CONTRACTUEL_ERRONE"/>
+						<xsd:enumeration value="ANOMALIE_COMPTAGE"/>
+						<xsd:enumeration value="FRAUDE"/>
+						<xsd:enumeration value="PRESTATION"/>
+						<xsd:enumeration value="CAS_ATYPIQUES"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Orig_Facture" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="12"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Date_Orig_Facture" type="xsd:date" minOccurs="0"/>
+			<xsd:element name="Orig_Sous_Lot" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="12"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Date_Orig_Sous_Lot" type="xsd:date" minOccurs="0"/>
+			<xsd:element name="CSPE_Appliquee" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="PS_Poste_Horosaisonnier" type="PS_Poste_Horosaisonnier" minOccurs="0" maxOccurs="8"/>
+			<xsd:element name="Donnees_Rectif" minOccurs="0">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="Id_PRM" minOccurs="0">
+							<xsd:simpleType>
+								<xsd:restriction base="xsd:string">
+									<xsd:length value="14"/>
+								</xsd:restriction>
+							</xsd:simpleType>
+						</xsd:element>
+						<xsd:element name="Id_Historique" minOccurs="0">
+							<xsd:simpleType>
+								<xsd:restriction base="xsd:string">
+									<xsd:maxLength value="10"/>
+								</xsd:restriction>
+							</xsd:simpleType>
+						</xsd:element>
+						<xsd:element name="Id_Rectif" minOccurs="0">
+							<xsd:simpleType>
+								<xsd:restriction base="xsd:string">
+									<xsd:maxLength value="8"/>
+								</xsd:restriction>
+							</xsd:simpleType>
+						</xsd:element>
+						<xsd:element name="Facture_Originale">
+							<xsd:simpleType>
+								<xsd:restriction base="xsd:string">
+									<xsd:maxLength value="12"/>
+								</xsd:restriction>
+							</xsd:simpleType>
+						</xsd:element>
+						<xsd:element name="Facture_Historique" type="xsd:boolean"/>
+						<xsd:element name="Date_Orig_Facture" type="xsd:date"/>
+						<xsd:element name="Divers" type="xsd:string" minOccurs="0"/>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="Element_Valorise" type="Element_Valorise" maxOccurs="unbounded"/>
+			<xsd:element name="Sous_Total" type="Sous_Total"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Donnee_Sup" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Code" type="xsd:string"/>
+			<xsd:element name="Libelle">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="70"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Valeur">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="3"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Unite_Quantite" type="Unite_Quantite" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Element_Valorise" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Id_EV">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="20"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Libelle_EV">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="250"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Debit_Credit">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="1"/>
+						<xsd:enumeration value="Y"/>
+						<xsd:enumeration value="Z"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="CSPE_Applicable" type="xsd:boolean"/>
+			<xsd:element name="Taux_TVA_Applicable">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="6"/>
+						<xsd:fractionDigits value="3"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Recapitulatif">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="CGEST"/>
+						<xsd:enumeration value="CCOMP"/>
+						<xsd:enumeration value="CAC"/>
+						<xsd:enumeration value="CAS"/>
+						<xsd:enumeration value="CSF"/>
+						<xsd:enumeration value="CSV"/>
+						<xsd:enumeration value="CMDPS"/>
+						<xsd:enumeration value="CREAC"/>
+						<xsd:enumeration value="CSPE"/>
+						<xsd:enumeration value="PREST"/>
+						<xsd:enumeration value="FRAIS"/>
+						<xsd:enumeration value="REM"/>
+						<xsd:enumeration value="AUTRE"/>
+						<xsd:enumeration value="CRGPT"/>
+						<xsd:enumeration value="CGCU"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Autres_Taxes" minOccurs="0" maxOccurs="unbounded">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="Type_Taxe">
+							<xsd:simpleType>
+								<xsd:restriction base="xsd:string">
+									<xsd:minLength value="1"/>
+									<xsd:maxLength value="4"/>
+								</xsd:restriction>
+							</xsd:simpleType>
+						</xsd:element>
+						<xsd:element name="Taxe_Applicable" type="xsd:boolean"/>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:choice>
+				<xsd:element name="Acheminement" type="Acheminement"/>
+				<xsd:element name="Prestations" type="Prestations"/>
+				<xsd:element name="Option" type="Option"/>
+				<xsd:element name="Frais_Divers" type="Frais_Divers"/>
+			</xsd:choice>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Sous_Total" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Montant_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Sous_Total_Fichier" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Rang_Fichier">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:positiveInteger">
+						<xsd:totalDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Nb_Fichier">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:positiveInteger">
+						<xsd:totalDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Nb_Sous_Lot">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:positiveInteger">
+						<xsd:totalDigits value="12"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Sous_Total_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="PS_Poste_Horosaisonnier" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Nom_Poste_Horosaisonnier">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="Pointe"/>
+						<xsd:enumeration value="HPH"/>
+						<xsd:enumeration value="HCH"/>
+						<xsd:enumeration value="HPE"/>
+						<xsd:enumeration value="HCE"/>
+						<xsd:enumeration value="HCDemiSaison"/>
+						<xsd:enumeration value="HPDemiSaison"/>
+						<xsd:enumeration value="JA"/>
+						<xsd:enumeration value="HP"/>
+						<xsd:enumeration value="HC"/>
+						<xsd:enumeration value="PM"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Puissance_Souscrite">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:integer">
+						<xsd:totalDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Acheminement">
+		<xsd:sequence>
+			<xsd:element name="Date_Debut" type="xsd:date"/>
+			<xsd:element name="Date_Fin" type="xsd:date" minOccurs="0"/>
+			<xsd:element name="Quantite">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Unite_Quantite" type="Unite_Quantite"/>
+			<xsd:element name="Prix_Unitaire">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Montant_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Donnee_Sup" type="Donnee_Sup" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Prestations">
+		<xsd:sequence>
+			<xsd:element name="Date_Effet" type="xsd:date"/>
+			<xsd:element name="Date_Envoi" type="xsd:date"/>
+			<xsd:element name="Num_Dossier">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="10"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Quantite">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Unite_Quantite" type="Unite_Quantite"/>
+			<xsd:element name="Prix_Unitaire">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Montant_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Donnee_Sup" type="Donnee_Sup" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Option">
+		<xsd:sequence>
+			<xsd:element name="Date_Debut" type="xsd:date"/>
+			<xsd:element name="Date_Fin" type="xsd:date" minOccurs="0"/>
+			<xsd:element name="Date_Souscription" type="xsd:date"/>
+			<xsd:element name="Quantite">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Unite_Quantite" type="Unite_Quantite"/>
+			<xsd:element name="Prix_Unitaire">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Montant_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Frais_Divers">
+		<xsd:sequence>
+			<xsd:element name="Date_Debut" type="xsd:date"/>
+			<xsd:element name="Date_Fin" type="xsd:date" minOccurs="0"/>
+			<xsd:element name="Quantite">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Unite_Quantite" type="Unite_Quantite"/>
+			<xsd:element name="Prix_Unitaire">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Montant_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="Unite_Quantite">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="c.j"/>
+			<xsd:enumeration value="EUR"/>
+			<xsd:enumeration value="h"/>
+			<xsd:enumeration value="j"/>
+			<xsd:enumeration value="kVA"/>
+			<xsd:enumeration value="kVA.j"/>
+			<xsd:enumeration value="kVArh"/>
+			<xsd:enumeration value="kW"/>
+			<xsd:enumeration value="kW.j"/>
+			<xsd:enumeration value="kWh"/>
+			<xsd:enumeration value="m"/>
+			<xsd:enumeration value="p.j"/>
+			<xsd:enumeration value="unite"/>
+			<xsd:enumeration value="cellule"/>
+			<xsd:enumeration value="km"/>
+			<xsd:enumeration value="kW.km.j"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+</xsd:schema>

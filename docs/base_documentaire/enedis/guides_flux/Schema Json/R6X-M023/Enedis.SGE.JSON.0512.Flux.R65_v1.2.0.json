@@ -1,0 +1,146 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "header": {
+      "type": "object",
+      "properties": {
+        "siDemandeur": {
+          "type": "string"
+        },
+        "typeDestinataire": {
+          "type": "string"
+        },
+        "idDestinataire": {
+          "type": "string"
+        },
+        "codeFlux": {
+          "type": "string"
+        },
+        "idDemande": {
+          "type": "string"
+        },
+        "modePublication": {
+          "type": "string"
+        },
+        "idCanalContact": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+		"publicationCrp":{
+			"type":"string"
+		}
+      },
+      "required": [
+        "siDemandeur",
+        "typeDestinataire",
+        "idDestinataire",
+        "codeFlux",
+        "idDemande",
+        "modePublication",
+        "idCanalContact",
+        "format"
+      ]
+    },
+    "mesures": {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "idPrm": {
+              "type": "string"
+            },
+            "etapeMetier": {
+              "type": "string"
+            },
+            "periode": {
+              "type": "object",
+              "properties": {
+                "dateDebut": {
+                  "type": "string"
+                },
+                "dateFin": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "dateDebut",
+                "dateFin"
+              ]
+            },
+            "typeValeur": {
+              "type": "string"
+            },
+            "modeCalcul": {
+              "type": "string"
+            },
+            "pas": {
+              "type": "string"
+            },
+            "grandeur": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "grandeurMetier": {
+                      "type": "string"
+                    },
+                    "grandeurPhysique": {
+                      "type": "string"
+                    },
+                    "unite": {
+                      "type": "string"
+                    },
+                    "points": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "v": {
+                              "type": "string"
+                            },
+                            "d": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "v",
+                            "d"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "grandeurMetier",
+                    "grandeurPhysique",
+                    "unite",
+                    "points"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "idPrm",
+            "etapeMetier",
+            "periode",
+            "typeValeur",
+            "modeCalcul",
+            "pas",
+            "grandeur"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "header",
+    "mesures"
+  ]
+}

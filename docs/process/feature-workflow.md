@@ -110,6 +110,8 @@ Run the feature against real data or realistic conditions, not just test fixture
 
 **Why this step matters:** Test fixtures are controlled. Real data has surprises (encoding issues, unexpected formats, edge cases in actual files). The SF2 real-file test (`ingest_real_db.py`) caught issues that synthetic fixtures didn't.
 
+**Storage rule:** Generated validation artifacts (screenshots, raw capture dumps, replay outputs) should be written under `artifacts/`, not at the repo root.
+
 ---
 
 ### 7. SHIP — PR, review, merge
@@ -129,6 +131,8 @@ Create the PR, get it reviewed, merge.
 ## Tracking Progress
 
 Feature progress is tracked in `ROADMAP.md` at the repo root. Each feature shows its current step (1–7) and key references (spec, plan, PR).
+
+The documentation index for the shared repo layout lives in `docs/README.md`.
 
 ## Adapting the Framework
 

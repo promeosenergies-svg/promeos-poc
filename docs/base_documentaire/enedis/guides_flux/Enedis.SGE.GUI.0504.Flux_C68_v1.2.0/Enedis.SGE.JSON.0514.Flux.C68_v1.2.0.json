@@ -1,0 +1,1170 @@
+{
+  "$schema" : "https://json-schema.org/draft/2019-09/schema",
+  "$defs" : {
+    "Adresse" : {
+      "type" : "object",
+      "properties" : {
+        "ligne1" : {
+          "type" : "string"
+        },
+        "ligne2" : {
+          "type" : "string"
+        },
+        "ligne3" : {
+          "type" : "string"
+        },
+        "ligne4" : {
+          "type" : "string"
+        },
+        "ligne5" : {
+          "type" : "string"
+        },
+        "ligne6" : {
+          "type" : "string"
+        },
+        "ligne7" : {
+          "type" : "string"
+        }
+      }
+    },
+    "Calendrier" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string"
+        },
+        "libelle" : {
+          "type" : "string"
+        }
+      }
+    },
+    "ClassePrecision" : {
+      "type" : "string"
+    },
+    "ClasseTemporelle" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string"
+        },
+        "libelle" : {
+          "type" : "string"
+        },
+        "puissance" : {
+          "$ref" : "#/$defs/Puissance"
+        }
+      }
+    },
+    "DomaineTension" : {
+      "type" : "string"
+    },
+    "Duree" : {
+      "type" : "object",
+      "properties" : {
+        "unite" : {
+          "$ref" : "#/$defs/UniteDuree"
+        },
+        "valeur" : {
+          "type" : "number"
+        }
+      }
+    },
+    "GrandeurPhysique" : {
+      "type" : "object",
+      "properties" : {
+        "unite" : {
+          "$ref" : "#/$defs/UniteGrandeurPhysique"
+        },
+        "valeur" : {
+          "type" : "number"
+        }
+      }
+    },
+    "GroupePeriodeMobile" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string"
+        },
+        "libelle" : {
+          "type" : "string"
+        }
+      }
+    },
+    "Interlocuteur" : {
+      "type" : "object",
+      "properties" : {
+        "adresse" : {
+          "$ref" : "#/$defs/Adresse"
+        },
+        "personnePhysique" : {
+          "$ref" : "#/$defs/PersonnePhysique"
+        }
+      }
+    },
+    "LibelleCode" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string"
+        }
+      }
+    },
+    "LongueurLiaison" : {
+      "type" : "object",
+      "properties" : {
+        "unite" : {
+          "type" : "string"
+        },
+        "valeur" : {
+          "type" : "number"
+        }
+      }
+    },
+    "Periodicite" : {
+      "type" : "string"
+    },
+    "PersonnePhysique" : {
+      "type" : "object",
+      "properties" : {
+        "civilite" : {
+          "type" : "string"
+        },
+        "nom" : {
+          "type" : "string"
+        },
+        "prenom" : {
+          "type" : "string"
+        }
+      }
+    },
+    "PosteHoraire" : {
+      "type" : "object",
+      "properties" : {
+        "classeTemporellePosteHoraire" : {
+          "type" : "string"
+        },
+        "periodesHoraires" : {
+          "type" : "string"
+        }
+      }
+    },
+    "Puissance" : {
+      "type" : "object",
+      "properties" : {
+        "unite" : {
+          "type" : "string"
+        },
+        "valeur" : {
+          "type" : "string"
+        }
+      }
+    },
+    "RegimePropriete" : {
+      "type" : "string"
+    },
+    "Restriction" : {
+      "type" : "object",
+      "properties" : {
+        "date" : {
+          "type" : "string"
+        },
+        "motif" : {
+          "type" : "string"
+        }
+      }
+    },
+    "Situation" : {
+      "type" : "string"
+    },
+    "TensionLivraison" : {
+      "type" : "string"
+    },
+    "UniteDuree" : {
+      "type" : "string"
+    },
+    "UniteGrandeurPhysique" : {
+      "type" : "string"
+    }
+  },
+  "type" : "array",
+  "items" : {
+    "type" : "object",
+    "properties" : {
+      "donneesGenerales" : {
+        "type" : "object",
+        "properties" : {
+          "adresseInstallationNonNormalisee" : {
+            "type" : "object",
+            "properties" : {
+              "batiment" : {
+                "type" : "string"
+              },
+              "codePostal" : {
+                "type" : "string"
+              },
+              "commune" : {
+                "type" : "string"
+              },
+              "escalierEtageAppartement" : {
+                "type" : "string"
+              },
+              "lieuDit" : {
+                "type" : "string"
+              },
+              "numeroNomVoie" : {
+                "type" : "string"
+              }
+            }
+          },
+          "typage" : {
+            "type" : "object",
+            "properties" : {
+              "alimentationComplementaire" : {
+                "type" : "boolean"
+              },
+              "alimentationSecours" : {
+                "type" : "boolean"
+              },
+              "bornePoste" : {
+                "type" : "boolean"
+              },
+              "hebergeurDecomptant" : {
+                "$ref" : "#/$defs/LibelleCode"
+              },
+              "regroupementTurpe" : {
+                "$ref" : "#/$defs/LibelleCode"
+              },
+              "sensible" : {
+                "type" : "boolean"
+              },
+              "borneFixe" : {
+                "type" : "boolean"
+              }
+            }
+          }
+        }
+      },
+      "idPrm" : {
+        "type" : "string"
+      },
+      "installationsProduction" : {
+        "type" : "array",
+        "items" : {
+          "type" : "object",
+          "properties" : {
+            "filiereProduction" : {
+              "type" : "string"
+            },
+            "technologie" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "optionsContractuelles" : {
+        "type" : "object",
+        "properties" : {
+          "bilansContinuiteFourniture" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "dateReferenceCoupures" : {
+                  "type" : "string"
+                },
+                "idFonctionnel" : {
+                  "type" : "string"
+                },
+                "moisReferenceCoupures" : {
+                  "type" : "integer"
+                },
+                "nbCoupuresBreves" : {
+                  "type" : "integer"
+                },
+                "nbCoupuresLongues" : {
+                  "type" : "integer"
+                },
+                "nbTotalCoupures" : {
+                  "type" : "integer"
+                },
+                "periodicite" : {
+                  "$ref" : "#/$defs/Periodicite"
+                },
+                "type" : {
+                  "type" : "string"
+                },
+                "typeCoupures" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "bilansQualiteFourniture" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "dateReferenceQualiteOnde" : {
+                  "type" : "string"
+                },
+                "dureeCreux" : {
+                  "$ref" : "#/$defs/Duree"
+                },
+                "idFonctionnel" : {
+                  "type" : "string"
+                },
+                "nbCreux" : {
+                  "type" : "number"
+                },
+                "periodicite" : {
+                  "$ref" : "#/$defs/Periodicite"
+                },
+                "profondeurCreux" : {
+                  "type" : "number"
+                }
+              }
+            }
+          },
+          "calendriersFournisseur" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "code" : {
+                  "type" : "string"
+                },
+                "periodeMobileAutorisee" : {
+                  "type" : "boolean"
+                },
+                "profilable" : {
+                  "type" : "boolean"
+                }
+              }
+            }
+          },
+          "courbesCharges" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "transmission" : {
+                  "type" : "boolean"
+                },
+                "utilisationRecoflux" : {
+                  "type" : "boolean"
+                }
+              }
+            }
+          },
+          "periodesObservation" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "nbMois" : {
+                  "$ref" : "#/$defs/Duree"
+                }
+              }
+            }
+          },
+          "protectionsChantier" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "nbPortees" : {
+                  "type" : "integer"
+                }
+              }
+            }
+          },
+          "telecommandesInterrupteurs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "dateResiliation" : {
+                  "type" : "string"
+                },
+                "dateSouscription" : {
+                  "type" : "string"
+                },
+                "nbDirections" : {
+                  "type" : "integer"
+                }
+              }
+            }
+          },
+          "transmissionsDonneesMesure" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "donneesCorrigees" : {
+                  "type" : "boolean"
+                },
+                "frequence" : {
+                  "$ref" : "#/$defs/Periodicite"
+                },
+                "idFonctionnel" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "rattachements" : {
+        "type" : "array",
+        "items" : {
+          "type" : "object",
+          "properties" : {
+            "dateDebut" : {
+              "type" : "string"
+            },
+            "dateFin" : {
+              "type" : "string"
+            },
+            "listePointsRattaches" : {
+              "type" : "array",
+              "items" : {
+                "type" : "object",
+                "properties" : {
+                  "prmIdRattache" : {
+                    "type" : "string"
+                  },
+                  "puissanceMaximaleAppelee" : {
+                    "type" : "object",
+                    "properties" : {
+                      "unite" : {
+                        "$ref" : "#/$defs/UniteGrandeurPhysique"
+                      },
+                      "valeur" : {
+                        "type" : "number"
+                      }
+                    }
+                  },
+                  "typePointRattache" : {
+                    "type" : "string"
+                  }
+                }
+              }
+            },
+            "longueurLiaisonAerienneHTA" : {
+              "$ref" : "#/$defs/LongueurLiaison"
+            },
+            "longueurLiaisonSouterraineHTA" : {
+              "$ref" : "#/$defs/LongueurLiaison"
+            },
+            "pointsConfondus" : {
+              "type" : "boolean"
+            },
+            "typeRattachement" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "situationAlimentation" : {
+        "type" : "object",
+        "properties" : {
+          "alimentationPrincipale" : {
+            "type" : "object",
+            "properties" : {
+              "domaineTension" : {
+                "$ref" : "#/$defs/DomaineTension"
+              },
+              "installationClient" : {
+                "type" : "object",
+                "properties" : {
+                  "dispositifParticulierLimitationPerturbations" : {
+                    "type" : "string"
+                  },
+                  "modeCouplageProductionAutonome" : {
+                    "type" : "string"
+                  },
+                  "nbMoyensProductionAutonomes" : {
+                    "type" : "integer"
+                  },
+                  "puissanceTotaleMoyensProductionAutonomes" : {
+                    "$ref" : "#/$defs/GrandeurPhysique"
+                  }
+                }
+              },
+              "longueurLiaisonAerienne" : {
+                "$ref" : "#/$defs/LongueurLiaison"
+              },
+              "longueurLiaisonSouterraine" : {
+                "$ref" : "#/$defs/LongueurLiaison"
+              },
+              "modeAlimentationApresCompteur" : {
+                "type" : "string"
+              },
+              "nbFilsBranchement" : {
+                "type" : "integer"
+              },
+              "puissanceLimiteSoutirage" : {
+                "$ref" : "#/$defs/GrandeurPhysique"
+              },
+              "puissanceRaccordementInjection" : {
+                "$ref" : "#/$defs/GrandeurPhysique"
+              },
+              "puissanceRaccordementSoutirage" : {
+                "$ref" : "#/$defs/GrandeurPhysique"
+              },
+              "tensionContractuelle" : {
+                "$ref" : "#/$defs/GrandeurPhysique"
+              },
+              "tensionLivraison" : {
+                "$ref" : "#/$defs/TensionLivraison"
+              },
+              "zoneQualiteDesserte" : {
+                "type" : "string"
+              }
+            }
+          },
+          "coupure" : {
+            "type" : "object",
+            "properties" : {
+              "localisation" : {
+                "type" : "string"
+              },
+              "restriction" : {
+                "$ref" : "#/$defs/Restriction"
+              }
+            }
+          },
+          "etatAlimentation" : {
+            "type" : "string"
+          },
+          "limiteur" : {
+            "type" : "object",
+            "properties" : {
+              "puissanceLimitee" : {
+                "$ref" : "#/$defs/GrandeurPhysique"
+              },
+              "restriction" : {
+                "$ref" : "#/$defs/Restriction"
+              }
+            }
+          },
+          "listeAlimentationComplementaire" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "domaineTension" : {
+                  "$ref" : "#/$defs/DomaineTension"
+                },
+                "longueurLiaisonAerienne" : {
+                  "$ref" : "#/$defs/LongueurLiaison"
+                },
+                "longueurLiaisonSouterraine" : {
+                  "$ref" : "#/$defs/LongueurLiaison"
+                },
+                "nbCellules" : {
+                  "type" : "integer"
+                },
+                "puissanceRaccordementSoutirage" : {
+                  "$ref" : "#/$defs/GrandeurPhysique"
+                },
+                "tensionLivraison" : {
+                  "$ref" : "#/$defs/TensionLivraison"
+                }
+              }
+            }
+          },
+          "listeAlimentationSecours" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "alimentationSecoursGarantie" : {
+                  "type" : "boolean"
+                },
+                "domaineTension" : {
+                  "$ref" : "#/$defs/DomaineTension"
+                },
+                "longueurLiaisonAerienne" : {
+                  "$ref" : "#/$defs/LongueurLiaison"
+                },
+                "longueurLiaisonSouterraine" : {
+                  "$ref" : "#/$defs/LongueurLiaison"
+                },
+                "modeBasculePrincipaleSecours" : {
+                  "type" : "string"
+                },
+                "nbCellules" : {
+                  "type" : "integer"
+                },
+                "prorataPuissance" : {
+                  "type" : "number"
+                },
+                "puissanceReserveeBt" : {
+                  "$ref" : "#/$defs/GrandeurPhysique"
+                },
+                "puissanceReserveeHt" : {
+                  "$ref" : "#/$defs/GrandeurPhysique"
+                },
+                "tensionLivraison" : {
+                  "$ref" : "#/$defs/TensionLivraison"
+                },
+                "transformateurDifferentAlimentationPrincipale" : {
+                  "type" : "boolean"
+                }
+              }
+            }
+          }
+        }
+      },
+      "situationComptage" : {
+        "type" : "object",
+        "properties" : {
+          "boitierTelereport" : {
+            "type" : "object",
+            "properties" : {
+              "presence" : {
+                "type" : "boolean"
+              }
+            }
+          },
+          "caracteristiquesReleve" : {
+            "type" : "object",
+            "properties" : {
+              "dureeCycle" : {
+                "type" : "object",
+                "properties" : {
+                  "unite" : {
+                    "$ref" : "#/$defs/UniteDuree"
+                  },
+                  "valeur" : {
+                    "type" : "number"
+                  }
+                }
+              },
+              "modeTraitement" : {
+                "type" : "string"
+              },
+              "periodicite" : {
+                "$ref" : "#/$defs/Periodicite"
+              },
+              "plage" : {
+                "type" : "string"
+              }
+            }
+          },
+          "compteurs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "accessibilite" : {
+                  "type" : "boolean"
+                },
+                "coefficientLecture" : {
+                  "type" : "number"
+                },
+                "intensiteNominale" : {
+                  "type" : "string"
+                },
+                "matricule" : {
+                  "type" : "string"
+                },
+                "modeleCompteur" : {
+                  "type" : "object",
+                  "properties" : {
+                    "nbCadrans" : {
+                      "type" : "integer"
+                    },
+                    "nbRoues" : {
+                      "type" : "integer"
+                    },
+                    "sousType" : {
+                      "type" : "string"
+                    }
+                  }
+                },
+                "nbFils" : {
+                  "type" : "integer"
+                },
+                "numeroSerie" : {
+                  "type" : "string"
+                },
+                "parametresTeleAcces" : {
+                  "type" : "object",
+                  "properties" : {
+                    "cleClient" : {
+                      "type" : "string"
+                    },
+                    "cleClientCourbeCharge" : {
+                      "type" : "string"
+                    },
+                    "cleEsclave" : {
+                      "type" : "string"
+                    },
+                    "etatLigneTel" : {
+                      "type" : "string"
+                    },
+                    "fenetreEcouteClient" : {
+                      "type" : "object",
+                      "properties" : {
+                        "dateHeureDebut" : {
+                          "type" : "string"
+                        },
+                        "duree" : {
+                          "$ref" : "#/$defs/Duree"
+                        }
+                      }
+                    },
+                    "numTelephone" : {
+                      "type" : "string"
+                    },
+                    "numVoieAiguillage" : {
+                      "type" : "integer"
+                    }
+                  }
+                },
+                "periodeDeploiementLinky" : {
+                  "type" : "string"
+                },
+                "programmationHoraire" : {
+                  "type" : "object",
+                  "properties" : {
+                    "posteHoraire1" : {
+                      "$ref" : "#/$defs/PosteHoraire"
+                    },
+                    "posteHoraire2" : {
+                      "$ref" : "#/$defs/PosteHoraire"
+                    },
+                    "posteHoraire3" : {
+                      "$ref" : "#/$defs/PosteHoraire"
+                    },
+                    "posteHoraire4" : {
+                      "$ref" : "#/$defs/PosteHoraire"
+                    },
+                    "posteHoraire5" : {
+                      "$ref" : "#/$defs/PosteHoraire"
+                    }
+                  }
+                },
+                "puissanceMaximale" : {
+                  "type" : "object",
+                  "properties" : {
+                    "unite" : {
+                      "type" : "string"
+                    },
+                    "valeur" : {
+                      "type" : "number"
+                    }
+                  }
+                },
+                "regimePropriete" : {
+                  "$ref" : "#/$defs/RegimePropriete"
+                },
+                "situation" : {
+                  "$ref" : "#/$defs/Situation"
+                },
+                "tension" : {
+                  "type" : "string"
+                },
+                "ticActivable" : {
+                  "type" : "boolean"
+                },
+                "ticActivee" : {
+                  "type" : "boolean"
+                },
+                "ticStandard" : {
+                  "type" : "boolean"
+                }
+              }
+            }
+          },
+          "disjoncteur" : {
+            "type" : "object",
+            "properties" : {
+              "accessibilite" : {
+                "type" : "boolean"
+              },
+              "calibre" : {
+                "type" : "string"
+              },
+              "intensiteReglage" : {
+                "type" : "object",
+                "properties" : {
+                  "unite" : {
+                    "type" : "string"
+                  },
+                  "valeur" : {
+                    "type" : "number"
+                  }
+                }
+              },
+              "nature" : {
+                "type" : "string"
+              },
+              "nbPoles" : {
+                "type" : "integer"
+              },
+              "regimePropriete" : {
+                "$ref" : "#/$defs/RegimePropriete"
+              },
+              "situation" : {
+                "$ref" : "#/$defs/Situation"
+              }
+            }
+          },
+          "dispositifComptage" : {
+            "type" : "object",
+            "properties" : {
+              "eligiblePeriodeMobile" : {
+                "type" : "boolean"
+              },
+              "media" : {
+                "type" : "string"
+              },
+              "modeReleve" : {
+                "type" : "string"
+              },
+              "particularite" : {
+                "type" : "string"
+              },
+              "teleoperable" : {
+                "type" : "boolean"
+              },
+              "tensionComptage" : {
+                "type" : "string"
+              },
+              "typeComptage" : {
+                "type" : "string"
+              }
+            }
+          },
+          "pertes" : {
+            "type" : "object",
+            "properties" : {
+              "facteurCorrectifPertesFer" : {
+                "type" : "number"
+              },
+              "facteurCorrectifPertesJoules" : {
+                "type" : "number"
+              },
+              "facteurCorrectifPertesReactives" : {
+                "type" : "number"
+              }
+            }
+          },
+          "relais" : {
+            "type" : "object",
+            "properties" : {
+              "nature" : {
+                "type" : "string"
+              },
+              "plageHeuresCreuses" : {
+                "type" : "object",
+                "properties" : {
+                  "libelle" : {
+                    "type" : "string"
+                  }
+                }
+              },
+              "regimePropriete" : {
+                "$ref" : "#/$defs/RegimePropriete"
+              },
+              "typeCommande" : {
+                "type" : "string"
+              }
+            }
+          },
+          "transformateurCourant" : {
+            "type" : "object",
+            "properties" : {
+              "calibre" : {
+                "type" : "string"
+              },
+              "classePrecision" : {
+                "$ref" : "#/$defs/ClassePrecision"
+              },
+              "couplage" : {
+                "type" : "string"
+              },
+              "position" : {
+                "type" : "string"
+              },
+              "regimePropriete" : {
+                "$ref" : "#/$defs/RegimePropriete"
+              }
+            }
+          },
+          "transformateurTension" : {
+            "type" : "object",
+            "properties" : {
+              "calibre" : {
+                "type" : "string"
+              },
+              "classePrecision" : {
+                "$ref" : "#/$defs/ClassePrecision"
+              },
+              "couplage" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      },
+      "situationsContractuelles" : {
+        "type" : "array",
+        "items" : {
+          "type" : "object",
+          "properties" : {
+            "clientFinal" : {
+              "type" : "object",
+              "properties" : {
+                "categorie" : {
+                  "type" : "string"
+                },
+                "informationsClient" : {
+                  "type" : "object",
+                  "properties" : {
+                    "adresse" : {
+                      "$ref" : "#/$defs/Adresse"
+                    },
+                    "coordonneesContact" : {
+                      "type" : "object",
+                      "properties" : {
+                        "email" : {
+                          "type" : "string"
+                        },
+                        "fax" : {
+                          "type" : "string"
+                        },
+                        "telephoneFixe" : {
+                          "type" : "string"
+                        },
+                        "telephonePortable" : {
+                          "type" : "string"
+                        }
+                      }
+                    },
+                    "personneMorale" : {
+                      "type" : "object",
+                      "properties" : {
+                        "activiteNaf" : {
+                          "type" : "string"
+                        },
+                        "denominationSociale" : {
+                          "type" : "string"
+                        },
+                        "nomCommercial" : {
+                          "type" : "string"
+                        },
+                        "numSiren" : {
+                          "type" : "string"
+                        },
+                        "numSiret" : {
+                          "type" : "string"
+                        },
+                        "secteur" : {
+                          "type" : "string"
+                        }
+                      }
+                    },
+                    "personnePhysique" : {
+                      "$ref" : "#/$defs/PersonnePhysique"
+                    }
+                  }
+                },
+                "interlocuteurClient" : {
+                  "$ref" : "#/$defs/Interlocuteur"
+                },
+                "interlocuteurTechnique" : {
+                  "$ref" : "#/$defs/Interlocuteur"
+                },
+                "referenceClient" : {
+                  "type" : "string"
+                },
+                "typeResidence" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "dateDebut" : {
+              "type" : "string"
+            },
+            "informationsContractuelles" : {
+              "type" : "object",
+              "properties" : {
+                "contrat" : {
+                  "type" : "object",
+                  "properties" : {
+                    "referenceContrat" : {
+                      "type" : "string"
+                    }
+                  }
+                },
+                "etatContractuel" : {
+                  "type" : "string"
+                },
+                "siContractuel" : {
+                  "type" : "object",
+                  "properties" : {
+                    "application" : {
+                      "type" : "string"
+                    },
+                    "instance" : {
+                      "type" : "string"
+                    }
+                  }
+                }
+              }
+            },
+            "nature" : {
+              "type" : "string"
+            },
+            "segment" : {
+              "type" : "string"
+            },
+            "structureTarifaire" : {
+              "type" : "object",
+              "properties" : {
+                "codeTarifAcheminement" : {
+                  "type" : "string"
+                },
+                "contexteUtilisation" : {
+                  "type" : "string"
+                },
+                "forfait" : {
+                  "type" : "object",
+                  "properties" : {
+                    "unite" : {
+                      "type" : "string"
+                    },
+                    "valeur" : {
+                      "type" : "number"
+                    }
+                  }
+                },
+                "formuleTarifaireAcheminement" : {
+                  "type" : "object",
+                  "properties" : {
+                    "code" : {
+                      "type" : "string"
+                    },
+                    "libelle" : {
+                      "type" : "string"
+                    }
+                  }
+                },
+                "grilleFournisseur" : {
+                  "type" : "object",
+                  "properties" : {
+                    "calendrier" : {
+                      "$ref" : "#/$defs/Calendrier"
+                    },
+                    "classesTemporelles" : {
+                      "type" : "array",
+                      "items" : {
+                        "$ref" : "#/$defs/ClasseTemporelle"
+                      }
+                    }
+                  }
+                },
+                "grilleTurpe" : {
+                  "type" : "object",
+                  "properties" : {
+                    "calendrier" : {
+                      "$ref" : "#/$defs/Calendrier"
+                    },
+                    "classesTemporelles" : {
+                      "type" : "array",
+                      "items" : {
+                        "$ref" : "#/$defs/ClasseTemporelle"
+                      }
+                    }
+                  }
+                },
+                "groupePeriodeMobile" : {
+                  "$ref" : "#/$defs/GroupePeriodeMobile"
+                },
+                "groupePeriodeMobileDistributeur" : {
+                  "$ref" : "#/$defs/GroupePeriodeMobile"
+                },
+                "puissanceSouscrite" : {
+                  "$ref" : "#/$defs/Puissance"
+                },
+                "typeOffre" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "typeInjection" : {
+              "type" : "boolean"
+            },
+            "refusPoseAMM" : {
+              "type" : "boolean"
+            },
+            "dateRefusPoseAMM" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "syntheseContractuelle" : {
+        "type" : "object",
+        "properties" : {
+          "autoConsommationCollective" : {
+            "type" : "object",
+            "properties" : {
+              "libelle" : {
+                "type" : "string"
+              }
+            }
+          },
+          "autoConsommationIndividuelle" : {
+            "type" : "object",
+            "properties" : {
+              "code" : {
+                "type" : "string"
+              }
+            }
+          },
+          "dateDernierModificationCalendrierFournisseur" : {
+            "type" : "string"
+          },
+          "dateDernierModificationGroupePeriodeMobile" : {
+            "type" : "string"
+          },
+          "dateDerniereAugmentationPuissanceSouscrite" : {
+            "type" : "string"
+          },
+          "dateDerniereDiminutionPuissanceSouscrite" : {
+            "type" : "string"
+          },
+          "dateDerniereMiseEnServiceInjection" : {
+            "type" : "string"
+          },
+          "dateDerniereMiseEnServiceSoutirage" : {
+            "type" : "string"
+          },
+          "dateDerniereModificationFormuleTarifaireAcheminement" : {
+            "type" : "string"
+          },
+          "datePremierePoseCompteurLinky" : {
+            "type" : "string"
+          },
+          "niveauOuvertureServices" : {
+            "type" : "object",
+            "properties" : {
+              "code" : {
+                "type" : "string"
+              }
+            }
+          },
+          "numeroTelephoneDepannage" : {
+            "type" : "string"
+          }
+        }
+      }
+    }
+  }
+}
