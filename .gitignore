@@ -96,3 +96,18 @@ exports/
 
 # Skills.sh vendor — local symlinks
 .agents/
+
+# Personal workspace safety net — rien de perso ne rentre dans le repo.
+# Cf docs/dev/workframe-contract.md (Personal Workspace mandatory).
+# Ceinture + bretelles si workspace/ est cree par reflexe dans le repo.
+workspace/
+personal/
+*.local
+*.local.*
+.env.*.local
+
+# Scratch & experiments — jamais dans le repo
+scratch/
+tmp/
+*.scratch
+*.scratch.*
