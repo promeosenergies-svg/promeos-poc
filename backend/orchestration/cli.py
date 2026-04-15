@@ -47,8 +47,14 @@ AGENTS_REGISTRY: dict[str, dict] = {
         "status": "active",
         "write_access": False,
     },
-    # P2 :
-    # "lead": {...},
+    "lead": {
+        "name": "Lead Engineer",
+        "description": "Orchestrateur QA + Regulatory (full / quick / synthesis LLM)",
+        "scopes": ["full", "quick", "synthesis"],
+        "default_scope": "full",
+        "status": "active",
+        "write_access": False,
+    },
 }
 
 
@@ -69,6 +75,21 @@ def _dry_run(agent: str, scope: str) -> None:
         from .agents.qa_guardian import SCOPE_PROMPTS, SYSTEM_PROMPT
     elif agent == "regulatory":
         from .agents.regulatory import SCOPE_PROMPTS, SYSTEM_PROMPT
+    elif agent == "lead":
+        # Le Lead orchestre — pas de prompt task, pas de SYSTEM_PROMPT sauf en synthesis.
+        print(f"=== LEAD dry-run (scope={scope}) ===")
+        if scope == "full":
+            print("1. QA Guardian source-guards (spawn SDK query)")
+            print("2. Regulatory Analyst audit-cesures (spawn SDK query + 3 MCP tools)")
+            print("3. Agrégation (pur Python, pas de query)")
+        elif scope == "quick":
+            print("1. QA Guardian tests (spawn SDK query, plus rapide)")
+            print("2. Agrégation (pur Python, pas de query)")
+        elif scope == "synthesis":
+            print("1. QA Guardian source-guards (spawn SDK query)")
+            print("2. Regulatory Analyst audit-cesures (spawn SDK query + 3 MCP tools)")
+            print("3. Agrégation + synthèse narrative CTO (1 query SDK supplémentaire)")
+        return
     else:
         raise ValueError(f"Agent inconnu : {agent}")
 
@@ -144,6 +165,16 @@ def main() -> None:
 
         async def _run():
             return await run_regulatory_audit(args.scope)
+    elif args.agent == "lead":
+        from .agents.lead import run_lead_audit
+
+        ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        if not args.json:
+            print(f"[{ts}] Lead Engineer - scope={args.scope}")
+            print("=" * 60)
+
+        async def _run():
+            return await run_lead_audit(args.scope)
 
         try:
             result = anyio.run(_run)

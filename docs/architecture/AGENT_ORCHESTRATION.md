@@ -25,7 +25,7 @@ backend/orchestration/                NOUVEAU (P0 + P1)
 │   ├── __init__.py
 │   ├── qa_guardian.py                # ✅ P0 — Audit read-only (5 scopes)
 │   ├── regulatory.py                 # ✅ P1 — Audit YAML tarifs + 3 MCP tools in-process
-│   └── lead.py                       # ⏳ P2 — Orchestrateur principal
+│   └── lead.py                       # ✅ P2 — Orchestrateur QA + Regulatory (full/quick/synthesis)
 └── tools/
     └── (custom MCP tools globaux à venir)
 
@@ -102,7 +102,7 @@ et les a explicitement dans `disallowed_tools`. Cette double protection est **te
 
 - [x] **P0** : QA Guardian (read-only audit) ← **livré**
 - [x] **P1.1** : Regulatory Analyst + 3 custom MCP tools sur `tarifs_reglementaires.yaml` ← **livré**
-- [ ] **P1.2** : Lead Engineer (orchestrateur qui dispatche QA + Regulatory)
+- [x] **P1.2** : Lead Engineer (orchestrateur QA + Regulatory, scopes full/quick/synthesis) ← **livré**
 - [ ] **P2** : Platform, Data Infra, Energy Analytics, UX/Demo
 - [ ] **P3** : Retirer Paperclip du workflow
 - [ ] **P4** : Évaluer Claude Managed Agents (cloud) pour les jobs CI/CD
