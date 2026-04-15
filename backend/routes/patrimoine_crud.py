@@ -5,7 +5,7 @@ Endpoints manuels pour ajouter/modifier/archiver des entités patrimoniales.
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from database import get_db
