@@ -35,11 +35,19 @@ AGENTS_REGISTRY: dict[str, dict] = {
         "name": "QA Guardian",
         "description": "Audit read-only : tests, source guards, constantes, seed",
         "scopes": ["full", "tests", "source-guards", "constants", "seed"],
+        "default_scope": "full",
         "status": "active",
         "write_access": False,
     },
-    # P1 — à ajouter après validation P0 :
-    # "regulatory": {...},
+    "regulatory": {
+        "name": "Regulatory Analyst",
+        "description": "Audit YAML tarifs réglementaires (TURPE/CTA/accises/ATRD) via MCP tools",
+        "scopes": ["audit-coherence", "audit-cesures", "audit-tariff"],
+        "default_scope": "audit-coherence",
+        "status": "active",
+        "write_access": False,
+    },
+    # P2 :
     # "lead": {...},
 }
 
@@ -56,13 +64,18 @@ def _print_list(as_json: bool) -> None:
         print(f"       Scopes : {', '.join(info['scopes'])}")
 
 
-def _dry_run(scope: str) -> None:
-    from .agents.qa_guardian import SCOPE_PROMPTS, SYSTEM_PROMPT
+def _dry_run(agent: str, scope: str) -> None:
+    if agent == "qa":
+        from .agents.qa_guardian import SCOPE_PROMPTS, SYSTEM_PROMPT
+    elif agent == "regulatory":
+        from .agents.regulatory import SCOPE_PROMPTS, SYSTEM_PROMPT
+    else:
+        raise ValueError(f"Agent inconnu : {agent}")
 
     print("=== SYSTEM PROMPT ===")
     print(SYSTEM_PROMPT[:600] + ("..." if len(SYSTEM_PROMPT) > 600 else ""))
     print()
-    print(f"=== TASK PROMPT (scope={scope}) ===")
+    print(f"=== TASK PROMPT ({agent} / scope={scope}) ===")
     print(SCOPE_PROMPTS[scope])
 
 
@@ -80,8 +93,8 @@ def main() -> None:
     parser.add_argument(
         "scope",
         nargs="?",
-        default="full",
-        help="Scope de l'audit (full / tests / source-guards / constants / seed)",
+        default=None,
+        help="Scope de l'audit (par défaut le default_scope de l'agent)",
     )
     parser.add_argument("--list", action="store_true", help="Lister les agents disponibles")
     parser.add_argument("--json", action="store_true", help="Sortie JSON")
@@ -98,6 +111,8 @@ def main() -> None:
         return
 
     agent_info = AGENTS_REGISTRY[args.agent]
+    if args.scope is None:
+        args.scope = agent_info["default_scope"]
     if args.scope not in agent_info["scopes"]:
         print(
             f"Scope '{args.scope}' invalide pour {args.agent}. Valides : {', '.join(agent_info['scopes'])}",
@@ -106,7 +121,7 @@ def main() -> None:
         sys.exit(1)
 
     if args.dry_run:
-        _dry_run(args.scope)
+        _dry_run(args.agent, args.scope)
         return
 
     if args.agent == "qa":
@@ -119,6 +134,16 @@ def main() -> None:
 
         async def _run():
             return await run_qa_audit(args.scope)
+    elif args.agent == "regulatory":
+        from .agents.regulatory import run_regulatory_audit
+
+        ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        if not args.json:
+            print(f"[{ts}] Regulatory Analyst - scope={args.scope}")
+            print("=" * 60)
+
+        async def _run():
+            return await run_regulatory_audit(args.scope)
 
         try:
             result = anyio.run(_run)

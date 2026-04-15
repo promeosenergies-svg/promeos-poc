@@ -16,18 +16,18 @@ Adapté aux scripts ponctuels et à la CI/CD, **pas au runtime serveur**. Pour l
 ## Arborescence
 
 ```
-backend/orchestration/                NOUVEAU (P0)
+backend/orchestration/                NOUVEAU (P0 + P1)
 ├── __init__.py
 ├── __main__.py                       # cd backend && python -m orchestration ...
 ├── config.py                         # Config centralisée (modèles, tools, chemins)
-├── cli.py                            # Runner CLI (--list, --json, --dry-run)
+├── cli.py                            # Runner CLI (--list, --json, --dry-run, multi-agent)
 ├── agents/
 │   ├── __init__.py
-│   ├── qa_guardian.py                # ✅ P0 — Audit read-only
-│   ├── regulatory.py                 # ⏳ P1 — DT/BACS/Billing/Achat
-│   └── lead.py                       # ⏳ P1 — Orchestrateur principal
+│   ├── qa_guardian.py                # ✅ P0 — Audit read-only (5 scopes)
+│   ├── regulatory.py                 # ✅ P1 — Audit YAML tarifs + 3 MCP tools in-process
+│   └── lead.py                       # ⏳ P2 — Orchestrateur principal
 └── tools/
-    └── (custom MCP tools à venir P2)
+    └── (custom MCP tools globaux à venir)
 
 backend/ai_layer/                     EXISTANT (production)
 ├── agents/                           # 5 agents via API directe
@@ -52,17 +52,24 @@ cd backend && python -m orchestration qa seed
 # Sortie JSON (CI/CD)
 cd backend && python -m orchestration qa full --json
 
+# Regulatory Analyst (P1)
+cd backend && python -m orchestration regulatory                    # défaut audit-coherence
+cd backend && python -m orchestration regulatory audit-coherence
+cd backend && python -m orchestration regulatory audit-cesures
+cd backend && python -m orchestration regulatory audit-tariff
+cd backend && python -m orchestration regulatory audit-cesures --dry-run
+
 # Dry run (affiche le prompt sans appeler l'API → pas besoin de clé)
 cd backend && python -m orchestration qa source-guards --dry-run
 ```
 
 ## Sécurité — matrice par agent
 
-| Agent | Read | Write | Bash | Network | Source-guard test |
-|---|---|---|---|---|---|
-| **QA Guardian** | ✅ | ❌ | ✅ (commandes lecture) | ❌ | `test_qa_guardian_is_readonly` |
-| Regulatory (P1) | ✅ | ❌ | ❌ | ✅ (CRE, légifrance, bofip) | à créer |
-| Lead Engineer (P1) | ✅ | ✅ (sous garde-fous) | ✅ | ❌ | à créer |
+| Agent | Read | Write | Bash | Network | MCP custom | Source-guard test |
+|---|---|---|---|---|---|---|
+| **QA Guardian** (P0) | ✅ | ❌ | ✅ (commandes lecture) | ❌ | — | `test_qa_guardian_is_readonly` |
+| **Regulatory Analyst** (P1) | ✅ | ❌ | ❌ | ❌ | 3 outils sur `tarifs_reglementaires.yaml` | `test_regulatory_module_imports` (Bash interdit, Write interdit) |
+| Lead Engineer (P2) | ✅ | ✅ (sous garde-fous) | ✅ | ❌ | — | à créer |
 
 QA Guardian **n'a pas** `Write` / `Edit` / `MultiEdit` / `NotebookEdit` dans `allowed_tools`,
 et les a explicitement dans `disallowed_tools`. Cette double protection est **testée** (test
@@ -94,10 +101,33 @@ et les a explicitement dans `disallowed_tools`. Cette double protection est **te
 ## Roadmap migration
 
 - [x] **P0** : QA Guardian (read-only audit) ← **livré**
-- [ ] **P1** : Regulatory & Market Agent (4 rules engines en custom MCP tools) + Lead Engineer (orchestrateur)
+- [x] **P1.1** : Regulatory Analyst + 3 custom MCP tools sur `tarifs_reglementaires.yaml` ← **livré**
+- [ ] **P1.2** : Lead Engineer (orchestrateur qui dispatche QA + Regulatory)
 - [ ] **P2** : Platform, Data Infra, Energy Analytics, UX/Demo
 - [ ] **P3** : Retirer Paperclip du workflow
 - [ ] **P4** : Évaluer Claude Managed Agents (cloud) pour les jobs CI/CD
+
+## Custom MCP tools (Regulatory Analyst P1)
+
+3 outils in-process déclarés via `@tool` du `claude-agent-sdk` et exposés à
+l'agent via `create_sdk_mcp_server("promeos-tarifs", ...)`. Tous **read-only**.
+
+| Tool | Input | Output | Usage |
+|---|---|---|---|
+| `list_sections` | — | Liste 27 sections du YAML avec `valid_from`/`valid_to`/source | Cartographie initiale, détection sources manquantes |
+| `read_section` | `section_name: str` | Contenu YAML brut de la section | Lecture ciblée d'un mécanisme |
+| `find_active_at_date` | `target_date: YYYY-MM-DD` | Liste des sections actives à cette date | Vérification césures (1/08/2025, 1/02/2026, 1/04/2026, etc.) |
+
+Avantage vs `Read` brut : l'agent ne lit pas tout le YAML (473 lignes) à chaque appel,
+il interroge un index sémantique. **Réduction tokens estimée : 60-80 %** pour un audit complet.
+
+## Scopes Regulatory Analyst
+
+| Scope | Action | Durée estimée | Coût estimé |
+|---|---|---|---|
+| `audit-coherence` | Audit structurel YAML (sources, dates, doublons, valeurs obsolètes) | 60-120 s | ~$0.05-0.10 |
+| `audit-cesures` | Vérifie 5 césures temporelles critiques (TURPE 7, CTA 2026, ATRT 8…) | 30-60 s | ~$0.03-0.06 |
+| `audit-tariff` | Audit profond d'un mécanisme spécifique | variable | variable |
 
 ## Liens utiles
 
