@@ -4,11 +4,12 @@ PROMEOS — Tests moteur DPE Tertiaire (V115 step 3, décret 2024-1040).
 
 import os
 import sys
-from datetime import date, datetime, timedelta
+from datetime import datetime
 from types import SimpleNamespace
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from models.enums import TypeEvidence, StatutEvidence
 from regops.rules import dpe_tertiaire
 
 
@@ -28,16 +29,14 @@ DEFAULT_CONFIG = {
 }
 
 
-def _site(**kwargs):
-    return SimpleNamespace(id=1, tertiaire_area_m2=kwargs.get("tertiaire_area_m2", 2000))
+def _site(tertiaire_area_m2=2000):
+    return SimpleNamespace(id=1, tertiaire_area_m2=tertiaire_area_m2)
 
 
-def _evidence(type_name="ATTESTATION_DPE", statut="VALIDE", created_at=None):
-    return SimpleNamespace(
-        type=SimpleNamespace(__str__=lambda self: type_name, name=type_name),
-        statut=SimpleNamespace(__str__=lambda self: statut, name=statut),
-        created_at=created_at,
-    )
+def _evidence(type_value=TypeEvidence.ATTESTATION_DPE, statut=StatutEvidence.VALIDE, created_at=None):
+    """Stub Evidence avec vrais enums — str(e.type)/str(e.statut) donne bien
+    'TypeEvidence.ATTESTATION_DPE' / 'StatutEvidence.VALIDE', ce que matche la rule."""
+    return SimpleNamespace(type=type_value, statut=statut, created_at=created_at)
 
 
 class TestScope:
@@ -63,7 +62,7 @@ class TestRealization:
         assert len(findings) == 1
         f = findings[0]
         assert f.rule_id == "DPE_REALIZATION_MISSING"
-        # deadline 2026-01-01, today is 2026-04-15 per context → past deadline
+        # deadline 2026-01-01, today is 2026-04-15 per sprint context → past deadline
         assert f.status == "NON_COMPLIANT"
         assert f.severity == "CRITICAL"
         assert f.estimated_penalty_eur == 7500.0
@@ -79,7 +78,7 @@ class TestRealization:
 
     def test_invalid_evidence_ignored(self):
         site = _site()
-        invalid_ev = _evidence(statut="EN_ATTENTE")
+        invalid_ev = _evidence(statut=StatutEvidence.EN_ATTENTE)
         findings = dpe_tertiaire.evaluate(site, [], [invalid_ev], DEFAULT_CONFIG)
         assert findings[0].rule_id == "DPE_REALIZATION_MISSING"
 

@@ -46,37 +46,66 @@ CANONICAL_REGULATIONS = frozenset(
 )
 
 
-# ── Lookup rule_id → regulation canonique ──────────────────────────────────
+# ── Canonicalisation de la `regulation` portée par chaque Finding ──────────
 #
-# Couvre les rule_ids des DEUX évaluateurs. Les rule_ids qui n'apparaissent
-# que dans un seul évaluateur sont tolérés (asymétrie acceptée) tant qu'ils
-# sont catégorisés par régulation.
+# Les deux évaluateurs utilisent des labels différents pour la même régulation :
+#   - compliance_rules packs : "decret_tertiaire_operat", "bacs", "aper"
+#   - regops Finding         : "TERTIAIRE_OPERAT", "BACS", "APER", "DPE_TERTIAIRE"
+#
+# Les rule_ids "OUT_OF_SCOPE" sont génériques et partagés entre moteurs (DT et
+# BACS émettent tous deux rule_id="OUT_OF_SCOPE"). La clé primaire de
+# désambiguïsation est donc le champ `regulation`, pas le `rule_id`.
+
+_REGULATION_ALIASES: dict[str, str] = {
+    # Décret Tertiaire
+    "decret_tertiaire_operat": "decret_tertiaire",
+    "decret_tertiaire": "decret_tertiaire",
+    "tertiaire_operat": "decret_tertiaire",
+    # BACS
+    "bacs": "bacs",
+    # APER
+    "aper": "aper",
+    # DPE
+    "dpe_tertiaire": "dpe_tertiaire",
+    "dpe": "dpe_tertiaire",
+}
+
+
+def canonicalize_regulation(label: str | None) -> str | None:
+    """Retourne le nom canonique de la régulation, ou None si inconnu."""
+    if not label:
+        return None
+    return _REGULATION_ALIASES.get(str(label).strip().lower())
+
+
+# ── Lookup rule_id → regulation canonique (secondaire) ─────────────────────
+#
+# Utilisé par le test de couverture "tous les rule_ids sont connus". N'est
+# PAS utilisé pour l'agrégation par régulation (qui passe par le champ
+# `regulation` du Finding, voir regulation_worst_status).
 
 RULE_ID_TO_REGULATION: dict[str, str] = {
     # ── Décret Tertiaire ────────────────────────────────────────────────────
-    # compliance_rules pack
     "DT_SCOPE": "decret_tertiaire",
     "DT_OPERAT": "decret_tertiaire",
     "DT_TRAJECTORY_2030": "decret_tertiaire",
     "DT_TRAJECTORY_2040": "decret_tertiaire",
     "DT_ENERGY_DATA": "decret_tertiaire",
-    # regops
     "SCOPE_UNKNOWN": "decret_tertiaire",
-    "OUT_OF_SCOPE": "decret_tertiaire",  # ambiguïté : aussi utilisé par bacs — cf. resolve helper
     "OPERAT_NOT_STARTED": "decret_tertiaire",
     "TRAJECTORY_ON_TRACK": "decret_tertiaire",
     "TRAJECTORY_OFF_TRACK": "decret_tertiaire",
     "TRAJECTORY_NOT_EVALUABLE": "decret_tertiaire",
     "ENERGY_DATA_MISSING": "decret_tertiaire",
     "MULTI_OCCUPIED_GOVERNANCE": "decret_tertiaire",
+    # OUT_OF_SCOPE est générique (DT + BACS) → résolu via `regulation`, pas ce lookup
+    "OUT_OF_SCOPE": "*ambiguous*",
     # ── BACS ────────────────────────────────────────────────────────────────
-    # compliance_rules pack
     "BACS_POWER": "bacs",
     "BACS_HIGH_DEADLINE": "bacs",
     "BACS_LOW_DEADLINE": "bacs",
     "BACS_ATTESTATION": "bacs",
     "BACS_DEROGATION": "bacs",
-    # regops + bacs_engine
     "CVC_POWER_UNKNOWN": "bacs",
     "BACS_NOT_INSTALLED": "bacs",
     "BACS_V2_OUT_OF_SCOPE": "bacs",
@@ -87,16 +116,14 @@ RULE_ID_TO_REGULATION: dict[str, str] = {
     "BACS_V2_INSPECTION_OVERDUE": "bacs",
     "BACS_V2_FULL": "bacs",
     # ── APER ────────────────────────────────────────────────────────────────
-    # compliance_rules pack
     "APER_PARKING": "aper",
     "APER_TOITURE": "aper",
     "APER_PARKING_TYPE": "aper",
-    # regops
     "PARKING_LARGE_APER": "aper",
     "PARKING_MEDIUM_APER": "aper",
     "PARKING_NOT_OUTDOOR": "aper",
     "ROOF_APER": "aper",
-    # ── DPE Tertiaire (regops only — pas de pack compliance_rules) ──────────
+    # ── DPE Tertiaire ───────────────────────────────────────────────────────
     "DPE_SCOPE_UNKNOWN": "dpe_tertiaire",
     "DPE_OUT_OF_SCOPE": "dpe_tertiaire",
     "DPE_REALIZATION_MISSING": "dpe_tertiaire",
@@ -112,15 +139,17 @@ STATUS_UNKNOWN = "UNKNOWN"
 STATUS_OUT_OF_SCOPE = "OUT_OF_SCOPE"
 
 
-_COMPLIANCE_RULES_STATUS = {
+_STATUS_NORMALIZATION = {
+    # compliance_rules vocab
     "OK": STATUS_OK,
-    "COMPLIANT": STATUS_OK,
     "NOK": STATUS_ISSUE,
+    "UNKNOWN": STATUS_UNKNOWN,
+    "OUT_OF_SCOPE": STATUS_OUT_OF_SCOPE,
+    # regops vocab
+    "COMPLIANT": STATUS_OK,
     "NON_COMPLIANT": STATUS_ISSUE,
     "AT_RISK": STATUS_ISSUE,
     "EXEMPTION_POSSIBLE": STATUS_ISSUE,
-    "UNKNOWN": STATUS_UNKNOWN,
-    "OUT_OF_SCOPE": STATUS_OUT_OF_SCOPE,
 }
 
 
@@ -133,19 +162,23 @@ def categorize_finding_status(raw_status: str | None) -> str:
     """
     if raw_status is None:
         return STATUS_UNKNOWN
-    return _COMPLIANCE_RULES_STATUS.get(str(raw_status).upper(), STATUS_UNKNOWN)
+    return _STATUS_NORMALIZATION.get(str(raw_status).upper(), STATUS_UNKNOWN)
 
 
-def regulation_worst_status(rule_id_status_pairs: list[tuple[str, str]]) -> dict[str, str]:
-    """Retourne le pire statut par régulation à partir d'une liste (rule_id, status).
+def regulation_worst_status(
+    findings: list[tuple[str, str]],
+) -> dict[str, str]:
+    """Retourne le pire statut par régulation à partir d'une liste (regulation, status).
 
+    Le champ `regulation` est la clé primaire (canonicalisée via
+    canonicalize_regulation) — `rule_id` n'est PAS utilisé pour l'attribution,
+    car certains rule_ids comme OUT_OF_SCOPE sont partagés entre moteurs.
     Règle d'agrégation : ISSUE > UNKNOWN > OUT_OF_SCOPE > OK.
-    Les rule_ids non mappés sont ignorés (avec un warning implicite).
     """
     severity = {STATUS_ISSUE: 3, STATUS_UNKNOWN: 2, STATUS_OUT_OF_SCOPE: 1, STATUS_OK: 0}
     worst: dict[str, str] = {}
-    for rule_id, raw_status in rule_id_status_pairs:
-        reg = RULE_ID_TO_REGULATION.get(rule_id)
+    for raw_regulation, raw_status in findings:
+        reg = canonicalize_regulation(raw_regulation)
         if reg is None:
             continue
         normalized = categorize_finding_status(raw_status)

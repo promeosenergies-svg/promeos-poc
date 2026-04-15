@@ -49,7 +49,7 @@ def evaluate_bacs_status(db: Session, asset_id: int) -> dict:
     JAMAIS de statut affirmatif sans preuve. Utilise les seuils V2 YAML
     (regulations/bacs/v2.yaml) — même source que services.bacs_engine.
     """
-    seuil_haut, seuil_bas = _get_thresholds()
+    _, seuil_bas = _get_thresholds()
 
     asset = db.query(BacsAsset).filter(BacsAsset.id == asset_id).first()
     if not asset:

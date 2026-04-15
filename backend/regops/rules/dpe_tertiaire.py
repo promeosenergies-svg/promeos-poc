@@ -12,7 +12,7 @@ Non inclus dans le score composite A.2 (regs.yaml scoring.weights exclut DPE).
 Les findings remontent dans le cockpit et /api/compliance/bundle.
 """
 
-from datetime import date
+from datetime import date, datetime
 
 from ..schemas import Finding
 
@@ -51,17 +51,18 @@ def _find_valid_dpe_evidence(evidences: list):
             valid.append(e)
     if not valid:
         return None
-    # Prend le plus récent selon created_at si dispo
-    return max(valid, key=lambda e: getattr(e, "created_at", None) or date.min)
+    # created_at est un datetime ORM SQLAlchemy ; datetime.min comme fallback
+    # pour éviter le TypeError date/datetime mix dans max().
+    return max(valid, key=lambda e: getattr(e, "created_at", None) or datetime.min)
 
 
 def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Finding]:
     findings: list[Finding] = []
 
     scope_threshold = config.get("scope_threshold_m2", 1000)
-    deadlines = config.get("deadlines", {}) or {}
+    deadlines = config.get("deadlines") or {}
     validite_annees = int(config.get("validite_annees", 10))
-    penalties = config.get("penalties", {}) or {}
+    penalties = config.get("penalties") or {}
 
     surface = getattr(site, "tertiaire_area_m2", None)
 
