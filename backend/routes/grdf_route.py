@@ -6,7 +6,7 @@ Consommation gaz (PCE), conversion PCS.
 """
 
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -135,7 +135,7 @@ def sync_pce(
                     is_estimated=False,
                     quality_score=0.9,
                     import_job_id=job.id,
-                    created_at=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
                 )
             )
             db.execute(stmt)
@@ -146,7 +146,7 @@ def sync_pce(
     job.status = ImportStatus.COMPLETED
     job.rows_total = len(data)
     job.rows_imported = inserted
-    job.completed_at = datetime.utcnow()
+    job.completed_at = datetime.now(timezone.utc)
     db.commit()
 
     return SyncResponse(

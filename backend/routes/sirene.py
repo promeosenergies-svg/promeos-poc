@@ -336,7 +336,9 @@ def onboarding_from_sirene(
     """Cree un client PROMEOS (Organisation + EntiteJuridique + Sites) depuis le referentiel Sirene.
 
     NE CREE PAS : batiment, compteur, contrat, obligation.
+    V119 J3 : protege par _require_write_access (DEMO_MODE accepte).
     """
+    _require_write_access(auth)
     correlation_id = uuid.uuid4().hex[:12]
     warnings: list[OnboardingFromSireneWarning] = []
 
@@ -510,16 +512,10 @@ def onboarding_from_sirene(
     )
     db.add(trace)
 
-    # Funnel onboarding — best-effort, ne doit pas bloquer la creation.
-    # TODO(V116): extraire _get_or_create/_auto_detect vers services/onboarding_stepper
-    # pour eviter le route-to-route import (leaky abstraction).
-    try:
-        from routes.onboarding_stepper import _get_or_create, _auto_detect
+    # Funnel onboarding — best-effort via service dedie (V119 : plus de route-to-route import).
+    from services.onboarding_stepper_service import wire_funnel_best_effort
 
-        progress = _get_or_create(db, org.id)
-        _auto_detect(db, org.id, progress)
-    except Exception as e:
-        logger.warning("onboarding_progress wiring failed [%s]: %s", correlation_id, e)
+    wire_funnel_best_effort(db, org.id, context=correlation_id)
 
     # Lead score — best-effort, enrichit la reponse pour CRM/commercial.
     # Utilise les donnees deja en scope (ul, etabs_by_siret) : zero query supplementaire.
@@ -605,6 +601,10 @@ def _create_site_from_etab(db: Session, portefeuille_id: int, etab, ul, org_nom:
     )
     db.add(site)
     return site, site_nom
+
+
+# V119 J3 : helper centralise dans services/auth_guards.py
+from services.auth_guards import require_write_access as _require_write_access  # noqa: E402
 
 
 def _require_admin(auth: Optional[AuthContext], allow_demo: bool = False):

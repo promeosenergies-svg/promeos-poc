@@ -1,0 +1,97 @@
+name: Sirene Monthly Import
+
+# Lance le 2 de chaque mois a 03:00 UTC = 04:00/05:00 Paris
+# (apres la publication du stock mensuel par l'INSEE le 1er du mois).
+on:
+  schedule:
+    - cron: '0 3 2 * *'
+  workflow_dispatch:
+    inputs:
+      snapshot_date:
+        description: 'Snapshot date YYYY-MM-DD (default: today)'
+        required: false
+        type: string
+
+jobs:
+  import-sirene:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Download stock CSV files from data.gouv.fr
+        run: |
+          mkdir -p backend/data/sirene
+          MONTH=$(date -u +%Y-%m-01)
+          echo "Downloading Sirene stock for $MONTH"
+          # data.gouv.fr URLs stables (a confirmer en cas d'evolution)
+          curl -fsSL -o backend/data/sirene/StockUniteLegale_utf8.zip \
+            "https://files.data.gouv.fr/insee-sirene/StockUniteLegale_utf8.zip" || \
+            { echo "FAIL: stockUniteLegale download"; exit 1; }
+          curl -fsSL -o backend/data/sirene/StockEtablissement_utf8.zip \
+            "https://files.data.gouv.fr/insee-sirene/StockEtablissement_utf8.zip" || \
+            { echo "FAIL: stockEtablissement download"; exit 1; }
+          curl -fsSL -o backend/data/sirene/StockDoublons_utf8.zip \
+            "https://files.data.gouv.fr/insee-sirene/StockDoublons_utf8.zip" || \
+            echo "WARN: stockDoublons download failed (non-blocking)"
+          unzip -o backend/data/sirene/StockUniteLegale_utf8.zip -d backend/data/sirene/
+          unzip -o backend/data/sirene/StockEtablissement_utf8.zip -d backend/data/sirene/
+          [ -f backend/data/sirene/StockDoublons_utf8.zip ] && \
+            unzip -o backend/data/sirene/StockDoublons_utf8.zip -d backend/data/sirene/ || true
+          ls -lh backend/data/sirene/
+
+      - name: Run Sirene import (delta if recent, full if first run)
+        env:
+          DATABASE_URL: ${{ secrets.SIRENE_PROD_DATABASE_URL }}
+          SIRENE_DATA_DIR: ./data/sirene
+        run: |
+          cd backend
+          SNAPSHOT_DATE="${{ github.event.inputs.snapshot_date }}"
+          if [ -z "$SNAPSHOT_DATE" ]; then
+            SNAPSHOT_DATE=$(date -u +%Y-%m-%d)
+          fi
+          echo "Snapshot date: $SNAPSHOT_DATE"
+          python -m services.sirene_import --type delta \
+            --ul data/sirene/StockUniteLegale_utf8.csv \
+            --etab data/sirene/StockEtablissement_utf8.csv \
+            --snapshot-date "$SNAPSHOT_DATE"
+          if [ -f data/sirene/StockDoublons_utf8.csv ]; then
+            python -m services.sirene_import --type doublons \
+              --file data/sirene/StockDoublons_utf8.csv \
+              --snapshot-date "$SNAPSHOT_DATE"
+          fi
+
+      - name: Trigger RGPD purge (payload_brut > 6 months)
+        env:
+          DATABASE_URL: ${{ secrets.SIRENE_PROD_DATABASE_URL }}
+        run: |
+          cd backend
+          python -c "
+          from database.connection import SessionLocal
+          from services.sirene_import import purge_old_payloads
+          db = SessionLocal()
+          try:
+              result = purge_old_payloads(db, max_age_days=180)
+              print('RGPD purge:', result)
+          finally:
+              db.close()
+          "
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Sirene monthly import failed for $(date -u +%Y-%m). Check logs."
+          # TODO: hook Slack/email via secret SLACK_WEBHOOK

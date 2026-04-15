@@ -34,6 +34,10 @@ from schemas.patrimoine_crud import (
 router = APIRouter(prefix="/api/patrimoine/crud", tags=["Patrimoine CRUD"])
 
 
+# V119 J3 : helper centralise dans services/auth_guards.py
+from services.auth_guards import require_write_access as _require_write_access  # noqa: E402
+
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -111,6 +115,7 @@ def create_organisation(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Crée une nouvelle organisation."""
+    _require_write_access(auth)
     org = Organisation(
         nom=body.nom,
         type_client=body.type_client,
@@ -144,6 +149,7 @@ def update_organisation(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Met à jour une organisation."""
+    _require_write_access(auth)
     org = db.query(Organisation).filter(Organisation.id == org_id, not_deleted(Organisation)).first()
     if not org:
         raise HTTPException(404, "Organisation introuvable")
@@ -161,6 +167,7 @@ def archive_organisation(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Archive (soft-delete) une organisation."""
+    _require_write_access(auth)
     org = db.query(Organisation).filter(Organisation.id == org_id, not_deleted(Organisation)).first()
     if not org:
         raise HTTPException(404, "Organisation introuvable")
@@ -195,6 +202,7 @@ def create_entite(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Crée une entité juridique."""
+    _require_write_access(auth)
     # Vérifier que l'organisation existe
     org = db.query(Organisation).filter(Organisation.id == body.organisation_id, not_deleted(Organisation)).first()
     if not org:
@@ -245,6 +253,7 @@ def update_entite(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Met à jour une entité juridique."""
+    _require_write_access(auth)
     e = db.query(EntiteJuridique).filter(EntiteJuridique.id == entite_id, not_deleted(EntiteJuridique)).first()
     if not e:
         raise HTTPException(404, "Entité juridique introuvable")
@@ -262,6 +271,7 @@ def archive_entite(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Archive (soft-delete) une entité juridique."""
+    _require_write_access(auth)
     e = db.query(EntiteJuridique).filter(EntiteJuridique.id == entite_id, not_deleted(EntiteJuridique)).first()
     if not e:
         raise HTTPException(404, "Entité juridique introuvable")
@@ -301,6 +311,7 @@ def create_portefeuille(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Crée un portefeuille."""
+    _require_write_access(auth)
     entite = (
         db.query(EntiteJuridique)
         .filter(
@@ -343,6 +354,7 @@ def update_portefeuille(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Met à jour un portefeuille."""
+    _require_write_access(auth)
     pf = db.query(Portefeuille).filter(Portefeuille.id == pf_id, not_deleted(Portefeuille)).first()
     if not pf:
         raise HTTPException(404, "Portefeuille introuvable")
@@ -360,6 +372,7 @@ def archive_portefeuille(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Archive (soft-delete) un portefeuille."""
+    _require_write_access(auth)
     pf = db.query(Portefeuille).filter(Portefeuille.id == pf_id, not_deleted(Portefeuille)).first()
     if not pf:
         raise HTTPException(404, "Portefeuille introuvable")
@@ -401,6 +414,7 @@ def create_site_crud(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Crée un site dans un portefeuille."""
+    _require_write_access(auth)
     pf = db.query(Portefeuille).filter(Portefeuille.id == body.portefeuille_id, not_deleted(Portefeuille)).first()
     if not pf:
         raise HTTPException(404, "Portefeuille introuvable")
@@ -461,6 +475,7 @@ def update_site_crud(
     le scoring compliance (DT/BACS/APER) pour que le NextStepsHub post-Sirene
     affiche des scores reels au lieu d'un ecran vide.
     """
+    _require_write_access(auth)
     site = db.query(Site).filter(Site.id == site_id, not_deleted(Site)).first()
     if not site:
         raise HTTPException(404, "Site introuvable")
@@ -508,6 +523,7 @@ def archive_site_crud(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Archive (soft-delete) un site."""
+    _require_write_access(auth)
     site = db.query(Site).filter(Site.id == site_id, not_deleted(Site)).first()
     if not site:
         raise HTTPException(404, "Site introuvable")
@@ -542,6 +558,7 @@ def create_batiment(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Cree un batiment rattache a un site."""
+    _require_write_access(auth)
     site = db.query(Site).filter(Site.id == body.site_id, not_deleted(Site)).first()
     if not site:
         raise HTTPException(404, "Site introuvable")

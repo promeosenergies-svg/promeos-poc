@@ -13,32 +13,19 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import (
-    OnboardingProgress,
-    Organisation,
-    Site,
-    Compteur,
-    User,
-    UserOrgRole,
-    ActionItem,
-    Portefeuille,
-    EntiteJuridique,
-    EnergyInvoice,
-)
+from models import OnboardingProgress
 from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import resolve_org_id
 from services.data_quality_service import compute_org_completeness
+from services.onboarding_stepper_service import (
+    STEP_FIELDS as _SVC_STEP_FIELDS,
+    get_or_create_progress,
+    auto_detect_steps as _svc_auto_detect,
+)
 
 router = APIRouter(prefix="/api/onboarding-progress", tags=["Onboarding Stepper"])
 
-STEP_FIELDS = [
-    "step_org_created",
-    "step_sites_added",
-    "step_meters_connected",
-    "step_invoices_imported",
-    "step_users_invited",
-    "step_first_action",
-]
+STEP_FIELDS = list(_SVC_STEP_FIELDS)  # backward-compat pour tests externes
 
 STEP_META = [
     {"key": "step_org_created", "label": "Créer l'organisation", "icon": "Building2"},
@@ -50,14 +37,10 @@ STEP_META = [
 ]
 
 
+# Alias backward-compat : routes/sirene.py et anciens tests continuent de fonctionner.
+# V119 a extrait la vraie logique vers services/onboarding_stepper_service.py.
 def _get_or_create(db: Session, org_id: int) -> OnboardingProgress:
-    """Get or create OnboardingProgress for an org."""
-    progress = db.query(OnboardingProgress).filter(OnboardingProgress.org_id == org_id).first()
-    if not progress:
-        progress = OnboardingProgress(org_id=org_id)
-        db.add(progress)
-        db.flush()
-    return progress
+    return get_or_create_progress(db, org_id)
 
 
 def _serialize(progress: OnboardingProgress, data_quality_pct: float = None) -> dict:
@@ -183,58 +166,8 @@ def dismiss_stepper(
 
 
 def _auto_detect(db: Session, oid: int, progress: OnboardingProgress):
-    """Auto-detect completed steps from actual data (shared logic)."""
-    # Step 1: org exists
-    org = db.query(Organisation).filter(Organisation.id == oid).first()
-    if org:
-        progress.step_org_created = True
-
-    # Step 2: has sites
-    pf_ids = [
-        r.id
-        for r in (
-            db.query(Portefeuille.id)
-            .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-            .filter(EntiteJuridique.organisation_id == oid)
-            .all()
-        )
-    ]
-    site_count = 0
-    if pf_ids:
-        site_count = db.query(Site).filter(Site.portefeuille_id.in_(pf_ids), Site.actif == True).count()
-    if site_count > 0:
-        progress.step_sites_added = True
-
-    # Step 3: has meters connected
-    if pf_ids:
-        site_ids = [r.id for r in db.query(Site.id).filter(Site.portefeuille_id.in_(pf_ids)).all()]
-        if site_ids:
-            meter_count = db.query(Compteur).filter(Compteur.site_id.in_(site_ids)).count()
-            if meter_count > 0:
-                progress.step_meters_connected = True
-
-    # Step 4: has invoices
-    if pf_ids:
-        inv_site_ids = [r.id for r in db.query(Site.id).filter(Site.portefeuille_id.in_(pf_ids)).all()]
-        if inv_site_ids:
-            inv_count = db.query(EnergyInvoice).filter(EnergyInvoice.site_id.in_(inv_site_ids)).count()
-            if inv_count > 0:
-                progress.step_invoices_imported = True
-
-    # Step 5: has users
-    user_count = db.query(UserOrgRole).filter(UserOrgRole.org_id == oid).count()
-    if user_count >= 1:
-        progress.step_users_invited = True
-
-    # Step 6: has actions
-    action_count = db.query(ActionItem).filter(ActionItem.org_id == oid).count()
-    if action_count > 0:
-        progress.step_first_action = True
-
-    # Check if all done
-    if all(getattr(progress, f) for f in STEP_FIELDS):
-        if not progress.completed_at:
-            progress.completed_at = datetime.now(timezone.utc)
+    """Alias backward-compat, delegue au service."""
+    return _svc_auto_detect(db, oid, progress)
 
 
 @router.post("/auto")

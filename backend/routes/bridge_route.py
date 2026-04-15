@@ -7,7 +7,7 @@ Bridge entre les flux Enedis staging et les MeterReading normalisées.
 
 import logging
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -93,7 +93,7 @@ def run_bridge(
         job.rows_imported = total_inserted
         job.rows_skipped = total_skipped
         job.rows_errored = total_errors
-        job.completed_at = datetime.utcnow()
+        job.completed_at = datetime.now(timezone.utc)
         db.commit()
 
         return BridgeRunResponse(
@@ -117,7 +117,7 @@ def run_bridge(
     except Exception as e:
         job.status = ImportStatus.FAILED
         job.error_message = str(e)[:500]
-        job.completed_at = datetime.utcnow()
+        job.completed_at = datetime.now(timezone.utc)
         db.commit()
         logger.exception("Bridge run failed")
         raise HTTPException(status_code=500, detail=str(e))
@@ -185,7 +185,7 @@ def get_gaps(
     if not org_check:
         raise HTTPException(status_code=404, detail=f"Aucun Meter pour PRM {prm}")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     start_dt = datetime.fromisoformat(start) if start else now - timedelta(days=90)
     end_dt = datetime.fromisoformat(end) if end else now
 

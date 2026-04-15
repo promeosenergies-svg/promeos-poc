@@ -148,7 +148,7 @@ def _bridge_mesures(
                     is_estimated=is_estimated,
                     quality_score=quality_score,
                     import_job_id=import_job_id,
-                    created_at=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
                 )
             )
             db.execute(stmt)
