@@ -6,7 +6,7 @@ Score = 100 - max(0, delay_days - 2) * 10 - gaps_count * 5, clamped [0, 100]
 Statut : ok >= 80, warning >= 50, critical < 50
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any
 
 from sqlalchemy.orm import Session
@@ -48,7 +48,7 @@ def compute_data_quality(db: Session, site_id: int) -> dict:
             "meters": [],
         }
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     thirty_days_ago = now - timedelta(days=30)
     meter_results: List[Dict[str, Any]] = []
 

@@ -1,0 +1,33 @@
+---
+# PROMEOS - Lead Score pricing grid (V119.3 — externalise depuis code Python)
+#
+# Ce fichier pilote le pricing estime du lead_score service. La vente peut
+# tuner ces valeurs sans deploy : le service recharge a chaque call.
+#
+# Source de verite : docs/ux_demo_strategy (400-2000 EUR/mois) + extensions GE.
+
+version: "1.0"
+updated_at: "2026-04-15"
+updated_by: "V119 tech debt sprint"
+
+# Prix de base mensuel par segment INSEE (EUR/mois, base 1-5 sites)
+base_mrr:
+  TPE: 200    # <10 salaries, 1-2 sites
+  PME: 600    # 10-250 salaries, 1-20 sites
+  ETI: 2000   # 250-5000 salaries, 10-100 sites
+  GE: 6000    # >5000 salaries, 100+ sites
+
+# Multiplicateur par nombre d'etablissements (borne sup inclusive)
+sites_multiplier:
+  - { max: 5, factor: 1.0 }
+  - { max: 20, factor: 1.8 }
+  - { max: 100, factor: 3.5 }
+  - { max: 500, factor: 6.0 }
+  - { max: 999999, factor: 10.0 }  # enterprise deal
+
+# Boost MRR selon tier NAF (complexite reglementaire = willingness to pay)
+naf_boost:
+  high: 1.25    # Retail/hotel/sante (DT+BACS+APER)
+  medium: 1.0   # Industrie/services tertiaires
+  low: 0.75     # Agriculture non-process
+  unknown: 1.0  # Fallback neutre

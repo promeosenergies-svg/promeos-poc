@@ -5,7 +5,7 @@ Génération de rapports PDF par site (ReportLab).
 
 import io
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -211,7 +211,7 @@ def generate_site_report(
     elements.append(Spacer(1, 1 * cm))
     elements.append(
         Paragraph(
-            f"Rapport généré par PROMEOS le {datetime.utcnow().strftime('%d/%m/%Y à %H:%M UTC')}",
+            f"Rapport généré par PROMEOS le {datetime.now(timezone.utc).strftime('%d/%m/%Y à %H:%M UTC')}",
             styles["PromeosFooter"],
         )
     )

@@ -13,11 +13,38 @@ Aucune dependance sur des donnees privees (effectifs precis, CA). Utilise
 uniquement les champs publics Sirene stockes localement.
 """
 
+from enum import Enum
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from models.sirene import SireneUniteLegale, SireneEtablissement
+from models.sirene import SireneEtablissement, SireneUniteLegale
+
+
+class LeadSegment(str, Enum):
+    """Segmentation INSEE entreprise (LME 2008, stable 2025-2026)."""
+
+    TPE = "TPE"
+    PME = "PME"
+    ETI = "ETI"
+    GE = "GE"
+
+
+class LeadPriority(str, Enum):
+    """Priorite commerciale PROMEOS."""
+
+    A = "A"  # Deal chaud
+    B = "B"  # Deal tiede
+    C = "C"  # Deal froid
+
+
+class NafValueTier(str, Enum):
+    """Tier de valeur PROMEOS par prefix NAF (complexite reglementaire)."""
+
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    UNKNOWN = "unknown"
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -26,25 +53,92 @@ from models.sirene import SireneUniteLegale, SireneEtablissement
 # ══════════════════════════════════════════════════════════════════════
 
 # Prix de base par segment (EUR/mois, base 1-5 sites)
-_BASE_MRR = {
-    "TPE": 200,  # <10 salaries, 1-2 sites
-    "PME": 600,  # 10-250 salaries, 1-20 sites
-    "ETI": 2000,  # 250-5000 salaries, 10-100 sites
-    "GE": 6000,  # >5000 salaries, 100+ sites
+# Valeurs par defaut, surchargees par config/pricing_lead_score.yaml (V119.3)
+_BASE_MRR_DEFAULT = {
+    LeadSegment.TPE: 200,  # <10 salaries, 1-2 sites
+    LeadSegment.PME: 600,  # 10-250 salaries, 1-20 sites
+    LeadSegment.ETI: 2000,  # 250-5000 salaries, 10-100 sites
+    LeadSegment.GE: 6000,  # >5000 salaries, 100+ sites
 }
+
+# Cache module-level pour eviter de re-parser le YAML a chaque call
+_PRICING_CACHE = None
+
+
+def _load_pricing_config() -> dict:
+    """Charge la grille pricing depuis YAML avec fallback sur les defaults.
+
+    Cache module-level : reset via _reset_pricing_cache() en test.
+    Format normalise : {base_mrr: {LeadSegment: int}, naf_boost: {NafValueTier: float},
+                       sites_multiplier: [(max, factor), ...]}
+    """
+    global _PRICING_CACHE
+    if _PRICING_CACHE is not None:
+        return _PRICING_CACHE
+
+    import logging
+    from pathlib import Path
+
+    config_path = Path(__file__).resolve().parent.parent / "config" / "pricing_lead_score.yaml"
+    base_mrr = dict(_BASE_MRR_DEFAULT)
+    naf_boost = dict(_NAF_BOOST_DEFAULT)
+    sites_multiplier = list(_SITES_MULTIPLIER_DEFAULT)
+
+    if config_path.exists():
+        try:
+            import yaml
+
+            with open(config_path, encoding="utf-8") as f:
+                raw = yaml.safe_load(f) or {}
+            if isinstance(raw.get("base_mrr"), dict):
+                for k, v in raw["base_mrr"].items():
+                    try:
+                        base_mrr[LeadSegment(k)] = int(v)
+                    except (ValueError, KeyError):
+                        pass
+            if isinstance(raw.get("naf_boost"), dict):
+                for k, v in raw["naf_boost"].items():
+                    try:
+                        naf_boost[NafValueTier(k)] = float(v)
+                    except (ValueError, KeyError):
+                        pass
+            if isinstance(raw.get("sites_multiplier"), list):
+                parsed = []
+                for entry in raw["sites_multiplier"]:
+                    if isinstance(entry, dict) and "max" in entry and "factor" in entry:
+                        parsed.append((int(entry["max"]), float(entry["factor"])))
+                if parsed:
+                    sites_multiplier = parsed
+        except Exception as e:
+            logging.getLogger(__name__).warning("pricing_lead_score.yaml load failed, using defaults: %s", e)
+
+    _PRICING_CACHE = {"base_mrr": base_mrr, "naf_boost": naf_boost, "sites_multiplier": sites_multiplier}
+    return _PRICING_CACHE
+
+
+def _reset_pricing_cache() -> None:
+    """Reset le cache pricing (utile en test apres modif YAML)."""
+    global _PRICING_CACHE
+    _PRICING_CACHE = None
 
 
 # Multiplicateur par tranche d'etablissements
+# Charge depuis YAML si present (V119.3), sinon fallback hardcode
+_SITES_MULTIPLIER_DEFAULT = [
+    (5, 1.0),
+    (20, 1.8),
+    (100, 3.5),
+    (500, 6.0),
+    (999999, 10.0),  # >500 sites = enterprise deal
+]
+
+
 def _sites_multiplier(n_etabs: int) -> float:
-    if n_etabs <= 5:
-        return 1.0
-    if n_etabs <= 20:
-        return 1.8
-    if n_etabs <= 100:
-        return 3.5
-    if n_etabs <= 500:
-        return 6.0
-    return 10.0  # >500 sites = enterprise deal
+    pricing = _load_pricing_config()
+    for entry in pricing["sites_multiplier"]:
+        if n_etabs <= entry[0]:
+            return entry[1]
+    return pricing["sites_multiplier"][-1][1]
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -100,59 +194,68 @@ _NAF_LOW_VALUE_PREFIXES = {
 }
 
 
-def _resolve_segment(ul: SireneUniteLegale, n_etabs: int) -> str:
+def _resolve_segment(ul: SireneUniteLegale, n_etabs: int) -> LeadSegment:
     """Deduit le segment depuis categorie_entreprise INSEE (prioritaire)
     avec fallback sur le nombre d'etablissements."""
     cat = (ul.categorie_entreprise or "").upper().strip()
-    if cat == "GE":
-        return "GE"
-    if cat == "ETI":
-        return "ETI"
-    if cat == "PME":
-        return "PME" if n_etabs >= 3 else "TPE"
+    if cat == LeadSegment.GE.value:
+        return LeadSegment.GE
+    if cat == LeadSegment.ETI.value:
+        return LeadSegment.ETI
+    if cat == LeadSegment.PME.value:
+        return LeadSegment.PME if n_etabs >= 3 else LeadSegment.TPE
     # Fallback si categorie absente
     if n_etabs >= 100:
-        return "GE"
+        return LeadSegment.GE
     if n_etabs >= 10:
-        return "ETI"
+        return LeadSegment.ETI
     if n_etabs >= 3:
-        return "PME"
-    return "TPE"
+        return LeadSegment.PME
+    return LeadSegment.TPE
 
 
-def _resolve_naf_value_tier(naf: Optional[str]) -> str:
+def _resolve_naf_value_tier(naf: Optional[str]) -> NafValueTier:
     if not naf:
-        return "unknown"
+        return NafValueTier.UNKNOWN
     prefix = naf[:2]
     if prefix in _NAF_HIGH_VALUE_PREFIXES:
-        return "high"
+        return NafValueTier.HIGH
     if prefix in _NAF_MEDIUM_VALUE_PREFIXES:
-        return "medium"
+        return NafValueTier.MEDIUM
     if prefix in _NAF_LOW_VALUE_PREFIXES:
-        return "low"
-    return "unknown"
+        return NafValueTier.LOW
+    return NafValueTier.UNKNOWN
 
 
-def _resolve_priority(segment: str, naf_tier: str, n_etabs: int) -> str:
+def _resolve_priority(segment: LeadSegment, naf_tier: NafValueTier, n_etabs: int) -> LeadPriority:
     """Priorite commerciale A/B/C.
 
     A = deal chaud (GE/ETI + high NAF OU multi-site enterprise)
     B = deal tiede (PME multi-site OU ETI standard OU GE low)
     C = deal froid (TPE OU low NAF)
     """
-    if segment in ("GE", "ETI") and naf_tier == "high":
-        return "A"
-    if segment == "GE":
-        return "A" if n_etabs >= 20 else "B"
-    if segment == "ETI":
-        return "A" if (naf_tier in ("high", "medium") and n_etabs >= 10) else "B"
-    if segment == "PME":
-        return "B" if (naf_tier == "high" or n_etabs >= 5) else "C"
-    return "C"  # TPE
+    is_high = naf_tier == NafValueTier.HIGH
+    is_high_or_medium = naf_tier in (NafValueTier.HIGH, NafValueTier.MEDIUM)
+
+    if segment in (LeadSegment.GE, LeadSegment.ETI) and is_high:
+        return LeadPriority.A
+    if segment == LeadSegment.GE:
+        return LeadPriority.A if n_etabs >= 20 else LeadPriority.B
+    if segment == LeadSegment.ETI:
+        return LeadPriority.A if (is_high_or_medium and n_etabs >= 10) else LeadPriority.B
+    if segment == LeadSegment.PME:
+        return LeadPriority.B if (is_high or n_etabs >= 5) else LeadPriority.C
+    return LeadPriority.C  # TPE
 
 
 # NAF value boost factors (PROMEOS willingness to pay par tier)
-_NAF_BOOST = {"high": 1.25, "medium": 1.0, "low": 0.75, "unknown": 1.0}
+# Valeurs par defaut surchargeables via config/pricing_lead_score.yaml (V119.3)
+_NAF_BOOST_DEFAULT = {
+    NafValueTier.HIGH: 1.25,
+    NafValueTier.MEDIUM: 1.0,
+    NafValueTier.LOW: 0.75,
+    NafValueTier.UNKNOWN: 1.0,
+}
 
 
 def compute_lead_score_from_loaded(ul: SireneUniteLegale, n_etabs_actifs: int) -> dict:
@@ -165,25 +268,28 @@ def compute_lead_score_from_loaded(ul: SireneUniteLegale, n_etabs_actifs: int) -
     naf_tier = _resolve_naf_value_tier(ul.activite_principale)
     priority = _resolve_priority(segment, naf_tier, n_etabs_actifs)
 
-    mrr = int(_BASE_MRR[segment] * _sites_multiplier(n_etabs_actifs) * _NAF_BOOST[naf_tier])
+    pricing = _load_pricing_config()
+    base = pricing["base_mrr"][segment]
+    boost = pricing["naf_boost"][naf_tier]
+    mrr = int(base * _sites_multiplier(n_etabs_actifs) * boost)
 
     drivers = []
     if ul.categorie_entreprise:
         drivers.append(f"categorie INSEE: {ul.categorie_entreprise}")
     if ul.activite_principale:
-        drivers.append(f"NAF: {ul.activite_principale} ({naf_tier}-value)")
+        drivers.append(f"NAF: {ul.activite_principale} ({naf_tier.value}-value)")
     drivers.append(f"{n_etabs_actifs} etablissement(s) actif(s)")
     if ul.etat_administratif != "A":
         drivers.append(f"ATTENTION : etat={ul.etat_administratif} (non actif)")
 
     return {
         "siren": ul.siren,
-        "segment": segment,
+        "segment": segment.value,
         "estimated_mrr_eur": mrr,
         "estimated_arr_eur": mrr * 12,
-        "priority": priority,
+        "priority": priority.value,
         "n_etablissements_actifs": n_etabs_actifs,
-        "naf_value_tier": naf_tier,
+        "naf_value_tier": naf_tier.value,
         "drivers": drivers,
     }
 

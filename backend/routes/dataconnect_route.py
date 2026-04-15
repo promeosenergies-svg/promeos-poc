@@ -191,7 +191,7 @@ def sync_consumption(
                     is_estimated=False,
                     quality_score=1.0,
                     import_job_id=job.id,
-                    created_at=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
                 )
             )
             db.execute(stmt)
@@ -202,7 +202,7 @@ def sync_consumption(
     job.status = ImportStatus.COMPLETED
     job.rows_total = len(daily)
     job.rows_imported = inserted
-    job.completed_at = datetime.utcnow()
+    job.completed_at = datetime.now(timezone.utc)
     db.commit()
 
     return SyncResponse(

@@ -102,7 +102,7 @@ def seed_datapoints(db: Session, sites: list) -> int:
     from models.datapoint import DataPoint
     from models.enums import SourceType
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     created = 0
 
     # 12 mois CO2 intensity (idempotent per source)
@@ -246,7 +246,7 @@ def seed_reg_source_events(db: Session) -> int:
                 snippet=evt["snippet"],
                 tags=evt["tags"],
                 published_at=evt["published_at"],
-                retrieved_at=datetime.utcnow(),
+                retrieved_at=datetime.now(timezone.utc),
                 content_hash=content_hash,
                 dedup_key=dedup_key,
                 status=WatcherEventStatus.NEW,
@@ -552,7 +552,7 @@ def seed_extra_actions(db: Session, org, sites: list, rng: random.Random) -> int
     }
 
     created = 0
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     for i, act in enumerate(EXTRA_ACTIONS):
         idem_key = f"helios-completion:action:{i}"
@@ -712,7 +712,7 @@ def seed_extra_notifications(db: Session, org, sites: list) -> int:
     }
 
     created = 0
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     for i, notif in enumerate(EXTRA_NOTIFICATIONS):
         source_key = f"completion:{notif['source_type'].lower()}:{i}"

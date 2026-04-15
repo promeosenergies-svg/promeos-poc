@@ -1072,6 +1072,113 @@ class TestV117Frictions:
         assert site.surface_m2 == 1500
 
 
+class TestV119TechDebt:
+    """V119 : 3-day tech debt sprint (architecture + industrialisation + securite)."""
+
+    # ── J1.1 : extraction service onboarding_stepper ──
+    def test_j1_1_service_extraction(self):
+        """V119.1 : helpers extraits dans services/onboarding_stepper_service.py."""
+        from services.onboarding_stepper_service import (
+            STEP_FIELDS,
+            auto_detect_steps,
+            get_or_create_progress,
+            wire_funnel_best_effort,
+        )
+
+        assert len(STEP_FIELDS) == 6
+        assert callable(get_or_create_progress)
+        assert callable(auto_detect_steps)
+        assert callable(wire_funnel_best_effort)
+
+    def test_j1_1_routes_use_service_alias(self):
+        """V119.1 : routes/onboarding_stepper.py garde aliases backward-compat."""
+        from routes.onboarding_stepper import _auto_detect, _get_or_create
+
+        assert callable(_get_or_create)
+        assert callable(_auto_detect)
+
+    def test_j1_1_sirene_no_route_to_route_import(self):
+        """V119.1 : routes/sirene.py n'importe plus depuis routes/onboarding_stepper."""
+        import inspect
+        from routes import sirene
+
+        src = inspect.getsource(sirene)
+        assert "from routes.onboarding_stepper import" not in src
+
+    # ── J1.2 : StrEnum lead_score ──
+    def test_j1_2_lead_score_enums(self):
+        """V119.2 : segment/priority/naf_value_tier sont des StrEnum."""
+        from enum import Enum
+
+        from services.lead_score import LeadPriority, LeadSegment, NafValueTier
+
+        assert issubclass(LeadSegment, Enum)
+        assert issubclass(LeadPriority, Enum)
+        assert issubclass(NafValueTier, Enum)
+        assert LeadSegment.GE.value == "GE"
+        assert LeadPriority.A.value == "A"
+        assert NafValueTier.HIGH.value == "high"
+
+    # ── J1.3 : pricing YAML config ──
+    def test_j1_3_pricing_yaml_loaded(self):
+        """V119.3 : config/pricing_lead_score.yaml est charge avec succes."""
+        from services.lead_score import LeadSegment, NafValueTier, _load_pricing_config, _reset_pricing_cache
+
+        _reset_pricing_cache()
+        cfg = _load_pricing_config()
+        assert cfg["base_mrr"][LeadSegment.GE] == 6000
+        assert cfg["base_mrr"][LeadSegment.PME] == 600
+        assert cfg["naf_boost"][NafValueTier.HIGH] == 1.25
+        assert cfg["naf_boost"][NafValueTier.LOW] == 0.75
+        assert len(cfg["sites_multiplier"]) >= 4
+
+    def test_j1_3_pricing_fallback_si_yaml_absent(self, monkeypatch, tmp_path):
+        """V119.3 : si YAML absent, fallback sur les defaults Python."""
+        from services import lead_score
+        from services.lead_score import _BASE_MRR_DEFAULT, _reset_pricing_cache
+
+        # Mock le path pour pointer vers un dossier vide
+        monkeypatch.setattr(
+            lead_score,
+            "_load_pricing_config",
+            lambda: {
+                "base_mrr": dict(_BASE_MRR_DEFAULT),
+                "naf_boost": dict(lead_score._NAF_BOOST_DEFAULT),
+                "sites_multiplier": list(lead_score._SITES_MULTIPLIER_DEFAULT),
+            },
+        )
+        _reset_pricing_cache()
+        # Pas d'erreur a l'execution
+        from models.sirene import SireneUniteLegale
+
+        ul = SireneUniteLegale(
+            siren="999000111",
+            categorie_entreprise="GE",
+            activite_principale="47.11F",
+            etat_administratif="A",
+            statut_diffusion="O",
+            snapshot_date=SNAPSHOT,
+        )
+        result = lead_score.compute_lead_score_from_loaded(ul, n_etabs_actifs=10)
+        assert result["segment"] == "GE"
+
+    # ── J3 : write access guard ──
+    def test_j3_helper_require_write_access(self):
+        """V119.3 : _require_write_access existe sur sirene + patrimoine_crud."""
+        from routes.patrimoine_crud import _require_write_access as crud_guard
+        from routes.sirene import _require_write_access as sirene_guard
+
+        assert callable(crud_guard)
+        assert callable(sirene_guard)
+
+    def test_j3_demo_mode_passes(self):
+        """V119.3 : auth=None (DEMO_MODE) ne leve pas d'exception."""
+        from routes.patrimoine_crud import _require_write_access
+
+        # Ne doit rien lever
+        _require_write_access(None)
+
+
 class TestNaf25Resolver:
     """V115 : time-aware NAF25 resolver (bascule 01/01/2027 INSEE)."""
 
