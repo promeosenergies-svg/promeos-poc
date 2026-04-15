@@ -49,7 +49,13 @@ def recompute_site(db: Session, site_id: int) -> dict:
 
 
 def _bulk_recompute(db: Session, sites: List[Site]):
-    """Recompute snapshots for a list of sites (3 queries total, no N+1)."""
+    """Recompute full compliance chain for a list of sites.
+
+    Étape 1 (legacy snapshots) : 2 requêtes bulk pour éviter le N+1.
+    Étapes 2+3 (RegAssessment + score unifié A.2) : par site, sans optimisation
+    bulk car evaluate_site lit déjà des dépendances mixtes ; le coût reste
+    acceptable sur les volumes démo/pilote.
+    """
     if not sites:
         return
 
@@ -67,6 +73,40 @@ def _bulk_recompute(db: Session, sites: List[Site]):
     for site in sites:
         snapshot = compute_site_snapshot(obs_by_site[site.id], evs_by_site[site.id])
         _apply_snapshot(site, snapshot)
+
+    db.flush()
+    _bulk_sync_regops_and_score(db, site_ids)
+
+
+def _bulk_sync_regops_and_score(db: Session, site_ids: List[int]):
+    """Étapes 2+3 du recompute en boucle : RegAssessment + score A.2 par site.
+
+    Best-effort par site : un échec isolé ne casse pas le batch.
+    """
+    from regops.engine import evaluate_site, persist_assessment
+    from services.compliance_score_service import sync_site_unified_score
+
+    regops_ok = score_ok = 0
+    for site_id in site_ids:
+        try:
+            summary = evaluate_site(db, site_id)
+            persist_assessment(db, summary)
+            regops_ok += 1
+        except Exception as exc:
+            _logger.warning("_bulk_sync regops site=%d failed: %s", site_id, exc)
+        try:
+            sync_site_unified_score(db, site_id)
+            score_ok += 1
+        except Exception as exc:
+            _logger.warning("_bulk_sync score site=%d failed: %s", site_id, exc)
+
+    _logger.info(
+        "_bulk_sync_regops_and_score: regops=%d/%d score=%d/%d",
+        regops_ok,
+        len(site_ids),
+        score_ok,
+        len(site_ids),
+    )
 
 
 def recompute_portfolio(db: Session, portefeuille_id: int) -> dict:
