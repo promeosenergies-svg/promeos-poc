@@ -1,7 +1,21 @@
 """
 PROMEOS — BACS Compliance Gate : evaluation prudente du statut BACS.
 
-Logique : jamais de "conforme" si la preuve n'est pas demontree.
+★ Matrice d'usage BACS (trois fonctions complémentaires) ★
+
+| Fonction                                           | Rôle                                        | Quand l'utiliser                                  |
+|----------------------------------------------------|---------------------------------------------|---------------------------------------------------|
+| services.bacs_engine.evaluate_bacs(db, site_id)    | Moteur V2 complet (Putile, classe EN15232, | Production : recompute complet d'un site          |
+|                                                    | TRI, inspections, score 0-100)             | → écrit BacsAssessment row + snapshots Site       |
+| services.bacs_engine.evaluate_legacy(site,         | Adapter signature RegOps                   | Via regops/rules/bacs.py dans evaluate_site       |
+|  batiments, evidences, config)                     | (Putile simple, fallback v1)               | → produit list[Finding] pour RegAssessment        |
+| services.bacs_compliance_gate.evaluate_bacs_status | Gate prudente "jamais de CONFORME sans    | Endpoint /api/bacs/asset/{id}/gate-evaluation    |
+|  (db, asset_id)                                    | preuve" (blockers, warnings, major)        | → audit compliance-officer, NE persiste QUE       |
+|                                                    |                                             | BacsAsset.bacs_scope_status                       |
+
+Logique de ce module : jamais de "conforme" si la preuve n'est pas démontrée.
+Le gate lit la MÊME config YAML que l'engine V2 (regulations/bacs/v2.yaml) pour
+garantir l'absence de dérive sur les seuils 290/70 kW et les deadlines.
 """
 
 import logging
@@ -9,12 +23,17 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 
 from models.bacs_models import BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection
+from services.bacs_engine import _load_bacs_config
 
 logger = logging.getLogger("promeos.bacs.gate")
 
-# Seuils reglementaires
-SEUIL_HAUT = 290  # kW
-SEUIL_BAS = 70  # kW
+
+def _get_thresholds() -> tuple[int, int]:
+    """Retourne (high_kw, low_kw) depuis regulations/bacs/v2.yaml — source unique."""
+    cfg = _load_bacs_config()
+    thresholds = cfg.get("thresholds_kw", {})
+    return (int(thresholds.get("tier1", 290)), int(thresholds.get("tier2", 70)))
+
 
 # Statuts BACS prudents
 NOT_APPLICABLE = "not_applicable"
@@ -27,8 +46,11 @@ READY_FOR_REVIEW = "ready_for_internal_review"
 def evaluate_bacs_status(db: Session, asset_id: int) -> dict:
     """Evalue le statut BACS d'un actif de facon prudente et tracable.
 
-    JAMAIS de statut affirmatif sans preuve.
+    JAMAIS de statut affirmatif sans preuve. Utilise les seuils V2 YAML
+    (regulations/bacs/v2.yaml) — même source que services.bacs_engine.
     """
+    seuil_haut, seuil_bas = _get_thresholds()
+
     asset = db.query(BacsAsset).filter(BacsAsset.id == asset_id).first()
     if not asset:
         return {"status": "error", "reason": "Asset introuvable"}
@@ -56,11 +78,11 @@ def evaluate_bacs_status(db: Session, asset_id: int) -> dict:
     putile_max = max((s.putile_kw_computed or 0) for s in systems)
     total_putile = sum(s.putile_kw_computed or 0 for s in systems)
 
-    if total_putile < SEUIL_BAS:
+    if total_putile < seuil_bas:
         asset.bacs_scope_status = NOT_APPLICABLE
-        asset.bacs_scope_reason = f"Putile {total_putile:.0f} kW < {SEUIL_BAS} kW"
+        asset.bacs_scope_reason = f"Putile {total_putile:.0f} kW < {seuil_bas} kW"
         db.flush()
-        return _result(NOT_APPLICABLE, f"Putile {total_putile:.0f} kW < seuil {SEUIL_BAS} kW", [], [], [])
+        return _result(NOT_APPLICABLE, f"Putile {total_putile:.0f} kW < seuil {seuil_bas} kW", [], [], [])
 
     # 4. Classe systeme
     unknown_class_systems = [s for s in systems if not s.system_class]
@@ -100,7 +122,7 @@ def evaluate_bacs_status(db: Session, asset_id: int) -> dict:
 
     # 7. Performance / efficacite
     systems_without_baseline = [s for s in systems if not s.performance_baseline_kwh]
-    if systems_without_baseline and total_putile >= SEUIL_BAS:
+    if systems_without_baseline and total_putile >= seuil_bas:
         warnings.append(
             f"{len(systems_without_baseline)} systeme(s) sans baseline performance — perte efficacite non evaluable"
         )

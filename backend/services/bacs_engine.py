@@ -333,7 +333,9 @@ def compute_inspection_schedule(
 
 def evaluate_bacs(db: Session, site_id: int, tri_context: Optional[dict] = None) -> Optional[BacsAssessment]:
     """
-    Full BACS evaluation for a site.
+    Full BACS evaluation V2 for a site — ★ MOTEUR PRODUCTION PRINCIPAL ★.
+
+    Voir services.bacs_compliance_gate pour la matrice d'usage des 3 moteurs BACS.
 
     1. Load BacsAsset (or return None if not configured)
     2. Load CVC systems
@@ -688,9 +690,16 @@ def _parse_json(text: Optional[str]):
 
 def evaluate_legacy(site, batiments: list, evidences: list, config: dict) -> list[Finding]:
     """
-    Legacy wrapper: called by regops/rules/bacs.py evaluate().
-    Uses simple max(cvc_power_kw) approach when BacsAsset not configured.
-    Falls back to the v1 logic.
+    ADAPTER RegOps — called by regops/rules/bacs.py evaluate() pour produire
+    des `list[Finding]` au format RegOps (et non BacsAssessment ORM).
+
+    Voir services.bacs_compliance_gate pour la matrice d'usage des 3 moteurs.
+
+    Contexte : ce wrapper existe parce que regops/engine.py attend une
+    signature (site, batiments, evidences, config) -> list[Finding] mais
+    le moteur V2 principal (evaluate_bacs) attend (db, site_id).
+    Fallback utilisé quand BacsAsset n'est pas configuré : Putile simple à
+    partir de max(cvc_power_kw) sur batiments. Logique v1 (pré-BacsAsset).
     """
     # Build virtual systems from batiments for putile calc
     from models import CvcArchitecture, CvcSystemType
