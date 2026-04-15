@@ -59,7 +59,6 @@ import {
   Building,
   SearchCheck,
   PieChart,
-  Radio,
 } from 'lucide-react';
 
 /* ── Route → module mapping ── */
@@ -115,9 +114,6 @@ export const ROUTE_MODULE_MAP = {
   // Achat
   '/achat-energie': 'achat',
   '/renouvellements': 'achat',
-
-  // Flex
-  '/flex': 'flex',
 
   // Admin
   '/import': 'admin',
@@ -243,21 +239,12 @@ export const NAV_MODULES = [
     desc: 'Échéances & arbitrage énergie',
   },
   {
-    key: 'flex',
-    label: 'Flex',
-    icon: Radio,
-    tint: 'yellow',
-    expertOnly: false,
-    order: 6,
-    desc: 'Effacement & valorisation',
-  },
-  {
     key: 'admin',
     label: 'Administration',
     icon: Settings,
     tint: 'slate',
     expertOnly: true,
-    order: 7,
+    order: 6,
     desc: 'Import, utilisateurs et système',
   },
 ];
@@ -697,35 +684,6 @@ export const NAV_SECTIONS = [
     ],
   },
 
-  // === FLEX (yellow) — valorisation effacement / NEBEF / Tempo ===
-  {
-    key: 'flex',
-    module: 'flex',
-    label: 'Flex',
-    expertOnly: false,
-    order: 6,
-    items: [
-      {
-        to: '/flex',
-        icon: Radio,
-        label: 'Flexibilité',
-        desc: 'Score, potentiel, effacement NEBEF',
-        keywords: [
-          'flex',
-          'flexibilite',
-          'nebef',
-          'effacement',
-          'tempo',
-          'capacite',
-          'fcr',
-          'afrr',
-          'valorisation',
-          'agregateur',
-        ],
-      },
-    ],
-  },
-
   // === ADMIN (slate) — module expertOnly ===
   {
     key: 'admin-data',
@@ -818,18 +776,18 @@ export function getModuleTint(keyOrPath) {
  * ══════════════════════════════════════════════════════════════════ */
 const ROLE_MODULE_ORDER = {
   // Direction / finance : focus décisionnel
-  dg_owner: ['cockpit', 'achat', 'conformite', 'patrimoine', 'energie', 'flex'],
-  daf: ['cockpit', 'patrimoine', 'achat', 'conformite', 'energie', 'flex'],
-  acheteur: ['cockpit', 'achat', 'patrimoine', 'conformite', 'flex', 'energie'],
+  dg_owner: ['cockpit', 'achat', 'conformite', 'patrimoine', 'energie'],
+  daf: ['cockpit', 'patrimoine', 'achat', 'conformite', 'energie'],
+  acheteur: ['cockpit', 'achat', 'patrimoine', 'conformite', 'energie'],
 
   // Technique / opérationnel : focus données + action
-  energy_manager: ['cockpit', 'energie', 'flex', 'conformite', 'patrimoine', 'achat'],
-  resp_conformite: ['cockpit', 'conformite', 'patrimoine', 'energie', 'achat', 'flex'],
-  resp_immobilier: ['cockpit', 'patrimoine', 'conformite', 'energie', 'achat', 'flex'],
-  resp_site: ['cockpit', 'patrimoine', 'energie', 'conformite', 'achat', 'flex'],
+  energy_manager: ['cockpit', 'energie', 'conformite', 'patrimoine', 'achat'],
+  resp_conformite: ['cockpit', 'conformite', 'patrimoine', 'energie', 'achat'],
+  resp_immobilier: ['cockpit', 'patrimoine', 'conformite', 'energie', 'achat'],
+  resp_site: ['cockpit', 'patrimoine', 'energie', 'conformite', 'achat'],
 
   // Default order (no role or unknown)
-  default: ['cockpit', 'conformite', 'energie', 'patrimoine', 'achat', 'flex'],
+  default: ['cockpit', 'conformite', 'energie', 'patrimoine', 'achat'],
 };
 
 /**

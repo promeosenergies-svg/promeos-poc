@@ -25,26 +25,18 @@ import {
 
 /* ── Module definitions V7 ── */
 describe('NAV_MODULES V7', () => {
-  it('has exactly 7 modules (6 normal + admin expert)', () => {
-    expect(NAV_MODULES).toHaveLength(7);
+  it('has exactly 6 modules (5 normal + admin expert, Flex WIP hidden)', () => {
+    expect(NAV_MODULES).toHaveLength(6);
   });
 
   it('modules are in correct order with correct keys', () => {
     const keys = NAV_MODULES.map((m) => m.key);
-    expect(keys).toEqual([
-      'cockpit',
-      'conformite',
-      'energie',
-      'patrimoine',
-      'achat',
-      'flex',
-      'admin',
-    ]);
+    expect(keys).toEqual(['cockpit', 'conformite', 'energie', 'patrimoine', 'achat', 'admin']);
   });
 
-  it('order field is sequential 1-7', () => {
+  it('order field is sequential 1-6', () => {
     const orders = NAV_MODULES.map((m) => m.order);
-    expect(orders).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(orders).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   it('each module has icon, label, tint, expertOnly, desc', () => {
@@ -59,16 +51,15 @@ describe('NAV_MODULES V7', () => {
     }
   });
 
-  it('normal mode shows 6 modules (+Flex strategic)', () => {
+  it('normal mode shows 5 modules (Flex WIP hidden)', () => {
     const normal = NAV_MODULES.filter((m) => !m.expertOnly);
-    expect(normal).toHaveLength(6);
+    expect(normal).toHaveLength(5);
     expect(normal.map((m) => m.key)).toEqual([
       'cockpit',
       'conformite',
       'energie',
       'patrimoine',
       'achat',
-      'flex',
     ]);
   });
 
@@ -122,8 +113,8 @@ describe('MODULE_TINTS', () => {
 
 /* ── Section definitions V7 ── */
 describe('NAV_SECTIONS V7', () => {
-  it('has exactly 7 sections (one per module)', () => {
-    expect(NAV_SECTIONS).toHaveLength(7);
+  it('has exactly 6 sections (one per module, Flex WIP hidden)', () => {
+    expect(NAV_SECTIONS).toHaveLength(6);
   });
 
   it('every section references a valid module', () => {
@@ -185,18 +176,18 @@ describe('NAV_SECTIONS V7', () => {
 
 /* ── Expert filtering (item level) ── */
 describe('Expert filtering V7', () => {
-  it('normal mode: 14 visible items (+Flex)', () => {
+  it('normal mode: 13 visible items (Flex WIP hidden)', () => {
     const normal = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, false)
     );
-    expect(normal).toHaveLength(14);
+    expect(normal).toHaveLength(13);
   });
 
-  it('expert mode: same 14 items (no expertOnly items left)', () => {
+  it('expert mode: same 13 items (no expertOnly items left)', () => {
     const expert = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, true)
     );
-    expect(expert).toHaveLength(14);
+    expect(expert).toHaveLength(13);
   });
 
   it('zero expert-only items (all tabs merged into parent pages)', () => {
@@ -494,8 +485,8 @@ describe('NAV_MAIN_SECTIONS', () => {
     expect(adminInMain).toBeUndefined();
   });
 
-  it('has 6 main sections (+Flex)', () => {
-    expect(NAV_MAIN_SECTIONS).toHaveLength(6);
+  it('has 5 main sections (Flex WIP hidden)', () => {
+    expect(NAV_MAIN_SECTIONS).toHaveLength(5);
   });
 
   it('is synchronized with NAV_SECTIONS (same items)', () => {
