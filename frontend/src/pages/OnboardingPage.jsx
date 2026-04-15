@@ -39,7 +39,7 @@ const STEP_ICONS = {
 
 const STEP_LINKS = {
   step_org_created: null,
-  step_sites_added: '/patrimoine',
+  step_sites_added: '/onboarding/sirene',
   step_meters_connected: '/connectors',
   step_invoices_imported: '/billing',
   step_users_invited: '/admin/users',
@@ -48,7 +48,8 @@ const STEP_LINKS = {
 
 const STEP_DESCRIPTIONS = {
   step_org_created: "Votre organisation a été créée lors de l'inscription.",
-  step_sites_added: 'Ajoutez vos bâtiments et sites dans le patrimoine.',
+  step_sites_added:
+    'Créez votre patrimoine depuis un SIREN (auto-complétion Sirene officielle) ou manuellement.',
   step_meters_connected: "Connectez vos compteurs d'électricité et de gaz.",
   step_invoices_imported: "Importez vos factures pour l'analyse énergétique.",
   step_users_invited: 'Invitez vos collaborateurs sur la plateforme.',

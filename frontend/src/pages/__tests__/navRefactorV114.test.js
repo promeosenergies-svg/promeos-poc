@@ -56,8 +56,8 @@ describe('V7 Nav Refactor guard-rails', () => {
     expect(routes).not.toContain('/portfolio-reconciliation');
   });
 
-  it('QUICK_ACTIONS has 14 entries', () => {
-    expect(QUICK_ACTIONS).toHaveLength(14);
+  it('QUICK_ACTIONS has 15 entries (14 base + 1 sirene V118)', () => {
+    expect(QUICK_ACTIONS).toHaveLength(15);
   });
 
   it('/import is visible in admin-data', () => {

@@ -353,8 +353,16 @@ describe('Source guard V7', () => {
 
 /* ── Quick Actions ── */
 describe('QUICK_ACTIONS', () => {
-  it('has 14 quick actions', () => {
-    expect(QUICK_ACTIONS).toHaveLength(14);
+  it('has 15 quick actions (14 base + 1 sirene V118)', () => {
+    expect(QUICK_ACTIONS).toHaveLength(15);
+  });
+
+  it('contains sirene entry with keywords siren/siret', () => {
+    const sirene = QUICK_ACTIONS.find((a) => a.key === 'sirene');
+    expect(sirene).toBeDefined();
+    expect(sirene.to).toBe('/onboarding/sirene');
+    expect(sirene.keywords).toContain('siren');
+    expect(sirene.keywords).toContain('siret');
   });
 
   it('each action has key, label, icon, to', () => {

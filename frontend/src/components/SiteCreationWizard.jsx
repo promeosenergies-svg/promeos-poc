@@ -81,11 +81,30 @@ function StepOrganisation({ data, setData, orgs, loading }) {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [newSiren, setNewSiren] = useState('');
+  const navigate = useNavigate();
 
   if (loading) return <p className="text-sm text-gray-500">Chargement des organisations...</p>;
 
   return (
     <div className="space-y-4">
+      {/* Shortcut Sirene : auto-complete patrimoine entier depuis un SIREN */}
+      <div className="flex items-center gap-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+        <div className="text-xl">⚡</div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-indigo-900">Plus rapide : créer depuis un SIREN</p>
+          <p className="text-[11px] text-indigo-600">
+            Auto-complète organisation + entité + sites depuis la base Sirene officielle.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => navigate('/onboarding/sirene')}
+          className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700 whitespace-nowrap"
+        >
+          Ouvrir →
+        </button>
+      </div>
+
       <label className="block text-sm font-medium text-gray-700">Societe</label>
       {!creating ? (
         <>
