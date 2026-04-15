@@ -4,6 +4,16 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 
 ---
 
+> **Repo layout**
+>
+> - Runtime code stays in `backend/`, `frontend/`, `e2e/`, `data/`, `scripts/`, and `tools/`
+> - Shared documentation starts at [`docs/README.md`](docs/README.md)
+> - Curated versioned evidence lives in `docs/evidence/curated/`
+> - Generated screenshots and raw audit outputs belong in `artifacts/`
+> - Shared workframe rules live in [`docs/dev/workframe-contract.md`](docs/dev/workframe-contract.md)
+
+---
+
 ## Table des matières
 
 1. [TL;DR](#tldr)
