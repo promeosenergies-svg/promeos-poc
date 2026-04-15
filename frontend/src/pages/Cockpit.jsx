@@ -14,6 +14,7 @@ import {
   ShoppingCart,
 } from 'lucide-react';
 import CrossModuleCTA from '../components/CrossModuleCTA';
+import { resolvePortfolioConfidence } from '../domain/compliance/confidence';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
@@ -211,11 +212,12 @@ const Cockpit = () => {
       compliance_score: complianceScoreUnified,
       compliance_confidence: cockpitKpis?.conformiteSource
         ? 'high'
-        : complianceApi?.high_confidence_count > total * 0.6
-          ? 'high'
-          : complianceApi
-            ? 'medium'
-            : null,
+        : complianceApi
+          ? resolvePortfolioConfidence({
+              high_confidence_count: complianceApi.high_confidence_count,
+              total_sites: total,
+            }) || 'medium'
+          : null,
     };
   }, [scopedSites, complianceApi, cockpitKpis]);
 

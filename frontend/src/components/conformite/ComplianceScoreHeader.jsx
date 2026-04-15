@@ -2,6 +2,11 @@
  * ComplianceScoreHeader — Unified compliance score display with breakdown bars.
  */
 import { getComplianceScoreColor, COMPLIANCE_SCORE_THRESHOLDS } from '../../lib/constants';
+import { CONFIDENCE_DATA_LABELS } from '../../domain/compliance/complianceLabels.fr';
+import {
+  DEFAULT_FRAMEWORKS_TOTAL,
+  resolvePortfolioConfidence,
+} from '../../domain/compliance/confidence';
 
 export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
   if (!complianceScore) return null;
@@ -124,25 +129,58 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
               );
             })}
         </div>
-        {/* Confidence */}
-        {(complianceScore.confidence || complianceScore.high_confidence_count != null) && (
-          <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">Confiance</p>
-            <span
-              className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                complianceScore.confidence === 'high' ||
-                complianceScore.high_confidence_count > (complianceScore.total_sites || 0) * 0.6
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-amber-100 text-amber-700'
-              }`}
-            >
-              {complianceScore.confidence === 'high' ||
-              complianceScore.high_confidence_count > (complianceScore.total_sites || 0) * 0.6
-                ? 'Données fiables'
-                : 'Données partielles'}
-            </span>
+        <ConfidenceBadge complianceScore={complianceScore} />
+      </div>
+    </div>
+  );
+}
+
+const CONFIDENCE_PILL_CLASSES = {
+  high: 'bg-green-100 text-green-700',
+  medium: 'bg-amber-100 text-amber-700',
+  low: 'bg-red-100 text-red-700',
+};
+
+function ConfidenceBadge({ complianceScore }) {
+  const level = complianceScore.confidence || resolvePortfolioConfidence(complianceScore);
+  if (!level) return null;
+
+  const evaluated = complianceScore.frameworks_evaluated;
+  const total = complianceScore.frameworks_total ?? DEFAULT_FRAMEWORKS_TOTAL;
+  const portfolioHigh = complianceScore.high_confidence_count;
+  const portfolioTotal = complianceScore.total_sites;
+  const hasPortfolioCounts = portfolioHigh != null && portfolioTotal != null;
+
+  return (
+    <div className="relative group inline-block text-center">
+      <p className="text-xs text-gray-500 mb-1">Confiance</p>
+      <span
+        data-testid="compliance-confidence-badge"
+        data-confidence-level={level}
+        className={`text-xs font-medium px-2 py-0.5 rounded-full cursor-help ${CONFIDENCE_PILL_CLASSES[level]}`}
+      >
+        {CONFIDENCE_DATA_LABELS[level]}
+      </span>
+      <div className="hidden group-hover:block absolute z-50 right-0 top-6 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-600 text-left">
+        <div className="font-semibold text-gray-800 mb-1">Niveau de confiance</div>
+        {hasPortfolioCounts ? (
+          <div>
+            {portfolioHigh}/{portfolioTotal} sites avec données fiables
+          </div>
+        ) : (
+          <div>
+            {evaluated}/{total} frameworks évalués
+            {evaluated < total && (
+              <div className="text-gray-400 mt-1">
+                Frameworks manquants : score basé sur fallback (50 pts par défaut)
+              </div>
+            )}
           </div>
         )}
+        <div className="text-gray-400 mt-1">
+          High = {DEFAULT_FRAMEWORKS_TOTAL}/{DEFAULT_FRAMEWORKS_TOTAL} · Medium = 2/
+          {DEFAULT_FRAMEWORKS_TOTAL} · Low = 0-1/{DEFAULT_FRAMEWORKS_TOTAL}
+        </div>
       </div>
     </div>
   );
