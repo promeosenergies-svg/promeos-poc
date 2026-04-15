@@ -1,0 +1,125 @@
+name: QA Orchestration (Claude Agent SDK)
+
+# Audit automatisé via `python -m orchestration qa ...`
+# - Phase 3 tests structurels (sans API key) : toujours exécutés sur PR + push main
+# - Phase 4 audit live (avec API key) : exécuté seulement si le secret est présent
+#   et sur `push main` uniquement (pas sur PR pour éviter de consommer sur chaque commit)
+#
+# Pré-requis :
+# - Secret GitHub `ANTHROPIC_API_KEY` (Settings → Secrets and variables → Actions)
+# - Le job live est optionnel et non-bloquant (`continue-on-error: true`)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Tests structurels (toujours, sans API key) ────────────────────────────
+  structural:
+    name: Orchestration structural tests (no API key)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install backend deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install claude-agent-sdk
+
+      - name: Verify SDK importable
+        run: python -c "import claude_agent_sdk; print('SDK', claude_agent_sdk.__version__ if hasattr(claude_agent_sdk, '__version__') else 'ok')"
+
+      - name: Orchestration tests (QA Guardian + Regulatory)
+        run: |
+          python -m pytest tests/test_orchestration_config.py tests/test_orchestration_regulatory.py -v --tb=short
+
+      - name: CLI smoke (list + dry-run)
+        run: |
+          python -m orchestration --list --json
+          python -m orchestration qa source-guards --dry-run
+          python -m orchestration regulatory audit-cesures --dry-run
+
+  # ── Audit live (main uniquement, si secret présent) ────────────────────────
+  live_audit:
+    name: Live audit (QA Guardian source-guards + Regulatory coherence)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    needs: structural
+    continue-on-error: true  # Non-bloquant : informationnel uniquement
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install backend deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install claude-agent-sdk
+
+      - name: Check API key secret
+        id: check_key
+        run: |
+          if [ -z "${ANTHROPIC_API_KEY}" ]; then
+            echo "has_key=false" >> $GITHUB_OUTPUT
+            echo "⚠️ ANTHROPIC_API_KEY non configuré — live audit skippé"
+          else
+            echo "has_key=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: QA Guardian source-guards (live)
+        if: steps.check_key.outputs.has_key == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AGENT_SDK_MODEL: sonnet
+          AGENT_SDK_MAX_TURNS: "15"
+        run: |
+          python -m orchestration qa source-guards --json > qa_source_guards.json || true
+          echo "=== QA Guardian source-guards ==="
+          echo "status: $(jq -r '.status // "unknown"' qa_source_guards.json)"
+          jq -r '.summary // "(no summary)"' qa_source_guards.json | head -80
+
+      - name: Regulatory Analyst audit-coherence (live)
+        if: steps.check_key.outputs.has_key == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AGENT_SDK_MODEL: sonnet
+          AGENT_SDK_MAX_TURNS: "15"
+        run: |
+          python -m orchestration regulatory audit-coherence --json > regulatory_coherence.json || true
+          echo "=== Regulatory Analyst audit-coherence ==="
+          echo "status: $(jq -r '.status // "unknown"' regulatory_coherence.json)"
+          jq -r '.summary // "(no summary)"' regulatory_coherence.json | head -80
+
+      - name: Upload audit reports
+        if: steps.check_key.outputs.has_key == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: orchestration-audit-reports-${{ github.sha }}
+          path: |
+            backend/qa_source_guards.json
+            backend/regulatory_coherence.json
+          retention-days: 30
