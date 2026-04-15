@@ -243,10 +243,10 @@ frontend/src/components/analytics/RecommendationsCard.jsx   # Sprint A
 
 ### Docs
 ```
-docs/adr/006-enedis-dual-source-bridge.md
-docs/adr/007-sf5-quality-first-upsert.md
-docs/adr/008-recommendation-engine-rules.md
-docs/audit/RAPPORT_ENEDIS_EXPLORATION.md
+docs/decisions/adr/006-enedis-dual-source-bridge.md
+docs/decisions/adr/007-sf5-quality-first-upsert.md
+docs/decisions/adr/008-recommendation-engine-rules.md
+docs/audits/general/RAPPORT_ENEDIS_EXPLORATION.md
 ```
 
 ---
@@ -329,7 +329,7 @@ curl http://localhost:8001/api/enedis/opendata/freshness # Claude
 - **Branche Yannick** : `feat/enedis-sge-ingestion`
 - **PR Sprint 1-8** : #203 (mergée)
 - **Spec SF5** : `docs/specs/feature-enedis-sge-6-data-staging.md`
-- **ADRs** : `docs/adr/006-008`
+- **ADRs** : `docs/decisions/adr/006-008`
 
 En cas de doute sur un champ ou une dépendance, le test `tests/test_sf5_e2e.py` est la source de vérité — il insère des rows avec les noms exacts attendus par les promoters.
 

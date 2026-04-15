@@ -74,13 +74,19 @@ test-results/
 e2e/node_modules/
 e2e/ux-report/
 e2e/UX_REVIEW_*/
-audit-screenshots/captures/
+artifacts/playwright/
+artifacts/audits/
+artifacts/exports/
 
 # Runtime / local data
 backend/data/*.db
 backend/data/*.bak*
 backend/data/tertiaire_exports/
 exports/
+
+# Agent outputs — shared contract keeps reusable config in git,
+# but personal/generated reports stay local.
+.agent/reports/
 
 # Paperclip — state local uniquement
 .paperclip/sessions/
@@ -90,3 +96,18 @@ exports/
 
 # Skills.sh vendor — local symlinks
 .agents/
+
+# Personal workspace safety net — rien de perso ne rentre dans le repo.
+# Cf docs/dev/workframe-contract.md (Personal Workspace mandatory).
+# Ceinture + bretelles si workspace/ est cree par reflexe dans le repo.
+workspace/
+personal/
+*.local
+*.local.*
+.env.*.local
+
+# Scratch & experiments — jamais dans le repo
+scratch/
+tmp/
+*.scratch
+*.scratch.*

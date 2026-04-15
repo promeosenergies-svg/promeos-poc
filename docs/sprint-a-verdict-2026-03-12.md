@@ -132,8 +132,8 @@ au lieu de l'ancien « 8 non-conformités à traiter ».
 | Command Center | `sprint-a-before/.../26-command-center.png` | `sprint-a-after/.../26-command-center.png` | Overlay supprimée |
 
 **Dossiers** :
-- Before : `audit-screenshots/captures/sprint-a-before/2026-03-11-22-40/`
-- After : `audit-screenshots/captures/sprint-a-after/2026-03-12-05-31/`
+- Before : `artifacts/audits/captures/sprint-a-before/2026-03-11-22-40/`
+- After : `artifacts/audits/captures/sprint-a-after/2026-03-12-05-31/`
 
 ---
 

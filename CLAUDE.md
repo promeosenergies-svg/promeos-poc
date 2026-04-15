@@ -8,6 +8,15 @@ Lis `SKILL.md` a la racine AVANT toute action sur ce repo.
 Toutes les regles non-negociables y sont encodees.
 Skills detailles dans `.claude/skills/` (11 skills domaine).
 
+## Workframe & boundaries
+
+Read and enforce the rules in `docs/dev/workframe-contract.md` before
+creating or moving files. Personal material never enters this repo —
+it lives in `../workspace/personal/<person>/` outside the git boundary.
+The merge process, commit message discipline, and wait-for-eyes zones
+are defined there. Do not create `docs/drafts/` or `docs/notes/` folders
+for informal sharing — use GitHub Draft PRs instead.
+
 ## Stack technique
 
 - Backend : Python 3.11 / FastAPI / SQLAlchemy / SQLite (PostgreSQL-ready)

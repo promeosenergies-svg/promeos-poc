@@ -1,0 +1,244 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "header": {
+      "type": "object",
+      "properties": {
+        "siDemandeur": {
+          "type": "string"
+        },
+        "typeDestinataire": {
+          "type": "string"
+        },
+        "idDestinataire": {
+          "type": "string"
+        },
+        "codeFlux": {
+          "type": "string"
+        },
+        "idDemande": {
+          "type": "string"
+        },
+        "modePublication": {
+          "type": "string"
+        },
+        "idCanalContact": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+		"publicationCrp":{
+			"type":"string"
+		}
+      },
+      "required": [
+        "siDemandeur",
+        "typeDestinataire",
+        "idDestinataire",
+        "codeFlux",
+        "idDemande",
+        "modePublication",
+        "idCanalContact",
+        "format"
+      ]
+    },
+    "mesures": {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "idPrm": {
+              "type": "string"
+            },
+            "periode": {
+              "type": "object",
+              "properties": {
+                "dateDebut": {
+                  "type": "string"
+                },
+                "dateFin": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "dateDebut",
+                "dateFin"
+              ]
+            },
+            "contexte": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "etapeMetier": {
+                      "type": "string"
+                    },
+                    "contexteReleve": {
+                      "type": "string"
+                    },
+                    "typeReleve": {
+                      "type": "string"
+                    },
+                    "motifReleve": {
+                      "type": "string"
+                    },
+                    "grandeur": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "grandeurMetier": {
+                              "type": "string"
+                            },
+                            "grandeurPhysique": {
+                              "type": "string"
+                            },
+                            "unite": {
+                              "type": "string"
+                            },
+                            "calendrier": {
+                              "type": "array",
+                              "items": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "idCalendrier": {
+                                      "type": "string"
+                                    },
+                                    "libelleCalendrier": {
+                                      "type": "string"
+                                    },
+									"libelleGrille": {
+                                      "type": "string"
+									},
+                                    "classeTemporelle": {
+                                      "type": "array",
+                                      "items": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "idClasseTemporelle": {
+                                              "type": "string"
+                                            },
+                                            "libelleClasseTemporelle": {
+                                              "type": "string"
+                                            },
+											"codeCadran": {
+                                              "type": "string"
+                                            },
+                                            "valeur": {
+                                              "type": "array",
+                                              "items": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "d": {
+                                                      "type": "string"
+                                                    },
+                                                    "v": {
+                                                      "type": "integer"
+                                                    },
+                                                    "iv": {
+                                                      "type": ["integer","null"]
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "d",
+                                                    "v",
+                                                    "iv"
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "valeur"
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "idCalendrier",
+                                    "libelleCalendrier",
+									                  "libelleGrille",
+                                    "classeTemporelle"
+                                  ]
+                                }
+                              ]
+                            },
+                            "cadranTotalisateur": {
+                              "type": "object",
+                              "properties": {
+                                "codeCadran": {
+                                  "type": "string"
+                                },
+                                "valeur": {
+                                  "type": "array",
+                                  "items": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "d": {
+                                          "type": "string"
+                                        },
+                                        "v": {
+                                          "type": "integer"
+                                        },
+                                        "iv": {
+                                          "type": ["integer","null"]
+                                        }
+                                      },
+                                      "required": [
+                                        "d",
+                                        "v",
+                                        "iv"
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "codeCadran",
+                                "valeur"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "grandeurMetier",
+                            "grandeurPhysique",
+                            "unite"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "etapeMetier",
+                    "contexteReleve",
+                    "typeReleve",
+                    "grandeur"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "idPrm",
+            "periode",
+            "contexte"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "header",
+    "mesures"
+  ]
+}
