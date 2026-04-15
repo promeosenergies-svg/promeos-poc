@@ -47,7 +47,7 @@ import {
   computeHealthState,
 } from '../models/dashboardEssentials';
 import _HealthSummary from '../components/HealthSummary';
-import _BriefingHeroCard from './cockpit/BriefingHeroCard';
+import MorningBriefCard from '../components/MorningBriefCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
 import _ModuleLaunchers from './cockpit/ModuleLaunchers';
 import _EssentialsRow from './cockpit/EssentialsRow';
@@ -410,6 +410,9 @@ export default function CommandCenter() {
       }
     >
       <CockpitTabs active="dashboard" />
+
+      {/* ── Morning Brief — ce qui a bougé depuis la dernière visite ── */}
+      <MorningBriefCard alerts={alertsCount} />
 
       {/* ── KPIs J-1 (maquette : section 1 après tabs) ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-testid="kpis-j1">
