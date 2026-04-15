@@ -41,14 +41,19 @@ describe('kbRecoActionModel', () => {
     expect(payload.estimated_gain_eur).toBe(2400);
   });
 
-  it('calculates CO2e at 0.052 kgCO2/kWh', () => {
+  // Fix P0 QA Guardian 2026-04-15 : le front ne calcule plus co2e,
+  // il envoie estimated_savings_kwh_year et le backend calcule via emission_factors.py.
+  // Objectif : empêcher la dérive DB si ADEME met à jour le facteur CO2.
+  it('sends estimated_savings_kwh_year (backend computes co2e)', () => {
     const payload = buildKbRecoActionPayload({
       orgId: 1,
       siteId: 1,
       siteName: 'Test',
       reco: mockReco,
     });
-    expect(payload.co2e_savings_est_kg).toBe(780); // 15000 * 0.052
+    expect(payload.estimated_savings_kwh_year).toBe(15000);
+    // Le front ne doit PLUS envoyer co2e_savings_est_kg — source guard DB.
+    expect(payload.co2e_savings_est_kg).toBeUndefined();
   });
 
   it('handles recos without savings', () => {
@@ -64,7 +69,8 @@ describe('kbRecoActionModel', () => {
       reco: recoNoSavings,
     });
     expect(payload.estimated_gain_eur).toBeNull();
-    expect(payload.co2e_savings_est_kg).toBeNull();
+    expect(payload.estimated_savings_kwh_year).toBeNull();
+    expect(payload.co2e_savings_est_kg).toBeUndefined();
   });
 
   it('buildKbRecoActionDeepLink points to /actions', () => {
