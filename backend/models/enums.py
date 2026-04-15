@@ -186,6 +186,7 @@ class TypeEvidence(str, enum.Enum):
     ATTESTATION_OMBRIERE_PV = "attestation_ombriere_pv"
     ATTESTATION_TOITURE_PV = "attestation_toiture_pv"
     ATTESTATION_TOITURE_VEGETALISEE = "attestation_toiture_vegetalisee"
+    ATTESTATION_DPE = "attestation_dpe"  # Décret 2024-1040 — DPE tertiaire
 
 
 class StatutEvidence(str, enum.Enum):
