@@ -218,6 +218,12 @@ from routes.config_emission_factors import router as config_emission_factors_rou
 
 app.include_router(config_emission_factors_router)
 
+# Config price references (fallback shadow billing, non-réglementaire)
+# Fix P1 audit QA Guardian — supprime le hardcode EUR_FACTOR = 0.068 frontend
+from routes.config_price_references import router as config_price_references_router
+
+app.include_router(config_price_references_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 

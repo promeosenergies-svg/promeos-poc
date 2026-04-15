@@ -11,9 +11,8 @@
  */
 
 import { useElecCo2Factor } from '../../contexts/EmissionFactorsContext';
+import { useElecPriceReference } from '../../contexts/PriceReferenceContext';
 import { fmtNum } from '../../utils/format';
-
-const EUR_FACTOR = 0.068; // €/kWh — spot moyen 30j bridgé, aligné backend
 
 function fmt(value, decimals = 0) {
   if (value == null || isNaN(value)) return null;
@@ -33,6 +32,7 @@ function DeltaBadge({ pct }) {
 
 export default function OverviewRow({ data, unit }) {
   const co2Factor = useElecCo2Factor();
+  const eurFactor = useElecPriceReference();
   if (!data) return null;
 
   const totalKwh = data.total_kwh ?? null;
@@ -41,7 +41,7 @@ export default function OverviewRow({ data, unit }) {
   const talonKw = data.talon_kw ?? null;
   const offHours = data.off_hours_pct ?? null;
   const co2e = totalKwh != null ? totalKwh * co2Factor : null;
-  const eur = totalKwh != null ? totalKwh * EUR_FACTOR : null;
+  const eur = totalKwh != null ? totalKwh * eurFactor : null;
 
   const kpis = [
     totalKwh != null && {
