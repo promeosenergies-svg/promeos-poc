@@ -79,13 +79,6 @@ const SMART_QUERIES = [
     section: 'Query',
   },
   {
-    match: /^flex\s*:\s*(potentiel|opportunit)/i,
-    label: 'Gisements flex détectés',
-    subtitle: 'Sites avec potentiel NEBEF / effacement',
-    to: '/flex',
-    section: 'Query',
-  },
-  {
     match: /^conformite\s*:\s*dt$/i,
     label: 'Décret Tertiaire',
     subtitle: 'Obligations DT sur le portefeuille',
@@ -295,9 +288,9 @@ export default function CommandPalette({ open, onClose, onToggleExpert }) {
                   <code className="text-violet-500">actions:urgent</code>
                 </p>
                 <p>
-                  <code className="text-violet-500">flex:potentiel</code> ·{' '}
                   <code className="text-violet-500">contrats:echeance</code> ·{' '}
-                  <code className="text-violet-500">conformite:dt</code>
+                  <code className="text-violet-500">conformite:dt</code> ·{' '}
+                  <code className="text-violet-500">conformite:bacs</code>
                 </p>
               </div>
             </div>

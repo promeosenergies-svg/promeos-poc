@@ -12,7 +12,6 @@ import {
   Clock,
   ShieldCheck,
   ShoppingCart,
-  Radio,
 } from 'lucide-react';
 import CrossModuleCTA from '../components/CrossModuleCTA';
 import { useScope } from '../contexts/ScopeContext';
@@ -464,7 +463,7 @@ const Cockpit = () => {
       }
     >
       {/* ── Cross-module funnel CTAs (stratégique : Accueil → modules valeur) ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
         <CrossModuleCTA
           icon={ShieldCheck}
           title="Conformité"
@@ -480,14 +479,6 @@ const Cockpit = () => {
           to="/achat-energie"
           label="Achat"
           tint="violet"
-        />
-        <CrossModuleCTA
-          icon={Radio}
-          title="Valoriser flex"
-          desc="Effacement, Tempo, capacité"
-          to="/flex"
-          label="Flex"
-          tint="yellow"
         />
       </div>
 

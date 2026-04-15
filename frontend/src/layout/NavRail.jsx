@@ -14,16 +14,11 @@ const MODULE_BADGE_KEY = {
   energie: 'monitoring',
 };
 
-/* ── Module → revenue teaser (strategic opportunity) ── */
-const MODULE_TEASER = {
-  flex: 'flexRevenueTeaser',
-};
-
 /* ── Rail icon button for one module ── */
-function RailIcon({ mod, isActive, onClick, badgeCount, teaser }) {
+function RailIcon({ mod, isActive, onClick, badgeCount }) {
   const t = TINT_PALETTE[mod.tint] || TINT_PALETTE.slate;
   const Icon = mod.icon;
-  const tipText = teaser ? `${mod.label} — ${teaser}` : mod.label;
+  const tipText = mod.label;
 
   return (
     <TooltipPortal text={tipText} position="right">
@@ -43,11 +38,6 @@ function RailIcon({ mod, isActive, onClick, badgeCount, teaser }) {
         {badgeCount > 0 && (
           <span className="absolute top-1 right-1 w-4 h-4 flex items-center justify-center text-[8px] font-bold bg-red-500 text-white rounded-full leading-none">
             {badgeCount > 9 ? '9+' : badgeCount}
-          </span>
-        )}
-        {teaser && !badgeCount && (
-          <span className="absolute -top-1 -right-1 px-1 py-px text-[8px] font-bold bg-amber-400 text-amber-900 rounded-full leading-none ring-1 ring-white">
-            {teaser}
           </span>
         )}
         <span className="text-[10px] mt-0.5 leading-tight opacity-80">{mod.label}</span>
@@ -84,7 +74,6 @@ export default function NavRail({ activeModule, onSelectModule, badges = {} }) {
             isActive={activeModule === mod.key}
             onClick={onSelectModule}
             badgeCount={badges[MODULE_BADGE_KEY[mod.key]] || 0}
-            teaser={badges[MODULE_TEASER[mod.key]] || null}
           />
         ))}
       </div>

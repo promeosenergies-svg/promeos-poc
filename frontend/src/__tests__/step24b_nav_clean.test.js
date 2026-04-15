@@ -99,14 +99,14 @@ describe('Step 24b — CommandPalette hidden pages', () => {
 });
 
 describe('Step 24b — NavRail modules V7', () => {
-  it('NAV_MODULES has 7 entries (6 normal + admin expert)', () => {
+  it('NAV_MODULES has 6 entries (5 normal + admin expert, Flex WIP hidden)', () => {
     const src = fs.readFileSync(navFile, 'utf8');
     const start = src.indexOf('export const NAV_MODULES');
     const block = src.slice(start, start + 3000);
     const firstClose = block.indexOf('];');
     const moduleBlock = block.slice(0, firstClose);
     const keys = moduleBlock.match(/key:\s*['"][^'"]+['"]/g) || [];
-    expect(keys.length).toBe(7);
+    expect(keys.length).toBe(6);
   });
 
   it('NAV_MODULES V7 includes cockpit, conformite, energie, patrimoine, achat, admin', () => {
