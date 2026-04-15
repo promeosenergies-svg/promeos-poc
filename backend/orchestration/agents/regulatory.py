@@ -136,11 +136,83 @@ async def read_section(args: dict) -> dict:
     }
 
 
+def _test_active(value: dict, target: date) -> tuple[bool, date | None, date | None]:
+    """Teste si un dict avec `valid_from`/`valid_to` est actif à la date cible.
+
+    Returns (is_dated, is_active, valid_from, valid_to).
+    - is_dated=False si aucune des deux clés n'est présente
+    - is_active=True si valid_from <= target <= valid_to (avec bornes optionnelles)
+    """
+    valid_from = _parse_date(value.get("valid_from"))
+    valid_to = _parse_date(value.get("valid_to"))
+    if valid_from is None and valid_to is None:
+        return False, False, None, None  # pas de dates
+    if valid_from and target < valid_from:
+        return True, False, valid_from, valid_to
+    if valid_to and target > valid_to:
+        return True, False, valid_from, valid_to
+    return True, True, valid_from, valid_to
+
+
+def _collect_active(
+    name: str,
+    value: dict,
+    target: date,
+    active: list[dict],
+    no_dates: list[str],
+    depth: int = 0,
+) -> None:
+    """Recurse dans une section et ses sous-sections pour trouver les entrées actives.
+
+    - Si la section a ses propres valid_from/valid_to : testée directement (comportement V1).
+    - Sinon : recurse dans les sous-dict qui ont eux-mêmes valid_from/valid_to
+      (pattern nested : `cta.elec`, `cta.gaz_transport`, etc.).
+    - Si aucun niveau n'a de date : marquée "sans dates".
+    Fix queue-1 audit 2026-04-15 : tool V1 naïf manquait les sections nested.
+    """
+    is_dated, is_active, vf, vt = _test_active(value, target)
+    if is_dated:
+        if is_active:
+            active.append(
+                {
+                    "name": name,
+                    "valid_from": str(vf) if vf else None,
+                    "valid_to": str(vt) if vt else None,
+                }
+            )
+        return
+
+    # Pas de date directe : inspecter les sous-sections
+    if depth > 2:  # garde-fou profondeur, YAML PROMEOS est plat au niveau 2 max
+        no_dates.append(name)
+        return
+
+    # Pré-check : y a-t-il au moins UN enfant qui a des dates ?
+    # Si oui, on recurse ; sinon, on marque le parent comme "sans dates"
+    # (on n'explose PAS en marquant chaque enfant individuellement).
+    has_any_dated_child = any(
+        isinstance(child_val, dict)
+        and (child_val.get("valid_from") is not None or child_val.get("valid_to") is not None)
+        for child_val in value.values()
+    )
+    if not has_any_dated_child:
+        no_dates.append(name)
+        return
+
+    for child_key, child_val in value.items():
+        if not isinstance(child_val, dict):
+            continue
+        child_name = f"{name}.{child_key}"
+        _collect_active(child_name, child_val, target, active, no_dates, depth + 1)
+
+
 @tool(
     "find_active_at_date",
-    "Retourne les sections du YAML dont la fenêtre de validité contient la date donnée. "
-    "Une section est 'active' à la date D si valid_from <= D et (valid_to absent OR D <= valid_to). "
-    "Format date : YYYY-MM-DD. Utile pour vérifier la césure temporelle PROMEOS.",
+    "Retourne les sections du YAML (y compris sous-sections nested comme "
+    "`cta.elec` ou `cta.gaz_transport`) dont la fenêtre de validité contient "
+    "la date donnée. Une section est 'active' à la date D si valid_from <= D et "
+    "(valid_to absent OR D <= valid_to). Format date : YYYY-MM-DD. "
+    "Utile pour vérifier la césure temporelle PROMEOS.",
     {"target_date": str},
 )
 async def find_active_at_date(args: dict) -> dict:
@@ -163,22 +235,7 @@ async def find_active_at_date(args: dict) -> dict:
     for key, value in data.items():
         if not isinstance(value, dict):
             continue
-        valid_from = _parse_date(value.get("valid_from"))
-        valid_to = _parse_date(value.get("valid_to"))
-        if valid_from is None and valid_to is None:
-            no_dates.append(key)
-            continue
-        if valid_from and target < valid_from:
-            continue
-        if valid_to and target > valid_to:
-            continue
-        active.append(
-            {
-                "name": key,
-                "valid_from": str(valid_from) if valid_from else None,
-                "valid_to": str(valid_to) if valid_to else None,
-            }
-        )
+        _collect_active(key, value, target, active, no_dates)
 
     text_lines = [
         f"Date cible : {target}",
