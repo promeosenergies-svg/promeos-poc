@@ -43,7 +43,7 @@ import useExplorerPresets from './consumption/useExplorerPresets';
 import useExplorerMode from './consumption/useExplorerMode';
 import PortfolioPanel from './consumption/PortfolioPanel';
 import { MAX_SITES, nonApplicableTabs } from './consumption/types';
-import { CO2E_FACTOR_KG_PER_KWH } from './consumption/constants';
+import { useElecCo2Factor } from '../contexts/EmissionFactorsContext';
 import TimeseriesPanel from './consumption/TimeseriesPanel';
 import SignaturePanel from './consumption/SignaturePanel';
 import { fmtCo2, fmtKwh } from '../utils/format';
@@ -212,6 +212,7 @@ export default function ConsumptionExplorerPage() {
   const navigate = useNavigate();
   const { selectedSiteId, orgSites, sitesLoading, scopeLabel } = useScope();
   const { toast } = useToast();
+  const co2Factor = useElecCo2Factor();
 
   // ── UI mode (Classic / Expert) — localStorage only, never in URL ───────
   const { uiMode, isClassic, toggleUiMode } = useExplorerMode();
@@ -379,14 +380,14 @@ export default function ConsumptionExplorerPage() {
     const hphc = motor.primaryHphc;
     const totalKwh = hphc?.total_kwh ?? motor.primaryTunnel?.total_kwh ?? null;
     const kwhStr = totalKwh != null ? fmtKwh(totalKwh) : null;
-    // Facteur CO₂ centralisé (source : backend/config/emission_factors.py — ADEME Base Empreinte V23.6)
-    const co2Kg = totalKwh != null ? Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH) : null;
+    // Facteur CO₂ via EmissionFactorsContext (source unique backend/config/emission_factors.py)
+    const co2Kg = totalKwh != null ? Math.round(totalKwh * co2Factor) : null;
     const co2Str = co2Kg != null ? fmtCo2(co2Kg) : null;
     return {
       'conso-kwh-total': evidenceKwhTotal(scopeLabel, periodStr, kwhStr),
       'conso-co2e': evidenceCO2e(scopeLabel, periodStr, co2Str),
     };
-  }, [scopeLabel, days, motor.primaryHphc, motor.primaryTunnel]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scopeLabel, days, motor.primaryHphc, motor.primaryTunnel, co2Factor]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync custom dates → URL
   useEffect(() => {

@@ -10,7 +10,7 @@
  *   unit  'kwh' | 'kw' | 'eur'
  */
 
-import { CO2E_FACTOR_KG_PER_KWH } from './constants';
+import { useElecCo2Factor } from '../../contexts/EmissionFactorsContext';
 import { fmtNum } from '../../utils/format';
 
 const EUR_FACTOR = 0.068; // €/kWh — spot moyen 30j bridgé, aligné backend
@@ -32,6 +32,7 @@ function DeltaBadge({ pct }) {
 }
 
 export default function OverviewRow({ data, unit }) {
+  const co2Factor = useElecCo2Factor();
   if (!data) return null;
 
   const totalKwh = data.total_kwh ?? null;
@@ -39,7 +40,7 @@ export default function OverviewRow({ data, unit }) {
   const peakKw = data.peak_kw ?? null;
   const talonKw = data.talon_kw ?? null;
   const offHours = data.off_hours_pct ?? null;
-  const co2e = totalKwh != null ? totalKwh * CO2E_FACTOR_KG_PER_KWH : null;
+  const co2e = totalKwh != null ? totalKwh * co2Factor : null;
   const eur = totalKwh != null ? totalKwh * EUR_FACTOR : null;
 
   const kpis = [

@@ -212,6 +212,12 @@ from routes.sirene import router as sirene_router
 
 app.include_router(sirene_router)
 
+# Config emission factors (ADEME Base Empreinte V23.6) — source unique pour le frontend
+# Fix P0 #1-5 audit QA Guardian SDK 2026-04-15 (supprime le hardcode CO2E_FACTOR_KG_PER_KWH)
+from routes.config_emission_factors import router as config_emission_factors_router
+
+app.include_router(config_emission_factors_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 

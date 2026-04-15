@@ -82,8 +82,13 @@ describe('V9 CO2e: ConsumptionDiagPage includes CO2e features', () => {
   const { resolve } = require('path');
   const src = readFileSync(resolve(__dirname, '../ConsumptionDiagPage.jsx'), 'utf8');
 
-  it('uses CO2E_FACTOR_KG_PER_KWH constant (imported from constants)', () => {
-    expect(src).toContain('CO2E_FACTOR_KG_PER_KWH');
+  it('uses useElecCo2Factor hook (post-migration EmissionFactorsContext)', () => {
+    // Fix P0 #1-5 audit QA Guardian 2026-04-15 : plus de hardcode
+    // CO2E_FACTOR_KG_PER_KWH, maintenant via EmissionFactorsContext.
+    expect(src).toContain('useElecCo2Factor');
+    expect(src).toContain('EmissionFactorsContext');
+    // Garde-fou : le hardcode ne doit PLUS réapparaître dans ce fichier.
+    expect(src).not.toContain('CO2E_FACTOR_KG_PER_KWH');
   });
 
   it('has CO2e evitable summary card', () => {
