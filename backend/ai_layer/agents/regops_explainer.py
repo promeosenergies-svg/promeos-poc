@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 from models import Site, AiInsight, InsightType
 from ..client import get_client
+from ..kb_context import build_kb_prompt_section
 
 SYSTEM_PROMPT = """Tu es un expert en réglementation énergétique française pour les bâtiments tertiaires.
 Contexte PROMEOS : plateforme B2B de gestion énergétique multi-sites, post-ARENH/VNU (depuis 01/01/2026).
@@ -65,8 +66,15 @@ def run(db, site_id: int, **kwargs):
     client = get_client()
     user_prompt = _build_user_prompt(site)
 
+    # Injection contexte KB
+    kb_section = build_kb_prompt_section(
+        site_context={"energy_vector": ["ELEC"], "building_type": site.type},
+        domain="reglementaire",
+    )
+    enriched_prompt = SYSTEM_PROMPT + kb_section if kb_section else SYSTEM_PROMPT
+
     response_text = client.complete(
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=enriched_prompt,
         user_prompt=user_prompt,
     )
 
