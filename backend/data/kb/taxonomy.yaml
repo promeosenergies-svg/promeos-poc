@@ -1,0 +1,84 @@
+# taxonomy.yaml — Source unique de vérité pour les namespaces KB
+# Version: 2026.1
+# Owner: PROMEOS Core
+# Ne jamais modifier sans mettre à jour kb_validate.py
+
+version: "2026.1"
+
+namespaces:
+  - id: constants
+    label: "Constantes métier"
+    description: "Valeurs réglementaires et physiques (CO₂, accise, TURPE, CTA, BACS...)"
+    sources:
+      - "config/tarifs_reglementaires.yaml"
+      - "config/emission_factors.py"
+      - "config/ademe_benchmarks.py"
+    owner: regulatory
+    update_trigger: "JORF publication ou décision CRE"
+    validation_required: true
+
+  - id: regulations
+    label: "Textes réglementaires"
+    description: "Décret Tertiaire, BACS, APER, Audit Énergétique, post-ARENH"
+    sources:
+      - "regops/config/regs.yaml"
+      - "docs/base_documentaire/"
+    owner: regulatory
+    update_trigger: "Publication officielle ou watcher RSS"
+    validation_required: true
+
+  - id: archetypes
+    label: "Archétypes bâtiment"
+    description: "Profils énergétiques par type de bâtiment (11 types ADEME)"
+    sources:
+      - "models/kb_models.py"
+      - "config/ademe_benchmarks.py"
+    owner: analytics
+    update_trigger: "Publication benchmark ADEME"
+    validation_required: true
+
+  - id: anomaly_rules
+    label: "Règles détection anomalies"
+    description: "30 règles de détection (base_nuit, weekend, puissance...)"
+    sources:
+      - ".claude/skills/"
+      - "services/electric_monitoring/"
+    owner: analytics
+    update_trigger: "FeedbackDigestAgent flag + révision manuelle"
+    validation_required: false
+
+  - id: recommendations
+    label: "Recommandations et plans d'action"
+    description: "Actions ROI avec effort, économies estimées, priorisation"
+    sources:
+      - "models/kb_models.py"
+      - "regops/config/compliance_rules.py"
+    owner: product
+    update_trigger: "Retours clients + nouvelles mesures réglementaires"
+    validation_required: false
+
+  - id: market_intel
+    label: "Intelligence marché"
+    description: "EPEX, NEBCO, flexibilité, post-ARENH, tendances"
+    sources:
+      - "docs/base_documentaire/EuropEnergies/"
+      - "docs/base_documentaire/enedis/"
+    owner: market
+    update_trigger: "Publications EuropEnergies mensuelles"
+    validation_required: false
+
+item_schema_required_fields:
+  - id
+  - namespace
+  - version
+  - status
+  - confidence
+  - source.reference
+  - source.extracted_at
+  - agent_context.summary
+  - user_explanation.short
+
+forbidden_combinations:
+  - status: validated
+    confidence: low
+    reason: "HARD RULE — jamais de validated+low"
