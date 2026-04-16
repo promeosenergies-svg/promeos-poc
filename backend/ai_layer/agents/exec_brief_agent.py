@@ -7,6 +7,7 @@ import json
 from sqlalchemy import func
 from models import AiInsight, InsightType, Site, Portefeuille, EntiteJuridique, Organisation
 from ..client import get_client
+from ..kb_context import build_kb_prompt_section
 
 SYSTEM_PROMPT = """Tu es un directeur énergie-environnement d'un grand groupe tertiaire français.
 Contexte PROMEOS : plateforme B2B de gestion énergétique multi-sites, post-ARENH/VNU (depuis 01/01/2026).
@@ -77,8 +78,12 @@ Avancement moyen Décret Tertiaire : {data.get("avg_avancement_pct", 0)}%
 
 Génère un brief exécutif de 2 minutes."""
 
+    # Injection contexte KB
+    kb_section = build_kb_prompt_section(domain="facturation")
+    enriched_system = SYSTEM_PROMPT + kb_section if kb_section else SYSTEM_PROMPT
+
     response_text = client.complete(
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=enriched_system,
         user_prompt=user_prompt,
     )
 
