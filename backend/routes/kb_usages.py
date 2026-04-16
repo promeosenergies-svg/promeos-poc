@@ -6,6 +6,7 @@ Archetypes, anomaly rules, recommendations, provenance, reload
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
 from models import (
     KBVersion,
     KBArchetype,
@@ -383,7 +384,11 @@ class KBSearchBody(BaseModel):
 
 
 @router.post("/search")
-def search_kb_post(body: KBSearchBody, db: Session = Depends(get_db)):
+def search_kb_post(
+    body: KBSearchBody,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """POST full-text search — accepts JSON body with q, domain, type, include_drafts, limit.
     Resolves the frontend 405 (backend only had GET /search).
     """
@@ -509,7 +514,10 @@ class SeedDemoResponse(BaseModel):
 
 
 @router.post("/seed_demo", response_model=SeedDemoResponse)
-def seed_demo_kb(db: Session = Depends(get_db)):
+def seed_demo_kb(
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Seed KB with a minimal demo pack. Idempotent — skips items that already exist."""
 
     # ── KB Version (idempotent) ──
@@ -1037,7 +1045,10 @@ def seed_demo_kb(db: Session = Depends(get_db)):
 
 
 @router.post("/reload", response_model=ReloadResponse)
-def reload_kb(db: Session = Depends(get_db)):
+def reload_kb(
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Reload KB from YAML files into database"""
     service = KBService(db)
 
