@@ -51,10 +51,10 @@ def get_turpe_gestion_mois(segment: str = "C5_BT") -> float:
 
 
 def get_accise_kwh(energy_type: str = "elec") -> float:
-    """Accise en EUR/kWh (elec ou gaz)."""
+    """Accise en EUR/kWh (elec ou gaz). Pour élec, retourne le taux T2 PME courant."""
     tarifs = load_tarifs()
     if energy_type == "elec":
-        return tarifs["accise_elec"]["rate_eur_kwh"]
+        return tarifs["accise_elec_2026_t2"]["rate_eur_kwh"]
     elif energy_type == "gaz":
         return tarifs["accise_gaz"]["rate_eur_kwh"]
     raise ValueError(f"energy_type inconnu : {energy_type}")
@@ -164,9 +164,9 @@ def get_tarif_summary() -> dict:
         "turpe_source": tarifs["turpe"]["source"],
         "turpe_valid_from": tarifs["turpe"]["valid_from"],
         "accise_elec": {
-            "rate_eur_kwh": tarifs["accise_elec"]["rate_eur_kwh"],
-            "source": tarifs["accise_elec"]["source"],
-            "valid_from": tarifs["accise_elec"]["valid_from"],
+            "rate_eur_kwh": tarifs["accise_elec_2026_t2"]["rate_eur_kwh"],
+            "source": tarifs["accise_elec_2026_t2"]["source"],
+            "valid_from": tarifs["accise_elec_2026_t2"]["valid_from"],
         },
         "accise_gaz": {
             "rate_eur_kwh": tarifs["accise_gaz"]["rate_eur_kwh"],
