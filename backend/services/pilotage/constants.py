@@ -216,3 +216,37 @@ SAISON_BASSE_MOIS: set[int] = {4, 5, 6, 7, 8, 9, 10}  # avril-octobre
 def get_calibration(archetype_code: str) -> dict | None:
     """Retourne le calibrage 2024 pour un archetype, ou None si absent."""
     return ARCHETYPE_CALIBRATION_2024.get(archetype_code)
+
+
+# --- 4. Mapping TypeSite -> archetype + puissance pilotable median ----------
+#
+# Utilise par le seed et le wiring automatique quand un Site n'a ni archetype
+# renseigne manuellement ni correspondance canonique sur le nom. Les valeurs
+# kW sont des medianes calibrees Barometre Flex 2026 par segment tertiaire.
+#
+# Garder en sync avec ARCHETYPE_CALIBRATION_2024 : toutes les cles de droite
+# doivent exister dans ARCHETYPE_CALIBRATION_2024 (ou fallback BUREAU_STANDARD).
+TYPESITE_ARCHETYPE_FALLBACK: dict[str, tuple[str, float]] = {
+    # TypeSite.value -> (archetype_code, puissance_pilotable_kw_median)
+    "magasin": ("COMMERCE_ALIMENTAIRE", 80.0),
+    "commerce": ("COMMERCE_SPECIALISE", 40.0),
+    "bureau": ("BUREAU_STANDARD", 50.0),
+    "entrepot": ("LOGISTIQUE_FRIGO", 60.0),
+    "usine": ("INDUSTRIE_LEGERE", 150.0),
+    "hotel": ("HOTELLERIE", 45.0),
+    "sante": ("SANTE", 70.0),
+    "enseignement": ("ENSEIGNEMENT", 35.0),
+}
+
+
+# Sites canoniques de la demo -- donnees exactes recommandees par l'equipe
+# produit (Hypermarche Montreuil, Tour Haussmann, Entrepot Rungis). Utilise
+# par le seed pour forcer le match sur les 3 sites vedettes.
+CANONICAL_SITE_PILOTAGE: dict[str, tuple[str, float]] = {
+    # Nom normalise (lowercase + accents strippes) -> (archetype, kw)
+    "carrefour montreuil": ("COMMERCE_ALIMENTAIRE", 220.0),
+    "hypermarche montreuil": ("COMMERCE_ALIMENTAIRE", 220.0),
+    "tour haussmann": ("BUREAU_STANDARD", 120.0),
+    "bureau haussmann": ("BUREAU_STANDARD", 120.0),
+    "entrepot rungis": ("LOGISTIQUE_FRIGO", 85.0),
+}
