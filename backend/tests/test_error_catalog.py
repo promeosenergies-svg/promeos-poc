@@ -72,6 +72,21 @@ def test_business_error_with_context():
     assert kwargs["detail"]["context"] == {"action_id": 42, "org_id": 7}
 
 
+def test_business_error_context_is_json_serializable():
+    """Le champ context doit toujours être JSON-serializable (évite crash FastAPI)."""
+    import json
+
+    kwargs = business_error(
+        "ACTION_NOT_FOUND",
+        action_id=42,
+        nested={"site": "paris", "value": 1234.5},
+        items=[1, 2, 3],
+    )
+    serialized = json.dumps(kwargs["detail"])
+    assert "action_id" in serialized
+    assert "paris" in serialized
+
+
 def test_business_error_raises_on_unknown_code():
     with pytest.raises(KeyError):
         business_error("NOPE_NOT_A_REAL_CODE")

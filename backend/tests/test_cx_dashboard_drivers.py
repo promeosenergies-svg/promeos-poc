@@ -14,6 +14,38 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+# ─── Helper _percentile (unit tests) ────────────────────────────────────────
+from routes.cx_dashboard import _percentile  # noqa: E402
+
+
+class TestPercentile:
+    def test_empty_returns_none(self):
+        assert _percentile([], 0.5) is None
+
+    def test_single_value_any_p(self):
+        assert _percentile([42.0], 0.0) == 42.0
+        assert _percentile([42.0], 0.5) == 42.0
+        assert _percentile([42.0], 1.0) == 42.0
+
+    def test_p_zero_returns_min(self):
+        assert _percentile([1.0, 2.0, 3.0, 10.0], 0.0) == 1.0
+
+    def test_p_one_returns_max(self):
+        assert _percentile([1.0, 2.0, 3.0, 10.0], 1.0) == 10.0
+
+    def test_p50_interpolation(self):
+        # Avec 4 valeurs, p50 interpole entre index 1 (=2) et 2 (=3) avec k=1.5
+        # Résultat : 2 + (3 - 2) * 0.5 = 2.5
+        assert _percentile([1.0, 2.0, 3.0, 4.0], 0.5) == 2.5
+
+    def test_p95_on_large_sample(self):
+        values = list(range(101))  # 0..100
+        values.sort()
+        p95 = _percentile(values, 0.95)
+        # k = 100 * 0.95 = 95, donc valeur exacte à l'index 95
+        assert p95 == 95.0
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine

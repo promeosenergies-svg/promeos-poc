@@ -117,6 +117,11 @@ def get_t2v(
     """
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
+    # Limite à 10 000 (user, org) pairs pour garder le calcul percentile en mémoire
+    # borné. À réécrire en SQL natif (percentile_cont) si volume dépasse cette limite
+    # de façon récurrente — cf followup IAR refinement.
+    MAX_SAMPLE = 10_000
+
     first_action = (
         db.query(
             AuditLog.user_id.label("user_id"),
@@ -130,6 +135,7 @@ def get_t2v(
             AuditLog.created_at >= cutoff,
         )
         .group_by(AuditLog.user_id, AuditLog.resource_id)
+        .limit(MAX_SAMPLE)
         .subquery()
     )
 
