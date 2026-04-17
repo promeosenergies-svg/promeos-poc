@@ -45,7 +45,14 @@ class FlexReadySignalsResponse(BaseModel):
     clock_resolution_min: int = Field(..., description="Resolution minimale (15 min norme)")
     puissance_max_instantanee_kw: float = Field(..., description="P max instantanee kW")
     prix_eur_kwh: float = Field(..., description="Prix unitaire €/kWh (signal temps réel ou tarif contractuel)")
-    prix_source: str = Field(..., description="Source du prix retournée machine-readable")
+    prix_source: str = Field(
+        ...,
+        description=(
+            "Source machine-readable du prix : "
+            "'entsoe_day_ahead' | 'contrat_fournisseur' | 'fournisseur_tarif_base' | "
+            "'site_sans_contrat_fallback'"
+        ),
+    )
     prix_age_hours: Optional[float] = Field(None, description="Âge en heures du signal prix temps réel")
     puissance_souscrite_kva: int = Field(..., description="P souscrite kVA (contrat GRD)")
     empreinte_carbone_kg_co2e_kwh: float = Field(..., description="Facteur emission kgCO2e/kWh")
@@ -79,6 +86,10 @@ _NORME = "NF EN IEC 62746-4"
 
 # Age max d'un prix spot avant d'etre considere stale (fenetre day-ahead ~24h)
 _PRIX_SPOT_MAX_AGE_H = 36
+
+# Tarif de base fallback : source unique dans `constants.py` (evite tout drift
+# entre service et route helpers).
+from services.pilotage.constants import TARIF_BASE_FALLBACK_EUR_KWH as _TARIF_BASE_FALLBACK_EUR_KWH
 
 
 def _get_latest_spot(db: Session) -> Optional[tuple[float, float]]:
@@ -155,15 +166,18 @@ def build_flex_ready_signals(
     else:
         ts = now.astimezone(_TZ_PARIS)
 
-    # Prix : priorite spot day-ahead reel frais, fallback tarif contractuel
+    # Prix : priorite spot day-ahead reel frais, fallback tarif contractuel.
+    # Le ctx peut porter un `prix_source` pre-calcule (ex. "site_sans_contrat_fallback"
+    # pour un Site reel sans EnergyContract) -- on le preserve en mode fallback.
     prix_contrat = float(demo_site["prix_eur_kwh"])
+    ctx_prix_source = demo_site.get("prix_source")
     spot_info = _get_latest_spot(db) if db is not None else None
     if spot_info is not None:
         prix_eur_kwh, prix_age_hours = spot_info
         prix_source = "entsoe_day_ahead"
     else:
         prix_eur_kwh = prix_contrat
-        prix_source = "fournisseur_tarif_base"
+        prix_source = ctx_prix_source or "fournisseur_tarif_base"
         prix_age_hours = None
 
     # Empreinte carbone : source unique config/emission_factors.py (ADEME V23.6)
@@ -192,6 +206,27 @@ def build_flex_ready_signals(
         "empreinte_source_label": empreinte_source_label,
         "norme": _NORME,
     }
-    # Conformite calculee : tous les 6 champs standard presents et non-None
-    payload["conformite_flex_ready"] = all(payload.get(field) is not None for field in _FLEX_READY_FIELD_MAP)
+    # Conformite calculee : tous les 6 champs standard presents, non-None, et
+    # pour les numeriques (puissance max, prix, puissance souscrite, empreinte)
+    # strictement positifs -- on exclut les sentinels 0 qui traduisent un etat
+    # degrade (Site sans DeliveryPoint, sans contrat, empreinte inconnue).
+    payload["conformite_flex_ready"] = all(
+        _is_flex_ready_field_conform(payload.get(field)) for field in _FLEX_READY_FIELD_MAP
+    )
     return payload
+
+
+def _is_flex_ready_field_conform(value: Any) -> bool:
+    """
+    True si le champ est exploitable pour l'audit Flex Ready.
+
+    `None` -> non conforme (champ absent). `0`/`0.0` sur numerique -> non conforme
+    (sentinel des fallbacks `_load_flex_ready_ctx` : site sans DeliveryPoint ou
+    empreinte manquante). Les strings et datetimes (horloge, norme) sont OK
+    des lors qu'elles sont presentes.
+    """
+    if value is None:
+        return False
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return value > 0
+    return True

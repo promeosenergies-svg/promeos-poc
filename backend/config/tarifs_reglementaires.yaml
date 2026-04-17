@@ -471,3 +471,132 @@ prix_reference:
   elec_eur_kwh: 0.068
   gaz_eur_kwh: 0.045
   source: "PROMEOS POC fallback (EPEX Spot 30j moyen)"
+
+# ── Pilotage Flex Ready® — paramètres MVP ROI + scoring portefeuille ───────
+# Constantes indicatives (pas des engagements commerciaux) utilisées par :
+#   - `services/pilotage/roi_flex_ready.py` : business case chiffré par site
+#   - `services/pilotage/portefeuille_scoring.py` : classement multi-sites
+#
+# Résolution :
+#   - Clé `code` + (optionnel) `scope.archetype` : sans archetype → wildcard "*"
+#   - Sélection par valid_from (le plus récent ≤ at_date)
+#   - Chaque entrée porte unité + source documentée (traçabilité RegOps/CFO)
+#
+# Sources primaires :
+#   - Baromètre Flex 2026 (RTE / Enedis / GIMELEC, avril 2026)
+#   - Observatoire CRE T4 2025 (513 h prix négatifs France 2025)
+#   - Fiche CEE BAT-TH-116 "Système GTB / BACS"
+#   - Bulletin marchés de gros CRE T4 2025
+pilotage_flex_ready:
+  # --- Fenêtres annuelles favorables au décalage NEBCO (EUR/MWh spread) -----
+  - code: HEURES_FENETRES_FAVORABLES_AN
+    scope: {archetype: "*"}
+    valid_from: "2026-01-01"
+    valeur: 200
+    unite: "h/an"
+    source: "Baromètre Flex 2026 RTE/Enedis/GIMELEC + Observatoire CRE T4 2025 (513h prix négatifs)"
+
+  - code: SPREAD_MOYEN_EUR_MWH
+    scope: {archetype: "*"}
+    valid_from: "2026-01-01"
+    valeur: 60.0
+    unite: "EUR/MWh"
+    source: "Baromètre Flex 2026 — spread moyen fenêtres favorables (surplus PV, prix bas marginaux)"
+
+  - code: SPREAD_POINTE_EUR_MWH
+    scope: {archetype: "*"}
+    valid_from: "2026-01-01"
+    valeur: 120.0
+    unite: "EUR/MWh"
+    source: "Observatoire CRE + Bulletin marchés gros T4 2025 — pointe hiver haute saison vs plage base"
+
+  - code: JOURS_EFFACEMENT_PAR_AN
+    scope: {archetype: "*"}
+    valid_from: "2026-01-01"
+    valeur: 200
+    unite: "j/an"
+    source: "Baromètre Flex 2026 — jours ouvrés effaçables (hors WE, fériés, pannes GTB)"
+
+  - code: CEE_BACS_EUR_M2
+    scope: {archetype: "*"}
+    valid_from: "2025-01-01"
+    valeur: 3.5
+    unite: "EUR/m2"
+    source: "Fiche CEE BAT-TH-116 Système GTB — valorisation moyenne 2025-2026 (fourchette 2-5 EUR/m2)"
+
+  # --- Heures favorables annuelles par archétype (scoring portefeuille) -----
+  # Couvre : pointes HP hiver (~500h), plages MA NEBEF (~250h), capacité
+  # (~100h), décalages HC (~150h). 24/7 (logistique frigo, santé) cumulent
+  # davantage de fenêtres activables.
+  - code: HEURES_FAVORABLES_AN
+    scope: {archetype: "BUREAU_STANDARD"}
+    valid_from: "2026-01-01"
+    valeur: 900
+    unite: "h/an"
+    source: "Baromètre Flex 2026 — Bureaux / tertiaire standard"
+
+  - code: HEURES_FAVORABLES_AN
+    scope: {archetype: "COMMERCE_ALIMENTAIRE"}
+    valid_from: "2026-01-01"
+    valeur: 1400
+    unite: "h/an"
+    source: "Baromètre Flex 2026 — Commerce alimentaire (froid 24/7, gisement MA NEBEF élevé)"
+
+  - code: HEURES_FAVORABLES_AN
+    scope: {archetype: "COMMERCE_SPECIALISE"}
+    valid_from: "2026-01-01"
+    valeur: 800
+    unite: "h/an"
+    source: "Baromètre Flex 2026 — Commerce non alimentaire"
+
+  - code: HEURES_FAVORABLES_AN
+    scope: {archetype: "LOGISTIQUE_FRIGO"}
+    valid_from: "2026-01-01"
+    valeur: 1600
+    unite: "h/an"
+    source: "Baromètre Flex 2026 — Logistique frigorifique (inertie froid, gisement max)"
+
+  - code: HEURES_FAVORABLES_AN
+    scope: {archetype: "ENSEIGNEMENT"}
+    valid_from: "2026-01-01"
+    valeur: 700
+    unite: "h/an"
+    source: "Baromètre Flex 2026 — Enseignement"
+
+  - code: HEURES_FAVORABLES_AN
+    scope: {archetype: "SANTE"}
+    valid_from: "2026-01-01"
+    valeur: 600
+    unite: "h/an"
+    source: "Baromètre Flex 2026 — Santé (contraintes médicales fortes, gisement plus faible)"
+
+  - code: HEURES_FAVORABLES_AN
+    scope: {archetype: "HOTELLERIE"}
+    valid_from: "2026-01-01"
+    valeur: 1100
+    unite: "h/an"
+    source: "Baromètre Flex 2026 — Hôtellerie / hébergement"
+
+  - code: HEURES_FAVORABLES_AN
+    scope: {archetype: "INDUSTRIE_LEGERE"}
+    valid_from: "2026-01-01"
+    valeur: 1000
+    unite: "h/an"
+    source: "Baromètre Flex 2026 GIMELEC — Industrie légère (estimation)"
+
+  # Fallback (archetype inconnu) — médiane tertiaire
+  - code: HEURES_FAVORABLES_AN
+    scope: {archetype: "*"}
+    valid_from: "2026-01-01"
+    valeur: 800
+    unite: "h/an"
+    source: "Baromètre Flex 2026 — médiane tertiaire (fallback archétype inconnu)"
+
+  # --- Spread moyen valorisable (EUR/kWh pilotable) -------------------------
+  # Moyenne des gains constatés (HP-HC + NEBEF + capacité) sur tertiaire 2024.
+  - code: SPREAD_EUR_PAR_KWH
+    scope: {archetype: "*"}
+    valid_from: "2026-01-01"
+    valeur: 0.08
+    unite: "EUR/kWh"
+    source: "Baromètre Flex 2026 — spread moyen HP-HC + NEBEF + capacité tertiaire 2024 (Observatoire CRE)"

@@ -40,12 +40,23 @@ Sources :
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Optional
+from zoneinfo import ZoneInfo
 
 from services.pilotage.constants import ARCHETYPE_CALIBRATION_2024
+from services.pilotage.parameters import get_pilotage_param
+
+# Fuseau reference : on veut la date "aujourd'hui" cote Paris (pas UTC machine)
+# pour que les `valid_from` YAML se declenchent sur la frontiere attendue.
+_TZ_PARIS = ZoneInfo("Europe/Paris")
 
 
-# --- Hypotheses MVP (exposees dans la payload) -------------------------------
+# --- Fallbacks defensifs (valeurs de repli si YAML indisponible) -------------
+# Ces constantes ne doivent PAS etre utilisees directement dans la logique :
+# elles sont passees comme `default=` a get_pilotage_param pour eviter un
+# crash prod si le YAML est corrompu ou si un code a ete retire par erreur.
+# Source de verite : section `pilotage_flex_ready:` de tarifs_reglementaires.yaml.
 
 # Fenetres annuelles favorables au decalage NEBCO (surplus PV, prix negatifs
 # marginaux, creux TURPE 7 favorables). Source : Barometre Flex 2026 + CRE T4 2025.
@@ -136,36 +147,71 @@ def compute_roi_flex_ready(
     taux_decalable = float(calib["taux_decalable_moyen"])
     plages_pointe = calib["plages_pointe_h"]
 
+    # --- Resolution ParameterStore pilotage ---------------------------------
+    # Source de verite : section `pilotage_flex_ready:` du YAML.
+    # On conserve les constantes Python en fallback defensif (YAML corrompu).
+    today = datetime.now(_TZ_PARIS).date()
+    heures_fen_res = get_pilotage_param(
+        "HEURES_FENETRES_FAVORABLES_AN",
+        at_date=today,
+        archetype=resolved_code,
+        default=HEURES_FENETRES_FAVORABLES_AN,
+    )
+    spread_moy_res = get_pilotage_param(
+        "SPREAD_MOYEN_EUR_MWH",
+        at_date=today,
+        archetype=resolved_code,
+        default=SPREAD_MOYEN_EUR_MWH,
+    )
+    spread_pointe_res = get_pilotage_param(
+        "SPREAD_POINTE_EUR_MWH",
+        at_date=today,
+        archetype=resolved_code,
+        default=SPREAD_POINTE_EUR_MWH,
+    )
+    jours_eff_res = get_pilotage_param(
+        "JOURS_EFFACEMENT_PAR_AN",
+        at_date=today,
+        archetype=resolved_code,
+        default=JOURS_EFFACEMENT_PAR_AN,
+    )
+    cee_res = get_pilotage_param(
+        "CEE_BACS_EUR_M2",
+        at_date=today,
+        archetype=resolved_code,
+        default=CEE_BACS_EUR_M2,
+    )
+    heures_fenetres_favorables = int(heures_fen_res.value)
+    spread_moyen = float(spread_moy_res.value)
+    spread_pointe = float(spread_pointe_res.value)
+    jours_effacement = int(jours_eff_res.value)
+    cee_bacs_eur_m2 = float(cee_res.value)
+
     # --- Composante 1 : evitement pointe --------------------------------
     # kW pilotable = P max x taux decalable archetype
     # Heures pointe / an = somme largeurs plages x jours effaces par an
     # Gain EUR = kW pilotable x heures / an x spread EUR/MWh / 1000 (MWh->kWh)
     kw_pilotable = p_max_kw * taux_decalable
     heures_pointe_par_jour = _heures_pointe_par_jour(plages_pointe)
-    heures_pointe_evitees_an = heures_pointe_par_jour * JOURS_EFFACEMENT_PAR_AN
+    heures_pointe_evitees_an = heures_pointe_par_jour * jours_effacement
     # Facteur d'effacement realiste : on ne peut effacer qu'une fraction des
     # heures pointe (GTB active, contraintes metier). On prend 10% de la
     # fenetre totale pointe x jours ouvres -- hypothese conservatrice MVP.
-    # Formule finale : kWh decales = kw_pilotable x (heures_pointe_evitees_an x 0.1)
-    #                 gain = kWh x spread / 1000
-    #
-    # NB : on garde la multiplication par 0.1 implicite dans le facteur
-    # "heures pointe evitees" pour la lisibilite de la formule cible du spec.
     kwh_evites_an = kw_pilotable * heures_pointe_evitees_an * 0.1
-    evitement_pointe_eur = kwh_evites_an * SPREAD_POINTE_EUR_MWH / 1000.0
+    evitement_pointe_eur = kwh_evites_an * spread_pointe / 1000.0
 
     # --- Composante 2 : decalage NEBCO ----------------------------------
     # kW decalable = P max x taux decalable archetype (meme hypothese)
     # Heures fenetres favorables = 200 h/an (hypothese MVP)
     # Gain EUR = kW decalable x heures x spread / 1000
     kw_decalable = kw_pilotable  # meme assiette que le pilotable pointe
-    kwh_decales_an = kw_decalable * HEURES_FENETRES_FAVORABLES_AN
-    decalage_nebco_eur = kwh_decales_an * SPREAD_MOYEN_EUR_MWH / 1000.0
+    kwh_decales_an = kw_decalable * heures_fenetres_favorables
+    decalage_nebco_eur = kwh_decales_an * spread_moyen / 1000.0
 
     # --- Composante 3 : CEE BACS ----------------------------------------
     # Forfait CEE BAT-TH-116 x surface m2. Si surface_m2 = 0 (non renseignee),
     # composante = 0 (pas de gain estime), pas une erreur.
-    cee_bacs_eur = max(0.0, surface_m2) * CEE_BACS_EUR_M2
+    cee_bacs_eur = max(0.0, surface_m2) * cee_bacs_eur_m2
 
     # --- Total ---------------------------------------------------------
     gain_total = evitement_pointe_eur + decalage_nebco_eur + cee_bacs_eur
@@ -180,15 +226,23 @@ def compute_roi_flex_ready(
             "cee_bacs_eur": round(cee_bacs_eur, 2),
         },
         "hypotheses": {
-            "heures_fenetres_favorables_an": HEURES_FENETRES_FAVORABLES_AN,
-            "spread_moyen_eur_mwh": SPREAD_MOYEN_EUR_MWH,
-            "spread_pointe_eur_mwh": SPREAD_POINTE_EUR_MWH,
-            "jours_effacement_par_an": JOURS_EFFACEMENT_PAR_AN,
-            "cee_bacs_eur_m2": CEE_BACS_EUR_M2,
+            "heures_fenetres_favorables_an": heures_fenetres_favorables,
+            "spread_moyen_eur_mwh": spread_moyen,
+            "spread_pointe_eur_mwh": spread_pointe,
+            "jours_effacement_par_an": jours_effacement,
+            "cee_bacs_eur_m2": cee_bacs_eur_m2,
             "taux_decalable_archetype": taux_decalable,
             "heures_pointe_par_jour_archetype": heures_pointe_par_jour,
             "surface_m2": surface_m2,
             "puissance_max_kw": p_max_kw,
+            # Trace audit : source + valid_from par parametre pilotage (V120+ item 6)
+            "parametres_sources": {
+                "heures_fenetres_favorables_an": heures_fen_res.to_trace(),
+                "spread_moyen_eur_mwh": spread_moy_res.to_trace(),
+                "spread_pointe_eur_mwh": spread_pointe_res.to_trace(),
+                "jours_effacement_par_an": jours_eff_res.to_trace(),
+                "cee_bacs_eur_m2": cee_res.to_trace(),
+            },
         },
         "confiance": "indicative",
         "source": "Barometre Flex 2026 RTE/Enedis + fiche CEE BAT-TH-116",

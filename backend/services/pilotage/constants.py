@@ -218,6 +218,18 @@ def get_calibration(archetype_code: str) -> dict | None:
     return ARCHETYPE_CALIBRATION_2024.get(archetype_code)
 
 
+# --- Fallbacks transverses partages entre flex_ready.py et routes/pilotage.py --
+#
+# Tarif de base fallback pour un Site reel sans EnergyContract rattache.
+# Calibre sur moyenne TRVE tertiaire BT 2026. Doctrine "indicative" : le
+# payload porte la trace `prix_source="site_sans_contrat_fallback"` quand
+# cette valeur est retenue.
+#
+# Source unique : evite toute derive entre `_load_flex_ready_ctx` (routes) et
+# `build_flex_ready_signals` (service).
+TARIF_BASE_FALLBACK_EUR_KWH: float = 0.175
+
+
 # --- 4. Mapping TypeSite -> archetype + puissance pilotable median ----------
 #
 # Utilise par le seed et le wiring automatique quand un Site n'a ni archetype
