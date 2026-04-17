@@ -10,7 +10,13 @@ from sqlalchemy.pool import StaticPool
 from models import Base
 from models.iam import AuditLog, User, UserOrgRole, UserRole
 from models import Organisation
-from middleware.cx_logger import log_cx_event, CX_EVENT_TYPES
+from middleware.cx_logger import (
+    log_cx_event,
+    CX_EVENT_TYPES,
+    _is_member_cached,
+    invalidate_membership_cache,
+    _MEMBERSHIP_CACHE,
+)
 
 
 @pytest.fixture
@@ -24,7 +30,10 @@ def db_session():
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine)
     session = Session()
+    # P2 : isole le cache membership entre tests (module-level global)
+    invalidate_membership_cache()
     yield session
+    invalidate_membership_cache()
     session.close()
 
 
@@ -161,3 +170,56 @@ def test_s1_event_with_null_user_id_bypasses_membership_check(db_session):
         db_session.query(AuditLog).filter(AuditLog.action == "CX_DASHBOARD_OPENED", AuditLog.resource_id == "5").count()
     )
     assert count == 1
+
+
+# ─── Sprint CX 2.5-bis P2 : membership cache (TTL 5 min) ────────────────────
+
+
+def test_membership_check_cached_within_ttl(db_session):
+    """P2 : le 2e appel avec même (user_id, org_id) ne re-query pas la DB.
+
+    Stratégie : on seed membership, on fait 1 check (miss → query DB → cache),
+    on supprime UserOrgRole en DB, puis 2e check → doit retourner True car
+    le cache TTL est chaud. Prouve que le cache est bien consulté avant DB.
+    """
+    _seed_member(db_session, user_id=1, org_id=1)
+
+    # 1er check : miss → query DB → cache miss et fill
+    assert _is_member_cached(db_session, 1, 1) is True
+    assert (1, 1) in _MEMBERSHIP_CACHE
+
+    # On supprime la ligne en DB pour prouver que le 2e check
+    # ne re-query pas : si la DB était re-hittée, le résultat basculerait à False.
+    db_session.query(UserOrgRole).filter_by(user_id=1, org_id=1).delete()
+    db_session.flush()
+
+    # 2e check : doit encore retourner True (cache hit, pas de query DB)
+    assert _is_member_cached(db_session, 1, 1) is True
+
+
+def test_membership_cache_invalidated_explicitly(db_session):
+    """P2 : invalidate_membership_cache() purge la paire → re-query DB au prochain appel."""
+    _seed_member(db_session, user_id=2, org_id=2)
+    assert _is_member_cached(db_session, 2, 2) is True
+
+    # Supprime la ligne en DB + invalide explicitement le cache
+    db_session.query(UserOrgRole).filter_by(user_id=2, org_id=2).delete()
+    db_session.flush()
+    invalidate_membership_cache(user_id=2, org_id=2)
+
+    # Prochain check → cache miss → query DB → False
+    assert _is_member_cached(db_session, 2, 2) is False
+
+
+def test_membership_cache_ttl_expires(db_session):
+    """P2 : au-delà du TTL, le cache re-query la DB."""
+    _seed_member(db_session, user_id=3, org_id=3)
+
+    # ttl_sec=0 → l'entrée expire immédiatement
+    assert _is_member_cached(db_session, 3, 3, ttl_sec=0) is True
+
+    # On supprime en DB et on re-check avec TTL normal : comme l'entrée précédente
+    # est expirée (expires_at = now + 0), le check re-query → False.
+    db_session.query(UserOrgRole).filter_by(user_id=3, org_id=3).delete()
+    db_session.flush()
+    assert _is_member_cached(db_session, 3, 3) is False
