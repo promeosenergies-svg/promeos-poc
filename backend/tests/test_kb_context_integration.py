@@ -15,7 +15,7 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from ai_layer.agents.kb_context import build_kb_context  # noqa: E402
+from ai_layer.agents.kb_context import build_kb_context, build_portfolio_kb_context  # noqa: E402
 
 
 def _fake_site(**overrides):
@@ -114,6 +114,36 @@ class TestSiteToContext:
         site = SimpleNamespace(surface_m2=1000, type=None, hvac_kw=None, parking_surface_m2=None)
         ctx = _site_to_context(site)
         assert ctx["energy_vector"] == "elec"
+
+
+class TestPortfolioKBContext:
+    def test_empty_portfolio_returns_insufficient(self):
+        ctx = build_portfolio_kb_context([])
+        assert ctx["total_items"] == 0
+        assert ctx["kb_item_ids"] == []
+        assert ctx["status"] == "insufficient"
+
+    def test_multi_site_aggregates_unique_items(self):
+        sites = [_fake_site(surface_m2=1500, hvac_kw=150), _fake_site(surface_m2=2000, hvac_kw=300)]
+        ctx = build_portfolio_kb_context(sites)
+        assert len(ctx["kb_item_ids"]) == len(set(ctx["kb_item_ids"]))
+
+    def test_stats_by_domain_structure(self):
+        ctx = build_portfolio_kb_context([_fake_site()], domains=["reglementaire", "facturation"])
+        assert "reglementaire" in ctx["stats_by_domain"]
+        assert "facturation" in ctx["stats_by_domain"]
+
+    def test_broken_kb_returns_empty_defensive(self, monkeypatch):
+        import ai_layer.agents.kb_context as mod
+
+        class BrokenKBService:
+            def apply(self, *a, **kw):
+                raise RuntimeError("boom")
+
+        monkeypatch.setattr(mod, "KBService", BrokenKBService)
+        ctx = build_portfolio_kb_context([_fake_site()])
+        assert ctx["status"] == "error"
+        assert ctx["kb_item_ids"] == []
 
 
 class TestFormatItem:
