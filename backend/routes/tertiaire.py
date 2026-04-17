@@ -9,7 +9,8 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from middleware.auth import get_optional_auth
+from middleware.auth import get_optional_auth, AuthContext
+from services.iam_scope import check_site_access, get_effective_org_id
 
 from database import get_db
 from models import (
@@ -239,12 +240,15 @@ def list_efas(
     site_id: Optional[int] = Query(None, description="Filtrer par site"),
     statut: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     query = db.query(TertiaireEfa).filter(not_deleted(TertiaireEfa))
     if site_id:
+        check_site_access(auth, site_id)
         query = query.filter(TertiaireEfa.site_id == site_id)
     elif org_id:
-        query = query.filter(TertiaireEfa.org_id == org_id)
+        effective_org_id = get_effective_org_id(auth, org_id)
+        query = query.filter(TertiaireEfa.org_id == effective_org_id)
     if statut:
         query = query.filter(TertiaireEfa.statut == statut)
     efas = query.order_by(TertiaireEfa.created_at.desc()).all()
@@ -252,7 +256,10 @@ def list_efas(
 
 
 @router.post("/efa", status_code=201)
-def create_efa(body: EfaCreate, db: Session = Depends(get_db)):
+def create_efa(
+    body: EfaCreate, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)
+):
+    get_effective_org_id(auth, body.org_id)
     # V41: Validate buildings if provided
     batiment_lookup = {}
     if body.buildings:
@@ -606,8 +613,12 @@ def dashboard(
     org_id: Optional[int] = Query(None),
     site_id: Optional[int] = Query(None, description="Filtrer par site"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    return get_tertiaire_dashboard(db, org_id, site_id=site_id)
+    effective_org_id = get_effective_org_id(auth, org_id)
+    if site_id:
+        check_site_access(auth, site_id)
+    return get_tertiaire_dashboard(db, effective_org_id, site_id=site_id)
 
 
 # ── Site Signals V42 ─────────────────────────────────────────────────────────
@@ -618,9 +629,13 @@ def site_signals(
     org_id: Optional[int] = Query(None, description="ID organisation (optionnel, filtre les sites)"),
     site_id: Optional[int] = Query(None, description="Filtrer par site"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """V42: Qualification des sites patrimoine vis-à-vis du Décret tertiaire."""
-    return compute_site_signals(db, org_id, site_id=site_id)
+    effective_org_id = get_effective_org_id(auth, org_id)
+    if site_id:
+        check_site_access(auth, site_id)
+    return compute_site_signals(db, effective_org_id, site_id=site_id)
 
 
 # ── Catalog (patrimoine buildings for wizard) ────────────────────────────────
@@ -630,7 +645,9 @@ def site_signals(
 def building_catalog(
     org_id: int = Query(1),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
+    org_id = get_effective_org_id(auth, org_id)
     """Sites + bâtiments pour le wizard EFA (scoped org)."""
     sites = (
         db.query(Site)
@@ -1257,7 +1274,9 @@ def get_site_dt_progress(
     site_id: int,
     annee: int = None,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
+    check_site_access(auth, site_id)
     """Progression DT pour un site — agrégation de ses EFA actives.
 
     Délègue à operat_trajectory.validate_trajectory() (SoT avec DJU).
@@ -1279,7 +1298,9 @@ def get_portfolio_dt_progress(
     org_id: int,
     annee: int = None,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
+    get_effective_org_id(auth, org_id)
     """Vue multi-site trajectoire DT pour une organisation.
 
     Tri : off_track en premier (sites en retard prioritaires).

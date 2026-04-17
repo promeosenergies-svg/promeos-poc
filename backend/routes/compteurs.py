@@ -9,6 +9,8 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
+from services.iam_scope import check_site_access
 from models import Compteur, Site, TypeCompteur, EnergyVector, not_deleted
 from routes.schemas import CompteurResponse
 from typing import List, Optional
@@ -55,8 +57,13 @@ class CompteurCreateRequest(BaseModel):
 
 
 @router.post("")
-def create_compteur(req: CompteurCreateRequest, db: Session = Depends(get_db)):
+def create_compteur(
+    req: CompteurCreateRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Cree un compteur sur un site existant."""
+    check_site_access(auth, req.site_id)
     site = db.query(Site).filter(Site.id == req.site_id).first()
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouve")
@@ -125,10 +132,13 @@ def get_compteurs(
     site_id: Optional[int] = Query(None, description="Filtrer par site"),
     type: Optional[str] = Query(None, description="Filtrer par type (electricite, gaz, eau)"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     Liste les compteurs avec filtres
     """
+    if site_id:
+        check_site_access(auth, site_id)
     query = not_deleted(db.query(Compteur), Compteur)
 
     if site_id:
