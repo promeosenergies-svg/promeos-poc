@@ -32,6 +32,7 @@ from models import (
 from services.action_hub_service import sync_actions, compute_priority
 from services.action_close_rules import is_operat_action, check_closable
 from middleware.auth import get_optional_auth, AuthContext
+from middleware.cx_logger import log_cx_event
 from services.iam_scope import apply_scope_filter
 from services.scope_utils import resolve_org_id
 
@@ -473,6 +474,7 @@ def patch_action(
     action_id: int,
     data: ActionPatch,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     PATCH /api/actions/{action_id}
@@ -509,6 +511,13 @@ def patch_action(
             # Set closed_at when action is marked done
             if new_status == ActionStatus.DONE and action.closed_at is None:
                 action.closed_at = datetime.now(timezone.utc)
+                log_cx_event(
+                    db,
+                    action.org_id,
+                    auth.id if auth else None,
+                    "CX_ACTION_FROM_INSIGHT",
+                    {"action_id": action.id, "source_type": action.source_type.value if action.source_type else None},
+                )
 
     if data.owner is not None:
         old_owner = action.owner

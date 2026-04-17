@@ -31,6 +31,7 @@ from models import (
 )
 from models.reg_assessment import RegAssessment
 from middleware.auth import get_optional_auth, AuthContext
+from middleware.cx_logger import log_cx_event
 from services.scope_utils import resolve_org_id
 from services.kpi_service import KpiService, KpiScope
 from services.consumption_unified_service import get_portfolio_consumption, ConsumptionSource
@@ -68,6 +69,14 @@ def get_cockpit(
     org = db.query(Organisation).filter(Organisation.id == effective_org_id).first()
     if not org:
         raise HTTPException(status_code=404, detail="Organisation non trouvée")
+
+    log_cx_event(
+        db,
+        effective_org_id,
+        auth.id if auth else None,
+        "CX_DASHBOARD_OPENED",
+        {"endpoint": "cockpit"},
+    )
 
     # Stats sites (exclude soft-deleted, scoped to org)
     q_sites = _sites_for_org(db, effective_org_id)
