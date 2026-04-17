@@ -51,9 +51,7 @@ def log_cx_event(
     # S1 hardening : validation membership user → org
     if user_id is not None and org_id is not None:
         is_member = (
-            db.query(UserOrgRole.id)
-            .filter(UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id)
-            .first()
+            db.query(UserOrgRole.id).filter(UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id).first()
         )
         if not is_member:
             logger.warning(

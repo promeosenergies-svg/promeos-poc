@@ -76,9 +76,7 @@ class TestS2InvalidTokenRejected:
 
     @pytest.mark.parametrize("endpoint", ADMIN_ENDPOINTS)
     def test_endpoint_with_invalid_token_returns_401(self, client_no_auth_override, endpoint):
-        r = client_no_auth_override.get(
-            endpoint, headers={"Authorization": "Bearer invalid.token.here"}
-        )
+        r = client_no_auth_override.get(endpoint, headers={"Authorization": "Bearer invalid.token.here"})
         assert r.status_code == 401
 
 

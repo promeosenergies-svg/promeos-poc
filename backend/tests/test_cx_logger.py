@@ -109,12 +109,8 @@ def test_log_cx_event_does_not_commit_parent_transaction(db_session):
     log_cx_event(db_session, 1, 1, "CX_INSIGHT_CONSULTED")
     # Rollback du caller → tout disparaît (event + pending org)
     db_session.rollback()
-    assert (
-        db_session.query(AuditLog).filter(AuditLog.action == "CX_INSIGHT_CONSULTED").count() == 0
-    )
-    assert (
-        db_session.query(Organisation).filter_by(nom="org-pending-not-committed").count() == 0
-    )
+    assert db_session.query(AuditLog).filter(AuditLog.action == "CX_INSIGHT_CONSULTED").count() == 0
+    assert db_session.query(Organisation).filter_by(nom="org-pending-not-committed").count() == 0
 
 
 # ─── Sprint CX 2.5 hardening S1 : validation membership user → org ─────────
@@ -162,8 +158,6 @@ def test_s1_event_with_null_user_id_bypasses_membership_check(db_session):
     log_cx_event(db_session, org_id=5, user_id=None, event_type="CX_DASHBOARD_OPENED")
     db_session.commit()
     count = (
-        db_session.query(AuditLog)
-        .filter(AuditLog.action == "CX_DASHBOARD_OPENED", AuditLog.resource_id == "5")
-        .count()
+        db_session.query(AuditLog).filter(AuditLog.action == "CX_DASHBOARD_OPENED", AuditLog.resource_id == "5").count()
     )
     assert count == 1

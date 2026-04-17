@@ -133,12 +133,6 @@ def test_mark_action_done_without_user_id(db_session):
     action = _seed_action(db_session, action_id=500)
     mark_action_done(db_session, action, user_id=None, reason="auto_close")
     db_session.commit()
-    events = (
-        db_session.query(AuditLog)
-        .filter(AuditLog.action == "CX_ACTION_FROM_INSIGHT")
-        .all()
-    )
+    events = db_session.query(AuditLog).filter(AuditLog.action == "CX_ACTION_FROM_INSIGHT").all()
     assert len(events) == 1
     assert events[0].user_id is None
-
-
