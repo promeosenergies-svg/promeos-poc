@@ -2,24 +2,20 @@
  * RoiFlexReadyCard - Pilotage V1.
  *
  * Gain annuel estime Flex Ready(R) pour le site courant.
- * 3 composantes : evitement pointe + decalage NEBCO + CEE BAT-TH-116.
+ * 3 composantes : evitement pointe + effacement remunere + CEE BAT-TH-116.
  *
  * Sources : Barometre Flex 2026 (RTE/Enedis/GIMELEC), fiche CEE BAT-TH-116.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import { getRoiFlexReady } from '../../services/api/pilotage';
+import { useScope } from '../../contexts/ScopeContext';
+import { toSite } from '../../services/routes';
+import { fmtEur } from '../../utils/format';
 import { Skeleton, InfoTip } from '../../ui';
 
-const DEFAULT_DEMO_SITE = 'retail-001';
-
-function fmtEuro(n) {
-  if (n == null) return '—';
-  return Number(n).toLocaleString('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  });
-}
+const DEMO_FALLBACK_SITE = 'retail-001';
 
 function ComposanteBar({ label, value, total, color, tooltip }) {
   const pct = total > 0 ? Math.max(2, Math.round((value / total) * 100)) : 0;
@@ -30,7 +26,7 @@ function ComposanteBar({ label, value, total, color, tooltip }) {
           {label}
           {tooltip ? <InfoTip content={tooltip} /> : null}
         </span>
-        <span className="font-medium text-gray-900">{fmtEuro(value)}</span>
+        <span className="font-medium text-gray-900">{fmtEur(value)}</span>
       </div>
       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
@@ -39,8 +35,17 @@ function ComposanteBar({ label, value, total, color, tooltip }) {
   );
 }
 
-export default function RoiFlexReadyCard({ siteId }) {
-  const resolvedSiteId = siteId || DEFAULT_DEMO_SITE;
+export default function RoiFlexReadyCard({ siteId: siteIdProp }) {
+  const navigate = useNavigate();
+  const { scope, scopedSites } = useScope();
+
+  const resolvedSiteId = String(siteIdProp || scope?.siteId || DEMO_FALLBACK_SITE);
+
+  const siteNom = useMemo(() => {
+    if (!scope?.siteId) return null;
+    const found = scopedSites?.find((s) => String(s.id) === resolvedSiteId);
+    return found?.nom || null;
+  }, [scope?.siteId, scopedSites, resolvedSiteId]);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -86,7 +91,7 @@ export default function RoiFlexReadyCard({ siteId }) {
       >
         <h3 className="text-sm font-semibold text-gray-800 mb-2">Gain annuel Flex Ready®</h3>
         <p className="text-xs text-gray-500">
-          Site sans données Flex Ready® — sélectionnez un site démo ou terminer le seed.
+          Site pas encore qualifié Flex Ready® — contactez votre CSM pour activer le diagnostic.
         </p>
       </div>
     );
@@ -94,6 +99,8 @@ export default function RoiFlexReadyCard({ siteId }) {
 
   const { gain_annuel_total_eur, composantes = {}, archetype } = data;
   const total = Number(gain_annuel_total_eur || 0);
+  const ctaLabel = scope?.siteId ? 'Voir la fiche site' : 'Explorer un site démo';
+  const ctaTarget = scope?.siteId ? toSite(scope.siteId) : '/sites';
 
   return (
     <div
@@ -104,7 +111,7 @@ export default function RoiFlexReadyCard({ siteId }) {
         <div>
           <h3 className="text-sm font-semibold text-gray-800">Gain annuel Flex Ready®</h3>
           <p className="text-[11px] text-gray-500 mt-0.5">
-            Valorisation cumulée — site {resolvedSiteId}
+            Valorisation cumulée — {siteNom || resolvedSiteId}
           </p>
         </div>
         <span
@@ -116,7 +123,7 @@ export default function RoiFlexReadyCard({ siteId }) {
       </div>
 
       <div>
-        <div className="text-3xl font-bold text-gray-900 leading-none">{fmtEuro(total)}</div>
+        <div className="text-3xl font-bold text-gray-900 leading-none">{fmtEur(total)}</div>
         <div className="text-[11px] text-gray-500 mt-1">
           Archétype : {archetype || 'indéterminé'} · confiance {data.confiance || 'indicative'}
         </div>
@@ -128,23 +135,33 @@ export default function RoiFlexReadyCard({ siteId }) {
           value={composantes.evitement_pointe_eur || 0}
           total={total}
           color="bg-amber-500"
-          tooltip="kW pilotable × heures pointe évitées × spread €/MWh"
+          tooltip="kW pilotable × heures pointe évitées × écart prix pointe vs creux"
         />
         <ComposanteBar
-          label="Décalage NEBCO"
+          label="Effacement rémunéré"
           value={composantes.decalage_nebco_eur || 0}
           total={total}
           color="bg-emerald-500"
-          tooltip="kW décalable × ~200 h/an × 60 €/MWh spread"
+          tooltip="Décalage volontaire de consommation vers les fenêtres favorables (~200 h/an × 60 €/MWh)"
         />
         <ComposanteBar
           label="CEE BAT-TH-116"
           value={composantes.cee_bacs_eur || 0}
           total={total}
           color="bg-sky-500"
-          tooltip="3,5 €/m² × surface — fiche GTB/BACS"
+          tooltip="3,5 €/m² × surface — fiche CEE pilotage bâtiment"
         />
       </div>
+
+      <button
+        type="button"
+        onClick={() => navigate(ctaTarget)}
+        className="mt-1 inline-flex items-center justify-between gap-1 text-xs font-medium text-indigo-700 hover:text-indigo-900 hover:underline"
+        data-testid="pilotage-roi-cta"
+      >
+        <span>{ctaLabel}</span>
+        <ArrowRight size={12} />
+      </button>
 
       <div className="text-[10px] text-gray-400 mt-auto pt-1 border-t border-gray-100">
         Source : {data.source || 'Baromètre Flex 2026 + fiche CEE'}
