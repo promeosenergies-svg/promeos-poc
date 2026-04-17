@@ -1,0 +1,86 @@
+---
+id: "ACC-DEFINITION-PERIMETRES"
+type: "rule"
+domain: "acc"
+title: "Autoconsommation Collective — Définition et périmètres"
+summary: "L'autoconsommation collective (article L315-2, Code de l'énergie) permet à producteurs et consommateurs de partager localement l'électricité produite au sein d'une PMO. Deux périmètres : ACC Simple (même bâtiment, 5 MW) et ACC Étendue (multi-sites, 5 MW baseline / 10 MW dérogation collectivités)."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - collectivite
+    - copro
+    - bailleur
+  asset:
+    - multi
+  reg:
+    - acc
+  granularity:
+    - mensuel
+
+scope: {}
+
+content_md: |
+  ## Autoconsommation Collective (ACC)
+
+  ### Définition légale
+  - Article L315-2, Code de l'énergie : partage local d'électricité produite entre producteurs et consommateurs, au sein d'une PMO (Personne Morale Organisatrice)
+
+  ### ACC Simple (même bâtiment)
+  - Points injection/soutirage au même bâtiment
+  - Puissance cumulée : pas de plafond spécifique distinct (historiquement 3 MW)
+  - Cas d'usage : copropriétés, bailleur monolithe
+
+  ### ACC Étendue (multi-sites)
+  - Distance max : 2 km (standard), 10 km (communes périurbaines/rurales), 20 km (communes exclusivement rurales) — paliers définis par arrêté du 21/11/2019 modifié
+  - Puissance cumulée : 5 MW en métropole continentale (relèvement 3 -> 5 MW par arrêté 21/02/2025), 10 MW (dérogation collectivités sous critères cumulatifs)
+  - Cas d'usage : parcs activités, quartiers, multi-communes
+
+  ### Arrêté pivot du 21 février 2025 (JO 5 mars 2025)
+  - Augmentation 3 MW -> 5 MW pour ACC étendue métropole continentale
+  - Dérogation 10 MW pour communes/EPCI à fiscalité propre
+  - PMO obligatoire dans tous les cas
+
+logic:
+  when:
+    all:
+      - field: "acc_project"
+        op: "="
+        value: true
+  then:
+    outputs:
+      - type: "obligation"
+        label: "Constituer une PMO (Personne Morale Organisatrice)"
+        severity: "high"
+        details: "Article L315-2 Code de l'énergie"
+
+      - type: "next_step"
+        label: "Déterminer le périmètre : ACC Simple (même bâtiment) ou ACC Étendue (multi-sites)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Vérifier puissance cumulée (5 MW baseline, 10 MW si collectivité)"
+        priority: 2
+
+      - type: "next_step"
+        label: "Convention avec Enedis/GRD pour clé de répartition"
+        priority: 3
+
+sources:
+  - doc_id: "LOI-ENERGIE-L315-2"
+    label: "Article L315-2 Code de l'énergie"
+    section: "Définition autoconsommation collective"
+    anchor: "#l315-2"
+    excerpt_short: "Opération permettant à un ou plusieurs producteurs et un ou plusieurs consommateurs finals de partager localement l'électricité produite"
+
+  - doc_id: "ARRETE-2025-02-21"
+    label: "Arrêté du 21 février 2025 (JO 5 mars 2025)"
+    section: "Article 1 — Relèvement puissance"
+    anchor: "#article-1"
+    excerpt_short: "Puissance cumulée portée à 5 MW pour l'ACC étendue en métropole continentale"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1

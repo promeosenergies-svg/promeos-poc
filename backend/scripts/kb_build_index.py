@@ -18,7 +18,7 @@ def main():
     indexer = KBIndexer()
     store = KBStore()
 
-    print("🔨 Rebuilding FTS5 index...")
+    print("[BUILD] Rebuilding FTS5 index...")
 
     # Rebuild
     result = indexer.rebuild_index()
@@ -45,12 +45,12 @@ def main():
     print(f"{'=' * 60}")
 
     if result["errors"]:
-        print("\n⚠️  Errors encountered:")
+        print("\n[WARN] Errors encountered:")
         for err in result["errors"]:
             print(f"  - {err['id']}: {err['error']}")
         sys.exit(1)
     else:
-        print("\n✅ Index build successful!")
+        print("\n[OK] Index build successful!")
         sys.exit(0)
 
 

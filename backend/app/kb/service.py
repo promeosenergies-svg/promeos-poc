@@ -139,24 +139,9 @@ class KBService:
             return True
 
         for field, expected in scope.items():
-            value = context.get(field)
-
-            # Null-safe: missing field = False
-            if value is None:
-                missing.append(field)
-                why.append(f"{field} is NULL (required for scope)")
-                return False
-
-            # List comparison (value must be in list)
-            if isinstance(expected, list):
-                if value not in expected:
-                    why.append(f"{field}={value} not in {expected}")
-                    return False
-                else:
-                    why.append(f"{field}={value} matches scope")
-
-            # Min/max comparisons
-            elif field.endswith("_min"):
+            # Handle _min/_max suffixes FIRST — they reference a base field
+            # e.g. scope "hvac_kw_min: 70" checks context["hvac_kw"] >= 70
+            if field.endswith("_min"):
                 base_field = field[:-4]
                 actual_value = context.get(base_field)
                 if actual_value is None:
@@ -165,8 +150,7 @@ class KBService:
                 if actual_value < expected:
                     why.append(f"{base_field}={actual_value} < {expected} (min)")
                     return False
-                else:
-                    why.append(f"{base_field}={actual_value} >= {expected} (min)")
+                why.append(f"{base_field}={actual_value} >= {expected} (min)")
 
             elif field.endswith("_max"):
                 base_field = field[:-4]
@@ -177,12 +161,22 @@ class KBService:
                 if actual_value > expected:
                     why.append(f"{base_field}={actual_value} > {expected} (max)")
                     return False
-                else:
-                    why.append(f"{base_field}={actual_value} <= {expected} (max)")
+                why.append(f"{base_field}={actual_value} <= {expected} (max)")
 
-            # Exact match
             else:
-                if value != expected:
+                # Direct field match
+                value = context.get(field)
+                if value is None:
+                    missing.append(field)
+                    why.append(f"{field} is NULL (required for scope)")
+                    return False
+
+                if isinstance(expected, list):
+                    if value not in expected:
+                        why.append(f"{field}={value} not in {expected}")
+                        return False
+                    why.append(f"{field}={value} matches scope")
+                elif value != expected:
                     why.append(f"{field}={value} != {expected}")
                     return False
                 else:
