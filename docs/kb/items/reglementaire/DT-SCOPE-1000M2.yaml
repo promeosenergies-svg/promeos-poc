@@ -61,7 +61,7 @@ logic:
         details: "Décret n°2019-771 du 23 juillet 2019"
 
       - type: "next_step"
-        label: "Choisir année de référence (2010-2019) et méthode (Crelat ou Cabs)"
+        label: "Choisir année de référence (2010-2022) et méthode (Crelat ou Cabs)"
         priority: 1
 
       - type: "next_step"
