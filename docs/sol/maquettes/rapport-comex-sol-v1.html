@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>PROMEOS — Rapport comex mensuel · gabarit Sol V1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --bg-paper: #FFFEFB;
+  --bg-cream: #FAF6F0;
+  --bg-sand: #F3ECE0;
+  --ink-900: #1C1B18;
+  --ink-700: #3A3731;
+  --ink-500: #6B665C;
+  --ink-400: #8F8A7E;
+  --ink-300: #B8B2A3;
+  --ink-200: #DCD5C4;
+  --rule: #D9D2C1;
+  --calme: #2F6B5E;
+  --attention: #A06B1A;
+  --afaire: #B8552E;
+  --succes: #2E6B4A;
+  --hph: #B84545;
+  --hch: #2E4A6B;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: #E8E2D4;
+  color: var(--ink-900);
+  -webkit-font-smoothing: antialiased;
+  padding: 32px 0;
+}
+
+.mono { font-family: var(--font-mono); font-feature-settings: "tnum"; }
+.serif { font-family: var(--font-display); }
+
+/* Toolbar (hors impression) */
+.toolbar {
+  max-width: 820px; margin: 0 auto 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 20px; background: var(--ink-900); color: var(--bg-cream);
+  font-size: 13px; border-radius: 3px;
+  font-family: var(--font-body);
+}
+.toolbar button {
+  background: var(--bg-cream); color: var(--ink-900);
+  border: none; padding: 7px 14px; border-radius: 2px; cursor: pointer;
+  font-family: var(--font-body); font-size: 12px; font-weight: 500;
+}
+.toolbar button:hover { background: var(--bg-sand); }
+
+/* Page A4 */
+.page {
+  width: 210mm; min-height: 297mm;
+  margin: 0 auto 24px; padding: 22mm 22mm 18mm;
+  background: var(--bg-paper);
+  box-shadow: 0 2px 12px rgba(28, 27, 24, 0.08);
+  position: relative;
+  color: var(--ink-900);
+  font-size: 10.5pt; line-height: 1.5;
+  page-break-after: always;
+}
+.page:last-child { page-break-after: auto; }
+
+@media print {
+  body { padding: 0; background: white; }
+  .toolbar, .print-hint { display: none; }
+  .page { box-shadow: none; margin: 0; }
+}
+
+/* ==== PAGE 1 — COUVERTURE + RÉSUMÉ EXÉCUTIF ==== */
+
+.cover-kicker {
+  font-family: var(--font-mono);
+  font-size: 9pt; text-transform: uppercase; letter-spacing: 0.18em;
+  color: var(--ink-500); font-weight: 600;
+  padding-bottom: 6px; border-bottom: 1px solid var(--ink-900);
+  display: inline-block;
+}
+
+.cover-title {
+  font-family: var(--font-display); font-weight: 600; font-style: italic;
+  font-size: 52pt; line-height: 1; margin-top: 14mm;
+  letter-spacing: -0.03em; color: var(--ink-900);
+  max-width: 80%;
+}
+.cover-title em { font-style: normal; color: var(--ink-500); display: block; margin-top: 4px; font-size: 42pt; }
+
+.cover-meta {
+  margin-top: 14mm;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+  font-family: var(--font-mono); font-size: 9pt;
+}
+.cover-meta-item {
+  border-top: 1px solid var(--rule); padding-top: 6px;
+}
+.cover-meta-item .label {
+  color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.1em; font-size: 7.5pt;
+  margin-bottom: 4px;
+}
+.cover-meta-item .value {
+  font-size: 10.5pt; color: var(--ink-900); font-weight: 600;
+}
+
+.cover-signature {
+  position: absolute; bottom: 22mm; left: 22mm; right: 22mm;
+  padding-top: 10px; border-top: 1px solid var(--rule);
+  display: flex; justify-content: space-between; align-items: flex-end;
+  font-size: 8.5pt; color: var(--ink-500);
+  font-family: var(--font-mono);
+}
+.cover-signature .left { max-width: 70%; }
+.cover-signature strong { color: var(--ink-900); font-weight: 600; }
+
+/* Executive summary (bas de page 1) */
+.exec-block {
+  margin-top: 18mm;
+  padding-top: 8mm;
+  border-top: 1px solid var(--ink-900);
+}
+.exec-heading {
+  font-family: var(--font-display); font-weight: 500; font-size: 20pt;
+  letter-spacing: -0.015em; color: var(--ink-900);
+  margin-bottom: 8mm;
+}
+.exec-heading em { font-style: italic; color: var(--ink-500); }
+
+.exec-numbers {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+}
+.exec-num {
+  border-top: 2px solid var(--ink-900); padding-top: 8px;
+}
+.exec-num-label {
+  font-size: 8pt; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--ink-500); margin-bottom: 5px; font-weight: 500;
+}
+.exec-num-value {
+  font-family: var(--font-mono); font-size: 28pt; font-weight: 600;
+  line-height: 1; color: var(--ink-900); letter-spacing: -0.025em;
+}
+.exec-num-unit {
+  font-family: var(--font-body); font-size: 13pt; color: var(--ink-400); font-weight: 400;
+  margin-left: 3px;
+}
+.exec-num-sub {
+  font-size: 9pt; color: var(--ink-500); margin-top: 6px; line-height: 1.45;
+}
+.exec-num-sub strong { color: var(--ink-900); font-weight: 600; }
+.exec-num .delta {
+  display: inline-block; font-family: var(--font-mono); font-size: 9pt;
+  margin-top: 4px; font-weight: 500;
+}
+.delta-good { color: var(--succes); }
+.delta-warn { color: var(--attention); }
+.delta-bad { color: var(--afaire); }
+
+/* ==== PAGE 2 — 3 FAITS + ACTIONS SOL ==== */
+
+.page-head {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding-bottom: 5mm; border-bottom: 1px solid var(--ink-900);
+  margin-bottom: 8mm;
+}
+.page-head-left {
+  font-family: var(--font-mono); font-size: 8pt; text-transform: uppercase; letter-spacing: 0.14em;
+  color: var(--ink-500);
+}
+.page-head-right {
+  font-family: var(--font-display); font-weight: 500; font-size: 14pt;
+  color: var(--ink-900); letter-spacing: -0.01em;
+}
+.page-head-right em { font-style: italic; color: var(--ink-500); }
+
+.sol-lead {
+  font-family: var(--font-display); font-weight: 400;
+  font-size: 16pt; line-height: 1.35; letter-spacing: -0.015em;
+  color: var(--ink-900);
+  margin-bottom: 10mm;
+  max-width: 90%;
+}
+.sol-lead em { font-style: italic; color: var(--ink-700); }
+
+/* 3 faits */
+.facts-section {
+  margin-bottom: 8mm;
+}
+.facts-label {
+  font-family: var(--font-mono); font-size: 8pt; text-transform: uppercase; letter-spacing: 0.14em;
+  color: var(--ink-500); margin-bottom: 5mm; font-weight: 600;
+  padding-bottom: 3px; border-bottom: 1px solid var(--rule);
+}
+.fact {
+  display: grid; grid-template-columns: 14mm 1fr 32mm; gap: 6mm;
+  padding: 5mm 0; border-bottom: 1px dashed var(--rule);
+  align-items: flex-start;
+}
+.fact:last-child { border-bottom: none; }
+.fact-num {
+  font-family: var(--font-display); font-style: italic; font-weight: 400;
+  font-size: 28pt; line-height: 0.9; color: var(--ink-300);
+}
+.fact-body {
+  font-size: 10pt; line-height: 1.5;
+}
+.fact-body h4 {
+  font-family: var(--font-display); font-weight: 600; font-size: 13pt;
+  color: var(--ink-900); margin-bottom: 3px; letter-spacing: -0.01em;
+}
+.fact-body p { color: var(--ink-700); }
+.fact-body p strong { color: var(--ink-900); font-weight: 600; }
+.fact-tag {
+  font-family: var(--font-mono); font-size: 8pt; font-weight: 600;
+  padding: 2px 6px; border-radius: 2px;
+  height: fit-content; text-transform: uppercase; letter-spacing: 0.08em;
+  text-align: center; white-space: nowrap;
+}
+.tag-attention { background: #F6EAD2; color: var(--attention); }
+.tag-succes { background: #DFEDE3; color: var(--succes); }
+.tag-afaire { background: #F7E4D8; color: var(--afaire); }
+
+/* Actions Sol */
+.actions-block {
+  margin-top: 8mm;
+  background: var(--bg-cream);
+  padding: 6mm;
+  border-left: 3px solid var(--calme);
+  border-radius: 2px;
+}
+.actions-title {
+  font-family: var(--font-display); font-weight: 500; font-size: 15pt;
+  color: var(--ink-900); margin-bottom: 2mm;
+  letter-spacing: -0.01em;
+}
+.actions-sub {
+  font-size: 9pt; color: var(--ink-500); margin-bottom: 5mm;
+}
+.actions-sub strong { color: var(--calme); font-weight: 600; }
+
+.action-row {
+  display: grid; grid-template-columns: 1fr 18mm 12mm;
+  gap: 8px; align-items: center;
+  padding: 3mm 0; border-top: 1px dashed var(--ink-200);
+  font-size: 9pt;
+}
+.action-row:first-of-type { border-top: none; }
+.action-date { font-family: var(--font-mono); color: var(--ink-500); }
+.action-desc { color: var(--ink-700); }
+.action-desc strong { color: var(--ink-900); font-weight: 500; }
+.action-amount { font-family: var(--font-mono); font-weight: 600; color: var(--ink-900); text-align: right; }
+.action-status { font-family: var(--font-mono); font-size: 8pt; text-align: right; }
+.st-ok { color: var(--succes); }
+.st-pending { color: var(--attention); }
+
+.actions-total {
+  margin-top: 5mm; padding-top: 3mm;
+  border-top: 2px solid var(--ink-900);
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.actions-total-label {
+  font-family: var(--font-display); font-weight: 500; font-size: 12pt; letter-spacing: -0.01em;
+}
+.actions-total-value {
+  font-family: var(--font-mono); font-size: 20pt; font-weight: 600; color: var(--calme);
+}
+
+/* ==== PAGE 3 — CONFORMITÉ + TRAJECTOIRE + RECOMMANDATIONS ==== */
+
+.section-split {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8mm;
+  margin-bottom: 8mm;
+}
+
+/* Conformité */
+.compliance-card {
+  border: 1px solid var(--ink-900);
+  padding: 6mm;
+}
+.compliance-card h3 {
+  font-family: var(--font-display); font-size: 13pt; font-weight: 600;
+  margin-bottom: 5mm;
+  letter-spacing: -0.01em;
+}
+.compliance-score {
+  font-family: var(--font-mono); font-size: 36pt; font-weight: 600;
+  line-height: 1; color: var(--attention); margin-bottom: 2mm;
+  letter-spacing: -0.025em;
+}
+.compliance-score .unit { font-family: var(--font-body); font-size: 14pt; color: var(--ink-400); font-weight: 400; }
+.compliance-detail {
+  font-size: 9pt; color: var(--ink-500); margin-bottom: 5mm; line-height: 1.5;
+}
+.compliance-bars {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.compliance-bar {
+  display: grid; grid-template-columns: 30mm 1fr 12mm;
+  gap: 6px; align-items: center;
+  font-family: var(--font-mono); font-size: 8.5pt;
+}
+.cb-label { color: var(--ink-700); }
+.cb-track {
+  height: 5px; background: var(--ink-200); border-radius: 2px; overflow: hidden;
+  position: relative;
+}
+.cb-fill { height: 100%; border-radius: 2px; }
+.cb-value { text-align: right; font-weight: 600; color: var(--ink-900); }
+
+/* Trajectoire */
+.trajectory-card {
+  border: 1px solid var(--ink-900);
+  padding: 6mm;
+}
+.trajectory-card h3 {
+  font-family: var(--font-display); font-size: 13pt; font-weight: 600;
+  margin-bottom: 4mm; letter-spacing: -0.01em;
+}
+.trajectory-svg {
+  width: 100%; height: 60mm; margin: 4mm 0;
+}
+.trajectory-legend {
+  font-family: var(--font-mono); font-size: 8pt; color: var(--ink-500);
+  display: flex; gap: 12px; flex-wrap: wrap;
+  padding-top: 3mm; border-top: 1px dashed var(--rule);
+}
+.leg-item { display: flex; align-items: center; gap: 4px; }
+.leg-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* Recommandations */
+.recos-block {
+  border-top: 1px solid var(--ink-900);
+  padding-top: 6mm;
+  margin-top: 4mm;
+}
+.recos-heading {
+  font-family: var(--font-display); font-weight: 500; font-size: 15pt;
+  letter-spacing: -0.01em; color: var(--ink-900); margin-bottom: 4mm;
+}
+.recos-heading em { font-style: italic; color: var(--ink-500); }
+
+.reco {
+  display: grid; grid-template-columns: 22mm 1fr 28mm;
+  gap: 5mm; padding: 4mm 0;
+  border-bottom: 1px dashed var(--rule);
+  font-size: 9.5pt; align-items: baseline;
+}
+.reco:last-child { border-bottom: none; }
+.reco-when {
+  font-family: var(--font-mono); font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--ink-500); font-weight: 600;
+}
+.reco-body h5 {
+  font-family: var(--font-display); font-weight: 600; font-size: 11pt;
+  color: var(--ink-900); margin-bottom: 2px; letter-spacing: -0.01em;
+}
+.reco-body p { color: var(--ink-700); line-height: 1.5; }
+.reco-impact {
+  font-family: var(--font-mono); font-size: 9pt; font-weight: 600;
+  color: var(--calme); text-align: right;
+}
+
+/* Footer identique sur pages 2 et 3 */
+.page-footer {
+  position: absolute; bottom: 14mm; left: 22mm; right: 22mm;
+  padding-top: 4px; border-top: 1px solid var(--rule);
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 7.5pt; color: var(--ink-400);
+  letter-spacing: 0.05em;
+}
+.page-footer strong { color: var(--ink-700); font-weight: 500; }
+
+.print-hint {
+  max-width: 820px; margin: 0 auto 12px;
+  font-size: 12px; color: #6B665C; font-family: var(--font-body);
+  padding: 8px 14px; background: #FAF6F0; border-radius: 3px;
+  border-left: 3px solid var(--calme);
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span>PROMEOS · Rapport comex mensuel · gabarit Sol V1</span>
+  <button onclick="window.print()">Imprimer / exporter PDF</button>
+</div>
+<div class="print-hint">
+  Gabarit A4 portrait · 3 pages · prévu pour l'Action&nbsp;5 de Sol V1 (rapport mensuel exécutif automatisé). Imprimable via Ctrl/Cmd+P → Enregistrer en PDF. Fonts Fraunces + DM&nbsp;Sans + JetBrains&nbsp;Mono.
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE 1 — COUVERTURE + RÉSUMÉ EXÉCUTIF                       -->
+<!-- ============================================================ -->
+<article class="page">
+
+  <div class="cover-kicker">Rapport énergétique mensuel · Mars 2026</div>
+
+  <h1 class="cover-title">
+    Votre mois sur l'énergie
+    <em>— et ce que Sol a fait pour vous.</em>
+  </h1>
+
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <div class="label">Organisation</div>
+      <div class="value">Patrimoine HELIOS</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Périmètre</div>
+      <div class="value">5 sites · 17 400 m²</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Destinataires</div>
+      <div class="value">a.martin · DG · CFO · CODIR</div>
+    </div>
+  </div>
+
+  <!-- Résumé exécutif -->
+  <div class="exec-block">
+    <div class="exec-heading">Votre mois en trois chiffres <em>— avec la tendance.</em></div>
+
+    <div class="exec-numbers">
+      <div class="exec-num">
+        <div class="exec-num-label">Facture énergie · mars</div>
+        <div class="exec-num-value">47&nbsp;382<span class="exec-num-unit">€ HT</span></div>
+        <div class="delta delta-warn">▲ +8,2&nbsp;% vs&nbsp;février</div>
+        <div class="exec-num-sub">Hausse <strong>saisonnière</strong> pour l'essentiel. Une anomalie sur Lyon explique un tiers de l'écart — <strong>contestée et récupérée</strong> par Sol ce mois-ci.</div>
+      </div>
+
+      <div class="exec-num">
+        <div class="exec-num-label">Économies & récupérations</div>
+        <div class="exec-num-value">5&nbsp;804<span class="exec-num-unit">€ HT</span></div>
+        <div class="delta delta-good">▲ +42&nbsp;% vs&nbsp;février</div>
+        <div class="exec-num-sub">Sol a envoyé <strong>3 contestations de facture</strong> validées par vous ce mois-ci. <strong>Zéro erreur</strong> d'exécution.</div>
+      </div>
+
+      <div class="exec-num">
+        <div class="exec-num-label">Conformité Décret tertiaire</div>
+        <div class="exec-num-value">62<span class="exec-num-unit">/100</span></div>
+        <div class="delta delta-warn">▼ −3 pts sur 3 mois</div>
+        <div class="exec-num-sub">Trois sites tirent le score vers le bas. <strong>Plan d'action chiffré</strong> préparé par Sol en page 3.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-signature">
+    <div class="left">
+      Rapport préparé par <strong>Sol</strong>, votre cockpit énergétique PROMEOS · données arrêtées au 31 mars 2026, 23 h 59.
+      Sources : Enedis DataConnect, GRDF ADICT, factures fournisseurs · shadow billing PROMEOS v4.2.
+    </div>
+    <div>Page 1 / 3</div>
+  </div>
+
+</article>
+
+<!-- ============================================================ -->
+<!-- PAGE 2 — 3 FAITS + ACTIONS SOL DU MOIS                      -->
+<!-- ============================================================ -->
+<article class="page">
+
+  <header class="page-head">
+    <div class="page-head-left">Patrimoine HELIOS · mars 2026 · page 2 / 3</div>
+    <div class="page-head-right">Faits marquants <em>et actions Sol</em></div>
+  </header>
+
+  <div class="sol-lead">
+    Ce mois-ci, votre patrimoine a consommé <strong>1 847&nbsp;MWh</strong>, soit <em>−4,1&nbsp;%</em> par rapport à mars 2025. Trois faits méritent votre attention — et Sol a agi sur chacun.
+  </div>
+
+  <!-- 3 FAITS -->
+  <section class="facts-section">
+    <div class="facts-label">Trois faits de mars</div>
+
+    <div class="fact">
+      <div class="fact-num">01</div>
+      <div class="fact-body">
+        <h4>Lyon — anomalie d'accise détectée et récupérée</h4>
+        <p>La facture de mars sur <strong>Lyon bureaux</strong> appliquait le taux d'accise T1 alors que le site est passé en T2 (électro-intensif) le 15 février. Sol a rédigé la contestation, vous l'avez relue, elle a été envoyée à EDF Entreprises le 14&nbsp;avril. <strong>Avoir reçu le 22 avril : 1 847,20&nbsp;€ HT.</strong></p>
+      </div>
+      <div class="fact-tag tag-succes">Résolu</div>
+    </div>
+
+    <div class="fact">
+      <div class="fact-num">02</div>
+      <div class="fact-body">
+        <h4>Marseille école — dérive de consommation sur 90 jours</h4>
+        <p>Votre site <strong>Marseille école</strong> consomme <strong>+12&nbsp;%</strong> par rapport à la même période l'an dernier. Le diagnostic Sol identifie la CTA défectueuse signalée en février comme cause la plus probable. Non-traitée, la dérive représente <strong>+4&nbsp;200&nbsp;€ par an</strong>.</p>
+      </div>
+      <div class="fact-tag tag-attention">À regarder</div>
+    </div>
+
+    <div class="fact">
+      <div class="fact-num">03</div>
+      <div class="fact-body">
+        <h4>Paris bureaux — obligation BACS conforme</h4>
+        <p>Le rapport d'homologation BACS de Paris bureaux a été reçu le 8 mars. Votre score de conformité gagne <strong>+4&nbsp;points</strong>. La pièce est classée dans le dossier de conformité de votre site. Aucune action requise.</p>
+      </div>
+      <div class="fact-tag tag-succes">Validé</div>
+    </div>
+  </section>
+
+  <!-- ACTIONS SOL -->
+  <div class="actions-block">
+    <div class="actions-title">Ce que Sol a fait pour vous en mars</div>
+    <div class="actions-sub">
+      <strong>7 actions exécutées · 0 erreur · 5 804,40&nbsp;€ récupérés.</strong>
+      Toutes les actions sont tracées dans votre journal d'audit, consultable à tout moment.
+    </div>
+
+    <div class="action-row">
+      <div class="action-desc"><strong>Contestation</strong> · Lyon bureaux · facture mars · accise T1/T2</div>
+      <div class="action-amount">1 847,20 €</div>
+      <div class="action-status st-ok">✓ reçu</div>
+    </div>
+    <div class="action-row">
+      <div class="action-desc"><strong>Contestation</strong> · Lyon bureaux · facture février · accise T1/T2</div>
+      <div class="action-amount">1 615,40 €</div>
+      <div class="action-status st-ok">✓ reçu</div>
+    </div>
+    <div class="action-row">
+      <div class="action-desc"><strong>Contestation</strong> · Paris bureaux · facture février · accise T1</div>
+      <div class="action-amount">2 341,80 €</div>
+      <div class="action-status st-ok">✓ reçu</div>
+    </div>
+    <div class="action-row">
+      <div class="action-desc"><strong>Alerte dérive</strong> · Marseille école · plan d'action généré</div>
+      <div class="action-amount">—</div>
+      <div class="action-status st-pending">en cours</div>
+    </div>
+    <div class="action-row">
+      <div class="action-desc"><strong>Rappel</strong> · Déclaration OPERAT Lyon · échéance 30 sept.</div>
+      <div class="action-amount">—</div>
+      <div class="action-status st-pending">à préparer</div>
+    </div>
+    <div class="action-row">
+      <div class="action-desc"><strong>Rapport</strong> · Comex du 25 avril · rédaction programmée le 24 au soir</div>
+      <div class="action-amount">—</div>
+      <div class="action-status st-pending">à venir</div>
+    </div>
+    <div class="action-row">
+      <div class="action-desc"><strong>Refus explicite</strong> · Marseille école · facture février · confiance 62&nbsp;% &lt; seuil 85&nbsp;%</div>
+      <div class="action-amount">—</div>
+      <div class="action-status" style="color: var(--ink-500);">⊘ non exécuté</div>
+    </div>
+
+    <div class="actions-total">
+      <div class="actions-total-label">Total récupéré · mars 2026</div>
+      <div class="actions-total-value">5 804,40&nbsp;€ HT</div>
+    </div>
+  </div>
+
+  <footer class="page-footer">
+    <div>PROMEOS · rapport mensuel <strong>mars 2026</strong> · patrimoine HELIOS · confidentiel</div>
+    <div>édition du 1<sup>er</sup> avril 2026 · 06 h 00</div>
+  </footer>
+
+</article>
+
+<!-- ============================================================ -->
+<!-- PAGE 3 — CONFORMITÉ + TRAJECTOIRE + RECOMMANDATIONS         -->
+<!-- ============================================================ -->
+<article class="page">
+
+  <header class="page-head">
+    <div class="page-head-left">Patrimoine HELIOS · mars 2026 · page 3 / 3</div>
+    <div class="page-head-right">Conformité <em>et recommandations</em></div>
+  </header>
+
+  <div class="sol-lead">
+    Vous êtes <strong>en zone à risque</strong> sur le Décret tertiaire, principalement à cause de trois sites. Sol a préparé un plan chiffré qui, appliqué avant décembre, remet le patrimoine en trajectoire 2030.
+  </div>
+
+  <div class="section-split">
+
+    <!-- CONFORMITÉ -->
+    <div class="compliance-card">
+      <h3>Score de conformité</h3>
+      <div class="compliance-score">62<span class="unit">/100</span></div>
+      <div class="compliance-detail">
+        Zone à risque — pénalité potentielle <strong>7 500&nbsp;€</strong> par bâtiment non conforme à l'échéance 2030 si aucune action engagée. <strong>Trois sites</strong> en dessous du seuil OID.
+      </div>
+      <div class="compliance-bars">
+        <div class="compliance-bar">
+          <div class="cb-label">Décret tertiaire</div>
+          <div class="cb-track"><div class="cb-fill" style="width: 58%; background: var(--afaire);"></div></div>
+          <div class="cb-value">58</div>
+        </div>
+        <div class="compliance-bar">
+          <div class="cb-label">BACS</div>
+          <div class="cb-track"><div class="cb-fill" style="width: 82%; background: var(--succes);"></div></div>
+          <div class="cb-value">82</div>
+        </div>
+        <div class="compliance-bar">
+          <div class="cb-label">APER</div>
+          <div class="cb-track"><div class="cb-fill" style="width: 45%; background: var(--attention);"></div></div>
+          <div class="cb-value">45</div>
+        </div>
+        <div class="compliance-bar">
+          <div class="cb-label">Audit énergétique</div>
+          <div class="cb-track"><div class="cb-fill" style="width: 100%; background: var(--succes);"></div></div>
+          <div class="cb-value">100</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRAJECTOIRE -->
+    <div class="trajectory-card">
+      <h3>Trajectoire Décret tertiaire</h3>
+      <svg class="trajectory-svg" viewBox="0 0 300 160" preserveAspectRatio="none">
+        <!-- Grille -->
+        <line x1="30" y1="20" x2="290" y2="20" stroke="#DCD5C4" stroke-dasharray="2,3"/>
+        <line x1="30" y1="60" x2="290" y2="60" stroke="#DCD5C4" stroke-dasharray="2,3"/>
+        <line x1="30" y1="100" x2="290" y2="100" stroke="#DCD5C4" stroke-dasharray="2,3"/>
+        <line x1="30" y1="140" x2="290" y2="140" stroke="#1C1B18" stroke-width="1"/>
+        <!-- Labels Y -->
+        <text x="5" y="24" font-family="JetBrains Mono" font-size="7" fill="#6B665C">100%</text>
+        <text x="5" y="64" font-family="JetBrains Mono" font-size="7" fill="#6B665C">−25%</text>
+        <text x="5" y="104" font-family="JetBrains Mono" font-size="7" fill="#6B665C">−40%</text>
+        <text x="5" y="144" font-family="JetBrains Mono" font-size="7" fill="#6B665C">−50%</text>
+        <!-- Ligne cible (trajectoire théorique) -->
+        <line x1="30" y1="20" x2="110" y2="60" stroke="#2F6B5E" stroke-width="1" stroke-dasharray="3,2"/>
+        <line x1="110" y1="60" x2="200" y2="100" stroke="#2F6B5E" stroke-width="1" stroke-dasharray="3,2"/>
+        <line x1="200" y1="100" x2="290" y2="140" stroke="#2F6B5E" stroke-width="1" stroke-dasharray="3,2"/>
+        <!-- Ligne réelle -->
+        <path d="M 30,20 L 50,32 L 70,40 L 90,50 L 110,52 L 130,48"
+              stroke="#B8552E" stroke-width="2" fill="none"/>
+        <circle cx="130" cy="48" r="3" fill="#B8552E"/>
+        <!-- Jalons -->
+        <text x="110" y="14" font-family="JetBrains Mono" font-size="7" fill="#2F6B5E" font-weight="600">2030</text>
+        <text x="200" y="14" font-family="JetBrains Mono" font-size="7" fill="#2F6B5E" font-weight="600">2040</text>
+        <text x="290" y="14" font-family="JetBrains Mono" font-size="7" fill="#2F6B5E" font-weight="600" text-anchor="end">2050</text>
+        <!-- Année de référence -->
+        <text x="30" y="156" font-family="JetBrains Mono" font-size="7" fill="#6B665C">2010</text>
+        <text x="130" y="156" font-family="JetBrains Mono" font-size="7" fill="#B8552E" font-weight="600" text-anchor="middle">auj.</text>
+        <!-- Annotation -->
+        <text x="135" y="40" font-family="JetBrains Mono" font-size="7" fill="#B8552E" font-weight="600">−12,4 %</text>
+      </svg>
+      <div class="trajectory-legend">
+        <div class="leg-item"><span class="leg-dot" style="background: var(--calme);"></span> Trajectoire cible</div>
+        <div class="leg-item"><span class="leg-dot" style="background: var(--afaire);"></span> Trajectoire réelle</div>
+        <div class="leg-item" style="margin-left: auto;">Retard <strong style="color: var(--ink-900);">−12,6 pts</strong> vs 2030</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECOMMANDATIONS -->
+  <div class="recos-block">
+    <div class="recos-heading">Ce que Sol recommande <em>— d'ici le prochain comex.</em></div>
+
+    <div class="reco">
+      <div class="reco-when">D'ici 15 jours</div>
+      <div class="reco-body">
+        <h5>Intervenir sur la CTA défectueuse — Marseille école</h5>
+        <p>La dérive de consommation sur 90 jours est attribuable à <strong>92&nbsp;%</strong> à la CTA signalée en février. Un devis de remise en état est estimé entre <strong>3 800</strong> et <strong>5 200&nbsp;€</strong>, amorti en 11 mois.</p>
+      </div>
+      <div class="reco-impact">−4 200 €/an<br><span style="color: var(--ink-500); font-weight: 400; font-size: 8pt;">évite pénalité DT</span></div>
+    </div>
+
+    <div class="reco">
+      <div class="reco-when">Avant le 30 juin</div>
+      <div class="reco-body">
+        <h5>Lancer l'appel d'offres Nice — contrat gaz</h5>
+        <p>Votre contrat gaz sur Nice hôtel arrive à échéance le <strong>30 septembre</strong>. Sol a préparé le dossier d'AO pour 4 fournisseurs ciblés. Le lancer sous 60 jours sécurise 90 jours de négociation sans pression. Économie annuelle anticipée : <strong>6&nbsp;000 à 9&nbsp;000&nbsp;€</strong>.</p>
+      </div>
+      <div class="reco-impact">−7 500 €/an<br><span style="color: var(--ink-500); font-weight: 400; font-size: 8pt;">gaz · nice</span></div>
+    </div>
+
+    <div class="reco">
+      <div class="reco-when">Avant le 30 septembre</div>
+      <div class="reco-body">
+        <h5>Déposer la déclaration OPERAT pour les 5 sites</h5>
+        <p>L'échéance réglementaire annuelle concerne tous les sites de plus de 1 000 m². Sol peut préparer les 5 fichiers CSV v3.2 à partir des données Enedis validées. Gain de temps estimé : <strong>24 heures d'équipe</strong>.</p>
+      </div>
+      <div class="reco-impact">24 h économisées<br><span style="color: var(--ink-500); font-weight: 400; font-size: 8pt;">équipe</span></div>
+    </div>
+
+    <div class="reco">
+      <div class="reco-when">Avant 2027</div>
+      <div class="reco-body">
+        <h5>Plan pluriannuel de rénovation — trois sites en retard DT</h5>
+        <p>Marseille école, Toulouse entrepôt et Nice hôtel sont sous l'OID de leur catégorie. Un plan d'audit énergétique ciblé puis de travaux progressifs remet les trois sites en trajectoire 2030. Sol prépare la matrice de priorisation ROI pour le prochain comex.</p>
+      </div>
+      <div class="reco-impact">score 62 → 78<br><span style="color: var(--ink-500); font-weight: 400; font-size: 8pt;">+16 pts DT</span></div>
+    </div>
+  </div>
+
+  <footer class="page-footer">
+    <div>PROMEOS · rapport mensuel <strong>mars 2026</strong> · patrimoine HELIOS · confidentiel</div>
+    <div>préparé par Sol · votre cockpit énergétique</div>
+  </footer>
+
+</article>
+
+</body>
+</html>
