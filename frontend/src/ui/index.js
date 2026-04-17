@@ -49,3 +49,6 @@ export { default as ActiveFiltersBar } from './ActiveFiltersBar';
 // Design System V9 — Glossaire & Explain (C.1)
 export { default as Explain } from './Explain';
 export { GLOSSARY } from './glossary';
+
+// Design System V10 — FindingCard unifié (Sprint CX 2, item B)
+export { default as FindingCard } from './FindingCard';
