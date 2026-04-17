@@ -260,10 +260,14 @@ def create_action(
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Source invalide: {data.source_type}")
 
-    if source_type not in (ActionSourceType.MANUAL, ActionSourceType.INSIGHT):
+    if source_type not in (
+        ActionSourceType.MANUAL,
+        ActionSourceType.INSIGHT,
+        ActionSourceType.PILOTAGE,
+    ):
         raise HTTPException(
             status_code=400,
-            detail="Creation directe: source_type doit etre 'manual' ou 'insight'",
+            detail="Creation directe: source_type doit etre 'manual', 'insight' ou 'pilotage'",
         )
 
     # Validate title

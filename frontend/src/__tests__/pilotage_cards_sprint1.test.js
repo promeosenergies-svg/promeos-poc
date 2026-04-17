@@ -60,11 +60,11 @@ describe('Pilotage cards — CTAs actionnables', () => {
   it('RadarPrixNegatifsCard propose un CTA "Planifier" via ActionDrawer, desactive si pas de site scope', () => {
     expect(radarSrc).toMatch(/useActionDrawer/);
     expect(radarSrc).toMatch(/openActionDrawer\(/);
-    // Le backend actions n'accepte que "manual" ou "insight" comme source_type.
-    // On utilise donc sourceType: 'insight' + sourceId prefixe `pilotage_radar:`
-    // pour conserver la tracabilite sans casser la validation enum.
-    expect(radarSrc).toMatch(/sourceType:\s*['"]insight['"]/);
-    expect(radarSrc).toMatch(/sourceId:\s*`pilotage_radar:/);
+    // Sprint 5a : StrEnum `ActionSourceType.PILOTAGE` accepte en creation
+    // directe par le backend (remplace le workaround `insight` + prefixe
+    // du Sprint 1b). Type safety : une erreur de valeur = 400 immediat.
+    expect(radarSrc).toMatch(/sourceType:\s*['"]pilotage['"]/);
+    expect(radarSrc).toMatch(/sourceId:\s*`radar:/);
     expect(radarSrc).toMatch(/Planifier/);
     // Bouton disabled si scope.siteId absent (evite actions sans rattachement)
     expect(radarSrc).toMatch(/disabled=\{!hasSite\}/);
