@@ -68,6 +68,7 @@ _FALLBACK_SCORE = 50.0
 def _estimate_gain_annuel_eur(
     archetype_code: Optional[str],
     puissance_pilotable_kw: float,
+    params_memo: Optional[dict[Optional[str], tuple[float, float]]] = None,
 ) -> float:
     """
     Estime le gain annuel valorisable pour un site donné.
@@ -79,32 +80,41 @@ def _estimate_gain_annuel_eur(
     Args:
         archetype_code : code canonique d'archétype (ex: "BUREAU_STANDARD").
         puissance_pilotable_kw : puissance mobilisable en kW.
+        params_memo : cache local {archetype_code -> (heures, spread)} utilisé
+            par `compute_portefeuille_scoring` pour éviter 2×N lookups YAML
+            quand le même archétype apparaît sur plusieurs sites.
 
     Returns:
         Gain annuel estimé en EUR (arrondi à l'entier).
     """
     if puissance_pilotable_kw <= 0:
         return 0.0
-    today = datetime.now(_TZ_PARIS).date()
-    # Heures favorables : scope par archétype, fallback médian si inconnu
-    fallback_heures = _HEURES_FAVORABLES_PAR_ARCHETYPE.get(
-        archetype_code or "",
-        _FALLBACK_HEURES_FAVORABLES,
-    )
-    heures_res = get_pilotage_param(
-        "HEURES_FAVORABLES_AN",
-        at_date=today,
-        archetype=archetype_code,
-        default=fallback_heures,
-    )
-    spread_res = get_pilotage_param(
-        "SPREAD_EUR_PAR_KWH",
-        at_date=today,
-        archetype=archetype_code,
-        default=_SPREAD_EUR_PAR_KWH_DEFAULT,
-    )
-    heures = float(heures_res.value)
-    spread = float(spread_res.value)
+
+    if params_memo is not None and archetype_code in params_memo:
+        heures, spread = params_memo[archetype_code]
+    else:
+        today = datetime.now(_TZ_PARIS).date()
+        fallback_heures = _HEURES_FAVORABLES_PAR_ARCHETYPE.get(
+            archetype_code or "",
+            _FALLBACK_HEURES_FAVORABLES,
+        )
+        heures_res = get_pilotage_param(
+            "HEURES_FAVORABLES_AN",
+            at_date=today,
+            archetype=archetype_code,
+            default=fallback_heures,
+        )
+        spread_res = get_pilotage_param(
+            "SPREAD_EUR_PAR_KWH",
+            at_date=today,
+            archetype=archetype_code,
+            default=_SPREAD_EUR_PAR_KWH_DEFAULT,
+        )
+        heures = float(heures_res.value)
+        spread = float(spread_res.value)
+        if params_memo is not None:
+            params_memo[archetype_code] = (heures, spread)
+
     gain = puissance_pilotable_kw * heures * spread
     return round(gain)
 
@@ -142,6 +152,10 @@ def compute_portefeuille_scoring(sites: list[dict]) -> dict:
             - heatmap_archetype             : dict archétype -> stats
             - source                        : citation source
     """
+    # Memo local : chaque archetype resolut (heures, spread) une seule fois
+    # depuis le YAML, meme si N sites partagent le meme archetype. Evite
+    # 2*N lookups quand on score un portefeuille entier.
+    params_memo: dict[Optional[str], tuple[float, float]] = {}
     enriched: list[dict] = []
     for site in sites:
         site_id = site.get("site_id")
@@ -149,7 +163,7 @@ def compute_portefeuille_scoring(sites: list[dict]) -> dict:
         puissance = float(site.get("puissance_pilotable_kw") or 0.0)
 
         score = _score_site(archetype)
-        gain = _estimate_gain_annuel_eur(archetype, puissance)
+        gain = _estimate_gain_annuel_eur(archetype, puissance, params_memo=params_memo)
         enriched.append(
             {
                 "site_id": site_id,

@@ -99,16 +99,14 @@ def normalize_archetype(code: Optional[str]) -> str:
     return "DEFAULT"
 
 
-def _naf_prefix(naf_code: str) -> str:
-    """Strip dots/spaces avant slice (format DD.DDC et DDDDC supportes)."""
-    return naf_code.replace(".", "").replace(" ", "")[:4]
-
-
 def _archetype_from_naf_static(naf_code: Optional[str]) -> Optional[str]:
     """Tier 3 : fallback NAF prefix hardcode (sans acces DB)."""
-    if not naf_code:
+    from utils.naf_resolver import naf_prefix
+
+    prefix = naf_prefix(naf_code)
+    if not prefix:
         return None
-    return NAF_PREFIX_TO_FLEX_ARCHETYPE.get(_naf_prefix(naf_code))
+    return NAF_PREFIX_TO_FLEX_ARCHETYPE.get(prefix)
 
 
 def resolve_archetype(db: Session, site, meter=None) -> str:

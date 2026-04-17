@@ -31,6 +31,8 @@ Barometre afin de faciliter la lecture ; le resolveur archetype normalise.
 
 from __future__ import annotations
 
+from typing import Optional
+
 
 # --- 1. Regles archetypes (detection signatures) -----------------------------
 
@@ -262,3 +264,84 @@ CANONICAL_SITE_PILOTAGE: dict[str, tuple[str, float]] = {
     "bureau haussmann": ("BUREAU_STANDARD", 120.0),
     "entrepot rungis": ("LOGISTIQUE_FRIGO", 85.0),
 }
+
+
+# --- 5. Mapping NAF -> 8 archetypes pilotage -------------------------------
+#
+# Prefixe NAF (4 premiers chiffres apres strip points/espaces) vers l'un des
+# 8 archetypes canoniques de `ARCHETYPE_CALIBRATION_2024`. Remplace l'ancienne
+# heuristique "continu_24_7 sans talon froid -> HOTELLERIE" de `usage_detector`
+# qui biaise massivement vers l'hotellerie (sante, collectivite, data center
+# tombent tous la-dedans).
+#
+# Source: nomenclature NAF rev 2 (INSEE) croisee avec les 8 segments retenus
+# dans le Barometre Flex 2026 (Enedis segments tertiaires + GIMELEC industrie).
+# Codes non couverts -> fallback BUREAU_STANDARD (median tertiaire).
+NAF_PREFIX_TO_PILOTAGE_ARCHETYPE: dict[str, str] = {
+    # Bureaux & services support
+    "6820": "BUREAU_STANDARD",  # location immobiliere de bureaux
+    "7010": "BUREAU_STANDARD",  # activites des sieges sociaux
+    "6910": "BUREAU_STANDARD",  # activites juridiques
+    "7022": "BUREAU_STANDARD",  # conseil pour les affaires
+    "6201": "BUREAU_STANDARD",  # programmation informatique
+    "6202": "BUREAU_STANDARD",  # conseil en systemes et logiciels
+    # Commerce alimentaire (froid + ECS predominant)
+    "4711": "COMMERCE_ALIMENTAIRE",  # grandes surfaces alimentaires
+    "4721": "COMMERCE_ALIMENTAIRE",  # fruits & legumes
+    "4722": "COMMERCE_ALIMENTAIRE",  # viandes
+    "4724": "COMMERCE_ALIMENTAIRE",  # pain, patisserie
+    "4781": "COMMERCE_ALIMENTAIRE",  # commerce de detail alimentaire sur marches
+    # Commerce specialise (non alimentaire)
+    "4741": "COMMERCE_SPECIALISE",  # ordinateurs et peripheriques
+    "4751": "COMMERCE_SPECIALISE",  # textiles
+    "4771": "COMMERCE_SPECIALISE",  # habillement
+    "4772": "COMMERCE_SPECIALISE",  # chaussures et maroquinerie
+    "4759": "COMMERCE_SPECIALISE",  # meubles, luminaires
+    "4761": "COMMERCE_SPECIALISE",  # livres
+    # Logistique frigo (froid inertie 24/7)
+    "1013": "LOGISTIQUE_FRIGO",  # preparation industrielle viande
+    "1020": "LOGISTIQUE_FRIGO",  # poissons transformes
+    "1052": "LOGISTIQUE_FRIGO",  # glaces et sorbets
+    "5210": "LOGISTIQUE_FRIGO",  # entreposage (frigo si site type=entrepot + activite alim)
+    # Enseignement
+    "8510": "ENSEIGNEMENT",  # enseignement pre-primaire
+    "8520": "ENSEIGNEMENT",  # enseignement primaire
+    "8531": "ENSEIGNEMENT",  # enseignement secondaire general
+    "8532": "ENSEIGNEMENT",  # enseignement secondaire technique/professionnel
+    "8541": "ENSEIGNEMENT",  # enseignement post-secondaire non superieur
+    "8542": "ENSEIGNEMENT",  # enseignement superieur
+    # Sante (contraintes medicales, decalabilite faible)
+    "8610": "SANTE",  # activites hospitalieres
+    "8621": "SANTE",  # pratique medicale generale
+    "8622": "SANTE",  # pratique medicale specialisee
+    "8623": "SANTE",  # pratique dentaire
+    "8710": "SANTE",  # hebergement medicalise (EHPAD)
+    "8720": "SANTE",  # hebergement social pour handicapes/malades
+    # Hotellerie (double pointe matin/soir, clim + ECS)
+    "5510": "HOTELLERIE",  # hotels et hebergement similaire
+    "5520": "HOTELLERIE",  # hebergement touristique
+    "5590": "HOTELLERIE",  # autres hebergements
+    "5610": "HOTELLERIE",  # restauration traditionnelle
+    "5630": "HOTELLERIE",  # debits de boissons
+    # Industrie legere
+    "2511": "INDUSTRIE_LEGERE",  # fabrication de structures metalliques
+    "2594": "INDUSTRIE_LEGERE",  # fabrication de vis et de boulons
+    "2822": "INDUSTRIE_LEGERE",  # fabrication de machines de levage
+    "2910": "INDUSTRIE_LEGERE",  # construction de vehicules automobiles
+    "3250": "INDUSTRIE_LEGERE",  # fabrication d'instruments medicaux
+}
+
+
+def archetype_from_naf(naf_code: Optional[str]) -> Optional[str]:
+    """
+    Retourne l'archetype pilotage pour un code NAF, ou None si inconnu.
+
+    Le caller decide du fallback (BUREAU_STANDARD typiquement).
+    Le prefix NAF est resolu via `utils.naf_resolver.naf_prefix` (source unique).
+    """
+    from utils.naf_resolver import naf_prefix
+
+    prefix = naf_prefix(naf_code)
+    if not prefix:
+        return None
+    return NAF_PREFIX_TO_PILOTAGE_ARCHETYPE.get(prefix)
