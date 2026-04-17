@@ -6,18 +6,16 @@
  *
  * Source : Barometre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026).
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { getPortefeuilleScoring } from '../../services/api/pilotage';
+import { useScope } from '../../contexts/ScopeContext';
+import { toSite } from '../../services/routes';
+import { fmtEur } from '../../utils/format';
 import { Skeleton, InfoTip } from '../../ui';
+import { humaniseArchetype } from './archetypeLabels';
 
-function fmtEuro(n) {
-  if (n == null) return '—';
-  return Number(n).toLocaleString('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  });
-}
+const HEATMAP_INCONNU_LABEL = 'À qualifier';
 
 function scoreBand(s) {
   if (s >= 75) return 'bg-emerald-500';
@@ -34,10 +32,17 @@ function heatIntensity(gainTotal, maxGain) {
   return 'bg-indigo-100 text-indigo-800';
 }
 
+const NUMERIC_ID_RE = /^\d+$/;
+
 export default function PortefeuilleScoringCard() {
+  const { scope, scopedSites } = useScope();
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Re-fetch au switch d'org ou portefeuille -- scoring recalcule cote backend.
+  const scopeKey = `${scope?.orgId ?? 'none'}:${scope?.portefeuilleId ?? 'none'}`;
 
   useEffect(() => {
     let cancel = false;
@@ -55,7 +60,13 @@ export default function PortefeuilleScoringCard() {
     return () => {
       cancel = true;
     };
-  }, []);
+  }, [scopeKey]);
+
+  const siteLabel = useMemo(() => {
+    const byId = new Map();
+    (scopedSites || []).forEach((s) => byId.set(String(s.id), s.nom));
+    return (siteIdRaw) => byId.get(String(siteIdRaw)) || siteIdRaw;
+  }, [scopedSites]);
 
   if (loading) {
     return (
@@ -107,9 +118,9 @@ export default function PortefeuilleScoringCard() {
           </p>
         </div>
         <div className="text-right">
-          <div className="text-[10px] text-gray-400 uppercase tracking-wide">Budget flex</div>
+          <div className="text-[10px] text-gray-400 uppercase tracking-wide">Gain portefeuille</div>
           <div className="text-sm font-bold text-gray-900 whitespace-nowrap">
-            {fmtEuro(gain_annuel_portefeuille_eur)}/an
+            {fmtEur(gain_annuel_portefeuille_eur)}/an
           </div>
         </div>
       </div>
@@ -118,28 +129,50 @@ export default function PortefeuilleScoringCard() {
         <p className="text-xs text-gray-500">Aucun site scopé pour l'instant.</p>
       ) : (
         <ol className="space-y-1.5">
-          {top5.map((site) => (
-            <li
-              key={site.site_id}
-              className="flex items-center gap-2 text-xs"
-              data-testid={`portefeuille-row-${site.site_id}`}
-            >
-              <span className="w-5 text-[10px] text-gray-400 font-medium">#{site.rang}</span>
-              <span className="flex-1 min-w-0 truncate text-gray-800">{site.site_id}</span>
-              <span className="text-[10px] text-gray-500 truncate max-w-[90px]">
-                {site.archetype || '—'}
-              </span>
-              <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full ${scoreBand(site.score)} rounded-full`}
-                  style={{ width: `${Math.max(2, Math.round(site.score))}%` }}
-                />
-              </div>
-              <span className="w-16 text-right text-gray-900 font-medium whitespace-nowrap">
-                {fmtEuro(site.gain_annuel_eur)}
-              </span>
-            </li>
-          ))}
+          {top5.map((site) => {
+            const siteIdStr = String(site.site_id);
+            const isNumeric = NUMERIC_ID_RE.test(siteIdStr);
+            const rowInner = (
+              <>
+                <span className="w-5 text-[10px] text-gray-400 font-medium">#{site.rang}</span>
+                <span className="flex-1 min-w-0 truncate text-gray-800">
+                  {siteLabel(site.site_id)}
+                </span>
+                <span className="text-[10px] text-gray-500 truncate max-w-[110px]">
+                  {humaniseArchetype(site.archetype)}
+                </span>
+                <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${scoreBand(site.score)} rounded-full`}
+                    style={{ width: `${Math.max(2, Math.round(site.score))}%` }}
+                  />
+                </div>
+                <span className="w-16 text-right text-gray-900 font-medium whitespace-nowrap">
+                  {fmtEur(site.gain_annuel_eur)}
+                </span>
+              </>
+            );
+            return (
+              <li key={siteIdStr} data-testid={`portefeuille-row-${siteIdStr}`}>
+                {isNumeric ? (
+                  <Link
+                    to={toSite(siteIdStr)}
+                    className="flex items-center gap-2 text-xs rounded px-1 py-0.5 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-indigo-400 no-underline"
+                  >
+                    {rowInner}
+                  </Link>
+                ) : (
+                  <div
+                    className="flex items-center gap-2 text-xs rounded px-1 py-0.5"
+                    title="Disponible en production uniquement"
+                    aria-disabled="true"
+                  >
+                    {rowInner}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ol>
       )}
 
@@ -149,20 +182,23 @@ export default function PortefeuilleScoringCard() {
             Heatmap archétype <InfoTip content="Intensité = gain annuel total par archétype" />
           </div>
           <div className="flex flex-wrap gap-1">
-            {archetypes.map(([code, agg]) => (
-              <span
-                key={code}
-                className={`text-[10px] px-2 py-0.5 rounded ${heatIntensity(
-                  agg?.gain_total_eur || 0,
-                  maxArchGain
-                )}`}
-                title={`${agg?.nb_sites || 0} site(s) · score moyen ${Math.round(
-                  agg?.score_moyen || 0
-                )}`}
-              >
-                {code} · {fmtEuro(agg?.gain_total_eur)}
-              </span>
-            ))}
+            {archetypes.map(([code, agg]) => {
+              const label = code === 'INCONNU' ? HEATMAP_INCONNU_LABEL : humaniseArchetype(code);
+              return (
+                <span
+                  key={code}
+                  className={`text-[10px] px-2 py-0.5 rounded ${heatIntensity(
+                    agg?.gain_total_eur || 0,
+                    maxArchGain
+                  )}`}
+                  title={`${agg?.nb_sites || 0} site(s) · score moyen ${Math.round(
+                    agg?.score_moyen || 0
+                  )}`}
+                >
+                  {label} · {fmtEur(agg?.gain_total_eur)}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}

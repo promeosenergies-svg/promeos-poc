@@ -113,7 +113,7 @@ ARCHETYPE_CALIBRATION_2024: dict[str, dict] = {
         "plages_pointe_h": [(7, 10), (17, 20)],
         "conso_journaliere_pointe_pct": 0.28,
         "bacs_penetration_2024": 0.17,
-        "source": "Barometre Flex 2026 RTE/Enedis/GIMELEC - Bureaux",
+        "source": "Baromètre Flex 2026 RTE/Enedis/GIMELEC - Bureaux",
     },
     "COMMERCE_ALIMENTAIRE": {
         # Froid commercial predominant + ECS : potentiel decalable eleve.
@@ -121,14 +121,14 @@ ARCHETYPE_CALIBRATION_2024: dict[str, dict] = {
         "plages_pointe_h": [(10, 20)],
         "conso_journaliere_pointe_pct": 0.55,
         "bacs_penetration_2024": 0.17,  # fourchette 15-19%, mediane retenue
-        "source": "Barometre Flex 2026 RTE/Enedis/GIMELEC - Commerces alimentaires",
+        "source": "Baromètre Flex 2026 RTE/Enedis/GIMELEC - Commerces alimentaires",
     },
     "COMMERCE_SPECIALISE": {
         "taux_decalable_moyen": 0.25,
         "plages_pointe_h": [(10, 19)],
         "conso_journaliere_pointe_pct": 0.45,
         "bacs_penetration_2024": 0.17,
-        "source": "Barometre Flex 2026 RTE/Enedis/GIMELEC - Commerces non alimentaires",
+        "source": "Baromètre Flex 2026 RTE/Enedis/GIMELEC - Commerces non alimentaires",
     },
     "LOGISTIQUE_FRIGO": {
         # Froid inertie 24h/24 : gisement le plus important.
@@ -136,14 +136,14 @@ ARCHETYPE_CALIBRATION_2024: dict[str, dict] = {
         "plages_pointe_h": [(0, 24)],
         "conso_journaliere_pointe_pct": 1.0,
         "bacs_penetration_2024": 0.23,
-        "source": "Barometre Flex 2026 RTE/Enedis/GIMELEC - Logistique frigorifique",
+        "source": "Baromètre Flex 2026 RTE/Enedis/GIMELEC - Logistique frigorifique",
     },
     "ENSEIGNEMENT": {
         "taux_decalable_moyen": 0.20,
         "plages_pointe_h": [(8, 17)],
         "conso_journaliere_pointe_pct": 0.50,
         "bacs_penetration_2024": 0.13,
-        "source": "Barometre Flex 2026 RTE/Enedis/GIMELEC - Enseignement",
+        "source": "Baromètre Flex 2026 RTE/Enedis/GIMELEC - Enseignement",
     },
     "SANTE": {
         # Contraintes medicales fortes : faible decalabilite.
@@ -151,7 +151,7 @@ ARCHETYPE_CALIBRATION_2024: dict[str, dict] = {
         "plages_pointe_h": [(0, 24)],
         "conso_journaliere_pointe_pct": 1.0,
         "bacs_penetration_2024": 0.40,
-        "source": "Barometre Flex 2026 RTE/Enedis/GIMELEC - Sante",
+        "source": "Baromètre Flex 2026 RTE/Enedis/GIMELEC - Sante",
     },
     "HOTELLERIE": {
         # Clim + ECS : double pointe matin/soir.
@@ -159,14 +159,14 @@ ARCHETYPE_CALIBRATION_2024: dict[str, dict] = {
         "plages_pointe_h": [(6, 10), (18, 23)],
         "conso_journaliere_pointe_pct": 0.48,
         "bacs_penetration_2024": 0.11,
-        "source": "Barometre Flex 2026 RTE/Enedis/GIMELEC - Hotellerie",
+        "source": "Baromètre Flex 2026 RTE/Enedis/GIMELEC - Hotellerie",
     },
     "INDUSTRIE_LEGERE": {
         "taux_decalable_moyen": 0.35,
         "plages_pointe_h": [(6, 18)],
         "conso_journaliere_pointe_pct": 0.60,
         "bacs_penetration_2024": 0.20,  # estimation GIMELEC (non publie par Enedis)
-        "source": "Barometre Flex 2026 GIMELEC - Industrie legere (estimation)",
+        "source": "Baromètre Flex 2026 GIMELEC - Industrie legere (estimation)",
     },
 }
 

@@ -245,5 +245,5 @@ def compute_roi_flex_ready(
             },
         },
         "confiance": "indicative",
-        "source": "Barometre Flex 2026 RTE/Enedis + fiche CEE BAT-TH-116",
+        "source": "Baromètre Flex 2026 RTE/Enedis + fiche CEE BAT-TH-116",
     }
