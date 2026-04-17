@@ -120,6 +120,7 @@ from .reg_assessment import RegAssessment
 from .job_outbox import JobOutbox
 from .ai_insight import AiInsight
 from .reg_source_event import RegSourceEvent
+from .annotation import Annotation, AnnotatorProfile
 
 # KB (Knowledge Base)
 from .kb_models import (

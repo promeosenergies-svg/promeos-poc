@@ -108,6 +108,69 @@ def run_migrations(engine):
     _create_sf5_promotion_tables(engine)
     # Referentiel Sirene — tables isolees (DIAMANT)
     _create_sirene_tables(engine)
+    # KB Annotation System — annotations + annotator_profiles
+    _create_annotation_tables(engine)
+
+
+def _create_annotation_tables(engine):
+    """Create annotations and annotator_profiles tables if missing (idempotent)."""
+    with engine.connect() as conn:
+        insp = inspect(engine)
+        if "annotations" not in insp.get_table_names():
+            conn.execute(
+                text("""
+                CREATE TABLE annotations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    object_type VARCHAR(50) NOT NULL,
+                    object_id INTEGER NOT NULL,
+                    label VARCHAR(100) NOT NULL,
+                    confidence FLOAT NOT NULL DEFAULT 0.5,
+                    correction TEXT,
+                    note TEXT,
+                    annotator_type VARCHAR(20) NOT NULL,
+                    annotator_id VARCHAR(100) NOT NULL,
+                    org_id INTEGER NOT NULL,
+                    kb_item_id VARCHAR(200),
+                    rule_id VARCHAR(200),
+                    needs_review BOOLEAN NOT NULL DEFAULT 0,
+                    reviewed_at DATETIME,
+                    reviewed_by VARCHAR(100),
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            )
+            conn.execute(text("CREATE INDEX ix_annotations_object ON annotations(object_type, object_id)"))
+            conn.execute(text("CREATE INDEX ix_annotations_annotator ON annotations(annotator_type, annotator_id)"))
+            conn.execute(text("CREATE INDEX ix_annotations_rule ON annotations(rule_id)"))
+            conn.execute(text("CREATE INDEX ix_annotations_org ON annotations(org_id)"))
+            conn.commit()
+            logger.info("Created annotations table")
+
+        if "annotator_profiles" not in insp.get_table_names():
+            conn.execute(
+                text("""
+                CREATE TABLE annotator_profiles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    annotator_id VARCHAR(100) NOT NULL UNIQUE,
+                    annotator_type VARCHAR(20) NOT NULL,
+                    org_id INTEGER NOT NULL,
+                    domain_scores_json TEXT DEFAULT '{}',
+                    bias_flags_json TEXT DEFAULT '{}',
+                    trust_weight FLOAT NOT NULL DEFAULT 0.5,
+                    annotation_count INTEGER NOT NULL DEFAULT 0,
+                    last_active_at DATETIME,
+                    computed_at DATETIME,
+                    computed_by VARCHAR(100),
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            )
+            conn.execute(text("CREATE UNIQUE INDEX ix_annotator_profiles_id ON annotator_profiles(annotator_id)"))
+            conn.execute(text("CREATE INDEX ix_annotator_profiles_org ON annotator_profiles(org_id)"))
+            conn.commit()
+            logger.info("Created annotator_profiles table")
 
 
 def _create_sirene_tables(engine):
