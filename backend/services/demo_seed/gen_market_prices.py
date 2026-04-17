@@ -72,6 +72,55 @@ def _generate_prices(start_date: date, end_date: date) -> list[dict]:
     return prices
 
 
+def _generate_hourly_spot_last_90d(now_utc: datetime) -> list[dict]:
+    """
+    Genere 90 jours d'historique spot day-ahead horaire FR avec des prix
+    negatifs plausibles sur la plage midi (10h-17h Europe/Paris) ~15% des jours
+    ouvres -- reproduit le signal 2025 (513h prix negatifs observes par la CRE).
+
+    Utilise par le Radar prix negatifs J+7 (heuristique 30% creneaux negatifs
+    sur jours semblables). La courbe horaire est deterministe (pas de random).
+    """
+    rows: list[dict] = []
+    # Plage solaire : surplus PV midi => pression baissiere forte.
+    solar_noon_hours = {11, 12, 13, 14, 15}
+    base_daily = 62.0  # moyenne 2026 EUR/MWh (aligne avec _generate_prices)
+
+    for d in range(90, 0, -1):
+        day = (now_utc - timedelta(days=d)).date()
+        # Jour ouvre = jeudi/vendredi plus probable de voir du negatif midi
+        # (demande tertiaire stable + surproduction PV). ~1 jour sur 7 flag "neg".
+        is_negative_day = (day.weekday() in (3, 4)) and (day.toordinal() % 7 == 0)
+
+        for hour in range(24):
+            # Profil diurne : pic 8h et 19h, creux nuit + midi.
+            diurnal = math.cos(2 * math.pi * (hour - 8) / 24) * 0.15
+            if hour in solar_noon_hours:
+                diurnal -= 0.25  # creux PV
+            price = base_daily * (1 + diurnal)
+
+            if is_negative_day and hour in solar_noon_hours:
+                # Force prix negatif sur 5 creneaux midi => 5/7 = 71% >> seuil 30%
+                price = -5.0 - (hour - 11) * 1.2  # -5 a -9.8 EUR/MWh
+
+            delivery_start = datetime(day.year, day.month, day.day, hour, tzinfo=timezone.utc)
+            rows.append(
+                {
+                    "source": MarketDataSource.MANUAL,
+                    "market_type": MarketType.SPOT_DAY_AHEAD,
+                    "product_type": ProductType.HOURLY,
+                    "zone": PriceZone.FR,
+                    "delivery_start": delivery_start,
+                    "delivery_end": delivery_start + timedelta(hours=1),
+                    "price_eur_mwh": round(price, 2),
+                    "resolution": Resolution.PT60M,
+                    "fetched_at": now_utc,
+                    "source_reference": "Seed PROMEOS -- historique horaire 90j pour Radar prix negatifs",
+                }
+            )
+    return rows
+
+
 def _generate_forward_curves() -> list[dict]:
     """Generate forward curve records (CAL, Q, M) for cockpit display."""
     now = datetime.now(timezone.utc)
@@ -133,9 +182,11 @@ def generate_market_prices(db: Session) -> dict:
     end = date(2026, 12, 31)
     prices = _generate_prices(start, end)
     forwards = _generate_forward_curves()
+    now_utc = datetime.now(timezone.utc)
+    hourly_radar = _generate_hourly_spot_last_90d(now_utc)
 
     inserted = 0
-    for p in prices + forwards:
+    for p in prices + forwards + hourly_radar:
         existing = (
             db.query(MktPrice)
             .filter(
@@ -153,5 +204,5 @@ def generate_market_prices(db: Session) -> dict:
             inserted += 1
 
     db.flush()
-    total = len(prices) + len(forwards)
+    total = len(prices) + len(forwards) + len(hourly_radar)
     return {"market_prices_total": total, "market_prices_inserted": inserted}

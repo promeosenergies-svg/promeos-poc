@@ -13,6 +13,9 @@ import { useScope } from '../../contexts/ScopeContext';
 import { toSite } from '../../services/routes';
 import { fmtEur } from '../../utils/format';
 import { Skeleton, InfoTip } from '../../ui';
+import { humaniseArchetype } from './archetypeLabels';
+
+const HEATMAP_INCONNU_LABEL = 'À qualifier';
 
 function scoreBand(s) {
   if (s >= 75) return 'bg-emerald-500';
@@ -135,8 +138,8 @@ export default function PortefeuilleScoringCard() {
                 <span className="flex-1 min-w-0 truncate text-gray-800">
                   {siteLabel(site.site_id)}
                 </span>
-                <span className="text-[10px] text-gray-500 truncate max-w-[90px]">
-                  {site.archetype || '—'}
+                <span className="text-[10px] text-gray-500 truncate max-w-[110px]">
+                  {humaniseArchetype(site.archetype)}
                 </span>
                 <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
@@ -179,20 +182,23 @@ export default function PortefeuilleScoringCard() {
             Heatmap archétype <InfoTip content="Intensité = gain annuel total par archétype" />
           </div>
           <div className="flex flex-wrap gap-1">
-            {archetypes.map(([code, agg]) => (
-              <span
-                key={code}
-                className={`text-[10px] px-2 py-0.5 rounded ${heatIntensity(
-                  agg?.gain_total_eur || 0,
-                  maxArchGain
-                )}`}
-                title={`${agg?.nb_sites || 0} site(s) · score moyen ${Math.round(
-                  agg?.score_moyen || 0
-                )}`}
-              >
-                {code} · {fmtEur(agg?.gain_total_eur)}
-              </span>
-            ))}
+            {archetypes.map(([code, agg]) => {
+              const label = code === 'INCONNU' ? HEATMAP_INCONNU_LABEL : humaniseArchetype(code);
+              return (
+                <span
+                  key={code}
+                  className={`text-[10px] px-2 py-0.5 rounded ${heatIntensity(
+                    agg?.gain_total_eur || 0,
+                    maxArchGain
+                  )}`}
+                  title={`${agg?.nb_sites || 0} site(s) · score moyen ${Math.round(
+                    agg?.score_moyen || 0
+                  )}`}
+                >
+                  {label} · {fmtEur(agg?.gain_total_eur)}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}

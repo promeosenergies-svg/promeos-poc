@@ -95,6 +95,32 @@ describe('RadarPrixNegatifsCard — timezone Europe/Paris force', () => {
   });
 });
 
+// ── Wording fixes Sprint 1b (audit visuel agents SDK) ───────────────
+describe('Pilotage cards — Sprint 1b wording FAIL corriges', () => {
+  it('Radar sous-titre utilise "Fenetres favorables probables" (pas "cout efface")', () => {
+    expect(radarSrc).toMatch(/Fenêtres favorables probables/);
+    const codeOnly = radarSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    expect(codeOnly).not.toMatch(/coût effacé/);
+  });
+
+  it('Radar badge confiance affiche "confiance indicative" (pas "INDICATIVE" majuscules)', () => {
+    expect(radarSrc).toMatch(/confiance \{data\?\.confiance/);
+    const codeOnly = radarSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    expect(codeOnly).not.toMatch(/uppercase tracking-wide[^}]*confiance/);
+  });
+
+  it('RoiFlexReadyCard humanise archetype + site_id (plus de codes SCREAMING_SNAKE cote UI)', () => {
+    expect(roiSrc).toMatch(/humaniseArchetype/);
+    expect(roiSrc).toMatch(/humaniseSiteId/);
+  });
+
+  it('PortefeuilleScoringCard humanise archetype + mappe "INCONNU" en "A qualifier"', () => {
+    expect(portefeuilleSrc).toMatch(/humaniseArchetype/);
+    expect(portefeuilleSrc).toMatch(/HEATMAP_INCONNU_LABEL/);
+    expect(portefeuilleSrc).toMatch(/À qualifier/);
+  });
+});
+
 // ── Data-testid stability (audit robustesse) ─────────────────────────
 describe('Pilotage cards — data-testid stable pour Playwright', () => {
   it('chaque carte porte son data-testid racine', () => {

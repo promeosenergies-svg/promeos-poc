@@ -141,7 +141,7 @@ export default function RadarPrixNegatifsCard({ horizonDays = 7 }) {
         <div>
           <h3 className="text-sm font-semibold text-gray-800">Radar fenêtres favorables</h3>
           <p className="text-[11px] text-gray-500 mt-0.5">
-            Créneaux probables à coût effacé dans les {data?.horizon_jours ?? horizonDays} jours.
+            Fenêtres favorables probables dans les {data?.horizon_jours ?? horizonDays} jours.
           </p>
         </div>
         <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap">
@@ -197,7 +197,7 @@ export default function RadarPrixNegatifsCard({ horizonDays = 7 }) {
           Source : historique marché 90 j{' '}
           <InfoTip content="Baromètre Flex 2026 RTE/Enedis/GIMELEC" />
         </span>
-        <span className="uppercase tracking-wide">{data?.confiance || 'indicative'}</span>
+        <span>confiance {data?.confiance || 'indicative'}</span>
       </div>
     </div>
   );

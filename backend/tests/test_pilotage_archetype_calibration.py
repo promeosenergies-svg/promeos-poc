@@ -47,7 +47,7 @@ def test_all_8_archetypes_calibrated():
     for code in EXPECTED_ARCHETYPES:
         entry = ARCHETYPE_CALIBRATION_2024[code]
         assert required_fields <= entry.keys(), f"{code} : champs manquants {required_fields - entry.keys()}"
-        assert "Barometre Flex 2026" in entry["source"] or "GIMELEC" in entry["source"], (
+        assert "Baromètre Flex 2026" in entry["source"] or "GIMELEC" in entry["source"], (
             f"{code} : source doit citer le Barometre Flex 2026 / GIMELEC (got {entry['source']!r})"
         )
 
@@ -87,7 +87,7 @@ def test_compute_potential_score_uses_calibration_when_present():
     assert result["used_calibration"] is True
     assert result["taux_decalable"] == pytest.approx(0.55)
     assert result["conso_pointe_pct"] == pytest.approx(1.0)
-    assert "Barometre Flex 2026" in result["source"]
+    assert "Baromètre Flex 2026" in result["source"]
     # Score doit etre plus eleve que celui d'un bureau standard (logique metier)
     result_bureau = compute_potential_score("BUREAU_STANDARD")
     assert result_bureau["used_calibration"] is True
