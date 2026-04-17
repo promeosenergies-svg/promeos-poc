@@ -362,3 +362,64 @@ def test_flex_ready_demo_sites_toujours_supportes(client):
     assert data["site_id"] == "bureau-001"
     assert data["puissance_souscrite_kva"] == 144
     assert data["puissance_max_instantanee_kw"] == 95.0
+
+
+def test_flex_ready_contrat_resilie_exclu(org_with_site_and_contract):
+    """
+    Fix review PR #231 : un contrat avec `end_date` anterieure a aujourd'hui
+    ne doit PAS etre retenu. On ajoute un contrat 'legacy' resilie avec un
+    start_date plus recent que l'actif, puis on verifie que c'est l'actif
+    (end_date=None) qui gagne.
+    """
+    from datetime import date, timedelta
+
+    from models.billing_models import EnergyContract
+    from models.enums import BillingEnergyType
+
+    ctx = org_with_site_and_contract
+    db = ctx["db"]
+    site = ctx["site"]
+
+    # Ajout d'un contrat resilie recent (start_date 2026-03-01, end_date 2026-03-15 PASSE)
+    resilie = EnergyContract(
+        site_id=site.id,
+        energy_type=BillingEnergyType.ELEC,
+        supplier_name="ANCIEN_FOURNISSEUR",
+        start_date=date(2026, 3, 1),
+        end_date=date.today() - timedelta(days=10),
+        price_ref_eur_per_kwh=0.999,
+    )
+    db.add(resilie)
+    db.flush()
+
+    r = ctx["client"].get(f"/api/pilotage/flex-ready-signals/{site.id}")
+    assert r.status_code == 200
+    data = r.json()
+    # Doit rester sur le contrat ACTIF (0.198) pas le resilie (0.999)
+    assert data["prix_eur_kwh"] == 0.198, f"Contrat resilie a ete retenu a tort : prix={data['prix_eur_kwh']}"
+    assert data["prix_source"] == "contrat_fournisseur"
+
+
+def test_flex_ready_conformite_false_sans_deliverypoint(org_with_site_and_contract):
+    """
+    Fix P1-1 audit PR #231 : un Site sans DeliveryPoint tombe sur le sentinel
+    `puissance_souscrite_kva=0` via `_load_flex_ready_ctx`. La regle de
+    conformite doit exclure les sentinels 0 (vs `is not None` naif) et
+    flagger `conformite_flex_ready=False`.
+    """
+    from models.patrimoine import DeliveryPoint
+
+    ctx = org_with_site_and_contract
+    db = ctx["db"]
+    site = ctx["site"]
+
+    # Supprimer le DeliveryPoint pour forcer le sentinel 0 kVA
+    db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site.id).delete()
+    db.flush()
+
+    r = ctx["client"].get(f"/api/pilotage/flex-ready-signals/{site.id}")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["puissance_souscrite_kva"] == 0
+    # Sentinel 0 -> conformite NF EN IEC 62746-4 NON atteinte
+    assert data["conformite_flex_ready"] is False

@@ -40,11 +40,16 @@ Sources :
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import datetime
 from typing import Any, Optional
+from zoneinfo import ZoneInfo
 
 from services.pilotage.constants import ARCHETYPE_CALIBRATION_2024
 from services.pilotage.parameters import get_pilotage_param
+
+# Fuseau reference : on veut la date "aujourd'hui" cote Paris (pas UTC machine)
+# pour que les `valid_from` YAML se declenchent sur la frontiere attendue.
+_TZ_PARIS = ZoneInfo("Europe/Paris")
 
 
 # --- Fallbacks defensifs (valeurs de repli si YAML indisponible) -------------
@@ -145,7 +150,7 @@ def compute_roi_flex_ready(
     # --- Resolution ParameterStore pilotage ---------------------------------
     # Source de verite : section `pilotage_flex_ready:` du YAML.
     # On conserve les constantes Python en fallback defensif (YAML corrompu).
-    today = date.today()
+    today = datetime.now(_TZ_PARIS).date()
     heures_fen_res = get_pilotage_param(
         "HEURES_FENETRES_FAVORABLES_AN",
         at_date=today,

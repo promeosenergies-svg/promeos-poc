@@ -16,6 +16,9 @@ from __future__ import annotations
 import logging
 import os
 from typing import Any, List, Optional
+from zoneinfo import ZoneInfo
+
+_TZ_PARIS = ZoneInfo("Europe/Paris")
 
 logger = logging.getLogger(__name__)
 
@@ -252,16 +255,23 @@ def _load_flex_ready_ctx(
             site.id,
         )
 
-    # --- prix_eur_kwh : EnergyContract elec actif le plus recent ---
+    # --- prix_eur_kwh : EnergyContract elec ACTIF (non resilie) le plus recent ---
+    # Filtre end_date : None (ouvert) OU dans le futur. Evite qu'un contrat
+    # resilie recemment batte un contrat actif plus ancien sur l'ordre start_date.
     try:
+        from sqlalchemy import or_
+        from datetime import datetime as _dt
+
         from models.billing_models import EnergyContract
         from models.enums import BillingEnergyType
 
+        today_paris = _dt.now(_TZ_PARIS).date()
         contract = (
             db.query(EnergyContract)
             .filter(
                 EnergyContract.site_id == site.id,
                 EnergyContract.energy_type == BillingEnergyType.ELEC,
+                or_(EnergyContract.end_date.is_(None), EnergyContract.end_date >= today_paris),
             )
             .order_by(EnergyContract.start_date.desc().nullslast(), EnergyContract.id.desc())
             .first()

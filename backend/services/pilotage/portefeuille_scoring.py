@@ -25,11 +25,16 @@ ce dernier étant réservé au scoring mono-site S22).
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import datetime
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from services.pilotage.parameters import get_pilotage_param
 from services.pilotage.score_potential import compute_potential_score
+
+# Fuseau Paris pour la resolution `at_date` ParameterStore cote caller -- evite
+# que `date.today()` UTC (Docker) rate un `valid_from` au tournant d'annee.
+_TZ_PARIS = ZoneInfo("Europe/Paris")
 
 
 # --- Fallbacks défensifs (valeurs de repli si YAML indisponible) ------------
@@ -80,7 +85,7 @@ def _estimate_gain_annuel_eur(
     """
     if puissance_pilotable_kw <= 0:
         return 0.0
-    today = date.today()
+    today = datetime.now(_TZ_PARIS).date()
     # Heures favorables : scope par archétype, fallback médian si inconnu
     fallback_heures = _HEURES_FAVORABLES_PAR_ARCHETYPE.get(
         archetype_code or "",
