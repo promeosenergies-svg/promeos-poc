@@ -121,7 +121,9 @@ describe('E. FindingCard — a11y & interactivity', () => {
   const src = readSrc('ui/FindingCard.jsx');
 
   it('utilise <button> quand onClick est fourni', () => {
-    expect(src).toMatch(/Wrapper\s*=\s*typeof\s*onClick\s*===\s*['"]function['"]\s*\?\s*['"]button['"]/);
+    expect(src).toMatch(
+      /Wrapper\s*=\s*typeof\s*onClick\s*===\s*['"]function['"]\s*\?\s*['"]button['"]/
+    );
   });
 
   it('stopPropagation sur le clic du CTA action', () => {

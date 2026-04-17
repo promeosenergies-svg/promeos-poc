@@ -19,7 +19,16 @@
  * Convention category : 'compliance' | 'billing' | 'consumption' | 'purchase' | 'flex' | 'audit' | 'insight'
  */
 
-import { ChevronRight, AlertTriangle, Receipt, Zap, ShoppingCart, FileText, Activity, Lightbulb } from 'lucide-react';
+import {
+  ChevronRight,
+  AlertTriangle,
+  Receipt,
+  Zap,
+  ShoppingCart,
+  FileText,
+  Activity,
+  Lightbulb,
+} from 'lucide-react';
 import { fmtEur } from '../utils/format';
 
 // ── Severity tokens (colors + labels) ───────────────────────────────────────
@@ -116,10 +125,7 @@ function ImpactRow({ impact }) {
   const { eur, kwh, co2_kg } = impact;
   if (eur == null && kwh == null && co2_kg == null) return null;
   return (
-    <div
-      className="mt-2 flex items-center gap-3 text-xs flex-wrap"
-      data-testid="finding-impact"
-    >
+    <div className="mt-2 flex items-center gap-3 text-xs flex-wrap" data-testid="finding-impact">
       {eur != null && eur !== 0 && (
         <span className="inline-flex items-center gap-1 text-green-700 font-semibold">
           <Zap size={12} aria-hidden="true" />
@@ -128,14 +134,10 @@ function ImpactRow({ impact }) {
         </span>
       )}
       {kwh != null && kwh > 0 && (
-        <span className="text-gray-500">
-          {Math.round(kwh).toLocaleString('fr-FR')} kWh/an
-        </span>
+        <span className="text-gray-500">{Math.round(kwh).toLocaleString('fr-FR')} kWh/an</span>
       )}
       {co2_kg != null && co2_kg > 0 && (
-        <span className="text-gray-500">
-          {Math.round(co2_kg).toLocaleString('fr-FR')} kgCO₂/an
-        </span>
+        <span className="text-gray-500">{Math.round(co2_kg).toLocaleString('fr-FR')} kgCO₂/an</span>
       )}
     </div>
   );
@@ -211,19 +213,14 @@ export default function FindingCard({
             data-testid="finding-severity-dot"
             aria-label={`Sévérité ${cfg.label}`}
           />
-          {Icon && (
-            <Icon size={16} className={`${cfg.text} opacity-80`} aria-hidden="true" />
-          )}
+          {Icon && <Icon size={16} className={`${cfg.text} opacity-80`} aria-hidden="true" />}
         </div>
 
         {/* Main content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             {priority != null && (
-              <span
-                className="text-xs font-semibold text-gray-500"
-                data-testid="finding-priority"
-              >
+              <span className="text-xs font-semibold text-gray-500" data-testid="finding-priority">
                 #{priority}
               </span>
             )}
@@ -232,9 +229,7 @@ export default function FindingCard({
           </div>
 
           <p className="text-sm font-semibold text-gray-900 line-clamp-2">{title}</p>
-          {description && (
-            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{description}</p>
-          )}
+          {description && <p className="text-xs text-gray-600 mt-1 line-clamp-2">{description}</p>}
 
           <ImpactRow impact={impact} />
         </div>
