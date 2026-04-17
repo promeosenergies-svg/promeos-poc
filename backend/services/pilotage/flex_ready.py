@@ -22,7 +22,8 @@ Source calibrage : Barometre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026).
 
 from __future__ import annotations
 
-from datetime import datetime
+import logging
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 from zoneinfo import ZoneInfo
 
@@ -33,6 +34,8 @@ from config.emission_factors import (
     get_emission_source,
 )
 
+logger = logging.getLogger(__name__)
+
 # Fuseau reference France pour timestamps Flex Ready
 _TZ_PARIS = ZoneInfo("Europe/Paris")
 
@@ -42,24 +45,45 @@ _FLEX_READY_CLOCK_RESOLUTION_MIN = 15
 # Norme de reference (affichee dans la payload pour audit)
 _NORME = "NF EN IEC 62746-4"
 
+# Age max d'un prix spot avant d'etre considere stale (fenetre day-ahead ~24h)
+_PRIX_SPOT_MAX_AGE_H = 36
 
-def _get_latest_spot_eur_kwh(db: Session) -> Optional[float]:
+
+def _get_latest_spot(db: Session) -> Optional[tuple[float, float]]:
     """
-    Retourne le dernier prix spot day-ahead FR en EUR/kWh, ou None.
-    Encapsule le connecteur ENTSO-E pour ne pas faire crasher la route si
-    le module est indisponible (fallback gracieux).
+    Retourne (prix_eur_kwh, age_hours) du dernier spot day-ahead FR, ou None.
+
+    Age_hours permet au caller de detecter une donnee stale. Au-dela de
+    `_PRIX_SPOT_MAX_AGE_H`, on considere la donnee trop ancienne et on retombe
+    sur le tarif contractuel.
+
+    Log warning sur exception (module indisponible, schema invalide) pour
+    eviter d'avaler silencieusement les incidents prod.
     """
     try:
         from services.pilotage.connectors.entsoe_day_ahead import (
-            get_latest_day_ahead_eur_mwh,
+            get_latest_day_ahead_with_timestamp,
         )
 
-        eur_mwh = get_latest_day_ahead_eur_mwh(db)
-        if eur_mwh is None:
-            return None
-        return round(eur_mwh / 1000.0, 5)
-    except Exception:
+        result = get_latest_day_ahead_with_timestamp(db)
+    except ImportError as exc:
+        logger.warning("flex_ready: ENTSO-E connector indisponible (%s)", exc)
         return None
+    except Exception as exc:
+        logger.warning("flex_ready: echec lecture spot (%s: %s)", type(exc).__name__, exc)
+        return None
+
+    if result is None:
+        return None
+
+    eur_mwh, delivery_start = result
+    now_utc = datetime.now(timezone.utc)
+    age = now_utc - delivery_start
+    age_hours = age.total_seconds() / 3600.0
+    if age_hours > _PRIX_SPOT_MAX_AGE_H:
+        logger.info("flex_ready: spot trop ancien (%.1f h) -- fallback tarif", age_hours)
+        return None
+    return (round(eur_mwh / 1000.0, 5), round(age_hours, 2))
 
 
 def build_flex_ready_signals(
@@ -91,25 +115,31 @@ def build_flex_ready_signals(
     ------
     dict conforme au standard Flex Ready (R) -- 5 donnees + metadonnees de trace.
     """
-    ts = now or datetime.now(_TZ_PARIS)
-    if ts.tzinfo is None:
-        ts = ts.replace(tzinfo=_TZ_PARIS)
+    if now is None:
+        ts = datetime.now(_TZ_PARIS)
+    elif now.tzinfo is None:
+        # Convention : datetime naif injecte = UTC (safe default, pas interprete wall-clock)
+        ts = now.replace(tzinfo=timezone.utc).astimezone(_TZ_PARIS)
+    else:
+        ts = now.astimezone(_TZ_PARIS)
 
-    # Prix : priorite spot day-ahead reel, fallback tarif contractuel
+    # Prix : priorite spot day-ahead reel frais, fallback tarif contractuel
     prix_contrat = float(demo_site["prix_eur_kwh"])
-    prix_spot: Optional[float] = _get_latest_spot_eur_kwh(db) if db is not None else None
-    if prix_spot is not None:
-        prix_eur_kwh = prix_spot
+    spot_info = _get_latest_spot(db) if db is not None else None
+    if spot_info is not None:
+        prix_eur_kwh, prix_age_hours = spot_info
         prix_source = "entsoe_day_ahead"
     else:
         prix_eur_kwh = prix_contrat
         prix_source = "fournisseur_tarif_base"
+        prix_age_hours = None
 
     # Empreinte carbone : source unique config/emission_factors.py (ADEME V23.6)
     energy_vector = str(demo_site.get("energy_vector", "ELEC")).upper()
     empreinte_kg_co2e_kwh = get_emission_factor(energy_vector)
-    empreinte_source = "ademe_2024"  # cf. EMISSION_FACTORS[*].year = 2024
     empreinte_source_label = get_emission_source(energy_vector)
+    # Extrait l'ID machine (ex. "ADEME V23.6 2024" -> "ademe_v23.6_2024")
+    empreinte_source = empreinte_source_label.lower().replace(" ", "_") if empreinte_source_label else "inconnu"
 
     return {
         "site_id": site_id,
@@ -118,6 +148,7 @@ def build_flex_ready_signals(
         "puissance_max_instantanee_kw": float(demo_site["puissance_max_instantanee_kw"]),
         "prix_eur_kwh": round(float(prix_eur_kwh), 5),
         "prix_source": prix_source,
+        "prix_age_hours": prix_age_hours,
         "puissance_souscrite_kva": int(demo_site["puissance_souscrite_kva"]),
         "empreinte_carbone_kg_co2e_kwh": round(float(empreinte_kg_co2e_kwh), 5),
         "empreinte_source": empreinte_source,

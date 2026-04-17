@@ -59,3 +59,46 @@ def get_latest_day_ahead_eur_mwh(
             .first()
         )
     return float(row.price_eur_mwh) if row else None
+
+
+def get_latest_day_ahead_with_timestamp(
+    db: Session,
+    zone: PriceZone = PriceZone.FR,
+    as_of: Optional[datetime] = None,
+) -> Optional[tuple[float, datetime]]:
+    """
+    Retourne `(prix_eur_mwh, delivery_start_utc)` du dernier spot day-ahead
+    couvrant `as_of`, pour permettre au caller de verifier la fraicheur.
+
+    `delivery_start` renvoye est toujours un `datetime` timezone-aware en UTC.
+    None si aucune donnee en DB.
+    """
+    now = as_of or datetime.now(timezone.utc)
+    row = (
+        db.query(MktPrice)
+        .filter(
+            MktPrice.zone == zone,
+            MktPrice.market_type == MarketType.SPOT_DAY_AHEAD,
+            MktPrice.delivery_start <= now,
+            MktPrice.delivery_end > now,
+        )
+        .order_by(MktPrice.delivery_start.desc())
+        .first()
+    )
+    if row is None:
+        row = (
+            db.query(MktPrice)
+            .filter(
+                MktPrice.zone == zone,
+                MktPrice.market_type == MarketType.SPOT_DAY_AHEAD,
+            )
+            .order_by(MktPrice.delivery_start.desc())
+            .first()
+        )
+    if row is None:
+        return None
+    delivery_start = row.delivery_start
+    if delivery_start.tzinfo is None:
+        # SQLite peut stocker naif : on assume UTC (convention PROMEOS)
+        delivery_start = delivery_start.replace(tzinfo=timezone.utc)
+    return (float(row.price_eur_mwh), delivery_start)

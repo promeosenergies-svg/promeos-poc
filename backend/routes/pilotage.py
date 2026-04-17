@@ -9,12 +9,13 @@ Reference : Barometre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026).
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import AuthContext, get_optional_auth
 from services.pilotage.flex_ready import build_flex_ready_signals
 
 
@@ -68,7 +69,11 @@ def _build_demo_site_ctx(site_id: str) -> dict[str, Any]:
 
 
 @router.get("/flex-ready-signals/{site_id}")
-def flex_ready_signals(site_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+def flex_ready_signals(
+    site_id: str,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+) -> dict[str, Any]:
     """
     Expose les 5 signaux standardises Flex Ready (R) conformes NF EN IEC 62746-4.
 
@@ -79,7 +84,7 @@ def flex_ready_signals(site_id: str, db: Session = Depends(get_db)) -> dict[str,
         4. Puissance souscrite (kVA)
         5. Empreinte carbone (kgCO2e/kWh) -- source ADEME V23.6
 
-    404 si le site n'est pas dans DEMO_SITES.
+    Auth requise hors DEMO_MODE. 404 si site absent de DEMO_SITES.
     """
     ctx = _build_demo_site_ctx(site_id)
     return build_flex_ready_signals(site_id=site_id, demo_site=ctx, db=db)
