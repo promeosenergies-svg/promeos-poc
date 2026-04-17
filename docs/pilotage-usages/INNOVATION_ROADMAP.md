@@ -82,7 +82,7 @@ Pointeurs mémoire :
 
 | Vague | Effort total | Impact | Angle différenciant | Statut |
 |---|---|---|---|---|
-| **V1 (Q2)** | 12-14 j/dev | Cockpit J+7 + ROI CFO + portefeuille | Visibilité anticipée unique | ✅ livré PR #222 (Option C PR #227 + UX PR #229 en review) |
+| **V1 (Q2)** | 12-14 j/dev | Cockpit J+7 + ROI CFO + portefeuille | Visibilité anticipée unique | ✅ livré PR #222 · Option C PR #227 mergée · Sprint 2 dette PR #231 mergée · Sprint 1 UX PR #229 + Sprint 3 docs PR #230 en review |
 | **V2 (Q3)** | 11-12 j/dev | Preuve chiffrée sur données réelles | Anti-objection "je n'y crois pas" | ⏳ à démarrer |
 | **V3 (Q4)** | 22-26 j/dev | Moat durable (jumeau + gamification + marketplace) | Guichet unique flexibilité | ⏳ à démarrer |
 
@@ -97,9 +97,15 @@ Corrigée dans ce même sprint :
 - ✅ `empreinte_source` lu depuis config/emission_factors.py
 - ✅ Injection tz : datetime naïf = UTC (pas wall-clock)
 
-Dettes restantes post-V1 :
-- ❌ Tests DST spring-forward/fall-back sur `is_hc_favorable` — à faire Sprint 2
+Dettes traitées Sprint 2 (PR #231 mergée) :
+- ✅ Tests DST spring-forward/fall-back sur `is_hc_favorable` — `test_pilotage_radar_dst.py` + `test_pilotage_turpe7_dst.py` (6 tests, finding documenté `<` fold=0/1 → `.timestamp()`)
 - ✅ `response_model` Pydantic sur endpoint Flex Ready (OpenAPI) — fait (tous les 4 endpoints ont `response_model`)
-- ❌ Tests fallback spot stale + module entsoe indisponible — à faire Sprint 2
-- ❌ Mapping NAF → archétype via `utils/naf_resolver` (supprimer heuristique hôtellerie biaisée) — à faire Sprint 2
-- ❌ Pondérations `_W_DECALABLE/_W_POINTE/_W_BACS` vers ParameterStore — à faire Sprint 2
+- ✅ Tests fallback spot stale + module entsoe indisponible — déjà couvert `test_pilotage_flex_ready.py` tests 5+6 + Option C tests (+ filtre `end_date` contrat actif ajouté)
+- ✅ Pondérations `_W_DECALABLE/_W_POINTE/_W_BACS` + 7 constantes ROI vers ParameterStore — `services/pilotage/parameters.py` façade + section `pilotage_flex_ready:` dans `tarifs_reglementaires.yaml` (15 entries avec `valid_from` + `source` citée)
+
+Dettes restantes à planifier :
+- ❌ Mapping NAF → archétype via `utils/naf_resolver` (supprimer heuristique hôtellerie biaisée)
+- ❌ Dedup `services/pilotage/parameters.py` vs `services/billing_engine/parameter_store.py` (~200 LOC duplication identifiée par review PR #231)
+- ❌ StrEnum `ActionSourceType` / `prix_source` pour type safety
+- ❌ Memo local dans `compute_portefeuille_scoring` (2× N lookups YAML)
+- ❌ `conftest.py` partagé pour fixtures DB pilotage

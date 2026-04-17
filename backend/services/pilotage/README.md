@@ -6,14 +6,15 @@ vocabulaire "flex / effacement" par une doctrine unique (voir §5).
 
 ## Pointeurs
 
-| Document | Quoi | Chemin |
-|---|---|---|
-| Roadmap produit (8 pistes Vagues 1-3) | `docs/pilotage-usages/INNOVATION_ROADMAP.md` |
-| Doctrine primaire (source calibrage) | `docs/reglementaire/barometre_flex_2026.md` |
-| Mémoire projet V1 Vague 1 | `~/.claude/.../memory/project_pilotage_v1_innovation.md` |
-| Mémoire projet audit S17-S20 | `~/.claude/.../memory/project_pilotage_audit_s17_s20.md` |
-| Mémoire projet Sprint 1 P0 UX | `~/.claude/.../memory/project_pilotage_sprint1_p0_ux.md` |
+| Document | Chemin |
+|---|---|
+| Roadmap produit (8 pistes Vagues 1-3) | [`docs/pilotage-usages/INNOVATION_ROADMAP.md`](../../../docs/pilotage-usages/INNOVATION_ROADMAP.md) |
+| Glossaire doctrine wording | [`docs/pilotage-usages/GLOSSAIRE.md`](../../../docs/pilotage-usages/GLOSSAIRE.md) |
+| Doctrine primaire (source calibrage) | [`docs/reglementaire/barometre_flex_2026.md`](../../../docs/reglementaire/barometre_flex_2026.md) |
+| YAML paramètres versionnés | [`backend/config/tarifs_reglementaires.yaml`](../../config/tarifs_reglementaires.yaml) section `pilotage_flex_ready:` |
 | Norme technique Flex Ready® | NF EN IEC 62746-4 (GIMELEC / Think Smartgrids) |
+
+> Les notes projet `memory/project_pilotage_*.md` sont conservées dans la mémoire locale du développeur PROMEOS (hors repo). Les informations promues utiles sont ingérées ici ou dans `docs/pilotage-usages/`.
 
 ## 1. Architecture — comment les sous-modules s'emboîtent
 
@@ -84,8 +85,8 @@ None mappés à `_FLEX_READY_FIELD_MAP`), pas auto-proclamé.
 
 | Méthode + chemin | Service appelé | Payload principal | Source doctrine | Scope auth |
 |---|---|---|---|---|
-| `GET /api/pilotage/flex-ready-signals/{site_id}` | `flex_ready.build_flex_ready_signals` | 5 signaux + `prix_source` + `prix_age_hours` + `conformite_flex_ready` | NF EN IEC 62746-4 + ADEME V23.6 | Auth optionnelle (DEMO_MODE toléré). 404 hors `DEMO_SITES`. |
-| `GET /api/pilotage/roi-flex-ready/{site_id}` | `roi_flex_ready.compute_roi_flex_ready` | `gain_annuel_total_eur` + 3 composantes + hypothèses explicites | Baromètre Flex 2026 + CEE BAT-TH-116 + CRE T4 2025 | Auth optionnelle (DEMO_MODE toléré). 404 hors `DEMO_SITES`. |
+| `GET /api/pilotage/flex-ready-signals/{site_id}` | `flex_ready.build_flex_ready_signals` | 5 signaux + `prix_source` + `prix_age_hours` + `conformite_flex_ready` | NF EN IEC 62746-4 + ADEME V23.6 | `site_id` numérique (Site.id réel, scope org via `_scoped_site_query`) OU clé `DEMO_SITES`. 404 si introuvable / hors scope. |
+| `GET /api/pilotage/roi-flex-ready/{site_id}` | `roi_flex_ready.compute_roi_flex_ready` | `gain_annuel_total_eur` + 3 composantes + `hypotheses.parametres_sources` (trace ParameterStore) | Baromètre Flex 2026 + CEE BAT-TH-116 + CRE T4 2025 | `site_id` numérique ou clé `DEMO_SITES`. 404 si introuvable / hors scope. |
 | `GET /api/pilotage/radar-prix-negatifs?horizon_days=7` | `radar_prix_negatifs.predict_negative_windows` | Liste `fenetres_predites` (ISO 8601 Europe/Paris, probabilité, prix médian, usages conseillés) | Historique ENTSO-E day-ahead FR 90 j | Auth optionnelle. Fallback `[]` si < 30 j d'historique. |
 | `GET /api/pilotage/portefeuille-scoring` | `portefeuille_scoring.compute_portefeuille_scoring` | `nb_sites_total` + `gain_annuel_portefeuille_eur` + `top_10` + `heatmap_archetype` | Baromètre Flex 2026 (calibrage Enedis 2024) | Org-scopé (`auth.org_id`). Fallback `DEMO_SITES` si `PROMEOS_DEMO_MODE=true` ou auth absente. Defense-in-depth via join `Portefeuille → EntiteJuridique.organisation_id`. |
 
@@ -101,8 +102,10 @@ Response`, `RoiFlexReadyResponse`, `RadarPrixNegatifsResponse`,
 | S17-S21 | Doctrine Pilotage + pipeline ENTSO-E / Tempo OAuth2 / APScheduler, fenêtres J+7, 7 quick wins | #216 | ✅ mergée |
 | S22 | Flex Ready® NF EN IEC 62746-4 + TURPE 7 HC saisonnalisés + calibrage Baromètre Flex 2026 | #218 | ✅ mergée |
 | V1 Vague 1 | Radar prix négatifs J+7 + ROI Flex Ready® + Portefeuille scoring (3 endpoints) | #222 | ✅ mergée |
-| Option C | Wiring modèle `Site` (`archetype_code`, `puissance_pilotable_kw`, `surface_m2`) + defense-in-depth org-scope | #227 | en review |
-| Sprint 1 P0 UX | CTAs cockpit + scope auth durci + wording doctrine "pilotage des usages" | #229 | en review |
+| Option C | Wiring modèle `Site` (`archetype_code`, `puissance_pilotable_kw`, `surface_m2`) + defense-in-depth org-scope | #227 | ✅ mergée |
+| Sprint 2 | Harmonisation `/flex-ready-signals/{Site.id}` + tests DST spring/fall-back + migration 7 constantes vers ParameterStore versionné | #231 | ✅ mergée |
+| Sprint 1 P0 UX | CTAs cockpit + scope auth durci + wording doctrine "pilotage des usages" + humanisation archétypes | #229 | en review |
+| Sprint 3 docs | README module + GLOSSAIRE + INNOVATION_ROADMAP à jour | #230 | en review (ce PR) |
 
 ## 5. Doctrine wording
 
