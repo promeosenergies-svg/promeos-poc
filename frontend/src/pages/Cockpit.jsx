@@ -60,6 +60,7 @@ import {
 import { useComplianceMeta } from '../hooks/useComplianceMeta';
 import { useCockpitData } from '../hooks/useCockpitData';
 import CockpitHero from './cockpit/CockpitHero';
+import ScoreBreakdownPanel from '../components/ScoreBreakdownPanel';
 import TrajectorySection from './cockpit/TrajectorySection';
 import ActionsImpact from './cockpit/ActionsImpact';
 import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
@@ -1146,12 +1147,16 @@ const Cockpit = () => {
         </div>
       </Modal>
 
-      {/* ── Evidence Drawer ("Pourquoi ce chiffre ?") ── */}
+      {/* ── Evidence Drawer ("Pourquoi ce chiffre ?") + ScoreBreakdownPanel (CX Gap #4) ── */}
       <EvidenceDrawer
         open={!!evidenceOpen}
         onClose={() => setEvidenceOpen(null)}
         evidence={evidenceOpen ? evidenceMap[evidenceOpen] : null}
-      />
+      >
+        {evidenceOpen === 'conformite' && scopedSites[0]?.id && (
+          <ScoreBreakdownPanel siteId={scopedSites[0].id} open />
+        )}
+      </EvidenceDrawer>
 
       {/* Lien cross-brique vers Usages */}
       <div className="flex items-center gap-2 mt-3 print:hidden">

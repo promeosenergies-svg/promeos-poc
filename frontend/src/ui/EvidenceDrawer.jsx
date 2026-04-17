@@ -51,7 +51,7 @@ function SectionTitle({ children }) {
   );
 }
 
-export default function EvidenceDrawer({ open, onClose, evidence }) {
+export default function EvidenceDrawer({ open, onClose, evidence, children }) {
   const navigate = useNavigate();
 
   if (!evidence) return null;
@@ -154,6 +154,9 @@ export default function EvidenceDrawer({ open, onClose, evidence }) {
             </p>
           )}
         </div>
+
+        {/* Slot for additional live content (e.g. ScoreBreakdownPanel) */}
+        {children}
       </div>
     </Drawer>
   );
