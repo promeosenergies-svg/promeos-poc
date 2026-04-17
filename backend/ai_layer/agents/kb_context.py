@@ -127,3 +127,59 @@ def build_kb_context(
         "missing_fields": result.get("missing_fields", []),
         "status": result.get("status", "ok"),
     }
+
+
+def build_portfolio_kb_context(
+    sites: list[Any],
+    domains: list[str] | None = None,
+) -> dict[str, Any]:
+    """Évalue la KB sur un portefeuille, agrège les items distincts."""
+    domains = domains or ["reglementaire", "facturation", "flex"]
+
+    seen_ids: set[str] = set()
+    all_items: list[dict[str, Any]] = []
+    stats_by_domain: dict[str, int] = {d: 0 for d in domains}
+
+    try:
+        svc = KBService()
+        for site in sites:
+            site_context = _site_to_context(site)
+            for domain in domains:
+                result = svc.apply(site_context, domain=domain, allow_drafts=False)
+                for item in result.get("applicable_items", []):
+                    item_id = item.get("kb_item_id")
+                    if item_id and item_id not in seen_ids:
+                        seen_ids.add(item_id)
+                        all_items.append(item)
+                        stats_by_domain[domain] = stats_by_domain.get(domain, 0) + 1
+    except Exception:
+        logger.warning("KB apply failed for portfolio, returning empty", exc_info=True)
+        return {
+            "prompt_section": "",
+            "kb_item_ids": [],
+            "stats_by_domain": {d: 0 for d in domains},
+            "total_items": 0,
+            "status": "error",
+        }
+
+    all_items.sort(key=lambda x: (x.get("priority", 3), x.get("domain", "zzz")))
+    capped = all_items[:MAX_ITEMS_IN_PROMPT]
+
+    if not capped:
+        prompt_section = "AUCUN ITEM KB VALIDÉ NE CORRESPOND AU PORTEFEUILLE.\nN'invente PAS de fait réglementaire."
+    else:
+        blocks = [_format_item_for_prompt(i) for i in capped]
+        prompt_section = (
+            f"ITEMS KB VALIDÉS APPLICABLES AU PORTEFEUILLE "
+            f"({len(capped)}/{len(all_items)} affichés, {len(sites)} sites scannés) :\n\n"
+            + "\n\n".join(blocks)
+            + "\n\nRÈGLE : ne cite que ces items. N'invente JAMAIS un décret, une date ou un seuil."
+        )
+
+    return {
+        "prompt_section": prompt_section,
+        "kb_item_ids": [i["kb_item_id"] for i in capped],
+        "stats_by_domain": stats_by_domain,
+        "total_items": len(all_items),
+        "status": "ok" if all_items else "insufficient",
+    }
