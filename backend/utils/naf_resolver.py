@@ -16,6 +16,19 @@ if TYPE_CHECKING:
     from models import Site
 
 
+def naf_prefix(naf_code: Optional[str]) -> Optional[str]:
+    """
+    Strip dots/spaces puis slice les 4 premiers chiffres.
+
+    Formats supportés : DD.DDC (INSEE canonique), DDDDC (compact), DD DD C.
+    Retourne None si naf_code vide / None. Helper partagé entre les resolvers
+    pilotage et flex pour éviter la duplication du `replace().replace()[:4]`.
+    """
+    if not naf_code:
+        return None
+    return naf_code.replace(".", "").replace(" ", "")[:4] or None
+
+
 def resolve_naf_code(site: "Site", db: "Session") -> Optional[str]:
     """
     Résolution NAF en cascade :
