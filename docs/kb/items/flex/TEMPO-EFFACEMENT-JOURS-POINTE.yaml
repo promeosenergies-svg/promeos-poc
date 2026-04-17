@@ -1,0 +1,78 @@
+---
+id: "TEMPO-EFFACEMENT-JOURS-POINTE"
+type: "rule"
+domain: "flex"
+title: "TEMPO et offres pointe mobile — Effacement jours de pointe hiver"
+summary: "1,2 million de clients résidentiels ont une offre pointe mobile (6 cadrans, type TEMPO). Effacement moyen 30-50% de la consommation sur jours rouges selon puissance souscrite, capacité totale ~400 MW sur l'hiver 2024-2025."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - copro
+    - bailleur
+  asset:
+    - multi
+  reg:
+    - multi
+  granularity:
+    - event
+
+scope: {}
+
+content_md: |
+  ## TEMPO et offres pointe mobile
+
+  ### Chiffres clés hiver 2024-2025
+  - **1,2 million de clients** souscrivent une offre pointe mobile (x4 depuis 2023)
+  - **~400 MW** capacité totale d'effacement
+  - **30-50%** effacement relatif par client selon heure et jour de pointe
+  - **200-500 W** effacement moyen par client lors des jours rouges
+
+  ### Types de jours TEMPO
+  - **Bleu** (300 jours) : tarif normal, pas de tension
+  - **Blanc** (43 jours) : tarif légèrement supérieur, moyenne tension
+  - **Rouge** (22 jours) : tarif très supérieur 6h-22h, forte tension
+  - Signalement veille à partir de 11h
+
+  ### Effacement par puissance souscrite (hiver 2024-2025)
+  | Puissance | Effacement relatif |
+  |---|---|
+  | < 9 kVA | 20-30 % |
+  | >= 9 kVA | 30-50 % |
+
+  ### Évolution TRV
+  - Extension de l'option TEMPO du tarif réglementé aux clients résidentiels ≥ 6 kVA
+  - Croissance x4 du nombre de clients TEMPO entre 2023 et 2025
+
+  ### Comportement effacement
+  - Baisse forte en journée lors jours rouges (jusqu'à 50% en matinée/après-midi)
+  - Report partiel en heures creuses (22h-6h) lors des jours rouges
+  - Augmentation effacement relatif par client d'année en année (apprentissage)
+
+logic:
+  when:
+    all:
+      - field: "offer_type"
+        op: "="
+        value: "tempo"
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Piloter automatiquement chauffage et ECS selon type de jour Tempo"
+        priority: 1
+
+      - type: "next_step"
+        label: "Anticiper le signalement à J-1 11h pour optimiser la programmation"
+        priority: 2
+
+sources:
+  - doc_id: "BAROMETRE-FLEX-2026"
+    label: "Baromètre des flexibilités de consommation d'électricité — Édition 2026"
+    section: "Chapitre 4.6 Zoom offre pointe mobile p.59"
+    anchor: "#tempo-pointe-mobile"
+    excerpt_short: "1,2 million de consommateurs bénéficiant d'une offre de fourniture à effacement (TEMPO ou type TEMPO) se traduit par une baisse de la consommation de 30% à 40% sur les jours signalés par RTE soit une capacité totale d'environ 400 MW"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 2

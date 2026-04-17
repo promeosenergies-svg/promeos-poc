@@ -1,0 +1,108 @@
+---
+id: "HEMS-PILOTAGE-RESIDENTIEL"
+type: "knowledge"
+domain: "flex"
+title: "HEMS — Gestionnaire d'énergie résidentiel"
+summary: "Le HEMS (Home Energy Management System) centralise le pilotage multi-usages du logement. 4% des foyers français équipés fin 2025 (x8 vs 2023), objectif 17% en 2030. Porte d'entrée de la flexibilité côté aval compteur."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - copro
+    - bailleur
+  asset:
+    - multi
+  reg:
+    - multi
+  granularity:
+    - 30min
+
+scope: {}
+
+content_md: |
+  ## HEMS — Gestionnaire d'énergie résidentiel
+
+  ### Définition
+  Home Energy Management System : solution intelligente qui optimise la consommation
+  et la puissance à l'échelle du logement en intégrant signaux externes (prix, CO2, EcoWatt)
+  et contraintes internes (confort, présence, PV, batterie).
+
+  ### Chiffres clés 2025
+  - **Taux d'équipement** : 4 % des foyers (x8 vs 0,5% en 2023)
+  - **Objectif 2030** : 17 % (plan IGNES volontariste)
+  - **Connaissance** : 66 % des Français connaissent les systèmes de pilotage multi-usages (vs 38% en 2024)
+
+  ### Fonctions clés
+  1. **Interface utilisateur** : tablette/smartphone, consignes, reprise main
+  2. **Agrégation signaux** : prix spot, EcoWatt, demandes agrégateurs, météo
+  3. **Optimisation courbe de charge** :
+     - Limitation consommation (respect puissance souscrite)
+     - Décalage usages dans le temps
+     - Modulation puissance appelée
+     - Stockage/déstockage énergie
+  4. **Pilotage équipements** : chauffage, ECS, IRVE, PV, batterie, volets, prises connectées
+
+  ### Standards de référence
+  - **Aval** : NF EN 50491-12-2 ("S2") — échanges HEMS ↔ équipements
+  - **Amont** : NF EN IEC 62746-4 — échanges HEMS ↔ fournisseurs/agrégateurs
+  - **International** : série IEC 63402 (depuis 2025)
+
+  ### Bénéfices pour l'utilisateur
+  - Amélioration taux autoconsommation PV
+  - Réduction facture électricité (arbitrage HC/HP, pointe mobile)
+  - Allègement charge mentale (automatisation)
+  - Suivi et pilotage à distance
+
+  ### Pilotage VE à domicile 2025
+  - **35 %** clients pilotent systématiquement leur recharge VE (vs 32% en 2024, 26% en 2023)
+  - **63 %** recharges entre 21h-7h
+  - **64 %** pilotent via apps voiture/borne, 25% manuellement, 4% via compteur Linky, 2% via HEMS
+
+  ### Pilotage ECS 2025
+  - **88 %** asservissement par tableau électrique (contacteur HC) — mode historique
+  - **8 %** pilotage connecté (+2 pts vs 2024)
+  - **4 %** autre
+
+  ### Pilotage chauffage 2025 (pompe à chaleur)
+  - **83 %** commande manuelle sur équipement
+  - **12 %** solutions de pilotage connectées (+5 pts vs 2024)
+
+logic:
+  when:
+    any:
+      - field: "segment"
+        op: "in"
+        value: ["copro", "bailleur"]
+      - field: "offer_type"
+        op: "in"
+        value: ["tempo", "hp_hc", "base"]
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Choisir un HEMS dès le premier usage flexible (VE, PAC, ECS)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Privilégier un HEMS conforme NF EN 50491-12-2 et NF EN IEC 62746-4"
+        priority: 2
+
+      - type: "next_step"
+        label: "Activer pilotage automatique multi-usages sans silo"
+        priority: 3
+
+sources:
+  - doc_id: "BAROMETRE-FLEX-2026"
+    label: "Baromètre des flexibilités de consommation d'électricité — Édition 2026"
+    section: "Chapitre 6.6 Pilotage global p.84-85"
+    anchor: "#hems"
+    excerpt_short: "Taux d'équipement HEMS 4% en 2025, objectif 17% en 2030, x8 depuis 2023"
+
+  - doc_id: "IGNES-HEMS-ETUDE-2025"
+    label: "IGNES/BVA — Évaluation multicritères pilotage connecté maison individuelle — juin 2025"
+    section: "Étude CSTB"
+    anchor: "#etude-ignes"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 2
