@@ -325,3 +325,149 @@ def test_simulate_now_injection_avec_cdc_et_spot(db_session):
     assert result["periode_debut"] == "2026-01-16"
     # Gain effectivement calcule (non-zero)
     assert result["kwh_decales_total"] > 0
+
+
+# ---------------------------------------------------------------------------
+# Tests fix audit (P0/P1 post-merge Vague 2) : multi-meter + is_estimated + neg
+# ---------------------------------------------------------------------------
+def test_simulate_multi_meter_filtre_electricity(db_session):
+    """
+    Fix P0 audit : un site elec + gaz ne doit compter QUE les kWh elec.
+    Avant le filtre EnergyVector.ELECTRICITY, les kWh gaz etaient additionnes
+    -> gain x2-x3 faux. Verification : on seed 100 kWh/h elec + 200 kWh/h gaz
+    sur 30j ; gain simule doit etre calcule UNIQUEMENT sur les 100 elec.
+    """
+    now = datetime(2026, 2, 15, 10, 0)
+    site = _seed_site(db_session, archetype_code="BUREAU_STANDARD")
+
+    # Meter gaz en plus de l'elec existant (seed_site ajoute deja un elec)
+    meter_gaz = Meter(
+        meter_id=f"PCE-GAZ-{site.id}",
+        name="M_gaz",
+        site_id=site.id,
+        energy_vector=EnergyVector.GAS,
+        is_active=True,
+    )
+    db_session.add(meter_gaz)
+    db_session.flush()
+
+    # Seed CDC elec 100 kWh/h (via _seed_cdc qui utilise le 1er meter = elec)
+    _seed_cdc(db_session, site.id, now=now, days=30, kwh_per_hour=100.0)
+
+    # Seed CDC gaz 999 kWh/h (si non filtre, x10 le volume)
+    for hour_offset in range(30 * 24):
+        ts = now - timedelta(hours=hour_offset + 1)
+        db_session.add(
+            MeterReading(
+                meter_id=meter_gaz.id,
+                timestamp=ts,
+                frequency=FrequencyType.HOURLY,
+                value_kwh=999.0,
+                is_estimated=False,
+            )
+        )
+    db_session.flush()
+    _seed_spot(db_session, now=now, days=30)
+
+    result = simulate_nebco_gain(site, db_session, period_days=30, now=now)
+
+    # Volume decalable doit etre proportionnel au kWh ELEC seulement (100/h)
+    # pas au kWh gaz (999/h). Upper bound tolerant : 30j * 24h * 100 kWh * 0.30 taux
+    # decalable BUREAU_STANDARD = 21600 kWh max. Si gaz etait compte, on aurait
+    # ~21600 * 10 = 216000 kWh.
+    assert result["kwh_decales_total"] < 30_000, f"kwh gaz compte par erreur : {result['kwh_decales_total']} kWh"
+
+
+def test_simulate_exclut_readings_estimees(db_session):
+    """
+    Fix P1 audit : les `MeterReading.is_estimated=True` (extrapolations SF4
+    sur gaps) ne doivent PAS compter dans la "preuve chiffree" — sinon on
+    gonfle le gain sur des donnees non observees.
+    """
+    now = datetime(2026, 2, 15, 10, 0)
+    site = _seed_site(db_session, archetype_code="COMMERCE_ALIMENTAIRE")
+
+    meter = db_session.query(Meter).filter(Meter.site_id == site.id).first()
+    assert meter is not None
+
+    # 30j : 50 kWh/h reels + 500 kWh/h ESTIMES (si non filtres, x10)
+    for hour_offset in range(30 * 24):
+        ts = now - timedelta(hours=hour_offset + 1)
+        db_session.add(
+            MeterReading(
+                meter_id=meter.id,
+                timestamp=ts,
+                frequency=FrequencyType.HOURLY,
+                value_kwh=50.0,
+                is_estimated=False,
+            )
+        )
+        db_session.add(
+            MeterReading(
+                meter_id=meter.id,
+                timestamp=ts + timedelta(minutes=30),  # autre timestamp pour PK
+                frequency=FrequencyType.HOURLY,
+                value_kwh=500.0,
+                is_estimated=True,
+            )
+        )
+    db_session.flush()
+    _seed_spot(db_session, now=now, days=30)
+
+    result = simulate_nebco_gain(site, db_session, period_days=30, now=now)
+
+    # Upper bound : 720h * 50 kWh * 0.45 COMMERCE_ALIMENTAIRE ~= 16200 kWh.
+    # Si estimes comptaient : 720h * 550 * 0.45 = 178k+ kWh.
+    assert result["kwh_decales_total"] < 25_000, (
+        f"readings estimes comptes par erreur : {result['kwh_decales_total']} kWh"
+    )
+
+
+def test_simulate_spread_negatif_trace_distincte(db_session, caplog):
+    """
+    Fix P0 audit : un spread negatif (classification inversee par bug amont)
+    doit etre tracabe distinctement du cas spread plat -- ne pas masquer
+    sous un seul label "non_significatif" qui camouflerait les incidents.
+    """
+    import logging
+    from unittest.mock import patch
+
+    from services.pilotage import nebco_simulation
+
+    now = datetime(2026, 2, 15, 10, 0)
+    site = _seed_site(db_session, archetype_code="BUREAU_STANDARD")
+    _seed_cdc(db_session, site.id, now=now, days=30, kwh_per_hour=50.0)
+    _seed_spot(db_session, now=now, days=30)
+
+    # Force un spread negatif via monkeypatch sur classify_slots
+    # (retourne FAVORABLE pour les plus chers, SENSIBLE pour les moins chers)
+    original = nebco_simulation.classify_slots
+
+    def inverted(slots, low, high):
+        res = original(slots, low, high)
+        from services.pilotage.window_detector import WindowType
+
+        inverted_map = {
+            WindowType.FAVORABLE: WindowType.SENSIBLE,
+            WindowType.SENSIBLE: WindowType.FAVORABLE,
+        }
+        for ts, cls in res.items():
+            if cls.window_type in inverted_map:
+                # SlotClassification est frozen dataclass -- on recree
+                import dataclasses
+
+                res[ts] = dataclasses.replace(cls, window_type=inverted_map[cls.window_type])
+        return res
+
+    with (
+        patch.object(nebco_simulation, "classify_slots", side_effect=inverted),
+        caplog.at_level(logging.WARNING, logger="services.pilotage.nebco_simulation"),
+    ):
+        result = simulate_nebco_gain(site, db_session, period_days=30, now=now)
+
+    # Le trace doit contenir "spread_negatif_fallback_60", PAS
+    # "spread_non_significatif" (label retire) ni "spread_plat"
+    source_cal = result["hypotheses"]["source_calibration"]
+    assert "spread_negatif_fallback_60" in source_cal, f"Trace spread negatif manquante : {source_cal!r}"
+    # Warning logue (pas silent)
+    assert any("spread negatif" in rec.message for rec in caplog.records)

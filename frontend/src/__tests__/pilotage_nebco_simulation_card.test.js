@@ -116,6 +116,22 @@ describe('NebcoSimulationCard — wording doctrine', () => {
     expect(codeOnly).not.toMatch(/>[^<]*prix négatif[^<]*</i);
   });
 
+  it('ne rend pas "usages flexibles" (doctrine fix audit Vague 2)', () => {
+    // L'audit post-merge a flag "usages flexibles" comme leak doctrine.
+    // Wording canonique : "usages décalables" ou "usages pilotables".
+    const codeOnly = cardSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    expect(codeOnly).not.toMatch(/usages flexibles/i);
+    expect(cardSrc).toMatch(/usages (pilotables|décalables)/);
+  });
+
+  it('distingue 404 (CDC absente) vs 500/timeout (backend KO) dans error state', () => {
+    // Fix P1 audit : un backend down affichait "CDC non seedée" faux.
+    expect(cardSrc).toMatch(/err\?\.response\?\.status/);
+    expect(cardSrc).toMatch(/cdc_missing/);
+    expect(cardSrc).toMatch(/backend_error/);
+    expect(cardSrc).toMatch(/Rejeu temporairement indisponible/);
+  });
+
   it('affiche confiance en minuscules (doctrine Sprint 1b)', () => {
     // "confiance indicative" — pas "INDICATIVE" screaming caps
     expect(cardSrc).toMatch(/confiance \{confiance/);

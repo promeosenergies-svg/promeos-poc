@@ -90,8 +90,14 @@ export default function NebcoSimulationCard({ siteId: siteIdProp, periodDays = 3
       .then((d) => {
         if (!cancel) setData(d);
       })
-      .catch(() => {
-        if (!cancel) setError(true);
+      .catch((err) => {
+        if (!cancel) {
+          // Distinguer 404 (CDC non seedée) de 500/timeout (backend down) :
+          // sans ça, un backend KO afficherait "CDC non seedée" qui est un
+          // mensonge et décrédibilise la démo.
+          const status = err?.response?.status ?? err?.status ?? 0;
+          setError(status === 404 ? 'cdc_missing' : 'backend_error');
+        }
       })
       .finally(() => {
         if (!cancel) setLoading(false);
@@ -115,15 +121,17 @@ export default function NebcoSimulationCard({ siteId: siteIdProp, periodDays = 3
   }
 
   if (error || !data) {
+    const message =
+      error === 'backend_error'
+        ? 'Rejeu temporairement indisponible — réessayez dans quelques instants.'
+        : 'CDC du site non seedée — contactez votre CSM pour activer le rejeu sur données réelles.';
     return (
       <div
         className="bg-white border border-gray-200 rounded-xl p-4"
         data-testid="pilotage-nebco-card"
       >
         <h3 className="text-sm font-semibold text-gray-800 mb-2">Gain simulé — rejeu historique</h3>
-        <p className="text-xs text-gray-500">
-          CDC du site non seedée — contactez votre CSM pour activer le rejeu sur données réelles.
-        </p>
+        <p className="text-xs text-gray-500">{message}</p>
       </div>
     );
   }
@@ -223,7 +231,7 @@ export default function NebcoSimulationCard({ siteId: siteIdProp, periodDays = 3
           {fmtEur(gainTotal)}
         </div>
         <div className="text-[11px] text-gray-500 mt-1">
-          Gain simulé sur les {expandedDays} derniers jours en décalant vos usages flexibles
+          Gain simulé sur les {expandedDays} derniers jours en décalant vos usages pilotables
         </div>
       </div>
 

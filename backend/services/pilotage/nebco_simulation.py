@@ -43,6 +43,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy.orm import Session
 
 from models.energy_models import FrequencyType, Meter, MeterReading
+from models.enums import EnergyVector
 from models.market_models import MarketType, MktPrice, PriceZone, Resolution
 from services.pilotage.constants import ARCHETYPE_CALIBRATION_2024
 from services.pilotage.window_detector import (
@@ -149,13 +150,21 @@ def _load_cdc_readings(
     debut = periode_debut.replace(tzinfo=None) if periode_debut.tzinfo else periode_debut
     fin = periode_fin.replace(tzinfo=None) if periode_fin.tzinfo else periode_fin
 
+    # Fix P0 audit Vague 2 : filtrer explicitement sur ELECTRICITY.
+    # Un site multi-vecteur (elec + gaz) risquait d'additionner les kWh gaz
+    # dans le volume decalable puis d'appliquer le taux decalable tertiaire
+    # elec et le spread spot elec -> gain faux (x2-x3 selon mix).
+    # Fix P1 : exclure `is_estimated=True` de la "preuve chiffree" -- les
+    # extrapolations SF4 gonfleraient artificiellement le gain simule.
     rows = (
         db.query(MeterReading.timestamp, MeterReading.value_kwh)
         .join(Meter, MeterReading.meter_id == Meter.id)
         .filter(
             Meter.site_id == site_id,
             Meter.is_active.is_(True),
+            Meter.energy_vector == EnergyVector.ELECTRICITY,
             MeterReading.frequency == FrequencyType.HOURLY,
+            MeterReading.is_estimated.is_(False),
             MeterReading.timestamp >= debut,
             MeterReading.timestamp <= fin,
         )
@@ -357,10 +366,20 @@ def simulate_nebco_gain(
     # --- 5. Spread moyen ------------------------------------------------------
     if prix_favorable and prix_sensible:
         spread_moyen = (sum(prix_sensible) / len(prix_sensible)) - (sum(prix_favorable) / len(prix_favorable))
-        # Garde-fou : spread non-significatif (ex. serie plate) -> fallback
-        if spread_moyen <= 0.0:
+        # Fix P0 audit Vague 2 : distinguer spread plat (0, serie stable) de
+        # spread negatif (bug amont : thresholds inverses, donnees polluees).
+        # Masquer les deux cas sous un seul label camouflerait les incidents.
+        if spread_moyen < 0.0:
+            logger.warning(
+                "nebco_simulation: spread negatif observe (%.2f EUR/MWh) -- "
+                "indice probable de thresholds inverses ou donnees polluees",
+                spread_moyen,
+            )
             spread_moyen = _SPREAD_FALLBACK_EUR_MWH
-            trace_parts.append("spread_non_significatif_fallback_60")
+            trace_parts.append("spread_negatif_fallback_60")
+        elif spread_moyen == 0.0:
+            spread_moyen = _SPREAD_FALLBACK_EUR_MWH
+            trace_parts.append("spread_plat_fallback_60")
     else:
         spread_moyen = _SPREAD_FALLBACK_EUR_MWH
         if spot_disponible:
