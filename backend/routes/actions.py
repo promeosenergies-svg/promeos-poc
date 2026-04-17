@@ -33,6 +33,7 @@ from services.action_hub_service import sync_actions, compute_priority
 from services.action_close_rules import is_operat_action, check_closable
 from middleware.auth import get_optional_auth, AuthContext
 from middleware.cx_logger import log_cx_event
+from services.action_status_service import mark_action_done
 from services.iam_scope import apply_scope_filter
 from services.scope_utils import resolve_org_id
 
@@ -510,18 +511,17 @@ def patch_action(
                         detail={"code": result.get("code", "CLOSE_BLOCKED"), "message": result["reason"]},
                     )
 
-            action.status = new_status
             _create_event(db, action.id, "status_change", old_value=old_status, new_value=data.status)
-            # Set closed_at when action is marked done
-            if new_status == ActionStatus.DONE and action.closed_at is None:
-                action.closed_at = datetime.now(timezone.utc)
-                log_cx_event(
+            if new_status == ActionStatus.DONE:
+                # Sprint CX 2.5 F1 : helper unifié (set status + closed_at + log_cx_event)
+                mark_action_done(
                     db,
-                    action.org_id,
-                    auth.id if auth else None,
-                    "CX_ACTION_FROM_INSIGHT",
-                    {"action_id": action.id, "source_type": action.source_type.value if action.source_type else None},
+                    action,
+                    user_id=auth.id if auth else None,
+                    reason="patch_action_done",
                 )
+            else:
+                action.status = new_status
 
     if data.owner is not None:
         old_owner = action.owner
