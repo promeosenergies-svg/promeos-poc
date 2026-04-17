@@ -37,7 +37,7 @@ def submit_csat(
 
     entry = CsatResponse(
         org_id=effective_org_id,
-        user_id=auth.id if auth else None,
+        user_id=auth.user.id if auth else None,
         score=score,
         verbatim=verbatim,
         trigger_type=trigger_type,

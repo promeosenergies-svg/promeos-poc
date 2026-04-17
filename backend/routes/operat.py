@@ -162,7 +162,7 @@ def export_operat_csv_route(
     log_cx_event(
         db,
         effective_org_id,
-        auth.id if auth else None,
+        auth.user.id if auth else None,
         "CX_REPORT_EXPORTED",
         {"report_type": "operat", "year": body.year},
     )

@@ -226,3 +226,49 @@ def require_permission(action: str, module: Optional[str] = None):
 def require_admin():
     """Dependency: require admin permission (DG_OWNER or DSI_ADMIN)."""
     return require_permission("admin")
+
+
+def require_platform_admin(
+    token: Optional[str] = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+):
+    """
+    Dependency: require platform admin (DG_OWNER or DSI_ADMIN) — STRICT.
+
+    Sprint CX 2.5 hardening (S2) : contrairement à require_permission, NE PAS
+    bypass en DEMO_MODE. Usage : endpoints internes PROMEOS qui exposent des
+    données cross-tenant (ex: /api/admin/cx-dashboard/*). Jamais exposer au
+    client, même en démo pilote.
+
+    Dep directe (pas factory) pour faciliter app.dependency_overrides en tests.
+    """
+    if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentification requise (endpoint interne PROMEOS)",
+        )
+
+    try:
+        payload = decode_token(token)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token invalide",
+        )
+
+    role_str = payload.get("role", "")
+    try:
+        role = UserRole(role_str)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Rôle invalide",
+        )
+
+    if role not in (UserRole.DG_OWNER, UserRole.DSI_ADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès réservé à l'administration plateforme",
+        )
+
+    return payload

@@ -73,7 +73,7 @@ def get_cockpit(
     log_cx_event(
         db,
         effective_org_id,
-        auth.id if auth else None,
+        auth.user.id if auth else None,
         "CX_DASHBOARD_OPENED",
         {"endpoint": "cockpit"},
     )
