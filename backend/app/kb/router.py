@@ -7,10 +7,11 @@ Hardened with input validation, payload limits, and proper error handling.
 import hashlib
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel, field_validator
 from typing import Optional, List, Dict, Any
 
+from middleware.auth import require_admin
 from .store import KBStore
 from .indexer import KBIndexer
 from .service import KBService
@@ -224,10 +225,13 @@ def get_stats():
         raise HTTPException(status_code=500, detail=f"Stats error: {str(e)[:200]}")
 
 
-@router.get("/metrics")
+@router.get("/metrics", dependencies=[Depends(require_admin())])
 def kb_metrics(since_days: int = Query(30, ge=1, le=365, description="Fenêtre d'agrégation en jours")):
     """
     Usage metrics of the KB apply engine (coverage, latency, top items, missing fields).
+
+    Admin-only : l'endpoint expose des signaux internes (items les plus matchés,
+    champs manquants côté site_context) qui ne doivent pas fuir hors Ops.
 
     - coverage_pct: share of calls that matched >= 1 item (over `since_days`)
     - latency_ms: avg / p50 / p95 / max
