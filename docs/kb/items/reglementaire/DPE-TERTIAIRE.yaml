@@ -1,0 +1,97 @@
+---
+id: "DPE-TERTIAIRE"
+type: "rule"
+domain: "reglementaire"
+title: "DPE Tertiaire — Diagnostic de performance énergétique obligatoire"
+summary: "Transposition directive EPBD refondue (UE 2024/1275) prévue en 2026-2027. DPE obligatoire pour tout bâtiment tertiaire >500 m2 lors de vente/location, et avant 2030 pour tout bâtiment existant à usage professionnel. Notation A-G sur consommation et émissions CO2."
+
+tags:
+  energy:
+    - multi
+  segment:
+    - tertiaire_multisite
+    - collectivite
+    - copro
+    - bailleur
+  asset:
+    - multi
+  reg:
+    - multi
+  granularity:
+    - event
+
+scope:
+  surface_m2_min: 500
+
+content_md: |
+  ## DPE Tertiaire — Obligation progressive
+
+  ### Cadre réglementaire
+  - Directive EPBD refondue (UE) 2024/1275 du 24 avril 2024
+  - Transposition française prévue mai 2026 (délai 24 mois)
+  - Code de la construction et de l'habitation — articles à préciser lors transposition
+
+  ### Périmètre
+  - Tout bâtiment tertiaire (bureaux, commerces, enseignement, santé, hôtellerie, sport, culture, transports)
+  - Seuil d'application : surface utile > 500 m2
+  - Bâtiments neufs : obligation à la livraison
+  - Bâtiments existants : obligation progressive 2026 → 2030
+
+  ### Notation DPE
+  Notation A (< 70 kWh/m2/an) → G (> 450 kWh/m2/an) sur 2 critères :
+  1. **Consommation** (kWh/m2/an d'énergie primaire)
+  2. **Émissions CO2** (kgCO2eq/m2/an)
+
+  ### Calendrier de mise en œuvre (attendu)
+  | Date | Obligation |
+  |---|---|
+  | Mai 2026 | Transposition française (publication) |
+  | 2026-2027 | Obligation vente/location bâtiments tertiaires >500m2 |
+  | 2027-2030 | Extension progressive à tout bâtiment existant |
+  | 2030 | Interdiction location/vente bâtiments classés G (sur modèle résidentiel) |
+
+  ### Articulation Décret Tertiaire
+  Le DPE tertiaire vient **compléter** (pas remplacer) le Décret Tertiaire :
+  - DT = obligation de réduction (-40% 2030, -50% 2040, -60% 2050)
+  - DPE tertiaire = diagnostic à moment donné + classe énergétique
+  - Les deux coexistent avec déclaration OPERAT annuelle
+
+  ### Impact ESG / CSRD
+  Le DPE alimente les indicateurs CSRD (E1 Climate change) pour les entreprises >250 salariés.
+
+  ### Attention
+  Cadre réglementaire **en cours de précision** au 2e trimestre 2026. Les paramètres définitifs (méthode calcul, seuils exacts) seront fixés par décret d'application post-transposition.
+
+logic:
+  when:
+    all:
+      - field: "surface_m2"
+        op: ">="
+        value: 500
+      - field: "building_type"
+        op: "in"
+        value: ["bureau", "commerce", "enseignement", "sante", "hotellerie", "sport", "culture", "transport"]
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Suivre la transposition française de la directive EPBD 2024/1275 (publication mai 2026)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Anticiper le diagnostic DPE pour toute vente/location prévue à partir de 2027"
+        priority: 2
+
+      - type: "next_step"
+        label: "Alimenter les indicateurs CSRD E1 avec le DPE calculé"
+        priority: 3
+
+sources:
+  - doc_id: "EPBD-2024-1275"
+    label: "Directive (UE) 2024/1275 du 24 avril 2024 (EPBD refondue)"
+    section: "Article 19 — DPE bâtiments non résidentiels"
+    anchor: "#epbd-19"
+    excerpt_short: "Obligation d'un diagnostic de performance énergétique pour les bâtiments non résidentiels, avec notation A-G et critères consommation + émissions"
+
+updated_at: "2026-04-17"
+confidence: "medium"
+priority: 2

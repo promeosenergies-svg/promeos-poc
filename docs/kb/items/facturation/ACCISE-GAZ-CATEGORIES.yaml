@@ -1,0 +1,88 @@
+---
+id: "ACCISE-GAZ-CATEGORIES"
+type: "rule"
+domain: "facturation"
+title: "Accise gaz naturel — Catégories et tarifs 2025-2026"
+summary: "Accise sur le gaz naturel (ex-TICGN) différenciée par usage (combustion, carburant, industrie cogénération). Tarif standard combustion : 16,37 €/MWh (2025). Régimes réduits possibles (industries électro-intensives, serres agricoles, transport maritime/aérien)."
+
+tags:
+  energy:
+    - gaz
+  segment:
+    - tertiaire_multisite
+    - industrie
+    - collectivite
+    - copro
+    - bailleur
+  asset:
+    - multi
+  reg:
+    - taxes
+  granularity:
+    - mensuel
+
+scope: {}
+
+content_md: |
+  ## Accise gaz naturel (ex-TICGN)
+
+  ### Cadre réglementaire
+  - Code des impositions sur les biens et services (CIBS) articles L312-48 et suivants
+  - Directive UE 2003/96/CE
+
+  ### Catégories tarifaires (assiette combustion)
+
+  | Catégorie | Usage | Tarif (€/MWh PCS) |
+  |---|---|---|
+  | **Combustion standard** | Chauffage, ECS, process bas | 16,37 (2025) |
+  | **Électro-intensives** | Industrie attestation DGEC | ~1,60 (taux réduit) |
+  | **Cogénération** | Cogénération ≥ 1 MW électrique | Exonéré (biométhane) ou réduit |
+  | **Serres** | Serres agricoles | Réduit sur attestation |
+
+  ### Usages carburant
+  - Tarif gazole carburant : 8,45 €/MWh
+  - Transport maritime/aérien international : exonéré
+
+  ### Articulation avec ATRD (CTA)
+  L'accise gaz est calculée sur l'énergie consommée (€/MWh PCS) — distinct de :
+  - ATRD (tarif réseau distribution) voir ATRD7-GAZ-STRUCTURE
+  - CTA gaz (assise sur ATRD) avec coefficient additif
+  - CEE (Certificats d'Économie d'Énergie) voir item dédié
+
+  ### Versioning PROMEOS
+  Table `tax_profiles` (V113) :
+  - `accise_category_gaz` : COMBUSTION_STANDARD / ELECTRO_INTENSIF / COGENERATION / SERRE
+  - `regime_reduit` : bool
+  - Référence attestation DGEC si applicable
+
+logic:
+  when:
+    all:
+      - field: "energy_vector"
+        op: "="
+        value: "gaz"
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Identifier catégorie accise gaz selon usage (combustion/cogen/serre/électro-intensif)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Vérifier attestation DGEC si régime réduit revendiqué"
+        priority: 2
+
+sources:
+  - doc_id: "CIBS-L312-48"
+    label: "Code des impositions sur les biens et services — Articles L312-48 et suivants"
+    section: "Accises gaz naturel"
+    anchor: "#cibs-l312-48"
+    excerpt_short: "Accise sur le gaz naturel selon usage (combustion, carburant, cogénération)"
+
+  - doc_id: "PROMEOS-V113-TAXPROFILE-GAZ"
+    label: "PROMEOS V113 — Enum AcciseCategoryGaz"
+    section: "Data model Vague 1 — Gaz"
+    anchor: "#v113-accise-gaz"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 2

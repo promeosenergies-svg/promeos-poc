@@ -1,0 +1,93 @@
+---
+id: "HEURES-CREUSES-REFORME-TURPE7"
+type: "rule"
+domain: "facturation"
+title: "Réforme Heures Creuses TURPE 7 — Saisonnalisation 2025-2028"
+summary: "Réforme des plages Heures Creuses engagée en novembre 2025 par décision CRE (TURPE 7). Objectif : décaler 5 GW vers 14h après 2027 en profitant de la production solaire. Déploiement en 3 phases de novembre 2025 à mi-2028."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - copro
+    - bailleur
+  asset:
+    - multi
+  reg:
+    - turpe
+  granularity:
+    - event
+
+scope: {}
+
+content_md: |
+  ## Réforme Heures Creuses TURPE 7
+
+  ### Cadre réglementaire
+  - CRE délibération 2025-78 du 13 mars 2025 (TURPE 7 HTA-BT)
+  - CRE délibération 2026-02 du 8 janvier 2026
+
+  ### Objectifs
+  - Saisonnaliser les plages HC entre été et hiver
+  - Exclure les plages HC qui mettent en contrainte l'équilibre offre-demande
+  - Favoriser les plages HC solaires été (11h-17h) et creux de nuit (2h-6h)
+  - Placer 5 GW supplémentaires vers 14h à partir de 2027 (ballons ECS + IRVE)
+
+  ### Calendrier de déploiement (3 phases)
+  | Phase | Période | Périmètre |
+  |---|---|---|
+  | Phase 1 | nov 2025 → mai 2026 | 5,2M PRM résidentiels (HC identiques été/hiver) |
+  | Phase 2 | déc 2026 → nov 2027 | 22,8M PRM résidentiels+pro ≤36kVA (HC saisonnalisées) |
+  | Phase 3 | mi-2027 → mi-2028 | 550k PRM Marché d'Affaires (>36kVA et HTA) |
+
+  ### Règles des nouvelles plages HC
+  - 8 heures HC/jour réparties sur 1 ou 2 plages
+  - Si 2 plages : 1 diurne (8h-20h) + 1 nocturne (20h-8h)
+  - Même nombre HC diurnes été/hiver
+  - Durée minimale 2h par plage (5h pour la plage nocturne)
+  - En été (1/04 → 31/10) : plages 11h-17h favorisées, 7h-11h et 17h-21h exclues
+  - En hiver (1/11 → 31/03) : plages 7h-11h et 17h-21h exclues
+
+  ### Évolution TRV associée (CRE 2025-10 du 15/01/2025)
+  - Suppression tarif Base pour sites >=18 kVA (début 2026)
+  - Mise en extinction tarif Base pour sites 9-15 kVA (depuis février 2025)
+  - Expérimentation option "pointe" pour sites 3 kVA et 6 kVA à horizon 2026
+
+logic:
+  when:
+    all:
+      - field: "offer_type"
+        op: "="
+        value: "hp_hc"
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Vérifier l'affectation de nouvelles plages HC par le GRD (Enedis)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Reprogrammer les asservissements ECS et IRVE selon les nouvelles plages"
+        priority: 2
+
+      - type: "next_step"
+        label: "Anticiper la reprogrammation Enedis de vos plages HC avant mi-2028"
+        priority: 3
+        severity: "low"
+        details: "Enedis pilote la migration, aucune action gestionnaire requise au-delà du suivi"
+
+sources:
+  - doc_id: "CRE-2025-78"
+    label: "Délibération CRE 2025-78 du 13 mars 2025"
+    section: "TURPE 7 HTA-BT — Heures Creuses"
+    anchor: "#turpe7-hc"
+
+  - doc_id: "BAROMETRE-FLEX-2026"
+    label: "Baromètre des flexibilités de consommation d'électricité — Édition 2026"
+    section: "Valorisation p.36 + Les Heures Creuses p.42-43"
+    anchor: "#reforme-hc"
+    excerpt_short: "Réforme des heures creuses engagée dès le 1er novembre 2025, doit se poursuivre jusqu'au printemps 2027, 5 GW de consommation placés vers les après-midis à partir de 2027"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1

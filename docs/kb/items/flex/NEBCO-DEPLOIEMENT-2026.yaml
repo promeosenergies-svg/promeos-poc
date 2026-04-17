@@ -1,0 +1,80 @@
+---
+id: "NEBCO-DEPLOIEMENT-2026"
+type: "knowledge"
+domain: "flex"
+title: "NEBCO — Déploiement 2025-2026 et adoption"
+summary: "NEBCO mis en service le 1er septembre 2025, remplace NEBEF. Fin 2025, 708 000 sites inscrits (x2 vs 2024), dont +230 000 entre septembre et décembre 2025. Adoption portée à 86% par le résidentiel."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - industrie
+    - collectivite
+    - copro
+    - bailleur
+  asset:
+    - multi
+  reg:
+    - multi
+  granularity:
+    - 30min
+
+scope: {}
+
+content_md: |
+  ## Déploiement NEBCO fin 2025
+
+  ### Chiffres clés
+  - **708 000 sites** inscrits fin 2025 (+365 000 vs 2024, soit x2)
+  - **+230 000 sites** entre septembre et décembre 2025 (4 premiers mois)
+  - **600 000 consommateurs résidentiels** activables via NEBCO fin 2025 (x2 vs 2024)
+  - **21 agrégateurs** agréés fin 2025, dont 9 nouveaux depuis 2023
+
+  ### Volumes de modulation 2025
+  - **185 GWh** modulations à la baisse valorisées sur l'année
+  - Premières modulations à la hausse (report, anticipation) au Q4 2025
+  - Forte accélération par rapport à NEBEF (23 GWh en 2024, 186 GWh en 2023)
+
+  ### Cadre réglementaire
+  - CRE délibération 2025-199 du 23 juillet 2025
+  - Code de l'énergie : articles L.271-1, L.271-2, L.321-15-1, R.271-1
+  - Mise en service : 1er septembre 2025
+
+  ### Différences clés vs NEBEF
+  - Valorisation des 3 types de modulation (effacement, report, anticipation)
+  - Décalage de consommation valorisable même si prix SPOT < barème fournisseur
+  - Grandeur dimensionnante = spread des prix SPOT (plus seulement seuil fournisseur)
+
+logic:
+  when:
+    all:
+      - field: "flex_interest"
+        op: "="
+        value: true
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Identifier un agrégateur certifié NEBCO (liste publique RTE)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Évaluer le spread de prix SPOT journalier pour valoriser les décalages"
+        priority: 2
+
+sources:
+  - doc_id: "BAROMETRE-FLEX-2026"
+    label: "Baromètre des flexibilités de consommation d'électricité — Édition 2026"
+    section: "Synthèse p.8 + Valorisation p.37"
+    anchor: "#nebco-deploiement"
+    excerpt_short: "708 000 sites inscrits sur NEBCO fin 2025, +230 000 entre septembre et décembre 2025, plus du double par rapport à l'an dernier"
+
+  - doc_id: "CRE-2025-199"
+    label: "Délibération CRE 2025-199 du 23 juillet 2025"
+    section: "Règles NEBCO"
+    anchor: "#regles-nebco"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1

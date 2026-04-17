@@ -1,0 +1,100 @@
+---
+id: "CEE-P6-OBLIGATIONS"
+type: "knowledge"
+domain: "facturation"
+title: "CEE Période 6 (2026+) — Obligations et tarifs"
+summary: "Certificats d'Économie d'Énergie P6 : obligation 1050 TWh cumac/an (PPE3), coût pass-through pour les clients via fournisseur. Coût moyen estimé P6 : ~0,731 €/MWh (vs 0,478 en P5). Pass-through cee activable par contrat dans PROMEOS."
+
+tags:
+  energy:
+    - multi
+  segment:
+    - tertiaire_multisite
+    - industrie
+    - collectivite
+    - copro
+    - bailleur
+  asset:
+    - multi
+  reg:
+    - cee
+  granularity:
+    - mensuel
+
+scope: {}
+
+content_md: |
+  ## CEE Période 6 (2026-2030)
+
+  ### Cadre réglementaire
+  - Code de l'énergie articles L221-1 à L221-14
+  - Programmation Pluriannuelle de l'Énergie 3 (PPE3, février 2026)
+  - Arrêtés annuels de fixation du niveau d'obligation
+
+  ### Obligation P6 vs P5
+  | Période | Volume obligation | Coût estimé (€/MWh cumac) |
+  |---|---|---|
+  | P5 (2022-2025) | 2 500 TWh cumac / 4 ans | 0,478 |
+  | **P6 (2026-2030)** | **1 050 TWh cumac / an** | **~0,731** |
+
+  ### Mécanisme pass-through
+  Les obligés (fournisseurs d'énergie) répercutent le coût CEE dans la facture du client final.
+  Dans PROMEOS (V113), le pass-through est configurable par contrat :
+  - `EnergyContract.cee_pass_through` : bool
+  - Si True : ligne CEE facturée au client (€/MWh consommé)
+  - Si False : coût CEE absorbé par le fournisseur (offre "tout compris")
+
+  ### Calcul sur facture
+  ```
+  CEE_client = Consommation_MWh × taux_cee_contractuel (€/MWh)
+  ```
+  Le taux peut être :
+  - Indexé sur le cours CEE EMMY (marché secondaire)
+  - Forfaitaire selon contrat
+  - Révisé annuellement
+
+  ### Nouveautés P6
+  - Nouvelles fiches CEE 2026 : chaleur fatale, data centers, VE
+  - Plafond 2027 sur volumes massifs en immobilier résidentiel
+  - Bonifications pour précarité énergétique maintenues
+
+  ### Articulation avec rénovation
+  Les travaux d'efficacité énergétique (DT, BACS, CVC) peuvent générer des CEE valorisables par le maître d'ouvrage — compensation partielle de l'investissement.
+
+logic:
+  when:
+    all:
+      - field: "energy_vector"
+        op: "in"
+        value: ["elec", "gaz", "multi"]
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Vérifier ligne CEE dans facture fournisseur (pass-through activé ?)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Identifier CEE valorisables pour les travaux d'efficacité énergétique prévus"
+        priority: 2
+
+sources:
+  - doc_id: "CODE-ENERGIE-L221"
+    label: "Code de l'énergie — Articles L221-1 à L221-14"
+    section: "Certificats d'Économie d'Énergie"
+    anchor: "#l221"
+    excerpt_short: "Mécanisme des certificats d'économie d'énergie, obligés fournisseurs d'énergie"
+
+  - doc_id: "PPE3-2026"
+    label: "Programmation Pluriannuelle de l'Énergie 3 — Février 2026"
+    section: "CEE P6 1050 TWh cumac/an"
+    anchor: "#ppe3-cee"
+    excerpt_short: "Objectif P6 : 1 050 TWh cumac par an entre 2026 et 2030"
+
+  - doc_id: "PROMEOS-V113-CEE-PASS"
+    label: "PROMEOS V113 — cee_pass_through sur EnergyContract"
+    section: "Data model Vague 1 — Pass-through"
+    anchor: "#v113-cee"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 2

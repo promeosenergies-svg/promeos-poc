@@ -403,6 +403,8 @@ def list_alerts(
 
     alerts = query.order_by(MonitoringAlert.created_at.desc()).limit(limit).all()
 
+    from services.alert_action_mapper import get_suggested_action
+
     return [
         {
             "id": a.id,
@@ -422,6 +424,10 @@ def list_alerts(
             "resolution_note": a.resolution_note,
             "snapshot_id": a.snapshot_id,
             "created_at": a.created_at.isoformat(),
+            "suggested_action": get_suggested_action(
+                a.alert_type,
+                {"site_id": a.site_id, "estimated_savings_eur": a.estimated_impact_eur},
+            ),
         }
         for a in alerts
     ]

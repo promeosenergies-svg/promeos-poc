@@ -1,0 +1,100 @@
+---
+id: "FLEX-READY-STANDARD-TERTIAIRE"
+type: "knowledge"
+domain: "flex"
+title: "Flex Ready® — Standard interopérabilité BACS et flexibilité"
+summary: "Standard porté par Think Smartgrids + GIMELEC, basé sur la norme NF EN IEC 62746-4. Permet aux BACS de recevoir et traiter les signaux externes de flexibilité (prix, puissance, CO2). Déploiement à l'échelle prévu au S1 2026."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - collectivite
+  asset:
+    - hvac
+    - multi
+  reg:
+    - multi
+  granularity:
+    - 30min
+
+scope: {}
+
+content_md: |
+  ## Flex Ready® — Standard d'interopérabilité
+
+  ### Cadre technique
+  - **Norme de référence** : NF EN IEC 62746-4
+  - **Portage** : Think Smartgrids + GIMELEC (marque collective)
+  - **Création** : octobre 2024, déploiement à l'échelle S1 2026
+
+  ### Données échangées (5 cas d'usage)
+  1. **Horloge** : synchronisation temporelle pas 15min min
+  2. **Puissance maximum instantanée** (kW) : limite pilotable
+  3. **Prix** (€/kWh) : signal tarifaire fournisseur
+  4. **Puissance souscrite** (kVA) : contrainte contractuelle
+  5. **Empreinte carbone** (tCO2eq) : signal environnemental
+
+  ### Cadre de référence complet
+  - Standard Flex Ready® (communication API)
+  - Référentiels techniques BACS Flex Ready® (GIMELEC + Think Smartgrids)
+  - Socle cybersécurité Flex Ready® (GIMELEC + ANSSI)
+  - Référentiel architecture informatique et connectivité (SBA)
+  - Référentiels organisationnels (SBA) : gouvernance data, audit flex, commissioning, exploitation
+
+  ### Projets pilotes 2025
+  - Siège Morbihan Énergies (syndicat d'énergie)
+  - IntenCity Schneider Electric Grenoble
+  - Sites ACTEE (collectivités)
+
+  ### Bénéfices attendus
+  - Coût d'intégration réduit pour agrégateurs (interface standardisée)
+  - Passage à l'échelle des flexibilités tertiaires possible
+  - Liberté de choix du fournisseur/agrégateur pour le gestionnaire de bâtiment
+  - Compatibilité multi-marques pour les fabricants de GTB
+
+  ### Interopérabilité résidentielle (Code of Conduct JRC)
+  - Phase 1 (2021-2024) : gros électroménager, CVC (norme EN 50631)
+  - Phase 2 (depuis 2024) : HEMS, onduleurs PV, IRVE
+  - Norme candidate HEMS : EN 50491-12-2 ("S2")
+  - Travaux internationaux IEC 63402 (2025-)
+
+logic:
+  when:
+    all:
+      - field: "hvac_kw"
+        op: ">="
+        value: 70
+      - field: "flex_interest"
+        op: "="
+        value: true
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Vérifier conformité BACS au standard Flex Ready® (NF EN IEC 62746-4)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Exiger le socle cybersécurité Flex Ready® à l'installation"
+        priority: 2
+
+      - type: "next_step"
+        label: "Planifier commissioning selon référentiel SBA-GIMELEC"
+        priority: 3
+
+sources:
+  - doc_id: "BAROMETRE-FLEX-2026"
+    label: "Baromètre des flexibilités de consommation d'électricité — Édition 2026"
+    section: "Chapitre 5.2 Flex Ready® p.68-69"
+    anchor: "#flex-ready"
+    excerpt_short: "Standard Flex Ready® basé sur la norme NF EN IEC 62746-4, passage à l'échelle prévu au S1 2026"
+
+  - doc_id: "THINK-SMARTGRIDS-FLEX-READY"
+    label: "Think Smartgrids — Flex Ready®"
+    section: "Cadre de référence"
+    anchor: "#flex-ready-standard"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 2
