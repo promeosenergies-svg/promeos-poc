@@ -1,0 +1,88 @@
+---
+id: "CAPACITE-MECANISME-RTE-2026"
+type: "rule"
+domain: "reglementaire"
+title: "Mécanisme de capacité centralisé RTE — Réforme 01/11/2026"
+summary: "Transition vers mécanisme centralisé RTE au 1er novembre 2026. Enchères PL-4 (4 ans) et PL-1 (1 an). Période PP1 hiver (~22 jours). Volume cible ~95 GW."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - industrie
+    - collectivite
+  asset:
+    - multi
+  reg:
+    - multi
+  granularity:
+    - event
+
+scope: {}
+
+content_md: |
+  ## Mécanisme de capacité centralisé — Passage 01/11/2026
+
+  ### Cadre réglementaire
+  - Code de l'énergie articles L335-1 à L335-8
+  - Directive (UE) 2019/944 — Article 21 (neutralité technologique)
+  - Décision Commission européenne validant la réforme française
+  - Délibération CRE structurante prévue 2026
+
+  ### Calendrier enchères
+  | Enchère | Période livraison | Fenêtre soumission |
+  |---|---|---|
+  | PL-4 2030-2031 | Hiver 2030-2031 | Été 2026 |
+  | PL-1 2026-2027 | Hiver 2026-2027 | Septembre 2026 |
+  | PL-1 2027-2028 | Hiver 2027-2028 | Septembre 2027 |
+
+  ### Période d'obligation PP1
+  - ~22 jours ouvrés entre novembre et mars
+  - Pointes matin (7h-10h) + soir (18h-20h)
+  - Notification >= 24h à l'avance
+  - Obligation de disponibilité
+
+  ### Impact client tertiaire/industriel
+  Sites avec actifs flexibles peuvent certifier leur capacité via agrégateur,
+  participer aux enchères, percevoir rémunération (€/kW/an).
+
+  ### ⚠️ Attention
+  Paramètres exacts en cours de finalisation CRE/RTE Q2 2026.
+
+logic:
+  when:
+    all:
+      - field: "energy_vector"
+        op: "="
+        value: "elec"
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Inventorier les actifs flexibles du portefeuille"
+        priority: 1
+
+      - type: "next_step"
+        label: "Identifier un agrégateur pour certification capacité"
+        priority: 2
+
+      - type: "next_step"
+        label: "Anticiper la fenêtre d'enchère PL-1 Septembre 2026"
+        deadline: "2026-09-30"
+        priority: 3
+        severity: "high"
+
+sources:
+  - doc_id: "CODE-ENERGIE-L335"
+    label: "Code de l'énergie — Articles L335-1 à L335-8"
+    section: "Mécanisme de capacité"
+    anchor: "#l335"
+
+  - doc_id: "RTE-BILAN-PREV-2025"
+    label: "RTE Bilan Prévisionnel 2025"
+    section: "Mécanisme de capacité — réforme"
+    anchor: "#rte-bp2025"
+
+updated_at: "2026-04-17"
+confidence: "medium"
+priority: 1
