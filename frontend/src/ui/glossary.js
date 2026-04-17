@@ -85,7 +85,7 @@ export const GLOSSARY = {
   capacite: {
     term: 'Mécanisme de capacité',
     short:
-      "Obligation RTE imposant aux fournisseurs de détenir des garanties de capacité proportionnelles à la pointe de leurs clients. Centralisation enchères PL-4/PL-1 prévue nov 2026.",
+      'Obligation RTE imposant aux fournisseurs de détenir des garanties de capacité proportionnelles à la pointe de leurs clients. Centralisation enchères PL-4/PL-1 prévue nov 2026.',
     long: "Le mécanisme de capacité assure l'adéquation offre/demande lors des pointes hiver (vague de froid, pointes du soir). Chaque fournisseur doit acheter des certificats auprès des producteurs/effaceurs pour couvrir l'obligation de ses clients. Réforme novembre 2026 : centralisation RTE (enchères PL-4 puis PL-1) remplace le système décentralisé actuel. Impact facture : ligne capacité (EUR/kW ou EUR/MWh selon contrat), en hausse attendue sur 2026–2028. Source : RTE, CRE, hebdo énergie avril 2026.",
   },
   ht: {
