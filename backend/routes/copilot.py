@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
+from middleware.cx_logger import log_cx_event
 from services.iam_scope import get_effective_org_id
 from models.copilot_models import CopilotAction
 from services.copilot_engine import (
@@ -49,6 +50,14 @@ def list_copilot_actions(
         )
         .limit(200)
         .all()
+    )
+
+    log_cx_event(
+        db,
+        effective_org_id,
+        auth.id if auth else None,
+        "CX_INSIGHT_CONSULTED",
+        {"insight_type": "copilot", "count": len(actions)},
     )
 
     return {

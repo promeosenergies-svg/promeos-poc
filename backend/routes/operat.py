@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
+from middleware.cx_logger import log_cx_event
 from services.iam_scope import get_effective_org_id
 from models.operat_export_manifest import OperatExportManifest
 from models.compliance_event_log import ComplianceEventLog
@@ -157,6 +158,14 @@ def export_operat_csv_route(
     actor = body.actor or resolve_actor(fallback="api_export")
     manifest = _build_manifest(db, effective_org_id, body.year, csv_content, filename, body.efa_ids, actor)
     db.commit()
+
+    log_cx_event(
+        db,
+        effective_org_id,
+        auth.id if auth else None,
+        "CX_REPORT_EXPORTED",
+        {"report_type": "operat", "year": body.year},
+    )
 
     return StreamingResponse(
         iter([csv_content]),
