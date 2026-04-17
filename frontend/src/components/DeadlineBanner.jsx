@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useScope } from '../contexts/ScopeContext';
 import { getAuditDeadlineStatus } from '../services/api/conformite';
 
-const DISMISS_KEY = 'promeos.dt_deadline_dismissed';
+const DISMISS_KEY = 'promeos.audit_sme_deadline_dismissed';
 
 const URGENCY_STYLES = {
   critical: 'bg-red-50 border-red-200 text-red-800',

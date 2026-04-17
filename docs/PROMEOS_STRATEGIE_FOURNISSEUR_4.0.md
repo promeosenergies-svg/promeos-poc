@@ -145,7 +145,7 @@ Les obligations réglementaires se multiplient et s'alourdissent pour les entrep
 
 **Obligations solarisation** :
 - Obligation d'installation de panneaux photovoltaïques ou de végétalisation sur les toitures des bâtiments commerciaux, industriels et de bureaux
-- **Bâtiments existants > 500 m² : obligation applicable dès janvier 2028** (Loi n°2025-391)
+- **Bâtiments existants > 500 m² : obligation applicable dès janvier 2028** (Loi APER n°2023-175)
 - Bâtiments neufs > 500 m² : déjà en vigueur (Loi Climat et Résilience)
 - Parcs de stationnement > 1 500 m² : obligation progressive depuis juillet 2023
 
@@ -1054,7 +1054,7 @@ Faible    │            │ R6         │            │ R11       │
 | RTE | Bilan prévisionnel 2023, Futurs énergétiques 2050 | 2023-2024 | Trajectoires consommation |
 | Gouvernement | PPE3 (2026-2035) | 2025 | Objectifs mix énergétique (section 2.1) |
 | Gouvernement | Décret n°2019-771 (décret tertiaire) | 2019 | Obligations tertiaire |
-| Gouvernement | Loi n°2025-391 (solarisation) | 2025 | Obligations solarisation (section 2.1) |
+| Gouvernement | Loi n°2025-391 (DDADUE — audit énergétique/SMÉ) | 2025 | Obligations audit >2.75 GWh (11/10/2026) et SMÉ >23.6 GWh (11/10/2027) |
 | RTE/Enedis | RM-5-NEBCO-V01 | 2024 | Règles marché NEBEF |
 
 ### Études sectorielles
@@ -1087,7 +1087,7 @@ Faible    │            │ R6         │            │ R11       │
 - **CRE Observatoire T4 2025** — Marchés de détail électricité et gaz naturel au 31/12/2025
 - **ADEME Base Empreinte V23.6** — Facteurs d'émission pour le calcul des impacts carbone
 - **Décret n°2019-771** — Décret tertiaire (obligations de réduction de consommation)
-- **Loi n°2025-391** — Obligations de solarisation des bâtiments existants
+- **Loi n°2025-391** — Loi DDADUE : audit énergétique obligatoire (>2.75 GWh, 11/10/2026) et SMÉ (>23.6 GWh, 11/10/2027)
 - **RM-5-NEBCO-V01** — Règles du mécanisme NEBEF (Notification d'Échange de Bloc d'Effacement)
 - **CRE délibération n°2026-33** — Régulation des marchés de l'énergie
 

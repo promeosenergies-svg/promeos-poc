@@ -28,7 +28,8 @@ description: "Réglementation énergie B2B France : Décret Tertiaire, OPERAT, B
 | Décret Tertiaire | Décret n°2019-771 | Bâtiments ≥1,000m² | -40% 2030 / -50% 2040 / -60% 2050 | Publish & shame (OPERAT) + 7,500€/bâtiment |
 | BACS | Décret n°2025-1343 | CVC > seuils kW | 01/01/2025 (290kW), **01/01/2030** (70kW, report déc. 2025) | Contrôle DREAL, amende administrative |
 | APER | Loi n°2023-175 | Parkings ≥1,500m², toitures ≥500m² | Progressif 2025-2028 | 40,000€/an + 200€/place |
-| Audit/SMÉ | Loi n°2025-391 | Orgs > 2.75 GWh | 11/10/2026 | 1,500€/an (audit), 3,000€/an (SMÉ) |
+| Audit énergétique | Loi n°2025-391 | Orgs > 2.75 GWh | 11/10/2026 | 1,500€/an |
+| SMÉ ISO 50001 | Loi n°2025-391 | Orgs > 23.6 GWh | 11/10/2027 | 3,000€/an |
 | DPE tertiaire | EPBD recast | Bâtiments tertiaires | 2026-2027 (transposition) | À définir |
 | CSRD (volet énergie) | Directive 2022/2464 | Entreprises >250 sal ou CA>50M€ | 2025-2026 | Sanctions financières + audit |
 

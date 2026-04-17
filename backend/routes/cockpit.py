@@ -256,7 +256,7 @@ def get_cockpit(
             },
             "kpi_details": kpi_details,
             "action_center": action_center_data,
-            "echeance_prochaine": "31 décembre 2026 (Décret Tertiaire 2030)",
+            "echeance_prochaine": "30 septembre 2026 (Déclaration OPERAT — consommations 2025)",
         },
         headers={"Cache-Control": "public, max-age=30"},
     )
