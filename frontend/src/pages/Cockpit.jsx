@@ -63,6 +63,9 @@ import CockpitHero from './cockpit/CockpitHero';
 import ScoreBreakdownPanel from '../components/ScoreBreakdownPanel';
 import TrajectorySection from './cockpit/TrajectorySection';
 import ActionsImpact from './cockpit/ActionsImpact';
+import RadarPrixNegatifsCard from '../components/pilotage/RadarPrixNegatifsCard';
+import RoiFlexReadyCard from '../components/pilotage/RoiFlexReadyCard';
+import PortefeuilleScoringCard from '../components/pilotage/PortefeuilleScoringCard';
 import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
 import VecteurEnergetiqueCard from './cockpit/VecteurEnergetiqueCard';
 import AlertesPrioritaires from './cockpit/AlertesPrioritaires';
@@ -728,6 +731,23 @@ const Cockpit = () => {
       </div>
 
       <ActionsImpact actions={cockpitActions} loading={cockpitLoading} />
+
+      {/* ═══════════ PILOTAGE DES USAGES — insights V1 (Baromètre Flex 2026) ═══════════ */}
+      <section className="space-y-3" data-testid="cockpit-pilotage-v1">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+            Pilotage des usages
+          </h2>
+          <span className="text-[10px] text-gray-400">
+            Baromètre Flex 2026 · RTE / Enedis / GIMELEC
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <RadarPrixNegatifsCard horizonDays={7} />
+          <RoiFlexReadyCard />
+          <PortefeuilleScoringCard />
+        </div>
+      </section>
 
       {/* ═══════════ ZONE 2 : KPI DÉCIDEUR — déplacé dans ZONE 4 (détail) ═══════════ */}
 
