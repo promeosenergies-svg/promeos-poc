@@ -149,9 +149,12 @@ describe('E. FindingCard — a11y & interactivity', () => {
 describe('H. FindingCard — fixes post-code-review PR #228', () => {
   const src = readSrc('ui/FindingCard.jsx');
 
-  it('Fix #1 : daysUntil wrappé avec useMemo (perf liste)', () => {
-    expect(src).toContain('import { useMemo }');
-    expect(src).toMatch(/useMemo\(\(\)\s*=>\s*daysUntil\(deadline\)/);
+  it('Sprint CX 2.5-bis F5 : daysUntil sans useMemo (évite staleness à minuit)', () => {
+    // useMemo retiré car daysUntil() fait new Date() et la memo ne se rerun pas
+    // à minuit → "J-1" restait figé. Calcul trivial donc recompute à chaque render.
+    expect(src).not.toContain('import { useMemo }');
+    expect(src).not.toMatch(/useMemo\(\(\)\s*=>\s*daysUntil\(deadline\)/);
+    expect(src).toMatch(/const\s+days\s*=\s*daysUntil\(deadline\)/);
   });
 
   it('Fix #2 : dev warning si impact fourni mais tous champs vides', () => {
@@ -164,6 +167,14 @@ describe('H. FindingCard — fixes post-code-review PR #228', () => {
     expect(src).toContain('data-category={category || undefined}');
     expect(src).not.toContain("data-category={category || 'generic'}");
   });
+
+  it('Sprint CX 2.5-bis F6 : daysUntil parse date-only en local TZ (pas UTC)', () => {
+    // Fix timezone bug : new Date('2026-04-20') = UTC midnight, à Paris 1h du matin
+    // la soustraction avec now local donnait négatif → "Dépassé" affiché à tort.
+    // Fix : split('T')[0] + new Date(y, m-1, d) pour local midnight.
+    expect(src).toContain("split('T')[0]");
+    expect(src).toMatch(/new Date\(y,\s*m\s*-\s*1,\s*d\)/);
+  });
 });
 
 // ── F. Impact display unifié ───────────────────────────────────────────────
@@ -171,10 +182,16 @@ describe('H. FindingCard — fixes post-code-review PR #228', () => {
 describe('F. FindingCard — impact (EUR/kWh/CO₂)', () => {
   const src = readSrc('ui/FindingCard.jsx');
 
-  it('supporte eur, kwh, co2_kg dans impact', () => {
+  it('supporte eur, kwh, co2e_kg dans impact (F4 : unité ADEME co2e)', () => {
     expect(src).toContain('eur');
     expect(src).toContain('kwh');
-    expect(src).toContain('co2_kg');
+    expect(src).toContain('co2e_kg');
+    // Sprint CX 2.5-bis F4 : l'ancien nom co2_kg ne doit plus apparaître
+    expect(src).not.toMatch(/\bco2_kg\b/);
+  });
+
+  it("affiche l'unité kgCO₂e/an (équivalent carbone ADEME)", () => {
+    expect(src).toContain('kgCO₂e/an');
   });
 
   it('utilise fmtEur pour formatage EUR (localisation FR)', () => {

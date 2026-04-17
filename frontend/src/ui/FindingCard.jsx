@@ -19,7 +19,6 @@
  * Convention category : 'compliance' | 'billing' | 'consumption' | 'purchase' | 'flex' | 'audit' | 'insight'
  */
 
-import { useMemo } from 'react';
 import {
   ChevronRight,
   AlertTriangle,
@@ -76,9 +75,26 @@ const CATEGORY_ICONS = {
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Calcule le nombre de jours jusqu'à deadline (local TZ).
+ *
+ * Sprint CX 2.5-bis F6 : fix timezone bug. `new Date('2026-04-20')` est
+ * parsé UTC minuit alors que `new Date()` est local now. À Paris à 1h du
+ * matin le 20/04, la différence donnait négatif → "Dépassé" affiché pour
+ * une échéance "aujourd'hui". Fix : normaliser les 2 dates en local
+ * midnight avant soustraction.
+ */
 function daysUntil(dateStr) {
   if (!dateStr) return null;
-  return Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
+  // Support ISO date-only (YYYY-MM-DD) et ISO datetime
+  const datePart = String(dateStr).split('T')[0];
+  const [y, m, d] = datePart.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const deadlineLocal = new Date(y, m - 1, d); // local midnight
+  const today = new Date();
+  const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return Math.round((deadlineLocal - todayLocal) / (1000 * 60 * 60 * 24));
 }
 
 function DeadlineBadge({ days }) {
@@ -123,8 +139,8 @@ function ConfidenceBadge({ score }) {
 
 function ImpactRow({ impact }) {
   if (!impact) return null;
-  const { eur, kwh, co2_kg } = impact;
-  if (eur == null && kwh == null && co2_kg == null) return null;
+  const { eur, kwh, co2e_kg } = impact;
+  if (eur == null && kwh == null && co2e_kg == null) return null;
   return (
     <div className="mt-2 flex items-center gap-3 text-xs flex-wrap" data-testid="finding-impact">
       {eur != null && eur !== 0 && (
@@ -137,8 +153,10 @@ function ImpactRow({ impact }) {
       {kwh != null && kwh > 0 && (
         <span className="text-gray-500">{Math.round(kwh).toLocaleString('fr-FR')} kWh/an</span>
       )}
-      {co2_kg != null && co2_kg > 0 && (
-        <span className="text-gray-500">{Math.round(co2_kg).toLocaleString('fr-FR')} kgCO₂/an</span>
+      {co2e_kg != null && co2e_kg > 0 && (
+        <span className="text-gray-500">
+          {Math.round(co2e_kg).toLocaleString('fr-FR')} kgCO₂e/an
+        </span>
       )}
     </div>
   );
@@ -153,7 +171,7 @@ function ImpactRow({ impact }) {
  * @param {'compliance'|'billing'|'consumption'|'purchase'|'flex'|'audit'|'insight'} [props.category]
  * @param {string} props.title
  * @param {string} [props.description]
- * @param {{eur?:number, kwh?:number, co2_kg?:number}} [props.impact]
+ * @param {{eur?:number, kwh?:number, co2e_kg?:number}} [props.impact]
  * @param {string} [props.deadline] - ISO date string
  * @param {number} [props.confidence] - 0..1
  * @param {string} [props.actionLabel]
@@ -180,16 +198,19 @@ export default function FindingCard({
   const cfg = SEVERITY_CONFIG[severity] || SEVERITY_CONFIG.medium;
   const Icon = category && CATEGORY_ICONS[category];
 
-  // Fix #1 (code review PR #228) : useMemo pour éviter recompute de `new Date()`
-  // à chaque render, important quand FindingCard est rendu dans une liste de N items.
-  const days = useMemo(() => daysUntil(deadline), [deadline]);
+  // Sprint CX 2.5-bis F5 : retrait de useMemo — daysUntil() fait `new Date()` (now),
+  // la memo ne se rerun pas à minuit donc "J-1" restait figé. Calcul trivial (<1µs),
+  // recompute à chaque render est correct et bon marché.
+  const days = daysUntil(deadline);
 
   // Fix #2 (code review) : dev warning si `impact` fourni mais tous champs vides/nuls
   // Aide à détecter un backend qui renvoie un payload vide silencieusement.
   if (import.meta.env?.DEV && impact) {
-    const { eur, kwh, co2_kg } = impact;
+    const { eur, kwh, co2e_kg } = impact;
     const allEmpty =
-      (eur == null || eur === 0) && (kwh == null || kwh === 0) && (co2_kg == null || co2_kg === 0);
+      (eur == null || eur === 0) &&
+      (kwh == null || kwh === 0) &&
+      (co2e_kg == null || co2e_kg === 0);
     if (allEmpty) {
       // eslint-disable-next-line no-console
       console.warn(
