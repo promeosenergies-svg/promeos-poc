@@ -14,7 +14,7 @@ from sqlalchemy import func, distinct
 from sqlalchemy.orm import Session
 
 from database import get_db
-from middleware.auth import require_permission
+from middleware.auth import require_platform_admin
 from middleware.cx_logger import CX_EVENT_TYPES
 from models.iam import AuditLog, User
 
@@ -44,7 +44,7 @@ def _percentile(sorted_values: list[float], p: float) -> Optional[float]:
 def get_cx_dashboard(
     days: int = Query(30, le=365),
     db: Session = Depends(get_db),
-    _auth=Depends(require_permission("admin:read")),
+    _auth=Depends(require_platform_admin),
 ):
     """
     KPIs CX agrégés par org — usage interne PROMEOS.
@@ -104,7 +104,7 @@ def get_cx_dashboard(
 def get_t2v(
     days: int = Query(180, le=365, description="Fenêtre d'observation"),
     db: Session = Depends(get_db),
-    _auth=Depends(require_permission("admin:read")),
+    _auth=Depends(require_platform_admin),
 ):
     """
     Time-to-Value = délai entre création compte user et 1ʳᵉ action validée.
@@ -189,7 +189,7 @@ def get_t2v(
 def get_iar(
     days: int = Query(30, le=365),
     db: Session = Depends(get_db),
-    _auth=Depends(require_permission("admin:read")),
+    _auth=Depends(require_platform_admin),
 ):
     """
     Insight-to-Action Rate = actions validées / insights consultés sur la période.
@@ -259,7 +259,7 @@ def get_iar(
 @router.get("/cx-dashboard/wau-mau")
 def get_wau_mau(
     db: Session = Depends(get_db),
-    _auth=Depends(require_permission("admin:read")),
+    _auth=Depends(require_platform_admin),
 ):
     """
     WAU/MAU stickiness ratio.

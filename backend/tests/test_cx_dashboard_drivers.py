@@ -28,6 +28,16 @@ from database import get_db
 
 @pytest.fixture
 def isolated_client():
+    """
+    Isolated test client avec override auth admin.
+
+    Sprint CX 2.5 hardening (S2) : les 4 endpoints /api/admin/cx-dashboard/*
+    utilisent désormais require_platform_admin (strict, pas de bypass DEMO_MODE).
+    Le test override cette dep pour simuler un admin DG_OWNER authentifié.
+    La sécurité est testée séparément dans test_cx_dashboard_security.py.
+    """
+    from middleware.auth import require_platform_admin
+
     engine = create_engine(
         "sqlite:///:memory:",
         echo=False,
@@ -44,6 +54,8 @@ def isolated_client():
             pass
 
     app.dependency_overrides[get_db] = _override
+    # S2 : override admin auth pour simuler DG_OWNER authentifié
+    app.dependency_overrides[require_platform_admin] = lambda: {"sub": "admin", "role": "dg_owner"}
     yield TestClient(app), session
     app.dependency_overrides.clear()
     session.close()
