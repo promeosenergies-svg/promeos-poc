@@ -642,6 +642,24 @@ const Cockpit = () => {
         onEvidence={setEvidenceOpen}
       />
 
+      {/* ═══════════ Sprint CX 2 — Exception-first : Top 3 à traiter ═══════════ */}
+      <section
+        data-testid="cockpit-top-priorities"
+        className="bg-gradient-to-br from-red-50/30 to-white border border-red-100 rounded-xl p-4 shadow-sm"
+      >
+        <div className="flex items-baseline justify-between mb-2">
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide flex items-center gap-2">
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"
+              aria-hidden="true"
+            />
+            À traiter cette semaine — top 3 priorités
+          </h2>
+          <span className="text-xs text-gray-500">Rule of 3</span>
+        </div>
+        <AlertesPrioritaires />
+      </section>
+
       {/* Bannière retard trajectoire (conditionnelle) */}
       {trajectoire?.reductionPctActuelle != null &&
         trajectoire?.objectifPremierJalonPct != null &&
@@ -716,11 +734,8 @@ const Cockpit = () => {
         );
       })()}
 
-      {/* ── Alertes + Événements (2 colonnes) ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <AlertesPrioritaires />
-        <EvenementsRecents />
-      </div>
+      {/* ── Événements (AlertesPrioritaires déplacé au top — Sprint CX 2 Exception-first) ── */}
+      <EvenementsRecents />
 
       <TrajectorySection trajectoire={trajectoire} loading={cockpitLoading} sites={scopedSites} />
 
