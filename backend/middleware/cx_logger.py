@@ -72,6 +72,7 @@ def invalidate_membership_cache(user_id: Optional[int] = None, org_id: Optional[
     for key in to_delete:
         _MEMBERSHIP_CACHE.pop(key, None)
 
+
 # Event type constants — utiliser ces constantes plutôt que des strings hardcodés
 # pour éviter drift silencieux (la validation log_cx_event return si event_type
 # n'est pas dans CX_EVENT_TYPES, sans trace).
