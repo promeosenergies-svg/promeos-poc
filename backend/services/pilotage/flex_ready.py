@@ -23,6 +23,7 @@ Source calibrage : Barometre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026).
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Any, Optional
 from zoneinfo import ZoneInfo
@@ -43,9 +44,9 @@ class FlexReadySignalsResponse(BaseModel):
     timestamp: str = Field(..., description="ISO 8601 Europe/Paris (horloge bidirectionnelle)")
     clock_resolution_min: int = Field(..., description="Resolution minimale (15 min norme)")
     puissance_max_instantanee_kw: float = Field(..., description="P max instantanee kW")
-    prix_eur_kwh: float = Field(..., description="Prix (spot day-ahead ou tarif contractuel)")
-    prix_source: str = Field(..., description="'entsoe_day_ahead' | 'fournisseur_tarif_base'")
-    prix_age_hours: Optional[float] = Field(None, description="Age du prix spot (heures)")
+    prix_eur_kwh: float = Field(..., description="Prix unitaire €/kWh (signal temps réel ou tarif contractuel)")
+    prix_source: str = Field(..., description="Source du prix retournée machine-readable")
+    prix_age_hours: Optional[float] = Field(None, description="Âge en heures du signal prix temps réel")
     puissance_souscrite_kva: int = Field(..., description="P souscrite kVA (contrat GRD)")
     empreinte_carbone_kg_co2e_kwh: float = Field(..., description="Facteur emission kgCO2e/kWh")
     empreinte_source: str = Field(..., description="ID machine source ADEME")
@@ -169,8 +170,13 @@ def build_flex_ready_signals(
     energy_vector = str(demo_site.get("energy_vector", "ELEC")).upper()
     empreinte_kg_co2e_kwh = get_emission_factor(energy_vector)
     empreinte_source_label = get_emission_source(energy_vector)
-    # Extrait l'ID machine (ex. "ADEME V23.6 2024" -> "ademe_v23.6_2024")
-    empreinte_source = empreinte_source_label.lower().replace(" ", "_") if empreinte_source_label else "inconnu"
+    # Slug machine-readable : lowercase ASCII, alphanumerique + underscores
+    # (ex. "ADEME V23.6 2024" -> "ademe_v23_6_2024")
+    if empreinte_source_label:
+        slug = re.sub(r"[^a-z0-9]+", "_", empreinte_source_label.lower()).strip("_")
+        empreinte_source = slug or "inconnu"
+    else:
+        empreinte_source = "inconnu"
 
     payload = {
         "site_id": site_id,

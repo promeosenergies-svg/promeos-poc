@@ -529,13 +529,13 @@ const Cockpit = () => {
         </div>
       )}
 
-      {/* ── Banner signal prix NEBCO ── */}
+      {/* ── Bannière signal tarifaire Pilotage ── */}
       {prixSignal?.signal === 'PRIX_NEGATIF' && (
         <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
           <AlertTriangle size={13} className="shrink-0" />
           <span>
-            <strong>Prix spot negatif</strong> — {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh{' '}
-            &middot; Opportunite NEBCO anticipation :{' '}
+            <strong>Fenêtre favorable</strong> — {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh{' '}
+            &middot; Pré-charger ou décaler les usages :{' '}
             {prixSignal.usages_cibles?.slice(0, 3).join(', ')}.{' '}
             <button
               onClick={() => navigate(toActionsList())}
@@ -550,8 +550,9 @@ const Cockpit = () => {
         <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
           <AlertTriangle size={13} className="shrink-0" />
           <span>
-            <strong>Prix spot eleve</strong> — {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh{' '}
-            &middot; Signal effacement NEBCO : {prixSignal.usages_cibles?.slice(0, 3).join(', ')}.{' '}
+            <strong>Fenêtre sensible</strong> — {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh{' '}
+            &middot; Éviter ou moduler les usages :{' '}
+            {prixSignal.usages_cibles?.slice(0, 3).join(', ')}.{' '}
             <button
               onClick={() => navigate(toActionsList())}
               className="underline font-medium hover:text-amber-900"

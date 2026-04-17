@@ -76,18 +76,19 @@ def flex_ready_signals(
     site_id: str,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
-) -> dict[str, Any]:
+) -> FlexReadySignalsResponse:
     """
     Expose les 5 signaux standardises Flex Ready (R) conformes NF EN IEC 62746-4.
 
-    Les 5 donnees echangees GTB <-> marche (Barometre Flex 2026) :
+    Les 5 donnees echangees entre gestion technique du bâtiment et acteurs
+    de pilotage (Baromètre Flex 2026) :
         1. Horloge (pas 15 min min, bidirectionnel)
-        2. Puissance max instantanee (kW)
-        3. Prix fournisseur (EUR/kWh) -- fallback tarif si spot indisponible
+        2. Puissance max instantanée (kW)
+        3. Prix unitaire (EUR/kWh) — signal temps réel ou tarif contractuel
         4. Puissance souscrite (kVA)
-        5. Empreinte carbone (kgCO2e/kWh) -- source ADEME V23.6
+        5. Empreinte carbone (kgCO2e/kWh) — source ADEME V23.6
 
-    Auth requise hors DEMO_MODE. 404 si site absent de DEMO_SITES.
+    Auth requise hors DEMO_MODE. 404 si site absent du catalogue de démo.
     """
     ctx = _build_demo_site_ctx(site_id)
     return build_flex_ready_signals(site_id=site_id, demo_site=ctx, db=db)
