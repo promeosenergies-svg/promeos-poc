@@ -119,6 +119,63 @@ def _build_demo_site_ctx(site_id: str) -> dict[str, Any]:
     return ctx
 
 
+def _scoped_site_query(db: Session, auth: Optional[AuthContext]):
+    """
+    Query de base `Site actif` + defense-in-depth org_id si auth present.
+
+    Hors auth (DEMO_MODE), aucune restriction -- le filtre d'actif suffit.
+    Retourne un Query[Site] que les callers affinent avec `.filter(Site.id == ...)`
+    ou `.filter(Site.id.in_(...))`.
+
+    Le 404 retourne sur lookup vide evite de distinguer "site inexistant" et
+    "site hors scope" -- choix delibere anti-enumeration (vs monitoring.py 403).
+    """
+    from models import EntiteJuridique, Portefeuille, Site
+
+    query = db.query(Site).filter(Site.actif == True)  # noqa: E712
+    if auth is not None and getattr(auth, "org_id", None):
+        query = (
+            query.join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+            .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+            .filter(EntiteJuridique.organisation_id == auth.org_id)
+        )
+    return query
+
+
+def _load_site_ctx(
+    db: Session,
+    site_id: str,
+    auth: Optional[AuthContext],
+) -> dict[str, Any]:
+    """
+    Resout `site_id` en fiche pour `compute_roi_flex_ready` :
+        - Si `site_id` est numerique -> lookup Site.id en DB (scope via auth.org_id).
+        - Sinon -> fallback DEMO_SITES (404 si cle inconnue).
+
+    Un site sans `archetype_code` renseigne tombe sur le fallback
+    BUREAU_STANDARD cote compute_roi_flex_ready (explainability preservee).
+    """
+    if not site_id.isdigit():
+        return _build_demo_site_ctx(site_id)
+
+    from models import Site
+
+    site_pk = int(site_id)
+    site = _scoped_site_query(db, auth).filter(Site.id == site_pk).first()
+    if site is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Site introuvable ou hors scope : id={site_pk}",
+        )
+
+    return {
+        "nom": site.nom,
+        "puissance_max_instantanee_kw": float(site.puissance_pilotable_kw or 0.0),
+        "surface_m2": float(site.surface_m2 or 0.0),
+        "archetype_code": site.archetype_code,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Radar prix negatifs J+7 -- schemas de reponse.
 # ---------------------------------------------------------------------------
@@ -224,37 +281,23 @@ def _demo_sites_as_portfolio() -> list[dict[str, Any]]:
 
 def _org_sites_as_portfolio(db: Session, auth: AuthContext) -> list[dict[str, Any]]:
     """
-    Liste les sites actifs scopes par AuthContext.site_ids pour le scoring.
+    Liste les sites actifs scopes par AuthContext.site_ids + org pour le scoring.
 
-    Defense-in-depth : en plus du filtre `Site.id IN auth.site_ids` (deja
-    scope par l'IAM dans `get_scoped_site_ids`), on recroise la hierarchie
-    Portefeuille -> EntiteJuridique pour garantir `organisation_id == auth.org_id`.
-    Si l'auth layer leakait un site_id cross-org, on ne servirait rien.
-
-    Note : le modele Site ne porte pas encore `archetype_code` ni
-    `puissance_pilotable_kw`. On retombe sur des valeurs sentinelles
-    (archetype None -> fallback score 50, puissance_pilotable 0 -> gain 0).
-    Ce wiring servira quand ces champs seront ajoutes au modele (backlog Option C).
+    Defense-in-depth via `_scoped_site_query` (join Portefeuille -> EntiteJuridique).
+    Lit `archetype_code` + `puissance_pilotable_kw` directement depuis Site.
+    Sites non seedes -> None/0, scoring retombe sur fallback 50 + gain 0.
     """
-    from models import EntiteJuridique, Portefeuille, Site
+    from models import Site
 
     site_ids = getattr(auth, "site_ids", None) or []
     if not site_ids:
         return []
-    rows = (
-        db.query(Site)
-        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
-        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-        .filter(Site.id.in_(site_ids))
-        .filter(EntiteJuridique.organisation_id == auth.org_id)
-        .filter(Site.actif == True)  # noqa: E712
-        .all()
-    )
+    rows = _scoped_site_query(db, auth).filter(Site.id.in_(site_ids)).all()
     return [
         {
             "site_id": str(site.id),
-            "archetype_code": getattr(site, "archetype_code", None),
-            "puissance_pilotable_kw": float(getattr(site, "puissance_pilotable_kw", 0.0) or 0.0),
+            "archetype_code": site.archetype_code,
+            "puissance_pilotable_kw": float(site.puissance_pilotable_kw or 0.0),
         }
         for site in rows
     ]
@@ -349,15 +392,18 @@ def roi_flex_ready(
         - Barometre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026)
         - Fiche CEE BAT-TH-116 (systeme GTB / BACS)
 
-    Scope MVP : `site_id` doit correspondre a une cle du catalogue DEMO_SITES
-    (`retail-001`, `bureau-001`, `entrepot-001`). Le wiring sur Site.id reel
-    (archetype_code + puissance_pilotable_kw + surface_m2 portes par le modele
-    Site) fera l'objet d'une PR follow-up (Option C). 404 hors DEMO_SITES.
+    Accepte deux formes de `site_id` :
+        - Numerique (ex. `42`) : Site.id reel, lookup DB avec scope org via
+          la chaine Portefeuille -> EntiteJuridique -> Organisation.
+        - Alphanumerique (ex. `retail-001`) : cle DEMO_SITES (catalogue demo).
 
-    Auth optionnelle (DEMO_MODE tolere). La session `db` est en place pour le
-    futur wiring Site.id mais n'est pas utilisee en MVP.
+    404 si le site est introuvable ou hors scope.
+    Archetype non renseigne cote prod -> fallback BUREAU_STANDARD (cf.
+    compute_roi_flex_ready), avec hypotheses exposees dans la payload.
+
+    Auth optionnelle (DEMO_MODE tolere).
     """
-    ctx = _build_demo_site_ctx(site_id)
+    ctx = _load_site_ctx(db=db, site_id=site_id, auth=auth)
     return compute_roi_flex_ready(
         site_id=site_id,
         demo_site=ctx,
