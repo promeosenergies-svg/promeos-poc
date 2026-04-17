@@ -155,7 +155,7 @@ def test_roi_endpoint_schema_pydantic_valide(client):
     assert parsed.archetype == "COMMERCE_ALIMENTAIRE"
     assert parsed.gain_annuel_total_eur > 0
     assert parsed.confiance == "indicative"
-    assert "Barometre Flex 2026" in parsed.source
+    assert "Baromètre Flex 2026" in parsed.source
     # Les 3 composantes doivent etre presentes
     assert parsed.composantes.evitement_pointe_eur >= 0
     assert parsed.composantes.decalage_nebco_eur >= 0

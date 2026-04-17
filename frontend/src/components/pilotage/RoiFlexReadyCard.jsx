@@ -14,6 +14,7 @@ import { useScope } from '../../contexts/ScopeContext';
 import { toSite } from '../../services/routes';
 import { fmtEur } from '../../utils/format';
 import { Skeleton, InfoTip } from '../../ui';
+import { humaniseArchetype, humaniseSiteId } from './archetypeLabels';
 
 const DEMO_FALLBACK_SITE = 'retail-001';
 
@@ -111,7 +112,7 @@ export default function RoiFlexReadyCard({ siteId: siteIdProp }) {
         <div>
           <h3 className="text-sm font-semibold text-gray-800">Gain annuel Flex Ready®</h3>
           <p className="text-[11px] text-gray-500 mt-0.5">
-            Valorisation cumulée — {siteNom || resolvedSiteId}
+            Valorisation cumulée — {siteNom || humaniseSiteId(resolvedSiteId)}
           </p>
         </div>
         <span
@@ -125,7 +126,7 @@ export default function RoiFlexReadyCard({ siteId: siteIdProp }) {
       <div>
         <div className="text-3xl font-bold text-gray-900 leading-none">{fmtEur(total)}</div>
         <div className="text-[11px] text-gray-500 mt-1">
-          Archétype : {archetype || 'indéterminé'} · confiance {data.confiance || 'indicative'}
+          Archétype : {humaniseArchetype(archetype)} · confiance {data.confiance || 'indicative'}
         </div>
       </div>
 
