@@ -1,0 +1,98 @@
+id: ARCHETYPE-SANTE
+type: knowledge
+domain: usages
+title: Archétype Santé
+summary: "Périmètre santé large (hôpitaux, cabinets, EHPAD, hébergement médicalisé) : fonctionnement 24/7 avec contraintes médicales fortes, décalabilité faible (15%), segment tertiaire le plus équipé en GTB (40%)."
+tags:
+  energy:
+  - elec
+  segment:
+  - collectivite
+  asset:
+  - hvac
+  - ecs
+  - eclairage
+  - it
+  - medical
+  reg: []
+  granularity:
+  - mensuel
+  - horaire
+scope:
+  archetype: SANTE
+  naf_codes:
+  - '86.10'
+  - '86.21'
+  - '86.22'
+  - '86.23'
+  - '87.10'
+  - '87.20'
+content_md: |
+  ## Archétype Santé
+
+  ### Périmètre
+  Archétype canonique Santé aligné sur le code `ARCHETYPE_CALIBRATION_2024`.
+  Couvre un périmètre **plus large** que `HOPITAL_STANDARD` :
+  - Hôpitaux et cliniques (activités hospitalières multi-services)
+  - Cabinets de médecine générale et spécialisée
+  - Pratique dentaire
+  - EHPAD (hébergement médicalisé personnes âgées)
+  - Hébergement social pour handicapés / malades
+
+  `HOPITAL_STANDARD` reste disponible comme **sous-archétype plus précis** pour les
+  établissements hospitaliers multi-services à forte densité technique (blocs
+  opératoires, imagerie, stérilisation). SANTE est le conteneur canonique pour
+  la résolution NAF 86.xx / 87.xx.
+
+  ### Consommation typique
+  - **Fourchette**: 250-500 kWh/m²/an (fortes disparités : cabinet 150 < EHPAD 300 < hôpital 450+)
+  - Drivers : CVC intensif (air neuf continu, filtration), IT médical, stérilisation, hygrométrie/température critiques
+
+  ### Signature temporelle
+  - Fonctionnement **24/7** avec contraintes médicales non négociables
+  - Charge relativement plate sur 24h, légère baisse de nuit
+  - Pointes limitées : pas de pic franc matin ou soir (fonctionnement continu)
+  - Talon de nuit élevé : 70-85% de la conso jour
+
+  ### Répartition par usage
+  - CVC (air neuf, filtration, hygrométrie) : 40-50%
+  - ECS : 15-20% (hygiène, stérilisation)
+  - Éclairage : 10-15%
+  - IT / équipements médicaux : 10-20%
+  - Autres : 5-10%
+
+  ### Calibrage Baromètre Flex 2026
+  - **Taux décalable moyen** : 15% — plus faible des 8 archétypes (contraintes médicales fortes)
+  - **Plages de pointe** : [0h-24h) — charge continue 24/7
+  - **Part conso en pointe** : 100% (pas de segmentation horaire significative)
+  - **Pénétration BACS 2024** : 40% — **segment tertiaire le plus équipé** en GTB
+    (contraintes réglementaires + exigences hygrométrie/température critiques)
+  - Gisement limité aux zones non-critiques : bureaux administratifs, circulations, parkings, ECS avec bouclage
+
+  ### Potentiel de pilotage
+  - Zones critiques (soins, blocs, imagerie, chaîne du froid médicaments) : **exclues** de tout effacement
+  - Leviers exploitables : CVC zones administratives, éclairage circulations, ECS non-soins, IRVE visiteurs
+  - Priorité conformité décret tertiaire + BACS : segment déjà largement équipé, levier MCO / optimisation GTB existante
+
+  ### Codes NAF typiques
+  - 86.10 Activités hospitalières
+  - 86.21 Activité des médecins généralistes
+  - 86.22 Activité des médecins spécialistes
+  - 86.23 Pratique dentaire
+  - 87.10 Hébergement médicalisé (EHPAD)
+  - 87.20 Hébergement social pour handicapés / malades
+logic: null
+sources:
+- doc_id: BAROMETRE_FLEX_2026
+  label: "Baromètre Flex 2026 — RTE/Enedis/GIMELEC (avril 2026)"
+  section: "archetype-sante"
+  anchor: "#archetype-sante"
+  excerpt_short: "Santé : taux décalable 15% (contraintes médicales), fonctionnement 24/7, pénétration BACS 40% — segment tertiaire le plus équipé en GTB."
+provenance:
+  source_path: docs/reglementaire/barometre_flex_2026.md
+  source_section: "archetype-sante"
+  extracted_at: '2026-04-17'
+updated_at: '2026-04-17'
+confidence: high
+status: validated
+priority: 2

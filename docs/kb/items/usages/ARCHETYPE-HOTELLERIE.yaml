@@ -1,0 +1,81 @@
+id: ARCHETYPE-HOTELLERIE
+type: knowledge
+domain: usages
+title: Archétype Hôtellerie / hébergement
+summary: "Hôtels, hébergements touristiques et restauration : double pointe matin/soir portée par climatisation et ECS, fonctionnement quasi-continu, faible équipement GTB (11%)."
+tags:
+  energy:
+  - elec
+  - gaz
+  segment:
+  - tertiaire_multisite
+  asset:
+  - hvac
+  - ecs
+  - eclairage
+  - cuisine
+  reg: []
+  granularity:
+  - mensuel
+  - horaire
+scope:
+  archetype: HOTELLERIE
+  naf_codes:
+  - '55.10'
+  - '55.20'
+  - '55.90'
+  - '56.10'
+  - '56.30'
+content_md: |
+  ## Archétype Hôtellerie / hébergement
+
+  ### Consommation typique
+  - **Fourchette**: 200-400 kWh/m²/an (moyenne ~280 kWh/m²/an, sources ADEME/Enedis)
+  - Mix énergétique : électricité dominante (clim, éclairage, cuisine) + gaz fréquent pour ECS et chauffage
+
+  ### Signature temporelle
+  - Fonctionnement quasi 24/7, occupation variable selon saisonnalité touristique
+  - **Double pointe** matin (6h-10h) : réveil clients, ECS douches, petit-déjeuner cuisine
+  - **Double pointe** soir (18h-23h) : retour clients, restauration, clim en période estivale
+  - Talon de nuit non négligeable (ECS bouclage, éclairage sécurité, minibars, veilles TV)
+
+  ### Répartition par usage
+  - Climatisation/chauffage : 35-45%
+  - ECS : 15-25%
+  - Éclairage : 10-15%
+  - Cuisine/restauration : 10-20%
+  - IT/TV/autres : 5-10%
+
+  ### Calibrage Baromètre Flex 2026
+  - **Taux décalable moyen** : 35% (ECS à forte inertie + pré-conditionnement clim chambres)
+  - **Plages de pointe** : [6h-10h) et [18h-23h) — double pointe matin/soir
+  - **Part conso en pointe** : 48% (concentrée sur les 9h de double pointe)
+  - **Pénétration BACS 2024** : 11% — segment tertiaire le moins équipé en GTB
+  - Gisement de pilotage sur ECS (cumulus, ballons tampon) + pré-refroidissement chambres avant check-in
+
+  ### Potentiel de pilotage
+  - Principal levier : décalage ECS hors pointe (inertie 6-12h)
+  - Second levier : pré-conditionnement thermique chambres vacantes
+  - Contraintes : confort client prime, pas d'effacement perceptible en zones communes
+
+  ### Codes NAF typiques
+  - 55.10 Hôtels et hébergement similaire
+  - 55.20 Hébergement touristique et autre hébergement de courte durée
+  - 55.90 Autres hébergements
+  - 56.10 Restauration traditionnelle
+  - 56.30 Débits de boissons
+logic: null
+sources:
+- doc_id: BAROMETRE_FLEX_2026
+  label: "Baromètre Flex 2026 — RTE/Enedis/GIMELEC (avril 2026)"
+  section: "archetype-hotellerie"
+  anchor: "#archetype-hotellerie"
+  excerpt_short: "Hôtellerie : taux décalable 35%, double pointe matin/soir 6-10h + 18-23h, pénétration BACS 11% (segment tertiaire le moins équipé)."
+provenance:
+  source_path: docs/reglementaire/barometre_flex_2026.md
+  source_section: "archetype-hotellerie"
+  extracted_at: '2026-04-17'
+updated_at: '2026-04-17'
+confidence: high
+status: validated
+priority: 2
