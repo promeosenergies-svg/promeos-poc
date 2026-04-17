@@ -37,6 +37,7 @@ def _is_demo_mode() -> bool:
 
 from services.pilotage.flex_ready import (
     FlexReadySignalsResponse,
+    PrixSource,
     build_flex_ready_signals,
 )
 from services.pilotage.portefeuille_scoring import compute_portefeuille_scoring
@@ -290,13 +291,13 @@ def _load_flex_ready_ctx(
         )
         if candidate is not None and float(candidate) > 0:
             prix_eur_kwh = float(candidate)
-            prix_source = "contrat_fournisseur"
+            prix_source = PrixSource.CONTRAT_FOURNISSEUR.value
         else:
             prix_eur_kwh = _TARIF_BASE_FALLBACK_EUR_KWH
-            prix_source = "site_sans_contrat_fallback"
+            prix_source = PrixSource.SITE_SANS_CONTRAT_FALLBACK.value
     else:
         prix_eur_kwh = _TARIF_BASE_FALLBACK_EUR_KWH
-        prix_source = "site_sans_contrat_fallback"
+        prix_source = PrixSource.SITE_SANS_CONTRAT_FALLBACK.value
 
     return {
         "nom": site.nom,

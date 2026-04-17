@@ -22,11 +22,35 @@ Source calibrage : Barometre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026).
 
 from __future__ import annotations
 
+import enum
 import logging
 import re
 from datetime import datetime, timezone
 from typing import Any, Optional
 from zoneinfo import ZoneInfo
+
+
+class PrixSource(str, enum.Enum):
+    """
+    Source machine-readable du champ `prix_eur_kwh` retourné par Flex Ready.
+
+    Valeurs ordonnées par préférence (de la plus fiable à la plus dégradée) :
+        - ENTSOE_DAY_AHEAD         : signal day-ahead ENTSO-E FR (< 36h)
+        - CONTRAT_FOURNISSEUR      : prix lu dans EnergyContract (HP > base > ref)
+        - FOURNISSEUR_TARIF_BASE   : tarif contractuel fourni dans DEMO_SITES ou
+                                     fallback quand le spot est stale (> 36h)
+        - SITE_SANS_CONTRAT_FALLBACK : Site réel sans EnergyContract rattaché
+                                       → _TARIF_BASE_FALLBACK_EUR_KWH (TRVE BT)
+
+    Utilisé par le consommateur API pour distinguer un signal temps réel d'un
+    fallback dégradé (impact sur la confiance de `gain_annuel_total_eur`).
+    """
+
+    ENTSOE_DAY_AHEAD = "entsoe_day_ahead"
+    CONTRAT_FOURNISSEUR = "contrat_fournisseur"
+    FOURNISSEUR_TARIF_BASE = "fournisseur_tarif_base"
+    SITE_SANS_CONTRAT_FALLBACK = "site_sans_contrat_fallback"
+
 
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -45,12 +69,14 @@ class FlexReadySignalsResponse(BaseModel):
     clock_resolution_min: int = Field(..., description="Resolution minimale (15 min norme)")
     puissance_max_instantanee_kw: float = Field(..., description="P max instantanee kW")
     prix_eur_kwh: float = Field(..., description="Prix unitaire €/kWh (signal temps réel ou tarif contractuel)")
-    prix_source: str = Field(
+    prix_source: PrixSource = Field(
         ...,
         description=(
-            "Source machine-readable du prix : "
-            "'entsoe_day_ahead' | 'contrat_fournisseur' | 'fournisseur_tarif_base' | "
-            "'site_sans_contrat_fallback'"
+            "Source machine-readable du prix (StrEnum `PrixSource`). "
+            "Valeurs : 'entsoe_day_ahead' (day-ahead < 36h) | 'contrat_fournisseur' "
+            "(EnergyContract) | 'fournisseur_tarif_base' (tarif contractuel ou "
+            "fallback spot stale) | 'site_sans_contrat_fallback' (Site réel sans "
+            "contrat — fallback TRVE BT)."
         ),
     )
     prix_age_hours: Optional[float] = Field(None, description="Âge en heures du signal prix temps réel")
@@ -174,10 +200,12 @@ def build_flex_ready_signals(
     spot_info = _get_latest_spot(db) if db is not None else None
     if spot_info is not None:
         prix_eur_kwh, prix_age_hours = spot_info
-        prix_source = "entsoe_day_ahead"
+        prix_source = PrixSource.ENTSOE_DAY_AHEAD
     else:
         prix_eur_kwh = prix_contrat
-        prix_source = ctx_prix_source or "fournisseur_tarif_base"
+        # Si le ctx a pré-positionné "site_sans_contrat_fallback", on le respecte
+        # (Site réel sans contrat). Sinon, tarif contractuel standard DEMO_SITES.
+        prix_source = PrixSource(ctx_prix_source) if ctx_prix_source else PrixSource.FOURNISSEUR_TARIF_BASE
         prix_age_hours = None
 
     # Empreinte carbone : source unique config/emission_factors.py (ADEME V23.6)
@@ -198,7 +226,7 @@ def build_flex_ready_signals(
         "clock_resolution_min": _FLEX_READY_CLOCK_RESOLUTION_MIN,
         "puissance_max_instantanee_kw": float(demo_site["puissance_max_instantanee_kw"]),
         "prix_eur_kwh": round(float(prix_eur_kwh), 5),
-        "prix_source": prix_source,
+        "prix_source": prix_source.value,
         "prix_age_hours": prix_age_hours,
         "puissance_souscrite_kva": int(demo_site["puissance_souscrite_kva"]),
         "empreinte_carbone_kg_co2e_kwh": round(float(empreinte_kg_co2e_kwh), 5),
