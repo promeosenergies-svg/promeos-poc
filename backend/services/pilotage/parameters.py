@@ -24,6 +24,12 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
+
+# Fuseau reference France : on veut la date "aujourd'hui" cote Paris, pas
+# la date UTC machine (qui peut etre J-1 au tournant d'annee dans les conteneurs
+# Docker UTC et rater un `valid_from: 2026-01-01`).
+_TZ_PARIS = ZoneInfo("Europe/Paris")
 from typing import Any, Optional, Union
 
 logger = logging.getLogger(__name__)
@@ -201,7 +207,7 @@ def get_pilotage_param(
         logger.warning("pilotage.parameters: code inconnu '%s'", code)
 
     if at_date is None:
-        at_date = date.today()
+        at_date = datetime.now(_TZ_PARIS).date()
     if isinstance(at_date, datetime):
         at_date = at_date.date()
 

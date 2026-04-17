@@ -103,7 +103,14 @@ class RoiFlexReadyResponse(BaseModel):
     archetype: str = Field(..., description="Archetype finalement utilise (fallback si inconnu)")
     gain_annuel_total_eur: float = Field(..., description="Gain annuel total estime (EUR)")
     composantes: RoiFlexReadyComposantes = Field(..., description="Detail des 3 composantes")
-    hypotheses: dict = Field(..., description="Parametres MVP utilises (explainability)")
+    hypotheses: dict = Field(
+        ...,
+        description=(
+            "Parametres MVP utilises (explainability). Inclut la sous-cle "
+            "'parametres_sources' : trace ParameterStore par parametre "
+            "(code, value, source, source_ref, valid_from, unite, scope)."
+        ),
+    )
     confiance: str = Field(..., description="Niveau de confiance : 'indicative' en MVP")
     source: str = Field(..., description="Citation courte des sources de calibrage")
 
@@ -194,9 +201,9 @@ def _load_site_ctx(
     }
 
 
-# Tarif de base fallback pour Site reel sans contrat elec rattache.
-# Valeur cohérente avec flex_ready._TARIF_BASE_FALLBACK_EUR_KWH (TRVE tertiaire BT 2026).
-_TARIF_BASE_FALLBACK_EUR_KWH = 0.175
+# Tarif de base fallback : source unique dans `services.pilotage.constants`
+# (evite le drift avec `flex_ready._TARIF_BASE_FALLBACK_EUR_KWH`).
+from services.pilotage.constants import TARIF_BASE_FALLBACK_EUR_KWH as _TARIF_BASE_FALLBACK_EUR_KWH
 
 
 def _load_flex_ready_ctx(
