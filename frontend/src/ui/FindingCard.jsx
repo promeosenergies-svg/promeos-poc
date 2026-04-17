@@ -19,6 +19,7 @@
  * Convention category : 'compliance' | 'billing' | 'consumption' | 'purchase' | 'flex' | 'audit' | 'insight'
  */
 
+import { useMemo } from 'react';
 import {
   ChevronRight,
   AlertTriangle,
@@ -178,7 +179,24 @@ export default function FindingCard({
 }) {
   const cfg = SEVERITY_CONFIG[severity] || SEVERITY_CONFIG.medium;
   const Icon = category && CATEGORY_ICONS[category];
-  const days = daysUntil(deadline);
+
+  // Fix #1 (code review PR #228) : useMemo pour éviter recompute de `new Date()`
+  // à chaque render, important quand FindingCard est rendu dans une liste de N items.
+  const days = useMemo(() => daysUntil(deadline), [deadline]);
+
+  // Fix #2 (code review) : dev warning si `impact` fourni mais tous champs vides/nuls
+  // Aide à détecter un backend qui renvoie un payload vide silencieusement.
+  if (import.meta.env?.DEV && impact) {
+    const { eur, kwh, co2_kg } = impact;
+    const allEmpty =
+      (eur == null || eur === 0) && (kwh == null || kwh === 0) && (co2_kg == null || co2_kg === 0);
+    if (allEmpty) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[FindingCard] "${title}" : prop impact fourni mais tous champs vides — masqué silencieusement.`
+      );
+    }
+  }
 
   const isInteractive = typeof onClick === 'function' || typeof onAction === 'function';
   const Wrapper = typeof onClick === 'function' ? 'button' : 'div';
@@ -196,7 +214,7 @@ export default function FindingCard({
       onClick={handleCardClick}
       data-testid="finding-card"
       data-severity={severity}
-      data-category={category || 'generic'}
+      data-category={category || undefined}
       className={`
         w-full text-left border rounded-lg
         ${compact ? 'p-3' : 'p-4'}

@@ -144,6 +144,28 @@ describe('E. FindingCard — a11y & interactivity', () => {
   });
 });
 
+// ── H. Fixes post-code-review ──────────────────────────────────────────────
+
+describe('H. FindingCard — fixes post-code-review PR #228', () => {
+  const src = readSrc('ui/FindingCard.jsx');
+
+  it('Fix #1 : daysUntil wrappé avec useMemo (perf liste)', () => {
+    expect(src).toContain('import { useMemo }');
+    expect(src).toMatch(/useMemo\(\(\)\s*=>\s*daysUntil\(deadline\)/);
+  });
+
+  it('Fix #2 : dev warning si impact fourni mais tous champs vides', () => {
+    expect(src).toContain('import.meta.env?.DEV');
+    expect(src).toContain('console.warn');
+    expect(src).toContain('impact fourni mais tous champs vides');
+  });
+
+  it('Fix #4 : data-category undefined si non fourni (pas de "generic" fallback)', () => {
+    expect(src).toContain('data-category={category || undefined}');
+    expect(src).not.toContain("data-category={category || 'generic'}");
+  });
+});
+
 // ── F. Impact display unifié ───────────────────────────────────────────────
 
 describe('F. FindingCard — impact (EUR/kWh/CO₂)', () => {
