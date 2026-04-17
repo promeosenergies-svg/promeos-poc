@@ -80,6 +80,12 @@ _NORME = "NF EN IEC 62746-4"
 # Age max d'un prix spot avant d'etre considere stale (fenetre day-ahead ~24h)
 _PRIX_SPOT_MAX_AGE_H = 36
 
+# Tarif de base fallback pour un Site reel sans EnergyContract rattache.
+# Calibre sur moyenne TRVE tertiaire BT (2026), doctrine "indicative".
+# Quand on retombe sur cette valeur, `prix_source` porte la trace
+# "site_sans_contrat_fallback" pour l'audit.
+_TARIF_BASE_FALLBACK_EUR_KWH = 0.175
+
 
 def _get_latest_spot(db: Session) -> Optional[tuple[float, float]]:
     """
@@ -155,15 +161,18 @@ def build_flex_ready_signals(
     else:
         ts = now.astimezone(_TZ_PARIS)
 
-    # Prix : priorite spot day-ahead reel frais, fallback tarif contractuel
+    # Prix : priorite spot day-ahead reel frais, fallback tarif contractuel.
+    # Le ctx peut porter un `prix_source` pre-calcule (ex. "site_sans_contrat_fallback"
+    # pour un Site reel sans EnergyContract) -- on le preserve en mode fallback.
     prix_contrat = float(demo_site["prix_eur_kwh"])
+    ctx_prix_source = demo_site.get("prix_source")
     spot_info = _get_latest_spot(db) if db is not None else None
     if spot_info is not None:
         prix_eur_kwh, prix_age_hours = spot_info
         prix_source = "entsoe_day_ahead"
     else:
         prix_eur_kwh = prix_contrat
-        prix_source = "fournisseur_tarif_base"
+        prix_source = ctx_prix_source or "fournisseur_tarif_base"
         prix_age_hours = None
 
     # Empreinte carbone : source unique config/emission_factors.py (ADEME V23.6)

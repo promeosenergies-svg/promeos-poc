@@ -13,8 +13,11 @@ Reference : Barometre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026).
 
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any, List, Optional
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -142,6 +145,30 @@ def _scoped_site_query(db: Session, auth: Optional[AuthContext]):
     return query
 
 
+def _resolve_db_site(db: Session, site_id: str, auth: Optional[AuthContext]):
+    """
+    Cœur commun des `_load_*_ctx` : numerique -> Site.id scope, alpha -> None.
+
+    Retourne `(site, None)` si site reel trouve, `(None, demo_ctx)` si cle DEMO_SITES,
+    leve HTTP 404 si Site.id numerique inexistant / hors scope.
+
+    Permet aux callers d'enrichir le contexte selon leurs besoins (roi, flex-ready...).
+    """
+    if not site_id.isdigit():
+        return None, _build_demo_site_ctx(site_id)
+
+    from models import Site
+
+    site_pk = int(site_id)
+    site = _scoped_site_query(db, auth).filter(Site.id == site_pk).first()
+    if site is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Site introuvable ou hors scope : id={site_pk}",
+        )
+    return site, None
+
+
 def _load_site_ctx(
     db: Session,
     site_id: str,
@@ -155,22 +182,112 @@ def _load_site_ctx(
     Un site sans `archetype_code` renseigne tombe sur le fallback
     BUREAU_STANDARD cote compute_roi_flex_ready (explainability preservee).
     """
-    if not site_id.isdigit():
-        return _build_demo_site_ctx(site_id)
-
-    from models import Site
-
-    site_pk = int(site_id)
-    site = _scoped_site_query(db, auth).filter(Site.id == site_pk).first()
-    if site is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Site introuvable ou hors scope : id={site_pk}",
-        )
+    site, demo_ctx = _resolve_db_site(db, site_id, auth)
+    if demo_ctx is not None:
+        return demo_ctx
 
     return {
         "nom": site.nom,
         "puissance_max_instantanee_kw": float(site.puissance_pilotable_kw or 0.0),
+        "surface_m2": float(site.surface_m2 or 0.0),
+        "archetype_code": site.archetype_code,
+    }
+
+
+# Tarif de base fallback pour Site reel sans contrat elec rattache.
+# Valeur cohérente avec flex_ready._TARIF_BASE_FALLBACK_EUR_KWH (TRVE tertiaire BT 2026).
+_TARIF_BASE_FALLBACK_EUR_KWH = 0.175
+
+
+def _load_flex_ready_ctx(
+    db: Session,
+    site_id: str,
+    auth: Optional[AuthContext],
+) -> dict[str, Any]:
+    """
+    Resout `site_id` en fiche pour `build_flex_ready_signals`.
+
+    Pattern Option C (cf. `_load_site_ctx` pour roi-flex-ready) :
+        - `site_id` numerique  -> lookup Site.id en DB (scope via auth.org_id)
+          + recuperation d'un DeliveryPoint actif (puissance_souscrite_kva)
+          + dernier EnergyContract elec actif (prix_eur_kwh).
+        - `site_id` alphanumerique -> fallback DEMO_SITES (4 signaux hardcodes).
+
+    Fallbacks gracieux pour Site reel :
+        - Pas de contrat elec rattache      -> prix = _TARIF_BASE_FALLBACK_EUR_KWH,
+                                                trace `prix_source="site_sans_contrat_fallback"`.
+        - Pas de DeliveryPoint / puissance  -> 0 kVA + warning logue
+                                                (pas de crash, trace operateur).
+        - Pas de puissance_pilotable_kw     -> 0 kW (cohesion avec roi-flex-ready).
+    """
+    site, demo_ctx = _resolve_db_site(db, site_id, auth)
+    if demo_ctx is not None:
+        return demo_ctx
+
+    from models.patrimoine import DeliveryPoint
+
+    # --- puissance_souscrite_kva : premier DeliveryPoint elec avec la valeur ---
+    dp = (
+        db.query(DeliveryPoint)
+        .filter(
+            DeliveryPoint.site_id == site.id,
+            DeliveryPoint.puissance_souscrite_kva.isnot(None),
+        )
+        .order_by(DeliveryPoint.id.asc())
+        .first()
+    )
+    if dp is not None and dp.puissance_souscrite_kva is not None:
+        puissance_souscrite_kva = int(dp.puissance_souscrite_kva)
+    else:
+        puissance_souscrite_kva = 0
+        logger.warning(
+            "flex_ready: Site.id=%s sans DeliveryPoint.puissance_souscrite_kva -> 0 kVA sentinel (conformite degradee)",
+            site.id,
+        )
+
+    # --- prix_eur_kwh : EnergyContract elec actif le plus recent ---
+    try:
+        from models.billing_models import EnergyContract
+        from models.enums import BillingEnergyType
+
+        contract = (
+            db.query(EnergyContract)
+            .filter(
+                EnergyContract.site_id == site.id,
+                EnergyContract.energy_type == BillingEnergyType.ELEC,
+            )
+            .order_by(EnergyContract.start_date.desc().nullslast(), EnergyContract.id.desc())
+            .first()
+        )
+    except ImportError:
+        contract = None
+
+    prix_eur_kwh: float
+    prix_source: str
+    if contract is not None:
+        # Priorite : price_hp_eur_kwh > price_base_eur_kwh > price_ref_eur_per_kwh
+        candidate = (
+            getattr(contract, "price_hp_eur_kwh", None)
+            or getattr(contract, "price_base_eur_kwh", None)
+            or getattr(contract, "price_ref_eur_per_kwh", None)
+        )
+        if candidate is not None and float(candidate) > 0:
+            prix_eur_kwh = float(candidate)
+            prix_source = "contrat_fournisseur"
+        else:
+            prix_eur_kwh = _TARIF_BASE_FALLBACK_EUR_KWH
+            prix_source = "site_sans_contrat_fallback"
+    else:
+        prix_eur_kwh = _TARIF_BASE_FALLBACK_EUR_KWH
+        prix_source = "site_sans_contrat_fallback"
+
+    return {
+        "nom": site.nom,
+        "puissance_max_instantanee_kw": float(site.puissance_pilotable_kw or 0.0),
+        "prix_eur_kwh": prix_eur_kwh,
+        "prix_source": prix_source,
+        "puissance_souscrite_kva": puissance_souscrite_kva,
+        "energy_vector": "ELEC",
         "surface_m2": float(site.surface_m2 or 0.0),
         "archetype_code": site.archetype_code,
     }
@@ -361,9 +478,17 @@ def flex_ready_signals(
         4. Puissance souscrite (kVA)
         5. Empreinte carbone (kgCO2e/kWh) — source ADEME V23.6
 
-    Auth requise hors DEMO_MODE. 404 si site absent du catalogue de démo.
+    Accepte deux formes de `site_id` (pattern Option C, cf. /roi-flex-ready) :
+        - Numerique (ex. `42`) : Site.id reel, lookup DB avec scope org.
+          Puissance souscrite depuis DeliveryPoint, prix depuis EnergyContract
+          actif (fallback tarif de base si contrat absent, avec trace
+          `prix_source="site_sans_contrat_fallback"`).
+        - Alphanumerique (ex. `retail-001`) : cle DEMO_SITES (catalogue demo).
+
+    404 si le site est introuvable ou hors scope.
+    Auth optionnelle (DEMO_MODE tolere).
     """
-    ctx = _build_demo_site_ctx(site_id)
+    ctx = _load_flex_ready_ctx(db=db, site_id=site_id, auth=auth)
     return build_flex_ready_signals(site_id=site_id, demo_site=ctx, db=db)
 
 

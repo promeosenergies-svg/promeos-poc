@@ -25,17 +25,18 @@ ce dernier étant réservé au scoring mono-site S22).
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Optional
 
+from services.pilotage.parameters import get_pilotage_param
 from services.pilotage.score_potential import compute_potential_score
 
 
-# --- Paramètres calibrage gain annuel ---------------------------------------
-
-# Heures favorables annuelles par archétype (calibrage Baromètre Flex 2026).
-# Couvre : pointes HP hiver (~500h), plages MA NEBEF (~250h), réserve capacité
-# (~100h), décalages HC (~150h). Les archétypes 24/7 (logistique frigo, santé)
-# cumulent davantage de fenêtres activables.
+# --- Fallbacks défensifs (valeurs de repli si YAML indisponible) ------------
+# La source de vérité est désormais `pilotage_flex_ready:` dans
+# tarifs_reglementaires.yaml. Ces dict/constantes ne servent QUE de filet
+# de sécurité : si YAML corrompu ou code retiré par erreur, on évite le
+# crash prod en passant ces valeurs à `get_pilotage_param(..., default=)`.
 _HEURES_FAVORABLES_PAR_ARCHETYPE: dict[str, int] = {
     "BUREAU_STANDARD": 900,
     "COMMERCE_ALIMENTAIRE": 1400,  # froid 24/7 -> plus de fenêtres MA
@@ -47,9 +48,7 @@ _HEURES_FAVORABLES_PAR_ARCHETYPE: dict[str, int] = {
     "INDUSTRIE_LEGERE": 1000,
 }
 
-# Spread moyen valorisable (EUR/kWh pilotable). Calibrage Baromètre Flex 2026 :
-# moyenne des gains constatés (HP-HC + rémunération NEBEF + capacité) sur les
-# sites tertiaires 2024. Valeur conservative, cohérente avec observatoire CRE.
+# Spread moyen valorisable (EUR/kWh pilotable) — fallback défensif.
 _SPREAD_EUR_PAR_KWH_DEFAULT = 0.08
 
 # Fallback si archétype inconnu : heures favorables médianes tertiaires.
@@ -69,6 +68,8 @@ def _estimate_gain_annuel_eur(
     Estime le gain annuel valorisable pour un site donné.
 
     Formule : kW × heures_favorables × spread EUR/kWh.
+    Paramètres lus depuis `pilotage_flex_ready:` du YAML (versionné,
+    sourcé Baromètre Flex 2026) avec fallback défensif en dur.
 
     Args:
         archetype_code : code canonique d'archétype (ex: "BUREAU_STANDARD").
@@ -79,11 +80,27 @@ def _estimate_gain_annuel_eur(
     """
     if puissance_pilotable_kw <= 0:
         return 0.0
-    heures = _HEURES_FAVORABLES_PAR_ARCHETYPE.get(
+    today = date.today()
+    # Heures favorables : scope par archétype, fallback médian si inconnu
+    fallback_heures = _HEURES_FAVORABLES_PAR_ARCHETYPE.get(
         archetype_code or "",
         _FALLBACK_HEURES_FAVORABLES,
     )
-    gain = puissance_pilotable_kw * heures * _SPREAD_EUR_PAR_KWH_DEFAULT
+    heures_res = get_pilotage_param(
+        "HEURES_FAVORABLES_AN",
+        at_date=today,
+        archetype=archetype_code,
+        default=fallback_heures,
+    )
+    spread_res = get_pilotage_param(
+        "SPREAD_EUR_PAR_KWH",
+        at_date=today,
+        archetype=archetype_code,
+        default=_SPREAD_EUR_PAR_KWH_DEFAULT,
+    )
+    heures = float(heures_res.value)
+    spread = float(spread_res.value)
+    gain = puissance_pilotable_kw * heures * spread
     return round(gain)
 
 
