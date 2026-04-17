@@ -12,6 +12,8 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
+from services.action_status_service import mark_action_done
+
 from models import (
     Obligation,
     Site,
@@ -223,9 +225,6 @@ def advance_cee_step(
                 action_step = CeeDossierStep(action_step_val)
                 action_step_idx = steps_list.index(action_step)
                 if action_step_idx < new_idx:
-                    # Sprint CX 2.5 F1 : wire CX_ACTION_FROM_INSIGHT sur auto-close CEE
-                    from services.action_status_service import mark_action_done
-
                     mark_action_done(db, action, reason="cee_step_advance")
                 elif action_step_idx == new_idx:
                     action.status = ActionStatus.IN_PROGRESS

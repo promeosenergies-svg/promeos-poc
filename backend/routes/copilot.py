@@ -55,7 +55,7 @@ def list_copilot_actions(
     log_cx_event(
         db,
         effective_org_id,
-        auth.id if auth else None,
+        auth.user.id if auth else None,
         "CX_INSIGHT_CONSULTED",
         {"insight_type": "copilot", "count": len(actions)},
     )

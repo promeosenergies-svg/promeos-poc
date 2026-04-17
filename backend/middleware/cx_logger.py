@@ -14,14 +14,24 @@ from models.iam import AuditLog, UserOrgRole
 
 logger = logging.getLogger(__name__)
 
+# Event type constants — utiliser ces constantes plutôt que des strings hardcodés
+# pour éviter drift silencieux (la validation log_cx_event return si event_type
+# n'est pas dans CX_EVENT_TYPES, sans trace).
+CX_INSIGHT_CONSULTED = "CX_INSIGHT_CONSULTED"
+CX_MODULE_ACTIVATED = "CX_MODULE_ACTIVATED"
+CX_REPORT_EXPORTED = "CX_REPORT_EXPORTED"
+CX_ONBOARDING_COMPLETED = "CX_ONBOARDING_COMPLETED"
+CX_ACTION_FROM_INSIGHT = "CX_ACTION_FROM_INSIGHT"
+CX_DASHBOARD_OPENED = "CX_DASHBOARD_OPENED"
+
 CX_EVENT_TYPES = frozenset(
     {
-        "CX_INSIGHT_CONSULTED",
-        "CX_MODULE_ACTIVATED",
-        "CX_REPORT_EXPORTED",
-        "CX_ONBOARDING_COMPLETED",
-        "CX_ACTION_FROM_INSIGHT",
-        "CX_DASHBOARD_OPENED",
+        CX_INSIGHT_CONSULTED,
+        CX_MODULE_ACTIVATED,
+        CX_REPORT_EXPORTED,
+        CX_ONBOARDING_COMPLETED,
+        CX_ACTION_FROM_INSIGHT,
+        CX_DASHBOARD_OPENED,
     }
 )
 

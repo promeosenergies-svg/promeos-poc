@@ -517,7 +517,7 @@ def patch_action(
                 mark_action_done(
                     db,
                     action,
-                    user_id=auth.id if auth else None,
+                    user_id=auth.user.id if auth else None,
                     reason="patch_action_done",
                 )
             else:

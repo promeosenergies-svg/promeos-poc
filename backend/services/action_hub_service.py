@@ -10,6 +10,8 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
+from services.action_status_service import mark_action_done
+
 from models import (
     Site,
     Organisation,
@@ -378,9 +380,6 @@ def sync_actions(db: Session, org_id: int, triggered_by: str = "api") -> dict:
         )
         .all()
     )
-    # Sprint CX 2.5 F1 : wire CX_ACTION_FROM_INSIGHT sur auto-close source résolue
-    from services.action_status_service import mark_action_done
-
     for item in open_items:
         key = (item.source_type, item.source_id, item.source_key)
         if key not in active_keys:

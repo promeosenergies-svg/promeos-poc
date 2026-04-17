@@ -21,7 +21,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from middleware.cx_logger import log_cx_event
+from middleware.cx_logger import CX_ACTION_FROM_INSIGHT, log_cx_event
 from models import ActionItem, ActionStatus
 
 
@@ -51,7 +51,7 @@ def mark_action_done(
             db,
             action.org_id,
             user_id,
-            "CX_ACTION_FROM_INSIGHT",
+            CX_ACTION_FROM_INSIGHT,
             {
                 "action_id": action.id,
                 "source_type": action.source_type.value if action.source_type else None,
