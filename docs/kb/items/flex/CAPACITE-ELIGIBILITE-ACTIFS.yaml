@@ -1,0 +1,100 @@
+---
+id: "CAPACITE-ELIGIBILITE-ACTIFS"
+type: "rule"
+domain: "flex"
+title: "Capacité — Éligibilité actifs flexibles (effacement, BESS, cogens, PAC)"
+summary: "Actifs éligibles mécanisme capacité RTE 2026+. Seuil certif 1 MW agrégé. Effacement >=100 kW, BESS, cogens, groupes secours, PAC/GTB pilotables. Disponibilité >=80% PP1."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - industrie
+    - collectivite
+  asset:
+    - multi
+  reg:
+    - multi
+  granularity:
+    - 30min
+
+scope: {}
+
+content_md: |
+  ## Éligibilité actifs mécanisme de capacité
+
+  ### 5 catégories éligibles
+  1. **Effacement** : sites tertiaires/industriels >=100 kW par bloc
+  2. **BESS** : batteries stationnaires, min 1 MW agrégé, 2h décharge
+  3. **Cogénération** : >=1 MW électrique, hors biométhane
+  4. **Groupes électrogènes** : post-2025 sous conditions émissions
+  5. **Usages pilotables** : PAC >=100 kW + GTB Flex Ready®, flottes VE >=100 kW
+
+  ### Seuils de certification
+  | Critère | Seuil |
+  |---|---|
+  | Puissance certifiable | 1 MW (agrégé) |
+  | Effacement par bloc | 100 kW |
+  | Durée disponibilité | 2h |
+  | Disponibilité PP1 | >=80% |
+  | Délai mobilisation | <1h |
+
+  ### Process de certification
+  1. Inventaire actifs + mesure potentiel
+  2. Contractualisation agrégateur (20+ agréés RTE)
+  3. Test qualification (3 activations hiver)
+  4. Certification RTE (1-3 ans)
+  5. Soumission enchère PL-4 ou PL-1
+
+  ### Rémunération indicative
+  - 2025 : ~30 k€/MW/an (volatile)
+  - 2026+ attendu : 20-50 k€/MW/an
+  - Commission agrégateur typique 10-20%
+
+  ### Exclusions
+  - Obligation d'achat (sauf sortie contrat)
+  - Autoconsommation totale
+  - Sites sans télécomptage
+
+logic:
+  when:
+    any:
+      - field: "flex_interest"
+        op: "="
+        value: true
+      - field: "erasable_kw"
+        op: ">="
+        value: 100
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Inventorier actifs flexibles (effacement, BESS, cogen, PAC/GTB)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Vérifier seuil 1 MW agrégé ou potentiel d'agrégation"
+        priority: 2
+
+      - type: "next_step"
+        label: "Estimer revenus capacité : ~20-50 k€/MW/an"
+        priority: 3
+
+      - type: "next_step"
+        label: "Identifier agrégateur NEBCO pour certification et enchère"
+        priority: 4
+
+sources:
+  - doc_id: "CRE-2025-199"
+    label: "Délibération CRE 2025-199 — Règles NEBCO"
+    section: "Catégories d'actifs valorisables"
+    anchor: "#nebco-categories"
+
+  - doc_id: "RTE-CERTIFICATION-CAPACITE"
+    label: "RTE — Règles de certification mécanisme de capacité"
+    section: "Paramètres techniques"
+    anchor: "#rte-certif"
+
+updated_at: "2026-04-17"
+confidence: "medium"
+priority: 1
