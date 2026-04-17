@@ -61,6 +61,7 @@ from .power import router as power_router
 from .flex_score import router as flex_score_router
 from .billing_usage import router as billing_usage_router
 from .purchase_strategy import router as purchase_strategy_router
+from .purchase_cost_simulation import router as purchase_cost_simulation_router
 from .analytics import router as analytics_router
 from .dataconnect_route import router as dataconnect_router
 from .grdf_route import router as grdf_router
@@ -126,6 +127,7 @@ __all__ = [
     "flex_score_router",
     "billing_usage_router",
     "purchase_strategy_router",
+    "purchase_cost_simulation_router",
     "analytics_router",
     "dataconnect_router",
     "grdf_router",

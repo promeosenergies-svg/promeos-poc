@@ -81,6 +81,7 @@ from routes import (
     flex_score_router,
     billing_usage_router,
     purchase_strategy_router,
+    purchase_cost_simulation_router,
     analytics_router,
     dataconnect_router,
     grdf_router,
@@ -174,6 +175,7 @@ app.include_router(flex_foundation_router)  # Flex Foundations Sprint 21 (assets
 app.include_router(flex_score_router)  # Flex Score Engine (15 usages, NEBCO, prix negatifs)
 app.include_router(billing_usage_router)  # Shadow bill ventilation par usage via archetype
 app.include_router(purchase_strategy_router)  # Purchase strategy recommender via archetype + CDC
+app.include_router(purchase_cost_simulation_router)  # Cost simulator 2026+ décomposée (post-ARENH)
 app.include_router(analytics_router)  # Analytics: usage disaggregation (CDC -> usages via 3 couches)
 if os.environ.get("PROMEOS_ENV") != "production":
     app.include_router(dev_tools_router)  # Dev Tools (reset_db)

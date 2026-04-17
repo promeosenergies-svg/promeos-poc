@@ -1,0 +1,312 @@
+"""
+Tests simulateur facture annuelle post-ARENH (2026+).
+
+Couvre :
+    - décomposition complète (site avec CDC + archetype renseigné)
+    - VNU dormant vs actif selon forward (seuil 78 EUR/MWh)
+    - capacité RTE estimation unitaire
+    - CBAM non applicable conso directe
+    - fallback annual_kwh absent → 100 000 kWh + trace
+    - cohérence somme composantes vs facture_totale_eur
+    - baseline 2024 + delta calculé
+
+Utilise SQLite in-memory + ParameterStore YAML (pas de DB tariff seed requis).
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from datetime import datetime, timezone
+from unittest.mock import patch
+
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from models.base import Base
+from models import (
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    TypeSite,
+)
+from models.market_models import (
+    MktPrice,
+    MarketType,
+    ProductType,
+    PriceZone,
+    MarketDataSource,
+    Resolution,
+)
+
+from services.purchase.cost_simulator_2026 import (
+    simulate_annual_cost_2026,
+    FALLBACK_FORWARD_EUR_MWH,
+    CAPACITE_UNITAIRE_EUR_MWH,
+    DEFAULT_ANNUAL_KWH,
+    BASELINE_2024_EUR_MWH,
+    VNU_SEUIL_DEFAUT_EUR_MWH,
+)
+
+
+# ── Fixtures ────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def db_session():
+    engine = create_engine(
+        "sqlite:///:memory:",
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    session = sessionmaker(bind=engine)()
+    yield session
+    session.close()
+
+
+def _make_org_site(
+    db,
+    *,
+    annual_kwh: float | None = 500_000.0,
+    archetype_code: str | None = "COMMERCE_ALIMENTAIRE",
+):
+    """Helper : org + ej + pf + site minimal pour tests cost simulator."""
+    org = Organisation(nom="Test Corp", type_client="commerce", actif=True)
+    db.add(org)
+    db.flush()
+    ej = EntiteJuridique(organisation_id=org.id, nom="Test Corp", siren="123456789")
+    db.add(ej)
+    db.flush()
+    pf = Portefeuille(entite_juridique_id=ej.id, nom="Default", description="Test PF")
+    db.add(pf)
+    db.flush()
+    site = Site(
+        nom="Site Carrefour Test",
+        type=TypeSite.COMMERCE,
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=2000.0,
+        portefeuille_id=pf.id,
+        annual_kwh_total=annual_kwh,
+        archetype_code=archetype_code,
+        naf_code="47.11F",
+    )
+    db.add(site)
+    db.flush()
+    return org, site
+
+
+def _seed_forward(
+    db,
+    *,
+    year: int = 2026,
+    price_eur_mwh: float = 62.0,
+):
+    """Insère un forward baseload FR pour l'année donnée."""
+    mp = MktPrice(
+        source=MarketDataSource.MANUAL,
+        market_type=MarketType.FORWARD_YEAR,
+        product_type=ProductType.BASELOAD,
+        zone=PriceZone.FR,
+        delivery_start=datetime(year, 1, 1, tzinfo=timezone.utc),
+        delivery_end=datetime(year, 12, 31, 23, 59, 59, tzinfo=timezone.utc),
+        price_eur_mwh=price_eur_mwh,
+        resolution=Resolution.P1Y,
+        fetched_at=datetime.now(timezone.utc),
+    )
+    db.add(mp)
+    db.flush()
+    return mp
+
+
+# ── Tests ──────────────────────────────────────────────────────────────────
+
+
+class TestSimulateFacture2026:
+    def test_simulate_facture_2026_site_complet(self, db_session):
+        """Site CDC 500 MWh + archetype COMMERCE_ALIMENTAIRE → décomposition non-nulle."""
+        _, site = _make_org_site(db_session, annual_kwh=500_000.0)
+        _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+
+        # Structure obligatoire (contrat agent B)
+        assert result["site_id"] == str(site.id)
+        assert result["year"] == 2026
+        assert result["confiance"] == "indicative"
+        assert "Post-ARENH" in result["source"]
+
+        # Composantes toutes présentes
+        comp = result["composantes"]
+        assert set(comp.keys()) == {
+            "fourniture_eur",
+            "turpe_eur",
+            "vnu_eur",
+            "capacite_eur",
+            "cbam_scope",
+            "accise_cta_tva_eur",
+        }
+
+        # Fourniture = 500 MWh × 62 EUR/MWh = 31 000 EUR
+        assert comp["fourniture_eur"] == pytest.approx(31_000.0, rel=1e-3)
+
+        # TURPE et taxes non-nulles (YAML résolu)
+        assert comp["turpe_eur"] > 0
+        assert comp["accise_cta_tva_eur"] > 0
+
+        # Capacité = 500 MWh × 4 EUR/MWh
+        assert comp["capacite_eur"] == pytest.approx(2_000.0, rel=1e-3)
+
+        # Énergie annuelle bien reportée
+        assert result["energie_annuelle_mwh"] == pytest.approx(500.0, rel=1e-6)
+
+        # Delta vs 2024 non-nul (la facture 2026 ne peut pas être exactement égale)
+        assert result["delta_vs_2024_pct"] != 0
+
+    def test_simulate_vnu_dormant_si_prix_bas(self, db_session):
+        """Forward 60 EUR/MWh < seuil 78 → vnu_statut='dormant', vnu_eur=0."""
+        _, site = _make_org_site(db_session, annual_kwh=300_000.0)
+        _seed_forward(db_session, year=2026, price_eur_mwh=60.0)
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+
+        assert result["hypotheses"]["vnu_statut"] == "dormant"
+        assert result["composantes"]["vnu_eur"] == 0.0
+        assert result["hypotheses"]["prix_forward_y1_eur_mwh"] == pytest.approx(60.0)
+
+    def test_simulate_vnu_actif_statut_informatif_sans_impact_facture(self, db_session):
+        """
+        Fix P0 audit Sprint Achat : VNU est une taxe redistributive SUR EDF
+        (art. L. 336-1 Code énergie), pas sur le consommateur final. La
+        facture client doit rester à 0 même lorsque le statut est "actif" ;
+        le risque upside s'expose dans `hypotheses` pour traçabilité.
+        """
+        _, site = _make_org_site(db_session, annual_kwh=400_000.0)
+        _seed_forward(db_session, year=2026, price_eur_mwh=90.0)
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+
+        # Statut informatif
+        assert result["hypotheses"]["vnu_statut"] == "actif"
+        # La facture client NE compte PAS le VNU — c'est la correction
+        assert result["composantes"]["vnu_eur"] == 0.0
+        # Risque upside tracé dans les hypothèses
+        assert result["hypotheses"]["vnu_risque_upside_eur_mwh"] > 0
+        # Seuil exposé
+        assert result["hypotheses"]["vnu_seuil_active_eur_mwh"] >= VNU_SEUIL_DEFAUT_EUR_MWH
+        # Note pédagogique présente pour auditeur
+        assert "taxe redistributive sur EDF" in result["hypotheses"]["vnu_note"]
+
+    def test_simulate_capacite_estimee(self, db_session):
+        """capacite_unitaire × annual_mwh = composante capacité."""
+        _, site = _make_org_site(db_session, annual_kwh=1_000_000.0)
+        _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+
+        # 1 000 MWh × 4 EUR/MWh = 4 000 EUR
+        expected = 1_000.0 * CAPACITE_UNITAIRE_EUR_MWH
+        assert result["composantes"]["capacite_eur"] == pytest.approx(expected, rel=1e-3)
+        assert result["hypotheses"]["capacite_unitaire_eur_mwh"] == CAPACITE_UNITAIRE_EUR_MWH
+
+    def test_simulate_cbam_non_applicable(self, db_session):
+        """CBAM = 0 EUR + trace documentée dans hypotheses."""
+        _, site = _make_org_site(db_session, annual_kwh=500_000.0)
+        _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+
+        assert result["composantes"]["cbam_scope"] == 0.0
+        assert "cbam_non_applicable_conso_directe" in result["hypotheses"]["source_calibration"]
+        # Note pédagogique pour auditeur
+        assert "CBAM" in result["hypotheses"]["cbam_note"]
+
+    def test_simulate_annual_kwh_absent_fallback(self, db_session):
+        """Site sans annual_kwh_total → fallback 100 000 kWh + trace."""
+        _, site = _make_org_site(db_session, annual_kwh=None)
+        _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+
+        # Énergie reportée = 100 MWh
+        assert result["energie_annuelle_mwh"] == pytest.approx(DEFAULT_ANNUAL_KWH / 1000.0)
+        assert result["hypotheses"]["annual_kwh_resolu"] == DEFAULT_ANNUAL_KWH
+        assert "annual_kwh_indisponible_fallback_100000" in result["hypotheses"]["source_calibration"]
+
+    def test_simulate_composantes_somme_coherente(self, db_session):
+        """facture_totale_eur == sum(composantes.values()) (tolérance arrondi)."""
+        _, site = _make_org_site(db_session, annual_kwh=750_000.0)
+        _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+
+        somme = sum(result["composantes"].values())
+        assert abs(result["facture_totale_eur"] - somme) < 0.5, (
+            f"facture_totale={result['facture_totale_eur']} != sum={somme}"
+        )
+
+    def test_simulate_baseline_et_delta(self, db_session):
+        """
+        Baseline 2024 présent, delta comparable HT énergie pure.
+        Fix P1 audit : `delta_vs_2024_pct` compare maintenant `fourniture_eur`
+        (2026 HT énergie) à `baseline_2024.fourniture_ht_eur` (2024 HT énergie
+        ARENH pondéré). Comparaison apples-to-apples, plus "facture TTC vs
+        baseline HT" trompeur.
+        """
+        _, site = _make_org_site(db_session, annual_kwh=500_000.0)
+        _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+
+        # Baseline = 500 MWh × 80 EUR/MWh = 40 000 EUR (énergie HT pure)
+        expected_baseline = 500.0 * BASELINE_2024_EUR_MWH
+        assert result["baseline_2024"]["facture_eur"] == pytest.approx(expected_baseline, rel=1e-3)
+        assert result["baseline_2024"]["fourniture_ht_eur"] == pytest.approx(expected_baseline, rel=1e-3)
+        assert result["baseline_2024"]["prix_moyen_pondere_eur_mwh"] == BASELINE_2024_EUR_MWH
+
+        # Delta HT énergie = (fourniture_2026 - baseline_2024) / baseline × 100
+        # Forward 62 EUR/MWh × 500 MWh = 31 000 EUR 2026 vs 40 000 EUR 2024
+        # => delta ≈ -22,5 % (baisse énergie forward post-ARENH vs spot 2024)
+        expected_delta_ht = (result["composantes"]["fourniture_eur"] - expected_baseline) / expected_baseline * 100.0
+        assert result["delta_vs_2024_pct"] == pytest.approx(expected_delta_ht, abs=0.1)
+        # Même valeur exposée dans baseline_2024.delta_fourniture_ht_pct
+        assert result["baseline_2024"]["delta_fourniture_ht_pct"] == pytest.approx(expected_delta_ht, abs=0.1)
+
+    def test_simulate_forward_absent_fallback_reference_price(self, db_session):
+        """Pas de MktPrice seedé → fallback EUR/MWh de référence + trace."""
+        _, site = _make_org_site(db_session, annual_kwh=200_000.0)
+        # Pas de _seed_forward : query retourne None
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+
+        assert result["hypotheses"]["prix_forward_y1_eur_mwh"] == FALLBACK_FORWARD_EUR_MWH
+        assert "forward_indisponible_fallback_reference_price" in result["hypotheses"]["source_calibration"]
+
+    def test_simulate_hypotheses_trace_complete(self, db_session):
+        """Payload hypotheses contient toutes les clés du contrat agent B."""
+        _, site = _make_org_site(db_session, annual_kwh=500_000.0)
+        _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+
+        required_keys = {
+            "prix_forward_y1_eur_mwh",
+            "facteur_forme",
+            "capacite_unitaire_eur_mwh",
+            "vnu_statut",
+            "vnu_seuil_active_eur_mwh",
+            "archetype",
+            "source_calibration",
+        }
+        assert required_keys.issubset(set(result["hypotheses"].keys()))
+        # Archetype renseigné bien propagé
+        assert result["hypotheses"]["archetype"] == "COMMERCE_ALIMENTAIRE"

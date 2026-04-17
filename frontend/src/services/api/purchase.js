@@ -67,3 +67,10 @@ export const quoteMultiStrategy = (params) =>
   api.post('/purchase/quote-multi', params).then((r) => r.data);
 export const reconcileOfferVsInvoice = (params) =>
   api.post('/purchase/reconcile', params).then((r) => r.data);
+
+// ── Sprint Achat post-ARENH MVP (2026) : simulation facture 2026+ ──
+// 6 composantes réglementaires exposées : fourniture, TURPE 7, VNU, capacité,
+// CBAM scope, accise+CTA+TVA. Backend agrège à partir de la brique `billing`
+// versionnée + context forward. Année par défaut : 2026 (post-ARENH).
+export const getCostSimulation2026 = (siteId, year = 2026) =>
+  cachedGet(`/purchase/cost-simulation/${siteId}`, { params: { year } }).then((r) => r.data);
