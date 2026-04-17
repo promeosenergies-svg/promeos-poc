@@ -1,0 +1,92 @@
+---
+id: "CTA-ELEC-COEFFICIENTS"
+type: "rule"
+domain: "facturation"
+title: "CTA électricité — Coefficients et assiette de calcul"
+summary: "Contribution Tarifaire d'Acheminement (CTA) calculée sur la part fixe du TURPE (abonnement + CG). Coefficients 15% (HTA) / 5% (BT) depuis février 2026. Historiquement 21,93% / 10,11% avant février 2026."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - collectivite
+    - industrie
+  asset:
+    - multi
+  reg:
+    - taxes
+  granularity:
+    - mensuel
+
+scope: {}
+
+content_md: |
+  ## CTA Électricité
+
+  ### Cadre réglementaire
+  - Article L2233 Code général des impôts
+  - Décret 2005-1635 (création CTA)
+  - Assiette : part fixe du TURPE (Composante de Gestion + Abonnement CMDPS)
+
+  ### Coefficients en vigueur
+  | Période | Haute Tension (HTA) | Basse Tension (BT ≤ 36 kVA) |
+  |---|---|---|
+  | Depuis février 2026 | 15 % | 5 % |
+  | Avant février 2026 | 21,93 % | 10,11 % |
+
+  ### Formule de calcul
+  ```
+  CTA_mensuelle = (Composante_Gestion + CMDPS_mensuelle) × coefficient_CTA
+  ```
+
+  Où coefficient_CTA dépend :
+  - Du niveau de tension (HTA vs BT)
+  - De la date d'effet du contrat
+
+  ### Exemple calcul BT (depuis fév 2026)
+  - Abonnement 6 kVA : CMDPS ~10 €/mois → CTA = 10 × 5% = 0,50 €/mois
+  - Composante de Gestion 15 €/an → CTA = (15/12) × 5% = 0,06 €/mois
+
+  ### Finalité
+  - Finance les réseaux de transport/distribution (électricité + gaz)
+  - Collectée par les fournisseurs, reversée à la CDC (Caisse des Dépôts)
+
+  ### Attention versioning
+  La CTA est **versionnée par date d'effet** dans PROMEOS (ParameterStore V112).
+  - Factures pré-février 2026 : utiliser 21,93% / 10,11%
+  - Factures post-février 2026 : utiliser 15% / 5%
+  - Période à cheval → calcul prorata par partition_windows
+
+logic:
+  when:
+    all:
+      - field: "energy_vector"
+        op: "="
+        value: "elec"
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Vérifier coefficient CTA appliqué selon date facture (15%/5% post-02/2026)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Contrôler assiette CTA = part fixe TURPE (Abonnement + Gestion)"
+        priority: 2
+
+sources:
+  - doc_id: "CGI-L2233"
+    label: "Article L2233 Code général des impôts"
+    section: "Contribution Tarifaire d'Acheminement"
+    anchor: "#l2233"
+    excerpt_short: "Contribution assise sur la part fixe des tarifs d'utilisation des réseaux publics de transport et de distribution"
+
+  - doc_id: "PROMEOS-V112-CTA-BRICK"
+    label: "PROMEOS V112 — Brique CTA ParameterStore versionné"
+    section: "Coefficients historiques restaurés"
+    anchor: "#v112-cta"
+    excerpt_short: "CTA historique pré-Feb 2026 : 21,93%/10,11% (HTA/BT), puis 15%/5% depuis février 2026"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1

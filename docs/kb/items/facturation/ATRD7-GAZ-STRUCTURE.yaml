@@ -1,0 +1,106 @@
+---
+id: "ATRD7-GAZ-STRUCTURE"
+type: "knowledge"
+domain: "facturation"
+title: "ATRD 7 gaz — Grille tarifaire GRDF T1-T4-TP"
+summary: "Tarif ATRD 7 gaz GRDF (CRE 2024-17 + 2025-122) en vigueur 01/07/2024. Grille à 5 options (T1/T2/T3/T4/TP) selon volume annuel. Abonnement annuel + proportionnel + terme capacité (T4/TP). Révision intermédiaire 01/07/2025 +6,06%."
+
+tags:
+  energy:
+    - gaz
+  segment:
+    - tertiaire_multisite
+    - industrie
+    - collectivite
+    - copro
+    - bailleur
+  asset:
+    - multi
+  reg:
+    - multi
+  granularity:
+    - mensuel
+
+scope: {}
+
+content_md: |
+  ## ATRD 7 — Grille tarifaire gaz GRDF
+
+  ### Cadre réglementaire
+  - Délibération CRE 2024-17 (tarif initial ATRD7)
+  - Délibération CRE 2025-122 (révision intermédiaire +6,06%)
+  - Délibération CRE 2024-82 (options T3/T4/TP)
+  - Date d'effet ATRD7 : 01/07/2024 (durée 4 ans)
+
+  ### 5 options tarifaires par volume
+
+  | Option | Volume annuel (MWh) | Abonnement 2024 (€/an) | Type usage |
+  |---|---|---|---|
+  | **T1** | < 6 | 51,96 | Petit résidentiel, cuisson seule |
+  | **T2** | 6 → 300 | 175,92 | Résidentiel chauffage, petit tertiaire |
+  | **T3** | 300 → 5 000 | 1 231,08 | Tertiaire moyen, copro |
+  | **T4** | 5 000 → 50 000 | 20 469,60 | Industrie moyenne, gros tertiaire |
+  | **TP** | > 50 000 | Tarification distance | Industrie lourde, réseaux gaz |
+
+  ### Structure 3 termes
+  1. **Abonnement** (€/an fixe par option)
+  2. **Proportionnel** (c€/kWh consommé) — dégressif par tranches
+  3. **Terme capacité** (T4/TP seulement, €/MWh/jour CJA CJN)
+
+  ### Révision 01/07/2025
+  CRE 2025-122 : +6,06% sur toutes composantes ATRD7, appliqué au 01/07/2025.
+
+  ### Proratisation
+  Abonnement annuel proratisé selon nombre de jours facturés dans la période.
+  PROMEOS V114 gère via `compute_prorata(start, end, annual_amount)`.
+
+  ### Articulation CTA gaz
+  L'assiette CTA gaz = abonnement ATRD annuel (part fixe).
+  Formule additive : `(20,80% + 4,71% × coef_transport)` avec coef_transport versionné (83,57% en 2024 → 83,21% en 2025).
+
+  ### Versioning PROMEOS
+  V114 : brique `bricks/atrd.py` + grille dans `config/tarifs_reglementaires.yaml` section `atrd7_gaz_tiers` valid_from 2024-07-01.
+  11 codes ParameterStore : `ATRD_GAZ_{T1-T4-TP}_{ABO,PROP,CAPA}`.
+
+logic:
+  when:
+    all:
+      - field: "energy_vector"
+        op: "="
+        value: "gaz"
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Identifier option ATRD (T1-T4-TP) selon volume annuel gaz"
+        priority: 1
+
+      - type: "next_step"
+        label: "Contrôler terme capacité si option T4 ou TP (CJA/CJN en MWh/jour)"
+        priority: 2
+
+      - type: "next_step"
+        label: "Vérifier proratisation abonnement et révision 01/07/2025"
+        priority: 3
+
+sources:
+  - doc_id: "CRE-2024-17"
+    label: "Délibération CRE 2024-17"
+    section: "ATRD 7 GRDF"
+    anchor: "#atrd7-cre-2024-17"
+    excerpt_short: "Tarif péréqué d'utilisation des réseaux publics de distribution de gaz naturel, applicable au 01/07/2024 pour 4 ans"
+
+  - doc_id: "CRE-2025-122-GAZ"
+    label: "Délibération CRE 2025-122"
+    section: "Révision intermédiaire ATRD7 +6,06%"
+    anchor: "#atrd7-revision-2025"
+    excerpt_short: "Révision tarifaire applicable au 01/07/2025"
+
+  - doc_id: "PROMEOS-V114-ATRD"
+    label: "PROMEOS V114 — Brique ATRD gaz"
+    section: "bricks/atrd.py + config/tarifs_reglementaires.yaml"
+    anchor: "#v114-atrd"
+    excerpt_short: "Grille ATRD7 par option, compute_atrd par tranche, proratisation annuelle, terme capacité"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 2

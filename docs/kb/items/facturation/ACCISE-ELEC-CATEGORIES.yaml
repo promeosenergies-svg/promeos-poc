@@ -1,0 +1,98 @@
+---
+id: "ACCISE-ELEC-CATEGORIES"
+type: "rule"
+domain: "facturation"
+title: "Accise électricité — Catégories T1/T2/T3 et tarifs 2025-2026"
+summary: "Accise sur l'électricité (ex-TICFE) différenciée par catégorie (ménages T1, PME T2, haute puissance T3). Césure tarifaire 01/08/2025. Taux réduits possibles sur attestation (entreprises électro-intensives, secteurs exposés carbon leakage)."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - industrie
+    - collectivite
+    - copro
+    - bailleur
+  asset:
+    - multi
+  reg:
+    - taxes
+  granularity:
+    - mensuel
+
+scope: {}
+
+content_md: |
+  ## Accise électricité (ex-TICFE)
+
+  ### Cadre réglementaire
+  - Code des impositions sur les biens et services (CIBS) articles L312-37 et suivants
+  - Directive UE 2003/96/CE (minima énergétiques)
+
+  ### 3 catégories fiscales
+
+  | Catégorie | Critère | Exemple client |
+  |---|---|---|
+  | **T1 Ménages** (HOUSEHOLD) | Puissance souscrite ≤ 36 kVA, usage résidentiel | Particulier, copro, bailleur |
+  | **T2 PME** (SME) | Puissance > 36 kVA et < 250 kVA | Tertiaire moyen, commerce |
+  | **T3 Haute Puissance** (HIGH_POWER) | Puissance ≥ 250 kVA ou conso élevée | Industrie, gros tertiaire |
+
+  ### Tarifs accise 2025-2026 (€/MWh)
+  | Période | T1 | T2 | T3 HP | T3 HC (jusqu'à 250 kV) |
+  |---|---|---|---|---|
+  | 01/02/2025 → 31/07/2025 | 33,70 | 20,50 | 20,50 | 20,50 |
+  | **01/08/2025** (césure) → 31/01/2026 | 25,09 | 20,50 | 20,50 | 20,50 |
+  | 01/02/2026 → ... | 29,98 | 22,50 | 21,00 | 20,90 |
+
+  ### Césure 01/08/2025
+  Césure triple : TURPE + TVA (passage 20%) + Accise dans le même mois. PROMEOS V114 gère le découpage par partition_windows pour factures à cheval.
+
+  ### Régime réduit / Exonération
+  - **Électro-intensives** : taux réduit sur attestation DGEC
+  - **Industries exposées carbon leakage** : exonération partielle
+  - **Autoconsommation** : exonérée si < 240 GWh/an consommée en autoconsommation
+  - **Réseau ferroviaire** : taux spécifique
+
+  ### Versioning dans PROMEOS
+  Table `tax_profiles` (V113) par delivery_point_id :
+  - `accise_category` : HOUSEHOLD_T1 / SME_T2 / HIGH_POWER_T3
+  - `regime_reduit` : bool (attestation en vigueur)
+  - `attestation_valid_until` : date
+
+logic:
+  when:
+    all:
+      - field: "energy_vector"
+        op: "="
+        value: "elec"
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Identifier catégorie accise (T1/T2/T3) selon puissance souscrite"
+        priority: 1
+
+      - type: "next_step"
+        label: "Vérifier éligibilité régime réduit (électro-intensif, secteur carbon leakage)"
+        priority: 2
+
+      - type: "next_step"
+        label: "Contrôler césure 01/08/2025 pour factures à cheval"
+        priority: 3
+
+sources:
+  - doc_id: "CIBS-L312-37"
+    label: "Code des impositions sur les biens et services — Articles L312-37 et suivants"
+    section: "Accises sur les énergies"
+    anchor: "#cibs-l312-37"
+    excerpt_short: "Accise sur l'électricité applicable selon catégorie de client et niveau de consommation"
+
+  - doc_id: "PROMEOS-V113-TAXPROFILE"
+    label: "PROMEOS V113 — Table tax_profiles + enum AcciseCategoryElec"
+    section: "Data model Vague 1"
+    anchor: "#v113-accise"
+    excerpt_short: "3 catégories fiscales (HOUSEHOLD_T1 ménages, SME_T2 PME, HIGH_POWER_T3 haute puissance)"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1
