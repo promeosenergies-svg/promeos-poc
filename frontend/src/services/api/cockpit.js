@@ -110,6 +110,10 @@ export const getCockpitBenchmark = () => cachedGet('/cockpit/benchmark').then((r
 export const getCockpitCo2 = () => cachedGet('/cockpit/co2').then((r) => r.data);
 export const getCockpitConsoMonth = () => cachedGet('/cockpit/conso-month').then((r) => r.data);
 
+// ── Value Summary (CX Gap #6) ──
+export const getValueSummary = (orgId) =>
+  cachedGet('/value-summary', { params: { org_id: orgId } }).then((r) => r.data);
+
 // ── Health + Meta ──
 export const getApiHealth = () => api.get('/health').then((r) => r.data);
 export const getMetaVersion = () =>
