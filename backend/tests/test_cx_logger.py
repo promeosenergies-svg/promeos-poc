@@ -54,12 +54,13 @@ def test_log_cx_event_no_user(db_session):
 
 
 def test_all_cx_event_types_defined():
-    assert len(CX_EVENT_TYPES) == 5
+    assert len(CX_EVENT_TYPES) == 6
     assert "CX_INSIGHT_CONSULTED" in CX_EVENT_TYPES
     assert "CX_MODULE_ACTIVATED" in CX_EVENT_TYPES
     assert "CX_REPORT_EXPORTED" in CX_EVENT_TYPES
     assert "CX_ONBOARDING_COMPLETED" in CX_EVENT_TYPES
     assert "CX_ACTION_FROM_INSIGHT" in CX_EVENT_TYPES
+    assert "CX_DASHBOARD_OPENED" in CX_EVENT_TYPES
 
 
 def test_log_cx_event_no_context(db_session):

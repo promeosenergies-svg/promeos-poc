@@ -21,6 +21,7 @@ CX_EVENT_TYPES = frozenset(
         "CX_REPORT_EXPORTED",
         "CX_ONBOARDING_COMPLETED",
         "CX_ACTION_FROM_INSIGHT",
+        "CX_DASHBOARD_OPENED",
     }
 )
 
