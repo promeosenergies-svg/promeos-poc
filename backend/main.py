@@ -217,6 +217,11 @@ from routes.cx_dashboard import router as cx_dashboard_router
 
 app.include_router(cx_dashboard_router)
 
+# Value Summary (CX Gap #6 — valeur cumulée PROMEOS)
+from routes.value_summary import router as value_summary_router
+
+app.include_router(value_summary_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 
