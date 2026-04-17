@@ -199,6 +199,13 @@ def get_iar(
 
     Retourne le ratio global + décomposition par org.
     Ratio "null" si dénominateur=0 (pas assez de signal).
+
+    Sprint CX 2.5-bis (F10) : le ratio peut dépasser 1.0 dans le cas légitime
+    « 1 insight → N actions » (une même recommandation générant plusieurs actions).
+    Pour garder une sémantique « taux » interprétable côté UI, on expose :
+    - `iar_raw` : le ratio brut (peut être > 1.0)
+    - `iar` : le ratio cappé à 1.0 (interprétable comme pourcentage)
+    - `is_capped` : true si iar_raw > 1.0 (signale au front d'afficher une nuance)
     """
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
@@ -225,10 +232,17 @@ def get_iar(
         else:
             org["actions"] = row.n
 
-    def _ratio(actions: int, insights: int) -> Optional[float]:
+    def _ratio_triplet(actions: int, insights: int) -> dict[str, Optional[float] | bool]:
+        """Calcule iar_raw, iar (cappé à 1.0) et is_capped."""
         if insights <= 0:
-            return None
-        return round(actions / insights, 4)
+            return {"iar": None, "iar_raw": None, "is_capped": False}
+        raw = round(actions / insights, 4)
+        capped = raw > 1.0
+        return {
+            "iar": round(min(raw, 1.0), 4),
+            "iar_raw": raw,
+            "is_capped": capped,
+        }
 
     global_insights = sum(d["insights"] for d in by_org.values())
     global_actions = sum(d["actions"] for d in by_org.values())
@@ -238,13 +252,13 @@ def get_iar(
         "global": {
             "insights_consulted": global_insights,
             "actions_validated": global_actions,
-            "iar": _ratio(global_actions, global_insights),
+            **_ratio_triplet(global_actions, global_insights),
         },
         "by_org": {
             oid: {
                 "insights_consulted": d["insights"],
                 "actions_validated": d["actions"],
-                "iar": _ratio(d["actions"], d["insights"]),
+                **_ratio_triplet(d["actions"], d["insights"]),
             }
             for oid, d in by_org.items()
         },
