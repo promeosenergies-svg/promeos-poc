@@ -75,6 +75,19 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
     annual_kwh_total = Column(Float, nullable=True, comment="Consommation annuelle totale (kWh)")
     last_energy_update_at = Column(DateTime, nullable=True, comment="Derniere MAJ donnees energie")
 
+    # Pilotage des usages (Flex Ready® NF EN IEC 62746-4, Baromètre Flex 2026)
+    archetype_code = Column(
+        String(50),
+        nullable=True,
+        index=True,
+        comment="Archétype Baromètre Flex 2026 (BUREAU_STANDARD, COMMERCE_ALIMENTAIRE, LOGISTIQUE_FRIGO...)",
+    )
+    puissance_pilotable_kw = Column(
+        Float,
+        nullable=True,
+        comment="Puissance pilotable/décalable estimée (kW), pour scoring portefeuille",
+    )
+
     @property
     def conso_kwh_an(self):
         """Alias for annual_kwh_total — used by frontend dashboards."""
