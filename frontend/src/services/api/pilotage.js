@@ -18,3 +18,10 @@ export const getPortefeuilleScoring = () =>
 
 export const getFlexReadySignals = (siteId) =>
   cachedGet(`/pilotage/flex-ready-signals/${siteId}`).then((r) => r.data);
+
+// Vague 2 — Simulation décalage d'usages sur historique CDC + spot ENTSO-E.
+// Différenciant démo : preuve chiffrée "voici ce que vous auriez gagné".
+export const getNebcoSimulation = (siteId, periodDays = 30) =>
+  cachedGet(`/pilotage/nebco-simulation/${siteId}`, {
+    params: { period_days: periodDays },
+  }).then((r) => r.data);

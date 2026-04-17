@@ -552,3 +552,79 @@ def roi_flex_ready(
         demo_site=ctx,
         archetype_code=ctx.get("archetype_code"),
     )
+
+
+# ---------------------------------------------------------------------------
+# Simulation NEBCO -- schemas de reponse (Vague 2 piste 4).
+# ---------------------------------------------------------------------------
+class NebcoSimulationComposantes(BaseModel):
+    """Detail du gain simule : spread brut, compensation fournisseur, net encaisse."""
+
+    gain_spread_eur: float = Field(..., description="Gain brut depuis spread prix marche")
+    compensation_fournisseur_eur: float = Field(
+        ..., description="Compensation versee au fournisseur historique (~30% MVP)"
+    )
+    net_eur: float = Field(..., description="Gain net reellement encaisse = spread - compensation")
+
+
+class NebcoSimulationResponse(BaseModel):
+    """Resultat de rejeu NEBCO sur CDC historique du site (Vague 2 piste 4)."""
+
+    site_id: str
+    periode_debut: str = Field(..., description="ISO date debut")
+    periode_fin: str = Field(..., description="ISO date fin")
+    gain_simule_eur: float = Field(..., description="Gain net simule EUR (arrondi)")
+    kwh_decales_total: float = Field(..., description="Volume kWh theoriquement decalable sur la periode")
+    n_fenetres_favorables: int = Field(..., ge=0)
+    spread_moyen_eur_mwh: float = Field(..., description="Ecart moyen prix SENSIBLE vs FAVORABLE observe")
+    composantes: NebcoSimulationComposantes
+    hypotheses: dict = Field(
+        ...,
+        description=("Parametres MVP utilises (taux decalable archetype, compensation ratio, sources)"),
+    )
+    confiance: str = Field(..., description="'indicative' en MVP")
+    source: str
+
+
+@router.get("/nebco-simulation/{site_id}", response_model=NebcoSimulationResponse)
+def nebco_simulation(
+    site_id: str,
+    period_days: int = Query(30, ge=7, le=90, description="Periode de rejeu (jours, 7-90)"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+) -> NebcoSimulationResponse:
+    """
+    Rejoue les N derniers jours de CDC du site et estime le gain NEBCO
+    qu'il aurait obtenu en decalant ses usages flexibles vers les fenetres
+    favorables detectees.
+
+    Differenciant demo : "voici les X EUR que vous auriez gagnes le mois
+    dernier" -- preuve chiffree sans engagement agregateur.
+
+    Accepte `site_id` numerique (Site.id scope org via `_scoped_site_query`)
+    OU cle DEMO_SITES. Les cles DEMO n'ont pas de CDC historique seedee
+    exploitable pour une simulation credible -> 404 explicite (wording doctrine :
+    pas de donnees = pas de simulation chiffree).
+
+    404 si le site est introuvable, hors scope, ou cle DEMO_SITES sans CDC.
+    422 si `period_days` hors [7, 90] (Pydantic Query validation).
+    Auth optionnelle (DEMO_MODE tolere).
+    """
+    site, demo_ctx = _resolve_db_site(db, site_id, auth)
+
+    if demo_ctx is not None:
+        # Cle DEMO_SITES : pas de CDC historique seedee -> 404 explicite.
+        # Wording doctrine : pas de donnees = pas de simulation credible.
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"Simulation NEBCO DEMO non disponible pour '{site_id}' "
+                "(pas de CDC historique seedee) -- utiliser un Site reel seede."
+            ),
+        )
+
+    # Site reel : appel service (interface stable, cf. agent A).
+    from services.pilotage.nebco_simulation import simulate_nebco_gain
+
+    result = simulate_nebco_gain(site=site, db=db, period_days=period_days)
+    return NebcoSimulationResponse(**result)
