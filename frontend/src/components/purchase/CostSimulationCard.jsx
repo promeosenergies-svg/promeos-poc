@@ -7,7 +7,7 @@
  * Décomposition en 6 composantes réglementaires :
  *   1. Fourniture énergie (prix forward Y+1)
  *   2. TURPE 7 (distribution + transport)
- *   3. VNU (volume nucléaire universel — peut être dormant si prix < seuil)
+ *   3. VNU (Versement Nucléaire Universel — dormant si prix < seuil CRE)
  *   4. Capacité RTE (mécanisme centralisé nov. 2026)
  *   5. CBAM (scope importations carbone — souvent non applicable)
  *   6. Taxes (accise + CTA + TVA)
@@ -53,7 +53,7 @@ const COMPOSANTES = [
     label: 'VNU',
     color: 'bg-amber-500',
     tooltip:
-      "Volume Nucléaire Universel — s'active uniquement si prix marché > seuil CRE 78 €/MWh.",
+      "Versement Nucléaire Universel (Décret 2026-55, CRE 2026-52) — s'active si prix marché > seuil CRE 78 €/MWh.",
   },
   {
     key: 'capacite_eur',
@@ -327,7 +327,7 @@ export default function CostSimulationCard({ siteId: siteIdProp, year = 2026 }) 
       </button>
 
       {/* ── Footer source ────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between text-[10px] text-gray-400 pt-2 border-t border-gray-100">
+      <div className="flex items-center justify-between text-[11px] text-gray-600 pt-2 border-t border-gray-100">
         <span className="flex items-center gap-1">
           Source : {source || 'Post-ARENH + TURPE 7 + VNU + capacité RTE'}
           <InfoTip content="Simulation basée sur paramètres réglementaires versionnés (ParameterStore) et prix forward marché." />

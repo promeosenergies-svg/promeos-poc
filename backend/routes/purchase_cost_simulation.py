@@ -67,6 +67,9 @@ class CostHypotheses(BaseModel):
     turpe_segment: str
     turpe_energie_eur_kwh: float
     turpe_gestion_eur_mois: float
+    turpe_comptage_eur_an: float
+    turpe_soutirage_eur_an: float
+    p_souscrite_kva_estimee: float
     accise_code_resolu: str
     accise_eur_kwh: float
     cta_rate: float
@@ -159,10 +162,13 @@ def get_cost_simulation_2026(
     scope org (anti-énumération).
 
     **Sources doctrine** :
-      - Post-ARENH 01/01/2026 (Loi souveraineté énergétique, art. L. 336-1)
-      - TURPE 7 CRE délibération 2025-78 (01/08/2025)
-      - VNU seuils CRE (78 / 110 EUR/MWh), statut dormant 2026
-      - RTE mécanisme capacité centralisé PL-4 / PL-1 (01/11/2026)
+      - Post-ARENH 01/01/2026 (Loi 2023-491 souveraineté énergétique,
+        art. L. 336-1 Code énergie)
+      - TURPE 7 CRE 2025-78 (01/08/2025, brochure Enedis p.13-14)
+      - VNU Décret 2026-55 + CRE 2026-52 (tarif unitaire 2026 = 0 €/MWh ;
+        seuils 78 / 110 €/MWh)
+      - Capacité Décret 2025-1441 + Arrêté 18/03/2026 (mécanisme centralisé
+        Y-4 / Y-1, démarrage 01/11/2026)
     """
     site = _resolve_site(db, site_id, auth)
 

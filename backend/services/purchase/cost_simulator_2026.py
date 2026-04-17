@@ -23,11 +23,12 @@ Doctrine :
 
 Sources :
 - Post-ARENH au 01/01/2026 (art. L. 336-1 Code énergie, Loi souveraineté
-  énergétique)
-- TURPE 7 CRE délibération 2025-78 (1/08/2025)
-- VNU seuils CRE (78 / 110 EUR/MWh), statut dormant 2026
-- RTE mécanisme capacité centralisé PL-4 / PL-1 à partir du 01/11/2026
-  (cf. `reference_hebdo_energie_avril_2026.md`)
+  énergétique 2023-491)
+- TURPE 7 CRE délibération 2025-78 (1/08/2025, brochure Enedis p.13-14)
+- VNU : Décret 2026-55 + CRE 2026-52 (tarif unitaire 2026 = 0 €/MWh ;
+  seuils activation 78 / 110 €/MWh)
+- Capacité RTE : Décret 2025-1441 + Arrêté 18/03/2026 (mécanisme centralisé
+  Y-4 / Y-1, démarrage 01/11/2026)
 - Accise / CTA / TVA : tarifs_reglementaires.yaml versionnés
 """
 
@@ -70,24 +71,18 @@ VNU_IMPACT_MVP_EUR_MWH = 2.0
 VNU_SEUIL_DEFAUT_EUR_MWH = 78.0
 
 # Facteur de forme typique par archétype (E_an / (P_max × 8760h)).
-# Valeurs indicatives pour MVP chiffrage — si non dispo sur le site,
-# elles servent uniquement à tracer dans `hypotheses.facteur_forme`.
+# Aligné sur les 8 archétypes canoniques `ARCHETYPE_CALIBRATION_2024`
+# (`services/pilotage/constants.py`). Purement indicatif — tracé dans
+# `hypotheses.facteur_forme` pour audit, non utilisé dans le calcul MVP.
 ARCHETYPE_FACTEUR_FORME = {
     "BUREAU_STANDARD": 0.30,
-    "HOTEL_HEBERGEMENT": 0.45,
-    "ENSEIGNEMENT": 0.25,
-    "ENSEIGNEMENT_SUP": 0.40,
-    "SANTE": 0.60,
     "COMMERCE_ALIMENTAIRE": 0.55,
-    "RESTAURANT": 0.35,
-    "LOGISTIQUE_SEC": 0.30,
+    "COMMERCE_SPECIALISE": 0.35,
     "LOGISTIQUE_FRIGO": 0.65,
+    "ENSEIGNEMENT": 0.25,
+    "SANTE": 0.60,
+    "HOTELLERIE": 0.45,
     "INDUSTRIE_LEGERE": 0.50,
-    "INDUSTRIE_LOURDE": 0.75,
-    "DATA_CENTER": 0.85,
-    "SPORT_LOISIR": 0.35,
-    "COLLECTIVITE": 0.30,
-    "COPROPRIETE": 0.40,
     "DEFAULT": 0.40,
 }
 
@@ -99,6 +94,29 @@ BASELINE_2024_EUR_MWH = 80.0
 # Segment TURPE par défaut (C4_BT = tertiaire moyen, majoritaire dans portefeuille PME).
 # Si `Meter.tariff_type` renseigne C5 / C3, on bascule.
 DEFAULT_TURPE_SEGMENT = "C4_BT"
+
+# TURPE 7 fixe additionnel : comptage (€/an/compteur) + soutirage (€/kVA/an moyen
+# toutes plages confondues). Source : `billing_engine/catalog.py::TURPE7_RATES`
+# (CRE 2025-78 p.13-14). MVP simplifié : on moyenne les plages horaires HPH/HCH/
+# HPB/HCB et on applique à la puissance souscrite estimée via le facteur de charge
+# archétype (P_souscrite ≈ annual_kwh / (8760 × facteur_charge)).
+TURPE_FIXE_PROFILES = {
+    "C5_BT": {
+        "comptage_eur_an": 87.96,
+        "soutirage_moyen_eur_kva_an": 10.0,
+        "p_souscrite_min_kva": 9.0,
+    },
+    "C4_BT": {
+        "comptage_eur_an": 283.27,
+        "soutirage_moyen_eur_kva_an": 15.0,  # Moyenne CU b_i HPH/HCH/HPB/HCB
+        "p_souscrite_min_kva": 36.0,
+    },
+    "C3_HTA": {
+        "comptage_eur_an": 283.27,
+        "soutirage_moyen_eur_kva_an": 3.5,  # HTA b_i significativement plus bas
+        "p_souscrite_min_kva": 250.0,
+    },
+}
 
 
 # ── Helpers internes ─────────────────────────────────────────────────────────
@@ -316,7 +334,21 @@ def simulate_annual_cost_2026(
         traces.append("turpe_parameterstore_indisponible_fallback_default")
 
     turpe_variable_eur = annual_kwh * turpe_energie_eur_kwh
-    turpe_fixe_eur = 12.0 * turpe_gestion_eur_mois  # composante gestion uniquement (MVP)
+    # Part fixe complète = gestion + comptage + soutirage (puissance souscrite).
+    # Fix audit : l'ancien MVP (gestion seule) sous-estimait la part fixe d'un
+    # facteur 8 sur C4_BT, faisant chuter la CTA du même ratio (CTA = 15% × fixe).
+    turpe_gestion_annuel_eur = 12.0 * turpe_gestion_eur_mois
+    turpe_profile = TURPE_FIXE_PROFILES.get(turpe_segment, TURPE_FIXE_PROFILES[DEFAULT_TURPE_SEGMENT])
+    # P_souscrite estimée via le facteur de charge de l'archétype.
+    # Plancher segment (9 kVA C5, 36 kVA C4, 250 kVA HTA) pour éviter un minimum
+    # irréaliste sur un site à faible conso.
+    p_souscrite_kva = max(
+        turpe_profile["p_souscrite_min_kva"],
+        annual_kwh / (8760.0 * max(facteur_forme, 0.15)),
+    )
+    turpe_comptage_eur = turpe_profile["comptage_eur_an"]
+    turpe_soutirage_eur = p_souscrite_kva * turpe_profile["soutirage_moyen_eur_kva_an"]
+    turpe_fixe_eur = turpe_gestion_annuel_eur + turpe_comptage_eur + turpe_soutirage_eur
     turpe_eur = turpe_variable_eur + turpe_fixe_eur
 
     # 5. VNU — statut informatif uniquement, NE PAS additionner à la facture client
@@ -412,6 +444,9 @@ def simulate_annual_cost_2026(
         "turpe_segment": turpe_segment,
         "turpe_energie_eur_kwh": round(turpe_energie_eur_kwh, 5),
         "turpe_gestion_eur_mois": round(turpe_gestion_eur_mois, 2),
+        "turpe_comptage_eur_an": round(turpe_comptage_eur, 2),
+        "turpe_soutirage_eur_an": round(turpe_soutirage_eur, 2),
+        "p_souscrite_kva_estimee": round(p_souscrite_kva, 1),
         "accise_code_resolu": accise_code,
         "accise_eur_kwh": round(accise_eur_kwh, 5),
         "cta_rate": cta_rate,

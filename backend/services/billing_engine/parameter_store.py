@@ -196,6 +196,7 @@ def _yaml_candidates(code: str, tarifs: dict) -> list[tuple[dict, str]]:
     if code == "ACCISE_ELEC_HP":
         return [
             (tarifs.get("accise_elec_2024_haute_puissance", {}), "rate_eur_kwh"),
+            (tarifs.get("accise_elec_2026_hp", {}), "rate_eur_kwh"),
         ]
 
     # Accise gaz (2024, 2025 jan, 2025 aout, 2026)
