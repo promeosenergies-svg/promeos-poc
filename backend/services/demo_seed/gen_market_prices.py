@@ -88,9 +88,10 @@ def _generate_hourly_spot_last_90d(now_utc: datetime) -> list[dict]:
 
     for d in range(90, 0, -1):
         day = (now_utc - timedelta(days=d)).date()
-        # Jour ouvre = jeudi/vendredi plus probable de voir du negatif midi
-        # (demande tertiaire stable + surproduction PV). ~1 jour sur 7 flag "neg".
-        is_negative_day = (day.weekday() in (3, 4)) and (day.toordinal() % 7 == 0)
+        # Negatif midi ~3 jours/semaine : mer + jeu + ven. Ratio calibre pour
+        # que le radar (seuil 30% creneaux negatifs sur jours semblables) declenche
+        # sur ces 3 weekdays sans polluer lun/mar/samedi/dimanche.
+        is_negative_day = day.weekday() in (2, 3, 4)
 
         for hour in range(24):
             # Profil diurne : pic 8h et 19h, creux nuit + midi.
