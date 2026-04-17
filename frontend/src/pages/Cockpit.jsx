@@ -66,6 +66,7 @@ import ActionsImpact from './cockpit/ActionsImpact';
 import RadarPrixNegatifsCard from '../components/pilotage/RadarPrixNegatifsCard';
 import RoiFlexReadyCard from '../components/pilotage/RoiFlexReadyCard';
 import PortefeuilleScoringCard from '../components/pilotage/PortefeuilleScoringCard';
+import NebcoSimulationCard from '../components/pilotage/NebcoSimulationCard';
 import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
 import VecteurEnergetiqueCard from './cockpit/VecteurEnergetiqueCard';
 import AlertesPrioritaires from './cockpit/AlertesPrioritaires';
@@ -761,6 +762,12 @@ const Cockpit = () => {
           <RadarPrixNegatifsCard horizonDays={7} />
           <RoiFlexReadyCard />
           <PortefeuilleScoringCard />
+        </div>
+        {/* Vague 2 — Preuve chiffrée : "voici les X € du mois dernier" */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <NebcoSimulationCard periodDays={30} />
+          </div>
         </div>
       </section>
 
