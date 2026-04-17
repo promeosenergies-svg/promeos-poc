@@ -48,6 +48,7 @@ import {
 } from '../models/dashboardEssentials';
 import _HealthSummary from '../components/HealthSummary';
 import MorningBriefCard from '../components/MorningBriefCard';
+import DeadlineBanner from '../components/DeadlineBanner';
 import TodayActionsCard from './cockpit/TodayActionsCard';
 import _ModuleLaunchers from './cockpit/ModuleLaunchers';
 import _EssentialsRow from './cockpit/EssentialsRow';
@@ -410,6 +411,9 @@ export default function CommandCenter() {
       }
     >
       <CockpitTabs active="dashboard" />
+
+      {/* ── Deadline DT — CX Gap #3 ── */}
+      <DeadlineBanner />
 
       {/* ── Morning Brief — ce qui a bougé depuis la dernière visite ── */}
       <MorningBriefCard alerts={alertsCount} />

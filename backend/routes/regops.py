@@ -320,6 +320,46 @@ def get_org_dashboard(
     }
 
 
+# ── Cockpit Deadline Banner (CX Gap #3) ──────────────────────────────────
+
+
+@router.get("/audit-deadline-status")
+def get_audit_deadline_status(
+    org_id: int = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Endpoint leger pour le DeadlineBanner cockpit."""
+    effective_org_id = get_effective_org_id(auth, org_id)
+    if not effective_org_id:
+        return {"show_banner": False}
+
+    from services.audit_sme_service import get_audit_sme_assessment
+
+    assessment = get_audit_sme_assessment(db, effective_org_id)
+    obligation = assessment.get("obligation", "AUCUNE")
+    jours = assessment.get("jours_restants")
+    show = obligation != "AUCUNE" and jours is not None and jours < 365
+
+    urgency = "medium"
+    if jours is not None:
+        if jours < 90:
+            urgency = "critical"
+        elif jours < 180:
+            urgency = "high"
+
+    return {
+        "deadline": "2026-10-11",
+        "days_remaining": jours,
+        "obligation": obligation,
+        "statut": assessment.get("statut"),
+        "conso_gwh": assessment.get("conso", {}).get("annuelle_moy_gwh", 0),
+        "estimated_penalty_eur": 15000 if obligation != "AUCUNE" else 0,
+        "show_banner": show,
+        "urgency": urgency,
+    }
+
+
 # ── Audit Energetique / SME (Loi 2025-391) ──────────────────────────────────
 
 
