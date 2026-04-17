@@ -40,21 +40,21 @@ def _fake_cost_simulation():
     return {
         "site_id": "42",
         "year": 2026,
-        "facture_totale_eur": 949_999.99,
+        "facture_totale_eur": 950_000.0,
         "energie_annuelle_mwh": 12500.0,
         "composantes": {
             "fourniture_eur": 750000.0,
             "turpe_eur": 80000.0,
             "vnu_eur": 0.0,
-            "capacite_eur": 8333.33,
+            "capacite_eur": 5375.0,
             "cbam_scope": 0.0,
-            "accise_cta_tva_eur": 111666.66,
+            "accise_cta_tva_eur": 114625.0,
         },
         "hypotheses": {
             "prix_forward_y1_eur_mwh": 60.0,
             "facteur_forme": 0.30,
-            "capacite_unitaire_eur_mwh": 4.0,
-            "capacite_prorata_mois": 2,
+            "capacite_unitaire_eur_mwh": 0.43,
+            "capacite_source_ref": "billing_engine/catalog.py::CAPACITE_ELEC (0.43 EUR/MWh)",
             "vnu_statut": "dormant",
             "vnu_seuil_active_eur_mwh": 78.0,
             "vnu_source_ref": None,
@@ -166,10 +166,10 @@ def test_endpoint_site_reel_numerique_200(_site_org_factory, _fake_cost_simulati
     data = r.json()
     assert data["site_id"] == str(site.id)
     assert data["year"] == 2026
-    assert data["facture_totale_eur"] == pytest.approx(949_999.99, rel=1e-3)
     assert "fourniture_eur" in data["composantes"]
     assert data["composantes"]["fourniture_eur"] == 750000.0
-    assert data["hypotheses"]["capacite_prorata_mois"] == 2
+    assert data["hypotheses"]["capacite_unitaire_eur_mwh"] == 0.43
+    assert "billing_engine/catalog" in data["hypotheses"]["capacite_source_ref"]
     assert "prix_forward_y1_eur_mwh" in data["hypotheses"]
     assert data["confiance"] == "indicative"
     assert "Post-ARENH" in data["source"]

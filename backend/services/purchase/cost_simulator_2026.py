@@ -57,10 +57,12 @@ DEFAULT_ARCHETYPE = "BUREAU_STANDARD"
 # YAML `prix_reference.elec_eur_kwh = 0.068` → 68 EUR/MWh.
 FALLBACK_FORWARD_EUR_MWH = 68.0
 
-# Mécanisme capacité centralisé RTE 2026 (estimation MVP, enchère PL-4 nov 2026)
-# Source : reference_hebdo_energie_avril_2026.md, hebdo énergie 6-12 avril 2026.
-# Ordre de grandeur 2-6 EUR/MWh sur les 12 derniers mois d'encheres RTE.
-CAPACITE_UNITAIRE_EUR_MWH = 4.0
+# Mécanisme capacité RTE — aligné sur `billing_engine/catalog.py::CAPACITE_ELEC`
+# (enchère 06/03/2025 : 3.15 EUR/MW × coeff obligation 1.2 / 8760h ≈ 0.43 EUR/MWh).
+# Le mécanisme centralisé acheteur unique nov. 2026 conserve la même valeur
+# placeholder (CAPACITE_ELEC_NOV2026) — pas de discontinuité tarifaire modélisée.
+# Source unique de vérité : `billing_engine/catalog.py` ligne 879.
+CAPACITE_UNITAIRE_EUR_MWH = 0.43
 
 # VNU redistributif MVP : si seuil 1 atteint, impact estimé 2 EUR/MWh
 # (hypothèse produit, à documenter dans hypotheses payload).
@@ -328,10 +330,13 @@ def simulate_annual_cost_2026(
     vnu_eur = 0.0
     vnu_risque_upside_eur_mwh = VNU_IMPACT_MVP_EUR_MWH if vnu_statut == "actif" else 0.0
 
-    # 6. Mécanisme capacité RTE (PL-4/PL-1 centralisé 01/11/2026)
-    # Prorata 2/12 pour 2026 (Nov-Déc uniquement) ; plein exercice à partir de 2027.
-    capacite_months = 2 if year == 2026 else 12
-    capacite_eur = annual_mwh * CAPACITE_UNITAIRE_EUR_MWH * (capacite_months / 12.0)
+    # 6. Mécanisme capacité RTE — plein exercice annuel.
+    # Cohérence avec `billing_engine/catalog.py` : le basculement mécanisme
+    # décentralisé → acheteur unique centralisé (01/11/2026) conserve la même
+    # valeur placeholder (CAPACITE_ELEC_NOV2026). Un acheteur en 2026 paie les
+    # deux mécanismes sur leurs fenêtres respectives, les coûts sont amortis
+    # sur l'année entière via le fournisseur (Jan-Oct) puis via RTE (Nov-Déc).
+    capacite_eur = annual_mwh * CAPACITE_UNITAIRE_EUR_MWH
 
     # 7. CBAM — non applicable à la conso élec directe (documenté)
     cbam_scope = 0.0
@@ -394,7 +399,7 @@ def simulate_annual_cost_2026(
         "prix_forward_y1_eur_mwh": round(forward_y1, 2),
         "facteur_forme": facteur_forme,
         "capacite_unitaire_eur_mwh": CAPACITE_UNITAIRE_EUR_MWH,
-        "capacite_prorata_mois": capacite_months,
+        "capacite_source_ref": "billing_engine/catalog.py::CAPACITE_ELEC (0.43 EUR/MWh)",
         "vnu_statut": vnu_statut,
         "vnu_seuil_active_eur_mwh": vnu_seuil,
         "vnu_source_ref": vnu_source_ref,

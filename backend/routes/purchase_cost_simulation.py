@@ -57,7 +57,7 @@ class CostHypotheses(BaseModel):
     prix_forward_y1_eur_mwh: float
     facteur_forme: float
     capacite_unitaire_eur_mwh: float
-    capacite_prorata_mois: int = Field(..., description="Nombre de mois facturés (2 pour 2026, 12 pour 2027+)")
+    capacite_source_ref: str
     vnu_statut: str = Field(..., description="'dormant' | 'actif'")
     vnu_seuil_active_eur_mwh: float
     vnu_source_ref: Optional[str] = None

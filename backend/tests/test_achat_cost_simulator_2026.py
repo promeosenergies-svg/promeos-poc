@@ -162,9 +162,8 @@ class TestSimulateFacture2026:
         assert comp["turpe_eur"] > 0
         assert comp["accise_cta_tva_eur"] > 0
 
-        # Capacité 2026 : prorata 2/12 (PL-4/PL-1 démarre 01/11/2026)
-        # → 500 MWh × 4 EUR/MWh × 2/12 ≈ 333,33 EUR
-        assert comp["capacite_eur"] == pytest.approx(2_000.0 * 2 / 12, rel=1e-3)
+        # Capacité : 500 MWh × 0.43 EUR/MWh = 215 EUR (aligné billing_engine)
+        assert comp["capacite_eur"] == pytest.approx(500.0 * CAPACITE_UNITAIRE_EUR_MWH, rel=1e-3)
 
         # Énergie annuelle bien reportée
         assert result["energie_annuelle_mwh"] == pytest.approx(500.0, rel=1e-6)
@@ -206,8 +205,8 @@ class TestSimulateFacture2026:
         # Note pédagogique présente pour auditeur
         assert "taxe redistributive sur EDF" in result["hypotheses"]["vnu_note"]
 
-    def test_simulate_capacite_prorata_2026_vs_2027(self, db_session):
-        """Capacité 2026 prorata 2/12 (PL-4/PL-1 01/11/2026), plein exercice dès 2027."""
+    def test_simulate_capacite_aligne_billing_engine(self, db_session):
+        """Capacité annuelle alignée sur billing_engine/catalog (0.43 EUR/MWh), plein exercice."""
         _, site = _make_org_site(db_session, annual_kwh=1_000_000.0)
         _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
         _seed_forward(db_session, year=2027, price_eur_mwh=62.0)
@@ -215,17 +214,12 @@ class TestSimulateFacture2026:
         result_2026 = simulate_annual_cost_2026(site, db_session, year=2026)
         result_2027 = simulate_annual_cost_2026(site, db_session, year=2027)
 
-        # 2026 : 1 000 MWh × 4 EUR/MWh × 2/12 ≈ 666,67 EUR
-        assert result_2026["composantes"]["capacite_eur"] == pytest.approx(
-            1_000.0 * CAPACITE_UNITAIRE_EUR_MWH * 2 / 12, rel=1e-3
-        )
-        assert result_2026["hypotheses"]["capacite_prorata_mois"] == 2
-        # 2027 : plein exercice 12/12 = 4 000 EUR
-        assert result_2027["composantes"]["capacite_eur"] == pytest.approx(
-            1_000.0 * CAPACITE_UNITAIRE_EUR_MWH, rel=1e-3
-        )
-        assert result_2027["hypotheses"]["capacite_prorata_mois"] == 12
-        assert result_2027["hypotheses"]["capacite_unitaire_eur_mwh"] == CAPACITE_UNITAIRE_EUR_MWH
+        # 1 000 MWh × 0.43 EUR/MWh = 430 EUR, indépendamment de l'année
+        expected = 1_000.0 * CAPACITE_UNITAIRE_EUR_MWH
+        assert result_2026["composantes"]["capacite_eur"] == pytest.approx(expected, rel=1e-3)
+        assert result_2027["composantes"]["capacite_eur"] == pytest.approx(expected, rel=1e-3)
+        assert result_2026["hypotheses"]["capacite_unitaire_eur_mwh"] == CAPACITE_UNITAIRE_EUR_MWH
+        assert "billing_engine/catalog" in result_2026["hypotheses"]["capacite_source_ref"]
 
     def test_simulate_cbam_non_applicable(self, db_session):
         """CBAM = 0 EUR + trace documentée dans hypotheses."""
