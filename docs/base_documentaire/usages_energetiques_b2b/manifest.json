@@ -6,51 +6,87 @@
   "status": "canonical",
   "description": "Base documentaire canonique des usages énergétiques B2B : taxonomie, archétypes sectoriels, règles d'anomalie, playbooks de recommandations",
   "source_path": "source/USAGES_ENERGETIQUES_B2B_v1.html",
-  "sha256": "e2a14f5de70c14da55f4a0f0af42d2eaf1be61166b4ce89ce65ffb6a3178ccbf",
+  "sha256": "e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22",
   "sections": [
     {
       "id": "taxonomie-usages",
       "title": "Taxonomie des Usages Énergétiques",
       "description": "11 types d'usages normalisés (HVAC, Éclairage, ECS, Froid, Cuisson, IT, Process, Air comprimé, Pompes, Ventilation, Autres)",
       "line_start": 15,
-      "extractable": ["usage_types", "typical_percentages"]
+      "extractable": [
+        "usage_types",
+        "typical_percentages"
+      ]
     },
     {
       "id": "archetypes",
       "title": "Archétypes de Consommation",
       "description": "6 archétypes sectoriels avec profils temporels, répartitions d'usage, codes NAF",
       "line_start": 90,
-      "extractable": ["archetypes"],
+      "extractable": [
+        "archetypes"
+      ],
       "archetypes": [
         {
           "code": "BUREAU_STANDARD",
           "id": "archetype-bureau",
-          "naf_codes": ["64.19", "68.20", "69.10", "70.10", "70.22", "62.02"]
+          "naf_codes": [
+            "64.19",
+            "68.20",
+            "69.10",
+            "70.10",
+            "70.22",
+            "62.02"
+          ]
         },
         {
           "code": "COMMERCE_ALIMENTAIRE",
           "id": "archetype-commerce-alim",
-          "naf_codes": ["47.11", "47.19", "47.21", "47.29", "47.30"]
+          "naf_codes": [
+            "47.11",
+            "47.19",
+            "47.21",
+            "47.29",
+            "47.30"
+          ]
         },
         {
           "code": "RESTAURATION_SERVICE",
           "id": "archetype-restauration",
-          "naf_codes": ["56.10", "56.21", "56.29", "56.30"]
+          "naf_codes": [
+            "56.10",
+            "56.21",
+            "56.29",
+            "56.30"
+          ]
         },
         {
           "code": "LOGISTIQUE_FROID",
           "id": "archetype-logistique-froid",
-          "naf_codes": ["52.10", "52.21", "52.29"]
+          "naf_codes": [
+            "52.10",
+            "52.21",
+            "52.29"
+          ]
         },
         {
           "code": "HOPITAL_STANDARD",
           "id": "archetype-hopital",
-          "naf_codes": ["86.10", "86.21", "87.10"]
+          "naf_codes": [
+            "86.10",
+            "86.21",
+            "87.10"
+          ]
         },
         {
           "code": "INDUSTRIE_LEGERE",
           "id": "archetype-industrie-legere",
-          "naf_codes": ["10.71", "13.10", "25.11", "28.11"]
+          "naf_codes": [
+            "10.71",
+            "13.10",
+            "25.11",
+            "28.11"
+          ]
         }
       ]
     },
@@ -59,14 +95,34 @@
       "title": "Règles de Détection d'Anomalies (Tier 1)",
       "description": "6 règles déterministes avec seuils sectoriels",
       "line_start": 380,
-      "extractable": ["anomaly_rules"],
+      "extractable": [
+        "anomaly_rules"
+      ],
       "rules": [
-        {"code": "ANOM_BASE_NUIT_ELEVEE", "id": "anomalie-base-nuit"},
-        {"code": "ANOM_WEEKEND_ELEVE", "id": "anomalie-weekend"},
-        {"code": "ANOM_PUISSANCE_POINTE", "id": "anomalie-puissance"},
-        {"code": "ANOM_PAS_SAISONNALITE", "id": "anomalie-saison"},
-        {"code": "ANOM_RATIO_M2_ANORMAL", "id": "anomalie-ratio-m2"},
-        {"code": "ANOM_GAZ_ETE", "id": "anomalie-gaz-ete"}
+        {
+          "code": "ANOM_BASE_NUIT_ELEVEE",
+          "id": "anomalie-base-nuit"
+        },
+        {
+          "code": "ANOM_WEEKEND_ELEVE",
+          "id": "anomalie-weekend"
+        },
+        {
+          "code": "ANOM_PUISSANCE_POINTE",
+          "id": "anomalie-puissance"
+        },
+        {
+          "code": "ANOM_PAS_SAISONNALITE",
+          "id": "anomalie-saison"
+        },
+        {
+          "code": "ANOM_RATIO_M2_ANORMAL",
+          "id": "anomalie-ratio-m2"
+        },
+        {
+          "code": "ANOM_GAZ_ETE",
+          "id": "anomalie-gaz-ete"
+        }
       ]
     },
     {
@@ -74,14 +130,34 @@
       "title": "Playbooks de Recommandations",
       "description": "6 playbooks actionnables avec estimations d'impact et scoring ICE",
       "line_start": 570,
-      "extractable": ["recommendation_playbooks"],
+      "extractable": [
+        "recommendation_playbooks"
+      ],
       "playbooks": [
-        {"code": "RECO_BASE_NUIT", "id": "reco-base-nuit"},
-        {"code": "RECO_AJUST_PUISSANCE", "id": "reco-puissance"},
-        {"code": "RECO_REGULATION_THERMIQUE", "id": "reco-thermique"},
-        {"code": "RECO_ECLAIRAGE_LED", "id": "reco-led"},
-        {"code": "RECO_FROID_COMMERCIAL", "id": "reco-froid"},
-        {"code": "RECO_AIR_COMPRIME_FUITES", "id": "reco-air-comprime"}
+        {
+          "code": "RECO_BASE_NUIT",
+          "id": "reco-base-nuit"
+        },
+        {
+          "code": "RECO_AJUST_PUISSANCE",
+          "id": "reco-puissance"
+        },
+        {
+          "code": "RECO_REGULATION_THERMIQUE",
+          "id": "reco-thermique"
+        },
+        {
+          "code": "RECO_ECLAIRAGE_LED",
+          "id": "reco-led"
+        },
+        {
+          "code": "RECO_FROID_COMMERCIAL",
+          "id": "reco-froid"
+        },
+        {
+          "code": "RECO_AIR_COMPRIME_FUITES",
+          "id": "reco-air-comprime"
+        }
       ]
     },
     {
@@ -89,14 +165,20 @@
       "title": "Méthodologie d'Analyse",
       "description": "Kit data minimal, pipeline analytics, formule ICE",
       "line_start": 710,
-      "extractable": ["data_requirements", "pipeline_stages", "scoring_formula"]
+      "extractable": [
+        "data_requirements",
+        "pipeline_stages",
+        "scoring_formula"
+      ]
     },
     {
       "id": "mappings-naf",
       "title": "Mappings NAF → Archétype",
       "description": "40 codes NAF mappés vers archétypes sectoriels",
       "line_start": 760,
-      "extractable": ["naf_mappings"]
+      "extractable": [
+        "naf_mappings"
+      ]
     }
   ],
   "kb_output": {

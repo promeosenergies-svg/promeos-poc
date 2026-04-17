@@ -8,10 +8,13 @@ import logging
 from dataclasses import asdict
 from datetime import date, timedelta
 
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
+from services.iam_scope import check_site_access
 from services.flex.archetype_resolver import resolve_archetype
 from services.power.power_profile_service import resolve_p_max_kw
 from services.purchase.strategy_recommender import recommend_purchase_strategy
@@ -25,7 +28,9 @@ router = APIRouter(prefix="/api/purchase/strategy", tags=["Purchase Strategy"])
 def get_site_purchase_strategy(
     site_id: int,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
+    check_site_access(auth, site_id)
     """
     Recommande une strategie d'achat pour le site.
 

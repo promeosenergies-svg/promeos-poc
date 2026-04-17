@@ -12,12 +12,15 @@ import json
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
+from middleware.cx_logger import log_cx_event
+from services.iam_scope import get_effective_org_id
 from models.operat_export_manifest import OperatExportManifest
 from models.compliance_event_log import ComplianceEventLog
 from services.operat_export_service import generate_operat_csv, log_operat_export, validate_operat_export
@@ -138,21 +141,31 @@ def _build_manifest(db, org_id, year, csv_content, filename, efa_ids=None, actor
 def export_operat_csv_route(
     body: ExportRequest,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Generate OPERAT-compatible CSV + manifest + audit log."""
-    csv_content = generate_operat_csv(db, body.org_id, body.year, body.efa_ids)
+    effective_org_id = get_effective_org_id(auth, body.org_id)
+    csv_content = generate_operat_csv(db, effective_org_id, body.year, body.efa_ids)
     filename = f"OPERAT_PREPARATOIRE_{body.org_id}_{body.year}.csv"
 
     # Legacy audit log
     efa_count = csv_content.count("\n") - 1
-    log_operat_export(db, body.org_id, body.year, max(0, efa_count))
+    log_operat_export(db, effective_org_id, body.year, max(0, efa_count))
 
     # Manifest + event log (actor depuis body ou fallback)
     from services.actor_resolver import resolve_actor
 
     actor = body.actor or resolve_actor(fallback="api_export")
-    manifest = _build_manifest(db, body.org_id, body.year, csv_content, filename, body.efa_ids, actor)
+    manifest = _build_manifest(db, effective_org_id, body.year, csv_content, filename, body.efa_ids, actor)
     db.commit()
+
+    log_cx_event(
+        db,
+        effective_org_id,
+        auth.id if auth else None,
+        "CX_REPORT_EXPORTED",
+        {"report_type": "operat", "year": body.year},
+    )
 
     return StreamingResponse(
         iter([csv_content]),
@@ -171,9 +184,11 @@ def export_operat_csv_route(
 def preview_operat_export(
     body: ExportRequest,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Preview OPERAT export data without downloading (returns JSON)."""
-    csv_content = generate_operat_csv(db, body.org_id, body.year, body.efa_ids)
+    effective_org_id = get_effective_org_id(auth, body.org_id)
+    csv_content = generate_operat_csv(db, effective_org_id, body.year, body.efa_ids)
     lines = csv_content.strip().split("\n")
     header = lines[0].split(";") if lines else []
     rows = []
@@ -195,9 +210,11 @@ def preview_operat_export(
 def validate_export(
     body: ExportRequest,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Validate OPERAT export data — returns errors (blocking) + warnings."""
-    return validate_operat_export(db, body.org_id, body.year, body.efa_ids)
+    effective_org_id = get_effective_org_id(auth, body.org_id)
+    return validate_operat_export(db, effective_org_id, body.year, body.efa_ids)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -209,11 +226,13 @@ def validate_export(
 def list_export_manifests(
     org_id: int,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Historique des exports preparatoires OPERAT pour une organisation."""
+    effective_org_id = get_effective_org_id(auth, org_id)
     rows = (
         db.query(OperatExportManifest)
-        .filter(OperatExportManifest.org_id == org_id)
+        .filter(OperatExportManifest.org_id == effective_org_id)
         .order_by(OperatExportManifest.generated_at.desc())
         .limit(50)
         .all()

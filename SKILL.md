@@ -62,9 +62,10 @@ SCORING_DEFAULT = {"DT": 0.45, "BACS": 0.30, "APER": 0.25}
 
 ### Conditions d'applicabilite par framework :
 - DT : surface >= 1 000 m2
-- BACS : puissance CVC > 290 kW (2025) ou > 70 kW (2027)
+- BACS : puissance CVC > 290 kW (2025) ou > 70 kW (2030, report décret 2025-1343)
 - APER : parking >= 1 500 m2 ou toiture >= 500 m2
-- AUDIT SME : conso > 2.75 GWh (audit) ou > 23.6 GWh (SME) — deadline 11/10/2026
+- AUDIT ÉNERGÉTIQUE : conso > 2.75 GWh — deadline 11/10/2026 (loi 2025-391)
+- SMÉ ISO 50001 : conso > 23.6 GWh — deadline 11/10/2027 (loi 2025-391)
 
 ## Sources de verite — une seule par domaine
 

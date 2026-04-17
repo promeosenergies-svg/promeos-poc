@@ -14,6 +14,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
+from middleware.cx_logger import log_cx_event
+from services.iam_scope import get_effective_org_id
 from models.copilot_models import CopilotAction
 from services.copilot_engine import (
     run_copilot_monthly,
@@ -30,9 +33,11 @@ def list_copilot_actions(
     status: Optional[str] = Query(None),
     site_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """List copilot actions for an org, sorted by priority_score desc."""
-    query = db.query(CopilotAction).filter(CopilotAction.org_id == org_id)
+    effective_org_id = get_effective_org_id(auth, org_id)
+    query = db.query(CopilotAction).filter(CopilotAction.org_id == effective_org_id)
     if status:
         query = query.filter(CopilotAction.status == status)
     if site_id:
@@ -45,6 +50,14 @@ def list_copilot_actions(
         )
         .limit(200)
         .all()
+    )
+
+    log_cx_event(
+        db,
+        effective_org_id,
+        auth.id if auth else None,
+        "CX_INSIGHT_CONSULTED",
+        {"insight_type": "copilot", "count": len(actions)},
     )
 
     return {
@@ -82,9 +95,11 @@ class RunBody(BaseModel):
 def run_monthly_copilot(
     body: RunBody,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Trigger monthly copilot analysis for an org."""
-    result = run_copilot_monthly(db, body.org_id)
+    effective_org_id = get_effective_org_id(auth, body.org_id)
+    result = run_copilot_monthly(db, effective_org_id)
     return result
 
 

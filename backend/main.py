@@ -212,6 +212,11 @@ from routes.sirene import router as sirene_router
 
 app.include_router(sirene_router)
 
+# CX Dashboard (admin — usage interne)
+from routes.cx_dashboard import router as cx_dashboard_router
+
+app.include_router(cx_dashboard_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 

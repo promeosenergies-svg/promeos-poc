@@ -11,6 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
+from services.iam_scope import check_site_access
 from services.flex.archetype_resolver import resolve_archetype
 from services.billing.usage_ventilation import ventile_shadow_bill_by_usage
 
@@ -23,7 +25,9 @@ router = APIRouter(prefix="/api/billing/usage-ventilation", tags=["Billing Usage
 def get_site_usage_ventilation(
     site_id: int,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
+    check_site_access(auth, site_id)
     """
     Ventile le dernier shadow bill du site par usage canonique.
 

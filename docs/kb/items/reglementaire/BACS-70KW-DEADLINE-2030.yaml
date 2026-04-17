@@ -1,0 +1,87 @@
+---
+id: "BACS-70KW-DEADLINE-2030"
+type: "rule"
+domain: "reglementaire"
+title: "Obligation BACS pour bâtiments 70-290 kW"
+summary: "Obligation d'installer une GTB (système BACS) avant le 1er janvier 2030 pour tout bâtiment tertiaire existant dont la puissance nominale CVC est comprise entre 70 et 290 kW (échéance repoussée de 2027 à 2030 par décret 2025-1343)."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - collectivite
+  asset:
+    - hvac
+  reg:
+    - bacs
+  granularity:
+    - event
+
+scope:
+  hvac_kw_min: 70
+  hvac_kw_max: 290
+
+content_md: |
+  ## Obligation BACS 70-290 kW
+
+  ### Seuil
+  - Puissance nominale utile (Pn) de chauffage OU de refroidissement entre 70 kW et 290 kW
+
+  ### Deadline
+  - 1er janvier 2030 pour les bâtiments existants (initialement 2027, repoussé par décret 2025-1343 du 26/12/2025)
+  - Dès le dépôt du permis de construire après le 08/04/2024 pour les bâtiments neufs
+
+  ### Systèmes concernés
+  - Systèmes BACS (GTB) de classe B ou A (NF EN ISO 52120-1)
+
+  ### Exemptions
+  - TRI (temps de retour sur investissement) > 10 ans avec étude technique
+  - Bâtiments dont la démolition est programmée dans les 2 ans
+
+  ### Historique
+  - Décret 2020-887 du 20/07/2020 : obligation >=290 kW, deadline 01/01/2025
+  - Décret 2023-259 du 07/04/2023 : extension à >=70 kW, deadline initiale 01/01/2027
+  - Décret 2025-1343 du 26/12/2025 : report deadline 70-290 kW au 01/01/2030
+
+logic:
+  when:
+    all:
+      - field: "hvac_kw"
+        op: ">="
+        value: 70
+      - field: "hvac_kw"
+        op: "<"
+        value: 290
+  then:
+    outputs:
+      - type: "obligation"
+        label: "Installer une GTB (classe B ou A) avant le 1er janvier 2030"
+        deadline: "2030-01-01"
+        severity: "high"
+        details: "Décret n°2023-259 du 7 avril 2023, reporté par décret n°2025-1343 du 26 décembre 2025"
+
+      - type: "next_step"
+        label: "Vérifier puissance CVC installée (chauffage + refroidissement)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Commander audit TRI si exemption envisagée"
+        priority: 2
+
+sources:
+  - doc_id: "DECRET-2023-259"
+    label: "Décret n°2023-259 du 7 avril 2023"
+    section: "Article 1"
+    anchor: "#article-1"
+    excerpt_short: "Extension de l'obligation BACS aux bâtiments dont la puissance nominale utile est supérieure à 70 kW"
+
+  - doc_id: "DECRET-2025-1343"
+    label: "Décret n°2025-1343 du 26 décembre 2025"
+    section: "Article 1 — Report échéance"
+    anchor: "#article-1"
+    excerpt_short: "Report de l'échéance du 1er janvier 2027 au 1er janvier 2030 pour les bâtiments de 70 à 290 kW"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1

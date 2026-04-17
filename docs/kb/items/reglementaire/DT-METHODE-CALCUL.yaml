@@ -1,0 +1,75 @@
+---
+id: "DT-METHODE-CALCUL"
+type: "knowledge"
+domain: "reglementaire"
+title: "Décret Tertiaire — Méthodes de calcul Crelat / Cabs"
+summary: "Les assujettis au Décret Tertiaire choisissent entre deux méthodes concurrentes : Crelat (valeur relative, réduction en % vs année de référence) ou Cabs (valeur absolue, seuil maximal en kWh/m2/an)."
+
+tags:
+  energy:
+    - multi
+  segment:
+    - tertiaire_multisite
+    - collectivite
+  asset:
+    - multi
+  reg:
+    - decret_tertiaire
+  granularity:
+    - mensuel
+
+scope:
+  surface_m2_min: 1000
+
+content_md: |
+  ## Méthodes de calcul Décret Tertiaire
+
+  ### Année de référence
+  - Choix d'une année entre 2010 et 2022 (plage élargie par arrêtés successifs, initialement 2010-2019)
+  - L'année choisie doit être représentative de l'activité normale du bâtiment
+
+  ### Méthode Crelat (Valeur Relative)
+  - Réduction en pourcentage par rapport à la consommation de l'année de référence
+  - Objectifs : -40% (2030), -50% (2040), -60% (2050)
+  - Favorable aux bâtiments anciens/énergivores (forte marge de réduction)
+
+  ### Méthode Cabs (Valeur Absolue)
+  - Seuil maximal en kWh/m2/an défini par catégorie d'activité
+  - Seuils publiés par arrêté pour chaque catégorie (bureaux, commerce, santé...)
+  - Favorable aux bâtiments performants/neufs (déjà proches du seuil)
+
+  ### Choix
+  - L'assujetti peut choisir la méthode la plus favorable pour chaque entité fonctionnelle
+  - Le choix peut être révisé annuellement sur OPERAT
+
+logic:
+  when:
+    all:
+      - field: "surface_m2"
+        op: ">="
+        value: 1000
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Comparer Crelat et Cabs pour chaque entité fonctionnelle"
+        priority: 1
+
+      - type: "next_step"
+        label: "Saisir consommation de référence et méthode sur OPERAT"
+        priority: 2
+
+sources:
+  - doc_id: "DECRET-2019-771"
+    label: "Décret n°2019-771 du 23 juillet 2019"
+    section: "Articles R.174-23 à R.174-26"
+    anchor: "#article-r174-23"
+    excerpt_short: "Deux méthodes de calcul : valeur relative (Crelat) et valeur absolue (Cabs)"
+
+  - doc_id: "DT_OPERAT_2026"
+    label: "Guide OPERAT 2026"
+    section: "Année de référence et méthodes de calcul"
+    anchor: "#anne-de-rfrence-et-mthodes-de-calcul"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 2

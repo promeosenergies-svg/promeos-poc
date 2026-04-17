@@ -28,6 +28,8 @@ export const getAuditSmeAssessment = (orgId) =>
 export const getAuditSmeScope = () => api.get('/regops/audit-sme/scope').then((r) => r.data);
 export const updateAuditSme = (orgId, payload) =>
   api.patch(`/regops/organisations/${orgId}/audit-sme`, payload).then((r) => r.data);
+export const getAuditDeadlineStatus = (orgId) =>
+  cachedGet('/regops/audit-deadline-status', { params: { org_id: orgId } }).then((r) => r.data);
 
 // ── Compliance (Rules-based) ──
 export const getComplianceSummary = (params = {}) =>

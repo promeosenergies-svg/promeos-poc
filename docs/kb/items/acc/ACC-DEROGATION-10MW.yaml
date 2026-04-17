@@ -1,0 +1,71 @@
+---
+id: "ACC-DEROGATION-10MW"
+type: "rule"
+domain: "acc"
+title: "ACC — Dérogation 10 MW pour collectivités territoriales"
+summary: "Dérogation permettant de porter la puissance cumulée ACC à 10 MW, sous 3 critères cumulatifs : participant collectif (commune/EPCI), tous participants publics/parapublics, périmètre géographique EPCI."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - collectivite
+  asset:
+    - multi
+  reg:
+    - acc
+  granularity:
+    - event
+
+scope: {}
+
+content_md: |
+  ## Dérogation 10 MW — Collectivités territoriales
+
+  ### Critères cumulatifs (arrêté 21 février 2025)
+  1. **Participant collectif obligatoire** : un des producteurs/consommateurs doit être une commune ou un EPCI à fiscalité propre
+  2. **Composition des participants** : tous doivent être :
+     - Organismes publics exerçant une mission de service public, OU
+     - Organismes privés exerçant une mission de service public, OU
+     - SEM locales (article L.1522-1 CGCT) et leurs filiales
+  3. **Périmètre géographique** : points de soutirage et d'injection situés dans le ressort de l'EPCI participant
+
+  ### Impact
+  - Double le plafond de puissance (5 MW -> 10 MW)
+  - Réservé aux acteurs publics/parapublics (exclut investisseurs privés stricto sensu)
+  - CRE avait préconisé 8 MW, gouvernement a retenu 10 MW
+
+logic:
+  when:
+    all:
+      - field: "acc_project"
+        op: "="
+        value: true
+      - field: "participant_type"
+        op: "in"
+        value: ["commune", "epci", "collectivite"]
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Vérifier éligibilité dérogation 10 MW (3 critères cumulatifs)"
+        priority: 1
+        severity: "medium"
+
+      - type: "next_step"
+        label: "Confirmer que tous participants sont publics/parapublics/SEM"
+        priority: 2
+
+      - type: "next_step"
+        label: "Vérifier périmètre géographique EPCI"
+        priority: 3
+
+sources:
+  - doc_id: "ARRETE-2025-02-21"
+    label: "Arrêté du 21 février 2025 (JO 5 mars 2025)"
+    section: "Article 2 — Dérogation collectivités"
+    anchor: "#article-2"
+    excerpt_short: "Dérogation spécifique permettant certains projets de monter jusqu'à 10 MW de puissance cumulée"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 2

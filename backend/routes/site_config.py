@@ -12,6 +12,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
+from services.iam_scope import check_site_access
 from models import Site, SiteOperatingSchedule, SiteTariffProfile
 
 router = APIRouter(prefix="/api/site", tags=["Site Config"])
@@ -203,7 +205,8 @@ def _build_schedule_response(site_id: int, sched, is_default: bool = False) -> d
 
 
 @router.get("/{site_id}/schedule")
-def get_schedule(site_id: int, db: Session = Depends(get_db)):
+def get_schedule(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+    check_site_access(auth, site_id)
     """Return operating schedule for site (creates default if none)."""
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
@@ -218,7 +221,13 @@ def get_schedule(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{site_id}/schedule")
-def put_schedule(site_id: int, data: ScheduleIn, db: Session = Depends(get_db)):
+def put_schedule(
+    site_id: int,
+    data: ScheduleIn,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    check_site_access(auth, site_id)
     """Create or update operating schedule for site."""
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
@@ -296,7 +305,8 @@ def put_schedule(site_id: int, data: ScheduleIn, db: Session = Depends(get_db)):
 
 
 @router.get("/{site_id}/tariff")
-def get_tariff(site_id: int, db: Session = Depends(get_db)):
+def get_tariff(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+    check_site_access(auth, site_id)
     """Return tariff profile for site (fallback to default if none)."""
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
@@ -321,7 +331,13 @@ def get_tariff(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{site_id}/tariff")
-def put_tariff(site_id: int, data: TariffIn, db: Session = Depends(get_db)):
+def put_tariff(
+    site_id: int,
+    data: TariffIn,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    check_site_access(auth, site_id)
     """Create or update tariff profile for site."""
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
