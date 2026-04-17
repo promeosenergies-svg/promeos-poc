@@ -83,10 +83,13 @@ export default function RadarPrixNegatifsCard({ horizonDays = 7 }) {
     if (!hasSite) return;
     const datetime = fenetre?.datetime_debut;
     const usages = (fenetre?.usages_recommandes || []).map((u) => USAGE_LABEL[u] || u).join(' · ');
+    // Le backend actions n'accepte que `manual` ou `insight` comme source_type
+    // (cf. backend/routes/actions.py:263 + ActionSourceType enum). On prefixe
+    // donc le sourceId avec `pilotage_radar:` pour conserver la tracabilite.
     openActionDrawer({
       siteId: scope.siteId,
-      sourceType: 'pilotage_radar',
-      sourceId: datetime || `radar-${idx}`,
+      sourceType: 'insight',
+      sourceId: `pilotage_radar:${datetime || `idx-${idx}`}`,
       prefill: {
         titre: `Décaler usages flexibles — ${formatRange(
           fenetre?.datetime_debut,

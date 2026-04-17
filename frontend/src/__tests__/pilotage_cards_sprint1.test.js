@@ -60,12 +60,14 @@ describe('Pilotage cards — CTAs actionnables', () => {
   it('RadarPrixNegatifsCard propose un CTA "Planifier" via ActionDrawer, desactive si pas de site scope', () => {
     expect(radarSrc).toMatch(/useActionDrawer/);
     expect(radarSrc).toMatch(/openActionDrawer\(/);
-    expect(radarSrc).toMatch(/pilotage_radar/);
+    // Le backend actions n'accepte que "manual" ou "insight" comme source_type.
+    // On utilise donc sourceType: 'insight' + sourceId prefixe `pilotage_radar:`
+    // pour conserver la tracabilite sans casser la validation enum.
+    expect(radarSrc).toMatch(/sourceType:\s*['"]insight['"]/);
+    expect(radarSrc).toMatch(/sourceId:\s*`pilotage_radar:/);
     expect(radarSrc).toMatch(/Planifier/);
     // Bouton disabled si scope.siteId absent (evite actions sans rattachement)
     expect(radarSrc).toMatch(/disabled=\{!hasSite\}/);
-    // sourceId fallback si datetime absent (clef idempotence drawer)
-    expect(radarSrc).toMatch(/datetime \|\| `radar-\$\{idx\}`/);
   });
 
   it('RoiFlexReadyCard expose un CTA navigation vers la fiche site (via toSite)', () => {
