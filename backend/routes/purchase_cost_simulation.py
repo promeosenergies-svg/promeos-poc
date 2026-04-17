@@ -51,6 +51,42 @@ class CostComposantes(BaseModel):
     accise_cta_tva_eur: float = Field(..., description="Taxes agrégées (accise + CTA + TVA)")
 
 
+class CostHypotheses(BaseModel):
+    """Hypothèses MVP documentées (contrat stable côté frontend)."""
+
+    prix_forward_y1_eur_mwh: float
+    facteur_forme: float
+    capacite_unitaire_eur_mwh: float
+    capacite_prorata_mois: int = Field(..., description="Nombre de mois facturés (2 pour 2026, 12 pour 2027+)")
+    vnu_statut: str = Field(..., description="'dormant' | 'actif'")
+    vnu_seuil_active_eur_mwh: float
+    vnu_source_ref: Optional[str] = None
+    vnu_note: str
+    vnu_risque_upside_eur_mwh: float
+    archetype: str
+    turpe_segment: str
+    turpe_energie_eur_kwh: float
+    turpe_gestion_eur_mois: float
+    accise_code_resolu: str
+    accise_eur_kwh: float
+    cta_rate: float
+    tva_rate: float
+    baseline_2024_eur_mwh: float
+    comparabilite_baseline: str
+    annual_kwh_resolu: float
+    cbam_note: str
+    source_calibration: list[str]
+
+
+class Baseline2024(BaseModel):
+    """Estimation facture historique ARENH 2024 HT pour delta comparable."""
+
+    fourniture_ht_eur: float
+    prix_moyen_pondere_eur_mwh: float
+    methode: str
+    delta_fourniture_ht_pct: float
+
+
 class CostSimulation2026Response(BaseModel):
     """Facture prévisionnelle annuelle post-ARENH — décomposition 6 composantes."""
 
@@ -59,16 +95,9 @@ class CostSimulation2026Response(BaseModel):
     facture_totale_eur: float = Field(..., description="Somme des composantes arrondie")
     energie_annuelle_mwh: float = Field(..., description="Conso annuelle en MWh")
     composantes: CostComposantes
-    hypotheses: dict = Field(
-        ...,
-        description=(
-            "Hypothèses MVP documentées : prix_forward_y1_eur_mwh, facteur_forme, "
-            "capacite_unitaire_eur_mwh, vnu_statut, vnu_seuil_active_eur_mwh, "
-            "archetype, source_calibration"
-        ),
-    )
-    baseline_2024: dict = Field(..., description="Estimation facture historique ARENH 2024 pour comparaison")
-    delta_vs_2024_pct: float = Field(..., description="Variation % vs baseline 2024")
+    hypotheses: CostHypotheses
+    baseline_2024: Baseline2024
+    delta_vs_2024_pct: float = Field(..., description="Variation % vs baseline 2024 HT énergie (comparable)")
     confiance: str = Field(..., description="'indicative' en MVP")
     source: str = Field(..., description="Citation courte sources réglementaires")
 
@@ -77,16 +106,10 @@ class CostSimulation2026Response(BaseModel):
 
 
 def _resolve_site(db: Session, site_id: str, auth: Optional[AuthContext]) -> Any:
-    """
-    Résout `site_id` en instance Site avec défense-in-depth org.
+    """Résout un Site numérique via le helper pilotage `_scoped_site_query`.
 
-    Pattern mirror de `routes/pilotage._resolve_db_site` :
-      - si `site_id` numérique → lookup Site.id en DB, joint Portefeuille →
-        EntiteJuridique et filtre `organisation_id == auth.org_id` quand
-        auth présent (sinon 404 pour anti-énumération).
-      - sinon → 404 car le simulateur Cost 2026+ exige un Site réel
-        (pas de fixture DEMO car les composantes dépendent d'annual_kwh
-        réel et d'un archétype résolu).
+    Les clés DEMO_SITES (non numériques) renvoient 404 explicite : le
+    simulateur exige annual_kwh réel + archétype résolu.
     """
     if not site_id.isdigit():
         raise HTTPException(
@@ -98,18 +121,11 @@ def _resolve_site(db: Session, site_id: str, auth: Optional[AuthContext]) -> Any
             ),
         )
 
-    from models import EntiteJuridique, Portefeuille, Site
+    from models import Site
+    from routes.pilotage import _scoped_site_query
 
     site_pk = int(site_id)
-    query = db.query(Site).filter(Site.id == site_pk).filter(Site.actif == True)  # noqa: E712
-    if auth is not None and getattr(auth, "org_id", None):
-        query = (
-            query.join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
-            .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-            .filter(EntiteJuridique.organisation_id == auth.org_id)
-        )
-
-    site = query.first()
+    site = _scoped_site_query(db, auth).filter(Site.id == site_pk).first()
     if site is None:
         raise HTTPException(
             status_code=404,

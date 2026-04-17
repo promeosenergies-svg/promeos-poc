@@ -218,34 +218,24 @@ def _safe_param(
 
 
 def _resolve_accise_code(site) -> str:
-    """
-    Route vers `ACCISE_ELEC_T1` / `_T2` / `_HP` selon `TaxProfile.accise_category_elec`
-    du premier `DeliveryPoint` élec actif (V113 data model).
+    """Route accise vers T1/T2/HP via le helper canonique V113.
 
-    Fallback `ACCISE_ELEC_T2` (PME standard) si aucun profil fiscal n'est
-    renseigné — préserve le comportement historique.
+    `DeliveryPoint.tax_profiles` est la backref plurielle SQLAlchemy (un PDL
+    peut avoir plusieurs profils historisés via `valid_from`/`valid_to`) — on
+    prend le premier trouvé, ce qui est suffisant pour MVP indicatif.
     """
-    try:
-        from models.enums import AcciseCategoryElec
-    except ImportError:
-        return "ACCISE_ELEC_T2"
+    from services.billing_shadow_v2 import _accise_code_for_category
 
+    tp = None
     try:
-        dps = getattr(site, "delivery_points", None) or []
-        for dp in dps:
-            tp = getattr(dp, "tax_profile", None)
-            if tp is None:
-                continue
-            cat = getattr(tp, "accise_category_elec", None)
-            if cat == AcciseCategoryElec.HOUSEHOLD:
-                return "ACCISE_ELEC_T1"
-            if cat == AcciseCategoryElec.HIGH_POWER:
-                return "ACCISE_ELEC_HP"
-            if cat == AcciseCategoryElec.SME:
-                return "ACCISE_ELEC_T2"
+        for dp in getattr(site, "delivery_points", None) or []:
+            profiles = getattr(dp, "tax_profiles", None) or []
+            if profiles:
+                tp = profiles[0]
+                break
     except Exception as exc:
         logger.debug("cost_simulator_2026: tax_profile lookup failed: %s", exc)
-    return "ACCISE_ELEC_T2"
+    return _accise_code_for_category("elec", tp)
 
 
 def _resolve_vnu_seuil(store: ParameterStore) -> tuple[float, Optional[str]]:
@@ -338,8 +328,10 @@ def simulate_annual_cost_2026(
     vnu_eur = 0.0
     vnu_risque_upside_eur_mwh = VNU_IMPACT_MVP_EUR_MWH if vnu_statut == "actif" else 0.0
 
-    # 6. Mécanisme capacité RTE (PL-4 centralisé 01/11/2026)
-    capacite_eur = annual_mwh * CAPACITE_UNITAIRE_EUR_MWH
+    # 6. Mécanisme capacité RTE (PL-4/PL-1 centralisé 01/11/2026)
+    # Prorata 2/12 pour 2026 (Nov-Déc uniquement) ; plein exercice à partir de 2027.
+    capacite_months = 2 if year == 2026 else 12
+    capacite_eur = annual_mwh * CAPACITE_UNITAIRE_EUR_MWH * (capacite_months / 12.0)
 
     # 7. CBAM — non applicable à la conso élec directe (documenté)
     cbam_scope = 0.0
@@ -386,7 +378,6 @@ def simulate_annual_cost_2026(
     # 2026, plus pertinent pour un acheteur (ce qu'il peut influencer par son
     # choix de contrat). Les taxes/TURPE ne varient pas significativement.
     baseline_2024_fourniture_eur = round(annual_mwh * BASELINE_2024_EUR_MWH, 2)
-    baseline_2024_eur = baseline_2024_fourniture_eur  # legacy key pour rétro-compat
     delta_fourniture_ht_pct = (
         round(
             (fourniture_eur - baseline_2024_fourniture_eur) / baseline_2024_fourniture_eur * 100.0,
@@ -403,6 +394,7 @@ def simulate_annual_cost_2026(
         "prix_forward_y1_eur_mwh": round(forward_y1, 2),
         "facteur_forme": facteur_forme,
         "capacite_unitaire_eur_mwh": CAPACITE_UNITAIRE_EUR_MWH,
+        "capacite_prorata_mois": capacite_months,
         "vnu_statut": vnu_statut,
         "vnu_seuil_active_eur_mwh": vnu_seuil,
         "vnu_source_ref": vnu_source_ref,
@@ -431,7 +423,6 @@ def simulate_annual_cost_2026(
     }
 
     baseline_2024 = {
-        "facture_eur": baseline_2024_eur,  # rétro-compat : énergie HT pure
         "fourniture_ht_eur": baseline_2024_fourniture_eur,
         "prix_moyen_pondere_eur_mwh": BASELINE_2024_EUR_MWH,
         "methode": (

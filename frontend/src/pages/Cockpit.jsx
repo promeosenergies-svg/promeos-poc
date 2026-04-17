@@ -772,11 +772,6 @@ const Cockpit = () => {
         </div>
       </section>
 
-      {/* ═══════════ ACHAT ÉNERGIE POST-ARENH — Sprint MVP 2026 ═══════════ */}
-      {/* Nouvelle carte facture prévisionnelle 2026+. En pleine largeur pour
-          mettre en valeur le hero chiffré + décomposition des 6 composantes
-          réglementaires. À réorganiser en grille 2 colonnes si d'autres cartes
-          achat viennent se greffer. */}
       <section className="space-y-3" data-testid="cockpit-achat-post-arenh">
         <div className="flex items-baseline justify-between">
           <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">

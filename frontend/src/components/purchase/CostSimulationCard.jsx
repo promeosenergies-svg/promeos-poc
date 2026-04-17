@@ -15,7 +15,7 @@
  * Sources : Post-ARENH 01/01/2026, TURPE 7 (CRE 2025-78), VNU CRE,
  *           mécanisme capacité centralisé RTE.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, AlertTriangle } from 'lucide-react';
 import { getCostSimulation2026 } from '../../services/api/purchase';
@@ -158,13 +158,8 @@ export default function CostSimulationCard({ siteId: siteIdProp, year = 2026 }) 
     };
   }, [resolvedSiteId, year]);
 
-  const ctaTarget = useMemo(() => {
-    if (resolvedSiteId) return toSite(resolvedSiteId, { tab: 'achats' });
-    return '/achat-energie';
-  }, [resolvedSiteId]);
-
   const handleCta = () => {
-    navigate(ctaTarget);
+    navigate(resolvedSiteId ? toSite(resolvedSiteId, { tab: 'achats' }) : '/achat-energie');
   };
 
   // ── Loading ────────────────────────────────────────────────────────────

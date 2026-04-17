@@ -32,34 +32,55 @@ from models import Base
 
 @pytest.fixture
 def _fake_cost_simulation():
-    """Payload type retourné par le service cost_simulator_2026 (contract stable)."""
+    """Payload retourné par le service — reflète le schéma Pydantic exact.
+
+    Toute modification de `CostHypotheses` / `Baseline2024` doit être
+    répercutée ici pour éviter une dérive contrat service↔endpoint.
+    """
     return {
         "site_id": "42",
         "year": 2026,
-        "facture_totale_eur": 850000.0,
+        "facture_totale_eur": 949_999.99,
         "energie_annuelle_mwh": 12500.0,
         "composantes": {
             "fourniture_eur": 750000.0,
             "turpe_eur": 80000.0,
             "vnu_eur": 0.0,
-            "capacite_eur": 50000.0,
+            "capacite_eur": 8333.33,
             "cbam_scope": 0.0,
-            "accise_cta_tva_eur": -30000.0,  # ajusté pour que la somme colle
+            "accise_cta_tva_eur": 111666.66,
         },
         "hypotheses": {
             "prix_forward_y1_eur_mwh": 60.0,
+            "facteur_forme": 0.30,
             "capacite_unitaire_eur_mwh": 4.0,
+            "capacite_prorata_mois": 2,
             "vnu_statut": "dormant",
             "vnu_seuil_active_eur_mwh": 78.0,
+            "vnu_source_ref": None,
+            "vnu_note": "VNU = taxe redistributive sur EDF, pas sur le consommateur final.",
+            "vnu_risque_upside_eur_mwh": 0.0,
             "archetype": "BUREAU_STANDARD",
-            "source_calibration": "nominal",
+            "turpe_segment": "C4_BT",
+            "turpe_energie_eur_kwh": 0.0390,
+            "turpe_gestion_eur_mois": 30.60,
+            "accise_code_resolu": "ACCISE_ELEC",
+            "accise_eur_kwh": 0.02658,
+            "cta_rate": 0.15,
+            "tva_rate": 0.20,
+            "baseline_2024_eur_mwh": 80.0,
+            "comparabilite_baseline": "delta cadré HT énergie pure.",
+            "annual_kwh_resolu": 12_500_000.0,
+            "cbam_note": "CBAM non applicable à la conso électrique directe.",
+            "source_calibration": [],
         },
         "baseline_2024": {
-            "total_eur": 1000000.0,
-            "arenh_ratio": 0.5,
-            "prix_pondere_eur_mwh": 80.0,
+            "fourniture_ht_eur": 1_000_000.0,
+            "prix_moyen_pondere_eur_mwh": 80.0,
+            "methode": "ARENH 42 EUR/MWh × 50 % + complément spot moyen 2024 — MVP.",
+            "delta_fourniture_ht_pct": -25.0,
         },
-        "delta_vs_2024_pct": -15.0,
+        "delta_vs_2024_pct": -25.0,
         "confiance": "indicative",
         "source": ("Post-ARENH 01/01/2026 + TURPE 7 + VNU CRE + RTE capacité PL-4/PL-1 Nov 2026"),
     }
@@ -145,9 +166,10 @@ def test_endpoint_site_reel_numerique_200(_site_org_factory, _fake_cost_simulati
     data = r.json()
     assert data["site_id"] == str(site.id)
     assert data["year"] == 2026
-    assert data["facture_totale_eur"] == 850000.0
+    assert data["facture_totale_eur"] == pytest.approx(949_999.99, rel=1e-3)
     assert "fourniture_eur" in data["composantes"]
     assert data["composantes"]["fourniture_eur"] == 750000.0
+    assert data["hypotheses"]["capacite_prorata_mois"] == 2
     assert "prix_forward_y1_eur_mwh" in data["hypotheses"]
     assert data["confiance"] == "indicative"
     assert "Post-ARENH" in data["source"]

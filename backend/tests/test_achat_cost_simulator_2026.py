@@ -21,7 +21,6 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from datetime import datetime, timezone
-from unittest.mock import patch
 
 import pytest
 from sqlalchemy import create_engine
@@ -163,8 +162,9 @@ class TestSimulateFacture2026:
         assert comp["turpe_eur"] > 0
         assert comp["accise_cta_tva_eur"] > 0
 
-        # Capacité = 500 MWh × 4 EUR/MWh
-        assert comp["capacite_eur"] == pytest.approx(2_000.0, rel=1e-3)
+        # Capacité 2026 : prorata 2/12 (PL-4/PL-1 démarre 01/11/2026)
+        # → 500 MWh × 4 EUR/MWh × 2/12 ≈ 333,33 EUR
+        assert comp["capacite_eur"] == pytest.approx(2_000.0 * 2 / 12, rel=1e-3)
 
         # Énergie annuelle bien reportée
         assert result["energie_annuelle_mwh"] == pytest.approx(500.0, rel=1e-6)
@@ -206,17 +206,26 @@ class TestSimulateFacture2026:
         # Note pédagogique présente pour auditeur
         assert "taxe redistributive sur EDF" in result["hypotheses"]["vnu_note"]
 
-    def test_simulate_capacite_estimee(self, db_session):
-        """capacite_unitaire × annual_mwh = composante capacité."""
+    def test_simulate_capacite_prorata_2026_vs_2027(self, db_session):
+        """Capacité 2026 prorata 2/12 (PL-4/PL-1 01/11/2026), plein exercice dès 2027."""
         _, site = _make_org_site(db_session, annual_kwh=1_000_000.0)
         _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+        _seed_forward(db_session, year=2027, price_eur_mwh=62.0)
 
-        result = simulate_annual_cost_2026(site, db_session, year=2026)
+        result_2026 = simulate_annual_cost_2026(site, db_session, year=2026)
+        result_2027 = simulate_annual_cost_2026(site, db_session, year=2027)
 
-        # 1 000 MWh × 4 EUR/MWh = 4 000 EUR
-        expected = 1_000.0 * CAPACITE_UNITAIRE_EUR_MWH
-        assert result["composantes"]["capacite_eur"] == pytest.approx(expected, rel=1e-3)
-        assert result["hypotheses"]["capacite_unitaire_eur_mwh"] == CAPACITE_UNITAIRE_EUR_MWH
+        # 2026 : 1 000 MWh × 4 EUR/MWh × 2/12 ≈ 666,67 EUR
+        assert result_2026["composantes"]["capacite_eur"] == pytest.approx(
+            1_000.0 * CAPACITE_UNITAIRE_EUR_MWH * 2 / 12, rel=1e-3
+        )
+        assert result_2026["hypotheses"]["capacite_prorata_mois"] == 2
+        # 2027 : plein exercice 12/12 = 4 000 EUR
+        assert result_2027["composantes"]["capacite_eur"] == pytest.approx(
+            1_000.0 * CAPACITE_UNITAIRE_EUR_MWH, rel=1e-3
+        )
+        assert result_2027["hypotheses"]["capacite_prorata_mois"] == 12
+        assert result_2027["hypotheses"]["capacite_unitaire_eur_mwh"] == CAPACITE_UNITAIRE_EUR_MWH
 
     def test_simulate_cbam_non_applicable(self, db_session):
         """CBAM = 0 EUR + trace documentée dans hypotheses."""
@@ -269,7 +278,6 @@ class TestSimulateFacture2026:
 
         # Baseline = 500 MWh × 80 EUR/MWh = 40 000 EUR (énergie HT pure)
         expected_baseline = 500.0 * BASELINE_2024_EUR_MWH
-        assert result["baseline_2024"]["facture_eur"] == pytest.approx(expected_baseline, rel=1e-3)
         assert result["baseline_2024"]["fourniture_ht_eur"] == pytest.approx(expected_baseline, rel=1e-3)
         assert result["baseline_2024"]["prix_moyen_pondere_eur_mwh"] == BASELINE_2024_EUR_MWH
 
@@ -290,6 +298,40 @@ class TestSimulateFacture2026:
 
         assert result["hypotheses"]["prix_forward_y1_eur_mwh"] == FALLBACK_FORWARD_EUR_MWH
         assert "forward_indisponible_fallback_reference_price" in result["hypotheses"]["source_calibration"]
+
+    @pytest.mark.parametrize(
+        "accise_category, expected_code",
+        [
+            ("HOUSEHOLD", "ACCISE_ELEC_T1"),
+            ("SME", "ACCISE_ELEC"),
+            ("HIGH_POWER", "ACCISE_ELEC_HP"),
+        ],
+    )
+    def test_simulate_accise_routing_par_tax_profile(self, db_session, accise_category, expected_code):
+        """TaxProfile.accise_category_elec pilote le code ParameterStore accise (T1/T2/HP)."""
+        from models import DeliveryPoint, TaxProfile
+        from models.enums import AcciseCategoryElec, DeliveryPointEnergyType
+
+        _, site = _make_org_site(db_session, annual_kwh=500_000.0)
+        _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+
+        pdl = DeliveryPoint(
+            site_id=site.id,
+            code="12345678901234",
+            energy_type=DeliveryPointEnergyType.ELEC,
+            grd_code="ENEDIS",
+        )
+        db_session.add(pdl)
+        db_session.flush()
+        profile = TaxProfile(
+            delivery_point_id=pdl.id,
+            accise_category_elec=AcciseCategoryElec[accise_category],
+        )
+        db_session.add(profile)
+        db_session.flush()
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+        assert result["hypotheses"]["accise_code_resolu"] == expected_code
 
     def test_simulate_hypotheses_trace_complete(self, db_session):
         """Payload hypotheses contient toutes les clés du contrat agent B."""
