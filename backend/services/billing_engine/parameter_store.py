@@ -30,13 +30,23 @@ Compatibilité :
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Optional
 
+from utils.parameter_store_base import (
+    ParameterResolution,
+    coerce_date as _coerce_date,
+    load_yaml_section,
+    paris_today,
+    period_contains as _base_period_contains,
+    warn_unknown_once,
+)
+
 logger = logging.getLogger(__name__)
 
-# Codes déjà signalés comme inconnus — évite de spammer les logs à chaque lookup.
+# Codes déjà signalés comme inconnus — module-level set isolé du pilotage
+# (helper `warn_unknown_once` accepte le set en paramètre pour éviter qu'un
+# test pilotage pollue le cache billing — cf. audit Sprint 5b).
 _unknown_codes_seen: set[str] = set()
 
 # Codes connus du référentiel — documentés pour éviter les fautes de frappe.
@@ -101,28 +111,9 @@ KNOWN_CODES = frozenset(
 )
 
 
-@dataclass(frozen=True)
-class ParameterResolution:
-    """Résultat d'une résolution : valeur + trace d'audit."""
-
-    code: str
-    value: float
-    source: str  # "db" | "yaml" | "missing"
-    source_ref: Optional[str]  # référence réglementaire (arrêté, délibération CRE)
-    valid_from: Optional[date]
-    valid_to: Optional[date]
-    scope: dict[str, str]  # scope effectivement résolu
-
-    def to_trace(self) -> dict[str, Any]:
-        return {
-            "code": self.code,
-            "value": self.value,
-            "source": self.source,
-            "source_ref": self.source_ref,
-            "valid_from": self.valid_from.isoformat() if self.valid_from else None,
-            "valid_to": self.valid_to.isoformat() if self.valid_to else None,
-            "scope": self.scope,
-        }
+# `ParameterResolution` et `_coerce_date` proviennent désormais de
+# `utils.parameter_store_base` (Sprint 5b dedup). Rétro-compat totale :
+# importée sous le nom `ParameterResolution` depuis ce module.
 
 
 # ── YAML loader ────────────────────────────────────────────────────────────
@@ -132,6 +123,7 @@ class ParameterResolution:
 
 
 def _load_yaml() -> dict:
+    """Charge le YAML tarifs complet (dict vide si loader indispo)."""
     try:
         from config.tarif_loader import load_tarifs
 
@@ -151,31 +143,14 @@ def reload_yaml_cache() -> None:
         logger.debug("ParameterStore.reload_yaml_cache: %s", exc)
 
 
-# ── Helpers de normalisation ──────────────────────────────────────────────
-def _coerce_date(value: Any) -> Optional[date]:
-    """Normalise une date (str ISO, datetime, date) en date pure."""
-    if value is None:
-        return None
-    if isinstance(value, datetime):
-        return value.date()
-    if isinstance(value, date):
-        return value
-    if isinstance(value, str):
-        try:
-            return date.fromisoformat(value)
-        except ValueError:
-            logger.warning("ParameterStore: date invalide '%s'", value)
-            return None
-    return None
-
-
 def _period_contains(valid_from: Optional[date], valid_to: Optional[date], at: date) -> bool:
-    """True si `at` est dans [valid_from, valid_to] (bornes incluses)."""
-    if valid_from and at < valid_from:
-        return False
-    if valid_to and at > valid_to:
-        return False
-    return True
+    """True si `at` est dans [valid_from, valid_to] (bornes incluses).
+
+    Wrapper sur `utils.parameter_store_base.period_contains` avec l'ordre
+    d'arguments historique billing (valid_from, valid_to, at) pour éviter
+    de toucher les ~50 call sites internes.
+    """
+    return _base_period_contains(at, valid_from, valid_to)
 
 
 def _turpe_candidates(tarifs: dict, seg: str, value_key: str) -> list[tuple[dict, str]]:
@@ -423,12 +398,13 @@ class ParameterStore:
         Retourne toujours une ParameterResolution (jamais None).
         Pour une valeur manquante, source="missing" et value=0.0.
         """
-        if code not in KNOWN_CODES and code not in _unknown_codes_seen:
-            _unknown_codes_seen.add(code)
-            logger.warning("ParameterStore: code inconnu '%s'", code)
+        if code not in KNOWN_CODES:
+            warn_unknown_once(_unknown_codes_seen, logger, code, module_tag="ParameterStore")
 
         if at_date is None:
-            at_date = date.today()
+            # Sprint 5b fix : Europe/Paris forcé (évite J-1 sous Docker UTC
+            # au tournant d'année, cf. fix pilotage Sprint 2 remonté en base).
+            at_date = paris_today()
         if isinstance(at_date, datetime):
             at_date = at_date.date()
         scope = scope or {}

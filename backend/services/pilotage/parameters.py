@@ -6,9 +6,13 @@ constantes MVP du module Pilotage (ROI Flex Ready® + scoring portefeuille).
 
 Pattern : inspiré du `ParameterStore` billing V112 (résolution YAML versionnée
 par `valid_from` + scope), mais scopé sur les paramètres pilotage uniquement.
-Pas de duplication avec le ParameterStore billing : les paramètres pilotage
-vivent dans la section `pilotage_flex_ready:` du YAML `tarifs_reglementaires`,
-et ce module est la seule façade qui les lit.
+Les paramètres pilotage vivent dans la section `pilotage_flex_ready:` du YAML
+`tarifs_reglementaires`.
+
+Depuis Sprint 5b, la dataclass `ParameterResolution` + helpers (`coerce_date`,
+`warn_unknown_once`, `paris_today`, `load_yaml_section`) sont partagés avec
+billing via `utils.parameter_store_base`. La logique de résolution (scope
+scoring archetype, liste plate YAML) reste spécifique pilotage.
 
 Principes :
 - Une seule source de vérité : `config/tarifs_reglementaires.yaml`
@@ -22,15 +26,16 @@ Principes :
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from datetime import date, datetime
-from zoneinfo import ZoneInfo
+from typing import Optional, Union
 
-# Fuseau reference France : on veut la date "aujourd'hui" cote Paris, pas
-# la date UTC machine (qui peut etre J-1 au tournant d'annee dans les conteneurs
-# Docker UTC et rater un `valid_from: 2026-01-01`).
-_TZ_PARIS = ZoneInfo("Europe/Paris")
-from typing import Any, Optional, Union
+from utils.parameter_store_base import (
+    ParameterResolution,
+    coerce_date,
+    load_yaml_section,
+    paris_today,
+    warn_unknown_once,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,64 +54,21 @@ KNOWN_PILOTAGE_CODES = frozenset(
     }
 )
 
-# Cache des codes inconnus déjà loggés — évite le spam.
+# Cache des codes inconnus déjà loggés (module-level, isolé de billing) — évite spam.
 _unknown_codes_seen: set[str] = set()
 
-
-@dataclass(frozen=True)
-class PilotageParameterResolution:
-    """Résultat d'une résolution pilotage : valeur + trace d'audit."""
-
-    code: str
-    value: Union[float, int]
-    source: str  # "yaml" | "fallback" | "missing"
-    source_ref: Optional[str]  # citation réglementaire / baromètre
-    valid_from: Optional[date]
-    unite: Optional[str]
-    scope: dict[str, str]
-
-    def to_trace(self) -> dict[str, Any]:
-        return {
-            "code": self.code,
-            "value": self.value,
-            "source": self.source,
-            "source_ref": self.source_ref,
-            "valid_from": self.valid_from.isoformat() if self.valid_from else None,
-            "unite": self.unite,
-            "scope": self.scope,
-        }
-
-
-def _coerce_date(value: Any) -> Optional[date]:
-    if value is None:
-        return None
-    if isinstance(value, datetime):
-        return value.date()
-    if isinstance(value, date):
-        return value
-    if isinstance(value, str):
-        try:
-            return date.fromisoformat(value)
-        except ValueError:
-            logger.warning("pilotage.parameters: date invalide '%s'", value)
-            return None
-    return None
+# Alias rétrocompat : code externe peut avoir importé `PilotageParameterResolution`.
+# La dataclass est maintenant `ParameterResolution` dans `utils.parameter_store_base`.
+PilotageParameterResolution = ParameterResolution
 
 
 def _load_pilotage_entries() -> list[dict]:
     """Charge la section `pilotage_flex_ready:` du YAML. [] si indisponible."""
-    try:
-        from config.tarif_loader import load_tarifs
-
-        tarifs = load_tarifs() or {}
-        entries = tarifs.get("pilotage_flex_ready") or []
-        if not isinstance(entries, list):
-            logger.warning("pilotage.parameters: section 'pilotage_flex_ready' malformée")
-            return []
-        return entries
-    except Exception as exc:  # pragma: no cover (défensif prod)
-        logger.warning("pilotage.parameters: YAML indisponible (%s)", exc)
+    entries = load_yaml_section("pilotage_flex_ready") or []
+    if not isinstance(entries, list):
+        logger.warning("pilotage.parameters: section 'pilotage_flex_ready' malformée")
         return []
+    return entries
 
 
 def _match_scope(entry_scope: dict, archetype: Optional[str]) -> Optional[int]:
@@ -129,7 +91,7 @@ def _resolve(
     code: str,
     at_date: date,
     archetype: Optional[str],
-) -> Optional[PilotageParameterResolution]:
+) -> Optional[ParameterResolution]:
     """Parcourt les entrées YAML et sélectionne la plus précise/récente."""
     entries = _load_pilotage_entries()
     if not entries:
@@ -146,7 +108,7 @@ def _resolve(
         scope_score = _match_scope(scope_dict, archetype)
         if scope_score is None:
             continue
-        vfrom = _coerce_date(entry.get("valid_from"))
+        vfrom = coerce_date(entry.get("valid_from"))
         if vfrom and vfrom > at_date:
             continue
         # Date default : "2000-01-01" si absente (applicable tout le temps)
@@ -164,12 +126,12 @@ def _resolve(
     if valeur is None:
         return None
 
-    return PilotageParameterResolution(
+    return ParameterResolution(
         code=code,
         value=valeur,
         source="yaml",
         source_ref=best_entry.get("source"),
-        valid_from=_coerce_date(best_entry.get("valid_from")),
+        valid_from=coerce_date(best_entry.get("valid_from")),
         unite=best_entry.get("unite"),
         scope=dict(best_entry.get("scope") or {}),
     )
@@ -180,7 +142,7 @@ def get_pilotage_param(
     at_date: Optional[date] = None,
     archetype: Optional[str] = None,
     default: Optional[Union[float, int]] = None,
-) -> PilotageParameterResolution:
+) -> ParameterResolution:
     """
     Résout un paramètre pilotage (YAML → fallback → missing).
 
@@ -189,7 +151,7 @@ def get_pilotage_param(
     code : str
         Code canonique (ex. "HEURES_FENETRES_FAVORABLES_AN").
     at_date : date | None
-        Date d'effet à considérer. Default = aujourd'hui.
+        Date d'effet à considérer. Default = aujourd'hui Europe/Paris.
     archetype : str | None
         Archetype canonique (ex. "COMMERCE_ALIMENTAIRE"). Si None, seul le
         scope wildcard "*" est considéré.
@@ -199,15 +161,14 @@ def get_pilotage_param(
 
     Returns
     -------
-    PilotageParameterResolution (jamais None) : value + trace.
+    ParameterResolution (jamais None) : value + trace.
     Si code inconnu et pas de default → value=0, source="missing" (+ warning).
     """
-    if code not in KNOWN_PILOTAGE_CODES and code not in _unknown_codes_seen:
-        _unknown_codes_seen.add(code)
-        logger.warning("pilotage.parameters: code inconnu '%s'", code)
+    if code not in KNOWN_PILOTAGE_CODES:
+        warn_unknown_once(_unknown_codes_seen, logger, code, module_tag="pilotage.parameters")
 
     if at_date is None:
-        at_date = datetime.now(_TZ_PARIS).date()
+        at_date = paris_today()
     if isinstance(at_date, datetime):
         at_date = at_date.date()
 
@@ -229,13 +190,11 @@ def get_pilotage_param(
             code,
             default,
         )
-        return PilotageParameterResolution(
+        return ParameterResolution(
             code=code,
             value=default,
             source="fallback",
             source_ref="hardcoded fallback (YAML indisponible ou code absent)",
-            valid_from=None,
-            unite=None,
             scope={"archetype": archetype or "*"},
         )
 
@@ -245,13 +204,10 @@ def get_pilotage_param(
         archetype,
         at_date,
     )
-    return PilotageParameterResolution(
+    return ParameterResolution(
         code=code,
         value=0,
         source="missing",
-        source_ref=None,
-        valid_from=None,
-        unite=None,
         scope={"archetype": archetype or "*"},
     )
 
