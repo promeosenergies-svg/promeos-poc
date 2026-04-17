@@ -25,6 +25,7 @@ from sqlalchemy.pool import StaticPool
 
 from database import get_db
 from main import app
+from middleware.auth import AuthContext, get_optional_auth
 from models import Base
 from services.pilotage.portefeuille_scoring import compute_portefeuille_scoring
 
@@ -225,3 +226,57 @@ def test_rangs_sequentiels():
         f"archetype None -> fallback score 50, obtenu {result_unknown['top_10'][0]['score']}"
     )
     assert result_unknown["top_10"][0]["rang"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Test 7 : auth avec org_id mais aucun site -> payload vide (pas DEMO)
+# ---------------------------------------------------------------------------
+def test_authenticated_user_without_sites_returns_empty(monkeypatch):
+    """
+    Fix P1 #2 audit PR #222 : un utilisateur authentifie avec org_id mais
+    site_ids vide ne doit PAS voir les donnees DEMO_SITES. Payload vide.
+
+    On s'assure aussi que PROMEOS_DEMO_MODE n'est pas "true" pour ce test
+    (sinon le fallback DEMO est autorise explicitement).
+    """
+    monkeypatch.delenv("PROMEOS_DEMO_MODE", raising=False)
+
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    SessionLocal = sessionmaker(bind=engine)
+
+    def _override_db():
+        db = SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    def _fake_auth():
+        # Auth authentique avec org_id set mais site_ids vide (pilote pre-seed).
+        # user/user_org_role/role ne sont pas utilises par l'endpoint.
+        return AuthContext(
+            user=None,
+            user_org_role=None,
+            org_id=42,
+            role=None,
+            site_ids=[],
+        )
+
+    app.dependency_overrides[get_db] = _override_db
+    app.dependency_overrides[get_optional_auth] = _fake_auth
+    try:
+        c = TestClient(app, raise_server_exceptions=False)
+        r = c.get("/api/pilotage/portefeuille-scoring")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["nb_sites_total"] == 0
+        assert data["gain_annuel_portefeuille_eur"] == 0
+        assert data["top_10"] == []
+        assert data["heatmap_archetype"] == {}
+    finally:
+        app.dependency_overrides.clear()

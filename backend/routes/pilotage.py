@@ -13,6 +13,7 @@ Reference : Barometre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026).
 
 from __future__ import annotations
 
+import os
 from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -21,6 +22,13 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import AuthContext, get_optional_auth
+
+
+def _is_demo_mode() -> bool:
+    """Vrai si `PROMEOS_DEMO_MODE=true` — gate explicite pour fallback DEMO."""
+    return os.environ.get("PROMEOS_DEMO_MODE", "false").lower() == "true"
+
+
 from services.pilotage.flex_ready import (
     FlexReadySignalsResponse,
     build_flex_ready_signals,
@@ -218,19 +226,27 @@ def _org_sites_as_portfolio(db: Session, auth: AuthContext) -> list[dict[str, An
     """
     Liste les sites actifs scopes par AuthContext.site_ids pour le scoring.
 
+    Defense-in-depth : en plus du filtre `Site.id IN auth.site_ids` (deja
+    scope par l'IAM dans `get_scoped_site_ids`), on recroise la hierarchie
+    Portefeuille -> EntiteJuridique pour garantir `organisation_id == auth.org_id`.
+    Si l'auth layer leakait un site_id cross-org, on ne servirait rien.
+
     Note : le modele Site ne porte pas encore `archetype_code` ni
     `puissance_pilotable_kw`. On retombe sur des valeurs sentinelles
     (archetype None -> fallback score 50, puissance_pilotable 0 -> gain 0).
-    Ce wiring servira quand ces champs seront ajoutes au modele (backlog).
+    Ce wiring servira quand ces champs seront ajoutes au modele (backlog Option C).
     """
-    from models import Site
+    from models import EntiteJuridique, Portefeuille, Site
 
     site_ids = getattr(auth, "site_ids", None) or []
     if not site_ids:
         return []
     rows = (
         db.query(Site)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
         .filter(Site.id.in_(site_ids))
+        .filter(EntiteJuridique.organisation_id == auth.org_id)
         .filter(Site.actif == True)  # noqa: E712
         .all()
     )
@@ -258,20 +274,27 @@ def portefeuille_scoring(
         - top_10                        : Top-10 trie par score decroissant
         - heatmap_archetype             : agregat par archetype (nb, gain, score moyen)
 
-    En DEMO_MODE (auth absent ou sans org_id), utilise les 3 sites de DEMO_SITES.
     En prod (auth.org_id present), iterer sur les sites actifs de l'organisation
     courante -- avec fallback sentinel tant que les champs archetype /
     puissance_pilotable_kw ne sont pas encore portes par le modele Site.
+    Si l'org ne porte aucun site (pilote pre-seed), le payload est vide --
+    on ne pollue pas l'ecran d'un utilisateur authentifie avec des donnees DEMO.
+
+    En DEMO_MODE uniquement (PROMEOS_DEMO_MODE=true ou auth absent), retombe sur
+    les 3 sites de DEMO_SITES pour garantir un payload non-vide exploitable
+    par le front de demonstration.
 
     Source : Barometre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026).
     """
     if auth is not None and getattr(auth, "org_id", None):
         sites = _org_sites_as_portfolio(db, auth)
-        # Si l'org n'a aucun site utile (cas pilote pre-seed), on retombe
-        # sur la demo pour garantir un payload non-vide exploitable par le front.
-        if not sites:
+        # Org authentifiee sans site utile : retourner payload vide plutot
+        # que polluer l'ecran avec des donnees DEMO. Fallback DEMO reserve
+        # au mode demonstration explicite.
+        if not sites and _is_demo_mode():
             sites = _demo_sites_as_portfolio()
     else:
+        # Pas d'auth : mode DEMO (front public ou dev local)
         sites = _demo_sites_as_portfolio()
 
     result = compute_portefeuille_scoring(sites)
@@ -304,6 +327,7 @@ def flex_ready_signals(
 @router.get("/roi-flex-ready/{site_id}", response_model=RoiFlexReadyResponse)
 def roi_flex_ready(
     site_id: str,
+    db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ) -> RoiFlexReadyResponse:
     """
@@ -325,7 +349,13 @@ def roi_flex_ready(
         - Barometre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026)
         - Fiche CEE BAT-TH-116 (systeme GTB / BACS)
 
-    Auth optionnelle (DEMO_MODE tolere). 404 si site absent du catalogue de demo.
+    Scope MVP : `site_id` doit correspondre a une cle du catalogue DEMO_SITES
+    (`retail-001`, `bureau-001`, `entrepot-001`). Le wiring sur Site.id reel
+    (archetype_code + puissance_pilotable_kw + surface_m2 portes par le modele
+    Site) fera l'objet d'une PR follow-up (Option C). 404 hors DEMO_SITES.
+
+    Auth optionnelle (DEMO_MODE tolere). La session `db` est en place pour le
+    futur wiring Site.id mais n'est pas utilisee en MVP.
     """
     ctx = _build_demo_site_ctx(site_id)
     return compute_roi_flex_ready(
