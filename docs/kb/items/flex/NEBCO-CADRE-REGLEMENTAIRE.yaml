@@ -1,0 +1,79 @@
+---
+id: "NEBCO-CADRE-REGLEMENTAIRE"
+type: "knowledge"
+domain: "flex"
+title: "NEBCO — Cadre réglementaire et types de modulation"
+summary: "NEBCO (Code de l'énergie, articles L.271-1/L.271-2/L.321-15-1/R.271-1, CRE 2025-199) remplace NEBEF depuis septembre 2025. Trois types de modulation : effacement, report et anticipation."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - industrie
+  asset:
+    - multi
+  reg:
+    - multi
+  granularity:
+    - 30min
+
+scope: {}
+
+content_md: |
+  ## NEBCO — Notification d'Échange de Blocs de COnsommation
+
+  ### Cadre légal
+  - Code de l'énergie : articles L.271-1, L.271-2, L.321-15-1, R.271-1
+  - CRE délibération 2025-199 du 23 juillet 2025
+  - Remplace le NEBEF (Notification d'Échange de Blocs d'Effacement) depuis septembre 2025
+
+  ### Trois types de modulation
+  1. **Effacement (réduction)** — Modulation à la baisse classique
+  2. **Report** — Hausse APRÈS l'effacement
+     - Sites télérelevés : dans les 7 jours
+     - Sites profilés : dans les 2 jours
+  3. **Anticipation** — Hausse AVANT l'effacement
+
+  ### Innovation majeure vs NEBEF
+  - Valorisation explicite des reports et anticipations
+  - Reconnaissance que les sites compensent après (ou avant) l'arrêt d'équipements
+  - Meilleure représentation de la réalité opérationnelle de la flexibilité
+
+  ### Marché
+  - Valorisation sur le marché spot (EPEX SPOT)
+  - Gate closure : J-1 12h (day-ahead) ou infrajournalier
+  - Certification des volumes par RTE (mesure ex-post)
+
+logic:
+  when:
+    all:
+      - field: "flex_interest"
+        op: "="
+        value: true
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Évaluer potentiel de modulation (effacement, report, anticipation)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Identifier agrégateur certifié NEBCO"
+        priority: 2
+
+sources:
+  - doc_id: "CODE-ENERGIE-L271"
+    label: "Code de l'énergie — Articles L.271-1 et L.271-2"
+    section: "Modulation de consommation"
+    anchor: "#l271-1"
+    excerpt_short: "Valorisation de trois types de modulations de consommation"
+
+  - doc_id: "CRE-2025-199"
+    label: "Délibération CRE 2025-199 du 23 juillet 2025"
+    section: "Règles NEBCO"
+    anchor: "#regles-nebco"
+    excerpt_short: "NEBCO défini dans le Code de l'énergie, approuvé par CRE"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 2

@@ -6,7 +6,7 @@
   "status": "canonical",
   "description": "Base documentaire canonique des usages énergétiques B2B : taxonomie, archétypes sectoriels, règles d'anomalie, playbooks de recommandations",
   "source_path": "source/USAGES_ENERGETIQUES_B2B_v1.html",
-  "sha256": "e2a14f5de70c14da55f4a0f0af42d2eaf1be61166b4ce89ce65ffb6a3178ccbf",
+  "sha256": "e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22",
   "sections": [
     {
       "id": "taxonomie-usages",
