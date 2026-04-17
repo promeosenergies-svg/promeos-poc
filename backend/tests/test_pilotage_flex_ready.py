@@ -146,3 +146,68 @@ def test_flex_ready_timestamp_iso_avec_tz(client):
     assert offset is not None
     hours = offset.total_seconds() / 3600
     assert hours in (1, 2), f"Offset inattendu pour Europe/Paris : {hours}h"
+
+
+# ---------------------------------------------------------------------------
+# Test 5 : fallback prix stale (> 36h) -> tarif contractuel
+# ---------------------------------------------------------------------------
+def test_flex_ready_spot_stale_fallback(monkeypatch):
+    """Un prix spot > 36h doit basculer sur le tarif contractuel (prix_age_hours=None)."""
+    from datetime import datetime, timedelta, timezone
+    from services.pilotage import flex_ready
+
+    def fake_stale_spot(db, zone=None, as_of=None):
+        return (100.0, datetime.now(timezone.utc) - timedelta(hours=48))
+
+    monkeypatch.setattr(
+        "services.pilotage.connectors.entsoe_day_ahead.get_latest_day_ahead_with_timestamp",
+        fake_stale_spot,
+    )
+
+    result = flex_ready.build_flex_ready_signals(
+        site_id="retail-001",
+        demo_site={
+            "puissance_max_instantanee_kw": 180.0,
+            "prix_eur_kwh": 0.185,
+            "puissance_souscrite_kva": 250,
+            "energy_vector": "ELEC",
+        },
+        db=object(),  # dummy, fake_stale_spot ignore le db
+    )
+    assert result["prix_source"] == "fournisseur_tarif_base"
+    assert result["prix_age_hours"] is None
+    assert result["prix_eur_kwh"] == 0.185
+
+
+# ---------------------------------------------------------------------------
+# Test 6 : module entsoe_day_ahead indisponible -> fallback gracieux + log
+# ---------------------------------------------------------------------------
+def test_flex_ready_entsoe_module_indisponible(monkeypatch, caplog):
+    """Si le module ENTSO-E crash a l'import, fallback tarif + warning log."""
+    import logging
+    from services.pilotage import flex_ready
+
+    def raise_import_error(db, zone=None, as_of=None):
+        raise ImportError("ENTSO-E connector manquant")
+
+    monkeypatch.setattr(
+        "services.pilotage.connectors.entsoe_day_ahead.get_latest_day_ahead_with_timestamp",
+        raise_import_error,
+    )
+
+    with caplog.at_level(logging.WARNING, logger="services.pilotage.flex_ready"):
+        result = flex_ready.build_flex_ready_signals(
+            site_id="retail-001",
+            demo_site={
+                "puissance_max_instantanee_kw": 180.0,
+                "prix_eur_kwh": 0.185,
+                "puissance_souscrite_kva": 250,
+                "energy_vector": "ELEC",
+            },
+            db=object(),
+        )
+
+    assert result["prix_source"] == "fournisseur_tarif_base"
+    assert result["prix_age_hours"] is None
+    # Verifie que l'erreur a ete loggee (pas avalee silencieusement)
+    assert any("ENTSO-E" in rec.message or "spot" in rec.message for rec in caplog.records)

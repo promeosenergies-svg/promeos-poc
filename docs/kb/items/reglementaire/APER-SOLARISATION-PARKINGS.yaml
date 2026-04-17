@@ -1,0 +1,100 @@
+---
+id: "APER-SOLARISATION-PARKINGS"
+type: "rule"
+domain: "reglementaire"
+title: "Loi APER — Obligation solarisation parkings >= 1 500 m2"
+summary: "Loi n°2023-175 du 10 mars 2023 (Accélération Production Énergies Renouvelables). Obligation d'équiper les parkings extérieurs ≥ 1 500 m2 de protections/ombrières avec PV ou végétalisation. Échéance 01/07/2026 (>10 000 m2) puis 01/07/2028 (1 500-10 000 m2). Sanctions 40 000 €/an + 200 €/place."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - collectivite
+    - copro
+  asset:
+    - multi
+  reg:
+    - loi_aper
+  granularity:
+    - event
+
+scope:
+  parking_surface_m2_min: 1500
+
+content_md: |
+  ## Loi APER — Solarisation parkings
+
+  ### Cadre réglementaire
+  - Loi n°2023-175 du 10 mars 2023 (APER), article 40
+  - Décret d'application n°2023-1250 du 26 décembre 2023
+  - Applicable aux parkings extérieurs ouverts au public
+
+  ### Seuils et échéances
+
+  | Surface parking | Échéance obligation |
+  |---|---|
+  | >= 10 000 m2 | **1er juillet 2026** |
+  | 1 500 - 10 000 m2 | 1er juillet 2028 |
+  | < 1 500 m2 | Non concerné |
+
+  ### Nature de l'obligation
+  Ombrières / protections couvrant au moins 50% de la surface, avec :
+  - **Production PV** sur au moins 50% de la couverture
+  - OU végétalisation (option alternative)
+
+  ### Exemptions
+  - Contraintes techniques, de sécurité, architecturales ou patrimoniales
+  - Parkings existants dont la couverture exposerait à des risques structurels
+  - Non-rentabilité économique démontrée (TRI > 10 ans sur étude technique)
+
+  ### Sanctions en cas de non-conformité
+  - **Astreinte jusqu'à 40 000 €/an** par parking non conforme (personne morale)
+  - **Amende 200 €/place de stationnement/an** pour non-exécution
+  - Contrôles par DREAL/DEAL
+
+  ### Articulation avec AUTRES obligations
+  - Loi Climat et Résilience : bâtiments neufs ≥500 m2 (toitures + parkings PV)
+  - Bâtiments existants >500 m2 : échéance janvier 2028 (loi APER art.42)
+
+logic:
+  when:
+    all:
+      - field: "parking_surface_m2"
+        op: ">="
+        value: 1500
+  then:
+    outputs:
+      - type: "obligation"
+        label: "Installer ombrières PV (ou végétalisation) sur >=50% du parking"
+        deadline: "2028-07-01"
+        severity: "high"
+        details: "Loi APER n°2023-175 art.40"
+
+      - type: "next_step"
+        label: "Vérifier si parking >= 10 000 m2 (deadline avancée au 01/07/2026)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Étudier éligibilité exemption (contraintes techniques, non-rentabilité TRI>10 ans)"
+        priority: 2
+
+      - type: "next_step"
+        label: "Budgéter risque sanction : 40 000 €/an + 200 €/place"
+        priority: 3
+
+sources:
+  - doc_id: "LOI-2023-175-APER"
+    label: "Loi n°2023-175 du 10 mars 2023 (APER)"
+    section: "Article 40 — Solarisation parkings"
+    anchor: "#art-40"
+    excerpt_short: "Obligation d'équiper les parkings extérieurs de plus de 1 500 m2 d'ombrières intégrant un dispositif de production d'énergie renouvelable ou de végétalisation"
+
+  - doc_id: "DECRET-2023-1250"
+    label: "Décret d'application n°2023-1250 du 26 décembre 2023"
+    section: "Modalités d'application"
+    anchor: "#decret-2023-1250"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1

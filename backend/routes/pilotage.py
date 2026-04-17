@@ -16,7 +16,10 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import AuthContext, get_optional_auth
-from services.pilotage.flex_ready import build_flex_ready_signals
+from services.pilotage.flex_ready import (
+    FlexReadySignalsResponse,
+    build_flex_ready_signals,
+)
 
 
 router = APIRouter(prefix="/api/pilotage", tags=["Pilotage"])
@@ -68,7 +71,7 @@ def _build_demo_site_ctx(site_id: str) -> dict[str, Any]:
     return ctx
 
 
-@router.get("/flex-ready-signals/{site_id}")
+@router.get("/flex-ready-signals/{site_id}", response_model=FlexReadySignalsResponse)
 def flex_ready_signals(
     site_id: str,
     db: Session = Depends(get_db),

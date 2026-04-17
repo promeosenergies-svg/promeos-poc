@@ -23,10 +23,11 @@ Source calibrage : Barometre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026).
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any, Optional
 from zoneinfo import ZoneInfo
 
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from config.emission_factors import (
@@ -34,7 +35,37 @@ from config.emission_factors import (
     get_emission_source,
 )
 
+
+class FlexReadySignalsResponse(BaseModel):
+    """Reponse conforme NF EN IEC 62746-4 (marque Flex Ready (R) GIMELEC 2025)."""
+
+    site_id: str = Field(..., description="Identifiant canonique du site")
+    timestamp: str = Field(..., description="ISO 8601 Europe/Paris (horloge bidirectionnelle)")
+    clock_resolution_min: int = Field(..., description="Resolution minimale (15 min norme)")
+    puissance_max_instantanee_kw: float = Field(..., description="P max instantanee kW")
+    prix_eur_kwh: float = Field(..., description="Prix (spot day-ahead ou tarif contractuel)")
+    prix_source: str = Field(..., description="'entsoe_day_ahead' | 'fournisseur_tarif_base'")
+    prix_age_hours: Optional[float] = Field(None, description="Age du prix spot (heures)")
+    puissance_souscrite_kva: int = Field(..., description="P souscrite kVA (contrat GRD)")
+    empreinte_carbone_kg_co2e_kwh: float = Field(..., description="Facteur emission kgCO2e/kWh")
+    empreinte_source: str = Field(..., description="ID machine source ADEME")
+    empreinte_source_label: str = Field(..., description="Label humain source")
+    norme: str = Field(..., description="Norme de reference")
+    conformite_flex_ready: bool = Field(..., description="True si 6 champs standard presents")
+
+
 logger = logging.getLogger(__name__)
+
+# Table de conformite NF EN IEC 62746-4 : champ payload <-> section norme
+# Permet un audit formel de la conformite et evite le flag auto-proclame.
+_FLEX_READY_FIELD_MAP: dict[str, str] = {
+    "timestamp": "NF EN IEC 62746-4 §5.2.1 (horloge bidirectionnelle)",
+    "clock_resolution_min": "NF EN IEC 62746-4 §5.2.1 (pas minimal 15 min)",
+    "puissance_max_instantanee_kw": "NF EN IEC 62746-4 §5.2.2 (P max instantanee)",
+    "prix_eur_kwh": "NF EN IEC 62746-4 §5.2.3 (signal prix)",
+    "puissance_souscrite_kva": "NF EN IEC 62746-4 §5.2.4 (capacite contractuelle)",
+    "empreinte_carbone_kg_co2e_kwh": "NF EN IEC 62746-4 §5.2.5 (empreinte carbone)",
+}
 
 # Fuseau reference France pour timestamps Flex Ready
 _TZ_PARIS = ZoneInfo("Europe/Paris")
@@ -141,7 +172,7 @@ def build_flex_ready_signals(
     # Extrait l'ID machine (ex. "ADEME V23.6 2024" -> "ademe_v23.6_2024")
     empreinte_source = empreinte_source_label.lower().replace(" ", "_") if empreinte_source_label else "inconnu"
 
-    return {
+    payload = {
         "site_id": site_id,
         "timestamp": ts.isoformat(),
         "clock_resolution_min": _FLEX_READY_CLOCK_RESOLUTION_MIN,
@@ -153,6 +184,8 @@ def build_flex_ready_signals(
         "empreinte_carbone_kg_co2e_kwh": round(float(empreinte_kg_co2e_kwh), 5),
         "empreinte_source": empreinte_source,
         "empreinte_source_label": empreinte_source_label,
-        "conformite_flex_ready": True,
         "norme": _NORME,
     }
+    # Conformite calculee : tous les 6 champs standard presents et non-None
+    payload["conformite_flex_ready"] = all(payload.get(field) is not None for field in _FLEX_READY_FIELD_MAP)
+    return payload

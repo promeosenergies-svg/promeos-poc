@@ -1,0 +1,119 @@
+---
+id: "CSRD-VOLET-ENERGIE"
+type: "rule"
+domain: "reglementaire"
+title: "CSRD — Volet énergie/climat (ESRS E1) obligatoire 2025-2026"
+summary: "Corporate Sustainability Reporting Directive (UE 2022/2464) transposée en France par ordonnance 2023-1142. Obligation de reporting extra-financier incluant ESRS E1 (climate change), avec indicateurs énergie: conso totale, mix énergétique, intensité énergétique, émissions Scope 1+2+3. Calendrier progressif par taille."
+
+tags:
+  energy:
+    - multi
+  segment:
+    - tertiaire_multisite
+    - industrie
+  asset:
+    - multi
+  reg:
+    - multi
+  granularity:
+    - mensuel
+
+scope: {}
+
+content_md: |
+  ## CSRD — Reporting durabilité obligatoire
+
+  ### Cadre réglementaire
+  - Directive (UE) 2022/2464 du 14 décembre 2022 (CSRD)
+  - Ordonnance n°2023-1142 du 6 décembre 2023 (transposition française)
+  - Normes ESRS (European Sustainability Reporting Standards), notamment **ESRS E1** pour climat/énergie
+
+  ### Calendrier progressif
+
+  | Rapport | Exercice | Périmètre entreprises |
+  |---|---|---|
+  | 2025 | Exercice 2024 | Grandes entreprises cotées (>500 sal) et entités d'intérêt public |
+  | 2026 | Exercice 2025 | Grandes entreprises (>250 sal, CA>50M€, bilan >25M€) |
+  | 2027 | Exercice 2026 | PME cotées, petites banques, captives d'assurance |
+  | 2029 | Exercice 2028 | Filiales UE de groupes non-UE (conditions de taille) |
+
+  ### Indicateurs ESRS E1 — Énergie/Climat
+
+  1. **Consommation énergétique totale** (MWh)
+     - Ventilation par source (élec, gaz, fioul, renouvelables autoconsommées)
+     - Détail par activité/site
+
+  2. **Intensité énergétique** (MWh/M€ CA)
+
+  3. **Émissions GES** — 3 scopes
+     - Scope 1 : combustion directe (gaz, fioul, véhicules)
+     - Scope 2 : électricité achetée (market-based + location-based)
+     - Scope 3 : chaîne de valeur (15 catégories GHG Protocol)
+
+  4. **Plan de transition** aligné trajectoire +1,5°C
+     - Objectifs SBTi (Science Based Targets)
+     - CAPEX verts / OPEX transition
+
+  5. **Risques physiques et transition** (analyse TCFD intégrée)
+
+  ### Articulation avec obligations énergie existantes
+  - **Décret Tertiaire** : fournit les consommations par site → alimente CSRD scope 2
+  - **Audit énergétique L233-1** : fournit le diagnostic → alimente plan de transition
+  - **CEE valorisés** : alimentent actions réalisées
+  - **BACS** : donne pilotage réel → intensité énergétique trackable
+
+  ### Sanctions non-conformité
+  - Amendes jusqu'à 5% du CA UE (modèle RGPD)
+  - Responsabilité civile des dirigeants
+  - Certification externe obligatoire (auditeur CSRD)
+
+  ### Attention complexité
+  Un rapport CSRD complet représente typiquement 80-150 pages, avec ~1 200 datapoints à remplir. Nécessite:
+  - Système d'information énergétique (EMIS) cohérent
+  - Gouvernance ESG dédiée
+  - Audit externe pré-certifié
+
+logic:
+  when:
+    any:
+      - field: "csrd_applicable"
+        op: "="
+        value: true
+      - field: "segment"
+        op: "in"
+        value: ["tertiaire_multisite", "industrie"]
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Identifier l'année d'application CSRD selon taille entreprise"
+        priority: 1
+
+      - type: "next_step"
+        label: "Cartographier les sources de données ESRS E1 (conso, émissions Scope 1-2-3)"
+        priority: 2
+
+      - type: "next_step"
+        label: "Aligner les déclarations OPERAT + audits L233-1 sur la logique CSRD E1"
+        priority: 3
+
+sources:
+  - doc_id: "CSRD-2022-2464"
+    label: "Directive (UE) 2022/2464 du 14 décembre 2022 (CSRD)"
+    section: "Articles 19a et 29a"
+    anchor: "#csrd-art"
+    excerpt_short: "Reporting extra-financier obligatoire selon normes ESRS, calendrier progressif par taille d'entreprise"
+
+  - doc_id: "ORDONNANCE-2023-1142"
+    label: "Ordonnance n°2023-1142 du 6 décembre 2023 (transposition française CSRD)"
+    section: "Code de commerce Art. L233-28-4"
+    anchor: "#ord-2023-1142"
+
+  - doc_id: "EFRAG-ESRS-E1"
+    label: "EFRAG ESRS E1 — Climate change"
+    section: "Disclosure requirements"
+    anchor: "#esrs-e1"
+    excerpt_short: "Norme européenne de reporting sur le changement climatique, incluant consommation, émissions et plan de transition"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1
