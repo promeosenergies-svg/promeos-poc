@@ -3,16 +3,18 @@
  *
  * Pattern PROMEOS : readFileSync + regex, pas de DOM rendering.
  * Vérifie l'invariance des composants Sol (tokens CSS, voix éditoriale,
- * absence de hex hardcodés sauf #FFFFFF).
+ * absence de hex hardcodés, absence de fetch / business state).
+ *
+ * Couvre les 21 composants de la Phase 1 (8 Sprint 2 + 13 Phase 1).
  */
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const SOL_DIR = join(process.cwd(), 'src', 'ui', 'sol');
 const readSol = (f) => readFileSync(join(SOL_DIR, f), 'utf8');
 
-const SOL_FILES = [
+const SOL_FILES_SPRINT2 = [
   'SolPageHeader.jsx',
   'SolKpiCard.jsx',
   'SolHero.jsx',
@@ -23,32 +25,93 @@ const SOL_FILES = [
   'SolTimerail.jsx',
 ];
 
-// Shades derivatives tokens autorisés (SVG gradient stopColor qui n'accepte pas
-// les CSS vars de manière fiable, + hover shades dérivés de calme-fg).
+const SOL_FILES_PHASE1 = [
+  'SolHeadline.jsx',
+  'SolSubline.jsx',
+  'SolStatusPill.jsx',
+  'SolButton.jsx',
+  'SolKpiRow.jsx',
+  'SolWeekGrid.jsx',
+  'SolLayerToggle.jsx',
+  'SolPendingBanner.jsx',
+  'SolInspectDoc.jsx',
+  'SolCartouche.jsx',
+  'SolDrawer.jsx',
+  'SolExpertGrid.jsx',
+  'SolJournal.jsx',
+  'SolRail.jsx',
+  'SolPanel.jsx',
+  'SolAppShell.jsx',
+];
+
+const ALL_SOL_FILES = [...SOL_FILES_SPRINT2, ...SOL_FILES_PHASE1];
+
+// Hex autorisés : blanc + slate-900 (= --sol-ink-900) + shade hover calme.
+// V2 raw (source lockée par user 17/04/2026, UX-1 journal en terrasse) :
+// palette warm slate + accents chaleureux.
 const ALLOWED_HEX = new Set([
-  '#FFFFFF',  // white
-  '#0F172A',  // slate-900 = var(--sol-ink-900) ; SVG gradients natifs
-  '#245047',  // calme-fg hover shade (approx. -10% luminosité)
+  '#FFFFFF',  // blanc
+  '#0F172A',  // slate-900 = var(--sol-ink-900), SVG gradients natifs
+  '#245047',  // calme-fg hover shade (-10% luminosité de #2F6B5E)
 ]);
 
+describe('Sol components — fichiers attendus', () => {
+  it('tous les 21 composants sont présents', () => {
+    const files = readdirSync(SOL_DIR).filter((f) => f.endsWith('.jsx'));
+    for (const expected of ALL_SOL_FILES) {
+      expect(files).toContain(expected);
+    }
+  });
+
+  it('tokens.css est présent', () => {
+    const files = readdirSync(SOL_DIR);
+    expect(files).toContain('tokens.css');
+  });
+});
+
 describe('Sol components — token discipline', () => {
-  SOL_FILES.forEach((f) => {
-    it(`${f} uses only CSS vars sol-* or whitelisted hex`, () => {
+  ALL_SOL_FILES.forEach((f) => {
+    it(`${f} : hex hardcodés interdits (sauf whitelist)`, () => {
       const src = readSol(f);
       const hexes = src.match(/#[0-9A-Fa-f]{6}/g) || [];
       const forbidden = hexes.filter((h) => !ALLOWED_HEX.has(h.toUpperCase()));
       expect(forbidden).toEqual([]);
     });
 
-    it(`${f} uses font vars (Fraunces/DM Sans/JetBrains Mono) via --sol-font-*`, () => {
+    it(`${f} : fontFamily utilise var(--sol-font-*) ou stack générique`, () => {
       const src = readSol(f);
       if (src.includes('fontFamily')) {
-        // Accepte var CSS ou stack générique
-        expect(src).toMatch(/var\(--sol-font|font-family:|'serif'|'monospace'|'sans-serif'/);
+        expect(src).toMatch(/var\(--sol-font|'serif'|'monospace'|'sans-serif'/);
       }
     });
   });
 });
+
+describe('Sol components — invariants présentation pure', () => {
+  ALL_SOL_FILES.forEach((f) => {
+    it(`${f} : pas de fetch direct`, () => {
+      const src = readSol(f);
+      expect(src).not.toMatch(/\bfetch\s*\(/);
+      expect(src).not.toMatch(/axios\./);
+    });
+
+    it(`${f} : pas de call API services/api`, () => {
+      const src = readSol(f);
+      expect(src).not.toMatch(/from\s+['"].*services\/api/);
+      expect(src).not.toMatch(/from\s+['"]@\/services\/api/);
+    });
+
+    it(`${f} : pas de useState(fetched) ni useEffect(api)`, () => {
+      const src = readSol(f);
+      expect(src).not.toMatch(/useState.*fetch/);
+      expect(src).not.toMatch(/useEffect.*fetch\(/);
+    });
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Tests unitaires composants Sprint 2 (existants)
+// ══════════════════════════════════════════════════════════════════════════════
 
 describe('SolPageHeader', () => {
   const src = readSol('SolPageHeader.jsx');
@@ -184,11 +247,202 @@ describe('SolTimerail', () => {
   });
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Tests unitaires composants Phase 1 (nouveaux)
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('SolHeadline', () => {
+  const src = readSol('SolHeadline.jsx');
+  it('V2 raw dashboard-first : sol-font-body 16px 500 ink-700', () => {
+    expect(src).toContain('var(--sol-font-body)');
+    expect(src).toMatch(/fontSize:\s*16/);
+    expect(src).toMatch(/fontWeight:\s*500/);
+    expect(src).toContain('var(--sol-ink-700)');
+  });
+});
+
+describe('SolSubline', () => {
+  const src = readSol('SolSubline.jsx');
+  it('V2 raw : 13px ink-500', () => {
+    expect(src).toMatch(/fontSize:\s*13\b/);
+    expect(src).toContain('var(--sol-ink-500)');
+  });
+});
+
+describe('SolStatusPill', () => {
+  const src = readSol('SolStatusPill.jsx');
+  it('3 kinds : ok / att / risk', () => {
+    expect(src).toContain('ok:');
+    expect(src).toContain('att:');
+    expect(src).toContain('risk:');
+  });
+  it('mono uppercase 10px', () => {
+    expect(src).toContain('var(--sol-font-mono)');
+    expect(src).toMatch(/textTransform:\s*'uppercase'/);
+  });
+});
+
+describe('SolButton', () => {
+  const src = readSol('SolButton.jsx');
+  it('4 variants via className sol-btn--*', () => {
+    expect(src).toContain('sol-btn--');
+  });
+  it('polymorphe via as="a"', () => {
+    expect(src).toMatch(/as:\s*Tag\s*=\s*'button'/);
+  });
+});
+
+describe('SolKpiRow', () => {
+  const src = readSol('SolKpiRow.jsx');
+  it('grid repeat 3 par défaut, gap 14', () => {
+    expect(src).toMatch(/gridTemplateColumns:.*repeat\(\$\{columns/);
+    expect(src).toMatch(/gap:\s*14/);
+  });
+});
+
+describe('SolWeekGrid', () => {
+  const src = readSol('SolWeekGrid.jsx');
+  it("grid 3 cols gap 12", () => {
+    expect(src).toMatch(/repeat\(3,\s*1fr\)/);
+    expect(src).toMatch(/gap:\s*12/);
+  });
+});
+
+describe('SolLayerToggle', () => {
+  const src = readSol('SolLayerToggle.jsx');
+  it('3 modes par défaut : surface / inspect / expert', () => {
+    expect(src).toContain("'surface'");
+    expect(src).toContain("'inspect'");
+    expect(src).toContain("'expert'");
+  });
+  it('a11y : role="group" + aria-pressed', () => {
+    expect(src).toContain('role="group"');
+    expect(src).toContain('aria-pressed');
+  });
+});
+
+describe('SolPendingBanner', () => {
+  const src = readSol('SolPendingBanner.jsx');
+  it('utilise sol-calme-bg + border calme', () => {
+    expect(src).toContain('var(--sol-calme-bg)');
+    expect(src).toContain('var(--sol-calme-fg)');
+  });
+  it('expose Annuler + Éditer', () => {
+    expect(src).toContain('Annuler');
+    expect(src).toContain('Éditer');
+  });
+});
+
+describe('SolInspectDoc', () => {
+  const src = readSol('SolInspectDoc.jsx');
+  it('max-width 760 + Fraunces 15/1.7', () => {
+    expect(src).toMatch(/maxWidth:\s*760/);
+    expect(src).toContain('var(--sol-font-display)');
+    expect(src).toMatch(/fontSize:\s*15/);
+    expect(src).toMatch(/lineHeight:\s*1\.7/);
+  });
+});
+
+describe('SolCartouche', () => {
+  const src = readSol('SolCartouche.jsx');
+  it('5 états : default / proposing / pending / executing / done', () => {
+    expect(src).toMatch(/default:\s*{/);
+    expect(src).toMatch(/proposing:\s*{/);
+    expect(src).toMatch(/pending:\s*{/);
+    expect(src).toMatch(/executing:\s*{/);
+    expect(src).toMatch(/done:\s*{/);
+  });
+  it('position fixed bas-droit z-50', () => {
+    expect(src).toMatch(/position:\s*'fixed'/);
+    expect(src).toMatch(/zIndex:\s*50/);
+  });
+  it('chip voice guide FR', () => {
+    expect(src).toContain('Sol · en veille');
+    expect(src).toContain('Sol · propose');
+  });
+});
+
+describe('SolDrawer', () => {
+  const src = readSol('SolDrawer.jsx');
+  it('a11y : role="dialog" + aria-modal', () => {
+    expect(src).toContain('role="dialog"');
+    expect(src).toContain('aria-modal="true"');
+  });
+  it('backdrop + aside', () => {
+    expect(src).toContain('aria-hidden');
+    expect(src).toContain('<aside');
+  });
+});
+
+describe('SolExpertGrid', () => {
+  const src = readSol('SolExpertGrid.jsx');
+  it('table avec th triables', () => {
+    expect(src).toContain('<table');
+    expect(src).toContain('onSort');
+  });
+  it('cells num : mono tabular', () => {
+    expect(src).toContain("col.num");
+    expect(src).toContain('var(--sol-font-mono)');
+  });
+});
+
+describe('SolJournal', () => {
+  const src = readSol('SolJournal.jsx');
+  it('grid 160/100/1fr/120', () => {
+    expect(src).toContain("'160px 100px 1fr 120px'");
+  });
+  it('empty state FR', () => {
+    expect(src).toContain("Aucune action Sol");
+  });
+});
+
+describe('SolRail', () => {
+  const src = readSol('SolRail.jsx');
+  it('lit NavRegistry via getOrderedModules + resolveModule', () => {
+    expect(src).toContain('getOrderedModules');
+    expect(src).toContain('resolveModule');
+  });
+  it('logo "P." Fraunces', () => {
+    expect(src).toContain('P.');
+    expect(src).toContain('var(--sol-font-display)');
+  });
+  it('a11y : aria-label + aria-current', () => {
+    expect(src).toContain('aria-label');
+    expect(src).toContain('aria-current');
+  });
+});
+
+describe('SolPanel', () => {
+  const src = readSol('SolPanel.jsx');
+  it('lit getSectionsForModule + getVisibleItems', () => {
+    expect(src).toContain('getSectionsForModule');
+    expect(src).toContain('getVisibleItems');
+  });
+  it('aria-label navigation contextuelle', () => {
+    expect(src).toContain('Navigation contextuelle');
+  });
+});
+
+describe('SolAppShell', () => {
+  const src = readSol('SolAppShell.jsx');
+  it('layout grid 56/240/1fr/36', () => {
+    expect(src).toContain("'56px 240px 1fr'");
+    expect(src).toContain("'1fr 36px'");
+  });
+  it('compose Rail + Panel + Timerail + Cartouche', () => {
+    expect(src).toContain('<SolRail');
+    expect(src).toContain('<SolPanel');
+    expect(src).toContain('<SolTimerail');
+    expect(src).toContain('<SolCartouche');
+  });
+});
+
 describe('Sol index barrel', () => {
   const src = readSol('index.js');
 
-  it('exports all 8 components', () => {
+  it('exporte les 21 composants', () => {
     for (const comp of [
+      // Sprint 2
       'SolPageHeader',
       'SolKpiCard',
       'SolHero',
@@ -197,6 +451,23 @@ describe('Sol index barrel', () => {
       'SolSectionHead',
       'SolLoadCurve',
       'SolTimerail',
+      // Phase 1
+      'SolHeadline',
+      'SolSubline',
+      'SolStatusPill',
+      'SolButton',
+      'SolKpiRow',
+      'SolWeekGrid',
+      'SolLayerToggle',
+      'SolPendingBanner',
+      'SolInspectDoc',
+      'SolCartouche',
+      'SolDrawer',
+      'SolExpertGrid',
+      'SolJournal',
+      'SolRail',
+      'SolPanel',
+      'SolAppShell',
     ]) {
       expect(src).toContain(comp);
     }

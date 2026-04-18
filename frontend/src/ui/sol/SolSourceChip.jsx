@@ -14,11 +14,13 @@ const KIND_COLOR = {
   grdf: 'var(--sol-calme-fg)',
 };
 
-export default function SolSourceChip({ kind, ref: refLabel, freshness }) {
+// Prop renommée `ref` → `origin` : React réserve `ref=` pour les function refs
+// et bloque les string refs en strict mode (erreur 16/04/2026 à la compile).
+export default function SolSourceChip({ kind, origin, freshness }) {
   const dotColor = KIND_COLOR[(kind || '').toLowerCase()] || 'var(--sol-calme-fg)';
   const parts = ['Source'];
   if (kind) parts.push(kind);
-  if (refLabel) parts.push(refLabel);
+  if (origin) parts.push(origin);
   if (freshness) parts.push(freshness);
 
   return (

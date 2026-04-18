@@ -21,8 +21,15 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 // Refonte Sol V1 : /cockpit pointe maintenant sur CockpitRefonte (rupture
 // visuelle V2 raw). Cockpit.jsx original accessible via /cockpit-legacy
 // pour A/B comparaison côte-à-côte (même backend, UX différente).
-const Cockpit = lazy(() => import('./pages/CockpitRefonte'));
+// Refonte Phase 2 : /cockpit pointe sur CockpitSol (APIs réelles branchées).
+// CockpitRefonte (fixtures) reste accessible via /cockpit-fixtures pour démo
+// et A/B. Cockpit V1 legacy via /cockpit-legacy.
+const Cockpit = lazy(() => import('./pages/CockpitSol'));
+const CockpitFixtures = lazy(() => import('./pages/CockpitRefonte'));
 const CockpitLegacy = lazy(() => import('./pages/Cockpit'));
+// Refonte Phase 1 : showcase des 21 composants Sol (Gate 1 validation).
+// Route hors AppShell car SolShowcase embarque son propre SolAppShell.
+const SolShowcase = lazy(() => import('./pages/SolShowcase'));
 const RegOps = lazy(() => import('./pages/RegOps'));
 const ConnectorsPage = lazy(() => import('./pages/ConnectorsPage'));
 const WatchersPage = lazy(() => import('./pages/WatchersPage'));
@@ -112,6 +119,18 @@ function App() {
                       <PageSuspense>
                         <LoginPage />
                       </PageSuspense>
+                    }
+                  />
+
+                  {/* Refonte Phase 1 — Gate 1 showcase (hors AppShell) */}
+                  <Route
+                    path="/_sol_showcase"
+                    element={
+                      <RequireAuth>
+                        <PageSuspense>
+                          <SolShowcase />
+                        </PageSuspense>
+                      </RequireAuth>
                     }
                   />
 
@@ -242,6 +261,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <CockpitLegacy />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/cockpit-fixtures"
+                      element={
+                        <PageSuspense>
+                          <CockpitFixtures />
                         </PageSuspense>
                       }
                     />

@@ -217,7 +217,7 @@ export default function CockpitRefonte() {
             text: fmtPctDelta(kpis.costDelta, 'vs février'),
           }}
           headline={interpretCost(kpis, scope)}
-          source={{ kind: 'Factures', ref: `${kpis.fournisseurCount} fournisseurs` }}
+          source={{ kind: 'Factures', origin: `${kpis.fournisseurCount} fournisseurs` }}
         />
         <SolKpiCard
           label="Conformité Décret tertiaire"
@@ -280,7 +280,7 @@ export default function CockpitRefonte() {
             tombe en heures pleines — attendu pour un bureau. Votre contrat est bien calibré.
           </>
         }
-        sourceChip={<SolSourceChip kind="Enedis" ref="M023" freshness="complète" />}
+        sourceChip={<SolSourceChip kind="Enedis" origin="M023" freshness="complète" />}
       />
     </div>
   );

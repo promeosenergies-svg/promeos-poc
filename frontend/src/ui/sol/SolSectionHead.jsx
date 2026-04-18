@@ -14,8 +14,8 @@ export default function SolSectionHead({ title, meta }) {
         display: 'flex',
         alignItems: 'baseline',
         justifyContent: 'space-between',
-        margin: '36px 0 16px 0',
-        paddingBottom: 10,
+        margin: '24px 0 12px 0',
+        paddingBottom: 8,
         borderBottom: '1px solid var(--sol-rule)',
         gap: 16,
         flexWrap: 'wrap',
@@ -23,11 +23,11 @@ export default function SolSectionHead({ title, meta }) {
     >
       <h2
         style={{
-          fontFamily: 'var(--sol-font-display)',
-          fontSize: 22,
-          fontWeight: 500,
+          fontFamily: 'var(--sol-font-body)',
+          fontSize: 15,
+          fontWeight: 600,
           color: 'var(--sol-ink-900)',
-          letterSpacing: '-0.015em',
+          letterSpacing: '-0.005em',
           margin: 0,
         }}
       >
@@ -37,7 +37,7 @@ export default function SolSectionHead({ title, meta }) {
         <span
           style={{
             fontFamily: 'var(--sol-font-mono)',
-            fontSize: 11,
+            fontSize: 10,
             color: 'var(--sol-ink-500)',
             textTransform: 'uppercase',
             letterSpacing: '0.1em',
