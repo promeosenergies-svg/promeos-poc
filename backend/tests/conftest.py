@@ -6,6 +6,16 @@ Runs as an autouse module-scoped fixture so that destructive tests
 (reset_db, reset-pack hard) don't break subsequent test modules.
 """
 
+# Auto-inject default test secrets BEFORE any backend import that reads them
+# at module load time (e.g. services.iam_service reads PROMEOS_JWT_SECRET at import).
+# Without this, `pytest --collect-only` fails on a fresh clone.
+import os
+
+os.environ.setdefault("PROMEOS_JWT_SECRET", "test_only_not_for_production")
+os.environ.setdefault("SECRET_KEY", "test_only_not_for_production")
+os.environ.setdefault("SOL_SECRET_KEY", "test_only_not_for_production")
+os.environ.setdefault("DEMO_MODE", "true")
+
 import pytest
 
 
