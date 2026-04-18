@@ -33,21 +33,19 @@ from typing import Optional
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from database import get_db
+from main_limiter import limiter  # Single source of truth : instance créée dans main.py
 from models.sirene import SireneEtablissement, SireneUniteLegale
 from services.lead_score import compute_lead_score_from_loaded
 
 logger = logging.getLogger(__name__)
 
 # Rate-limit configurable via env (tests / CI peuvent surcharger, défaut 10/min/IP).
-# Cohérent avec slowapi configuré dans main.py (`app.state.limiter`).
+# Lu à l'import — pour override à chaud, restart du worker nécessaire.
 _PUBLIC_RATE_LIMIT = os.environ.get("PROMEOS_PUBLIC_DIAGNOSTIC_RATE", "10/minute")
-limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(prefix="/api/public", tags=["Public Diagnostic — Wedge Sirene"])
 
@@ -170,6 +168,8 @@ def _preview_compliance(ul, segment: str) -> CompliancePreview:
 
 @router.get("/diagnostic/{siren}", response_model=PublicDiagnosticResponse)
 @limiter.limit(_PUBLIC_RATE_LIMIT)
+# NB : OPTIONS preflight CORS est routé vers CORSMiddleware (registered pre-router)
+# → ne hit PAS ce handler → ne consomme pas le rate limit. Aucune exemption requise.
 def get_public_diagnostic(
     request: Request,
     siren: str,

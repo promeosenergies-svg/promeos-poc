@@ -218,47 +218,42 @@ def test_diagnostic_endpoint_ne_requiert_pas_auth(_public_client):
 def test_diagnostic_endpoint_rate_limited_par_slowapi():
     """Endpoint `/api/public/*` protégé par slowapi 10/min/IP par défaut.
 
-    Rate-limit configurable via env `PROMEOS_PUBLIC_DIAGNOSTIC_RATE` (tests
-    en posent 1000/min pour ne pas hitter 429 sur runs denses).
+    Vérifie l'infrastructure : limiter unifié dans main_limiter.py,
+    wired dans main.py, décoré sur la route publique.
     """
     import inspect
 
     import main as main_module
+    import main_limiter
     from routes import public_diagnostic as pd_module
 
+    # Limiter extrait dans module dédié (anti double-instance)
+    assert hasattr(main_limiter, "limiter")
+    # main.py importe depuis main_limiter (une seule source de vérité)
     main_src = inspect.getsource(main_module)
-    # slowapi limiter wired dans main
-    assert "from slowapi import Limiter" in main_src
+    assert "from main_limiter import limiter" in main_src
     assert "app.state.limiter = limiter" in main_src
     assert "RateLimitExceeded" in main_src
 
-    # Endpoint décoré par @limiter.limit
+    # Endpoint décoré par @limiter.limit sur la MÊME instance
     pd_src = inspect.getsource(pd_module)
+    assert "from main_limiter import limiter" in pd_src
     assert "@limiter.limit(_PUBLIC_RATE_LIMIT)" in pd_src
-    assert "PROMEOS_PUBLIC_DIAGNOSTIC_RATE" in pd_src
 
 
-def test_diagnostic_endpoint_429_si_rate_limit_depasse(_public_client):
-    """Surcharge temporaire du rate limit à 2/minute → 3ème requête renvoie 429."""
-    client, _, seed = _public_client
-    seed("444444444", "RL Test", "68.20B")
+def test_diagnostic_endpoint_limiter_unified_single_instance():
+    """L'instance Limiter est unique (main_limiter.limiter) et partagée.
 
-    # Surcharger le limiter en place : le slowapi 0.1.9 expose `_limits`
-    # via decorated func ; le plus simple pour tester est de poser un rate
-    # ultra-restrictif via limits="1/minute" sur une copie du limiter et
-    # de laisser la méthode run.
-    from slowapi.errors import RateLimitExceeded
-    from routes.public_diagnostic import limiter as pd_limiter
+    Critique après audit : PR #253 initial avait 2 Limiter séparés (main.py
+    + routes/public_diagnostic.py) → counters isolés. Fix : import depuis
+    `main_limiter` dans les deux modules.
+    """
+    import main_limiter
+    from routes import public_diagnostic as pd_module
+    import main as main_module
 
-    # Réinitialise le storage du limiter (memory-based par défaut).
-    pd_limiter.reset()
-
-    # Patch le décorateur via patch direct sur le rate string
-    with patch("routes.public_diagnostic._PUBLIC_RATE_LIMIT", "1/minute"):
-        # Le patch n'affecte que les NOUVEAUX décorateurs : comme le endpoint
-        # est déjà décoré à l'import, on exerce simplement le cap existant
-        # en faisant plusieurs calls sous le default 1000/minute.
-        # Ce test vérifie l'infrastructure (limiter configuré, pas le cap
-        # dynamique — qui demanderait un reload du module).
-        r = client.get("/api/public/diagnostic/444444444")
-    assert r.status_code in (200, 429)  # Le limiter est bien actif
+    # Même objet en mémoire (test d'identité, pas d'égalité)
+    assert main_module.limiter is main_limiter.limiter
+    assert pd_module.limiter is main_limiter.limiter
+    # Et wired sur app.state
+    assert main_module.app.state.limiter is main_limiter.limiter

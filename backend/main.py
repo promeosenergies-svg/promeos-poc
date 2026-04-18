@@ -111,14 +111,18 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Rate limiter (slowapi) — scoped aux endpoints qui utilisent `@limiter.limit(...)`.
+# Rate limiter (slowapi) — single source of truth dans `main_limiter.py`
+# pour éviter les doubles instances entre main et routes (counters isolés).
 # Used by `/api/public/*` (wedge Sirene, partenaires CCI/Medef) pour prévenir
 # DoS + épuisement quota API gouv + pollution table Sirene.
-from slowapi import Limiter, _rate_limit_exceeded_handler
+# NB : derrière reverse proxy, uvicorn doit tourner avec `--proxy-headers
+# --forwarded-allow-ips=<trusted>` pour que le rate limit soit par vraie IP
+# client (cf. docstring `main_limiter.py`).
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
-limiter = Limiter(key_func=get_remote_address, default_limits=[])
+from main_limiter import limiter
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
