@@ -1,0 +1,92 @@
+id: ARCHETYPE-ENSEIGNEMENT
+type: knowledge
+domain: usages
+title: Archétype Enseignement
+summary: "Établissements scolaires et universitaires : CVC + éclairage dominants, pointe diurne 8h-17h jours ouvrés, faible décalabilité mais fenêtres marquées."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+  asset:
+    - hvac
+    - eclairage
+    - it
+  reg:
+    - dt
+    - bacs
+  granularity:
+    - mensuel
+    - horaire
+
+scope:
+  archetype: ENSEIGNEMENT
+  naf_codes:
+    - '85.10'
+    - '85.20'
+    - '85.31'
+    - '85.32'
+    - '85.41'
+    - '85.42'
+
+content_md: |
+  ## Archétype Enseignement
+
+  ### Consommation typique
+  - **Fourchette**: 80-150 kWh/m²/an (source : Enedis Open Data 2024 + benchmarks ADEME enseignement)
+  - Chauffage (gaz ou élec) + éclairage dominants ; profil fortement marqué par le calendrier scolaire.
+
+  ### Signature temporelle
+  - Horaires ouverture : 8h-17h lundi-vendredi (variable selon primaire/secondaire/supérieur).
+  - Continu 24/7 : non (sauf résidences universitaires, hors périmètre ici).
+  - Talon nocturne : 15-25% de la conso jour (serveurs, éclairage sécurité, préchauffage).
+  - Saisonnalité : vacances scolaires = chute à 30-40% du régime normal.
+
+  ### Répartition par usage
+  - HVAC / chauffage : 40-55%
+  - Éclairage (salles + circulations) : 20-30%
+  - IT (salles info, administration) : 10-15%
+  - ECS (cantines, gymnases) : 5-10%
+  - Autres (cuisine collective, ventilation) : 5-10%
+
+  ### Calibrage Baromètre Flex 2026
+  - **Taux décalable moyen** : 0.20 (source : Baromètre Flex 2026 RTE/Enedis/GIMELEC — section Enseignement)
+  - **Plages de pointe** : [(8, 17)] (horaires de cours)
+  - **Conso concentrée pointe** : 0.50 (part de la conso journalière sur la plage 8h-17h)
+  - **Pénétration BACS 2024** : 0.13 (taux médian — lycées 46%, primaire < 10%, source Enedis 2024)
+
+  ### Potentiel de pilotage
+  Gisement de décalage limité par la présence humaine (confort élèves, contraintes sanitaires), mais fenêtres très marquées : vacances scolaires (mise en veille profonde), week-ends et nuits. Les usages pilotables prioritaires sont le préchauffage matinal (décalage vers 6h-7h au lieu de 8h au pic système) et la ventilation (consignes CO₂ ajustables). Le potentiel BACS est élevé (13% actuel, objectif décret tertiaire 2030), ce qui ouvrira un gisement supplémentaire sur l'optimisation des consignes. Fenêtres favorables : 2h-6h (préchauffage) et 11h-17h (surplus PV).
+
+  ### Codes NAF typiques
+  - 85.10 — Enseignement pré-primaire
+  - 85.20 — Enseignement primaire
+  - 85.31 — Enseignement secondaire général
+  - 85.32 — Enseignement secondaire technique ou professionnel
+  - 85.41 — Enseignement post-secondaire non supérieur
+  - 85.42 — Enseignement supérieur
+
+logic: null
+
+sources:
+  - doc_id: BAROMETRE_FLEX_2026
+    label: "Baromètre Flex 2026 — RTE/Enedis/GIMELEC (avril 2026)"
+    section: "archetype-enseignement"
+    anchor: "#chiffres-sectoriels-enedis-2024"
+    excerpt_short: "Enseignement : 37 000 sites, 166 M m², 13% BACS équipés (lycées 46%), 4.5 TWh/an (Enedis 2024)."
+  - doc_id: ENEDIS_OPEN_DATA_2024
+    label: "Enedis Open Data 2024 — Ratios enseignement"
+    section: "tertiaire-enseignement"
+    anchor: null
+    excerpt_short: "Ratios consommation 80-150 kWh/m²/an, CVC + éclairage dominants, profil calendrier scolaire."
+
+provenance:
+  source_path: docs/reglementaire/barometre_flex_2026.md
+  source_section: "archetype-enseignement"
+  extracted_at: '2026-04-17'
+
+updated_at: '2026-04-17'
+confidence: high
+status: validated
+priority: 2

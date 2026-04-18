@@ -1,0 +1,90 @@
+id: ARCHETYPE-COMMERCE_ALIMENTAIRE
+type: knowledge
+domain: usages
+title: Archétype Commerce Alimentaire
+summary: "Grandes et moyennes surfaces alimentaires (GMS) : froid commercial dominant + ECS, pointe diurne large, potentiel de décalage élevé."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+  asset:
+    - froid_process
+    - hvac
+    - eclairage
+    - ecs
+  reg:
+    - dt
+    - bacs
+  granularity:
+    - mensuel
+    - horaire
+
+scope:
+  archetype: COMMERCE_ALIMENTAIRE
+  naf_codes:
+    - '47.11'
+    - '47.21'
+    - '47.22'
+    - '47.24'
+    - '47.81'
+
+content_md: |
+  ## Archétype Commerce Alimentaire
+
+  ### Consommation typique
+  - **Fourchette**: 400-600 kWh/m²/an (source : Enedis Open Data 2024 + benchmarks ADEME tertiaire alimentaire)
+  - Froid commercial prédominant : meubles positifs + négatifs fonctionnant 24/7.
+
+  ### Signature temporelle
+  - Horaires ouverture : 8h-21h (6j/7, parfois 7j/7 en centre-ville).
+  - Continu 24/7 : oui pour le froid, non pour l'éclairage et la climatisation ambiante.
+  - Talon nocturne : 35-45% de la conso jour (maintien chaîne du froid + préparation fournil).
+
+  ### Répartition par usage
+  - Froid alimentaire (positif + négatif) : 40-55%
+  - HVAC / renouvellement d'air : 15-20%
+  - Éclairage (magasin + enseignes) : 15-20%
+  - ECS + fournil / boucherie / traiteur : 10-15%
+  - Autres (IT caisses, sécurité) : 5-10%
+
+  ### Calibrage Baromètre Flex 2026
+  - **Taux décalable moyen** : 0.45 (source : Baromètre Flex 2026 RTE/Enedis/GIMELEC — section Commerces alimentaires)
+  - **Plages de pointe** : [(10, 20)] (ouverture clientèle continue, pas de double pointe nette)
+  - **Conso concentrée pointe** : 0.55 (part de la conso journalière sur la plage 10h-20h)
+  - **Pénétration BACS 2024** : 0.17 (fourchette 15-19% GMS, médiane Enedis 2024)
+
+  ### Potentiel de pilotage
+  Gisement décalable élevé porté par l'inertie des meubles froids (positifs 2-6°C, négatifs -20°C) et des chambres froides : fenêtres favorables nocturnes 2h-6h et méridiennes 11h-17h (ensoleillement PV TURPE 7 saisonnalisé). Les usages pilotables prioritaires sont le froid commercial (cycles dégivrage, consignes nuit) et l'ECS. L'éclairage et la climatisation ambiante restent contraints par l'expérience client.
+
+  ### Codes NAF typiques
+  - 47.11 — Commerce de détail en magasin non spécialisé à prédominance alimentaire (GMS)
+  - 47.21 — Commerce de détail de fruits et légumes en magasin spécialisé
+  - 47.22 — Commerce de détail de viandes et de produits à base de viande
+  - 47.24 — Commerce de détail de pain, pâtisserie et confiserie
+  - 47.81 — Commerce de détail alimentaire sur éventaires et marchés
+
+logic: null
+
+sources:
+  - doc_id: BAROMETRE_FLEX_2026
+    label: "Baromètre Flex 2026 — RTE/Enedis/GIMELEC (avril 2026)"
+    section: "archetype-commerce-alimentaire"
+    anchor: "#chiffres-sectoriels-enedis-2024"
+    excerpt_short: "Commerces : 60 000 sites, 150 M m², 17% BACS équipés (Enedis 2024)."
+  - doc_id: ENEDIS_OPEN_DATA_2024
+    label: "Enedis Open Data 2024 — Ratios tertiaire alimentaire"
+    section: "tertiaire-commerce-alimentaire"
+    anchor: null
+    excerpt_short: "Ratios consommation 400-600 kWh/m²/an, segment froid commercial dominant."
+
+provenance:
+  source_path: docs/reglementaire/barometre_flex_2026.md
+  source_section: "archetype-commerce-alimentaire"
+  extracted_at: '2026-04-17'
+
+updated_at: '2026-04-17'
+confidence: high
+status: validated
+priority: 2
