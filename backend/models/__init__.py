@@ -2,7 +2,7 @@
 PROMEOS - Models
 """
 
-from .base import Base, TimestampMixin, SoftDeleteMixin, not_deleted
+from .base import Base, TimestampMixin, SoftDeleteMixin, CreatedAtOnlyMixin, not_deleted
 
 # Enums (tous centralises)
 from .enums import (

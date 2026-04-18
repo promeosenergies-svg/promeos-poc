@@ -108,6 +108,39 @@ def run_migrations(engine):
     _create_sf5_promotion_tables(engine)
     # Referentiel Sirene — tables isolees (DIAMANT)
     _create_sirene_tables(engine)
+    # Sol V1 — infrastructure agentique (append-only audit, pending actions, tokens, org policy)
+    _migrate_sol_v1_foundations(engine)
+
+
+def _migrate_sol_v1_foundations(engine):
+    """Create Sol V1 foundations tables if missing (idempotent).
+
+    4 tables : sol_action_log (append-only audit), sol_pending_action
+    (grace period queue), sol_confirmation_token (HMAC preview→execute),
+    sol_org_policy (gouvernance par org).
+
+    Voir docs/sol/DECISIONS_LOG.md et docs/sol/PROMPT_SOL_V1_SPRINT_1-2_APPLIED.md.
+    """
+    SOL_TABLES = (
+        "sol_action_log",
+        "sol_pending_action",
+        "sol_confirmation_token",
+        "sol_org_policy",
+    )
+    insp = inspect(engine)
+    missing = [t for t in SOL_TABLES if not insp.has_table(t)]
+    if not missing:
+        return
+    # Import déclenche l'enregistrement des modèles dans Base.metadata.tables
+    import models.sol  # noqa: F401
+    from models.base import Base
+
+    Base.metadata.create_all(
+        bind=engine,
+        tables=[Base.metadata.tables[t] for t in SOL_TABLES if t in Base.metadata.tables],
+        checkfirst=True,
+    )
+    logger.info("migration: created Sol V1 foundation tables: %s", missing)
 
 
 def _create_sirene_tables(engine):

@@ -33,6 +33,26 @@ class TimestampMixin:
     )
 
 
+class CreatedAtOnlyMixin:
+    """
+    Mixin pour tables append-only : created_at seul, pas d'updated_at.
+
+    Utilisé pour les journaux d'audit immuables (ex: sol_action_log) où
+    toute modification doit être rejetée. Ne fournit PAS updated_at car
+    l'append-only implique qu'une ligne n'est jamais modifiée après insert.
+
+    Voir aussi : event listener SQLAlchemy `before_update` sur le modèle
+    concret pour bloquer les UPDATE au runtime (cf models/sol.py).
+    """
+
+    created_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        comment="Date de creation (append-only, jamais modifie)",
+    )
+
+
 class SoftDeleteMixin:
     """
     Mixin pour suppression logique (soft delete).
