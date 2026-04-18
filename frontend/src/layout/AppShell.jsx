@@ -25,6 +25,8 @@ import { trackRouteChange } from '../services/tracker';
 import { useAuth } from '../contexts/AuthContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { resolveModule, MODULE_TINTS } from './NavRegistry';
+// Sprint 2 refonte : footer éditorial Sol persistant sur toutes les pages.
+import { SolTimerail } from '../ui/sol';
 import {
   getActionCenterActionsSummary,
   getActionCenterNotifications,
@@ -359,7 +361,11 @@ export default function AppShell() {
         />
 
         {/* Content */}
-        <main id="main-content" className="flex-1 overflow-y-auto">
+        <main
+          id="main-content"
+          className="flex-1 overflow-y-auto"
+          style={{ paddingBottom: 36 }}  /* espace pour Sol timerail fixed 36px */
+        >
           <ToastProvider>
             <ActionDrawerProvider>
               <Outlet />
@@ -387,6 +393,11 @@ export default function AppShell() {
 
       {/* Onboarding tour (first login only) */}
       <OnboardingOverlay />
+
+      {/* Sprint 2 refonte — Timerail Sol persistant (fixed bottom 36px).
+         Zéro fetch propre : affiche juste heure courante + semaine.
+         Trajectory optionnelle, passée en prop quand dispo dans contexte. */}
+      <SolTimerail />
     </div>
   );
 }
