@@ -269,11 +269,11 @@ def _resolve_accise_code(site) -> str:
     return _accise_code_for_category("elec", tp)
 
 
-def _resolve_vnu_seuil(store: ParameterStore) -> tuple[float, Optional[str], float]:
+def _resolve_vnu_seuil() -> tuple[float, Optional[str], float]:
     """Extrait seuil + impact upside VNU depuis `tarifs_reglementaires.yaml::vnu`.
 
     Retourne `(seuil_eur_mwh, source_ref, impact_upside_eur_mwh)`. Fallback
-    hardcodé si YAML absent.
+    hardcodé si YAML absent — warning loggé pour visibilité prod.
     """
     try:
         vnu = load_yaml_section("vnu") or {}
@@ -281,7 +281,7 @@ def _resolve_vnu_seuil(store: ParameterStore) -> tuple[float, Optional[str], flo
         impact = float(vnu.get("impact_upside_mvp_eur_mwh", VNU_IMPACT_MVP_EUR_MWH_FALLBACK))
         return seuil, vnu.get("source"), impact
     except Exception as exc:
-        logger.debug("cost_simulator_2026: vnu lookup failed: %s", exc)
+        logger.warning("cost_simulator_2026: vnu lookup failed (fallback hardcoded): %s", exc)
     return VNU_SEUIL_DEFAUT_EUR_MWH, None, VNU_IMPACT_MVP_EUR_MWH_FALLBACK
 
 
@@ -300,7 +300,7 @@ def _load_simulator_params() -> dict[str, float]:
             "peak_premium_ratio": float(section.get("peak_premium_ratio", PEAK_PREMIUM_RATIO_FALLBACK)),
         }
     except Exception as exc:
-        logger.debug("cost_simulator_2026: simulator params lookup failed: %s", exc)
+        logger.warning("cost_simulator_2026: simulator params lookup failed (fallback hardcoded): %s", exc)
     return {
         "baseline_eur_mwh": BASELINE_2024_EUR_MWH_FALLBACK,
         "fallback_forward_eur_mwh": FALLBACK_FORWARD_EUR_MWH,
@@ -402,7 +402,7 @@ def simulate_annual_cost_2026(
     # consommateur final. L'additionner à la facture client comme auparavant
     # gonflait artificiellement le total de ~2 EUR/MWh quand "actif". On expose
     # désormais le statut + risque upside dans `hypotheses`, facture toujours = 0.
-    vnu_seuil, vnu_source_ref, vnu_impact = _resolve_vnu_seuil(store)
+    vnu_seuil, vnu_source_ref, vnu_impact = _resolve_vnu_seuil()
     vnu_statut = "dormant" if forward_y1 < vnu_seuil else "actif"
     vnu_eur = 0.0
     vnu_risque_upside_eur_mwh = vnu_impact if vnu_statut == "actif" else 0.0
