@@ -26,6 +26,7 @@ from models import (
     SiteOperatingSchedule,
 )
 from models.energy_models import EnergyVector
+from services.error_catalog import business_error
 
 router = APIRouter(prefix="/api/monitoring", tags=["Monitoring"])
 
@@ -324,7 +325,7 @@ def run_monitoring(request: MonitoringRunRequest, db: Session = Depends(get_db))
 
     site = db.query(Site).filter_by(id=request.site_id).first()
     if not site:
-        raise HTTPException(status_code=404, detail=f"Site {request.site_id} not found")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=request.site_id))
 
     orchestrator = MonitoringOrchestrator(db)
     result = orchestrator.run(
@@ -441,7 +442,7 @@ def acknowledge_alert(alert_id: int, request: AlertAckRequest, db: Session = Dep
     """Acknowledge an open alert."""
     alert = db.query(MonitoringAlert).filter_by(id=alert_id).first()
     if not alert:
-        raise HTTPException(status_code=404, detail=f"Alert {alert_id} not found")
+        raise HTTPException(**business_error("ALERT_NOT_FOUND"))
 
     if alert.status != AlertStatus.OPEN:
         raise HTTPException(status_code=400, detail=f"Alert is {alert.status.value}, can only ack OPEN alerts")
@@ -462,7 +463,7 @@ def resolve_alert(alert_id: int, request: AlertResolveRequest, db: Session = Dep
     """Resolve an alert (from open or acknowledged)."""
     alert = db.query(MonitoringAlert).filter_by(id=alert_id).first()
     if not alert:
-        raise HTTPException(status_code=404, detail=f"Alert {alert_id} not found")
+        raise HTTPException(**business_error("ALERT_NOT_FOUND"))
 
     if alert.status == AlertStatus.RESOLVED:
         raise HTTPException(status_code=400, detail="Alert is already resolved")
@@ -588,7 +589,7 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
     """Generate monitoring demo data (profiled pattern + weather correlation + anomalies)."""
     site = db.query(Site).filter_by(id=request.site_id).first()
     if not site:
-        raise HTTPException(status_code=404, detail=f"Site {request.site_id} not found")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=request.site_id))
 
     profile = USAGE_PROFILES.get(request.profile, USAGE_PROFILES["office"])
 
