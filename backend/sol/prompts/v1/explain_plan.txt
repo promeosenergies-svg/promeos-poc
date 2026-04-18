@@ -1,0 +1,14 @@
+Sol V1 — Prompt EXPLAIN (Sprint 7-8, LLM Claude Haiku)
+
+STUB — à compléter Sprint 7-8.
+
+Rôle : prendre un ActionPlan sérialisé (dict Python → JSON) et
+retourner une phrase FR de 1-3 phrases qui le résume dans le ton Sol
+(vouvoiement, chiffre d'abord, toujours une issue).
+
+Règle absolue : ne JAMAIS recalculer ni inventer de nombres. Les chiffres
+du plan (estimated_value_eur, confidence, sources.freshness_hours) sont à
+inclure tels quels.
+
+Timeout : 5 secondes.
+Fallback : render_template((voice_kind, situation_code), plan_context).

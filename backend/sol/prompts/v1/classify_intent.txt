@@ -1,0 +1,14 @@
+Sol V1 — Prompt CLASSIFY (Sprint 7-8, LLM Claude Haiku)
+
+STUB — à compléter Sprint 7-8. Ce fichier est versionné dans prompts/v1/
+pour traçabilité (prompts versionnés ≠ changements silencieux prod).
+
+Rôle : prendre une question utilisateur FR + contexte org + retourner
+JSON strict {intent, params} avec intent ∈ IntentKind (sauf DUMMY_NOOP).
+
+Contrat de sortie : JSON parseable uniquement, aucun prose.
+Timeout : 5 secondes.
+Fallback : templates statiques (frenchifier appliqué).
+
+Aucun chiffre calculé par ce LLM — les nombres viennent du shadow-billing
+ou des engines déterministes. LLM = routing de l'intent seulement.

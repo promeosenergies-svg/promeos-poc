@@ -1,0 +1,12 @@
+Sol V1 — Prompt SUMMARIZE (Sprint 7-8, LLM Claude Haiku)
+
+STUB — à compléter Sprint 7-8.
+
+Rôle : prendre un ExecutionResult sérialisé + retourner une phrase FR
+factuelle (1-2 phrases) résumant l'outcome pour le journal utilisateur.
+
+Style Sol : "Courrier envoyé à {recipient} à {time}. Accusé de réception
+reçu." — pas d'excuses, pas de célébration excessive.
+
+Timeout : 5 secondes.
+Fallback : render_template(("done", outcome_code), result_context).
