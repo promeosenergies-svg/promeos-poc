@@ -20,7 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, AlertTriangle } from 'lucide-react';
 import { getCostSimulation2026 } from '../../services/api/purchase';
 import { useScope } from '../../contexts/ScopeContext';
-import { toSite } from '../../services/routes';
+import { toPurchase } from '../../services/routes';
 import { fmtEur } from '../../utils/format';
 import { Skeleton, InfoTip } from '../../ui';
 
@@ -176,7 +176,9 @@ export default function CostSimulationCard({ siteId: siteIdProp, year: yearProp 
   }, [resolvedSiteId, selectedYear]);
 
   const handleCta = () => {
-    navigate(resolvedSiteId ? toSite(resolvedSiteId, { tab: 'achats' }) : '/achat-energie');
+    // `/sites/{id}` n'expose pas d'onglet achat — on route vers la page Achat
+    // énergie avec `site_id` en query pour pré-sélection du site.
+    navigate(toPurchase({ site_id: resolvedSiteId, tab: 'simulation' }));
   };
 
   // ── Loading ────────────────────────────────────────────────────────────
@@ -243,6 +245,13 @@ export default function CostSimulationCard({ siteId: siteIdProp, year: yearProp 
 
   const deltaIsNegative = deltaPct != null && deltaPct < 0;
   const deltaIsPositive = deltaPct != null && deltaPct > 0;
+
+  // Confiance dégradée si l'endpoint a dû tomber sur un fallback (pas de
+  // forward marché pour l'année sélectionnée, pas d'annual_kwh, etc.).
+  const sourceCalibration = hypotheses?.source_calibration || [];
+  const hasForwardFallback = sourceCalibration.some((t) =>
+    String(t).startsWith('forward_indisponible')
+  );
 
   return (
     <div
@@ -323,11 +332,26 @@ export default function CostSimulationCard({ siteId: siteIdProp, year: yearProp 
 
       {/* ── Hero big number ──────────────────────────────────────────── */}
       <div>
-        <div
-          className="text-3xl font-bold text-indigo-700 leading-tight"
-          data-testid="cost-sim-total"
-        >
-          {fmtEur(total)}
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <div
+            className="text-3xl font-bold text-indigo-700 leading-tight"
+            data-testid="cost-sim-total"
+          >
+            {fmtEur(total)}
+          </div>
+          {hasForwardFallback && (
+            <span
+              className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 text-[10px] font-medium px-2 py-0.5 rounded-full"
+              data-testid="cost-sim-forward-fallback-badge"
+              aria-label={`Projection ${selectedYear} sans forward marché : extrapolation sur prix de référence`}
+            >
+              <AlertTriangle size={10} aria-hidden="true" />
+              Projection extrapolée
+              <InfoTip
+                content={`Aucun forward ${selectedYear} n'est disponible dans mkt_prices. Le simulateur utilise le prix de référence PROMEOS (${68} €/MWh) — utile pour cadrer un budget, pas pour un engagement commercial.`}
+              />
+            </span>
+          )}
         </div>
         <p className="text-[11px] text-gray-500 mt-1">
           Facture totale estimée · 6 composantes réglementaires
