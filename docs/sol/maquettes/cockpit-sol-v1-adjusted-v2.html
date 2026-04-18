@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROMEOS — Cockpit Sol V1 · Ajusté V2 (dashboard-first)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Typo */
+  --font-display: 'Fraunces', 'Tiempos', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* V2 ajusté : palette neutre SaaS moderne (style Linear / Arc) */
+  --bg-canvas: #F8F9FA;          /* off-white très légèrement gris */
+  --bg-paper: #FFFFFF;
+  --bg-panel: #F3F4F6;
+  --ink-900: #0F172A;            /* slate noir, tranchant */
+  --ink-700: #334155;
+  --ink-500: #64748B;
+  --ink-400: #94A3B8;
+  --ink-300: #CBD5E1;
+  --ink-200: #E2E8F0;
+  --ink-100: #F1F5F9;
+  --rule: #E2E8F0;
+
+  /* Palette fonctionnelle — 6 familles */
+  --calme-fg: #2F6B5E;           /* bleu-vert doux, "tout va bien" */
+  --calme-bg: #E3F0ED;
+  --attention-fg: #A06B1A;       /* ambre chaleureux */
+  --attention-bg: #F6EAD2;
+  --afaire-fg: #B8552E;          /* orange corail, pas punitif */
+  --afaire-bg: #F7E4D8;
+  --succes-fg: #2E6B4A;          /* vert forêt, pas fluo */
+  --succes-bg: #DFEDE3;
+  --refuse-fg: #8B3A3A;
+  --refuse-bg: #F3DDDB;
+
+  /* Palette tarifaire — appliquée aux graphiques */
+  --hph-fg: #B84545; --hph-bg: #FBE9E9;
+  --hch-fg: #2E4A6B; --hch-bg: #E6EDF5;
+  --hpe-fg: #D08B3C; --hpe-bg: #FBF1E3;
+  --hce-fg: #6B8CAE; --hce-bg: #E9EEF4;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-canvas);
+  color: var(--ink-900);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+  line-height: 1.5;
+  font-size: 15px;
+}
+
+.mono { font-family: var(--font-mono); font-feature-settings: "tnum", "zero"; }
+.serif { font-family: var(--font-display); font-optical-sizing: auto; }
+
+/* ==== LAYOUT ==== */
+.app {
+  display: grid;
+  grid-template-columns: 56px 240px 1fr;
+  grid-template-rows: 1fr 36px;
+  min-height: 100vh;
+  grid-template-areas:
+    "rail panel main"
+    "rail panel timerail";
+}
+
+.rail { grid-area: rail; background: var(--bg-paper); border-right: 1px solid var(--rule); padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.panel { grid-area: panel; background: var(--bg-paper); border-right: 1px solid var(--rule); padding: 24px 18px; overflow-y: auto; }
+.main { grid-area: main; overflow-y: auto; padding: 32px 48px 60px 48px; }
+.timerail { grid-area: timerail; background: var(--bg-panel); border-top: 1px solid var(--rule); padding: 0 48px; display: flex; align-items: center; gap: 24px; font-size: 11.5px; color: var(--ink-500); font-family: var(--font-mono); font-feature-settings: "tnum"; }
+
+/* ==== RAIL ==== */
+.rail-logo { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--ink-900); margin-bottom: 12px; letter-spacing: -0.03em; }
+.rail-icon {
+  width: 36px; height: 36px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-500); cursor: pointer; transition: all 120ms ease;
+  font-size: 17px;
+}
+.rail-icon:hover { background: var(--bg-panel); color: var(--ink-900); }
+.rail-icon.active { background: var(--ink-900); color: var(--bg-canvas); }
+
+/* ==== PANEL ==== */
+.panel-module {
+  font-family: var(--font-display); font-weight: 600; font-size: 19px;
+  color: var(--ink-900); letter-spacing: -0.015em; margin-bottom: 4px;
+}
+.panel-desc { font-size: 12px; color: var(--ink-500); margin-bottom: 24px; line-height: 1.4; }
+.panel-section {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--ink-400); font-weight: 600; margin: 18px 0 8px 0;
+}
+.panel-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; margin: 0 -10px; border-radius: 3px;
+  cursor: pointer; font-size: 13.5px; color: var(--ink-700);
+  transition: all 100ms ease;
+}
+.panel-item:hover { background: var(--bg-panel); color: var(--ink-900); }
+.panel-item.active { background: var(--ink-100); color: var(--ink-900); font-weight: 500; box-shadow: inset 2px 0 0 var(--ink-900); }
+.panel-item .badge {
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
+  padding: 1px 6px; border-radius: 2px;
+  background: var(--afaire-bg); color: var(--afaire-fg);
+}
+
+/* ==== MAIN — HEADER ==== */
+.page-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding-bottom: 20px; border-bottom: 1px solid var(--rule); margin-bottom: 28px;
+}
+.page-kicker {
+  font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: 0.14em; color: var(--ink-500); margin-bottom: 6px;
+}
+.page-title {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 34px; line-height: 1.05; color: var(--ink-900);
+  letter-spacing: -0.025em;
+}
+.page-title em { font-style: italic; font-weight: 400; color: var(--ink-500); }
+
+/* Layer toggle */
+.layer-toggle { display: flex; gap: 0; border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; background: var(--bg-paper); }
+.layer-btn {
+  padding: 7px 14px; font-size: 12px; font-weight: 500;
+  font-family: var(--font-body); background: transparent;
+  border: none; color: var(--ink-500); cursor: pointer;
+  border-right: 1px solid var(--rule); transition: all 120ms ease;
+}
+.layer-btn:last-child { border-right: none; }
+.layer-btn:hover { color: var(--ink-900); background: var(--bg-panel); }
+.layer-btn.active { background: var(--ink-900); color: var(--bg-canvas); }
+
+/* ==== SOL — voice layer dans les pages ==== */
+.sol-headline {
+  font-family: var(--font-display); font-weight: 500; font-size: 22px;
+  color: var(--ink-900); line-height: 1.3; letter-spacing: -0.015em;
+  max-width: 680px; margin-bottom: 10px;
+}
+.sol-headline em { font-style: italic; color: var(--ink-700); }
+.sol-subline { font-size: 13.5px; color: var(--ink-500); max-width: 680px; line-height: 1.55; }
+
+/* ==== SOL PROPOSE — carte héro ==== */
+.sol-hero {
+  background: var(--bg-paper);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--calme-fg);
+  padding: 24px 28px; border-radius: 3px;
+  margin: 24px 0 32px 0;
+  display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center;
+}
+.sol-chip-inline {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--calme-fg); font-weight: 600;
+  margin-bottom: 10px;
+}
+.sol-chip-inline::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--calme-fg);
+  animation: pulse 3s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.sol-hero-title { font-family: var(--font-display); font-size: 20px; font-weight: 500; color: var(--ink-900); margin-bottom: 6px; line-height: 1.3; }
+.sol-hero-sub { font-size: 13.5px; color: var(--ink-500); line-height: 1.55; max-width: 520px; }
+.sol-hero-metrics { display: flex; gap: 24px; margin-top: 14px; }
+.sol-hero-metric-val { font-family: var(--font-mono); font-size: 16px; font-weight: 600; color: var(--ink-900); }
+.sol-hero-metric-lbl { font-size: 11px; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.08em; }
+.sol-hero-actions { display: flex; flex-direction: column; gap: 8px; min-width: 180px; }
+
+.btn {
+  font-family: var(--font-body); font-size: 13.5px; font-weight: 500;
+  padding: 9px 16px; border-radius: 3px; cursor: pointer; border: 1px solid transparent;
+  transition: all 120ms ease; white-space: nowrap; text-align: center;
+}
+.btn-primary { background: var(--ink-900); color: var(--bg-canvas); }
+.btn-primary:hover { background: var(--ink-700); }
+.btn-secondary { background: var(--bg-paper); border-color: var(--rule); color: var(--ink-900); }
+.btn-secondary:hover { background: var(--bg-panel); }
+.btn-ghost { background: transparent; color: var(--ink-500); }
+.btn-ghost:hover { color: var(--ink-900); }
+.btn-agentic { background: var(--calme-fg); color: white; }
+.btn-agentic:hover { background: #245047; }
+
+/* ==== KPI CARDS — numbers first ==== */
+.kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 28px; }
+.kpi {
+  background: var(--bg-paper); border: 1px solid var(--rule); border-radius: 3px;
+  padding: 18px 20px 16px;
+}
+.kpi-label { font-size: 11px; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+.kpi-value {
+  font-family: var(--font-mono); font-size: 30px; font-weight: 600; color: var(--ink-900);
+  line-height: 1; letter-spacing: -0.02em; font-feature-settings: "tnum";
+}
+.kpi-unit { font-family: var(--font-body); font-size: 13px; color: var(--ink-400); font-weight: 400; margin-left: 4px; }
+.kpi-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-family: var(--font-mono); margin-top: 8px; }
+.delta-down { color: var(--succes-fg); }
+.delta-up { color: var(--afaire-fg); }
+.kpi-headline { font-size: 12.5px; color: var(--ink-700); margin-top: 10px; line-height: 1.45; font-weight: 400; }
+.kpi-headline em { font-style: italic; color: var(--ink-900); }
+
+.source-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--ink-500); border: 1px solid var(--rule); border-radius: 2px;
+  padding: 2px 5px; margin-top: 12px;
+}
+.source-chip::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
+.source-chip.src-enedis::before { background: var(--calme-fg); }
+.source-chip.src-facture::before { background: var(--calme-fg); }
+.source-chip.src-estime::before { background: var(--attention-fg); }
+
+/* ==== SECTION ==== */
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin: 36px 0 16px 0; padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule);
+}
+.section-title { font-family: var(--font-display); font-size: 22px; font-weight: 500; color: var(--ink-900); letter-spacing: -0.015em; }
+.section-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.1em; }
+
+/* ==== CARDS "Cette semaine" ==== */
+.week-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+.week-card {
+  background: var(--bg-paper); border: 1px solid var(--rule); border-radius: 3px;
+  padding: 18px 20px; cursor: pointer; transition: all 120ms ease;
+  position: relative;
+}
+.week-card:hover { border-color: var(--ink-500); }
+.week-card-tag {
+  font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.1em;
+  font-weight: 600; padding: 2px 6px; border-radius: 2px; display: inline-block; margin-bottom: 12px;
+}
+.tag-attention { background: var(--attention-bg); color: var(--attention-fg); }
+.tag-afaire { background: var(--afaire-bg); color: var(--afaire-fg); }
+.tag-succes { background: var(--succes-bg); color: var(--succes-fg); }
+.week-card-title { font-family: var(--font-display); font-size: 16px; font-weight: 500; color: var(--ink-900); margin-bottom: 6px; line-height: 1.3; }
+.week-card-body { font-size: 13px; color: var(--ink-500); line-height: 1.5; }
+.week-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--ink-200);
+  font-size: 11px; color: var(--ink-500); font-family: var(--font-mono);
+}
+
+/* ==== COURBE DE CHARGE SVG ==== */
+.load-curve { width: 100%; height: 180px; margin: 12px 0; }
+.tariff-stripe-hph { fill: var(--hph-bg); opacity: 0.55; }
+.tariff-stripe-hch { fill: var(--hch-bg); opacity: 0.45; }
+
+/* ==== PENDING / TIMERAIL ==== */
+.pending-banner {
+  background: var(--bg-paper); border: 1px solid var(--calme-fg); border-left: 3px solid var(--calme-fg);
+  border-radius: 3px; padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  margin-bottom: 24px;
+}
+.pending-text { font-size: 13.5px; color: var(--ink-700); }
+.pending-text strong { color: var(--ink-900); font-weight: 600; }
+.pending-timer { font-family: var(--font-mono); font-size: 12px; color: var(--calme-fg); font-weight: 600; }
+
+/* ==== TIMERAIL BAR ==== */
+.timerail-sep { width: 1px; height: 16px; background: var(--ink-200); }
+.tr-item { display: flex; align-items: center; gap: 8px; }
+.tr-dot { width: 6px; height: 6px; border-radius: 50%; }
+.tr-hch { background: var(--hch-fg); }
+.tr-live { background: var(--calme-fg); animation: pulse 3s ease-in-out infinite; }
+.tr-trajectory { flex: 1; display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--ink-500); }
+.tr-bar { width: 120px; height: 4px; background: var(--ink-200); border-radius: 2px; position: relative; overflow: hidden; }
+.tr-bar-fill { height: 100%; background: linear-gradient(to right, var(--calme-fg), var(--attention-fg)); width: 62%; }
+
+/* ==== SOL STATUS BAR (cartouche bas-droit) ==== */
+.sol-cartouche {
+  position: fixed; bottom: 48px; right: 24px; z-index: 50;
+  background: var(--bg-paper); border: 1px solid var(--rule);
+  border-radius: 4px; padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12.5px; color: var(--ink-700);
+  box-shadow: 0 2px 8px rgba(28, 27, 24, 0.04);
+  cursor: pointer; transition: all 180ms ease;
+  max-width: 340px;
+}
+.sol-cartouche:hover { border-color: var(--ink-500); }
+.sol-cartouche.proposing { border-color: var(--calme-fg); background: var(--calme-bg); }
+.sol-cartouche.pending { border-color: var(--attention-fg); background: var(--attention-bg); }
+.sol-cartouche.executing { border-color: var(--calme-fg); }
+.sol-cartouche.done { border-color: var(--succes-fg); background: var(--succes-bg); }
+.sol-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ink-400); flex-shrink: 0;
+}
+.sol-cartouche.proposing .sol-dot { background: var(--calme-fg); animation: pulse 3s ease-in-out infinite; }
+.sol-cartouche.pending .sol-dot { background: var(--attention-fg); animation: pulse 1.5s ease-in-out infinite; }
+.sol-cartouche.executing .sol-dot { background: var(--calme-fg); animation: pulse 1s ease-in-out infinite; }
+.sol-cartouche.done .sol-dot { background: var(--succes-fg); }
+.sol-label { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-500); }
+.sol-msg { font-weight: 500; color: var(--ink-900); }
+
+/* ==== DRAWER SOL PREVIEW ==== */
+.backdrop {
+  position: fixed; inset: 0; background: rgba(28, 27, 24, 0.3);
+  z-index: 90; display: none;
+}
+.backdrop.open { display: block; }
+.drawer {
+  position: fixed; top: 0; right: 0; height: 100vh; width: 560px;
+  background: var(--bg-paper); z-index: 100;
+  transform: translateX(100%); transition: transform 280ms cubic-bezier(0.2, 0, 0, 1);
+  overflow-y: auto; display: flex; flex-direction: column;
+}
+.drawer.open { transform: translateX(0); }
+.drawer-head {
+  padding: 24px 32px 18px; border-bottom: 1px solid var(--rule);
+}
+.drawer-kicker { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--calme-fg); font-weight: 600; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 6px; }
+.drawer-kicker::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--calme-fg); animation: pulse 3s infinite; }
+.drawer-title { font-family: var(--font-display); font-size: 24px; font-weight: 600; color: var(--ink-900); letter-spacing: -0.02em; line-height: 1.2; }
+.drawer-body { padding: 24px 32px; flex: 1; }
+.drawer-body p { font-size: 14px; color: var(--ink-700); line-height: 1.6; margin-bottom: 14px; }
+.drawer-section { margin-bottom: 24px; }
+.drawer-section-title {
+  font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--ink-500); font-weight: 600; margin-bottom: 10px;
+}
+.preview-box {
+  background: var(--bg-canvas); border: 1px solid var(--rule); border-radius: 3px;
+  padding: 18px 20px; font-family: var(--font-display); font-size: 14.5px; line-height: 1.65; color: var(--ink-900);
+  white-space: pre-wrap;
+}
+.preview-box strong { font-weight: 600; }
+.law-list { display: flex; flex-direction: column; gap: 10px; }
+.law-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 10px 14px; background: var(--bg-panel); border-radius: 3px;
+  font-size: 13px; color: var(--ink-700);
+}
+.law-icon { color: var(--calme-fg); font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+.drawer-footer {
+  padding: 18px 32px; border-top: 1px solid var(--rule); background: var(--bg-canvas);
+  display: flex; gap: 10px; justify-content: space-between; align-items: center;
+}
+
+/* ==== EXPERT VIEW ==== */
+.expert-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px;
+  background: var(--rule); border: 1px solid var(--rule);
+}
+.expert-cell {
+  background: var(--bg-paper); padding: 10px 12px;
+  font-family: var(--font-mono); font-size: 12px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.expert-cell.head { background: var(--bg-panel); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-500); font-weight: 600; }
+.expert-cell.head.sortable::after { content: '▲'; font-size: 8px; margin-left: 4px; color: var(--ink-400); }
+.expert-cell .v { font-weight: 600; color: var(--ink-900); }
+.expert-cell .sub { font-size: 10px; color: var(--ink-500); }
+.expert-status { display: inline-flex; padding: 1px 6px; border-radius: 2px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; width: fit-content; }
+.status-ok { background: var(--succes-bg); color: var(--succes-fg); }
+.status-att { background: var(--attention-bg); color: var(--attention-fg); }
+.status-risk { background: var(--refuse-bg); color: var(--refuse-fg); }
+
+.expert-toolbar {
+  background: var(--bg-panel); border: 1px solid var(--rule); border-bottom: none;
+  padding: 8px 12px; display: flex; align-items: center; gap: 12px;
+  font-family: var(--font-mono); font-size: 11px;
+}
+.expert-kbd {
+  font-family: var(--font-mono); font-size: 10px;
+  background: var(--bg-paper); border: 1px solid var(--rule); border-radius: 2px;
+  padding: 1px 5px; color: var(--ink-500);
+}
+
+/* ==== JOURNAL AUDIT ==== */
+.journal {
+  font-family: var(--font-mono); font-size: 12px;
+  background: var(--bg-paper); border: 1px solid var(--rule); border-radius: 3px;
+  padding: 16px 20px;
+}
+.journal-row { display: grid; grid-template-columns: 160px 100px 1fr 120px; gap: 16px; padding: 8px 0; border-bottom: 1px dashed var(--ink-200); font-size: 11.5px; }
+.journal-row:last-child { border-bottom: none; }
+.journal-row.head { color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; font-weight: 600; border-bottom-style: solid; padding-bottom: 10px; }
+.j-status { font-weight: 600; }
+
+/* ==== ANNOTATIONS ==== */
+.annot {
+  position: absolute; font-family: var(--font-mono); font-size: 10px;
+  color: var(--afaire-fg); background: var(--afaire-bg);
+  padding: 3px 8px; border-radius: 2px; letter-spacing: 0.05em;
+  pointer-events: none; z-index: 5;
+}
+
+/* ==== PROSE MODE INSPECT ==== */
+.inspect-doc {
+  max-width: 760px; margin: 0 auto; padding: 40px 48px;
+  background: var(--bg-paper); border: 1px solid var(--rule);
+  border-radius: 3px; font-family: var(--font-display); font-size: 15px; line-height: 1.7; color: var(--ink-700);
+}
+.inspect-doc h3 { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--ink-900); margin: 24px 0 10px; letter-spacing: -0.015em; }
+.inspect-doc p { margin-bottom: 14px; }
+.inspect-doc .lead { font-size: 18px; color: var(--ink-900); font-weight: 500; margin-bottom: 24px; }
+.inspect-doc .footnote { font-size: 12px; color: var(--ink-500); font-family: var(--font-body); border-top: 1px solid var(--rule); padding-top: 12px; margin-top: 24px; }
+.inspect-doc .inline-num { font-family: var(--font-mono); font-weight: 600; color: var(--ink-900); background: var(--ink-100); padding: 1px 5px; border-radius: 2px; font-size: 0.9em; }
+
+/* Sélection mode */
+.hidden { display: none !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/* V2 OVERRIDES — dashboard-first (feedback UX "trop éditorial")          */
+/* Aesthetic: style Linear/Arc/Raycast — neutre, dense, efficient         */
+/* Keep Sol voice (FR, vouvoiement) ; drop Sol editorial layout           */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+/* 1. Retirer italique + Fraunces sur tous les em sauf sol-hero */
+.page-title em,
+.sol-headline em,
+.sol-hero-metric-lbl em,
+.section-title em,
+.kpi-headline em,
+.exec-heading em,
+.recos-heading em { font-style: normal; color: var(--ink-500); font-weight: 500; }
+
+/* 2. Tous les titres sauf sol-hero-title passent en DM Sans */
+.page-title,
+.section-title,
+.week-card-title,
+.sol-headline {
+  font-family: var(--font-body);
+  letter-spacing: -0.015em;
+}
+
+.page-title { font-size: 24px; font-weight: 600; line-height: 1.2; }
+.sol-headline { font-size: 16px; font-weight: 500; line-height: 1.4; margin-bottom: 8px; color: var(--ink-700); }
+.sol-subline { font-size: 13px; }
+.section-title { font-size: 15px; font-weight: 600; letter-spacing: -0.005em; }
+.week-card-title { font-size: 14px; font-weight: 600; }
+
+/* 3. Page-head plus compact */
+.page-head { padding-bottom: 14px; margin-bottom: 20px; }
+.page-kicker { font-size: 10px; margin-bottom: 4px; }
+
+/* 4. KPIs plus denses (padding réduit, chiffres plus petits mais lisibles) */
+.kpi-row { gap: 14px; margin-bottom: 20px; }
+.kpi { padding: 14px 16px 12px; border-radius: 6px; border-color: var(--ink-200); }
+.kpi-label { font-size: 10.5px; margin-bottom: 8px; }
+.kpi-value { font-size: 24px; letter-spacing: -0.025em; }
+.kpi-unit { font-size: 12px; margin-left: 3px; }
+.kpi-headline { font-size: 11.5px; margin-top: 8px; line-height: 1.45; }
+
+/* 5. Sol-hero : rester distinctif (ancre Sol) mais moins éditorial */
+.sol-hero {
+  border-radius: 8px;
+  padding: 18px 22px;
+  border-color: var(--ink-200);
+  border-left-width: 3px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.sol-hero-title {
+  font-family: var(--font-body); /* plus de Fraunces, plus affirmatif */
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+.sol-hero-sub { font-size: 13px; }
+.sol-hero-metrics { gap: 18px; margin-top: 10px; }
+.sol-hero-metric-val { font-size: 15px; }
+.sol-hero-metric-lbl { font-size: 10px; }
+
+/* 6. Week-cards plus compactes (retour au standard SaaS) */
+.week-grid { gap: 12px; margin-bottom: 24px; }
+.week-card { padding: 14px 16px; border-radius: 6px; border-color: var(--ink-200); }
+.week-card-body { font-size: 12.5px; line-height: 1.45; }
+.week-card-footer { margin-top: 10px; padding-top: 10px; font-size: 10.5px; }
+
+/* 7. Section heads plus serrés */
+.section-head { margin: 24px 0 12px 0; padding-bottom: 8px; }
+.section-meta { font-size: 10px; }
+
+/* 8. Panel latéral plus compact */
+.panel { padding: 20px 14px; }
+.panel-module { font-family: var(--font-body); font-weight: 600; font-size: 16px; letter-spacing: -0.01em; }
+.panel-item { padding: 6px 8px; font-size: 13px; border-radius: 4px; }
+.panel-item.active { box-shadow: none; background: var(--ink-100); }
+.panel-section { font-size: 10px; margin: 14px 0 6px 0; }
+
+/* 9. Buttons plus modernes */
+.btn { border-radius: 6px; font-size: 13px; padding: 8px 14px; font-weight: 500; }
+.btn-agentic { background: var(--calme-fg); }
+
+/* 10. Cartouche Sol : shadow softer */
+.sol-cartouche { border-radius: 6px; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08); }
+
+/* 11. Drawer : radius modernes, padding serré */
+.drawer { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+.drawer-head { padding: 20px 26px 14px; }
+.drawer-title { font-family: var(--font-body); font-weight: 600; font-size: 20px; }
+
+/* 12. Kpi-row garde 3 cols (4 serait trop dense sur surface 1), mais tighter */
+/* (no change on grid-template-columns) */
+
+/* 13. Courbe de charge : remise dans un card style dashboard */
+.load-curve { border: 1px solid var(--ink-200); border-radius: 6px; padding: 12px; background: var(--bg-paper); height: 200px; }
+
+/* 14. Timerail plus discret */
+.timerail { font-size: 10.5px; padding: 0 32px; }
+
+/* 15. Table expert : radius modernes */
+.expert-grid { border-radius: 6px; overflow: hidden; }
+
+/* 16. Sol-chip-inline : style pill moderne */
+.sol-chip-inline {
+  background: var(--calme-bg);
+  color: var(--calme-fg);
+  padding: 3px 8px;
+  border-radius: 99px;
+  font-size: 9.5px;
+}
+.sol-chip-inline::before { width: 5px; height: 5px; }
+
+/* 17. Rail-logo garde Fraunces pour signature Sol */
+/* (inchangé via var(--font-display)) */
+</style>
+</head>
+<body>
+
+<!-- SURFACE -->
+<div class="app" id="mode-surface">
+  <aside class="rail">
+    <div class="rail-logo">P.</div>
+    <div class="rail-icon active" title="Cockpit">◐</div>
+    <div class="rail-icon" title="Conformité">§</div>
+    <div class="rail-icon" title="Analyse">∿</div>
+    <div class="rail-icon" title="Marché">€</div>
+    <div class="rail-icon" title="Admin">⋯</div>
+  </aside>
+
+  <nav class="panel">
+    <div class="panel-module">Cockpit</div>
+    <div class="panel-desc">Votre cockpit énergétique, semaine du 14 avril.</div>
+
+    <div class="panel-section">Cette semaine</div>
+    <div class="panel-item active">Vue d'accueil</div>
+    <div class="panel-item">Journal d'actions <span class="badge">3</span></div>
+    <div class="panel-item">Alertes <span class="badge">2</span></div>
+
+    <div class="panel-section">Horizons</div>
+    <div class="panel-item">Trajectoire 2030</div>
+    <div class="panel-item">Trajectoire 2040</div>
+
+    <div class="panel-section">Vue d'ensemble</div>
+    <div class="panel-item">Patrimoine (5 sites)</div>
+    <div class="panel-item">Exécutif</div>
+  </nav>
+
+  <main class="main">
+    <header class="page-head">
+      <div>
+        <div class="page-kicker">Cockpit · semaine 16 · patrimoine HELIOS</div>
+        <h1 class="page-title">Bonjour <em>— voici votre semaine</em></h1>
+      </div>
+      <div class="layer-toggle">
+        <button class="layer-btn active" onclick="switchMode('surface')">Surface</button>
+        <button class="layer-btn" onclick="switchMode('inspect')">Inspecter</button>
+        <button class="layer-btn" onclick="switchMode('expert')">Expert</button>
+      </div>
+    </header>
+
+    <!-- SOL HEADLINE -->
+    <div class="sol-headline">
+      Trois points méritent votre attention cette semaine. L'action la plus urgente concerne <em>la facture de mars sur Lyon</em>, que je peux contester à votre place.
+    </div>
+    <div class="sol-subline">Votre patrimoine de 5 sites consomme au rythme attendu pour la saison. Un site dérive de sa trajectoire Décret Tertiaire. Votre prochain comex est dans 11 jours — le rapport sera prêt la veille.</div>
+
+    <!-- SOL HERO — PROPOSE UNE ACTION -->
+    <section class="sol-hero" onclick="openDrawer()">
+      <div>
+        <div class="sol-chip-inline">Sol propose · action agentique</div>
+        <div class="sol-hero-title">Contester la facture Lyon de mars auprès d'EDF Entreprises</div>
+        <div class="sol-hero-sub">Vous avez été facturé l'accise T1 sur toute la période, alors que vous êtes basculé en T2 depuis le&nbsp;15&nbsp;février. Je peux rédiger le courrier et l'envoyer — vous relisez avant, vous gardez la main pendant 24&nbsp;h.</div>
+        <div class="sol-hero-metrics">
+          <div>
+            <div class="sol-hero-metric-val">1 847,20&nbsp;€</div>
+            <div class="sol-hero-metric-lbl">à récupérer</div>
+          </div>
+          <div>
+            <div class="sol-hero-metric-val">94&nbsp;%</div>
+            <div class="sol-hero-metric-lbl">confiance du calcul</div>
+          </div>
+          <div>
+            <div class="sol-hero-metric-val">3&nbsp;min</div>
+            <div class="sol-hero-metric-lbl">pour valider</div>
+          </div>
+        </div>
+      </div>
+      <div class="sol-hero-actions">
+        <button class="btn btn-agentic">Voir ce que j'enverrai</button>
+        <button class="btn btn-ghost">Plus tard</button>
+      </div>
+    </section>
+
+    <!-- KPIs "Numbers first" -->
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">Facture énergie · mars</div>
+        <div class="kpi-value">47&nbsp;382<span class="kpi-unit">€ HT</span></div>
+        <div class="kpi-delta delta-up">▲ +8,2&nbsp;% vs&nbsp;février</div>
+        <div class="kpi-headline">Hausse tirée par <em>Lyon</em> et <em>Nice</em> — principalement saisonnière, mais une anomalie sur Lyon explique un tiers de l'écart.</div>
+        <div class="source-chip src-facture">● Source&nbsp;·&nbsp;factures&nbsp;·&nbsp;3&nbsp;fournisseurs</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Conformité Décret tertiaire</div>
+        <div class="kpi-value">62<span class="kpi-unit">/100</span></div>
+        <div class="kpi-delta delta-down">▼ −3 pts sur 3 mois</div>
+        <div class="kpi-headline">Vous êtes <em>en zone à risque</em> — trois sites tirent le score vers le bas, Marseille école en tête.</div>
+        <div class="source-chip src-enedis">● Source&nbsp;·&nbsp;Enedis&nbsp;·&nbsp;mis à jour&nbsp;il&nbsp;y&nbsp;a&nbsp;23&nbsp;h</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Consommation · patrimoine</div>
+        <div class="kpi-value">1 847<span class="kpi-unit">MWh</span></div>
+        <div class="kpi-delta delta-down">▼ −4,1&nbsp;% vs&nbsp;n−1</div>
+        <div class="kpi-headline">Vous consommez <em>moins</em> qu'à la même période l'an dernier — Paris et Toulouse portent la baisse.</div>
+        <div class="source-chip src-enedis">● Source&nbsp;·&nbsp;Enedis + GRDF</div>
+      </div>
+    </div>
+
+    <!-- CETTE SEMAINE -->
+    <div class="section-head">
+      <div class="section-title">Cette semaine chez vous</div>
+      <div class="section-meta">3 points · actualisé il y a 47 min</div>
+    </div>
+    <div class="week-grid">
+      <div class="week-card">
+        <div class="week-card-tag tag-attention">À regarder</div>
+        <div class="week-card-title">Marseille école dérive</div>
+        <div class="week-card-body">Consommation en hausse de <strong>+12 %</strong> sur 90 jours glissants — probablement la CTA défectueuse signalée en février. Je peux générer le plan d'action.</div>
+        <div class="week-card-footer">
+          <span>chiffré : +4 200 € / an si non-traité</span>
+          <span>⌘K</span>
+        </div>
+      </div>
+      <div class="week-card">
+        <div class="week-card-tag tag-afaire">À faire</div>
+        <div class="week-card-title">OPERAT Lyon · 30 sept</div>
+        <div class="week-card-body">Déclaration annuelle à déposer dans <strong>5 mois</strong>. Je peux préparer le fichier CSV v3.2 à partir de vos données — il vous restera à le déposer.</div>
+        <div class="week-card-footer">
+          <span>préparation : 4 h → 3 min</span>
+          <span>Automatisable</span>
+        </div>
+      </div>
+      <div class="week-card">
+        <div class="week-card-tag tag-succes">Bonne nouvelle</div>
+        <div class="week-card-title">Paris bureaux · BACS validé</div>
+        <div class="week-card-body">L'obligation BACS sur Paris est <strong>conforme</strong> depuis le rapport d'homologation reçu hier. Votre score de conformité gagne <strong>+4 points</strong>.</div>
+        <div class="week-card-footer">
+          <span>conforme · pièce au dossier</span>
+          <span>✓ Clean</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- COURBE DE CHARGE — signature visuelle -->
+    <div class="section-head">
+      <div class="section-title">Courbe de charge — Lyon, hier</div>
+      <div class="section-meta">pas 30 min · HP / HC tarifaires</div>
+    </div>
+    <svg class="load-curve" viewBox="0 0 900 180" preserveAspectRatio="none">
+      <!-- Bandes HP/HC -->
+      <rect class="tariff-stripe-hch" x="0" y="0" width="220" height="180"/>
+      <rect class="tariff-stripe-hph" x="220" y="0" width="420" height="180"/>
+      <rect class="tariff-stripe-hch" x="640" y="0" width="260" height="180"/>
+      <!-- Grille -->
+      <line x1="0" y1="45" x2="900" y2="45" stroke="#D9D2C1" stroke-dasharray="2,3"/>
+      <line x1="0" y1="90" x2="900" y2="90" stroke="#D9D2C1" stroke-dasharray="2,3"/>
+      <line x1="0" y1="135" x2="900" y2="135" stroke="#D9D2C1" stroke-dasharray="2,3"/>
+      <!-- Courbe -->
+      <path d="M 0,130 L 50,128 L 100,125 L 150,118 L 200,95 L 250,70 L 300,55 L 350,48 L 400,52 L 450,62 L 500,70 L 550,58 L 600,45 L 650,38 L 700,55 L 750,82 L 800,105 L 850,118 L 900,125"
+            stroke="#1C1B18" stroke-width="1.8" fill="none"/>
+      <!-- Point maintenant -->
+      <circle cx="648" cy="38" r="4" fill="#2F6B5E"/>
+      <text x="656" y="34" font-family="JetBrains Mono" font-size="10" fill="#2F6B5E" font-weight="600">pic 14h · 118 kW</text>
+      <!-- Légende -->
+      <text x="10" y="172" font-family="JetBrains Mono" font-size="10" fill="#6B665C">HC 00:00 → 06:00</text>
+      <text x="230" y="172" font-family="JetBrains Mono" font-size="10" fill="#B84545">HP 06:00 → 22:00</text>
+      <text x="650" y="172" font-family="JetBrains Mono" font-size="10" fill="#6B665C">HC 22:00 → 24:00</text>
+    </svg>
+    <div style="font-size: 12.5px; color: var(--ink-500); margin-top: 8px;">
+      <strong style="color: var(--ink-900);">85 % de votre consommation</strong> tombe en heures pleines — attendu pour un bureau. Votre contrat est bien calibré.
+      <span class="source-chip src-enedis" style="margin-left: 8px; margin-top: 0;">● Enedis · M023 · complète</span>
+    </div>
+  </main>
+
+  <footer class="timerail">
+    <div class="tr-item">
+      <span class="tr-dot tr-live"></span>
+      <span>14h32 · <strong style="color: var(--hph-fg);">HP</strong> en cours · jusqu'à 22h</span>
+    </div>
+    <div class="timerail-sep"></div>
+    <div class="tr-item">
+      <span>Sem. 16 · avril</span>
+    </div>
+    <div class="timerail-sep"></div>
+    <div class="tr-trajectory">
+      <span>Trajectoire DT 2030&nbsp;:</span>
+      <div class="tr-bar"><div class="tr-bar-fill"></div></div>
+      <span><strong style="color: var(--ink-900);">−12,4 %</strong> sur −25 % requis · en retard</span>
+    </div>
+    <div class="timerail-sep"></div>
+    <div class="tr-item">
+      <span>Sol · en veille · 3 actions en attente</span>
+    </div>
+  </footer>
+</div>
+
+<!-- CARTOUCHE SOL -->
+<div class="sol-cartouche proposing" id="sol-status" onclick="openDrawer()">
+  <span class="sol-dot"></span>
+  <div>
+    <div class="sol-label">Sol</div>
+    <div class="sol-msg">Je propose une action — <span style="color: var(--calme-fg); font-weight: 600;">1 847 €</span> à récupérer</div>
+  </div>
+</div>
+
+<!-- DRAWER — PREVIEW DE L'ACTION AGENTIQUE -->
+<div class="backdrop" id="backdrop" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-kicker">Sol · prévisualisation avant exécution</div>
+    <div class="drawer-title">Contester la facture Lyon de mars</div>
+    <p style="font-size: 13.5px; color: var(--ink-500); margin-top: 10px; line-height: 1.5;">
+      Je vais envoyer le courrier ci-dessous à EDF Entreprises. Vous avez <strong style="color: var(--calme-fg);">24 heures</strong> pour annuler après validation. Rien n'est irréversible.
+    </p>
+  </div>
+
+  <div class="drawer-body">
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Anomalie détectée</div>
+      <div style="background: var(--bg-panel); padding: 14px 18px; border-radius: 3px; border-left: 3px solid var(--attention-fg);">
+        <div style="font-size: 13.5px; color: var(--ink-900); font-weight: 500; margin-bottom: 6px;">Accise facturée T1 sur toute la période</div>
+        <div style="font-size: 12.5px; color: var(--ink-700); line-height: 1.6;">
+          Vous êtes passé en <strong>tarif T2</strong> (site électro-intensif) le <strong>15 février 2026</strong> suite à votre demande SIRENE du 12 février. La facture du 1<sup>er</sup> au 31 mars aurait dû appliquer <span class="mono">26,58&nbsp;€/MWh</span> — elle applique <span class="mono">30,85&nbsp;€/MWh</span>.
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 12px; color: var(--ink-500); margin-top: 10px; line-height: 1.6;">
+          Écart : <strong style="color: var(--ink-900);">4,27 €/MWh × 432,6 MWh = 1&nbsp;847,20&nbsp;€ HT</strong><br>
+          Confiance calcul : <strong style="color: var(--calme-fg);">94&nbsp;%</strong> · Seuil d'exécution : 85&nbsp;%
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Courrier qui sera envoyé</div>
+      <div class="preview-box">À : contestation-pro@edf.fr
+Objet : Contestation facture n° F-2026-03-LYON · accise électricité
+
+Madame, Monsieur,
+
+Nous contestons la facture <strong>F-2026-03-LYON</strong> du <strong>2&nbsp;avril 2026</strong> concernant notre site de <strong>Lyon-Bureaux</strong> (PDL : 14500000123456).
+
+L'accise sur les consommations d'électricité a été facturée au taux <strong>T1 à 30,85&nbsp;€/MWh</strong> sur l'ensemble de la période, alors que notre statut d'électro-intensif (T2 à 26,58&nbsp;€/MWh) est effectif depuis le <strong>15&nbsp;février 2026</strong> (notification SIRENE du 12&nbsp;février, copie en annexe).
+
+L'écart de facturation s'élève à <strong>1&nbsp;847,20&nbsp;€ HT</strong>, détaillé comme suit&nbsp;:
+ — Consommations période : 432,6 MWh
+ — Taux facturé : 30,85 €/MWh · Taux applicable : 26,58 €/MWh
+ — Écart unitaire : 4,27 €/MWh
+
+Nous vous remercions de procéder à l'émission d'un avoir correctif…</div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Pièces jointes générées</div>
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--ink-700); line-height: 1.8;">
+        📎 notification-sirene-t2-12fev2026.pdf <span style="color: var(--ink-500);">· 214&nbsp;ko</span><br>
+        📎 facture-lyon-mars-2026.pdf <span style="color: var(--ink-500);">· 186&nbsp;ko</span><br>
+        📎 calcul-ecart-accise.pdf <span style="color: var(--ink-500);">· 92&nbsp;ko</span><br>
+        📎 historique-consommations-lyon-janv-mars.csv <span style="color: var(--ink-500);">· 4&nbsp;ko</span>
+      </div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Garanties d'exécution</div>
+      <div class="law-list">
+        <div class="law-item"><span class="law-icon">1.</span><div><strong style="color: var(--ink-900);">Délai de grâce 24&nbsp;h</strong> — annulable d'un clic, sans frais, tant que l'envoi n'est pas exécuté.</div></div>
+        <div class="law-item"><span class="law-icon">2.</span><div><strong style="color: var(--ink-900);">Logique déterministe</strong> — le calcul vient du moteur shadow-billing, pas d'une estimation par IA.</div></div>
+        <div class="law-item"><span class="law-icon">3.</span><div><strong style="color: var(--ink-900);">Audit complet</strong> — chaque étape est tracée dans le journal des actions, consultable et exportable.</div></div>
+        <div class="law-item"><span class="law-icon">4.</span><div><strong style="color: var(--ink-900);">Mail signé PROMEOS</strong> — DKIM/SPF depuis votre domaine, pas depuis un tiers.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer-footer">
+    <button class="btn btn-ghost" onclick="closeDrawer()">Annuler</button>
+    <div style="display: flex; gap: 8px;">
+      <button class="btn btn-secondary">Éditer le courrier</button>
+      <button class="btn btn-primary" onclick="schedulePending()">Valider — envoi dans 24&nbsp;h</button>
+    </div>
+  </div>
+</aside>
+
+<!-- INSPECT MODE (caché par défaut) -->
+<div class="app hidden" id="mode-inspect">
+  <aside class="rail">
+    <div class="rail-logo">P.</div>
+    <div class="rail-icon active">◐</div><div class="rail-icon">§</div><div class="rail-icon">∿</div><div class="rail-icon">€</div><div class="rail-icon">⋯</div>
+  </aside>
+  <nav class="panel">
+    <div class="panel-module">Cockpit · Inspecter</div>
+    <div class="panel-desc">Contestation facture Lyon · mars 2026.</div>
+    <div class="panel-section">Navigation</div>
+    <div class="panel-item">← Retour cockpit</div>
+    <div class="panel-item active">Dossier d'anomalie</div>
+    <div class="panel-item">Historique factures</div>
+    <div class="panel-item">Journal Sol</div>
+  </nav>
+  <main class="main">
+    <header class="page-head">
+      <div>
+        <div class="page-kicker">Dossier d'anomalie · facture Lyon · F-2026-03-LYON</div>
+        <h1 class="page-title">Pourquoi cette facture <em>pose question</em></h1>
+      </div>
+      <div class="layer-toggle">
+        <button class="layer-btn" onclick="switchMode('surface')">Surface</button>
+        <button class="layer-btn active" onclick="switchMode('inspect')">Inspecter</button>
+        <button class="layer-btn" onclick="switchMode('expert')">Expert</button>
+      </div>
+    </header>
+
+    <div class="inspect-doc">
+      <p class="lead">Votre site de Lyon a été facturé <strong>47 382 € HT</strong> pour le mois de mars. Un écart de <span class="inline-num">+8,2 %</span> par rapport à février, expliqué à <span class="inline-num">71 %</span> par la saison et à <span class="inline-num">29 %</span> par une anomalie de taux d'accise que nous détaillons ici.</p>
+
+      <h3>§1. Ce qui s'est passé en chiffres</h3>
+      <p>Le 12 février 2026, votre statut d'<em>électro-intensif</em> a été validé par la direction générale des entreprises, ouvrant droit au tarif réduit d'accise de <span class="inline-num">26,58 €/MWh</span> (catégorie T2) en remplacement du taux standard de <span class="inline-num">30,85 €/MWh</span> (T1). La bascule est effective rétroactivement au <strong>15 février</strong>, conformément à l'article 266&nbsp;quinquies&nbsp;C du Code des douanes<sup>1</sup>.</p>
+
+      <p>Sur la facture F-2026-03-LYON émise le <strong>2 avril</strong>, EDF Entreprises a appliqué le taux T1 à l'intégralité des <span class="inline-num">432,6 MWh</span> consommés. Le taux T2 aurait dû s'appliquer sur la totalité de la période, puisque la bascule était effective depuis le 15 février — soit <strong>15 jours avant</strong> le début du mois facturé.</p>
+
+      <h3>§2. Ce que cela représente</h3>
+      <p>L'écart unitaire de <span class="inline-num">4,27 €/MWh</span>, appliqué aux <span class="inline-num">432,6 MWh</span>, représente un trop-perçu de <strong>1 847,20 €&nbsp;HT</strong>, soit <strong>2 216,64 €&nbsp;TTC</strong>. Cette somme peut être récupérée sous forme d'avoir correctif sur la prochaine facture, ou par virement direct si vous le demandez.</p>
+
+      <h3>§3. Comment Sol a détecté l'anomalie</h3>
+      <p>Le moteur de <em>shadow billing</em> de PROMEOS reconstruit en parallèle la facture attendue à partir de vos consommations réelles (Enedis, courbe de charge M023) et des barèmes réglementaires en vigueur, puis compare ligne à ligne avec la facture reçue. L'écart sur la ligne « accise » a dépassé le seuil de signification (1&nbsp;% ou 500&nbsp;€, selon le plus faible), déclenchant une alerte automatique.</p>
+
+      <p>La confiance du calcul est estimée à <span class="inline-num">94 %</span>, au-dessus du seuil minimal d'exécution agentique (85 %). Sol propose donc de rédiger et d'envoyer la contestation à votre place, sous votre contrôle.</p>
+
+      <div class="footnote">
+        <strong>1.</strong> Code des douanes, article 266 quinquies C, modifié par la loi n°2024-1039 du 21 décembre 2024 (LFI 2025). Décret d'application n°2025-0172 du 3 février 2025. Référence JORFTEXT000053407616.<br>
+        <strong>Sources de cette analyse</strong> : facture PDF (F-2026-03-LYON) · Enedis DataConnect (courbe M023 · 31/03/26) · PROMEOS shadow billing v4.2 · arrêté 15/02/26 (statut T2).
+      </div>
+    </div>
+  </main>
+  <footer class="timerail">
+    <div class="tr-item"><span class="tr-dot tr-live"></span><span>14h32 · <strong style="color: var(--hph-fg);">HP</strong></span></div>
+    <div class="timerail-sep"></div>
+    <div class="tr-item"><span>Mode Inspect · lecture approfondie</span></div>
+  </footer>
+</div>
+
+<!-- EXPERT MODE (caché par défaut) -->
+<div class="app hidden" id="mode-expert">
+  <aside class="rail">
+    <div class="rail-logo">P.</div>
+    <div class="rail-icon active">◐</div><div class="rail-icon">§</div><div class="rail-icon">∿</div><div class="rail-icon">€</div><div class="rail-icon">⋯</div>
+  </aside>
+  <nav class="panel">
+    <div class="panel-module">Cockpit · Expert</div>
+    <div class="panel-desc">Vue dense · raccourcis clavier actifs.</div>
+    <div class="panel-section">Vues</div>
+    <div class="panel-item active">Factures anomalies</div>
+    <div class="panel-item">Actions Sol en cours</div>
+    <div class="panel-item">Journal audit</div>
+    <div class="panel-item">Seuils & règles</div>
+    <div class="panel-section">Raccourcis</div>
+    <div class="panel-item" style="font-family: var(--font-mono); font-size: 11.5px;">⌘K · Commande</div>
+    <div class="panel-item" style="font-family: var(--font-mono); font-size: 11.5px;">⌘E · Export</div>
+    <div class="panel-item" style="font-family: var(--font-mono); font-size: 11.5px;">⌘⇧A · Sol agentique</div>
+  </nav>
+  <main class="main" style="padding: 28px 40px;">
+    <header class="page-head">
+      <div>
+        <div class="page-kicker">Expert · anomalies facturation · 5 sites · période glissante 90 j</div>
+        <h1 class="page-title" style="font-size: 26px;">Anomalies détectées <em>—&nbsp;12 lignes</em></h1>
+      </div>
+      <div class="layer-toggle">
+        <button class="layer-btn" onclick="switchMode('surface')">Surface</button>
+        <button class="layer-btn" onclick="switchMode('inspect')">Inspecter</button>
+        <button class="layer-btn active" onclick="switchMode('expert')">Expert</button>
+      </div>
+    </header>
+
+    <div class="sol-headline" style="font-size: 16px; margin-bottom: 14px;">12 anomalies détectées · 7 contestables automatiquement · <strong style="color: var(--calme-fg);">récupération potentielle 12&nbsp;847&nbsp;€</strong></div>
+
+    <div class="expert-toolbar">
+      <span>Filtres :</span>
+      <span class="expert-kbd">site:all</span>
+      <span class="expert-kbd">conf:≥85%</span>
+      <span class="expert-kbd">period:90d</span>
+      <span style="margin-left: auto; color: var(--ink-500);">Sélection : <strong style="color: var(--ink-900);">7 / 12</strong></span>
+      <button class="btn btn-agentic" style="padding: 4px 12px; font-size: 12px;">Contester en masse (7)</button>
+    </div>
+
+    <div class="expert-grid">
+      <div class="expert-cell head sortable">Site</div>
+      <div class="expert-cell head sortable">Facture</div>
+      <div class="expert-cell head sortable">Anomalie</div>
+      <div class="expert-cell head sortable">Écart</div>
+      <div class="expert-cell head sortable">Conf.</div>
+      <div class="expert-cell head">Statut</div>
+
+      <div class="expert-cell"><span class="v">Lyon-Bur.</span><span class="sub">14500…3456</span></div>
+      <div class="expert-cell"><span class="v">F-26-03</span><span class="sub">02/04/26</span></div>
+      <div class="expert-cell"><span class="v">Accise T1/T2</span><span class="sub">bascule 15/02</span></div>
+      <div class="expert-cell"><span class="v">1&nbsp;847,20</span><span class="sub">€ HT</span></div>
+      <div class="expert-cell"><span class="v" style="color: var(--calme-fg);">94%</span></div>
+      <div class="expert-cell"><span class="expert-status status-att">Sol propose</span></div>
+
+      <div class="expert-cell"><span class="v">Nice-Hôtel</span><span class="sub">50020…8891</span></div>
+      <div class="expert-cell"><span class="v">F-26-03</span><span class="sub">05/04/26</span></div>
+      <div class="expert-cell"><span class="v">TURPE CMS</span><span class="sub">dépass. P_souscr.</span></div>
+      <div class="expert-cell"><span class="v">4&nbsp;213,08</span><span class="sub">€ HT</span></div>
+      <div class="expert-cell"><span class="v" style="color: var(--calme-fg);">91%</span></div>
+      <div class="expert-cell"><span class="expert-status status-att">Sol propose</span></div>
+
+      <div class="expert-cell"><span class="v">Marseille</span><span class="sub">14500…9172</span></div>
+      <div class="expert-cell"><span class="v">F-26-03</span><span class="sub">03/04/26</span></div>
+      <div class="expert-cell"><span class="v">CTA coefficient</span><span class="sub">27,04% vs 26,23%</span></div>
+      <div class="expert-cell"><span class="v">382,15</span><span class="sub">€ HT</span></div>
+      <div class="expert-cell"><span class="v" style="color: var(--calme-fg);">97%</span></div>
+      <div class="expert-cell"><span class="expert-status status-att">Sol propose</span></div>
+
+      <div class="expert-cell"><span class="v">Toulouse</span><span class="sub">14500…4401</span></div>
+      <div class="expert-cell"><span class="v">F-26-03</span><span class="sub">01/04/26</span></div>
+      <div class="expert-cell"><span class="v">TVA base</span><span class="sub">20% vs 5,5%?</span></div>
+      <div class="expert-cell"><span class="v">847,90</span><span class="sub">€ HT</span></div>
+      <div class="expert-cell"><span class="v" style="color: var(--attention-fg);">78%</span></div>
+      <div class="expert-cell"><span class="expert-status status-risk">À vérifier</span></div>
+
+      <div class="expert-cell"><span class="v">Paris-Bur.</span><span class="sub">14500…7733</span></div>
+      <div class="expert-cell"><span class="v">F-26-02</span><span class="sub">03/03/26</span></div>
+      <div class="expert-cell"><span class="v">Accise T1</span><span class="sub">idem Lyon</span></div>
+      <div class="expert-cell"><span class="v">2&nbsp;341,80</span><span class="sub">€ HT</span></div>
+      <div class="expert-cell"><span class="v" style="color: var(--calme-fg);">94%</span></div>
+      <div class="expert-cell"><span class="expert-status status-ok">Contesté 05/04</span></div>
+
+      <div class="expert-cell"><span class="v">Lyon-Bur.</span><span class="sub">14500…3456</span></div>
+      <div class="expert-cell"><span class="v">F-26-02</span><span class="sub">03/03/26</span></div>
+      <div class="expert-cell"><span class="v">Accise T1/T2</span><span class="sub">idem mars</span></div>
+      <div class="expert-cell"><span class="v">1&nbsp;615,40</span><span class="sub">€ HT</span></div>
+      <div class="expert-cell"><span class="v" style="color: var(--calme-fg);">94%</span></div>
+      <div class="expert-cell"><span class="expert-status status-ok">Récupéré 12/04</span></div>
+    </div>
+
+    <!-- JOURNAL AUDIT -->
+    <div class="section-head" style="margin-top: 40px;">
+      <div class="section-title">Journal des actions Sol</div>
+      <div class="section-meta">30 derniers jours · append-only · exportable CSV/PDF</div>
+    </div>
+    <div class="journal">
+      <div class="journal-row head">
+        <div>Date · heure</div><div>Action</div><div>Détail</div><div>Statut</div>
+      </div>
+      <div class="journal-row">
+        <div>14/04 · 10h12</div>
+        <div>contestation</div>
+        <div>Lyon-Bur · F-26-03 · accise T1/T2 · <strong>1&nbsp;847,20&nbsp;€</strong> · validé par a.martin@cli…</div>
+        <div class="j-status" style="color: var(--attention-fg);">en attente 24h</div>
+      </div>
+      <div class="journal-row">
+        <div>12/04 · 14h47</div>
+        <div>contestation</div>
+        <div>Lyon-Bur · F-26-02 · accise T1/T2 · <strong>1&nbsp;615,40&nbsp;€</strong> · envoyé 13/04 · avoir reçu</div>
+        <div class="j-status" style="color: var(--succes-fg);">✓ récupéré</div>
+      </div>
+      <div class="journal-row">
+        <div>10/04 · 09h03</div>
+        <div>rapport exécutif</div>
+        <div>Mars 2026 · envoyé à 4 destinataires · ouvert 3/4</div>
+        <div class="j-status" style="color: var(--succes-fg);">✓ livré</div>
+      </div>
+      <div class="journal-row">
+        <div>08/04 · 16h22</div>
+        <div>alerte dérive</div>
+        <div>Marseille école · +12% / 90j · CTA suspectée · plan généré</div>
+        <div class="j-status" style="color: var(--calme-fg);">en cours</div>
+      </div>
+      <div class="journal-row">
+        <div>05/04 · 11h18</div>
+        <div>contestation</div>
+        <div>Paris-Bur · F-26-02 · accise T1/T2 · <strong>2&nbsp;341,80&nbsp;€</strong> · envoyé 06/04</div>
+        <div class="j-status" style="color: var(--succes-fg);">✓ récupéré</div>
+      </div>
+      <div class="journal-row">
+        <div>02/04 · 08h44</div>
+        <div>refus</div>
+        <div>Marseille · F-26-02 · TVA 5,5%? · confiance 62% &lt; seuil 85%</div>
+        <div class="j-status" style="color: var(--refuse-fg);">⊘ refusé auto</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 32px; padding: 16px 20px; background: var(--bg-panel); border-radius: 3px; font-size: 12.5px; color: var(--ink-700); line-height: 1.6;">
+      <strong style="color: var(--ink-900); font-family: var(--font-display); font-size: 14px;">Pour votre prochain CODIR (25 avril)</strong><br>
+      Sol a généré <strong>5&nbsp;804,40&nbsp;€</strong> de récupérations sur les 30 derniers jours, avec <strong>0 erreur</strong>. Le rapport PDF sera prêt le 24 au soir — vous le recevrez pour relecture.
+    </div>
+  </main>
+  <footer class="timerail">
+    <div class="tr-item"><span class="tr-dot tr-live"></span><span>14h32</span></div>
+    <div class="timerail-sep"></div>
+    <div class="tr-item"><span>Expert · ⌘K</span></div>
+    <div class="timerail-sep"></div>
+    <div class="tr-item"><span>7 actions sélectionnées · récup. totale : <strong style="color: var(--calme-fg);">12&nbsp;847&nbsp;€</strong></span></div>
+  </footer>
+</div>
+
+<script>
+function switchMode(mode) {
+  document.querySelectorAll('.app').forEach(el => el.classList.add('hidden'));
+  document.getElementById('mode-' + mode).classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('backdrop').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('backdrop').classList.remove('open');
+}
+function schedulePending() {
+  closeDrawer();
+  const sol = document.getElementById('sol-status');
+  sol.className = 'sol-cartouche pending';
+  sol.innerHTML = `<span class="sol-dot"></span><div><div class="sol-label">Sol · en attente 23h 59min</div><div class="sol-msg">Envoi programmé demain 14h32 · <span style="color: var(--calme-fg);">annulable</span></div></div>`;
+
+  // Bannière pending en haut du cockpit
+  const main = document.querySelector('#mode-surface .main');
+  if (!document.getElementById('pending-banner')) {
+    const banner = document.createElement('div');
+    banner.id = 'pending-banner';
+    banner.className = 'pending-banner';
+    banner.innerHTML = `
+      <div class="pending-text"><strong>Contestation Lyon</strong> programmée — envoi dans <span class="pending-timer">23 h 59 min</span>. Vous pouvez annuler ou éditer jusque-là.</div>
+      <div style="display: flex; gap: 8px;"><button class="btn btn-ghost">Modifier</button><button class="btn btn-secondary">Annuler</button></div>
+    `;
+    const heroEl = main.querySelector('.sol-hero');
+    heroEl.replaceWith(banner);
+  }
+}
+</script>
+
+</body>
+</html>
