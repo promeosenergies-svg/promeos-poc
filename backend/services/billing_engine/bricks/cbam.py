@@ -42,11 +42,16 @@ Sources :
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Optional
+from typing import Literal, Optional
+
+import yaml
 
 from utils.parameter_store_base import load_yaml_section
+
+logger = logging.getLogger(__name__)
 
 # Scopes CBAM officiels (Règlement 2023/956, article 2). Source de vérité
 # canonique côté YAML via `cbam_eu.scope`, listé ici pour validation type.
@@ -64,6 +69,9 @@ DEFAULT_INTENSITIES = {
 }
 
 
+IntensitySource = Literal["site_specific", "default_ce"]
+
+
 @dataclass(frozen=True)
 class CbamScopeBreakdown:
     """Détail par scope pour audit."""
@@ -73,7 +81,7 @@ class CbamScopeBreakdown:
     intensity_tco2_per_t: float
     co2_embedded_t: float  # = volume × intensity
     cost_eur: float  # = co2 × rate
-    intensity_source: str  # 'site_specific' | 'default_ce'
+    intensity_source: IntensitySource
 
 
 @dataclass(frozen=True)
@@ -90,7 +98,12 @@ class CbamResult:
 
 
 def _load_cbam_params() -> tuple[float, dict[str, float]]:
-    """Charge rate + intensités par défaut depuis `tarifs_reglementaires.yaml::cbam_eu`."""
+    """Charge rate + intensités par défaut depuis `tarifs_reglementaires.yaml::cbam_eu`.
+
+    Fallback sur les constantes hardcodées (`DEFAULT_RATE_EUR_PER_TCO2` +
+    `DEFAULT_INTENSITIES`) en cas d'indisponibilité YAML — warning loggé
+    pour visibilité prod.
+    """
     try:
         section = load_yaml_section("cbam_eu") or {}
         rate = float(section.get("rate_eur_per_t_co2", DEFAULT_RATE_EUR_PER_TCO2))
@@ -99,7 +112,8 @@ def _load_cbam_params() -> tuple[float, dict[str, float]]:
         for scope, default_int in DEFAULT_INTENSITIES.items():
             intensities.setdefault(scope, default_int)
         return rate, intensities
-    except Exception:
+    except (FileNotFoundError, KeyError, ValueError, yaml.YAMLError) as exc:
+        logger.warning("cbam: params YAML indisponible (fallback hardcoded) — %s", exc)
         return DEFAULT_RATE_EUR_PER_TCO2, dict(DEFAULT_INTENSITIES)
 
 

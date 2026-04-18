@@ -131,3 +131,21 @@ class TestCbamScopes:
     def test_cbam_scopes_canoniques_six(self):
         """Les 6 scopes CBAM du règlement 2023/956."""
         assert CBAM_SCOPES == frozenset(["acier", "ciment", "aluminium", "engrais", "hydrogene", "electricite"])
+
+    def test_cbam_scopes_aligned_with_yaml(self):
+        """Drift guard : CBAM_SCOPES Python == cbam_eu.scope YAML == DEFAULT_INTENSITIES keys.
+
+        Si le YAML est mis à jour (ajout/retrait scope), le Python doit suivre —
+        ce test catche une divergence au test run plutôt qu'en prod silencieuse.
+        """
+        from utils.parameter_store_base import load_yaml_section
+
+        section = load_yaml_section("cbam_eu") or {}
+        yaml_scopes = frozenset(section.get("scope", []))
+        default_keys = frozenset(DEFAULT_INTENSITIES.keys())
+        assert CBAM_SCOPES == yaml_scopes, (
+            f"Drift CBAM_SCOPES Python vs YAML cbam_eu.scope : py={CBAM_SCOPES} yaml={yaml_scopes}"
+        )
+        assert CBAM_SCOPES == default_keys, (
+            f"Drift CBAM_SCOPES vs DEFAULT_INTENSITIES keys : scopes={CBAM_SCOPES} defaults={default_keys}"
+        )

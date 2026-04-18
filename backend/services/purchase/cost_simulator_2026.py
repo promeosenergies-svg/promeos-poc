@@ -42,6 +42,7 @@ from typing import Any, Optional
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from services.billing_engine.bricks.cbam import compute_cbam
 from services.billing_engine.parameter_store import ParameterStore
 from utils.parameter_store_base import load_yaml_section, paris_today
 
@@ -415,11 +416,12 @@ def simulate_annual_cost_2026(
     capacite_eur = annual_mwh * CAPACITE_UNITAIRE_EUR_MWH
 
     # 7. CBAM — délégué à la brique dédiée (P3 wedge stratégique).
-    # Par défaut `site.cbam_imports_tonnes` est absent/vide → exposition nulle
-    # avec note pédagogique. Si le site déclare des volumes d'imports hors UE,
-    # la brique calcule l'exposition annuelle avec breakdown par scope.
-    from services.billing_engine.bricks.cbam import compute_cbam
-
+    # HOOK EXPÉRIMENTAL : `site.cbam_imports_tonnes` n'est pas une colonne du
+    # model Site — c'est un attribut runtime-only (attaché via setattr dans
+    # les tests ou par un futur pipeline d'intake industriel). En production
+    # standard, aucun site n'a cet attribut → getattr retourne None → brique
+    # renvoie `applicable=False` avec note pédagogique. Migration Site
+    # nécessaire pour activer l'exposition réelle à grande échelle.
     cbam_imports = getattr(site, "cbam_imports_tonnes", None) or {}
     cbam_intensities = getattr(site, "cbam_intensities_tco2_per_t", None) or None
     cbam_result = compute_cbam(cbam_imports, at_date, site_specific_intensities=cbam_intensities)
