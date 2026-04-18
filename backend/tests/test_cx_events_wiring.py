@@ -81,9 +81,7 @@ def test_module_activated_fires_only_first_time(db_session):
     db_session.commit()
 
     count = (
-        db_session.query(AuditLog)
-        .filter(AuditLog.action == CX_MODULE_ACTIVATED, AuditLog.resource_id == "1")
-        .count()
+        db_session.query(AuditLog).filter(AuditLog.action == CX_MODULE_ACTIVATED, AuditLog.resource_id == "1").count()
     )
     assert count == 1
 
@@ -114,18 +112,27 @@ def test_module_activated_different_modules_fire_independently(db_session):
     _seed_member(db_session, user_id=1, org_id=1)
 
     log_cx_event_first_only(
-        db_session, 1, 1, CX_MODULE_ACTIVATED,
+        db_session,
+        1,
+        1,
+        CX_MODULE_ACTIVATED,
         dedup_key='"module_key": "flex"',
         context={"module_key": "flex"},
     )
     log_cx_event_first_only(
-        db_session, 1, 1, CX_MODULE_ACTIVATED,
+        db_session,
+        1,
+        1,
+        CX_MODULE_ACTIVATED,
         dedup_key='"module_key": "bacs"',
         context={"module_key": "bacs"},
     )
     # doublon flex → ignoré
     log_cx_event_first_only(
-        db_session, 1, 1, CX_MODULE_ACTIVATED,
+        db_session,
+        1,
+        1,
+        CX_MODULE_ACTIVATED,
         dedup_key='"module_key": "flex"',
         context={"module_key": "flex"},
     )
@@ -143,12 +150,18 @@ def test_module_activated_different_orgs_fire_independently(db_session):
     _seed_member(db_session, user_id=2, org_id=2)
 
     log_cx_event_first_only(
-        db_session, 1, 1, CX_MODULE_ACTIVATED,
+        db_session,
+        1,
+        1,
+        CX_MODULE_ACTIVATED,
         dedup_key='"module_key": "flex"',
         context={"module_key": "flex"},
     )
     log_cx_event_first_only(
-        db_session, 2, 2, CX_MODULE_ACTIVATED,
+        db_session,
+        2,
+        2,
+        CX_MODULE_ACTIVATED,
         dedup_key='"module_key": "flex"',
         context={"module_key": "flex"},
     )
@@ -165,12 +178,18 @@ def test_module_activated_returns_true_on_first_false_after(db_session):
     _seed_member(db_session, user_id=1, org_id=1)
 
     first = log_cx_event_first_only(
-        db_session, 1, 1, CX_MODULE_ACTIVATED,
+        db_session,
+        1,
+        1,
+        CX_MODULE_ACTIVATED,
         dedup_key='"module_key": "flex"',
         context={"module_key": "flex"},
     )
     second = log_cx_event_first_only(
-        db_session, 1, 1, CX_MODULE_ACTIVATED,
+        db_session,
+        1,
+        1,
+        CX_MODULE_ACTIVATED,
         dedup_key='"module_key": "flex"',
         context={"module_key": "flex"},
     )
@@ -182,7 +201,10 @@ def test_log_cx_event_first_only_invalid_type_returns_false(db_session):
     """event_type hors whitelist → False et pas de log."""
     _seed_member(db_session, user_id=1, org_id=1)
     result = log_cx_event_first_only(
-        db_session, 1, 1, "NOT_A_CX_EVENT",
+        db_session,
+        1,
+        1,
+        "NOT_A_CX_EVENT",
         dedup_key="x",
         context={},
     )
@@ -235,9 +257,7 @@ def test_onboarding_completed_fires_once_on_all_done_transition(db_session, monk
                 completed = completed.replace(tzinfo=None)
             progress.completed_at = completed
             if progress.created_at:
-                progress.ttfv_seconds = int(
-                    (completed - created).total_seconds()
-                )
+                progress.ttfv_seconds = int((completed - created).total_seconds())
             just_completed = True
 
     if just_completed:
