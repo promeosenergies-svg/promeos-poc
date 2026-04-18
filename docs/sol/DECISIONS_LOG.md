@@ -188,4 +188,61 @@ Patterns existants à **ne PAS reproduire** :
 
 ---
 
-**Document figé. Les 15 décisions ci-dessus sont les données d'entrée du prompt applicable `PROMPT_SOL_V1_SPRINT_1-2_APPLIED.md`.**
+---
+
+## Décisions UX (ajout post-Phase 1, session 2026-04-18)
+
+### UX-1 · Maquette source de vérité : **V2 polished**
+
+**Décision** : l'UI Sol V1 livré Sprint 3+ s'inspire strictement de
+`docs/sol/maquettes/cockpit-sol-v1-adjusted-v2-polished.html`.
+
+**Historique** :
+- Original (ivoire crème + Fraunces partout) → retour entourage UX : "trop éditorial"
+- V1 (désaturation douce) → conservé comme référence comparative
+- V2 (dashboard-first, style Linear/Arc) → adopté comme direction
+- V2 polished (palette harmonisée + KPI hiérarchie + courbe premium) → **locked**
+
+**Raison** : Sol V1 = différenciant démo levée seed 30/06/2026. V2 polished
+trouve l'équilibre entre distinctif (voice Sol, Sol-hero card signature,
+Sol-cartouche) et professionnel (dashboard dense, slate moderne,
+tabular-nums). Convient pour un investisseur B2B scrollant 10 secondes.
+
+**Implications concrètes pour Sprint 3+ UI** :
+- Palette `solTokens` dans `frontend/src/ui/tokens.js` (nouveau namespace) :
+  - bg canvas `#F8F9FA`, paper `#FFFFFF`, panel `#F3F4F6`
+  - ink slate-900 `#0F172A` (900) → `#94A3B8` (400)
+  - accents : emerald-600 (calme), amber-600 (attention), orange-600 (afaire), green-600 (succes)
+  - tariff : rose-600 (HP), sky-600 (HC)
+- Fonts : DM Sans (400/500/600) + JetBrains Mono (400/500) + Fraunces
+  uniquement sur rail-logo "P." (signature discrète, pas corps de page)
+- Wrapper `.sol-surface` appliqué au `<AppShell>` uniquement sur routes
+  cockpit Sol — isolation CSS stricte, V7 Rail/Panel existante préservée
+- KPI hiérarchie : value mono tabular-nums 28px weight 700, label 10px
+  uppercase tracking 0.12em, delta pill compact (emerald/amber selon sens)
+- Courbe de charge : card wrapper (border-radius 8, shadow subtle),
+  linearGradient area fill opacity 0.12→0, stroke slate-900 2px
+- Radius system : 4px (pills) / 6px (buttons, cards small) / 8px (cards, card chunks)
+
+**Maquettes conservées** :
+- Original (`cockpit-sol-v1.html`) : archivé comme référence éditoriale
+- V1 désaturation douce (`cockpit-sol-v1-adjusted-v1.html`) : archivé
+- V2 raw (`cockpit-sol-v1-adjusted-v2.html`) : archivé (step intermédiaire)
+- V2 polished (`cockpit-sol-v1-adjusted-v2-polished.html`) : **source de vérité**
+- Rapport comex (`rapport-comex-sol-v1.html`) : **conservé en registre
+  éditorial** (livrable imprimé mensuel, Fraunces justifié)
+
+### UX-2 · Scope UI hors Sprint 1-2 (rappel)
+
+**Décision** : Sprint 1-2 = backend pure. UI implémentation = Sprint 3+.
+
+**Implications** : les tokens ci-dessus sont déclarés dans `DECISIONS_LOG`
+mais pas codés encore. Le prompt Sprint 3+ devra inclure un commit
+préparatoire `feat(ui-sol): tokens + SolSurface wrapper + self-host fonts`
+avant tout composant.
+
+---
+
+**Document figé. Les 15 décisions initiales (P0-1 à P1-10) + 2 décisions UX
+ci-dessus sont les données d'entrée du prompt applicable
+`PROMPT_SOL_V1_SPRINT_1-2_APPLIED.md`.**
