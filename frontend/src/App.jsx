@@ -19,6 +19,7 @@ const ActionCenterPage = lazy(() => import('./pages/ActionCenterPage'));
 const ConformitePage = lazy(() => import('./pages/ConformitePage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Cockpit = lazy(() => import('./pages/Cockpit'));
+const SolCockpitPage = lazy(() => import('./pages/SolCockpitPage'));
 const RegOps = lazy(() => import('./pages/RegOps'));
 const ConnectorsPage = lazy(() => import('./pages/ConnectorsPage'));
 const WatchersPage = lazy(() => import('./pages/WatchersPage'));
@@ -230,6 +231,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <Cockpit />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/cockpit/sol"
+                      element={
+                        <PageSuspense>
+                          <SolCockpitPage />
                         </PageSuspense>
                       }
                     />

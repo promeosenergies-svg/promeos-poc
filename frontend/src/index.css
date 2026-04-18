@@ -52,3 +52,58 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Sol V1 surface tokens (isolated namespace via .sol-surface wrapper)        */
+/* Source : docs/sol/maquettes/cockpit-sol-v1-adjusted-v2.html                */
+/* Insight : "journal en terrasse" — slate pro + accents warm                 */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+.sol-surface {
+  /* Backgrounds + inks (slate base) */
+  --sol-bg-canvas: #F8F9FA;
+  --sol-bg-paper: #FFFFFF;
+  --sol-bg-panel: #F3F4F6;
+  --sol-ink-900: #0F172A;
+  --sol-ink-700: #334155;
+  --sol-ink-500: #64748B;
+  --sol-ink-400: #94A3B8;
+  --sol-ink-300: #CBD5E1;
+  --sol-ink-200: #E2E8F0;
+  --sol-ink-100: #F1F5F9;
+  --sol-rule: #E2E8F0;
+
+  /* Accents warm (journal en terrasse) */
+  --sol-calme-fg: #2F6B5E;
+  --sol-calme-bg: #E3F0ED;
+  --sol-attention-fg: #A06B1A;
+  --sol-attention-bg: #F6EAD2;
+  --sol-afaire-fg: #B8552E;
+  --sol-afaire-bg: #F7E4D8;
+  --sol-succes-fg: #2E6B4A;
+  --sol-succes-bg: #DFEDE3;
+  --sol-refuse-fg: #8B3A3A;
+  --sol-refuse-bg: #F3DDDB;
+
+  /* Tariff (HP/HC curves) */
+  --sol-hph-fg: #B84545;
+  --sol-hph-bg: #FBE9E9;
+  --sol-hch-fg: #2E4A6B;
+  --sol-hch-bg: #E6EDF5;
+
+  background: var(--sol-bg-canvas);
+  color: var(--sol-ink-900);
+}
+
+/* Pulse animation for Sol cartouche + chip (respect prefers-reduced-motion) */
+@keyframes sol-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sol-surface * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
