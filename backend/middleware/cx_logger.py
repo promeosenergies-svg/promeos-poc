@@ -95,6 +95,57 @@ CX_EVENT_TYPES = frozenset(
 )
 
 
+def log_cx_event_first_only(
+    db: Session,
+    org_id: int,
+    user_id: Optional[int],
+    event_type: str,
+    dedup_key: str,
+    context: Optional[dict] = None,
+) -> bool:
+    """
+    Sprint CX 3 P0.4 : variante "1er only" de log_cx_event.
+
+    Fire l'event UNIQUEMENT si aucun AuditLog précédent n'existe pour ce
+    couple (org_id, event_type, dedup_key). `dedup_key` est cherché dans
+    `detail_json` (match exact JSON substring — sqlite-friendly).
+
+    Motivation : CX_MODULE_ACTIVATED doit signaler la *1ère* activation d'un
+    module par une org (pour driver WAU-MAU / T2V). Sans dédup, chaque write
+    dans le module re-fire l'event → pollution et métriques biaisées.
+
+    Retourne True si l'event a été loggé (1ère activation), False sinon.
+
+    Pattern d'usage :
+        log_cx_event_first_only(
+            db, org_id, user_id,
+            CX_MODULE_ACTIVATED,
+            dedup_key=f'"module_key": "flex"',
+            context={"module_key": "flex"},
+        )
+    """
+    if event_type not in CX_EVENT_TYPES:
+        return False
+
+    # Check si event existe déjà pour (org, event_type, module_key)
+    # On cherche la sous-chaîne dedup_key dans detail_json → compatible sqlite.
+    existing = (
+        db.query(AuditLog.id)
+        .filter(
+            AuditLog.action == event_type,
+            AuditLog.resource_type == "cx_event",
+            AuditLog.resource_id == str(org_id),
+            AuditLog.detail_json.like(f"%{dedup_key}%"),
+        )
+        .first()
+    )
+    if existing is not None:
+        return False
+
+    log_cx_event(db, org_id, user_id, event_type, context)
+    return True
+
+
 def log_cx_event(
     db: Session,
     org_id: int,
