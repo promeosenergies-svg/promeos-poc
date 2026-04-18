@@ -228,4 +228,82 @@ Scheduler JobOutbox + Audit + DummyEngine — 4j estimé).
 
 ---
 
-*Document append-only — ajouter Phase 3, Phase 4 en-dessous au fur et à mesure.*
+---
+
+## Phase 3 — Planner + Validator + Scheduler JobOutbox + Audit + DummyEngine (DONE 2026-04-18)
+
+**Durée réelle** : ~2j (vs 4j estimé). Gagné 2j (cumulé : 4.5j d'avance).
+
+### Commits
+- `f4a123a3 feat(sol-p3)` — implémentation initiale (192 tests)
+- `307c2480 fix(sol-utils)` — bug HMAC slicing (caché 12%)
+- `eea59d9f chore` — cleanup commentaire
+- `9a65a3d3 Merge origin/main` — sync 13 commits avance
+- `9545dccf fix(sol-p3) audit` — 3 P0 correctness + CX wiring + 3 tests P3
+
+### Livré
+
+9 modules + 5 fichiers tests (Phase 3 initial), puis enrichis post-audit :
+- `backend/sol/engines/base.py` + `_dummy.py` + `__init__.py` (SolEngine ABC + DummyEngine auto-register)
+- `backend/sol/audit.py` (log_action flush-pattern + CX fire-and-forget + get_audit_trail + check_audit_integrity)
+- `backend/sol/planner.py` (propose_plan dispatcher)
+- `backend/sol/validator.py` (validate_plan_for_execution + 5 exceptions typées)
+- `backend/sol/scheduler.py` (schedule/cancel/execute_due — tous atomic)
+- `backend/sol/utils.py` (fix HMAC slicing fixed 32 bytes)
+- `backend/jobs/worker.py` (+_handle_sol_execute_pending_action dispatch)
+- `backend/models/enums.py` (+JobType.SOL_EXECUTE_PENDING_ACTION, +ActionSourceType.SOL)
+- `backend/middleware/cx_logger.py` (+5 CX_SOL_* events + CX_EVENT_TYPES)
+
+### Résultats tests finals
+
+- **195/195 tests Sol verts** en 25s (vs 30+ minimum Phase 3 + 3 P3 post-audit)
+- Baseline totale : **5866+ tests collected** (+195 Sol vs baseline 5605 + ~66 depuis merge origin/main)
+- Couverture `backend/sol/` > 95%
+- Cycle E2E propose→schedule→execute testé freezegun
+- Cycle E2E propose→schedule→cancel testé
+- 2 failure paths couverts (engine raise, log_action raise atomicité)
+- 1 tampering detection couvert (raw SQL bypass + hash mismatch)
+
+### Audit Phase 3 findings appliqués
+
+- **P0-2** schedule_pending_action atomique une seule tx
+- **P0-3** log_action flush-pattern (cx_logger F2)
+- **P0-4** execute_due_sol_action log avant commit + try/except
+- **CX wiring** `CX_SOL_*` events fire parallèles (stratégie CX strict)
+- **ActionSourceType.SOL** enum pour convergence Action Hub Phase 4+
+- **Bug HMAC** verify_confirmation_token slicing 32 bytes fixe (Heisenbug caché 12% probabilité)
+
+### Décisions appliquées
+
+- P1-2 JobOutbox réutilisé (zéro APScheduler nouveau)
+- P1-12 DummyEngine.KIND = IntentKind.DUMMY_NOOP (exclusif tests)
+- P1-1 datetime.now(timezone.utc) partout
+- F2 cx_logger flush-pattern adopté pour log_action
+
+### Insight stratégique produit capturé (UX-1)
+
+"Le journal en terrasse" — l'ADN de Sol : slate compétent + accents warm
+= moment démocratique partagé entre ouvrier et cadre dirigeant. V2 raw
+incarne ce registre. V2 polished le sacrifiait en full Tailwind neutre.
+
+### Ce que Phase 3 ne livre pas (conforme scope)
+
+- Pas de routes API /api/sol/* (Phase 4)
+- Pas d'UI (Sprint 3+)
+- Pas d'engines métier réels (Sprint 3-6 un par un : invoice_dispute, exec_report, dt_action_plan, ao_builder, operat_builder)
+- Pas de LLM (Sprint 7-8)
+- Pas de reaper zombies 'executing' (backlog Sprint 3+)
+
+---
+
+## STOP GATE 3 audit — livré ✅
+
+Cumul Sprint 1-2 à ce stade : **22 commits atomiques** sur `claude/sol-v1-audit`.
+195 tests Sol verts. Aligned origin/main.
+
+Attente go Phase 4 (routes API `/api/sol/*` + org-scoping + CSV export,
+10 endpoints dont 2 stubs 501, 3j estimé).
+
+---
+
+*Document append-only — ajouter Phase 4 en-dessous au fur et à mesure.*
