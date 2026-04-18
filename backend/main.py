@@ -234,6 +234,11 @@ from routes.feedback import router as feedback_router
 
 app.include_router(feedback_router)
 
+# NPS micro-survey (Sprint CX P1 residual — scorecard 10% "NPS/CES")
+from routes.nps import router as nps_router
+
+app.include_router(nps_router)
+
 # Pilotage (Flex Ready® NF EN IEC 62746-4 — Baromètre Flex 2026)
 from routes.pilotage import router as pilotage_router
 

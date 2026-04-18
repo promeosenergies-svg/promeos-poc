@@ -36,6 +36,7 @@ from services.iam_service import (
 from middleware.auth import require_permission, get_current_user_role
 from models import Site, EntiteJuridique, Portefeuille
 from services.error_catalog import business_error
+from middleware.cx_logger import safe_invalidate_membership_cache
 
 
 router = APIRouter(prefix="/api/admin", tags=["Admin Users"])
@@ -271,6 +272,7 @@ def change_role(
 
     log_audit(db, None, "change_role", "user", str(user_id), {"new_role": req.role})
     db.commit()
+    safe_invalidate_membership_cache(user_id=user_id, org_id=org_id)
     return {"status": "updated", "role": new_role.value}
 
 
@@ -340,6 +342,7 @@ def delete_user(
     soft_delete_user(db, user_id)
     log_audit(db, None, "soft_delete_user", "user", str(user_id))
     db.commit()
+    safe_invalidate_membership_cache(user_id=user_id)
     return {"status": "deleted"}
 
 

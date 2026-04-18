@@ -27,6 +27,7 @@ from models import (
     Batiment,
 )
 from middleware.auth import get_optional_auth, get_portfolio_optional_auth, AuthContext
+from services.error_catalog import business_error
 
 from routes.patrimoine._helpers import (
     _get_org_id,
@@ -640,7 +641,7 @@ def get_site_snapshot_endpoint(
     _load_site_with_org_check(db, site_id, org_id)  # 404/403 si hors périmètre
     snapshot = get_site_snapshot(site_id, org_id, db)
     if snapshot is None:
-        raise HTTPException(status_code=404, detail=f"Site {site_id} non trouvé")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=site_id))
     return snapshot
 
 

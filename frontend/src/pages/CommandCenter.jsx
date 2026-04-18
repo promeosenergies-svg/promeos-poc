@@ -51,6 +51,7 @@ import MorningBriefCard from '../components/MorningBriefCard';
 import DeadlineBanner from '../components/DeadlineBanner';
 import ValueCounterCard from '../components/ValueCounterCard';
 import CsatModal from '../components/CsatModal';
+import NpsModal from '../components/NpsModal';
 import TodayActionsCard from './cockpit/TodayActionsCard';
 import _ModuleLaunchers from './cockpit/ModuleLaunchers';
 import _EssentialsRow from './cockpit/EssentialsRow';
@@ -422,6 +423,9 @@ export default function CommandCenter() {
 
       {/* ── CSAT J+14 — CX Gap #7 (fixed position bottom-right) ── */}
       <CsatModal orgId={org?.id} />
+
+      {/* ── NPS J+30 — Sprint CX P1 residual (scorecard 10% NPS/CES) ── */}
+      <NpsModal orgId={org?.id} userCreatedAt={org?.created_at} />
 
       {/* ── Morning Brief — ce qui a bougé depuis la dernière visite ── */}
       <MorningBriefCard alerts={alertsCount} />

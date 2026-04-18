@@ -275,10 +275,17 @@ def _reset_iam_demo(db):
     from models import User, UserOrgRole
 
     demo_users = db.query(User).filter(User.email.like("%@atlas.demo")).all()
+    demo_user_ids = [u.id for u in demo_users]
     for u in demo_users:
         db.query(UserOrgRole).filter(UserOrgRole.user_id == u.id).delete()
         db.query(User).filter(User.id == u.id).delete()
     db.commit()
+    # Sprint CX P1 residual : purge cache membership pour tous les users demo
+    # supprimés (sinon staleness ≤ 5 min post-reset).
+    from middleware.cx_logger import safe_invalidate_membership_cache
+
+    for uid in demo_user_ids:
+        safe_invalidate_membership_cache(user_id=uid)
     # Re-seed IAM if an org still exists
     org = db.query(Organisation).first()
     if org:

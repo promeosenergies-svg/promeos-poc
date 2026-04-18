@@ -44,6 +44,7 @@ from models import (
     Batiment,
 )
 from middleware.auth import get_optional_auth, get_portfolio_optional_auth, AuthContext
+from services.error_catalog import business_error
 
 
 # ========================================
@@ -93,7 +94,7 @@ def _load_site_with_org_check(db: Session, site_id: int, org_id: int) -> Site:
     """Load a site and verify org ownership. Raises 404/403."""
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(status_code=404, detail=f"Site {site_id} non trouvé")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=site_id))
     _check_site_belongs_to_org(db, site, org_id)
     return site
 
