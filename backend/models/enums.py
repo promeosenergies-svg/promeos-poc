@@ -238,6 +238,7 @@ class JobType(str, enum.Enum):
     SYNC_CONNECTOR = "sync_connector"
     RUN_WATCHER = "run_watcher"
     RUN_AI_AGENT = "run_ai_agent"
+    SOL_EXECUTE_PENDING_ACTION = "sol_execute_pending_action"  # Sol V1 Phase 3
 
 
 class JobStatus(str, enum.Enum):

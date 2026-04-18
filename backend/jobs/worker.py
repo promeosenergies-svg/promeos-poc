@@ -73,6 +73,8 @@ def process_one(db: Session) -> bool:
             _handle_run_watcher(db, payload)
         elif job.job_type == JobType.RUN_AI_AGENT:
             _handle_run_ai_agent(db, payload)
+        elif job.job_type == JobType.SOL_EXECUTE_PENDING_ACTION:
+            _handle_sol_execute_pending_action(db, payload)
 
         # Mark DONE
         job.status = JobStatus.DONE
@@ -132,3 +134,23 @@ def _handle_run_ai_agent(db: Session, payload: dict):
 
     agent_name = payload.get("agent_name")
     run_agent(agent_name, db, **payload)
+
+
+def _handle_sol_execute_pending_action(db: Session, payload: dict):
+    """
+    Handler pour SOL_EXECUTE_PENDING_ACTION (Sol V1 Phase 3).
+
+    Dispatche vers sol.scheduler.execute_due_sol_action(correlation_id) qui :
+    - skip si pending.status != 'waiting' (cancelled ou déjà exécuté)
+    - skip si now < scheduled_for (grace period pas encore écoulé)
+    - sinon exécute l'engine + marque status='executed' + log audit.
+
+    NB : si execute_due_sol_action retourne None (pas encore due), le job
+    est quand même marqué DONE par le worker — un job ultérieur sera
+    enfilé si besoin (pas de retry auto dans Phase 3 ; à revisiter Sprint 3+).
+    """
+    from sol.scheduler import execute_due_sol_action
+
+    correlation_id = payload.get("correlation_id")
+    if correlation_id:
+        execute_due_sol_action(db, correlation_id)
