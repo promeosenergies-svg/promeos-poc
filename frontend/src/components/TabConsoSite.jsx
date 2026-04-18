@@ -211,20 +211,21 @@ export default function TabConsoSite({ siteId }) {
           <ResponsiveContainer width="100%" height={260}>
             <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <defs>
+                {/* Sprint 2 refonte — gradient slate Sol au lieu de blue Tailwind */}
                 <linearGradient id="colorConso" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.05} />
+                  <stop offset="5%" stopColor="#0F172A" stopOpacity={0.12} />
+                  <stop offset="95%" stopColor="#0F172A" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 11, fill: '#6B7280' }}
+                tick={{ fontSize: 11, fill: '#64748B', fontFamily: 'JetBrains Mono' }}
                 tickLine={false}
-                axisLine={{ stroke: '#E5E7EB' }}
+                axisLine={{ stroke: '#E2E8F0' }}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: '#6B7280' }}
+                tick={{ fontSize: 11, fill: '#94A3B8', fontFamily: 'JetBrains Mono' }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => `${v}`}
@@ -234,11 +235,11 @@ export default function TabConsoSite({ siteId }) {
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke="#3B82F6"
-                strokeWidth={2}
+                stroke="#0F172A"
+                strokeWidth={1.8}
                 fill="url(#colorConso)"
                 dot={false}
-                activeDot={{ r: 4, stroke: '#3B82F6', strokeWidth: 2, fill: '#fff' }}
+                activeDot={{ r: 5, stroke: '#2F6B5E', strokeWidth: 2.5, fill: '#fff' }}
                 connectNulls
               />
             </AreaChart>
