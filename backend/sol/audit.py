@@ -1,8 +1,15 @@
 """
-Audit Sol V1 — append-only log + chain correlation + intégrité.
+Audit Sol V1 — append-only log + chain correlation + intégrité + CX events.
 
 Wrapper over SolActionLog (models/sol.py). Toutes les actions Sol passent
-par `log_action(ctx, phase, ...)` pour garantir le trail d'audit L4.
+par `log_action(db, ctx, phase, ...)` pour garantir le trail d'audit L4.
+
+Alignement PROMEOS :
+- Pattern `db.flush()` (pas commit) — cohérent cx_logger F2 Sprint CX 2.5.
+  Le caller de log_action est responsable du commit/rollback final.
+- Fire-and-forget CX event via `log_cx_event(CX_SOL_*)` en parallèle :
+  observabilité dans le CX dashboard sans bloquer la tx métier Sol.
+- Mapping ActionPhase → CX_SOL_* constants (middleware/cx_logger.py).
 """
 
 from __future__ import annotations
@@ -12,14 +19,34 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from middleware.cx_logger import (
+    CX_SOL_CANCELLED,
+    CX_SOL_EXECUTED,
+    CX_SOL_PROPOSED,
+    CX_SOL_REFUSED,
+    CX_SOL_SCHEDULED,
+    log_cx_event,
+)
 from models.sol import SolActionLog
 
 from .schemas import ActionPhase, ActionPlan, ExecutionResult, PlanRefused, SolContextData
-from .utils import hash_inputs, now_utc
+from .utils import hash_inputs
+
+
+# Mapping ActionPhase → CX event type. Les phases intermédiaires (previewed,
+# confirmed, reverted) ne sont pas émises en CX — elles sont implicites dans
+# le flux propose → schedule → execute | cancel | refuse.
+_PHASE_TO_CX_EVENT: dict[ActionPhase, str] = {
+    ActionPhase.PROPOSED: CX_SOL_PROPOSED,
+    ActionPhase.SCHEDULED: CX_SOL_SCHEDULED,
+    ActionPhase.EXECUTED: CX_SOL_EXECUTED,
+    ActionPhase.CANCELLED: CX_SOL_CANCELLED,
+    ActionPhase.REFUSED: CX_SOL_REFUSED,
+}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# log_action — INSERT append-only
+# log_action — INSERT append-only + CX event parallèle
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -29,23 +56,28 @@ def log_action(
     phase: ActionPhase,
     plan_or_refusal: ActionPlan | PlanRefused | None = None,
     outcome: ExecutionResult | dict[str, Any] | None = None,
+    *,
+    commit: bool = False,
 ) -> SolActionLog:
     """
-    INSERT append-only dans sol_action_log.
+    INSERT append-only dans sol_action_log + CX event (fire-and-forget).
 
-    Accepte soit un ActionPlan (phases proposed / previewed / confirmed /
-    scheduled / executed), soit un PlanRefused (phase refused), soit rien
-    (phases cancelled / reverted — outcome obligatoire alors).
+    Pattern `db.flush()` par défaut (pas commit) — le caller doit commit
+    explicitement. Cohérent avec middleware/cx_logger.log_cx_event pour
+    garantir transactional consistency : si la tx parente échoue ensuite,
+    rien n'est persisté (pas d'état partiel).
 
     Args:
         db: Session active.
         ctx: SolContextData (fournit org_id, user_id, correlation_id).
         phase: ActionPhase — quelle étape du cycle on loggue.
         plan_or_refusal: ActionPlan ou PlanRefused selon phase.
-        outcome: ExecutionResult ou dict arbitraire pour phases CANCELLED/REVERTED.
+        outcome: ExecutionResult ou dict arbitraire pour phases CANCELLED/EXECUTED.
+        commit: si True, commit ET refresh le log créé. Par défaut False
+            (flush + caller commit).
 
     Returns:
-        SolActionLog nouvellement créé (id attribué, created_at set).
+        SolActionLog nouvellement créé (id attribué par flush).
     """
     intent_kind = "unknown"
     plan_json: dict[str, Any] = {}
@@ -63,7 +95,6 @@ def log_action(
         outcome_code = plan_or_refusal.reason_code
         outcome_message = plan_or_refusal.reason_fr
 
-    # Outcome post-exécution / cancel / revert
     state_before: dict[str, Any] | None = None
     state_after: dict[str, Any] | None = None
     if isinstance(outcome, ExecutionResult):
@@ -99,8 +130,27 @@ def log_action(
         confidence=confidence,
     )
     db.add(log)
-    db.commit()
-    db.refresh(log)
+
+    # CX event parallèle (fire-and-forget, pattern log_cx_event)
+    cx_event_type = _PHASE_TO_CX_EVENT.get(phase)
+    if cx_event_type is not None:
+        log_cx_event(
+            db,
+            org_id=ctx.org_id,
+            user_id=ctx.user_id,
+            event_type=cx_event_type,
+            context={
+                "correlation_id": ctx.correlation_id,
+                "intent_kind": intent_kind,
+                "outcome_code": outcome_code,
+            },
+        )
+
+    if commit:
+        db.commit()
+        db.refresh(log)
+    else:
+        db.flush()
     return log
 
 
@@ -143,13 +193,12 @@ def check_audit_integrity(
     limit: int = 100,
 ) -> list[str]:
     """
-    Vérifie l'intégrité des logs récents : inputs_hash recalculable,
-    phase cohérente avec précédente (propose → preview → …).
+    Vérifie l'intégrité des logs récents : inputs_hash recalculable.
 
     Retourne une liste de messages d'incidents (vide si tout OK).
 
-    Conçu pour job hourly différé (pas encore wired Phase 3 — wire Phase 4 ou
-    déféré Sprint 3+ selon DECISIONS P1-10 rétention).
+    Conçu pour job hourly différé (pas encore wired Phase 3 — wire Sprint 3+
+    selon DECISIONS P1-10 rétention anonymisation).
     """
     incidents: list[str] = []
 
@@ -159,7 +208,6 @@ def check_audit_integrity(
     q = q.order_by(SolActionLog.id.desc()).limit(limit)
 
     for log in q.all():
-        # Recompute inputs_hash
         expected = hash_inputs(
             log.org_id,
             log.user_id,

@@ -382,6 +382,7 @@ class ActionSourceType(str, enum.Enum):
     SEGMENTATION = "segmentation"  # V101: from segmentation recommendations
     COPILOT = "copilot"  # V113: from Energy Copilot rule engine
     PILOTAGE = "pilotage"  # V116: from Pilotage Radar/ROI CTAs (Baromètre Flex 2026)
+    SOL = "sol"  # Sol V1: agentic assistant actions (contestation facture, OPERAT, rapport exec...)
 
 
 class ActionStatus(str, enum.Enum):

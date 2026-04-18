@@ -228,3 +228,73 @@ def test_full_cycle_propose_schedule_execute(sol_db, sol_org, sol_user):
     )
     phases = [lg.action_phase for lg in logs]
     assert phases == ["proposed", "scheduled", "executed"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Tests P3 ajoutés post-audit : branches exception + edge cases
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_execute_due_engine_raises_marks_failed(sol_db, sol_org, sol_user, monkeypatch):
+    """Engine.execute qui lève → pending.status='failed' + audit outcome_code='execution_failed'."""
+    from sol.engines._dummy import DummyEngine
+
+    def _boom(self, ctx, plan, confirmation_token):  # noqa: ARG001
+        raise RuntimeError("engine crash simulé")
+
+    monkeypatch.setattr(DummyEngine, "execute", _boom)
+
+    ctx = _ctx(sol_org, sol_user, correlation_id="fa11fa11-aaaa-bbbb-cccc-000000000003")
+    plan, tok = _propose_and_tokenize(sol_db, ctx)
+    schedule_pending_action(sol_db, ctx, plan, tok)
+
+    with freeze_time(datetime.now(timezone.utc) + timedelta(seconds=120)):
+        with pytest.raises(RuntimeError, match="engine crash"):
+            execute_due_sol_action(sol_db, plan.correlation_id)
+
+    # Vérifier état final : status='failed' + audit log 'executed' avec outcome 'execution_failed'
+    pending = sol_db.query(SolPendingAction).filter_by(correlation_id=plan.correlation_id).one()
+    assert pending.status == "failed"
+
+    failure_log = (
+        sol_db.query(SolActionLog)
+        .filter_by(correlation_id=plan.correlation_id, action_phase="executed")
+        .one()
+    )
+    assert failure_log.outcome_code == "execution_failed"
+    assert "RuntimeError" in (failure_log.outcome_message or "")
+
+
+def test_schedule_atomicity_rollback_on_log_failure(sol_db, sol_org, sol_user, monkeypatch):
+    """P0-2 atomicité : si log_action lève pendant schedule, tout rollback
+    (token non consommé, pending non créé, JobOutbox absent)."""
+    ctx = _ctx(sol_org, sol_user, correlation_id="a70117c0-aaaa-bbbb-cccc-000000000004")
+    plan, tok = _propose_and_tokenize(sol_db, ctx)
+
+    # Snapshot état avant schedule
+    from models.sol import SolConfirmationToken as _Sct
+    token_row_before = sol_db.query(_Sct).filter_by(token=tok).one()
+    assert token_row_before.consumed is False
+
+    # Monkeypatch log_action via sol.scheduler pour lever
+    def _boom(*args, **kwargs):  # noqa: ARG001
+        raise RuntimeError("simulated log_action crash")
+
+    monkeypatch.setattr("sol.scheduler.log_action", _boom)
+
+    with pytest.raises(RuntimeError, match="simulated log_action crash"):
+        schedule_pending_action(sol_db, ctx, plan, tok)
+
+    sol_db.rollback()  # cleanup session
+    # Invariants : rien persisté
+    token_after = sol_db.query(_Sct).filter_by(token=tok).one()
+    assert token_after.consumed is False, "token ne doit PAS être consommé"
+
+    pending_count = (
+        sol_db.query(SolPendingAction).filter_by(correlation_id=plan.correlation_id).count()
+    )
+    assert pending_count == 0
+
+    from models import JobOutbox as _Jo
+    job_count = sol_db.query(_Jo).filter_by(job_type=JobType.SOL_EXECUTE_PENDING_ACTION).count()
+    assert job_count == 0

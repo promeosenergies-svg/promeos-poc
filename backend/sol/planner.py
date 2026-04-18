@@ -63,7 +63,9 @@ def propose_plan(
                 "vous gardez toujours la main sur l'exécution."
             ),
         )
-        log_action(db, ctx, ActionPhase.REFUSED, plan_or_refusal=refused)
+        # commit=True : log_action standalone dans propose_plan, caller
+        # FastAPI route n'a pas forcément un commit englobant.
+        log_action(db, ctx, ActionPhase.REFUSED, plan_or_refusal=refused, commit=True)
         return refused
 
     # Dispatch vers engine
@@ -80,16 +82,16 @@ def propose_plan(
                 f"rapport exécutif, plan DT, appel d'offres, ou déclaration OPERAT."
             ),
         )
-        log_action(db, ctx, ActionPhase.REFUSED, plan_or_refusal=refused)
+        log_action(db, ctx, ActionPhase.REFUSED, plan_or_refusal=refused, commit=True)
         return refused
 
     # Appel engine.dry_run déterministe
     result = engine.dry_run(ctx, params)
 
     if isinstance(result, ActionPlan):
-        log_action(db, ctx, ActionPhase.PROPOSED, plan_or_refusal=result)
+        log_action(db, ctx, ActionPhase.PROPOSED, plan_or_refusal=result, commit=True)
     else:
-        log_action(db, ctx, ActionPhase.REFUSED, plan_or_refusal=result)
+        log_action(db, ctx, ActionPhase.REFUSED, plan_or_refusal=result, commit=True)
 
     return result
 

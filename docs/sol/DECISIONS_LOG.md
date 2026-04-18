@@ -211,6 +211,17 @@ combinaison est distinctive : aucun concurrent énergie ne combine slate
 base + accents warm. V2 polished va full Tailwind normalisé et perd
 cette signature.
 
+**Insight stratégique produit (Amine, 2026-04-18)** : « Le journal en
+terrasse ». Un ouvrier et un cadre dirigeant ont en commun la lecture du
+journal en terrasse malgré leur statut social. C'est ce moment universel
+et démocratique que V2 raw incarne. Le slate = compétence dashboard
+(respecté par le cadre). Les accents warm = chaleur éditoriale (familier
+à l'ouvrier). Aucun autre produit SaaS énergie ne combine les deux — la
+plupart choisissent soit la froideur corporate (Linear-like), soit le
+magazine premium (Apollo.io-like). Sol V1 assume les deux registres dans
+UN SEUL écran. C'est la signature que V2 polished sacrifiait en devenant
+full Tailwind slate neutre.
+
 **Implications concrètes pour Sprint 3+ UI** :
 - Palette `solTokens` dans `frontend/src/ui/tokens.js` (nouveau namespace) :
   - bg canvas `#F8F9FA`, paper `#FFFFFF`, panel `#F3F4F6`

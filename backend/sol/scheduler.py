@@ -5,30 +5,37 @@ Réutilise le pattern JobOutbox existant (DÉCISION P1-2 : pas d'APScheduler).
 
 Flux :
 1. `schedule_pending_action(db, ctx, plan, confirmation_token)` :
-   consomme token, crée SolPendingAction, enqueue JobOutbox,
-   log phase=SCHEDULED.
+   consomme token, crée SolPendingAction, insère JobOutbox, log SCHEDULED
+   — TOUT EN UNE TRANSACTION (atomic).
 2. Worker `jobs.worker.process_one` picks up le job — dispatcher Sol
    (worker modifié Phase 3.7) appelle `execute_due_sol_action`.
 3. `execute_due_sol_action(db, correlation_id)` :
    lookup SolPendingAction, reconstruit ctx, appelle engine.execute,
-   log phase=EXECUTED, met status=executed.
+   log EXECUTED puis commit une fois. Wrapping try/except pour marquer
+   'failed' avec audit sur exception.
 4. `cancel_pending_action(db, cancellation_token, user_id=None)` :
-   marque status=cancelled. Le worker skip au moment de la dispatch
-   s'il trouve status != 'waiting'.
+   marque status='cancelled' + log CANCELLED. Le worker skippe au
+   moment de la dispatch s'il trouve status != 'waiting'.
 
 Annulation one-click sans JWT : le cancellation_token URL-safe suffit
 (lookup DB unique, pas d'HMAC — la sécurité vient du secret du token
 envoyé par email au seul utilisateur concerné).
+
+Audit Phase 3 (post-merge) : 3 corrections P0 appliquées :
+- P0-2 : schedule_pending_action atomic (une seule tx)
+- P0-3 : log_action utilise flush (pattern cx_logger), caller commit
+- P0-4 : execute_due_sol_action log avant commit final, try/except ciblé
 """
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy.orm import Session
 
-from models import JobType
+from models import JobOutbox, JobStatus, JobType
 from models.sol import SolConfirmationToken, SolPendingAction
 
 from .audit import log_action
@@ -51,7 +58,7 @@ class PendingActionNotCancellable(Exception):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# schedule_pending_action — orchestration après /confirm
+# schedule_pending_action — atomic transaction (P0-2 fix)
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -62,23 +69,25 @@ def schedule_pending_action(
     confirmation_token: str,
 ) -> SolPendingAction:
     """
-    Programme l'exécution d'un plan confirmé (grace period L2).
+    Programme l'exécution d'un plan confirmé — atomique en une seule tx.
 
     Pré-conditions :
-    - Le plan a déjà été validé via `validate_plan_for_execution` (token
-      HMAC OK, plan non altéré, pas dry-run, confiance OK, dual validation OK)
-    - SolConfirmationToken row exists (lookup par `confirmation_token`)
+    - Plan déjà validé via `validate_plan_for_execution` (HMAC OK, plan non
+      altéré, pas dry-run, confiance OK, dual validation OK).
+    - SolConfirmationToken row exists (lookup par `confirmation_token`).
 
-    Flux :
-    1. Marque SolConfirmationToken.consumed=True + consumed_at=now
-    2. Crée SolPendingAction status='waiting', scheduled_for=now+grace
-    3. Enqueue JobOutbox type SOL_EXECUTE_PENDING_ACTION avec payload
-       {correlation_id, scheduled_for_iso}
-    4. Log append-only phase=SCHEDULED (via audit)
+    Flow atomique (une seule db.commit() à la fin) :
+    1. Consume token (consumed=True + consumed_at)
+    2. Create SolPendingAction status='waiting'
+    3. Insert JobOutbox (pas via enqueue_job qui commit seul — on veut
+       atomicity, donc création manuelle inline)
+    4. log_action(phase=SCHEDULED, commit=False) → flush
+    5. db.commit() une fois
 
-    Retourne la SolPendingAction créée.
+    Si n'importe quelle étape échoue, rollback automatique par SQLAlchemy
+    → zéro état partiel (token non consommé, pending non créé, job non
+    enfilé, audit log non écrit). C'est l'invariant critique L4 audit.
     """
-    # 1. Consume token
     token_row = (
         db.query(SolConfirmationToken)
         .filter(SolConfirmationToken.token == confirmation_token)
@@ -87,6 +96,7 @@ def schedule_pending_action(
     if token_row is None:
         raise PendingActionNotFound(f"Confirmation token not found: {confirmation_token[:16]}...")
 
+    # 1. Consume token (in-session, pas encore commit)
     token_row.consumed = True
     token_row.consumed_at = now_utc()
 
@@ -104,31 +114,36 @@ def schedule_pending_action(
         status="waiting",
     )
     db.add(pending)
+
+    # 3. Create JobOutbox inline (pas via enqueue_job qui commit seul —
+    #    on veut atomicity avec le reste de la transaction).
+    job = JobOutbox(
+        job_type=JobType.SOL_EXECUTE_PENDING_ACTION,
+        payload_json=json.dumps(
+            {
+                "correlation_id": plan.correlation_id,
+                "scheduled_for_iso": scheduled_for.isoformat(),
+            }
+        ),
+        priority=3,
+        status=JobStatus.PENDING,
+        created_at=now_utc(),
+    )
+    db.add(job)
+
+    # 4. Audit log (flush only)
+    log_action(db, ctx, ActionPhase.SCHEDULED, plan_or_refusal=plan, commit=False)
+
+    # 5. One commit for all
     db.commit()
     db.refresh(pending)
 
-    # 3. Enqueue JobOutbox
-    from jobs.worker import enqueue_job
-    enqueue_job(
-        db,
-        JobType.SOL_EXECUTE_PENDING_ACTION,
-        {
-            "correlation_id": plan.correlation_id,
-            "scheduled_for_iso": scheduled_for.isoformat(),
-        },
-        priority=3,
-    )
-
-    # 4. Audit log
-    log_action(db, ctx, ActionPhase.SCHEDULED, plan_or_refusal=plan)
-
-    # TODO Sprint 3+: envoyer email notif avec cancellation_token + deadline
-
+    # TODO Sprint 3+ : email notif avec cancellation_token + deadline
     return pending
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# cancel_pending_action — one-click email, pas d'auth
+# cancel_pending_action — atomic, une tx
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -143,16 +158,10 @@ def cancel_pending_action(
     Accepté SANS JWT — le cancellation_token URL-safe est secret par
     construction (envoyé par email au seul utilisateur concerné).
 
+    Atomic : update status + audit log + commit en une tx.
+
     Le worker JobOutbox qui picke plus tard verra status='cancelled' et
-    skippera l'exécution (execute_due_sol_action early-return).
-
-    Args:
-        cancellation_token: URL-safe token reçu par email.
-        user_id: optionnel, user qui a cliqué (pour audit trail).
-
-    Raises:
-        PendingActionNotFound si token inconnu.
-        PendingActionNotCancellable si status != 'waiting'.
+    skippera l'exécution (execute_due_sol_action early-return None).
     """
     pending = (
         db.query(SolPendingAction)
@@ -169,9 +178,8 @@ def cancel_pending_action(
     pending.status = "cancelled"
     pending.cancelled_at = now_utc()
     pending.cancelled_by = user_id
-    db.commit()
 
-    # Log cancel — on reconstruit un ctx minimal depuis pending
+    # Log (flush only) puis commit atomique
     minimal_ctx = SolContextData(
         org_id=pending.org_id,
         user_id=user_id or pending.user_id,
@@ -189,12 +197,14 @@ def cancel_pending_action(
                 "Vous pouvez reprendre plus tard."
             ),
         },
+        commit=False,
     )
+    db.commit()
     return pending
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# execute_due_sol_action — appelé par worker.process_one Phase 3.7
+# execute_due_sol_action — appelé par worker.process_one
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -208,18 +218,23 @@ def execute_due_sol_action(
     Appelée par le worker (backend/jobs/worker.py) quand il picke un
     JobOutbox type=SOL_EXECUTE_PENDING_ACTION.
 
-    Logique :
+    Logique (P0-4 fix : log avant commit final) :
     1. Lookup SolPendingAction par correlation_id
-    2. Si status != 'waiting' (cancelled, already executed) → None, skip
-    3. Si now < scheduled_for → None, le worker doit re-queue
-    4. Marquer status='executing'
-    5. Reconstruire ctx minimal + plan depuis pending.plan_json
-    6. Dispatcher vers engine.execute(ctx, plan, ...)
-    7. Marquer status='executed' + executed_at
-    8. Log phase=EXECUTED via audit
+    2. Si status != 'waiting' (cancelled, already executed) → None
+    3. Si now < scheduled_for → None (worker peut re-queue)
+    4. Marquer status='executing' + commit (observable par autres workers)
+    5. Appel engine.execute(ctx, plan, ...) — peut lever
+    6. Sur succès : log_action EXECUTED (flush) + mark status='executed'
+       + executed_at + commit une fois
+    7. Sur exception : catch + mark status='failed' + log EXECUTED avec
+       outcome="execution_failed" + commit + reraise
 
     Returns:
         ExecutionResult si exécuté, None si skip (cancelled / pas encore due).
+
+    Risque connu (documented P1-3 audit) : crash entre étape 4 et 5 →
+    status='executing' zombie. Mitigation : Sprint 3+ reaper périodique
+    qui rebascule 'executing' > N min vers 'failed'.
     """
     pending = (
         db.query(SolPendingAction)
@@ -230,61 +245,38 @@ def execute_due_sol_action(
         raise PendingActionNotFound(f"No pending action for correlation_id {correlation_id}")
 
     if pending.status != "waiting":
-        return None  # cancelled / already executed → worker marks DONE
+        return None  # cancelled / already executed
 
     scheduled_for = pending.scheduled_for
     if scheduled_for.tzinfo is None:
         scheduled_for = scheduled_for.replace(tzinfo=timezone.utc)
     if now_utc() < scheduled_for:
-        return None  # pas encore due, worker doit re-queue
+        return None  # pas encore due, worker peut re-queue
 
-    # Mark executing
+    # Mark executing (observable)
     pending.status = "executing"
     db.commit()
 
+    intent = IntentKind(pending.intent_kind)
+    engine = get_engine(intent)
+    plan = ActionPlan(**pending.plan_json)
+    ctx = SolContextData(
+        org_id=pending.org_id,
+        user_id=pending.user_id,
+        correlation_id=pending.correlation_id,
+        now=now_utc(),
+    )
+
     try:
-        intent = IntentKind(pending.intent_kind)
-        engine = get_engine(intent)
-
-        # Reconstruct plan from stored plan_json
-        plan = ActionPlan(**pending.plan_json)
-
-        # Reconstruct minimal ctx for engine execution
-        ctx = SolContextData(
-            org_id=pending.org_id,
-            user_id=pending.user_id,
-            correlation_id=pending.correlation_id,
-            now=now_utc(),
-        )
-
-        # Engine execute — peut lever, on catche pour status=failed
         result = engine.execute(ctx, plan, confirmation_token="consumed-by-scheduler")
-
-        # Mark executed + log audit
-        pending.status = "executed"
-        pending.executed_at = now_utc()
-        db.commit()
-
-        log_action(db, ctx, ActionPhase.EXECUTED, plan_or_refusal=plan, outcome=result)
-        return result
-
     except Exception as e:  # noqa: BLE001
-        # Rollback status → waiting (worker réessaiera) OU marquer failed définitif ?
-        # Pour Phase 3 : on marque failed, worker marque DONE (pas de retry auto)
+        # Mark failed + audit log "execution_failed" + commit + reraise
         pending.status = "failed"
-        db.commit()
-        # Log d'audit "failed" même si exception
-        ctx = SolContextData(
-            org_id=pending.org_id,
-            user_id=pending.user_id,
-            correlation_id=pending.correlation_id,
-            now=now_utc(),
-        )
         log_action(
             db,
             ctx,
             ActionPhase.EXECUTED,
-            plan_or_refusal=None,
+            plan_or_refusal=plan,
             outcome={
                 "outcome_code": "execution_failed",
                 "outcome_message_fr": (
@@ -292,8 +284,17 @@ def execute_due_sol_action(
                     f"Erreur technique : {type(e).__name__}"
                 ),
             },
+            commit=False,
         )
+        db.commit()
         raise
+
+    # Success path : log + mark executed atomic
+    pending.status = "executed"
+    pending.executed_at = now_utc()
+    log_action(db, ctx, ActionPhase.EXECUTED, plan_or_refusal=plan, outcome=result, commit=False)
+    db.commit()
+    return result
 
 
 __all__ = [

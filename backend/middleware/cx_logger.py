@@ -83,6 +83,17 @@ CX_ONBOARDING_COMPLETED = "CX_ONBOARDING_COMPLETED"
 CX_ACTION_FROM_INSIGHT = "CX_ACTION_FROM_INSIGHT"
 CX_DASHBOARD_OPENED = "CX_DASHBOARD_OPENED"
 
+# Sol V1 agentic events (Phase 3+)
+# Observabilité CX dashboard des actions agentiques Sol : propose→schedule→
+# execute|cancel|refuse. Les événements CX_SOL_* sont émis par
+# backend.sol.audit.log_action en parallèle de l'insert SolActionLog
+# (fire-and-forget via db.flush, pas bloquant).
+CX_SOL_PROPOSED = "CX_SOL_PROPOSED"
+CX_SOL_SCHEDULED = "CX_SOL_SCHEDULED"
+CX_SOL_EXECUTED = "CX_SOL_EXECUTED"
+CX_SOL_CANCELLED = "CX_SOL_CANCELLED"
+CX_SOL_REFUSED = "CX_SOL_REFUSED"
+
 CX_EVENT_TYPES = frozenset(
     {
         CX_INSIGHT_CONSULTED,
@@ -91,6 +102,11 @@ CX_EVENT_TYPES = frozenset(
         CX_ONBOARDING_COMPLETED,
         CX_ACTION_FROM_INSIGHT,
         CX_DASHBOARD_OPENED,
+        CX_SOL_PROPOSED,
+        CX_SOL_SCHEDULED,
+        CX_SOL_EXECUTED,
+        CX_SOL_CANCELLED,
+        CX_SOL_REFUSED,
     }
 )
 

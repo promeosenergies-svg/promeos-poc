@@ -153,7 +153,33 @@ def test_check_audit_integrity_empty_db_returns_empty(sol_db):
 def test_check_audit_integrity_clean_after_log(sol_db, sol_org, sol_user):
     ctx = _ctx(sol_org, sol_user)
     plan = _fake_plan(ctx)
-    log_action(sol_db, ctx, ActionPhase.PROPOSED, plan_or_refusal=plan)
+    log_action(sol_db, ctx, ActionPhase.PROPOSED, plan_or_refusal=plan, commit=True)
 
     incidents = check_audit_integrity(sol_db, org_id=sol_org.id)
     assert incidents == []
+
+
+def test_check_audit_integrity_detects_hash_mismatch(sol_db, sol_org, sol_user):
+    """Altération manuelle du plan_json via raw SQL → check_audit_integrity
+    retourne un incident HASH_MISMATCH."""
+    from sqlalchemy import text
+
+    ctx = _ctx(sol_org, sol_user, correlation_id="1a7e7e7e-aaaa-bbbb-cccc-000000000005")
+    plan = _fake_plan(ctx)
+    log = log_action(sol_db, ctx, ActionPhase.PROPOSED, plan_or_refusal=plan, commit=True)
+
+    # Altérer le plan_json via raw SQL (contourne l'event listener append-only —
+    # documenté comme limitation connue DECISIONS_LOG P0-2 event listener).
+    # L'intégrité check doit détecter la désynchro inputs_hash.
+    sol_db.execute(
+        text("UPDATE sol_action_log SET plan_json = :v WHERE id = :id"),
+        {"v": '{"tampered": true}', "id": log.id},
+    )
+    sol_db.commit()
+    # Forcer re-read depuis DB (sinon cache SQLAlchemy retourne ancien plan_json)
+    sol_db.expire_all()
+
+    incidents = check_audit_integrity(sol_db, org_id=sol_org.id)
+    assert len(incidents) == 1
+    assert "HASH_MISMATCH" in incidents[0]
+    assert str(log.id) in incidents[0]
