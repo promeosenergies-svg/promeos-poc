@@ -136,3 +136,77 @@ def test_mark_action_done_without_user_id(db_session):
     events = db_session.query(AuditLog).filter(AuditLog.action == "CX_ACTION_FROM_INSIGHT").all()
     assert len(events) == 1
     assert events[0].user_id is None
+
+
+# ─── Issue #225 — IAR refinement : whitelist source_type ───────────────────
+
+
+def test_issue225_manual_action_does_not_fire_event(db_session):
+    """Issue #225 : action MANUAL → status DONE OK, mais PAS d'event CX.
+
+    MANUAL = action créée par user (pas d'insight/reco système détecté),
+    donc ne doit pas compter dans le numérateur IAR.
+    """
+    _seed_org_and_member(db_session)
+    action = ActionItem(
+        id=700,
+        org_id=1,
+        source_type=ActionSourceType.MANUAL,
+        source_id="user-created",
+        source_key="manual-700",
+        title="Action créée par user",
+        status=ActionStatus.OPEN,
+    )
+    db_session.add(action)
+    db_session.flush()
+
+    mark_action_done(db_session, action, user_id=1, reason="user_manual")
+    db_session.commit()
+
+    # Status OK
+    assert action.status == ActionStatus.DONE
+    assert action.closed_at is not None
+    # Mais AUCUN event CX car MANUAL exclu du whitelist
+    events = db_session.query(AuditLog).filter(AuditLog.action == "CX_ACTION_FROM_INSIGHT").count()
+    assert events == 0
+
+
+def test_issue225_insight_driven_sources_fire_event(db_session):
+    """Issue #225 : les 8 source_types insight-driven fire l'event IAR."""
+    _seed_org_and_member(db_session)
+
+    expected_sources = [
+        ActionSourceType.COMPLIANCE,
+        ActionSourceType.CONSUMPTION,
+        ActionSourceType.BILLING,
+        ActionSourceType.PURCHASE,
+        ActionSourceType.INSIGHT,
+        ActionSourceType.SEGMENTATION,
+        ActionSourceType.COPILOT,
+        ActionSourceType.PILOTAGE,
+    ]
+
+    for idx, src in enumerate(expected_sources):
+        action = ActionItem(
+            id=800 + idx,
+            org_id=1,
+            source_type=src,
+            source_id=f"test-{src.value}",
+            source_key=f"key-{src.value}",
+            title=f"Action {src.value}",
+            status=ActionStatus.OPEN,
+        )
+        db_session.add(action)
+        db_session.flush()
+        mark_action_done(db_session, action, user_id=1, reason=f"test_{src.value}")
+
+    db_session.commit()
+
+    events = db_session.query(AuditLog).filter(AuditLog.action == "CX_ACTION_FROM_INSIGHT").all()
+    assert len(events) == 8
+    # Vérifier qu'on a bien 1 event par source insight-driven
+    logged_sources = set()
+    for e in events:
+        detail = json.loads(e.detail_json)
+        logged_sources.add(detail["source_type"])
+    assert logged_sources == {src.value for src in expected_sources}
