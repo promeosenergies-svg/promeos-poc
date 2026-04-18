@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import require_admin
+from middleware.cx_logger import safe_invalidate_membership_cache
 from models import (
     Organisation,
     EntiteJuridique,
@@ -280,12 +281,8 @@ def _reset_iam_demo(db):
         db.query(UserOrgRole).filter(UserOrgRole.user_id == u.id).delete()
         db.query(User).filter(User.id == u.id).delete()
     db.commit()
-    # Sprint CX P1 residual : purge cache membership pour tous les users demo
-    # supprimés (sinon staleness ≤ 5 min post-reset).
-    from middleware.cx_logger import safe_invalidate_membership_cache
-
-    for uid in demo_user_ids:
-        safe_invalidate_membership_cache(user_id=uid)
+    if demo_user_ids:
+        safe_invalidate_membership_cache(user_ids=demo_user_ids)
     # Re-seed IAM if an org still exists
     org = db.query(Organisation).first()
     if org:

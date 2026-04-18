@@ -4,14 +4,18 @@ Full BACS assessment, CVC system management, data quality, seed demo.
 """
 
 import json
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth
 from middleware.cx_logger import log_cx_event_first_only, make_dedup_key, CX_MODULE_ACTIVATED
 from services.scope_utils import resolve_org_id
+
+logger = logging.getLogger(__name__)
 
 from models import (
     Site,
@@ -212,8 +216,8 @@ def create_bacs_asset(
     db.commit()
     db.refresh(asset)
 
-    # Sprint CX 3 P0.4 : fire CX_MODULE_ACTIVATED (1ère activation BACS par l'org).
-    # Option A : dédup via `module_key=bacs` dans detail_json. Résout org_id via site.
+    # Fire CX_MODULE_ACTIVATED (1ère activation BACS par l'org). Dédup via
+    # `module_key=bacs` dans detail_json. org_id résolu via site→portefeuille→ej.
     try:
         pf = db.get(Portefeuille, site.portefeuille_id) if site and site.portefeuille_id else None
         ej = db.get(EntiteJuridique, pf.entite_juridique_id) if pf else None
@@ -228,8 +232,9 @@ def create_bacs_asset(
                 context={"module_key": "bacs", "trigger": "create_bacs_asset"},
             )
             db.commit()
-    except Exception:
-        pass  # fire-and-forget : ne casse pas la création asset
+    except SQLAlchemyError:
+        logger.debug("CX_MODULE_ACTIVATED bacs instrumentation failed", exc_info=True)
+        db.rollback()
 
     return _serialize_asset(asset)
 

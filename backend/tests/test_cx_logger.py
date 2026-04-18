@@ -212,6 +212,26 @@ def test_membership_cache_invalidated_explicitly(db_session):
     assert _is_member_cached(db_session, 2, 2) is False
 
 
+def test_membership_cache_invalidate_user_ids_batch():
+    """Batch : invalidate_membership_cache(user_ids=...) purge toutes les paires
+    en une passe (utilisé par demo reset sur un lot d'utilisateurs)."""
+    import time as _time
+
+    invalidate_membership_cache()  # clean
+    now = _time.monotonic()
+    _MEMBERSHIP_CACHE[(10, 1)] = (True, now + 300)
+    _MEMBERSHIP_CACHE[(11, 1)] = (True, now + 300)
+    _MEMBERSHIP_CACHE[(12, 2)] = (True, now + 300)
+
+    invalidate_membership_cache(user_ids=[10, 11])
+
+    assert (10, 1) not in _MEMBERSHIP_CACHE
+    assert (11, 1) not in _MEMBERSHIP_CACHE
+    assert (12, 2) in _MEMBERSHIP_CACHE  # hors lot → conservé
+
+    invalidate_membership_cache()
+
+
 def test_membership_cache_ttl_expires(db_session):
     """P2 : au-delà du TTL, le cache re-query la DB."""
     _seed_member(db_session, user_id=3, org_id=3)

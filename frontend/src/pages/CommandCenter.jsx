@@ -421,10 +421,7 @@ export default function CommandCenter() {
       {/* ── Value Counter — CX Gap #6 ── */}
       <ValueCounterCard orgId={org?.id} />
 
-      {/* ── CSAT J+14 — CX Gap #7 (fixed position bottom-right) ── */}
       <CsatModal orgId={org?.id} />
-
-      {/* ── NPS J+30 — Sprint CX P1 residual (scorecard 10% NPS/CES) ── */}
       <NpsModal orgId={org?.id} userCreatedAt={org?.created_at} />
 
       {/* ── Morning Brief — ce qui a bougé depuis la dernière visite ── */}

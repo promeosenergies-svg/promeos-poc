@@ -7,7 +7,8 @@ Fire-and-forget : les erreurs sont loggées mais ne bloquent pas la requête.
 import json
 import logging
 import time
-from typing import Optional
+from datetime import datetime, timedelta, timezone
+from typing import Iterable, Optional
 
 from sqlalchemy.orm import Session
 
@@ -53,27 +54,41 @@ def _is_member_cached(db: Session, user_id: int, org_id: int, ttl_sec: int = _ME
     return is_member
 
 
-def invalidate_membership_cache(user_id: Optional[int] = None, org_id: Optional[int] = None) -> None:
+def invalidate_membership_cache(
+    user_id: Optional[int] = None,
+    org_id: Optional[int] = None,
+    user_ids: Optional[Iterable[int]] = None,
+) -> None:
     """Invalide le cache membership.
 
     - Sans argument : vide tout le cache (utile en tests).
     - Avec (user_id, org_id) : invalide cette paire.
     - Avec user_id seul : invalide toutes les paires pour cet utilisateur.
     - Avec org_id seul : invalide toutes les paires pour cette org.
+    - Avec user_ids (set/list) : invalide en une passe toutes les paires
+      (user, *) dont user ∈ user_ids — évite N × O(|cache|) scans quand on
+      purge un lot d'utilisateurs (ex. reset demo).
     """
-    if user_id is None and org_id is None:
+    if user_id is None and org_id is None and user_ids is None:
         _MEMBERSHIP_CACHE.clear()
         return
+    user_id_set = {int(u) for u in user_ids} if user_ids is not None else None
     to_delete = [
         key
         for key in _MEMBERSHIP_CACHE
-        if (user_id is None or key[0] == user_id) and (org_id is None or key[1] == org_id)
+        if (user_id is None or key[0] == user_id)
+        and (org_id is None or key[1] == org_id)
+        and (user_id_set is None or key[0] in user_id_set)
     ]
     for key in to_delete:
         _MEMBERSHIP_CACHE.pop(key, None)
 
 
-def safe_invalidate_membership_cache(user_id: Optional[int] = None, org_id: Optional[int] = None) -> None:
+def safe_invalidate_membership_cache(
+    user_id: Optional[int] = None,
+    org_id: Optional[int] = None,
+    user_ids: Optional[Iterable[int]] = None,
+) -> None:
     """Wrapper fire-and-forget autour de invalidate_membership_cache.
 
     Usage : call-sites CRUD (iam_service, admin_users, demo reset) qui veulent
@@ -81,12 +96,13 @@ def safe_invalidate_membership_cache(user_id: Optional[int] = None, org_id: Opti
     échoue (pire cas : staleness ≤ 5 min, comportement pré-wiring).
     """
     try:
-        invalidate_membership_cache(user_id=user_id, org_id=org_id)
+        invalidate_membership_cache(user_id=user_id, org_id=org_id, user_ids=user_ids)
     except Exception:
         logger.debug(
-            "invalidate_membership_cache failed (user_id=%s, org_id=%s)",
+            "invalidate_membership_cache failed (user_id=%s, org_id=%s, user_ids=%s)",
             user_id,
             org_id,
+            user_ids,
             exc_info=True,
         )
 
@@ -103,8 +119,6 @@ def has_recent_audit_event(
     pas harceler un même utilisateur. `action` doit être une des constantes
     CX_* ou un action_type d'AuditLog existant.
     """
-    from datetime import datetime, timedelta, timezone
-
     cutoff = datetime.now(timezone.utc) - timedelta(days=cooldown_days)
     existing = (
         db.query(AuditLog.id)
@@ -127,7 +141,6 @@ CX_REPORT_EXPORTED = "CX_REPORT_EXPORTED"
 CX_ONBOARDING_COMPLETED = "CX_ONBOARDING_COMPLETED"
 CX_ACTION_FROM_INSIGHT = "CX_ACTION_FROM_INSIGHT"
 CX_DASHBOARD_OPENED = "CX_DASHBOARD_OPENED"
-# Sprint CX P1 residual : NPS micro-survey (scorecard 10% "NPS/CES")
 CX_NPS_SUBMITTED = "CX_NPS_SUBMITTED"
 
 CX_EVENT_TYPES = frozenset(
