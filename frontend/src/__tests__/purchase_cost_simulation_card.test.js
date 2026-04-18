@@ -214,10 +214,13 @@ describe('CostSimulationCard — accessibilité', () => {
     expect(cardSrc).toMatch(/aria-label=\{[\s\S]*?deltaIsNegative[\s\S]*?Baisse/);
   });
 
-  it('year selector est un radiogroup a11y', () => {
-    expect(cardSrc).toMatch(/role=["']radiogroup["']/);
+  it('year selector est un toggle group a11y (group + aria-pressed)', () => {
+    // Volontairement `role=group` + `aria-pressed` plutôt que radiogroup :
+    // évite l'obligation WAI-ARIA d'une nav ←/→ entre items. Chaque bouton
+    // reste Tab-focusable et l'état sélectionné est annoncé par les SR.
+    expect(cardSrc).toMatch(/role=["']group["']/);
     expect(cardSrc).toMatch(/aria-label=["']Année de projection["']/);
-    expect(cardSrc).toMatch(/aria-checked=\{selected\}/);
+    expect(cardSrc).toMatch(/aria-pressed=\{selected\}/);
   });
 });
 

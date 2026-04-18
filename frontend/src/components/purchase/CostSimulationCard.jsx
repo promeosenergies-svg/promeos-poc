@@ -144,6 +144,11 @@ export default function CostSimulationCard({ siteId: siteIdProp, year: yearProp 
   const [loading, setLoading] = useState(true);
   const [errorCode, setErrorCode] = useState(null); // 404 | 500 | null
 
+  // Sync selectedYear si le parent change yearProp (forçage externe)
+  useEffect(() => {
+    setSelectedYear(yearProp);
+  }, [yearProp]);
+
   useEffect(() => {
     if (!resolvedSiteId) {
       setLoading(false);
@@ -254,16 +259,19 @@ export default function CostSimulationCard({ siteId: siteIdProp, year: yearProp 
               data-testid="cost-sim-badge-post-arenh"
             >
               Post-ARENH
-              <InfoTip content="ARENH (tarif nucléaire régulé 42 €/MWh × 50% quota) supprimé au 31/12/2025. Nouveau cadre 2026+ : fourniture 100% marché + Versement Nucléaire Universel (VNU) redistributif + mécanisme capacité RTE centralisé." />
+              <InfoTip content="ARENH (tarif nucléaire régulé 42 €/MWh × 50% quota) supprimé au 31/12/2025. Nouveau cadre 2026+ : fourniture 100% marché, mécanisme capacité RTE centralisé, et VNU redistributif côté EDF (sans impact sur la facture client)." />
             </span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-[11px] text-gray-500">
               Projection {selectedYear} · {formatMwh(mwh)} MWh/an
             </p>
+            {/* Toggle group plutôt que radiogroup ARIA : évite l'obligation
+                WAI-ARIA de nav ←/→ entre items. Chaque bouton reste Tab-focusable
+                et annonce `aria-pressed` aux screen readers. */}
             <div
               className="inline-flex gap-0.5 p-0.5 bg-gray-100 rounded-md"
-              role="radiogroup"
+              role="group"
               aria-label="Année de projection"
               data-testid="cost-sim-year-selector"
             >
@@ -273,8 +281,7 @@ export default function CostSimulationCard({ siteId: siteIdProp, year: yearProp 
                   <button
                     key={y}
                     type="button"
-                    role="radio"
-                    aria-checked={selected}
+                    aria-pressed={selected}
                     onClick={() => setSelectedYear(y)}
                     className={`px-1.5 py-0.5 text-[10px] font-medium rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                       selected
