@@ -1,21 +1,10 @@
 /**
- * PROMEOS — NpsModal (Sprint CX P1 residual)
+ * PROMEOS — NpsModal : micro-survey NPS 0-10 + verbatim.
  *
- * Micro-survey NPS (Net Promoter Score) — instrumente la mesure scorecard
- * "NPS/CES" (10% du score) orpheline avant ce sprint.
- *
- * Pattern industry-standard :
- *   - Question : "Dans quelle mesure recommanderiez-vous PROMEOS à un collègue ?"
- *   - Échelle 0-10 (11 boutons cliquables)
- *   - Verbatim optionnel
- *   - Classification promoter (9-10) / passive (7-8) / detractor (0-6)
- *
- * Self-contained : la modale décide elle-même de s'afficher (trigger J+30 via
- * shouldShowNps + délai 5 s non-intrusif), align avec CsatModal. Le caller
- * n'a qu'à mount <NpsModal orgId={...} userCreatedAt={...} /> — aucun état
- * externe.
- *
- * Anti-flood 90j côté front (localStorage) + côté back (AuditLog).
+ * Classification promoter (9-10) / passive (7-8) / detractor (0-6).
+ * Self-contained : décide elle-même de s'afficher (trigger J+30 via
+ * shouldShowNps + délai 5 s non-intrusif). Anti-flood 90 j côté front
+ * (localStorage) + côté back (AuditLog via has_recent_audit_event).
  */
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
@@ -71,8 +60,10 @@ export default function NpsModal({ orgId, userCreatedAt, onSubmit }) {
       setSubmitted(true);
       onSubmit?.(res);
       setTimeout(() => setIsOpen(false), 1500);
-    } catch {
-      // Silent fail — on marque quand même pour éviter boucle immédiate
+    } catch (err) {
+      // On marque submitted pour éviter une boucle immédiate, mais on log
+      // pour ne pas perdre la trace (télémétrie / debug réseau).
+      console.warn('NPS submit failed', err);
       markNpsSubmitted();
       setIsOpen(false);
     } finally {

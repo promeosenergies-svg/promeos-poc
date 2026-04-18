@@ -1,11 +1,9 @@
 /**
- * PROMEOS - API NPS micro-survey (Sprint CX P1 residual)
+ * PROMEOS — API NPS micro-survey.
  *
  * POST /api/nps/submit — envoie une note NPS (0-10) + verbatim optionnel.
  * Le trigger d'affichage est piloté côté front via utils/nps.js::shouldShowNps
  * (localStorage + user.created_at), sans aller-retour réseau.
- *
- * Cible scorecard CX "NPS/CES" (mesure 10% orpheline avant ce sprint).
  */
 import api from './core';
 
