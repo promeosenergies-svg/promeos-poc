@@ -1,0 +1,111 @@
+# Sprint 1-2 Sol V1 — Progress Log (append-only)
+
+**Branche** : `claude/sol-v1-audit`
+**Base** : origin/main `711d3f5e` (cx-sprint25-hardening)
+**Worktree** : `C:/Users/amine/promeos-poc/promeos-sol-audit/`
+
+---
+
+## Commits prépa réalisés (pre-Gate 0)
+
+| SHA | Titre | Fichiers |
+|---|---|---|
+| `d0b4d0df` | docs(sol-v1): decisions log + applied prompt | 2 docs ajoutés |
+| `0dbbc2de` | docs(sol-v1): audit package + findings | 6 docs ajoutés |
+| `c8644743` | chore(deps): add anthropic + freezegun for Sol V1 | backend/requirements.txt +4 lignes |
+| `00610bb8` | fix(tests): auto-inject test secrets in conftest | backend/tests/conftest.py +10 lignes |
+
+---
+
+## Gate 0 — Audit read-only (DONE 2026-04-18)
+
+### Environnement technique confirmé
+
+- **Python** : 3.14.3 (supporte `from datetime import UTC` et `timezone.utc` — on reste sur `timezone.utc` par DÉCISION P1-1 pour aligner sur les 381 occurrences existantes)
+- **DB dev** : SQLite par défaut (`backend/data/promeos.db`)
+- **Deps Sol installées** : `anthropic>=0.40.0` + `freezegun>=1.5.0` ✓
+- **conftest auto-inject** : vérifié — `pytest --collect-only` sans `PROMEOS_JWT_SECRET` env fonctionne ✓
+
+### Baseline tests Gate 0
+
+**Backend** :
+```
+5605 tests collected in ~15s · 0 erreur de collecte
+```
+→ baseline pour Gate 4 "régression ≥ baseline".
+
+**Frontend** :
+Install partiel dans worktree (node_modules workspace-split, tailwind non résolu sans scripts). Non bloquant pour Sprint 1-2 (backend-only). Baseline frontend à re-mesurer Gate 4 après `npm install` complet dans worktree parent si refresh nécessaire. Référence mémoire CLAUDE.md : ~3870 tests FE au merge sprint CX 2.5 hardening (PR #237).
+
+### Patterns référencés dans DECISIONS_LOG — vérification factuelle
+
+| Pattern | Attendu | Trouvé | Statut |
+|---|---|---|---|
+| `TimestampMixin` | `backend/models/base.py` avec `updated_at onupdate=now()` | `models/base.py:14` classe + `updated_at` ligne 27 | ✓ |
+| `CreatedAtOnlyMixin` | Absent, à créer | 0 hit | ✓ (absence confirmée) |
+| `resolve_org_id` signature | `(request, auth, db, *, org_id_override)` appelée body | `services/scope_utils.py:81` + usage `actions.py:103`, `aper.py:30`, `bacs.py:55` | ✓ |
+| `get_optional_auth` | `Depends`-compatible | `middleware/auth.py:95` | ✓ |
+| `JobOutbox` model | Existe | `models/job_outbox.py:13` (`__tablename__="job_outbox"`) | ✓ |
+| `JobType` + `JobStatus` enums | Présents | **Relocalisés** : `models/enums.py:236` (JobType) et `models/enums.py:243` (JobStatus), PAS dans `models/job_outbox.py` comme le prompt laissait entendre | ⚠ correction Phase 3 |
+| `enqueue_job` helper | Signature `(db, job_type, payload, priority=0)` | `jobs/worker.py:21` ✓ | ✓ |
+| `cx_logger` | Réutilisable pour Sol monitoring | **Relocalisé** : `middleware/cx_logger.py` (pas `services/cx_logger.py` comme écrit dans DECISIONS_LOG P1-4) — API `log_cx_event(db, ...)`, utilise `AuditLog` model (V117) avec event_type préfixé `CX_*` | ⚠ correction P1-4 |
+| `tarifs_reglementaires.yaml` | Existe | `backend/config/tarifs_reglementaires.yaml` ✓ | ✓ |
+| Migration custom pattern | `_migrate_<feature_name>(engine)` dans `database/migrations.py` | Confirmé : les fonctions s'appellent `_migrate_usage_v1_1`, `_migrate_operat_trajectory`, `_migrate_compliance_event_log`, `_migrate_bacs_hardening`, `_migrate_contracts_v2`, `_migrate_phase1_contrats_cadre`, `_migrate_phase5_invoice_annexe_site` etc. **Pas de naming V112/V113/V114** — le prompt mentionnait ces noms de sprint, pas les noms de fonctions. Le pattern réel = 1 fonction par feature, préfixe `_migrate_`. | ⚠ correction DECISIONS_LOG + PROMPT_APPLIED |
+
+### Corrections à apporter au PROMPT_APPLIED avant Phase 1
+
+1. **Phase 1 section 1.3** — remplacer toutes références "pattern V113/V114" par "pattern `_migrate_<feature_name>`". Fonction à nommer : `_migrate_sol_v1_foundations(engine)` ✓ (déjà correct dans le prompt).
+
+2. **Phase 3 section 3.4** — corriger :
+   - "Ajouter `JobType.SOL_EXECUTE_PENDING_ACTION` dans enum" → préciser **fichier** : `backend/models/enums.py:236` (pas `models/job_outbox.py`).
+   - Même correction pour toute mention de JobType/JobStatus.
+
+3. **DECISIONS_LOG P1-4** — corriger : `cx_logger` est à `backend/middleware/cx_logger.py` (pas `services/`). Ajouter note API : `log_cx_event(db, user_id, org_id, event_type, ...)`. Event types = constantes `CX_*` définies en haut du fichier (`CX_INSIGHT_CONSULTED`, `CX_MODULE_ACTIVATED`, etc.).
+
+4. **Ajouter constantes Sol** — quand Phase 4 wire le logging : créer constantes `SOL_PROPOSE_GENERATED`, `SOL_ACTION_SCHEDULED`, `SOL_ACTION_EXECUTED`, `SOL_ACTION_CANCELLED`, `SOL_PLAN_REFUSED` suivant le même pattern que `CX_*` mais préfixées `SOL_*`.
+
+### Questions ouvertes détectées Gate 0 (non-bloquantes Phase 1, à tracker)
+
+- **Q1** — `models/enums.py:236` : le fichier est-il à jour avec toutes les `JobType` utilisées actuellement ? Ajouter `JobType.SOL_EXECUTE_PENDING_ACTION` = 1 ligne, faible risque.
+- **Q2** — `services/iam_service.py:35` lit `PROMEOS_JWT_SECRET` à l'import : le junior va peut-être avoir la même surprise en Phase 4 avec d'autres vars env. Garder l'œil sur autres modules qui lisent env à l'import (pattern anti-pattern repo à signaler post-seed).
+- **Q3** — `AuditLog` (V117) existe déjà pour CX logging. Sol a sa propre table `SolActionLog` append-only. Pas de duplication — les 2 coexistent : `AuditLog` pour événements UI métier (CX), `SolActionLog` pour le trail agentique Sol (plan_json + state_before/after + outcome). À documenter dans Phase 4.
+- **Q4** — Migration fonction `_migrate_sol_v1_foundations(engine, inspector)` : certaines migrations existantes prennent `(engine)` seul, d'autres `(engine, inspector)`. À vérifier au moment d'écrire pour matcher le pattern local le plus récent. Voir `_migrate_phase5_invoice_annexe_site(engine)` comme référence.
+- **Q5** — Frontend baseline non mesurée dans worktree (node_modules workspace). Non-bloquant Sprint 1-2 (backend-only) mais Gate 4 devra la re-mesurer proprement pour le check "régression ≥ baseline".
+
+### Fichiers existants à reproduire comme modèles
+
+- **Mixin pattern** : `backend/models/base.py:14` (TimestampMixin) — copier structure, retirer `updated_at`.
+- **Migration pattern** : `backend/database/migrations.py:2229` (`_migrate_phase5_invoice_annexe_site`) — exemple récent, bien typé.
+- **Org-scoped route pattern** : `backend/routes/actions.py:100-110` — exemple canonique.
+- **log_cx_event usage** : voir `backend/routes/cx_dashboard.py` ou `routes/copilot.py` — pattern à copier pour `log_sol_event`.
+
+### Fichiers NE PAS toucher ce sprint
+
+- `backend/models/base.py` → **autorisé pour ajouter `CreatedAtOnlyMixin` seulement**, ne pas modifier TimestampMixin/SoftDeleteMixin existants.
+- `backend/models/enums.py` → **autorisé pour ajouter `JobType.SOL_EXECUTE_PENDING_ACTION` seulement**, ne pas modifier les autres enums.
+- `backend/database/migrations.py` → **autorisé pour ajouter `_migrate_sol_v1_foundations(engine)` + son appel dans `run_migrations()`**, ne pas toucher au reste.
+- `backend/jobs/worker.py` → **autorisé pour ajouter le dispatcher `JobType.SOL_EXECUTE_PENDING_ACTION`**, ne pas toucher aux autres types.
+- `backend/main.py` → **autorisé pour include_router Sol uniquement** (Phase 4).
+- `backend/requirements.txt` → **déjà modifié en Commit A**, ne plus toucher.
+- `backend/tests/conftest.py` → **déjà modifié en Commit B**, ne plus toucher.
+
+Tout le reste : **hors scope, zéro tolérance**. Diff review manuel avant chaque commit Phase 1-4.
+
+---
+
+## Gate 0 — Verdict
+
+✅ **Ready for Phase 1.**
+
+- Infrastructure prépa en place (2 commits préparatoires)
+- Baseline backend : 5605 tests collectés, 0 erreur
+- Patterns référencés tous vérifiés, 3 corrections mineures de localisation identifiées (à appliquer Phase 1 & 3)
+- 5 questions ouvertes trackées (non-bloquantes)
+
+**Attente** : validation user pour démarrer Phase 1 (modèles DB Sol + migration custom + 11 tests).
+
+Estimation Phase 1 : 2 jours (CreatedAtOnlyMixin + 4 classes SQLAlchemy + event listener append-only + migration `_migrate_sol_v1_foundations` + tests).
+
+---
+
+*Document append-only — ajouter Phase 1, Phase 2, Phase 3, Phase 4 en-dessous au fur et à mesure.*
