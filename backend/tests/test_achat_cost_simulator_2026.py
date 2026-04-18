@@ -206,7 +206,7 @@ class TestSimulateFacture2026:
         # Risque upside tracé dans les hypothèses
         assert result["hypotheses"]["vnu_risque_upside_eur_mwh"] > 0
         # Seuil exposé
-        assert result["hypotheses"]["vnu_seuil_active_eur_mwh"] >= VNU_SEUIL_DEFAUT_EUR_MWH
+        assert result["hypotheses"]["vnu_seuil_active_eur_mwh"] == VNU_SEUIL_DEFAUT_EUR_MWH
         # Note pédagogique présente pour auditeur
         assert "taxe redistributive sur EDF" in result["hypotheses"]["vnu_note"]
 

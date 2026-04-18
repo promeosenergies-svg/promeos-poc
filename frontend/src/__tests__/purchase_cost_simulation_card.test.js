@@ -55,9 +55,12 @@ describe('CostSimulationCard — imports partages', () => {
     expect(codeOnly).not.toMatch(/const\s+fmtEuro\s*=/);
   });
 
-  it('utilise useNavigate + toSite (pattern achats)', () => {
+  it('utilise useNavigate + toPurchase (fix audit — tab achat absent de Site360)', () => {
     expect(cardSrc).toMatch(/useNavigate/);
-    expect(cardSrc).toMatch(/toSite\(resolvedSiteId/);
+    expect(cardSrc).toMatch(/toPurchase\(\{/);
+    // Ne doit PAS rester un reliquat vers toSite(site_id, { tab: 'achats' }) :
+    // Site360 TABS n'expose pas 'achats' → fallback silencieux sur 'resume'.
+    expect(cardSrc).not.toMatch(/tab:\s*['"]achats['"]/);
   });
 });
 
@@ -221,6 +224,20 @@ describe('CostSimulationCard — accessibilité', () => {
     expect(cardSrc).toMatch(/role=["']group["']/);
     expect(cardSrc).toMatch(/aria-label=["']Année de projection["']/);
     expect(cardSrc).toMatch(/aria-pressed=\{selected\}/);
+  });
+});
+
+// ── Badge projection extrapolée (forward fallback) ──────────────────
+describe('CostSimulationCard — badge confiance si forward fallback', () => {
+  it('détecte `forward_indisponible` dans hypotheses.source_calibration', () => {
+    expect(cardSrc).toMatch(/hasForwardFallback/);
+    expect(cardSrc).toMatch(/forward_indisponible/);
+  });
+
+  it('rend un badge "Projection extrapolée" avec aria-label explicite', () => {
+    expect(cardSrc).toMatch(/Projection extrapolée/);
+    expect(cardSrc).toMatch(/cost-sim-forward-fallback-badge/);
+    expect(cardSrc).toMatch(/aria-label=\{`Projection \$\{selectedYear\}/);
   });
 });
 

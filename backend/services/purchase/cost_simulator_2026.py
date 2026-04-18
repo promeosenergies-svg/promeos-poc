@@ -5,7 +5,8 @@ Répond à la question "combien coûtera ma facture énergie en 2026 / 2027 ?"
 avec une décomposition par composante réglementaire post-ARENH :
     - fourniture (forward baseload × CDC annuel)
     - TURPE 7 (part fixe + variable)
-    - VNU (dormant si prix < 78 EUR/MWh, upside sinon)
+    - VNU (statut informatif : dormant/actif selon seuil CRE ; facture client
+      = 0 dans les 2 cas — upside tracé dans `hypotheses.vnu_risque_upside_*`)
     - mécanisme capacité RTE (enchères PL-4/PL-1 centralisées nov. 2026)
     - CBAM scope (non applicable à la conso élec directe — documenté)
     - taxes agrégées (accise + CTA + TVA)
@@ -18,8 +19,8 @@ Doctrine :
 - MVP indicatif, confiance = "indicative"
 - Fallbacks défensifs traçables (clé `source_calibration`)
 - Jamais "flex" standalone dans les strings exposées (doctrine wording)
-- Réutilise `ParameterStore` + `resolve_archetype` + `tarif_loader`
-- Interface stable : agents B (endpoint) et C (frontend) s'y reposent
+- Réutilise `ParameterStore` (billing_engine), `resolve_archetype` (flex),
+  `load_yaml_section` (tarifs_reglementaires.yaml)
 
 Sources :
 - Post-ARENH au 01/01/2026 (art. L. 336-1 Code énergie, Loi souveraineté
@@ -90,11 +91,9 @@ ARCHETYPE_FACTEUR_FORME = {
     "DEFAULT": 0.40,
 }
 
-# Ces constantes sont conservées comme alias pour imports rétro-compatibles.
-# Les valeurs effectives proviennent de YAML (cf. `_load_simulator_params`).
+# Alias historique utilisé par `test_achat_cost_simulator_2026.py`. Valeur
+# effective toujours lue depuis YAML via `_load_simulator_params`.
 BASELINE_2024_EUR_MWH = BASELINE_2024_EUR_MWH_FALLBACK
-PEAK_PREMIUM_RATIO = PEAK_PREMIUM_RATIO_FALLBACK
-VNU_IMPACT_MVP_EUR_MWH = VNU_IMPACT_MVP_EUR_MWH_FALLBACK
 
 # Segment TURPE par défaut (C4_BT = tertiaire moyen, majoritaire dans portefeuille PME).
 # Si `Meter.tariff_type` renseigne C5 / C3, on bascule.
