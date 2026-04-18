@@ -30,7 +30,7 @@ import {
   Building2,
   ArrowRight,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, EmptyState, TrustBadge } from '../../ui';
+import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, Explain } from '../../ui';
 import { fmtEur } from '../../utils/format';
 import { useExpertMode } from '../../contexts/ExpertModeContext';
 import { track } from '../../services/tracker';
@@ -109,7 +109,9 @@ function ScoreGauge({ pct, isEmpty }) {
         </div>
         <div className="flex-1">
           <div className="h-3 bg-gray-200 rounded-full" />
-          <p className="text-xs text-gray-500 mt-1">Score de conformité global</p>
+          <p className="text-xs text-gray-500 mt-1">
+            <Explain term="compliance_score">Score de conformité global</Explain>
+          </p>
           <p className="text-xs text-gray-400 mt-0.5">Aucune évaluation disponible</p>
         </div>
       </div>
@@ -132,7 +134,9 @@ function ScoreGauge({ pct, isEmpty }) {
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="text-xs text-gray-500 mt-1">Score de conformité global</p>
+        <p className="text-xs text-gray-500 mt-1">
+          <Explain term="compliance_score">Score de conformité global</Explain>
+        </p>
         <p className="text-xs text-gray-400 mt-0.5">
           Score = sites conformes / sites évalués (pondéré par criticité)
         </p>

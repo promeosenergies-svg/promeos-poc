@@ -22,7 +22,7 @@ import { getCostSimulation2026 } from '../../services/api/purchase';
 import { useScope } from '../../contexts/ScopeContext';
 import { toPurchase } from '../../services/routes';
 import { fmtEur } from '../../utils/format';
-import { Skeleton, InfoTip } from '../../ui';
+import { Skeleton, InfoTip, Explain } from '../../ui';
 
 // Intl forcé Europe/Paris pour les nombres (cohérent avec autres cartes pilotage)
 const MWH_FMT = new Intl.NumberFormat('fr-FR', {
@@ -366,8 +366,10 @@ export default function CostSimulationCard({ siteId: siteIdProp, year: yearProp 
         >
           <AlertTriangle size={12} className="shrink-0 mt-0.5" aria-hidden="true" />
           <span>
-            <strong>VNU actif</strong> — prix marché &gt; seuil CRE {vnuSeuil} €/MWh. Composante
-            complémentaire activée.
+            <strong>
+              <Explain term="vnu">VNU</Explain> actif
+            </strong>{' '}
+            — prix marché &gt; seuil CRE {vnuSeuil} €/MWh. Composante complémentaire activée.
           </span>
         </div>
       )}
