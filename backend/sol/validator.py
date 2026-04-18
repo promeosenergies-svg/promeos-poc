@@ -114,9 +114,6 @@ def validate_plan_for_execution(
         confirmation_token, plan.correlation_id, expected_plan_hash
     )
     if not hmac_valid:
-        # Distinguer "token altéré / mauvais plan_hash" vs "token structurellement invalide"
-        # verify_confirmation_token retourne False pour les deux — on essaie de discriminer
-        # en tentant de vérifier avec un plan_hash bidon pour voir si le token est parseable
         raise InvalidToken(
             "Confirmation token invalide, expiré côté HMAC, ou plan altéré. "
             "Relancez la prévisualisation."
