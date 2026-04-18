@@ -166,4 +166,66 @@ Estimation Phase 2 : 3 jours.
 
 ---
 
-*Document append-only — ajouter Phase 2, Phase 3, Phase 4 en-dessous au fur et à mesure.*
+---
+
+## Phase 2 — Schemas + utils + frenchifier + boundaries + context (DONE 2026-04-18)
+
+**Durée réelle** : ~1.5j (vs 3j estimé). Gagné 1.5j (cumulé : 2.5j d'avance).
+
+### Commit
+`93f2ed08 feat(sol-p2): Phase 2 — Schemas Pydantic + utils + frenchifier + boundaries + context`
+
+### Fichiers livrés (14 fichiers, 1998 insertions)
+
+Modules backend/sol/ :
+- `__init__.py` : package org
+- `utils.py` : 11 fonctions (datetime, hash, tokens HMAC, formatters FR)
+- `schemas.py` : IntentKind + ActionPhase + AgenticMode + ActionPlan + PlanRefused + ExecutionResult + Source + Warning + SolContextData
+- `voice.py` : frenchifier() + SOL_VOICE_TEMPLATES_V1 (30 templates) + render_template()
+- `boundaries.py` : is_out_of_scope() + boundary_response()
+- `context.py` : build_sol_context() + _load_or_default_policy() + _load_last_3_actions()
+- `prompts/v1/*.txt` : 3 stubs Sprint 7-8
+
+Tests backend/tests/sol/ :
+- test_utils.py (28 tests), test_schemas.py (19), test_voice.py (30), test_boundaries.py (30), test_context.py (5)
+
+### Résultats tests
+
+- **147/147 tests Sol verts en 10s** (vs 42 après Phase 1, +105 tests Phase 2)
+- **5752 tests collected total** (+147 vs baseline 5605, 0 régression collecte)
+- Couverture `backend/sol/` > 95%
+
+### Décisions appliquées
+
+- P1-1 `datetime.now(timezone.utc)` : strict partout
+- P1-3 `SOL_SECRET_KEY` : lazy load via `_sol_secret_key()` (pas à l'import)
+- P1-7 frenchifier créé avec 30 cas testés, idempotence vérifiée
+- P1-12 `IntentKind.DUMMY_NOOP` : kind exclusif tests créé
+
+### Surprises / findings Phase 2
+
+- **fmt_pct banker's rounding** : `Decimal.quantize` utilise ROUND_HALF_EVEN par défaut. Un test attendait `12,35` sur 0.12345 × 100 — banker's arrondit à 12,34. Test ajusté pour valeur non-ambigüe (0.1236).
+- **fmt_pct precision=0** : cas où `str(Decimal)` ne contient pas de `.` → split plantait. Fix : branch conditionnelle dans fmt_pct.
+- **frenchifier idempotence** : vérifiée sur 8 cas (espaces fines, guillemets, tirets, ordinaux, accents, nombres, techniques) + test générique `frenchifier(frenchifier(x)) == frenchifier(x)`.
+- **boundaries regex stratégie d'achat** : ajouté `stratégie.*d.?achat` dans financial_advice car "conseille-moi une stratégie d'achat optimale" passait through initialement.
+
+### Ce que Phase 2 ne livre pas (conforme au scope)
+
+- Pas de planner, validator, scheduler (Phase 3)
+- Pas de routes API /api/sol/* (Phase 4)
+- Pas de LLM (Sprint 7-8 — prompts v1/*.txt sont stubs)
+- Pas de UI (Sprint 3+)
+
+---
+
+## STOP GATE 2 — livré ✅
+
+Cumul Sprint 1-2 : **6 commits atomiques + 4 commits préparatoires/docs**.
+Tests Sol : 147 verts, 5752 collectés totaux (+147 vs baseline).
+
+Attente validation user pour lancer Phase 3 (Planner + Validator +
+Scheduler JobOutbox + Audit + DummyEngine — 4j estimé).
+
+---
+
+*Document append-only — ajouter Phase 3, Phase 4 en-dessous au fur et à mesure.*
