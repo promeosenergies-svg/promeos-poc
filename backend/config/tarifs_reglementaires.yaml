@@ -127,6 +127,13 @@ accise_elec_2026_t2:
   valid_from: "2026-02-01"
   valid_to: null
 
+accise_elec_2026_hp:
+  label: "Accise électricité 2026 — HP haute puissance (>10 GWh, industriel)"
+  rate_eur_kwh: 0.00571
+  source: "Loi de finances 2026 — 5.71 EUR/MWh haute puissance (fév 2026+, art. 266 quinquies C CIBS)"
+  valid_from: "2026-02-01"
+  valid_to: null
+
 # ── Accise gaz (ex-TICGN) ───────────────────────────────────────────────────
 # 2024 : art. 64 LFI 2024 — fin bouclier tarifaire, retour taux plein
 accise_gaz_2024:

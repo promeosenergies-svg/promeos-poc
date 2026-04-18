@@ -67,6 +67,7 @@ import RadarPrixNegatifsCard from '../components/pilotage/RadarPrixNegatifsCard'
 import RoiFlexReadyCard from '../components/pilotage/RoiFlexReadyCard';
 import PortefeuilleScoringCard from '../components/pilotage/PortefeuilleScoringCard';
 import NebcoSimulationCard from '../components/pilotage/NebcoSimulationCard';
+import CostSimulationCard from '../components/purchase/CostSimulationCard';
 import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
 import VecteurEnergetiqueCard from './cockpit/VecteurEnergetiqueCard';
 import AlertesPrioritaires from './cockpit/AlertesPrioritaires';
@@ -769,6 +770,21 @@ const Cockpit = () => {
             <NebcoSimulationCard periodDays={30} />
           </div>
         </div>
+      </section>
+
+      <section className="space-y-3" data-testid="cockpit-achat-post-arenh">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+            Achat énergie post-ARENH
+          </h2>
+          <span className="text-[10px] text-gray-400">
+            Post-ARENH 01/01/2026 · TURPE 7 · VNU CRE · capacité RTE
+          </span>
+        </div>
+        <CostSimulationCard
+          siteId={isSingleSite ? singleSite?.id : scopedSites[0]?.id}
+          year={2026}
+        />
       </section>
 
       {/* ═══════════ ZONE 2 : KPI DÉCIDEUR — déplacé dans ZONE 4 (détail) ═══════════ */}

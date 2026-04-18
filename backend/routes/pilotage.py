@@ -135,24 +135,31 @@ def _build_demo_site_ctx(site_id: str) -> dict[str, Any]:
 
 def _scoped_site_query(db: Session, auth: Optional[AuthContext]):
     """
-    Query de base `Site actif` + defense-in-depth org_id si auth present.
+    Query de base `Site actif` + défense-in-depth org_id + site_ids (IAM).
 
-    Hors auth (DEMO_MODE), aucune restriction -- le filtre d'actif suffit.
-    Retourne un Query[Site] que les callers affinent avec `.filter(Site.id == ...)`
-    ou `.filter(Site.id.in_(...))`.
+    Quand `auth` est présent :
+      - filtre org_id via la chaîne Portefeuille → EntiteJuridique → Organisation
+      - filtre `site_ids` IAM si présent (`UserScope` → liste whitelist).
+        Semantique IAM : `site_ids=[]` = deny-by-default (aucun scope configuré).
 
-    Le 404 retourne sur lookup vide evite de distinguer "site inexistant" et
-    "site hors scope" -- choix delibere anti-enumeration (vs monitoring.py 403).
+    Hors auth (DEMO_MODE), aucune restriction — le filtre actif suffit.
+
+    Le 404 retourné sur lookup vide évite de distinguer "site inexistant" et
+    "site hors scope" — choix délibéré anti-énumération (vs monitoring.py 403).
     """
     from models import EntiteJuridique, Portefeuille, Site
 
     query = db.query(Site).filter(Site.actif == True)  # noqa: E712
-    if auth is not None and getattr(auth, "org_id", None):
-        query = (
-            query.join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
-            .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-            .filter(EntiteJuridique.organisation_id == auth.org_id)
-        )
+    if auth is not None:
+        if getattr(auth, "org_id", None):
+            query = (
+                query.join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+                .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+                .filter(EntiteJuridique.organisation_id == auth.org_id)
+            )
+        site_ids = getattr(auth, "site_ids", None)
+        if site_ids is not None:
+            query = query.filter(Site.id.in_(site_ids))
     return query
 
 
