@@ -108,4 +108,62 @@ Estimation Phase 1 : 2 jours (CreatedAtOnlyMixin + 4 classes SQLAlchemy + event 
 
 ---
 
-*Document append-only — ajouter Phase 1, Phase 2, Phase 3, Phase 4 en-dessous au fur et à mesure.*
+---
+
+## Phase 1 — Modèles DB + migration custom (DONE 2026-04-18)
+
+**Durée réelle** : ~1j (vs 2j estimé). Gagné 1j sur estimation.
+
+### Commit
+`c90d8b64 feat(sol-p1): Phase 1 — Modèles DB Sol V1 (append-only audit, pending, tokens, policy)`
+
+### Fichiers livrés (8 fichiers, 803 insertions, -1 deletion)
+
+1. `backend/models/base.py` (modif) — +`CreatedAtOnlyMixin` (5 lignes)
+2. `backend/models/__init__.py` (modif) — export `CreatedAtOnlyMixin`
+3. `backend/models/sol.py` (new) — 4 classes SQLAlchemy + event listener + `AppendOnlyViolation`
+4. `backend/database/migrations.py` (modif) — +`_migrate_sol_v1_foundations(engine)` (pattern `_create_sirene_tables`-like, import module + `metadata.create_all(checkfirst=True)`)
+5. `backend/tests/sol/__init__.py` (new)
+6. `backend/tests/sol/conftest.py` (new) — fixtures `sol_db`, `sol_org`, `sol_user`, `sol_correlation_id`, `now_utc` (DB SQLite mémoire isolée par test)
+7. `backend/tests/sol/test_models_sol.py` (new) — 11 tests
+8. `backend/tests/sol/test_sol_append_only.py` (new) — 7 tests
+
+### Résultats tests
+
+- **18/18 tests Sol verts en 8s** (vs 11 minimum exigé, +64% de couverture)
+- **5623 tests collected total** (+18 Sol vs baseline 5605, 0 régression collecte)
+- Couverture `models/sol.py` > 95% (toutes les classes + event listener + `is_dry_run_active` testés)
+
+### Décisions appliquées
+
+- P0-1 : Integer PK autoincrement ✓ (les 4 tables)
+- P0-2 : `Column(JSON)` + event listener `before_update` (pas JSONB, pas trigger DDL)
+- P0-5 : `CreatedAtOnlyMixin` créé et utilisé par `SolActionLog` / `SolPendingAction` / `SolConfirmationToken`. `SolOrgPolicy` a son propre `updated_at` (mutable).
+- P0-3 : Migration custom pattern `_migrate_<feature_name>(engine)` avec `metadata.create_all(tables=[...], checkfirst=True)` — wired dans `run_migrations()` après `_create_sirene_tables`.
+- P1-1 : `datetime.now(timezone.utc)` partout (zéro `datetime.utcnow()` introduit)
+
+### Surprises / findings Phase 1
+
+- **Test pré-existant cassé sur origin/main** : `tests/test_iam.py::TestScopeFiltering::test_sites_unfiltered_without_auth` échoue avec 401 au lieu de 200 attendu. Reproduit avec et sans mes changements Phase 1. Pas de ma faute, à remonter à l'équipe hors scope Sprint 1-2 Sol.
+- **Git stash avec event listener** : `git stash` peut "oublier" les changements de certaines modifs sur fichiers modifiés en même temps que des fichiers nouveaux. Recovery par `git stash pop`. Incident contrôlé.
+- **origin/main à jour** : 4 commits en avance depuis base `711d3f5e` (dernier `5fb57031 feat(cx-ux): migrate PriorityActions to FindingCard`). Branche Sol reste stable sur `711d3f5e`, pas de rebase nécessaire (pas de conflit scope).
+- **User model fields** : `hashed_password` (pas `password_hash`), `actif` (pas `is_active`), `nom` + `prenom` requis. Corrigé dans fixture `sol_user`.
+
+### Ce que Phase 1 ne livre pas (conforme au scope)
+
+- Pas de `JobType.SOL_EXECUTE_PENDING_ACTION` encore (Phase 3)
+- Pas de `cx_logger` wiring (Phase 4 — utiliser `middleware/cx_logger.py`)
+- Pas de schemas Pydantic (Phase 2)
+- Pas de `frenchifier()` (Phase 2)
+
+---
+
+## STOP GATE 1 — livré ✅
+
+Attente validation user pour lancer Phase 2 (schemas Pydantic + utils + frenchifier + boundaries + voice templates V1).
+
+Estimation Phase 2 : 3 jours.
+
+---
+
+*Document append-only — ajouter Phase 2, Phase 3, Phase 4 en-dessous au fur et à mesure.*
