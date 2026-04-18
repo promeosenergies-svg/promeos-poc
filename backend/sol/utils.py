@@ -119,6 +119,9 @@ def generate_confirmation_token(
     return base64.urlsafe_b64encode(payload + b"|" + sig).decode("ascii").rstrip("=")
 
 
+_HMAC_SHA256_SIZE = 32  # HMAC-SHA256 produces 32 raw bytes
+
+
 def verify_confirmation_token(
     token: str,
     expected_correlation_id: str,
@@ -129,25 +132,32 @@ def verify_confirmation_token(
 
     Validations :
     1. Décodage base64url réussi
-    2. Structure "payload|signature" conforme
+    2. Taille minimale compatible (HMAC 32 bytes + 1 "|" + payload non vide)
     3. correlation_id matche expected
     4. plan_hash matche expected (détection altération)
     5. Signature HMAC matche (détection tampering)
 
     N'implémente PAS expiry ni single-use : ceux-ci sont vérifiés côté DB
     via `SolConfirmationToken.expires_at` / `.consumed`.
+
+    Structure format : `{payload_utf8} | HMAC_SHA256(payload)` (32 bytes raw).
+    Slicing par longueur fixe (pas rfind b"|" — la sig binaire peut contenir
+    des bytes 0x7C qui casseraient le split).
     """
     secret = _sol_secret_key()
     try:
         # Re-padding base64 si nécessaire
         padding = "=" * (-len(token) % 4)
         raw = base64.urlsafe_b64decode(token + padding)
-        # Split payload | signature (cherche le dernier "|")
-        sep_idx = raw.rfind(b"|")
-        if sep_idx < 0:
+        # Structure : payload_bytes + b"|" + sig_32_bytes
+        # Slice depuis la fin par longueur fixe (sig HMAC-SHA256 = 32 bytes)
+        if len(raw) < _HMAC_SHA256_SIZE + 2:  # au moins 1 byte payload + 1 "|" + 32 sig
             return (False, None)
-        payload_bytes = raw[:sep_idx]
-        sig_provided = raw[sep_idx + 1:]
+        sig_provided = raw[-_HMAC_SHA256_SIZE:]
+        separator_byte = raw[-_HMAC_SHA256_SIZE - 1:-_HMAC_SHA256_SIZE]
+        if separator_byte != b"|":
+            return (False, None)
+        payload_bytes = raw[:-_HMAC_SHA256_SIZE - 1]
 
         # Validation HMAC
         sig_expected = hmac.new(secret, payload_bytes, hashlib.sha256).digest()
