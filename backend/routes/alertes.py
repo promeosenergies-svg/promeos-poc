@@ -14,6 +14,7 @@ from typing import Optional
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access
 from services.iam_service import log_audit
+from services.error_catalog import business_error
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ def get_alerte(alerte_id: int, db: Session = Depends(get_db), auth: Optional[Aut
     alerte = db.query(Alerte).filter(Alerte.id == alerte_id).first()
 
     if not alerte:
-        raise HTTPException(status_code=404, detail="Alerte non trouvée")
+        raise HTTPException(**business_error("ALERT_NOT_FOUND"))
 
     check_site_access(auth, alerte.site_id)
     return alerte
@@ -76,7 +77,7 @@ def resolve_alerte(
     alerte = db.query(Alerte).filter(Alerte.id == alerte_id).first()
 
     if not alerte:
-        raise HTTPException(status_code=404, detail="Alerte non trouvée")
+        raise HTTPException(**business_error("ALERT_NOT_FOUND"))
 
     check_site_access(auth, alerte.site_id)
 

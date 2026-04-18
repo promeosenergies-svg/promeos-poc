@@ -127,6 +127,13 @@ accise_elec_2026_t2:
   valid_from: "2026-02-01"
   valid_to: null
 
+accise_elec_2026_hp:
+  label: "Accise électricité 2026 — HP haute puissance (>10 GWh, industriel)"
+  rate_eur_kwh: 0.00571
+  source: "Loi de finances 2026 — 5.71 EUR/MWh haute puissance (fév 2026+, art. 266 quinquies C CIBS)"
+  valid_from: "2026-02-01"
+  valid_to: null
+
 # ── Accise gaz (ex-TICGN) ───────────────────────────────────────────────────
 # 2024 : art. 64 LFI 2024 — fin bouclier tarifaire, retour taux plein
 accise_gaz_2024:
@@ -436,6 +443,17 @@ cbam_eu:
   valid_to: null
   reference_ets_eur_per_t: 69.99    # EU ETS même jour, pour comparaison
   scope: ["acier", "ciment", "aluminium", "engrais", "hydrogene", "electricite"]
+  # Intensités carbone par défaut (tCO2 embarqué par tonne de produit importé
+  # hors UE). Valeurs issues des défauts Commission UE "Implementing Regulation
+  # 2023/1773" tableau 2 (annexe) — utilisés quand l'importateur ne fournit
+  # pas de donnée site-specific vérifiée.
+  default_intensity_tco2_per_t:
+    acier: 2.0         # aciéries haut fourneau/EAF mix, ordre CE par défaut
+    ciment: 0.66       # clinker-riche, default EU 0.6-0.72
+    aluminium: 16.5    # primaire (Hall-Héroult), très carbo-intensif hors EU
+    engrais: 2.6       # ammonia-based, default UREA/NPK
+    hydrogene: 10.0    # grey H₂ SMR sans CCS
+    electricite: 0.45  # default EU hors interconnexions bas-carbone
 
 # ── TVA ──────────────────────────────────────────────────────────────────────
 tva:
@@ -460,8 +478,9 @@ tva:
 vnu:
   seuil_1_eur_mwh: 78.0
   seuil_2_eur_mwh: 110.0
+  impact_upside_mvp_eur_mwh: 2.0
   statut: "EN VIGUEUR — DORMANT (prix marché ~60 €/MWh < seuil 78)"
-  source: "Loi de souveraineté énergétique — VNU au 01/01/2026"
+  source: "Loi de souveraineté énergétique — VNU au 01/01/2026 (Décret 2026-55, CRE 2026-52)"
   valid_from: "2026-01-01"
   revision_triennale: "~2028 (CRE)"
   note: "L'ancien ARENH (42 EUR/MWh) n'est plus applicable. Ne plus utiliser comme référence de prix."
@@ -471,6 +490,18 @@ prix_reference:
   elec_eur_kwh: 0.068
   gaz_eur_kwh: 0.045
   source: "PROMEOS POC fallback (EPEX Spot 30j moyen)"
+
+# ── Cost Simulator post-ARENH MVP — constantes versionnées ─────────────────
+# Utilisées par `services/purchase/cost_simulator_2026.py`. Migration depuis
+# constantes hardcodées vers YAML pour traçabilité + versioning par date
+# d'effet (cohérent avec le reste du référentiel CRE).
+cost_simulator_2026:
+  baseline_eur_mwh: 80.0  # ARENH 42 × 50% + complément spot 2024 (~120 × 50%)
+  fallback_forward_eur_mwh: 68.0  # Si mkt_prices vide (= prix_reference.elec_eur_kwh × 1000)
+  peak_premium_ratio: 0.15  # Majoration HP/HC baseload, calibrée Observatoire CRE T4 2025
+  source: "PROMEOS MVP post-ARENH — calibration Observatoire CRE T4 2025 + baromètre CRE bulletin marchés de gros 2025"
+  valid_from: "2026-01-01"
+  valid_to: null
 
 # ── Pilotage Flex Ready® — paramètres MVP ROI + scoring portefeuille ───────
 # Constantes indicatives (pas des engagements commerciaux) utilisées par :

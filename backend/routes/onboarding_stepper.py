@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import OnboardingProgress
 from middleware.auth import get_optional_auth, AuthContext
+from middleware.cx_logger import log_cx_event, CX_ONBOARDING_COMPLETED
 from services.scope_utils import resolve_org_id
 from services.data_quality_service import compute_org_completeness
 from services.onboarding_stepper_service import (
@@ -132,14 +133,28 @@ def update_step(
     setattr(progress, body.step, body.done)
 
     # Check if all done + compute TTFV
+    just_completed = False
     if all(getattr(progress, f) for f in STEP_FIELDS):
         if not progress.completed_at:
             progress.completed_at = datetime.now(timezone.utc)
             if progress.created_at:
                 progress.ttfv_seconds = int((progress.completed_at - progress.created_at).total_seconds())
+            just_completed = True
     else:
         progress.completed_at = None
         progress.ttfv_seconds = None
+
+    # Sprint CX 3 P0.4 : fire CX_ONBOARDING_COMPLETED sur transition 1ère fois.
+    # Option B (fire-and-forget à chaque complétion) : l'event est rare (1x/org)
+    # grâce au gate `not progress.completed_at` ci-dessus.
+    if just_completed:
+        log_cx_event(
+            db,
+            oid,
+            auth.user.id if auth else None,
+            CX_ONBOARDING_COMPLETED,
+            {"ttfv_seconds": progress.ttfv_seconds, "trigger": "stepper_all_done"},
+        )
 
     db.commit()
     db.refresh(progress)

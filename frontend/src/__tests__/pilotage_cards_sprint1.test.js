@@ -66,8 +66,11 @@ describe('Pilotage cards — CTAs actionnables', () => {
     expect(radarSrc).toMatch(/sourceType:\s*['"]pilotage['"]/);
     expect(radarSrc).toMatch(/sourceId:\s*`radar:/);
     expect(radarSrc).toMatch(/Planifier/);
-    // Bouton disabled si scope.siteId absent (evite actions sans rattachement)
-    expect(radarSrc).toMatch(/disabled=\{!hasSite\}/);
+    // Sprint CX UX migration (5/66) : FindingCard ne rend pas le CTA quand
+    // `actionLabel` est undefined → `actionLabel={hasSite ? 'Planifier' : undefined}`
+    // remplace l'ancien `disabled={!hasSite}` (sémantique équivalente : pas
+    // d'action possible sans scope site).
+    expect(radarSrc).toMatch(/hasSite\s*\?\s*['"]Planifier['"]/);
   });
 
   it('RoiFlexReadyCard expose un CTA navigation vers la fiche site (via toSite)', () => {

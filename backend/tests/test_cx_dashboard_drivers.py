@@ -153,8 +153,31 @@ class TestIAR:
 
         r = client.get("/api/admin/cx-dashboard/iar")
         body = r.json()
+        # F10 : iar (cappé) == iar_raw (brut) quand actions <= insights
         assert body["global"]["iar"] == 0.3
+        assert body["global"]["iar_raw"] == 0.3
+        assert body["global"]["is_capped"] is False
         assert body["by_org"]["1"]["iar"] == 0.3
+        assert body["by_org"]["1"]["iar_raw"] == 0.3
+        assert body["by_org"]["1"]["is_capped"] is False
+
+    def test_iar_capped_when_actions_exceed_insights(self, isolated_client):
+        """F10 : cas '1 insight → N actions' → iar_raw > 1.0, iar cappé à 1.0."""
+        client, db = isolated_client
+        # 10 insights, 50 actions → raw = 5.0, capped = 1.0
+        for _ in range(10):
+            _seed_event(db, 1, 1, "CX_INSIGHT_CONSULTED", 2)
+        for _ in range(50):
+            _seed_event(db, 1, 1, "CX_ACTION_FROM_INSIGHT", 1)
+
+        r = client.get("/api/admin/cx-dashboard/iar")
+        body = r.json()
+        assert body["global"]["iar"] == 1.0  # cappé
+        assert body["global"]["iar_raw"] == 5.0  # valeur brute exposée
+        assert body["global"]["is_capped"] is True
+        assert body["by_org"]["1"]["iar"] == 1.0
+        assert body["by_org"]["1"]["iar_raw"] == 5.0
+        assert body["by_org"]["1"]["is_capped"] is True
 
     def test_excludes_events_outside_window(self, isolated_client):
         client, db = isolated_client
@@ -165,6 +188,8 @@ class TestIAR:
         body = r.json()
         assert body["global"]["insights_consulted"] == 0
         assert body["global"]["iar"] is None  # dénominateur=0
+        assert body["global"]["iar_raw"] is None
+        assert body["global"]["is_capped"] is False
 
 
 # ─── WAU/MAU ────────────────────────────────────────────────────────────────

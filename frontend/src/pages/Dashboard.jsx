@@ -148,7 +148,9 @@ function Dashboard({ onUpgradeClick }) {
                   <Th>Type</Th>
                   <Th>Ville</Th>
                   <Th>Region</Th>
-                  <Th>Score conformité</Th>
+                  <Th>
+                    <Explain term="compliance_score">Score conformité</Explain>
+                  </Th>
                   <Th>Statut</Th>
                 </Tr>
               </Thead>

@@ -126,6 +126,15 @@ def _generate_forward_curves() -> list[dict]:
     """Generate forward curve records (CAL, Q, M) for cockpit display."""
     now = datetime.now(timezone.utc)
     curves = [
+        # CAL 2026 — moyenne pondérée des Q2/Q3/Q4 2026 (Q1 déjà livré).
+        # Requis par cost_simulator_2026 (filtre FORWARD_YEAR sur delivery_start).
+        {
+            "market_type": MarketType.FORWARD_YEAR,
+            "delivery_start": datetime(2026, 1, 1, tzinfo=timezone.utc),
+            "delivery_end": datetime(2026, 12, 31, 23, 59, 59, tzinfo=timezone.utc),
+            "price_eur_mwh": 62.0,
+            "resolution": Resolution.P1Y,
+        },
         # CAL 2027
         {
             "market_type": MarketType.FORWARD_YEAR,

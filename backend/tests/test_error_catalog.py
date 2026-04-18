@@ -3,6 +3,7 @@ Tests for business error catalog (Sprint CX item #3).
 Guarantees: 20 codes, FR messages, suggestions, valid HTTP status.
 """
 
+import logging
 import sys
 import os
 
@@ -10,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
-from services.error_catalog import ERROR_CATALOG, business_error
+from services.error_catalog import ERROR_CATALOG, business_error, _SAFE_CONTEXT_KEYS
 
 
 VALID_HTTP_STATUS = {400, 404, 409, 422, 500}
@@ -75,6 +76,83 @@ def test_business_error_with_context():
 def test_business_error_raises_on_unknown_code():
     with pytest.raises(KeyError):
         business_error("NOPE_NOT_A_REAL_CODE")
+
+
+# ─── Sprint CX 2.5-bis S3 : anti-PII allowlist sur context ───────────────
+
+
+def test_safe_context_allowlisted():
+    """S3 : les clés de l'allowlist passent inchangées."""
+    kwargs = business_error(
+        "ACTION_NOT_FOUND",
+        action_id=42,
+        site_id=7,
+        org_id=1,
+        siren="123456789",
+        siret="12345678900012",
+        module="billing",
+        field="puissance_souscrite",
+        value_reçue=99,
+        limite=36,
+        period_start="2026-01-01",
+        period_end="2026-12-31",
+        count=5,
+    )
+    ctx = kwargs["detail"]["context"]
+    for key in _SAFE_CONTEXT_KEYS:
+        assert key in ctx, f"clé safe {key} manquante dans le context retourné"
+
+
+def test_pii_keys_stripped_email():
+    """S3 : `user_email` strippé même si dev insiste."""
+    kwargs = business_error("USER_NOT_FOUND", user_email="leak@example.com", action_id=42)
+    ctx = kwargs["detail"].get("context", {})
+    assert "user_email" not in ctx
+    assert "email" not in ctx
+    assert ctx == {"action_id": 42}
+
+
+def test_pii_keys_stripped_common_patterns():
+    """S3 : patterns email/phone/token/password/*_at/*name/nom tous strippés."""
+    kwargs = business_error(
+        "USER_NOT_FOUND",
+        user_email="x@y.z",
+        phone="0102030405",
+        access_token="secret",
+        password="hunter2",
+        created_at="2026-01-01T00:00:00",
+        last_name="Dupont",
+        nom="Dupont",
+        action_id=42,  # seul survivant
+    )
+    ctx = kwargs["detail"].get("context", {})
+    assert ctx == {"action_id": 42}
+
+
+def test_non_allowlisted_key_stripped():
+    """S3 : clé inconnue (hors allowlist ET hors pattern PII) → strippée quand même."""
+    kwargs = business_error("ACTION_NOT_FOUND", action_id=42, random_debug_field="whatever")
+    ctx = kwargs["detail"].get("context", {})
+    assert "random_debug_field" not in ctx
+    assert ctx == {"action_id": 42}
+
+
+def test_warning_logged_on_strip(caplog):
+    """S3 : chaque clé strippée émet un warning traçable."""
+    with caplog.at_level(logging.WARNING, logger="services.error_catalog"):
+        business_error("ACTION_NOT_FOUND", user_email="leak@x.io", action_id=42)
+
+    # Un warning contenant le code d'erreur et la clé strippée
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert any("user_email" in r.getMessage() and "ACTION_NOT_FOUND" in r.getMessage() for r in warnings), (
+        f"warning strip attendu, records={[r.getMessage() for r in warnings]}"
+    )
+
+
+def test_empty_context_after_strip_omits_field():
+    """S3 : si toutes les clés sont strippées, detail.context est absent (pas {})."""
+    kwargs = business_error("USER_NOT_FOUND", user_email="x@y.z", password="hunter2")
+    assert "context" not in kwargs["detail"]
 
 
 def test_required_codes_present():

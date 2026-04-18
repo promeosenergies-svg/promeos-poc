@@ -5,6 +5,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
+from services.error_catalog import business_error
 
 router = APIRouter(prefix="/api/action-center", tags=["action-center"])
 
@@ -225,7 +226,7 @@ def calibration_compare(
 
     result = compare_calibrations(db, v1, v2)
     if not result:
-        raise HTTPException(status_code=404, detail="Version non trouvée")
+        raise HTTPException(**business_error("VERSION_NOT_FOUND"))
     return result
 
 
@@ -242,7 +243,7 @@ def create_calibration_endpoint(
         db, body["version"], body["weights"], body.get("comment"), actor, body.get("domain_adjustments")
     )
     if not result:
-        raise HTTPException(status_code=400, detail="Version existe déjà ou poids invalides (somme != 1.0)")
+        raise HTTPException(**business_error("WEIGHTS_SUM_INVALID"))
     db.commit()
     return result
 
@@ -258,7 +259,7 @@ def activate_calibration_endpoint(
     actor = (auth.email if auth else None) or body.get("actor", "system")
     result = activate_calibration(db, body["version"], actor)
     if not result:
-        raise HTTPException(status_code=400, detail="Version non trouvée ou statut incompatible")
+        raise HTTPException(**business_error("VERSION_NOT_FOUND"))
     db.commit()
     return result
 
@@ -273,7 +274,7 @@ def rollback_calibration_endpoint(
     actor = (auth.email if auth else None) or "system"
     result = rollback_calibration(db, actor)
     if not result:
-        raise HTTPException(status_code=400, detail="Aucune version précédente disponible")
+        raise HTTPException(**business_error("NO_PREVIOUS_VERSION"))
     db.commit()
     return result
 
@@ -337,7 +338,7 @@ def dismiss_rec(
     actor = (auth.email if auth else None) or body.get("actor", "system")
     d = dismiss_recommendation(db, rec_id, body.get("action_id"), body.get("reason"), actor, body.get("decision_score"))
     if not d:
-        raise HTTPException(status_code=400, detail="Motif requis (min 5 caractères)")
+        raise HTTPException(**business_error("REASON_REQUIRED"))
     db.commit()
     return serialize_decision(d)
 
@@ -422,12 +423,12 @@ def override_priority_endpoint(
     new_priority = body.get("priority")
     reason = body.get("reason")
     if not new_priority:
-        raise HTTPException(status_code=400, detail="priority is required")
+        raise HTTPException(**business_error("PRIORITY_REQUIRED"))
     if not reason or len(str(reason).strip()) < 5:
-        raise HTTPException(status_code=400, detail="reason is required (min 5 chars)")
+        raise HTTPException(**business_error("REASON_REQUIRED"))
     item = override_priority(db, action_id, new_priority, reason)
     if not item:
-        raise HTTPException(status_code=404, detail="Action non trouvée ou priorité invalide")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
     db.commit()
     return serialize_action(item)
 
@@ -443,7 +444,7 @@ def update_action_endpoint(
 
     item = update_action(db, action_id, body)
     if not item:
-        raise HTTPException(status_code=404, detail="Action non trouvée")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
     db.commit()
     return serialize_action(item)
 
@@ -509,7 +510,7 @@ def export_action_dossier_endpoint(action_id: int, db: Session = Depends(get_db)
 
     dossier = export_action_dossier(db, action_id)
     if not dossier:
-        raise HTTPException(status_code=404, detail="Action non trouvée")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
     return dossier
 
 
@@ -524,7 +525,7 @@ def reopen_action_endpoint(
 
     item = reopen_action(db, action_id, body.get("reason"))
     if not item:
-        raise HTTPException(status_code=404, detail="Action non trouvée")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
     db.commit()
     return serialize_action(item)
 

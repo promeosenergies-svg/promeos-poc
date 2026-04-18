@@ -19,7 +19,71 @@ Le helper retourne un kwargs prêt pour HTTPException :
     { "status_code": 404, "detail": {"code": "...", "message": "...", "suggestion": "..."} }
 """
 
+import logging
+import re
 from typing import Any
+
+logger = logging.getLogger(__name__)
+
+# Sprint CX 2.5-bis (S3) : anti-PII guard sur le context sérialisé au client.
+#
+# Contexte : business_error(**context) sérialise le dict `context` directement
+# dans detail.context. Un dev pressé peut passer `user_email=u.email` ou
+# `action=action_orm_obj` → leak PII ou objet SQLAlchemy au client.
+#
+# Stratégie :
+#   1. Allowlist de clés neutres (IDs, codes fiscaux, champs techniques).
+#   2. Regex de blocklist pour les clés "dangereuses" (email, token, nom…) —
+#      filet de sécurité si un dev ajoute une nouvelle clé sans maj l'allowlist.
+#   3. Warning log si une clé est strippée (pour détecter les usages à
+#      corriger côté caller).
+_SAFE_CONTEXT_KEYS: frozenset[str] = frozenset(
+    {
+        "action_id",
+        "site_id",
+        "org_id",
+        "siren",
+        "siret",
+        "module",
+        "field",
+        "value_reçue",
+        "limite",
+        "period_start",
+        "period_end",
+        "count",
+    }
+)
+
+# Regex case-insensitive : toute clé matchant ce pattern est strippée même
+# si elle finit dans l'allowlist un jour par erreur (defense in depth).
+_PII_KEY_PATTERN = re.compile(r"email|phone|token|password|_at$|name$|nom", re.IGNORECASE)
+
+
+def _sanitize_context(code: str, context: dict[str, Any]) -> dict[str, Any]:
+    """Filtre un dict de context pour ne garder que les clés safe.
+
+    - Garde uniquement les clés dans _SAFE_CONTEXT_KEYS.
+    - Strippe aussi toute clé matchant _PII_KEY_PATTERN (même si dans l'allowlist).
+    - Log un warning par clé strippée avec le code d'erreur pour traçabilité.
+    """
+    safe: dict[str, Any] = {}
+    for key, value in context.items():
+        if _PII_KEY_PATTERN.search(key):
+            logger.warning(
+                "business_error[%s] : clé context '%s' strippée (match PII pattern)",
+                code,
+                key,
+            )
+            continue
+        if key not in _SAFE_CONTEXT_KEYS:
+            logger.warning(
+                "business_error[%s] : clé context '%s' strippée (pas dans allowlist)",
+                code,
+                key,
+            )
+            continue
+        safe[key] = value
+    return safe
 
 
 ERROR_CATALOG: dict[str, dict[str, Any]] = {
@@ -137,7 +201,11 @@ def business_error(code: str, **context: Any) -> dict[str, Any]:
 
     Args:
         code: Clé du catalogue (ex. "ACTION_NOT_FOUND")
-        **context: Champs additionnels à ajouter dans `detail` (ex. action_id=42)
+        **context: Champs additionnels à ajouter dans `detail` (ex. action_id=42).
+            Sprint CX 2.5-bis (S3) : les clés sont filtrées par _SAFE_CONTEXT_KEYS
+            avant sérialisation. Toute clé hors allowlist ou matchant le pattern
+            PII (email/phone/token/password/*_at/*name/nom) est strippée avec
+            un warning log. Passer `user_email=x` ne leak RIEN au client.
 
     Returns:
         dict avec status_code et detail, utilisable comme :
@@ -147,11 +215,13 @@ def business_error(code: str, **context: Any) -> dict[str, Any]:
         KeyError: si le code n'existe pas dans le catalogue.
     """
     entry = ERROR_CATALOG[code]
-    detail = {
+    detail: dict[str, Any] = {
         "code": code,
         "message": entry["message"],
         "suggestion": entry["suggestion"],
     }
     if context:
-        detail["context"] = context
+        safe_context = _sanitize_context(code, context)
+        if safe_context:
+            detail["context"] = safe_context
     return {"status_code": entry["http_status"], "detail": detail}
