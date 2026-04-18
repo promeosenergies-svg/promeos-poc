@@ -73,7 +73,7 @@ VNU_SEUIL_DEFAUT_EUR_MWH = 78.0
 # compatibilité stable à la BC.
 FALLBACK_FORWARD_EUR_MWH = 68.0  # YAML: cost_simulator_2026.fallback_forward_eur_mwh
 BASELINE_2024_EUR_MWH_FALLBACK = 80.0  # YAML: cost_simulator_2026.baseline_eur_mwh
-VNU_IMPACT_MVP_EUR_MWH_FALLBACK = 2.0  # YAML: vnu.impact_upside_mvp_eur_mwh
+VNU_IMPACT_MVP_EUR_MWH_FALLBACK = 2.0  # YAML: cost_simulator_2026.vnu_impact_upside_mvp_eur_mwh
 PEAK_PREMIUM_RATIO_FALLBACK = 0.15  # YAML: cost_simulator_2026.peak_premium_ratio
 
 # Facteur de forme typique par archétype (E_an / (P_max × 8760h)).
@@ -91,10 +91,6 @@ ARCHETYPE_FACTEUR_FORME = {
     "INDUSTRIE_LEGERE": 0.50,
     "DEFAULT": 0.40,
 }
-
-# Alias historique utilisé par `test_achat_cost_simulator_2026.py`. Valeur
-# effective toujours lue depuis YAML via `_load_simulator_params`.
-BASELINE_2024_EUR_MWH = BASELINE_2024_EUR_MWH_FALLBACK
 
 # Segment TURPE par défaut (C4_BT = tertiaire moyen, majoritaire dans portefeuille PME).
 # Si `Meter.tariff_type` renseigne C5 / C3, on bascule.
@@ -270,15 +266,21 @@ def _resolve_accise_code(site) -> str:
 
 
 def _resolve_vnu_seuil() -> tuple[float, Optional[str], float]:
-    """Extrait seuil + impact upside VNU depuis `tarifs_reglementaires.yaml::vnu`.
+    """Extrait seuil VNU (réglementaire) + impact upside MVP (produit).
+
+    - `seuil_1_eur_mwh` lu depuis section `vnu` (CRE-canonique).
+    - `vnu_impact_upside_mvp_eur_mwh` lu depuis section `cost_simulator_2026`
+      (valeur produit MVP, séparée de la doctrine réglementaire pour éviter
+      la dérive mix MVP / régulation dans la même section YAML).
 
     Retourne `(seuil_eur_mwh, source_ref, impact_upside_eur_mwh)`. Fallback
     hardcodé si YAML absent — warning loggé pour visibilité prod.
     """
     try:
         vnu = load_yaml_section("vnu") or {}
+        sim = load_yaml_section("cost_simulator_2026") or {}
         seuil = float(vnu.get("seuil_1_eur_mwh", VNU_SEUIL_DEFAUT_EUR_MWH))
-        impact = float(vnu.get("impact_upside_mvp_eur_mwh", VNU_IMPACT_MVP_EUR_MWH_FALLBACK))
+        impact = float(sim.get("vnu_impact_upside_mvp_eur_mwh", VNU_IMPACT_MVP_EUR_MWH_FALLBACK))
         return seuil, vnu.get("source"), impact
     except Exception as exc:
         logger.warning("cost_simulator_2026: vnu lookup failed (fallback hardcoded): %s", exc)
