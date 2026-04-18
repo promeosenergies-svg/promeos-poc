@@ -35,6 +35,7 @@ from services.iam_service import (
 )
 from middleware.auth import require_permission, get_current_user_role
 from models import Site, EntiteJuridique, Portefeuille
+from services.error_catalog import business_error
 
 
 router = APIRouter(prefix="/api/admin", tags=["Admin Users"])
@@ -148,7 +149,7 @@ def create_user_endpoint(
     # Check email uniqueness
     existing = db.query(User).filter(User.email == req.email).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Email already exists")
+        raise HTTPException(**business_error("EMAIL_ALREADY_EXISTS"))
 
     try:
         role = UserRole(req.role)
@@ -191,7 +192,7 @@ def get_user(
     """Get user detail."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(**business_error("USER_NOT_FOUND"))
 
     uor = None
     if _admin:
@@ -213,7 +214,7 @@ def patch_user(
     """Modify user fields."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(**business_error("USER_NOT_FOUND"))
 
     if req.nom is not None:
         user.nom = req.nom
@@ -223,7 +224,7 @@ def patch_user(
         # Check uniqueness
         dup = db.query(User).filter(User.email == req.email, User.id != user_id).first()
         if dup:
-            raise HTTPException(status_code=400, detail="Email already exists")
+            raise HTTPException(**business_error("EMAIL_ALREADY_EXISTS"))
         user.email = req.email
     if req.actif is not None:
         user.actif = req.actif
@@ -265,7 +266,7 @@ def change_role(
                 .count()
             )
             if count <= 1:
-                raise HTTPException(status_code=400, detail="Cannot remove last DG_OWNER")
+                raise HTTPException(**business_error("LAST_DG_OWNER_PROTECTION"))
         uor.role = new_role
 
     log_audit(db, None, "change_role", "user", str(user_id), {"new_role": req.role})
@@ -285,7 +286,7 @@ def set_scopes(
 
     uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id).first()
     if not uor:
-        raise HTTPException(status_code=404, detail="User has no role in this org")
+        raise HTTPException(**business_error("USER_NO_ROLE_IN_ORG"))
 
     # Delete existing scopes
     db.query(UserScope).filter(UserScope.user_org_role_id == uor.id).delete()
@@ -318,7 +319,7 @@ def delete_user(
     """Soft delete user (set actif=False). Last-owner protection."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(**business_error("USER_NOT_FOUND"))
 
     # Check if last DG_OWNER
     org_id = int(_admin.get("org_id", 0)) if _admin else None
@@ -334,7 +335,7 @@ def delete_user(
                 .count()
             )
             if count <= 1:
-                raise HTTPException(status_code=400, detail="Cannot remove last DG_OWNER")
+                raise HTTPException(**business_error("LAST_DG_OWNER_PROTECTION"))
 
     soft_delete_user(db, user_id)
     log_audit(db, None, "soft_delete_user", "user", str(user_id))
@@ -367,7 +368,7 @@ def get_effective_access(
     """Return the list of sites accessible by this user (resolved from scopes)."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(**business_error("USER_NOT_FOUND"))
 
     org_id = int(_admin.get("org_id", 0)) if _admin else None
     uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == user_id).first()
