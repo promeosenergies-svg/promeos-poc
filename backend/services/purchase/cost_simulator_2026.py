@@ -42,6 +42,7 @@ from typing import Any, Optional
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from services.billing_engine.bricks.cbam import compute_cbam
 from services.billing_engine.parameter_store import ParameterStore
 from utils.parameter_store_base import load_yaml_section, paris_today
 
@@ -414,9 +415,23 @@ def simulate_annual_cost_2026(
     # sur l'année entière via le fournisseur (Jan-Oct) puis via RTE (Nov-Déc).
     capacite_eur = annual_mwh * CAPACITE_UNITAIRE_EUR_MWH
 
-    # 7. CBAM — non applicable à la conso élec directe (documenté)
-    cbam_scope = 0.0
-    traces.append("cbam_non_applicable_conso_directe")
+    # 7. CBAM — délégué à la brique dédiée (P3 wedge stratégique).
+    # HOOK EXPÉRIMENTAL : `site.cbam_imports_tonnes` n'est pas une colonne du
+    # model Site — c'est un attribut runtime-only (attaché via setattr dans
+    # les tests ou par un futur pipeline d'intake industriel). En production
+    # standard, aucun site n'a cet attribut → getattr retourne None → brique
+    # renvoie `applicable=False` avec note pédagogique. Migration Site
+    # nécessaire pour activer l'exposition réelle à grande échelle.
+    cbam_imports = getattr(site, "cbam_imports_tonnes", None) or {}
+    cbam_intensities = getattr(site, "cbam_intensities_tco2_per_t", None) or None
+    cbam_result = compute_cbam(cbam_imports, at_date, site_specific_intensities=cbam_intensities)
+    cbam_scope = cbam_result.total_cost_eur
+    if not cbam_result.applicable:
+        traces.append("cbam_non_applicable_aucune_importation_declaree")
+    else:
+        traces.append(
+            f"cbam_applicable_{len(cbam_result.breakdown)}_scopes_{int(cbam_result.total_co2_embedded_t)}_tco2"
+        )
 
     # 8. Taxes : accise + CTA + TVA
     # Fix P0 audit post-Sprint : lire `tax_profile.accise_category_elec` (V113 TaxProfile)
@@ -511,7 +526,21 @@ def simulate_annual_cost_2026(
             "CTA / TVA absents du baseline pour éviter la comparaison TTC vs HT."
         ),
         "annual_kwh_resolu": annual_kwh,
-        "cbam_note": "CBAM non applicable à la conso électrique directe (s'applique aux importations de biens carbonés, pas à l'acheminement). Inclus pour traçabilité auditeur.",
+        "cbam_note": cbam_result.note,
+        "cbam_applicable": cbam_result.applicable,
+        "cbam_rate_eur_per_tco2": cbam_result.rate_eur_per_tco2,
+        "cbam_total_co2_embedded_t": cbam_result.total_co2_embedded_t,
+        "cbam_breakdown": [
+            {
+                "scope": b.scope,
+                "volume_t": b.volume_t,
+                "intensity_tco2_per_t": b.intensity_tco2_per_t,
+                "co2_embedded_t": b.co2_embedded_t,
+                "cost_eur": b.cost_eur,
+                "intensity_source": b.intensity_source,
+            }
+            for b in cbam_result.breakdown
+        ],
         "source_calibration": traces,
     }
 
