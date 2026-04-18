@@ -6,19 +6,25 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Lightbulb, Zap, RefreshCw, ChevronRight, AlertTriangle } from 'lucide-react';
-import { Card, CardBody, CardHeader } from '../../ui';
+import { Lightbulb, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Card, CardBody, CardHeader, FindingCard } from '../../ui';
 import { generateRecommendations } from '../../services/api/enedis';
 
-const SEVERITY_CONFIG = {
-  low: { bg: 'bg-gray-50 border-gray-200', dot: 'bg-gray-400', label: 'Info' },
-  medium: {
-    bg: 'bg-yellow-50 border-yellow-200',
-    dot: 'bg-yellow-500',
-    label: 'Moyenne',
-  },
-  high: { bg: 'bg-orange-50 border-orange-200', dot: 'bg-orange-500', label: 'Élevée' },
-  critical: { bg: 'bg-red-50 border-red-200', dot: 'bg-red-500', label: 'Critique' },
+// Map ICE score 0-10 → FindingCard confidence prop 0-1
+// L'ICE est un composite (Impact × Confidence × Ease). En affichant l'ICE comme
+// confidence dans le badge FindingCard, on perd la granularité I/C/E individuelle
+// mais on garde un indicateur de fiabilité globale. Le détail ICE complet reste
+// accessible via RecommendationDetail modal.
+const iceToConfidence = (ice) =>
+  typeof ice === 'number' ? Math.min(1, Math.max(0, ice / 10)) : null;
+
+// Severity CSS classes conservées uniquement pour RecommendationDetail modal
+// (wrapper background). La liste utilise FindingCard qui gère son propre rendu.
+const DETAIL_SEVERITY_BG = {
+  low: 'bg-gray-50',
+  medium: 'bg-yellow-50',
+  high: 'bg-orange-50',
+  critical: 'bg-red-50',
 };
 
 function IceBadge({ score }) {
@@ -37,52 +43,10 @@ function IceBadge({ score }) {
   );
 }
 
-function RecommendationRow({ reco, onClick }) {
-  const sev = reco.triggered_by?.severity || 'medium';
-  const cfg = SEVERITY_CONFIG[sev] || SEVERITY_CONFIG.medium;
-  const savingsEur = reco.estimated_savings_eur_year || 0;
-  const savingsKwh = reco.estimated_savings_kwh_year || 0;
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full text-left border rounded-lg p-3 hover:shadow-sm transition ${cfg.bg}`}
-    >
-      <div className="flex items-start gap-3">
-        <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${cfg.dot}`} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="text-xs font-semibold text-gray-500">#{reco.priority_rank}</span>
-            <IceBadge score={reco.ice_score} />
-            <span className="text-xs text-gray-500">{cfg.label}</span>
-          </div>
-          <p className="text-sm font-medium text-gray-800 truncate">{reco.title}</p>
-          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{reco.description}</p>
-          {savingsEur > 0 && (
-            <div className="mt-2 flex items-center gap-3 text-xs">
-              <span className="inline-flex items-center gap-1 text-green-700 font-semibold">
-                <Zap size={12} />
-                {savingsEur.toLocaleString('fr-FR')} €/an
-              </span>
-              <span className="text-gray-500">
-                {Math.round(savingsKwh).toLocaleString('fr-FR')} kWh/an
-              </span>
-              {reco.estimated_savings_pct > 0 && (
-                <span className="text-gray-500">({reco.estimated_savings_pct}%)</span>
-              )}
-            </div>
-          )}
-        </div>
-        <ChevronRight size={16} className="text-gray-400 flex-shrink-0 mt-1" />
-      </div>
-    </button>
-  );
-}
-
 function RecommendationDetail({ reco, onClose }) {
   const sev = reco.triggered_by?.severity || 'medium';
-  const cfg = SEVERITY_CONFIG[sev] || SEVERITY_CONFIG.medium;
+  const bg = DETAIL_SEVERITY_BG[sev] || DETAIL_SEVERITY_BG.medium;
+  const sevLabel = { low: 'Info', medium: 'Moyenne', high: 'Élevée', critical: 'Critique' }[sev];
   return (
     <div
       className="fixed inset-0 bg-black/30 z-50 flex items-end md:items-center justify-center p-4"
@@ -100,7 +64,7 @@ function RecommendationDetail({ reco, onClose }) {
                   Priorité #{reco.priority_rank}
                 </span>
                 <IceBadge score={reco.ice_score} />
-                <span className={`text-xs px-2 py-0.5 rounded-full ${cfg.bg}`}>{cfg.label}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${bg}`}>{sevLabel}</span>
               </div>
               <h3 className="text-base font-semibold text-gray-800">{reco.title}</h3>
               <p className="text-xs text-gray-500 mt-0.5 font-mono">{reco.code}</p>
@@ -272,9 +236,19 @@ export default function RecommendationsCard({ siteId }) {
           ) : (
             <div className="space-y-2">
               {recos.map((reco) => (
-                <RecommendationRow
+                <FindingCard
                   key={reco.code}
-                  reco={reco}
+                  compact
+                  priority={reco.priority_rank}
+                  severity={reco.triggered_by?.severity || 'medium'}
+                  category="consumption"
+                  title={reco.title}
+                  description={reco.description}
+                  confidence={iceToConfidence(reco.ice_score)}
+                  impact={{
+                    eur: reco.estimated_savings_eur_year,
+                    kwh: reco.estimated_savings_kwh_year,
+                  }}
                   onClick={() => setSelectedReco(reco)}
                 />
               ))}
