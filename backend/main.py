@@ -177,7 +177,10 @@ app.include_router(flex_score_router)  # Flex Score Engine (15 usages, NEBCO, pr
 app.include_router(billing_usage_router)  # Shadow bill ventilation par usage via archetype
 app.include_router(purchase_strategy_router)  # Purchase strategy recommender via archetype + CDC
 app.include_router(purchase_cost_simulation_router)  # Cost simulator 2026+ décomposée (post-ARENH)
-app.include_router(public_diagnostic_router)  # Public freemium diagnostic (wedge Sirene P2)
+# Public diagnostic (wedge Sirene P2) — opt-in via env flag tant que le rate
+# limiting (`slowapi`) n'est pas en place. Éviter exposition accidentelle.
+if os.environ.get("PROMEOS_ENABLE_PUBLIC_DIAGNOSTIC") == "true":
+    app.include_router(public_diagnostic_router)
 app.include_router(analytics_router)  # Analytics: usage disaggregation (CDC -> usages via 3 couches)
 if os.environ.get("PROMEOS_ENV") != "production":
     app.include_router(dev_tools_router)  # Dev Tools (reset_db)

@@ -14,6 +14,9 @@ import os
 import sys
 from unittest.mock import patch
 
+# Router opt-in via env flag (cf. main.py) — activer avant import de `app`.
+os.environ.setdefault("PROMEOS_ENABLE_PUBLIC_DIAGNOSTIC", "true")
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from datetime import date
@@ -27,6 +30,12 @@ from sqlalchemy.pool import StaticPool
 from database import get_db
 from main import app
 from models import Base
+from routes.public_diagnostic import router as public_diagnostic_router
+
+# Réinclure le router si l'import initial de `main` s'est fait avant que le
+# flag env soit actif (cas pytest runs multi-module).
+if not any(r.path.startswith("/api/public/diagnostic") for r in app.routes):
+    app.include_router(public_diagnostic_router)
 
 
 @pytest.fixture
@@ -88,9 +97,11 @@ def test_diagnostic_siren_invalide_400(_public_client):
 
 
 def test_diagnostic_siren_introuvable_404(_public_client):
-    """SIREN absent local + hydratation live qui échoue → 404."""
+    """SIREN absent local + hydratation live qui échoue → 404 (avec rollback)."""
     client, _, _ = _public_client
-    with patch("services.sirene_hydrate.hydrate_siren_from_api", side_effect=Exception("API down")):
+    # IOError = représentatif d'un timeout/réseau API gouv (catché par la
+    # clause narrow except du handler).
+    with patch("services.sirene_hydrate.hydrate_siren_from_api", side_effect=IOError("API gouv timeout")):
         r = client.get("/api/public/diagnostic/999999999")
     assert r.status_code == 404
     assert r.json()["detail"]["code"] == "SIREN_NOT_FOUND"
@@ -114,10 +125,10 @@ def test_diagnostic_succes_eti_tertiaire(_public_client):
     assert data["naf_code"] == "68.20B"
     assert data["n_etablissements_actifs"] == 10
 
-    # Lead score
+    # Lead score (MRR retiré du public pour éviter info disclosure)
     assert data["lead_score"]["segment"] == "ETI"
     assert data["lead_score"]["priority"] in {"A", "B", "C"}
-    assert data["lead_score"]["mrr_estime_eur_mois"] > 0
+    assert "mrr_estime_eur_mois" not in data["lead_score"]  # P2 audit: pas dans public
 
     # Compliance preview : ETI tertiaire → décret + BACS probables, CBAM non
     assert data["compliance_preview"]["decret_tertiaire_applicable"] is True
@@ -184,9 +195,10 @@ def test_diagnostic_schema_exhaustif(_public_client):
     ):
         assert key in data
 
-    # lead_score
-    for key in ("segment", "priority", "mrr_estime_eur_mois", "naf_value_tier", "drivers"):
+    # lead_score (sans mrr_estime_eur_mois — retiré du public P2 audit)
+    for key in ("segment", "priority", "naf_value_tier", "drivers"):
         assert key in data["lead_score"]
+    assert "mrr_estime_eur_mois" not in data["lead_score"]
 
     # compliance_preview
     for key in (
@@ -206,3 +218,17 @@ def test_diagnostic_endpoint_ne_requiert_pas_auth(_public_client):
     # Pas de header Authorization → doit passer
     r = client.get("/api/public/diagnostic/333333333")
     assert r.status_code == 200
+
+
+def test_diagnostic_endpoint_opt_in_via_env_flag():
+    """Le router n'est enregistré dans main.py que si PROMEOS_ENABLE_PUBLIC_DIAGNOSTIC=true.
+
+    Protection contre exposition accidentelle avant rate limiting.
+    """
+    import main as main_module
+    import inspect
+
+    src = inspect.getsource(main_module)
+    assert "PROMEOS_ENABLE_PUBLIC_DIAGNOSTIC" in src
+    # Le include_router doit être conditionnel (gated par le env flag)
+    assert 'os.environ.get("PROMEOS_ENABLE_PUBLIC_DIAGNOSTIC")' in src

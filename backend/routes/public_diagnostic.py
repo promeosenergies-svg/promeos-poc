@@ -8,15 +8,16 @@ Endpoint **sans authentification**, conçu pour être intégré sur :
 Flow :
   1. Input : SIREN (9 chiffres)
   2. Backend : lookup local → si absent, hydrate via API gouv (live)
-  3. Compute : lead_score (segment/MRR/priorité) + exposition CBAM potentielle
+  3. Compute : lead_score (segment/priorité — sans MRR pour éviter info leak)
   4. Output : carte pédagogique "coût d'inaction compliance" + pré-qualification
 
 Différenciateur : premier diagnostic freemium B2B énergie France (intégration
 Sirene + scoring + CBAM + compliance) en 1 appel, sans compte utilisateur.
 
-Rate limiting : À implémenter en V2 via middleware (pour l'instant, le endpoint
-est lenient — aligné sur la doctrine DEMO_MODE ; ajouter un `slowapi` si besoin
-avant mise en production publique).
+**Opt-in production** : le router n'est enregistré dans `main.py` que si
+`PROMEOS_ENABLE_PUBLIC_DIAGNOSTIC=true` (pas par défaut, pour éviter
+exposition accidentelle avant rate limiting en place). Ajouter `slowapi`
+throttle `/api/public/*` (10/min/IP) avant tout déploiement public réel.
 
 Sources :
 - `services/lead_score.py` — compute lead score (V116)
@@ -29,11 +30,15 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from database import get_db
+from models.sirene import SireneEtablissement, SireneUniteLegale
+from services.lead_score import compute_lead_score_from_loaded
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +46,14 @@ router = APIRouter(prefix="/api/public", tags=["Public Diagnostic — Wedge Sire
 
 
 class LeadScoreSummary(BaseModel):
-    """Résumé lead score pour carte publique (sans détails internes)."""
+    """Résumé lead score pour carte publique (sans MRR pour éviter info leak
+    vers les concurrents via énumération SIREN).
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     segment: str = Field(..., description="TPE / PME / ETI / GE")
     priority: str = Field(..., description="A (chaud) / B (tiède) / C (froid)")
-    mrr_estime_eur_mois: int = Field(..., description="MRR estimé mensuel en EUR")
     naf_value_tier: str = Field(..., description="high / medium / low")
     drivers: list[str] = Field(default_factory=list)
 
@@ -183,10 +189,9 @@ def get_public_diagnostic(
             },
         )
 
-    from models.sirene import SireneEtablissement, SireneUniteLegale
-    from services.lead_score import compute_lead_score_from_loaded
-
-    # Tentative hydratation si absent local (live API gouv).
+    # Lookup local → si absent, tentative hydratation live API gouv avec
+    # rollback défensif si hydrate_siren_from_api insère partiellement puis
+    # échoue (évite session pollution entre requêtes).
     ul = db.query(SireneUniteLegale).filter(SireneUniteLegale.siren == siren).first()
     if ul is None:
         try:
@@ -195,8 +200,9 @@ def get_public_diagnostic(
             hydrate_siren_from_api(db, siren)
             db.commit()
             ul = db.query(SireneUniteLegale).filter(SireneUniteLegale.siren == siren).first()
-        except Exception as exc:
-            logger.info("public_diagnostic: hydrate failed for %s: %s", siren, exc)
+        except (httpx.HTTPError, IOError, ValueError, SQLAlchemyError) as exc:
+            db.rollback()
+            logger.warning("public_diagnostic: hydrate failed for %s: %s", siren, exc)
 
     if ul is None:
         raise HTTPException(
@@ -222,7 +228,6 @@ def get_public_diagnostic(
     lead_score = LeadScoreSummary(
         segment=str(score_raw["segment"]),
         priority=str(score_raw["priority"]),
-        mrr_estime_eur_mois=int(score_raw["estimated_mrr_eur"]),
         naf_value_tier=str(score_raw["naf_value_tier"]),
         drivers=score_raw.get("drivers", []),
     )
