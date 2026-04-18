@@ -15,6 +15,7 @@ os.environ.setdefault("PROMEOS_JWT_SECRET", "test_only_not_for_production")
 os.environ.setdefault("SECRET_KEY", "test_only_not_for_production")
 os.environ.setdefault("SOL_SECRET_KEY", "test_only_not_for_production")
 os.environ.setdefault("DEMO_MODE", "true")
+os.environ.setdefault("PROMEOS_DEMO_MODE", "true")
 
 import pytest
 

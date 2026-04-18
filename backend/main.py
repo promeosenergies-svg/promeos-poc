@@ -64,6 +64,9 @@ from routes import (
     data_quality_router,
     operat_router,
     copilot_router,
+    sol_router,
+    sol_audit_router,
+    sol_policy_router,
     action_templates_router,
     onboarding_stepper_router,
     consumption_unified_router,
@@ -194,6 +197,9 @@ app.include_router(contracts_radar_router)  # V99 Contract Renewal Radar + Purch
 app.include_router(data_quality_router)  # V113 Data Quality Dashboard
 app.include_router(operat_router)  # V113 OPERAT CSV Export
 app.include_router(copilot_router)  # V113 Energy Copilot
+app.include_router(sol_router)  # Sol V1 agentic (propose/preview/confirm/cancel/pending)
+app.include_router(sol_audit_router)  # Sol V1 audit trail + CSV export
+app.include_router(sol_policy_router)  # Sol V1 org policy (admin only)
 app.include_router(action_templates_router)  # V113 Action Templates
 app.include_router(onboarding_stepper_router)  # V113 Onboarding Stepper
 app.include_router(consumption_unified_router)  # A.1 Unified Consumption (metered/billed/reconciled)

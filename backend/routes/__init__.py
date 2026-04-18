@@ -44,6 +44,9 @@ from .contracts_radar import router as contracts_radar_router
 from .data_quality import router as data_quality_router
 from .operat import router as operat_router
 from .copilot import router as copilot_router
+from .sol import router as sol_router
+from .sol_audit import router as sol_audit_router
+from .sol_policy import router as sol_policy_router
 from .action_templates import router as action_templates_router
 from .onboarding_stepper import router as onboarding_stepper_router
 from .consumption_unified import router as consumption_unified_router
@@ -111,6 +114,9 @@ __all__ = [
     "data_quality_router",
     "operat_router",
     "copilot_router",
+    "sol_router",
+    "sol_audit_router",
+    "sol_policy_router",
     "action_templates_router",
     "onboarding_stepper_router",
     "consumption_unified_router",
