@@ -49,7 +49,7 @@ from services.purchase.cost_simulator_2026 import (
     FALLBACK_FORWARD_EUR_MWH,
     CAPACITE_UNITAIRE_EUR_MWH,
     DEFAULT_ANNUAL_KWH,
-    BASELINE_2024_EUR_MWH,
+    BASELINE_2024_EUR_MWH_FALLBACK,
     VNU_SEUIL_DEFAUT_EUR_MWH,
 )
 
@@ -298,9 +298,9 @@ class TestSimulateFacture2026:
         # Baseline = 500 MWh × 80 EUR/MWh × peakload_mult (COMMERCE_ALIMENTAIRE 0.55)
         # mult = 1 + 0.15 × 0.45 = 1.0675 → baseline = 42 700 EUR
         peakload_mult = 1.0 + 0.15 * (1.0 - 0.55)
-        expected_baseline = 500.0 * BASELINE_2024_EUR_MWH * peakload_mult
+        expected_baseline = 500.0 * BASELINE_2024_EUR_MWH_FALLBACK * peakload_mult
         assert result["baseline_2024"]["fourniture_ht_eur"] == pytest.approx(expected_baseline, rel=1e-3)
-        assert result["baseline_2024"]["prix_moyen_pondere_eur_mwh"] == BASELINE_2024_EUR_MWH
+        assert result["baseline_2024"]["prix_moyen_pondere_eur_mwh"] == BASELINE_2024_EUR_MWH_FALLBACK
 
         # Delta HT énergie = (fourniture_2026 - baseline_2024) / baseline × 100
         # Même multiplier des deux côtés → delta isole le shift ARENH→forward
