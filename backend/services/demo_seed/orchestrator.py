@@ -79,6 +79,13 @@ class SeedOrchestrator:
 
         result["pilotage_fields"] = seed_pilotage_fields(self.db, master["sites"])
 
+        # Populate cbam_imports_tonnes sur sites industriels (P3 wedge) pour
+        # que le cockpit affiche une exposition CBAM réelle en démo au lieu
+        # de "non applicable" partout.
+        from .gen_cbam_fields import seed_cbam_fields
+
+        result["cbam_fields"] = seed_cbam_fields(self.db, master["sites"])
+
         # V107: build site_meta for surface-normalized consumption
         site_meta = {}
         for s in master["sites"]:

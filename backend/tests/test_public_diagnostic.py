@@ -14,8 +14,9 @@ import os
 import sys
 from unittest.mock import patch
 
-# Router opt-in via env flag (cf. main.py) — activer avant import de `app`.
-os.environ.setdefault("PROMEOS_ENABLE_PUBLIC_DIAGNOSTIC", "true")
+# Rate-limit confortable pour les tests (évite 429 sur runs denses) — doit
+# être posé AVANT l'import de `main` qui déclenche la construction du limiter.
+os.environ.setdefault("PROMEOS_PUBLIC_DIAGNOSTIC_RATE", "1000/minute")
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -30,12 +31,6 @@ from sqlalchemy.pool import StaticPool
 from database import get_db
 from main import app
 from models import Base
-from routes.public_diagnostic import router as public_diagnostic_router
-
-# Réinclure le router si l'import initial de `main` s'est fait avant que le
-# flag env soit actif (cas pytest runs multi-module).
-if not any(r.path.startswith("/api/public/diagnostic") for r in app.routes):
-    app.include_router(public_diagnostic_router)
 
 
 @pytest.fixture
@@ -220,15 +215,45 @@ def test_diagnostic_endpoint_ne_requiert_pas_auth(_public_client):
     assert r.status_code == 200
 
 
-def test_diagnostic_endpoint_opt_in_via_env_flag():
-    """Le router n'est enregistré dans main.py que si PROMEOS_ENABLE_PUBLIC_DIAGNOSTIC=true.
+def test_diagnostic_endpoint_rate_limited_par_slowapi():
+    """Endpoint `/api/public/*` protégé par slowapi 10/min/IP par défaut.
 
-    Protection contre exposition accidentelle avant rate limiting.
+    Vérifie l'infrastructure : limiter unifié dans main_limiter.py,
+    wired dans main.py, décoré sur la route publique.
     """
-    import main as main_module
     import inspect
 
-    src = inspect.getsource(main_module)
-    assert "PROMEOS_ENABLE_PUBLIC_DIAGNOSTIC" in src
-    # Le include_router doit être conditionnel (gated par le env flag)
-    assert 'os.environ.get("PROMEOS_ENABLE_PUBLIC_DIAGNOSTIC")' in src
+    import main as main_module
+    import main_limiter
+    from routes import public_diagnostic as pd_module
+
+    # Limiter extrait dans module dédié (anti double-instance)
+    assert hasattr(main_limiter, "limiter")
+    # main.py importe depuis main_limiter (une seule source de vérité)
+    main_src = inspect.getsource(main_module)
+    assert "from main_limiter import limiter" in main_src
+    assert "app.state.limiter = limiter" in main_src
+    assert "RateLimitExceeded" in main_src
+
+    # Endpoint décoré par @limiter.limit sur la MÊME instance
+    pd_src = inspect.getsource(pd_module)
+    assert "from main_limiter import limiter" in pd_src
+    assert "@limiter.limit(_PUBLIC_RATE_LIMIT)" in pd_src
+
+
+def test_diagnostic_endpoint_limiter_unified_single_instance():
+    """L'instance Limiter est unique (main_limiter.limiter) et partagée.
+
+    Critique après audit : PR #253 initial avait 2 Limiter séparés (main.py
+    + routes/public_diagnostic.py) → counters isolés. Fix : import depuis
+    `main_limiter` dans les deux modules.
+    """
+    import main_limiter
+    from routes import public_diagnostic as pd_module
+    import main as main_module
+
+    # Même objet en mémoire (test d'identité, pas d'égalité)
+    assert main_module.limiter is main_limiter.limiter
+    assert pd_module.limiter is main_limiter.limiter
+    # Et wired sur app.state
+    assert main_module.app.state.limiter is main_limiter.limiter
