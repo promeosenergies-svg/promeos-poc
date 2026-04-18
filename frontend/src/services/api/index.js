@@ -29,3 +29,4 @@ export * from './admin';
 export * from './market';
 export * from './contractsV2';
 export * from './pilotage';
+export * from './cxDashboard';

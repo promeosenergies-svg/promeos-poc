@@ -419,4 +419,24 @@ export const GLOSSARY = {
       "Temps de Retour sur Investissement. Duree necessaire pour que les economies d'energie remboursent le cout d'un investissement. TRI = cout / economie annuelle.",
     long: "Le TRI est un critere essentiel du dossier de modulation DT et de l'exemption BACS. Un TRI > 10 ans (BACS) ou disproportionne (DT) peut justifier un ajustement d'objectif. Norme NF EN 15459.",
   },
+
+  // ── Drivers North-Star CX (Sprint CX 3) ─────────────────────────────────
+  t2v: {
+    term: 'T2V',
+    short:
+      "Time-to-Value : délai entre la création d'un compte utilisateur et sa 1ʳᵉ action validée. Cible <7j (vert), 7–14j (amber), >14j (rouge).",
+    long: "Le T2V mesure la rapidité avec laquelle un nouvel utilisateur atteint un 1ᵉʳ résultat tangible (une action PROMEOS passée au statut DONE). Signal : event CX_ACTION_FROM_INSIGHT. Rapporté en p50/p90/p95 jours. Un user sans action validée n'est pas dans l'échantillon.",
+  },
+  iar: {
+    term: 'IAR',
+    short:
+      "Insight-to-Action Rate : ratio entre actions validées et insights consultés sur la période. Un IAR supérieur à 1.0 (capped) signale qu'un insight a généré plusieurs actions (légitime).",
+    long: "IAR = actions_validated / insights_consulted sur la fenêtre. Numérateur CX_ACTION_FROM_INSIGHT, dénominateur CX_INSIGHT_CONSULTED. Le ratio est cappé à 1.0 pour une lecture en pourcentage ; iar_raw > 1.0 quand un même insight produit N actions. is_capped signale au front d'afficher une nuance.",
+  },
+  wau_mau: {
+    term: 'WAU/MAU',
+    short:
+      'Stickiness ratio : WAU (users actifs 7j) / MAU (users actifs 30j). Seuils : ≥40% excellent, 30–40% bon, 20–30% à travailler, <20% faible.',
+    long: "Le ratio WAU/MAU mesure la fidélité d'usage : plus il est haut, plus les utilisateurs reviennent fréquemment. Référence marché B2B SaaS : 20-30% normal, 40%+ excellent. Source : events CX_* rattachés à un user_id sur les fenêtres 7j et 30j.",
+  },
 };
