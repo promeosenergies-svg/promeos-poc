@@ -10,6 +10,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck, Plus, RotateCcw, RefreshCw, Coins, ShoppingCart } from 'lucide-react';
 import { toUsages } from '../services/routes';
 import { Button, PageShell, ActiveFiltersBar, Explain } from '../ui';
+// Sprint 2 refonte : header éditorial Sol (présentation pure).
+import { SolPageHeader } from '../ui/sol';
 import ObligationsTab from './conformite-tabs/ObligationsTab';
 import DonneesTab from './conformite-tabs/DonneesTab';
 import ExecutionTab from './conformite-tabs/ExecutionTab';
@@ -578,6 +580,7 @@ export default function ConformitePage() {
         </>
       }
       subtitle={scopeLabel}
+      hideHeader
       actions={
         <>
           <Button variant="secondary" size="sm" onClick={handleRecompute} disabled={recomputing}>
@@ -590,6 +593,30 @@ export default function ConformitePage() {
         </>
       }
     >
+      {/* Sprint 2 refonte — header éditorial Sol (remplace le header PageShell via hideHeader) */}
+      <SolPageHeader
+        kicker={`Conformité · ${scopeLabel || 'patrimoine'}`}
+        title="Votre conformité"
+        titleEm=" — décret tertiaire et obligations"
+        narrative={
+          <>
+            Voici l'état de vos obligations réglementaires et les échéances qui
+            vous attendent — <em>agissez avant les dates limites</em> pour éviter les pénalités.
+          </>
+        }
+        subNarrative="Score consolidé, sites à risque, évidences et plan d'action sont détaillés ci-dessous."
+        rightSlot={
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="secondary" size="sm" onClick={handleRecompute} disabled={recomputing}>
+              <RefreshCw size={14} className={recomputing ? 'animate-spin' : ''} />
+              {recomputing ? 'Évaluation...' : 'Réévaluer'}
+            </Button>
+            <Button onClick={() => openActionDrawer({})}>
+              <Plus size={16} /> Créer une action
+            </Button>
+          </div>
+        }
+      />
       {/* Freshness — dernière évaluation + fallback */}
       {bundle?.meta?.generated_at ? (
         <span className="text-xs text-gray-400 ml-2">
