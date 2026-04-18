@@ -18,7 +18,11 @@ const ActionsPage = lazy(() => import('./pages/ActionsPage'));
 const ActionCenterPage = lazy(() => import('./pages/ActionCenterPage'));
 const ConformitePage = lazy(() => import('./pages/ConformitePage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
-const Cockpit = lazy(() => import('./pages/Cockpit'));
+// Refonte Sol V1 : /cockpit pointe maintenant sur CockpitRefonte (rupture
+// visuelle V2 raw). Cockpit.jsx original accessible via /cockpit-legacy
+// pour A/B comparaison côte-à-côte (même backend, UX différente).
+const Cockpit = lazy(() => import('./pages/CockpitRefonte'));
+const CockpitLegacy = lazy(() => import('./pages/Cockpit'));
 const RegOps = lazy(() => import('./pages/RegOps'));
 const ConnectorsPage = lazy(() => import('./pages/ConnectorsPage'));
 const WatchersPage = lazy(() => import('./pages/WatchersPage'));
@@ -230,6 +234,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <Cockpit />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/cockpit-legacy"
+                      element={
+                        <PageSuspense>
+                          <CockpitLegacy />
                         </PageSuspense>
                       }
                     />
