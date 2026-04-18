@@ -443,6 +443,17 @@ cbam_eu:
   valid_to: null
   reference_ets_eur_per_t: 69.99    # EU ETS même jour, pour comparaison
   scope: ["acier", "ciment", "aluminium", "engrais", "hydrogene", "electricite"]
+  # Intensités carbone par défaut (tCO2 embarqué par tonne de produit importé
+  # hors UE). Valeurs issues des défauts Commission UE "Implementing Regulation
+  # 2023/1773" tableau 2 (annexe) — utilisés quand l'importateur ne fournit
+  # pas de donnée site-specific vérifiée.
+  default_intensity_tco2_per_t:
+    acier: 2.0         # aciéries haut fourneau/EAF mix, ordre CE par défaut
+    ciment: 0.66       # clinker-riche, default EU 0.6-0.72
+    aluminium: 16.5    # primaire (Hall-Héroult), très carbo-intensif hors EU
+    engrais: 2.6       # ammonia-based, default UREA/NPK
+    hydrogene: 10.0    # grey H₂ SMR sans CCS
+    electricite: 0.45  # default EU hors interconnexions bas-carbone
 
 # ── TVA ──────────────────────────────────────────────────────────────────────
 tva:

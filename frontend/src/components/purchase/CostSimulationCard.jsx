@@ -72,7 +72,7 @@ const COMPOSANTES = [
     label: 'CBAM',
     color: 'bg-rose-400',
     tooltip:
-      "Mécanisme d'Ajustement Carbone aux Frontières — non applicable à la consommation électrique directe française (imports hors UE uniquement).",
+      "Mécanisme d'Ajustement Carbone aux Frontières (Règlement UE 2023/956, activé 07/04/2026 à 75,36 €/tCO2) — exposition sur les importations hors UE de biens couverts (acier, ciment, aluminium, engrais, hydrogène, électricité). Non applicable si aucun import déclaré.",
   },
   {
     key: 'accise_cta_tva_eur',

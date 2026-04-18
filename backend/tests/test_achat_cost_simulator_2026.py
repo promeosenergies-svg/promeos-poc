@@ -226,6 +226,26 @@ class TestSimulateFacture2026:
         assert result_2026["hypotheses"]["capacite_unitaire_eur_mwh"] == CAPACITE_UNITAIRE_EUR_MWH
         assert "billing_engine/catalog" in result_2026["hypotheses"]["capacite_source_ref"]
 
+    def test_simulate_cbam_applicable_site_avec_imports(self, db_session):
+        """Site avec imports CBAM déclarés → cbam_scope > 0, breakdown exposé."""
+        _, site = _make_org_site(db_session, annual_kwh=500_000.0)
+        _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+        # Simule un site industriel avec imports hors UE déclarés.
+        site.cbam_imports_tonnes = {"acier": 100.0, "aluminium": 5.0}
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+
+        # Exposition CBAM : 100 × 2.0 + 5 × 16.5 = 282.5 tCO2 × 75.36 = 21 289 €
+        expected_cbam = (100.0 * 2.0 + 5.0 * 16.5) * 75.36
+        assert result["composantes"]["cbam_scope"] == pytest.approx(expected_cbam, rel=1e-3)
+        assert result["hypotheses"]["cbam_applicable"] is True
+        assert result["hypotheses"]["cbam_total_co2_embedded_t"] == pytest.approx(282.5, rel=1e-3)
+        assert len(result["hypotheses"]["cbam_breakdown"]) == 2
+        scopes = {b["scope"] for b in result["hypotheses"]["cbam_breakdown"]}
+        assert scopes == {"acier", "aluminium"}
+        # Trace dans source_calibration
+        assert any("cbam_applicable" in t for t in result["hypotheses"]["source_calibration"])
+
     def test_simulate_cbam_non_applicable(self, db_session):
         """CBAM = 0 EUR + trace documentée dans hypotheses."""
         _, site = _make_org_site(db_session, annual_kwh=500_000.0)
@@ -234,7 +254,7 @@ class TestSimulateFacture2026:
         result = simulate_annual_cost_2026(site, db_session, year=2026)
 
         assert result["composantes"]["cbam_scope"] == 0.0
-        assert "cbam_non_applicable_conso_directe" in result["hypotheses"]["source_calibration"]
+        assert any("cbam_non_applicable" in t for t in result["hypotheses"]["source_calibration"])
         # Note pédagogique pour auditeur
         assert "CBAM" in result["hypotheses"]["cbam_note"]
 

@@ -84,6 +84,10 @@ class CostHypotheses(BaseModel):
     comparabilite_baseline: str
     annual_kwh_resolu: float
     cbam_note: str
+    cbam_applicable: bool
+    cbam_rate_eur_per_tco2: float
+    cbam_total_co2_embedded_t: float
+    cbam_breakdown: list[dict]
     source_calibration: list[str]
 
 

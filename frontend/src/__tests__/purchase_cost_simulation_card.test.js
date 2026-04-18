@@ -281,9 +281,13 @@ describe('CostSimulationCard — tooltips CFO', () => {
     expect(cardSrc).toMatch(/Arrêté 18\/03\/2026/);
   });
 
-  it('tooltip CBAM précise "non applicable" + "imports hors UE"', () => {
-    expect(cardSrc).toMatch(/non applicable/);
-    expect(cardSrc).toMatch(/imports hors UE/);
+  it('tooltip CBAM cite Règlement UE 2023/956 + 75,36 €/tCO2 + 6 scopes', () => {
+    expect(cardSrc).toMatch(/Règlement UE 2023\/956/);
+    expect(cardSrc).toMatch(/75,36 €\/tCO2/);
+    expect(cardSrc).toMatch(/acier/);
+    expect(cardSrc).toMatch(/ciment/);
+    expect(cardSrc).toMatch(/aluminium/);
+    expect(cardSrc).toMatch(/hydrogène/);
   });
 
   it('tooltip fourniture mentionne le multiplicateur peakload', () => {

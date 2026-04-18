@@ -76,7 +76,11 @@ def _fake_cost_simulation():
             "baseline_2024_eur_mwh": 80.0,
             "comparabilite_baseline": "delta cadré HT énergie pure.",
             "annual_kwh_resolu": 12_500_000.0,
-            "cbam_note": "CBAM non applicable à la conso électrique directe.",
+            "cbam_note": "CBAM non applicable — aucune importation hors UE déclarée.",
+            "cbam_applicable": False,
+            "cbam_rate_eur_per_tco2": 75.36,
+            "cbam_total_co2_embedded_t": 0.0,
+            "cbam_breakdown": [],
             "source_calibration": [],
         },
         "baseline_2024": {
