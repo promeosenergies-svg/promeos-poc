@@ -76,3 +76,41 @@ def sol_correlation_id():
 def now_utc():
     """Helper : datetime UTC-aware à l'instant du test."""
     return datetime.now(timezone.utc)
+
+
+@pytest.fixture
+def sol_action_log_factory(sol_db, sol_org, sol_user):
+    """
+    Factory pour créer des SolActionLog rapidement dans les tests.
+
+    Usage : `log = sol_action_log_factory(correlation_id="x", outcome_code="success")`.
+    Tous les champs ont des defaults raisonnables et sont overridables.
+    """
+    from models.sol import SolActionLog
+
+    def _factory(
+        *,
+        correlation_id: str | None = None,
+        intent_kind: str = "invoice_dispute",
+        action_phase: str = "executed",
+        outcome_code: str | None = None,
+        plan_json: dict | None = None,
+        confidence: float | None = None,
+    ) -> SolActionLog:
+        log = SolActionLog(
+            org_id=sol_org.id,
+            user_id=sol_user.id,
+            correlation_id=correlation_id or str(uuid.uuid4()),
+            intent_kind=intent_kind,
+            action_phase=action_phase,
+            inputs_hash="f" * 64,
+            plan_json=plan_json if plan_json is not None else {"total_eur": 1847.20},
+            outcome_code=outcome_code,
+            confidence=confidence,
+        )
+        sol_db.add(log)
+        sol_db.commit()
+        sol_db.refresh(log)
+        return log
+
+    return _factory

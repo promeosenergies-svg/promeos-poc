@@ -113,11 +113,14 @@ def run_migrations(engine):
 
 
 def _migrate_sol_v1_foundations(engine):
-    """Create Sol V1 foundations tables if missing (idempotent).
+    """Create Sol V1 foundations tables if missing (idempotent + transactional).
 
     4 tables : sol_action_log (append-only audit), sol_pending_action
     (grace period queue), sol_confirmation_token (HMAC preview→execute),
     sol_org_policy (gouvernance par org).
+
+    Transactionnel : si une table plante en milieu de création, les
+    précédentes sont rollback ensemble — pas d'état partiel.
 
     Voir docs/sol/DECISIONS_LOG.md et docs/sol/PROMPT_SOL_V1_SPRINT_1-2_APPLIED.md.
     """
@@ -135,11 +138,12 @@ def _migrate_sol_v1_foundations(engine):
     import models.sol  # noqa: F401
     from models.base import Base
 
-    Base.metadata.create_all(
-        bind=engine,
-        tables=[Base.metadata.tables[t] for t in SOL_TABLES if t in Base.metadata.tables],
-        checkfirst=True,
-    )
+    with engine.begin() as conn:
+        Base.metadata.create_all(
+            bind=conn,
+            tables=[Base.metadata.tables[t] for t in SOL_TABLES if t in Base.metadata.tables],
+            checkfirst=True,
+        )
     logger.info("migration: created Sol V1 foundation tables: %s", missing)
 
 

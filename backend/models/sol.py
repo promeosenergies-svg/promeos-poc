@@ -4,12 +4,14 @@ PROMEOS — Modèles DB Sol V1 (agentic assistant).
 4 tables append-only / statefuls pour l'infrastructure Sol :
 
 1. `SolActionLog` — journal append-only de toutes les actions Sol.
-   Modification interdite (event listener before_update), sauf champ
-   `anonymized` + `anonymized_at` (RGPD, rétention 3 ans).
+   Modification interdite (event listener before_update), suppression
+   interdite (event listener before_delete). Seule exception :
+   anonymisation RGPD (champs `anonymized` + `anonymized_at`, rétention 3 ans).
 
 2. `SolPendingAction` — queue des actions programmées (grace period L2).
-   Lookup via `correlation_id` ou `cancellation_token` (annulation
-   one-click sans auth depuis email).
+   Immutable sauf transitions de statut légitimes (waiting → executing →
+   executed | cancelled). Lookup via `correlation_id` ou
+   `cancellation_token` (annulation one-click sans auth depuis email).
 
 3. `SolConfirmationToken` — tokens HMAC de confirmation avant exécution
    (L1 prévisualisation intégrale). TTL 5 min, single-use.
@@ -22,6 +24,13 @@ Décisions appliquées : cf docs/sol/DECISIONS_LOG.md
 - P0-2 : Column(JSON) générique SQLAlchemy (pas JSONB)
 - P0-5 : CreatedAtOnlyMixin pour append-only (pas TimestampMixin)
 - P1-1 : datetime.now(timezone.utc) (pas UTC import)
+
+Corrections audit (commit c90d8b64 → post-review) :
+- P0-B : SolOrgPolicy.updated_at a server_default=func.now()
+- P0-A : SolPendingAction a event listener whitelist transitions d'état
+- P1-B : SolActionLog a event listener before_delete bloquant
+- P1-A : SolActionLog anonymized/anonymized_at cohérence enforcée
+- P2   : CheckConstraint confidence ∈ [0, 1] sur SolActionLog et SolOrgPolicy
 """
 
 from __future__ import annotations
@@ -29,6 +38,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
     DateTime,
     ForeignKey,
@@ -39,14 +49,26 @@ from sqlalchemy import (
     String,
     Text,
     event,
-    inspect as sa_inspect,
+    func,
+    inspect,
 )
 
 from .base import Base, CreatedAtOnlyMixin
 
 
 class AppendOnlyViolation(Exception):
-    """Levée quand un UPDATE est tenté sur une table append-only Sol."""
+    """Levée quand un UPDATE / DELETE est tenté sur une table append-only Sol,
+    ou quand un champ immuable d'une table partiellement mutable est modifié."""
+
+
+# Fields de SolPendingAction qui PEUVENT changer (transitions d'état légitimes).
+# Tout le reste est figé à la création.
+_PENDING_ACTION_MUTABLE_FIELDS = frozenset(
+    {"status", "executed_at", "cancelled_at", "cancelled_by"}
+)
+
+# Fields de SolActionLog autorisés à changer (anonymisation RGPD uniquement).
+_ACTION_LOG_ANONYMIZATION_FIELDS = frozenset({"anonymized", "anonymized_at"})
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -62,9 +84,11 @@ class SolActionLog(Base, CreatedAtOnlyMixin):
     PROPOSED → PREVIEWED → CONFIRMED → SCHEDULED → EXECUTED
     (ou CANCELLED / REVERTED / REFUSED).
 
-    L'immutabilité est garantie par l'event listener `_block_sol_action_log_update`
-    qui lève `AppendOnlyViolation` pour toute modification sauf
-    anonymisation (RGPD rétention 3 ans, voir DECISIONS_LOG P1-10).
+    L'immutabilité est garantie par deux event listeners :
+    - `_block_sol_action_log_update` rejette UPDATE sauf anonymisation
+      cohérente (anonymized + anonymized_at ensemble).
+    - `_block_sol_action_log_delete` rejette tout DELETE (politique RGPD
+      exige anonymisation par le job périodique, pas suppression).
     """
 
     __tablename__ = "sol_action_log"
@@ -99,7 +123,7 @@ class SolActionLog(Base, CreatedAtOnlyMixin):
     # Traces LLM (rôles strictement CLASSIFY/EXPLAIN/SUMMARIZE, Sprint 7-8)
     llm_calls = Column(JSON, nullable=True)
 
-    # Confiance du calcul déterministe (seuil d'exécution L5)
+    # Confiance du calcul déterministe (seuil d'exécution L5) ∈ [0, 1]
     confidence = Column(Numeric(4, 2), nullable=True)
 
     # RGPD : anonymisation après 3 ans (job différé Sprint 3+, voir P1-10)
@@ -108,33 +132,68 @@ class SolActionLog(Base, CreatedAtOnlyMixin):
 
     __table_args__ = (
         Index("ix_sol_action_log_org_created", "org_id", "created_at"),
+        # Confidence must be in [0, 1] when present (Postgres enforce, SQLite ignore)
+        CheckConstraint(
+            "confidence IS NULL OR (confidence >= 0 AND confidence <= 1)",
+            name="ck_sol_action_log_confidence_range",
+        ),
     )
 
 
 @event.listens_for(SolActionLog, "before_update")
 def _block_sol_action_log_update(mapper, connection, target):  # noqa: ARG001
     """
-    Bloque les UPDATE sur sol_action_log sauf anonymisation RGPD.
+    Bloque les UPDATE sur sol_action_log sauf anonymisation RGPD cohérente.
 
-    Seule la combinaison de champs {anonymized, anonymized_at} peut changer.
-    Toute autre modification lève AppendOnlyViolation.
+    Règles :
+    - Aucun field changé → autorisé (idempotent no-op).
+    - Uniquement fields ⊆ {anonymized, anonymized_at} → autorisé.
+    - Toute autre combinaison → AppendOnlyViolation.
+    - Cohérence anonymisation : si `anonymized` passe à True, alors
+      `anonymized_at` doit être set dans la même transaction.
 
-    Compensation SQLite (pas de trigger DDL natif Postgres) : event listener
-    SQLAlchemy suffit pour le code applicatif. Contournement par raw SQL
-    (session.execute(text("UPDATE..."))) reste possible — compensé par
+    Compensation SQLite : event listener SQLAlchemy suffit pour le code
+    applicatif. Contournement par raw SQL reste possible — compensé par
     test CI grep "no raw UPDATE on sol_action_log" dans backend/.
     """
-    state = sa_inspect(target)
+    state = inspect(target)
     changed = {attr.key for attr in state.attrs if attr.history.has_changes()}
 
-    # Autoriser anonymisation RGPD : changer anonymized et/ou anonymized_at
-    allowed_changes = {"anonymized", "anonymized_at"}
-    if changed and not changed.issubset(allowed_changes):
-        disallowed = changed - allowed_changes
+    if not changed:
+        return  # no-op UPDATE idempotent
+
+    disallowed = changed - _ACTION_LOG_ANONYMIZATION_FIELDS
+    if disallowed:
         raise AppendOnlyViolation(
             f"SolActionLog is append-only. Attempted changes on forbidden "
             f"fields: {sorted(disallowed)}"
         )
+
+    # Cohérence anonymisation : anonymized=True ⇒ anonymized_at set
+    anonymized_changed = "anonymized" in changed
+    if anonymized_changed and target.anonymized is True and target.anonymized_at is None:
+        raise AppendOnlyViolation(
+            "SolActionLog anonymization inconsistent: anonymized=True requires "
+            "anonymized_at set in the same transaction."
+        )
+
+
+@event.listens_for(SolActionLog, "before_delete")
+def _block_sol_action_log_delete(mapper, connection, target):  # noqa: ARG001
+    """
+    Bloque DELETE sur sol_action_log.
+
+    La politique RGPD (DECISIONS_LOG P1-10) exige anonymisation, pas
+    suppression. Le job différé Sprint 3+ set `anonymized=True` +
+    `anonymized_at` à la place d'un DELETE physique.
+
+    Un DELETE accidentel (bug app, migration mal faite) doit échouer
+    bruyamment pour préserver le trail d'audit.
+    """
+    raise AppendOnlyViolation(
+        "SolActionLog DELETE forbidden. Use RGPD anonymization "
+        "(set anonymized=True + anonymized_at) instead of physical delete."
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -154,6 +213,13 @@ class SolPendingAction(Base, CreatedAtOnlyMixin):
     Annulation one-click sans auth : le `cancellation_token` (URL-safe
     32 bytes) peut être utilisé sans JWT — lien envoyé par email,
     "Annuler l'envoi" dans les 24h.
+
+    Fields MUTABLES (transitions d'état légitimes) :
+    - status, executed_at, cancelled_at, cancelled_by
+
+    Tout le reste (correlation_id, org_id, user_id, intent_kind,
+    plan_json, scheduled_for, cancellation_token, created_at) est
+    immuable après insertion — enforcement via event listener.
     """
 
     __tablename__ = "sol_pending_action"
@@ -182,6 +248,33 @@ class SolPendingAction(Base, CreatedAtOnlyMixin):
     cancelled_by = Column(Integer, ForeignKey("users.id"), nullable=True)
 
 
+@event.listens_for(SolPendingAction, "before_update")
+def _block_sol_pending_action_update(mapper, connection, target):  # noqa: ARG001
+    """
+    Whitelist des fields mutables sur SolPendingAction.
+
+    Seules les transitions d'état opérationnelles sont autorisées :
+    status + timestamps (executed_at, cancelled_at, cancelled_by).
+
+    Toute tentative de modifier le plan original (correlation_id,
+    org_id, plan_json, scheduled_for, cancellation_token) lève
+    AppendOnlyViolation — ces champs sont figés à la création.
+    """
+    state = inspect(target)
+    changed = {attr.key for attr in state.attrs if attr.history.has_changes()}
+
+    if not changed:
+        return
+
+    disallowed = changed - _PENDING_ACTION_MUTABLE_FIELDS
+    if disallowed:
+        raise AppendOnlyViolation(
+            f"SolPendingAction has immutable fields. Attempted changes on "
+            f"forbidden fields: {sorted(disallowed)}. Only status transitions "
+            f"({sorted(_PENDING_ACTION_MUTABLE_FIELDS)}) are allowed."
+        )
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. SolConfirmationToken — tokens HMAC preview→execute (L1 Prévisualisation)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -201,7 +294,7 @@ class SolConfirmationToken(Base, CreatedAtOnlyMixin):
 
     __tablename__ = "sol_confirmation_token"
 
-    # Token = clé primaire (déterministe, pas d'auto-increment ici car lookup par token)
+    # Token = clé primaire (déterministe, pas d'auto-increment — lookup par token)
     token = Column(String(64), primary_key=True)
 
     correlation_id = Column(String(36), nullable=False, unique=True, index=True)
@@ -237,10 +330,11 @@ class SolOrgPolicy(Base):
       (propose/preview continuent) — sécurité migration pilote.
 
     - confidence_threshold : minimum pour que Sol valide une proposition
-      automatique. Si < threshold → PlanRefused avec reason='confidence_low'.
+      automatique ∈ [0, 1]. Si < threshold → PlanRefused avec
+      reason='confidence_low'.
 
     NB : `SolOrgPolicy` n'utilise PAS CreatedAtOnlyMixin car la politique
-    évolue — un `updated_at` manuel suffit.
+    évolue — `updated_at` est donc légitime (transitions de mode attendues).
     """
 
     __tablename__ = "sol_org_policy"
@@ -265,7 +359,15 @@ class SolOrgPolicy(Base):
         DateTime,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
+        server_default=func.current_timestamp(),  # fallback pour INSERT SQL brut
         nullable=False,
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "confidence_threshold >= 0 AND confidence_threshold <= 1",
+            name="ck_sol_org_policy_confidence_range",
+        ),
     )
 
     def is_dry_run_active(self, now: datetime) -> bool:
