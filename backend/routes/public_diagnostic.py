@@ -14,10 +14,9 @@ Flow :
 Différenciateur : premier diagnostic freemium B2B énergie France (intégration
 Sirene + scoring + CBAM + compliance) en 1 appel, sans compte utilisateur.
 
-**Opt-in production** : le router n'est enregistré dans `main.py` que si
-`PROMEOS_ENABLE_PUBLIC_DIAGNOSTIC=true` (pas par défaut, pour éviter
-exposition accidentelle avant rate limiting en place). Ajouter `slowapi`
-throttle `/api/public/*` (10/min/IP) avant tout déploiement public réel.
+**Protection** : rate limiting `slowapi` 10/min/IP par défaut (surchargeable
+via env `PROMEOS_PUBLIC_DIAGNOSTIC_RATE`) pour prévenir DoS + épuisement
+quota API gouv + pollution locale table Sirene via loop SIREN.
 
 Sources :
 - `services/lead_score.py` — compute lead score (V116)
@@ -28,19 +27,25 @@ Sources :
 from __future__ import annotations
 
 import logging
+import os
 from typing import Optional
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from database import get_db
+from main_limiter import limiter  # Single source of truth : instance créée dans main.py
 from models.sirene import SireneEtablissement, SireneUniteLegale
 from services.lead_score import compute_lead_score_from_loaded
 
 logger = logging.getLogger(__name__)
+
+# Rate-limit configurable via env (tests / CI peuvent surcharger, défaut 10/min/IP).
+# Lu à l'import — pour override à chaud, restart du worker nécessaire.
+_PUBLIC_RATE_LIMIT = os.environ.get("PROMEOS_PUBLIC_DIAGNOSTIC_RATE", "10/minute")
 
 router = APIRouter(prefix="/api/public", tags=["Public Diagnostic — Wedge Sirene"])
 
@@ -162,7 +167,11 @@ def _preview_compliance(ul, segment: str) -> CompliancePreview:
 
 
 @router.get("/diagnostic/{siren}", response_model=PublicDiagnosticResponse)
+@limiter.limit(_PUBLIC_RATE_LIMIT)
+# NB : OPTIONS preflight CORS est routé vers CORSMiddleware (registered pre-router)
+# → ne hit PAS ce handler → ne consomme pas le rate limit. Aucune exemption requise.
 def get_public_diagnostic(
+    request: Request,
     siren: str,
     db: Session = Depends(get_db),
 ) -> PublicDiagnosticResponse:

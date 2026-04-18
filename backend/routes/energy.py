@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access
+from services.error_catalog import business_error
 from routes.patrimoine._helpers import _check_portfolio_belongs_to_org
 from models import (
     Site,
@@ -110,7 +111,7 @@ def create_meter(
     # Verify site exists
     site = db.query(Site).filter_by(id=meter.site_id).first()
     if not site:
-        raise HTTPException(status_code=404, detail=f"Site {meter.site_id} not found")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=meter.site_id))
 
     # Check uniqueness
     existing = db.query(Meter).filter_by(meter_id=meter.meter_id).first()
@@ -414,7 +415,7 @@ def generate_demo_data(
     check_site_access(auth, request.site_id)
     site = db.query(Site).filter_by(id=request.site_id).first()
     if not site:
-        raise HTTPException(status_code=404, detail=f"Site {request.site_id} not found")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=request.site_id))
 
     # Create meter if not exists
     meter_id_str = f"PRM-{request.site_id:06d}"

@@ -46,6 +46,9 @@ openpyxl>=3.1.0
 # Sol V1 (agentic assistant — infrastructure Sprint 1-2, usage Sprint 7-8)
 anthropic>=0.40.0
 
+# Rate limiting (public endpoints)
+slowapi>=0.1.9
+
 # Dev & Testing
 pytest>=7.4.3
 pytest-asyncio>=0.21.1

@@ -564,7 +564,7 @@ def patch_action(
         try:
             action.realized_at = dt_date.fromisoformat(data.realized_at)
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Date invalide: {data.realized_at}")
+            raise HTTPException(**business_error("INVALID_DATE_FORMAT"))
 
     if data.category is not None:
         action.category = data.category

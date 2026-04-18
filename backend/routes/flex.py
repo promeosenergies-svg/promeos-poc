@@ -16,7 +16,7 @@ from database import get_db
 from services.flex_mini import compute_flex_mini
 from services.scope_utils import resolve_org_id
 from middleware.auth import get_optional_auth, AuthContext
-from middleware.cx_logger import log_cx_event_first_only, CX_MODULE_ACTIVATED
+from middleware.cx_logger import log_cx_event_first_only, make_dedup_key, CX_MODULE_ACTIVATED
 from schemas.flex_schemas import (
     FlexAssetResponse,
     FlexAssetListResponse,
@@ -162,7 +162,7 @@ def create_flex_asset(
         org_id,
         auth.user.id if auth else None,
         CX_MODULE_ACTIVATED,
-        dedup_key='"module_key": "flex"',
+        dedup_key=make_dedup_key("module_key", "flex"),
         context={"module_key": "flex", "trigger": "create_flex_asset"},
     )
     db.commit()

@@ -26,6 +26,7 @@ from services.iam_service import (
 )
 from middleware.auth import oauth2_scheme, get_current_user_role, require_permission, DEMO_MODE
 from middleware.rate_limit import check_rate_limit
+from services.error_catalog import business_error
 
 import logging
 
@@ -281,7 +282,7 @@ def impersonate(
 
     target = db.query(User).filter(User.email == req.email, User.actif == True).first()
     if not target:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(**business_error("USER_NOT_FOUND"))
 
     uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == target.id).first()
     if not uor:

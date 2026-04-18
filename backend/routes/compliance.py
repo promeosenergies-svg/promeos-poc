@@ -51,6 +51,7 @@ from services.compliance_rules import (
 )
 from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import resolve_org_id
+from services.error_catalog import business_error
 
 router = APIRouter(prefix="/api/compliance", tags=["Compliance"])
 
@@ -685,7 +686,7 @@ def get_site_compliance_score(
 
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(status_code=404, detail="Site non trouvé")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=site_id))
 
     result = compute_site_compliance_score(db, site_id)
     return result.to_dict()
