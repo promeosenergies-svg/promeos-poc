@@ -778,7 +778,8 @@ const Cockpit = () => {
             Achat énergie post-ARENH
           </h2>
           <span className="text-[10px] text-gray-400">
-            Post-ARENH 01/01/2026 · TURPE 7 · VNU CRE · capacité RTE
+            Post-ARENH 01/01/2026 · TURPE 7 · <Explain term="vnu">VNU</Explain> CRE ·{' '}
+            <Explain term="capacite">capacité</Explain> RTE
           </span>
         </div>
         <CostSimulationCard

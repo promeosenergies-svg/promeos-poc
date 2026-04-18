@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth
+from middleware.cx_logger import log_cx_event_first_only, CX_MODULE_ACTIVATED
 from services.scope_utils import resolve_org_id
 
 from models import (
@@ -193,7 +194,7 @@ def create_bacs_asset(
     auth=Depends(get_optional_auth),
 ):
     """Create BacsAsset for a site."""
-    _verify_site_access(db, site_id, request, auth)
+    site = _verify_site_access(db, site_id, request, auth)
 
     existing = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
     if existing:
@@ -209,6 +210,26 @@ def create_bacs_asset(
     db.add(asset)
     db.commit()
     db.refresh(asset)
+
+    # Sprint CX 3 P0.4 : fire CX_MODULE_ACTIVATED (1ère activation BACS par l'org).
+    # Option A : dédup via `module_key=bacs` dans detail_json. Résout org_id via site.
+    try:
+        pf = db.get(Portefeuille, site.portefeuille_id) if site and site.portefeuille_id else None
+        ej = db.get(EntiteJuridique, pf.entite_juridique_id) if pf else None
+        org_id = ej.organisation_id if ej else None
+        if org_id:
+            log_cx_event_first_only(
+                db,
+                org_id,
+                auth.user.id if (auth and getattr(auth, "user", None)) else None,
+                CX_MODULE_ACTIVATED,
+                dedup_key='"module_key": "bacs"',
+                context={"module_key": "bacs", "trigger": "create_bacs_asset"},
+            )
+            db.commit()
+    except Exception:
+        pass  # fire-and-forget : ne casse pas la création asset
+
     return _serialize_asset(asset)
 
 

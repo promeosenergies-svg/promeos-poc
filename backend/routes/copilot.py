@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
-from middleware.cx_logger import log_cx_event
+from middleware.cx_logger import log_cx_event, log_cx_event_first_only, CX_MODULE_ACTIVATED
 from services.iam_scope import get_effective_org_id
 from models.copilot_models import CopilotAction
 from services.copilot_engine import (
@@ -100,6 +100,17 @@ def run_monthly_copilot(
     """Trigger monthly copilot analysis for an org."""
     effective_org_id = get_effective_org_id(auth, body.org_id)
     result = run_copilot_monthly(db, effective_org_id)
+
+    # Sprint CX 3 P0.4 : fire CX_MODULE_ACTIVATED (1ère activation copilot par l'org).
+    log_cx_event_first_only(
+        db,
+        effective_org_id,
+        auth.user.id if auth else None,
+        CX_MODULE_ACTIVATED,
+        dedup_key='"module_key": "copilot"',
+        context={"module_key": "copilot", "trigger": "run_monthly_copilot"},
+    )
+    db.commit()
     return result
 
 
