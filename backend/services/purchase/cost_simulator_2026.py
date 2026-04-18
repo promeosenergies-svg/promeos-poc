@@ -95,24 +95,30 @@ BASELINE_2024_EUR_MWH = 80.0
 # Si `Meter.tariff_type` renseigne C5 / C3, on bascule.
 DEFAULT_TURPE_SEGMENT = "C4_BT"
 
-# TURPE 7 fixe additionnel : comptage (€/an/compteur) + soutirage (€/kVA/an moyen
-# toutes plages confondues). Source : `billing_engine/catalog.py::TURPE7_RATES`
-# (CRE 2025-78 p.13-14). MVP simplifié : on moyenne les plages horaires HPH/HCH/
-# HPB/HCB et on applique à la puissance souscrite estimée via le facteur de charge
-# archétype (P_souscrite ≈ annual_kwh / (8760 × facteur_charge)).
+# TURPE 7 fixe — valeurs CRE canoniques (`billing_engine/catalog.py::TURPE7_RATES`,
+# délib. CRE 2025-78 p.13-16, entrée en vigueur 01/08/2025).
+#
+# Note : le YAML `config/tarifs_reglementaires.yaml` `turpe.segments.*.gestion_eur_mois`
+# diverge sensiblement du catalog CRE (C5 221.76 €/an YAML vs 16.80 €/an catalog ;
+# C4 367.20 vs 217.80). Investigation séparée requise pour trancher si YAML =
+# calibration empirique ou erreur. Cost simulator source = catalog CRE pour
+# auditabilité client.
 TURPE_FIXE_PROFILES = {
     "C5_BT": {
-        "comptage_eur_an": 87.96,
-        "soutirage_moyen_eur_kva_an": 10.0,
+        "gestion_eur_an": 16.80,  # CRE TURPE 7 BT≤36kVA CG CU (brochure p.16)
+        "comptage_eur_an": 22.00,  # CC bimestrielle Linky (p.16)
+        "soutirage_moyen_eur_kva_an": 10.11,  # b CU4 (p.17)
         "p_souscrite_min_kva": 9.0,
     },
     "C4_BT": {
-        "comptage_eur_an": 283.27,
-        "soutirage_moyen_eur_kva_an": 15.0,  # Moyenne CU b_i HPH/HCH/HPB/HCB
+        "gestion_eur_an": 217.80,  # CRE TURPE 7 BT>36kVA CG CU (brochure p.13)
+        "comptage_eur_an": 283.27,  # CC mensuelle (p.13)
+        "soutirage_moyen_eur_kva_an": 15.03,  # Moyenne b CU HPH/HCH/HPB/HCB (p.14)
         "p_souscrite_min_kva": 36.0,
     },
     "C3_HTA": {
-        "comptage_eur_an": 283.27,
+        "gestion_eur_an": 435.72,  # CRE TURPE 7 HTA CG CU (brochure p.9)
+        "comptage_eur_an": 283.27,  # CC HTA (alignement p.9)
         "soutirage_moyen_eur_kva_an": 3.5,  # HTA b_i significativement plus bas
         "p_souscrite_min_kva": 250.0,
     },
@@ -326,26 +332,28 @@ def simulate_annual_cost_2026(
     fourniture_eur = annual_mwh * forward_y1
 
     # 4. TURPE 7 (part fixe + variable)
+    # Part variable via ParameterStore (YAML aligné catalog sur ce code).
     turpe_energie_code = f"TURPE_ENERGIE_{turpe_segment}"
-    turpe_gestion_code = f"TURPE_GESTION_{turpe_segment}"
     turpe_energie_eur_kwh, fb_energie = _safe_param(store, turpe_energie_code, at_date, 0.0390)
-    turpe_gestion_eur_mois, fb_gestion = _safe_param(store, turpe_gestion_code, at_date, 30.60)
-    if fb_energie or fb_gestion:
+    if fb_energie:
         traces.append("turpe_parameterstore_indisponible_fallback_default")
 
     turpe_variable_eur = annual_kwh * turpe_energie_eur_kwh
-    # Part fixe complète = gestion + comptage + soutirage (puissance souscrite).
-    # Fix audit : l'ancien MVP (gestion seule) sous-estimait la part fixe d'un
-    # facteur 8 sur C4_BT, faisant chuter la CTA du même ratio (CTA = 15% × fixe).
-    turpe_gestion_annuel_eur = 12.0 * turpe_gestion_eur_mois
+    # Part fixe complète = gestion + comptage + soutirage (puissance souscrite)
+    # — valeurs CRE canoniques via TURPE_FIXE_PROFILES (pas YAML, divergent du
+    # catalog sur `gestion_eur_mois`). L'ancien MVP (gestion seule via YAML)
+    # sous-estimait la part fixe d'un facteur 8 sur C4_BT, faisant chuter la
+    # CTA du même ratio (CTA = 15% × part fixe).
     turpe_profile = TURPE_FIXE_PROFILES.get(turpe_segment, TURPE_FIXE_PROFILES[DEFAULT_TURPE_SEGMENT])
-    # P_souscrite estimée via le facteur de charge de l'archétype.
-    # Plancher segment (9 kVA C5, 36 kVA C4, 250 kVA HTA) pour éviter un minimum
+    # P_souscrite estimée via le facteur de charge de l'archétype ; plancher
+    # segment (9 kVA C5, 36 kVA C4, 250 kVA HTA) pour éviter un minimum
     # irréaliste sur un site à faible conso.
     p_souscrite_kva = max(
         turpe_profile["p_souscrite_min_kva"],
         annual_kwh / (8760.0 * max(facteur_forme, 0.15)),
     )
+    turpe_gestion_annuel_eur = turpe_profile["gestion_eur_an"]
+    turpe_gestion_eur_mois = turpe_gestion_annuel_eur / 12.0
     turpe_comptage_eur = turpe_profile["comptage_eur_an"]
     turpe_soutirage_eur = p_souscrite_kva * turpe_profile["soutirage_moyen_eur_kva_an"]
     turpe_fixe_eur = turpe_gestion_annuel_eur + turpe_comptage_eur + turpe_soutirage_eur
