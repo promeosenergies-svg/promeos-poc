@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
-from middleware.cx_logger import log_cx_event, log_cx_event_first_only, CX_MODULE_ACTIVATED
+from middleware.cx_logger import log_cx_event, log_cx_event_first_only, make_dedup_key, CX_MODULE_ACTIVATED
 from services.iam_scope import get_effective_org_id
 from models.copilot_models import CopilotAction
 from services.copilot_engine import (
@@ -107,7 +107,7 @@ def run_monthly_copilot(
         effective_org_id,
         auth.user.id if auth else None,
         CX_MODULE_ACTIVATED,
-        dedup_key='"module_key": "copilot"',
+        dedup_key=make_dedup_key("module_key", "copilot"),
         context={"module_key": "copilot", "trigger": "run_monthly_copilot"},
     )
     db.commit()

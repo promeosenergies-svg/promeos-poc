@@ -73,6 +73,51 @@ def invalidate_membership_cache(user_id: Optional[int] = None, org_id: Optional[
         _MEMBERSHIP_CACHE.pop(key, None)
 
 
+def safe_invalidate_membership_cache(user_id: Optional[int] = None, org_id: Optional[int] = None) -> None:
+    """Wrapper fire-and-forget autour de invalidate_membership_cache.
+
+    Usage : call-sites CRUD (iam_service, admin_users, demo reset) qui veulent
+    purger le cache sans risquer de casser le flow métier si l'invalidation
+    échoue (pire cas : staleness ≤ 5 min, comportement pré-wiring).
+    """
+    try:
+        invalidate_membership_cache(user_id=user_id, org_id=org_id)
+    except Exception:
+        logger.debug(
+            "invalidate_membership_cache failed (user_id=%s, org_id=%s)",
+            user_id,
+            org_id,
+            exc_info=True,
+        )
+
+
+def has_recent_audit_event(
+    db: Session,
+    user_id: int,
+    action: str,
+    cooldown_days: int,
+) -> bool:
+    """Retourne True si un AuditLog `action` pour `user_id` existe dans les N derniers jours.
+
+    Pattern utilisé pour anti-flood d'events CX (NPS, CSAT, ...) où on veut ne
+    pas harceler un même utilisateur. `action` doit être une des constantes
+    CX_* ou un action_type d'AuditLog existant.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=cooldown_days)
+    existing = (
+        db.query(AuditLog.id)
+        .filter(
+            AuditLog.user_id == user_id,
+            AuditLog.action == action,
+            AuditLog.created_at >= cutoff,
+        )
+        .first()
+    )
+    return existing is not None
+
+
 # Event type constants — utiliser ces constantes plutôt que des strings hardcodés
 # pour éviter drift silencieux (la validation log_cx_event return si event_type
 # n'est pas dans CX_EVENT_TYPES, sans trace).
@@ -82,6 +127,8 @@ CX_REPORT_EXPORTED = "CX_REPORT_EXPORTED"
 CX_ONBOARDING_COMPLETED = "CX_ONBOARDING_COMPLETED"
 CX_ACTION_FROM_INSIGHT = "CX_ACTION_FROM_INSIGHT"
 CX_DASHBOARD_OPENED = "CX_DASHBOARD_OPENED"
+# Sprint CX P1 residual : NPS micro-survey (scorecard 10% "NPS/CES")
+CX_NPS_SUBMITTED = "CX_NPS_SUBMITTED"
 
 CX_EVENT_TYPES = frozenset(
     {
@@ -91,8 +138,25 @@ CX_EVENT_TYPES = frozenset(
         CX_ONBOARDING_COMPLETED,
         CX_ACTION_FROM_INSIGHT,
         CX_DASHBOARD_OPENED,
+        CX_NPS_SUBMITTED,
     }
 )
+
+
+def make_dedup_key(key: str, value: str) -> str:
+    """Construit le fragment canonique matché par log_cx_event_first_only.
+
+    Format : `"<key>": "<value>"` (doit matcher exactement la sortie json.dumps).
+    Exemple : make_dedup_key("module_key", "flex") → '"module_key": "flex"'.
+
+    Garantit l'absence de false positive (ex. "flex" vs "flexibilite") via
+    les guillemets fermants autour de la valeur.
+    """
+    if not key or not value:
+        raise ValueError("make_dedup_key requires non-empty key and value")
+    if '"' in key or '"' in value:
+        raise ValueError(f"make_dedup_key does not support double quotes in key={key!r} or value={value!r}")
+    return f'"{key}": "{value}"'
 
 
 def log_cx_event_first_only(
@@ -108,7 +172,12 @@ def log_cx_event_first_only(
 
     Fire l'event UNIQUEMENT si aucun AuditLog précédent n'existe pour ce
     couple (org_id, event_type, dedup_key). `dedup_key` est cherché dans
-    `detail_json` (match exact JSON substring — sqlite-friendly).
+    `detail_json` via LIKE (match sous-chaîne — sqlite-friendly).
+
+    ⚠ `dedup_key` DOIT être un fragment JSON canonique au format exact
+    `"<key>": "<value>"` produit par json.dumps avec terminateurs de valeur
+    (guillemets fermants) — utiliser `make_dedup_key(key, value)` pour le
+    construire et éviter les false positives ("flex" vs "flexibilite").
 
     Motivation : CX_MODULE_ACTIVATED doit signaler la *1ère* activation d'un
     module par une org (pour driver WAU-MAU / T2V). Sans dédup, chaque write
@@ -120,15 +189,13 @@ def log_cx_event_first_only(
         log_cx_event_first_only(
             db, org_id, user_id,
             CX_MODULE_ACTIVATED,
-            dedup_key=f'"module_key": "flex"',
+            dedup_key=make_dedup_key("module_key", "flex"),
             context={"module_key": "flex"},
         )
     """
     if event_type not in CX_EVENT_TYPES:
         return False
 
-    # Check si event existe déjà pour (org, event_type, module_key)
-    # On cherche la sous-chaîne dedup_key dans detail_json → compatible sqlite.
     existing = (
         db.query(AuditLog.id)
         .filter(
