@@ -56,6 +56,8 @@ class CostHypotheses(BaseModel):
 
     prix_forward_y1_eur_mwh: float
     facteur_forme: float
+    peakload_multiplier: float
+    peak_premium_ratio: float
     capacite_unitaire_eur_mwh: float
     capacite_source_ref: str
     vnu_statut: str = Field(..., description="'dormant' | 'actif'")

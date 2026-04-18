@@ -34,46 +34,57 @@ function formatMwh(v) {
   return MWH_FMT.format(v);
 }
 
-// Palette des composantes — ordre d'affichage stable
+// Palette des composantes — ordre d'affichage stable.
+// Couleurs choisies pour lisibilité daltonisme (deutan/protan) : hues bien
+// espacées sur le cercle chromatique, évite orange↔amber et slate↔gray
+// adjacents. Toutes >= 4.5:1 contraste sur fond blanc (WCAG AA).
 const COMPOSANTES = [
   {
     key: 'fourniture_eur',
     label: 'Fourniture énergie',
     color: 'bg-blue-500',
-    tooltip: 'Prix forward Y+1 × volume annuel. Part dominante post-ARENH.',
+    tooltip:
+      'Prix forward Y+1 × volume annuel × multiplicateur peakload (HP/HC). Part dominante post-ARENH.',
   },
   {
     key: 'turpe_eur',
     label: 'TURPE 7',
-    color: 'bg-gray-500',
-    tooltip: "Tarif d'utilisation des réseaux publics d'électricité (CRE 2025-78, août 2025).",
+    color: 'bg-zinc-500',
+    tooltip:
+      "Tarif d'utilisation des réseaux publics d'électricité (Enedis+RTE). CRE 2025-78, en vigueur 01/08/2025.",
   },
   {
     key: 'vnu_eur',
     label: 'VNU',
     color: 'bg-amber-500',
     tooltip:
-      "Versement Nucléaire Universel (Décret 2026-55, CRE 2026-52) — s'active si prix marché > seuil CRE 78 €/MWh.",
+      'Versement Nucléaire Universel (Décret 2026-55, CRE 2026-52) — taxe redistributive sur EDF, facture client = 0 même en statut actif.',
   },
   {
     key: 'capacite_eur',
     label: 'Capacité RTE',
-    color: 'bg-orange-500',
-    tooltip: 'Mécanisme centralisé (enchères PL-4 / PL-1), nov. 2026.',
+    color: 'bg-teal-500',
+    tooltip:
+      'Mécanisme centralisé acheteur unique RTE (enchères Y-4 / Y-1). Démarrage 01/11/2026, Décret 2025-1441 + Arrêté 18/03/2026.',
   },
   {
     key: 'cbam_scope',
     label: 'CBAM',
-    color: 'bg-slate-400',
-    tooltip: 'Ajustement carbone aux frontières — applicable aux imports de scope couvert.',
+    color: 'bg-rose-400',
+    tooltip:
+      "Mécanisme d'Ajustement Carbone aux Frontières — non applicable à la consommation électrique directe française (imports hors UE uniquement).",
   },
   {
     key: 'accise_cta_tva_eur',
     label: 'Taxes (accise + CTA + TVA)',
-    color: 'bg-indigo-400',
-    tooltip: "Accise sur l'électricité + Contribution Tarifaire d'Acheminement + TVA 20%.",
+    color: 'bg-violet-500',
+    tooltip:
+      "Accise sur l'électricité (ex-TICFE, selon catégorie T1/T2/HP) + Contribution Tarifaire d'Acheminement (15% × part fixe TURPE) + TVA 20%.",
   },
 ];
+
+// Années prévisionnelles exposées par l'endpoint (Query ge=2026 le=2030).
+const AVAILABLE_YEARS = [2026, 2027, 2028, 2029, 2030];
 
 function ComposanteBar({
   composanteKey,
@@ -122,15 +133,21 @@ function ComposanteBar({
   );
 }
 
-export default function CostSimulationCard({ siteId: siteIdProp, year = 2026 }) {
+export default function CostSimulationCard({ siteId: siteIdProp, year: yearProp = 2026 }) {
   const navigate = useNavigate();
   const { scope } = useScope();
 
   const resolvedSiteId = siteIdProp || scope?.siteId || null;
 
+  const [selectedYear, setSelectedYear] = useState(yearProp);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorCode, setErrorCode] = useState(null); // 404 | 500 | null
+
+  // Sync selectedYear si le parent change yearProp (forçage externe)
+  useEffect(() => {
+    setSelectedYear(yearProp);
+  }, [yearProp]);
 
   useEffect(() => {
     if (!resolvedSiteId) {
@@ -140,7 +157,7 @@ export default function CostSimulationCard({ siteId: siteIdProp, year = 2026 }) 
     let cancel = false;
     setLoading(true);
     setErrorCode(null);
-    getCostSimulation2026(resolvedSiteId, year)
+    getCostSimulation2026(resolvedSiteId, selectedYear)
       .then((d) => {
         if (!cancel) setData(d);
       })
@@ -156,7 +173,7 @@ export default function CostSimulationCard({ siteId: siteIdProp, year = 2026 }) 
     return () => {
       cancel = true;
     };
-  }, [resolvedSiteId, year]);
+  }, [resolvedSiteId, selectedYear]);
 
   const handleCta = () => {
     navigate(resolvedSiteId ? toSite(resolvedSiteId, { tab: 'achats' }) : '/achat-energie');
@@ -189,7 +206,7 @@ export default function CostSimulationCard({ siteId: siteIdProp, year = 2026 }) 
       >
         <h3 className="text-sm font-semibold text-gray-800 mb-2">Facture énergie post-ARENH</h3>
         <p className="text-xs text-gray-500">
-          Site sans simulation — contactez votre CSM pour activer la projection {year}.
+          Site sans simulation — contactez votre CSM pour activer la projection {selectedYear}.
         </p>
       </div>
     );
@@ -242,11 +259,43 @@ export default function CostSimulationCard({ siteId: siteIdProp, year = 2026 }) 
               data-testid="cost-sim-badge-post-arenh"
             >
               Post-ARENH
+              <InfoTip content="ARENH (tarif nucléaire régulé 42 €/MWh × 50% quota) supprimé au 31/12/2025. Nouveau cadre 2026+ : fourniture 100% marché, mécanisme capacité RTE centralisé, et VNU redistributif côté EDF (sans impact sur la facture client)." />
             </span>
           </div>
-          <p className="text-[11px] text-gray-500">
-            Projection {year} · {formatMwh(mwh)} MWh/an
-          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-[11px] text-gray-500">
+              Projection {selectedYear} · {formatMwh(mwh)} MWh/an
+            </p>
+            {/* Toggle group plutôt que radiogroup ARIA : évite l'obligation
+                WAI-ARIA de nav ←/→ entre items. Chaque bouton reste Tab-focusable
+                et annonce `aria-pressed` aux screen readers. */}
+            <div
+              className="inline-flex gap-0.5 p-0.5 bg-gray-100 rounded-md"
+              role="group"
+              aria-label="Année de projection"
+              data-testid="cost-sim-year-selector"
+            >
+              {AVAILABLE_YEARS.map((y) => {
+                const selected = y === selectedYear;
+                return (
+                  <button
+                    key={y}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => setSelectedYear(y)}
+                    className={`px-1.5 py-0.5 text-[10px] font-medium rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                      selected
+                        ? 'bg-white text-indigo-700 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                    data-testid={`cost-sim-year-${y}`}
+                  >
+                    {y}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
         {deltaPct != null && (
           <span
@@ -257,6 +306,13 @@ export default function CostSimulationCard({ siteId: siteIdProp, year = 2026 }) 
                   ? 'bg-red-50 text-red-700'
                   : 'bg-gray-50 text-gray-600'
             }`}
+            aria-label={
+              deltaIsNegative
+                ? `Baisse de ${Math.abs(deltaPct).toFixed(1)}% vs 2024 (HT énergie)`
+                : deltaIsPositive
+                  ? `Hausse de ${Math.abs(deltaPct).toFixed(1)}% vs 2024 (HT énergie)`
+                  : `Stable vs 2024 (HT énergie)`
+            }
             data-testid="cost-sim-delta-badge"
           >
             {deltaIsNegative ? '↓' : deltaIsPositive ? '↑' : '='} {Math.abs(deltaPct).toFixed(1)}%

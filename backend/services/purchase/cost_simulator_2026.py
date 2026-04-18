@@ -91,6 +91,11 @@ ARCHETYPE_FACTEUR_FORME = {
 # Hypothèse produit simplificatrice MVP, à préciser si besoin futur.
 BASELINE_2024_EUR_MWH = 80.0
 
+# Peak premium MVP : majoration baseload pour modéliser le prix pondéré HP/HC.
+# Calibré sur spread HP/HC tertiaire moyen 2024 (Observatoire CRE T4 2025).
+# Appliqué proportionnellement à `(1 - facteur_forme)` — site flat → 0 premium.
+PEAK_PREMIUM_RATIO = 0.15
+
 # Segment TURPE par défaut (C4_BT = tertiaire moyen, majoritaire dans portefeuille PME).
 # Si `Meter.tariff_type` renseigne C5 / C3, on bascule.
 DEFAULT_TURPE_SEGMENT = "C4_BT"
@@ -325,11 +330,17 @@ def simulate_annual_cost_2026(
     # 2. ParameterStore (YAML + DB)
     store = ParameterStore(db=db)
 
-    # 3. Fourniture énergie — forward Y+1 baseload × CDC annuel
+    # 3. Fourniture énergie — forward Y+1 baseload × CDC annuel + premium peakload
+    # Un site peaky (faible facteur de forme, ex. bureau 0.30) consomme
+    # majoritairement en HP → prix pondéré ~10-15 % au-dessus du baseload. Un
+    # site flat (facteur 0.65+, logistique frigo) reste proche du baseload.
+    # Multiplicateur MVP : `1 + peak_premium × (1 - facteur_forme)` avec
+    # `peak_premium = 0.15` calibré sur spread HP/HC tertiaire 2024 (CRE T4).
     forward_y1, trace_fwd = _resolve_forward_y1(db, year)
     if trace_fwd:
         traces.append(trace_fwd)
-    fourniture_eur = annual_mwh * forward_y1
+    peakload_multiplier = 1.0 + PEAK_PREMIUM_RATIO * (1.0 - facteur_forme)
+    fourniture_eur = annual_mwh * forward_y1 * peakload_multiplier
 
     # 4. TURPE 7 (part fixe + variable)
     # Part variable via ParameterStore (YAML aligné catalog sur ce code).
@@ -422,7 +433,13 @@ def simulate_annual_cost_2026(
     # favorable de +30-40 pts. Désormais on compare l'énergie pure HT 2024 vs
     # 2026, plus pertinent pour un acheteur (ce qu'il peut influencer par son
     # choix de contrat). Les taxes/TURPE ne varient pas significativement.
-    baseline_2024_fourniture_eur = round(annual_mwh * BASELINE_2024_EUR_MWH, 2)
+    #
+    # Le même peakload_multiplier est appliqué à la baseline 2024 : un site
+    # peaky en 2024 subissait déjà la pointe HP/HC sur son complément spot,
+    # donc comparer fourniture 2026 (profilée) à baseline 2024 flat donnerait
+    # un delta archetype-biaisé trompeur. Avec le multiplier commun, le delta
+    # isole le shift Post-ARENH (ARENH 42 × 50% + spot → forward 100%).
+    baseline_2024_fourniture_eur = round(annual_mwh * BASELINE_2024_EUR_MWH * peakload_multiplier, 2)
     delta_fourniture_ht_pct = (
         round(
             (fourniture_eur - baseline_2024_fourniture_eur) / baseline_2024_fourniture_eur * 100.0,
@@ -438,6 +455,8 @@ def simulate_annual_cost_2026(
     hypotheses = {
         "prix_forward_y1_eur_mwh": round(forward_y1, 2),
         "facteur_forme": facteur_forme,
+        "peakload_multiplier": round(peakload_multiplier, 4),
+        "peak_premium_ratio": PEAK_PREMIUM_RATIO,
         "capacite_unitaire_eur_mwh": CAPACITE_UNITAIRE_EUR_MWH,
         "capacite_source_ref": "billing_engine/catalog.py::CAPACITE_ELEC (0.43 EUR/MWh)",
         "vnu_statut": vnu_statut,
@@ -461,9 +480,10 @@ def simulate_annual_cost_2026(
         "tva_rate": tva_rate,
         "baseline_2024_eur_mwh": BASELINE_2024_EUR_MWH,
         "comparabilite_baseline": (
-            "delta_vs_2024_pct cadré HT énergie pure (fourniture uniquement). "
-            "TURPE / accise / CTA / TVA absents du baseline pour éviter la "
-            "comparaison TTC vs HT trompeuse."
+            "delta_vs_2024_pct cadré HT énergie pure (fourniture uniquement), "
+            "même peakload_multiplier appliqué aux deux côtés pour isoler le "
+            "shift Post-ARENH (baseload 80 → forward Y+1). TURPE / accise / "
+            "CTA / TVA absents du baseline pour éviter la comparaison TTC vs HT."
         ),
         "annual_kwh_resolu": annual_kwh,
         "cbam_note": "CBAM non applicable à la conso électrique directe (s'applique aux importations de biens carbonés, pas à l'acheminement). Inclus pour traçabilité auditeur.",
@@ -474,8 +494,9 @@ def simulate_annual_cost_2026(
         "fourniture_ht_eur": baseline_2024_fourniture_eur,
         "prix_moyen_pondere_eur_mwh": BASELINE_2024_EUR_MWH,
         "methode": (
-            "ARENH 42 EUR/MWh × 50 % + complément spot moyen 2024 (simplification "
-            "MVP). HT énergie uniquement pour comparaison apples-to-apples avec "
+            "ARENH 42 EUR/MWh × 50 % + complément spot moyen 2024 pondéré "
+            "par peakload_multiplier de l'archétype (simplification MVP). "
+            "HT énergie uniquement pour comparaison apples-to-apples avec "
             "`composantes.fourniture_eur` 2026."
         ),
         "delta_fourniture_ht_pct": delta_fourniture_ht_pct,

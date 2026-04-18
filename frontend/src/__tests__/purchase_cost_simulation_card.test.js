@@ -77,10 +77,10 @@ describe('CostSimulationCard — 6 composantes rendues', () => {
     expect(cardSrc).toMatch(/bg-blue-500/);
   });
 
-  it('affiche la composante TURPE (gray-500)', () => {
+  it('affiche la composante TURPE (zinc-500, daltonisme-safe)', () => {
     expect(cardSrc).toMatch(/turpe_eur/);
     expect(cardSrc).toMatch(/TURPE 7/);
-    expect(cardSrc).toMatch(/bg-gray-500/);
+    expect(cardSrc).toMatch(/bg-zinc-500/);
   });
 
   it('affiche la composante VNU avec gestion statut dormant/actif (amber-500)', () => {
@@ -91,22 +91,29 @@ describe('CostSimulationCard — 6 composantes rendues', () => {
     expect(cardSrc).toMatch(/dormant/);
   });
 
-  it('affiche la composante capacité RTE (orange-500)', () => {
+  it('affiche la composante capacité RTE (teal-500, daltonisme-safe)', () => {
     expect(cardSrc).toMatch(/capacite_eur/);
     expect(cardSrc).toMatch(/Capacité RTE/);
-    expect(cardSrc).toMatch(/bg-orange-500/);
+    expect(cardSrc).toMatch(/bg-teal-500/);
   });
 
-  it('affiche la composante CBAM (slate-400) avec "non applicable" si 0', () => {
+  it('affiche la composante CBAM (rose-400) avec "non applicable" si 0', () => {
     expect(cardSrc).toMatch(/cbam_scope/);
-    expect(cardSrc).toMatch(/bg-slate-400/);
+    expect(cardSrc).toMatch(/bg-rose-400/);
     expect(cardSrc).toMatch(/non applicable/);
   });
 
-  it('affiche la composante Taxes (accise + CTA + TVA, indigo-400)', () => {
+  it('affiche la composante Taxes (accise + CTA + TVA, violet-500)', () => {
     expect(cardSrc).toMatch(/accise_cta_tva_eur/);
     expect(cardSrc).toMatch(/Taxes/);
-    expect(cardSrc).toMatch(/bg-indigo-400/);
+    expect(cardSrc).toMatch(/bg-violet-500/);
+  });
+
+  it('palette sans voisins daltonisme-unsafe (orange↔amber, slate↔gray)', () => {
+    // Les paires problématiques sont évitées dans le rendu
+    expect(cardSrc).not.toMatch(/bg-orange-500/);
+    expect(cardSrc).not.toMatch(/bg-slate-400/);
+    expect(cardSrc).not.toMatch(/bg-gray-500/);
   });
 });
 
@@ -200,5 +207,69 @@ describe('CostSimulationCard — accessibilité', () => {
 
   it('button type="button" (pas de submit involontaire)', () => {
     expect(cardSrc).toMatch(/type=["']button["']/);
+  });
+
+  it('delta badge porte un aria-label textuel (pas seulement ↑/↓)', () => {
+    // L'arrow symbol est lu comme "symbole" par les SR, d'où l'aria-label
+    expect(cardSrc).toMatch(/aria-label=\{[\s\S]*?deltaIsNegative[\s\S]*?Baisse/);
+  });
+
+  it('year selector est un toggle group a11y (group + aria-pressed)', () => {
+    // Volontairement `role=group` + `aria-pressed` plutôt que radiogroup :
+    // évite l'obligation WAI-ARIA d'une nav ←/→ entre items. Chaque bouton
+    // reste Tab-focusable et l'état sélectionné est annoncé par les SR.
+    expect(cardSrc).toMatch(/role=["']group["']/);
+    expect(cardSrc).toMatch(/aria-label=["']Année de projection["']/);
+    expect(cardSrc).toMatch(/aria-pressed=\{selected\}/);
+  });
+});
+
+// ── Year selector (slider 2026-2030) ─────────────────────────────────
+describe('CostSimulationCard — year selector', () => {
+  it('expose AVAILABLE_YEARS = [2026..2030]', () => {
+    expect(cardSrc).toMatch(/AVAILABLE_YEARS\s*=\s*\[2026,\s*2027,\s*2028,\s*2029,\s*2030\]/);
+  });
+
+  it('utilise un state `selectedYear` initialisé depuis la prop `yearProp`', () => {
+    expect(cardSrc).toMatch(/useState\(yearProp\)/);
+    expect(cardSrc).toMatch(/\[selectedYear,\s*setSelectedYear\]/);
+  });
+
+  it('re-fetch sur changement de selectedYear (dep useEffect)', () => {
+    expect(cardSrc).toMatch(/\[resolvedSiteId,\s*selectedYear\]/);
+  });
+
+  it('testids stables par année pour Playwright', () => {
+    expect(cardSrc).toMatch(/data-testid=\{`cost-sim-year-\$\{y\}`\}/);
+    expect(cardSrc).toMatch(/data-testid=["']cost-sim-year-selector["']/);
+  });
+});
+
+// ── Tooltips CFO (Post-ARENH + composantes enrichies) ────────────────
+describe('CostSimulationCard — tooltips CFO', () => {
+  it('Post-ARENH badge porte un InfoTip expliquant la fin ARENH', () => {
+    // Le tooltip doit mentionner ARENH + fin 31/12/2025 + nouveau cadre
+    expect(cardSrc).toMatch(/tarif nucléaire régulé/);
+    expect(cardSrc).toMatch(/31\/12\/2025/);
+  });
+
+  it('tooltip VNU cite Décret 2026-55 + CRE 2026-52 et précise "facture client = 0"', () => {
+    expect(cardSrc).toMatch(/Décret 2026-55/);
+    expect(cardSrc).toMatch(/CRE 2026-52/);
+    expect(cardSrc).toMatch(/facture client = 0/);
+  });
+
+  it('tooltip Capacité cite Décret 2025-1441 + Arrêté 18/03/2026', () => {
+    expect(cardSrc).toMatch(/Décret 2025-1441/);
+    expect(cardSrc).toMatch(/Arrêté 18\/03\/2026/);
+  });
+
+  it('tooltip CBAM précise "non applicable" + "imports hors UE"', () => {
+    expect(cardSrc).toMatch(/non applicable/);
+    expect(cardSrc).toMatch(/imports hors UE/);
+  });
+
+  it('tooltip fourniture mentionne le multiplicateur peakload', () => {
+    expect(cardSrc).toMatch(/peakload/);
   });
 });

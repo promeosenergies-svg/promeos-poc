@@ -78,10 +78,13 @@ def _make_org_site(
     archetype_code: str | None = "COMMERCE_ALIMENTAIRE",
 ):
     """Helper : org + ej + pf + site minimal pour tests cost simulator."""
-    org = Organisation(nom="Test Corp", type_client="commerce", actif=True)
+    import uuid
+
+    siren = uuid.uuid4().hex[:9].upper()
+    org = Organisation(nom=f"Test Corp {siren}", type_client="commerce", actif=True)
     db.add(org)
     db.flush()
-    ej = EntiteJuridique(organisation_id=org.id, nom="Test Corp", siren="123456789")
+    ej = EntiteJuridique(organisation_id=org.id, nom=f"Test Corp {siren}", siren=siren)
     db.add(ej)
     db.flush()
     pf = Portefeuille(entite_juridique_id=ej.id, nom="Default", description="Test PF")
@@ -155,8 +158,10 @@ class TestSimulateFacture2026:
             "accise_cta_tva_eur",
         }
 
-        # Fourniture = 500 MWh × 62 EUR/MWh = 31 000 EUR
-        assert comp["fourniture_eur"] == pytest.approx(31_000.0, rel=1e-3)
+        # Fourniture = 500 MWh × 62 EUR/MWh × peakload_mult
+        # COMMERCE_ALIMENTAIRE facteur_forme 0.55 → mult = 1 + 0.15 × 0.45 = 1.0675
+        expected_fourniture = 500.0 * 62.0 * (1.0 + 0.15 * (1.0 - 0.55))
+        assert comp["fourniture_eur"] == pytest.approx(expected_fourniture, rel=1e-3)
 
         # TURPE et taxes non-nulles (YAML résolu)
         assert comp["turpe_eur"] > 0
@@ -270,14 +275,15 @@ class TestSimulateFacture2026:
 
         result = simulate_annual_cost_2026(site, db_session, year=2026)
 
-        # Baseline = 500 MWh × 80 EUR/MWh = 40 000 EUR (énergie HT pure)
-        expected_baseline = 500.0 * BASELINE_2024_EUR_MWH
+        # Baseline = 500 MWh × 80 EUR/MWh × peakload_mult (COMMERCE_ALIMENTAIRE 0.55)
+        # mult = 1 + 0.15 × 0.45 = 1.0675 → baseline = 42 700 EUR
+        peakload_mult = 1.0 + 0.15 * (1.0 - 0.55)
+        expected_baseline = 500.0 * BASELINE_2024_EUR_MWH * peakload_mult
         assert result["baseline_2024"]["fourniture_ht_eur"] == pytest.approx(expected_baseline, rel=1e-3)
         assert result["baseline_2024"]["prix_moyen_pondere_eur_mwh"] == BASELINE_2024_EUR_MWH
 
         # Delta HT énergie = (fourniture_2026 - baseline_2024) / baseline × 100
-        # Forward 62 EUR/MWh × 500 MWh = 31 000 EUR 2026 vs 40 000 EUR 2024
-        # => delta ≈ -22,5 % (baisse énergie forward post-ARENH vs spot 2024)
+        # Même multiplier des deux côtés → delta isole le shift ARENH→forward
         expected_delta_ht = (result["composantes"]["fourniture_eur"] - expected_baseline) / expected_baseline * 100.0
         assert result["delta_vs_2024_pct"] == pytest.approx(expected_delta_ht, abs=0.1)
         # Même valeur exposée dans baseline_2024.delta_fourniture_ht_pct
@@ -326,6 +332,38 @@ class TestSimulateFacture2026:
 
         result = simulate_annual_cost_2026(site, db_session, year=2026)
         assert result["hypotheses"]["accise_code_resolu"] == expected_code
+
+    def test_simulate_peakload_multiplier_par_archetype(self, db_session):
+        """Un site peaky (bureau 0.30) paie + qu'un site flat (logistique frigo 0.65)."""
+        _, bureau = _make_org_site(db_session, annual_kwh=500_000.0, archetype_code="BUREAU_STANDARD")
+        _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+
+        r_bureau = simulate_annual_cost_2026(bureau, db_session, year=2026)
+        # BUREAU_STANDARD : facteur_forme 0.30 → mult = 1 + 0.15 × 0.70 = 1.105
+        assert r_bureau["hypotheses"]["peakload_multiplier"] == pytest.approx(1.105, rel=1e-3)
+        assert r_bureau["hypotheses"]["peak_premium_ratio"] == 0.15
+
+        # Site flat (LOGISTIQUE_FRIGO 0.65) → mult = 1 + 0.15 × 0.35 = 1.0525
+        _, logistique = _make_org_site(db_session, annual_kwh=500_000.0, archetype_code="LOGISTIQUE_FRIGO")
+        r_log = simulate_annual_cost_2026(logistique, db_session, year=2026)
+        assert r_log["hypotheses"]["peakload_multiplier"] == pytest.approx(1.0525, rel=1e-3)
+
+        # Le bureau paie + cher en fourniture que le logistique (même volume, même forward)
+        assert r_bureau["composantes"]["fourniture_eur"] > r_log["composantes"]["fourniture_eur"]
+
+        # Delta vs 2024 : multiplier appliqué aux deux côtés → DELTA IDENTIQUE
+        # entre archétypes, isolant le shift Post-ARENH (baseline 80 → forward 62).
+        assert r_bureau["delta_vs_2024_pct"] == pytest.approx(r_log["delta_vs_2024_pct"], abs=0.1)
+
+    def test_simulate_archetype_inconnu_fallback_default(self, db_session):
+        """Archetype hors dict → fallback DEFAULT (facteur_forme 0.40, mult 1.09)."""
+        _, site = _make_org_site(db_session, annual_kwh=500_000.0, archetype_code="ARCHETYPE_INEXISTANT")
+        _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+        # DEFAULT facteur_forme 0.40 → mult = 1 + 0.15 × 0.60 = 1.09
+        assert result["hypotheses"]["peakload_multiplier"] == pytest.approx(1.09, rel=1e-3)
+        assert result["hypotheses"]["facteur_forme"] == 0.40
 
     def test_simulate_hypotheses_trace_complete(self, db_session):
         """Payload hypotheses contient toutes les clés du contrat agent B."""

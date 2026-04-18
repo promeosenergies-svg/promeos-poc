@@ -53,6 +53,8 @@ def _fake_cost_simulation():
         "hypotheses": {
             "prix_forward_y1_eur_mwh": 60.0,
             "facteur_forme": 0.30,
+            "peakload_multiplier": 1.105,
+            "peak_premium_ratio": 0.15,
             "capacite_unitaire_eur_mwh": 0.43,
             "capacite_source_ref": "billing_engine/catalog.py::CAPACITE_ELEC (0.43 EUR/MWh)",
             "vnu_statut": "dormant",
