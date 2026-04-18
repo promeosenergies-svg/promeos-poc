@@ -230,6 +230,22 @@ def test_endpoint_demo_site_key_404_explicite(_site_org_factory):
     )
 
 
+def test_endpoint_pydantic_extra_forbid_catch_drift(_site_org_factory, _fake_cost_simulation):
+    """Drift détection : une clé inconnue dans `hypotheses` → 500 (extra='forbid')."""
+    client, _, site, _ = _site_org_factory()
+    _fake_cost_simulation["site_id"] = str(site.id)
+    # Ajout d'une clé non déclarée dans CostHypotheses — doit être rejetée par Pydantic
+    _fake_cost_simulation["hypotheses"]["nouvelle_cle_inconnue"] = "valeur_drift"
+
+    import services.purchase.cost_simulator_2026 as cost_mod
+
+    with patch.object(cost_mod, "simulate_annual_cost_2026", return_value=_fake_cost_simulation):
+        r = client.get(f"/api/purchase/cost-simulation/{site.id}")
+
+    # Pydantic raise ValidationError → FastAPI 500
+    assert r.status_code == 500
+
+
 def test_endpoint_schema_pydantic_exhaustif(_site_org_factory, _fake_cost_simulation):
     """Valide la structure complète du payload (tous champs requis présents)."""
     client, _, site, _ = _site_org_factory()

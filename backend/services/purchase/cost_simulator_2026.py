@@ -42,7 +42,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from services.billing_engine.parameter_store import ParameterStore
-from utils.parameter_store_base import paris_today
+from utils.parameter_store_base import load_yaml_section, paris_today
 
 logger = logging.getLogger(__name__)
 
@@ -54,10 +54,6 @@ logger = logging.getLogger(__name__)
 DEFAULT_ANNUAL_KWH = 100_000.0  # Fallback si site sans conso
 DEFAULT_ARCHETYPE = "BUREAU_STANDARD"
 
-# Prix de référence fallback (EUR/MWh) si forward absent de mkt_prices.
-# YAML `prix_reference.elec_eur_kwh = 0.068` → 68 EUR/MWh.
-FALLBACK_FORWARD_EUR_MWH = 68.0
-
 # Mécanisme capacité RTE — aligné sur `billing_engine/catalog.py::CAPACITE_ELEC`
 # (enchère 06/03/2025 : 3.15 EUR/MW × coeff obligation 1.2 / 8760h ≈ 0.43 EUR/MWh).
 # Le mécanisme centralisé acheteur unique nov. 2026 conserve la même valeur
@@ -65,10 +61,18 @@ FALLBACK_FORWARD_EUR_MWH = 68.0
 # Source unique de vérité : `billing_engine/catalog.py` ligne 879.
 CAPACITE_UNITAIRE_EUR_MWH = 0.43
 
-# VNU redistributif MVP : si seuil 1 atteint, impact estimé 2 EUR/MWh
-# (hypothèse produit, à documenter dans hypotheses payload).
-VNU_IMPACT_MVP_EUR_MWH = 2.0
+# Seuil VNU par défaut (fallback hardcodé si YAML indisponible).
+# Valeur canonique dans `tarifs_reglementaires.yaml::vnu.seuil_1_eur_mwh`.
 VNU_SEUIL_DEFAUT_EUR_MWH = 78.0
+
+# Fallbacks hardcodés — constantes YAML canoniques dans `cost_simulator_2026`
+# section de `tarifs_reglementaires.yaml`. Valeurs ici uniquement pour tenir
+# les tests en mode stand-alone (YAML manquant) + exposer une cible de
+# compatibilité stable à la BC.
+FALLBACK_FORWARD_EUR_MWH = 68.0  # YAML: cost_simulator_2026.fallback_forward_eur_mwh
+BASELINE_2024_EUR_MWH_FALLBACK = 80.0  # YAML: cost_simulator_2026.baseline_eur_mwh
+VNU_IMPACT_MVP_EUR_MWH_FALLBACK = 2.0  # YAML: vnu.impact_upside_mvp_eur_mwh
+PEAK_PREMIUM_RATIO_FALLBACK = 0.15  # YAML: cost_simulator_2026.peak_premium_ratio
 
 # Facteur de forme typique par archétype (E_an / (P_max × 8760h)).
 # Aligné sur les 8 archétypes canoniques `ARCHETYPE_CALIBRATION_2024`
@@ -86,15 +90,11 @@ ARCHETYPE_FACTEUR_FORME = {
     "DEFAULT": 0.40,
 }
 
-# Baseline 2024 : pondération ARENH 42 EUR/MWh (50% quota) + complément spot
-# ~120 EUR/MWh moyenne 2024 → ~80 EUR/MWh pondéré HT énergie brute.
-# Hypothèse produit simplificatrice MVP, à préciser si besoin futur.
-BASELINE_2024_EUR_MWH = 80.0
-
-# Peak premium MVP : majoration baseload pour modéliser le prix pondéré HP/HC.
-# Calibré sur spread HP/HC tertiaire moyen 2024 (Observatoire CRE T4 2025).
-# Appliqué proportionnellement à `(1 - facteur_forme)` — site flat → 0 premium.
-PEAK_PREMIUM_RATIO = 0.15
+# Ces constantes sont conservées comme alias pour imports rétro-compatibles.
+# Les valeurs effectives proviennent de YAML (cf. `_load_simulator_params`).
+BASELINE_2024_EUR_MWH = BASELINE_2024_EUR_MWH_FALLBACK
+PEAK_PREMIUM_RATIO = PEAK_PREMIUM_RATIO_FALLBACK
+VNU_IMPACT_MVP_EUR_MWH = VNU_IMPACT_MVP_EUR_MWH_FALLBACK
 
 # Segment TURPE par défaut (C4_BT = tertiaire moyen, majoritaire dans portefeuille PME).
 # Si `Meter.tariff_type` renseigne C5 / C3, on bascule.
@@ -133,12 +133,12 @@ TURPE_FIXE_PROFILES = {
 # ── Helpers internes ─────────────────────────────────────────────────────────
 
 
-def _resolve_forward_y1(db: Session, year: int) -> tuple[float, str]:
+def _resolve_forward_y1(db: Session, year: int, fallback_eur_mwh: float) -> tuple[float, str]:
     """
     Cherche un forward baseload FR année `year` dans `mkt_prices`.
 
     Retourne (prix_eur_mwh, trace). La trace est la clé à ajouter dans
-    `source_calibration` si on a dû tomber sur le fallback.
+    `source_calibration` si on a dû tomber sur le fallback YAML-versionné.
     """
     try:
         from models.market_models import (
@@ -166,7 +166,7 @@ def _resolve_forward_y1(db: Session, year: int) -> tuple[float, str]:
     except Exception as exc:
         logger.debug("cost_simulator_2026: forward lookup failed: %s", exc)
 
-    return FALLBACK_FORWARD_EUR_MWH, "forward_indisponible_fallback_reference_price"
+    return fallback_eur_mwh, "forward_indisponible_fallback_reference_price"
 
 
 def _resolve_archetype_safe(db: Session, site) -> tuple[str, Optional[str]]:
@@ -269,23 +269,43 @@ def _resolve_accise_code(site) -> str:
     return _accise_code_for_category("elec", tp)
 
 
-def _resolve_vnu_seuil(store: ParameterStore) -> tuple[float, Optional[str]]:
-    """
-    Extrait le seuil d'activation VNU depuis le YAML `vnu.seuil_1_eur_mwh`.
+def _resolve_vnu_seuil(store: ParameterStore) -> tuple[float, Optional[str], float]:
+    """Extrait seuil + impact upside VNU depuis `tarifs_reglementaires.yaml::vnu`.
 
-    VNU n'est pas versionné via ParameterStore (pas de code canonique)
-    — on lit directement la section YAML via le loader partagé.
+    Retourne `(seuil_eur_mwh, source_ref, impact_upside_eur_mwh)`. Fallback
+    hardcodé si YAML absent.
     """
     try:
-        from utils.parameter_store_base import load_yaml_section
-
         vnu = load_yaml_section("vnu") or {}
-        seuil = vnu.get("seuil_1_eur_mwh")
-        if seuil is not None:
-            return float(seuil), vnu.get("source")
+        seuil = float(vnu.get("seuil_1_eur_mwh", VNU_SEUIL_DEFAUT_EUR_MWH))
+        impact = float(vnu.get("impact_upside_mvp_eur_mwh", VNU_IMPACT_MVP_EUR_MWH_FALLBACK))
+        return seuil, vnu.get("source"), impact
     except Exception as exc:
         logger.debug("cost_simulator_2026: vnu lookup failed: %s", exc)
-    return VNU_SEUIL_DEFAUT_EUR_MWH, None
+    return VNU_SEUIL_DEFAUT_EUR_MWH, None, VNU_IMPACT_MVP_EUR_MWH_FALLBACK
+
+
+def _load_simulator_params() -> dict[str, float]:
+    """Charge les paramètres MVP versionnés depuis YAML.
+
+    `tarifs_reglementaires.yaml::cost_simulator_2026` fournit `baseline_eur_mwh`,
+    `fallback_forward_eur_mwh`, `peak_premium_ratio`. Fallback hardcodé en cas
+    d'indisponibilité (test en mémoire sans fichier YAML).
+    """
+    try:
+        section = load_yaml_section("cost_simulator_2026") or {}
+        return {
+            "baseline_eur_mwh": float(section.get("baseline_eur_mwh", BASELINE_2024_EUR_MWH_FALLBACK)),
+            "fallback_forward_eur_mwh": float(section.get("fallback_forward_eur_mwh", FALLBACK_FORWARD_EUR_MWH)),
+            "peak_premium_ratio": float(section.get("peak_premium_ratio", PEAK_PREMIUM_RATIO_FALLBACK)),
+        }
+    except Exception as exc:
+        logger.debug("cost_simulator_2026: simulator params lookup failed: %s", exc)
+    return {
+        "baseline_eur_mwh": BASELINE_2024_EUR_MWH_FALLBACK,
+        "fallback_forward_eur_mwh": FALLBACK_FORWARD_EUR_MWH,
+        "peak_premium_ratio": PEAK_PREMIUM_RATIO_FALLBACK,
+    }
 
 
 # ── Interface publique ──────────────────────────────────────────────────────
@@ -314,6 +334,12 @@ def simulate_annual_cost_2026(
     """
     at_date = (now.date() if isinstance(now, datetime) else None) or paris_today()
 
+    # 0. Chargement des constantes MVP versionnées (YAML).
+    sim_params = _load_simulator_params()
+    baseline_eur_mwh = sim_params["baseline_eur_mwh"]
+    peak_premium_ratio = sim_params["peak_premium_ratio"]
+    fallback_forward = sim_params["fallback_forward_eur_mwh"]
+
     # 1. Normalisation inputs site
     annual_kwh, trace_kwh = _resolve_annual_kwh(site)
     annual_mwh = annual_kwh / 1000.0
@@ -336,10 +362,10 @@ def simulate_annual_cost_2026(
     # site flat (facteur 0.65+, logistique frigo) reste proche du baseload.
     # Multiplicateur MVP : `1 + peak_premium × (1 - facteur_forme)` avec
     # `peak_premium = 0.15` calibré sur spread HP/HC tertiaire 2024 (CRE T4).
-    forward_y1, trace_fwd = _resolve_forward_y1(db, year)
+    forward_y1, trace_fwd = _resolve_forward_y1(db, year, fallback_forward)
     if trace_fwd:
         traces.append(trace_fwd)
-    peakload_multiplier = 1.0 + PEAK_PREMIUM_RATIO * (1.0 - facteur_forme)
+    peakload_multiplier = 1.0 + peak_premium_ratio * (1.0 - facteur_forme)
     fourniture_eur = annual_mwh * forward_y1 * peakload_multiplier
 
     # 4. TURPE 7 (part fixe + variable)
@@ -376,10 +402,10 @@ def simulate_annual_cost_2026(
     # consommateur final. L'additionner à la facture client comme auparavant
     # gonflait artificiellement le total de ~2 EUR/MWh quand "actif". On expose
     # désormais le statut + risque upside dans `hypotheses`, facture toujours = 0.
-    vnu_seuil, vnu_source_ref = _resolve_vnu_seuil(store)
+    vnu_seuil, vnu_source_ref, vnu_impact = _resolve_vnu_seuil(store)
     vnu_statut = "dormant" if forward_y1 < vnu_seuil else "actif"
     vnu_eur = 0.0
-    vnu_risque_upside_eur_mwh = VNU_IMPACT_MVP_EUR_MWH if vnu_statut == "actif" else 0.0
+    vnu_risque_upside_eur_mwh = vnu_impact if vnu_statut == "actif" else 0.0
 
     # 6. Mécanisme capacité RTE — plein exercice annuel.
     # Cohérence avec `billing_engine/catalog.py` : le basculement mécanisme
@@ -439,7 +465,7 @@ def simulate_annual_cost_2026(
     # donc comparer fourniture 2026 (profilée) à baseline 2024 flat donnerait
     # un delta archetype-biaisé trompeur. Avec le multiplier commun, le delta
     # isole le shift Post-ARENH (ARENH 42 × 50% + spot → forward 100%).
-    baseline_2024_fourniture_eur = round(annual_mwh * BASELINE_2024_EUR_MWH * peakload_multiplier, 2)
+    baseline_2024_fourniture_eur = round(annual_mwh * baseline_eur_mwh * peakload_multiplier, 2)
     delta_fourniture_ht_pct = (
         round(
             (fourniture_eur - baseline_2024_fourniture_eur) / baseline_2024_fourniture_eur * 100.0,
@@ -456,7 +482,7 @@ def simulate_annual_cost_2026(
         "prix_forward_y1_eur_mwh": round(forward_y1, 2),
         "facteur_forme": facteur_forme,
         "peakload_multiplier": round(peakload_multiplier, 4),
-        "peak_premium_ratio": PEAK_PREMIUM_RATIO,
+        "peak_premium_ratio": peak_premium_ratio,
         "capacite_unitaire_eur_mwh": CAPACITE_UNITAIRE_EUR_MWH,
         "capacite_source_ref": "billing_engine/catalog.py::CAPACITE_ELEC (0.43 EUR/MWh)",
         "vnu_statut": vnu_statut,
@@ -478,7 +504,7 @@ def simulate_annual_cost_2026(
         "accise_eur_kwh": round(accise_eur_kwh, 5),
         "cta_rate": cta_rate,
         "tva_rate": tva_rate,
-        "baseline_2024_eur_mwh": BASELINE_2024_EUR_MWH,
+        "baseline_2024_eur_mwh": baseline_eur_mwh,
         "comparabilite_baseline": (
             "delta_vs_2024_pct cadré HT énergie pure (fourniture uniquement), "
             "même peakload_multiplier appliqué aux deux côtés pour isoler le "
@@ -492,7 +518,7 @@ def simulate_annual_cost_2026(
 
     baseline_2024 = {
         "fourniture_ht_eur": baseline_2024_fourniture_eur,
-        "prix_moyen_pondere_eur_mwh": BASELINE_2024_EUR_MWH,
+        "prix_moyen_pondere_eur_mwh": baseline_eur_mwh,
         "methode": (
             "ARENH 42 EUR/MWh × 50 % + complément spot moyen 2024 pondéré "
             "par peakload_multiplier de l'archétype (simplification MVP). "

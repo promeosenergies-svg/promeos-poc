@@ -23,7 +23,7 @@ import logging
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -40,6 +40,8 @@ router = APIRouter(prefix="/api/purchase/cost-simulation", tags=["Achat Energie 
 class CostComposantes(BaseModel):
     """Décomposition des 6 composantes de la facture prévisionnelle post-ARENH."""
 
+    model_config = ConfigDict(extra="forbid")
+
     fourniture_eur: float = Field(..., description="Fourniture énergie (forward baseload × CDC annuel)")
     turpe_eur: float = Field(..., description="TURPE 7 (part fixe + variable)")
     vnu_eur: float = Field(
@@ -53,6 +55,8 @@ class CostComposantes(BaseModel):
 
 class CostHypotheses(BaseModel):
     """Hypothèses MVP documentées (contrat stable côté frontend)."""
+
+    model_config = ConfigDict(extra="forbid")
 
     prix_forward_y1_eur_mwh: float
     facteur_forme: float
@@ -85,6 +89,8 @@ class CostHypotheses(BaseModel):
 
 class Baseline2024(BaseModel):
     """Estimation facture historique ARENH 2024 HT pour delta comparable."""
+
+    model_config = ConfigDict(extra="forbid")
 
     fourniture_ht_eur: float
     prix_moyen_pondere_eur_mwh: float

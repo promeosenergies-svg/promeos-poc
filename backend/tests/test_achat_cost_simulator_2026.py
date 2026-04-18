@@ -355,6 +355,23 @@ class TestSimulateFacture2026:
         # entre archétypes, isolant le shift Post-ARENH (baseline 80 → forward 62).
         assert r_bureau["delta_vs_2024_pct"] == pytest.approx(r_log["delta_vs_2024_pct"], abs=0.1)
 
+    def test_simulate_params_lus_depuis_yaml(self, db_session):
+        """Les constantes MVP (baseline, fallback forward, peak_premium) viennent du YAML."""
+        from services.purchase.cost_simulator_2026 import _load_simulator_params
+
+        params = _load_simulator_params()
+        # Valeurs actuelles dans tarifs_reglementaires.yaml::cost_simulator_2026
+        assert params["baseline_eur_mwh"] == pytest.approx(80.0, rel=1e-3)
+        assert params["fallback_forward_eur_mwh"] == pytest.approx(68.0, rel=1e-3)
+        assert params["peak_premium_ratio"] == pytest.approx(0.15, rel=1e-3)
+
+        # Le service les expose dans hypotheses (traçabilité auditeur)
+        _, site = _make_org_site(db_session, annual_kwh=500_000.0)
+        _seed_forward(db_session, year=2026, price_eur_mwh=62.0)
+        result = simulate_annual_cost_2026(site, db_session, year=2026)
+        assert result["hypotheses"]["baseline_2024_eur_mwh"] == pytest.approx(80.0, rel=1e-3)
+        assert result["hypotheses"]["peak_premium_ratio"] == pytest.approx(0.15, rel=1e-3)
+
     def test_simulate_archetype_inconnu_fallback_default(self, db_session):
         """Archetype hors dict → fallback DEFAULT (facteur_forme 0.40, mult 1.09)."""
         _, site = _make_org_site(db_session, annual_kwh=500_000.0, archetype_code="ARCHETYPE_INEXISTANT")

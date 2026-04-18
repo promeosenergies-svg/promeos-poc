@@ -467,8 +467,9 @@ tva:
 vnu:
   seuil_1_eur_mwh: 78.0
   seuil_2_eur_mwh: 110.0
+  impact_upside_mvp_eur_mwh: 2.0
   statut: "EN VIGUEUR — DORMANT (prix marché ~60 €/MWh < seuil 78)"
-  source: "Loi de souveraineté énergétique — VNU au 01/01/2026"
+  source: "Loi de souveraineté énergétique — VNU au 01/01/2026 (Décret 2026-55, CRE 2026-52)"
   valid_from: "2026-01-01"
   revision_triennale: "~2028 (CRE)"
   note: "L'ancien ARENH (42 EUR/MWh) n'est plus applicable. Ne plus utiliser comme référence de prix."
@@ -478,6 +479,18 @@ prix_reference:
   elec_eur_kwh: 0.068
   gaz_eur_kwh: 0.045
   source: "PROMEOS POC fallback (EPEX Spot 30j moyen)"
+
+# ── Cost Simulator post-ARENH MVP — constantes versionnées ─────────────────
+# Utilisées par `services/purchase/cost_simulator_2026.py`. Migration depuis
+# constantes hardcodées vers YAML pour traçabilité + versioning par date
+# d'effet (cohérent avec le reste du référentiel CRE).
+cost_simulator_2026:
+  baseline_eur_mwh: 80.0  # ARENH 42 × 50% + complément spot 2024 (~120 × 50%)
+  fallback_forward_eur_mwh: 68.0  # Si mkt_prices vide (= prix_reference.elec_eur_kwh × 1000)
+  peak_premium_ratio: 0.15  # Majoration HP/HC baseload, calibrée Observatoire CRE T4 2025
+  source: "PROMEOS MVP post-ARENH — calibration Observatoire CRE T4 2025 + baromètre CRE bulletin marchés de gros 2025"
+  valid_from: "2026-01-01"
+  valid_to: null
 
 # ── Pilotage Flex Ready® — paramètres MVP ROI + scoring portefeuille ───────
 # Constantes indicatives (pas des engagements commerciaux) utilisées par :
