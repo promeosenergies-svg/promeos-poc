@@ -5,13 +5,15 @@
  * "fenetre favorable probable" (pas "prix negatif").
  *
  * Source : Barometre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026).
+ *
+ * Sprint CX UX migration (5/66) : list items rendus via <FindingCard>.
+ * Header + footer conservés (pattern spécifique card pilotage).
  */
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarPlus } from 'lucide-react';
 import { getRadarPrixNegatifs } from '../../services/api/pilotage';
 import { useActionDrawer } from '../../contexts/ActionDrawerContext';
 import { useScope } from '../../contexts/ScopeContext';
-import { Skeleton, InfoTip } from '../../ui';
+import { Skeleton, InfoTip, FindingCard } from '../../ui';
 
 // Formatteurs Intl forces sur Europe/Paris -- independant du fuseau navigateur.
 // Les backends renvoient des ISO aware Europe/Paris (ex. 2026-04-22T10:00+02:00),
@@ -45,6 +47,16 @@ const USAGE_LABEL = {
   ve_recharge: 'Recharge VE',
   pre_charge_froid: 'Pré-charge froid',
 };
+
+// Map probabilité 0-1 → FindingCard severity (4 niveaux).
+// Probabilité élevée = opportunité forte à saisir (mapping "positif" = high severity
+// d'opportunité manquée si non saisi, pas de "danger" réglementaire).
+function probToSeverity(p) {
+  if (p == null) return 'low';
+  if (p >= 0.75) return 'high';
+  if (p >= 0.5) return 'medium';
+  return 'low';
+}
 
 export default function RadarPrixNegatifsCard({ horizonDays = 7 }) {
   const { openActionDrawer } = useActionDrawer();
@@ -83,9 +95,6 @@ export default function RadarPrixNegatifsCard({ horizonDays = 7 }) {
     if (!hasSite) return;
     const datetime = fenetre?.datetime_debut;
     const usages = (fenetre?.usages_recommandes || []).map((u) => USAGE_LABEL[u] || u).join(' · ');
-    // `ActionSourceType.PILOTAGE` est accepté en création directe côté backend
-    // (cf. backend/routes/actions.py + enums.py). SourceId identifie le signal
-    // radar pour idempotency du drawer (sans préfixe hack).
     openActionDrawer({
       siteId: scope.siteId,
       sourceType: 'pilotage',
@@ -131,9 +140,6 @@ export default function RadarPrixNegatifsCard({ horizonDays = 7 }) {
 
   const emptyMsg =
     'Historique insuffisant ou aucune récurrence détectée sur l’horizon demandé. Revenez demain.';
-  const ctaTitle = hasSite
-    ? 'Créer une action planifiée pour cette fenêtre'
-    : 'Sélectionnez un site pour planifier un décalage';
 
   return (
     <div
@@ -155,44 +161,27 @@ export default function RadarPrixNegatifsCard({ horizonDays = 7 }) {
       {topFenetres.length === 0 ? (
         <p className="text-xs text-gray-500">{emptyMsg}</p>
       ) : (
-        <ul className="space-y-2">
-          {topFenetres.map((f, idx) => (
-            <li
-              key={`${f.datetime_debut}-${idx}`}
-              className="flex items-center justify-between gap-3 text-xs border border-gray-100 rounded-lg px-2.5 py-2"
-              data-testid={`pilotage-radar-row-${idx}`}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-gray-900">
-                  {formatRange(f.datetime_debut, f.datetime_fin)}
-                </div>
-                <div className="text-[10px] text-gray-500 mt-0.5">
-                  {(f.usages_recommandes || []).map((u) => USAGE_LABEL[u] || u).join(' · ') ||
-                    'Décaler les usages flexibles'}
-                </div>
-              </div>
-              <div className="flex items-center gap-3 shrink-0 text-right whitespace-nowrap">
-                <div>
-                  <div className="text-sm font-semibold text-emerald-700">
-                    {Math.round((f.probabilite || 0) * 100)}%
-                  </div>
-                  <div className="text-[10px] text-gray-400">probable</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handlePlanifier(f, idx)}
-                  disabled={!hasSite}
-                  className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-700 hover:text-indigo-900 hover:underline disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:no-underline"
-                  title={ctaTitle}
-                  data-testid={`pilotage-radar-cta-${idx}`}
-                >
-                  <CalendarPlus size={12} />
-                  Planifier
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-2" data-testid="pilotage-radar-list">
+          {topFenetres.map((f, idx) => {
+            const usages =
+              (f.usages_recommandes || []).map((u) => USAGE_LABEL[u] || u).join(' · ') ||
+              'Décaler les usages flexibles';
+            return (
+              <FindingCard
+                key={`${f.datetime_debut}-${idx}`}
+                compact
+                priority={idx + 1}
+                severity={probToSeverity(f.probabilite)}
+                category="flex"
+                title={formatRange(f.datetime_debut, f.datetime_fin)}
+                description={usages}
+                confidence={f.probabilite}
+                actionLabel={hasSite ? 'Planifier' : undefined}
+                onAction={hasSite ? () => handlePlanifier(f, idx) : undefined}
+              />
+            );
+          })}
+        </div>
       )}
 
       <div className="flex items-center justify-between text-[10px] text-gray-400 mt-auto pt-1 border-t border-gray-100">
