@@ -416,12 +416,11 @@ def simulate_annual_cost_2026(
     capacite_eur = annual_mwh * CAPACITE_UNITAIRE_EUR_MWH
 
     # 7. CBAM — délégué à la brique dédiée (P3 wedge stratégique).
-    # HOOK EXPÉRIMENTAL : `site.cbam_imports_tonnes` n'est pas une colonne du
-    # model Site — c'est un attribut runtime-only (attaché via setattr dans
-    # les tests ou par un futur pipeline d'intake industriel). En production
-    # standard, aucun site n'a cet attribut → getattr retourne None → brique
-    # renvoie `applicable=False` avec note pédagogique. Migration Site
-    # nécessaire pour activer l'exposition réelle à grande échelle.
+    # Colonnes JSON sur `Site` depuis migration `add_cbam_fields_to_site` :
+    #   - `cbam_imports_tonnes` : {scope: tonnes/an} hors UE par scope CBAM
+    #   - `cbam_intensities_tco2_per_t` : override site-specific des défauts CE
+    # Null/vide → `applicable=False` avec note pédagogique (cas général
+    # tertiaire standard). Rempli pour sites industriels démo (seed CBAM).
     cbam_imports = getattr(site, "cbam_imports_tonnes", None) or {}
     cbam_intensities = getattr(site, "cbam_intensities_tco2_per_t", None) or None
     cbam_result = compute_cbam(cbam_imports, at_date, site_specific_intensities=cbam_intensities)

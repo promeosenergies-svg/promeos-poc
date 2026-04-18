@@ -43,6 +43,9 @@ pymupdf>=1.24.0
 # Excel parsing (Patrimoine wizard)
 openpyxl>=3.1.0
 
+# Rate limiting (public endpoints)
+slowapi>=0.1.9
+
 # Dev & Testing
 pytest>=7.4.3
 pytest-asyncio>=0.21.1

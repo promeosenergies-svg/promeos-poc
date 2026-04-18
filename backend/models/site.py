@@ -3,7 +3,7 @@ PROMEOS - Modèle Site
 Coeur du domaine : site de consommation énergétique
 """
 
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Boolean, DateTime
+from sqlalchemy import JSON, Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import TypeSite, StatutConformite, ParkingType, OperatStatus
@@ -86,6 +86,21 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
         Float,
         nullable=True,
         comment="Puissance pilotable/décalable estimée (kW), pour scoring portefeuille",
+    )
+
+    # CBAM — exposition industrielle hors UE (Règlement UE 2023/956).
+    # JSON : {scope: tonnes_annuelles} pour chaque scope CBAM (acier, ciment,
+    # aluminium, engrais, hydrogène, électricité). Null/vide = non applicable.
+    cbam_imports_tonnes = Column(
+        JSON,
+        nullable=True,
+        comment="Volumes annuels d'importation hors UE par scope CBAM (tonnes/an)",
+    )
+    # Optionnel : intensités carbone site-specific vérifiées (override défauts CE).
+    cbam_intensities_tco2_per_t = Column(
+        JSON,
+        nullable=True,
+        comment="Intensités carbone vérifiées par scope (tCO2/t) — surcharge défauts CE",
     )
 
     @property

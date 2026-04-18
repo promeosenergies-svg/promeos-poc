@@ -111,6 +111,17 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Rate limiter (slowapi) — scoped aux endpoints qui utilisent `@limiter.limit(...)`.
+# Used by `/api/public/*` (wedge Sirene, partenaires CCI/Medef) pour prévenir
+# DoS + épuisement quota API gouv + pollution table Sirene.
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address, default_limits=[])
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # Global error handlers (HTTPException, ValidationError, unhandled)
 register_error_handlers(app)
 
@@ -177,10 +188,7 @@ app.include_router(flex_score_router)  # Flex Score Engine (15 usages, NEBCO, pr
 app.include_router(billing_usage_router)  # Shadow bill ventilation par usage via archetype
 app.include_router(purchase_strategy_router)  # Purchase strategy recommender via archetype + CDC
 app.include_router(purchase_cost_simulation_router)  # Cost simulator 2026+ décomposée (post-ARENH)
-# Public diagnostic (wedge Sirene P2) — opt-in via env flag tant que le rate
-# limiting (`slowapi`) n'est pas en place. Éviter exposition accidentelle.
-if os.environ.get("PROMEOS_ENABLE_PUBLIC_DIAGNOSTIC") == "true":
-    app.include_router(public_diagnostic_router)
+app.include_router(public_diagnostic_router)  # Public freemium wedge Sirene (slowapi rate-limited)
 app.include_router(analytics_router)  # Analytics: usage disaggregation (CDC -> usages via 3 couches)
 if os.environ.get("PROMEOS_ENV") != "production":
     app.include_router(dev_tools_router)  # Dev Tools (reset_db)
