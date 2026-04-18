@@ -192,43 +192,53 @@ Patterns existants à **ne PAS reproduire** :
 
 ## Décisions UX (ajout post-Phase 1, session 2026-04-18)
 
-### UX-1 · Maquette source de vérité : **V2 polished**
+### UX-1 · Maquette source de vérité : **V2 raw** (correction 2026-04-18)
 
 **Décision** : l'UI Sol V1 livré Sprint 3+ s'inspire strictement de
-`docs/sol/maquettes/cockpit-sol-v1-adjusted-v2-polished.html`.
+`docs/sol/maquettes/cockpit-sol-v1-adjusted-v2.html` (V2 raw, PAS V2 polished).
 
-**Historique** :
+**Historique + correction** :
 - Original (ivoire crème + Fraunces partout) → retour entourage UX : "trop éditorial"
 - V1 (désaturation douce) → conservé comme référence comparative
-- V2 (dashboard-first, style Linear/Arc) → adopté comme direction
-- V2 polished (palette harmonisée + KPI hiérarchie + courbe premium) → **locked**
+- V2 raw (dashboard-first, slate neutre + accents warm préservés) → **adopté comme base locked**
+- V2 polished → expérimentation post-validation, **PAS retenu** comme base (va trop loin vers Tailwind-standard, perd la chaleur émotionnelle Sol)
 
-**Raison** : Sol V1 = différenciant démo levée seed 30/06/2026. V2 polished
-trouve l'équilibre entre distinctif (voice Sol, Sol-hero card signature,
-Sol-cartouche) et professionnel (dashboard dense, slate moderne,
-tabular-nums). Convient pour un investisseur B2B scrollant 10 secondes.
+**Raison** : V2 raw trouve l'équilibre unique — fond slate neutre moderne
+(#F8F9FA / #0F172A) + accents émotionnels **warm hérités** préservés
+(calme bleu-vert doux `#2F6B5E`, attention ambre chaleureux `#A06B1A`,
+afaire orange corail `#B8552E`, succès vert forêt `#2E6B4A`). Cette
+combinaison est distinctive : aucun concurrent énergie ne combine slate
+base + accents warm. V2 polished va full Tailwind normalisé et perd
+cette signature.
 
 **Implications concrètes pour Sprint 3+ UI** :
 - Palette `solTokens` dans `frontend/src/ui/tokens.js` (nouveau namespace) :
   - bg canvas `#F8F9FA`, paper `#FFFFFF`, panel `#F3F4F6`
-  - ink slate-900 `#0F172A` (900) → `#94A3B8` (400)
-  - accents : emerald-600 (calme), amber-600 (attention), orange-600 (afaire), green-600 (succes)
-  - tariff : rose-600 (HP), sky-600 (HC)
+  - ink slate-900 `#0F172A` → `#94A3B8` (slate scale)
+  - **Accents émotionnels warm** (signature Sol, pas Tailwind) :
+    - calme `#2F6B5E` fg / `#E3F0ED` bg (bleu-vert doux)
+    - attention `#A06B1A` fg / `#F6EAD2` bg (ambre chaleureux)
+    - afaire `#B8552E` fg / `#F7E4D8` bg (orange corail, pas punitif)
+    - succes `#2E6B4A` fg / `#DFEDE3` bg (vert forêt)
+  - Tariff : `#B84545` HP (rose terne), `#2E4A6B` HC (bleu nuit) — **warm préservés**
 - Fonts : DM Sans (400/500/600) + JetBrains Mono (400/500) + Fraunces
   uniquement sur rail-logo "P." (signature discrète, pas corps de page)
 - Wrapper `.sol-surface` appliqué au `<AppShell>` uniquement sur routes
   cockpit Sol — isolation CSS stricte, V7 Rail/Panel existante préservée
-- KPI hiérarchie : value mono tabular-nums 28px weight 700, label 10px
-  uppercase tracking 0.12em, delta pill compact (emerald/amber selon sens)
-- Courbe de charge : card wrapper (border-radius 8, shadow subtle),
-  linearGradient area fill opacity 0.12→0, stroke slate-900 2px
-- Radius system : 4px (pills) / 6px (buttons, cards small) / 8px (cards, card chunks)
+- KPI hiérarchie V2 raw : value mono 24px weight 600, label 10.5px,
+  delta triangle inline (pas pill). **Polish KPI V2 polished = backlog
+  refinement possible**, pas locked.
+- Courbe de charge V2 raw : card wrapper simple. **Polish gradient +
+  stroke slate-900 épais V2 polished = backlog refinement**, pas locked.
+- Radius system : 3-6px modérés (cohérent V2 raw, pas 8px polished).
 
 **Maquettes conservées** :
 - Original (`cockpit-sol-v1.html`) : archivé comme référence éditoriale
 - V1 désaturation douce (`cockpit-sol-v1-adjusted-v1.html`) : archivé
-- V2 raw (`cockpit-sol-v1-adjusted-v2.html`) : archivé (step intermédiaire)
-- V2 polished (`cockpit-sol-v1-adjusted-v2-polished.html`) : **source de vérité**
+- **V2 raw (`cockpit-sol-v1-adjusted-v2.html`) : SOURCE DE VÉRITÉ**
+- V2 polished (`cockpit-sol-v1-adjusted-v2-polished.html`) : archivé comme
+  candidat refinement palette + hiérarchie KPI + courbe — à revisiter
+  Sprint 3+ si tests utilisateurs pointent carence de cohérence
 - Rapport comex (`rapport-comex-sol-v1.html`) : **conservé en registre
   éditorial** (livrable imprimé mensuel, Fraunces justifié)
 
