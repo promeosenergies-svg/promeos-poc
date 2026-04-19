@@ -965,6 +965,126 @@ export const PANEL_SECTIONS_BY_ROUTE = {
       ],
     },
   ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // Anomalies (Lot 2 Phase 2) — Pattern B pur
+  // ─────────────────────────────────────────────────────────────────────────
+  '/anomalies': [
+    {
+      key: 'anomalies_vue',
+      label: 'Anomalies',
+      items: [
+        { to: '/anomalies', label: 'Toutes', desc: 'Vue consolidée · filtres site/type/sévérité' },
+        { to: '/anomalies?fw=DECRET_TERTIAIRE', label: 'Décret Tertiaire', desc: 'Dérives trajectoire DT' },
+        { to: '/anomalies?fw=FACTURATION', label: 'Facturation', desc: 'Écarts shadow billing' },
+        { to: '/anomalies?fw=BACS', label: 'BACS', desc: 'GTB/GTC non conforme' },
+      ],
+    },
+    {
+      key: 'anomalies_actions',
+      label: 'Actions',
+      items: [
+        { to: '/actions', label: "Journal d'actions", desc: 'Historique résolutions', badgeKey: 'actions' },
+      ],
+    },
+  ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // Contrats (Lot 2 Phase 3) — Pattern B pur
+  // ─────────────────────────────────────────────────────────────────────────
+  '/contrats': [
+    {
+      key: 'contrats_vue',
+      label: 'Contrats',
+      items: [
+        { to: '/contrats', label: 'Tous', desc: 'Cadres + annexes multi-sites' },
+        { to: '/contrats?filter=expiring', label: 'Expirant 90 j', desc: 'Renouvellements imminents' },
+        { to: '/contrats?filter=active', label: 'Actifs', desc: 'Contrats en cours' },
+      ],
+    },
+    {
+      key: 'contrats_liens',
+      label: "Achat d'énergie",
+      items: [
+        { to: '/renouvellements', label: 'Radar renouvellement', desc: 'Échéances DAF' },
+        { to: '/achat-energie', label: "Achat énergie", desc: 'Scénarios prix marché' },
+      ],
+    },
+  ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // Renouvellements (Lot 2 Phase 4) — Pattern B pur
+  // ─────────────────────────────────────────────────────────────────────────
+  '/renouvellements': [
+    {
+      key: 'radar',
+      label: 'Radar échéances',
+      items: [
+        { to: '/renouvellements?horizon=90', label: '90 jours', desc: 'Urgent — action immédiate' },
+        { to: '/renouvellements?horizon=180', label: '180 jours', desc: 'Fenêtre de préparation' },
+        { to: '/renouvellements?horizon=365', label: '12 mois', desc: 'Pipeline annuel' },
+      ],
+    },
+    {
+      key: 'renouvellements_liens',
+      label: 'Contexte',
+      items: [
+        { to: '/contrats', label: 'Fiches contrats', desc: 'Cadres + annexes' },
+      ],
+    },
+  ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // Usages (Lot 2 Phase 5) — Pattern A hybride
+  // ─────────────────────────────────────────────────────────────────────────
+  '/usages': [
+    {
+      key: 'usages_vue',
+      label: 'Usages énergétiques',
+      items: [
+        { to: '/usages', label: "Vue d'ensemble", desc: 'Répartition par usage' },
+        { to: '/usages-horaires', label: 'Profils horaires', desc: 'Tranches HP/HC · signature' },
+      ],
+    },
+    {
+      key: 'usages_context',
+      label: 'Contexte',
+      items: [
+        { to: '/diagnostic-conso', label: 'Diagnostic', desc: 'Détection anomalies conso' },
+        { to: '/monitoring', label: 'Monitoring', desc: 'Trajectoire patrimoine' },
+      ],
+    },
+  ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // Usages horaires (Lot 2 Phase 6) — Pattern A hybride compact
+  // ─────────────────────────────────────────────────────────────────────────
+  '/usages-horaires': [
+    {
+      key: 'horaires_vue',
+      label: 'Profils horaires',
+      items: [
+        { to: '/usages-horaires?tab=profile', label: 'Profil journalier', desc: 'Heatmap 24 h × 7 j' },
+        { to: '/usages-horaires?tab=horaires', label: 'Tranches HP/HC', desc: 'Détection anomalies horaires' },
+      ],
+    },
+    {
+      key: 'horaires_liens',
+      label: 'Contexte',
+      items: [
+        { to: '/usages', label: 'Usages globaux', desc: 'Vue agrégée' },
+      ],
+    },
+  ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // Watchers (Lot 2 Phase 7) — Pattern B avec prélude cards
+  // ─────────────────────────────────────────────────────────────────────────
+  '/watchers': [
+    {
+      key: 'watchers_vue',
+      label: 'Veille',
+      items: [
+        { to: '/watchers', label: 'Événements', desc: 'Dernières mises à jour' },
+        { to: '/watchers?status=new', label: 'À traiter', desc: 'Revue requise' },
+        { to: '/watchers?status=applied', label: 'Appliqués', desc: 'Historique intégrations' },
+      ],
+    },
+  ],
 };
 
 /**

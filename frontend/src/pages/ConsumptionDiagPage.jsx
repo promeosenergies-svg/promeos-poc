@@ -972,7 +972,7 @@ export default function ConsumptionDiagPage() {
         </div>
       )}
 
-      {/* V15-B: Scope badge */}
+      {/* V15-B: Scope badge + période */}
       <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
         <span>Périmètre :</span>
         <span className="font-medium text-gray-700">{scopeLabel}</span>
@@ -981,6 +981,9 @@ export default function ConsumptionDiagPage() {
             Vue filtrée
           </span>
         )}
+        <span className="text-gray-400 ml-2">
+          Période : {period.start} — {period.end} ({period.days}j)
+        </span>
       </div>
 
       {/* V15-B: Scope mismatch banner */}

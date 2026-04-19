@@ -35,6 +35,10 @@ import {
   SolBreadcrumb,
   SolEntityCard,
   SolTimeline,
+  SolListPage,
+  SolExpertToolbar,
+  SolExpertGridFull,
+  SolPagination,
 } from '../ui/sol';
 
 // U+202F thin NBSP et U+00A0 NBSP
@@ -114,9 +118,33 @@ const EXPERT_ROWS = [
   { key: 'paris', cells: { site: 'Paris Centre', surface: '4 820 m²', conso: '541 MWh', score: '82', status: <SolStatusPill kind="ok">Conforme</SolStatusPill> } },
 ];
 
+// Pattern B démo — filtres, rows, pagination
+const LIST_COLUMNS = [
+  { id: 'site', label: 'Site', sortable: true, align: 'left' },
+  { id: 'type', label: 'Type', sortable: true, align: 'left' },
+  { id: 'severity', label: 'Sévérité', sortable: true, align: 'left' },
+  { id: 'impact', label: 'Impact', sortable: true, align: 'right' },
+  { id: 'status', label: 'Statut', sortable: true, align: 'left' },
+];
+const LIST_ROWS = [
+  { id: 1, cells: { site: 'Lyon Sud', type: 'Facturation', severity: 'Critique', impact: '1 847 €', status: 'À traiter' }, tone: 'refuse' },
+  { id: 2, cells: { site: 'Nice Hôtel', type: 'Conso', severity: 'Élevée', impact: '890 €', status: 'En cours' }, tone: 'attention' },
+  { id: 3, cells: { site: 'Paris Centre', type: 'BACS', severity: 'Moyenne', impact: '420 €', status: 'Ouvert' } },
+  { id: 4, cells: { site: 'Toulouse', type: 'Facturation', severity: 'Faible', impact: '120 €', status: 'Ouvert' } },
+  { id: 5, cells: { site: 'Marseille', type: 'Conso', severity: 'Moyenne', impact: '650 €', status: 'Résolu' }, tone: 'succes' },
+];
+const LIST_FILTERS = [
+  { id: 'site', label: 'Site', options: [{ value: 'lyon', label: 'Lyon Sud' }, { value: 'nice', label: 'Nice Hôtel' }] },
+  { id: 'type', label: 'Type', options: [{ value: 'facturation', label: 'Facturation' }, { value: 'conso', label: 'Conso' }] },
+  { id: 'severity', label: 'Sévérité', options: [{ value: 'critical', label: 'Critique' }, { value: 'high', label: 'Élevée' }] },
+];
+
 export default function SolShowcase() {
   const [mode, setMode] = useState('surface');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [listFilters, setListFilters] = useState({ site: 'lyon' });
+  const [listSelected, setListSelected] = useState(new Set());
+  const [listPage, setListPage] = useState(1);
 
   return (
     <SolAppShell
@@ -321,6 +349,41 @@ export default function SolShowcase() {
         <SolButton variant="agentic" onClick={() => {}}>Agentic</SolButton>
         <SolSourceChip kind="factures" origin="3 fournisseurs" />
       </div>
+
+      <SolSectionHead
+        title="Pattern B · liste drillable (Lot 2)"
+        meta="SolListPage · SolExpertToolbar · SolExpertGridFull · SolPagination"
+      />
+      <SolExpertToolbar
+        filters={LIST_FILTERS}
+        activeFilters={listFilters}
+        onFilterChange={(id, v) => setListFilters((prev) => ({ ...prev, [id]: v }))}
+        searchPlaceholder="Rechercher un site, un type…"
+        searchValue=""
+        onSearchChange={() => {}}
+        selection={{ count: listSelected.size, total: LIST_ROWS.length }}
+        selectionActions={listSelected.size > 0 ? [
+          { label: 'Contester sélection', onClick: () => {}, variant: 'primary' },
+        ] : []}
+      />
+      <SolExpertGridFull
+        columns={LIST_COLUMNS}
+        rows={LIST_ROWS}
+        sortBy={{ column: 'impact', direction: 'desc' }}
+        onSort={() => {}}
+        selectable
+        selectedIds={listSelected}
+        onSelectionChange={setListSelected}
+        onRowClick={() => setDrawerOpen(true)}
+        highlightColumn="impact"
+      />
+      <SolPagination
+        page={listPage}
+        pageSize={5}
+        total={42}
+        onPageChange={setListPage}
+        onPageSizeChange={() => {}}
+      />
 
       <SolDrawer
         open={drawerOpen}

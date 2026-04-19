@@ -54,7 +54,15 @@ const SOL_FILES_LOT3 = [
   'SolTimeline.jsx',
 ];
 
-const ALL_SOL_FILES = [...SOL_FILES_SPRINT2, ...SOL_FILES_PHASE1, ...SOL_FILES_LOT3];
+// Lot 2 — Pattern B (Liste drillable)
+const SOL_FILES_LOT2 = [
+  'SolListPage.jsx',
+  'SolExpertToolbar.jsx',
+  'SolExpertGridFull.jsx',
+  'SolPagination.jsx',
+];
+
+const ALL_SOL_FILES = [...SOL_FILES_SPRINT2, ...SOL_FILES_PHASE1, ...SOL_FILES_LOT3, ...SOL_FILES_LOT2];
 
 // Hex autorisés : blanc + slate-900 (= --sol-ink-900) + shade hover calme.
 // V2 raw (source lockée par user 17/04/2026, UX-1 journal en terrasse) :
@@ -731,5 +739,136 @@ describe('SolDetailPage (Lot 3 wrapper)', () => {
 
   it('slot layerToggle rendu dans header si fourni', () => {
     expect(src).toContain('layerToggle');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Lot 2 — Pattern B (Liste drillable) : SolListPage, SolExpertToolbar,
+// SolExpertGridFull, SolPagination.
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('SolListPage (Lot 2)', () => {
+  const src = readSol('SolListPage.jsx');
+
+  it('compose SolBreadcrumb optionnel', () => {
+    expect(src).toContain("import SolBreadcrumb from './SolBreadcrumb'");
+  });
+
+  it('structure header aligné SolDetailPage (kicker + title + narrative)', () => {
+    expect(src).toMatch(/fontFamily:\s*['"]var\(--sol-font-display\)['"]/);
+    expect(src).toMatch(/fontSize:\s*34/);
+  });
+
+  it('accepte kpiRow + preludeSlot + toolbar + grid + pagination + drawerSlot', () => {
+    for (const p of ['kpiRow', 'preludeSlot', 'toolbar', 'grid', 'pagination', 'drawerSlot']) {
+      expect(src).toContain(p);
+    }
+  });
+
+  it('rightSlot rendu dans header', () => {
+    expect(src).toContain('rightSlot');
+  });
+});
+
+describe('SolExpertToolbar (Lot 2)', () => {
+  const src = readSol('SolExpertToolbar.jsx');
+
+  it('font-family mono 11.5px toolbar', () => {
+    expect(src).toMatch(/var\(--sol-font-mono\)/);
+    expect(src).toMatch(/fontSize:\s*11\.5/);
+  });
+
+  it('accepte filters + activeFilters + onFilterChange + selection + selectionActions', () => {
+    for (const p of ['filters', 'activeFilters', 'onFilterChange', 'selection', 'selectionActions']) {
+      expect(src).toContain(p);
+    }
+  });
+
+  it('input search optionnel via onSearchChange', () => {
+    expect(src).toContain('onSearchChange');
+    expect(src).toMatch(/type="search"/);
+  });
+
+  it('filter actif visuellement accentué (var sol-calme-*)', () => {
+    expect(src).toContain('sol-calme-fg');
+    expect(src).toContain('sol-calme-bg');
+  });
+
+  it('source chip "N actifs" si activeFilterCount > 0', () => {
+    expect(src).toMatch(/actif/);
+  });
+});
+
+describe('SolExpertGridFull (Lot 2)', () => {
+  const src = readSol('SolExpertGridFull.jsx');
+
+  it('table mono 12px tabular-nums', () => {
+    expect(src).toMatch(/var\(--sol-font-mono\)/);
+    expect(src).toMatch(/fontSize:\s*12/);
+    expect(src).toMatch(/tabular-nums/);
+  });
+
+  it('accepte columns + rows + sortBy + onSort + selectable + onRowClick + emptyState + loading', () => {
+    for (const p of ['columns', 'rows', 'sortBy', 'onSort', 'selectable', 'onRowClick', 'emptyState', 'loading']) {
+      expect(src).toContain(p);
+    }
+  });
+
+  it('headers sortable triable avec ▲▼', () => {
+    expect(src).toContain('▲');
+    expect(src).toContain('▼');
+  });
+
+  it('render custom par colonne via col.render', () => {
+    expect(src).toMatch(/col\.render/);
+  });
+
+  it('row tone mappé (calme/attention/afaire/succes/refuse)', () => {
+    expect(src).toContain('TONE_BG');
+    for (const tone of ['calme', 'attention', 'afaire', 'succes', 'refuse']) {
+      expect(src).toContain(`sol-${tone}-bg`);
+    }
+  });
+
+  it('empty state narratif avec title + message + action optionnel', () => {
+    expect(src).toMatch(/emptyState\.title/);
+    expect(src).toMatch(/emptyState\.message/);
+    expect(src).toMatch(/emptyState\.action/);
+  });
+
+  it('selectable checkbox col + select all', () => {
+    expect(src).toMatch(/type="checkbox"/);
+    expect(src).toMatch(/toggleAll/);
+  });
+});
+
+describe('SolPagination (Lot 2)', () => {
+  const src = readSol('SolPagination.jsx');
+
+  it('mono 11px alignée à droite', () => {
+    expect(src).toMatch(/var\(--sol-font-mono\)/);
+    expect(src).toMatch(/fontSize:\s*11/);
+    expect(src).toMatch(/justifyContent:\s*['"]flex-end['"]/);
+  });
+
+  it('format X–Y sur Z · page N / M', () => {
+    expect(src).toMatch(/NBSP/);
+    expect(src).toMatch(/sur/);
+    expect(src).toMatch(/page/);
+  });
+
+  it('nav aria-label + prev/next aria-label', () => {
+    expect(src).toMatch(/aria-label="Pagination"/);
+    expect(src).toMatch(/aria-label="Page précédente"/);
+    expect(src).toMatch(/aria-label="Page suivante"/);
+  });
+
+  it('pageSize selector via onPageSizeChange optionnel', () => {
+    expect(src).toContain('onPageSizeChange');
+    expect(src).toContain('pageSizeOptions');
+  });
+
+  it('retourne null si total <= pageSize et pas de size selector', () => {
+    expect(src).toMatch(/total <= pageSize && !onPageSizeChange/);
   });
 });

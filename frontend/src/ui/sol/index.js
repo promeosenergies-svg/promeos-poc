@@ -54,6 +54,12 @@ export { default as SolBreadcrumb } from './SolBreadcrumb';
 export { default as SolEntityCard } from './SolEntityCard';
 export { default as SolTimeline } from './SolTimeline';
 
+// Pattern B — Liste drillable (Lot 2)
+export { default as SolListPage } from './SolListPage';
+export { default as SolExpertToolbar } from './SolExpertToolbar';
+export { default as SolExpertGridFull } from './SolExpertGridFull';
+export { default as SolPagination } from './SolPagination';
+
 // Overlays
 export { default as SolDrawer } from './SolDrawer';
 
