@@ -123,6 +123,23 @@ export const GLOSSARY = {
       "Intensité énergétique. Ratio clé du Décret Tertiaire pour mesurer la performance d'un bâtiment.",
   },
 
+  // ── Conformité Tertiaire (Lot 6 Phase 4, Pattern A hybride) ─────────────
+  tertiaire_efa_active_count: {
+    term: 'EFA actives',
+    short:
+      "Nombre d'Entités Fonctionnelles d'Assujettissement (EFA) Décret Tertiaire actuellement en suivi actif sur votre portefeuille (statut ≠ brouillon ni clôturée). Chaque EFA regroupe un ou plusieurs bâtiments avec une déclaration OPERAT annuelle commune.",
+  },
+  tertiaire_open_issues: {
+    term: 'Problèmes ouverts',
+    short:
+      "Nombre d'issues conformité actuellement actives sur vos EFA : anomalies déclaration OPERAT, données manquantes pour trajectoire 2030, retards calendaires, etc. Décompte agrégé ORG via /api/tertiaire/dashboard.",
+  },
+  tertiaire_critical_issues: {
+    term: 'Issues critiques',
+    short:
+      "Nombre d'issues conformité en gravité CRITICAL (échéance OPERAT imminente < 30 jours, non-conformité majeure, ou risque d'amende administrative). À traiter en priorité absolue.",
+  },
+
   // ── Segmentation B2B (Lot 6 Phase 3, Pattern A compact) ─────────────────
   segmentation_profile_typology: {
     term: 'Profil détecté',

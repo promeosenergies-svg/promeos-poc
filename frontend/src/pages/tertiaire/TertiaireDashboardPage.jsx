@@ -32,6 +32,7 @@ import ExportOperatModal from '../../components/ExportOperatModal';
 import MutualisationSection from '../../components/conformite/MutualisationSection';
 import DtProgressMultiSite from '../../components/conformite/DtProgressMultiSite';
 import Explain from '../../ui/Explain';
+import ConformiteTertiaireSol from '../ConformiteTertiaireSol';
 
 const STATUS_LABELS = {
   active: 'Active',
@@ -160,12 +161,19 @@ export default function TertiaireDashboardPage() {
     <PageShell
       title="Décret tertiaire / OPERAT"
       subtitle={`${kpis.total_efa} EFA enregistrée${kpis.total_efa > 1 ? 's' : ''}`}
+      hideHeader
       actions={
         <Button size="sm" variant="secondary" onClick={() => setShowExportModal(true)}>
           <Download size={14} className="mr-1" /> Export OPERAT
         </Button>
       }
     >
+      {/* Lot 6 Phase 4 — ConformiteTertiaireSol hero Pattern A injecté
+          top. Legacy body (DtProgressMultiSite + Sites à traiter +
+          EFA list + MutualisationSection + ExportOperatModal +
+          Drawer "Pourquoi ?") préservé intégralement dessous. */}
+      <ConformiteTertiaireSol dashboard={dashboard} isLoading={loading} />
+
       {/* Empty state when no EFA */}
       {kpis.total_efa === 0 && (
         <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
