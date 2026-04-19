@@ -242,6 +242,24 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Profils horaires (Lot 2 Phase 6) ────────────────────────────────────
+  'hourly.no_data': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Données horaires insuffisantes',
+    body: "Activez le comptage 30-min dans la fiche Patrimoine du site pour déclencher l'analyse du profil horaire.",
+    footer: 'comptage 30-min requis',
+    footerRight: 'Automatisable',
+  },
+  'hourly.profile_pending': {
+    tag: 'attention',
+    tagLabel: 'Info temporaire',
+    title: 'Analyse de profil en cours',
+    body: "Sol analyse vos courbes de charge pour qualifier le profil comportemental. Premier résultat disponible après 14 jours de mesures 30-min.",
+    footer: 'moteur anomalies actif',
+    footerRight: '⟳',
+  },
+
   // ── Usages (Lot 2 Phase 5) ──────────────────────────────────────────────
   'usage.no_usages': {
     tag: 'afaire',

@@ -123,6 +123,23 @@ export const GLOSSARY = {
       "Intensité énergétique. Ratio clé du Décret Tertiaire pour mesurer la performance d'un bâtiment.",
   },
 
+  // ── Profils horaires (Lot 2 Phase 6, Pattern A compact) ─────────────────
+  hourly_behavior_score: {
+    term: 'Score comportement',
+    short:
+      "Score 0-100 évaluant la cohérence du profil de consommation avec l'activité déclarée du site. Mesure les anomalies horaires : hors-horaires, talon, dérive, ratios nuit/weekend. ≥ 80 cohérent · 50-79 à surveiller · < 50 anomalies marquées.",
+  },
+  hourly_offhours_pct: {
+    term: 'Consommation hors horaires',
+    short:
+      "Pourcentage de la consommation mesurée en dehors des horaires d'ouverture déclarés. Permet de détecter programmations inadaptées CVC, éclairage nocturne, ou équipements oubliés.",
+  },
+  hourly_baseload_kw: {
+    term: 'Talon',
+    short:
+      "Puissance minimale (Q10) mesurée la nuit (22h-6h) sur 30 jours. Représente la consommation incompressible : veilles, serveurs, CVC permanent. Un talon élevé (> 30 % de la puissance moyenne) signale un levier d'efficacité important.",
+  },
+
   // ── Usages (Lot 2 Phase 5, Pattern A hybride) ───────────────────────────
   usage_dominant: {
     term: 'Usage dominant',
