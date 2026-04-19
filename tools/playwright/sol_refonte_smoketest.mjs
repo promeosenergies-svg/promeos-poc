@@ -101,6 +101,17 @@ async function runSmokeTest() {
     return;
   }
 
+  // ─── 2z. / (CommandCenter Lot 1.1) ───────────────────────────────────────
+  await page.goto(`${URL}/`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(3500);
+  await dismissOverlay(page);
+  const cmdKicker = await expectVisible(page, '.sol-page-kicker');
+  const cmdKpis = await expectVisible(page, '.sol-kpi-row');
+  const cmdTiles = await page.locator('text=Accès rapide aux modules').count();
+  const shotCmd = await snap(page, 'step00_command_center');
+  log('02z / CommandCenter render', cmdKicker && cmdKpis && cmdTiles > 0 ? 'OK' : 'FAIL',
+    `kicker ${cmdKicker} · kpis ${cmdKpis} · tiles ${cmdTiles > 0}`, shotCmd);
+
   // ─── 2a. /cockpit ────────────────────────────────────────────────────────
   await page.goto(`${URL}/cockpit`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(3500);
@@ -187,6 +198,26 @@ async function runSmokeTest() {
   const shot8 = await snap(page, 'step08_achat');
   log('02h /achat-energie render', achatKpis && marketChart > 0 ? 'OK' : 'FAIL',
     `KPIs: ${achatKpis} · Marché: ${marketChart > 0}`, shot8);
+
+  // ─── 2i. /conformite/aper (Lot 1.2) ──────────────────────────────────────
+  await page.goto(`${URL}/conformite/aper`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(3500);
+  await dismissOverlay(page);
+  const aperKpis = await expectVisible(page, '.sol-kpi-row');
+  const aperChart = await page.locator('text=Potentiel PV par site').count();
+  const shotAper = await snap(page, 'step20_aper');
+  log('02i /conformite/aper render', aperKpis && aperChart > 0 ? 'OK' : 'FAIL',
+    `KPIs: ${aperKpis} · BarChart: ${aperChart > 0}`, shotAper);
+
+  // ─── 2j. /monitoring (Lot 1.3) ───────────────────────────────────────────
+  await page.goto(`${URL}/monitoring`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(3500);
+  await dismissOverlay(page);
+  const monitKpis = await expectVisible(page, '.sol-kpi-row');
+  const monitChart = await page.locator('text=Consommation patrimoine').count();
+  const shotMonit = await snap(page, 'step21_monitoring');
+  log('02j /monitoring render', monitKpis && monitChart > 0 ? 'OK' : 'FAIL',
+    `KPIs: ${monitKpis} · Trajectory: ${monitChart > 0}`, shotMonit);
 
   // ─── 3. Raccourcis clavier ────────────────────────────────────────────────
   await page.goto(`${URL}/cockpit`, { waitUntil: 'networkidle' });
