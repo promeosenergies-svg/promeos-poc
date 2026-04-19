@@ -139,6 +139,11 @@ export const GLOSSARY = {
     short:
       "Nombre d'issues conformité en gravité CRITICAL (échéance OPERAT imminente < 30 jours, non-conformité majeure, ou risque d'amende administrative). À traiter en priorité absolue.",
   },
+  tertiaire_deadline_operat: {
+    term: 'Échéance OPERAT',
+    short:
+      "Compte à rebours vers la prochaine date limite de déclaration OPERAT ADEME (30 septembre annuel, Décret Tertiaire). Tone : ≥ 180 j neutral · < 180 j amber · < 60 j red · échue rouge « régularisation urgente ». Date réglementaire publique (2026-09-30), non calculée côté front.",
+  },
 
   // ── Segmentation B2B (Lot 6 Phase 3, Pattern A compact) ─────────────────
   segmentation_profile_typology: {

@@ -75,7 +75,8 @@ export function formatIssuesOpen(dashboard) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. formatCriticalIssues — KPI 3 display
+// 4. formatCriticalIssues — KPI legacy (kept pour backward-compat tests
+//    + potentielle réutilisation future par drawer "Pourquoi ?")
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function formatCriticalIssues(dashboard) {
@@ -86,6 +87,62 @@ export function formatCriticalIssues(dashboard) {
     tone: critical > 0 ? 'refuse' : 'succes',
     urgent: critical > 0,
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4 bis. formatDeadlineOperat — NEW KPI 3 (swap CRITIQUES → DEADLINE)
+//
+// L'API /api/tertiaire/dashboard n'expose ni `days_until_operat` ni
+// `next_deadline` côté ORG. Le legacy TertiaireDashboardPage.jsx calcule
+// `new Date('2026-09-30') - new Date()` — la date 2026-09-30 est
+// l'échéance réglementaire OPERAT publique et stable (décret tertiaire).
+// C'est une DATE RÉGLEMENTAIRE, pas une formule métier → pas de violation
+// source-guard.
+//
+// Signature : accepte `deadlineDate` ISO optionnel (default fallback
+// à la date OPERAT 2026). Quand un endpoint `/api/audit-sme/status`
+// exposera un `deadline` dynamique (cf. backlog P5), la valeur sera
+// passée explicitement au presenter.
+//
+// Tone 4 quadrants (cf. règle user D4 micro-alerte 2) :
+//   ≥ 180 j : neutral/calme (pas d'urgence)
+//   < 180 j : attention (amber, fenêtre de préparation)
+//   < 60 j  : refuse (red, urgence dépôt)
+//   ≤ 0 j   : refuse + label "échue" (dépassement)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DEFAULT_OPERAT_DEADLINE_ISO = '2026-09-30';
+
+export function formatDeadlineOperat(dashboard, deadlineDate = DEFAULT_OPERAT_DEADLINE_ISO) {
+  if (!hasDashboard(dashboard)) {
+    return { days: null, tone: 'calme', label: '—', overdue: false };
+  }
+  if (!deadlineDate) {
+    return { days: null, tone: 'calme', label: '—', overdue: false };
+  }
+  const target = new Date(deadlineDate);
+  if (isNaN(target.getTime())) {
+    return { days: null, tone: 'calme', label: '—', overdue: false };
+  }
+  const days = Math.ceil((target.getTime() - Date.now()) / 86_400_000);
+  if (days <= 0) {
+    return { days, tone: 'refuse', label: `échue${days < 0 ? ` (J+${Math.abs(days)})` : ''}`, overdue: true };
+  }
+  let tone = 'calme';
+  if (days < 60) tone = 'refuse';
+  else if (days < 180) tone = 'attention';
+  return { days, tone, label: `J-${days}`, overdue: false };
+}
+
+export function interpretDeadlineOperat(dashboard, deadlineDate = DEFAULT_OPERAT_DEADLINE_ISO) {
+  const k = formatDeadlineOperat(dashboard, deadlineDate);
+  if (k.days == null) return 'Date d\'échéance OPERAT indisponible.';
+  if (k.overdue) {
+    return `Échéance OPERAT dépassée (${Math.abs(k.days)}${NBSP}jour${Math.abs(k.days) > 1 ? 's' : ''}) · régularisation urgente.`;
+  }
+  if (k.days < 60) return 'Échéance imminente · préparez le dépôt sans tarder.';
+  if (k.days < 180) return 'Fenêtre de préparation ouverte · centralisez les données avant septembre.';
+  return 'Délai confortable · prochaine action après consolidation 2026.';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -102,30 +159,32 @@ export function buildKickerText(dashboard) {
 // 6. buildNarrative
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function buildNarrative(dashboard) {
+export function buildNarrative(dashboard, deadlineDate) {
   if (!hasDashboard(dashboard)) {
     return "Aucune donnée Décret Tertiaire disponible — vérifiez l'import du patrimoine.";
   }
   const total = Number(dashboard.total_efa) || 0;
   const active = Number(dashboard.active) || 0;
-  const draft = Number(dashboard.draft) || 0;
   const open = Number(dashboard.open_issues) || 0;
-  const critical = Number(dashboard.critical_issues) || 0;
 
   if (total === 0) {
-    return 'Aucune EFA Décret Tertiaire enregistrée pour votre organisation. Créez votre première EFA pour démarrer le suivi obligatoire 2030.';
+    return 'Aucune EFA Décret Tertiaire enregistrée · créez la première pour démarrer le suivi 2030.';
   }
 
-  const parts = [];
-  parts.push(`${active}${NBSP}EFA actives sur ${total}${NBSP}enregistrée${total > 1 ? 's' : ''}`);
-  if (draft > 0) parts.push(`${draft}${NBSP}en brouillon`);
+  // 1 phrase compact ≤ 120 car (directive P1 micro-sprint polish)
+  const deadline = formatDeadlineOperat(dashboard, deadlineDate);
+  const bits = [`${active}${NBSP}EFA actives`];
   if (open > 0) {
-    parts.push(`${open}${NBSP}problème${open > 1 ? 's' : ''} ouvert${open > 1 ? 's' : ''}`);
+    bits.push(`${open}${NBSP}problème${open > 1 ? 's' : ''} ouvert${open > 1 ? 's' : ''}`);
   }
-  if (critical > 0) {
-    parts.push(`${critical}${NBSP}critique${critical > 1 ? 's' : ''} à traiter en priorité`);
+  if (deadline.days != null) {
+    if (deadline.overdue) {
+      bits.push(`OPERAT échue`);
+    } else {
+      bits.push(`OPERAT dans ${deadline.days}${NBSP}jours`);
+    }
   }
-  return parts.join(' · ') + '.';
+  return bits.join(' · ') + '.';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -133,15 +192,15 @@ export function buildNarrative(dashboard) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function buildSubNarrative(dashboard) {
-  const base =
-    'Sources : moteur RegOps backend + /api/tertiaire/dashboard agrégats ORG · ' +
-    'trajectoire 2030 évaluée par site via /api/regops/site/{id}.';
-  if (!hasDashboard(dashboard)) return base;
+  // Version métier (directive P2 micro-sprint polish) : zéro mention
+  // d'endpoints API. Transparence dev préservée via source chips sous
+  // chaque SolKpiCard.
+  if (!hasDashboard(dashboard)) return 'Trajectoire 2030 évaluée site par site.';
   const closed = Number(dashboard.closed) || 0;
   if (closed > 0) {
-    return `${closed}${NBSP}EFA clôturée${closed > 1 ? 's' : ''} (historique préservé). ${base}`;
+    return `${closed}${NBSP}EFA clôturée${closed > 1 ? 's' : ''} (historique préservé) · trajectoire 2030 évaluée site par site.`;
   }
-  return base;
+  return 'Trajectoire 2030 évaluée site par site.';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -187,7 +246,7 @@ export function buildEmptyState({ dashboard } = {}) {
 // 10. resolveTooltipExplain — router vers l'interpret correct par KPI code
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function resolveTooltipExplain(kpiCode, dashboard) {
+export function resolveTooltipExplain(kpiCode, dashboard, deadlineDate) {
   switch (kpiCode) {
     case 'efa_count':
       return interpretEfaCount(dashboard);
@@ -195,6 +254,8 @@ export function resolveTooltipExplain(kpiCode, dashboard) {
       return interpretIssues(dashboard);
     case 'critical_issues':
       return interpretCritical(dashboard);
+    case 'deadline_operat':
+      return interpretDeadlineOperat(dashboard, deadlineDate);
     default:
       return '';
   }

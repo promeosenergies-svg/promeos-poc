@@ -10,6 +10,8 @@ import {
   formatEfaCount,
   formatIssuesOpen,
   formatCriticalIssues,
+  formatDeadlineOperat,
+  interpretDeadlineOperat,
   buildKickerText,
   buildNarrative,
   buildSubNarrative,
@@ -123,14 +125,18 @@ describe('buildNarrative + buildSubNarrative', () => {
   it('empty state si 0 EFA', () => {
     expect(buildNarrative(DASHBOARD_EMPTY)).toMatch(/Aucune EFA|première EFA/i);
   });
-  it('inclut compteurs si data', () => {
+  it('narrative compact (≤ 120 car, 1 phrase) avec EFA + problèmes + OPERAT', () => {
     const n = buildNarrative(DASHBOARD_FULL);
-    expect(n).toContain('9');
-    expect(n).toContain('10');
-    expect(n).toMatch(/critique/i);
+    expect(n).toContain('9'); // EFA actives count
+    expect(n).toMatch(/problème|ouvert/i);
+    expect(n).toMatch(/OPERAT/i);
+    expect(n.length).toBeLessThanOrEqual(130); // tolérance 10 car pour NBSP
   });
-  it('subNarrative cite sources moteur + endpoints', () => {
-    expect(buildSubNarrative(DASHBOARD_FULL)).toMatch(/RegOps|dashboard/i);
+  it('subNarrative version métier sans endpoints (Phase 4 polish)', () => {
+    const s = buildSubNarrative(DASHBOARD_FULL);
+    expect(s).toMatch(/clôturée|historique|trajectoire 2030/i);
+    // Polish P2 : zéro mention endpoints
+    expect(s).not.toMatch(/\/api\/|RegOps|endpoint/i);
   });
 });
 
@@ -155,9 +161,81 @@ describe('resolveTooltipExplain', () => {
     expect(resolveTooltipExplain('efa_count', DASHBOARD_FULL)).toMatch(/brouillons|clôturée|Suivi/i);
     expect(resolveTooltipExplain('open_issues', DASHBOARD_FULL)).toMatch(/critique|problème/i);
     expect(resolveTooltipExplain('critical_issues', DASHBOARD_FULL)).toMatch(/priorité|critique/i);
+    expect(resolveTooltipExplain('deadline_operat', DASHBOARD_FULL, '2026-09-30')).toMatch(/OPERAT|échéance|préparation|confortable/i);
   });
   it('string vide si code inconnu', () => {
     expect(resolveTooltipExplain('unknown_kpi', DASHBOARD_FULL)).toBe('');
+  });
+});
+
+describe('formatDeadlineOperat (Phase 4 polish · KPI 3 swap)', () => {
+  // Helper : date ISO qui correspond à N jours depuis maintenant
+  const daysFromNow = (n) => {
+    const d = new Date(Date.now() + n * 86_400_000);
+    return d.toISOString();
+  };
+
+  it('null si dashboard absent', () => {
+    const k = formatDeadlineOperat(null);
+    expect(k.days).toBe(null);
+    expect(k.tone).toBe('calme');
+    expect(k.label).toBe('—');
+  });
+
+  it('null si deadlineDate undefined/invalide', () => {
+    expect(formatDeadlineOperat(DASHBOARD_FULL, null).days).toBe(null);
+    expect(formatDeadlineOperat(DASHBOARD_FULL, 'not-a-date').days).toBe(null);
+  });
+
+  it('J-365 (> 180 j) → tone calme', () => {
+    const k = formatDeadlineOperat(DASHBOARD_FULL, daysFromNow(365));
+    expect(k.tone).toBe('calme');
+    expect(k.label).toMatch(/^J-36[45]$/);
+    expect(k.overdue).toBe(false);
+  });
+
+  it('J-164 (entre 60 et 180) → tone attention (amber)', () => {
+    const k = formatDeadlineOperat(DASHBOARD_FULL, daysFromNow(164));
+    expect(k.tone).toBe('attention');
+    expect(k.days).toBeGreaterThanOrEqual(163);
+    expect(k.days).toBeLessThanOrEqual(165);
+  });
+
+  it('J-30 (< 60 j) → tone refuse (red urgence)', () => {
+    const k = formatDeadlineOperat(DASHBOARD_FULL, daysFromNow(30));
+    expect(k.tone).toBe('refuse');
+    expect(k.overdue).toBe(false);
+  });
+
+  it('J-0 ou échue → tone refuse + label "échue"', () => {
+    const k = formatDeadlineOperat(DASHBOARD_FULL, daysFromNow(0));
+    expect(k.tone).toBe('refuse');
+    expect(k.overdue).toBe(true);
+    expect(k.label).toMatch(/échue/i);
+  });
+
+  it('J-(-5) dépassée → tone refuse + label échue J+5', () => {
+    const k = formatDeadlineOperat(DASHBOARD_FULL, daysFromNow(-5));
+    expect(k.tone).toBe('refuse');
+    expect(k.overdue).toBe(true);
+    expect(k.label).toMatch(/J\+5|J\+4|J\+6/);
+  });
+});
+
+describe('interpretDeadlineOperat adaptive', () => {
+  const daysFromNow = (n) => new Date(Date.now() + n * 86_400_000).toISOString();
+
+  it('overdue → régularisation urgente', () => {
+    expect(interpretDeadlineOperat(DASHBOARD_FULL, daysFromNow(-10))).toMatch(/dépassée|urgente/i);
+  });
+  it('< 60 j → imminente', () => {
+    expect(interpretDeadlineOperat(DASHBOARD_FULL, daysFromNow(30))).toMatch(/imminente|tarder/i);
+  });
+  it('< 180 j → fenêtre préparation', () => {
+    expect(interpretDeadlineOperat(DASHBOARD_FULL, daysFromNow(120))).toMatch(/préparation|centralisez/i);
+  });
+  it('≥ 180 j → délai confortable', () => {
+    expect(interpretDeadlineOperat(DASHBOARD_FULL, daysFromNow(300))).toMatch(/confortable|consolidation/i);
   });
 });
 

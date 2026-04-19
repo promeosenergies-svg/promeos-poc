@@ -190,7 +190,13 @@ export default function TertiaireDashboardPage() {
         </div>
       )}
 
-      {/* KPIs */}
+      {/* KPIs legacy — masqués Lot 6 Phase 4 polish (dédup avec hero Sol).
+          Les 4 KPIs (EFA enregistrees · Anomalies ouvertes · Issues
+          critiques · Deadline OPERAT) sont maintenant portés par
+          ConformiteTertiaireSol en tête. Le legacy garde Trajectoire
+          DtProgressMultiSite + table sites + MutualisationSection qui
+          ne sont PAS dans le hero (complémentaires vrais). */}
+      {false && (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="EFA enregistrees" value={kpis.total_efa} icon={Building2} accent="blue" />
         <KpiCard
@@ -213,6 +219,7 @@ export default function TertiaireDashboardPage() {
           accent={daysToOperat < 90 ? 'red' : 'amber'}
         />
       </div>
+      )}
 
       {/* Vue multi-site trajectoire DT */}
       <div className="mt-6">

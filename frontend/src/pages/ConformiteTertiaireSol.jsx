@@ -27,13 +27,13 @@ import {
   hasDashboard,
   formatEfaCount,
   formatIssuesOpen,
-  formatCriticalIssues,
+  formatDeadlineOperat,
   buildKickerText,
   buildNarrative,
   buildSubNarrative,
   interpretEfaCount,
   interpretIssues,
-  interpretCritical,
+  interpretDeadlineOperat,
   buildEmptyState,
   NBSP,
 } from './conformite-tertiaire/sol_presenters';
@@ -138,7 +138,7 @@ export default function ConformiteTertiaireSol({ dashboard, isLoading = false, e
   const subNarrative = buildSubNarrative(dashboard);
   const efaK = formatEfaCount(dashboard);
   const issuesK = formatIssuesOpen(dashboard);
-  const criticalK = formatCriticalIssues(dashboard);
+  const deadlineK = formatDeadlineOperat(dashboard);
 
   return (
     <section
@@ -154,23 +154,6 @@ export default function ConformiteTertiaireSol({ dashboard, isLoading = false, e
         subNarrative={subNarrative}
       />
 
-      {efaK.total > 0 && (
-        <SolHeadline>
-          <em>Votre organisation</em> suit{' '}
-          {efaK.value}{NBSP}EFA active{efaK.value > 1 ? 's' : ''} sur {efaK.total}{NBSP}enregistrée
-          {efaK.total > 1 ? 's' : ''}
-          {criticalK.value > 0 && ` · ${criticalK.value}${NBSP}critique${criticalK.value > 1 ? 's' : ''} à traiter`}
-          .
-        </SolHeadline>
-      )}
-      {efaK.total > 0 && issuesK.value > 0 && (
-        <SolSubline>
-          {issuesK.value} problème{issuesK.value > 1 ? 's' : ''} ouvert{issuesK.value > 1 ? 's' : ''}
-          {criticalK.value > 0 ? ` (dont ${criticalK.value} critique${criticalK.value > 1 ? 's' : ''})` : ''}
-          .
-        </SolSubline>
-      )}
-
       <SolKpiRow>
         <SolKpiCard
           label="EFA actives"
@@ -184,20 +167,20 @@ export default function ConformiteTertiaireSol({ dashboard, isLoading = false, e
         <SolKpiCard
           label="Problèmes ouverts"
           value={issuesK.value != null ? String(issuesK.value) : '—'}
-          unit={issuesK.value > 1 ? 'à traiter' : 'à traiter'}
+          unit="à traiter"
           semantic={TONE_TO_SEMANTIC[issuesK.tone] || 'neutral'}
           explainKey="tertiaire_open_issues"
           headline={interpretIssues(dashboard)}
           source={{ kind: 'calcul', origin: '/api/tertiaire/dashboard' }}
         />
         <SolKpiCard
-          label="Critiques"
-          value={criticalK.value != null ? String(criticalK.value) : '—'}
-          unit={criticalK.value > 0 ? 'priorité absolue' : 'sous contrôle'}
-          semantic={TONE_TO_SEMANTIC[criticalK.tone] || 'neutral'}
-          explainKey="tertiaire_critical_issues"
-          headline={interpretCritical(dashboard)}
-          source={{ kind: 'calcul', origin: 'severity=CRITICAL · /api/tertiaire/dashboard' }}
+          label="Échéance OPERAT"
+          value={deadlineK.days != null ? deadlineK.label : '—'}
+          unit={deadlineK.overdue ? 'régularisation urgente' : 'jours restants'}
+          semantic={TONE_TO_SEMANTIC[deadlineK.tone] || 'neutral'}
+          explainKey="tertiaire_deadline_operat"
+          headline={interpretDeadlineOperat(dashboard)}
+          source={{ kind: 'calcul', origin: 'Décret Tertiaire · 30/09/2026' }}
         />
       </SolKpiRow>
     </section>
