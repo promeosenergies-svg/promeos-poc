@@ -123,6 +123,23 @@ export const GLOSSARY = {
       "Intensité énergétique. Ratio clé du Décret Tertiaire pour mesurer la performance d'un bâtiment.",
   },
 
+  // ── Segmentation B2B (Lot 6 Phase 3, Pattern A compact) ─────────────────
+  segmentation_profile_typology: {
+    term: 'Profil détecté',
+    short:
+      "Typologie métier de votre organisation détectée automatiquement (11 catégories PROMEOS : Tertiaire Privé/Public, Industrie, Commerce, Copropriété, Bailleur Social, Collectivité, Hôtellerie, Santé, Enseignement, Mixte). Basée sur code NAF + questionnaire + analyse patrimoine.",
+  },
+  segmentation_confidence_score: {
+    term: 'Confiance segmentation',
+    short:
+      "Score 0-100 évaluant la fiabilité de la typologie détectée. ≥ 70 % = haute confiance · 40-69 % = moyenne, questionnaire recommandé · < 40 % = faible, questionnaire prioritaire.",
+  },
+  segmentation_questionnaire_progress: {
+    term: 'Progression questionnaire',
+    short:
+      "Pourcentage de questions de segmentation métier répondues. Un questionnaire complet permet de passer le profil de la détection automatique (NAF seul) à une segmentation affinée, augmentant la pertinence des recommandations PROMEOS.",
+  },
+
   // ── Base de connaissance (Lot 6 Phase 2, Pattern B pur) ─────────────────
   kb_total_items: {
     term: 'Items indexés',

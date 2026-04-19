@@ -242,6 +242,24 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Segmentation B2B (Lot 6 Phase 3) ────────────────────────────────────
+  'segmentation.low_confidence': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Confiance de segmentation insuffisante',
+    body: "Complétez le questionnaire métier pour améliorer la confiance et obtenir des recommandations PROMEOS adaptées à votre activité.",
+    footer: 'minimum 3 questions requises',
+    footerRight: 'Automatisable',
+  },
+  'segmentation.no_naf': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Code NAF manquant',
+    body: "Renseignez votre code NAF (SIRET SIRENE) dans la fiche patrimoine pour activer la détection automatique de typologie.",
+    footer: 'import SIRET disponible',
+    footerRight: 'Automatisable',
+  },
+
   // ── Base de connaissance (Lot 6 Phase 2) ────────────────────────────────
   'kb.no_results': {
     tag: 'afaire',
