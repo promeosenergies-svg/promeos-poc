@@ -2,6 +2,30 @@
  * PROMEOS - Compliance Pipeline V68 (/compliance/pipeline)
  * Portfolio view: 3 KPIs, top 10 blockers, deadlines 30/90/180, untrusted sites, site table.
  * Every missing item has a CTA linking to Patrimoine/Timeline/Shadow Billing.
+ *
+ * ─── Lot 6 Phase 5 (refonte Sol) ──────────────────────────────────────
+ * Le hero Sol `CompliancePipelineSol` est injecté au sommet du rendu
+ * happy path ci-dessous. Le body legacy (3 KPIs cards + top_blockers
+ * + deadlines + untrusted_sites + sites table) est wrapped
+ * `{false && (…)}` pour préserver le rollback intégral (code vivant
+ * référence — un simple `true &&` suffit à restaurer). Les early
+ * returns (loading/error/empty) restent actifs pour les états
+ * dégradés pré-data ; Sol hero prend la main dès que `data` est chargé.
+ *
+ * Violations source-guards INTENTIONNELLEMENT hors scope (legacy wrap) :
+ *   - `s.completeness_pct >= 80/50` (line ~310-315) — seuillage gate
+ *   - `s.reg_risk >= 60/30` (line ~324-328) — seuillage risque visuel
+ *   - `s.trust_score` display raw (line ~266) — affichage brut
+ *
+ * Ces patterns sont tolérés dans le legacy parce que le bloc est dead
+ * code post-Sol. Les source-guards P5.0 scopent uniquement les
+ * nouveaux paths `CompliancePipelineSol.jsx` + `compliance-pipeline/`.
+ *
+ * Scope switcher limitation : l'endpoint backend
+ * `/api/compliance/portfolio/summary` n'accepte pas de `site_id` —
+ * le hero reste ORG-level même sur `useScope` site. Gap documenté
+ * Demande 4 de `docs/backlog/BACKLOG_P5_AUDIT_SME_API.md`.
+ * ─────────────────────────────────────────────────────────────────────
  */
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -23,6 +47,7 @@ import { useToast } from '../ui/ToastProvider';
 import ErrorState from '../ui/ErrorState';
 import { useScope } from '../contexts/ScopeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
+import CompliancePipelineSol from './CompliancePipelineSol';
 
 const GATE_BADGE = {
   BLOCKED: { label: 'Bloqué', color: 'bg-red-100 text-red-700', icon: XCircle },
@@ -130,6 +155,19 @@ export default function CompliancePipelinePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8" data-section="compliance-pipeline">
+      {/* Lot 6 Phase 5 — CompliancePipelineSol hero Pattern B injecté top.
+          Legacy body (3 KPIs cards + top_blockers + deadlines + untrusted +
+          sites table) wrapped {false && (…)} ci-dessous pour rollback.
+          Voir header top-of-file pour détails des violations tolérées. */}
+      <CompliancePipelineSol
+        summary={data}
+        isLoading={false}
+        error={null}
+        onRowClick={(row) => navigate(toSiteCompliance(row.id))}
+      />
+
+      {false && (
+      <>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -364,6 +402,8 @@ export default function CompliancePipelinePage() {
       </div>
 
       {/* Action creation handled by ActionDrawerContext */}
+    </>
+      )}
     </div>
   );
 }

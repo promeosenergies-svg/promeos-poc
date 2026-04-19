@@ -101,11 +101,30 @@ Pendant la Phase 4 Conformité Tertiaire, l'audit API a révélé 3 absences d'e
 
 **Priorité** : P2 (amélioration traçabilité + consolidation source unique · impact UX faible en v2.4 car le workaround actuel fonctionne).
 
+## Demande 4 — `GET /api/compliance/portfolio/summary?site_id=X` (scope site-level)
+
+**Rationale** : l'endpoint actuel (`backend/routes/compliance.py:506-520`, `compute_portfolio_compliance_summary(db, org_id)`) accepte uniquement `org_id`. Le frontend `CompliancePipelinePage.jsx` récupère toujours la shape ORG-level, même quand l'utilisateur navigue via `useScope` vers un site spécifique. Résultat : le hero Sol Phase 5 (`CompliancePipelineSol.jsx`) affiche "5 sites / 5 prêts" même en scope=HELIOS Paris.
+
+**Solution envisagée** : ajouter un filtre `site_id: Optional[int]` dans la route + le service, qui restreint :
+
+- `total_sites` à 1 (ou 0 si hors scope)
+- `kpis.data_{blocked,warning,ready}` au gate_status du site unique
+- `deadlines.{d30,d90,d180,beyond}` aux échéances du site
+- `untrusted_sites` au site (s'il est untrusted)
+- `sites[]` à 1 entrée
+
+**Alternative rejetée** (discipline Lot 6) : filtre client-side sur `summary.sites` qui recomputerait KPIs + buckets deadlines + liste untrusted côté front. Violerait les source-guards P5.0 (`gate_status_literal_assign`, `days_remaining_bucket`, `trust_score_threshold`) et introduirait une divergence silencieuse backend/front.
+
+**Impact frontend** : cohérence §3 non-négo — scope switcher wiring vrai, KPIs passent à 1/1 quand user navigue vers 1 site. Jusqu'à livraison backend, hero `CompliancePipelineSol` reste ORG-level (comportement aligné legacy `CompliancePipelinePage.jsx` qui ignore déjà `selectedSiteId` côté fetch).
+
+**Priorité** : **P1** (cohérence UX nav scope, différenciateur "vérité visible").
+
 ## Récapitulatif priorités
 
 | # | Demande | Impact hero | Priorité |
 |---|---|---|---|
 | 1 | `/api/regops/portfolio-summary` | 4 KPIs ORG-level vendeurs (score composite + trajectoire + frameworks + pénalité) | **P1** |
+| 4 | `/api/compliance/portfolio/summary?site_id=` | Scope switcher cohérent hero Phase 5 (1/1 site HELIOS Paris) | **P1** |
 | 2 | `/api/audit-sme/status` | 4ᵉ KPI Audit SMÉ différenciateur | P2 |
 | 3 | Enrichir RegAssessment (`weights_used` + `penalty_risk_eur`) | Traçabilité + source unique pénalité | P2 |
 
