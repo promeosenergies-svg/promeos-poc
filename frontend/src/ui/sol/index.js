@@ -48,6 +48,12 @@ export { default as SolRail } from './SolRail';
 export { default as SolPanel } from './SolPanel';
 export { default as SolAppShell } from './SolAppShell';
 
+// Pattern C — Fiche détail (Lot 3)
+export { default as SolDetailPage } from './SolDetailPage';
+export { default as SolBreadcrumb } from './SolBreadcrumb';
+export { default as SolEntityCard } from './SolEntityCard';
+export { default as SolTimeline } from './SolTimeline';
+
 // Overlays
 export { default as SolDrawer } from './SolDrawer';
 

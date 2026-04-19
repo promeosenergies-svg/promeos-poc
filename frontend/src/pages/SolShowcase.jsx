@@ -32,6 +32,9 @@ import {
   SolJournal,
   SolDrawer,
   SolButton,
+  SolBreadcrumb,
+  SolEntityCard,
+  SolTimeline,
 } from '../ui/sol';
 
 // U+202F thin NBSP et U+00A0 NBSP
@@ -70,6 +73,31 @@ const JOURNAL = [
     action: "Annulation envoi courrier litige consommation Nice",
     status: 'Annulé',
     statusKind: 'risk',
+  },
+];
+
+const TIMELINE_EVENTS = [
+  {
+    datetime: '12 avr · 09 h 04',
+    type: 'Upload',
+    title: 'Facture mars Engie reçue',
+    description: 'Fichier Enedis M023 joint · 48 pas de temps validés.',
+    tone: 'neutral',
+  },
+  {
+    datetime: '14 avr · 11 h 22',
+    type: 'Anomalie',
+    title: 'Écart TURPE détecté · Lyon Sud',
+    description: 'Composante Gestion : 21,93 € HT vs 15,00 € contractuels.',
+    tone: 'attention',
+  },
+  {
+    datetime: '15 avr · 14 h 32',
+    type: 'Action Sol',
+    title: 'Courrier contestation envoyé',
+    description: 'Envoi réversible 24 h · suivi de lecture activé.',
+    tone: 'succes',
+    deeplink: '/journal#j1',
   },
 ];
 
@@ -240,6 +268,51 @@ export default function SolShowcase() {
 
       <SolSectionHead title="Journal des actions Sol" meta="append-only · traçabilité" />
       <SolJournal entries={JOURNAL} />
+
+      <SolSectionHead
+        title="Pattern C · fiche détail (Lot 3)"
+        meta="SolBreadcrumb · SolEntityCard · SolTimeline · SolDetailPage wrapper"
+      />
+      <SolBreadcrumb
+        backTo="/patrimoine"
+        segments={[
+          { label: 'Patrimoine', to: '/patrimoine' },
+          { label: 'Tertiaire', to: '/patrimoine?type=tertiaire' },
+          { label: 'Lyon Sud' },
+        ]}
+      />
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(260px, 300px) minmax(0, 1fr)',
+          gap: 24,
+          alignItems: 'flex-start',
+        }}
+      >
+        <SolEntityCard
+          title="Lyon Sud"
+          subtitle="Tertiaire · 3 240 m² · OPERAT actif"
+          status={{ label: 'À traiter', tone: 'afaire' }}
+          fields={[
+            { label: 'PDL', value: '14511234567890', mono: true },
+            { label: 'Fournisseur', value: 'Engie' },
+            { label: 'Contrat', value: 'Fixe 36 mois · fin 10/2026' },
+            { label: 'Conso 2024', value: '412 MWh', mono: true },
+            { label: 'Score DT', value: '68 / 100', mono: true },
+          ]}
+          actions={
+            <>
+              <SolButton variant="secondary" onClick={() => {}}>
+                Voir factures
+              </SolButton>
+              <SolButton variant="ghost" onClick={() => {}}>
+                Éditer
+              </SolButton>
+            </>
+          }
+        />
+        <SolTimeline events={TIMELINE_EVENTS} onNavigate={() => {}} />
+      </div>
 
       <div style={{ display: 'flex', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
         <SolButton variant="primary" onClick={() => {}}>Primary</SolButton>

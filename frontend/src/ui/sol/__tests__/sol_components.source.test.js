@@ -46,7 +46,15 @@ const SOL_FILES_PHASE1 = [
   'SolBarChart.jsx',        // Phase 4.1.1 (prep 4.2)
 ];
 
-const ALL_SOL_FILES = [...SOL_FILES_SPRINT2, ...SOL_FILES_PHASE1];
+// Lot 3 — Pattern C (Fiche détail)
+const SOL_FILES_LOT3 = [
+  'SolDetailPage.jsx',
+  'SolBreadcrumb.jsx',
+  'SolEntityCard.jsx',
+  'SolTimeline.jsx',
+];
+
+const ALL_SOL_FILES = [...SOL_FILES_SPRINT2, ...SOL_FILES_PHASE1, ...SOL_FILES_LOT3];
 
 // Hex autorisés : blanc + slate-900 (= --sol-ink-900) + shade hover calme.
 // V2 raw (source lockée par user 17/04/2026, UX-1 journal en terrasse) :
@@ -575,5 +583,153 @@ describe('SolPanel overflow (Phase 4.1.1 — scroll middle zone only)', () => {
     // Le root aside doit avoir flexDirection column + minHeight 0
     // mais PAS overflowY (sinon header/footer scrollent aussi)
     expect(src).toMatch(/flexDirection:\s*'column'/);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Lot 3 — Pattern C (Fiche détail) : SolBreadcrumb, SolEntityCard, SolTimeline,
+// SolDetailPage wrapper.
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('SolBreadcrumb (Lot 3)', () => {
+  const src = readSol('SolBreadcrumb.jsx');
+
+  it('kicker mono uppercase letter-spacing 0.14em', () => {
+    expect(src).toMatch(/var\(--sol-font-mono\)/);
+    expect(src).toMatch(/textTransform:\s*'uppercase'/);
+    expect(src).toMatch(/letterSpacing:\s*'0\.14em'/);
+  });
+
+  it('accepte segments + backTo + backLabel props', () => {
+    for (const prop of ['segments', 'backTo', 'backLabel']) {
+      expect(src).toContain(prop);
+    }
+  });
+
+  it('utilise Link react-router-dom pour segments cliquables', () => {
+    expect(src).toMatch(/from\s+['"]react-router-dom['"]/);
+    expect(src).toContain('<Link');
+  });
+
+  it('dernier segment rendu en ink-900 avec aria-current="page"', () => {
+    expect(src).toMatch(/aria-current.*page/);
+    expect(src).toMatch(/sol-ink-900/);
+  });
+
+  it('séparateur « › » entre segments', () => {
+    expect(src).toContain('›');
+  });
+});
+
+describe('SolEntityCard (Lot 3)', () => {
+  const src = readSol('SolEntityCard.jsx');
+
+  it('card paper + border ink-200 + padding 18/20', () => {
+    expect(src).toMatch(/sol-bg-paper/);
+    expect(src).toMatch(/sol-ink-200/);
+    expect(src).toMatch(/padding:\s*'18px 20px'/);
+  });
+
+  it('title Fraunces 18px 600 + subtitle body 13px ink-500', () => {
+    expect(src).toMatch(/var\(--sol-font-display\)/);
+    expect(src).toMatch(/fontSize:\s*18/);
+    expect(src).toMatch(/fontWeight:\s*600/);
+  });
+
+  it('accepte title + subtitle + status + fields + actions props', () => {
+    for (const prop of ['title', 'subtitle', 'status', 'fields', 'actions']) {
+      expect(src).toContain(prop);
+    }
+  });
+
+  it('status pill tone mappée sur 5 tons Sol (calme/attention/afaire/succes/refuse)', () => {
+    expect(src).toContain('sol-calme-bg');
+    expect(src).toContain('sol-attention-bg');
+    expect(src).toContain('sol-afaire-bg');
+    expect(src).toContain('sol-succes-bg');
+    expect(src).toContain('sol-refuse-bg');
+  });
+
+  it('field mono active tabular-nums et var(--sol-font-mono)', () => {
+    expect(src).toMatch(/f\.mono.*sol-font-mono/s);
+    expect(src).toMatch(/tabular-nums/);
+  });
+});
+
+describe('SolTimeline (Lot 3)', () => {
+  const src = readSol('SolTimeline.jsx');
+
+  it('rail gauche 2px ink-200 en position absolute', () => {
+    expect(src).toMatch(/RAIL_WIDTH\s*=\s*2/);
+    expect(src).toMatch(/sol-ink-200/);
+    expect(src).toMatch(/position:\s*'absolute'/);
+  });
+
+  it('dots colorés sur 6 tons (5 Sol + neutral)', () => {
+    expect(src).toContain('sol-calme-fg');
+    expect(src).toContain('sol-attention-fg');
+    expect(src).toContain('sol-afaire-fg');
+    expect(src).toContain('sol-succes-fg');
+    expect(src).toContain('sol-refuse-fg');
+    expect(src).toContain('sol-ink-400');
+  });
+
+  it('dernier event : dot plus grand (10px) + glow', () => {
+    expect(src).toMatch(/DOT_LAST_SIZE\s*=\s*10/);
+    expect(src).toMatch(/isLast/);
+    expect(src).toMatch(/boxShadow/);
+  });
+
+  it('clickable via deeplink + onNavigate : role button + keyboard', () => {
+    expect(src).toMatch(/role=\{clickable/);
+    expect(src).toMatch(/tabIndex=\{clickable/);
+    expect(src).toMatch(/'Enter'|'\\s'/);
+  });
+
+  it('emptyLabel italique ink-500 si events vide', () => {
+    expect(src).toMatch(/emptyLabel/);
+    expect(src).toMatch(/fontStyle:\s*'italic'/);
+  });
+
+  it('datetime mono uppercase 10.5px', () => {
+    expect(src).toMatch(/var\(--sol-font-mono\)/);
+    expect(src).toMatch(/textTransform:\s*'uppercase'/);
+  });
+});
+
+describe('SolDetailPage (Lot 3 wrapper)', () => {
+  const src = readSol('SolDetailPage.jsx');
+
+  it('compose SolBreadcrumb en premier', () => {
+    expect(src).toContain("import SolBreadcrumb from './SolBreadcrumb'");
+    expect(src).toContain('<SolBreadcrumb');
+  });
+
+  it('grid 2 colonnes 280px + 1fr', () => {
+    expect(src).toMatch(/gridTemplateColumns.*280px/);
+  });
+
+  it('entityCard sticky top (desktop)', () => {
+    expect(src).toMatch(/position:\s*'sticky'/);
+  });
+
+  it('accepte breadcrumb + title + titleEm + narrative + entityCard + mainContent', () => {
+    for (const prop of ['breadcrumb', 'title', 'titleEm', 'narrative', 'entityCard', 'mainContent']) {
+      expect(src).toContain(prop);
+    }
+  });
+
+  it('titre Fraunces 34px 500 ink-900 (aligné SolPageHeader)', () => {
+    expect(src).toMatch(/var\(--sol-font-display\)/);
+    expect(src).toMatch(/fontSize:\s*34/);
+  });
+
+  it('responsive : grid devient 1fr sur <=900px', () => {
+    expect(src).toMatch(/max-width:\s*900px/);
+    expect(src).toMatch(/grid-template-columns:\s*1fr/);
+  });
+
+  it('slot layerToggle rendu dans header si fourni', () => {
+    expect(src).toContain('layerToggle');
   });
 });
