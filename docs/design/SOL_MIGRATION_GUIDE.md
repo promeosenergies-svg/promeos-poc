@@ -248,7 +248,14 @@
 7. **Créer le presenter** `frontend/src/pages/<xxx>/sol_presenters.js`
 8. **Router temporaire** : `/xxx` → `XxxSol.jsx` dans le worktree refonte · `/xxx-legacy` → `Xxx.jsx` pour comparaison
 9. **Source-guards** auto avant commit
-10. **Screenshots** avant/après dans `docs/design/screenshots/<page>_{before,after}.png`
+10. **Screenshots A/B obligatoires** dans `docs/design/screenshots/` avec nomenclature stricte :
+    - `<page>_main_before.png` + `<page>_main_before_fold.png` (port 5173, legacy)
+    - `<page>_refonte_after.png` + `<page>_refonte_after_fold.png` (port 5175, refonte)
+    - Capturés via **Playwright headless** avec login réel `promeos@promeos.io` / `promeos2024`
+    - Viewport **1440×900**, full page + fold (au-dessus du pli)
+    - Utiliser l'helper `captureABPair(pageName, routePath)` de `tools/playwright/sol_refonte_helper.mjs`
+    - Attendre 3 500 ms après navigation pour stabilisation des fetches parallèles
+    - Dismisser `OnboardingOverlay` si présent avant screenshot
 
 ---
 

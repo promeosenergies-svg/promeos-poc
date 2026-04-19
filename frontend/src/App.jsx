@@ -7,7 +7,10 @@ import { ExpertModeProvider } from './contexts/ExpertModeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import RequireAuth from './components/RequireAuth';
 import UpgradeWizard from './components/UpgradeWizard';
-import AppShell from './layout/AppShell';
+// Refonte Phase 3 : SolAppShell remplace AppShell sur toutes les routes
+// protégées. Le fichier AppShell.jsx legacy reste sur disque pour rollback
+// manuel (git revert ou import ponctuel pendant debug).
+import SolAppShell from './layout/SolAppShell';
 import { SkeletonCard } from './ui/Skeleton';
 
 // Lazy-loaded pages — code-split per route
@@ -134,11 +137,11 @@ function App() {
                     }
                   />
 
-                  {/* Protected: AppShell layout wraps all routes */}
+                  {/* Protected: SolAppShell layout wraps all routes (refonte P3) */}
                   <Route
                     element={
                       <RequireAuth>
-                        <AppShell />
+                        <SolAppShell />
                       </RequireAuth>
                     }
                   >

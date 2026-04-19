@@ -414,12 +414,15 @@ describe('SolRail', () => {
 
 describe('SolPanel', () => {
   const src = readSol('SolPanel.jsx');
-  it('lit getSectionsForModule + getVisibleItems', () => {
-    expect(src).toContain('getSectionsForModule');
-    expect(src).toContain('getVisibleItems');
+  it('lit getPanelSections (Phase 3 : panelSections par route + fallback legacy)', () => {
+    expect(src).toContain('getPanelSections');
   });
   it('aria-label navigation contextuelle', () => {
     expect(src).toContain('Navigation contextuelle');
+  });
+  it('accepte headerSlot + footerSlot (Phase 3 : scope switcher + user menu absorb\u00e9s)', () => {
+    expect(src).toContain('headerSlot');
+    expect(src).toContain('footerSlot');
   });
 });
 

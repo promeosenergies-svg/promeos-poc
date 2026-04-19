@@ -738,6 +738,68 @@ export function getVisibleItems(items, expertMode) {
   return expertMode ? items : items.filter((item) => !item.expertOnly);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+ * PANEL_SECTIONS_BY_ROUTE — configuration conforme maquette V2 raw
+ *
+ * Structure par route, chargée par SolPanel pour afficher les sections
+ * sémantiques de la maquette (Cette semaine / Horizons / Vue d'ensemble)
+ * au lieu des sections génériques NAV_SECTIONS (qui restent le fallback).
+ *
+ * Routes sans entrée ici → SolPanel retombe sur `getSectionsForModule()`
+ * (comportement legacy non-cassant).
+ * ══════════════════════════════════════════════════════════════════════════ */
+export const PANEL_SECTIONS_BY_ROUTE = {
+  '/cockpit': [
+    {
+      key: 'semaine',
+      label: 'Cette semaine',
+      items: [
+        { to: '/cockpit', label: "Vue d'accueil", desc: 'KPIs + signaux hebdo' },
+        { to: '/actions', label: "Journal d'actions", desc: 'Actions Sol append-only', badgeKey: 'actions' },
+        { to: '/notifications', label: 'Alertes', desc: 'Détection automatique', badgeKey: 'alertes' },
+      ],
+    },
+    {
+      key: 'horizons',
+      label: 'Horizons',
+      items: [
+        { to: '/conformite', label: 'Trajectoire 2030', desc: 'Décret tertiaire −25 %' },
+        { to: '/conformite/aper', label: 'Trajectoire 2040', desc: 'APER + solarisation' },
+      ],
+    },
+    {
+      key: 'ensemble',
+      label: "Vue d'ensemble",
+      items: [
+        { to: '/patrimoine', label: 'Patrimoine', desc: 'Sites + contrats + factures' },
+        { to: '/cockpit-fixtures', label: 'Vue démo', desc: 'Fixtures Sol V1', expertOnly: true },
+      ],
+    },
+  ],
+};
+
+/**
+ * Résout les sections à afficher dans SolPanel pour une route donnée.
+ * Priorité : PANEL_SECTIONS_BY_ROUTE[route] → getSectionsForModule(moduleKey).
+ */
+export function getPanelSections(pathname, expertMode) {
+  const clean = (pathname || '').split('?')[0].split('#')[0];
+  // 1. Match exact route
+  if (PANEL_SECTIONS_BY_ROUTE[clean]) {
+    return PANEL_SECTIONS_BY_ROUTE[clean]
+      .map((s) => ({ ...s, items: getVisibleItems(s.items, expertMode) }))
+      .filter((s) => s.items.length > 0);
+  }
+  // 2. Fallback : sections génériques du module courant
+  const { moduleId } = matchRouteToModule(clean);
+  const fallback = getSectionsForModule(moduleId);
+  return fallback.map((s) => ({
+    key: s.key,
+    label: s.label,
+    items: getVisibleItems(s.items || [], expertMode),
+  })).filter((s) => s.items.length > 0);
+}
+
 /** Flat list of all nav items (for CommandPalette search) — base path only (no query) */
 export const ALL_NAV_ITEMS = NAV_SECTIONS.flatMap((s) =>
   s.items.map((item) => ({ ...item, section: s.label, module: s.module }))

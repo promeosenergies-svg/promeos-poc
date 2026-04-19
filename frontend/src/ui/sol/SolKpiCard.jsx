@@ -10,16 +10,37 @@
  */
 import SolSourceChip from './SolSourceChip';
 
+// Mapping sémantique delta → tone.
+// - cost / conso : hausse = mauvais (orange), baisse = bon (vert)
+// - score        : hausse = bon (vert), baisse = mauvais (orange)
+// - neutral      : gris mono, pas de jugement
+const SEMANTIC_TONE = {
+  cost:    { up: 'bad',  down: 'good' },
+  conso:   { up: 'bad',  down: 'good' },
+  score:   { up: 'good', down: 'bad'  },
+  neutral: { up: 'neutral', down: 'neutral' },
+};
+
+function resolveDeltaColor(semantic, direction) {
+  const map = SEMANTIC_TONE[semantic] || SEMANTIC_TONE.neutral;
+  const tone = map[direction];
+  if (tone === 'good') return 'var(--sol-succes-fg)';
+  if (tone === 'bad') return 'var(--sol-afaire-fg)';
+  return 'var(--sol-ink-500)';
+}
+
 export default function SolKpiCard({
   label,
   value,
   unit,
   delta,
+  semantic = 'neutral',
   headline,
   source,
 }) {
-  const deltaDirection = delta?.direction; // 'up' | 'down'
+  const deltaDirection = delta?.direction; // 'up' | 'down' | 'flat'
   const deltaText = delta?.text;
+  const deltaColor = resolveDeltaColor(semantic, deltaDirection);
 
   return (
     <div
@@ -81,8 +102,7 @@ export default function SolKpiCard({
               fontFamily: 'var(--sol-font-mono)',
               fontWeight: 500,
               fontVariantNumeric: 'tabular-nums',
-              color:
-                deltaDirection === 'down' ? 'var(--sol-succes-fg)' : 'var(--sol-afaire-fg)',
+              color: deltaColor,
             }}
           >
             {deltaText}

@@ -286,6 +286,7 @@ export default function CockpitSol() {
               value={kpiCostValue != null ? formatFR(kpiCostValue, 0) : '—'}
               unit={`${NBSP}€${NBSP}HT`}
               delta={kpiCostDelta}
+              semantic="cost"
               headline={
                 billing.total_invoices
                   ? `${billing.total_invoices} factures analysées · ${billing.total_insights ?? 0} anomalie${(billing.total_insights ?? 0) > 1 ? 's' : ''}.`
@@ -304,6 +305,7 @@ export default function CockpitSol() {
               value={scoreNow != null ? `${scoreNow}` : '—'}
               unit="/100"
               delta={scoreDelta}
+              semantic="score"
               headline={interpretCompliance({
                 score: scoreNow,
                 sitesAtRisk: cockpitStats.sites_tertiaire_ko,
@@ -321,6 +323,7 @@ export default function CockpitSol() {
               value={consoMwh != null ? formatFR(consoMwh, 0) : '—'}
               unit={`${NBSP}MWh`}
               delta={consoDelta}
+              semantic="conso"
               headline={
                 cockpitStats.conso_sites_with_data
                   ? `${cockpitStats.conso_sites_with_data}${NBSP}sites avec données · période glissante.`

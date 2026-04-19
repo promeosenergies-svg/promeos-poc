@@ -13,8 +13,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   resolveModule,
-  getSectionsForModule,
-  getVisibleItems,
+  getPanelSections,
   NAV_MODULES,
 } from '../../layout/NavRegistry';
 
@@ -23,13 +22,16 @@ export default function SolPanel({
   badges = {},
   isExpert = false,
   rightSlot = null,
+  headerSlot = null,
+  footerSlot = null,
   className = '',
 }) {
   const location = useLocation();
   const navigate = useNavigate();
   const currentModule = resolveModule(location.pathname);
   const moduleMeta = NAV_MODULES.find((m) => m.key === currentModule);
-  const sections = getSectionsForModule(currentModule);
+  // V2 : panelSections par route (maquette) avec fallback sur NAV_SECTIONS
+  const sections = getPanelSections(location.pathname, isExpert);
 
   return (
     <aside
@@ -38,40 +40,43 @@ export default function SolPanel({
       style={{
         background: 'var(--sol-bg-paper)',
         borderRight: '1px solid var(--sol-rule)',
-        padding: '20px 18px',
         overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-        <h2
-          className="sol-panel-module"
+      {headerSlot}
+      <div style={{ padding: '16px 14px 0', flex: 1 }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+          <h2
+            className="sol-panel-module"
+            style={{
+              fontFamily: 'var(--sol-font-display)',
+              fontSize: 18,
+              fontWeight: 500,
+              color: 'var(--sol-ink-900)',
+              letterSpacing: '-0.015em',
+              margin: 0,
+            }}
+          >
+            {moduleMeta?.label || 'Navigation'}
+          </h2>
+          {rightSlot}
+        </header>
+        <p
+          className="sol-panel-desc"
           style={{
-            fontFamily: 'var(--sol-font-display)',
-            fontSize: 18,
-            fontWeight: 500,
-            color: 'var(--sol-ink-900)',
-            letterSpacing: '-0.015em',
-            margin: 0,
+            fontSize: 12.5,
+            color: 'var(--sol-ink-500)',
+            lineHeight: 1.45,
+            margin: '0 0 18px 0',
           }}
         >
-          {moduleMeta?.label || 'Navigation'}
-        </h2>
-        {rightSlot}
-      </header>
-      <p
-        className="sol-panel-desc"
-        style={{
-          fontSize: 12.5,
-          color: 'var(--sol-ink-500)',
-          lineHeight: 1.45,
-          margin: '0 0 22px 0',
-        }}
-      >
-        {desc || moduleMeta?.desc || ''}
-      </p>
+          {desc || moduleMeta?.desc || ''}
+        </p>
 
       {sections.map((section) => {
-        const items = getVisibleItems(section.items || [], isExpert);
+        const items = section.items || [];
         if (items.length === 0) return null;
         return (
           <div key={section.key} className="sol-panel-section" style={{ marginBottom: 20 }}>
@@ -159,6 +164,8 @@ export default function SolPanel({
           </div>
         );
       })}
+      </div>
+      {footerSlot}
     </aside>
   );
 }
