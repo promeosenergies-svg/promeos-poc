@@ -75,6 +75,11 @@ export default function SolTrajectoryChart({
   sourceChip = null,
   caption = null,
   height = 200,
+  // Lot 3 Phase 4 — jalons verticaux (ex : DT 2030/2040/2050).
+  // Shape : [{ x, label, tone: 'attention'|'succes'|'afaire'|'refuse' }]
+  // `x` doit correspondre à la valeur exacte d'une entrée data[i].month
+  // pour que recharts place la ReferenceLine sur un tick existant.
+  verticalMarkers = null,
 }) {
   if (!Array.isArray(data) || data.length === 0) {
     return (
@@ -207,6 +212,34 @@ export default function SolTrajectoryChart({
               dot={false}
               activeDot={{ r: 4, stroke: 'var(--sol-calme-fg)', strokeWidth: 2, fill: 'white' }}
             />
+
+            {/* Jalons verticaux (Lot 3 P4 : DT 2030/2040/2050). Optional. */}
+            {Array.isArray(verticalMarkers) && verticalMarkers.map((m, i) => {
+              const toneColor = {
+                attention: 'var(--sol-attention-fg)',
+                afaire: 'var(--sol-afaire-fg)',
+                succes: 'var(--sol-succes-fg)',
+                refuse: 'var(--sol-refuse-fg)',
+                calme: 'var(--sol-calme-fg)',
+              }[m.tone || 'attention'] || 'var(--sol-attention-fg)';
+              return (
+                <ReferenceLine
+                  key={`vmarker-${i}-${m.x}`}
+                  x={m.x}
+                  stroke={toneColor}
+                  strokeDasharray="3 3"
+                  strokeWidth={1.1}
+                  label={{
+                    value: m.label,
+                    position: 'insideTop',
+                    fill: toneColor,
+                    fontFamily: 'var(--sol-font-mono)',
+                    fontSize: 9.5,
+                    fontWeight: 600,
+                  }}
+                />
+              );
+            })}
 
             {/* Ligne cible (ex : DT 75 pts ≈ -25% conso). Optional. */}
             {targetLine != null && (

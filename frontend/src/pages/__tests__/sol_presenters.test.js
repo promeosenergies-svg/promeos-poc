@@ -1009,3 +1009,286 @@ describe('RegOpsSol · buildRegOpsEntityCardFields', () => {
     expect(operat.value).toBe('Non applicable');
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+// EfaSol presenters (Lot 3 Phase 4)
+// ══════════════════════════════════════════════════════════════════════════
+
+import * as EfaPresenters from '../efa/sol_presenters';
+
+describe('EfaSol · DT_MILESTONES + targetKwhForMilestone', () => {
+  it('3 jalons 2030/2040/2050 avec ratios -25/-40/-50', () => {
+    expect(EfaPresenters.DT_MILESTONES).toHaveLength(3);
+    expect(EfaPresenters.DT_MILESTONES[0]).toMatchObject({ year: 2030, ratio: 0.75 });
+    expect(EfaPresenters.DT_MILESTONES[2]).toMatchObject({ year: 2050, ratio: 0.5 });
+  });
+  it('2030 target = ref * 0.75', () => {
+    expect(EfaPresenters.targetKwhForMilestone(1_000_000, 2030)).toBe(750_000);
+  });
+  it('null si référence nulle', () => {
+    expect(EfaPresenters.targetKwhForMilestone(0, 2030)).toBe(null);
+    expect(EfaPresenters.targetKwhForMilestone(null, 2030)).toBe(null);
+  });
+  it('null si année hors jalons', () => {
+    expect(EfaPresenters.targetKwhForMilestone(1_000_000, 2025)).toBe(null);
+  });
+});
+
+describe('EfaSol · normalizeEfa', () => {
+  it('null pour input null', () => {
+    expect(EfaPresenters.normalizeEfa(null)).toBe(null);
+  });
+  it('fallbacks statut=draft + arrays vides', () => {
+    const out = EfaPresenters.normalizeEfa({ id: 1, nom: 'Paris Bureaux' });
+    expect(out.statut).toBe('draft');
+    expect(out.buildings).toEqual([]);
+    expect(out.consumptions).toEqual([]);
+    expect(out.declarations).toEqual([]);
+    expect(out.proofs).toEqual([]);
+  });
+});
+
+describe('EfaSol · statusPillFromEfa (priorité trajectory > statut)', () => {
+  it('trajectory_status prioritaire si dispo', () => {
+    const p = EfaPresenters.statusPillFromEfa({
+      efa: { statut: 'draft', trajectory_status: 'on_track' },
+    });
+    expect(p.tone).toBe('succes');
+    expect(p.label).toBe('En avance');
+  });
+  it('fallback sur statut EFA si pas de trajectory', () => {
+    const p = EfaPresenters.statusPillFromEfa({ efa: { statut: 'active' } });
+    expect(p.tone).toBe('calme');
+  });
+  it('trajectoryStatus param override efa.trajectory_status', () => {
+    const p = EfaPresenters.statusPillFromEfa({
+      efa: { trajectory_status: 'off_track' },
+      trajectoryStatus: 'on_track',
+    });
+    expect(p.label).toBe('En avance');
+  });
+});
+
+describe('EfaSol · totalSurface + usageLabels', () => {
+  it('somme surfaces bâtiments', () => {
+    const efa = { buildings: [{ surface_m2: 1500 }, { surface_m2: 2000 }] };
+    expect(EfaPresenters.totalSurface(efa)).toBe(3500);
+  });
+  it('usages distincts', () => {
+    const efa = {
+      buildings: [
+        { usage_label: 'bureaux' },
+        { usage_label: 'bureaux' },
+        { usage_label: 'entrepôt' },
+      ],
+    };
+    expect(EfaPresenters.usageLabels(efa)).toEqual(['bureaux', 'entrepôt']);
+  });
+});
+
+describe('EfaSol · latestConsumption + consumptionKwh', () => {
+  it('retourne la consommation avec year max', () => {
+    const efa = {
+      consumptions: [
+        { year: 2022, kwh_total: 100 },
+        { year: 2024, kwh_total: 90 },
+        { year: 2023, kwh_total: 95 },
+      ],
+    };
+    const last = EfaPresenters.latestConsumption(efa);
+    expect(last.year).toBe(2024);
+    expect(EfaPresenters.consumptionKwh(last)).toBe(90);
+  });
+  it('accepte kwh_total / kwh_total_final / kwh_final', () => {
+    expect(EfaPresenters.consumptionKwh({ kwh_total_final: 50 })).toBe(50);
+    expect(EfaPresenters.consumptionKwh({ kwh_final: 42 })).toBe(42);
+    expect(EfaPresenters.consumptionKwh(null)).toBe(null);
+  });
+});
+
+describe('EfaSol · interpretEfaCurrent', () => {
+  it('−25 % ou plus : objectif 2030 atteint', () => {
+    const r = EfaPresenters.interpretEfaCurrent({
+      efa: {
+        reference_year_kwh: 1_000_000,
+        consumptions: [{ year: 2024, kwh_total: 700_000 }],
+      },
+    });
+    expect(r).toMatch(/atteint/i);
+  });
+  it('entre 10 et 24 % : progression à maintenir', () => {
+    const r = EfaPresenters.interpretEfaCurrent({
+      efa: {
+        reference_year_kwh: 1_000_000,
+        consumptions: [{ year: 2024, kwh_total: 850_000 }],
+      },
+    });
+    expect(r).toMatch(/maintenir/i);
+  });
+  it('en hausse vs référence : plan requis', () => {
+    const r = EfaPresenters.interpretEfaCurrent({
+      efa: {
+        reference_year_kwh: 1_000_000,
+        consumptions: [{ year: 2024, kwh_total: 1_100_000 }],
+      },
+    });
+    expect(r).toMatch(/plan requis/i);
+  });
+  it('indisponible si pas de conso', () => {
+    const r = EfaPresenters.interpretEfaCurrent({
+      efa: { reference_year_kwh: 1_000_000, consumptions: [] },
+    });
+    expect(r).toMatch(/indisponible|MAJ/i);
+  });
+});
+
+describe('EfaSol · buildEfaTrajectoryChart', () => {
+  it('retourne data vide + markers vides si référence manquante', () => {
+    const out = EfaPresenters.buildEfaTrajectoryChart({});
+    expect(out.data).toEqual([]);
+    expect(out.verticalMarkers).toEqual([]);
+    expect(out.targetLine).toBe(null);
+  });
+
+  it('génère years de reference_year à >= 2050 + 3 verticalMarkers', () => {
+    const efa = {
+      reference_year: 2020,
+      reference_year_kwh: 1_000_000,
+      consumptions: [
+        { year: 2020, kwh_total: 1_000_000 },
+        { year: 2024, kwh_total: 850_000 },
+      ],
+    };
+    const out = EfaPresenters.buildEfaTrajectoryChart(efa);
+    expect(out.data[0].month).toBe('2020');
+    expect(out.data[out.data.length - 1].month).toBe('2050');
+    expect(out.verticalMarkers).toHaveLength(3);
+    expect(out.verticalMarkers.map((m) => m.x)).toEqual(['2030', '2040', '2050']);
+  });
+
+  it('targetLine = référence MWh * 0.75', () => {
+    const efa = {
+      reference_year: 2020,
+      reference_year_kwh: 1_000_000,
+      consumptions: [],
+    };
+    const out = EfaPresenters.buildEfaTrajectoryChart(efa);
+    // 1_000_000 * 0.75 = 750_000 kWh = 750 MWh
+    expect(out.targetLine).toBe(750);
+  });
+
+  it('data utilise `month` comme clé X (contrainte SolTrajectoryChart)', () => {
+    const efa = {
+      reference_year: 2020,
+      reference_year_kwh: 500_000,
+      consumptions: [{ year: 2024, kwh_total: 400_000 }],
+    };
+    const out = EfaPresenters.buildEfaTrajectoryChart(efa);
+    for (const d of out.data) {
+      expect(d).toHaveProperty('month');
+    }
+  });
+});
+
+describe('EfaSol · buildEfaWeekCards (variety guard D1)', () => {
+  it('3 tags distincts (attention + afaire + succes) si data riche', () => {
+    const cards = EfaPresenters.buildEfaWeekCards({
+      efa: {
+        reference_year_kwh: 1_000_000,
+        trajectory_status: 'off_track',
+        buildings: [{ id: 1, nom: 'Bât A', surface_m2: 2000, usage_label: 'bureaux' }],
+        consumptions: [{ year: 2024, kwh_total: 1_100_000 }],
+        proofs: [{ id: 'p1' }],
+        declarations: [{ year: 2024, status: 'submitted_simulated' }],
+      },
+      lastDeclaration: { year: 2024, status: 'submitted_simulated' },
+    });
+    expect(cards).toHaveLength(3);
+    const tags = cards.map((c) => c.tagKind);
+    expect(tags).toContain('attention');
+    expect(tags).toContain('afaire');
+    expect(tags).toContain('succes');
+  });
+
+  it('card 1 "trajectoire en retard" prioritaire si off_track', () => {
+    const cards = EfaPresenters.buildEfaWeekCards({
+      efa: {
+        reference_year_kwh: 1_000_000,
+        trajectory_status: 'off_track',
+        consumptions: [{ year: 2024, kwh_total: 900_000 }],
+      },
+    });
+    expect(cards[0].id).toBe('traj-off');
+    expect(cards[0].tagKind).toBe('attention');
+  });
+
+  it('card 2 "pièces à déposer" si proofs vide', () => {
+    const cards = EfaPresenters.buildEfaWeekCards({
+      efa: {
+        reference_year_kwh: 1_000_000,
+        proofs: [],
+        consumptions: [],
+      },
+    });
+    expect(cards[1].id).toBe('proofs-missing');
+    expect(cards[1].tagKind).toBe('afaire');
+  });
+
+  it('card 3 on_track fallback → efa.on_track business_error', () => {
+    const cards = EfaPresenters.buildEfaWeekCards({
+      efa: {
+        reference_year_kwh: 1_000_000,
+        trajectory_status: 'on_track',
+        buildings: [{ surface_m2: 1000 }],
+        proofs: [{ id: 'p' }],
+      },
+      lastDeclaration: null,
+    });
+    expect(cards[2].tagKind).toBe('succes');
+  });
+
+  it('fallback "évaluation active" si aucune bonne nouvelle dispo', () => {
+    const cards = EfaPresenters.buildEfaWeekCards({
+      efa: {
+        reference_year_kwh: 0,
+        buildings: [],
+        proofs: [{ id: 'p' }],
+      },
+      lastDeclaration: null,
+    });
+    expect(cards[2].tagKind).toBe('succes');
+    expect(cards[2].title).toMatch(/évaluation|surveillance/i);
+  });
+});
+
+describe('EfaSol · buildEfaEntityCardFields', () => {
+  it('7 fields dont Référence avec année dynamique', () => {
+    const fields = EfaPresenters.buildEfaEntityCardFields({
+      efa: {
+        reference_year: 2020,
+        reference_year_kwh: 1_200_000,
+        buildings: [{ surface_m2: 1500, usage_label: 'bureaux' }],
+        role_assujetti: 'proprietaire',
+      },
+    });
+    expect(fields).toHaveLength(7);
+    const refField = fields.find((f) => f.label.startsWith('Référence'));
+    expect(refField.label).toContain('2020');
+    expect(refField.value).toMatch(/1[\s\u00a0]200/);
+  });
+});
+
+describe('EfaSol · ownerFromEfa', () => {
+  it('priorité role=proprietaire', () => {
+    const efa = {
+      responsibilities: [
+        { role: 'locataire', person_name: 'Alice' },
+        { role: 'proprietaire', person_name: 'Bob' },
+      ],
+    };
+    expect(EfaPresenters.ownerFromEfa(efa)).toBe('Bob');
+  });
+  it('null si pas de responsibilities', () => {
+    expect(EfaPresenters.ownerFromEfa({})).toBe(null);
+  });
+});

@@ -242,6 +242,40 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── EFA — Décret Tertiaire (Lot 3 Phase 4) ──────────────────────────────
+  'efa.proofs_missing': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Pièces justificatives manquantes',
+    body: "Complétez la saisie des pièces (facture, attestation, relevé) pour valider la déclaration OPERAT de cette EFA.",
+    footer: 'Saisie requise · upload multi-format',
+    footerRight: 'Automatisable',
+  },
+  'efa.no_findings': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Aucune anomalie détectée',
+    body: "Votre EFA respecte la trajectoire réglementaire. Aucune dérive identifiée sur les obligations applicables.",
+    footer: 'Évaluation déterministe active',
+    footerRight: '✓ Clean',
+  },
+  'efa.on_track': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Trajectoire en avance sur les objectifs',
+    body: "Votre EFA dépasse déjà le jalon 2030. Continuez sur cette lancée pour sécuriser -40 % en 2040.",
+    footer: 'Marge confortable',
+    footerRight: '✓ Avance',
+  },
+  'efa.evaluation_pending': {
+    tag: 'attention',
+    tagLabel: 'Info temporaire',
+    title: 'Évaluation en attente du prochain OPERAT',
+    body: "Les premiers résultats de trajectoire seront disponibles après la prochaine déclaration OPERAT (fenêtre annuelle 30 septembre).",
+    footer: 'Calendrier réglementaire actif',
+    footerRight: '⟳',
+  },
+
   // ── RegOps (Lot 3 Phase 3) ───────────────────────────────────────────────
   'regops.no_findings': {
     tag: 'succes',

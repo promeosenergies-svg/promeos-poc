@@ -123,6 +123,23 @@ export const GLOSSARY = {
       "Intensité énergétique. Ratio clé du Décret Tertiaire pour mesurer la performance d'un bâtiment.",
   },
 
+  // ── EFA — Décret Tertiaire (Lot 3 Phase 4) ──────────────────────────────
+  efa_reference_year_kwh: {
+    term: 'Consommation année de référence',
+    short:
+      "Consommation annuelle de référence (kWh final) verrouillée pour l'EFA dans le Décret Tertiaire. L'année est choisie à l'immatriculation (≥ 2010). Assiette de calcul de tous les objectifs -25%/-40%/-50%.",
+  },
+  efa_current_year_kwh: {
+    term: 'Consommation actuelle',
+    short:
+      "Consommation annuelle la plus récente déclarée sur OPERAT. Peut être affichée en version brute ou normalisée DJU selon le mode de la baseline (raw_only, normalized_authoritative, mixed).",
+  },
+  efa_target_2030_kwh: {
+    term: 'Objectif 2030',
+    short:
+      "Consommation cible pour 2030 : -25 % vs consommation de référence. Premier jalon du Décret Tertiaire. Les jalons suivants sont -40 % en 2040 et -50 % en 2050.",
+  },
+
   // ── RegOps (Lot 3 Phase 3) ───────────────────────────────────────────────
   operat_status: {
     term: 'Statut OPERAT',

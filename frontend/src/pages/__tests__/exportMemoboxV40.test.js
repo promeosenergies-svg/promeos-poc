@@ -107,9 +107,16 @@ describe('GUARD generate_operat_pack KB doc creation', () => {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 2. GUARD: TertiaireEfaDetailPage — export result + Mémobox button
+//
+// ⚠ Lot 3 Phase 4 — La page EFA a été refondue en Pattern C (EfaSol.jsx).
+//   Les flows UI export pack + Mémobox (V40) sont temporairement retirés
+//   du loader thin. Le backend `generate_operat_pack` (section 1 ci-dessus)
+//   reste intact et continue de créer les KB docs. La ré-intégration du
+//   bouton export + Mémobox dans la fiche est prévue Phase 6 Lot 3
+//   (section optionnelle dans EfaSol entity card actions).
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('GUARD TertiaireEfaDetailPage export → Mémobox', () => {
+describe.skip('GUARD TertiaireEfaDetailPage export → Mémobox (Lot 3 P4 : reporté Phase 6)', () => {
   const code = src('pages/tertiaire/TertiaireEfaDetailPage.jsx');
 
   it('has exportResult state', () => {
@@ -141,7 +148,6 @@ describe('GUARD TertiaireEfaDetailPage export → Mémobox', () => {
     expect(code).toContain('exportResult.kb_doc_id');
   });
 
-  // V40.1: display_name
   it('prefers kb_doc_display_name over kb_doc_id', () => {
     expect(code).toContain('exportResult.kb_doc_display_name || exportResult.kb_doc_id');
   });
@@ -153,26 +159,30 @@ describe('GUARD TertiaireEfaDetailPage export → Mémobox', () => {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 3. GUARD: No regression — existing features preserved
+//
+// Post-Lot 3 P4 : ProofDepositCTA préservé (user requirement Phase 4).
+// Precheck flow + qualification card + export pack button retirés du
+// Pattern C — ré-intégration planifiée Phase 6 si signal utilisateur.
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('GUARD no regression on EFA detail', () => {
+describe('GUARD no regression on EFA detail (post-Lot 3 P4)', () => {
   const code = src('pages/tertiaire/TertiaireEfaDetailPage.jsx');
 
   it('ProofDepositCTA still imported', () => {
     expect(code).toContain("import ProofDepositCTA from './components/ProofDepositCTA'");
   });
 
-  it('handlePrecheck still works', () => {
+  it.skip('handlePrecheck still works (reporté Phase 6)', () => {
     expect(code).toContain('handlePrecheck');
     expect(code).toContain('precheckResult');
   });
 
-  it('qualification status card still present', () => {
+  it.skip('qualification status card still present (reporté Phase 6)', () => {
     expect(code).toContain('Complétude');
     expect(code).toContain('completeness_pct');
   });
 
-  it('export pack button still present', () => {
+  it.skip('export pack button still present (reporté Phase 6)', () => {
     expect(code).toContain('Générer le pack export (simulation)');
   });
 });
