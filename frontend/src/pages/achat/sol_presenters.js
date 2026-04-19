@@ -110,7 +110,7 @@ export function interpretPrixPondere({ weightedPrice, marketSpot } = {}) {
   if (ratio < 0.9) {
     return `Prix contracté avantageux vs marché actuel. Position à préserver.`;
   }
-  return `Aligné sur le marché spot EPEX (écart ±5 %).`;
+  return `Aligné sur le marché spot EPEX (écart ±5${NBSP}%).`;
 }
 
 /**

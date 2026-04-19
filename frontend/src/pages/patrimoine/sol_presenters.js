@@ -43,7 +43,7 @@ export function buildPatrimoineKicker({ scope, typeFilter } = {}) {
   return `Patrimoine · ${orgName}${sitesSuffix}${filterSuffix}`;
 }
 
-export function buildPatrimoineNarrative({ kpis, sites, euiAvg, benchmarkAvg } = {}) {
+export function buildPatrimoineNarrative({ kpis, sites, euiAvg, benchmarkAvg, topDrivers } = {}) {
   const nbSites = kpis?.total ?? sites?.length ?? 0;
   const surface = kpis?.totalSurface ?? 0;
 
@@ -60,13 +60,28 @@ export function buildPatrimoineNarrative({ kpis, sites, euiAvg, benchmarkAvg } =
   }
 
   const gap = Math.round(((euiAvg - benchmarkAvg) / benchmarkAvg) * 100);
+  const baseFigures = `${nbSites} sites, ${formatFR(surface, 0)}${NBSP}m² · EUI moyen ${formatFR(euiAvg, 0)}${NBSP}kWh/m²`;
+
+  // Phase 5 L1 : lorsque moyenne aligned OU faiblement au-dessus, mais qu'un
+  // site individuel dépasse de >30 %, expliciter le piège de la moyenne.
+  // Évite la contradiction apparente "aligned" vs week-card "Toulouse +50 %".
+  const outlier = (topDrivers || []).find((d) => d?.gapPct > 30);
+  const outlierClause = outlier
+    ? `, mais la moyenne masque un écart important : ${outlier.site?.nom || 'un site'} dépasse de ${outlier.gapPct}${NBSP}% sa référence.`
+    : null;
+
   if (gap > 10) {
-    return `${nbSites} sites, ${formatFR(surface, 0)}${NBSP}m² · EUI moyen ${formatFR(euiAvg, 0)}${NBSP}kWh/m²${NBSP}— ${gap}${NBSP}% au-dessus de la référence ADEME. ${typeSummary}`;
+    // Patrimoine déjà franchement au-dessus — pas besoin d'explication "masque"
+    return `${baseFigures}${NBSP}— ${gap}${NBSP}% au-dessus de la référence ADEME. ${typeSummary}`;
   }
   if (gap < -5) {
-    return `${nbSites} sites, ${formatFR(surface, 0)}${NBSP}m² · EUI moyen ${formatFR(euiAvg, 0)}${NBSP}kWh/m²${NBSP}— ${Math.abs(gap)}${NBSP}% mieux que la référence ADEME. ${typeSummary}`;
+    return `${baseFigures}${NBSP}— ${Math.abs(gap)}${NBSP}% mieux que la référence ADEME. ${typeSummary}`;
   }
-  return `${nbSites} sites, ${formatFR(surface, 0)}${NBSP}m² · EUI moyen ${formatFR(euiAvg, 0)}${NBSP}kWh/m² aligné sur la référence ADEME. ${typeSummary}`;
+  // Aligned : ajouter la clause outlier si un site décroche
+  if (outlierClause) {
+    return `${baseFigures} aligné sur la référence ADEME${outlierClause} ${typeSummary}`;
+  }
+  return `${baseFigures} aligné sur la référence ADEME. ${typeSummary}`;
 }
 
 export function buildPatrimoineSubNarrative({ kpis } = {}) {

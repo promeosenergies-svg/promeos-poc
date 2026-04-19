@@ -168,6 +168,7 @@ export default function PatrimoineSol() {
     sites,
     euiAvg,
     benchmarkAvg,
+    topDrivers,
   });
   const subNarrative = buildPatrimoineSubNarrative({ kpis: displayKpis });
 
