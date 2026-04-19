@@ -10,6 +10,7 @@ import { PageShell, Card, CardBody, Badge, Button, EmptyState, Modal, Tabs } fro
 import { SkeletonCard } from '../ui/Skeleton';
 import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
+import WatchersSol from './WatchersSol';
 
 const STATUS_TABS = [
   { id: 'all', label: 'Tous' },
@@ -104,13 +105,44 @@ export default function WatchersPage() {
       icon={Eye}
       title="Veille"
       subtitle="Réglementaire & marché : alertes et synthèses"
+      hideHeader
       actions={
         <Button variant="secondary" onClick={loadData}>
           <RefreshCw size={14} className="mr-1.5" /> Actualiser
         </Button>
       }
     >
-      {/* Watchers Section */}
+      {/* Lot 2 Phase 7 — Pattern B Sol avec prélude SolWatcherCard.
+          Le body legacy (Section Watchers + Section Events + Info Panel)
+          est préservé dessous en mode mort {false && …} pour rollback. */}
+      <WatchersSol
+        watchers={watchers}
+        events={events}
+        runResults={runResults}
+        loading={loading}
+        onRunWatcher={handleRunWatcher}
+        onReviewEvent={(event) => {
+          setReviewModal(event);
+          setReviewNotes('');
+        }}
+        onRefresh={loadData}
+      />
+
+      {/* Info panel (garde-fou droits d'auteur) */}
+      <Card className="border-yellow-200 bg-yellow-50/50 mt-6">
+        <CardBody>
+          <h3 className="text-sm font-semibold text-yellow-800 mb-1">Stockage Minimal</h3>
+          <p className="text-sm text-gray-700">
+            Les watchers stockent uniquement un hash de contenu + snippet de 500 caracteres maximum.
+            Aucune copie massive de contenu réglementaire n'est effectuée (conformité droits
+            d'auteur).
+          </p>
+        </CardBody>
+      </Card>
+
+      {/* Legacy body préservé en mode mort pour rollback */}
+      {false && (
+      <>
       <div>
         <h2 className="text-base font-semibold text-gray-800 mb-3">Watchers Actifs</h2>
         {watchers.length === 0 ? (
@@ -272,7 +304,7 @@ export default function WatchersPage() {
         </div>
       </div>
 
-      {/* Info Panel */}
+      {/* Info Panel legacy (duplicate, kept in dead branch) */}
       <Card className="border-yellow-200 bg-yellow-50/50">
         <CardBody>
           <h3 className="text-sm font-semibold text-yellow-800 mb-1">Stockage Minimal</h3>
@@ -283,8 +315,10 @@ export default function WatchersPage() {
           </p>
         </CardBody>
       </Card>
+      </>
+      )}
 
-      {/* Review Modal */}
+      {/* Review Modal (LIVE — triggered via onReviewEvent from WatchersSol) */}
       <Modal open={!!reviewModal} onClose={() => setReviewModal(null)} title="Réviser l'événement">
         {reviewModal && (
           <div className="space-y-4">

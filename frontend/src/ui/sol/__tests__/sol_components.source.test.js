@@ -60,6 +60,7 @@ const SOL_FILES_LOT2 = [
   'SolExpertToolbar.jsx',
   'SolExpertGridFull.jsx',
   'SolPagination.jsx',
+  'SolWatcherCard.jsx', // Phase 7 prélude cards
 ];
 
 const ALL_SOL_FILES = [...SOL_FILES_SPRINT2, ...SOL_FILES_PHASE1, ...SOL_FILES_LOT3, ...SOL_FILES_LOT2];
@@ -870,5 +871,37 @@ describe('SolPagination (Lot 2)', () => {
 
   it('retourne null si total <= pageSize et pas de size selector', () => {
     expect(src).toMatch(/total <= pageSize && !onPageSizeChange/);
+  });
+});
+
+describe('SolWatcherCard (Lot 2 Phase 7)', () => {
+  const src = readSol('SolWatcherCard.jsx');
+
+  it('tokens var uniquement (pas d\'hex hardcodé)', () => {
+    expect(src).toMatch(/var\(--sol-bg-paper\)/);
+    expect(src).toMatch(/var\(--sol-ink-200\)/);
+    expect(src).toMatch(/var\(--sol-font-display\)/);
+  });
+
+  it('accepte name + description + status + resultMessage + onRun', () => {
+    for (const p of ['name', 'description', 'status', 'resultMessage', 'onRun']) {
+      expect(src).toContain(p);
+    }
+  });
+
+  it('feedback ok / error mappés sur tokens succes / refuse', () => {
+    expect(src).toContain('sol-succes-bg');
+    expect(src).toContain('sol-refuse-bg');
+  });
+
+  it('disabled + cursor wait si status === running', () => {
+    expect(src).toMatch(/status === 'running'/);
+    expect(src).toMatch(/cursor:\s*status === 'running'/);
+  });
+
+  it('title Fraunces 15px 600 ink-900', () => {
+    expect(src).toMatch(/var\(--sol-font-display\)/);
+    expect(src).toMatch(/fontSize:\s*15/);
+    expect(src).toMatch(/fontWeight:\s*600/);
   });
 });

@@ -123,6 +123,23 @@ export const GLOSSARY = {
       "Intensité énergétique. Ratio clé du Décret Tertiaire pour mesurer la performance d'un bâtiment.",
   },
 
+  // ── Watchers (Lot 2 Phase 7, Pattern B avec prélude cards) ──────────────
+  watcher_total_count: {
+    term: 'Watchers configurés',
+    short:
+      "Nombre de sources de veille réglementaire et marché actuellement surveillées par Sol. Chaque watcher interroge une source (Légifrance, CRE, RTE, agrégateurs marché) et remonte les événements pertinents.",
+  },
+  watcher_new_events_count: {
+    term: 'Événements à réviser',
+    short:
+      "Nombre d'événements réglementaires captés par les watchers en attente de révision humaine. Chaque événement nouveau doit être jugé « Appliquer » (action à planifier) ou « Ignorer » (hors périmètre).",
+  },
+  watcher_events_30d: {
+    term: 'Événements 30 jours',
+    short:
+      "Nombre d'événements réglementaires captés par vos watchers sur les 30 derniers jours. Indicateur de densité de veille réglementaire sur la période.",
+  },
+
   // ── Profils horaires (Lot 2 Phase 6, Pattern A compact) ─────────────────
   hourly_behavior_score: {
     term: 'Score comportement',

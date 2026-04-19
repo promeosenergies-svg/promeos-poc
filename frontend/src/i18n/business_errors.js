@@ -242,6 +242,32 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Watchers (Lot 2 Phase 7) ────────────────────────────────────────────
+  'watcher.no_watchers': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Aucun watcher configuré',
+    body: 'Créez votre premier watcher pour activer la veille réglementaire et marché automatisée (Légifrance, CRE, RTE).',
+    footer: 'configuration légère',
+    footerRight: 'Automatisable',
+  },
+  'watcher.filter_no_results': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Aucun événement ne correspond à vos filtres',
+    body: 'Modifiez ou réinitialisez les filtres pour retrouver des résultats.',
+    footer: 'filtres actifs',
+    footerRight: '—',
+  },
+  'watcher.pending': {
+    tag: 'attention',
+    tagLabel: 'Info temporaire',
+    title: 'Watchers en cours d\'initialisation',
+    body: 'Les premiers événements seront captés sous 24 h après la création du watcher.',
+    footer: 'délai typique',
+    footerRight: '⟳',
+  },
+
   // ── Profils horaires (Lot 2 Phase 6) ────────────────────────────────────
   'hourly.no_data': {
     tag: 'afaire',

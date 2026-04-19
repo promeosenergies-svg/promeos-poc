@@ -59,6 +59,8 @@ export { default as SolListPage } from './SolListPage';
 export { default as SolExpertToolbar } from './SolExpertToolbar';
 export { default as SolExpertGridFull } from './SolExpertGridFull';
 export { default as SolPagination } from './SolPagination';
+// Pattern B prélude — Watcher card (Lot 2 Phase 7)
+export { default as SolWatcherCard } from './SolWatcherCard';
 
 // Overlays
 export { default as SolDrawer } from './SolDrawer';
