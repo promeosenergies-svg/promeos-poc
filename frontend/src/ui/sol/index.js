@@ -31,9 +31,10 @@ export { default as SolPendingBanner } from './SolPendingBanner';
 export { default as SolWeekGrid } from './SolWeekGrid';
 export { default as SolWeekCard } from './SolWeekCard';
 
-// Courbe + timerail + graphe trajectoire
+// Courbe + timerail + graphes (trajectoire + bar chart mensuel)
 export { default as SolLoadCurve } from './SolLoadCurve';
 export { default as SolTrajectoryChart } from './SolTrajectoryChart';
+export { default as SolBarChart } from './SolBarChart';
 export { default as SolTimerail } from './SolTimerail';
 
 // Modes d'affichage

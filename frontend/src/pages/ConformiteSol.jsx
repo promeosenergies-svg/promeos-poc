@@ -117,12 +117,18 @@ export default function ConformiteSol() {
   const kicker = buildConformiteKicker({ scope: { orgName, sitesCount } });
 
   // Scores : DT depuis summary.compliance_score (canonique),
-  //          BACS + APER dérivés depuis findings_by_regulation
+  //          BACS + APER dérivés depuis findings_by_regulation.
+  // Fix P4.1.1 : deriveScoreFromFindings distingue 'not_applicable' (aucun
+  // site assujetti, out_of_scope only) vs null (en attente d'évaluation).
   const summary = data.summary ?? {};
   const findingsByReg = summary.findings_by_regulation ?? {};
   const scoreDT = summary.compliance_score;
-  const scoreBACS = deriveScoreFromFindings(findingsByReg.bacs);
-  const scoreAPER = deriveScoreFromFindings(findingsByReg.aper);
+  const rawBACS = deriveScoreFromFindings(findingsByReg.bacs);
+  const rawAPER = deriveScoreFromFindings(findingsByReg.aper);
+  const scoreBACS = typeof rawBACS === 'number' ? rawBACS : null;
+  const scoreBACSNotApplicable = rawBACS === 'not_applicable';
+  const scoreAPER = typeof rawAPER === 'number' ? rawAPER : null;
+  const scoreAPERNotApplicable = rawAPER === 'not_applicable';
 
   // Delta DT via trend
   const trendArr = Array.isArray(data.trend?.trend) ? data.trend.trend : [];
@@ -210,7 +216,8 @@ export default function ConformiteSol() {
           value={scoreBACS != null ? scoreBACS.toFixed(0) : '—'}
           unit="/100"
           semantic="score"
-          headline={interpretScoreBACS({ findingsByReg })}
+          notApplicable={scoreBACSNotApplicable}
+          headline={interpretScoreBACS({ findingsByReg, notApplicable: scoreBACSNotApplicable })}
           source={{
             kind: 'RegOps',
             origin: 'bacs_v2.0',
@@ -225,7 +232,8 @@ export default function ConformiteSol() {
           value={scoreAPER != null ? scoreAPER.toFixed(0) : '—'}
           unit="/100"
           semantic="score"
-          headline={interpretScoreAPER({ findingsByReg })}
+          notApplicable={scoreAPERNotApplicable}
+          headline={interpretScoreAPER({ findingsByReg, notApplicable: scoreAPERNotApplicable })}
           source={{
             kind: 'RegOps',
             origin: 'aper + audit SMÉ',

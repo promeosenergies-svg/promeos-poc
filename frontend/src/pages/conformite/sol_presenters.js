@@ -89,7 +89,10 @@ export function interpretScoreDT({ score, sitesOk, sitesTotal, deadline }) {
   return `En zone à risque — plan d'action requis. ${pct}.`.trim();
 }
 
-export function interpretScoreBACS({ findingsByReg }) {
+export function interpretScoreBACS({ findingsByReg, notApplicable } = {}) {
+  if (notApplicable) {
+    return "Aucun bâtiment de votre portefeuille n'est assujetti au décret BACS (puissance CVC\u00a0<\u00a070\u00a0kW).";
+  }
   const bacs = findingsByReg?.bacs;
   if (!bacs) return 'Aucune installation BACS recensée.';
   const total = (bacs.ok || 0) + (bacs.nok || 0);
@@ -100,7 +103,10 @@ export function interpretScoreBACS({ findingsByReg }) {
   return `GTB/GTC manquante sur ${bacs.nok}${NBSP}bâtiment${bacs.nok > 1 ? 's' : ''} > 290${NBSP}kW.`;
 }
 
-export function interpretScoreAPER({ findingsByReg }) {
+export function interpretScoreAPER({ findingsByReg, notApplicable } = {}) {
+  if (notApplicable) {
+    return "Aucun site de votre portefeuille n'est assujetti à l'obligation APER (toit\u00a0<\u00a0500\u00a0m², parking\u00a0<\u00a01\u00a0500\u00a0m²).";
+  }
   const aper = findingsByReg?.aper;
   if (!aper) return 'Cartographie APER en cours.';
   const total = (aper.ok || 0) + (aper.nok || 0) + (aper.unknown || 0);
@@ -114,17 +120,39 @@ export function interpretScoreAPER({ findingsByReg }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Dérive un score sous-famille (bacs/aper) depuis findings_by_regulation.
- * Formule : ok / (ok + nok + unknown) × 100 (pourcentage "sites conformes").
+ * Dérive un score sous-famille (bacs/aper/dt) depuis findings_by_regulation.
+ *
+ * Règle de calcul :
+ *   - `out_of_scope` = sites non-assujettis (ex : APER pas applicable car
+ *     toit < 500 m² ET parking < 1 500 m²). Exclu du dénominateur.
+ *   - `unknown` = sites assujettis mais non encore évalués (en attente).
+ *     Exclu du dénominateur : on ne pénalise pas tant qu'on n'a pas évalué.
+ *   - Dénominateur : (ok + nok) = sites réellement évalués.
+ *
+ * Retour :
+ *   - number 0-100 : pourcentage d'évalués conformes (1 décimale)
+ *   - 'not_applicable' : aucun site assujetti (tous out_of_scope)
+ *   - null : en attente d'évaluation (unknown > 0, ok+nok = 0) ou données absentes
  */
 export function deriveScoreFromFindings(findings) {
   if (!findings) return null;
   const ok = findings.ok || 0;
   const nok = findings.nok || 0;
   const unknown = findings.unknown || 0;
-  const total = ok + nok + unknown;
-  if (total === 0) return null;
-  return Math.round((ok / total) * 1000) / 10; // 1 décimale
+  const outOfScope = findings.out_of_scope || 0;
+
+  // Aucun site en scope (tous out_of_scope) → réglementation non applicable
+  const inScope = ok + nok + unknown;
+  if (inScope === 0) {
+    return outOfScope > 0 ? 'not_applicable' : null;
+  }
+
+  // Sites en scope mais aucun encore évalué → en attente (null, pas 0)
+  const evaluated = ok + nok;
+  if (evaluated === 0) return null;
+
+  // Score = pourcentage d'évalués conformes, 1 décimale
+  return Math.round((ok / evaluated) * 1000) / 10;
 }
 
 /**

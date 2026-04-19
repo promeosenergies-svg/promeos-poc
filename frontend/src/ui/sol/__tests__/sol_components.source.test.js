@@ -43,6 +43,7 @@ const SOL_FILES_PHASE1 = [
   'SolPanel.jsx',
   'SolAppShell.jsx',
   'SolTrajectoryChart.jsx', // Phase 4.1
+  'SolBarChart.jsx',        // Phase 4.1.1 (prep 4.2)
 ];
 
 const ALL_SOL_FILES = [...SOL_FILES_SPRINT2, ...SOL_FILES_PHASE1];
@@ -480,7 +481,7 @@ describe('SolTrajectoryChart (Phase 4.1)', () => {
 describe('Sol index barrel', () => {
   const src = readSol('index.js');
 
-  it('exporte les 22 composants (21 + SolTrajectoryChart Phase 4.1)', () => {
+  it('exporte les 23 composants (21 + SolTrajectoryChart P4.1 + SolBarChart P4.1.1)', () => {
     for (const comp of [
       // Sprint 2 + Phase 1
       'SolPageHeader', 'SolKpiCard', 'SolHero', 'SolWeekCard', 'SolSourceChip',
@@ -490,8 +491,71 @@ describe('Sol index barrel', () => {
       'SolExpertGrid', 'SolJournal', 'SolRail', 'SolPanel', 'SolAppShell',
       // Phase 4.1
       'SolTrajectoryChart',
+      // Phase 4.1.1
+      'SolBarChart',
     ]) {
       expect(src).toContain(comp);
     }
+  });
+});
+
+describe('SolBarChart (Phase 4.1.1)', () => {
+  const src = readSol('SolBarChart.jsx');
+
+  it('utilise Recharts BarChart + 2 Bar (current + previous)', () => {
+    expect(src).toContain('BarChart');
+    expect(src).toMatch(/dataKey="current"/);
+    expect(src).toMatch(/dataKey="previous"/);
+  });
+
+  it('previous en ink-300 opacity 0.7 (comparateur discret)', () => {
+    expect(src).toContain('var(--sol-ink-300)');
+    expect(src).toMatch(/fillOpacity=\{0\.7\}/);
+  });
+
+  it('current highlight calme-fg si highlightCurrent + dernier mois', () => {
+    expect(src).toContain('highlightCurrent');
+    expect(src).toContain('var(--sol-calme-fg)');
+  });
+
+  it('accepte metric euros|mwh|count + formatValue FR (NBSP sep)', () => {
+    expect(src).toContain("metric = 'euros'");
+    expect(src).toMatch(/M€|k€|GWh|MWh/);
+  });
+
+  it('showDeltaPct rend LabelList avec delta pct au-dessus barre', () => {
+    expect(src).toContain('LabelList');
+    expect(src).toContain('DeltaPctLabel');
+    expect(src).toContain('computeDeltaPct');
+  });
+});
+
+describe('SolKpiCard notApplicable (Phase 4.1.1 — APER applicability fix)', () => {
+  const src = readSol('SolKpiCard.jsx');
+
+  it('prop notApplicable + rend "N/A" en italique body font ink-500', () => {
+    expect(src).toContain('notApplicable');
+    expect(src).toMatch(/N\/A/);
+    expect(src).toMatch(/fontStyle:\s*'italic'/);
+  });
+
+  it('masque delta + unit si notApplicable', () => {
+    expect(src).toMatch(/notApplicable \?/);
+  });
+});
+
+describe('SolPanel overflow (Phase 4.1.1 — scroll middle zone only)', () => {
+  const src = readSol('SolPanel.jsx');
+
+  it('body scroll zone via overflowY auto + flex 1 + minHeight 0', () => {
+    expect(src).toMatch(/sol-panel-body/);
+    expect(src).toMatch(/overflowY:\s*'auto'/);
+    expect(src).toMatch(/minHeight:\s*0/);
+  });
+
+  it('aside root n\'a plus overflowY (header + footer naturellement visibles)', () => {
+    // Le root aside doit avoir flexDirection column + minHeight 0
+    // mais PAS overflowY (sinon header/footer scrollent aussi)
+    expect(src).toMatch(/flexDirection:\s*'column'/);
   });
 });

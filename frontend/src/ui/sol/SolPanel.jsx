@@ -40,13 +40,25 @@ export default function SolPanel({
       style={{
         background: 'var(--sol-bg-paper)',
         borderRight: '1px solid var(--sol-rule)',
-        overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
+        height: '100%',
+        minHeight: 0, // critical pour laisser l'enfant scroll dans un flex parent
       }}
     >
+      {/* Header slot — reste visible (pas sticky — naturellement au-dessus
+          du flex:1 scroll area, donc toujours accessible). */}
       {headerSlot}
-      <div style={{ padding: '16px 14px 0', flex: 1 }}>
+      {/* Scroll zone : sections navigation, flex:1 + overflowY auto */}
+      <div
+        className="sol-panel-body"
+        style={{
+          padding: '16px 14px 0',
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+        }}
+      >
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
           <h2
             className="sol-panel-module"

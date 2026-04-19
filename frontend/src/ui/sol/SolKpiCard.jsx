@@ -37,6 +37,7 @@ export default function SolKpiCard({
   delta,
   semantic = 'neutral',
   explainKey,
+  notApplicable = false,
   headline,
   source,
 }) {
@@ -102,48 +103,66 @@ export default function SolKpiCard({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
-        <span
-          style={{
-            fontFamily: 'var(--sol-font-mono)',
-            fontSize: 24,
-            fontWeight: 600,
-            color: 'var(--sol-ink-900)',
-            lineHeight: 1,
-            letterSpacing: '-0.025em',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          {value}
-        </span>
-        {unit && (
+        {notApplicable ? (
           <span
             style={{
               fontFamily: 'var(--sol-font-body)',
-              fontSize: 12,
-              color: 'var(--sol-ink-400)',
+              fontStyle: 'italic',
+              fontSize: 18,
               fontWeight: 400,
-              marginLeft: 3,
+              color: 'var(--sol-ink-500)',
+              lineHeight: 1,
+              letterSpacing: '-0.01em',
             }}
           >
-            {unit}
+            N/A
           </span>
-        )}
-        {deltaText && (
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 2,
-              marginLeft: 4,
-              fontSize: 11,
-              fontFamily: 'var(--sol-font-mono)',
-              fontWeight: 500,
-              fontVariantNumeric: 'tabular-nums',
-              color: deltaColor,
-            }}
-          >
-            {deltaText}
-          </span>
+        ) : (
+          <>
+            <span
+              style={{
+                fontFamily: 'var(--sol-font-mono)',
+                fontSize: 24,
+                fontWeight: 600,
+                color: 'var(--sol-ink-900)',
+                lineHeight: 1,
+                letterSpacing: '-0.025em',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {value}
+            </span>
+            {unit && (
+              <span
+                style={{
+                  fontFamily: 'var(--sol-font-body)',
+                  fontSize: 12,
+                  color: 'var(--sol-ink-400)',
+                  fontWeight: 400,
+                  marginLeft: 3,
+                }}
+              >
+                {unit}
+              </span>
+            )}
+            {deltaText && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  marginLeft: 4,
+                  fontSize: 11,
+                  fontFamily: 'var(--sol-font-mono)',
+                  fontWeight: 500,
+                  fontVariantNumeric: 'tabular-nums',
+                  color: deltaColor,
+                }}
+              >
+                {deltaText}
+              </span>
+            )}
+          </>
         )}
       </div>
 
