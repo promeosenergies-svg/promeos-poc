@@ -123,6 +123,23 @@ export const GLOSSARY = {
       "Intensité énergétique. Ratio clé du Décret Tertiaire pour mesurer la performance d'un bâtiment.",
   },
 
+  // ── Renouvellements (Lot 2 Phase 4, Pattern B) ──────────────────────────
+  renewal_imminent_count: {
+    term: 'Renouvellements imminents',
+    short:
+      "Nombre de contrats énergie arrivant à échéance dans une fenêtre ≤ 90 jours. Ces contrats peuvent être renégociés avant expiration pour sécuriser les conditions commerciales.",
+  },
+  renewal_readiness_score: {
+    term: 'Score préparation',
+    short:
+      "Moyenne des readiness_score des contrats (0-100). Indique la complétude des données fournisseur/site nécessaires pour lancer une renégociation : factures récentes, courbes de charge, profil métier. ≥ 80 = prêt ; 50-79 = partiel ; < 50 = insuffisant.",
+  },
+  renewal_expired_count: {
+    term: 'Contrats expirés',
+    short:
+      "Nombre de contrats dont l'échéance est dépassée (days_to_end < 0). Situation de régularisation urgente — le site est en contrat par tacite reconduction ou en prix spot par défaut, avec surcoût possible.",
+  },
+
   // ── Contrats (Lot 2 Phase 3, Pattern B) ─────────────────────────────────
   contract_active_count: {
     term: 'Contrats actifs',

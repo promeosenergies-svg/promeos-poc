@@ -242,6 +242,32 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Renouvellements (Lot 2 Phase 4) ─────────────────────────────────────
+  'renewal.no_renewals': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Aucun renouvellement dans l\'horizon',
+    body: "Votre portefeuille est stable sur cette fenêtre. Élargissez l'horizon pour voir les échéances à plus long terme.",
+    footer: 'surveillance continue',
+    footerRight: '✓ Stable',
+  },
+  'renewal.filter_no_results': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Aucun renouvellement ne correspond à vos filtres',
+    body: 'Modifiez ou réinitialisez les filtres pour retrouver des résultats.',
+    footer: 'filtres actifs',
+    footerRight: '—',
+  },
+  'renewal.scenarios_pending': {
+    tag: 'attention',
+    tagLabel: 'Info temporaire',
+    title: 'Scénarios en cours de calcul',
+    body: "Les scénarios de renégociation sont générés sous 24 h après import des contrats. Cliquez sur une ligne pour déclencher le calcul prioritaire.",
+    footer: 'moteur scénarios V99',
+    footerRight: '⟳',
+  },
+
   // ── Contrats (Lot 2 Phase 3) ────────────────────────────────────────────
   'contract.no_contracts': {
     tag: 'afaire',

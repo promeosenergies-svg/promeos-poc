@@ -31,6 +31,7 @@ import { track } from '../services/tracker';
 import { fmtDateFR } from '../utils/format';
 import { useScope } from '../contexts/ScopeContext';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
+import RenouvellementsSol from './RenouvellementsSol';
 
 /* ── Urgency mapping ── */
 const URGENCY_CFG = {
@@ -405,34 +406,22 @@ export default function ContractRadarPage() {
       icon={CalendarRange}
       title="Échéances"
       subtitle="Radar des échéances et scénarios d'achat"
+      hideHeader
     >
-      <div className="flex items-center gap-3 mb-1">
-        <RadarFilterBar
-          horizon={horizon}
-          onHorizonChange={setHorizon}
-          stats={data?.stats}
-          total={data?.total || 0}
-        />
-        <SegmentationBadge profile={segProfile} />
-      </div>
+      <RenouvellementsSol
+        contracts={contracts}
+        horizon={horizon}
+        onHorizonChange={setHorizon}
+        loading={loading}
+        segProfile={segProfile}
+        onOpenSegModal={() => setShowSegModal(true)}
+        onOpenScenario={(contract) => setSelectedContract(contract)}
+      />
 
-      {/* V101: Segmentation confidence nudge */}
-      {segProfile?.has_profile && segProfile.confidence_score < 50 && (
-        <div className="mb-3 flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
-          <HelpCircle size={16} className="text-amber-500 flex-shrink-0" />
-          <span className="text-sm text-amber-800 flex-1">
-            Profil à {Math.round(segProfile.confidence_score)}% — répondez à 2 questions pour
-            affiner vos scénarios
-          </span>
-          <button
-            onClick={() => setShowSegModal(true)}
-            className="px-3 py-1 text-xs font-medium text-amber-700 bg-amber-100 border border-amber-300 rounded-lg hover:bg-amber-200 transition"
-          >
-            Affiner
-          </button>
-        </div>
-      )}
-
+      {/* Legacy render body désactivé (Lot 2 Phase 4). Rollback rapide
+          via toggle `{false &&}` en cas de régression démo pilote. */}
+      {false && (
+        <div>
       {loading && <SkeletonTable rows={6} cols={7} />}
 
       {!loading && contracts.length === 0 && (
@@ -529,6 +518,8 @@ export default function ContractRadarPage() {
             })}
           </Tbody>
         </Table>
+      )}
+        </div>
       )}
 
       <ScenarioDrawer
