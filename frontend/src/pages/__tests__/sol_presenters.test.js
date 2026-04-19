@@ -547,3 +547,201 @@ describe('adaptEmsSeriesToLoadCurve', () => {
     expect(adaptEmsSeriesToLoadCurve(raw)).toEqual([]);
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+// Site360Sol presenters (Lot 3 Phase 2)
+// ══════════════════════════════════════════════════════════════════════════
+
+import * as SitePresenters from '../sites/sol_presenters';
+
+describe('Site360Sol · normalizeCompliance', () => {
+  it('retourne null pour input null/undefined', () => {
+    expect(SitePresenters.normalizeCompliance(null)).toBe(null);
+    expect(SitePresenters.normalizeCompliance(undefined)).toBe(null);
+  });
+
+  it('arrondit score et mappe breakdown tertiaire_operat → dt', () => {
+    const raw = {
+      score: 62.4,
+      breakdown: [
+        { framework: 'tertiaire_operat', score: 58.7 },
+        { framework: 'bacs', score: 80 },
+      ],
+    };
+    const out = SitePresenters.normalizeCompliance(raw);
+    expect(out.overall).toBe(62);
+    expect(out.breakdown.dt).toBe(59);
+    expect(out.breakdown.bacs).toBe(80);
+    expect(out.breakdown.aper).toBeUndefined();
+  });
+
+  it('accepte shape déjà normalisée (overall + breakdown object)', () => {
+    const raw = { overall: 80, breakdown: [], baseline: 45 };
+    const out = SitePresenters.normalizeCompliance(raw);
+    expect(out.overall).toBe(80);
+    expect(out.baseline).toBe(45);
+  });
+});
+
+describe('Site360Sol · buildSiteKicker', () => {
+  it('uppercase type + ville', () => {
+    const k = SitePresenters.buildSiteKicker({ usage: 'bureau', ville: 'Lyon' });
+    expect(k).toBe('SITE · BUREAUX · LYON');
+  });
+  it('sans ville : pas de séparateur vide', () => {
+    const k = SitePresenters.buildSiteKicker({ usage: 'entrepot' });
+    expect(k).toBe('SITE · ENTREPÔT');
+  });
+  it('fallback site null', () => {
+    expect(SitePresenters.buildSiteKicker(null)).toBe('SITE');
+  });
+});
+
+describe('Site360Sol · statusPillFromSite', () => {
+  it('score >= 75 → calme Conforme', () => {
+    const p = SitePresenters.statusPillFromSite({ compliance: { overall: 82 } });
+    expect(p.tone).toBe('calme');
+    expect(p.label).toBe('Conforme');
+  });
+  it('score 60-74 → attention À surveiller', () => {
+    const p = SitePresenters.statusPillFromSite({ compliance: { overall: 68 } });
+    expect(p.tone).toBe('attention');
+  });
+  it('score < 60 → afaire À traiter', () => {
+    const p = SitePresenters.statusPillFromSite({ compliance: { overall: 50 } });
+    expect(p.tone).toBe('afaire');
+  });
+  it('fallback statut_conformite si pas de score', () => {
+    const p = SitePresenters.statusPillFromSite({
+      site: { statut_conformite: 'non_conforme' },
+    });
+    expect(p.tone).toBe('afaire');
+  });
+  it('null si aucun signal', () => {
+    expect(SitePresenters.statusPillFromSite({ site: {} })).toBe(null);
+  });
+});
+
+describe('Site360Sol · buildEntityCardFields', () => {
+  it('PDL depuis deliveryPoints, fallback "—" si absent', () => {
+    const site = { siret: '12345678901234', surface_m2: 3240, usage: 'bureau' };
+    const dps = [{ prm: '14511234567890' }];
+    const fields = SitePresenters.buildEntityCardFields({ site, deliveryPoints: dps });
+    const pdl = fields.find((f) => f.label === 'PDL / PRM');
+    expect(pdl.value).toBe('14511234567890');
+    expect(pdl.mono).toBe(true);
+  });
+
+  it('conso affichée en MWh si > 0, absente sinon', () => {
+    const withConso = SitePresenters.buildEntityCardFields({
+      site: { conso_kwh_an: 412000, usage: 'bureau' },
+      deliveryPoints: [],
+    });
+    expect(withConso.find((f) => f.label === 'Conso 12 mois')).toBeDefined();
+
+    const noConso = SitePresenters.buildEntityCardFields({
+      site: { usage: 'bureau' },
+      deliveryPoints: [],
+    });
+    expect(noConso.find((f) => f.label === 'Conso 12 mois')).toBeUndefined();
+  });
+});
+
+describe('Site360Sol · interpretSiteEui', () => {
+  it('fallback narratif si pas de data intensité', () => {
+    const r = SitePresenters.interpretSiteEui({ intensityData: { hasIntensity: false } });
+    expect(r).toMatch(/indisponible/i);
+  });
+
+  it('> 10 % au-dessus : annonce gap', () => {
+    const r = SitePresenters.interpretSiteEui({
+      intensityData: { hasIntensity: true, intensity: 150, benchmark: 100 },
+      site: { usage: 'bureau' },
+    });
+    expect(r).toMatch(/50/);
+    expect(r).toMatch(/au-dessus/);
+  });
+
+  it('< -5 % : annonce "mieux que"', () => {
+    const r = SitePresenters.interpretSiteEui({
+      intensityData: { hasIntensity: true, intensity: 85, benchmark: 100 },
+      site: { usage: 'bureau' },
+    });
+    expect(r).toMatch(/mieux/i);
+  });
+
+  it('aligned : phrase neutre', () => {
+    const r = SitePresenters.interpretSiteEui({
+      intensityData: { hasIntensity: true, intensity: 102, benchmark: 100 },
+      site: { usage: 'bureau' },
+    });
+    expect(r).toMatch(/[aA]ligné/);
+  });
+});
+
+describe('Site360Sol · buildSiteWeekCards', () => {
+  it('3 cards : anomalie + reco + compliance si tout dispo', () => {
+    const cards = SitePresenters.buildSiteWeekCards({
+      site: { id: 7, compliance_score: 82 },
+      anomalies: [{ id: 'a1', title: 'CTA incorrecte', impact_eur: 1847 }],
+      topReco: { id: 'r1', title: 'Reprogrammation HC', impact_eur: 3000 },
+      compliance: { overall: 82 },
+    });
+    expect(cards).toHaveLength(3);
+    expect(cards[0].tagKind).toBe('attention');
+    expect(cards[1].tagKind).toBe('afaire');
+    expect(cards[2].tagKind).toBe('succes');
+  });
+
+  it('fallbacks business_errors si data absente', () => {
+    const cards = SitePresenters.buildSiteWeekCards({
+      site: { id: 7 },
+      anomalies: [],
+      topReco: null,
+      compliance: null,
+    });
+    expect(cards).toHaveLength(3);
+    expect(cards[0].id).toContain('site.no_anomalies');
+    expect(cards[1].id).toContain('site.no_reco');
+  });
+
+  it('anomalies resolved_at exclues du tri', () => {
+    const cards = SitePresenters.buildSiteWeekCards({
+      site: { id: 7 },
+      anomalies: [{ id: 'a1', resolved_at: '2026-03-01', title: 'Old' }],
+      topReco: null,
+      compliance: null,
+    });
+    expect(cards[0].id).toContain('site.no_anomalies');
+  });
+});
+
+describe('Site360Sol · adaptComplianceToTrajectory', () => {
+  it('null si aucun score', () => {
+    expect(
+      SitePresenters.adaptComplianceToTrajectory({ site: {}, compliance: null })
+    ).toBe(null);
+  });
+
+  it('3 points 2020/2024/2030 avec score cible 75', () => {
+    const data = SitePresenters.adaptComplianceToTrajectory({
+      site: { compliance_score: 62 },
+      compliance: null,
+    });
+    expect(data).toHaveLength(3);
+    expect(data[0].month).toBe('2020');
+    expect(data[2].score).toBe(75);
+    expect(data[1].score).toBe(62);
+  });
+});
+
+describe('Site360Sol · labelUsage', () => {
+  it('aliases bureau/bureaux → bureaux', () => {
+    expect(SitePresenters.labelUsage('bureau')).toBe('bureaux');
+    expect(SitePresenters.labelUsage('bureaux')).toBe('bureaux');
+  });
+  it('fallback générique pour inconnu', () => {
+    expect(SitePresenters.labelUsage(null)).toBe('tertiaire');
+    expect(SitePresenters.labelUsage('unknown_type')).toBe('unknown_type');
+  });
+});

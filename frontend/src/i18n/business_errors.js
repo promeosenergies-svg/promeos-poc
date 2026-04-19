@@ -242,6 +242,32 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Site360Sol (Lot 3 Phase 2) ───────────────────────────────────────────
+  'site.not_found': {
+    tag: 'attention',
+    tagLabel: 'Info',
+    title: 'Site introuvable dans votre périmètre',
+    body: 'Ce site n\'appartient pas à votre scope actuel ou a été archivé. Revenez au patrimoine pour le localiser.',
+    footer: 'Scope actuel actif',
+    footerRight: '—',
+  },
+  'site.no_anomalies': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Aucune anomalie active',
+    body: 'Les factures de ce site sont conformes au shadow billing ce mois.',
+    footer: 'Moteur shadow v4.2',
+    footerRight: '✓ Clean',
+  },
+  'site.no_reco': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Aucune recommandation prioritaire',
+    body: 'Le moteur de détection n\'a pas identifié de levier actionnable cette semaine sur ce site.',
+    footer: 'Détection automatique active',
+    footerRight: '⟳',
+  },
+
   // ── Generic fallback ─────────────────────────────────────────────────────
   'generic.no_data': {
     tag: 'attention',
