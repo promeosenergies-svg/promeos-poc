@@ -188,6 +188,60 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Command Center (Lot 1.1) ─────────────────────────────────────────────
+  'command.all_clean': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Patrimoine sous contrôle',
+    body: 'Aucune alerte critique, toutes les échéances sont sur leur trajectoire.',
+    footer: 'Sol veille en continu',
+    footerRight: '✓ Stable',
+  },
+  'command.no_sol_actions': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Aucune action Sol à valider',
+    body: 'Le moteur de détection tourne en arrière-plan. Les prochaines opportunités apparaîtront ici.',
+    footer: 'Détection automatique active',
+    footerRight: '⟳',
+  },
+
+  // ── APER (Lot 1.2) ───────────────────────────────────────────────────────
+  'aper.no_eligible': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Aucun site assujetti APER',
+    body: 'Aucun de vos sites n\u2019atteint les seuils d\u2019assujettissement (toit ≥ 500 m² ou parking ≥ 1 500 m²).',
+    footer: 'Loi APER non applicable',
+    footerRight: '—',
+  },
+  'aper.study_in_progress': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Études PV en cours',
+    body: 'Les études de potentiel solaire sont en cours de réalisation pour vos sites éligibles.',
+    footer: 'Sol peut préparer les dossiers DP',
+    footerRight: 'Automatisable',
+  },
+
+  // ── Monitoring Performance (Lot 1.3) ─────────────────────────────────────
+  'monitoring.no_drift': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Aucune dérive active',
+    body: 'Toutes vos consommations respectent leur baseline de référence ajustée DJU.',
+    footer: 'Baseline Météo-France calibrée',
+    footerRight: '✓ Stable',
+  },
+  'monitoring.calibration_needed': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Calibration de la baseline requise',
+    body: 'Importez 12 mois de consommations pour activer la détection de dérives avec normalisation DJU.',
+    footer: 'Import télérelève Enedis',
+    footerRight: 'Automatisable',
+  },
+
   // ── Generic fallback ─────────────────────────────────────────────────────
   'generic.no_data': {
     tag: 'attention',

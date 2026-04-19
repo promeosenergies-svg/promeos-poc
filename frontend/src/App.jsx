@@ -14,7 +14,10 @@ import SolAppShell from './layout/SolAppShell';
 import { SkeletonCard } from './ui/Skeleton';
 
 // Lazy-loaded pages — code-split per route
-const CommandCenter = lazy(() => import('./pages/CommandCenter'));
+// Refonte Lot 1.1 : / pointe sur CommandCenterSol (Pattern A).
+// CommandCenter legacy accessible via /home-legacy pour A/B.
+const CommandCenter = lazy(() => import('./pages/CommandCenterSol'));
+const CommandCenterLegacy = lazy(() => import('./pages/CommandCenter'));
 // Refonte Phase 4.3 : /patrimoine pointe sur PatrimoineSol (Pattern A).
 // Patrimoine legacy accessible via /patrimoine-legacy pour A/B comparaison.
 const Patrimoine = lazy(() => import('./pages/PatrimoineSol'));
@@ -163,6 +166,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <CommandCenter />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/home-legacy"
+                      element={
+                        <PageSuspense>
+                          <CommandCenterLegacy />
                         </PageSuspense>
                       }
                     />

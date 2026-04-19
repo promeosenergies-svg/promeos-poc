@@ -750,6 +750,74 @@ export function getVisibleItems(items, expertMode) {
  * ══════════════════════════════════════════════════════════════════════════ */
 export const PANEL_SECTIONS_BY_ROUTE = {
   // ─────────────────────────────────────────────────────────────────────────
+  // Command Center / Accueil — Lot 1.1
+  // ─────────────────────────────────────────────────────────────────────────
+  '/': [
+    {
+      key: 'pulse',
+      label: 'Pouls patrimoine',
+      items: [
+        { to: '/', label: 'Vue d\u2019accueil', desc: 'KPIs macro + top alertes' },
+        { to: '/actions', label: "Actions Sol", desc: 'Propositions agentiques', badgeKey: 'actions' },
+        { to: '/notifications', label: 'Notifications', desc: 'Flux d\u2019alertes temps réel', badgeKey: 'alertes' },
+      ],
+    },
+    {
+      key: 'modules',
+      label: 'Modules',
+      items: [
+        { to: '/cockpit', label: 'Cockpit exécutif', desc: 'Synthèse portefeuille' },
+        { to: '/conformite', label: 'Conformité', desc: 'DT · BACS · APER' },
+        { to: '/bill-intel', label: 'Facturation', desc: 'Shadow billing + anomalies' },
+        { to: '/patrimoine', label: 'Patrimoine', desc: 'Sites + contrats' },
+        { to: '/achat-energie', label: 'Achat énergie', desc: 'Arbitrage + scénarios' },
+      ],
+    },
+  ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // APER solarisation — Lot 1.2
+  // ─────────────────────────────────────────────────────────────────────────
+  '/conformite/aper': [
+    {
+      key: 'aper_inventaire',
+      label: 'Inventaire APER',
+      items: [
+        { to: '/conformite/aper', label: 'Vue d\u2019ensemble', desc: 'Sites éligibles + potentiel' },
+        { to: '/conformite/aper?filter=parking', label: 'Parkings', desc: '> 1 500 m², échéances 2026-2028' },
+        { to: '/conformite/aper?filter=toiture', label: 'Toitures', desc: '> 500 m² neuves/rénovées' },
+      ],
+    },
+    {
+      key: 'aper_actions',
+      label: 'Actions',
+      items: [
+        { to: '/conformite', label: 'Retour conformité', desc: 'Synthèse globale' },
+      ],
+    },
+  ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // Monitoring performance — Lot 1.3
+  // ─────────────────────────────────────────────────────────────────────────
+  '/monitoring': [
+    {
+      key: 'monitoring_surveillance',
+      label: 'Surveillance',
+      items: [
+        { to: '/monitoring', label: 'Vue d\u2019ensemble', desc: 'KPIs + alertes dérive' },
+        { to: '/diagnostic-conso', label: 'Diagnostics', desc: 'Détection anomalies par site' },
+      ],
+    },
+    {
+      key: 'monitoring_consommations',
+      label: 'Consommations',
+      items: [
+        { to: '/consommations', label: 'Courbes de charge', desc: 'Explorer les données horaires' },
+        { to: '/usages', label: 'Répartition par usage', desc: 'CVC · éclairage · process' },
+        { to: '/usages-horaires', label: 'Profil hebdo', desc: 'Heatmap heure × jour', expertOnly: true },
+      ],
+    },
+  ],
+  // ─────────────────────────────────────────────────────────────────────────
   // Cockpit — pré-configuré Phase 3
   // ─────────────────────────────────────────────────────────────────────────
   '/cockpit': [

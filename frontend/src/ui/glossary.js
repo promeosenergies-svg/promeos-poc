@@ -527,4 +527,70 @@ export const GLOSSARY = {
     long:
       "Chaque scénario compare un prix d'achat simulé à la situation actuelle, intègre la volatilité marché, le profil de consommation, les coûts post-ARENH. Un scénario validé est archivé avec traçabilité complète pour audit. Source : services/purchase_service.py + moteur cost_simulator.",
   },
+  // ── Command Center (Lot 1.1) ─────────────────────────────────────────────
+  command_state_index: {
+    term: 'Indice d\u2019état patrimoine',
+    short:
+      "Score composite 0-100 synthétisant conformité, performance énergétique et maîtrise facture sur l'ensemble de votre patrimoine.",
+    long:
+      "Moyenne pondérée de 3 dimensions : conformité réglementaire (40 %, via compliance_score), performance facture (30 %, écart vs shadow billing), et couverture monitoring (30 %, ratio sites surveillés actifs). Seuils : ≥75 solide, 60-75 vigilance, <60 risque. Calculé côté frontend à partir des APIs existantes, pas d'endpoint dédié.",
+  },
+  command_alerts_count: {
+    term: 'Alertes actives',
+    short:
+      "Nombre d'alertes critiques non résolues toutes sources confondues (conformité, facturation, consommation, achat).",
+    long:
+      "Agrégat des notifications severity critical/high non-lues sur l'ensemble des modules. Source : /api/notifications/summary. Sert de pulse du patrimoine à l'instant T. Baisse = bon signal.",
+  },
+  command_sol_actions_count: {
+    term: 'Actions Sol disponibles',
+    short:
+      "Nombre d'actions préparées par Sol (contestations facture, scénarios achat, déclarations OPERAT) en attente de validation utilisateur.",
+    long:
+      "Somme des actions générées automatiquement par les moteurs de détection + propositions agentiques. Chaque action est réversible (délai 24 h) et trace son impact financier estimé. Source : /api/actions/summary counts.open + by_source (insight + copilot + purchase).",
+  },
+  // ── APER (Lot 1.2) ───────────────────────────────────────────────────────
+  aper_eligible_sites: {
+    term: 'Sites éligibles APER',
+    short:
+      "Nombre de sites assujettis à la loi APER (Accélération des énergies renouvelables) : toit ≥ 500 m² OU parking ≥ 1 500 m².",
+    long:
+      "La loi APER (10/03/2023) impose la solarisation des parkings > 1 500 m² (échéances 2026-2028 selon surface) et des toitures > 500 m² des bâtiments neufs/rénovés. L'éligibilité est automatique selon les caractéristiques du bâti. Source : /api/aper/dashboard.parking + /api/aper/dashboard.roof.",
+  },
+  aper_conforming_sites: {
+    term: 'Sites conformes APER',
+    short:
+      "Nombre de sites éligibles APER pour lesquels un projet photovoltaïque est validé, installé ou en chantier.",
+    long:
+      "Un site est conforme APER quand il dispose d'un projet PV sous DP urbanisme acceptée ou installation raccordée. Ratio conforme/éligible < 100 % avant l'échéance = obligation de rattrapage avec potentielles pénalités (non précisées dans la loi APER actuelle).",
+  },
+  aper_potential_capacity: {
+    term: 'Potentiel solaire cumulé',
+    short:
+      "Capacité photovoltaïque théorique installable sur l'ensemble des sites éligibles, exprimée en kilowatts-crête (kWc).",
+    long:
+      "Estimation basée sur surface × facteur d'emprise (toit ≈ 0,15 kWc/m², parking ≈ 0,20 kWc/m² avec ombrières). Productible annuel moyen France 1 000-1 200 kWh/kWc selon ensoleillement (Sud > Nord). Revenus attendus : autoconsommation (économie facture) + vente surplus (tarif d'achat ou marché).",
+  },
+  // ── Monitoring Performance (Lot 1.3) ─────────────────────────────────────
+  monitoring_active_sites: {
+    term: 'Sites en surveillance active',
+    short:
+      "Nombre de sites équipés d'un monitoring consommations continu (télérelève + baseline de référence calibrée).",
+    long:
+      "Un site est en surveillance active s'il dispose d'au moins 12 mois de télérelève mensuelle + d'un modèle de référence (baseline ajustée par les degrés-jours unifiés Météo-France). Le ratio sites actifs / total sites indique la couverture du dispositif.",
+  },
+  monitoring_active_alerts: {
+    term: 'Alertes de dérive actives',
+    short:
+      "Nombre d'alertes de consommation détectées par le moteur de monitoring et non encore résolues.",
+    long:
+      "Types d'alertes : dérive baseline (>10 % écart mensuel), talon nocturne anormal, consommation week-end, surconsommation ponctuelle. Chaque alerte est enrichie d'une cause probable via les règles métier (services/monitoring_rules.py). Une alerte non résolue sous 30 jours = risque financier matérialisé.",
+  },
+  monitoring_cumulative_drift: {
+    term: 'Dérive cumulée estimée',
+    short:
+      "Coût annualisé estimé des dérives de consommation non-traitées, exprimé en euros par an.",
+    long:
+      "Somme des impacts financiers de chaque alerte active × coefficient de persistance (90 jours → 365 jours). Calculé via prix moyen €/kWh × excès kWh estimé par règle. Un patrimoine avec dérive cumulée > 5 % de la facture annuelle signale une opportunité d'optimisation immédiate.",
+  },
 };
