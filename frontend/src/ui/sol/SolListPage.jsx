@@ -62,6 +62,7 @@ export default function SolListPage({
         <div style={{ flex: 1, minWidth: 0 }}>
           {kicker && (
             <span
+              className="sol-page-kicker"
               style={{
                 fontFamily: 'var(--sol-font-mono)',
                 fontSize: 10.5,

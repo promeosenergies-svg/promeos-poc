@@ -274,6 +274,84 @@ async function runSmokeTest() {
     `kicker: ${diagKicker} · kpis: ${diagKpis} · bar chart: ${diagBarChart > 0}`,
     shotDiag);
 
+  // ─── 2o. /anomalies AnomaliesSol (Pattern B pur, Lot 2 P2) ──────────────
+  await page.goto(`${URL}/anomalies`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(5000);
+  await dismissOverlay(page);
+  const anomKicker = await expectVisible(page, '.sol-page-kicker');
+  const anomKpis = await expectVisible(page, '.sol-kpi-row');
+  const anomGrid = await page.locator('table.sol-expert-grid-full').count();
+  const shotAnom = await snap(page, 'step26_anomalies_pattern_b');
+  log('02o /anomalies AnomaliesSol render',
+    anomKicker && anomKpis && anomGrid > 0 ? 'OK' : 'FAIL',
+    `kicker: ${anomKicker} · kpis: ${anomKpis} · grid: ${anomGrid > 0}`,
+    shotAnom);
+
+  // ─── 2p. /contrats ContratsSol (Pattern B pur + KpiRow, Lot 2 P3) ───────
+  await page.goto(`${URL}/contrats`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(5000);
+  await dismissOverlay(page);
+  const contratsKicker = await expectVisible(page, '.sol-page-kicker');
+  const contratsKpis = await expectVisible(page, '.sol-kpi-row');
+  const contratsGrid = await page.locator('table.sol-expert-grid-full').count();
+  const shotContrats = await snap(page, 'step27_contrats_pattern_b');
+  log('02p /contrats ContratsSol render',
+    contratsKicker && contratsKpis && contratsGrid > 0 ? 'OK' : 'FAIL',
+    `kicker: ${contratsKicker} · kpis: ${contratsKpis} · grid: ${contratsGrid > 0}`,
+    shotContrats);
+
+  // ─── 2q. /renouvellements RenouvellementsSol (Pattern B + horizon, P4) ──
+  await page.goto(`${URL}/renouvellements`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(5000);
+  await dismissOverlay(page);
+  const renouvKicker = await expectVisible(page, '.sol-page-kicker');
+  const renouvKpis = await expectVisible(page, '.sol-kpi-row');
+  const renouvHorizon = await page.locator('button[aria-pressed]').count();
+  const shotRenouv = await snap(page, 'step28_renouvellements_pattern_b');
+  log('02q /renouvellements RenouvellementsSol render',
+    renouvKicker && renouvKpis && renouvHorizon > 0 ? 'OK' : 'FAIL',
+    `kicker: ${renouvKicker} · kpis: ${renouvKpis} · horizon buttons: ${renouvHorizon}`,
+    shotRenouv);
+
+  // ─── 2r. /usages UsagesSol (Pattern A hybride, Lot 2 P5) ────────────────
+  await page.goto(`${URL}/usages`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(8000);
+  await dismissOverlay(page);
+  const usagesKicker = await expectVisible(page, '.sol-page-kicker');
+  const usagesKpis = await expectVisible(page, '.sol-kpi-row');
+  const usagesLegacyTabs = await page.locator('text=Profil conso').count() + await page.locator('text=Baseline').count();
+  const shotUsages = await snap(page, 'step29_usages_pattern_a');
+  log('02r /usages UsagesSol render',
+    usagesKicker && usagesKpis ? 'OK' : 'FAIL',
+    `kicker: ${usagesKicker} · kpis: ${usagesKpis} · legacy tabs: ${usagesLegacyTabs > 0}`,
+    shotUsages);
+
+  // ─── 2s. /usages-horaires UsagesHorairesSol (Pattern A compact, P6) ─────
+  await page.goto(`${URL}/usages-horaires`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(6000);
+  await dismissOverlay(page);
+  const horairesKicker = await expectVisible(page, '.sol-page-kicker');
+  const horairesKpis = await expectVisible(page, '.sol-kpi-row');
+  const shotHoraires = await snap(page, 'step30_usages_horaires_pattern_a');
+  log('02s /usages-horaires UsagesHorairesSol render',
+    horairesKicker && horairesKpis ? 'OK' : 'FAIL',
+    `kicker: ${horairesKicker} · kpis: ${horairesKpis}`,
+    shotHoraires);
+
+  // ─── 2t. /watchers WatchersSol (Pattern B preludeSlot, Lot 2 P7) ────────
+  await page.goto(`${URL}/watchers`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(6000);
+  await dismissOverlay(page);
+  const watchersKicker = await expectVisible(page, '.sol-page-kicker');
+  const watchersGrid = await page.locator('table.sol-expert-grid-full').count();
+  // Prélude SolWatcherCard : grid responsive avec cards
+  const watcherCards = await page.locator('text=Exécuter').count();
+  const shotWatchers = await snap(page, 'step31_watchers_pattern_b_prelude');
+  log('02t /watchers WatchersSol render',
+    watchersKicker && watchersGrid > 0 && watcherCards > 0 ? 'OK' : 'FAIL',
+    `kicker: ${watchersKicker} · grid: ${watchersGrid > 0} · watcher cards (Exécuter buttons): ${watcherCards}`,
+    shotWatchers);
+
   // ─── 3. Raccourcis clavier ────────────────────────────────────────────────
   await page.goto(`${URL}/cockpit`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(1500);

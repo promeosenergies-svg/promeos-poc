@@ -88,6 +88,40 @@
 
 ---
 
+**✅ Statut Lot 2 (v2.3-lot2-listes, avril 2026)** :
+
+4 composants Pattern B livrés et stabilisés sur 4 applications
+concrètes (commit `d1e09df3`) :
+[`SolListPage`](../../frontend/src/ui/sol/SolListPage.jsx),
+[`SolExpertToolbar`](../../frontend/src/ui/sol/SolExpertToolbar.jsx),
+[`SolExpertGridFull`](../../frontend/src/ui/sol/SolExpertGridFull.jsx),
+[`SolPagination`](../../frontend/src/ui/sol/SolPagination.jsx).
+
+3 pages migrées en Pattern B pur :
+
+- [`/anomalies`](../../frontend/src/pages/AnomaliesSol.jsx) —
+  EvidenceDrawer legacy préservé (commit `eed71ecb`)
+- [`/contrats`](../../frontend/src/pages/ContratsSol.jsx) — première
+  application **SolKpiRow agrégats client-side** + fix honnêteté
+  "prix pondéré null vs 0" (commit `b2119707`)
+- [`/renouvellements`](../../frontend/src/pages/RenouvellementsSol.jsx)
+  — **Horizon picker rightSlot** (5 pills) + Segmentation badge
+  conditionnel (commit `540e7842`)
+
+**Variante Pattern B avec preludeSlot** (Phase 7, commit `b1963160`) :
+
+- [`/watchers`](../../frontend/src/pages/WatchersSol.jsx) — grid
+  responsive de [`SolWatcherCard`](../../frontend/src/ui/sol/SolWatcherCard.jsx)
+  en preludeSlot (watchers = objets actionables avec bouton Exécuter
+  · feedback inline, pas des chiffres agrégés).
+
+**Cas d'usage preludeSlot** : entités actionables avec état mutable
+(running/ok/error) devant la toolbar, au lieu d'un SolKpiRow
+agrégats classique. Extensible à bookmarks utilisateur, alertes
+personnalisées, configurations sauvegardées.
+
+---
+
 ### Pattern C — Fiche détail
 
 **Quand l'utiliser** : page d'une entité unique (un site, un dossier de conformité, une anomalie de facture, un diagnostic).

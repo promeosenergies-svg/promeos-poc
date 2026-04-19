@@ -109,7 +109,8 @@ export function buildContractRows(cadres = []) {
     });
     for (const a of c.annexes || []) {
       rows.push({
-        id: `annexe-${a.id}`,
+        // Préfixe cadreId pour éviter collisions annexe-id entre cadres
+        id: `annexe-${c.id}-${a.id}`,
         cells: {
           site: `${NBSP}${NBSP}↳ ${a.site_name || a.annexe_ref || 'Annexe'}`,
           supplier: c.supplier_name || '—',
