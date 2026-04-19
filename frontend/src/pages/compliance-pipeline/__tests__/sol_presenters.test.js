@@ -19,8 +19,12 @@ import {
   buildSubNarrative,
   buildEmptyState,
   resolveTooltipExplain,
+  buildKpiAriaLabel,
+  buildFilterConfig,
   pipelineRows,
   filterRows,
+  sortRows,
+  paginateRows,
 } from '../sol_presenters';
 
 const SUMMARY_FULL = {
@@ -266,6 +270,55 @@ describe('resolveTooltipExplain', () => {
   });
 });
 
+describe('buildKpiAriaLabel', () => {
+  it('retourne label dégradé si summary absent', () => {
+    expect(buildKpiAriaLabel('pipeline_sites_ready', null)).toMatch(/indisponible/i);
+    expect(buildKpiAriaLabel('pipeline_deadlines_d30', null)).toMatch(/indisponible/i);
+    expect(buildKpiAriaLabel('pipeline_untrusted_sites', null)).toMatch(/indisponible/i);
+  });
+  it('string vide si code inconnu', () => {
+    expect(buildKpiAriaLabel('unknown_kpi', SUMMARY_FULL)).toBe('');
+  });
+  it('cohérence scope switcher : total_sites=1 → label 1 / 1', () => {
+    // Snapshot scope=site spécifique : summary.total_sites=1, ready=1
+    const soloSummary = {
+      total_sites: 1,
+      kpis: { data_blocked: 0, data_warning: 0, data_ready: 1 },
+      deadlines: { d30: [], d90: [], d180: [], beyond: [] },
+      untrusted_sites: [],
+      sites: [SUMMARY_FULL.sites[0]],
+    };
+    const aria = buildKpiAriaLabel('pipeline_sites_ready', soloSummary);
+    expect(aria).toContain('1 sur 1');
+    expect(aria).toMatch(/prêts|OK/i);
+  });
+  it('label riche avec ratio + tone pour les 3 KPIs', () => {
+    expect(buildKpiAriaLabel('pipeline_sites_ready', SUMMARY_FULL)).toMatch(/sur 5/);
+    expect(buildKpiAriaLabel('pipeline_deadlines_d30', SUMMARY_FULL)).toMatch(/sous 30/i);
+    expect(buildKpiAriaLabel('pipeline_untrusted_sites', SUMMARY_FULL)).toMatch(/sur 5/);
+  });
+});
+
+describe('buildFilterConfig', () => {
+  it('gate options filtrés sur gates réellement présents', () => {
+    const config = buildFilterConfig(SUMMARY_FULL);
+    const gateFilter = config.find((f) => f.id === 'gate_status');
+    // SUMMARY_FULL a OK + WARNING + BLOCKED
+    expect(gateFilter.options.map((o) => o.value)).toEqual(['', 'OK', 'WARNING', 'BLOCKED']);
+  });
+  it('gate options vides si summary vide (juste "Tous gates")', () => {
+    const config = buildFilterConfig(null);
+    const gateFilter = config.find((f) => f.id === 'gate_status');
+    expect(gateFilter.options).toHaveLength(1);
+    expect(gateFilter.options[0].value).toBe('');
+  });
+  it('framework + untrustedOnly toujours présents (statiques)', () => {
+    const config = buildFilterConfig(null);
+    expect(config.find((f) => f.id === 'framework').options).toHaveLength(4);
+    expect(config.find((f) => f.id === 'untrustedOnly').options).toHaveLength(2);
+  });
+});
+
 describe('pipelineRows', () => {
   it('array vide si summary absent', () => {
     expect(pipelineRows(null)).toEqual([]);
@@ -313,5 +366,45 @@ describe('filterRows', () => {
   it('retourne [] si rows non-array', () => {
     expect(filterRows(null)).toEqual([]);
     expect(filterRows(undefined)).toEqual([]);
+  });
+});
+
+describe('sortRows', () => {
+  const rows = pipelineRows(SUMMARY_FULL);
+
+  it('tri ASC numérique sur compliance_score (défaut Phase 5)', () => {
+    const sorted = sortRows(rows, { column: 'compliance_score', direction: 'asc' });
+    expect(sorted.map((r) => r.compliance_score)).toEqual([30, 65, 90]);
+  });
+  it('tri par gate_status respecte ordre sémantique BLOCKED→WARNING→OK', () => {
+    const sorted = sortRows(rows, { column: 'gate_status', direction: 'asc' });
+    expect(sorted.map((r) => r.gate_status)).toEqual(['BLOCKED', 'WARNING', 'OK']);
+  });
+  it('tri alphabétique FR sur site_nom', () => {
+    const sorted = sortRows(rows, { column: 'site_nom', direction: 'asc' });
+    expect(sorted[0].site_nom).toMatch(/Bureau|Entrepôt|Siège/);
+  });
+  it('rows vide/null safe', () => {
+    expect(sortRows(null)).toEqual([]);
+    expect(sortRows([], { column: 'x', direction: 'asc' })).toEqual([]);
+  });
+});
+
+describe('paginateRows', () => {
+  const rows = Array.from({ length: 25 }, (_, i) => ({ id: i + 1 }));
+
+  it('slice page 1 / 20', () => {
+    expect(paginateRows(rows, 1, 20)).toHaveLength(20);
+  });
+  it('slice page 2 avec reste', () => {
+    const p2 = paginateRows(rows, 2, 20);
+    expect(p2).toHaveLength(5);
+    expect(p2[0].id).toBe(21);
+  });
+  it('clamp page < 1 → page 1', () => {
+    expect(paginateRows(rows, 0, 10)[0].id).toBe(1);
+  });
+  it('rows null / invalid safe', () => {
+    expect(paginateRows(null)).toEqual([]);
   });
 });

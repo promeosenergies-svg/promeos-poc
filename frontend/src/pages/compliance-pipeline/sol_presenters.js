@@ -204,6 +204,76 @@ export function resolveTooltipExplain(code, summary) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 12 bis. buildKpiAriaLabel — aria-label via helper (pas hardcoded JSX)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function buildKpiAriaLabel(code, summary) {
+  switch (code) {
+    case 'pipeline_sites_ready': {
+      const k = formatSitesReady(summary);
+      if (k.value == null) return 'Sites prêts : donnée indisponible';
+      return `Sites prêts : ${k.value} sur ${k.total}, ${interpretSitesReady(summary)}`;
+    }
+    case 'pipeline_deadlines_d30': {
+      const k = formatDeadlinesD30(summary);
+      if (k.value == null) return 'Échéances imminentes : donnée indisponible';
+      return `Échéances sous 30 jours : ${k.value}, ${interpretDeadlinesD30(summary)}`;
+    }
+    case 'pipeline_untrusted_sites': {
+      const k = formatUntrustedSites(summary);
+      if (k.value == null) return 'Sites non fiables : donnée indisponible';
+      return `Sites non fiables : ${k.value} sur ${k.total}, ${interpretUntrustedSites(summary)}`;
+    }
+    default:
+      return '';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 12 ter. buildFilterConfig — toolbar filters déclaratifs (pas inline JSX)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function buildFilterConfig(summary) {
+  const gateValues = new Set();
+  if (hasSummary(summary) && Array.isArray(summary.sites)) {
+    for (const s of summary.sites) {
+      if (s.gate_status) gateValues.add(s.gate_status);
+    }
+  }
+  const gateOptions = [
+    { value: '', label: 'Tous gates' },
+    ...['OK', 'WARNING', 'BLOCKED']
+      .filter((g) => gateValues.has(g))
+      .map((g) => ({ value: g, label: g })),
+  ];
+  return [
+    {
+      id: 'gate_status',
+      label: 'Gate data',
+      options: gateOptions,
+    },
+    {
+      id: 'framework',
+      label: 'Framework',
+      options: [
+        { value: '', label: 'Tous frameworks' },
+        { value: 'dt', label: 'Décret Tertiaire' },
+        { value: 'bacs', label: 'BACS' },
+        { value: 'aper', label: 'APER' },
+      ],
+    },
+    {
+      id: 'untrustedOnly',
+      label: 'Fiabilité',
+      options: [
+        { value: '', label: 'Tous' },
+        { value: 'untrusted', label: 'Sites à fiabiliser' },
+      ],
+    },
+  ];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 13. pipelineRows — transforme sites[] en rows pour SolExpertGridFull
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -222,6 +292,51 @@ export function pipelineRows(summary) {
     applicable_bacs: Boolean(s.applicability?.bacs),
     applicable_aper: Boolean(s.applicability?.aper),
   }));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 14. filterRows — search + gate_status + applicability + untrusted
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 15. sortRows — tri client-side sur enum / numérique / string
+// ─────────────────────────────────────────────────────────────────────────────
+
+const GATE_SORT_ORDER = { BLOCKED: 0, WARNING: 1, OK: 2, UNKNOWN: 3 };
+
+export function sortRows(rows, sortBy) {
+  if (!Array.isArray(rows)) return [];
+  if (!sortBy || !sortBy.column) return [...rows];
+  const { column, direction } = sortBy;
+  const factor = direction === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    let va = a[column];
+    let vb = b[column];
+    if (column === 'gate_status') {
+      va = GATE_SORT_ORDER[va] ?? 99;
+      vb = GATE_SORT_ORDER[vb] ?? 99;
+    }
+    if (typeof va === 'boolean') va = va ? 1 : 0;
+    if (typeof vb === 'boolean') vb = vb ? 1 : 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    if (typeof va === 'string' && typeof vb === 'string') {
+      return va.localeCompare(vb, 'fr') * factor;
+    }
+    return (va - vb) * factor;
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 16. paginateRows — découpe page (aucun return null, composant décide seul)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function paginateRows(rows, page = 1, pageSize = 20) {
+  if (!Array.isArray(rows)) return [];
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeSize = Math.max(1, Number(pageSize) || 20);
+  const start = (safePage - 1) * safeSize;
+  return rows.slice(start, start + safeSize);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
