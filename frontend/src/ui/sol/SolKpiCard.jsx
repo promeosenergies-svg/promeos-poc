@@ -8,6 +8,7 @@
  * Source maquette : .kpi / .kpi-label / .kpi-value / .kpi-unit / .kpi-delta
  *                 / .kpi-headline / .source-chip
  */
+import Explain from '../Explain';
 import SolSourceChip from './SolSourceChip';
 
 // Mapping sémantique delta → tone.
@@ -35,6 +36,7 @@ export default function SolKpiCard({
   unit,
   delta,
   semantic = 'neutral',
+  explainKey,
   headline,
   source,
 }) {
@@ -53,6 +55,10 @@ export default function SolKpiCard({
     >
       <div
         style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 6,
           fontSize: 10.5,
           color: 'var(--sol-ink-500)',
           textTransform: 'uppercase',
@@ -61,7 +67,38 @@ export default function SolKpiCard({
           fontWeight: 500,
         }}
       >
-        {label}
+        <span>{label}</span>
+        {explainKey && (
+          <Explain
+            term={explainKey}
+            position="bottom"
+            className="sol-kpi-explain"
+          >
+            <span
+              aria-label="Voir la d\u00e9finition"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 14,
+                height: 14,
+                borderRadius: '50%',
+                border: '1px solid var(--sol-ink-300)',
+                color: 'var(--sol-ink-400)',
+                fontFamily: 'var(--sol-font-mono)',
+                fontSize: 9,
+                fontWeight: 600,
+                lineHeight: 1,
+                cursor: 'help',
+                letterSpacing: 0,
+                textTransform: 'none',
+                transition: 'color 120ms, border-color 120ms',
+              }}
+            >
+              ?
+            </span>
+          </Explain>
+        )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>

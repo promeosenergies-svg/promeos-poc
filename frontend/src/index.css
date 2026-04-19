@@ -206,6 +206,19 @@ em, .italic-hook { font-style: italic; color: var(--sol-ink-500); font-weight: 5
   background: var(--sol-calme-fg);
 }
 
+/* SolKpiCard explainKey wrapper — Explain ajoute un border-b dotted qu'on
+   doit neutraliser quand le trigger est déjà un cercle "?" stylé. */
+.sol-kpi-explain {
+  border-bottom: none !important;
+  display: inline-flex !important;
+  vertical-align: middle;
+}
+.sol-kpi-explain:hover > span,
+.sol-kpi-explain:focus-visible > span {
+  border-color: var(--sol-calme-fg) !important;
+  color: var(--sol-ink-700) !important;
+}
+
 /* KPI pattern signature Sol — mono tabular + label uppercase (V2 raw compact) */
 .sol-kpi-value {
   font-family: var(--sol-font-mono);

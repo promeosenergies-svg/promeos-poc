@@ -439,4 +439,26 @@ export const GLOSSARY = {
       'Stickiness ratio : WAU (users actifs 7j) / MAU (users actifs 30j). Seuils : ≥40% excellent, 30–40% bon, 20–30% à travailler, <20% faible.',
     long: "Le ratio WAU/MAU mesure la fidélité d'usage : plus il est haut, plus les utilisateurs reviennent fréquemment. Référence marché B2B SaaS : 20-30% normal, 40%+ excellent. Source : events CX_* rattachés à un user_id sur les fenêtres 7j et 30j.",
   },
+  // ── Scores de conformité (Phase 4.1 refonte) ────────────────────────────
+  compliance_score_dt: {
+    term: 'Score Décret Tertiaire',
+    short:
+      "Score de conformité au Décret Tertiaire (Éco Énergie Tertiaire). Exprime la trajectoire vers l'objectif −25 % de consommation à horizon 2030, sur base OPERAT.",
+    long:
+      'Le score Décret Tertiaire composite pondère trois dimensions : déclaration OPERAT annuelle (30 %), trajectoire de réduction réelle vs cible (50 %), qualité des données (20 %). Un score ≥75 place le site en bonne trajectoire, 60–75 en zone de vigilance, <60 en risque de sanction. Source canonique : moteur RegAssessment (services/compliance_engine.py).',
+  },
+  compliance_score_bacs: {
+    term: 'Score BACS',
+    short:
+      "Score de conformité au décret BACS (Building Automation Control Systems). Obligation GTB/GTC pour bâtiments tertiaires avec CVC > 290 kW.",
+    long:
+      'Le décret BACS impose un système de gestion technique du bâtiment (GTB) classe A ou B pour les tertiaires dont la puissance des systèmes CVC dépasse 290 kW (échéance 01/01/2025) ou 70–290 kW (échéance 01/01/2030). Le score pondère : inventaire CVC (40 %), homologation GTB (40 %), reporting annuel (20 %). Source : RegAssessment bacs_v2.0.',
+  },
+  compliance_score_aper: {
+    term: 'Score APER',
+    short:
+      "Score de conformité à la loi APER (Accélération des énergies renouvelables). Obligation solarisation des parkings extérieurs et toitures neuves/rénovées.",
+    long:
+      "La loi APER (10/03/2023) impose la solarisation des parkings > 1 500 m² (échéances 2026-2028 selon surface) et des toitures > 500 m² des bâtiments neufs/rénovés. Le score pondère : cartographie assujettissement (30 %), études techniques PV (35 %), échéancier travaux (35 %). Source : RegAssessment module aper.",
+  },
 };

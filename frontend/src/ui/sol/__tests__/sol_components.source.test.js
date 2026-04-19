@@ -42,6 +42,7 @@ const SOL_FILES_PHASE1 = [
   'SolRail.jsx',
   'SolPanel.jsx',
   'SolAppShell.jsx',
+  'SolTrajectoryChart.jsx', // Phase 4.1
 ];
 
 const ALL_SOL_FILES = [...SOL_FILES_SPRINT2, ...SOL_FILES_PHASE1];
@@ -150,6 +151,15 @@ describe('SolKpiCard', () => {
 
   it('delegates source chip to SolSourceChip component', () => {
     expect(src).toContain('SolSourceChip');
+  });
+
+  it('Phase 4.1 : prop explainKey + r\u00e9utilise Explain composant', () => {
+    expect(src).toContain('explainKey');
+    expect(src).toContain("import Explain from '../Explain'");
+  });
+
+  it('Phase 4.1 : bouton "?" rendu uniquement si explainKey pr\u00e9sent', () => {
+    expect(src).toMatch(/\{explainKey && \(/);
   });
 });
 
@@ -440,37 +450,46 @@ describe('SolAppShell', () => {
   });
 });
 
+describe('SolTrajectoryChart (Phase 4.1)', () => {
+  const src = readSol('SolTrajectoryChart.jsx');
+
+  it('utilise Recharts LineChart + ReferenceLine target + ReferenceArea zones', () => {
+    expect(src).toContain('LineChart');
+    expect(src).toContain('ReferenceLine');
+    expect(src).toContain('ReferenceArea');
+  });
+
+  it('bandes conformit\u00e9 0-60/60-75/75-100 avec tokens sol-{refuse,attention,succes}-bg', () => {
+    expect(src).toContain('sol-refuse-bg');
+    expect(src).toContain('sol-attention-bg');
+    expect(src).toContain('sol-succes-bg');
+  });
+
+  it('dernier point annot\u00e9 via ReferenceDot stroke calme-fg', () => {
+    expect(src).toContain('ReferenceDot');
+    expect(src).toMatch(/stroke="var\(--sol-calme-fg\)"/);
+  });
+
+  it('accepte targetLine + targetLabel + sourceChip props', () => {
+    for (const prop of ['targetLine', 'targetLabel', 'sourceChip', 'caption']) {
+      expect(src).toContain(prop);
+    }
+  });
+});
+
 describe('Sol index barrel', () => {
   const src = readSol('index.js');
 
-  it('exporte les 21 composants', () => {
+  it('exporte les 22 composants (21 + SolTrajectoryChart Phase 4.1)', () => {
     for (const comp of [
-      // Sprint 2
-      'SolPageHeader',
-      'SolKpiCard',
-      'SolHero',
-      'SolWeekCard',
-      'SolSourceChip',
-      'SolSectionHead',
-      'SolLoadCurve',
-      'SolTimerail',
-      // Phase 1
-      'SolHeadline',
-      'SolSubline',
-      'SolStatusPill',
-      'SolButton',
-      'SolKpiRow',
-      'SolWeekGrid',
-      'SolLayerToggle',
-      'SolPendingBanner',
-      'SolInspectDoc',
-      'SolCartouche',
-      'SolDrawer',
-      'SolExpertGrid',
-      'SolJournal',
-      'SolRail',
-      'SolPanel',
-      'SolAppShell',
+      // Sprint 2 + Phase 1
+      'SolPageHeader', 'SolKpiCard', 'SolHero', 'SolWeekCard', 'SolSourceChip',
+      'SolSectionHead', 'SolLoadCurve', 'SolTimerail', 'SolHeadline', 'SolSubline',
+      'SolStatusPill', 'SolButton', 'SolKpiRow', 'SolWeekGrid', 'SolLayerToggle',
+      'SolPendingBanner', 'SolInspectDoc', 'SolCartouche', 'SolDrawer',
+      'SolExpertGrid', 'SolJournal', 'SolRail', 'SolPanel', 'SolAppShell',
+      // Phase 4.1
+      'SolTrajectoryChart',
     ]) {
       expect(src).toContain(comp);
     }

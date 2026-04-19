@@ -19,7 +19,10 @@ const Patrimoine = lazy(() => import('./pages/Patrimoine'));
 const Site360 = lazy(() => import('./pages/Site360'));
 const ActionsPage = lazy(() => import('./pages/ActionsPage'));
 const ActionCenterPage = lazy(() => import('./pages/ActionCenterPage'));
-const ConformitePage = lazy(() => import('./pages/ConformitePage'));
+// Refonte Phase 4.1 : /conformite pointe sur ConformiteSol (Pattern A).
+// ConformitePage legacy accessible via /conformite-legacy pour A/B comparaison.
+const ConformitePage = lazy(() => import('./pages/ConformiteSol'));
+const ConformiteLegacy = lazy(() => import('./pages/ConformitePage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 // Refonte Sol V1 : /cockpit pointe maintenant sur CockpitRefonte (rupture
 // visuelle V2 raw). Cockpit.jsx original accessible via /cockpit-legacy
@@ -204,6 +207,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <ConformitePage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/conformite-legacy"
+                      element={
+                        <PageSuspense>
+                          <ConformiteLegacy />
                         </PageSuspense>
                       }
                     />
