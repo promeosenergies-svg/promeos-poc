@@ -1,24 +1,35 @@
 /**
- * PROMEOS — SolTrajectoryChart (Phase 4.1 refonte)
+ * PROMEOS — SolTrajectoryChart (Phase 4.1 ; étendu Phase 4.4 Achat)
  *
- * Graphe trajectoire signature Conformité DT (réutilisable Achat énergie
- * Phase 4.4 pour évolution prix marché).
+ * Graphe trajectoire / évolution temporelle signature.
+ * Utilisé par :
+ *   - Conformité DT (score compliance 6-12 mois + zones seuil + cible)
+ *   - Achat énergie (prix marché spot 12 mois + ligne prix contracté utilisateur
+ *                    + fenêtre d'opportunité)
  *
  * Props :
- *   data         : [{month: '2025-11', score: 42.0}, ...] 12 derniers mois
- *   targetLine   : nombre 0-100 — score cible (ex : 75 pour DT)
- *   targetLabel  : texte sous la ligne cible (ex : "Cible DT 2030")
- *   yLabel       : unité Y axis (défaut "score")
- *   sourceChip   : élément <SolSourceChip /> optionnel pour la légende basse
- *   caption      : phrase narrative sous le chart (JSX)
- *   height       : pixels (défaut 200)
+ *   data             : [{month, score}] ou [{month, value}] — X temporel
+ *   dataKey          : clé numérique lue — défaut 'score'
+ *   targetLine       : nombre cible (null → pas de ReferenceLine target) — défaut null
+ *   targetLabel      : texte sous la cible (ex "Cible DT 2030")
+ *   userLine         : nombre pour une ligne horizontale user (ex "Votre prix actuel")
+ *   userLabel        : texte près de userLine
+ *   yDomain          : [min, max] — défaut [0, 100] adapté score
+ *   yLabel           : unité Y axis
+ *   showThresholdZones : bool — défaut true pour Conformité (0-60/60-75/75-100)
+ *                        false pour Achat (pas de zones de seuil)
+ *   opportunityArea  : { x1, x2, label } — ReferenceArea calme-fg opacity 0.2
+ *                      (optionnel — affiché seulement si non-null)
+ *   sourceChip       : <SolSourceChip /> optionnel
+ *   caption          : phrase narrative JSX
+ *   height           : pixels (défaut 200)
  *
- * Zones de couleur (ReferenceArea) :
- *   0–60    : rouge léger (zone risque)
+ * Zones de couleur (showThresholdZones=true) :
+ *   0–60    : rouge léger (risque)
  *   60–75   : ambre léger (vigilance)
  *   75–100  : vert léger (solide)
  *
- * Dernier point annoté avec circle calme-fg + text mono.
+ * Dernier point annoté circle calme-fg + text mono dans tous les cas.
  */
 import {
   Area,
@@ -52,9 +63,15 @@ function formatMonthLabel(monthKey) {
 
 export default function SolTrajectoryChart({
   data = [],
+  dataKey = 'score',
   targetLine,
   targetLabel,
+  userLine = null,
+  userLabel = '',
+  yDomain = [0, 100],
   yLabel = 'score',
+  showThresholdZones = true,
+  opportunityArea = null,
   sourceChip = null,
   caption = null,
   height = 200,
@@ -78,7 +95,7 @@ export default function SolTrajectoryChart({
 
   const last = data[data.length - 1];
   const peakAnnotation = last
-    ? { month: last.month, score: last.score }
+    ? { month: last.month, score: last[dataKey] }
     : null;
 
   return (
@@ -93,28 +110,51 @@ export default function SolTrajectoryChart({
               </linearGradient>
             </defs>
 
-            {/* Zones de seuil conformité (colorées en fond) */}
-            <ReferenceArea
-              y1={0}
-              y2={60}
-              fill="var(--sol-refuse-bg)"
-              fillOpacity={0.35}
-              ifOverflow="visible"
-            />
-            <ReferenceArea
-              y1={60}
-              y2={75}
-              fill="var(--sol-attention-bg)"
-              fillOpacity={0.3}
-              ifOverflow="visible"
-            />
-            <ReferenceArea
-              y1={75}
-              y2={100}
-              fill="var(--sol-succes-bg)"
-              fillOpacity={0.25}
-              ifOverflow="visible"
-            />
+            {/* Zones de seuil conformité — affichées seulement si showThresholdZones */}
+            {showThresholdZones && (
+              <>
+                <ReferenceArea
+                  y1={0}
+                  y2={60}
+                  fill="var(--sol-refuse-bg)"
+                  fillOpacity={0.35}
+                  ifOverflow="visible"
+                />
+                <ReferenceArea
+                  y1={60}
+                  y2={75}
+                  fill="var(--sol-attention-bg)"
+                  fillOpacity={0.3}
+                  ifOverflow="visible"
+                />
+                <ReferenceArea
+                  y1={75}
+                  y2={100}
+                  fill="var(--sol-succes-bg)"
+                  fillOpacity={0.25}
+                  ifOverflow="visible"
+                />
+              </>
+            )}
+
+            {/* Opportunity area (Achat : fenêtre favorable prix marché bas) */}
+            {opportunityArea && (
+              <ReferenceArea
+                x1={opportunityArea.x1}
+                x2={opportunityArea.x2}
+                fill="var(--sol-calme-bg)"
+                fillOpacity={0.35}
+                ifOverflow="visible"
+                label={{
+                  value: opportunityArea.label || 'Fenêtre favorable',
+                  position: 'insideTop',
+                  fill: 'var(--sol-calme-fg)',
+                  fontFamily: 'var(--sol-font-mono)',
+                  fontSize: 9.5,
+                  fontWeight: 600,
+                }}
+              />
+            )}
 
             <CartesianGrid strokeDasharray="2 3" stroke="var(--sol-ink-200)" vertical={false} />
             <XAxis
@@ -130,7 +170,7 @@ export default function SolTrajectoryChart({
               interval="preserveStartEnd"
             />
             <YAxis
-              domain={[0, 100]}
+              domain={yDomain}
               axisLine={false}
               tickLine={false}
               tick={{
@@ -138,7 +178,7 @@ export default function SolTrajectoryChart({
                 fontSize: 10,
                 fill: 'var(--sol-ink-400)',
               }}
-              width={36}
+              width={44}
               label={{
                 value: yLabel,
                 position: 'insideTopLeft',
@@ -156,19 +196,19 @@ export default function SolTrajectoryChart({
                 color: 'var(--sol-ink-900)',
               }}
               labelFormatter={formatMonthLabel}
-              formatter={(value) => [`${Number(value).toFixed(1)} pts`, yLabel]}
+              formatter={(value) => [`${Number(value).toFixed(1)}`, yLabel]}
             />
 
             <Line
               type="monotone"
-              dataKey="score"
+              dataKey={dataKey}
               stroke="var(--sol-ink-900)"
               strokeWidth={1.8}
               dot={false}
               activeDot={{ r: 4, stroke: 'var(--sol-calme-fg)', strokeWidth: 2, fill: 'white' }}
             />
 
-            {/* Ligne cible (ex : DT 75 pts ≈ -25% conso) */}
+            {/* Ligne cible (ex : DT 75 pts ≈ -25% conso). Optional. */}
             {targetLine != null && (
               <ReferenceLine
                 y={targetLine}
@@ -179,6 +219,24 @@ export default function SolTrajectoryChart({
                   value: targetLabel || `cible ${targetLine}`,
                   position: 'right',
                   fill: 'var(--sol-attention-fg)',
+                  fontFamily: 'var(--sol-font-mono)',
+                  fontSize: 10,
+                  fontWeight: 600,
+                }}
+              />
+            )}
+
+            {/* Ligne utilisateur (Achat : prix pondéré contracté actuel). Optional. */}
+            {userLine != null && (
+              <ReferenceLine
+                y={userLine}
+                stroke="var(--sol-afaire-fg)"
+                strokeDasharray="6 3"
+                strokeWidth={1.4}
+                label={{
+                  value: userLabel || `votre niveau ${userLine}`,
+                  position: 'left',
+                  fill: 'var(--sol-afaire-fg)',
                   fontFamily: 'var(--sol-font-mono)',
                   fontSize: 10,
                   fontWeight: 600,
@@ -227,59 +285,61 @@ export default function SolTrajectoryChart({
         {sourceChip}
       </div>
 
-      {/* Micro-légende zones */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 16,
-          marginTop: 10,
-          fontFamily: 'var(--sol-font-mono)',
-          fontSize: 9.5,
-          color: 'var(--sol-ink-500)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-        }}
-      >
-        <span>
-          <span
-            style={{
-              display: 'inline-block',
-              width: 10,
-              height: 4,
-              background: 'var(--sol-refuse-bg)',
-              marginRight: 5,
-              verticalAlign: 'middle',
-            }}
-          />
-          0–60 risque
-        </span>
-        <span>
-          <span
-            style={{
-              display: 'inline-block',
-              width: 10,
-              height: 4,
-              background: 'var(--sol-attention-bg)',
-              marginRight: 5,
-              verticalAlign: 'middle',
-            }}
-          />
-          60–75 vigilance
-        </span>
-        <span>
-          <span
-            style={{
-              display: 'inline-block',
-              width: 10,
-              height: 4,
-              background: 'var(--sol-succes-bg)',
-              marginRight: 5,
-              verticalAlign: 'middle',
-            }}
-          />
-          75–100 solide
-        </span>
-      </div>
+      {/* Micro-légende zones (conformité seulement) */}
+      {showThresholdZones && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            marginTop: 10,
+            fontFamily: 'var(--sol-font-mono)',
+            fontSize: 9.5,
+            color: 'var(--sol-ink-500)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+          }}
+        >
+          <span>
+            <span
+              style={{
+                display: 'inline-block',
+                width: 10,
+                height: 4,
+                background: 'var(--sol-refuse-bg)',
+                marginRight: 5,
+                verticalAlign: 'middle',
+              }}
+            />
+            0–60 risque
+          </span>
+          <span>
+            <span
+              style={{
+                display: 'inline-block',
+                width: 10,
+                height: 4,
+                background: 'var(--sol-attention-bg)',
+                marginRight: 5,
+                verticalAlign: 'middle',
+              }}
+            />
+            60–75 vigilance
+          </span>
+          <span>
+            <span
+              style={{
+                display: 'inline-block',
+                width: 10,
+                height: 4,
+                background: 'var(--sol-succes-bg)',
+                marginRight: 5,
+                verticalAlign: 'middle',
+              }}
+            />
+            75–100 solide
+          </span>
+        </div>
+      )}
     </div>
   );
 }

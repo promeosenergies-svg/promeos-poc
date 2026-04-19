@@ -61,7 +61,10 @@ const BillIntelPage = lazy(() => import('./pages/BillIntelSol'));
 const BillIntelLegacy = lazy(() => import('./pages/BillIntelPage'));
 const BillingPage = lazy(() => import('./pages/BillingPage'));
 const KBExplorerPage = lazy(() => import('./pages/KBExplorerPage'));
-const PurchasePage = lazy(() => import('./pages/PurchasePage'));
+// Refonte Phase 4.4 : /achat-energie pointe sur AchatSol (Pattern A).
+// PurchasePage legacy accessible via /achat-energie-legacy pour A/B comparaison.
+const PurchasePage = lazy(() => import('./pages/AchatSol'));
+const PurchaseLegacy = lazy(() => import('./pages/PurchasePage'));
 // PurchaseAssistantPage — now embedded as tab in PurchasePage, route redirects
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
@@ -462,6 +465,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <PurchasePage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/achat-energie-legacy"
+                      element={
+                        <PageSuspense>
+                          <PurchaseLegacy />
                         </PageSuspense>
                       }
                     />

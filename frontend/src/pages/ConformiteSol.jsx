@@ -278,9 +278,12 @@ export default function ConformiteSol() {
       >
         <SolTrajectoryChart
           data={trendArr}
+          dataKey="score"
           targetLine={75}
           targetLabel={`Cible${NBSP}DT${NBSP}2030`}
+          yDomain={[0, 100]}
           yLabel="score /100"
+          showThresholdZones
           caption={
             <>
               <SolStatusPill

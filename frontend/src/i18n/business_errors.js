@@ -163,6 +163,30 @@ export const BUSINESS_ERRORS = {
     footer: 'Prochaine échéance > 3 mois',
     footerRight: '✓ Stable',
   },
+  'achat.all_stable': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Portefeuille contractuel stable',
+    body: 'Aucune décision urgente. Votre position tarifaire est cohérente avec le marché.',
+    footer: 'surveillance continue',
+    footerRight: '✓ Stable',
+  },
+  'achat.market_data_unavailable': {
+    tag: 'attention',
+    tagLabel: 'Info temporaire',
+    title: 'Données marché en cours de collecte',
+    body: "Les prix EPEX Spot et forward sont en cours de rafraîchissement. Revenez dans quelques minutes.",
+    footer: 'source EPEX · MAJ automatique',
+    footerRight: '⟳',
+  },
+  'achat.no_scenarios': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Simulez votre premier scénario',
+    body: "Lancez l'assistant d'achat pour comparer offres fournisseurs, indexation et hedging forward.",
+    footer: 'assistant disponible',
+    footerRight: 'Automatisable',
+  },
 
   // ── Generic fallback ─────────────────────────────────────────────────────
   'generic.no_data': {

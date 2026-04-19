@@ -505,4 +505,26 @@ export const GLOSSARY = {
     long:
       "EUI (Energy Use Intensity) = consommation annuelle (kWhEF, énergie finale) / surface (m²). Moyenne pondérée par la surface : Σ(conso_kwh_an) / Σ(surface_m2). Benchmarks ADEME ODP 2024 par usage : bureau 210, entrepôt 80, enseignement 140, commerce 330, hôtellerie 280, industrie 180, santé 250. Un patrimoine au-dessus du benchmark signale un potentiel de réduction.",
   },
+  // ── Achat énergie (Phase 4.4 refonte) ────────────────────────────────────
+  achat_prix_pondere: {
+    term: 'Prix pondéré contracté',
+    short:
+      "Coût moyen €/MWh toutes énergies et tous sites confondus, pondéré par les volumes de consommation. Base de comparaison avec le marché spot.",
+    long:
+      "Formule : Σ(prix_contrat × volume_contrat) / Σ(volume_contrat) sur la période en cours. Exprime le coût moyen effectif d'approvisionnement. Comparé au prix EPEX Spot moyen pour identifier les fenêtres d'arbitrage (renégociation, switch fournisseur, hedging forward). Ratio > 1,15 vs spot suggère une opportunité d'optimisation.",
+  },
+  achat_echeance_contrat: {
+    term: 'Échéance prochain contrat',
+    short:
+      "Nombre de mois avant la prochaine fin de contrat énergie dans votre portefeuille, triée par date croissante. Détermine la fenêtre d'arbitrage.",
+    long:
+      "Calculé sur le portefeuille de contrats actifs non-renouvelés automatiquement. Seuils d'action : < 90 jours → préparation urgente des scénarios RFP ; 90-180 jours → fenêtre d'arbitrage ouverte, surveillance prix marché ; > 180 jours → veille passive. Le délai de préavis contractuel (notice_period_days) est pris en compte.",
+  },
+  achat_scenarios_valides: {
+    term: 'Scénarios validés',
+    short:
+      "Nombre de scénarios d'achat simulés et validés par l'utilisateur pour arbitrage (switch fournisseur, indexation, hedging).",
+    long:
+      "Chaque scénario compare un prix d'achat simulé à la situation actuelle, intègre la volatilité marché, le profil de consommation, les coûts post-ARENH. Un scénario validé est archivé avec traçabilité complète pour audit. Source : services/purchase_service.py + moteur cost_simulator.",
+  },
 };

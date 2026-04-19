@@ -476,6 +476,16 @@ describe('SolTrajectoryChart (Phase 4.1)', () => {
       expect(src).toContain(prop);
     }
   });
+
+  it('Phase 4.4 : extensions optionnelles userLine + opportunityArea + showThresholdZones + dataKey + yDomain', () => {
+    for (const prop of ['userLine', 'userLabel', 'opportunityArea', 'showThresholdZones', 'dataKey', 'yDomain']) {
+      expect(src).toContain(prop);
+    }
+    // userLine = ReferenceLine afaire-fg strokeDasharray 6 3
+    expect(src).toMatch(/stroke="var\(--sol-afaire-fg\)"/);
+    // opportunityArea = ReferenceArea calme-bg
+    expect(src).toMatch(/fill="var\(--sol-calme-bg\)"/);
+  });
 });
 
 describe('Sol index barrel', () => {
