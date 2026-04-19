@@ -339,7 +339,7 @@ export function buildAchatWeekCards({ renewals = [], marketContext, scenarios = 
       footerRight: 'Simuler',
     });
   } else {
-    cards.push(businessErrorFallback('achat.all_stable'));
+    cards.push(businessErrorFallback('achat.all_stable', cards.length));
   }
 
   // Card 3 Bonne nouvelle : scénario validé / hedging sécurisé
@@ -358,7 +358,7 @@ export function buildAchatWeekCards({ renewals = [], marketContext, scenarios = 
       onClick: () => onOpenRenewal?.(validatedScenario),
     });
   } else {
-    cards.push(businessErrorFallback('achat.all_stable'));
+    cards.push(businessErrorFallback('achat.all_stable', cards.length));
   }
 
   return cards.slice(0, 3);

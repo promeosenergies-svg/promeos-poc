@@ -205,7 +205,7 @@ export function buildBillWeekCards({ insights = [], onOpenInsight } = {}) {
       onClick: () => onOpenInsight?.(topAnomalie),
     });
   } else {
-    cards.push(businessErrorFallback('billing.no_anomalies_detected'));
+    cards.push(businessErrorFallback('billing.no_anomalies_detected', cards.length));
   }
 
   // Card 2 À faire : contestation en cours (in_review) ou à engager si anomalie présente
@@ -247,7 +247,7 @@ export function buildBillWeekCards({ insights = [], onOpenInsight } = {}) {
       onClick: () => onOpenInsight?.(resolved),
     });
   } else {
-    cards.push(businessErrorFallback('billing.no_anomalies_detected'));
+    cards.push(businessErrorFallback('billing.no_anomalies_detected', cards.length));
   }
 
   return cards.slice(0, 3);

@@ -18,6 +18,7 @@
  * 3 modes : Surface (par défaut) · Inspect (prose éditoriale) · Expert (table dense).
  */
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   SolPageHeader,
   SolHeadline,
@@ -131,6 +132,7 @@ function useCockpitSolData({ orgId, siteId } = {}) {
 
 export default function CockpitSol() {
   const scopeCtx = useScope();
+  const navigate = useNavigate();
   const scope = scopeCtx?.scope || {};
   const org = scopeCtx?.org;
   const scopeLabel = scopeCtx?.scopeLabel;
@@ -223,8 +225,9 @@ export default function CockpitSol() {
       upcomingItems: upcoming,
       validatedItems: validated,
       scope: { sitesCount: cockpitStats.total_sites },
+      onNavigate: (path) => navigate(path),
     });
-  }, [data.notifications, data.timeline, cockpitStats.total_sites]);
+  }, [data.notifications, data.timeline, cockpitStats.total_sites, navigate]);
 
   // Load curve — EMS réel si dispo, sinon fallback courbe 24h type bureau
   // (la signature visuelle de la maquette doit toujours être présente).

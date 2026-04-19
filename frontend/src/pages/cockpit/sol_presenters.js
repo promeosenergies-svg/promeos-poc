@@ -260,8 +260,20 @@ export function buildWeekSignals({
   upcomingItems = [],
   validatedItems = [],
   scope = {},
+  onNavigate = null, // Fix P4.5 : callback pour gérer string deeplink → fonction navigate
 } = {}) {
   const cards = [];
+
+  // Helper : convertit deeplink string → fonction ou undefined (React n'accepte
+  // pas un string comme onClick — warning console). Si onNavigate callback fourni,
+  // l'utilise (React Router) ; sinon window.location fallback.
+  const asNavigateFn = (path) => {
+    if (!path || typeof path !== 'string') return undefined;
+    if (typeof onNavigate === 'function') return () => onNavigate(path);
+    return () => {
+      if (typeof window !== 'undefined') window.location.assign(path);
+    };
+  };
 
   // 1) À regarder — alerte la plus critique
   const topAlert = alerts[0];
@@ -275,7 +287,7 @@ export function buildWeekSignals({
       body: topAlert.message || topAlert.summary || topAlert.description,
       footerLeft: impact ? `chiffré : ${formatFR(impact, 0)} €` : '',
       footerRight: topAlert.automatable ? 'Automatisable' : '⌘K',
-      onClick: topAlert.deeplink_path || topAlert.navigateTo,
+      onClick: asNavigateFn(topAlert.deeplink_path || topAlert.navigateTo),
     });
   } else {
     // Fallback attention : invitation à importer des données
@@ -306,7 +318,7 @@ export function buildWeekSignals({
         (sitesCount ? ` ${sitesCount} site${sitesCount > 1 ? 's' : ''} concerné${sitesCount > 1 ? 's' : ''}.` : ''),
       footerLeft: deadline ? `échéance ${deadline}` : '',
       footerRight: penalty ? `pénalité ${formatFR(penalty, 0)} €` : 'Automatisable',
-      onClick: topUpcoming.navigateTo,
+      onClick: asNavigateFn(topUpcoming.deeplink_path || topUpcoming.navigateTo),
     });
   } else {
     cards.push({
@@ -331,7 +343,7 @@ export function buildWeekSignals({
       body: topValidated.description || topValidated.summary,
       footerLeft: 'conforme · pièce au dossier',
       footerRight: '✓ Clean',
-      onClick: topValidated.navigateTo,
+      onClick: asNavigateFn(topValidated.deeplink_path || topValidated.navigateTo),
     });
   } else {
     // Fallback succès : toujours donner une bonne nouvelle — déséquilibre visuel sinon

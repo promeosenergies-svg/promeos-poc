@@ -202,13 +202,21 @@ export const BUSINESS_ERRORS = {
 /**
  * Retourne l'entrée formatée pour injection directe dans un SolWeekCard.
  * Si la clé est inconnue, retourne l'entrée "generic.no_data".
+ *
+ * Fix Phase 4.5 : accepte un `slot` optionnel pour désambiguïser l'id
+ * quand le même fallback est utilisé dans plusieurs cards consécutives
+ * (ex : Card 2 ET Card 3 fallback sur 'achat.all_stable'). Évite les
+ * "duplicate keys" warnings React.
+ *
  * @param {string} key — ex "conformite.no_drift"
+ * @param {string|number} [slot] — suffixe désambiguïsant (ex "slot2")
  * @returns {{tagKind, tagLabel, title, body, footerLeft, footerRight, id}}
  */
-export function businessErrorFallback(key) {
+export function businessErrorFallback(key, slot = null) {
   const entry = BUSINESS_ERRORS[key] || BUSINESS_ERRORS['generic.no_data'];
+  const baseId = `be-${key || 'generic'}`;
   return {
-    id: `be-${key || 'generic'}`,
+    id: slot != null ? `${baseId}-${slot}` : baseId,
     tagKind: entry.tag,
     tagLabel: entry.tagLabel,
     title: entry.title,

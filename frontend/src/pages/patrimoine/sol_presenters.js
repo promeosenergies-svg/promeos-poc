@@ -303,7 +303,7 @@ export function buildPatrimoineWeekCards({ sites, topDrivers, onNavigateSite } =
       onClick: () => onNavigateSite?.(topDriver.site.id),
     });
   } else {
-    cards.push(businessErrorFallback('patrimoine.all_conforming'));
+    cards.push(businessErrorFallback('patrimoine.all_conforming', cards.length));
   }
 
   // Card 2 : site avec risque financier le plus élevé (échéance réglementaire)
@@ -341,7 +341,7 @@ export function buildPatrimoineWeekCards({ sites, topDrivers, onNavigateSite } =
       onClick: () => onNavigateSite?.(bestSite.id),
     });
   } else {
-    cards.push(businessErrorFallback('patrimoine.all_conforming'));
+    cards.push(businessErrorFallback('patrimoine.all_conforming', cards.length));
   }
 
   return cards.slice(0, 3);
