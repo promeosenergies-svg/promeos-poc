@@ -916,52 +916,44 @@ export default function ConsumptionDiagPage() {
     ? filteredInsights.filter((i) => i.type === filterType)
     : filteredInsights;
 
+  // Lot 3 Phase 6.1 — 5 actions legacy (Explorer / Performance / Usages /
+  // Seed démo / Lancer diag) déplacées dans le rightSlot du SolPageHeader.
+  // PageShell.hideHeader=true kill le header legacy (Sol prend la main).
+  const headerActions = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <Link
+        to={toConsoExplorer()}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+      >
+        <BarChart3 size={14} />
+        Explorer
+      </Link>
+      <Link
+        to={toMonitoring()}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+      >
+        <Activity size={14} />
+        Performance
+      </Link>
+      <Link
+        to={toUsages()}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+      >
+        <BarChart3 size={14} />
+        Usages
+      </Link>
+      <Button variant="secondary" size="sm" onClick={handleSeedDemo} disabled={seeding}>
+        {seeding ? 'Génération...' : 'Générer conso démo'}
+      </Button>
+      <Button size="sm" onClick={handleDiagnose} disabled={diagnosing}>
+        <Zap size={14} />
+        {diagnosing ? 'Analyse...' : 'Lancer diagnostic'}
+      </Button>
+    </div>
+  );
+
   return (
-    <PageShell
-      icon={Zap}
-      title="Diagnostic"
-      subtitle={
-        <>
-          Détectez automatiquement les anomalies de consommation : horaires inhabituels, talon
-          excessif, pointes, dérives.{' '}
-          <span className="text-xs text-gray-400 ml-2">
-            Période : {period.start} — {period.end} ({period.days}j)
-          </span>
-        </>
-      }
-      actions={
-        <>
-          <Link
-            to={toConsoExplorer()}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-          >
-            <BarChart3 size={14} />
-            Explorer
-          </Link>
-          <Link
-            to={toMonitoring()}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-          >
-            <Activity size={14} />
-            Performance
-          </Link>
-          <Link
-            to={toUsages()}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-          >
-            <BarChart3 size={14} />
-            Usages
-          </Link>
-          <Button variant="secondary" size="sm" onClick={handleSeedDemo} disabled={seeding}>
-            {seeding ? 'Génération...' : 'Générer conso démo'}
-          </Button>
-          <Button size="sm" onClick={handleDiagnose} disabled={diagnosing}>
-            <Zap size={14} />
-            {diagnosing ? 'Analyse...' : 'Lancer diagnostic'}
-          </Button>
-        </>
-      }
-    >
+    <PageShell icon={Zap} hideHeader>
       {/* Lot 3 Phase 5 — Hero Pattern A Sol injecté en haut. Le reste de
           la page (liste insights + EvidenceDrawer 4 tabs inline) reste
           intégralement préservé en legacy. */}
@@ -975,6 +967,7 @@ export default function ConsumptionDiagPage() {
             periodDays={period?.days || 90}
             customPrice={customPrice}
             onOpenInsight={(insight) => setDrawerInsight(insight)}
+            actions={headerActions}
           />
         </div>
       )}
