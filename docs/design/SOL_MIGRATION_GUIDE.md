@@ -125,6 +125,28 @@
 
 ---
 
+**✅ Statut Lot 3 (v2.2-lot3-fiches, avril 2026)** :
+
+4 composants Pattern C livrés et stabilisés — tous commités dans
+[frontend/src/ui/sol/](../../frontend/src/ui/sol/) (commit `be11dd02`) :
+`SolDetailPage`, `SolBreadcrumb`, `SolEntityCard`, `SolTimeline`.
+Extension `SolTrajectoryChart.verticalMarkers` backward-compat
+(commit `b8d1017c`).
+
+3 pages migrées en Pattern C :
+- [`/sites/:id`](../../frontend/src/pages/Site360Sol.jsx) — onglet Résumé only (scope-cut, legacy 8 onglets préservés) — commit `b85f7f60`
+- [`/regops/:id`](../../frontend/src/pages/RegOpsSol.jsx) — commit `b38674b1` (bonus : AI endpoints non-bloquants)
+- [`/conformite/tertiaire/efa/:id`](../../frontend/src/pages/EfaSol.jsx) — commit `b8d1017c` (3 jalons DT 2030/2040/2050)
+
+1 page migrée en Pattern A hybride (exception Pattern C) :
+- [`/diagnostic-conso`](../../frontend/src/pages/DiagnosticConsoSol.jsx) — commit `b0313cf4` + polish `cea98719`. **Cas d'usage Pattern A** plutôt que C : pas de `:id` dans la route, page multi-sites avec scope optionnel, sélecteur de période (usePeriodParams 90 j), comportement dashboard. Pattern C aurait forcé une sémantique métier cassée. Legacy body + EvidenceDrawer 4 tabs inline **intégralement préservés** (asset lourd hors scope Lot 3).
+
+Cumul Sol : **25 composants** (Pattern C inclus), **12 pages migrées** (Phase 2+Lot 1+Lot 3), **~37 termes glossaire**, **~37 entrées business_errors**, **58 presenters purs**. Voir [BILAN_LOT_3.md](BILAN_LOT_3.md) pour détail complet.
+
+Registre [REFONTE_FEATURES_PARKED.md](../REFONTE_FEATURES_PARKED.md) : 3 features EFA temporairement parkées (Export Mémobox UI + précheck + controls) — ré-intégration post-pilote si signal utilisateur.
+
+---
+
 ### Pattern D — Wizard / Import
 
 **Quand l'utiliser** : flux multi-étapes guidé (onboarding Sirene, import factures, création entité).

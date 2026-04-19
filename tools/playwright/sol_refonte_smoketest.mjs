@@ -219,6 +219,61 @@ async function runSmokeTest() {
   log('02j /monitoring render', monitKpis && monitChart > 0 ? 'OK' : 'FAIL',
     `KPIs: ${monitKpis} · Trajectory: ${monitChart > 0}`, shotMonit);
 
+  // ─── 2k. /sites/3 Site360Sol (Pattern C Lot 3 P2) ────────────────────────
+  await page.goto(`${URL}/sites/3`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(4500);
+  await dismissOverlay(page);
+  const siteBreadcrumb = await page.locator('[aria-label="Fil d\'Ariane"]').count();
+  const siteEntityCard = await page.locator('text=PDL / PRM').count();
+  const siteTrajectoire = await page.locator('text=Trajectoire Décret Tertiaire').count();
+  const shotSite = await snap(page, 'step22_site360_pattern_c');
+  log('02k /sites/3 Site360Sol render',
+    siteBreadcrumb > 0 && siteEntityCard > 0 && siteTrajectoire > 0 ? 'OK' : 'FAIL',
+    `breadcrumb: ${siteBreadcrumb > 0} · entity: ${siteEntityCard > 0} · trajectoire: ${siteTrajectoire > 0}`,
+    shotSite);
+
+  // ─── 2l. /regops/3 RegOpsSol (Pattern C Lot 3 P3) ────────────────────────
+  // AI endpoints non-bloquants — la fiche rend en <3s via priorité assessment.
+  const regopsStart = Date.now();
+  await page.goto(`${URL}/regops/3`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(3500);
+  const regopsRenderMs = Date.now() - regopsStart;
+  await dismissOverlay(page);
+  const regopsBreadcrumb = await page.locator('[aria-label="Fil d\'Ariane"]').count();
+  const regopsTimeline = await page.locator('text=Timeline du dossier').count();
+  const shotRegOps = await snap(page, 'step23_regops_pattern_c');
+  log('02l /regops/3 RegOpsSol render',
+    regopsBreadcrumb > 0 && regopsTimeline > 0 ? 'OK' : 'FAIL',
+    `breadcrumb: ${regopsBreadcrumb > 0} · timeline: ${regopsTimeline > 0} · render: ${regopsRenderMs}ms`,
+    shotRegOps);
+
+  // ─── 2m. /conformite/tertiaire/efa/1 EfaSol (Pattern C Lot 3 P4) ─────────
+  await page.goto(`${URL}/conformite/tertiaire/efa/1`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(8000);
+  await dismissOverlay(page);
+  const efaBreadcrumb = await page.locator('[aria-label="Fil d\'Ariane"]').count();
+  const efaTrajectoire = await page.locator('text=Trajectoire Décret Tertiaire').count();
+  const efaSafetyBanner = await page.locator('[aria-label="Aide à la conformité OPERAT"]').count();
+  const shotEfa = await snap(page, 'step24_efa_pattern_c');
+  log('02m /conformite/tertiaire/efa/1 EfaSol render',
+    efaBreadcrumb > 0 && efaTrajectoire > 0 && efaSafetyBanner > 0 ? 'OK' : 'FAIL',
+    `breadcrumb: ${efaBreadcrumb > 0} · trajectoire: ${efaTrajectoire > 0} · safety banner: ${efaSafetyBanner > 0}`,
+    shotEfa);
+
+  // ─── 2n. /diagnostic-conso DiagnosticConsoSol (Pattern A hybride P5+6.1) ─
+  await page.goto(`${URL}/diagnostic-conso`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(12000);
+  await dismissOverlay(page);
+  const diagKicker = await expectVisible(page, '.sol-page-kicker');
+  const diagKpis = await expectVisible(page, '.sol-kpi-row');
+  const diagBarChart = await page.locator('text=Top sites par pertes').count();
+  // Post-6.1 : plus de double header. Vérifier absence du title legacy "Diagnostic" seul.
+  const shotDiag = await snap(page, 'step25_diagnostic_pattern_a');
+  log('02n /diagnostic-conso DiagnosticConsoSol render',
+    diagKicker && diagKpis && diagBarChart > 0 ? 'OK' : 'FAIL',
+    `kicker: ${diagKicker} · kpis: ${diagKpis} · bar chart: ${diagBarChart > 0}`,
+    shotDiag);
+
   // ─── 3. Raccourcis clavier ────────────────────────────────────────────────
   await page.goto(`${URL}/cockpit`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(1500);
