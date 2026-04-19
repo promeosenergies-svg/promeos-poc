@@ -121,6 +121,30 @@ export const BUSINESS_ERRORS = {
     footer: 'Onboarding SIRENE disponible',
     footerRight: 'Automatisable',
   },
+  'patrimoine.collection_in_progress': {
+    tag: 'attention',
+    tagLabel: 'Info temporaire',
+    title: 'Collecte des données en cours',
+    body: 'Vos consommations et surfaces sont en cours de rapprochement. Revenez dans quelques minutes.',
+    footer: 'Collecte automatique active',
+    footerRight: '⟳',
+  },
+  'patrimoine.eui_unavailable': {
+    tag: 'attention',
+    tagLabel: 'Info',
+    title: 'Intensité énergétique indisponible',
+    body: "Renseignez les surfaces de vos sites et importez 12\u00a0mois de consommations pour activer le calcul EUI.",
+    footer: 'Benchmark ADEME ODP 2024',
+    footerRight: '—',
+  },
+  'patrimoine.all_conforming': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Tous vos sites dans la cible',
+    body: 'Aucun site ne dépasse significativement son benchmark ADEME. Votre patrimoine est bien positionné.',
+    footer: 'mis à jour automatiquement',
+    footerRight: '✓ Clean',
+  },
 
   // ── Achat énergie (Phase 4.4) ────────────────────────────────────────────
   'achat.no_contracts': {

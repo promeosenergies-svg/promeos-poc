@@ -528,6 +528,14 @@ describe('SolBarChart (Phase 4.1.1)', () => {
     expect(src).toContain('DeltaPctLabel');
     expect(src).toContain('computeDeltaPct');
   });
+
+  it('Phase 4.3 : supporte xAxisType + xAxisKey + xAxisAngle pour axe cat\u00e9goriel', () => {
+    expect(src).toMatch(/xAxisType\s*=\s*'time'/);
+    expect(src).toMatch(/xAxisKey\s*=\s*'month'/);
+    expect(src).toMatch(/xAxisAngle\s*=\s*0/);
+    // dataKey lit xAxisKey (pas "month" hardcod\u00e9)
+    expect(src).toMatch(/dataKey=\{xAxisKey\}/);
+  });
 });
 
 describe('SolKpiCard notApplicable (Phase 4.1.1 — APER applicability fix)', () => {

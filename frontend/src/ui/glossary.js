@@ -483,4 +483,26 @@ export const GLOSSARY = {
     long:
       "Somme des avoirs correctifs reçus depuis le début de l'année courante suite à contestation. Hausse = bon (plus d'argent récupéré). Délai moyen de traitement contestation→avoir : 45 jours. Sol peut rédiger automatiquement les courriers de contestation avec délai de grâce 24 h.",
   },
+  // ── Patrimoine (Phase 4.3 refonte) ───────────────────────────────────────
+  patrimoine_sites_count: {
+    term: 'Nombre de sites',
+    short:
+      'Nombre de sites actifs dans votre patrimoine, tous types confondus (bureaux, entrepôts, enseignement, commerce, santé, industrie).',
+    long:
+      "Compte des entités sites actives (filtre actif=true et not_deleted). Chaque site porte sa propre surface, ses compteurs PDL, ses contrats énergie et son statut de conformité réglementaire. Source : table `sites` (backend/models/site.py) scope organisation.",
+  },
+  patrimoine_surface_m2: {
+    term: 'Surface totale',
+    short:
+      "Surface utile cumulée de votre patrimoine en m², base de calcul du ratio EUI et de l'assujettissement Décret Tertiaire (seuil ≥ 1 000 m²).",
+    long:
+      "Somme des champs `surface_m2` de tous les sites actifs. Unité : m² (SI). Utilisée comme dénominateur pour l'intensité énergétique (EUI kWhEF/m²/an) et comme seuil d'assujettissement Décret Tertiaire (obligatoire ≥ 1 000 m²) et APER parkings. Données renseignées lors de l'onboarding SIRENE ou saisie manuelle.",
+  },
+  patrimoine_eui_moyen: {
+    term: 'EUI moyen',
+    short:
+      "Intensité énergétique moyenne du patrimoine (kWhEF/m²/an). Comparée aux benchmarks ADEME ODP 2024 par usage. Plus bas = meilleure performance.",
+    long:
+      "EUI (Energy Use Intensity) = consommation annuelle (kWhEF, énergie finale) / surface (m²). Moyenne pondérée par la surface : Σ(conso_kwh_an) / Σ(surface_m2). Benchmarks ADEME ODP 2024 par usage : bureau 210, entrepôt 80, enseignement 140, commerce 330, hôtellerie 280, industrie 180, santé 250. Un patrimoine au-dessus du benchmark signale un potentiel de réduction.",
+  },
 };

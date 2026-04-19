@@ -15,7 +15,10 @@ import { SkeletonCard } from './ui/Skeleton';
 
 // Lazy-loaded pages — code-split per route
 const CommandCenter = lazy(() => import('./pages/CommandCenter'));
-const Patrimoine = lazy(() => import('./pages/Patrimoine'));
+// Refonte Phase 4.3 : /patrimoine pointe sur PatrimoineSol (Pattern A).
+// Patrimoine legacy accessible via /patrimoine-legacy pour A/B comparaison.
+const Patrimoine = lazy(() => import('./pages/PatrimoineSol'));
+const PatrimoineLegacy = lazy(() => import('./pages/Patrimoine'));
 const Site360 = lazy(() => import('./pages/Site360'));
 const ActionsPage = lazy(() => import('./pages/ActionsPage'));
 const ActionCenterPage = lazy(() => import('./pages/ActionCenterPage'));
@@ -165,6 +168,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <Patrimoine />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/patrimoine-legacy"
+                      element={
+                        <PageSuspense>
+                          <PatrimoineLegacy />
                         </PageSuspense>
                       }
                     />

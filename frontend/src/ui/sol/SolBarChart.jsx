@@ -1,16 +1,22 @@
 /**
- * PROMEOS — SolBarChart (Phase 4.1.1, préparation Phase 4.2 Bill Intelligence)
+ * PROMEOS — SolBarChart (Phase 4.1.1 ; étendu axe catégoriel Phase 4.3)
  *
- * Bar chart mensuel signature pour comparaisons current vs previous.
- * Utilisé par Bill Intelligence (factures mensuelles), futur /monitoring,
- * et tout graphe comparatif mensuel.
+ * Bar chart signature pour comparaisons current vs previous.
+ * Utilisé par :
+ *   - Bill Intelligence (factures mensuelles, xAxis temporel)
+ *   - Patrimoine (conso par site, xAxis catégoriel noms de sites)
+ *   - futur /monitoring, /achat-energie (prix forward)
  *
  * Props :
- *   data               : [{ month: 'janv.', current: 42380, previous: 38920 }, ...]
- *   metric             : 'euros' | 'mwh' | 'count' — détermine format Y axis
+ *   data               : axe temporel [{ month, current, previous }, ...]
+ *                        OU axe catégoriel [{ site|category, current, previous }, ...]
+ *   metric             : 'euros' | 'mwh' | 'count' — format Y axis
+ *   xAxisType          : 'time' | 'category' — défaut 'time'
+ *   xAxisKey           : clé dataKey XAxis — défaut 'month'
+ *   xAxisAngle         : rotation ticks X (ex -20 pour noms longs) — défaut 0
  *   showDeltaPct       : bool — affiche +/-X % au-dessus de chaque barre current
  *   sourceChip         : <SolSourceChip /> optionnel légende basse
- *   highlightCurrent   : bool — mois courant en couleur calme-fg plutôt qu'ink-700
+ *   highlightCurrent   : bool — dernier point en calme-fg plutôt qu'ink-700
  *   caption            : phrase narrative sous chart (JSX)
  *   height             : pixels (défaut 220)
  *
@@ -89,6 +95,9 @@ function DeltaPctLabel({ x, y, width, value, payload }) {
 export default function SolBarChart({
   data = [],
   metric = 'euros',
+  xAxisType = 'time',
+  xAxisKey = 'month',
+  xAxisAngle = 0,
   showDeltaPct = false,
   sourceChip = null,
   highlightCurrent = false,
@@ -128,15 +137,18 @@ export default function SolBarChart({
           <BarChart data={dataWithFlag} margin={{ top: 24, right: 24, bottom: 28, left: 24 }}>
             <CartesianGrid strokeDasharray="2 3" stroke="var(--sol-ink-200)" vertical={false} />
             <XAxis
-              dataKey="month"
+              dataKey={xAxisKey}
               axisLine={false}
               tickLine={false}
               tick={{
                 fontFamily: 'var(--sol-font-mono)',
-                fontSize: 10,
+                fontSize: xAxisAngle !== 0 ? 9 : 10,
                 fill: 'var(--sol-ink-500)',
               }}
-              interval="preserveStartEnd"
+              angle={xAxisAngle}
+              textAnchor={xAxisAngle !== 0 ? 'end' : 'middle'}
+              height={xAxisAngle !== 0 ? 50 : 28}
+              interval={xAxisType === 'category' ? 0 : 'preserveStartEnd'}
             />
             <YAxis
               axisLine={false}
