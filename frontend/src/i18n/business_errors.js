@@ -242,6 +242,24 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Conformité Tertiaire (Lot 6 Phase 4) ────────────────────────────────
+  'conformite.no_dashboard': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Dashboard conformité indisponible',
+    body: "Aucune donnée agrégée Décret Tertiaire n'est disponible. Vérifiez l'import du patrimoine ou contactez le support.",
+    footer: 'endpoint /api/tertiaire/dashboard',
+    footerRight: '⟳',
+  },
+  'conformite.no_efa': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Aucune EFA enregistrée',
+    body: "Créez votre première EFA (Entité Fonctionnelle d'Assujettissement) pour démarrer le suivi Décret Tertiaire 2030.",
+    footer: 'wizard création disponible',
+    footerRight: 'Automatisable',
+  },
+
   // ── Segmentation B2B (Lot 6 Phase 3) ────────────────────────────────────
   'segmentation.low_confidence': {
     tag: 'afaire',
