@@ -52,7 +52,10 @@ const ConsommationsImportTab = lazy(() =>
 const ConsommationsKBTab = lazy(() =>
   import('./pages/ConsommationsUsages').then((m) => ({ default: m.KBAdminPanel }))
 );
-const MonitoringPage = lazy(() => import('./pages/MonitoringPage'));
+// Refonte Lot 1.3 : /monitoring pointe sur MonitoringSol (Pattern A).
+// MonitoringPage legacy accessible via /monitoring-legacy pour A/B.
+const MonitoringPage = lazy(() => import('./pages/MonitoringSol'));
+const MonitoringLegacy = lazy(() => import('./pages/MonitoringPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
 const SegmentationPage = lazy(() => import('./pages/SegmentationPage'));
@@ -410,6 +413,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <MonitoringPage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/monitoring-legacy"
+                      element={
+                        <PageSuspense>
+                          <MonitoringLegacy />
                         </PageSuspense>
                       }
                     />

@@ -266,6 +266,9 @@ export const getMonitoringSnapshots = (siteId, limit = 10) =>
   api.get('/monitoring/snapshots', { params: { site_id: siteId, limit } }).then((r) => r.data);
 export const getMonitoringAlerts = (siteId, status = null, limit = 50) =>
   api.get('/monitoring/alerts', { params: { site_id: siteId, status, limit } }).then((r) => r.data);
+// Lot 1.3 refonte : variant org-level (pas de site_id, backend accepte org_id)
+export const getMonitoringAlertsByOrg = (orgId, status = null, limit = 50) =>
+  api.get('/monitoring/alerts', { params: { org_id: orgId, status, limit } }).then((r) => r.data);
 export const ackMonitoringAlert = (id) =>
   api.post(`/monitoring/alerts/${id}/ack`, { acknowledged_by: 'user' }).then((r) => r.data);
 export const resolveMonitoringAlert = (id, note = null) =>
