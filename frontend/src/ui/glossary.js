@@ -807,4 +807,31 @@ export const GLOSSARY = {
     long:
       "Somme des impacts financiers de chaque alerte active × coefficient de persistance (90 jours → 365 jours). Calculé via prix moyen €/kWh × excès kWh estimé par règle. Un patrimoine avec dérive cumulée > 5 % de la facture annuelle signale une opportunité d'optimisation immédiate.",
   },
+
+  // ── Compliance Pipeline (Lot 6 Phase 5, Pattern B) ──────────────────────
+  pipeline_sites_ready: {
+    term: 'Sites prêts',
+    short:
+      "Nombre de sites du portefeuille dont la gate data conformité est OK (toutes données obligatoires DT/BACS/APER renseignées). Ratio lu depuis `kpis.data_ready / total_sites` de /api/compliance/portfolio/summary — pas de recompute côté front.",
+  },
+  pipeline_deadlines_d30: {
+    term: 'Échéances < 30 j',
+    short:
+      "Nombre d'échéances réglementaires (BACS, APER, OPERAT, audit SMÉ) tombant dans les 30 prochains jours. Liste pré-filtrée backend via `deadlines.d30[]` — les buckets d30/d90/d180/beyond sont partitionnés serveur-side, jamais recalculés côté client.",
+  },
+  pipeline_untrusted_sites: {
+    term: 'Sites non fiables',
+    short:
+      "Nombre de sites dont le trust score data est dégradé (anomalies fréquentes, données aberrantes, écarts shadow billing). Liste pré-filtrée backend via `untrusted_sites[]` — le seuil d'untrusted est défini serveur-side, le front lit la longueur du tableau.",
+  },
+  pipeline_gate_status: {
+    term: 'Gate data',
+    short:
+      "Statut de la porte data conformité pour un site : OK (toutes données requises présentes) · WARNING (données recommandées manquantes) · BLOCKED (données obligatoires manquantes, évaluation impossible). Enum backend-sourced — le front ne recompose jamais l'état depuis completeness_pct.",
+  },
+  pipeline_applicability_frameworks: {
+    term: 'Frameworks applicables',
+    short:
+      "Règles réglementaires applicables par site : Décret Tertiaire (surfaces ≥ 1 000 m²) · BACS (bâtiments tertiaires neufs ou CVC > 290 kW) · APER (parkings ≥ 1 500 m² ou toitures industrielles ≥ 500 m²). Booléens calculés backend à partir des attributs patrimoine (surface, puissance CVC, parking).",
+  },
 };

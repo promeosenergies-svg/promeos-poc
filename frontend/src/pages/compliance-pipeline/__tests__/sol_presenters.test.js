@@ -325,19 +325,20 @@ describe('pipelineRows', () => {
     expect(pipelineRows({})).toEqual([]);
     expect(pipelineRows({ total_sites: 5 })).toEqual([]);
   });
-  it('mappe sites[] en rows avec applicability booléen', () => {
+  it('mappe sites[] en rows SolExpertGridFull avec cells + applicability booléen', () => {
     const rows = pipelineRows(SUMMARY_FULL);
     expect(rows).toHaveLength(3);
-    expect(rows[0].applicable_dt).toBe(true);
-    expect(rows[0].applicable_bacs).toBe(true);
-    expect(rows[1].applicable_bacs).toBe(false);
-    expect(rows[2].gate_status).toBe('BLOCKED');
+    expect(rows[0].id).toBe(1);
+    expect(rows[0].cells.applicable_dt).toBe(true);
+    expect(rows[0].cells.applicable_bacs).toBe(true);
+    expect(rows[1].cells.applicable_bacs).toBe(false);
+    expect(rows[2].cells.gate_status).toBe('BLOCKED');
   });
   it('fallbacks safe si sites[].applicability absent', () => {
     const rows = pipelineRows({ total_sites: 1, sites: [{ site_id: 9, site_nom: 'X' }] });
-    expect(rows[0].applicable_dt).toBe(false);
-    expect(rows[0].completeness_pct).toBe(0);
-    expect(rows[0].gate_status).toBe('UNKNOWN');
+    expect(rows[0].cells.applicable_dt).toBe(false);
+    expect(rows[0].cells.completeness_pct).toBe(0);
+    expect(rows[0].cells.gate_status).toBe('UNKNOWN');
   });
 });
 
@@ -374,15 +375,15 @@ describe('sortRows', () => {
 
   it('tri ASC numérique sur compliance_score (défaut Phase 5)', () => {
     const sorted = sortRows(rows, { column: 'compliance_score', direction: 'asc' });
-    expect(sorted.map((r) => r.compliance_score)).toEqual([30, 65, 90]);
+    expect(sorted.map((r) => r.cells.compliance_score)).toEqual([30, 65, 90]);
   });
   it('tri par gate_status respecte ordre sémantique BLOCKED→WARNING→OK', () => {
     const sorted = sortRows(rows, { column: 'gate_status', direction: 'asc' });
-    expect(sorted.map((r) => r.gate_status)).toEqual(['BLOCKED', 'WARNING', 'OK']);
+    expect(sorted.map((r) => r.cells.gate_status)).toEqual(['BLOCKED', 'WARNING', 'OK']);
   });
   it('tri alphabétique FR sur site_nom', () => {
     const sorted = sortRows(rows, { column: 'site_nom', direction: 'asc' });
-    expect(sorted[0].site_nom).toMatch(/Bureau|Entrepôt|Siège/);
+    expect(sorted[0].cells.site_nom).toMatch(/Bureau|Entrepôt|Siège/);
   });
   it('rows vide/null safe', () => {
     expect(sortRows(null)).toEqual([]);

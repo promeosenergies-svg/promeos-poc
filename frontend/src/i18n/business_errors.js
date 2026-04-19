@@ -278,6 +278,35 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Compliance Pipeline (Lot 6 Phase 5) ─────────────────────────────────
+  'pipeline.no_sites': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Pipeline conformité indisponible',
+    body:
+      "Aucun site dans votre portefeuille. Rendez-vous sur Patrimoine pour importer ou créer vos premiers sites et activer le suivi de conformité.",
+    footer: 'import SIRENE disponible',
+    footerRight: 'Automatisable',
+  },
+  'pipeline.filter_no_results': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Aucun site ne correspond à vos filtres',
+    body:
+      'Élargissez ou réinitialisez les filtres (gate, framework, fiabilité) pour retrouver des résultats. Le bouton « Réinitialiser filtres » en haut à droite repart à zéro.',
+    footer: 'filtres actifs',
+    footerRight: '—',
+  },
+  'pipeline.all_ready': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Portefeuille entièrement prêt',
+    body:
+      'Tous vos sites passent la gate data conformité et aucune échéance n\u2019est imminente. Continuez la consolidation trajectoire 2030 et attestations BACS / APER.',
+    footer: 'surveillance continue',
+    footerRight: '✓ Stable',
+  },
+
   // ── Base de connaissance (Lot 6 Phase 2) ────────────────────────────────
   'kb.no_results': {
     tag: 'afaire',

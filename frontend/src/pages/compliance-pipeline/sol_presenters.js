@@ -282,15 +282,17 @@ export function pipelineRows(summary) {
   const sites = Array.isArray(summary.sites) ? summary.sites : [];
   return sites.map((s) => ({
     id: s.site_id,
-    site_nom: s.site_nom ?? '—',
-    gate_status: s.gate_status ?? 'UNKNOWN',
-    completeness_pct: Number(s.completeness_pct) || 0,
-    compliance_score: Number(s.compliance_score) || 0,
-    reg_risk: Number(s.reg_risk) || 0,
-    financial_opportunity_eur: Number(s.financial_opportunity_eur) || 0,
-    applicable_dt: Boolean(s.applicability?.tertiaire_operat),
-    applicable_bacs: Boolean(s.applicability?.bacs),
-    applicable_aper: Boolean(s.applicability?.aper),
+    cells: {
+      site_nom: s.site_nom ?? '—',
+      gate_status: s.gate_status ?? 'UNKNOWN',
+      completeness_pct: Number(s.completeness_pct) || 0,
+      compliance_score: Number(s.compliance_score) || 0,
+      reg_risk: Number(s.reg_risk) || 0,
+      financial_opportunity_eur: Number(s.financial_opportunity_eur) || 0,
+      applicable_dt: Boolean(s.applicability?.tertiaire_operat),
+      applicable_bacs: Boolean(s.applicability?.bacs),
+      applicable_aper: Boolean(s.applicability?.aper),
+    },
   }));
 }
 
@@ -310,8 +312,10 @@ export function sortRows(rows, sortBy) {
   const { column, direction } = sortBy;
   const factor = direction === 'asc' ? 1 : -1;
   return [...rows].sort((a, b) => {
-    let va = a[column];
-    let vb = b[column];
+    const ca = a.cells || a;
+    const cb = b.cells || b;
+    let va = ca[column];
+    let vb = cb[column];
     if (column === 'gate_status') {
       va = GATE_SORT_ORDER[va] ?? 99;
       vb = GATE_SORT_ORDER[vb] ?? 99;
@@ -352,11 +356,12 @@ export function filterRows(rows, filters = {}) {
   const untrustedOnly = Boolean(filters.untrustedOnly);
 
   return rows.filter((r) => {
-    if (q && !(r.site_nom || '').toLowerCase().includes(q)) return false;
-    if (gate !== 'all' && r.gate_status !== gate) return false;
-    if (framework === 'dt' && !r.applicable_dt) return false;
-    if (framework === 'bacs' && !r.applicable_bacs) return false;
-    if (framework === 'aper' && !r.applicable_aper) return false;
+    const c = r.cells || r;
+    if (q && !(c.site_nom || '').toLowerCase().includes(q)) return false;
+    if (gate !== 'all' && c.gate_status !== gate) return false;
+    if (framework === 'dt' && !c.applicable_dt) return false;
+    if (framework === 'bacs' && !c.applicable_bacs) return false;
+    if (framework === 'aper' && !c.applicable_aper) return false;
     if (untrustedOnly && untrustedIds && !untrustedIds.has(r.id)) return false;
     return true;
   });
