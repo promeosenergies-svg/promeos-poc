@@ -30,7 +30,7 @@
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Command, Bell, LogOut, ChevronDown, Building2 } from 'lucide-react';
+import { Search, Command, Bell, LogOut, ChevronDown, User, Settings, Shield } from 'lucide-react';
 import SolRail from '../ui/sol/SolRail';
 import SolPanel from '../ui/sol/SolPanel';
 import SolTimerail from '../ui/sol/SolTimerail';
@@ -70,98 +70,206 @@ function PanelHeaderSlot() {
   );
 }
 
+const ROLE_LABELS = {
+  dg_owner: 'DG / Propriétaire',
+  daf: 'DAF',
+  acheteur: 'Acheteur',
+  resp_conformite: 'Resp. Conformité',
+  energy_manager: 'Responsable Énergie',
+  resp_immobilier: 'Resp. Immobilier',
+  resp_site: 'Resp. Site',
+  dsi_admin: 'DSI / Admin',
+};
+
 function PanelFooterSlot() {
   const { user, role, logout } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const name = user?.name || user?.email || 'Utilisateur';
+  const name = user?.name || user?.email?.split('@')[0] || 'Promeos Admin';
   const initials = name
-    .split(/[\s@.]/)
+    .split(/[\s@._-]/)
     .filter(Boolean)
     .slice(0, 2)
     .map((s) => s[0]?.toUpperCase())
     .join('') || 'PA';
+  const roleLabel = ROLE_LABELS[role] || role || 'DG / Propriétaire';
+
   return (
-    <div style={{
-      borderTop: '1px solid var(--sol-rule)',
-      padding: '10px 14px',
-      position: 'relative',
-    }}>
+    <div
+      style={{
+        borderTop: '1px solid var(--sol-rule)',
+        padding: '10px 14px',
+        position: 'relative',
+      }}
+    >
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
         aria-label="Menu utilisateur"
+        aria-expanded={open}
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 10,
           width: '100%',
-          padding: '6px 4px',
+          padding: '4px 2px',
           background: 'transparent',
           border: 'none',
           cursor: 'pointer',
           color: 'var(--sol-ink-700)',
           fontSize: 13,
           textAlign: 'left',
+          borderRadius: 4,
+          transition: 'background 120ms',
         }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--sol-bg-panel)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
       >
-        <span style={{
-          width: 28,
-          height: 28,
-          borderRadius: '50%',
-          background: 'var(--sol-calme-bg)',
-          color: 'var(--sol-calme-fg)',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 11,
-          fontWeight: 600,
-          fontFamily: 'var(--sol-font-mono)',
-        }}>{initials}</span>
-        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          <span style={{ display: 'block', fontWeight: 500 }}>{user?.name || 'Promeos Admin'}</span>
-          <span style={{ display: 'block', fontSize: 10.5, color: 'var(--sol-ink-500)', fontFamily: 'var(--sol-font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            {role || 'dg_owner'}
-          </span>
-        </span>
-        <ChevronDown size={13} style={{ color: 'var(--sol-ink-400)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 120ms' }} />
-      </button>
-      {open && (
-        <div
+        <span
           style={{
-            position: 'absolute',
-            bottom: '100%',
-            left: 14,
-            right: 14,
-            background: 'var(--sol-bg-paper)',
-            border: '1px solid var(--sol-rule)',
-            borderRadius: 6,
-            boxShadow: '0 4px 12px rgba(15, 23, 42, 0.08)',
-            zIndex: 80,
-            overflow: 'hidden',
+            width: 28,
+            height: 28,
+            borderRadius: '50%',
+            background: 'var(--sol-calme-bg)',
+            color: 'var(--sol-calme-fg)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 11,
+            fontWeight: 600,
+            fontFamily: 'var(--sol-font-mono)',
           }}
         >
-          <button
-            type="button"
-            onClick={() => { setOpen(false); logout?.(); }}
+          {initials}
+        </span>
+        <span
+          style={{
+            flex: 1,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontWeight: 500,
+          }}
+        >
+          {name}
+        </span>
+        <ChevronDown
+          size={13}
+          style={{
+            color: 'var(--sol-ink-400)',
+            transform: open ? 'rotate(180deg)' : 'none',
+            transition: 'transform 120ms',
+          }}
+        />
+      </button>
+      {open && (
+        <>
+          <div
+            onClick={() => setOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 79 }}
+            aria-hidden="true"
+          />
+          <div
+            role="menu"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              width: '100%',
-              padding: '10px 14px',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--sol-ink-700)',
-              fontSize: 13,
-              textAlign: 'left',
+              position: 'absolute',
+              bottom: 'calc(100% - 2px)',
+              left: 14,
+              right: 14,
+              background: 'var(--sol-bg-paper)',
+              border: '1px solid var(--sol-rule)',
+              borderRadius: 6,
+              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.08)',
+              zIndex: 80,
+              overflow: 'hidden',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--sol-bg-panel)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
-            <LogOut size={14} /> Se déconnecter
-          </button>
-        </div>
+            {/* Info rôle — non-cliquable, juste afficher */}
+            <div
+              style={{
+                padding: '10px 14px',
+                borderBottom: '1px solid var(--sol-rule)',
+                background: 'var(--sol-bg-canvas)',
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontFamily: 'var(--sol-font-mono)',
+                  fontSize: 10,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: 'var(--sol-ink-500)',
+                  fontWeight: 600,
+                }}
+              >
+                <Shield size={11} /> Rôle
+              </span>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: 'var(--sol-ink-700)',
+                  marginTop: 2,
+                }}
+              >
+                {roleLabel}
+              </div>
+            </div>
+            {[
+              { icon: User, label: 'Profil', to: '/admin/users' },
+              { icon: Settings, label: 'Paramètres', to: '/admin/users' },
+            ].map(({ icon: Icon, label, to }) => (
+              <button
+                key={label}
+                type="button"
+                role="menuitem"
+                onClick={() => { setOpen(false); navigate(to); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  width: '100%',
+                  padding: '9px 14px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--sol-ink-700)',
+                  fontSize: 12.5,
+                  textAlign: 'left',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--sol-bg-panel)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                <Icon size={13} /> {label}
+              </button>
+            ))}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setOpen(false); logout?.(); }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                width: '100%',
+                padding: '9px 14px',
+                background: 'transparent',
+                border: 'none',
+                borderTop: '1px solid var(--sol-rule)',
+                cursor: 'pointer',
+                color: 'var(--sol-refuse-fg)',
+                fontSize: 12.5,
+                textAlign: 'left',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--sol-refuse-bg)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              <LogOut size={13} /> Se déconnecter
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

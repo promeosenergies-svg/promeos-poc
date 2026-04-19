@@ -38,12 +38,18 @@ export const NNBSP = '\u202F';
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * "Cockpit · semaine 16 · patrimoine HELIOS"
+ * "Cockpit · semaine 16 · patrimoine HELIOS — 5 sites"
+ * (le suffixe "— N sites" n'apparaît que si scope.sitesCount est fourni)
  */
 export function buildKicker({ module = 'Cockpit', weekNum, scope, date = new Date() } = {}) {
   const week = weekNum ?? computeIsoWeek(date);
   const orgName = scope?.orgName || 'votre patrimoine';
-  return `${module} · semaine ${week} · patrimoine ${orgName}`;
+  const sitesCount = scope?.sitesCount;
+  const sitesSuffix =
+    sitesCount != null && sitesCount > 0
+      ? ` — ${sitesCount}${NBSP}site${sitesCount > 1 ? 's' : ''}`
+      : '';
+  return `${module} · semaine ${week} · patrimoine ${orgName}${sitesSuffix}`;
 }
 
 /**

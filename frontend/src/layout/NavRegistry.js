@@ -749,6 +749,9 @@ export function getVisibleItems(items, expertMode) {
  * (comportement legacy non-cassant).
  * ══════════════════════════════════════════════════════════════════════════ */
 export const PANEL_SECTIONS_BY_ROUTE = {
+  // ─────────────────────────────────────────────────────────────────────────
+  // Cockpit — pré-configuré Phase 3
+  // ─────────────────────────────────────────────────────────────────────────
   '/cockpit': [
     {
       key: 'semaine',
@@ -773,6 +776,124 @@ export const PANEL_SECTIONS_BY_ROUTE = {
       items: [
         { to: '/patrimoine', label: 'Patrimoine', desc: 'Sites + contrats + factures' },
         { to: '/cockpit-fixtures', label: 'Vue démo', desc: 'Fixtures Sol V1', expertOnly: true },
+      ],
+    },
+  ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // Conformité — pré-rempli Phase 4.0 (items affinés lors Phase 4.1 audit)
+  // ─────────────────────────────────────────────────────────────────────────
+  '/conformite': [
+    {
+      key: 'surveillance',
+      label: 'Surveillance',
+      items: [
+        { to: '/conformite', label: "Vue d'ensemble", desc: 'Score global + risques' },
+        { to: '/conformite/audit-sme', label: 'Audit SMÉ', desc: 'Audit énergétique ISO 50001', expertOnly: true },
+      ],
+    },
+    {
+      key: 'echeances',
+      label: 'Échéances',
+      items: [
+        { to: '/conformite/tertiaire', label: 'Décret tertiaire', desc: 'OPERAT · 30 septembre', badgeKey: 'dt_deadline' },
+        { to: '/conformite/bacs', label: 'BACS / GTB', desc: 'Obligation > 290 kW', badgeKey: 'bacs_deadline' },
+        { to: '/conformite/aper', label: 'Solarisation APER', desc: 'Parkings + toitures' },
+      ],
+    },
+    {
+      key: 'sites_critiques',
+      label: 'Sites critiques',
+      items: [
+        { to: '/compliance/pipeline', label: 'Pipeline findings', desc: 'Non-conformités détectées', expertOnly: true },
+        { to: '/regops/dashboard', label: 'Tableau RegOps', desc: 'Assessments par site', expertOnly: true },
+      ],
+    },
+  ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // Bill Intelligence — pré-rempli Phase 4.0
+  // ─────────────────────────────────────────────────────────────────────────
+  '/bill-intel': [
+    {
+      key: 'courant',
+      label: 'Mois en cours',
+      items: [
+        { to: '/bill-intel', label: 'Vue synthèse', desc: 'Factures + anomalies' },
+        { to: '/billing', label: 'Factures détaillées', desc: 'Liste + audit ligne-à-ligne' },
+      ],
+    },
+    {
+      key: 'anomalies',
+      label: 'Anomalies',
+      items: [
+        { to: '/bill-intel?tab=anomalies', label: 'À contester', desc: "Anomalies détectées", badgeKey: 'anomalies_count' },
+        { to: '/bill-intel?tab=contestations', label: 'En cours', desc: 'Courriers envoyés' },
+      ],
+    },
+    {
+      key: 'historique',
+      label: 'Historique',
+      items: [
+        { to: '/portfolio-reconciliation', label: 'Réconciliation', desc: 'Couverture + gaps' },
+        { to: '/payment-rules', label: 'Règles paiement', desc: 'Contrôles automatiques', expertOnly: true },
+      ],
+    },
+  ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // Patrimoine — pré-rempli Phase 4.0
+  // ─────────────────────────────────────────────────────────────────────────
+  '/patrimoine': [
+    {
+      key: 'global',
+      label: 'Vue globale',
+      items: [
+        { to: '/patrimoine', label: 'Sites & bâtiments', desc: 'Registre consolidé' },
+        { to: '/contrats', label: 'Contrats énergie', desc: 'Cadre + annexes + tarifs' },
+      ],
+    },
+    {
+      key: 'par_type',
+      label: 'Par type',
+      items: [
+        { to: '/patrimoine?type=bureau', label: 'Bureaux', desc: 'Tertiaire administratif' },
+        { to: '/patrimoine?type=entrepot', label: 'Entrepôts', desc: 'Logistique + process' },
+        { to: '/patrimoine?type=enseignement', label: 'Enseignement', desc: 'Écoles + universités' },
+      ],
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      items: [
+        { to: '/bill-intel', label: 'Facturation', desc: 'Anomalies + contestations' },
+        { to: '/onboarding/sirene', label: 'Nouveau site', desc: 'Onboarding depuis SIRENE' },
+      ],
+    },
+  ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // Achat énergie — pré-rempli Phase 4.0
+  // ─────────────────────────────────────────────────────────────────────────
+  '/achat-energie': [
+    {
+      key: 'contrats',
+      label: 'Contrats',
+      items: [
+        { to: '/renouvellements', label: 'Échéances', desc: 'Radar portefeuille', badgeKey: 'renewals_90j' },
+        { to: '/contrats', label: 'Contrats référence', desc: 'Cadre + annexes', expertOnly: true },
+      ],
+    },
+    {
+      key: 'marche',
+      label: 'Marché',
+      items: [
+        { to: '/achat-energie', label: 'Simulateur', desc: 'Prix post-ARENH' },
+        { to: '/achat-energie?tab=marche', label: 'Prix spot & forward', desc: 'EPEX + Powernext' },
+      ],
+    },
+    {
+      key: 'scenarios',
+      label: 'Scénarios',
+      items: [
+        { to: '/achat-energie?tab=assistant', label: "Assistant d'achat", desc: 'Wizard RFP + corridor' },
+        { to: '/achat-energie?tab=portefeuille', label: 'Vue portefeuille', desc: 'Agrégé multi-sites' },
       ],
     },
   ],

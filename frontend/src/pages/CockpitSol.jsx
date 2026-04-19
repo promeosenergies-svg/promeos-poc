@@ -134,6 +134,7 @@ export default function CockpitSol() {
   const scope = scopeCtx?.scope || {};
   const org = scopeCtx?.org;
   const scopeLabel = scopeCtx?.scopeLabel;
+  const sitesCount = scopeCtx?.sitesCount;
   const orgName = org?.name || org?.label || scopeLabel || 'votre patrimoine';
   const [mode, setMode] = useState('surface');
 
@@ -146,7 +147,7 @@ export default function CockpitSol() {
 
   const kicker = buildKicker({
     module: 'Cockpit',
-    scope: { orgName },
+    scope: { orgName, sitesCount },
   });
 
   // KPI 1 : facture énergie (shape réelle : billing.total_eur, total_kwh, total_invoices)
