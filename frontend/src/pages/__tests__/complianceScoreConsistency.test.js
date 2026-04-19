@@ -175,26 +175,32 @@ describe('D - Site360 has compliance score badge', () => {
 });
 
 // ============================================================
-// E. RegOps.jsx: uses shared config (not local)
+// E. RegOps/Sol: score affiché via Pattern C (tokens sémantiques)
 // ============================================================
-describe('E - RegOps uses shared getComplianceScoreColor', () => {
-  const code = readSrc('pages', 'RegOps.jsx');
-
-  it('imports from lib/constants', () => {
-    expect(code).toContain("from '../lib/constants'");
+//
+// Lot 3 P3 : RegOps.jsx est désormais un loader thin ; l'affichage du
+// score migre dans RegOpsSol.jsx + regops/sol_presenters.js. La palette
+// de couleurs n'utilise plus lib/constants Tailwind, mais les tokens Sol
+// (--sol-calme-fg / --sol-attention-fg / --sol-afaire-fg) via le
+// semantic="score" de SolKpiCard + statusPillFromAssessment presenter.
+// On guarde ici uniquement que la présentation du /100 est préservée.
+describe('E - RegOpsSol preserve le format /100', () => {
+  it('RegOpsSol.jsx ou presenters contient /100 pour le score', () => {
+    const sol = readSrc('pages', 'RegOpsSol.jsx');
+    const presenter = readSrc('pages', 'regops', 'sol_presenters.js');
+    expect(sol + presenter).toMatch(/\/100|\/\${NBSP}100/);
   });
 
-  it('imports COMPLIANCE_SCORE_THRESHOLDS', () => {
-    expect(code).toContain('COMPLIANCE_SCORE_THRESHOLDS');
+  it('aucun hardcode Tailwind text-green-600 dans RegOpsSol ou RegOps loader', () => {
+    const sol = readSrc('pages', 'RegOpsSol.jsx');
+    const loader = readSrc('pages', 'RegOps.jsx');
+    expect(sol).not.toContain('text-green-600');
+    expect(loader).not.toContain('text-green-600');
   });
 
-  it('does NOT define local getComplianceScoreColor with hardcoded thresholds', () => {
-    // Should not have a local function body with hardcoded 80/60/40
-    expect(code).not.toContain("if (score >= 80) return 'text-green-600'");
-  });
-
-  it('displays /100 format', () => {
-    expect(code).toContain('/100');
+  it('RegOpsSol utilise semantic score sur le SolKpiCard conformité', () => {
+    const sol = readSrc('pages', 'RegOpsSol.jsx');
+    expect(sol).toMatch(/semantic="score"/);
   });
 });
 

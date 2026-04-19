@@ -242,6 +242,24 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── RegOps (Lot 3 Phase 3) ───────────────────────────────────────────────
+  'regops.no_findings': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Aucun finding actif sur ce dossier',
+    body: "Le moteur déterministe n'a identifié aucune obligation à risque pour ce site. Votre conformité est en ordre.",
+    footer: 'Évaluation à jour',
+    footerRight: '✓ Clean',
+  },
+  'regops.evaluation_unavailable': {
+    tag: 'attention',
+    tagLabel: 'Info temporaire',
+    title: 'Évaluation en cours de recalcul',
+    body: "Sol réévalue ce dossier. Les résultats seront mis à jour automatiquement dans quelques minutes.",
+    footer: 'Réessai automatique actif',
+    footerRight: '⟳',
+  },
+
   // ── Site360Sol (Lot 3 Phase 2) ───────────────────────────────────────────
   'site.not_found': {
     tag: 'attention',

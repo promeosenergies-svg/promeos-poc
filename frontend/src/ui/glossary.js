@@ -123,6 +123,28 @@ export const GLOSSARY = {
       "Intensité énergétique. Ratio clé du Décret Tertiaire pour mesurer la performance d'un bâtiment.",
   },
 
+  // ── RegOps (Lot 3 Phase 3) ───────────────────────────────────────────────
+  operat_status: {
+    term: 'Statut OPERAT',
+    short:
+      "Statut du dépôt OPERAT (ADEME) pour le Décret Tertiaire. Valeurs principales : Conforme (dépôt à jour), À risque (en retard ou incomplet), Non conforme (dépôt manqué), À qualifier (évaluation en cours).",
+  },
+  regops_completion: {
+    term: 'Complétude obligations',
+    short:
+      "Pourcentage des obligations réglementaires applicables à ce site qui sont aujourd'hui en statut « Conforme ». Calculé sur l'ensemble des findings hors catégorie « incentive ».",
+  },
+  regops_penalty_eur: {
+    term: 'Pénalité potentielle',
+    short:
+      "Somme des pénalités financières estimées sur les findings en statut « À risque » ou « Non conforme ». Barèmes réglementaires officiels (Décret Tertiaire, BACS, APER). Indicatif, réévalué à chaque passage du moteur RegOps.",
+  },
+  regops_days_remaining: {
+    term: 'Jours restants',
+    short:
+      "Nombre de jours calendaires avant la prochaine échéance légale du dossier. Calculé depuis la date la plus proche parmi les findings + next_deadline global.",
+  },
+
   // ── Concepts PROMEOS ───────────────────────────────────────────────────────
   shadow_billing: {
     term: 'Facturation théorique',

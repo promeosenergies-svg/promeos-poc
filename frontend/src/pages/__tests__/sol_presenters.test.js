@@ -745,3 +745,267 @@ describe('Site360Sol · labelUsage', () => {
     expect(SitePresenters.labelUsage('unknown_type')).toBe('unknown_type');
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+// RegOpsSol presenters (Lot 3 Phase 3)
+// ══════════════════════════════════════════════════════════════════════════
+
+import * as RegOpsPresenters from '../regops/sol_presenters';
+
+describe('RegOpsSol · normalizeAssessment', () => {
+  it('retourne null pour input null', () => {
+    expect(RegOpsPresenters.normalizeAssessment(null)).toBe(null);
+  });
+  it('fallback global_status UNKNOWN si absent', () => {
+    const out = RegOpsPresenters.normalizeAssessment({ site_id: 3 });
+    expect(out.global_status).toBe('UNKNOWN');
+    expect(out.findings).toEqual([]);
+    expect(out.actions).toEqual([]);
+    expect(out.missing_data).toEqual([]);
+  });
+  it('préserve findings + actions + missing_data si arrays', () => {
+    const out = RegOpsPresenters.normalizeAssessment({
+      site_id: 3,
+      compliance_score: 67,
+      global_status: 'AT_RISK',
+      findings: [{ rule_id: 'dt_2030' }],
+      actions: [{ label: 'Déposer' }],
+      missing_data: ['surface_m2'],
+    });
+    expect(out.compliance_score).toBe(67);
+    expect(out.findings).toHaveLength(1);
+    expect(out.actions).toHaveLength(1);
+    expect(out.missing_data).toHaveLength(1);
+  });
+});
+
+describe('RegOpsSol · computeCompletion', () => {
+  it('retourne null si pas d\'obligation applicable', () => {
+    expect(RegOpsPresenters.computeCompletion([])).toEqual({
+      percent: null,
+      compliant: 0,
+      total: 0,
+    });
+  });
+  it('exclut la catégorie incentive (CEE masqué V1.2)', () => {
+    const r = RegOpsPresenters.computeCompletion([
+      { status: 'COMPLIANT', category: 'obligation' },
+      { status: 'COMPLIANT', category: 'incentive' },
+      { status: 'NON_COMPLIANT', category: 'obligation' },
+    ]);
+    expect(r.total).toBe(2);
+    expect(r.compliant).toBe(1);
+    expect(r.percent).toBe(50);
+  });
+  it('arrondit le pourcentage au plus proche entier', () => {
+    const r = RegOpsPresenters.computeCompletion([
+      { status: 'COMPLIANT' },
+      { status: 'COMPLIANT' },
+      { status: 'NON_COMPLIANT' },
+    ]);
+    expect(r.percent).toBe(67);
+  });
+});
+
+describe('RegOpsSol · sumPenalties', () => {
+  it('somme uniquement AT_RISK + NON_COMPLIANT', () => {
+    const total = RegOpsPresenters.sumPenalties([
+      { status: 'COMPLIANT', estimated_penalty_eur: 1000 }, // ignoré
+      { status: 'AT_RISK', estimated_penalty_eur: 2000 },
+      { status: 'NON_COMPLIANT', estimated_penalty_eur: 3000 },
+      { status: 'UNKNOWN', estimated_penalty_eur: 500 }, // ignoré
+    ]);
+    expect(total).toBe(5000);
+  });
+  it('0 si aucun finding à risque', () => {
+    expect(RegOpsPresenters.sumPenalties([{ status: 'COMPLIANT' }])).toBe(0);
+  });
+});
+
+describe('RegOpsSol · daysUntil', () => {
+  it('null si date invalide ou absente', () => {
+    expect(RegOpsPresenters.daysUntil(null)).toBe(null);
+    expect(RegOpsPresenters.daysUntil('not-a-date')).toBe(null);
+  });
+  it('positif pour date future', () => {
+    const future = new Date(Date.now() + 10 * 24 * 3600 * 1000).toISOString();
+    expect(RegOpsPresenters.daysUntil(future)).toBeGreaterThanOrEqual(9);
+    expect(RegOpsPresenters.daysUntil(future)).toBeLessThanOrEqual(10);
+  });
+  it('négatif pour date passée', () => {
+    const past = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString();
+    expect(RegOpsPresenters.daysUntil(past)).toBeLessThan(0);
+  });
+});
+
+describe('RegOpsSol · interpretRegOpsDeadline', () => {
+  it('null date → phrase neutre', () => {
+    expect(RegOpsPresenters.interpretRegOpsDeadline(null)).toMatch(/aucune/i);
+  });
+  it('< 30 jours → "imminente"', () => {
+    const d = new Date(Date.now() + 10 * 24 * 3600 * 1000).toISOString();
+    expect(RegOpsPresenters.interpretRegOpsDeadline(d)).toMatch(/imminente/i);
+  });
+  it('< 90 jours → "fenêtre confortable"', () => {
+    const d = new Date(Date.now() + 60 * 24 * 3600 * 1000).toISOString();
+    expect(RegOpsPresenters.interpretRegOpsDeadline(d)).toMatch(/confortable/i);
+  });
+  it('> 90 jours → "lointaine"', () => {
+    const d = new Date(Date.now() + 200 * 24 * 3600 * 1000).toISOString();
+    expect(RegOpsPresenters.interpretRegOpsDeadline(d)).toMatch(/lointaine/i);
+  });
+  it('date passée → "dépassée"', () => {
+    const d = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString();
+    expect(RegOpsPresenters.interpretRegOpsDeadline(d)).toMatch(/dépassée/i);
+  });
+});
+
+describe('RegOpsSol · toneFromSeverity', () => {
+  it('CRITICAL → refuse', () => {
+    expect(RegOpsPresenters.toneFromSeverity('CRITICAL')).toBe('refuse');
+  });
+  it('HIGH → attention', () => {
+    expect(RegOpsPresenters.toneFromSeverity('HIGH')).toBe('attention');
+  });
+  it('LOW → succes', () => {
+    expect(RegOpsPresenters.toneFromSeverity('LOW')).toBe('succes');
+  });
+  it('inconnu → afaire par défaut', () => {
+    expect(RegOpsPresenters.toneFromSeverity('??')).toBe('afaire');
+  });
+});
+
+describe('RegOpsSol · statusPillFromAssessment', () => {
+  it('COMPLIANT → calme ou succes + label Conforme', () => {
+    const p = RegOpsPresenters.statusPillFromAssessment({
+      assessment: { global_status: 'COMPLIANT' },
+    });
+    expect(p.label).toBe('Conforme');
+    expect(p.tone).toBe('succes');
+  });
+  it('NON_COMPLIANT → refuse + Non conforme', () => {
+    const p = RegOpsPresenters.statusPillFromAssessment({
+      assessment: { global_status: 'NON_COMPLIANT' },
+    });
+    expect(p.tone).toBe('refuse');
+  });
+  it('null assessment → null', () => {
+    expect(RegOpsPresenters.statusPillFromAssessment({})).toBe(null);
+  });
+});
+
+describe('RegOpsSol · buildRegOpsTimelineEvents', () => {
+  it('tri deadlines ASC puis findings sans deadline par severity', () => {
+    const events = RegOpsPresenters.buildRegOpsTimelineEvents({
+      assessment: null,
+      findings: [
+        { rule_id: 'a', regulation: 'bacs', severity: 'LOW', legal_deadline: '2027-01-01' },
+        { rule_id: 'b', regulation: 'bacs', severity: 'CRITICAL' }, // sans deadline, severity HIGH → après
+        { rule_id: 'c', regulation: 'bacs', severity: 'MEDIUM', legal_deadline: '2026-06-01' },
+      ],
+    });
+    expect(events).toHaveLength(3);
+    expect(events[0].id).toContain('c'); // deadline la plus proche
+    expect(events[1].id).toContain('a');
+    expect(events[2].id).toContain('b'); // sans deadline
+  });
+  it('ajoute jalon next_deadline global si absent des findings', () => {
+    const future = new Date(Date.now() + 45 * 24 * 3600 * 1000).toISOString();
+    const events = RegOpsPresenters.buildRegOpsTimelineEvents({
+      assessment: { next_deadline: future },
+      findings: [],
+    });
+    expect(events).toHaveLength(1);
+    expect(events[0].id).toBe('next-deadline');
+  });
+  it('ignore la catégorie incentive', () => {
+    const events = RegOpsPresenters.buildRegOpsTimelineEvents({
+      assessment: null,
+      findings: [
+        { rule_id: 'cee', regulation: 'cee', severity: 'MEDIUM', category: 'incentive' },
+      ],
+    });
+    expect(events).toHaveLength(0);
+  });
+});
+
+describe('RegOpsSol · buildRegOpsWeekCards (variété tags D1)', () => {
+  it('3 cards avec tags distincts (attention + afaire + succes) si data riche', () => {
+    const cards = RegOpsPresenters.buildRegOpsWeekCards({
+      assessment: {
+        actions: [{ label: 'Dépôt OPERAT', priority_score: 85 }],
+        missing_data: ['surface_m2', 'année'],
+      },
+      findings: [
+        { rule_id: 'a', regulation: 'bacs', severity: 'CRITICAL', status: 'NON_COMPLIANT' },
+        { rule_id: 'b', regulation: 'aper', severity: 'LOW', status: 'COMPLIANT' },
+      ],
+    });
+    expect(cards).toHaveLength(3);
+    const tags = cards.map((c) => c.tagKind);
+    expect(tags).toContain('attention');
+    expect(tags).toContain('afaire');
+    expect(tags).toContain('succes');
+  });
+
+  it('card 1 critical finding pris avant top action', () => {
+    const cards = RegOpsPresenters.buildRegOpsWeekCards({
+      assessment: { actions: [{ label: 'X', priority_score: 80 }] },
+      findings: [{ rule_id: 'crit', regulation: 'bacs', severity: 'CRITICAL', status: 'NON_COMPLIANT' }],
+    });
+    expect(cards[0].id).toContain('critical');
+  });
+
+  it('card 3 succes fallback "surveillance active" si aucun finding COMPLIANT', () => {
+    const cards = RegOpsPresenters.buildRegOpsWeekCards({
+      assessment: { actions: [], missing_data: [] },
+      findings: [],
+    });
+    expect(cards[2].tagKind).toBe('succes');
+    expect(cards[2].title).toMatch(/surveillance|évaluation/i);
+  });
+
+  it('fallback regops.no_findings si aucune action et aucun finding critique', () => {
+    const cards = RegOpsPresenters.buildRegOpsWeekCards({
+      assessment: { actions: [], missing_data: [] },
+      findings: [],
+    });
+    expect(cards[0].title).toMatch(/aucun finding/i);
+  });
+});
+
+describe('RegOpsSol · buildRegOpsEntityCardFields', () => {
+  it('6 fields dont Site + Obligations + Score + Échéance + Statut OPERAT + Moteur', () => {
+    const fields = RegOpsPresenters.buildRegOpsEntityCardFields({
+      assessment: {
+        site_id: 3,
+        compliance_score: 72,
+        next_deadline: '2026-09-30',
+        deterministic_version: '2.1.0',
+      },
+      site: { nom: 'Entrepôt Toulouse' },
+      findings: [
+        { regulation: 'decret_tertiaire_operat', status: 'AT_RISK' },
+        { regulation: 'bacs', status: 'COMPLIANT' },
+      ],
+    });
+    expect(fields).toHaveLength(6);
+    const labels = fields.map((f) => f.label);
+    expect(labels).toContain('Site');
+    expect(labels).toContain('Obligations');
+    expect(labels).toContain('Score conformité');
+    expect(labels).toContain('Prochaine échéance');
+    expect(labels).toContain('Statut OPERAT');
+    expect(labels).toContain('Moteur');
+  });
+
+  it('statut OPERAT "Non applicable" si pas de finding decret_tertiaire_operat', () => {
+    const fields = RegOpsPresenters.buildRegOpsEntityCardFields({
+      assessment: { site_id: 3, next_deadline: null },
+      site: null,
+      findings: [{ regulation: 'bacs', status: 'COMPLIANT' }],
+    });
+    const operat = fields.find((f) => f.label === 'Statut OPERAT');
+    expect(operat.value).toBe('Non applicable');
+  });
+});
