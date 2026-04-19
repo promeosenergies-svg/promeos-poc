@@ -123,6 +123,23 @@ export const GLOSSARY = {
       "Intensité énergétique. Ratio clé du Décret Tertiaire pour mesurer la performance d'un bâtiment.",
   },
 
+  // ── Base de connaissance (Lot 6 Phase 2, Pattern B pur) ─────────────────
+  kb_total_items: {
+    term: 'Items indexés',
+    short:
+      "Nombre total d'articles de connaissance (règles, fiches, checklists, calculs) indexés dans le moteur FTS5 PROMEOS. Inclut les articles internes + sources externes agrégées (Légifrance, ADEME, CRE, RTE).",
+  },
+  kb_validated_ratio: {
+    term: 'Ratio validés',
+    short:
+      "Pourcentage d'articles en statut « Validé » (approuvés pour usage décisionnel). ≥ 80 % = base de haute fiabilité · 50-79 % = revue recommandée · < 50 % = brouillons majoritaires à traiter.",
+  },
+  kb_domains_covered: {
+    term: 'Domaines couverts',
+    short:
+      'Nombre de domaines Sol (sur 5 : Réglementaire · Usages · ACC · Facturation · Flex) ayant au moins 1 article indexé. Indicateur de maturité de la couverture thématique.',
+  },
+
   // ── Watchers (Lot 2 Phase 7, Pattern B avec prélude cards) ──────────────
   watcher_total_count: {
     term: 'Watchers configurés',

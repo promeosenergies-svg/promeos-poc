@@ -242,6 +242,24 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Base de connaissance (Lot 6 Phase 2) ────────────────────────────────
+  'kb.no_results': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Base de connaissance vide',
+    body: "Aucun article indexé pour l'instant. Uploadez votre premier document PDF ou CSV via l'onglet Documents pour démarrer l'indexation FTS5.",
+    footer: 'import PDF/CSV disponible',
+    footerRight: 'Automatisable',
+  },
+  'kb.filter_no_results': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Aucun résultat pour votre recherche',
+    body: 'Modifiez ou réinitialisez les filtres pour retrouver des articles. La recherche couvre titres, tags et contenu.',
+    footer: 'filtres actifs',
+    footerRight: '—',
+  },
+
   // ── Watchers (Lot 2 Phase 7) ────────────────────────────────────────────
   'watcher.no_watchers': {
     tag: 'afaire',

@@ -35,6 +35,7 @@ import {
   linkProofToAction,
 } from '../services/api';
 import { DOC_STATUS_LABELS, DOC_STATUS_BADGE } from '../models/proofLinkModel';
+import KBExplorerSol from './KBExplorerSol';
 
 const DOMAIN_TABS = [
   { key: null, label: 'Tout', icon: BookOpen },
@@ -265,6 +266,7 @@ export default function KBExplorerPage() {
           ? `${stats.total_items} items — Règles, documents & preuves`
           : 'Règles, documents & preuves'
       }
+      hideHeader
       actions={
         stats && (
           <div className="flex items-center gap-2">
@@ -274,6 +276,43 @@ export default function KBExplorerPage() {
         )
       }
     >
+      {/* Lot 6 Phase 2 — KBExplorerSol Pattern B pur injecté en haut.
+          Legacy body (domain tabs Bootstrap, cartes KB item, upload
+          form, docs grid) préservé en mode mort {false && …} pour
+          rollback si régression pilote. */}
+      <KBExplorerSol
+        items={results}
+        docs={docs}
+        stats={stats}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        loading={loading || docsLoading}
+        initialSearch={query}
+        initialDomain={domain}
+        preludeSlot={
+          proofContext ? (
+            <div
+              style={{
+                padding: '10px 14px',
+                background: 'var(--sol-attention-bg)',
+                border: '1px solid var(--sol-attention-fg)',
+                borderRadius: 6,
+                fontFamily: 'var(--sol-font-body)',
+                fontSize: 13,
+                color: 'var(--sol-attention-fg)',
+              }}
+            >
+              <strong>Contexte preuve</strong> · domaine {proofContext.domain || '—'} · lever {proofContext.lever || '—'}
+              {proofContext.efa_id ? ` · EFA ${proofContext.efa_id}` : ''}
+              {proofContext.action_id ? ` · action ${proofContext.action_id}` : ''}
+            </div>
+          ) : null
+        }
+      />
+
+      {/* Legacy body préservé mort pour rollback */}
+      {false && (
+        <>
       {/* KB unavailable fallback banner */}
       {kbError === 'kb_unavailable' && (
         <Card className="bg-amber-50 border-amber-200">
@@ -595,6 +634,8 @@ export default function KBExplorerPage() {
         period={stats ? `${stats.total_items} items de connaissance` : '…'}
         confidence="high"
       />
+        </>
+      )}
     </PageShell>
   );
 }
