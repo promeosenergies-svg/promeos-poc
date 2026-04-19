@@ -242,6 +242,32 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Usages (Lot 2 Phase 5) ──────────────────────────────────────────────
+  'usage.no_usages': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Aucun usage segmenté',
+    body: "Importez les données de vos compteurs divisionnaires pour activer la segmentation par usage (CVC, éclairage, IT, process).",
+    footer: 'minimum 30 jours de données',
+    footerRight: 'Automatisable',
+  },
+  'usage.segmentation_pending': {
+    tag: 'attention',
+    tagLabel: 'Info temporaire',
+    title: 'Segmentation usages en cours',
+    body: "Sol analyse vos courbes de charge pour identifier les usages dominants. Premiers résultats disponibles sous 7 jours de mesures.",
+    footer: 'moteur segmentation actif',
+    footerRight: '⟳',
+  },
+  'usage.benchmark_unavailable': {
+    tag: 'attention',
+    tagLabel: 'Info',
+    title: 'Benchmark archétype non disponible',
+    body: "Votre activité (code NAF) n'a pas encore de benchmark ADEME OID publié. Les comparaisons se feront uniquement vs votre baseline propre.",
+    footer: 'ADEME OID 2024',
+    footerRight: '—',
+  },
+
   // ── Renouvellements (Lot 2 Phase 4) ─────────────────────────────────────
   'renewal.no_renewals': {
     tag: 'succes',

@@ -123,6 +123,23 @@ export const GLOSSARY = {
       "Intensité énergétique. Ratio clé du Décret Tertiaire pour mesurer la performance d'un bâtiment.",
   },
 
+  // ── Usages (Lot 2 Phase 5, Pattern A hybride) ───────────────────────────
+  usage_dominant: {
+    term: 'Usage dominant',
+    short:
+      "Catégorie d'usage énergétique qui pèse le plus dans votre consommation totale. Identifié via segmentation compteurs + benchmarks archétype ADEME OID 2024 (bureaux, entrepôts, commerces…). Ex : CVC 42 %, éclairage 18 %, IT 12 %.",
+  },
+  usage_total_mwh: {
+    term: 'Consommation totale',
+    short:
+      "Consommation totale du patrimoine sur 12 mois glissants, toutes énergies confondues (électricité + gaz + vapeur). Agrégat summary.total_kwh normalisé en MWh.",
+  },
+  usage_readiness_score: {
+    term: 'Qualité segmentation',
+    short:
+      "Score 0-100 mesurant la fiabilité de la segmentation par usage : présence de sous-compteurs dédiés, finesse de mesure, cohérence benchmarks. ≥ 80 = segmentation complète · 50-79 = partielle · < 50 = insuffisante.",
+  },
+
   // ── Renouvellements (Lot 2 Phase 4, Pattern B) ──────────────────────────
   renewal_imminent_count: {
     term: 'Renouvellements imminents',

@@ -16,6 +16,7 @@ import {
   getFlexNebcoPortfolio,
 } from '../services/api';
 
+import UsagesSol from './UsagesSol';
 import ScopeBar from '../components/usages/ScopeBar';
 import KpiStrip from '../components/usages/KpiStrip';
 import TabBar from '../components/usages/TabBar';
@@ -229,7 +230,15 @@ export default function UsagesDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Lot 2 Phase 5 — Pattern A hybride : injection Sol en haut,
+          legacy body (Header custom + ScopeBar + KpiStrip + 3 onglets
+          Timeline/Baseline/Comptage + HeatmapCard + ComplianceCard +
+          FlexNebcoCard + cards power/cdc/flex bubble) préservé intégralement
+          dessous. Zéro rewrite des onglets — asset lourd refonte dédiée
+          future. */}
+      <UsagesSol dashboard={data} />
+
+      {/* Header legacy */}
       <Header
         score={data?.readiness?.score}
         level={data?.readiness?.level}
