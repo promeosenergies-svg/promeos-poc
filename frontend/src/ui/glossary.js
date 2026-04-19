@@ -461,4 +461,26 @@ export const GLOSSARY = {
     long:
       "La loi APER (10/03/2023) impose la solarisation des parkings > 1 500 m² (échéances 2026-2028 selon surface) et des toitures > 500 m² des bâtiments neufs/rénovés. Le score pondère : cartographie assujettissement (30 %), études techniques PV (35 %), échéancier travaux (35 %). Source : RegAssessment module aper.",
   },
+  // ── Billing Intelligence (Phase 4.2 refonte) ─────────────────────────────
+  billing_total_current_month: {
+    term: 'Facture énergie · mois en cours',
+    short:
+      "Total HT cumulé des factures d'énergie reçues pour le mois en cours, toutes énergies et tous sites confondus.",
+    long:
+      "Agrégation € HT des factures d'électricité et gaz du mois courant. Calculé sur l'assiette scope utilisateur (org/portefeuille/site). Comparé au mois précédent pour dégager une tendance. Les anomalies détectées par le shadow billing sont inclues dans ce total tant qu'elles ne sont pas contestées — elles apparaissent séparément dans le KPI Anomalies.",
+  },
+  billing_anomalies_count: {
+    term: 'Anomalies de facturation',
+    short:
+      "Nombre d'anomalies détectées par le moteur shadow billing, triées par impact financier. Chaque anomalie est contestable, souvent automatiquement.",
+    long:
+      "Le shadow billing reconstitue en parallèle la facture attendue à partir des consommations réelles (Enedis M023, GRDF) et des barèmes réglementaires en vigueur (TURPE 7, ATRD, accises, CTA, TVA). Écart significatif (> 1 % ou > 500 €) = anomalie. Types principaux : shadow_gap, reseau_mismatch, taxes_mismatch, unit_price_high, contract_expiry_soon. Source : services/billing_engine/.",
+  },
+  billing_recovery_ytd: {
+    term: 'Récupéré YTD',
+    short:
+      "Montant cumulé depuis le 1ᵉʳ janvier des contestations de facturation validées et remboursées par vos fournisseurs.",
+    long:
+      "Somme des avoirs correctifs reçus depuis le début de l'année courante suite à contestation. Hausse = bon (plus d'argent récupéré). Délai moyen de traitement contestation→avoir : 45 jours. Sol peut rédiger automatiquement les courriers de contestation avec délai de grâce 24 h.",
+  },
 };

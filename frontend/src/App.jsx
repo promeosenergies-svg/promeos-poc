@@ -52,7 +52,10 @@ const ImportPage = lazy(() => import('./pages/ImportPage'));
 const SegmentationPage = lazy(() => import('./pages/SegmentationPage'));
 // CompliancePage deprecated — /compliance root redirects to /conformite (V92)
 const ConsumptionDiagPage = lazy(() => import('./pages/ConsumptionDiagPage'));
-const BillIntelPage = lazy(() => import('./pages/BillIntelPage'));
+// Refonte Phase 4.2 : /bill-intel pointe sur BillIntelSol (Pattern A).
+// BillIntelPage legacy accessible via /bill-intel-legacy pour A/B.
+const BillIntelPage = lazy(() => import('./pages/BillIntelSol'));
+const BillIntelLegacy = lazy(() => import('./pages/BillIntelPage'));
 const BillingPage = lazy(() => import('./pages/BillingPage'));
 const KBExplorerPage = lazy(() => import('./pages/KBExplorerPage'));
 const PurchasePage = lazy(() => import('./pages/PurchasePage'));
@@ -424,6 +427,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <BillIntelPage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/bill-intel-legacy"
+                      element={
+                        <PageSuspense>
+                          <BillIntelLegacy />
                         </PageSuspense>
                       }
                     />

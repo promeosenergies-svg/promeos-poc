@@ -61,7 +61,16 @@ export const BUSINESS_ERRORS = {
     footerRight: '⟳',
   },
 
-  // ── Bill Intelligence (Phase 4.2 anticipée) ──────────────────────────────
+  // ── Bill Intelligence (Phase 4.2) ────────────────────────────────────────
+  'billing.no_anomalies_detected': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Aucune anomalie détectée',
+    body: 'Toutes vos factures analysées ce mois sont conformes au shadow billing.',
+    footer: 'Moteur shadow v4.2 · 100 % couverture',
+    footerRight: '✓ Clean',
+  },
+  // Alias rétro-compat (Phase 4.1)
   'billing.no_anomalies': {
     tag: 'succes',
     tagLabel: 'Bonne nouvelle',
@@ -70,6 +79,14 @@ export const BUSINESS_ERRORS = {
     footer: 'Moteur shadow v4.2 · 100 % couverture',
     footerRight: '✓ Clean',
   },
+  'billing.no_invoices_yet': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Importez vos premières factures',
+    body: "L'analyse d'anomalies et le shadow billing se déclenchent dès 3 factures importées.",
+    footer: 'Import PDF ou CSV',
+    footerRight: 'Automatisable',
+  },
   'billing.no_invoices': {
     tag: 'afaire',
     tagLabel: 'À faire',
@@ -77,6 +94,22 @@ export const BUSINESS_ERRORS = {
     body: "L'analyse d'anomalies et le shadow billing se déclenchent dès 3 factures importées.",
     footer: 'Import PDF ou CSV',
     footerRight: 'Automatisable',
+  },
+  'billing.recovery_in_progress': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Contestations en cours de traitement',
+    body: "Sol suit l'avancement de vos courriers de contestation. Délai moyen de retour fournisseur\u00a0: 45\u00a0jours.",
+    footer: 'Suivi automatique actif',
+    footerRight: 'Automatisable',
+  },
+  'billing.api_down': {
+    tag: 'attention',
+    tagLabel: 'Info temporaire',
+    title: 'Analyse en cours',
+    body: 'Votre historique de facturation est en cours de recalcul. Revenez dans quelques minutes.',
+    footer: 'Réessai automatique dans 2 min',
+    footerRight: '⟳',
   },
 
   // ── Patrimoine (Phase 4.3) ───────────────────────────────────────────────
