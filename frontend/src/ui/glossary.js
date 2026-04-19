@@ -123,6 +123,23 @@ export const GLOSSARY = {
       "Intensité énergétique. Ratio clé du Décret Tertiaire pour mesurer la performance d'un bâtiment.",
   },
 
+  // ── Anomalies (Lot 2 Phase 2, Pattern B) ────────────────────────────────
+  anomaly_active_count: {
+    term: 'Anomalies actives',
+    short:
+      "Nombre d'anomalies actuellement ouvertes dans votre périmètre. Agrège patrimoine (Décret Tertiaire + BACS) et facturation (shadow billing). Les anomalies ignorées ou résolues ne sont plus comptées.",
+  },
+  anomaly_total_impact_eur: {
+    term: 'Risque financier cumulé',
+    short:
+      "Impact financier potentiel total des anomalies actives. Estimation basée sur le prix moyen pondéré de l'énergie + baseline DJU normalisée ADEME. Ne représente pas une facture émise mais un écart détecté à contester.",
+  },
+  anomaly_critical_count: {
+    term: 'Anomalies critiques',
+    short:
+      "Nombre d'anomalies de sévérité CRITIQUE — impact réglementaire ou financier immédiat justifiant une action cette semaine.",
+  },
+
   // ── Diagnostic consommation (Lot 3 Phase 5) ─────────────────────────────
   diagnostic_total_loss_eur: {
     term: 'Pertes financières',

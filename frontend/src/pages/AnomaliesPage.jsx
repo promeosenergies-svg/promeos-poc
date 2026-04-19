@@ -42,6 +42,7 @@ import { useToast } from '../ui/ToastProvider';
 import useAnomalyFilters from './useAnomalyFilters';
 import { buildAnomalyEvidence } from './anomalyEvidence';
 import { fmtEur } from '../utils/format';
+import AnomaliesSol from './AnomaliesSol';
 
 const ActionsPageInline = lazy(() => import('./ActionsPage'));
 
@@ -311,6 +312,7 @@ export default function AnomaliesPage() {
       icon={AlertTriangle}
       title="Centre d'actions"
       subtitle={activeTab === 'anomalies' ? subtitle : undefined}
+      hideHeader={activeTab === 'anomalies'}
     >
       <Tabs
         tabs={CENTRE_TABS}
@@ -332,6 +334,29 @@ export default function AnomaliesPage() {
           <ActionsPageInline bare />
         </Suspense>
       ) : (
+        <div className="mt-6">
+          <AnomaliesSol
+            anomalies={filtered}
+            allAnomalies={anomalies}
+            kpis={kpis}
+            filters={filters}
+            setFilters={setFilters}
+            resetFilters={resetFilters}
+            hasFilters={hasFilters}
+            scopedSites={scopedSites}
+            anomalyStatuses={anomalyStatuses}
+            onRowClick={(anom) => {
+              setEvidenceData(buildAnomalyEvidence(anom));
+              setEvidenceOpen(true);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Legacy anomalies body — preserved mais masqué (Lot 2 P2).
+          Garde le code legacy accessible via ?view=legacy pour rollback
+          rapide si régression critique pendant démo pilote. */}
+      {false && activeTab === 'anomalies-legacy-disabled' && (
         <div className="space-y-4">
           {/* ── KPI row ── */}
           <div className="grid grid-cols-3 gap-3">

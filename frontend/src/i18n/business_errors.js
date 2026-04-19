@@ -242,6 +242,24 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Anomalies (Lot 2 Phase 2) ───────────────────────────────────────────
+  'anomaly.no_anomalies': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Aucune anomalie active sur votre patrimoine',
+    body: 'Sol continue à surveiller les factures et les signaux de consommation chaque nuit. Vous serez alerté dès qu\'une nouvelle anomalie apparaît.',
+    footer: 'Détection ML + shadow billing actifs',
+    footerRight: '✓ Clean',
+  },
+  'anomaly.filter_no_results': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Aucune anomalie ne correspond à vos filtres',
+    body: 'Modifiez ou réinitialisez les filtres pour retrouver des résultats. Utilisez « Réinitialiser filtres » en haut à droite pour repartir à zéro.',
+    footer: 'filtres actifs',
+    footerRight: '—',
+  },
+
   // ── Diagnostic consommation (Lot 3 Phase 5) ─────────────────────────────
   'diagnostic.no_insights': {
     tag: 'succes',
