@@ -242,6 +242,24 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Diagnostic consommation (Lot 3 Phase 5) ─────────────────────────────
+  'diagnostic.no_insights': {
+    tag: 'succes',
+    tagLabel: 'Bonne nouvelle',
+    title: 'Aucune anomalie détectée sur la période',
+    body: 'Votre patrimoine est stable sur la fenêtre analysée. Sol continuera à surveiller les profils chaque nuit.',
+    footer: 'Détection ML + baseline DJU active',
+    footerRight: '✓ Stable',
+  },
+  'diagnostic.seed_needed': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Lancez un premier diagnostic',
+    body: "Importez au moins 30 jours de consommations pour activer la détection d'anomalies. Le bouton « Générer conso démo » simule un jeu de données pour validation.",
+    footer: 'minimum 30 jours requis',
+    footerRight: 'Automatisable',
+  },
+
   // ── EFA — Décret Tertiaire (Lot 3 Phase 4) ──────────────────────────────
   'efa.proofs_missing': {
     tag: 'afaire',

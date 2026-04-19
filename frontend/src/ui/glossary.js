@@ -123,6 +123,23 @@ export const GLOSSARY = {
       "Intensité énergétique. Ratio clé du Décret Tertiaire pour mesurer la performance d'un bâtiment.",
   },
 
+  // ── Diagnostic consommation (Lot 3 Phase 5) ─────────────────────────────
+  diagnostic_total_loss_eur: {
+    term: 'Pertes financières',
+    short:
+      "Pertes financières cumulées sur la période analysée. Somme des écarts estimés en euros sur l'ensemble des anomalies détectées (hors horaires, talon excessif, pointes, dérives). Recalcul possible via le prix moyen pondéré personnalisé.",
+  },
+  diagnostic_total_loss_kwh: {
+    term: 'Excès énergétique',
+    short:
+      "Somme des écarts de consommation détectés sur la période, exprimée en kWh. Comparaison vs baseline DJU normalisée Météo-France + profils archétypes ADEME tertiaire.",
+  },
+  diagnostic_sites_affected: {
+    term: 'Sites concernés',
+    short:
+      "Nombre de sites du périmètre actuel qui présentent au moins une anomalie active (non résolue) sur la période. Compteur réduit automatiquement quand les anomalies sont traitées.",
+  },
+
   // ── EFA — Décret Tertiaire (Lot 3 Phase 4) ──────────────────────────────
   efa_reference_year_kwh: {
     term: 'Consommation année de référence',

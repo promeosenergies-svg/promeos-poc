@@ -1292,3 +1292,175 @@ describe('EfaSol · ownerFromEfa', () => {
     expect(EfaPresenters.ownerFromEfa({})).toBe(null);
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+// DiagnosticConsoSol presenters (Lot 3 Phase 5, Pattern A hybride)
+// ══════════════════════════════════════════════════════════════════════════
+
+import * as DiagPresenters from '../diagnostic/sol_presenters';
+
+describe('DiagnosticConsoSol · normalizeDiagnosticSummary', () => {
+  it('retourne zéros pour input null', () => {
+    const out = DiagPresenters.normalizeDiagnosticSummary(null);
+    expect(out.total_insights).toBe(0);
+    expect(out.total_loss_eur).toBe(0);
+  });
+  it('convertit strings en numbers', () => {
+    const out = DiagPresenters.normalizeDiagnosticSummary({
+      total_insights: '5',
+      total_loss_eur: '1234.5',
+    });
+    expect(out.total_insights).toBe(5);
+    expect(out.total_loss_eur).toBe(1234.5);
+  });
+});
+
+describe('DiagnosticConsoSol · labelInsightType', () => {
+  it('aliases connus', () => {
+    expect(DiagPresenters.labelInsightType('hors_horaires')).toBe('Hors horaires');
+    expect(DiagPresenters.labelInsightType('base_load')).toBe('Talon excessif');
+    expect(DiagPresenters.labelInsightType('derive')).toBe('Dérive tendance');
+  });
+  it('fallback: replace underscores', () => {
+    expect(DiagPresenters.labelInsightType('other_kind')).toBe('other kind');
+    expect(DiagPresenters.labelInsightType(null)).toBe('Anomalie');
+  });
+});
+
+describe('DiagnosticConsoSol · toneFromSeverity', () => {
+  it('critical → refuse', () => {
+    expect(DiagPresenters.toneFromSeverity('critical')).toBe('refuse');
+  });
+  it('case-insensitive', () => {
+    expect(DiagPresenters.toneFromSeverity('HIGH')).toBe('attention');
+    expect(DiagPresenters.toneFromSeverity('Medium')).toBe('afaire');
+  });
+  it('inconnu → afaire par défaut', () => {
+    expect(DiagPresenters.toneFromSeverity('??')).toBe('afaire');
+  });
+});
+
+describe('DiagnosticConsoSol · buildDiagnosticNarrative', () => {
+  it('"patrimoine stable" si aucune anomalie', () => {
+    const r = DiagPresenters.buildDiagnosticNarrative({
+      summary: { total_insights: 0 },
+      insights: [],
+    });
+    expect(r).toMatch(/stable|aucune/i);
+  });
+  it('inclut nombre d\'anomalies + impact €', () => {
+    const r = DiagPresenters.buildDiagnosticNarrative({
+      summary: {
+        total_insights: 9,
+        sites_with_insights: 3,
+        total_loss_eur: 8420,
+        total_loss_kwh: 42000,
+      },
+      insights: [
+        { site_nom: 'Nice Hôtel', type: 'hors_horaires', estimated_loss_eur: 3500 },
+      ],
+      periodDays: 90,
+    });
+    expect(r).toContain('9');
+    expect(r).toMatch(/Nice Hôtel/);
+    expect(r).toMatch(/Hors horaires/i);
+  });
+});
+
+describe('DiagnosticConsoSol · adaptInsightsToBarChart', () => {
+  it('vide si aucun insight', () => {
+    expect(DiagPresenters.adaptInsightsToBarChart([])).toEqual([]);
+  });
+  it('agrège par site + trie DESC impact', () => {
+    const data = DiagPresenters.adaptInsightsToBarChart([
+      { site_nom: 'A', estimated_loss_eur: 100 },
+      { site_nom: 'B', estimated_loss_eur: 500 },
+      { site_nom: 'A', estimated_loss_eur: 200 },
+    ]);
+    expect(data[0].site).toBe('B');
+    expect(data[0].current).toBe(500);
+    expect(data[1].site).toBe('A');
+    expect(data[1].current).toBe(300);
+  });
+  it('exclut insights sans perte €', () => {
+    const data = DiagPresenters.adaptInsightsToBarChart([
+      { site_nom: 'Z', estimated_loss_eur: 0 },
+    ]);
+    expect(data).toEqual([]);
+  });
+  it('limite respectée', () => {
+    const many = Array.from({ length: 20 }, (_, i) => ({
+      site_nom: `site${i}`,
+      estimated_loss_eur: 100 + i,
+    }));
+    const data = DiagPresenters.adaptInsightsToBarChart(many, { limit: 5 });
+    expect(data).toHaveLength(5);
+  });
+});
+
+describe('DiagnosticConsoSol · buildDiagnosticWeekCards (variety guard D1)', () => {
+  it('3 tags distincts (attention + afaire + succes) si data riche', () => {
+    const cards = DiagPresenters.buildDiagnosticWeekCards({
+      insights: [
+        {
+          id: 1, site_nom: 'Lyon', type: 'hors_horaires',
+          estimated_loss_eur: 3500, message: 'Surconso weekend',
+          recommended_actions: [{ label: 'Programmer horloge' }],
+          insight_status: 'open',
+        },
+        {
+          id: 2, site_nom: 'Paris', type: 'base_load',
+          estimated_loss_eur: 1200,
+          recommended_actions: [{ label: 'Audit talon' }],
+          insight_status: 'open',
+        },
+        {
+          id: 3, site_nom: 'Nice', type: 'pointe',
+          insight_status: 'resolved',
+        },
+      ],
+    });
+    expect(cards).toHaveLength(3);
+    const tags = cards.map((c) => c.tagKind);
+    expect(tags).toContain('attention');
+    expect(tags).toContain('afaire');
+    expect(tags).toContain('succes');
+  });
+
+  it('fallback "patrimoine stable" si aucun insight', () => {
+    const cards = DiagPresenters.buildDiagnosticWeekCards({ insights: [] });
+    expect(cards[0].title).toMatch(/aucune|stable/i);
+    expect(cards[2].title).toMatch(/détection|continue/i);
+  });
+
+  it('exclut resolved du top €', () => {
+    const cards = DiagPresenters.buildDiagnosticWeekCards({
+      insights: [
+        { id: 1, estimated_loss_eur: 10000, insight_status: 'resolved' },
+        { id: 2, estimated_loss_eur: 100, insight_status: 'open', site_nom: 'X', type: 'derive' },
+      ],
+    });
+    expect(cards[0].id).not.toContain('1');
+  });
+});
+
+describe('DiagnosticConsoSol · interpretSitesAffected', () => {
+  it('0 → phrase neutre', () => {
+    expect(DiagPresenters.interpretSitesAffected({ summary: { sites_with_insights: 0 } }))
+      .toMatch(/aucun/i);
+  });
+  it('1 site → singulier', () => {
+    const r = DiagPresenters.interpretSitesAffected({
+      summary: { sites_with_insights: 1, total_insights: 3 },
+    });
+    expect(r).toMatch(/1[\s\u00a0]site/);
+    expect(r).toMatch(/3/);
+  });
+  it('plusieurs sites → pluriel', () => {
+    const r = DiagPresenters.interpretSitesAffected({
+      summary: { sites_with_insights: 4, total_insights: 12 },
+    });
+    expect(r).toMatch(/4/);
+    expect(r).toMatch(/12/);
+  });
+});

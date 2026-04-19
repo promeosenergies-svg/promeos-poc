@@ -23,6 +23,7 @@ import {
 } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
 import { normalizeId } from './consumption/helpers';
+import DiagnosticConsoSol from './DiagnosticConsoSol';
 import {
   Card,
   CardBody,
@@ -961,6 +962,23 @@ export default function ConsumptionDiagPage() {
         </>
       }
     >
+      {/* Lot 3 Phase 5 — Hero Pattern A Sol injecté en haut. Le reste de
+          la page (liste insights + EvidenceDrawer 4 tabs inline) reste
+          intégralement préservé en legacy. */}
+      {!loading && summary && (
+        <div style={{ marginBottom: 24 }}>
+          <DiagnosticConsoSol
+            insights={Array.isArray(summary?.insights) ? summary.insights : []}
+            summary={summary?.summary}
+            scope={{ sitesCount, selectedSiteId, scopeLabel }}
+            selectedSite={null}
+            periodDays={period?.days || 90}
+            customPrice={customPrice}
+            onOpenInsight={(insight) => setDrawerInsight(insight)}
+          />
+        </div>
+      )}
+
       {/* V15-B: Scope badge */}
       <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
         <span>Périmètre :</span>
