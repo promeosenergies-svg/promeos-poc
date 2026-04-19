@@ -123,6 +123,23 @@ export const GLOSSARY = {
       "Intensité énergétique. Ratio clé du Décret Tertiaire pour mesurer la performance d'un bâtiment.",
   },
 
+  // ── Contrats (Lot 2 Phase 3, Pattern B) ─────────────────────────────────
+  contract_active_count: {
+    term: 'Contrats actifs',
+    short:
+      "Nombre de contrats énergie actuellement en vigueur dans votre portefeuille (cadres + annexes). Les contrats expirés, brouillons ou résiliés ne sont pas comptés.",
+  },
+  contract_total_volume_mwh: {
+    term: 'Volume cumulé 12 mois',
+    short:
+      "Volume total d'énergie couvert par les contrats actifs sur une année glissante, exprimé en MWh. Somme des volumes annexes + cadres renseignés dans le référentiel.",
+  },
+  contract_weighted_price_eur_mwh: {
+    term: 'Prix pondéré portefeuille',
+    short:
+      "Prix moyen de l'énergie sur le portefeuille, pondéré par le volume de chaque contrat : (Σ prix × volume) / Σ volume. Inclut uniquement les contrats avec prix et volume renseignés — les contrats indexés sans prix fixe sont exclus.",
+  },
+
   // ── Anomalies (Lot 2 Phase 2, Pattern B) ────────────────────────────────
   anomaly_active_count: {
     term: 'Anomalies actives',

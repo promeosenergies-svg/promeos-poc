@@ -12,6 +12,7 @@ import ContractKpiStrip from '../components/contracts/ContractKpiStrip';
 import ContractCadrePanel from '../components/contracts/ContractCadrePanel';
 import ContractAnnexePanel from '../components/contracts/ContractAnnexePanel';
 import ContractWizard from '../components/contracts/ContractWizard';
+import ContratsSol from './ContratsSol';
 
 /* ── Status badges ── */
 const STATUS_CFG = {
@@ -135,14 +136,62 @@ export default function Contrats() {
   }, []);
 
   return (
-    <PageShell>
-      {/* Breadcrumb */}
-      <div className="text-xs text-gray-400 mb-1.5">
-        <span className="text-blue-600">PROMEOS</span> /{' '}
-        <span className="text-blue-600">Patrimoine</span> / <b>Contrats</b>
-      </div>
+    <PageShell hideHeader>
+      {/* Lot 2 Phase 3 : rendu Pattern B Sol en haut, panels legacy
+          préservés ci-dessous pour drill-down. */}
+      <ContratsSol
+        cadres={cadres}
+        loading={loading}
+        onOpenCadre={(id) => {
+          setAnnexePanel(null);
+          setCadrePanel(id);
+        }}
+        onOpenAnnexe={(annexeId, cadreId) => openAnnexePanel(annexeId, cadreId)}
+        onOpenWizard={() => setWizardOpen(true)}
+      />
 
-      {/* Header */}
+      {/* Panels drawer legacy préservés */}
+      {cadrePanel && (
+        <ContractCadrePanel
+          cadreId={cadrePanel}
+          onClose={() => setCadrePanel(null)}
+          onOpenAnnexe={(annexeId) => openAnnexePanel(annexeId, cadrePanel)}
+        />
+      )}
+      {annexePanel && (
+        <ContractAnnexePanel
+          cadreId={annexeCadreId}
+          annexeId={annexePanel}
+          onClose={() => setAnnexePanel(null)}
+          onOpenCadre={() => {
+            setAnnexePanel(null);
+            setCadrePanel(annexeCadreId);
+          }}
+        />
+      )}
+
+      {/* Wizard */}
+      <ContractWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        onCreated={fetchData}
+      />
+
+      {/* Error state legacy (si API down) */}
+      {error && (
+        <div className="mt-4">
+          <ErrorState message={error} onRetry={fetchData} />
+        </div>
+      )}
+
+      {/* Legacy body — désactivé (Lot 2 Phase 3). Rollback rapide via
+          toggle `{false &&}` en cas de régression démo pilote. */}
+      {false && (
+        <div>
+          <div className="text-xs text-gray-400 mb-1.5">
+            <span className="text-blue-600">PROMEOS</span> /{' '}
+            <span className="text-blue-600">Patrimoine</span> / <b>Contrats</b>
+          </div>
       <div className="flex items-start justify-between mb-4">
         <div>
           <h1 className="text-xl font-extrabold tracking-tight flex items-center gap-2.5">
@@ -425,10 +474,13 @@ export default function Contrats() {
         onClose={() => setWizardOpen(false)}
         onCreated={fetchData}
       />
+        </div>
+      )}
     </PageShell>
   );
 }
 
+// eslint-disable-next-line no-unused-vars
 function fmtDate(d) {
   if (!d) return '—';
   try {

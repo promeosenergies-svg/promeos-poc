@@ -242,6 +242,32 @@ export const BUSINESS_ERRORS = {
     footerRight: 'Automatisable',
   },
 
+  // ── Contrats (Lot 2 Phase 3) ────────────────────────────────────────────
+  'contract.no_contracts': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Aucun contrat enregistré',
+    body: "Importez vos contrats en cours depuis CSV ou PDF pour activer le radar de renouvellement et les KPIs portefeuille.",
+    footer: 'import CSV/PDF disponible',
+    footerRight: 'Automatisable',
+  },
+  'contract.filter_no_results': {
+    tag: 'afaire',
+    tagLabel: 'À faire',
+    title: 'Aucun contrat ne correspond à vos filtres',
+    body: 'Modifiez ou réinitialisez les filtres pour retrouver des résultats. Utilisez le bouton « Réinitialiser filtres » en haut à droite.',
+    footer: 'filtres actifs',
+    footerRight: '—',
+  },
+  'contract.price_unavailable': {
+    tag: 'attention',
+    tagLabel: 'Info',
+    title: 'Prix non renseigné',
+    body: "Ce contrat est indexé ou n'a pas encore de prix fixe. Le prix pondéré portefeuille l'exclut du calcul.",
+    footer: 'à compléter si prix fixe disponible',
+    footerRight: '—',
+  },
+
   // ── Anomalies (Lot 2 Phase 2) ───────────────────────────────────────────
   'anomaly.no_anomalies': {
     tag: 'succes',
