@@ -79,8 +79,8 @@ export const GLOSSARY = {
   vnu: {
     term: 'VNU',
     short:
-      "Ventes au Nucléaire Unifié. Mécanisme régulant l'accès à l'électricité nucléaire historique, successeur de l'ARENH depuis le 1/1/2026.",
-    long: "La VNU remplace l'ARENH (fini 31/12/2025) dans le cadre post-bouclier tarifaire. Elle unifie les ventes d'EDF sur un marché de gros régulé (plutôt qu'un prix fixe 42 €/MWh comme ARENH). Fin 2025, l'open interest sur Y_2026 a atteint 24,1 GW (record historique) — signal fort d'anticipation par les acheteurs. PROMEOS intègre la VNU dans les scénarios d'achat Q2-Q3 2026. Source : Loi Énergie-Climat 2019, PPE3 2026–2035, bulletin CRE T4 2025.",
+      'Versement Nucléaire Universel. Taxe redistributive sur la rente nucléaire EDF (Décret 2026-55, CRE 2026-52), successeur du cadre ARENH depuis le 01/01/2026.',
+    long: "Le VNU (Versement Nucléaire Universel) est une taxe redistributive prélevée sur EDF lorsque le prix de marché dépasse les seuils CRE (78 / 110 €/MWh). Elle n'est PAS une ligne de la facture client final — c'est un transfert EDF → fournisseurs concurrents pour ré-équilibrer la rente nucléaire. Remplace le cadre ARENH (42 €/MWh × 50% quota) supprimé au 31/12/2025. Statut dormant en 2026 tant que les prix forward restent sous 78 €/MWh. PROMEOS expose le statut VNU dans hypotheses pour traçabilité auditeur. Source : Loi 2023-491 souveraineté énergétique, Décret 2026-55, CRE 2026-52.",
   },
   capacite: {
     term: 'Mécanisme de capacité',
@@ -346,7 +346,7 @@ export const GLOSSARY = {
   arenh: {
     term: 'ARENH',
     short:
-      "Accès Régulé à l'Électricité Nucléaire Historique. Prix fixe 42 €/MWh. Dispositif terminé le 31/12/2025, remplacé par le mécanisme VNU (Ventes au Nucléaire Unifié).",
+      "Accès Régulé à l'Électricité Nucléaire Historique. Prix fixe 42 €/MWh. Dispositif terminé le 31/12/2025, remplacé par le VNU (Versement Nucléaire Universel, taxe redistributive sur EDF).",
     // Source : Loi Énergie-Climat 2019, fin ARENH confirmée LFI 2023. VNU : PPE3 2026-2035.
   },
 
