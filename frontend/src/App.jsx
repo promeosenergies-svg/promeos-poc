@@ -97,7 +97,10 @@ const ContractRadarPage = lazy(() => import('./pages/ContractRadarPage'));
 const Contrats = lazy(() => import('./pages/Contrats'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const SireneOnboardingPage = lazy(() => import('./pages/SireneOnboardingPage'));
-const AperPage = lazy(() => import('./pages/AperPage'));
+// Refonte Lot 1.2 : /conformite/aper pointe sur AperSol (Pattern A).
+// AperPage legacy accessible via /conformite/aper-legacy pour A/B.
+const AperPage = lazy(() => import('./pages/AperSol'));
+const AperLegacy = lazy(() => import('./pages/AperPage'));
 const UsagesDashboardPage = lazy(() => import('./pages/UsagesDashboardPage'));
 
 function PageSuspense({ children }) {
@@ -283,6 +286,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <AperPage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/conformite/aper-legacy"
+                      element={
+                        <PageSuspense>
+                          <AperLegacy />
                         </PageSuspense>
                       }
                     />
