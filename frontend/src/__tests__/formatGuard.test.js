@@ -102,14 +102,17 @@ describe('C. Source guard — .toFixed() dans pages et composants', () => {
     }
   }
 
-  it('moins de 40 fichiers avec .toFixed() (baseline avant migration complète)', () => {
-    // Objectif: réduire progressivement. Baseline initiale permissive.
-    expect(violations.length).toBeLessThan(40);
+  it('moins de 35 fichiers avec .toFixed() (Lot 7 — baseline durcie, progression vers < 20)', () => {
+    // Progression : Lot 6 close = 45 → sprint heritage debt = 35 → Lot 7 = 32.
+    // Prochain palier cible : < 30 (refonte Lot 7+ des 5 composants lourds restants).
+    expect(violations.length).toBeLessThan(35);
   });
 
-  it('total .toFixed() < 120 occurrences dans pages+components (hors autorisés)', () => {
+  it('total .toFixed() < 80 occurrences dans pages+components (hors autorisés)', () => {
+    // Progression : Lot 6 close = ~130 → sprint heritage debt = ~120 → Lot 7 = 63.
+    // Headroom ~17 pour nouveaux dev — durcir à < 70 au Lot 7+1.
     const total = violations.reduce((s, v) => s + v.count, 0);
-    expect(total).toBeLessThan(120);
+    expect(total).toBeLessThan(80);
   });
 });
 
