@@ -52,6 +52,7 @@ import {
   freshness,
 } from './command-center/sol_presenters';
 import { SkeletonCard } from '../ui/Skeleton';
+import { fmtNum } from '../utils/format';
 import { LayoutDashboard, ShieldCheck, Receipt, Building2, ShoppingCart } from 'lucide-react';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -214,7 +215,7 @@ export default function CommandCenterSol() {
         <SolKpiCard
           label="Indice d'état patrimoine"
           explainKey="command_state_index"
-          value={stateIndex != null ? stateIndex.toFixed(1).replace('.', ',') : '—'}
+          value={stateIndex != null ? fmtNum(stateIndex, 1) : '—'}
           unit="/100"
           semantic="score"
           headline={interpretStateIndex(stateIndex)}

@@ -25,6 +25,7 @@ import {
   freshness,
 } from '../cockpit/sol_presenters';
 import { businessErrorFallback } from '../../i18n/business_errors';
+import { fmtNum } from '../../utils/format';
 
 export { NBSP };
 
@@ -332,7 +333,7 @@ export function buildAchatWeekCards({ renewals = [], marketContext, scenarios = 
       tagKind: 'afaire',
       tagLabel: 'À faire',
       title: 'Fenêtre marché favorable',
-      body: `Spot EPEX en baisse de ${Math.abs(trend).toFixed(1)}${NBSP}% sur 30 jours. Moment opportun pour négocier un hedging forward.`,
+      body: `Spot EPEX en baisse de ${fmtNum(Math.abs(trend), 1)}${NBSP}% sur 30 jours. Moment opportun pour négocier un hedging forward.`,
       footerLeft: marketContext.spot_current_eur_mwh
         ? `spot ${formatFR(marketContext.spot_current_eur_mwh, 1)}${NBSP}€/MWh`
         : '',

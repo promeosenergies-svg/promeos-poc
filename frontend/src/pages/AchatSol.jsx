@@ -56,6 +56,7 @@ import {
   freshness,
 } from './achat/sol_presenters';
 import { SkeletonCard } from '../ui/Skeleton';
+import { fmtNum } from '../utils/format';
 
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -318,7 +319,7 @@ export default function AchatSol() {
                     }}
                   >
                     {market.trend_30d_vs_12m_pct > 0 ? '+' : ''}
-                    {market.trend_30d_vs_12m_pct.toFixed(1)}{NBSP}%
+                    {fmtNum(market.trend_30d_vs_12m_pct, 1)}{NBSP}%
                   </span>
                 )}
                 {' '}vs moyenne 12 mois.

@@ -832,6 +832,6 @@ export const GLOSSARY = {
   pipeline_applicability_frameworks: {
     term: 'Frameworks applicables',
     short:
-      "Règles réglementaires applicables par site : Décret Tertiaire (surfaces ≥ 1 000 m²) · BACS (bâtiments tertiaires neufs ou CVC > 290 kW) · APER (parkings ≥ 1 500 m² ou toitures industrielles ≥ 500 m²). Booléens calculés backend à partir des attributs patrimoine (surface, puissance CVC, parking).",
+      "Règles applicables par site : Décret Tertiaire (≥ 1 000 m²) · BACS (CVC > 290 kW) · APER (parkings ≥ 1 500 m² ou toitures ≥ 500 m²). Booléens backend dérivés du patrimoine (surface, puissance CVC, parking).",
   },
 };

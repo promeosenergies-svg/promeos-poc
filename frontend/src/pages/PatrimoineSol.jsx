@@ -52,6 +52,7 @@ import {
   freshness,
 } from './patrimoine/sol_presenters';
 import { SkeletonCard } from '../ui/Skeleton';
+import { fmtNum } from '../utils/format';
 
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -143,7 +144,7 @@ export default function PatrimoineSol() {
     const gap = ((euiAvg - benchmarkAvg) / benchmarkAvg) * 100;
     if (Math.abs(gap) < 0.5) return { direction: 'flat', text: `aligné ADEME`, value: 0 };
     const sign = gap > 0 ? '▲' : '▼';
-    const formatted = Math.abs(gap).toFixed(0);
+    const formatted = fmtNum(Math.abs(gap), 0);
     return {
       direction: gap > 0 ? 'up' : 'down',
       value: gap,

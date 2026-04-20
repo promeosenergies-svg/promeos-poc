@@ -4,7 +4,7 @@
  * Affiche le delta (pertes & parties communes) comme tranche distincte.
  */
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { fmtKwh } from '../utils/format';
+import { fmtKwh, fmtPct } from '../utils/format';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 const DELTA_COLOR = '#94a3b8';
@@ -44,7 +44,7 @@ export default function MeterBreakdownChart({ breakdown }) {
             outerRadius={80}
             paddingAngle={2}
             dataKey="value"
-            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+            label={({ name, percent }) => `${name} ${fmtPct(percent, true, 0)}`}
             labelLine={false}
           >
             {data.map((_, i) => (

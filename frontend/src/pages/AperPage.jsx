@@ -11,6 +11,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { Explain, KpiCardInline } from '../ui';
 import ErrorState from '../ui/ErrorState'; // eslint-disable-line no-unused-vars
 import { getAperDashboard, getAperEstimate } from '../services/api';
+import { fmtPct } from '../utils/format';
 
 const MONTH_LABELS = [
   'Jan',
@@ -346,7 +347,7 @@ export default function AperPage() {
                   Surface panneaux : {fmt(estimate.surface_panneaux_m2)}
                   {'\u00A0'}m²
                 </span>
-                <span>Couverture : {(estimate.coverage_ratio * 100).toFixed(0)}%</span>
+                <span>Couverture : {fmtPct(estimate.coverage_ratio, true, 0)}</span>
                 <span>Autoconso : {estimate.autoconsommation_pct}%</span>
               </div>
             )}

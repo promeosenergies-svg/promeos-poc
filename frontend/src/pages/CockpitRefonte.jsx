@@ -32,6 +32,7 @@ import {
   interpretConsumption,
   interpretCost,
 } from './cockpit/sol_interpreters';
+import { fmtNum } from '../utils/format';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixtures — shapes représentatives de ce que les hooks PROMEOS renverront.
@@ -132,7 +133,7 @@ function fmtEurFull(n) {
 }
 function fmtPctDelta(delta, suffix) {
   const sign = delta > 0 ? '+' : '';
-  const val = `${sign}${(delta * 100).toFixed(1).replace('.', ',')}${NNBSP}%`;
+  const val = `${sign}${fmtNum(delta * 100, 1)}${NNBSP}%`;
   const arrow = delta > 0 ? '▲' : '▼';
   return `${arrow} ${val} ${suffix}`;
 }
