@@ -18,26 +18,27 @@
 import { TrendingDown, TrendingUp, Minus, ArrowRight } from 'lucide-react';
 import { fmtNum } from '../../utils/format';
 
-// Mapping état → token Sol sémantique. Tags FR exposés côté test
+// Style commun sur tous les chiffres affichés (police mono + tabular-nums
+// pour que les colonnes de chiffres s'alignent pixel-à-pixel).
+const MONO_STYLE = {
+  fontFamily: 'var(--sol-font-mono)',
+  fontVariantNumeric: 'tabular-nums',
+};
+
+// Mapping état → token Sol sémantique. Strings FR exposées côté test
 // (step24_market_banner.test.js vérifie "favorable" / "stable" / "cap").
 const STATES = {
   low: {
-    tone: 'succes',
-    tagLabel: 'favorable',
     icon: TrendingDown,
     bgVar: 'var(--sol-succes-bg)',
     fgVar: 'var(--sol-succes-fg)',
   },
   stable: {
-    tone: 'calme',
-    tagLabel: 'stable',
     icon: Minus,
     bgVar: 'var(--sol-calme-bg)',
     fgVar: 'var(--sol-calme-fg)',
   },
   high: {
-    tone: 'attention',
-    tagLabel: 'cap conseillé',
     icon: TrendingUp,
     bgVar: 'var(--sol-attention-bg)',
     fgVar: 'var(--sol-attention-fg)',
@@ -98,29 +99,20 @@ export default function MarketContextBanner({ marketContext, isExpert, onNavigat
         >
           {state === 'low' && (
             <>
-              Le marché spot est à{' '}
-              <strong style={{ fontFamily: 'var(--sol-font-mono)', fontVariantNumeric: 'tabular-nums' }}>
-                {spotDisplay} EUR/MWh
-              </strong>
-              , {absTrend}% sous la moyenne 12 mois. Moment favorable pour sécuriser un prix.
+              Le marché spot est à <strong style={MONO_STYLE}>{spotDisplay} EUR/MWh</strong>, {absTrend}%
+              sous la moyenne 12 mois. Moment favorable pour sécuriser un prix.
             </>
           )}
           {state === 'stable' && (
             <>
-              Le marché spot est à{' '}
-              <strong style={{ fontFamily: 'var(--sol-font-mono)', fontVariantNumeric: 'tabular-nums' }}>
-                {spotDisplay} EUR/MWh
-              </strong>
-              , stable par rapport aux 12 derniers mois.
+              Le marché spot est à <strong style={MONO_STYLE}>{spotDisplay} EUR/MWh</strong>, stable par
+              rapport aux 12 derniers mois.
             </>
           )}
           {state === 'high' && (
             <>
-              Le marché spot est à{' '}
-              <strong style={{ fontFamily: 'var(--sol-font-mono)', fontVariantNumeric: 'tabular-nums' }}>
-                {spotDisplay} EUR/MWh
-              </strong>
-              , {absTrend}% au-dessus de la moyenne 12 mois. Envisagez un contrat indexé avec cap pour limiter
+              Le marché spot est à <strong style={MONO_STYLE}>{spotDisplay} EUR/MWh</strong>, {absTrend}%
+              au-dessus de la moyenne 12 mois. Envisagez un contrat indexé avec cap pour limiter
               l'exposition.
             </>
           )}
@@ -128,14 +120,12 @@ export default function MarketContextBanner({ marketContext, isExpert, onNavigat
 
         {isExpert && (
           <p
-            data-testid="market-context-expert"
             style={{
-              fontFamily: 'var(--sol-font-mono)',
+              ...MONO_STYLE,
               fontSize: 11,
               color: 'var(--sol-ink-500)',
               letterSpacing: '0.02em',
               margin: '4px 0 0 0',
-              fontVariantNumeric: 'tabular-nums',
             }}
           >
             Spot 30j : {fmtNum(spot30d, 1)} EUR/MWh · Moy. 12m : {fmtNum(avg12m, 1)} EUR/MWh · Volatilité :{' '}
@@ -147,7 +137,6 @@ export default function MarketContextBanner({ marketContext, isExpert, onNavigat
         {state !== 'stable' && onNavigate && (
           <button
             type="button"
-            data-testid="market-context-cta"
             onClick={() => onNavigate('/achat-energie?tab=simulation')}
             style={{
               display: 'inline-flex',
@@ -186,12 +175,25 @@ export function MarketContextCompact({ marketContext, onNavigate }) {
   const absTrend = fmtNum(Math.abs(trend), 0);
   const arrow = trend < -2 ? '↓' : trend > 2 ? '↑' : '→';
 
+  const interactive = typeof onNavigate === 'function';
+  const navigate = () => onNavigate('/achat-energie');
+
   return (
     <div
-      role={onNavigate ? 'button' : undefined}
-      onClick={() => onNavigate?.('/achat-energie')}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive ? navigate : undefined}
+      onKeyDown={
+        interactive
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate();
+              }
+            }
+          : undefined
+      }
       title="Voir les scénarios d'achat"
-      data-testid="market-context-compact"
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -199,7 +201,7 @@ export function MarketContextCompact({ marketContext, onNavigate }) {
         fontFamily: 'var(--sol-font-body)',
         fontSize: 12,
         color: 'var(--sol-ink-500)',
-        cursor: onNavigate ? 'pointer' : 'default',
+        cursor: interactive ? 'pointer' : 'default',
       }}
     >
       <span
@@ -214,11 +216,9 @@ export function MarketContextCompact({ marketContext, onNavigate }) {
       />
       <span>
         Marché :{' '}
-        <strong style={{ fontFamily: 'var(--sol-font-mono)', fontVariantNumeric: 'tabular-nums', color: 'var(--sol-ink-900)' }}>
-          {fmtNum(spot, 0)} EUR/MWh
-        </strong>
+        <strong style={{ ...MONO_STYLE, color: 'var(--sol-ink-900)' }}>{fmtNum(spot, 0)} EUR/MWh</strong>
       </span>
-      <span style={{ color: cfg.fgVar, fontFamily: 'var(--sol-font-mono)', fontVariantNumeric: 'tabular-nums' }}>
+      <span style={{ ...MONO_STYLE, color: cfg.fgVar }}>
         ({arrow} {absTrend}% vs moy.)
       </span>
     </div>
