@@ -769,17 +769,12 @@ export const PANEL_SECTIONS_BY_ROUTE = {
         { to: '/notifications', label: 'Notifications', desc: 'Flux d\u2019alertes temps réel', badgeKey: 'alertes' },
       ],
     },
-    {
-      key: 'modules',
-      label: 'Modules',
-      items: [
-        { to: '/cockpit', label: 'Cockpit exécutif', desc: 'Synthèse portefeuille' },
-        { to: '/conformite', label: 'Conformité', desc: 'DT · BACS · APER' },
-        { to: '/bill-intel', label: 'Facturation', desc: 'Shadow billing + anomalies' },
-        { to: '/patrimoine', label: 'Patrimoine', desc: 'Sites + contrats' },
-        { to: '/achat-energie', label: 'Achat énergie', desc: 'Arbitrage + scénarios' },
-      ],
-    },
+    // Pas de section "Modules" ici : le rail gauche affiche déjà les 5 modules
+    // comme icônes navigables. Dupliquer en liste texte violait (1) la doctrine
+    // Sol (panel = contexte du module courant, pas duplication rail), (2) la
+    // SSOT NAV_MODULES (labels divergents "Cockpit exécutif" vs "Accueil",
+    // "Facturation" listé comme module alors qu'il est sous-item Patrimoine
+    // dans NAV_SECTIONS — cf NavRegistry.test.js:140-145).
   ],
   // ─────────────────────────────────────────────────────────────────────────
   // APER solarisation — Lot 1.2
