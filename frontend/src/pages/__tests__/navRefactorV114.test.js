@@ -50,7 +50,7 @@ describe('V7 Nav Refactor guard-rails', () => {
 
   it('Admin-data section does NOT contain payment-rules or portfolio-reconciliation', () => {
     const adminData = NAV_SECTIONS.find((s) => s.key === 'admin-data');
-    expect(adminData.label).toBe('Données');
+    expect(adminData.label).toBe('Administration');
     const routes = adminData.items.map((i) => i.to);
     expect(routes).not.toContain('/payment-rules');
     expect(routes).not.toContain('/portfolio-reconciliation');

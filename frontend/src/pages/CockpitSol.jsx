@@ -65,6 +65,19 @@ import {
   buildCockpitSubNarrative,
 } from './cockpit/sol_interpreters';
 import { SkeletonCard } from '../ui/Skeleton';
+import { businessErrorFallback } from '../i18n/business_errors';
+
+const SOL_PROPOSAL_EMPTY_STYLE = {
+  margin: '16px 0 24px',
+  padding: '14px 18px',
+  background: 'var(--sol-bg-paper)',
+  border: '1px dashed var(--sol-ink-200)',
+  borderRadius: 6,
+  color: 'var(--sol-ink-500)',
+  fontFamily: 'var(--sol-font-body)',
+  fontSize: 13,
+  lineHeight: 1.5,
+};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Async data hook — charge en parallèle les 6 endpoints Cockpit.
@@ -147,10 +160,7 @@ export default function CockpitSol() {
 
   // ─── Dérivations présentation ──────────────────────────────────────────────
 
-  // Proposition Sol du jour — Phase 4.6 câblera GET /api/sol/pending.
-  // Tant que l'endpoint n'est pas branché, solProposal reste null et on
-  // affiche un fallback visible (cf. render plus bas) au lieu d'un null
-  // invisible.
+  // Phase 4.6 branchera GET /api/sol/pending ici.
   const solProposal = null;
 
   const kicker = buildKicker({
@@ -286,9 +296,6 @@ export default function CockpitSol() {
         rightSlot={<SolLayerToggle value={mode} onChange={setMode} />}
       />
 
-      {/* V2 : solProposal est mocké null tant que GET /api/sol/pending
-          n'est pas câblé (Phase 4.6 post-merge sol-v1-audit). Le fallback
-          visible remplace le `null` invisible de la version précédente. */}
       {mode === 'surface' && (
         solProposal ? (
           <SolHero
@@ -296,27 +303,17 @@ export default function CockpitSol() {
             title={solProposal.title_fr}
             description={solProposal.summary_fr}
           />
-        ) : (
-          <div
-            role="region"
-            aria-label="Aucune action Sol en attente"
-            style={{
-              margin: '16px 0 24px',
-              padding: '14px 18px',
-              background: 'var(--sol-bg-paper)',
-              border: '1px dashed var(--sol-ink-200)',
-              borderRadius: 6,
-              color: 'var(--sol-ink-500)',
-              fontFamily: 'var(--sol-font-body)',
-              fontSize: 13,
-              lineHeight: 1.5,
-            }}
-          >
-            <p style={{ margin: 0 }}>
-              Aucune action Sol proposée ce jour — nous surveillons vos patrimoines en continu.
-            </p>
-          </div>
-        )
+        ) : (() => {
+          const fb = businessErrorFallback('command.no_sol_actions');
+          return (
+            <div role="region" aria-label={fb.title} style={SOL_PROPOSAL_EMPTY_STYLE}>
+              <p style={{ margin: 0, fontWeight: 600, color: 'var(--sol-ink-700)' }}>
+                {fb.title}
+              </p>
+              <p style={{ margin: '4px 0 0' }}>{fb.body}</p>
+            </div>
+          );
+        })()
       )}
       {mode === 'surface' && (
         <>
