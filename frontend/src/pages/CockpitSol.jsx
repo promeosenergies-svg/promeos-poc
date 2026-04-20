@@ -147,6 +147,12 @@ export default function CockpitSol() {
 
   // ─── Dérivations présentation ──────────────────────────────────────────────
 
+  // Proposition Sol du jour — Phase 4.6 câblera GET /api/sol/pending.
+  // Tant que l'endpoint n'est pas branché, solProposal reste null et on
+  // affiche un fallback visible (cf. render plus bas) au lieu d'un null
+  // invisible.
+  const solProposal = null;
+
   const kicker = buildKicker({
     module: 'Cockpit',
     scope: { orgName, sitesCount },
@@ -280,8 +286,38 @@ export default function CockpitSol() {
         rightSlot={<SolLayerToggle value={mode} onChange={setMode} />}
       />
 
-      {/* V2 : solProposal est mocké null, SolHero n'apparaît qu'en démo.
-          Phase 4.6 (post-merge sol-v1-audit) : câbler GET /api/sol/pending. */}
+      {/* V2 : solProposal est mocké null tant que GET /api/sol/pending
+          n'est pas câblé (Phase 4.6 post-merge sol-v1-audit). Le fallback
+          visible remplace le `null` invisible de la version précédente. */}
+      {mode === 'surface' && (
+        solProposal ? (
+          <SolHero
+            chip="Sol propose · action agentique"
+            title={solProposal.title_fr}
+            description={solProposal.summary_fr}
+          />
+        ) : (
+          <div
+            role="region"
+            aria-label="Aucune action Sol en attente"
+            style={{
+              margin: '16px 0 24px',
+              padding: '14px 18px',
+              background: 'var(--sol-bg-paper)',
+              border: '1px dashed var(--sol-ink-200)',
+              borderRadius: 6,
+              color: 'var(--sol-ink-500)',
+              fontFamily: 'var(--sol-font-body)',
+              fontSize: 13,
+              lineHeight: 1.5,
+            }}
+          >
+            <p style={{ margin: 0 }}>
+              Aucune action Sol proposée ce jour — nous surveillons vos patrimoines en continu.
+            </p>
+          </div>
+        )
+      )}
       {mode === 'surface' && (
         <>
           <SolKpiRow>
