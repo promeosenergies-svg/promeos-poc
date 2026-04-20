@@ -18,7 +18,8 @@
  *  - Achat visible en mode normal (plus expertOnly)
  *  - Usages visible en mode normal (sorti de HIDDEN_PAGES)
  *  - Vocabulaire : Cockpit→Accueil, BACS→Pilotage bâtiment, APER→Solarisation (APER),
- *    Performance→Performance énergétique, Usages→Répartition par usage,
+ *    Performance→Monitoring (était "Performance énergétique" V7 → "Monitoring" chantier 2),
+ *    Usages→Répartition par usage,
  *    Stratégies d'achat→Scénarios d'achat, Assistant→Simulateur d'achat
  *  - Actions & Suivi + Notifications retirés (déplacés dans Centre d'actions header)
  */
@@ -86,7 +87,11 @@ export const ROUTE_MODULE_MAP = {
   '/conformite/tertiaire/wizard': 'conformite',
   '/conformite/tertiaire/anomalies': 'conformite',
   '/conformite/tertiaire/efa/:id': 'conformite',
+  // /compliance (root) → Navigate redirect vers /conformite dans App.jsx.
+  // On garde un mapping de sécurité pour éviter un flash de module "cockpit"
+  // pendant le très bref render pré-redirection (tint header correct).
   '/compliance': 'conformite',
+  // /compliance/pipeline + /compliance/sites/:siteId = routes RÉELLES (pas des Navigate) :
   '/compliance/pipeline': 'conformite',
   '/compliance/sites/:siteId': 'conformite',
   '/regops/:id': 'conformite',
@@ -125,6 +130,9 @@ export const ROUTE_MODULE_MAP = {
   '/admin/roles': 'admin',
   '/admin/assignments': 'admin',
   '/admin/audit': 'admin',
+  '/admin/kb-metrics': 'admin',
+  '/admin/cx-dashboard': 'admin',
+  '/admin/enedis-health': 'admin',
   '/activation': 'admin',
   '/status': 'admin',
 };
@@ -421,7 +429,7 @@ export const QUICK_ACTIONS = [
     longLabel: "Scénarios d'achat & échéances",
     icon: ShoppingCart,
     to: '/achat-energie',
-    keywords: ['achat', 'purchase', 'marche', 'contrat'],
+    keywords: ['achat', 'marche', 'contrat'],
   },
   {
     key: 'onboarding',
@@ -584,10 +592,10 @@ export const NAV_SECTIONS = [
       {
         to: '/monitoring',
         icon: TrendingUp,
-        label: 'Performance énergétique',
+        label: 'Monitoring',
         desc: 'KPIs puissance, heatmap, tendances',
         badgeKey: 'monitoring',
-        keywords: ['monitoring', 'kpi', 'puissance', 'performance', 'heatmap'],
+        keywords: ['monitoring', 'kpi', 'puissance', 'performance', 'performance énergétique', 'heatmap'],
       },
       {
         to: '/usages',
@@ -669,7 +677,6 @@ export const NAV_SECTIONS = [
         desc: 'Comparer offres, simuler, assistant achat',
         keywords: [
           'achat',
-          'purchase',
           'scenarios',
           'strategie',
           'contrats',
@@ -688,7 +695,7 @@ export const NAV_SECTIONS = [
   {
     key: 'admin-data',
     module: 'admin',
-    label: 'Données',
+    label: 'Administration',
     expertOnly: true,
     order: 7,
     items: [
@@ -1005,7 +1012,7 @@ export const PANEL_SECTIONS_BY_ROUTE = {
       label: "Achat d'énergie",
       items: [
         { to: '/renouvellements', label: 'Radar renouvellement', desc: 'Échéances DAF' },
-        { to: '/achat-energie', label: "Achat énergie", desc: 'Scénarios prix marché' },
+        { to: '/achat-energie', label: "Simulateur & scénarios", desc: 'Scénarios prix marché' },
       ],
     },
   ],

@@ -296,10 +296,11 @@ describe('Vocabulary V7', () => {
     expect(usages).toBeDefined();
   });
 
-  it('Performance is labeled "Performance énergétique"', () => {
+  it('Monitoring is labeled "Monitoring" (relabelled chantier 2 from "Performance énergétique")', () => {
     const energie = NAV_SECTIONS.find((s) => s.module === 'energie');
-    const perf = energie.items.find((i) => i.label === 'Performance énergétique');
+    const perf = energie.items.find((i) => i.to === '/monitoring');
     expect(perf).toBeDefined();
+    expect(perf.label).toBe('Monitoring');
   });
 
   it("Achat item 'Scénarios d'achat' replaces 'Stratégies d'achat'", () => {

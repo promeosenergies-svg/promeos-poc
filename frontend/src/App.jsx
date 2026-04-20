@@ -672,7 +672,25 @@ function App() {
                       }
                     />
 
-                    {/* URL aliases (redirect to canonical routes) */}
+                    {/*
+                      ════════════════════════════════════════════════════════
+                      URL aliases — Navigate redirects to canonical routes.
+
+                      Ces alias existent pour 3 raisons :
+                      1. Bookmarks utilisateurs historiques (anciennes URLs
+                         PROMEOS V1-V6 qui circulent encore en interne).
+                      2. Liens externes (docs internes, emails pilote).
+                      3. SEO potentiel si URLs indexées (peu probable mais coût
+                         nul de maintenir la redirection).
+
+                      Horizon de suppression : post-Lot 10 (refonte terminée +
+                      6 mois de grâce, soit Q4 2026 au plus tôt).
+
+                      Source unique doc : docs/audit/nav_legacy_redirects.md
+                      NE PAS supprimer sans vérifier ce fichier + run la suite
+                      Playwright smoke qui teste les redirections bookmark.
+                      ════════════════════════════════════════════════════════
+                    */}
                     <Route
                       path="/plan-action"
                       element={<Navigate to="/anomalies?tab=actions" replace />}
