@@ -760,21 +760,28 @@ export const PANEL_SECTIONS_BY_ROUTE = {
   // Command Center / Accueil — Lot 1.1
   // ─────────────────────────────────────────────────────────────────────────
   '/': [
+    // Section "Accueil" : parité avec NAV_SECTIONS[cockpit] de main (Tableau
+    // de bord + Vue exécutive). Permet d'atteindre /cockpit depuis le panel
+    // home sans dupliquer le rail (qui montre les 5 modules en icônes).
+    {
+      key: 'accueil',
+      label: 'Accueil',
+      items: [
+        { to: '/', label: 'Tableau de bord', desc: 'KPIs J-1, alertes, trajectoire mensuelle' },
+        { to: '/cockpit', label: 'Vue exécutive', desc: 'Synthèse portefeuille pour la direction' },
+      ],
+    },
+    // Section "Pouls patrimoine" : couche sémantique Sol additive — promeut
+    // /actions et /notifications comme signaux temps réel sur le home.
+    // Coexiste avec "Accueil" (main-style) au lieu de la remplacer.
     {
       key: 'pulse',
       label: 'Pouls patrimoine',
       items: [
-        { to: '/', label: 'Vue d\u2019accueil', desc: 'KPIs macro + top alertes' },
         { to: '/actions', label: "Actions Sol", desc: 'Propositions agentiques', badgeKey: 'actions' },
         { to: '/notifications', label: 'Notifications', desc: 'Flux d\u2019alertes temps réel', badgeKey: 'alertes' },
       ],
     },
-    // Pas de section "Modules" ici : le rail gauche affiche déjà les 5 modules
-    // comme icônes navigables. Dupliquer en liste texte violait (1) la doctrine
-    // Sol (panel = contexte du module courant, pas duplication rail), (2) la
-    // SSOT NAV_MODULES (labels divergents "Cockpit exécutif" vs "Accueil",
-    // "Facturation" listé comme module alors qu'il est sous-item Patrimoine
-    // dans NAV_SECTIONS — cf NavRegistry.test.js:140-145).
   ],
   // ─────────────────────────────────────────────────────────────────────────
   // APER solarisation — Lot 1.2
