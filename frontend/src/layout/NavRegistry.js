@@ -760,26 +760,19 @@ export const PANEL_SECTIONS_BY_ROUTE = {
   // Command Center / Accueil — Lot 1.1
   // ─────────────────────────────────────────────────────────────────────────
   '/': [
-    // Section "Accueil" : parité avec NAV_SECTIONS[cockpit] de main (Tableau
-    // de bord + Vue exécutive). Permet d'atteindre /cockpit depuis le panel
-    // home sans dupliquer le rail (qui montre les 5 modules en icônes).
+    // Parité stricte avec NAV_SECTIONS[cockpit] de main (Tableau de bord
+    // + Vue exécutive). Pas de section "Pouls" pour l'instant : /actions
+    // et /notifications sont volontairement cachés du nav main (redirigés
+    // vers Centre d'actions header). Décision Sol additive reportée — à
+    // rouvrir quand le produit aura tranché si /actions+/notifications
+    // doivent devenir items first-class du nav cockpit (ce qui impacterait
+    // aussi main, pas seulement refonte).
     {
       key: 'accueil',
       label: 'Accueil',
       items: [
         { to: '/', label: 'Tableau de bord', desc: 'KPIs J-1, alertes, trajectoire mensuelle' },
         { to: '/cockpit', label: 'Vue exécutive', desc: 'Synthèse portefeuille pour la direction' },
-      ],
-    },
-    // Section "Pouls patrimoine" : couche sémantique Sol additive — promeut
-    // /actions et /notifications comme signaux temps réel sur le home.
-    // Coexiste avec "Accueil" (main-style) au lieu de la remplacer.
-    {
-      key: 'pulse',
-      label: 'Pouls patrimoine',
-      items: [
-        { to: '/actions', label: "Actions Sol", desc: 'Propositions agentiques', badgeKey: 'actions' },
-        { to: '/notifications', label: 'Notifications', desc: 'Flux d\u2019alertes temps réel', badgeKey: 'alertes' },
       ],
     },
   ],
