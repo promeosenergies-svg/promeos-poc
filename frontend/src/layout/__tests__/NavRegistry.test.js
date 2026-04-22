@@ -376,6 +376,68 @@ describe('QUICK_ACTIONS', () => {
   });
 });
 
+/* ── PANEL_SECTIONS_BY_ROUTE — Lot 1 deep-links (anomalies / renouvellements / aper) ──
+ * Chaque entrée expose la route parent comme premier item (pas d'orphelin),
+ * puis les deep-links paramétrés (?fw=, ?horizon=, ?filter=). Lock via tests
+ * pour éviter redrift vers structure divergente de NAV_SECTIONS.
+ */
+describe('PANEL_SECTIONS_BY_ROUTE — Lot 1 deep-links', () => {
+  // Re-import — PANEL_SECTIONS_BY_ROUTE non importé au top du fichier
+  const loadPanel = async () => {
+    const mod = await import('../NavRegistry.js');
+    return mod.PANEL_SECTIONS_BY_ROUTE;
+  };
+
+  it('/anomalies expose les 4 filtres framework (all + DT + FACT + BACS)', async () => {
+    const panel = await loadPanel();
+    const entry = panel['/anomalies'];
+    expect(entry).toBeDefined();
+    const tos = entry.flatMap((s) => s.items.map((i) => i.to));
+    expect(tos).toContain('/anomalies');
+    expect(tos).toContain('/anomalies?fw=DECRET_TERTIAIRE');
+    expect(tos).toContain('/anomalies?fw=FACTURATION');
+    expect(tos).toContain('/anomalies?fw=BACS');
+  });
+
+  it('/renouvellements expose les 3 horizons (90/180/365) + vue globale', async () => {
+    const panel = await loadPanel();
+    const entry = panel['/renouvellements'];
+    expect(entry).toBeDefined();
+    const tos = entry.flatMap((s) => s.items.map((i) => i.to));
+    expect(tos).toContain('/renouvellements');
+    expect(tos).toContain('/renouvellements?horizon=90');
+    expect(tos).toContain('/renouvellements?horizon=180');
+    expect(tos).toContain('/renouvellements?horizon=365');
+  });
+
+  it('/conformite/aper expose filtres parking + toiture + vue globale', async () => {
+    const panel = await loadPanel();
+    const entry = panel['/conformite/aper'];
+    expect(entry).toBeDefined();
+    const tos = entry.flatMap((s) => s.items.map((i) => i.to));
+    expect(tos).toContain('/conformite/aper');
+    expect(tos).toContain('/conformite/aper?filter=parking');
+    expect(tos).toContain('/conformite/aper?filter=toiture');
+  });
+
+  it('chaque entrée Lot 1 a la route parent comme premier item (pas d\'orphelin)', async () => {
+    const panel = await loadPanel();
+    for (const [route, sections] of Object.entries(panel)) {
+      const firstItem = sections[0]?.items?.[0];
+      expect(firstItem?.to, `${route} premier item doit être la route parent`).toBe(route);
+    }
+  });
+
+  it('toutes les routes parent résolvent via matchRouteToModule à un module valide', async () => {
+    const panel = await loadPanel();
+    const moduleKeys = NAV_MODULES.map((m) => m.key);
+    for (const route of Object.keys(panel)) {
+      const { moduleId } = matchRouteToModule(route);
+      expect(moduleKeys, `${route} doit résoudre à un module`).toContain(moduleId);
+    }
+  });
+});
+
 /* ── Routes -legacy résolvent au bon module (pas au default 'cockpit') ──
  * Le matcher prefix est strict (`route + '/'`), donc /conformite-legacy ne
  * matche PAS le préfixe /conformite. Sans mapping explicite, ces routes
