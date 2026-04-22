@@ -1,7 +1,7 @@
 """Integration tests — decrypt real Enedis SGE files.
 
 Skipped entirely if KEY_1/IV_1 env vars are not set (CI without keys).
-Requires real flux files in the flux_enedis/ directory.
+Requires real flux files in the flux_enedis/<FLUX>/ directories.
 """
 
 import pytest
@@ -13,18 +13,12 @@ from data_ingestion.enedis.decrypt import (
 )
 from data_ingestion.enedis.enums import FluxType
 
-from .conftest import _HAS_REAL_FILES, _HAS_REAL_KEYS, _FLUX_DIR
+from .conftest import _HAS_REAL_FILES, _HAS_REAL_KEYS, find_real_flux_files
 
 pytestmark = pytest.mark.skipif(
     not (_HAS_REAL_KEYS and _HAS_REAL_FILES),
     reason="Real Enedis keys or flux_enedis/ directory not available",
 )
-
-
-def _find_files(subdir: str, pattern: str) -> list:
-    """Find encrypted files matching a glob pattern."""
-    base = _FLUX_DIR / subdir if subdir else _FLUX_DIR
-    return sorted(base.glob(pattern))
 
 
 # ========================================================================
@@ -33,19 +27,19 @@ def _find_files(subdir: str, pattern: str) -> list:
 
 
 @pytest.mark.parametrize(
-    "subdir, pattern, expected_type",
+    "flux_name, expected_type",
     [
-        ("C1-C4", "*_R4H_CDC_*.zip", FluxType.R4H),
-        ("C1-C4", "*_R4M_CDC_*.zip", FluxType.R4M),
-        ("C1-C4", "*_R4Q_CDC_*.zip", FluxType.R4Q),
-        ("C1-C4", "*R171*.zip", FluxType.R171),
-        ("C5", "*R50*.zip", FluxType.R50),
-        ("C5", "*R151*.zip", FluxType.R151),
+        ("R4H", FluxType.R4H),
+        ("R4M", FluxType.R4M),
+        ("R4Q", FluxType.R4Q),
+        ("R171", FluxType.R171),
+        ("R50", FluxType.R50),
+        ("R151", FluxType.R151),
     ],
 )
-def test_decrypt_all_files(real_keys, subdir, pattern, expected_type):
+def test_decrypt_all_files(real_keys, flux_name, expected_type):
     """Decrypt ALL files of a given type and validate XML output."""
-    files = _find_files(subdir, pattern)
+    files = find_real_flux_files(flux_name)
     assert len(files) > 0, f"No {expected_type.value} files found"
     for f in files:
         assert classify_flux(f.name) == expected_type
@@ -59,16 +53,17 @@ def test_decrypt_all_files(real_keys, subdir, pattern, expected_type):
 
 
 @pytest.mark.parametrize(
-    "subdir, pattern, expected_type",
+    "flux_name, expected_type",
     [
-        ("C1-C4", "*R172*.zip", FluxType.R172),
-        ("", "*X14*.zip", FluxType.X14),
+        ("R172", FluxType.R172),
+        ("X14", FluxType.X14),
     ],
 )
-def test_skipped_flux_classified(subdir, pattern, expected_type):
+def test_skipped_flux_classified(flux_name, expected_type):
     """Skipped flux types are classified correctly."""
-    files = _find_files(subdir, pattern)
-    assert len(files) > 0, f"No {expected_type.value} files found"
+    files = find_real_flux_files(flux_name)
+    if not files:
+        pytest.skip(f"No local {expected_type.value} samples available")
     for f in files:
         ft = classify_flux(f.name)
         assert ft == expected_type

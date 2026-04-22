@@ -143,6 +143,31 @@ _FLUX_DIR = Path(__file__).resolve().parents[5] / "flux_enedis"
 _HAS_REAL_KEYS = bool(os.environ.get("KEY_1") and os.environ.get("IV_1"))
 _HAS_REAL_FILES = _FLUX_DIR.is_dir()
 
+REAL_FLUX_PATTERNS = {
+    "R4H": "*_R4H_CDC_*.zip",
+    "R4M": "*_R4M_CDC_*.zip",
+    "R4Q": "*_R4Q_CDC_*.zip",
+    "R171": "*R171*.zip",
+    "R50": "*R50*.zip",
+    "R151": "*R151*.zip",
+    "R172": "*R172*.zip",
+    "X14": "*X14*.zip",
+}
+
+
+def find_real_flux_files(flux_name: str) -> list[Path]:
+    """Return real encrypted files for one flux family stored in flux_enedis/<FLUX>/.
+
+    The local corpus is now organized directly by flux family rather than by
+    Enedis segment (for example no more C1-C4/C5 split).
+    """
+    pattern = REAL_FLUX_PATTERNS[flux_name]
+    if flux_name == "X14":
+        base = _FLUX_DIR
+    else:
+        base = _FLUX_DIR / flux_name
+    return sorted(base.glob(pattern))
+
 
 @pytest.fixture(scope="module")
 def real_keys():

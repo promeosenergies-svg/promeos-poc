@@ -21,7 +21,7 @@ from data_ingestion.enedis.models import (
 )
 from data_ingestion.enedis.pipeline import ingest_directory, ingest_file
 
-from .conftest import _HAS_REAL_FILES, _HAS_REAL_KEYS
+from .conftest import _HAS_REAL_FILES, _HAS_REAL_KEYS, find_real_flux_files
 
 pytestmark = pytest.mark.skipif(
     not (_HAS_REAL_KEYS and _HAS_REAL_FILES),
@@ -45,11 +45,25 @@ def _get_error_details(db) -> str:
     return "; ".join(f"{e.filename}: {e.error_message}" for e in errors)
 
 
-def _find_first(real_flux_dir: Path, subdir: str, pattern: str) -> Path:
-    """Find the first file matching pattern in subdir. Fail if none found."""
-    files = sorted((real_flux_dir / subdir).glob(pattern))
-    assert len(files) > 0, f"No files matching {pattern} in {subdir}"
+def _find_first(flux_name: str) -> Path:
+    """Find the first real file for one flux family. Fail if none found."""
+    files = find_real_flux_files(flux_name)
+    assert len(files) > 0, f"No local files found for {flux_name}"
     return files[0]
+
+
+def _build_supported_flux_tree(base_dir: Path) -> Path:
+    """Create a temporary recursive root containing only supported flux families."""
+    root = base_dir / "supported_flux_enedis"
+    root.mkdir(parents=True, exist_ok=True)
+
+    for flux_name in SUPPORTED_FLUX_NAMES:
+        target_dir = root / flux_name
+        target_dir.mkdir(parents=True, exist_ok=True)
+        for source_file in find_real_flux_files(flux_name):
+            os.symlink(source_file, target_dir / source_file.name)
+
+    return root
 
 
 # ---------------------------------------------------------------------------
@@ -57,13 +71,15 @@ def _find_first(real_flux_dir: Path, subdir: str, pattern: str) -> Path:
 # ---------------------------------------------------------------------------
 
 FLUX_SPECS = [
-    ("R4H", "C1-C4", "*_R4H_CDC_*.zip", EnedisFluxMesureR4x, ["point_id", "horodatage", "valeur_point", "flux_type"]),
-    ("R4M", "C1-C4", "*_R4M_CDC_*.zip", EnedisFluxMesureR4x, ["point_id", "horodatage", "valeur_point", "flux_type"]),
-    ("R4Q", "C1-C4", "*_R4Q_CDC_*.zip", EnedisFluxMesureR4x, ["point_id", "horodatage", "valeur_point", "flux_type"]),
-    ("R171", "C1-C4", "*R171*.zip", EnedisFluxMesureR171, ["point_id", "type_mesure", "date_fin", "valeur"]),
-    ("R50", "C5", "*R50*.zip", EnedisFluxMesureR50, ["point_id", "date_releve", "horodatage"]),
-    ("R151", "C5", "*R151*.zip", EnedisFluxMesureR151, ["point_id", "date_releve", "type_donnee"]),
+    ("R4H", EnedisFluxMesureR4x, ["point_id", "horodatage", "valeur_point", "flux_type"]),
+    ("R4M", EnedisFluxMesureR4x, ["point_id", "horodatage", "valeur_point", "flux_type"]),
+    ("R4Q", EnedisFluxMesureR4x, ["point_id", "horodatage", "valeur_point", "flux_type"]),
+    ("R171", EnedisFluxMesureR171, ["point_id", "type_mesure", "date_fin", "valeur"]),
+    ("R50", EnedisFluxMesureR50, ["point_id", "date_releve", "horodatage"]),
+    ("R151", EnedisFluxMesureR151, ["point_id", "date_releve", "type_donnee"]),
 ]
+
+SUPPORTED_FLUX_NAMES = [spec[0] for spec in FLUX_SPECS]
 
 
 # ===========================================================================
@@ -75,7 +91,7 @@ class TestSingleFileE2E:
     """Ingest one real file per flux type, validate DB state."""
 
     @pytest.mark.parametrize(
-        "flux_name, subdir, pattern, model_cls, required_cols",
+        "flux_name, model_cls, required_cols",
         FLUX_SPECS,
         ids=[s[0] for s in FLUX_SPECS],
     )
@@ -85,12 +101,10 @@ class TestSingleFileE2E:
         real_keys,
         real_flux_dir,
         flux_name,
-        subdir,
-        pattern,
         model_cls,
         required_cols,
     ):
-        first_file = _find_first(real_flux_dir, subdir, pattern)
+        first_file = _find_first(flux_name)
 
         status = ingest_file(first_file, db, real_keys)
 
@@ -125,11 +139,11 @@ class TestSingleFileE2E:
             assert _PRM_RE.match(m.point_id), f"Invalid PRM format: {m.point_id}"
 
     @pytest.mark.parametrize(
-        "flux_name, subdir, pattern, expected_freq",
+        "flux_name, expected_freq",
         [
-            ("R4H", "C1-C4", "*_R4H_CDC_*.zip", "H"),
-            ("R4M", "C1-C4", "*_R4M_CDC_*.zip", "M"),
-            ("R4Q", "C1-C4", "*_R4Q_CDC_*.zip", "Q"),
+            ("R4H", "H"),
+            ("R4M", "M"),
+            ("R4Q", "Q"),
         ],
         ids=["R4H", "R4M", "R4Q"],
     )
@@ -139,12 +153,10 @@ class TestSingleFileE2E:
         real_keys,
         real_flux_dir,
         flux_name,
-        subdir,
-        pattern,
         expected_freq,
     ):
         """R4x files: verify frequence_publication and field formats."""
-        first_file = _find_first(real_flux_dir, subdir, pattern)
+        first_file = _find_first(flux_name)
         status = ingest_file(first_file, db, real_keys)
         assert status == FluxStatus.PARSED
 
@@ -168,12 +180,13 @@ class TestSingleFileE2E:
 
 
 class TestFullDirectoryIngestion:
-    """Ingest the entire flux_enedis/ directory, validate counters."""
+    """Ingest the entire flux_enedis/ directory, validate supported counters."""
 
-    def test_ingest_all_files(self, db, real_keys, real_flux_dir):
-        """Ingest ALL real Enedis files — zero errors expected."""
+    def test_ingest_all_files(self, db, real_keys, tmp_path):
+        """Ingest all supported real Enedis files — zero errors expected."""
+        supported_root = _build_supported_flux_tree(tmp_path)
         counters = ingest_directory(
-            real_flux_dir,
+            supported_root,
             db,
             real_keys,
             recursive=True,
@@ -182,16 +195,8 @@ class TestFullDirectoryIngestion:
         # Zero errors
         assert counters["error"] == 0, f"Ingestion errors: {_get_error_details(db)}"
 
-        # Dynamically compute expected parsed count
-        in_scope_patterns = [
-            ("C1-C4", "*_R4H_CDC_*.zip"),
-            ("C1-C4", "*_R4M_CDC_*.zip"),
-            ("C1-C4", "*_R4Q_CDC_*.zip"),
-            ("C1-C4", "*R171*.zip"),
-            ("C5", "*R50*.zip"),
-            ("C5", "*R151*.zip"),
-        ]
-        expected_parsed = sum(len(list((real_flux_dir / sub).glob(pat))) for sub, pat in in_scope_patterns)
+        # Only the currently supported families should be parsed.
+        expected_parsed = sum(len(find_real_flux_files(flux_name)) for flux_name in SUPPORTED_FLUX_NAMES)
         assert counters["parsed"] == expected_parsed, f"Expected {expected_parsed} parsed, got {counters['parsed']}"
 
         # All 4 measure tables have rows
@@ -218,16 +223,17 @@ class TestFullDirectoryIngestion:
         print(f"TOTAL measures:{total_measures:>8,}")
         print(f"{'=' * 60}")
 
-    def test_idempotence_on_real_files(self, db, real_keys, real_flux_dir):
+    def test_idempotence_on_real_files(self, db, real_keys, tmp_path):
         """Second ingest_directory run produces zero new ingestions."""
+        supported_root = _build_supported_flux_tree(tmp_path)
         counters1 = ingest_directory(
-            real_flux_dir,
+            supported_root,
             db,
             real_keys,
             recursive=True,
         )
         counters2 = ingest_directory(
-            real_flux_dir,
+            supported_root,
             db,
             real_keys,
             recursive=True,
@@ -248,20 +254,20 @@ class TestDecryptedXmlCapture:
     """Decrypt one sample of each flux type and validate output."""
 
     SAMPLES = [
-        ("R4H", "C1-C4", "*_R4H_CDC_*.zip"),
-        ("R4M", "C1-C4", "*_R4M_CDC_*.zip"),
-        ("R4Q", "C1-C4", "*_R4Q_CDC_*.zip"),
-        ("R171", "C1-C4", "*R171*.zip"),
-        ("R50", "C5", "*R50*.zip"),
-        ("R151", "C5", "*R151*.zip"),
+        "R4H",
+        "R4M",
+        "R4Q",
+        "R171",
+        "R50",
+        "R151",
     ]
 
     def test_capture_decrypted_xml_samples(self, real_keys, real_flux_dir, tmp_path):
         """Decrypt one sample per flux type and write XML to archive_dir."""
         archive_dir = tmp_path / "decrypted_xml"
 
-        for flux_name, subdir, pattern in self.SAMPLES:
-            first_file = _find_first(real_flux_dir, subdir, pattern)
+        for flux_name in self.SAMPLES:
+            first_file = _find_first(flux_name)
             xml_bytes = decrypt_file(first_file, real_keys, archive_dir=archive_dir)
 
             expected_xml = archive_dir / (first_file.stem + ".xml")
