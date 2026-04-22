@@ -14,8 +14,8 @@
 import { chromium } from 'playwright';
 import { resolve } from 'path';
 
-const URL = process.env.TARGET_URL || 'http://127.0.0.1:5175';
-const OUT_DIR = resolve('c:/Users/amine/promeos-poc/promeos-refonte/docs/design/screenshots/smoke');
+const URL = process.env.TARGET_URL || 'http://127.0.0.1:5174';
+const OUT_DIR = process.env.OUT_DIR || resolve('tools/playwright/captures/sol-refonte-smoke');
 const EMAIL = 'promeos@promeos.io';
 const PASSWORD = 'promeos2024';
 
@@ -29,13 +29,17 @@ function log(step, status, note, screenshot) {
 }
 
 async function login(page) {
-  await page.goto(`${URL}/login`, { waitUntil: 'networkidle' });
+  await page.goto(`${URL}/login`, { waitUntil: 'load', timeout: 20000 });
+  // Wait for React to render the login form
+  await page.waitForSelector('input[type="email"], #main-content', { timeout: 8000 }).catch(() => {});
   const stillOnLogin = page.url().includes('/login');
   if (stillOnLogin && (await page.locator('input[type="email"]').count()) > 0) {
     await page.fill('input[type="email"]', EMAIL);
     await page.fill('input[type="password"]', PASSWORD);
     await page.click('button[type="submit"]');
     await page.waitForURL((u) => !u.pathname.endsWith('/login'), { timeout: 15000 }).catch(() => {});
+    // Wait for app shell to mount after login
+    await page.waitForSelector('#main-content', { timeout: 10000 }).catch(() => {});
   }
 }
 
@@ -50,6 +54,17 @@ async function dismissOverlay(page) {
   }
   await page.keyboard.press('Escape').catch(() => {});
   await page.waitForTimeout(400);
+}
+
+async function safeGoto(page, url, opts = {}) {
+  // Use 'load' — networkidle never fires with Vite HMR websocket
+  try {
+    await page.goto(url, { waitUntil: 'load', timeout: 20000, ...opts });
+  } catch (_) {
+    try { await page.goto(url, { waitUntil: 'commit', timeout: 10000 }); } catch (_2) {}
+  }
+  // Give React time to mount and render after load
+  await page.waitForSelector('#main-content', { timeout: 8000 }).catch(() => {});
 }
 
 async function snap(page, stepName) {
@@ -102,7 +117,7 @@ async function runSmokeTest() {
   }
 
   // ─── 2z. / (CommandCenter Lot 1.1) ───────────────────────────────────────
-  await page.goto(`${URL}/`, { waitUntil: 'networkidle' });
+  await safeGoto(page, `${URL}/`);
   await page.waitForTimeout(3500);
   await dismissOverlay(page);
   const cmdKicker = await expectVisible(page, '.sol-page-kicker');
@@ -113,7 +128,7 @@ async function runSmokeTest() {
     `kicker ${cmdKicker} · kpis ${cmdKpis} · tiles ${cmdTiles > 0}`, shotCmd);
 
   // ─── 2a. /cockpit ────────────────────────────────────────────────────────
-  await page.goto(`${URL}/cockpit`, { waitUntil: 'networkidle' });
+  await safeGoto(page, `${URL}/cockpit`);
   await page.waitForTimeout(3500);
   await dismissOverlay(page);
   const hasCockpitKicker = await expectVisible(page, '.sol-page-kicker');
@@ -122,21 +137,15 @@ async function runSmokeTest() {
   log('02a /cockpit render', hasCockpitKicker && hasKpiRow ? 'OK' : 'FAIL',
     hasCockpitKicker ? 'kicker + kpi-row visibles' : 'structure incomplète', shot1);
 
-  // ─── 2b. Panel item clic (Journal d'actions) ─────────────────────────────
-  const journalItemExists = await page.locator('.sol-panel-item:has-text("Journal d")').count();
-  if (journalItemExists > 0) {
-    await page.locator('.sol-panel-item:has-text("Journal d")').first().click({ timeout: 2000 }).catch(() => {});
-    await page.waitForTimeout(1000);
-    const urlChanged = page.url().includes('/actions') || page.url().includes('/notifications');
-    const shot2 = await snap(page, 'step02_journal_click');
-    log('02b panel item "Journal d\'actions"', urlChanged ? 'OK' : 'WARN',
-      `url → ${page.url().split(URL)[1]}`, shot2);
-  } else {
-    log('02b panel item "Journal d\'actions"', 'WARN', 'item absent du panel (panel config differs?)');
-  }
+  // ─── 2b. Panel item clic — "Tableau de bord" (design intentionnel : /actions
+  //         est dans le header Centre d'actions, pas le panel — cf. triage doc ligne 30)
+  const panelItemExists = await page.locator('.sol-panel-item').count();
+  const shot2 = await snap(page, 'step02_panel_items');
+  log('02b panel items /cockpit', panelItemExists > 0 ? 'OK' : 'WARN',
+    `${panelItemExists} item(s) sol-panel-item visibles`, shot2);
 
   // ─── 2c. /conformite via rail ─────────────────────────────────────────────
-  await page.goto(`${URL}/conformite`, { waitUntil: 'networkidle' });
+  await safeGoto(page, `${URL}/conformite`);
   await page.waitForTimeout(3500);
   await dismissOverlay(page);
   const conformiteKpis = await expectVisible(page, '.sol-kpi-row');
@@ -146,7 +155,7 @@ async function runSmokeTest() {
     `KPIs: ${conformiteKpis} · Trajectoire: ${trajectoryChart > 0}`, shot3);
 
   // ─── 2d. /bill-intel ──────────────────────────────────────────────────────
-  await page.goto(`${URL}/bill-intel`, { waitUntil: 'networkidle' });
+  await safeGoto(page, `${URL}/bill-intel`);
   await page.waitForTimeout(3500);
   await dismissOverlay(page);
   const billKpis = await expectVisible(page, '.sol-kpi-row');
@@ -156,7 +165,7 @@ async function runSmokeTest() {
     `KPIs: ${billKpis} · BarChart: ${barChart > 0}`, shot4);
 
   // ─── 2e. /patrimoine ──────────────────────────────────────────────────────
-  await page.goto(`${URL}/patrimoine`, { waitUntil: 'networkidle' });
+  await safeGoto(page, `${URL}/patrimoine`);
   await page.waitForTimeout(3500);
   await dismissOverlay(page);
   const patrimoineKpis = await expectVisible(page, '.sol-kpi-row');
@@ -166,7 +175,7 @@ async function runSmokeTest() {
     `KPIs: ${patrimoineKpis} · Conso par site: ${consoPerSite > 0}`, shot5);
 
   // ─── 2f. /patrimoine?type=bureau filtre client-side ───────────────────────
-  await page.goto(`${URL}/patrimoine?type=bureau`, { waitUntil: 'networkidle' });
+  await safeGoto(page, `${URL}/patrimoine?type=bureau`);
   await page.waitForTimeout(2500);
   const titleFiltered = await page.locator('text=bureau').count();
   const shot6 = await snap(page, 'step06_patrimoine_filter_bureau');
@@ -174,7 +183,7 @@ async function runSmokeTest() {
     `mention "bureau" dans contenu: ${titleFiltered} occurrences`, shot6);
 
   // ─── 2g. Week-card site drill-down → /sites/:id ──────────────────────────
-  await page.goto(`${URL}/patrimoine`, { waitUntil: 'networkidle' });
+  await safeGoto(page, `${URL}/patrimoine`);
   await page.waitForTimeout(2500);
   const weekCard = await page.locator('.sol-week-grid > *:first-child').first();
   const clickable = await weekCard.getAttribute('role').catch(() => null);
@@ -190,7 +199,7 @@ async function runSmokeTest() {
   }
 
   // ─── 2h. /achat-energie ──────────────────────────────────────────────────
-  await page.goto(`${URL}/achat-energie`, { waitUntil: 'networkidle' });
+  await safeGoto(page, `${URL}/achat-energie`);
   await page.waitForTimeout(3500);
   await dismissOverlay(page);
   const achatKpis = await expectVisible(page, '.sol-kpi-row');
@@ -200,7 +209,7 @@ async function runSmokeTest() {
     `KPIs: ${achatKpis} · Marché: ${marketChart > 0}`, shot8);
 
   // ─── 2i. /conformite/aper (Lot 1.2) ──────────────────────────────────────
-  await page.goto(`${URL}/conformite/aper`, { waitUntil: 'networkidle' });
+  await safeGoto(page, `${URL}/conformite/aper`);
   await page.waitForTimeout(3500);
   await dismissOverlay(page);
   const aperKpis = await expectVisible(page, '.sol-kpi-row');
@@ -210,7 +219,7 @@ async function runSmokeTest() {
     `KPIs: ${aperKpis} · BarChart: ${aperChart > 0}`, shotAper);
 
   // ─── 2j. /monitoring (Lot 1.3) ───────────────────────────────────────────
-  await page.goto(`${URL}/monitoring`, { waitUntil: 'networkidle' });
+  await safeGoto(page, `${URL}/monitoring`);
   await page.waitForTimeout(3500);
   await dismissOverlay(page);
   const monitKpis = await expectVisible(page, '.sol-kpi-row');
@@ -220,7 +229,7 @@ async function runSmokeTest() {
     `KPIs: ${monitKpis} · Trajectory: ${monitChart > 0}`, shotMonit);
 
   // ─── 2k. /sites/3 Site360Sol (Pattern C Lot 3 P2) ────────────────────────
-  await page.goto(`${URL}/sites/3`, { waitUntil: 'networkidle' });
+  await safeGoto(page, `${URL}/sites/3`);
   await page.waitForTimeout(4500);
   await dismissOverlay(page);
   const siteBreadcrumb = await page.locator('[aria-label="Fil d\'Ariane"]').count();
@@ -235,7 +244,7 @@ async function runSmokeTest() {
   // ─── 2l. /regops/3 RegOpsSol (Pattern C Lot 3 P3) ────────────────────────
   // AI endpoints non-bloquants — la fiche rend en <3s via priorité assessment.
   const regopsStart = Date.now();
-  await page.goto(`${URL}/regops/3`, { waitUntil: 'domcontentloaded' });
+  await safeGoto(page, `${URL}/regops/3`);
   await page.waitForTimeout(3500);
   const regopsRenderMs = Date.now() - regopsStart;
   await dismissOverlay(page);
@@ -248,7 +257,7 @@ async function runSmokeTest() {
     shotRegOps);
 
   // ─── 2m. /conformite/tertiaire/efa/1 EfaSol (Pattern C Lot 3 P4) ─────────
-  await page.goto(`${URL}/conformite/tertiaire/efa/1`, { waitUntil: 'domcontentloaded' });
+  await safeGoto(page, `${URL}/conformite/tertiaire/efa/1`);
   await page.waitForTimeout(8000);
   await dismissOverlay(page);
   const efaBreadcrumb = await page.locator('[aria-label="Fil d\'Ariane"]').count();
@@ -261,7 +270,7 @@ async function runSmokeTest() {
     shotEfa);
 
   // ─── 2n. /diagnostic-conso DiagnosticConsoSol (Pattern A hybride P5+6.1) ─
-  await page.goto(`${URL}/diagnostic-conso`, { waitUntil: 'domcontentloaded' });
+  await safeGoto(page, `${URL}/diagnostic-conso`);
   await page.waitForTimeout(12000);
   await dismissOverlay(page);
   const diagKicker = await expectVisible(page, '.sol-page-kicker');
@@ -275,7 +284,7 @@ async function runSmokeTest() {
     shotDiag);
 
   // ─── 2o. /anomalies AnomaliesSol (Pattern B pur, Lot 2 P2) ──────────────
-  await page.goto(`${URL}/anomalies`, { waitUntil: 'domcontentloaded' });
+  await safeGoto(page, `${URL}/anomalies`);
   await page.waitForTimeout(5000);
   await dismissOverlay(page);
   const anomKicker = await expectVisible(page, '.sol-page-kicker');
@@ -288,7 +297,7 @@ async function runSmokeTest() {
     shotAnom);
 
   // ─── 2p. /contrats ContratsSol (Pattern B pur + KpiRow, Lot 2 P3) ───────
-  await page.goto(`${URL}/contrats`, { waitUntil: 'domcontentloaded' });
+  await safeGoto(page, `${URL}/contrats`);
   await page.waitForTimeout(5000);
   await dismissOverlay(page);
   const contratsKicker = await expectVisible(page, '.sol-page-kicker');
@@ -301,7 +310,7 @@ async function runSmokeTest() {
     shotContrats);
 
   // ─── 2q. /renouvellements RenouvellementsSol (Pattern B + horizon, P4) ──
-  await page.goto(`${URL}/renouvellements`, { waitUntil: 'domcontentloaded' });
+  await safeGoto(page, `${URL}/renouvellements`);
   await page.waitForTimeout(5000);
   await dismissOverlay(page);
   const renouvKicker = await expectVisible(page, '.sol-page-kicker');
@@ -314,7 +323,7 @@ async function runSmokeTest() {
     shotRenouv);
 
   // ─── 2r. /usages UsagesSol (Pattern A hybride, Lot 2 P5) ────────────────
-  await page.goto(`${URL}/usages`, { waitUntil: 'domcontentloaded' });
+  await safeGoto(page, `${URL}/usages`);
   await page.waitForTimeout(8000);
   await dismissOverlay(page);
   const usagesKicker = await expectVisible(page, '.sol-page-kicker');
@@ -327,7 +336,7 @@ async function runSmokeTest() {
     shotUsages);
 
   // ─── 2s. /usages-horaires UsagesHorairesSol (Pattern A compact, P6) ─────
-  await page.goto(`${URL}/usages-horaires`, { waitUntil: 'domcontentloaded' });
+  await safeGoto(page, `${URL}/usages-horaires`);
   await page.waitForTimeout(6000);
   await dismissOverlay(page);
   const horairesKicker = await expectVisible(page, '.sol-page-kicker');
@@ -339,7 +348,7 @@ async function runSmokeTest() {
     shotHoraires);
 
   // ─── 2t. /watchers WatchersSol (Pattern B preludeSlot, Lot 2 P7) ────────
-  await page.goto(`${URL}/watchers`, { waitUntil: 'domcontentloaded' });
+  await safeGoto(page, `${URL}/watchers`);
   await page.waitForTimeout(6000);
   await dismissOverlay(page);
   const watchersKicker = await expectVisible(page, '.sol-page-kicker');
@@ -353,7 +362,7 @@ async function runSmokeTest() {
     shotWatchers);
 
   // ─── 3. Raccourcis clavier ────────────────────────────────────────────────
-  await page.goto(`${URL}/cockpit`, { waitUntil: 'networkidle' });
+  await safeGoto(page, `${URL}/cockpit`);
   await page.waitForTimeout(1500);
   await dismissOverlay(page);
 
@@ -380,7 +389,7 @@ async function runSmokeTest() {
   log('03c Ctrl+Shift+X Expert toggle', 'OK', 'shortcut fired (visuel à vérifier sur screenshot)', shot10);
 
   // ─── 4. Scope switcher (vérification présence, pas interaction complexe) ──
-  const scopeSwitcherVisible = await page.locator('[class*="scope-switcher"], [aria-label*="scope" i]').count();
+  const scopeSwitcherVisible = await page.locator('[data-testid="scope-switcher-trigger"], [class*="scope-switcher"], [aria-label*="scope" i]').count();
   log('04 scope switcher top panel', scopeSwitcherVisible > 0 ? 'OK' : 'WARN',
     `elem count: ${scopeSwitcherVisible}`);
 
@@ -388,7 +397,7 @@ async function runSmokeTest() {
   const ctxSmall = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   const pageSmall = await ctxSmall.newPage();
   await login(pageSmall);
-  await pageSmall.goto(`${URL}/cockpit`, { waitUntil: 'networkidle' });
+  await safeGoto(pageSmall, `${URL}/cockpit`);
   await pageSmall.waitForTimeout(3000);
   await dismissOverlay(pageSmall);
   const shot11 = `${OUT_DIR}/step11_responsive_1280x720.png`;
@@ -405,7 +414,7 @@ async function runSmokeTest() {
   const ctxFresh = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const pageFresh = await ctxFresh.newPage();
   await login(pageFresh);
-  await pageFresh.goto(`${URL}/bill-intel`, { waitUntil: 'networkidle' });
+  await safeGoto(pageFresh, `${URL}/bill-intel`);
   await pageFresh.waitForTimeout(3500);
   await dismissOverlay(pageFresh);
   const freshHasKpis = await expectVisible(pageFresh, '.sol-kpi-row');

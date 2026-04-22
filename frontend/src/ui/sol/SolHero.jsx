@@ -96,7 +96,7 @@ export default function SolHero({
         {metrics.length > 0 && (
           <div style={{ display: 'flex', gap: 18, marginTop: 10 }}>
             {metrics.map((m, i) => (
-              <div key={i}>
+              <div key={m.label ?? m.value ?? i}>
                 <div
                   style={{
                     fontFamily: 'var(--sol-font-mono)',

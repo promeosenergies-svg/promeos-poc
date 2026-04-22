@@ -99,7 +99,8 @@ export function buildAnomaliesSubNarrative({ anomalies = [] } = {}) {
     if (bySev[s] != null) bySev[s] += 1;
   }
   const bits = [];
-  if (bySev.CRITICAL > 0) bits.push(`${bySev.CRITICAL}${NBSP}critique${bySev.CRITICAL > 1 ? 's' : ''}`);
+  if (bySev.CRITICAL > 0)
+    bits.push(`${bySev.CRITICAL}${NBSP}critique${bySev.CRITICAL > 1 ? 's' : ''}`);
   if (bySev.HIGH > 0) bits.push(`${bySev.HIGH}${NBSP}élevée${bySev.HIGH > 1 ? 's' : ''}`);
   if (bySev.MEDIUM > 0) bits.push(`${bySev.MEDIUM}${NBSP}moyenne${bySev.MEDIUM > 1 ? 's' : ''}`);
   if (bySev.LOW > 0) bits.push(`${bySev.LOW}${NBSP}faible${bySev.LOW > 1 ? 's' : ''}`);
@@ -115,7 +116,12 @@ export function buildAnomaliesSubNarrative({ anomalies = [] } = {}) {
 
 export function interpretActiveCount({ anomalies = [] } = {}) {
   const sub = buildAnomaliesSubNarrative({ anomalies });
-  return sub.split('Sources')[0].replace(/\.\s*$/, '').trim() || 'Aucune anomalie active.';
+  return (
+    sub
+      .split('Sources')[0]
+      .replace(/\.\s*$/, '')
+      .trim() || 'Aucune anomalie active.'
+  );
 }
 
 export function interpretTotalImpact({ summary } = {}) {
@@ -139,12 +145,12 @@ export function interpretFilteredContext({ filtersActive, totalAll, totalFiltere
  *                               title, impact_eur, status }, tone }
  */
 export function adaptAnomaliesToRows(anomalies = [], statuses = {}) {
-  return (anomalies || []).map((a) => {
+  return (anomalies || []).map((a, i) => {
     const key = `${a._isBilling ? 'billing' : 'patrimoine'}:${a.code || a.id}:${a.site_id}`;
     const status = statuses[key]?.status || 'open';
     const sev = a.severity || 'MEDIUM';
     return {
-      id: key,
+      id: `${key}:${i}`,
       cells: {
         site: a.site_nom || `Site #${a.site_id ?? '—'}`,
         framework: FRAMEWORK_LABELS[a?.regulatory_impact?.framework] || '—',
