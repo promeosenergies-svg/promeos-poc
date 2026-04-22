@@ -11,12 +11,7 @@
  * narratif évident, acceptable de skip — cf note Phase 6 spec user).
  */
 import React from 'react';
-import {
-  SolPageHeader,
-  SolHeadline,
-  SolKpiRow,
-  SolKpiCard,
-} from '../ui/sol';
+import { SolPageHeader, SolHeadline, SolKpiRow, SolKpiCard } from '../ui/sol';
 import {
   buildHourlyKicker,
   buildHourlyNarrative,

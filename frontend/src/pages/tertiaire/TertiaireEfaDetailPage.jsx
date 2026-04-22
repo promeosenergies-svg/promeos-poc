@@ -56,7 +56,9 @@ export default function TertiaireEfaDetailPage() {
 
     // Trajectoire en non-bloquant (endpoint séparé)
     validateEfaTrajectory(id, new Date().getFullYear())
-      .then((data) => { if (!cancelled) setTrajectoryInfo(data); })
+      .then((data) => {
+        if (!cancelled) setTrajectoryInfo(data);
+      })
       .catch(() => {});
 
     return () => {
@@ -79,7 +81,10 @@ export default function TertiaireEfaDetailPage() {
   // que ProofDepositCTA — on utilise le handler généré par ce composant
   // côté DOM (clic déclenché par ref). Fallback : toast explicatif.
   const handleOpenProofs = useCallback(() => {
-    toast('Utilisez le bouton "Déposer une preuve" dans la section Preuves documentaires ci-dessous.', 'info');
+    toast(
+      'Utilisez le bouton "Déposer une preuve" dans la section Preuves documentaires ci-dessous.',
+      'info'
+    );
   }, [toast]);
 
   const handleOpenModulation = useCallback(() => {
@@ -92,7 +97,14 @@ export default function TertiaireEfaDetailPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        style={{
+          minHeight: '60vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <div
           style={{
             width: 48,
@@ -110,7 +122,14 @@ export default function TertiaireEfaDetailPage() {
 
   if (!efa) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        style={{
+          minHeight: '60vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <div style={{ textAlign: 'center' }}>
           <p style={{ color: 'var(--sol-ink-500)', marginBottom: 16 }}>
             EFA introuvable ou accès restreint.
@@ -195,12 +214,10 @@ export default function TertiaireEfaDetailPage() {
               lineHeight: 1.45,
             }}
           >
-            PROMEOS génère un pack préparatoire OPERAT (simulation). Le dépôt
-            officiel doit toujours être effectué via la plateforme de l’ADEME
-            sur <strong>operat.ademe.fr</strong> — cette fiche ne se substitue
-            pas à la déclaration légale. Le bouton « Générer le pack
-            préparatoire » produit uniquement le dossier documentaire destiné
-            au dépôt manuel.
+            PROMEOS génère un pack préparatoire OPERAT (simulation). Le dépôt officiel doit toujours
+            être effectué via la plateforme de l’ADEME sur <strong>operat.ademe.fr</strong> — cette
+            fiche ne se substitue pas à la déclaration légale. Le bouton « Générer le pack
+            préparatoire » produit uniquement le dossier documentaire destiné au dépôt manuel.
           </p>
         </div>
       </aside>
@@ -236,9 +253,8 @@ export default function TertiaireEfaDetailPage() {
             lineHeight: 1.5,
           }}
         >
-          Déposez les factures, relevés et attestations associés à cette EFA
-          pour alimenter le dossier OPERAT. Le hint est pré-rempli avec le
-          contexte (EFA, responsable, surface).
+          Déposez les factures, relevés et attestations associés à cette EFA pour alimenter le
+          dossier OPERAT. Le hint est pré-rempli avec le contexte (EFA, responsable, surface).
         </p>
         <ProofDepositCTA hint={proofHint} />
       </section>

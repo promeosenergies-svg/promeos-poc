@@ -144,13 +144,7 @@ function fmtPctDelta(delta, suffix) {
 
 export default function CockpitRefonte() {
   const [solDismissed, setSolDismissed] = useState(false);
-  const {
-    scope,
-    kpis,
-    compliance,
-    alerts,
-    solProposal,
-  } = FIXTURE;
+  const { scope, kpis, compliance, alerts, solProposal } = FIXTURE;
 
   const weekCards = buildWeekCards(alerts);
 
@@ -229,7 +223,10 @@ export default function CockpitRefonte() {
             text: `▼ −${Math.abs(compliance.delta)} pts sur 3 mois`,
           }}
           headline={interpretCompliance(compliance)}
-          source={{ kind: 'Enedis', freshness: `mis à jour il y a ${compliance.freshnessHours}${NBSP}h` }}
+          source={{
+            kind: 'Enedis',
+            freshness: `mis à jour il y a ${compliance.freshnessHours}${NBSP}h`,
+          }}
         />
         <SolKpiCard
           label="Consommation · patrimoine"
@@ -272,12 +269,17 @@ export default function CockpitRefonte() {
       </div>
 
       {/* Courbe de charge — signature HP/HC */}
-      <SolSectionHead title="Courbe de charge — Lyon, hier" meta="pas 30 min · HP / HC tarifaires" />
+      <SolSectionHead
+        title="Courbe de charge — Lyon, hier"
+        meta="pas 30 min · HP / HC tarifaires"
+      />
       <SolLoadCurve
         peakPoint={{ time: '14:00', value: 118, label: `pic 14${NNBSP}h · 118${NBSP}kW` }}
         caption={
           <>
-            <strong style={{ color: 'var(--sol-ink-900)' }}>85{NNBSP}% de votre consommation</strong>{' '}
+            <strong style={{ color: 'var(--sol-ink-900)' }}>
+              85{NNBSP}% de votre consommation
+            </strong>{' '}
             tombe en heures pleines — attendu pour un bureau. Votre contrat est bien calibré.
           </>
         }

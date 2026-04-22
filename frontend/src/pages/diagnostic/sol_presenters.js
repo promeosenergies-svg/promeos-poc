@@ -60,9 +60,7 @@ export function toneFromSeverity(severity) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function buildDiagnosticKicker({ scope, selectedSite, periodDays } = {}) {
-  const siteTag = selectedSite?.nom
-    ? selectedSite.nom.toUpperCase()
-    : 'PATRIMOINE TOUS LES SITES';
+  const siteTag = selectedSite?.nom ? selectedSite.nom.toUpperCase() : 'PATRIMOINE TOUS LES SITES';
   const days = periodDays || 90;
   return `DIAGNOSTIC · CONSOMMATION · ${siteTag} · ${days}${NBSP}JOURS`;
 }
@@ -88,7 +86,9 @@ export function buildDiagnosticNarrative({ summary, insights = [], scope, period
     `${totalInsights}${NBSP}anomalie${totalInsights > 1 ? 's' : ''} détectée${totalInsights > 1 ? 's' : ''} sur ${days}${NBSP}jours`
   );
   if (sitesCount > 0) {
-    parts.push(`${sitesCount}${NBSP}site${sitesCount > 1 ? 's' : ''} concerné${sitesCount > 1 ? 's' : ''}`);
+    parts.push(
+      `${sitesCount}${NBSP}site${sitesCount > 1 ? 's' : ''} concerné${sitesCount > 1 ? 's' : ''}`
+    );
   }
   if (totalLossEur > 0) {
     parts.push(`pertes cumulées ${formatFREur(totalLossEur, 0)}`);
@@ -130,7 +130,7 @@ export function interpretDriftKwh({ summary } = {}) {
 export function interpretSitesAffected({ summary } = {}) {
   const sites = Number(summary?.sites_with_insights) || 0;
   const total = Number(summary?.total_insights) || 0;
-  if (sites <= 0) return 'Aucun site ne présente d\'anomalie active.';
+  if (sites <= 0) return "Aucun site ne présente d'anomalie active.";
   return `${sites}${NBSP}site${sites > 1 ? 's' : ''} avec ${total}${NBSP}anomalie${total > 1 ? 's' : ''} active${total > 1 ? 's' : ''} détectée${total > 1 ? 's' : ''}.`;
 }
 
@@ -164,7 +164,9 @@ export function adaptInsightsToBarChart(insights = [], { limit = 8 } = {}) {
 
 function shortSite(name) {
   if (!name) return 'Site';
-  const clean = String(name).replace(/HELIOS\s*/gi, '').trim();
+  const clean = String(name)
+    .replace(/HELIOS\s*/gi, '')
+    .trim();
   return clean.length > 20 ? clean.slice(0, 18) + '…' : clean;
 }
 
@@ -206,7 +208,10 @@ export function buildDiagnosticWeekCards({ insights = [], onOpenInsight } = {}) 
 
   // Card 2 : insight avec recommended_actions (afaire)
   const withReco = active.find(
-    (i) => Array.isArray(i?.recommended_actions) && i.recommended_actions.length > 0 && i.id !== topEur?.id
+    (i) =>
+      Array.isArray(i?.recommended_actions) &&
+      i.recommended_actions.length > 0 &&
+      i.id !== topEur?.id
   );
   if (withReco) {
     const where = withReco.site_nom || `Site #${withReco.site_id}`;
@@ -215,7 +220,10 @@ export function buildDiagnosticWeekCards({ insights = [], onOpenInsight } = {}) 
       tagKind: 'afaire',
       tagLabel: 'À faire',
       title: `${where} · action prête`,
-      body: withReco.recommended_actions[0]?.label || withReco.message || 'Action recommandée identifiée.',
+      body:
+        withReco.recommended_actions[0]?.label ||
+        withReco.message ||
+        'Action recommandée identifiée.',
       footerLeft: labelInsightType(withReco.type),
       footerRight: 'Sol peut préparer',
       onClick: () => onOpenInsight?.(withReco),

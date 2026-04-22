@@ -50,8 +50,8 @@ export default function SolLoadCurve({
   unit = 'kW',
   caption = (
     <>
-      <strong style={{ color: 'var(--sol-ink-900)' }}>85{'\u00A0'}% de votre consommation</strong> tombe en
-      heures pleines — attendu pour un bureau. Votre contrat est bien calibré.
+      <strong style={{ color: 'var(--sol-ink-900)' }}>85{'\u00A0'}% de votre consommation</strong>{' '}
+      tombe en heures pleines — attendu pour un bureau. Votre contrat est bien calibré.
     </>
   ),
   sourceChip = null,

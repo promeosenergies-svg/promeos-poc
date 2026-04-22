@@ -25,22 +25,14 @@
  * (vs NAV_SECTIONS qui utilise `{ to, label, desc, icon, ... }`).
  */
 import { describe, it, expect } from 'vitest';
-import {
-  NAV_SECTIONS,
-  PANEL_DEEP_LINKS_BY_ROUTE,
-  matchRouteToModule,
-} from '../NavRegistry';
+import { NAV_SECTIONS, PANEL_DEEP_LINKS_BY_ROUTE, matchRouteToModule } from '../NavRegistry';
 
 const HIDDEN_ITEMS = ['/actions', '/notifications'];
 
 describe('PANEL_DEEP_LINKS_BY_ROUTE — invariance structurelle (GATE 2)', () => {
   // Pré-calculs issus de NAV_SECTIONS (SSOT main) — property name = 'to'
-  const topLevelPaths = new Set(
-    NAV_SECTIONS.flatMap((s) => (s.items || []).map((i) => i.to)),
-  );
-  const topLevelLabels = new Set(
-    NAV_SECTIONS.flatMap((s) => (s.items || []).map((i) => i.label)),
-  );
+  const topLevelPaths = new Set(NAV_SECTIONS.flatMap((s) => (s.items || []).map((i) => i.to)));
+  const topLevelLabels = new Set(NAV_SECTIONS.flatMap((s) => (s.items || []).map((i) => i.label)));
 
   it('règle 1 : chaque deep-link est query-param OU sous-path (pas un item top-level)', () => {
     const violations = [];
@@ -50,7 +42,7 @@ describe('PANEL_DEEP_LINKS_BY_ROUTE — invariance structurelle (GATE 2)', () =>
         const isSubPath = /^\/[a-z-]+\/[a-z-]+/i.test(link.href);
         if (!isQueryParam && !isSubPath) {
           violations.push(
-            `Route "${route}" link "${link.label}" → href "${link.href}" n'est ni query-param ni sous-path (interdit)`,
+            `Route "${route}" link "${link.label}" → href "${link.href}" n'est ni query-param ni sous-path (interdit)`
           );
         }
       }
@@ -64,7 +56,7 @@ describe('PANEL_DEEP_LINKS_BY_ROUTE — invariance structurelle (GATE 2)', () =>
       for (const link of deeplinks) {
         if (topLevelPaths.has(link.href)) {
           violations.push(
-            `Route "${route}" link "${link.label}" → href "${link.href}" duplique un item top-level NAV_SECTIONS (divergence SSOT)`,
+            `Route "${route}" link "${link.label}" → href "${link.href}" duplique un item top-level NAV_SECTIONS (divergence SSOT)`
           );
         }
       }
@@ -79,7 +71,7 @@ describe('PANEL_DEEP_LINKS_BY_ROUTE — invariance structurelle (GATE 2)', () =>
         for (const hidden of HIDDEN_ITEMS) {
           if (link.href === hidden || link.href.startsWith(`${hidden}?`)) {
             violations.push(
-              `Route "${route}" link "${link.label}" ré-expose item masqué "${hidden}"`,
+              `Route "${route}" link "${link.label}" ré-expose item masqué "${hidden}"`
             );
           }
         }
@@ -94,7 +86,7 @@ describe('PANEL_DEEP_LINKS_BY_ROUTE — invariance structurelle (GATE 2)', () =>
       for (const link of deeplinks) {
         if (topLevelLabels.has(link.label)) {
           violations.push(
-            `Route "${route}" label "${link.label}" duplique un label top-level NAV_SECTIONS (risque redrift SSOT)`,
+            `Route "${route}" label "${link.label}" duplique un label top-level NAV_SECTIONS (risque redrift SSOT)`
           );
         }
       }
@@ -110,7 +102,7 @@ describe('PANEL_DEEP_LINKS_BY_ROUTE — invariance structurelle (GATE 2)', () =>
       // explicite dans ROUTE_MODULE_MAP) — très probablement une typo.
       if (pattern === null) {
         violations.push(
-          `Route "${route}" ne résout pas via ROUTE_MODULE_MAP (typo ou route absente)`,
+          `Route "${route}" ne résout pas via ROUTE_MODULE_MAP (typo ou route absente)`
         );
       }
     }
@@ -132,7 +124,9 @@ describe('PANEL_DEEP_LINKS_BY_ROUTE — invariance structurelle (GATE 2)', () =>
           violations.push(`Route "${route}" link ${JSON.stringify(link)} : label manquant ou vide`);
         }
         if (link.hint != null && typeof link.hint !== 'string') {
-          violations.push(`Route "${route}" link ${JSON.stringify(link)} : hint doit être string ou absent`);
+          violations.push(
+            `Route "${route}" link ${JSON.stringify(link)} : hint doit être string ou absent`
+          );
         }
       }
     }

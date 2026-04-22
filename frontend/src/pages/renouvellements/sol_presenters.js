@@ -149,7 +149,9 @@ export function buildRenewalsNarrative({ contracts = [], kpis } = {}) {
     );
   }
   if (k.expiredCount > 0) {
-    parts.push(`${k.expiredCount}${NBSP}déjà expiré${k.expiredCount > 1 ? 's' : ''} · action immédiate requise`);
+    parts.push(
+      `${k.expiredCount}${NBSP}déjà expiré${k.expiredCount > 1 ? 's' : ''} · action immédiate requise`
+    );
   }
   // Top priorité : contract avec urgency=red + days_to_end minimum
   const top = [...contracts]
@@ -157,7 +159,9 @@ export function buildRenewalsNarrative({ contracts = [], kpis } = {}) {
     .sort((a, b) => (a.days_to_end ?? Infinity) - (b.days_to_end ?? Infinity))[0];
   if (top) {
     const where = top.site_nom || top.supplier_name || 'un site';
-    parts.push(`action prioritaire : ${where} · ${top.supplier_name || 'fournisseur'} · ${top.days_to_end}${NBSP}jours`);
+    parts.push(
+      `action prioritaire : ${where} · ${top.supplier_name || 'fournisseur'} · ${top.days_to_end}${NBSP}jours`
+    );
   }
   return parts.join(' · ') + '.';
 }
@@ -182,7 +186,9 @@ export function interpretImminentCount({ kpis } = {}) {
   const bits = [];
   if (kpis.under30d > 0) bits.push(`${kpis.under30d}${NBSP}<${NBSP}30${NBSP}j`);
   if (kpis.between30and90d > 0) bits.push(`${kpis.between30and90d}${NBSP}entre 30-90${NBSP}j`);
-  return bits.length > 0 ? `Répartition : ${bits.join(' · ')}.` : 'Fenêtre active de renégociation.';
+  return bits.length > 0
+    ? `Répartition : ${bits.join(' · ')}.`
+    : 'Fenêtre active de renégociation.';
 }
 
 export function interpretReadinessAvg({ kpis } = {}) {
@@ -243,17 +249,32 @@ export function filterRows(rows, { search, supplier, status, urgency } = {}) {
   if (supplier) r = r.filter((x) => x.cells.supplier === supplier);
   if (status) r = r.filter((x) => x.cells.status === status);
   if (urgency) {
-    if (urgency === 'under30') r = r.filter((x) => x.cells.days_to_end != null && x.cells.days_to_end >= 0 && x.cells.days_to_end <= 30);
-    else if (urgency === 'between30_90') r = r.filter((x) => x.cells.days_to_end != null && x.cells.days_to_end > 30 && x.cells.days_to_end <= 90);
-    else if (urgency === 'over90') r = r.filter((x) => x.cells.days_to_end != null && x.cells.days_to_end > 90);
-    else if (urgency === 'expired') r = r.filter((x) => x.cells.status === 'expired' || (x.cells.days_to_end != null && x.cells.days_to_end < 0));
+    if (urgency === 'under30')
+      r = r.filter(
+        (x) => x.cells.days_to_end != null && x.cells.days_to_end >= 0 && x.cells.days_to_end <= 30
+      );
+    else if (urgency === 'between30_90')
+      r = r.filter(
+        (x) => x.cells.days_to_end != null && x.cells.days_to_end > 30 && x.cells.days_to_end <= 90
+      );
+    else if (urgency === 'over90')
+      r = r.filter((x) => x.cells.days_to_end != null && x.cells.days_to_end > 90);
+    else if (urgency === 'expired')
+      r = r.filter(
+        (x) =>
+          x.cells.status === 'expired' || (x.cells.days_to_end != null && x.cells.days_to_end < 0)
+      );
   }
   if (search) {
     const q = search.toLowerCase();
     r = r.filter(
       (x) =>
-        String(x.cells.site || '').toLowerCase().includes(q) ||
-        String(x.cells.supplier || '').toLowerCase().includes(q)
+        String(x.cells.site || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(x.cells.supplier || '')
+          .toLowerCase()
+          .includes(q)
     );
   }
   return r;

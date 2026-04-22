@@ -195,8 +195,7 @@ export default function EnergySignatureCard({ siteId, months = 12 }) {
           <div>
             <div className="text-xs text-gray-500 uppercase">Baseload</div>
             <div className="font-semibold text-gray-800">
-              {fmtNum(model.base_kwh_day, 0)}{' '}
-              <span className="text-xs text-gray-500">kWh/j</span>
+              {fmtNum(model.base_kwh_day, 0)} <span className="text-xs text-gray-500">kWh/j</span>
             </div>
           </div>
           <div>
@@ -221,9 +220,7 @@ export default function EnergySignatureCard({ siteId, months = 12 }) {
           </div>
           <div>
             <div className="text-xs text-gray-500 uppercase">Part thermosens.</div>
-            <div className="font-semibold text-gray-800">
-              {fmtNum(thermo.part_thermo_pct, 0)}%
-            </div>
+            <div className="font-semibold text-gray-800">{fmtNum(thermo.part_thermo_pct, 0)}%</div>
           </div>
         </div>
 

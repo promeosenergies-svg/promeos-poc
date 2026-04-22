@@ -33,7 +33,8 @@ export default function SolPendingBanner({
         {message}
         {countdown && (
           <>
-            {' '}dans{' '}
+            {' '}
+            dans{' '}
             <span
               className="sol-pending-banner-countdown"
               style={{ fontFamily: 'var(--sol-font-mono)', fontWeight: 600 }}

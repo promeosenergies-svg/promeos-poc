@@ -15,43 +15,62 @@
   --sol-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   /* Slate base — papier / canevas / panneau */
-  --sol-bg-canvas: #F8F9FA;
-  --sol-bg-paper: #FFFFFF;
-  --sol-bg-panel: #F3F4F6;
+  --sol-bg-canvas: #f8f9fa;
+  --sol-bg-paper: #ffffff;
+  --sol-bg-panel: #f3f4f6;
 
   /* Ink scale — 100 le plus clair, 900 le plus foncé */
-  --sol-ink-900: #0F172A;
+  --sol-ink-900: #0f172a;
   --sol-ink-700: #334155;
-  --sol-ink-500: #64748B;
-  --sol-ink-400: #94A3B8;
-  --sol-ink-300: #CBD5E1;
-  --sol-ink-200: #E2E8F0;
-  --sol-ink-100: #F1F5F9;
-  --sol-rule: #E2E8F0;
+  --sol-ink-500: #64748b;
+  --sol-ink-400: #94a3b8;
+  --sol-ink-300: #cbd5e1;
+  --sol-ink-200: #e2e8f0;
+  --sol-ink-100: #f1f5f9;
+  --sol-rule: #e2e8f0;
 
   /* Accents émotionnels warm — palette V2 raw « journal en terrasse » (source locked) */
-  --sol-calme-fg: #2F6B5E;     --sol-calme-bg: #E3F0ED;  /* bleu-vert doux « tout va bien » */
-  --sol-calme-fg-hover: #245047;                         /* -10% luminosité pour hover */
-  --sol-attention-fg: #A06B1A; --sol-attention-bg: #F6EAD2;  /* ambre chaleureux */
-  --sol-afaire-fg: #B8552E;    --sol-afaire-bg: #F7E4D8;     /* orange corail, pas punitif */
-  --sol-succes-fg: #2E6B4A;    --sol-succes-bg: #DFEDE3;     /* vert forêt, pas fluo */
-  --sol-refuse-fg: #8B3A3A;    --sol-refuse-bg: #F3DDDB;
+  --sol-calme-fg: #2f6b5e;
+  --sol-calme-bg: #e3f0ed; /* bleu-vert doux « tout va bien » */
+  --sol-calme-fg-hover: #245047; /* -10% luminosité pour hover */
+  --sol-attention-fg: #a06b1a;
+  --sol-attention-bg: #f6ead2; /* ambre chaleureux */
+  --sol-afaire-fg: #b8552e;
+  --sol-afaire-bg: #f7e4d8; /* orange corail, pas punitif */
+  --sol-succes-fg: #2e6b4a;
+  --sol-succes-bg: #dfede3; /* vert forêt, pas fluo */
+  --sol-refuse-fg: #8b3a3a;
+  --sol-refuse-bg: #f3dddb;
 
   /* Tariff HP/HC — palette warm V2 raw */
-  --sol-hph-fg: #B84545; --sol-hph-bg: #FBE9E9;  /* HP signal fort */
-  --sol-hch-fg: #2E4A6B; --sol-hch-bg: #E6EDF5;  /* HC calme */
-  --sol-hpe-fg: #D08B3C; --sol-hpe-bg: #FBF1E3;
-  --sol-hce-fg: #6B8CAE; --sol-hce-bg: #E9EEF4;
+  --sol-hph-fg: #b84545;
+  --sol-hph-bg: #fbe9e9; /* HP signal fort */
+  --sol-hch-fg: #2e4a6b;
+  --sol-hch-bg: #e6edf5; /* HC calme */
+  --sol-hpe-fg: #d08b3c;
+  --sol-hpe-bg: #fbf1e3;
+  --sol-hce-fg: #6b8cae;
+  --sol-hce-bg: #e9eef4;
 }
 
 /* ── Animations signature ── */
 @keyframes sol-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 @keyframes sol-pulse-fast {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

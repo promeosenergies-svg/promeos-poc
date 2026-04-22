@@ -17,13 +17,7 @@
  *
  * Zéro fetch ici, fonctions pures déterministes.
  */
-import {
-  NBSP,
-  formatFR,
-  formatFREur,
-  computeDelta,
-  freshness,
-} from '../cockpit/sol_presenters';
+import { NBSP, formatFR, formatFREur, computeDelta, freshness } from '../cockpit/sol_presenters';
 import { businessErrorFallback } from '../../i18n/business_errors';
 import { fmtNum } from '../../utils/format';
 
@@ -43,20 +37,27 @@ export function buildAchatKicker({ scope } = {}) {
   return `Achat énergie · ${orgName}${sitesSuffix}`;
 }
 
-export function buildAchatNarrative({ weightedPrice, marketSpot, nextRenewal, renewalsCount } = {}) {
+export function buildAchatNarrative({
+  weightedPrice,
+  marketSpot,
+  nextRenewal,
+  renewalsCount,
+} = {}) {
   const renewalsSoon = renewalsCount || 0;
   const nextDays = nextRenewal?.days_until_expiry;
-  const ratio = (weightedPrice != null && marketSpot != null && marketSpot > 0)
-    ? weightedPrice / marketSpot
-    : null;
+  const ratio =
+    weightedPrice != null && marketSpot != null && marketSpot > 0
+      ? weightedPrice / marketSpot
+      : null;
 
   if (weightedPrice == null && renewalsSoon === 0) {
     return "Saisissez vos contrats actuels pour déclencher l'analyse marché et le radar de renouvellement.";
   }
 
-  const renewalHint = renewalsSoon > 0
-    ? ` ${renewalsSoon} contrat${renewalsSoon > 1 ? 's' : ''} à renouveler${nextDays != null && nextDays < 180 ? ` dont un sous ${nextDays}${NBSP}jours` : ''}.`
-    : '';
+  const renewalHint =
+    renewalsSoon > 0
+      ? ` ${renewalsSoon} contrat${renewalsSoon > 1 ? 's' : ''} à renouveler${nextDays != null && nextDays < 180 ? ` dont un sous ${nextDays}${NBSP}jours` : ''}.`
+      : '';
 
   if (ratio == null) {
     return `Veille marché active.${renewalHint}`;
@@ -94,7 +95,7 @@ export function buildAchatSubNarrative({ marketContext, renewals } = {}) {
 
 export function interpretPrixPondere({ weightedPrice, marketSpot } = {}) {
   if (weightedPrice == null) {
-    return "Saisissez vos contrats actuels (prix €/MWh × volume) pour calculer le prix pondéré.";
+    return 'Saisissez vos contrats actuels (prix €/MWh × volume) pour calculer le prix pondéré.';
   }
   if (marketSpot == null) {
     return `Prix effectif ${formatFR(weightedPrice, 1)}${NBSP}€/MWh pondéré par les volumes contractés.`;
@@ -123,7 +124,7 @@ export function interpretEcheance(nextRenewal) {
     return {
       value: '—',
       unit: '',
-      headline: "Aucune échéance enregistrée. Saisissez vos contrats actifs.",
+      headline: 'Aucune échéance enregistrée. Saisissez vos contrats actifs.',
       tone: 'calme',
     };
   }
@@ -192,7 +193,10 @@ export function interpretScenarios({ validatedCount, simulatedCount, potentialSa
     return "Lancez l'assistant d'achat pour simuler vos premiers scénarios de renouvellement.";
   }
   const parts = [];
-  if (simulatedCount) parts.push(`sur ${simulatedCount}${NBSP}scénario${simulatedCount > 1 ? 's' : ''} simulé${simulatedCount > 1 ? 's' : ''}`);
+  if (simulatedCount)
+    parts.push(
+      `sur ${simulatedCount}${NBSP}scénario${simulatedCount > 1 ? 's' : ''} simulé${simulatedCount > 1 ? 's' : ''}`
+    );
   if (potentialSavings && potentialSavings > 0) {
     parts.push(`${formatFREur(potentialSavings, 0)} d'économies identifiées`);
   }
@@ -236,8 +240,18 @@ export function synthesizeMarketTrend(marketContext) {
   if (!avg || !now) return [];
 
   const MONTHS_FR = [
-    'janv.', 'févr.', 'mars', 'avril', 'mai', 'juin',
-    'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
+    'janv.',
+    'févr.',
+    'mars',
+    'avril',
+    'mai',
+    'juin',
+    'juil.',
+    'août',
+    'sept.',
+    'oct.',
+    'nov.',
+    'déc.',
   ];
   const today = new Date();
   const data = [];
@@ -273,7 +287,7 @@ export function detectOpportunityArea(trendData, userPrice) {
   return {
     x1: trendData[first]?.month,
     x2: trendData[last]?.month,
-    label: "Fenêtre favorable",
+    label: 'Fenêtre favorable',
   };
 }
 
@@ -281,13 +295,23 @@ export function detectOpportunityArea(trendData, userPrice) {
 // Week-cards Achat
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function buildAchatWeekCards({ renewals = [], marketContext, scenarios = [], onOpenRenewal } = {}) {
+export function buildAchatWeekCards({
+  renewals = [],
+  marketContext,
+  scenarios = [],
+  onOpenRenewal,
+} = {}) {
   const cards = [];
 
   // Card 1 À regarder : contrat avec urgency='red' ou days_until_expiry minimum
-  const urgentRenewal = [...renewals]
-    .sort((a, b) => (a.days_until_expiry ?? 999) - (b.days_until_expiry ?? 999))[0];
-  if (urgentRenewal && urgentRenewal.days_until_expiry != null && urgentRenewal.days_until_expiry < 180) {
+  const urgentRenewal = [...renewals].sort(
+    (a, b) => (a.days_until_expiry ?? 999) - (b.days_until_expiry ?? 999)
+  )[0];
+  if (
+    urgentRenewal &&
+    urgentRenewal.days_until_expiry != null &&
+    urgentRenewal.days_until_expiry < 180
+  ) {
     const days = urgentRenewal.days_until_expiry;
     const expired = days < 0;
     const notice = urgentRenewal.days_until_notice;
@@ -325,7 +349,10 @@ export function buildAchatWeekCards({ renewals = [], marketContext, scenarios = 
       footerRight: 'À valider',
       onClick: () => onOpenRenewal?.(pendingScenario),
     });
-  } else if (marketContext?.trend_30d_vs_12m_pct != null && marketContext.trend_30d_vs_12m_pct < -2) {
+  } else if (
+    marketContext?.trend_30d_vs_12m_pct != null &&
+    marketContext.trend_30d_vs_12m_pct < -2
+  ) {
     // Opportunité marché : tendance 30j < -2 %
     const trend = marketContext.trend_30d_vs_12m_pct;
     cards.push({
@@ -344,7 +371,9 @@ export function buildAchatWeekCards({ renewals = [], marketContext, scenarios = 
   }
 
   // Card 3 Bonne nouvelle : scénario validé / hedging sécurisé
-  const validatedScenario = scenarios.find((s) => s?.status === 'validated' || s?.status === 'approved');
+  const validatedScenario = scenarios.find(
+    (s) => s?.status === 'validated' || s?.status === 'approved'
+  );
   if (validatedScenario) {
     cards.push({
       id: `validated-${validatedScenario.id}`,

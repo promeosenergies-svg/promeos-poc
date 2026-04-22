@@ -11,11 +11,7 @@
  */
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  resolveModule,
-  getPanelSections,
-  NAV_MODULES,
-} from '../../layout/NavRegistry';
+import { resolveModule, getPanelSections, NAV_MODULES } from '../../layout/NavRegistry';
 
 export default function SolPanel({
   desc,
@@ -59,7 +55,14 @@ export default function SolPanel({
           overflowY: 'auto',
         }}
       >
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+        <header
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'baseline',
+            marginBottom: 4,
+          }}
+        >
           <h2
             className="sol-panel-module"
             style={{
@@ -87,95 +90,95 @@ export default function SolPanel({
           {desc || moduleMeta?.desc || ''}
         </p>
 
-      {sections.map((section) => {
-        const items = section.items || [];
-        if (items.length === 0) return null;
-        return (
-          <div key={section.key} className="sol-panel-section" style={{ marginBottom: 20 }}>
-            <p
-              className="sol-panel-section-label"
-              style={{
-                fontFamily: 'var(--sol-font-mono)',
-                fontSize: 9.5,
-                textTransform: 'uppercase',
-                letterSpacing: '0.14em',
-                fontWeight: 600,
-                color: 'var(--sol-ink-400)',
-                margin: '0 0 8px 2px',
-              }}
-            >
-              {section.label}
-            </p>
-            {items.map((item) => {
-              const basePath = item.to.split('?')[0].split('#')[0];
-              const isActive =
-                basePath === location.pathname ||
-                (basePath !== '/' && location.pathname.startsWith(basePath + '/'));
-              const badge = badges[basePath] ?? badges[item.to];
-              return (
-                <button
-                  key={item.to}
-                  type="button"
-                  onClick={() => navigate(item.to)}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`sol-panel-item ${isActive ? 'is-active' : ''}`.trim()}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '7px 8px',
-                    borderRadius: 4,
-                    color: isActive ? 'var(--sol-calme-fg)' : 'var(--sol-ink-700)',
-                    background: isActive ? 'var(--sol-calme-bg)' : 'transparent',
-                    fontSize: 13,
-                    fontWeight: isActive ? 500 : 400,
-                    cursor: 'pointer',
-                    width: '100%',
-                    textAlign: 'left',
-                    border: 'none',
-                    transition: 'background 120ms ease',
-                  }}
-                >
-                  <span style={{ flex: 1, lineHeight: 1.3 }}>
-                    {item.label}
-                    {item.desc && (
+        {sections.map((section) => {
+          const items = section.items || [];
+          if (items.length === 0) return null;
+          return (
+            <div key={section.key} className="sol-panel-section" style={{ marginBottom: 20 }}>
+              <p
+                className="sol-panel-section-label"
+                style={{
+                  fontFamily: 'var(--sol-font-mono)',
+                  fontSize: 9.5,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.14em',
+                  fontWeight: 600,
+                  color: 'var(--sol-ink-400)',
+                  margin: '0 0 8px 2px',
+                }}
+              >
+                {section.label}
+              </p>
+              {items.map((item) => {
+                const basePath = item.to.split('?')[0].split('#')[0];
+                const isActive =
+                  basePath === location.pathname ||
+                  (basePath !== '/' && location.pathname.startsWith(basePath + '/'));
+                const badge = badges[basePath] ?? badges[item.to];
+                return (
+                  <button
+                    key={item.to}
+                    type="button"
+                    onClick={() => navigate(item.to)}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`sol-panel-item ${isActive ? 'is-active' : ''}`.trim()}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '7px 8px',
+                      borderRadius: 4,
+                      color: isActive ? 'var(--sol-calme-fg)' : 'var(--sol-ink-700)',
+                      background: isActive ? 'var(--sol-calme-bg)' : 'transparent',
+                      fontSize: 13,
+                      fontWeight: isActive ? 500 : 400,
+                      cursor: 'pointer',
+                      width: '100%',
+                      textAlign: 'left',
+                      border: 'none',
+                      transition: 'background 120ms ease',
+                    }}
+                  >
+                    <span style={{ flex: 1, lineHeight: 1.3 }}>
+                      {item.label}
+                      {item.desc && (
+                        <span
+                          className="sol-panel-item-desc"
+                          style={{
+                            display: 'block',
+                            fontSize: 11,
+                            color: 'var(--sol-ink-400)',
+                            marginTop: 1,
+                            lineHeight: 1.35,
+                            fontWeight: 400,
+                          }}
+                        >
+                          {item.desc}
+                        </span>
+                      )}
+                    </span>
+                    {badge != null && (
                       <span
-                        className="sol-panel-item-desc"
+                        className="sol-panel-item-badge"
                         style={{
-                          display: 'block',
-                          fontSize: 11,
-                          color: 'var(--sol-ink-400)',
-                          marginTop: 1,
-                          lineHeight: 1.35,
-                          fontWeight: 400,
+                          fontFamily: 'var(--sol-font-mono)',
+                          fontSize: 10,
+                          background: 'var(--sol-afaire-bg)',
+                          color: 'var(--sol-afaire-fg)',
+                          padding: '1px 5px',
+                          borderRadius: 2,
+                          fontWeight: 600,
                         }}
                       >
-                        {item.desc}
+                        {badge}
                       </span>
                     )}
-                  </span>
-                  {badge != null && (
-                    <span
-                      className="sol-panel-item-badge"
-                      style={{
-                        fontFamily: 'var(--sol-font-mono)',
-                        fontSize: 10,
-                        background: 'var(--sol-afaire-bg)',
-                        color: 'var(--sol-afaire-fg)',
-                        padding: '1px 5px',
-                        borderRadius: 2,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        );
-      })}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
       {footerSlot}
     </aside>

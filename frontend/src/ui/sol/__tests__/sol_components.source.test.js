@@ -43,7 +43,7 @@ const SOL_FILES_PHASE1 = [
   'SolPanel.jsx',
   'SolAppShell.jsx',
   'SolTrajectoryChart.jsx', // Phase 4.1
-  'SolBarChart.jsx',        // Phase 4.1.1 (prep 4.2)
+  'SolBarChart.jsx', // Phase 4.1.1 (prep 4.2)
 ];
 
 // Lot 3 — Pattern C (Fiche détail)
@@ -63,15 +63,20 @@ const SOL_FILES_LOT2 = [
   'SolWatcherCard.jsx', // Phase 7 prélude cards
 ];
 
-const ALL_SOL_FILES = [...SOL_FILES_SPRINT2, ...SOL_FILES_PHASE1, ...SOL_FILES_LOT3, ...SOL_FILES_LOT2];
+const ALL_SOL_FILES = [
+  ...SOL_FILES_SPRINT2,
+  ...SOL_FILES_PHASE1,
+  ...SOL_FILES_LOT3,
+  ...SOL_FILES_LOT2,
+];
 
 // Hex autorisés : blanc + slate-900 (= --sol-ink-900) + shade hover calme.
 // V2 raw (source lockée par user 17/04/2026, UX-1 journal en terrasse) :
 // palette warm slate + accents chaleureux.
 const ALLOWED_HEX = new Set([
-  '#FFFFFF',  // blanc
-  '#0F172A',  // slate-900 = var(--sol-ink-900), SVG gradients natifs
-  '#245047',  // calme-fg hover shade (-10% luminosité de #2F6B5E)
+  '#FFFFFF', // blanc
+  '#0F172A', // slate-900 = var(--sol-ink-900), SVG gradients natifs
+  '#245047', // calme-fg hover shade (-10% luminosité de #2F6B5E)
 ]);
 
 describe('Sol components — fichiers attendus', () => {
@@ -330,7 +335,7 @@ describe('SolKpiRow', () => {
 
 describe('SolWeekGrid', () => {
   const src = readSol('SolWeekGrid.jsx');
-  it("grid 3 cols gap 12", () => {
+  it('grid 3 cols gap 12', () => {
     expect(src).toMatch(/repeat\(3,\s*1fr\)/);
     expect(src).toMatch(/gap:\s*12/);
   });
@@ -409,7 +414,7 @@ describe('SolExpertGrid', () => {
     expect(src).toContain('onSort');
   });
   it('cells num : mono tabular', () => {
-    expect(src).toContain("col.num");
+    expect(src).toContain('col.num');
     expect(src).toContain('var(--sol-font-mono)');
   });
 });
@@ -420,7 +425,7 @@ describe('SolJournal', () => {
     expect(src).toContain("'160px 100px 1fr 120px'");
   });
   it('empty state FR', () => {
-    expect(src).toContain("Aucune action Sol");
+    expect(src).toContain('Aucune action Sol');
   });
 });
 
@@ -495,7 +500,14 @@ describe('SolTrajectoryChart (Phase 4.1)', () => {
   });
 
   it('Phase 4.4 : extensions optionnelles userLine + opportunityArea + showThresholdZones + dataKey + yDomain', () => {
-    for (const prop of ['userLine', 'userLabel', 'opportunityArea', 'showThresholdZones', 'dataKey', 'yDomain']) {
+    for (const prop of [
+      'userLine',
+      'userLabel',
+      'opportunityArea',
+      'showThresholdZones',
+      'dataKey',
+      'yDomain',
+    ]) {
       expect(src).toContain(prop);
     }
     // userLine = ReferenceLine afaire-fg strokeDasharray 6 3
@@ -511,11 +523,30 @@ describe('Sol index barrel', () => {
   it('exporte les 23 composants (21 + SolTrajectoryChart P4.1 + SolBarChart P4.1.1)', () => {
     for (const comp of [
       // Sprint 2 + Phase 1
-      'SolPageHeader', 'SolKpiCard', 'SolHero', 'SolWeekCard', 'SolSourceChip',
-      'SolSectionHead', 'SolLoadCurve', 'SolTimerail', 'SolHeadline', 'SolSubline',
-      'SolStatusPill', 'SolButton', 'SolKpiRow', 'SolWeekGrid', 'SolLayerToggle',
-      'SolPendingBanner', 'SolInspectDoc', 'SolCartouche', 'SolDrawer',
-      'SolExpertGrid', 'SolJournal', 'SolRail', 'SolPanel', 'SolAppShell',
+      'SolPageHeader',
+      'SolKpiCard',
+      'SolHero',
+      'SolWeekCard',
+      'SolSourceChip',
+      'SolSectionHead',
+      'SolLoadCurve',
+      'SolTimerail',
+      'SolHeadline',
+      'SolSubline',
+      'SolStatusPill',
+      'SolButton',
+      'SolKpiRow',
+      'SolWeekGrid',
+      'SolLayerToggle',
+      'SolPendingBanner',
+      'SolInspectDoc',
+      'SolCartouche',
+      'SolDrawer',
+      'SolExpertGrid',
+      'SolJournal',
+      'SolRail',
+      'SolPanel',
+      'SolAppShell',
       // Phase 4.1
       'SolTrajectoryChart',
       // Phase 4.1.1
@@ -588,7 +619,7 @@ describe('SolPanel overflow (Phase 4.1.1 — scroll middle zone only)', () => {
     expect(src).toMatch(/minHeight:\s*0/);
   });
 
-  it('aside root n\'a plus overflowY (header + footer naturellement visibles)', () => {
+  it("aside root n'a plus overflowY (header + footer naturellement visibles)", () => {
     // Le root aside doit avoir flexDirection column + minHeight 0
     // mais PAS overflowY (sinon header/footer scrollent aussi)
     expect(src).toMatch(/flexDirection:\s*'column'/);
@@ -723,7 +754,14 @@ describe('SolDetailPage (Lot 3 wrapper)', () => {
   });
 
   it('accepte breadcrumb + title + titleEm + narrative + entityCard + mainContent', () => {
-    for (const prop of ['breadcrumb', 'title', 'titleEm', 'narrative', 'entityCard', 'mainContent']) {
+    for (const prop of [
+      'breadcrumb',
+      'title',
+      'titleEm',
+      'narrative',
+      'entityCard',
+      'mainContent',
+    ]) {
       expect(src).toContain(prop);
     }
   });
@@ -780,7 +818,13 @@ describe('SolExpertToolbar (Lot 2)', () => {
   });
 
   it('accepte filters + activeFilters + onFilterChange + selection + selectionActions', () => {
-    for (const p of ['filters', 'activeFilters', 'onFilterChange', 'selection', 'selectionActions']) {
+    for (const p of [
+      'filters',
+      'activeFilters',
+      'onFilterChange',
+      'selection',
+      'selectionActions',
+    ]) {
       expect(src).toContain(p);
     }
   });
@@ -810,7 +854,16 @@ describe('SolExpertGridFull (Lot 2)', () => {
   });
 
   it('accepte columns + rows + sortBy + onSort + selectable + onRowClick + emptyState + loading', () => {
-    for (const p of ['columns', 'rows', 'sortBy', 'onSort', 'selectable', 'onRowClick', 'emptyState', 'loading']) {
+    for (const p of [
+      'columns',
+      'rows',
+      'sortBy',
+      'onSort',
+      'selectable',
+      'onRowClick',
+      'emptyState',
+      'loading',
+    ]) {
       expect(src).toContain(p);
     }
   });
@@ -877,7 +930,7 @@ describe('SolPagination (Lot 2)', () => {
 describe('SolWatcherCard (Lot 2 Phase 7)', () => {
   const src = readSol('SolWatcherCard.jsx');
 
-  it('tokens var uniquement (pas d\'hex hardcodé)', () => {
+  it("tokens var uniquement (pas d'hex hardcodé)", () => {
     expect(src).toMatch(/var\(--sol-bg-paper\)/);
     expect(src).toMatch(/var\(--sol-ink-200\)/);
     expect(src).toMatch(/var\(--sol-font-display\)/);

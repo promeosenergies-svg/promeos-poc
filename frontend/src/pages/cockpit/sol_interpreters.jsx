@@ -26,9 +26,7 @@ export function interpretCost(kpis, scope) {
 
   if (Math.abs(delta) < 0.02) {
     return (
-      <>
-        Facture stable ce mois — votre patrimoine consomme au rythme attendu pour la saison.
-      </>
+      <>Facture stable ce mois — votre patrimoine consomme au rythme attendu pour la saison.</>
     );
   }
 
@@ -70,8 +68,8 @@ export function interpretCompliance(compliance) {
     if (siteCount >= 3 && leadSite) {
       return (
         <>
-          Vous êtes en zone à risque — trois sites tirent le score vers le bas, <em>{leadSite}</em> en
-          tête.
+          Vous êtes en zone à risque — trois sites tirent le score vers le bas, <em>{leadSite}</em>{' '}
+          en tête.
         </>
       );
     }
@@ -142,8 +140,8 @@ export function buildCockpitSubNarrative({ sitesCount, nextComexDays } = {}) {
 
   return (
     <>
-      Votre patrimoine {sites} consomme au rythme attendu pour la saison. Un site peut dériver de
-      sa trajectoire Décret Tertiaire.{comex}
+      Votre patrimoine {sites} consomme au rythme attendu pour la saison. Un site peut dériver de sa
+      trajectoire Décret Tertiaire.{comex}
     </>
   );
 }

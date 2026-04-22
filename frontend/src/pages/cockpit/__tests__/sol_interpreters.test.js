@@ -21,7 +21,9 @@ function jsxToText(node) {
   if (typeof node === 'string' || typeof node === 'number') return String(node);
   if (Array.isArray(node)) return node.map(jsxToText).join('');
   if (isValidElement(node)) {
-    return Children.toArray(node.props?.children || []).map(jsxToText).join('');
+    return Children.toArray(node.props?.children || [])
+      .map(jsxToText)
+      .join('');
   }
   return '';
 }
@@ -36,8 +38,8 @@ describe('interpretCost', () => {
     const text = jsxToText(
       interpretCost(
         { costDelta: 0.08, topDriverSites: [{ name: 'Lyon' }, { name: 'Nice' }] },
-        { orgName: 'X' },
-      ),
+        { orgName: 'X' }
+      )
     );
     expect(text).toMatch(/Lyon/);
     expect(text).toMatch(/Nice/);
@@ -63,7 +65,7 @@ describe('interpretCompliance', () => {
         score: 62,
         sitesAtRisk: 3,
         leadRiskSite: { name: 'Marseille école' },
-      }),
+      })
     );
     expect(text).toMatch(/zone à risque|trois sites/i);
     expect(text).toMatch(/Marseille école/);
@@ -80,8 +82,8 @@ describe('interpretConsumption', () => {
     const text = jsxToText(
       interpretConsumption(
         { consoDelta: -0.04, topBaisseSites: [{ name: 'Paris' }, { name: 'Toulouse' }] },
-        { orgName: 'X' },
-      ),
+        { orgName: 'X' }
+      )
     );
     expect(text).toMatch(/moins/i);
     expect(text).toMatch(/Paris/);
@@ -102,7 +104,7 @@ describe('buildCockpitNarrative', () => {
 
   it('3 alerts with top title → mentions number + title', () => {
     const text = jsxToText(
-      buildCockpitNarrative({ alertsCount: 3, topAlertTitle: 'la facture Lyon' }),
+      buildCockpitNarrative({ alertsCount: 3, topAlertTitle: 'la facture Lyon' })
     );
     expect(text).toMatch(/3 points méritent/);
     expect(text).toMatch(/la facture Lyon/);
@@ -116,9 +118,7 @@ describe('buildCockpitNarrative', () => {
 
 describe('buildCockpitSubNarrative', () => {
   it('includes site count + comex days', () => {
-    const text = jsxToText(
-      buildCockpitSubNarrative({ sitesCount: 5, nextComexDays: 11 }),
-    );
+    const text = jsxToText(buildCockpitSubNarrative({ sitesCount: 5, nextComexDays: 11 }));
     expect(text).toMatch(/5 sites/);
     expect(text).toMatch(/11 jours/);
   });

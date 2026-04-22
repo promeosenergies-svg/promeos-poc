@@ -12,7 +12,14 @@
  */
 import React from 'react';
 
-export default function SolExpertGrid({ columns = [], rows = [], sortKey, sortDir = 'asc', onSort, className = '' }) {
+export default function SolExpertGrid({
+  columns = [],
+  rows = [],
+  sortKey,
+  sortDir = 'asc',
+  onSort,
+  className = '',
+}) {
   return (
     <div style={{ overflowX: 'auto' }}>
       <table

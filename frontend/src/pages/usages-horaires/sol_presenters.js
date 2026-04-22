@@ -35,7 +35,7 @@ export function buildHourlyKicker({ siteName, periodDays = 30 } = {}) {
 
 export function buildHourlyNarrative({ data, siteName } = {}) {
   if (!data) {
-    return "Analyse du profil horaire en cours — minimum 14 jours de données 30-min requis pour un signal robuste.";
+    return 'Analyse du profil horaire en cours — minimum 14 jours de données 30-min requis pour un signal robuste.';
   }
   const score = Number(data?.anomalies?.behavior_score);
   const offhours = Number(data?.anomalies?.kpis?.offhours_pct) || 0;
@@ -45,13 +45,23 @@ export function buildHourlyNarrative({ data, siteName } = {}) {
   const site = siteName || 'Ce site';
   const parts = [];
   if (Number.isFinite(score)) {
-    if (score >= 80) parts.push(`${site} affiche un profil cohérent avec son activité (score ${Math.round(score)}${NBSP}/${NBSP}100)`);
-    else if (score >= 50) parts.push(`${site} montre un profil à surveiller (score ${Math.round(score)}${NBSP}/${NBSP}100)`);
-    else parts.push(`${site} présente des anomalies comportementales marquées (score ${Math.round(score)}${NBSP}/${NBSP}100)`);
+    if (score >= 80)
+      parts.push(
+        `${site} affiche un profil cohérent avec son activité (score ${Math.round(score)}${NBSP}/${NBSP}100)`
+      );
+    else if (score >= 50)
+      parts.push(
+        `${site} montre un profil à surveiller (score ${Math.round(score)}${NBSP}/${NBSP}100)`
+      );
+    else
+      parts.push(
+        `${site} présente des anomalies comportementales marquées (score ${Math.round(score)}${NBSP}/${NBSP}100)`
+      );
   } else {
     parts.push(`${site} en cours de qualification`);
   }
-  if (offhours > 20) parts.push(`${Math.round(offhours)}${NBSP}% de consommation hors horaires d'ouverture`);
+  if (offhours > 20)
+    parts.push(`${Math.round(offhours)}${NBSP}% de consommation hors horaires d'ouverture`);
   if (baseload > 0) parts.push(`talon ${formatFR(baseload, 0)}${NBSP}kW (Q10 nuit)`);
   if (Math.abs(drift) > 10) {
     const sign = drift > 0 ? '+' : '';
@@ -81,7 +91,7 @@ export function interpretOffhours({ data } = {}) {
   if (!Number.isFinite(p)) return 'Consommation hors horaires à qualifier.';
   if (p > 30) return 'Part significative · vérifier programmation CVC + éclairage.';
   if (p > 15) return 'Part modérée · surveillance active recommandée.';
-  return 'Part faible · profil optimisé sur horaires d\'ouverture.';
+  return "Part faible · profil optimisé sur horaires d'ouverture.";
 }
 
 export function interpretBaseload({ data } = {}) {

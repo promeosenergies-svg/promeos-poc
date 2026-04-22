@@ -14,13 +14,7 @@
  *
  * Zéro fetch ici. Fonctions pures déterministes.
  */
-import {
-  NBSP,
-  formatFR,
-  formatFREur,
-  computeDelta,
-  freshness,
-} from '../cockpit/sol_presenters';
+import { NBSP, formatFR, formatFREur, computeDelta, freshness } from '../cockpit/sol_presenters';
 import { businessErrorFallback } from '../../i18n/business_errors';
 
 export { NBSP };
@@ -62,7 +56,7 @@ export function buildBillNarrative({ summary, anomaliesCount, recoveredYtd } = {
 export function buildBillSubNarrative({ summary } = {}) {
   const months = summary?.coverage_months ?? 0;
   const engine = summary?.engine_version || 'shadow v4.2';
-  if (months === 0) return "Couverture analytique en cours de constitution.";
+  if (months === 0) return 'Couverture analytique en cours de constitution.';
   return `${months}${NBSP}mois couverts · moteur ${engine} compare chaque ligne aux barèmes TURPE 7, ATRD, accises, CTA et TVA en vigueur.`;
 }
 
@@ -70,9 +64,14 @@ export function buildBillSubNarrative({ summary } = {}) {
 // KPI interpretations
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function interpretTotalFactures({ summary, currentMonthEur, previousMonthEur, topAnomalySites } = {}) {
+export function interpretTotalFactures({
+  summary,
+  currentMonthEur,
+  previousMonthEur,
+  topAnomalySites,
+} = {}) {
   if (currentMonthEur == null) {
-    return "Montant du mois en cours en cours de calcul.";
+    return 'Montant du mois en cours en cours de calcul.';
   }
   const prev = previousMonthEur;
   const pctChange = prev ? Math.abs((currentMonthEur - prev) / prev) * 100 : null;
@@ -81,28 +80,31 @@ export function interpretTotalFactures({ summary, currentMonthEur, previousMonth
   if (pctChange == null) {
     return `${summary?.total_invoices ?? 0} factures agrégées ce mois.`;
   }
-  if (pctChange < 3) return "Facture stable vs mois précédent.";
+  if (pctChange < 3) return 'Facture stable vs mois précédent.';
   if (currentMonthEur > prev) {
     if (drivers.length >= 2) {
       return `Hausse tirée par ${drivers[0]} et ${drivers[1]}.`;
     }
-    return "Hausse significative vs mois précédent.";
+    return 'Hausse significative vs mois précédent.';
   }
-  return "Baisse vs mois précédent — effet saison + arbitrage contractuel.";
+  return 'Baisse vs mois précédent — effet saison + arbitrage contractuel.';
 }
 
 export function interpretAnomalies({ anomaliesCount, potentialRecovery, contestableCount } = {}) {
-  if (!anomaliesCount) return "Aucune anomalie détectée ce mois.";
-  const recovery = potentialRecovery ? ` · récupération potentielle ${formatFREur(potentialRecovery, 0)}` : '';
-  const contestable = contestableCount != null
-    ? ` dont ${contestableCount}${NBSP}contestable${contestableCount > 1 ? 's' : ''} automatiquement`
+  if (!anomaliesCount) return 'Aucune anomalie détectée ce mois.';
+  const recovery = potentialRecovery
+    ? ` · récupération potentielle ${formatFREur(potentialRecovery, 0)}`
     : '';
+  const contestable =
+    contestableCount != null
+      ? ` dont ${contestableCount}${NBSP}contestable${contestableCount > 1 ? 's' : ''} automatiquement`
+      : '';
   return `${contestable}${recovery}`.trim() || `${anomaliesCount} anomalies à investiguer.`;
 }
 
 export function interpretRecovery({ recoveredYtd, contestationsValidated, avgDelayDays } = {}) {
   if (!recoveredYtd || recoveredYtd === 0) {
-    return "Aucune contestation validée depuis le 1ᵉʳ janvier.";
+    return 'Aucune contestation validée depuis le 1ᵉʳ janvier.';
   }
   const count = contestationsValidated
     ? `sur ${contestationsValidated}${NBSP}contestation${contestationsValidated > 1 ? 's' : ''} validée${contestationsValidated > 1 ? 's' : ''}`
@@ -166,11 +168,15 @@ export function countContestableAnomalies(insights) {
   if (!Array.isArray(insights)) return 0;
   // Heuristique : les types shadow_gap / reseau_mismatch / taxes_mismatch
   // avec severity 'high' ou 'critical' sont contestables automatiquement.
-  const CONTESTABLE_TYPES = new Set(['shadow_gap', 'reseau_mismatch', 'taxes_mismatch', 'accise_mismatch', 'cta_mismatch']);
+  const CONTESTABLE_TYPES = new Set([
+    'shadow_gap',
+    'reseau_mismatch',
+    'taxes_mismatch',
+    'accise_mismatch',
+    'cta_mismatch',
+  ]);
   return insights.filter(
-    (i) =>
-      CONTESTABLE_TYPES.has(i?.type) &&
-      ['high', 'critical'].includes(i?.severity)
+    (i) => CONTESTABLE_TYPES.has(i?.type) && ['high', 'critical'].includes(i?.severity)
   ).length;
 }
 
@@ -191,7 +197,8 @@ export function buildBillWeekCards({ insights = [], onOpenInsight } = {}) {
     .filter((i) => i?.insight_status === 'open')
     .sort((a, b) => (Number(b.estimated_loss_eur) || 0) - (Number(a.estimated_loss_eur) || 0));
 
-  const topAnomalie = openInsights.find((i) => ['high', 'critical'].includes(i?.severity)) || openInsights[0];
+  const topAnomalie =
+    openInsights.find((i) => ['high', 'critical'].includes(i?.severity)) || openInsights[0];
   if (topAnomalie) {
     const impact = Number(topAnomalie.estimated_loss_eur) || 0;
     cards.push({
@@ -210,7 +217,9 @@ export function buildBillWeekCards({ insights = [], onOpenInsight } = {}) {
 
   // Card 2 À faire : contestation en cours (in_review) ou à engager si anomalie présente
   const inReview = insights.find((i) => i?.insight_status === 'in_review');
-  const pendingContestation = insights.find((i) => i?.action_id != null && i?.insight_status === 'open');
+  const pendingContestation = insights.find(
+    (i) => i?.action_id != null && i?.insight_status === 'open'
+  );
   const topForAction = inReview || pendingContestation;
   if (topForAction) {
     const impact = Number(topForAction.estimated_loss_eur) || 0;

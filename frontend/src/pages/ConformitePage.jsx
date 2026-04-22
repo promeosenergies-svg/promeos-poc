@@ -600,8 +600,8 @@ export default function ConformitePage() {
         titleEm=" — décret tertiaire et obligations"
         narrative={
           <>
-            Voici l'état de vos obligations réglementaires et les échéances qui
-            vous attendent — <em>agissez avant les dates limites</em> pour éviter les pénalités.
+            Voici l'état de vos obligations réglementaires et les échéances qui vous attendent —{' '}
+            <em>agissez avant les dates limites</em> pour éviter les pénalités.
           </>
         }
         subNarrative="Score consolidé, sites à risque, évidences et plan d'action sont détaillés ci-dessous."

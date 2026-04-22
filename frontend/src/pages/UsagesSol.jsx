@@ -76,7 +76,9 @@ export default function UsagesSol({ dashboard, scopeLabel, onOpenDetail }) {
       </SolHeadline>
       {totalMwh != null && (
         <SolSubline>
-          Consommation totale {formatFR(totalMwh, 0)}{NBSP}MWh sur 12 mois · {baselines.length}{NBSP}baselines calculées.
+          Consommation totale {formatFR(totalMwh, 0)}
+          {NBSP}MWh sur 12 mois · {baselines.length}
+          {NBSP}baselines calculées.
         </SolSubline>
       )}
 
@@ -120,9 +122,7 @@ export default function UsagesSol({ dashboard, scopeLabel, onOpenDetail }) {
           xAxisKey="name"
           xAxisType="category"
           yLabel="MWh/an"
-          sourceChip={
-            <SolSourceChip kind="calcul" origin="top_ues · baseline" />
-          }
+          sourceChip={<SolSourceChip kind="calcul" origin="top_ues · baseline" />}
         />
       ) : (
         <p

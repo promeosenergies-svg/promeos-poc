@@ -99,21 +99,21 @@ export default function MarketContextBanner({ marketContext, isExpert, onNavigat
         >
           {state === 'low' && (
             <>
-              Le marché spot est à <strong style={MONO_STYLE}>{spotDisplay} EUR/MWh</strong>, {absTrend}%
-              sous la moyenne 12 mois. Moment favorable pour sécuriser un prix.
+              Le marché spot est à <strong style={MONO_STYLE}>{spotDisplay} EUR/MWh</strong>,{' '}
+              {absTrend}% sous la moyenne 12 mois. Moment favorable pour sécuriser un prix.
             </>
           )}
           {state === 'stable' && (
             <>
-              Le marché spot est à <strong style={MONO_STYLE}>{spotDisplay} EUR/MWh</strong>, stable par
-              rapport aux 12 derniers mois.
+              Le marché spot est à <strong style={MONO_STYLE}>{spotDisplay} EUR/MWh</strong>, stable
+              par rapport aux 12 derniers mois.
             </>
           )}
           {state === 'high' && (
             <>
-              Le marché spot est à <strong style={MONO_STYLE}>{spotDisplay} EUR/MWh</strong>, {absTrend}%
-              au-dessus de la moyenne 12 mois. Envisagez un contrat indexé avec cap pour limiter
-              l'exposition.
+              Le marché spot est à <strong style={MONO_STYLE}>{spotDisplay} EUR/MWh</strong>,{' '}
+              {absTrend}% au-dessus de la moyenne 12 mois. Envisagez un contrat indexé avec cap pour
+              limiter l'exposition.
             </>
           )}
         </p>
@@ -128,8 +128,8 @@ export default function MarketContextBanner({ marketContext, isExpert, onNavigat
               margin: '4px 0 0 0',
             }}
           >
-            Spot 30j : {fmtNum(spot30d, 1)} EUR/MWh · Moy. 12m : {fmtNum(avg12m, 1)} EUR/MWh · Volatilité :{' '}
-            {fmtNum(vol, 1)} EUR/MWh · Δ {trend >= 0 ? '+' : ''}
+            Spot 30j : {fmtNum(spot30d, 1)} EUR/MWh · Moy. 12m : {fmtNum(avg12m, 1)} EUR/MWh ·
+            Volatilité : {fmtNum(vol, 1)} EUR/MWh · Δ {trend >= 0 ? '+' : ''}
             {fmtNum(trend, 1)}%
           </p>
         )}
@@ -216,7 +216,9 @@ export function MarketContextCompact({ marketContext, onNavigate }) {
       />
       <span>
         Marché :{' '}
-        <strong style={{ ...MONO_STYLE, color: 'var(--sol-ink-900)' }}>{fmtNum(spot, 0)} EUR/MWh</strong>
+        <strong style={{ ...MONO_STYLE, color: 'var(--sol-ink-900)' }}>
+          {fmtNum(spot, 0)} EUR/MWh
+        </strong>
       </span>
       <span style={{ ...MONO_STYLE, color: cfg.fgVar }}>
         ({arrow} {absTrend}% vs moy.)

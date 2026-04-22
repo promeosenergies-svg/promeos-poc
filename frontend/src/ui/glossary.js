@@ -142,24 +142,24 @@ export const GLOSSARY = {
   tertiaire_deadline_operat: {
     term: 'Échéance OPERAT',
     short:
-      "Compte à rebours vers la prochaine date limite de déclaration OPERAT ADEME (30 septembre annuel, Décret Tertiaire). Tone : ≥ 180 j neutral · < 180 j amber · < 60 j red · échue rouge « régularisation urgente ». Date réglementaire publique (2026-09-30), non calculée côté front.",
+      'Compte à rebours vers la prochaine date limite de déclaration OPERAT ADEME (30 septembre annuel, Décret Tertiaire). Tone : ≥ 180 j neutral · < 180 j amber · < 60 j red · échue rouge « régularisation urgente ». Date réglementaire publique (2026-09-30), non calculée côté front.',
   },
 
   // ── Segmentation B2B (Lot 6 Phase 3, Pattern A compact) ─────────────────
   segmentation_profile_typology: {
     term: 'Profil détecté',
     short:
-      "Typologie métier de votre organisation détectée automatiquement (11 catégories PROMEOS : Tertiaire Privé/Public, Industrie, Commerce, Copropriété, Bailleur Social, Collectivité, Hôtellerie, Santé, Enseignement, Mixte). Basée sur code NAF + questionnaire + analyse patrimoine.",
+      'Typologie métier de votre organisation détectée automatiquement (11 catégories PROMEOS : Tertiaire Privé/Public, Industrie, Commerce, Copropriété, Bailleur Social, Collectivité, Hôtellerie, Santé, Enseignement, Mixte). Basée sur code NAF + questionnaire + analyse patrimoine.',
   },
   segmentation_confidence_score: {
     term: 'Confiance segmentation',
     short:
-      "Score 0-100 évaluant la fiabilité de la typologie détectée. ≥ 70 % = haute confiance · 40-69 % = moyenne, questionnaire recommandé · < 40 % = faible, questionnaire prioritaire.",
+      'Score 0-100 évaluant la fiabilité de la typologie détectée. ≥ 70 % = haute confiance · 40-69 % = moyenne, questionnaire recommandé · < 40 % = faible, questionnaire prioritaire.',
   },
   segmentation_questionnaire_progress: {
     term: 'Progression questionnaire',
     short:
-      "Pourcentage de questions de segmentation métier répondues. Un questionnaire complet permet de passer le profil de la détection automatique (NAF seul) à une segmentation affinée, augmentant la pertinence des recommandations PROMEOS.",
+      'Pourcentage de questions de segmentation métier répondues. Un questionnaire complet permet de passer le profil de la détection automatique (NAF seul) à une segmentation affinée, augmentant la pertinence des recommandations PROMEOS.',
   },
 
   // ── Base de connaissance (Lot 6 Phase 2, Pattern B pur) ─────────────────
@@ -183,7 +183,7 @@ export const GLOSSARY = {
   watcher_total_count: {
     term: 'Watchers configurés',
     short:
-      "Nombre de sources de veille réglementaire et marché actuellement surveillées par Sol. Chaque watcher interroge une source (Légifrance, CRE, RTE, agrégateurs marché) et remonte les événements pertinents.",
+      'Nombre de sources de veille réglementaire et marché actuellement surveillées par Sol. Chaque watcher interroge une source (Légifrance, CRE, RTE, agrégateurs marché) et remonte les événements pertinents.',
   },
   watcher_new_events_count: {
     term: 'Événements à réviser',
@@ -222,24 +222,24 @@ export const GLOSSARY = {
   usage_total_mwh: {
     term: 'Consommation totale',
     short:
-      "Consommation totale du patrimoine sur 12 mois glissants, toutes énergies confondues (électricité + gaz + vapeur). Agrégat summary.total_kwh normalisé en MWh.",
+      'Consommation totale du patrimoine sur 12 mois glissants, toutes énergies confondues (électricité + gaz + vapeur). Agrégat summary.total_kwh normalisé en MWh.',
   },
   usage_readiness_score: {
     term: 'Qualité segmentation',
     short:
-      "Score 0-100 mesurant la fiabilité de la segmentation par usage : présence de sous-compteurs dédiés, finesse de mesure, cohérence benchmarks. ≥ 80 = segmentation complète · 50-79 = partielle · < 50 = insuffisante.",
+      'Score 0-100 mesurant la fiabilité de la segmentation par usage : présence de sous-compteurs dédiés, finesse de mesure, cohérence benchmarks. ≥ 80 = segmentation complète · 50-79 = partielle · < 50 = insuffisante.',
   },
 
   // ── Renouvellements (Lot 2 Phase 4, Pattern B) ──────────────────────────
   renewal_imminent_count: {
     term: 'Renouvellements imminents',
     short:
-      "Nombre de contrats énergie arrivant à échéance dans une fenêtre ≤ 90 jours. Ces contrats peuvent être renégociés avant expiration pour sécuriser les conditions commerciales.",
+      'Nombre de contrats énergie arrivant à échéance dans une fenêtre ≤ 90 jours. Ces contrats peuvent être renégociés avant expiration pour sécuriser les conditions commerciales.',
   },
   renewal_readiness_score: {
     term: 'Score préparation',
     short:
-      "Moyenne des readiness_score des contrats (0-100). Indique la complétude des données fournisseur/site nécessaires pour lancer une renégociation : factures récentes, courbes de charge, profil métier. ≥ 80 = prêt ; 50-79 = partiel ; < 50 = insuffisant.",
+      'Moyenne des readiness_score des contrats (0-100). Indique la complétude des données fournisseur/site nécessaires pour lancer une renégociation : factures récentes, courbes de charge, profil métier. ≥ 80 = prêt ; 50-79 = partiel ; < 50 = insuffisant.',
   },
   renewal_expired_count: {
     term: 'Contrats expirés',
@@ -251,7 +251,7 @@ export const GLOSSARY = {
   contract_active_count: {
     term: 'Contrats actifs',
     short:
-      "Nombre de contrats énergie actuellement en vigueur dans votre portefeuille (cadres + annexes). Les contrats expirés, brouillons ou résiliés ne sont pas comptés.",
+      'Nombre de contrats énergie actuellement en vigueur dans votre portefeuille (cadres + annexes). Les contrats expirés, brouillons ou résiliés ne sont pas comptés.',
   },
   contract_total_volume_mwh: {
     term: 'Volume cumulé 12 mois',
@@ -290,12 +290,12 @@ export const GLOSSARY = {
   diagnostic_total_loss_kwh: {
     term: 'Excès énergétique',
     short:
-      "Somme des écarts de consommation détectés sur la période, exprimée en kWh. Comparaison vs baseline DJU normalisée Météo-France + profils archétypes ADEME tertiaire.",
+      'Somme des écarts de consommation détectés sur la période, exprimée en kWh. Comparaison vs baseline DJU normalisée Météo-France + profils archétypes ADEME tertiaire.',
   },
   diagnostic_sites_affected: {
     term: 'Sites concernés',
     short:
-      "Nombre de sites du périmètre actuel qui présentent au moins une anomalie active (non résolue) sur la période. Compteur réduit automatiquement quand les anomalies sont traitées.",
+      'Nombre de sites du périmètre actuel qui présentent au moins une anomalie active (non résolue) sur la période. Compteur réduit automatiquement quand les anomalies sont traitées.',
   },
 
   // ── EFA — Décret Tertiaire (Lot 3 Phase 4) ──────────────────────────────
@@ -307,19 +307,19 @@ export const GLOSSARY = {
   efa_current_year_kwh: {
     term: 'Consommation actuelle',
     short:
-      "Consommation annuelle la plus récente déclarée sur OPERAT. Peut être affichée en version brute ou normalisée DJU selon le mode de la baseline (raw_only, normalized_authoritative, mixed).",
+      'Consommation annuelle la plus récente déclarée sur OPERAT. Peut être affichée en version brute ou normalisée DJU selon le mode de la baseline (raw_only, normalized_authoritative, mixed).',
   },
   efa_target_2030_kwh: {
     term: 'Objectif 2030',
     short:
-      "Consommation cible pour 2030 : -25 % vs consommation de référence. Premier jalon du Décret Tertiaire. Les jalons suivants sont -40 % en 2040 et -50 % en 2050.",
+      'Consommation cible pour 2030 : -25 % vs consommation de référence. Premier jalon du Décret Tertiaire. Les jalons suivants sont -40 % en 2040 et -50 % en 2050.',
   },
 
   // ── RegOps (Lot 3 Phase 3) ───────────────────────────────────────────────
   operat_status: {
     term: 'Statut OPERAT',
     short:
-      "Statut du dépôt OPERAT (ADEME) pour le Décret Tertiaire. Valeurs principales : Conforme (dépôt à jour), À risque (en retard ou incomplet), Non conforme (dépôt manqué), À qualifier (évaluation en cours).",
+      'Statut du dépôt OPERAT (ADEME) pour le Décret Tertiaire. Valeurs principales : Conforme (dépôt à jour), À risque (en retard ou incomplet), Non conforme (dépôt manqué), À qualifier (évaluation en cours).',
   },
   regops_completion: {
     term: 'Complétude obligations',
@@ -329,12 +329,12 @@ export const GLOSSARY = {
   regops_penalty_eur: {
     term: 'Pénalité potentielle',
     short:
-      "Somme des pénalités financières estimées sur les findings en statut « À risque » ou « Non conforme ». Barèmes réglementaires officiels (Décret Tertiaire, BACS, APER). Indicatif, réévalué à chaque passage du moteur RegOps.",
+      'Somme des pénalités financières estimées sur les findings en statut « À risque » ou « Non conforme ». Barèmes réglementaires officiels (Décret Tertiaire, BACS, APER). Indicatif, réévalué à chaque passage du moteur RegOps.',
   },
   regops_days_remaining: {
     term: 'Jours restants',
     short:
-      "Nombre de jours calendaires avant la prochaine échéance légale du dossier. Calculé depuis la date la plus proche parmi les findings + next_deadline global.",
+      'Nombre de jours calendaires avant la prochaine échéance légale du dossier. Calculé depuis la date la plus proche parmi les findings + next_deadline global.',
   },
 
   // ── Concepts PROMEOS ───────────────────────────────────────────────────────
@@ -658,161 +658,140 @@ export const GLOSSARY = {
     term: 'Score Décret Tertiaire',
     short:
       "Score de conformité au Décret Tertiaire (Éco Énergie Tertiaire). Exprime la trajectoire vers l'objectif −25 % de consommation à horizon 2030, sur base OPERAT.",
-    long:
-      'Le score Décret Tertiaire composite pondère trois dimensions : déclaration OPERAT annuelle (30 %), trajectoire de réduction réelle vs cible (50 %), qualité des données (20 %). Un score ≥75 place le site en bonne trajectoire, 60–75 en zone de vigilance, <60 en risque de sanction. Source canonique : moteur RegAssessment (services/compliance_engine.py).',
+    long: 'Le score Décret Tertiaire composite pondère trois dimensions : déclaration OPERAT annuelle (30 %), trajectoire de réduction réelle vs cible (50 %), qualité des données (20 %). Un score ≥75 place le site en bonne trajectoire, 60–75 en zone de vigilance, <60 en risque de sanction. Source canonique : moteur RegAssessment (services/compliance_engine.py).',
   },
   compliance_score_bacs: {
     term: 'Score BACS',
     short:
-      "Score de conformité au décret BACS (Building Automation Control Systems). Obligation GTB/GTC pour bâtiments tertiaires avec CVC > 290 kW.",
-    long:
-      'Le décret BACS impose un système de gestion technique du bâtiment (GTB) classe A ou B pour les tertiaires dont la puissance des systèmes CVC dépasse 290 kW (échéance 01/01/2025) ou 70–290 kW (échéance 01/01/2030). Le score pondère : inventaire CVC (40 %), homologation GTB (40 %), reporting annuel (20 %). Source : RegAssessment bacs_v2.0.',
+      'Score de conformité au décret BACS (Building Automation Control Systems). Obligation GTB/GTC pour bâtiments tertiaires avec CVC > 290 kW.',
+    long: 'Le décret BACS impose un système de gestion technique du bâtiment (GTB) classe A ou B pour les tertiaires dont la puissance des systèmes CVC dépasse 290 kW (échéance 01/01/2025) ou 70–290 kW (échéance 01/01/2030). Le score pondère : inventaire CVC (40 %), homologation GTB (40 %), reporting annuel (20 %). Source : RegAssessment bacs_v2.0.',
   },
   compliance_score_aper: {
     term: 'Score APER',
     short:
-      "Score de conformité à la loi APER (Accélération des énergies renouvelables). Obligation solarisation des parkings extérieurs et toitures neuves/rénovées.",
-    long:
-      "La loi APER (10/03/2023) impose la solarisation des parkings > 1 500 m² (échéances 2026-2028 selon surface) et des toitures > 500 m² des bâtiments neufs/rénovés. Le score pondère : cartographie assujettissement (30 %), études techniques PV (35 %), échéancier travaux (35 %). Source : RegAssessment module aper.",
+      'Score de conformité à la loi APER (Accélération des énergies renouvelables). Obligation solarisation des parkings extérieurs et toitures neuves/rénovées.',
+    long: 'La loi APER (10/03/2023) impose la solarisation des parkings > 1 500 m² (échéances 2026-2028 selon surface) et des toitures > 500 m² des bâtiments neufs/rénovés. Le score pondère : cartographie assujettissement (30 %), études techniques PV (35 %), échéancier travaux (35 %). Source : RegAssessment module aper.',
   },
   // ── Billing Intelligence (Phase 4.2 refonte) ─────────────────────────────
   billing_total_current_month: {
     term: 'Facture énergie · mois en cours',
     short:
       "Total HT cumulé des factures d'énergie reçues pour le mois en cours, toutes énergies et tous sites confondus.",
-    long:
-      "Agrégation € HT des factures d'électricité et gaz du mois courant. Calculé sur l'assiette scope utilisateur (org/portefeuille/site). Comparé au mois précédent pour dégager une tendance. Les anomalies détectées par le shadow billing sont inclues dans ce total tant qu'elles ne sont pas contestées — elles apparaissent séparément dans le KPI Anomalies.",
+    long: "Agrégation € HT des factures d'électricité et gaz du mois courant. Calculé sur l'assiette scope utilisateur (org/portefeuille/site). Comparé au mois précédent pour dégager une tendance. Les anomalies détectées par le shadow billing sont inclues dans ce total tant qu'elles ne sont pas contestées — elles apparaissent séparément dans le KPI Anomalies.",
   },
   billing_anomalies_count: {
     term: 'Anomalies de facturation',
     short:
       "Nombre d'anomalies détectées par le moteur shadow billing, triées par impact financier. Chaque anomalie est contestable, souvent automatiquement.",
-    long:
-      "Le shadow billing reconstitue en parallèle la facture attendue à partir des consommations réelles (Enedis M023, GRDF) et des barèmes réglementaires en vigueur (TURPE 7, ATRD, accises, CTA, TVA). Écart significatif (> 1 % ou > 500 €) = anomalie. Types principaux : shadow_gap, reseau_mismatch, taxes_mismatch, unit_price_high, contract_expiry_soon. Source : services/billing_engine/.",
+    long: 'Le shadow billing reconstitue en parallèle la facture attendue à partir des consommations réelles (Enedis M023, GRDF) et des barèmes réglementaires en vigueur (TURPE 7, ATRD, accises, CTA, TVA). Écart significatif (> 1 % ou > 500 €) = anomalie. Types principaux : shadow_gap, reseau_mismatch, taxes_mismatch, unit_price_high, contract_expiry_soon. Source : services/billing_engine/.',
   },
   billing_recovery_ytd: {
     term: 'Récupéré YTD',
     short:
-      "Montant cumulé depuis le 1ᵉʳ janvier des contestations de facturation validées et remboursées par vos fournisseurs.",
-    long:
-      "Somme des avoirs correctifs reçus depuis le début de l'année courante suite à contestation. Hausse = bon (plus d'argent récupéré). Délai moyen de traitement contestation→avoir : 45 jours. Sol peut rédiger automatiquement les courriers de contestation avec délai de grâce 24 h.",
+      'Montant cumulé depuis le 1ᵉʳ janvier des contestations de facturation validées et remboursées par vos fournisseurs.',
+    long: "Somme des avoirs correctifs reçus depuis le début de l'année courante suite à contestation. Hausse = bon (plus d'argent récupéré). Délai moyen de traitement contestation→avoir : 45 jours. Sol peut rédiger automatiquement les courriers de contestation avec délai de grâce 24 h.",
   },
   // ── Patrimoine (Phase 4.3 refonte) ───────────────────────────────────────
   patrimoine_sites_count: {
     term: 'Nombre de sites',
     short:
       'Nombre de sites actifs dans votre patrimoine, tous types confondus (bureaux, entrepôts, enseignement, commerce, santé, industrie).',
-    long:
-      "Compte des entités sites actives (filtre actif=true et not_deleted). Chaque site porte sa propre surface, ses compteurs PDL, ses contrats énergie et son statut de conformité réglementaire. Source : table `sites` (backend/models/site.py) scope organisation.",
+    long: 'Compte des entités sites actives (filtre actif=true et not_deleted). Chaque site porte sa propre surface, ses compteurs PDL, ses contrats énergie et son statut de conformité réglementaire. Source : table `sites` (backend/models/site.py) scope organisation.',
   },
   patrimoine_surface_m2: {
     term: 'Surface totale',
     short:
       "Surface utile cumulée de votre patrimoine en m², base de calcul du ratio EUI et de l'assujettissement Décret Tertiaire (seuil ≥ 1 000 m²).",
-    long:
-      "Somme des champs `surface_m2` de tous les sites actifs. Unité : m² (SI). Utilisée comme dénominateur pour l'intensité énergétique (EUI kWhEF/m²/an) et comme seuil d'assujettissement Décret Tertiaire (obligatoire ≥ 1 000 m²) et APER parkings. Données renseignées lors de l'onboarding SIRENE ou saisie manuelle.",
+    long: "Somme des champs `surface_m2` de tous les sites actifs. Unité : m² (SI). Utilisée comme dénominateur pour l'intensité énergétique (EUI kWhEF/m²/an) et comme seuil d'assujettissement Décret Tertiaire (obligatoire ≥ 1 000 m²) et APER parkings. Données renseignées lors de l'onboarding SIRENE ou saisie manuelle.",
   },
   patrimoine_eui_moyen: {
     term: 'EUI moyen',
     short:
-      "Intensité énergétique moyenne du patrimoine (kWhEF/m²/an). Comparée aux benchmarks ADEME ODP 2024 par usage. Plus bas = meilleure performance.",
-    long:
-      "EUI (Energy Use Intensity) = consommation annuelle (kWhEF, énergie finale) / surface (m²). Moyenne pondérée par la surface : Σ(conso_kwh_an) / Σ(surface_m2). Benchmarks ADEME ODP 2024 par usage : bureau 210, entrepôt 80, enseignement 140, commerce 330, hôtellerie 280, industrie 180, santé 250. Un patrimoine au-dessus du benchmark signale un potentiel de réduction.",
+      'Intensité énergétique moyenne du patrimoine (kWhEF/m²/an). Comparée aux benchmarks ADEME ODP 2024 par usage. Plus bas = meilleure performance.',
+    long: 'EUI (Energy Use Intensity) = consommation annuelle (kWhEF, énergie finale) / surface (m²). Moyenne pondérée par la surface : Σ(conso_kwh_an) / Σ(surface_m2). Benchmarks ADEME ODP 2024 par usage : bureau 210, entrepôt 80, enseignement 140, commerce 330, hôtellerie 280, industrie 180, santé 250. Un patrimoine au-dessus du benchmark signale un potentiel de réduction.',
   },
   // ── Achat énergie (Phase 4.4 refonte) ────────────────────────────────────
   achat_prix_pondere: {
     term: 'Prix pondéré contracté',
     short:
-      "Coût moyen €/MWh toutes énergies et tous sites confondus, pondéré par les volumes de consommation. Base de comparaison avec le marché spot.",
-    long:
-      "Formule : Σ(prix_contrat × volume_contrat) / Σ(volume_contrat) sur la période en cours. Exprime le coût moyen effectif d'approvisionnement. Comparé au prix EPEX Spot moyen pour identifier les fenêtres d'arbitrage (renégociation, switch fournisseur, hedging forward). Ratio > 1,15 vs spot suggère une opportunité d'optimisation.",
+      'Coût moyen €/MWh toutes énergies et tous sites confondus, pondéré par les volumes de consommation. Base de comparaison avec le marché spot.',
+    long: "Formule : Σ(prix_contrat × volume_contrat) / Σ(volume_contrat) sur la période en cours. Exprime le coût moyen effectif d'approvisionnement. Comparé au prix EPEX Spot moyen pour identifier les fenêtres d'arbitrage (renégociation, switch fournisseur, hedging forward). Ratio > 1,15 vs spot suggère une opportunité d'optimisation.",
   },
   achat_echeance_contrat: {
     term: 'Échéance prochain contrat',
     short:
       "Nombre de mois avant la prochaine fin de contrat énergie dans votre portefeuille, triée par date croissante. Détermine la fenêtre d'arbitrage.",
-    long:
-      "Calculé sur le portefeuille de contrats actifs non-renouvelés automatiquement. Seuils d'action : < 90 jours → préparation urgente des scénarios RFP ; 90-180 jours → fenêtre d'arbitrage ouverte, surveillance prix marché ; > 180 jours → veille passive. Le délai de préavis contractuel (notice_period_days) est pris en compte.",
+    long: "Calculé sur le portefeuille de contrats actifs non-renouvelés automatiquement. Seuils d'action : < 90 jours → préparation urgente des scénarios RFP ; 90-180 jours → fenêtre d'arbitrage ouverte, surveillance prix marché ; > 180 jours → veille passive. Le délai de préavis contractuel (notice_period_days) est pris en compte.",
   },
   achat_scenarios_valides: {
     term: 'Scénarios validés',
     short:
       "Nombre de scénarios d'achat simulés et validés par l'utilisateur pour arbitrage (switch fournisseur, indexation, hedging).",
-    long:
-      "Chaque scénario compare un prix d'achat simulé à la situation actuelle, intègre la volatilité marché, le profil de consommation, les coûts post-ARENH. Un scénario validé est archivé avec traçabilité complète pour audit. Source : services/purchase_service.py + moteur cost_simulator.",
+    long: "Chaque scénario compare un prix d'achat simulé à la situation actuelle, intègre la volatilité marché, le profil de consommation, les coûts post-ARENH. Un scénario validé est archivé avec traçabilité complète pour audit. Source : services/purchase_service.py + moteur cost_simulator.",
   },
   // ── Command Center (Lot 1.1) ─────────────────────────────────────────────
   command_state_index: {
     term: 'Indice d\u2019état patrimoine',
     short:
       "Score composite 0-100 synthétisant conformité, performance énergétique et maîtrise facture sur l'ensemble de votre patrimoine.",
-    long:
-      "Moyenne pondérée de 3 dimensions : conformité réglementaire (40 %, via compliance_score), performance facture (30 %, écart vs shadow billing), et couverture monitoring (30 %, ratio sites surveillés actifs). Seuils : ≥75 solide, 60-75 vigilance, <60 risque. Calculé côté frontend à partir des APIs existantes, pas d'endpoint dédié.",
+    long: "Moyenne pondérée de 3 dimensions : conformité réglementaire (40 %, via compliance_score), performance facture (30 %, écart vs shadow billing), et couverture monitoring (30 %, ratio sites surveillés actifs). Seuils : ≥75 solide, 60-75 vigilance, <60 risque. Calculé côté frontend à partir des APIs existantes, pas d'endpoint dédié.",
   },
   command_alerts_count: {
     term: 'Alertes actives',
     short:
       "Nombre d'alertes critiques non résolues toutes sources confondues (conformité, facturation, consommation, achat).",
-    long:
-      "Agrégat des notifications severity critical/high non-lues sur l'ensemble des modules. Source : /api/notifications/summary. Sert de pulse du patrimoine à l'instant T. Baisse = bon signal.",
+    long: "Agrégat des notifications severity critical/high non-lues sur l'ensemble des modules. Source : /api/notifications/summary. Sert de pulse du patrimoine à l'instant T. Baisse = bon signal.",
   },
   command_sol_actions_count: {
     term: 'Actions Sol disponibles',
     short:
       "Nombre d'actions préparées par Sol (contestations facture, scénarios achat, déclarations OPERAT) en attente de validation utilisateur.",
-    long:
-      "Somme des actions générées automatiquement par les moteurs de détection + propositions agentiques. Chaque action est réversible (délai 24 h) et trace son impact financier estimé. Source : /api/actions/summary counts.open + by_source (insight + copilot + purchase).",
+    long: 'Somme des actions générées automatiquement par les moteurs de détection + propositions agentiques. Chaque action est réversible (délai 24 h) et trace son impact financier estimé. Source : /api/actions/summary counts.open + by_source (insight + copilot + purchase).',
   },
   // ── APER (Lot 1.2) ───────────────────────────────────────────────────────
   aper_eligible_sites: {
     term: 'Sites éligibles APER',
     short:
-      "Nombre de sites assujettis à la loi APER (Accélération des énergies renouvelables) : toit ≥ 500 m² OU parking ≥ 1 500 m².",
-    long:
-      "La loi APER (10/03/2023) impose la solarisation des parkings > 1 500 m² (échéances 2026-2028 selon surface) et des toitures > 500 m² des bâtiments neufs/rénovés. L'éligibilité est automatique selon les caractéristiques du bâti. Source : /api/aper/dashboard.parking + /api/aper/dashboard.roof.",
+      'Nombre de sites assujettis à la loi APER (Accélération des énergies renouvelables) : toit ≥ 500 m² OU parking ≥ 1 500 m².',
+    long: "La loi APER (10/03/2023) impose la solarisation des parkings > 1 500 m² (échéances 2026-2028 selon surface) et des toitures > 500 m² des bâtiments neufs/rénovés. L'éligibilité est automatique selon les caractéristiques du bâti. Source : /api/aper/dashboard.parking + /api/aper/dashboard.roof.",
   },
   aper_conforming_sites: {
     term: 'Sites conformes APER',
     short:
-      "Nombre de sites éligibles APER pour lesquels un projet photovoltaïque est validé, installé ou en chantier.",
-    long:
-      "Un site est conforme APER quand il dispose d'un projet PV sous DP urbanisme acceptée ou installation raccordée. Ratio conforme/éligible < 100 % avant l'échéance = obligation de rattrapage avec potentielles pénalités (non précisées dans la loi APER actuelle).",
+      'Nombre de sites éligibles APER pour lesquels un projet photovoltaïque est validé, installé ou en chantier.',
+    long: "Un site est conforme APER quand il dispose d'un projet PV sous DP urbanisme acceptée ou installation raccordée. Ratio conforme/éligible < 100 % avant l'échéance = obligation de rattrapage avec potentielles pénalités (non précisées dans la loi APER actuelle).",
   },
   aper_potential_capacity: {
     term: 'Potentiel solaire cumulé',
     short:
       "Capacité photovoltaïque théorique installable sur l'ensemble des sites éligibles, exprimée en kilowatts-crête (kWc).",
-    long:
-      "Estimation basée sur surface × facteur d'emprise (toit ≈ 0,15 kWc/m², parking ≈ 0,20 kWc/m² avec ombrières). Productible annuel moyen France 1 000-1 200 kWh/kWc selon ensoleillement (Sud > Nord). Revenus attendus : autoconsommation (économie facture) + vente surplus (tarif d'achat ou marché).",
+    long: "Estimation basée sur surface × facteur d'emprise (toit ≈ 0,15 kWc/m², parking ≈ 0,20 kWc/m² avec ombrières). Productible annuel moyen France 1 000-1 200 kWh/kWc selon ensoleillement (Sud > Nord). Revenus attendus : autoconsommation (économie facture) + vente surplus (tarif d'achat ou marché).",
   },
   // ── Monitoring Performance (Lot 1.3) ─────────────────────────────────────
   monitoring_active_sites: {
     term: 'Sites en surveillance active',
     short:
       "Nombre de sites équipés d'un monitoring consommations continu (télérelève + baseline de référence calibrée).",
-    long:
-      "Un site est en surveillance active s'il dispose d'au moins 12 mois de télérelève mensuelle + d'un modèle de référence (baseline ajustée par les degrés-jours unifiés Météo-France). Le ratio sites actifs / total sites indique la couverture du dispositif.",
+    long: "Un site est en surveillance active s'il dispose d'au moins 12 mois de télérelève mensuelle + d'un modèle de référence (baseline ajustée par les degrés-jours unifiés Météo-France). Le ratio sites actifs / total sites indique la couverture du dispositif.",
   },
   monitoring_active_alerts: {
     term: 'Alertes de dérive actives',
     short:
       "Nombre d'alertes de consommation détectées par le moteur de monitoring et non encore résolues.",
-    long:
-      "Types d'alertes : dérive baseline (>10 % écart mensuel), talon nocturne anormal, consommation week-end, surconsommation ponctuelle. Chaque alerte est enrichie d'une cause probable via les règles métier (services/monitoring_rules.py). Une alerte non résolue sous 30 jours = risque financier matérialisé.",
+    long: "Types d'alertes : dérive baseline (>10 % écart mensuel), talon nocturne anormal, consommation week-end, surconsommation ponctuelle. Chaque alerte est enrichie d'une cause probable via les règles métier (services/monitoring_rules.py). Une alerte non résolue sous 30 jours = risque financier matérialisé.",
   },
   monitoring_cumulative_drift: {
     term: 'Dérive cumulée estimée',
     short:
-      "Coût annualisé estimé des dérives de consommation non-traitées, exprimé en euros par an.",
-    long:
-      "Somme des impacts financiers de chaque alerte active × coefficient de persistance (90 jours → 365 jours). Calculé via prix moyen €/kWh × excès kWh estimé par règle. Un patrimoine avec dérive cumulée > 5 % de la facture annuelle signale une opportunité d'optimisation immédiate.",
+      'Coût annualisé estimé des dérives de consommation non-traitées, exprimé en euros par an.',
+    long: "Somme des impacts financiers de chaque alerte active × coefficient de persistance (90 jours → 365 jours). Calculé via prix moyen €/kWh × excès kWh estimé par règle. Un patrimoine avec dérive cumulée > 5 % de la facture annuelle signale une opportunité d'optimisation immédiate.",
   },
 
   // ── Compliance Pipeline (Lot 6 Phase 5, Pattern B) ──────────────────────
   pipeline_sites_ready: {
     term: 'Sites prêts',
     short:
-      "Nombre de sites du portefeuille dont la gate data conformité est OK (toutes données obligatoires DT/BACS/APER renseignées). Ratio lu depuis `kpis.data_ready / total_sites` de /api/compliance/portfolio/summary — pas de recompute côté front.",
+      'Nombre de sites du portefeuille dont la gate data conformité est OK (toutes données obligatoires DT/BACS/APER renseignées). Ratio lu depuis `kpis.data_ready / total_sites` de /api/compliance/portfolio/summary — pas de recompute côté front.',
   },
   pipeline_deadlines_d30: {
     term: 'Échéances < 30 j',
@@ -832,6 +811,6 @@ export const GLOSSARY = {
   pipeline_applicability_frameworks: {
     term: 'Frameworks applicables',
     short:
-      "Règles applicables par site : Décret Tertiaire (≥ 1 000 m²) · BACS (CVC > 290 kW) · APER (parkings ≥ 1 500 m² ou toitures ≥ 500 m²). Booléens backend dérivés du patrimoine (surface, puissance CVC, parking).",
+      'Règles applicables par site : Décret Tertiaire (≥ 1 000 m²) · BACS (CVC > 290 kW) · APER (parkings ≥ 1 500 m² ou toitures ≥ 500 m²). Booléens backend dérivés du patrimoine (surface, puissance CVC, parking).',
   },
 };

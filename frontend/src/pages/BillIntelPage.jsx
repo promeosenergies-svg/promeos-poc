@@ -565,8 +565,8 @@ export default function BillIntelPage() {
         titleEm=" — vérifiées, recalculées, expliquées"
         narrative={
           <>
-            Chaque facture est recalculée côté PROMEOS à partir de vos consommations — <em>les
-            écarts sont détectés automatiquement</em>.
+            Chaque facture est recalculée côté PROMEOS à partir de vos consommations —{' '}
+            <em>les écarts sont détectés automatiquement</em>.
           </>
         }
         subNarrative="Si un fournisseur a oublié une bascule d'accise ou appliqué le mauvais taux CTA, vous le verrez ici avant même qu'il s'en rende compte."

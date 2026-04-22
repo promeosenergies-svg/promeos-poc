@@ -16,9 +16,9 @@ import SolSourceChip from './SolSourceChip';
 // - score        : hausse = bon (vert), baisse = mauvais (orange)
 // - neutral      : gris mono, pas de jugement
 const SEMANTIC_TONE = {
-  cost:    { up: 'bad',  down: 'good' },
-  conso:   { up: 'bad',  down: 'good' },
-  score:   { up: 'good', down: 'bad'  },
+  cost: { up: 'bad', down: 'good' },
+  conso: { up: 'bad', down: 'good' },
+  score: { up: 'good', down: 'bad' },
   neutral: { up: 'neutral', down: 'neutral' },
 };
 
@@ -70,11 +70,7 @@ export default function SolKpiCard({
       >
         <span>{label}</span>
         {explainKey && (
-          <Explain
-            term={explainKey}
-            position="bottom"
-            className="sol-kpi-explain"
-          >
+          <Explain term={explainKey} position="bottom" className="sol-kpi-explain">
             <span
               aria-label="Voir la d\u00e9finition"
               style={{

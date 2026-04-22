@@ -80,7 +80,14 @@ describe('formatEfaCount', () => {
     expect(k.tone).toBe('attention');
   });
   it('tone refuse si zéro active', () => {
-    const k = formatEfaCount({ total_efa: 3, active: 0, draft: 3, closed: 0, open_issues: 0, critical_issues: 0 });
+    const k = formatEfaCount({
+      total_efa: 3,
+      active: 0,
+      draft: 3,
+      closed: 0,
+      open_issues: 0,
+      critical_issues: 0,
+    });
     expect(k.tone).toBe('refuse');
   });
 });
@@ -111,7 +118,14 @@ describe('buildKickerText', () => {
     expect(k).toContain('EFA');
   });
   it('singulier vs pluriel', () => {
-    const k = buildKickerText({ total_efa: 1, active: 1, draft: 0, closed: 0, open_issues: 0, critical_issues: 0 });
+    const k = buildKickerText({
+      total_efa: 1,
+      active: 1,
+      draft: 0,
+      closed: 0,
+      open_issues: 0,
+      critical_issues: 0,
+    });
     expect(k).toContain('1');
     expect(k).toContain('ENREGISTRÉE');
     expect(k).not.toContain('ENREGISTRÉES');
@@ -158,10 +172,14 @@ describe('interpret*', () => {
 
 describe('resolveTooltipExplain', () => {
   it('route vers le bon interpret par code KPI', () => {
-    expect(resolveTooltipExplain('efa_count', DASHBOARD_FULL)).toMatch(/brouillons|clôturée|Suivi/i);
+    expect(resolveTooltipExplain('efa_count', DASHBOARD_FULL)).toMatch(
+      /brouillons|clôturée|Suivi/i
+    );
     expect(resolveTooltipExplain('open_issues', DASHBOARD_FULL)).toMatch(/critique|problème/i);
     expect(resolveTooltipExplain('critical_issues', DASHBOARD_FULL)).toMatch(/priorité|critique/i);
-    expect(resolveTooltipExplain('deadline_operat', DASHBOARD_FULL, '2026-09-30')).toMatch(/OPERAT|échéance|préparation|confortable/i);
+    expect(resolveTooltipExplain('deadline_operat', DASHBOARD_FULL, '2026-09-30')).toMatch(
+      /OPERAT|échéance|préparation|confortable/i
+    );
   });
   it('string vide si code inconnu', () => {
     expect(resolveTooltipExplain('unknown_kpi', DASHBOARD_FULL)).toBe('');
@@ -232,10 +250,14 @@ describe('interpretDeadlineOperat adaptive', () => {
     expect(interpretDeadlineOperat(DASHBOARD_FULL, daysFromNow(30))).toMatch(/imminente|tarder/i);
   });
   it('< 180 j → fenêtre préparation', () => {
-    expect(interpretDeadlineOperat(DASHBOARD_FULL, daysFromNow(120))).toMatch(/préparation|centralisez/i);
+    expect(interpretDeadlineOperat(DASHBOARD_FULL, daysFromNow(120))).toMatch(
+      /préparation|centralisez/i
+    );
   });
   it('≥ 180 j → délai confortable', () => {
-    expect(interpretDeadlineOperat(DASHBOARD_FULL, daysFromNow(300))).toMatch(/confortable|consolidation/i);
+    expect(interpretDeadlineOperat(DASHBOARD_FULL, daysFromNow(300))).toMatch(
+      /confortable|consolidation/i
+    );
   });
 });
 

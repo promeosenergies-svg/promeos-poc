@@ -234,7 +234,14 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
                   }}
                 />
                 <RTooltip />
-                <Area type="monotone" dataKey="kwh" stroke="#0F172A" fill="#E3F0ED" strokeWidth={1.8} name="kWh" />
+                <Area
+                  type="monotone"
+                  dataKey="kwh"
+                  stroke="#0F172A"
+                  fill="#E3F0ED"
+                  strokeWidth={1.8}
+                  name="kWh"
+                />
               </AreaChart>
             </ResponsiveContainer>
             <p className="text-[10px] text-gray-400 mt-1">

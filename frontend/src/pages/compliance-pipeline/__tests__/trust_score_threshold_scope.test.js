@@ -84,9 +84,9 @@ describe('trust_score threshold scope guard (Phase 5 Lot 6)', () => {
     // trust_score peut être AFFICHÉ (ex : badge "Confiance 32%") mais
     // jamais comparé à un seuil littéral côté front.
     const allowedReads = [
-      'site.trust_score',       // display numérique
-      'site.anomaly_count',     // display numérique
-      'site.reasons',           // array display
+      'site.trust_score', // display numérique
+      'site.anomaly_count', // display numérique
+      'site.reasons', // array display
       'untrusted_sites.length', // count agrégat
     ];
     expect(allowedReads.length).toBe(4);

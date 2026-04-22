@@ -302,7 +302,8 @@ export default function KBExplorerPage() {
                 color: 'var(--sol-attention-fg)',
               }}
             >
-              <strong>Contexte preuve</strong> · domaine {proofContext.domain || '—'} · lever {proofContext.lever || '—'}
+              <strong>Contexte preuve</strong> · domaine {proofContext.domain || '—'} · lever{' '}
+              {proofContext.lever || '—'}
               {proofContext.efa_id ? ` · EFA ${proofContext.efa_id}` : ''}
               {proofContext.action_id ? ` · action ${proofContext.action_id}` : ''}
             </div>
@@ -313,327 +314,336 @@ export default function KBExplorerPage() {
       {/* Legacy body préservé mort pour rollback */}
       {false && (
         <>
-      {/* KB unavailable fallback banner */}
-      {kbError === 'kb_unavailable' && (
-        <Card className="bg-amber-50 border-amber-200">
-          <CardBody className="flex items-center gap-3 py-3">
-            <AlertTriangle size={20} className="text-amber-600 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-800">Mode démo — données locales</p>
-              <p className="text-xs text-amber-600">
-                La base de connaissances est chargée localement. Toutes les fonctionnalités sont
-                disponibles.
-              </p>
-            </div>
-          </CardBody>
-        </Card>
-      )}
+          {/* KB unavailable fallback banner */}
+          {kbError === 'kb_unavailable' && (
+            <Card className="bg-amber-50 border-amber-200">
+              <CardBody className="flex items-center gap-3 py-3">
+                <AlertTriangle size={20} className="text-amber-600 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800">Mode démo — données locales</p>
+                  <p className="text-xs text-amber-600">
+                    La base de connaissances est chargée localement. Toutes les fonctionnalités sont
+                    disponibles.
+                  </p>
+                </div>
+              </CardBody>
+            </Card>
+          )}
 
-      {/* V39.1: Proof context banner */}
-      {proofContext && (
-        <div
-          className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-indigo-200 bg-indigo-50/60"
-          data-testid="proof-context-banner"
-        >
-          <Upload size={16} className="text-indigo-500 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-indigo-800">
-              Preuve attendue
-              {proofContext.domain && (
-                <span className="text-indigo-500 font-normal">
-                  {' '}
-                  — Domaine :{' '}
-                  {proofContext.domain
-                    .replace('conformite/', 'Conformité / ')
-                    .replace('tertiaire-operat', 'Tertiaire OPERAT')}
-                </span>
-              )}
-            </p>
-            {proofContext.proof_type && (
-              <p
-                className="text-[11px] text-indigo-700 font-medium mt-0.5"
-                data-testid="proof-type-label"
-              >
-                Type : {proofContext.proof_type.replace(/_/g, ' ')}
-                {proofContext.efa_id && (
-                  <span className="text-indigo-500 font-normal"> · EFA #{proofContext.efa_id}</span>
-                )}
-              </p>
-            )}
-            {proofContext.hint && (
-              <p className="text-[11px] text-indigo-600 truncate mt-0.5">{proofContext.hint}</p>
-            )}
-            {/* V49: Close rule reminder */}
-            {proofContext.action_id && (
-              <p className="text-[10px] text-indigo-400 mt-0.5" data-testid="v49-close-rule-hint">
-                Une preuve validée permet de clôturer cette action.
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {/* V47: Retour à l'action */}
-            {proofContext.action_id && (
-              <button
-                onClick={() => navigate(`/actions?detail=${proofContext.action_id}`)}
-                className="flex items-center gap-1 text-[11px] font-medium text-indigo-700 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 px-2 py-1 rounded transition"
-                data-testid="btn-return-action"
-              >
-                <ArrowLeft size={12} />
-                Retour à l'action
-              </button>
-            )}
-            <button
-              onClick={clearProofContext}
-              className="flex items-center gap-1 text-[11px] text-indigo-600 hover:text-indigo-800"
-              aria-label="Effacer les filtres de preuve"
+          {/* V39.1: Proof context banner */}
+          {proofContext && (
+            <div
+              className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-indigo-200 bg-indigo-50/60"
+              data-testid="proof-context-banner"
             >
-              <X size={12} />
-              Effacer filtres
+              <Upload size={16} className="text-indigo-500 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-indigo-800">
+                  Preuve attendue
+                  {proofContext.domain && (
+                    <span className="text-indigo-500 font-normal">
+                      {' '}
+                      — Domaine :{' '}
+                      {proofContext.domain
+                        .replace('conformite/', 'Conformité / ')
+                        .replace('tertiaire-operat', 'Tertiaire OPERAT')}
+                    </span>
+                  )}
+                </p>
+                {proofContext.proof_type && (
+                  <p
+                    className="text-[11px] text-indigo-700 font-medium mt-0.5"
+                    data-testid="proof-type-label"
+                  >
+                    Type : {proofContext.proof_type.replace(/_/g, ' ')}
+                    {proofContext.efa_id && (
+                      <span className="text-indigo-500 font-normal">
+                        {' '}
+                        · EFA #{proofContext.efa_id}
+                      </span>
+                    )}
+                  </p>
+                )}
+                {proofContext.hint && (
+                  <p className="text-[11px] text-indigo-600 truncate mt-0.5">{proofContext.hint}</p>
+                )}
+                {/* V49: Close rule reminder */}
+                {proofContext.action_id && (
+                  <p
+                    className="text-[10px] text-indigo-400 mt-0.5"
+                    data-testid="v49-close-rule-hint"
+                  >
+                    Une preuve validée permet de clôturer cette action.
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {/* V47: Retour à l'action */}
+                {proofContext.action_id && (
+                  <button
+                    onClick={() => navigate(`/actions?detail=${proofContext.action_id}`)}
+                    className="flex items-center gap-1 text-[11px] font-medium text-indigo-700 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 px-2 py-1 rounded transition"
+                    data-testid="btn-return-action"
+                  >
+                    <ArrowLeft size={12} />
+                    Retour à l'action
+                  </button>
+                )}
+                <button
+                  onClick={clearProofContext}
+                  className="flex items-center gap-1 text-[11px] text-indigo-600 hover:text-indigo-800"
+                  aria-label="Effacer les filtres de preuve"
+                >
+                  <X size={12} />
+                  Effacer filtres
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* V38: Tab switcher — Items vs Documents */}
+          <div className="flex border-b border-gray-200" data-testid="memobox-tabs">
+            <button
+              onClick={() => setActiveTab('items')}
+              className={`px-4 py-2 text-sm font-medium transition ${
+                activeTab === 'items'
+                  ? 'border-b-2 border-blue-500 text-blue-700'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Règles & Connaissances
+            </button>
+            <button
+              onClick={() => setActiveTab('docs')}
+              className={`px-4 py-2 text-sm font-medium transition ${
+                activeTab === 'docs'
+                  ? 'border-b-2 border-blue-500 text-blue-700'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Documents
             </button>
           </div>
-        </div>
-      )}
 
-      {/* V38: Tab switcher — Items vs Documents */}
-      <div className="flex border-b border-gray-200" data-testid="memobox-tabs">
-        <button
-          onClick={() => setActiveTab('items')}
-          className={`px-4 py-2 text-sm font-medium transition ${
-            activeTab === 'items'
-              ? 'border-b-2 border-blue-500 text-blue-700'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Règles & Connaissances
-        </button>
-        <button
-          onClick={() => setActiveTab('docs')}
-          className={`px-4 py-2 text-sm font-medium transition ${
-            activeTab === 'docs'
-              ? 'border-b-2 border-blue-500 text-blue-700'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Documents
-        </button>
-      </div>
+          {/* ═══ Items Tab ═══ */}
+          {activeTab === 'items' && (
+            <>
+              {/* Search bar */}
+              <div className="relative">
+                <Search
+                  size={18}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Rechercher : BACS 290 kW, décret tertiaire, autoconsommation..."
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                />
+              </div>
 
-      {/* ═══ Items Tab ═══ */}
-      {activeTab === 'items' && (
-        <>
-          {/* Search bar */}
-          <div className="relative">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Rechercher : BACS 290 kW, décret tertiaire, autoconsommation..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
-            />
-          </div>
-
-          {/* Domain tabs */}
-          <div className="flex items-center gap-1 flex-wrap">
-            {DOMAIN_TABS.map(({ key, label, icon: Icon }) => (
-              <button
-                key={label}
-                onClick={() => setDomain(key)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition
+              {/* Domain tabs */}
+              <div className="flex items-center gap-1 flex-wrap">
+                {DOMAIN_TABS.map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={label}
+                    onClick={() => setDomain(key)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition
                   ${
                     domain === key
                       ? 'bg-blue-100 text-blue-700'
                       : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                   }`}
-              >
-                <Icon size={14} />
-                {label}
-                {stats && key && (
-                  <span className="text-xs opacity-60">({stats.by_domain?.[key] || 0})</span>
-                )}
-              </button>
-            ))}
+                  >
+                    <Icon size={14} />
+                    {label}
+                    {stats && key && (
+                      <span className="text-xs opacity-60">({stats.by_domain?.[key] || 0})</span>
+                    )}
+                  </button>
+                ))}
 
-            {/* Type filter */}
-            <div className="ml-auto flex items-center gap-1">
-              <Filter size={14} className="text-gray-400" />
-              {Object.entries(TYPE_LABELS).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => setTypeFilter(typeFilter === key ? null : key)}
-                  className={`px-2 py-1 rounded text-xs font-medium transition
+                {/* Type filter */}
+                <div className="ml-auto flex items-center gap-1">
+                  <Filter size={14} className="text-gray-400" />
+                  {Object.entries(TYPE_LABELS).map(([key, label]) => (
+                    <button
+                      key={key}
+                      onClick={() => setTypeFilter(typeFilter === key ? null : key)}
+                      className={`px-2 py-1 rounded text-xs font-medium transition
                     ${
                       typeFilter === key
                         ? 'bg-blue-100 text-blue-700'
                         : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                     }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Results */}
-          {loading && (
-            <div className="text-center py-8 text-gray-400 text-sm">Recherche en cours...</div>
-          )}
-
-          {!loading && results.length === 0 && query && (
-            <Card>
-              <CardBody className="text-center py-8">
-                <BookOpen size={32} className="text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">Aucun résultat pour &quot;{query}&quot;</p>
-              </CardBody>
-            </Card>
-          )}
-
-          {!loading && results.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs text-gray-400">{results.length} résultats</p>
-              {results.map((item) => (
-                <KBItemCard
-                  key={item.id}
-                  item={item}
-                  expanded={expandedId === item.id}
-                  onToggle={() => toggleExpand(item.id)}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Initial state */}
-          {!loading && results.length === 0 && !query && (
-            <Card>
-              <CardBody className="text-center py-12">
-                <BookOpen size={40} className="text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                  Explorez la base de connaissances
-                </h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Recherchez par mot-clé ou filtrez par domaine pour découvrir les règles,
-                  obligations et recommandations.
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  {[
-                    'BACS 290 kW',
-                    'décret tertiaire',
-                    'autoconsommation',
-                    'OPERAT',
-                    'flexibilité',
-                    'ARENH',
-                  ].map((q) => (
-                    <button
-                      key={q}
-                      onClick={() => setQuery(q)}
-                      className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition"
                     >
-                      {q}
+                      {label}
                     </button>
                   ))}
                 </div>
-              </CardBody>
-            </Card>
+              </div>
+
+              {/* Results */}
+              {loading && (
+                <div className="text-center py-8 text-gray-400 text-sm">Recherche en cours...</div>
+              )}
+
+              {!loading && results.length === 0 && query && (
+                <Card>
+                  <CardBody className="text-center py-8">
+                    <BookOpen size={32} className="text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">Aucun résultat pour &quot;{query}&quot;</p>
+                  </CardBody>
+                </Card>
+              )}
+
+              {!loading && results.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-400">{results.length} résultats</p>
+                  {results.map((item) => (
+                    <KBItemCard
+                      key={item.id}
+                      item={item}
+                      expanded={expandedId === item.id}
+                      onToggle={() => toggleExpand(item.id)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Initial state */}
+              {!loading && results.length === 0 && !query && (
+                <Card>
+                  <CardBody className="text-center py-12">
+                    <BookOpen size={40} className="text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                      Explorez la base de connaissances
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Recherchez par mot-clé ou filtrez par domaine pour découvrir les règles,
+                      obligations et recommandations.
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      {[
+                        'BACS 290 kW',
+                        'décret tertiaire',
+                        'autoconsommation',
+                        'OPERAT',
+                        'flexibilité',
+                        'ARENH',
+                      ].map((q) => (
+                        <button
+                          key={q}
+                          onClick={() => setQuery(q)}
+                          className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition"
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </CardBody>
+                </Card>
+              )}
+            </>
           )}
-        </>
-      )}
 
-      {/* ═══ Documents Tab (V38) ═══ */}
-      {activeTab === 'docs' && (
-        <div className="space-y-3" data-testid="docs-tab">
-          {/* Upload zone */}
-          <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer hover:border-blue-400 transition bg-white">
-            <Upload size={20} className="text-gray-400" />
-            <span className="text-sm text-gray-500">
-              Déposer un document (PDF, HTML, MD, TXT — max 10 Mo)
-            </span>
-            <input
-              type="file"
-              className="hidden"
-              accept=".pdf,.html,.htm,.md,.txt"
-              onChange={handleUpload}
-              data-testid="upload-input"
-            />
-          </label>
+          {/* ═══ Documents Tab (V38) ═══ */}
+          {activeTab === 'docs' && (
+            <div className="space-y-3" data-testid="docs-tab">
+              {/* Upload zone */}
+              <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer hover:border-blue-400 transition bg-white">
+                <Upload size={20} className="text-gray-400" />
+                <span className="text-sm text-gray-500">
+                  Déposer un document (PDF, HTML, MD, TXT — max 10 Mo)
+                </span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.html,.htm,.md,.txt"
+                  onChange={handleUpload}
+                  data-testid="upload-input"
+                />
+              </label>
 
-          {/* Upload feedback */}
-          {uploadMsg && (
-            <div
-              className={`text-xs px-3 py-2 rounded-lg ${
-                uploadMsg.type === 'ok'
-                  ? 'bg-green-50 text-green-700'
-                  : uploadMsg.type === 'info'
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'bg-red-50 text-red-700'
-              }`}
-            >
-              {uploadMsg.text}
-            </div>
-          )}
+              {/* Upload feedback */}
+              {uploadMsg && (
+                <div
+                  className={`text-xs px-3 py-2 rounded-lg ${
+                    uploadMsg.type === 'ok'
+                      ? 'bg-green-50 text-green-700'
+                      : uploadMsg.type === 'info'
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'bg-red-50 text-red-700'
+                  }`}
+                >
+                  {uploadMsg.text}
+                </div>
+              )}
 
-          {/* Domain filter for docs */}
-          <div className="flex items-center gap-1 flex-wrap">
-            {DOMAIN_TABS.map(({ key, label, icon: Icon }) => (
-              <button
-                key={label}
-                onClick={() => setDomain(key)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition
+              {/* Domain filter for docs */}
+              <div className="flex items-center gap-1 flex-wrap">
+                {DOMAIN_TABS.map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={label}
+                    onClick={() => setDomain(key)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition
                   ${
                     domain === key
                       ? 'bg-blue-100 text-blue-700'
                       : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                   }`}
-              >
-                <Icon size={14} />
-                {label}
-              </button>
-            ))}
-          </div>
+                  >
+                    <Icon size={14} />
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-          {/* Docs list */}
-          {docsLoading && (
-            <div className="text-center py-8 text-gray-400 text-sm">
-              Chargement des documents...
+              {/* Docs list */}
+              {docsLoading && (
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  Chargement des documents...
+                </div>
+              )}
+
+              {!docsLoading && docs.length === 0 && (
+                <Card>
+                  <CardBody className="text-center py-8">
+                    <FileText size={32} className="text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">Aucun document déposé</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Utilisez la zone ci-dessus pour déposer un fichier
+                    </p>
+                  </CardBody>
+                </Card>
+              )}
+
+              {!docsLoading && docs.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-400">
+                    {docs.length} document{docs.length > 1 ? 's' : ''}
+                  </p>
+                  {docs.map((doc) => (
+                    <DocCard
+                      key={doc.doc_id}
+                      doc={doc}
+                      onStatusChange={handleStatusChange}
+                      proofContext={proofContext}
+                      onLinkMsg={setUploadMsg}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {!docsLoading && docs.length === 0 && (
-            <Card>
-              <CardBody className="text-center py-8">
-                <FileText size={32} className="text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">Aucun document déposé</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Utilisez la zone ci-dessus pour déposer un fichier
-                </p>
-              </CardBody>
-            </Card>
-          )}
-
-          {!docsLoading && docs.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs text-gray-400">
-                {docs.length} document{docs.length > 1 ? 's' : ''}
-              </p>
-              {docs.map((doc) => (
-                <DocCard
-                  key={doc.doc_id}
-                  doc={doc}
-                  onStatusChange={handleStatusChange}
-                  proofContext={proofContext}
-                  onLinkMsg={setUploadMsg}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Footer */}
-      <TrustBadge
-        source="PROMEOS Mémobox"
-        period={stats ? `${stats.total_items} items de connaissance` : '…'}
-        confidence="high"
-      />
+          {/* Footer */}
+          <TrustBadge
+            source="PROMEOS Mémobox"
+            period={stats ? `${stats.total_items} items de connaissance` : '…'}
+            confidence="high"
+          />
         </>
       )}
     </PageShell>

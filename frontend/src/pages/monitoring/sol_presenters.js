@@ -14,13 +14,7 @@
  *
  * Zéro endpoint dédié monitoring-summary, calculs agrégés côté frontend.
  */
-import {
-  NBSP,
-  formatFR,
-  formatFREur,
-  computeDelta,
-  freshness,
-} from '../cockpit/sol_presenters';
+import { NBSP, formatFR, formatFREur, computeDelta, freshness } from '../cockpit/sol_presenters';
 import { businessErrorFallback } from '../../i18n/business_errors';
 
 export { NBSP };
@@ -39,7 +33,12 @@ export function buildMonitoringKicker({ scope } = {}) {
   return `Monitoring performance · ${orgName}${sitesSuffix}`;
 }
 
-export function buildMonitoringNarrative({ alertsCount, totalImpact, activeSites, totalSites } = {}) {
+export function buildMonitoringNarrative({
+  alertsCount,
+  totalImpact,
+  activeSites,
+  totalSites,
+} = {}) {
   if (activeSites == null && alertsCount == null) {
     return "Le monitoring s'active dès qu'un site reçoit 12 mois de télérelève. Sol calibre la baseline de référence automatiquement.";
   }
@@ -48,9 +47,8 @@ export function buildMonitoringNarrative({ alertsCount, totalImpact, activeSites
     return `Tous vos sites respectent leur baseline DJU. Aucune dérive active${activeSites ? ` sur ${activeSites}${NBSP}site${activeSites > 1 ? 's' : ''} surveillés` : ''}.`;
   }
 
-  const impactClause = totalImpact > 0
-    ? ` · impact annualisé estimé ${formatFREur(totalImpact, 0)}/an`
-    : '';
+  const impactClause =
+    totalImpact > 0 ? ` · impact annualisé estimé ${formatFREur(totalImpact, 0)}/an` : '';
   return `${alertsCount}${NBSP}dérive${alertsCount > 1 ? 's' : ''} active${alertsCount > 1 ? 's' : ''} détectée${alertsCount > 1 ? 's' : ''}${impactClause}. Sol identifie les causes probables et propose des plans d'action.`;
 }
 
@@ -58,7 +56,8 @@ export function buildMonitoringSubNarrative({ totalSites, coverage } = {}) {
   const parts = [];
   if (coverage != null) parts.push(`${coverage}${NBSP}% de couverture monitoring`);
   if (totalSites > 0) parts.push(`baseline DJU normalisée Météo-France`);
-  if (parts.length === 0) return "Sources : EMS télérelève + Météo-France + règles métier services/monitoring_rules.py.";
+  if (parts.length === 0)
+    return 'Sources : EMS télérelève + Météo-France + règles métier services/monitoring_rules.py.';
   return `${parts.join(' · ')}. Sources : EMS télérelève + Météo-France + règles métier.`;
 }
 
@@ -67,29 +66,33 @@ export function buildMonitoringSubNarrative({ totalSites, coverage } = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function interpretMonitoringSites({ activeSites, totalSites } = {}) {
-  if (!totalSites) return "Aucun site dans votre portefeuille.";
-  if (activeSites === totalSites) return `Couverture complète · baseline ajustée DJU sur ${totalSites}${NBSP}site${totalSites > 1 ? 's' : ''}.`;
+  if (!totalSites) return 'Aucun site dans votre portefeuille.';
+  if (activeSites === totalSites)
+    return `Couverture complète · baseline ajustée DJU sur ${totalSites}${NBSP}site${totalSites > 1 ? 's' : ''}.`;
   return `${activeSites}/${totalSites} sites instrumentés · ${totalSites - activeSites} à calibrer.`;
 }
 
 export function interpretMonitoringAlerts({ alertsCount, bySeverity, topAlert } = {}) {
-  if (!alertsCount) return "Aucune dérive active sur les 30 derniers jours.";
+  if (!alertsCount) return 'Aucune dérive active sur les 30 derniers jours.';
   const parts = [];
-  if (bySeverity?.critical > 0) parts.push(`${bySeverity.critical}${NBSP}critique${bySeverity.critical > 1 ? 's' : ''}`);
-  if (bySeverity?.high > 0) parts.push(`${bySeverity.high}${NBSP}haute${bySeverity.high > 1 ? 's' : ''}`);
+  if (bySeverity?.critical > 0)
+    parts.push(`${bySeverity.critical}${NBSP}critique${bySeverity.critical > 1 ? 's' : ''}`);
+  if (bySeverity?.high > 0)
+    parts.push(`${bySeverity.high}${NBSP}haute${bySeverity.high > 1 ? 's' : ''}`);
   if (bySeverity?.warning > 0) parts.push(`${bySeverity.warning}${NBSP}vigilance`);
   const severities = parts.join(' · ');
   if (topAlert?.explanation) {
-    const short = topAlert.explanation.length > 80
-      ? topAlert.explanation.slice(0, 80) + '…'
-      : topAlert.explanation;
+    const short =
+      topAlert.explanation.length > 80
+        ? topAlert.explanation.slice(0, 80) + '…'
+        : topAlert.explanation;
     return `${severities}. Plus récente : ${short}`;
   }
   return severities || `${alertsCount} dérives à traiter.`;
 }
 
 export function interpretMonitoringDrift({ totalImpact, topContributors } = {}) {
-  if (!totalImpact) return "Aucun impact financier matérialisé.";
+  if (!totalImpact) return 'Aucun impact financier matérialisé.';
   const drivers = (topContributors || []).slice(0, 2).map((c) => c.site_nom || `site ${c.site_id}`);
   if (drivers.length === 2) {
     return `${formatFREur(totalImpact, 0)}/an en jeu · top contributeurs : ${drivers[0]} et ${drivers[1]}.`;
@@ -148,9 +151,18 @@ export function enrichAlertsWithSites(alerts, sites) {
 export function adaptCompareToTrajectory(compare) {
   if (!compare || !Array.isArray(compare.months)) return [];
   const MONTH_KEYS = {
-    Janv: '2026-01', Fév: '2026-02', Mars: '2026-03', Avr: '2026-04',
-    Mai: '2026-05', Juin: '2026-06', Juil: '2026-07', Août: '2026-08',
-    Sept: '2026-09', Oct: '2026-10', Nov: '2026-11', Déc: '2026-12',
+    Janv: '2026-01',
+    Fév: '2026-02',
+    Mars: '2026-03',
+    Avr: '2026-04',
+    Mai: '2026-05',
+    Juin: '2026-06',
+    Juil: '2026-07',
+    Août: '2026-08',
+    Sept: '2026-09',
+    Oct: '2026-10',
+    Nov: '2026-11',
+    Déc: '2026-12',
   };
   return compare.months
     .map((m) => {
@@ -197,7 +209,8 @@ export function buildMonitoringWeekCards({ alerts = [], onNavigateSite = null } 
       title: `${labelAlertType(urgent.alert_type)} · ${urgent.site_nom || 'site ' + urgent.site_id}`,
       body: urgent.explanation || 'Dérive détectée sur la consommation.',
       footerLeft: impact > 0 ? `impact ${formatFREur(impact, 0)}/an` : '',
-      footerRight: urgent.severity === 'critical' ? 'Critique' : urgent.severity === 'high' ? 'Haute' : '⌘K',
+      footerRight:
+        urgent.severity === 'critical' ? 'Critique' : urgent.severity === 'high' ? 'Haute' : '⌘K',
       onClick: onNavigateSite ? () => onNavigateSite(urgent.site_id) : undefined,
     });
   } else {

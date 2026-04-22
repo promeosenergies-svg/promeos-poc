@@ -101,7 +101,9 @@ export function buildWatchersNarrative({ watchers = [], events = [] } = {}) {
     return 'Aucun watcher configuré. Créez votre premier watcher pour activer la veille réglementaire et marché.';
   }
 
-  const parts = [`${nbWatchers}${NBSP}watcher${nbWatchers > 1 ? 's' : ''} configuré${nbWatchers > 1 ? 's' : ''}`];
+  const parts = [
+    `${nbWatchers}${NBSP}watcher${nbWatchers > 1 ? 's' : ''} configuré${nbWatchers > 1 ? 's' : ''}`,
+  ];
   if (count30d > 0) {
     parts.push(`${count30d}${NBSP}événement${count30d > 1 ? 's' : ''} captés sur 30${NBSP}jours`);
   }
@@ -128,7 +130,7 @@ export function buildWatchersSubNarrative({ events = [] } = {}) {
   const head = parts.length > 0 ? `Historique : ${parts.join(' · ')}. ` : '';
   return (
     head +
-    'Sources : Légifrance, CRE, RTE + agrégateurs marché. Stockage minimal (hash + snippet 500 chars, droits d\'auteur respectés).'
+    "Sources : Légifrance, CRE, RTE + agrégateurs marché. Stockage minimal (hash + snippet 500 chars, droits d'auteur respectés)."
   );
 }
 
@@ -139,7 +141,7 @@ export function buildWatchersSubNarrative({ events = [] } = {}) {
 export function interpretWatchersCount({ watchers = [] } = {}) {
   const n = watchers.length;
   if (n === 0) return 'Aucun watcher configuré — créer via bouton Nouveau.';
-  if (n <= 3) return 'Couverture minimale — envisager d\'ajouter des sources complémentaires.';
+  if (n <= 3) return "Couverture minimale — envisager d'ajouter des sources complémentaires.";
   return 'Couverture veille active sur sources multiples.';
 }
 
@@ -190,9 +192,15 @@ export function filterRows(rows, { search, source, status } = {}) {
     const q = search.toLowerCase();
     r = r.filter(
       (x) =>
-        String(x.cells.title || '').toLowerCase().includes(q) ||
-        String(x.cells.source_name || '').toLowerCase().includes(q) ||
-        String(x.cells.tags || '').toLowerCase().includes(q)
+        String(x.cells.title || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(x.cells.source_name || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(x.cells.tags || '')
+          .toLowerCase()
+          .includes(q)
     );
   }
   return r;

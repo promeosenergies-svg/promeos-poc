@@ -122,9 +122,7 @@ export default function SolDetailPage({
           alignItems: 'flex-start',
         }}
       >
-        <div style={{ position: 'sticky', top: 16, alignSelf: 'flex-start' }}>
-          {entityCard}
-        </div>
+        <div style={{ position: 'sticky', top: 16, alignSelf: 'flex-start' }}>{entityCard}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 }}>
           {kpiRow}
           {mainContent}

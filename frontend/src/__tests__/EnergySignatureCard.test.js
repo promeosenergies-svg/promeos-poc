@@ -27,7 +27,9 @@ describe('EnergySignatureCard — source guard (no-calc)', () => {
   });
 
   it('importe fmtNum depuis utils/format (helper FR null-safe)', () => {
-    expect(cardSrc).toMatch(/import\s*\{[^}]*fmtNum[^}]*\}\s*from\s*['"]\.\.\/\.\.\/utils\/format['"]/);
+    expect(cardSrc).toMatch(
+      /import\s*\{[^}]*fmtNum[^}]*\}\s*from\s*['"]\.\.\/\.\.\/utils\/format['"]/
+    );
   });
 
   it('utilise fmtNum pour R² avec 3 décimales', () => {

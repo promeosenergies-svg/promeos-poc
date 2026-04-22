@@ -13,7 +13,12 @@ const DEFAULT_MODES = [
   { value: 'expert', label: 'Expert' },
 ];
 
-export default function SolLayerToggle({ value = 'surface', onChange, modes = DEFAULT_MODES, className = '' }) {
+export default function SolLayerToggle({
+  value = 'surface',
+  onChange,
+  modes = DEFAULT_MODES,
+  className = '',
+}) {
   return (
     <div
       role="group"

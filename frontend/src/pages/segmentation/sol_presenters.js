@@ -58,7 +58,11 @@ export function buildSegmentationKicker({ profile } = {}) {
   return `SEGMENTATION · ${typo.toUpperCase()}`;
 }
 
-export function buildSegmentationNarrative({ profile, answeredCount = 0, totalQuestions = 0 } = {}) {
+export function buildSegmentationNarrative({
+  profile,
+  answeredCount = 0,
+  totalQuestions = 0,
+} = {}) {
   if (!profile?.has_profile) {
     return 'Aucun profil détecté pour votre organisation. Répondez au questionnaire ci-dessous pour activer la segmentation et affiner les recommandations PROMEOS.';
   }
@@ -77,7 +81,8 @@ export function buildSegmentationNarrative({ profile, answeredCount = 0, totalQu
 
 export function buildSegmentationSubNarrative({ profile } = {}) {
   const reasons = Array.isArray(profile?.reasons) ? profile.reasons : [];
-  const reasonsBit = reasons.length > 0 ? `Signaux détectés : ${reasons.slice(0, 3).join(' · ')}. ` : '';
+  const reasonsBit =
+    reasons.length > 0 ? `Signaux détectés : ${reasons.slice(0, 3).join(' · ')}. ` : '';
   return (
     reasonsBit +
     'Méthodologie : code NAF + questionnaire métier + analyse patrimoine · 11 typologies référence PROMEOS.'
@@ -89,7 +94,7 @@ export function buildSegmentationSubNarrative({ profile } = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function interpretTypology({ profile } = {}) {
-  if (!profile?.has_profile) return 'Profil en cours d\'établissement — complétez le questionnaire.';
+  if (!profile?.has_profile) return "Profil en cours d'établissement — complétez le questionnaire.";
   const source = SOURCE_LABELS[profile.derived_from] || profile.derived_from;
   return `Source : ${source}. Raffinez via questionnaire pour confiance supérieure.`;
 }
@@ -103,7 +108,7 @@ export function interpretConfidence({ profile } = {}) {
 }
 
 export function interpretQuestionnaireProgress({ answeredCount = 0, totalQuestions = 0 } = {}) {
-  if (totalQuestions === 0) return 'Questionnaire en cours d\'initialisation.';
+  if (totalQuestions === 0) return "Questionnaire en cours d'initialisation.";
   if (answeredCount === 0) return 'Répondez aux questions pour activer la segmentation.';
   if (answeredCount === totalQuestions) return 'Questionnaire complet · profil à jour.';
   const pct = Math.round((answeredCount / totalQuestions) * 100);

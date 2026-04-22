@@ -82,9 +82,7 @@ export default function EfaSol({
   });
   const fields = buildEfaEntityCardFields({ efa, lastDeclaration });
 
-  const refMwh = efa.reference_year_kwh
-    ? Math.round(efa.reference_year_kwh / 1000)
-    : null;
+  const refMwh = efa.reference_year_kwh ? Math.round(efa.reference_year_kwh / 1000) : null;
   const latest = latestConsumption(efa);
   const currKwh = Number(consumptionKwh(latest)) || 0;
   const currMwh = currKwh > 0 ? Math.round(currKwh / 1000) : null;
@@ -104,9 +102,7 @@ export default function EfaSol({
     onOpenModulation,
   });
 
-  const titleEm = efa.reference_year
-    ? `· référence ${efa.reference_year}`
-    : '';
+  const titleEm = efa.reference_year ? `· référence ${efa.reference_year}` : '';
 
   const entityCardActions = (
     <>

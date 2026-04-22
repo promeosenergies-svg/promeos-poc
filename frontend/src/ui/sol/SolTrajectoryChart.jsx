@@ -47,8 +47,18 @@ import {
 } from 'recharts';
 
 const MONTH_LABELS_FR = [
-  'janv.', 'févr.', 'mars', 'avril', 'mai', 'juin',
-  'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
+  'janv.',
+  'févr.',
+  'mars',
+  'avril',
+  'mai',
+  'juin',
+  'juil.',
+  'août',
+  'sept.',
+  'oct.',
+  'nov.',
+  'déc.',
 ];
 
 function formatMonthLabel(monthKey) {
@@ -99,9 +109,7 @@ export default function SolTrajectoryChart({
   }
 
   const last = data[data.length - 1];
-  const peakAnnotation = last
-    ? { month: last.month, score: last[dataKey] }
-    : null;
+  const peakAnnotation = last ? { month: last.month, score: last[dataKey] } : null;
 
   return (
     <div>
@@ -214,32 +222,34 @@ export default function SolTrajectoryChart({
             />
 
             {/* Jalons verticaux (Lot 3 P4 : DT 2030/2040/2050). Optional. */}
-            {Array.isArray(verticalMarkers) && verticalMarkers.map((m, i) => {
-              const toneColor = {
-                attention: 'var(--sol-attention-fg)',
-                afaire: 'var(--sol-afaire-fg)',
-                succes: 'var(--sol-succes-fg)',
-                refuse: 'var(--sol-refuse-fg)',
-                calme: 'var(--sol-calme-fg)',
-              }[m.tone || 'attention'] || 'var(--sol-attention-fg)';
-              return (
-                <ReferenceLine
-                  key={`vmarker-${i}-${m.x}`}
-                  x={m.x}
-                  stroke={toneColor}
-                  strokeDasharray="3 3"
-                  strokeWidth={1.1}
-                  label={{
-                    value: m.label,
-                    position: 'insideTop',
-                    fill: toneColor,
-                    fontFamily: 'var(--sol-font-mono)',
-                    fontSize: 9.5,
-                    fontWeight: 600,
-                  }}
-                />
-              );
-            })}
+            {Array.isArray(verticalMarkers) &&
+              verticalMarkers.map((m, i) => {
+                const toneColor =
+                  {
+                    attention: 'var(--sol-attention-fg)',
+                    afaire: 'var(--sol-afaire-fg)',
+                    succes: 'var(--sol-succes-fg)',
+                    refuse: 'var(--sol-refuse-fg)',
+                    calme: 'var(--sol-calme-fg)',
+                  }[m.tone || 'attention'] || 'var(--sol-attention-fg)';
+                return (
+                  <ReferenceLine
+                    key={`vmarker-${i}-${m.x}`}
+                    x={m.x}
+                    stroke={toneColor}
+                    strokeDasharray="3 3"
+                    strokeWidth={1.1}
+                    label={{
+                      value: m.label,
+                      position: 'insideTop',
+                      fill: toneColor,
+                      fontFamily: 'var(--sol-font-mono)',
+                      fontSize: 9.5,
+                      fontWeight: 600,
+                    }}
+                  />
+                );
+              })}
 
             {/* Ligne cible (ex : DT 75 pts ≈ -25% conso). Optional. */}
             {targetLine != null && (

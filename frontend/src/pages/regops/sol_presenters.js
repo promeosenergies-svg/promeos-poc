@@ -116,9 +116,8 @@ export function buildRegOpsNarrative({ assessment, site, findings = [] }) {
   if (!assessment) {
     return 'Évaluation en cours. Sol analyse les obligations applicables à ce site.';
   }
-  const score = assessment.compliance_score != null
-    ? Math.round(assessment.compliance_score)
-    : null;
+  const score =
+    assessment.compliance_score != null ? Math.round(assessment.compliance_score) : null;
   const { percent, compliant, total } = computeCompletion(findings);
   const penalty = sumPenalties(findings);
   const days = daysUntil(assessment.next_deadline);
@@ -131,14 +130,18 @@ export function buildRegOpsNarrative({ assessment, site, findings = [] }) {
     parts.push(`${siteLabel} est en cours d'évaluation`);
   }
   if (percent != null && total > 0) {
-    parts.push(`${compliant}${NBSP}obligation${compliant > 1 ? 's' : ''} sur ${total} conforme${compliant > 1 ? 's' : ''} (${percent}${NBSP}%)`);
+    parts.push(
+      `${compliant}${NBSP}obligation${compliant > 1 ? 's' : ''} sur ${total} conforme${compliant > 1 ? 's' : ''} (${percent}${NBSP}%)`
+    );
   }
   if (penalty > 0) {
     parts.push(`pénalité potentielle ${formatFREur(penalty, 0)} en cas de dépôt manqué`);
   }
   if (days != null) {
     if (days <= 0) {
-      parts.push(`échéance dépassée de ${Math.abs(days)}${NBSP}jour${Math.abs(days) > 1 ? 's' : ''}`);
+      parts.push(
+        `échéance dépassée de ${Math.abs(days)}${NBSP}jour${Math.abs(days) > 1 ? 's' : ''}`
+      );
     } else if (days <= 30) {
       parts.push(`prochaine échéance dans ${days}${NBSP}jour${days > 1 ? 's' : ''}`);
     } else if (days <= 90) {
@@ -187,21 +190,23 @@ export function buildRegOpsEntityCardFields({ assessment, site, findings = [] })
       frameworks.add(f.regulation);
     }
   }
-  const frameworksLabel = Array.from(frameworks)
-    .map((k) => REG_LABELS[k] || k)
-    .join(' · ') || '—';
+  const frameworksLabel =
+    Array.from(frameworks)
+      .map((k) => REG_LABELS[k] || k)
+      .join(' · ') || '—';
 
   // Statut OPERAT : statut du finding dont regulation contient 'decret_tertiaire'
   const operatFinding = (findings || []).find(
     (f) => f?.regulation === 'decret_tertiaire_operat' || f?.rule_id?.includes('operat')
   );
   const operatLabel = operatFinding
-    ? (REGOPS_STATUS_LABELS[operatFinding.status] || operatFinding.status)
+    ? REGOPS_STATUS_LABELS[operatFinding.status] || operatFinding.status
     : 'Non applicable';
 
-  const scoreLabel = assessment.compliance_score != null
-    ? `${Math.round(assessment.compliance_score)}${NBSP}/${NBSP}100`
-    : '—';
+  const scoreLabel =
+    assessment.compliance_score != null
+      ? `${Math.round(assessment.compliance_score)}${NBSP}/${NBSP}100`
+      : '—';
 
   return [
     { label: 'Site', value: site?.nom || `#${assessment.site_id || '—'}` },
@@ -237,8 +242,9 @@ export function interpretRegOpsPenalty(findings = []) {
     return 'Aucune pénalité financière identifiée à ce jour.';
   }
   const atRisk = (findings || []).filter(
-    (f) => (f?.status === 'AT_RISK' || f?.status === 'NON_COMPLIANT')
-      && Number(f.estimated_penalty_eur) > 0
+    (f) =>
+      (f?.status === 'AT_RISK' || f?.status === 'NON_COMPLIANT') &&
+      Number(f.estimated_penalty_eur) > 0
   );
   return `${formatFREur(total, 0)} cumulés sur ${atRisk.length}${NBSP}finding${atRisk.length > 1 ? 's' : ''} non conforme${atRisk.length > 1 ? 's' : ''}.`;
 }
@@ -280,9 +286,7 @@ export function buildRegOpsTimelineEvents({ assessment, findings = [] } = {}) {
   const SEVERITY_RANK = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
   const withoutDeadline = obligations
     .filter((f) => !f.legal_deadline)
-    .sort(
-      (a, b) => (SEVERITY_RANK[a.severity] ?? 9) - (SEVERITY_RANK[b.severity] ?? 9)
-    );
+    .sort((a, b) => (SEVERITY_RANK[a.severity] ?? 9) - (SEVERITY_RANK[b.severity] ?? 9));
 
   const events = [];
   for (const f of [...withDeadline, ...withoutDeadline]) {
@@ -301,9 +305,7 @@ export function buildRegOpsTimelineEvents({ assessment, findings = [] } = {}) {
 
   // Jalon « prochaine échéance globale » si différente des findings déjà listés
   if (assessment?.next_deadline) {
-    const already = events.some(
-      (e) => e.datetime === formatDateFR(assessment.next_deadline)
-    );
+    const already = events.some((e) => e.datetime === formatDateFR(assessment.next_deadline));
     if (!already) {
       events.unshift({
         id: 'next-deadline',
@@ -380,8 +382,7 @@ export function buildRegOpsWeekCards({ assessment, findings = [], onOpenAction }
   const mediumAction = sortedActions.find(
     (a) => (a.priority_score || 0) <= 70 && (a.priority_score || 0) > 30
   );
-  const hasMissing = Array.isArray(assessment?.missing_data)
-    && assessment.missing_data.length > 0;
+  const hasMissing = Array.isArray(assessment?.missing_data) && assessment.missing_data.length > 0;
   if (hasMissing) {
     cards.push({
       id: 'missing-data',
@@ -431,7 +432,7 @@ export function buildRegOpsWeekCards({ assessment, findings = [], onOpenAction }
       tagKind: 'succes',
       tagLabel: 'Bonne nouvelle',
       title: 'Évaluation déterministe active',
-      body: 'Le moteur RegOps surveille ce dossier en continu et vous alertera dès qu\'une obligation est validée.',
+      body: "Le moteur RegOps surveille ce dossier en continu et vous alertera dès qu'une obligation est validée.",
       footerLeft: 'surveillance active',
       footerRight: '—',
     });

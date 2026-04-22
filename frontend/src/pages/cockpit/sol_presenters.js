@@ -58,8 +58,18 @@ export function buildKicker({ module = 'Cockpit', weekNum, scope, date = new Dat
 export function buildPanelDesc({ date = new Date() } = {}) {
   const day = date.getDate();
   const monthNames = [
-    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+    'janvier',
+    'février',
+    'mars',
+    'avril',
+    'mai',
+    'juin',
+    'juillet',
+    'août',
+    'septembre',
+    'octobre',
+    'novembre',
+    'décembre',
   ];
   const month = monthNames[date.getMonth()];
   return `Votre cockpit énergétique, semaine du ${day}${NBSP}${month}.`;
@@ -71,8 +81,18 @@ export function buildPanelDesc({ date = new Date() } = {}) {
 export function buildWeekLabel(date = new Date()) {
   const weekNum = computeIsoWeek(date);
   const monthShort = [
-    'janv.', 'févr.', 'mars', 'avril', 'mai', 'juin',
-    'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
+    'janv.',
+    'févr.',
+    'mars',
+    'avril',
+    'mai',
+    'juin',
+    'juil.',
+    'août',
+    'sept.',
+    'oct.',
+    'nov.',
+    'déc.',
   ][date.getMonth()];
   return `Sem.${NBSP}${weekNum} · ${monthShort}`;
 }
@@ -155,9 +175,8 @@ export function computeDelta({ current, previous, unit = '%', context = '' } = {
     const formatted = pct.toFixed(1).replace('.', ',');
     text = `${sign}${formatted}${NBSP}%`;
   }
-  const direction = Math.abs(value) < (unit === 'pts' ? 0.5 : 0.005)
-    ? 'flat'
-    : (value > 0 ? 'up' : 'down');
+  const direction =
+    Math.abs(value) < (unit === 'pts' ? 0.5 : 0.005) ? 'flat' : value > 0 ? 'up' : 'down';
   const arrow = direction === 'up' ? '▲' : direction === 'down' ? '▼' : '—';
   return {
     direction,
@@ -181,9 +200,8 @@ export function findPeak(series = [], unit = 'kW') {
     if (pt?.value != null && pt.value > (peak?.value ?? -Infinity)) peak = pt;
   }
   if (peak?.value == null) return null;
-  const hourLabel = typeof peak.time === 'string' && peak.time.includes(':')
-    ? peak.time.split(':')[0]
-    : peak.time;
+  const hourLabel =
+    typeof peak.time === 'string' && peak.time.includes(':') ? peak.time.split(':')[0] : peak.time;
   return {
     time: peak.time,
     value: peak.value,
@@ -315,7 +333,9 @@ export function buildWeekSignals({
       title: topUpcoming.label || topUpcoming.title || 'Échéance à préparer',
       body:
         (topUpcoming.description || topUpcoming.summary || '') +
-        (sitesCount ? ` ${sitesCount} site${sitesCount > 1 ? 's' : ''} concerné${sitesCount > 1 ? 's' : ''}.` : ''),
+        (sitesCount
+          ? ` ${sitesCount} site${sitesCount > 1 ? 's' : ''} concerné${sitesCount > 1 ? 's' : ''}.`
+          : ''),
       footerLeft: deadline ? `échéance ${deadline}` : '',
       footerRight: penalty ? `pénalité ${formatFR(penalty, 0)} €` : 'Automatisable',
       onClick: asNavigateFn(topUpcoming.deeplink_path || topUpcoming.navigateTo),
@@ -399,10 +419,30 @@ export function freshness(timestamp, now = new Date()) {
  */
 export function buildFallbackLoadCurve() {
   const pattern = [
-    18, 17, 16, 15, 15, 16, // 00–05 nuit
-    22, 38, 62, 85, 98, 108, // 06–11 rampe matinale
-    112, 115, 118, 116, 110, 96, // 12–17 plateau + pic
-    78, 58, 42, 32, 26, 22, // 18–23 redescente
+    18,
+    17,
+    16,
+    15,
+    15,
+    16, // 00–05 nuit
+    22,
+    38,
+    62,
+    85,
+    98,
+    108, // 06–11 rampe matinale
+    112,
+    115,
+    118,
+    116,
+    110,
+    96, // 12–17 plateau + pic
+    78,
+    58,
+    42,
+    32,
+    26,
+    22, // 18–23 redescente
   ];
   return pattern.map((value, hour) => ({
     time: `${String(hour).padStart(2, '0')}:00`,

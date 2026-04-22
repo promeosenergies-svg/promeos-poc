@@ -50,7 +50,7 @@ export function buildConformiteNarrative({ summary, upcomingCount } = {}) {
     : '';
 
   if (score == null) {
-    return "Votre score de conformité est en cours de calcul. Revenez dans quelques minutes.";
+    return 'Votre score de conformité est en cours de calcul. Revenez dans quelques minutes.';
   }
   if (score >= 75) {
     return `Conformité solide (${formatScore(score)}/100). Votre patrimoine est en bonne trajectoire.${deadlineHint}`;
@@ -67,7 +67,7 @@ export function buildConformiteSubNarrative({ summary } = {}) {
   const nok = summary?.sites_nok ?? 0;
   const unknown = summary?.sites_unknown ?? 0;
   if (total === 0) {
-    return "Aucun site évalué pour le moment. Importez votre patrimoine depuis SIREN ou ajoutez un site manuellement.";
+    return 'Aucun site évalué pour le moment. Importez votre patrimoine depuis SIREN ou ajoutez un site manuellement.';
   }
   return `${ok}${NBSP}site${ok > 1 ? 's' : ''} conforme${ok > 1 ? 's' : ''} · ${nok}${NBSP}à risque · ${unknown}${NBSP}à évaluer. Sources : RegOps canonique + OPERAT + inspections BACS.`;
 }
@@ -99,7 +99,8 @@ export function interpretScoreBACS({ findingsByReg, notApplicable } = {}) {
   if (total === 0) return 'Aucun bâtiment assujetti BACS identifié.';
   const pctOk = total > 0 ? Math.round(((bacs.ok || 0) / total) * 100) : 0;
   if (pctOk >= 75) return `${bacs.ok}/${total} installations GTB homologuées.`;
-  if (pctOk >= 40) return `${bacs.nok}${NBSP}installation${bacs.nok > 1 ? 's' : ''} à mettre en conformité.`;
+  if (pctOk >= 40)
+    return `${bacs.nok}${NBSP}installation${bacs.nok > 1 ? 's' : ''} à mettre en conformité.`;
   return `GTB/GTC manquante sur ${bacs.nok}${NBSP}bâtiment${bacs.nok > 1 ? 's' : ''} > 290${NBSP}kW.`;
 }
 
@@ -110,8 +111,9 @@ export function interpretScoreAPER({ findingsByReg, notApplicable } = {}) {
   const aper = findingsByReg?.aper;
   if (!aper) return 'Cartographie APER en cours.';
   const total = (aper.ok || 0) + (aper.nok || 0) + (aper.unknown || 0);
-  if (total === 0) return "Aucun bien assujetti loi APER détecté.";
-  if (aper.unknown > 0) return `${aper.unknown}${NBSP}site${aper.unknown > 1 ? 's' : ''} à cartographier (parkings + toitures).`;
+  if (total === 0) return 'Aucun bien assujetti loi APER détecté.';
+  if (aper.unknown > 0)
+    return `${aper.unknown}${NBSP}site${aper.unknown > 1 ? 's' : ''} à cartographier (parkings + toitures).`;
   return `${aper.ok}/${total} projets ENR engagés.`;
 }
 
@@ -209,11 +211,12 @@ export function buildConformiteWeekCards({
   const cards = [];
 
   // Card 1 — "À regarder" : top finding drift, fallback si aucune dérive
-  const topDrift = findings.find((f) => f?.severity === 'critical' || f?.severity === 'high')
-    || findings[0];
+  const topDrift =
+    findings.find((f) => f?.severity === 'critical' || f?.severity === 'high') || findings[0];
   if (topDrift) {
     const deltaScore = topDrift.score_delta ?? topDrift.deltaScore;
-    const deltaLabel = deltaScore != null ? `écart ${deltaScore > 0 ? '+' : ''}${deltaScore}${NBSP}pts` : '';
+    const deltaLabel =
+      deltaScore != null ? `écart ${deltaScore > 0 ? '+' : ''}${deltaScore}${NBSP}pts` : '';
     cards.push({
       id: `drift-${topDrift.id || topDrift.rule_id || 0}`,
       tagKind: 'attention',
@@ -238,7 +241,8 @@ export function buildConformiteWeekCards({
     const penalty = topUpcoming.penalty_eur;
     const sitesCount = topUpcoming.sites_concerned;
     const footerParts = [];
-    if (daysLeft != null) footerParts.push(`${daysLeft > 0 ? `${daysLeft}${NBSP}j restants` : 'échéance passée'}`);
+    if (daysLeft != null)
+      footerParts.push(`${daysLeft > 0 ? `${daysLeft}${NBSP}j restants` : 'échéance passée'}`);
     if (penalty) footerParts.push(`pénalité ${formatFREur(penalty, 0)}`);
     cards.push({
       id: `upcoming-${topUpcoming.id || 0}`,
@@ -247,7 +251,9 @@ export function buildConformiteWeekCards({
       title: topUpcoming.label || topUpcoming.title || 'Échéance à préparer',
       body:
         (topUpcoming.description || topUpcoming.summary || '') +
-        (sitesCount ? ` ${sitesCount} site${sitesCount > 1 ? 's' : ''} concerné${sitesCount > 1 ? 's' : ''}.` : ''),
+        (sitesCount
+          ? ` ${sitesCount} site${sitesCount > 1 ? 's' : ''} concerné${sitesCount > 1 ? 's' : ''}.`
+          : ''),
       footerLeft: footerParts.join(' · '),
       footerRight: dl ? formatDateFR(dl) : 'Automatisable',
       onClick: () => onOpenEvidence?.(topUpcoming),

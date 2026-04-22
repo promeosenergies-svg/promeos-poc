@@ -16,23 +16,18 @@
  * parking 0,20 kWc/m² (ombrières). Productible France moyen 1 100 kWh/kWc.
  * Tarif de rachat surplus ≈ 0,10 €/kWh.
  */
-import {
-  NBSP,
-  formatFR,
-  formatFREur,
-  freshness,
-} from '../cockpit/sol_presenters';
+import { NBSP, formatFR, formatFREur, freshness } from '../cockpit/sol_presenters';
 import { businessErrorFallback } from '../../i18n/business_errors';
 
 export { NBSP };
 
 // Coefficients d'emprise PV (kWc/m²)
 const ROOF_KWC_PER_M2 = 0.15;
-const PARKING_KWC_PER_M2 = 0.20;
+const PARKING_KWC_PER_M2 = 0.2;
 // Productible moyen France (kWh/kWc/an)
 const PRODUCTIBLE_KWH_PER_KWC = 1100;
 // Prix moyen achat surplus (€/kWh, tarif d'obligation d'achat simplifié)
-const PRICE_EUR_PER_KWH = 0.10;
+const PRICE_EUR_PER_KWH = 0.1;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Kicker + narratives
@@ -81,18 +76,20 @@ export function buildAperSubNarrative({ dashboard } = {}) {
 
 export function interpretAperEligible({ dashboard } = {}) {
   const total = dashboard?.total_eligible_sites ?? 0;
-  if (total === 0) return "Aucun site assujetti à cette obligation.";
+  if (total === 0) return 'Aucun site assujetti à cette obligation.';
   const parking = dashboard?.parking?.eligible_count ?? 0;
   const roof = dashboard?.roof?.eligible_count ?? 0;
   const parts = [];
-  if (parking > 0) parts.push(`${parking}${NBSP}parking${parking > 1 ? 's' : ''} > 1\u00a0500\u00a0m²`);
+  if (parking > 0)
+    parts.push(`${parking}${NBSP}parking${parking > 1 ? 's' : ''} > 1\u00a0500\u00a0m²`);
   if (roof > 0) parts.push(`${roof}${NBSP}toiture${roof > 1 ? 's' : ''} > 500\u00a0m²`);
   return parts.join(' · ') + '.';
 }
 
 export function interpretAperConforming({ conformingCount, totalEligible } = {}) {
-  if (totalEligible === 0) return "Aucun site assujetti à cette obligation.";
-  if (conformingCount === 0) return "Aucun projet PV validé pour l'instant. Sol peut préparer les études préalables.";
+  if (totalEligible === 0) return 'Aucun site assujetti à cette obligation.';
+  if (conformingCount === 0)
+    return "Aucun projet PV validé pour l'instant. Sol peut préparer les études préalables.";
   const pct = Math.round((conformingCount / totalEligible) * 100);
   return `${conformingCount}/${totalEligible} sites avec projet PV validé · ${pct}${NBSP}% de couverture.`;
 }
@@ -101,7 +98,9 @@ export function interpretAperPotential({ potentialKwc, annualGainEur, dashboard 
   if (!potentialKwc) return 'Potentiel solaire en cours de calcul.';
   const parts = [`${formatFR(potentialKwc, 0)}${NBSP}kWc installables`];
   if (annualGainEur > 0) {
-    parts.push(`productible ${formatFR(Math.round(potentialKwc * PRODUCTIBLE_KWH_PER_KWC / 1000), 0)}${NBSP}MWh/an`);
+    parts.push(
+      `productible ${formatFR(Math.round((potentialKwc * PRODUCTIBLE_KWH_PER_KWC) / 1000), 0)}${NBSP}MWh/an`
+    );
     parts.push(`gain potentiel ${formatFREur(annualGainEur, 0)}/an`);
   }
   return parts.join(' · ') + '.';
@@ -150,7 +149,10 @@ export function mergeSitesForBarChart(dashboard) {
     if (existing) {
       existing.roof_m2 = r.surface_m2 || 0;
       // Prendre la deadline la plus proche
-      if (r.deadline && (!existing.deadline || new Date(r.deadline) < new Date(existing.deadline))) {
+      if (
+        r.deadline &&
+        (!existing.deadline || new Date(r.deadline) < new Date(existing.deadline))
+      ) {
         existing.deadline = r.deadline;
       }
     } else {
@@ -217,7 +219,9 @@ export function buildAperWeekCards({ sites = [], onNavigateSite = null } = {}) {
     const surfaceText = [
       urgent.roof_m2 > 0 ? `toit ${formatFR(urgent.roof_m2, 0)}${NBSP}m²` : null,
       urgent.parking_m2 > 0 ? `parking ${formatFR(urgent.parking_m2, 0)}${NBSP}m²` : null,
-    ].filter(Boolean).join(' + ');
+    ]
+      .filter(Boolean)
+      .join(' + ');
     cards.push({
       id: `urgent-${urgent.site_id}`,
       tagKind: 'attention',

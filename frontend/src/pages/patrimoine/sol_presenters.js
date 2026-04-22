@@ -16,13 +16,7 @@
  * EUI moyen calculé côté client (formule Σ(conso) / Σ(surface)), pas
  * d'endpoint dédié. Benchmarks ADEME via utils/benchmarks.js.
  */
-import {
-  NBSP,
-  formatFR,
-  formatFREur,
-  computeDelta,
-  freshness,
-} from '../cockpit/sol_presenters';
+import { NBSP, formatFR, formatFREur, computeDelta, freshness } from '../cockpit/sol_presenters';
 import { getBenchmark } from '../../utils/benchmarks';
 import { businessErrorFallback } from '../../i18n/business_errors';
 
@@ -92,18 +86,20 @@ export function buildPatrimoineSubNarrative({ kpis } = {}) {
   const total = conformes + aRisque + nonConformes;
 
   if (total === 0) {
-    return "Sources : moteur de conformité RegOps + référentiel ADEME ODP 2024.";
+    return 'Sources : moteur de conformité RegOps + référentiel ADEME ODP 2024.';
   }
 
   const parts = [];
   if (conformes > 0) parts.push(`${conformes}${NBSP}conforme${conformes > 1 ? 's' : ''}`);
   if (aRisque > 0) parts.push(`${aRisque}${NBSP}à${NBSP}risque`);
-  if (nonConformes > 0) parts.push(`${nonConformes}${NBSP}non${NBSP}conforme${nonConformes > 1 ? 's' : ''}`);
+  if (nonConformes > 0)
+    parts.push(`${nonConformes}${NBSP}non${NBSP}conforme${nonConformes > 1 ? 's' : ''}`);
   const statut = parts.join(' · ');
 
-  const contrats = expiring > 0
-    ? ` · ${expiring}${NBSP}contrat${expiring > 1 ? 's' : ''} expirant sous 90${NBSP}jours`
-    : '';
+  const contrats =
+    expiring > 0
+      ? ` · ${expiring}${NBSP}contrat${expiring > 1 ? 's' : ''} expirant sous 90${NBSP}jours`
+      : '';
 
   return `${statut}${contrats}. Sources : RegOps canonique + ADEME ODP 2024.`;
 }
@@ -119,7 +115,9 @@ function groupByType(sites) {
 }
 
 function summarizeTypeDistribution(byType) {
-  const entries = Object.entries(byType).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const entries = Object.entries(byType)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
   if (entries.length === 0) return '';
   return entries.map(([type, n]) => `${n}${NBSP}${labelType(type, n)}`).join(', ') + '.';
 }
@@ -247,11 +245,15 @@ export function interpretEUI({ euiAvg, benchmarkAvg, topDrivers } = {}) {
     return `EUI moyen ${formatFR(euiAvg, 0)}${NBSP}kWh/m²/an.`;
   }
   const gap = Math.round(((euiAvg - benchmarkAvg) / benchmarkAvg) * 100);
-  const drivers = (topDrivers || []).slice(0, 3).map((d) => d.site.nom).filter(Boolean);
+  const drivers = (topDrivers || [])
+    .slice(0, 3)
+    .map((d) => d.site.nom)
+    .filter(Boolean);
   if (gap > 10) {
-    const driverList = drivers.length > 0
-      ? ` ${drivers.length > 1 ? 'Sites tirant la moyenne' : 'Site tirant la moyenne'} : ${drivers.join(', ')}.`
-      : '';
+    const driverList =
+      drivers.length > 0
+        ? ` ${drivers.length > 1 ? 'Sites tirant la moyenne' : 'Site tirant la moyenne'} : ${drivers.join(', ')}.`
+        : '';
     return `${gap}${NBSP}% au-dessus de la référence ADEME ${formatFR(benchmarkAvg, 0)}${NBSP}kWh/m².${driverList}`;
   }
   if (gap < -5) {
@@ -278,9 +280,10 @@ export function adaptSitesToBarChart(sites, options = {}) {
     .map((s) => ({
       site: shortName(s.nom || s.site || 'Site'),
       current: Math.round((Number(s.conso_kwh_an) || 0) / 1000), // kWh → MWh
-      previous: s.conso_kwh_an_n1 != null
-        ? Math.round(Number(s.conso_kwh_an_n1) / 1000)
-        : Math.round(((Number(s.conso_kwh_an) || 0) * 1.04) / 1000), // mock +4 % N-1
+      previous:
+        s.conso_kwh_an_n1 != null
+          ? Math.round(Number(s.conso_kwh_an_n1) / 1000)
+          : Math.round(((Number(s.conso_kwh_an) || 0) * 1.04) / 1000), // mock +4 % N-1
     }));
 }
 

@@ -15,8 +15,8 @@ export default function PageShell({
   className = '',
   tintColor = 'text-blue-600',
   moduleKey,
-  hideHeader = false,  // Sprint 2 refonte Sol : désactive le header
-                       // PageShell pour laisser place à <SolPageHeader>.
+  hideHeader = false, // Sprint 2 refonte Sol : désactive le header
+  // PageShell pour laisser place à <SolPageHeader>.
 }) {
   return (
     <div className={`px-6 py-6 space-y-6 animate-[slideInUp_0.3s_ease-out] ${className}`}>

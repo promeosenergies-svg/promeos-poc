@@ -35,10 +35,10 @@ export { NBSP, formatFR };
 export function hasSummary(summary) {
   return Boolean(
     summary &&
-      typeof summary === 'object' &&
-      'total_sites' in summary &&
-      summary.total_sites !== null &&
-      summary.total_sites !== undefined,
+    typeof summary === 'object' &&
+    'total_sites' in summary &&
+    summary.total_sites !== null &&
+    summary.total_sites !== undefined
   );
 }
 
@@ -101,7 +101,8 @@ export function interpretSitesReady(summary) {
   const k = formatSitesReady(summary);
   if (k.total === 0) return 'Aucun site dans le portefeuille.';
   if (k.tone === 'succes') return `Tous les ${k.total} sites sont prêts (gate data OK).`;
-  if (k.tone === 'attention') return `${k.value} sites prêts sur ${k.total} — compléter les blocages data.`;
+  if (k.tone === 'attention')
+    return `${k.value} sites prêts sur ${k.total} — compléter les blocages data.`;
   return `Seuls ${k.value} sites prêts sur ${k.total} — priorité débloquer la data.`;
 }
 

@@ -66,9 +66,7 @@ export default function AperPage() {
   // URL param `?filter=parking|toiture` : deep-link depuis panel nav.
   // Valeurs acceptées : 'parking', 'toiture'. Autres → pas de filtre.
   const filterParam = searchParams.get('filter');
-  const activeFilter = filterParam === 'parking' || filterParam === 'toiture'
-    ? filterParam
-    : null;
+  const activeFilter = filterParam === 'parking' || filterParam === 'toiture' ? filterParam : null;
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -128,11 +126,12 @@ export default function AperPage() {
   ];
   // Filtre deep-link ?filter=parking (surfaceType 'parking') ou
   // ?filter=toiture (surfaceType 'roof'). null = tous les sites.
-  const allSites = activeFilter === 'parking'
-    ? allSitesUnfiltered.filter((s) => s.surfaceType === 'parking')
-    : activeFilter === 'toiture'
-      ? allSitesUnfiltered.filter((s) => s.surfaceType === 'roof')
-      : allSitesUnfiltered;
+  const allSites =
+    activeFilter === 'parking'
+      ? allSitesUnfiltered.filter((s) => s.surfaceType === 'parking')
+      : activeFilter === 'toiture'
+        ? allSitesUnfiltered.filter((s) => s.surfaceType === 'roof')
+        : allSitesUnfiltered;
 
   const monthlyData =
     estimate?.monthly_kwh?.map((kwh, i) => ({

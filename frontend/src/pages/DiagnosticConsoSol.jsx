@@ -75,9 +75,8 @@ export default function DiagnosticConsoSol({
   const barData = adaptInsightsToBarChart(insights);
   const weekCards = buildDiagnosticWeekCards({ insights, onOpenInsight });
 
-  const sitesSuffix = scope?.sitesCount != null && !selectedSite
-    ? ` · ${scope.sitesCount}${NBSP}sites`
-    : '';
+  const sitesSuffix =
+    scope?.sitesCount != null && !selectedSite ? ` · ${scope.sitesCount}${NBSP}sites` : '';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -105,7 +104,8 @@ export default function DiagnosticConsoSol({
       {summary?.total_loss_eur > 0 && (
         <SolSubline>
           Pertes cumulées estimées {formatFREur(totalLossEur, 0)} · excès énergétique{' '}
-          {formatFR(Math.round(totalLossKwh / 1000), 0)}{NBSP}MWh.
+          {formatFR(Math.round(totalLossKwh / 1000), 0)}
+          {NBSP}MWh.
         </SolSubline>
       )}
 
@@ -164,10 +164,7 @@ export default function DiagnosticConsoSol({
         </p>
       )}
 
-      <SolSectionHead
-        title="Cette semaine sur le diagnostic"
-        meta="3 signaux prioritaires"
-      />
+      <SolSectionHead title="Cette semaine sur le diagnostic" meta="3 signaux prioritaires" />
       <SolWeekGrid>
         {weekCards.map((c) => (
           <SolWeekCard

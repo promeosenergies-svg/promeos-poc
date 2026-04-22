@@ -88,9 +88,9 @@ describe('gate_status enum scope guard (Phase 5 Lot 6)', () => {
     // Lecture autorisée : comparaison égalité pour mapping UI,
     // switch/case, rendu conditionnel pill, filtres.
     const allowedReads = [
-      "site.gate_status === 'OK'",       // → tone succes
-      "site.gate_status === 'WARNING'",  // → tone attention
-      "site.gate_status === 'BLOCKED'",  // → tone refuse
+      "site.gate_status === 'OK'", // → tone succes
+      "site.gate_status === 'WARNING'", // → tone attention
+      "site.gate_status === 'BLOCKED'", // → tone refuse
       'switch (site.gate_status) { ... }',
       'applicability.{tertiaire_operat, bacs, aper}', // booleans display
     ];

@@ -45,7 +45,8 @@ function formatValue(value, metric) {
   if (value == null || isNaN(value)) return '—';
   const n = Number(value);
   if (metric === 'euros') {
-    if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace('.', ',')}${'\u00A0'}M€`;
+    if (Math.abs(n) >= 1_000_000)
+      return `${(n / 1_000_000).toFixed(1).replace('.', ',')}${'\u00A0'}M€`;
     if (Math.abs(n) >= 1_000) return `${(n / 1_000).toFixed(0)}${'\u00A0'}k€`;
     return `${n.toFixed(0)}${'\u00A0'}€`;
   }
@@ -170,7 +171,10 @@ export default function SolBarChart({
                 fontSize: 11,
                 color: 'var(--sol-ink-900)',
               }}
-              formatter={(value, name) => [formatValue(value, metric), name === 'current' ? 'mois' : 'année\u00A0N\u202F−\u202F1']}
+              formatter={(value, name) => [
+                formatValue(value, metric),
+                name === 'current' ? 'mois' : 'année\u00A0N\u202F−\u202F1',
+              ]}
             />
 
             {/* Barre previous (comparateur, ink-300, opacity 0.7) */}
@@ -222,7 +226,16 @@ export default function SolBarChart({
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ display: 'flex', gap: 16, fontFamily: 'var(--sol-font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            fontFamily: 'var(--sol-font-mono)',
+            fontSize: 10,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+          }}
+        >
           <span>
             <span
               style={{

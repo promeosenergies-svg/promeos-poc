@@ -114,14 +114,20 @@ export function buildKbNarrative({ stats, activeTab } = {}) {
   }
   const kpis = computeKpis(stats);
   if (kpis.total === 0) {
-    return 'Base de connaissance vide — aucun article indexé pour le moment. Uploadez votre premier document via l\'onglet Documents.';
+    return "Base de connaissance vide — aucun article indexé pour le moment. Uploadez votre premier document via l'onglet Documents.";
   }
   const parts = [];
-  parts.push(`${kpis.total}${NBSP}article${kpis.total > 1 ? 's' : ''} indexé${kpis.total > 1 ? 's' : ''}`);
+  parts.push(
+    `${kpis.total}${NBSP}article${kpis.total > 1 ? 's' : ''} indexé${kpis.total > 1 ? 's' : ''}`
+  );
   if (kpis.validated > 0) {
-    parts.push(`${kpis.validated}${NBSP}validé${kpis.validated > 1 ? 's' : ''} (${kpis.validatedRatio}${NBSP}%)`);
+    parts.push(
+      `${kpis.validated}${NBSP}validé${kpis.validated > 1 ? 's' : ''} (${kpis.validatedRatio}${NBSP}%)`
+    );
   }
-  parts.push(`${kpis.domainsCovered}${NBSP}domaine${kpis.domainsCovered > 1 ? 's' : ''} couvert${kpis.domainsCovered > 1 ? 's' : ''}`);
+  parts.push(
+    `${kpis.domainsCovered}${NBSP}domaine${kpis.domainsCovered > 1 ? 's' : ''} couvert${kpis.domainsCovered > 1 ? 's' : ''}`
+  );
   if (activeTab === 'docs') {
     parts.push('mode Documents — PDF/CSV sources');
   } else {
@@ -150,7 +156,8 @@ export function buildKbSubNarrative({ stats } = {}) {
 
 export function interpretTotalItems({ stats } = {}) {
   const kpis = computeKpis(stats);
-  if (kpis.total == null) return 'Statistiques indisponibles — base de connaissance en initialisation.';
+  if (kpis.total == null)
+    return 'Statistiques indisponibles — base de connaissance en initialisation.';
   if (kpis.total === 0) return 'Base vide — uploadez votre premier document.';
   return `${kpis.domainsCovered}${NBSP}domaine${kpis.domainsCovered > 1 ? 's' : ''} couvert${kpis.domainsCovered > 1 ? 's' : ''} · base active.`;
 }
@@ -159,7 +166,8 @@ export function interpretValidatedRatio({ stats } = {}) {
   const kpis = computeKpis(stats);
   if (kpis.validatedRatio == null) return 'Aucun article encore validé.';
   if (kpis.validatedRatio >= 80) return 'Base de haute fiabilité · usage décisionnel activable.';
-  if (kpis.validatedRatio >= 50) return 'Base partiellement validée · revue recommandée sur les brouillons.';
+  if (kpis.validatedRatio >= 50)
+    return 'Base partiellement validée · revue recommandée sur les brouillons.';
   return 'Nombreux brouillons en attente · prioriser la revue éditoriale.';
 }
 
@@ -220,9 +228,15 @@ export function filterRows(rows, { search, domain, type, status } = {}) {
     const q = search.toLowerCase();
     r = r.filter(
       (x) =>
-        String(x.cells.title || '').toLowerCase().includes(q) ||
-        String(x.cells._raw?.summary || '').toLowerCase().includes(q) ||
-        String(x.cells._raw?.tags || '').toLowerCase().includes(q)
+        String(x.cells.title || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(x.cells._raw?.summary || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(x.cells._raw?.tags || '')
+          .toLowerCase()
+          .includes(q)
     );
   }
   return r;

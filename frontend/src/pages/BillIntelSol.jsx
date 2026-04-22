@@ -36,11 +36,7 @@ import {
   SolBarChart,
 } from '../ui/sol';
 import { useScope } from '../contexts/ScopeContext';
-import {
-  getBillingSummary,
-  getBillingInsights,
-  getBillingCompareMonthly,
-} from '../services/api';
+import { getBillingSummary, getBillingInsights, getBillingCompareMonthly } from '../services/api';
 import {
   NBSP,
   buildBillKicker,
@@ -94,7 +90,9 @@ function useBillIntelSolData({ orgId, siteId } = {}) {
       });
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [orgId, siteId]);
 
   return state;
@@ -147,7 +145,9 @@ export default function BillIntelSol() {
 
   // KPI 3 — Récupéré YTD
   const recoveredYtd = useMemo(() => estimateRecoveredYtd(insightsList), [insightsList]);
-  const contestationsValidated = insightsList.filter((i) => i?.insight_status === 'resolved').length;
+  const contestationsValidated = insightsList.filter(
+    (i) => i?.insight_status === 'resolved'
+  ).length;
 
   // Narrative
   const narrative = buildBillNarrative({
@@ -170,10 +170,7 @@ export default function BillIntelSol() {
   // Graphe signature
   const barChartData = useMemo(() => adaptCompareToBarChart(compare), [compare]);
 
-  const dataFreshness = useMemo(
-    () => freshness(summary.last_updated),
-    [summary.last_updated]
-  );
+  const dataFreshness = useMemo(() => freshness(summary.last_updated), [summary.last_updated]);
 
   // ─── Rendu ───────────────────────────────────────────────────────────────
 
@@ -212,9 +209,7 @@ export default function BillIntelSol() {
           })}
           source={{
             kind: 'Factures',
-            origin: summary.total_invoices
-              ? `${summary.total_invoices}${NBSP}factures`
-              : undefined,
+            origin: summary.total_invoices ? `${summary.total_invoices}${NBSP}factures` : undefined,
             freshness: summary.coverage_months
               ? `${summary.coverage_months}${NBSP}mois`
               : undefined,
@@ -297,23 +292,16 @@ export default function BillIntelSol() {
                 <strong style={{ color: 'var(--sol-ink-900)' }}>
                   {formatFREur(summary.total_eur, 0)}
                 </strong>{' '}
-                cumulés sur {summary.coverage_months ?? '—'}{NBSP}mois
+                cumulés sur {summary.coverage_months ?? '—'}
+                {NBSP}mois
                 {potentialRecovery > 0 && (
-                  <>
-                    {' '}· potentiel récupération {formatFREur(potentialRecovery, 0)}
-                  </>
+                  <> · potentiel récupération {formatFREur(potentialRecovery, 0)}</>
                 )}
                 .
               </>
             ) : null
           }
-          sourceChip={
-            <SolSourceChip
-              kind="Factures"
-              origin="agrégées"
-              freshness={dataFreshness}
-            />
-          }
+          sourceChip={<SolSourceChip kind="Factures" origin="agrégées" freshness={dataFreshness} />}
         />
       </div>
 

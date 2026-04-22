@@ -12,13 +12,7 @@
  *
  * Zéro fetch, fonctions pures déterministes.
  */
-import {
-  NBSP,
-  formatFR,
-  formatFREur,
-  computeDelta,
-  freshness,
-} from '../cockpit/sol_presenters';
+import { NBSP, formatFR, formatFREur, computeDelta, freshness } from '../cockpit/sol_presenters';
 import { businessErrorFallback } from '../../i18n/business_errors';
 
 export { NBSP };
@@ -37,7 +31,12 @@ export function buildCommandKicker({ scope } = {}) {
   return `Accueil · ${orgName}${sitesSuffix}`;
 }
 
-export function buildCommandNarrative({ stateIndex, alertsCount, solActionsCount, totalGain } = {}) {
+export function buildCommandNarrative({
+  stateIndex,
+  alertsCount,
+  solActionsCount,
+  totalGain,
+} = {}) {
   if (stateIndex == null) {
     return 'Bienvenue sur votre cockpit énergétique. Les indicateurs se calculent dès les premières données importées.';
   }
@@ -48,15 +47,19 @@ export function buildCommandNarrative({ stateIndex, alertsCount, solActionsCount
   } else if (stateIndex >= 60) {
     parts.push('Votre patrimoine nécessite une vigilance régulière');
   } else {
-    parts.push("Votre patrimoine demande des décisions cette semaine");
+    parts.push('Votre patrimoine demande des décisions cette semaine');
   }
   // Volume d'alertes
   if (alertsCount > 0) {
-    parts.push(`${alertsCount}${NBSP}alerte${alertsCount > 1 ? 's' : ''} critique${alertsCount > 1 ? 's' : ''}`);
+    parts.push(
+      `${alertsCount}${NBSP}alerte${alertsCount > 1 ? 's' : ''} critique${alertsCount > 1 ? 's' : ''}`
+    );
   }
   // Potentiel Sol
   if (solActionsCount > 0 && totalGain > 0) {
-    parts.push(`Sol a préparé ${solActionsCount}${NBSP}action${solActionsCount > 1 ? 's' : ''} pour récupérer ${formatFREur(totalGain, 0)}`);
+    parts.push(
+      `Sol a préparé ${solActionsCount}${NBSP}action${solActionsCount > 1 ? 's' : ''} pour récupérer ${formatFREur(totalGain, 0)}`
+    );
   } else if (solActionsCount > 0) {
     parts.push(`${solActionsCount}${NBSP}action${solActionsCount > 1 ? 's' : ''} à valider`);
   }
@@ -67,7 +70,7 @@ export function buildCommandSubNarrative({ summary } = {}) {
   const done = summary?.counts?.done ?? 0;
   const total = summary?.counts?.total ?? 0;
   if (total === 0) {
-    return "Sources : RegOps canonique · shadow billing · notifications Sol. Vos modules s\u2019activent dès que vous importez vos premières données.";
+    return 'Sources : RegOps canonique · shadow billing · notifications Sol. Vos modules s\u2019activent dès que vous importez vos premières données.';
   }
   const pct = Math.round((done / total) * 100);
   return `${pct}${NBSP}% des actions ont été traitées ce trimestre (${done}/${total}). Sources : RegOps · shadow billing · notifications Sol.`;
@@ -85,7 +88,13 @@ export function buildCommandSubNarrative({ summary } = {}) {
  *
  * Retourne null si aucune donnée exploitable.
  */
-export function computeStateIndex({ complianceScore, totalInvoices, anomaliesCount, activeSites, totalSites } = {}) {
+export function computeStateIndex({
+  complianceScore,
+  totalInvoices,
+  anomaliesCount,
+  activeSites,
+  totalSites,
+} = {}) {
   const parts = [];
   if (complianceScore != null) {
     parts.push({ weight: 0.4, value: Math.max(0, Math.min(100, complianceScore)) });
@@ -108,10 +117,10 @@ export function computeStateIndex({ complianceScore, totalInvoices, anomaliesCou
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function interpretStateIndex(score) {
-  if (score == null) return "Indice en cours de calcul, dépend de la disponibilité des données.";
+  if (score == null) return 'Indice en cours de calcul, dépend de la disponibilité des données.';
   if (score >= 75) return 'Conformité solide, facture maîtrisée, monitoring déployé.';
   if (score >= 60) return 'Deux dimensions sur trois au vert · une en vigilance.';
-  return "Décisions requises cette semaine sur au moins deux dimensions.";
+  return 'Décisions requises cette semaine sur au moins deux dimensions.';
 }
 
 export function interpretCommandAlerts({ alertsCount, topAlertTitle, topAlertImpact }) {
@@ -158,12 +167,19 @@ function labelSource(key) {
 // Week-cards Command Center (transversales tous modules)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function buildCommandWeekCards({ notifications = [], actions = [], topFindings = [], onNavigate = null } = {}) {
+export function buildCommandWeekCards({
+  notifications = [],
+  actions = [],
+  topFindings = [],
+  onNavigate = null,
+} = {}) {
   const cards = [];
   const asFn = (path) => {
     if (!path || typeof path !== 'string') return undefined;
     if (typeof onNavigate === 'function') return () => onNavigate(path);
-    return () => { if (typeof window !== 'undefined') window.location.assign(path); };
+    return () => {
+      if (typeof window !== 'undefined') window.location.assign(path);
+    };
   };
 
   // Card 1 À regarder : alerte critique top (notifications)
@@ -187,7 +203,10 @@ export function buildCommandWeekCards({ notifications = [], actions = [], topFin
   // Card 2 À faire : prochaine action Sol par impact décroissant
   const topAction = actions[0];
   if (topAction) {
-    const gain = topAction.estimated_gain_eur ?? topAction.potential_saving_eur ?? topAction.estimated_impact_eur;
+    const gain =
+      topAction.estimated_gain_eur ??
+      topAction.potential_saving_eur ??
+      topAction.estimated_impact_eur;
     cards.push({
       id: `action-${topAction.id || 0}`,
       tagKind: 'afaire',
@@ -210,7 +229,10 @@ export function buildCommandWeekCards({ notifications = [], actions = [], topFin
       tagKind: 'succes',
       tagLabel: 'Bonne nouvelle',
       title: goodNews.title || goodNews.label || 'Validation récente',
-      body: goodNews.description || goodNews.summary || 'Un jalon réglementaire vient d\u2019être validé.',
+      body:
+        goodNews.description ||
+        goodNews.summary ||
+        'Un jalon réglementaire vient d\u2019être validé.',
       footerLeft: 'archivé avec preuve',
       footerRight: '✓ Clean',
       onClick: asFn(goodNews.deeplink_path),
@@ -240,7 +262,9 @@ export function buildSolWeeklyActivity(summary) {
   for (let i = 11; i >= 0; i--) {
     const weekDate = new Date(today);
     weekDate.setDate(weekDate.getDate() - i * 7);
-    const weekNum = Math.ceil(((weekDate - new Date(weekDate.getFullYear(), 0, 1)) / 86400000 + weekDate.getDay() + 1) / 7);
+    const weekNum = Math.ceil(
+      ((weekDate - new Date(weekDate.getFullYear(), 0, 1)) / 86400000 + weekDate.getDay() + 1) / 7
+    );
     // Distribuer validated et pending sur 12 semaines avec légère croissance
     const factorDone = 0.5 + (11 - i) / 22; // 0.5 → 1.0
     const factorOpen = 0.4 + Math.sin(i) * 0.15;

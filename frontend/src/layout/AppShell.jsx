@@ -364,7 +364,7 @@ export default function AppShell() {
         <main
           id="main-content"
           className="flex-1 overflow-y-auto"
-          style={{ paddingBottom: 36 }}  /* espace pour Sol timerail fixed 36px */
+          style={{ paddingBottom: 36 }} /* espace pour Sol timerail fixed 36px */
         >
           <ToastProvider>
             <ActionDrawerProvider>

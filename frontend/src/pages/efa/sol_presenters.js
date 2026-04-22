@@ -38,8 +38,8 @@ export { NBSP, formatFR, formatFREur };
 
 export const DT_MILESTONES = [
   { year: 2030, ratio: 0.75, label: '−25 %', tone: 'afaire' },
-  { year: 2040, ratio: 0.60, label: '−40 %', tone: 'attention' },
-  { year: 2050, ratio: 0.50, label: '−50 %', tone: 'refuse' },
+  { year: 2040, ratio: 0.6, label: '−40 %', tone: 'attention' },
+  { year: 2050, ratio: 0.5, label: '−50 %', tone: 'refuse' },
 ];
 
 export function targetKwhForMilestone(referenceKwh, year) {
@@ -109,9 +109,7 @@ export function ownerFromEfa(efa) {
 export function latestConsumption(efa) {
   const consos = Array.isArray(efa?.consumptions) ? efa.consumptions : [];
   if (consos.length === 0) return null;
-  return consos
-    .slice()
-    .sort((a, b) => (b.year || 0) - (a.year || 0))[0];
+  return consos.slice().sort((a, b) => (b.year || 0) - (a.year || 0))[0];
 }
 
 export function consumptionKwh(conso) {
@@ -199,14 +197,12 @@ export function buildEfaEntityCardFields({ efa, lastDeclaration } = {}) {
   const surface = totalSurface(efa);
   const bldgs = Array.isArray(efa.buildings) ? efa.buildings.length : 0;
   const owner = ownerFromEfa(efa);
-  const refKwhMwh = efa.reference_year_kwh
-    ? Math.round(efa.reference_year_kwh / 1000)
-    : null;
+  const refKwhMwh = efa.reference_year_kwh ? Math.round(efa.reference_year_kwh / 1000) : null;
 
   return [
     {
       label: 'Périmètre',
-      value: usages.length > 0 ? usages.join(' · ') : (efa.nom || '—'),
+      value: usages.length > 0 ? usages.join(' · ') : efa.nom || '—',
     },
     {
       label: 'Bâtiments',
@@ -224,9 +220,7 @@ export function buildEfaEntityCardFields({ efa, lastDeclaration } = {}) {
     },
     {
       label: 'Dernier OPERAT',
-      value: lastDeclaration?.updated_at
-        ? formatDateFR(lastDeclaration.updated_at)
-        : 'non déposé',
+      value: lastDeclaration?.updated_at ? formatDateFR(lastDeclaration.updated_at) : 'non déposé',
     },
     {
       label: 'Responsable',
@@ -268,7 +262,8 @@ export function interpretEfaCurrent({ efa } = {}) {
   const progressPct = Math.round(((refKwh - currKwh) / refKwh) * 100);
   if (progressPct >= 25) return `−${progressPct}${NBSP}% vs référence · objectif 2030 atteint.`;
   if (progressPct >= 10) return `−${progressPct}${NBSP}% vs référence · progression à maintenir.`;
-  if (progressPct > 0) return `−${progressPct}${NBSP}% vs référence · accélérer pour atteindre −25${NBSP}% en 2030.`;
+  if (progressPct > 0)
+    return `−${progressPct}${NBSP}% vs référence · accélérer pour atteindre −25${NBSP}% en 2030.`;
   return `+${Math.abs(progressPct)}${NBSP}% vs référence · trajectoire en retard, plan requis.`;
 }
 
@@ -318,10 +313,7 @@ export function buildEfaTrajectoryChart(efa) {
   // Ajouter le point de référence
   byYear.set(refYear, refMwh);
 
-  const lastConsoYear = consos.reduce(
-    (acc, c) => Math.max(acc, c?.year || 0),
-    refYear
-  );
+  const lastConsoYear = consos.reduce((acc, c) => Math.max(acc, c?.year || 0), refYear);
   const years = [];
   for (let y = refYear; y <= Math.max(2050, lastConsoYear); y += 1) {
     years.push(y);
@@ -366,9 +358,8 @@ export function buildEfaWeekCards({ efa, lastDeclaration, onOpenModulation, onOp
   const refKwh = Number(efa?.reference_year_kwh) || 0;
   const latest = latestConsumption(efa);
   const currKwh = Number(consumptionKwh(latest)) || 0;
-  const progressPct = refKwh > 0 && currKwh > 0
-    ? Math.round(((refKwh - currKwh) / refKwh) * 100)
-    : null;
+  const progressPct =
+    refKwh > 0 && currKwh > 0 ? Math.round(((refKwh - currKwh) / refKwh) * 100) : null;
 
   // Card 1 : attention (bâtiment top-driver conso OU trajectoire off_track)
   if (efa?.trajectory_status === 'off_track' && progressPct != null) {
@@ -376,7 +367,7 @@ export function buildEfaWeekCards({ efa, lastDeclaration, onOpenModulation, onOp
       id: 'traj-off',
       tagKind: 'attention',
       tagLabel: 'À regarder',
-      title: 'Trajectoire en retard sur l\'objectif 2030',
+      title: "Trajectoire en retard sur l'objectif 2030",
       body: `Progression actuelle ${progressPct >= 0 ? '−' + progressPct : '+' + Math.abs(progressPct)}${NBSP}% vs référence, cible −25${NBSP}% à atteindre.`,
       footerLeft: `référence ${efa.reference_year || '—'}`,
       footerRight: 'Plan requis',
@@ -407,7 +398,7 @@ export function buildEfaWeekCards({ efa, lastDeclaration, onOpenModulation, onOp
       tagKind: 'afaire',
       tagLabel: 'À faire',
       title: 'Pièces justificatives à déposer',
-      body: "Aucune pièce déposée sur cette EFA. Facture, relevé ou attestation sont nécessaires pour valider la prochaine déclaration OPERAT.",
+      body: 'Aucune pièce déposée sur cette EFA. Facture, relevé ou attestation sont nécessaires pour valider la prochaine déclaration OPERAT.',
       footerLeft: 'upload multi-format',
       footerRight: 'Automatisable',
       onClick: () => onOpenProofs?.(),
@@ -436,7 +427,7 @@ export function buildEfaWeekCards({ efa, lastDeclaration, onOpenModulation, onOp
       tagKind: 'succes',
       tagLabel: 'Bonne nouvelle',
       title: `Déclaration ${lastDeclaration.year || ''} validée`.trim(),
-      body: "Votre dernière déclaration OPERAT a été soumise avec succès (simulation). Continuez sur cette régularité.",
+      body: 'Votre dernière déclaration OPERAT a été soumise avec succès (simulation). Continuez sur cette régularité.',
       footerLeft: 'OPERAT ADEME',
       footerRight: '✓ Clean',
     });
@@ -489,7 +480,5 @@ export function normalizeEfa(raw) {
 export function latestDeclaration(efa) {
   const decs = Array.isArray(efa?.declarations) ? efa.declarations : [];
   if (decs.length === 0) return null;
-  return decs
-    .slice()
-    .sort((a, b) => (b.year || 0) - (a.year || 0))[0];
+  return decs.slice().sort((a, b) => (b.year || 0) - (a.year || 0))[0];
 }

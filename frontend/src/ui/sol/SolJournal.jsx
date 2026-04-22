@@ -32,7 +32,10 @@ export default function SolJournal({ entries = [], className = '' }) {
     );
   }
   return (
-    <div className={`sol-journal ${className}`.trim()} style={{ borderTop: '1px solid var(--sol-ink-100)' }}>
+    <div
+      className={`sol-journal ${className}`.trim()}
+      style={{ borderTop: '1px solid var(--sol-ink-100)' }}
+    >
       {entries.map((e) => (
         <div
           key={e.key}
@@ -70,7 +73,10 @@ export default function SolJournal({ entries = [], className = '' }) {
           >
             {e.actor}
           </span>
-          <span className="sol-journal-action" style={{ color: 'var(--sol-ink-700)', lineHeight: 1.45 }}>
+          <span
+            className="sol-journal-action"
+            style={{ color: 'var(--sol-ink-700)', lineHeight: 1.45 }}
+          >
             {e.action}
           </span>
           <span className="sol-journal-status" style={{ textAlign: 'right' }}>

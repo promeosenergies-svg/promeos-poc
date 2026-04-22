@@ -102,9 +102,8 @@ export default function SolTimerail({ trajectory, solBadge }) {
           }}
         />
         <span>
-          {hourStr} ·{' '}
-          <strong style={{ color: tariff.color }}>{tariff.slot}</strong> en cours · jusqu'à{' '}
-          {tariff.until} h
+          {hourStr} · <strong style={{ color: tariff.color }}>{tariff.slot}</strong> en cours ·
+          jusqu'à {tariff.until} h
         </span>
       </span>
 
@@ -157,9 +156,7 @@ export default function SolTimerail({ trajectory, solBadge }) {
       )}
 
       <Separator />
-      <span>
-        {solBadge || 'Sol · en veille'}
-      </span>
+      <span>{solBadge || 'Sol · en veille'}</span>
     </div>
   );
 }

@@ -63,7 +63,14 @@ export default function SolEntityCard({ title, subtitle, status, fields = [], ac
         gap: 14,
       }}
     >
-      <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
         <div style={{ minWidth: 0 }}>
           <h3
             style={{

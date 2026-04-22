@@ -197,28 +197,28 @@ export default function TertiaireDashboardPage() {
           DtProgressMultiSite + table sites + MutualisationSection qui
           ne sont PAS dans le hero (complémentaires vrais). */}
       {false && (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="EFA enregistrees" value={kpis.total_efa} icon={Building2} accent="blue" />
-        <KpiCard
-          label="Anomalies ouvertes"
-          value={kpis.open_issues}
-          icon={AlertTriangle}
-          accent={kpis.open_issues > 0 ? 'amber' : 'slate'}
-          onClick={() => navigate('/conformite/tertiaire/anomalies')}
-        />
-        <KpiCard
-          label="Issues critiques"
-          value={kpis.critical_issues}
-          icon={ShieldAlert}
-          accent={kpis.critical_issues > 0 ? 'red' : 'slate'}
-        />
-        <KpiCard
-          label="Deadline OPERAT"
-          value={`J-${daysToOperat}`}
-          icon={Clock}
-          accent={daysToOperat < 90 ? 'red' : 'amber'}
-        />
-      </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <KpiCard label="EFA enregistrees" value={kpis.total_efa} icon={Building2} accent="blue" />
+          <KpiCard
+            label="Anomalies ouvertes"
+            value={kpis.open_issues}
+            icon={AlertTriangle}
+            accent={kpis.open_issues > 0 ? 'amber' : 'slate'}
+            onClick={() => navigate('/conformite/tertiaire/anomalies')}
+          />
+          <KpiCard
+            label="Issues critiques"
+            value={kpis.critical_issues}
+            icon={ShieldAlert}
+            accent={kpis.critical_issues > 0 ? 'red' : 'slate'}
+          />
+          <KpiCard
+            label="Deadline OPERAT"
+            value={`J-${daysToOperat}`}
+            icon={Clock}
+            accent={daysToOperat < 90 ? 'red' : 'amber'}
+          />
+        </div>
       )}
 
       {/* Vue multi-site trajectoire DT */}

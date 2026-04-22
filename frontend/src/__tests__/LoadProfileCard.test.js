@@ -27,7 +27,9 @@ describe('LoadProfileCard — source guard (no-calc)', () => {
   });
 
   it('importe fmtNum depuis utils/format (helper FR null-safe)', () => {
-    expect(cardSrc).toMatch(/import\s*\{[^}]*fmtNum[^}]*\}\s*from\s*['"]\.\.\/\.\.\/utils\/format['"]/);
+    expect(cardSrc).toMatch(
+      /import\s*\{[^}]*fmtNum[^}]*\}\s*from\s*['"]\.\.\/\.\.\/utils\/format['"]/
+    );
   });
 
   it('utilise fmtNum pour kWh moyen dans le tooltip (2 décimales)', () => {

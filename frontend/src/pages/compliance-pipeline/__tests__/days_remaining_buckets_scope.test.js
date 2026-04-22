@@ -90,13 +90,13 @@ describe('days_remaining buckets scope guard (Phase 5 Lot 6)', () => {
     // days_remaining peut être AFFICHÉ (ex : "J-73") mais jamais
     // comparé à un seuil littéral pour bucketer.
     const allowedReads = [
-      'deadline.days_remaining',       // display numérique (J-N)
-      'deadline.deadline',              // ISO date display
-      'deadline.description',           // string display
-      'deadline.type',                  // enum finding/audit
-      'deadline.regulation',            // enum bacs/dt/aper
-      'deadline.statut',                // enum NOK/OK display
-      'deadlines.d30.length',           // count agrégat
+      'deadline.days_remaining', // display numérique (J-N)
+      'deadline.deadline', // ISO date display
+      'deadline.description', // string display
+      'deadline.type', // enum finding/audit
+      'deadline.regulation', // enum bacs/dt/aper
+      'deadline.statut', // enum NOK/OK display
+      'deadlines.d30.length', // count agrégat
       'deadlines.d90.length',
       'deadlines.d180.length',
       'deadlines.beyond.length',

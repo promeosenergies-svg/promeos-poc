@@ -61,9 +61,21 @@ export default function RegOps() {
     loadAssessment();
 
     // AI (non-bloquant)
-    getAiExplanation(id).then((d) => { if (!cancelled) setAiExplanation(d); }).catch(() => {});
-    getAiRecommendations(id).then((d) => { if (!cancelled) setAiRecommendations(d); }).catch(() => {});
-    getAiDataQuality(id).then((d) => { if (!cancelled) setDataQuality(d); }).catch(() => {});
+    getAiExplanation(id)
+      .then((d) => {
+        if (!cancelled) setAiExplanation(d);
+      })
+      .catch(() => {});
+    getAiRecommendations(id)
+      .then((d) => {
+        if (!cancelled) setAiRecommendations(d);
+      })
+      .catch(() => {});
+    getAiDataQuality(id)
+      .then((d) => {
+        if (!cancelled) setDataQuality(d);
+      })
+      .catch(() => {});
 
     return () => {
       cancelled = true;
@@ -72,7 +84,14 @@ export default function RegOps() {
 
   if (loading || sitesLoading) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        style={{
+          minHeight: '60vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <div
           style={{
             width: 48,
@@ -90,7 +109,14 @@ export default function RegOps() {
 
   if (!assessment) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        style={{
+          minHeight: '60vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <div style={{ textAlign: 'center' }}>
           <p style={{ color: 'var(--sol-ink-500)', marginBottom: 16 }}>
             Évaluation réglementaire non disponible pour ce site.

@@ -126,7 +126,12 @@ export function formatDeadlineOperat(dashboard, deadlineDate = DEFAULT_OPERAT_DE
   }
   const days = Math.ceil((target.getTime() - Date.now()) / 86_400_000);
   if (days <= 0) {
-    return { days, tone: 'refuse', label: `échue${days < 0 ? ` (J+${Math.abs(days)})` : ''}`, overdue: true };
+    return {
+      days,
+      tone: 'refuse',
+      label: `échue${days < 0 ? ` (J+${Math.abs(days)})` : ''}`,
+      overdue: true,
+    };
   }
   let tone = 'calme';
   if (days < 60) tone = 'refuse';
@@ -136,12 +141,13 @@ export function formatDeadlineOperat(dashboard, deadlineDate = DEFAULT_OPERAT_DE
 
 export function interpretDeadlineOperat(dashboard, deadlineDate = DEFAULT_OPERAT_DEADLINE_ISO) {
   const k = formatDeadlineOperat(dashboard, deadlineDate);
-  if (k.days == null) return 'Date d\'échéance OPERAT indisponible.';
+  if (k.days == null) return "Date d'échéance OPERAT indisponible.";
   if (k.overdue) {
     return `Échéance OPERAT dépassée (${Math.abs(k.days)}${NBSP}jour${Math.abs(k.days) > 1 ? 's' : ''}) · régularisation urgente.`;
   }
   if (k.days < 60) return 'Échéance imminente · préparez le dépôt sans tarder.';
-  if (k.days < 180) return 'Fenêtre de préparation ouverte · centralisez les données avant septembre.';
+  if (k.days < 180)
+    return 'Fenêtre de préparation ouverte · centralisez les données avant septembre.';
   return 'Délai confortable · prochaine action après consolidation 2026.';
 }
 
@@ -212,7 +218,10 @@ export function interpretEfaCount(dashboard) {
   if (k.value == null) return 'Statistiques EFA indisponibles.';
   if (k.total === 0) return 'Aucune EFA enregistrée — démarrez la déclaration OPERAT 2030.';
   if (k.value === k.total) return 'Toutes vos EFA sont actives · suivi réglementaire opérationnel.';
-  return `${k.draft > 0 ? `${k.draft}${NBSP}brouillons à finaliser · ` : ''}${k.closed > 0 ? `${k.closed}${NBSP}clôturée${k.closed > 1 ? 's' : ''} (historique)` : ''}`.trim() || 'Suivi EFA en cours.';
+  return (
+    `${k.draft > 0 ? `${k.draft}${NBSP}brouillons à finaliser · ` : ''}${k.closed > 0 ? `${k.closed}${NBSP}clôturée${k.closed > 1 ? 's' : ''} (historique)` : ''}`.trim() ||
+    'Suivi EFA en cours.'
+  );
 }
 
 export function interpretIssues(dashboard) {

@@ -39,25 +39,49 @@ const SUMMARY_FULL = {
     beyond: [],
   },
   untrusted_sites: [
-    { site_id: 1, site_nom: 'Siège HELIOS Paris', trust_score: 0, anomaly_count: 16, reasons: ['10 anomalies'] },
-    { site_id: 3, site_nom: 'Entrepôt Toulouse', trust_score: 30, anomaly_count: 4, reasons: ['data gaps'] },
+    {
+      site_id: 1,
+      site_nom: 'Siège HELIOS Paris',
+      trust_score: 0,
+      anomaly_count: 16,
+      reasons: ['10 anomalies'],
+    },
+    {
+      site_id: 3,
+      site_nom: 'Entrepôt Toulouse',
+      trust_score: 30,
+      anomaly_count: 4,
+      reasons: ['data gaps'],
+    },
   ],
   sites: [
     {
-      site_id: 1, site_nom: 'Siège HELIOS Paris',
-      gate_status: 'OK', completeness_pct: 100, reg_risk: 10, compliance_score: 90,
+      site_id: 1,
+      site_nom: 'Siège HELIOS Paris',
+      gate_status: 'OK',
+      completeness_pct: 100,
+      reg_risk: 10,
+      compliance_score: 90,
       financial_opportunity_eur: 0,
       applicability: { tertiaire_operat: true, bacs: true, aper: true },
     },
     {
-      site_id: 2, site_nom: 'Bureau Lyon',
-      gate_status: 'WARNING', completeness_pct: 85, reg_risk: 35, compliance_score: 65,
+      site_id: 2,
+      site_nom: 'Bureau Lyon',
+      gate_status: 'WARNING',
+      completeness_pct: 85,
+      reg_risk: 35,
+      compliance_score: 65,
       financial_opportunity_eur: 2500,
       applicability: { tertiaire_operat: true, bacs: false, aper: false },
     },
     {
-      site_id: 3, site_nom: 'Entrepôt Toulouse',
-      gate_status: 'BLOCKED', completeness_pct: 45, reg_risk: 70, compliance_score: 30,
+      site_id: 3,
+      site_nom: 'Entrepôt Toulouse',
+      gate_status: 'BLOCKED',
+      completeness_pct: 45,
+      reg_risk: 70,
+      compliance_score: 30,
       financial_opportunity_eur: 12000,
       applicability: { tertiaire_operat: true, bacs: true, aper: false },
     },
@@ -191,7 +215,9 @@ describe('interpret*', () => {
   });
   it('interpretSitesReady adapte au ratio', () => {
     expect(interpretSitesReady(SUMMARY_CLEAN)).toMatch(/prêts|OK/i);
-    expect(interpretSitesReady({ total_sites: 5, kpis: { data_ready: 1 } })).toMatch(/priorité|débloquer/i);
+    expect(interpretSitesReady({ total_sites: 5, kpis: { data_ready: 1 } })).toMatch(
+      /priorité|débloquer/i
+    );
   });
   it('interpretDeadlinesD30 différencie bucket', () => {
     expect(interpretDeadlinesD30(SUMMARY_FULL)).toMatch(/imminente|sous 30/i);
@@ -229,7 +255,7 @@ describe('buildNarrative + buildSubNarrative', () => {
   });
   it('narrative compact (≤ 130 car) avec prêts + échéances + untrusted', () => {
     const n = buildNarrative(SUMMARY_FULL);
-    expect(n).toContain('5');            // total
+    expect(n).toContain('5'); // total
     expect(n).toMatch(/prêts|prêt/i);
     expect(n.length).toBeLessThanOrEqual(130);
   });
@@ -238,8 +264,18 @@ describe('buildNarrative + buildSubNarrative', () => {
     expect(s).not.toMatch(/\/api\/|RegOps|endpoint/i);
   });
   it('subNarrative prioritise blocked puis warning puis stable', () => {
-    expect(buildSubNarrative({ total_sites: 5, kpis: { data_blocked: 2, data_warning: 0, data_ready: 3 } })).toMatch(/bloqué/i);
-    expect(buildSubNarrative({ total_sites: 5, kpis: { data_blocked: 0, data_warning: 2, data_ready: 3 } })).toMatch(/warning|compléter/i);
+    expect(
+      buildSubNarrative({
+        total_sites: 5,
+        kpis: { data_blocked: 2, data_warning: 0, data_ready: 3 },
+      })
+    ).toMatch(/bloqué/i);
+    expect(
+      buildSubNarrative({
+        total_sites: 5,
+        kpis: { data_blocked: 0, data_warning: 2, data_ready: 3 },
+      })
+    ).toMatch(/warning|compléter/i);
     expect(buildSubNarrative(SUMMARY_CLEAN)).toMatch(/stable|trajectoire/i);
   });
 });
@@ -261,9 +297,15 @@ describe('buildEmptyState', () => {
 
 describe('resolveTooltipExplain', () => {
   it('route vers bon interpret par code KPI', () => {
-    expect(resolveTooltipExplain('pipeline_sites_ready', SUMMARY_FULL)).toMatch(/sites|prêts|portefeuille/i);
-    expect(resolveTooltipExplain('pipeline_deadlines_d30', SUMMARY_FULL)).toMatch(/imminente|échéance/i);
-    expect(resolveTooltipExplain('pipeline_untrusted_sites', SUMMARY_FULL)).toMatch(/fiabiliser|anomalies/i);
+    expect(resolveTooltipExplain('pipeline_sites_ready', SUMMARY_FULL)).toMatch(
+      /sites|prêts|portefeuille/i
+    );
+    expect(resolveTooltipExplain('pipeline_deadlines_d30', SUMMARY_FULL)).toMatch(
+      /imminente|échéance/i
+    );
+    expect(resolveTooltipExplain('pipeline_untrusted_sites', SUMMARY_FULL)).toMatch(
+      /fiabiliser|anomalies/i
+    );
   });
   it('string vide si code inconnu', () => {
     expect(resolveTooltipExplain('unknown_kpi', SUMMARY_FULL)).toBe('');
@@ -357,10 +399,10 @@ describe('filterRows', () => {
     expect(filterRows(rows, { gate_status: 'OK' })).toHaveLength(1);
   });
   it('filtre par framework applicability', () => {
-    expect(filterRows(rows, { framework: 'bacs' })).toHaveLength(2);  // HELIOS + Toulouse
-    expect(filterRows(rows, { framework: 'aper' })).toHaveLength(1);  // HELIOS
+    expect(filterRows(rows, { framework: 'bacs' })).toHaveLength(2); // HELIOS + Toulouse
+    expect(filterRows(rows, { framework: 'aper' })).toHaveLength(1); // HELIOS
   });
-  it('filtre untrustedOnly via Set d\'IDs', () => {
+  it("filtre untrustedOnly via Set d'IDs", () => {
     const untrustedIds = new Set([1, 3]);
     expect(filterRows(rows, { untrustedOnly: true, untrustedIds })).toHaveLength(2);
   });

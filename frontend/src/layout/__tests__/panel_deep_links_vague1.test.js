@@ -48,7 +48,7 @@ describe('PANEL_DEEP_LINKS_BY_ROUTE — Vague 1 présence (GATE 4)', () => {
   it('Vague 1 total = 8 deep-links sur 3 routes', () => {
     const total = Object.values(PANEL_DEEP_LINKS_BY_ROUTE).reduce(
       (sum, links) => sum + links.length,
-      0,
+      0
     );
     expect(total).toBe(8);
     expect(Object.keys(PANEL_DEEP_LINKS_BY_ROUTE)).toHaveLength(3);

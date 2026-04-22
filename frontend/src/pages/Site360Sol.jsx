@@ -111,9 +111,10 @@ export default function Site360Sol({
   const fields = buildEntityCardFields({ site, deliveryPoints });
 
   const usageLabel = labelUsage(site.usage || site.type);
-  const titleEm = site.surface_m2 > 0
-    ? `· ${usageLabel} · ${formatFR(site.surface_m2, 0)}${NBSP}m²`
-    : `· ${usageLabel}`;
+  const titleEm =
+    site.surface_m2 > 0
+      ? `· ${usageLabel} · ${formatFR(site.surface_m2, 0)}${NBSP}m²`
+      : `· ${usageLabel}`;
 
   const trajectory = adaptComplianceToTrajectory({ site, compliance });
   const complianceScore = compliance?.overall ?? site.compliance_score ?? null;
@@ -185,10 +186,7 @@ export default function Site360Sol({
 
   const mainContent = (
     <>
-      <SolSectionHead
-        title="Trajectoire Décret Tertiaire"
-        meta="référence 2020 · objectif 2030"
-      />
+      <SolSectionHead title="Trajectoire Décret Tertiaire" meta="référence 2020 · objectif 2030" />
       {trajectory ? (
         <SolTrajectoryChart
           data={trajectory}
@@ -232,10 +230,7 @@ export default function Site360Sol({
   return (
     <SolDetailPage
       breadcrumb={{
-        segments: [
-          { label: 'Patrimoine', to: '/patrimoine' },
-          { label: site.nom || 'Site' },
-        ],
+        segments: [{ label: 'Patrimoine', to: '/patrimoine' }, { label: site.nom || 'Site' }],
         backTo: '/patrimoine',
       }}
       kicker={kicker}
