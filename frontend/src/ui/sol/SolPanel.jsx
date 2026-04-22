@@ -9,13 +9,14 @@
  *   isExpert   : filtre items expertOnly
  *   rightSlot  : optionnel (ex. bouton "Réduire panel")
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   resolveModule,
   getPanelSections,
   NAV_MODULES,
 } from '../../layout/NavRegistry';
+import { track } from '../../services/tracker';
 
 export default function SolPanel({
   desc,
@@ -32,6 +33,17 @@ export default function SolPanel({
   const moduleMeta = NAV_MODULES.find((m) => m.key === currentModule);
   // V2 : panelSections par route (maquette) avec fallback sur NAV_SECTIONS
   const sections = getPanelSections(location.pathname, isExpert);
+
+  // A1 — Track panel mount par route (dénominateur pour ratio clicks/open).
+  // Fire à chaque changement de pathname (pas pour chaque query change),
+  // sinon le ratio serait biaisé (1 navigation deep-link = 1 nav_panel_opened
+  // + 1 nav_deep_link_click, le ratio serait ~100% artificiellement).
+  useEffect(() => {
+    track('nav_panel_opened', {
+      route: location.pathname,
+      module: currentModule,
+    });
+  }, [location.pathname, currentModule]);
 
   return (
     <aside
