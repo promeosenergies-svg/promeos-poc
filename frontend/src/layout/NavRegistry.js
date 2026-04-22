@@ -67,7 +67,11 @@ export const ROUTE_MODULE_MAP = {
   // Cockpit (ex-pilotage)
   '/': 'cockpit',
   '/cockpit': 'cockpit',
+  '/home-legacy': 'cockpit',
+  '/cockpit-legacy': 'cockpit',
   '/onboarding': 'cockpit',
+  // /onboarding/sirene = module patrimoine : le wizard Sirene crée des
+  // sites dans le patrimoine (contexte plus pertinent que cockpit onboarding).
   '/onboarding/sirene': 'patrimoine',
   // Backward compat (redirigés vers Centre d'actions via AppShell)
   '/notifications': 'cockpit',

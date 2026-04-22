@@ -384,6 +384,8 @@ describe('QUICK_ACTIONS', () => {
  */
 describe('matchRouteToModule — routes -legacy', () => {
   const cases = [
+    ['/home-legacy', 'cockpit'],
+    ['/cockpit-legacy', 'cockpit'],
     ['/patrimoine-legacy', 'patrimoine'],
     ['/sites-legacy/abc-123', 'patrimoine'],
     ['/conformite-legacy', 'conformite'],
