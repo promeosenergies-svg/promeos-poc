@@ -40,6 +40,7 @@ import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtDateFR, fmtKwh } from '../utils/format';
+import ComplianceScoreHeader from '../components/conformite/ComplianceScoreHeader';
 
 const REG_CONFIG = {
   tertiaire_operat: { label: 'Décret Tertiaire', icon: Building, color: 'bg-blue-600' },
@@ -589,6 +590,7 @@ export default function SiteCompliancePage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('obligations');
+  const [complianceScore, setComplianceScore] = useState(null);
   const { openActionDrawer } = useActionDrawer();
 
   useEffect(() => {
@@ -599,6 +601,14 @@ export default function SiteCompliancePage() {
       .catch(() => toast('Erreur lors du chargement de la conformité site', 'error'))
       .finally(() => setLoading(false));
   }, [siteId, toast]);
+
+  useEffect(() => {
+    if (!siteId) return;
+    fetch(`/api/compliance/sites/${siteId}/score`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setComplianceScore)
+      .catch(() => setComplianceScore(null));
+  }, [siteId]);
 
   if (loading || sitesLoading) {
     return (
@@ -652,6 +662,13 @@ export default function SiteCompliancePage() {
           {GATE_BADGE[data.readiness.gate_status]?.label || 'N/A'}
         </span>
       </div>
+
+      {/* Score global conformité — unifié avec Site360 (/api/compliance/sites/:id/score) */}
+      {complianceScore && (
+        <div className="mb-4" data-testid="compliance-score-header">
+          <ComplianceScoreHeader complianceScore={complianceScore} />
+        </div>
+      )}
 
       {/* Scores strip */}
       <div className="grid grid-cols-4 gap-3 mb-6">
