@@ -40,16 +40,7 @@ export function formatDate(isoStr, granularity) {
   if (granularity === 'daily') {
     return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', timeZone: 'UTC' });
   }
-  if (granularity === 'hourly') {
-    return d.toLocaleString('fr-FR', {
-      day: '2-digit',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'UTC',
-    });
-  }
-  // 15min / 30min — same day+month+time format as hourly
+  // hourly / 15min / 30min — day+month+time format
   return d.toLocaleString('fr-FR', {
     day: '2-digit',
     month: 'short',

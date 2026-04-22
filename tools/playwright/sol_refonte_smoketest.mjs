@@ -56,10 +56,10 @@ async function dismissOverlay(page) {
   await page.waitForTimeout(400);
 }
 
-async function safeGoto(page, url, opts = {}) {
+async function safeGoto(page, url) {
   // Use 'load' — networkidle never fires with Vite HMR websocket
   try {
-    await page.goto(url, { waitUntil: 'load', timeout: 20000, ...opts });
+    await page.goto(url, { waitUntil: 'load', timeout: 20000 });
   } catch (_) {
     try { await page.goto(url, { waitUntil: 'commit', timeout: 10000 }); } catch (_2) {}
   }
