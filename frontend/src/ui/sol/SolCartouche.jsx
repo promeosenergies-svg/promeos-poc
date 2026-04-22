@@ -20,8 +20,15 @@ export default function SolCartouche({ state = 'default', onClick, className = '
     <div
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? tone.chip : undefined}
       onClick={onClick}
-      onKeyDown={interactive ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick?.(e); } : undefined}
+      onKeyDown={
+        interactive
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') onClick?.(e);
+            }
+          : undefined
+      }
       className={`sol-cartouche ${className}`.trim()}
       style={{
         position: 'fixed',

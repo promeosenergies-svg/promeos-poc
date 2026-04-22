@@ -86,6 +86,7 @@ export default function SolTimeline({ events = [], onNavigate, emptyLabel = 'Auc
             key={ev.id ?? `${ev.datetime}-${idx}`}
             role={clickable ? 'button' : undefined}
             tabIndex={clickable ? 0 : undefined}
+            aria-label={clickable ? ev.title : undefined}
             onClick={handleClick}
             onKeyDown={handleKey}
             style={{

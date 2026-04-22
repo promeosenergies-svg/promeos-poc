@@ -91,7 +91,9 @@ function usePatrimoineSolData({ orgId, typeFilter } = {}) {
       });
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [orgId, typeFilter]);
 
   return state;
@@ -164,14 +166,21 @@ export default function PatrimoineSol() {
 
   const barChartData = useMemo(() => adaptSitesToBarChart(sites, { limit: 8 }), [sites]);
 
-  const narrative = buildPatrimoineNarrative({
-    kpis: displayKpis,
-    sites,
-    euiAvg,
-    benchmarkAvg,
-    topDrivers,
-  });
-  const subNarrative = buildPatrimoineSubNarrative({ kpis: displayKpis });
+  const narrative = useMemo(
+    () =>
+      buildPatrimoineNarrative({
+        kpis: displayKpis,
+        sites,
+        euiAvg,
+        benchmarkAvg,
+        topDrivers,
+      }),
+    [displayKpis, sites, euiAvg, benchmarkAvg, topDrivers]
+  );
+  const subNarrative = useMemo(
+    () => buildPatrimoineSubNarrative({ kpis: displayKpis }),
+    [displayKpis]
+  );
 
   // ─── Rendu ───────────────────────────────────────────────────────────────
 
@@ -231,9 +240,8 @@ export default function PatrimoineSol() {
           source={{
             kind: 'Consommations',
             origin: 'Enedis + GRDF · ADEME ODP 2024',
-            freshness: benchmarkAvg != null
-              ? `réf. ${formatFR(benchmarkAvg, 0)}${NBSP}kWh/m²`
-              : undefined,
+            freshness:
+              benchmarkAvg != null ? `réf. ${formatFR(benchmarkAvg, 0)}${NBSP}kWh/m²` : undefined,
           }}
         />
       </SolKpiRow>
@@ -282,9 +290,11 @@ export default function PatrimoineSol() {
             euiAvg != null ? (
               <>
                 <strong style={{ color: 'var(--sol-ink-900)' }}>
-                  EUI moyen {formatFR(euiAvg, 0)}{NBSP}kWh/m²
+                  EUI moyen {formatFR(euiAvg, 0)}
+                  {NBSP}kWh/m²
                 </strong>{' '}
-                · référence ADEME ODP 2024 pondérée surface : {formatFR(benchmarkAvg || 0, 0)}{NBSP}kWh/m².
+                · référence ADEME ODP 2024 pondérée surface : {formatFR(benchmarkAvg || 0, 0)}
+                {NBSP}kWh/m².
               </>
             ) : (
               <>Conso annuelle par site · tri décroissant.</>
@@ -294,7 +304,11 @@ export default function PatrimoineSol() {
             <SolSourceChip
               kind="Enedis + GRDF"
               origin="12 mois glissants"
-              freshness={kpis.completude_moyenne_pct != null ? `${kpis.completude_moyenne_pct}% complet` : undefined}
+              freshness={
+                kpis.completude_moyenne_pct != null
+                  ? `${kpis.completude_moyenne_pct}% complet`
+                  : undefined
+              }
             />
           }
         />

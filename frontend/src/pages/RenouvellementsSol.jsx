@@ -72,10 +72,12 @@ export default function RenouvellementsSol({
   const pageRows = useMemo(() => paginateRows(sorted, page, pageSize), [sorted, page, pageSize]);
 
   const kicker = buildRenewalsKicker({ scopeLabel, imminentCount: kpis.imminentCount90d });
-  const narrative = buildRenewalsNarrative({ contracts, kpis });
-  const subNarrative = buildRenewalsSubNarrative({ kpis });
+  const narrative = useMemo(() => buildRenewalsNarrative({ contracts, kpis }), [contracts, kpis]);
+  const subNarrative = useMemo(() => buildRenewalsSubNarrative({ kpis }), [kpis]);
 
-  const hasFilters = Boolean(filters.search || filters.supplier || filters.status || filters.urgency);
+  const hasFilters = Boolean(
+    filters.search || filters.supplier || filters.status || filters.urgency
+  );
   const emptyState = buildEmptyState({ hasFilters, hasAnyRenewal: rowsAll.length > 0 });
   const filterConfig = useMemo(() => buildFilterConfig({ contracts }), [contracts]);
 
@@ -123,14 +125,12 @@ export default function RenouvellementsSol({
         if (v == null) return '—';
         const cells = row.cells;
         const kind =
-          cells.status === 'expired' || v < 0
-            ? 'risk'
-            : v <= 30
-              ? 'risk'
-              : v <= 90
-                ? 'att'
-                : 'ok';
-        return <SolStatusPill kind={kind}>{v < 0 ? `+${Math.abs(v)}${NBSP}j` : `${v}${NBSP}j`}</SolStatusPill>;
+          cells.status === 'expired' || v < 0 ? 'risk' : v <= 30 ? 'risk' : v <= 90 ? 'att' : 'ok';
+        return (
+          <SolStatusPill kind={kind}>
+            {v < 0 ? `+${Math.abs(v)}${NBSP}j` : `${v}${NBSP}j`}
+          </SolStatusPill>
+        );
       },
     },
     {
@@ -141,7 +141,9 @@ export default function RenouvellementsSol({
       render: (v) => {
         const label = URGENCY_LABELS[v] || v || '—';
         const tone = toneFromUrgency(v);
-        const kind = { calme: 'ok', attention: 'att', afaire: 'att', refuse: 'risk', succes: 'ok' }[tone] || 'att';
+        const kind =
+          { calme: 'ok', attention: 'att', afaire: 'att', refuse: 'risk', succes: 'ok' }[tone] ||
+          'att';
         return <SolStatusPill kind={kind}>{label}</SolStatusPill>;
       },
     },
@@ -158,7 +160,8 @@ export default function RenouvellementsSol({
       align: 'right',
       width: 110,
       render: (v) => {
-        if (v == null) return <span style={{ color: 'var(--sol-ink-400)', fontStyle: 'italic' }}>n/d</span>;
+        if (v == null)
+          return <span style={{ color: 'var(--sol-ink-400)', fontStyle: 'italic' }}>n/d</span>;
         const color =
           v >= 80
             ? 'var(--sol-succes-fg)'
@@ -176,7 +179,9 @@ export default function RenouvellementsSol({
       render: (v) => {
         const label = STATUS_LABELS[v] || v || '—';
         const tone = toneFromStatus(v);
-        const kind = { calme: 'ok', attention: 'att', afaire: 'att', refuse: 'risk', succes: 'ok' }[tone] || 'att';
+        const kind =
+          { calme: 'ok', attention: 'att', afaire: 'att', refuse: 'risk', succes: 'ok' }[tone] ||
+          'att';
         return <SolStatusPill kind={kind}>{label}</SolStatusPill>;
       },
     },
@@ -328,10 +333,7 @@ export default function RenouvellementsSol({
   return (
     <SolListPage
       breadcrumb={{
-        segments: [
-          { label: 'Patrimoine', to: '/patrimoine' },
-          { label: 'Renouvellements' },
-        ],
+        segments: [{ label: 'Patrimoine', to: '/patrimoine' }, { label: 'Renouvellements' }],
         backTo: '/patrimoine',
       }}
       kicker={kicker}

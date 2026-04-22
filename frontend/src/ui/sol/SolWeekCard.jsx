@@ -29,8 +29,18 @@ export default function SolWeekCard({
     <div
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
+      aria-label={onClick ? [tagLabel, title].filter(Boolean).join(' · ') : undefined}
       onClick={onClick}
-      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(e); } } : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick(e);
+              }
+            }
+          : undefined
+      }
       style={{
         background: 'var(--sol-bg-paper)',
         border: '1px solid var(--sol-ink-200)',
@@ -40,8 +50,12 @@ export default function SolWeekCard({
         transition: 'border-color 120ms ease',
         position: 'relative',
       }}
-      onMouseEnter={onClick ? (e) => (e.currentTarget.style.borderColor = 'var(--sol-ink-500)') : undefined}
-      onMouseLeave={onClick ? (e) => (e.currentTarget.style.borderColor = 'var(--sol-ink-200)') : undefined}
+      onMouseEnter={
+        onClick ? (e) => (e.currentTarget.style.borderColor = 'var(--sol-ink-500)') : undefined
+      }
+      onMouseLeave={
+        onClick ? (e) => (e.currentTarget.style.borderColor = 'var(--sol-ink-200)') : undefined
+      }
     >
       <div
         style={{

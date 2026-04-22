@@ -67,6 +67,7 @@ export default function SolExpertToolbar({
       {onSearchChange && (
         <input
           type="search"
+          aria-label={searchPlaceholder}
           placeholder={searchPlaceholder}
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -152,7 +153,8 @@ export default function SolExpertToolbar({
                 fontWeight: 600,
               }}
             >
-              ● {nActive}{'\u00a0'}actif{nActive > 1 ? 's' : ''}
+              ● {nActive}
+              {'\u00a0'}actif{nActive > 1 ? 's' : ''}
             </span>
           )}
         </div>

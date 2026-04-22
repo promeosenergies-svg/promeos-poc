@@ -177,9 +177,18 @@ export default function SolExpertGridFull({
               const active = sortBy?.column === id;
               const dir = active ? sortBy.direction : null;
               const canSort = col.sortable && onSort;
+              const ariaSort = canSort
+                ? active
+                  ? dir === 'asc'
+                    ? 'ascending'
+                    : 'descending'
+                  : 'none'
+                : undefined;
               return (
                 <th
                   key={id}
+                  scope="col"
+                  aria-sort={ariaSort}
                   onClick={canSort ? () => onSort(id) : undefined}
                   style={{
                     textAlign: col.align || 'left',
@@ -220,9 +229,7 @@ export default function SolExpertGridFull({
                 onClick={handleClick}
                 style={{
                   cursor: clickable ? 'pointer' : 'default',
-                  background: isSelected
-                    ? 'var(--sol-calme-bg)'
-                    : toneBg || 'transparent',
+                  background: isSelected ? 'var(--sol-calme-bg)' : toneBg || 'transparent',
                   transition: 'background-color 120ms ease',
                 }}
                 onMouseEnter={(e) => {

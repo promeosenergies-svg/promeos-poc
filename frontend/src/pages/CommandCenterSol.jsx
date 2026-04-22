@@ -92,7 +92,9 @@ function useCommandData({ orgId } = {}) {
       });
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [orgId]);
 
   return state;
@@ -101,11 +103,26 @@ function useCommandData({ orgId } = {}) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 const MODULE_TILES = [
-  { to: '/cockpit', label: 'Cockpit exécutif', desc: 'Synthèse portefeuille, KPIs 3 modes', Icon: LayoutDashboard },
-  { to: '/conformite', label: 'Conformité', desc: 'Décret tertiaire · BACS · APER', Icon: ShieldCheck },
+  {
+    to: '/cockpit',
+    label: 'Cockpit exécutif',
+    desc: 'Synthèse portefeuille, KPIs 3 modes',
+    Icon: LayoutDashboard,
+  },
+  {
+    to: '/conformite',
+    label: 'Conformité',
+    desc: 'Décret tertiaire · BACS · APER',
+    Icon: ShieldCheck,
+  },
   { to: '/bill-intel', label: 'Facturation', desc: 'Shadow billing + anomalies', Icon: Receipt },
   { to: '/patrimoine', label: 'Patrimoine', desc: 'Sites · contrats · EUI', Icon: Building2 },
-  { to: '/achat-energie', label: 'Achat énergie', desc: 'Arbitrage · scénarios · radar', Icon: ShoppingCart },
+  {
+    to: '/achat-energie',
+    label: 'Achat énergie',
+    desc: 'Arbitrage · scénarios · radar',
+    Icon: ShoppingCart,
+  },
 ];
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -152,9 +169,9 @@ export default function CommandCenterSol() {
 
   // KPI 2 alerts
   const alertsCount =
-    notifSummary.total
-    ?? notifSummary.counts?.total
-    ?? (notifList.filter((n) => n?.severity === 'critical' || n?.severity === 'high').length);
+    notifSummary.total ??
+    notifSummary.counts?.total ??
+    notifList.filter((n) => n?.severity === 'critical' || n?.severity === 'high').length;
   const topAlert = notifList.find((n) => n?.severity === 'critical') || notifList[0];
 
   // KPI 3 Sol actions
@@ -176,13 +193,11 @@ export default function CommandCenterSol() {
   // Graphe activité Sol hebdo
   const barChartData = useMemo(() => buildSolWeeklyActivity(actions), [actions]);
 
-  const narrative = buildCommandNarrative({
-    stateIndex,
-    alertsCount,
-    solActionsCount,
-    totalGain,
-  });
-  const subNarrative = buildCommandSubNarrative({ summary: actions });
+  const narrative = useMemo(
+    () => buildCommandNarrative({ stateIndex, alertsCount, solActionsCount, totalGain }),
+    [stateIndex, alertsCount, solActionsCount, totalGain]
+  );
+  const subNarrative = useMemo(() => buildCommandSubNarrative({ summary: actions }), [actions]);
 
   const dataFreshness = useMemo(
     () => freshness(data.cockpit?.stats?.compliance_computed_at),
@@ -304,23 +319,22 @@ export default function CommandCenterSol() {
               <>
                 <strong style={{ color: 'var(--sol-ink-900)' }}>
                   {actions.counts.done}/{actions.counts.total} actions validées
-                </strong>
-                {' '}à date · gain cumulé {formatFREur(totalGain, 0)}.
+                </strong>{' '}
+                à date · gain cumulé {formatFREur(totalGain, 0)}.
               </>
             ) : null
           }
           sourceChip={
-            <SolSourceChip
-              kind="Sol V1"
-              origin="journal actions"
-              freshness={dataFreshness}
-            />
+            <SolSourceChip kind="Sol V1" origin="journal actions" freshness={dataFreshness} />
           }
         />
       </div>
 
       {/* Tuiles de navigation modules — complément Pattern A pour page racine */}
-      <SolSectionHead title="Accès rapide aux modules" meta={`${MODULE_TILES.length}${NBSP}modules`} />
+      <SolSectionHead
+        title="Accès rapide aux modules"
+        meta={`${MODULE_TILES.length}${NBSP}modules`}
+      />
       <div
         style={{
           display: 'grid',
