@@ -9,6 +9,7 @@ Garanties :
 - Per-PRM atomicité (un PRM en erreur ne bloque pas les autres)
 - Quality-first overwrite (meilleure qualité auto-promote)
 - Backlog replay (PRM non résolus retentés à chaque run)
+- Raw read path in flux_data.db, promoted write path in promeos.db
 """
 
 import json
@@ -60,6 +61,7 @@ def run_promotion(
     triggered_by: str = "api",
     flux_types: list[str] | None = None,
     dry_run: bool = False,
+    flux_db: Session | None = None,
 ) -> PromotionRun:
     """Exécute un run de promotion complet.
 
@@ -67,6 +69,8 @@ def run_promotion(
     """
     if flux_types is None:
         flux_types = ["R4X", "R50", "R171", "R151"]
+    if flux_db is None:
+        flux_db = db
 
     # Vérifier qu'aucun run n'est déjà en cours
     running = db.query(PromotionRun).filter(PromotionRun.status == "running").first()
@@ -90,7 +94,7 @@ def run_promotion(
         run.high_water_mark_before = json.dumps(hwm_before)
 
         # Discover : collecter tous les PRM distincts à traiter
-        prm_rows = _discover_prms(db, flux_types, hwm_before, mode)
+        prm_rows = _discover_prms(flux_db, db, flux_types, hwm_before, mode)
         run.prms_total = len(prm_rows)
 
         counters = defaultdict(int)
@@ -107,11 +111,12 @@ def run_promotion(
                 counters["rows_power_peak"] += result.get("pp", 0)
                 counters["rows_skipped"] += result.get("skipped", 0)
             except Exception as e:
+                db.rollback()
                 logger.error("Promotion failed for PRM %s: %s", prm_code, e)
                 counters["failed"] += 1
 
         # Finalize
-        hwm_after = _get_high_water_marks(db, flux_types)
+        hwm_after = _get_high_water_marks(flux_db, flux_types)
         run.high_water_mark_after = json.dumps(hwm_after)
         run.prms_matched = counters["matched"]
         run.prms_unmatched = counters["unmatched"]
@@ -153,7 +158,13 @@ def run_promotion(
     return run
 
 
-def _discover_prms(db: Session, flux_types: list[str], hwm: dict, mode: str) -> dict[str, list[tuple[str, object]]]:
+def _discover_prms(
+    flux_db: Session,
+    db: Session,
+    flux_types: list[str],
+    hwm: dict,
+    mode: str,
+) -> dict[str, list[tuple[str, object]]]:
     """Découvre les PRM distincts à traiter depuis les tables staging.
 
     Retourne {prm_code: [(flux_key, staging_row), ...]}
@@ -165,7 +176,7 @@ def _discover_prms(db: Session, flux_types: list[str], hwm: dict, mode: str) -> 
             continue
         model_cls, _ = _STAGING_TABLES[flux_key]
 
-        query = db.query(model_cls)
+        query = flux_db.query(model_cls)
         if mode == "incremental" and flux_key in hwm:
             query = query.filter(model_cls.id > hwm[flux_key])
 
@@ -423,14 +434,14 @@ def _resolve_backlog(db: Session, prm_code: str, meter_id: int) -> None:
         # Pas de commit ici — atomicité per-PRM gérée par _process_prm
 
 
-def _get_high_water_marks(db: Session, flux_types: list[str]) -> dict[str, int]:
+def _get_high_water_marks(flux_db: Session, flux_types: list[str]) -> dict[str, int]:
     """Retourne le max(id) par table staging (snapshot courant)."""
     hwm = {}
     for flux_key in flux_types:
         if flux_key not in _STAGING_TABLES:
             continue
         model_cls, _ = _STAGING_TABLES[flux_key]
-        max_id = db.query(func.max(model_cls.id)).scalar()
+        max_id = flux_db.query(func.max(model_cls.id)).scalar()
         if max_id is not None:
             hwm[flux_key] = max_id
     return hwm

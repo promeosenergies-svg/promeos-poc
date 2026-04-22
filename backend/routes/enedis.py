@@ -16,7 +16,7 @@ from sqlalchemy import func, text, union
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from database import get_db
+from database import get_db, get_flux_data_db
 from data_ingestion.enedis.config import get_flux_dir
 from data_ingestion.enedis.decrypt import MissingKeyError, load_keys_from_env
 from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
@@ -190,7 +190,7 @@ class StatsResponse(BaseModel):
 
 
 @router.post("/ingest", response_model=IngestResponse)
-def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db)):
+def trigger_ingest(body: IngestRequest, db: Session = Depends(get_flux_data_db)):
     """Trigger the Enedis SGE ingestion pipeline (synchronous)."""
     # --- Pre-flight validation ---
     try:
@@ -283,7 +283,7 @@ def list_flux_files(
     flux_type: Optional[str] = Query(None, description="Filter by flux type"),
     limit: int = Query(24, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_flux_data_db),
 ):
     """List Enedis flux files with optional filters and pagination."""
     q = db.query(EnedisFluxFile)
@@ -309,7 +309,7 @@ def list_flux_files(
 
 
 @router.get("/flux-files/{file_id}", response_model=FluxFileDetailResponse)
-def get_flux_file_detail(file_id: int, db: Session = Depends(get_db)):
+def get_flux_file_detail(file_id: int, db: Session = Depends(get_flux_data_db)):
     """Get detail of a single flux file including header_raw and error history."""
     f = db.query(EnedisFluxFile).filter(EnedisFluxFile.id == file_id).first()
     if f is None:
@@ -341,7 +341,7 @@ def get_flux_file_detail(file_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/stats", response_model=StatsResponse)
-def get_stats(db: Session = Depends(get_db)):
+def get_stats(db: Session = Depends(get_flux_data_db)):
     """Aggregated ingestion stats: files, measures, PRMs, last ingestion."""
     # --- Files by status ---
     status_rows = db.query(EnedisFluxFile.status, func.count()).group_by(EnedisFluxFile.status).all()
@@ -434,6 +434,7 @@ def trigger_promotion(
     flux_types: Optional[str] = Query(None, description="R4X,R50,R171,R151 (comma-sep)"),
     dry_run: bool = Query(False),
     db: Session = Depends(get_db),
+    flux_db: Session = Depends(get_flux_data_db),
     _auth=Depends(_require_auth),
 ):
     """Déclenche un run de promotion staging → tables fonctionnelles.
@@ -448,7 +449,7 @@ def trigger_promotion(
 
     ft = [f.strip().upper() for f in flux_types.split(",")] if flux_types else None
     try:
-        run = run_promotion(db, mode=mode, triggered_by="api", flux_types=ft, dry_run=dry_run)
+        run = run_promotion(db, mode=mode, triggered_by="api", flux_types=ft, dry_run=dry_run, flux_db=flux_db)
         return {
             "run_id": run.id,
             "status": run.status,

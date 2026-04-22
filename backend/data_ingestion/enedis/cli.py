@@ -25,12 +25,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 # database import triggers load_dotenv() via connection.py
 from sqlalchemy.exc import IntegrityError  # noqa: E402
-from database import SessionLocal, engine, run_migrations  # noqa: E402
-from models.base import Base  # noqa: E402
+from database import FluxDataSessionLocal as SessionLocal, flux_data_engine as engine  # noqa: E402
 
 from data_ingestion.enedis.config import get_flux_dir  # noqa: E402
 from data_ingestion.enedis.decrypt import MissingKeyError, load_keys_from_env  # noqa: E402
 from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus  # noqa: E402
+from data_ingestion.enedis.migrations import run_flux_data_migrations  # noqa: E402
 from data_ingestion.enedis.models import (  # noqa: E402
     EnedisFluxFile,
     EnedisFluxMesureR4x,
@@ -51,11 +51,9 @@ logger = logging.getLogger("promeos.enedis.cli")
 
 def _ensure_tables(eng):
     """Create all tables if DB is missing or empty, then run migrations."""
-    import models  # noqa: F401 — register all models with SQLAlchemy
     import data_ingestion.enedis.models  # noqa: F401 — register Enedis staging models
 
-    Base.metadata.create_all(bind=eng)
-    run_migrations(eng)
+    run_flux_data_migrations(eng)
 
 
 # ---------------------------------------------------------------------------

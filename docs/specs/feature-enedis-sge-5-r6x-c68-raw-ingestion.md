@@ -1,9 +1,9 @@
 # SF5 — Enedis R6X + C68 Raw Ingestion Extension
 
 > **Status**: PRD v0.1 — first draft based on roadmap, official local guides, JSON schemas, and real `flux_enedis/` samples inspected on 2026-04-18
-> **Depends on**: SF1 (decrypt), SF2 (R4x staging), SF3 (R171/R50/R151 staging), SF4 (operationalization) — complete and merged
+> **Depends on**: SF1 (decrypt), SF2 (R4x staging), SF3 (R171/R50/R151 staging), SF4 (operationalization), SGE4.5 (raw DB split to `flux_data.db`) — complete and merged
 > **Module**: `backend/data_ingestion/enedis/`
-> **Goal**: extend the existing raw archive pipeline with `R63`, `R64`, and `C68` while preserving SF1-SF4 behavior for legacy XML flows
+> **Goal**: extend the existing raw archive pipeline with `R63`, `R64`, and `C68` while preserving SF1-SF4 behavior for legacy XML flows and the SGE4.5 storage split to `flux_data.db`
 
 ---
 
@@ -41,7 +41,7 @@ If we do nothing, SF6 remains blocked: it already treats SF5 as the upstream pre
 - `C68` is the raw source for technical and contractual PRM snapshots needed by downstream power/contract features
 - the current ingestion CLI/API/stats should continue to work across mixed Enedis directories instead of splitting into a second ad hoc toolchain
 
-SF5 therefore extends the existing pipeline, but stays strictly in the **raw archive layer**. No functional promotion, PRM matching, or business normalization belongs here.
+SF5 therefore extends the existing pipeline, but stays strictly in the **raw archive layer** stored in `flux_data.db`. No functional promotion, PRM matching, or business normalization belongs here.
 
 ---
 

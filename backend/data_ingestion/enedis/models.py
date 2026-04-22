@@ -10,9 +10,8 @@ Tables:
   enedis_flux_mesure_r151  — one row per valeur R151 index+puissance max C5
 
 Design decisions:
-  - Uses the shared Base (models.base.Base) so tables are created in promeos.db
-    alongside all other PROMEOS models. Production may later migrate to a
-    specialized time-series DB.
+  - Uses the dedicated FluxDataBase so raw Enedis tables live in flux_data.db
+    instead of the main PROMEOS product database.
   - No unique constraint on mesure rows: Enedis may republish corrections for the
     same PRM/timestamp. Both versions are archived; deduplication is deferred to a
     future staging/normalization layer.
@@ -40,8 +39,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
+from data_ingestion.enedis.base import FluxDataBase
 from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
-from models.base import Base, TimestampMixin
+from models.base import TimestampMixin
+
+Base = FluxDataBase
 
 
 class EnedisFluxFile(Base, TimestampMixin):
@@ -357,3 +359,14 @@ class IngestionRun(Base, TimestampMixin):
 
     def __repr__(self) -> str:
         return f"<IngestionRun #{self.id} {self.status} triggered_by={self.triggered_by}>"
+
+
+ENEDIS_RAW_TABLES = (
+    "enedis_flux_file",
+    "enedis_flux_mesure_r4x",
+    "enedis_flux_mesure_r171",
+    "enedis_flux_mesure_r50",
+    "enedis_flux_mesure_r151",
+    "enedis_flux_file_error",
+    "enedis_ingestion_run",
+)

@@ -22,9 +22,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from main import app
-from models.base import Base
+from data_ingestion.enedis.base import FluxDataBase
 import data_ingestion.enedis.models  # noqa: F401 — register Enedis tables
-from database import get_db
+from database import get_db, get_flux_data_db
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
     EnedisFluxFileError,
@@ -45,13 +45,13 @@ from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
 @pytest.fixture
 def client():
     """TestClient + session tuple with isolated in-memory DB."""
-    engine = create_engine(
+    raw_engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    Base.metadata.create_all(bind=engine)
-    Session = sessionmaker(bind=engine)
+    FluxDataBase.metadata.create_all(bind=raw_engine)
+    Session = sessionmaker(bind=raw_engine)
     session = Session()
 
     def _override():
@@ -60,6 +60,7 @@ def client():
         finally:
             pass
 
+    app.dependency_overrides[get_flux_data_db] = _override
     app.dependency_overrides[get_db] = _override
     yield TestClient(app), session
     app.dependency_overrides.clear()

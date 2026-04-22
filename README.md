@@ -153,7 +153,7 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > **Disclaimer**
 >
 > Ce depot est un **proof-of-concept** (POC). Il n'est pas prevu pour la production :
-> SQLite par defaut (PostgreSQL supporte via `DATABASE_URL` + Alembic migrations).
+> SQLite par defaut (`promeos.db` pour l'app, `flux_data.db` pour les flux bruts Enedis). PostgreSQL reste supporte via `DATABASE_URL` + Alembic migrations.
 > Rate-limiting en memoire (sliding window par IP, endpoints sensibles proteges).
 > CORS configurable (`PROMEOS_CORS_ORIGINS` en production, wildcard en mode demo).
 > Authentification IAM implementee (JWT + scopes hierarchiques + 11 roles metier).
@@ -352,6 +352,7 @@ Le fichier `backend/.env.example` contient toutes les variables :
 | Variable | Defaut | Description |
 |----------|--------|-------------|
 | `DATABASE_URL` | `sqlite:///./data/promeos.db` | Chemin de la DB SQLite |
+| `FLUX_DATA_DATABASE_URL` | `sqlite:///./data/flux_data.db` | Base SQLite dediee aux flux Enedis bruts |
 | `API_HOST` | `127.0.0.1` | Host du backend |
 | `API_PORT` | `8001` | Port du backend |
 | `FRONTEND_URL` | `http://localhost:5173` | URL du frontend (CORS) |
@@ -462,7 +463,13 @@ python scripts/kb_smoke.py
      |  SQLAlchemy   |   |  SQLite kb.db |   |  Watchers       |
      |  98+ modeles  |   |  12 items     |   |  Legifrance,    |
      |  promeos.db   |   |               |   |  CRE, RTE RSS   |
-     +---------------+   +---------------+   +-----------------+
+     +--------+------+   +---------------+   +-----------------+
+              |
+     +--------v--------+
+     |  flux_data.db   |
+     |  Flux Enedis    |
+     |  archive brut   |
+     +--------+--------+
               |
      +--------v--------+
      |  AI Layer       |
@@ -479,6 +486,7 @@ python scripts/kb_smoke.py
 | Backend | FastAPI 0.104 + Uvicorn 0.24 |
 | ORM | SQLAlchemy 2.0 |
 | DB principale | SQLite (promeos.db) |
+| DB flux bruts | SQLite (flux_data.db) |
 | DB Knowledge Base | SQLite + FTS5 (kb.db) |
 | Validation | Pydantic 2.5 |
 | Tests | pytest 7.4 + vitest 4.0 |

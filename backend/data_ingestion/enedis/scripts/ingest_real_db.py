@@ -1,4 +1,4 @@
-"""Ingest real Enedis SGE files into promeos.db.
+"""Ingest real Enedis SGE files into flux_data.db.
 
 .. deprecated:: SF4
     This script is deprecated. Use the CLI instead:
@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[3] / ".env")
 
-from database.connection import SessionLocal
+from database import FluxDataSessionLocal
 from data_ingestion.enedis.decrypt import load_keys_from_env
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
@@ -45,7 +45,7 @@ def main():
         sys.exit(1)
 
     keys = load_keys_from_env()
-    session = SessionLocal()
+    session = FluxDataSessionLocal()
 
     try:
         # Show pre-ingestion state

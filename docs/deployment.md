@@ -131,6 +131,7 @@ npm run dev      # Development server
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `DATABASE_URL` | No | SQLAlchemy database URL (default: SQLite) |
+| `FLUX_DATA_DATABASE_URL` | No | Dedicated raw Enedis flux database URL (default: `sqlite:///./data/flux_data.db`) |
 | `AI_API_KEY` | No | AI provider API key (stub mode if missing) |
 | `AI_MODEL` | No | AI model name (default: claude-sonnet) |
 | `METEOFRANCE_API_KEY` | No | MeteoFrance API key (stub if missing) |

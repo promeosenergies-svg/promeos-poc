@@ -118,7 +118,7 @@ def empty_file(tmp_path):
 @pytest.fixture
 def db():
     """In-memory SQLite DB with Enedis staging tables only."""
-    from models.base import Base
+    from data_ingestion.enedis.base import FluxDataBase
 
     engine = create_engine(
         "sqlite:///:memory:",
@@ -128,7 +128,7 @@ def db():
     # Import models so they register with Base.metadata
     import data_ingestion.enedis.models  # noqa: F401
 
-    Base.metadata.create_all(bind=engine)
+    FluxDataBase.metadata.create_all(bind=engine)
     session = sessionmaker(bind=engine)()
     yield session
     session.close()

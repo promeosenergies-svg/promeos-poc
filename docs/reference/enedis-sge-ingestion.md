@@ -219,13 +219,13 @@ backend/data_ingestion/enedis/
 | **Dispatch table** | Le routage flux → parser → stockage est une table de dispatch. Ajouter un nouveau type de flux = 1 parser + 1 entrée dans la table. |
 | **Idempotence fichier** | SHA256 du fichier chiffré. Même contenu physique = pas de re-traitement. |
 | **Crash recovery** | Conception en 2 phases. Un crash en cours de traitement laisse les fichiers en statut `RECEIVED`, qui seront repris au prochain run. |
-| **Base partagée** | Les tables Enedis utilisent le même `Base` SQLAlchemy que le reste de Promeos (même fichier `promeos.db` en dev). |
+| **Base dédiée raw** | Les tables Enedis brutes utilisent `FluxDataBase` et sont stockées dans `flux_data.db` en dev, séparées de `promeos.db`. |
 
 ### Intégration avec le reste du backend
 
 - **Routes** : le routeur FastAPI est enregistré dans `main.py` sous le préfixe `/api/enedis`
-- **Base de données** : les tables sont créées au démarrage via `database/migrations.py` (`_create_enedis_tables()`)
-- **Session** : l'API utilise `database.get_db()` (injection FastAPI), le CLI utilise `database.SessionLocal()`
+- **Base de données** : les tables raw sont créées au démarrage via `data_ingestion/enedis/migrations.py` (`run_flux_data_migrations()`)
+- **Session** : l'API utilise `database.get_flux_data_db()`, le CLI utilise `database.FluxDataSessionLocal()`
 - **Aucun lien vers les entités métier** : les tables de staging n'ont pas de FK vers `Compteur`, `Site` ou `Consommation`
 
 ---
@@ -271,7 +271,7 @@ backend/data_ingestion/enedis/
          ▼
 ┌──────────────────┐
 │  Tables staging  │  enedis_flux_file (registre)
-│  (promeos.db)    │  enedis_flux_mesure_r4x / r171 / r50 / r151 (mesures)
+│ (flux_data.db)   │  enedis_flux_mesure_r4x / r171 / r50 / r151 (mesures)
 └──────────────────┘
 ```
 

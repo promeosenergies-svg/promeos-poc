@@ -269,10 +269,12 @@ from routes.pilotage import router as pilotage_router
 app.include_router(pilotage_router)
 
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
-from database import engine as _engine, run_migrations as _run_migrations
+from database import engine as _engine, flux_data_engine as _flux_data_engine, run_migrations as _run_migrations
+from data_ingestion.enedis.migrations import run_flux_data_migrations as _run_flux_data_migrations
 
 if "pytest" not in sys.modules:
     _run_migrations(_engine)
+    _run_flux_data_migrations(_flux_data_engine)
 
 # Startup route validation: verify critical V67 billing routes are registered
 _REQUIRED_BILLING_PATHS = ["/api/billing/periods", "/api/billing/coverage-summary", "/api/billing/missing-periods"]

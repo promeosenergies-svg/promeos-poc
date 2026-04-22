@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Run Enedis raw ingestion flow-by-flow into backend/data/enedis.db.
+"""Run Enedis raw ingestion flow-by-flow into backend/data/flux_data.db.
 
 The script deliberately reuses the existing SF1-SF4 CLI unchanged by:
-- switching DATABASE_URL to a dedicated SQLite database
+- switching FLUX_DATA_DATABASE_URL to a dedicated SQLite database
 - invoking `python -m data_ingestion.enedis.cli ingest`
 - running one flow directory per CLI execution
 
@@ -29,7 +29,7 @@ BACKEND_DIR = SCRIPT_PATH.parents[1]
 REPO_ROOT = SCRIPT_PATH.parents[2]
 WORKSPACE_ROOT = SCRIPT_PATH.parents[3]
 
-DEFAULT_DB_PATH = BACKEND_DIR / "data" / "enedis.db"
+DEFAULT_DB_PATH = BACKEND_DIR / "data" / "flux_data.db"
 DEFAULT_PROMEOS_DB_PATH = BACKEND_DIR / "data" / "promeos.db"
 DEFAULT_LOG_DIR = BACKEND_DIR / "data" / "enedis_lab_logs"
 DEFAULT_BACKEND_PYTHON = BACKEND_DIR / "venv" / "bin" / "python3"
@@ -73,7 +73,7 @@ EXPECTED_MEASURE_TABLE = {
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Load Enedis raw flows into backend/data/enedis.db")
+    parser = argparse.ArgumentParser(description="Load Enedis raw flows into backend/data/flux_data.db")
     parser.add_argument(
         "source",
         nargs="?",
@@ -82,12 +82,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--all",
         action="store_true",
-        help="Run the default flow sequence on the same enedis.db",
+        help="Run the default flow sequence on the same flux_data.db",
     )
     parser.add_argument(
         "--reset-db",
         action="store_true",
-        help="Delete enedis.db before the first run",
+        help="Delete flux_data.db before the first run",
     )
     parser.add_argument(
         "--db-path",
@@ -208,7 +208,7 @@ def resolve_python_executable() -> str:
 
 def stream_cli_run(flow_name: str, source_dir: Path, db_path: Path, log_path: Path) -> int:
     env = os.environ.copy()
-    env["DATABASE_URL"] = f"sqlite:///{db_path}"
+    env["FLUX_DATA_DATABASE_URL"] = f"sqlite:///{db_path}"
     python_executable = resolve_python_executable()
 
     command = [

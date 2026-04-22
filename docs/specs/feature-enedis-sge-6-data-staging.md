@@ -1,7 +1,7 @@
 # SF6 — Enedis Data Staging: Raw → Functional Promotion Pipeline
 
 > **Status**: PRD v2.5 — feature renumbered from SF5 to SF6 after inserting a new SF5 raw-ingestion wave
-> **Depends on**: SF1 (decrypt), SF2 (CDC ingestion), SF3 (index ingestion), SF4 (operationalization) — complete and merged; SF5 (R63/R64 R6X + C68 raw-ingestion extension) — upstream prerequisite
+> **Depends on**: SF1 (decrypt), SF2 (CDC ingestion), SF3 (index ingestion), SF4 (operationalization), SGE4.5 (raw DB split to `flux_data.db`) — complete and merged; SF5 (R63/R64 R6X + C68 raw-ingestion extension) — upstream prerequisite
 > **Module**: `backend/data_staging/` (new, separate from `data_ingestion/`)
 > **Document note**: this spec now lives at `feature-enedis-sge-6-data-staging.md` to match the new **SF6** roadmap numbering.
 
@@ -9,7 +9,7 @@
 
 ## 1. Problem Statement
 
-SF1-SF4 delivered the first complete raw ingestion pipeline: 6 flux types parsed, 5 staging tables, 91 real files ingested, 123,846 measures — all stored as raw strings with zero transformation. This raw archive is the **source of truth** for everything Enedis sends us.
+SF1-SF4 delivered the first complete raw ingestion pipeline: 6 flux types parsed, 5 staging tables, 91 real files ingested, 123,846 measures — all stored as raw strings with zero transformation. Since SGE4.5, this raw archive is stored in `flux_data.db` and remains the **source of truth** for everything Enedis sends us.
 
 The roadmap now inserts a new **SF5** before this feature. That new SF5 extends the raw-ingestion layer with two additional staging tables covering `R63` / `R64` (R6X family) and `C68`. This document stays focused on the downstream **raw → functional promotion layer** and therefore becomes **SF6**.
 
