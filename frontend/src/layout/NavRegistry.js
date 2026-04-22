@@ -756,62 +756,72 @@ export function getVisibleItems(items, expertMode) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
- * PANEL_SECTIONS_BY_ROUTE — overrides Sol par route (vide pour parité main)
- *
- * Mécanisme : permet à une route donnée d'avoir des sections sémantiques
- * Sol-spécifiques (ex: "Cette semaine / Horizons / Vue d'ensemble") au
- * lieu des sections génériques NAV_SECTIONS du module.
- *
- * État actuel : VIDE — décision prise (avril 2026) de tenir "main = vérité"
- * sur la nav. Toutes les routes retombent sur getSectionsForModule() qui lit
- * NAV_SECTIONS (parité stricte main). Réintroduire des entrées route par
- * route uniquement après validation produit que les divergences Sol sont
- * souhaitées (ex: ajouter /actions et /notifications first-class implique
- * d'aussi muter NAV_SECTIONS de main, pas seulement la refonte).
- * ══════════════════════════════════════════════════════════════════════════ */
-export const PANEL_SECTIONS_BY_ROUTE = {};
-
-
-/* ══════════════════════════════════════════════════════════════════════════
- * PANEL_DEEP_LINKS_BY_ROUTE — stub introduit GATE 2 (sprint nav-deep-links).
+ * PANEL_DEEP_LINKS_BY_ROUTE — raccourcis paramétrés additifs par route.
  *
  * DOCTRINE (non-négociable) :
  *   - SSOT = NAV_SECTIONS. Ce mécanisme NE la remplace JAMAIS.
+ *   - Schéma entrée : `{ href: string, label: string, hint?: string }[]`
  *   - Uniquement raccourcis paramétrés (?tab=, ?filter=, ?horizon=, ?fw=)
  *     ou sous-paths qui n'existent PAS comme items top-level NAV_SECTIONS.
  *   - Zéro duplication de label top-level NAV_SECTIONS (garde-fou test).
  *   - Zéro ré-exposition d'items cachés volontairement (/actions, /notifications).
  *
- * Contrat enforce par __tests__/panel_deep_links_invariant.test.js (GATE 2).
+ * Contrat enforce par __tests__/panel_deep_links_invariant.test.js.
  *
  * Historique : ex-PANEL_SECTIONS_BY_ROUTE (vidé f679f14c après divergence
- * SSOT). Triage détaillé des 14 routes historiques dans
- * docs/audit/deep_links_panel_triage.md.
+ * SSOT — 14 entrées avec sections concurrentes, labels divergents, items
+ * cachés ré-exposés). Triage détaillé docs/audit/deep_links_panel_triage.md.
  *
- * État actuel : stub vide (GATE 2). Remplissage Vague 1 en GATE 4.
+ * Merge logic : getPanelSections() retourne les sections NAV_SECTIONS du
+ * module courant (SSOT) PUIS append une section "Raccourcis" contenant les
+ * deep-links de la route (si présents). Ordre : SSOT d'abord, additif ensuite.
+ *
+ * État actuel : vide (GATE 3 rename). Remplissage Vague 1 en GATE 4.
  * ══════════════════════════════════════════════════════════════════════════ */
 export const PANEL_DEEP_LINKS_BY_ROUTE = {};
 
 /**
  * Résout les sections à afficher dans SolPanel pour une route donnée.
- * Priorité : PANEL_SECTIONS_BY_ROUTE[route] → getSectionsForModule(moduleKey).
+ *
+ * Architecture 3 couches :
+ *   1. NAV_SECTIONS (SSOT) → sections du module courant, source principale
+ *   2. PANEL_DEEP_LINKS_BY_ROUTE → raccourcis additifs paramétrés (optionnel)
+ *   3. getVisibleItems() → filtre expertOnly
+ *
+ * Le merge est **additif** (pas d'override) : les items SSOT restent
+ * toujours visibles, les deep-links apparaissent dans une section
+ * "Raccourcis" appendée en bas du panel si la route en déclare.
  */
 export function getPanelSections(pathname, expertMode) {
   const clean = (pathname || '').split('?')[0].split('#')[0];
-  // 1. Match exact route
-  if (PANEL_SECTIONS_BY_ROUTE[clean]) {
-    return PANEL_SECTIONS_BY_ROUTE[clean]
-      .map((s) => ({ ...s, items: getVisibleItems(s.items, expertMode) }))
-      .filter((s) => s.items.length > 0);
-  }
-  // 2. Fallback : sections génériques du module courant
+
+  // 1. Couche SSOT : sections du module courant depuis NAV_SECTIONS
   const { moduleId } = matchRouteToModule(clean);
-  const fallback = getSectionsForModule(moduleId);
-  return fallback.map((s) => ({
+  const baseSections = getSectionsForModule(moduleId).map((s) => ({
     key: s.key,
     label: s.label,
     items: getVisibleItems(s.items || [], expertMode),
   })).filter((s) => s.items.length > 0);
+
+  // 2. Couche additive : deep-links paramétrés pour la route exacte
+  const deepLinks = PANEL_DEEP_LINKS_BY_ROUTE[clean] || [];
+  if (deepLinks.length === 0) {
+    return baseSections;
+  }
+
+  // Transforme les deep-links {href, label, hint} vers le shape items
+  // attendu par SolPanel ({to, label, desc}) pour compat rendu.
+  const shortcutsSection = {
+    key: 'deep-links',
+    label: 'Raccourcis',
+    items: deepLinks.map((l) => ({
+      to: l.href,
+      label: l.label,
+      desc: l.hint,
+    })),
+  };
+
+  return [...baseSections, shortcutsSection];
 }
 
 /** Flat list of all nav items (for CommandPalette search) — base path only (no query) */
