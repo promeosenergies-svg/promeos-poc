@@ -769,57 +769,7 @@ export function getVisibleItems(items, expertMode) {
  * souhaitées (ex: ajouter /actions et /notifications first-class implique
  * d'aussi muter NAV_SECTIONS de main, pas seulement la refonte).
  * ══════════════════════════════════════════════════════════════════════════ */
-export const PANEL_SECTIONS_BY_ROUTE = {
-  // ─────────────────────────────────────────────────────────────────────────
-  // /anomalies — filtres framework réglementaire (Lot 1 deep-links)
-  // Doctrine : la route parent '/anomalies' est le premier item ; les
-  // deep-links ?fw=XXX sont des raccourcis sémantiques sans remplacer la
-  // vue globale. NAV_SECTIONS non muté.
-  // ─────────────────────────────────────────────────────────────────────────
-  '/anomalies': [
-    {
-      key: 'frameworks',
-      label: 'Frameworks réglementaires',
-      items: [
-        { to: '/anomalies', label: 'Toutes anomalies', desc: 'Vue consolidée' },
-        { to: '/anomalies?fw=DECRET_TERTIAIRE', label: 'Décret Tertiaire', desc: 'DPE · seuils surface' },
-        { to: '/anomalies?fw=FACTURATION', label: 'Facturation', desc: 'Shadow billing · écarts' },
-        { to: '/anomalies?fw=BACS', label: 'BACS', desc: 'Automatisation CVC' },
-      ],
-    },
-  ],
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // /renouvellements — horizons temporels (Lot 1 deep-links)
-  // ─────────────────────────────────────────────────────────────────────────
-  '/renouvellements': [
-    {
-      key: 'horizons',
-      label: 'Horizons',
-      items: [
-        { to: '/renouvellements', label: 'Tous renouvellements', desc: 'Portefeuille complet' },
-        { to: '/renouvellements?horizon=90', label: '90 jours', desc: 'Urgent', badgeKey: 'renewals_90j' },
-        { to: '/renouvellements?horizon=180', label: '6 mois', desc: 'À préparer' },
-        { to: '/renouvellements?horizon=365', label: '12 mois', desc: 'Roadmap' },
-      ],
-    },
-  ],
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // /conformite/aper — filtres parkings/toitures (Lot 1 deep-links)
-  // ─────────────────────────────────────────────────────────────────────────
-  '/conformite/aper': [
-    {
-      key: 'aper_inventaire',
-      label: 'Inventaire APER',
-      items: [
-        { to: '/conformite/aper', label: 'Vue d\u2019ensemble', desc: 'Sites éligibles + potentiel' },
-        { to: '/conformite/aper?filter=parking', label: 'Parkings', desc: '> 1 500 m² · 2026-2028' },
-        { to: '/conformite/aper?filter=toiture', label: 'Toitures', desc: '> 500 m² neuves/rénovées' },
-      ],
-    },
-  ],
-};
+export const PANEL_SECTIONS_BY_ROUTE = {};
 
 
 /* ══════════════════════════════════════════════════════════════════════════
