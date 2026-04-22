@@ -376,6 +376,29 @@ describe('QUICK_ACTIONS', () => {
   });
 });
 
+/* ── Routes -legacy résolvent au bon module (pas au default 'cockpit') ──
+ * Le matcher prefix est strict (`route + '/'`), donc /conformite-legacy ne
+ * matche PAS le préfixe /conformite. Sans mapping explicite, ces routes
+ * tomberaient toutes au default 'cockpit', cassant le tint header + le
+ * highlight rail. On les liste explicitement dans ROUTE_MODULE_MAP.
+ */
+describe('matchRouteToModule — routes -legacy', () => {
+  const cases = [
+    ['/patrimoine-legacy', 'patrimoine'],
+    ['/sites-legacy/abc-123', 'patrimoine'],
+    ['/conformite-legacy', 'conformite'],
+    ['/monitoring-legacy', 'energie'],
+    ['/bill-intel-legacy', 'patrimoine'],
+    ['/achat-energie-legacy', 'achat'],
+  ];
+  for (const [path, expectedModule] of cases) {
+    it(`${path} → module '${expectedModule}'`, () => {
+      const { moduleId } = matchRouteToModule(path);
+      expect(moduleId).toBe(expectedModule);
+    });
+  }
+});
+
 /* ── Section tints ── */
 describe('SECTION_TINTS', () => {
   it('has a tint for every section', () => {

@@ -79,6 +79,7 @@ export const ROUTE_MODULE_MAP = {
 
   // Conformité (module autonome)
   '/conformite': 'conformite',
+  '/conformite-legacy': 'conformite',
   '/conformite/dt': 'conformite',
   '/conformite/bacs': 'conformite',
   '/conformite/aper': 'conformite',
@@ -105,19 +106,24 @@ export const ROUTE_MODULE_MAP = {
   '/usages': 'energie',
   '/usages-horaires': 'energie',
   '/monitoring': 'energie',
+  '/monitoring-legacy': 'energie',
 
   // Patrimoine (Facturation migrée ici)
   '/patrimoine': 'patrimoine',
   '/patrimoine/nouveau': 'patrimoine',
+  '/patrimoine-legacy': 'patrimoine',
   '/sites/:id': 'patrimoine',
+  '/sites-legacy/:id': 'patrimoine',
   '/contrats': 'patrimoine',
   '/billing': 'patrimoine',
   '/bill-intel': 'patrimoine',
+  '/bill-intel-legacy': 'patrimoine',
   '/payment-rules': 'patrimoine',
   '/portfolio-reconciliation': 'patrimoine',
 
   // Achat
   '/achat-energie': 'achat',
+  '/achat-energie-legacy': 'achat',
   '/renouvellements': 'achat',
 
   // Admin
