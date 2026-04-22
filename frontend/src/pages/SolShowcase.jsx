@@ -35,7 +35,6 @@ import {
   SolBreadcrumb,
   SolEntityCard,
   SolTimeline,
-  SolListPage,
   SolExpertToolbar,
   SolExpertGridFull,
   SolPagination,
@@ -74,7 +73,7 @@ const JOURNAL = [
     key: 'j3',
     date: '13 avr · 17 h 54',
     actor: 'Amine',
-    action: "Annulation envoi courrier litige consommation Nice",
+    action: 'Annulation envoi courrier litige consommation Nice',
     status: 'Annulé',
     statusKind: 'risk',
   },
@@ -113,9 +112,36 @@ const EXPERT_COLS = [
   { key: 'status', label: 'État', align: 'right', num: false },
 ];
 const EXPERT_ROWS = [
-  { key: 'lyon', cells: { site: 'Lyon Sud', surface: '3 240 m²', conso: '412 MWh', score: '68', status: <SolStatusPill kind="att">Att</SolStatusPill> } },
-  { key: 'nice', cells: { site: 'Nice Tertiaire', surface: '2 180 m²', conso: '298 MWh', score: '54', status: <SolStatusPill kind="risk">Risque</SolStatusPill> } },
-  { key: 'paris', cells: { site: 'Paris Centre', surface: '4 820 m²', conso: '541 MWh', score: '82', status: <SolStatusPill kind="ok">Conforme</SolStatusPill> } },
+  {
+    key: 'lyon',
+    cells: {
+      site: 'Lyon Sud',
+      surface: '3 240 m²',
+      conso: '412 MWh',
+      score: '68',
+      status: <SolStatusPill kind="att">Att</SolStatusPill>,
+    },
+  },
+  {
+    key: 'nice',
+    cells: {
+      site: 'Nice Tertiaire',
+      surface: '2 180 m²',
+      conso: '298 MWh',
+      score: '54',
+      status: <SolStatusPill kind="risk">Risque</SolStatusPill>,
+    },
+  },
+  {
+    key: 'paris',
+    cells: {
+      site: 'Paris Centre',
+      surface: '4 820 m²',
+      conso: '541 MWh',
+      score: '82',
+      status: <SolStatusPill kind="ok">Conforme</SolStatusPill>,
+    },
+  },
 ];
 
 // Pattern B démo — filtres, rows, pagination
@@ -127,16 +153,85 @@ const LIST_COLUMNS = [
   { id: 'status', label: 'Statut', sortable: true, align: 'left' },
 ];
 const LIST_ROWS = [
-  { id: 1, cells: { site: 'Lyon Sud', type: 'Facturation', severity: 'Critique', impact: '1 847 €', status: 'À traiter' }, tone: 'refuse' },
-  { id: 2, cells: { site: 'Nice Hôtel', type: 'Conso', severity: 'Élevée', impact: '890 €', status: 'En cours' }, tone: 'attention' },
-  { id: 3, cells: { site: 'Paris Centre', type: 'BACS', severity: 'Moyenne', impact: '420 €', status: 'Ouvert' } },
-  { id: 4, cells: { site: 'Toulouse', type: 'Facturation', severity: 'Faible', impact: '120 €', status: 'Ouvert' } },
-  { id: 5, cells: { site: 'Marseille', type: 'Conso', severity: 'Moyenne', impact: '650 €', status: 'Résolu' }, tone: 'succes' },
+  {
+    id: 1,
+    cells: {
+      site: 'Lyon Sud',
+      type: 'Facturation',
+      severity: 'Critique',
+      impact: '1 847 €',
+      status: 'À traiter',
+    },
+    tone: 'refuse',
+  },
+  {
+    id: 2,
+    cells: {
+      site: 'Nice Hôtel',
+      type: 'Conso',
+      severity: 'Élevée',
+      impact: '890 €',
+      status: 'En cours',
+    },
+    tone: 'attention',
+  },
+  {
+    id: 3,
+    cells: {
+      site: 'Paris Centre',
+      type: 'BACS',
+      severity: 'Moyenne',
+      impact: '420 €',
+      status: 'Ouvert',
+    },
+  },
+  {
+    id: 4,
+    cells: {
+      site: 'Toulouse',
+      type: 'Facturation',
+      severity: 'Faible',
+      impact: '120 €',
+      status: 'Ouvert',
+    },
+  },
+  {
+    id: 5,
+    cells: {
+      site: 'Marseille',
+      type: 'Conso',
+      severity: 'Moyenne',
+      impact: '650 €',
+      status: 'Résolu',
+    },
+    tone: 'succes',
+  },
 ];
 const LIST_FILTERS = [
-  { id: 'site', label: 'Site', options: [{ value: 'lyon', label: 'Lyon Sud' }, { value: 'nice', label: 'Nice Hôtel' }] },
-  { id: 'type', label: 'Type', options: [{ value: 'facturation', label: 'Facturation' }, { value: 'conso', label: 'Conso' }] },
-  { id: 'severity', label: 'Sévérité', options: [{ value: 'critical', label: 'Critique' }, { value: 'high', label: 'Élevée' }] },
+  {
+    id: 'site',
+    label: 'Site',
+    options: [
+      { value: 'lyon', label: 'Lyon Sud' },
+      { value: 'nice', label: 'Nice Hôtel' },
+    ],
+  },
+  {
+    id: 'type',
+    label: 'Type',
+    options: [
+      { value: 'facturation', label: 'Facturation' },
+      { value: 'conso', label: 'Conso' },
+    ],
+  },
+  {
+    id: 'severity',
+    label: 'Sévérité',
+    options: [
+      { value: 'critical', label: 'Critique' },
+      { value: 'high', label: 'Élevée' },
+    ],
+  },
 ];
 
 export default function SolShowcase() {
@@ -174,8 +269,8 @@ export default function SolShowcase() {
       />
 
       <SolHeadline>
-        <em>Vous êtes</em> à 62/100 cette semaine. Deux sites tirent la facture vers le haut —
-        Sol peut préparer les courriers.
+        <em>Vous êtes</em> à 62/100 cette semaine. Deux sites tirent la facture vers le haut — Sol
+        peut préparer les courriers.
       </SolHeadline>
       <SolSubline>
         La saisonnalité prolonge le pic du matin, mais le contrat limite les leviers jusqu&apos;au
@@ -204,7 +299,10 @@ export default function SolShowcase() {
         onCancel={() => {}}
       />
 
-      <SolSectionHead title="Vos indicateurs · mars" meta="3 kpis · sources : factures, RegOps, Enedis" />
+      <SolSectionHead
+        title="Vos indicateurs · mars"
+        meta="3 kpis · sources : factures, RegOps, Enedis"
+      />
       <SolKpiRow>
         <SolKpiCard
           label="Facture énergie · mars"
@@ -259,7 +357,15 @@ export default function SolShowcase() {
       </SolWeekGrid>
 
       <SolSectionHead title="Courbe de charge · 24 h" meta="site critique · pas 30 min" />
-      <div style={{ background: 'var(--sol-bg-paper)', border: '1px solid var(--sol-rule)', borderRadius: 8, padding: 16, boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)' }}>
+      <div
+        style={{
+          background: 'var(--sol-bg-paper)',
+          border: '1px solid var(--sol-rule)',
+          borderRadius: 8,
+          padding: 16,
+          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
+        }}
+      >
         <SolLoadCurve
           data={LOAD_DATA}
           peakPoint={{ time: '14:00', value: 118, label: 'pic 14 h · 118 kW' }}
@@ -271,17 +377,20 @@ export default function SolShowcase() {
 
       {mode === 'inspect' && (
         <>
-          <SolSectionHead title="Inspect · la logique Sol" meta="prose éditoriale · Fraunces 15/1.7" />
+          <SolSectionHead
+            title="Inspect · la logique Sol"
+            meta="prose éditoriale · Fraunces 15/1.7"
+          />
           <SolInspectDoc>
             <p>
-              Le score conformité passe de 64 à 62 parce que deux obligations n&apos;ont pas progressé
-              ce mois-ci : la <strong>déclaration OPERAT</strong> et l&apos;<strong>audit SMÉ</strong>
-              {' '}sur le périmètre tertiaire.
+              Le score conformité passe de 64 à 62 parce que deux obligations n&apos;ont pas
+              progressé ce mois-ci : la <strong>déclaration OPERAT</strong> et l&apos;
+              <strong>audit SMÉ</strong> sur le périmètre tertiaire.
             </p>
             <p>
               Sol observe également une dérive gaz sur le site de Lyon Sud depuis 14 jours. Sans
-              correction, la trajectoire 2030 glisse de deux points. <em>Aucun levier ne peut
-              déroger à la règle sans votre validation.</em>
+              correction, la trajectoire 2030 glisse de deux points.{' '}
+              <em>Aucun levier ne peut déroger à la règle sans votre validation.</em>
             </p>
           </SolInspectDoc>
         </>
@@ -343,10 +452,18 @@ export default function SolShowcase() {
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
-        <SolButton variant="primary" onClick={() => {}}>Primary</SolButton>
-        <SolButton variant="secondary" onClick={() => {}}>Secondary</SolButton>
-        <SolButton variant="ghost" onClick={() => {}}>Ghost</SolButton>
-        <SolButton variant="agentic" onClick={() => {}}>Agentic</SolButton>
+        <SolButton variant="primary" onClick={() => {}}>
+          Primary
+        </SolButton>
+        <SolButton variant="secondary" onClick={() => {}}>
+          Secondary
+        </SolButton>
+        <SolButton variant="ghost" onClick={() => {}}>
+          Ghost
+        </SolButton>
+        <SolButton variant="agentic" onClick={() => {}}>
+          Agentic
+        </SolButton>
         <SolSourceChip kind="factures" origin="3 fournisseurs" />
       </div>
 
@@ -362,9 +479,11 @@ export default function SolShowcase() {
         searchValue=""
         onSearchChange={() => {}}
         selection={{ count: listSelected.size, total: LIST_ROWS.length }}
-        selectionActions={listSelected.size > 0 ? [
-          { label: 'Contester sélection', onClick: () => {}, variant: 'primary' },
-        ] : []}
+        selectionActions={
+          listSelected.size > 0
+            ? [{ label: 'Contester sélection', onClick: () => {}, variant: 'primary' }]
+            : []
+        }
       />
       <SolExpertGridFull
         columns={LIST_COLUMNS}
@@ -392,7 +511,9 @@ export default function SolShowcase() {
         width={540}
       >
         <SolInspectDoc>
-          <p><em>Madame, Monsieur,</em></p>
+          <p>
+            <em>Madame, Monsieur,</em>
+          </p>
           <p>
             Je relève sur votre facture de mars deux écarts avec la grille TURPE 7 publiée par la
             CRE en 2024 :
@@ -400,12 +521,12 @@ export default function SolShowcase() {
           <p>
             <strong>— Composante Gestion</strong> : 21,93 € HT au lieu de 15,00 € HT contractuels.
             <br />
-            <strong>— CTA</strong> : 10,11 % appliquée au lieu de 4,71 % applicables depuis
-            le 1er février 2026.
+            <strong>— CTA</strong> : 10,11 % appliquée au lieu de 4,71 % applicables depuis le 1er
+            février 2026.
           </p>
           <p>
-            Je vous prie de bien vouloir corriger ces écarts sur la prochaine facturation et d&apos;en
-            tenir compte pour la période mars 2026.
+            Je vous prie de bien vouloir corriger ces écarts sur la prochaine facturation et
+            d&apos;en tenir compte pour la période mars 2026.
           </p>
           <p style={{ color: 'var(--sol-ink-500)', fontSize: 13 }}>
             <em>Ce courrier est généré par Sol · envoi réversible 24 h.</em>
@@ -413,7 +534,9 @@ export default function SolShowcase() {
         </SolInspectDoc>
         <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
           <SolButton variant="agentic">Envoyer maintenant</SolButton>
-          <SolButton variant="secondary" onClick={() => setDrawerOpen(false)}>Plus tard</SolButton>
+          <SolButton variant="secondary" onClick={() => setDrawerOpen(false)}>
+            Plus tard
+          </SolButton>
         </div>
       </SolDrawer>
     </SolAppShell>

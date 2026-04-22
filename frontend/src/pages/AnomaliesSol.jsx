@@ -34,7 +34,6 @@ import {
   buildFilterConfig,
   toneFromSeverity,
   SEVERITY_LABELS,
-  FRAMEWORK_LABELS,
   formatFREur,
   NBSP,
 } from './anomalies/sol_presenters';
@@ -95,16 +94,10 @@ export default function AnomaliesSol({
     hasAnyAnomaly: allAnomalies.length > 0 || anomalies.length > 0,
   });
 
-  const filterConfig = useMemo(
-    () => buildFilterConfig({ scopedSites }),
-    [scopedSites]
-  );
+  const filterConfig = useMemo(() => buildFilterConfig({ scopedSites }), [scopedSites]);
 
   const activeFilterCount =
-    (filters.fw ? 1 : 0) +
-    (filters.sev ? 1 : 0) +
-    (filters.site ? 1 : 0) +
-    (filters.q ? 1 : 0);
+    (filters.fw ? 1 : 0) + (filters.sev ? 1 : 0) + (filters.site ? 1 : 0) + (filters.q ? 1 : 0);
 
   const handleSort = (columnId) => {
     setSortBy((prev) => {
@@ -197,11 +190,7 @@ export default function AnomaliesSol({
       searchPlaceholder="Rechercher une anomalie ou un site…"
       searchValue={filters.q || ''}
       onSearchChange={(v) => handleFilterChange('q', v)}
-      selection={
-        selectedIds.size > 0
-          ? { count: selectedIds.size, total: rowsAll.length }
-          : null
-      }
+      selection={selectedIds.size > 0 ? { count: selectedIds.size, total: rowsAll.length } : null}
       selectionActions={
         selectedIds.size > 0 && selectionActions
           ? selectionActions.map((a) => ({

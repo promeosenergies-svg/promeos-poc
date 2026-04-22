@@ -9,7 +9,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   ARCHETYPE_LABELS,
-  DEMO_SITE_LABELS,
   humaniseArchetype,
   humaniseSiteId,
 } from '../components/pilotage/archetypeLabels';

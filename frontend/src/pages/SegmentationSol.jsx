@@ -10,12 +10,7 @@
  * pas de SolBarChart, pas de SolWeekGrid, juste header + 3 KPIs.
  */
 import React from 'react';
-import {
-  SolPageHeader,
-  SolHeadline,
-  SolKpiRow,
-  SolKpiCard,
-} from '../ui/sol';
+import { SolPageHeader, SolHeadline, SolKpiRow, SolKpiCard } from '../ui/sol';
 import {
   buildSegmentationKicker,
   buildSegmentationNarrative,
@@ -25,7 +20,6 @@ import {
   interpretQuestionnaireProgress,
   profilePill,
   TYPO_LABELS,
-  NBSP,
 } from './segmentation/sol_presenters';
 
 /**
@@ -44,7 +38,8 @@ export default function SegmentationSol({ profile, questions = [], answers = {} 
   const pill = profilePill({ profile });
 
   const confidenceValue = Number(profile?.confidence_score);
-  const progressPct = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : null;
+  const progressPct =
+    totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : null;
 
   const typoLabel = profile?.has_profile
     ? profile.segment_label || TYPO_LABELS[profile.typologie] || profile.typologie || '—'
@@ -64,7 +59,7 @@ export default function SegmentationSol({ profile, questions = [], answers = {} 
         <em>Votre organisation</em>{' '}
         {profile?.has_profile
           ? `est segmentée comme ${typoLabel} (${pill.label.toLowerCase()}).`
-          : 'n\'a pas encore de profil — questionnaire à compléter ci-dessous.'}
+          : "n'a pas encore de profil — questionnaire à compléter ci-dessous."}
       </SolHeadline>
 
       <SolKpiRow>

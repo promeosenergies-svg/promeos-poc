@@ -40,7 +40,6 @@ import {
   toneFromConfidence,
   formatDateFR,
   formatFR,
-  NBSP,
 } from './kb/sol_presenters';
 
 /**
@@ -95,10 +94,7 @@ export default function KBExplorerSol({
 
   const hasFilters = Boolean(filters.search || filters.domain || filters.type || filters.status);
   const emptyState = buildEmptyState({ hasFilters, hasAny: rowsAll.length > 0 });
-  const filterConfig = useMemo(
-    () => buildFilterConfig({ activeTab, stats }),
-    [activeTab, stats]
-  );
+  const filterConfig = useMemo(() => buildFilterConfig({ activeTab, stats }), [activeTab, stats]);
 
   const activeFilterCount =
     (filters.search ? 1 : 0) +
@@ -156,7 +152,8 @@ export default function KBExplorerSol({
       width: 110,
       render: (v) => {
         const tone = toneFromConfidence(v);
-        const kind = { succes: 'ok', attention: 'att', afaire: 'neutral', calme: 'ok' }[tone] || 'neutral';
+        const kind =
+          { succes: 'ok', attention: 'att', afaire: 'neutral', calme: 'ok' }[tone] || 'neutral';
         return <SolStatusPill kind={kind}>{v || '—'}</SolStatusPill>;
       },
     },
@@ -167,7 +164,9 @@ export default function KBExplorerSol({
       width: 110,
       render: (v) => {
         const tone = toneFromStatus(v);
-        const kind = { succes: 'ok', attention: 'att', afaire: 'att', calme: 'ok', refuse: 'risk' }[tone] || 'att';
+        const kind =
+          { succes: 'ok', attention: 'att', afaire: 'att', calme: 'ok', refuse: 'risk' }[tone] ||
+          'att';
         return <SolStatusPill kind={kind}>{STATUS_LABELS[v] || v || '—'}</SolStatusPill>;
       },
     },
@@ -281,9 +280,7 @@ export default function KBExplorerSol({
       />
       <SolKpiCard
         label="Validés"
-        value={
-          kpis.validatedRatio != null ? `${kpis.validatedRatio}` : '—'
-        }
+        value={kpis.validatedRatio != null ? `${kpis.validatedRatio}` : '—'}
         unit="%"
         semantic="score"
         explainKey="kb_validated_ratio"
@@ -368,9 +365,7 @@ export default function KBExplorerSol({
   );
 
   // Expanded preview panel (inline, sous la grid)
-  const expandedRow = expandedId
-    ? pageRows.find((r) => r.id === expandedId)
-    : null;
+  const expandedRow = expandedId ? pageRows.find((r) => r.id === expandedId) : null;
   const expandedPanel = expandedRow && (
     <div
       style={{
@@ -382,7 +377,14 @@ export default function KBExplorerSol({
         borderLeft: '3px solid var(--sol-calme-fg)',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 12,
+        }}
+      >
         <div style={{ minWidth: 0 }}>
           <h3
             style={{

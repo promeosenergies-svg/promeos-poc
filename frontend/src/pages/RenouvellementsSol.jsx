@@ -35,7 +35,6 @@ import {
   toneFromUrgency,
   toneFromStatus,
   formatDateFR,
-  formatFR,
   NBSP,
 } from './renouvellements/sol_presenters';
 

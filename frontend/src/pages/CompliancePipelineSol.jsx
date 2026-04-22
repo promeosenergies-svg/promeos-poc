@@ -36,7 +36,6 @@ import {
   buildEmptyState,
   buildKpiAriaLabel,
   buildFilterConfig,
-  resolveTooltipExplain,
   interpretSitesReady,
   interpretDeadlinesD30,
   interpretUntrustedSites,
@@ -98,7 +97,7 @@ export default function CompliancePipelineSol({
         untrustedIds,
         untrustedOnly: filters.untrustedOnly === 'untrusted',
       }),
-    [rowsAll, filters, untrustedIds],
+    [rowsAll, filters, untrustedIds]
   );
 
   const sorted = useMemo(() => sortRows(filtered, sortBy), [filtered, sortBy]);
@@ -133,8 +132,7 @@ export default function CompliancePipelineSol({
           margin: '24px 28px 0',
         }}
       >
-        <strong>Erreur chargement pipeline{NBSP}:</strong>{' '}
-        {error.message || String(error)}
+        <strong>Erreur chargement pipeline{NBSP}:</strong> {error.message || String(error)}
       </div>
     );
   }
@@ -228,7 +226,7 @@ export default function CompliancePipelineSol({
     setSortBy((prev) =>
       prev.column === col
         ? { column: col, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
-        : { column: col, direction: 'asc' },
+        : { column: col, direction: 'asc' }
     );
   };
 

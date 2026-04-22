@@ -22,8 +22,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   SolPageHeader,
-  SolHeadline,
-  SolSubline,
   SolKpiRow,
   SolKpiCard,
   SolSourceChip,
@@ -93,7 +91,9 @@ function useConformiteSolData({ orgId } = {}) {
       });
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [orgId]);
 
   return state;
@@ -286,9 +286,7 @@ export default function ConformiteSol() {
           showThresholdZones
           caption={
             <>
-              <SolStatusPill
-                kind={scoreDT >= 75 ? 'ok' : scoreDT >= 60 ? 'att' : 'risk'}
-              >
+              <SolStatusPill kind={scoreDT >= 75 ? 'ok' : scoreDT >= 60 ? 'att' : 'risk'}>
                 {scoreDT >= 75 ? 'Solide' : scoreDT >= 60 ? 'Vigilance' : 'Risque'}
               </SolStatusPill>{' '}
               <span style={{ color: 'var(--sol-ink-700)', fontWeight: 500 }}>
@@ -307,10 +305,7 @@ export default function ConformiteSol() {
         />
       </div>
 
-      <FindingAuditDrawer
-        findingId={auditFindingId}
-        onClose={() => setAuditFindingId(null)}
-      />
+      <FindingAuditDrawer findingId={auditFindingId} onClose={() => setAuditFindingId(null)} />
     </>
   );
 }

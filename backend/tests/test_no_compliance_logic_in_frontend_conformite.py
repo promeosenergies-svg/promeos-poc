@@ -19,6 +19,7 @@ incluant :
   - frontend/src/pages/ConformiteSol.jsx (Phase 4.1 portfolio, déjà
     refait v2.1)
 """
+
 from pathlib import Path
 import re
 
@@ -122,6 +123,4 @@ def test_whitelist_findings_ops_enums_allowed():
         "actions[].priority_score",
         "actions[].owner_role",
     ]
-    assert len(allowed_fields) >= 10, (
-        "Whitelist doit contenir ≥ 10 champs display autorisés"
-    )
+    assert len(allowed_fields) >= 10, "Whitelist doit contenir ≥ 10 champs display autorisés"

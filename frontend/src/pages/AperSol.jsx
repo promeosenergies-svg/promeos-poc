@@ -55,7 +55,9 @@ function useAperData() {
       .catch(() => {
         if (!cancelled) setState({ status: 'ready', dashboard: null });
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
   return state;
 }
@@ -64,7 +66,7 @@ function useAperData() {
 
 export default function AperSol() {
   const scopeCtx = useScope();
-  const scope = scopeCtx?.scope || {};
+  const _scope = scopeCtx?.scope || {};
   const org = scopeCtx?.org;
   const scopeLabel = scopeCtx?.scopeLabel;
   const sitesCount = scopeCtx?.sitesCount;
@@ -205,10 +207,11 @@ export default function AperSol() {
             potentialKwc > 0 ? (
               <>
                 <strong style={{ color: 'var(--sol-ink-900)' }}>
-                  {formatFR(potentialKwc, 0)}{NBSP}kWc
-                </strong>
-                {' '}installables cumulés · gain annuel potentiel {formatFREur(annualGain, 0)}{' '}
-                (tarif achat ≈ 0,10{NBSP}€/kWh, productible 1{NBSP}100{NBSP}kWh/kWc).
+                  {formatFR(potentialKwc, 0)}
+                  {NBSP}kWc
+                </strong>{' '}
+                installables cumulés · gain annuel potentiel {formatFREur(annualGain, 0)} (tarif
+                achat ≈ 0,10{NBSP}€/kWh, productible 1{NBSP}100{NBSP}kWh/kWc).
               </>
             ) : (
               <>Potentiel PV non disponible.</>

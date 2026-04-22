@@ -14,7 +14,6 @@ import {
   CheckCircle,
   XCircle,
   UserCheck,
-  HelpCircle,
 } from 'lucide-react';
 import { PageShell, Badge, Button, EmptyState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
@@ -390,10 +389,10 @@ export default function ContractRadarPage() {
           next.set('horizon', String(value));
           return next;
         },
-        { replace: true },
+        { replace: true }
       );
     },
-    [setSearchParams],
+    [setSearchParams]
   );
   const [selectedContract, setSelectedContract] = useState(null);
   const [segProfile, setSegProfile] = useState(null);
@@ -440,103 +439,104 @@ export default function ContractRadarPage() {
           via toggle `{false &&}` en cas de régression démo pilote. */}
       {false && (
         <div>
-      {loading && <SkeletonTable rows={6} cols={7} />}
+          {loading && <SkeletonTable rows={6} cols={7} />}
 
-      {!loading && contracts.length === 0 && (
-        <EmptyState
-          icon={CalendarRange}
-          title="Aucun contrat dans l'horizon"
-          description="Aucun contrat ne nécessite d'attention sur cette période."
-        />
-      )}
+          {!loading && contracts.length === 0 && (
+            <EmptyState
+              icon={CalendarRange}
+              title="Aucun contrat dans l'horizon"
+              description="Aucun contrat ne nécessite d'attention sur cette période."
+            />
+          )}
 
-      {!loading && contracts.length > 0 && contracts.length < 5 && (
-        <div className="text-center py-4 text-gray-400 text-sm">
-          Seuls les contrats arrivant à échéance dans les {horizon} prochains jours sont affichés.
-        </div>
-      )}
+          {!loading && contracts.length > 0 && contracts.length < 5 && (
+            <div className="text-center py-4 text-gray-400 text-sm">
+              Seuls les contrats arrivant à échéance dans les {horizon} prochains jours sont
+              affichés.
+            </div>
+          )}
 
-      {!loading && contracts.length > 0 && (
-        <Table>
-          <Thead>
-            <Tr>
-              <Th>Site</Th>
-              <Th>Fournisseur</Th>
-              <Th>Fin</Th>
-              <Th>Jours</Th>
-              <Th>Indexation</Th>
-              <Th>État données</Th>
-              <Th>Payeur</Th>
-              <Th></Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {contracts.map((ct) => {
-              const urg = URGENCY_CFG[ct.urgency] || URGENCY_CFG.gray;
-              const st = STATUS_CFG[ct.contract_status] || STATUS_CFG.active;
-              const StIcon = st.icon;
-              return (
-                <Tr
-                  key={ct.contract_id}
-                  className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => setSelectedContract(ct)}
-                >
-                  <Td>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{ct.site_nom}</p>
-                      {ct.portfolio_nom && (
-                        <p className="text-[11px] text-gray-400">{ct.portfolio_nom}</p>
-                      )}
-                    </div>
-                  </Td>
-                  <Td className="text-sm text-gray-700">{ct.supplier_name || '—'}</Td>
-                  <Td>
-                    <div className="flex items-center gap-1.5">
-                      <StIcon size={14} className={st.color} />
-                      <span className="text-xs text-gray-600">{fmtDateFR(ct.end_date)}</span>
-                    </div>
-                  </Td>
-                  <Td>
-                    <Badge status={urg.badge}>
-                      {ct.days_to_end != null ? `${ct.days_to_end}j` : '—'}
-                    </Badge>
-                  </Td>
-                  <Td className="text-xs text-gray-600">{ct.indexation_label || '—'}</Td>
-                  <Td>
-                    {ct.readiness_score != null ? (
-                      <div className="flex items-center gap-1.5">
-                        <div
-                          className={`h-1.5 w-8 rounded-full ${
-                            ct.readiness_score >= 80
-                              ? 'bg-green-400'
-                              : ct.readiness_score >= 50
-                                ? 'bg-amber-400'
-                                : 'bg-red-400'
-                          }`}
-                        >
-                          <div
-                            className="h-full bg-current rounded-full"
-                            style={{ width: `${ct.readiness_score}%` }}
-                          />
-                        </div>
-                        <span className="text-[11px] text-gray-500">{ct.readiness_score}%</span>
-                      </div>
-                    ) : (
-                      '—'
-                    )}
-                  </Td>
-                  <Td className="text-xs text-gray-600">{ct.payer_entity || '—'}</Td>
-                  <Td>
-                    <button className="p-1 rounded hover:bg-gray-100 transition-colors">
-                      <ChevronRight size={16} className="text-gray-400" />
-                    </button>
-                  </Td>
+          {!loading && contracts.length > 0 && (
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>Site</Th>
+                  <Th>Fournisseur</Th>
+                  <Th>Fin</Th>
+                  <Th>Jours</Th>
+                  <Th>Indexation</Th>
+                  <Th>État données</Th>
+                  <Th>Payeur</Th>
+                  <Th></Th>
                 </Tr>
-              );
-            })}
-          </Tbody>
-        </Table>
-      )}
+              </Thead>
+              <Tbody>
+                {contracts.map((ct) => {
+                  const urg = URGENCY_CFG[ct.urgency] || URGENCY_CFG.gray;
+                  const st = STATUS_CFG[ct.contract_status] || STATUS_CFG.active;
+                  const StIcon = st.icon;
+                  return (
+                    <Tr
+                      key={ct.contract_id}
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => setSelectedContract(ct)}
+                    >
+                      <Td>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{ct.site_nom}</p>
+                          {ct.portfolio_nom && (
+                            <p className="text-[11px] text-gray-400">{ct.portfolio_nom}</p>
+                          )}
+                        </div>
+                      </Td>
+                      <Td className="text-sm text-gray-700">{ct.supplier_name || '—'}</Td>
+                      <Td>
+                        <div className="flex items-center gap-1.5">
+                          <StIcon size={14} className={st.color} />
+                          <span className="text-xs text-gray-600">{fmtDateFR(ct.end_date)}</span>
+                        </div>
+                      </Td>
+                      <Td>
+                        <Badge status={urg.badge}>
+                          {ct.days_to_end != null ? `${ct.days_to_end}j` : '—'}
+                        </Badge>
+                      </Td>
+                      <Td className="text-xs text-gray-600">{ct.indexation_label || '—'}</Td>
+                      <Td>
+                        {ct.readiness_score != null ? (
+                          <div className="flex items-center gap-1.5">
+                            <div
+                              className={`h-1.5 w-8 rounded-full ${
+                                ct.readiness_score >= 80
+                                  ? 'bg-green-400'
+                                  : ct.readiness_score >= 50
+                                    ? 'bg-amber-400'
+                                    : 'bg-red-400'
+                              }`}
+                            >
+                              <div
+                                className="h-full bg-current rounded-full"
+                                style={{ width: `${ct.readiness_score}%` }}
+                              />
+                            </div>
+                            <span className="text-[11px] text-gray-500">{ct.readiness_score}%</span>
+                          </div>
+                        ) : (
+                          '—'
+                        )}
+                      </Td>
+                      <Td className="text-xs text-gray-600">{ct.payer_entity || '—'}</Td>
+                      <Td>
+                        <button className="p-1 rounded hover:bg-gray-100 transition-colors">
+                          <ChevronRight size={16} className="text-gray-400" />
+                        </button>
+                      </Td>
+                    </Tr>
+                  );
+                })}
+              </Tbody>
+            </Table>
+          )}
         </div>
       )}
 

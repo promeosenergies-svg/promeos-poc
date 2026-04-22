@@ -16,13 +16,7 @@
  * Audit SMÉ reporté backlog P5.
  */
 import React from 'react';
-import {
-  SolPageHeader,
-  SolHeadline,
-  SolSubline,
-  SolKpiRow,
-  SolKpiCard,
-} from '../ui/sol';
+import { SolPageHeader, SolKpiRow, SolKpiCard } from '../ui/sol';
 import {
   hasDashboard,
   formatEfaCount,
@@ -35,7 +29,6 @@ import {
   interpretIssues,
   interpretDeadlineOperat,
   buildEmptyState,
-  NBSP,
 } from './conformite-tertiaire/sol_presenters';
 
 const TONE_TO_SEMANTIC = {
@@ -83,8 +76,7 @@ export default function ConformiteTertiaireSol({ dashboard, isLoading = false, e
           margin: '24px 28px 0',
         }}
       >
-        <strong>Erreur chargement conformité :</strong>{' '}
-        {error.message || String(error)}
+        <strong>Erreur chargement conformité :</strong> {error.message || String(error)}
       </div>
     );
   }

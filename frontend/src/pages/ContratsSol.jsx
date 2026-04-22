@@ -41,7 +41,6 @@ import {
   formatDateFR,
   daysUntil,
   formatFR,
-  formatFREur,
   NBSP,
 } from './contrats/sol_presenters';
 

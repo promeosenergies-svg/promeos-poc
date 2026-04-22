@@ -34,11 +34,7 @@ import {
   SolTrajectoryChart,
 } from '../ui/sol';
 import { useScope } from '../contexts/ScopeContext';
-import {
-  getPurchaseRenewals,
-  getPurchaseAssistantData,
-  getMarketContext,
-} from '../services/api';
+import { getPurchaseRenewals, getPurchaseAssistantData, getMarketContext } from '../services/api';
 import {
   NBSP,
   buildAchatKicker,
@@ -52,8 +48,6 @@ import {
   interpretScenarios,
   synthesizeMarketTrend,
   formatFR,
-  formatFREur,
-  freshness,
 } from './achat/sol_presenters';
 import { SkeletonCard } from '../ui/Skeleton';
 import { fmtNum } from '../utils/format';
@@ -86,7 +80,9 @@ function useAchatSolData({ orgId } = {}) {
       });
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [orgId]);
 
   return state;
@@ -195,11 +191,12 @@ export default function AchatSol() {
   }
 
   // Classes CSS tone pour KPI Échéance headline (afaire / attention / calme)
-  const echeanceToneColor = {
-    afaire: 'var(--sol-afaire-fg)',
-    attention: 'var(--sol-attention-fg)',
-    calme: 'var(--sol-calme-fg)',
-  }[echeance.tone] || 'var(--sol-ink-700)';
+  const echeanceToneColor =
+    {
+      afaire: 'var(--sol-afaire-fg)',
+      attention: 'var(--sol-attention-fg)',
+      calme: 'var(--sol-calme-fg)',
+    }[echeance.tone] || 'var(--sol-ink-700)';
 
   return (
     <>
@@ -222,9 +219,8 @@ export default function AchatSol() {
           source={{
             kind: 'Contrats',
             origin: 'pondéré volumes',
-            freshness: marketSpot != null
-              ? `spot EPEX ${formatFR(marketSpot, 1)}${NBSP}€/MWh`
-              : undefined,
+            freshness:
+              marketSpot != null ? `spot EPEX ${formatFR(marketSpot, 1)}${NBSP}€/MWh` : undefined,
           }}
         />
         <SolKpiCard
@@ -233,17 +229,11 @@ export default function AchatSol() {
           value={echeance.value}
           unit={echeance.unit}
           semantic="neutral"
-          headline={
-            <span style={{ color: echeanceToneColor }}>
-              {echeance.headline}
-            </span>
-          }
+          headline={<span style={{ color: echeanceToneColor }}>{echeance.headline}</span>}
           source={{
             kind: 'Radar renouvellements',
             origin: nextRenewal?.energy_type || 'portefeuille',
-            freshness: nextRenewal?.end_date
-              ? `fin ${nextRenewal.end_date}`
-              : undefined,
+            freshness: nextRenewal?.end_date ? `fin ${nextRenewal.end_date}` : undefined,
           }}
         />
         <SolKpiCard
@@ -297,7 +287,9 @@ export default function AchatSol() {
           dataKey="spot"
           targetLine={null}
           userLine={weightedPrice}
-          userLabel={weightedPrice != null ? `Votre prix ${formatFR(weightedPrice, 0)}${NBSP}€/MWh` : ''}
+          userLabel={
+            weightedPrice != null ? `Votre prix ${formatFR(weightedPrice, 0)}${NBSP}€/MWh` : ''
+          }
           yDomain={[30, 100]}
           yLabel="€/MWh"
           showThresholdZones={false}
@@ -306,9 +298,10 @@ export default function AchatSol() {
             market?.spot_current_eur_mwh != null ? (
               <>
                 <strong style={{ color: 'var(--sol-ink-900)' }}>
-                  Spot {formatFR(market.spot_current_eur_mwh, 1)}{NBSP}€/MWh
-                </strong>
-                {' '}actuellement · tendance 30j{' '}
+                  Spot {formatFR(market.spot_current_eur_mwh, 1)}
+                  {NBSP}€/MWh
+                </strong>{' '}
+                actuellement · tendance 30j{' '}
                 {market.trend_30d_vs_12m_pct != null && (
                   <span
                     style={{
@@ -319,10 +312,11 @@ export default function AchatSol() {
                     }}
                   >
                     {market.trend_30d_vs_12m_pct > 0 ? '+' : ''}
-                    {fmtNum(market.trend_30d_vs_12m_pct, 1)}{NBSP}%
+                    {fmtNum(market.trend_30d_vs_12m_pct, 1)}
+                    {NBSP}%
                   </span>
-                )}
-                {' '}vs moyenne 12 mois.
+                )}{' '}
+                vs moyenne 12 mois.
               </>
             ) : (
               <>Données marché en cours de rafraîchissement.</>

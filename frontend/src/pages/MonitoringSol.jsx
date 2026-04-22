@@ -45,7 +45,6 @@ import {
   interpretMonitoringDrift,
   formatFR,
   formatFREur,
-  freshness,
 } from './monitoring/sol_presenters';
 import { SkeletonCard } from '../ui/Skeleton';
 
@@ -71,9 +70,12 @@ function useMonitoringData({ orgId } = {}) {
       getPatrimoineKpis().catch(() => null),
     ]).then(([alerts, compare, sites, patrimoineKpis]) => {
       if (cancelled) return;
-      const sitesArr = sites.status === 'fulfilled'
-        ? (Array.isArray(sites.value) ? sites.value : sites.value?.sites || [])
-        : [];
+      const sitesArr =
+        sites.status === 'fulfilled'
+          ? Array.isArray(sites.value)
+            ? sites.value
+            : sites.value?.sites || []
+          : [];
       setState({
         status: 'ready',
         alerts: alerts.status === 'fulfilled' ? alerts.value : [],
@@ -83,7 +85,9 @@ function useMonitoringData({ orgId } = {}) {
       });
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [orgId]);
 
   return state;
@@ -211,9 +215,10 @@ export default function MonitoringSol() {
           source={{
             kind: 'Estimation',
             origin: 'prix moyen × kWh excès',
-            freshness: summary.topImpact.length > 0
-              ? `${summary.topImpact.length}${NBSP}contributeurs`
-              : undefined,
+            freshness:
+              summary.topImpact.length > 0
+                ? `${summary.topImpact.length}${NBSP}contributeurs`
+                : undefined,
           }}
         />
       </SolKpiRow>
@@ -263,21 +268,18 @@ export default function MonitoringSol() {
             trajectoryData.length > 0 ? (
               <>
                 <strong style={{ color: 'var(--sol-ink-900)' }}>
-                  Baseline {formatFR(baseline || 0, 0)}{NBSP}MWh/mois
-                </strong>
-                {' '}(moyenne 12 mois) · dérives cumulées estimées{' '}
-                {formatFREur(summary.totalImpact, 0)}/an.
+                  Baseline {formatFR(baseline || 0, 0)}
+                  {NBSP}MWh/mois
+                </strong>{' '}
+                (moyenne 12 mois) · dérives cumulées estimées {formatFREur(summary.totalImpact, 0)}
+                /an.
               </>
             ) : (
               <>Historique de consommation non disponible.</>
             )
           }
           sourceChip={
-            <SolSourceChip
-              kind="EMS"
-              origin="Enedis + GRDF"
-              freshness="DJU Météo-France"
-            />
+            <SolSourceChip kind="EMS" origin="Enedis + GRDF" freshness="DJU Météo-France" />
           }
         />
       </div>

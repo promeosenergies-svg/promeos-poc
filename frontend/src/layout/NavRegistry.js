@@ -56,8 +56,6 @@ import {
   Upload,
   BarChart3,
   Sun,
-  Cpu,
-  Building,
   SearchCheck,
   PieChart,
 } from 'lucide-react';
@@ -605,7 +603,14 @@ export const NAV_SECTIONS = [
         label: 'Monitoring',
         desc: 'KPIs puissance, heatmap, tendances',
         badgeKey: 'monitoring',
-        keywords: ['monitoring', 'kpi', 'puissance', 'performance', 'performance énergétique', 'heatmap'],
+        keywords: [
+          'monitoring',
+          'kpi',
+          'puissance',
+          'performance',
+          'performance énergétique',
+          'heatmap',
+        ],
       },
       {
         to: '/usages',
@@ -781,8 +786,16 @@ export function getVisibleItems(items, expertMode) {
 export const PANEL_DEEP_LINKS_BY_ROUTE = {
   // /anomalies — filtres framework réglementaire (consommés par useAnomalyFilters)
   '/anomalies': [
-    { href: '/anomalies?fw=DECRET_TERTIAIRE', label: 'Décret Tertiaire', hint: 'Dérives trajectoire DT' },
-    { href: '/anomalies?fw=FACTURATION', label: 'Anomalies facturation', hint: 'Écarts shadow billing' },
+    {
+      href: '/anomalies?fw=DECRET_TERTIAIRE',
+      label: 'Décret Tertiaire',
+      hint: 'Dérives trajectoire DT',
+    },
+    {
+      href: '/anomalies?fw=FACTURATION',
+      label: 'Anomalies facturation',
+      hint: 'Écarts shadow billing',
+    },
     { href: '/anomalies?fw=BACS', label: 'BACS', hint: 'GTB/GTC non conforme' },
   ],
 
@@ -795,8 +808,16 @@ export const PANEL_DEEP_LINKS_BY_ROUTE = {
 
   // /conformite/aper — filtres assujettissement (consommés par AperPage useSearchParams)
   '/conformite/aper': [
-    { href: '/conformite/aper?filter=parking', label: 'Parkings > 1500 m²', hint: 'Obligations ombrières PV' },
-    { href: '/conformite/aper?filter=toiture', label: 'Toitures > 500 m²', hint: 'Obligations solarisation' },
+    {
+      href: '/conformite/aper?filter=parking',
+      label: 'Parkings > 1500 m²',
+      hint: 'Obligations ombrières PV',
+    },
+    {
+      href: '/conformite/aper?filter=toiture',
+      label: 'Toitures > 500 m²',
+      hint: 'Obligations solarisation',
+    },
   ],
 };
 
@@ -817,11 +838,13 @@ export function getPanelSections(pathname, expertMode) {
 
   // 1. Couche SSOT : sections du module courant depuis NAV_SECTIONS
   const { moduleId } = matchRouteToModule(clean);
-  const baseSections = getSectionsForModule(moduleId).map((s) => ({
-    key: s.key,
-    label: s.label,
-    items: getVisibleItems(s.items || [], expertMode),
-  })).filter((s) => s.items.length > 0);
+  const baseSections = getSectionsForModule(moduleId)
+    .map((s) => ({
+      key: s.key,
+      label: s.label,
+      items: getVisibleItems(s.items || [], expertMode),
+    }))
+    .filter((s) => s.items.length > 0);
 
   // 2. Couche additive : deep-links paramétrés pour la route exacte
   const deepLinks = PANEL_DEEP_LINKS_BY_ROUTE[clean] || [];

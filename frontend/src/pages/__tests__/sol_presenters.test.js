@@ -32,11 +32,7 @@ import {
   getCurrentTariffPeriod,
   adaptEmsSeriesToLoadCurve,
 } from '../cockpit/sol_presenters';
-import {
-  deriveScoreFromFindings,
-  computeScoreDelta,
-  buildConformiteNarrative,
-} from '../conformite/sol_presenters';
+import { deriveScoreFromFindings, computeScoreDelta } from '../conformite/sol_presenters';
 import {
   interpretEcheance,
   interpretPrixPondere,
@@ -54,12 +50,8 @@ import {
   extractCurrentMonthTotals,
   estimateRecoveredYtd,
   countContestableAnomalies,
-  adaptCompareToBarChart,
 } from '../bill-intel/sol_presenters';
-import {
-  businessErrorFallback,
-  BUSINESS_ERRORS,
-} from '../../i18n/business_errors';
+import { businessErrorFallback, BUSINESS_ERRORS } from '../../i18n/business_errors';
 
 // ══════════════════════════════════════════════════════════════════════════
 // Formatters FR
@@ -152,7 +144,7 @@ describe('freshness', () => {
     const past = new Date('2026-04-15T12:00:00Z');
     expect(freshness(past, now)).toMatch(/4.*j/);
   });
-  it('null → à l\'instant', () => {
+  it("null → à l'instant", () => {
     expect(freshness(null)).toMatch(/instant/);
   });
 });
@@ -300,7 +292,11 @@ describe('interpretEcheance', () => {
     expect(r.headline).toMatch(/imminent|Eni|Lyon/);
   });
   it('90-180 jours → tone=attention + unit en mois', () => {
-    const r = interpretEcheance({ days_until_expiry: 150, supplier_name: 'EDF', site_nom: 'Paris' });
+    const r = interpretEcheance({
+      days_until_expiry: 150,
+      supplier_name: 'EDF',
+      site_nom: 'Paris',
+    });
     expect(r.tone).toBe('attention');
     expect(r.unit).toContain('mois');
     expect(r.headline).toMatch(/arbitrage/);
@@ -314,7 +310,7 @@ describe('interpretEcheance', () => {
     expect(r.tone).toBe('afaire');
     expect(r.headline).toMatch(/dépassé|préavis/);
   });
-  it('nextRenewal null → headline d\'invitation', () => {
+  it("nextRenewal null → headline d'invitation", () => {
     const r = interpretEcheance(null);
     expect(r.value).toBe('—');
     expect(r.tone).toBe('calme');
@@ -380,7 +376,10 @@ describe('detectOpportunityArea', () => {
     expect(area.label).toMatch(/favorable/i);
   });
   it('pas de fenêtre → null', () => {
-    const trend = [{ month: 'janv.', spot: 80 }, { month: 'févr.', spot: 82 }];
+    const trend = [
+      { month: 'janv.', spot: 80 },
+      { month: 'févr.', spot: 82 },
+    ];
     expect(detectOpportunityArea(trend, 65)).toBeNull();
   });
 });
@@ -479,10 +478,10 @@ describe('estimateRecoveredYtd', () => {
 describe('countContestableAnomalies', () => {
   it('compte types shadow_gap/reseau_mismatch severity high ou critical', () => {
     const insights = [
-      { type: 'shadow_gap', severity: 'high' },         // OK
+      { type: 'shadow_gap', severity: 'high' }, // OK
       { type: 'reseau_mismatch', severity: 'critical' }, // OK
-      { type: 'reseau_mismatch', severity: 'medium' },  // NON (severity low)
-      { type: 'unit_price_high', severity: 'high' },    // NON (type non contestable)
+      { type: 'reseau_mismatch', severity: 'medium' }, // NON (severity low)
+      { type: 'unit_price_high', severity: 'high' }, // NON (type non contestable)
     ];
     expect(countContestableAnomalies(insights)).toBe(2);
   });
@@ -500,7 +499,7 @@ describe('businessErrorFallback', () => {
     expect(c).toHaveProperty('title');
     expect(c).toHaveProperty('body');
   });
-  it('slot désambiguïse l\'id (Phase 4.5 fix)', () => {
+  it("slot désambiguïse l'id (Phase 4.5 fix)", () => {
     const a = businessErrorFallback('achat.all_stable', 0);
     const b = businessErrorFallback('achat.all_stable', 1);
     expect(a.id).not.toBe(b.id);
@@ -543,7 +542,10 @@ describe('adaptEmsSeriesToLoadCurve', () => {
     expect(adapted[0].value).toBe(86); // arrondi
   });
   it('valeurs null filtrées', () => {
-    const raw = [{ t: '2026-04-19T10:00:00', v: null }, { t: 'bad', v: 50 }];
+    const raw = [
+      { t: '2026-04-19T10:00:00', v: null },
+      { t: 'bad', v: 50 },
+    ];
     expect(adaptEmsSeriesToLoadCurve(raw)).toEqual([]);
   });
 });
@@ -718,9 +720,7 @@ describe('Site360Sol · buildSiteWeekCards', () => {
 
 describe('Site360Sol · adaptComplianceToTrajectory', () => {
   it('null si aucun score', () => {
-    expect(
-      SitePresenters.adaptComplianceToTrajectory({ site: {}, compliance: null })
-    ).toBe(null);
+    expect(SitePresenters.adaptComplianceToTrajectory({ site: {}, compliance: null })).toBe(null);
   });
 
   it('3 points 2020/2024/2030 avec score cible 75', () => {
@@ -780,7 +780,7 @@ describe('RegOpsSol · normalizeAssessment', () => {
 });
 
 describe('RegOpsSol · computeCompletion', () => {
-  it('retourne null si pas d\'obligation applicable', () => {
+  it("retourne null si pas d'obligation applicable", () => {
     expect(RegOpsPresenters.computeCompletion([])).toEqual({
       percent: null,
       compliant: 0,
@@ -921,9 +921,7 @@ describe('RegOpsSol · buildRegOpsTimelineEvents', () => {
   it('ignore la catégorie incentive', () => {
     const events = RegOpsPresenters.buildRegOpsTimelineEvents({
       assessment: null,
-      findings: [
-        { rule_id: 'cee', regulation: 'cee', severity: 'MEDIUM', category: 'incentive' },
-      ],
+      findings: [{ rule_id: 'cee', regulation: 'cee', severity: 'MEDIUM', category: 'incentive' }],
     });
     expect(events).toHaveLength(0);
   });
@@ -951,7 +949,9 @@ describe('RegOpsSol · buildRegOpsWeekCards (variété tags D1)', () => {
   it('card 1 critical finding pris avant top action', () => {
     const cards = RegOpsPresenters.buildRegOpsWeekCards({
       assessment: { actions: [{ label: 'X', priority_score: 80 }] },
-      findings: [{ rule_id: 'crit', regulation: 'bacs', severity: 'CRITICAL', status: 'NON_COMPLIANT' }],
+      findings: [
+        { rule_id: 'crit', regulation: 'bacs', severity: 'CRITICAL', status: 'NON_COMPLIANT' },
+      ],
     });
     expect(cards[0].id).toContain('critical');
   });
@@ -1348,7 +1348,7 @@ describe('DiagnosticConsoSol · buildDiagnosticNarrative', () => {
     });
     expect(r).toMatch(/stable|aucune/i);
   });
-  it('inclut nombre d\'anomalies + impact €', () => {
+  it("inclut nombre d'anomalies + impact €", () => {
     const r = DiagPresenters.buildDiagnosticNarrative({
       summary: {
         total_insights: 9,
@@ -1356,9 +1356,7 @@ describe('DiagnosticConsoSol · buildDiagnosticNarrative', () => {
         total_loss_eur: 8420,
         total_loss_kwh: 42000,
       },
-      insights: [
-        { site_nom: 'Nice Hôtel', type: 'hors_horaires', estimated_loss_eur: 3500 },
-      ],
+      insights: [{ site_nom: 'Nice Hôtel', type: 'hors_horaires', estimated_loss_eur: 3500 }],
       periodDays: 90,
     });
     expect(r).toContain('9');
@@ -1383,9 +1381,7 @@ describe('DiagnosticConsoSol · adaptInsightsToBarChart', () => {
     expect(data[1].current).toBe(300);
   });
   it('exclut insights sans perte €', () => {
-    const data = DiagPresenters.adaptInsightsToBarChart([
-      { site_nom: 'Z', estimated_loss_eur: 0 },
-    ]);
+    const data = DiagPresenters.adaptInsightsToBarChart([{ site_nom: 'Z', estimated_loss_eur: 0 }]);
     expect(data).toEqual([]);
   });
   it('limite respectée', () => {
@@ -1403,19 +1399,26 @@ describe('DiagnosticConsoSol · buildDiagnosticWeekCards (variety guard D1)', ()
     const cards = DiagPresenters.buildDiagnosticWeekCards({
       insights: [
         {
-          id: 1, site_nom: 'Lyon', type: 'hors_horaires',
-          estimated_loss_eur: 3500, message: 'Surconso weekend',
+          id: 1,
+          site_nom: 'Lyon',
+          type: 'hors_horaires',
+          estimated_loss_eur: 3500,
+          message: 'Surconso weekend',
           recommended_actions: [{ label: 'Programmer horloge' }],
           insight_status: 'open',
         },
         {
-          id: 2, site_nom: 'Paris', type: 'base_load',
+          id: 2,
+          site_nom: 'Paris',
+          type: 'base_load',
           estimated_loss_eur: 1200,
           recommended_actions: [{ label: 'Audit talon' }],
           insight_status: 'open',
         },
         {
-          id: 3, site_nom: 'Nice', type: 'pointe',
+          id: 3,
+          site_nom: 'Nice',
+          type: 'pointe',
           insight_status: 'resolved',
         },
       ],
@@ -1446,8 +1449,9 @@ describe('DiagnosticConsoSol · buildDiagnosticWeekCards (variety guard D1)', ()
 
 describe('DiagnosticConsoSol · interpretSitesAffected', () => {
   it('0 → phrase neutre', () => {
-    expect(DiagPresenters.interpretSitesAffected({ summary: { sites_with_insights: 0 } }))
-      .toMatch(/aucun/i);
+    expect(DiagPresenters.interpretSitesAffected({ summary: { sites_with_insights: 0 } })).toMatch(
+      /aucun/i
+    );
   });
   it('1 site → singulier', () => {
     const r = DiagPresenters.interpretSitesAffected({

@@ -21,8 +21,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   SolPageHeader,
-  SolHeadline,
-  SolSubline,
   SolHero,
   SolKpiRow,
   SolKpiCard,

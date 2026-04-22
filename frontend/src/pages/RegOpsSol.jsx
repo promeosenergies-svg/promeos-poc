@@ -21,7 +21,6 @@ import {
   SolEntityCard,
   SolKpiRow,
   SolKpiCard,
-  SolSourceChip,
   SolSectionHead,
   SolTimeline,
   SolWeekGrid,
@@ -43,7 +42,6 @@ import {
   interpretRegOpsDeadline,
   buildRegOpsTimelineEvents,
   buildRegOpsWeekCards,
-  formatFR,
   formatFREur,
   NBSP,
 } from './regops/sol_presenters';
@@ -196,19 +194,27 @@ export default function RegOpsSol({
           />
           <SolInspectDoc>
             <p style={{ whiteSpace: 'pre-wrap' }}>{aiExplanation.brief}</p>
-            {Array.isArray(aiRecommendations?.suggestions) && aiRecommendations.suggestions.length > 0 && (
-              <>
-                <p style={{ marginTop: 12, fontWeight: 600 }}>Recommandations :</p>
-                <ul style={{ margin: 0, paddingLeft: 20 }}>
-                  {aiRecommendations.suggestions.slice(0, 5).map((s, i) => (
-                    <li key={i} style={{ marginBottom: 4 }}>
-                      {typeof s === 'string' ? s : s.label || s.suggestion || '—'}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-            <p style={{ fontSize: 12, color: 'var(--sol-ink-500)', marginTop: 12, fontStyle: 'italic' }}>
+            {Array.isArray(aiRecommendations?.suggestions) &&
+              aiRecommendations.suggestions.length > 0 && (
+                <>
+                  <p style={{ marginTop: 12, fontWeight: 600 }}>Recommandations :</p>
+                  <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    {aiRecommendations.suggestions.slice(0, 5).map((s, i) => (
+                      <li key={i} style={{ marginBottom: 4 }}>
+                        {typeof s === 'string' ? s : s.label || s.suggestion || '—'}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            <p
+              style={{
+                fontSize: 12,
+                color: 'var(--sol-ink-500)',
+                marginTop: 12,
+                fontStyle: 'italic',
+              }}
+            >
               Les suggestions IA ne modifient jamais le statut de conformité déterministe.
             </p>
           </SolInspectDoc>

@@ -48,8 +48,6 @@ import {
   interpretSurface,
   interpretEUI,
   formatFR,
-  formatFREur,
-  freshness,
 } from './patrimoine/sol_presenters';
 import { SkeletonCard } from '../ui/Skeleton';
 import { fmtNum } from '../utils/format';
