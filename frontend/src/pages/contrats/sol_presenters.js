@@ -168,9 +168,7 @@ export function computePortfolioKpis(cadres = []) {
     // (Σ prix × volume = 0), pour éviter un "0 €/MWh" trompeur
     // quand le portefeuille est 100 % indexé.
     weightedPriceEurMwh:
-      totalVolume > 0 && weightedSum > 0
-        ? Math.round((weightedSum / totalVolume) * 10) / 10
-        : null,
+      totalVolume > 0 && weightedSum > 0 ? Math.round((weightedSum / totalVolume) * 10) / 10 : null,
     byType,
     totalContracts: allContracts.length,
   };
@@ -191,7 +189,7 @@ export function buildContractsNarrative({ cadres = [], kpis } = {}) {
   const totalContracts = k.totalContracts;
 
   if (totalContracts === 0) {
-    return 'Aucun contrat enregistré pour l\'instant. Importez vos contrats en cours depuis CSV ou PDF pour activer le radar de renouvellement.';
+    return "Aucun contrat enregistré pour l'instant. Importez vos contrats en cours depuis CSV ou PDF pour activer le radar de renouvellement.";
   }
 
   // Top expirant proche
@@ -238,9 +236,7 @@ export function buildContractsSubNarrative({ cadres = [], kpis } = {}) {
   const total = (cadres || []).length;
   const parts = [];
   if (top3.length > 0 && total > 0) {
-    const mix = top3
-      .map(([s, n]) => `${s} ${Math.round((n / total) * 100)}${NBSP}%`)
-      .join(' · ');
+    const mix = top3.map(([s, n]) => `${s} ${Math.round((n / total) * 100)}${NBSP}%`).join(' · ');
     parts.push(`Mix fournisseurs : ${mix}`);
   }
   parts.push('Sources : référentiel contrats PROMEOS + import CSV/PDF');
@@ -279,7 +275,7 @@ export function interpretTotalVolume({ kpis, nbSites } = {}) {
 
 export function interpretWeightedPrice({ kpis } = {}) {
   if (!kpis || kpis.weightedPriceEurMwh == null) {
-    return 'Prix pondéré indisponible — certains contrats n\'ont pas de prix renseigné.';
+    return "Prix pondéré indisponible — certains contrats n'ont pas de prix renseigné.";
   }
   const p = kpis.weightedPriceEurMwh;
   // Heuristique marché : < 60 = bien · 60-100 = marché · > 100 = au-dessus
@@ -299,7 +295,12 @@ export function buildEmptyState({ hasFilters, hasAnyContract } = {}) {
   }
   if (!hasAnyContract) {
     const fb = businessErrorFallback('contract.no_contracts');
-    return { title: fb.title, message: fb.body };
+    return {
+      title: fb.title,
+      message: fb.body,
+      ctaLabel: fb.ctaLabel,
+      ctaHref: fb.ctaHref,
+    };
   }
   return null;
 }
@@ -309,9 +310,7 @@ export function buildEmptyState({ hasFilters, hasAnyContract } = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function buildFilterConfig({ cadres = [] } = {}) {
-  const suppliers = Array.from(
-    new Set((cadres || []).map((c) => c.supplier_name).filter(Boolean))
-  );
+  const suppliers = Array.from(new Set((cadres || []).map((c) => c.supplier_name).filter(Boolean)));
   return [
     {
       id: 'supplier',
@@ -354,8 +353,12 @@ export function filterRows(rows, { search, supplier, chip, status } = {}) {
     r = r.filter((x) => {
       const cells = x.cells;
       return (
-        String(cells.site || '').toLowerCase().includes(q) ||
-        String(cells.supplier || '').toLowerCase().includes(q)
+        String(cells.site || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(cells.supplier || '')
+          .toLowerCase()
+          .includes(q)
       );
     });
   }

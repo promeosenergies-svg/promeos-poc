@@ -11,6 +11,7 @@
  * onOpenWizard).
  */
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   SolListPage,
   SolKpiRow,
@@ -78,13 +79,20 @@ export default function ContratsSol({
   const narrative = buildContractsNarrative({ cadres, kpis });
   const subNarrative = buildContractsSubNarrative({ cadres, kpis });
 
-  const hasFilters = Boolean(
-    filters.search || filters.supplier || filters.chip || filters.status
-  );
-  const emptyState = buildEmptyState({
+  const navigate = useNavigate();
+  const hasFilters = Boolean(filters.search || filters.supplier || filters.chip || filters.status);
+  const rawEmpty = buildEmptyState({
     hasFilters,
     hasAnyContract: rowsAll.length > 0,
   });
+  const emptyState =
+    rawEmpty?.ctaLabel && rawEmpty?.ctaHref
+      ? {
+          title: rawEmpty.title,
+          message: rawEmpty.message,
+          action: { label: rawEmpty.ctaLabel, onClick: () => navigate(rawEmpty.ctaHref) },
+        }
+      : rawEmpty;
   const filterConfig = useMemo(() => buildFilterConfig({ cadres }), [cadres]);
 
   const activeFilterCount =
@@ -171,7 +179,8 @@ export default function ContratsSol({
                   letterSpacing: '0.05em',
                 }}
               >
-                {days}{NBSP}j
+                {days}
+                {NBSP}j
               </span>
             </span>
           );
@@ -194,16 +203,16 @@ export default function ContratsSol({
       align: 'right',
       width: 100,
       render: (v) =>
-        v != null && v > 0
-          ? `${formatFR(v, 1)}${NBSP}€`
-          : (
-            <span
-              title="Prix non renseigné (indexé ou à compléter)"
-              style={{ color: 'var(--sol-ink-400)', fontStyle: 'italic' }}
-            >
-              indexé
-            </span>
-          ),
+        v != null && v > 0 ? (
+          `${formatFR(v, 1)}${NBSP}€`
+        ) : (
+          <span
+            title="Prix non renseigné (indexé ou à compléter)"
+            style={{ color: 'var(--sol-ink-400)', fontStyle: 'italic' }}
+          >
+            indexé
+          </span>
+        ),
     },
     {
       id: 'status',
@@ -276,11 +285,7 @@ export default function ContratsSol({
       />
       <SolKpiCard
         label="Prix pondéré"
-        value={
-          kpis.weightedPriceEurMwh != null
-            ? formatFR(kpis.weightedPriceEurMwh, 1)
-            : '—'
-        }
+        value={kpis.weightedPriceEurMwh != null ? formatFR(kpis.weightedPriceEurMwh, 1) : '—'}
         unit="€/MWh"
         semantic="cost"
         explainKey="contract_weighted_price_eur_mwh"
@@ -326,10 +331,7 @@ export default function ContratsSol({
   return (
     <SolListPage
       breadcrumb={{
-        segments: [
-          { label: 'Patrimoine', to: '/patrimoine' },
-          { label: 'Contrats' },
-        ],
+        segments: [{ label: 'Patrimoine', to: '/patrimoine' }, { label: 'Contrats' }],
         backTo: '/patrimoine',
       }}
       kicker={kicker}
