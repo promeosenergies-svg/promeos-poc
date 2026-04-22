@@ -1,6 +1,6 @@
 # SGE4.5 — Retarget Existing Enedis Raw Pipeline To `flux_data.db`
 
-> **Status**: BUILD
+> **Status**: COMPLETE — implemented and validated locally on real data
 > **Depends on**: SF1-SF4 complete
 > **Goal**: keep the current Enedis raw ingestion pipeline intact while moving its raw archive/control tables out of `promeos.db`
 
@@ -30,3 +30,4 @@ After SGE4.5:
 - `/api/enedis/*` raw-ingestion endpoints behave the same for the user
 - raw tables bootstrap in `flux_data.db`
 - raw tables are no longer recreated in `promeos.db`
+- local real-file and real-data validation confirmed the split boundary on the supported flux families

@@ -1,7 +1,7 @@
 # SF5 — Enedis R6X + C68 Raw Ingestion Extension
 
 > **Status**: PRD v0.1 — first draft based on roadmap, official local guides, JSON schemas, and real `flux_enedis/` samples inspected on 2026-04-18
-> **Depends on**: SF1 (decrypt), SF2 (R4x staging), SF3 (R171/R50/R151 staging), SF4 (operationalization), SGE4.5 (raw DB split to `flux_data.db`) — complete and merged
+> **Depends on**: SF1 (decrypt), SF2 (R4x staging), SF3 (R171/R50/R151 staging), SF4 (operationalization), SGE4.5 (raw DB split to `flux_data.db`) — complete and validated
 > **Module**: `backend/data_ingestion/enedis/`
 > **Goal**: extend the existing raw archive pipeline with `R63`, `R64`, and `C68` while preserving SF1-SF4 behavior for legacy XML flows and the SGE4.5 storage split to `flux_data.db`
 

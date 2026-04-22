@@ -16,13 +16,15 @@ Replace synthetic seed data with real Enedis SGE flux (load curves + index).
 | SF2 — CDC R4x | R4H/R4M/R4Q parser, staging model, pipeline | 7-SHIP ✅ | [spec](docs/specs/feature-enedis-sge-2-ingestion-cdc.md) · PR #163 |
 | SF3 — R171 + Index | R171, R50, R151 parsers, multi-flux dispatch | 7-SHIP ✅ | [spec](docs/specs/feature-enedis-sge-3-ingestion-index.md) · [plan](docs/specs/plan-enedis-sge-3-implementation.md) · PRs #167–#174 |
 | SF4 — Operationalization | Config, error audit, batch retry, CLI, REST API | 7-SHIP ✅ | [spec](docs/specs/feature-enedis-sge-4-operationalization.md) · [plan](docs/specs/plan-enedis-sge-4-implementation.md) · PR #177 |
-| SGE4.5 — Flux Data DB Split | Retarget the existing Enedis raw pipeline to `flux_data.db` without changing CLI/API/parser behavior | 4-BUILD | [spec](docs/specs/feature-enedis-sge-4-5-flux-data-db-split.md) |
+| SGE4.5 — Flux Data DB Split | Retarget the existing Enedis raw pipeline to `flux_data.db` without changing CLI/API/parser behavior | 6-VALIDATE | [spec](docs/specs/feature-enedis-sge-4-5-flux-data-db-split.md) |
 | SF5 — R6X + C68 Raw Ingestion | Extend the raw ingesting pipeline with 2 new staging tables: `R63`/`R64` (R6X family) and `C68` | 1-SPEC | [spec](docs/specs/feature-enedis-sge-5-r6x-c68-raw-ingestion.md) |
 | SF6 — Data Staging Pipeline | Promotion raw→functional: 3 new tables (`meter_load_curve`, `meter_energy_index`, `meter_power_peak`), PRM matching, quality scoring, republication handling, audit trail | 1-SPEC | [spec](docs/specs/feature-enedis-sge-6-data-staging.md) |
 
 **Result after SF4:** 6 flux types, 5 staging tables, 91 real files ingested, 123,846 measures. CLI + 4 API endpoints operational.
 
 **SGE4.5 scope:** keep the current Enedis raw pipeline intact, but move its raw tables and ingest control tables to `flux_data.db`.
+
+**SGE4.5 result:** implementation complete and validated locally on real data; raw Enedis storage now lives in `flux_data.db`, while `promeos.db` stays focused on app-facing and promoted data.
 
 **SF5 scope:** raw-ingestion extension for `R63`, `R64` (R6X family), and `C68` via 2 new staging tables in the existing raw ingest pipeline stored in `flux_data.db`.
 
@@ -48,5 +50,5 @@ _Add new features here as they are scoped._
 - **3-PLAN** — Implementation plan being written
 - **4-BUILD** — Coding in progress (phases N/M)
 - **5-VERIFY** — Walking spec against implementation
-- **6-VALIDATE** — Real-data smoke test
+- **6-VALIDATE** — Implementation complete and validated locally (real-data smoke passed)
 - **7-SHIP ✅** — PR merged on main

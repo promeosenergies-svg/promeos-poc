@@ -1,7 +1,7 @@
 # SF6 — Enedis Data Staging: Raw → Functional Promotion Pipeline
 
 > **Status**: PRD v2.5 — feature renumbered from SF5 to SF6 after inserting a new SF5 raw-ingestion wave
-> **Depends on**: SF1 (decrypt), SF2 (CDC ingestion), SF3 (index ingestion), SF4 (operationalization), SGE4.5 (raw DB split to `flux_data.db`) — complete and merged; SF5 (R63/R64 R6X + C68 raw-ingestion extension) — upstream prerequisite
+> **Depends on**: SF1 (decrypt), SF2 (CDC ingestion), SF3 (index ingestion), SF4 (operationalization), SGE4.5 (raw DB split to `flux_data.db`) — complete and validated; SF5 (R63/R64 R6X + C68 raw-ingestion extension) — upstream prerequisite
 > **Module**: `backend/data_staging/` (new, separate from `data_ingestion/`)
 > **Document note**: this spec now lives at `feature-enedis-sge-6-data-staging.md` to match the new **SF6** roadmap numbering.
 
