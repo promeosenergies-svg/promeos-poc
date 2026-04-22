@@ -37,7 +37,9 @@ import SolTimerail from '../ui/sol/SolTimerail';
 import SolCartouche from '../ui/sol/SolCartouche';
 import ScopeSwitcher from './ScopeSwitcher';
 import CommandPalette from '../ui/CommandPalette';
-import ActionCenterSlideOver, { computeActionCenterBadge } from '../components/ActionCenterSlideOver';
+import ActionCenterSlideOver, {
+  computeActionCenterBadge,
+} from '../components/ActionCenterSlideOver';
 import OnboardingOverlay from '../components/OnboardingOverlay';
 import DevPanel from './DevPanel';
 import { ToastProvider } from '../ui/ToastProvider';
@@ -86,12 +88,13 @@ function PanelFooterSlot() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const name = user?.name || user?.email?.split('@')[0] || 'Promeos Admin';
-  const initials = name
-    .split(/[\s@._-]/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((s) => s[0]?.toUpperCase())
-    .join('') || 'PA';
+  const initials =
+    name
+      .split(/[\s@._-]/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((s) => s[0]?.toUpperCase())
+      .join('') || 'PA';
   const roleLabel = ROLE_LABELS[role] || role || 'DG / Propriétaire';
 
   return (
@@ -122,8 +125,12 @@ function PanelFooterSlot() {
           borderRadius: 4,
           transition: 'background 120ms',
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--sol-bg-panel)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'var(--sol-bg-panel)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'transparent';
+        }}
       >
         <span
           style={{
@@ -225,7 +232,10 @@ function PanelFooterSlot() {
                 key={label}
                 type="button"
                 role="menuitem"
-                onClick={() => { setOpen(false); navigate(to); }}
+                onClick={() => {
+                  setOpen(false);
+                  navigate(to);
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -239,8 +249,12 @@ function PanelFooterSlot() {
                   fontSize: 12.5,
                   textAlign: 'left',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--sol-bg-panel)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--sol-bg-panel)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
               >
                 <Icon size={13} /> {label}
               </button>
@@ -248,7 +262,10 @@ function PanelFooterSlot() {
             <button
               type="button"
               role="menuitem"
-              onClick={() => { setOpen(false); logout?.(); }}
+              onClick={() => {
+                setOpen(false);
+                logout?.();
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -263,8 +280,12 @@ function PanelFooterSlot() {
                 fontSize: 12.5,
                 textAlign: 'left',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--sol-refuse-bg)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--sol-refuse-bg)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
             >
               <LogOut size={13} /> Se déconnecter
             </button>
@@ -323,8 +344,12 @@ function SolAppShellHeader({
           cursor: 'pointer',
           transition: 'border-color 120ms',
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--sol-ink-300)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--sol-rule)'; }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'var(--sol-ink-300)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'var(--sol-rule)';
+        }}
       >
         <Search size={12} />
         <span>Rechercher</span>
@@ -366,8 +391,12 @@ function SolAppShellHeader({
           cursor: 'pointer',
           transition: 'border-color 120ms',
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--sol-ink-300)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--sol-rule)'; }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'var(--sol-ink-300)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'var(--sol-rule)';
+        }}
       >
         <Bell size={14} />
         {actionCenterBadge.count !== null && (
@@ -398,9 +427,15 @@ function SolAppShellHeader({
       {/* Expert toggle */}
       <div
         style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-        title="Affiche sources, confiance, détails techniques"
+        title="Affiche sources, confiance, détails techniques (Ctrl+Shift+X)"
       >
-        <Toggle checked={isExpert} onChange={toggleExpert} label="Expert" size="sm" />
+        <Toggle
+          checked={isExpert}
+          onChange={toggleExpert}
+          label="Expert"
+          size="sm"
+          aria-label="Basculer mode expert (Ctrl+Shift+X)"
+        />
       </div>
     </header>
   );
@@ -422,7 +457,9 @@ export default function SolAppShell() {
   const [actionCenterBadge, setActionCenterBadge] = useState({ count: null, color: 'gray' });
 
   // Track route changes (analytics)
-  useEffect(() => { trackRouteChange(location.pathname); }, [location.pathname]);
+  useEffect(() => {
+    trackRouteChange(location.pathname);
+  }, [location.pathname]);
 
   // URL param actionCenter=open → open slide-over
   useEffect(() => {
@@ -455,11 +492,16 @@ export default function SolAppShell() {
         setActionCenterBadge((prev) =>
           prev.count === next.count && prev.color === next.color ? prev : next
         );
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     };
     fetchBadge();
     const interval = setInterval(fetchBadge, 60_000);
-    return () => { cancelled = true; clearInterval(interval); };
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [actionCenterOpen]);
 
   // ⌘K / Ctrl+K global
@@ -525,7 +567,10 @@ export default function SolAppShell() {
       >
         <SolAppShellHeader
           onSearchClick={() => setPaletteOpen(true)}
-          onActionCenterClick={() => { setActionCenterTab('actions'); setActionCenterOpen(true); }}
+          onActionCenterClick={() => {
+            setActionCenterTab('actions');
+            setActionCenterOpen(true);
+          }}
           actionCenterBadge={actionCenterBadge}
           isExpert={isExpert}
           toggleExpert={toggleExpert}

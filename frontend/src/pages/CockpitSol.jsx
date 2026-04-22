@@ -180,21 +180,21 @@ export default function CockpitSol() {
   // peut retourner 500 dans certaines configs scope — fallback mandatoire).
   const cockpit = data.cockpit ?? {};
   const cockpitStats = cockpit.stats ?? {};
-  const trendArr = Array.isArray(data.complianceTrend?.trend)
-    ? data.complianceTrend.trend
-    : [];
+  const trendArr = Array.isArray(data.complianceTrend?.trend) ? data.complianceTrend.trend : [];
   const trendLast = trendArr[trendArr.length - 1];
-  const scoreNow = cockpitStats.compliance_score
-    ?? (trendLast?.score != null ? Math.round(trendLast.score * 10) / 10 : null);
+  const scoreNow =
+    cockpitStats.compliance_score ??
+    (trendLast?.score != null ? Math.round(trendLast.score * 10) / 10 : null);
   const scorePrev = trendArr.length >= 2 ? trendArr[0]?.score : null;
-  const scoreDelta = scorePrev != null && scoreNow != null
-    ? computeDelta({
-        current: scoreNow,
-        previous: scorePrev,
-        unit: 'pts',
-        context: `sur${NBSP}${trendArr.length}${NBSP}mois`,
-      })
-    : null;
+  const scoreDelta =
+    scorePrev != null && scoreNow != null
+      ? computeDelta({
+          current: scoreNow,
+          previous: scorePrev,
+          unit: 'pts',
+          context: `sur${NBSP}${trendArr.length}${NBSP}mois`,
+        })
+      : null;
 
   // KPI 3 : conso patrimoine — /cockpit.stats.conso_kwh_total en priorité,
   // fallback sur billing.total_kwh (facturation = proxy consommation).
@@ -208,10 +208,11 @@ export default function CockpitSol() {
   // Narratives — alertes : compteur stats en priorité, sinon longueur liste notifications.
   const notifList = Array.isArray(data.notifications)
     ? data.notifications
-    : (data.notifications?.items || data.notifications?.events || []);
-  const alertsCount = cockpitStats.alertes_actives
-    ?? cockpit?.action_center?.total_issues
-    ?? notifList.filter((n) => n?.severity === 'critical' || n?.severity === 'high').length;
+    : data.notifications?.items || data.notifications?.events || [];
+  const alertsCount =
+    cockpitStats.alertes_actives ??
+    cockpit?.action_center?.total_issues ??
+    notifList.filter((n) => n?.severity === 'critical' || n?.severity === 'high').length;
   const topAlertTitle = notifList[0]?.title;
 
   // Week signals — notifications (array) + timeline /compliance/timeline.events[]
@@ -222,11 +223,11 @@ export default function CockpitSol() {
   const weekCards = useMemo(() => {
     const notifs = Array.isArray(data.notifications)
       ? data.notifications
-      : (data.notifications?.items || data.notifications?.events || []);
+      : data.notifications?.items || data.notifications?.events || [];
     const timelineRaw = data.timeline;
     const timelineItems = Array.isArray(timelineRaw)
       ? timelineRaw
-      : (timelineRaw?.events || timelineRaw?.items || []);
+      : timelineRaw?.events || timelineRaw?.items || [];
     // Filtrer critical en priorité pour l'alerte "à regarder"
     const sortedAlerts = [...notifs].sort((a, b) => {
       const rank = { critical: 0, high: 1, warn: 2, info: 3 };
@@ -248,15 +249,12 @@ export default function CockpitSol() {
   // Load curve — EMS réel si dispo, sinon fallback courbe 24h type bureau
   // (la signature visuelle de la maquette doit toujours être présente).
   const loadCurveData = useMemo(() => {
-    const raw = data.emsSeries?.series?.[0]?.data
-      || data.emsSeries?.data
-      || [];
+    const raw = data.emsSeries?.series?.[0]?.data || data.emsSeries?.data || [];
     const adapted = adaptEmsSeriesToLoadCurve(raw);
     return adapted.length > 0 ? adapted : buildFallbackLoadCurve();
   }, [data.emsSeries]);
   const loadCurveIsMock = !(
-    data.emsSeries?.series?.[0]?.data?.length
-    || data.emsSeries?.data?.length
+    data.emsSeries?.series?.[0]?.data?.length || data.emsSeries?.data?.length
   );
 
   const peak = useMemo(() => findPeak(loadCurveData, 'kW'), [loadCurveData]);
@@ -264,9 +262,8 @@ export default function CockpitSol() {
 
   // Freshness — timestamp dominant pour la section "Cette semaine"
   const dataFreshness = useMemo(() => {
-    const ts = data.cockpit?.stats?.compliance_computed_at
-      || data.notifications?.[0]?.created_at
-      || null;
+    const ts =
+      data.cockpit?.stats?.compliance_computed_at || data.notifications?.[0]?.created_at || null;
     return freshness(ts);
   }, [data.cockpit, data.notifications]);
 
@@ -283,7 +280,9 @@ export default function CockpitSol() {
   }
 
   return (
-    <div style={{ padding: '32px 48px 60px', background: 'var(--sol-bg-canvas)', minHeight: '100vh' }}>
+    <div
+      style={{ padding: '32px 48px 60px', background: 'var(--sol-bg-canvas)', minHeight: '100vh' }}
+    >
       <SolPageHeader
         kicker={kicker}
         title="Bonjour "
@@ -296,30 +295,32 @@ export default function CockpitSol() {
         rightSlot={<SolLayerToggle value={mode} onChange={setMode} />}
       />
 
-      {mode === 'surface' && (
-        solProposal ? (
+      {mode === 'surface' &&
+        (solProposal ? (
           <SolHero
             chip="Sol propose · action agentique"
             title={solProposal.title_fr}
             description={solProposal.summary_fr}
           />
-        ) : (() => {
-          const fb = businessErrorFallback('command.no_sol_actions');
-          return (
-            <div role="region" aria-label={fb.title} style={SOL_PROPOSAL_EMPTY_STYLE}>
-              <p style={{ margin: 0, fontWeight: 600, color: 'var(--sol-ink-700)' }}>
-                {fb.title}
-              </p>
-              <p style={{ margin: '4px 0 0' }}>{fb.body}</p>
-            </div>
-          );
-        })()
-      )}
+        ) : (
+          (() => {
+            const fb = businessErrorFallback('command.no_sol_actions');
+            return (
+              <div role="region" aria-label={fb.title} style={SOL_PROPOSAL_EMPTY_STYLE}>
+                <p style={{ margin: 0, fontWeight: 600, color: 'var(--sol-ink-700)' }}>
+                  {fb.title}
+                </p>
+                <p style={{ margin: '4px 0 0' }}>{fb.body}</p>
+              </div>
+            );
+          })()
+        ))}
       {mode === 'surface' && (
         <>
           <SolKpiRow>
             <SolKpiCard
               label="Facture énergie · période"
+              explainKey="billing_total_current_month"
               value={kpiCostValue != null ? formatFR(kpiCostValue, 0) : '—'}
               unit={`${NBSP}€${NBSP}HT`}
               delta={kpiCostDelta}
@@ -327,18 +328,20 @@ export default function CockpitSol() {
               headline={
                 billing.total_invoices
                   ? `${billing.total_invoices} factures analysées · ${billing.total_insights ?? 0} anomalie${(billing.total_insights ?? 0) > 1 ? 's' : ''}.`
-                  : 'Importez vos factures pour déclencher l\'analyse.'
+                  : "Importez vos factures pour déclencher l'analyse."
               }
               source={{
                 kind: 'Factures',
                 origin: billing.engine_version ? `shadow ${billing.engine_version}` : undefined,
-                freshness: billing.last_updated || billing.coverage_months
-                  ? `${billing.coverage_months ?? '—'}${NBSP}mois couverts`
-                  : undefined,
+                freshness:
+                  billing.last_updated || billing.coverage_months
+                    ? `${billing.coverage_months ?? '—'}${NBSP}mois couverts`
+                    : undefined,
               }}
             />
             <SolKpiCard
               label="Conformité Décret tertiaire"
+              explainKey="compliance_score_dt"
               value={scoreNow != null ? `${scoreNow}` : '—'}
               unit="/100"
               delta={scoreDelta}
@@ -357,6 +360,7 @@ export default function CockpitSol() {
             />
             <SolKpiCard
               label="Consommation · patrimoine"
+              explainKey="usage_total_mwh"
               value={consoMwh != null ? formatFR(consoMwh, 0) : '—'}
               unit={`${NBSP}MWh`}
               delta={consoDelta}
@@ -370,9 +374,10 @@ export default function CockpitSol() {
               }
               source={{
                 kind: consoSource,
-                freshness: cockpitStats.conso_confidence && cockpitStats.conso_confidence !== 'none'
-                  ? `confiance ${cockpitStats.conso_confidence}`
-                  : undefined,
+                freshness:
+                  cockpitStats.conso_confidence && cockpitStats.conso_confidence !== 'none'
+                    ? `confiance ${cockpitStats.conso_confidence}`
+                    : undefined,
               }}
             />
           </SolKpiRow>
@@ -442,34 +447,48 @@ export default function CockpitSol() {
       {/* ─── Mode INSPECT : lecture éditoriale de la semaine ─── */}
       {mode === 'inspect' && (
         <>
-          <SolSectionHead title="Pourquoi ces chiffres méritent votre attention" meta="lecture approfondie" />
+          <SolSectionHead
+            title="Pourquoi ces chiffres méritent votre attention"
+            meta="lecture approfondie"
+          />
           <SolInspectDoc>
-            <p style={{ fontSize: 18, color: 'var(--sol-ink-900)', fontWeight: 500, marginBottom: 24 }}>
+            <p
+              style={{
+                fontSize: 18,
+                color: 'var(--sol-ink-900)',
+                fontWeight: 500,
+                marginBottom: 24,
+              }}
+            >
               Votre patrimoine a été facturé{' '}
-              <strong>
-                {kpiCostValue != null ? formatFREur(kpiCostValue, 0) : '—'}
-              </strong>{' '}
-              sur la période analysée.{' '}
+              <strong>{kpiCostValue != null ? formatFREur(kpiCostValue, 0) : '—'}</strong> sur la
+              période analysée.{' '}
               {billing.total_insights
                 ? `${billing.total_insights} anomalie${billing.total_insights > 1 ? 's' : ''} détectée${billing.total_insights > 1 ? 's' : ''} par le moteur shadow billing.`
                 : 'Aucune anomalie détectée.'}
             </p>
-            <h3 style={{ fontSize: 20, fontWeight: 600, margin: '24px 0 10px' }}>§1. Ce que Sol voit</h3>
+            <h3 style={{ fontSize: 20, fontWeight: 600, margin: '24px 0 10px' }}>
+              §1. Ce que Sol voit
+            </h3>
             <p>
               {billing.total_invoices
                 ? `${billing.total_invoices} factures ont été analysées, couvrant ${billing.coverage_months ?? '—'}${NBSP}mois. Le moteur ${billing.engine_version ?? 'shadow billing'} compare chaque ligne aux barèmes réglementaires en vigueur.`
-                : 'Le moteur shadow billing est prêt. Importez vos factures pour commencer l\'analyse.'}
+                : "Le moteur shadow billing est prêt. Importez vos factures pour commencer l'analyse."}
             </p>
-            <h3 style={{ fontSize: 20, fontWeight: 600, margin: '24px 0 10px' }}>§2. Votre conformité</h3>
+            <h3 style={{ fontSize: 20, fontWeight: 600, margin: '24px 0 10px' }}>
+              §2. Votre conformité
+            </h3>
             <p>
               Votre score Décret tertiaire est de <strong>{scoreNow ?? '—'}/100</strong>
               {scoreDelta ? ` (${scoreDelta.text})` : ''}. Le seuil d'alerte se situe à 60/100 ;
               en-dessous, une réaction rapide est nécessaire pour tenir la trajectoire −25 % à 2030.
             </p>
-            <h3 style={{ fontSize: 20, fontWeight: 600, margin: '24px 0 10px' }}>§3. Ce que Sol observe</h3>
+            <h3 style={{ fontSize: 20, fontWeight: 600, margin: '24px 0 10px' }}>
+              §3. Ce que Sol observe
+            </h3>
             <p>
               {alertsCount === 0
-                ? "Aucun signal fort cette semaine. Votre patrimoine tourne au rythme attendu."
+                ? 'Aucun signal fort cette semaine. Votre patrimoine tourne au rythme attendu.'
                 : `${alertsCount} point${alertsCount > 1 ? 's' : ''} nécessite${alertsCount > 1 ? 'nt' : ''} votre attention. Les signaux sont détaillés dans le mode Surface.`}
             </p>
             <div
@@ -574,7 +593,9 @@ export default function CockpitSol() {
                   delta: '—',
                   source: 'Notifications',
                   status: (
-                    <SolStatusPill kind={alertsCount === 0 ? 'ok' : alertsCount <= 2 ? 'att' : 'risk'}>
+                    <SolStatusPill
+                      kind={alertsCount === 0 ? 'ok' : alertsCount <= 2 ? 'att' : 'risk'}
+                    >
                       {alertsCount === 0 ? 'RAS' : alertsCount <= 2 ? 'À voir' : 'Vigilance'}
                     </SolStatusPill>
                   ),
