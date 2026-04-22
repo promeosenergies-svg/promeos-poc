@@ -152,7 +152,13 @@ export default function WatchersSol({
       width: 140,
       render: (v) =>
         v ? (
-          <span style={{ color: 'var(--sol-ink-500)', fontFamily: 'var(--sol-font-mono)', fontSize: 10.5 }}>
+          <span
+            style={{
+              color: 'var(--sol-ink-500)',
+              fontFamily: 'var(--sol-font-mono)',
+              fontSize: 10.5,
+            }}
+          >
             {v}
           </span>
         ) : (
@@ -167,7 +173,9 @@ export default function WatchersSol({
       render: (v) => {
         const label = STATUS_LABELS[v] || v || 'Nouveau';
         const tone = toneFromStatus(v);
-        const kind = { calme: 'ok', attention: 'att', afaire: 'att', refuse: 'risk', succes: 'ok' }[tone] || 'att';
+        const kind =
+          { calme: 'ok', attention: 'att', afaire: 'att', refuse: 'risk', succes: 'ok' }[tone] ||
+          'att';
         return <SolStatusPill kind={kind}>{label}</SolStatusPill>;
       },
     },
@@ -178,11 +186,13 @@ export default function WatchersSol({
       render: (_, row) => {
         const raw = row.cells._raw;
         const isNew = !raw.status || raw.status === 'new';
+        const safeUrl =
+          typeof raw.url === 'string' && /^https?:\/\//i.test(raw.url) ? raw.url : null;
         return (
           <div style={{ display: 'flex', gap: 6 }}>
-            {raw.url && (
+            {safeUrl && (
               <a
-                href={raw.url}
+                href={safeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}

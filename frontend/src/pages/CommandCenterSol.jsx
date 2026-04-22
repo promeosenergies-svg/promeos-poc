@@ -125,6 +125,43 @@ const MODULE_TILES = [
   },
 ];
 
+const TILE_STYLE = {
+  background: 'var(--sol-bg-paper)',
+  border: '1px solid var(--sol-ink-200)',
+  borderRadius: 8,
+  padding: '16px 18px',
+  cursor: 'pointer',
+  textAlign: 'left',
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: 12,
+  transition: 'border-color 120ms, box-shadow 120ms',
+};
+const TILE_ICON_STYLE = { color: 'var(--sol-calme-fg)', flexShrink: 0, marginTop: 2 };
+const TILE_BODY_STYLE = { flex: 1, minWidth: 0 };
+const TILE_LABEL_STYLE = {
+  fontFamily: 'var(--sol-font-body)',
+  fontSize: 14,
+  fontWeight: 600,
+  color: 'var(--sol-ink-900)',
+  marginBottom: 3,
+};
+const TILE_DESC_STYLE = { fontSize: 12, color: 'var(--sol-ink-500)', lineHeight: 1.4 };
+const TILE_GRID_STYLE = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+  gap: 12,
+  marginTop: 8,
+};
+const tileHoverEnter = (e) => {
+  e.currentTarget.style.borderColor = 'var(--sol-calme-fg)';
+  e.currentTarget.style.boxShadow = '0 2px 6px rgba(15, 23, 42, 0.06)';
+};
+const tileHoverLeave = (e) => {
+  e.currentTarget.style.borderColor = 'var(--sol-ink-200)';
+  e.currentTarget.style.boxShadow = '0 1px 2px rgba(15, 23, 42, 0.03)';
+};
+
 // ──────────────────────────────────────────────────────────────────────────────
 
 export default function CommandCenterSol() {
@@ -335,56 +372,20 @@ export default function CommandCenterSol() {
         title="Accès rapide aux modules"
         meta={`${MODULE_TILES.length}${NBSP}modules`}
       />
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 12,
-          marginTop: 8,
-        }}
-      >
+      <div style={TILE_GRID_STYLE}>
         {MODULE_TILES.map(({ to, label, desc, Icon }) => (
           <button
             key={to}
             type="button"
             onClick={() => navigate(to)}
-            style={{
-              background: 'var(--sol-bg-paper)',
-              border: '1px solid var(--sol-ink-200)',
-              borderRadius: 8,
-              padding: '16px 18px',
-              cursor: 'pointer',
-              textAlign: 'left',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 12,
-              transition: 'border-color 120ms, box-shadow 120ms',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--sol-calme-fg)';
-              e.currentTarget.style.boxShadow = '0 2px 6px rgba(15, 23, 42, 0.06)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--sol-ink-200)';
-              e.currentTarget.style.boxShadow = '0 1px 2px rgba(15, 23, 42, 0.03)';
-            }}
+            style={TILE_STYLE}
+            onMouseEnter={tileHoverEnter}
+            onMouseLeave={tileHoverLeave}
           >
-            <Icon size={20} style={{ color: 'var(--sol-calme-fg)', flexShrink: 0, marginTop: 2 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontFamily: 'var(--sol-font-body)',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: 'var(--sol-ink-900)',
-                  marginBottom: 3,
-                }}
-              >
-                {label}
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--sol-ink-500)', lineHeight: 1.4 }}>
-                {desc}
-              </div>
+            <Icon size={20} style={TILE_ICON_STYLE} />
+            <div style={TILE_BODY_STYLE}>
+              <div style={TILE_LABEL_STYLE}>{label}</div>
+              <div style={TILE_DESC_STYLE}>{desc}</div>
             </div>
           </button>
         ))}
