@@ -822,6 +822,26 @@ export const PANEL_SECTIONS_BY_ROUTE = {
 };
 
 
+/* ══════════════════════════════════════════════════════════════════════════
+ * PANEL_DEEP_LINKS_BY_ROUTE — stub introduit GATE 2 (sprint nav-deep-links).
+ *
+ * DOCTRINE (non-négociable) :
+ *   - SSOT = NAV_SECTIONS. Ce mécanisme NE la remplace JAMAIS.
+ *   - Uniquement raccourcis paramétrés (?tab=, ?filter=, ?horizon=, ?fw=)
+ *     ou sous-paths qui n'existent PAS comme items top-level NAV_SECTIONS.
+ *   - Zéro duplication de label top-level NAV_SECTIONS (garde-fou test).
+ *   - Zéro ré-exposition d'items cachés volontairement (/actions, /notifications).
+ *
+ * Contrat enforce par __tests__/panel_deep_links_invariant.test.js (GATE 2).
+ *
+ * Historique : ex-PANEL_SECTIONS_BY_ROUTE (vidé f679f14c après divergence
+ * SSOT). Triage détaillé des 14 routes historiques dans
+ * docs/audit/deep_links_panel_triage.md.
+ *
+ * État actuel : stub vide (GATE 2). Remplissage Vague 1 en GATE 4.
+ * ══════════════════════════════════════════════════════════════════════════ */
+export const PANEL_DEEP_LINKS_BY_ROUTE = {};
+
 /**
  * Résout les sections à afficher dans SolPanel pour une route donnée.
  * Priorité : PANEL_SECTIONS_BY_ROUTE[route] → getSectionsForModule(moduleKey).
