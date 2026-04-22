@@ -2,7 +2,7 @@
  * PROMEOS — ProfileHeatmapTab
  * Tab 1: Heatmap 7×24 + daily profile (24pts) + baseload/peak/load_factor.
  */
-import { memo, useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -56,10 +56,8 @@ const HeatmapGrid = memo(function HeatmapGrid({ heatmap }) {
         ))}
         {/* Data rows */}
         {grid.matrix.map((row, d) => (
-          <>
-            <div key={`l${d}`} className="text-xs text-gray-500 pr-1 flex items-center">
-              {DAY_LABELS[d]}
-            </div>
+          <React.Fragment key={d}>
+            <div className="text-xs text-gray-500 pr-1 flex items-center">{DAY_LABELS[d]}</div>
             {row.map((val, h) => (
               <div
                 key={`${d}-${h}`}
@@ -67,7 +65,7 @@ const HeatmapGrid = memo(function HeatmapGrid({ heatmap }) {
                 title={`${DAY_LABELS[d]} ${h}h — ${fmtNum(val, 1)} kWh`}
               />
             ))}
-          </>
+          </React.Fragment>
         ))}
       </div>
     </div>

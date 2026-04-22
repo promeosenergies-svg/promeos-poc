@@ -190,13 +190,14 @@ export function statusPillFromSite({ site, compliance }) {
  */
 export function buildEntityCardFields({ site, deliveryPoints = [] }) {
   if (!site) return [];
-  const pdl = Array.isArray(deliveryPoints) && deliveryPoints.length > 0
-    ? deliveryPoints
-        .map((dp) => dp.prm || dp.pdl || dp.identifier)
-        .filter(Boolean)
-        .slice(0, 2)
-        .join(' · ')
-    : null;
+  const pdl =
+    Array.isArray(deliveryPoints) && deliveryPoints.length > 0
+      ? deliveryPoints
+          .map((dp) => dp.prm || dp.pdl || dp.identifier)
+          .filter(Boolean)
+          .slice(0, 2)
+          .join(' · ')
+      : null;
   const surfaceLabel = site.surface_m2 > 0 ? `${formatFR(site.surface_m2, 0)}${NBSP}m²` : '—';
   const addressParts = [site.adresse, site.code_postal, site.ville].filter(Boolean);
   const addressLabel = addressParts.length > 0 ? addressParts.join(', ') : '—';
@@ -310,7 +311,7 @@ export function buildSiteWeekCards({ site, anomalies = [], topReco, compliance, 
       title: top.title || top.description || 'Anomalie de facturation',
       body: euros
         ? `Impact estimé ${formatFREur(euros, 0)}. Preuve disponible dans l'onglet Factures.`
-        : 'Écart détecté avec le shadow billing. Preuve disponible dans l\'onglet Factures.',
+        : "Écart détecté avec le shadow billing. Preuve disponible dans l'onglet Factures.",
       footerLeft: top.source || 'shadow billing',
       footerRight: '⌘K',
       onClick: () => onOpenTab?.('factures'),
@@ -329,7 +330,7 @@ export function buildSiteWeekCards({ site, anomalies = [], topReco, compliance, 
       title: topReco.title || topReco.name,
       body: impact
         ? `Économie potentielle estimée ${formatFREur(impact, 0)}/an.`
-        : (topReco.description || 'Recommandation à examiner dans l\'onglet Actions.'),
+        : topReco.description || "Recommandation à examiner dans l'onglet Actions.",
       footerLeft: topReco.category || 'optimisation',
       footerRight: 'Sol peut préparer',
       onClick: () => onOpenTab?.('actions'),
@@ -390,17 +391,7 @@ export function adaptComplianceToTrajectory({ site, compliance }) {
   // affiche tels quels et la progression est lisible même avec 3 points.
   return [
     { month: '2020', score: baseline, label: 'Référence' },
-    { month: '2024', score: current, label: 'Aujourd\'hui' },
+    { month: '2024', score: current, label: "Aujourd'hui" },
     { month: '2030', score: target, label: 'Objectif DT' },
   ];
-}
-
-/**
- * Benchmark EUI ADEME pour le site (wrapper autour getBenchmark pour usage unique).
- * Utile quand la valeur `benchmark` n'est pas déjà dans intensityData.
- */
-export function resolveSiteBenchmark(site) {
-  if (!site) return null;
-  const bench = getBenchmark(site.usage || site.type);
-  return bench > 0 ? bench : null;
 }

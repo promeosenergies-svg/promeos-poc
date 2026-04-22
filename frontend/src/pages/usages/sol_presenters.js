@@ -39,9 +39,8 @@ export function buildUsagesNarrative({ dashboard } = {}) {
   if (!dashboard) {
     return 'Segmentation des usages énergétiques en cours de calcul — données de comptage requises sur plus de 30 jours.';
   }
-  const top = Array.isArray(dashboard.top_ues) && dashboard.top_ues.length > 0
-    ? dashboard.top_ues[0]
-    : null;
+  const top =
+    Array.isArray(dashboard.top_ues) && dashboard.top_ues.length > 0 ? dashboard.top_ues[0] : null;
   const totalKwh = Number(dashboard.summary?.total_kwh) || 0;
   const totalMwh = Math.round(totalKwh / 1000);
 
@@ -72,7 +71,7 @@ export function buildUsagesNarrative({ dashboard } = {}) {
     }
   }
   if (parts.length === 0) {
-    return 'Données d\'usages en cours d\'agrégation — segmentation complète disponible sous 7 jours.';
+    return "Données d'usages en cours d'agrégation — segmentation complète disponible sous 7 jours.";
   }
   return parts.join(' · ') + '.';
 }
@@ -119,7 +118,7 @@ export function interpretReadinessScore({ dashboard } = {}) {
   if (!Number.isFinite(score)) {
     return 'Score qualité indisponible — segmentation en cours.';
   }
-  if (score >= 80) return 'Segmentation complète · leviers d\'efficacité activables immédiatement.';
+  if (score >= 80) return "Segmentation complète · leviers d'efficacité activables immédiatement.";
   if (score >= 50) return 'Segmentation partielle · compléter les compteurs manquants.';
   return 'Données insuffisantes · prioriser import compteurs sous-comptage.';
 }
@@ -197,7 +196,7 @@ export function buildUsagesWeekCards({ dashboard, onOpenDetail } = {}) {
       tagKind: 'afaire',
       tagLabel: 'À faire',
       title: `${nonSignificant.label} à qualifier`,
-      body: "Données de comptage insuffisantes pour valider cet usage. Ajoutez un sous-compteur dédié pour activer le suivi efficacité.",
+      body: 'Données de comptage insuffisantes pour valider cet usage. Ajoutez un sous-compteur dédié pour activer le suivi efficacité.',
       footerLeft: `source actuelle : ${nonSignificant.data_source || 'estimée'}`,
       footerRight: 'Sol peut guider',
       onClick: () => onOpenDetail?.(nonSignificant),
@@ -237,19 +236,4 @@ export function buildUsagesWeekCards({ dashboard, onOpenDetail } = {}) {
   }
 
   return cards.slice(0, 3);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Normalize
-// ─────────────────────────────────────────────────────────────────────────────
-
-export function normalizeUsagesSummary(raw) {
-  if (!raw) return null;
-  return {
-    summary: raw.summary || {},
-    top_ues: Array.isArray(raw.top_ues) ? raw.top_ues : [],
-    baselines: Array.isArray(raw.baselines) ? raw.baselines : [],
-    readiness: raw.readiness || {},
-    sites_count: Number(raw.sites_count) || 0,
-  };
 }
