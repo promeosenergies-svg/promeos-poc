@@ -9,6 +9,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  // 15s timeout : empêche UI frozen si backend hang (uvicorn reload, lock DB).
+  // Backend routes lourdes (getRegOpsAssessment) peuvent override via config.timeout
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
