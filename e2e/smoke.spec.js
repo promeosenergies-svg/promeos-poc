@@ -10,13 +10,13 @@ test.describe('Smoke tests', () => {
     const res = await request.get('http://127.0.0.1:8001/api/health');
     expect(res.ok()).toBeTruthy();
     const body = await res.json();
-    expect(body).toHaveProperty('status');
+    expect(body).toHaveProperty('ok', true);
   });
 
   test('Login with demo credentials redirects to dashboard', async ({ page }) => {
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'sophie@atlas.demo');
-    await page.fill('input[type="password"]', 'demo2024');
+    await page.fill('input[type="email"]', 'promeos@promeos.io');
+    await page.fill('input[type="password"]', 'promeos2024');
     await page.click('button[type="submit"]');
 
     // After login, should redirect away from /login
@@ -32,8 +32,8 @@ test.describe('Smoke tests', () => {
   test('Dashboard renders KPI content after login', async ({ page }) => {
     // Login first
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'sophie@atlas.demo');
-    await page.fill('input[type="password"]', 'demo2024');
+    await page.fill('input[type="email"]', 'promeos@promeos.io');
+    await page.fill('input[type="password"]', 'promeos2024');
     await page.click('button[type="submit"]');
     await page.waitForURL((url) => !url.pathname.includes('/login'), {
       timeout: 10_000,
