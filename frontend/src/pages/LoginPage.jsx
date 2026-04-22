@@ -13,14 +13,13 @@ export default function LoginPage() {
   const location = useLocation();
 
   // RequireAuth push les deeplinks intercepted dans `state.from`.
-  // Après login réussi, restaurer la route demandée (preserve query params).
-  const redirectTo = (() => {
-    const from = location.state?.from;
-    if (!from) return '/';
-    const path = from.pathname || '/';
-    if (path === '/login') return '/';
-    return `${path}${from.search || ''}${from.hash || ''}`;
-  })();
+  // Préserve pathname + query params + hash. Fallback `/` si from absent
+  // ou pointe vers /login (anti-boucle).
+  const from = location.state?.from;
+  const redirectTo =
+    from && from.pathname && from.pathname !== '/login'
+      ? `${from.pathname}${from.search || ''}${from.hash || ''}`
+      : '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();

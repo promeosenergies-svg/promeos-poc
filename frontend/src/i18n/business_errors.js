@@ -13,6 +13,8 @@
  *     body:       phrase explicative, vouvoiement strict,
  *     footer:     ligne mono 11px optionnelle,
  *     footerRight: marqueur court optionnel (ex "✓ Clean", "⌘K"),
+ *     ctaLabel?:  libellé CTA primaire (first-time empty states T2V),
+ *     ctaHref?:   route React Router pour navigate (query params OK),
  *   }
  *
  * Convention clé : <module>.<cas> (ex "conformite.no_drift").

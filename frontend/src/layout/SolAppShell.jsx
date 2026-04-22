@@ -424,10 +424,11 @@ function SolAppShellHeader({
         )}
       </button>
 
-      {/* Expert toggle */}
+      {/* Expert toggle — title reste utile pour hover desktop (sources/confiance),
+          aria-label sert screen readers avec le raccourci explicite. */}
       <div
         style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-        title="Affiche sources, confiance, détails techniques (Ctrl+Shift+X)"
+        title="Affiche sources, confiance, détails techniques"
       >
         <Toggle
           checked={isExpert}

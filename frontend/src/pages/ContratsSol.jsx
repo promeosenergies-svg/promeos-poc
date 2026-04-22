@@ -85,14 +85,14 @@ export default function ContratsSol({
     hasFilters,
     hasAnyContract: rowsAll.length > 0,
   });
-  const emptyState =
-    rawEmpty?.ctaLabel && rawEmpty?.ctaHref
-      ? {
-          title: rawEmpty.title,
-          message: rawEmpty.message,
-          action: { label: rawEmpty.ctaLabel, onClick: () => navigate(rawEmpty.ctaHref) },
-        }
-      : rawEmpty;
+  const emptyState = useMemo(() => {
+    if (!rawEmpty?.ctaLabel || !rawEmpty?.ctaHref) return rawEmpty;
+    return {
+      title: rawEmpty.title,
+      message: rawEmpty.message,
+      action: { label: rawEmpty.ctaLabel, onClick: () => navigate(rawEmpty.ctaHref) },
+    };
+  }, [rawEmpty, navigate]);
   const filterConfig = useMemo(() => buildFilterConfig({ cadres }), [cadres]);
 
   const activeFilterCount =
