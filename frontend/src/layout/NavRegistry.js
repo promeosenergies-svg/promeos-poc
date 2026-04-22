@@ -776,9 +776,29 @@ export function getVisibleItems(items, expertMode) {
  * module courant (SSOT) PUIS append une section "Raccourcis" contenant les
  * deep-links de la route (si présents). Ordre : SSOT d'abord, additif ensuite.
  *
- * État actuel : vide (GATE 3 rename). Remplissage Vague 1 en GATE 4.
+ * État actuel : Vague 1 livrée (GATE 4) — 8 deep-links sur 3 routes.
  * ══════════════════════════════════════════════════════════════════════════ */
-export const PANEL_DEEP_LINKS_BY_ROUTE = {};
+export const PANEL_DEEP_LINKS_BY_ROUTE = {
+  // /anomalies — filtres framework réglementaire (consommés par useAnomalyFilters)
+  '/anomalies': [
+    { href: '/anomalies?fw=DECRET_TERTIAIRE', label: 'Décret Tertiaire', hint: 'Dérives trajectoire DT' },
+    { href: '/anomalies?fw=FACTURATION', label: 'Anomalies facturation', hint: 'Écarts shadow billing' },
+    { href: '/anomalies?fw=BACS', label: 'BACS', hint: 'GTB/GTC non conforme' },
+  ],
+
+  // /renouvellements — horizons temporels (consommés par ContractRadarPage useSearchParams)
+  '/renouvellements': [
+    { href: '/renouvellements?horizon=90', label: '90 jours', hint: 'Urgent — action immédiate' },
+    { href: '/renouvellements?horizon=180', label: '180 jours', hint: 'Fenêtre de préparation' },
+    { href: '/renouvellements?horizon=365', label: '12 mois', hint: 'Pipeline annuel' },
+  ],
+
+  // /conformite/aper — filtres assujettissement (consommés par AperPage useSearchParams)
+  '/conformite/aper': [
+    { href: '/conformite/aper?filter=parking', label: 'Parkings > 1500 m²', hint: 'Obligations ombrières PV' },
+    { href: '/conformite/aper?filter=toiture', label: 'Toitures > 500 m²', hint: 'Obligations solarisation' },
+  ],
+};
 
 /**
  * Résout les sections à afficher dans SolPanel pour une route donnée.

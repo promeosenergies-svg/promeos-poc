@@ -5,6 +5,7 @@
  * Table + ScenarioDrawer + ScenarioSummaryModal.
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   CalendarRange,
   ChevronRight,
@@ -374,9 +375,26 @@ function SegmentationBadge({ profile }) {
 /* ── Main Page ── */
 export default function ContractRadarPage() {
   const { selectedSiteId } = useScope();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [horizon, setHorizon] = useState(90);
+  // URL comme source de vérité pour horizon (?horizon=90/180/365 depuis
+  // le panel deep-link). Fallback 90 si param absent ou invalide.
+  const urlHorizon = parseInt(searchParams.get('horizon'), 10);
+  const horizon = [90, 180, 365].includes(urlHorizon) ? urlHorizon : 90;
+  const setHorizon = useCallback(
+    (value) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('horizon', String(value));
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const [selectedContract, setSelectedContract] = useState(null);
   const [segProfile, setSegProfile] = useState(null);
   const [showSegModal, setShowSegModal] = useState(false);
