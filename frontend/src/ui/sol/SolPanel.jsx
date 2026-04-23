@@ -51,6 +51,31 @@ export default function SolPanel({
   //   - sinon → locked si !hasPermission('view', PERMISSION_KEY_MAP[module])
   //             && !hasPermission('admin')
   //   - non authentifié → rien de locké (avant login tout passe)
+  // Keyboard navigation Up/Down/Home/End (Sprint 1 Vague A phase A8)
+  // Parité NavPanel main. Les boutons items sont les focusables cibles
+  // — on navigue entre items de sections différentes naturellement (flat
+  // tab-order dans le DOM).
+  const handlePanelKeyDown = React.useCallback((e) => {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+    const buttons = Array.from(
+      e.currentTarget.querySelectorAll('button.sol-panel-item:not([disabled])')
+    );
+    if (buttons.length === 0) return;
+    const idx = buttons.indexOf(document.activeElement);
+    let next;
+    if (e.key === 'ArrowDown') {
+      next = idx === -1 ? 0 : Math.min(idx + 1, buttons.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      next = idx === -1 ? buttons.length - 1 : Math.max(idx - 1, 0);
+    } else if (e.key === 'Home') {
+      next = 0;
+    } else {
+      next = buttons.length - 1;
+    }
+    e.preventDefault();
+    buttons[next]?.focus();
+  }, []);
+
   const sections = React.useMemo(() => {
     if (!isAuthenticated) {
       return rawSections.map((section) => ({
@@ -80,6 +105,7 @@ export default function SolPanel({
     <aside
       className={`sol-panel sol-app-panel ${className}`.trim()}
       aria-label="Navigation contextuelle"
+      onKeyDown={handlePanelKeyDown}
       style={{
         background: 'var(--sol-bg-paper)',
         borderRight: '1px solid var(--sol-rule)',
