@@ -63,7 +63,11 @@ describe('SolPanel — permission filtering wiring', () => {
     expect(src).toMatch(/\[rawSections,\s*isAuthenticated,\s*hasPermission\]/);
   });
 
-  it('bypasses filter when not authenticated (returns rawSections)', () => {
-    expect(src).toMatch(/if\s*\(!\s*isAuthenticated\)\s*return\s*rawSections/);
+  it('bypasses filter when not authenticated (all items remain visible)', () => {
+    // A3 : au lieu d'un simple `return rawSections`, on map items avec
+    // locked: false pour garder le shape cohérent. Test vérifie la branche
+    // !isAuthenticated.
+    expect(src).toMatch(/if\s*\(!\s*isAuthenticated\)\s*\{?/);
+    expect(src).toMatch(/locked:\s*false/);
   });
 });

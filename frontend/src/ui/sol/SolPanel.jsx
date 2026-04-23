@@ -11,6 +11,7 @@
  */
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Lock } from 'lucide-react';
 import {
   resolveModule,
   getPanelSections,
@@ -19,6 +20,8 @@ import {
 } from '../../layout/NavRegistry';
 import { resolveBackendPermissionKey } from '../../layout/permissionMap';
 import { useAuth } from '../../contexts/AuthContext';
+
+const LOCKED_TOOLTIP = 'Module non inclus dans votre rôle. Contactez votre administrateur.';
 
 export default function SolPanel({
   desc,
@@ -37,23 +40,37 @@ export default function SolPanel({
   // V2 : panelSections par route (maquette) avec fallback sur NAV_SECTIONS
   const rawSections = getPanelSections(location.pathname, isExpert);
 
-  // Filtre permissions (Sprint 1 Vague A phase A2) — parité NavPanel legacy.
-  // requireAdmin → hasPermission('admin')
-  // sinon → hasPermission('view', resolveBackendPermissionKey(module))
-  //         avec module = ROUTE_MODULE_MAP[item.to]
-  // Fallback : items sans module mapping passent (ex. deep-links Raccourcis).
+  // Permissions (Sprint 1 Vague A phases A2+A3) — parité NavPanel legacy.
+  // Chaque item est enrichi avec `locked: boolean` plutôt que masqué.
+  // A3 rend un cadenas + tooltip au lieu de disparaître silencieusement
+  // → UX transparente + upsell potentiel.
+  //
+  // Logique :
+  //   - requireAdmin && !hasPermission('admin') → locked
+  //   - basePath hors ROUTE_MODULE_MAP → toujours visible (deep-links Raccourcis)
+  //   - sinon → locked si !hasPermission('view', PERMISSION_KEY_MAP[module])
+  //             && !hasPermission('admin')
+  //   - non authentifié → rien de locké (avant login tout passe)
   const sections = React.useMemo(() => {
-    if (!isAuthenticated) return rawSections;
+    if (!isAuthenticated) {
+      return rawSections.map((section) => ({
+        ...section,
+        items: (section.items || []).map((item) => ({ ...item, locked: false })),
+      }));
+    }
     return rawSections
       .map((section) => ({
         ...section,
-        items: (section.items || []).filter((item) => {
-          if (item.requireAdmin) return hasPermission('admin');
+        items: (section.items || []).map((item) => {
+          if (item.requireAdmin) {
+            return { ...item, locked: !hasPermission('admin') };
+          }
           const basePath = item.to.split('?')[0].split('#')[0];
           const navModule = ROUTE_MODULE_MAP[basePath];
-          if (navModule === undefined) return true;
+          if (navModule === undefined) return { ...item, locked: false };
           const backendKey = resolveBackendPermissionKey(navModule);
-          return hasPermission('view', backendKey) || hasPermission('admin');
+          const allowed = hasPermission('view', backendKey) || hasPermission('admin');
+          return { ...item, locked: !allowed };
         }),
       }))
       .filter((section) => section.items.length > 0);
@@ -145,24 +162,35 @@ export default function SolPanel({
                   basePath === location.pathname ||
                   (basePath !== '/' && location.pathname.startsWith(basePath + '/'));
                 const badge = badges[basePath] ?? badges[item.to];
+                const locked = item.locked === true;
                 return (
                   <button
                     key={item.to}
                     type="button"
-                    onClick={() => navigate(item.to)}
+                    onClick={locked ? undefined : () => navigate(item.to)}
+                    disabled={locked}
                     aria-current={isActive ? 'page' : undefined}
-                    className={`sol-panel-item ${isActive ? 'is-active' : ''}`.trim()}
+                    aria-disabled={locked || undefined}
+                    aria-label={locked ? `${item.label} — ${LOCKED_TOOLTIP}` : undefined}
+                    title={locked ? LOCKED_TOOLTIP : undefined}
+                    data-locked={locked || undefined}
+                    className={`sol-panel-item ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: 10,
                       padding: '7px 8px',
                       borderRadius: 4,
-                      color: isActive ? 'var(--sol-calme-fg)' : 'var(--sol-ink-700)',
-                      background: isActive ? 'var(--sol-calme-bg)' : 'transparent',
+                      color: locked
+                        ? 'var(--sol-ink-400)'
+                        : isActive
+                          ? 'var(--sol-calme-fg)'
+                          : 'var(--sol-ink-700)',
+                      background: isActive && !locked ? 'var(--sol-calme-bg)' : 'transparent',
                       fontSize: 13,
-                      fontWeight: isActive ? 500 : 400,
-                      cursor: 'pointer',
+                      fontWeight: isActive && !locked ? 500 : 400,
+                      cursor: locked ? 'not-allowed' : 'pointer',
+                      opacity: locked ? 0.55 : 1,
                       width: '100%',
                       textAlign: 'left',
                       border: 'none',
@@ -187,6 +215,14 @@ export default function SolPanel({
                         </span>
                       )}
                     </span>
+                    {locked && (
+                      <Lock
+                        size={12}
+                        aria-hidden="true"
+                        data-testid="sol-panel-item-lock"
+                        style={{ color: 'var(--sol-ink-400)', flexShrink: 0 }}
+                      />
+                    )}
                     {badge != null && (
                       <span
                         className="sol-panel-item-badge"
