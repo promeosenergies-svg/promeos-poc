@@ -1,5 +1,5 @@
 """
-SF5 — CLI de promotion.
+SF6 — CLI de promotion Enedis.
 
 Usage :
     cd backend
@@ -15,7 +15,7 @@ from data_staging.engine import run_promotion
 
 
 def main():
-    parser = argparse.ArgumentParser(description="PROMEOS SF5 — Pipeline de promotion Enedis")
+    parser = argparse.ArgumentParser(description="PROMEOS SF6 — Pipeline de promotion Enedis")
     sub = parser.add_subparsers(dest="command")
 
     p = sub.add_parser("promote", help="Lancer un run de promotion")

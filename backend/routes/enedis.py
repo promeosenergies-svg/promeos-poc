@@ -424,7 +424,7 @@ def get_stats(db: Session = Depends(get_flux_data_db)):
 
 
 # ========================================
-# SF5 — Promotion Pipeline Endpoints
+# SF6 — Promotion Pipeline Endpoints
 # ========================================
 
 
@@ -437,7 +437,7 @@ def trigger_promotion(
     flux_db: Session = Depends(get_flux_data_db),
     _auth=Depends(_require_auth),
 ):
-    """Déclenche un run de promotion staging → tables fonctionnelles.
+    """Déclenche un run de promotion archive brute → tables fonctionnelles.
 
     Rate limit : 1 run par fenêtre de 60s (anti DoS).
     Dry-run : exempt du rate limit pour debug.

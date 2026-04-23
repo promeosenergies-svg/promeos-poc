@@ -1,9 +1,9 @@
 # SF5 — Enedis R6X + C68 Raw Ingestion Extension
 
-> **Status**: PRD v0.1 — first draft based on roadmap, official local guides, JSON schemas, and real `flux_enedis/` samples inspected on 2026-04-18
-> **Depends on**: SF1 (decrypt), SF2 (R4x staging), SF3 (R171/R50/R151 staging), SF4 (operationalization), SGE4.5 (raw DB split to `flux_data.db`) — complete and validated
+> **Status**: PRD v0.2 — reviewed on 2026-04-23 against the post-SGE4.5 raw/product DB split; grounded in the roadmap, official local guides, JSON schemas, and real `flux_enedis/` samples inspected on 2026-04-18
+> **Depends on**: SF1 (decrypt), SF2 (R4x raw archive), SF3 (R171/R50/R151 raw archive), SF4 (operationalization), SGE4.5 (raw DB split to `flux_data.db`) — complete and validated
 > **Module**: `backend/data_ingestion/enedis/`
-> **Goal**: extend the existing raw archive pipeline with `R63`, `R64`, and `C68` while preserving SF1-SF4 behavior for legacy XML flows and the SGE4.5 storage split to `flux_data.db`
+> **Goal**: extend the existing raw archive pipeline with `R63`, `R64`, and `C68` while preserving SF1-SF4 behavior for legacy XML flows and the SGE4.5 storage split to `flux_data.db`; SF5 must not create or mutate promoted/product tables in `promeos.db`
 
 ---
 
@@ -22,7 +22,7 @@ That pipeline assumes one dominant technical contract:
 2. decrypt AES ciphertext with `KEY_n/IV_n`
 3. validate XML
 4. parse XML
-5. store raw rows in dedicated staging tables
+5. store raw rows in dedicated raw archive tables in `flux_data.db`
 
 The new SF5 scope breaks those assumptions in several ways:
 
@@ -34,11 +34,18 @@ The new SF5 scope breaks those assumptions in several ways:
 
 If we do nothing, SF6 remains blocked: it already treats SF5 as the upstream prerequisite for raw ingestion of `R63` / `R64` and `C68`.
 
+Since SGE4.5, this is no longer only a parser-extension question. The persistence contract now matters just as much as the payload contract:
+
+- raw file registry rows, raw measurement/snapshot rows, retry history, and ingest-control tables stay in `flux_data.db`
+- `promeos.db` remains reserved for later promotion/audit/product tables
+- SF5 must preserve that split instead of reintroducing raw Enedis storage into the main platform database
+
 ### Why this matters
 
 - `R63` is the raw source for fine-grain load curves outside the legacy R4x/R50 perimeter
 - `R64` is the raw source for fine-grain indexes and related measurement contexts
 - `C68` is the raw source for technical and contractual PRM snapshots needed by downstream power/contract features
+- the platform now has a deliberate 2-DB contract: `flux_data.db` archives what Enedis sent, while `promeos.db` is where later functional promotion will happen
 - the current ingestion CLI/API/stats should continue to work across mixed Enedis directories instead of splitting into a second ad hoc toolchain
 
 SF5 therefore extends the existing pipeline, but stays strictly in the **raw archive layer** stored in `flux_data.db`. No functional promotion, PRM matching, or business normalization belongs here.
@@ -193,11 +200,11 @@ SF5 must therefore generalize the ingestion surface without regressing the old X
 ```text
 Existing legacy path (unchanged happy path)
 -------------------------------------------
-file -> classify -> AES/XML decrypt -> XML parser -> staging table
+file -> classify -> AES/XML decrypt -> XML parser -> raw archive table (`flux_data.db`)
 
 New SF5 path
 ------------
-file -> classify -> archive open -> member detection -> JSON/CSV parser -> staging table
+file -> classify -> archive open -> member detection -> JSON/CSV parser -> raw archive table (`flux_data.db`)
                                  \-> invalid archive -> FluxStatus.ERROR
 
 Mixed run support
@@ -207,6 +214,7 @@ one ingest_directory() run can contain:
 - new direct ZIP R63/R64 files
 - new primary+secondary ZIP C68 files
 - skipped out-of-scope files
+- all persisted raw results land in `flux_data.db`; SF5 never writes promoted data into `promeos.db`
 ```
 
 ### New high-level rule
@@ -217,6 +225,8 @@ The ingestion pipeline becomes **container-aware** instead of assuming “all in
 - `R63`, `R64`, `C68` use ZIP/member extraction and JSON/CSV parsing
 - the registry, retry logic, republication/versioning logic, CLI, REST scaffolding, and run counters remain shared
 
+SF5 still ends at raw persistence. The later `backend/data_staging/` module from SF6 is the separate bridge that reads raw rows from `flux_data.db` and writes promoted functional rows to `promeos.db`. That promotion boundary is intentionally outside SF5.
+
 ---
 
 ## 4. Scope Boundary
@@ -226,17 +236,19 @@ The ingestion pipeline becomes **container-aware** instead of assuming “all in
 - add raw-ingestion support for `R63`, `R64`, and `C68`
 - support both **JSON and CSV** for these families on day one
 - support `C68` nested archive extraction
-- add 2 new staging tables:
+- add 2 new raw archive tables in `flux_data.db`:
   - one shared raw table for atomic `R63` / `R64` rows
   - one raw table for `C68` per-PRM snapshots
 - extend file metadata capture so request/publication fields from filenames are queryable
-- extend CLI/API/stats/tests so the existing operational surfaces cover the new tables
+- extend CLI/API/stats/tests so the existing raw-ingestion operational surfaces cover the new tables without changing the `promeos.db` contract
 
 ### SF5 Out
 
 - no promotion to functional tables (`meter_load_curve`, `meter_energy_index`, etc.)
+- no creation or mutation of promotion/audit/product tables in `promeos.db`
 - no PRM matching to `DeliveryPoint` / `Meter`
 - no deduplication/republication resolution at measurement level
+- no dependency on `backend/data_staging/` for persistence
 - no support in this wave for:
   - `R63A`, `R63B`
   - `R64A`, `R64B`
@@ -255,13 +267,14 @@ The ingestion pipeline becomes **container-aware** instead of assuming “all in
 | D1 | Supported formats | **JSON + CSV required from day one** | The official guides allow both and the local corpus is already mixed; shipping JSON-only would knowingly reject real files |
 | D2 | Archive handling | **Do not send `R63/R64/C68` through the XML decrypt path** | Their happy path is ZIP publication, not AES/XML |
 | D3 | Invalid non-zip files | **Treat as `ERROR`, not alternate happy path** | The guides define ZIP delivery and the sampled invalid files did not open as valid ZIPs nor decrypt with current legacy AES keys |
-| D4 | Table count | **2 new staging tables total** | Aligns with roadmap wording and keeps SF5 bounded |
+| D4 | Table count | **2 new raw archive tables total** | Aligns with roadmap scope and keeps SF5 bounded |
 | D5 | `R63` + `R64` storage model | **One shared raw table** with nullable context columns | Both are R6X request-response measurement families with one atomic temporal value per leaf row |
 | D6 | `C68` storage model | **One per-PRM snapshot table with full raw payload + curated extracted columns** | C68 is too wide and heterogeneous for a pure all-columns-first model in SF5, but a pure blob would be too opaque |
 | D7 | Metadata authority | **Filename nomenclature is authoritative** for request/publication fields; payload headers are supplemental | CSV variants and C68 do not provide all metadata inside the payload |
-| D8 | Raw typing | **Store extracted staging values as raw strings** (same archive philosophy as SF2/SF3) | Preserve fidelity and avoid premature normalization across JSON/CSV variants |
+| D8 | Raw typing | **Store extracted raw-archive values as raw strings** (same archive philosophy as SF2/SF3) | Preserve fidelity and avoid premature normalization across JSON/CSV variants |
 | D9 | Key loading | **Decryption keys become lazy/conditional** | A directory containing only direct ZIP R63/R64/C68 should not fail before scan time just because legacy AES keys are absent |
 | D10 | C68 row granularity | **1 row = 1 PRM snapshot from one payload file** | Matches both JSON array items and CSV rows, and fits downstream traceability needs |
+| D11 | Database boundary | **All SF5 persistence stays in `flux_data.db`** | Preserves SGE4.5. Raw archive/control tables remain isolated from promoted/product data in `promeos.db` |
 
 ---
 
@@ -269,7 +282,7 @@ The ingestion pipeline becomes **container-aware** instead of assuming “all in
 
 ### 6.1 `enedis_flux_file` Extensions
 
-`EnedisFluxFile` remains the physical file registry. SF5 extends it with filename-derived publication metadata that is useful across `R63`, `R64`, and `C68`.
+`EnedisFluxFile` remains the physical file registry in `flux_data.db`. SF5 extends it with filename-derived publication metadata that is useful across `R63`, `R64`, and `C68`.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -287,11 +300,11 @@ The ingestion pipeline becomes **container-aware** instead of assuming “all in
 - `R63`/`R64` JSON: raw `header` object
 - CSV variants and `C68`: filename-derived metadata envelope and archive manifest
 
-This keeps one registry abstraction instead of creating a parallel file table.
+This keeps one raw-file registry abstraction in `flux_data.db` instead of creating a parallel file table or leaking raw-ingestion metadata into `promeos.db`.
 
-### 6.2 New Table: `enedis_flux_mesure_r6x`
+### 6.2 New Raw Table: `enedis_flux_mesure_r6x`
 
-Shared raw table for atomic `R63` and `R64` rows.
+Shared raw archive table in `flux_data.db` for atomic `R63` and `R64` rows.
 
 **Granularity**
 
@@ -345,11 +358,11 @@ Shared raw table for atomic `R63` and `R64` rows.
 
 **No unique constraint**
 
-As with every existing staging table, republications/corrections remain archived side by side.
+As with every existing raw archive table, republications/corrections remain archived side by side.
 
-### 6.3 New Table: `enedis_flux_itc_c68`
+### 6.3 New Raw Table: `enedis_flux_itc_c68`
 
-Raw table for `C68` technical/contractual PRM snapshots.
+Raw archive table in `flux_data.db` for `C68` technical/contractual PRM snapshots.
 
 **Granularity**
 
@@ -358,7 +371,7 @@ Raw table for `C68` technical/contractual PRM snapshots.
 
 **Important design note**
 
-Unlike `R63` / `R64`, `C68` is not a compact measurement family. It is a very wide, nested snapshot whose exact leaf set differs between JSON and CSV. For SF5, the canonical source-of-truth inside the staging row is therefore the **full per-PRM raw payload**, plus a small extracted column set that supports filtering and future downstream use.
+Unlike `R63` / `R64`, `C68` is not a compact measurement family. It is a very wide, nested snapshot whose exact leaf set differs between JSON and CSV. For SF5, the canonical source-of-truth inside the raw archive row is therefore the **full per-PRM raw payload**, plus a small extracted column set that supports filtering and future downstream use.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -469,7 +482,7 @@ Filename parsing is not optional. It is the authoritative metadata source for:
 - for each secondary ZIP:
   - require exactly 1 payload file
   - detect `JSON` vs `CSV`
-  - parse and flatten into per-PRM staging rows
+  - parse and flatten into per-PRM raw archive rows
 - if one secondary archive fails:
   - the whole physical file is recorded as `ERROR`
   - partial inserts from that file must be rolled back, same as current pipeline behavior
@@ -569,7 +582,7 @@ Keep the current `ingest_file()` orchestration model:
 1. classify
 2. idempotence / retry / republication handling
 3. parse container + payload
-4. insert file row + staging rows
+4. insert/update file row + raw archive rows in `flux_data.db`
 5. commit
 
 But replace the assumption “in-scope means decrypt to XML” with “in-scope means use the family-specific extractor”.
@@ -612,6 +625,15 @@ Keep current file-level rules:
 
 SF5 does **not** add request-level or PRM-level deduplication.
 
+### 8.6 Database Responsibility
+
+The raw-ingestion operational surface stays bound to the dedicated raw database:
+
+- raw CLI execution continues to open the dedicated raw session/engine
+- raw REST list/stats surfaces continue to query the raw DB dependency
+- SF5 migrations/bootstrap create the new raw tables in `flux_data.db`
+- `promeos.db` is not a fallback persistence target and should remain unchanged by an SF5 ingest run
+
 ---
 
 ## 9. Operational Surfaces
@@ -620,7 +642,7 @@ SF5 does **not** add request-level or PRM-level deduplication.
 
 The existing `python -m data_ingestion.enedis.cli ingest` command stays the only CLI entrypoint.
 
-The report must include the two new staging totals:
+The report must include the two new raw archive totals, queried from `flux_data.db`:
 
 - `R6X`
 - `C68`
@@ -628,7 +650,7 @@ The report must include the two new staging totals:
 Suggested output section:
 
 ```text
-Measures stored (staging totals):
+Measures stored (raw archive totals):
   R4x:     ...
   R171:    ...
   R50:     ...
@@ -640,7 +662,7 @@ Measures stored (staging totals):
 
 ### API / Stats
 
-`GET /api/enedis/stats` and any equivalent stats scaffolding from SF4 should extend the breakdown with:
+`GET /api/enedis/stats` and any equivalent stats scaffolding from SF4 should continue to use the dedicated raw DB dependency and extend the breakdown with:
 
 - total `R6X` rows
 - total `C68` rows
@@ -729,6 +751,15 @@ Legacy SF1-SF4 tests must continue to pass unchanged for:
 - pipeline idempotence/retry/republication
 - CLI run/reporting
 
+### 10.5 Cross-DB Boundary Tests
+
+Add explicit boundary tests so the SGE4.5 split remains enforced after SF5:
+
+- bootstrapping `promeos.db` must **not** create `enedis_flux_mesure_r6x` or `enedis_flux_itc_c68`
+- bootstrapping `flux_data.db` **must** create `enedis_flux_mesure_r6x` and `enedis_flux_itc_c68`
+- raw ingestion stats/list endpoints must still read through the dedicated raw DB dependency
+- ingesting representative SF5 files must change `flux_data.db` only; promoted/product tables in `promeos.db` remain untouched
+
 ---
 
 ## 11. Risks and Open Questions
@@ -746,6 +777,8 @@ Legacy SF1-SF4 tests must continue to pass unchanged for:
 ## 12. Acceptance Checklist
 
 - [ ] `FluxType` and classification support `R63`, `R64`, `C68`
+- [ ] raw DB bootstrap creates `enedis_flux_mesure_r6x` and `enedis_flux_itc_c68` in `flux_data.db`
+- [ ] main `promeos.db` bootstrap does not create the new raw Enedis tables
 - [ ] one mixed `ingest_directory()` run can process legacy XML flows and new ZIP publication flows together
 - [ ] `R63` JSON ingests successfully into `enedis_flux_mesure_r6x`
 - [ ] `R63` CSV ingests successfully into `enedis_flux_mesure_r6x`
@@ -755,7 +788,8 @@ Legacy SF1-SF4 tests must continue to pass unchanged for:
 - [ ] `C68` CSV ingests successfully into `enedis_flux_itc_c68`
 - [ ] `C68` primary archives with multiple secondary ZIPs ingest correctly
 - [ ] malformed `R63` / `C68` archives are recorded as clean file errors
-- [ ] CLI/reporting/stats show the two new staging tables
+- [ ] CLI/reporting/stats show the two new raw archive tables through the dedicated raw DB surface
+- [ ] ingesting SF5 files leaves `promeos.db` unchanged
 - [ ] legacy SF1-SF4 ingestion behavior remains green
 
 ---
@@ -770,4 +804,5 @@ Legacy SF1-SF4 tests must continue to pass unchanged for:
 | **C68** | Technical and contractual information response flow |
 | **Primary archive** | Outer ZIP published by Enedis for one request |
 | **Secondary archive** | Nested ZIP inside `C68` primary publication |
-| **Raw archive layer** | The staging layer that preserves Enedis data without business normalization |
+| **Raw archive layer** | The `flux_data.db` database and tables that preserve Enedis data without business normalization |
+| **Functional promotion layer** | The later SF6 layer in `promeos.db` that reads raw archive rows and writes promoted product-usable tables |

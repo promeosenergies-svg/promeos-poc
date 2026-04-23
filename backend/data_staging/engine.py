@@ -1,8 +1,8 @@
 """
-SF5 — Moteur de promotion : orchestre discover → match → convert → promote → audit.
+SF6 — Moteur de promotion : orchestre discover → match → convert → promote → audit.
 
 Modes :
-- incremental : ne traite que les nouvelles rows staging (id > high_water_mark)
+- incremental : ne traite que les nouvelles rows d'archive brute (id > high_water_mark)
 - full : retraite tout depuis le début
 
 Garanties :
@@ -46,8 +46,8 @@ logger = logging.getLogger(__name__)
 
 CHUNK_SIZE = 1000
 
-# Tables staging par type de flux
-_STAGING_TABLES = {
+# Tables source d'archive brute par type de flux
+_RAW_SOURCE_TABLES = {
     "R4X": (EnedisFluxMesureR4x, promote_r4x_row),
     "R50": (EnedisFluxMesureR50, promote_r50_row),
     "R171": (EnedisFluxMesureR171, promote_r171_row),
@@ -100,9 +100,9 @@ def run_promotion(
         counters = defaultdict(int)
 
         # Traiter par PRM (per-PRM atomicité)
-        for prm_code, staging_entries in prm_rows.items():
+        for prm_code, raw_entries in prm_rows.items():
             try:
-                result = _process_prm(db, run.id, prm_code, staging_entries, dry_run)
+                result = _process_prm(db, run.id, prm_code, raw_entries, dry_run)
                 counters["matched" if result["matched"] else "unmatched"] += 1
                 if result["matched"]:
                     counters["promoted"] += 1
@@ -165,16 +165,16 @@ def _discover_prms(
     hwm: dict,
     mode: str,
 ) -> dict[str, list[tuple[str, object]]]:
-    """Découvre les PRM distincts à traiter depuis les tables staging.
+    """Découvre les PRM distincts à traiter depuis les tables source d'archive brute.
 
-    Retourne {prm_code: [(flux_key, staging_row), ...]}
+    Retourne {prm_code: [(flux_key, raw_row), ...]}
     """
     prm_rows: dict[str, list] = defaultdict(list)
 
     for flux_key in flux_types:
-        if flux_key not in _STAGING_TABLES:
+        if flux_key not in _RAW_SOURCE_TABLES:
             continue
-        model_cls, _ = _STAGING_TABLES[flux_key]
+        model_cls, _ = _RAW_SOURCE_TABLES[flux_key]
 
         query = flux_db.query(model_cls)
         if mode == "incremental" and flux_key in hwm:
@@ -201,9 +201,7 @@ def _discover_prms(
     return prm_rows
 
 
-def _process_prm(
-    db: Session, run_id: int, prm_code: str, staging_entries: list[tuple[str, object]], dry_run: bool
-) -> dict:
+def _process_prm(db: Session, run_id: int, prm_code: str, raw_entries: list[tuple[str, object]], dry_run: bool) -> dict:
     """Traite un PRM : match → convert → promote."""
     result = {"matched": False, "lc": 0, "ei": 0, "pp": 0, "skipped": 0}
 
@@ -211,7 +209,7 @@ def _process_prm(
     match = resolve_prm(db, prm_code)
 
     if not match.matched:
-        _upsert_unmatched(db, prm_code, match.block_reason, staging_entries)
+        _upsert_unmatched(db, prm_code, match.block_reason, raw_entries)
         return result
 
     # Si le PRM était dans le backlog, le résoudre
@@ -225,8 +223,8 @@ def _process_prm(
     ei_rows = []
     pp_rows = []
 
-    for flux_key, row in staging_entries:
-        _, promoter_fn = _STAGING_TABLES.get(flux_key, (None, None))
+    for flux_key, row in raw_entries:
+        _, promoter_fn = _RAW_SOURCE_TABLES.get(flux_key, (None, None))
         if promoter_fn is None:
             continue
 
@@ -435,12 +433,12 @@ def _resolve_backlog(db: Session, prm_code: str, meter_id: int) -> None:
 
 
 def _get_high_water_marks(flux_db: Session, flux_types: list[str]) -> dict[str, int]:
-    """Retourne le max(id) par table staging (snapshot courant)."""
+    """Retourne le max(id) par table source d'archive brute (snapshot courant)."""
     hwm = {}
     for flux_key in flux_types:
-        if flux_key not in _STAGING_TABLES:
+        if flux_key not in _RAW_SOURCE_TABLES:
             continue
-        model_cls, _ = _STAGING_TABLES[flux_key]
+        model_cls, _ = _RAW_SOURCE_TABLES[flux_key]
         max_id = flux_db.query(func.max(model_cls.id)).scalar()
         if max_id is not None:
             hwm[flux_key] = max_id
