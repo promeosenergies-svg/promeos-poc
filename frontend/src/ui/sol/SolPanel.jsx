@@ -24,11 +24,47 @@ import { track } from '../../services/tracker';
 
 const LOCKED_TOOLTIP = 'Module non inclus dans votre rôle. Contactez votre administrateur.';
 
-// Sections concernées par PANEL_DEEP_LINKS_BY_ROUTE — permet de distinguer
-// un click sur un raccourci paramétré (?filter=, ?horizon=, ?fw=) d'un
-// click sur un item NAV_SECTIONS top-level. Cohérent avec la clé
-// `deep-links` utilisée dans getPanelSections (NavRegistry L857).
+// Clé de section utilisée par getPanelSections (NavRegistry) pour
+// distinguer un click sur un raccourci paramétré d'un item top-level.
 const DEEP_LINK_SECTION_KEY = 'deep-links';
+
+const FOCUS_RING_CLASS =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1';
+
+// Précédence : locked > active > default. Évite la ternary chain inline.
+function getItemVisuals(locked, isActive) {
+  if (locked) {
+    return {
+      color: 'var(--sol-ink-500)',
+      background: 'transparent',
+      fontWeight: 400,
+      cursor: 'not-allowed',
+    };
+  }
+  if (isActive) {
+    return {
+      color: 'var(--sol-calme-fg)',
+      background: 'var(--sol-calme-bg)',
+      fontWeight: 500,
+      cursor: 'pointer',
+    };
+  }
+  return {
+    color: 'var(--sol-ink-700)',
+    background: 'transparent',
+    fontWeight: 400,
+    cursor: 'pointer',
+  };
+}
+
+// Table key → index transformer. Évite la cascade if/else pour
+// ArrowDown/Up/Home/End.
+const KEY_NAV_NEXT = {
+  ArrowDown: (idx, len) => (idx === -1 ? 0 : Math.min(idx + 1, len - 1)),
+  ArrowUp: (idx, len) => (idx === -1 ? len - 1 : Math.max(idx - 1, 0)),
+  Home: () => 0,
+  End: (_idx, len) => len - 1,
+};
 
 export default function SolPanel({
   desc,
@@ -76,29 +112,12 @@ export default function SolPanel({
     [navigate, currentModule]
   );
 
-  // Permissions (Sprint 1 Vague A phases A2+A3) — parité NavPanel legacy.
-  // Chaque item est enrichi avec `locked: boolean` plutôt que masqué.
-  // A3 rend un cadenas + tooltip au lieu de disparaître silencieusement
-  // → UX transparente + upsell potentiel.
-  //
-  // Logique :
-  //   - requireAdmin && !hasPermission('admin') → locked
-  //   - basePath hors ROUTE_MODULE_MAP → toujours visible (deep-links Raccourcis)
-  //   - sinon → locked si !hasPermission('view', PERMISSION_KEY_MAP[module])
-  //             && !hasPermission('admin')
-  //   - non authentifié → rien de locké (avant login tout passe)
-  // Keyboard navigation Up/Down/Home/End (Sprint 1 Vague A phase A8 + F1 fix)
-  // Parité NavPanel main. Les boutons items sont les focusables cibles
-  // — on navigue entre items de sections différentes naturellement (flat
-  // tab-order dans le DOM).
-  //
-  // F1 fix P0 a11y : les items lockés (aria-disabled) sont INCLUS dans la
-  // navigation clavier pour que le cadenas reste découvrable au clavier.
-  // Le bouton reste focusable, SR annonce « disabled », onClick no-op.
-  //
-  // F2 fix P1-6 : Escape retire le focus du panel (blur) pour éviter
-  // que l'utilisateur soit piégé dans la liste. Tab natif continue de
-  // fonctionner pour la nav intra-panel (parité NavPanel legacy).
+  // Permissions : items visibles avec `locked: boolean` plutôt que masqués
+  // (cadenas + tooltip = transparence + upsell). Pas de filter pré-auth.
+  // Clavier : Escape blur l'item actif, ArrowDown/Up/Home/End naviguent
+  // entre items de sections différentes (flat tab-order). Les items
+  // lockés restent focusables pour que le cadenas soit découvrable
+  // au clavier.
   const handlePanelKeyDown = React.useCallback((e) => {
     if (e.key === 'Escape') {
       if (document.activeElement instanceof HTMLElement) {
@@ -106,20 +125,12 @@ export default function SolPanel({
       }
       return;
     }
-    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+    const nextFn = KEY_NAV_NEXT[e.key];
+    if (!nextFn) return;
     const buttons = Array.from(e.currentTarget.querySelectorAll('button.sol-panel-item'));
     if (buttons.length === 0) return;
     const idx = buttons.indexOf(document.activeElement);
-    let next;
-    if (e.key === 'ArrowDown') {
-      next = idx === -1 ? 0 : Math.min(idx + 1, buttons.length - 1);
-    } else if (e.key === 'ArrowUp') {
-      next = idx === -1 ? buttons.length - 1 : Math.max(idx - 1, 0);
-    } else if (e.key === 'Home') {
-      next = 0;
-    } else {
-      next = buttons.length - 1;
-    }
+    const next = nextFn(idx, buttons.length);
     e.preventDefault();
     buttons[next]?.focus();
     buttons[next]?.scrollIntoView({ block: 'nearest' });
@@ -238,6 +249,7 @@ export default function SolPanel({
                   (basePath !== '/' && location.pathname.startsWith(basePath + '/'));
                 const badge = badges[basePath] ?? badges[item.to];
                 const locked = item.locked === true;
+                const visuals = getItemVisuals(locked, isActive);
                 return (
                   <button
                     key={item.to}
@@ -247,26 +259,19 @@ export default function SolPanel({
                     aria-disabled={locked || undefined}
                     title={locked ? LOCKED_TOOLTIP : undefined}
                     data-locked={locked || undefined}
-                    className={`sol-panel-item focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
+                    className={`sol-panel-item ${FOCUS_RING_CLASS} ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: 10,
                       padding: '7px 8px',
                       borderRadius: 4,
-                      color: locked
-                        ? 'var(--sol-ink-500)'
-                        : isActive
-                          ? 'var(--sol-calme-fg)'
-                          : 'var(--sol-ink-700)',
-                      background: isActive && !locked ? 'var(--sol-calme-bg)' : 'transparent',
                       fontSize: 13,
-                      fontWeight: isActive && !locked ? 500 : 400,
-                      cursor: locked ? 'not-allowed' : 'pointer',
                       width: '100%',
                       textAlign: 'left',
                       border: 'none',
                       transition: 'background 120ms ease',
+                      ...visuals,
                     }}
                   >
                     <span style={{ flex: 1, lineHeight: 1.3 }}>

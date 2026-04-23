@@ -10,10 +10,9 @@
 const STORAGE_KEY = 'promeos_tracker';
 const MAX_EVENTS = 200;
 
-// F4 P2-1 : whitelist des query keys qui peuvent être trackées dans
-// `href` payload. Toute autre clé est stripped pour éviter PII leak
-// localStorage (ex. ?site_id=123, ?email=x@y.z persistés sur poste
-// partagé). Les clés Vague 1 sont dans la whitelist.
+// Whitelist des query keys trackables dans `href` payload. Toute autre
+// clé est stripped pour éviter PII leak localStorage (ex. ?site_id=123,
+// ?email=x@y.z persistés sur poste partagé).
 const SAFE_QUERY_KEYS = new Set([
   'tab',
   'filter',
@@ -55,18 +54,16 @@ function loadEvents() {
 }
 
 function persistEvents(events) {
-  // F4 P2-2 : try/catch sur setItem (quota exceeded en Safari Private
-  // ou autres contextes restrictifs). Échec silencieux — le tracker
-  // n'est pas critique, mieux vaut drop les events que throw.
+  // try/catch obligatoire : Safari Private Mode / quota exceeded /
+  // localStorage disabled — mieux drop des events que throw.
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(events.slice(-MAX_EVENTS)));
   } catch {
-    // ignore — quota exceeded or localStorage disabled
+    /* noop */
   }
 }
 
 export function track(event, data = {}) {
-  // F4 P2-1 : sanitize href field if present (anti-PII leak).
   const safeData = 'href' in data ? { ...data, href: sanitizeHref(data.href) } : data;
 
   const entry = {

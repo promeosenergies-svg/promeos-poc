@@ -545,13 +545,11 @@ export default function SolAppShell() {
         fontFamily: 'var(--sol-font-body)',
       }}
     >
-      {/* Skip link a11y (Sprint 1 Vague A phase A7 + F2 fix P1-9) —
-          sr-only par défaut, révélé au focus clavier. left=68 pour
-          éviter le chevauchement du rail fixe 56px (cf. grid
-          '56px 240px 1fr' dans SolAppShell). Classes Tailwind pures. */}
+      {/* Skip link a11y — révélé au focus clavier. `left-[68px]` =
+          rail 56px + gutter 12px pour ne pas chevaucher le rail fixe. */}
       <a
         href="#main-content"
-        className="sol-skip-link sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-[68px] focus:z-[300] focus:px-4 focus:py-2 focus:bg-white focus:text-slate-900 focus:border-2 focus:border-blue-500 focus:rounded focus:text-sm focus:font-medium focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-[68px] focus:z-[300] focus:px-4 focus:py-2 focus:bg-white focus:text-slate-900 focus:border-2 focus:border-blue-500 focus:rounded focus:text-sm focus:font-medium focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
       >
         Aller au contenu principal
       </a>

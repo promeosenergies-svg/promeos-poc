@@ -171,8 +171,8 @@ export default function AperSol() {
             fontFamily: 'var(--sol-font-body)',
           }}
         >
-          {/* F2 fix P1-3 : live region limitée au texte (le bouton Reset
-              ne doit pas être annoncé en polite à chaque changement). */}
+          {/* Live region scopée au texte (pas au bouton Reset) pour
+              éviter la ré-annonce SR à chaque click. */}
           <span
             role="status"
             aria-live="polite"
@@ -195,8 +195,7 @@ export default function AperSol() {
             </span>
             <span style={{ fontWeight: 500 }}>{FILTER_LABELS[activeFilter]}</span>
           </span>
-          {/* F2 fix P1-2 : hit area ≥ 44×44 (WCAG 2.5.5) via padding +
-              minHeight. Focus-visible ring pour utilisateur clavier. */}
+          {/* Hit area ≥ 44×44 (WCAG 2.5.5). */}
           <button
             type="button"
             onClick={() => navigate('/conformite/aper')}

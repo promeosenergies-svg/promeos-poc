@@ -20,7 +20,7 @@ describe('SolAppShell skip link (A7)', () => {
   });
 
   it('uses sr-only class (hidden by default)', () => {
-    expect(src).toMatch(/sol-skip-link[^"]*sr-only/);
+    expect(src).toMatch(/className=["'](?=[^"']*\bsr-only\b)/);
   });
 
   it('reveals itself on focus via focus:not-sr-only', () => {

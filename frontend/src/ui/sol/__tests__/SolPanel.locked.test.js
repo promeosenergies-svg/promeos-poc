@@ -76,18 +76,19 @@ describe('SolPanel — locked badge on restricted items (A3)', () => {
   });
 
   it('locked items use cursor not-allowed (mouse visual hint)', () => {
-    expect(src).toMatch(/cursor:\s*locked \? 'not-allowed' : 'pointer'/);
+    expect(src).toMatch(/cursor:\s*['"]not-allowed['"]/);
   });
 
-  it('F1 fix P0-C : no opacity:0.55 on locked items (was WCAG 1.4.3 FAIL at 1.6:1)', () => {
+  it('no opacity:0.55 on locked items (WCAG 1.4.3 FAIL at 1.6:1 contrast)', () => {
     expect(src).not.toMatch(/opacity:\s*locked \? 0\.55/);
   });
 
-  it('F1 fix P0-C : locked text uses --sol-ink-500 (4.6:1 passes WCAG AA)', () => {
-    expect(src).toMatch(/color:\s*locked\s*\?\s*'var\(--sol-ink-500\)'/);
+  it('locked text uses --sol-ink-500 via getItemVisuals (4.6:1 WCAG AA)', () => {
+    expect(src).toMatch(/getItemVisuals/);
+    expect(src).toMatch(/color:\s*['"]var\(--sol-ink-500\)['"]/);
   });
 
-  it('F1 fix P1-7 : Lock icon uses --sol-ink-500 (passes WCAG 1.4.11 3:1 non-text)', () => {
+  it('Lock icon uses --sol-ink-500 (WCAG 1.4.11 non-text 3:1 min)', () => {
     expect(src).toMatch(/<Lock[\s\S]*?color:\s*'var\(--sol-ink-500\)'/);
   });
 

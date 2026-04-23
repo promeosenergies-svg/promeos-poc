@@ -24,20 +24,22 @@ export const PERMISSION_KEY_MAP = {
   admin: 'admin',
 };
 
+// Dev warning : signale les clés nav non mappées (sinon le fallback
+// identity masque silencieusement un oubli). Fire-once par clé pour
+// éviter le spam dans le useMemo sections (append à chaque render où
+// les deps changent).
+const _warnedKeys = new Set();
+
 /**
  * Traduit une clé module NavRegistry en clé backend permission.
  * Identity fallback pour toute clé non-mappée (future-proof).
- *
- * F4 P2-8 : en dev, `console.warn` si une clé non-mappée est demandée
- * pour détecter silencieusement les nouveaux modules NavRegistry qui
- * n'ont pas été ajoutés à PERMISSION_KEY_MAP (sinon fallback identity
- * masquerait le bug).
  */
 export function resolveBackendPermissionKey(navKey) {
   if (navKey == null) return navKey;
   const mapped = PERMISSION_KEY_MAP[navKey];
   if (mapped === undefined) {
-    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV) {
+    if (import.meta.env?.DEV && !_warnedKeys.has(navKey)) {
+      _warnedKeys.add(navKey);
       // eslint-disable-next-line no-console
       console.warn(
         `[permissionMap] nav key "${navKey}" not mapped to a backend capability ` +
