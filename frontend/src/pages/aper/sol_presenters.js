@@ -132,25 +132,36 @@ export function normalizeAperFilter(raw) {
 export function applyAperFilter(dashboard, filter) {
   if (!dashboard || !filter) return dashboard;
 
+  // F3 P2-g : emptyCategory préserve la shape attendue par les
+  // presenters downstream (mergeSitesForBarChart, computeAperPotentialKwc).
+  // Si le backend ajoute des champs à parking/roof, adapter ce shape.
   const emptyCategory = { eligible_count: 0, total_surface_m2: 0, sites: [] };
 
+  // Normalise la catégorie conservée : garantit que `sites` est toujours
+  // un array (ex. `dashboard.parking = {}` → sites = []). F3 P1-2.
+  const normalize = (cat) => ({
+    eligible_count: cat?.eligible_count ?? 0,
+    total_surface_m2: cat?.total_surface_m2 ?? 0,
+    sites: Array.isArray(cat?.sites) ? cat.sites : [],
+  });
+
   if (filter === 'parking') {
-    const parking = dashboard.parking ?? emptyCategory;
+    const parking = normalize(dashboard.parking);
     return {
       ...dashboard,
       parking,
       roof: emptyCategory,
-      total_eligible_sites: parking.sites?.length ?? 0,
+      total_eligible_sites: parking.sites.length,
     };
   }
 
   if (filter === 'toiture') {
-    const roof = dashboard.roof ?? emptyCategory;
+    const roof = normalize(dashboard.roof);
     return {
       ...dashboard,
       parking: emptyCategory,
       roof,
-      total_eligible_sites: roof.sites?.length ?? 0,
+      total_eligible_sites: roof.sites.length,
     };
   }
 

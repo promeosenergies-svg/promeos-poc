@@ -4,6 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { PERMISSION_KEY_MAP, resolveBackendPermissionKey } from '../permissionMap';
+import { NAV_MODULES } from '../NavRegistry';
 
 describe('PERMISSION_KEY_MAP', () => {
   it('maps NavRegistry keys to backend capability keys', () => {
@@ -23,10 +24,15 @@ describe('PERMISSION_KEY_MAP', () => {
     expect(resolveBackendPermissionKey('')).toBe('');
   });
 
-  it('all 6 NavRegistry module keys are present in the map', () => {
-    const navKeys = ['cockpit', 'conformite', 'energie', 'patrimoine', 'achat', 'admin'];
+  it('F3 fix P1-11 : every NAV_MODULES key is present in PERMISSION_KEY_MAP (dynamic)', () => {
+    // Dérivé dynamiquement de NAV_MODULES — si un jour un 7ème module
+    // est ajouté (ex. flexibilite), il doit être ajouté à PERMISSION_KEY_MAP
+    // simultanément sinon le test échoue.
+    const navKeys = NAV_MODULES.map((m) => m.key);
+    expect(navKeys.length).toBeGreaterThanOrEqual(6);
+    const missing = navKeys.filter((k) => PERMISSION_KEY_MAP[k] === undefined);
+    expect(missing, `Modules missing from PERMISSION_KEY_MAP: ${missing.join(', ')}`).toEqual([]);
     navKeys.forEach((key) => {
-      expect(PERMISSION_KEY_MAP[key]).toBeDefined();
       expect(typeof PERMISSION_KEY_MAP[key]).toBe('string');
     });
   });

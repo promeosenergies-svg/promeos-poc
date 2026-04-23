@@ -48,6 +48,24 @@ describe('Tracker events — SolPanel (A10)', () => {
       /onClick=\{locked \? undefined : \(\) => handleItemClick\(item, section\.key\)\}/
     );
   });
+
+  // F3 fix P0-T4 : assertion NÉGATIVE que track() ne peut PAS être
+  // invoqué sur le chemin locked. Une régression triviale (track()
+  // inconditionnel dans handleItemClick, onMouseDown séparé, etc.)
+  // passerait les tests positifs mais casserait ce guard.
+  it('F3 P0-T4 : track nav_deep_link_click cannot fire when locked', () => {
+    const trackCalls = src.match(/track\(\s*['"]nav_deep_link_click['"]/g) || [];
+    expect(trackCalls.length).toBe(1); // un seul site d'appel
+    expect(src).toMatch(/handleItemClick[\s\S]*?track\(\s*['"]nav_deep_link_click['"]/);
+    expect(src).toMatch(/onClick=\{locked \? undefined : \(\) => handleItemClick/);
+  });
+
+  it('F3 : no onMouseDown / onTouchStart tracker leaks (track only on onClick)', () => {
+    // Le panel n'expose aucun handler secondaire susceptible de fire
+    // le tracker en bypassant le guard locked.
+    expect(src).not.toMatch(/onMouseDown=.*track\(/);
+    expect(src).not.toMatch(/onTouchStart=.*track\(/);
+  });
 });
 
 describe('Tracker events — AperSol (A10)', () => {

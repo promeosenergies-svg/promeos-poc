@@ -30,7 +30,11 @@ describe('normalizeAperFilter', () => {
 describe('applyAperFilter', () => {
   const baseDashboard = {
     total_eligible_sites: 5,
-    parking: { eligible_count: 3, total_surface_m2: 5000, sites: [{ id: 1 }, { id: 2 }, { id: 3 }] },
+    parking: {
+      eligible_count: 3,
+      total_surface_m2: 5000,
+      sites: [{ id: 1 }, { id: 2 }, { id: 3 }],
+    },
     roof: { eligible_count: 2, total_surface_m2: 800, sites: [{ id: 4 }, { id: 5 }] },
   };
 
@@ -54,14 +58,24 @@ describe('applyAperFilter', () => {
     expect(result.total_eligible_sites).toBe(2);
   });
 
-  it("dashboard null → retourne null (safe fallback)", () => {
+  it('dashboard null → retourne null (safe fallback)', () => {
     expect(applyAperFilter(null, 'parking')).toBeNull();
     expect(applyAperFilter(undefined, 'toiture')).toBeUndefined();
   });
 
-  it("dashboard sans parking/roof → catégories vides retournées", () => {
+  it('dashboard sans parking/roof → catégories vides retournées', () => {
     const minimal = { total_eligible_sites: 0 };
     const result = applyAperFilter(minimal, 'parking');
+    expect(result.parking.sites).toEqual([]);
+    expect(result.total_eligible_sites).toBe(0);
+  });
+
+  // F3 fix P1-2 edge case : sites=undefined (catégorie présente mais vide).
+  // `parking.sites?.length ?? 0` dans applyAperFilter doit gérer ce cas
+  // sans throw (optional chaining + nullish coalescing).
+  it('dashboard.parking = {} (sites=undefined) → sites=[] après filter', () => {
+    const partial = { parking: {}, roof: {}, total_eligible_sites: 0 };
+    const result = applyAperFilter(partial, 'parking');
     expect(result.parking.sites).toEqual([]);
     expect(result.total_eligible_sites).toBe(0);
   });
