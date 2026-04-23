@@ -545,13 +545,15 @@ export default function SolAppShell() {
         fontFamily: 'var(--sol-font-body)',
       }}
     >
-      {/* Skip link a11y */}
+      {/* Skip link a11y (Sprint 1 Vague A phase A7) — sr-only par défaut,
+          révélé au focus clavier en haut-gauche. Parité shell legacy
+          AppShell. Classes Tailwind pures (sr-only + focus:not-sr-only)
+          pour garantir que le lien reste invisible hors focus. */}
       <a
         href="#main-content"
-        className="sr-only"
-        style={{ position: 'absolute', left: -9999, top: 0 }}
+        className="sol-skip-link sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[300] focus:px-4 focus:py-2 focus:bg-white focus:text-slate-900 focus:border-2 focus:border-blue-500 focus:rounded focus:text-sm focus:font-medium focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
       >
-        Aller au contenu
+        Aller au contenu principal
       </a>
 
       <SolRail role={role} isExpert={isExpert} />
