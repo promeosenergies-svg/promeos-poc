@@ -891,7 +891,9 @@ def _load_archetype_data(archetype_code: str) -> dict:
 
     try:
         base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        path = os.path.join(base, "docs", "base_documentaire", "naf_archetype_mapping", "archetypes_energy_v1.json")
+        path = os.path.join(
+            base, "docs", "base_documentaire", "naf", "naf_archetype_mapping", "archetypes_energy_v1.json"
+        )
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
         for arch in data.get("archetypes", []):

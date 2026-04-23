@@ -16,7 +16,7 @@ Le gain annuel par site est une estimation :
 
 Calibrage Baromètre Flex 2026 (RTE/Enedis/GIMELEC, avril 2026) :
     - heures_favorables : nombre d'heures/an où un site de cet archétype peut
-      valoriser de la flexibilité (effacement HP, décalage HC, MA NEBEF...)
+      valoriser de la flexibilité (effacement HP, décalage HC, MA NEBCO...)
     - spread : écart moyen HP/HC + MA + capacité par kWh pilotable
 
 Doctrine : "classement par potentiel de pilotage" (jamais "classement flex",

@@ -548,7 +548,9 @@ def _load_archetype_breakdown(archetype_code: str) -> dict:
     try:
         # __file__ = backend/services/analytics/usage_disaggregation.py -> 4 niveaux up = project root
         base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        path = os.path.join(base, "docs", "base_documentaire", "naf_archetype_mapping", "archetypes_energy_v1.json")
+        path = os.path.join(
+            base, "docs", "base_documentaire", "naf", "naf_archetype_mapping", "archetypes_energy_v1.json"
+        )
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
         for arch in data.get("archetypes", []):
