@@ -25,6 +25,11 @@ describe('SolPanel keyboard navigation (A8)', () => {
     expect(src).toMatch(/['"]End['"]/);
   });
 
+  it('F2 fix P1-6 : Escape key blurs active element (exit panel)', () => {
+    expect(src).toMatch(/e\.key === ['"]Escape['"]/);
+    expect(src).toMatch(/document\.activeElement\.blur\(\)/);
+  });
+
   it('wires handler via onKeyDown on <aside>', () => {
     expect(src).toMatch(/onKeyDown=\{handlePanelKeyDown\}/);
   });

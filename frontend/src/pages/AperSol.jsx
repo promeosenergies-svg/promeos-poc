@@ -156,15 +156,13 @@ export default function AperSol() {
 
       {activeFilter && (
         <div
-          role="status"
-          aria-live="polite"
           data-testid="aper-active-filter"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: 10,
             padding: '6px 10px',
-            marginBottom: 16,
+            marginBottom: 24,
             background: 'var(--sol-calme-bg)',
             color: 'var(--sol-calme-fg)',
             border: '1px solid var(--sol-ink-200)',
@@ -173,36 +171,53 @@ export default function AperSol() {
             fontFamily: 'var(--sol-font-body)',
           }}
         >
+          {/* F2 fix P1-3 : live region limitée au texte (le bouton Reset
+              ne doit pas être annoncé en polite à chaque changement). */}
           <span
+            role="status"
+            aria-live="polite"
             style={{
-              fontFamily: 'var(--sol-font-mono)',
-              fontSize: 10,
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              opacity: 0.75,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 10,
             }}
           >
-            Filtre actif
+            <span
+              style={{
+                fontFamily: 'var(--sol-font-mono)',
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                color: 'var(--sol-ink-500)',
+              }}
+            >
+              Filtre actif
+            </span>
+            <span style={{ fontWeight: 500 }}>{FILTER_LABELS[activeFilter]}</span>
           </span>
-          <span style={{ fontWeight: 500 }}>{FILTER_LABELS[activeFilter]}</span>
+          {/* F2 fix P1-2 : hit area ≥ 44×44 (WCAG 2.5.5) via padding +
+              minHeight. Focus-visible ring pour utilisateur clavier. */}
           <button
             type="button"
             onClick={() => navigate('/conformite/aper')}
             aria-label="Réinitialiser le filtre"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 4,
-              padding: '2px 6px',
+              gap: 6,
+              padding: '10px 12px',
+              minHeight: 44,
+              minWidth: 44,
               background: 'transparent',
               border: '1px solid var(--sol-ink-300)',
-              borderRadius: 3,
+              borderRadius: 4,
               color: 'var(--sol-ink-700)',
-              fontSize: 11,
+              fontSize: 12,
               cursor: 'pointer',
             }}
           >
-            <X size={11} aria-hidden="true" />
+            <X size={14} aria-hidden="true" />
             Réinitialiser
           </button>
         </div>

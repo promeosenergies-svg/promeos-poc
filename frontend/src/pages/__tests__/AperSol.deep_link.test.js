@@ -35,13 +35,25 @@ describe('AperSol — deep-link filter wiring', () => {
     expect(pageSrc).toMatch(/applyAperFilter\(\s*data\.dashboard\s*,\s*activeFilter\s*\)/);
   });
 
-  it('renders filter banner with role=status + aria-live=polite', () => {
+  it('F2 fix P1-3 : live region on inner span (not on wrapping div with button)', () => {
+    // role=status + aria-live sur le span texte uniquement, pas sur le
+    // wrapper qui contient le bouton Reset (éviter annonces parasites)
     expect(pageSrc).toMatch(/role=["']status["']/);
     expect(pageSrc).toMatch(/aria-live=["']polite["']/);
   });
 
   it('filter banner has data-testid="aper-active-filter"', () => {
     expect(pageSrc).toMatch(/data-testid=["']aper-active-filter["']/);
+  });
+
+  it('F2 fix P1-2 : Reset button has minHeight >=44 + minWidth >=44 (WCAG 2.5.5)', () => {
+    expect(pageSrc).toMatch(/minHeight:\s*44/);
+    expect(pageSrc).toMatch(/minWidth:\s*44/);
+  });
+
+  it('F2 : Reset button has focus-visible ring (keyboard users)', () => {
+    expect(pageSrc).toMatch(/focus-visible:ring-2/);
+    expect(pageSrc).toMatch(/focus-visible:ring-blue-500/);
   });
 
   it('reset button navigates to /conformite/aper (no query)', () => {

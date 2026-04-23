@@ -95,7 +95,17 @@ export default function SolPanel({
   // F1 fix P0 a11y : les items lockés (aria-disabled) sont INCLUS dans la
   // navigation clavier pour que le cadenas reste découvrable au clavier.
   // Le bouton reste focusable, SR annonce « disabled », onClick no-op.
+  //
+  // F2 fix P1-6 : Escape retire le focus du panel (blur) pour éviter
+  // que l'utilisateur soit piégé dans la liste. Tab natif continue de
+  // fonctionner pour la nav intra-panel (parité NavPanel legacy).
   const handlePanelKeyDown = React.useCallback((e) => {
+    if (e.key === 'Escape') {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      return;
+    }
     if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
     const buttons = Array.from(e.currentTarget.querySelectorAll('button.sol-panel-item'));
     if (buttons.length === 0) return;

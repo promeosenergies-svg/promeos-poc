@@ -27,10 +27,12 @@ describe('SolAppShell skip link (A7)', () => {
     expect(src).toMatch(/focus:not-sr-only/);
   });
 
-  it('positions visibly on focus (fixed top-3 left-3)', () => {
+  it('F2 fix P1-9 : positions visibly on focus avoiding rail (fixed top-3 left-[68px])', () => {
     expect(src).toMatch(/focus:fixed/);
     expect(src).toMatch(/focus:top-3/);
-    expect(src).toMatch(/focus:left-3/);
+    // left-[68px] = rail 56px + gutter 12px (rail ne recouvre plus skip link sur mobile)
+    expect(src).toMatch(/focus:left-\[68px\]/);
+    expect(src).not.toMatch(/focus:left-3[^0-9]/);
   });
 
   it('has focus-visible ring (keyboard users)', () => {
