@@ -82,10 +82,13 @@ export const ROUTE_MODULE_MAP = {
   // Conformité (module autonome)
   '/conformite': 'conformite',
   '/conformite-legacy': 'conformite',
-  '/conformite/dt': 'conformite',
-  '/conformite/bacs': 'conformite',
+  // NOTE (Sprint 1 Vague A phase A5) : /conformite/dt, /conformite/bacs,
+  // /conformite/audit-sme retirés ici — aucune Route React correspondante
+  // dans App.jsx → ils tombaient sur NotFound alors que le rail s'éclairait
+  // en émeraude (promesse cassée). Implémentation `?tab=obligations&focus=X`
+  // dans ConformiteSol prévue Vague D Sprint 2. Cf.
+  // docs/audit/audit-navigation-sol-fresh-2026-04-22.md §8 Q7.
   '/conformite/aper': 'conformite',
-  '/conformite/audit-sme': 'conformite',
   '/conformite/tertiaire': 'conformite',
   '/conformite/tertiaire/wizard': 'conformite',
   '/conformite/tertiaire/anomalies': 'conformite',
