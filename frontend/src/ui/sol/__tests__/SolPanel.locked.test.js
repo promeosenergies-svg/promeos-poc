@@ -41,7 +41,8 @@ describe('SolPanel — locked badge on restricted items (A3)', () => {
   });
 
   it('button onClick is guarded : undefined when locked', () => {
-    expect(src).toMatch(/onClick=\{locked \? undefined : \(\) => navigate/);
+    // A10 : onClick délègue à handleItemClick pour tracking deep_link.
+    expect(src).toMatch(/onClick=\{locked \? undefined : \(\) => handleItemClick/);
   });
 
   it('button has title={LOCKED_TOOLTIP} when locked', () => {
