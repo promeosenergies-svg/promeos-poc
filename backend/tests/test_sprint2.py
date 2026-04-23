@@ -203,7 +203,8 @@ class TestCreateCompteur:
             },
         )
         assert r.status_code == 400
-        assert "Type invalide" in r.json()["detail"]
+        body = r.json()
+        assert "Type invalide" in (body.get("message") or str(body.get("detail") or ""))
 
     def test_create_compteur_elec(self, client, db_session):
         seed = _seed(client)

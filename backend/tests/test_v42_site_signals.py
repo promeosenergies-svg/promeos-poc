@@ -167,7 +167,7 @@ class TestSourceGuardsV42:
         assert "site-signals" in self.route_code
 
     def test_service_imports_site_batiment(self):
-        assert "Site, Batiment" in self.service_code
+        assert "Site" in self.service_code and "Batiment" in self.service_code
 
     def test_route_has_response_model(self):
         """V50.1: endpoint must declare response_model for proper OpenAPI."""

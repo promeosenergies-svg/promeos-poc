@@ -141,7 +141,7 @@ class TestAgentStubs:
             statut_bacs = "A_RISQUE"
             risque_financier_euro = 5000
 
-        result = _stub_response(FakeSite())
+        result = _stub_response(FakeSite(), kb_context={"applicable_items": [], "kb_item_ids": []})
         assert "brief" in result
         assert "sources_used" in result
         assert "confidence" in result
@@ -152,7 +152,7 @@ class TestAgentStubs:
         from ai_layer.agents.exec_brief_agent import _stub_response
 
         data = {"org_name": "Test Org", "total_sites": 5, "total_surface_m2": 10000, "total_risk_eur": 25000}
-        result = _stub_response(data)
+        result = _stub_response(data, kb_context={"applicable_items": [], "kb_item_ids": []})
         assert "executive_summary" in result
         assert "key_metrics" in result
         assert result["mode"] == "stub"

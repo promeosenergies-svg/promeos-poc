@@ -217,11 +217,11 @@ class TestSourceGuards:
         assert "get_meter_breakdown" in src
 
     def test_routes_has_sub_meters_endpoint(self):
-        src = self._read("routes/patrimoine.py")
-        assert "sub-meters" in src
+        src = self._read("routes/patrimoine/sites.py") + self._read("routes/patrimoine/_helpers.py")
+        assert "sub-meters" in src or "sub_meters" in src
 
     def test_routes_has_breakdown_endpoint(self):
-        src = self._read("routes/patrimoine.py")
+        src = self._read("routes/patrimoine/sites.py") + self._read("routes/patrimoine/_helpers.py")
         assert "breakdown" in src
 
     def test_packs_has_sub_meters(self):

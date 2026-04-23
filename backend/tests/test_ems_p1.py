@@ -35,10 +35,13 @@ def env():
             pass
 
     app.dependency_overrides[get_db] = _override
+    from tests.conftest import seed_org_hierarchy
+
+    _, _, pf = seed_org_hierarchy(session)
     client = TestClient(app)
 
     # Seed a site + meter + 30 days of readings
-    site = Site(nom="P1 Test Site", type=TypeSite.BUREAU, latitude=48.86, longitude=2.35)
+    site = Site(nom="P1 Test Site", type=TypeSite.BUREAU, latitude=48.86, longitude=2.35, portefeuille_id=pf.id)
     session.add(site)
     session.flush()
 

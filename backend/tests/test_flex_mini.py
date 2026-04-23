@@ -44,6 +44,10 @@ def env():
             pass
 
     app.dependency_overrides[get_db] = _override
+    from tests.conftest import seed_org_hierarchy
+
+    _, _, _pf = seed_org_hierarchy(session)
+    session._test_pf_id = _pf.id
     client = TestClient(app)
     yield client, session
     app.dependency_overrides.clear()
@@ -51,7 +55,8 @@ def env():
 
 
 def _seed_site(db, site_type=TypeSite.BUREAU, nom="Test Site"):
-    site = Site(nom=nom, type=site_type, latitude=48.86, longitude=2.35)
+    pf_id = getattr(db, "_test_pf_id", None)
+    site = Site(nom=nom, type=site_type, latitude=48.86, longitude=2.35, portefeuille_id=pf_id)
     db.add(site)
     db.flush()
     return site

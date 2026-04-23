@@ -111,12 +111,11 @@ class TestBenchmarkPricing:
 
         # Créer un contrat cadre actif
         contract = EnergyContract(
-            reference=f"CTR-TEST-{site.id}",
-            energy_type="ELEC",
+            site_id=site.id,
+            energy_type="elec",
             supplier_name="EDF",
             start_date=date.today() - timedelta(days=180),
             end_date=date.today() + timedelta(days=180),
-            status="active",
         )
         db_session.add(contract)
         db_session.flush()
@@ -126,8 +125,6 @@ class TestBenchmarkPricing:
             contrat_cadre_id=contract.id,
             site_id=site.id,
             status="active",
-            start_date=date.today() - timedelta(days=180),
-            end_date=date.today() + timedelta(days=180),
         )
         db_session.add(annexe)
         db_session.commit()

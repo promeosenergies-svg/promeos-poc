@@ -34,6 +34,11 @@ def db_session():
 
 @pytest.fixture
 def client(db_session):
+    from tests.conftest import seed_org_hierarchy
+
+    _, _, pf = seed_org_hierarchy(db_session)
+    db_session._test_pf_id = pf.id
+
     def override():
         yield db_session
 
@@ -43,7 +48,8 @@ def client(db_session):
 
 
 def _make_site(db, naf_code=None, site_type=TypeSite.BUREAU):
-    site = Site(nom="Test Site", type=site_type, actif=True, naf_code=naf_code)
+    pf_id = getattr(db, "_test_pf_id", None)
+    site = Site(nom="Test Site", type=site_type, actif=True, naf_code=naf_code, portefeuille_id=pf_id)
     db.add(site)
     db.flush()
     return site

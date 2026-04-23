@@ -164,11 +164,11 @@ class TestSourceGuard:
         assert "delivery_point_id" in src
 
     def test_patrimoine_routes_import_unified(self):
-        src = self._read("routes/patrimoine.py")
+        src = self._read("routes/patrimoine/sites.py") + self._read("routes/patrimoine/_helpers.py")
         assert "meter_unified_service" in src or "get_site_meters" in src
 
     def test_patrimoine_routes_has_meters_endpoint(self):
-        src = self._read("routes/patrimoine.py")
+        src = self._read("routes/patrimoine/sites.py") + self._read("routes/patrimoine/_helpers.py")
         assert "/meters" in src
 
     def test_activation_creates_meter(self):

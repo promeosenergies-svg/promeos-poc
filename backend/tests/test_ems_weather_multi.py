@@ -47,6 +47,10 @@ def env():
             pass
 
     app.dependency_overrides[get_db] = _override
+    from tests.conftest import seed_org_hierarchy
+
+    _, _, _pf = seed_org_hierarchy(session)
+    session._test_pf_id = _pf.id
     client = TestClient(app)
     yield client, session
     app.dependency_overrides.clear()
@@ -55,6 +59,7 @@ def env():
 
 def _seed_sites(db, n=3, lat_base=48.86, lat_spread=0.5):
     """Create n sites with spread latitudes."""
+    pf_id = getattr(db, "_test_pf_id", None)
     sites = []
     for i in range(n):
         s = Site(
@@ -62,6 +67,7 @@ def _seed_sites(db, n=3, lat_base=48.86, lat_spread=0.5):
             type=TypeSite.BUREAU,
             latitude=lat_base + i * lat_spread,
             longitude=2.35,
+            portefeuille_id=pf_id,
         )
         db.add(s)
         sites.append(s)
@@ -141,7 +147,13 @@ class TestWeatherEndpoint:
 class TestAvailability:
     def test_timeseries_includes_availability(self, env):
         client, db = env
-        site = Site(nom="Avail Test", type=TypeSite.BUREAU, latitude=48.86, longitude=2.35)
+        site = Site(
+            nom="Avail Test",
+            type=TypeSite.BUREAU,
+            latitude=48.86,
+            longitude=2.35,
+            portefeuille_id=getattr(db, "_test_pf_id", None),
+        )
         db.add(site)
         db.flush()
         m = Meter(meter_id="PRM-AVAIL-1", name="AvailM", site_id=site.id, energy_vector=EnergyVector.ELECTRICITY)
@@ -183,7 +195,13 @@ class TestAvailability:
 
     def test_availability_detects_gap(self, env):
         client, db = env
-        site = Site(nom="Gap Test", type=TypeSite.BUREAU, latitude=48.86, longitude=2.35)
+        site = Site(
+            nom="Gap Test",
+            type=TypeSite.BUREAU,
+            latitude=48.86,
+            longitude=2.35,
+            portefeuille_id=getattr(db, "_test_pf_id", None),
+        )
         db.add(site)
         db.flush()
         m = Meter(meter_id="PRM-GAP-1", name="GapM", site_id=site.id, energy_vector=EnergyVector.ELECTRICITY)

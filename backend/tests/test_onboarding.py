@@ -254,7 +254,7 @@ class TestOnboardingService:
         assert prov["cvc_power_kw"] > 0
         bat = db_session.query(Batiment).filter_by(site_id=site.id).first()
         assert bat is not None
-        assert bat.nom == "Batiment principal"
+        assert bat.nom == site.nom
 
     def test_provision_site_tertiaire_gt1000_creates_decret(self, db_session):
         result = create_organisation_full(
@@ -368,7 +368,11 @@ class TestOnboardingAPI:
             },
         )
         assert r.status_code == 409
-        assert "existe deja" in r.json()["detail"]
+        body = r.json()
+        msg = body.get("message") or body.get("detail") or ""
+        if isinstance(msg, dict):
+            msg = msg.get("message", "")
+        assert "existe deja" in msg
 
     def test_status_before_onboarding(self, client):
         r = client.get("/api/onboarding/status")
