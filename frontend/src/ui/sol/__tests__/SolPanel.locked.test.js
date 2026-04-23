@@ -35,8 +35,11 @@ describe('SolPanel — locked badge on restricted items (A3)', () => {
     expect(src).toMatch(/section\.items\.length\s*>\s*0/);
   });
 
-  it('button is disabled + aria-disabled when locked', () => {
-    expect(src).toMatch(/disabled=\{locked\}/);
+  it('button is NOT HTML-disabled (F1 fix : stays focusable)', () => {
+    expect(src).not.toMatch(/disabled=\{locked\}/);
+  });
+
+  it('button uses aria-disabled for ARIA state (WAI-ARIA canonical pattern)', () => {
     expect(src).toMatch(/aria-disabled=\{locked \|\| undefined\}/);
   });
 
@@ -45,14 +48,16 @@ describe('SolPanel — locked badge on restricted items (A3)', () => {
     expect(src).toMatch(/onClick=\{locked \? undefined : \(\) => handleItemClick/);
   });
 
-  it('button has title={LOCKED_TOOLTIP} when locked', () => {
+  it('button has title={LOCKED_TOOLTIP} when locked (mouse hover tooltip)', () => {
     expect(src).toMatch(/title=\{locked \? LOCKED_TOOLTIP : undefined\}/);
   });
 
-  it('button aria-label includes label + tooltip when locked', () => {
-    expect(src).toMatch(
-      /aria-label=\{locked \? `\$\{item\.label\} — \$\{LOCKED_TOOLTIP\}` : undefined\}/
-    );
+  it('sr-only span provides context to screen readers (why locked)', () => {
+    expect(src).toMatch(/<span className="sr-only">— \{LOCKED_TOOLTIP\}<\/span>/);
+  });
+
+  it('aria-current is cleared when locked (not misleading)', () => {
+    expect(src).toMatch(/aria-current=\{isActive && !locked \? 'page' : undefined\}/);
   });
 
   it('button has data-locked attribute (testability hook)', () => {
@@ -70,9 +75,20 @@ describe('SolPanel — locked badge on restricted items (A3)', () => {
     expect(src).toMatch(/aria-hidden=["']true["']/);
   });
 
-  it('locked items use cursor not-allowed + reduced opacity', () => {
+  it('locked items use cursor not-allowed (mouse visual hint)', () => {
     expect(src).toMatch(/cursor:\s*locked \? 'not-allowed' : 'pointer'/);
-    expect(src).toMatch(/opacity:\s*locked \? 0\.55 : 1/);
+  });
+
+  it('F1 fix P0-C : no opacity:0.55 on locked items (was WCAG 1.4.3 FAIL at 1.6:1)', () => {
+    expect(src).not.toMatch(/opacity:\s*locked \? 0\.55/);
+  });
+
+  it('F1 fix P0-C : locked text uses --sol-ink-500 (4.6:1 passes WCAG AA)', () => {
+    expect(src).toMatch(/color:\s*locked\s*\?\s*'var\(--sol-ink-500\)'/);
+  });
+
+  it('F1 fix P1-7 : Lock icon uses --sol-ink-500 (passes WCAG 1.4.11 3:1 non-text)', () => {
+    expect(src).toMatch(/<Lock[\s\S]*?color:\s*'var\(--sol-ink-500\)'/);
   });
 
   it('unauthenticated users see items with locked: false (no filtering)', () => {

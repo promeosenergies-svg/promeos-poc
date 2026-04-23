@@ -87,15 +87,17 @@ export default function SolPanel({
   //   - sinon → locked si !hasPermission('view', PERMISSION_KEY_MAP[module])
   //             && !hasPermission('admin')
   //   - non authentifié → rien de locké (avant login tout passe)
-  // Keyboard navigation Up/Down/Home/End (Sprint 1 Vague A phase A8)
+  // Keyboard navigation Up/Down/Home/End (Sprint 1 Vague A phase A8 + F1 fix)
   // Parité NavPanel main. Les boutons items sont les focusables cibles
   // — on navigue entre items de sections différentes naturellement (flat
   // tab-order dans le DOM).
+  //
+  // F1 fix P0 a11y : les items lockés (aria-disabled) sont INCLUS dans la
+  // navigation clavier pour que le cadenas reste découvrable au clavier.
+  // Le bouton reste focusable, SR annonce « disabled », onClick no-op.
   const handlePanelKeyDown = React.useCallback((e) => {
     if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
-    const buttons = Array.from(
-      e.currentTarget.querySelectorAll('button.sol-panel-item:not([disabled])')
-    );
+    const buttons = Array.from(e.currentTarget.querySelectorAll('button.sol-panel-item'));
     if (buttons.length === 0) return;
     const idx = buttons.indexOf(document.activeElement);
     let next;
@@ -110,6 +112,7 @@ export default function SolPanel({
     }
     e.preventDefault();
     buttons[next]?.focus();
+    buttons[next]?.scrollIntoView({ block: 'nearest' });
   }, []);
 
   const sections = React.useMemo(() => {
@@ -230,10 +233,8 @@ export default function SolPanel({
                     key={item.to}
                     type="button"
                     onClick={locked ? undefined : () => handleItemClick(item, section.key)}
-                    disabled={locked}
-                    aria-current={isActive ? 'page' : undefined}
+                    aria-current={isActive && !locked ? 'page' : undefined}
                     aria-disabled={locked || undefined}
-                    aria-label={locked ? `${item.label} — ${LOCKED_TOOLTIP}` : undefined}
                     title={locked ? LOCKED_TOOLTIP : undefined}
                     data-locked={locked || undefined}
                     className={`sol-panel-item focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
@@ -244,7 +245,7 @@ export default function SolPanel({
                       padding: '7px 8px',
                       borderRadius: 4,
                       color: locked
-                        ? 'var(--sol-ink-400)'
+                        ? 'var(--sol-ink-500)'
                         : isActive
                           ? 'var(--sol-calme-fg)'
                           : 'var(--sol-ink-700)',
@@ -252,7 +253,6 @@ export default function SolPanel({
                       fontSize: 13,
                       fontWeight: isActive && !locked ? 500 : 400,
                       cursor: locked ? 'not-allowed' : 'pointer',
-                      opacity: locked ? 0.55 : 1,
                       width: '100%',
                       textAlign: 'left',
                       border: 'none',
@@ -278,12 +278,15 @@ export default function SolPanel({
                       )}
                     </span>
                     {locked && (
-                      <Lock
-                        size={12}
-                        aria-hidden="true"
-                        data-testid="sol-panel-item-lock"
-                        style={{ color: 'var(--sol-ink-400)', flexShrink: 0 }}
-                      />
+                      <>
+                        <Lock
+                          size={12}
+                          aria-hidden="true"
+                          data-testid="sol-panel-item-lock"
+                          style={{ color: 'var(--sol-ink-500)', flexShrink: 0 }}
+                        />
+                        <span className="sr-only">— {LOCKED_TOOLTIP}</span>
+                      </>
                     )}
                     {badge != null && (
                       <span

@@ -29,8 +29,13 @@ describe('SolPanel keyboard navigation (A8)', () => {
     expect(src).toMatch(/onKeyDown=\{handlePanelKeyDown\}/);
   });
 
-  it('queries only non-disabled items (respects locked flag)', () => {
-    expect(src).toMatch(/button\.sol-panel-item:not\(\[disabled\]\)/);
+  it('F1 fix P0-B : queries ALL sol-panel-item buttons (locked items stay reachable)', () => {
+    expect(src).toMatch(/button\.sol-panel-item['"]\)/);
+    expect(src).not.toMatch(/button\.sol-panel-item:not\(\[disabled\]\)/);
+  });
+
+  it('F1 fix P1-4 : scrollIntoView({block:"nearest"}) after focus shift', () => {
+    expect(src).toMatch(/scrollIntoView\(\s*\{\s*block:\s*['"]nearest['"]/);
   });
 
   it('uses Array.from + querySelectorAll (DOM flat list)', () => {
