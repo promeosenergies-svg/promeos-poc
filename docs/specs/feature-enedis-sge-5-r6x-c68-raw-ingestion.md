@@ -16,7 +16,9 @@ SF1-SF4 delivered a stable raw-ingestion backbone for the first six Enedis SGE f
 - `R50`
 - `R151`
 
-That pipeline assumes one dominant technical contract:
+Functionally, that means Promeos already knows how to take a legacy Enedis delivery from "file received" to "raw data safely archived" for the first wave of supported flows. Operators can run one ingestion pipeline, engineers can inspect one raw archive layer, and downstream work can trust that the incoming file was stored before any business interpretation happens.
+
+In practice, the current pipeline is built around one dominant technical contract:
 
 1. classify from filename
 2. decrypt AES ciphertext with `KEY_n/IV_n`
@@ -24,7 +26,9 @@ That pipeline assumes one dominant technical contract:
 4. parse XML
 5. store raw rows in dedicated raw archive tables in `flux_data.db`
 
-The new SF5 scope breaks those assumptions in several ways:
+SF5 matters because the next Enedis data families that unblock product work do not follow that contract. The platform now needs to ingest new files that are still "raw Enedis inputs", but they arrive with different transport, packaging, and payload rules.
+
+The new SF5 scope breaks the legacy assumptions in several ways:
 
 - `R63` / `R64` are **R6X M023 response flows**, not legacy XML supplier-perimeter flows
 - the official R6X guide states the publication format is **JSON**, with **CSV** also possible
@@ -32,9 +36,13 @@ The new SF5 scope breaks those assumptions in several ways:
 - `C68` payloads contain large technical and contractual snapshots, not simple point-series measurements
 - the real local corpus is mixed-format and includes malformed archives that must fail cleanly
 
-If we do nothing, SF6 remains blocked: it already treats SF5 as the upstream prerequisite for raw ingestion of `R63` / `R64` and `C68`.
+What this means in plain English is simple: the existing "decrypt XML and archive it" path is no longer enough. A user waiting for fine-grain curves, index histories, or PRM contractual snapshots does not care that the source file changed from encrypted XML to nested ZIP + JSON/CSV. They care that the data arrives through the same operational pipeline and is archived reliably for later use.
 
-Since SGE4.5, this is no longer only a parser-extension question. The persistence contract now matters just as much as the payload contract:
+Concrete example: a mixed Enedis drop can contain a legacy `R50` encrypted XML file, a direct-ZIP `R63` response, and a nested-ZIP `C68` request result. The operator should still be able to run one ingestion command, get one coherent stats surface, archive all valid raw data in `flux_data.db`, and see malformed archives fail cleanly without corrupting downstream storage.
+
+If we do nothing, SF6 remains blocked. It already treats SF5 as the upstream prerequisite for raw ingestion of `R63`, `R64`, and `C68`.
+
+Since SGE4.5, this is no longer only a parser-extension question. The storage boundary is part of the feature contract just as much as the parser behavior:
 
 - raw file registry rows, raw measurement/snapshot rows, retry history, and ingest-control tables stay in `flux_data.db`
 - `promeos.db` remains reserved for later promotion/audit/product tables
@@ -42,11 +50,11 @@ Since SGE4.5, this is no longer only a parser-extension question. The persistenc
 
 ### Why this matters
 
-- `R63` is the raw source for fine-grain load curves outside the legacy R4x/R50 perimeter
-- `R64` is the raw source for fine-grain indexes and related measurement contexts
-- `C68` is the raw source for technical and contractual PRM snapshots needed by downstream power/contract features
-- the platform now has a deliberate 2-DB contract: `flux_data.db` archives what Enedis sent, while `promeos.db` is where later functional promotion will happen
-- the current ingestion CLI/API/stats should continue to work across mixed Enedis directories instead of splitting into a second ad hoc toolchain
+- `R63` is the raw entry point for fine-grain load-curve data outside the older R4x/R50 perimeter, so without SF5 those usage surfaces stay unavailable upstream.
+- `R64` is the raw entry point for fine-grain indexes plus their measurement context, which means later consumers cannot reconstruct the business meaning of the values unless SF5 preserves that raw detail.
+- `C68` is the raw entry point for PRM technical and contractual snapshots, so downstream contract and power features depend on SF5 even though SF5 itself should not perform business promotion.
+- the platform now has a deliberate 2-DB contract: `flux_data.db` archives exactly what Enedis sent, while `promeos.db` is reserved for later interpreted or promoted data.
+- the ingestion CLI, API, and stats surfaces should continue to behave like one product surface across mixed directories instead of forcing operators into a second ad hoc toolchain for "new" flows.
 
 SF5 therefore extends the existing pipeline, but stays strictly in the **raw archive layer** stored in `flux_data.db`. No functional promotion, PRM matching, or business normalization belongs here.
 
@@ -58,24 +66,53 @@ This draft is grounded in the local documentation under `docs/base_documentaire/
 
 ### 2.1 Official Guide Findings
 
-#### R6X (`Enedis.SGE.GUI.0503.Flux.R6X_v1.5.2.pdf`)
+#### R6X (`Enedis-R6X.pdf`)
 
-- `R63` = fine-grain load curves (`Courbes de charge`)
-- `R64` = indexes (`Index`)
-- `R65`, `R66`, `R67` also exist in the guide but are outside this SF5 roadmap scope
-- the guide explicitly states the published file format is **JSON**
-- it also documents **CSV** as a supported format for punctual M023 requests
-- R6X M023 file nomenclature is:
+- this local guide is about **publication recurrente** for `R63` and `R64`, not punctual `M023` responses; the feature text should therefore describe it as the contract for recurring measurement publications configured in the Enedis enterprise account
+- functionally, `R63` is the recurring raw source for infra-daily load curves (`Courbes de charge`), while `R64` is the recurring raw source for indexes (`Index`)
+- the guide states the subscribed payload format can be **JSON** or **CSV**
+- CSV is not universally available: the guide says CSV is only possible for a perimeter of **less than 100 PRM**
+- the guide also states an operational rule with direct ingestion impact: when files are delivered outside the Enedis enterprise account over channels such as **email** or **FTP**, they are encrypted for security
+- SF5 should therefore keep one decryption-capable ingestion pipeline and detect whether each incoming file still needs decryption, instead of assuming that all R6X files bypass decryption just because our local corpus is already plain ZIP
+- each recurring publication is first delivered as a **ZIP archive**
+- each archive contains data for one **SIREN** and one measurement family (`CdC` or `Index`)
+- the outer archive nomenclature is:
 
 ```text
-ENEDIS_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<numSequence>_<horodate>.<extension>
+Enedis_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<SIREN>_<horodate>.zip
 ```
 
+- the inner JSON/CSV payload nomenclature is:
+
+```text
+Enedis_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<numSequence>_<horodate>.<extension>
+```
+
+- `codeFlux` is itself business-significant and must be preserved raw:
+  - `R63A` / `R64A` = meters with power **> 36 kVA**
+  - `R63B` / `R64B` = **Linky** meters with power **<= 36 kVA**
+- `modePublication` is also meaningful to a non-technical reader because it encodes the delivery rhythm chosen in the subscription:
+  - `Q` = daily
+  - `H` = weekly
+  - `M` = monthly
+- the JSON header carries request/publication metadata in addition to the measure payload, so SF5 should treat filename metadata and JSON header metadata as complementary raw evidence rather than trying to collapse them too early
 - for `R63`, the JSON contract is `header + mesures[]`, then `grandeur[]`, then `points[]`
 - for `R64`, the JSON contract is `header + mesures[]`, then `contexte[]`, then `grandeur[]`, then `calendrier[]`, then `classeTemporelle[]`, then `valeur[]`
-- the guide states an important semantic rule that SF5 must preserve raw, not normalize away:
-  - `R63` timestamps are not uniformly interpreted across all segments
-  - `R64` values carry measurement context (`contexteReleve`, `typeReleve`, `motifReleve`, calendars, classes, cadrans)
+- for a business reader, `R63` is not just "a list of values": it is a recurring publication of consumption or production curves at infra-daily granularity, with step sizes that depend on meter family (`PT5M`, `PT10M`, `PT15M`, `PT30M`, `PT60M`)
+- the guide makes clear that `R63` raw point qualifiers carry useful operational meaning and should be archived as-is:
+  - `n` explains the nature of the point (`brut`, `estimé`, outage-related, clock-adjusted, etc.)
+  - `tc` explains the correction/completion type when relevant
+  - `iv` and `ec` qualify Linky point reliability and context
+- the guide also clarifies that `dateDebut` and `dateFin` are publication-window boundaries tied to what Enedis collected in its SI, not a simplified business period label; this matters when later consumers interpret partial-day recurring publications
+- for `R64` Linky (`<= 36 kVA`), the guide states that the raw data can contain both **totalizer indexes** and indexes attached to **supplier** and **distributor** grids
+- preserving those raw grid, calendar, temporal-class, and cadran fields is functionally essential:
+  - the supplier grid helps compare published consumption against the supplier invoice logic
+  - the distributor grid helps validate regulated grid-cost logic such as TURPE
+- for `R64` meters with power **> 36 kVA**, the guide states there are **no totalizer indexes**
+- in that higher-power case, indexes remain attached to either a **supplier** or **distributor** grid, and the flow can also return additional overrun-related information such as `DD`, `DE`, `DQ`, `PMA`, and `TF`
+- those `> 36 kVA` fields are not implementation noise: they are raw ingredients for later optimisation and tariff analysis, so SF5 should archive them without business reduction
+- the guide defines `iv` for `R64` Linky active-energy indexes as a **0..15 plausibility code** carrying Enedis quality semantics
+- that detailed plausibility interpretation is not central to SF5 ingestion decisions, but it is valuable raw evidence to preserve now and will likely be much more useful in SF6 staging and quality assessment
 
 #### C68 (`Enedis.SGE.GUI.0504.Flux_C68_v1.2.0.pdf`)
 
@@ -114,6 +151,9 @@ Observed packaging behavior:
 
 - `R63` / `R64` valid files are direct ZIP archives with a single JSON or CSV member
 - `C68` valid files are primary ZIPs whose members are secondary ZIPs
+- the local corpus mostly reflects files that are already usable as archives, but this must not be over-interpreted as a global transport rule:
+  - the official guides still allow encrypted delivery depending on publication channel
+  - SF5 should therefore treat "already-openable archive" as a per-file state to detect, not as a separate family-level pipeline contract
 - observed `C68` primary ZIP cardinality:
   - 246 files with 1 secondary archive
   - 8 files with 2 secondary archives
@@ -185,13 +225,15 @@ The new families are not just “three more parsers”.
 
 | Topic | Legacy SF1-SF4 contract | New SF5 reality |
 |------|--------------------------|-----------------|
-| Transport | raw AES ciphertext | mostly direct ZIP archives |
+| Transport | raw AES ciphertext that must decrypt before parsing | mixed per-file transport: some deliveries may still arrive encrypted, then yield ZIP/JSON/CSV after decryption; others may already be directly openable archives |
 | Payload format | XML only | JSON + CSV |
-| Archive depth | one ciphertext -> one XML | direct ZIP; `C68` = ZIP -> ZIP -> JSON/CSV |
+| Archive depth | one ciphertext -> one XML | direct ZIP for some files; `C68` = ZIP -> ZIP -> JSON/CSV; encrypted deliveries add a pre-archive unwrap step rather than a separate pipeline |
 | Metadata source | XML headers | JSON header for R63/R64 JSON, but filename metadata is authoritative for CSV and C68 |
 | Row granularity | measurement-like rows only | mixed: measurement points (`R63`), index values (`R64`), PRM snapshots (`C68`) |
 
-SF5 must therefore generalize the ingestion surface without regressing the old XML path.
+Functionally, the operator experience should still feel like one ingestion product: one run accepts mixed files, conditionally decrypts when needed, then routes the usable payload into the right raw parser.
+
+SF5 must therefore generalize the ingestion surface without regressing the old XML path or introducing a second "new flows only" pipeline.
 
 ---
 
@@ -202,27 +244,38 @@ Existing legacy path (unchanged happy path)
 -------------------------------------------
 file -> classify -> AES/XML decrypt -> XML parser -> raw archive table (`flux_data.db`)
 
-New SF5 path
-------------
-file -> classify -> archive open -> member detection -> JSON/CSV parser -> raw archive table (`flux_data.db`)
-                                 \-> invalid archive -> FluxStatus.ERROR
+Unified SF1-SF5 path
+--------------------
+file -> classify -> detect whether transport is still encrypted
+                  -> if encrypted: decrypt
+                  -> if already openable: continue
+                  -> open container / payload
+                  -> detect member format and depth
+                  -> XML parser or JSON/CSV parser
+                  -> raw archive table (`flux_data.db`)
+                  \-> invalid encryption/container/payload -> FluxStatus.ERROR
 
 Mixed run support
 -----------------
 one ingest_directory() run can contain:
 - legacy encrypted XML files
-- new direct ZIP R63/R64 files
-- new primary+secondary ZIP C68 files
+- `R63` / `R64` files that still need decryption before archive handling
+- `R63` / `R64` files already present as direct ZIP archives
+- `C68` files that still need decryption before nested ZIP handling
+- `C68` files already present as primary+secondary ZIP archives
 - skipped out-of-scope files
 - all persisted raw results land in `flux_data.db`; SF5 never writes promoted data into `promeos.db`
 ```
 
 ### New high-level rule
 
-The ingestion pipeline becomes **container-aware** instead of assuming “all in-scope files must decrypt to XML”.
+The ingestion pipeline becomes **transport-aware and container-aware** instead of assuming “all in-scope files must decrypt to XML” or “new files never need decryption”.
 
 - legacy XML families keep using the current AES/XML path
-- `R63`, `R64`, `C68` use ZIP/member extraction and JSON/CSV parsing
+- `R63`, `R64`, `C68` stay on the same shared ingestion backbone:
+  - detect whether the incoming file is still encrypted because of its delivery channel
+  - decrypt when needed
+  - then continue into ZIP/member extraction and JSON/CSV parsing
 - the registry, retry logic, republication/versioning logic, CLI, REST scaffolding, and run counters remain shared
 
 SF5 still ends at raw persistence. The later `backend/data_staging/` module from SF6 is the separate bridge that reads raw rows from `flux_data.db` and writes promoted functional rows to `promeos.db`. That promotion boundary is intentionally outside SF5.
