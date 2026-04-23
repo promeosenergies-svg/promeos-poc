@@ -107,6 +107,57 @@ export function interpretAperPotential({ potentialKwc, annualGainEur, dashboard 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Deep-link filter (Vague 1 : `?filter=parking|toiture`)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Normalise le query param `filter` — accepte 'parking' ou 'toiture',
+ * sinon retourne null.
+ */
+export function normalizeAperFilter(raw) {
+  if (raw === 'parking' || raw === 'toiture') return raw;
+  return null;
+}
+
+/**
+ * Applique un filtre de type (parking|toiture) au dashboard en ne gardant
+ * que la catégorie concernée. Tous les downstream presenters (KPIs,
+ * week-cards, bar chart, narratives) héritent automatiquement du filtre.
+ *
+ * Contrat :
+ *   - filter === null → dashboard inchangé
+ *   - filter === 'parking' → roof vidé, total_eligible_sites = parking.sites.length
+ *   - filter === 'toiture' → parking vidé, total_eligible_sites = roof.sites.length
+ */
+export function applyAperFilter(dashboard, filter) {
+  if (!dashboard || !filter) return dashboard;
+
+  const emptyCategory = { eligible_count: 0, total_surface_m2: 0, sites: [] };
+
+  if (filter === 'parking') {
+    const parking = dashboard.parking ?? emptyCategory;
+    return {
+      ...dashboard,
+      parking,
+      roof: emptyCategory,
+      total_eligible_sites: parking.sites?.length ?? 0,
+    };
+  }
+
+  if (filter === 'toiture') {
+    const roof = dashboard.roof ?? emptyCategory;
+    return {
+      ...dashboard,
+      parking: emptyCategory,
+      roof,
+      total_eligible_sites: roof.sites?.length ?? 0,
+    };
+  }
+
+  return dashboard;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Computations
 // ─────────────────────────────────────────────────────────────────────────────
 

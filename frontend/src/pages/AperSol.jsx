@@ -10,7 +10,8 @@
  * Drawer : navigation vers /sites/:id pour drill-down (pas de drawer Sol dédié).
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { X } from 'lucide-react';
 import {
   SolPageHeader,
   SolKpiRow,
@@ -38,8 +39,15 @@ import {
   mergeSitesForBarChart,
   formatFR,
   formatFREur,
+  applyAperFilter,
+  normalizeAperFilter,
 } from './aper/sol_presenters';
 import { SkeletonCard } from '../ui/Skeleton';
+
+const FILTER_LABELS = {
+  parking: 'Parkings > 1 500 m²',
+  toiture: 'Toitures > 500 m²',
+};
 
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -72,6 +80,11 @@ export default function AperSol() {
   const sitesCount = scopeCtx?.sitesCount;
   const orgName = org?.name || org?.label || scopeLabel || 'votre patrimoine';
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Deep-link `?filter=parking|toiture` depuis panel nav (Vague 1).
+  // Autre valeur ou absence → pas de filtre.
+  const activeFilter = normalizeAperFilter(searchParams.get('filter'));
 
   const data = useAperData();
 
@@ -79,7 +92,11 @@ export default function AperSol() {
 
   const kicker = buildAperKicker({ scope: { orgName, sitesCount } });
 
-  const dashboard = data.dashboard;
+  // Dashboard filtré : propage automatiquement sur KPIs, week-cards, bar chart.
+  const dashboard = useMemo(
+    () => applyAperFilter(data.dashboard, activeFilter),
+    [data.dashboard, activeFilter]
+  );
   const totalEligible = dashboard?.total_eligible_sites ?? 0;
   const potentialKwc = useMemo(() => computeAperPotentialKwc(dashboard), [dashboard]);
   const annualGain = useMemo(() => computeAperAnnualGain(potentialKwc), [potentialKwc]);
@@ -123,6 +140,60 @@ export default function AperSol() {
         narrative={narrative}
         subNarrative={subNarrative}
       />
+
+      {activeFilter && (
+        <div
+          role="status"
+          aria-live="polite"
+          data-testid="aper-active-filter"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '6px 10px',
+            marginBottom: 16,
+            background: 'var(--sol-calme-bg)',
+            color: 'var(--sol-calme-fg)',
+            border: '1px solid var(--sol-ink-200)',
+            borderRadius: 4,
+            fontSize: 12,
+            fontFamily: 'var(--sol-font-body)',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--sol-font-mono)',
+              fontSize: 10,
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              opacity: 0.75,
+            }}
+          >
+            Filtre actif
+          </span>
+          <span style={{ fontWeight: 500 }}>{FILTER_LABELS[activeFilter]}</span>
+          <button
+            type="button"
+            onClick={() => navigate('/conformite/aper')}
+            aria-label="Réinitialiser le filtre"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '2px 6px',
+              background: 'transparent',
+              border: '1px solid var(--sol-ink-300)',
+              borderRadius: 3,
+              color: 'var(--sol-ink-700)',
+              fontSize: 11,
+              cursor: 'pointer',
+            }}
+          >
+            <X size={11} aria-hidden="true" />
+            Réinitialiser
+          </button>
+        </div>
+      )}
 
       <SolKpiRow>
         <SolKpiCard
