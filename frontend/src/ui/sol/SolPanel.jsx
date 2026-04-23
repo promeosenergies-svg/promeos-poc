@@ -200,7 +200,7 @@ export default function SolPanel({
                     aria-label={locked ? `${item.label} — ${LOCKED_TOOLTIP}` : undefined}
                     title={locked ? LOCKED_TOOLTIP : undefined}
                     data-locked={locked || undefined}
-                    className={`sol-panel-item ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
+                    className={`sol-panel-item focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
                     style={{
                       display: 'flex',
                       alignItems: 'center',

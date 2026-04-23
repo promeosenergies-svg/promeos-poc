@@ -66,7 +66,7 @@ export default function SolRail({ role = 'default', isExpert = false, className 
             aria-current={isActive ? 'page' : undefined}
             title={mod.label}
             onClick={() => navigate(target)}
-            className={`sol-rail-icon ${isActive ? 'is-active' : ''}`.trim()}
+            className={`sol-rail-icon focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${isActive ? 'is-active' : ''}`.trim()}
             style={{
               width: 34,
               height: 34,
