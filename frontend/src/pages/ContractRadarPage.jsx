@@ -4,7 +4,7 @@
  * Portfolio-level renewal radar for DAF / Direction Achats.
  * Table + ScenarioDrawer + ScenarioSummaryModal.
  */
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   CalendarRange,
@@ -383,6 +383,7 @@ export default function ContractRadarPage() {
   const horizon = [90, 180, 365].includes(urlHorizon) ? urlHorizon : 90;
   const setHorizon = useCallback(
     (value) => {
+      track('renouvellements_horizon_selected', { horizon: value, source: 'manual' });
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
@@ -394,6 +395,16 @@ export default function ContractRadarPage() {
     },
     [setSearchParams]
   );
+  // Tracker A10 : horizon_applied source=deep_link au mount quand l'URL
+  // contient déjà `?horizon=…` (cas Vague 1 depuis panel nav).
+  const firedHorizonDeepLinkRef = useRef(false);
+  useEffect(() => {
+    if (firedHorizonDeepLinkRef.current) return;
+    firedHorizonDeepLinkRef.current = true;
+    if ([90, 180, 365].includes(urlHorizon)) {
+      track('renouvellements_horizon_selected', { horizon: urlHorizon, source: 'deep_link' });
+    }
+  }, [urlHorizon]);
   const [selectedContract, setSelectedContract] = useState(null);
   const [segProfile, setSegProfile] = useState(null);
   const [showSegModal, setShowSegModal] = useState(false);

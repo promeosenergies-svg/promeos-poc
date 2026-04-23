@@ -12,6 +12,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
+import { track } from '../services/tracker';
 import {
   SolPageHeader,
   SolKpiRow,
@@ -85,6 +86,18 @@ export default function AperSol() {
   // Deep-link `?filter=parking|toiture` depuis panel nav (Vague 1).
   // Autre valeur ou absence → pas de filtre.
   const activeFilter = normalizeAperFilter(searchParams.get('filter'));
+
+  // Tracker A10 : filter_applied au mount + à chaque changement URL.
+  // Source = 'deep_link' quand l'URL contient `?filter=…` au mount, sinon
+  // non tracké (pas de filtre manuel dans AperSol pour l'instant — les
+  // week-cards drillent directement vers /sites/:id sans filtrage).
+  React.useEffect(() => {
+    if (!activeFilter) return;
+    track('aper_filter_applied', {
+      filter_type: activeFilter,
+      source: 'deep_link',
+    });
+  }, [activeFilter]);
 
   const data = useAperData();
 

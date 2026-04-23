@@ -20,8 +20,15 @@ import {
 } from '../../layout/NavRegistry';
 import { resolveBackendPermissionKey } from '../../layout/permissionMap';
 import { useAuth } from '../../contexts/AuthContext';
+import { track } from '../../services/tracker';
 
 const LOCKED_TOOLTIP = 'Module non inclus dans votre rôle. Contactez votre administrateur.';
+
+// Sections concernées par PANEL_DEEP_LINKS_BY_ROUTE — permet de distinguer
+// un click sur un raccourci paramétré (?filter=, ?horizon=, ?fw=) d'un
+// click sur un item NAV_SECTIONS top-level. Cohérent avec la clé
+// `deep-links` utilisée dans getPanelSections (NavRegistry L857).
+const DEEP_LINK_SECTION_KEY = 'deep-links';
 
 export default function SolPanel({
   desc,
@@ -39,6 +46,35 @@ export default function SolPanel({
   const moduleMeta = NAV_MODULES.find((m) => m.key === currentModule);
   // V2 : panelSections par route (maquette) avec fallback sur NAV_SECTIONS
   const rawSections = getPanelSections(location.pathname, isExpert);
+
+  // Tracker A10 : event `nav_panel_opened` au mount + au changement de module.
+  // Permet de mesurer la fenêtre Test milieu (ratio clicks deep-link / panels
+  // ouverts) et la valeur du système de raccourcis en conditions réelles.
+  React.useEffect(() => {
+    track('nav_panel_opened', {
+      module: currentModule,
+      route: location.pathname,
+      is_expert: isExpert,
+    });
+  }, [currentModule, location.pathname, isExpert]);
+
+  // Handler click items : wrap navigate() avec tracker.
+  // Différencie deep-link (section 'deep-links') d'un item NAV_SECTIONS
+  // top-level — crucial pour la mesure Sprint 1→2.
+  const handleItemClick = React.useCallback(
+    (item, sectionKey) => {
+      const isDeepLink = sectionKey === DEEP_LINK_SECTION_KEY;
+      track('nav_deep_link_click', {
+        href: item.to,
+        label: item.label,
+        module: currentModule,
+        section_key: sectionKey,
+        is_deep_link: isDeepLink,
+      });
+      navigate(item.to);
+    },
+    [navigate, currentModule]
+  );
 
   // Permissions (Sprint 1 Vague A phases A2+A3) — parité NavPanel legacy.
   // Chaque item est enrichi avec `locked: boolean` plutôt que masqué.
@@ -193,7 +229,7 @@ export default function SolPanel({
                   <button
                     key={item.to}
                     type="button"
-                    onClick={locked ? undefined : () => navigate(item.to)}
+                    onClick={locked ? undefined : () => handleItemClick(item, section.key)}
                     disabled={locked}
                     aria-current={isActive ? 'page' : undefined}
                     aria-disabled={locked || undefined}

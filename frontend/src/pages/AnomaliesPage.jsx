@@ -42,6 +42,7 @@ import { useToast } from '../ui/ToastProvider';
 import useAnomalyFilters from './useAnomalyFilters';
 import { buildAnomalyEvidence } from './anomalyEvidence';
 import { fmtEur } from '../utils/format';
+import { track } from '../services/tracker';
 import AnomaliesSol from './AnomaliesSol';
 
 const ActionsPageInline = lazy(() => import('./ActionsPage'));
@@ -77,6 +78,20 @@ export default function AnomaliesPage() {
   const navigate = useNavigate();
   const { filters, hasFilters, setFilters, resetFilters } = useAnomalyFilters();
   const activeTab = filters.tab;
+
+  // Tracker A10 : filter_applied avec source=deep_link au mount quand
+  // l'URL contient déjà `?fw=` (cas Vague 1 depuis panel nav).
+  const firedDeepLinkTrackRef = useRef(false);
+  useEffect(() => {
+    if (firedDeepLinkTrackRef.current) return;
+    firedDeepLinkTrackRef.current = true;
+    if (filters.fw) {
+      track('anomaly_filter_applied', {
+        framework: filters.fw,
+        source: 'deep_link',
+      });
+    }
+  }, [filters.fw]);
   const { scopedSites, sitesLoading } = useScope();
   const { openActionDrawer } = useActionDrawer();
 
@@ -410,7 +425,10 @@ export default function AnomaliesPage() {
             {/* Framework */}
             <QuickSelect
               value={filters.fw}
-              onChange={(v) => setFilters({ fw: v })}
+              onChange={(v) => {
+                if (v) track('anomaly_filter_applied', { framework: v, source: 'manual' });
+                setFilters({ fw: v });
+              }}
               options={[
                 { value: '', label: 'Framework' },
                 { value: 'DECRET_TERTIAIRE', label: 'Décret Tertiaire' },
