@@ -33,6 +33,7 @@ import {
   Activity,
   Import,
   Users,
+  UserCog,
   Receipt,
   CalendarRange,
   BookOpen,
@@ -742,7 +743,7 @@ export const NAV_SECTIONS = [
       },
       {
         to: '/admin/assignments',
-        icon: Users,
+        icon: UserCog,
         label: 'Attributions',
         desc: 'Affectations utilisateurs × sites',
         requireAdmin: true,
@@ -770,11 +771,11 @@ export const NAV_SECTIONS = [
       {
         to: '/admin/cx-dashboard',
         icon: TrendingUp,
-        label: 'North-Star CX',
-        desc: 'T2V · IAR · WAU · rétention',
+        label: 'Indicateurs CX',
+        desc: 'Time-to-Value, adoption, rétention utilisateurs',
         requireAdmin: true,
         expertOnly: true,
-        keywords: ['cx', 'north-star', 't2v', 'iar', 'wau', 'retention'],
+        keywords: ['cx', 'north-star', 't2v', 'iar', 'wau', 'retention', 'adoption'],
       },
       {
         to: '/admin/enedis-health',

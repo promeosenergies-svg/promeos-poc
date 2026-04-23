@@ -27,7 +27,24 @@ export const PERMISSION_KEY_MAP = {
 /**
  * Traduit une clé module NavRegistry en clé backend permission.
  * Identity fallback pour toute clé non-mappée (future-proof).
+ *
+ * F4 P2-8 : en dev, `console.warn` si une clé non-mappée est demandée
+ * pour détecter silencieusement les nouveaux modules NavRegistry qui
+ * n'ont pas été ajoutés à PERMISSION_KEY_MAP (sinon fallback identity
+ * masquerait le bug).
  */
 export function resolveBackendPermissionKey(navKey) {
-  return PERMISSION_KEY_MAP[navKey] ?? navKey;
+  if (navKey == null) return navKey;
+  const mapped = PERMISSION_KEY_MAP[navKey];
+  if (mapped === undefined) {
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[permissionMap] nav key "${navKey}" not mapped to a backend capability ` +
+          `— using identity fallback. Add it to PERMISSION_KEY_MAP.`
+      );
+    }
+    return navKey;
+  }
+  return mapped;
 }

@@ -3,6 +3,9 @@
  * capability backend (Sprint 1 Vague A phase A2).
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { PERMISSION_KEY_MAP, resolveBackendPermissionKey } from '../permissionMap';
 import { NAV_MODULES } from '../NavRegistry';
 
@@ -40,5 +43,15 @@ describe('PERMISSION_KEY_MAP', () => {
   it('undefined and null are handled (identity fallback)', () => {
     expect(resolveBackendPermissionKey(undefined)).toBeUndefined();
     expect(resolveBackendPermissionKey(null)).toBe(null);
+  });
+});
+
+describe('permissionMap source guards (F4 P2-8)', () => {
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const src = readFileSync(join(__dirname, '..', 'permissionMap.js'), 'utf-8');
+
+  it('warns in dev when a key is not mapped (anti silent typo)', () => {
+    expect(src).toMatch(/console\.warn/);
+    expect(src).toMatch(/not mapped to a backend capability/);
   });
 });
