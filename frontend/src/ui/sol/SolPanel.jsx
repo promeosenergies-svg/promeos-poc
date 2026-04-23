@@ -11,7 +11,14 @@
  */
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { resolveModule, getPanelSections, NAV_MODULES } from '../../layout/NavRegistry';
+import {
+  resolveModule,
+  getPanelSections,
+  NAV_MODULES,
+  ROUTE_MODULE_MAP,
+} from '../../layout/NavRegistry';
+import { resolveBackendPermissionKey } from '../../layout/permissionMap';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function SolPanel({
   desc,
@@ -24,10 +31,33 @@ export default function SolPanel({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAuthenticated, hasPermission } = useAuth();
   const currentModule = resolveModule(location.pathname);
   const moduleMeta = NAV_MODULES.find((m) => m.key === currentModule);
   // V2 : panelSections par route (maquette) avec fallback sur NAV_SECTIONS
-  const sections = getPanelSections(location.pathname, isExpert);
+  const rawSections = getPanelSections(location.pathname, isExpert);
+
+  // Filtre permissions (Sprint 1 Vague A phase A2) — parité NavPanel legacy.
+  // requireAdmin → hasPermission('admin')
+  // sinon → hasPermission('view', resolveBackendPermissionKey(module))
+  //         avec module = ROUTE_MODULE_MAP[item.to]
+  // Fallback : items sans module mapping passent (ex. deep-links Raccourcis).
+  const sections = React.useMemo(() => {
+    if (!isAuthenticated) return rawSections;
+    return rawSections
+      .map((section) => ({
+        ...section,
+        items: (section.items || []).filter((item) => {
+          if (item.requireAdmin) return hasPermission('admin');
+          const basePath = item.to.split('?')[0].split('#')[0];
+          const navModule = ROUTE_MODULE_MAP[basePath];
+          if (navModule === undefined) return true;
+          const backendKey = resolveBackendPermissionKey(navModule);
+          return hasPermission('view', backendKey) || hasPermission('admin');
+        }),
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [rawSections, isAuthenticated, hasPermission]);
 
   return (
     <aside
