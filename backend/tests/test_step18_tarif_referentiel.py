@@ -25,7 +25,7 @@ class TestYAMLLoad:
         from config.tarif_loader import get_tarif_version
 
         version = get_tarif_version()
-        assert version == "2026-03-22"
+        assert version == "2026-04-24"
 
     def test_reload_tarifs(self):
         from config.tarif_loader import reload_tarifs
@@ -167,7 +167,7 @@ class TestTarifSummary:
         from config.tarif_loader import get_tarif_summary
 
         s = get_tarif_summary()
-        assert s["version"] == "2026-03-22"
+        assert s["version"] == "2026-04-24"
 
     def test_summary_has_turpe_segments(self):
         from config.tarif_loader import get_tarif_summary
