@@ -305,7 +305,12 @@ export default function CommandCenterSol() {
         subNarrative={subNarrative}
       />
 
-      {/* User request : "Cette semaine chez vous" juste après header sur les 2 vues */}
+      {/* Ordre stratégie produit : urgence réglementaire → priorités semaine → briefing → KPIs */}
+
+      {/* 1. Urgence réglementaire (contextuel du header) */}
+      <DeadlineBanner />
+
+      {/* 2. Priorités narratives (juste après contexte header) */}
       <SolSectionHead
         title="Cette semaine chez vous"
         meta={`${weekCards.length} points · actualisé ${dataFreshness}`}
@@ -325,8 +330,7 @@ export default function CommandCenterSol() {
         ))}
       </SolWeekGrid>
 
-      {/* Sprint P6 S2 — Section MAIN-parity : bannière échéance + briefing d'arrivée */}
-      <DeadlineBanner />
+      {/* 3. Briefing d'arrivée (contextualise les compteurs) */}
       <div style={{ marginTop: 8 }}>
         <MorningBriefCard
           alerts={alertsCount || 0}
@@ -335,6 +339,7 @@ export default function CommandCenterSol() {
         />
       </div>
 
+      {/* 4. État patrimoine 360° */}
       <SolKpiRow>
         <SolKpiCard
           label="Indice d'état patrimoine"

@@ -332,26 +332,14 @@ export default function CockpitSol() {
         ))}
       </SolWeekGrid>
 
-      {mode === 'surface' &&
-        (solProposal ? (
-          <SolHero
-            chip="Sol propose · action agentique"
-            title={solProposal.title_fr}
-            description={solProposal.summary_fr}
-          />
-        ) : (
-          (() => {
-            const fb = businessErrorFallback('command.no_sol_actions');
-            return (
-              <div role="region" aria-label={fb.title} style={SOL_PROPOSAL_EMPTY_STYLE}>
-                <p style={{ margin: 0, fontWeight: 600, color: 'var(--sol-ink-700)' }}>
-                  {fb.title}
-                </p>
-                <p style={{ margin: '4px 0 0' }}>{fb.body}</p>
-              </div>
-            );
-          })()
-        ))}
+      {/* Sol Hero "proposition agentique" — affiché uniquement si disponible (pas d'empty state verbeux) */}
+      {mode === 'surface' && solProposal && (
+        <SolHero
+          chip="Sol propose · action agentique"
+          title={solProposal.title_fr}
+          description={solProposal.summary_fr}
+        />
+      )}
       {mode === 'surface' && (
         <>
           <SolKpiRow>
