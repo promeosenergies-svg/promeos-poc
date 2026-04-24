@@ -13,6 +13,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { track } from '../services/tracker';
+import { FOCUS_RING_SOL } from '../ui/sol/focusRing';
 import {
   SolPageHeader,
   SolKpiRow,
@@ -200,7 +201,7 @@ export default function AperSol() {
             type="button"
             onClick={() => navigate('/conformite/aper')}
             aria-label="Réinitialiser le filtre"
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+            className={FOCUS_RING_SOL}
             style={{
               display: 'inline-flex',
               alignItems: 'center',

@@ -21,15 +21,13 @@ import {
 import { resolveBackendPermissionKey } from '../../layout/permissionMap';
 import { useAuth } from '../../contexts/AuthContext';
 import { track } from '../../services/tracker';
+import { FOCUS_RING_SOL } from './focusRing';
 
 const LOCKED_TOOLTIP = 'Module non inclus dans votre rôle. Contactez votre administrateur.';
 
 // Clé de section utilisée par getPanelSections (NavRegistry) pour
 // distinguer un click sur un raccourci paramétré d'un item top-level.
 const DEEP_LINK_SECTION_KEY = 'deep-links';
-
-const FOCUS_RING_CLASS =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1';
 
 // Précédence : locked > active > default. Évite la ternary chain inline.
 function getItemVisuals(locked, isActive) {
@@ -259,7 +257,7 @@ export default function SolPanel({
                     aria-disabled={locked || undefined}
                     title={locked ? LOCKED_TOOLTIP : undefined}
                     data-locked={locked || undefined}
-                    className={`sol-panel-item ${FOCUS_RING_CLASS} ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
+                    className={`sol-panel-item ${FOCUS_RING_SOL} ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
                     style={{
                       display: 'flex',
                       alignItems: 'center',

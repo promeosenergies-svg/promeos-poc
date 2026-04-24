@@ -51,9 +51,11 @@ describe('AperSol — deep-link filter wiring', () => {
     expect(pageSrc).toMatch(/minWidth:\s*44/);
   });
 
-  it('F2 : Reset button has focus-visible ring (keyboard users)', () => {
-    expect(pageSrc).toMatch(/focus-visible:ring-2/);
-    expect(pageSrc).toMatch(/focus-visible:ring-blue-500/);
+  it('Reset button has focus-visible ring via FOCUS_RING_SOL constant (Vague B refacto)', () => {
+    expect(pageSrc).toMatch(
+      /import\s*\{\s*FOCUS_RING_SOL\s*\}\s*from\s*['"]\.\.\/ui\/sol\/focusRing['"]/
+    );
+    expect(pageSrc).toMatch(/className=\{FOCUS_RING_SOL\}/);
   });
 
   it('reset button navigates to /conformite/aper (no query)', () => {

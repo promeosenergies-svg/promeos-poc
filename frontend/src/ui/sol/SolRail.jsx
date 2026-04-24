@@ -9,6 +9,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getOrderedModules, resolveModule } from '../../layout/NavRegistry';
+import { FOCUS_RING_SOL } from './focusRing';
 
 const MODULE_FIRST_ROUTE = {
   cockpit: '/',
@@ -66,7 +67,7 @@ export default function SolRail({ role = 'default', isExpert = false, className 
             aria-current={isActive ? 'page' : undefined}
             title={mod.label}
             onClick={() => navigate(target)}
-            className={`sol-rail-icon focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${isActive ? 'is-active' : ''}`.trim()}
+            className={`sol-rail-icon ${FOCUS_RING_SOL} ${isActive ? 'is-active' : ''}`.trim()}
             style={{
               width: 34,
               height: 34,
