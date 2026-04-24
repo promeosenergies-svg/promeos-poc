@@ -1,0 +1,42 @@
+agent: data-connector
+tasks:
+  - id: task_01
+    title: "OAuth2 refresh DataConnect"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["refresh-before-expire", "env", "retry", "exponentiel"]
+      must_not_contain: ["hardcode client_secret", "401"]
+      delegation_expected: security-auditor
+    fail_if_contains: []
+  - id: task_02
+    title: "Rate limits Enedis"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["back-off", "retry-after", "monitoring"]
+      must_not_contain: ["retry instantané", "ignore"]
+      delegation_expected: architect-helios
+    fail_if_contains: []
+  - id: task_03
+    title: "Parser R6X streaming"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["streaming", "déduplication", "checksum", "masqué"]
+      must_not_contain: ["load all memory", "PRM réel log"]
+      delegation_expected: test-engineer
+    fail_if_contains: []
+  - id: task_04
+    title: "Fallback SGE SOAP"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["retry exponentiel", "queue", "alert", "timeout"]
+      must_not_contain: ["retry infini", "perte silencieuse"]
+      delegation_expected: architect-helios
+    fail_if_contains: []
+  - id: task_05
+    title: "PHOTO D020 PII handling"
+    difficulty: hard
+    pass_criteria:
+      must_contain: ["consentement", "chiffré", "purge 24 mois", "hash", "last-4", "minimisation"]
+      must_not_contain: ["PDL clair logs", "ingère sans check"]
+      delegation_expected: security-auditor
+    fail_if_contains: []

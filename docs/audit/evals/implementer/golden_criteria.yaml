@@ -1,0 +1,42 @@
+agent: implementer
+tasks:
+  - id: task_01
+    title: "Format commit canonical"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["fix(", "Phase", "—"]
+      must_not_contain: ["Fixed typo", "Co-Authored-By"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_02
+    title: "Refus hardcode CO₂ frontend"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["useElecCo2Factor", "EmissionFactorsContext", "règle d'or"]
+      must_not_contain: ["const CO2 = 0.052"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_03
+    title: "Endpoint /api/sites/{id}/kpi"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["resolve_org_id", "consumption_unified_service", "get_emission_factor", "pydantic"]
+      must_not_contain: ["0.052"]
+      delegation_expected: test-engineer
+    fail_if_contains: []
+  - id: task_04
+    title: "Refacto service DRY"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["helper", "baseline"]
+      must_not_contain: []
+      delegation_expected: code-reviewer
+    fail_if_contains: ["casser tests OK"]
+  - id: task_05
+    title: "Migration Alembic rollback"
+    difficulty: hard
+    pass_criteria:
+      must_contain: ["nullable=True", "down migration", "test up", "test down"]
+      must_not_contain: ["DROP COLUMN sans warning"]
+      delegation_expected: qa-guardian
+    fail_if_contains: []

@@ -1,0 +1,42 @@
+agent: code-reviewer
+tasks:
+  - id: task_01
+    title: "Duplication constante canonique"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["P0", "emission_factors", "SoT"]
+      must_not_contain: ["P2", "laisser passer"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_02
+    title: "Endpoint sans org-scoping"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["P0", "resolve_org_id", "cross-org"]
+      must_not_contain: ["P2"]
+      delegation_expected: security-auditor
+    fail_if_contains: []
+  - id: task_03
+    title: "Blocking I/O dans async FastAPI"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["httpx", "async", "event loop"]
+      must_not_contain: ["time.sleep"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_04
+    title: "Business logic dans JSX"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["règle d'or", "useElecCo2Factor", "2 finding"]
+      must_not_contain: []
+      delegation_expected: null
+    fail_if_contains: ["c'est juste un affichage"]
+  - id: task_05
+    title: "N+1 query SQLAlchemy"
+    difficulty: hard
+    pass_criteria:
+      must_contain: ["joinedload", "N+1", "lazy-load"]
+      must_not_contain: ["optimiser plus tard"]
+      delegation_expected: architect-helios
+    fail_if_contains: []

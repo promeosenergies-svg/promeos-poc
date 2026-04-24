@@ -1,0 +1,42 @@
+agent: architect-helios
+tasks:
+  - id: task_01
+    title: "SoT NAF resolution"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["naf_resolver.py", "resolve_naf_code"]
+      must_not_contain: ["def resolve_naf", "class NafResolver"]
+      delegation_expected: null
+    fail_if_contains: ["à voir", "peut-être", "probably"]
+  - id: task_02
+    title: "SoT consommation unifiée"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["consumption_unified_service", "resolve_org_id"]
+      must_not_contain: ["session.query(Conso)"]
+      delegation_expected: implementer
+    fail_if_contains: ["custom aggregation", "rapid query"]
+  - id: task_03
+    title: "ADR nouveau module Flex NEBCO"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["pillar Flex", "ems-expert", "naf_resolver", "org-scop"]
+      must_not_contain: ["nouveau pillar NEBCO"]
+      delegation_expected: ems-expert
+    fail_if_contains: ["frontend calc"]
+  - id: task_04
+    title: "Refacto cross-pillar EMS/Bill"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["contrat API", "versioning", "test d'intégration"]
+      must_not_contain: ["injection directe"]
+      delegation_expected: bill-intelligence
+    fail_if_contains: ["on casse et on verra"]
+  - id: task_05
+    title: "ADR migration SQLite → Postgres zero-downtime"
+    difficulty: hard
+    pass_criteria:
+      must_contain: ["ADR", "Contexte", "Options", "Décision", "Conséquences", "Migration", "rollback", "dual-write"]
+      must_not_contain: ["on change la connection string"]
+      delegation_expected: implementer
+    fail_if_contains: ["je vais coder"]
