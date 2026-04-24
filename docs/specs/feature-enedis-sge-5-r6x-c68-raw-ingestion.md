@@ -121,15 +121,29 @@ Enedis_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<numSequence>_<hor
 - the primary archive contains **1 to 10 secondary archives**
 - each secondary archive contains **one JSON or CSV file**
 - each secondary archive can contain data for up to **1000 PRMs**
+- the official publication contract also includes a `CR.M023` compte rendu file, but SF5 only ingests the C68 data archive; `CR.M023` parsing/reconciliation is explicitly out of scope for this wave
 - nomenclature is also request-oriented:
 
 ```text
 ENEDIS_<codeFlux>_<modePublication>_<typeDonnee>_<idDemande>_<numSequence>_<horodate>.<extension>
 ```
 
+- the primary archive sequence is expected to be fixed at `00001`
+- secondary archives and their JSON/CSV payload files use the same nomenclature, with sequence values from `00001` to `00010` depending on the number of requested PRMs
 - JSON and CSV do not carry identical business richness:
   - the guide explicitly notes some technical/contractual sections are JSON-only
   - CSV is a flattened export surface, not a perfect semantic twin of the nested JSON model
+- C68 field absence can be business-significant:
+  - `T` = transmitted without customer consent
+  - `O` = transmitted only with customer consent
+  - `A` = absent/unavailable for the requester context
+  - therefore, missing non-identity fields are not automatically parser defects; they may point to consent/requester-right gaps that data-management users need to act on
+- v1.2.0 adds four notable CSV/JSON data points:
+  - `Type Injection` / `situationsContractuelles[].typeInjection`
+  - `Refus de pose Linky` / `situationsContractuelles[].refusPoseAMM`
+  - `Date refus de pose Linky` / `situationsContractuelles[].dateRefusPoseAMM`
+  - `Borne Fixe` / `donneesGenerales.typage.borneFixe`
+- JSON-only branches such as `rattachements` and `optionsContractuelles` must be preserved in the raw payload, but SF5 does not normalize them into dedicated tables
 
 ### 2.2 Real Corpus Findings (`flux_enedis/`)
 
@@ -158,6 +172,11 @@ Observed packaging behavior:
   - 246 files with 1 secondary archive
   - 8 files with 2 secondary archives
 - every observed valid secondary `C68` archive contains exactly 1 JSON or CSV payload file
+- observed `C68` payload row counts range from 1 to 1000 PRM snapshots
+- observed `C68` CSV headers include both:
+  - legacy 207-column files
+  - v1.2-style 211-column files with `Type Injection`, `Refus de pose Linky`, `Date refus de pose Linky`, and `Borne Fixe`
+- these corpus facts are empirical implementation evidence, not universal Enedis rules; the official guide still defines up to 10 secondary archives per primary publication
 
 Observed content examples:
 
@@ -310,6 +329,7 @@ SF5 still ends at raw persistence. The later `backend/data_staging/` module from
   - `R67`
 - no C68 business normalization into contract/power models
 - no completeness SLA monitoring for M023 publication sequences
+- no `CR.M023` compte rendu parsing/reconciliation
 
 ---
 
@@ -324,10 +344,11 @@ SF5 still ends at raw persistence. The later `backend/data_staging/` module from
 | D5 | `R63` + `R64` storage model | **One shared raw table** with nullable context columns | Both are R6X request-response measurement families with one atomic temporal value per leaf row |
 | D6 | `C68` storage model | **One per-PRM snapshot table with full raw payload + curated extracted columns** | C68 is too wide and heterogeneous for a pure all-columns-first model in SF5, but a pure blob would be too opaque |
 | D7 | Metadata authority | **Filename nomenclature is authoritative** for request/publication fields; payload headers are supplemental | CSV variants and C68 do not provide all metadata inside the payload |
-| D8 | Raw typing | **Store extracted raw-archive values as raw strings** (same archive philosophy as SF2/SF3) | Preserve fidelity and avoid premature normalization across JSON/CSV variants |
+| D8 | Raw typing | **Store most extracted raw-archive values as raw strings, with curated value/unit splits for high-value C68 power fields** | Preserve fidelity while making key power filters usable without normalizing the whole C68 model |
 | D9 | Key loading | **Decryption keys become lazy/conditional** | A directory containing only direct ZIP R63/R64/C68 should not fail before scan time just because legacy AES keys are absent |
 | D10 | C68 row granularity | **1 row = 1 PRM snapshot from one payload file** | Matches both JSON array items and CSV rows, and fits downstream traceability needs |
 | D11 | Database boundary | **All SF5 persistence stays in `flux_data.db`** | Preserves SGE4.5. Raw archive/control tables remain isolated from promoted/product data in `promeos.db` |
+| D12 | C68 sensitivity posture | **POC stores full C68 `payload_raw`; production privacy/RGPD storage is an open architecture question** | SF5 needs source fidelity for reprocessing, but production must revisit redaction, encryption, access control, and deletion/anonymization strategy |
 
 ---
 
@@ -435,19 +456,28 @@ Unlike `R63` / `R64`, `C68` is not a compact measurement family. It is a very wi
 | `payload_member_name` | String(255) | JSON/CSV payload filename inside secondary ZIP |
 | `point_id` | String(14) | PRM |
 | `payload_raw` | Text | full per-PRM payload serialized as JSON text |
+| `contractual_situation_count` | Integer nullable | number of `situationsContractuelles[]` items when available |
+| `date_debut_situation_contractuelle` | String(30) nullable | `dateDebut` of the contractual situation used for extracted contractual columns |
 | `segment` | String(20) nullable | extracted when available |
 | `etat_contractuel` | String(20) nullable | extracted when available |
 | `formule_tarifaire_acheminement` | String(50) nullable | extracted when available |
 | `code_tarif_acheminement` | String(30) nullable | extracted when available |
+| `siret` | String(20) nullable | organization identifier extracted when available |
+| `siren` | String(20) nullable | organization identifier extracted when available |
 | `domaine_tension` | String(20) nullable | extracted when available |
 | `tension_livraison` | String(30) nullable | extracted when available |
 | `type_comptage` | String(30) nullable | extracted when available |
 | `mode_releve` | String(30) nullable | extracted when available |
 | `media_comptage` | String(30) nullable | extracted when available |
 | `periodicite_releve` | String(30) nullable | extracted when available |
-| `puissance_souscrite` | String(30) nullable | extracted when available |
-| `puissance_limite_soutirage` | String(30) nullable | extracted when available |
-| `puissance_raccordement_soutirage` | String(30) nullable | extracted when available |
+| `puissance_souscrite_valeur` | Numeric nullable | extracted when available |
+| `puissance_souscrite_unite` | String(20) nullable | extracted when available |
+| `puissance_limite_soutirage_valeur` | Numeric nullable | extracted when available |
+| `puissance_limite_soutirage_unite` | String(20) nullable | extracted when available |
+| `puissance_raccordement_soutirage_valeur` | Numeric nullable | extracted when available |
+| `puissance_raccordement_soutirage_unite` | String(20) nullable | extracted when available |
+| `puissance_raccordement_injection_valeur` | Numeric nullable | extracted when available |
+| `puissance_raccordement_injection_unite` | String(20) nullable | extracted when available |
 | `borne_fixe` | String(10) nullable | extracted when available |
 | `refus_pose_linky` | String(10) nullable | extracted when available |
 | `date_refus_pose_linky` | String(30) nullable | extracted when available |
@@ -457,6 +487,8 @@ Unlike `R63` / `R64`, `C68` is not a compact measurement family. It is a very wi
 - `(point_id)`
 - `(flux_file_id)`
 - `(point_id, flux_file_id)`
+- `(siret)`
+- `(siren)`
 
 **Why `payload_raw` is acceptable here**
 
@@ -466,6 +498,8 @@ This is the one deliberate exception to the earlier “no fourre-tout JSON” in
 - JSON and CSV are not semantically equivalent
 - fidelity matters more than a premature full flattening
 - downstream usage is still outside SF5
+- POC raw storage intentionally preserves the full Enedis payload, including fields that may be sensitive
+- production architecture must revisit RGPD-compliant storage, access control, deletion/anonymization, and whether personal subtrees should be separated from anonymized technical/metering data
 
 Without `payload_raw`, SF5 would either discard information or balloon into a very large schema-design project that the roadmap does not ask for.
 
@@ -515,6 +549,14 @@ Filename parsing is not optional. It is the authoritative metadata source for:
 - `C68` JSON
 - `C68` CSV
 
+For `C68`:
+
+- the primary file must match the C68 filename pattern to be classified as `C68`
+- the primary sequence is expected to be `00001`
+- secondary archive and payload filenames should also match the official nomenclature and use sequence values from `00001` to `00010`
+- mismatched secondary/payload names are non-conformant and should be surfaced as warnings, but they do not block ingestion when the archive structure and payload data are otherwise usable
+- secondary sequence gaps are non-conformant but non-fatal if all present payloads parse
+
 ### 7.3 Container Rules
 
 #### Legacy families (`R4H`, `R4M`, `R4Q`, `R171`, `R50`, `R151`)
@@ -539,6 +581,8 @@ Filename parsing is not optional. It is the authoritative metadata source for:
 - if one secondary archive fails:
   - the whole physical file is recorded as `ERROR`
   - partial inserts from that file must be rolled back, same as current pipeline behavior
+- missing `idPrm` in JSON or `PRM` in CSV is a fatal structural error for the whole physical C68 file
+- the accompanying `CR.M023` report file is not parsed by SF5; if present in the input directory, it should be skipped or classified outside the C68 data-archive path rather than causing C68 data ingestion to fail
 
 ### 7.4 Format Detection
 
@@ -553,7 +597,22 @@ CSV rules:
 
 - accept UTF-8 and UTF-8-SIG
 - delimiter = `;`
+- parse by header name, not column position
 - preserve original header labels through explicit column mapping
+- accept both observed C68 CSV layouts:
+  - legacy 207-column files
+  - v1.2 211-column files
+- preserve unknown extra columns in `payload_raw`
+- surface unknown extra columns as schema-drift warnings/alerts so the team can decide whether to extend extracted columns and reprocess
+- fail C68 CSV only when essential structure is unusable, such as missing `PRM`
+
+JSON rules:
+
+- C68 JSON must be syntactically valid and have a top-level array of PRM objects
+- parse best-effort against the official v1.2 JSON schema rather than making schema validation a hard gate
+- preserve unknown fields in `payload_raw`
+- surface schema drift as warnings/alerts
+- fail only when the payload is structurally impossible to ingest, such as missing `idPrm`
 
 ### 7.5 Parser Contracts
 
@@ -618,9 +677,16 @@ parse_c68_payload(payload_bytes: bytes, source_format: str, member_name: str) ->
 - JSON:
   - one row per top-level PRM object
   - `payload_raw` stores that PRM object
+  - `situationsContractuelles[]` remains nested inside `payload_raw`; it does not multiply raw rows
+  - extracted contractual columns come from the latest contractual situation by greatest parseable `dateDebut`
+  - if `dateDebut` is missing/tied/ambiguous across multiple contractual situations, ingest the PRM snapshot but surface an ambiguity warning and avoid pretending the extracted fields are authoritative
 - CSV:
   - one row per CSV line
   - `payload_raw` stores the row converted to JSON object `{csv_header: raw_string_value}`
+- extracted code/libelle fields store the stable code/scalar value in first-class columns; the full object or flattened source value remains in `payload_raw`
+- person names, emails, phone numbers, postal address lines, and interlocutor contact details are not extracted into query columns
+- `SIRET` and `SIREN` are extracted as useful organization identifiers for BACS, decret tertiaire, and multi-client filtering
+- high-value power fields are split into value/unit columns; less-used value/unit technical fields remain only in `payload_raw`
 
 No cross-format synthesis is allowed in SF5. If CSV omits a JSON-only branch, it stays omitted.
 
@@ -668,6 +734,8 @@ This keeps mixed-directory support while making the new direct publication flows
 - `R63`: number of atomic point rows inserted
 - `R64`: number of atomic value rows inserted
 - `C68`: number of PRM snapshot rows inserted
+
+For `C68`, archive/package diagnostics such as secondary archive count and payload member count should be exposed separately when the stats/debug surface supports them. They must not be folded into `measures_count`.
 
 ### 8.5 Republication Behavior
 
@@ -732,6 +800,9 @@ Expected new error classes:
 - unsupported payload member type
 - malformed JSON
 - malformed CSV headers / missing mandatory columns
+- non-fatal schema drift warnings for unknown C68 CSV columns or JSON fields
+- non-fatal C68 filename/sequence non-conformance warnings for usable secondary archives or payload members
+- C68 contractual-situation ambiguity warnings when extracted summary columns cannot be tied to one clear latest situation
 
 These must follow the same `EnedisFluxFile.status=error` + archived error history conventions already delivered in SF4.
 
@@ -748,7 +819,8 @@ Add parser tests for:
 - `R64` JSON
 - `R64` CSV
 - `C68` JSON
-- `C68` CSV
+- `C68` CSV with legacy 207-column headers
+- `C68` CSV with v1.2 211-column headers
 
 Mandatory assertions:
 
@@ -757,6 +829,13 @@ Mandatory assertions:
 - PRM format preserved
 - JSON arrays and nested contexts/classes are fully exploded
 - CSV header mapping is correct
+- C68 CSV extraction is header-name based, not position-based
+- C68 v1.2 fields are preserved/extracted when present and tolerated when absent
+- unknown C68 CSV columns and JSON fields remain in `payload_raw` and produce warnings rather than hard failures
+- C68 JSON nested arrays such as `rattachements`, `installationsProduction`, and `optionsContractuelles` remain intact in `payload_raw`
+- C68 extracted contractual columns use the latest `situationsContractuelles[]` item by `dateDebut`
+- ambiguous C68 contractual-situation selection produces a warning
+- C68 missing `idPrm` / `PRM` fails the physical file and rolls back inserts
 
 ### 10.2 Container Tests
 
@@ -768,6 +847,8 @@ Add extraction tests for:
 - `C68` primary ZIP with multiple secondary ZIPs
 - invalid outer ZIP
 - invalid secondary ZIP
+- C68 primary ZIP where one secondary archive is invalid and the entire physical file is rolled back
+- C68 secondary/payload filename mismatch that ingests successfully with a non-fatal warning
 - unsupported member extension
 
 ### 10.3 Integration Tests
@@ -780,6 +861,8 @@ Add representative real-file integration tests covering all observed happy-path 
 - `R64` CSV real sample
 - `C68` JSON real sample
 - `C68` CSV real sample
+- `C68` legacy 207-column CSV real sample
+- `C68` v1.2 211-column CSV real sample
 
 Recommended real-sample references from the local corpus:
 
@@ -789,6 +872,7 @@ Recommended real-sample references from the local corpus:
 - `flux_enedis/R64/ENEDIS_R64_P_INDEX_M06CX26D_00001_20240523105124.zip`
 - `flux_enedis/C68/ENEDIS_C68_P_ITC_M05GIGM1_00001_20231204101954.zip`
 - `flux_enedis/C68/ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094139.zip`
+- `flux_enedis/C68/ENEDIS_C68_P_ITC_M08GV8IG_00001_20250721134328.zip`
 
 Add explicit bad-file tests using observed malformed samples:
 
@@ -819,11 +903,12 @@ Add explicit boundary tests so the SGE4.5 split remains enforced after SF5:
 
 | ID | Topic | Status | Notes |
 |----|-------|--------|-------|
-| OQ1 | C68 extracted column set | Open | This draft proposes `payload_raw` + curated query columns. If the team wants a full all-columns flattening, SF5 scope expands materially |
+| OQ1 | C68 extracted column set | Settled for SF5 | Use `payload_raw` + curated query columns, including SIRET/SIREN and split value/unit columns for the small high-value power set. Full all-columns flattening remains out of scope |
 | OQ2 | Out-of-scope R6X recognition | Open | We may want to classify `R63A/B`, `R64A/B`, `R65`, `R66`, `R67` explicitly as known-but-skipped instead of `UNKNOWN` |
 | OQ3 | `R6X` table naming | Open | `enedis_flux_mesure_r6x` is concise and matches roadmap intent, but `r63_r64` would be more explicit |
 | OQ4 | Stats granularity | Open | It may be useful to expose JSON vs CSV counts in stats/debug output, but it is not required for SF5 |
 | OQ5 | Invalid non-zip files | Open but non-blocking | This draft treats them as corrupt publication files; if Enedis later confirms an alternate encryption contract, we can add it in a later wave |
+| OQ6 | Production C68 privacy/RGPD architecture | Open for production | POC stores full C68 `payload_raw`. Before production, decide whether personal/contact subtrees should be separated, encrypted, access-controlled, redacted, selectively deletable, or anonymized while retaining useful technical/metering data for model development |
 
 ---
 
@@ -839,8 +924,14 @@ Add explicit boundary tests so the SGE4.5 split remains enforced after SF5:
 - [ ] `R64` CSV ingests successfully into `enedis_flux_mesure_r6x`
 - [ ] `C68` JSON ingests successfully into `enedis_flux_itc_c68`
 - [ ] `C68` CSV ingests successfully into `enedis_flux_itc_c68`
+- [ ] `C68` legacy 207-column CSV and v1.2 211-column CSV both ingest successfully
+- [ ] C68 unknown CSV/JSON fields are preserved in `payload_raw` and surfaced as warnings, not hard failures
+- [ ] C68 missing `idPrm` / `PRM` fails the physical file and rolls back inserts
+- [ ] C68 extracted contractual columns use the latest `situationsContractuelles[]` item by `dateDebut`
 - [ ] `C68` primary archives with multiple secondary ZIPs ingest correctly
+- [ ] one invalid C68 secondary archive rolls back the whole physical file
 - [ ] malformed `R63` / `C68` archives are recorded as clean file errors
+- [ ] C68 `measures_count` reports PRM snapshot rows, not archive/member counts
 - [ ] CLI/reporting/stats show the two new raw archive tables through the dedicated raw DB surface
 - [ ] ingesting SF5 files leaves `promeos.db` unchanged
 - [ ] legacy SF1-SF4 ingestion behavior remains green
