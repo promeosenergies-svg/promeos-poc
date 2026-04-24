@@ -65,6 +65,16 @@ import {
 import { SkeletonCard } from '../ui/Skeleton';
 import { businessErrorFallback } from '../i18n/business_errors';
 
+// Sprint P6 S2 — Enrichissement superset MAIN (Batch 2 Vue exécutive)
+// Imports composants MAIN standalone pour parité fonctionnelle
+import AlertesPrioritaires from './cockpit/AlertesPrioritaires';
+import TrajectorySection from './cockpit/TrajectorySection';
+import EvenementsRecents from './cockpit/EvenementsRecents';
+import HeroImpactBar from './cockpit/HeroImpactBar';
+import SanteKpiGrid from './cockpit/SanteKpiGrid';
+import PriorityActions from './cockpit/PriorityActions';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
 const SOL_PROPOSAL_EMPTY_STYLE = {
   margin: '16px 0 24px',
   padding: '14px 18px',
@@ -157,6 +167,8 @@ export default function CockpitSol() {
   const sitesCount = scopeCtx?.sitesCount;
   const orgName = org?.name || org?.label || scopeLabel || 'votre patrimoine';
   const [mode, setMode] = useState('surface');
+  // Sprint P6 S2 Batch 2 : accordion Zone 4 détail (MAIN-parity)
+  const [showDetailZone, setShowDetailZone] = useState(false);
 
   const data = useCockpitSolData({
     orgId: scope.orgId,
@@ -387,6 +399,34 @@ export default function CockpitSol() {
             />
           </SolKpiRow>
 
+          {/* Sprint P6 S2 — Section MAIN-parity : Alertes prioritaires top 3 (exception-first) */}
+          <SolSectionHead
+            title="À traiter cette semaine — top 3"
+            meta="Priorités par impact business (Rule of 3)"
+          />
+          <div style={{ marginBottom: 24 }}>
+            <AlertesPrioritaires />
+          </div>
+
+          {/* Sprint P6 S2 — Section MAIN-parity : Trajectoire Décret Tertiaire */}
+          <SolSectionHead
+            title="Trajectoire Décret Tertiaire"
+            meta="Progression vers objectif 2030 (-40%)"
+          />
+          <div style={{ marginBottom: 24 }}>
+            <TrajectorySection
+              trajectoire={cockpitStats.trajectoire}
+              loading={data.status === 'loading'}
+              sites={cockpit.sites}
+            />
+          </div>
+
+          {/* Sprint P6 S2 — Section MAIN-parity : Événements récents (timeline) */}
+          <SolSectionHead title="Événements récents" meta="Timeline monitoring 7j" />
+          <div style={{ marginBottom: 24 }}>
+            <EvenementsRecents />
+          </div>
+
           <SolSectionHead
             title="Cette semaine chez vous"
             meta={`${weekCards.length} points · actualisé ${dataFreshness}`}
@@ -445,6 +485,61 @@ export default function CockpitSol() {
                 />
               }
             />
+          </div>
+
+          {/* Sprint P6 S2 — Zone 4 accordion : détail complet MAIN-parity */}
+          <div style={{ marginTop: 24 }}>
+            <button
+              type="button"
+              onClick={() => setShowDetailZone((s) => !s)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                padding: '14px 18px',
+                background: 'var(--sol-bg-paper)',
+                border: '1px solid var(--sol-ink-200)',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 600,
+                color: 'var(--sol-ink-900)',
+                fontFamily: 'var(--sol-font-body)',
+              }}
+            >
+              <span>
+                {showDetailZone ? 'Masquer' : 'Voir'} le détail exécutif complet
+                <span style={{ fontWeight: 400, color: 'var(--sol-ink-500)', marginLeft: 12 }}>
+                  — Impact financier · KPIs santé · Actions prioritaires
+                </span>
+              </span>
+              {showDetailZone ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </button>
+            {showDetailZone && (
+              <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* HeroImpactBar — impact 4 colonnes */}
+                <HeroImpactBar
+                  totalEur={cockpitStats.impact_financier_total_eur}
+                  conformiteEur={cockpitStats.impact_conformite_eur}
+                  facturesEur={cockpitStats.impact_factures_eur}
+                  optimisationEur={cockpitStats.impact_optimisation_eur}
+                  sitesConcernes={cockpitStats.sites_concernes || []}
+                />
+                {/* SanteKpiGrid — 4 KPIs santé */}
+                <SanteKpiGrid
+                  sante={{
+                    conformite_score: scoreNow,
+                    risque_eur: cockpitStats.risque_eur,
+                    conso_kwh: consoKwh,
+                    alertes_count: alertsCount,
+                    ...(cockpitStats.sante || {}),
+                  }}
+                />
+                {/* PriorityActions — top actions V1+ executive */}
+                <PriorityActions actions={cockpit.top_actions || cockpit.priority_actions || []} />
+              </div>
+            )}
           </div>
         </>
       )}
