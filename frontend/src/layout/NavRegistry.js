@@ -75,7 +75,9 @@ export const ROUTE_MODULE_MAP = {
   // Backward compat (redirigés vers Centre d'actions via AppShell)
   '/notifications': 'cockpit',
   '/notifications-legacy': 'cockpit', // Sprint P6 S1 pilot — rollback route
+  '/billing-legacy': 'patrimoine', // Sprint P6 S1 pilot — rollback route
   '/actions': 'cockpit',
+  '/actions-legacy': 'cockpit', // Sprint P6 S1 pilot — rollback route
   '/actions/new': 'cockpit',
   '/actions/:actionId': 'cockpit',
   '/anomalies': 'cockpit',

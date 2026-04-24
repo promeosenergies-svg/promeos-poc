@@ -23,6 +23,9 @@ const CommandCenterLegacy = lazy(() => import('./pages/CommandCenter'));
 const Patrimoine = lazy(() => import('./pages/PatrimoineSol'));
 const PatrimoineLegacy = lazy(() => import('./pages/Patrimoine'));
 const Site360 = lazy(() => import('./pages/Site360'));
+// Sprint REFONTE-P6 S1 pilot : /actions* pointe sur ActionsSol wrapper.
+// ActionsPage legacy accessible via /actions-legacy pour A/B + rollback.
+const ActionsSol = lazy(() => import('./pages/ActionsSol'));
 const ActionsPage = lazy(() => import('./pages/ActionsPage'));
 const ActionCenterPage = lazy(() => import('./pages/ActionCenterPage'));
 // Refonte Phase 4.1 : /conformite pointe sur ConformiteSol (Pattern A).
@@ -65,6 +68,8 @@ const ConsumptionDiagPage = lazy(() => import('./pages/ConsumptionDiagPage'));
 // BillIntelPage legacy accessible via /bill-intel-legacy pour A/B.
 const BillIntelPage = lazy(() => import('./pages/BillIntelSol'));
 const BillIntelLegacy = lazy(() => import('./pages/BillIntelPage'));
+// Sprint REFONTE-P6 S1 pilot : /billing pointe sur BillingSol wrapper.
+const BillingSol = lazy(() => import('./pages/BillingSol'));
 const BillingPage = lazy(() => import('./pages/BillingPage'));
 const KBExplorerPage = lazy(() => import('./pages/KBExplorerPage'));
 // Refonte Phase 4.4 : /achat-energie pointe sur AchatSol (Pattern A).
@@ -219,7 +224,7 @@ function App() {
                       path="/actions"
                       element={
                         <PageSuspense>
-                          <ActionsPage />
+                          <ActionsSol />
                         </PageSuspense>
                       }
                     />
@@ -227,12 +232,21 @@ function App() {
                       path="/actions/new"
                       element={
                         <PageSuspense>
-                          <ActionsPage autoCreate />
+                          <ActionsSol autoCreate />
                         </PageSuspense>
                       }
                     />
                     <Route
                       path="/actions/:actionId"
+                      element={
+                        <PageSuspense>
+                          <ActionsSol />
+                        </PageSuspense>
+                      }
+                    />
+                    {/* Legacy fallback Sprint P6 S1 — rollback instant */}
+                    <Route
+                      path="/actions-legacy"
                       element={
                         <PageSuspense>
                           <ActionsPage />
@@ -490,6 +504,15 @@ function App() {
                     />
                     <Route
                       path="/billing"
+                      element={
+                        <PageSuspense>
+                          <BillingSol />
+                        </PageSuspense>
+                      }
+                    />
+                    {/* Legacy fallback Sprint P6 S1 — rollback instant */}
+                    <Route
+                      path="/billing-legacy"
                       element={
                         <PageSuspense>
                           <BillingPage />
