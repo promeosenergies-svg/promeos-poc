@@ -228,7 +228,7 @@ function App() {
                       path="/actions"
                       element={
                         <PageSuspense>
-                          <ActionsSol />
+                          <ActionsPage />
                         </PageSuspense>
                       }
                     />
@@ -236,7 +236,7 @@ function App() {
                       path="/actions/new"
                       element={
                         <PageSuspense>
-                          <ActionsSol autoCreate />
+                          <ActionsPage autoCreate />
                         </PageSuspense>
                       }
                     />
@@ -244,16 +244,16 @@ function App() {
                       path="/actions/:actionId"
                       element={
                         <PageSuspense>
-                          <ActionsSol />
+                          <ActionsPage />
                         </PageSuspense>
                       }
                     />
-                    {/* Legacy fallback Sprint P6 S1 — rollback instant */}
+                    {/* Sol wrappers Sprint P6 S1 — work-in-progress, réactivable après fix layout PageShell */}
                     <Route
-                      path="/actions-legacy"
+                      path="/actions-sol"
                       element={
                         <PageSuspense>
-                          <ActionsPage />
+                          <ActionsSol />
                         </PageSuspense>
                       }
                     />
@@ -371,12 +371,11 @@ function App() {
                       }
                     />
                     {/* Consommations: 4-tab layout (Explorer | Portfolio | Import & Analyse | KB) */}
-                    {/* Sprint REFONTE-P6 S1 — wrappers Sol */}
                     <Route
                       path="/consommations"
                       element={
                         <PageSuspense>
-                          <ConsommationsSol />
+                          <ConsommationsPage />
                         </PageSuspense>
                       }
                     >
@@ -385,7 +384,7 @@ function App() {
                         path="explorer"
                         element={
                           <PageSuspense>
-                            <ConsumptionExplorerSol />
+                            <ConsumptionExplorerPage bare />
                           </PageSuspense>
                         }
                       />
@@ -393,7 +392,7 @@ function App() {
                         path="portfolio"
                         element={
                           <PageSuspense>
-                            <ConsumptionPortfolioSol />
+                            <ConsumptionPortfolioPage />
                           </PageSuspense>
                         }
                       />
@@ -414,7 +413,34 @@ function App() {
                         }
                       />
                     </Route>
-                    {/* Legacy fallbacks Sprint P6 S1 — rollback instant */}
+                    {/* Sol wrappers Sprint P6 S1 — réactivable après fix layout PageShell */}
+                    <Route
+                      path="/consommations-sol"
+                      element={
+                        <PageSuspense>
+                          <ConsommationsSol />
+                        </PageSuspense>
+                      }
+                    >
+                      <Route index element={<Navigate to="/consommations-sol/portfolio" replace />} />
+                      <Route
+                        path="explorer"
+                        element={
+                          <PageSuspense>
+                            <ConsumptionExplorerSol />
+                          </PageSuspense>
+                        }
+                      />
+                      <Route
+                        path="portfolio"
+                        element={
+                          <PageSuspense>
+                            <ConsumptionPortfolioSol />
+                          </PageSuspense>
+                        }
+                      />
+                    </Route>
+                    {/* Legacy -legacy aliases kept for backward compat */}
                     <Route
                       path="/consommations-legacy"
                       element={
@@ -538,16 +564,15 @@ function App() {
                       path="/billing"
                       element={
                         <PageSuspense>
-                          <BillingSol />
+                          <BillingPage />
                         </PageSuspense>
                       }
                     />
-                    {/* Legacy fallback Sprint P6 S1 — rollback instant */}
                     <Route
-                      path="/billing-legacy"
+                      path="/billing-sol"
                       element={
                         <PageSuspense>
-                          <BillingPage />
+                          <BillingSol />
                         </PageSuspense>
                       }
                     />
@@ -599,16 +624,15 @@ function App() {
                       path="/notifications"
                       element={
                         <PageSuspense>
-                          <NotificationsSol />
+                          <NotificationsPage />
                         </PageSuspense>
                       }
                     />
-                    {/* Legacy fallback - rollback instant Sprint P6 S1 */}
                     <Route
-                      path="/notifications-legacy"
+                      path="/notifications-sol"
                       element={
                         <PageSuspense>
-                          <NotificationsPage />
+                          <NotificationsSol />
                         </PageSuspense>
                       }
                     />
