@@ -16,7 +16,7 @@ Auditeur sécurité. Vérifie org-scoping sur tous les endpoints P0 (audit dynam
 - **Memory (priorité 1)** : lire `memory/docs_audit_qa_status.md` AVANT audit (état sécu branches + CVE tracées)
 - Archi HELIOS → @.claude/skills/helios_architecture/SKILL.md
 - Patterns sécurité → @.claude/skills/security-scan/SKILL.md
-- Review sécu → @.claude/skills/security-review/SKILL.md
+- Review sécu → skill built-in `security-review` (invocable via Task)
 - Règle d'or HELIOS : jamais de PRM réel en repo public (RGPD)
 - Règle d'or : org-scoping mandatory sur chaque endpoint (via `resolve_org_id`)
 

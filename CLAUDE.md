@@ -1,107 +1,101 @@
 # CLAUDE.md — Contexte PROMEOS pour Claude Code
 
-Ce fichier est charge automatiquement a chaque session Claude Code.
+Ce fichier est chargé automatiquement à chaque session Claude Code.
 
 ## Skill PROMEOS obligatoire
 
-Lis `SKILL.md` a la racine AVANT toute action sur ce repo.
-Toutes les regles non-negociables y sont encodees.
-Skills detailles dans `.claude/skills/` (11 skills domaine).
+Lis `SKILL.md` à la racine AVANT toute action sur ce repo. Toutes les règles non-négociables y sont encodées. Skills détaillés dans `.claude/skills/`.
 
 ## Workframe & boundaries
 
-Read and enforce the rules in `docs/dev/workframe-contract.md` before
-creating or moving files. Personal material never enters this repo —
-it lives in `../workspace/personal/<person>/` outside the git boundary.
-The merge process, commit message discipline, and wait-for-eyes zones
-are defined there. Do not create `docs/drafts/` or `docs/notes/` folders
-for informal sharing — use GitHub Draft PRs instead.
+Lire et appliquer `docs/dev/workframe-contract.md`. Matériel personnel jamais dans le repo — il vit dans `../workspace/personal/<person>/` hors boundary git. Pas de `docs/drafts/` ni `docs/notes/` — utiliser Draft PRs GitHub.
 
 ## Stack technique
 
 - Backend : Python 3.11 / FastAPI / SQLAlchemy / SQLite (PostgreSQL-ready)
 - Frontend : React 18 / Vite / Tailwind CSS v4 / Recharts / Lucide React
 - Tests : pytest (BE) / Vitest (FE) / Playwright (E2E)
-- Repo : github.com/promeosenergies-svg/promeos-poc
-- Port backend : **8001** (pas 8000 ni 8080)
-- Port frontend : **5173** (proxy -> localhost:8001)
+- Port backend : **8001** (pas 8000 ni 8080) · Port frontend : **5173** (proxy → 8001)
 
-## Regle d'or — ZERO calcul metier frontend
+## Règle d'or — ZERO calcul métier frontend
 
-Le frontend est affichage uniquement. Voir SKILL.md section "Regle absolue".
+Le frontend est affichage uniquement. Calculs métier (CO₂, scoring, forecasting) côté backend, exposés via REST, consommés en Context/hook. Voir SKILL.md.
 
-## Workflow obligatoire
+## Agents Claude Code (délégation via Task tool)
 
-1. Phase 0 read-only : grep/find/cat uniquement — bilan avant toute modif
-2. Zero modif sans bilan Phase 0 valide
-3. Tests avant ET apres chaque phase
-4. Commit atomique par phase avec message normalise
+Routage obligatoire pour les 11 agents de `.claude/agents/*.md` :
+
+- **Architecture / ADR / cross-pillar** → `architect-helios`
+- **Code FastAPI + React (post-ADR)** → `implementer`
+- **Revue PR / anti-patterns / duplication** → `code-reviewer` (avant commit)
+- **Tests pytest / Vitest / Playwright** → `test-engineer`
+- **Baseline / DoD / STOP gate / release** → `qa-guardian` (fin de phase)
+- **OPERAT / BACS / APER / TURPE 7 / CRE / CBAM / VNU / capacité** → `regulatory-expert`
+- **Shadow billing / accises / CTA / TURPE / anomalies** → `bill-intelligence`
+- **Carpet plot / CUSUM / DJU / signature / forecasting / flex (NEBCO/AOFD)** → `ems-expert`
+- **Enedis / SGE / GRDF / R6X / CDC / PHOTO D020** → `data-connector`
+- **Org-scoping / RGPD / PII / secrets / CVE** → `security-auditor`
+- **Génération prompts Claude Code** → `prompt-architect`
+
+Les 5 agents Python `backend/ai_layer/agents/` sont runtime API production, **distincts** des 11 AgentDefinitions ci-dessus (usage interactif).
+
+## Règles non-négociables
+
+1. Zero business logic in frontend
+2. Org-scoping obligatoire sur chaque endpoint via `resolve_org_id`
+3. Atomic commits : `fix(module-pN): Phase X.Y — description`
+4. MCP obligatoires : Context7, code-review, simplify
+5. Baseline tests jamais régresser (FE ≥ 3 783, BE ≥ 843, cf. workflow pre-merge)
+6. `consumption_unified_service.py` = SoT consommation
+7. `utils/naf_resolver.py:resolve_naf_code()` = canonical NAF
+8. Branche `claude/*` — jamais commit direct main
+9. Commit + push + draft PR immédiat (pas d'accumulation)
+
+## Workflow méthodologique
+
+Phase 0 read-only (grep/find/cat) → STOP gate → phases numérotées → DoD → atomic commit → source-guard test. Zero modif sans bilan Phase 0 valide.
 
 ## Fichiers critiques (audit avant modification)
 
-- backend/regops/scoring.py — source de verite scoring conformite
-- backend/services/consumption_unified_service.py — source de verite conso
-- backend/config/emission_factors.py — constantes CO2 canoniques
-- backend/config/tarifs_reglementaires.yaml — tarifs versionnes
-- backend/utils/naf_resolver.py — resolution NAF (ne pas dupliquer)
-- backend/services/demo_seed/orchestrator.py — seed orchestration
-- backend/services/compliance_score_service.py — scoring conformite
+- `backend/regops/scoring.py` — SoT scoring conformité
+- `backend/services/consumption_unified_service.py` — SoT consommation
+- `backend/config/emission_factors.py` — constantes CO₂ canoniques
+- `backend/config/tarifs_reglementaires.yaml` — tarifs versionnés (ParameterStore)
+- `backend/utils/naf_resolver.py` — résolution NAF
+- `backend/services/demo_seed/orchestrator.py` — seed orchestration
+- `backend/services/compliance_score_service.py` — scoring conformité
 
-## Commandes de reference
+## Commandes de référence
 
 ```bash
-# Backend
-cd backend && python main.py                        # -> http://localhost:8001
-cd backend && python -m pytest tests/ -v --tb=short # tests backend
-
-# Frontend
-cd frontend && npm run dev                           # -> http://localhost:5173
-cd frontend && npx vitest run                        # tests frontend
-
-# Source guards (regles architecture)
-cd backend && python -m pytest tests/source_guards/ -v
-
-# Seed demo
+cd backend && python main.py                                # → :8001
+cd backend && python -m pytest tests/ -v --tb=short         # tests BE
+cd frontend && npm run dev                                   # → :5173
+cd frontend && npx vitest run                                # tests FE
+cd backend && python -m pytest tests/source_guards/ -v       # source-guards
 cd backend && python -m services.demo_seed --pack helios --size S --reset
-
-# Full stack
-npm run dev:full                                     # depuis la racine
-
-# Skills
-npx skills list                                      # tous les skills installes
+npm run dev:full                                             # full stack
 ```
 
 ## Workflow obligatoire pre-merge
 
-1. `/code-review:code-review` — bugs, secu, qualite
-2. `/simplify` — refactoring, clarte
-3. Tests FE >= 3 783, BE >= 843, zero regression
+1. `/code-review:code-review` — bugs, sécu, qualité
+2. `/simplify` — refactoring, clarté
+3. Tests FE ≥ 3 783, BE ≥ 843, zéro régression
 4. Playwright audit screenshots si modification UI
 
-## Architecture hierarchique
+## Architecture hiérarchique
 
-Organisation -> EntiteJuridique -> Portefeuille -> Site -> Batiment -> Compteur -> DeliveryPoint
+Organisation → EntitéJuridique → Portefeuille → Site → Bâtiment → Compteur → DeliveryPoint
 
-## Skills installes
+## Skills partagées canoniques (`.claude/skills/`)
 
-### Skills domaine (.claude/skills/) :
-- promeos-regulatory — conformite DT/BACS/APER/AUDIT
-- promeos-billing — shadow billing, TURPE, accises
-- promeos-enedis — connecteur SGE, SF1/SF2/SF3
-- promeos-architecture — patterns backend/frontend
-- promeos-seed — orchestration demo data
-- promeos-energy-fundamentals — physique energie
-- promeos-energy-market — marche elec/gaz France
-- energy-contracts-b2b — contrats B2B fourniture
-- energy-flexibility-dr — flexibilite et DR
-- energy-autoconsommation — autoconsommation collective
-- energy-france-veille — veille reglementaire
+Skills PROMEOS auto-chargées par les 11 agents :
 
-### Skills vendor (.agents/skills/) :
-- fastapi-templates — patterns FastAPI
-- python-testing-patterns — patterns pytest
-- vercel-react-best-practices — React patterns
-- webapp-testing — testing web apps
+- `emission_factors` — CO₂ ADEME V23.6 (wrapper de `config/emission_factors.py`)
+- `regops_constants` — seuils BACS/APER/AUDIT, jalons DT, sanctions
+- `regulatory_calendar` — deadlines 2026-2050 (OPERAT, Audit SMÉ, Capacité 11/2026, CBAM…)
+- `helios_architecture` — 6 pillars + 3-layers agents + SoT canoniques
+- `tariff_constants` — **Phase 3B** (bloqué par followup `tarifs_sot_consolidation.md`)
 
-### Skill core (racine) :
-- promeos-core (SKILL.md) — regles metier PROMEOS
+Plus 11 skills domaine (`promeos-*`, `energy-*`) et 4 skills vendor dans `.claude/skills/`.

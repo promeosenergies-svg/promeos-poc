@@ -16,7 +16,7 @@ Méta-agent. Génère les prompts Claude Code pour les futures sessions : audits
 - **Memory (priorité 1)** : lire `memory/feedback_context7.md`, `memory/feedback_kb_naming_convention.md`, `memory/feedback_ingest_triage.md`, survol `memory/project_sprint_*.md` (templates de sprints réussis) AVANT génération
 - Archi HELIOS → @.claude/skills/helios_architecture/SKILL.md
 - Plans → @.claude/skills/writing-plans/SKILL.md
-- Init doctrine → @.claude/skills/init/SKILL.md
+- Init doctrine → skill built-in `init` (invocable via Task)
 - Règle d'or : Phase 0 read-only avant tout code
 - Doctrine user : atomic commits, baseline tests intangible, zero-pollution main
 
