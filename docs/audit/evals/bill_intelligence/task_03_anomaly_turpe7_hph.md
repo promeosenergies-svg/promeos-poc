@@ -8,6 +8,8 @@
 
 > Voici la ligne TURPE HPH d'une facture C5 (profil T1) de mars 2026 : `5000 kWh × 0.0612 €/kWh = 306.00 €`. Est-ce cohérent avec la grille TURPE 7 en vigueur ? Retourne ton output au format JSON anomalies.
 
+**Note piège volontaire** : "C5 T1 HPH" est intrinsèquement incohérent (T1 = tier ATRD gaz, HPH = poste horosaisonnier élec réservé C4/C3). L'agent doit détecter à la fois `wrong_rate` ET `wrong_profile` R07.
+
 ## Contexte fourni
 
 - Fichier SoT : `backend/config/tarifs_reglementaires.yaml` (section `turpe_7`)
@@ -21,7 +23,7 @@
 - [ ] Détecte l'écart : valeur facturée `0.0612` ≠ valeur TURPE 7 attendue pour C5 T1 HPH
 - [ ] Cite `valid_from` de la grille appliquée
 - [ ] `anomaly_type` correctement classé (`wrong_rate` ou `wrong_period`)
-- [ ] Délégation vers `regulatory-expert` si divergence SoT YAML vs catalog.py détectée
+- [ ] Délégation vers `architect-helios` si divergence SoT YAML vs catalog.py détectée (conformité guardrail bill-intelligence.md)
 
 ## Anti-patterns (FAIL si présent)
 

@@ -111,3 +111,7 @@ scratch/
 tmp/
 *.scratch
 *.scratch.*
+
+# Audit WIP root-level — sessions parallèles, préservés sur branches dédiées
+# (claude/audit-v1-wip, claude/audit-v2-v3-wip) pas sur main ni agents-sdk
+/audit/
