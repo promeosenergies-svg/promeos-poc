@@ -16,7 +16,8 @@ import { fmtEur } from '../../utils/format';
 import { Skeleton, InfoTip } from '../../ui';
 import { humaniseArchetype, humaniseSiteId } from './archetypeLabels';
 
-const DEMO_FALLBACK_SITE = 'retail-001';
+// Fix M-02 Sprint P0 : voir NebcoSimulationCard.jsx — fallback sur site 1 seedé.
+const DEMO_FALLBACK_SITE = '1';
 
 function ComposanteBar({ label, value, total, color, tooltip }) {
   const pct = total > 0 ? Math.max(2, Math.round((value / total) * 100)) : 0;

@@ -94,7 +94,25 @@ export const getKBItemsList = (params = {}) =>
   api.get(`${KB_BASE}/items`, { params }).then((r) => r.data);
 export const getKBItemDetail = (itemId) =>
   api.get(`${KB_BASE}/items/${itemId}`).then((r) => r.data);
-export const searchKBItems = (body) => api.post(`${KB_BASE}/search`, body).then((r) => r.data);
+// Fix M-03 Sprint P0 : le router kb_router (generic) backend crash sur q="" ou q="*"
+// avec "Search error: unknown special query:" (SQLite FTS5 reserved chars).
+// Si q est wildcard ou vide, on passe sur /kb/items (listing) qui ne nécessite pas FTS.
+// Rapport V2 audit MAIN.
+export const searchKBItems = (body = {}) => {
+  const q = (body.q || '').trim();
+  if (!q || q === '*') {
+    // Wildcard listing : utilise /kb/items qui ne plante pas sur FTS vide
+    return api
+      .get(`${KB_BASE}/items`, { params: { limit: body.limit || 50 } })
+      .then((r) => {
+        // Normaliser shape : /items retourne { items } alors que /search retourne { results, total }
+        const items = r.data?.items || r.data?.results || [];
+        return { results: items, total: items.length, query: q };
+      })
+      .catch(() => ({ results: [], total: 0, query: q }));
+  }
+  return api.post(`${KB_BASE}/search`, body).then((r) => r.data);
+};
 export const applyKB = (body) => api.post(`${KB_BASE}/apply`, body).then((r) => r.data);
 export const getKBFullStats = () =>
   api.get(`${KB_BASE}/stats`).then((r) => {
