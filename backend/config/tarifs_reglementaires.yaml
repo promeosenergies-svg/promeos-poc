@@ -431,6 +431,40 @@ atrd7_gaz_tiers_2026:
       capa_eur_mwh_j_an: 152.16
       distance_eur_per_metre_an: 99.84
 
+# Biométhane — Termes tarifaires injection GRDF au 1/07/2026
+# 3 niveaux de localisation selon coût de raccordement (niveau 1 = plus
+# favorable, niveau 3 = plus coûteux). Timbre capacitaire identique sur les
+# 3 niveaux. Source : CRE délibération 2026-84 du 16/04/2026.
+biomethane_gaz_2026:
+  source: "CRE délibération 2026-84 du 16/04/2026 — ATRD7 GRDF biométhane injection 1/07/2026"
+  valid_from: "2026-07-01"
+  valid_to: null
+  niveaux:
+    niveau_1:
+      label: "Niveau 1 (plus favorable)"
+      timbre_var_eur_mwh: 0.00
+      timbre_capa_eur_mwh_j_an: 56.14
+    niveau_2:
+      label: "Niveau 2"
+      timbre_var_eur_mwh: 0.44
+      timbre_capa_eur_mwh_j_an: 56.14
+    niveau_3:
+      label: "Niveau 3 (plus coûteux)"
+      timbre_var_eur_mwh: 0.78
+      timbre_capa_eur_mwh_j_an: 56.14
+
+# Tarif stockage gaz 2026-2027 — appliqué aux fournisseurs B2B/B2C pour
+# couverture obligation de stockage saisonnier (L.421-6 code énergie).
+# +23,8 % vs 321,5 €/MWh/j/an période précédente. Impact ménage : +10 €/an.
+# Source : CRE — délibération tarif stockage gaz applicable au 1/04/2026.
+stockage_gaz_2026:
+  rate_eur_mwh_j_an: 398.08
+  previous_rate_eur_mwh_j_an: 321.5
+  variation_pct: 23.8
+  source: "CRE tarif stockage gaz 2026-2027 applicable au 1/04/2026 (+23,8% vs période précédente)"
+  valid_from: "2026-04-01"
+  valid_to: "2027-03-31"
+
 atrt_gaz:
   rate_eur_kwh: 0.012
   source: "CRE ATRT8 2025"
@@ -443,6 +477,23 @@ atrt_gaz:
 atrt_gaz_2026:
   rate_eur_kwh: 0.01240920          # 0.012 × 1.0341
   source: "CRE ATRT8 2026 — révision +3,41% au 01/04/2026"
+  valid_from: "2026-04-01"
+  valid_to: null
+
+# Coefficients A transport gaz — péréquation inter-opérateurs au 1/04/2026
+# Ajustement annuel différentiel entre les 2 GRT français (NaTran = ex-GRTgaz
+# depuis oct. 2024, Teréga = Sud-Ouest). NaTran baisse, Teréga hausse —
+# convergence progressive des revenus autorisés. Source : CRE délib 2026-49
+# du 26/02/2026 (JORFTEXT000053619771).
+atrt_coefficients_a_2026:
+  natran:
+    variation_pct: -5.4
+    label: "NaTran (ex-GRTgaz depuis 10/2024) — réseau principal France"
+  terega:
+    variation_pct: 3.7
+    label: "Teréga — réseau Sud-Ouest"
+  source: "CRE délibération 2026-49 du 26/02/2026 — coefficients A transport gaz au 1/04/2026"
+  source_url: "legifrance.gouv.fr/jorf/id/JORFTEXT000053619771"
   valid_from: "2026-04-01"
   valid_to: null
 
@@ -462,6 +513,16 @@ prix_repere_gaz:
   valid_to: null
   previous_rate_eur_mwh: 139.12     # pour calcul delta
   previous_valid_from: "2026-04-01"
+  # Composition du bloc fourniture (seul bloc réestimé mensuellement).
+  # Indices d'indexation sur cotations EEX. Source : doctrine CRE publiée
+  # avec le prix repère depuis fin TRV gaz (01/07/2023).
+  composition:
+    fourniture:
+      indice_ma2_pct: 80            # EEX MA2 (mois futur), 80% du bloc
+      indice_qa_pct: 20             # EEX QA (trimestre futur), 20% du bloc
+    acheminement: ["ATRT", "ATS", "ATRD"]
+    taxes: ["CTA", "TVA", "accise_gaz"]
+    impact_facture_mai_eur_ttc: 6.19
 
 # ── CBAM — Carbon Border Adjustment Mechanism (frontières UE) ──────────────
 # Premier prix officiel fixé par la Commission européenne le 7 avril 2026.
