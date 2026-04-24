@@ -74,6 +74,7 @@ export const ROUTE_MODULE_MAP = {
   '/onboarding/sirene': 'patrimoine',
   // Backward compat (redirigés vers Centre d'actions via AppShell)
   '/notifications': 'cockpit',
+  '/notifications-legacy': 'cockpit', // Sprint P6 S1 pilot — rollback route
   '/actions': 'cockpit',
   '/actions/new': 'cockpit',
   '/actions/:actionId': 'cockpit',

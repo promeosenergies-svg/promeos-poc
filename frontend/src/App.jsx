@@ -72,6 +72,9 @@ const KBExplorerPage = lazy(() => import('./pages/KBExplorerPage'));
 const PurchasePage = lazy(() => import('./pages/AchatSol'));
 const PurchaseLegacy = lazy(() => import('./pages/PurchasePage'));
 // PurchaseAssistantPage — now embedded as tab in PurchasePage, route redirects
+// Sprint REFONTE-P6 S1 pilot : /notifications pointe sur NotificationsSol wrapper.
+// NotificationsPage legacy accessible via /notifications-legacy pour A/B + rollback.
+const NotificationsSol = lazy(() => import('./pages/NotificationsSol'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
@@ -539,6 +542,15 @@ function App() {
                     />
                     <Route
                       path="/notifications"
+                      element={
+                        <PageSuspense>
+                          <NotificationsSol />
+                        </PageSuspense>
+                      }
+                    />
+                    {/* Legacy fallback - rollback instant Sprint P6 S1 */}
+                    <Route
+                      path="/notifications-legacy"
                       element={
                         <PageSuspense>
                           <NotificationsPage />
