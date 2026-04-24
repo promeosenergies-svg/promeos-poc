@@ -30,7 +30,17 @@
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Command, Bell, LogOut, ChevronDown, User, Settings, Shield } from 'lucide-react';
+import {
+  Search,
+  Command,
+  Bell,
+  LogOut,
+  ChevronDown,
+  User,
+  Settings,
+  Shield,
+  Menu,
+} from 'lucide-react';
 import SolRail from '../ui/sol/SolRail';
 import SolPanel from '../ui/sol/SolPanel';
 import SolTimerail from '../ui/sol/SolTimerail';
@@ -49,6 +59,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { trackRouteChange } from '../services/tracker';
 import useRouteTracker from '../hooks/useRouteTracker';
+import useMediaQuery from '../hooks/useMediaQuery';
+import Drawer from '../ui/Drawer';
+import { FOCUS_RING_SOL } from '../ui/sol/focusRing';
 import {
   getActionCenterActionsSummary,
   getActionCenterNotifications,
@@ -307,6 +320,9 @@ function SolAppShellHeader({
   actionCenterBadge,
   isExpert,
   toggleExpert,
+  isMobile = false,
+  onOpenMobileDrawer,
+  mobileDrawerOpen = false,
 }) {
   return (
     <header
@@ -316,7 +332,7 @@ function SolAppShellHeader({
         minHeight: 40,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'flex-end',
+        justifyContent: isMobile ? 'space-between' : 'flex-end',
         gap: 10,
         padding: '0 24px',
         background: 'var(--sol-bg-paper)',
@@ -326,6 +342,31 @@ function SolAppShellHeader({
         zIndex: 40,
       }}
     >
+      {isMobile && (
+        <button
+          type="button"
+          onClick={onOpenMobileDrawer}
+          aria-label="Ouvrir le menu de navigation"
+          aria-expanded={mobileDrawerOpen}
+          aria-controls="sol-panel-mobile-drawer"
+          className={`sol-app-header-hamburger ${FOCUS_RING_SOL}`.trim()}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 44,
+            height: 44,
+            marginLeft: -10,
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--sol-ink-700)',
+            cursor: 'pointer',
+            borderRadius: 4,
+          }}
+        >
+          <Menu size={18} />
+        </button>
+      )}
       {/* Command palette trigger */}
       <button
         type="button"
@@ -458,6 +499,15 @@ export default function SolAppShell() {
   const [actionCenterTab, setActionCenterTab] = useState('actions');
   const [actionCenterBadge, setActionCenterBadge] = useState({ count: null, color: 'gray' });
 
+  // B4 : responsive mobile — sous 768 px, SolPanel déplacé dans un Drawer
+  // (role=dialog, aria-modal, Escape, body scroll lock via composant Drawer).
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  // Fermer le drawer à chaque navigation (UX attendue).
+  useEffect(() => {
+    setMobileDrawerOpen(false);
+  }, [location.pathname]);
+
   // Track route changes (analytics)
   useEffect(() => {
     trackRouteChange(location.pathname);
@@ -535,14 +585,21 @@ export default function SolAppShell() {
     [isExpert]
   );
 
+  // B4 : grid compact en mobile (pas de colonne panel) — le panel vit
+  // dans un Drawer ouvert par le hamburger. Desktop conserve le grid 3-col.
+  const gridTemplateColumns = isMobile ? '56px 1fr' : '56px 240px 1fr';
+  const gridTemplateAreas = isMobile
+    ? '"rail main" "rail timerail"'
+    : '"rail panel main" "rail panel timerail"';
+
   return (
     <div
       className="sol-app"
       style={{
         display: 'grid',
-        gridTemplateColumns: '56px 240px 1fr',
+        gridTemplateColumns,
         gridTemplateRows: '1fr 36px',
-        gridTemplateAreas: '"rail panel main" "rail panel timerail"',
+        gridTemplateAreas,
         minHeight: '100vh',
         background: 'var(--sol-bg-canvas)',
         color: 'var(--sol-ink-900)',
@@ -559,7 +616,23 @@ export default function SolAppShell() {
       </a>
 
       <SolRail role={role} isExpert={isExpert} />
-      <SolPanel {...panelProps} />
+      {!isMobile && <SolPanel {...panelProps} />}
+
+      {/* Mobile : Panel dans un Drawer gauche. 4 patterns a11y couverts
+          par le composant Drawer existant (role=dialog, aria-modal,
+          Escape handler, body scroll lock, focus trap Tab). */}
+      {isMobile && (
+        <Drawer
+          open={mobileDrawerOpen}
+          onClose={() => setMobileDrawerOpen(false)}
+          title="Navigation"
+          side="left"
+          noPadding
+          className="w-full max-w-[260px]"
+        >
+          <SolPanel {...panelProps} />
+        </Drawer>
+      )}
 
       <main
         id="main-content"
@@ -579,6 +652,9 @@ export default function SolAppShell() {
           actionCenterBadge={actionCenterBadge}
           isExpert={isExpert}
           toggleExpert={toggleExpert}
+          isMobile={isMobile}
+          onOpenMobileDrawer={() => setMobileDrawerOpen(true)}
+          mobileDrawerOpen={mobileDrawerOpen}
         />
         <div style={{ flex: 1, padding: '24px 40px 48px' }}>
           <ToastProvider>
