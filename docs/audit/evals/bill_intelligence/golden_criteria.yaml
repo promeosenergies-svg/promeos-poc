@@ -22,7 +22,7 @@ tasks:
     pass_criteria:
       must_contain: ["line_item", "computed_value", "reference_value", "anomaly_type", "valid_from"]
       must_not_contain: ["0.0569 CO2"]
-      delegation_expected: regulatory-expert
+      delegation_expected: architect-helios  # divergence YAML vs catalog.py (cf bill-intelligence.md guardrail), regulatory-expert acceptable si ambiguïté réglementaire
     fail_if_contains: []
   - id: task_04
     title: "CTA additive gaz V114"
