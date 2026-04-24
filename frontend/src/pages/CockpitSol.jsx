@@ -98,17 +98,24 @@ function useCockpitSolData({ orgId, siteId } = {}) {
     let cancelled = false;
     setState((s) => ({ ...s, status: 'loading', error: null }));
 
+    // Fix M-02-bis Sprint P0 : backend /api/ems/timeseries exige site_ids
+    // obligatoire + dates YYYY-MM-DD (date-only, pas ISO complet avec T...Z).
+    // Si pas de siteId scope, on skip l'appel EMS (pattern "no-site=no-data").
     const dateTo = new Date();
     const dateFrom = new Date();
     dateFrom.setDate(dateFrom.getDate() - 1);
-    const emsParams = {
-      site_ids: siteId ? String(siteId) : undefined,
-      date_from: dateFrom.toISOString(),
-      date_to: dateTo.toISOString(),
-      granularity: '30min',
-      mode: 'aggregate',
-      metric: 'kw',
-    };
+    const isoDate = (d) => d.toISOString().split('T')[0];
+    const hasSite = Boolean(siteId);
+    const emsParams = hasSite
+      ? {
+          site_ids: String(siteId),
+          date_from: isoDate(dateFrom),
+          date_to: isoDate(dateTo),
+          granularity: '30min',
+          mode: 'aggregate',
+          metric: 'kw',
+        }
+      : null;
 
     Promise.allSettled([
       getBillingSummary().catch(() => null),
@@ -116,7 +123,7 @@ function useCockpitSolData({ orgId, siteId } = {}) {
       getCockpit().catch(() => null),
       getNotificationsList({ org_id: orgId, limit: 10 }).catch(() => null),
       getComplianceTimeline().catch(() => null),
-      getEmsTimeseries(emsParams).catch(() => null),
+      emsParams ? getEmsTimeseries(emsParams).catch(() => null) : Promise.resolve(null),
     ]).then(([billing, compliance, cockpit, notifications, timeline, ems]) => {
       if (cancelled) return;
       setState({
