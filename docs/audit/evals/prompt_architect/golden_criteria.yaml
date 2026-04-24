@@ -1,0 +1,42 @@
+agent: prompt-architect
+tasks:
+  - id: task_01
+    title: "Prompt audit billing"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["Phase 0 read-only", "STOP gate", "DoD", "Context7", "code-review", "simplify"]
+      must_not_contain: ["écriture directe sans audit"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_02
+    title: "Prompt migration data model"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["Phase 0", "Alembic up", "Alembic down", "rollback", "backfill", "atomic"]
+      must_not_contain: []
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_03
+    title: "Prompt feature Flex NEBCO"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["architect-helios", "implementer", "test-engineer", "code-reviewer", "qa-guardian"]
+      must_not_contain: ["1 seul agent"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_04
+    title: "Prompt refacto tarifs SoT"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["diff YAML", "STOP gate", "signal post-merge", "baseline"]
+      must_not_contain: []
+      delegation_expected: null
+    fail_if_contains: ["d'un coup"]
+  - id: task_05
+    title: "Prompt bench concurrentiel anti me-too"
+    difficulty: hard
+    pass_criteria:
+      must_contain: ["bench", "Advizeo", "Metron", "différenciation", "NO-GO", "Fournisseur 4.0"]
+      must_not_contain: ["copie Advizeo OK"]
+      delegation_expected: null
+    fail_if_contains: []

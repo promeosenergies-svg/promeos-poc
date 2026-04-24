@@ -1,0 +1,42 @@
+agent: bill-intelligence
+tasks:
+  - id: task_01
+    title: "TURPE 7 HPH lookup"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["tarifs_reglementaires.yaml", "ParameterStore", "valid_from", "CRE"]
+      must_not_contain: ["0.052 CO2"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_02
+    title: "Accise élec T1 fév 2026"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["01/02/2026", "T1", "T2", "Loi de finances 2026"]
+      must_not_contain: ["TICGN élec"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_03
+    title: "Anomalie TURPE 7 HPH facture C5"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["line_item", "computed_value", "reference_value", "anomaly_type", "valid_from"]
+      must_not_contain: ["0.0569 CO2"]
+      delegation_expected: regulatory-expert
+    fail_if_contains: []
+  - id: task_04
+    title: "CTA additive gaz V114"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["puissance souscrite", "ATRD", "coef"]
+      must_not_contain: ["proportionnel conso"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_05
+    title: "CBAM import acier"
+    difficulty: hard
+    pass_criteria:
+      must_contain: ["6 scopes", "importateur UE", "EU ETS", "2034"]
+      must_not_contain: ["taxe énergie interne"]
+      delegation_expected: regulatory-expert
+    fail_if_contains: []

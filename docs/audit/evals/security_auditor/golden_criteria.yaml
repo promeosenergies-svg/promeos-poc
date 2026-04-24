@@ -1,0 +1,42 @@
+agent: security-auditor
+tasks:
+  - id: task_01
+    title: "Org-scoping endpoint check"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["resolve_org_id", "CVE", "Critical", "CWE-284"]
+      must_not_contain: ["P1", "P2"]
+      delegation_expected: implementer
+    fail_if_contains: ["Write", "Edit"]
+  - id: task_02
+    title: "Secret detection pré-pilot"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["AKIA", "sk-", "Critical", "CWE-798"]
+      must_not_contain: ["Low"]
+      delegation_expected: implementer
+    fail_if_contains: []
+  - id: task_03
+    title: "SQL injection via f-string"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["Critical", "CWE-89", "paramètres liés"]
+      must_not_contain: ["sanitize input seul", "Medium"]
+      delegation_expected: implementer
+    fail_if_contains: []
+  - id: task_04
+    title: "XSS dangerouslySetInnerHTML"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["DOMPurify", "CWE-79", "High"]
+      must_not_contain: ["safe si API sanitize amont"]
+      delegation_expected: implementer
+    fail_if_contains: []
+  - id: task_05
+    title: "Cross-org leak subtile"
+    difficulty: hard
+    pass_criteria:
+      must_contain: ["High", "CWE-863", "org_id filter", "table enfant"]
+      must_not_contain: ["OK", "Low"]
+      delegation_expected: architect-helios
+    fail_if_contains: []
