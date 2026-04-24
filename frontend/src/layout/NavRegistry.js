@@ -76,6 +76,9 @@ export const ROUTE_MODULE_MAP = {
   '/notifications': 'cockpit',
   '/notifications-legacy': 'cockpit', // Sprint P6 S1 pilot — rollback route
   '/billing-legacy': 'patrimoine', // Sprint P6 S1 pilot — rollback route
+  '/consommations-legacy': 'energie',
+  '/consommations-legacy/portfolio': 'energie',
+  '/consommations-legacy/explorer': 'energie',
   '/actions': 'cockpit',
   '/actions-legacy': 'cockpit', // Sprint P6 S1 pilot — rollback route
   '/actions/new': 'cockpit',

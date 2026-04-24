@@ -48,6 +48,10 @@ const SolShowcase = lazy(() => import('./pages/SolShowcase'));
 const RegOps = lazy(() => import('./pages/RegOps'));
 const ConnectorsPage = lazy(() => import('./pages/ConnectorsPage'));
 const WatchersPage = lazy(() => import('./pages/WatchersPage'));
+// Sprint REFONTE-P6 S1 pilot : /consommations* pointe sur Sol wrappers.
+const ConsommationsSol = lazy(() => import('./pages/ConsommationsSol'));
+const ConsumptionPortfolioSol = lazy(() => import('./pages/ConsumptionPortfolioSol'));
+const ConsumptionExplorerSol = lazy(() => import('./pages/ConsumptionExplorerSol'));
 const ConsommationsPage = lazy(() => import('./pages/ConsommationsPage'));
 const ConsommationsImportTab = lazy(() =>
   import('./pages/ConsommationsUsages').then((m) => ({ default: m.ImportWizard }))
@@ -367,11 +371,12 @@ function App() {
                       }
                     />
                     {/* Consommations: 4-tab layout (Explorer | Portfolio | Import & Analyse | KB) */}
+                    {/* Sprint REFONTE-P6 S1 — wrappers Sol */}
                     <Route
                       path="/consommations"
                       element={
                         <PageSuspense>
-                          <ConsommationsPage />
+                          <ConsommationsSol />
                         </PageSuspense>
                       }
                     >
@@ -380,7 +385,7 @@ function App() {
                         path="explorer"
                         element={
                           <PageSuspense>
-                            <ConsumptionExplorerPage bare />
+                            <ConsumptionExplorerSol />
                           </PageSuspense>
                         }
                       />
@@ -388,7 +393,7 @@ function App() {
                         path="portfolio"
                         element={
                           <PageSuspense>
-                            <ConsumptionPortfolioPage />
+                            <ConsumptionPortfolioSol />
                           </PageSuspense>
                         }
                       />
@@ -405,6 +410,33 @@ function App() {
                         element={
                           <PageSuspense>
                             <ConsommationsKBTab />
+                          </PageSuspense>
+                        }
+                      />
+                    </Route>
+                    {/* Legacy fallbacks Sprint P6 S1 — rollback instant */}
+                    <Route
+                      path="/consommations-legacy"
+                      element={
+                        <PageSuspense>
+                          <ConsommationsPage />
+                        </PageSuspense>
+                      }
+                    >
+                      <Route index element={<Navigate to="/consommations-legacy/portfolio" replace />} />
+                      <Route
+                        path="explorer"
+                        element={
+                          <PageSuspense>
+                            <ConsumptionExplorerPage />
+                          </PageSuspense>
+                        }
+                      />
+                      <Route
+                        path="portfolio"
+                        element={
+                          <PageSuspense>
+                            <ConsumptionPortfolioPage />
                           </PageSuspense>
                         }
                       />
