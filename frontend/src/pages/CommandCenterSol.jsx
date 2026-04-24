@@ -365,101 +365,36 @@ export default function CommandCenterSol() {
         />
       </SolKpiRow>
 
-      {/* Section "Signature énergétique" — 2 graphiques harmonisés cross-vues */}
-      {(weekSeries.length > 0 || hourlyProfile.length > 0) && (
+      {/* Signature énergétique — un seul graphique iconique (SolLoadCurve 24h avec HP/HC + pic) */}
+      {hourlyProfile.length > 0 && (
         <>
           <SolSectionHead
-            title="Signature énergétique récente"
-            meta="7 derniers jours · profil horaire J-1"
+            title="Courbe de charge · profil horaire J-1"
+            meta={`pas 15 min · HP/HC tarifaires${kpisJ1.pic_puissance_kw ? ` · pic ${Math.round(kpisJ1.pic_puissance_kw)} kW` : ''}`}
           />
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-              gap: 16,
+              background: 'var(--sol-bg-paper)',
+              border: '1px solid var(--sol-ink-200)',
+              borderRadius: 8,
+              padding: 16,
             }}
           >
-            {weekSeries.length > 0 && (
-              <div
-                style={{
-                  background: 'var(--sol-bg-paper)',
-                  border: '1px solid var(--sol-ink-200)',
-                  borderRadius: 8,
-                  padding: 16,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--sol-ink-500)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    marginBottom: 8,
-                  }}
-                >
-                  Consommation 7 jours · MWh/jour
-                </div>
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={weekSeries.map((d) => ({ ...d, mwh: d.kwh != null ? d.kwh / 1000 : null }))}>
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 11, fill: 'var(--sol-ink-500)' }}
-                      tickFormatter={(v) => v?.slice(5) || ''}
-                    />
-                    <YAxis tick={{ fontSize: 11, fill: 'var(--sol-ink-500)' }} />
-                    <RechartsTooltip
-                      contentStyle={{
-                        background: 'var(--sol-bg-paper)',
-                        border: '1px solid var(--sol-ink-200)',
-                        borderRadius: 6,
-                        fontSize: 12,
-                      }}
-                      formatter={(v) => [`${Number(v).toFixed(1)} MWh`, 'Conso']}
-                    />
-                    <Bar dataKey="mwh" fill="var(--sol-calme-fg)" radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-                <SolSourceChip kind="Enedis CDC" origin="agrégation journalière" freshness="temps réel" />
-              </div>
-            )}
-            {hourlyProfile.length > 0 && (
-              <div
-                style={{
-                  background: 'var(--sol-bg-paper)',
-                  border: '1px solid var(--sol-ink-200)',
-                  borderRadius: 8,
-                  padding: 16,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--sol-ink-500)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    marginBottom: 8,
-                  }}
-                >
-                  Profil horaire J-1 · kW
-                </div>
-                {/* SolLoadCurve — harmonisation avec /cockpit (style Sol + HP/HC annotés) */}
-                <SolLoadCurve
-                  data={hourlyProfile.map((p) => ({ time: p.heure, value: p.kw }))}
-                  peakPoint={
-                    kpisJ1.pic_puissance_kw != null
-                      ? {
-                          time: kpisJ1.pic_heure || '14:00',
-                          value: kpisJ1.pic_puissance_kw,
-                          label: `pic ${kpisJ1.pic_heure || ''} · ${Math.round(kpisJ1.pic_puissance_kw)} kW`,
-                        }
-                      : undefined
-                  }
-                  hpStart="06:00"
-                  hpEnd="22:00"
-                />
-                <SolSourceChip kind="Enedis CDC" origin="profil horaire 15min agrégé" freshness="J-1" />
-              </div>
-            )}
+            <SolLoadCurve
+              data={hourlyProfile.map((p) => ({ time: p.heure, value: p.kw }))}
+              peakPoint={
+                kpisJ1.pic_puissance_kw != null
+                  ? {
+                      time: kpisJ1.pic_heure || '14:00',
+                      value: kpisJ1.pic_puissance_kw,
+                      label: `pic ${kpisJ1.pic_heure || ''} · ${Math.round(kpisJ1.pic_puissance_kw)} kW`,
+                    }
+                  : undefined
+              }
+              hpStart="06:00"
+              hpEnd="22:00"
+            />
+            <SolSourceChip kind="Enedis CDC" origin="profil horaire 15 min agrégé" freshness="J-1" />
           </div>
         </>
       )}
@@ -551,41 +486,9 @@ export default function CommandCenterSol() {
         </>
       )}
 
-      <SolSectionHead
-        title="Activité Sol · 12 semaines"
-        meta={`${barChartData.length}${NBSP}semaines · actions validées vs en attente`}
-      />
-      <div
-        style={{
-          background: 'var(--sol-bg-paper)',
-          border: '1px solid var(--sol-ink-200)',
-          borderRadius: 8,
-          padding: 16,
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
-        }}
-      >
-        <SolBarChart
-          data={barChartData}
-          metric="count"
-          xAxisType="category"
-          xAxisKey="month"
-          showDeltaPct={false}
-          highlightCurrent
-          caption={
-            actions.counts ? (
-              <>
-                <strong style={{ color: 'var(--sol-ink-900)' }}>
-                  {actions.counts.done}/{actions.counts.total} actions validées
-                </strong>{' '}
-                à date · gain cumulé {formatFREur(totalGain, 0)}.
-              </>
-            ) : null
-          }
-          sourceChip={
-            <SolSourceChip kind="Sol V1" origin="journal actions" freshness={dataFreshness} />
-          }
-        />
-      </div>
+      {/* Activité Sol 12 semaines retirée — demande user : moins de graphiques,
+          lisibilité haute. Action counts visibles dans "Cette semaine chez vous"
+          et accessible via /actions. */}
 
       {/* Tuiles de navigation modules — complément Pattern A pour page racine */}
       <SolSectionHead

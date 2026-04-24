@@ -74,17 +74,8 @@ import SanteKpiGrid from './cockpit/SanteKpiGrid';
 import PriorityActions from './cockpit/PriorityActions';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
-// Reco A + C — cohérence cross-vues Tableau de bord / Vue exécutive
+// Cohérence cross-vues Tableau de bord / Vue exécutive
 import DeadlineBanner from '../components/DeadlineBanner';
-import { useCommandCenterData } from '../hooks/useCommandCenterData';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-} from 'recharts';
 
 const SOL_PROPOSAL_EMPTY_STYLE = {
   margin: '16px 0 24px',
@@ -185,9 +176,7 @@ export default function CockpitSol() {
     orgId: scope.orgId,
     siteId: scope.siteId,
   });
-  // Reco C — données 7j pour harmoniser signature énergétique avec /
-  const cmd = useCommandCenterData();
-  const weekSeries = cmd.weekSeries || [];
+  // useCommandCenterData non requis suite retrait BarChart 7j — garder hook import-free
 
   // ─── Dérivations présentation ──────────────────────────────────────────────
 
@@ -446,46 +435,8 @@ export default function CockpitSol() {
             <EvenementsRecents />
           </div>
 
-          {/* Reco C — Signature énergétique 7j (cohérence avec /) */}
-          {weekSeries.length > 0 && (
-            <>
-              <SolSectionHead
-                title="Consommation 7 derniers jours"
-                meta="Agrégation journalière · MWh/jour"
-              />
-              <div
-                style={{
-                  background: 'var(--sol-bg-paper)',
-                  border: '1px solid var(--sol-ink-200)',
-                  borderRadius: 8,
-                  padding: 16,
-                  marginBottom: 16,
-                }}
-              >
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={weekSeries.map((d) => ({ ...d, mwh: d.kwh != null ? d.kwh / 1000 : null }))}>
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 11, fill: 'var(--sol-ink-500)' }}
-                      tickFormatter={(v) => v?.slice(5) || ''}
-                    />
-                    <YAxis tick={{ fontSize: 11, fill: 'var(--sol-ink-500)' }} />
-                    <RechartsTooltip
-                      contentStyle={{
-                        background: 'var(--sol-bg-paper)',
-                        border: '1px solid var(--sol-ink-200)',
-                        borderRadius: 6,
-                        fontSize: 12,
-                      }}
-                      formatter={(v) => [`${Number(v).toFixed(1)} MWh`, 'Conso']}
-                    />
-                    <Bar dataKey="mwh" fill="var(--sol-calme-fg)" radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-                <SolSourceChip kind="Enedis CDC" origin="agrégation journalière" freshness="temps réel" />
-              </div>
-            </>
-          )}
+          {/* BarChart 7j retiré (demande user : moins de graphiques, lisibilité haute)
+              Seul SolLoadCurve 24h conservé — la signature iconique HP/HC suffit. */}
 
           <SolSectionHead
             title={`Courbe de charge · ${loadCurveIsMock ? `aperçu 24${NBSP}h` : 'hier'}`}
