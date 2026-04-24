@@ -88,8 +88,9 @@ describe('SolPanel — Pins integration (B1)', () => {
     expect(panelSrc).toMatch(/\{!locked && \(/);
   });
 
-  it('button item has paddingRight: 32 to reserve space for absolute pin', () => {
-    expect(panelSrc).toMatch(/paddingRight:\s*32/);
+  it('F5 : paddingRight via constante PIN_BUTTON_RESERVE_PX (= 32)', () => {
+    expect(panelSrc).toMatch(/const PIN_BUTTON_RESERVE_PX\s*=\s*32/);
+    expect(panelSrc).toMatch(/paddingRight:\s*PIN_BUTTON_RESERVE_PX/);
   });
 });
 

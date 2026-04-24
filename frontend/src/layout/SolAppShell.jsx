@@ -504,7 +504,7 @@ export default function SolAppShell() {
   const [actionCenterTab, setActionCenterTab] = useState('actions');
   const [actionCenterBadge, setActionCenterBadge] = useState({ count: null, color: 'gray' });
 
-  // B4 : responsive mobile — sous 768 px, SolPanel déplacé dans un Drawer
+  // Responsive mobile — sous 768 px, SolPanel déplacé dans un Drawer
   // (role=dialog, aria-modal, Escape, body scroll lock via composant Drawer).
   const isMobile = useMediaQuery('(max-width: 767px)');
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -518,7 +518,7 @@ export default function SolAppShell() {
     trackRouteChange(location.pathname);
   }, [location.pathname]);
 
-  // B2 : navRecent persistence (alimente la section "Récents" du SolPanel).
+  // navRecent persistence (alimente la section "Récents" du SolPanel).
   useRouteTracker();
 
   // URL param actionCenter=open → open slide-over
@@ -591,8 +591,8 @@ export default function SolAppShell() {
     [isExpert, isMobile]
   );
 
-  // B4 : grid compact en mobile (pas de colonne panel) — le panel vit
-  // dans un Drawer ouvert par le hamburger. Desktop conserve le grid 3-col.
+  // Grid compact en mobile (pas de colonne panel) — le panel vit dans
+  // un Drawer ouvert par le hamburger. Desktop conserve le grid 3-col.
   const gridTemplateColumns = isMobile ? '56px 1fr' : '56px 240px 1fr';
   const gridTemplateAreas = isMobile
     ? '"rail main" "rail timerail"'

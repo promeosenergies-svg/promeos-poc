@@ -29,6 +29,10 @@ import { FOCUS_RING_SOL } from './focusRing';
 // Plus petit que MAX_RECENTS (5) du storage pour éviter l'encombrement.
 const RECENTS_DISPLAY_LIMIT = 3;
 
+// Espace réservé à droite de chaque item pour le `PanelPinButton` en
+// position absolute (24px bouton + 8px gutter).
+const PIN_BUTTON_RESERVE_PX = 32;
+
 const LOCKED_TOOLTIP = 'Module non inclus dans votre rôle. Contactez votre administrateur.';
 
 // Clé de section utilisée par getPanelSections (NavRegistry) pour
@@ -133,8 +137,8 @@ export default function SolPanel({
   // V2 : panelSections par route (maquette) avec fallback sur NAV_SECTIONS
   const rawSections = getPanelSections(location.pathname, isExpert);
 
-  // Pins (B1) : localStorage ne déclenche pas React, on force re-render via
-  // un counter incrémenté après chaque toggle.
+  // Pins : localStorage ne notifie pas React, on force re-render via un
+  // counter incrémenté après chaque toggle.
   const [pinsVersion, setPinsVersion] = React.useState(0);
   const pins = React.useMemo(
     () => getPins(),
@@ -149,9 +153,9 @@ export default function SolPanel({
     setPinsVersion((v) => v + 1);
   }, []);
 
-  // Tracker A10 : event `nav_panel_opened` au mount + au changement de module.
-  // Permet de mesurer la fenêtre Test milieu (ratio clicks deep-link / panels
-  // ouverts) et la valeur du système de raccourcis en conditions réelles.
+  // Event analytics `nav_panel_opened` au mount + au changement de module.
+  // Permet de mesurer le ratio clicks deep-link / panels ouverts et la
+  // valeur du système de raccourcis en conditions réelles.
   React.useEffect(() => {
     track('nav_panel_opened', {
       module: currentModule,
@@ -386,7 +390,7 @@ export default function SolPanel({
                       alignItems: 'center',
                       gap: 10,
                       padding: '7px 8px',
-                      paddingRight: 32, // place pour le PanelPinButton absolute
+                      paddingRight: PIN_BUTTON_RESERVE_PX, // place pour le PanelPinButton absolute
                       borderRadius: 4,
                       fontSize: 13,
                       width: '100%',
@@ -537,7 +541,7 @@ export default function SolPanel({
                         alignItems: 'center',
                         gap: 10,
                         padding: '7px 8px',
-                        paddingRight: 32, // place pour le PanelPinButton absolute
+                        paddingRight: PIN_BUTTON_RESERVE_PX, // place pour le PanelPinButton absolute
                         borderRadius: 4,
                         fontSize: 13,
                         width: '100%',

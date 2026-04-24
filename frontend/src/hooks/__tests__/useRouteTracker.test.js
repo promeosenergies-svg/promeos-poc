@@ -1,9 +1,9 @@
 /**
- * useRouteTracker — source-guard tests (Sprint 1 Vague B · B2.3)
+ * useRouteTracker — source-guard tests.
  *
- * Test runtime DOM impossible (env node sans jsdom). Guards vérifient
- * l'intégration correcte : import addRecent, useLocation, exclusions,
- * useEffect avec dep pathname.
+ * Guards vérifient l'intégration : import addRecent, useLocation,
+ * exclusions `EXCLUDED_PATHS`, useEffect avec dep pathname.
+ * Runtime RTL suite reportée (cf. docs/backlog/rtl_runtime_suite_investment.md).
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
@@ -37,8 +37,10 @@ describe('useRouteTracker (B2.1)', () => {
     expect(src).toMatch(/['"]\/_sol_showcase['"]/);
   });
 
-  it('useEffect depends on pathname + getLabel', () => {
-    expect(src).toMatch(/\[pathname,\s*getLabel\]/);
+  it('useEffect depends on pathname only (F5 : getLabel param retiré, YAGNI)', () => {
+    expect(src).toMatch(/\[pathname\]/);
+    // Pas d'autre dep inutile
+    expect(src).not.toMatch(/getLabel/);
   });
 
   it('calls addRecent only when pathname NOT in EXCLUDED_PATHS', () => {
