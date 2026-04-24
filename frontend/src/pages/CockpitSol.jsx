@@ -67,7 +67,6 @@ import { businessErrorFallback } from '../i18n/business_errors';
 
 // Sprint P6 S2 — Enrichissement superset MAIN (Batch 2 Vue exécutive)
 // Imports composants MAIN standalone pour parité fonctionnelle
-import AlertesPrioritaires from './cockpit/AlertesPrioritaires';
 import TrajectorySection from './cockpit/TrajectorySection';
 import EvenementsRecents from './cockpit/EvenementsRecents';
 import HeroImpactBar from './cockpit/HeroImpactBar';
@@ -425,14 +424,8 @@ export default function CockpitSol() {
             />
           </SolKpiRow>
 
-          {/* Sprint P6 S2 — Section MAIN-parity : Alertes prioritaires top 3 (exception-first) */}
-          <SolSectionHead
-            title="À traiter cette semaine — top 3"
-            meta="Priorités par impact business (Rule of 3)"
-          />
-          <div style={{ marginBottom: 24 }}>
-            <AlertesPrioritaires />
-          </div>
+          {/* Note : AlertesPrioritaires retiré — doublon avec "Cette semaine chez vous" qui
+              affiche déjà les 3 signaux faibles/forts (À regarder / Dérive / Bonne nouvelle). */}
 
           {/* Sprint P6 S2 — Section MAIN-parity : Trajectoire Décret Tertiaire */}
           <SolSectionHead

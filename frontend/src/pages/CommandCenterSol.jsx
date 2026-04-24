@@ -55,27 +55,13 @@ import { SkeletonCard } from '../ui/Skeleton';
 import { fmtNum } from '../utils/format';
 import { LayoutDashboard, ShieldCheck, Receipt, Building2, ShoppingCart } from 'lucide-react';
 
-// Sprint P6 S2 — Enrichissement superset MAIN (Batch 1 Tableau de bord)
-// Imports composants MAIN standalone (pas de PageShell wrapping)
+// Sprint P6 S2 — Enrichissement superset MAIN + cohérence 10/10 sans doublon
 import DeadlineBanner from '../components/DeadlineBanner';
-import MorningBriefCard from '../components/MorningBriefCard';
-import TodayActionsCard from './cockpit/TodayActionsCard';
 import SitesBaselineCard from './cockpit/SitesBaselineCard';
-// Reco B — cohérence cross-vues : AlertesPrioritaires top 3 sur les 2 pages
-import AlertesPrioritaires from './cockpit/AlertesPrioritaires';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  ComposedChart,
-  Line,
-  ReferenceLine,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  Cell,
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+// SolLoadCurve pour harmonisation graphique 24h avec /cockpit
+import SolLoadCurve from '../ui/sol/SolLoadCurve';
 
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -332,119 +318,54 @@ export default function CommandCenterSol() {
         ))}
       </SolWeekGrid>
 
-      {/* 3. Briefing d'arrivée (contextualise les compteurs) */}
-      <div style={{ marginTop: 8 }}>
-        <MorningBriefCard
-          alerts={alertsCount || 0}
-          invoices={data.cockpit?.billing?.anomalies_count || 0}
-          actionsClosed={actions.counts?.done || 0}
-        />
-      </div>
-
-      {/* 4. État patrimoine 360° */}
+      {/* 4. SolKpiRow × 3 STANDARDISÉ (cohérence cross-vues) : Coût / Conformité / Conso */}
       <SolKpiRow>
         <SolKpiCard
-          label="Indice d'état patrimoine"
-          explainKey="command_state_index"
-          value={stateIndex != null ? fmtNum(stateIndex, 1) : '—'}
-          unit="/100"
-          semantic="score"
-          headline={interpretStateIndex(stateIndex)}
+          label="Coût énergie · mois"
+          explainKey="billing_total_current_month"
+          value={data.cockpit?.billing?.total_eur != null ? formatFREur(data.cockpit.billing.total_eur, 0) : '—'}
+          unit=""
+          semantic="cost"
+          headline={
+            data.cockpit?.billing?.total_invoices
+              ? `${data.cockpit.billing.total_invoices} factures · ${data.cockpit.billing.anomalies_count || 0} anomalie${(data.cockpit.billing.anomalies_count || 0) > 1 ? 's' : ''}`
+              : 'Moteur shadow billing v4.2 actif'
+          }
           source={{
-            kind: 'Composite',
-            origin: 'conformité + facture + monitoring',
+            kind: 'Factures',
+            origin: 'shadow billing',
             freshness: dataFreshness,
           }}
         />
         <SolKpiCard
-          label="Alertes actives"
-          explainKey="command_alerts_count"
-          value={alertsCount != null ? formatFR(alertsCount, 0) : '—'}
-          unit={alertsCount > 1 ? 'alertes' : 'alerte'}
-          semantic="cost"
-          headline={interpretCommandAlerts({
-            alertsCount,
-            topAlertTitle: topAlert?.title,
-            topAlertImpact: topAlert?.estimated_impact_eur,
-          })}
+          label="Conformité Décret tertiaire"
+          explainKey="compliance_score_dt"
+          value={complianceScore != null ? fmtNum(complianceScore, 0) : '—'}
+          unit="/100"
+          semantic="score"
+          headline={interpretStateIndex(complianceScore)}
           source={{
-            kind: 'Notifications',
-            origin: 'tous modules',
+            kind: 'RegOps',
+            origin: 'score canonique',
+            freshness: dataFreshness,
           }}
         />
         <SolKpiCard
-          label="Actions Sol à valider"
-          explainKey="command_sol_actions_count"
-          value={solActionsCount != null ? formatFR(solActionsCount, 0) : '—'}
-          unit={solActionsCount > 1 ? 'actions' : 'action'}
-          semantic="score"
-          headline={interpretSolActions({
-            count: solActionsCount,
-            totalGain,
-            bySource: actions.by_source,
-          })}
+          label="Consommation · patrimoine"
+          explainKey="conso_total_current_period"
+          value={kpisJ1.conso_mois_kwh != null ? fmtKwhCompact(kpisJ1.conso_mois_kwh) : '—'}
+          unit=""
+          semantic="conso"
+          headline={kpisJ1.delta_mom_pct != null ? `${kpisJ1.delta_mom_pct > 0 ? '+' : ''}${kpisJ1.delta_mom_pct.toFixed(1)}% vs mois préc.` : 'Cumul mensuel Enedis + GRDF'}
           source={{
-            kind: 'Sol V1',
-            origin: 'journal actions',
-            freshness: totalGain > 0 ? `potentiel ${formatFREur(totalGain, 0)}` : undefined,
+            kind: 'Enedis CDC',
+            origin: 'consumption_unified_service',
+            freshness: 'temps réel',
           }}
         />
       </SolKpiRow>
 
-      {/* Reco B — Section "À traiter cette semaine — top 3" (cohérence avec /cockpit) */}
-      <SolSectionHead
-        title="À traiter cette semaine — top 3"
-        meta="Priorités par impact business"
-      />
-      <div style={{ marginBottom: 8 }}>
-        <AlertesPrioritaires />
-      </div>
-
-      {/* Sprint P6 S2 — Section MAIN-parity : KPIs J-1 opérationnels */}
-      {kpisJ1 && (kpisJ1.conso_hier_kwh != null || kpisJ1.pic_puissance_kw != null) && (
-        <>
-          <SolSectionHead
-            title="Hier — opérationnel J-1"
-            meta="Consommation, pic puissance et intensité CO₂"
-          />
-          <SolKpiRow>
-            <SolKpiCard
-              label="Conso hier"
-              value={fmtKwhCompact(kpisJ1.conso_hier_kwh)}
-              unit=""
-              semantic="conso"
-              headline={kpisJ1.delta_j7_pct != null ? `${kpisJ1.delta_j7_pct > 0 ? '+' : ''}${kpisJ1.delta_j7_pct.toFixed(1)}% vs J-7` : null}
-              source={{ kind: 'Enedis CDC', origin: 'EMS timeseries', freshness: 'J-1' }}
-            />
-            <SolKpiCard
-              label="Conso mois"
-              value={fmtKwhCompact(kpisJ1.conso_mois_kwh)}
-              unit=""
-              semantic="conso"
-              headline={kpisJ1.delta_mom_pct != null ? `${kpisJ1.delta_mom_pct > 0 ? '+' : ''}${kpisJ1.delta_mom_pct.toFixed(1)}% vs mois préc.` : null}
-              source={{ kind: 'Enedis CDC', origin: 'cumul mensuel', freshness: 'temps réel' }}
-            />
-            <SolKpiCard
-              label="Pic puissance"
-              value={kpisJ1.pic_puissance_kw != null ? fmtNum(kpisJ1.pic_puissance_kw, 0) : '—'}
-              unit="kW"
-              semantic="neutral"
-              headline={kpisJ1.pic_heure ? `à ${kpisJ1.pic_heure}` : null}
-              source={{ kind: 'Enedis CDC', origin: 'max 15min', freshness: 'J-1' }}
-            />
-            <SolKpiCard
-              label="Intensité CO₂"
-              value={kpisJ1.co2_intensity != null ? fmtNum(kpisJ1.co2_intensity, 0) : '—'}
-              unit="gCO₂/kWh"
-              semantic="cost"
-              headline="Mix RTE France temps réel"
-              source={{ kind: 'RTE eco2mix', origin: 'moyenne J-1', freshness: 'J-1' }}
-            />
-          </SolKpiRow>
-        </>
-      )}
-
-      {/* Sprint P6 S2 — Section MAIN-parity : graphiques conso 7j + profil 24h */}
+      {/* Section "Signature énergétique" — 2 graphiques harmonisés cross-vues */}
       {(weekSeries.length > 0 || hourlyProfile.length > 0) && (
         <>
           <SolSectionHead
@@ -521,36 +442,21 @@ export default function CommandCenterSol() {
                 >
                   Profil horaire J-1 · kW
                 </div>
-                <ResponsiveContainer width="100%" height={180}>
-                  <ComposedChart data={hourlyProfile}>
-                    <XAxis dataKey="heure" tick={{ fontSize: 11, fill: 'var(--sol-ink-500)' }} />
-                    <YAxis tick={{ fontSize: 11, fill: 'var(--sol-ink-500)' }} />
-                    <RechartsTooltip
-                      contentStyle={{
-                        background: 'var(--sol-bg-paper)',
-                        border: '1px solid var(--sol-ink-200)',
-                        borderRadius: 6,
-                        fontSize: 12,
-                      }}
-                      formatter={(v) => [`${Math.round(v)} kW`, 'Puissance']}
-                    />
-                    {kpisJ1.pic_puissance_kw != null && (
-                      <ReferenceLine
-                        y={kpisJ1.pic_puissance_kw * 0.8}
-                        stroke="var(--sol-attention-fg)"
-                        strokeDasharray="3 3"
-                        label={{ value: '80% pic', fill: 'var(--sol-attention-fg)', fontSize: 10 }}
-                      />
-                    )}
-                    <Line
-                      type="monotone"
-                      dataKey="kw"
-                      stroke="var(--sol-calme-fg)"
-                      strokeWidth={2}
-                      dot={{ fill: 'var(--sol-calme-fg)', r: 2 }}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
+                {/* SolLoadCurve — harmonisation avec /cockpit (style Sol + HP/HC annotés) */}
+                <SolLoadCurve
+                  data={hourlyProfile.map((p) => ({ time: p.heure, value: p.kw }))}
+                  peakPoint={
+                    kpisJ1.pic_puissance_kw != null
+                      ? {
+                          time: kpisJ1.pic_heure || '14:00',
+                          value: kpisJ1.pic_puissance_kw,
+                          label: `pic ${kpisJ1.pic_heure || ''} · ${Math.round(kpisJ1.pic_puissance_kw)} kW`,
+                        }
+                      : undefined
+                  }
+                  hpStart="06:00"
+                  hpEnd="22:00"
+                />
                 <SolSourceChip kind="Enedis CDC" origin="profil horaire 15min agrégé" freshness="J-1" />
               </div>
             )}
@@ -558,103 +464,75 @@ export default function CommandCenterSol() {
         </>
       )}
 
-      {/* Sprint P6 S2 — Section MAIN-parity : Trajectoire DT 2030 + Actions du jour */}
-      {(dtProgress || topActions.length > 0) && (
+      {/* Trajectoire Décret Tertiaire 2030 — 1 col pleine largeur (retrait doublon TodayActionsCard) */}
+      {dtProgress && (
         <>
           <SolSectionHead
-            title="Trajectoire 2030 & priorités du jour"
-            meta="Objectif Décret Tertiaire -40%"
+            title="Trajectoire Décret Tertiaire 2030"
+            meta="Objectif -40% · score canonique RegOps"
           />
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: 16,
+              background: 'var(--sol-bg-paper)',
+              border: '1px solid var(--sol-ink-200)',
+              borderRadius: 8,
+              padding: 16,
             }}
           >
-            {dtProgress && (
-              <div
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                marginBottom: 8,
+              }}
+            >
+              <span
                 style={{
-                  background: 'var(--sol-bg-paper)',
-                  border: '1px solid var(--sol-ink-200)',
-                  borderRadius: 8,
-                  padding: 16,
+                  fontFamily: 'var(--sol-font-display)',
+                  fontSize: 28,
+                  color: 'var(--sol-ink-900)',
                 }}
               >
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--sol-ink-500)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    marginBottom: 12,
-                  }}
-                >
-                  Trajectoire Décret Tertiaire 2030
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'baseline',
-                    marginBottom: 8,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: 'var(--sol-font-display)',
-                      fontSize: 28,
-                      color: 'var(--sol-ink-900)',
-                    }}
-                  >
-                    {fmtNum(dtProgress.score, 0)}
-                    <span style={{ fontSize: 14, color: 'var(--sol-ink-500)' }}>/100</span>
-                  </span>
-                  <span style={{ fontSize: 12, color: 'var(--sol-ink-500)' }}>
-                    Objectif ≥ {dtProgress.objectif}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    height: 8,
-                    background: 'var(--sol-ink-100)',
-                    borderRadius: 4,
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${dtProgress.pct}%`,
-                      height: '100%',
-                      background:
-                        dtProgress.pct >= 100
-                          ? 'var(--sol-succes-fg)'
-                          : dtProgress.pct >= 70
-                            ? 'var(--sol-attention-fg)'
-                            : 'var(--sol-afaire-fg)',
-                      transition: 'width 300ms ease',
-                    }}
-                  />
-                </div>
-                <div style={{ marginTop: 8, fontSize: 12, color: 'var(--sol-ink-500)' }}>
-                  {dtProgress.pct >= 100
-                    ? '✓ Sur la trajectoire pour 2030'
-                    : dtProgress.pct >= 70
-                      ? 'Rythme soutenu, vigilance sur les écarts'
-                      : 'Retard — plan d\'action prioritaire requis'}
-                </div>
-                <div style={{ marginTop: 12 }}>
-                  <SolSourceChip kind="RegOps" origin="score compliance_score_service" freshness={dataFreshness} />
-                </div>
-              </div>
-            )}
-            {topActions.length > 0 && (
-              <TodayActionsCard
-                actions={topActions.slice(0, 5)}
-                onNavigate={(path) => navigate(path)}
-                title="À traiter aujourd'hui"
+                {fmtNum(dtProgress.score, 0)}
+                <span style={{ fontSize: 14, color: 'var(--sol-ink-500)' }}>/100</span>
+              </span>
+              <span style={{ fontSize: 12, color: 'var(--sol-ink-500)' }}>
+                Objectif ≥ {dtProgress.objectif}
+              </span>
+            </div>
+            <div
+              style={{
+                height: 8,
+                background: 'var(--sol-ink-100)',
+                borderRadius: 4,
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  width: `${dtProgress.pct}%`,
+                  height: '100%',
+                  background:
+                    dtProgress.pct >= 100
+                      ? 'var(--sol-succes-fg)'
+                      : dtProgress.pct >= 70
+                        ? 'var(--sol-attention-fg)'
+                        : 'var(--sol-afaire-fg)',
+                  transition: 'width 300ms ease',
+                }}
               />
-            )}
+            </div>
+            <div style={{ marginTop: 8, fontSize: 12, color: 'var(--sol-ink-500)' }}>
+              {dtProgress.pct >= 100
+                ? '✓ Sur la trajectoire pour 2030'
+                : dtProgress.pct >= 70
+                  ? 'Rythme soutenu, vigilance sur les écarts'
+                  : 'Retard — plan d\'action prioritaire requis'}
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <SolSourceChip kind="RegOps" origin="compliance_score_service" freshness={dataFreshness} />
+            </div>
           </div>
         </>
       )}
