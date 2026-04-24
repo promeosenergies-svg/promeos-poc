@@ -1,7 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 
 const ONBOARDING_KEY = 'promeos_onboarding_done';
+
+/**
+ * Onboarding désactivé par défaut en mode démo + en production pour éviter
+ * de bloquer la première impression à l'accueil. Pour re-activer pour un
+ * vrai nouveau user : localStorage.setItem('promeos_onboarding_show', '1')
+ * ou via env VITE_ONBOARDING_FORCE=1.
+ * Fix M-01 Sprint P0 démo-ready (rapport V2 audit).
+ */
+function shouldShowOnboarding() {
+  try {
+    // Désactivé si déjà vu
+    if (localStorage.getItem(ONBOARDING_KEY)) return false;
+    // Force via env var (pour dev/debug)
+    if (import.meta.env?.VITE_ONBOARDING_FORCE === '1') return true;
+    // Force via localStorage (opt-in user)
+    if (localStorage.getItem('promeos_onboarding_show') === '1') return true;
+    // Par défaut : off en démo (cas usage principal PROMEOS)
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 const STEPS = [
   {
@@ -27,11 +49,7 @@ export default function OnboardingOverlay() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    try {
-      if (!localStorage.getItem(ONBOARDING_KEY)) setVisible(true);
-    } catch {
-      /* noop */
-    }
+    if (shouldShowOnboarding()) setVisible(true);
   }, []);
 
   const dismiss = () => {
