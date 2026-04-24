@@ -61,6 +61,8 @@ import DeadlineBanner from '../components/DeadlineBanner';
 import MorningBriefCard from '../components/MorningBriefCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
 import SitesBaselineCard from './cockpit/SitesBaselineCard';
+// Reco B — cohérence cross-vues : AlertesPrioritaires top 3 sur les 2 pages
+import AlertesPrioritaires from './cockpit/AlertesPrioritaires';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
 import {
   BarChart,
@@ -388,6 +390,15 @@ export default function CommandCenterSol() {
           }}
         />
       </SolKpiRow>
+
+      {/* Reco B — Section "À traiter cette semaine — top 3" (cohérence avec /cockpit) */}
+      <SolSectionHead
+        title="À traiter cette semaine — top 3"
+        meta="Priorités par impact business"
+      />
+      <div style={{ marginBottom: 8 }}>
+        <AlertesPrioritaires />
+      </div>
 
       {/* Sprint P6 S2 — Section MAIN-parity : KPIs J-1 opérationnels */}
       {kpisJ1 && (kpisJ1.conso_hier_kwh != null || kpisJ1.pic_puissance_kw != null) && (
