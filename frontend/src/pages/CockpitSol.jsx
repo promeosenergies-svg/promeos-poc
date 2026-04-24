@@ -312,6 +312,26 @@ export default function CockpitSol() {
         rightSlot={<SolLayerToggle value={mode} onChange={setMode} />}
       />
 
+      {/* User request : "Cette semaine chez vous" juste après header sur les 2 vues */}
+      <SolSectionHead
+        title="Cette semaine chez vous"
+        meta={`${weekCards.length} points · actualisé ${dataFreshness}`}
+      />
+      <SolWeekGrid>
+        {weekCards.map((c) => (
+          <SolWeekCard
+            key={c.id}
+            tagKind={c.tagKind}
+            tagLabel={c.tagLabel}
+            title={c.title}
+            body={c.body}
+            footerLeft={c.footerLeft}
+            footerRight={c.footerRight}
+            onClick={c.onClick}
+          />
+        ))}
+      </SolWeekGrid>
+
       {mode === 'surface' &&
         (solProposal ? (
           <SolHero
@@ -426,25 +446,6 @@ export default function CockpitSol() {
           <div style={{ marginBottom: 24 }}>
             <EvenementsRecents />
           </div>
-
-          <SolSectionHead
-            title="Cette semaine chez vous"
-            meta={`${weekCards.length} points · actualisé ${dataFreshness}`}
-          />
-          <SolWeekGrid>
-            {weekCards.map((c) => (
-              <SolWeekCard
-                key={c.id}
-                tagKind={c.tagKind}
-                tagLabel={c.tagLabel}
-                title={c.title}
-                body={c.body}
-                footerLeft={c.footerLeft}
-                footerRight={c.footerRight}
-                onClick={c.onClick}
-              />
-            ))}
-          </SolWeekGrid>
 
           <SolSectionHead
             title={`Courbe de charge · ${loadCurveIsMock ? `aperçu 24${NBSP}h` : 'hier'}`}

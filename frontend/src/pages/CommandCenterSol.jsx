@@ -305,6 +305,26 @@ export default function CommandCenterSol() {
         subNarrative={subNarrative}
       />
 
+      {/* User request : "Cette semaine chez vous" juste après header sur les 2 vues */}
+      <SolSectionHead
+        title="Cette semaine chez vous"
+        meta={`${weekCards.length} points · actualisé ${dataFreshness}`}
+      />
+      <SolWeekGrid>
+        {weekCards.map((c) => (
+          <SolWeekCard
+            key={c.id}
+            tagKind={c.tagKind}
+            tagLabel={c.tagLabel}
+            title={c.title}
+            body={c.body}
+            footerLeft={c.footerLeft}
+            footerRight={c.footerRight}
+            onClick={c.onClick}
+          />
+        ))}
+      </SolWeekGrid>
+
       {/* Sprint P6 S2 — Section MAIN-parity : bannière échéance + briefing d'arrivée */}
       <DeadlineBanner />
       <div style={{ marginTop: 8 }}>
@@ -636,25 +656,6 @@ export default function CommandCenterSol() {
           />
         </>
       )}
-
-      <SolSectionHead
-        title="Cette semaine chez vous"
-        meta={`${weekCards.length} points · actualisé ${dataFreshness}`}
-      />
-      <SolWeekGrid>
-        {weekCards.map((c) => (
-          <SolWeekCard
-            key={c.id}
-            tagKind={c.tagKind}
-            tagLabel={c.tagLabel}
-            title={c.title}
-            body={c.body}
-            footerLeft={c.footerLeft}
-            footerRight={c.footerRight}
-            onClick={c.onClick}
-          />
-        ))}
-      </SolWeekGrid>
 
       <SolSectionHead
         title="Activité Sol · 12 semaines"
