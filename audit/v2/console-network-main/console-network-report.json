@@ -1,0 +1,689 @@
+{
+  "startedAt": "2026-04-24T16:37:18.006Z",
+  "routes": [
+    {
+      "name": "01-cockpit",
+      "path": "/cockpit",
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.",
+        "[API] GET /pilotage/nebco-simulation/retail-001 failed {page: /cockpit, orgId: 1, endpoint: /pilotage/nebco-simulation/retail-001, ms: 52, status: 404}"
+      ],
+      "pageErrors": [],
+      "failedRequests": [
+        {
+          "url": "http://localhost:5173/api/pilotage/nebco-simulation/retail-001?period_days=30",
+          "status": 404
+        }
+      ],
+      "slowRequests": [],
+      "requestCount": 67,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/cockpit",
+      "finalStatus": "errors",
+      "loadMs": 2001
+    },
+    {
+      "name": "02-actions",
+      "path": "/actions",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 42,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/actions",
+      "finalStatus": "ok",
+      "loadMs": 1720
+    },
+    {
+      "name": "03-notifications",
+      "path": "/notifications",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 41,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/notifications",
+      "finalStatus": "ok",
+      "loadMs": 1606
+    },
+    {
+      "name": "04-patrimoine",
+      "path": "/patrimoine",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 48,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/patrimoine",
+      "finalStatus": "ok",
+      "loadMs": 1766
+    },
+    {
+      "name": "05-conformite",
+      "path": "/conformite",
+      "consoleErrors": [
+        "Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s \n\nCheck the render method of `KBObligationsSection`.  \n    at Card (http://localhost:5173/src/ui/Card.jsx:17:32)\n    at KBObligationsSection (http://localhost:5173/src/pages/conformite-tabs/ObligationsTab.jsx:226:33)\n    at ObligationsTab (http://localhost:5173/src/pages/conformite-tabs/ObligationsTab.jsx:1768:3)\n    at div\n    at PageShell (http://localhost:5173/s"
+      ],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 52,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/conformite",
+      "finalStatus": "errors",
+      "loadMs": 1793
+    },
+    {
+      "name": "06-contrats",
+      "path": "/contrats",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 45,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/contrats",
+      "finalStatus": "ok",
+      "loadMs": 1615
+    },
+    {
+      "name": "06b-conformite-tertiaire",
+      "path": "/conformite/tertiaire",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 49,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/conformite/tertiaire",
+      "finalStatus": "ok",
+      "loadMs": 1659
+    },
+    {
+      "name": "07-consommations",
+      "path": "/consommations",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 41,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/consommations/portfolio",
+      "finalStatus": "ok",
+      "loadMs": 1715
+    },
+    {
+      "name": "08-explorer",
+      "path": "/consommations/explorer",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 48,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/consommations/explorer?sites=1&energy=electricity&days=90&mode=agrege&unit=kwh",
+      "finalStatus": "ok",
+      "loadMs": 1701
+    },
+    {
+      "name": "09-portfolio-conso",
+      "path": "/consommations/portfolio",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 41,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/consommations/portfolio",
+      "finalStatus": "ok",
+      "loadMs": 1665
+    },
+    {
+      "name": "10-import-conso",
+      "path": "/consommations/import",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 39,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/consommations/import",
+      "finalStatus": "ok",
+      "loadMs": 1605
+    },
+    {
+      "name": "11-diagnostic",
+      "path": "/diagnostic-conso",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 41,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/diagnostic-conso",
+      "finalStatus": "ok",
+      "loadMs": 1614
+    },
+    {
+      "name": "12-monitoring",
+      "path": "/monitoring",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 52,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/monitoring",
+      "finalStatus": "ok",
+      "loadMs": 1656
+    },
+    {
+      "name": "13-usages-horaires",
+      "path": "/usages-horaires",
+      "consoleErrors": [
+        "Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s \n\nCheck the render method of `HeatmapGrid2`.  \n    at HeatmapGrid2 (http://localhost:5173/src/pages/consumption/ProfileHeatmapTab.jsx:41:61)\n    at div\n    at CardBody (http://localhost:5173/src/ui/Card.jsx:44:28)\n    at div\n    at Card (http://localhost:5173/src/ui/Card.jsx:17:32)\n    at div\n    at ProfileHeatmapTab (http://localhost:5173/src/pages/consumption/Pro"
+      ],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 40,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/usages-horaires",
+      "finalStatus": "errors",
+      "loadMs": 1625
+    },
+    {
+      "name": "14-bill-intel",
+      "path": "/bill-intel",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 48,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/bill-intel",
+      "finalStatus": "ok",
+      "loadMs": 1643
+    },
+    {
+      "name": "15-billing-timeline",
+      "path": "/billing",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 47,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/billing?site_id=1",
+      "finalStatus": "ok",
+      "loadMs": 1657
+    },
+    {
+      "name": "16-achat-energie",
+      "path": "/achat-energie",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 45,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/achat-energie",
+      "finalStatus": "ok",
+      "loadMs": 1630
+    },
+    {
+      "name": "17-assistant-achat",
+      "path": "/achat-assistant",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 48,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/achat-energie?tab=assistant",
+      "finalStatus": "ok",
+      "loadMs": 1684
+    },
+    {
+      "name": "18-renouvellements",
+      "path": "/renouvellements",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 43,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/renouvellements",
+      "finalStatus": "ok",
+      "loadMs": 1613
+    },
+    {
+      "name": "19-admin-users",
+      "path": "/admin/users",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 41,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/admin/users",
+      "finalStatus": "ok",
+      "loadMs": 1607
+    },
+    {
+      "name": "20-onboarding",
+      "path": "/onboarding",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 40,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/onboarding",
+      "finalStatus": "ok",
+      "loadMs": 1663
+    },
+    {
+      "name": "21-connectors",
+      "path": "/connectors",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 41,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/connectors",
+      "finalStatus": "ok",
+      "loadMs": 1610
+    },
+    {
+      "name": "22-activation",
+      "path": "/activation",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 44,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/activation",
+      "finalStatus": "ok",
+      "loadMs": 1613
+    },
+    {
+      "name": "23-status",
+      "path": "/status",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 51,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/status",
+      "finalStatus": "ok",
+      "loadMs": 1780
+    },
+    {
+      "name": "24-kb",
+      "path": "/kb",
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.",
+        "[API] POST /kb/search failed {page: /kb, orgId: 1, endpoint: /kb/search, ms: 3, status: 500}"
+      ],
+      "pageErrors": [],
+      "failedRequests": [
+        {
+          "url": "http://localhost:5173/api/kb/search",
+          "status": 500
+        }
+      ],
+      "slowRequests": [],
+      "requestCount": 42,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/kb",
+      "finalStatus": "errors",
+      "loadMs": 1885
+    },
+    {
+      "name": "25-segmentation",
+      "path": "/segmentation",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 43,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/segmentation",
+      "finalStatus": "ok",
+      "loadMs": 1609
+    },
+    {
+      "name": "26-command-center",
+      "path": "/",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 55,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/",
+      "finalStatus": "ok",
+      "loadMs": 1746
+    },
+    {
+      "name": "27-anomalies",
+      "path": "/anomalies",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 44,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/anomalies",
+      "finalStatus": "ok",
+      "loadMs": 1649
+    },
+    {
+      "name": "28-aper",
+      "path": "/conformite/aper",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 40,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/conformite/aper",
+      "finalStatus": "ok",
+      "loadMs": 1611
+    },
+    {
+      "name": "29-usages",
+      "path": "/usages",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.",
+        "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+        "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 49,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/usages",
+      "finalStatus": "ok",
+      "loadMs": 2064
+    },
+    {
+      "name": "30-compliance-pipeline",
+      "path": "/compliance/pipeline",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 41,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/compliance/pipeline",
+      "finalStatus": "ok",
+      "loadMs": 1621
+    },
+    {
+      "name": "31-watchers",
+      "path": "/watchers",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 43,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/watchers",
+      "finalStatus": "ok",
+      "loadMs": 1610
+    },
+    {
+      "name": "32-energy-copilot",
+      "path": "/energy-copilot",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 39,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/energy-copilot",
+      "finalStatus": "ok",
+      "loadMs": 1597
+    },
+    {
+      "name": "33-energy-copilot-legacy",
+      "path": "/energy-copilot-legacy",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 39,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/energy-copilot-legacy",
+      "finalStatus": "ok",
+      "loadMs": 1601
+    },
+    {
+      "name": "34-usages-horaires",
+      "path": "/usages-horaires",
+      "consoleErrors": [
+        "Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s \n\nCheck the render method of `HeatmapGrid2`.  \n    at HeatmapGrid2 (http://localhost:5173/src/pages/consumption/ProfileHeatmapTab.jsx:41:61)\n    at div\n    at CardBody (http://localhost:5173/src/ui/Card.jsx:44:28)\n    at div\n    at Card (http://localhost:5173/src/ui/Card.jsx:17:32)\n    at div\n    at ProfileHeatmapTab (http://localhost:5173/src/pages/consumption/Pro"
+      ],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 40,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/usages-horaires",
+      "finalStatus": "errors",
+      "loadMs": 1617
+    },
+    {
+      "name": "35-onboarding-sirene",
+      "path": "/onboarding/sirene",
+      "consoleErrors": [],
+      "consoleWarnings": [
+        "⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.",
+        "⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath."
+      ],
+      "pageErrors": [],
+      "failedRequests": [],
+      "slowRequests": [],
+      "requestCount": 40,
+      "is404": false,
+      "title": "PROMEOS - Dashboard",
+      "url": "http://localhost:5173/onboarding/sirene",
+      "finalStatus": "ok",
+      "loadMs": 1613
+    }
+  ],
+  "endedAt": "2026-04-24T16:38:18.928Z",
+  "summary": {
+    "total": 36,
+    "ok": 31,
+    "notFound": 0,
+    "errors": 5,
+    "apiFail": 0,
+    "crashes": 0,
+    "totalConsoleErrors": 5,
+    "totalApiFails": 2,
+    "totalPageErrors": 0
+  }
+}
