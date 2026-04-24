@@ -50,6 +50,7 @@ Les 5 agents Python `backend/ai_layer/agents/` sont runtime API production, **di
 7. `utils/naf_resolver.py:resolve_naf_code()` = canonical NAF
 8. Branche `claude/*` — jamais commit direct main
 9. Commit + push + draft PR immédiat (pas d'accumulation)
+10. Hooks et scripts d'audit : TOUJOURS utiliser `$CLAUDE_PROJECT_DIR` pour chemins, jamais relatifs (cwd peut varier). Leçon Phase 4 deadlock.
 
 ## Workflow méthodologique
 
