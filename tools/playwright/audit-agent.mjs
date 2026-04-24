@@ -52,8 +52,11 @@ const ALL_PAGES = [
   { name: '15-billing-timeline',   path: '/billing',                section: 'facturation' },
 
   // ACHAT
+  // NOTE : `/achat-assistant` (redirect App.jsx:513 → /achat-energie?tab=assistant)
+  // retiré temporairement : AchatSol.jsx ne consomme pas `?tab=assistant`,
+  // capture doublon de `16-achat-energie`. À re-ajouter Sprint 2 Vague D quand
+  // l'URL state tab sera câblé dans AchatSol (cf. docs/backlog/).
   { name: '16-achat-energie',      path: '/achat-energie',          section: 'achat' },
-  { name: '17-assistant-achat',    path: '/achat-assistant',        section: 'achat' },
   { name: '18-renouvellements',    path: '/renouvellements',        section: 'achat' },
 
   // ADMIN & SYSTÈME
@@ -270,6 +273,10 @@ Options:
 
   await page.evaluate((token) => {
     localStorage.setItem('promeos_token', token);
+    // Dismiss onboarding tour pre-capture (évite le modal masquant tous
+    // les screenshots). Cohérent avec OnboardingOverlay.jsx:4
+    // (ONBOARDING_KEY = 'promeos_onboarding_done').
+    localStorage.setItem('promeos_onboarding_done', 'true');
   }, loginResp.access_token);
 
   // Navigate to cockpit to validate auth
