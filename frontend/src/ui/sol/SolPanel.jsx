@@ -11,7 +11,7 @@
  */
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { Lock, Star } from 'lucide-react';
 import {
   resolveModule,
   getPanelSections,
@@ -21,6 +21,7 @@ import {
 import { resolveBackendPermissionKey } from '../../layout/permissionMap';
 import { useAuth } from '../../contexts/AuthContext';
 import { track } from '../../services/tracker';
+import { getPins, togglePin, isPinned } from '../../utils/navPins';
 import { FOCUS_RING_SOL } from './focusRing';
 
 const LOCKED_TOOLTIP = 'Module non inclus dans votre rôle. Contactez votre administrateur.';
@@ -64,6 +65,34 @@ const KEY_NAV_NEXT = {
   End: (_idx, len) => len - 1,
 };
 
+// Bouton Pin/Unpin — toujours rendu mais opacity contrôlée :
+// visible à 100% si pinné, au hover/focus sinon. Pas de render conditionnel
+// pour éviter le reflow quand on toggle un item sur/de la liste.
+function PanelPinButton({ itemKey, itemLabel, pinned, onToggle }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => onToggle(itemKey, e)}
+      aria-label={pinned ? `Désépingler ${itemLabel}` : `Épingler ${itemLabel}`}
+      aria-pressed={pinned}
+      data-testid={`sol-panel-pin-${itemKey}`}
+      className={`sol-panel-pin ${FOCUS_RING_SOL}`.trim()}
+      style={{
+        background: 'transparent',
+        border: 'none',
+        padding: 2,
+        cursor: 'pointer',
+        color: pinned ? 'var(--sol-attention-fg)' : 'var(--sol-ink-400)',
+        opacity: pinned ? 1 : 0,
+        transition: 'opacity 120ms ease, color 120ms ease',
+        flexShrink: 0,
+      }}
+    >
+      <Star size={12} fill={pinned ? 'currentColor' : 'none'} aria-hidden="true" />
+    </button>
+  );
+}
+
 export default function SolPanel({
   desc,
   badges = {},
@@ -80,6 +109,21 @@ export default function SolPanel({
   const moduleMeta = NAV_MODULES.find((m) => m.key === currentModule);
   // V2 : panelSections par route (maquette) avec fallback sur NAV_SECTIONS
   const rawSections = getPanelSections(location.pathname, isExpert);
+
+  // Pins (B1) : localStorage ne déclenche pas React, on force re-render via
+  // un counter incrémenté après chaque toggle.
+  const [pinsVersion, setPinsVersion] = React.useState(0);
+  const pins = React.useMemo(
+    () => getPins(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pinsVersion]
+  );
+  const handleTogglePin = React.useCallback((itemKey, event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    togglePin(itemKey);
+    setPinsVersion((v) => v + 1);
+  }, []);
 
   // Tracker A10 : event `nav_panel_opened` au mount + au changement de module.
   // Permet de mesurer la fenêtre Test milieu (ratio clicks deep-link / panels
@@ -159,6 +203,14 @@ export default function SolPanel({
       .filter((section) => section.items.length > 0);
   }, [rawSections, isAuthenticated, hasPermission]);
 
+  // Items épinglés résolus contre les sections courantes (cross-modules OK,
+  // on pioche dans tout ce qui est actuellement visible). Un pin qui pointe
+  // vers un item masqué (permissions/expert mode) disparaît silencieusement.
+  const pinnedItems = React.useMemo(() => {
+    const allItems = sections.flatMap((s) => s.items || []);
+    return pins.map((key) => allItems.find((it) => it.to === key)).filter(Boolean);
+  }, [pins, sections]);
+
   return (
     <aside
       className={`sol-panel sol-app-panel ${className}`.trim()}
@@ -221,6 +273,93 @@ export default function SolPanel({
           {desc || moduleMeta?.desc || ''}
         </p>
 
+        {/* Section Épinglés (B1) — affichée uniquement quand pins non-vide */}
+        {pinnedItems.length > 0 && (
+          <div
+            key="pinned"
+            className="sol-panel-section"
+            style={{ marginBottom: 20 }}
+            aria-label="Items épinglés"
+          >
+            <p
+              className="sol-panel-section-label"
+              style={{
+                fontFamily: 'var(--sol-font-mono)',
+                fontSize: 9.5,
+                textTransform: 'uppercase',
+                letterSpacing: '0.14em',
+                fontWeight: 600,
+                color: 'var(--sol-ink-400)',
+                margin: '0 0 8px 2px',
+              }}
+            >
+              Épinglés
+            </p>
+            {pinnedItems.map((item) => {
+              const basePath = item.to.split('?')[0].split('#')[0];
+              const isActive =
+                basePath === location.pathname ||
+                (basePath !== '/' && location.pathname.startsWith(basePath + '/'));
+              const locked = item.locked === true;
+              const visuals = getItemVisuals(locked, isActive);
+              return (
+                <div
+                  key={`pinned-${item.to}`}
+                  className="sol-panel-item-row"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'stretch',
+                    position: 'relative',
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={locked ? undefined : () => handleItemClick(item, 'pinned')}
+                    aria-current={isActive && !locked ? 'page' : undefined}
+                    aria-disabled={locked || undefined}
+                    title={locked ? LOCKED_TOOLTIP : undefined}
+                    data-locked={locked || undefined}
+                    className={`sol-panel-item ${FOCUS_RING_SOL} ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '7px 8px',
+                      paddingRight: 32, // place pour le PanelPinButton absolute
+                      borderRadius: 4,
+                      fontSize: 13,
+                      width: '100%',
+                      textAlign: 'left',
+                      border: 'none',
+                      transition: 'background 120ms ease',
+                      ...visuals,
+                    }}
+                  >
+                    <span style={{ flex: 1, lineHeight: 1.3 }}>{item.label}</span>
+                  </button>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      right: 6,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <PanelPinButton
+                      itemKey={item.to}
+                      itemLabel={item.label}
+                      pinned
+                      onToggle={handleTogglePin}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {sections.map((section) => {
           const items = section.items || [];
           if (items.length === 0) return null;
@@ -248,76 +387,106 @@ export default function SolPanel({
                 const badge = badges[basePath] ?? badges[item.to];
                 const locked = item.locked === true;
                 const visuals = getItemVisuals(locked, isActive);
+                const pinned = isPinned(item.to);
                 return (
-                  <button
+                  <div
                     key={item.to}
-                    type="button"
-                    onClick={locked ? undefined : () => handleItemClick(item, section.key)}
-                    aria-current={isActive && !locked ? 'page' : undefined}
-                    aria-disabled={locked || undefined}
-                    title={locked ? LOCKED_TOOLTIP : undefined}
-                    data-locked={locked || undefined}
-                    className={`sol-panel-item ${FOCUS_RING_SOL} ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
+                    className="sol-panel-item-row"
                     style={{
                       display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '7px 8px',
-                      borderRadius: 4,
-                      fontSize: 13,
-                      width: '100%',
-                      textAlign: 'left',
-                      border: 'none',
-                      transition: 'background 120ms ease',
-                      ...visuals,
+                      alignItems: 'stretch',
+                      position: 'relative',
                     }}
                   >
-                    <span style={{ flex: 1, lineHeight: 1.3 }}>
-                      {item.label}
-                      {item.desc && (
+                    <button
+                      type="button"
+                      onClick={locked ? undefined : () => handleItemClick(item, section.key)}
+                      aria-current={isActive && !locked ? 'page' : undefined}
+                      aria-disabled={locked || undefined}
+                      title={locked ? LOCKED_TOOLTIP : undefined}
+                      data-locked={locked || undefined}
+                      className={`sol-panel-item ${FOCUS_RING_SOL} ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '7px 8px',
+                        paddingRight: 32, // place pour le PanelPinButton absolute
+                        borderRadius: 4,
+                        fontSize: 13,
+                        width: '100%',
+                        textAlign: 'left',
+                        border: 'none',
+                        transition: 'background 120ms ease',
+                        ...visuals,
+                      }}
+                    >
+                      <span style={{ flex: 1, lineHeight: 1.3 }}>
+                        {item.label}
+                        {item.desc && (
+                          <span
+                            className="sol-panel-item-desc"
+                            style={{
+                              display: 'block',
+                              fontSize: 11,
+                              color: 'var(--sol-ink-400)',
+                              marginTop: 1,
+                              lineHeight: 1.35,
+                              fontWeight: 400,
+                            }}
+                          >
+                            {item.desc}
+                          </span>
+                        )}
+                      </span>
+                      {locked && (
+                        <>
+                          <Lock
+                            size={12}
+                            aria-hidden="true"
+                            data-testid="sol-panel-item-lock"
+                            style={{ color: 'var(--sol-ink-500)', flexShrink: 0 }}
+                          />
+                          <span className="sr-only">— {LOCKED_TOOLTIP}</span>
+                        </>
+                      )}
+                      {badge != null && (
                         <span
-                          className="sol-panel-item-desc"
+                          className="sol-panel-item-badge"
                           style={{
-                            display: 'block',
-                            fontSize: 11,
-                            color: 'var(--sol-ink-400)',
-                            marginTop: 1,
-                            lineHeight: 1.35,
-                            fontWeight: 400,
+                            fontFamily: 'var(--sol-font-mono)',
+                            fontSize: 10,
+                            background: 'var(--sol-afaire-bg)',
+                            color: 'var(--sol-afaire-fg)',
+                            padding: '1px 5px',
+                            borderRadius: 2,
+                            fontWeight: 600,
                           }}
                         >
-                          {item.desc}
+                          {badge}
                         </span>
                       )}
-                    </span>
-                    {locked && (
-                      <>
-                        <Lock
-                          size={12}
-                          aria-hidden="true"
-                          data-testid="sol-panel-item-lock"
-                          style={{ color: 'var(--sol-ink-500)', flexShrink: 0 }}
-                        />
-                        <span className="sr-only">— {LOCKED_TOOLTIP}</span>
-                      </>
-                    )}
-                    {badge != null && (
-                      <span
-                        className="sol-panel-item-badge"
+                    </button>
+                    {!locked && (
+                      <div
                         style={{
-                          fontFamily: 'var(--sol-font-mono)',
-                          fontSize: 10,
-                          background: 'var(--sol-afaire-bg)',
-                          color: 'var(--sol-afaire-fg)',
-                          padding: '1px 5px',
-                          borderRadius: 2,
-                          fontWeight: 600,
+                          position: 'absolute',
+                          right: 6,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          display: 'flex',
+                          alignItems: 'center',
                         }}
                       >
-                        {badge}
-                      </span>
+                        <PanelPinButton
+                          itemKey={item.to}
+                          itemLabel={item.label}
+                          pinned={pinned}
+                          onToggle={handleTogglePin}
+                        />
+                      </div>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>

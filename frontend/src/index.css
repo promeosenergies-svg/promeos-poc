@@ -1040,6 +1040,17 @@ em,
 }
 
 /* ══════════════════════════════════════════════════════════════════════════ */
+/* SolPanel pin button — révélation au hover/focus de la ligne parente        */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+.sol-panel-item-row:hover .sol-panel-pin,
+.sol-panel-item-row:focus-within .sol-panel-pin,
+.sol-panel-pin:hover,
+.sol-panel-pin:focus-visible {
+  opacity: 1 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
 /* Respect prefers-reduced-motion (fallback global)                            */
 /* ══════════════════════════════════════════════════════════════════════════ */
 

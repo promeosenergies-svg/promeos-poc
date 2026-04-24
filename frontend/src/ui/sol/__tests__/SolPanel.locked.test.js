@@ -17,7 +17,8 @@ const src = readFileSync(join(__dirname, '..', 'SolPanel.jsx'), 'utf-8');
 
 describe('SolPanel — locked badge on restricted items (A3)', () => {
   it('imports Lock icon from lucide-react', () => {
-    expect(src).toMatch(/import\s*\{\s*Lock\s*\}\s*from\s*['"]lucide-react['"]/);
+    // Le panel peut importer plusieurs icônes dans le même groupe ({ Lock, Star, ... })
+    expect(src).toMatch(/import\s*\{[^}]*\bLock\b[^}]*\}\s*from\s*['"]lucide-react['"]/);
   });
 
   it('declares LOCKED_TOOLTIP constant (FR)', () => {
