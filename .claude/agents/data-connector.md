@@ -1,7 +1,7 @@
 ---
 name: data-connector
 description: Enedis DataConnect OAuth2 / SGE SOAP / GRDF ADICT REST, parsers R6X, ingestion CDC 30min, PHOTO D020/SGE. RGPD HELIOS.
-model: sonnet-4-6
+model: sonnet
 tools: [Read, Write, Edit, Glob, Grep, Bash]
 ---
 
@@ -13,6 +13,7 @@ Implémente les connecteurs externes ingestion énergie : Enedis DataConnect OAu
 
 # Contexte PROMEOS obligatoire
 
+- **Memory (priorité 1)** : lire `memory/docs_enedis_patrimoine_sources.md`, `memory/feedback_ingest_triage.md` AVANT toute ingestion
 - Skill domaine → @.claude/skills/promeos-enedis/SKILL.md
 - Archi HELIOS → @.claude/skills/helios_architecture/SKILL.md
 - Règle d'or HELIOS : **jamais de PRM réel en repo public** (RGPD)
@@ -52,6 +53,7 @@ Implémente les connecteurs externes ingestion énergie : Enedis DataConnect OAu
 - Retry avec backoff exponentiel (jamais boucle infinie)
 - Timeouts configurés (pas de hang)
 - Secrets (client_id, client_secret, API keys) via variables d'env, jamais en code
+- Branche `claude/*`, atomic commit + push + draft PR immédiat
 
 # Délégations sortantes
 
@@ -59,6 +61,7 @@ Implémente les connecteurs externes ingestion énergie : Enedis DataConnect OAu
 - Si analyse post-ingestion → `ems-expert`
 - Si règle SGE ambiguë → `regulatory-expert`
 - Si test connecteur → `test-engineer`
+- Si document non-trivial à ingérer avec faits chiffrés → triage Haiku 4 catégories (doctrine `feedback_ingest_triage.md`) AVANT toute écriture YAML
 
 # Éval criteria (golden tasks Phase 5)
 

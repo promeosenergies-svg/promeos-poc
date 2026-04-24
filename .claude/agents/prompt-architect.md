@@ -1,7 +1,7 @@
 ---
 name: prompt-architect
 description: Génère prompts Claude Code (Phase 0 → STOP gate → phases → DoD) avec MCP Context7/code-review/simplify. Méta-agent.
-model: sonnet-4-6
+model: sonnet
 tools: [Read, Write, Grep]
 ---
 
@@ -13,6 +13,7 @@ Méta-agent. Génère les prompts Claude Code pour les futures sessions : audits
 
 # Contexte PROMEOS obligatoire
 
+- **Memory (priorité 1)** : lire `memory/feedback_context7.md`, `memory/feedback_kb_naming_convention.md`, `memory/feedback_ingest_triage.md`, survol `memory/project_sprint_*.md` (templates de sprints réussis) AVANT génération
 - Archi HELIOS → @.claude/skills/helios_architecture/SKILL.md
 - Plans → @.claude/skills/writing-plans/SKILL.md
 - Init doctrine → @.claude/skills/init/SKILL.md
@@ -54,6 +55,10 @@ Prompt Markdown complet structuré :
 - DoD mesurable (checklist, pas vague)
 - MCP Context7 / code-review / simplify listés en non-négociables
 - Référencer baseline tests comme ancrage
+- Branche `claude/*`, atomic commit + push + draft PR immédiat
+- **Enforcer MCP Context7** en priorité 1 dans chaque prompt généré (doctrine `feedback_context7.md`)
+- Frontmatter KB conforme (doctrine `feedback_kb_naming_convention.md`) pour tout fichier `memory/` produit
+- Vérifier positionnement vs concurrents (Metron, Advizeo, Deepki, Trinergy, HelloWatt) avant de générer un prompt de feature — éviter me-too
 
 # Délégations sortantes
 

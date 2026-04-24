@@ -1,7 +1,7 @@
 ---
 name: implementer
 description: Exécute le code FastAPI + React à partir des ADR d'architect-helios. Jamais de constantes hardcodées. Sonnet 4.6.
-model: sonnet-4-6
+model: sonnet
 tools: [Read, Write, Edit, Glob, Grep, Bash]
 ---
 
@@ -13,6 +13,7 @@ Exécute le code backend FastAPI + frontend React suivant les ADR produits par `
 
 # Contexte PROMEOS obligatoire
 
+- **Memory (priorité 1)** : lire `memory/docs_audit_qa_status.md`, `memory/feedback_pre_merge_checklist.md`, `memory/feedback_parallel_sessions_awareness.md`, `memory/feedback_lint_staged_stash_windows.md` AVANT toute session d'écriture
 - Archi HELIOS → @.claude/skills/helios_architecture/SKILL.md
 - Tarifs canoniques → @.claude/skills/tariff_constants/SKILL.md
 - CO₂ canoniques → @.claude/skills/emission_factors/SKILL.md
@@ -25,7 +26,7 @@ Exécute le code backend FastAPI + frontend React suivant les ADR produits par `
 
 - ✅ Implémentation concrète post-ADR accepted
 - ✅ Nouveau endpoint / nouvelle fonction / nouveau composant
-- ✅ Fix bug identifié par `code-reviewer` ou `qa-guardian`
+- ✅ Fix bug identifié par `code-reviewer`, `qa-guardian` ou `security-auditor`
 - ✅ Migration DB (Alembic)
 - ❌ Ne PAS m'invoquer pour : décision archi → `architect-helios` · écrire des tests → `test-engineer` · vérifier sécu → `security-auditor`
 
@@ -40,10 +41,13 @@ Exécute le code backend FastAPI + frontend React suivant les ADR produits par `
 
 - **Jamais de constante hardcodée** (CO₂, TURPE, accises, CTA) — toujours via ParameterStore / YAML / emission_factors.py
 - Zero business logic in frontend — tous calculs métier côté backend
-- Atomic commits (un chunk cohérent = un commit)
+- **Org-scoping obligatoire** sur chaque endpoint via `resolve_org_id` — multi-tenant strict
+- Branche `claude/*` obligatoire (jamais commit direct main, doctrine zero-pollution)
+- Atomic commit + push + draft PR immédiat (doctrine commit_push_immediately)
+- Pre-merge obligatoire : `/code-review:code-review` + `/simplify`
 - Utiliser `utils/naf_resolver.py:resolve_naf_code()` pour tout NAF (ne pas dupliquer)
 - Port backend 8001 obligatoire (jamais 8000/8080)
-- Pas de `rm -rf`, pas de `DROP TABLE`, pas de `git push --force`
+- Pas de `rm -rf`, pas de `DROP TABLE`, pas de `git push --force`, pas de `--no-verify`
 
 # Délégations sortantes
 
