@@ -21,7 +21,7 @@ import {
 import { resolveBackendPermissionKey } from '../../layout/permissionMap';
 import { useAuth } from '../../contexts/AuthContext';
 import { track } from '../../services/tracker';
-import { getPins, togglePin, isPinned } from '../../utils/navPins';
+import { getPins, togglePin } from '../../utils/navPins';
 import { getRecents } from '../../utils/navRecent';
 import { FOCUS_RING_SOL } from './focusRing';
 
@@ -142,7 +142,8 @@ export default function SolPanel({
     [pinsVersion]
   );
   const handleTogglePin = React.useCallback((itemKey, event) => {
-    event.preventDefault();
+    // stopPropagation empêche le bubble vers le row click-handler. Pas de
+    // preventDefault : <button type="button"> ne submit pas de form.
     event.stopPropagation();
     togglePin(itemKey);
     setPinsVersion((v) => v + 1);
@@ -226,48 +227,47 @@ export default function SolPanel({
       .filter((section) => section.items.length > 0);
   }, [rawSections, isAuthenticated, hasPermission]);
 
-  // Items épinglés résolus contre les sections courantes (cross-modules OK,
-  // on pioche dans tout ce qui est actuellement visible). Un pin qui pointe
-  // vers un item masqué (permissions/expert mode) disparaît silencieusement.
-  const pinnedItems = React.useMemo(() => {
-    const allItems = sections.flatMap((s) => s.items || []);
-    return pins.map((key) => allItems.find((it) => it.to === key)).filter(Boolean);
-  }, [pins, sections]);
+  // F3 optim : memo partagés entre pinnedItems + recentsItems (évite
+  // triple flatMap sur `sections` à chaque render).
+  const allItems = React.useMemo(() => sections.flatMap((s) => s.items || []), [sections]);
+  const pinnedSet = React.useMemo(() => new Set(pins), [pins]);
 
-  // Items récents (B2) : last 3 pathnames navigués, exclut les pinnés et
-  // les items déjà visibles dans les sections courantes (éviter duplication).
-  // Lecture directe de localStorage via navRecent — l'écriture est faite
-  // par useRouteTracker dans SolAppShell, pas par SolPanel (séparation
-  // responsabilités : shell track, panel read).
+  // Items épinglés résolus contre les sections courantes. Un pin qui pointe
+  // vers un item masqué (permissions/expert mode) disparaît silencieusement.
+  const pinnedItems = React.useMemo(
+    () => pins.map((key) => allItems.find((it) => it.to === key)).filter(Boolean),
+    [pins, allItems]
+  );
+
+  // Items récents : last N pathnames navigués, exclut les pinnés et les items
+  // déjà visibles dans les sections courantes (éviter duplication).
+  // Lecture localStorage via navRecent — l'écriture est faite par
+  // useRouteTracker dans SolAppShell (séparation shell-write / panel-read).
   const recentsItems = React.useMemo(() => {
     const recents = getRecents();
-    const currentSectionPaths = new Set(
-      sections.flatMap((s) => (s.items || []).map((i) => i.to.split('?')[0]))
-    );
-    const pinnedSet = new Set(pins);
+    const currentSectionPaths = new Set(allItems.map((i) => i.to.split('?')[0]));
     const currentPath = location.pathname.split('?')[0];
-    // Map recents (paths) → items — cherche dans TOUT le registry pour
-    // pouvoir pointer vers une page hors du module courant.
-    const allSectionItems = sections.flatMap((s) => s.items || []);
     return recents
-      .filter((r) => r && r.path)
-      .filter((r) => r.path !== currentPath)
-      .filter((r) => !pinnedSet.has(r.path))
-      .filter((r) => !currentSectionPaths.has(r.path.split('?')[0]))
+      .filter(
+        (r) =>
+          r &&
+          r.path &&
+          r.path !== currentPath &&
+          !pinnedSet.has(r.path) &&
+          !currentSectionPaths.has(r.path.split('?')[0])
+      )
       .map((r) => {
-        const found = allSectionItems.find((it) => it.to === r.path);
+        const found = allItems.find((it) => it.to === r.path);
         if (found) return found;
-        // Fallback si la route n'est pas dans NAV_SECTIONS (page masquée /
-        // hidden) — on crée un item minimal avec le label stocké.
+        // Fallback si la route n'est pas dans NAV_SECTIONS (page masquée).
         if (!r.label) return null;
         return { to: r.path, label: r.label, locked: false };
       })
       .filter(Boolean)
       .slice(0, RECENTS_DISPLAY_LIMIT);
-    // Les deps incluent location.pathname pour que la liste se rafraîchisse
-    // après chaque navigation (useRouteTracker a déjà pushé le nouvel item).
+    // deps incluent pathname pour rafraîchir après navigation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sections, pins, location.pathname]);
+  }, [allItems, pinnedSet, location.pathname]);
 
   return (
     <aside
@@ -513,7 +513,7 @@ export default function SolPanel({
                 const badge = badges[basePath] ?? badges[item.to];
                 const locked = item.locked === true;
                 const visuals = getItemVisuals(locked, isActive);
-                const pinned = isPinned(item.to);
+                const pinned = pinnedSet.has(item.to);
                 return (
                   <div
                     key={item.to}

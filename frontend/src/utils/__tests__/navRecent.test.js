@@ -100,6 +100,15 @@ describe('addRecent', () => {
     const result = addRecent('/actions');
     expect(result[0]).toEqual({ path: '/actions' });
   });
+
+  it('F3 : quota-safe — no throw when localStorage.setItem fails', () => {
+    localStorageMock.setItem.mockImplementationOnce(() => {
+      throw new DOMException('QuotaExceededError', 'QuotaExceededError');
+    });
+    // Si addRecent throw, le consumer useRouteTracker crashe à chaque nav.
+    // Cohérence avec navPins.safeWrite.
+    expect(() => addRecent('/will-fail')).not.toThrow();
+  });
 });
 
 describe('clearRecents', () => {

@@ -24,9 +24,11 @@ describe('SolPanel — Recents integration (B2)', () => {
     expect(panelSrc).toMatch(/RECENTS_DISPLAY_LIMIT\s*=\s*\d+/);
   });
 
-  it('memoizes recentsItems with sections + pins + location.pathname deps', () => {
+  it('memoizes recentsItems with allItems + pinnedSet + location.pathname deps (F3)', () => {
     expect(panelSrc).toMatch(/recentsItems/);
-    expect(panelSrc).toMatch(/\[sections,\s*pins,\s*location\.pathname\]/);
+    // F3 : deps basés sur les memos partagés allItems + pinnedSet (pas
+    // directement sections + pins) pour éviter re-computes redondants.
+    expect(panelSrc).toMatch(/\[allItems,\s*pinnedSet,\s*location\.pathname\]/);
   });
 
   it('excludes current path + pinned + already-visible-in-sections', () => {

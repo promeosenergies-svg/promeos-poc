@@ -26,7 +26,7 @@ function safeWrite(pins) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(pins));
   } catch (err) {
-    if (import.meta.env?.DEV) {
+    if (import.meta.env.DEV) {
       // eslint-disable-next-line no-console
       console.warn('[navPins] localStorage write failed', err);
     }

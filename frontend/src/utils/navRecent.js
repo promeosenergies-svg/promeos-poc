@@ -37,7 +37,17 @@ export function addRecent(path, meta = {}) {
   const recents = getRecents();
   const entry = { path, ...meta };
   const updated = [entry, ...recents.filter((r) => r.path !== path)].slice(0, MAX_RECENTS);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  // Cohérence avec navPins.safeWrite : quota-safe (Safari Private Mode,
+  // localStorage désactivé, quota plein). Échec silencieux — tracker nav
+  // n'est pas critique, mieux drop l'entry que throw.
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.warn('[navRecent] localStorage write failed', err);
+    }
+  }
   return updated;
 }
 

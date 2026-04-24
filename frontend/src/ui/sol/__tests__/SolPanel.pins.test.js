@@ -19,12 +19,13 @@ describe('SolPanel — Pins integration (B1)', () => {
     expect(panelSrc).toMatch(/import\s*\{[^}]*\bStar\b[^}]*\}\s*from\s*['"]lucide-react['"]/);
   });
 
-  it('imports pin API from utils/navPins', () => {
+  it('imports pin API from utils/navPins (F3 : isPinned loop remplacé par pinnedSet)', () => {
     expect(panelSrc).toMatch(
       /import\s*\{[^}]*\bgetPins\b[^}]*\}\s*from\s*['"]\.\.\/\.\.\/utils\/navPins['"]/
     );
     expect(panelSrc).toMatch(/togglePin/);
-    expect(panelSrc).toMatch(/isPinned/);
+    // F3 : isPinned n'est PLUS importé (remplacé par pinnedSet via useMemo)
+    expect(panelSrc).not.toMatch(/\bisPinned\b/);
   });
 
   it('declares PanelPinButton helper component', () => {
@@ -51,14 +52,22 @@ describe('SolPanel — Pins integration (B1)', () => {
     expect(panelSrc).toMatch(/setPinsVersion\(\(v\)\s*=>\s*v\s*\+\s*1\)/);
   });
 
-  it('handleTogglePin calls preventDefault + stopPropagation', () => {
-    expect(panelSrc).toMatch(/event\.preventDefault\(\)/);
+  it('handleTogglePin calls stopPropagation (F3 : preventDefault retiré — type="button" ne submit pas)', () => {
     expect(panelSrc).toMatch(/event\.stopPropagation\(\)/);
+    // F3 : event.preventDefault retiré (redondant sur <button type="button">)
+    expect(panelSrc).not.toMatch(/event\.preventDefault\(\)/);
   });
 
-  it('resolves pinnedItems from current sections flatMap', () => {
+  it('F3 : allItems + pinnedSet memos extracted (DRY vs triple flatMap)', () => {
+    expect(panelSrc).toMatch(/const allItems = React\.useMemo\(/);
+    expect(panelSrc).toMatch(/const pinnedSet = React\.useMemo\(\s*\(\)\s*=>\s*new Set\(pins\)/);
     expect(panelSrc).toMatch(/pinnedItems/);
-    expect(panelSrc).toMatch(/sections\.flatMap\(\(s\)\s*=>\s*s\.items/);
+  });
+
+  it('F3 : isPinned() loop remplacé par pinnedSet.has() (perf JSON.parse×N → 0)', () => {
+    expect(panelSrc).toMatch(/pinnedSet\.has\(item\.to\)/);
+    // Zéro appel direct à isPinned() dans le source (plus importé)
+    expect(panelSrc).not.toMatch(/\bisPinned\(/);
   });
 
   it('renders Épinglés section only when pinnedItems.length > 0', () => {
