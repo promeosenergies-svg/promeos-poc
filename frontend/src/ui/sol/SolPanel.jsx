@@ -70,30 +70,45 @@ const KEY_NAV_NEXT = {
   End: (_idx, len) => len - 1,
 };
 
-// Bouton Pin/Unpin — toujours rendu mais opacity contrôlée :
-// visible à 100% si pinné, au hover/focus sinon. Pas de render conditionnel
-// pour éviter le reflow quand on toggle un item sur/de la liste.
-function PanelPinButton({ itemKey, itemLabel, pinned, onToggle }) {
+// Bouton Pin/Unpin. Visible si pinné, sinon au hover/focus parent (desktop)
+// OU toujours visible sur mobile (pas de hover → découvrabilité impossible
+// sinon). Hit area 24×24 (WCAG 2.5.5 AA). Contraste `--sol-ink-500` non-pinned
+// 4.6:1 (WCAG 1.4.11).
+//
+// `data-testid` slugifié : item.to contient des `/` qui posent problème avec
+// certains testing helpers (encodage URL ou CSS selector ambigu).
+function slugifyPin(itemKey) {
+  return String(itemKey)
+    .replace(/[^a-zA-Z0-9-]/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function PanelPinButton({ itemKey, itemLabel, pinned, onToggle, isMobile = false }) {
   return (
     <button
       type="button"
       onClick={(e) => onToggle(itemKey, e)}
       aria-label={pinned ? `Désépingler ${itemLabel}` : `Épingler ${itemLabel}`}
       aria-pressed={pinned}
-      data-testid={`sol-panel-pin-${itemKey}`}
+      data-testid={`sol-panel-pin-${slugifyPin(itemKey)}`}
       className={`sol-panel-pin ${FOCUS_RING_SOL}`.trim()}
       style={{
         background: 'transparent',
         border: 'none',
-        padding: 2,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 24,
+        height: 24,
+        padding: 0,
         cursor: 'pointer',
-        color: pinned ? 'var(--sol-attention-fg)' : 'var(--sol-ink-400)',
-        opacity: pinned ? 1 : 0,
+        color: pinned ? 'var(--sol-attention-fg)' : 'var(--sol-ink-500)',
+        opacity: pinned || isMobile ? 1 : 0,
         transition: 'opacity 120ms ease, color 120ms ease',
         flexShrink: 0,
       }}
     >
-      <Star size={12} fill={pinned ? 'currentColor' : 'none'} aria-hidden="true" />
+      <Star size={14} fill={pinned ? 'currentColor' : 'none'} aria-hidden="true" />
     </button>
   );
 }
@@ -106,6 +121,9 @@ export default function SolPanel({
   headerSlot = null,
   footerSlot = null,
   className = '',
+  // isMobile : force l'étoile de pin à toujours rester visible (pas de
+  // hover tactile). Wire par SolAppShell via useMediaQuery.
+  isMobile = false,
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -313,71 +331,10 @@ export default function SolPanel({
           {desc || moduleMeta?.desc || ''}
         </p>
 
-        {/* Section Récents (B2) — last 3 navigations hors courante/pinnés
-            /module-courant. Vide = pas de rendu. */}
-        {recentsItems.length > 0 && (
-          <div
-            key="recents"
-            className="sol-panel-section"
-            style={{ marginBottom: 20 }}
-            aria-label="Récemment visité"
-          >
-            <p
-              className="sol-panel-section-label"
-              style={{
-                fontFamily: 'var(--sol-font-mono)',
-                fontSize: 9.5,
-                textTransform: 'uppercase',
-                letterSpacing: '0.14em',
-                fontWeight: 600,
-                color: 'var(--sol-ink-400)',
-                margin: '0 0 8px 2px',
-              }}
-            >
-              Récents
-            </p>
-            {recentsItems.map((item) => {
-              const basePath = item.to.split('?')[0].split('#')[0];
-              const isActive =
-                basePath === location.pathname ||
-                (basePath !== '/' && location.pathname.startsWith(basePath + '/'));
-              const locked = item.locked === true;
-              const visuals = getItemVisuals(locked, isActive);
-              return (
-                <div
-                  key={`recent-${item.to}`}
-                  className="sol-panel-item-row"
-                  style={{ display: 'flex', alignItems: 'stretch', position: 'relative' }}
-                >
-                  <button
-                    type="button"
-                    onClick={locked ? undefined : () => handleItemClick(item, 'recents')}
-                    aria-current={isActive && !locked ? 'page' : undefined}
-                    aria-disabled={locked || undefined}
-                    className={`sol-panel-item ${FOCUS_RING_SOL} ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '7px 8px',
-                      borderRadius: 4,
-                      fontSize: 13,
-                      width: '100%',
-                      textAlign: 'left',
-                      border: 'none',
-                      transition: 'background 120ms ease',
-                      ...visuals,
-                    }}
-                  >
-                    <span style={{ flex: 1, lineHeight: 1.3 }}>{item.label}</span>
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {/* Hiérarchie UX attendue : fréquent > récent > structure.
+            Ordre de rendu : Épinglés → Récents → NAV sections. */}
 
-        {/* Section Épinglés (B1) — affichée uniquement quand pins non-vide */}
+        {/* Section Épinglés — affichée uniquement quand pins non-vide */}
         {pinnedItems.length > 0 && (
           <div
             key="pinned"
@@ -456,8 +413,73 @@ export default function SolPanel({
                       itemLabel={item.label}
                       pinned
                       onToggle={handleTogglePin}
+                      isMobile={isMobile}
                     />
                   </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Section Récents — last 3 navigations hors courante/pinnés/
+            sections visibles du module courant. */}
+        {recentsItems.length > 0 && (
+          <div
+            key="recents"
+            className="sol-panel-section"
+            style={{ marginBottom: 20 }}
+            aria-label="Récemment visité"
+          >
+            <p
+              className="sol-panel-section-label"
+              style={{
+                fontFamily: 'var(--sol-font-mono)',
+                fontSize: 9.5,
+                textTransform: 'uppercase',
+                letterSpacing: '0.14em',
+                fontWeight: 600,
+                color: 'var(--sol-ink-400)',
+                margin: '0 0 8px 2px',
+              }}
+            >
+              Récents
+            </p>
+            {recentsItems.map((item) => {
+              const basePath = item.to.split('?')[0].split('#')[0];
+              const isActive =
+                basePath === location.pathname ||
+                (basePath !== '/' && location.pathname.startsWith(basePath + '/'));
+              const locked = item.locked === true;
+              const visuals = getItemVisuals(locked, isActive);
+              return (
+                <div
+                  key={`recent-${item.to}`}
+                  className="sol-panel-item-row"
+                  style={{ display: 'flex', alignItems: 'stretch', position: 'relative' }}
+                >
+                  <button
+                    type="button"
+                    onClick={locked ? undefined : () => handleItemClick(item, 'recents')}
+                    aria-current={isActive && !locked ? 'page' : undefined}
+                    aria-disabled={locked || undefined}
+                    className={`sol-panel-item ${FOCUS_RING_SOL} ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '7px 8px',
+                      borderRadius: 4,
+                      fontSize: 13,
+                      width: '100%',
+                      textAlign: 'left',
+                      border: 'none',
+                      transition: 'background 120ms ease',
+                      ...visuals,
+                    }}
+                  >
+                    <span style={{ flex: 1, lineHeight: 1.3 }}>{item.label}</span>
+                  </button>
                 </div>
               );
             })}
@@ -587,6 +609,7 @@ export default function SolPanel({
                           itemLabel={item.label}
                           pinned={pinned}
                           onToggle={handleTogglePin}
+                          isMobile={isMobile}
                         />
                       </div>
                     )}

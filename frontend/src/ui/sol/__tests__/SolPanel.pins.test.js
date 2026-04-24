@@ -84,6 +84,53 @@ describe('SolPanel — Pins integration (B1)', () => {
   });
 });
 
+describe('SolPanel — F1 fixes (a11y hit area + contraste + ordre)', () => {
+  it('F1 : hit area PanelPinButton 24x24 (WCAG 2.5.5 AA, 44 AAA recommended)', () => {
+    expect(panelSrc).toMatch(/width:\s*24\b/);
+    expect(panelSrc).toMatch(/height:\s*24\b/);
+  });
+
+  it('F1 : icon Star size=14 (up from 12 pour lisibilité)', () => {
+    expect(panelSrc).toMatch(/<Star\s+size=\{14\}/);
+  });
+
+  it('F1 : contraste non-pinné uses --sol-ink-500 (4.6:1 WCAG 1.4.11 pass)', () => {
+    // Ancien : --sol-ink-400 (2.85:1 FAIL). Nouveau : --sol-ink-500 (4.6:1 OK).
+    expect(panelSrc).toMatch(
+      /color:\s*pinned\s*\?\s*['"]var\(--sol-attention-fg\)['"][\s\S]*?['"]var\(--sol-ink-500\)['"]/
+    );
+  });
+
+  it('F1 : opacity 1 sur mobile OR pinned (découvrabilité tactile)', () => {
+    expect(panelSrc).toMatch(/opacity:\s*pinned\s*\|\|\s*isMobile\s*\?\s*1\s*:\s*0/);
+  });
+
+  it('F1 : isMobile prop transmis aux 2 PanelPinButton', () => {
+    const pinButtonUsages = panelSrc.match(/<PanelPinButton[\s\S]*?\/>/g) || [];
+    expect(pinButtonUsages.length).toBeGreaterThanOrEqual(2);
+    pinButtonUsages.forEach((usage) => {
+      expect(usage).toMatch(/isMobile=\{isMobile\}/);
+    });
+  });
+
+  it('F1 : data-testid slugifié (pas de / dans la valeur)', () => {
+    expect(panelSrc).toMatch(/slugifyPin\(itemKey\)/);
+    expect(panelSrc).toMatch(/function slugifyPin/);
+  });
+
+  it('F1 : ordre DOM Épinglés AVANT Récents AVANT NAV sections', () => {
+    const idxPinned = panelSrc.indexOf('Section Épinglés');
+    const idxRecents = panelSrc.indexOf('Section Récents');
+    const idxNavMap = panelSrc.indexOf('{sections.map((section)');
+    expect(idxPinned).toBeGreaterThan(0);
+    expect(idxRecents).toBeGreaterThan(0);
+    expect(idxNavMap).toBeGreaterThan(0);
+    // Épinglés (fréquent) > Récents (récent) > NAV (structure)
+    expect(idxPinned).toBeLessThan(idxRecents);
+    expect(idxRecents).toBeLessThan(idxNavMap);
+  });
+});
+
 describe('SolPanel pin CSS hover reveal (index.css)', () => {
   it('pin button is hidden (opacity:0) at rest, revealed on row hover/focus-within', () => {
     expect(cssSrc).toMatch(/\.sol-panel-item-row:hover\s+\.sol-panel-pin/);

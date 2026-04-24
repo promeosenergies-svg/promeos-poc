@@ -581,8 +581,9 @@ export default function SolAppShell() {
       isExpert,
       headerSlot: <PanelHeaderSlot />,
       footerSlot: <PanelFooterSlot />,
+      isMobile,
     }),
-    [isExpert]
+    [isExpert, isMobile]
   );
 
   // B4 : grid compact en mobile (pas de colonne panel) — le panel vit
