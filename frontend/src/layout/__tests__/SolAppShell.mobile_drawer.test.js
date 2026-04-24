@@ -76,6 +76,51 @@ describe('SolAppShell mobile drawer wiring (B4)', () => {
   });
 });
 
+describe('SolAppShell — F2 fixes (aria-controls, double h2, header overflow)', () => {
+  it('F2 : Drawer reçoit un id="sol-panel-mobile-drawer" (aria-controls match)', () => {
+    expect(shellSrc).toMatch(/id=["']sol-panel-mobile-drawer["']/);
+  });
+
+  it('F2 : Drawer utilise ariaLabel="Navigation" au lieu de title (évite double h2)', () => {
+    expect(shellSrc).toMatch(/ariaLabel=["']Navigation["']/);
+    // title="Navigation" ne doit PAS apparaître dans le <Drawer> mobile
+    const drawerBlock = shellSrc.match(/<Drawer[\s\S]*?<\/Drawer>/);
+    if (drawerBlock) {
+      expect(drawerBlock[0]).not.toMatch(/title="Navigation"/);
+    }
+  });
+
+  it('F2 : header search label "Rechercher" + kbd masqués sur mobile (overflow fix)', () => {
+    expect(shellSrc).toMatch(/\{!isMobile && \(\s*<>\s*<span>Rechercher<\/span>/);
+  });
+
+  it('F2 : Toggle Expert label vide sur mobile (overflow fix)', () => {
+    expect(shellSrc).toMatch(/label=\{isMobile \? ['"]['"]\s*:\s*['"]Expert['"]\}/);
+  });
+});
+
+describe('Drawer component — F2 conditional header + id prop', () => {
+  it('F2 : accepte prop `id` propagée sur le div principal', () => {
+    expect(drawerSrc).toMatch(/\bid,\s*\n/);
+    expect(drawerSrc).toMatch(/id=\{id\}/);
+  });
+
+  it('F2 : accepte prop `ariaLabel` fallback pour dialog sans title', () => {
+    expect(drawerSrc).toMatch(/\bariaLabel,\s*\n/);
+    expect(drawerSrc).toMatch(/aria-label=\{ariaLabel \|\| title\}/);
+  });
+
+  it('F2 : header (h2 + close) rendu seulement si title truthy', () => {
+    expect(drawerSrc).toMatch(/\{title \?/);
+  });
+
+  it('F2 : sans title, bouton Fermer absolute top-right encore accessible', () => {
+    const absoluteCloseBlock = drawerSrc.match(/\) : \([\s\S]*?aria-label="Fermer"/);
+    expect(absoluteCloseBlock).toBeTruthy();
+    expect(drawerSrc).toMatch(/className="absolute top-2 right-2/);
+  });
+});
+
 describe('Drawer component — 4 a11y patterns (V2 vigilance)', () => {
   it('pattern 1 : role="dialog"', () => {
     expect(drawerSrc).toMatch(/role=["']dialog["']/);

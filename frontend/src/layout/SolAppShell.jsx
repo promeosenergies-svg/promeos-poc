@@ -394,23 +394,28 @@ function SolAppShellHeader({
         }}
       >
         <Search size={12} />
-        <span>Rechercher</span>
-        <kbd
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: '0 4px',
-            marginLeft: 4,
-            fontFamily: 'var(--sol-font-mono)',
-            fontSize: 9.5,
-            background: 'var(--sol-bg-paper)',
-            border: '1px solid var(--sol-rule)',
-            borderRadius: 2,
-            color: 'var(--sol-ink-400)',
-          }}
-        >
-          <Command size={9} style={{ marginRight: 2 }} />K
-        </kbd>
+        {/* Mobile : icône seule. Desktop : label + kbd pour discoverability. */}
+        {!isMobile && (
+          <>
+            <span>Rechercher</span>
+            <kbd
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '0 4px',
+                marginLeft: 4,
+                fontFamily: 'var(--sol-font-mono)',
+                fontSize: 9.5,
+                background: 'var(--sol-bg-paper)',
+                border: '1px solid var(--sol-rule)',
+                borderRadius: 2,
+                color: 'var(--sol-ink-400)',
+              }}
+            >
+              <Command size={9} style={{ marginRight: 2 }} />K
+            </kbd>
+          </>
+        )}
       </button>
 
       {/* Action Center bell */}
@@ -475,7 +480,7 @@ function SolAppShellHeader({
         <Toggle
           checked={isExpert}
           onChange={toggleExpert}
-          label="Expert"
+          label={isMobile ? '' : 'Expert'}
           size="sm"
           aria-label="Basculer mode expert (Ctrl+Shift+X)"
         />
@@ -621,12 +626,15 @@ export default function SolAppShell() {
 
       {/* Mobile : Panel dans un Drawer gauche. 4 patterns a11y couverts
           par le composant Drawer existant (role=dialog, aria-modal,
-          Escape handler, body scroll lock, focus trap Tab). */}
+          Escape handler, body scroll lock, focus trap Tab). Pas de title
+          passé — SolPanel rend son propre <h2> module (évite double h2).
+          `id` matche `aria-controls` du hamburger. */}
       {isMobile && (
         <Drawer
           open={mobileDrawerOpen}
           onClose={() => setMobileDrawerOpen(false)}
-          title="Navigation"
+          id="sol-panel-mobile-drawer"
+          ariaLabel="Navigation"
           side="left"
           noPadding
           className="w-full max-w-[260px]"
