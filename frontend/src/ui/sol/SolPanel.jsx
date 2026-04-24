@@ -22,7 +22,12 @@ import { resolveBackendPermissionKey } from '../../layout/permissionMap';
 import { useAuth } from '../../contexts/AuthContext';
 import { track } from '../../services/tracker';
 import { getPins, togglePin, isPinned } from '../../utils/navPins';
+import { getRecents } from '../../utils/navRecent';
 import { FOCUS_RING_SOL } from './focusRing';
+
+// Nombre max d'items dans la section "Récents" du panel.
+// Plus petit que MAX_RECENTS (5) du storage pour éviter l'encombrement.
+const RECENTS_DISPLAY_LIMIT = 3;
 
 const LOCKED_TOOLTIP = 'Module non inclus dans votre rôle. Contactez votre administrateur.';
 
@@ -211,6 +216,41 @@ export default function SolPanel({
     return pins.map((key) => allItems.find((it) => it.to === key)).filter(Boolean);
   }, [pins, sections]);
 
+  // Items récents (B2) : last 3 pathnames navigués, exclut les pinnés et
+  // les items déjà visibles dans les sections courantes (éviter duplication).
+  // Lecture directe de localStorage via navRecent — l'écriture est faite
+  // par useRouteTracker dans SolAppShell, pas par SolPanel (séparation
+  // responsabilités : shell track, panel read).
+  const recentsItems = React.useMemo(() => {
+    const recents = getRecents();
+    const currentSectionPaths = new Set(
+      sections.flatMap((s) => (s.items || []).map((i) => i.to.split('?')[0]))
+    );
+    const pinnedSet = new Set(pins);
+    const currentPath = location.pathname.split('?')[0];
+    // Map recents (paths) → items — cherche dans TOUT le registry pour
+    // pouvoir pointer vers une page hors du module courant.
+    const allSectionItems = sections.flatMap((s) => s.items || []);
+    return recents
+      .filter((r) => r && r.path)
+      .filter((r) => r.path !== currentPath)
+      .filter((r) => !pinnedSet.has(r.path))
+      .filter((r) => !currentSectionPaths.has(r.path.split('?')[0]))
+      .map((r) => {
+        const found = allSectionItems.find((it) => it.to === r.path);
+        if (found) return found;
+        // Fallback si la route n'est pas dans NAV_SECTIONS (page masquée /
+        // hidden) — on crée un item minimal avec le label stocké.
+        if (!r.label) return null;
+        return { to: r.path, label: r.label, locked: false };
+      })
+      .filter(Boolean)
+      .slice(0, RECENTS_DISPLAY_LIMIT);
+    // Les deps incluent location.pathname pour que la liste se rafraîchisse
+    // après chaque navigation (useRouteTracker a déjà pushé le nouvel item).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sections, pins, location.pathname]);
+
   return (
     <aside
       className={`sol-panel sol-app-panel ${className}`.trim()}
@@ -272,6 +312,70 @@ export default function SolPanel({
         >
           {desc || moduleMeta?.desc || ''}
         </p>
+
+        {/* Section Récents (B2) — last 3 navigations hors courante/pinnés
+            /module-courant. Vide = pas de rendu. */}
+        {recentsItems.length > 0 && (
+          <div
+            key="recents"
+            className="sol-panel-section"
+            style={{ marginBottom: 20 }}
+            aria-label="Récemment visité"
+          >
+            <p
+              className="sol-panel-section-label"
+              style={{
+                fontFamily: 'var(--sol-font-mono)',
+                fontSize: 9.5,
+                textTransform: 'uppercase',
+                letterSpacing: '0.14em',
+                fontWeight: 600,
+                color: 'var(--sol-ink-400)',
+                margin: '0 0 8px 2px',
+              }}
+            >
+              Récents
+            </p>
+            {recentsItems.map((item) => {
+              const basePath = item.to.split('?')[0].split('#')[0];
+              const isActive =
+                basePath === location.pathname ||
+                (basePath !== '/' && location.pathname.startsWith(basePath + '/'));
+              const locked = item.locked === true;
+              const visuals = getItemVisuals(locked, isActive);
+              return (
+                <div
+                  key={`recent-${item.to}`}
+                  className="sol-panel-item-row"
+                  style={{ display: 'flex', alignItems: 'stretch', position: 'relative' }}
+                >
+                  <button
+                    type="button"
+                    onClick={locked ? undefined : () => handleItemClick(item, 'recents')}
+                    aria-current={isActive && !locked ? 'page' : undefined}
+                    aria-disabled={locked || undefined}
+                    className={`sol-panel-item ${FOCUS_RING_SOL} ${isActive ? 'is-active' : ''}${locked ? ' is-locked' : ''}`.trim()}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '7px 8px',
+                      borderRadius: 4,
+                      fontSize: 13,
+                      width: '100%',
+                      textAlign: 'left',
+                      border: 'none',
+                      transition: 'background 120ms ease',
+                      ...visuals,
+                    }}
+                  >
+                    <span style={{ flex: 1, lineHeight: 1.3 }}>{item.label}</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Section Épinglés (B1) — affichée uniquement quand pins non-vide */}
         {pinnedItems.length > 0 && (

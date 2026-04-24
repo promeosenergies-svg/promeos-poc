@@ -48,6 +48,7 @@ import { Toggle } from '../ui';
 import { useAuth } from '../contexts/AuthContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { trackRouteChange } from '../services/tracker';
+import useRouteTracker from '../hooks/useRouteTracker';
 import {
   getActionCenterActionsSummary,
   getActionCenterNotifications,
@@ -461,6 +462,9 @@ export default function SolAppShell() {
   useEffect(() => {
     trackRouteChange(location.pathname);
   }, [location.pathname]);
+
+  // B2 : navRecent persistence (alimente la section "Récents" du SolPanel).
+  useRouteTracker();
 
   // URL param actionCenter=open → open slide-over
   useEffect(() => {
