@@ -35,6 +35,7 @@ import {
   getComplianceBundle,
   getCockpit,
   getPatrimoineKpis,
+  getSolProposal,
 } from '../services/api';
 import {
   NBSP,
@@ -85,6 +86,7 @@ function useCommandData({ orgId } = {}) {
     compliance: null,
     cockpit: null,
     patrimoine: null,
+    solProposal: null,
   });
 
   useEffect(() => {
@@ -98,18 +100,22 @@ function useCommandData({ orgId } = {}) {
       getComplianceBundle().catch(() => null),
       getCockpit().catch(() => null),
       getPatrimoineKpis().catch(() => null),
-    ]).then(([actions, notifSummary, notifList, compliance, cockpit, patrimoine]) => {
-      if (cancelled) return;
-      setState({
-        status: 'ready',
-        actions: actions.status === 'fulfilled' ? actions.value : null,
-        notifSummary: notifSummary.status === 'fulfilled' ? notifSummary.value : null,
-        notifList: notifList.status === 'fulfilled' ? notifList.value : null,
-        compliance: compliance.status === 'fulfilled' ? compliance.value : null,
-        cockpit: cockpit.status === 'fulfilled' ? cockpit.value : null,
-        patrimoine: patrimoine.status === 'fulfilled' ? patrimoine.value : null,
-      });
-    });
+      getSolProposal().catch(() => null),
+    ]).then(
+      ([actions, notifSummary, notifList, compliance, cockpit, patrimoine, solProposal]) => {
+        if (cancelled) return;
+        setState({
+          status: 'ready',
+          actions: actions.status === 'fulfilled' ? actions.value : null,
+          notifSummary: notifSummary.status === 'fulfilled' ? notifSummary.value : null,
+          notifList: notifList.status === 'fulfilled' ? notifList.value : null,
+          compliance: compliance.status === 'fulfilled' ? compliance.value : null,
+          cockpit: cockpit.status === 'fulfilled' ? cockpit.value : null,
+          patrimoine: patrimoine.status === 'fulfilled' ? patrimoine.value : null,
+          solProposal: solProposal.status === 'fulfilled' ? solProposal.value : null,
+        });
+      }
+    );
 
     return () => {
       cancelled = true;
@@ -427,49 +433,49 @@ export default function CommandCenterSol() {
       {/* 1. Urgence régulatoire (cross-vues canonique) */}
       <DeadlineBanner />
 
-      {/* 2. SOL VOUS PROPOSE — hero agentique avec plan structuré + chiffrage.
-          Sol identifie le top 1, contextualise avec compteurs (priorités totales,
-          gain potentiel cumulé, délai d'action). Si rien à proposer, on saute. */}
-      {solTopProp && (
+      {/* 2. SOL PROPOSE — hero agentique riche, alimenté par /api/sol/proposal.
+          Backend retourne un plan d'action structuré (3 actions chiffrées avec
+          impact €/an, délai, source module). Affiche le headline prescriptif +
+          3 metrics (Actions / Gain potentiel / Délai) + liste actions chiffrées
+          en panneau bottom. Fallback briefing[0] si endpoint indisponible. */}
+      {(data.solProposal || solTopProp) && (
         <SolHero
           chip="Sol propose · plan d'action"
-          title={solTopProp.label}
+          title={data.solProposal?.headline || solTopProp?.label}
           description={
-            briefing.length > 1
-              ? `Sol a identifié ${briefing.length} priorités sur votre patrimoine. ${
-                  totalGain > 0
-                    ? `Gain potentiel cumulé estimé à ${formatFREur(totalGain, 0)} sur 12 mois.`
-                    : 'Plan d\'action prêt — chiffrage en cours.'
-                }`
-              : solTopProp.severity === 'critical'
-                ? `Priorité critique à traiter aujourd'hui pour éviter une dérive${
-                    totalGain > 0 ? ` · gain potentiel ${formatFREur(totalGain, 0)}` : ''
-                  }.`
-                : `À regarder cette semaine pour rester sur votre trajectoire${
-                    totalGain > 0 ? ` · gain potentiel ${formatFREur(totalGain, 0)}` : ''
-                  }.`
+            data.solProposal
+              ? `Sources : ${(data.solProposal.sources || []).join(' · ')} · scope ${data.solProposal.scope_label}`
+              : briefing.length > 1
+                ? `Sol a identifié ${briefing.length} priorités sur votre patrimoine.`
+                : 'Plan d\'action prêt.'
           }
           metrics={[
             {
-              label: 'Priorités',
-              value: `${todayActions.length || briefing.length || 0}`,
+              label: 'Actions',
+              value: `${data.solProposal?.actions?.length || todayActions.length || 0}`,
             },
             {
               label: 'Gain potentiel',
-              value: totalGain > 0 ? formatFREur(totalGain, 0) : '—',
+              value:
+                data.solProposal?.total_impact_eur_per_year > 0
+                  ? formatFREur(data.solProposal.total_impact_eur_per_year, 0)
+                  : totalGain > 0
+                    ? formatFREur(totalGain, 0)
+                    : '—',
             },
             {
               label: 'Délai',
               value:
-                solTopProp.severity === 'critical'
+                data.solProposal?.actions?.[0]?.delay ||
+                (solTopProp?.severity === 'critical'
                   ? 'aujourd\'hui'
-                  : solTopProp.severity === 'high'
-                    ? 'cette semaine'
-                    : 'ce mois',
+                  : 'cette semaine'),
             },
           ]}
-          primaryLabel="Voir le plan d'action"
-          onPrimary={() => solTopProp.path && navigate(solTopProp.path)}
+          actions={data.solProposal?.actions || []}
+          onAction={(path) => path && navigate(path)}
+          primaryLabel="Voir le plan complet"
+          onPrimary={() => navigate('/actions')}
           secondaryLabel="Plus tard"
           onSecondary={() => {}}
         />

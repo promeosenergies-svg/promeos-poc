@@ -42,6 +42,7 @@ import {
   getNotificationsList,
   getComplianceScoreTrend,
   getComplianceTimeline,
+  getSolProposal,
 } from '../services/api';
 import {
   buildKicker,
@@ -80,6 +81,7 @@ function useCockpitSolData({ orgId } = {}) {
     notifications: null,
     timeline: null,
     co2: null,
+    solProposal: null,
   });
 
   useEffect(() => {
@@ -93,7 +95,8 @@ function useCockpitSolData({ orgId } = {}) {
       getNotificationsList({ org_id: orgId, limit: 10 }).catch(() => null),
       getComplianceTimeline().catch(() => null),
       getCockpitCo2().catch(() => null),
-    ]).then(([billing, compliance, cockpit, notifications, timeline, co2]) => {
+      getSolProposal().catch(() => null),
+    ]).then(([billing, compliance, cockpit, notifications, timeline, co2, solProposal]) => {
       if (cancelled) return;
       setState({
         status: 'ready',
@@ -103,6 +106,7 @@ function useCockpitSolData({ orgId } = {}) {
         notifications: notifications.status === 'fulfilled' ? notifications.value : null,
         timeline: timeline.status === 'fulfilled' ? timeline.value : null,
         co2: co2.status === 'fulfilled' ? co2.value : null,
+        solProposal: solProposal.status === 'fulfilled' ? solProposal.value : null,
       });
     });
 
@@ -333,12 +337,20 @@ export default function CockpitSol() {
       {/* Mode SURFACE — Briefing exécutif Sol → KPIs → Trajectoire → benchmark → CO₂ → opportunités → événements */}
       {mode === 'surface' && (
         <>
-          {/* 1. BRIEF SOL — narration 1 phrase + 3 métriques + CTA */}
+          {/* 1. BRIEF SOL — alimenté par /api/sol/proposal (même source que /).
+              Headline prescriptif chiffré + 3 metrics KPIs exécutifs + plan
+              d'action structuré (3 leviers chiffrés) + CTAs export brief. */}
           <SolHero
             chip="Briefing exécutif · Sol"
-            title={briefTitle}
-            description={briefDescription}
+            title={data.solProposal?.headline || briefTitle}
+            description={
+              data.solProposal
+                ? `${briefDescription} Sources : ${(data.solProposal.sources || []).join(' · ')}.`
+                : briefDescription
+            }
             metrics={briefMetrics}
+            actions={data.solProposal?.actions || []}
+            onAction={(path) => path && navigate(path)}
             primaryLabel="Voir les actions prioritaires"
             onPrimary={() => navigate('/actions')}
             secondaryLabel="Exporter le brief"

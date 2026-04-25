@@ -88,6 +88,10 @@ export default function SolHero({
   onPrimary,
   secondaryLabel = 'Plus tard',
   onSecondary,
+  // Plan d'action structuré (depuis /api/sol/proposal). Si fourni,
+  // affiche les actions en panneau bottom (border-top séparateur).
+  actions = [],
+  onAction,
 }) {
   if (!title) return null;
 
@@ -103,7 +107,7 @@ export default function SolHero({
         display: 'grid',
         gridTemplateColumns: '1fr auto',
         gap: 24,
-        alignItems: 'center',
+        alignItems: 'flex-start',
         boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
         // Entry animation : slide-up + fade-in 600ms ease-out signature.
         // Respecte prefers-reduced-motion via règle globale (index.css:1043).
@@ -246,6 +250,184 @@ export default function SolHero({
           </button>
         )}
       </div>
+
+      {/* Plan d'action — 3 actions chiffrées (depuis /api/sol/proposal).
+          Span 2 colonnes du grid, border-top pour séparation claire. */}
+      {actions && actions.length > 0 && (
+        <div
+          style={{
+            gridColumn: '1 / -1',
+            marginTop: 14,
+            paddingTop: 14,
+            borderTop: '1px solid var(--sol-ink-200)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: 'var(--sol-font-mono)',
+              fontSize: 9.5,
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              color: 'var(--sol-ink-500)',
+              fontWeight: 600,
+              marginBottom: 2,
+            }}
+          >
+            Plan d'action — {actions.length} levier{actions.length > 1 ? 's' : ''}
+          </div>
+          {actions.map((a, i) => (
+            <SolActionRow
+              key={a.id || i}
+              action={a}
+              index={i}
+              onAction={onAction}
+            />
+          ))}
+        </div>
+      )}
     </section>
+  );
+}
+
+// ─── SolActionRow : ligne d'action chiffrée avec metadata + CTA ──────────
+
+const SEVERITY_BADGE_STYLES = {
+  critical: {
+    background: 'var(--sol-afaire-bg, #fef2f2)',
+    color: 'var(--sol-afaire-fg, #b91c1c)',
+    label: 'CRITIQUE',
+  },
+  high: {
+    background: 'var(--sol-attention-bg, #fef3c7)',
+    color: 'var(--sol-attention-fg, #b45309)',
+    label: 'ÉLEVÉ',
+  },
+  warn: {
+    background: 'var(--sol-attention-bg, #fef3c7)',
+    color: 'var(--sol-attention-fg, #b45309)',
+    label: 'WARN',
+  },
+  info: {
+    background: 'var(--sol-calme-bg, #ecfdf5)',
+    color: 'var(--sol-calme-fg, #047857)',
+    label: 'INFO',
+  },
+};
+
+const SOURCE_LABELS = {
+  conformite: 'CONFORMITÉ',
+  billing: 'FACTURATION',
+  actions: 'PLAN ACTION',
+  'achat-energie': 'ACHAT ÉNERGIE',
+  patrimoine: 'PATRIMOINE',
+  flex: 'PILOTAGE',
+};
+
+function SolActionRow({ action, index, onAction }) {
+  const sev = SEVERITY_BADGE_STYLES[action.severity] || SEVERITY_BADGE_STYLES.info;
+  const sourceLabel = SOURCE_LABELS[action.source_module] || action.source_module?.toUpperCase();
+  const formattedImpact = (action.impact_eur_per_year || 0).toLocaleString('fr-FR');
+
+  return (
+    <button
+      type="button"
+      onClick={() => onAction && action.action_path && onAction(action.action_path, action)}
+      style={{
+        all: 'unset',
+        cursor: onAction ? 'pointer' : 'default',
+        display: 'grid',
+        gridTemplateColumns: 'auto 1fr auto',
+        gap: 12,
+        alignItems: 'flex-start',
+        padding: '10px 0',
+        borderTop: index > 0 ? '1px dashed var(--sol-ink-200)' : 'none',
+        textAlign: 'left',
+        fontFamily: 'var(--sol-font-body)',
+        transition: 'background 120ms ease',
+      }}
+      onMouseEnter={(e) => onAction && (e.currentTarget.style.background = 'var(--sol-bg-canvas, #fafaf6)')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+    >
+      {/* Index */}
+      <div
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: '50%',
+          background: 'var(--sol-ink-100, #f3f4f6)',
+          color: 'var(--sol-ink-700)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 11,
+          fontWeight: 700,
+          fontFamily: 'var(--sol-font-mono)',
+          flexShrink: 0,
+        }}
+      >
+        {index + 1}
+      </div>
+
+      {/* Titre + description courte */}
+      <div style={{ minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 13.5,
+            fontWeight: 600,
+            color: 'var(--sol-ink-900)',
+            marginBottom: 2,
+            lineHeight: 1.3,
+          }}
+        >
+          {action.title}
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            fontSize: 10.5,
+            fontFamily: 'var(--sol-font-mono)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: 'var(--sol-ink-500)',
+          }}
+        >
+          <span
+            style={{
+              padding: '1px 6px',
+              borderRadius: 99,
+              background: sev.background,
+              color: sev.color,
+              fontWeight: 600,
+            }}
+          >
+            {sev.label}
+          </span>
+          <span style={{ fontWeight: 600, color: 'var(--sol-ink-900)' }}>
+            +{formattedImpact} €/an
+          </span>
+          <span>{action.delay}</span>
+          {sourceLabel && <span>· {sourceLabel}</span>}
+        </div>
+      </div>
+
+      {/* Arrow CTA */}
+      {onAction && (
+        <div
+          style={{
+            fontSize: 18,
+            color: 'var(--sol-ink-400)',
+            paddingTop: 1,
+          }}
+        >
+          →
+        </div>
+      )}
+    </button>
   );
 }

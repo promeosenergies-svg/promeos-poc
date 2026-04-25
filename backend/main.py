@@ -98,6 +98,9 @@ from routes.market_intelligence import router as market_intelligence_router
 # Import Bill Intelligence router
 from app.bill_intelligence.router import router as bill_router
 
+# Sol (agentique) — propositions d'actions chiffrées
+from app.sol.router import router as sol_router
+
 # Import Market Data V2 router (spot, forwards, tariffs, freshness)
 from routes.market_data import router as market_data_router
 
@@ -157,6 +160,7 @@ app.include_router(compteurs_router)
 app.include_router(consommations_router)
 app.include_router(alertes_router)
 app.include_router(cockpit_router)
+app.include_router(sol_router)
 app.include_router(compliance_router)
 app.include_router(demo_router)
 app.include_router(guidance_router)
