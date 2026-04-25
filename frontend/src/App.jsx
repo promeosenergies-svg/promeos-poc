@@ -720,6 +720,12 @@ function App() {
                       path="/contracts-radar"
                       element={<Navigate to="/renouvellements" replace />}
                     />
+                    {/* M-05 Sprint P0 : /energy-copilot était dead code mais accessible via URL/nav.
+                        Redirect vers /cockpit pour éviter lien fantôme. */}
+                    <Route
+                      path="/energy-copilot"
+                      element={<Navigate to="/cockpit" replace />}
+                    />
 
                     {/* Catch-all */}
                     <Route

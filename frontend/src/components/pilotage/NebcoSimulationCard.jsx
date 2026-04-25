@@ -20,7 +20,10 @@ import { fmtEur } from '../../utils/format';
 import { Skeleton, InfoTip } from '../../ui';
 import { humaniseArchetype, humaniseSiteId } from './archetypeLabels';
 
-const DEMO_FALLBACK_SITE = 'retail-001';
+// Fix M-02 Sprint P0 : 'retail-001' était l'ID DEMO legacy absent du seed
+// HELIOS actuel (sites numériques 1-5). Fallback sur Siège HELIOS Paris (1)
+// qui existe toujours en seed S. Rapport V2 audit MAIN.
+const DEMO_FALLBACK_SITE = '1';
 
 // Formatteur Intl force sur Europe/Paris pour afficher la periode de rejeu
 // independamment du fuseau navigateur (backend renvoie ISO YYYY-MM-DD).

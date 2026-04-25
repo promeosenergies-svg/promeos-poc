@@ -12,7 +12,7 @@ export default function SolKpiRow({ children, className = '', columns = 3 }) {
         display: 'grid',
         gridTemplateColumns: `repeat(${columns}, 1fr)`,
         gap: 14,
-        margin: '18px 0 24px 0',
+        margin: '12px 0 16px 0',
       }}
     >
       {children}
