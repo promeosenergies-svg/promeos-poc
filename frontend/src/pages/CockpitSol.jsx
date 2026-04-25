@@ -317,12 +317,15 @@ export default function CockpitSol() {
     <div
       style={{ padding: '32px 48px 60px', background: 'var(--sol-bg-canvas)', minHeight: '100vh' }}
     >
+      {/* Header sobre — le briefing chiffré vit dans le SolHero (chip "BRIEFING
+          EXÉCUTIF · SOL" + headline prescriptif + plan 3 leviers). On garde
+          ici l'orgname + breakdown sites pour le contexte exec. */}
       <SolPageHeader
         kicker={kicker}
         title="Bonjour "
-        titleEm="— votre semaine en briefing"
-        narrative={briefTitle}
-        subNarrative={`${rawKpis.total} sites · ${rawKpis.conformes} OK · ${rawKpis.nonConformes + rawKpis.aRisque} à risque · ${alertsCount} alerte${alertsCount > 1 ? 's' : ''}`}
+        titleEm="— votre patrimoine cette semaine"
+        narrative={`${rawKpis.total} sites · ${rawKpis.conformes} OK · ${rawKpis.nonConformes + rawKpis.aRisque} à risque · ${alertsCount} alerte${alertsCount > 1 ? 's' : ''}`}
+        subNarrative="Sol prépare le briefing exécutif ci-dessous."
         rightSlot={
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <BoutonRapportCOMEX />

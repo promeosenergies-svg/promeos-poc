@@ -63,7 +63,6 @@ import {
 
 // Refonte from-scratch : composants MAIN agentiques + builders
 import DeadlineBanner from '../components/DeadlineBanner';
-import TodayActionsCard from './cockpit/TodayActionsCard';
 import WatchlistCard from './cockpit/WatchlistCard';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
 import { useCockpitData } from '../hooks/useCockpitData';
@@ -422,11 +421,14 @@ export default function CommandCenterSol() {
 
   return (
     <>
+      {/* Header sobre — la narration chiffrée vit dans le SolHero ci-dessous.
+          Évite la contradiction "header dit X, SolHero dit Y" en gardant juste
+          le contexte (orgname + sites) sans répéter les chiffres. */}
       <SolPageHeader
         kicker={kicker}
         title="Bonjour "
         titleEm="— vos actions du jour"
-        narrative={narrative}
+        narrative={`${rawKpis.total} site${rawKpis.total > 1 ? 's' : ''} sous votre périmètre · Sol vous propose le plan d'action ci-dessous.`}
         subNarrative={subNarrative}
       />
 
@@ -481,52 +483,16 @@ export default function CommandCenterSol() {
         />
       )}
 
-      {/* 3 + 5 — Top priorités & Watchlist pairés en grid 2-col
-          (à faire / à surveiller, densités similaires, évite le vide horizontal).
-          Children stretch via align-items default + cards full-height pour alignement parfait. */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-          gap: 16,
-          alignItems: 'stretch',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <SolSectionHead
-            title="À traiter aujourd'hui"
-            meta={
-              todayActions.length > 0
-                ? `${todayActions.length} priorité${todayActions.length > 1 ? 's' : ''} · ${dataFreshness}`
-                : dataFreshness
-            }
-          />
-          <div style={{ flex: 1, display: 'flex' }}>
-            <div style={{ width: '100%' }}>
-              <TodayActionsCard actions={todayActions} onNavigate={navigate} />
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <SolSectionHead
-            title="À surveiller"
-            meta={
-              watchlist.length > 0
-                ? `${watchlist.length} signal${watchlist.length > 1 ? 'aux' : ''}`
-                : 'Tout va bien'
-            }
-          />
-          <div style={{ flex: 1, display: 'flex' }}>
-            <div style={{ width: '100%' }}>
-              <WatchlistCard
-                watchlist={watchlist}
-                consistency={consistency}
-                loading={false}
-                onNavigate={navigate}
-              />
-            </div>
-          </div>
-        </div>
+      {/* Watchlist — signaux faibles à monitorer. Le composant a son propre
+          header "À surveiller" + badge count, donc pas de SolSectionHead
+          au-dessus (sinon doublon de titre). */}
+      <div style={{ marginTop: 24 }}>
+        <WatchlistCard
+          watchlist={watchlist}
+          consistency={consistency}
+          loading={false}
+          onNavigate={navigate}
+        />
       </div>
 
       {/* 4. Activité 7 jours + Répartition HP/HC J-1 — grid 2-col, lectures complémentaires :
