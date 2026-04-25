@@ -14,6 +14,7 @@ import { TrendingUp, TrendingDown, Minus, Zap, RefreshCw, Info } from 'lucide-re
 import { AreaChart, Area, ResponsiveContainer, Tooltip as RTooltip } from 'recharts';
 import { useMarketData } from '../../hooks/useMarketData';
 import { Explain } from '../../ui';
+import { fmtNum } from '../../utils/format';
 
 // Mapping key brique → clé glossaire (pour Explain inline dans la légende)
 const BRIQUE_GLOSSARY = {
@@ -163,7 +164,7 @@ export default function MarketWidget({ profile = 'C4' }) {
         <div>
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
-              {spotAvg7 != null ? spotAvg7.toFixed(1) : '—'}
+              {fmtNum(spotAvg7, 1)}
             </span>
             <span className="text-xs text-zinc-500">€/MWh</span>
           </div>
@@ -180,7 +181,7 @@ export default function MarketWidget({ profile = 'C4' }) {
           </div>
           {forwardCal && (
             <div className="text-xs text-zinc-400">
-              CAL{forwardCal.delivery_start.slice(2, 4)} : {forwardCal.price_eur_mwh.toFixed(1)} €
+              CAL{forwardCal.delivery_start.slice(2, 4)} : {fmtNum(forwardCal.price_eur_mwh, 1)} €
             </div>
           )}
         </div>
@@ -227,7 +228,7 @@ export default function MarketWidget({ profile = 'C4' }) {
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-zinc-500">Décomposition prix {profile}</span>
             <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
-              {data.decomposition.total_ttc_eur_mwh.toFixed(0)} €/MWh TTC
+              {fmtNum(data.decomposition.total_ttc_eur_mwh, 0)} €/MWh TTC
             </span>
           </div>
 
@@ -243,7 +244,7 @@ export default function MarketWidget({ profile = 'C4' }) {
                 }}
               >
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-10 whitespace-nowrap bg-zinc-900 text-white text-[10px] px-2 py-1 rounded shadow">
-                  {BRIQUE_LABELS[b.key]} : {b.value.toFixed(1)} €/MWh ({b.pct.toFixed(0)}%)
+                  {BRIQUE_LABELS[b.key]} : {fmtNum(b.value, 1)} €/MWh ({fmtNum(b.pct, 0)}%)
                 </div>
               </div>
             ))}
@@ -260,14 +261,14 @@ export default function MarketWidget({ profile = 'C4' }) {
                     className="inline-block w-2 h-2 rounded-sm shrink-0"
                     style={{ backgroundColor: BRIQUE_COLORS[b.key] }}
                   />
-                  {glossKey ? <Explain term={glossKey}>{label}</Explain> : label} {b.pct.toFixed(0)}
+                  {glossKey ? <Explain term={glossKey}>{label}</Explain> : label} {fmtNum(b.pct, 0)}
                   %
                 </div>
               );
             })}
             <div className="flex items-center gap-1 text-[10px] text-zinc-400">
               <span className="inline-block w-2 h-2 rounded-sm shrink-0 bg-zinc-300 dark:bg-zinc-600" />
-              Autres {(100 - briques.slice(0, 3).reduce((s, b) => s + b.pct, 0)).toFixed(0)}%
+              Autres {fmtNum(100 - briques.slice(0, 3).reduce((s, b) => s + b.pct, 0), 0)}%
             </div>
           </div>
         </div>

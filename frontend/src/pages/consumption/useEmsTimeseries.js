@@ -35,25 +35,18 @@ export function formatDate(isoStr, granularity) {
   if (isNaN(d.getTime())) return isoStr;
 
   if (granularity === 'monthly') {
-    return d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+    return d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit', timeZone: 'UTC' });
   }
   if (granularity === 'daily') {
-    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', timeZone: 'UTC' });
   }
-  if (granularity === 'hourly') {
-    return d.toLocaleString('fr-FR', {
-      day: '2-digit',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-  // 15min / 30min — same day+month+time format as hourly
+  // Default catches hourly / 15min / 30min — format identique (jour + mois + heure).
   return d.toLocaleString('fr-FR', {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'UTC',
   });
 }
 

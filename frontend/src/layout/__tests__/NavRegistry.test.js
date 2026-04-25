@@ -296,10 +296,11 @@ describe('Vocabulary V7', () => {
     expect(usages).toBeDefined();
   });
 
-  it('Performance is labeled "Performance énergétique"', () => {
+  it('Monitoring is labeled "Monitoring" (relabelled chantier 2 from "Performance énergétique")', () => {
     const energie = NAV_SECTIONS.find((s) => s.module === 'energie');
-    const perf = energie.items.find((i) => i.label === 'Performance énergétique');
+    const perf = energie.items.find((i) => i.to === '/monitoring');
     expect(perf).toBeDefined();
+    expect(perf.label).toBe('Monitoring');
   });
 
   it("Achat item 'Scénarios d'achat' replaces 'Stratégies d'achat'", () => {
@@ -373,6 +374,31 @@ describe('QUICK_ACTIONS', () => {
       expect(moduleKeys).toContain(moduleId);
     }
   });
+});
+
+/* ── Routes -legacy résolvent au bon module (pas au default 'cockpit') ──
+ * Le matcher prefix est strict (`route + '/'`), donc /conformite-legacy ne
+ * matche PAS le préfixe /conformite. Sans mapping explicite, ces routes
+ * tomberaient toutes au default 'cockpit', cassant le tint header + le
+ * highlight rail. On les liste explicitement dans ROUTE_MODULE_MAP.
+ */
+describe('matchRouteToModule — routes -legacy', () => {
+  const cases = [
+    ['/home-legacy', 'cockpit'],
+    ['/cockpit-legacy', 'cockpit'],
+    ['/patrimoine-legacy', 'patrimoine'],
+    ['/sites-legacy/abc-123', 'patrimoine'],
+    ['/conformite-legacy', 'conformite'],
+    ['/monitoring-legacy', 'energie'],
+    ['/bill-intel-legacy', 'patrimoine'],
+    ['/achat-energie-legacy', 'achat'],
+  ];
+  for (const [path, expectedModule] of cases) {
+    it(`${path} → module '${expectedModule}'`, () => {
+      const { moduleId } = matchRouteToModule(path);
+      expect(moduleId).toBe(expectedModule);
+    });
+  }
 });
 
 /* ── Section tints ── */

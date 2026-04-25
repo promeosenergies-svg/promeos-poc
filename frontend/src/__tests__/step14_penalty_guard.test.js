@@ -5,25 +5,27 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 
-describe('Step 14 — RegOps penalty display', () => {
-  it('RegOps.jsx imports fmtEur', () => {
-    const src = fs.readFileSync('src/pages/RegOps.jsx', 'utf8');
-    expect(src).toContain('fmtEur');
+// Lot 3 Phase 3 : pénalités affichées via RegOpsSol.jsx
+// + regops/sol_presenters.js (RegOps.jsx réduit à un loader).
+describe('Step 14 — RegOps penalty display (Pattern C Lot 3)', () => {
+  it('regops/sol_presenters utilise formatFREur pour afficher les pénalités', () => {
+    const src = fs.readFileSync('src/pages/regops/sol_presenters.js', 'utf8');
+    expect(src).toContain('formatFREur');
   });
 
-  it('RegOps.jsx displays estimated_penalty_eur', () => {
-    const src = fs.readFileSync('src/pages/RegOps.jsx', 'utf8');
+  it('regops/sol_presenters lit estimated_penalty_eur', () => {
+    const src = fs.readFileSync('src/pages/regops/sol_presenters.js', 'utf8');
     expect(src).toContain('estimated_penalty_eur');
   });
 
-  it('RegOps.jsx shows Risque financier label', () => {
-    const src = fs.readFileSync('src/pages/RegOps.jsx', 'utf8');
-    expect(src).toContain('Risque financier');
+  it('RegOpsSol affiche le KPI « Pénalité potentielle »', () => {
+    const src = fs.readFileSync('src/pages/RegOpsSol.jsx', 'utf8');
+    expect(src).toMatch(/Pénalité potentielle/);
   });
 
-  it('RegOps.jsx shows penalty_basis', () => {
-    const src = fs.readFileSync('src/pages/RegOps.jsx', 'utf8');
-    expect(src).toContain('penalty_basis');
+  it('sumPenalties exclut COMPLIANT (filtre AT_RISK + NON_COMPLIANT)', () => {
+    const src = fs.readFileSync('src/pages/regops/sol_presenters.js', 'utf8');
+    expect(src).toMatch(/AT_RISK.*NON_COMPLIANT|NON_COMPLIANT.*AT_RISK/s);
   });
 });
 

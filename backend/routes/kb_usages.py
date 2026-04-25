@@ -691,8 +691,6 @@ def seed_demo_kb(db: Session = Depends(get_db)):
         ("85.20Z", "ENSEIGNEMENT"),
         ("63.11Z", "DATACENTER"),
         ("63.12Z", "DATACENTER"),
-        ("68.20A", "BUREAU_STANDARD"),
-        ("68.20B", "BUREAU_STANDARD"),
         ("55.10Z", "HOTEL_STANDARD"),
         ("55.20Z", "HOTEL_STANDARD"),
     ]

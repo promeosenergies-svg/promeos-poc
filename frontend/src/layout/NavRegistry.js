@@ -18,7 +18,8 @@
  *  - Achat visible en mode normal (plus expertOnly)
  *  - Usages visible en mode normal (sorti de HIDDEN_PAGES)
  *  - Vocabulaire : Cockpit→Accueil, BACS→Pilotage bâtiment, APER→Solarisation (APER),
- *    Performance→Performance énergétique, Usages→Répartition par usage,
+ *    Performance→Monitoring (était "Performance énergétique" V7 → "Monitoring" chantier 2),
+ *    Usages→Répartition par usage,
  *    Stratégies d'achat→Scénarios d'achat, Assistant→Simulateur d'achat
  *  - Actions & Suivi + Notifications retirés (déplacés dans Centre d'actions header)
  */
@@ -32,6 +33,7 @@ import {
   Activity,
   Import,
   Users,
+  UserCog,
   Receipt,
   CalendarRange,
   BookOpen,
@@ -55,8 +57,6 @@ import {
   Upload,
   BarChart3,
   Sun,
-  Cpu,
-  Building,
   SearchCheck,
   PieChart,
 } from 'lucide-react';
@@ -66,7 +66,11 @@ export const ROUTE_MODULE_MAP = {
   // Cockpit (ex-pilotage)
   '/': 'cockpit',
   '/cockpit': 'cockpit',
+  '/home-legacy': 'cockpit',
+  '/cockpit-legacy': 'cockpit',
   '/onboarding': 'cockpit',
+  // /onboarding/sirene = module patrimoine : le wizard Sirene crée des
+  // sites dans le patrimoine (contexte plus pertinent que cockpit onboarding).
   '/onboarding/sirene': 'patrimoine',
   // Backward compat (redirigés vers Centre d'actions via AppShell)
   '/notifications': 'cockpit',
@@ -78,15 +82,24 @@ export const ROUTE_MODULE_MAP = {
 
   // Conformité (module autonome)
   '/conformite': 'conformite',
-  '/conformite/dt': 'conformite',
-  '/conformite/bacs': 'conformite',
+  '/conformite-legacy': 'conformite',
+  // NOTE (Sprint 1 Vague A phase A5) : /conformite/dt, /conformite/bacs,
+  // /conformite/audit-sme retirés ici — aucune Route React correspondante
+  // dans App.jsx → ils tombaient sur NotFound alors que le rail s'éclairait
+  // en émeraude (promesse cassée). Implémentation `?tab=obligations&focus=X`
+  // dans ConformiteSol prévue Vague D Sprint 2. Cf.
+  // docs/audit/audit-navigation-sol-fresh-2026-04-22.md §8 Q7.
   '/conformite/aper': 'conformite',
-  '/conformite/audit-sme': 'conformite',
+  '/conformite/aper-legacy': 'conformite',
   '/conformite/tertiaire': 'conformite',
   '/conformite/tertiaire/wizard': 'conformite',
   '/conformite/tertiaire/anomalies': 'conformite',
   '/conformite/tertiaire/efa/:id': 'conformite',
+  // /compliance (root) → Navigate redirect vers /conformite dans App.jsx.
+  // On garde un mapping de sécurité pour éviter un flash de module "cockpit"
+  // pendant le très bref render pré-redirection (tint header correct).
   '/compliance': 'conformite',
+  // /compliance/pipeline + /compliance/sites/:siteId = routes RÉELLES (pas des Navigate) :
   '/compliance/pipeline': 'conformite',
   '/compliance/sites/:siteId': 'conformite',
   '/regops/:id': 'conformite',
@@ -100,19 +113,24 @@ export const ROUTE_MODULE_MAP = {
   '/usages': 'energie',
   '/usages-horaires': 'energie',
   '/monitoring': 'energie',
+  '/monitoring-legacy': 'energie',
 
   // Patrimoine (Facturation migrée ici)
   '/patrimoine': 'patrimoine',
   '/patrimoine/nouveau': 'patrimoine',
+  '/patrimoine-legacy': 'patrimoine',
   '/sites/:id': 'patrimoine',
+  '/sites-legacy/:id': 'patrimoine',
   '/contrats': 'patrimoine',
   '/billing': 'patrimoine',
   '/bill-intel': 'patrimoine',
+  '/bill-intel-legacy': 'patrimoine',
   '/payment-rules': 'patrimoine',
   '/portfolio-reconciliation': 'patrimoine',
 
   // Achat
   '/achat-energie': 'achat',
+  '/achat-energie-legacy': 'achat',
   '/renouvellements': 'achat',
 
   // Admin
@@ -125,6 +143,9 @@ export const ROUTE_MODULE_MAP = {
   '/admin/roles': 'admin',
   '/admin/assignments': 'admin',
   '/admin/audit': 'admin',
+  '/admin/kb-metrics': 'admin',
+  '/admin/cx-dashboard': 'admin',
+  '/admin/enedis-health': 'admin',
   '/activation': 'admin',
   '/status': 'admin',
 };
@@ -421,7 +442,7 @@ export const QUICK_ACTIONS = [
     longLabel: "Scénarios d'achat & échéances",
     icon: ShoppingCart,
     to: '/achat-energie',
-    keywords: ['achat', 'purchase', 'marche', 'contrat'],
+    keywords: ['achat', 'marche', 'contrat'],
   },
   {
     key: 'onboarding',
@@ -584,10 +605,17 @@ export const NAV_SECTIONS = [
       {
         to: '/monitoring',
         icon: TrendingUp,
-        label: 'Performance énergétique',
+        label: 'Monitoring',
         desc: 'KPIs puissance, heatmap, tendances',
         badgeKey: 'monitoring',
-        keywords: ['monitoring', 'kpi', 'puissance', 'performance', 'heatmap'],
+        keywords: [
+          'monitoring',
+          'kpi',
+          'puissance',
+          'performance',
+          'performance énergétique',
+          'heatmap',
+        ],
       },
       {
         to: '/usages',
@@ -669,7 +697,6 @@ export const NAV_SECTIONS = [
         desc: 'Comparer offres, simuler, assistant achat',
         keywords: [
           'achat',
-          'purchase',
           'scenarios',
           'strategie',
           'contrats',
@@ -688,7 +715,7 @@ export const NAV_SECTIONS = [
   {
     key: 'admin-data',
     module: 'admin',
-    label: 'Données',
+    label: 'Administration',
     expertOnly: true,
     order: 7,
     items: [
@@ -704,6 +731,60 @@ export const NAV_SECTIONS = [
         label: 'Utilisateurs',
         requireAdmin: true,
         keywords: ['users', 'comptes'],
+      },
+      {
+        to: '/admin/roles',
+        icon: ShieldCheck,
+        label: 'Rôles & permissions',
+        desc: 'Matrice rôles × capabilities',
+        requireAdmin: true,
+        expertOnly: true,
+        keywords: ['roles', 'permissions', 'iam', 'acces'],
+      },
+      {
+        to: '/admin/assignments',
+        icon: UserCog,
+        label: 'Attributions',
+        desc: 'Affectations utilisateurs × sites',
+        requireAdmin: true,
+        expertOnly: true,
+        keywords: ['assignments', 'attributions', 'scopes', 'perimetre'],
+      },
+      {
+        to: '/admin/audit',
+        icon: FileText,
+        label: "Journal d'audit",
+        desc: 'Historique événements tracer + CX',
+        requireAdmin: true,
+        expertOnly: true,
+        keywords: ['audit', 'log', 'historique', 'journal', 'traces'],
+      },
+      {
+        to: '/admin/kb-metrics',
+        icon: BarChart3,
+        label: 'Métriques KB',
+        desc: 'Observabilité knowledge base',
+        requireAdmin: true,
+        expertOnly: true,
+        keywords: ['kb', 'metrics', 'knowledge', 'observability'],
+      },
+      {
+        to: '/admin/cx-dashboard',
+        icon: TrendingUp,
+        label: 'Indicateurs CX',
+        desc: 'Time-to-Value, adoption, rétention utilisateurs',
+        requireAdmin: true,
+        expertOnly: true,
+        keywords: ['cx', 'north-star', 't2v', 'iar', 'wau', 'retention', 'adoption'],
+      },
+      {
+        to: '/admin/enedis-health',
+        icon: Activity,
+        label: 'Santé Enedis',
+        desc: 'Santé connecteurs + promotion',
+        requireAdmin: true,
+        expertOnly: true,
+        keywords: ['enedis', 'sge', 'dataconnect', 'promotion', 'connectors'],
       },
       {
         to: '/watchers',
@@ -736,6 +817,113 @@ export function resolveModule(pathname) {
 /** Filter nav items according to expert mode (expertOnly items are hidden in normal) */
 export function getVisibleItems(items, expertMode) {
   return expertMode ? items : items.filter((item) => !item.expertOnly);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * PANEL_DEEP_LINKS_BY_ROUTE — raccourcis paramétrés additifs par route.
+ *
+ * DOCTRINE (non-négociable) :
+ *   - SSOT = NAV_SECTIONS. Ce mécanisme NE la remplace JAMAIS.
+ *   - Schéma entrée : `{ href: string, label: string, hint?: string }[]`
+ *   - Uniquement raccourcis paramétrés (?tab=, ?filter=, ?horizon=, ?fw=)
+ *     ou sous-paths qui n'existent PAS comme items top-level NAV_SECTIONS.
+ *   - Zéro duplication de label top-level NAV_SECTIONS (garde-fou test).
+ *   - Zéro ré-exposition d'items cachés volontairement (/actions, /notifications).
+ *
+ * Contrat enforce par __tests__/panel_deep_links_invariant.test.js.
+ *
+ * Historique : ex-PANEL_SECTIONS_BY_ROUTE (vidé f679f14c après divergence
+ * SSOT — 14 entrées avec sections concurrentes, labels divergents, items
+ * cachés ré-exposés). Triage détaillé docs/audit/deep_links_panel_triage.md.
+ *
+ * Merge logic : getPanelSections() retourne les sections NAV_SECTIONS du
+ * module courant (SSOT) PUIS append une section "Raccourcis" contenant les
+ * deep-links de la route (si présents). Ordre : SSOT d'abord, additif ensuite.
+ *
+ * État actuel : Vague 1 livrée (GATE 4) — 8 deep-links sur 3 routes.
+ * ══════════════════════════════════════════════════════════════════════════ */
+export const PANEL_DEEP_LINKS_BY_ROUTE = {
+  // /anomalies — filtres framework réglementaire (consommés par useAnomalyFilters)
+  '/anomalies': [
+    {
+      href: '/anomalies?fw=DECRET_TERTIAIRE',
+      label: 'Décret Tertiaire',
+      hint: 'Dérives trajectoire DT',
+    },
+    {
+      href: '/anomalies?fw=FACTURATION',
+      label: 'Anomalies facturation',
+      hint: 'Écarts shadow billing',
+    },
+    { href: '/anomalies?fw=BACS', label: 'BACS', hint: 'GTB/GTC non conforme' },
+  ],
+
+  // /renouvellements — horizons temporels (consommés par ContractRadarPage useSearchParams)
+  '/renouvellements': [
+    { href: '/renouvellements?horizon=90', label: '90 jours', hint: 'Urgent — action immédiate' },
+    { href: '/renouvellements?horizon=180', label: '180 jours', hint: 'Fenêtre de préparation' },
+    { href: '/renouvellements?horizon=365', label: '12 mois', hint: 'Pipeline annuel' },
+  ],
+
+  // /conformite/aper — filtres assujettissement (consommés par AperPage useSearchParams)
+  '/conformite/aper': [
+    {
+      href: '/conformite/aper?filter=parking',
+      label: 'Parkings > 1500 m²',
+      hint: 'Obligations ombrières PV',
+    },
+    {
+      href: '/conformite/aper?filter=toiture',
+      label: 'Toitures > 500 m²',
+      hint: 'Obligations solarisation',
+    },
+  ],
+};
+
+/**
+ * Résout les sections à afficher dans SolPanel pour une route donnée.
+ *
+ * Architecture 3 couches :
+ *   1. NAV_SECTIONS (SSOT) → sections du module courant, source principale
+ *   2. PANEL_DEEP_LINKS_BY_ROUTE → raccourcis additifs paramétrés (optionnel)
+ *   3. getVisibleItems() → filtre expertOnly
+ *
+ * Le merge est **additif** (pas d'override) : les items SSOT restent
+ * toujours visibles, les deep-links apparaissent dans une section
+ * "Raccourcis" appendée en bas du panel si la route en déclare.
+ */
+export function getPanelSections(pathname, expertMode) {
+  const clean = (pathname || '').split('?')[0].split('#')[0];
+
+  // 1. Couche SSOT : sections du module courant depuis NAV_SECTIONS
+  const { moduleId } = matchRouteToModule(clean);
+  const baseSections = getSectionsForModule(moduleId)
+    .map((s) => ({
+      key: s.key,
+      label: s.label,
+      items: getVisibleItems(s.items || [], expertMode),
+    }))
+    .filter((s) => s.items.length > 0);
+
+  // 2. Couche additive : deep-links paramétrés pour la route exacte
+  const deepLinks = PANEL_DEEP_LINKS_BY_ROUTE[clean] || [];
+  if (deepLinks.length === 0) {
+    return baseSections;
+  }
+
+  // Transforme les deep-links {href, label, hint} vers le shape items
+  // attendu par SolPanel ({to, label, desc}) pour compat rendu.
+  const shortcutsSection = {
+    key: 'deep-links',
+    label: 'Raccourcis',
+    items: deepLinks.map((l) => ({
+      to: l.href,
+      label: l.label,
+      desc: l.hint,
+    })),
+  };
+
+  return [...baseSections, shortcutsSection];
 }
 
 /** Flat list of all nav items (for CommandPalette search) — base path only (no query) */

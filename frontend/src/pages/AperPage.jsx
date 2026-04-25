@@ -3,7 +3,7 @@
  * Page dédiée Loi APER : sites éligibles, estimation production PV, timeline.
  */
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Sun, MapPin, Calendar, Zap, Leaf, Euro, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -11,6 +11,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { Explain, KpiCardInline } from '../ui';
 import ErrorState from '../ui/ErrorState'; // eslint-disable-line no-unused-vars
 import { getAperDashboard, getAperEstimate } from '../services/api';
+import { fmtPct } from '../utils/format';
 
 const MONTH_LABELS = [
   'Jan',
@@ -61,6 +62,11 @@ export default function AperPage() {
   const { isExpert } = useExpertMode();
   const { sitesLoading } = useScope();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // URL param `?filter=parking|toiture` : deep-link depuis panel nav.
+  // Valeurs acceptées : 'parking', 'toiture'. Autres → pas de filtre.
+  const filterParam = searchParams.get('filter');
+  const activeFilter = filterParam === 'parking' || filterParam === 'toiture' ? filterParam : null;
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -110,7 +116,7 @@ export default function AperPage() {
     );
   }
 
-  const allSites = [
+  const allSitesUnfiltered = [
     ...(dashboard?.parking?.sites || []).map((s) => ({
       ...s,
       type: 'Parking',
@@ -118,6 +124,14 @@ export default function AperPage() {
     })),
     ...(dashboard?.roof?.sites || []).map((s) => ({ ...s, type: 'Toiture', surfaceType: 'roof' })),
   ];
+  // Filtre deep-link ?filter=parking (surfaceType 'parking') ou
+  // ?filter=toiture (surfaceType 'roof'). null = tous les sites.
+  const allSites =
+    activeFilter === 'parking'
+      ? allSitesUnfiltered.filter((s) => s.surfaceType === 'parking')
+      : activeFilter === 'toiture'
+        ? allSitesUnfiltered.filter((s) => s.surfaceType === 'roof')
+        : allSitesUnfiltered;
 
   const monthlyData =
     estimate?.monthly_kwh?.map((kwh, i) => ({
@@ -346,7 +360,7 @@ export default function AperPage() {
                   Surface panneaux : {fmt(estimate.surface_panneaux_m2)}
                   {'\u00A0'}m²
                 </span>
-                <span>Couverture : {(estimate.coverage_ratio * 100).toFixed(0)}%</span>
+                <span>Couverture : {fmtPct(estimate.coverage_ratio, true, 0)}</span>
                 <span>Autoconso : {estimate.autoconsommation_pct}%</span>
               </div>
             )}

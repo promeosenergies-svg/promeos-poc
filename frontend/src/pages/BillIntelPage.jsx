@@ -17,6 +17,8 @@ import {
   getInsightDetail,
 } from '../services/api';
 import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState, Explain } from '../ui';
+// Sprint 2 refonte : header éditorial Sol.
+import { SolPageHeader } from '../ui/sol';
 import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
 import ErrorState from '../ui/ErrorState';
 import Tooltip from '../ui/Tooltip';
@@ -471,6 +473,7 @@ export default function BillIntelPage() {
       icon={FileText}
       title="Facturation"
       subtitle="Vérifiez vos factures : PROMEOS recalcule le montant attendu et détecte les écarts."
+      hideHeader
       actions={
         <>
           <Button
@@ -555,6 +558,20 @@ export default function BillIntelPage() {
         </>
       }
     >
+      {/* Sprint 2 refonte — header éditorial Sol */}
+      <SolPageHeader
+        kicker="Facturation · shadow billing PROMEOS"
+        title="Vos factures"
+        titleEm=" — vérifiées, recalculées, expliquées"
+        narrative={
+          <>
+            Chaque facture est recalculée côté PROMEOS à partir de vos consommations —{' '}
+            <em>les écarts sont détectés automatiquement</em>.
+          </>
+        }
+        subNarrative="Si un fournisseur a oublié une bascule d'accise ou appliqué le mauvais taux CTA, vous le verrez ici avant même qu'il s'en rende compte."
+      />
+
       {/* CTA vers achat énergie */}
       <button
         onClick={() => navigate('/achat-energie')}

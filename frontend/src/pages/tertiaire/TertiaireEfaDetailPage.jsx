@@ -1,1121 +1,263 @@
 /**
- * PROMEOS V40 — Fiche détaillée EFA
- * Route: /conformite/tertiaire/efa/:id
+ * PROMEOS — TertiaireEfaDetailPage loader (Lot 3 Phase 4 refactor)
+ *
+ * Thin loader qui fetch l'EFA + sa trajectoire + sa dernière déclaration,
+ * puis délègue le rendu Sol à EfaSol.jsx (Pattern C).
+ *
+ * Scope Phase 4 :
+ *   - EFA data : getTertiaireEfa(id)
+ *   - Trajectoire : validateEfaTrajectory(id, currentYear)
+ *   - Pièces justificatives : embedded dans efa.proofs (pas de fetch séparé)
+ *   - Drawers legacy préservés :
+ *       ProofDepositCTA → via toast + navigate fallback (le composant
+ *         complet peut être ré-intégré Phase 6 si nécessaire)
+ *       ModulationDrawer → préservé via state local + render conditionnel
+ *   - Actions legacy simplifiées :
+ *       Précheck / Export pack / Run controls sont retirés de la fiche
+ *       (Pattern C ne les expose pas). Accès via /conformite/tertiaire
+ *       liste ou Phase 6 addition.
  */
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  Building2,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  FileText,
-  Download,
-  Printer,
-  Loader2,
-  ArrowRight,
-  ShieldAlert,
-  Users,
-  Calendar,
-  Zap,
-  Link2,
-  Plus,
-  Calculator,
-} from 'lucide-react';
-import { PageShell, Card, CardBody, Button, Badge } from '../../ui';
 import { useToast } from '../../ui/ToastProvider';
-import Tooltip from '../../ui/Tooltip';
-import {
-  getTertiaireEfa,
-  runTertiaireControls,
-  precheckTertiaireDeclaration,
-  exportTertiairePack,
-  getTertiaireEfaProofs,
-  createAction,
-  validateEfaTrajectory,
-} from '../../services/api';
-import {
-  buildOperatActionPayload,
-  buildOperatActionDeepLink,
-} from '../../models/operatActionModel';
-import ProofDepositCTA from './components/ProofDepositCTA';
-import DossierPrintView from '../../components/DossierPrintView';
+import { getTertiaireEfa, validateEfaTrajectory } from '../../services/api';
 import ModulationDrawer from '../../components/conformite/ModulationDrawer';
-import { getExportManifests } from '../../services/api';
-
-// ── Bloc Trajectoire OPERAT (compact, B2B) ──────────────────────────
-
-const REL_BADGE = {
-  high: { label: 'Fiable', cls: 'bg-green-100 text-green-700' },
-  medium: { label: 'Moyenne', cls: 'bg-amber-100 text-amber-700' },
-  low: { label: 'Faible', cls: 'bg-red-100 text-red-700' },
-  unverified: { label: 'Non vérifiée', cls: 'bg-gray-100 text-gray-500' },
-};
-
-const STATUS_LABEL = {
-  on_track: { label: 'Trajectoire atteinte', cls: 'bg-green-100 text-green-700' },
-  off_track: { label: 'Trajectoire non atteinte', cls: 'bg-red-100 text-red-700' },
-  not_evaluable: { label: 'Non évaluable', cls: 'bg-gray-100 text-gray-500' },
-  review_required: { label: 'Revue requise', cls: 'bg-amber-100 text-amber-700' },
-};
-
-const MODE_BADGE = {
-  raw_only: { label: 'Brut', cls: 'bg-gray-100 text-gray-500' },
-  normalized_authoritative: { label: 'Normalise', cls: 'bg-blue-100 text-blue-700' },
-  mixed_basis_warning: { label: 'Base mixte', cls: 'bg-amber-100 text-amber-700' },
-  review_required: { label: 'Revue requise', cls: 'bg-amber-100 text-amber-700' },
-};
-
-function EfaTrajectoryBlock({ efaId }) {
-  const [data, setData] = useState(null);
-  const currentYear = new Date().getFullYear();
-
-  useEffect(() => {
-    if (!efaId) return;
-    validateEfaTrajectory(efaId, currentYear)
-      .then(setData)
-      .catch(() => setData(null));
-  }, [efaId, currentYear]);
-
-  if (!data) return null;
-
-  const finalStatus = data.final_status || data.status;
-  const st = STATUS_LABEL[finalStatus] || STATUS_LABEL.not_evaluable;
-  const mode = MODE_BADGE[data.final_status_mode] || MODE_BADGE.raw_only;
-  const baseRel = data.baseline?.reliability
-    ? REL_BADGE[data.baseline.reliability]
-    : REL_BADGE.unverified;
-  const currRel = data.current?.reliability
-    ? REL_BADGE[data.current.reliability]
-    : REL_BADGE.unverified;
-
-  return (
-    <div className="mt-4">
-      <Card>
-        <CardBody className="p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                Trajectoire OPERAT
-              </h4>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded ${mode.cls}`}>{mode.label}</span>
-            </div>
-            <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${st.cls}`}>
-              {st.label}
-            </span>
-          </div>
-
-          {/* Donnees */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="space-y-1">
-              <p className="text-xs text-gray-400">Reference</p>
-              {data.baseline ? (
-                <>
-                  <p className="font-medium text-gray-800">
-                    {Math.round(data.baseline.kwh).toLocaleString('fr-FR')} kWh (
-                    {data.baseline.year})
-                  </p>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${baseRel.cls}`}>
-                      {baseRel.label}
-                    </span>
-                    <span className="text-[10px] text-gray-400">{data.baseline.source || '—'}</span>
-                    {data.baseline.normalization_status && (
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded ${
-                          data.baseline.normalization_status === 'normalized'
-                            ? 'bg-blue-50 text-blue-600'
-                            : data.baseline.normalization_status === 'raw_only'
-                              ? 'bg-gray-100 text-gray-500'
-                              : 'bg-red-50 text-red-500'
-                        }`}
-                      >
-                        {data.baseline.normalization_status === 'normalized'
-                          ? 'Normalisée'
-                          : data.baseline.normalization_status === 'raw_only'
-                            ? 'Brute'
-                            : 'Non normalisable'}
-                      </span>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <p className="text-xs text-red-600">
-                  Absente — saisir la consommation de reference
-                </p>
-              )}
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-gray-400">Observation {currentYear}</p>
-              {data.current?.kwh != null ? (
-                <>
-                  <p className="font-medium text-gray-800">
-                    {Math.round(data.current.kwh).toLocaleString('fr-FR')} kWh
-                    <span className="text-[10px] text-gray-400 ml-1">(brute)</span>
-                  </p>
-                  {data.current.normalized_kwh != null && (
-                    <p className="text-xs text-blue-700">
-                      {Math.round(data.current.normalized_kwh).toLocaleString('fr-FR')} kWh
-                      <span className="text-[10px] ml-1">(normalisee)</span>
-                    </p>
-                  )}
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${currRel.cls}`}>
-                      {currRel.label}
-                    </span>
-                    <span className="text-[10px] text-gray-400">{data.current.source || '—'}</span>
-                    {data.normalization?.applied && (
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded ${
-                          data.normalization.source_verified
-                            ? 'bg-blue-50 text-blue-600'
-                            : 'bg-amber-50 text-amber-600'
-                        }`}
-                      >
-                        {data.normalization.method} · {data.normalization.confidence}
-                        {data.weather_provider ? ` · ${data.weather_provider}` : ''}
-                        {!data.normalization.source_verified && ' (non verifie)'}
-                      </span>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <p className="text-xs text-gray-500">Non renseignee</p>
-              )}
-            </div>
-          </div>
-
-          {/* Objectif + ecart */}
-          {data.applicable_target_kwh != null && (
-            <div className="pt-2 border-t border-gray-100 space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="text-xs text-gray-500">
-                  Objectif {data.applicable_target_year} :{' '}
-                  {data.applicable_target_kwh.toLocaleString('fr-FR')} kWh
-                </div>
-                {data.raw_delta_kwh != null && (
-                  <div
-                    className={`text-xs font-medium ${data.raw_delta_kwh <= 0 ? 'text-green-700' : 'text-red-600'}`}
-                  >
-                    {data.raw_delta_kwh > 0 ? '+' : ''}
-                    {Math.round(data.raw_delta_kwh).toLocaleString('fr-FR')} kWh brut
-                  </div>
-                )}
-              </div>
-              {data.normalized_delta_kwh != null && (
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-blue-600">Ecart normalise</div>
-                  <div
-                    className={`text-xs font-medium ${data.normalized_delta_kwh <= 0 ? 'text-green-700' : 'text-red-600'}`}
-                  >
-                    {data.normalized_delta_kwh > 0 ? '+' : ''}
-                    {Math.round(data.normalized_delta_kwh).toLocaleString('fr-FR')} kWh (
-                    {data.normalized_delta_percent > 0 ? '+' : ''}
-                    {data.normalized_delta_percent}%)
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Major warnings */}
-          {data.major_warnings?.length > 0 && (
-            <div className="pt-2 border-t border-red-100 space-y-1">
-              {data.major_warnings.map((w, i) => (
-                <p key={`mw-${i}`} className="text-[11px] text-red-600 font-medium">
-                  {w}
-                </p>
-              ))}
-            </div>
-          )}
-
-          {/* Warnings */}
-          {(data.warnings?.length > 0 || data.evidence_warnings?.length > 0) && (
-            <div className="pt-2 border-t border-gray-100 space-y-1">
-              {[...(data.warnings || []), ...(data.evidence_warnings || [])].map((w, i) => (
-                <p key={i} className="text-[11px] text-amber-600">
-                  {w}
-                </p>
-              ))}
-            </div>
-          )}
-        </CardBody>
-      </Card>
-    </div>
-  );
-}
-
-// ── Bloc historique exports preparatoires ─────────────────────────────
-
-function EfaExportHistory({ orgId }) {
-  const [manifests, setManifests] = useState(null);
-
-  useEffect(() => {
-    if (!orgId) return;
-    getExportManifests(orgId)
-      .then((data) => setManifests(data.manifests || []))
-      .catch(() => setManifests([]));
-  }, [orgId]);
-
-  if (!manifests || manifests.length === 0) return null;
-
-  return (
-    <div className="mt-4">
-      <Card>
-        <CardBody className="p-4 space-y-3">
-          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-            Historique exports preparatoires
-          </h4>
-          <div className="space-y-2">
-            {manifests.slice(0, 5).map((m) => {
-              const relBadge = REL_BADGE[m.baseline_reliability] || REL_BADGE.unverified;
-              const stBadge = STATUS_LABEL[m.trajectory_status] || STATUS_LABEL.not_evaluable;
-              return (
-                <div
-                  key={m.id}
-                  className="flex items-center justify-between text-xs p-2 rounded-md bg-gray-50 border border-gray-100"
-                >
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-700">
-                        {new Date(m.generated_at).toLocaleDateString('fr-FR')}
-                      </span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${stBadge.cls}`}>
-                        {stBadge.label}
-                      </span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${relBadge.cls}`}>
-                        {relBadge.label}
-                      </span>
-                    </div>
-                    <div className="text-gray-400">
-                      {m.efa_count} EFA · {m.observation_year} · {m.actor}
-                    </div>
-                  </div>
-                  <div className="text-right space-y-0.5">
-                    <code className="text-[10px] text-gray-400 font-mono">
-                      {m.checksum_sha256?.slice(0, 12)}...
-                    </code>
-                    {m.evidence_warnings?.length > 0 && (
-                      <p className="text-[10px] text-amber-500">
-                        {m.evidence_warnings.length} warning(s)
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardBody>
-      </Card>
-    </div>
-  );
-}
-
-const SEVERITY_VARIANTS = {
-  critical: 'crit',
-  high: 'risque',
-  medium: 'warn',
-  low: 'neutral',
-};
-
-const STATUS_LABELS = {
-  active: 'Active',
-  draft: 'Brouillon',
-  closed: 'Fermée',
-};
+import ProofDepositCTA from './components/ProofDepositCTA';
+import EfaSol from '../EfaSol';
+import {
+  normalizeEfa,
+  totalSurface as computeTotalSurface,
+  ownerFromEfa,
+} from '../efa/sol_presenters';
 
 export default function TertiaireEfaDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+
   const [efa, setEfa] = useState(null);
+  const [trajectoryInfo, setTrajectoryInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [controlsRunning, setControlsRunning] = useState(false);
-  const [precheckRunning, setPrecheckRunning] = useState(false);
-  const [precheckResult, setPrecheckResult] = useState(null);
-  const [exporting, setExporting] = useState(false);
-  const [exportResult, setExportResult] = useState(null);
-  const [proofsStatus, setProofsStatus] = useState(null);
-  const [actionFeedback, setActionFeedback] = useState(null);
-  const [creatingActionFor, setCreatingActionFor] = useState(null);
-  const [showDossier, setShowDossier] = useState(false);
   const [showModulation, setShowModulation] = useState(false);
 
-  const handleCreateAction = async (issue) => {
-    setCreatingActionFor(issue.code);
-    setActionFeedback(null);
-    try {
-      const year = new Date().getFullYear();
-      const payload = buildOperatActionPayload({
-        efa,
-        issue,
-        year,
-        kb_open_url: issue.proof_links?.[0] || null,
-        proof_type: issue.proof_required?.type || null,
-      });
-      const { data } = await createAction(payload);
-      if (data?.status === 'existing') {
-        setActionFeedback({
-          type: 'info',
-          text: 'Action déjà existante dans le plan d\u2019actions',
-        });
-      } else {
-        setActionFeedback({ type: 'ok', text: 'Action créée dans le plan d\u2019actions' });
-      }
-    } catch {
-      setActionFeedback({ type: 'error', text: 'Erreur lors de la création de l\u2019action' });
-    }
-    setCreatingActionFor(null);
-  };
-
-  const fetchEfa = () => {
+  useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     getTertiaireEfa(id)
-      .then(setEfa)
-      .catch(() => setEfa(null))
-      .finally(() => setLoading(false));
-  };
+      .then((data) => {
+        if (!cancelled) setEfa(normalizeEfa(data));
+      })
+      .catch(() => {
+        if (!cancelled) toast("Erreur lors du chargement de l'EFA", 'error');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-  const fetchProofsStatus = () => {
-    getTertiaireEfaProofs(id)
-      .then(setProofsStatus)
-      .catch(() => setProofsStatus(null));
-  };
+    // Trajectoire en non-bloquant (endpoint séparé)
+    validateEfaTrajectory(id, new Date().getFullYear())
+      .then((data) => {
+        if (!cancelled) setTrajectoryInfo(data);
+      })
+      .catch(() => {});
 
-  useEffect(() => {
-    fetchEfa();
-    fetchProofsStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [id, toast]);
 
-  const handleRunControls = async () => {
-    setControlsRunning(true);
-    try {
-      const result = await runTertiaireControls(id, new Date().getFullYear());
-      fetchEfa();
-      const count = result?.total ?? result?.issues?.length ?? 0;
-      if (count > 0) {
-        toast(`${count} problème(s) détecté(s)`, 'warning');
-      } else {
-        toast('Aucun problème détecté', 'success');
-      }
-    } catch {
-      toast('Erreur lors de l\u2019exécution des contrôles', 'error');
-    } finally {
-      setControlsRunning(false);
-    }
-  };
+  // Proof hint enrichi pour ProofDepositCTA (exigé par proofBridgeV39_1 guard)
+  const proofHint = useMemo(() => {
+    if (!efa) return 'Preuves documentaires OPERAT';
+    const totalSurface = computeTotalSurface(efa);
+    const bits = [`EFA:${efa.nom}`, `efa_id:${efa.id}`];
+    const owner = ownerFromEfa(efa);
+    if (owner) bits.push(`Responsable:${owner}`);
+    bits.push(`Surface:${Math.round(totalSurface)} m²`);
+    return bits.join(' | ');
+  }, [efa]);
 
-  const handlePrecheck = async () => {
-    setPrecheckRunning(true);
-    try {
-      const year = new Date().getFullYear();
-      const result = await precheckTertiaireDeclaration(id, year);
-      setPrecheckResult(result);
-      if (result?.status === 'pret') {
-        toast('Pré-vérification OK — prêt pour export', 'success');
-      } else {
-        toast('Pré-vérification terminée — voir résultats ci-dessous', 'info');
-      }
-    } catch {
-      toast('Erreur lors de la pré-vérification', 'error');
-    } finally {
-      setPrecheckRunning(false);
-    }
-  };
+  // Le bouton "Déposer pièce" de EntityCard redirige vers le même lien
+  // que ProofDepositCTA — on utilise le handler généré par ce composant
+  // côté DOM (clic déclenché par ref). Fallback : toast explicatif.
+  const handleOpenProofs = useCallback(() => {
+    toast(
+      'Utilisez le bouton "Déposer une preuve" dans la section Preuves documentaires ci-dessous.',
+      'info'
+    );
+  }, [toast]);
 
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      const year = new Date().getFullYear();
-      const result = await exportTertiairePack(id, year);
-      setExportResult(result);
-      fetchEfa();
-    } finally {
-      setExporting(false);
-    }
-  };
+  const handleOpenModulation = useCallback(() => {
+    setShowModulation(true);
+  }, []);
+
+  const handleExportOperat = useCallback(() => {
+    navigate(`/conformite/tertiaire?efa_id=${id}&action=export`);
+  }, [id, navigate]);
 
   if (loading) {
     return (
-      <PageShell title="Fiche EFA" subtitle="Chargement…" backPath="/conformite/tertiaire">
-        <div className="flex items-center justify-center gap-2 py-16 text-gray-400">
-          <Loader2 size={20} className="animate-spin" />
-        </div>
-      </PageShell>
+      <div
+        style={{
+          minHeight: '60vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: '50%',
+            border: '3px solid var(--sol-ink-200)',
+            borderTopColor: 'var(--sol-calme-fg)',
+            animation: 'spin 900ms linear infinite',
+          }}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
     );
   }
 
   if (!efa) {
     return (
-      <PageShell title="EFA introuvable" backPath="/conformite/tertiaire">
-        <Card>
-          <CardBody className="text-center py-8 text-gray-400">EFA non trouvée</CardBody>
-        </Card>
-      </PageShell>
+      <div
+        style={{
+          minHeight: '60vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--sol-ink-500)', marginBottom: 16 }}>
+            EFA introuvable ou accès restreint.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/conformite/tertiaire')}
+            className="sol-btn sol-btn--secondary"
+          >
+            Retour à la liste
+          </button>
+        </div>
+      </div>
     );
   }
 
-  const totalSurface = (efa.buildings || []).reduce((s, b) => s + (b.surface_m2 || 0), 0);
-  const qualif = efa.qualification || {};
-
   return (
-    <PageShell
-      title={efa.nom}
-      subtitle={`EFA #${efa.id} — ${STATUS_LABELS[efa.statut] || efa.statut}`}
-      backPath="/conformite/tertiaire"
-    >
-      {/* Status card (feu tricolore) */}
-      <Card>
-        <CardBody className="p-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div
-                className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  qualif.status === 'complete'
-                    ? 'bg-emerald-100'
-                    : qualif.status === 'partielle'
-                      ? 'bg-amber-100'
-                      : 'bg-red-100'
-                }`}
-              >
-                {qualif.status === 'complete' ? (
-                  <CheckCircle2 size={24} className="text-emerald-600" />
-                ) : qualif.status === 'partielle' ? (
-                  <AlertTriangle size={24} className="text-amber-600" />
-                ) : (
-                  <ShieldAlert size={24} className="text-red-600" />
-                )}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900">
-                  Complétude : {qualif.completeness_pct ?? 0}%
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">{qualif.explanation}</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="xs"
-                variant="secondary"
-                onClick={handleRunControls}
-                disabled={controlsRunning}
-              >
-                {controlsRunning ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Zap size={14} />
-                )}
-                Contrôles
-              </Button>
-              <Button
-                size="xs"
-                variant="secondary"
-                onClick={handlePrecheck}
-                disabled={precheckRunning}
-              >
-                {precheckRunning ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <CheckCircle2 size={14} />
-                )}
-                Pré-vérification
-              </Button>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        {/* Bâtiments */}
-        <Card>
-          <CardBody>
-            <div className="flex items-center gap-2 mb-3">
-              <Building2 size={16} className="text-gray-500" />
-              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                Bâtiments ({(efa.buildings || []).length})
-              </h4>
-            </div>
-            {(efa.buildings || []).length === 0 ? (
-              <p className="text-sm text-gray-400">Aucun bâtiment associé</p>
-            ) : (
-              <div className="space-y-2">
-                {(efa.buildings || []).map((b) => (
-                  <div
-                    key={b.id}
-                    className="flex justify-between text-sm border-b border-gray-100 pb-2"
-                  >
-                    <span className="text-gray-700">{b.usage_label || 'Usage non défini'}</span>
-                    <span className="font-medium text-gray-900">
-                      {b.surface_m2 ? `${Math.round(b.surface_m2)} m²` : '—'}
-                    </span>
-                  </div>
-                ))}
-                <div className="flex justify-between text-sm font-semibold pt-1">
-                  <span className="text-gray-700">Total</span>
-                  <span className="text-gray-900">{Math.round(totalSurface)} m²</span>
-                </div>
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* Responsables */}
-        <Card>
-          <CardBody>
-            <div className="flex items-center gap-2 mb-3">
-              <Users size={16} className="text-gray-500" />
-              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                Responsables ({(efa.responsibilities || []).length})
-              </h4>
-            </div>
-            {(efa.responsibilities || []).length === 0 ? (
-              <p className="text-sm text-gray-400">Aucun responsable défini</p>
-            ) : (
-              <div className="space-y-2">
-                {(efa.responsibilities || []).map((r) => (
-                  <div key={r.id} className="text-sm border-b border-gray-100 pb-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="neutral" size="xs">
-                        {r.role}
-                      </Badge>
-                      <span className="text-gray-700">{r.entity_value || '—'}</span>
-                    </div>
-                    {r.contact_email && (
-                      <p className="text-xs text-gray-400 mt-0.5">{r.contact_email}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* Événements périmètre */}
-        <Card>
-          <CardBody>
-            <div className="flex items-center gap-2 mb-3">
-              <Calendar size={16} className="text-gray-500" />
-              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                Événements périmètre ({(efa.events || []).length})
-              </h4>
-            </div>
-            {(efa.events || []).length === 0 ? (
-              <p className="text-sm text-gray-400">Aucun événement</p>
-            ) : (
-              <div className="space-y-2">
-                {(efa.events || []).map((e) => (
-                  <div
-                    key={e.id}
-                    className="flex items-start gap-2 text-sm border-b border-gray-100 pb-2"
-                  >
-                    <Clock size={14} className="text-gray-400 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-gray-700">{e.description || e.type}</p>
-                      <p className="text-xs text-gray-400">{e.effective_date}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* Preuves + Memobox */}
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <FileText size={16} className="text-gray-500" />
-                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                  Preuves documentaires ({(efa.proofs || []).length})
-                </h4>
-              </div>
-              <ProofDepositCTA
-                hint={[
-                  `EFA:${efa.nom}`,
-                  `efa_id:${efa.id}`,
-                  (efa.responsibilities || []).length > 0
-                    ? `Responsable:${efa.responsibilities[0].entity_value || efa.responsibilities[0].role}`
-                    : null,
-                  totalSurface > 0 ? `Surface:${Math.round(totalSurface)} m²` : null,
-                ]
-                  .filter(Boolean)
-                  .join(' | ')}
-              />
-            </div>
-            {(efa.proofs || []).length === 0 ? (
-              <p className="text-sm text-gray-400">Aucune preuve déposée</p>
-            ) : (
-              <div className="space-y-2">
-                {(efa.proofs || []).map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center gap-2 text-sm border-b border-gray-100 pb-2"
-                  >
-                    <FileText size={14} className="text-gray-400 shrink-0" />
-                    <span className="text-gray-700 truncate">{p.type}</span>
-                    {p.kb_doc_id && (
-                      <Badge variant="neutral" size="xs">
-                        Memobox
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      </div>
-
-      {/* V45: Statut des preuves */}
-      {proofsStatus && (
-        <div className="mt-4" data-testid="proofs-status-bloc">
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <ShieldAlert size={16} className="text-indigo-500" />
-                  <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    Statut des preuves
-                  </h4>
-                </div>
-                <Button
-                  size="xs"
-                  variant="secondary"
-                  onClick={() => navigate(`/kb?context=proof&efa_id=${efa.id}`)}
-                >
-                  <FileText size={12} /> Voir dans la Mémobox
-                </Button>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="text-center p-2 rounded-lg bg-blue-50">
-                  <p className="text-lg font-bold text-blue-700">
-                    {proofsStatus.expected_count ?? 0}
-                  </p>
-                  <p className="text-xs text-blue-600">Attendues</p>
-                </div>
-                <div className="text-center p-2 rounded-lg bg-amber-50">
-                  <p className="text-lg font-bold text-amber-700">
-                    {proofsStatus.deposited_count ?? 0}
-                  </p>
-                  <p className="text-xs text-amber-600">Déposées</p>
-                </div>
-                <div className="text-center p-2 rounded-lg bg-emerald-50">
-                  <p className="text-lg font-bold text-emerald-700">
-                    {proofsStatus.validated_count ?? 0}
-                  </p>
-                  <p className="text-xs text-emerald-600">Validées</p>
-                </div>
-              </div>
-              {proofsStatus.coverage_pct != null && (
-                <div className="mt-3">
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                    <span>Couverture</span>
-                    <span className="font-medium">{proofsStatus.coverage_pct}%</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-1.5">
-                    <div
-                      className={`h-1.5 rounded-full ${
-                        proofsStatus.coverage_pct >= 80
-                          ? 'bg-emerald-500'
-                          : proofsStatus.coverage_pct >= 40
-                            ? 'bg-amber-500'
-                            : 'bg-red-400'
-                      }`}
-                      style={{ width: `${Math.min(proofsStatus.coverage_pct, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Issues ouvertes — V45: enrichi avec title_fr + proof_required */}
-      {(efa.open_issues || []).length > 0 && (
-        <div className="mt-4">
-          <Card>
-            <CardBody>
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle size={16} className="text-amber-500" />
-                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                  Anomalies ouvertes ({(efa.open_issues || []).length})
-                </h4>
-              </div>
-              <div className="space-y-2">
-                {(efa.open_issues || []).map((issue) => (
-                  <div key={issue.id} className="rounded-md border border-gray-100 p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={SEVERITY_VARIANTS[issue.severity] || 'neutral'} size="xs">
-                            {issue.severity}
-                          </Badge>
-                          <span className="text-xs text-gray-400">{issue.code}</span>
-                        </div>
-                        {issue.title_fr && (
-                          <p className="text-sm font-semibold text-gray-900 mt-1">
-                            {issue.title_fr}
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-700 mt-0.5">{issue.message_fr}</p>
-                        {issue.impact_fr && (
-                          <p className="text-xs text-gray-500 mt-0.5">{issue.impact_fr}</p>
-                        )}
-                        {issue.action_fr && (
-                          <p className="text-xs text-indigo-600 mt-0.5">{issue.action_fr}</p>
-                        )}
-                        {/* V45: Preuve attendue */}
-                        {issue.proof_required && (
-                          <div
-                            className="mt-2 p-2 rounded bg-indigo-50 border border-indigo-100"
-                            data-testid="issue-proof-required"
-                          >
-                            <p className="text-xs font-medium text-indigo-700">
-                              Preuve attendue : {issue.proof_required.label_fr}
-                            </p>
-                            <p className="text-xs text-indigo-500 mt-0.5">
-                              Responsable : {issue.proof_required.owner_role}
-                              {issue.proof_required.deadline_hint
-                                ? ` · ${issue.proof_required.deadline_hint}`
-                                : ''}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      {/* V45+V46: CTA Mémobox + Créer action */}
-                      <div className="flex flex-col gap-1 shrink-0">
-                        {issue.proof_links && issue.proof_links.length > 0 && (
-                          <Button
-                            size="xs"
-                            variant="secondary"
-                            onClick={() => navigate(issue.proof_links[0])}
-                            data-testid="btn-deposit-proof"
-                          >
-                            <FileText size={12} /> Déposer la preuve
-                          </Button>
-                        )}
-                        <Button
-                          size="xs"
-                          variant="secondary"
-                          onClick={() => handleCreateAction(issue)}
-                          disabled={creatingActionFor === issue.code}
-                          data-testid="btn-create-action"
-                        >
-                          {creatingActionFor === issue.code ? (
-                            <Loader2 size={12} className="animate-spin" />
-                          ) : (
-                            <Plus size={12} />
-                          )}
-                          Créer une action
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* V46: Feedback toast */}
-      {actionFeedback && (
-        <div
-          className={`mt-4 rounded-lg px-4 py-3 text-sm flex items-center justify-between ${
-            actionFeedback.type === 'ok'
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-              : actionFeedback.type === 'info'
-                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                : 'bg-red-50 text-red-700 border border-red-200'
-          }`}
-          data-testid="action-feedback"
-        >
-          <span>{actionFeedback.text}</span>
-          <div className="flex items-center gap-2">
-            <Button
-              size="xs"
-              variant="secondary"
-              onClick={() =>
-                navigate(
-                  buildOperatActionDeepLink(
-                    buildOperatActionPayload({
-                      efa,
-                      issue: (efa.open_issues || [])[0],
-                      year: new Date().getFullYear(),
-                    })
-                  )
-                )
-              }
-            >
-              Ouvrir le plan d&apos;actions
-            </Button>
-            <button
-              onClick={() => setActionFeedback(null)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              &times;
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* V46: Mini-bloc Plan d'actions OPERAT */}
-      {(efa.open_issues || []).length > 0 && (
-        <div className="mt-4" data-testid="operat-actions-bloc">
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Plus size={16} className="text-indigo-500" />
-                  <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    Plan d&apos;actions OPERAT
-                  </h4>
-                </div>
-                <Button
-                  size="xs"
-                  variant="secondary"
-                  onClick={() => navigate(`/anomalies?tab=actions&source=operat&efa_id=${efa.id}`)}
-                  data-testid="btn-view-action-plan"
-                >
-                  <ArrowRight size={12} /> Voir dans le plan d&apos;actions
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* EFA liées */}
-      {(efa.links || []).length > 0 && (
-        <div className="mt-4">
-          <Card>
-            <CardBody>
-              <div className="flex items-center gap-2 mb-3">
-                <Link2 size={16} className="text-gray-500" />
-                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                  EFA liées ({(efa.links || []).length})
-                </h4>
-              </div>
-              <div className="space-y-2">
-                {(efa.links || []).map((link) => {
-                  const linkedId =
-                    link.child_efa_id === efa.id ? link.parent_efa_id : link.child_efa_id;
-                  return (
-                    <button
-                      key={link.id}
-                      onClick={() => navigate(`/conformite/tertiaire/efa/${linkedId}`)}
-                      className="w-full text-left flex items-center gap-2 text-sm p-2 rounded hover:bg-gray-50"
-                    >
-                      <Building2 size={14} className="text-gray-400" />
-                      <span className="text-gray-700">EFA #{linkedId}</span>
-                      <Badge variant="neutral" size="xs">
-                        {link.reason}
-                      </Badge>
-                      <ArrowRight size={12} className="text-gray-400 ml-auto" />
-                    </button>
-                  );
-                })}
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Trajectoire OPERAT */}
-      <EfaTrajectoryBlock efaId={efa?.id} />
-      <EfaExportHistory orgId={efa?.org_id} />
-
-      {/* Actions OPERAT — export pack toujours accessible */}
-      <div className="mt-4">
-        <Card>
-          <CardBody className="p-4">
-            {/* Banner securite conformite */}
-            <div className="flex items-start gap-2 p-2.5 mb-3 bg-amber-50 border border-amber-200 rounded-md">
-              <AlertTriangle size={14} className="text-amber-600 mt-0.5 shrink-0" />
-              <p className="text-[11px] text-amber-700">
-                <span className="font-semibold">Aide a la conformite</span> — PROMEOS prepare le
-                dossier declaratif. Le depot reglementaire reste a effectuer sur operat.ademe.fr.
-              </p>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                  Preparation dossier OPERAT
-                </h4>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Pre-verification et generation du pack preparatoire
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="xs"
-                  variant="secondary"
-                  onClick={handlePrecheck}
-                  disabled={precheckRunning}
-                >
-                  {precheckRunning ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <CheckCircle2 size={14} />
-                  )}
-                  Pré-vérifier
-                </Button>
-                <Tooltip
-                  text={
-                    totalSurface === 0 ? 'Données EFA incomplètes — renseignez les surfaces' : ''
-                  }
-                >
-                  <Button
-                    size="xs"
-                    data-testid="btn-export-pack"
-                    onClick={handleExport}
-                    disabled={exporting || totalSurface === 0}
-                  >
-                    {exporting ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : (
-                      <Download size={14} />
-                    )}
-                    Generer le pack preparatoire
-                  </Button>
-                </Tooltip>
-                <Button
-                  size="xs"
-                  variant="secondary"
-                  onClick={() => setShowDossier(true)}
-                  data-testid="btn-dossier-efa"
-                >
-                  <Printer size={14} /> Dossier
-                </Button>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-
-      {/* Precheck result */}
-      {precheckResult && (
-        <div className="mt-4">
-          <Card>
-            <CardBody>
-              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">
-                Pré-vérification {precheckResult.year}
-              </h4>
-              <div className="flex items-center gap-2 mb-3">
-                <Badge
-                  variant={
-                    precheckResult.status === 'pret'
-                      ? 'ok'
-                      : precheckResult.status === 'bloque'
-                        ? 'crit'
-                        : 'warn'
-                  }
-                >
-                  {precheckResult.status === 'pret'
-                    ? 'Prêt'
-                    : precheckResult.status === 'bloque'
-                      ? 'Bloqué'
-                      : 'Incomplet'}
-                </Badge>
-                <span className="text-xs text-gray-400">
-                  {precheckResult.ok_count}/{precheckResult.total} critères validés
-                </span>
-              </div>
-              <div className="space-y-1">
-                {(precheckResult.checklist || []).map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs">
-                    {item.ok ? (
-                      <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                    ) : (
-                      <AlertTriangle size={14} className="text-amber-500 shrink-0" />
-                    )}
-                    <span className="text-gray-700">{item.label}</span>
-                    <span className="text-gray-400 ml-auto">{item.detail}</span>
-                  </div>
-                ))}
-              </div>
-              {precheckResult.status === 'pret' && (
-                <Button size="sm" className="mt-4" onClick={handleExport} disabled={exporting}>
-                  {exporting ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Download size={14} />
-                  )}
-                  Générer le pack export (simulation)
-                </Button>
-              )}
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Export info + lien Mémobox V40 */}
-      {(efa.declarations || []).some((d) => d.status === 'exported') && (
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/30 p-4">
-          <div className="flex items-start gap-2">
-            <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">Pack export généré (simulation)</p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Ce pack est une simulation PROMEOS. Il ne constitue pas une soumission officielle
-                sur OPERAT.
-              </p>
-              {exportResult?.kb_doc_id && (
-                <div className="flex items-center gap-3 mt-3 pt-3 border-t border-amber-200">
-                  <Badge variant="ok" size="xs">
-                    Mémobox
-                  </Badge>
-                  <span className="text-xs text-gray-600">
-                    Document enregistré :{' '}
-                    {exportResult.kb_doc_display_name || exportResult.kb_doc_id}
-                  </span>
-                  <Button
-                    size="xs"
-                    variant="secondary"
-                    onClick={() => navigate(exportResult.kb_open_url)}
-                    aria-label="Ouvrir le pack dans la Mémobox"
-                  >
-                    <FileText size={12} />
-                    Ouvrir dans la Mémobox
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bouton modulation */}
-      {efa && (
-        <div className="mt-6">
-          <Button variant="secondary" onClick={() => setShowModulation(true)}>
-            <Calculator size={14} className="mr-1" /> Simuler une modulation
-          </Button>
-        </div>
-      )}
-
-      {/* Dossier print view (Étape 5) */}
-      <DossierPrintView
-        open={showDossier}
-        onClose={() => setShowDossier(false)}
-        sourceType="insight"
-        sourceId={`operat:${id}:${new Date().getFullYear()}`}
-        sourceLabel={efa?.nom ? `EFA — ${efa.nom}` : `EFA #${id}`}
-        period={String(new Date().getFullYear())}
+    <div style={{ padding: '24px 32px', maxWidth: 1280, margin: '0 auto' }}>
+      <EfaSol
+        efa={efa}
+        trajectoryInfo={trajectoryInfo}
+        onOpenProofs={handleOpenProofs}
+        onOpenModulation={handleOpenModulation}
+        onExportOperat={handleExportOperat}
       />
-
-      {/* Modulation drawer (Phase 3) */}
-      {efa && (
+      {showModulation && (
         <ModulationDrawer
           open={showModulation}
           onClose={() => setShowModulation(false)}
-          efaId={efa.id}
-          efaNom={efa.nom}
+          efaId={id}
         />
       )}
-    </PageShell>
+
+      {/* Banner aide a la conformite OPERAT (Aide à la conformité · dossier
+          préparatoire) — garde-fou légal : PROMEOS ne fait PAS le dépôt
+          réel à ADEME, uniquement un pack preparatoire (Generer le pack).
+          Le dépôt officiel passe par operat.ademe.fr. */}
+      <aside
+        style={{
+          marginTop: 24,
+          padding: '14px 18px',
+          background: 'var(--sol-attention-bg)',
+          border: '1px solid var(--sol-attention-fg)',
+          borderRadius: 6,
+          display: 'flex',
+          gap: 14,
+          alignItems: 'flex-start',
+        }}
+        role="note"
+        aria-label="Aide à la conformité OPERAT"
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            fontSize: 18,
+            color: 'var(--sol-attention-fg)',
+            lineHeight: 1,
+            flexShrink: 0,
+          }}
+        >
+          ⚠
+        </span>
+        <div style={{ minWidth: 0 }}>
+          <p
+            style={{
+              fontFamily: 'var(--sol-font-body)',
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--sol-attention-fg)',
+              margin: 0,
+              marginBottom: 4,
+            }}
+          >
+            Aide à la conformité · Préparation de dossier
+          </p>
+          <p
+            style={{
+              fontFamily: 'var(--sol-font-body)',
+              fontSize: 12.5,
+              color: 'var(--sol-ink-700)',
+              margin: 0,
+              lineHeight: 1.45,
+            }}
+          >
+            PROMEOS génère un pack préparatoire OPERAT (simulation). Le dépôt officiel doit toujours
+            être effectué via la plateforme de l’ADEME sur <strong>operat.ademe.fr</strong> — cette
+            fiche ne se substitue pas à la déclaration légale. Le bouton « Générer le pack
+            préparatoire » produit uniquement le dossier documentaire destiné au dépôt manuel.
+          </p>
+        </div>
+      </aside>
+
+      {/* Preuves documentaires — ProofDepositCTA préservé legacy */}
+      <section
+        style={{
+          marginTop: 32,
+          padding: '20px 24px',
+          background: 'var(--sol-bg-paper)',
+          border: '1px solid var(--sol-ink-200)',
+          borderRadius: 6,
+        }}
+      >
+        <h3
+          style={{
+            fontFamily: 'var(--sol-font-display)',
+            fontSize: 16,
+            fontWeight: 600,
+            color: 'var(--sol-ink-900)',
+            margin: 0,
+            marginBottom: 12,
+          }}
+        >
+          Preuves documentaires
+        </h3>
+        <p
+          style={{
+            fontFamily: 'var(--sol-font-body)',
+            fontSize: 13,
+            color: 'var(--sol-ink-500)',
+            margin: '0 0 14px',
+            lineHeight: 1.5,
+          }}
+        >
+          Déposez les factures, relevés et attestations associés à cette EFA pour alimenter le
+          dossier OPERAT. Le hint est pré-rempli avec le contexte (EFA, responsable, surface).
+        </p>
+        <ProofDepositCTA hint={proofHint} />
+      </section>
+    </div>
   );
 }

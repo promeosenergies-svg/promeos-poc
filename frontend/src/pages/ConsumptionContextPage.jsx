@@ -13,6 +13,7 @@ import { PageShell, KpiCard, Tabs, Card, CardBody, EmptyState, Badge, Button } f
 import { useToast } from '../ui/ToastProvider';
 import ProfileHeatmapTab from './consumption/ProfileHeatmapTab';
 import HorairesAnomaliesTab from './consumption/HorairesAnomaliesTab';
+import UsagesHorairesSol from './UsagesHorairesSol';
 
 const TABS = [
   { id: 'profile', label: 'Profil & Heatmap' },
@@ -96,11 +97,14 @@ export default function ConsumptionContextPage() {
     );
   }
 
+  const siteName = orgSites?.find((s) => s.id === siteId)?.nom;
+
   return (
     <PageShell
       icon={Activity}
       title="Usages & Horaires"
       subtitle="Profil conso · Anomalies comportementales"
+      hideHeader
       actions={
         <Button size="sm" variant="outline" onClick={handleRefresh} disabled={refreshing}>
           <RefreshCw className={`w-4 h-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
@@ -108,7 +112,12 @@ export default function ConsumptionContextPage() {
         </Button>
       }
     >
-      {/* KPI Row */}
+      {/* Lot 2 Phase 6 — Pattern A compact Sol injecté en haut. Legacy
+          body (KPI strip 4 cartes + 2 onglets + widgets spécialisés)
+          préservé intégralement dessous. */}
+      <UsagesHorairesSol data={data} siteName={siteName} periodDays={30} />
+
+      {/* KPI Row legacy */}
       {score !== null && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <KpiCard

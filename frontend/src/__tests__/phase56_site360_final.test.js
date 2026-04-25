@@ -71,8 +71,8 @@ describe('B. 6 onglets vivants', () => {
     expect(SITE360).toMatch(/<TabConformite/);
   });
 
-  test('TabResume rendered with props', () => {
-    expect(SITE360).toMatch(/<TabResume.*site=/s);
+  test('onglet Résumé rendu avec props (Site360Sol Pattern C Lot 3)', () => {
+    expect(SITE360).toMatch(/<Site360Sol.*site=/s);
   });
 });
 

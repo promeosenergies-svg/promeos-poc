@@ -119,7 +119,7 @@ def resolve_org_id(
     from services.demo_state import DemoState
 
     demo_org_id = DemoState.get_demo_org_id()
-    if demo_org_id:
+    if demo_org_id and db.query(Organisation).filter(Organisation.id == demo_org_id).first():
         return demo_org_id
 
     org = db.query(Organisation).filter(Organisation.actif == True).first()

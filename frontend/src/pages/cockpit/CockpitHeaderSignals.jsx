@@ -3,6 +3,7 @@ import { Zap, Leaf as _Leaf, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCockpitSignals } from '../../hooks/useCockpitSignals';
 import { getFlexPrixSignal } from '../../services/api';
+import { fmtNum } from '../../utils/format';
 
 /**
  * Pills de signaux marché affichées dans le header du cockpit.
@@ -79,7 +80,7 @@ export default function CockpitHeaderSignals() {
           title={prixSignal.message}
         >
           <Zap size={11} />
-          Spot {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh
+          Spot {fmtNum(prixSignal.valeur_eur_mwh, 0)} &euro;/MWh
         </span>
       )}
     </div>

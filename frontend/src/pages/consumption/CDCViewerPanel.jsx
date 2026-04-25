@@ -202,10 +202,10 @@ export default function CDCViewerPanel({ meterId, dateFrom, dateTo }) {
           <Area
             type="monotone"
             dataKey="kw"
-            stroke="#3b82f6"
-            fill="#93c5fd"
-            fillOpacity={0.3}
-            strokeWidth={1.5}
+            stroke="#0F172A"
+            fill="#0F172A"
+            fillOpacity={0.12}
+            strokeWidth={1.8}
             dot={false}
             isAnimationActive={false}
           />

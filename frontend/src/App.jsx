@@ -7,18 +7,41 @@ import { ExpertModeProvider } from './contexts/ExpertModeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import RequireAuth from './components/RequireAuth';
 import UpgradeWizard from './components/UpgradeWizard';
-import AppShell from './layout/AppShell';
+// Refonte Phase 3 : SolAppShell remplace AppShell sur toutes les routes
+// protégées. Le fichier AppShell.jsx legacy reste sur disque pour rollback
+// manuel (git revert ou import ponctuel pendant debug).
+import SolAppShell from './layout/SolAppShell';
 import { SkeletonCard } from './ui/Skeleton';
 
 // Lazy-loaded pages — code-split per route
-const CommandCenter = lazy(() => import('./pages/CommandCenter'));
-const Patrimoine = lazy(() => import('./pages/Patrimoine'));
+// Refonte Lot 1.1 : / pointe sur CommandCenterSol (Pattern A).
+// CommandCenter legacy accessible via /home-legacy pour A/B.
+const CommandCenter = lazy(() => import('./pages/CommandCenterSol'));
+const CommandCenterLegacy = lazy(() => import('./pages/CommandCenter'));
+// Refonte Phase 4.3 : /patrimoine pointe sur PatrimoineSol (Pattern A).
+// Patrimoine legacy accessible via /patrimoine-legacy pour A/B comparaison.
+const Patrimoine = lazy(() => import('./pages/PatrimoineSol'));
+const PatrimoineLegacy = lazy(() => import('./pages/Patrimoine'));
 const Site360 = lazy(() => import('./pages/Site360'));
 const ActionsPage = lazy(() => import('./pages/ActionsPage'));
 const ActionCenterPage = lazy(() => import('./pages/ActionCenterPage'));
-const ConformitePage = lazy(() => import('./pages/ConformitePage'));
+// Refonte Phase 4.1 : /conformite pointe sur ConformiteSol (Pattern A).
+// ConformitePage legacy accessible via /conformite-legacy pour A/B comparaison.
+const ConformitePage = lazy(() => import('./pages/ConformiteSol'));
+const ConformiteLegacy = lazy(() => import('./pages/ConformitePage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
-const Cockpit = lazy(() => import('./pages/Cockpit'));
+// Refonte Sol V1 : /cockpit pointe maintenant sur CockpitRefonte (rupture
+// visuelle V2 raw). Cockpit.jsx original accessible via /cockpit-legacy
+// pour A/B comparaison côte-à-côte (même backend, UX différente).
+// Refonte Phase 2 : /cockpit pointe sur CockpitSol (APIs réelles branchées).
+// CockpitRefonte (fixtures) reste accessible via /cockpit-fixtures pour démo
+// et A/B. Cockpit V1 legacy via /cockpit-legacy.
+const Cockpit = lazy(() => import('./pages/CockpitSol'));
+const CockpitFixtures = lazy(() => import('./pages/CockpitRefonte'));
+const CockpitLegacy = lazy(() => import('./pages/Cockpit'));
+// Refonte Phase 1 : showcase des 21 composants Sol (Gate 1 validation).
+// Route hors AppShell car SolShowcase embarque son propre SolAppShell.
+const SolShowcase = lazy(() => import('./pages/SolShowcase'));
 const RegOps = lazy(() => import('./pages/RegOps'));
 const ConnectorsPage = lazy(() => import('./pages/ConnectorsPage'));
 const WatchersPage = lazy(() => import('./pages/WatchersPage'));
@@ -29,16 +52,25 @@ const ConsommationsImportTab = lazy(() =>
 const ConsommationsKBTab = lazy(() =>
   import('./pages/ConsommationsUsages').then((m) => ({ default: m.KBAdminPanel }))
 );
-const MonitoringPage = lazy(() => import('./pages/MonitoringPage'));
+// Refonte Lot 1.3 : /monitoring pointe sur MonitoringSol (Pattern A).
+// MonitoringPage legacy accessible via /monitoring-legacy pour A/B.
+const MonitoringPage = lazy(() => import('./pages/MonitoringSol'));
+const MonitoringLegacy = lazy(() => import('./pages/MonitoringPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
 const SegmentationPage = lazy(() => import('./pages/SegmentationPage'));
 // CompliancePage deprecated — /compliance root redirects to /conformite (V92)
 const ConsumptionDiagPage = lazy(() => import('./pages/ConsumptionDiagPage'));
-const BillIntelPage = lazy(() => import('./pages/BillIntelPage'));
+// Refonte Phase 4.2 : /bill-intel pointe sur BillIntelSol (Pattern A).
+// BillIntelPage legacy accessible via /bill-intel-legacy pour A/B.
+const BillIntelPage = lazy(() => import('./pages/BillIntelSol'));
+const BillIntelLegacy = lazy(() => import('./pages/BillIntelPage'));
 const BillingPage = lazy(() => import('./pages/BillingPage'));
 const KBExplorerPage = lazy(() => import('./pages/KBExplorerPage'));
-const PurchasePage = lazy(() => import('./pages/PurchasePage'));
+// Refonte Phase 4.4 : /achat-energie pointe sur AchatSol (Pattern A).
+// PurchasePage legacy accessible via /achat-energie-legacy pour A/B comparaison.
+const PurchasePage = lazy(() => import('./pages/AchatSol'));
+const PurchaseLegacy = lazy(() => import('./pages/PurchasePage'));
 // PurchaseAssistantPage — now embedded as tab in PurchasePage, route redirects
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
@@ -68,7 +100,10 @@ const ContractRadarPage = lazy(() => import('./pages/ContractRadarPage'));
 const Contrats = lazy(() => import('./pages/Contrats'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const SireneOnboardingPage = lazy(() => import('./pages/SireneOnboardingPage'));
-const AperPage = lazy(() => import('./pages/AperPage'));
+// Refonte Lot 1.2 : /conformite/aper pointe sur AperSol (Pattern A).
+// AperPage legacy accessible via /conformite/aper-legacy pour A/B.
+const AperPage = lazy(() => import('./pages/AperSol'));
+const AperLegacy = lazy(() => import('./pages/AperPage'));
 const UsagesDashboardPage = lazy(() => import('./pages/UsagesDashboardPage'));
 
 function PageSuspense({ children }) {
@@ -111,11 +146,23 @@ function App() {
                     }
                   />
 
-                  {/* Protected: AppShell layout wraps all routes */}
+                  {/* Refonte Phase 1 — Gate 1 showcase (hors AppShell) */}
+                  <Route
+                    path="/_sol_showcase"
+                    element={
+                      <RequireAuth>
+                        <PageSuspense>
+                          <SolShowcase />
+                        </PageSuspense>
+                      </RequireAuth>
+                    }
+                  />
+
+                  {/* Protected: SolAppShell layout wraps all routes (refonte P3) */}
                   <Route
                     element={
                       <RequireAuth>
-                        <AppShell />
+                        <SolAppShell />
                       </RequireAuth>
                     }
                   >
@@ -129,10 +176,26 @@ function App() {
                       }
                     />
                     <Route
+                      path="/home-legacy"
+                      element={
+                        <PageSuspense>
+                          <CommandCenterLegacy />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
                       path="/patrimoine"
                       element={
                         <PageSuspense>
                           <Patrimoine />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/patrimoine-legacy"
+                      element={
+                        <PageSuspense>
+                          <PatrimoineLegacy />
                         </PageSuspense>
                       }
                     />
@@ -182,6 +245,14 @@ function App() {
                       }
                     />
                     <Route
+                      path="/conformite-legacy"
+                      element={
+                        <PageSuspense>
+                          <ConformiteLegacy />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
                       path="/conformite/tertiaire"
                       element={
                         <PageSuspense>
@@ -221,6 +292,14 @@ function App() {
                         </PageSuspense>
                       }
                     />
+                    <Route
+                      path="/conformite/aper-legacy"
+                      element={
+                        <PageSuspense>
+                          <AperLegacy />
+                        </PageSuspense>
+                      }
+                    />
                     {/* Energy Copilot — route supprimée (Sprint B P0-7 + Sprint C cleanup) */}
 
                     {/* Legacy redirects */}
@@ -230,6 +309,22 @@ function App() {
                       element={
                         <PageSuspense>
                           <Cockpit />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/cockpit-legacy"
+                      element={
+                        <PageSuspense>
+                          <CockpitLegacy />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/cockpit-fixtures"
+                      element={
+                        <PageSuspense>
+                          <CockpitFixtures />
                         </PageSuspense>
                       }
                     />
@@ -321,6 +416,14 @@ function App() {
                         </PageSuspense>
                       }
                     />
+                    <Route
+                      path="/monitoring-legacy"
+                      element={
+                        <PageSuspense>
+                          <MonitoringLegacy />
+                        </PageSuspense>
+                      }
+                    />
                     <Route path="/compliance" element={<Navigate to="/conformite" replace />} />
                     <Route
                       path="/compliance/pipeline"
@@ -375,6 +478,14 @@ function App() {
                       }
                     />
                     <Route
+                      path="/bill-intel-legacy"
+                      element={
+                        <PageSuspense>
+                          <BillIntelLegacy />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
                       path="/billing"
                       element={
                         <PageSuspense>
@@ -387,6 +498,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <PurchasePage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/achat-energie-legacy"
+                      element={
+                        <PageSuspense>
+                          <PurchaseLegacy />
                         </PageSuspense>
                       }
                     />
@@ -553,7 +672,8 @@ function App() {
                       }
                     />
 
-                    {/* URL aliases (redirect to canonical routes) */}
+                    {/* URL aliases → canonical routes. Horizon suppression
+                        post-Lot 10. Inventaire : docs/audit/nav_legacy_redirects.md */}
                     <Route
                       path="/plan-action"
                       element={<Navigate to="/anomalies?tab=actions" replace />}

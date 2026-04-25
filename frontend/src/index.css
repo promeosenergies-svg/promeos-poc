@@ -1,6 +1,14 @@
 @import 'tailwindcss';
+@import './ui/sol/tokens.css';
 
-/* ── PROMEOS Animations ── */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* REFONTE VISUELLE SOL V1 — PROMEOS complet                                  */
+/* Source : docs/sol/maquettes/cockpit-sol-v1-adjusted-v2.html (V2 raw)       */
+/* Tokens CSS déplacés dans ui/sol/tokens.css (Phase 1).                      */
+/* Ce fichier conserve uniquement les overrides Tailwind + patterns Sol.      */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Animations page-level (restent ici, non-Sol spécifiques) ── */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -40,15 +48,1004 @@
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Global body + typography                                                   */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+html,
 body {
   margin: 0;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
-    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background: var(--sol-bg-canvas);
+  color: var(--sol-ink-900);
+  font-family: var(--sol-font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  font-feature-settings: 'ss01', 'cv11';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+code,
+pre,
+.font-mono {
+  font-family: var(--sol-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum', 'zero';
+}
+
+h1,
+h2,
+h3,
+h4,
+.serif,
+.font-serif {
+  font-family: var(--sol-font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+h2 {
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+h3 {
+  font-size: 17px;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+/* italic hook pour hero titles Sol */
+em,
+.italic-hook {
+  font-style: italic;
+  color: var(--sol-ink-500);
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Overrides Tailwind — palette Sol + typography shifts                       */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+/* Backgrounds neutres → Sol slate */
+.bg-white {
+  background-color: var(--sol-bg-paper) !important;
+}
+.bg-gray-50,
+.bg-slate-50 {
+  background-color: var(--sol-bg-canvas) !important;
+}
+.bg-gray-100,
+.bg-slate-100 {
+  background-color: var(--sol-bg-panel) !important;
+}
+.bg-gray-200,
+.bg-slate-200 {
+  background-color: var(--sol-ink-200) !important;
+}
+
+/* Textes neutres → ink Sol */
+.text-gray-900,
+.text-slate-900,
+.text-black {
+  color: var(--sol-ink-900) !important;
+}
+.text-gray-800,
+.text-slate-800,
+.text-gray-700,
+.text-slate-700 {
+  color: var(--sol-ink-700) !important;
+}
+.text-gray-600,
+.text-slate-600,
+.text-gray-500,
+.text-slate-500 {
+  color: var(--sol-ink-500) !important;
+}
+.text-gray-400,
+.text-slate-400 {
+  color: var(--sol-ink-400) !important;
+}
+
+/* Bordures neutres → rule Sol */
+.border-gray-100,
+.border-slate-100 {
+  border-color: var(--sol-ink-100) !important;
+}
+.border-gray-200,
+.border-slate-200 {
+  border-color: var(--sol-rule) !important;
+}
+.border-gray-300,
+.border-slate-300 {
+  border-color: var(--sol-ink-300) !important;
+}
+
+/* Blue (primary PROMEOS) → Sol calme (bleu-vert doux warm) */
+.bg-blue-50 {
+  background-color: var(--sol-calme-bg) !important;
+}
+.bg-blue-100 {
+  background-color: var(--sol-calme-bg) !important;
+}
+.bg-blue-500,
+.bg-blue-600,
+.bg-blue-700 {
+  background-color: var(--sol-calme-fg) !important;
+}
+.text-blue-500,
+.text-blue-600,
+.text-blue-700 {
+  color: var(--sol-calme-fg) !important;
+}
+.border-blue-200,
+.border-blue-300,
+.border-blue-500,
+.border-blue-600 {
+  border-color: var(--sol-calme-fg) !important;
+}
+.ring-blue-500,
+.ring-blue-600 {
+  --tw-ring-color: var(--sol-calme-fg) !important;
+}
+.hover\:bg-blue-700:hover {
+  background-color: #245047 !important;
+}
+
+/* Emerald/Green → Sol succes */
+.bg-emerald-50,
+.bg-green-50 {
+  background-color: var(--sol-succes-bg) !important;
+}
+.bg-emerald-500,
+.bg-emerald-600,
+.bg-green-500,
+.bg-green-600 {
+  background-color: var(--sol-succes-fg) !important;
+}
+.text-emerald-500,
+.text-emerald-600,
+.text-emerald-700,
+.text-green-500,
+.text-green-600,
+.text-green-700 {
+  color: var(--sol-succes-fg) !important;
+}
+.border-emerald-200,
+.border-green-200 {
+  border-color: var(--sol-succes-fg) !important;
+}
+
+/* Amber/Yellow → Sol attention */
+.bg-amber-50,
+.bg-yellow-50 {
+  background-color: var(--sol-attention-bg) !important;
+}
+.bg-amber-500,
+.bg-amber-600,
+.bg-yellow-500 {
+  background-color: var(--sol-attention-fg) !important;
+}
+.text-amber-500,
+.text-amber-600,
+.text-amber-700,
+.text-yellow-600 {
+  color: var(--sol-attention-fg) !important;
+}
+.border-amber-200,
+.border-yellow-200 {
+  border-color: var(--sol-attention-fg) !important;
+}
+
+/* Orange → Sol afaire */
+.bg-orange-50 {
+  background-color: var(--sol-afaire-bg) !important;
+}
+.bg-orange-500,
+.bg-orange-600 {
+  background-color: var(--sol-afaire-fg) !important;
+}
+.text-orange-500,
+.text-orange-600,
+.text-orange-700 {
+  color: var(--sol-afaire-fg) !important;
+}
+.border-orange-200,
+.border-orange-500 {
+  border-color: var(--sol-afaire-fg) !important;
+}
+
+/* Red → Sol refuse */
+.bg-red-50 {
+  background-color: var(--sol-refuse-bg) !important;
+}
+.bg-red-500,
+.bg-red-600 {
+  background-color: var(--sol-refuse-fg) !important;
+}
+.text-red-500,
+.text-red-600,
+.text-red-700 {
+  color: var(--sol-refuse-fg) !important;
+}
+.border-red-200,
+.border-red-500 {
+  border-color: var(--sol-refuse-fg) !important;
+}
+
+/* Fonds gradient AppShell → uniform canvas slate */
+.bg-gradient-to-b.from-slate-50.via-white.to-slate-50\/80,
+.bg-gradient-to-b.from-white.via-slate-50.to-white,
+[class*='bg-gradient'][class*='slate'] {
+  background: var(--sol-bg-canvas) !important;
+  background-image: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Cards : radius 6-8px (plus modernes, moins Tailwind-chunky)                */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+.rounded,
+.rounded-md,
+.rounded-lg,
+.rounded-xl {
+  border-radius: 6px !important;
+}
+.rounded-2xl,
+.rounded-3xl {
+  border-radius: 8px !important;
+}
+
+/* Shadows softer */
+.shadow-sm,
+.shadow {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+.shadow-md {
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06) !important;
+}
+.shadow-lg,
+.shadow-xl,
+.shadow-2xl {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Sol éditorial patterns — classes utilisables pour hero pages, kickers      */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+.sol-page-kicker {
+  font-family: var(--sol-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sol-ink-500);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+/* V2 raw override : titre compact DM Sans, Fraunces réservé au rail-logo +
+   drawer-title + prose Inspect (source UX-1 journal en terrasse). */
+.sol-page-title {
+  font-family: var(--sol-font-body);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--sol-ink-900);
+  letter-spacing: -0.015em;
+  margin-bottom: 4px;
+}
+
+.sol-page-title em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--sol-ink-500);
+}
+
+.sol-headline {
+  font-family: var(--sol-font-body);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+  color: var(--sol-ink-700);
+  max-width: 680px;
+  margin-bottom: 8px;
+}
+
+.sol-headline em {
+  font-style: normal;
+  color: var(--sol-ink-900);
+  font-weight: 600;
+}
+
+.sol-subline {
+  font-size: 13px;
+  color: var(--sol-ink-500);
+  max-width: 680px;
+  line-height: 1.55;
+}
+
+/* Source chips — mono 9-10px, dot de couleur selon source */
+.sol-source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--sol-font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--sol-ink-500);
+  border: 1px solid var(--sol-rule);
+  border-radius: 2px;
+  padding: 2px 6px;
+}
+.sol-source-chip::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sol-calme-fg);
+}
+
+/* SolKpiCard explainKey wrapper — Explain ajoute un border-b dotted qu'on
+   doit neutraliser quand le trigger est déjà un cercle "?" stylé. */
+.sol-kpi-explain {
+  border-bottom: none !important;
+  display: inline-flex !important;
+  vertical-align: middle;
+}
+.sol-kpi-explain:hover > span,
+.sol-kpi-explain:focus-visible > span {
+  border-color: var(--sol-calme-fg) !important;
+  color: var(--sol-ink-700) !important;
+}
+
+/* KPI pattern signature Sol — mono tabular + label uppercase (V2 raw compact) */
+.sol-kpi-value {
+  font-family: var(--sol-font-mono);
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--sol-ink-900);
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+.sol-kpi-unit {
+  font-family: var(--sol-font-body);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--sol-ink-400);
+  margin-left: 3px;
+}
+.sol-kpi-label {
+  font-size: 10.5px;
+  color: var(--sol-ink-500);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.sol-kpi-delta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--sol-font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+.sol-delta-down {
+  background: var(--sol-succes-bg);
+  color: var(--sol-succes-fg);
+}
+.sol-delta-up {
+  background: var(--sol-attention-bg);
+  color: var(--sol-attention-fg);
+}
+
+/* Section head pattern — V2 raw : DM Sans 15px 600, serré */
+.sol-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 24px 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--sol-rule);
+}
+.sol-section-head h2,
+.sol-section-head .sol-section-title {
+  font-family: var(--sol-font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sol-ink-900);
+  letter-spacing: -0.005em;
+  margin: 0;
+}
+.sol-section-head .sol-section-meta {
+  font-family: var(--sol-font-mono);
+  font-size: 10px;
+  color: var(--sol-ink-500);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Card week pattern (À regarder / À faire / Bonne nouvelle) */
+.sol-week-card {
+  background: var(--sol-bg-paper);
+  border: 1px solid var(--sol-rule);
+  border-radius: 6px;
+  padding: 16px 18px;
+  transition: border-color 120ms ease;
+  cursor: pointer;
+}
+.sol-week-card:hover {
+  border-color: var(--sol-ink-400);
+}
+
+.sol-week-tag {
+  font-family: var(--sol-font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+.sol-tag-attention {
+  background: var(--sol-attention-bg);
+  color: var(--sol-attention-fg);
+}
+.sol-tag-afaire {
+  background: var(--sol-afaire-bg);
+  color: var(--sol-afaire-fg);
+}
+.sol-tag-succes {
+  background: var(--sol-succes-bg);
+  color: var(--sol-succes-fg);
+}
+
+.sol-week-card-title {
+  font-family: var(--sol-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sol-ink-900);
+  line-height: 1.3;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.01em;
+}
+.sol-week-card-body {
+  font-size: 12.5px;
+  color: var(--sol-ink-500);
+  line-height: 1.45;
+}
+
+/* Sol hero signature (carte Sol propose avec border left accent) */
+.sol-hero {
+  background: var(--sol-bg-paper);
+  border: 1px solid var(--sol-ink-200);
+  border-left: 3px solid var(--sol-calme-fg);
+  padding: 20px 24px;
+  border-radius: 6px;
+  margin: 20px 0 28px 0;
+}
+.sol-hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sol-font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sol-calme-fg);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.sol-hero-chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sol-calme-fg);
+  animation: sol-pulse 2.5s ease-in-out infinite;
+}
+.sol-hero-title {
+  font-family: var(--sol-font-display);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--sol-ink-900);
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+.sol-hero-sub {
+  font-size: 13.5px;
+  color: var(--sol-ink-500);
+  line-height: 1.55;
+  max-width: 520px;
+  margin: 0;
+}
+
+/* Timerail footer pattern */
+.sol-timerail {
+  background: var(--sol-bg-panel);
+  border-top: 1px solid var(--sol-rule);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 36px;
+  font-family: var(--sol-font-mono);
+  font-size: 11px;
+  color: var(--sol-ink-500);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* SolAppShell — layout grid 56/240/1fr/36 (Phase 1)                          */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+.sol-app {
+  display: grid;
+  grid-template-columns: 56px 240px 1fr;
+  grid-template-rows: 1fr 36px;
+  grid-template-areas:
+    'rail panel main'
+    'rail panel timerail';
+  min-height: 100vh;
+  background: var(--sol-bg-canvas);
+  color: var(--sol-ink-900);
+  font-family: var(--sol-font-body);
+}
+
+.sol-app-rail {
+  grid-area: rail;
+}
+.sol-app-panel {
+  grid-area: panel;
+}
+.sol-app-main {
+  grid-area: main;
+  overflow-y: auto;
+  padding: 32px 48px 60px 48px;
+}
+.sol-app-timerail {
+  grid-area: timerail;
+}
+
+/* ── Rail (56px) ── */
+.sol-rail {
+  background: var(--sol-bg-paper);
+  border-right: 1px solid var(--sol-rule);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 0;
+  gap: 18px;
+}
+.sol-rail-logo {
+  font-family: var(--sol-font-display);
+  font-weight: 600;
+  font-size: 22px;
+  color: var(--sol-ink-900);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.sol-rail-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--sol-ink-500);
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+.sol-rail-icon:hover {
+  background: var(--sol-bg-panel);
+  color: var(--sol-ink-700);
+}
+.sol-rail-icon.is-active {
+  background: var(--sol-calme-bg);
+  color: var(--sol-calme-fg);
+}
+
+/* ── Panel (240px) ── */
+.sol-panel {
+  background: var(--sol-bg-paper);
+  border-right: 1px solid var(--sol-rule);
+  padding: 20px 18px;
+  overflow-y: auto;
+}
+.sol-panel-module {
+  font-family: var(--sol-font-display);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--sol-ink-900);
+  letter-spacing: -0.015em;
+  margin: 0 0 4px 0;
+}
+.sol-panel-desc {
+  font-size: 12.5px;
+  color: var(--sol-ink-500);
+  line-height: 1.45;
+  margin: 0 0 22px 0;
+}
+.sol-panel-section {
+  margin-bottom: 20px;
+}
+.sol-panel-section-label {
+  font-family: var(--sol-font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: var(--sol-ink-400);
+  margin: 0 0 8px 2px;
+}
+.sol-panel-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 4px;
+  color: var(--sol-ink-700);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 120ms ease;
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.sol-panel-item:hover {
+  background: var(--sol-bg-panel);
+}
+.sol-panel-item.is-active {
+  background: var(--sol-calme-bg);
+  color: var(--sol-calme-fg);
+  font-weight: 500;
+}
+.sol-panel-item-label {
+  flex: 1;
+  line-height: 1.3;
+}
+.sol-panel-item-desc {
+  font-size: 11px;
+  color: var(--sol-ink-400);
+  margin-top: 1px;
+  line-height: 1.35;
+}
+.sol-panel-item-badge {
+  font-family: var(--sol-font-mono);
+  font-size: 10px;
+  background: var(--sol-afaire-bg);
+  color: var(--sol-afaire-fg);
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+/* ── KpiRow ── */
+.sol-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 18px 0 24px 0;
+}
+@media (max-width: 960px) {
+  .sol-kpi-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── WeekGrid ── */
+.sol-week-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 14px 0 24px 0;
+}
+@media (max-width: 960px) {
+  .sol-week-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── LayerToggle ── */
+.sol-layer-toggle {
+  display: inline-flex;
+  background: var(--sol-bg-panel);
+  border: 1px solid var(--sol-rule);
+  border-radius: 4px;
+  padding: 2px;
+  gap: 0;
+}
+.sol-layer-btn {
+  font-family: var(--sol-font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--sol-ink-500);
+  padding: 5px 12px;
+  border-radius: 3px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+.sol-layer-btn:hover {
+  color: var(--sol-ink-700);
+}
+.sol-layer-btn.is-active {
+  background: var(--sol-bg-paper);
+  color: var(--sol-ink-900);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+/* ── Cartouche ── */
+.sol-cartouche {
+  position: fixed;
+  bottom: 48px;
+  right: 24px;
+  z-index: 50;
+  max-width: 340px;
+  background: var(--sol-bg-paper);
+  border: 1px solid var(--sol-ink-200);
+  border-left: 3px solid var(--sol-calme-fg);
+  border-radius: 6px;
+  padding: 14px 18px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+}
+.sol-cartouche-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sol-font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sol-calme-fg);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.sol-cartouche-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sol-calme-fg);
+  animation: sol-pulse 2.5s ease-in-out infinite;
+}
+.sol-cartouche-message {
+  font-size: 13px;
+  color: var(--sol-ink-700);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ── PendingBanner ── */
+.sol-pending-banner {
+  background: var(--sol-calme-bg);
+  border: 1px solid var(--sol-calme-fg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 14px 0;
+}
+.sol-pending-banner-msg {
+  flex: 1;
+  font-size: 13px;
+  color: var(--sol-calme-fg);
+  line-height: 1.4;
+}
+.sol-pending-banner-countdown {
+  font-family: var(--sol-font-mono);
+  font-weight: 600;
+}
+
+/* ── InspectDoc ── */
+.sol-inspect-doc {
+  max-width: 760px;
+  font-family: var(--sol-font-display);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--sol-ink-700);
+  padding: 8px 0;
+}
+.sol-inspect-doc p {
+  margin: 0 0 14px 0;
+}
+.sol-inspect-doc strong {
+  color: var(--sol-ink-900);
+  font-weight: 600;
+}
+.sol-inspect-doc em {
+  font-style: italic;
+  color: var(--sol-ink-500);
+}
+
+/* ── ExpertGrid (table dense sortable) ── */
+.sol-expert-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.sol-expert-grid th {
+  text-align: left;
+  font-family: var(--sol-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sol-ink-500);
+  font-weight: 600;
+  border-bottom: 1px solid var(--sol-rule);
+  padding: 8px 10px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.sol-expert-grid th:hover {
+  color: var(--sol-ink-700);
+}
+.sol-expert-grid td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--sol-ink-100);
+  color: var(--sol-ink-700);
+}
+.sol-expert-grid tr:hover td {
+  background: var(--sol-bg-panel);
+}
+.sol-expert-grid .num {
+  font-family: var(--sol-font-mono);
+  color: var(--sol-ink-900);
+}
+
+/* ── Journal (append-only grid 160/100/1fr/120) ── */
+.sol-journal-row {
+  display: grid;
+  grid-template-columns: 160px 100px 1fr 120px;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--sol-ink-100);
+  font-size: 12.5px;
+  align-items: baseline;
+}
+.sol-journal-row:last-child {
+  border-bottom: 0;
+}
+.sol-journal-date {
+  font-family: var(--sol-font-mono);
+  color: var(--sol-ink-500);
+  font-size: 11px;
+}
+.sol-journal-actor {
+  font-family: var(--sol-font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sol-calme-fg);
+  font-weight: 600;
+}
+.sol-journal-action {
+  color: var(--sol-ink-700);
+  line-height: 1.45;
+}
+.sol-journal-status {
+  font-family: var(--sol-font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: right;
+}
+
+/* ── StatusPill ── */
+.sol-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--sol-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 2px;
+  line-height: 1.2;
+}
+.sol-status-pill.is-ok {
+  background: var(--sol-succes-bg);
+  color: var(--sol-succes-fg);
+}
+.sol-status-pill.is-att {
+  background: var(--sol-attention-bg);
+  color: var(--sol-attention-fg);
+}
+.sol-status-pill.is-risk {
+  background: var(--sol-refuse-bg);
+  color: var(--sol-refuse-fg);
+}
+
+/* ── Button Sol (4 variants) ── */
+.sol-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sol-font-body);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
+  line-height: 1.2;
+  text-decoration: none;
+}
+.sol-btn--primary {
+  background: var(--sol-ink-900);
+  color: var(--sol-bg-paper);
+}
+.sol-btn--primary:hover {
+  background: var(--sol-ink-700);
+}
+.sol-btn--secondary {
+  background: var(--sol-bg-paper);
+  color: var(--sol-ink-900);
+  border-color: var(--sol-ink-300);
+}
+.sol-btn--secondary:hover {
+  border-color: var(--sol-ink-500);
+}
+.sol-btn--ghost {
+  background: transparent;
+  color: var(--sol-ink-500);
+}
+.sol-btn--ghost:hover {
+  color: var(--sol-ink-900);
+  background: var(--sol-bg-panel);
+}
+.sol-btn--agentic {
+  background: var(--sol-calme-fg);
+  color: var(--sol-bg-paper);
+}
+.sol-btn--agentic:hover {
+  background: #245047;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Respect prefers-reduced-motion (fallback global)                            */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

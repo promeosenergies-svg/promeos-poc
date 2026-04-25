@@ -42,6 +42,8 @@ import { useToast } from '../ui/ToastProvider';
 import useAnomalyFilters from './useAnomalyFilters';
 import { buildAnomalyEvidence } from './anomalyEvidence';
 import { fmtEur } from '../utils/format';
+import { track } from '../services/tracker';
+import AnomaliesSol from './AnomaliesSol';
 
 const ActionsPageInline = lazy(() => import('./ActionsPage'));
 
@@ -76,6 +78,20 @@ export default function AnomaliesPage() {
   const navigate = useNavigate();
   const { filters, hasFilters, setFilters, resetFilters } = useAnomalyFilters();
   const activeTab = filters.tab;
+
+  // Tracker A10 : filter_applied avec source=deep_link au mount quand
+  // l'URL contient déjà `?fw=` (cas Vague 1 depuis panel nav).
+  const firedDeepLinkTrackRef = useRef(false);
+  useEffect(() => {
+    if (firedDeepLinkTrackRef.current) return;
+    firedDeepLinkTrackRef.current = true;
+    if (filters.fw) {
+      track('anomaly_filter_applied', {
+        framework: filters.fw,
+        source: 'deep_link',
+      });
+    }
+  }, [filters.fw]);
   const { scopedSites, sitesLoading } = useScope();
   const { openActionDrawer } = useActionDrawer();
 
@@ -311,6 +327,7 @@ export default function AnomaliesPage() {
       icon={AlertTriangle}
       title="Centre d'actions"
       subtitle={activeTab === 'anomalies' ? subtitle : undefined}
+      hideHeader={activeTab === 'anomalies'}
     >
       <Tabs
         tabs={CENTRE_TABS}
@@ -332,6 +349,29 @@ export default function AnomaliesPage() {
           <ActionsPageInline bare />
         </Suspense>
       ) : (
+        <div className="mt-6">
+          <AnomaliesSol
+            anomalies={filtered}
+            allAnomalies={anomalies}
+            kpis={kpis}
+            filters={filters}
+            setFilters={setFilters}
+            resetFilters={resetFilters}
+            hasFilters={hasFilters}
+            scopedSites={scopedSites}
+            anomalyStatuses={anomalyStatuses}
+            onRowClick={(anom) => {
+              setEvidenceData(buildAnomalyEvidence(anom));
+              setEvidenceOpen(true);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Legacy anomalies body — preserved mais masqué (Lot 2 P2).
+          Garde le code legacy accessible via ?view=legacy pour rollback
+          rapide si régression critique pendant démo pilote. */}
+      {false && activeTab === 'anomalies-legacy-disabled' && (
         <div className="space-y-4">
           {/* ── KPI row ── */}
           <div className="grid grid-cols-3 gap-3">
@@ -385,7 +425,10 @@ export default function AnomaliesPage() {
             {/* Framework */}
             <QuickSelect
               value={filters.fw}
-              onChange={(v) => setFilters({ fw: v })}
+              onChange={(v) => {
+                if (v) track('anomaly_filter_applied', { framework: v, source: 'manual' });
+                setFilters({ fw: v });
+              }}
               options={[
                 { value: '', label: 'Framework' },
                 { value: 'DECRET_TERTIAIRE', label: 'Décret Tertiaire' },

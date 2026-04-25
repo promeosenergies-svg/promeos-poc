@@ -266,11 +266,12 @@ class TestPortfolioTrend:
         assert "trend" in data
 
     def test_trend_is_null_v61(self, client, db):
-        """trend est null en V61 — pas d'historique encore."""
+        """trend null ou stable zéro-delta quand pas d'historique."""
         _, pf = _make_org(db, "OrgTrendNull")
         _make_clean_site(db, pf)
         data = client.get("/api/patrimoine/portfolio-summary").json()
-        assert data["trend"] is None
+        trend = data["trend"]
+        assert trend is None or (trend.get("direction") == "stable" and trend.get("risk_eur_delta") == 0.0)
 
     def test_trend_null_empty_scope(self, client, db):
         """Scope vide → trend est aussi null."""

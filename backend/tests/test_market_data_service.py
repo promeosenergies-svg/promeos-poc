@@ -37,8 +37,8 @@ def service(db_session):
 
 @pytest.fixture
 def sample_prices():
-    """24h de prix spot factices."""
-    base = datetime(2026, 3, 20, 0, 0, tzinfo=timezone.utc)
+    """24h de prix spot factices — dates récentes pour rester dans les fenêtres glissantes."""
+    base = (datetime.now(timezone.utc) - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
     prices = [75 + (h % 12) * 5 for h in range(24)]  # 75-130 EUR/MWh
     return [
         {

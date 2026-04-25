@@ -69,6 +69,8 @@ import {
 import IntakeWizard from '../components/IntakeWizard';
 import BacsWizard from '../components/BacsWizard';
 import BacsRegulatoryPanel from '../components/BacsRegulatoryPanel';
+import Site360Sol from './Site360Sol';
+import { normalizeCompliance } from './sites/sol_presenters';
 import { FlexPotentialCard, BacsFlexLink } from '../components/flex';
 import SiteBillingMini from '../components/SiteBillingMini';
 import SiteContractsSummary from '../components/SiteContractsSummary';
@@ -2143,15 +2145,16 @@ export default function Site360() {
 
       {/* Tab content */}
       {activeTab === 'resume' && (
-        <TabResume
+        <Site360Sol
           site={site}
           orgId={scope.orgId}
           unifiedCount={unifiedCount}
           anomalies={unifiedAnomalies}
           anomLoading={unifiedAnomLoading}
-          onSegmentationClick={() => setShowSegModal(true)}
           topReco={topReco}
           intensityData={intensityData}
+          compliance={normalizeCompliance(siteComplianceScore)}
+          onOpenTab={handleSetTab}
         />
       )}
       {activeTab === 'conso' && <TabConsoSite siteId={site.id} />}

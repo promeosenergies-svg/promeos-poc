@@ -10,6 +10,7 @@ import { PageShell, Card, CardBody, Badge, Button, EmptyState, Modal, Tabs } fro
 import { SkeletonCard } from '../ui/Skeleton';
 import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
+import WatchersSol from './WatchersSol';
 
 const STATUS_TABS = [
   { id: 'all', label: 'Tous' },
@@ -104,176 +105,31 @@ export default function WatchersPage() {
       icon={Eye}
       title="Veille"
       subtitle="Réglementaire & marché : alertes et synthèses"
+      hideHeader
       actions={
         <Button variant="secondary" onClick={loadData}>
           <RefreshCw size={14} className="mr-1.5" /> Actualiser
         </Button>
       }
     >
-      {/* Watchers Section */}
-      <div>
-        <h2 className="text-base font-semibold text-gray-800 mb-3">Watchers Actifs</h2>
-        {watchers.length === 0 ? (
-          <EmptyState
-            icon={Eye}
-            title="Aucun watcher configuré"
-            text="Configurez vos sources de veille réglementaire."
-          />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {watchers.map((watcher) => (
-              <Card key={watcher.name} className="hover:shadow-md transition-shadow duration-200">
-                <CardBody>
-                  <h3 className="font-semibold text-gray-900 mb-1">{watcher.name}</h3>
-                  <p className="text-sm text-gray-500 mb-3">{watcher.description}</p>
+      {/* Lot 2 Phase 7 — Pattern B Sol avec prélude SolWatcherCard.
+          Le body legacy (Section Watchers + Section Events + Info Panel)
+          est préservé dessous en mode mort {false && …} pour rollback. */}
+      <WatchersSol
+        watchers={watchers}
+        events={events}
+        runResults={runResults}
+        loading={loading}
+        onRunWatcher={handleRunWatcher}
+        onReviewEvent={(event) => {
+          setReviewModal(event);
+          setReviewNotes('');
+        }}
+        onRefresh={loadData}
+      />
 
-                  {runResults[watcher.name] && !runResults[watcher.name].loading && (
-                    <div
-                      className={`text-xs mb-3 rounded-lg px-3 py-2 ${runResults[watcher.name].error ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}
-                    >
-                      {runResults[watcher.name].error
-                        ? `Erreur: ${runResults[watcher.name].error}`
-                        : `${runResults[watcher.name].new_events} nouveaux événements`}
-                    </div>
-                  )}
-
-                  <Button
-                    variant="secondary"
-                    className="w-full text-sm"
-                    onClick={() => handleRunWatcher(watcher.name)}
-                    disabled={runResults[watcher.name]?.loading}
-                  >
-                    {runResults[watcher.name]?.loading ? (
-                      <>
-                        <RefreshCw size={14} className="mr-1.5 animate-spin" /> Exécution...
-                      </>
-                    ) : (
-                      <>
-                        <Play size={14} className="mr-1.5" /> Executer
-                      </>
-                    )}
-                  </Button>
-                </CardBody>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Events Section */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-gray-800">Événements Réglementaires</h2>
-          <select
-            value={filterSource}
-            onChange={(e) => setFilterSource(e.target.value)}
-            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
-          >
-            <option value="">Toutes les sources</option>
-            {watchers.map((w) => (
-              <option key={w.name} value={w.name}>
-                {w.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <Tabs tabs={STATUS_TABS} active={filterStatus} onChange={setFilterStatus} />
-
-        <div className="mt-4">
-          {events.length === 0 ? (
-            <EmptyState
-              icon={Eye}
-              title="Aucun événement"
-              text="Exécutez un watcher pour détecter les événements réglementaires."
-              ctaLabel="Lancer la veille"
-              onCta={() => watchers.length > 0 && handleRunWatcher(watchers[0].name)}
-            />
-          ) : (
-            <Card>
-              <div className="divide-y divide-gray-100">
-                {events.map((event) => (
-                  <div key={event.id} className="px-5 py-4 hover:bg-gray-50 transition">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h3 className="font-semibold text-gray-900 text-sm">{event.title}</h3>
-                          <Badge status={STATUS_BADGE[event.status] || 'info'}>
-                            {event.status || 'new'}
-                          </Badge>
-                        </div>
-
-                        <div className="flex items-center gap-3 text-xs text-gray-500">
-                          <Badge status="info">{event.source_name}</Badge>
-                          {event.published_at && (
-                            <span>{new Date(event.published_at).toLocaleDateString('fr-FR')}</span>
-                          )}
-                          {event.tags && <span className="text-gray-400">{event.tags}</span>}
-                        </div>
-
-                        {expandedEvent === event.id && (
-                          <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
-                            <p className="text-sm text-gray-700">{event.snippet}</p>
-                            {event.url && (
-                              <a
-                                href={event.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-                              >
-                                <ExternalLink size={12} /> Lien source
-                              </a>
-                            )}
-                            {event.review_note && (
-                              <div className="p-2 bg-green-50 border border-green-200 rounded">
-                                <p className="text-xs text-green-800">
-                                  <strong>Note:</strong> {event.review_note}
-                                </p>
-                              </div>
-                            )}
-                            {event.reviewed_at && (
-                              <p className="text-xs text-gray-400">
-                                Revise le {new Date(event.reviewed_at).toLocaleDateString('fr-FR')}
-                                {event.reviewed_by && ` par ${event.reviewed_by}`}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex gap-2 ml-4 shrink-0">
-                        <Button
-                          variant="ghost"
-                          className="text-sm"
-                          onClick={() =>
-                            setExpandedEvent(expandedEvent === event.id ? null : event.id)
-                          }
-                        >
-                          {expandedEvent === event.id ? 'Masquer' : 'Details'}
-                        </Button>
-                        {(event.status === 'new' || !event.status) && (
-                          <Button
-                            className="text-sm"
-                            onClick={() => {
-                              setReviewModal(event);
-                              setReviewNotes('');
-                            }}
-                          >
-                            Reviser
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-        </div>
-      </div>
-
-      {/* Info Panel */}
-      <Card className="border-yellow-200 bg-yellow-50/50">
+      {/* Info panel (garde-fou droits d'auteur) */}
+      <Card className="border-yellow-200 bg-yellow-50/50 mt-6">
         <CardBody>
           <h3 className="text-sm font-semibold text-yellow-800 mb-1">Stockage Minimal</h3>
           <p className="text-sm text-gray-700">
@@ -284,7 +140,191 @@ export default function WatchersPage() {
         </CardBody>
       </Card>
 
-      {/* Review Modal */}
+      {/* Legacy body préservé en mode mort pour rollback */}
+      {false && (
+        <>
+          <div>
+            <h2 className="text-base font-semibold text-gray-800 mb-3">Watchers Actifs</h2>
+            {watchers.length === 0 ? (
+              <EmptyState
+                icon={Eye}
+                title="Aucun watcher configuré"
+                text="Configurez vos sources de veille réglementaire."
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {watchers.map((watcher) => (
+                  <Card
+                    key={watcher.name}
+                    className="hover:shadow-md transition-shadow duration-200"
+                  >
+                    <CardBody>
+                      <h3 className="font-semibold text-gray-900 mb-1">{watcher.name}</h3>
+                      <p className="text-sm text-gray-500 mb-3">{watcher.description}</p>
+
+                      {runResults[watcher.name] && !runResults[watcher.name].loading && (
+                        <div
+                          className={`text-xs mb-3 rounded-lg px-3 py-2 ${runResults[watcher.name].error ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}
+                        >
+                          {runResults[watcher.name].error
+                            ? `Erreur: ${runResults[watcher.name].error}`
+                            : `${runResults[watcher.name].new_events} nouveaux événements`}
+                        </div>
+                      )}
+
+                      <Button
+                        variant="secondary"
+                        className="w-full text-sm"
+                        onClick={() => handleRunWatcher(watcher.name)}
+                        disabled={runResults[watcher.name]?.loading}
+                      >
+                        {runResults[watcher.name]?.loading ? (
+                          <>
+                            <RefreshCw size={14} className="mr-1.5 animate-spin" /> Exécution...
+                          </>
+                        ) : (
+                          <>
+                            <Play size={14} className="mr-1.5" /> Executer
+                          </>
+                        )}
+                      </Button>
+                    </CardBody>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Events Section */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-800">Événements Réglementaires</h2>
+              <select
+                value={filterSource}
+                onChange={(e) => setFilterSource(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+              >
+                <option value="">Toutes les sources</option>
+                {watchers.map((w) => (
+                  <option key={w.name} value={w.name}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <Tabs tabs={STATUS_TABS} active={filterStatus} onChange={setFilterStatus} />
+
+            <div className="mt-4">
+              {events.length === 0 ? (
+                <EmptyState
+                  icon={Eye}
+                  title="Aucun événement"
+                  text="Exécutez un watcher pour détecter les événements réglementaires."
+                  ctaLabel="Lancer la veille"
+                  onCta={() => watchers.length > 0 && handleRunWatcher(watchers[0].name)}
+                />
+              ) : (
+                <Card>
+                  <div className="divide-y divide-gray-100">
+                    {events.map((event) => (
+                      <div key={event.id} className="px-5 py-4 hover:bg-gray-50 transition">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h3 className="font-semibold text-gray-900 text-sm">{event.title}</h3>
+                              <Badge status={STATUS_BADGE[event.status] || 'info'}>
+                                {event.status || 'new'}
+                              </Badge>
+                            </div>
+
+                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                              <Badge status="info">{event.source_name}</Badge>
+                              {event.published_at && (
+                                <span>
+                                  {new Date(event.published_at).toLocaleDateString('fr-FR')}
+                                </span>
+                              )}
+                              {event.tags && <span className="text-gray-400">{event.tags}</span>}
+                            </div>
+
+                            {expandedEvent === event.id && (
+                              <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
+                                <p className="text-sm text-gray-700">{event.snippet}</p>
+                                {event.url && (
+                                  <a
+                                    href={event.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                                  >
+                                    <ExternalLink size={12} /> Lien source
+                                  </a>
+                                )}
+                                {event.review_note && (
+                                  <div className="p-2 bg-green-50 border border-green-200 rounded">
+                                    <p className="text-xs text-green-800">
+                                      <strong>Note:</strong> {event.review_note}
+                                    </p>
+                                  </div>
+                                )}
+                                {event.reviewed_at && (
+                                  <p className="text-xs text-gray-400">
+                                    Revise le{' '}
+                                    {new Date(event.reviewed_at).toLocaleDateString('fr-FR')}
+                                    {event.reviewed_by && ` par ${event.reviewed_by}`}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex gap-2 ml-4 shrink-0">
+                            <Button
+                              variant="ghost"
+                              className="text-sm"
+                              onClick={() =>
+                                setExpandedEvent(expandedEvent === event.id ? null : event.id)
+                              }
+                            >
+                              {expandedEvent === event.id ? 'Masquer' : 'Details'}
+                            </Button>
+                            {(event.status === 'new' || !event.status) && (
+                              <Button
+                                className="text-sm"
+                                onClick={() => {
+                                  setReviewModal(event);
+                                  setReviewNotes('');
+                                }}
+                              >
+                                Reviser
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          </div>
+
+          {/* Info Panel legacy (duplicate, kept in dead branch) */}
+          <Card className="border-yellow-200 bg-yellow-50/50">
+            <CardBody>
+              <h3 className="text-sm font-semibold text-yellow-800 mb-1">Stockage Minimal</h3>
+              <p className="text-sm text-gray-700">
+                Les watchers stockent uniquement un hash de contenu + snippet de 500 caracteres
+                maximum. Aucune copie massive de contenu réglementaire n'est effectuée (conformité
+                droits d'auteur).
+              </p>
+            </CardBody>
+          </Card>
+        </>
+      )}
+
+      {/* Review Modal (LIVE — triggered via onReviewEvent from WatchersSol) */}
       <Modal open={!!reviewModal} onClose={() => setReviewModal(null)} title="Réviser l'événement">
         {reviewModal && (
           <div className="space-y-4">

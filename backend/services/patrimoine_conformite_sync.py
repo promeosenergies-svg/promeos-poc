@@ -287,7 +287,10 @@ def run_coherence_check(db: Session) -> Dict:
             .order_by(BacsAssessment.assessed_at.desc())
             .first()
         )
-        if not last_assessment or (last_assessment.assessed_at and last_assessment.assessed_at < cutoff):
+        _assessed = last_assessment.assessed_at if last_assessment else None
+        if _assessed is not None and _assessed.tzinfo is not None:
+            _assessed = _assessed.replace(tzinfo=None)
+        if not last_assessment or (_assessed and _assessed < cutoff):
             summary["bacs_stale"].append(
                 {
                     "asset_id": asset.id,

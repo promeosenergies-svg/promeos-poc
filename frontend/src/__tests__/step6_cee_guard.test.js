@@ -14,45 +14,26 @@ function readSrc(relPath) {
   return readFileSync(join(__dirname, '..', relPath), 'utf-8');
 }
 
-// ── A. RegOps.jsx — obligations vs incentives separation ────────────────────
+// ── A. RegOps/Sol — obligations vs incentives separation (Lot 3 P3) ─────────
+//
+// Depuis Pattern C Lot 3, RegOps.jsx est un loader thin ; la séparation
+// obligations/incentives vit dans regops/sol_presenters.js (filtre
+// `category !== 'incentive'` dans computeCompletion, sumPenalties,
+// buildRegOpsEntityCardFields, buildRegOpsTimelineEvents). Les « data-section »
+// CSS du legacy sont remplacés par la structure sémantique SolDetailPage +
+// SolKpiRow + SolTimeline.
 
-describe('Step6 — RegOps.jsx CEE separation', () => {
-  const src = readSrc('pages/RegOps.jsx');
+describe('Step6 — RegOps presenters preserve obligations/incentives filter', () => {
+  const presenterSrc = readSrc('pages/regops/sol_presenters.js');
 
-  it('has "Obligations réglementaires" section', () => {
-    expect(src).toContain('Obligations réglementaires');
+  it('filters findings by category !== incentive (obligations)', () => {
+    expect(presenterSrc).toMatch(/category\s*!==\s*['"]incentive['"]/);
   });
 
-  it('has "Financements & opportunités" section', () => {
-    expect(src).toContain('Financements & opportunités');
-  });
-
-  it('filters findings by category for obligations', () => {
-    expect(src).toMatch(/category\s*!==\s*['"]incentive['"]/);
-  });
-
-  it.skip('filters findings by category for incentives — CEE masqué V1.2', () => {
-    expect(src).toMatch(/category\s*===\s*['"]incentive['"]/);
-  });
-
-  it('uses Coins icon from lucide-react', () => {
-    expect(src).toContain('Coins');
-  });
-
-  it.skip('shows "Éligible CEE" badge for incentives — CEE masqué V1.2', () => {
-    expect(src).toContain('Éligible CEE');
-  });
-
-  it('has data-section="obligations" and data-section="incentives"', () => {
-    expect(src).toContain('data-section="obligations"');
-    // data-section="incentives" masqué V1.2 — CEE prévu évolution future
-  });
-
-  it('does NOT show severity badge for incentive findings', () => {
-    // Incentive section should use neutral CEE badges, not getSeverityBadgeColor
-    // The incentive block should not call getSeverityBadgeColor
-    const incentiveBlock = src.split('data-section="incentives"')[1]?.split('</div>')[0] || '';
-    expect(incentiveBlock).not.toContain('getSeverityBadgeColor');
+  it('computeCompletion + sumPenalties + buildTimeline honor the filter', () => {
+    // Le filtre doit apparaître plusieurs fois (au moins 3 call-sites)
+    const matches = presenterSrc.match(/category\s*!==\s*['"]incentive['"]/g) || [];
+    expect(matches.length).toBeGreaterThanOrEqual(3);
   });
 });
 

@@ -1,0 +1,82 @@
+/**
+ * PROMEOS — Sol design tokens (Phase 1, SOL_WIREFRAME_SPEC.md section 10)
+ *
+ * Source de vérité : docs/sol/maquettes/cockpit-sol-v1-adjusted-v2.html (V2 raw)
+ * Insight UX-1 « journal en terrasse » — slate compétent + accents warm.
+ *
+ * Prefix `--sol-*` conservé (cohérence avec tests source-guards sprint 2).
+ * Importé une seule fois depuis src/index.css.
+ */
+
+:root {
+  /* Typography stack — Fraunces display · DM Sans body · JetBrains Mono numeric */
+  --sol-font-display: 'Fraunces', 'Tiempos', Georgia, serif;
+  --sol-font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --sol-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Slate base — papier / canevas / panneau */
+  --sol-bg-canvas: #f8f9fa;
+  --sol-bg-paper: #ffffff;
+  --sol-bg-panel: #f3f4f6;
+
+  /* Ink scale — 100 le plus clair, 900 le plus foncé */
+  --sol-ink-900: #0f172a;
+  --sol-ink-700: #334155;
+  --sol-ink-500: #64748b;
+  --sol-ink-400: #94a3b8;
+  --sol-ink-300: #cbd5e1;
+  --sol-ink-200: #e2e8f0;
+  --sol-ink-100: #f1f5f9;
+  --sol-rule: #e2e8f0;
+
+  /* Accents émotionnels warm — palette V2 raw « journal en terrasse » (source locked) */
+  --sol-calme-fg: #2f6b5e;
+  --sol-calme-bg: #e3f0ed; /* bleu-vert doux « tout va bien » */
+  --sol-calme-fg-hover: #245047; /* -10% luminosité pour hover */
+  --sol-attention-fg: #a06b1a;
+  --sol-attention-bg: #f6ead2; /* ambre chaleureux */
+  --sol-afaire-fg: #b8552e;
+  --sol-afaire-bg: #f7e4d8; /* orange corail, pas punitif */
+  --sol-succes-fg: #2e6b4a;
+  --sol-succes-bg: #dfede3; /* vert forêt, pas fluo */
+  --sol-refuse-fg: #8b3a3a;
+  --sol-refuse-bg: #f3dddb;
+
+  /* Tariff HP/HC — palette warm V2 raw */
+  --sol-hph-fg: #b84545;
+  --sol-hph-bg: #fbe9e9; /* HP signal fort */
+  --sol-hch-fg: #2e4a6b;
+  --sol-hch-bg: #e6edf5; /* HC calme */
+  --sol-hpe-fg: #d08b3c;
+  --sol-hpe-bg: #fbf1e3;
+  --sol-hce-fg: #6b8cae;
+  --sol-hce-bg: #e9eef4;
+}
+
+/* ── Animations signature ── */
+@keyframes sol-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes sol-pulse-fast {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sol-hero-chip::before,
+  .sol-cartouche-dot,
+  [style*='sol-pulse'] {
+    animation: none !important;
+  }
+}

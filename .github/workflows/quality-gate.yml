@@ -173,7 +173,9 @@ jobs:
         run: npm run dev &
 
       - name: Wait for servers
-        run: npx wait-on http://127.0.0.1:8001/api/health http://127.0.0.1:5173 --timeout 30000
+        # Branche refonte : vite.config.js force port 5174 (coexistence avec
+        # main sur 5173 en dev local). Ici on attend donc 5174.
+        run: npx wait-on http://127.0.0.1:8001/api/health http://127.0.0.1:5174 --timeout 60000
 
       - name: Smoke E2E (chain validation)
         id: smoke

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoginBackground from './LoginBackground';
 
@@ -10,6 +10,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // RequireAuth push les deeplinks intercepted dans `state.from`.
+  // Préserve pathname + query params + hash. Fallback `/` si from absent
+  // ou pointe vers /login (anti-boucle).
+  const from = location.state?.from;
+  const redirectTo =
+    from && from.pathname && from.pathname !== '/login'
+      ? `${from.pathname}${from.search || ''}${from.hash || ''}`
+      : '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +27,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/', { replace: true });
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(err.response?.data?.detail || 'Identifiants incorrects');
     } finally {

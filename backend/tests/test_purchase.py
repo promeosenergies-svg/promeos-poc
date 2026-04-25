@@ -711,7 +711,8 @@ class TestEnergyGate:
 
         resp = client.post(f"/api/purchase/compute/{site.id}")
         assert resp.status_code == 422
-        assert "non supportee" in resp.json()["detail"]
+        body = resp.json()
+        assert "non supportee" in (body.get("message") or str(body.get("detail") or ""))
 
     def test_compute_elec_succeeds(self, client, db_session):
         """Compute succeeds for ELEC site."""

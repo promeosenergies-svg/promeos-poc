@@ -21,6 +21,7 @@ import {
 import { Thermometer, Snowflake, Flame, TrendingUp, AlertTriangle } from 'lucide-react';
 import { Card, CardBody, CardHeader } from '../../ui';
 import { getEnergySignatureAdvanced } from '../../services/api/enedis';
+import { fmtNum } from '../../utils/format';
 
 const LABEL_CONFIG = {
   heating_dominant: {
@@ -58,7 +59,7 @@ function ChartTooltip({ active, payload }) {
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-2 text-xs">
       {d.date && <p className="text-gray-500">{d.date}</p>}
       <p className="text-gray-800 font-semibold">{d.temp}°C</p>
-      <p className="text-gray-600">{d.kwh?.toFixed(1)} kWh</p>
+      <p className="text-gray-600">{fmtNum(d.kwh, 1)} kWh</p>
     </div>
   );
 }
@@ -146,7 +147,7 @@ export default function EnergySignatureCard({ siteId, months = 12 }) {
             <span
               className={`text-xs font-mono ${QUALITY_COLORS[model.quality] || 'text-gray-500'}`}
             >
-              R² = {model.r_squared?.toFixed(3) || '—'}
+              R² = {fmtNum(model.r_squared, 3)}
             </span>
           </div>
         </div>
@@ -194,14 +195,13 @@ export default function EnergySignatureCard({ siteId, months = 12 }) {
           <div>
             <div className="text-xs text-gray-500 uppercase">Baseload</div>
             <div className="font-semibold text-gray-800">
-              {model.base_kwh_day?.toFixed(0) || '—'}{' '}
-              <span className="text-xs text-gray-500">kWh/j</span>
+              {fmtNum(model.base_kwh_day, 0)} <span className="text-xs text-gray-500">kWh/j</span>
             </div>
           </div>
           <div>
             <div className="text-xs text-gray-500 uppercase">Pente chauffage</div>
             <div className="font-semibold text-orange-700">
-              {model.a_heating_kwh_per_c?.toFixed(1) || '—'}{' '}
+              {fmtNum(model.a_heating_kwh_per_c, 1)}{' '}
               <span className="text-xs text-gray-500">kWh/°C</span>
             </div>
             {model.t_heat_c != null && (
@@ -211,7 +211,7 @@ export default function EnergySignatureCard({ siteId, months = 12 }) {
           <div>
             <div className="text-xs text-gray-500 uppercase">Pente clim</div>
             <div className="font-semibold text-blue-700">
-              {model.b_cooling_kwh_per_c?.toFixed(1) || '—'}{' '}
+              {fmtNum(model.b_cooling_kwh_per_c, 1)}{' '}
               <span className="text-xs text-gray-500">kWh/°C</span>
             </div>
             {model.t_cool_c != null && (
@@ -220,9 +220,7 @@ export default function EnergySignatureCard({ siteId, months = 12 }) {
           </div>
           <div>
             <div className="text-xs text-gray-500 uppercase">Part thermosens.</div>
-            <div className="font-semibold text-gray-800">
-              {thermo.part_thermo_pct?.toFixed(0) || '—'}%
-            </div>
+            <div className="font-semibold text-gray-800">{fmtNum(thermo.part_thermo_pct, 0)}%</div>
           </div>
         </div>
 

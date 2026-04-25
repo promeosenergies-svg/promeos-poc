@@ -29,6 +29,8 @@ import {
   Clock,
 } from 'lucide-react';
 import { Card, Badge, Button, EmptyState, PageShell, Drawer, Tabs, Tooltip } from '../ui';
+// Sprint 2 refonte : header éditorial Sol.
+import { SolPageHeader } from '../ui/sol';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import { useToast } from '../ui';
@@ -707,6 +709,7 @@ export default function Patrimoine() {
       icon={Building2}
       title="Sites & bâtiments"
       subtitle={subtitle}
+      hideHeader
       actions={
         <>
           {!isEmptyPatrimoine && (
@@ -734,6 +737,20 @@ export default function Patrimoine() {
         </>
       }
     >
+      {/* Sprint 2 refonte — header éditorial Sol */}
+      <SolPageHeader
+        kicker="Patrimoine · sites, bâtiments, compteurs"
+        title="Votre patrimoine"
+        titleEm=" — chaque site, son contexte, ses données"
+        narrative={
+          <>
+            C'est ici que vous gérez vos <em>sites</em>, vos <em>bâtiments</em> et vos{' '}
+            <em>compteurs</em> — la donnée propre en amont, les analyses justes en aval.
+          </>
+        }
+        subNarrative={subtitle}
+      />
+
       {/* ── Welcome empty state ── */}
       {isEmptyPatrimoine ? (
         <EmptyState

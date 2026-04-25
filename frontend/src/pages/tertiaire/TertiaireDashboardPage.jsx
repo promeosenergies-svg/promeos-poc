@@ -32,6 +32,7 @@ import ExportOperatModal from '../../components/ExportOperatModal';
 import MutualisationSection from '../../components/conformite/MutualisationSection';
 import DtProgressMultiSite from '../../components/conformite/DtProgressMultiSite';
 import Explain from '../../ui/Explain';
+import ConformiteTertiaireSol from '../ConformiteTertiaireSol';
 
 const STATUS_LABELS = {
   active: 'Active',
@@ -160,12 +161,19 @@ export default function TertiaireDashboardPage() {
     <PageShell
       title="Décret tertiaire / OPERAT"
       subtitle={`${kpis.total_efa} EFA enregistrée${kpis.total_efa > 1 ? 's' : ''}`}
+      hideHeader
       actions={
         <Button size="sm" variant="secondary" onClick={() => setShowExportModal(true)}>
           <Download size={14} className="mr-1" /> Export OPERAT
         </Button>
       }
     >
+      {/* Lot 6 Phase 4 — ConformiteTertiaireSol hero Pattern A injecté
+          top. Legacy body (DtProgressMultiSite + Sites à traiter +
+          EFA list + MutualisationSection + ExportOperatModal +
+          Drawer "Pourquoi ?") préservé intégralement dessous. */}
+      <ConformiteTertiaireSol dashboard={dashboard} isLoading={loading} />
+
       {/* Empty state when no EFA */}
       {kpis.total_efa === 0 && (
         <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
@@ -182,29 +190,36 @@ export default function TertiaireDashboardPage() {
         </div>
       )}
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="EFA enregistrees" value={kpis.total_efa} icon={Building2} accent="blue" />
-        <KpiCard
-          label="Anomalies ouvertes"
-          value={kpis.open_issues}
-          icon={AlertTriangle}
-          accent={kpis.open_issues > 0 ? 'amber' : 'slate'}
-          onClick={() => navigate('/conformite/tertiaire/anomalies')}
-        />
-        <KpiCard
-          label="Issues critiques"
-          value={kpis.critical_issues}
-          icon={ShieldAlert}
-          accent={kpis.critical_issues > 0 ? 'red' : 'slate'}
-        />
-        <KpiCard
-          label="Deadline OPERAT"
-          value={`J-${daysToOperat}`}
-          icon={Clock}
-          accent={daysToOperat < 90 ? 'red' : 'amber'}
-        />
-      </div>
+      {/* KPIs legacy — masqués Lot 6 Phase 4 polish (dédup avec hero Sol).
+          Les 4 KPIs (EFA enregistrees · Anomalies ouvertes · Issues
+          critiques · Deadline OPERAT) sont maintenant portés par
+          ConformiteTertiaireSol en tête. Le legacy garde Trajectoire
+          DtProgressMultiSite + table sites + MutualisationSection qui
+          ne sont PAS dans le hero (complémentaires vrais). */}
+      {false && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <KpiCard label="EFA enregistrees" value={kpis.total_efa} icon={Building2} accent="blue" />
+          <KpiCard
+            label="Anomalies ouvertes"
+            value={kpis.open_issues}
+            icon={AlertTriangle}
+            accent={kpis.open_issues > 0 ? 'amber' : 'slate'}
+            onClick={() => navigate('/conformite/tertiaire/anomalies')}
+          />
+          <KpiCard
+            label="Issues critiques"
+            value={kpis.critical_issues}
+            icon={ShieldAlert}
+            accent={kpis.critical_issues > 0 ? 'red' : 'slate'}
+          />
+          <KpiCard
+            label="Deadline OPERAT"
+            value={`J-${daysToOperat}`}
+            icon={Clock}
+            accent={daysToOperat < 90 ? 'red' : 'amber'}
+          />
+        </div>
+      )}
 
       {/* Vue multi-site trajectoire DT */}
       <div className="mt-6">

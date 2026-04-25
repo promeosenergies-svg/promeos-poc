@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { AlertTriangle, ArrowRight, HelpCircle, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getScoreExplain } from '../services/api/conformite';
+import { fmtNum } from '../utils/format';
 
 const FW_PATHS = {
   tertiaire_operat: '/conformite',
@@ -31,7 +32,7 @@ function BreakdownBar({ reg }) {
       </div>
       <div className="flex items-center justify-between text-[11px] text-gray-500">
         <span>
-          Poids : {Math.round(reg.weight * 100)}% — contribution : {contribution.toFixed(1)} pts
+          Poids : {Math.round(reg.weight * 100)}% — contribution : {fmtNum(contribution, 1)} pts
         </span>
         {reg.penalties_count > 0 && (
           <span className="text-red-500">

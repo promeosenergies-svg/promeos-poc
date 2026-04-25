@@ -302,14 +302,14 @@ class TestE2E_OfferFixeElec:
         reseau = next(c for c in r["components"] if c["code"] == "reseau")
         assert reseau["ht"] == pytest.approx(45.30, abs=0.01)
 
-        # Taxes: 1000 × 0.0225 = 22.50
+        # Taxes: 1000 × 0.0210 = 21.00 (accise elec 2024, valid jan 2025)
         taxes = next(c for c in r["components"] if c["code"] == "taxes")
-        assert taxes["ht"] == pytest.approx(22.50, abs=0.01)
+        assert taxes["ht"] == pytest.approx(21.00, abs=0.01)
 
         # Abonnement: 18.48 × 1.0 = 18.48 (30 days, prorata=1)
         abo = next(c for c in r["components"] if c["code"] == "abonnement")
         assert abo["ht"] == pytest.approx(18.48, abs=0.01)
 
-        # TVA: (189+45.3+22.5)×0.20 + 18.48×0.055
-        expected_tva = (189.0 + 45.30 + 22.50) * 0.20 + 18.48 * 0.055
+        # TVA: (189+45.3+21.0)×0.20 + 18.48×0.055
+        expected_tva = (189.0 + 45.30 + 21.00) * 0.20 + 18.48 * 0.055
         assert r["totals"]["tva"] == pytest.approx(expected_tva, abs=0.05)

@@ -77,7 +77,7 @@ class TestEfaCreation:
         from models.tertiaire import TertiaireEfa
 
         names = [
-            "EFA Siege HELIOS Paris",
+            "EFA Siège HELIOS Paris",
             "EFA Hotel HELIOS Nice",
             "EFA Bureau Regional Lyon",
         ]
@@ -90,7 +90,7 @@ class TestEfaCreation:
         from models.tertiaire import TertiaireEfa, TertiaireEfaBuilding, TertiaireResponsibility
         from models.enums import EfaStatut
 
-        efa = seeded_db.query(TertiaireEfa).filter_by(nom="EFA Siege HELIOS Paris").first()
+        efa = seeded_db.query(TertiaireEfa).filter_by(nom="EFA Siège HELIOS Paris").first()
         assert efa.statut == EfaStatut.ACTIVE
         buildings = seeded_db.query(TertiaireEfaBuilding).filter_by(efa_id=efa.id).all()
         assert len(buildings) >= 1
@@ -141,7 +141,7 @@ class TestEfaCreation:
         from models.tertiaire import TertiaireEfa, TertiaireDeclaration
 
         names = [
-            "EFA Siege HELIOS Paris",
+            "EFA Siège HELIOS Paris",
             "EFA Hotel HELIOS Nice",
             "EFA Bureau Regional Lyon",
         ]
@@ -155,7 +155,7 @@ class TestEfaCreation:
         import json
         from models.tertiaire import TertiaireEfa, TertiaireDeclaration
 
-        efa = seeded_db.query(TertiaireEfa).filter_by(nom="EFA Siege HELIOS Paris").first()
+        efa = seeded_db.query(TertiaireEfa).filter_by(nom="EFA Siège HELIOS Paris").first()
         decl = seeded_db.query(TertiaireDeclaration).filter_by(efa_id=efa.id, year=2024).first()
         raw = decl.checklist_json
         assert raw is not None
@@ -167,7 +167,7 @@ class TestEfaCreation:
         """Chaque EfaBuilding a un building_id valide."""
         from models.tertiaire import TertiaireEfa, TertiaireEfaBuilding
 
-        efa = seeded_db.query(TertiaireEfa).filter_by(nom="EFA Siege HELIOS Paris").first()
+        efa = seeded_db.query(TertiaireEfa).filter_by(nom="EFA Siège HELIOS Paris").first()
         buildings = seeded_db.query(TertiaireEfaBuilding).filter_by(efa_id=efa.id).all()
         for b in buildings:
             assert b.building_id is not None
@@ -180,7 +180,7 @@ class TestEfaCreation:
         from services.demo_seed.gen_tertiaire_efa import seed_tertiaire_efa
 
         names_list = [
-            "EFA Siege HELIOS Paris",
+            "EFA Siège HELIOS Paris",
             "EFA Hotel HELIOS Nice",
             "EFA Bureau Regional Lyon",
         ]

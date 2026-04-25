@@ -30,6 +30,7 @@ import {
   Skeleton,
 } from '../../ui';
 import { useToast } from '../../ui/ToastProvider';
+import { fmtNum } from '../../utils/format';
 
 // ── Helpers tone (Color-Life : accent rouge uniquement pour seuils dépassés) ──
 
@@ -57,7 +58,7 @@ const TONE_CLASS = {
 
 function formatDays(v) {
   if (v == null) return '—';
-  return `${v.toFixed(1)} j`;
+  return `${fmtNum(v, 1)} j`;
 }
 
 function formatPct(v) {

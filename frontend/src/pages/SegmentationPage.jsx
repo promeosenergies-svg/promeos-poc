@@ -13,6 +13,7 @@ import { PageShell, Card, CardBody, Badge, Button, EmptyState, Progress } from '
 import { SkeletonCard } from '../ui/Skeleton';
 import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
+import SegmentationSol from './SegmentationSol';
 
 const TYPO_LABELS = {
   tertiaire_prive: 'Tertiaire Privé',
@@ -98,7 +99,13 @@ export default function SegmentationPage() {
       icon={UserCheck}
       title="Segmentation B2B"
       subtitle="Affinez votre profil pour des recommandations plus précises"
+      hideHeader
     >
+      {/* Lot 6 Phase 3 — SegmentationSol Pattern A compact injecté top.
+          Legacy body (profile card + progress + questions + submit)
+          préservé intégralement dessous pour le flow questionnaire. */}
+      <SegmentationSol profile={profile} questions={questions} answers={answers} />
+
       {/* Current profile card */}
       {profile && profile.has_profile && (
         <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">

@@ -4,7 +4,8 @@
  * Portfolio-level renewal radar for DAF / Direction Achats.
  * Table + ScenarioDrawer + ScenarioSummaryModal.
  */
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   CalendarRange,
   ChevronRight,
@@ -13,7 +14,6 @@ import {
   CheckCircle,
   XCircle,
   UserCheck,
-  HelpCircle,
 } from 'lucide-react';
 import { PageShell, Badge, Button, EmptyState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
@@ -31,6 +31,7 @@ import { track } from '../services/tracker';
 import { fmtDateFR } from '../utils/format';
 import { useScope } from '../contexts/ScopeContext';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
+import RenouvellementsSol from './RenouvellementsSol';
 
 /* ── Urgency mapping ── */
 const URGENCY_CFG = {
@@ -373,9 +374,37 @@ function SegmentationBadge({ profile }) {
 /* ── Main Page ── */
 export default function ContractRadarPage() {
   const { selectedSiteId } = useScope();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [horizon, setHorizon] = useState(90);
+  // URL comme source de vérité pour horizon (?horizon=90/180/365 depuis
+  // le panel deep-link). Fallback 90 si param absent ou invalide.
+  const urlHorizon = parseInt(searchParams.get('horizon'), 10);
+  const horizon = [90, 180, 365].includes(urlHorizon) ? urlHorizon : 90;
+  const setHorizon = useCallback(
+    (value) => {
+      track('renouvellements_horizon_selected', { horizon: value, source: 'manual' });
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('horizon', String(value));
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+  // Tracker A10 : horizon_applied source=deep_link au mount quand l'URL
+  // contient déjà `?horizon=…` (cas Vague 1 depuis panel nav).
+  const firedHorizonDeepLinkRef = useRef(false);
+  useEffect(() => {
+    if (firedHorizonDeepLinkRef.current) return;
+    firedHorizonDeepLinkRef.current = true;
+    if ([90, 180, 365].includes(urlHorizon)) {
+      track('renouvellements_horizon_selected', { horizon: urlHorizon, source: 'deep_link' });
+    }
+  }, [urlHorizon]);
   const [selectedContract, setSelectedContract] = useState(null);
   const [segProfile, setSegProfile] = useState(null);
   const [showSegModal, setShowSegModal] = useState(false);
@@ -405,130 +434,121 @@ export default function ContractRadarPage() {
       icon={CalendarRange}
       title="Échéances"
       subtitle="Radar des échéances et scénarios d'achat"
+      hideHeader
     >
-      <div className="flex items-center gap-3 mb-1">
-        <RadarFilterBar
-          horizon={horizon}
-          onHorizonChange={setHorizon}
-          stats={data?.stats}
-          total={data?.total || 0}
-        />
-        <SegmentationBadge profile={segProfile} />
-      </div>
+      <RenouvellementsSol
+        contracts={contracts}
+        horizon={horizon}
+        onHorizonChange={setHorizon}
+        loading={loading}
+        segProfile={segProfile}
+        onOpenSegModal={() => setShowSegModal(true)}
+        onOpenScenario={(contract) => setSelectedContract(contract)}
+      />
 
-      {/* V101: Segmentation confidence nudge */}
-      {segProfile?.has_profile && segProfile.confidence_score < 50 && (
-        <div className="mb-3 flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
-          <HelpCircle size={16} className="text-amber-500 flex-shrink-0" />
-          <span className="text-sm text-amber-800 flex-1">
-            Profil à {Math.round(segProfile.confidence_score)}% — répondez à 2 questions pour
-            affiner vos scénarios
-          </span>
-          <button
-            onClick={() => setShowSegModal(true)}
-            className="px-3 py-1 text-xs font-medium text-amber-700 bg-amber-100 border border-amber-300 rounded-lg hover:bg-amber-200 transition"
-          >
-            Affiner
-          </button>
-        </div>
-      )}
+      {/* Legacy render body désactivé (Lot 2 Phase 4). Rollback rapide
+          via toggle `{false &&}` en cas de régression démo pilote. */}
+      {false && (
+        <div>
+          {loading && <SkeletonTable rows={6} cols={7} />}
 
-      {loading && <SkeletonTable rows={6} cols={7} />}
+          {!loading && contracts.length === 0 && (
+            <EmptyState
+              icon={CalendarRange}
+              title="Aucun contrat dans l'horizon"
+              description="Aucun contrat ne nécessite d'attention sur cette période."
+            />
+          )}
 
-      {!loading && contracts.length === 0 && (
-        <EmptyState
-          icon={CalendarRange}
-          title="Aucun contrat dans l'horizon"
-          description="Aucun contrat ne nécessite d'attention sur cette période."
-        />
-      )}
+          {!loading && contracts.length > 0 && contracts.length < 5 && (
+            <div className="text-center py-4 text-gray-400 text-sm">
+              Seuls les contrats arrivant à échéance dans les {horizon} prochains jours sont
+              affichés.
+            </div>
+          )}
 
-      {!loading && contracts.length > 0 && contracts.length < 5 && (
-        <div className="text-center py-4 text-gray-400 text-sm">
-          Seuls les contrats arrivant à échéance dans les {horizon} prochains jours sont affichés.
-        </div>
-      )}
-
-      {!loading && contracts.length > 0 && (
-        <Table>
-          <Thead>
-            <Tr>
-              <Th>Site</Th>
-              <Th>Fournisseur</Th>
-              <Th>Fin</Th>
-              <Th>Jours</Th>
-              <Th>Indexation</Th>
-              <Th>État données</Th>
-              <Th>Payeur</Th>
-              <Th></Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {contracts.map((ct) => {
-              const urg = URGENCY_CFG[ct.urgency] || URGENCY_CFG.gray;
-              const st = STATUS_CFG[ct.contract_status] || STATUS_CFG.active;
-              const StIcon = st.icon;
-              return (
-                <Tr
-                  key={ct.contract_id}
-                  className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => setSelectedContract(ct)}
-                >
-                  <Td>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{ct.site_nom}</p>
-                      {ct.portfolio_nom && (
-                        <p className="text-[11px] text-gray-400">{ct.portfolio_nom}</p>
-                      )}
-                    </div>
-                  </Td>
-                  <Td className="text-sm text-gray-700">{ct.supplier_name || '—'}</Td>
-                  <Td>
-                    <div className="flex items-center gap-1.5">
-                      <StIcon size={14} className={st.color} />
-                      <span className="text-xs text-gray-600">{fmtDateFR(ct.end_date)}</span>
-                    </div>
-                  </Td>
-                  <Td>
-                    <Badge status={urg.badge}>
-                      {ct.days_to_end != null ? `${ct.days_to_end}j` : '—'}
-                    </Badge>
-                  </Td>
-                  <Td className="text-xs text-gray-600">{ct.indexation_label || '—'}</Td>
-                  <Td>
-                    {ct.readiness_score != null ? (
-                      <div className="flex items-center gap-1.5">
-                        <div
-                          className={`h-1.5 w-8 rounded-full ${
-                            ct.readiness_score >= 80
-                              ? 'bg-green-400'
-                              : ct.readiness_score >= 50
-                                ? 'bg-amber-400'
-                                : 'bg-red-400'
-                          }`}
-                        >
-                          <div
-                            className="h-full bg-current rounded-full"
-                            style={{ width: `${ct.readiness_score}%` }}
-                          />
-                        </div>
-                        <span className="text-[11px] text-gray-500">{ct.readiness_score}%</span>
-                      </div>
-                    ) : (
-                      '—'
-                    )}
-                  </Td>
-                  <Td className="text-xs text-gray-600">{ct.payer_entity || '—'}</Td>
-                  <Td>
-                    <button className="p-1 rounded hover:bg-gray-100 transition-colors">
-                      <ChevronRight size={16} className="text-gray-400" />
-                    </button>
-                  </Td>
+          {!loading && contracts.length > 0 && (
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>Site</Th>
+                  <Th>Fournisseur</Th>
+                  <Th>Fin</Th>
+                  <Th>Jours</Th>
+                  <Th>Indexation</Th>
+                  <Th>État données</Th>
+                  <Th>Payeur</Th>
+                  <Th></Th>
                 </Tr>
-              );
-            })}
-          </Tbody>
-        </Table>
+              </Thead>
+              <Tbody>
+                {contracts.map((ct) => {
+                  const urg = URGENCY_CFG[ct.urgency] || URGENCY_CFG.gray;
+                  const st = STATUS_CFG[ct.contract_status] || STATUS_CFG.active;
+                  const StIcon = st.icon;
+                  return (
+                    <Tr
+                      key={ct.contract_id}
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => setSelectedContract(ct)}
+                    >
+                      <Td>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{ct.site_nom}</p>
+                          {ct.portfolio_nom && (
+                            <p className="text-[11px] text-gray-400">{ct.portfolio_nom}</p>
+                          )}
+                        </div>
+                      </Td>
+                      <Td className="text-sm text-gray-700">{ct.supplier_name || '—'}</Td>
+                      <Td>
+                        <div className="flex items-center gap-1.5">
+                          <StIcon size={14} className={st.color} />
+                          <span className="text-xs text-gray-600">{fmtDateFR(ct.end_date)}</span>
+                        </div>
+                      </Td>
+                      <Td>
+                        <Badge status={urg.badge}>
+                          {ct.days_to_end != null ? `${ct.days_to_end}j` : '—'}
+                        </Badge>
+                      </Td>
+                      <Td className="text-xs text-gray-600">{ct.indexation_label || '—'}</Td>
+                      <Td>
+                        {ct.readiness_score != null ? (
+                          <div className="flex items-center gap-1.5">
+                            <div
+                              className={`h-1.5 w-8 rounded-full ${
+                                ct.readiness_score >= 80
+                                  ? 'bg-green-400'
+                                  : ct.readiness_score >= 50
+                                    ? 'bg-amber-400'
+                                    : 'bg-red-400'
+                              }`}
+                            >
+                              <div
+                                className="h-full bg-current rounded-full"
+                                style={{ width: `${ct.readiness_score}%` }}
+                              />
+                            </div>
+                            <span className="text-[11px] text-gray-500">{ct.readiness_score}%</span>
+                          </div>
+                        ) : (
+                          '—'
+                        )}
+                      </Td>
+                      <Td className="text-xs text-gray-600">{ct.payer_entity || '—'}</Td>
+                      <Td>
+                        <button className="p-1 rounded hover:bg-gray-100 transition-colors">
+                          <ChevronRight size={16} className="text-gray-400" />
+                        </button>
+                      </Td>
+                    </Tr>
+                  );
+                })}
+              </Tbody>
+            </Table>
+          )}
+        </div>
       )}
 
       <ScenarioDrawer

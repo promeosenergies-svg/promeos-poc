@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { Activity, AlertTriangle, CheckCircle2, Moon } from 'lucide-react';
 import { Card, CardBody, CardHeader } from '../../ui';
 import { getLoadProfile } from '../../services/api/enedis';
+import { fmtNum } from '../../utils/format';
 
 const QUALITY_COLORS = {
   excellent: 'text-green-700 bg-green-100',
@@ -50,7 +51,7 @@ function HourlyTooltip({ active, payload }) {
       <p className="font-semibold text-gray-800">
         {String(d.hour).padStart(2, '0')}:00 — {String(d.hour + 1).padStart(2, '0')}:00
       </p>
-      <p className="text-gray-600">{d.kwh.toFixed(2)} kWh moyen</p>
+      <p className="text-gray-600">{fmtNum(d.kwh, 2)} kWh moyen</p>
     </div>
   );
 }
@@ -159,7 +160,7 @@ export default function LoadProfileCard({ siteId, months = 12 }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KpiTile
             label="Baseload P5"
-            value={baseload.p5_kwh?.toFixed(1) || '—'}
+            value={fmtNum(baseload.p5_kwh, 1)}
             unit="kWh"
             sublabel={`${baseload.baseload_pct_of_mean || 0}% moy · ${baseload.verdict || '-'}`}
             color={verdictClass.split(' ')[0]}
@@ -167,13 +168,13 @@ export default function LoadProfileCard({ siteId, months = 12 }) {
           />
           <KpiTile
             label="Load factor"
-            value={data.load_factor?.toFixed(2) || '—'}
+            value={fmtNum(data.load_factor, 2)}
             sublabel={data.load_factor < 0.2 ? 'Pics marqués' : 'Usage régulier'}
             icon={Activity}
           />
           <KpiTile
             label="Nuit / Jour"
-            value={ratios.night_day?.toFixed(2) || '—'}
+            value={fmtNum(ratios.night_day, 2)}
             sublabel={
               ratios.night_day > 0.5
                 ? 'Conso nocturne élevée'
@@ -184,7 +185,7 @@ export default function LoadProfileCard({ siteId, months = 12 }) {
           />
           <KpiTile
             label="WE / Semaine"
-            value={ratios.weekend_weekday?.toFixed(2) || '—'}
+            value={fmtNum(ratios.weekend_weekday, 2)}
             sublabel={
               ratios.weekend_weekday > 0.7
                 ? 'Actif 7/7'
@@ -201,7 +202,7 @@ export default function LoadProfileCard({ siteId, months = 12 }) {
           <span className="w-2 h-2 rounded-full bg-blue-500" />
           <span>
             Pic moyen à <strong className="text-gray-700">{peakHour.hour}h00</strong> (
-            {peakHour.kwh.toFixed(1)} kWh)
+            {fmtNum(peakHour.kwh, 1)} kWh)
           </span>
         </div>
       </CardBody>

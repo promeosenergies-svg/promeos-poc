@@ -6,6 +6,23 @@ Ce fichier est chargé automatiquement à chaque session Claude Code.
 
 Lis `SKILL.md` à la racine AVANT toute action sur ce repo. Toutes les règles non-négociables y sont encodées. Skills détaillés dans `.claude/skills/`.
 
+## Sources veille canoniques (regle obligatoire 24/04/2026)
+
+AVANT toute recherche externe (web, wiki, autre) sur un sujet energie /
+reglementaire / marche / facture, consulter d'abord le catalogue de sources
+canoniques :
+
+- Catalogue : `~/.claude/projects/-Users-amine-projects-promeos-poc/memory/reference_sources_veille_kb.md`
+  (28 entrees : CRE, RTE, Enedis, GRDF, NaTran, Terega, Legifrance, ADEME,
+  MNE, France Renov, MTE/DGEC, Commission UE, EEX + presse + observatoires)
+- Doctrine d'usage + triage par cas d'usage : `~/.claude/projects/-Users-amine-projects-promeos-poc/memory/feedback_kb_sources_systematic.md`
+
+Pour tout subagent (Agent tool) en domaine energie/regulation, inclure dans
+le prompt : *"Consulte le catalogue de sources canoniques PROMEOS avant
+toute recherche externe."*
+
+Decouverte d'une nouvelle source utile -> l'ajouter immediatement au catalogue.
+
 ## Workframe & boundaries
 
 Lire et appliquer `docs/dev/workframe-contract.md`. Matériel personnel jamais dans le repo — il vit dans `../workspace/personal/<person>/` hors boundary git. Pas de `docs/drafts/` ni `docs/notes/` — utiliser Draft PRs GitHub.
