@@ -61,9 +61,9 @@ import EvenementsRecents from './cockpit/EvenementsRecents';
 import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
 import VecteurEnergetiqueCard from './cockpit/VecteurEnergetiqueCard';
 import OpportunitiesCard from './cockpit/OpportunitiesCard';
-import MarketWidget from './cockpit/MarketWidget';
 import BoutonRapportCOMEX from './cockpit/BoutonRapportCOMEX';
 import DeadlineBanner from '../components/DeadlineBanner';
+import RegulatoryCalendarCard from '../components/RegulatoryCalendarCard';
 import { useCockpitData } from '../hooks/useCockpitData';
 import {
   buildBriefing,
@@ -461,14 +461,15 @@ export default function CockpitSol() {
             />
           </SolKpiRow>
 
-          {/* Contexte marché — prix EPEX spot, signal Tempo/EcoWatt, alerte
-              forward. Très pertinent pour COMEX qui pilote l'achat énergie. */}
+          {/* Calendrier réglementaire — compact, 3 prochaines échéances.
+              MarketWidget retiré (trop volumineux pour cockpit · vit sur
+              /achat-energie où il a sa place dédiée pleine puissance). */}
           <SolSectionHead
-            title="Contexte marché énergie"
-            meta="EPEX spot · signaux RTE · alertes prix"
+            title="Calendrier réglementaire"
+            meta="3 prochaines échéances B2B tertiaire"
           />
           <div style={{ marginBottom: 24 }}>
-            <MarketWidget profile="C4" />
+            <RegulatoryCalendarCard limit={3} />
           </div>
 
           {/* 3. Trajectoire Décret Tertiaire 2030 */}
@@ -483,6 +484,37 @@ export default function CockpitSol() {
               sites={cockpit.sites}
             />
           </div>
+
+          {/* AJUSTEMENT PERSONA — Plan d'action PROMU avant Pairs/Vecteurs.
+              Scan exec top-down : état → KPIs → marché → trajectoire → PLAN
+              → benchmarks → événements. Le COMEX veut le plan tôt dans la
+              page (avant les benchmarks qui sont contextuels). */}
+          {(() => {
+            const sourceActions = data.solProposal?.actions || [];
+            const oppList =
+              sourceActions.length > 0
+                ? sourceActions.map((a) => ({
+                    id: a.id,
+                    label: a.title,
+                    sub: `+${(a.impact_eur_per_year || 0).toLocaleString('fr-FR')} €/an · ${a.delay} · ${a.source_module}`,
+                    cta: 'Voir l\'action',
+                    path: a.action_path,
+                  }))
+                : opportunities;
+            return (
+              oppList.length > 0 && (
+                <>
+                  <SolSectionHead
+                    title="Plan d'action — leviers à activer"
+                    meta={`${oppList.length} levier${oppList.length > 1 ? 's' : ''} chiffré${oppList.length > 1 ? 's' : ''} · total ${formatFREur(data.solProposal?.total_impact_eur_per_year || 0, 0)}/an`}
+                  />
+                  <div style={{ marginBottom: 24 }}>
+                    <OpportunitiesCard opportunities={oppList} onNavigate={navigate} />
+                  </div>
+                </>
+              )
+            );
+          })()}
 
           {/* 4 + 5 — Performance OID & Vecteurs CO₂ pairés en grid 2-col
               (densités similaires, évite le vide horizontal sur écran large).
@@ -520,36 +552,8 @@ export default function CockpitSol() {
             </div>
           </div>
 
-          {/* 6. Opportunités à activer — alimenté par solProposal.actions
-              (même backend que SolHero / pour cohérence chiffrage). Format
-              cards 3-col exec-friendly, complément du SolHero allégé ci-dessus.
-              Fallback : buildOpportunities() si endpoint indisponible. */}
-          {(() => {
-            const sourceActions = data.solProposal?.actions || [];
-            const oppList =
-              sourceActions.length > 0
-                ? sourceActions.map((a) => ({
-                    id: a.id,
-                    label: a.title,
-                    sub: `+${(a.impact_eur_per_year || 0).toLocaleString('fr-FR')} €/an · ${a.delay} · ${a.source_module}`,
-                    cta: 'Voir l\'action',
-                    path: a.action_path,
-                  }))
-                : opportunities;
-            return (
-              oppList.length > 0 && (
-                <>
-                  <SolSectionHead
-                    title="Plan d'action — leviers à activer"
-                    meta={`${oppList.length} levier${oppList.length > 1 ? 's' : ''} chiffré${oppList.length > 1 ? 's' : ''} · total ${formatFREur(data.solProposal?.total_impact_eur_per_year || 0, 0)}/an`}
-                  />
-                  <div style={{ marginBottom: 24 }}>
-                    <OpportunitiesCard opportunities={oppList} onNavigate={navigate} />
-                  </div>
-                </>
-              )
-            );
-          })()}
+          {/* Plan d'action déplacé plus haut (après Trajectoire) pour
+              cohérence scan exec : les leviers viennent avant les benchmarks. */}
 
           {/* 7. Événements récents (timeline 7j) */}
           <SolSectionHead title="Événements récents" meta="Timeline monitoring 7j" />
