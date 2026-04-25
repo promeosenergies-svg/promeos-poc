@@ -64,6 +64,7 @@ import {
 // Refonte from-scratch : composants MAIN agentiques + builders
 import DeadlineBanner from '../components/DeadlineBanner';
 import ValueCounterCard from '../components/ValueCounterCard';
+import PeerComparisonCard from '../components/PeerComparisonCard';
 import WatchlistCard from './cockpit/WatchlistCard';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
 import { useCockpitData } from '../hooks/useCockpitData';
@@ -488,6 +489,12 @@ export default function CommandCenterSol() {
           Wow-moment exploitant : "Sol a déjà identifié X € en N jours". */}
       <div style={{ marginTop: 16 }}>
         <ValueCounterCard orgId={scope.orgId} />
+      </div>
+
+      {/* WOW-7 — Comparaison tarif vs pairs sectoriels (anti-fournisseur).
+          Marie voit immédiatement si elle surpaye ou pas. Wedge fort. */}
+      <div style={{ marginTop: 16 }}>
+        <PeerComparisonCard />
       </div>
 
       {/* Watchlist — signaux faibles à monitorer. Le composant a son propre

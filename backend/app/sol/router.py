@@ -24,7 +24,7 @@ from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import resolve_org_id
 
-from .schemas import SolProposal
+from .schemas import PeerComparison, SolProposal
 from .service import ProposalService
 
 
@@ -53,3 +53,26 @@ def get_sol_proposal(
         site_ids=site_ids,
     )
     return proposal
+
+
+@router.get("/peer-comparison", response_model=PeerComparison)
+def get_peer_comparison(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Comparaison tarifaire org vs pairs sectoriels (€/kWh moyen).
+
+    Wedge anti-fournisseur PROMEOS « tout sauf la fourniture » : prouve au
+    client qu'il surpaye vs benchmark archétype NAF. Sources : OID/CEREN
+    benchmarks B2B + Observatoire CRE T4. Aggregation factures sur scope.
+    """
+
+    effective_org_id = resolve_org_id(request, auth, db)
+    site_ids = auth.site_ids if auth and auth.site_ids else None
+
+    service = ProposalService(db)
+    return service.build_peer_comparison(
+        org_id=effective_org_id,
+        site_ids=site_ids,
+    )

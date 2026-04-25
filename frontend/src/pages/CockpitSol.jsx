@@ -66,6 +66,7 @@ import DeadlineBanner from '../components/DeadlineBanner';
 import RegulatoryCalendarCard from '../components/RegulatoryCalendarCard';
 import ImpactProjectionCard from '../components/ImpactProjectionCard';
 import BriefCodexCard from '../components/BriefCodexCard';
+import WhatIfScenarioCard from '../components/WhatIfScenarioCard';
 import { useCockpitData } from '../hooks/useCockpitData';
 import {
   buildBriefing,
@@ -141,6 +142,9 @@ export default function CockpitSol() {
   const sitesCount = scopeCtx?.sitesCount;
   const orgName = org?.name || org?.label || scopeLabel || 'votre patrimoine';
   const [mode, setMode] = useState('surface');
+  // Accordéon "Détails benchmark" — fermé par défaut pour réduire scroll exec.
+  // Le COMEX expand seulement s'il veut creuser. Gain ~600px en scroll initial.
+  const [showBenchmarkDetails, setShowBenchmarkDetails] = useState(false);
 
   const data = useCockpitSolData({ orgId: scope.orgId });
   const { kpis: cockpitKpisFull } = useCockpitData();
@@ -463,6 +467,28 @@ export default function CockpitSol() {
             />
           </SolKpiRow>
 
+          {/* WOW-1 PROMU — Brief CODIR juste après KPIs (position #5).
+              Le COMEX a son livrable accessible sans scroll long. */}
+          <SolSectionHead
+            title="Brief exécutif — prêt à présenter"
+            meta="Synthèse copy-paste pour CODIR · généré par Sol"
+          />
+          <div style={{ marginBottom: 24 }}>
+            <BriefCodexCard
+              orgName={orgName}
+              totalSites={rawKpis.total}
+              facture={billing.total_eur}
+              conformityScore={scoreNow}
+              consoMwh={consoMwh}
+              co2Tco2={co2Total}
+              sitesAtRisk={sitesAtRisk}
+              actionsCount={data.solProposal?.actions?.length || 0}
+              totalImpactEur={data.solProposal?.total_impact_eur_per_year || 0}
+              alertesCount={alertsCount}
+              anomaliesCount={billing.total_insights || 0}
+            />
+          </div>
+
           {/* Calendrier réglementaire — compact, 3 prochaines échéances.
               MarketWidget retiré (trop volumineux pour cockpit · vit sur
               /achat-energie où il a sa place dédiée pleine puissance). */}
@@ -474,18 +500,46 @@ export default function CockpitSol() {
             <RegulatoryCalendarCard limit={3} />
           </div>
 
-          {/* 3. Trajectoire Décret Tertiaire 2030 */}
-          <SolSectionHead
-            title="Trajectoire Décret Tertiaire"
-            meta="Progression vers objectif 2030 (-40%)"
-          />
-          <div style={{ marginBottom: 24 }}>
-            <TrajectorySection
-              trajectoire={cockpitStats.trajectoire}
-              loading={false}
-              sites={cockpit.sites}
-            />
-          </div>
+          {/* 3. Trajectoire Décret Tertiaire 2030 — compact si data absente
+              pour ne pas perdre 155px sur un placeholder. Si trajectoire
+              chargée, affiche le composant complet (TrajectorySection). */}
+          {cockpitStats.trajectoire?.annees?.length > 0 ? (
+            <>
+              <SolSectionHead
+                title="Trajectoire Décret Tertiaire"
+                meta="Progression vers objectif 2030 (-40%)"
+              />
+              <div style={{ marginBottom: 24 }}>
+                <TrajectorySection
+                  trajectoire={cockpitStats.trajectoire}
+                  loading={false}
+                  sites={cockpit.sites}
+                />
+              </div>
+            </>
+          ) : (
+            <div
+              style={{
+                background: 'var(--sol-bg-paper)',
+                border: '1px dashed var(--sol-ink-200)',
+                borderRadius: 6,
+                padding: '10px 14px',
+                marginBottom: 24,
+                fontSize: 12,
+                color: 'var(--sol-ink-500)',
+                fontFamily: 'var(--sol-font-body)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}
+            >
+              <span style={{ fontFamily: 'var(--sol-font-mono)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 10, color: 'var(--sol-ink-700)' }}>
+                Trajectoire DT
+              </span>
+              <span>·</span>
+              <span>Données pluriannuelles non disponibles — connexion patrimoine à finaliser.</span>
+            </div>
+          )}
 
           {/* AJUSTEMENT PERSONA — Plan d'action PROMU avant Pairs/Vecteurs.
               Scan exec top-down : état → KPIs → marché → trajectoire → PLAN
@@ -530,64 +584,95 @@ export default function CockpitSol() {
             </div>
           )}
 
-          {/* 4 + 5 — Performance OID & Vecteurs CO₂ pairés en grid 2-col
-              (densités similaires, évite le vide horizontal sur écran large).
-              align-items stretch + flex column wrappers → cards parfaitement alignées. */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-              gap: 16,
-              marginBottom: 24,
-              alignItems: 'stretch',
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <SolSectionHead
-                title="Performance vs pairs OID"
-                meta="Benchmark par usage · top 5 sites"
-              />
-              <div style={{ flex: 1, display: 'flex' }}>
-                <div style={{ width: '100%' }}>
-                  <PerformanceSitesCard fallbackSites={cockpit.sites || scopedSites} />
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <SolSectionHead
-                title="Vecteurs & empreinte CO₂"
-                meta="Élec/gaz · scopes 1/2 · vs N-1"
-              />
-              <div style={{ flex: 1, display: 'flex' }}>
-                <div style={{ width: '100%' }}>
-                  <VecteurEnergetiqueCard />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* WOW-1 : Brief CODIR pré-rédigé par Sol — texte exec prêt à copier
-              dans une présentation/mail. Différenciateur PROMEOS : seul outil
-              B2B énergie qui ÉCRIT le brief, pas juste les chiffres. */}
+          {/* WOW-6 : Simulator what-if exec — sliders pour arbitrer en live.
+              Différenciateur PROMEOS : permet à l'exec de SIMULER l'impact
+              budget en temps réel (renégo contrat / PV / efficacité). */}
           <SolSectionHead
-            title="Brief exécutif — prêt à présenter"
-            meta="Synthèse copy-paste pour CODIR"
+            title="Simulateur d'arbitrage"
+            meta="Et si on activait... ? · projection live multi-leviers"
           />
           <div style={{ marginBottom: 24 }}>
-            <BriefCodexCard
-              orgName={orgName}
-              totalSites={rawKpis.total}
-              facture={billing.total_eur}
-              conformityScore={scoreNow}
-              consoMwh={consoMwh}
-              co2Tco2={co2Total}
-              sitesAtRisk={sitesAtRisk}
-              actionsCount={data.solProposal?.actions?.length || 0}
-              totalImpactEur={data.solProposal?.total_impact_eur_per_year || 0}
-              alertesCount={alertsCount}
-              anomaliesCount={billing.total_insights || 0}
+            <WhatIfScenarioCard
+              baselineConsoKwh={consoKwh || 2_750_000}
+              baselineFactureEur={billing.total_eur || 386_972}
+              defaultTariff={
+                consoKwh > 0 && billing.total_eur > 0
+                  ? billing.total_eur / consoKwh
+                  : 0.18
+              }
             />
           </div>
+
+          {/* Sprint 1.O3 — Accordéon "Détails benchmark" : Performance OID +
+              Vecteurs CO₂ regroupés et collapsable. Réduit le scroll initial
+              de ~600px sur /cockpit, l'exec expand seulement s'il veut creuser. */}
+          <div style={{ marginBottom: 24 }}>
+            <button
+              type="button"
+              onClick={() => setShowBenchmarkDetails((s) => !s)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                padding: '12px 16px',
+                background: 'var(--sol-bg-paper)',
+                border: '1px solid var(--sol-ink-200)',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--sol-ink-900)',
+                fontFamily: 'var(--sol-font-body)',
+              }}
+            >
+              <span>
+                {showBenchmarkDetails ? 'Masquer' : 'Voir'} le détail benchmark
+                <span style={{ fontWeight: 400, color: 'var(--sol-ink-500)', marginLeft: 12, fontSize: 12 }}>
+                  — Performance vs pairs OID · Vecteurs énergétiques + CO₂ scopes
+                </span>
+              </span>
+              <span style={{ color: 'var(--sol-ink-400)', fontSize: 18 }}>
+                {showBenchmarkDetails ? '−' : '+'}
+              </span>
+            </button>
+            {showBenchmarkDetails && (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+                  gap: 16,
+                  marginTop: 16,
+                  alignItems: 'stretch',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <SolSectionHead
+                    title="Performance vs pairs OID"
+                    meta="Benchmark par usage · top 5 sites"
+                  />
+                  <div style={{ flex: 1, display: 'flex' }}>
+                    <div style={{ width: '100%' }}>
+                      <PerformanceSitesCard fallbackSites={cockpit.sites || scopedSites} />
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <SolSectionHead
+                    title="Vecteurs & empreinte CO₂"
+                    meta="Élec/gaz · scopes 1/2 · vs N-1"
+                  />
+                  <div style={{ flex: 1, display: 'flex' }}>
+                    <div style={{ width: '100%' }}>
+                      <VecteurEnergetiqueCard />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Brief CODIR remonté en position #5 (juste après KPIs). */}
 
           {/* 7. Événements récents (timeline 7j) */}
           <SolSectionHead title="Événements récents" meta="Timeline monitoring 7j" />

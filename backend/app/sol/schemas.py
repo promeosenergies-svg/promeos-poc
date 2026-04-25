@@ -77,3 +77,42 @@ class SolProposal(BaseModel):
         default_factory=list,
         description="Modules sources contributifs (pour traçabilité utilisateur)",
     )
+
+
+class PeerComparison(BaseModel):
+    """Comparaison tarifaire org vs pairs sectoriels.
+
+    Wedge anti-fournisseur PROMEOS « tout sauf la fourniture » : on prouve
+    au client qu'il surpaye en €/kWh par rapport au benchmark de son
+    archétype NAF.
+    """
+
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    org_id: int
+    archetype: str = Field(
+        ..., description="Archétype NAF dominant du patrimoine (ex 'bureau')"
+    )
+    archetype_label: str = Field(
+        ..., description="Label lisible (ex 'Bureau tertiaire')"
+    )
+    my_avg_kwh_price_eur: Optional[float] = Field(
+        None, description="Prix moyen €/kWh du patrimoine (facture / conso)"
+    )
+    peer_avg_kwh_price_eur: float = Field(
+        ..., description="Prix moyen €/kWh des pairs OID/CEREN même archétype"
+    )
+    spread_pct: Optional[float] = Field(
+        None, description="(my - peer) / peer × 100 — positif = surpaye"
+    )
+    annual_overpayment_eur: Optional[int] = Field(
+        None, description="Surpaiement annuel estimé si spread > 0"
+    )
+    sites_count_in_scope: int = 0
+    confidence: ConfidenceT = "medium"
+    peer_source: str = Field(
+        "OID/CEREN benchmarks B2B 2026",
+        description="Source du benchmark pair (traçabilité)",
+    )
+    interpretation: str = Field(
+        ..., description="Phrase d'interprétation prête à afficher en wow-card"
+    )

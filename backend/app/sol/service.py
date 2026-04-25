@@ -29,11 +29,50 @@ from .schemas import (
     ConfidenceT,
     DelayT,
     ImpactKindT,
+    PeerComparison,
     SeverityT,
     SolAction,
     SolProposal,
     SourceModuleT,
 )
+
+
+# Benchmark tarifs pairs B2B 2026 par archétype NAF (€/kWh moyen TTC C4/C5).
+# Source : OID/CEREN agrégats publics + observatoire CRE.
+PEER_AVG_PRICE_EUR_KWH = {
+    'bureau': 0.168,
+    'bureaux': 0.168,
+    'tertiaire': 0.168,
+    'commerce': 0.182,
+    'retail': 0.182,
+    'hotel': 0.176,
+    'restaurant': 0.195,
+    'ecole': 0.156,
+    'scolaire': 0.156,
+    'sante': 0.172,
+    'industrie': 0.142,
+    'industrial': 0.142,
+    'logistique': 0.158,
+    'entrepot': 0.158,
+}
+PEER_AVG_PRICE_DEFAULT = 0.175
+
+ARCHETYPE_LABELS = {
+    'bureau': 'Bureau tertiaire',
+    'bureaux': 'Bureau tertiaire',
+    'tertiaire': 'Tertiaire général',
+    'commerce': 'Commerce',
+    'retail': 'Retail/Commerce',
+    'hotel': 'Hôtellerie',
+    'restaurant': 'Restauration',
+    'ecole': 'Établissement scolaire',
+    'scolaire': 'Établissement scolaire',
+    'sante': 'Santé',
+    'industrie': 'Industrie',
+    'industrial': 'Industrie',
+    'logistique': 'Logistique',
+    'entrepot': 'Entrepôt logistique',
+}
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -430,6 +469,121 @@ class ProposalService:
         # Pas de chiffrage disponible — focus sur sévérité
         top = actions[0]
         return f"Sol propose {n} action{'s' if n > 1 else ''} prioritaire{'s' if n > 1 else ''} : {top.title.lower()}"
+
+    # ── PeerComparison ────────────────────────────────────────────────────
+
+    def build_peer_comparison(
+        self,
+        org_id: int,
+        site_ids: Optional[Iterable[int]] = None,
+    ) -> PeerComparison:
+        """Compose une comparaison tarif moyen org vs pairs sectoriels.
+
+        Méthode :
+            1. Récupère sites scope + archétype dominant (par usage_type)
+            2. Calcule prix moyen €/kWh = SUM(billing_total_eur) / SUM(billing_total_kwh)
+            3. Compare au benchmark pair de l'archétype
+            4. Génère une phrase d'interprétation actionnable
+        """
+
+        # Sites scopés (même chaîne que build_proposal)
+        site_query = (
+            self.db.query(Site)
+            .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+            .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+            .filter(
+                EntiteJuridique.organisation_id == org_id,
+                Site.deleted_at.is_(None),
+            )
+        )
+        if site_ids:
+            site_ids_list = list(site_ids)
+            if site_ids_list:
+                site_query = site_query.filter(Site.id.in_(site_ids_list))
+        sites = site_query.all()
+
+        # Archétype dominant (mode des usage_type des sites)
+        usage_counts: dict[str, int] = {}
+        for s in sites:
+            ut = (getattr(s, 'usage_type', None) or '').lower().strip()
+            if ut:
+                usage_counts[ut] = usage_counts.get(ut, 0) + 1
+        archetype = (
+            max(usage_counts, key=usage_counts.get) if usage_counts else 'tertiaire'
+        )
+        archetype_label = ARCHETYPE_LABELS.get(archetype, 'Tertiaire général')
+        peer_avg = PEER_AVG_PRICE_EUR_KWH.get(archetype, PEER_AVG_PRICE_DEFAULT)
+
+        # Tarif moyen org via billing_summary agrégé
+        # SUM(total_eur) / SUM(total_kwh) sur energy_invoices scope
+        scoped_site_ids = [s.id for s in sites]
+        my_avg_price: Optional[float] = None
+        annual_overpayment: Optional[int] = None
+        spread_pct: Optional[float] = None
+        annual_kwh = 0
+
+        if scoped_site_ids:
+            site_ids_str = ','.join(str(i) for i in scoped_site_ids)
+            row = self.db.execute(
+                text(
+                    f"""
+                    SELECT
+                        COALESCE(SUM(total_eur), 0) AS total_eur,
+                        COALESCE(SUM(total_kwh), 0) AS total_kwh
+                    FROM energy_invoices
+                    WHERE site_id IN ({site_ids_str})
+                      AND total_kwh > 0
+                    """
+                )
+            ).fetchone()
+            if row and row.total_kwh > 0:
+                my_avg_price = row.total_eur / row.total_kwh
+                annual_kwh = row.total_kwh
+                spread_pct = ((my_avg_price - peer_avg) / peer_avg) * 100
+                if spread_pct > 0:
+                    annual_overpayment = int(round((my_avg_price - peer_avg) * row.total_kwh))
+
+        # Phrase d'interprétation
+        if my_avg_price is None:
+            interpretation = (
+                f"Pas assez de factures pour comparer — connectez vos factures "
+                f"pour évaluer votre position vs pairs {archetype_label}."
+            )
+        elif spread_pct is None or abs(spread_pct) < 2:
+            interpretation = (
+                f"Vous payez {my_avg_price:.3f} €/kWh, dans la moyenne des pairs "
+                f"{archetype_label} ({peer_avg:.3f} €/kWh) — contrat correctement calibré."
+            )
+        elif spread_pct > 0:
+            interpretation = (
+                f"Vous payez {my_avg_price:.3f} €/kWh contre {peer_avg:.3f} €/kWh "
+                f"chez vos pairs {archetype_label} — surpaiement de "
+                f"{spread_pct:.1f}% (≈ {annual_overpayment:,} €/an).".replace(',', ' ')
+            )
+        else:
+            interpretation = (
+                f"Vous payez {my_avg_price:.3f} €/kWh, "
+                f"{abs(spread_pct):.1f}% MOINS que les pairs {archetype_label} "
+                f"({peer_avg:.3f} €/kWh) — contrat performant."
+            )
+
+        confidence: ConfidenceT = (
+            "high" if annual_kwh > 100000 else "medium" if annual_kwh > 10000 else "low"
+        )
+
+        return PeerComparison(
+            org_id=org_id,
+            archetype=archetype,
+            archetype_label=archetype_label,
+            my_avg_kwh_price_eur=my_avg_price,
+            peer_avg_kwh_price_eur=peer_avg,
+            spread_pct=spread_pct,
+            annual_overpayment_eur=annual_overpayment,
+            sites_count_in_scope=len(sites),
+            confidence=confidence,
+            peer_source="OID/CEREN benchmarks B2B 2026 + Observatoire CRE T4 2025",
+            interpretation=interpretation,
+        )
 
     @staticmethod
     def _build_scope_label(

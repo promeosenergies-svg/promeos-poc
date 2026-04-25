@@ -23,3 +23,15 @@ import { cachedGet } from './core';
  */
 export const getSolProposal = () =>
   cachedGet('/sol/proposal').then((r) => r.data);
+
+/**
+ * GET /api/sol/peer-comparison
+ * Comparaison tarif moyen org vs pairs sectoriels (€/kWh).
+ *
+ * Shape :
+ *   { archetype, archetype_label, my_avg_kwh_price_eur, peer_avg_kwh_price_eur,
+ *     spread_pct, annual_overpayment_eur, sites_count_in_scope,
+ *     confidence, peer_source, interpretation }
+ */
+export const getPeerComparison = () =>
+  cachedGet('/sol/peer-comparison').then((r) => r.data);
