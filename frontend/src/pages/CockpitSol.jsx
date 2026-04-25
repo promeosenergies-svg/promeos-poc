@@ -124,9 +124,22 @@ function useCockpitSolData({ orgId } = {}) {
 
 // ──────────────────────────────────────────────────────────────────────────────
 
-function getRiskStatus(eur) {
-  if (eur > 50000) return 'crit';
-  if (eur > 10000) return 'warn';
+// Seuils relatifs au chiffre énergie (audit Jean-Marc COMEX CAC40) :
+// - >10% facture annuelle = critique
+// - >5% = warning
+// - <5% = ok
+// Pour un patrimoine 200 sites à 4M€/an, "10k€" n'a aucun sens — il faut
+// normaliser par le poids financier réel.
+function getRiskStatus(riskEur, factureAnnuelleEur) {
+  if (!factureAnnuelleEur || factureAnnuelleEur <= 0) {
+    // Fallback absolu si pas de baseline — seuils CAC40 (M€)
+    if (riskEur > 200000) return 'crit';
+    if (riskEur > 50000) return 'warn';
+    return 'ok';
+  }
+  const ratio = riskEur / factureAnnuelleEur;
+  if (ratio > 0.10) return 'crit';
+  if (ratio > 0.05) return 'warn';
   return 'ok';
 }
 
@@ -176,9 +189,9 @@ export default function CockpitSol() {
       pctConf,
       couvertureDonnees,
       compStatus,
-      risqueStatus: getRiskStatus(risque),
+      risqueStatus: getRiskStatus(risque, data.billing?.total_eur),
     };
-  }, [scopedSites, cockpitKpisFull]);
+  }, [scopedSites, cockpitKpisFull, data.billing]);
 
   // ─── Données existantes pour KPIs ─────────────────────────────────────────
 
@@ -283,9 +296,9 @@ export default function CockpitSol() {
         `${opportunities.length} levier${opportunities.length > 1 ? 's' : ''} identifié${opportunities.length > 1 ? 's' : ''} par Sol`
       );
     } else if (sitesAtRisk > 0) {
-      parts.push(`Sol prépare un plan d'optimisation`);
+      parts.push(`plan d'optimisation à valider`);
     } else {
-      parts.push(`Sol surveille en continu vos ${rawKpis.total} sites`);
+      parts.push(`surveillance continue sur ${rawKpis.total} sites`);
     }
     if (billing.total_insights > 0) {
       parts.push(
@@ -332,7 +345,7 @@ export default function CockpitSol() {
         title="Bonjour "
         titleEm="— votre patrimoine cette semaine"
         narrative={`${rawKpis.total} sites · ${rawKpis.conformes} OK · ${rawKpis.nonConformes + rawKpis.aRisque} à risque · ${alertsCount} alerte${alertsCount > 1 ? 's' : ''}`}
-        subNarrative="Sol prépare le briefing exécutif ci-dessous."
+        subNarrative="Briefing exécutif synthétisé ci-dessous."
         rightSlot={
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <BoutonRapportCOMEX />
@@ -353,11 +366,11 @@ export default function CockpitSol() {
               même backend /api/sol/proposal, formats adaptés par persona
               (liste action-first sur / · cards 3-col exec-first sur /cockpit). */}
           <SolHero
-            chip="Briefing exécutif · Sol"
+            chip="Briefing exécutif"
             title={briefTitle}
             description={
               data.solProposal && data.solProposal.actions?.length > 0
-                ? `${briefDescription} Sol a identifié ${data.solProposal.actions.length} levier${data.solProposal.actions.length > 1 ? 's' : ''} chiffré${data.solProposal.actions.length > 1 ? 's' : ''} (${formatFREur(data.solProposal.total_impact_eur_per_year || 0, 0)}/an) — voir les cards Opportunités ci-dessous.`
+                ? `${briefDescription} ${data.solProposal.actions.length} levier${data.solProposal.actions.length > 1 ? 's' : ''} chiffré${data.solProposal.actions.length > 1 ? 's' : ''} identifié${data.solProposal.actions.length > 1 ? 's' : ''} (${formatFREur(data.solProposal.total_impact_eur_per_year || 0, 0)}/an) — détails ci-dessous.`
                 : briefDescription
             }
             metrics={[

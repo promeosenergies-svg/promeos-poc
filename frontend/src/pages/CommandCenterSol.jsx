@@ -128,13 +128,18 @@ function useCommandData({ orgId } = {}) {
 
 // ──────────────────────────────────────────────────────────────────────────────
 
-const MODULE_TILES = [
+// 2 groupes distincts pour clarifier la cible persona (audit UX A2) :
+// - "Pour la direction" : 1 tuile vers la vue exécutive (persona COMEX)
+// - "Modules opérationnels" : 4 tuiles persona exploitant Marie
+const MODULE_TILES_EXEC = [
   {
     to: '/cockpit',
-    label: 'Cockpit exécutif',
-    desc: 'Synthèse portefeuille, KPIs 3 modes',
+    label: 'Vue exécutive',
+    desc: 'Briefing CODIR · trajectoire 2030 · benchmarks pairs',
     Icon: LayoutDashboard,
   },
+];
+const MODULE_TILES_OPS = [
   {
     to: '/conformite',
     label: 'Conformité',
@@ -879,13 +884,34 @@ export default function CommandCenterSol() {
 
       {/* Watchlist déplacée dans le grid 2-col ci-dessus (pair avec TodayActions). */}
 
-      {/* 5. Tuiles de navigation modules — accès cross-stream */}
+      {/* Modules — 2 groupes distincts pour clarifier la cible persona
+          (audit UX A2). Vue exécutive séparée des opérationnels. */}
+      <SolSectionHead title="Pour la direction" meta="Briefing exécutif" />
+      <div style={TILE_GRID_STYLE}>
+        {MODULE_TILES_EXEC.map(({ to, label, desc, Icon }) => (
+          <button
+            key={to}
+            type="button"
+            onClick={() => navigate(to)}
+            style={TILE_STYLE}
+            onMouseEnter={tileHoverEnter}
+            onMouseLeave={tileHoverLeave}
+          >
+            <Icon size={20} style={TILE_ICON_STYLE} />
+            <div style={TILE_BODY_STYLE}>
+              <div style={TILE_LABEL_STYLE}>{label}</div>
+              <div style={TILE_DESC_STYLE}>{desc}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+
       <SolSectionHead
-        title="Accès rapide aux modules"
-        meta={`${MODULE_TILES.length}${NBSP}modules`}
+        title="Modules opérationnels"
+        meta={`${MODULE_TILES_OPS.length}${NBSP}modules`}
       />
       <div style={TILE_GRID_STYLE}>
-        {MODULE_TILES.map(({ to, label, desc, Icon }) => (
+        {MODULE_TILES_OPS.map(({ to, label, desc, Icon }) => (
           <button
             key={to}
             type="button"

@@ -9,7 +9,7 @@
  * Metron/Advizeo donnent les chiffres, PROMEOS donne le texte exec prêt.
  */
 import { useMemo, useState } from 'react';
-import { Copy, Check, FileText } from 'lucide-react';
+import { Copy, Check, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 
 function formatFREur(eur) {
   if (eur == null || isNaN(eur)) return '—';
@@ -38,12 +38,15 @@ function buildBriefText({
   alertesCount,
   anomaliesCount,
 }) {
-  const orgLabel = orgName || 'votre patrimoine';
   const lines = [];
 
-  // Ligne 1 : situation patrimoine
+  // Ligne 1 : situation patrimoine — wording fluide qui marche AVEC ou SANS orgName
+  // FIX bug audit Jean-Marc : "Notre patrimoine votre patrimoine" quand fallback.
+  const introContext = orgName
+    ? `Notre groupe ${orgName} pilote ${totalSites} sites tertiaires et`
+    : `Le patrimoine de ${totalSites} sites tertiaires`;
   lines.push(
-    `Notre patrimoine ${orgLabel} (${totalSites} sites tertiaires) affiche une facture énergie de ${formatFREur(facture)} HT cette période, pour ${formatFRMwh(consoMwh)} de consommation cumulée.`
+    `${introContext} affiche une facture énergie de ${formatFREur(facture)} HT cette période, pour ${formatFRMwh(consoMwh)} de consommation cumulée.`
   );
 
   // Ligne 2 : conformité + risque
@@ -141,8 +144,10 @@ export default function BriefCodexCard({
   );
 
   const [copied, setCopied] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
-  const handleCopy = async () => {
+  const handleCopy = async (e) => {
+    e?.stopPropagation();
     try {
       await navigator.clipboard.writeText(briefText);
       setCopied(true);
@@ -161,21 +166,26 @@ export default function BriefCodexCard({
         border: '1px solid var(--sol-ink-200)',
         borderLeft: '3px solid var(--sol-ink-700)',
         borderRadius: 8,
-        padding: '20px 22px',
       }}
     >
-      {/* Header */}
-      <div
+      {/* Header collapsable — économise ~500px en first-paint
+          (audit UX A1 : duplique SolHero + KPIs si toujours déplié). */}
+      <button
+        type="button"
+        onClick={() => setExpanded((s) => !s)}
         style={{
+          all: 'unset',
+          cursor: 'pointer',
+          width: '100%',
+          padding: '14px 22px',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           gap: 16,
-          marginBottom: 14,
         }}
       >
-        <div>
-          <div
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+          <span
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -189,91 +199,92 @@ export default function BriefCodexCard({
               background: 'var(--sol-ink-100, #f3f4f6)',
               padding: '3px 8px',
               borderRadius: 99,
-              marginBottom: 8,
             }}
           >
             <FileText size={10} />
-            Brief CODIR · généré par Sol
-          </div>
-          <h3
+            Brief CODIR
+          </span>
+          <span
             style={{
               fontFamily: 'var(--sol-font-body)',
-              fontSize: 16,
-              fontWeight: 600,
+              fontSize: 13,
+              fontWeight: 500,
               color: 'var(--sol-ink-900)',
-              margin: 0,
-              lineHeight: 1.3,
-              letterSpacing: '-0.015em',
             }}
           >
-            Synthèse exécutive prête à présenter
-          </h3>
+            Synthèse exécutive · {expanded ? 'masquer' : 'voir'} le texte
+          </span>
         </div>
-
-        <button
-          type="button"
-          onClick={handleCopy}
-          style={{
-            fontFamily: 'var(--sol-font-body)',
-            fontSize: 12.5,
-            fontWeight: 500,
-            padding: '6px 12px',
-            borderRadius: 6,
-            border: '1px solid var(--sol-ink-200)',
-            background: copied ? 'var(--sol-calme-bg)' : 'var(--sol-bg-paper)',
-            color: copied ? 'var(--sol-calme-fg)' : 'var(--sol-ink-700)',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            whiteSpace: 'nowrap',
-            transition: 'background 120ms ease',
-          }}
-        >
-          {copied ? (
-            <>
-              <Check size={13} />
-              Copié
-            </>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            type="button"
+            onClick={handleCopy}
+            style={{
+              fontFamily: 'var(--sol-font-body)',
+              fontSize: 12.5,
+              fontWeight: 500,
+              padding: '5px 10px',
+              borderRadius: 6,
+              border: '1px solid var(--sol-ink-200)',
+              background: copied ? 'var(--sol-calme-bg)' : 'var(--sol-bg-paper)',
+              color: copied ? 'var(--sol-calme-fg)' : 'var(--sol-ink-700)',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {copied ? (
+              <>
+                <Check size={12} /> Copié
+              </>
+            ) : (
+              <>
+                <Copy size={12} /> Copier
+              </>
+            )}
+          </button>
+          {expanded ? (
+            <ChevronUp size={16} style={{ color: 'var(--sol-ink-400)' }} />
           ) : (
-            <>
-              <Copy size={13} />
-              Copier le brief
-            </>
+            <ChevronDown size={16} style={{ color: 'var(--sol-ink-400)' }} />
           )}
-        </button>
-      </div>
+        </div>
+      </button>
 
-      {/* Brief text — typographie body, lisible, formatée comme un email exec */}
-      <div
-        style={{
-          fontFamily: 'var(--sol-font-body)',
-          fontSize: 13.5,
-          lineHeight: 1.65,
-          color: 'var(--sol-ink-700)',
-          whiteSpace: 'pre-wrap',
-          background: 'var(--sol-bg-canvas, #fafaf6)',
-          border: '1px solid var(--sol-ink-100, #f3f4f6)',
-          borderRadius: 6,
-          padding: '14px 16px',
-          maxWidth: 820,
-        }}
-      >
-        {briefText}
-      </div>
-
-      {/* Footer disclaimer */}
-      <div
-        style={{
-          marginTop: 10,
-          fontSize: 10.5,
-          color: 'var(--sol-ink-400)',
-          fontFamily: 'var(--sol-font-mono)',
-          letterSpacing: '0.04em',
-        }}
-      >
-        Texte généré automatiquement — modifiable avant envoi · Sources : KPIs cockpit + plan d'action Sol
-      </div>
+      {/* Brief text expandable */}
+      {expanded && (
+        <div style={{ padding: '0 22px 18px' }}>
+          <div
+            style={{
+              fontFamily: 'var(--sol-font-body)',
+              fontSize: 13.5,
+              lineHeight: 1.65,
+              color: 'var(--sol-ink-700)',
+              whiteSpace: 'pre-wrap',
+              background: 'var(--sol-bg-canvas, #fafaf6)',
+              border: '1px solid var(--sol-ink-100, #f3f4f6)',
+              borderRadius: 6,
+              padding: '14px 16px',
+              maxWidth: 820,
+            }}
+          >
+            {briefText}
+          </div>
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 10.5,
+              color: 'var(--sol-ink-400)',
+              fontFamily: 'var(--sol-font-mono)',
+              letterSpacing: '0.04em',
+            }}
+          >
+            Texte généré automatiquement — modifiable avant envoi
+          </div>
+        </div>
+      )}
     </div>
   );
 }

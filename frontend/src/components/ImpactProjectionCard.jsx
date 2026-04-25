@@ -36,13 +36,17 @@ export default function ImpactProjectionCard({
     [annualImpactEur]
   );
 
+  // Données projection cumulée — courbe "non capturé" = opportunité latente
+  // (pas "0 € sans Sol" — Jean-Marc trouve ça insultant car ses équipes
+  // font quand même des actions). La courbe verte = capture incrémentale
+  // que les leviers identifiés permettent de SÉCURISER.
   const chartData = useMemo(() => {
     const a = annualImpactEur || 0;
     return [
-      { year: 'Aujourd\'hui', sansSol: 0, avecSol: 0 },
-      { year: 'Année 1', sansSol: 0, avecSol: a },
-      { year: 'Année 2', sansSol: 0, avecSol: a * 2 },
-      { year: 'Année 3', sansSol: 0, avecSol: a * 3 },
+      { year: 'Aujourd\'hui', latent: 0, capture: 0 },
+      { year: 'Année 1', latent: 0, capture: a },
+      { year: 'Année 2', latent: 0, capture: a * 2 },
+      { year: 'Année 3', latent: 0, capture: a * 3 },
     ];
   }, [annualImpactEur]);
 
@@ -103,11 +107,12 @@ export default function ImpactProjectionCard({
           margin: '0 0 16px 0',
         }}
       >
-        Sans action, ces opportunités restent latentes. Avec Sol, vous récupérez{' '}
+        Activer les {actionsCount} leviers identifiés sécurise{' '}
         <strong style={{ color: 'var(--sol-ink-900)' }}>
           {formatFREur(cumul3)}
         </strong>{' '}
-        cumulés sur 3 ans.
+        d'impact cumulé sur 3 ans (capture progressive vs maintien à
+        l'identique).
       </p>
 
       {/* Two-column : metrics + mini chart */}
@@ -120,7 +125,7 @@ export default function ImpactProjectionCard({
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Sans Sol */}
+          {/* Année 1 capture */}
           <div>
             <div
               style={{
@@ -133,24 +138,25 @@ export default function ImpactProjectionCard({
                 fontWeight: 600,
               }}
             >
-              Sans action
+              Année 1 · première capture
             </div>
             <div
               style={{
                 fontFamily: 'var(--sol-font-display)',
-                fontSize: 28,
-                color: 'var(--sol-ink-400)',
+                fontSize: 26,
+                color: 'var(--sol-ink-700)',
                 lineHeight: 1,
+                fontWeight: 600,
               }}
             >
-              0 €
+              {formatFREur(annualImpactEur)}
             </div>
             <div style={{ fontSize: 11, color: 'var(--sol-ink-500)', marginTop: 4 }}>
-              opportunités latentes
+              impact annuel des {actionsCount} leviers
             </div>
           </div>
 
-          {/* Avec Sol */}
+          {/* Cumul 3 ans */}
           <div>
             <div
               style={{
@@ -163,7 +169,7 @@ export default function ImpactProjectionCard({
                 fontWeight: 600,
               }}
             >
-              Avec Sol · {actionsCount} leviers
+              Cumul 3 ans · capture sécurisée
             </div>
             <div
               style={{
@@ -177,7 +183,7 @@ export default function ImpactProjectionCard({
               {formatFREur(cumul3)}
             </div>
             <div style={{ fontSize: 11, color: 'var(--sol-ink-500)', marginTop: 4 }}>
-              cumul économies à 3 ans
+              hypothèse capture progressive
             </div>
           </div>
         </div>
@@ -213,12 +219,12 @@ export default function ImpactProjectionCard({
                 }}
                 formatter={(value, name) => [
                   formatFREur(value),
-                  name === 'avecSol' ? 'avec Sol' : 'sans Sol',
+                  name === 'capture' ? 'capture cumulée' : 'baseline',
                 ]}
               />
               <Area
                 type="monotone"
-                dataKey="sansSol"
+                dataKey="latent"
                 stroke="var(--sol-ink-300)"
                 strokeWidth={1.5}
                 strokeDasharray="3 3"
@@ -227,7 +233,7 @@ export default function ImpactProjectionCard({
               />
               <Area
                 type="monotone"
-                dataKey="avecSol"
+                dataKey="capture"
                 stroke="var(--sol-calme-fg)"
                 strokeWidth={2.5}
                 fill="url(#solGapFill)"

@@ -110,9 +110,14 @@ export default function WhatIfScenarioCard({
   baselineFactureEur = 386_972,
   defaultTariff = DEFAULT_TARIFF_EUR_KWH,
 }) {
-  const [tariff, setTariff] = useState(defaultTariff);
-  const [pvKwc, setPvKwc] = useState(0);
-  const [reductionPct, setReductionPct] = useState(0);
+  // Preset par défaut chiffré — empêche le first-paint "0 €" qui donne
+  // l'impression "ça marche pas" (audit UX A3 / Jean-Marc).
+  // Hypothèse : -3% tarif renégo · 50 kWc PV · -2% efficacité ≈ scénario réaliste.
+  const [tariff, setTariff] = useState(
+    Math.max(0.10, parseFloat((defaultTariff * 0.97).toFixed(3)))
+  );
+  const [pvKwc, setPvKwc] = useState(50);
+  const [reductionPct, setReductionPct] = useState(2);
 
   // Calcul live de la projection
   const result = useMemo(() => {
@@ -149,9 +154,9 @@ export default function WhatIfScenarioCard({
   );
 
   const handleReset = () => {
-    setTariff(defaultTariff);
-    setPvKwc(0);
-    setReductionPct(0);
+    setTariff(Math.max(0.10, parseFloat((defaultTariff * 0.97).toFixed(3))));
+    setPvKwc(50);
+    setReductionPct(2);
   };
 
   const isImproved = result.ecoEur > 100;
