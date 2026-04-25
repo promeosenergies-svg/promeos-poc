@@ -1,31 +1,31 @@
 /**
- * PROMEOS — CommandCenterSol (Lot 1.1, route racine /)
+ * PROMEOS — CommandCenterSol (refonte from-scratch, route racine /)
  *
- * Page d'accueil PROMEOS. Pattern A adapté avec tuiles de navigation
- * modules en complément des 3 KPIs + 3 week-cards + graphe signature.
+ * Persona : exploitant énergie multisite tertiaire.
+ * Question répondue : « Qu'est-ce que je dois faire aujourd'hui ? »
  *
- * APIs consommées (inchangées) :
- *   - getActionsSummary(orgId)      → counts + by_source + total_gain + top5
- *   - getNotificationsSummary(orgId) → counts + top alertes
- *   - getNotificationsList({limit}) → items détaillés pour week-cards
- *   - getComplianceBundle({scope})  → score conformité + findings
- *   - getCockpit()                   → stats patrimoine (fallback issue #257)
- *   - getPatrimoineKpis()            → total_sites + surface (contexte narrative)
+ * Doctrine appliquée :
+ *   - AI-native : Sol prend la parole en hero (« Sol propose »).
+ *   - Management by Exception : Top 3 priorités + Watchlist, pas de KPI décoratif.
+ *   - T2V < 10 min : 6 sections ordonnées par criticité d'action.
  *
- * Zéro drawer Sol custom — les navigations vers modules ouvrent les
- * pages dédiées via Router (SPA, pas de flash).
+ * Structure :
+ *   1. Header narratif Sol
+ *   2. DeadlineBanner (urgence régulatoire)
+ *   3. SolHero — proposition agentique du jour (depuis briefing[0])
+ *   4. TodayActionsCard — top 5 priorités du jour
+ *   5. SolLoadCurve — profil horaire J-1 + seuil 80% (discipline HP/HC)
+ *   6. WatchlistCard — sites à surveiller
+ *   7. Tuiles modules (accès aux 5 modules cross-stream)
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   SolPageHeader,
-  SolKpiRow,
-  SolKpiCard,
-  SolSourceChip,
+  SolHero,
   SolSectionHead,
-  SolWeekGrid,
-  SolWeekCard,
-  SolBarChart,
+  SolSourceChip,
+  SolLoadCurve,
 } from '../ui/sol';
 import { useScope } from '../contexts/ScopeContext';
 import {
@@ -41,27 +41,37 @@ import {
   buildCommandKicker,
   buildCommandNarrative,
   buildCommandSubNarrative,
-  buildCommandWeekCards,
-  buildSolWeeklyActivity,
   computeStateIndex,
-  interpretStateIndex,
-  interpretCommandAlerts,
-  interpretSolActions,
-  formatFR,
-  formatFREur,
   freshness,
 } from './command-center/sol_presenters';
+import { buildFallbackLoadCurve } from './cockpit/sol_presenters';
 import { SkeletonCard } from '../ui/Skeleton';
-import { fmtNum } from '../utils/format';
 import { LayoutDashboard, ShieldCheck, Receipt, Building2, ShoppingCart } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  ReferenceLine,
+} from 'recharts';
 
-// Sprint P6 S2 — Enrichissement superset MAIN + cohérence 10/10 sans doublon
+// Refonte from-scratch : composants MAIN agentiques + builders
 import DeadlineBanner from '../components/DeadlineBanner';
-import SitesBaselineCard from './cockpit/SitesBaselineCard';
+import TodayActionsCard from './cockpit/TodayActionsCard';
+import WatchlistCard from './cockpit/WatchlistCard';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
-import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
-// SolLoadCurve pour harmonisation graphique 24h avec /cockpit
-import SolLoadCurve from '../ui/sol/SolLoadCurve';
+import { useCockpitData } from '../hooks/useCockpitData';
+import {
+  buildBriefing,
+  buildWatchlist,
+  buildTodayActions,
+  buildOpportunities,
+  checkConsistency,
+} from '../models/dashboardEssentials';
 
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -172,9 +182,18 @@ const tileHoverLeave = (e) => {
 
 // ──────────────────────────────────────────────────────────────────────────────
 
+function getRiskStatus(eur) {
+  if (eur > 50000) return 'crit';
+  if (eur > 10000) return 'warn';
+  return 'ok';
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+
 export default function CommandCenterSol() {
   const scopeCtx = useScope();
   const scope = scopeCtx?.scope || {};
+  const scopedSites = scopeCtx?.scopedSites || [];
   const org = scopeCtx?.org;
   const scopeLabel = scopeCtx?.scopeLabel;
   const sitesCount = scopeCtx?.sitesCount;
@@ -182,28 +201,179 @@ export default function CommandCenterSol() {
   const navigate = useNavigate();
 
   const data = useCommandData({ orgId: scope.orgId });
-  // Sprint P6 S2 — données EMS J-1 + 7 jours + profil 24h pour enrichissement superset MAIN
   const cmd = useCommandCenterData();
   const kpisJ1 = cmd.kpisJ1 || {};
-  const weekSeries = cmd.weekSeries || [];
   const hourlyProfile = cmd.hourlyProfile || [];
+  const weekSeries = cmd.weekSeries || [];
+  const { kpis: cockpitKpis } = useCockpitData();
 
-  // ─── Dérivations présentation ──────────────────────────────────────────────
+  // ─── Dérivations 7 jours + HP/HC J-1 ───────────────────────────────────────
+
+  // 7 jours conso quotidienne — grille fixe de 7 jours (aujourd'hui-6 → aujourd'hui)
+  // garantie même si le backend retourne moins. Jours sans data → kwh null + flag isMissing.
+  // ATTENTION : on génère les dates en LOCAL (pas toISOString qui décale en UTC),
+  // sinon mismatch avec le backend qui renvoie des dates UTC sans heure.
+  const weekChartData = useMemo(() => {
+    const dayFmt = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric' });
+    const localDate = (d) => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+    const today = new Date();
+    const grid = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      grid.push({
+        day: dayFmt.format(d).replace('.', ''),
+        kwh: null,
+        rawDate: localDate(d),
+        isMissing: true,
+      });
+    }
+    if (Array.isArray(weekSeries) && weekSeries.length > 0) {
+      weekSeries.forEach((p) => {
+        const idx = grid.findIndex((g) => g.rawDate === p.date);
+        if (idx >= 0) {
+          grid[idx].kwh = p.kwh;
+          grid[idx].isMissing = p.kwh == null;
+        }
+      });
+    }
+    return grid;
+  }, [weekSeries]);
+  const weekAverage = useMemo(() => {
+    const valid = weekChartData.filter((p) => p.kwh != null);
+    if (valid.length === 0) return null;
+    return Math.round(valid.reduce((s, p) => s + p.kwh, 0) / valid.length);
+  }, [weekChartData]);
+  const weekMissingCount = useMemo(
+    () => weekChartData.filter((p) => p.isMissing).length,
+    [weekChartData]
+  );
+
+  // Profil horaire 24h — données réelles si dispo, sinon fallback bureau type.
+  // Robuste : seed HELIOS n'expose pas toujours d'agrégat horaire/30min, on garde
+  // la signature visuelle (la SolLoadCurve est trop iconique pour être absente).
+  // ATTENTION : on ajoute un point 24:00 (= dernière valeur) pour que la
+  // bande HC droite (22→24h) ait un x2 ancrable côté Recharts.
+  const loadCurveData = useMemo(() => {
+    let data;
+    if (Array.isArray(hourlyProfile) && hourlyProfile.length > 0) {
+      data = hourlyProfile.map((p) => {
+        const h = parseInt((p.heure || '0').replace('h', '').replace(':', ''), 10) || 0;
+        return { time: `${String(h).padStart(2, '0')}:00`, value: p.kw };
+      });
+    } else {
+      data = buildFallbackLoadCurve();
+    }
+    // Garantir un dernier point à 24:00 pour la bande HC droite
+    if (data.length > 0 && data[data.length - 1].time !== '24:00') {
+      const last = data[data.length - 1];
+      data = [...data, { time: '24:00', value: last.value }];
+    }
+    return data;
+  }, [hourlyProfile]);
+  const loadCurveIsMock =
+    !Array.isArray(hourlyProfile) || hourlyProfile.length === 0;
+
+  // Pic dérivé de loadCurveData (uniformément, même en fallback)
+  const peakPoint = useMemo(() => {
+    if (!loadCurveData.length) return null;
+    const max = loadCurveData.reduce(
+      (m, p) => ((p.value ?? 0) > (m.value ?? 0) ? p : m),
+      loadCurveData[0]
+    );
+    if (max?.value == null) return null;
+    return {
+      time: max.time,
+      value: max.value,
+      label: `pic ${max.time} · ${Math.round(max.value)} kW`,
+    };
+  }, [loadCurveData]);
+
+  // HP/HC J-1 — ratio dérivé du profil horaire (HP = 06:00→22:00 standard).
+  const hpcShare = useMemo(() => {
+    if (!Array.isArray(loadCurveData) || loadCurveData.length === 0) return null;
+    let hpKwh = 0;
+    let hcKwh = 0;
+    loadCurveData.forEach((p) => {
+      const hour = parseInt((p.time || '00:00').split(':')[0], 10);
+      const kw = Number(p.value) || 0;
+      if (hour >= 6 && hour < 22) hpKwh += kw;
+      else hcKwh += kw;
+    });
+    const total = hpKwh + hcKwh;
+    if (total === 0) return null;
+    const hpPct = Math.round((hpKwh / total) * 100);
+    return {
+      hpPct,
+      hcPct: 100 - hpPct,
+      hpKwh: Math.round(hpKwh),
+      hcKwh: Math.round(hcKwh),
+      totalKwh: Math.round(total),
+    };
+  }, [loadCurveData]);
+
+  // ─── KPIs builder-ready (shape attendue par dashboardEssentials) ──────────
+
+  const rawKpis = useMemo(() => {
+    const total = scopedSites.length;
+    const conformes = scopedSites.filter((s) => s.statut_conformite === 'conforme').length;
+    const nonConformes = scopedSites.filter((s) => s.statut_conformite === 'non_conforme').length;
+    const aRisque = scopedSites.filter((s) => s.statut_conformite === 'a_risque').length;
+    const risque = scopedSites.reduce((sum, s) => sum + (s.risque_eur || 0), 0);
+    const pctConf =
+      cockpitKpis?.conformiteScore != null ? Math.round(cockpitKpis.conformiteScore) : 0;
+    const couvertureDonnees =
+      total > 0
+        ? Math.round((scopedSites.filter((s) => s.conso_kwh_an > 0).length / total) * 100)
+        : 0;
+    const compStatus =
+      nonConformes > 0 ? 'crit' : aRisque > 0 ? 'warn' : total > 0 ? 'ok' : 'neutral';
+    return {
+      total,
+      conformes,
+      nonConformes,
+      aRisque,
+      risque,
+      pctConf,
+      couvertureDonnees,
+      compStatus,
+      risqueStatus: getRiskStatus(risque),
+    };
+  }, [scopedSites, cockpitKpis]);
+
+  const alertsCount =
+    data.notifSummary?.total ?? data.notifSummary?.counts?.total ?? 0;
+
+  const consistency = useMemo(() => checkConsistency(rawKpis), [rawKpis]);
+  const watchlist = useMemo(
+    () => buildWatchlist(rawKpis, scopedSites),
+    [rawKpis, scopedSites]
+  );
+  const opportunities = useMemo(
+    () => buildOpportunities(rawKpis, scopedSites),
+    [rawKpis, scopedSites]
+  );
+  const briefing = useMemo(
+    () => buildBriefing(rawKpis, watchlist, alertsCount),
+    [rawKpis, watchlist, alertsCount]
+  );
+  const todayActions = useMemo(
+    () => buildTodayActions(rawKpis, watchlist, opportunities),
+    [rawKpis, watchlist, opportunities]
+  );
+
+  // ─── Présentation header (kicker, narrative existants) ────────────────────
 
   const kicker = buildCommandKicker({ scope: { orgName, sitesCount } });
 
   const actions = data.actions ?? {};
-  const notifSummary = data.notifSummary ?? {};
-  const notifList = Array.isArray(data.notifList)
-    ? data.notifList
-    : Array.isArray(data.notifList?.items)
-      ? data.notifList.items
-      : [];
   const cockpitStats = data.cockpit?.stats ?? {};
-  const patrimoine = data.patrimoine ?? {};
   const compliance = data.compliance ?? {};
-
-  // KPI 1 State index composite
   const complianceScore = cockpitStats.compliance_score ?? compliance.compliance_score;
   const stateIndex = useMemo(
     () =>
@@ -211,67 +381,27 @@ export default function CommandCenterSol() {
         complianceScore,
         totalInvoices: data.cockpit?.billing?.total_invoices ?? 36,
         anomaliesCount: cockpitStats.alertes_actives ?? 0,
-        activeSites: patrimoine.nb_sites ?? patrimoine.total ?? sitesCount,
-        totalSites: patrimoine.nb_sites ?? patrimoine.total ?? sitesCount,
+        activeSites: rawKpis.total,
+        totalSites: rawKpis.total,
       }),
-    [complianceScore, cockpitStats, patrimoine, sitesCount, data.cockpit]
+    [complianceScore, cockpitStats, rawKpis, data.cockpit]
   );
-
-  // KPI 2 alerts
-  const alertsCount =
-    notifSummary.total ??
-    notifSummary.counts?.total ??
-    notifList.filter((n) => n?.severity === 'critical' || n?.severity === 'high').length;
-  const topAlert = notifList.find((n) => n?.severity === 'critical') || notifList[0];
-
-  // KPI 3 Sol actions
   const solActionsCount = actions.counts?.open ?? 0;
   const totalGain = actions.total_gain_eur ?? 0;
-
-  // Week-cards
-  const weekCards = useMemo(
-    () =>
-      buildCommandWeekCards({
-        notifications: notifList,
-        actions: actions.top5 || [],
-        topFindings: compliance.findings || [],
-        onNavigate: (path) => navigate(path),
-      }),
-    [notifList, actions.top5, compliance.findings, navigate]
-  );
-
-  // Graphe activité Sol hebdo
-  const barChartData = useMemo(() => buildSolWeeklyActivity(actions), [actions]);
-
   const narrative = useMemo(
     () => buildCommandNarrative({ stateIndex, alertsCount, solActionsCount, totalGain }),
     [stateIndex, alertsCount, solActionsCount, totalGain]
   );
   const subNarrative = useMemo(() => buildCommandSubNarrative({ summary: actions }), [actions]);
-
   const dataFreshness = useMemo(
     () => freshness(data.cockpit?.stats?.compliance_computed_at),
     [data.cockpit]
   );
 
-  // ─── Rendu ───────────────────────────────────────────────────────────────
+  // Sol proposition (top 1 du briefing — sert de hero agentique)
+  const solTopProp = briefing[0];
 
-  // Sprint P6 S2 — derivations pour sections MAIN enrichies (avant early return)
-  const topActions = actions.top5 || actions.items || [];
-  const fmtKwhCompact = (v) => {
-    if (v == null || !Number.isFinite(v)) return '—';
-    if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1).replace('.', ',')} GWh`;
-    if (v >= 1_000) return `${(v / 1_000).toFixed(1).replace('.', ',')} MWh`;
-    return `${Math.round(v).toLocaleString('fr-FR')} kWh`;
-  };
-  // Trajectoire DT 2030 (cible -40% vs baseline) — useMemo AVANT early return
-  const dtProgress = useMemo(() => {
-    const score = complianceScore;
-    if (score == null) return null;
-    const objectif = 60;
-    const pct = Math.min(100, Math.max(0, (score / objectif) * 100));
-    return { score, objectif, pct };
-  }, [complianceScore]);
+  // ─── Rendu ───────────────────────────────────────────────────────────────
 
   if (data.status === 'loading') {
     return (
@@ -288,209 +418,451 @@ export default function CommandCenterSol() {
       <SolPageHeader
         kicker={kicker}
         title="Bonjour "
-        titleEm="— bienvenue sur votre cockpit énergétique"
+        titleEm="— vos actions du jour"
         narrative={narrative}
         subNarrative={subNarrative}
       />
 
-      {/* Ordre stratégie produit : urgence réglementaire → priorités semaine → briefing → KPIs */}
-
-      {/* 1. Urgence réglementaire (contextuel du header) */}
+      {/* 1. Urgence régulatoire (cross-vues canonique) */}
       <DeadlineBanner />
 
-      {/* 2. Priorités narratives (juste après contexte header) */}
-      <SolSectionHead
-        title="Cette semaine chez vous"
-        meta={`${weekCards.length} points · actualisé ${dataFreshness}`}
-      />
-      <SolWeekGrid>
-        {weekCards.map((c) => (
-          <SolWeekCard
-            key={c.id}
-            tagKind={c.tagKind}
-            tagLabel={c.tagLabel}
-            title={c.title}
-            body={c.body}
-            footerLeft={c.footerLeft}
-            footerRight={c.footerRight}
-            onClick={c.onClick}
-          />
-        ))}
-      </SolWeekGrid>
-
-      {/* 4. SolKpiRow × 3 STANDARDISÉ (cohérence cross-vues) : Coût / Conformité / Conso */}
-      <SolKpiRow>
-        <SolKpiCard
-          label="Coût énergie · mois"
-          explainKey="billing_total_current_month"
-          value={data.cockpit?.billing?.total_eur != null ? formatFREur(data.cockpit.billing.total_eur, 0) : '—'}
-          unit=""
-          semantic="cost"
-          headline={
-            data.cockpit?.billing?.total_invoices
-              ? `${data.cockpit.billing.total_invoices} factures · ${data.cockpit.billing.anomalies_count || 0} anomalie${(data.cockpit.billing.anomalies_count || 0) > 1 ? 's' : ''}`
-              : 'Moteur shadow billing v4.2 actif'
+      {/* 2. SOL VOUS PROPOSE — hero agentique sur la priorité #1 du briefing.
+          Si rien à proposer, on saute — pas d'empty state verbeux. */}
+      {solTopProp && (
+        <SolHero
+          chip="Sol propose · action agentique"
+          title={solTopProp.label}
+          description={
+            solTopProp.severity === 'critical'
+              ? 'Priorité critique — à traiter aujourd\'hui pour éviter une dérive.'
+              : solTopProp.severity === 'high'
+                ? 'Forte priorité — impact significatif sur votre conformité ou facture.'
+                : 'À regarder cette semaine pour rester sur votre trajectoire.'
           }
-          source={{
-            kind: 'Factures',
-            origin: 'shadow billing',
-            freshness: dataFreshness,
-          }}
+          onPrimary={() => solTopProp.path && navigate(solTopProp.path)}
+          primaryLabel={solTopProp.cta || 'Voir l\'action'}
         />
-        <SolKpiCard
-          label="Conformité Décret tertiaire"
-          explainKey="compliance_score_dt"
-          value={complianceScore != null ? fmtNum(complianceScore, 0) : '—'}
-          unit="/100"
-          semantic="score"
-          headline={interpretStateIndex(complianceScore)}
-          source={{
-            kind: 'RegOps',
-            origin: 'score canonique',
-            freshness: dataFreshness,
-          }}
-        />
-        <SolKpiCard
-          label="Consommation · patrimoine"
-          explainKey="conso_total_current_period"
-          value={kpisJ1.conso_mois_kwh != null ? fmtKwhCompact(kpisJ1.conso_mois_kwh) : '—'}
-          unit=""
-          semantic="conso"
-          headline={kpisJ1.delta_mom_pct != null ? `${kpisJ1.delta_mom_pct > 0 ? '+' : ''}${kpisJ1.delta_mom_pct.toFixed(1)}% vs mois préc.` : 'Cumul mensuel Enedis + GRDF'}
-          source={{
-            kind: 'Enedis CDC',
-            origin: 'consumption_unified_service',
-            freshness: 'temps réel',
-          }}
-        />
-      </SolKpiRow>
-
-      {/* Signature énergétique — un seul graphique iconique (SolLoadCurve 24h avec HP/HC + pic) */}
-      {hourlyProfile.length > 0 && (
-        <>
-          <SolSectionHead
-            title="Courbe de charge · profil horaire J-1"
-            meta={`pas 15 min · HP/HC tarifaires${kpisJ1.pic_puissance_kw ? ` · pic ${Math.round(kpisJ1.pic_puissance_kw)} kW` : ''}`}
-          />
-          <div
-            style={{
-              background: 'var(--sol-bg-paper)',
-              border: '1px solid var(--sol-ink-200)',
-              borderRadius: 8,
-              padding: 16,
-            }}
-          >
-            <SolLoadCurve
-              data={hourlyProfile.map((p) => ({ time: p.heure, value: p.kw }))}
-              peakPoint={
-                kpisJ1.pic_puissance_kw != null
-                  ? {
-                      time: kpisJ1.pic_heure || '14:00',
-                      value: kpisJ1.pic_puissance_kw,
-                      label: `pic ${kpisJ1.pic_heure || ''} · ${Math.round(kpisJ1.pic_puissance_kw)} kW`,
-                    }
-                  : undefined
-              }
-              hpStart="06:00"
-              hpEnd="22:00"
-            />
-            <SolSourceChip kind="Enedis CDC" origin="profil horaire 15 min agrégé" freshness="J-1" />
-          </div>
-        </>
       )}
 
-      {/* Trajectoire Décret Tertiaire 2030 — 1 col pleine largeur (retrait doublon TodayActionsCard) */}
-      {dtProgress && (
-        <>
+      {/* 3 + 5 — Top priorités & Watchlist pairés en grid 2-col
+          (à faire / à surveiller, densités similaires, évite le vide horizontal).
+          Children stretch via align-items default + cards full-height pour alignement parfait. */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+          gap: 16,
+          alignItems: 'stretch',
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           <SolSectionHead
-            title="Trajectoire Décret Tertiaire 2030"
-            meta="Objectif -40% · score canonique RegOps"
+            title="À traiter aujourd'hui"
+            meta={
+              todayActions.length > 0
+                ? `${todayActions.length} priorité${todayActions.length > 1 ? 's' : ''} · ${dataFreshness}`
+                : dataFreshness
+            }
           />
-          <div
-            style={{
-              background: 'var(--sol-bg-paper)',
-              border: '1px solid var(--sol-ink-200)',
-              borderRadius: 8,
-              padding: 16,
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                marginBottom: 8,
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: 'var(--sol-font-display)',
-                  fontSize: 28,
-                  color: 'var(--sol-ink-900)',
-                }}
-              >
-                {fmtNum(dtProgress.score, 0)}
-                <span style={{ fontSize: 14, color: 'var(--sol-ink-500)' }}>/100</span>
-              </span>
-              <span style={{ fontSize: 12, color: 'var(--sol-ink-500)' }}>
-                Objectif ≥ {dtProgress.objectif}
-              </span>
+          <div style={{ flex: 1, display: 'flex' }}>
+            <div style={{ width: '100%' }}>
+              <TodayActionsCard actions={todayActions} onNavigate={navigate} />
             </div>
-            <div
-              style={{
-                height: 8,
-                background: 'var(--sol-ink-100)',
-                borderRadius: 4,
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                style={{
-                  width: `${dtProgress.pct}%`,
-                  height: '100%',
-                  background:
-                    dtProgress.pct >= 100
-                      ? 'var(--sol-succes-fg)'
-                      : dtProgress.pct >= 70
-                        ? 'var(--sol-attention-fg)'
-                        : 'var(--sol-afaire-fg)',
-                  transition: 'width 300ms ease',
-                }}
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <SolSectionHead
+            title="À surveiller"
+            meta={
+              watchlist.length > 0
+                ? `${watchlist.length} signal${watchlist.length > 1 ? 'aux' : ''}`
+                : 'Tout va bien'
+            }
+          />
+          <div style={{ flex: 1, display: 'flex' }}>
+            <div style={{ width: '100%' }}>
+              <WatchlistCard
+                watchlist={watchlist}
+                consistency={consistency}
+                loading={false}
+                onNavigate={navigate}
               />
             </div>
-            <div style={{ marginTop: 8, fontSize: 12, color: 'var(--sol-ink-500)' }}>
-              {dtProgress.pct >= 100
-                ? '✓ Sur la trajectoire pour 2030'
-                : dtProgress.pct >= 70
-                  ? 'Rythme soutenu, vigilance sur les écarts'
-                  : 'Retard — plan d\'action prioritaire requis'}
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <SolSourceChip kind="RegOps" origin="compliance_score_service" freshness={dataFreshness} />
-            </div>
           </div>
-        </>
+        </div>
+      </div>
+
+      {/* 4. Activité 7 jours + Répartition HP/HC J-1 — grid 2-col, lectures complémentaires :
+          tendance hebdo (semaine) + composition tarifaire (cost-optim). */}
+      {(weekChartData.length > 0 || hpcShare) && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+            gap: 16,
+            alignItems: 'stretch',
+          }}
+        >
+          {/* Activité 7 jours */}
+          {weekChartData.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <SolSectionHead
+                title="Activité 7 derniers jours"
+                meta={
+                  weekAverage != null
+                    ? `Moyenne ${weekAverage.toLocaleString('fr-FR')} kWh/jour${
+                        weekMissingCount > 0
+                          ? ` · ${weekMissingCount} jour${weekMissingCount > 1 ? 's' : ''} sans donnée`
+                          : ''
+                      }`
+                    : weekMissingCount === 7
+                      ? '7 jours sans donnée — raccordement en cours'
+                      : 'Tendance hebdo · pas journalier'
+                }
+              />
+              <div
+                style={{
+                  background: 'var(--sol-bg-paper)',
+                  border: '1px solid var(--sol-ink-200)',
+                  borderRadius: 8,
+                  padding: 16,
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <div style={{ width: '100%', height: 200, flex: 1, minHeight: 200 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={weekChartData}
+                      margin={{ top: 24, right: 20, bottom: 24, left: 24 }}
+                    >
+                      <CartesianGrid strokeDasharray="2 3" stroke="var(--sol-ink-200)" vertical={false} />
+                      <XAxis
+                        dataKey="day"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{
+                          fontFamily: 'var(--sol-font-mono)',
+                          fontSize: 11,
+                          fill: 'var(--sol-ink-700)',
+                        }}
+                        interval={0}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{
+                          fontFamily: 'var(--sol-font-mono)',
+                          fontSize: 10,
+                          fill: 'var(--sol-ink-400)',
+                        }}
+                        width={52}
+                        tickFormatter={(v) =>
+                          v >= 1000
+                            ? `${(v / 1000).toFixed(1).replace('.', ',')}k`
+                            : String(Math.round(v))
+                        }
+                      />
+                      <RechartsTooltip
+                        contentStyle={{
+                          background: 'var(--sol-bg-paper)',
+                          border: '1px solid var(--sol-rule)',
+                          borderRadius: 4,
+                          fontFamily: 'var(--sol-font-mono)',
+                          fontSize: 11,
+                          color: 'var(--sol-ink-900)',
+                        }}
+                        formatter={(value) => [
+                          value != null
+                            ? `${Math.round(value).toLocaleString('fr-FR')} kWh`
+                            : '—',
+                          'consommation',
+                        ]}
+                      />
+                      {weekAverage != null && (
+                        <ReferenceLine
+                          y={weekAverage}
+                          stroke="var(--sol-calme-fg)"
+                          strokeDasharray="4 3"
+                          strokeWidth={1}
+                          label={{
+                            value: `moyenne`,
+                            position: 'insideTopRight',
+                            fill: 'var(--sol-calme-fg)',
+                            fontFamily: 'var(--sol-font-mono)',
+                            fontSize: 9,
+                            fontWeight: 600,
+                          }}
+                        />
+                      )}
+                      <Bar dataKey="kwh" radius={[3, 3, 0, 0]} barSize={28}>
+                        {weekChartData.map((entry, idx) => (
+                          <Cell
+                            key={entry.rawDate || idx}
+                            fill={
+                              entry.isMissing
+                                ? 'var(--sol-ink-200)'
+                                : idx === weekChartData.length - 1
+                                  ? 'var(--sol-calme-fg)'
+                                  : 'var(--sol-ink-700)'
+                            }
+                            fillOpacity={entry.isMissing ? 0.4 : 1}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 16,
+                    marginTop: 8,
+                    fontSize: 10,
+                    color: 'var(--sol-ink-500)',
+                    fontFamily: 'var(--sol-font-mono)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  <span>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 10,
+                        height: 10,
+                        background: 'var(--sol-ink-700)',
+                        marginRight: 5,
+                        verticalAlign: 'middle',
+                        borderRadius: 2,
+                      }}
+                    />
+                    jours précédents
+                  </span>
+                  <span>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 10,
+                        height: 10,
+                        background: 'var(--sol-calme-fg)',
+                        marginRight: 5,
+                        verticalAlign: 'middle',
+                        borderRadius: 2,
+                      }}
+                    />
+                    hier
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Répartition HP/HC — composition tarifaire représentative de la semaine. */}
+          {hpcShare && (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <SolSectionHead
+                title="Heures pleines / creuses · 7 derniers jours"
+                meta={
+                  loadCurveIsMock
+                    ? 'Estimation profil bureau type · CDC non raccordée'
+                    : `Calculé sur le profil J-1 (représentatif de la semaine)`
+                }
+              />
+              <div
+                style={{
+                  background: 'var(--sol-bg-paper)',
+                  border: '1px solid var(--sol-ink-200)',
+                  borderRadius: 8,
+                  padding: 20,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: 18,
+                  minHeight: 240,
+                }}
+              >
+                {/* Big numbers */}
+                <div style={{ display: 'flex', gap: 20, alignItems: 'baseline' }}>
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--sol-hph-fg, #b84545)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        fontFamily: 'var(--sol-font-mono)',
+                        marginBottom: 4,
+                        fontWeight: 600,
+                      }}
+                    >
+                      Heures pleines
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: 'var(--sol-font-display)',
+                        fontSize: 36,
+                        color: 'var(--sol-hph-fg, #b84545)',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {hpcShare.hpPct}
+                      <span style={{ fontSize: 18, color: 'var(--sol-ink-500)' }}>%</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--sol-ink-500)', marginTop: 4 }}>
+                      06h–22h · plage tarifaire HP
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--sol-hch-fg, #2e4a6b)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        fontFamily: 'var(--sol-font-mono)',
+                        marginBottom: 4,
+                        fontWeight: 600,
+                      }}
+                    >
+                      Heures creuses
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: 'var(--sol-font-display)',
+                        fontSize: 36,
+                        color: 'var(--sol-hch-fg, #2e4a6b)',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {hpcShare.hcPct}
+                      <span style={{ fontSize: 18, color: 'var(--sol-ink-500)' }}>%</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--sol-ink-500)', marginTop: 4 }}>
+                      22h–06h · plage tarifaire HC
+                    </div>
+                  </div>
+                </div>
+
+                {/* Horizontal split bar */}
+                <div
+                  style={{
+                    display: 'flex',
+                    height: 12,
+                    borderRadius: 6,
+                    overflow: 'hidden',
+                    boxShadow: 'inset 0 0 0 1px var(--sol-ink-200)',
+                  }}
+                  title={`HP ${hpcShare.hpPct}% · HC ${hpcShare.hcPct}%`}
+                >
+                  <div
+                    style={{
+                      width: `${hpcShare.hpPct}%`,
+                      background: 'var(--sol-hph-bg, #fbe9e9)',
+                      borderRight:
+                        hpcShare.hpPct > 0 && hpcShare.hcPct > 0
+                          ? '1px solid var(--sol-ink-200)'
+                          : 'none',
+                    }}
+                  />
+                  <div
+                    style={{
+                      width: `${hpcShare.hcPct}%`,
+                      background: 'var(--sol-hch-bg, #e6edf5)',
+                    }}
+                  />
+                </div>
+
+                {/* Caption interprétation cost-optim sur la semaine. */}
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    color: 'var(--sol-ink-500)',
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {hpcShare.hpPct >= 80 ? (
+                    <>
+                      <strong style={{ color: 'var(--sol-ink-900)' }}>
+                        Profil bureau type sur la semaine
+                      </strong>{' '}
+                      — contrat HP/HC bien calibré, peu de marge à activer.
+                    </>
+                  ) : hpcShare.hpPct >= 60 ? (
+                    <>
+                      <strong style={{ color: 'var(--sol-ink-900)' }}>
+                        Profil mixte sur la semaine
+                      </strong>{' '}
+                      — examiner si une part de HP peut basculer en HC.
+                    </>
+                  ) : (
+                    <>
+                      <strong style={{ color: 'var(--sol-ink-900)' }}>
+                        Forte part HC sur la semaine
+                      </strong>{' '}
+                      — opportunité de renégocier le contrat tarifaire.
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
-      {/* Sprint P6 S2 — Section MAIN-parity : Sites J-1 vs baseline */}
-      {kpisJ1.consoJ1BySite && Array.isArray(kpisJ1.consoJ1BySite) && kpisJ1.consoJ1BySite.length > 0 && (
-        <>
-          <SolSectionHead
-            title="Sites — performance J-1"
-            meta="Consommation hier vs baseline historique"
-          />
-          <SitesBaselineCard
-            consoJ1BySite={kpisJ1.consoJ1BySite}
-            consoHierTotal={kpisJ1.conso_hier_kwh}
-          />
-        </>
-      )}
+      {/* 5. Profil horaire J-1 + seuil 80% — discipline HP/HC quotidienne.
+          Toujours rendu : si seed n'a pas de CDC, on affiche le profil bureau type
+          en aperçu (signature iconique conservée). */}
+      <SolSectionHead
+        title={loadCurveIsMock ? 'Profil horaire · aperçu 24 h' : 'Profil horaire J-1'}
+        meta={
+          loadCurveIsMock
+            ? 'Données détaillées en cours de raccordement · profil bureau type'
+            : `pas 15 min · HP/HC tarifaires${
+                peakPoint ? ` · seuil 80% = ${Math.round(peakPoint.value * 0.8)} kW` : ''
+              }`
+        }
+      />
+      <div
+        style={{
+          background: 'var(--sol-bg-paper)',
+          border: '1px solid var(--sol-ink-200)',
+          borderRadius: 8,
+          padding: 16,
+        }}
+      >
+        <SolLoadCurve
+          data={loadCurveData}
+          peakPoint={peakPoint}
+          peakThreshold={0.8}
+          hpStart="06:00"
+          hpEnd="22:00"
+          caption={
+            <>
+              <strong style={{ color: 'var(--sol-ink-900)' }}>Seuil 80% du pic</strong> —
+              ligne ambre pointillée. Au-dessus = discipline HP/HC à resserrer.
+              {loadCurveIsMock && (
+                <span style={{ color: 'var(--sol-ink-400)', marginLeft: 8 }}>
+                  (aperçu estimé, courbe réelle en cours de raccordement Enedis)
+                </span>
+              )}
+            </>
+          }
+          sourceChip={
+            <SolSourceChip
+              kind={loadCurveIsMock ? 'Estimé' : 'Enedis CDC'}
+              origin={loadCurveIsMock ? 'profil bureau type' : 'profil 15 min'}
+              freshness={loadCurveIsMock ? undefined : 'J-1'}
+            />
+          }
+        />
+      </div>
 
-      {/* Activité Sol 12 semaines retirée — demande user : moins de graphiques,
-          lisibilité haute. Action counts visibles dans "Cette semaine chez vous"
-          et accessible via /actions. */}
+      {/* Watchlist déplacée dans le grid 2-col ci-dessus (pair avec TodayActions). */}
 
-      {/* Tuiles de navigation modules — complément Pattern A pour page racine */}
+      {/* 5. Tuiles de navigation modules — accès cross-stream */}
       <SolSectionHead
         title="Accès rapide aux modules"
         meta={`${MODULE_TILES.length}${NBSP}modules`}

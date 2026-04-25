@@ -1,21 +1,25 @@
 /**
- * PROMEOS — CockpitSol (Phase 2, refonte Sol V1)
+ * PROMEOS — CockpitSol (refonte from-scratch, route /cockpit)
  *
- * Cockpit exécutif branché sur les APIs main réelles (aucun mock, aucun fetch
- * dans les composants Sol).
+ * Persona : COMEX / Directeur énergie / DG / CFO.
+ * Question répondue : « Où on en est, qu'est-ce qui menace budget/trajectoire ? »
  *
- * APIs consommées (inchangées) :
- *   - getBillingSummary({ scope })           → KPI facture + delta
- *   - getComplianceScoreTrend({ scope })     → KPI score DT + delta
- *   - getCockpit()                           → KPI conso patrimoine
- *   - getNotificationsSummary(orgId, siteId) → alertes / signaux
- *   - getComplianceTimeline()                → échéances + validations
- *   - getEmsTimeseries({ granularity:'30min'}) → courbe de charge
+ * Doctrine appliquée :
+ *   - Briefing exécutif : Sol résume en 1 phrase narrative.
+ *   - Multi-stream : KPIs Facture · Conformité · Conso · CO₂ (4 streams).
+ *   - Livrable concret : export Rapport COMEX (PDF via window.print).
+ *   - 3 modes Surface/Inspect/Expert : densité ajustable.
  *
- * Zéro logique métier ici : seulement des helpers présentation purs
- * (sol_presenters.js + sol_interpreters.jsx).
- *
- * 3 modes : Surface (par défaut) · Inspect (prose éditoriale) · Expert (table dense).
+ * Structure (mode Surface) :
+ *   1. Header + LayerToggle + BoutonRapportCOMEX
+ *   2. DeadlineBanner
+ *   3. SolHero — briefing exécutif Sol
+ *   4. SolKpiRow × 4 — Facture / Conformité / Conso / CO₂
+ *   5. Trajectoire DT 2030
+ *   6. Performance vs pairs OID
+ *   7. Vecteurs énergétiques + CO₂ scopes
+ *   8. Opportunités (top 3)
+ *   9. Événements récents (timeline 7j)
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -24,11 +28,7 @@ import {
   SolHero,
   SolKpiRow,
   SolKpiCard,
-  SolSourceChip,
   SolSectionHead,
-  SolWeekGrid,
-  SolWeekCard,
-  SolLoadCurve,
   SolLayerToggle,
   SolInspectDoc,
   SolExpertGrid,
@@ -41,93 +41,48 @@ import {
   getNotificationsList,
   getComplianceScoreTrend,
   getComplianceTimeline,
-  getEmsTimeseries,
 } from '../services/api';
 import {
   buildKicker,
-  buildWeekSignals,
-  buildFallbackLoadCurve,
   computeDelta,
-  computeHPShare,
-  findPeak,
   freshness,
-  adaptEmsSeriesToLoadCurve,
   formatFR,
   formatFREur,
   formatFRPct,
   NBSP,
 } from './cockpit/sol_presenters';
-import {
-  interpretCompliance,
-  buildCockpitNarrative,
-  buildCockpitSubNarrative,
-} from './cockpit/sol_interpreters';
 import { SkeletonCard } from '../ui/Skeleton';
-import { businessErrorFallback } from '../i18n/business_errors';
 
-// Sprint P6 S2 — Enrichissement superset MAIN (Batch 2 Vue exécutive)
-// Imports composants MAIN standalone pour parité fonctionnelle
+// Refonte from-scratch : composants MAIN-récup pour incarner la doctrine
 import TrajectorySection from './cockpit/TrajectorySection';
 import EvenementsRecents from './cockpit/EvenementsRecents';
-import HeroImpactBar from './cockpit/HeroImpactBar';
-import SanteKpiGrid from './cockpit/SanteKpiGrid';
-import PriorityActions from './cockpit/PriorityActions';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-
-// Cohérence cross-vues Tableau de bord / Vue exécutive
+import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
+import VecteurEnergetiqueCard from './cockpit/VecteurEnergetiqueCard';
+import OpportunitiesCard from './cockpit/OpportunitiesCard';
+import BoutonRapportCOMEX from './cockpit/BoutonRapportCOMEX';
 import DeadlineBanner from '../components/DeadlineBanner';
-
-const SOL_PROPOSAL_EMPTY_STYLE = {
-  margin: '16px 0 24px',
-  padding: '14px 18px',
-  background: 'var(--sol-bg-paper)',
-  border: '1px dashed var(--sol-ink-200)',
-  borderRadius: 6,
-  color: 'var(--sol-ink-500)',
-  fontFamily: 'var(--sol-font-body)',
-  fontSize: 13,
-  lineHeight: 1.5,
-};
+import { useCockpitData } from '../hooks/useCockpitData';
+import {
+  buildBriefing,
+  buildWatchlist,
+  buildOpportunities,
+} from '../models/dashboardEssentials';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Async data hook — charge en parallèle les 6 endpoints Cockpit.
-// Zero state management framework : useState + useEffect, pattern PROMEOS.
-// ──────────────────────────────────────────────────────────────────────────────
 
-function useCockpitSolData({ orgId, siteId } = {}) {
+function useCockpitSolData({ orgId } = {}) {
   const [state, setState] = useState({
     status: 'loading',
     billing: null,
-    compliance: null,
+    complianceTrend: null,
     cockpit: null,
     notifications: null,
     timeline: null,
-    emsSeries: null,
-    error: null,
   });
 
   useEffect(() => {
     let cancelled = false;
-    setState((s) => ({ ...s, status: 'loading', error: null }));
-
-    // Fix M-02-bis Sprint P0 : backend /api/ems/timeseries exige site_ids
-    // obligatoire + dates YYYY-MM-DD (date-only, pas ISO complet avec T...Z).
-    // Si pas de siteId scope, on skip l'appel EMS (pattern "no-site=no-data").
-    const dateTo = new Date();
-    const dateFrom = new Date();
-    dateFrom.setDate(dateFrom.getDate() - 1);
-    const isoDate = (d) => d.toISOString().split('T')[0];
-    const hasSite = Boolean(siteId);
-    const emsParams = hasSite
-      ? {
-          site_ids: String(siteId),
-          date_from: isoDate(dateFrom),
-          date_to: isoDate(dateTo),
-          granularity: '30min',
-          mode: 'aggregate',
-          metric: 'kw',
-        }
-      : null;
+    setState((s) => ({ ...s, status: 'loading' }));
 
     Promise.allSettled([
       getBillingSummary().catch(() => null),
@@ -135,8 +90,7 @@ function useCockpitSolData({ orgId, siteId } = {}) {
       getCockpit().catch(() => null),
       getNotificationsList({ org_id: orgId, limit: 10 }).catch(() => null),
       getComplianceTimeline().catch(() => null),
-      emsParams ? getEmsTimeseries(emsParams).catch(() => null) : Promise.resolve(null),
-    ]).then(([billing, compliance, cockpit, notifications, timeline, ems]) => {
+    ]).then(([billing, compliance, cockpit, notifications, timeline]) => {
       if (cancelled) return;
       setState({
         status: 'ready',
@@ -145,17 +99,23 @@ function useCockpitSolData({ orgId, siteId } = {}) {
         cockpit: cockpit.status === 'fulfilled' ? cockpit.value : null,
         notifications: notifications.status === 'fulfilled' ? notifications.value : null,
         timeline: timeline.status === 'fulfilled' ? timeline.value : null,
-        emsSeries: ems.status === 'fulfilled' ? ems.value : null,
-        error: null,
       });
     });
 
     return () => {
       cancelled = true;
     };
-  }, [orgId, siteId]);
+  }, [orgId]);
 
   return state;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+
+function getRiskStatus(eur) {
+  if (eur > 50000) return 'crit';
+  if (eur > 10000) return 'warn';
+  return 'ok';
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -164,42 +124,53 @@ export default function CockpitSol() {
   const scopeCtx = useScope();
   const navigate = useNavigate();
   const scope = scopeCtx?.scope || {};
+  const scopedSites = scopeCtx?.scopedSites || [];
   const org = scopeCtx?.org;
   const scopeLabel = scopeCtx?.scopeLabel;
   const sitesCount = scopeCtx?.sitesCount;
   const orgName = org?.name || org?.label || scopeLabel || 'votre patrimoine';
   const [mode, setMode] = useState('surface');
-  // Sprint P6 S2 Batch 2 : accordion Zone 4 détail (MAIN-parity)
-  const [showDetailZone, setShowDetailZone] = useState(false);
 
-  const data = useCockpitSolData({
-    orgId: scope.orgId,
-    siteId: scope.siteId,
-  });
-  // useCommandCenterData non requis suite retrait BarChart 7j — garder hook import-free
+  const data = useCockpitSolData({ orgId: scope.orgId });
+  const { kpis: cockpitKpisFull } = useCockpitData();
 
-  // ─── Dérivations présentation ──────────────────────────────────────────────
+  // ─── KPIs builder-ready (shape attendue par dashboardEssentials) ──────────
 
-  // Phase 4.6 branchera GET /api/sol/pending ici.
-  const solProposal = null;
+  const rawKpis = useMemo(() => {
+    const total = scopedSites.length;
+    const conformes = scopedSites.filter((s) => s.statut_conformite === 'conforme').length;
+    const nonConformes = scopedSites.filter((s) => s.statut_conformite === 'non_conforme').length;
+    const aRisque = scopedSites.filter((s) => s.statut_conformite === 'a_risque').length;
+    const risque = scopedSites.reduce((sum, s) => sum + (s.risque_eur || 0), 0);
+    const pctConf =
+      cockpitKpisFull?.conformiteScore != null
+        ? Math.round(cockpitKpisFull.conformiteScore)
+        : 0;
+    const couvertureDonnees =
+      total > 0
+        ? Math.round((scopedSites.filter((s) => s.conso_kwh_an > 0).length / total) * 100)
+        : 0;
+    const compStatus =
+      nonConformes > 0 ? 'crit' : aRisque > 0 ? 'warn' : total > 0 ? 'ok' : 'neutral';
+    return {
+      total,
+      conformes,
+      nonConformes,
+      aRisque,
+      risque,
+      pctConf,
+      couvertureDonnees,
+      compStatus,
+      risqueStatus: getRiskStatus(risque),
+    };
+  }, [scopedSites, cockpitKpisFull]);
 
-  const kicker = buildKicker({
-    module: 'Cockpit',
-    scope: { orgName, sitesCount },
-  });
+  // ─── Données existantes pour KPIs ─────────────────────────────────────────
 
-  // KPI 1 : facture énergie (shape réelle : billing.total_eur, total_kwh, total_invoices)
   const billing = data.billing ?? {};
-  const kpiCostValue = billing.total_eur;
-  // Pas de previous_cost dans /billing/summary → delta non calculable ici,
-  // nécessite getBillingCompareMonthly() qu'on ajoutera dans une mini-phase suivante.
-  const kpiCostDelta = null;
-
-  // KPI 2 : conformité DT — /cockpit.stats.compliance_score en priorité,
-  // fallback sur /compliance/score-trend dernier point (l'endpoint /cockpit
-  // peut retourner 500 dans certaines configs scope — fallback mandatoire).
   const cockpit = data.cockpit ?? {};
   const cockpitStats = cockpit.stats ?? {};
+
   const trendArr = Array.isArray(data.complianceTrend?.trend) ? data.complianceTrend.trend : [];
   const trendLast = trendArr[trendArr.length - 1];
   const scoreNow =
@@ -216,16 +187,17 @@ export default function CockpitSol() {
         })
       : null;
 
-  // KPI 3 : conso patrimoine — /cockpit.stats.conso_kwh_total en priorité,
-  // fallback sur billing.total_kwh (facturation = proxy consommation).
-  const consoKwhPrimary = cockpitStats.conso_kwh_total;
-  const consoKwhFallback = billing.total_kwh;
-  const consoKwh = consoKwhPrimary ?? consoKwhFallback ?? null;
+  const consoKwh = cockpitStats.conso_kwh_total ?? billing.total_kwh ?? null;
   const consoMwh = consoKwh != null ? consoKwh / 1000 : null;
-  const consoSource = consoKwhPrimary != null ? 'Enedis + GRDF' : 'Factures (estimation)';
-  const consoDelta = null;
 
-  // Narratives — alertes : compteur stats en priorité, sinon longueur liste notifications.
+  // CO₂ : tente cockpitStats puis fallback null (carte VecteurEnergetiqueCard ci-dessous est l'autorité)
+  const co2Tco2 =
+    cockpitStats.total_t_co2eq ??
+    cockpitStats.co2_total_tco2 ??
+    cockpitStats.co2_t_co2eq ??
+    null;
+
+  // Notifications + alertes
   const notifList = Array.isArray(data.notifications)
     ? data.notifications
     : data.notifications?.items || data.notifications?.events || [];
@@ -233,59 +205,60 @@ export default function CockpitSol() {
     cockpitStats.alertes_actives ??
     cockpit?.action_center?.total_issues ??
     notifList.filter((n) => n?.severity === 'critical' || n?.severity === 'high').length;
-  const topAlertTitle = notifList[0]?.title;
 
-  // Week signals — notifications (array) + timeline /compliance/timeline.events[]
-  // Backend shapes :
-  //   notifications = array directe avec {severity, title, message, deeplink_path, ...}
-  //   timeline = { events: [{status: 'passed'|'upcoming'|'future', label, deadline, ...}] }
-  // Backend utilise 'passed' pour les échéances validées (pas 'validated'/'completed').
-  const weekCards = useMemo(() => {
-    const notifs = Array.isArray(data.notifications)
-      ? data.notifications
-      : data.notifications?.items || data.notifications?.events || [];
-    const timelineRaw = data.timeline;
-    const timelineItems = Array.isArray(timelineRaw)
-      ? timelineRaw
-      : timelineRaw?.events || timelineRaw?.items || [];
-    // Filtrer critical en priorité pour l'alerte "à regarder"
-    const sortedAlerts = [...notifs].sort((a, b) => {
-      const rank = { critical: 0, high: 1, warn: 2, info: 3 };
-      return (rank[a?.severity] ?? 9) - (rank[b?.severity] ?? 9);
-    });
-    const upcoming = timelineItems
-      .filter((t) => t?.status === 'upcoming')
-      .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
-    const validated = timelineItems.filter((t) => t?.status === 'passed');
-    return buildWeekSignals({
-      alerts: sortedAlerts,
-      upcomingItems: upcoming,
-      validatedItems: validated,
-      scope: { sitesCount: cockpitStats.total_sites },
-      onNavigate: (path) => navigate(path),
-    });
-  }, [data.notifications, data.timeline, cockpitStats.total_sites, navigate]);
+  // ─── Builders pour Briefing exécutif + Opportunités ───────────────────────
 
-  // Load curve — EMS réel si dispo, sinon fallback courbe 24h type bureau
-  // (la signature visuelle de la maquette doit toujours être présente).
-  const loadCurveData = useMemo(() => {
-    const raw = data.emsSeries?.series?.[0]?.data || data.emsSeries?.data || [];
-    const adapted = adaptEmsSeriesToLoadCurve(raw);
-    return adapted.length > 0 ? adapted : buildFallbackLoadCurve();
-  }, [data.emsSeries]);
-  const loadCurveIsMock = !(
-    data.emsSeries?.series?.[0]?.data?.length || data.emsSeries?.data?.length
+  const watchlist = useMemo(
+    () => buildWatchlist(rawKpis, scopedSites),
+    [rawKpis, scopedSites]
+  );
+  const opportunities = useMemo(
+    () => buildOpportunities(rawKpis, scopedSites, { isExpert: mode === 'expert' }),
+    [rawKpis, scopedSites, mode]
+  );
+  const briefing = useMemo(
+    () => buildBriefing(rawKpis, watchlist, alertsCount),
+    [rawKpis, watchlist, alertsCount]
   );
 
-  const peak = useMemo(() => findPeak(loadCurveData, 'kW'), [loadCurveData]);
-  const hpShare = useMemo(() => computeHPShare(loadCurveData), [loadCurveData]);
+  // Brief Sol — narration 1 phrase + 3 métriques horizontales (SolHero metrics).
+  const briefMetrics = useMemo(() => {
+    const m = [];
+    if (billing.total_eur != null)
+      m.push({ label: 'Facture', value: formatFREur(billing.total_eur, 0) });
+    if (scoreNow != null) m.push({ label: 'Conformité', value: `${scoreNow}/100` });
+    if (consoMwh != null) m.push({ label: 'Consommation', value: `${formatFR(consoMwh, 0)} MWh` });
+    return m.slice(0, 3);
+  }, [billing, scoreNow, consoMwh]);
 
-  // Freshness — timestamp dominant pour la section "Cette semaine"
+  const briefTitle = useMemo(() => {
+    if (briefing[0]) return briefing[0].label;
+    if (alertsCount > 0)
+      return `${alertsCount} signal${alertsCount > 1 ? 'aux' : ''} fort${alertsCount > 1 ? 's' : ''} cette semaine`;
+    return 'Patrimoine sous contrôle cette semaine';
+  }, [briefing, alertsCount]);
+  const briefDescription = useMemo(() => {
+    const facture = billing.total_eur != null ? formatFREur(billing.total_eur, 0) : '—';
+    const score = scoreNow != null ? `${scoreNow}/100` : '—';
+    const conso = consoMwh != null ? `${formatFR(consoMwh, 0)} MWh` : '—';
+    const anomalies = billing.total_insights ?? 0;
+    return `Facture analysée ${facture} · score conformité ${score} · consommation ${conso}${
+      anomalies > 0 ? ` · ${anomalies} anomalie${anomalies > 1 ? 's' : ''} détectée${anomalies > 1 ? 's' : ''}` : ''
+    }.`;
+  }, [billing, scoreNow, consoMwh]);
+
+  // Freshness pour SolKpiCard sources
   const dataFreshness = useMemo(() => {
     const ts =
       data.cockpit?.stats?.compliance_computed_at || data.notifications?.[0]?.created_at || null;
     return freshness(ts);
   }, [data.cockpit, data.notifications]);
+
+  // Header
+  const kicker = buildKicker({
+    module: 'Cockpit',
+    scope: { orgName, sitesCount },
+  });
 
   // ─── Rendu ───────────────────────────────────────────────────────────────
 
@@ -306,68 +279,52 @@ export default function CockpitSol() {
       <SolPageHeader
         kicker={kicker}
         title="Bonjour "
-        titleEm="— voici votre semaine"
-        narrative={buildCockpitNarrative({ alertsCount, topAlertTitle })}
-        subNarrative={buildCockpitSubNarrative({
-          sitesCount: cockpit.total_sites ?? cockpit.sites_count,
-          nextComexDays: cockpit.next_comex_days,
-        })}
-        rightSlot={<SolLayerToggle value={mode} onChange={setMode} />}
+        titleEm="— votre semaine en briefing"
+        narrative={briefTitle}
+        subNarrative={`${rawKpis.total} sites · ${rawKpis.conformes} OK · ${rawKpis.nonConformes + rawKpis.aRisque} à risque · ${alertsCount} alerte${alertsCount > 1 ? 's' : ''}`}
+        rightSlot={
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <BoutonRapportCOMEX />
+            <SolLayerToggle value={mode} onChange={setMode} />
+          </div>
+        }
       />
 
-      {/* Reco A — cohérence avec / : urgence régulatoire partout */}
+      {/* Urgence régulatoire (cross-vues canonique) */}
       <DeadlineBanner />
 
-      {/* User request : "Cette semaine chez vous" juste après header sur les 2 vues */}
-      <SolSectionHead
-        title="Cette semaine chez vous"
-        meta={`${weekCards.length} points · actualisé ${dataFreshness}`}
-      />
-      <SolWeekGrid>
-        {weekCards.map((c) => (
-          <SolWeekCard
-            key={c.id}
-            tagKind={c.tagKind}
-            tagLabel={c.tagLabel}
-            title={c.title}
-            body={c.body}
-            footerLeft={c.footerLeft}
-            footerRight={c.footerRight}
-            onClick={c.onClick}
-          />
-        ))}
-      </SolWeekGrid>
-
-      {/* Sol Hero "proposition agentique" — affiché uniquement si disponible (pas d'empty state verbeux) */}
-      {mode === 'surface' && solProposal && (
-        <SolHero
-          chip="Sol propose · action agentique"
-          title={solProposal.title_fr}
-          description={solProposal.summary_fr}
-        />
-      )}
+      {/* Mode SURFACE — Briefing exécutif Sol → KPIs → Trajectoire → benchmark → CO₂ → opportunités → événements */}
       {mode === 'surface' && (
         <>
-          <SolKpiRow>
+          {/* 1. BRIEF SOL — narration 1 phrase + 3 métriques + CTA */}
+          <SolHero
+            chip="Briefing exécutif · Sol"
+            title={briefTitle}
+            description={briefDescription}
+            metrics={briefMetrics}
+            primaryLabel="Voir les actions prioritaires"
+            onPrimary={() => navigate('/actions')}
+            secondaryLabel="Exporter le brief"
+            onSecondary={() => window.print()}
+          />
+
+          {/* 2. SolKpiRow × 4 — Facture · Conformité · Consommation · CO₂ */}
+          <SolKpiRow columns={4}>
             <SolKpiCard
               label="Facture énergie · période"
               explainKey="billing_total_current_month"
-              value={kpiCostValue != null ? formatFR(kpiCostValue, 0) : '—'}
+              value={billing.total_eur != null ? formatFR(billing.total_eur, 0) : '—'}
               unit={`${NBSP}€${NBSP}HT`}
-              delta={kpiCostDelta}
               semantic="cost"
               headline={
                 billing.total_invoices
-                  ? `${billing.total_invoices} factures analysées · ${billing.total_insights ?? 0} anomalie${(billing.total_insights ?? 0) > 1 ? 's' : ''}.`
+                  ? `${billing.total_invoices} factures · ${billing.total_insights ?? 0} anomalie${(billing.total_insights ?? 0) > 1 ? 's' : ''}`
                   : "Importez vos factures pour déclencher l'analyse."
               }
               source={{
                 kind: 'Factures',
-                origin: billing.engine_version ? `shadow ${billing.engine_version}` : undefined,
-                freshness:
-                  billing.last_updated || billing.coverage_months
-                    ? `${billing.coverage_months ?? '—'}${NBSP}mois couverts`
-                    : undefined,
+                origin: billing.engine_version ? `shadow ${billing.engine_version}` : 'shadow billing',
+                freshness: billing.coverage_months ? `${billing.coverage_months}${NBSP}mois couverts` : dataFreshness,
               }}
             />
             <SolKpiCard
@@ -377,16 +334,19 @@ export default function CockpitSol() {
               unit="/100"
               delta={scoreDelta}
               semantic="score"
-              headline={interpretCompliance({
-                score: scoreNow,
-                sitesAtRisk: cockpitStats.sites_tertiaire_ko,
-              })}
+              headline={
+                scoreNow == null
+                  ? 'Score en cours de calcul.'
+                  : scoreNow >= 75
+                    ? 'Trajectoire solide vers 2030.'
+                    : scoreNow >= 60
+                      ? 'Vigilance — quelques sites en retard.'
+                      : 'Risque — plan d\'action prioritaire.'
+              }
               source={{
                 kind: 'RegOps',
                 origin: cockpitStats.compliance_source || 'canonique',
-                freshness: cockpitStats.sites_evaluated
-                  ? `${cockpitStats.sites_evaluated}${NBSP}sites évalués`
-                  : undefined,
+                freshness: cockpitStats.sites_evaluated ? `${cockpitStats.sites_evaluated}${NBSP}sites` : dataFreshness,
               }}
             />
             <SolKpiCard
@@ -394,29 +354,40 @@ export default function CockpitSol() {
               explainKey="usage_total_mwh"
               value={consoMwh != null ? formatFR(consoMwh, 0) : '—'}
               unit={`${NBSP}MWh`}
-              delta={consoDelta}
               semantic="conso"
               headline={
                 cockpitStats.conso_sites_with_data
-                  ? `${cockpitStats.conso_sites_with_data}${NBSP}sites avec données · période glissante.`
-                  : billing.total_invoices
-                    ? `Estimée depuis ${billing.total_invoices}${NBSP}factures analysées.`
-                    : 'Données de consommation en cours de collecte.'
+                  ? `${cockpitStats.conso_sites_with_data}${NBSP}sites avec données`
+                  : 'Cumul Enedis + GRDF agrégé.'
               }
               source={{
-                kind: consoSource,
+                kind: cockpitStats.conso_source || 'Enedis + GRDF',
                 freshness:
                   cockpitStats.conso_confidence && cockpitStats.conso_confidence !== 'none'
                     ? `confiance ${cockpitStats.conso_confidence}`
-                    : undefined,
+                    : dataFreshness,
+              }}
+            />
+            <SolKpiCard
+              label="Empreinte CO₂"
+              explainKey="co2_total_tco2eq"
+              value={co2Tco2 != null ? formatFR(co2Tco2, 0) : '—'}
+              unit={`${NBSP}tCO₂eq`}
+              semantic="conso"
+              headline={
+                co2Tco2 != null
+                  ? 'Scopes 1+2 cumulés sur la période · ADEME V23.6.'
+                  : 'Calcul CO₂ disponible dans la section Vecteurs ci-dessous.'
+              }
+              source={{
+                kind: 'ADEME V23.6',
+                origin: 'facteurs canoniques',
+                freshness: dataFreshness,
               }}
             />
           </SolKpiRow>
 
-          {/* Note : AlertesPrioritaires retiré — doublon avec "Cette semaine chez vous" qui
-              affiche déjà les 3 signaux faibles/forts (À regarder / Dérive / Bonne nouvelle). */}
-
-          {/* Sprint P6 S2 — Section MAIN-parity : Trajectoire Décret Tertiaire */}
+          {/* 3. Trajectoire Décret Tertiaire 2030 */}
           <SolSectionHead
             title="Trajectoire Décret Tertiaire"
             meta="Progression vers objectif 2030 (-40%)"
@@ -424,119 +395,69 @@ export default function CockpitSol() {
           <div style={{ marginBottom: 24 }}>
             <TrajectorySection
               trajectoire={cockpitStats.trajectoire}
-              loading={data.status === 'loading'}
+              loading={false}
               sites={cockpit.sites}
             />
           </div>
 
-          {/* Sprint P6 S2 — Section MAIN-parity : Événements récents (timeline) */}
+          {/* 4 + 5 — Performance OID & Vecteurs CO₂ pairés en grid 2-col
+              (densités similaires, évite le vide horizontal sur écran large).
+              align-items stretch + flex column wrappers → cards parfaitement alignées. */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+              gap: 16,
+              marginBottom: 24,
+              alignItems: 'stretch',
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <SolSectionHead
+                title="Performance vs pairs OID"
+                meta="Benchmark par usage · top 5 sites"
+              />
+              <div style={{ flex: 1, display: 'flex' }}>
+                <div style={{ width: '100%' }}>
+                  <PerformanceSitesCard fallbackSites={cockpit.sites || scopedSites} />
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <SolSectionHead
+                title="Vecteurs & empreinte CO₂"
+                meta="Élec/gaz · scopes 1/2 · vs N-1"
+              />
+              <div style={{ flex: 1, display: 'flex' }}>
+                <div style={{ width: '100%' }}>
+                  <VecteurEnergetiqueCard />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 6. Opportunités économiques (top 3) */}
+          {opportunities.length > 0 && (
+            <>
+              <SolSectionHead
+                title="Opportunités à activer"
+                meta={`${opportunities.length} levier${opportunities.length > 1 ? 's' : ''} identifié${opportunities.length > 1 ? 's' : ''}`}
+              />
+              <div style={{ marginBottom: 24 }}>
+                <OpportunitiesCard opportunities={opportunities} onNavigate={navigate} />
+              </div>
+            </>
+          )}
+
+          {/* 7. Événements récents (timeline 7j) */}
           <SolSectionHead title="Événements récents" meta="Timeline monitoring 7j" />
           <div style={{ marginBottom: 24 }}>
             <EvenementsRecents />
           </div>
-
-          {/* BarChart 7j retiré (demande user : moins de graphiques, lisibilité haute)
-              Seul SolLoadCurve 24h conservé — la signature iconique HP/HC suffit. */}
-
-          <SolSectionHead
-            title={`Courbe de charge · ${loadCurveIsMock ? `aperçu 24${NBSP}h` : 'hier'}`}
-            meta={`pas ${loadCurveIsMock ? `1${NBSP}h` : `30${NBSP}min`} · HP / HC tarifaires`}
-          />
-          <div
-            style={{
-              background: 'var(--sol-bg-paper)',
-              border: '1px solid var(--sol-ink-200)',
-              borderRadius: 8,
-              padding: 16,
-              boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
-            }}
-          >
-            <SolLoadCurve
-              data={loadCurveData}
-              peakPoint={peak}
-              hpStart="06:00"
-              hpEnd="22:00"
-              caption={
-                <>
-                  <strong style={{ color: 'var(--sol-ink-900)' }}>
-                    {formatFRPct(Math.round(hpShare * 100))} de votre consommation
-                  </strong>{' '}
-                  tombe en heures pleines — attendu pour un bureau.
-                  {loadCurveIsMock && (
-                    <span style={{ color: 'var(--sol-ink-400)', marginLeft: 8 }}>
-                      (aperçu estimé, courbe réelle en cours de branchement)
-                    </span>
-                  )}
-                </>
-              }
-              sourceChip={
-                <SolSourceChip
-                  kind={loadCurveIsMock ? 'Estimé' : 'Enedis'}
-                  origin={loadCurveIsMock ? 'profil bureau' : 'M023'}
-                  freshness={loadCurveIsMock ? undefined : 'complète'}
-                />
-              }
-            />
-          </div>
-
-          {/* Sprint P6 S2 — Zone 4 accordion : détail complet MAIN-parity */}
-          <div style={{ marginTop: 24 }}>
-            <button
-              type="button"
-              onClick={() => setShowDetailZone((s) => !s)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-                padding: '14px 18px',
-                background: 'var(--sol-bg-paper)',
-                border: '1px solid var(--sol-ink-200)',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontSize: 14,
-                fontWeight: 600,
-                color: 'var(--sol-ink-900)',
-                fontFamily: 'var(--sol-font-body)',
-              }}
-            >
-              <span>
-                {showDetailZone ? 'Masquer' : 'Voir'} le détail exécutif complet
-                <span style={{ fontWeight: 400, color: 'var(--sol-ink-500)', marginLeft: 12 }}>
-                  — Impact financier · KPIs santé · Actions prioritaires
-                </span>
-              </span>
-              {showDetailZone ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-            </button>
-            {showDetailZone && (
-              <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* HeroImpactBar — impact 4 colonnes */}
-                <HeroImpactBar
-                  totalEur={cockpitStats.impact_financier_total_eur}
-                  conformiteEur={cockpitStats.impact_conformite_eur}
-                  facturesEur={cockpitStats.impact_factures_eur}
-                  optimisationEur={cockpitStats.impact_optimisation_eur}
-                  sitesConcernes={cockpitStats.sites_concernes || []}
-                />
-                {/* SanteKpiGrid — 4 KPIs santé */}
-                <SanteKpiGrid
-                  sante={{
-                    conformite_score: scoreNow,
-                    risque_eur: cockpitStats.risque_eur,
-                    conso_kwh: consoKwh,
-                    alertes_count: alertsCount,
-                    ...(cockpitStats.sante || {}),
-                  }}
-                />
-                {/* PriorityActions — top actions V1+ executive */}
-                <PriorityActions actions={cockpit.top_actions || cockpit.priority_actions || []} />
-              </div>
-            )}
-          </div>
         </>
       )}
 
-      {/* ─── Mode INSPECT : lecture éditoriale de la semaine ─── */}
+      {/* Mode INSPECT — lecture éditoriale prose */}
       {mode === 'inspect' && (
         <>
           <SolSectionHead
@@ -553,8 +474,8 @@ export default function CockpitSol() {
               }}
             >
               Votre patrimoine a été facturé{' '}
-              <strong>{kpiCostValue != null ? formatFREur(kpiCostValue, 0) : '—'}</strong> sur la
-              période analysée.{' '}
+              <strong>{billing.total_eur != null ? formatFREur(billing.total_eur, 0) : '—'}</strong>
+              {' '}sur la période analysée.{' '}
               {billing.total_insights
                 ? `${billing.total_insights} anomalie${billing.total_insights > 1 ? 's' : ''} détectée${billing.total_insights > 1 ? 's' : ''} par le moteur shadow billing.`
                 : 'Aucune anomalie détectée.'}
@@ -593,18 +514,18 @@ export default function CockpitSol() {
                 marginTop: 24,
               }}
             >
-              Sources : shadow billing v4.2 · Enedis DataConnect · RegOps canonique · GRDF.
+              Sources : shadow billing v4.2 · Enedis DataConnect · RegOps canonique · GRDF · ADEME V23.6.
             </div>
           </SolInspectDoc>
         </>
       )}
 
-      {/* ─── Mode EXPERT : table dense anomalies factures ─── */}
+      {/* Mode EXPERT — table dense KPIs détaillés */}
       {mode === 'expert' && (
         <>
           <SolSectionHead
             title="Expert · KPIs détaillés"
-            meta={`${formatFR(loadCurveData.length)} points · source Enedis`}
+            meta={`${rawKpis.total} sites scoped`}
           />
           <SolExpertGrid
             columns={[
@@ -619,8 +540,8 @@ export default function CockpitSol() {
                 key: 'cost',
                 cells: {
                   metric: 'Facture énergie',
-                  value: kpiCostValue != null ? formatFREur(kpiCostValue, 0) : '—',
-                  delta: kpiCostDelta?.text || '—',
+                  value: billing.total_eur != null ? formatFREur(billing.total_eur, 0) : '—',
+                  delta: '—',
                   source: 'Factures fournisseur',
                   status: (
                     <SolStatusPill kind="ok">
@@ -648,7 +569,7 @@ export default function CockpitSol() {
                 cells: {
                   metric: 'Consommation',
                   value: consoMwh != null ? `${formatFR(consoMwh, 0)}${NBSP}MWh` : '—',
-                  delta: consoDelta?.text || '—',
+                  delta: '—',
                   source: cockpitStats.conso_source || 'Enedis + GRDF',
                   status: (
                     <SolStatusPill kind={cockpitStats.conso_confidence === 'high' ? 'ok' : 'att'}>
@@ -658,23 +579,17 @@ export default function CockpitSol() {
                 },
               },
               {
-                key: 'peak',
+                key: 'co2',
                 cells: {
-                  metric: 'Pic J-1',
-                  value: peak ? `${peak.value}${NBSP}kW` : '—',
-                  delta: peak ? `à ${peak.time}` : '—',
-                  source: 'Enedis M023',
-                  status: <SolStatusPill kind="ok">Observé</SolStatusPill>,
-                },
-              },
-              {
-                key: 'hp',
-                cells: {
-                  metric: 'Part HP',
-                  value: hpShare ? formatFRPct(Math.round(hpShare * 100)) : '—',
+                  metric: 'CO₂eq cumulé',
+                  value: co2Tco2 != null ? `${formatFR(co2Tco2, 0)}${NBSP}tCO₂` : '—',
                   delta: '—',
-                  source: 'Enedis M023',
-                  status: <SolStatusPill kind="ok">Calculé</SolStatusPill>,
+                  source: 'ADEME V23.6',
+                  status: (
+                    <SolStatusPill kind={co2Tco2 != null ? 'ok' : 'att'}>
+                      {co2Tco2 != null ? 'Calculé' : 'En attente'}
+                    </SolStatusPill>
+                  ),
                 },
               },
               {
@@ -685,10 +600,22 @@ export default function CockpitSol() {
                   delta: '—',
                   source: 'Notifications',
                   status: (
-                    <SolStatusPill
-                      kind={alertsCount === 0 ? 'ok' : alertsCount <= 2 ? 'att' : 'risk'}
-                    >
+                    <SolStatusPill kind={alertsCount === 0 ? 'ok' : alertsCount <= 2 ? 'att' : 'risk'}>
                       {alertsCount === 0 ? 'RAS' : alertsCount <= 2 ? 'À voir' : 'Vigilance'}
+                    </SolStatusPill>
+                  ),
+                },
+              },
+              {
+                key: 'risque',
+                cells: {
+                  metric: 'Risque cumulé',
+                  value: `${formatFR(rawKpis.risque, 0)}${NBSP}€`,
+                  delta: '—',
+                  source: 'Scoring sites',
+                  status: (
+                    <SolStatusPill kind={rawKpis.risqueStatus === 'crit' ? 'risk' : rawKpis.risqueStatus === 'warn' ? 'att' : 'ok'}>
+                      {rawKpis.risqueStatus === 'crit' ? 'Élevé' : rawKpis.risqueStatus === 'warn' ? 'Modéré' : 'Faible'}
                     </SolStatusPill>
                   ),
                 },
