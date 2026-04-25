@@ -64,6 +64,8 @@ import OpportunitiesCard from './cockpit/OpportunitiesCard';
 import BoutonRapportCOMEX from './cockpit/BoutonRapportCOMEX';
 import DeadlineBanner from '../components/DeadlineBanner';
 import RegulatoryCalendarCard from '../components/RegulatoryCalendarCard';
+import ImpactProjectionCard from '../components/ImpactProjectionCard';
+import BriefCodexCard from '../components/BriefCodexCard';
 import { useCockpitData } from '../hooks/useCockpitData';
 import {
   buildBriefing,
@@ -487,8 +489,7 @@ export default function CockpitSol() {
 
           {/* AJUSTEMENT PERSONA — Plan d'action PROMU avant Pairs/Vecteurs.
               Scan exec top-down : état → KPIs → marché → trajectoire → PLAN
-              → benchmarks → événements. Le COMEX veut le plan tôt dans la
-              page (avant les benchmarks qui sont contextuels). */}
+              → projection 3 ans (WOW) → benchmarks → événements. */}
           {(() => {
             const sourceActions = data.solProposal?.actions || [];
             const oppList =
@@ -508,13 +509,26 @@ export default function CockpitSol() {
                     title="Plan d'action — leviers à activer"
                     meta={`${oppList.length} levier${oppList.length > 1 ? 's' : ''} chiffré${oppList.length > 1 ? 's' : ''} · total ${formatFREur(data.solProposal?.total_impact_eur_per_year || 0, 0)}/an`}
                   />
-                  <div style={{ marginBottom: 24 }}>
+                  <div style={{ marginBottom: 16 }}>
                     <OpportunitiesCard opportunities={oppList} onNavigate={navigate} />
                   </div>
                 </>
               )
             );
           })()}
+
+          {/* WOW-2 : Projection 3 ans avec/sans Sol — gap visuel. Différenciateur
+              PROMEOS (aucun concurrent B2B énergie n'affiche ce GAP). Sources :
+              solProposal.total_impact_eur_per_year × 3 ans. */}
+          {data.solProposal?.total_impact_eur_per_year > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <ImpactProjectionCard
+                annualImpactEur={data.solProposal.total_impact_eur_per_year}
+                actionsCount={data.solProposal.actions?.length || 3}
+                onPrimary={() => navigate('/actions')}
+              />
+            </div>
+          )}
 
           {/* 4 + 5 — Performance OID & Vecteurs CO₂ pairés en grid 2-col
               (densités similaires, évite le vide horizontal sur écran large).
@@ -552,8 +566,28 @@ export default function CockpitSol() {
             </div>
           </div>
 
-          {/* Plan d'action déplacé plus haut (après Trajectoire) pour
-              cohérence scan exec : les leviers viennent avant les benchmarks. */}
+          {/* WOW-1 : Brief CODIR pré-rédigé par Sol — texte exec prêt à copier
+              dans une présentation/mail. Différenciateur PROMEOS : seul outil
+              B2B énergie qui ÉCRIT le brief, pas juste les chiffres. */}
+          <SolSectionHead
+            title="Brief exécutif — prêt à présenter"
+            meta="Synthèse copy-paste pour CODIR"
+          />
+          <div style={{ marginBottom: 24 }}>
+            <BriefCodexCard
+              orgName={orgName}
+              totalSites={rawKpis.total}
+              facture={billing.total_eur}
+              conformityScore={scoreNow}
+              consoMwh={consoMwh}
+              co2Tco2={co2Total}
+              sitesAtRisk={sitesAtRisk}
+              actionsCount={data.solProposal?.actions?.length || 0}
+              totalImpactEur={data.solProposal?.total_impact_eur_per_year || 0}
+              alertesCount={alertsCount}
+              anomaliesCount={billing.total_insights || 0}
+            />
+          </div>
 
           {/* 7. Événements récents (timeline 7j) */}
           <SolSectionHead title="Événements récents" meta="Timeline monitoring 7j" />
