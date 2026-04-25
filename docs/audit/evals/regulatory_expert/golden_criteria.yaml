@@ -1,0 +1,42 @@
+agent: regulatory-expert
+tasks:
+  - id: task_01
+    title: "Deadline OPERAT N+1"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["30 septembre", "Décret n°2019-771", "OPERAT", "confidence"]
+      must_not_contain: ["30 juin", "avant fin d'année"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_02
+    title: "Seuil BACS 2030"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["70 kW", "01/01/2030", "290 kW", "2025-1343"]
+      must_not_contain: ["2027"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_03
+    title: "Applicabilité Audit SMÉ"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["2,75 GWh", "11/10/2026", "2025-391", "1 500"]
+      must_not_contain: ["500 salariés seuil"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_04
+    title: "TURPE 7 HPH C5 T1"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["tarifs_reglementaires.yaml", "valid_from", "CRE", "C5", "T1"]
+      must_not_contain: ["CO2", "0.052"]
+      delegation_expected: bill-intelligence
+    fail_if_contains: []
+  - id: task_05
+    title: "CSRD post-Omnibus scope"
+    difficulty: hard
+    pass_criteria:
+      must_contain: ["250 salariés", "50 M€", "E1", "Omnibus", "26/02/2025"]
+      must_not_contain: ["500 salariés"]
+      delegation_expected: architect-helios
+    fail_if_contains: []

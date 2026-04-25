@@ -19,6 +19,7 @@ from services.data_quality_service import (
     compute_portfolio_data_quality,
     compute_site_freshness,
 )
+from services.error_catalog import business_error
 
 router = APIRouter(prefix="/api/data-quality", tags=["data-quality"])
 
@@ -55,7 +56,7 @@ def get_site_data_quality(
 
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(status_code=404, detail="Site non trouvé")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=site_id))
     return compute_site_data_quality(db, site_id)
 
 
@@ -69,7 +70,7 @@ def get_site_freshness(
 
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(status_code=404, detail="Site non trouvé")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=site_id))
     return compute_site_freshness(db, site_id)
 
 

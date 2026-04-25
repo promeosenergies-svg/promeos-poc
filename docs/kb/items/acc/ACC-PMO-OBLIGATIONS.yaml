@@ -1,0 +1,110 @@
+---
+id: "ACC-PMO-OBLIGATIONS"
+type: "rule"
+domain: "acc"
+title: "ACC — PMO (Personne Morale Organisatrice) — Rôles et obligations"
+summary: "Toute opération d'Autoconsommation Collective (ACC) doit être organisée par une Personne Morale Organisatrice (PMO) obligatoire depuis 2017. La PMO signe la convention unique avec Enedis/GRD, gère la clé de répartition, facture/reverse aux participants, et centralise la relation réseau."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - collectivite
+    - copro
+    - bailleur
+    - tertiaire_multisite
+  asset:
+    - multi
+  reg:
+    - acc
+  granularity:
+    - event
+
+scope: {}
+
+content_md: |
+  ## PMO — Personne Morale Organisatrice
+
+  ### Cadre réglementaire
+  - Article L315-2 Code de l'énergie (définition ACC)
+  - Article L315-2-1 Code de l'énergie (rôle PMO)
+  - Arrêté du 21 novembre 2019 modifié par arrêté 21 février 2025
+
+  ### Nature juridique possible
+  - **Association loi 1901** (la plus courante pour copro / habitants)
+  - **Syndicat de copropriété** (si ACC interne à la copro)
+  - **SCI, SCIC, SEM, SAS** (pour projets > copropriété)
+  - **Collectivité** (commune ou EPCI — peut être PMO directement)
+
+  ### Obligations de la PMO
+
+  1. **Convention unique avec Enedis/GRD**
+     - Déclaration de l'opération (périmètre géographique, puissance cumulée, liste participants)
+     - Mise à jour à chaque entrée/sortie d'un participant
+
+  2. **Clé de répartition**
+     - Définir la règle de partage de l'énergie autoproduite entre consommateurs
+     - Possible : statique (%), dynamique (proportion conso instantanée)
+     - Doit être transmise à Enedis pour prise en compte
+
+  3. **Facturation/reversement**
+     - Gère les flux financiers entre producteurs et consommateurs
+     - Reverse aux producteurs la valeur de l'énergie autoconsommée
+     - Facture éventuellement les participants
+
+  4. **Responsabilité périmètre**
+     - Assurer que tous les PDL participants respectent les critères géographiques (2/10/20 km selon zone)
+     - Veiller au respect du plafond de puissance (5 MW baseline, 10 MW dérogation collectivités)
+
+  5. **Déclaration annuelle**
+     - Bilan de l'opération à Enedis
+     - Déclaration fiscale le cas échéant (selon statut PMO)
+
+  ### Coûts types d'une PMO (ordres de grandeur)
+  - Constitution juridique (association) : 0 à 500 €
+  - Frais de fonctionnement annuels : 1 000 à 5 000 €/an (secrétariat, comptabilité)
+  - Logiciel de gestion (facultatif) : 200 à 2 000 €/an
+
+  ### Exceptions
+  - Bailleur social peut être exempté de PMO sous conditions (convention directe avec locataires)
+
+logic:
+  when:
+    all:
+      - field: "acc_project"
+        op: "="
+        value: true
+  then:
+    outputs:
+      - type: "obligation"
+        label: "Constituer une PMO avant le démarrage de l'opération ACC"
+        severity: "critical"
+        details: "Article L315-2-1 Code de l'énergie"
+
+      - type: "next_step"
+        label: "Choisir la forme juridique PMO selon contexte (association copro, SCIC multi-acteurs, SEM territoriale)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Définir la clé de répartition avant signature convention Enedis"
+        priority: 2
+
+      - type: "next_step"
+        label: "Estimer les coûts de fonctionnement annuels PMO (1k€-5k€)"
+        priority: 3
+
+sources:
+  - doc_id: "CODE-ENERGIE-L315-2-1"
+    label: "Article L315-2-1 Code de l'énergie"
+    section: "Rôle de la Personne Morale Organisatrice"
+    anchor: "#l315-2-1"
+    excerpt_short: "L'opération d'autoconsommation collective est organisée par une personne morale organisatrice (PMO) qui établit et gère les conventions nécessaires"
+
+  - doc_id: "ARRETE-2019-11-21-MODIFIE"
+    label: "Arrêté du 21 novembre 2019 modifié (21/02/2025)"
+    section: "Modalités ACC et rôle PMO"
+    anchor: "#arrete-acc"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1

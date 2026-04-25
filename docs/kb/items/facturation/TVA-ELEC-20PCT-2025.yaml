@@ -1,0 +1,99 @@
+---
+id: "TVA-ELEC-20PCT-2025"
+type: "rule"
+domain: "facturation"
+title: "TVA électricité — Passage à 20% au 01/08/2025"
+summary: "Passage TVA 20% généralisée sur l'électricité depuis le 1er août 2025. Avant césure : TVA 5,5% sur abonnement (bouclier tarifaire) + 20% sur énergie. Après césure : 20% sur tout (abonnement + énergie + taxes)."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - industrie
+    - collectivite
+    - copro
+    - bailleur
+  asset:
+    - multi
+  reg:
+    - taxes
+  granularity:
+    - mensuel
+
+scope: {}
+
+content_md: |
+  ## TVA Électricité — Césure 01/08/2025
+
+  ### Cadre réglementaire
+  - Article 278-0 bis Code général des impôts
+  - Loi de finances 2025 (fin bouclier tarifaire)
+
+  ### Taux avant et après césure
+
+  | Poste | Avant 01/08/2025 | Depuis 01/08/2025 |
+  |---|---|---|
+  | Abonnement (CG + CMDPS) | **5,5 %** (taux réduit) | **20 %** (taux normal) |
+  | Énergie consommée | 20 % | 20 % |
+  | CTA | 20 % | 20 % |
+  | Accise | 20 % | 20 % |
+  | CEE (facturé) | 20 % | 20 % |
+
+  ### Logique de calcul facture
+  ```
+  Montant_HT = Abonnement + Énergie + CTA + Accise + CEE
+  Montant_TTC = Montant_HT × (1 + TVA_applicable)
+  ```
+  Avant 01/08/2025 : 2 taux distincts (5,5% abonnement, 20% autres).
+  Depuis 01/08/2025 : taux unique 20% sur tous postes.
+
+  ### Césure et partition_windows
+  PROMEOS V112 gère automatiquement les factures à cheval sur 01/08/2025 :
+  - Décompte proportionnel jours avant/après césure
+  - Deux calculs TVA distincts
+  - Totaux séparés dans le breakdown
+
+  ### Impact financier ménages
+  - Abonnement 6 kVA annuel ~140 € HT
+  - TVA 5,5% → 7,70 € TVA = 147,70 € TTC
+  - TVA 20% → 28 € TVA = 168 € TTC
+  - **Écart : +20,30 €/an par ménage** (hausse TVA seule)
+
+logic:
+  when:
+    all:
+      - field: "energy_vector"
+        op: "="
+        value: "elec"
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Vérifier TVA 20% sur tous postes facture post-01/08/2025"
+        priority: 1
+
+      - type: "next_step"
+        label: "Contrôler découpage partition_windows pour factures à cheval césure"
+        priority: 2
+
+sources:
+  - doc_id: "CGI-278-0-BIS"
+    label: "Article 278-0 bis Code général des impôts"
+    section: "Taux réduit TVA énergie"
+    anchor: "#cgi-278"
+    excerpt_short: "Taux réduit 5,5% applicable sur abonnement électricité — supprimé au 01/08/2025"
+
+  - doc_id: "LFI-2025-BOUCLIER"
+    label: "Loi de finances 2025 — Fin bouclier tarifaire"
+    section: "Art. 54 et suivants"
+    anchor: "#lfi-2025-54"
+    excerpt_short: "Suppression du taux réduit 5,5% TVA sur l'abonnement électricité au 01/08/2025"
+
+  - doc_id: "PROMEOS-V112-CESURE"
+    label: "PROMEOS V112 — partition_windows"
+    section: "Césure triple 01/08/2025 (TURPE + TVA + Accise)"
+    anchor: "#v112-cesure"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1

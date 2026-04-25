@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import resolve_org_id
+from services.error_catalog import business_error
 
 router = APIRouter(prefix="/api/ems", tags=["EMS Explorer"])
 
@@ -23,7 +24,7 @@ def _check_site_org(db: Session, site_id: int, org_id: int):
 
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(404, "Site non trouvé")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=site_id))
     if not site.portefeuille_id:
         raise HTTPException(403, "Site hors périmètre")
     pf = db.get(Portefeuille, site.portefeuille_id)
@@ -153,7 +154,7 @@ def usage_suggest(
 
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(404, "Site not found")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=site_id))
 
     # Current schedule
     schedule = db.query(SiteOperatingSchedule).filter_by(site_id=site_id).first()
@@ -255,7 +256,7 @@ def ems_benchmark(
 
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(404, "Site not found")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=site_id))
 
     # Get latest snapshot for target site
     target_snap = (

@@ -73,3 +73,9 @@ testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-x -q --tb=short"
 markers = ["fast: tests rapides pour le cycle dev (< 2 min)"]
+filterwarnings = [
+    # SQLAlchemy utilise datetime.utcnow() en interne (schema.py:3624) —
+    # déprécié Python 3.12+ mais pas encore migré dans SQLAlchemy stable.
+    # Bruit (~14k/run), pas d'action côté PROMEOS.
+    "ignore:datetime.datetime.utcnow\\(\\) is deprecated:DeprecationWarning:sqlalchemy",
+]

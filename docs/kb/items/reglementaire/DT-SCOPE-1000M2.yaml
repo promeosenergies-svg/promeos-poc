@@ -1,0 +1,80 @@
+---
+id: "DT-SCOPE-1000M2"
+type: "rule"
+domain: "reglementaire"
+title: "Décret Tertiaire — Assujettissement surface >= 1000 m2"
+summary: "Le Décret Tertiaire s'applique à tout bâtiment ou partie de bâtiment à usage tertiaire dont la surface de plancher cumulée atteint ou dépasse 1 000 m2."
+
+tags:
+  energy:
+    - multi
+  segment:
+    - tertiaire_multisite
+    - collectivite
+  asset:
+    - multi
+  reg:
+    - decret_tertiaire
+  granularity:
+    - mensuel
+
+scope:
+  surface_m2_min: 1000
+
+content_md: |
+  ## Décret Tertiaire — Champ d'application
+
+  ### Seuil d'assujettissement
+  - Surface de plancher cumulée >= 1 000 m2 à usage tertiaire
+  - S'applique aux bâtiments entiers OU parties de bâtiments
+
+  ### Personnes concernées
+  - Propriétaires
+  - Locataires (preneurs à bail)
+  - Occupants ayant la responsabilité de la gestion énergétique
+
+  ### Secteurs types
+  - Bureaux, enseignement, commerce, santé
+  - Logistique, hôtellerie, établissements publics
+  - Logements avec parties communes tertiaires > 1000 m2
+
+  ### Objectifs de réduction
+  - -40% en 2030 (vs année de référence choisie dans la plage 2010-2022)
+  - -50% en 2040
+  - -60% en 2050
+
+  ### Déclaration
+  - Plateforme OPERAT (ADEME) : déclaration annuelle obligatoire
+
+logic:
+  when:
+    all:
+      - field: "surface_m2"
+        op: ">="
+        value: 1000
+  then:
+    outputs:
+      - type: "obligation"
+        label: "Assujetti au Décret Tertiaire — déclaration OPERAT obligatoire"
+        deadline: "2030-12-31"
+        severity: "critical"
+        details: "Décret n°2019-771 du 23 juillet 2019"
+
+      - type: "next_step"
+        label: "Choisir année de référence (2010-2022) et méthode (Crelat ou Cabs)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Déclarer consommations sur OPERAT avant le 30 septembre de chaque année"
+        priority: 2
+
+sources:
+  - doc_id: "DECRET-2019-771"
+    label: "Décret n°2019-771 du 23 juillet 2019"
+    section: "Article R.174-22"
+    anchor: "#article-r174-22"
+    excerpt_short: "Tout bâtiment à usage tertiaire dont la surface de plancher est supérieure ou égale à 1 000 m2"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1

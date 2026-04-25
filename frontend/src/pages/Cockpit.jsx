@@ -61,8 +61,14 @@ import {
 import { useComplianceMeta } from '../hooks/useComplianceMeta';
 import { useCockpitData } from '../hooks/useCockpitData';
 import CockpitHero from './cockpit/CockpitHero';
+import ScoreBreakdownPanel from '../components/ScoreBreakdownPanel';
 import TrajectorySection from './cockpit/TrajectorySection';
 import ActionsImpact from './cockpit/ActionsImpact';
+import RadarPrixNegatifsCard from '../components/pilotage/RadarPrixNegatifsCard';
+import RoiFlexReadyCard from '../components/pilotage/RoiFlexReadyCard';
+import PortefeuilleScoringCard from '../components/pilotage/PortefeuilleScoringCard';
+import NebcoSimulationCard from '../components/pilotage/NebcoSimulationCard';
+import CostSimulationCard from '../components/purchase/CostSimulationCard';
 import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
 import VecteurEnergetiqueCard from './cockpit/VecteurEnergetiqueCard';
 import AlertesPrioritaires from './cockpit/AlertesPrioritaires';
@@ -530,13 +536,13 @@ const Cockpit = () => {
         </div>
       )}
 
-      {/* ── Banner signal prix NEBCO ── */}
+      {/* ── Bannière signal tarifaire Pilotage ── */}
       {prixSignal?.signal === 'PRIX_NEGATIF' && (
         <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
           <AlertTriangle size={13} className="shrink-0" />
           <span>
-            <strong>Prix spot negatif</strong> — {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh{' '}
-            &middot; Opportunite NEBCO anticipation :{' '}
+            <strong>Fenêtre favorable</strong> — {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh{' '}
+            &middot; Pré-charger ou décaler les usages :{' '}
             {prixSignal.usages_cibles?.slice(0, 3).join(', ')}.{' '}
             <button
               onClick={() => navigate(toActionsList())}
@@ -551,8 +557,9 @@ const Cockpit = () => {
         <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
           <AlertTriangle size={13} className="shrink-0" />
           <span>
-            <strong>Prix spot eleve</strong> — {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh{' '}
-            &middot; Signal effacement NEBCO : {prixSignal.usages_cibles?.slice(0, 3).join(', ')}.{' '}
+            <strong>Fenêtre sensible</strong> — {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh{' '}
+            &middot; Éviter ou moduler les usages :{' '}
+            {prixSignal.usages_cibles?.slice(0, 3).join(', ')}.{' '}
             <button
               onClick={() => navigate(toActionsList())}
               className="underline font-medium hover:text-amber-900"
@@ -639,6 +646,24 @@ const Cockpit = () => {
         onEvidence={setEvidenceOpen}
       />
 
+      {/* ═══════════ Sprint CX 2 — Exception-first : Top 3 à traiter ═══════════ */}
+      <section
+        data-testid="cockpit-top-priorities"
+        className="bg-gradient-to-br from-red-50/30 to-white border border-red-100 rounded-xl p-4 shadow-sm"
+      >
+        <div className="flex items-baseline justify-between mb-2">
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide flex items-center gap-2">
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"
+              aria-hidden="true"
+            />
+            À traiter cette semaine — top 3 priorités
+          </h2>
+          <span className="text-xs text-gray-500">Rule of 3</span>
+        </div>
+        <AlertesPrioritaires />
+      </section>
+
       {/* Bannière retard trajectoire (conditionnelle) */}
       {trajectoire?.reductionPctActuelle != null &&
         trajectoire?.objectifPremierJalonPct != null &&
@@ -713,11 +738,8 @@ const Cockpit = () => {
         );
       })()}
 
-      {/* ── Alertes + Événements (2 colonnes) ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <AlertesPrioritaires />
-        <EvenementsRecents />
-      </div>
+      {/* ── Événements (AlertesPrioritaires déplacé au top — Sprint CX 2 Exception-first) ── */}
+      <EvenementsRecents />
 
       <TrajectorySection trajectoire={trajectoire} loading={cockpitLoading} sites={scopedSites} />
 
@@ -728,6 +750,45 @@ const Cockpit = () => {
       </div>
 
       <ActionsImpact actions={cockpitActions} loading={cockpitLoading} />
+
+      {/* ═══════════ PILOTAGE DES USAGES — insights V1 (Baromètre Flex 2026) ═══════════ */}
+      <section className="space-y-3" data-testid="cockpit-pilotage-v1">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+            Pilotage des usages
+          </h2>
+          <span className="text-[10px] text-gray-400">
+            Baromètre Flex 2026 · RTE / Enedis / GIMELEC
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <RadarPrixNegatifsCard horizonDays={7} />
+          <RoiFlexReadyCard />
+          <PortefeuilleScoringCard />
+        </div>
+        {/* Vague 2 — Preuve chiffrée : "voici les X € du mois dernier" */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <NebcoSimulationCard periodDays={30} />
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-3" data-testid="cockpit-achat-post-arenh">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+            Achat énergie post-ARENH
+          </h2>
+          <span className="text-[10px] text-gray-400">
+            Post-ARENH 01/01/2026 · TURPE 7 · <Explain term="vnu">VNU</Explain> CRE ·{' '}
+            <Explain term="capacite">capacité</Explain> RTE
+          </span>
+        </div>
+        <CostSimulationCard
+          siteId={isSingleSite ? singleSite?.id : scopedSites[0]?.id}
+          year={2026}
+        />
+      </section>
 
       {/* ═══════════ ZONE 2 : KPI DÉCIDEUR — déplacé dans ZONE 4 (détail) ═══════════ */}
 
@@ -1148,12 +1209,16 @@ const Cockpit = () => {
         </div>
       </Modal>
 
-      {/* ── Evidence Drawer ("Pourquoi ce chiffre ?") ── */}
+      {/* ── Evidence Drawer ("Pourquoi ce chiffre ?") + ScoreBreakdownPanel (CX Gap #4) ── */}
       <EvidenceDrawer
         open={!!evidenceOpen}
         onClose={() => setEvidenceOpen(null)}
         evidence={evidenceOpen ? evidenceMap[evidenceOpen] : null}
-      />
+      >
+        {evidenceOpen === 'conformite' && scopedSites[0]?.id && (
+          <ScoreBreakdownPanel siteId={scopedSites[0].id} open />
+        )}
+      </EvidenceDrawer>
 
       {/* Lien cross-brique vers Usages */}
       <div className="flex items-center gap-2 mt-3 print:hidden">

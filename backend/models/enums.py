@@ -381,6 +381,7 @@ class ActionSourceType(str, enum.Enum):
     MANUAL = "manual"  # manually created by user
     SEGMENTATION = "segmentation"  # V101: from segmentation recommendations
     COPILOT = "copilot"  # V113: from Energy Copilot rule engine
+    PILOTAGE = "pilotage"  # V116: from Pilotage Radar/ROI CTAs (Baromètre Flex 2026)
 
 
 class ActionStatus(str, enum.Enum):

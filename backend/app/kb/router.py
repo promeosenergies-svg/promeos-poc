@@ -7,13 +7,15 @@ Hardened with input validation, payload limits, and proper error handling.
 import hashlib
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel, field_validator
 from typing import Optional, List, Dict, Any
 
+from middleware.auth import require_admin
 from .store import KBStore
 from .indexer import KBIndexer
 from .service import KBService
+from .telemetry import ensure_telemetry_schema, log_apply_event, measure_latency, get_metrics
 
 # --- Constants ---
 MAX_SEARCH_QUERY_LENGTH = 500
@@ -95,6 +97,14 @@ router = APIRouter(prefix="/api/kb", tags=["Knowledge Base"])
 store = KBStore()
 indexer = KBIndexer()
 service = KBService()
+
+# Ensure telemetry tables exist (idempotent, non-fatal if schema migration fails)
+try:
+    ensure_telemetry_schema()
+except Exception:  # pragma: no cover
+    import logging as _logging
+
+    _logging.getLogger(__name__).warning("KB telemetry schema init failed", exc_info=True)
 
 
 @router.get("/ping")
@@ -178,15 +188,25 @@ def apply_kb(request: ApplyRequest):
     HARD RULE: allow_drafts=False by default — only validated items used for decisions.
     """
     try:
-        result = service.apply(
-            site_context=request.site_context, domain=request.domain, allow_drafts=request.allow_drafts
+        with measure_latency() as elapsed:
+            result = service.apply(
+                site_context=request.site_context, domain=request.domain, allow_drafts=request.allow_drafts
+            )
+            latency_ms = elapsed()
+
+        log_apply_event(
+            domain=request.domain,
+            allow_drafts=request.allow_drafts,
+            site_context=request.site_context,
+            result=result,
+            latency_ms=latency_ms,
         )
 
-        # Add guard metadata to response
         result["guards"] = {
             "allow_drafts": request.allow_drafts,
             "mode": "exploration" if request.allow_drafts else "decisional",
         }
+        result["latency_ms"] = round(latency_ms, 3)
 
         return result
     except Exception as e:
@@ -203,6 +223,25 @@ def get_stats():
         return {"kb": kb_stats, "index": index_stats}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Stats error: {str(e)[:200]}")
+
+
+@router.get("/metrics", dependencies=[Depends(require_admin())])
+def kb_metrics(since_days: int = Query(30, ge=1, le=365, description="Fenêtre d'agrégation en jours")):
+    """
+    Usage metrics of the KB apply engine (coverage, latency, top items, missing fields).
+
+    Admin-only : l'endpoint expose des signaux internes (items les plus matchés,
+    champs manquants côté site_context) qui ne doivent pas fuir hors Ops.
+
+    - coverage_pct: share of calls that matched >= 1 item (over `since_days`)
+    - latency_ms: avg / p50 / p95 / max
+    - top_items: 10 most-matched KB items
+    - top_missing_fields: 10 most-requested site_context fields that were absent
+    """
+    try:
+        return get_metrics(since_days=since_days)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Metrics error: {str(e)[:200]}")
 
 
 @router.get("/docs")

@@ -7,6 +7,7 @@ import {
   DEFAULT_FRAMEWORKS_TOTAL,
   resolvePortfolioConfidence,
 } from '../../domain/compliance/confidence';
+import { Explain } from '../../ui';
 
 export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
   if (!complianceScore) return null;
@@ -19,7 +20,9 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
       <div className="flex items-center gap-6">
         {/* Score display */}
         <div className="text-center min-w-[100px]">
-          <p className="text-xs text-gray-500 mb-1">Score conformité</p>
+          <p className="text-xs text-gray-500 mb-1">
+            <Explain term="compliance_score">Score conformité</Explain>
+          </p>
           <span
             className={`text-3xl font-bold ${getComplianceScoreColor(complianceScore.score ?? complianceScore.avg_score)}`}
           >

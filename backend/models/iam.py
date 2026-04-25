@@ -12,6 +12,7 @@ from sqlalchemy import (
     Text,
     ForeignKey,
     UniqueConstraint,
+    Index,
     Enum as SAEnum,
 )
 from sqlalchemy.orm import relationship
@@ -76,6 +77,21 @@ class UserScope(Base):
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
+
+    # Sprint CX 2.5 hardening (P1-perf) : indices composite + simples pour
+    # optimiser les queries CX dashboard (T2V, IAR, WAU/MAU) qui filtrent sur
+    # (action IN (...), resource_type='cx_event', created_at >= cutoff) +
+    # group_by(resource_id, action) + distinct(user_id).
+    __table_args__ = (
+        Index(
+            "ix_audit_cx_action_resource_created",
+            "action",
+            "resource_type",
+            "created_at",
+        ),
+        Index("ix_audit_user_id", "user_id"),
+        Index("ix_audit_resource_id", "resource_id"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)

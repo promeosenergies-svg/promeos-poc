@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
+from services.iam_scope import check_site_access, get_effective_org_id
 from regops.engine import evaluate_site, persist_assessment
 from regops.scoring import compute_regops_score, load_scoring_profile
 from regops.data_quality import compute_data_quality
@@ -26,8 +28,13 @@ router = APIRouter(prefix="/api/regops", tags=["RegOps"])
 
 
 @router.get("/site/{site_id}")
-def get_site_assessment(site_id: int, db: Session = Depends(get_db)):
+def get_site_assessment(
+    site_id: int,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Evaluation RegOps complete d'un site (fresh compute + persist + sync A.2)."""
+    check_site_access(auth, site_id)
     try:
         summary = evaluate_site(db, site_id)
         persist_assessment(db, summary)
@@ -71,8 +78,13 @@ def get_site_assessment(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/site/{site_id}/cached")
-def get_cached_assessment(site_id: int, db: Session = Depends(get_db)):
+def get_cached_assessment(
+    site_id: int,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Retourne l'assessment en cache (rapide)."""
+    check_site_access(auth, site_id)
     assessment = (
         db.query(RegAssessment).filter(RegAssessment.object_type == "site", RegAssessment.object_id == site_id).first()
     )
@@ -92,10 +104,14 @@ def get_cached_assessment(site_id: int, db: Session = Depends(get_db)):
 
 @router.post("/recompute")
 def recompute_assessments(
-    scope: str = Query("site", enum=["site", "all"]), site_id: int = Query(None), db: Session = Depends(get_db)
+    scope: str = Query("site", enum=["site", "all"]),
+    site_id: int = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Trigger recompute (enqueue jobs ou execute directement)."""
     if scope == "site" and site_id:
+        check_site_access(auth, site_id)
         summary = evaluate_site(db, site_id)
         persist_assessment(db, summary)
         db.commit()
@@ -125,8 +141,11 @@ def get_score_explain(
     scope_type: str = Query("site"),
     scope_id: int = Query(...),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Score explain: detailed breakdown of compliance score computation."""
+    if scope_type == "site":
+        check_site_access(auth, scope_id)
     if scope_type != "site":
         raise HTTPException(status_code=400, detail="Only scope_type=site supported")
 
@@ -228,8 +247,11 @@ def get_data_quality(
     scope_type: str = Query("site"),
     scope_id: int = Query(...),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Data quality gate: coverage, confidence, missing fields per regulation."""
+    if scope_type == "site":
+        check_site_access(auth, scope_id)
     if scope_type != "site":
         raise HTTPException(status_code=400, detail="Only scope_type=site supported")
 
@@ -256,15 +278,17 @@ def get_data_quality_specs():
 def get_org_dashboard(
     org_id: int = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """KPIs org-level — score from unified A.2 service."""
+    effective_org_id = get_effective_org_id(auth, org_id)
     # Resolve site_ids for the org (same join chain as cockpit)
     site_query = not_deleted(db.query(Site.id), Site)
-    if org_id:
+    if effective_org_id:
         site_query = (
             site_query.join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
             .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-            .filter(EntiteJuridique.organisation_id == org_id)
+            .filter(EntiteJuridique.organisation_id == effective_org_id)
         )
     site_ids = [row[0] for row in site_query.all()]
 
@@ -281,8 +305,8 @@ def get_org_dashboard(
     non_compliant = sum(1 for a in assessments if "NON_COMPLIANT" in str(a.global_status))
 
     # Score from A.2 unified service (single source of truth)
-    if org_id:
-        portfolio = compute_portfolio_compliance(db, org_id)
+    if effective_org_id:
+        portfolio = compute_portfolio_compliance(db, effective_org_id)
         avg_score = portfolio["avg_score"]
     else:
         avg_score = sum(a.compliance_score for a in assessments if a.compliance_score) / max(1, total)
@@ -296,6 +320,46 @@ def get_org_dashboard(
     }
 
 
+# ── Cockpit Deadline Banner (CX Gap #3) ──────────────────────────────────
+
+
+@router.get("/audit-deadline-status")
+def get_audit_deadline_status(
+    org_id: int = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Endpoint leger pour le DeadlineBanner cockpit."""
+    effective_org_id = get_effective_org_id(auth, org_id)
+    if not effective_org_id:
+        return {"show_banner": False}
+
+    from services.audit_sme_service import get_audit_sme_assessment
+
+    assessment = get_audit_sme_assessment(db, effective_org_id)
+    obligation = assessment.get("obligation", "AUCUNE")
+    jours = assessment.get("jours_restants")
+    show = obligation != "AUCUNE" and jours is not None and jours < 365
+
+    urgency = "medium"
+    if jours is not None:
+        if jours < 90:
+            urgency = "critical"
+        elif jours < 180:
+            urgency = "high"
+
+    return {
+        "deadline": "2026-10-11",
+        "days_remaining": jours,
+        "obligation": obligation,
+        "statut": assessment.get("statut"),
+        "conso_gwh": assessment.get("conso", {}).get("annuelle_moy_gwh", 0),
+        "estimated_penalty_eur": 15000 if obligation != "AUCUNE" else 0,
+        "show_banner": show,
+        "urgency": urgency,
+    }
+
+
 # ── Audit Energetique / SME (Loi 2025-391) ──────────────────────────────────
 
 
@@ -303,6 +367,7 @@ def get_org_dashboard(
 def get_audit_sme(
     organisation_id: int,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     Evaluation complete Audit Energetique / SME pour une organisation.
@@ -310,13 +375,17 @@ def get_audit_sme(
     Source : Loi n 2025-391 du 30 avril 2025 (art. L.233-1 code de l'energie)
     Deadline premier audit : 11 octobre 2026
     """
+    effective_org_id = get_effective_org_id(auth, organisation_id)
     from services.audit_sme_service import get_audit_sme_assessment
 
-    return get_audit_sme_assessment(db, organisation_id)
+    return get_audit_sme_assessment(db, effective_org_id)
 
 
 @router.get("/audit-sme/scope")
-def get_audit_sme_scope(db: Session = Depends(get_db)):
+def get_audit_sme_scope(
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     Liste toutes les organisations dans le perimetre Audit/SME avec leur statut.
     Pre-fetches AuditEnergetique records to avoid N+1.
@@ -324,7 +393,10 @@ def get_audit_sme_scope(db: Session = Depends(get_db)):
     from models.audit_sme import AuditEnergetique
     from services.audit_sme_service import get_audit_sme_assessment
 
-    organisations = db.query(Organisation).filter(Organisation.actif == True).all()  # noqa: E712
+    org_query = db.query(Organisation).filter(Organisation.actif == True)  # noqa: E712
+    if auth and auth.org_id:
+        org_query = org_query.filter(Organisation.id == auth.org_id)
+    organisations = org_query.all()
 
     # Bulk-fetch all AuditEnergetique records (avoids N individual queries)
     org_ids = [org.id for org in organisations]
@@ -383,6 +455,7 @@ def update_audit_sme_record(
     organisation_id: int,
     payload: AuditSmeUpdate,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     Met a jour le statut Audit/SME d'une organisation (action manuelle).
@@ -390,11 +463,12 @@ def update_audit_sme_record(
     from models.audit_sme import AuditEnergetique
     from services.audit_sme_service import get_audit_sme_assessment
 
-    audit = db.query(AuditEnergetique).filter_by(organisation_id=organisation_id).first()
+    effective_org_id = get_effective_org_id(auth, organisation_id)
+    audit = db.query(AuditEnergetique).filter_by(organisation_id=effective_org_id).first()
 
     if not audit:
         audit = AuditEnergetique(
-            organisation_id=organisation_id,
+            organisation_id=effective_org_id,
             date_premier_audit_limite=date(2026, 10, 11),
         )
         db.add(audit)
@@ -406,4 +480,4 @@ def update_audit_sme_record(
     db.commit()
     db.refresh(audit)
 
-    return get_audit_sme_assessment(db, organisation_id)
+    return get_audit_sme_assessment(db, effective_org_id)

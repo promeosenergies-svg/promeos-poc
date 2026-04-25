@@ -31,7 +31,10 @@ from models import (
 )
 from services.action_hub_service import sync_actions, compute_priority
 from services.action_close_rules import is_operat_action, check_closable
+from services.error_catalog import business_error
 from middleware.auth import get_optional_auth, AuthContext
+from middleware.cx_logger import log_cx_event
+from services.action_status_service import mark_action_done
 from services.iam_scope import apply_scope_filter
 from services.scope_utils import resolve_org_id
 
@@ -286,15 +289,19 @@ def create_action(
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Source invalide: {data.source_type}")
 
-    if source_type not in (ActionSourceType.MANUAL, ActionSourceType.INSIGHT):
+    if source_type not in (
+        ActionSourceType.MANUAL,
+        ActionSourceType.INSIGHT,
+        ActionSourceType.PILOTAGE,
+    ):
         raise HTTPException(
             status_code=400,
-            detail="Creation directe: source_type doit etre 'manual' ou 'insight'",
+            detail="Creation directe: source_type doit etre 'manual', 'insight' ou 'pilotage'",
         )
 
     # Validate title
     if not data.title or not data.title.strip():
-        raise HTTPException(status_code=422, detail="Titre requis")
+        raise HTTPException(**business_error("TITLE_REQUIRED"))
 
     # Parse due_date
     parsed_due = None
@@ -302,11 +309,11 @@ def create_action(
         try:
             parsed_due = dt_date.fromisoformat(data.due_date)
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Date invalide: {data.due_date}")
+            raise HTTPException(**business_error("INVALID_DATE_FORMAT"))
 
     # Validate priority
     if data.priority is not None and not (1 <= data.priority <= 5):
-        raise HTTPException(status_code=400, detail="Priorite doit etre entre 1 et 5")
+        raise HTTPException(**business_error("PRIORITY_OUT_OF_RANGE"))
 
     # Auto-compute priority if absent
     priority = data.priority
@@ -500,6 +507,7 @@ def patch_action(
     action_id: int,
     data: ActionPatch,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     PATCH /api/actions/{action_id}
@@ -508,7 +516,7 @@ def patch_action(
     """
     action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
     if not action:
-        raise HTTPException(status_code=404, detail="Action non trouvee")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
 
     # V49: store closure_justification before status check (needed for closability)
     if data.closure_justification is not None:
@@ -531,11 +539,17 @@ def patch_action(
                         detail={"code": result.get("code", "CLOSE_BLOCKED"), "message": result["reason"]},
                     )
 
-            action.status = new_status
             _create_event(db, action.id, "status_change", old_value=old_status, new_value=data.status)
-            # Set closed_at when action is marked done
-            if new_status == ActionStatus.DONE and action.closed_at is None:
-                action.closed_at = datetime.now(timezone.utc)
+            if new_status == ActionStatus.DONE:
+                # Sprint CX 2.5 F1 : helper unifié (set status + closed_at + log_cx_event)
+                mark_action_done(
+                    db,
+                    action,
+                    user_id=auth.user.id if auth else None,
+                    reason="patch_action_done",
+                )
+            else:
+                action.status = new_status
 
     if data.owner is not None:
         old_owner = action.owner
@@ -550,11 +564,11 @@ def patch_action(
         try:
             action.due_date = dt_date.fromisoformat(data.due_date)
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Date invalide: {data.due_date}")
+            raise HTTPException(**business_error("INVALID_DATE_FORMAT"))
 
     if data.priority is not None:
         if not 1 <= data.priority <= 5:
-            raise HTTPException(status_code=400, detail="Priorite doit etre entre 1 et 5")
+            raise HTTPException(**business_error("PRIORITY_OUT_OF_RANGE"))
         old_prio = action.priority
         if old_prio != data.priority:
             action.priority = data.priority
@@ -577,7 +591,7 @@ def patch_action(
         try:
             action.realized_at = dt_date.fromisoformat(data.realized_at)
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Date invalide: {data.realized_at}")
+            raise HTTPException(**business_error("INVALID_DATE_FORMAT"))
 
     if data.category is not None:
         action.category = data.category
@@ -803,7 +817,7 @@ def add_comment(
     """
     action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
     if not action:
-        raise HTTPException(status_code=404, detail="Action non trouvee")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
 
     if not data.body or not data.body.strip():
         raise HTTPException(status_code=422, detail="Contenu du commentaire requis")
@@ -843,7 +857,7 @@ def list_comments(
     """
     action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
     if not action:
-        raise HTTPException(status_code=404, detail="Action non trouvee")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
 
     comments = (
         db.query(ActionComment)
@@ -875,7 +889,7 @@ def add_evidence(
     """
     action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
     if not action:
-        raise HTTPException(status_code=404, detail="Action non trouvee")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
 
     if not data.label or not data.label.strip():
         raise HTTPException(status_code=422, detail="Libelle de la piece requis")
@@ -917,7 +931,7 @@ def list_evidence(
     """
     action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
     if not action:
-        raise HTTPException(status_code=404, detail="Action non trouvee")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
 
     items = (
         db.query(ActionEvidence)
@@ -950,7 +964,7 @@ def list_events(
     """
     action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
     if not action:
-        raise HTTPException(status_code=404, detail="Action non trouvee")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
 
     events = (
         db.query(ActionEvent).filter(ActionEvent.action_id == action_id).order_by(ActionEvent.created_at.asc()).all()
@@ -982,7 +996,7 @@ def get_action_closeability(action_id: int, db: Session = Depends(get_db)):
     """
     action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
     if not action:
-        raise HTTPException(status_code=404, detail="Action non trouvée")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
 
     ev_count = db.query(ActionEvidence).filter(ActionEvidence.action_id == action_id).count()
     result = check_closable(action, evidence_count=ev_count)
@@ -1005,7 +1019,7 @@ def get_action_proofs(action_id: int, db: Session = Depends(get_db)):
     """
     action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
     if not action:
-        raise HTTPException(status_code=404, detail="Action non trouvée")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
 
     try:
         from app.kb.store import KBStore
@@ -1029,7 +1043,7 @@ def link_proof_to_action(
     """
     action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
     if not action:
-        raise HTTPException(status_code=404, detail="Action non trouvée")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
 
     try:
         from app.kb.store import KBStore
@@ -1061,7 +1075,7 @@ def get_action_detail(
     """
     action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
     if not action:
-        raise HTTPException(status_code=404, detail="Action non trouvee")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
 
     comments_count = db.query(ActionComment).filter(ActionComment.action_id == action_id).count()
     evidence_count = db.query(ActionEvidence).filter(ActionEvidence.action_id == action_id).count()

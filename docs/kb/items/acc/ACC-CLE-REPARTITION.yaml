@@ -1,0 +1,113 @@
+---
+id: "ACC-CLE-REPARTITION"
+type: "knowledge"
+domain: "acc"
+title: "ACC — Clés de répartition de l'énergie autoproduite"
+summary: "La clé de répartition définit comment l'énergie autoproduite est partagée entre les consommateurs participants à l'ACC. Trois types autorisés : statique (%), dynamique (proportion conso instantanée), et sur mesure (algorithme défini par la PMO). Choix stratégique avec impacts économiques et opérationnels."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - collectivite
+    - copro
+    - bailleur
+    - tertiaire_multisite
+  asset:
+    - multi
+  reg:
+    - acc
+  granularity:
+    - 30min
+
+scope: {}
+
+content_md: |
+  ## Clés de répartition ACC
+
+  ### Cadre réglementaire
+  - Arrêté du 21 novembre 2019 modifié, article 2 (ACC étendue)
+  - Enedis spécifications techniques de mise en œuvre
+
+  ### Les 3 types de clés autorisées
+
+  #### 1. Clé statique par pourcentage
+  - Chaque consommateur se voit attribuer un pourcentage fixe de l'énergie produite
+  - Exemple : 10 logements → 10% chacun
+  - **Avantage** : simple à comprendre et expliquer
+  - **Inconvénient** : ne tient pas compte de la conso réelle → gaspillage possible (énergie non consommée retourne au réseau)
+
+  #### 2. Clé dynamique (proportion consommation instantanée)
+  - L'énergie produite est répartie proportionnellement à la consommation de chaque participant sur chaque pas de 30 min
+  - Pas de gaspillage : celui qui consomme touche plus
+  - **Avantage** : optimisation automatique
+  - **Inconvénient** : moins prévisible pour le consommateur
+
+  #### 3. Clé sur mesure (algorithme PMO)
+  - Règle personnalisée définie par la PMO
+  - Peut combiner statique + dynamique + priorités
+  - Exemple : 50% dynamique + 50% statique avec priorité aux habitants permanents
+  - **Avantage** : flexible, peut refléter la gouvernance du projet
+  - **Inconvénient** : complexité, doit être validée par Enedis
+
+  ### Critères de choix
+  | Contexte | Clé recommandée |
+  |---|---|
+  | Copropriété homogène | Statique par lot (simple, équitable) |
+  | Mix résidentiel + tertiaire avec profils différents | Dynamique (optimise autoconsommation globale) |
+  | Projet collectivité avec enjeux sociaux | Sur mesure (pondération selon revenus / précarité) |
+  | Gros consommateurs variables (industrie) | Dynamique ou sur mesure |
+
+  ### Impact économique
+  - Clé bien choisie → taux autoconsommation collective 30-60% (vs 15-25% mal calibrée)
+  - Gain typique : 0,05 à 0,15 €/kWh autoconsommé vs revente au tarif d'achat
+
+  ### Modification de la clé
+  - Possible à tout moment via la PMO
+  - Délai de prise en compte Enedis : ~30 jours
+  - Historique traçable par Enedis pour contentieux éventuels
+
+  ### Bonnes pratiques
+  - Simuler plusieurs clés sur 12 mois historiques avant de choisir
+  - Prévoir une clause de révision annuelle dans le règlement PMO
+  - Communiquer clairement aux participants le fonctionnement choisi
+
+logic:
+  when:
+    all:
+      - field: "acc_project"
+        op: "="
+        value: true
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Analyser les profils de consommation des participants (CDC sur 12 mois minimum)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Simuler 3 clés (statique / dynamique / mixte) pour évaluer taux d'autoconsommation"
+        priority: 2
+
+      - type: "next_step"
+        label: "Faire valider la clé choisie par la PMO et la transmettre à Enedis"
+        priority: 3
+
+      - type: "next_step"
+        label: "Prévoir une clause de révision annuelle dans le règlement intérieur PMO"
+        priority: 4
+
+sources:
+  - doc_id: "ARRETE-2019-11-21-ART-2"
+    label: "Arrêté du 21 novembre 2019 modifié — Article 2"
+    section: "Clé de répartition ACC"
+    anchor: "#arrete-art-2"
+    excerpt_short: "La PMO définit et transmet à Enedis la clé de répartition de l'énergie entre consommateurs participants, avec révision possible"
+
+  - doc_id: "ENEDIS-ACC-SPECS"
+    label: "Enedis — Spécifications techniques ACC"
+    section: "Mise en œuvre clés de répartition"
+    anchor: "#enedis-acc-specs"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 2

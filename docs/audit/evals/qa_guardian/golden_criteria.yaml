@@ -1,0 +1,42 @@
+agent: qa-guardian
+tasks:
+  - id: task_01
+    title: "Status baseline branche"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["pytest --collect-only", "origin/main", "PASS", "status"]
+      must_not_contain: []
+      delegation_expected: null
+    fail_if_contains: ["probably"]
+  - id: task_02
+    title: "Source-guards frontend scope"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["source_guards", "xfail"]
+      must_not_contain: []
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_03
+    title: "DoD Phase 3A audit agents"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["wc -l CLAUDE.md", "< 120", "4 skills", "source_of_truth", "last_verified"]
+      must_not_contain: []
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_04
+    title: "Checklist release pré-pilot"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["GO", "NO-GO", "baseline", "source-guards", "security-auditor", "code-reviewer"]
+      must_not_contain: ["probably OK"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_05
+    title: "Arbitrage verdicts contradictoires"
+    difficulty: hard
+    pass_criteria:
+      must_contain: ["Critical", "FAIL", "security-auditor"]
+      must_not_contain: ["vote majorité", "PASS"]
+      delegation_expected: architect-helios
+    fail_if_contains: []

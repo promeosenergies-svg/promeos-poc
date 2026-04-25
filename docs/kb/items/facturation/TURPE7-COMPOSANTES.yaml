@@ -1,0 +1,97 @@
+---
+id: "TURPE7-COMPOSANTES"
+type: "knowledge"
+domain: "facturation"
+title: "TURPE 7 — Composantes du tarif d'utilisation des réseaux électriques"
+summary: "Structure tarifaire TURPE 7 (CRE 2025-78, en vigueur 01/08/2025) : composantes de gestion, comptage, soutirage (CS), abonnement (CMDPS). Révisions annuelles indexées inflation. Révision intermédiaire +6,06% au 01/07/2025 (CRE 2025-122)."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - collectivite
+    - industrie
+    - copro
+    - bailleur
+  asset:
+    - multi
+  reg:
+    - turpe
+  granularity:
+    - mensuel
+
+scope: {}
+
+content_md: |
+  ## TURPE 7 — Structure tarifaire
+
+  ### Cadre réglementaire
+  - Délibération CRE n°2025-78 du 13 mars 2025
+  - Date d'effet : 1er août 2025
+  - Durée : 4 ans (jusqu'au 31/07/2029)
+  - Révision intermédiaire 01/07/2025 : +6,06% (CRE 2025-122)
+
+  ### 4 composantes principales
+
+  1. **Composante de Gestion (CG)** — forfaitaire annuelle par PDL
+     - Couvre coûts administratifs fournisseur ↔ GRD
+     - Varie selon type de client (résidentiel/pro/entreprise)
+
+  2. **Composante de Comptage (CC)** — forfaitaire annuelle
+     - Couvre location compteur + relevés
+     - Plus élevée pour compteurs spécifiques (Linky vs ancien)
+
+  3. **Composante de Soutirage (CS)** — variable €/MWh
+     - Tarifée à l'énergie consommée
+     - Différenciée selon plages temporelles (HP/HC, été/hiver)
+     - Peak tariffs sur plages pointe
+
+  4. **Composante Mensuelle des Dépassements de Puissance Souscrite (CMDPS)** — €/kVA/mois
+     - Forfait mensuel proportionnel à la puissance souscrite
+     - Majoration si dépassement constaté
+
+  ### Plages horosaisonnalisées (HTA)
+  - Pointe : décembre-février, 9h-11h + 18h-20h
+  - Heures Pleines Hiver, Heures Creuses Hiver, Heures Pleines Été, Heures Creuses Été
+  - 5 plages tarifaires distinctes pour HTA
+
+  ### Impact réforme Heures Creuses
+  Voir item HEURES-CREUSES-REFORME-TURPE7 pour les 3 phases de déploiement 2025-2028.
+
+  ### Application temporelle
+  - Tarif valide du 01/08/2025 au 31/07/2026 (révision annuelle)
+  - Prochaine révision : CRE ~mars 2026
+
+logic:
+  when:
+    all:
+      - field: "energy_vector"
+        op: "="
+        value: "elec"
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Identifier composantes TURPE 7 sur facture (CG, CC, CS, CMDPS)"
+        priority: 1
+
+      - type: "next_step"
+        label: "Vérifier tarification HP/HC/pointe alignée avec l'option souscrite"
+        priority: 2
+
+sources:
+  - doc_id: "CRE-2025-78"
+    label: "Délibération CRE n°2025-78 du 13 mars 2025"
+    section: "TURPE 7 HTA-BT"
+    anchor: "#turpe7-structure"
+    excerpt_short: "Tarif d'utilisation des réseaux publics d'électricité en HTA-BT, applicable du 01/08/2025 au 31/07/2029"
+
+  - doc_id: "CRE-2025-122"
+    label: "Délibération CRE 2025-122"
+    section: "Révision intermédiaire TURPE 7"
+    anchor: "#revision-2025-07"
+    excerpt_short: "Révision tarifaire +6,06% applicable au 01/07/2025"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1

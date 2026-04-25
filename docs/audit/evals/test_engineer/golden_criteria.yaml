@@ -1,0 +1,42 @@
+agent: test-engineer
+tasks:
+  - id: task_01
+    title: "Baseline BE count"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["pytest", "--collect-only", "CLAUDE.md"]
+      must_not_contain: []
+      delegation_expected: qa-guardian
+    fail_if_contains: []
+  - id: task_02
+    title: "Regression test NAF 99 prefix"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["pytest", "assert", "99"]
+      must_not_contain: ["mock excessif"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_03
+    title: "Integration test endpoint org-scoping"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["fixture", "2 orgs", "cross-org", "SQLite"]
+      must_not_contain: ["mock DB"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_04
+    title: "Playwright E2E Site360"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["waitFor", "no console.error", "seed HELIOS"]
+      must_not_contain: ["sleep(1000)", "setTimeout"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_05
+    title: "Fix flaky test race condition"
+    difficulty: hard
+    pass_criteria:
+      must_contain: ["freezegun", "seed RNG", "100 fois"]
+      must_not_contain: ["@pytest.mark.flaky", "rerun"]
+      delegation_expected: architect-helios
+    fail_if_contains: []

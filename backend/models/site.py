@@ -3,7 +3,7 @@ PROMEOS - Modèle Site
 Coeur du domaine : site de consommation énergétique
 """
 
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Boolean, DateTime
+from sqlalchemy import JSON, Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import TypeSite, StatutConformite, ParkingType, OperatStatus
@@ -74,6 +74,34 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
     operat_last_submission_year = Column(Integer, nullable=True, comment="Derniere annee de declaration OPERAT")
     annual_kwh_total = Column(Float, nullable=True, comment="Consommation annuelle totale (kWh)")
     last_energy_update_at = Column(DateTime, nullable=True, comment="Derniere MAJ donnees energie")
+
+    # Pilotage des usages (Flex Ready® NF EN IEC 62746-4, Baromètre Flex 2026)
+    archetype_code = Column(
+        String(50),
+        nullable=True,
+        index=True,
+        comment="Archétype Baromètre Flex 2026 (BUREAU_STANDARD, COMMERCE_ALIMENTAIRE, LOGISTIQUE_FRIGO...)",
+    )
+    puissance_pilotable_kw = Column(
+        Float,
+        nullable=True,
+        comment="Puissance pilotable/décalable estimée (kW), pour scoring portefeuille",
+    )
+
+    # CBAM — exposition industrielle hors UE (Règlement UE 2023/956).
+    # JSON : {scope: tonnes_annuelles} pour chaque scope CBAM (acier, ciment,
+    # aluminium, engrais, hydrogène, électricité). Null/vide = non applicable.
+    cbam_imports_tonnes = Column(
+        JSON,
+        nullable=True,
+        comment="Volumes annuels d'importation hors UE par scope CBAM (tonnes/an)",
+    )
+    # Optionnel : intensités carbone site-specific vérifiées (override défauts CE).
+    cbam_intensities_tco2_per_t = Column(
+        JSON,
+        nullable=True,
+        comment="Intensités carbone vérifiées par scope (tCO2/t) — surcharge défauts CE",
+    )
 
     @property
     def conso_kwh_an(self):

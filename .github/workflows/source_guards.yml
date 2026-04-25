@@ -1,0 +1,45 @@
+name: Source Guards
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  source-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test deps
+        run: pip install pytest pyyaml
+
+      - name: Run source-guards pytest suite
+        run: pytest tests/source_guards/ -v --tb=short
+
+      - name: Verify agent definitions count (== 11)
+        run: |
+          count=$(ls .claude/agents/*.md | wc -l)
+          test "$count" -eq 11 || (echo "Expected 11 agents, got $count"; exit 1)
+
+      - name: Verify Phase 3A skills present
+        run: |
+          for skill in emission_factors regops_constants regulatory_calendar helios_architecture; do
+            test -f ".claude/skills/$skill/SKILL.md" || (echo "Missing skill: $skill"; exit 1)
+          done
+
+      - name: Hooks scripts executable check
+        run: |
+          for h in tools/hooks/*.py; do
+            test -x "$h" || (echo "Not executable: $h"; exit 1)
+          done
+
+      - name: CLAUDE.md routing + size
+        run: |
+          test -f CLAUDE.md
+          lines=$(wc -l < CLAUDE.md)
+          test "$lines" -le 120 || (echo "CLAUDE.md > 120L ($lines)"; exit 1)

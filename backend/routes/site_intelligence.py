@@ -14,6 +14,7 @@ from services.billing_service import get_reference_price
 from models import Site, Meter
 from models.energy_models import UsageProfile, Anomaly, Recommendation, RecommendationStatus
 from models.kb_models import KBArchetype
+from services.error_catalog import business_error
 
 router = APIRouter(prefix="/api/sites", tags=["site-intelligence"])
 
@@ -58,7 +59,7 @@ def get_site_intelligence(site_id: int, db: Session = Depends(get_db)):
     """Return full KB intelligence for a site: archetype, anomalies, recommendations, summary."""
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(status_code=404, detail=f"Site {site_id} not found")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=site_id))
 
     org_id = _resolve_org_id(db, site)
 
@@ -205,7 +206,7 @@ def get_top_recommendation(site_id: int, db: Session = Depends(get_db)):
     try:
         site = db.query(Site).filter(Site.id == site_id).first()
         if not site:
-            raise HTTPException(status_code=404, detail=f"Site {site_id} not found")
+            raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=site_id))
 
         meters = db.query(Meter).filter(Meter.site_id == site_id).all()
         if not meters:

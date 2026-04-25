@@ -22,6 +22,7 @@ from models import (
 )
 from routes.schemas import SiteResponse, SiteListResponse, SiteStats, SiteComplianceResponse, BatimentResponse
 from services.compliance_utils import compute_action_recommandee, _ACTION_TEMPLATES
+from services.error_catalog import business_error
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access, apply_scope_filter
 from services.scope_utils import resolve_org_id
@@ -364,7 +365,7 @@ def get_site(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthCon
     )
 
     if not site:
-        raise HTTPException(status_code=404, detail="Site non trouvé")
+        raise HTTPException(**business_error("SITE_NOT_FOUND"))
 
     return site
 
@@ -380,7 +381,7 @@ def get_site_stats(
     site = not_deleted(db.query(Site), Site).filter(Site.id == site_id).first()
 
     if not site:
-        raise HTTPException(status_code=404, detail="Site non trouvé")
+        raise HTTPException(**business_error("SITE_NOT_FOUND"))
 
     # Nombre de compteurs
     nb_compteurs = db.query(Compteur).filter(Compteur.site_id == site_id).count()
@@ -418,7 +419,7 @@ def get_site_compliance(
     check_site_access(auth, site_id)
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(status_code=404, detail="Site non trouvé")
+        raise HTTPException(**business_error("SITE_NOT_FOUND"))
 
     obligations = db.query(Obligation).filter(Obligation.site_id == site_id).all()
     evidences = db.query(Evidence).filter(Evidence.site_id == site_id).all()
@@ -496,5 +497,5 @@ def get_site_guardrails(
 
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(status_code=404, detail="Site non trouvé")
+        raise HTTPException(**business_error("SITE_NOT_FOUND"))
     return validate_site(db, site_id)

@@ -1,0 +1,105 @@
+---
+id: "BACS-OBJECTIF-100K-2030"
+type: "knowledge"
+domain: "reglementaire"
+title: "BACS — Plan 100 000 bâtiments équipés en 2030"
+summary: "Objectif de la filière (GIMELEC + Think Smartgrids) : équiper 100 000 bâtiments tertiaires de BACS d'ici 2030. Fin 2025, seulement 32 000 BACS installés (16% du parc), rythme insuffisant nécessitant une forte accélération."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - collectivite
+  asset:
+    - hvac
+    - multi
+  reg:
+    - bacs
+  granularity:
+    - event
+
+scope:
+  hvac_kw_min: 70
+
+content_md: |
+  ## Plan 100 000 BACS 2030 — État des lieux 2026
+
+  ### Chiffres clés fin 2025
+  - **32 000 BACS** installés (vs 30 000 en 2024, +2 000 sur l'année)
+  - **16 %** des bâtiments tertiaires équipés
+  - **37 %** des surfaces tertiaires équipées
+  - **Objectif 2030 : 100 000 BACS** (plan filière GIMELEC/Think Smartgrids)
+  - Rythme actuel amènerait l'atteinte de l'objectif en **2040**, pas 2030
+
+  ### Taux d'équipement par secteur (2025)
+  | Secteur | Taux BACS |
+  |---|---|
+  | Bureaux | 17 % |
+  | Commerces alimentaires | 15 % |
+  | Commerces non-alimentaires | 19 % |
+  | Entrepôts logistique | 23 % |
+  | Enseignement primaire | 7 % |
+  | Enseignement secondaire (collège/lycée) | 14-46 % |
+  | Santé | 40 % |
+  | Hôtellerie-restauration | 11 % |
+  | Transport (gares, aéroports) | 27 % |
+
+  ### Taux d'équipement par taille (2025)
+  | Surface | Taux BACS |
+  |---|---|
+  | 1 000-2 000 m² | 10 % |
+  | 2 000-5 000 m² | 16 % |
+  | 5 000-10 000 m² | 19 % |
+  | 10 000-20 000 m² | 33 % |
+  | > 20 000 m² | 86 % |
+
+  ### Freins identifiés
+  - 45 % des BACS installés ne sont pas exploités (paramétrage obsolète, pas de commissioning)
+  - Manque de compétence et ressources côté gestionnaires
+  - Interprétation norme NF EN ISO 52120-1 limite souvent au strict respect du décret
+
+  ### Facteurs clés de succès
+  - Commissioning systématique à la mise en service
+  - Re-commissioning lors de rénovation ou changement d'activité
+  - Exploitation par Facility Manager ou contrat de performance énergétique (CPE)
+  - Standard Flex Ready® pour interopérabilité avec signaux de marché
+
+logic:
+  when:
+    all:
+      - field: "hvac_kw"
+        op: ">="
+        value: 70
+      - field: "surface_m2"
+        op: ">="
+        value: 1000
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Vérifier éligibilité CEE pour l'installation BACS"
+        priority: 1
+
+      - type: "next_step"
+        label: "Exiger commissioning systématique lors de l'installation"
+        priority: 2
+
+      - type: "next_step"
+        label: "Privilégier un BACS Flex Ready® pour bénéficier de la flexibilité à terme"
+        priority: 3
+
+sources:
+  - doc_id: "BAROMETRE-FLEX-2026"
+    label: "Baromètre des flexibilités de consommation d'électricité — Édition 2026"
+    section: "Chapitre 5 — Déploiement tertiaire p.64-71"
+    anchor: "#bacs-deploiement"
+    excerpt_short: "32 000 BACS installés fin 2025, objectif 100 000 en 2030, 16% des bâtiments équipés"
+
+  - doc_id: "GIMELEC-ONDB-2025"
+    label: "Observatoire National du Déploiement des BACS — GIMELEC"
+    section: "Édition 2025"
+    anchor: "#ondb-2025"
+
+updated_at: "2026-04-17"
+confidence: "high"
+priority: 1

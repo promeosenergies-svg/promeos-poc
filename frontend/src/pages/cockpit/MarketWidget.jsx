@@ -13,6 +13,15 @@ import React, { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Minus, Zap, RefreshCw, Info } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip as RTooltip } from 'recharts';
 import { useMarketData } from '../../hooks/useMarketData';
+import { Explain } from '../../ui';
+
+// Mapping key brique → clé glossaire (pour Explain inline dans la légende)
+const BRIQUE_GLOSSARY = {
+  turpe: 'turpe',
+  cee: 'cee',
+  cta: 'cta',
+  tva: 'tva',
+};
 
 // Couleurs des briques pour la barre empilée
 const BRIQUE_COLORS = {
@@ -242,15 +251,20 @@ export default function MarketWidget({ profile = 'C4' }) {
 
           {/* Légende compacte — top 3 + "autres" */}
           <div className="flex flex-wrap gap-x-3 gap-y-1">
-            {briques.slice(0, 3).map((b) => (
-              <div key={b.key} className="flex items-center gap-1 text-[10px] text-zinc-500">
-                <span
-                  className="inline-block w-2 h-2 rounded-sm shrink-0"
-                  style={{ backgroundColor: BRIQUE_COLORS[b.key] }}
-                />
-                {BRIQUE_LABELS[b.key]} {b.pct.toFixed(0)}%
-              </div>
-            ))}
+            {briques.slice(0, 3).map((b) => {
+              const glossKey = BRIQUE_GLOSSARY[b.key];
+              const label = BRIQUE_LABELS[b.key];
+              return (
+                <div key={b.key} className="flex items-center gap-1 text-[10px] text-zinc-500">
+                  <span
+                    className="inline-block w-2 h-2 rounded-sm shrink-0"
+                    style={{ backgroundColor: BRIQUE_COLORS[b.key] }}
+                  />
+                  {glossKey ? <Explain term={glossKey}>{label}</Explain> : label} {b.pct.toFixed(0)}
+                  %
+                </div>
+              );
+            })}
             <div className="flex items-center gap-1 text-[10px] text-zinc-400">
               <span className="inline-block w-2 h-2 rounded-sm shrink-0 bg-zinc-300 dark:bg-zinc-600" />
               Autres {(100 - briques.slice(0, 3).reduce((s, b) => s + b.pct, 0)).toFixed(0)}%

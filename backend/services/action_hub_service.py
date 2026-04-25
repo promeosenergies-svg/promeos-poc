@@ -10,6 +10,8 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
+from services.action_status_service import mark_action_done
+
 from models import (
     Site,
     Organisation,
@@ -381,7 +383,7 @@ def sync_actions(db: Session, org_id: int, triggered_by: str = "api") -> dict:
     for item in open_items:
         key = (item.source_type, item.source_id, item.source_key)
         if key not in active_keys:
-            item.status = ActionStatus.DONE
+            mark_action_done(db, item, reason="source_resolved")
             item.notes = (item.notes or "") + "\n[Auto-ferme: source resolue]"
             item.notes = item.notes.strip()
             batch.closed_count += 1

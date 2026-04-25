@@ -81,6 +81,8 @@ from routes import (
     flex_score_router,
     billing_usage_router,
     purchase_strategy_router,
+    purchase_cost_simulation_router,
+    public_diagnostic_router,
     analytics_router,
     dataconnect_router,
     grdf_router,
@@ -108,6 +110,21 @@ app = FastAPI(
     description="API de gestion énergétique multi-sites - 120 sites",
     version="1.0.0",
 )
+
+# Rate limiter (slowapi) — single source of truth dans `main_limiter.py`
+# pour éviter les doubles instances entre main et routes (counters isolés).
+# Used by `/api/public/*` (wedge Sirene, partenaires CCI/Medef) pour prévenir
+# DoS + épuisement quota API gouv + pollution table Sirene.
+# NB : derrière reverse proxy, uvicorn doit tourner avec `--proxy-headers
+# --forwarded-allow-ips=<trusted>` pour que le rate limit soit par vraie IP
+# client (cf. docstring `main_limiter.py`).
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
+from main_limiter import limiter
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Global error handlers (HTTPException, ValidationError, unhandled)
 register_error_handlers(app)
@@ -174,6 +191,8 @@ app.include_router(flex_foundation_router)  # Flex Foundations Sprint 21 (assets
 app.include_router(flex_score_router)  # Flex Score Engine (15 usages, NEBCO, prix negatifs)
 app.include_router(billing_usage_router)  # Shadow bill ventilation par usage via archetype
 app.include_router(purchase_strategy_router)  # Purchase strategy recommender via archetype + CDC
+app.include_router(purchase_cost_simulation_router)  # Cost simulator 2026+ décomposée (post-ARENH)
+app.include_router(public_diagnostic_router)  # Public freemium wedge Sirene (slowapi rate-limited)
 app.include_router(analytics_router)  # Analytics: usage disaggregation (CDC -> usages via 3 couches)
 if os.environ.get("PROMEOS_ENV") != "production":
     app.include_router(dev_tools_router)  # Dev Tools (reset_db)
@@ -223,6 +242,31 @@ app.include_router(config_emission_factors_router)
 from routes.config_price_references import router as config_price_references_router
 
 app.include_router(config_price_references_router)
+
+# CX Dashboard (admin — usage interne)
+from routes.cx_dashboard import router as cx_dashboard_router
+
+app.include_router(cx_dashboard_router)
+
+# Value Summary (CX Gap #6 — valeur cumulée PROMEOS)
+from routes.value_summary import router as value_summary_router
+
+app.include_router(value_summary_router)
+
+# Feedback CSAT (CX Gap #7)
+from routes.feedback import router as feedback_router
+
+app.include_router(feedback_router)
+
+# NPS micro-survey (Sprint CX P1 residual — scorecard 10% "NPS/CES")
+from routes.nps import router as nps_router
+
+app.include_router(nps_router)
+
+# Pilotage (Flex Ready® NF EN IEC 62746-4 — Baromètre Flex 2026)
+from routes.pilotage import router as pilotage_router
+
+app.include_router(pilotage_router)
 
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations

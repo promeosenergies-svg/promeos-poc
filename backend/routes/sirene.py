@@ -44,6 +44,7 @@ from schemas.sirene import (
     LeadScoreOut,
 )
 from services.naf_classifier import classify_naf
+from services.error_catalog import business_error
 from models.enums import TypeSite
 
 logger = logging.getLogger(__name__)
@@ -116,10 +117,7 @@ def get_unite_legale(
 ):
     """Detail d'une unite legale par SIREN."""
     if not siren.isdigit() or len(siren) != 9:
-        raise HTTPException(
-            400,
-            detail={"code": "INVALID_SIREN", "message": "SIREN invalide (9 chiffres)", "hint": "Verifiez le format"},
-        )
+        raise HTTPException(**business_error("SIREN_INVALID", siren=siren))
 
     ul = db.query(SireneUniteLegale).filter(SireneUniteLegale.siren == siren).first()
     if not ul:
@@ -148,7 +146,7 @@ def get_etablissements_by_siren(
 ):
     """Liste des etablissements d'une unite legale (max 500 par defaut)."""
     if not siren.isdigit() or len(siren) != 9:
-        raise HTTPException(400, detail={"code": "INVALID_SIREN", "message": "SIREN invalide"})
+        raise HTTPException(**business_error("SIREN_INVALID", siren=siren))
 
     query = db.query(SireneEtablissement).filter(
         SireneEtablissement.siren == siren,
@@ -183,11 +181,11 @@ def get_etablissement(
 ):
     """Detail d'un etablissement par SIRET."""
     if not siret.isdigit() or len(siret) != 14:
-        raise HTTPException(400, detail={"code": "INVALID_SIRET", "message": "SIRET invalide (14 chiffres)"})
+        raise HTTPException(**business_error("SIRET_INVALID", siret=siret))
 
     e = db.query(SireneEtablissement).filter(SireneEtablissement.siret == siret).first()
     if not e:
-        raise HTTPException(404, detail={"code": "NOT_FOUND", "message": f"Etablissement {siret} non trouve"})
+        raise HTTPException(**business_error("ETABLISSEMENT_NOT_FOUND", siret=siret))
 
     return SireneEtablissementOut.model_validate(e)
 
@@ -282,7 +280,7 @@ def _run_admin_import(req: SireneImportRequest, db: Session, auth, sync_type: st
         try:
             snapshot = datetime.strptime(req.snapshot_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
         except ValueError:
-            raise HTTPException(400, detail={"code": "INVALID_DATE", "message": "Format attendu: YYYY-MM-DD"})
+            raise HTTPException(**business_error("INVALID_DATE_FORMAT"))
 
     run = run_sirene_import(
         db=db,

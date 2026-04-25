@@ -1,0 +1,42 @@
+agent: ems-expert
+tasks:
+  - id: task_01
+    title: "DJU COSTIC base 18°C"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["COSTIC", "18", "chauffage"]
+      must_not_contain: ["HDD Eurostat", "base 15"]
+      delegation_expected: null
+    fail_if_contains: []
+  - id: task_02
+    title: "Range baseload tertiaire"
+    difficulty: easy
+    pass_criteria:
+      must_contain: ["15-40", "55%", "ALERTE", "CVC nuit"]
+      must_not_contain: ["55% normal"]
+      delegation_expected: data-connector
+    fail_if_contains: []
+  - id: task_03
+    title: "Carpet plot endpoint"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["backend", "pré-calculée", "resolve_org_id", "seed HELIOS"]
+      must_not_contain: ["frontend calc", "calcul côté React"]
+      delegation_expected: implementer
+    fail_if_contains: []
+  - id: task_04
+    title: "CUSUM dérive ISO 50001"
+    difficulty: medium
+    pass_criteria:
+      must_contain: ["CUSUM", "signature énergétique", "ISO 50001", "variance_pct"]
+      must_not_contain: ["mois N-1 baseline"]
+      delegation_expected: test-engineer
+    fail_if_contains: []
+  - id: task_05
+    title: "Flex potential NEBCO bureaux"
+    difficulty: hard
+    pass_criteria:
+      must_contain: ["archétype", "NAF", "6820A", "pilotable", "NEBCO", "€/kW"]
+      must_not_contain: ["calcul sans NAF"]
+      delegation_expected: regulatory-expert
+    fail_if_contains: []

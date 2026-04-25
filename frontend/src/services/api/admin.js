@@ -103,6 +103,8 @@ export const getKBFullStats = () =>
     // Normalize to flat shape expected by KBExplorerPage (stats.total_items, stats.by_status, ...)
     return d && d.kb ? { ...d.kb } : d;
   });
+export const getKBMetrics = (sinceDays = 30) =>
+  api.get(`${KB_BASE}/metrics`, { params: { since_days: sinceDays } }).then((r) => r.data);
 
 // KB Memobox — Upload + Lifecycle
 export const uploadKBDoc = (file, title, domain = null, docType = 'pdf', actionId = null) => {

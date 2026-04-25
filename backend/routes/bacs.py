@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth
+from middleware.cx_logger import log_cx_event_first_only, make_dedup_key, CX_MODULE_ACTIVATED
 from services.scope_utils import resolve_org_id
 
 from models import (
@@ -34,6 +35,7 @@ from services.bacs_engine import (
     compute_inspection_schedule,
     ENGINE_VERSION,
 )
+from services.error_catalog import business_error
 
 router = APIRouter(prefix="/api/regops/bacs", tags=["BACS Expert"])
 
@@ -49,7 +51,7 @@ def _verify_site_access(db: Session, site_id: int, request: Request, auth) -> Si
     """
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        raise HTTPException(status_code=404, detail="Site not found")
+        raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=site_id))
 
     try:
         org_id = resolve_org_id(request, auth, db)
@@ -63,7 +65,7 @@ def _verify_site_access(db: Session, site_id: int, request: Request, auth) -> Si
         if pf:
             ej = db.query(EntiteJuridique).filter(EntiteJuridique.id == pf.entite_juridique_id).first()
             if ej and ej.organisation_id != org_id:
-                raise HTTPException(status_code=404, detail="Site not found")
+                raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=site_id))
 
     return site
 
@@ -193,7 +195,7 @@ def create_bacs_asset(
     auth=Depends(get_optional_auth),
 ):
     """Create BacsAsset for a site."""
-    _verify_site_access(db, site_id, request, auth)
+    site = _verify_site_access(db, site_id, request, auth)
 
     existing = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
     if existing:
@@ -209,6 +211,26 @@ def create_bacs_asset(
     db.add(asset)
     db.commit()
     db.refresh(asset)
+
+    # Sprint CX 3 P0.4 : fire CX_MODULE_ACTIVATED (1ère activation BACS par l'org).
+    # Option A : dédup via `module_key=bacs` dans detail_json. Résout org_id via site.
+    try:
+        pf = db.get(Portefeuille, site.portefeuille_id) if site and site.portefeuille_id else None
+        ej = db.get(EntiteJuridique, pf.entite_juridique_id) if pf else None
+        org_id = ej.organisation_id if ej else None
+        if org_id:
+            log_cx_event_first_only(
+                db,
+                org_id,
+                auth.user.id if (auth and getattr(auth, "user", None)) else None,
+                CX_MODULE_ACTIVATED,
+                dedup_key=make_dedup_key("module_key", "bacs"),
+                context={"module_key": "bacs", "trigger": "create_bacs_asset"},
+            )
+            db.commit()
+    except Exception:
+        pass  # fire-and-forget : ne casse pas la création asset
+
     return _serialize_asset(asset)
 
 
@@ -566,7 +588,7 @@ def attach_proof_to_action(
     """Rattacher une preuve a une action corrective."""
     action = db.query(BacsRemediationAction).filter(BacsRemediationAction.id == action_id).first()
     if not action:
-        raise HTTPException(404, "Action introuvable")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
 
     proof = BacsProofDocument(
         asset_id=action.asset_id,
@@ -599,7 +621,7 @@ def review_proof(
 
     action = db.query(BacsRemediationAction).filter(BacsRemediationAction.id == action_id).first()
     if not action:
-        raise HTTPException(404, "Action introuvable")
+        raise HTTPException(**business_error("ACTION_NOT_FOUND", action_id=action_id))
 
     if body.decision not in ("accepted", "rejected"):
         raise HTTPException(400, "Decision invalide (accepted ou rejected)")

@@ -1,0 +1,238 @@
+"""
+Tests for CX Dashboard drivers: T2V, IAR, WAU/MAU.
+Uses isolated in-memory DB + TestClient + DEMO_MODE lenient auth.
+"""
+
+import json
+import sys
+import os
+from datetime import datetime, timedelta, timezone
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from main import app
+from models import Base
+from models.iam import AuditLog, User
+from database import get_db
+
+
+@pytest.fixture
+def isolated_client():
+    """
+    Isolated test client avec override auth admin.
+
+    Sprint CX 2.5 hardening (S2) : les 4 endpoints /api/admin/cx-dashboard/*
+    utilisent désormais require_platform_admin (strict, pas de bypass DEMO_MODE).
+    Le test override cette dep pour simuler un admin DG_OWNER authentifié.
+    La sécurité est testée séparément dans test_cx_dashboard_security.py.
+    """
+    from middleware.auth import require_platform_admin
+
+    engine = create_engine(
+        "sqlite:///:memory:",
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    session = sessionmaker(bind=engine)()
+
+    def _override():
+        try:
+            yield session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = _override
+    # S2 : override admin auth pour simuler DG_OWNER authentifié
+    app.dependency_overrides[require_platform_admin] = lambda: {"sub": "admin", "role": "dg_owner"}
+    yield TestClient(app), session
+    app.dependency_overrides.clear()
+    session.close()
+
+
+def _seed_user(db, user_id: int, created_days_ago: int) -> User:
+    created_at = datetime.now(timezone.utc) - timedelta(days=created_days_ago)
+    u = User(
+        id=user_id,
+        email=f"u{user_id}@test.promeos.io",
+        hashed_password="x",
+        nom=f"User {user_id}",
+        prenom=f"First{user_id}",
+        created_at=created_at,
+    )
+    db.add(u)
+    db.commit()
+    return u
+
+
+def _seed_event(db, user_id, org_id, event_type, days_ago):
+    entry = AuditLog(
+        user_id=user_id,
+        action=event_type,
+        resource_type="cx_event",
+        resource_id=str(org_id),
+        detail_json=json.dumps({"org_id": org_id}),
+        created_at=datetime.now(timezone.utc) - timedelta(days=days_ago),
+    )
+    db.add(entry)
+    db.commit()
+
+
+# ─── T2V ────────────────────────────────────────────────────────────────────
+
+
+class TestT2V:
+    def test_empty_db_returns_zero_sample(self, isolated_client):
+        client, _ = isolated_client
+        r = client.get("/api/admin/cx-dashboard/t2v")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["sample_size"] == 0
+        assert body["p50_days"] is None
+
+    def test_single_user_single_action(self, isolated_client):
+        client, db = isolated_client
+        _seed_user(db, user_id=1, created_days_ago=10)
+        _seed_event(db, user_id=1, org_id=42, event_type="CX_ACTION_FROM_INSIGHT", days_ago=5)
+
+        r = client.get("/api/admin/cx-dashboard/t2v")
+        body = r.json()
+        assert body["sample_size"] == 1
+        assert 4.5 < body["p50_days"] < 5.5  # ~5 jours
+        assert "42" in body["by_org"]
+
+    def test_action_before_user_creation_excluded(self, isolated_client):
+        client, db = isolated_client
+        _seed_user(db, user_id=1, created_days_ago=2)
+        _seed_event(db, user_id=1, org_id=1, event_type="CX_ACTION_FROM_INSIGHT", days_ago=10)
+
+        r = client.get("/api/admin/cx-dashboard/t2v")
+        assert r.json()["sample_size"] == 0
+
+    def test_only_first_action_counts_per_user_org(self, isolated_client):
+        client, db = isolated_client
+        _seed_user(db, user_id=1, created_days_ago=30)
+        _seed_event(db, user_id=1, org_id=1, event_type="CX_ACTION_FROM_INSIGHT", days_ago=25)
+        _seed_event(db, user_id=1, org_id=1, event_type="CX_ACTION_FROM_INSIGHT", days_ago=5)
+
+        r = client.get("/api/admin/cx-dashboard/t2v")
+        body = r.json()
+        assert body["sample_size"] == 1
+        assert 4.5 < body["p50_days"] < 5.5  # min = 5j (pas 25)
+
+
+# ─── IAR ────────────────────────────────────────────────────────────────────
+
+
+class TestIAR:
+    def test_empty_returns_null_ratio(self, isolated_client):
+        client, _ = isolated_client
+        r = client.get("/api/admin/cx-dashboard/iar")
+        body = r.json()
+        assert body["global"]["iar"] is None
+        assert body["global"]["insights_consulted"] == 0
+        assert body["global"]["actions_validated"] == 0
+
+    def test_ratio_computed_correctly(self, isolated_client):
+        client, db = isolated_client
+        for _ in range(10):
+            _seed_event(db, 1, 1, "CX_INSIGHT_CONSULTED", 2)
+        for _ in range(3):
+            _seed_event(db, 1, 1, "CX_ACTION_FROM_INSIGHT", 1)
+
+        r = client.get("/api/admin/cx-dashboard/iar")
+        body = r.json()
+        # F10 : iar (cappé) == iar_raw (brut) quand actions <= insights
+        assert body["global"]["iar"] == 0.3
+        assert body["global"]["iar_raw"] == 0.3
+        assert body["global"]["is_capped"] is False
+        assert body["by_org"]["1"]["iar"] == 0.3
+        assert body["by_org"]["1"]["iar_raw"] == 0.3
+        assert body["by_org"]["1"]["is_capped"] is False
+
+    def test_iar_capped_when_actions_exceed_insights(self, isolated_client):
+        """F10 : cas '1 insight → N actions' → iar_raw > 1.0, iar cappé à 1.0."""
+        client, db = isolated_client
+        # 10 insights, 50 actions → raw = 5.0, capped = 1.0
+        for _ in range(10):
+            _seed_event(db, 1, 1, "CX_INSIGHT_CONSULTED", 2)
+        for _ in range(50):
+            _seed_event(db, 1, 1, "CX_ACTION_FROM_INSIGHT", 1)
+
+        r = client.get("/api/admin/cx-dashboard/iar")
+        body = r.json()
+        assert body["global"]["iar"] == 1.0  # cappé
+        assert body["global"]["iar_raw"] == 5.0  # valeur brute exposée
+        assert body["global"]["is_capped"] is True
+        assert body["by_org"]["1"]["iar"] == 1.0
+        assert body["by_org"]["1"]["iar_raw"] == 5.0
+        assert body["by_org"]["1"]["is_capped"] is True
+
+    def test_excludes_events_outside_window(self, isolated_client):
+        client, db = isolated_client
+        _seed_event(db, 1, 1, "CX_INSIGHT_CONSULTED", 50)  # hors fenêtre 30j
+        _seed_event(db, 1, 1, "CX_ACTION_FROM_INSIGHT", 5)
+
+        r = client.get("/api/admin/cx-dashboard/iar?days=30")
+        body = r.json()
+        assert body["global"]["insights_consulted"] == 0
+        assert body["global"]["iar"] is None  # dénominateur=0
+        assert body["global"]["iar_raw"] is None
+        assert body["global"]["is_capped"] is False
+
+
+# ─── WAU/MAU ────────────────────────────────────────────────────────────────
+
+
+class TestWauMau:
+    def test_empty_returns_zero(self, isolated_client):
+        client, _ = isolated_client
+        r = client.get("/api/admin/cx-dashboard/wau-mau")
+        body = r.json()
+        assert body["wau"] == 0
+        assert body["mau"] == 0
+        assert body["stickiness_ratio"] is None
+
+    def test_wau_counts_distinct_users_last_7d(self, isolated_client):
+        client, db = isolated_client
+        _seed_event(db, 1, 1, "CX_DASHBOARD_OPENED", 2)
+        _seed_event(db, 2, 1, "CX_INSIGHT_CONSULTED", 3)
+        _seed_event(db, 1, 1, "CX_DASHBOARD_OPENED", 4)  # doublon user 1
+        _seed_event(db, 3, 1, "CX_DASHBOARD_OPENED", 15)  # hors WAU
+
+        r = client.get("/api/admin/cx-dashboard/wau-mau")
+        body = r.json()
+        assert body["wau"] == 2  # users 1+2
+        assert body["mau"] == 3  # users 1+2+3
+
+    def test_null_user_excluded(self, isolated_client):
+        client, db = isolated_client
+        _seed_event(db, None, 1, "CX_DASHBOARD_OPENED", 2)
+        _seed_event(db, 1, 1, "CX_DASHBOARD_OPENED", 2)
+
+        r = client.get("/api/admin/cx-dashboard/wau-mau")
+        assert r.json()["wau"] == 1
+
+    def test_interpretation_tiers(self, isolated_client):
+        client, db = isolated_client
+        # 2 WAU users, 4 MAU users → ratio = 0.5 → excellent
+        for uid in (1, 2):
+            _seed_event(db, uid, 1, "CX_DASHBOARD_OPENED", 2)
+        for uid in (3, 4):
+            _seed_event(db, uid, 1, "CX_DASHBOARD_OPENED", 15)
+
+        r = client.get("/api/admin/cx-dashboard/wau-mau")
+        body = r.json()
+        assert body["stickiness_ratio"] == 0.5
+        assert body["interpretation"] == "excellent"

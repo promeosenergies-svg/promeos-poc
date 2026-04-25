@@ -49,13 +49,44 @@ export const GLOSSARY = {
   cta: {
     term: 'CTA',
     short:
-      "Contribution Tarifaire d'Acheminement. Taxe finançant les retraites des agents des industries électriques et gazières.",
+      "Contribution Tarifaire d'Acheminement. Taxe finançant les retraites des agents des industries électriques et gazières. Assiette : part fixe TURPE (gestion + soutirage).",
+    long: "La CTA est calculée comme un pourcentage de la composante gestion du TURPE (part fixe). Coefficients 2026 en vigueur : 21,93 % pour l'électricité (sur part gestion), 10,11 % pour l'abonnement TURPE. Pré-février 2026, les coefficients historiques étaient 15 %/5 %. CTA gaz : formule additive (20,80 % + 4,71 % × coef_transport). La CTA est soumise à une TVA de 5,5 %. Source : Code de la sécurité sociale, arrêté tarifaire CRE, ParameterStore PROMEOS versionné par date d'effet.",
   },
   tva: {
     term: 'TVA',
     short:
       'Taxe sur la Valeur Ajoutée. CTA : 5,5 %. Abonnement et consommation : 20 % (depuis août 2025 pour les ≤36 kVA, toujours 20 % pour les professionnels).',
-    // Source : LFI 2025. TVA 20% sur abonnement ménages ≤36 kVA depuis 1er août 2025. CTA reste à 5,5%.
+    long: "La TVA s'applique à 3 taux différents selon la composante : CTA à 5,5 % (taux réduit), abonnement à 20 % (depuis 1er août 2025 pour les ménages ≤36 kVA, sinon toujours 20 % pro), consommation (énergie + accise) à 20 %. Le calcul final : TTC = HT × (1 + taux applicable par composante). Source : LFI 2025, Code général des impôts art. 278-0 bis.",
+  },
+  car: {
+    term: 'CAR',
+    short:
+      "Consommation Annuelle de Référence. Volume annuel de gaz consommé par un point de livraison, base de calcul de l'option tarifaire ATRD.",
+    long: "La CAR conditionne l'option tarifaire ATRD applicable : T1 si < 6 MWh/an, T2 si 6–300 MWh/an, T3 si 300–5 000 MWh/an, T4 si ≥ 5 000 MWh/an. Pour T4, un découpage marginal 2 tranches s'applique (< 500 et ≥ 500 MWh/jour). TP (Tarif à Proximité) réservé aux plus gros volumes avec terme capacité distance. Source : délibération CRE n°2024-17 (ATRD7), mise à jour 2025-122 au 1/07/2025 (+6,06 %).",
+  },
+  tdn: {
+    term: 'TDN',
+    short:
+      "Tarif Dynamique de Nouveaux usages. Tarif d'achat d'électricité avec signal prix variable, pensé pour les usages pilotables (VE, batteries, ballons ECS).",
+    long: "Le TDN est un tarif dynamique horaire indexé sur les prix spot du marché, avec une incitation forte à consommer quand l'électricité est abondante (prix bas/négatifs). Cible : clients résidentiels équipés d'actifs pilotables et pro avec flexibilité fine. Articulation avec le mécanisme Tempo (3 couleurs) et les tarifications dynamiques en cours d'élargissement dans le cadre de la réforme HC TURPE 7 (3 phases nov 2025 → mi-2028). Source : CRE, RTE, réforme HC saisonnalisée.",
+  },
+  cee: {
+    term: 'CEE',
+    short:
+      "Certificats d'Économies d'Énergie. Dispositif obligeant les fournisseurs d'énergie à financer des travaux d'efficacité énergétique chez leurs clients. P6 depuis 1/1/2026 : 1 050 TWhc/an.",
+    long: "Les CEE (dispositif obligation nationale) imposent aux fournisseurs d'atteindre un volume de certificats sur la période P6 2026–2030 (1 050 TWhc/an, +50 % vs P5). Impact facture : ~0,731 €/MWh livré en 2026 (vs 0,478 en P5). Le coût est soit assumé par le fournisseur, soit répercuté au client via la composante CEE de la facture (pass-through activé sur le contrat). Nouvelles fiches 2026 : chaleur fatale, data centers, bornes VE. Source : DGEC, arrêté CEE P6, hebdo énergie 6-12 avril 2026.",
+  },
+  vnu: {
+    term: 'VNU',
+    short:
+      'Versement Nucléaire Universel. Taxe redistributive sur la rente nucléaire EDF (Décret 2026-55, CRE 2026-52), successeur du cadre ARENH depuis le 01/01/2026.',
+    long: "Le VNU (Versement Nucléaire Universel) est une taxe redistributive prélevée sur EDF lorsque le prix de marché dépasse les seuils CRE (78 / 110 €/MWh). Elle n'est PAS une ligne de la facture client final — c'est un transfert EDF → fournisseurs concurrents pour ré-équilibrer la rente nucléaire. Remplace le cadre ARENH (42 €/MWh × 50% quota) supprimé au 31/12/2025. Statut dormant en 2026 tant que les prix forward restent sous 78 €/MWh. PROMEOS expose le statut VNU dans hypotheses pour traçabilité auditeur. Source : Loi 2023-491 souveraineté énergétique, Décret 2026-55, CRE 2026-52.",
+  },
+  capacite: {
+    term: 'Mécanisme de capacité',
+    short:
+      'Obligation RTE imposant aux fournisseurs de détenir des garanties de capacité proportionnelles à la pointe de leurs clients. Centralisation enchères PL-4/PL-1 prévue nov 2026.',
+    long: "Le mécanisme de capacité assure l'adéquation offre/demande lors des pointes hiver (vague de froid, pointes du soir). Chaque fournisseur doit acheter des certificats auprès des producteurs/effaceurs pour couvrir l'obligation de ses clients. Réforme novembre 2026 : centralisation RTE (enchères PL-4 puis PL-1) remplace le système décentralisé actuel. Impact facture : ligne capacité (EUR/kW ou EUR/MWh selon contrat), en hausse attendue sur 2026–2028. Source : RTE, CRE, hebdo énergie avril 2026.",
   },
   ht: {
     term: 'HT',
@@ -157,7 +188,7 @@ export const GLOSSARY = {
   arenh: {
     term: 'ARENH',
     short:
-      "Accès Régulé à l'Électricité Nucléaire Historique. Prix fixe 42 €/MWh. Dispositif terminé le 31/12/2025, remplacé par le mécanisme VNU (Ventes au Nucléaire Unifié).",
+      "Accès Régulé à l'Électricité Nucléaire Historique. Prix fixe 42 €/MWh. Dispositif terminé le 31/12/2025, remplacé par le VNU (Versement Nucléaire Universel, taxe redistributive sur EDF).",
     // Source : Loi Énergie-Climat 2019, fin ARENH confirmée LFI 2023. VNU : PPE3 2026-2035.
   },
 
@@ -387,5 +418,25 @@ export const GLOSSARY = {
     short:
       "Temps de Retour sur Investissement. Duree necessaire pour que les economies d'energie remboursent le cout d'un investissement. TRI = cout / economie annuelle.",
     long: "Le TRI est un critere essentiel du dossier de modulation DT et de l'exemption BACS. Un TRI > 10 ans (BACS) ou disproportionne (DT) peut justifier un ajustement d'objectif. Norme NF EN 15459.",
+  },
+
+  // ── Drivers North-Star CX (Sprint CX 3) ─────────────────────────────────
+  t2v: {
+    term: 'T2V',
+    short:
+      "Time-to-Value : délai entre la création d'un compte utilisateur et sa 1ʳᵉ action validée. Cible <7j (vert), 7–14j (amber), >14j (rouge).",
+    long: "Le T2V mesure la rapidité avec laquelle un nouvel utilisateur atteint un 1ᵉʳ résultat tangible (une action PROMEOS passée au statut DONE). Signal : event CX_ACTION_FROM_INSIGHT. Rapporté en p50/p90/p95 jours. Un user sans action validée n'est pas dans l'échantillon.",
+  },
+  iar: {
+    term: 'IAR',
+    short:
+      "Insight-to-Action Rate : ratio entre actions validées et insights consultés sur la période. Un IAR supérieur à 1.0 (capped) signale qu'un insight a généré plusieurs actions (légitime).",
+    long: "IAR = actions_validated / insights_consulted sur la fenêtre. Numérateur CX_ACTION_FROM_INSIGHT, dénominateur CX_INSIGHT_CONSULTED. Le ratio est cappé à 1.0 pour une lecture en pourcentage ; iar_raw > 1.0 quand un même insight produit N actions. is_capped signale au front d'afficher une nuance.",
+  },
+  wau_mau: {
+    term: 'WAU/MAU',
+    short:
+      'Stickiness ratio : WAU (users actifs 7j) / MAU (users actifs 30j). Seuils : ≥40% excellent, 30–40% bon, 20–30% à travailler, <20% faible.',
+    long: "Le ratio WAU/MAU mesure la fidélité d'usage : plus il est haut, plus les utilisateurs reviennent fréquemment. Référence marché B2B SaaS : 20-30% normal, 40%+ excellent. Source : events CX_* rattachés à un user_id sur les fenêtres 7j et 30j.",
   },
 };

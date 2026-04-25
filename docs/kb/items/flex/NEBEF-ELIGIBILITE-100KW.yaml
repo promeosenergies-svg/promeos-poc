@@ -1,0 +1,86 @@
+---
+id: "NEBEF-ELIGIBILITE-100KW"
+type: "rule"
+domain: "flex"
+title: "NEBEF/NEBCO — Éligibilité effacement >= 100 kW"
+summary: "Pour valoriser l'effacement de consommation sur le marché (NEBEF, remplacé par NEBCO sept. 2025), un site doit pouvoir effacer au minimum 100 kW par bloc, disposer d'un agrégateur certifié et d'un accord CAR."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - industrie
+  asset:
+    - multi
+  reg:
+    - multi
+  granularity:
+    - 30min
+
+scope:
+  erasable_kw_min: 100
+
+content_md: |
+  ## Éligibilité NEBEF / NEBCO
+
+  ### Seuil minimal
+  - Capacité d'effacement >= 100 kW par bloc (sites RPT ou RPD)
+  - Tout secteur : tertiaire multi-sites, industrie, stockage, IRVE
+
+  ### Prérequis site
+  - Accord écrit du titulaire du CAR (Contrat Accès Réseau)
+  - Comptage télérelevé ou profilé (Linky + API)
+  - Disponibilité >= 80% sur la période d'engagement
+
+  ### Prérequis agrégateur
+  - Personne morale avec accord de participation NEBEF/NEBCO signé avec RTE
+  - Agrément technique (capacité, fiabilité)
+  - Responsable d'équilibre (directement ou via tiers)
+  - Homologation 1-3 ans selon fiabilité
+
+  ### Exclusions
+  - Sites avec production autoconsommation obligatoire
+  - Sites avec primes d'énergie renouvelable (sauf déclaration EIF spécifique)
+
+  ### Évolution NEBCO (sept. 2025)
+  - NEBEF remplacé par NEBCO (CRE délibération 2025-199)
+  - Nouveauté : valorisation explicite des reports et anticipations
+
+logic:
+  when:
+    all:
+      - field: "erasable_kw"
+        op: ">="
+        value: 100
+  then:
+    outputs:
+      - type: "next_step"
+        label: "Éligible NEBEF/NEBCO — identifier un agrégateur certifié RTE"
+        priority: 1
+        severity: "medium"
+
+      - type: "next_step"
+        label: "Vérifier accord CAR et comptage télérelevé"
+        priority: 2
+
+      - type: "next_step"
+        label: "Estimer revenus effacement (prix spot + prime capacité)"
+        priority: 3
+
+sources:
+  - doc_id: "RTE-NEBEF-REGLES"
+    label: "Règles NEBEF — RTE"
+    section: "Conditions d'éligibilité"
+    anchor: "#eligibilite"
+    excerpt_short: "Sites de soutirage capables d'effacer au minimum 100 kW par bloc"
+
+  - doc_id: "CRE-2025-199"
+    label: "Délibération CRE 2025-199 — NEBCO"
+    section: "Définition et cadre réglementaire"
+    anchor: "#definition"
+    excerpt_short: "NEBCO remplace NEBEF avec valorisation des reports et anticipations"
+
+updated_at: "2026-04-17"
+confidence: "medium"
+priority: 1

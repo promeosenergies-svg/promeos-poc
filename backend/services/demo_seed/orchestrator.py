@@ -72,6 +72,20 @@ class SeedOrchestrator:
         self.db.flush()
         result["delivery_points_created"] = dp_total
 
+        # Populate archetype_code + puissance_pilotable_kw (Baromètre Flex 2026)
+        # pour que portefeuille-scoring et roi-flex-ready travaillent sur des
+        # sites réels plutôt que sur le catalogue DEMO_SITES hardcodé.
+        from .gen_pilotage_fields import seed_pilotage_fields
+
+        result["pilotage_fields"] = seed_pilotage_fields(self.db, master["sites"])
+
+        # Populate cbam_imports_tonnes sur sites industriels (P3 wedge) pour
+        # que le cockpit affiche une exposition CBAM réelle en démo au lieu
+        # de "non applicable" partout.
+        from .gen_cbam_fields import seed_cbam_fields
+
+        result["cbam_fields"] = seed_cbam_fields(self.db, master["sites"])
+
         # V107: build site_meta for surface-normalized consumption
         site_meta = {}
         for s in master["sites"]:

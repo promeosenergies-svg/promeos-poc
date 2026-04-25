@@ -168,6 +168,9 @@ from .notification import (
 # IAM (Users / Roles / Scopes)
 from .iam import User, UserOrgRole, UserScope, AuditLog
 
+# CSAT (CX Gap #7)
+from .csat import CsatResponse  # noqa: F401
+
 # Patrimoine / Staging (DIAMANT)
 from .patrimoine import (
     OrgEntiteLink,
