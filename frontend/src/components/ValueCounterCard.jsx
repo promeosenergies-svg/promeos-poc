@@ -27,15 +27,11 @@ export default function ValueCounterCard({ orgId }) {
       .catch(() => setData(null));
   }, [orgId]);
 
-  // Conditionnel ≥ 7 jours d'historique (audit Marie : "8 k€ depuis
-  // aujourd'hui" est ridicule en démo fraîche). On vérifie que `since`
-  // est antérieur de ≥ 7 jours pour valider le wow.
-  if (!data || !data.total_eur || data.total_eur <= 0) return null;
-  if (data.since) {
-    const sinceDate = new Date(data.since);
-    const daysSince = (Date.now() - sinceDate.getTime()) / (1000 * 60 * 60 * 24);
-    if (daysSince < 7) return null;
-  }
+  // Conditionnel sur la PERTINENCE de la valeur (option C compromis) :
+  // - Si total_eur < 1000 €, on cache (absurde "8 € depuis hier")
+  // - Si total_eur ≥ 1000 €, on affiche peu importe la fraîcheur de `since`
+  // (la valeur est réelle, pas un mock).
+  if (!data || !data.total_eur || data.total_eur < 1000) return null;
 
   return (
     <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 mb-4">

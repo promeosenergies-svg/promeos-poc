@@ -66,7 +66,8 @@ import DeadlineBanner from '../components/DeadlineBanner';
 import RegulatoryCalendarCard from '../components/RegulatoryCalendarCard';
 import ImpactProjectionCard from '../components/ImpactProjectionCard';
 import BriefCodexCard from '../components/BriefCodexCard';
-import WhatIfScenarioCard from '../components/WhatIfScenarioCard';
+// WhatIfScenarioCard retiré /cockpit : trop complexe pour vue exec
+// (lecture/scan, pas manipulation interactive). Vit sur /achat-energie.
 import { useCockpitData } from '../hooks/useCockpitData';
 import {
   buildBriefing,
@@ -640,25 +641,9 @@ export default function CockpitSol() {
             </div>
           )}
 
-          {/* WOW-6 : Simulator what-if exec — sliders pour arbitrer en live.
-              Différenciateur PROMEOS : permet à l'exec de SIMULER l'impact
-              budget en temps réel (renégo contrat / PV / efficacité). */}
-          <SolSectionHead
-            title="Simulateur d'arbitrage"
-            meta="Et si on activait... ? · projection live multi-leviers"
-          />
-          <div style={{ marginBottom: 24 }}>
-            <WhatIfScenarioCard
-              baselineConsoKwh={consoKwh || 2_750_000}
-              baselineFactureEur={billing.total_eur || 386_972}
-              defaultTariff={
-                consoKwh > 0 && billing.total_eur > 0
-                  ? billing.total_eur / consoKwh
-                  : 0.18
-              }
-              totalSites={rawKpis.total || 5}
-            />
-          </div>
+          {/* WhatIfScenarioCard retiré : trop complexe pour /cockpit (vue
+              exec en lecture/scan, pas en manipulation). Le simulateur a
+              sa place sur /achat-energie où l'arbitrage budget se pilote. */}
 
           {/* AJUSTEMENT POST-AUDIT Jean-Marc : Performance OID SORTIE de
               l'accordéon (argument DAF #1 vs Danone/Lactalis). Vecteurs CO₂
