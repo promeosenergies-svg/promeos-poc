@@ -43,7 +43,7 @@ import { deepLinkWithContext } from '../services/deepLink';
 import { toConsoExplorer, toMonitoring, toUsages, toBillIntel } from '../services/routes';
 import usePeriodParams from '../hooks/usePeriodParams';
 import { SEVERITY_TINT } from '../ui/colorTokens';
-import { CO2E_FACTOR_KG_PER_KWH } from './consumption/constants';
+import { useElecCo2Factor } from '../contexts/EmissionFactorsContext';
 import {
   Zap,
   Info,
@@ -163,6 +163,7 @@ function SeverityBadge({ severity }) {
 }
 
 function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
+  const co2Factor = useElecCo2Factor();
   const periods = insights.filter((i) => i.period_start && i.period_end);
   const from = periods.length
     ? periods.reduce((m, i) => (i.period_start < m ? i.period_start : m), periods[0].period_start)
@@ -216,9 +217,7 @@ function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-400">CO₂e évitable</p>
-              <p className="text-lg font-bold text-emerald-600">
-                {fmtCo2(totalKwh * CO2E_FACTOR_KG_PER_KWH)}
-              </p>
+              <p className="text-lg font-bold text-emerald-600">{fmtCo2(totalKwh * co2Factor)}</p>
             </div>
           </div>
         </div>
@@ -228,6 +227,7 @@ function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
 }
 
 function SummaryCards({ summary, customPrice }) {
+  const co2Factor = useElecCo2Factor();
   if (!summary) return null;
   const defaultPrice = 0.15;
   const lossEur =
@@ -235,7 +235,7 @@ function SummaryCards({ summary, customPrice }) {
       ? recalcLosses(summary.total_loss_kwh, customPrice, defaultPrice)
       : Math.round(summary.total_loss_eur || 0);
 
-  const totalCo2eKg = Math.round((summary.total_loss_kwh || 0) * CO2E_FACTOR_KG_PER_KWH);
+  const totalCo2eKg = Math.round((summary.total_loss_kwh || 0) * co2Factor);
   const cards = [
     {
       label: 'Analyses détectées',
@@ -325,6 +325,7 @@ function RecommendedAction({ action }) {
 }
 
 function InsightRow({ insight, onRowClick, onCreateAction }) {
+  const co2Factor = useElecCo2Factor();
   const statusCfg = WORKFLOW_CONFIG[insight.insight_status] || WORKFLOW_CONFIG.open;
   return (
     <tr
@@ -350,9 +351,7 @@ function InsightRow({ insight, onRowClick, onCreateAction }) {
         {insight.estimated_loss_kwh ? fmtKwh(Math.round(insight.estimated_loss_kwh)) : '—'}
       </td>
       <td className="py-3 px-4 text-sm text-right text-emerald-600">
-        {insight.estimated_loss_kwh
-          ? fmtCo2(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH)
-          : '—'}
+        {insight.estimated_loss_kwh ? fmtCo2(insight.estimated_loss_kwh * co2Factor) : '—'}
       </td>
       <td className="py-3 px-4 text-sm text-center">
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.color}`}>
@@ -525,6 +524,7 @@ function EvidenceDrawer({
   onViewInvoice,
 }) {
   const [tab, setTab] = useState('evidence');
+  const co2Factor = useElecCo2Factor();
   if (!insight) return null;
 
   const metrics = insight.metrics || {};
@@ -553,7 +553,7 @@ function EvidenceDrawer({
               {insight.estimated_loss_kwh > 0 && insight.estimated_loss_eur > 0 && ' · '}
               {insight.estimated_loss_eur > 0 && fmtEur(Math.round(insight.estimated_loss_eur))}
               {' · '}
-              {fmtCo2(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH)}
+              {fmtCo2(insight.estimated_loss_kwh * co2Factor)}
             </span>
           )}
         </div>
@@ -679,6 +679,7 @@ function EvidenceDrawer({
 }
 
 function EvidenceTab({ insight }) {
+  const co2Factor = useElecCo2Factor();
   const chartData = useMemo(() => generateComparisonChart(insight), [insight]);
   return (
     <div className="space-y-4">
@@ -715,7 +716,7 @@ function EvidenceTab({ insight }) {
             {insight.estimated_loss_eur > 0 &&
               ` (${fmtEur(Math.round(insight.estimated_loss_eur))})`}
             {' · '}
-            {fmtCo2(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH)}
+            {fmtCo2(insight.estimated_loss_kwh * co2Factor)}
           </p>
         )}
       </div>
@@ -732,6 +733,7 @@ export default function ConsumptionDiagPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { org, selectedSiteId, scopeLabel, sitesCount } = useScope();
+  const co2Factor = useElecCo2Factor();
   // Step 11: unified period from URL (default 90 days for diagnostic)
   const { period, periodQueryString: _periodQueryString } = usePeriodParams(90);
   const [summary, setSummary] = useState(null);
@@ -1039,7 +1041,7 @@ export default function ConsumptionDiagPage() {
               <div className="bg-gray-50 rounded-lg p-3 text-center">
                 <div className="text-xs text-gray-500">CO₂e évitable</div>
                 <div className="text-lg font-bold text-emerald-600">
-                  {fmtCo2((displayedSummary.total_loss_kwh || 0) * CO2E_FACTOR_KG_PER_KWH)}
+                  {fmtCo2((displayedSummary.total_loss_kwh || 0) * co2Factor)}
                 </div>
                 <div className="text-[11px] text-gray-400">Impact carbone</div>
               </div>

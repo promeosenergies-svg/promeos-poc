@@ -23,10 +23,13 @@ class TestCORSConfig:
         src = _read_main_source()
         assert "CORSMiddleware" in src
 
-    def test_demo_mode_wildcard(self):
-        """In DEMO_MODE, CORS origins should be wildcard ['*']."""
+    def test_no_wildcard_origins(self):
+        """V119 security tightening: CORS origins must NOT be wildcard ['*'].
+        Replaces test_demo_mode_wildcard — wildcard deemed insecure even in demo mode."""
         src = _read_main_source()
-        assert '_CORS_ORIGINS = ["*"]' in src or "_CORS_ORIGINS = ['*']" in src
+        assert '_CORS_ORIGINS = ["*"]' not in src
+        assert "_CORS_ORIGINS = ['*']" not in src
+        assert "never wildcard" in src or "PROMEOS_CORS_ORIGINS" in src
 
     def test_production_uses_env_var(self):
         """In production mode, CORS reads PROMEOS_CORS_ORIGINS from env."""

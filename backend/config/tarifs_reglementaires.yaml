@@ -64,8 +64,13 @@ turpe_6:
         energie_cu_pf_hce: 0.0101
 
 # ── TURPE 7 soutirage énergie (composante variable) ──────────────────────────
+# Note : clé historique `turpe` = TURPE 7 actif. L'audit Regulatory 2026-04-15
+# recommandait de renommer en `turpe_7` pour clarifier le versioning, mais
+# cette clé est utilisée activement par le code (tarif_loader, parameter_store).
+# On garde la clé stable et on documente la version via le champ `version`.
 turpe:
-  source: "CRE délibération TURPE 7 HTA-BT 2025"
+  version: 7
+  source: "CRE délibération n°2025-78 (13/03/2025, JO 14/05/2025) — TURPE 7 HTA-BT, en vigueur 1/08/2025"
   valid_from: "2025-08-01"
   valid_to: null
   segments:
@@ -105,13 +110,54 @@ accise_elec_2024_haute_puissance:
   valid_from: "2024-02-01"
   valid_to: "2025-01-31"
 
-# 2025-2026 : Loi de finances 2025 + 2026
+# ── 2025 : Loi de finances 2025 (trajectoire) ──────────────────────────────
+# Fix P0 audit Regulatory 2026-04-15 : ces 4 sections comblent le GAP
+# entre accise_elec_2024_* (valid_to 2025-01-31) et accise_elec_2026_* (valid_from 2026-02-01).
+# Valeurs historiques vérifiées dans backend/services/billing_engine/catalog.py
+# et sur factures réelles (ENGIE SUENO C5, EDF Cannes BL C4).
+accise_elec_2025_t1_feb_jul:
+  label: "Accise électricité 2025 — T1 ménages (fév-jul 2025)"
+  rate_eur_kwh: 0.02623
+  source: "Loi de finances 2025 — 26.23 EUR/MWh (T1, fév-jul 2025)"
+  valid_from: "2025-02-01"
+  valid_to: "2025-07-31"
+
+accise_elec_2025_t1_aug:
+  label: "Accise électricité 2025 — T1 ménages (aoû 2025 → jan 2026)"
+  rate_eur_kwh: 0.02998
+  source: "Loi de finances 2025 — 29.98 EUR/MWh (T1, aoû 2025+, vérifié facture ENGIE SUENO jan 2026)"
+  valid_from: "2025-08-01"
+  valid_to: "2026-01-31"
+
+accise_elec_2025_t2_feb_jul:
+  label: "Accise électricité 2025 — T2 PME (fév-jul 2025)"
+  rate_eur_kwh: 0.02569
+  source: "Loi de finances 2025 — 25.69 EUR/MWh (T2, fév-jul 2025)"
+  valid_from: "2025-02-01"
+  valid_to: "2025-07-31"
+
+accise_elec_2025_t2_aug:
+  label: "Accise électricité 2025 — T2 PME (aoû 2025 → jan 2026)"
+  rate_eur_kwh: 0.02579
+  source: "Loi de finances 2025 — 25.79 EUR/MWh (T2, aoû 2025+, vérifié facture EDF Cannes BL oct 2025)"
+  valid_from: "2025-08-01"
+  valid_to: "2026-01-31"
+
+# ── 2026 : Loi de finances 2026 (valeurs courantes) ────────────────────────
+# Note : `accise_elec` (top-level sans suffixe) est un **alias rétro-compat**
+# qui pointe vers la valeur T2/PME (26.58 €/MWh fév 2026+). Utilisé activement
+# par `backend/config/tarif_loader.py` et `services/billing_engine/parameter_store.py`.
+# Pour un routage dynamique par profil fiscal (HOUSEHOLD→T1, SME→T2, HIGH_POWER→HP),
+# utiliser les clés qualifiées `accise_elec_2026_t1` / `accise_elec_2026_t2` via
+# `_accise_code_for_category`. Ne pas supprimer cette clé sans refactor coordonné.
+# Audit Regulatory 2026-04-15 (P1).
 accise_elec:
-  label: "Accise sur l'électricité (ex-CSPE/TIEE) — PME fév 2026+"
+  label: "Accise élec (ex-CSPE/TIEE) — alias T2/PME fév 2026+ (rétro-compat)"
   rate_eur_kwh: 0.02658
-  source: "Loi de finances 2026 — accise PME 26.58 EUR/MWh (fév 2026+)"
+  source: "Loi de finances 2026 — accise T2/PME 26.58 EUR/MWh (fév 2026+)"
   valid_from: "2026-02-01"
   valid_to: null
+  alias_for: "accise_elec_2026_t2"
 
 accise_elec_2026_t1:
   label: "Accise électricité 2026 — T1 ménages & assimilés (≤250 MWh)"
@@ -174,6 +220,13 @@ accise_gaz:
 # sont lues parallèlement par ParameterStore._yaml_candidates : le candidat
 # dont la période contient la date d'effet gagne.
 cta_2021:
+  # Top-level envelope = union des fenêtres de validité des enfants.
+  # Structure nested (elec / elec_transport) : chaque enfant porte ses propres
+  # valid_from/valid_to qui restent la source de vérité pour le routage.
+  # Fix P0 audit Regulatory 2026-04-15 (tool find_active_at_date naive).
+  valid_from: "2021-08-01"
+  valid_to: "2026-01-31"
+  source: "Arrêté CTA 26/07/2021 — grille CTA 2021-2026 (voir sous-sections)"
   elec:
     taux_pct: 21.93
     assiette: "turpe_fixe_ht"
@@ -188,6 +241,12 @@ cta_2021:
     valid_to: "2026-01-31"
 
 cta:
+  # Top-level envelope = grille CTA courante (gaz stable depuis 2021-08-01,
+  # elec révisée au 2026-02-01). Enfants portent les valid_from/valid_to réels.
+  # Fix P0 audit Regulatory 2026-04-15 (tool find_active_at_date naive).
+  valid_from: "2021-08-01"
+  valid_to: null
+  source: "CTA en vigueur — élec CRE 2026-14 (fév 2026+) + gaz arrêté 20/07/2021"
   elec:
     taux_pct: 15.0
     assiette: "turpe_fixe_ht"
@@ -238,10 +297,17 @@ cta:
     valid_from: "2025-07-01"
     valid_to: null
 
-# ── TICGN (historique, remplace par accise_gaz_* temporalisees ci-dessus) ────
+# ── TICGN (historique, superseded par accise_gaz_* temporalisees ci-dessus) ─
+# Clé historique encore consommée par `tarif_loader.load_ticgn_rate()`,
+# `billing_engine/engine.py`, `market_tariff_loader.py`. Gardée pour rétro-compat
+# et tests de shadow billing gaz. Pour le routage temporalisé actuel, utiliser
+# `accise_gaz_2025_jan` (même valeur 16.37) ou `accise_gaz_2025_aout` (10.54) ou
+# `accise_gaz` (10.73 fév 2026+).
 ticgn:
+  deprecated: true
+  superseded_by: ["accise_gaz_2025_jan", "accise_gaz_2025_aout", "accise_gaz"]
   rate_eur_kwh: 0.01637
-  source: "Loi de finances 2025 — DEPRECATED, utiliser accise_gaz_*"
+  source: "Loi de finances 2025 — 16.37 EUR/MWh jan-jul 2025 (deprecated, voir superseded_by)"
   valid_from: "2025-01-01"
   valid_to: "2025-07-31"
 
@@ -457,6 +523,13 @@ cbam_eu:
 
 # ── TVA ──────────────────────────────────────────────────────────────────────
 tva:
+  # Top-level valid_from = 1/08/2025 : doctrine PROMEOS "TVA 20% uniforme"
+  # devient effective ce jour-là (suppression du taux réduit 5,5% sur
+  # abonnement + CTA + TURPE fixe). Avant cette date, les 2 taux co-existaient
+  # et la sélection était faite par composante. Fix P0 audit Regulatory 2026-04-15.
+  valid_from: "2025-08-01"
+  valid_to: null
+  source: "LFI 2025 art. 20 + directive UE (bofip ACTU-2025-00057) — TVA 20% uniforme au 1/08/2025"
   normale:
     taux: 0.20
     source: "CGI art. 278"
@@ -476,19 +549,30 @@ tva:
 # le prix de marché dépasse les seuils fixés par la CRE.
 # Source : Loi de souveraineté énergétique, art. L. 336-1 Code énergie
 vnu:
+  dormant: true
+  taux_eur_mwh: 0.0  # explicite : aucun prélèvement tant que marché < seuil_1
   seuil_1_eur_mwh: 78.0
   seuil_2_eur_mwh: 110.0
   statut: "EN VIGUEUR — DORMANT (prix marché ~60 €/MWh < seuil 78)"
-  source: "Loi de souveraineté énergétique — VNU au 01/01/2026 (Décret 2026-55, CRE 2026-52)"
+  source: "Loi de souveraineté énergétique (art. L. 336-1 Code énergie) — VNU au 01/01/2026 (Décret 2026-55, CRE 2026-52)"
   valid_from: "2026-01-01"
+  valid_to: null
   revision_triennale: "~2028 (CRE)"
-  note: "L'ancien ARENH (42 EUR/MWh) n'est plus applicable. Ne plus utiliser comme référence de prix."
+  note: "L'ancien ARENH (42 EUR/MWh) n'est plus applicable. Ne plus utiliser comme référence de prix. Le flag `dormant: true` signale aux moteurs de calcul de ne PAS appliquer de composante VNU tant qu'une activation explicite n'est pas publiée."
 
 # ── Prix de référence par défaut (fallback shadow billing) ──────────────────
+# Note : `prix_reference` est un FALLBACK non-réglementaire (prix spot moyen
+# interne PROMEOS), pas une grille tarifaire officielle. Il n'a donc pas de
+# `valid_from` réglementaire strict. Le champ `valid_from` ci-dessous est
+# purement une date d'initialisation de la valeur (traceability PROMEOS),
+# pas une date d'effet légale. Audit Regulatory 2026-04-15 (P2).
 prix_reference:
   elec_eur_kwh: 0.068
   gaz_eur_kwh: 0.045
-  source: "PROMEOS POC fallback (EPEX Spot 30j moyen)"
+  source: "PROMEOS POC fallback (EPEX Spot 30j moyen, 2024-2025)"
+  valid_from: "2024-01-01"
+  valid_to: null
+  is_regulatory: false
 
 # ── Cost Simulator post-ARENH MVP — constantes versionnées ─────────────────
 # Utilisées par `services/purchase/cost_simulator_2026.py`. Migration depuis

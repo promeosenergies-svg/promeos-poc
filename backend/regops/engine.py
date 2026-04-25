@@ -36,7 +36,7 @@ from .schemas import Finding, Action, SiteSummary
 from .completeness import check_required_inputs
 from .versioning import compute_deterministic_version, compute_data_version
 from .scoring import compute_regops_score  # kept for score_explain detail only
-from .rules import tertiaire_operat, bacs, aper, cee_p6
+from .rules import tertiaire_operat, bacs, aper, cee_p6, dpe_tertiaire
 from .config.legal_refs import get_legal_ref
 
 _logger = logging.getLogger(__name__)
@@ -181,6 +181,7 @@ def evaluate_site(db: Session, site_id: int, *, org_id: int | None = None) -> Si
     all_findings.extend(tertiaire_operat.evaluate(site, batiments, evidences, regs.get("tertiaire_operat", {}), db=db))
     all_findings.extend(bacs.evaluate(site, batiments, evidences, regs.get("bacs", {})))
     all_findings.extend(aper.evaluate(site, batiments, evidences, regs.get("aper", {})))
+    all_findings.extend(dpe_tertiaire.evaluate(site, batiments, evidences, regs.get("dpe_tertiaire", {})))
     all_findings.extend(cee_p6.evaluate(site, batiments, evidences, regs.get("cee_p6", {})))
 
     # Check completeness for missing data actions

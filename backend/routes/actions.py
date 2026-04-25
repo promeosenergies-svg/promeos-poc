@@ -63,7 +63,12 @@ class ActionCreate(BaseModel):
     owner: Optional[str] = Field(None, max_length=200)
     notes: Optional[str] = Field(None, max_length=5000)
     idempotency_key: Optional[str] = Field(None, max_length=100)
+    # Si fourni, stocké tel quel. Si absent et `estimated_savings_kwh_year` fourni,
+    # calculé côté serveur via `config.emission_factors.get_emission_factor("ELEC")`.
+    # Doctrine PROMEOS : le facteur CO₂ est une constante réglementaire ADEME, jamais
+    # hardcodée côté frontend (éviterait la dérive post-mise-à-jour ADEME).
     co2e_savings_est_kg: Optional[float] = Field(None, ge=0, le=1e9)
+    estimated_savings_kwh_year: Optional[float] = Field(None, ge=0, le=1e12)
     evidence_required: Optional[bool] = None
 
 
@@ -97,6 +102,28 @@ class EvidenceCreate(BaseModel):
 # ========================================
 # Helpers
 # ========================================
+
+
+def _resolve_co2e_kg(
+    co2e_kg: Optional[float],
+    kwh_year: Optional[float],
+) -> Optional[float]:
+    """Résout la valeur CO₂e à persister.
+
+    Priorité : valeur explicite > calcul serveur depuis kWh. Si les deux
+    sont absents, retourne None. Protège la DB contre les valeurs
+    pré-calculées côté frontend avec un facteur obsolète (bug #6 QA Guardian
+    2026-04-15) en rendant le backend la source unique de vérité CO₂.
+    """
+    if co2e_kg is not None:
+        return co2e_kg
+    if kwh_year is None:
+        return None
+    # Import local pour éviter une dépendance au démarrage du module si
+    # emission_factors venait à bouger.
+    from config.emission_factors import get_emission_factor
+
+    return round(kwh_year * get_emission_factor("ELEC"), 2)
 
 
 def _resolve_org(request: Request, auth: Optional[AuthContext], db: Session, org_id: Optional[int] = None) -> int:
@@ -337,7 +364,7 @@ def create_action(
         owner=data.owner,
         notes=notes,
         idempotency_key=data.idempotency_key,
-        co2e_savings_est_kg=data.co2e_savings_est_kg,
+        co2e_savings_est_kg=_resolve_co2e_kg(data.co2e_savings_est_kg, data.estimated_savings_kwh_year),
         evidence_required=data.evidence_required or False,
     )
     db.add(item)

@@ -1,15 +1,40 @@
 """
 PROMEOS - Compliance Rules Evaluator
-Charge les packs YAML et produit des ComplianceFinding persistants.
 
-Architecture moteurs (B1 — clarification) :
-  - compliance_engine.py  : LEGACY, snapshots Site (déprécié)
-  - compliance_rules.py   : Ce fichier. Évaluateur YAML → ComplianceFinding rows.
-                            Appelé par POST /api/compliance/recompute-rules et
-                            par get_compliance_bundle() pour la vue cockpit.
-  - regops/engine.py      : ORCHESTRATEUR, source de vérité pour le score unifié A.2.
-                            Appelle regops/rules/*.py qui wrappent ce même évaluateur.
-  - bacs_engine.py        : Moteur V2 BACS spécialisé (Putile, TRI, inspections).
+★ FUTURE-DEPRECATED — conservé pour le workflow OPS ComplianceFinding ★
+
+Charge les packs YAML backend/rules/decret_*_v1.yaml et produit des
+ComplianceFinding ORM rows (avec workflow insight_status, owner, notes,
+run_batch, engine_version). Ce flux alimente /api/compliance/bundle pour
+le cockpit conformité côté utilisateur métier.
+
+Architecture actuelle (sprint V115) — deux évaluateurs en parallèle :
+  - compliance_engine.py  : LEGACY snapshots Site (déprécié historique).
+  - compliance_rules.py   : Ce fichier. Packs YAML → ComplianceFinding ORM.
+                            Consommé par /api/compliance/bundle + recompute-rules.
+  - regops/engine.py      : ★ SOURCE DE VÉRITÉ scoring A.2 ★.
+                            regs.yaml → Finding dataclass → RegAssessment JSON.
+                            Consommé par /api/regops/* et compliance_score_service.
+  - bacs_engine.py        : Moteur V2 BACS spécialisé (voir matrice dans
+                            services/bacs_compliance_gate.py).
+
+Risque de dérive : les deux évaluateurs lisent des YAML différents et peuvent
+diverger sur les mêmes données. Le sprint V115 step 5 pose les fondations pour
+prévenir ce risque :
+  - services/compliance_rule_mapping.py : mapping canonique des rule_ids
+    entre les deux moteurs + helper regulation_worst_status.
+  - tests/test_compliance_dual_engine_consistency.py : test golden qui
+    exécute les deux évaluateurs sur la même fixture et assert leur
+    cohérence par régulation.
+
+TODO (post-V115, sprint dédié refactor) :
+  - Remplacer les _eval_decret_tertiaire/_eval_bacs/_eval_aper par un appel
+    à regops.engine.evaluate_site et un adaptateur Finding → ComplianceFinding.
+    Cela rendra regops.engine le seul évaluateur et compliance_rules un pur
+    adaptateur de persistance ORM. Les packs YAML de backend/rules/ seront
+    alors alignés sur regs.yaml ou supprimés.
+  - Tant que ce refactor n'est pas fait, respecter RULE_ID_TO_REGULATION lors
+    de tout ajout de rule_id pour garder le test de cohérence vert.
 
 Source de vérité scoring : compliance_score_service.py (poids lus depuis regs.yaml).
 """

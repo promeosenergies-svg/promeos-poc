@@ -2,9 +2,13 @@
  * KB Recommendation → ActionItem bridge model.
  * Pure functions: build payload for POST /api/actions.
  * Pattern: OPERAT V46 (source_type='insight', idempotency_key for dedup).
+ *
+ * Doctrine PROMEOS (fix P0 QA Guardian 2026-04-15) :
+ * - Jamais de facteur CO₂ hardcodé côté frontend pour persistence en DB.
+ * - On envoie `estimated_savings_kwh_year` au backend, qui calcule
+ *   `co2e_savings_est_kg` via `config.emission_factors.get_emission_factor("ELEC")`.
+ * - Si ADEME met à jour le facteur, le recompute est backend-only.
  */
-
-import { CO2E_FACTOR_KG_PER_KWH } from '../pages/consumption/constants';
 
 const SEVERITY_TO_PRIORITY = { critical: 1, high: 2, medium: 3, low: 4 };
 
@@ -29,7 +33,6 @@ export function buildKbRecoActionPayload({
   const severity = topSeverity || 'medium';
   const savingsEur = reco.estimated_savings_eur_year || null;
   const savingsKwh = reco.estimated_savings_kwh_year || null;
-  const co2eSavings = savingsKwh ? Math.round(savingsKwh * CO2E_FACTOR_KG_PER_KWH) : null;
 
   return {
     org_id: orgId,
@@ -43,7 +46,9 @@ export function buildKbRecoActionPayload({
     priority: SEVERITY_TO_PRIORITY[severity] || 3,
     severity,
     estimated_gain_eur: savingsEur,
-    co2e_savings_est_kg: co2eSavings,
+    // Le backend calcule co2e_savings_est_kg depuis estimated_savings_kwh_year.
+    // Ne pas envoyer co2e_savings_est_kg depuis le front : source unique backend.
+    estimated_savings_kwh_year: savingsKwh,
     due_date: computeDueDate(severity),
     category: 'energie',
   };

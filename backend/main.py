@@ -231,6 +231,18 @@ from routes.sirene import router as sirene_router
 
 app.include_router(sirene_router)
 
+# Config emission factors (ADEME Base Empreinte V23.6) — source unique pour le frontend
+# Fix P0 #1-5 audit QA Guardian SDK 2026-04-15 (supprime le hardcode CO2E_FACTOR_KG_PER_KWH)
+from routes.config_emission_factors import router as config_emission_factors_router
+
+app.include_router(config_emission_factors_router)
+
+# Config price references (fallback shadow billing, non-réglementaire)
+# Fix P1 audit QA Guardian — supprime le hardcode EUR_FACTOR = 0.068 frontend
+from routes.config_price_references import router as config_price_references_router
+
+app.include_router(config_price_references_router)
+
 # CX Dashboard (admin — usage interne)
 from routes.cx_dashboard import router as cx_dashboard_router
 

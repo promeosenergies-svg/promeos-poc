@@ -82,7 +82,12 @@ def _seed_org_site(db):
 
 
 def _kb_action_payload(org_id, site_id, reco_id=42, reco_code="RECO-LED-001", **overrides):
-    """Build a KB reco action payload matching kbRecoActionModel.js output."""
+    """Build a KB reco action payload matching kbRecoActionModel.js output.
+
+    Post P0 fix (QA Guardian 2026-04-15) : le front envoie
+    `estimated_savings_kwh_year`, le backend calcule `co2e_savings_est_kg`
+    via `config.emission_factors.get_emission_factor("ELEC")`.
+    """
     payload = {
         "org_id": org_id,
         "site_id": site_id,
@@ -95,7 +100,7 @@ def _kb_action_payload(org_id, site_id, reco_id=42, reco_code="RECO-LED-001", **
         "priority": 3,
         "severity": "medium",
         "estimated_gain_eur": 2400.0,
-        "co2e_savings_est_kg": 780.0,  # 15000 * 0.052
+        "estimated_savings_kwh_year": 15000.0,  # backend calcule co2e = 15000 * 0.052 = 780
         "due_date": "2026-06-01",
         "category": "energie",
     }
@@ -121,11 +126,14 @@ class TestKbActionBridgeCreation:
         data = client.post("/api/actions", json=payload).json()
         assert data["source_type"] == "insight"
 
-    def test_created_action_has_co2e_savings(self, client, db):
+    def test_created_action_has_co2e_savings_computed_server_side(self, client, db):
+        """Fix P0 2026-04-15 : le backend calcule co2e depuis kwh_year (pas le front)."""
         org, site = _seed_org_site(db)
         payload = _kb_action_payload(org.id, site.id)
+        # Le payload n'envoie PLUS co2e_savings_est_kg — le serveur doit le calculer.
+        assert "co2e_savings_est_kg" not in payload
         data = client.post("/api/actions", json=payload).json()
-        assert data.get("co2e_savings_est_kg") == 780.0
+        assert data.get("co2e_savings_est_kg") == 780.0  # 15000 * 0.052 ADEME
 
     def test_created_action_has_estimated_gain(self, client, db):
         org, site = _seed_org_site(db)
@@ -228,8 +236,26 @@ class TestKbActionBridgeSourceGuard:
         assert factor == 0.052, f"get_emission_factor('ELEC') = {factor}, attendu 0.052"
 
     def test_co2e_matches_kwh_times_052(self, client, db):
-        """15000 kWh * 0.052 = 780 kgCO₂e — verifie la coherence frontend/backend."""
+        """15000 kWh * 0.052 = 780 kgCO₂e — verifie que le backend calcule bien
+        via emission_factors (source unique, pas de hardcode front)."""
         org, site = _seed_org_site(db)
-        payload = _kb_action_payload(org.id, site.id, co2e_savings_est_kg=780.0)
+        payload = _kb_action_payload(org.id, site.id)
         data = client.post("/api/actions", json=payload).json()
         assert data["co2e_savings_est_kg"] == 780.0
+
+    def test_co2e_explicit_value_wins_over_kwh_compute(self, client, db):
+        """Si le client envoie explicitement co2e_savings_est_kg, il a la priorité
+        sur le calcul serveur (compat pour les agents qui font leur propre calcul)."""
+        org, site = _seed_org_site(db)
+        payload = _kb_action_payload(org.id, site.id, co2e_savings_est_kg=999.0)
+        data = client.post("/api/actions", json=payload).json()
+        assert data["co2e_savings_est_kg"] == 999.0  # valeur explicite gagne
+
+    def test_co2e_null_when_no_kwh_and_no_explicit(self, client, db):
+        """Si ni co2e_savings_est_kg ni estimated_savings_kwh_year fournis,
+        le champ reste null (pas de valeur fabriquée)."""
+        org, site = _seed_org_site(db)
+        payload = _kb_action_payload(org.id, site.id)
+        payload.pop("estimated_savings_kwh_year", None)
+        data = client.post("/api/actions", json=payload).json()
+        assert data.get("co2e_savings_est_kg") is None

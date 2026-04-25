@@ -16,7 +16,9 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 import { colorForSite } from './helpers';
 import { Card, CardBody } from '../../ui';
 
-const _EUR_FACTOR = 0.068; // EUR/kWh — spot moyen 30j bridgé, aligné backend
+// Queue 2 cleanup 2026-04-15 : `_EUR_FACTOR = 0.068` supprimé (dead code, jamais
+// utilisé dans ce fichier). Pour un prix de référence dynamique, importer
+// `useElecPriceReference` depuis `contexts/PriceReferenceContext`.
 
 /** Compute a single site's KPIs from its tunnel data */
 function computeSiteKPIs(tunnel) {

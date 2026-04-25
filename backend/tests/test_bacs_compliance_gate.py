@@ -17,7 +17,7 @@ from sqlalchemy.pool import StaticPool
 from models import Base, Site, Organisation, Batiment
 from models.bacs_models import BacsAsset, BacsCvcSystem, BacsInspection
 from models.enums import CvcSystemType, CvcArchitecture, InspectionStatus
-from services.bacs_compliance_gate import evaluate_bacs_status
+from services.bacs_compliance_gate import evaluate_bacs_status, _get_thresholds
 
 
 @pytest.fixture
@@ -169,3 +169,51 @@ class TestBacsSourceTraceability:
         _add_inspection(db, asset.id)
         result = evaluate_bacs_status(db, asset.id)
         assert any("baseline" in w.lower() or "efficacite" in w.lower() for w in result["warnings"])
+
+
+class TestThresholdSourceUnicity:
+    """V115 step 4 — tous les moteurs BACS doivent lire les mêmes seuils 290/70."""
+
+    def test_gate_reads_from_yaml_v2(self):
+        """_get_thresholds() retourne (290, 70) depuis regulations/bacs/v2.yaml."""
+        high, low = _get_thresholds()
+        assert high == 290
+        assert low == 70
+
+    def test_gate_and_engine_share_config_file(self):
+        """Le gate et l'engine V2 lisent la MÊME constante via _load_bacs_config."""
+        from services.bacs_engine import _load_bacs_config
+
+        cfg = _load_bacs_config()
+        assert cfg["thresholds_kw"]["tier1"] == 290
+        assert cfg["thresholds_kw"]["tier2"] == 70
+
+    def test_all_known_bacs_threshold_sources_agree(self):
+        """Garde-fou contre la dérive entre les 5+ sources qui définissent 290/70.
+
+        Si ce test casse, c'est qu'une source a été modifiée sans MAJ des autres.
+        Ne PAS supprimer ce test — adapter toutes les sources ensemble.
+        """
+        from config.emission_factors import BACS_SEUIL_HAUT, BACS_SEUIL_BAS
+        from services.bacs_engine import _load_bacs_config
+
+        cfg = _load_bacs_config()
+        assert int(BACS_SEUIL_HAUT) == cfg["thresholds_kw"]["tier1"] == 290
+        assert int(BACS_SEUIL_BAS) == cfg["thresholds_kw"]["tier2"] == 70
+
+
+class TestGateEngineConsistency:
+    """V115 step 4 — gate et engine ne doivent jamais se contredire sur un même asset."""
+
+    def test_below_threshold_both_say_not_applicable(self, db, asset):
+        """Putile < 70 kW → gate=NOT_APPLICABLE et engine dit is_obligated=False."""
+        _add_system(db, asset.id, CvcSystemType.HEATING, 50, system_class="A", verified=True)
+        gate_result = evaluate_bacs_status(db, asset.id)
+        assert gate_result["bacs_status"] == "not_applicable"
+
+        from services.bacs_engine import evaluate_bacs
+
+        engine_result = evaluate_bacs(db, asset.site_id)
+        # Cohérence : gate dit not_applicable → engine doit dire is_obligated=False
+        assert engine_result is not None
+        assert engine_result.is_obligated is False

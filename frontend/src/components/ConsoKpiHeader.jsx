@@ -9,7 +9,7 @@
  */
 import { Zap, Euro, TrendingUp, Leaf, Activity, Moon, HelpCircle, Building2 } from 'lucide-react';
 import { TrustBadge as _TrustBadge } from '../ui';
-import { CO2E_FACTOR_KG_PER_KWH } from '../pages/consumption/constants';
+import { useElecCo2Factor } from '../contexts/EmissionFactorsContext';
 import { fmtNum, fmtKwh } from '../utils/format';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { getKpiLabel } from '../shared/kpiLabels';
@@ -104,6 +104,7 @@ export default function ConsoKpiHeader({
   loading = false,
 }) {
   const { isExpert } = useExpertMode();
+  const co2Factor = useElecCo2Factor();
   // --- kWh total ---
   // Priority: hphc.total_kwh (sum of readings HP+HC, always available when data exists)
   // then tunnel.total_kwh (not returned by current tunnel service)
@@ -134,8 +135,8 @@ export default function ConsoKpiHeader({
       : null;
   const eurPerM2Label = eurPerM2Year != null ? fmtNum(eurPerM2Year, 1, '€/m²/an') : '—';
 
-  // --- CO2e ---
-  const co2Kg = totalKwh != null ? Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH) : null;
+  // --- CO2e (facteur via EmissionFactorsContext, source unique ADEME) ---
+  const co2Kg = totalKwh != null ? Math.round(totalKwh * co2Factor) : null;
   const co2Label =
     co2Kg != null
       ? co2Kg >= 1000

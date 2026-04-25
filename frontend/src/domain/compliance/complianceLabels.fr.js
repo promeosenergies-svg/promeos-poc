@@ -111,6 +111,12 @@ export const CONFIDENCE_LABELS = {
   low: 'Faible',
 };
 
+export const CONFIDENCE_DATA_LABELS = {
+  high: 'Données fiables',
+  medium: 'Données partielles',
+  low: 'Données limitées',
+};
+
 // ─── Types d'action ─────────────────────────────────────────────────────
 
 export const ACTION_TYPE_LABELS = {
