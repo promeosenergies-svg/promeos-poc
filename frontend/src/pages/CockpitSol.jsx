@@ -572,10 +572,53 @@ export default function CockpitSol() {
             return (
               oppList.length > 0 && (
                 <>
-                  <SolSectionHead
-                    title="Plan d'action — leviers à activer"
-                    meta={`${oppList.length} levier${oppList.length > 1 ? 's' : ''} chiffré${oppList.length > 1 ? 's' : ''} · total ${formatFREur(data.solProposal?.total_impact_eur_per_year || 0, 0)}/an`}
-                  />
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      justifyContent: 'space-between',
+                      marginTop: 24,
+                      marginBottom: 12,
+                      gap: 16,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <h3
+                      style={{
+                        fontFamily: 'var(--sol-font-body)',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: 'var(--sol-ink-900)',
+                        margin: 0,
+                      }}
+                    >
+                      Plan d'action — leviers à activer
+                      <span
+                        style={{
+                          fontWeight: 400,
+                          color: 'var(--sol-ink-500)',
+                          marginLeft: 10,
+                          fontSize: 12,
+                        }}
+                      >
+                        {oppList.length} levier{oppList.length > 1 ? 's' : ''}
+                        {' '}chiffré{oppList.length > 1 ? 's' : ''}
+                      </span>
+                    </h3>
+                    {/* Meta valeur €/an SAILLANTE (audit UX B2 : chiffre-clé
+                        CFO mérite typographie bold colorée, pas meta gris). */}
+                    <span
+                      style={{
+                        fontFamily: 'var(--sol-font-mono)',
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: 'var(--sol-calme-fg, #047857)',
+                        letterSpacing: '-0.01em',
+                      }}
+                    >
+                      {formatFREur(data.solProposal?.total_impact_eur_per_year || 0, 0)}/an
+                    </span>
+                  </div>
                   <div style={{ marginBottom: 16 }}>
                     <OpportunitiesCard opportunities={oppList} onNavigate={navigate} />
                   </div>
@@ -613,12 +656,23 @@ export default function CockpitSol() {
                   ? billing.total_eur / consoKwh
                   : 0.18
               }
+              totalSites={rawKpis.total || 5}
             />
           </div>
 
-          {/* Sprint 1.O3 — Accordéon "Détails benchmark" : Performance OID +
-              Vecteurs CO₂ regroupés et collapsable. Réduit le scroll initial
-              de ~600px sur /cockpit, l'exec expand seulement s'il veut creuser. */}
+          {/* AJUSTEMENT POST-AUDIT Jean-Marc : Performance OID SORTIE de
+              l'accordéon (argument DAF #1 vs Danone/Lactalis). Vecteurs CO₂
+              reste collapsable (ESG/CSRD = secondaire pour CFO). */}
+          <SolSectionHead
+            title="Performance vs pairs OID"
+            meta="Benchmark sectoriel · argument DAF anti-CFO"
+          />
+          <div style={{ marginBottom: 24 }}>
+            <PerformanceSitesCard fallbackSites={cockpit.sites || scopedSites} />
+          </div>
+
+          {/* Vecteurs CO₂ + ESG → accordéon (secondaire CFO mais utile pour
+              reporting CSRD à la demande). */}
           <div style={{ marginBottom: 24 }}>
             <button
               type="button"
@@ -640,9 +694,9 @@ export default function CockpitSol() {
               }}
             >
               <span>
-                {showBenchmarkDetails ? 'Masquer' : 'Voir'} le détail benchmark
+                {showBenchmarkDetails ? 'Masquer' : 'Voir'} le détail ESG/CSRD
                 <span style={{ fontWeight: 400, color: 'var(--sol-ink-500)', marginLeft: 12, fontSize: 12 }}>
-                  — Performance vs pairs OID · Vecteurs énergétiques + CO₂ scopes
+                  — Vecteurs énergétiques + CO₂ scopes 1/2 + delta N-1
                 </span>
               </span>
               <span style={{ color: 'var(--sol-ink-400)', fontSize: 18 }}>
@@ -650,37 +704,12 @@ export default function CockpitSol() {
               </span>
             </button>
             {showBenchmarkDetails && (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-                  gap: 16,
-                  marginTop: 16,
-                  alignItems: 'stretch',
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <SolSectionHead
-                    title="Performance vs pairs OID"
-                    meta="Benchmark par usage · top 5 sites"
-                  />
-                  <div style={{ flex: 1, display: 'flex' }}>
-                    <div style={{ width: '100%' }}>
-                      <PerformanceSitesCard fallbackSites={cockpit.sites || scopedSites} />
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <SolSectionHead
-                    title="Vecteurs & empreinte CO₂"
-                    meta="Élec/gaz · scopes 1/2 · vs N-1"
-                  />
-                  <div style={{ flex: 1, display: 'flex' }}>
-                    <div style={{ width: '100%' }}>
-                      <VecteurEnergetiqueCard />
-                    </div>
-                  </div>
-                </div>
+              <div style={{ marginTop: 16 }}>
+                <SolSectionHead
+                  title="Vecteurs & empreinte CO₂"
+                  meta="Élec/gaz · scopes 1/2 · vs N-1"
+                />
+                <VecteurEnergetiqueCard />
               </div>
             )}
           </div>

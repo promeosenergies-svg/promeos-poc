@@ -40,9 +40,21 @@ function buildBriefText({
 }) {
   const lines = [];
 
-  // Ligne 1 : situation patrimoine — wording fluide qui marche AVEC ou SANS orgName
-  // FIX bug audit Jean-Marc : "Notre patrimoine votre patrimoine" quand fallback.
-  const introContext = orgName
+  // Ligne 1 : situation patrimoine — wording fluide AVEC ou SANS orgName.
+  // FIX régression Jean-Marc : useScope() peut renvoyer orgName = "votre
+  // patrimoine" en fallback (chaîne) → bypass la branche `if (orgName)`.
+  // On filtre les valeurs sentinelles connues + chaînes < 3 chars.
+  const SENTINEL_FALLBACKS = new Set([
+    'votre patrimoine',
+    'patrimoine',
+    'organisation',
+  ]);
+  const isRealOrgName =
+    orgName &&
+    typeof orgName === 'string' &&
+    orgName.length >= 3 &&
+    !SENTINEL_FALLBACKS.has(orgName.toLowerCase().trim());
+  const introContext = isRealOrgName
     ? `Notre groupe ${orgName} pilote ${totalSites} sites tertiaires et`
     : `Le patrimoine de ${totalSites} sites tertiaires`;
   lines.push(
@@ -88,10 +100,13 @@ function buildBriefText({
     lines.push(`À surveiller cette semaine : ${signals.join(', ')}.`);
   }
 
-  // Ligne 6 : décision attendue
+  // Ligne 6 : décision attendue avec CHIFFRE de l'enveloppe (audit Jean-Marc :
+  // "Mon DG va répondre OK combien tu veux ? et là je suis nu").
+  // Heuristique : enveloppe ≈ 30-40% impact_eur_per_year (hyp. payback 2.5-3.3 ans).
   if (totalImpactEur > 0) {
+    const enveloppe = Math.round(totalImpactEur * 0.35);
     lines.push(
-      `Décision attendue : validation de l'enveloppe pour activer les ${actionsCount} leviers identifiés.`
+      `Décision attendue : validation d'une enveloppe estimée à ${formatFREur(enveloppe)} pour activer les ${actionsCount} leviers (payback ≤ 3 ans, gain récurrent ${formatFREur(totalImpactEur)}/an).`
     );
   } else {
     lines.push(`Décision attendue : aucune action urgente — patrimoine sous contrôle.`);

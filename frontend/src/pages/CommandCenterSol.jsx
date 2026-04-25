@@ -65,6 +65,7 @@ import {
 import DeadlineBanner from '../components/DeadlineBanner';
 import ValueCounterCard from '../components/ValueCounterCard';
 import PeerComparisonCard from '../components/PeerComparisonCard';
+import BriefCodexCard from '../components/BriefCodexCard';
 import WatchlistCard from './cockpit/WatchlistCard';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
 import { useCockpitData } from '../hooks/useCockpitData';
@@ -427,10 +428,17 @@ export default function CommandCenterSol() {
   }
 
   return (
-    <>
+    <div
+      style={{
+        padding: '32px 48px 60px',
+        background: 'var(--sol-bg-canvas)',
+        minHeight: '100vh',
+      }}
+    >
       {/* Header sobre — la narration chiffrée vit dans le SolHero ci-dessous.
           Évite la contradiction "header dit X, SolHero dit Y" en gardant juste
-          le contexte (orgname + sites) sans répéter les chiffres. */}
+          le contexte (orgname + sites) sans répéter les chiffres.
+          Padding container harmonisé avec /cockpit (audit UX B1). */}
       <SolPageHeader
         kicker={kicker}
         title="Bonjour "
@@ -485,21 +493,60 @@ export default function CommandCenterSol() {
           onAction={(path) => path && navigate(path)}
           primaryLabel="Voir le plan complet"
           onPrimary={() => navigate('/actions')}
-          secondaryLabel="Plus tard"
-          onSecondary={() => {}}
+          secondaryLabel="Reporter à demain"
+          onSecondary={() => {
+            // Snooze 24h via localStorage — protège la démo du bouton mort
+            const tomorrow = new Date();
+            tomorrow.setHours(tomorrow.getHours() + 24);
+            try {
+              localStorage.setItem(
+                'sol_hero_snoozed_until',
+                tomorrow.toISOString()
+              );
+            } catch {
+              /* localStorage indisponible — silent */
+            }
+            // Feedback minimal : refresh viewport (le hero ne se masque pas
+            // côté demo car beaucoup de monde clique pour voir)
+            window.alert(
+              'Plan reporté à demain · Sol gardera ce briefing en attente.'
+            );
+          }}
         />
       )}
 
-      {/* Sol ROI cumulé — preuve de valeur Sol depuis l'activation.
-          Wow-moment exploitant : "Sol a déjà identifié X € en N jours". */}
-      <div style={{ marginTop: 16 }}>
-        <ValueCounterCard orgId={scope.orgId} />
-      </div>
-
       {/* WOW-7 — Comparaison tarif vs pairs sectoriels (anti-fournisseur).
-          Marie voit immédiatement si elle surpaye ou pas. Wedge fort. */}
+          REMONTÉE en position #4 (audit Marie + UX B3) : c'est le hook
+          différenciant PROMEOS "tout sauf la fourniture". Marie voit
+          immédiatement si elle surpaye, AVANT le ValueCounter ROI. */}
       <div style={{ marginTop: 16 }}>
         <PeerComparisonCard />
+      </div>
+
+      {/* G3 — Brief CFO 5 bullets (audit Marie exigence #3 enfin livrée).
+          BriefCodexCard compact collapsable, Marie clique "Copier" et a son
+          brief 14h pour sa CFO en 1 seconde. Wording adapté direction interne. */}
+      <div style={{ marginTop: 16 }}>
+        <BriefCodexCard
+          orgName={orgName}
+          totalSites={rawKpis.total}
+          facture={data.cockpit?.billing?.total_eur}
+          conformityScore={complianceScore}
+          consoMwh={kpisJ1.conso_mois_kwh ? kpisJ1.conso_mois_kwh / 1000 : null}
+          co2Tco2={null}
+          sitesAtRisk={rawKpis.aRisque + rawKpis.nonConformes}
+          actionsCount={data.solProposal?.actions?.length || 0}
+          totalImpactEur={data.solProposal?.total_impact_eur_per_year || 0}
+          alertesCount={alertsCount}
+          anomaliesCount={data.cockpit?.billing?.anomalies_count || 0}
+        />
+      </div>
+
+      {/* ValueCounter ROI cumul — placé après PeerComparison (preuve concrète
+          arrive après le hook anti-fournisseur). Conditionnel ≥7j historique
+          via composant qui null-return si data.total_eur <= 0. */}
+      <div style={{ marginTop: 16 }}>
+        <ValueCounterCard orgId={scope.orgId} />
       </div>
 
       {/* Watchlist — signaux faibles à monitorer. Le composant a son propre
@@ -928,6 +975,6 @@ export default function CommandCenterSol() {
           </button>
         ))}
       </div>
-    </>
+    </div>
   );
 }

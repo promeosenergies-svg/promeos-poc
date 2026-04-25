@@ -109,14 +109,28 @@ export default function WhatIfScenarioCard({
   baselineConsoKwh = 2_750_000, // 2750 MWh par défaut
   baselineFactureEur = 386_972,
   defaultTariff = DEFAULT_TARIFF_EUR_KWH,
+  totalSites = 5,
 }) {
+  // Cap PV dynamique = totalSites × 500 kWc (audit Jean-Marc CAC40 :
+  // "slider plafonne 1000 kWc, sur 218 sites c'est ridicule"). Ce cap
+  // donne une marge réaliste : 5 sites → 2500 kWc max ; 200 → 100 MWc.
+  const pvMaxKwc = Math.max(1000, totalSites * 500);
+
+  // Preset adaptatif relatif à la facture (audit Jean-Marc : "preset
+  // calibré pour 4 sites démo, ne tient pas en grand compte"). On vise
+  // un PV qui couvre ~2% de la conso annuelle = environ scénario réaliste.
+  // Soit pv_kwc_initial = baselineConsoKwh × 0.02 / 1100h.
+  const initialPvKwc = Math.min(
+    pvMaxKwc,
+    Math.max(50, Math.round((baselineConsoKwh * 0.02) / PV_YIELD_HOURS_PER_YEAR))
+  );
+
   // Preset par défaut chiffré — empêche le first-paint "0 €" qui donne
   // l'impression "ça marche pas" (audit UX A3 / Jean-Marc).
-  // Hypothèse : -3% tarif renégo · 50 kWc PV · -2% efficacité ≈ scénario réaliste.
   const [tariff, setTariff] = useState(
     Math.max(0.10, parseFloat((defaultTariff * 0.97).toFixed(3)))
   );
-  const [pvKwc, setPvKwc] = useState(50);
+  const [pvKwc, setPvKwc] = useState(initialPvKwc);
   const [reductionPct, setReductionPct] = useState(2);
 
   // Calcul live de la projection
@@ -155,7 +169,7 @@ export default function WhatIfScenarioCard({
 
   const handleReset = () => {
     setTariff(Math.max(0.10, parseFloat((defaultTariff * 0.97).toFixed(3))));
-    setPvKwc(50);
+    setPvKwc(initialPvKwc);
     setReductionPct(2);
   };
 
@@ -268,12 +282,12 @@ export default function WhatIfScenarioCard({
           <Slider
             label="Photovoltaïque installé"
             min={0}
-            max={1000}
-            step={10}
+            max={pvMaxKwc}
+            step={Math.max(10, Math.round(pvMaxKwc / 100))}
             value={pvKwc}
             onChange={setPvKwc}
-            formatValue={(v) => `${v} kWc`}
-            hint={`≈ ${(pvKwc * PV_YIELD_HOURS_PER_YEAR).toLocaleString('fr-FR')} kWh/an autoconsommés`}
+            formatValue={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)} MWc` : `${v} kWc`)}
+            hint={`≈ ${(pvKwc * PV_YIELD_HOURS_PER_YEAR).toLocaleString('fr-FR')} kWh/an autoconsommés · cap ${(pvMaxKwc / 1000).toFixed(0)} MWc (${totalSites} sites)`}
           />
           <Slider
             label="Baisse consommation"
