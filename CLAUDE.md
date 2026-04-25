@@ -8,6 +8,23 @@ Lis `SKILL.md` a la racine AVANT toute action sur ce repo.
 Toutes les regles non-negociables y sont encodees.
 Skills detailles dans `.claude/skills/` (11 skills domaine).
 
+## Sources veille canoniques (regle obligatoire 24/04/2026)
+
+AVANT toute recherche externe (web, wiki, autre) sur un sujet energie /
+reglementaire / marche / facture, consulter d'abord le catalogue de sources
+canoniques :
+
+- Catalogue : `~/.claude/projects/-Users-amine-projects-promeos-poc/memory/reference_sources_veille_kb.md`
+  (28 entrees : CRE, RTE, Enedis, GRDF, NaTran, Terega, Legifrance, ADEME,
+  MNE, France Renov, MTE/DGEC, Commission UE, EEX + presse + observatoires)
+- Doctrine d'usage + triage par cas d'usage : `~/.claude/projects/-Users-amine-projects-promeos-poc/memory/feedback_kb_sources_systematic.md`
+
+Pour tout subagent (Agent tool) en domaine energie/regulation, inclure dans
+le prompt : *"Consulte le catalogue de sources canoniques PROMEOS avant
+toute recherche externe."*
+
+Decouverte d'une nouvelle source utile -> l'ajouter immediatement au catalogue.
+
 ## Workframe & boundaries
 
 Read and enforce the rules in `docs/dev/workframe-contract.md` before
