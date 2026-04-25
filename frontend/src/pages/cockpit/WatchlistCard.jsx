@@ -71,11 +71,11 @@ export default function WatchlistCard({
             {watchlist.map((item, idx) => (
               <li
                 key={item.id}
-                className={`flex items-start justify-between gap-3 py-2.5 ${
+                className={`flex items-center gap-3 py-2.5 ${
                   idx < watchlist.length - 1 ? 'border-b border-gray-50' : ''
                 }`}
               >
-                <div className="flex items-start gap-2.5 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <SevDot severity={item.severity} />
                   <span className="text-sm text-gray-700 leading-snug">{item.label}</span>
                 </div>
@@ -86,7 +86,7 @@ export default function WatchlistCard({
                     onClick={() => onNavigate?.(item.path)}
                     className="shrink-0 text-xs"
                   >
-                    {item.cta} →
+                    {item.cta} <span aria-hidden="true">→</span>
                   </Button>
                 )}
               </li>

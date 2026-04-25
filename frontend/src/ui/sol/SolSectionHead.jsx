@@ -14,7 +14,7 @@ export default function SolSectionHead({ title, meta }) {
         display: 'flex',
         alignItems: 'baseline',
         justifyContent: 'space-between',
-        margin: '24px 0 12px 0',
+        margin: '18px 0 10px 0',
         paddingBottom: 8,
         borderBottom: '1px solid var(--sol-rule)',
         gap: 16,

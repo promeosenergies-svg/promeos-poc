@@ -34,7 +34,34 @@ export default function PeerComparisonCard() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading || !data || data.my_avg_kwh_price_eur == null) return null;
+  // Empty state visible — ne pas casser le grid 2-col PeerComp+ValueCounter
+  // sur la home / (audit user round 5 : pas de vide droit). Placeholder dashed
+  // compact au lieu de return null.
+  if (loading || !data || data.my_avg_kwh_price_eur == null) {
+    return (
+      <div
+        style={{
+          background: 'var(--sol-bg-paper)',
+          border: '1px dashed var(--sol-ink-200)',
+          borderRadius: 8,
+          padding: '20px 22px',
+          fontSize: 12,
+          color: 'var(--sol-ink-500)',
+          fontFamily: 'var(--sol-font-body)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          minHeight: 80,
+        }}
+      >
+        <Users size={16} style={{ color: 'var(--sol-ink-400)', flexShrink: 0 }} />
+        <span>
+          <strong style={{ color: 'var(--sol-ink-700)' }}>Comparaison vs pairs sectoriels</strong>
+          {' '}— calcul en cours · benchmark OID/CEREN par archétype NAF.
+        </span>
+      </div>
+    );
+  }
 
   const surpaie = data.spread_pct > 0;
   const isPair = Math.abs(data.spread_pct || 0) < 2;

@@ -336,15 +336,19 @@ export default function CockpitSol() {
 
   return (
     <div
-      style={{ padding: '32px 48px 60px', background: 'var(--sol-bg-canvas)', minHeight: '100vh' }}
+      style={{
+        padding: '24px 48px 48px',
+        background: 'var(--sol-bg-canvas)',
+        minHeight: '100vh',
+      }}
     >
       {/* Header sobre — le briefing chiffré vit dans le SolHero (chip "BRIEFING
           EXÉCUTIF · SOL" + headline prescriptif + plan 3 leviers). On garde
           ici l'orgname + breakdown sites pour le contexte exec. */}
       <SolPageHeader
         kicker={kicker}
-        title="Bonjour "
-        titleEm="— votre patrimoine cette semaine"
+        title="Bonjour"
+        titleEm=" — votre patrimoine cette semaine"
         narrative={`${rawKpis.total} sites · ${rawKpis.conformes} OK · ${rawKpis.nonConformes + rawKpis.aRisque} à risque · ${alertsCount} alerte${alertsCount > 1 ? 's' : ''}`}
         subNarrative="Briefing exécutif synthétisé ci-dessous."
         rightSlot={
@@ -369,11 +373,7 @@ export default function CockpitSol() {
           <SolHero
             chip="Briefing exécutif"
             title={briefTitle}
-            description={
-              data.solProposal && data.solProposal.actions?.length > 0
-                ? `${briefDescription} ${data.solProposal.actions.length} levier${data.solProposal.actions.length > 1 ? 's' : ''} chiffré${data.solProposal.actions.length > 1 ? 's' : ''} identifié${data.solProposal.actions.length > 1 ? 's' : ''} (${formatFREur(data.solProposal.total_impact_eur_per_year || 0, 0)}/an) — détails ci-dessous.`
-                : briefDescription
-            }
+            description={briefDescription}
             metrics={[
               {
                 label: 'Sites à risque',
@@ -390,8 +390,6 @@ export default function CockpitSol() {
             ]}
             primaryLabel="Voir le plan complet"
             onPrimary={() => navigate('/')}
-            secondaryLabel="Exporter le brief"
-            onSecondary={() => window.print()}
           />
 
           {/* 2. SolKpiRow × 4 — Facture · Conformité · Consommation · CO₂ */}
@@ -481,37 +479,43 @@ export default function CockpitSol() {
             />
           </SolKpiRow>
 
-          {/* WOW-1 PROMU — Brief CODIR juste après KPIs (position #5).
-              Le COMEX a son livrable accessible sans scroll long. */}
-          <SolSectionHead
-            title="Brief exécutif — prêt à présenter"
-            meta="Synthèse copy-paste pour CODIR · généré par Sol"
-          />
-          <div style={{ marginBottom: 24 }}>
-            <BriefCodexCard
-              orgName={orgName}
-              totalSites={rawKpis.total}
-              facture={billing.total_eur}
-              conformityScore={scoreNow}
-              consoMwh={consoMwh}
-              co2Tco2={co2Total}
-              sitesAtRisk={sitesAtRisk}
-              actionsCount={data.solProposal?.actions?.length || 0}
-              totalImpactEur={data.solProposal?.total_impact_eur_per_year || 0}
-              alertesCount={alertsCount}
-              anomaliesCount={billing.total_insights || 0}
-            />
-          </div>
-
-          {/* Calendrier réglementaire — compact, 3 prochaines échéances.
-              MarketWidget retiré (trop volumineux pour cockpit · vit sur
-              /achat-energie où il a sa place dédiée pleine puissance). */}
-          <SolSectionHead
-            title="Calendrier réglementaire"
-            meta="3 prochaines échéances B2B tertiaire"
-          />
-          <div style={{ marginBottom: 24 }}>
-            <RegulatoryCalendarCard limit={3} />
+          {/* Densification — Brief CODIR + Calendrier réglementaire en
+              grid 2-col responsive. Sur écran large, comble le vide droit
+              que créait le full-width single column. */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
+              gap: 16,
+              marginBottom: 16,
+            }}
+          >
+            <div>
+              <SolSectionHead
+                title="Brief exécutif — prêt à présenter"
+                meta="Copy-paste CODIR · généré par Sol"
+              />
+              <BriefCodexCard
+                orgName={orgName}
+                totalSites={rawKpis.total}
+                facture={billing.total_eur}
+                conformityScore={scoreNow}
+                consoMwh={consoMwh}
+                co2Tco2={co2Total}
+                sitesAtRisk={sitesAtRisk}
+                actionsCount={data.solProposal?.actions?.length || 0}
+                totalImpactEur={data.solProposal?.total_impact_eur_per_year || 0}
+                alertesCount={alertsCount}
+                anomaliesCount={billing.total_insights || 0}
+              />
+            </div>
+            <div>
+              <SolSectionHead
+                title="Calendrier réglementaire"
+                meta="3 prochaines échéances tertiaire"
+              />
+              <RegulatoryCalendarCard limit={3} />
+            </div>
           </div>
 
           {/* 3. Trajectoire Décret Tertiaire 2030 — compact si data absente
@@ -523,7 +527,7 @@ export default function CockpitSol() {
                 title="Trajectoire Décret Tertiaire"
                 meta="Progression vers objectif 2030 (-40%)"
               />
-              <div style={{ marginBottom: 24 }}>
+              <div style={{ marginBottom: 16 }}>
                 <TrajectorySection
                   trajectoire={cockpitStats.trajectoire}
                   loading={false}
@@ -538,7 +542,7 @@ export default function CockpitSol() {
                 border: '1px dashed var(--sol-ink-200)',
                 borderRadius: 6,
                 padding: '10px 14px',
-                marginBottom: 24,
+                marginBottom: 16,
                 fontSize: 12,
                 color: 'var(--sol-ink-500)',
                 fontFamily: 'var(--sol-font-body)',
@@ -570,56 +574,18 @@ export default function CockpitSol() {
                     path: a.action_path,
                   }))
                 : opportunities;
+            const totalImpact = data.solProposal?.total_impact_eur_per_year || 0;
             return (
               oppList.length > 0 && (
                 <>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      justifyContent: 'space-between',
-                      marginTop: 24,
-                      marginBottom: 12,
-                      gap: 16,
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <h3
-                      style={{
-                        fontFamily: 'var(--sol-font-body)',
-                        fontSize: 14,
-                        fontWeight: 600,
-                        color: 'var(--sol-ink-900)',
-                        margin: 0,
-                      }}
-                    >
-                      Plan d'action — leviers à activer
-                      <span
-                        style={{
-                          fontWeight: 400,
-                          color: 'var(--sol-ink-500)',
-                          marginLeft: 10,
-                          fontSize: 12,
-                        }}
-                      >
-                        {oppList.length} levier{oppList.length > 1 ? 's' : ''}
-                        {' '}chiffré{oppList.length > 1 ? 's' : ''}
-                      </span>
-                    </h3>
-                    {/* Meta valeur €/an SAILLANTE (audit UX B2 : chiffre-clé
-                        CFO mérite typographie bold colorée, pas meta gris). */}
-                    <span
-                      style={{
-                        fontFamily: 'var(--sol-font-mono)',
-                        fontSize: 15,
-                        fontWeight: 700,
-                        color: 'var(--sol-calme-fg, #047857)',
-                        letterSpacing: '-0.01em',
-                      }}
-                    >
-                      {formatFREur(data.solProposal?.total_impact_eur_per_year || 0, 0)}/an
-                    </span>
-                  </div>
+                  <SolSectionHead
+                    title="Plan d'action — leviers à activer"
+                    meta={
+                      totalImpact > 0
+                        ? `${oppList.length} levier${oppList.length > 1 ? 's' : ''} · ${formatFREur(totalImpact, 0)}/an`
+                        : `${oppList.length} levier${oppList.length > 1 ? 's' : ''} chiffré${oppList.length > 1 ? 's' : ''}`
+                    }
+                  />
                   <div style={{ marginBottom: 16 }}>
                     <OpportunitiesCard opportunities={oppList} onNavigate={navigate} />
                   </div>
@@ -632,7 +598,7 @@ export default function CockpitSol() {
               PROMEOS (aucun concurrent B2B énergie n'affiche ce GAP). Sources :
               solProposal.total_impact_eur_per_year × 3 ans. */}
           {data.solProposal?.total_impact_eur_per_year > 0 && (
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 16 }}>
               <ImpactProjectionCard
                 annualImpactEur={data.solProposal.total_impact_eur_per_year}
                 actionsCount={data.solProposal.actions?.length || 3}
@@ -645,20 +611,33 @@ export default function CockpitSol() {
               exec en lecture/scan, pas en manipulation). Le simulateur a
               sa place sur /achat-energie où l'arbitrage budget se pilote. */}
 
-          {/* AJUSTEMENT POST-AUDIT Jean-Marc : Performance OID SORTIE de
-              l'accordéon (argument DAF #1 vs Danone/Lactalis). Vecteurs CO₂
-              reste collapsable (ESG/CSRD = secondaire pour CFO). */}
-          <SolSectionHead
-            title="Performance vs pairs OID"
-            meta="Benchmark sectoriel · argument DAF anti-CFO"
-          />
-          <div style={{ marginBottom: 24 }}>
-            <PerformanceSitesCard fallbackSites={cockpit.sites || scopedSites} />
+          {/* Densification — Performance OID + Événements récents en
+              grid 2-col responsive. Performance OID = argument DAF, Événements
+              = timeline 7j monitoring. Comble le vide droit. */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
+              gap: 16,
+              marginBottom: 16,
+            }}
+          >
+            <div>
+              <SolSectionHead
+                title="Performance vs pairs OID"
+                meta="Benchmark · indice OID/CEREN"
+              />
+              <PerformanceSitesCard fallbackSites={cockpit.sites || scopedSites} />
+            </div>
+            <div>
+              <SolSectionHead title="Événements récents" meta="Timeline monitoring 7j" />
+              <EvenementsRecents />
+            </div>
           </div>
 
           {/* Vecteurs CO₂ + ESG → accordéon (secondaire CFO mais utile pour
-              reporting CSRD à la demande). */}
-          <div style={{ marginBottom: 24 }}>
+              reporting CSRD à la demande). Pleine largeur car expandable. */}
+          <div style={{ marginBottom: 16 }}>
             <button
               type="button"
               onClick={() => setShowBenchmarkDetails((s) => !s)}
@@ -699,13 +678,8 @@ export default function CockpitSol() {
             )}
           </div>
 
-          {/* Brief CODIR remonté en position #5 (juste après KPIs). */}
-
-          {/* 7. Événements récents (timeline 7j) */}
-          <SolSectionHead title="Événements récents" meta="Timeline monitoring 7j" />
-          <div style={{ marginBottom: 24 }}>
-            <EvenementsRecents />
-          </div>
+          {/* Brief CODIR remonté en grid 2-col avec Calendrier (position #5). */}
+          {/* Événements récents intégré au grid Performance OID (position #6). */}
         </>
       )}
 

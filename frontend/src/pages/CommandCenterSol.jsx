@@ -27,6 +27,7 @@ import {
   SolSourceChip,
   SolLoadCurve,
 } from '../ui/sol';
+import SolToast from '../ui/sol/SolToast';
 import { useScope } from '../contexts/ScopeContext';
 import {
   getActionsSummary,
@@ -65,7 +66,6 @@ import {
 import DeadlineBanner from '../components/DeadlineBanner';
 import ValueCounterCard from '../components/ValueCounterCard';
 import PeerComparisonCard from '../components/PeerComparisonCard';
-import BriefCodexCard from '../components/BriefCodexCard';
 import WatchlistCard from './cockpit/WatchlistCard';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
 import { useCockpitData } from '../hooks/useCockpitData';
@@ -220,6 +220,7 @@ export default function CommandCenterSol() {
   const hourlyProfile = cmd.hourlyProfile || [];
   const weekSeries = cmd.weekSeries || [];
   const { kpis: cockpitKpis } = useCockpitData();
+  const [toast, setToast] = useState(null);
 
   // ─── Dérivations 7 jours + HP/HC J-1 ───────────────────────────────────────
 
@@ -430,7 +431,7 @@ export default function CommandCenterSol() {
   return (
     <div
       style={{
-        padding: '32px 48px 60px',
+        padding: '24px 48px 48px',
         background: 'var(--sol-bg-canvas)',
         minHeight: '100vh',
       }}
@@ -441,9 +442,9 @@ export default function CommandCenterSol() {
           Padding container harmonisé avec /cockpit (audit UX B1). */}
       <SolPageHeader
         kicker={kicker}
-        title="Bonjour "
-        titleEm="— vos actions du jour"
-        narrative={`${rawKpis.total} site${rawKpis.total > 1 ? 's' : ''} sous votre périmètre · Sol vous propose le plan d'action ci-dessous.`}
+        title="Bonjour"
+        titleEm=" — vos actions du jour"
+        narrative={`${rawKpis.total} site${rawKpis.total > 1 ? 's' : ''} sous votre périmètre.`}
         subNarrative={subNarrative}
       />
 
@@ -457,11 +458,11 @@ export default function CommandCenterSol() {
           en panneau bottom. Fallback briefing[0] si endpoint indisponible. */}
       {(data.solProposal || solTopProp) && (
         <SolHero
-          chip="Sol propose · plan d'action"
+          chip="Plan d'action du jour"
           title={data.solProposal?.headline || solTopProp?.label}
           description={
-            data.solProposal
-              ? `Sources : ${(data.solProposal.sources || []).join(' · ')} · scope ${data.solProposal.scope_label}`
+            data.solProposal && data.solProposal.sources?.length > 0
+              ? `Sources croisées : ${data.solProposal.sources.join(' · ')}`
               : briefing.length > 1
                 ? `Sol a identifié ${briefing.length} priorités sur votre patrimoine.`
                 : 'Plan d\'action prêt.'
@@ -495,7 +496,8 @@ export default function CommandCenterSol() {
           onPrimary={() => navigate('/actions')}
           secondaryLabel="Reporter à demain"
           onSecondary={() => {
-            // Snooze 24h via localStorage — protège la démo du bouton mort
+            // Snooze 24h via localStorage + toast Sol-themed (audit Marie H1 :
+            // "window.alert en démo CFO, sérieusement ?"). Toast sobre.
             const tomorrow = new Date();
             tomorrow.setHours(tomorrow.getHours() + 24);
             try {
@@ -506,53 +508,35 @@ export default function CommandCenterSol() {
             } catch {
               /* localStorage indisponible — silent */
             }
-            // Feedback minimal : refresh viewport (le hero ne se masque pas
-            // côté demo car beaucoup de monde clique pour voir)
-            window.alert(
-              'Plan reporté à demain · Sol gardera ce briefing en attente.'
-            );
+            setToast({
+              kind: 'info',
+              message:
+                'Plan reporté à demain · Sol gardera ce briefing en attente.',
+            });
           }}
         />
       )}
 
-      {/* WOW-7 — Comparaison tarif vs pairs sectoriels (anti-fournisseur).
-          REMONTÉE en position #4 (audit Marie + UX B3) : c'est le hook
-          différenciant PROMEOS "tout sauf la fourniture". Marie voit
-          immédiatement si elle surpaye, AVANT le ValueCounter ROI. */}
-      <div style={{ marginTop: 16 }}>
+      {/* Densification — PeerComparison + ValueCounter en grid 2-col.
+          PeerComparison = wedge anti-fournisseur (gauche), ValueCounter
+          = preuve ROI concrète (droite). Comble le vide droit du single
+          column full-bleed sur écran large. */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
+          gap: 16,
+          marginTop: 12,
+          alignItems: 'stretch',
+        }}
+      >
         <PeerComparisonCard />
-      </div>
-
-      {/* G3 — Brief CFO 5 bullets (audit Marie exigence #3 enfin livrée).
-          BriefCodexCard compact collapsable, Marie clique "Copier" et a son
-          brief 14h pour sa CFO en 1 seconde. Wording adapté direction interne. */}
-      <div style={{ marginTop: 16 }}>
-        <BriefCodexCard
-          orgName={orgName}
-          totalSites={rawKpis.total}
-          facture={data.cockpit?.billing?.total_eur}
-          conformityScore={complianceScore}
-          consoMwh={kpisJ1.conso_mois_kwh ? kpisJ1.conso_mois_kwh / 1000 : null}
-          co2Tco2={null}
-          sitesAtRisk={rawKpis.aRisque + rawKpis.nonConformes}
-          actionsCount={data.solProposal?.actions?.length || 0}
-          totalImpactEur={data.solProposal?.total_impact_eur_per_year || 0}
-          alertesCount={alertsCount}
-          anomaliesCount={data.cockpit?.billing?.anomalies_count || 0}
-        />
-      </div>
-
-      {/* ValueCounter ROI cumul — placé après PeerComparison (preuve concrète
-          arrive après le hook anti-fournisseur). Conditionnel ≥7j historique
-          via composant qui null-return si data.total_eur <= 0. */}
-      <div style={{ marginTop: 16 }}>
         <ValueCounterCard orgId={scope.orgId} />
       </div>
 
-      {/* Watchlist — signaux faibles à monitorer. Le composant a son propre
-          header "À surveiller" + badge count, donc pas de SolSectionHead
-          au-dessus (sinon doublon de titre). */}
-      <div style={{ marginTop: 24 }}>
+      {/* Watchlist — signaux faibles à monitorer. Pleine largeur car
+          contient potentiellement 5+ items (label long + CTA droit). */}
+      <div style={{ marginTop: 16 }}>
         <WatchlistCard
           watchlist={watchlist}
           consistency={consistency}
@@ -562,7 +546,9 @@ export default function CommandCenterSol() {
       </div>
 
       {/* 4. Activité 7 jours + Répartition HP/HC J-1 — grid 2-col, lectures complémentaires :
-          tendance hebdo (semaine) + composition tarifaire (cost-optim). */}
+          tendance hebdo (semaine) + composition tarifaire (cost-optim).
+          marginTop: 16 explicite (round 6 audit persona) — cohérence avec
+          les autres wrappers (PeerComp+ValueCounter L529, Watchlist L539). */}
       {(weekChartData.length > 0 || hpcShare) && (
         <div
           style={{
@@ -570,6 +556,7 @@ export default function CommandCenterSol() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
             gap: 16,
             alignItems: 'stretch',
+            marginTop: 16,
           }}
         >
           {/* Activité 7 jours */}
@@ -975,6 +962,9 @@ export default function CommandCenterSol() {
           </button>
         ))}
       </div>
+
+      {/* Toast Sol-themed pour feedback (snooze/info) */}
+      <SolToast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
 }

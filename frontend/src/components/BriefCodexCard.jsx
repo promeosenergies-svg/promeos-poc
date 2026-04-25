@@ -127,6 +127,7 @@ export default function BriefCodexCard({
   totalImpactEur = 0,
   alertesCount = 0,
   anomaliesCount = 0,
+  defaultExpanded = false,
 }) {
   const briefText = useMemo(
     () =>
@@ -159,7 +160,10 @@ export default function BriefCodexCard({
   );
 
   const [copied, setCopied] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  // Collapsed par défaut (user feedback : "le brief doit être un bouton
+  // pour le visualiser, rien d'autre"). defaultExpanded controllable
+  // par le parent si besoin contextuel.
+  const [expanded, setExpanded] = useState(defaultExpanded);
 
   const handleCopy = async (e) => {
     e?.stopPropagation();
@@ -183,40 +187,53 @@ export default function BriefCodexCard({
         borderRadius: 8,
       }}
     >
-      {/* Header collapsable — économise ~500px en first-paint
-          (audit UX A1 : duplique SolHero + KPIs si toujours déplié). */}
-      <button
-        type="button"
-        onClick={() => setExpanded((s) => !s)}
+      {/* Header — flex container avec 2 boutons distincts (toggle + copier).
+          Fix P0 ergo : précédemment <button> dans <button> = HTML invalide.
+          Maintenant : div flex, toggle = bouton autonome (chip + texte + chevron),
+          copier = bouton autonome séparé. aria-expanded + aria-controls
+          pour les screen readers. */}
+      <div
         style={{
-          all: 'unset',
-          cursor: 'pointer',
-          width: '100%',
-          padding: '14px 22px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 16,
+          padding: '12px 18px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+        <button
+          type="button"
+          onClick={() => setExpanded((s) => !s)}
+          aria-expanded={expanded}
+          aria-controls="brief-codex-content"
+          style={{
+            all: 'unset',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            minWidth: 0,
+            flex: 1,
+            minHeight: 44,
+          }}
+        >
           <span
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
               fontFamily: 'var(--sol-font-mono)',
-              fontSize: 9.5,
+              fontSize: 11,
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
               color: 'var(--sol-ink-700)',
               fontWeight: 600,
               background: 'var(--sol-ink-100, #f3f4f6)',
-              padding: '3px 8px',
+              padding: '4px 9px',
               borderRadius: 99,
             }}
           >
-            <FileText size={10} />
+            <FileText size={11} aria-hidden="true" />
             Brief CODIR
           </span>
           <span
@@ -229,48 +246,51 @@ export default function BriefCodexCard({
           >
             Synthèse exécutive · {expanded ? 'masquer' : 'voir'} le texte
           </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button
-            type="button"
-            onClick={handleCopy}
-            style={{
-              fontFamily: 'var(--sol-font-body)',
-              fontSize: 12.5,
-              fontWeight: 500,
-              padding: '5px 10px',
-              borderRadius: 6,
-              border: '1px solid var(--sol-ink-200)',
-              background: copied ? 'var(--sol-calme-bg)' : 'var(--sol-bg-paper)',
-              color: copied ? 'var(--sol-calme-fg)' : 'var(--sol-ink-700)',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {copied ? (
-              <>
-                <Check size={12} /> Copié
-              </>
+          <span aria-hidden="true" style={{ display: 'inline-flex', marginLeft: 'auto', padding: 4 }}>
+            {expanded ? (
+              <ChevronUp size={16} style={{ color: 'var(--sol-ink-400)' }} />
             ) : (
-              <>
-                <Copy size={12} /> Copier
-              </>
+              <ChevronDown size={16} style={{ color: 'var(--sol-ink-400)' }} />
             )}
-          </button>
-          {expanded ? (
-            <ChevronUp size={16} style={{ color: 'var(--sol-ink-400)' }} />
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={handleCopy}
+          aria-label={copied ? 'Brief copié' : 'Copier le brief'}
+          style={{
+            fontFamily: 'var(--sol-font-body)',
+            fontSize: 13,
+            fontWeight: 500,
+            padding: '10px 14px',
+            minHeight: 44,
+            borderRadius: 6,
+            border: '1px solid var(--sol-ink-200)',
+            background: copied ? 'var(--sol-calme-bg)' : 'var(--sol-bg-paper)',
+            color: copied ? 'var(--sol-calme-fg)' : 'var(--sol-ink-700)',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+        >
+          {copied ? (
+            <>
+              <Check size={14} aria-hidden="true" /> Copié
+            </>
           ) : (
-            <ChevronDown size={16} style={{ color: 'var(--sol-ink-400)' }} />
+            <>
+              <Copy size={14} aria-hidden="true" /> Copier
+            </>
           )}
-        </div>
-      </button>
+        </button>
+      </div>
 
       {/* Brief text expandable */}
       {expanded && (
-        <div style={{ padding: '0 22px 18px' }}>
+        <div id="brief-codex-content" style={{ padding: '0 18px 16px' }}>
           <div
             style={{
               fontFamily: 'var(--sol-font-body)',
@@ -281,8 +301,7 @@ export default function BriefCodexCard({
               background: 'var(--sol-bg-canvas, #fafaf6)',
               border: '1px solid var(--sol-ink-100, #f3f4f6)',
               borderRadius: 6,
-              padding: '14px 16px',
-              maxWidth: 820,
+              padding: '14px 18px',
             }}
           >
             {briefText}
