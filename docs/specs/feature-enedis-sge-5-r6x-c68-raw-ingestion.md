@@ -30,7 +30,7 @@ SF5 matters because the next Enedis data families that unblock product work do n
 
 The new SF5 scope breaks the legacy assumptions in several ways:
 
-- `R63` / `R64` are **R6X M023 response flows**, not legacy XML supplier-perimeter flows
+- `R63` / `R64` are **M023-requested R6X measurement publication flows**, not legacy XML supplier-perimeter flows; depending on the Enedis guide and request/subscription setup they may be punctual or recurrent, and SF5 does not make that distinction a routing rule
 - the official R6X guide states the publication format is **JSON**, with **CSV** also possible
 - `C68` is an **ITC punctual response flow** whose delivery contract is a **primary ZIP containing 1..n secondary ZIPs**
 - `C68` payloads contain large technical and contractual snapshots, not simple point-series measurements
@@ -38,7 +38,7 @@ The new SF5 scope breaks the legacy assumptions in several ways:
 
 What this means in plain English is simple: the existing "decrypt XML and archive it" path is no longer enough. A user waiting for fine-grain curves, index histories, or PRM contractual snapshots does not care that the source file changed from encrypted XML to nested ZIP + JSON/CSV. They care that the data arrives through the same operational pipeline and is archived reliably for later use.
 
-Concrete example: a mixed Enedis drop can contain a legacy `R50` encrypted XML file, a direct-ZIP `R63` response, and a nested-ZIP `C68` request result. The operator should still be able to run one ingestion command, get one coherent stats surface, archive all valid raw data in `flux_data.db`, and see malformed archives fail cleanly without corrupting downstream storage.
+Concrete example: a mixed Enedis drop can contain a legacy `R50` encrypted XML file, a direct-ZIP `R63` publication, and a nested-ZIP `C68` request result. The operator should still be able to run one ingestion command, get one coherent stats surface, archive all valid raw data in `flux_data.db`, and see malformed archives fail cleanly without corrupting downstream storage.
 
 If we do nothing, SF6 remains blocked. It already treats SF5 as the upstream prerequisite for raw ingestion of `R63`, `R64`, and `C68`.
 
@@ -68,15 +68,15 @@ This draft is grounded in the local documentation under `docs/base_documentaire/
 
 #### R6X (`Enedis-R6X.pdf`)
 
-- this local guide is about **publication recurrente** for `R63` and `R64`, not punctual `M023` responses; the feature text should therefore describe it as the contract for recurring measurement publications configured in the Enedis enterprise account
-- functionally, `R63` is the recurring raw source for infra-daily load curves (`Courbes de charge`), while `R64` is the recurring raw source for indexes (`Index`)
+- the local guide corpus is not fully aligned on punctual vs recurrent wording: some guide material treats `R63` / `R64` as punctual publications requested through M023, while other material describes recurring publications; SF5 therefore treats `R63` / `R64` as M023-requested R6X measurement publications and preserves the publication metadata needed to clarify punctual/recurrent context later
+- functionally, `R63` is the raw source for infra-daily load curves (`Courbes de charge`), while `R64` is the raw source for indexes (`Index`)
 - the guide states the subscribed payload format can be **JSON** or **CSV**
 - CSV is not universally available: the guide says CSV is only possible for a perimeter of **less than 100 PRM**
 - the guide also states an operational rule with direct ingestion impact: when files are delivered outside the Enedis enterprise account over channels such as **email** or **FTP**, they are encrypted for security
 - SF5 should therefore keep one decryption-capable ingestion pipeline and detect whether each incoming file still needs decryption, instead of assuming that all R6X files bypass decryption just because our local corpus is already plain ZIP
-- each recurring publication is first delivered as a **ZIP archive**
-- each archive contains data for one **SIREN** and one measurement family (`CdC` or `Index`)
-- the outer archive nomenclature is:
+- guide-style recurring publications are first delivered as a **ZIP archive**
+- guide-style recurring archives contain data for one **SIREN** and one measurement family (`CdC` or `Index`)
+- the guide-style outer archive nomenclature is:
 
 ```text
 Enedis_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<SIREN>_<horodate>.zip
@@ -98,7 +98,7 @@ Enedis_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<numSequence>_<hor
 - the JSON header carries request/publication metadata in addition to the measure payload, so SF5 should treat filename metadata and JSON header metadata as complementary raw evidence rather than trying to collapse them too early
 - for `R63`, the JSON contract is `header + mesures[]`, then `grandeur[]`, then `points[]`
 - for `R64`, the JSON contract is `header + mesures[]`, then `contexte[]`, then `grandeur[]`, then `calendrier[]`, then `classeTemporelle[]`, then `valeur[]`
-- for a business reader, `R63` is not just "a list of values": it is a recurring publication of consumption or production curves at infra-daily granularity, with step sizes that depend on meter family (`PT5M`, `PT10M`, `PT15M`, `PT30M`, `PT60M`)
+- for a business reader, `R63` is not just "a list of values": it is a publication of consumption or production curves at infra-daily granularity, with step sizes that depend on meter family (`PT5M`, `PT10M`, `PT15M`, `PT30M`, `PT60M`)
 - the guide makes clear that `R63` raw point qualifiers carry useful operational meaning and should be archived as-is:
   - `n` explains the nature of the point (`brut`, `estimé`, outage-related, clock-adjusted, etc.)
   - `tc` explains the correction/completion type when relevant
@@ -266,7 +266,7 @@ file -> classify -> AES/XML decrypt -> XML parser -> raw archive table (`flux_da
 Unified SF1-SF5 path
 --------------------
 file -> classify -> detect whether transport is still encrypted
-                  -> if encrypted: decrypt
+                  -> if encrypted: decrypt/unwrap in memory
                   -> if already openable: continue
                   -> open container / payload
                   -> detect member format and depth
@@ -278,9 +278,9 @@ Mixed run support
 -----------------
 one ingest_directory() run can contain:
 - legacy encrypted XML files
-- `R63` / `R64` files that still need decryption before archive handling
+- `R63` / `R64` files that still need decryption/unwrap before archive handling
 - `R63` / `R64` files already present as direct ZIP archives
-- `C68` files that still need decryption before nested ZIP handling
+- `C68` files that still need decryption/unwrap before nested ZIP handling
 - `C68` files already present as primary+secondary ZIP archives
 - skipped out-of-scope files
 - all persisted raw results land in `flux_data.db`; SF5 never writes promoted data into `promeos.db`
@@ -293,9 +293,11 @@ The ingestion pipeline becomes **transport-aware and container-aware** instead o
 - legacy XML families keep using the current AES/XML path
 - `R63`, `R64`, `C68` stay on the same shared ingestion backbone:
   - detect whether the incoming file is still encrypted because of its delivery channel
-  - decrypt when needed
+  - decrypt/unwrap in memory when needed
   - then continue into ZIP/member extraction and JSON/CSV parsing
 - the registry, retry logic, republication/versioning logic, CLI, REST scaffolding, and run counters remain shared
+
+Production security posture: if original Enedis archives are delivered encrypted, they should remain encrypted in file storage. SF5 may decrypt/unwrap bytes transiently in memory during ingestion, and the decrypted raw content may persist only inside the protected raw database. SF5 must not write decrypted ZIP, JSON, or CSV artifacts to ordinary file storage by default.
 
 SF5 still ends at raw persistence. The later `backend/data_staging/` module from SF6 is the separate bridge that reads raw rows from `flux_data.db` and writes promoted functional rows to `promeos.db`. That promotion boundary is intentionally outside SF5.
 
@@ -331,6 +333,8 @@ SF5 still ends at raw persistence. The later `backend/data_staging/` module from
 - no completeness SLA monitoring for M023 publication sequences
 - no `CR.M023` compte rendu parsing/reconciliation
 
+Known-but-out-of-scope files (`R63A/B`, `R64A/B`, `R65`, `R66`, `R67`, standalone `CR.M023`) should be classified and recorded as `SKIPPED` when encountered, not treated as unknown files. They do not receive parser/storage support in SF5.
+
 ---
 
 ## 5. Key Decisions
@@ -338,17 +342,19 @@ SF5 still ends at raw persistence. The later `backend/data_staging/` module from
 | ID | Topic | Decision | Why |
 |----|-------|----------|-----|
 | D1 | Supported formats | **JSON + CSV required from day one** | The official guides allow both and the local corpus is already mixed; shipping JSON-only would knowingly reject real files |
-| D2 | Archive handling | **Do not send `R63/R64/C68` through the XML decrypt path** | Their happy path is ZIP publication, not AES/XML |
-| D3 | Invalid non-zip files | **Treat as `ERROR`, not alternate happy path** | The guides define ZIP delivery and the sampled invalid files did not open as valid ZIPs nor decrypt with current legacy AES keys |
+| D2 | Transport handling | **One transport resolver detects whether decrypt/unwrap is needed per file** | Operators should not sort direct ZIP and encrypted deliveries into separate pipelines |
+| D3 | Invalid/non-openable files | **Try generic AES unwrap when keys exist, then fail as file-level `ERROR` if the expected container is still not coherent** | Non-ZIP may mean encrypted transport, but corrupt or incoherent files must not enter the raw archive |
 | D4 | Table count | **2 new raw archive tables total** | Aligns with roadmap scope and keeps SF5 bounded |
-| D5 | `R63` + `R64` storage model | **One shared raw table** with nullable context columns | Both are R6X request-response measurement families with one atomic temporal value per leaf row |
+| D5 | `R63` + `R64` storage model | **One shared raw table** with nullable context columns | Both are R6X measurement publication families with one atomic temporal value per leaf row |
 | D6 | `C68` storage model | **One per-PRM snapshot table with full raw payload + curated extracted columns** | C68 is too wide and heterogeneous for a pure all-columns-first model in SF5, but a pure blob would be too opaque |
 | D7 | Metadata authority | **Filename nomenclature is authoritative** for request/publication fields; payload headers are supplemental | CSV variants and C68 do not provide all metadata inside the payload |
-| D8 | Raw typing | **Store most extracted raw-archive values as raw strings, with curated value/unit splits for high-value C68 power fields** | Preserve fidelity while making key power filters usable without normalizing the whole C68 model |
-| D9 | Key loading | **Decryption keys become lazy/conditional** | A directory containing only direct ZIP R63/R64/C68 should not fail before scan time just because legacy AES keys are absent |
+| D8 | Raw typing | **Store extracted raw-archive values as raw strings, including C68 power values and units** | Preserve fidelity; numeric conversion belongs to later promotion/product layers |
+| D9 | Key loading | **Decryption keys become lazy/conditional and file-scoped** | Direct-openable files should ingest without AES keys; files that need missing keys become file-level `ERROR` |
 | D10 | C68 row granularity | **1 row = 1 PRM snapshot from one payload file** | Matches both JSON array items and CSV rows, and fits downstream traceability needs |
 | D11 | Database boundary | **All SF5 persistence stays in `flux_data.db`** | Preserves SGE4.5. Raw archive/control tables remain isolated from promoted/product data in `promeos.db` |
-| D12 | C68 sensitivity posture | **POC stores full C68 `payload_raw`; production privacy/RGPD storage is an open architecture question** | SF5 needs source fidelity for reprocessing, but production must revisit redaction, encryption, access control, and deletion/anonymization strategy |
+| D12 | C68 sensitivity posture | **Store full C68 `payload_raw` only inside the protected raw DB; do not write decrypted artifacts to file storage** | SF5 needs source fidelity for reprocessing, while production keeps original encrypted archives in file storage and decrypted data inside controlled database boundaries |
+| D13 | Archive coherence | **Strict package/filename coherence is a hard gate** | Any outer/inner filename mismatch, sidecar file, unsupported extra member, sequence inconsistency, or mixed C68 payload format makes the whole physical file `ERROR` |
+| D14 | Warnings | **Only non-contractual schema drift is non-fatal and stored in `header_raw.warnings`** | Packaging/provenance inconsistencies are errors; unknown extra payload fields can be preserved for later parser evolution |
 
 ---
 
@@ -360,19 +366,52 @@ SF5 still ends at raw persistence. The later `backend/data_staging/` module from
 
 | Column | Type | Description |
 |--------|------|-------------|
+| `code_flux` | String(20) nullable | exact source flux code from filename, e.g. `R63`, `R64`, later `R63A` / `R64B` when real support exists |
 | `type_donnee` | String(20) nullable | e.g. `CdC`, `INDEX`, `ITC` from filename |
 | `id_demande` | String(20) nullable | M023 request identifier from filename and/or JSON header |
 | `mode_publication` | String(5) nullable | e.g. `P` |
 | `payload_format` | String(10) nullable | `XML`, `JSON`, `CSV` — actual parsed payload format |
 | `num_sequence` | String(10) nullable | raw sequence segment from filename |
+| `siren_publication` | String(20) nullable | guide-style R6X publication SIREN from filename when present; distinct from C68 payload-level `siren` |
 | `publication_horodatage` | String(20) nullable | raw `AAAAMMJJHHMMSS` from filename |
 | `archive_members_count` | Integer nullable | number of first-level archive members actually opened |
 
-`header_raw` semantics broaden slightly:
+`flux_type` remains the normalized routing/storage family (`R63`, `R64`, `C68`) while `code_flux` preserves the exact Enedis code seen in the filename.
+
+`header_raw` semantics broaden into a structured file-level evidence envelope:
 
 - legacy XML flows: raw XML header JSON as today
-- `R63`/`R64` JSON: raw `header` object
-- CSV variants and `C68`: filename-derived metadata envelope and archive manifest
+- SF5 flows: `filename_metadata`, `archive_manifest`, optional `payload_header`, and `warnings`
+
+Example SF5 `header_raw` shape:
+
+```json
+{
+  "source": "filename+archive",
+  "filename_metadata": {
+    "code_flux": "C68",
+    "mode_publication": "P",
+    "type_donnee": "ITC",
+    "id_demande": "M05J6FUB",
+    "num_sequence": "00001",
+    "publication_horodatage": "20231219094139"
+  },
+  "archive_manifest": {
+    "outer_member_count": 1,
+    "secondary_archives": [
+      {
+        "name": "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094139.zip",
+        "payload_member_name": "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094139.csv",
+        "payload_format": "CSV"
+      }
+    ]
+  },
+  "payload_header": null,
+  "warnings": []
+}
+```
+
+`archive_members_count` always means first-level non-directory member count. For C68, detailed nested counts and member names belong in `header_raw.archive_manifest`.
 
 This keeps one raw-file registry abstraction in `flux_data.db` instead of creating a parallel file table or leaking raw-ingestion metadata into `promeos.db`.
 
@@ -387,7 +426,7 @@ Shared raw archive table in `flux_data.db` for atomic `R63` and `R64` rows.
 
 **Why one shared table**
 
-- both families are M023 response measurement datasets
+- both families are M023-requested R6X measurement publication datasets
 - both are flattened into one atomic time/value leaf row
 - both share query keys: PRM, period, physical quantity, business quantity, timestamp/value, file provenance
 
@@ -412,6 +451,7 @@ Shared raw archive table in `flux_data.db` for atomic `R63` and `R64` rows.
 | `horodatage` | String(50) | raw measurement/index timestamp |
 | `pas` | String(20) nullable | `R63` only, raw ISO duration like `PT5M` |
 | `nature_point` | String(10) nullable | `R63` only |
+| `type_correction` | String(10) nullable | `R63` only, raw text form of `tc` |
 | `valeur` | String(30) nullable | raw value as text |
 | `indice_vraisemblance` | String(10) nullable | raw text form of `iv` |
 | `etat_complementaire` | String(10) nullable | `R63` only, raw text form of `ec` |
@@ -470,13 +510,13 @@ Unlike `R63` / `R64`, `C68` is not a compact measurement family. It is a very wi
 | `mode_releve` | String(30) nullable | extracted when available |
 | `media_comptage` | String(30) nullable | extracted when available |
 | `periodicite_releve` | String(30) nullable | extracted when available |
-| `puissance_souscrite_valeur` | Numeric nullable | extracted when available |
+| `puissance_souscrite_valeur` | String(50) nullable | raw extracted text when available |
 | `puissance_souscrite_unite` | String(20) nullable | extracted when available |
-| `puissance_limite_soutirage_valeur` | Numeric nullable | extracted when available |
+| `puissance_limite_soutirage_valeur` | String(50) nullable | raw extracted text when available |
 | `puissance_limite_soutirage_unite` | String(20) nullable | extracted when available |
-| `puissance_raccordement_soutirage_valeur` | Numeric nullable | extracted when available |
+| `puissance_raccordement_soutirage_valeur` | String(50) nullable | raw extracted text when available |
 | `puissance_raccordement_soutirage_unite` | String(20) nullable | extracted when available |
-| `puissance_raccordement_injection_valeur` | Numeric nullable | extracted when available |
+| `puissance_raccordement_injection_valeur` | String(50) nullable | raw extracted text when available |
 | `puissance_raccordement_injection_unite` | String(20) nullable | extracted when available |
 | `borne_fixe` | String(10) nullable | extracted when available |
 | `refus_pose_linky` | String(10) nullable | extracted when available |
@@ -514,9 +554,6 @@ Add new `FluxType` values:
 - `R63`
 - `R64`
 - `C68`
-
-Recommended but out-of-scope recognition-as-skipped:
-
 - `R63A`
 - `R63B`
 - `R64A`
@@ -524,13 +561,24 @@ Recommended but out-of-scope recognition-as-skipped:
 - `R65`
 - `R66`
 - `R67`
+- `CR_M023`
+
+Only `R63`, `R64`, and `C68` receive parser/storage support in SF5. The other values are known-but-skipped so operators can distinguish recognized out-of-scope Enedis artifacts from truly unknown files.
+
+Filename and extension parsing are case-insensitive for technical matching (`ENEDIS` vs `Enedis`, `.JSON` vs `.json`), but original filenames, member names, and raw metadata values are preserved in storage.
 
 ### 7.2 Filename Parsing
 
-Add a shared filename parser for M023 publication nomenclature:
+Add a shared filename parser for M023/R6X publication nomenclature. The observed corpus baseline is:
 
 ```text
 ENEDIS_<codeFlux>_<modePublication>_<typeDonnee>_<idDemande>_<numSequence>_<horodate>.<extension>
+```
+
+R6X guide-style recurring outer archives may instead use:
+
+```text
+Enedis_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<SIREN>_<horodate>.zip
 ```
 
 It must extract at minimum:
@@ -540,7 +588,14 @@ It must extract at minimum:
 - `type_donnee`
 - `id_demande`
 - `num_sequence`
+- `siren_publication`
 - `publication_horodatage`
+
+For the ambiguous fifth segment in R6X names:
+
+- sequence-like values such as `00001` populate `num_sequence`
+- SIREN-like values populate `siren_publication`
+- any other shape is a filename-structure error unless a real Enedis sample later justifies support
 
 Filename parsing is not optional. It is the authoritative metadata source for:
 
@@ -553,36 +608,45 @@ For `C68`:
 
 - the primary file must match the C68 filename pattern to be classified as `C68`
 - the primary sequence is expected to be `00001`
-- secondary archive and payload filenames should also match the official nomenclature and use sequence values from `00001` to `00010`
-- mismatched secondary/payload names are non-conformant and should be surfaced as warnings, but they do not block ingestion when the archive structure and payload data are otherwise usable
-- secondary sequence gaps are non-conformant but non-fatal if all present payloads parse
+- secondary archive and payload filenames must also match the official nomenclature and use sequence values from `00001` to `00010`
+- mismatched secondary/payload names are fatal provenance errors, not warnings
+- secondary sequence gaps are fatal unless real Enedis samples later prove a legitimate gap pattern
+- code flux, mode publication, type donnée, request id, sequence, and horodatage must remain coherent across outer archive, secondary archive, and payload filename
 
 ### 7.3 Container Rules
 
 #### Legacy families (`R4H`, `R4M`, `R4Q`, `R171`, `R50`, `R151`)
 
 - keep current AES/XML path unchanged
+- use the shared transport resolver: if the file is already an expected XML payload, parse it; otherwise decrypt/unwrap in memory and require XML
 
 #### `R63` / `R64`
 
-- open the physical file as a ZIP archive
-- require exactly 1 payload member for the happy path
+- use the shared transport resolver: if the file is already an expected ZIP container, parse it; otherwise decrypt/unwrap in memory and require an expected ZIP container
+- require exactly 1 non-directory payload member for the happy path
+- ignore ZIP directory entries only; any extra non-directory member, including `.DS_Store`, `__MACOSX` metadata, sidecar files, or duplicate payloads, makes the physical file `ERROR`
+- require the payload member filename to match the expected nomenclature and to remain coherent with the outer filename metadata
 - detect `JSON` vs `CSV` from member extension or first non-whitespace byte
 - invalid archive or unsupported member shape => `FluxStatus.ERROR`
 
 #### `C68`
 
-- open the physical file as a primary ZIP
+- use the shared transport resolver: if the file is already an expected primary ZIP, parse it; otherwise decrypt/unwrap in memory and require an expected primary ZIP
+- ignore ZIP directory entries only
+- require 1..10 first-level non-directory members
+- require every first-level non-directory member to be a conformant secondary ZIP; any sidecar file, direct JSON/CSV, `CR.M023`, `.DS_Store`, `__MACOSX` metadata, or other unexpected member makes the whole physical file `ERROR`
 - iterate all secondary ZIP members
 - for each secondary ZIP:
-  - require exactly 1 payload file
+  - require exactly 1 non-directory payload file
+  - require secondary archive and payload filenames to match the C68 filename contract and remain coherent with the primary archive metadata
   - detect `JSON` vs `CSV`
   - parse and flatten into per-PRM raw archive rows
+- require one payload format per physical C68 archive; mixed JSON/CSV secondary payloads are a file-level `ERROR`
 - if one secondary archive fails:
   - the whole physical file is recorded as `ERROR`
   - partial inserts from that file must be rolled back, same as current pipeline behavior
-- missing `idPrm` in JSON or `PRM` in CSV is a fatal structural error for the whole physical C68 file
-- the accompanying `CR.M023` report file is not parsed by SF5; if present in the input directory, it should be skipped or classified outside the C68 data-archive path rather than causing C68 data ingestion to fail
+- missing `idPrm` in any JSON PRM object or `PRM` in any CSV row is a fatal structural error for the whole physical C68 file
+- the accompanying standalone `CR.M023` report file is not parsed by SF5; if present in the input directory, it is classified as known `SKIPPED`; if present inside a C68 data archive, it makes that archive `ERROR`
 
 ### 7.4 Format Detection
 
@@ -599,20 +663,44 @@ CSV rules:
 - delimiter = `;`
 - parse by header name, not column position
 - preserve original header labels through explicit column mapping
+- validate headers before row iteration and fail the whole physical file when mandatory identity/value headers are missing
+- fail the whole physical file when any row is malformed for a mandatory field; partial CSV ingestion is not allowed
+- for `R63`, mandatory CSV headers are:
+  - `Identifiant PRM`
+  - `Date de début`
+  - `Date de fin`
+  - `Grandeur physique`
+  - `Grandeur métier`
+  - `Etape métier`
+  - `Unité`
+  - `Horodate`
+  - `Valeur`
+  - `Nature`
+  - `Pas`
+- for `R64`, mandatory CSV headers are:
+  - `Identifiant PRM`
+  - `Date de début`
+  - `Date de fin`
+  - `Grandeur physique`
+  - `Grandeur metier`
+  - `Etape metier`
+  - `Unite`
+  - `Horodate`
+  - `Valeur`
 - accept both observed C68 CSV layouts:
   - legacy 207-column files
   - v1.2 211-column files
 - preserve unknown extra columns in `payload_raw`
-- surface unknown extra columns as schema-drift warnings/alerts so the team can decide whether to extend extracted columns and reprocess
-- fail C68 CSV only when essential structure is unusable, such as missing `PRM`
+- surface unknown extra columns as schema-drift warnings in `header_raw.warnings` so the team can decide whether to extend extracted columns and reprocess
+- fail C68 CSV when essential structure is unusable, such as missing header `PRM` or any row with missing/blank `PRM`
 
 JSON rules:
 
 - C68 JSON must be syntactically valid and have a top-level array of PRM objects
 - parse best-effort against the official v1.2 JSON schema rather than making schema validation a hard gate
 - preserve unknown fields in `payload_raw`
-- surface schema drift as warnings/alerts
-- fail only when the payload is structurally impossible to ingest, such as missing `idPrm`
+- surface schema drift as warnings in `header_raw.warnings`
+- fail when the payload is structurally impossible to ingest, such as any C68 PRM object missing `idPrm`
 
 ### 7.5 Parser Contracts
 
@@ -651,6 +739,7 @@ parse_c68_payload(payload_bytes: bytes, source_format: str, member_name: str) ->
   - timestamp
   - value
   - point nature
+  - correction/completion type (`tc`)
   - step/pas
   - plausibility index
   - complementary state
@@ -658,6 +747,8 @@ parse_c68_payload(payload_bytes: bytes, source_format: str, member_name: str) ->
 #### `R64`
 
 - explode one row per `valeur[]` leaf or CSV line
+- JSON flattening follows the actual nested tree path to each `valeur[]` leaf
+- ambiguous or disconnected JSON structures fail the physical file; no cross-product synthesis is allowed
 - preserve:
   - PRM
   - period start/end
@@ -679,14 +770,16 @@ parse_c68_payload(payload_bytes: bytes, source_format: str, member_name: str) ->
   - `payload_raw` stores that PRM object
   - `situationsContractuelles[]` remains nested inside `payload_raw`; it does not multiply raw rows
   - extracted contractual columns come from the latest contractual situation by greatest parseable `dateDebut`
-  - if `dateDebut` is missing/tied/ambiguous across multiple contractual situations, ingest the PRM snapshot but surface an ambiguity warning and avoid pretending the extracted fields are authoritative
+  - if `dateDebut` is missing/tied/ambiguous across multiple contractual situations, ingest the PRM snapshot, preserve all raw situations in `payload_raw`, set contractual summary columns to null, and record a structured warning
 - CSV:
   - one row per CSV line
   - `payload_raw` stores the row converted to JSON object `{csv_header: raw_string_value}`
+  - treat each CSV row as the Enedis-provided flat snapshot; do not apply JSON latest-situation selection logic to CSV
 - extracted code/libelle fields store the stable code/scalar value in first-class columns; the full object or flattened source value remains in `payload_raw`
-- person names, emails, phone numbers, postal address lines, and interlocutor contact details are not extracted into query columns
+- C68 extraction uses an explicit allowlist of query columns; person names, emails, phone numbers, postal address lines, street details, civilité/prénom/nom, free-text contact fields, and interlocutor contact details are not extracted into query columns
 - `SIRET` and `SIREN` are extracted as useful organization identifiers for BACS, decret tertiaire, and multi-client filtering
-- high-value power fields are split into value/unit columns; less-used value/unit technical fields remain only in `payload_raw`
+- high-value power fields are split into raw string value/unit columns; less-used value/unit technical fields remain only in `payload_raw`
+- SF5 does not numerically parse C68 power values; numeric conversion and validation are deferred to later promotion/product layers
 
 No cross-format synthesis is allowed in SF5. If CSV omits a JSON-only branch, it stays omitted.
 
@@ -700,32 +793,51 @@ Keep the current `ingest_file()` orchestration model:
 
 1. classify
 2. idempotence / retry / republication handling
-3. parse container + payload
-4. insert/update file row + raw archive rows in `flux_data.db`
-5. commit
+3. resolve transport in memory
+4. parse container + payload
+5. insert/update file row + raw archive rows in `flux_data.db`
+6. commit
 
 But replace the assumption “in-scope means decrypt to XML” with “in-scope means use the family-specific extractor”.
+
+The transport resolver is the single shared rule:
+
+```text
+file
+-> classify from filename
+-> test whether bytes are already usable as the expected container/payload
+-> if usable: continue as-is
+-> if not usable and AES keys are available: decrypt/unwrap bytes in memory
+-> if decrypt/unwrap yields the expected coherent container/payload: continue
+-> otherwise: file-level ERROR
+```
+
+The current XML-specific `decrypt_file()` behavior should remain available for legacy flows, but SF5 needs a lower-level AES unwrap primitive that returns plaintext bytes without requiring XML validation.
 
 ### 8.2 New Dispatch Families
 
 | Flux family | Extraction path | Parser | Target table |
 |-------------|-----------------|--------|--------------|
-| `R4H/R4M/R4Q` | AES/XML | existing | `enedis_flux_mesure_r4x` |
-| `R171` | AES/XML | existing | `enedis_flux_mesure_r171` |
-| `R50` | AES/XML | existing | `enedis_flux_mesure_r50` |
-| `R151` | AES/XML | existing | `enedis_flux_mesure_r151` |
-| `R63` | ZIP -> JSON/CSV | new | `enedis_flux_mesure_r6x` |
-| `R64` | ZIP -> JSON/CSV | new | `enedis_flux_mesure_r6x` |
-| `C68` | ZIP -> ZIP -> JSON/CSV | new | `enedis_flux_itc_c68` |
+| `R4H/R4M/R4Q` | transport resolver -> XML | existing | `enedis_flux_mesure_r4x` |
+| `R171` | transport resolver -> XML | existing | `enedis_flux_mesure_r171` |
+| `R50` | transport resolver -> XML | existing | `enedis_flux_mesure_r50` |
+| `R151` | transport resolver -> XML | existing | `enedis_flux_mesure_r151` |
+| `R63` | transport resolver -> ZIP -> JSON/CSV | new | `enedis_flux_mesure_r6x` |
+| `R64` | transport resolver -> ZIP -> JSON/CSV | new | `enedis_flux_mesure_r6x` |
+| `C68` | transport resolver -> ZIP -> ZIP -> JSON/CSV | new | `enedis_flux_itc_c68` |
 
 ### 8.3 Key Loading / CLI Behavior
 
-Current CLI behavior fails up front if no AES keys are present. SF5 should relax that rule:
+Current CLI behavior fails up front if no AES keys are present. SF5 should relax that rule and move lazy key loading into the shared pipeline layer so CLI and API behave the same way:
 
-- if the scanned run contains only direct ZIP publication families (`R63`, `R64`, `C68`), the run must proceed without AES keys
-- if at least one legacy AES/XML family is discovered and no keys are available, the run fails clearly before processing those files
+- direct-openable files never require AES keys
+- if a specific file needs decrypt/unwrap and keys are available, decrypt/unwrap it in memory
+- if a specific file needs decrypt/unwrap and keys are unavailable or invalid, record that file as `ERROR`
+- missing AES keys do not block other direct-openable files in the same run
 
 This keeps mixed-directory support while making the new direct publication flows independently ingestible.
+
+`archive_dir` remains XML-only for existing legacy behavior. SF5 decrypted ZIP/JSON/CSV artifacts are processed in memory and must not be written to disk by default.
 
 ### 8.4 `measures_count` Semantics
 
@@ -735,7 +847,7 @@ This keeps mixed-directory support while making the new direct publication flows
 - `R64`: number of atomic value rows inserted
 - `C68`: number of PRM snapshot rows inserted
 
-For `C68`, archive/package diagnostics such as secondary archive count and payload member count should be exposed separately when the stats/debug surface supports them. They must not be folded into `measures_count`.
+For `C68`, archive/package diagnostics such as secondary archive count and payload member count belong in `header_raw.archive_manifest` and must not be folded into `measures_count`.
 
 ### 8.5 Republication Behavior
 
@@ -787,9 +899,13 @@ Measures stored (raw archive totals):
 
 - total `R6X` rows
 - total `C68` rows
-- optional distinct PRM counts for these new tables
+- distinct PRM counts for `R6X`
+- distinct PRM counts for `C68`
+- optional JSON vs CSV breakdown only if cheap from existing `payload_format` / `source_format`
 
 No new endpoint family is required in SF5.
+
+Filename metadata is "queryable" in SF5 because it is stored in first-class database columns. Advanced REST filters for `id_demande`, `type_donnee`, `payload_format`, etc. are deferred unless trivial to add to existing list endpoints.
 
 ### Error Observability
 
@@ -800,11 +916,12 @@ Expected new error classes:
 - unsupported payload member type
 - malformed JSON
 - malformed CSV headers / missing mandatory columns
-- non-fatal schema drift warnings for unknown C68 CSV columns or JSON fields
-- non-fatal C68 filename/sequence non-conformance warnings for usable secondary archives or payload members
+- C68 filename/sequence/coherence non-conformance
+- unexpected archive sidecar or extra non-directory member
 - C68 contractual-situation ambiguity warnings when extracted summary columns cannot be tied to one clear latest situation
+- non-fatal schema drift warnings for unknown C68 CSV columns or JSON fields
 
-These must follow the same `EnedisFluxFile.status=error` + archived error history conventions already delivered in SF4.
+Fatal issues must follow the same `EnedisFluxFile.status=error` + archived error history conventions already delivered in SF4. Non-fatal schema-drift and contractual-summary ambiguity warnings are stored as structured entries in `header_raw.warnings`; SF5 does not add a separate warning table.
 
 ---
 
@@ -836,6 +953,8 @@ Mandatory assertions:
 - C68 extracted contractual columns use the latest `situationsContractuelles[]` item by `dateDebut`
 - ambiguous C68 contractual-situation selection produces a warning
 - C68 missing `idPrm` / `PRM` fails the physical file and rolls back inserts
+- malformed mandatory CSV rows fail the physical file and roll back inserts
+- C68 power value columns preserve raw strings and do not perform numeric parsing
 
 ### 10.2 Container Tests
 
@@ -848,12 +967,19 @@ Add extraction tests for:
 - invalid outer ZIP
 - invalid secondary ZIP
 - C68 primary ZIP where one secondary archive is invalid and the entire physical file is rolled back
-- C68 secondary/payload filename mismatch that ingests successfully with a non-fatal warning
+- R63/R64 payload filename mismatch that fails the physical file
+- C68 secondary/payload filename mismatch that fails the physical file
+- C68 sequence gap or metadata mismatch that fails the physical file
+- C68 primary archive with any sidecar or extra non-directory member that fails the physical file
+- R63/R64 direct ZIP with `.DS_Store` / `__MACOSX` / any extra non-directory member that fails the physical file
+- C68 primary archive with mixed JSON/CSV secondary payload formats that fails the physical file
 - unsupported member extension
+- direct-openable SF5 file with no AES keys succeeds
+- file that needs decrypt/unwrap and has no AES keys becomes file-level `ERROR`
 
 ### 10.3 Integration Tests
 
-Add representative real-file integration tests covering all observed happy-path combinations:
+Default automated integration tests should use small synthetic or sanitized fixtures. Add representative opt-in real-file integration tests covering all observed happy-path combinations, skipped unless explicitly enabled in the local environment:
 
 - `R63` JSON real sample
 - `R63` CSV real sample
@@ -864,7 +990,7 @@ Add representative real-file integration tests covering all observed happy-path 
 - `C68` legacy 207-column CSV real sample
 - `C68` v1.2 211-column CSV real sample
 
-Recommended real-sample references from the local corpus:
+Recommended opt-in real-sample references from the local corpus:
 
 - `flux_enedis/R63/ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.zip`
 - `flux_enedis/R63/ENEDIS_R63_P_CdC_M057W4YR_00001_20231016154951.zip`
@@ -879,6 +1005,8 @@ Add explicit bad-file tests using observed malformed samples:
 - `flux_enedis/R63/ENEDIS_R63_P_CdC_M06DSGVE_00001_20240528163243.zip`
 - `flux_enedis/C68/ENEDIS_C68_P_ITC_M082FQJM_00001_20250424205829.zip`
 
+Default CI fixtures should include fake-data C68 CSV samples for both the legacy 207-column and v1.2 211-column layouts. The 211-column fixture must include fake values for `Type Injection`, `Refus de pose Linky`, `Date refus de pose Linky`, and `Borne Fixe`. Do not commit sensitive real C68 payloads as mandatory test fixtures.
+
 ### 10.4 Regression Tests
 
 Legacy SF1-SF4 tests must continue to pass unchanged for:
@@ -887,6 +1015,7 @@ Legacy SF1-SF4 tests must continue to pass unchanged for:
 - XML parsers
 - pipeline idempotence/retry/republication
 - CLI run/reporting
+- lazy key loading behavior for legacy and direct-openable files
 
 ### 10.5 Cross-DB Boundary Tests
 
@@ -896,6 +1025,7 @@ Add explicit boundary tests so the SGE4.5 split remains enforced after SF5:
 - bootstrapping `flux_data.db` **must** create `enedis_flux_mesure_r6x` and `enedis_flux_itc_c68`
 - raw ingestion stats/list endpoints must still read through the dedicated raw DB dependency
 - ingesting representative SF5 files must change `flux_data.db` only; promoted/product tables in `promeos.db` remain untouched
+- SF5 decrypted ZIP/JSON/CSV artifacts must not be written to ordinary file storage by default
 
 ---
 
@@ -903,21 +1033,33 @@ Add explicit boundary tests so the SGE4.5 split remains enforced after SF5:
 
 | ID | Topic | Status | Notes |
 |----|-------|--------|-------|
-| OQ1 | C68 extracted column set | Settled for SF5 | Use `payload_raw` + curated query columns, including SIRET/SIREN and split value/unit columns for the small high-value power set. Full all-columns flattening remains out of scope |
-| OQ2 | Out-of-scope R6X recognition | Open | We may want to classify `R63A/B`, `R64A/B`, `R65`, `R66`, `R67` explicitly as known-but-skipped instead of `UNKNOWN` |
+| OQ1 | C68 extracted column set | Settled for SF5 | Use `payload_raw` + curated allowlisted query columns, including SIRET/SIREN and raw string value/unit columns for the small high-value power set. Full all-columns flattening remains out of scope |
+| OQ2 | Out-of-scope R6X recognition | Settled for SF5 | Classify `R63A/B`, `R64A/B`, `R65`, `R66`, `R67`, and standalone `CR.M023` explicitly as known-but-skipped |
 | OQ3 | `R6X` table naming | Open | `enedis_flux_mesure_r6x` is concise and matches roadmap intent, but `r63_r64` would be more explicit |
-| OQ4 | Stats granularity | Open | It may be useful to expose JSON vs CSV counts in stats/debug output, but it is not required for SF5 |
-| OQ5 | Invalid non-zip files | Open but non-blocking | This draft treats them as corrupt publication files; if Enedis later confirms an alternate encryption contract, we can add it in a later wave |
-| OQ6 | Production C68 privacy/RGPD architecture | Open for production | POC stores full C68 `payload_raw`. Before production, decide whether personal/contact subtrees should be separated, encrypted, access-controlled, redacted, selectively deletable, or anonymized while retaining useful technical/metering data for model development |
+| OQ4 | Stats granularity | Settled for SF5 | Row totals and distinct PRM counts are required; JSON vs CSV breakdown is optional/debug-level if cheap from existing format fields |
+| OQ5 | R63/R64 punctual vs recurrent semantics | Open but non-blocking | Treat `R63` / `R64` as M023-requested R6X measurement publications that may be punctual or recurrent depending on guide/setup; preserve metadata and do not route differently in SF5 |
+| OQ6 | Production C68 privacy/RGPD architecture | Open for production | Original encrypted archives should remain encrypted in file storage. Decrypted SF5 content exists transiently in memory and persists only inside protected raw DB tables; before production, finalize DB encryption/access/backup/retention/deletion/anonymization policy |
+
+### 11.1 Migration Policy
+
+SF5 should use idempotent additive raw DB migrations:
+
+- create `enedis_flux_mesure_r6x` and `enedis_flux_itc_c68` if absent
+- add nullable `enedis_flux_file` columns if missing
+- preserve existing raw data in `flux_data.db`
+- do not introduce a full migration framework solely for SF5 unless the project adopts one separately
 
 ---
 
 ## 12. Acceptance Checklist
 
-- [ ] `FluxType` and classification support `R63`, `R64`, `C68`
+- [ ] `FluxType` and classification support `R63`, `R64`, `C68`, and known-skipped `R63A/B`, `R64A/B`, `R65`, `R66`, `R67`, `CR_M023`
 - [ ] raw DB bootstrap creates `enedis_flux_mesure_r6x` and `enedis_flux_itc_c68` in `flux_data.db`
+- [ ] raw DB bootstrap additively creates missing nullable `enedis_flux_file` metadata columns including `code_flux` and `siren_publication`
 - [ ] main `promeos.db` bootstrap does not create the new raw Enedis tables
 - [ ] one mixed `ingest_directory()` run can process legacy XML flows and new ZIP publication flows together
+- [ ] direct-openable SF5 files ingest without AES keys
+- [ ] files that need decrypt/unwrap but have missing keys become file-level `ERROR`, without blocking direct-openable files in the same run
 - [ ] `R63` JSON ingests successfully into `enedis_flux_mesure_r6x`
 - [ ] `R63` CSV ingests successfully into `enedis_flux_mesure_r6x`
 - [ ] `R64` JSON ingests successfully into `enedis_flux_mesure_r6x`
@@ -927,11 +1069,15 @@ Add explicit boundary tests so the SGE4.5 split remains enforced after SF5:
 - [ ] `C68` legacy 207-column CSV and v1.2 211-column CSV both ingest successfully
 - [ ] C68 unknown CSV/JSON fields are preserved in `payload_raw` and surfaced as warnings, not hard failures
 - [ ] C68 missing `idPrm` / `PRM` fails the physical file and rolls back inserts
-- [ ] C68 extracted contractual columns use the latest `situationsContractuelles[]` item by `dateDebut`
+- [ ] C68 extracted contractual columns use the latest unambiguous `situationsContractuelles[]` item by `dateDebut`; ambiguous selection nulls contractual summary columns and records a warning
 - [ ] `C68` primary archives with multiple secondary ZIPs ingest correctly
-- [ ] one invalid C68 secondary archive rolls back the whole physical file
+- [ ] one invalid C68 secondary archive, filename mismatch, sequence gap, sidecar member, or mixed payload format rolls back the whole physical file
+- [ ] R63/R64 archives with extra non-directory members or mismatched payload filenames fail the whole physical file
 - [ ] malformed `R63` / `C68` archives are recorded as clean file errors
 - [ ] C68 `measures_count` reports PRM snapshot rows, not archive/member counts
+- [ ] SF5 stats expose R6X/C68 row totals and distinct PRM counts
+- [ ] non-fatal warnings are stored in `header_raw.warnings`; no SF5 warning table is required
+- [ ] no decrypted SF5 ZIP/JSON/CSV artifact is written to ordinary file storage by default
 - [ ] CLI/reporting/stats show the two new raw archive tables through the dedicated raw DB surface
 - [ ] ingesting SF5 files leaves `promeos.db` unchanged
 - [ ] legacy SF1-SF4 ingestion behavior remains green
@@ -942,11 +1088,12 @@ Add explicit boundary tests so the SGE4.5 split remains enforced after SF5:
 
 | Term | Meaning |
 |------|---------|
-| **M023** | Enedis request/response service family for punctual data access publications |
-| **R63** | Fine-grain load curve response flow |
-| **R64** | Fine-grain index response flow |
+| **M023** | Enedis request/publication service family used to request data access publications; `R63` / `R64` may be punctual or recurrent depending on guide/setup, while SF5 treats them uniformly as raw R6X publications |
+| **R63** | Fine-grain load curve publication flow |
+| **R64** | Fine-grain index publication flow |
 | **C68** | Technical and contractual information response flow |
 | **Primary archive** | Outer ZIP published by Enedis for one request |
 | **Secondary archive** | Nested ZIP inside `C68` primary publication |
+| **Transport resolver** | Shared ingestion step that decides whether a file is already usable or needs in-memory AES decrypt/unwrap before family parsing |
 | **Raw archive layer** | The `flux_data.db` database and tables that preserve Enedis data without business normalization |
 | **Functional promotion layer** | The later SF6 layer in `promeos.db` that reads raw archive rows and writes promoted product-usable tables |
