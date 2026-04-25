@@ -20,6 +20,7 @@ import {
   AreaChart,
   ReferenceArea,
   ReferenceDot,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -42,12 +43,23 @@ const DEFAULT_DATA = [
   { time: '24:00', value: 40 },
 ];
 
+// Arrondi vers le haut au prochain "nice number" pour ticks YAxis lisibles.
+function niceMax(rawMax) {
+  if (rawMax <= 50) return Math.ceil(rawMax / 10) * 10;
+  if (rawMax <= 200) return Math.ceil(rawMax / 30) * 30;
+  if (rawMax <= 500) return Math.ceil(rawMax / 50) * 50;
+  return Math.ceil(rawMax / 100) * 100;
+}
+
 export default function SolLoadCurve({
   data = DEFAULT_DATA,
   peakPoint = { time: '14:00', value: 118, label: 'pic 14 h · 118 kW' },
   hpStart = '06:00',
   hpEnd = '22:00',
   unit = 'kW',
+  // peakThreshold : fraction du pic (ex 0.8 = 80%) → ReferenceLine horizontale
+  // pour pilotage discipline HP/HC. Si null/undefined, pas de ligne.
+  peakThreshold = null,
   caption = (
     <>
       <strong style={{ color: 'var(--sol-ink-900)' }}>85{'\u00A0'}% de votre consommation</strong>{' '}
@@ -56,12 +68,27 @@ export default function SolLoadCurve({
   ),
   sourceChip = null,
 }) {
+  const thresholdValue =
+    peakThreshold != null && peakPoint?.value != null
+      ? Math.round(peakPoint.value * peakThreshold)
+      : null;
+  // YAxis — niceMax avec headroom + ticks EXPLICITES (forcés, pas hint).
+  // Recharts ignore tickCount au profit de son auto-scale, donc on impose
+  // un tableau ticks=[0, step, 2step, ...] aligné multiple de niceStep.
+  const dataMax = Math.max(
+    ...data.map((p) => p.value || 0),
+    peakPoint?.value || 0,
+    thresholdValue || 0
+  );
+  const yMax = niceMax(dataMax * 1.18);
+  const yStep = yMax / 5;
+  const yTicks = [0, yStep, yStep * 2, yStep * 3, yStep * 4, yMax];
   return (
     <div>
       <div
         style={{
           width: '100%',
-          height: 200,
+          height: 240,
           marginBottom: 8,
         }}
       >
@@ -117,6 +144,10 @@ export default function SolLoadCurve({
                 fill: 'var(--sol-ink-400)',
               }}
               width={36}
+              // Domain + ticks explicites pour empêcher Recharts de re-calculer
+              // ses propres "nicer" values qui produisent du 35/70/105/140.
+              domain={[0, yMax]}
+              ticks={yTicks}
               label={{
                 value: unit,
                 position: 'insideTopLeft',
@@ -144,6 +175,23 @@ export default function SolLoadCurve({
               strokeWidth={1.8}
               fill="url(#solLoadCurveFill)"
             />
+
+            {thresholdValue != null && (
+              <ReferenceLine
+                y={thresholdValue}
+                stroke="var(--sol-attention-fg, #b45309)"
+                strokeDasharray="4 3"
+                strokeWidth={1}
+                label={{
+                  value: `seuil ${Math.round(peakThreshold * 100)}% · ${thresholdValue} ${unit}`,
+                  position: 'insideTopRight',
+                  fill: 'var(--sol-attention-fg, #b45309)',
+                  fontFamily: 'var(--sol-font-mono)',
+                  fontSize: 9,
+                  fontWeight: 600,
+                }}
+              />
+            )}
 
             {peakPoint && (
               <ReferenceDot

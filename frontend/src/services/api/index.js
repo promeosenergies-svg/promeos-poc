@@ -31,3 +31,4 @@ export * from './contractsV2';
 export * from './pilotage';
 export * from './cxDashboard';
 export * from './nps';
+export * from './sol';

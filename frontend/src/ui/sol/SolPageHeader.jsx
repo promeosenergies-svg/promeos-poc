@@ -23,11 +23,18 @@ export default function SolPageHeader({
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'space-between',
-        paddingBottom: 18,
+        paddingTop: 12,
+        paddingBottom: 14,
         borderBottom: '1px solid var(--sol-rule)',
-        marginBottom: 24,
+        marginBottom: 18,
         gap: 24,
         flexWrap: 'wrap',
+        // Sticky header — reste visible au scroll, fond canvas pour
+        // ne pas voir le contenu derrière (audit user round 5).
+        position: 'sticky',
+        top: 0,
+        zIndex: 20,
+        background: 'var(--sol-bg-canvas)',
       }}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
