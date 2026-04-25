@@ -63,6 +63,7 @@ import {
 
 // Refonte from-scratch : composants MAIN agentiques + builders
 import DeadlineBanner from '../components/DeadlineBanner';
+import ValueCounterCard from '../components/ValueCounterCard';
 import WatchlistCard from './cockpit/WatchlistCard';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
 import { useCockpitData } from '../hooks/useCockpitData';
@@ -482,6 +483,12 @@ export default function CommandCenterSol() {
           onSecondary={() => {}}
         />
       )}
+
+      {/* Sol ROI cumulé — preuve de valeur Sol depuis l'activation.
+          Wow-moment exploitant : "Sol a déjà identifié X € en N jours". */}
+      <div style={{ marginTop: 16 }}>
+        <ValueCounterCard orgId={scope.orgId} />
+      </div>
 
       {/* Watchlist — signaux faibles à monitorer. Le composant a son propre
           header "À surveiller" + badge count, donc pas de SolSectionHead

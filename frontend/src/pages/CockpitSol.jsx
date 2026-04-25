@@ -61,6 +61,7 @@ import EvenementsRecents from './cockpit/EvenementsRecents';
 import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
 import VecteurEnergetiqueCard from './cockpit/VecteurEnergetiqueCard';
 import OpportunitiesCard from './cockpit/OpportunitiesCard';
+import MarketWidget from './cockpit/MarketWidget';
 import BoutonRapportCOMEX from './cockpit/BoutonRapportCOMEX';
 import DeadlineBanner from '../components/DeadlineBanner';
 import { useCockpitData } from '../hooks/useCockpitData';
@@ -340,22 +341,35 @@ export default function CockpitSol() {
       {/* Mode SURFACE — Briefing exécutif Sol → KPIs → Trajectoire → benchmark → CO₂ → opportunités → événements */}
       {mode === 'surface' && (
         <>
-          {/* 1. BRIEF SOL — alimenté par /api/sol/proposal (même source que /).
-              Headline prescriptif chiffré + 3 metrics KPIs exécutifs + plan
-              d'action structuré (3 leviers chiffrés) + CTAs export brief. */}
+          {/* 1. BRIEF SOL — version exécutive : narrative état + chiffrage risque.
+              Le PLAN détaillé (3 actions chiffrées) vit dans OpportunitiesCard
+              plus bas pour éviter le doublon avec /. Cohérence cross-vues :
+              même backend /api/sol/proposal, formats adaptés par persona
+              (liste action-first sur / · cards 3-col exec-first sur /cockpit). */}
           <SolHero
             chip="Briefing exécutif · Sol"
-            title={data.solProposal?.headline || briefTitle}
+            title={briefTitle}
             description={
-              data.solProposal
-                ? `${briefDescription} Sources : ${(data.solProposal.sources || []).join(' · ')}.`
+              data.solProposal && data.solProposal.actions?.length > 0
+                ? `${briefDescription} Sol a identifié ${data.solProposal.actions.length} levier${data.solProposal.actions.length > 1 ? 's' : ''} chiffré${data.solProposal.actions.length > 1 ? 's' : ''} (${formatFREur(data.solProposal.total_impact_eur_per_year || 0, 0)}/an) — voir les cards Opportunités ci-dessous.`
                 : briefDescription
             }
-            metrics={briefMetrics}
-            actions={data.solProposal?.actions || []}
-            onAction={(path) => path && navigate(path)}
-            primaryLabel="Voir les actions prioritaires"
-            onPrimary={() => navigate('/actions')}
+            metrics={[
+              {
+                label: 'Sites à risque',
+                value: `${sitesAtRisk}`,
+              },
+              {
+                label: 'Risque cumulé',
+                value: rawKpis.risque > 0 ? formatFREur(rawKpis.risque, 0) : '—',
+              },
+              {
+                label: 'Leviers identifiés',
+                value: `${data.solProposal?.actions?.length || 0}`,
+              },
+            ]}
+            primaryLabel="Voir le plan complet"
+            onPrimary={() => navigate('/')}
             secondaryLabel="Exporter le brief"
             onSecondary={() => window.print()}
           />
@@ -447,6 +461,16 @@ export default function CockpitSol() {
             />
           </SolKpiRow>
 
+          {/* Contexte marché — prix EPEX spot, signal Tempo/EcoWatt, alerte
+              forward. Très pertinent pour COMEX qui pilote l'achat énergie. */}
+          <SolSectionHead
+            title="Contexte marché énergie"
+            meta="EPEX spot · signaux RTE · alertes prix"
+          />
+          <div style={{ marginBottom: 24 }}>
+            <MarketWidget profile="C4" />
+          </div>
+
           {/* 3. Trajectoire Décret Tertiaire 2030 */}
           <SolSectionHead
             title="Trajectoire Décret Tertiaire"
@@ -496,18 +520,36 @@ export default function CockpitSol() {
             </div>
           </div>
 
-          {/* 6. Opportunités économiques (top 3) */}
-          {opportunities.length > 0 && (
-            <>
-              <SolSectionHead
-                title="Opportunités à activer"
-                meta={`${opportunities.length} levier${opportunities.length > 1 ? 's' : ''} identifié${opportunities.length > 1 ? 's' : ''}`}
-              />
-              <div style={{ marginBottom: 24 }}>
-                <OpportunitiesCard opportunities={opportunities} onNavigate={navigate} />
-              </div>
-            </>
-          )}
+          {/* 6. Opportunités à activer — alimenté par solProposal.actions
+              (même backend que SolHero / pour cohérence chiffrage). Format
+              cards 3-col exec-friendly, complément du SolHero allégé ci-dessus.
+              Fallback : buildOpportunities() si endpoint indisponible. */}
+          {(() => {
+            const sourceActions = data.solProposal?.actions || [];
+            const oppList =
+              sourceActions.length > 0
+                ? sourceActions.map((a) => ({
+                    id: a.id,
+                    label: a.title,
+                    sub: `+${(a.impact_eur_per_year || 0).toLocaleString('fr-FR')} €/an · ${a.delay} · ${a.source_module}`,
+                    cta: 'Voir l\'action',
+                    path: a.action_path,
+                  }))
+                : opportunities;
+            return (
+              oppList.length > 0 && (
+                <>
+                  <SolSectionHead
+                    title="Plan d'action — leviers à activer"
+                    meta={`${oppList.length} levier${oppList.length > 1 ? 's' : ''} chiffré${oppList.length > 1 ? 's' : ''} · total ${formatFREur(data.solProposal?.total_impact_eur_per_year || 0, 0)}/an`}
+                  />
+                  <div style={{ marginBottom: 24 }}>
+                    <OpportunitiesCard opportunities={oppList} onNavigate={navigate} />
+                  </div>
+                </>
+              )
+            );
+          })()}
 
           {/* 7. Événements récents (timeline 7j) */}
           <SolSectionHead title="Événements récents" meta="Timeline monitoring 7j" />
