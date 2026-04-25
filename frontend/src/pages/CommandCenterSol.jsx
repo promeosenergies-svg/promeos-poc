@@ -42,6 +42,7 @@ import {
   buildCommandNarrative,
   buildCommandSubNarrative,
   computeStateIndex,
+  formatFREur,
   freshness,
 } from './command-center/sol_presenters';
 import { buildFallbackLoadCurve } from './cockpit/sol_presenters';
@@ -426,21 +427,51 @@ export default function CommandCenterSol() {
       {/* 1. Urgence régulatoire (cross-vues canonique) */}
       <DeadlineBanner />
 
-      {/* 2. SOL VOUS PROPOSE — hero agentique sur la priorité #1 du briefing.
-          Si rien à proposer, on saute — pas d'empty state verbeux. */}
+      {/* 2. SOL VOUS PROPOSE — hero agentique avec plan structuré + chiffrage.
+          Sol identifie le top 1, contextualise avec compteurs (priorités totales,
+          gain potentiel cumulé, délai d'action). Si rien à proposer, on saute. */}
       {solTopProp && (
         <SolHero
-          chip="Sol propose · action agentique"
+          chip="Sol propose · plan d'action"
           title={solTopProp.label}
           description={
-            solTopProp.severity === 'critical'
-              ? 'Priorité critique — à traiter aujourd\'hui pour éviter une dérive.'
-              : solTopProp.severity === 'high'
-                ? 'Forte priorité — impact significatif sur votre conformité ou facture.'
-                : 'À regarder cette semaine pour rester sur votre trajectoire.'
+            briefing.length > 1
+              ? `Sol a identifié ${briefing.length} priorités sur votre patrimoine. ${
+                  totalGain > 0
+                    ? `Gain potentiel cumulé estimé à ${formatFREur(totalGain, 0)} sur 12 mois.`
+                    : 'Plan d\'action prêt — chiffrage en cours.'
+                }`
+              : solTopProp.severity === 'critical'
+                ? `Priorité critique à traiter aujourd'hui pour éviter une dérive${
+                    totalGain > 0 ? ` · gain potentiel ${formatFREur(totalGain, 0)}` : ''
+                  }.`
+                : `À regarder cette semaine pour rester sur votre trajectoire${
+                    totalGain > 0 ? ` · gain potentiel ${formatFREur(totalGain, 0)}` : ''
+                  }.`
           }
+          metrics={[
+            {
+              label: 'Priorités',
+              value: `${todayActions.length || briefing.length || 0}`,
+            },
+            {
+              label: 'Gain potentiel',
+              value: totalGain > 0 ? formatFREur(totalGain, 0) : '—',
+            },
+            {
+              label: 'Délai',
+              value:
+                solTopProp.severity === 'critical'
+                  ? 'aujourd\'hui'
+                  : solTopProp.severity === 'high'
+                    ? 'cette semaine'
+                    : 'ce mois',
+            },
+          ]}
+          primaryLabel="Voir le plan d'action"
           onPrimary={() => solTopProp.path && navigate(solTopProp.path)}
-          primaryLabel={solTopProp.cta || 'Voir l\'action'}
+          secondaryLabel="Plus tard"
+          onSecondary={() => {}}
         />
       )}
 

@@ -38,6 +38,7 @@ import { useScope } from '../contexts/ScopeContext';
 import {
   getBillingSummary,
   getCockpit,
+  getCockpitCo2,
   getNotificationsList,
   getComplianceScoreTrend,
   getComplianceTimeline,
@@ -78,6 +79,7 @@ function useCockpitSolData({ orgId } = {}) {
     cockpit: null,
     notifications: null,
     timeline: null,
+    co2: null,
   });
 
   useEffect(() => {
@@ -90,7 +92,8 @@ function useCockpitSolData({ orgId } = {}) {
       getCockpit().catch(() => null),
       getNotificationsList({ org_id: orgId, limit: 10 }).catch(() => null),
       getComplianceTimeline().catch(() => null),
-    ]).then(([billing, compliance, cockpit, notifications, timeline]) => {
+      getCockpitCo2().catch(() => null),
+    ]).then(([billing, compliance, cockpit, notifications, timeline, co2]) => {
       if (cancelled) return;
       setState({
         status: 'ready',
@@ -99,6 +102,7 @@ function useCockpitSolData({ orgId } = {}) {
         cockpit: cockpit.status === 'fulfilled' ? cockpit.value : null,
         notifications: notifications.status === 'fulfilled' ? notifications.value : null,
         timeline: timeline.status === 'fulfilled' ? timeline.value : null,
+        co2: co2.status === 'fulfilled' ? co2.value : null,
       });
     });
 
@@ -190,12 +194,20 @@ export default function CockpitSol() {
   const consoKwh = cockpitStats.conso_kwh_total ?? billing.total_kwh ?? null;
   const consoMwh = consoKwh != null ? consoKwh / 1000 : null;
 
-  // CO₂ : tente cockpitStats puis fallback null (carte VecteurEnergetiqueCard ci-dessous est l'autorité)
-  const co2Tco2 =
-    cockpitStats.total_t_co2eq ??
-    cockpitStats.co2_total_tco2 ??
-    cockpitStats.co2_t_co2eq ??
-    null;
+  // CO₂ : source canonique = endpoint /api/cockpit/co2 (même que VecteurEnergetiqueCard
+  // plus bas → garantit cohérence des chiffres entre KPI haut et card détail).
+  // Backend retourne total_co2_tonnes mais peut être 0 même quand sites[] a des t_co2.
+  // On somme depuis sites[].t_co2 en fallback (somme défensive, pas du calcul métier).
+  const co2Total = useMemo(() => {
+    const direct = data.co2?.total_co2_tonnes ?? data.co2?.total_t_co2 ?? null;
+    if (direct != null && direct > 0) return direct;
+    const sites = Array.isArray(data.co2?.sites) ? data.co2.sites : [];
+    if (sites.length === 0) return null;
+    const sum = sites.reduce((s, site) => s + (Number(site.t_co2) || 0), 0);
+    return sum > 0 ? Math.round(sum * 10) / 10 : null;
+  }, [data.co2]);
+  const co2DeltaPct = data.co2?.delta_total_pct ?? null;
+  const co2Year = data.co2?.year ?? data.co2?.annee_ref ?? new Date().getFullYear();
 
   // Notifications + alertes
   const notifList = Array.isArray(data.notifications)
@@ -231,21 +243,46 @@ export default function CockpitSol() {
     return m.slice(0, 3);
   }, [billing, scoreNow, consoMwh]);
 
+  // Brief prescriptif : titre = menace ou opportunité concrète,
+  // description = chiffrage du risque + nombre de leviers proposés.
+  const sitesAtRisk = rawKpis.aRisque + rawKpis.nonConformes;
   const briefTitle = useMemo(() => {
-    if (briefing[0]) return briefing[0].label;
-    if (alertsCount > 0)
-      return `${alertsCount} signal${alertsCount > 1 ? 'aux' : ''} fort${alertsCount > 1 ? 's' : ''} cette semaine`;
+    if (sitesAtRisk > 0) {
+      return `${sitesAtRisk} site${sitesAtRisk > 1 ? 's' : ''} ${sitesAtRisk > 1 ? 'menacent' : 'menace'} votre trajectoire 2030`;
+    }
+    if (rawKpis.risque > 50000) {
+      return `Risque budgétaire ${formatFREur(rawKpis.risque, 0)} à arbitrer cette semaine`;
+    }
+    if (alertsCount > 0) {
+      return `${alertsCount} signal${alertsCount > 1 ? 'aux' : ''} fort${alertsCount > 1 ? 's' : ''} demandent votre arbitrage`;
+    }
+    if (opportunities.length > 0) {
+      return `${opportunities.length} levier${opportunities.length > 1 ? 's' : ''} d'optimisation activable${opportunities.length > 1 ? 's' : ''}`;
+    }
     return 'Patrimoine sous contrôle cette semaine';
-  }, [briefing, alertsCount]);
+  }, [sitesAtRisk, rawKpis.risque, alertsCount, opportunities.length]);
+
   const briefDescription = useMemo(() => {
-    const facture = billing.total_eur != null ? formatFREur(billing.total_eur, 0) : '—';
-    const score = scoreNow != null ? `${scoreNow}/100` : '—';
-    const conso = consoMwh != null ? `${formatFR(consoMwh, 0)} MWh` : '—';
-    const anomalies = billing.total_insights ?? 0;
-    return `Facture analysée ${facture} · score conformité ${score} · consommation ${conso}${
-      anomalies > 0 ? ` · ${anomalies} anomalie${anomalies > 1 ? 's' : ''} détectée${anomalies > 1 ? 's' : ''}` : ''
-    }.`;
-  }, [billing, scoreNow, consoMwh]);
+    const parts = [];
+    if (rawKpis.risque > 0) {
+      parts.push(`Risque cumulé ${formatFREur(rawKpis.risque, 0)}`);
+    }
+    if (opportunities.length > 0) {
+      parts.push(
+        `${opportunities.length} levier${opportunities.length > 1 ? 's' : ''} identifié${opportunities.length > 1 ? 's' : ''} par Sol`
+      );
+    } else if (sitesAtRisk > 0) {
+      parts.push(`Sol prépare un plan d'optimisation`);
+    } else {
+      parts.push(`Sol surveille en continu vos ${rawKpis.total} sites`);
+    }
+    if (billing.total_insights > 0) {
+      parts.push(
+        `${billing.total_insights} anomalie${billing.total_insights > 1 ? 's' : ''} facture détectée${billing.total_insights > 1 ? 's' : ''}`
+      );
+    }
+    return parts.join(' · ') + '.';
+  }, [rawKpis.risque, rawKpis.total, sitesAtRisk, opportunities.length, billing.total_insights]);
 
   // Freshness pour SolKpiCard sources
   const dataFreshness = useMemo(() => {
@@ -371,13 +408,21 @@ export default function CockpitSol() {
             <SolKpiCard
               label="Empreinte CO₂"
               explainKey="co2_total_tco2eq"
-              value={co2Tco2 != null ? formatFR(co2Tco2, 0) : '—'}
+              value={co2Total != null ? formatFR(co2Total, 0) : '—'}
               unit={`${NBSP}tCO₂eq`}
+              delta={
+                co2DeltaPct != null
+                  ? {
+                      text: `${co2DeltaPct > 0 ? '+' : ''}${co2DeltaPct.toFixed(1)}% vs ${co2Year - 1}`,
+                      kind: co2DeltaPct < 0 ? 'good' : co2DeltaPct > 0 ? 'bad' : 'neutral',
+                    }
+                  : null
+              }
               semantic="conso"
               headline={
-                co2Tco2 != null
-                  ? 'Scopes 1+2 cumulés sur la période · ADEME V23.6.'
-                  : 'Calcul CO₂ disponible dans la section Vecteurs ci-dessous.'
+                co2Total != null
+                  ? `Scopes 1+2 cumulés ${co2Year} · facteurs ADEME V23.6.`
+                  : 'Données CO₂ en cours de calcul.'
               }
               source={{
                 kind: 'ADEME V23.6',
@@ -582,12 +627,12 @@ export default function CockpitSol() {
                 key: 'co2',
                 cells: {
                   metric: 'CO₂eq cumulé',
-                  value: co2Tco2 != null ? `${formatFR(co2Tco2, 0)}${NBSP}tCO₂` : '—',
-                  delta: '—',
+                  value: co2Total != null ? `${formatFR(co2Total, 0)}${NBSP}tCO₂` : '—',
+                  delta: co2DeltaPct != null ? `${co2DeltaPct > 0 ? '+' : ''}${co2DeltaPct.toFixed(1)}%` : '—',
                   source: 'ADEME V23.6',
                   status: (
-                    <SolStatusPill kind={co2Tco2 != null ? 'ok' : 'att'}>
-                      {co2Tco2 != null ? 'Calculé' : 'En attente'}
+                    <SolStatusPill kind={co2Total != null ? 'ok' : 'att'}>
+                      {co2Total != null ? 'Calculé' : 'En attente'}
                     </SolStatusPill>
                   ),
                 },

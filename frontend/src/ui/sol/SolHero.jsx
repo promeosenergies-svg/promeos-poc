@@ -6,6 +6,78 @@
  *
  * Source maquette : .sol-hero / .sol-chip-inline / .sol-hero-title / .sol-hero-metrics
  */
+import { useEffect, useMemo, useState } from 'react';
+
+// Anime un nombre de 0 → target en `duration` ms avec ease-out cubic.
+// Respecte prefers-reduced-motion (résultat instantané).
+// Robuste : si la valeur affichée n'est pas parseable (ex "—" ou "aujourd'hui"),
+// retourne la valeur d'origine sans tenter d'animation.
+function useCountUpDisplay(displayValue, duration = 900) {
+  const target = useMemo(() => {
+    const str = String(displayValue ?? '');
+    // Match leading number (avec espaces FR / nbsp / dot / virgule)
+    const m = str.match(/(-?[\d  \s.,]+)/);
+    if (!m) return null;
+    const numStr = m[1].replace(/[\s  ]/g, '').replace(',', '.');
+    let parsed;
+    if (/^-?\d+\.\d+$/.test(numStr)) {
+      parsed = parseFloat(numStr);
+    } else {
+      parsed = parseFloat(numStr.replace(/\./g, ''));
+    }
+    return isNaN(parsed) ? null : parsed;
+  }, [displayValue]);
+
+  const [progress, setProgress] = useState(target == null ? 1 : 0);
+
+  useEffect(() => {
+    if (target == null) {
+      setProgress(1);
+      return;
+    }
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      setProgress(1);
+      return;
+    }
+    setProgress(0);
+    const start = performance.now();
+    let raf;
+    const step = (now) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setProgress(eased);
+      if (t < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => raf && cancelAnimationFrame(raf);
+  }, [target, duration]);
+
+  if (target == null || progress >= 1) return displayValue;
+  const animated = target * progress;
+  // Reformate en mimant le format d'origine
+  const str = String(displayValue);
+  const m = str.match(/^([-\d  \s.,]+)(.*)$/);
+  if (!m) return displayValue;
+  const rest = m[2];
+  const hasThousand = /[  \s]/.test(m[1]);
+  const decimals = (m[1].match(/[.,](\d+)$/) || [])[1]?.length || 0;
+  const num = hasThousand
+    ? Math.round(animated).toLocaleString('fr-FR')
+    : decimals > 0
+      ? animated.toFixed(decimals)
+      : Math.round(animated).toString();
+  return num + rest;
+}
+
+function MetricValue({ value }) {
+  const animated = useCountUpDisplay(value);
+  return (
+    <span style={{ fontVariantNumeric: 'tabular-nums' }}>{animated}</span>
+  );
+}
 
 export default function SolHero({
   chip = 'Sol propose · action agentique',
@@ -33,6 +105,9 @@ export default function SolHero({
         gap: 24,
         alignItems: 'center',
         boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+        // Entry animation : slide-up + fade-in 600ms ease-out signature.
+        // Respecte prefers-reduced-motion via règle globale (index.css:1043).
+        animation: 'slideInUp 600ms cubic-bezier(0.16, 1, 0.3, 1) backwards',
       }}
     >
       <div>
@@ -106,7 +181,7 @@ export default function SolHero({
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 >
-                  {m.value}
+                  <MetricValue value={m.value} />
                 </div>
                 <div
                   style={{

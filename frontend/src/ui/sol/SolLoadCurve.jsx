@@ -72,13 +72,17 @@ export default function SolLoadCurve({
     peakThreshold != null && peakPoint?.value != null
       ? Math.round(peakPoint.value * peakThreshold)
       : null;
-  // YAxis domain — niceMax avec headroom pour label "pic"
+  // YAxis — niceMax avec headroom + ticks EXPLICITES (forcés, pas hint).
+  // Recharts ignore tickCount au profit de son auto-scale, donc on impose
+  // un tableau ticks=[0, step, 2step, ...] aligné multiple de niceStep.
   const dataMax = Math.max(
     ...data.map((p) => p.value || 0),
     peakPoint?.value || 0,
     thresholdValue || 0
   );
   const yMax = niceMax(dataMax * 1.18);
+  const yStep = yMax / 5;
+  const yTicks = [0, yStep, yStep * 2, yStep * 3, yStep * 4, yMax];
   return (
     <div>
       <div
@@ -140,10 +144,10 @@ export default function SolLoadCurve({
                 fill: 'var(--sol-ink-400)',
               }}
               width={36}
-              // Domain niceMax pré-calculé → ticks ronds (multiple de 10/30/50)
-              // au lieu de valeurs odd type 105/35.
+              // Domain + ticks explicites pour empêcher Recharts de re-calculer
+              // ses propres "nicer" values qui produisent du 35/70/105/140.
               domain={[0, yMax]}
-              tickCount={6}
+              ticks={yTicks}
               label={{
                 value: unit,
                 position: 'insideTopLeft',
