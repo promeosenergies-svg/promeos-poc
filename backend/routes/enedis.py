@@ -23,10 +23,12 @@ from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
     EnedisFluxFileError,
+    EnedisFluxItcC68,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR151,
     EnedisFluxMesureR171,
     EnedisFluxMesureR50,
+    EnedisFluxMesureR6x,
     IngestionRun,
 )
 from data_ingestion.enedis.pipeline import ingest_directory
@@ -113,6 +115,16 @@ class FluxFileResponse(BaseModel):
     measures_count: int = 0
     version: int
     supersedes_file_id: Optional[int] = None
+    code_flux: Optional[str] = None
+    type_donnee: Optional[str] = None
+    id_demande: Optional[str] = None
+    mode_publication: Optional[str] = None
+    payload_format: Optional[str] = None
+    num_sequence: Optional[str] = None
+    siren_publication: Optional[str] = None
+    code_contrat_publication: Optional[str] = None
+    publication_horodatage: Optional[str] = None
+    archive_members_count: Optional[int] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -163,6 +175,8 @@ class MeasureStats(BaseModel):
     r171: int
     r50: int
     r151: int
+    r6x: int
+    c68: int
 
 
 class PrmStats(BaseModel):
@@ -200,8 +214,8 @@ def trigger_ingest(body: IngestRequest, db: Session = Depends(get_flux_data_db))
 
     try:
         keys = load_keys_from_env()
-    except MissingKeyError as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
+    except MissingKeyError:
+        keys = []
 
     # --- Concurrency guard (atomic via partial unique index) ---
     run = IngestionRun(
@@ -331,6 +345,16 @@ def get_flux_file_detail(file_id: int, db: Session = Depends(get_flux_data_db)):
         frequence_publication=f.frequence_publication,
         nature_courbe_demandee=f.nature_courbe_demandee,
         identifiant_destinataire=f.identifiant_destinataire,
+        code_flux=f.code_flux,
+        type_donnee=f.type_donnee,
+        id_demande=f.id_demande,
+        mode_publication=f.mode_publication,
+        payload_format=f.payload_format,
+        num_sequence=f.num_sequence,
+        siren_publication=f.siren_publication,
+        code_contrat_publication=f.code_contrat_publication,
+        publication_horodatage=f.publication_horodatage,
+        archive_members_count=f.archive_members_count,
         errors_history=[ErrorHistoryItem.model_validate(e) for e in f.errors],
     )
 
@@ -367,6 +391,8 @@ def get_stats(db: Session = Depends(get_flux_data_db)):
     r171 = measure_by_type.get("R171", 0)
     r50 = measure_by_type.get("R50", 0)
     r151 = measure_by_type.get("R151", 0)
+    r6x = sum(v for k, v in measure_by_type.items() if k in ("R63", "R64"))
+    c68 = measure_by_type.get("C68", 0)
 
     # --- PRMs: UNION DISTINCT across 4 measure tables (distinct point_id only) ---
     prm_union = union(
@@ -374,6 +400,8 @@ def get_stats(db: Session = Depends(get_flux_data_db)):
         db.query(EnedisFluxMesureR171.point_id.distinct()),
         db.query(EnedisFluxMesureR50.point_id.distinct()),
         db.query(EnedisFluxMesureR151.point_id.distinct()),
+        db.query(EnedisFluxMesureR6x.point_id.distinct()),
+        db.query(EnedisFluxItcC68.point_id.distinct()),
     )
     prm_rows = db.execute(prm_union).fetchall()
     prm_identifiers = sorted(row[0] for row in prm_rows)
@@ -409,11 +437,13 @@ def get_stats(db: Session = Depends(get_flux_data_db)):
             by_flux_type=by_flux_type,
         ),
         measures=MeasureStats(
-            total=r4x + r171 + r50 + r151,
+            total=r4x + r171 + r50 + r151 + r6x + c68,
             r4x=r4x,
             r171=r171,
             r50=r50,
             r151=r151,
+            r6x=r6x,
+            c68=c68,
         ),
         prms=PrmStats(
             count=len(prm_identifiers),

@@ -5,8 +5,11 @@ mocking SessionLocal/engine to route all DB operations through the test session.
 """
 
 import argparse
+import io
+import json
 import logging
 import os
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -16,7 +19,9 @@ import pytest
 from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
+    EnedisFluxItcC68,
     EnedisFluxMesureR4x,
+    EnedisFluxMesureR6x,
     IngestionRun,
 )
 from data_ingestion.enedis.cli import cmd_ingest, _print_report, _dry_run_report
@@ -89,6 +94,47 @@ def _write_corrupt(directory: Path, filename: str) -> Path:
     """Write a corrupt (random bytes) file to *directory*."""
     path = directory / filename
     path.write_bytes(os.urandom(256))
+    return path
+
+
+def _write_r63_direct(directory: Path) -> Path:
+    payload = json.dumps(
+        {
+            "header": {
+                "siDemandeur": "SGE",
+                "typeDestinataire": "SI",
+                "idDestinataire": "GRD-F001",
+                "codeFlux": "R63",
+                "idDemande": "M053Q0D3",
+                "modePublication": "P",
+                "idCanalContact": "WEB",
+                "format": "JSON",
+            },
+            "mesures": [
+                {
+                    "idPrm": "30000000000001",
+                    "etapeMetier": "MESURE",
+                    "periode": {"dateDebut": "2026-01-01", "dateFin": "2026-01-02"},
+                    "modeCalcul": "BRUT",
+                    "grandeur": [
+                        {
+                            "grandeurMetier": "CONS",
+                            "grandeurPhysique": "EA",
+                            "unite": "Wh",
+                            "points": [{"d": "2026-01-01T00:00:00+01:00", "v": "10", "p": "PT5M", "n": "R"}],
+                        }
+                    ],
+                }
+            ],
+        }
+    ).encode()
+    outer = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.zip"
+    member = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.json"
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(member, payload)
+    path = directory / outer
+    path.write_bytes(buf.getvalue())
     return path
 
 
@@ -297,9 +343,10 @@ class TestCliMissingDir:
 
 
 class TestCliMissingKeys:
-    """Keys absent -> error, no IngestionRun created."""
+    """Keys absent -> direct-openable files still run; encrypted files become per-file errors."""
 
-    def test_missing_keys_exits_with_error(self, db, tmp_path):
+    def test_missing_keys_still_processes_direct_sf5(self, db, tmp_path):
+        _write_r63_direct(tmp_path)
         args = _make_args()
 
         from data_ingestion.enedis.decrypt import MissingKeyError
@@ -313,10 +360,86 @@ class TestCliMissingKeys:
         with patch.multiple("data_ingestion.enedis.cli", **{k.split(".")[-1]: v for k, v in patches.items()}):
             exit_code = cmd_ingest(args)
 
-        assert exit_code == 1
+        assert exit_code == 0
+        assert db.query(IngestionRun).one().status == IngestionRunStatus.COMPLETED
+        assert db.query(EnedisFluxFile).one().status == FluxStatus.PARSED
+        assert db.query(EnedisFluxMesureR6x).count() == 1
 
-        # No IngestionRun created (pre-flight failure)
-        assert db.query(IngestionRun).count() == 0
+    def test_missing_keys_records_error_for_encrypted_file(self, db, tmp_path):
+        _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_20260301.zip")
+        args = _make_args()
+
+        from data_ingestion.enedis.decrypt import MissingKeyError
+
+        patches = _patch_cli_deps(db, tmp_path)
+        patches["data_ingestion.enedis.cli.load_keys_from_env"] = MagicMock(side_effect=MissingKeyError("no keys"))
+
+        with patch.multiple("data_ingestion.enedis.cli", **{k.split(".")[-1]: v for k, v in patches.items()}):
+            exit_code = cmd_ingest(args)
+
+        assert exit_code == 0
+        file_row = db.query(EnedisFluxFile).one()
+        assert file_row.status == FluxStatus.ERROR
+        assert db.query(IngestionRun).one().files_error == 1
+
+
+def test_print_report_includes_r6x_and_c68_totals(db, capsys):
+    run = IngestionRun(
+        started_at=datetime.now(timezone.utc),
+        directory="/tmp/flux",
+        recursive=True,
+        dry_run=False,
+        status=IngestionRunStatus.COMPLETED,
+        triggered_by="cli",
+    )
+    db.add(run)
+    file_r6x = EnedisFluxFile(filename="r63.zip", file_hash="r63", flux_type="R63", status=FluxStatus.PARSED)
+    file_c68 = EnedisFluxFile(filename="c68.zip", file_hash="c68", flux_type="C68", status=FluxStatus.PARSED)
+    db.add_all([file_r6x, file_c68])
+    db.flush()
+    db.add(
+        EnedisFluxMesureR6x(
+            flux_file_id=file_r6x.id,
+            flux_type="R63",
+            source_format="JSON",
+            archive_member_name="payload.json",
+            point_id="30000000000001",
+            horodatage="2026-01-01T00:00:00+01:00",
+        )
+    )
+    db.add(
+        EnedisFluxItcC68(
+            flux_file_id=file_c68.id,
+            source_format="JSON",
+            payload_member_name="payload.json",
+            point_id="30000000000002",
+            payload_raw='{"idPrm":"30000000000002"}',
+        )
+    )
+    db.commit()
+
+    _print_report(
+        {
+            "received": 2,
+            "parsed": 2,
+            "skipped": 0,
+            "error": 0,
+            "needs_review": 0,
+            "retried": 0,
+            "max_retries_reached": 0,
+            "permanently_failed": 0,
+            "already_processed": 0,
+        },
+        db,
+        run,
+        0.1,
+        Path("/tmp/flux"),
+        True,
+    )
+
+    output = capsys.readouterr().out
+    assert "R6X:" in output
+    assert "C68:" in output
 
 
 class TestCliConcurrentRun:
