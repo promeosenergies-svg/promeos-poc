@@ -17,7 +17,7 @@ Replace synthetic seed data with real Enedis SGE flux (load curves + index).
 | SF3 — R171 + Index | R171, R50, R151 parsers, multi-flux dispatch | 7-SHIP ✅ | [spec](docs/specs/feature-enedis-sge-3-ingestion-index.md) · [plan](docs/specs/plan-enedis-sge-3-implementation.md) · PRs #167–#174 |
 | SF4 — Operationalization | Config, error audit, batch retry, CLI, REST API | 7-SHIP ✅ | [spec](docs/specs/feature-enedis-sge-4-operationalization.md) · [plan](docs/specs/plan-enedis-sge-4-implementation.md) · PR #177 |
 | SGE4.5 — Flux Data DB Split | Retarget the existing Enedis raw pipeline to `flux_data.db` without changing CLI/API/parser behavior | 6-VALIDATE | [spec](docs/specs/feature-enedis-sge-4-5-flux-data-db-split.md) |
-| SF5 — R6X + C68 Raw Ingestion | Extend the raw ingestion pipeline with 2 new raw archive tables: `R63`/`R64` (R6X family) and `C68` | 1-SPEC | [spec](docs/specs/feature-enedis-sge-5-r6x-c68-raw-ingestion.md) |
+| SF5 — R6X + C68 Raw Ingestion | Extend the raw ingestion pipeline with dedicated raw archive tables for `R63`, `R64`, and `C68` | 6-VALIDATE | [spec](docs/specs/feature-enedis-sge-5-r6x-c68-raw-ingestion.md) · [plan](docs/specs/implementation-plan-sf5-r6x-c68-raw-ingestion.md) |
 | SF6 — Raw → Functional Promotion | Promote Enedis raw archive data from `flux_data.db` into 3 functional tables in `promeos.db` (`meter_load_curve`, `meter_energy_index`, `meter_power_peak`), with PRM matching, quality scoring, republication handling, and audit trail | 1-SPEC | [spec](docs/specs/feature-enedis-sge-6-data-staging.md) |
 
 **Result after SF4:** 6 flux types, 5 raw archive tables, 91 real files ingested, 123,846 measures. CLI + 4 API endpoints operational.
@@ -26,7 +26,9 @@ Replace synthetic seed data with real Enedis SGE flux (load curves + index).
 
 **SGE4.5 result:** implementation complete and validated locally on real data; raw Enedis storage now lives in `flux_data.db`, while `promeos.db` stays focused on app-facing and promoted data.
 
-**SF5 scope:** raw-ingestion extension for `R63`, `R64` (R6X family), and `C68` via 2 new raw archive tables in the existing raw ingest pipeline stored in `flux_data.db`.
+**SF5 scope:** raw-ingestion extension for `R63`, `R64` (R6X family), and `C68` via dedicated raw archive tables in the existing raw ingest pipeline stored in `flux_data.db`.
+
+**SF5 result:** implementation finalized and validated locally; one ingestion run can now archive legacy XML flows plus punctual `R63`, `R64`, and `C68` files, recognize adjacent unsupported R6X/M023 flows as clean skips, expose SF5 counts in CLI/API stats, and keep all raw SF5 persistence isolated in `flux_data.db`.
 
 **SF6 scope (8 phases):** read raw archive data from `flux_data.db`, write promoted/audit tables to `promeos.db`, then deliver A-Foundation & data model · B-R4x CDC promotion · C-R50 CDC promotion · D-Republication handling · E-R171/R151 index+PMAX · F-API scaffolding · G-Backfill & validation · H-Service migration
 
