@@ -544,7 +544,7 @@ function App() {
                           }
                         />
                         <Route
-                          path="/admin/cx"
+                          path="/admin/cx-dashboard"
                           element={
                             <PageSuspense>
                               <CxDashboardPage />
