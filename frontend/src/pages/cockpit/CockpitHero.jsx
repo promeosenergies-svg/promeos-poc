@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { HelpCircle } from 'lucide-react';
 import { Skeleton, ErrorState } from '../../ui';
 import { fmtEur } from '../../utils/format';
+import { formatRiskEur } from '../../lib/risk/normalizeRisk';
 
 // ── Gauge helpers (display-only) ─────────────────────────────────────
 
@@ -32,18 +33,18 @@ function gaugeLabel(score) {
 }
 
 // ── Trend/Delta helpers ──────────────────────────────────────────────
-// Audit Jean-Marc P0.5 : "386 972 €, c'est plus ou moins que l'an dernier ?"
-// → afficher un mini-delta sous chaque chiffre-roi quand dispo (sinon "—").
+// Mini-delta sous chaque chiffre-roi (« +3 pts vs N-1 »).
+
+const DELTA_TONE_CLS = Object.freeze({
+  good: 'bg-green-50 text-green-700 ring-green-200',
+  warn: 'bg-amber-50 text-amber-700 ring-amber-200',
+  bad: 'bg-red-50 text-red-700 ring-red-200',
+  neutral: 'bg-gray-50 text-gray-600 ring-gray-200',
+});
 
 function DeltaPill({ text, tone = 'neutral' }) {
   if (!text) return null;
-  const toneCls =
-    {
-      good: 'bg-green-50 text-green-700 ring-green-200',
-      warn: 'bg-amber-50 text-amber-700 ring-amber-200',
-      bad: 'bg-red-50 text-red-700 ring-red-200',
-      neutral: 'bg-gray-50 text-gray-600 ring-gray-200',
-    }[tone] ?? 'bg-gray-50 text-gray-600 ring-gray-200';
+  const toneCls = DELTA_TONE_CLS[tone] ?? DELTA_TONE_CLS.neutral;
   return (
     <span
       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ring-1 ${toneCls}`}
@@ -52,6 +53,16 @@ function DeltaPill({ text, tone = 'neutral' }) {
     </span>
   );
 }
+
+// SVG <text> styles — const module-level (recharts diff inégal sinon, audit
+// efficiency 26/04 P1 : objet style recréé à chaque render Hero).
+const SCORE_TEXT_STYLE = Object.freeze({
+  fontSize: '22px',
+  fontWeight: 700,
+  fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+  fontVariantNumeric: 'tabular-nums',
+});
+const SCORE_UNIT_STYLE = Object.freeze({ fontSize: '9px' });
 
 // ── N-1 helpers ──
 // Polarity = direction "souhaitable" : higher_is_good (conformité, actions),
@@ -62,26 +73,22 @@ const N1_FALLBACK = {
   tone: 'neutral',
 };
 
-function compactEur(n) {
-  return Math.abs(n) >= 1000 ? `${Math.round(n / 1000)} k€` : `${Math.round(n)} €`;
-}
-
-function formatDelta(value, unit) {
-  if (unit === 'eur') return compactEur(value);
-  if (unit === 'pct') return `${value}%`;
-  if (unit === 'pts') return `${value} pt${Math.abs(value) > 1 ? 's' : ''}`;
-  return `${value}`;
+function formatDelta(absValue, unit) {
+  // absValue est toujours positif — le signe est ajouté au call-site
+  if (unit === 'eur') return formatRiskEur(absValue);
+  if (unit === 'pct') return `${absValue}%`;
+  if (unit === 'pts') return `${absValue} pt${absValue > 1 ? 's' : ''}`;
+  return `${absValue}`;
 }
 
 function buildTrendPill(n1, deltaKey, unit, polarity) {
   if (!n1 || n1.data_status !== 'available' || n1[deltaKey] == null) return N1_FALLBACK;
   const v = n1[deltaKey];
-  if (v === 0) return { text: `stable vs N-1`, tone: 'neutral' };
+  if (v === 0) return { text: 'stable vs N-1', tone: 'neutral' };
   const isGood = polarity === 'higher_is_good' ? v > 0 : v < 0;
   const tone = isGood ? 'good' : 'bad';
-  const sign = v > 0 ? '+' : '';
-  const suffix = unit === 'pts' ? ' vs N-1' : ' vs N-1';
-  return { text: `${sign}${formatDelta(v, unit)}${suffix}`, tone };
+  const sign = v > 0 ? '+' : '−'; // U+2212 minus (typo CFO)
+  return { text: `${sign}${formatDelta(Math.abs(v), unit)} vs N-1`, tone };
 }
 
 // Fallback dédié à conformité : si N-1 indisponible, on retombe sur le trend
@@ -216,12 +223,7 @@ export default function CockpitHero({
               y="56"
               textAnchor="middle"
               className="fill-gray-900"
-              style={{
-                fontSize: '22px',
-                fontWeight: 700,
-                fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-                fontVariantNumeric: 'tabular-nums',
-              }}
+              style={SCORE_TEXT_STYLE}
             >
               {score != null ? Math.round(score) : '—'}
             </text>
@@ -230,7 +232,7 @@ export default function CockpitHero({
               y="72"
               textAnchor="middle"
               className="fill-gray-400"
-              style={{ fontSize: '9px' }}
+              style={SCORE_UNIT_STYLE}
             >
               /100
             </text>

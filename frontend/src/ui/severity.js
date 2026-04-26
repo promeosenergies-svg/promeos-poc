@@ -107,35 +107,39 @@ export const SEVERITY_CLASSES = Object.freeze({
  *   const styles = getSeverityInlineStyles('critical');
  *   <div style={styles.bg}>...</div>
  */
+
+// Const module-level pour éviter l'allocation des 16 sous-objets style à
+// chaque appel (sinon casse la mémoïsation React downstream).
+const SEVERITY_INLINE_STYLES = Object.freeze({
+  [SEVERITY.CRITICAL]: Object.freeze({
+    bg: Object.freeze({ backgroundColor: 'var(--sol-refuse-bg)' }),
+    border: Object.freeze({ borderColor: 'var(--sol-refuse-fg)' }),
+    title: Object.freeze({ color: 'var(--sol-refuse-fg)' }),
+    cta: Object.freeze({ backgroundColor: 'var(--sol-refuse-fg)', color: 'white' }),
+  }),
+  [SEVERITY.WARN]: Object.freeze({
+    bg: Object.freeze({ backgroundColor: 'var(--sol-attention-bg)' }),
+    border: Object.freeze({ borderColor: 'var(--sol-attention-fg)' }),
+    title: Object.freeze({ color: 'var(--sol-attention-fg)' }),
+    cta: Object.freeze({ backgroundColor: 'var(--sol-attention-fg)', color: 'white' }),
+  }),
+  [SEVERITY.INFO]: Object.freeze({
+    bg: Object.freeze({ backgroundColor: 'var(--sol-calme-bg)' }),
+    border: Object.freeze({ borderColor: 'var(--sol-calme-fg)' }),
+    title: Object.freeze({ color: 'var(--sol-calme-fg)' }),
+    cta: Object.freeze({ backgroundColor: 'var(--sol-calme-fg)', color: 'white' }),
+  }),
+  [SEVERITY.OK]: Object.freeze({
+    bg: Object.freeze({ backgroundColor: 'var(--sol-succes-bg)' }),
+    border: Object.freeze({ borderColor: 'var(--sol-succes-fg)' }),
+    title: Object.freeze({ color: 'var(--sol-succes-fg)' }),
+    cta: Object.freeze({ backgroundColor: 'var(--sol-succes-fg)', color: 'white' }),
+  }),
+});
+
 export function getSeverityInlineStyles(severity) {
   const key = normalizeSeverity(severity);
-  const map = {
-    [SEVERITY.CRITICAL]: {
-      bg: { backgroundColor: 'var(--sol-refuse-bg)' },
-      border: { borderColor: 'var(--sol-refuse-fg)' },
-      title: { color: 'var(--sol-refuse-fg)' },
-      cta: { backgroundColor: 'var(--sol-refuse-fg)', color: 'white' },
-    },
-    [SEVERITY.WARN]: {
-      bg: { backgroundColor: 'var(--sol-attention-bg)' },
-      border: { borderColor: 'var(--sol-attention-fg)' },
-      title: { color: 'var(--sol-attention-fg)' },
-      cta: { backgroundColor: 'var(--sol-attention-fg)', color: 'white' },
-    },
-    [SEVERITY.INFO]: {
-      bg: { backgroundColor: 'var(--sol-calme-bg)' },
-      border: { borderColor: 'var(--sol-calme-fg)' },
-      title: { color: 'var(--sol-calme-fg)' },
-      cta: { backgroundColor: 'var(--sol-calme-fg)', color: 'white' },
-    },
-    [SEVERITY.OK]: {
-      bg: { backgroundColor: 'var(--sol-succes-bg)' },
-      border: { borderColor: 'var(--sol-succes-fg)' },
-      title: { color: 'var(--sol-succes-fg)' },
-      cta: { backgroundColor: 'var(--sol-succes-fg)', color: 'white' },
-    },
-  };
-  return map[key] ?? map[SEVERITY.INFO];
+  return SEVERITY_INLINE_STYLES[key] ?? SEVERITY_INLINE_STYLES[SEVERITY.INFO];
 }
 
 export function getSeverityClasses(severity) {
