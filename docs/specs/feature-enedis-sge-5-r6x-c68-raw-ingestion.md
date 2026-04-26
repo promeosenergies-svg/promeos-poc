@@ -251,6 +251,7 @@ Observed content examples:
   - one flat row per PRM
   - very wide contract/technical export
   - fields such as `PRM`, `Domaine de tension`, `Tension de Livraison`, `Type de comptage`, `Mode de releve`, `Puissance souscrite`, `Refus de pose Linky`, `Date refus de pose Linky`
+  - observed CSV reality check on 2026-04-26: `Puissance souscrite` can be a single combined field such as `36 kVA` or `36kVA`; ingestion must store `36` in `puissance_souscrite_valeur` and `kVA` in `puissance_souscrite_unite`, while preserving the original CSV cell in `payload_raw`
 
 ### 2.3 Critical Delta vs SF1-SF4
 
@@ -562,8 +563,8 @@ Unlike `R63` / `R64`, `C68` is not a compact measurement family. It is a very wi
 | `mode_releve` | String(30) nullable | extracted when available |
 | `media_comptage` | String(30) nullable | extracted when available |
 | `periodicite_releve` | String(30) nullable | extracted when available |
-| `puissance_souscrite_valeur` | String(50) nullable | raw extracted text when available |
-| `puissance_souscrite_unite` | String(20) nullable | extracted when available |
+| `puissance_souscrite_valeur` | String(50) nullable | raw extracted value text when available; if CSV only provides combined `Puissance souscrite` such as `36 kVA`, store only `36` here |
+| `puissance_souscrite_unite` | String(20) nullable | extracted unit when available; if CSV only provides combined `Puissance souscrite` such as `36 kVA`, store `kVA` here |
 | `puissance_limite_soutirage_valeur` | String(50) nullable | raw extracted text when available |
 | `puissance_limite_soutirage_unite` | String(20) nullable | extracted when available |
 | `puissance_raccordement_soutirage_valeur` | String(50) nullable | raw extracted text when available |
@@ -855,6 +856,7 @@ parse_c68_payload(payload_bytes: bytes, source_format: str, member_name: str) ->
 - C68 extraction uses an explicit allowlist of query columns; person names, emails, phone numbers, postal address lines, street details, civilité/prénom/nom, free-text contact fields, and interlocutor contact details are not extracted into query columns
 - `SIRET` and `SIREN` are extracted as useful organization identifiers for BACS, decret tertiaire, and multi-client filtering
 - high-value power fields are split into raw string value/unit columns; less-used value/unit technical fields remain only in `payload_raw`
+- for C68 CSV, the flattened export may provide subscribed power as one combined `Puissance souscrite` cell; split that cell into `puissance_souscrite_valeur` and `puissance_souscrite_unite` instead of storing the combined text in the value column
 - SF5 does not numerically parse C68 power values; numeric conversion and validation are deferred to later promotion/product layers
 
 No cross-format synthesis is allowed in SF5. If CSV omits a JSON-only branch, it stays omitted.
@@ -1027,6 +1029,7 @@ Mandatory assertions:
 - JSON arrays and nested contexts/classes are fully exploded
 - CSV header mapping is correct
 - C68 CSV extraction is header-name based, not position-based
+- C68 CSV combined `Puissance souscrite` values split into separate value/unit columns
 - C68 v1.2 fields are preserved/extracted when present and tolerated when absent
 - unknown C68 CSV columns and JSON fields remain in `payload_raw` and produce warnings rather than hard failures
 - C68 JSON nested arrays such as `rattachements`, `installationsProduction`, and `optionsContractuelles` remain intact in `payload_raw`
@@ -1036,6 +1039,7 @@ Mandatory assertions:
 - C68 missing `idPrm` / `PRM` fails the physical file and rolls back inserts
 - malformed mandatory CSV rows fail the physical file and roll back inserts
 - C68 power value columns preserve raw strings and do not perform numeric parsing
+- C68 CSV combined subscribed-power cells such as `36 kVA` or `36kVA` are split into `puissance_souscrite_valeur = 36` and `puissance_souscrite_unite = kVA`
 
 ### 10.2 Container Tests
 

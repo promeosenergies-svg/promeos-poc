@@ -612,6 +612,7 @@ CSV parsing:
 - missing `PRM` header or blank row PRM is fatal
 - accept both legacy 207-column and v1.2 211-column layouts
 - preserve unknown columns in `payload_raw`
+- observed CSV reality check on 2026-04-26: the flattened `Puissance souscrite` column may carry the value and unit together, for example `36 kVA` or `36kVA`; parser/storage must split it into `puissance_souscrite_valeur = 36` and `puissance_souscrite_unite = kVA`, while leaving the original CSV cell in `payload_raw`
 - extract v1.2 additions when present:
   - `Type Injection`
   - `Refus de pose Linky`
@@ -625,6 +626,7 @@ Extraction policy:
 - Do not extract person names, emails, phone numbers, postal address lines, street details, civilite, prenom, nom, free-text contact fields, or interlocutor contact details.
 - Extract SIRET/SIREN.
 - Store power values and units as raw strings, with no numeric conversion.
+- When CSV provides a combined subscribed-power cell, split value and unit before writing the dedicated columns; do not let `puissance_souscrite_valeur` contain text such as `36 kVA`.
 
 Storage notes:
 
@@ -646,6 +648,7 @@ Storage notes:
 - C68 JSON ingests into `enedis_flux_itc_c68`.
 - C68 CSV ingests into `enedis_flux_itc_c68`.
 - C68 legacy 207-column CSV and v1.2 211-column CSV both ingest.
+- C68 CSV combined `Puissance souscrite` cells are split into separate value/unit raw columns.
 - `measures_count` equals PRM snapshot rows, not archive/member count.
 - `archive_members_count` records first-level member count.
 - `header_raw.archive_manifest` records secondary archive and payload names.
@@ -666,6 +669,7 @@ Storage notes:
 - Synthetic C68 JSON regression matching the real id `22` nested shape: one undated contractual situation projects `segment = C1`, `etat_contractuel = SERVC`, `formule_tarifaire_acheminement = HTALU5`, `media_comptage = IP`, and `periodicite_releve = QUOTID`.
 - Synthetic C68 CSV 207-column-style fixture.
 - Synthetic C68 CSV 211-column-style fixture with fake `Type Injection`, `Refus de pose Linky`, `Date refus de pose Linky`, and `Borne Fixe`.
+- Synthetic C68 CSV fixture where `Puissance souscrite` is a combined value/unit cell, with assertions that value and unit are stored separately.
 - Multi-secondary archive where primary timestamp differs from secondary/payload timestamp.
 - Sequence gap failure.
 - Secondary/payload mismatch failures.
