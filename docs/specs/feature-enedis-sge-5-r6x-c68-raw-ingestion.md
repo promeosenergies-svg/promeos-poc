@@ -1,6 +1,6 @@
 # SF5 — Enedis R6X + C68 Raw Ingestion Extension
 
-> **Status**: PRD v0.2 — reviewed on 2026-04-23 against the post-SGE4.5 raw/product DB split; grounded in the roadmap, official local guides, JSON schemas, and real `flux_enedis/` samples inspected on 2026-04-18
+> **Status**: PRD v0.3 — reviewed on 2026-04-26 against the post-SGE4.5 raw/product DB split and the newer R6X v1.5.2 guide; grounded in the roadmap, official local guides, JSON schemas, and real `flux_enedis/` samples inspected on 2026-04-18
 > **Depends on**: SF1 (decrypt), SF2 (R4x raw archive), SF3 (R171/R50/R151 raw archive), SF4 (operationalization), SGE4.5 (raw DB split to `flux_data.db`) — complete and validated
 > **Module**: `backend/data_ingestion/enedis/`
 > **Goal**: extend the existing raw archive pipeline with `R63`, `R64`, and `C68` while preserving SF1-SF4 behavior for legacy XML flows and the SGE4.5 storage split to `flux_data.db`; SF5 must not create or mutate promoted/product tables in `promeos.db`
@@ -30,7 +30,7 @@ SF5 matters because the next Enedis data families that unblock product work do n
 
 The new SF5 scope breaks the legacy assumptions in several ways:
 
-- `R63` / `R64` are **M023-requested R6X measurement publication flows**, not legacy XML supplier-perimeter flows; depending on the Enedis guide and request/subscription setup they may be punctual or recurrent, and SF5 does not make that distinction a routing rule
+- `R63` / `R64` are **punctual M023-requested R6X measurement publication flows**, not legacy XML supplier-perimeter flows; the newer guide separates recurrent equivalents into suffixed `R63A/B` and `R64A/B` flows that SF5 recognizes but does not parse yet
 - the official R6X guide states the publication format is **JSON**, with **CSV** also possible
 - `C68` is an **ITC punctual response flow** whose delivery contract is a **primary ZIP containing 1..n secondary ZIPs**
 - `C68` payloads contain large technical and contractual snapshots, not simple point-series measurements
@@ -66,32 +66,44 @@ This draft is grounded in the local documentation under `docs/base_documentaire/
 
 ### 2.1 Official Guide Findings
 
-#### R6X (`Enedis-R6X.pdf`)
+#### R6X (`Enedis-R6X.pdf`, then checked against `Enedis.SGE.GUI.0503.Flux.R6X_v1.5.2.pdf`)
 
-- the local guide corpus is not fully aligned on punctual vs recurrent wording: some guide material treats `R63` / `R64` as punctual publications requested through M023, while other material describes recurring publications; SF5 therefore treats `R63` / `R64` as M023-requested R6X measurement publications and preserves the publication metadata needed to clarify punctual/recurrent context later
+- the newer v1.5.2 guide clarifies the split between punctual R6X-M023 and recurrent R6X-REC flows:
+  - `R63` / `R64` are punctual M023 publication flows
+  - `R63A` / `R63B` and `R64A` / `R64B` are recurrent R6X-REC flows
+  - SF5 supports only the unsuffixed punctual `R63` / `R64` families because those are the real observed files; suffixed recurrent flows are recognized as known-but-unsupported and recorded as `SKIPPED`
 - functionally, `R63` is the raw source for infra-daily load curves (`Courbes de charge`), while `R64` is the raw source for indexes (`Index`)
 - the guide states the subscribed payload format can be **JSON** or **CSV**
-- CSV is not universally available: the guide says CSV is only possible for a perimeter of **less than 100 PRM**
+- the v1.5.2 guide states JSON is the normal published format for these flows, and that punctual M023 requests made via the SGE portal can also produce CSV; local samples confirm CSV must be supported on day one
+- CSV is not universally available: earlier guide material says CSV is only possible for a perimeter of **less than 100 PRM**, while the v1.5.2 guide points format and PRM limits back to the request channel/service guide; SF5 treats CSV as supported when received, not as a routing promise
 - the guide also states an operational rule with direct ingestion impact: when files are delivered outside the Enedis enterprise account over channels such as **email** or **FTP**, they are encrypted for security
 - SF5 should therefore keep one decryption-capable ingestion pipeline and detect whether each incoming file still needs decryption, instead of assuming that all R6X files bypass decryption just because our local corpus is already plain ZIP
-- guide-style recurring publications are first delivered as a **ZIP archive**
-- guide-style recurring archives contain data for one **SIREN** and one measurement family (`CdC` or `Index`)
-- the guide-style outer archive nomenclature is:
+- guide-style publications are delivered as ZIP archives; each archive can transmit data for several PRMs
+- the v1.5.2 guide defines the punctual R6X-M023 outer archive nomenclature as:
 
 ```text
-Enedis_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<SIREN>_<horodate>.zip
+ENEDIS_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<numSequence>_<horodate>.zip
 ```
 
-- the inner JSON/CSV payload nomenclature is:
+- the v1.5.2 guide defines the recurrent R6X-REC outer archive nomenclature as:
+
+```text
+ENEDIS_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<codeContrat>_<numSequence>_<horodate>.zip
+```
+
+- older guide material and some implementation notes may describe a comparable extra publication identifier as a SIREN; SF5 therefore supports both observed M023 names and the longer guide-style recurrent/legacy metadata shape, preserving the extra segment as either `code_contrat_publication` or `siren_publication` according to its shape
+- the payload file inside the archive uses the compact data-file nomenclature:
 
 ```text
 Enedis_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<numSequence>_<horodate>.<extension>
 ```
 
 - `codeFlux` is itself business-significant and must be preserved raw:
-  - `R63A` / `R64A` = meters with power **> 36 kVA**
-  - `R63B` / `R64B` = **Linky** meters with power **<= 36 kVA**
+  - `R63` / `R64` = punctual M023 files supported by SF5
+  - `R63A` / `R64A` = recurrent files for C1-C4/P1-P3 segments, not supported by SF5 without real samples
+  - `R63B` / `R64B` = recurrent files for C5/P4 segments, not supported by SF5 without real samples
 - `modePublication` is also meaningful to a non-technical reader because it encodes the delivery rhythm chosen in the subscription:
+  - `P` = punctual
   - `Q` = daily
   - `H` = weekly
   - `M` = monthly
@@ -328,12 +340,15 @@ SF5 still ends at raw persistence. The later `backend/data_staging/` module from
   - `R64A`, `R64B`
   - `R65`
   - `R66`
+  - `R66B`
   - `R67`
 - no C68 business normalization into contract/power models
 - no completeness SLA monitoring for M023 publication sequences
 - no `CR.M023` compte rendu parsing/reconciliation
 
-Known-but-out-of-scope files (`R63A/B`, `R64A/B`, `R65`, `R66`, `R67`, standalone `CR.M023`) should be classified and recorded as `SKIPPED` when encountered, not treated as unknown files. They do not receive parser/storage support in SF5.
+Known-but-out-of-scope files (`R63A/B`, `R64A/B`, `R65`, `R66`, `R66B`, `R67`, standalone `CR.M023`) should be classified and recorded as `SKIPPED` when encountered, not treated as unknown files. They do not receive parser/storage support in SF5.
+
+This is intentional, not an accidental gap. The v1.5.2 R6X guide identifies `R63A/B` and `R64A/B` as recurrent R6X-REC publications with their own JSON schemas and metadata shape. Because the current local corpus contains real unsuffixed `R63` / `R64` M023 files but no real suffixed recurrent examples, SF5 avoids building speculative support for those flows. Future support should be added from real recurrent samples and the R6X-REC schemas.
 
 ---
 
@@ -355,6 +370,8 @@ Known-but-out-of-scope files (`R63A/B`, `R64A/B`, `R65`, `R66`, `R67`, standalon
 | D12 | C68 sensitivity posture | **Store full C68 `payload_raw` only inside the protected raw DB; do not write decrypted artifacts to file storage** | SF5 needs source fidelity for reprocessing, while production keeps original encrypted archives in file storage and decrypted data inside controlled database boundaries |
 | D13 | Archive coherence | **Strict package/filename coherence is a hard gate** | Any outer/inner filename mismatch, sidecar file, unsupported extra member, sequence inconsistency, or mixed C68 payload format makes the whole physical file `ERROR` |
 | D14 | Warnings | **Only non-contractual schema drift is non-fatal and stored in `header_raw.warnings`** | Packaging/provenance inconsistencies are errors; unknown extra payload fields can be preserved for later parser evolution |
+| D15 | Suffixed R6X flows | **Recognize but do not parse `R63A/B` and `R64A/B` in SF5** | They are recurrent R6X-REC flows in the newer guide, and we have no real samples; SF5 supports observed punctual `R63` / `R64` only |
+| D16 | JSON schema-drift baseline | **Use the local official JSON schemas as the warning baseline** | Unknown JSON fields are warnings relative to `R63_v1.2.0`, `R64_v1.2.1`, and `C68_v1.2.0`; later `R6X-REC` schemas apply only when those flows are implemented |
 
 ---
 
@@ -373,6 +390,7 @@ Known-but-out-of-scope files (`R63A/B`, `R64A/B`, `R65`, `R66`, `R67`, standalon
 | `payload_format` | String(10) nullable | `XML`, `JSON`, `CSV` — actual parsed payload format |
 | `num_sequence` | String(10) nullable | raw sequence segment from filename |
 | `siren_publication` | String(20) nullable | guide-style R6X publication SIREN from filename when present; distinct from C68 payload-level `siren` |
+| `code_contrat_publication` | String(50) nullable | guide-style R6X-REC contract/publication identifier from filename when present, e.g. `GRD-F345` or `12994` |
 | `publication_horodatage` | String(20) nullable | raw `AAAAMMJJHHMMSS` from filename |
 | `archive_members_count` | Integer nullable | number of first-level archive members actually opened |
 
@@ -560,10 +578,13 @@ Add new `FluxType` values:
 - `R64B`
 - `R65`
 - `R66`
+- `R66B`
 - `R67`
 - `CR_M023`
 
 Only `R63`, `R64`, and `C68` receive parser/storage support in SF5. The other values are known-but-skipped so operators can distinguish recognized out-of-scope Enedis artifacts from truly unknown files.
+
+`R63A`, `R63B`, `R64A`, and `R64B` must not be normalized into `R63` / `R64` in SF5. They are separate recurrent R6X-REC flows in the newer guide, and without real samples SF5 should avoid silently applying punctual M023 assumptions to them.
 
 Filename and extension parsing are case-insensitive for technical matching (`ENEDIS` vs `Enedis`, `.JSON` vs `.json`), but original filenames, member names, and raw metadata values are preserved in storage.
 
@@ -575,11 +596,13 @@ Add a shared filename parser for M023/R6X publication nomenclature. The observed
 ENEDIS_<codeFlux>_<modePublication>_<typeDonnee>_<idDemande>_<numSequence>_<horodate>.<extension>
 ```
 
-R6X guide-style recurring outer archives may instead use:
+R6X guide-style recurrent outer archives may instead use the v1.5.2 R6X-REC shape:
 
 ```text
-Enedis_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<SIREN>_<horodate>.zip
+ENEDIS_<codeFlux>_<modePublication>_<typeDonnees>_<idDemande>_<codeContrat>_<numSequence>_<horodate>.zip
 ```
+
+Older guide material and prior implementation notes may use a comparable extra publication identifier described as SIREN. SF5 should parse and preserve both shapes so a future recurrent implementation has trustworthy metadata, even though the suffixed recurrent flows are skipped in this wave.
 
 It must extract at minimum:
 
@@ -589,13 +612,22 @@ It must extract at minimum:
 - `id_demande`
 - `num_sequence`
 - `siren_publication`
+- `code_contrat_publication`
 - `publication_horodatage`
 
-For the ambiguous fifth segment in R6X names:
+For R6X outer archive names:
 
-- sequence-like values such as `00001` populate `num_sequence`
-- SIREN-like values populate `siren_publication`
+- the six-token M023 shape uses the fifth metadata segment as `num_sequence`
+- the seven-token REC shape uses the fifth metadata segment as `code_contrat_publication` or `siren_publication`, and the sixth metadata segment as `num_sequence`
+- SIREN-like extra identifiers populate `siren_publication`
+- non-SIREN extra identifiers such as `GRD-F345` or `12994` populate `code_contrat_publication`
 - any other shape is a filename-structure error unless a real Enedis sample later justifies support
+
+R6X outer/payload filename coherence rules:
+
+- for M023-style outer archives, `code_flux`, `mode_publication`, `type_donnee`, `id_demande`, `num_sequence`, and `publication_horodatage` must match the payload filename
+- for REC/legacy-style outer archives, `code_flux`, `mode_publication`, `type_donnee`, `id_demande`, `num_sequence`, and `publication_horodatage` must match the payload filename; the extra `code_contrat_publication` / `siren_publication` segment exists only on the outer archive and is not compared to the payload filename
+- `R63A/B` and `R64A/B` names that parse successfully are still recorded as known `SKIPPED`, not passed to the `R63` / `R64` parser
 
 Filename parsing is not optional. It is the authoritative metadata source for:
 
@@ -696,9 +728,12 @@ CSV rules:
 
 JSON rules:
 
+- for `R63`, warning-level schema drift is assessed against the local official schema `docs/base_documentaire/enedis/Schema Json/R6X-M023/Enedis.SGE.JSON.0510.Flux.R63_v1.2.0.json`
+- for `R64`, warning-level schema drift is assessed against the local official schema `docs/base_documentaire/enedis/Schema Json/R6X-M023/Enedis.SGE.JSON.0511.Flux.R64_v1.2.1.json`
+- for `C68`, warning-level schema drift is assessed against the local official schema `docs/base_documentaire/enedis/guides_flux/Enedis.SGE.GUI.0504.Flux_C68_v1.2.0/Enedis.SGE.JSON.0514.Flux.C68_v1.2.0.json`
 - C68 JSON must be syntactically valid and have a top-level array of PRM objects
-- parse best-effort against the official v1.2 JSON schema rather than making schema validation a hard gate
-- preserve unknown fields in `payload_raw`
+- parse best-effort against the official schema rather than making schema validation a hard gate
+- for C68, preserve unknown fields in `payload_raw`; for R63/R64, preserve schema-drift evidence in `header_raw.warnings` because the R6X raw table stores the mapped atomic values rather than a full payload blob
 - surface schema drift as warnings in `header_raw.warnings`
 - fail when the payload is structurally impossible to ingest, such as any C68 PRM object missing `idPrm`
 
@@ -975,6 +1010,8 @@ Add extraction tests for:
 - C68 primary archive with mixed JSON/CSV secondary payload formats that fails the physical file
 - unsupported member extension
 - direct-openable SF5 file with no AES keys succeeds
+- encrypted synthetic `R63` / `R64` direct-ZIP fixtures with valid AES keys decrypt in memory and ingest successfully
+- encrypted synthetic `C68` nested-ZIP fixture with valid AES keys decrypts in memory and ingests successfully
 - file that needs decrypt/unwrap and has no AES keys becomes file-level `ERROR`
 
 ### 10.3 Integration Tests
@@ -1016,6 +1053,7 @@ Legacy SF1-SF4 tests must continue to pass unchanged for:
 - pipeline idempotence/retry/republication
 - CLI run/reporting
 - lazy key loading behavior for legacy and direct-openable files
+- successful in-memory AES unwrap for encrypted SF5 ZIP publications with valid keys
 
 ### 10.5 Cross-DB Boundary Tests
 
@@ -1034,10 +1072,10 @@ Add explicit boundary tests so the SGE4.5 split remains enforced after SF5:
 | ID | Topic | Status | Notes |
 |----|-------|--------|-------|
 | OQ1 | C68 extracted column set | Settled for SF5 | Use `payload_raw` + curated allowlisted query columns, including SIRET/SIREN and raw string value/unit columns for the small high-value power set. Full all-columns flattening remains out of scope |
-| OQ2 | Out-of-scope R6X recognition | Settled for SF5 | Classify `R63A/B`, `R64A/B`, `R65`, `R66`, `R67`, and standalone `CR.M023` explicitly as known-but-skipped |
-| OQ3 | `R6X` table naming | Open | `enedis_flux_mesure_r6x` is concise and matches roadmap intent, but `r63_r64` would be more explicit |
+| OQ2 | Out-of-scope R6X recognition | Settled for SF5 | Classify `R63A/B`, `R64A/B`, `R65`, `R66`, `R66B`, `R67`, and standalone `CR.M023` explicitly as known-but-skipped |
+| OQ3 | `R6X` table naming | Settled for SF5 | Use `enedis_flux_mesure_r6x`; the table intentionally stores supported punctual `R63` / `R64` rows while preserving `flux_type` and `code_flux` for clarity |
 | OQ4 | Stats granularity | Settled for SF5 | Row totals and distinct PRM counts are required; JSON vs CSV breakdown is optional/debug-level if cheap from existing format fields |
-| OQ5 | R63/R64 punctual vs recurrent semantics | Open but non-blocking | Treat `R63` / `R64` as M023-requested R6X measurement publications that may be punctual or recurrent depending on guide/setup; preserve metadata and do not route differently in SF5 |
+| OQ5 | R63/R64 punctual vs recurrent semantics | Settled for SF5 | The newer R6X v1.5.2 guide identifies unsuffixed `R63` / `R64` as punctual M023 flows and suffixed `R63A/B` / `R64A/B` as recurrent R6X-REC flows. SF5 supports only observed unsuffixed `R63` / `R64`; recurrent suffixed flows are recognized and skipped |
 | OQ6 | Production C68 privacy/RGPD architecture | Open for production | Original encrypted archives should remain encrypted in file storage. Decrypted SF5 content exists transiently in memory and persists only inside protected raw DB tables; before production, finalize DB encryption/access/backup/retention/deletion/anonymization policy |
 
 ### 11.1 Migration Policy
@@ -1053,13 +1091,15 @@ SF5 should use idempotent additive raw DB migrations:
 
 ## 12. Acceptance Checklist
 
-- [ ] `FluxType` and classification support `R63`, `R64`, `C68`, and known-skipped `R63A/B`, `R64A/B`, `R65`, `R66`, `R67`, `CR_M023`
+- [ ] `FluxType` and classification support `R63`, `R64`, `C68`, and known-skipped `R63A/B`, `R64A/B`, `R65`, `R66`, `R66B`, `R67`, `CR_M023`
 - [ ] raw DB bootstrap creates `enedis_flux_mesure_r6x` and `enedis_flux_itc_c68` in `flux_data.db`
-- [ ] raw DB bootstrap additively creates missing nullable `enedis_flux_file` metadata columns including `code_flux` and `siren_publication`
+- [ ] raw DB bootstrap additively creates missing nullable `enedis_flux_file` metadata columns including `code_flux`, `siren_publication`, and `code_contrat_publication`
 - [ ] main `promeos.db` bootstrap does not create the new raw Enedis tables
 - [ ] one mixed `ingest_directory()` run can process legacy XML flows and new ZIP publication flows together
 - [ ] direct-openable SF5 files ingest without AES keys
+- [ ] encrypted synthetic SF5 ZIP publications decrypt in memory and ingest successfully with valid AES keys
 - [ ] files that need decrypt/unwrap but have missing keys become file-level `ERROR`, without blocking direct-openable files in the same run
+- [ ] `R63A/B` and `R64A/B` are recognized as known recurrent R6X-REC flows and recorded as `SKIPPED`, never silently routed through the punctual `R63` / `R64` parser
 - [ ] `R63` JSON ingests successfully into `enedis_flux_mesure_r6x`
 - [ ] `R63` CSV ingests successfully into `enedis_flux_mesure_r6x`
 - [ ] `R64` JSON ingests successfully into `enedis_flux_mesure_r6x`
@@ -1088,7 +1128,7 @@ SF5 should use idempotent additive raw DB migrations:
 
 | Term | Meaning |
 |------|---------|
-| **M023** | Enedis request/publication service family used to request data access publications; `R63` / `R64` may be punctual or recurrent depending on guide/setup, while SF5 treats them uniformly as raw R6X publications |
+| **M023** | Enedis punctual request/publication service family used to request data access publications; in SF5 this covers observed unsuffixed `R63` / `R64` raw R6X publications |
 | **R63** | Fine-grain load curve publication flow |
 | **R64** | Fine-grain index publication flow |
 | **C68** | Technical and contractual information response flow |
