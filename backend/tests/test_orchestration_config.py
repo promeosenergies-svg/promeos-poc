@@ -88,7 +88,8 @@ def test_agent_module_imports():
     )
 
     assert callable(run_qa_audit)
-    assert "0.052" in SYSTEM_PROMPT  # Facteur CO₂ ADEME
+    assert "CO₂ élec" in SYSTEM_PROMPT
+    assert "backend/config/emission_factors.py" in SYSTEM_PROMPT
     assert "7500" in SYSTEM_PROMPT  # Pénalité DT
     assert "READ-ONLY" in SYSTEM_PROMPT
     assert set(SCOPE_PROMPTS.keys()) == {

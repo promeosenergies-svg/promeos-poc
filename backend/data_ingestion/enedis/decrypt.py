@@ -21,6 +21,7 @@ from cryptography.hazmat.primitives import padding as crypto_padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from data_ingestion.enedis.enums import FluxType
+from data_ingestion.enedis.filename import SF5_KNOWN_SKIPPED_FLUX_TYPES, classify_sf5_filename
 
 
 # ---------------------------------------------------------------------------
@@ -40,7 +41,9 @@ class MissingKeyError(Exception):
 # Flux types that should NOT be decrypted
 # ---------------------------------------------------------------------------
 
-SKIP_FLUX_TYPES = frozenset({FluxType.R172, FluxType.X14, FluxType.HDM, FluxType.UNKNOWN})
+SKIP_FLUX_TYPES = (
+    frozenset({FluxType.R172, FluxType.X14, FluxType.HDM, FluxType.UNKNOWN}) | SF5_KNOWN_SKIPPED_FLUX_TYPES
+)
 
 
 # ---------------------------------------------------------------------------
@@ -69,8 +72,13 @@ def classify_flux(filename: str) -> FluxType:
     >>> classify_flux("ERDF_R50_23X--130624--EE1_GRD-F121.zip")
     <FluxType.R50: 'R50'>
     """
+    sf5_type = classify_sf5_filename(filename)
+    if sf5_type is not None:
+        return sf5_type
+
+    upper_filename = filename.upper()
     for pattern, flux_type in _CLASSIFY_RULES:
-        if pattern in filename:
+        if pattern in upper_filename:
             return flux_type
     return FluxType.UNKNOWN
 
@@ -120,6 +128,22 @@ def _aes_cbc_decrypt(ciphertext: bytes, key: bytes, iv: bytes) -> bytes | None:
         return unpadder.update(padded) + unpadder.finalize()
     except Exception:
         return None
+
+
+def aes_unwrap_bytes(ciphertext: bytes, keys: list[tuple[bytes, bytes]]) -> tuple[bytes, int]:
+    """Return the first AES-CBC plaintext without XML/ZIP validation.
+
+    The returned key index is 1-based to match KEY_1/IV_1 environment naming.
+    """
+    if not ciphertext:
+        raise DecryptError("File is empty")
+
+    for index, (key, iv) in enumerate(keys, start=1):
+        plaintext = _aes_cbc_decrypt(ciphertext, key, iv)
+        if plaintext is not None:
+            return plaintext, index
+
+    raise DecryptError(f"Decryption failed: none of the {len(keys)} key(s) produced valid plaintext")
 
 
 def _extract_xml_from_zip(data: bytes) -> bytes:

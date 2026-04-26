@@ -1,7 +1,7 @@
-# SF6 — Enedis Data Staging: Raw → Functional Promotion Pipeline
+# SF6 — Enedis Raw Archive → Functional Promotion Pipeline
 
-> **Status**: PRD v2.5 — feature renumbered from SF5 to SF6 after inserting a new SF5 raw-ingestion wave
-> **Depends on**: SF1 (decrypt), SF2 (CDC ingestion), SF3 (index ingestion), SF4 (operationalization) — complete and merged; SF5 (R63/R64 R6X + C68 raw-ingestion extension) — upstream prerequisite
+> **Status**: PRD v2.6 — reviewed on 2026-04-23 against the post-SGE4.5 raw/product DB split; feature renumbered from SF5 to SF6 after inserting a new SF5 raw-ingestion wave
+> **Depends on**: SF1 (decrypt), SF2 (CDC raw archive ingestion), SF3 (index raw archive ingestion), SF4 (operationalization), SGE4.5 (raw DB split to `flux_data.db`) — complete and validated; SF5 (R63/R64 R6X + C68 raw-ingestion extension) — upstream prerequisite
 > **Module**: `backend/data_staging/` (new, separate from `data_ingestion/`)
 > **Document note**: this spec now lives at `feature-enedis-sge-6-data-staging.md` to match the new **SF6** roadmap numbering.
 
@@ -9,15 +9,20 @@
 
 ## 1. Problem Statement
 
-SF1-SF4 delivered the first complete raw ingestion pipeline: 6 flux types parsed, 5 staging tables, 91 real files ingested, 123,846 measures — all stored as raw strings with zero transformation. This raw archive is the **source of truth** for everything Enedis sends us.
+SF1-SF4 delivered the first complete raw ingestion pipeline: 6 flux types parsed, 5 raw archive tables, 91 real files ingested, 123,846 measures — all stored as raw strings with zero transformation. Since SGE4.5, this raw archive is stored in `flux_data.db` and remains the **source of truth** for everything Enedis sends us.
 
-The roadmap now inserts a new **SF5** before this feature. That new SF5 extends the raw-ingestion layer with two additional staging tables covering `R63` / `R64` (R6X family) and `C68`. This document stays focused on the downstream **raw → functional promotion layer** and therefore becomes **SF6**.
+The roadmap now inserts a new **SF5** before this feature. That new SF5 extends the raw-ingestion layer with two additional raw archive tables covering `R63` / `R64` (R6X family) and `C68`. This document stays focused on the downstream **raw → functional promotion layer** and therefore becomes **SF6**.
 
-However, **no bridge exists** between the raw staging tables and a real-data functional layer that downstream services can later consume safely. Today, consumption dashboards, anomaly detection, monitoring alerts, regulatory compliance, and billing reconciliation still depend on seeded/demo structures rather than promoted Enedis data.
+However, **no bridge exists** between the raw archive tables and a real-data functional layer that downstream services can later consume safely. Today, consumption dashboards, anomaly detection, monitoring alerts, regulatory compliance, and billing reconciliation still depend on seeded/demo structures rather than promoted Enedis data.
 
-Today, `MeterReading` is populated exclusively by synthetic seed data. The raw staging data — real Enedis measurements — is invisible to the application.
+Today, `MeterReading` is populated exclusively by synthetic seed data. The raw archive data — real Enedis measurements — is invisible to the application.
 
 This is intentional for the prototype: the current seeded/demo metering universe stays live during SF6 so we do not break the platform while the Enedis backbone is being built. SF6 creates and populates a **parallel real-data promotion layer**. It does **not** migrate existing services, dashboards, calculations, or client-facing product surfaces to those new tables; that cutover is a **separate feature wave**, not part of SF6 itself.
+
+Since SGE4.5, SF6 is also explicitly a **cross-database bridge**:
+- `flux_data.db` stores the raw Enedis file registry, raw archive rows, and ingest control state
+- `promeos.db` stores the promoted functional tables, promotion audit trail, and PRM backlog state
+- SF6 must preserve that split rather than reintroducing raw Enedis persistence into the main product database
 
 Furthermore, the existing `MeterReading` model conflates two fundamentally different physical quantities:
 - **Power (kW)** — average power over a forward interval (what CDC load curves measure)
@@ -29,7 +34,7 @@ These require **separate functional tables** with distinct semantics, units, and
 
 Correctly and reliably handling Enedis data is one of Promeos's core MOATs. Competitors that cut corners on data quality lose client trust. This pipeline must be:
 
-- **Transparent**: every promoted value traceable to its source staging row and flux file
+- **Transparent**: every promoted value traceable to its source raw archive row and flux file
 - **Safe**: no unidentified data leaks to production — unknown PRMs are flagged, not silently promoted
 - **Auditable**: full trail of what was promoted, when, why, and what it replaced
 - **Incremental**: designed for scale (10,000 PRMs, 175M readings at 2 years hourly)
@@ -40,11 +45,11 @@ Correctly and reliably handling Enedis data is one of Promeos's core MOATs. Comp
 ## 2. Architecture Overview
 
 ```
-                SF1-SF5 (raw ingestion)                 SF6 (this feature)
-                ─────────────────────                   ──────────────────
+                SF1-SF5 (raw ingestion in `flux_data.db`)     SF6 (promotion in `promeos.db`)
+                ─────────────────────────────────────────     ───────────────────────────────
 
-Encrypted ──→ Decrypt ──→ Parse ──→ Raw Staging    ──→  Promotion Pipeline
-  .zip         (AES)      (XML)     (staging tables)    (data_staging/)
+Encrypted ──→ Decrypt ──→ Parse ──→ Raw Archive         ──→  Promotion Pipeline
+  .zip         (AES)      (XML)     (`enedis_flux_*`)       (data_staging/)
   (FTP)                              │                        │
                                      │              ┌─────────┴──────────────┐
                                      │              │  1. PRM Matching       │
@@ -69,11 +74,13 @@ Encrypted ──→ Decrypt ──→ Parse ──→ Raw Staging    ──→  
                                                                (Wh)
 ```
 
+Operationally, SF6 is the first feature that bridges the two databases end to end: `flux_data.db` remains the raw source of truth, while `promeos.db` becomes the destination for promoted Enedis data and promotion observability.
+
 SF6 does **not** replace the currently live prototype tables during this phase. `meter_reading` and `power_readings` remain part of the seeded/demo universe, while `meter_load_curve`, `meter_energy_index`, and `meter_power_peak` become the canonical promoted targets for a later real-data migration wave.
 
 SF6 includes **operational observability of the promotion pipeline itself**: run status, counters, blocked PRMs, skipped rows, replacements, and failures. SF6 preserves data absences as absences and records promotion outcomes, but it does **not** implement publication-SLA monitoring, file-delivery completeness monitoring, or explicit missing-data / gap alerting. Those remain deferred to a later wave.
 
-> **Precondition from the official R4x guide**: an R4x ZIP archive may legally contain one or more XML files, one curve per XML. SF6 promotes only what SF1-SF5 have already materialized in staging. If upstream extraction misses XML members, those measurements cannot be promoted. Archive-extraction completeness is outside SF6 scope.
+> **Precondition from the official R4x guide**: an R4x ZIP archive may legally contain one or more XML files, one curve per XML. SF6 promotes only what SF1-SF5 have already materialized in the raw archive tables in `flux_data.db`. If upstream extraction misses XML members, those measurements cannot be promoted. Archive-extraction completeness is outside SF6 scope.
 
 ### Three Functional Tables
 
@@ -138,7 +145,7 @@ R171-specific guardrails:
 - only rows with `grandeur_physique='EA'` and `unite='Wh'` are promotable to `meter_energy_index`
 - `typeCalendrier='D'` maps to `tariff_grid='CT_DIST'`; `typeCalendrier='F'` maps to `tariff_grid='CT'`
 - `dateFin` is the **reading timestamp / J+1 dated index**, not the covered day label for downstream daily-consumption UX
-- non-energy R171 rows (`DD`, `DQ`, `TF`, `PMA`, `ERC`, `ERI`, and any future `ER` / `DE`) stay in raw staging in SF6
+- non-energy R171 rows (`DD`, `DQ`, `TF`, `PMA`, `ERC`, `ERI`, and any future `ER` / `DE`) stay in the raw archive tables in `flux_data.db`
 ```
 
 ---
@@ -149,19 +156,19 @@ R171-specific guardrails:
 |---|----------|----------|---------------|
 | D1 | Scope | CDC (R4x, R50) **and** Index (R171, R151) | Both are in scope. Implementation phases will separate them, but the PRD and architecture cover both |
 | D2 | Blocked PRMs | **Flag and block** — never promote unidentified or ambiguously linked data | No data leaks to production. The PRM backlog captures missing DeliveryPoints, missing active meters, and ambiguous meter matches. Once resolved, the next promotion run picks them up |
-| D3 | Pipeline mode | **Incremental + backlog replay** | Each run processes new staging rows beyond the high-water mark **and** previously blocked PRMs still pending resolution. This avoids missing historical data after a PRM is fixed |
+| D3 | Pipeline mode | **Incremental + backlog replay** | Each run processes new raw archive rows beyond the high-water mark **and** previously blocked PRMs still pending resolution. This avoids missing historical data after a PRM is fixed |
 | D4 | Republication strategy | **Quality-first overwrite policy** | Better quality auto-promotes. Equal quality uses the latest republication. Worse quality is flagged and does not overwrite the current promoted row |
-| D5 | Production versioning | **Option A — Current truth + audit trail** | Functional tables always hold the latest best value (UPSERT). Staging keeps full history. `PromotionEvent` table provides full traceability. No `WHERE is_current` tax on all downstream queries |
+| D5 | Production versioning | **Option A — Current truth + audit trail** | Functional tables always hold the latest best value (UPSERT). The raw archive keeps full history. `PromotionEvent` table provides full traceability. No `WHERE is_current` tax on all downstream queries |
 | D6 | Quality gate | **Promote all readings that satisfy the defined promotion rules, regardless of quality score** | Promotability is determined by the matching, routing, and validation rules in this spec. Low-quality-but-valid readings are still promoted with `quality_score` and `is_estimated` flags; unmatched, unsupported, invalid, or unparsable rows are not promoted |
 | D7 | Gap handling | **Preserve absence and promotion observability now; explicit completeness monitoring later** | Null or unparsable values are never converted to synthetic zeroes. Missing promoted rows remain visible as absences, and skipped/blocked outcomes are audited. Publication-SLA monitoring, file-delivery completeness tracking, and explicit gap alerting remain later-wave work |
 | D8 | Quality score mapping | **Official R4x status semantics + Promeos heuristic score** (see Section 5) | The Enedis guide defines the meaning of `statut_point`, but not a numeric confidence score. SF6 keeps a product-owned heuristic for republication comparison |
 | D9 | Module location | **`backend/data_staging/`** (new, separate module) | Separation of concerns. `data_ingestion/` = raw archive, `data_staging/` = normalization + promotion. The module should remain modular for later extensions, but non-Enedis expansion is not part of SF6 |
 | D10 | Trigger model | **Separate from ingestion** — dedicated CLI command + minimal API | Natural break point: ingest → data backlog review → promote. Decoupled failure domains. POC: CLI `promote` command + minimal `/api/enedis/promotion/*` API |
 | D11 | Atomicity | **Per-PRM** | Each PRM is fully promoted or not at all. One bad PRM doesn't block the fleet. Prevents misleading partial data. Aligns with business unit (site managers care about their PRMs) |
-| D12 | Audit trail | **Yes — `PromotionRun` + `PromotionEvent` tables** | Core MOAT. Every promoted reading traceable to source staging row, flux file, and promotion run. Every replacement logged |
+| D12 | Audit trail | **Yes — `PromotionRun` + `PromotionEvent` tables** | Core MOAT. Every promoted reading traceable to its source raw archive row, flux file, and promotion run. Every replacement logged |
 | D13 | API surface | **CLI + minimal promotion-operations API** (no review UX yet) | POST `/api/enedis/promotion/promote`, GET `/api/enedis/promotion/runs`, GET `/api/enedis/promotion/stats` support promotion execution and operational observability only |
 | D14 | Scale target | **175M rows** (10,000 PRMs x 2 years hourly) | Code must handle this volume even if POC runs on SQLite. Batch processing, chunked inserts, indexed lookups |
-| D15 | Initial run | **Full backfill of staged data** | First run processes all promotable historical data already present in staging. Subsequent runs are incremental |
+| D15 | Initial run | **Full backfill of raw archive data** | First run processes all promotable historical data already present in the raw archive tables. Subsequent runs are incremental |
 | D16 | Functional data model | **Three separate promoted tables**: `meter_load_curve`, `meter_energy_index`, `meter_power_peak` | Power and energy are different physical quantities with different units, granularities, and consumers. Mixing them in one table creates semantic confusion |
 | D17 | Legacy/demo coexistence | **Coexist then migrate** — promoted Enedis tables are canonical for real data, while `meter_reading` and `power_readings` remain part of the prototype/demo universe until later migration | Don't break what works. SF6 builds the real backbone first; service migration happens later |
 | D18 | `meter_load_curve` schema | **One row per interval with separate columns** | `meter_load_curve` stores one row per `(meter_id, timestamp, pas_minutes)` and merges multiple CDC grandeurs into separate columns (`active_power_kw`, reactive columns, `voltage_v`) |
@@ -179,7 +186,7 @@ R171-specific guardrails:
 ### SF6 In / SF6 Out
 
 **SF6 in**
-- Promote supported Enedis staging data already materialized by SF1-SF5 into `meter_load_curve`, `meter_energy_index`, and `meter_power_peak`
+- Promote supported Enedis raw archive data already materialized by SF1-SF5 into `meter_load_curve`, `meter_energy_index`, and `meter_power_peak`
 - Apply the promotability, PRM matching, normalization, routing, republication, and audit rules defined in this spec
 - Maintain backlog handling for unresolved PRMs and replay them in later runs
 - Provide operational observability for promotion runs: status, counters, blocked PRMs, skipped rows, replacements, and failures
@@ -191,7 +198,7 @@ R171-specific guardrails:
 - Implement publication-SLA monitoring, delivery-completeness monitoring, or explicit missing-data / gap alerting
 - Provide manual review UX or auto-resolution workflows for blocked PRMs
 - Promote readings that fail the defined promotability rules
-- Fix upstream extraction/staging completeness issues in SF1-SF5; SF6 can only promote what is present in staging
+- Fix upstream extraction/raw-archive completeness issues in SF1-SF5; SF6 can only promote what is present in the raw archive tables
 
 ## 4. Data Model Changes
 
@@ -235,7 +242,7 @@ Each row represents **one canonical half-open interval** `[timestamp ; timestamp
 - different source rows may contribute different quantities to the same interval row, but **each quantity column has at most one canonical winning value**
 - absence of a row means no promotable canonical CDC row exists for that interval under SF6 rules; it does not by itself prove zero load or source non-delivery
 
-**Merge rule**: when the raw staging layer carries multiple CDC rows for the same `(meter_id, timestamp, pas_minutes)`, SF6 merges different promotable `grandeur_physique` values into one canonical interval row before UPSERT. Competing candidates for the same promoted quantity are resolved to one winning value before the row is considered final. Staging remains the place where the original row-per-grandeur fidelity is preserved.
+**Merge rule**: when the raw archive layer carries multiple CDC rows for the same `(meter_id, timestamp, pas_minutes)`, SF6 merges different promotable `grandeur_physique` values into one canonical interval row before UPSERT. Competing candidates for the same promoted quantity are resolved to one winning value before the row is considered final. The raw archive tables preserve the original row-per-grandeur fidelity.
 
 #### `meter_energy_index` — Cumulative energy index per tariff class
 
@@ -310,9 +317,9 @@ Mirrors `IngestionRun` pattern from SF4.
 | `triggered_by` | String | `cli` / `api` |
 | `mode` | String | `incremental` / `full` |
 | `scope_flux_types` | String | Comma-separated flux types in execution scope for this run (e.g. "R4H,R4M,R50"); execution scope only, not a completeness or provenance guarantee |
-| `high_water_mark_before` | JSON | Per-table discovery/progress markers at start of run; not a guarantee that all earlier staging rows are already canonicalized |
-| `high_water_mark_after` | JSON | Per-table discovery/progress markers at end of run; not a guarantee that all earlier staging rows are already canonicalized |
-| `prms_total` | Integer | Distinct PRMs found in staging data to process |
+| `high_water_mark_before` | JSON | Per-table discovery/progress markers at start of run; not a guarantee that all earlier raw archive rows are already canonicalized |
+| `high_water_mark_after` | JSON | Per-table discovery/progress markers at end of run; not a guarantee that all earlier raw archive rows are already canonicalized |
+| `prms_total` | Integer | Distinct PRMs found in raw archive data to process |
 | `prms_matched` | Integer | PRMs successfully matched to a Meter |
 | `prms_unmatched` | Integer | PRMs blocked from promotion for unresolved matching reasons (`no_delivery_point`, `no_active_meter`, `multiple_active_meters`); not a source-completeness counter |
 | `prms_promoted` | Integer | PRMs whose readings were successfully promoted |
@@ -332,7 +339,7 @@ The audit log for promotion processing. One row records either:
 - a write-affecting event for one canonical target row (`created`, `updated`)
 - or a source-side processing outcome for a candidate that did not produce a new canonical row (`skipped`, `flagged`)
 
-For merged promoted rows, audit must preserve lineage to **all contributing staging rows**. A single source-row reference is therefore not semantically sufficient on its own for composite CDC promotions.
+For merged promoted rows, audit must preserve lineage to **all contributing raw archive rows**. A single source-row reference is therefore not semantically sufficient on its own for composite CDC promotions.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -342,7 +349,7 @@ For merged promoted rows, audit must preserve lineage to **all contributing stag
 | `target_row_id` | Integer | nullable in semantics — PK of the canonical target row when one exists; absent/undefined for pure source-side skipped or rejected outcomes |
 | `action` | String | `created` / `updated` / `skipped` / `flagged` |
 | `source_table` | String | `enedis_flux_mesure_r4x` / `r50` / `r171` / `r151` |
-| `source_row_id` | Integer | PK of one originating staging row when the event concerns a single source row; merged CDC promotions require additional lineage to all contributing rows |
+| `source_row_id` | Integer | PK of one originating raw archive row when the event concerns a single source row; merged CDC promotions require additional lineage to all contributing rows |
 | `source_flux_file_id` | FK → `enedis_flux_file.id` | One originating flux file reference when applicable; merged promotions may require more than one source reference to preserve total audit |
 | `previous_payload_json` | JSON | nullable — prior promoted payload for the target row before update |
 | `previous_quality_score` | Float | nullable — old quality if action=updated |
@@ -357,16 +364,16 @@ For merged promoted rows, audit must preserve lineage to **all contributing stag
 
 Historical name kept for the POC. In practice this table covers both truly unmatched PRMs and PRMs blocked by ambiguous meter linkage.
 
-Semantically, one row means: staging data exists for this PRM, but SF6 could not safely map it to exactly one promotable meter at the time of the run. It is a promotion-blocking backlog, not evidence of zero usage, source non-delivery, or a confirmed canonical data gap.
+Semantically, one row means: raw archive data exists for this PRM, but SF6 could not safely map it to exactly one promotable meter at the time of the run. It is a promotion-blocking backlog, not evidence of zero usage, source non-delivery, or a confirmed canonical data gap.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | Integer PK | |
-| `point_id` | String(14) | The PRM from staging |
+| `point_id` | String(14) | The PRM from the raw archive tables |
 | `first_seen_at` | DateTime | When first encountered |
 | `last_seen_at` | DateTime | Updated on each promotion run |
 | `flux_types` | String | Comma-separated flux types where this PRM appears |
-| `measures_count` | Integer | Total staging measures for this PRM (across all flux types) |
+| `measures_count` | Integer | Total raw archive measures for this PRM (across all flux types) |
 | `status` | String | `pending` / `resolved` / `ignored` |
 | `block_reason` | String | `no_delivery_point` / `no_active_meter` / `multiple_active_meters` |
 | `resolved_at` | DateTime | nullable |
@@ -447,11 +454,11 @@ Routing in SF6 is determined by the canonical target slot the source row can leg
 - it matches one of the accepted source quantity/unit contracts below
 - all target-identity guardrails required by that contract are present
 
-If a row fails PRM resolution, promotion is **blocked** at PRM level. If it fails a supported row contract, it is **skipped** and remains in raw staging. If an R151 file declares header units incompatible with the routed family, promotion is **blocked** at file level.
+If a row fails PRM resolution, promotion is **blocked** at PRM level. If it fails a supported row contract, it is **skipped** and remains in the raw archive tables. If an R151 file declares header units incompatible with the routed family, promotion is **blocked** at file level.
 
 ### 6.1 Strict Routing Matrix
 
-| Staging source | Flux type | Source quantity contract | Guardrails required before routing | Target table / canonical slot | Outcome if contract not met |
+| Raw source | Flux type | Source quantity contract | Guardrails required before routing | Target table / canonical slot | Outcome if contract not met |
 |----------------|-----------|--------------------------|------------------------------------|-------------------------------|-----------------------------|
 | `enedis_flux_mesure_r4x` | `R4H` / `R4M` / `R4Q` | `grandeur_physique='EA'` and `unite_mesure='kW'` | `granularite` parses to `5` or `10`; timestamp/value parse | `meter_load_curve.active_power_kw` at `(meter_id, timestamp, pas_minutes)` | Skip row |
 | `enedis_flux_mesure_r4x` | `R4H` / `R4M` / `R4Q` | `grandeur_physique='ERI'` and `unite_mesure='kWr'` | `granularite` parses to `5` or `10`; timestamp/value parse | `meter_load_curve.reactive_inductive_kvar` at `(meter_id, timestamp, pas_minutes)` | Skip row |
@@ -462,7 +469,7 @@ If a row fails PRM resolution, promotion is **blocked** at PRM level. If it fail
 | `enedis_flux_mesure_r151` | `R151` + `type_donnee='CT'` | supplier energy index | file header `Unite_Mesure_Index='Wh'`; `id_classe_temporelle` present; `date_releve`/value parse | `meter_energy_index` at `(meter_id, date_releve, 'CT', tariff_class_code)` | Block file on bad header unit, otherwise skip row |
 | `enedis_flux_mesure_r151` | `R151` + `type_donnee='CT_DIST'` | distributor energy index | file header `Unite_Mesure_Index='Wh'`; `id_classe_temporelle` present; `date_releve`/value parse | `meter_energy_index` at `(meter_id, date_releve, 'CT_DIST', tariff_class_code)` | Block file on bad header unit, otherwise skip row |
 | `enedis_flux_mesure_r151` | `R151` + `type_donnee='PMAX'` | PMAX apparent power | file header `Unite_Mesure_Puissance='VA'`; `date_releve`/value parse | `meter_power_peak` at `(meter_id, date_releve)` | Block file on bad header unit, otherwise skip row |
-| any staging source | unsupported family | any other quantity/unit/type combination | none | no promoted target in SF6 | Skip row |
+| any raw archive source | unsupported family | any other quantity/unit/type combination | none | no promoted target in SF6 | Skip row |
 
 ### 6.2 Routing Guardrails
 
@@ -574,10 +581,10 @@ That distinction is important for ingestion correctness, but it is **not accepta
 
 ## 7. Pipeline Stages (Detailed)
 
-### Stage 1: Discover — Identify new staging data
+### Stage 1: Discover — Identify new raw archive data
 
 ```
-For each staging table (r4x, r50, r171, r151):
+For each raw archive table (r4x, r50, r171, r151):
     1. Discover new candidates:
         SELECT DISTINCT point_id, flux_file_id, COUNT(*)
         FROM enedis_flux_mesure_<table>
@@ -591,7 +598,7 @@ For each staging table (r4x, r50, r171, r151):
         WHERE status = 'pending'
 ```
 
-The high-water mark (last promoted staging row ID per table) is stored in `promotion_run.high_water_mark_after` (JSON). First run: high-water mark = 0 (process everything). Incremental runs always combine **new candidates** with **still-pending backlog PRMs** so historical raw data is replayed when a PRM is later resolved.
+The high-water mark (last promoted raw archive row ID per table) is stored in `promotion_run.high_water_mark_after` (JSON). First run: high-water mark = 0 (process everything). Incremental runs always combine **new candidates** with **still-pending backlog PRMs** so historical raw archive data is replayed when a PRM is later resolved.
 
 Publication freshness should be tracked separately from PRM backlog:
 - no file yet, but official publication deadline not reached -> `expected_not_due`
@@ -631,10 +638,10 @@ For each distinct point_id found in Stage 1:
 
 ### Stage 3: Resolve — Handle republications
 
-For each matched PRM, across all staging rows to promote:
+For each matched PRM, across all raw archive rows to promote:
 
 ```
-Group staging rows by (point_id, timestamp/horodatage)
+Group raw archive rows by (point_id, timestamp/horodatage)
 For each group:
     IF single row → use it
     IF multiple rows (republications):
@@ -653,7 +660,7 @@ Quality comparison uses the working hierarchy from Section 5: `R > C > S=T=F=G >
 
 ### Stage 4: Convert & Route — Transform and assign target table
 
-For each staging row to promote, determine the target table and convert values:
+For each raw archive row to promote, determine the target table and convert values:
 
 **CDC rows (R4x, R50) → `meter_load_curve`:**
 ```
@@ -767,7 +774,7 @@ INSERT INTO promotion_event (
 )
 ```
 
-For R4x promotions, the audit payload should also preserve the key source-header provenance already available in staging: `frequence_publication`, `nature_courbe_demandee`, and `reference_demande` (from `header_raw`). This keeps each promoted interval traceable back to the subscribed publication option, not just the raw point row.
+For R4x promotions, the audit payload should also preserve the key source-header provenance already available in the raw archive tables: `frequence_publication`, `nature_courbe_demandee`, and `reference_demande` (from `header_raw`). This keeps each promoted interval traceable back to the subscribed publication option, not just the raw point row.
 
 ### Stage 7: Finalize — Update promotion run
 
@@ -812,7 +819,7 @@ Only the withdrawal-side active-energy subset is safely promotable to `meter_ene
 - `typeCalendrier` is known and maps cleanly to one tariff grid: `D -> CT_DIST`, `F -> CT`
 - `code_classe_temporelle` is present
 
-Those rows are cumulative energy indexes per tariff class and are not consumption deltas. `PROD` rows remain in raw staging in SF6 because `meter_energy_index` does not currently encode direction.
+Those rows are cumulative energy indexes per tariff class and are not consumption deltas. `PROD` rows remain in the raw archive tables in SF6 because `meter_energy_index` does not currently encode direction.
 
 `dateFin` must be interpreted as the local reading timestamp. Per the official guide, indexes for day `J` are read, dated, and sent on `J+1`, so downstream daily-consumption services must attribute deltas to the interval between two readings, not blindly label `dateFin` as "consumption for that date".
 
@@ -820,7 +827,7 @@ Those rows are cumulative energy indexes per tariff class and are not consumptio
 
 Example promotion of one R171 row:
 ```
-Staging:  point_id=30001234567890, grandeur_metier=CONS, grandeur_physique=EA, type_calendrier=D,
+Raw archive:  point_id=30001234567890, grandeur_metier=CONS, grandeur_physique=EA, type_calendrier=D,
           code_classe_temporelle=HPE, date_fin=2024-06-15T00:41:20, valeur=12345678
     ↓
 meter_energy_index:  meter_id=42, date_releve=2024-06-15,
@@ -881,7 +888,7 @@ The data manager can:
 2. **Onboard new site**: Create a new Site + DeliveryPoint + Meter for this PRM
 3. **Ignore**: Mark as `ignored` (e.g., test PRM, competitor data)
 
-Once resolved, the next promotion run automatically replays the pending historical staging data for that PRM from the backlog.
+Once resolved, the next promotion run automatically replays the pending historical raw archive data for that PRM from the backlog.
 
 ### Auto-resolution (future evolution)
 
@@ -1020,9 +1027,9 @@ This feature is too large for a single implementation session. Proposed phasing:
 | OQ5 | Gap detection, completeness scoring, and interpolation / estimation service | Open | Future feature to detect missing intervals explicitly, score completeness, and optionally fill gaps with statistical estimates |
 | OQ6 | R4x `statut_point` score calibration on real republications/outage cases | Open | Official meanings are now validated by Enedis R4x v2.0.3; the remaining question is whether Promeos' heuristic scores and `is_estimated` buckets need tuning on real data |
 | OQ7 | Auto-resolution of unmatched PRMs when new DeliveryPoints are onboarded | Open | Natural extension of the unmatched PRM workflow |
-| OQ8 | Multi-XML R4x archive support in SF1-SF4 raw ingestion | Open | The official guide allows 1..n XML per ZIP archive. Current POC observations were mono-XML, but staging completeness depends on hardening this assumption |
+| OQ8 | Multi-XML R4x archive support in SF1-SF4 raw ingestion | Open | The official guide allows 1..n XML per ZIP archive. Current POC observations were mono-XML, but raw archive completeness depends on hardening this assumption |
 | OQ9 | Business-day calendar for R4H/R4M SLA evaluation | Open | "3rd business day" needs an explicit calendar/timezone policy before we operationalize `late_publication` detection |
-| OQ10 | R50 cadence/file-group completeness tracking from filename nomenclature | Open | Daily vs monthly cadence, subscription monthly day, and `XXXXX`/`YYYYY` completeness are official R50 rules but are not yet modeled as first-class staging metadata |
+| OQ10 | R50 cadence/file-group completeness tracking from filename nomenclature | Open | Daily vs monthly cadence, subscription monthly day, and `XXXXX`/`YYYYY` completeness are official R50 rules but are not yet modeled as first-class raw archive metadata |
 
 ---
 
@@ -1033,7 +1040,7 @@ This feature is too large for a single implementation session. Proposed phasing:
 - [ ] PMAX data (R151) promoted to `meter_power_peak`
 - [ ] Unmatched PRMs are flagged, zero unidentified data in production
 - [ ] Ambiguous PRM mappings are blocked and replayed from backlog once resolved
-- [ ] Every promoted row is traceable to its source staging row(s) via `promotion_event`
+- [ ] Every promoted row is traceable to its source raw archive row(s) via `promotion_event`
 - [ ] Republications with better quality auto-replace, equal-quality ties use latest version, worse quality is flagged without overwrite
 - [ ] Incremental mode processes both new data and pending backlog
 - [ ] Full backfill mode can rebuild from scratch
@@ -1060,10 +1067,10 @@ This feature is too large for a single implementation session. Proposed phasing:
 | **PMAX** | Puissance Maximale Atteinte — peak power demand in VA for a period |
 | **Power (kW)** | Average power over the covered forward interval — what CDC measures. Stored in `meter_load_curve` |
 | **Energy (kWh/Wh)** | Cumulative active-energy counter value — what index measures. Stored in `meter_energy_index` |
-| **Staging** | Raw Enedis data stored as-is (strings, no transformation) in `enedis_flux_mesure_*` tables |
-| **Promotion** | Transforming and writing staging data into functional tables (`meter_load_curve`, `meter_energy_index`, `meter_power_peak`) |
+| **Raw archive** | Raw Enedis data stored as-is (strings, no transformation) in the `enedis_flux_*` tables in `flux_data.db` |
+| **Promotion** | Transforming and writing raw archive data into functional tables (`meter_load_curve`, `meter_energy_index`, `meter_power_peak`) in `promeos.db` |
 | **Republication** | When Enedis sends a new version of previously-sent data (corrections) |
-| **High-water mark** | The last staging row ID processed per table for newly discovered data. Pending backlog PRMs are replayed separately during incremental runs |
+| **High-water mark** | The last raw archive row ID processed per table for newly discovered data. Pending backlog PRMs are replayed separately during incremental runs |
 | **`pas_minutes`** | Exact CDC interval size stored on promoted `meter_load_curve` rows (`5`, `10`, `30`) |
 | **`[start ; end[`** | Half-open interval semantics used for CDC rows: start included, end excluded |
 | **Statut_point** | Enedis measurement-status / provenance code (R/H/P/S/T/F/G/E/C/K/D) carried by R4x points |

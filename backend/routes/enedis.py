@@ -16,17 +16,20 @@ from sqlalchemy import func, text, union
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from database import get_db
+from database import get_db, get_flux_data_db
 from data_ingestion.enedis.config import get_flux_dir
 from data_ingestion.enedis.decrypt import MissingKeyError, load_keys_from_env
 from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
     EnedisFluxFileError,
+    EnedisFluxIndexR64,
+    EnedisFluxItcC68,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR151,
     EnedisFluxMesureR171,
     EnedisFluxMesureR50,
+    EnedisFluxMesureR63,
     IngestionRun,
 )
 from data_ingestion.enedis.pipeline import ingest_directory
@@ -113,6 +116,16 @@ class FluxFileResponse(BaseModel):
     measures_count: int = 0
     version: int
     supersedes_file_id: Optional[int] = None
+    code_flux: Optional[str] = None
+    type_donnee: Optional[str] = None
+    id_demande: Optional[str] = None
+    mode_publication: Optional[str] = None
+    payload_format: Optional[str] = None
+    num_sequence: Optional[str] = None
+    siren_publication: Optional[str] = None
+    code_contrat_publication: Optional[str] = None
+    publication_horodatage: Optional[str] = None
+    archive_members_count: Optional[int] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -163,6 +176,10 @@ class MeasureStats(BaseModel):
     r171: int
     r50: int
     r151: int
+    r63: int
+    r64: int
+    r6x: int
+    c68: int
 
 
 class PrmStats(BaseModel):
@@ -190,7 +207,7 @@ class StatsResponse(BaseModel):
 
 
 @router.post("/ingest", response_model=IngestResponse)
-def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db)):
+def trigger_ingest(body: IngestRequest, db: Session = Depends(get_flux_data_db)):
     """Trigger the Enedis SGE ingestion pipeline (synchronous)."""
     # --- Pre-flight validation ---
     try:
@@ -200,8 +217,8 @@ def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db)):
 
     try:
         keys = load_keys_from_env()
-    except MissingKeyError as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
+    except MissingKeyError:
+        keys = []
 
     # --- Concurrency guard (atomic via partial unique index) ---
     run = IngestionRun(
@@ -283,7 +300,7 @@ def list_flux_files(
     flux_type: Optional[str] = Query(None, description="Filter by flux type"),
     limit: int = Query(24, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_flux_data_db),
 ):
     """List Enedis flux files with optional filters and pagination."""
     q = db.query(EnedisFluxFile)
@@ -309,7 +326,7 @@ def list_flux_files(
 
 
 @router.get("/flux-files/{file_id}", response_model=FluxFileDetailResponse)
-def get_flux_file_detail(file_id: int, db: Session = Depends(get_db)):
+def get_flux_file_detail(file_id: int, db: Session = Depends(get_flux_data_db)):
     """Get detail of a single flux file including header_raw and error history."""
     f = db.query(EnedisFluxFile).filter(EnedisFluxFile.id == file_id).first()
     if f is None:
@@ -331,6 +348,16 @@ def get_flux_file_detail(file_id: int, db: Session = Depends(get_db)):
         frequence_publication=f.frequence_publication,
         nature_courbe_demandee=f.nature_courbe_demandee,
         identifiant_destinataire=f.identifiant_destinataire,
+        code_flux=f.code_flux,
+        type_donnee=f.type_donnee,
+        id_demande=f.id_demande,
+        mode_publication=f.mode_publication,
+        payload_format=f.payload_format,
+        num_sequence=f.num_sequence,
+        siren_publication=f.siren_publication,
+        code_contrat_publication=f.code_contrat_publication,
+        publication_horodatage=f.publication_horodatage,
+        archive_members_count=f.archive_members_count,
         errors_history=[ErrorHistoryItem.model_validate(e) for e in f.errors],
     )
 
@@ -341,7 +368,7 @@ def get_flux_file_detail(file_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/stats", response_model=StatsResponse)
-def get_stats(db: Session = Depends(get_db)):
+def get_stats(db: Session = Depends(get_flux_data_db)):
     """Aggregated ingestion stats: files, measures, PRMs, last ingestion."""
     # --- Files by status ---
     status_rows = db.query(EnedisFluxFile.status, func.count()).group_by(EnedisFluxFile.status).all()
@@ -367,13 +394,20 @@ def get_stats(db: Session = Depends(get_db)):
     r171 = measure_by_type.get("R171", 0)
     r50 = measure_by_type.get("R50", 0)
     r151 = measure_by_type.get("R151", 0)
+    r63 = measure_by_type.get("R63", 0)
+    r64 = measure_by_type.get("R64", 0)
+    r6x = r63 + r64
+    c68 = measure_by_type.get("C68", 0)
 
-    # --- PRMs: UNION DISTINCT across 4 measure tables (distinct point_id only) ---
+    # --- PRMs: UNION DISTINCT across raw row tables (distinct point_id only) ---
     prm_union = union(
         db.query(EnedisFluxMesureR4x.point_id.distinct()),
         db.query(EnedisFluxMesureR171.point_id.distinct()),
         db.query(EnedisFluxMesureR50.point_id.distinct()),
         db.query(EnedisFluxMesureR151.point_id.distinct()),
+        db.query(EnedisFluxMesureR63.point_id.distinct()),
+        db.query(EnedisFluxIndexR64.point_id.distinct()),
+        db.query(EnedisFluxItcC68.point_id.distinct()),
     )
     prm_rows = db.execute(prm_union).fetchall()
     prm_identifiers = sorted(row[0] for row in prm_rows)
@@ -409,11 +443,15 @@ def get_stats(db: Session = Depends(get_db)):
             by_flux_type=by_flux_type,
         ),
         measures=MeasureStats(
-            total=r4x + r171 + r50 + r151,
+            total=r4x + r171 + r50 + r151 + r6x + c68,
             r4x=r4x,
             r171=r171,
             r50=r50,
             r151=r151,
+            r63=r63,
+            r64=r64,
+            r6x=r6x,
+            c68=c68,
         ),
         prms=PrmStats(
             count=len(prm_identifiers),
@@ -424,7 +462,7 @@ def get_stats(db: Session = Depends(get_db)):
 
 
 # ========================================
-# SF5 — Promotion Pipeline Endpoints
+# SF6 — Promotion Pipeline Endpoints
 # ========================================
 
 
@@ -434,9 +472,10 @@ def trigger_promotion(
     flux_types: Optional[str] = Query(None, description="R4X,R50,R171,R151 (comma-sep)"),
     dry_run: bool = Query(False),
     db: Session = Depends(get_db),
+    flux_db: Session = Depends(get_flux_data_db),
     _auth=Depends(_require_auth),
 ):
-    """Déclenche un run de promotion staging → tables fonctionnelles.
+    """Déclenche un run de promotion archive brute → tables fonctionnelles.
 
     Rate limit : 1 run par fenêtre de 60s (anti DoS).
     Dry-run : exempt du rate limit pour debug.
@@ -448,7 +487,7 @@ def trigger_promotion(
 
     ft = [f.strip().upper() for f in flux_types.split(",")] if flux_types else None
     try:
-        run = run_promotion(db, mode=mode, triggered_by="api", flux_types=ft, dry_run=dry_run)
+        run = run_promotion(db, mode=mode, triggered_by="api", flux_types=ft, dry_run=dry_run, flux_db=flux_db)
         return {
             "run_id": run.id,
             "status": run.status,

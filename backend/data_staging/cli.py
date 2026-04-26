@@ -1,5 +1,5 @@
 """
-SF5 — CLI de promotion.
+SF6 — CLI de promotion Enedis.
 
 Usage :
     cd backend
@@ -10,12 +10,12 @@ import argparse
 import logging
 import sys
 
-from database import SessionLocal
+from database import FluxDataSessionLocal, SessionLocal
 from data_staging.engine import run_promotion
 
 
 def main():
-    parser = argparse.ArgumentParser(description="PROMEOS SF5 — Pipeline de promotion Enedis")
+    parser = argparse.ArgumentParser(description="PROMEOS SF6 — Pipeline de promotion Enedis")
     sub = parser.add_subparsers(dest="command")
 
     p = sub.add_parser("promote", help="Lancer un run de promotion")
@@ -38,8 +38,11 @@ def main():
     ft = [f.strip().upper() for f in args.flux_types.split(",")] if args.flux_types else None
 
     db = SessionLocal()
+    flux_db = FluxDataSessionLocal()
     try:
-        run = run_promotion(db, mode=args.mode, triggered_by="cli", flux_types=ft, dry_run=args.dry_run)
+        run = run_promotion(
+            db, mode=args.mode, triggered_by="cli", flux_types=ft, dry_run=args.dry_run, flux_db=flux_db
+        )
         print(f"\nPromotion run #{run.id} — {run.status}")
         print(f"  PRMs: {run.prms_total} total, {run.prms_matched} matched, {run.prms_unmatched} unmatched")
         print(f"  Rows: {run.rows_load_curve} LC, {run.rows_energy_index} EI, {run.rows_power_peak} PP")
@@ -47,6 +50,7 @@ def main():
         if run.error_message:
             print(f"  Error: {run.error_message}")
     finally:
+        flux_db.close()
         db.close()
 
 

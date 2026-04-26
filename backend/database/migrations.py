@@ -46,7 +46,6 @@ def run_migrations(engine):
     _create_tertiaire_tables(engine)
     # V2-Conso — Dedup meter_reading + unique constraint
     _dedup_meter_reading(engine)
-    _add_unique_meter_reading_index(engine)
     # V101 — Add frequency to meter_reading unique constraint
     _upgrade_meter_reading_unique_constraint(engine)
     # Étape 4 — Action Engine: evidence_required column
@@ -66,6 +65,8 @@ def run_migrations(engine):
     _add_meter_unified_columns(engine)
     # Step 26 — Geocoding columns on sites
     _add_site_geocoding_columns(engine)
+    # Pilotage / Flex Ready — columns used by Site Intelligence and pilotage views
+    _add_site_pilotage_columns(engine)
     # P3 CBAM — colonnes JSON d'exposition importations hors UE sur sites
     _add_site_cbam_columns(engine)
     # V1.1 Usage — usage_id FK + usage enrichment + usage_baselines table
@@ -84,10 +85,6 @@ def run_migrations(engine):
     _migrate_bacs_remediation(engine)
     # Export manifest — chaine de preuve export
     _migrate_operat_export_manifest(engine)
-    # Enedis SGE — CDC staging tables
-    _rename_enedis_mesure_table(engine)
-    _create_enedis_tables(engine)
-    _add_enedis_columns(engine)
     # TURPE 7 / HC reprog — delivery_points enrichment
     _add_delivery_point_turpe_columns(engine)
     # P1: FK delivery_points → tou_schedules
@@ -784,7 +781,7 @@ def _dedup_meter_reading(engine):
 
 
 def _add_unique_meter_reading_index(engine):
-    """Add UNIQUE index on (meter_id, timestamp) to prevent future duplicates."""
+    """Legacy migration for the old (meter_id, timestamp) uniqueness rule."""
     idx_name = "uq_meter_reading_meter_ts"
     insp = inspect(engine)
 
@@ -1240,6 +1237,41 @@ def _add_site_geocoding_columns(engine):
         logger.info("migration: Step 26 — added %d geocoding column(s) to sites", added)
     else:
         logger.debug("migration: Step 26 — sites geocoding columns already present")
+
+
+def _add_site_pilotage_columns(engine):
+    """Pilotage / Flex Ready — add site columns used by the current Site model."""
+    insp = inspect(engine)
+    if not insp.has_table("sites"):
+        return
+
+    existing_cols = {c["name"] for c in insp.get_columns("sites")}
+    columns = [
+        ("archetype_code", "VARCHAR(50)"),
+        ("puissance_pilotable_kw", "FLOAT"),
+    ]
+
+    added = 0
+    with engine.begin() as conn:
+        for col_name, col_type in columns:
+            if col_name in existing_cols:
+                continue
+            try:
+                conn.execute(text(f'ALTER TABLE "sites" ADD COLUMN "{col_name}" {col_type}'))
+                added += 1
+                logger.info("migration: Pilotage — added sites.%s (%s)", col_name, col_type)
+            except Exception as e:
+                logger.warning("migration: Pilotage — could not add sites.%s: %s", col_name, e)
+
+        try:
+            conn.execute(text('CREATE INDEX IF NOT EXISTS "ix_sites_archetype_code" ON "sites" ("archetype_code")'))
+        except Exception as e:
+            logger.warning("migration: Pilotage — could not create ix_sites_archetype_code: %s", e)
+
+    if added > 0:
+        logger.info("migration: Pilotage — added %d site column(s)", added)
+    else:
+        logger.debug("migration: Pilotage — sites columns already present")
 
 
 def _add_site_cbam_columns(engine):
@@ -1744,147 +1776,24 @@ def _migrate_bacs_remediation(engine):
 
 
 def _rename_enedis_mesure_table(engine):
-    """Rename enedis_flux_mesure → enedis_flux_mesure_r4x for existing DBs.
+    """Backward-compatible wrapper for the dedicated Enedis raw DB migration."""
+    from data_ingestion.enedis.migrations import _rename_enedis_mesure_table as _rename_flux_table
 
-    Also drops old indexes and recreates them with r4x-qualified names.
-    Idempotent: skips if old table does not exist or new table already exists.
-    """
-    insp = inspect(engine)
-    if not insp.has_table("enedis_flux_mesure"):
-        return
-    if insp.has_table("enedis_flux_mesure_r4x"):
-        return
-
-    with engine.begin() as conn:
-        conn.execute(text('ALTER TABLE "enedis_flux_mesure" RENAME TO "enedis_flux_mesure_r4x"'))
-        # Drop old indexes (SQLite doesn't support RENAME INDEX)
-        conn.execute(text('DROP INDEX IF EXISTS "ix_enedis_mesure_point_horodatage"'))
-        conn.execute(text('DROP INDEX IF EXISTS "ix_enedis_mesure_flux_file"'))
-        conn.execute(text('DROP INDEX IF EXISTS "ix_enedis_mesure_flux_type"'))
-        # Recreate with r4x-qualified names
-        conn.execute(
-            text(
-                'CREATE INDEX IF NOT EXISTS "ix_enedis_mesure_r4x_point_horodatage"'
-                ' ON "enedis_flux_mesure_r4x" ("point_id", "horodatage")'
-            )
-        )
-        conn.execute(
-            text(
-                'CREATE INDEX IF NOT EXISTS "ix_enedis_mesure_r4x_flux_file"'
-                ' ON "enedis_flux_mesure_r4x" ("flux_file_id")'
-            )
-        )
-        conn.execute(
-            text(
-                'CREATE INDEX IF NOT EXISTS "ix_enedis_mesure_r4x_flux_type" ON "enedis_flux_mesure_r4x" ("flux_type")'
-            )
-        )
-    logger.info("migration: renamed enedis_flux_mesure → enedis_flux_mesure_r4x")
+    _rename_flux_table(engine)
 
 
 def _create_enedis_tables(engine):
-    """Create Enedis SGE staging tables if any are missing.
+    """Backward-compatible wrapper for the dedicated Enedis raw DB migration."""
+    from data_ingestion.enedis.migrations import _create_enedis_tables as _create_flux_tables
 
-    Checks each table individually so that tables added after the initial
-    deployment are created on the next migration run.
-    """
-    all_enedis_tables = (
-        "enedis_flux_file",
-        "enedis_flux_mesure_r4x",
-        "enedis_flux_mesure_r171",
-        "enedis_flux_mesure_r50",
-        "enedis_flux_mesure_r151",
-        "enedis_flux_file_error",
-        "enedis_ingestion_run",
-    )
-    insp = inspect(engine)
-    missing = [t for t in all_enedis_tables if not insp.has_table(t)]
-    if missing:
-        # Import models to register them with Base.metadata
-        import data_ingestion.enedis.models  # noqa: F401
-        from models.base import Base
-
-        # Use checkfirst=True with the full table list so SQLAlchemy handles
-        # FK-dependency ordering correctly (matters for PostgreSQL).
-        Base.metadata.create_all(
-            bind=engine,
-            tables=[Base.metadata.tables[t] for t in all_enedis_tables if t in Base.metadata.tables],
-            checkfirst=True,
-        )
-        logger.info("migration: created Enedis SGE staging tables: %s", missing)
-
-    # Ensure partial unique index for concurrency guard exists (always run,
-    # even if all tables already exist, to cover upgraded DBs from SF2/SF3).
-    with engine.begin() as conn:
-        conn.execute(
-            text(
-                'CREATE UNIQUE INDEX IF NOT EXISTS "ix_ingestion_run_single_running" '
-                'ON "enedis_ingestion_run" ("status") WHERE "status" = \'running\''
-            )
-        )
+    _create_flux_tables(engine)
 
 
 def _add_enedis_columns(engine):
-    """Add columns to existing Enedis tables that may have been created before schema evolution.
+    """Backward-compatible wrapper for the dedicated Enedis raw DB migration."""
+    from data_ingestion.enedis.migrations import _add_enedis_columns as _add_flux_columns
 
-    Follows the same pattern as _add_soft_delete_columns, _add_site_geocoding_columns, etc.
-    When new columns are added to EnedisFluxFile or EnedisFluxMesureR4x models,
-    add them to the relevant list below so existing DBs receive them via ALTER TABLE.
-    """
-    insp = inspect(engine)
-
-    # --- enedis_flux_file columns ---
-    # Add new columns here as (col_name, col_type) when evolving the model.
-    enedis_flux_file_columns = [
-        ("version", "INTEGER DEFAULT 1"),
-        ("supersedes_file_id", "INTEGER REFERENCES enedis_flux_file(id) ON DELETE SET NULL"),
-        ("frequence_publication", "VARCHAR(5)"),
-        ("nature_courbe_demandee", "VARCHAR(20)"),
-        ("identifiant_destinataire", "VARCHAR(100)"),
-        ("header_raw", "TEXT"),
-    ]
-
-    # --- enedis_flux_mesure_r4x columns ---
-    enedis_flux_mesure_r4x_columns = [
-        # Example for future SF3+:
-        # ("new_column_name", "VARCHAR(50)"),
-    ]
-
-    # SF3 tables — add evolved columns here when the model grows:
-    enedis_flux_mesure_r171_columns = []
-    enedis_flux_mesure_r50_columns = []
-    enedis_flux_mesure_r151_columns = []
-
-    table_column_map = {
-        "enedis_flux_file": enedis_flux_file_columns,
-        "enedis_flux_mesure_r4x": enedis_flux_mesure_r4x_columns,
-        "enedis_flux_mesure_r171": enedis_flux_mesure_r171_columns,
-        "enedis_flux_mesure_r50": enedis_flux_mesure_r50_columns,
-        "enedis_flux_mesure_r151": enedis_flux_mesure_r151_columns,
-    }
-
-    added = 0
-    with engine.begin() as conn:
-        for table_name, columns in table_column_map.items():
-            if not insp.has_table(table_name) or not columns:
-                continue
-
-            existing_cols = {c["name"] for c in insp.get_columns(table_name)}
-
-            for col_name, col_type in columns:
-                if col_name in existing_cols:
-                    continue
-                try:
-                    conn.execute(text(f'ALTER TABLE "{table_name}" ADD COLUMN "{col_name}" {col_type}'))
-                    added += 1
-                    logger.info("migration: added %s.%s (%s)", table_name, col_name, col_type)
-                except Exception as e:
-                    logger.warning("migration: could not add %s.%s: %s", table_name, col_name, e)
-
-    if added > 0:
-        logger.info("migration: added %d Enedis column(s)", added)
-    else:
-        logger.debug("migration: Enedis columns already present — no changes")
+    _add_flux_columns(engine)
 
 
 def _add_delivery_point_turpe_columns(engine):

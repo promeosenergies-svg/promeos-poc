@@ -4,7 +4,7 @@ PROMEOS — Routes Config : emission factors
 GET /api/config/emission-factors
 
 Expose la source unique `config/emission_factors.py` au frontend via HTTP.
-Objectif : supprimer le hardcode `CO2E_FACTOR_KG_PER_KWH = 0.052` dans
+Objectif : supprimer le hardcode `CO2E_FACTOR_KG_PER_KWH` dans
 `frontend/src/pages/consumption/constants.js` en laissant le backend
 servir les facteurs ADEME via une API. Si ADEME met à jour, mise à jour
 backend + restart = propagation frontend sans redéploiement frontend.
@@ -33,7 +33,7 @@ def get_emission_factors() -> dict:
       {
         "factors": {
           "elec": {
-            "kgco2e_per_kwh": 0.052,
+            "kgco2e_per_kwh": <valeur ELEC depuis la source de vérité>,
             "source": "ADEME Base Empreinte V23.6 ...",
             "year": 2024
           },
