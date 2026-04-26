@@ -154,6 +154,42 @@ def test_c68_csv_207_style_extracts_allowlisted_columns_and_preserves_unknowns()
     assert parsed.warnings[0]["code"] == "unknown_csv_columns"
 
 
+def test_c68_csv_v12_official_labels_populate_summary_columns():
+    csv_payload = (
+        "PRM;date de debut de la situation contractuelle;Etat contractuel;Segment;"
+        "Code tarif acheminement;Formule tarifaire acheminement;Numero Siret;Numero Siren;"
+        "Domaine de tension;Tension de livraison;Type de comptage;Mode de releve;Media comptage;"
+        "Periodicite;Puissance souscrite;Type Injection;Refus de pose Linky;Date refus de pose Linky;Borne Fixe\n"
+        "30000000000001;01-04-2022;SERVC;C4;CU4;BTSUPCU4;12345678900011;123456789;"
+        "HTA;20 kV;ICE;TRLV;IP;QUOTID;36 kVA;SURPLUS;false;2024-01-02;true\n"
+    ).encode("utf-8-sig")
+
+    parsed = parse_c68_payload(csv_payload, "CSV", "payload.csv")
+
+    row = parsed.rows[0]
+    assert row.date_debut_situation_contractuelle == "01-04-2022"
+    assert row.etat_contractuel == "SERVC"
+    assert row.segment == "C4"
+    assert row.code_tarif_acheminement == "CU4"
+    assert row.formule_tarifaire_acheminement == "BTSUPCU4"
+    assert row.siret == "12345678900011"
+    assert row.siren == "123456789"
+    assert row.domaine_tension == "HTA"
+    assert row.tension_livraison == "20 kV"
+    assert row.type_comptage == "ICE"
+    assert row.mode_releve == "TRLV"
+    assert row.media_comptage == "IP"
+    assert row.periodicite_releve == "QUOTID"
+    assert row.puissance_souscrite_valeur == "36"
+    assert row.puissance_souscrite_unite == "kVA"
+    assert row.type_injection == "SURPLUS"
+    assert row.refus_pose_linky == "false"
+    assert row.date_refus_pose_linky == "2024-01-02"
+    assert row.borne_fixe == "true"
+    assert json.loads(row.payload_raw)["Numero Siret"] == "12345678900011"
+    assert parsed.warnings == []
+
+
 @pytest.mark.parametrize("raw_power", ["36 kVA", "36kVA"])
 def test_c68_csv_combined_puissance_souscrite_splits_value_and_unit(raw_power):
     csv_payload = f"PRM;Puissance souscrite\n30000000000001;{raw_power}\n".encode()

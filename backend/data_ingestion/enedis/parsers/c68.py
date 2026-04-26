@@ -117,7 +117,10 @@ def _parse_csv(payload_bytes: bytes, member_name: str) -> ParsedC68Payload:
 
     rows: list[ParsedC68Row] = []
     warnings: list[dict[str, str]] = []
-    unknown_headers = sorted(set(reader.fieldnames) - set(_CSV_ALLOWED_RAW_HEADERS))
+    allowed_headers = {_normalize_header(name) for name in _CSV_ALLOWED_RAW_HEADERS}
+    unknown_headers = sorted(
+        name for name in reader.fieldnames if name is not None and _normalize_header(name) not in allowed_headers
+    )
     if unknown_headers:
         warnings.append({"code": "unknown_csv_columns", "columns": ",".join(unknown_headers)})
 
@@ -211,20 +214,22 @@ def _extract_csv_columns(csv_row: dict[str, str | None], headers: dict[str, str]
 
     return {
         "date_debut_situation_contractuelle": h(
-            "Date debut situation contractuelle", "Date de debut situation contractuelle"
+            "Date debut situation contractuelle",
+            "Date de debut situation contractuelle",
+            "date de debut de la situation contractuelle",
         ),
         "segment": h("Segment"),
         "etat_contractuel": h("Etat contractuel"),
         "formule_tarifaire_acheminement": h("Formule Tarifaire Acheminement", "Formule tarifaire acheminement"),
         "code_tarif_acheminement": h("Code Tarif Acheminement", "Code tarif acheminement"),
-        "siret": h("SIRET"),
-        "siren": h("SIREN"),
-        "domaine_tension": h("Domaine Tension", "Domaine tension"),
-        "tension_livraison": h("Tension Livraison", "Tension livraison"),
-        "type_comptage": h("Type Comptage", "Type comptage"),
-        "mode_releve": h("Mode Releve", "Mode releve", "Mode relève"),
+        "siret": h("SIRET", "Numero Siret"),
+        "siren": h("SIREN", "Numero Siren"),
+        "domaine_tension": h("Domaine Tension", "Domaine tension", "Domaine de tension"),
+        "tension_livraison": h("Tension Livraison", "Tension livraison", "Tension de livraison"),
+        "type_comptage": h("Type Comptage", "Type comptage", "Type de comptage"),
+        "mode_releve": h("Mode Releve", "Mode releve", "Mode relève", "Mode de releve", "Mode de relève"),
         "media_comptage": h("Media Comptage", "Media comptage"),
-        "periodicite_releve": h("Periodicite Releve", "Periodicite releve", "Périodicité relève"),
+        "periodicite_releve": h("Periodicite Releve", "Periodicite releve", "Périodicité relève", "Periodicite"),
         "puissance_souscrite_valeur": puissance_souscrite_valeur,
         "puissance_souscrite_unite": puissance_souscrite_unite,
         "puissance_limite_soutirage_valeur": h("Puissance Limite Soutirage Valeur"),
@@ -377,18 +382,26 @@ _JSON_ALLOWED_TOP_LEVEL = {
 
 _CSV_ALLOWED_RAW_HEADERS = {
     "PRM",
+    "date de debut de la situation contractuelle",
     "Segment",
     "Etat contractuel",
     "Formule Tarifaire Acheminement",
     "Code Tarif Acheminement",
     "SIRET",
+    "Numero Siret",
     "SIREN",
+    "Numero Siren",
     "Domaine Tension",
+    "Domaine de tension",
     "Tension Livraison",
+    "Tension de livraison",
     "Type Comptage",
+    "Type de comptage",
     "Mode Releve",
+    "Mode de releve",
     "Media Comptage",
     "Periodicite Releve",
+    "Periodicite",
     "Puissance souscrite",
     "Puissance Souscrite Valeur",
     "Puissance Souscrite Unite",

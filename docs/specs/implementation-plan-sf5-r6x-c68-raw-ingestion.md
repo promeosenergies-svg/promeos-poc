@@ -612,6 +612,8 @@ CSV parsing:
 - missing `PRM` header or blank row PRM is fatal
 - accept both legacy 207-column and v1.2 211-column layouts
 - preserve unknown columns in `payload_raw`
+- treat CSV header matching as normalized alias matching, not as exact-case string matching; official v1.2 labels observed in real rows include `Numero Siret`, `Numero Siren`, `Domaine de tension`, `Type de comptage`, `Mode de releve`, `Periodicite`, and `date de debut de la situation contractuelle`
+- do not infer that CSV contains more useful data just because CSV `payload_raw` is longer; the flattened 207/211-column export includes many empty cells, while JSON is compact and nested
 - observed CSV reality check on 2026-04-26: the flattened `Puissance souscrite` column may carry the value and unit together, for example `36 kVA` or `36kVA`; parser/storage must split it into `puissance_souscrite_valeur = 36` and `puissance_souscrite_unite = kVA`, while leaving the original CSV cell in `payload_raw`
 - extract v1.2 additions when present:
   - `Type Injection`
@@ -633,10 +635,13 @@ Storage notes:
 - `payload_raw` should contain the per-PRM JSON object or a JSON object reconstructed from the CSV row, including unknown columns.
 - `header_raw.archive_manifest` should record the primary archive, each secondary archive, payload filename, payload format, row count, and any structured warnings.
 - Do not persist secondary ZIP bytes or extracted JSON/CSV files to ordinary filesystem paths.
+- `payload_raw` is also the raw-exploitation recovery path: when alias mapping improves, queryable C68 columns can be backfilled by reparsing stored `payload_raw` rows, without downloading, decrypting, or reloading the original Enedis archives.
+- Production development should include an explicit idempotent C68 backfill operation for parser improvements. It must update only derived summary columns from `payload_raw`, preserve `payload_raw` unchanged, and report before/after counts per field and source format.
 
 ### Files Likely Touched
 
 - new `backend/data_ingestion/enedis/parsers/c68.py`
+- new `backend/data_ingestion/enedis/scripts/backfill_c68_payload_raw.py`
 - `backend/data_ingestion/enedis/pipeline.py`
 - `backend/data_ingestion/enedis/models.py`
 - `backend/data_ingestion/enedis/tests/test_parsers_c68.py`
@@ -648,6 +653,7 @@ Storage notes:
 - C68 JSON ingests into `enedis_flux_itc_c68`.
 - C68 CSV ingests into `enedis_flux_itc_c68`.
 - C68 legacy 207-column CSV and v1.2 211-column CSV both ingest.
+- Official v1.2 CSV labels populate queryable summary columns, including SIRET/SIREN, tension/comptage/releve fields, periodicity, and contractual start date.
 - C68 CSV combined `Puissance souscrite` cells are split into separate value/unit raw columns.
 - `measures_count` equals PRM snapshot rows, not archive/member count.
 - `archive_members_count` records first-level member count.
@@ -669,6 +675,7 @@ Storage notes:
 - Synthetic C68 JSON regression matching the real id `22` nested shape: one undated contractual situation projects `segment = C1`, `etat_contractuel = SERVC`, `formule_tarifaire_acheminement = HTALU5`, `media_comptage = IP`, and `periodicite_releve = QUOTID`.
 - Synthetic C68 CSV 207-column-style fixture.
 - Synthetic C68 CSV 211-column-style fixture with fake `Type Injection`, `Refus de pose Linky`, `Date refus de pose Linky`, and `Borne Fixe`.
+- Synthetic C68 CSV fixture using official v1.2 labels such as `Numero Siret`, `Domaine de tension`, `Type de comptage`, `Mode de releve`, `Periodicite`, and `date de debut de la situation contractuelle`.
 - Synthetic C68 CSV fixture where `Puissance souscrite` is a combined value/unit cell, with assertions that value and unit are stored separately.
 - Multi-secondary archive where primary timestamp differs from secondary/payload timestamp.
 - Sequence gap failure.
@@ -686,12 +693,14 @@ cd backend
 pytest data_ingestion/enedis/tests/test_parsers_c68.py \
   data_ingestion/enedis/tests/test_containers_sf5.py \
   data_ingestion/enedis/tests/test_pipeline_sf5.py
+PYTHONPATH=. python -m data_ingestion.enedis.scripts.backfill_c68_payload_raw --dry-run
 ```
 
 ### Risks
 
 - C68 is sensitive and wide; committed fixtures must remain synthetic or sanitized.
 - C68 CSV headers are numerous; tests should prove header-name mapping rather than positional mapping.
+- Existing raw databases may already contain valid CSV `payload_raw` with under-populated summary columns from older parser aliases; production rollout needs a backfill step before relying on those query columns.
 - Full payload persistence is appropriate for the raw DB but needs production access/retention policy before deployment beyond POC.
 
 ## Milestone 7 - Unified Pipeline Integration

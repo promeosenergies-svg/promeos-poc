@@ -145,6 +145,8 @@ ENEDIS_<codeFlux>_<modePublication>_<typeDonnee>_<idDemande>_<numSequence>_<horo
 - JSON and CSV do not carry identical business richness:
   - the guide explicitly notes some technical/contractual sections are JSON-only
   - CSV is a flattened export surface, not a perfect semantic twin of the nested JSON model
+  - CSV `payload_raw` can look much larger than JSON because Enedis publishes a very wide flat header with many empty cells, while JSON is nested and usually omits absent branches
+  - conversely, JSON can contain higher-value nested branches such as `rattachements` and `optionsContractuelles` that CSV does not expose
 - C68 field absence can be business-significant:
   - `T` = transmitted without customer consent
   - `O` = transmitted only with customer consent
@@ -188,6 +190,10 @@ Observed packaging behavior:
 - observed `C68` CSV headers include both:
   - legacy 207-column files
   - v1.2-style 211-column files with `Type Injection`, `Refus de pose Linky`, `Date refus de pose Linky`, and `Borne Fixe`
+- observed parser/reuse finding on 2026-04-26:
+  - `payload_raw` preserved all CSV cells correctly, but summary-column extraction initially missed official v1.2 labels such as `Numero Siret`, `Numero Siren`, `Domaine de tension`, `Type de comptage`, `Mode de releve`, `Periodicite`, and `date de debut de la situation contractuelle`
+  - production code must treat C68 CSV mapping as header-name based with normalized aliases, not as a small legacy-label allowlist
+  - because the raw archive keeps each per-PRM `payload_raw`, future parser improvements can be backfilled into queryable columns without reloading the original Enedis ZIP files
 - these corpus facts are empirical implementation evidence, not universal Enedis rules; the official guide still defines up to 10 secondary archives per primary publication
 
 Observed content examples:
@@ -252,6 +258,7 @@ Observed content examples:
   - very wide contract/technical export
   - fields such as `PRM`, `Domaine de tension`, `Tension de Livraison`, `Type de comptage`, `Mode de releve`, `Puissance souscrite`, `Refus de pose Linky`, `Date refus de pose Linky`
   - observed CSV reality check on 2026-04-26: `Puissance souscrite` can be a single combined field such as `36 kVA` or `36kVA`; ingestion must store `36` in `puissance_souscrite_valeur` and `kVA` in `puissance_souscrite_unite`, while preserving the original CSV cell in `payload_raw`
+  - observed backfill reality check on 2026-04-26: reparsing an existing CSV `payload_raw` row from `flux_data.db` populated fields that were null before the alias fix, including `siret = 84255830600028`, `siren = 842558306`, `domaine_tension = HTA`, `type_comptage = PMEI`, `mode_releve = TRLV`, `periodicite_releve = QUOTID`, and `date_debut_situation_contractuelle = 01-04-2022`
 
 ### 2.3 Critical Delta vs SF1-SF4
 
