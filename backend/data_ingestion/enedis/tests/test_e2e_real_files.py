@@ -18,6 +18,8 @@ from data_ingestion.enedis.models import (
     EnedisFluxMesureR50,
     EnedisFluxMesureR151,
     EnedisFluxMesureR171,
+    EnedisFluxMesureR6x,
+    EnedisFluxItcC68,
 )
 from data_ingestion.enedis.pipeline import ingest_directory, ingest_file
 
@@ -80,6 +82,13 @@ FLUX_SPECS = [
 ]
 
 SUPPORTED_FLUX_NAMES = [spec[0] for spec in FLUX_SPECS]
+
+_RUN_REAL_SF5 = os.environ.get("PROMEOS_RUN_REAL_SF5_TESTS") == "1"
+SF5_FLUX_SPECS = [
+    ("R63", EnedisFluxMesureR6x, ["point_id", "horodatage", "valeur", "flux_type"]),
+    ("R64", EnedisFluxMesureR6x, ["point_id", "horodatage", "valeur", "flux_type"]),
+    ("C68", EnedisFluxItcC68, ["point_id", "payload_raw"]),
+]
 
 
 # ===========================================================================
@@ -172,6 +181,73 @@ class TestSingleFileE2E:
             # valeur_point should be a numeric string (may be negative)
             if m.valeur_point is not None:
                 assert m.valeur_point.lstrip("-").isdigit(), f"Non-numeric valeur_point: {m.valeur_point}"
+
+
+@pytest.mark.skipif(
+    not _RUN_REAL_SF5,
+    reason="Set PROMEOS_RUN_REAL_SF5_TESTS=1 to run real SF5 corpus tests",
+)
+class TestSF5RealSamples:
+    """Opt-in real SF5 ingestion tests. No real payloads are committed."""
+
+    @pytest.mark.parametrize(
+        "flux_name, model_cls, required_cols",
+        SF5_FLUX_SPECS,
+        ids=[s[0] for s in SF5_FLUX_SPECS],
+    )
+    def test_single_sf5_file_e2e(self, db, real_keys, flux_name, model_cls, required_cols):
+        files = find_real_flux_files(flux_name)
+        if not files:
+            pytest.skip(f"No local {flux_name} samples available")
+
+        status = ingest_file(files[0], db, real_keys)
+
+        assert status == FluxStatus.PARSED, (
+            f"Expected PARSED for {files[0].name}, got {status}. Errors: {_get_error_details(db)}"
+        )
+        flux_file = db.query(EnedisFluxFile).first()
+        assert flux_file.flux_type == flux_name
+        assert flux_file.measures_count > 0
+        assert flux_file.payload_format in {"JSON", "CSV"}
+        assert flux_file.get_header_raw()["archive_manifest"]
+
+        rows = db.query(model_cls).all()
+        assert len(rows) == flux_file.measures_count
+        for row in rows:
+            for col in required_cols:
+                assert getattr(row, col) is not None, f"{col} is None on row id={row.id} in {files[0].name}"
+            assert _PRM_RE.match(row.point_id), f"Invalid PRM format: {row.point_id}"
+
+    @pytest.mark.parametrize(
+        "flux_name, sample_name",
+        [
+            ("R63", "ENEDIS_R63_P_CdC_M06DSGVE_00001_20240528163243.zip"),
+            ("C68", "ENEDIS_C68_P_ITC_M082FQJM_00001_20250424205829.zip"),
+        ],
+    )
+    def test_known_malformed_sf5_samples_error_cleanly(self, db, real_keys, flux_name, sample_name):
+        matches = [path for path in find_real_flux_files(flux_name) if path.name == sample_name]
+        if not matches:
+            pytest.skip(f"No local malformed {sample_name} sample available")
+
+        status = ingest_file(matches[0], db, real_keys)
+
+        assert status == FluxStatus.ERROR
+        assert db.query(EnedisFluxFile).one().error_message
+
+    def test_supported_legacy_and_sf5_tree_when_enabled(self, db, real_keys, tmp_path):
+        root = _build_supported_flux_tree(tmp_path)
+        for flux_name in ("R63", "R64", "C68"):
+            target_dir = root / flux_name
+            target_dir.mkdir(parents=True, exist_ok=True)
+            for source_file in find_real_flux_files(flux_name):
+                os.symlink(source_file, target_dir / source_file.name)
+
+        counters = ingest_directory(root, db, real_keys, recursive=True)
+
+        assert counters["error"] == 0, f"Ingestion errors: {_get_error_details(db)}"
+        assert db.query(EnedisFluxMesureR6x).count() > 0
+        assert db.query(EnedisFluxItcC68).count() > 0
 
 
 # ===========================================================================

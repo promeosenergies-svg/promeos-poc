@@ -5,6 +5,7 @@ Requires real flux files in the flux_enedis/<FLUX>/ directories.
 """
 
 import pytest
+import os
 
 from data_ingestion.enedis.decrypt import (
     classify_flux,
@@ -45,6 +46,26 @@ def test_decrypt_all_files(real_keys, flux_name, expected_type):
         assert classify_flux(f.name) == expected_type
         xml = decrypt_file(f, real_keys)
         assert xml.startswith(b"<?xml")
+
+
+@pytest.mark.skipif(
+    os.environ.get("PROMEOS_RUN_REAL_SF5_TESTS") != "1",
+    reason="Set PROMEOS_RUN_REAL_SF5_TESTS=1 to classify real SF5 samples",
+)
+@pytest.mark.parametrize(
+    "flux_name, expected_type",
+    [
+        ("R63", FluxType.R63),
+        ("R64", FluxType.R64),
+        ("C68", FluxType.C68),
+    ],
+)
+def test_classify_real_sf5_files_when_enabled(flux_name, expected_type):
+    files = find_real_flux_files(flux_name)
+    if not files:
+        pytest.skip(f"No {expected_type.value} files found")
+    for f in files:
+        assert classify_flux(f.name) == expected_type
 
 
 # ========================================================================

@@ -152,6 +152,9 @@ REAL_FLUX_PATTERNS = {
     "R151": "*R151*.zip",
     "R172": "*R172*.zip",
     "X14": "*X14*.zip",
+    "R63": "ENEDIS_R63_*.zip",
+    "R64": "ENEDIS_R64_*.zip",
+    "C68": "ENEDIS_C68_*.zip",
 }
 
 
