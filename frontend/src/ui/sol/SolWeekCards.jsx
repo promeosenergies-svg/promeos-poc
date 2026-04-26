@@ -87,9 +87,9 @@ function WeekCard({ card, onNavigate }) {
     : {};
 
   return (
-    <Wrapper data-testid={`sol-week-card-${card.type}`} {...wrapperProps}>
+    <Wrapper data-testid={`sol-week-card-${card.type}`} role="listitem" {...wrapperProps}>
       <article
-        className={`flex flex-col gap-2 p-4 rounded-lg border ${cfg.bgCls} ${cfg.borderCls} h-full sol-card transition-colors hover:brightness-[0.98]`}
+        className={`flex flex-col gap-2.5 p-5 rounded-lg border ${cfg.bgCls} ${cfg.borderCls} h-full sol-card transition-colors hover:brightness-[0.98]`}
         data-tone={
           card.type === 'good_news'
             ? 'succes'
@@ -113,7 +113,7 @@ function WeekCard({ card, onNavigate }) {
             <span className="text-[10px] text-[var(--sol-ink-500)] font-medium">{urgency}</span>
           )}
         </header>
-        <h3 className="text-sm font-semibold text-[var(--sol-ink-900)] leading-tight">
+        <h3 className="text-sm font-semibold text-[var(--sol-ink-900)] leading-snug">
           {card.title}
         </h3>
         {card.body && (
@@ -142,23 +142,48 @@ function WeekCard({ card, onNavigate }) {
 }
 
 /**
- * Densification §4 : si backend renvoie <3 cards, on rend ce qu'on a
- * + on remplit avec une card "Bonne nouvelle" générique densifiée
- * via le `fallbackBody` fourni par le parent (qui le calcule backend).
+ * Densification §4 : si backend renvoie <3 cards, on remplit AVEC DES
+ * TITRES DISTINCTS (audit Sprint 1.1 : duplication "Patrimoine stable"
+ * x2 trahit le mécanisme fallback — un journal ne réimprime pas le
+ * même titre 2 fois).
  *
- * Si fallbackBody absent, on insère une card silence éditorial
- * minimal — JAMAIS un empty state pleine largeur.
+ * Catalogue de fallbacks contextuels alternés (4 variantes), tous
+ * orientés "bonne nouvelle" pour ne jamais inventer un signal négatif.
+ * Le `fallbackBody` du backend (pré-calculé par narrative_generator)
+ * est injecté en body — la card reste sourcée même quand le titre
+ * est générique.
+ *
+ * JAMAIS un empty state pleine largeur (anti-pattern §6.1).
  */
+const FALLBACK_VARIANTS = Object.freeze([
+  { type: 'good_news', title: 'Patrimoine stable cette semaine' },
+  { type: 'good_news', title: 'Aucune dérive détectée' },
+  { type: 'good_news', title: 'Conformité tenue' },
+  { type: 'good_news', title: 'Données à jour' },
+]);
+
 function applyFallbackDensification(cards, fallbackBody) {
   if (cards.length >= 3) return cards.slice(0, 3);
   const filled = [...cards];
-  while (filled.length < 3) {
+  // Sélectionne des variantes distinctes au fil des slots manquants.
+  // Évite les variantes dont le `type` chevauche les cards existantes
+  // pour ne pas générer "good_news" à côté d'une vraie "good_news" backend.
+  const usedTypes = new Set(filled.map((c) => c.type));
+  let variantIdx = 0;
+  while (filled.length < 3 && variantIdx < FALLBACK_VARIANTS.length) {
+    const variant = FALLBACK_VARIANTS[variantIdx];
+    variantIdx += 1;
+    // Si une vraie good_news existe déjà, on saute cette variante (sauf
+    // si on a épuisé le catalogue — dernier recours densité §4).
+    if (usedTypes.has(variant.type) && variantIdx < FALLBACK_VARIANTS.length) {
+      continue;
+    }
     filled.push({
-      type: 'good_news',
-      title: 'Patrimoine stable cette semaine',
+      ...variant,
       body: fallbackBody || 'Aucun signal critique détecté — votre patrimoine est sous contrôle.',
       _fallback: true,
     });
+    usedTypes.add(variant.type);
   }
   return filled;
 }

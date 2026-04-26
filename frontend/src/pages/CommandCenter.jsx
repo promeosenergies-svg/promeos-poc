@@ -55,7 +55,8 @@ import ValueCounterCard from '../components/ValueCounterCard';
 import CsatModal from '../components/CsatModal';
 import NpsModal from '../components/NpsModal';
 import PriorityHero from './cockpit/PriorityHero';
-import DashboardHeroFeatured from './dashboard/DashboardHeroFeatured';
+// DashboardHeroFeatured retiré S1.1bis P0-4 (audit 10 agents : empilement legacy ATF avant SolNarrative)
+// import DashboardHeroFeatured from './dashboard/DashboardHeroFeatured';
 // Sprint 1.1 — grammaire Sol industrialisée (ADR-001)
 import SolNarrative from '../ui/sol/SolNarrative';
 import SolWeekCards from '../ui/sol/SolWeekCards';
@@ -398,50 +399,16 @@ export default function CommandCenter() {
     >
       <CockpitTabs active="dashboard" />
 
-      {/* Priorité #1 above-the-fold (avant le pavé info ci-dessous). */}
-      <PriorityHero priority={priority1} onNavigate={navigate} />
+      {/* ── Préambule éditorial Sol §5 (ADR-001 — S1.1bis P0-4) ──
+          Le briefing Sol est désormais le PRÉAMBULE UNIQUE de la page.
+          Audit Sprint 1.1 : empilement legacy (PriorityHero+DeadlineBanner+
+          MorningBriefCard+CTAs+DashboardHeroFeatured) avant la narrative
+          Sol était cité comme friction P0 par 6/10 agents. La grammaire
+          §5 doit ouvrir la page, pas être noyée en position 7.
 
-      {/* Info strip compact : Deadline DT + Morning brief. ValueCounter
-          (compteur cumulé PROMEOS) déplacé en footer, expert-only. */}
-      <div className="space-y-2">
-        <DeadlineBanner />
-        <MorningBriefCard alerts={alertsCount} sitesCount={scopedSites?.length || 0} />
-      </div>
-
-      {/* Modals fixed-position (n'affectent pas le flow visuel) */}
-      <CsatModal orgId={org?.id} />
-      <NpsModal orgId={org?.id} userCreatedAt={org?.created_at} />
-
-      {/* Funnel CTAs compacts (Phase 3.2 — densité ATF) : 1 ligne 36px au
-          lieu de 2 cards verticales 80px chacune. Audit UX : ATF gagnait
-          ~250px en compactant le top de page. */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => navigate('/cockpit')}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-        >
-          <FileText size={14} aria-hidden="true" />
-          Préparer le brief CFO
-          <ArrowRight size={12} aria-hidden="true" className="opacity-60" />
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate('/conformite')}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-        >
-          <Scan size={14} aria-hidden="true" />
-          Ouvrir conformité
-          <ArrowRight size={12} aria-hidden="true" className="opacity-60" />
-        </button>
-      </div>
-
-      {/* Sprint 1.1 — Grammaire éditoriale Sol §5 (ADR-001).
-          Backend renvoie kicker + titre Fraunces + narrative 2-3 lignes
-          sourcée + 3 KPIs avec tooltip. Briefing-grade au sens doctrine §1
-          (briefing au lieu du dashboard) — remplace l'ancienne grille KPI
-          Phase 4 qui était l'anti-pattern §6.1 "page commençant par grille
-          sans préambule". */}
+          DashboardHeroFeatured fallback chargement supprimé — SolNarrative
+          gère son propre état loading via solBriefingLoading + skeleton
+          intrinsèque (3 KPIs avec animate-pulse). */}
       {solBriefing && (
         <SolNarrative
           kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
@@ -462,17 +429,44 @@ export default function CommandCenter() {
         />
       )}
 
-      {/* Fallback Hero pendant chargement initial briefing Sol (avant 1ère réponse API).
-          Doctrine §4 : densité éditoriale, pas de zone vide. À supprimer Sprint 1.2
-          quand briefing backend sera mature. */}
-      {!solBriefing && solBriefingLoading && (
-        <DashboardHeroFeatured
-          kpis={kpis}
-          kpisJ1={kpisJ1}
-          loading={loading || cmdLoading}
-          sitesCount={scopedSites.length}
-        />
-      )}
+      {/* ── Rappels secondaires (rétrogradés en S1.1bis) ──
+          PriorityHero + DeadlineBanner + MorningBriefCard + funnel CTAs
+          étaient l'empilement legacy ATF. Désormais après le briefing Sol
+          en complément contextuel. À fusionner Sprint 2 (chantier α) :
+          ces signaux deviendront des week-cards typées poussées par le
+          moteur d'événements. */}
+      <PriorityHero priority={priority1} onNavigate={navigate} />
+
+      <div className="space-y-2">
+        <DeadlineBanner />
+        <MorningBriefCard alerts={alertsCount} sitesCount={scopedSites?.length || 0} />
+      </div>
+
+      {/* Modals fixed-position (n'affectent pas le flow visuel) */}
+      <CsatModal orgId={org?.id} />
+      <NpsModal orgId={org?.id} userCreatedAt={org?.created_at} />
+
+      {/* Funnel CTAs compacts — pivots cross-pillar (déplacés post-briefing) */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => navigate('/cockpit')}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-[var(--sol-calme-bg)] hover:bg-[var(--sol-calme-bg)] border border-[var(--sol-calme-fg)]/30 text-[var(--sol-calme-fg)] text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)]"
+        >
+          <FileText size={14} aria-hidden="true" />
+          Préparer le brief CFO
+          <ArrowRight size={12} aria-hidden="true" className="opacity-60" />
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/conformite')}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-[var(--sol-succes-bg)] hover:bg-[var(--sol-succes-bg)] border border-[var(--sol-succes-line)] text-[var(--sol-succes-fg)] text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-succes-fg)]"
+        >
+          <Scan size={14} aria-hidden="true" />
+          Ouvrir conformité
+          <ArrowRight size={12} aria-hidden="true" className="opacity-60" />
+        </button>
+      </div>
 
       {/* Top 5 sites en dérive (drill-down vers détail site). */}
       <TopDeriveSitesCard sites={scopedSites} totalSites={kpis?.total} />

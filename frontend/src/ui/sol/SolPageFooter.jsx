@@ -56,24 +56,26 @@ export default function SolPageFooter({
   return (
     <footer
       data-testid="sol-page-footer"
-      className={`mt-6 pt-3 border-t border-[var(--sol-line)] flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[var(--sol-ink-500)] ${className}`}
+      role="contentinfo"
+      aria-label="Provenance des données"
+      className={`mt-10 pt-3 border-t border-[var(--sol-line)] flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[var(--sol-ink-500)] ${className}`}
     >
       {source && (
         <span>
-          <span className="font-mono uppercase tracking-wider text-[10px] text-[var(--sol-ink-400)] mr-1">
+          <span className="font-mono uppercase tracking-wider text-[10px] text-[var(--sol-ink-500)] mr-1">
             Source
           </span>
           <span>{source}</span>
         </span>
       )}
       <span>
-        <span className="font-mono uppercase tracking-wider text-[10px] text-[var(--sol-ink-400)] mr-1">
+        <span className="font-mono uppercase tracking-wider text-[10px] text-[var(--sol-ink-500)] mr-1">
           Confiance
         </span>
         <span className={`font-medium ${confCfg.cls}`}>{confCfg.label}</span>
       </span>
       <span>
-        <span className="font-mono uppercase tracking-wider text-[10px] text-[var(--sol-ink-400)] mr-1">
+        <span className="font-mono uppercase tracking-wider text-[10px] text-[var(--sol-ink-500)] mr-1">
           Mis à jour
         </span>
         <span>{updatedLabel}</span>

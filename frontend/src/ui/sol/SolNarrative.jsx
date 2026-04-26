@@ -23,19 +23,21 @@ function KpiTile({ kpi }) {
     <div
       className="flex flex-col gap-1 px-4 py-3 bg-white border border-[var(--sol-line)] rounded-lg sol-card"
       data-testid={`sol-kpi-${kpi.label}`}
+      role="listitem"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--sol-ink-400)]">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--sol-ink-500)]">
           {kpi.label}
         </span>
         {showTooltip && (
-          <span
-            className="text-[var(--sol-ink-400)] cursor-help"
+          <button
+            type="button"
+            className="text-[var(--sol-ink-500)] hover:text-[var(--sol-ink-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)] rounded-sm p-0.5 -m-0.5 cursor-help"
             title={kpi.tooltip}
             aria-label={`Définition : ${kpi.tooltip}`}
           >
             <HelpCircle size={12} aria-hidden="true" />
-          </span>
+          </button>
         )}
       </div>
       <div className="flex items-baseline gap-1">
@@ -47,7 +49,7 @@ function KpiTile({ kpi }) {
         )}
       </div>
       {kpi.source && (
-        <span className="text-[10px] text-[var(--sol-ink-400)] font-mono uppercase tracking-wider truncate">
+        <span className="text-[10px] text-[var(--sol-ink-500)] font-mono uppercase tracking-wider truncate">
           {kpi.source}
         </span>
       )}
@@ -70,7 +72,7 @@ export default function SolNarrative({
   return (
     <section
       data-testid="sol-narrative"
-      className={`flex flex-col gap-4 ${className}`}
+      className={`flex flex-col gap-5 mt-2 ${className}`}
       aria-label="Briefing éditorial"
     >
       <header className="flex flex-col gap-1">

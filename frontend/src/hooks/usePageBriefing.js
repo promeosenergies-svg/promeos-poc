@@ -7,12 +7,19 @@
  *
  * MVP Sprint 1.1 : page_key='cockpit_daily'. Sprint 1.2+ étendra.
  *
+ * Sprint 1.1bis P0-5 (audit CX) : re-fetch sur changement scope (org_id
+ * + selectedSiteId). Sans ça, le briefing reste figé sur le scope initial
+ * même quand l'utilisateur switche de site dans le ScopeContext.
+ *
  * Doctrine §8.1 règle d'or : aucun calcul métier ici.
  */
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api/core';
+import { useScope } from '../contexts/ScopeContext';
 
 export function usePageBriefing(pageKey, { persona = 'daily', archetype } = {}) {
+  const { org, selectedSiteId } = useScope();
+  const orgId = org?.id;
   const [briefing, setBriefing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,6 +33,10 @@ export function usePageBriefing(pageKey, { persona = 'daily', archetype } = {}) 
 
     const params = new URLSearchParams({ persona });
     if (archetype) params.set('archetype', archetype);
+    // Backend `resolve_org_id` lit le query org_id en priorité (cf
+    // routes/pages_briefing.py). Re-fetch automatique sur switch scope.
+    if (orgId) params.set('org_id', String(orgId));
+    if (selectedSiteId) params.set('site_id', String(selectedSiteId));
 
     api
       .get(`/pages/${pageKey}/briefing?${params.toString()}`)
@@ -56,7 +67,7 @@ export function usePageBriefing(pageKey, { persona = 'daily', archetype } = {}) 
       cancelled = true;
       mountedRef.current = false;
     };
-  }, [pageKey, persona, archetype]);
+  }, [pageKey, persona, archetype, orgId, selectedSiteId]);
 
   return { briefing, loading, error };
 }

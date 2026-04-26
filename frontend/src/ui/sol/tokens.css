@@ -29,6 +29,12 @@
   --sol-ink-100: #f1f5f9;
   --sol-rule: #e2e8f0;
 
+  /* Borderlines tonales — Sprint 1.1bis P0-1 (audit UI/Visual + Ergo 26/04).
+     Référencées par SolNarrative, SolWeekCards, SolPageFooter mais non définies
+     dans la version initiale → bordures invisibles, perte signature ~30%.
+     Couleurs dérivées des accents émotionnels avec opacité 0.35-0.4. */
+  --sol-line: var(--sol-rule);
+
   /* Accents émotionnels warm — palette V2 raw « journal en terrasse » (source locked) */
   --sol-calme-fg: #2f6b5e;
   --sol-calme-bg: #e3f0ed; /* bleu-vert doux « tout va bien » */
@@ -37,12 +43,16 @@
      Assombri à #8a5a14 → ratio ~5.0:1 (PASS AA), impact visuel quasi-nul. */
   --sol-attention-fg: #8a5a14;
   --sol-attention-bg: #f6ead2; /* ambre chaleureux */
+  --sol-attention-line: #d4a85a; /* bordure ambre 35% — séparation card "à regarder" */
   --sol-afaire-fg: #b8552e;
   --sol-afaire-bg: #f7e4d8; /* orange corail, pas punitif */
+  --sol-afaire-line: #d68a5e; /* bordure corail 35% — séparation card "à faire" */
   --sol-succes-fg: #2e6b4a;
   --sol-succes-bg: #dfede3; /* vert forêt, pas fluo */
+  --sol-succes-line: #5a8a72; /* bordure verte 35% — séparation card "bonne nouvelle" */
   --sol-refuse-fg: #8b3a3a;
   --sol-refuse-bg: #f3dddb;
+  --sol-refuse-line: #b85a5a; /* bordure terre cuite 35% — séparation card "dérive" */
 
   /* Tariff HP/HC — palette warm V2 raw */
   --sol-hph-fg: #b84545;

@@ -87,16 +87,19 @@ Score doctrine cible fin S1 : **5.5/10** (+1.3 pts)
 2. **Source-guards pytest** — `backend/tests/test_doctrine_sol_source_guards.py` bloquants en CI
 3. **Tests doctrinaux Playwright** — `tools/playwright/doctrine/runner.mjs` (T4+T7 actifs, T1/T2/T6/T8 S1.1+)
 4. **Synchronisation hebdomadaire** — ce fichier (`state_of_doctrine.md`) mis à jour chaque vendredi
-5. **7-agents persona audit fin de sprint** — protocole obligatoire à chaque clôture de sprint sur le scope migré :
+5. **10-agents audit fin de sprint** — protocole obligatoire à chaque clôture de sprint sur le scope migré :
    - Agent **Persona Marie** (DAF tertiaire 5 sites, briefing daily 8h45)
    - Agent **Persona Jean-Marc** (CFO ETI, vue COMEX, brief CODIR)
    - Agent **Persona Investisseur** (vision produit, différenciation Mix-E)
    - Agent **UX** (parcours utilisateur, friction cognitive)
-   - Agent **UI / Visual** (signature Sol, palette journal, typo)
+   - Agent **UI / Visual** (signature Sol, palette journal, typo Fraunces+DM Sans+JetBrains)
    - Agent **Navigation** (déambulation guidée §3 P2, mapping intention→emplacement §11)
    - Agent **CX** (TTFV, scorecard 10 critères, cohérence cross-pages)
    - Agent **Densité** (§4 — pas de zone vide >200px, week-cards toujours pleines)
    - Agent **Ergonomie** (a11y WCAG AA, motion reduced, drill-down accessible)
+   - Agent **Espaces & blancs** (whitespace management, rythme vertical, breathing,
+     padding/margin/gap consistency, hiérarchie typographique espacée — ce qui
+     distingue Stripe Atlas / Linear de Bootstrap générique)
 
    Score consolidé /10 pour chaque agent + top 3 frictions résiduelles
    + top 3 quick wins next sprint. Synthèse archivée dans
