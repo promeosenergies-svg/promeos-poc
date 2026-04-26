@@ -1,8 +1,8 @@
 # Ingestion des flux Enedis SGE
 
 > **Module** : `backend/data_ingestion/enedis/`
-> **Statut** : POC -- couche de staging brut opérationnelle (SF1 à SF4)
-> **Dernière mise à jour** : 2026-03-29
+> **Statut** : POC -- archive brute opérationnelle SF1 à SF5, isolée dans `flux_data.db`
+> **Dernière mise à jour** : 2026-04-26
 
 ---
 
@@ -11,54 +11,44 @@
 1. [Introduction](#1-introduction)
 2. [Vue d'ensemble fonctionnelle](#2-vue-densemble-fonctionnelle)
 3. [Source des données : les flux SGE](#3-source-des-données--les-flux-sge)
-4. [Types de flux](#4-types-de-flux)
+4. [Types de flux et classification](#4-types-de-flux-et-classification)
 5. [Architecture du module](#5-architecture-du-module)
 6. [Flux de données de bout en bout](#6-flux-de-données-de-bout-en-bout)
-7. [Décryptage](#7-décryptage)
-8. [Parsers XML](#8-parsers-xml)
-   - 8.1 [Utilitaires partagés](#81-utilitaires-partagés-_helperspy)
-   - 8.2 [R4x -- Courbe de charge C1-C4](#82-r4x--courbe-de-charge-c1-c4)
-   - 8.3 [R171 -- Index journalier C2-C4](#83-r171--index-journalier-c2-c4)
-   - 8.4 [R50 -- Courbe de charge C5](#84-r50--courbe-de-charge-c5)
-   - 8.5 [R151 -- Index et puissance maximale C5](#85-r151--index-et-puissance-maximale-c5)
+7. [Décryptage et transport](#7-décryptage-et-transport)
+8. [Parsers](#8-parsers)
 9. [Pipeline d'ingestion](#9-pipeline-dingestion)
-   - 9.1 [Traitement unitaire : `ingest_file()`](#91-traitement-unitaire--ingest_file)
-   - 9.2 [Traitement batch : `ingest_directory()`](#92-traitement-batch--ingest_directory)
-   - 9.3 [Idempotence](#93-idempotence)
-   - 9.4 [Détection des republications](#94-détection-des-republications)
-   - 9.5 [Retry et gestion d'erreurs](#95-retry-et-gestion-derreurs)
-   - 9.6 [Mode dry-run](#96-mode-dry-run)
 10. [Modèle de données](#10-modèle-de-données)
-    - 10.1 [`enedis_flux_file`](#101-enedis_flux_file)
-    - 10.2 [`enedis_flux_mesure_r4x`](#102-enedis_flux_mesure_r4x)
-    - 10.3 [`enedis_flux_mesure_r171`](#103-enedis_flux_mesure_r171)
-    - 10.4 [`enedis_flux_mesure_r50`](#104-enedis_flux_mesure_r50)
-    - 10.5 [`enedis_flux_mesure_r151`](#105-enedis_flux_mesure_r151)
-    - 10.6 [`enedis_flux_file_error`](#106-enedis_flux_file_error)
-    - 10.7 [`enedis_ingestion_run`](#107-enedis_ingestion_run)
-11. [API REST](#11-api-rest)
-12. [Interface CLI](#12-interface-cli)
-13. [Configuration](#13-configuration)
-14. [Tests](#14-tests)
-15. [Cycle de vie d'un fichier (machine à états)](#15-cycle-de-vie-dun-fichier-machine-à-états)
-16. [Glossaire](#16-glossaire)
+11. [Migrations et séparation des bases](#11-migrations-et-séparation-des-bases)
+12. [API REST](#12-api-rest)
+13. [Interface CLI](#13-interface-cli)
+14. [Configuration](#14-configuration)
+15. [Tests](#15-tests)
+16. [Cycle de vie d'un fichier](#16-cycle-de-vie-dun-fichier)
+17. [Limites connues](#17-limites-connues)
+18. [Glossaire](#18-glossaire)
 
 ---
 
 ## 1. Introduction
 
-Ce document décrit le module d'ingestion des flux Enedis SGE tel qu'implémenté dans le POC Promeos. Il couvre l'intégralité de la chaîne : réception des fichiers chiffrés, décryptage, parsing XML, stockage en base de données, exposition via API REST et CLI.
+Ce document décrit l'implémentation actuelle du module d'ingestion brute des flux Enedis SGE dans le POC Promeos. Il sert de référence pour comprendre ce que la couche raw archive stocke, ce qu'elle expose aux opérateurs, et ce qu'elle laisse volontairement à des couches ultérieures.
 
-Le module a été construit en 4 sous-features (SF1 à SF4) :
+Fonctionnellement, le module prend des fichiers Enedis reçus par dépôt fichier, les identifie, les ouvre selon leur transport, parse leur contenu, puis archive les données brutes dans des tables dédiées. Pour l'utilisateur, cela veut dire qu'un seul run d'ingestion peut traiter un répertoire mixte contenant à la fois les anciens flux XML chiffrés et les nouveaux flux SF5 en ZIP direct ou chiffré.
 
-| SF | Périmètre | Résultat |
-|----|-----------|----------|
-| SF1 | Décryptage et classification | AES-128-CBC, 3 paires de clés, 91 fichiers décryptés |
-| SF2 | Ingestion CDC R4x (C1-C4) | Parser R4H/R4M/R4Q, modèle staging, pipeline mono-fichier |
-| SF3 | Ingestion R171 + R50 + R151 | 3 parsers supplémentaires, dispatch multi-flux, `ingest_directory()` |
-| SF4 | Opérationnalisation | CLI, API REST (4 endpoints), config externalisée, audit d'erreurs, retry |
+Le module a été construit par vagues :
 
-**Philosophie fondamentale** : archiver la donnée brute telle que reçue d'Enedis, sans transformation ni conversion de type. Toutes les valeurs sont stockées en tant que chaînes de caractères. La conversion et la normalisation sont réservées à une couche fonctionnelle ultérieure.
+| Vague | Périmètre | Résultat actuel |
+|-------|-----------|-----------------|
+| SF1 | Décryptage et classification initiale | AES-128-CBC, clés `KEY_n/IV_n`, classification legacy |
+| SF2 | Courbes R4x C1-C4 | Parser R4H/R4M/R4Q, table raw R4x |
+| SF3 | Index et courbes complémentaires | Parsers R171, R50, R151, dispatch multi-flux |
+| SF4 | Opérationnalisation | Retry, audit d'erreurs, CLI, API REST, dry-run |
+| SGE4.5 | Séparation des bases | Raw Enedis dans `flux_data.db`, pas dans `promeos.db` |
+| SF5 | R6X + C68 raw ingestion | R63, R64, C68 JSON/CSV, ZIP direct ou AES, tables raw dédiées |
+
+Le principe central n'a pas changé depuis SF1 : **archiver la donnée brute telle qu'Enedis l'a publiée, sans conversion métier**. Les valeurs de mesure restent des chaînes. Les dates ne sont pas converties en UTC. Les doublons de mesure ne sont pas supprimés. La normalisation, le matching PRM vers site et la promotion vers les tables produit appartiennent à la couche suivante.
+
+Exemple concret : si Enedis publie deux fichiers portant le même nom mais avec un contenu différent, Promeos conserve les deux versions. La nouvelle version passe en `needs_review` afin qu'un humain ou une future couche de promotion décide comment l'utiliser.
 
 ---
 
@@ -66,123 +56,154 @@ Le module a été construit en 4 sous-features (SF1 à SF4) :
 
 ### Ce que fait le module
 
-Le module ingère les fichiers de flux Enedis SGE (publiés par Enedis via FTP) et les archive dans une couche de staging en base de données. Il assure :
+Le module ingère des flux Enedis SGE et les archive dans une base raw dédiée. Il assure :
 
-- **Le décryptage** des fichiers AES-128-CBC reçus chiffrés
-- **Le parsing** de 6 formats XML distincts (R4H, R4M, R4Q, R171, R50, R151)
-- **Le stockage** des mesures brutes dans des tables dédiées par famille de flux
-- **L'idempotence** : un fichier identique (même contenu) n'est jamais traité deux fois
-- **La détection des republications** : quand Enedis republié un fichier corrigé, les deux versions sont conservées
-- **L'audit** : chaque exécution est tracée, les erreurs sont historisées, les fichiers en échec sont retentés automatiquement
+- **La classification** des fichiers à partir de leur nomenclature.
+- **Le transport** : fichiers legacy AES/XML, fichiers SF5 ZIP directs, ou fichiers SF5 AES qui se déchiffrent en ZIP.
+- **Le parsing** de 9 familles ingérées : `R4H`, `R4M`, `R4Q`, `R171`, `R50`, `R151`, `R63`, `R64`, `C68`.
+- **Le stockage brut** dans `flux_data.db`, avec une table de registre et des tables de mesures/snapshots par famille.
+- **L'idempotence fichier** : un fichier physique identique n'est pas retraité.
+- **La gestion des republications** : même nom de fichier, hash différent, nouvelle version conservée en `needs_review`.
+- **Le retry** : les erreurs sont historisées et les fichiers en échec sont retentés jusqu'à `MAX_RETRIES`.
+- **L'observabilité opérationnelle** : CLI, API REST, compteurs par statut, compteurs par flux et liste des erreurs.
 
-### Ce que le module ne fait pas (hors périmètre actuel)
+Ce que cela signifie pour l'utilisateur : l'opérateur n'a pas besoin de choisir un outil différent selon que le dépôt contient un ancien R50 XML chiffré, un R63 ZIP direct, ou une archive C68 imbriquée. Il lance la même ingestion, puis consulte les mêmes compteurs et statuts.
 
-- Pas de conversion des mesures en données fonctionnelles (pas d'écriture dans `Consommation` ou `MeterReading`)
-- Pas de matching PRM vers Site
-- Pas de déduplication au niveau des mesures individuelles
-- Pas d'authentification sur les endpoints API
-- Pas d'appel SOAP aux web services Enedis (les fichiers sont déposés via FTP)
+### Ce que le module ne fait pas
+
+Le module ne fait pas :
+
+- de conversion en tables métier (`Consommation`, `MeterReading`, `meter_load_curve`, etc.) ;
+- de matching PRM vers `Site`, `Compteur` ou contrat Promeos ;
+- de déduplication au niveau des mesures individuelles ;
+- d'interprétation tarifaire ou qualité avancée ;
+- de réconciliation du compte rendu `CR.M023` ;
+- d'appel SOAP aux services Enedis ;
+- d'authentification propre sur les endpoints d'ingestion du POC.
+
+Ces choix sont volontaires. La couche d'ingestion brute doit rester une archive fidèle et réexploitable. Par exemple, si un parser C68 s'améliore plus tard pour extraire une nouvelle colonne, le `payload_raw` stocké permet de recalculer cette colonne sans redemander le fichier à Enedis.
 
 ---
 
 ## 3. Source des données : les flux SGE
 
-Enedis publie les données de comptage via le **Système de Gestion des Échanges (SGE)**. En tant que fournisseur, Promeos reçoit ces flux sous forme de fichiers `.zip` chiffrés déposés sur un serveur FTP.
+Enedis publie des données de comptage via le **Système de Gestion des Échanges (SGE)**. Promeos reçoit ces flux sous forme de fichiers portant une nomenclature Enedis. Selon la famille et le canal, le fichier reçu peut être :
 
-Chaque fichier contient un document XML structuré selon les XSD Enedis (ADR V70). Le nom du fichier indique le type de flux qu'il contient.
+- un ciphertext AES qui contient un XML ou un ZIP contenant un XML ;
+- un ZIP directement ouvrable contenant un JSON ou un CSV ;
+- un ciphertext AES qui, une fois déchiffré, contient un ZIP SF5.
 
-**Segments de comptage concernés :**
+Les segments actuellement couverts sont :
 
-| Segment | Description | Flux associés |
-|---------|-------------|---------------|
-| C1-C4 | Compteurs télérelevés haute fréquence (> 36 kVA) | R4H, R4M, R4Q, R171 |
-| C5 | Compteurs Linky basse tension (< 36 kVA) | R50, R151 |
+| Segment / famille | Description | Flux ingérés |
+|-------------------|-------------|--------------|
+| C1-C4 legacy | Compteurs télérelevés haute fréquence | `R4H`, `R4M`, `R4Q`, `R171` |
+| C5 legacy | Compteurs Linky basse tension | `R50`, `R151` |
+| R6X ponctuel | Mesures demandées via M023 | `R63`, `R64` |
+| ITC ponctuel | Informations techniques et contractuelles | `C68` |
 
-**Volume de référence (POC)** : 91 fichiers en périmètre, 123 846 mesures ingérées.
-
-**Objectif de dimensionnement** : 10 000 PRM sur 2 ans d'historique.
+Les fichiers historiques SF1-SF4 étaient principalement des XML chiffrés. SF5 ajoute des payloads JSON/CSV et des règles de conteneur ZIP plus riches.
 
 ---
 
-## 4. Types de flux
-
-Le module reconnaît 10 types de flux à partir du nom de fichier. 6 sont ingérés, 4 sont hors périmètre.
+## 4. Types de flux et classification
 
 ### Flux ingérés
 
-| Type | Nom complet | Segment | Contenu | Granularité |
-|------|-------------|---------|---------|-------------|
-| **R4H** | CDC publiée hebdomadairement | C1-C4 | Courbe de charge publiée à la maille hebdomadaire | Points toutes les 5 ou 10 min |
-| **R4M** | CDC publiée mensuellement | C1-C4 | Idem, publication mensuelle | Points toutes les 5 ou 10 min |
-| **R4Q** | CDC publiée quotidiennement | C1-C4 | Idem, publication quotidienne | Points toutes les 5 ou 10 min |
-| **R171** | Mesures datees quotidiennes par PRM | C2-C4 | Grandeurs journalieres par classe temporelle et type de grille | 1 valeur par jour, par classe, par grandeur |
-| **R50** | Courbe de charge C5 | C5 | Points de courbe sur abonnement | Points toutes les 30 min |
-| **R151** | Index + puissance max C5 | C5 | Index par classe temporelle et puissance maximale | 1 relevé par période |
+| Type | Nom fonctionnel | Contenu archivé | Format payload | Granularité raw |
+|------|-----------------|-----------------|----------------|-----------------|
+| `R4H` | Courbe de charge hebdomadaire C1-C4 | Points de courbe R4x | XML | 5 ou 10 min selon Enedis |
+| `R4M` | Courbe de charge mensuelle C1-C4 | Points de courbe R4x | XML | 5 ou 10 min selon Enedis |
+| `R4Q` | Courbe de charge quotidienne C1-C4 | Points de courbe R4x | XML | 5 ou 10 min selon Enedis |
+| `R171` | Mesures datées quotidiennes C2-C4 | Index / grandeurs par classe temporelle | XML | 1..n valeurs datées par série |
+| `R50` | Courbe de charge C5 | Points de courbe C5 | XML | 30 min |
+| `R151` | Index et puissance maximale C5 | Index fournisseur/distributeur et PMAX | XML | 1 relevé par période |
+| `R63` | Courbe de charge R6X ponctuelle | Points de courbe infrajournaliers | JSON ou CSV | Pas brut `PT5M`, `PT10M`, `PT15M`, `PT30M`, `PT60M`, etc. |
+| `R64` | Index R6X ponctuels | Index cumulés avec contexte de relève, calendrier et classe temporelle | JSON ou CSV | Valeurs d'index datées |
+| `C68` | Informations techniques et contractuelles | Snapshot ITC par PRM | JSON ou CSV | 1 ligne/snapshot par PRM |
 
-### Fenetres officielles de publication R4x
+### Flux reconnus mais ignorés
 
-Ces delais ne changent pas le parsing, mais ils sont importants pour l'exploitation et la future couche de completude:
-
-| Flux | Periode couverte | Delai officiel de publication |
-|------|------------------|-------------------------------|
-| **R4Q** | Jour D (`00:00-23:50`) | **J+1 calendaire** |
-| **R4H** | Semaine (`samedi 00:00` -> `vendredi 23:50`) | **Au plus tard le 3eme jour ouvre apres la fin de semaine, avant minuit** |
-| **R4M** | Mois civil (`1er jour 00:00` -> dernier jour `23:50`) | **Au plus tard le 3eme jour ouvre apres la fin du mois, avant minuit** |
-
-Point important pour la suite:
-- avant l'expiration de cette fenetre, une publication absente est **attendue mais non echue**
-- apres l'expiration de cette fenetre, elle devient **potentiellement en retard / manquante**
-- cela doit etre traite separement d'un **trou de donnees a l'interieur d'un fichier effectivement livre**
-
-### Fenetres officielles de publication R50
-
-Le guide officiel R50 distingue bien le **pas de la courbe** (`Pas_Publication=30`) de la **cadence de livraison des fichiers** :
-
-| Flux | Periode couverte | Delai officiel de publication |
-|------|------------------|-------------------------------|
-| **R50 quotidien** | Jour J | **Dans la nuit de J+1 a J+2** |
-| **R50 mensuel** | Abonnement mensuel (jour du mois 1-28, pas forcement mois civil) | **Au plus tard le 3eme jour ouvre apres le dernier jour de collecte** |
-
-Points importants pour la suite:
-- le guide R50 autorise des **rattrapages quotidiens** quand les donnees de J etaient indisponibles a la publication initiale: Enedis les republie au plus pres de leur reception, tant que l'abonnement quotidien est toujours actif et que J' reste a moins de 20 jours de J
-- la **cadence quotidienne vs mensuelle** se lit dans la nomenclature de fichier (`_Q_` / `_M_`), pas dans `Pas_Publication`
-- les fichiers mensuels R50 ne doivent donc **pas** etre supposes alignes sur un mois civil; dans le corpus reel, ils couvrent par exemple `2023-01-04 -> 2023-02-03`, puis `2023-02-04 -> 2023-03-03`
-- le guide fixe aussi une **taille maximale par ZIP/XML** au demarrage du service: `3000 PRM` pour un R50 quotidien, `100 PRM` pour un R50 mensuel
-- les compteurs `XXXXX` / `YYYYY` presents dans le nom du fichier servent a verifier la **completude** d'un envoi multi-fichiers pour un abonnement et un numero de sequence donnes
-- `num_seq` identifie la sequence d'envoi pour un abonnement, mais ce sont bien `XXXXX` / `YYYYY` qui permettent de savoir si tous les fichiers attendus de cette sequence ont ete recus
-
-### Flux hors périmètre (ignorés)
+Ces flux sont connus de la classification mais restent hors périmètre de parsing. Ils sont enregistrés en `skipped`, pas en `error`, car leur présence n'est pas une panne d'ingestion.
 
 | Type | Raison |
 |------|--------|
-| **R172** | Réconciliation binaire -- format non XML |
-| **X14** | Hors périmètre fonctionnel |
-| **HDM** | CSV chiffré PGP -- algorithme différent |
-| **UNKNOWN** | Nom de fichier non reconnu |
+| `R172` | Réconciliation binaire legacy, non XML |
+| `X14` | Hors périmètre fonctionnel |
+| `HDM` | CSV chiffré PGP, transport différent |
+| `R63A`, `R63B` | R6X récurrent, reconnu mais non supporté SF5 |
+| `R64A`, `R64B` | R6X récurrent, reconnu mais non supporté SF5 |
+| `R65`, `R66`, `R66B`, `R67` | Flux R6X adjacents hors périmètre SF5 |
+| `CR_M023` | Compte rendu M023 reconnu mais non réconcilié |
+| `UNKNOWN` | Nom non reconnu |
 
-### Règles de classification
+### Règles de classification legacy
 
-La classification se fait par recherche de sous-chaîne dans le nom de fichier, dans l'ordre de priorité suivant :
+Les flux SF1-SF4 sont détectés par motifs dans le nom de fichier :
 
-| Motif recherché | Type assigné |
-|----------------|--------------|
-| `_R4H_CDC_` | R4H |
-| `_R4M_CDC_` | R4M |
-| `_R4Q_CDC_` | R4Q |
-| `_R171_` | R171 |
-| `_R50_` | R50 |
-| `_R151_` | R151 |
-| `_R172_` | R172 |
-| `_X14_` | X14 |
-| `_HDM_` | HDM |
-| *(aucun match)* | UNKNOWN |
+| Motif | Type |
+|-------|------|
+| `_R4H_CDC_` | `R4H` |
+| `_R4M_CDC_` | `R4M` |
+| `_R4Q_CDC_` | `R4Q` |
+| `_R171_` | `R171` |
+| `_R50_` | `R50` |
+| `_R151_` | `R151` |
+| `_R172_` | `R172` |
+| `_X14_` | `X14` |
+| `_HDM_` | `HDM` |
 
-Exemples de noms de fichiers réels :
+### Règles de classification SF5
+
+SF5 lit un segment explicite de code flux plutôt qu'une simple sous-chaîne large. Cette prudence évite de confondre `R63A` avec `R63`, ou `R64B` avec `R64`.
+
+Nomenclatures supportées :
+
+```text
+ENEDIS_<codeFlux>_<modePublication>_<typeDonnee>_<idDemande>_<numSequence>_<horodate>.<extension>
+ENEDIS_<codeFlux>_<modePublication>_<typeDonnee>_<idDemande>_<codeContratOrSiren>_<numSequence>_<horodate>.<extension>
 ```
+
+Métadonnées extraites quand le fichier est réellement parsé :
+
+| Métadonnée | Exemple | Utilisation |
+|------------|---------|-------------|
+| `code_flux` | `R63`, `C68` | Code source Enedis |
+| `mode_publication` | `P`, `Q`, `H`, `M` | Rythme ou mode de publication |
+| `type_donnee` | `CdC`, `INDEX`, `ITC` | Famille de donnée publiée |
+| `id_demande` | `M053Q0D3` | Identifiant de demande M023 |
+| `num_sequence` | `00001` | Numéro de séquence brut |
+| `publication_horodatage` | `20230918161101` | Horodatage de publication brut |
+| `siren_publication` | `123456789` | Segment extra si forme SIREN |
+| `code_contrat_publication` | `GRD-F345` | Segment extra si non-SIREN |
+| `payload_format` | `JSON`, `CSV` | Format SF5 effectivement parsé ; les flux legacy XML le laissent actuellement nul |
+| `archive_members_count` | `1`, `2`, ... | Nombre de membres ouverts au niveau pertinent |
+
+Exemples :
+
+```text
 ENEDIS_23X--130624--EE1_R4H_CDC_20260302.zip
 ERDF_R50_23X--130624--EE1_GRD-F121.zip
 ENEDIS_R171_C_00000099895595_GRDF_23X--130624--EE1_20260301024107.zip
+ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.zip
+ENEDIS_R64_P_INDEX_M06IFF1Z_00001_20240627165441.zip
+ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094139.zip
+ENEDIS_R63A_R_CDC_M01ABCDE_GRD-F345_00001_20230918161101.zip
 ```
+
+### Fenêtres de publication utiles à l'exploitation
+
+Ces délais n'influencent pas le parsing, mais ils évitent de confondre un fichier pas encore attendu avec un retard.
+
+| Flux | Période couverte | Délai de publication |
+|------|------------------|----------------------|
+| `R4Q` | Jour D | J+1 calendaire |
+| `R4H` | Semaine samedi 00:00 à vendredi 23:50 | Au plus tard le 3e jour ouvré après fin de semaine |
+| `R4M` | Mois civil | Au plus tard le 3e jour ouvré après fin de mois |
+| `R50` quotidien | Jour J | Nuit de J+1 à J+2 |
+| `R50` mensuel | Abonnement mensuel, pas forcément mois civil | Au plus tard le 3e jour ouvré après le dernier jour de collecte |
+
+Point important : l'ingestion brute ne produit pas encore d'état de complétude. Une absence de fichier avant échéance, un retard de publication, et un trou à l'intérieur d'un fichier livré sont trois problèmes différents.
 
 ---
 
@@ -190,480 +211,379 @@ ENEDIS_R171_C_00000099895595_GRDF_23X--130624--EE1_20260301024107.zip
 
 ### Arborescence
 
-```
+```text
 backend/data_ingestion/enedis/
 ├── __init__.py
-├── enums.py                # Vocabulaire partagé (FluxType, FluxStatus, IngestionRunStatus)
-├── config.py               # Configuration externalisée (ENEDIS_FLUX_DIR, MAX_RETRIES)
-├── decrypt.py              # Décryptage AES-128-CBC + classification des flux
-├── models.py               # 7 modèles SQLAlchemy (staging)
-├── pipeline.py             # Orchestrateur (ingest_file, ingest_directory, fonctions de stockage)
+├── base.py                 # FluxDataBase, base SQLAlchemy dédiée raw Enedis
+├── enums.py                # FluxType, FluxStatus, IngestionRunStatus
+├── config.py               # ENEDIS_FLUX_DIR, MAX_RETRIES
+├── decrypt.py              # AES legacy + classification générale
+├── filename.py             # Classification/parsing de nomenclature SF5
+├── transport.py            # Résolution direct ZIP/XML ou AES vers payload attendu
+├── containers.py           # Validation des archives R6X et C68
+├── models.py               # Modèles SQLAlchemy raw
+├── migrations.py           # Bootstrap/migrations flux_data.db
+├── pipeline.py             # Orchestrateur ingest_file / ingest_directory
 ├── cli.py                  # Point d'entrée CLI
 ├── parsers/
 │   ├── _helpers.py         # Utilitaires XML tolérants aux namespaces
-│   ├── r4.py               # Parser R4H/R4M/R4Q
-│   ├── r171.py             # Parser R171
-│   ├── r50.py              # Parser R50
-│   └── r151.py             # Parser R151
+│   ├── r4.py               # R4H/R4M/R4Q XML
+│   ├── r171.py             # R171 XML
+│   ├── r50.py              # R50 XML
+│   ├── r151.py             # R151 XML
+│   ├── r63.py              # R63 JSON/CSV
+│   ├── r64.py              # R64 JSON/CSV
+│   └── c68.py              # C68 JSON/CSV
 └── scripts/
-    ├── decrypt_samples.py  # (déprécié) Script autonome de décryptage vers XML
-    └── ingest_real_db.py   # (déprécié) Script autonome d'ingestion
+    ├── backfill_c68_payload_raw.py
+    ├── decrypt_samples.py
+    └── ingest_real_db.py
 ```
 
 ### Principes de conception
 
-| Principe | Description |
-|----------|-------------|
-| **Parsers purs** | Les parsers sont des fonctions pures : bytes en entrée, dataclasses en sortie. Aucun accès DB, aucun effet de bord. |
-| **Stockage brut** | Toutes les valeurs sont stockées en `String`, sans conversion (`float`, `datetime`, UTC). Garantie zéro perte de donnée. |
-| **Dispatch table** | Le routage flux → parser → stockage est une table de dispatch. Ajouter un nouveau type de flux = 1 parser + 1 entrée dans la table. |
-| **Idempotence fichier** | SHA256 du fichier chiffré. Même contenu physique = pas de re-traitement. |
-| **Crash recovery** | Conception en 2 phases. Un crash en cours de traitement laisse les fichiers en statut `RECEIVED`, qui seront repris au prochain run. |
-| **Base dédiée raw** | Les tables Enedis brutes utilisent `FluxDataBase` et sont stockées dans `flux_data.db` en dev, séparées de `promeos.db`. |
+| Principe | Implémentation |
+|----------|----------------|
+| Archive brute | Valeurs stockées comme chaînes, pas de conversion numérique ou temporelle |
+| Base raw dédiée | Modèles rattachés à `FluxDataBase`, stockage dans `flux_data.db` |
+| Parsers purs | Les parsers transforment des bytes en dataclasses, sans accès DB |
+| Transport séparé du parsing | SF5 résout d'abord direct ZIP ou AES, puis valide le conteneur, puis parse le payload |
+| Dispatch explicite | Legacy XML via `_DISPATCH`, SF5 via handlers dédiés R6X/C68 |
+| Idempotence fichier | SHA256 du fichier physique reçu |
+| Pas de déduplication mesure | Les doublons restent en raw ; la décision est repoussée à la promotion |
+| Crash recovery | Scan en deux phases avec statut `received` repris au run suivant |
+| Audit | Runs, erreurs par tentative et statuts fichier conservés |
 
-### Intégration avec le reste du backend
+### Intégration backend
 
-- **Routes** : le routeur FastAPI est enregistré dans `main.py` sous le préfixe `/api/enedis`
-- **Base de données** : les tables raw sont créées au démarrage via `data_ingestion/enedis/migrations.py` (`run_flux_data_migrations()`)
-- **Session** : l'API utilise `database.get_flux_data_db()`, le CLI utilise `database.FluxDataSessionLocal()`
-- **Aucun lien vers les entités métier** : les tables de staging n'ont pas de FK vers `Compteur`, `Site` ou `Consommation`
+- **Routes** : `backend/routes/enedis.py`, préfixe `/api/enedis`.
+- **Session API** : `database.get_flux_data_db()`.
+- **Session CLI** : `database.FluxDataSessionLocal()`.
+- **Migrations raw** : `data_ingestion/enedis/migrations.py::run_flux_data_migrations()`.
+- **Séparation produit/raw** : les tables `enedis_flux_*` ne sont pas créées dans `promeos.db`.
+- **Aucune FK métier** : pas de relation vers `Site`, `Compteur`, `Consommation` ou les tables de promotion.
 
 ---
 
 ## 6. Flux de données de bout en bout
 
+### Chemin legacy XML (`R4H`, `R4M`, `R4Q`, `R171`, `R50`, `R151`)
+
+```text
+Fichier reçu
+  │
+  ├─ classify_flux(filename)
+  │
+  ├─ SHA256 du fichier physique
+  │
+  ├─ vérification idempotence / retry / republication
+  │
+  ├─ decrypt_file()
+  │    ├─ AES-128-CBC + PKCS7
+  │    ├─ ZIP post-décryptage : extraction du premier membre
+  │    └─ validation XML
+  │
+  ├─ parser XML spécifique
+  │
+  ├─ _create_flux_file()
+  │
+  └─ _store_r4x/_store_r171/_store_r50/_store_r151()
+       └─ insertions batch dans flux_data.db
 ```
-┌──────────────────┐
-│  Fichier .zip    │  Fichier chiffré AES-128-CBC déposé sur le FTP Enedis
-│  (ciphertext)    │
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  Classification  │  Identification du type de flux via le nom de fichier
-│  (classify_flux) │  → FluxType (R4H, R50, UNKNOWN, etc.)
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  Hash SHA256     │  Calcul de l'empreinte du fichier chiffré
-│  (idempotence)   │  → Vérification : déjà traité ?
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  Décryptage      │  AES-128-CBC + PKCS7, essai séquentiel des clés
-│  (decrypt_file)  │  → Extraction ZIP → Validation XML
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  Parsing XML     │  Parser spécifique au type de flux
-│  (parse_r4x/...) │  → Dataclasses typées (valeurs brutes string)
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  Stockage        │  Insertion batch en base (chunks de 1000 lignes)
-│  (_store_r4x/..) │  → EnedisFluxFile + mesures dans la table dédiée
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  Tables staging  │  enedis_flux_file (registre)
-│ (flux_data.db)   │  enedis_flux_mesure_r4x / r171 / r50 / r151 (mesures)
-└──────────────────┘
+
+Ce que cela veut dire pour un R50 : le fichier est déchiffré, le XML est lu, chaque `PDC` devient une ligne dans `enedis_flux_mesure_r50`, et le registre `enedis_flux_file` porte le statut final et le nombre de points stockés.
+
+### Chemin SF5 R6X (`R63`, `R64`)
+
+```text
+Fichier ENEDIS_R63/R64_*.zip
+  │
+  ├─ classification SF5 par segment codeFlux
+  │
+  ├─ SHA256 du fichier physique
+  │
+  ├─ resolve_payload(expected="zip")
+  │    ├─ si ZIP direct : utilisé tel quel
+  │    └─ sinon : tentative AES avec les clés disponibles
+  │
+  ├─ extract_r6x_payload()
+  │    ├─ archive ZIP avec exactement 1 membre
+  │    ├─ membre JSON ou CSV
+  │    └─ cohérence nomenclature archive ↔ payload
+  │
+  ├─ parse_r63_payload() ou parse_r64_payload()
+  │
+  └─ stockage dans enedis_flux_mesure_r63 ou enedis_flux_index_r64
 ```
+
+Exemple : `ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.zip` doit contenir un seul payload `ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.json` ou `.csv`. Si le payload annonce `00002` alors que l'archive annonce `00001`, le fichier passe en `error` sans insert partiel.
+
+### Chemin SF5 C68
+
+```text
+Fichier ENEDIS_C68_*.zip (archive primaire)
+  │
+  ├─ classification C68
+  │
+  ├─ SHA256 du fichier physique
+  │
+  ├─ resolve_payload(expected="zip")
+  │
+  ├─ extract_c68_payloads()
+  │    ├─ archive primaire : séquence 00001 obligatoire
+  │    ├─ 1 à 10 archives secondaires
+  │    ├─ chaque secondaire contient exactement 1 JSON ou CSV
+  │    ├─ séquences secondaires contiguës 00001..N
+  │    └─ pas de mélange JSON/CSV dans une même primaire
+  │
+  ├─ parse_c68_payload() pour chaque payload secondaire
+  │
+  └─ stockage dans enedis_flux_itc_c68
+```
+
+Ce que cela veut dire pour l'utilisateur : une demande ITC C68 livrée en deux archives secondaires est stockée comme un seul fichier de registre avec `archive_members_count=2`, puis une ligne raw par PRM dans `enedis_flux_itc_c68`.
 
 ---
 
-## 7. Décryptage
+## 7. Décryptage et transport
 
-**Fichier** : `decrypt.py`
+### Décryptage legacy (`decrypt.py`)
 
-### Algorithme
+Le décryptage legacy est utilisé pour les flux XML SF1-SF4.
 
-- **Chiffrement** : AES-128-CBC avec padding PKCS7
-- **Clés** : jusqu'à 9 paires clé/IV, chargées depuis les variables d'environnement `KEY_1/IV_1` à `KEY_9/IV_9`
-- **Format des clés** : hexadécimal (32 caractères hex = 16 octets pour AES-128)
-- **Essai séquentiel** : chaque paire est essayée dans l'ordre jusqu'à obtenir un XML valide. Il n'existe pas de correspondance déterministe entre une clé et un type de flux.
-- **Nombre de clés en production POC** : 3 paires
+| Élément | Détail |
+|---------|--------|
+| Chiffrement | AES-128-CBC |
+| Padding | PKCS7 |
+| Clés | `KEY_1/IV_1` à `KEY_9/IV_9` |
+| Format clé/IV | Hexadécimal, 32 caractères pour 16 octets |
+| Stratégie | Essai séquentiel des paires disponibles |
+| Sortie attendue | XML direct ou ZIP contenant un XML |
 
-### Processus de décryptage (`decrypt_file()`)
+`decrypt_file()` valide que le résultat est parseable en XML. Si un ZIP est produit, l'implémentation actuelle extrait uniquement le premier membre.
 
-1. Lecture du fichier chiffré (ciphertext brut)
-2. Pour chaque paire (clé, IV) :
-   - Tentative AES-128-CBC + dépadding PKCS7
-   - Si le déchiffrement échoue → paire suivante
-   - Inspection du résultat :
-     - Octets magiques `PK\x03\x04` → c'est un ZIP → extraction du premier fichier contenu
-     - Premier caractère `<` → XML direct
-     - Autre → paire suivante
-   - Validation : le résultat doit être parseable par `xml.etree.ElementTree`
-3. Si `archive_dir` est fourni : sauvegarde du XML décrypté sur disque (audit)
-4. Si aucune clé ne produit un XML valide → `DecryptError`
+### Chargement des clés
 
-### Classification (`classify_flux()`)
+`load_keys_from_env()` :
 
-Identification du type de flux par recherche de motif dans le nom de fichier (voir section 4).
+- parcourt les indices `1..9` et charge chaque paire `KEY_n/IV_n` présente ;
+- échoue si une clé existe sans IV, ou inversement ;
+- échoue si aucune paire n'est trouvée.
 
-### Gestion des clés (`load_keys_from_env()`)
+La CLI et l'API attrapent `MissingKeyError` et continuent avec `keys=[]`. Cela permet d'ingérer des fichiers SF5 directement ouvrables même quand les clés ne sont pas configurées. En revanche, un flux legacy chiffré ou un SF5 chiffré passera en `error` si aucune clé n'est disponible pour l'ouvrir.
 
-- Lecture des variables `KEY_1/IV_1`, `KEY_2/IV_2`, etc. dans l'ordre
-- Arrêt au premier indice absent (si `KEY_3` manque, seules les paires 1 et 2 sont chargées)
-- Erreur si `KEY_i` est présent sans `IV_i` (ou inversement)
-- Erreur si aucune paire n'est trouvée (`MissingKeyError`)
+### Transport SF5 (`transport.py`)
+
+SF5 utilise `resolve_payload()` au lieu de `decrypt_file()` :
+
+1. Lire les bytes du fichier reçu.
+2. Vérifier si ces bytes correspondent déjà au type attendu (`zip` pour R63/R64/C68).
+3. Si oui, transport `direct`.
+4. Sinon, tenter `aes_unwrap_bytes()` avec les clés disponibles.
+5. Valider que le plaintext obtenu correspond au type attendu.
+
+Le transport ne parse pas le contenu métier. Il répond seulement à la question : "ai-je maintenant un ZIP exploitable ?"
 
 ---
 
-## 8. Parsers XML
+## 8. Parsers
 
-Chaque parser est une fonction pure : `bytes → dataclass`. Aucun accès base de données, aucun effet de bord. Les valeurs sont toujours conservées en tant que chaînes de caractères brutes telles qu'elles apparaissent dans le XML.
+Chaque parser est volontairement limité à la transformation bytes → dataclasses. Le stockage en base est fait dans `pipeline.py`.
 
-### 8.1 Utilitaires partagés (`_helpers.py`)
+### 8.1 Utilitaires XML partagés
 
-Trois fonctions utilisées par tous les parsers pour gérer les variations de namespace XML (ERDF → ENEDIS, namespaces `ns2:`, etc.) :
+`parsers/_helpers.py` fournit :
 
 | Fonction | Rôle |
 |----------|------|
-| `strip_ns(tag)` | Retire le préfixe namespace d'un tag XML : `{http://...}Tag` → `Tag` |
-| `find_child(parent, tag_name)` | Trouve le premier enfant direct correspondant au nom de tag (tolérant aux namespaces) |
-| `child_text(parent, tag_name)` | Retourne le contenu texte du premier enfant correspondant, ou `None` |
+| `strip_ns(tag)` | Supprime le namespace XML d'un tag |
+| `find_child(parent, tag_name)` | Trouve un enfant direct en ignorant les namespaces |
+| `child_text(parent, tag_name)` | Retourne le texte d'un enfant, ou `None` |
 
----
+Ces helpers permettent d'accepter des XML avec préfixes `ns2:` ou anciennes mentions `ERDF`.
 
 ### 8.2 R4x -- Courbe de charge C1-C4
 
 **Fichier** : `parsers/r4.py`
-**Flux concernés** : R4H, R4M, R4Q (même structure XML, même parser)
-**Fonction** : `parse_r4x(xml_bytes) → ParsedR4xFile`
 
-#### Structure XML
+Flux concernés : `R4H`, `R4M`, `R4Q`.
 
-```xml
-<Courbe>
-  <Entete>
-    <Identifiant_Flux>R4x</Identifiant_Flux>
-    <Libelle_Flux>...</Libelle_Flux>
-    <Identifiant_Emetteur>ENEDIS</Identifiant_Emetteur>
-    <Identifiant_Destinataire>...</Identifiant_Destinataire>
-    <Date_Creation>...</Date_Creation>
-    <Frequence_Publication>H|M|Q</Frequence_Publication>
-    <Reference_Demande>...</Reference_Demande>
-    <Nature_De_Courbe_Demandee>Brute|Corrigee</Nature_De_Courbe_Demandee>
-  </Entete>
-  <Corps>
-    <Identifiant_PRM>30000210411333</Identifiant_PRM>   <!-- 14 chiffres, 1 par fichier -->
-    <Donnees_Courbe>                                      <!-- 1..N par Corps -->
-      <Horodatage_Debut>2026-03-01T00:00:00+01:00</Horodatage_Debut>
-      <Horodatage_Fin>2026-03-02T00:00:00+01:00</Horodatage_Fin>
-      <Granularite>10</Granularite>                       <!-- pas en minutes (5 ou 10) -->
-      <Unite_Mesure>kW</Unite_Mesure>                     <!-- kW, kWr, V -->
-      <Grandeur_Metier>CONS</Grandeur_Metier>             <!-- CONS ou PROD -->
-      <Grandeur_Physique>EA</Grandeur_Physique>           <!-- EA, ERC, ERI, E -->
-      <Donnees_Point_Mesure
-        Horodatage="2026-03-01T00:10:00+01:00"
-        Valeur_Point="1234"
-        Statut_Point="R"/>                                <!-- attributs XML -->
-      <!-- ... répété pour chaque pas de temps -->
-    </Donnees_Courbe>
-  </Corps>
-</Courbe>
-```
+Le parser lit un XML `<Courbe>` et produit une ligne raw par `<Donnees_Point_Mesure>`.
 
-#### Champs obligatoires
+| Champ raw | Source | Sens fonctionnel |
+|-----------|--------|------------------|
+| `point_id` | `Identifiant_PRM` | PRM du fichier |
+| `horodatage_debut` / `horodatage_fin` | Bloc `Donnees_Courbe` | Fenêtre couverte par le bloc |
+| `granularite` | `Granularite` | Pas en minutes, stocké brut |
+| `unite_mesure` | `Unite_Mesure` | Unité Enedis brute |
+| `grandeur_metier` | `Grandeur_Metier` | `CONS`, `PROD`, etc. |
+| `grandeur_physique` | `Grandeur_Physique` | `EA`, `ERC`, `ERI`, etc. |
+| `horodatage` | attribut `Horodatage` | Début de l'intervalle couvert |
+| `valeur_point` | attribut `Valeur_Point` | Valeur brute |
+| `statut_point` | attribut `Statut_Point` | Qualité/statut Enedis brut |
 
-- Balise racine `<Courbe>`
-- `<Entete>` présent
-- `<Corps>` présent avec `<Identifiant_PRM>` non vide
-- Chaque `<Donnees_Point_Mesure>` doit avoir l'attribut `Horodatage`
+Point métier important : la valeur R4x associée à `Horodatage=H` représente l'intervalle `[H ; H + granularité[`. Les passages heure d'été/hiver doivent être interprétés plus tard à partir des offsets fournis par Enedis.
 
-#### Champs optionnels (stockés `None` si absents)
-
-- `Valeur_Point`, `Statut_Point` sur les points de mesure
-- Tous les champs du bloc `<Donnees_Courbe>` (granularité, unité, etc.)
-
-#### Tolérances
-
-- Préfixe `ERDF_` dans l'émetteur (nom historique d'Enedis)
-- `<Donnees_Courbe>` vide (0 points) : liste vide, pas d'erreur
-
-#### Contraintes officielles utiles (guide R4x v2.0.3)
-
-- Les dates R4x sont vehiculees en "heure legale Paris" avec decalage horaire explicite.
-- Au passage a l'heure d'hiver, la tranche locale `[02:00 ; 03:00[` apparait deux fois avec deux offsets differents.
-- Au passage a l'heure d'ete, la tranche locale `[02:00 ; 03:00[` est absente et ce n'est pas une anomalie de donnees.
-- La `Granularite` officielle R4x est `10` avant la date de bascule Enedis et `5` apres. Le module de staging stocke la valeur brute et ne hardcode pas cette date.
-- La `Valeur_Point` associee a un `Horodatage=H` represente la valeur moyenne sur la periode suivante, de duree egale a la granularite. En pratique, les donnees R4x doivent donc etre interpretees comme couvrant l'intervalle demi-ouvert `[H ; H + granularite[`, pas comme un echantillon instantane pris a `H`.
-- Le guide officiel autorise une archive ZIP contenant un ou plusieurs XML. Les fichiers observes dans le POC etaient mono-XML, et `decrypt_file()` extrait encore uniquement le premier membre de l'archive. Le support multi-XML reste donc un point de durcissement pour SF1-SF4.
-
-#### Données produites
-
-| Champ dataclass | Source XML | Description |
-|-----------------|-----------|-------------|
-| `header.raw` | Tous les enfants de `<Entete>` | Dictionnaire `{tag: texte}` |
-| `header.frequence_publication` | `Frequence_Publication` | H (hebdomadaire), M (mensuel), Q (quotidien) |
-| `header.nature_courbe_demandee` | `Nature_De_Courbe_Demandee` | Brute ou Corrigee |
-| `header.identifiant_destinataire` | `Identifiant_Destinataire` | Code du destinataire |
-| `point_id` | `Identifiant_PRM` | PRM 14 chiffres (1 par fichier) |
-| `courbes[].horodatage_debut` | `Horodatage_Debut` | Début de la période du bloc |
-| `courbes[].horodatage_fin` | `Horodatage_Fin` | Fin de la période du bloc |
-| `courbes[].granularite` | `Granularite` | Pas en minutes ("5" ou "10") |
-| `courbes[].unite_mesure` | `Unite_Mesure` | kW, kWr, V |
-| `courbes[].grandeur_metier` | `Grandeur_Metier` | CONS ou PROD |
-| `courbes[].grandeur_physique` | `Grandeur_Physique` | EA, ERC, ERI, E |
-| `courbes[].points[].horodatage` | attribut `Horodatage` | ISO8601 avec timezone, debut de l'intervalle couvert |
-| `courbes[].points[].valeur_point` | attribut `Valeur_Point` | Valeur brute string |
-| `courbes[].points[].statut_point` | attribut `Statut_Point` | R/H/P/S/T/F/G/E/C/K/D |
-
----
-
-### 8.3 R171 -- Index journalier C2-C4
+### 8.3 R171 -- Mesures datées quotidiennes C2-C4
 
 **Fichier** : `parsers/r171.py`
-**Flux concerné** : R171
-**Fonction** : `parse_r171(xml_bytes) → ParsedR171File`
 
-#### Structure XML
+Le parser lit un XML `<R171>` et produit une ligne par `mesureDatee`.
 
-```xml
-<ns2:R171 xmlns:ns2="http://www.enedis.fr/stm/R171">
-  <entete>
-    <emetteur>Enedis</emetteur>
-    <destinataire>GRD-F121</destinataire>
-    <dateHeureCreation>2026-03-01T01:13:01</dateHeureCreation>
-    <flux>R171</flux>
-    <version>1.0</version>
-  </entete>
-  <serieMesuresDateesListe>
-    <serieMesuresDatees>                              <!-- 1..N, multi-PRM possible -->
-      <prmId>30000550506121</prmId>                   <!-- obligatoire -->
-      <type>INDEX</type>                              <!-- obligatoire -->
-      <grandeurMetier>CONS</grandeurMetier>
-      <grandeurPhysique>EA</grandeurPhysique>
-      <typeCalendrier>D</typeCalendrier>
-      <codeClasseTemporelle>HPH</codeClasseTemporelle>
-      <libelleClasseTemporelle>Heures Pleines Hiver</libelleClasseTemporelle>
-      <unite>Wh</unite>
-      <mesuresDateesListe>
-        <mesureDatee>
-          <dateFin>2026-03-01T00:51:11</dateFin>      <!-- obligatoire -->
-          <valeur>1320</valeur>
-        </mesureDatee>
-      </mesuresDateesListe>
-    </serieMesuresDatees>
-  </serieMesuresDateesListe>
-</ns2:R171>
-```
+| Champ raw | Source | Sens fonctionnel |
+|-----------|--------|------------------|
+| `point_id` | `prmId` | PRM |
+| `type_mesure` | `type` | Observé : `INDEX` |
+| `grandeur_metier` | `grandeurMetier` | `CONS`, `PROD` |
+| `grandeur_physique` | `grandeurPhysique` | `EA`, `PMA`, `DD`, etc. |
+| `type_calendrier` | `typeCalendrier` | Grille distributeur/fournisseur |
+| `code_classe_temporelle` | `codeClasseTemporelle` | HPH, HCH, P, etc. |
+| `unite` | `unite` | Wh, W, s, VA, VArh |
+| `date_fin` | `dateFin` | Horodatage de lecture |
+| `valeur` | `valeur` | Valeur brute |
 
-**Particularités du R171** :
-- Noms de balises en camelCase (schéma ADR V70), contrairement aux R4x/R50/R151 en underscore
-- Namespace `ns2:` sur la racine (optionnel, géré par `strip_ns`)
-- **Multi-PRM** : un fichier peut contenir des séries pour plusieurs PRM différents
-- **Multi-guichet** : la documentation officielle prévoit un ou plusieurs fichiers par jour, à partir de 02:00 locale, et le corpus réel montre souvent 2 à 4 fichiers pour un même `id_demande_publication`
-- **Nomenclature officielle** : `ENEDIS_R171_<grandeur_metier>_<id_demande_publication>_<type_destinataire>_<id_destinataire>_<horodatage>.zip`
-- **Temporalité officielle** : les index du jour `J` sont lus, datés et transmis en `J+1`; `dateFin` est donc une date/heure de lecture, pas un libellé métier "consommation du jour"
-
-#### Champs obligatoires
-
-**Côté Enedis / XSD officielle** :
-- Balise racine `<R171>` avec `<entete>` puis `<serieMesuresDateesListe>`
-- Dans chaque `<serieMesuresDatees>` : `prmId`, `type`, `grandeurMetier`, `grandeurPhysique`, `typeCalendrier`, `codeClasseTemporelle`, `libelleClasseTemporelle`, `unite`, `mesuresDateesListe`
-- Dans chaque `<mesureDatee>` : `dateFin` et `valeur`
-
-**Côté parser Promeos actuel** :
-- Balise racine `<R171>` (avec ou sans namespace)
-- `<entete>` et `<serieMesuresDateesListe>` présents
-- Chaque `<serieMesuresDatees>` : `<prmId>` et `<type>` non vides
-- Chaque `<mesureDatee>` : `<dateFin>` non vide
-
-Le parser est donc volontairement plus tolérant que la XSD officielle sur certains champs, afin de préserver l'archivage brut même si un flux réel est partiellement incomplet.
-
-#### Données produites
-
-| Champ dataclass | Source XML | Description |
-|-----------------|-----------|-------------|
-| `header.raw` | Enfants de `<entete>` | Dictionnaire `{tag: texte}` |
-| `series[].point_id` | `prmId` | PRM 14 chiffres |
-| `series[].type_mesure` | `type` | Valeur brute du XML. Observé : `INDEX`. L'annexe officielle mentionne `IDX` |
-| `series[].grandeur_metier` | `grandeurMetier` | CONS, PROD |
-| `series[].grandeur_physique` | `grandeurPhysique` | Officiel : EA, PMA, ERC, ERI, ER, TF, DD, DE, DQ. Observé : DD, DQ, EA, ERC, ERI, PMA, TF |
-| `series[].type_calendrier` | `typeCalendrier` | D (distributeur) ou F (fournisseur) |
-| `series[].code_classe_temporelle` | `codeClasseTemporelle` | HPH, HCH, HPE, HCE, P |
-| `series[].libelle_classe_temporelle` | `libelleClasseTemporelle` | Texte humain |
-| `series[].unite` | `unite` | Officiel : Wh, W, s, VA, VARh. Observé : Wh, W, s, VA, VArh |
-| `series[].mesures[].date_fin` | `dateFin` | ISO8601 sans timezone, date/heure de lecture |
-| `series[].mesures[].valeur` | `valeur` | Valeur brute string |
-
-**Observations du corpus réel** :
-- Les fichiers réels contiennent actuellement 1 `mesureDatee` par `serieMesuresDatees`, mais la XSD autorise `1..*`
-- Le corpus réel ne contient pour l'instant que `typeCalendrier=D`, mais la documentation officielle autorise aussi `F`
-- Le corpus réel contient `CONS` et `PROD`
-
----
+Le fichier peut contenir plusieurs PRM et plusieurs séries. Le parser est plus tolérant que la XSD sur certains champs optionnels afin de préserver l'archive brute.
 
 ### 8.4 R50 -- Courbe de charge C5
 
 **Fichier** : `parsers/r50.py`
-**Flux concerné** : R50
-**Fonction** : `parse_r50(xml_bytes) → ParsedR50File`
 
-#### Structure XML
+Le parser lit un XML `<R50>` et produit une ligne par `PDC`.
 
-```xml
-<R50>
-  <En_Tete_Flux>
-    <Identifiant_Flux>R50</Identifiant_Flux>
-    <Libelle_Flux>Courbes de charge des PRM du segment C5 sur abonnement</Libelle_Flux>
-    <Version_XSD>1.1.0</Version_XSD>
-    <Identifiant_Emetteur>ERDF</Identifiant_Emetteur>     <!-- historique ERDF -->
-    <Identifiant_Destinataire>...</Identifiant_Destinataire>
-    <Date_Creation>...</Date_Creation>
-    <Identifiant_Contrat>...</Identifiant_Contrat>
-    <Numero_Abonnement>...</Numero_Abonnement>
-    <Pas_Publication>30</Pas_Publication>                   <!-- pas de courbe = 30 minutes -->
-  </En_Tete_Flux>
-  <PRM>                                                     <!-- 1..N -->
-    <Id_PRM>30001234567890</Id_PRM>
-    <Donnees_Releve>                                        <!-- 1..N par PRM -->
-      <Date_Releve>2023-01-02</Date_Releve>
-      <Id_Affaire>M041AWXF</Id_Affaire>
-      <PDC>                                                 <!-- 0..N par releve -->
-        <H>2023-01-02T00:30:00+01:00</H>                   <!-- fin de l'intervalle de 30 min -->
-        <V>20710</V>                                        <!-- puissance moyenne sur les 30 min precedentes, en W -->
-        <IV>0</IV>                                          <!-- indice de vraisemblance optionnel -->
-      </PDC>
-    </Donnees_Releve>
-  </PRM>
-</R50>
-```
+| Champ raw | Source | Sens fonctionnel |
+|-----------|--------|------------------|
+| `point_id` | `Id_PRM` | PRM |
+| `date_releve` | `Date_Releve` | Date du relevé |
+| `id_affaire` | `Id_Affaire` | Affaire Enedis |
+| `horodatage` | `H` | Fin de l'intervalle de 30 minutes |
+| `valeur` | `V` | Puissance moyenne brute en W |
+| `indice_vraisemblance` | `IV` | Qualité brute, `1` = valeur sujette à caution |
 
-**Particularités du R50** :
-- Structure à 3 niveaux d'imbrication : fichier → PRM → relevé → PDC
-- **Multi-PRM** : un fichier contient les courbes de plusieurs PRM
-- `Pas_Publication=30` décrit le **pas de la courbe**, pas la cadence quotidienne/mensuelle du fichier
-- La valeur `V` est une **puissance moyenne en watts** sur les **30 minutes precedant** `H`
-- Un releve journalier complet pour `Date_Releve=D` s'etend typiquement de `H=00:30` sur `D` a `H=00:00` sur `D+1`
-- Une journee normale contient souvent 48 PDC, mais le corpus reel montre aussi 46 points au passage DST de printemps et des `PDC` avec `H` seul quand la valeur n'est pas encore disponible
-- `IV=1` signifie officiellement **"valeur sujette a caution"**, pas explicitement "estimee"
-- L'émetteur peut être `ERDF` (nom historique)
-- Le parser est volontairement **plus tolerant que la XSD** sur certains cas de bord (ex: liste PRM vide) pour privilegier l'archivage brut en situation degradee
-
-#### Champs obligatoires
-
-- Balise racine `<R50>`
-- `<En_Tete_Flux>` présent
-- Chaque `<PRM>` : `<Id_PRM>` non vide
-- Chaque `<Donnees_Releve>` : `<Date_Releve>` non vide
-- Chaque `<PDC>` : `<H>` non vide
-
-#### Données produites
-
-| Champ dataclass | Source XML | Description |
-|-----------------|-----------|-------------|
-| `header.raw` | Enfants de `<En_Tete_Flux>` | Dictionnaire `{tag: texte}` |
-| `prms[].point_id` | `Id_PRM` | PRM 14 chiffres |
-| `prms[].releves[].date_releve` | `Date_Releve` | Date du relevé |
-| `prms[].releves[].id_affaire` | `Id_Affaire` | Identifiant d'affaire (optionnel) |
-| `prms[].releves[].points[].horodatage` | `H` | ISO8601 avec timezone -- **fin** de l'intervalle couvert |
-| `prms[].releves[].points[].valeur` | `V` | Valeur brute string -- puissance moyenne en **W** |
-| `prms[].releves[].points[].indice_vraisemblance` | `IV` | "0" ou "1" (`1` = valeur sujette a caution) |
-
----
+Exemple : un point `H=2023-01-02T00:30:00+01:00` porte la puissance moyenne des 30 minutes précédentes, pas une mesure instantanée prise à 00:30.
 
 ### 8.5 R151 -- Index et puissance maximale C5
 
 **Fichier** : `parsers/r151.py`
-**Flux concerné** : R151
-**Fonction** : `parse_r151(xml_bytes) → ParsedR151File`
 
-#### Structure XML
+Le parser lit un XML `<R151>` et produit une ligne par valeur d'index ou de puissance maximale.
 
-```xml
-<R151>
-  <En_Tete_Flux>
-    <Identifiant_Flux>R151</Identifiant_Flux>
-    <Libelle_Flux>Puissances maximales et index des PRM du segment C5 sur abonnement</Libelle_Flux>
-    <Version_XSD>V1</Version_XSD>
-    <Identifiant_Emetteur>ERDF</Identifiant_Emetteur>
-    <Identifiant_Destinataire>...</Identifiant_Destinataire>
-    <Date_Creation>...</Date_Creation>
-    <Identifiant_Contrat>...</Identifiant_Contrat>
-    <Numero_Abonnement>...</Numero_Abonnement>
-    <Unite_Mesure_Index>Wh</Unite_Mesure_Index>
-    <Unite_Mesure_Puissance>VA</Unite_Mesure_Puissance>
-  </En_Tete_Flux>
-  <PRM>
-    <Id_PRM>30001234567890</Id_PRM>
-    <Donnees_Releve>
-      <Date_Releve>2024-12-17</Date_Releve>
-      <Id_Calendrier_Fournisseur>CF001</Id_Calendrier_Fournisseur>
-      <Libelle_Calendrier_Fournisseur>Base</Libelle_Calendrier_Fournisseur>
-      <Id_Calendrier_Distributeur>CD001</Id_Calendrier_Distributeur>
-      <Libelle_Calendrier_Distributeur>4 postes</Libelle_Calendrier_Distributeur>
-      <Id_Affaire>...</Id_Affaire>
+| Type synthétisé | Source XML | Sens |
+|-----------------|------------|------|
+| `CT_DIST` | `Classe_Temporelle_Distributeur` | Index grille distributeur |
+| `CT` | `Classe_Temporelle` | Index grille fournisseur |
+| `PMAX` | `Puissance_Maximale` | Puissance maximale |
 
-      <!-- Index grille distributeur -->
-      <Classe_Temporelle_Distributeur>
-        <Id_Classe_Temporelle>HCB</Id_Classe_Temporelle>
-        <Libelle_Classe_Temporelle>Heures Creuses Basses</Libelle_Classe_Temporelle>
-        <Rang_Cadran>1</Rang_Cadran>
-        <Valeur>83044953</Valeur>
-        <Indice_Vraisemblance>0</Indice_Vraisemblance>
-      </Classe_Temporelle_Distributeur>
+Le champ `type_donnee` n'existe pas dans le XML : il est synthétisé par le parser pour rendre la table raw interrogeable.
 
-      <!-- Index grille fournisseur -->
-      <Classe_Temporelle>
-        <Id_Classe_Temporelle>HC</Id_Classe_Temporelle>
-        <Libelle_Classe_Temporelle>Heures Creuses</Libelle_Classe_Temporelle>
-        <Rang_Cadran>1</Rang_Cadran>
-        <Valeur>18047813</Valeur>
-        <Indice_Vraisemblance>0</Indice_Vraisemblance>
-      </Classe_Temporelle>
+### 8.6 R63 -- Courbe de charge R6X ponctuelle
 
-      <!-- Puissance maximale -->
-      <Puissance_Maximale>
-        <Valeur>7452</Valeur>
-      </Puissance_Maximale>
-    </Donnees_Releve>
-  </PRM>
-</R151>
+**Fichier** : `parsers/r63.py`
+
+Le parser accepte `JSON` et `CSV`.
+
+Structure JSON attendue :
+
+```text
+header
+mesures[]
+  idPrm
+  etapeMetier
+  modeCalcul
+  periode.dateDebut/dateFin
+  grandeur[]
+    grandeurMetier
+    grandeurPhysique
+    unite
+    points[]
+      d, v, p, n, tc, iv, ec
 ```
 
-**Particularités du R151** :
-- Structure à 3 niveaux : fichier → PRM → relevé → données
-- **3 types de données dans un même relevé**, distingués par le tag XML :
-  - `<Classe_Temporelle_Distributeur>` → `type_donnee = "CT_DIST"` (grille distributeur)
-  - `<Classe_Temporelle>` → `type_donnee = "CT"` (grille fournisseur)
-  - `<Puissance_Maximale>` → `type_donnee = "PMAX"` (puissance maximale atteinte)
-- Le discriminant `type_donnee` est **synthétisé par le parser** (il n'existe pas dans le XML)
-- Les lignes PMAX n'ont pas de classe temporelle ni d'indice de vraisemblance (stockés `None`)
+Colonnes CSV reconnues par alias normalisés :
 
-#### Champs obligatoires
+| Champ dataclass | Exemples d'en-tête CSV |
+|-----------------|------------------------|
+| `point_id` | `Identifiant PRM` |
+| `periode_date_debut` | `Date de début` |
+| `periode_date_fin` | `Date de fin` |
+| `grandeur_physique` | `Grandeur physique` |
+| `grandeur_metier` | `Grandeur métier` |
+| `etape_metier` | `Etape métier` |
+| `unite` | `Unité` |
+| `horodatage` | `Horodate` |
+| `valeur` | `Valeur` |
+| `nature_point` | `Nature` |
+| `pas` | `Pas` |
+| `type_correction` | `Type correction`, `tc` |
+| `indice_vraisemblance` | `Indice de vraisemblance`, `iv` |
+| `etat_complementaire` | `Etat complémentaire`, `ec` |
 
-- Balise racine `<R151>`
-- `<En_Tete_Flux>` présent
-- Chaque `<PRM>` : `<Id_PRM>` non vide
-- Chaque `<Donnees_Releve>` : `<Date_Releve>` non vide
+Chaque point devient une ligne `enedis_flux_mesure_r63`. Les clés JSON inconnues sont enregistrées comme warnings dans `header_raw`.
 
-#### Données produites
+### 8.7 R64 -- Index R6X ponctuels
 
-| Champ dataclass | Source XML | Description |
-|-----------------|-----------|-------------|
-| `header.raw` | Enfants de `<En_Tete_Flux>` | Dictionnaire `{tag: texte}` |
-| `prms[].point_id` | `Id_PRM` | PRM 14 chiffres |
-| `prms[].releves[].date_releve` | `Date_Releve` | Date du relevé |
-| `prms[].releves[].id_calendrier_fournisseur` | `Id_Calendrier_Fournisseur` | Identifiant calendrier |
-| `prms[].releves[].libelle_calendrier_fournisseur` | `Libelle_Calendrier_Fournisseur` | Libellé |
-| `prms[].releves[].id_calendrier_distributeur` | `Id_Calendrier_Distributeur` | Identifiant calendrier |
-| `prms[].releves[].libelle_calendrier_distributeur` | `Libelle_Calendrier_Distributeur` | Libellé |
-| `prms[].releves[].id_affaire` | `Id_Affaire` | Identifiant d'affaire |
-| `prms[].releves[].donnees[].type_donnee` | *(déduit du tag)* | CT_DIST, CT, ou PMAX |
-| `prms[].releves[].donnees[].id_classe_temporelle` | `Id_Classe_Temporelle` | HCB/HCH/HPB/HPH/HC/HP (null pour PMAX) |
-| `prms[].releves[].donnees[].libelle_classe_temporelle` | `Libelle_Classe_Temporelle` | Texte humain (null pour PMAX) |
-| `prms[].releves[].donnees[].rang_cadran` | `Rang_Cadran` | Numéro de cadran (null pour PMAX) |
-| `prms[].releves[].donnees[].valeur` | `Valeur` | Index en Wh ou puissance en VA |
-| `prms[].releves[].donnees[].indice_vraisemblance` | `Indice_Vraisemblance` | 0-15 (null pour PMAX) |
+**Fichier** : `parsers/r64.py`
+
+Le parser accepte `JSON` et `CSV`.
+
+Structure JSON attendue :
+
+```text
+header
+mesures[]
+  idPrm
+  periode.dateDebut/dateFin
+  contexte[]
+    etapeMetier
+    contexteReleve
+    typeReleve
+    motifReleve
+    grandeur[]
+      grandeurMetier
+      grandeurPhysique
+      unite
+      calendrier[].classeTemporelle[].valeur[]
+      cadranTotalisateur.valeur[]
+```
+
+Le parser aplatit les feuilles `valeur[]` en lignes `enedis_flux_index_r64`, en conservant le contexte de relève, la grandeur, le calendrier, la classe temporelle et le cadran quand ils existent.
+
+Pour l'utilisateur métier, cela signifie qu'un index R64 ne perd pas son contexte tarifaire brut : un même PRM peut avoir des valeurs rattachées à une grille fournisseur, une grille distributeur ou un cadran totalisateur.
+
+### 8.8 C68 -- Informations techniques et contractuelles
+
+**Fichier** : `parsers/c68.py`
+
+Le parser accepte `JSON` et `CSV`, après validation de l'archive C68 par `containers.py`.
+
+Granularité : une ligne `enedis_flux_itc_c68` par PRM snapshot.
+
+| Élément | Comportement |
+|---------|--------------|
+| `payload_raw` | JSON complet de l'objet PRM ou de la ligne CSV, sérialisé en texte |
+| Colonnes extraites | Allowlist de champs utiles pour requête rapide |
+| JSON nested | Recherche récursive pour certains champs techniques |
+| CSV | Mapping par noms d'en-têtes normalisés, pas par position |
+| Situations contractuelles multiples | Sélection de la plus récente si non ambiguë, sinon warning et colonnes contractuelles prudentes |
+| Puissance souscrite CSV | `36 kVA` est séparé en valeur `36` et unité `kVA` |
+
+Colonnes extraites principales :
+
+| Colonne | Sens |
+|---------|------|
+| `point_id` | PRM |
+| `contractual_situation_count` | Nombre de situations contractuelles JSON |
+| `date_debut_situation_contractuelle` | Date de début retenue si disponible |
+| `segment` | Segment contractuel |
+| `etat_contractuel` | État contractuel |
+| `formule_tarifaire_acheminement` | FTA ou code/libellé associé |
+| `code_tarif_acheminement` | Code tarif brut |
+| `siret`, `siren` | Identifiants client final |
+| `domaine_tension`, `tension_livraison` | Données techniques de tension |
+| `type_comptage`, `mode_releve`, `media_comptage`, `periodicite_releve` | Informations de comptage/relevé |
+| `puissance_*_valeur`, `puissance_*_unite` | Puissances contractuelles/techniques |
+| `type_injection`, `borne_fixe`, `refus_pose_linky`, `date_refus_pose_linky` | Champs C68 récents/observés |
+
+Le parser C68 ne normalise pas les branches riches comme `rattachements` ou `optionsContractuelles` dans des tables dédiées. Elles restent disponibles dans `payload_raw`.
 
 ---
 
@@ -671,125 +591,117 @@ Le parser est donc volontairement plus tolérant que la XSD officielle sur certa
 
 **Fichier** : `pipeline.py`
 
-Le pipeline orchestre l'ensemble du processus : classification → hash → décryptage → parsing → stockage. Il fonctionne en deux modes : traitement unitaire (`ingest_file()`) et traitement batch (`ingest_directory()`).
-
 ### 9.1 Traitement unitaire : `ingest_file()`
 
-Traite un seul fichier `.zip` et retourne un `FluxStatus`.
+`ingest_file(file_path, session, keys, ...)` traite un fichier et retourne un `FluxStatus`.
 
-**Séquence de traitement :**
+Séquence commune :
 
-```
-ingest_file(file_path, session, keys)
-│
-├── classify_flux(filename) → FluxType
-├── SHA256(ciphertext) → file_hash
-│
-├── VÉRIFICATION IDEMPOTENCE (recherche par file_hash) :
-│   ├── Statut PARSED/SKIPPED/NEEDS_REVIEW/PERMANENTLY_FAILED → retour immédiat (no-op)
-│   ├── Statut ERROR, nb erreurs >= MAX_RETRIES → archiver erreur, PERMANENTLY_FAILED
-│   ├── Statut ERROR, nb erreurs < MAX_RETRIES → archiver erreur, préparer retry
-│   └── Statut RECEIVED → reprise après crash
-│
-├── Type dans {R172, X14, HDM, UNKNOWN} ? → SKIPPED
-├── Type absent de la dispatch table ? → SKIPPED
-│
-├── DÉTECTION REPUBLICATION :
-│   └── Même filename + statut PARSED/NEEDS_REVIEW ? → is_republication = true
-│
-├── decrypt_file() → xml_bytes  (ou ERROR si décryptage impossible)
-├── parser_fn() → dataclass     (ou ERROR si parsing impossible)
-│
-└── STOCKAGE :
-    ├── Republication → status=NEEDS_REVIEW, version=N+1, supersedes_file_id=prev.id
-    └── Normal → status=PARSED, version=1
-    ├── Création/mise à jour EnedisFluxFile + flush (obtention de l'id)
-    ├── store_fn() → bulk insert des mesures (chunks de 1000)
-    └── commit (ou rollback + ERROR en cas d'exception)
-```
+1. Vérifier que le fichier existe.
+2. Classifier le type de flux.
+3. Calculer ou recevoir le SHA256 du fichier physique.
+4. Chercher un fichier existant par hash.
+5. Appliquer idempotence, retry ou reprise `received`.
+6. Skip immédiat si type dans `SKIP_FLUX_TYPES`.
+7. Détecter une republication par même filename et hash différent.
+8. Ouvrir le payload selon la famille.
+9. Parser.
+10. Créer ou mettre à jour `enedis_flux_file`.
+11. Insérer les lignes raw par batch de `DEFAULT_CHUNK_SIZE=1000`.
+12. Commit, ou rollback + statut `error` en cas d'échec.
 
 ### 9.2 Traitement batch : `ingest_directory()`
 
-Traite un répertoire entier de fichiers `.zip` en deux phases.
+`ingest_directory()` fonctionne en deux phases.
 
-**Phase 1 -- Scan et enregistrement :**
+**Phase 1 -- scan et enregistrement**
 
-Pour chaque fichier `.zip` trouvé (glob `*.zip`, optionnellement récursif, trié par nom) :
-1. Calcul du SHA256
-2. Recherche en base par hash
-3. Selon le statut existant :
-   - **Pas trouvé** → création d'un enregistrement `EnedisFluxFile` en statut `RECEIVED`
-   - **RECEIVED** → fichier périmé d'un run interrompu, ajouté à la file de traitement
-   - **ERROR** (< MAX_RETRIES) → ajouté à la file pour retry
-   - **ERROR** (>= MAX_RETRIES) → transition vers `PERMANENTLY_FAILED`
-   - **PARSED/SKIPPED/NEEDS_REVIEW/PERMANENTLY_FAILED** → comptabilisé comme déjà traité
-4. Un seul `commit()` pour tous les enregistrements `RECEIVED` de la phase 1
+- Scanne les fichiers selon `pattern="*.zip"`.
+- Utilise `directory.rglob()` si `recursive=True`, sinon `directory.glob()`.
+- Trie les fichiers par nom.
+- Crée les nouveaux registres en `received`.
+- Reprend les anciens `received`.
+- Retente les anciens `error` si le compteur d'erreurs est inférieur à `MAX_RETRIES`.
+- Passe les erreurs épuisées en `permanently_failed`.
 
-**Phase 2 -- Traitement :**
+**Phase 2 -- traitement**
 
-Pour chaque fichier de la file :
-1. Appel à `ingest_file()` (traitement unitaire)
-2. Mise à jour incrémentale des compteurs de l'`IngestionRun` après chaque fichier
-3. Si exception non gérée : le fichier `RECEIVED` passe en `ERROR`
+- Appelle `ingest_file()` pour chaque fichier à traiter.
+- Met à jour les compteurs du run après chaque fichier.
+- En cas d'exception non gérée, le fichier pré-enregistré passe en `error`.
 
-**Intérêt de la conception en 2 phases** : si le processus crash pendant la phase 2, les fichiers restent en statut `RECEIVED` et seront automatiquement repris au prochain run.
+Ce design rend les crashs récupérables : si le processus s'arrête après le scan mais avant la fin du traitement, les fichiers restés en `received` seront repris au prochain run.
 
-### Compteurs retournés
+### 9.3 Compteurs
 
 | Compteur | Description |
 |----------|-------------|
-| `received` | Nouveaux fichiers + fichiers RECEIVED périmés |
-| `parsed` | Fichiers traités avec succès |
-| `needs_review` | Republications ingérées (en attente de review) |
-| `skipped` | Flux hors périmètre (R172, X14, HDM, UNKNOWN) |
+| `received` | Nouveaux fichiers + anciens `received` repris |
+| `parsed` | Fichiers ingérés avec succès |
+| `needs_review` | Republications ingérées et à examiner |
+| `skipped` | Flux connus hors périmètre ou inconnus |
 | `error` | Fichiers en erreur dans ce run |
-| `permanently_failed` | Fichiers passés en PERMANENTLY_FAILED dans ce run |
-| `already_processed` | Fichiers déjà traités lors d'un run précédent |
-| `retried` | Fichiers ERROR retentés dans ce run |
-| `max_retries_reached` | Fichiers ayant atteint la limite de retries |
+| `permanently_failed` | Fichiers passés en échec définitif pendant ce run |
+| `already_processed` | Fichiers déjà finalisés avant ce run |
+| `retried` | Fichiers `error` retentés |
+| `max_retries_reached` | Fichiers déjà ou nouvellement au plafond de retries |
 
-**Invariant** : `received + retried == parsed + needs_review + skipped + error` (en mode non-dry-run).
+En non-dry-run, l'invariant attendu est :
 
-### 9.3 Idempotence
+```text
+received + retried == parsed + needs_review + skipped + error
+```
 
-L'idempotence est assurée à **deux niveaux** :
+### 9.4 Idempotence
 
-1. **Niveau fichier (SHA256)** : le hash est calculé sur le fichier **chiffré** (ciphertext brut). La colonne `file_hash` a une contrainte `UNIQUE`. Même contenu physique = skip automatique.
+L'idempotence est au niveau fichier :
 
-2. **Niveau republication (filename + hash différent)** : si un fichier porte le même nom qu'un fichier déjà traité mais a un contenu différent (hash différent), il est traité comme une republication (voir section 9.4).
+- `file_hash` = SHA256 des bytes du fichier reçu.
+- `file_hash` est unique.
+- Même fichier physique = no-op si statut déjà finalisé.
 
-Il n'y a **pas d'idempotence au niveau des mesures individuelles**. Si le même PRM/horodatage apparaît dans deux fichiers différents, les deux lignes coexistent dans la table staging.
+Ce détail est important depuis SF5 : pour un fichier ZIP direct, le hash est celui du ZIP direct ; pour un fichier chiffré, le hash est celui du ciphertext reçu.
 
-### 9.4 Détection des republications
+Il n'y a pas d'idempotence au niveau mesure. Exemple : si deux fichiers différents contiennent le même PRM et le même horodatage, les deux lignes restent en raw.
 
-Enedis peut republier un fichier avec le même nom mais un contenu corrigé. Le pipeline détecte ce cas :
+### 9.5 Republications
 
-1. Recherche d'un `EnedisFluxFile` existant avec le même `filename` et un statut `PARSED` ou `NEEDS_REVIEW`
-2. Si trouvé : le nouveau fichier est ingéré avec `status = NEEDS_REVIEW`, `version = N+1`, et `supersedes_file_id` pointant vers le fichier précédent
-3. Les deux versions (originale et republication) sont conservées en base
-4. L'intervenant humain doit ensuite décider quoi faire (d'où le statut `NEEDS_REVIEW`)
+Une republication est détectée quand :
 
-### 9.5 Retry et gestion d'erreurs
+- le `filename` existe déjà avec statut `parsed` ou `needs_review` ;
+- le nouveau fichier a un `file_hash` différent.
 
-| Mécanisme | Description |
-|-----------|-------------|
-| **MAX_RETRIES** | 3 (configurable dans `config.py`), soit 4 tentatives au total (1 initiale + 3 retries) |
-| **Historique** | Chaque échec est archivé dans `enedis_flux_file_error` (1 ligne par tentative). Le nombre de lignes sert de compteur de retries. |
-| **Escalade** | Après 3 erreurs archivées → le fichier passe en `PERMANENTLY_FAILED` et n'est plus retenté |
-| **Recovery** | Les fichiers en `ERROR` (< MAX_RETRIES) sont automatiquement retentés lors du prochain run de `ingest_directory()` |
+Le nouveau registre reçoit :
 
-### 9.6 Mode dry-run
+- `status = needs_review` ;
+- `version = previous.version + 1` ;
+- `supersedes_file_id = previous.id`.
 
-En mode `dry_run=True` :
-- La phase 1 (scan) s'exécute mais **aucun enregistrement n'est créé** en base
-- La phase 2 (traitement) est **entièrement ignorée**
-- Les transitions vers `PERMANENTLY_FAILED` sont aussi ignorées
-- Un `IngestionRun` est quand même créé (pour audit), marqué `dry_run=true`
-- Le rapport affiche les fichiers qui *seraient* traités
+Les deux versions restent consultables. La couche raw ne choisit pas laquelle est "bonne".
 
-### Table de dispatch
+### 9.6 Retry et erreurs
 
-Le routage d'un type de flux vers son parser et sa fonction de stockage est centralisé dans une table de dispatch :
+| Mécanisme | Comportement |
+|-----------|--------------|
+| `MAX_RETRIES` | `3` erreurs historisées avant échec définitif |
+| Historique | Une ligne `enedis_flux_file_error` par tentative échouée archivée avant retry |
+| Dernière erreur | `enedis_flux_file.error_message` porte l'erreur courante |
+| Escalade | Après le plafond, statut `permanently_failed`, `error_message` remis à `None` |
+| Reprise | Les fichiers `error` sous le plafond sont retentés automatiquement au prochain batch |
+
+### 9.7 Dry-run
+
+En `dry_run=True` :
+
+- un `IngestionRun` est créé pour audit ;
+- le répertoire est scanné ;
+- aucun `EnedisFluxFile` ni aucune mesure ne sont créés ;
+- la phase de parsing/stockage est ignorée ;
+- les transitions `permanently_failed` sont simulées dans le rapport.
+
+### 9.8 Routage parser/stockage
+
+Legacy XML via `_DISPATCH` :
 
 ```python
 _DISPATCH = {
@@ -797,450 +709,544 @@ _DISPATCH = {
     FluxType.R4M:  (parse_r4x,  R4xParseError,  _store_r4x),
     FluxType.R4Q:  (parse_r4x,  R4xParseError,  _store_r4x),
     FluxType.R171: (parse_r171, R171ParseError, _store_r171),
-    FluxType.R50:  (parse_r50,  R50ParseError,  _store_r50),
+    FluxType.R50:  (parse_r50,  R50ParseError, _store_r50),
     FluxType.R151: (parse_r151, R151ParseError, _store_r151),
 }
 ```
 
-Pour ajouter un nouveau type de flux, il suffit de :
-1. Créer un parser (fonction pure `bytes → dataclass`)
-2. Créer un modèle SQLAlchemy (table de mesures)
-3. Créer une fonction de stockage (`_store_xxx`)
-4. Ajouter une entrée dans `_DISPATCH`
+SF5 utilise des handlers dédiés :
+
+| Flux | Handler | Parser | Store |
+|------|---------|--------|-------|
+| `R63` | `_ingest_r6x_file()` | `parse_r63_payload()` | `_store_r63()` |
+| `R64` | `_ingest_r6x_file()` | `parse_r64_payload()` | `_store_r64()` |
+| `C68` | `_ingest_c68_file()` | `parse_c68_payload()` | `_store_c68()` |
 
 ---
 
 ## 10. Modèle de données
 
-Toutes les tables utilisent le `Base` partagé de SQLAlchemy (`models.base.Base`) et le `TimestampMixin` qui ajoute automatiquement `created_at` et `updated_at`.
+Toutes les tables Enedis raw héritent de `data_ingestion.enedis.base.FluxDataBase`. Elles sont créées dans `flux_data.db`. Elles utilisent aussi `TimestampMixin`, qui ajoute `created_at` et `updated_at`.
 
-Les mesures sont stockées en tant que **chaînes de caractères brutes** (aucune conversion en `float` ou `datetime`).
-
-Les suppressions sont en **cascade** : supprimer un `EnedisFluxFile` supprime automatiquement toutes ses mesures et ses erreurs.
+Les suppressions sont en cascade : supprimer une ligne `enedis_flux_file` supprime ses mesures/snapshots et ses erreurs.
 
 ### 10.1 `enedis_flux_file`
 
-Registre central : un enregistrement par fichier ingéré.
+Registre central : une ligne par fichier reçu.
 
-| Colonne | Type | Null | Description |
-|---------|------|------|-------------|
-| `id` | Integer PK | | Identifiant auto-incrémenté |
-| `filename` | String(255) | non | Nom du fichier `.zip` original |
-| `file_hash` | String(64) | non | SHA256 du fichier chiffré (**UNIQUE**) |
-| `flux_type` | String(10) | non | R4H, R4M, R4Q, R171, R50, R151, etc. |
-| `status` | String(20) | non | received / parsed / error / skipped / needs_review / permanently_failed |
-| `error_message` | Text | oui | Message d'erreur de la dernière tentative |
-| `measures_count` | Integer | oui | Nombre de mesures extraites et stockées |
-| `version` | Integer | non | 1 = original, 2+ = republication |
-| `supersedes_file_id` | Integer FK→self | oui | Pointe vers le fichier remplacé (SET NULL à la suppression) |
-| `frequence_publication` | String(5) | oui | H/M/Q -- R4x uniquement |
-| `nature_courbe_demandee` | String(20) | oui | Brute/Corrigee -- R4x uniquement |
-| `identifiant_destinataire` | String(100) | oui | Code destinataire -- R4x uniquement |
-| `header_raw` | Text | oui | En-tête XML complet sérialisé en JSON |
-| `created_at` | DateTime | | Horodatage de création |
-| `updated_at` | DateTime | | Horodatage de dernière modification |
+| Colonne | Type | Description |
+|---------|------|-------------|
+| `id` | Integer PK | Identifiant |
+| `filename` | String(255) | Nom du fichier original |
+| `file_hash` | String(64), unique | SHA256 du fichier physique |
+| `flux_type` | String(10) | Type Promeos/Enedis : `R4H`, `R63`, `C68`, etc. |
+| `status` | String(20) | `received`, `parsed`, `error`, `skipped`, `needs_review`, `permanently_failed` |
+| `error_message` | Text | Dernière erreur courante |
+| `measures_count` | Integer | Nombre de lignes raw insérées |
+| `version` | Integer | `1` original, `2+` republication |
+| `supersedes_file_id` | FK self | Version précédente remplacée |
+| `frequence_publication` | String(5) | R4x uniquement |
+| `nature_courbe_demandee` | String(20) | R4x uniquement |
+| `identifiant_destinataire` | String(100) | R4x uniquement |
+| `code_flux` | String(20) | SF5 : code flux du nom |
+| `type_donnee` | String(20) | SF5 : `CdC`, `INDEX`, `ITC`, etc. |
+| `id_demande` | String(20) | SF5 : demande M023 |
+| `mode_publication` | String(5) | SF5 : `P`, `Q`, `H`, `M` |
+| `payload_format` | String(10) | SF5 : `JSON` ou `CSV`; legacy XML actuellement nul |
+| `num_sequence` | String(10) | Séquence brute |
+| `siren_publication` | String(20) | Segment extra SIREN si présent |
+| `code_contrat_publication` | String(50) | Segment extra non-SIREN si présent |
+| `publication_horodatage` | String(20) | Horodatage publication brut |
+| `archive_members_count` | Integer | Nombre de membres utiles au niveau archive |
+| `header_raw` | Text | JSON brut d'en-tête / manifeste / warnings |
 
-**Relations** : `mesures_r4x`, `mesures_r171`, `mesures_r50`, `mesures_r151`, `errors` (toutes en cascade delete-orphan).
+Relations : `mesures_r4x`, `mesures_r171`, `mesures_r50`, `mesures_r151`, `mesures_r63`, `indexes_r64`, `itc_c68`, `errors`.
 
 ### 10.2 `enedis_flux_mesure_r4x`
 
-Mesures CDC haute fréquence (C1-C4). Entièrement dénormalisé : chaque ligne porte le contexte de son bloc `<Donnees_Courbe>`.
+Une ligne par point R4x.
 
-| Colonne | Type | Null | Description |
-|---------|------|------|-------------|
-| `id` | Integer PK | | |
-| `flux_file_id` | Integer FK | non | FK vers `enedis_flux_file` (CASCADE) |
-| `flux_type` | String(10) | non | R4H/R4M/R4Q (dénormalisé) |
-| `point_id` | String(14) | non | PRM 14 chiffres |
-| `grandeur_physique` | String(10) | oui | EA/ERI/ERC/E |
-| `grandeur_metier` | String(10) | oui | CONS/PROD |
-| `unite_mesure` | String(10) | oui | kW/kWr/V |
-| `granularite` | String(10) | oui | Pas en minutes (5/10) |
-| `horodatage_debut` | String(50) | oui | Début de la période du bloc |
-| `horodatage_fin` | String(50) | oui | Fin de la période du bloc |
-| `horodatage` | String(50) | non | Horodatage du point (ISO8601) |
-| `valeur_point` | String(20) | oui | Valeur brute |
-| `statut_point` | String(2) | oui | R/H/P/S/T/F/G/E/C/K/D |
+| Colonne | Description |
+|---------|-------------|
+| `flux_file_id` | FK vers `enedis_flux_file` |
+| `flux_type` | `R4H`, `R4M` ou `R4Q` |
+| `point_id` | PRM |
+| `grandeur_physique`, `grandeur_metier`, `unite_mesure`, `granularite` | Contexte du bloc courbe |
+| `horodatage_debut`, `horodatage_fin` | Fenêtre du bloc |
+| `horodatage` | Horodatage du point |
+| `valeur_point` | Valeur brute |
+| `statut_point` | Statut brut |
 
-**Index** : `(point_id, horodatage)`, `flux_file_id`, `flux_type`
+Index : `(point_id, horodatage)`, `flux_file_id`, `flux_type`.
 
 ### 10.3 `enedis_flux_mesure_r171`
 
-Mesure datee quotidienne R171 (C2-C4). 1 ligne par `mesureDatee`.
+Une ligne par `mesureDatee`.
 
-| Colonne | Type | Null | Description |
-|---------|------|------|-------------|
-| `id` | Integer PK | | |
-| `flux_file_id` | Integer FK | non | FK vers `enedis_flux_file` (CASCADE) |
-| `flux_type` | String(10) | non | R171 |
-| `point_id` | String(14) | non | PRM 14 chiffres |
-| `type_mesure` | String(10) | non | Valeur brute (`INDEX` observe, `IDX` mentionne dans l'annexe officielle) |
-| `grandeur_metier` | String(10) | oui | CONS |
-| `grandeur_physique` | String(10) | oui | Officiel : EA/PMA/ERC/ERI/ER/TF/DD/DE/DQ |
-| `type_calendrier` | String(5) | oui | D ou F |
-| `code_classe_temporelle` | String(10) | oui | HCE/HCH/HPE/HPH/P |
-| `libelle_classe_temporelle` | String(100) | oui | Texte humain |
-| `unite` | String(10) | oui | Wh/W/s/VA/VARh |
-| `date_fin` | String(50) | non | dateFin (ISO8601) = timestamp de lecture |
-| `valeur` | String(20) | oui | Valeur brute |
+| Colonne | Description |
+|---------|-------------|
+| `flux_file_id` | FK |
+| `flux_type` | `R171` |
+| `point_id` | PRM |
+| `type_mesure` | Type brut, observé `INDEX` |
+| `grandeur_metier`, `grandeur_physique` | Grandeurs |
+| `type_calendrier` | Grille |
+| `code_classe_temporelle`, `libelle_classe_temporelle` | Classe temporelle |
+| `unite` | Unité |
+| `date_fin` | Horodatage de lecture |
+| `valeur` | Valeur brute |
 
-**Index** : `(point_id, date_fin)`, `flux_file_id`, `flux_type`
+Index : `(point_id, date_fin)`, `flux_file_id`, `flux_type`.
 
 ### 10.4 `enedis_flux_mesure_r50`
 
-Courbe de charge C5. 1 ligne par PDC (point de courbe, pas de 30 min).
+Une ligne par `PDC`.
 
-| Colonne | Type | Null | Description |
-|---------|------|------|-------------|
-| `id` | Integer PK | | |
-| `flux_file_id` | Integer FK | non | FK vers `enedis_flux_file` (CASCADE) |
-| `flux_type` | String(10) | non | R50 |
-| `point_id` | String(14) | non | PRM 14 chiffres |
-| `date_releve` | String(20) | non | Date du relevé |
-| `id_affaire` | String(20) | oui | Identifiant d'affaire |
-| `horodatage` | String(50) | non | Horodatage du PDC (ISO8601+TZ) |
-| `valeur` | String(20) | oui | Valeur brute |
-| `indice_vraisemblance` | String(5) | oui | 0 ou 1 |
+| Colonne | Description |
+|---------|-------------|
+| `flux_file_id` | FK |
+| `flux_type` | `R50` |
+| `point_id` | PRM |
+| `date_releve` | Date du relevé |
+| `id_affaire` | Affaire Enedis |
+| `horodatage` | Fin de l'intervalle 30 min |
+| `valeur` | Puissance moyenne brute |
+| `indice_vraisemblance` | Qualité brute |
 
-**Index** : `(point_id, horodatage)`, `flux_file_id`, `flux_type`
+Index : `(point_id, horodatage)`, `flux_file_id`, `flux_type`.
 
 ### 10.5 `enedis_flux_mesure_r151`
 
-Index et puissance maximale C5. 1 ligne par valeur (index par classe temporelle ou puissance max).
+Une ligne par index ou puissance maximale.
 
-| Colonne | Type | Null | Description |
-|---------|------|------|-------------|
-| `id` | Integer PK | | |
-| `flux_file_id` | Integer FK | non | FK vers `enedis_flux_file` (CASCADE) |
-| `flux_type` | String(10) | non | R151 |
-| `point_id` | String(14) | non | PRM 14 chiffres |
-| `date_releve` | String(20) | non | Date du relevé |
-| `id_calendrier_fournisseur` | String(20) | oui | |
-| `libelle_calendrier_fournisseur` | String(100) | oui | |
-| `id_calendrier_distributeur` | String(20) | oui | |
-| `libelle_calendrier_distributeur` | String(150) | oui | |
-| `id_affaire` | String(20) | oui | |
-| `type_donnee` | String(10) | non | CT_DIST / CT / PMAX (déduit du tag XML) |
-| `id_classe_temporelle` | String(10) | oui | HCB/HCH/HPB/HPH/HC/HP (null pour PMAX) |
-| `libelle_classe_temporelle` | String(100) | oui | Texte humain (null pour PMAX) |
-| `rang_cadran` | String(5) | oui | Numéro de cadran (null pour PMAX) |
-| `valeur` | String(20) | oui | Index Wh ou puissance VA |
-| `indice_vraisemblance` | String(5) | oui | 0-15 (null pour PMAX) |
+| Colonne | Description |
+|---------|-------------|
+| `flux_file_id` | FK |
+| `flux_type` | `R151` |
+| `point_id` | PRM |
+| `date_releve` | Date du relevé |
+| `id_calendrier_fournisseur`, `libelle_calendrier_fournisseur` | Calendrier fournisseur |
+| `id_calendrier_distributeur`, `libelle_calendrier_distributeur` | Calendrier distributeur |
+| `id_affaire` | Affaire |
+| `type_donnee` | `CT_DIST`, `CT`, `PMAX` |
+| `id_classe_temporelle`, `libelle_classe_temporelle`, `rang_cadran` | Contexte tarifaire |
+| `valeur` | Valeur brute |
+| `indice_vraisemblance` | Qualité brute |
 
-**Index** : `(point_id, date_releve)`, `flux_file_id`, `flux_type`
+Index : `(point_id, date_releve)`, `flux_file_id`, `flux_type`.
 
-### 10.6 `enedis_flux_file_error`
+### 10.6 `enedis_flux_mesure_r63`
 
-Historique des erreurs de traitement. 1 ligne par tentative échouée.
+Une ligne par point R63.
 
-| Colonne | Type | Null | Description |
-|---------|------|------|-------------|
-| `id` | Integer PK | | |
-| `flux_file_id` | Integer FK | non | FK vers `enedis_flux_file` (CASCADE) |
-| `error_message` | Text | non | Message d'erreur de la tentative |
-| `created_at` | DateTime | | Horodatage de l'erreur |
-| `updated_at` | DateTime | | |
+| Colonne | Description |
+|---------|-------------|
+| `flux_file_id` | FK |
+| `flux_type` | `R63` |
+| `source_format` | `JSON` ou `CSV` |
+| `archive_member_name` | Nom du payload dans l'archive |
+| `point_id` | PRM |
+| `periode_date_debut`, `periode_date_fin` | Période de publication brute |
+| `etape_metier`, `mode_calcul` | Contexte R6X |
+| `grandeur_metier`, `grandeur_physique`, `unite` | Grandeur |
+| `horodatage` | Horodatage du point |
+| `pas` | Pas brut |
+| `nature_point` | Nature du point |
+| `type_correction` | Type de correction |
+| `valeur` | Valeur brute |
+| `indice_vraisemblance` | Qualité brute |
+| `etat_complementaire` | État complémentaire |
 
-Le nombre de lignes pour un `flux_file_id` donné sert de **compteur de retries** (pas de colonne dédiée).
+Index : `(point_id, horodatage)`, `flux_file_id`, `(point_id, grandeur_physique)`.
 
-**Index** : `flux_file_id`
+### 10.7 `enedis_flux_index_r64`
 
-### 10.7 `enedis_ingestion_run`
+Une ligne par valeur d'index R64.
 
-Audit de chaque exécution du pipeline. Les compteurs sont mis à jour **de manière incrémentale** (après chaque fichier traité), ce qui permet de voir la progression même en cas de crash.
+| Colonne | Description |
+|---------|-------------|
+| `flux_file_id` | FK |
+| `flux_type` | `R64` |
+| `source_format` | `JSON` ou `CSV` |
+| `archive_member_name` | Payload |
+| `point_id` | PRM |
+| `periode_date_debut`, `periode_date_fin` | Période brute |
+| `etape_metier` | Étape métier |
+| `contexte_releve`, `type_releve`, `motif_releve` | Contexte de relève |
+| `grandeur_metier`, `grandeur_physique`, `unite` | Grandeur |
+| `horodatage` | Horodatage de l'index |
+| `valeur` | Index brut |
+| `indice_vraisemblance` | Qualité brute |
+| `code_grille` | Grille brute si CSV |
+| `id_calendrier`, `libelle_calendrier`, `libelle_grille` | Calendrier/grille |
+| `id_classe_temporelle`, `libelle_classe_temporelle` | Classe temporelle |
+| `code_cadran` | Cadran |
 
-| Colonne | Type | Null | Description |
-|---------|------|------|-------------|
-| `id` | Integer PK | | |
-| `started_at` | DateTime | non | Début du run |
-| `finished_at` | DateTime | oui | Fin du run (null si en cours) |
-| `directory` | String(500) | non | Répertoire source scanné |
-| `recursive` | Boolean | non | Scan récursif |
-| `dry_run` | Boolean | non | Mode dry-run |
-| `status` | String(20) | non | running / completed / failed |
-| `triggered_by` | String(10) | non | cli / api |
-| `files_received` | Integer | | Nouveaux fichiers à traiter |
-| `files_parsed` | Integer | | Fichiers parsés avec succès |
-| `files_skipped` | Integer | | Flux hors périmètre |
-| `files_error` | Integer | | Fichiers en erreur |
-| `files_needs_review` | Integer | | Republications en attente de review |
-| `files_already_processed` | Integer | | Fichiers déjà traités |
-| `files_retried` | Integer | | Fichiers ERROR retentés |
-| `files_max_retries` | Integer | | Fichiers PERMANENTLY_FAILED |
-| `error_message` | Text | oui | Erreur ayant interrompu le run |
+Index : `(point_id, horodatage)`, `flux_file_id`, `(point_id, grandeur_physique)`, `(point_id, id_calendrier, id_classe_temporelle)`.
+
+### 10.8 `enedis_flux_itc_c68`
+
+Une ligne par snapshot PRM C68.
+
+| Colonne | Description |
+|---------|-------------|
+| `flux_file_id` | FK |
+| `source_format` | `JSON` ou `CSV` |
+| `secondary_archive_name` | Archive secondaire C68 |
+| `payload_member_name` | Payload JSON/CSV |
+| `point_id` | PRM |
+| `payload_raw` | Objet PRM ou ligne CSV complète sérialisée JSON |
+| `contractual_situation_count` | Nombre de situations contractuelles |
+| `date_debut_situation_contractuelle` | Date retenue si non ambiguë |
+| `segment`, `etat_contractuel` | Résumé contractuel |
+| `formule_tarifaire_acheminement`, `code_tarif_acheminement` | Tarification brute |
+| `siret`, `siren` | Identifiants client |
+| `domaine_tension`, `tension_livraison` | Données techniques |
+| `type_comptage`, `mode_releve`, `media_comptage`, `periodicite_releve` | Données de comptage |
+| `puissance_souscrite_*` | Puissance souscrite |
+| `puissance_limite_soutirage_*` | Puissance limite soutirage |
+| `puissance_raccordement_soutirage_*` | Puissance raccordement soutirage |
+| `puissance_raccordement_injection_*` | Puissance raccordement injection |
+| `type_injection`, `borne_fixe`, `refus_pose_linky`, `date_refus_pose_linky` | Champs ITC complémentaires |
+
+Index : `point_id`, `flux_file_id`, `(point_id, flux_file_id)`, `siret`, `siren`.
+
+### 10.9 `enedis_flux_file_error`
+
+Historique des erreurs.
+
+| Colonne | Description |
+|---------|-------------|
+| `flux_file_id` | FK |
+| `error_message` | Message de la tentative échouée |
+| `created_at`, `updated_at` | Audit |
+
+Le nombre de lignes par fichier sert de compteur de retry.
+
+### 10.10 `enedis_ingestion_run`
+
+Audit de chaque exécution.
+
+| Colonne | Description |
+|---------|-------------|
+| `started_at`, `finished_at` | Début/fin |
+| `directory` | Répertoire scanné |
+| `recursive` | Scan récursif |
+| `dry_run` | Simulation |
+| `status` | `running`, `completed`, `failed` |
+| `triggered_by` | `cli` ou `api` |
+| `files_received`, `files_parsed`, `files_skipped`, `files_error`, `files_needs_review` | Compteurs principaux |
+| `files_already_processed`, `files_retried`, `files_max_retries` | Compteurs opérationnels |
+| `error_message` | Erreur run-level |
+
+Une contrainte d'unicité partielle empêche deux runs `running` simultanés.
 
 ---
 
-## 11. API REST
+## 11. Migrations et séparation des bases
+
+`run_flux_data_migrations(engine)` gère le bootstrap de `flux_data.db`.
+
+Étapes :
+
+1. Renommer l'ancien `enedis_flux_mesure` en `enedis_flux_mesure_r4x` si nécessaire.
+2. Créer les tables raw listées dans `ENEDIS_RAW_TABLES`.
+3. Ajouter les colonnes évolutives sur `enedis_flux_file`.
+4. Ajouter les colonnes C68 évolutives si nécessaire.
+5. Migrer une ancienne table physique `enedis_flux_mesure_r6x` vers les tables canoniques split.
+6. Créer la vue de compatibilité `enedis_flux_mesure_r6x`.
+
+Tables canoniques raw :
+
+```text
+enedis_flux_file
+enedis_flux_mesure_r4x
+enedis_flux_mesure_r171
+enedis_flux_mesure_r50
+enedis_flux_mesure_r151
+enedis_flux_mesure_r63
+enedis_flux_index_r64
+enedis_flux_itc_c68
+enedis_flux_file_error
+enedis_ingestion_run
+```
+
+`enedis_flux_mesure_r6x` n'est pas une table canonique. C'est une vue read-only de compatibilité qui agrège `R63` et `R64`.
+
+Ce que cela signifie pour le produit : l'application principale peut évoluer sans embarquer les tables volumineuses de staging Enedis dans `promeos.db`.
+
+---
+
+## 12. API REST
 
 **Fichier** : `backend/routes/enedis.py`
 **Préfixe** : `/api/enedis`
-**Authentification** : aucune (POC)
 
-### POST /api/enedis/ingest
+### POST `/api/enedis/ingest`
 
-Déclenche le pipeline d'ingestion de manière **synchrone** (bloquant).
+Déclenche l'ingestion synchrone.
 
-**Corps de la requête** (`IngestRequest`) :
+Corps :
 
 | Champ | Type | Défaut | Description |
 |-------|------|--------|-------------|
-| `directory` | string (opt.) | null | Override de `ENEDIS_FLUX_DIR` |
-| `recursive` | bool | true | Scan récursif |
-| `dry_run` | bool | false | Mode simulation |
+| `recursive` | bool | `true` | Scan récursif |
+| `dry_run` | bool | `false` | Simulation sans mutation de fichiers raw |
 
-**Validations préalables** :
-1. Résolution du répertoire flux (422 si non configuré ou inexistant)
-2. Chargement des clés de décryptage (422 si absentes)
-3. Vérification de concurrence : rejet 409 si un run est déjà en cours
+Le répertoire vient de `ENEDIS_FLUX_DIR`. Contrairement à la CLI, l'API ne prend pas d'override `directory`.
 
-**Réponse** (`IngestResponse`) :
+Pré-vol :
 
-| Champ | Type | Description |
-|-------|------|-------------|
-| `run_id` | int | Identifiant du run |
-| `status` | string | completed / failed |
-| `dry_run` | bool | |
-| `duration_seconds` | float | Durée d'exécution |
-| `counters` | dict | Compteurs du pipeline (voir section 9.2) |
-| `errors` | list | Fichiers en ERROR/PERMANENTLY_FAILED modifiés pendant ce run |
+- résolution de `ENEDIS_FLUX_DIR` ;
+- chargement des clés si présentes, sinon continuation avec `keys=[]` ;
+- garde de concurrence via un run `running` unique.
 
-**Codes retour** : 200 (succès), 409 (run concurrent), 422 (config invalide), 500 (erreur pipeline)
+Réponse :
 
-### GET /api/enedis/flux-files
+| Champ | Description |
+|-------|-------------|
+| `run_id` | Identifiant du run |
+| `status` | Statut final |
+| `dry_run` | Mode simulation |
+| `duration_seconds` | Durée |
+| `counters` | Compteurs du pipeline |
+| `errors` | Fichiers en `error` ou `permanently_failed` modifiés pendant ce run |
 
-Liste paginée des fichiers flux avec filtres optionnels.
+Codes principaux : `200`, `409` si run concurrent, `422` si répertoire invalide, `500` si interruption pipeline.
 
-**Paramètres query** :
+### GET `/api/enedis/flux-files`
 
-| Paramètre | Type | Défaut | Description |
-|-----------|------|--------|-------------|
-| `status` | string (opt.) | null | Filtrer par statut (parsed, error, etc.) |
-| `flux_type` | string (opt.) | null | Filtrer par type de flux (R4H, R171, etc.) |
-| `limit` | int | 24 | Taille de page (1-200) |
-| `offset` | int | 0 | Décalage |
+Liste paginée des fichiers.
 
-**Réponse** (`FluxFileListResponse`) :
+Paramètres :
 
-| Champ | Type |
-|-------|------|
-| `total` | int |
-| `items` | liste de `FluxFileResponse` (id, filename, file_hash, flux_type, status, error_message, measures_count, version, supersedes_file_id, created_at, updated_at) |
-| `limit`, `offset` | int |
+| Paramètre | Défaut | Description |
+|-----------|--------|-------------|
+| `status` | aucun | Filtre par statut |
+| `flux_type` | aucun | Filtre par type |
+| `limit` | `24` | 1 à 200 |
+| `offset` | `0` | Décalage |
 
-### GET /api/enedis/flux-files/{id}
+Chaque item expose les champs de registre, y compris les métadonnées SF5 (`code_flux`, `id_demande`, `payload_format`, `archive_members_count`, etc.).
 
-Détail d'un fichier flux avec en-tête XML complet et historique des erreurs.
+### GET `/api/enedis/flux-files/{id}`
 
-**Réponse** (`FluxFileDetailResponse`) : tous les champs de `FluxFileResponse` plus :
+Détail d'un fichier :
 
-| Champ | Type | Description |
-|-------|------|-------------|
-| `header_raw` | dict (opt.) | En-tête XML complet décodé du JSON |
-| `frequence_publication` | string (opt.) | H/M/Q (R4x uniquement) |
-| `nature_courbe_demandee` | string (opt.) | Brute/Corrigee (R4x uniquement) |
-| `identifiant_destinataire` | string (opt.) | Code destinataire (R4x uniquement) |
-| `errors_history` | liste | Toutes les tentatives échouées (error_message, created_at) |
+- champs de liste ;
+- `header_raw` décodé ;
+- champs R4x dédiés ;
+- historique complet `errors_history`.
 
-**Code retour** : 200 ou 404
+### GET `/api/enedis/stats`
 
-### GET /api/enedis/stats
-
-Dashboard agrégé de la couche staging.
-
-**Réponse** (`StatsResponse`) :
+Retourne :
 
 ```json
 {
   "files": {
-    "total": 91,
-    "by_status": {"parsed": 81, "skipped": 7, "needs_review": 3},
-    "by_flux_type": {"R4H": 5, "R4M": 4, "R171": 64, ...}
+    "total": 123,
+    "by_status": {"parsed": 100, "skipped": 10, "error": 13},
+    "by_flux_type": {"R4H": 5, "R63": 20, "C68": 3}
   },
   "measures": {
-    "total": 123846,
-    "r4x": 98234,
-    "r171": 15432,
-    "r50": 8180,
-    "r151": 2000
+    "total": 456789,
+    "r4x": 1000,
+    "r171": 200,
+    "r50": 300,
+    "r151": 40,
+    "r63": 400000,
+    "r64": 50000,
+    "r6x": 450000,
+    "c68": 249
   },
   "prms": {
-    "count": 12,
-    "identifiers": ["30000210411333", "30000550506121", ...]
+    "count": 42,
+    "identifiers": ["30000000000001"]
   },
   "last_ingestion": {
-    "run_id": 5,
-    "timestamp": "2026-03-28T14:30:00Z",
-    "files_count": 91,
+    "run_id": 12,
+    "timestamp": "2026-04-26T10:00:00",
+    "files_count": 33,
     "triggered_by": "cli"
   }
 }
 ```
 
-La liste des PRM est obtenue par un `UNION DISTINCT` sur les 4 tables de mesures.
+Les mesures sont agrégées depuis `enedis_flux_file.measures_count` pour les statuts `parsed` et `needs_review`. Les PRM sont calculés par `UNION DISTINCT` sur les tables raw R4x, R171, R50, R151, R63, R64 et C68.
 
 ---
 
-## 12. Interface CLI
+## 13. Interface CLI
 
-**Fichier** : `cli.py`
-**Invocation** : `cd promeos-poc/backend && python -m data_ingestion.enedis.cli ingest [OPTIONS]`
+Invocation :
 
-### Commande `ingest`
+```bash
+cd promeos-poc/backend
+python -m data_ingestion.enedis.cli ingest [OPTIONS]
+```
+
+Options :
 
 | Option | Description |
 |--------|-------------|
-| `--dir PATH` | Override de la variable `ENEDIS_FLUX_DIR` |
-| `--dry-run` | Scan et classification sans écriture en base |
-| `--no-recursive` | Désactiver le scan récursif (récursif par défaut) |
-| `--verbose` | Activer le logging DEBUG |
+| `--dir PATH` | Override de `ENEDIS_FLUX_DIR` |
+| `--dry-run` | Scan sans création de fichiers raw ni mesures |
+| `--no-recursive` | Désactive le scan récursif |
+| `--verbose` | Logging DEBUG |
 
-### Séquence d'exécution
+Séquence :
 
-1. Configuration du logging (INFO par défaut, DEBUG avec `--verbose`)
-2. Bootstrap des tables (`_ensure_tables` : création des tables + migrations)
-3. Résolution du répertoire flux
-4. Chargement des clés de décryptage
-5. Vérification de concurrence (exit code 1 si un run est déjà en cours)
-6. Création de l'`IngestionRun` (statut `RUNNING`)
-7. Exécution de `ingest_directory()`
-8. Affichage du rapport
-9. Exit code 0 (succès) ou 1 (erreur)
+1. Configurer le logging.
+2. Créer/migrer les tables raw via `run_flux_data_migrations()`.
+3. Résoudre le répertoire source.
+4. Charger les clés si disponibles ; continuer avec un warning si absentes.
+5. Créer le run avec garde de concurrence.
+6. Appeler `ingest_directory()`.
+7. Afficher le rapport.
 
-### Rapport d'exécution
+Le rapport non dry-run affiche :
 
-Le rapport affiche :
-- Identifiant et statut du run
-- Répertoire source et mode (récursif ou non)
-- Durée
-- Compteurs par statut (received, parsed, skipped, error, needs_review, retried, max_retries, already_processed)
-- **Totaux staging** : nombre de mesures par table (R4x, R171, R50, R151) et total
-- **Détail des erreurs** : nom de fichier et message pour chaque fichier en erreur
+- compteurs fichiers ;
+- retries et échecs définitifs ;
+- totaux staging par table : R4x, R171, R50, R151, R63, R64, R6X agrégé, C68 ;
+- détail des erreurs récentes.
 
 ---
 
-## 13. Configuration
+## 14. Configuration
 
-### Variables d'environnement requises
+Variables :
 
-| Variable | Description | Exemple |
-|----------|-------------|---------|
-| `ENEDIS_FLUX_DIR` | Répertoire contenant les fichiers `.zip` chiffrés | `/data/flux_enedis` |
-| `KEY_1` | Clé AES-128 (hex, 32 chars) | `00112233445566778899aabbccddeeff` |
-| `IV_1` | Vecteur d'initialisation (hex, 32 chars) | `aabbccddeeff00112233445566778899` |
-| `KEY_2`, `IV_2` | 2e paire de clés | |
-| `KEY_3`, `IV_3` | 3e paire de clés | |
+| Variable | Usage |
+|----------|-------|
+| `ENEDIS_FLUX_DIR` | Répertoire scanné par CLI/API |
+| `KEY_1` / `IV_1` ... `KEY_9` / `IV_9` | Paires AES-128-CBC en hex |
 
-Les paires de clés sont numérotées de 1 à 9. Le chargement s'arrête au premier indice absent.
+Paramètres internes :
 
-### Paramètres internes
+| Paramètre | Valeur actuelle | Fichier |
+|-----------|-----------------|---------|
+| `MAX_RETRIES` | `3` | `config.py` |
+| `DEFAULT_CHUNK_SIZE` | `1000` | `pipeline.py` |
+| Pattern batch | `*.zip` | `pipeline.py` |
 
-| Paramètre | Valeur | Fichier | Description |
-|-----------|--------|---------|-------------|
-| `MAX_RETRIES` | 3 | `config.py` | Nombre max de retries (4 tentatives au total) |
-| `DEFAULT_CHUNK_SIZE` | 1000 | `pipeline.py` | Taille de batch pour l'insertion des mesures |
+Les clés sont optionnelles pour les fichiers SF5 ZIP directs, mais restent nécessaires pour :
+
+- les flux legacy XML chiffrés ;
+- les fichiers SF5 reçus chiffrés selon le canal Enedis.
 
 ---
 
-## 14. Tests
+## 15. Tests
 
-**Répertoire** : `backend/data_ingestion/enedis/tests/`
+Répertoires principaux :
 
-### Organisation
+- `backend/data_ingestion/enedis/tests/`
+- `backend/tests/test_enedis_api.py`
+- `backend/tests/test_flux_data_split.py`
+- `backend/tests/test_sf5_e2e.py`
 
-| Fichier | Couverture | Nb de tests |
-|---------|-----------|-------------|
-| `test_decrypt.py` | Classification, décryptage, gestion des clés | 17 |
-| `test_parsers_r4.py` | Parser R4x : header, courbes, points, erreurs | 19 |
-| `test_parsers_r171.py` | Parser R171 : séries, mesures, namespaces, erreurs | 22 |
-| `test_parsers_r50.py` | Parser R50 : PRMs, relevés, PDC, ERDF | 22 |
-| `test_parsers_r151.py` | Parser R151 : CT_DIST/CT/PMAX, calendriers | 26 |
-| `test_models.py` | 7 modèles SQLAlchemy, relations, cascades | 45 |
-| `test_pipeline.py` | `ingest_file()` : idempotence, retry, republication, erreurs | 41 |
-| `test_pipeline_full.py` | `ingest_directory()` : batch, dry-run, compteurs, multi-flux | 23 |
-| `test_config.py` | `get_flux_dir()`, MAX_RETRIES | 10 |
-| `test_cli.py` | CLI : ingest, dry-run, verbose, concurrence | 9 |
-| `test_integration.py` | Intégration avec fichiers réels (skip sans clés) | 2 (paramétrés) |
-| `test_e2e_real_files.py` | E2E complet avec fichiers chiffrés réels | 5 |
+Couverture notable :
 
-**Total** : ~265 tests (incluant les tests API dans `backend/tests/test_enedis_api.py`).
+| Fichier | Couverture |
+|---------|------------|
+| `test_decrypt.py` | Décryptage et classification legacy |
+| `test_filename_sf5.py` | Classification et parsing des noms SF5 |
+| `test_transport_sf5.py` | ZIP direct, AES vers ZIP, clés absentes |
+| `test_containers_sf5.py` | Contraintes d'archives R6X/C68 |
+| `test_parsers_r4.py`, `r171.py`, `r50.py`, `r151.py` | Parsers XML legacy |
+| `test_parsers_r63.py`, `r64.py`, `c68.py` | Parsers JSON/CSV SF5 |
+| `test_models.py` | Modèles, relations, cascades, doublons raw |
+| `test_pipeline.py`, `test_pipeline_full.py`, `test_pipeline_sf5.py` | Idempotence, batch, retry, republications, SF5 |
+| `test_cli.py` | CLI, dry-run, rapport |
+| `test_enedis_api.py` | API ingestion, liste, détail, stats |
+| `test_flux_data_split.py` | Garantie `flux_data.db` vs `promeos.db` |
 
-### Données de test
+Les tests réels SF5 sont opt-in via `PROMEOS_RUN_REAL_SF5_TESTS=1`, car les payloads locaux ne sont pas versionnés dans le repo.
 
-- Les tests unitaires utilisent des **XML synthétiques** construits par des fonctions helper dans chaque fichier de test
-- Les tests de décryptage utilisent des **clés de test** codées en dur et des fichiers chiffrés générés par `make_encrypted_zip()` (dans `conftest.py`)
-- Les tests d'intégration et E2E utilisent des **fichiers réels** situés hors du repo (`flux_enedis/`) et sont **ignorés en CI** (absence de clés)
-
-### Exécution
+Commandes utiles :
 
 ```bash
-# Tous les tests Enedis
 cd promeos-poc/backend
 ./venv/bin/pytest data_ingestion/enedis/tests/ -x -v
-
-# Tests API Enedis
-./venv/bin/pytest tests/test_enedis_api.py -x -v
+./venv/bin/pytest tests/test_enedis_api.py tests/test_flux_data_split.py -x -v
 ```
 
 ---
 
-## 15. Cycle de vie d'un fichier (machine à états)
+## 16. Cycle de vie d'un fichier
 
-```
-                        ┌──────────┐
-   Nouveau fichier ────▶│ RECEIVED │◄──── Reprise après crash
-                        └────┬─────┘
+```text
+                       nouveau fichier
                              │
-                    ┌────────┼────────────────────┐
-                    │        │                     │
-                    ▼        ▼                     ▼
-              ┌──────────┐ ┌────────┐       ┌──────────┐
-              │ SKIPPED  │ │ PARSED │       │  ERROR   │
-              │(hors     │ │        │       │          │
-              │ scope)   │ └────────┘       └────┬─────┘
-              └──────────┘                       │
-                                          retry < MAX ?
-                                           │         │
-                                          oui       non
-                                           │         │
-                                           ▼         ▼
-                                    ┌──────────┐ ┌───────────────────┐
-                                    │ RECEIVED │ │PERMANENTLY_FAILED │
-                                    │(retry)   │ │                   │
-                                    └──────────┘ └───────────────────┘
-
-              ┌──────────────┐
-              │ NEEDS_REVIEW │◄──── Republication détectée
-              │              │      (même filename, hash différent)
-              └──────────────┘
+                             ▼
+                       ┌──────────┐
+                       │ RECEIVED │◄──── reprise après crash
+                       └────┬─────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+        ▼                   ▼                   ▼
+   ┌─────────┐        ┌──────────┐        ┌────────┐
+   │ PARSED  │        │ SKIPPED  │        │ ERROR  │
+   └─────────┘        └──────────┘        └───┬────┘
+        │                                     │
+        │ republication                       │ retry < MAX_RETRIES
+        ▼                                     │
+ ┌──────────────┐                             ▼
+ │ NEEDS_REVIEW │                       ┌──────────┐
+ └──────────────┘                       │ RECEIVED │
+                                        └──────────┘
+                                             │
+                                             │ retry épuisé
+                                             ▼
+                                  ┌────────────────────┐
+                                  │ PERMANENTLY_FAILED │
+                                  └────────────────────┘
 ```
 
-| Statut | Signification | Action requise |
-|--------|---------------|----------------|
-| `received` | Fichier enregistré, en attente de traitement | Aucune (traitement automatique) |
-| `parsed` | Ingéré avec succès | Aucune |
-| `skipped` | Type de flux hors périmètre (R172, X14, HDM, UNKNOWN) | Aucune |
-| `error` | Échec de traitement, retry possible | Retry automatique au prochain run |
-| `needs_review` | Republication ingérée, les deux versions coexistent | Revue humaine nécessaire |
-| `permanently_failed` | MAX_RETRIES atteint, fichier abandonné | Investigation manuelle |
+| Statut | Signification | Action |
+|--------|---------------|--------|
+| `received` | Fichier enregistré, pas encore finalisé | Repris automatiquement |
+| `parsed` | Données raw insérées | Aucune |
+| `skipped` | Flux hors périmètre ou inconnu | Aucune |
+| `error` | Échec avec retry possible | Retry automatique |
+| `needs_review` | Republication stockée | Revue humaine/future promotion |
+| `permanently_failed` | Retry épuisé | Investigation manuelle |
 
 ---
 
-## 16. Glossaire
+## 17. Limites connues
+
+- Les archives legacy XML post-décryptage peuvent officiellement contenir plusieurs XML, mais `decrypt_file()` extrait encore seulement le premier membre.
+- Les endpoints d'ingestion du POC ne portent pas encore une auth opérationnelle dédiée.
+- `CR_M023` est reconnu mais non réconcilié avec les données C68/R6X.
+- Les flux R6X récurrents `R63A/B` et `R64A/B` sont reconnus mais non parsés.
+- La complétude temporelle des publications n'est pas calculée par cette couche.
+- Les warnings parser sont stockés dans `header_raw`, mais il n'existe pas encore de surface dédiée pour les filtrer.
+- `enedis_flux_mesure_r6x` est une vue de compatibilité, pas une cible d'écriture.
+
+---
+
+## 18. Glossaire
 
 | Terme | Définition |
 |-------|------------|
-| **SGE** | Système de Gestion des Échanges -- plateforme Enedis d'échange de données de comptage |
-| **PRM** | Point de Référence Mesure -- identifiant unique d'un point de comptage (14 chiffres) |
-| **CDC** | Courbe de charge -- série temporelle de mesures de puissance/énergie |
-| **C1-C4** | Segments de comptage pour compteurs télérelevés haute fréquence (puissance > 36 kVA) |
-| **C5** | Segment de comptage pour compteurs Linky basse tension (puissance <= 36 kVA) |
-| **Flux** | Fichier de données publié par Enedis selon un format XML normalisé |
-| **Republication** | Nouvelle version d'un fichier déjà publié par Enedis (corrections) |
-| **Staging** | Couche de stockage brut -- archive fidèle des données XML sans transformation |
-| **ADR** | Accord de Données de Référence -- standard Enedis pour les formats de flux |
-| **FTP** | Protocole de transfert de fichiers utilisé pour la publication des flux SGE |
-| **Classe temporelle** | Découpage tarifaire de la consommation (HPH, HCH, HPE, HCE, etc.) |
-| **Indice de vraisemblance** | Indicateur de qualité dont la signification depend du flux. Pour R50, le guide officiel definit `0 = valeur OK` et `1 = valeur sujette a caution` |
-| **ERDF** | Ancien nom d'Enedis (Électricité Réseau Distribution France) -- présent dans certains flux |
-| **Dry-run** | Mode d'exécution qui simule le traitement sans écrire en base |
+| **SGE** | Système de Gestion des Échanges Enedis |
+| **PRM** | Point de Référence Mesure, identifiant de point de comptage |
+| **CDC** | Courbe de charge |
+| **R6X** | Famille Enedis de publications de mesures demandées, incluant R63/R64 |
+| **M023** | Demande ponctuelle à l'origine de certains flux R6X/C68 |
+| **ITC** | Informations techniques et contractuelles |
+| **C1-C4** | Segments de comptage haute puissance/télérelevés |
+| **C5** | Segment Linky basse tension |
+| **Raw archive** | Stockage brut fidèle aux fichiers source |
+| **Promotion** | Transformation ultérieure raw → tables fonctionnelles |
+| **Republication** | Nouveau fichier avec même nom mais contenu différent |
+| **Idempotence** | Garantie qu'un même fichier physique n'est pas traité deux fois |
+| **Payload** | Fichier métier contenu dans une archive |
+| **Archive primaire C68** | ZIP C68 de premier niveau |
+| **Archive secondaire C68** | ZIP contenu dans la primaire, portant un JSON/CSV |
+| **Dry-run** | Simulation sans insertion de fichiers raw ni mesures |
+| **ERDF** | Ancien nom d'Enedis, encore présent dans certains flux |
