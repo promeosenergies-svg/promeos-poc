@@ -57,6 +57,7 @@ from data_ingestion.enedis.parsers.r4 import R4xParseError, parse_r4x
 from data_ingestion.enedis.parsers.r50 import R50ParseError, parse_r50
 from data_ingestion.enedis.parsers.r151 import R151ParseError, parse_r151
 from data_ingestion.enedis.parsers.r171 import R171ParseError, parse_r171
+from data_ingestion.enedis.parsers.r64 import R64ParseError, parse_r64_payload
 from data_ingestion.enedis.transport import TransportError, resolve_payload
 
 logger = logging.getLogger("promeos.enedis.pipeline")
@@ -148,7 +149,7 @@ def ingest_file(
 
     # SF5 direct/encrypted ZIP flows use transport + container handlers, not
     # the legacy decrypt-to-XML dispatch table.
-    if flux_type == FluxType.R63:
+    if flux_type in {FluxType.R63, FluxType.R64}:
         previous_file = (
             session.query(EnedisFluxFile)
             .filter(
@@ -158,12 +159,13 @@ def ingest_file(
             .order_by(EnedisFluxFile.version.desc())
             .first()
         )
-        return _ingest_r63_file(
+        return _ingest_r6x_file(
             file_path,
             session,
             keys,
             chunk_size,
             file_hash,
+            flux_type,
             pre_registered,
             previous_file,
         )
@@ -636,29 +638,31 @@ def _create_sf5_flux_file(
     return target
 
 
-def _ingest_r63_file(
+def _ingest_r6x_file(
     file_path: Path,
     session: Session,
     keys: list[tuple[bytes, bytes]],
     chunk_size: int,
     file_hash: str,
+    flux_type: FluxType,
     pre_registered: EnedisFluxFile | None,
     previous_file: EnedisFluxFile | None,
 ) -> FluxStatus:
     filename = file_path.name
+    parser_fn = parse_r63_payload if flux_type == FluxType.R63 else parse_r64_payload
+    parse_error_cls = R63ParseError if flux_type == FluxType.R63 else R64ParseError
+    store_fn = _store_r63 if flux_type == FluxType.R63 else _store_r64
     try:
         resolved = resolve_payload(file_path, "zip", keys=keys or None)
         container_payload = extract_r6x_payload(filename, resolved.payload_bytes)
-        parsed = parse_r63_payload(
+        parsed = parser_fn(
             container_payload.payload_bytes,
             container_payload.payload_format,
             container_payload.member_name,
         )
-    except (TransportError, ContainerError, R63ParseError) as exc:
-        logger.error("SF5 R63 ingest failed for %s: %s", filename, exc)
-        _record_file(
-            session, filename, file_hash, FluxType.R63.value, FluxStatus.ERROR, str(exc), existing=pre_registered
-        )
+    except (TransportError, ContainerError, parse_error_cls) as exc:
+        logger.error("SF5 %s ingest failed for %s: %s", flux_type.value, filename, exc)
+        _record_file(session, filename, file_hash, flux_type.value, FluxStatus.ERROR, str(exc), existing=pre_registered)
         session.commit()
         return FluxStatus.ERROR
 
@@ -675,7 +679,7 @@ def _ingest_r63_file(
         flux_file = _create_sf5_flux_file(
             filename,
             file_hash,
-            FluxType.R63,
+            flux_type,
             file_status,
             file_version,
             supersedes_id,
@@ -686,17 +690,17 @@ def _ingest_r63_file(
         if pre_registered is None:
             session.add(flux_file)
         session.flush()
-        total_inserted = _store_r63(parsed, flux_file, session, chunk_size)
+        total_inserted = store_fn(parsed, flux_file, session, chunk_size)
         flux_file.measures_count = total_inserted
         session.commit()
         return file_status
     except Exception as exc:
         session.rollback()
-        logger.error("SF5 R63 storage failed for %s: %s", filename, exc)
+        logger.error("SF5 %s storage failed for %s: %s", flux_type.value, filename, exc)
         refetched = (
             session.query(EnedisFluxFile).filter_by(file_hash=file_hash).first() if pre_registered is not None else None
         )
-        _record_file(session, filename, file_hash, FluxType.R63.value, FluxStatus.ERROR, str(exc), existing=refetched)
+        _record_file(session, filename, file_hash, flux_type.value, FluxStatus.ERROR, str(exc), existing=refetched)
         session.commit()
         return FluxStatus.ERROR
 
@@ -867,6 +871,40 @@ def _iter_r63(parsed: Any, flux_file: EnedisFluxFile):
 
 def _store_r63(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
     return _batch_insert(session, EnedisFluxMesureR6x, _iter_r63(parsed, flux_file), chunk_size)
+
+
+def _iter_r64(parsed: Any, flux_file: EnedisFluxFile):
+    for row in parsed.rows:
+        yield dict(
+            flux_file_id=flux_file.id,
+            flux_type=flux_file.flux_type,
+            source_format=parsed.source_format,
+            archive_member_name=parsed.member_name,
+            point_id=row.point_id,
+            periode_date_debut=row.periode_date_debut,
+            periode_date_fin=row.periode_date_fin,
+            etape_metier=row.etape_metier,
+            contexte_releve=row.contexte_releve,
+            type_releve=row.type_releve,
+            motif_releve=row.motif_releve,
+            grandeur_metier=row.grandeur_metier,
+            grandeur_physique=row.grandeur_physique,
+            unite=row.unite,
+            horodatage=row.horodatage,
+            valeur=row.valeur,
+            indice_vraisemblance=row.indice_vraisemblance,
+            code_grille=row.code_grille,
+            id_calendrier=row.id_calendrier,
+            libelle_calendrier=row.libelle_calendrier,
+            libelle_grille=row.libelle_grille,
+            id_classe_temporelle=row.id_classe_temporelle,
+            libelle_classe_temporelle=row.libelle_classe_temporelle,
+            code_cadran=row.code_cadran,
+        )
+
+
+def _store_r64(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
+    return _batch_insert(session, EnedisFluxMesureR6x, _iter_r64(parsed, flux_file), chunk_size)
 
 
 # ---------------------------------------------------------------------------

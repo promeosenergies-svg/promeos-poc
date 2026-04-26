@@ -63,6 +63,69 @@ def _r63_csv() -> bytes:
     ).encode()
 
 
+def _r64_json() -> bytes:
+    return json.dumps(
+        {
+            "header": {
+                "siDemandeur": "SGE",
+                "typeDestinataire": "SI",
+                "idDestinataire": "GRD-F001",
+                "codeFlux": "R64",
+                "idDemande": "M06IFF1Z",
+                "modePublication": "P",
+                "idCanalContact": "WEB",
+                "format": "JSON",
+            },
+            "mesures": [
+                {
+                    "idPrm": "30000000000001",
+                    "periode": {"dateDebut": "2026-01-01", "dateFin": "2026-01-02"},
+                    "contexte": [
+                        {
+                            "etapeMetier": "RELEVE",
+                            "contexteReleve": "NORMAL",
+                            "typeReleve": "INDEX",
+                            "motifReleve": "PERIODIQUE",
+                            "grandeur": [
+                                {
+                                    "grandeurMetier": "CONS",
+                                    "grandeurPhysique": "EA",
+                                    "unite": "Wh",
+                                    "calendrier": [
+                                        {
+                                            "idCalendrier": "CAL1",
+                                            "libelleCalendrier": "Calendrier",
+                                            "libelleGrille": "Grille",
+                                            "classeTemporelle": [
+                                                {
+                                                    "idClasseTemporelle": "HP",
+                                                    "libelleClasseTemporelle": "Heures pleines",
+                                                    "codeCadran": "01",
+                                                    "valeur": [{"d": "2026-01-01T00:00:00+01:00", "v": 100, "iv": 0}],
+                                                }
+                                            ],
+                                        }
+                                    ],
+                                }
+                            ],
+                        }
+                    ],
+                }
+            ],
+        }
+    ).encode()
+
+
+def _r64_csv() -> bytes:
+    return (
+        "Identifiant PRM;Date de debut;Date de fin;Grandeur physique;Grandeur metier;Etape metier;Unite;"
+        "Horodate;Valeur;Contexte releve;Type releve;Motif releve;Code grille;Id calendrier;"
+        "Libelle calendrier;Libelle grille;Id classe temporelle;Libelle classe temporelle;Code cadran;iv\n"
+        "30000000000001;2026-01-01;2026-01-02;EA;CONS;RELEVE;Wh;2026-01-01T00:00:00+01:00;"
+        "100;NORMAL;INDEX;PERIODIQUE;GRD;CAL1;Calendrier;Grille;HP;Heures pleines;01;0\n"
+    ).encode()
+
+
 def test_ingest_r63_direct_json_zip_without_keys(db, tmp_path):
     outer = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.zip"
     member = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.json"
@@ -129,6 +192,62 @@ def test_ingest_r63_malformed_csv_records_error_and_rolls_back(db, tmp_path):
     member = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.csv"
     path = tmp_path / outer
     path.write_bytes(_zip_bytes({member: b"Identifiant PRM;Date de debut\n30000000000001;2026-01-01\n"}))
+
+    status = ingest_file(path, db, keys=[])
+
+    assert status == FluxStatus.ERROR
+    assert db.query(EnedisFluxMesureR6x).count() == 0
+
+
+def test_ingest_r64_direct_json_zip_without_keys(db, tmp_path):
+    outer = "ENEDIS_R64_P_INDEX_M06IFF1Z_00001_20240627165441.zip"
+    member = "ENEDIS_R64_P_INDEX_M06IFF1Z_00001_20240627165441.json"
+    path = tmp_path / outer
+    path.write_bytes(_zip_bytes({member: _r64_json()}))
+
+    status = ingest_file(path, db, keys=[])
+
+    assert status == FluxStatus.PARSED
+    file_row = db.query(EnedisFluxFile).one()
+    assert file_row.flux_type == "R64"
+    assert file_row.payload_format == "JSON"
+    assert file_row.measures_count == 1
+    row = db.query(EnedisFluxMesureR6x).one()
+    assert row.id_calendrier == "CAL1"
+    assert row.code_cadran == "01"
+    assert row.valeur == "100"
+
+
+def test_ingest_r64_direct_csv_zip(db, tmp_path):
+    outer = "ENEDIS_R64_P_INDEX_M06IFF1Z_00001_20240627165441.zip"
+    member = "ENEDIS_R64_P_INDEX_M06IFF1Z_00001_20240627165441.csv"
+    path = tmp_path / outer
+    path.write_bytes(_zip_bytes({member: _r64_csv()}))
+
+    status = ingest_file(path, db, keys=[])
+
+    assert status == FluxStatus.PARSED
+    assert db.query(EnedisFluxFile).one().payload_format == "CSV"
+    assert db.query(EnedisFluxMesureR6x).one().source_format == "CSV"
+
+
+def test_ingest_r64_aes_wrapped_zip(db, tmp_path, test_keys):
+    outer = "ENEDIS_R64_P_INDEX_M06IFF1Z_00001_20240627165441.zip"
+    member = "ENEDIS_R64_P_INDEX_M06IFF1Z_00001_20240627165441.json"
+    path = tmp_path / outer
+    path.write_bytes(aes_encrypt(_zip_bytes({member: _r64_json()}), TEST_KEY, TEST_IV))
+
+    status = ingest_file(path, db, keys=test_keys)
+
+    assert status == FluxStatus.PARSED
+    assert db.query(EnedisFluxMesureR6x).count() == 1
+
+
+def test_ingest_r64_payload_filename_mismatch_records_error_and_rolls_back(db, tmp_path):
+    outer = "ENEDIS_R64_P_INDEX_M06IFF1Z_00001_20240627165441.zip"
+    member = "ENEDIS_R64_P_INDEX_M06IFF1Z_00002_20240627165441.json"
+    path = tmp_path / outer
+    path.write_bytes(_zip_bytes({member: _r64_json()}))
 
     status = ingest_file(path, db, keys=[])
 
