@@ -7,12 +7,13 @@ from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
     EnedisFluxFileError,
+    EnedisFluxIndexR64,
     EnedisFluxItcC68,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR171,
     EnedisFluxMesureR50,
     EnedisFluxMesureR151,
-    EnedisFluxMesureR6x,
+    EnedisFluxMesureR63,
     IngestionRun,
 )
 
@@ -286,20 +287,20 @@ class TestEnedisFluxMesureR4x:
 
 
 # ---------------------------------------------------------------------------
-# EnedisFluxMesureR6x
+# EnedisFluxMesureR63 / EnedisFluxIndexR64
 # ---------------------------------------------------------------------------
 
 
-class TestEnedisFluxMesureR6x:
-    def _make_file(self, db, file_hash="r6x_file"):
-        f = EnedisFluxFile(filename="r6x.zip", file_hash=file_hash, flux_type="R63", status="parsed")
+class TestEnedisFluxMesureR63:
+    def _make_file(self, db, file_hash="r63_file"):
+        f = EnedisFluxFile(filename="r63.zip", file_hash=file_hash, flux_type="R63", status="parsed")
         db.add(f)
         db.flush()
         return f
 
-    def test_create_r6x_mesure_raw_strings(self, db):
+    def test_create_r63_mesure_raw_strings(self, db):
         f = self._make_file(db)
-        m = EnedisFluxMesureR6x(
+        m = EnedisFluxMesureR63(
             flux_file_id=f.id,
             flux_type="R63",
             source_format="JSON",
@@ -317,14 +318,80 @@ class TestEnedisFluxMesureR6x:
         db.add(m)
         db.commit()
 
-        result = db.query(EnedisFluxMesureR6x).one()
+        result = db.query(EnedisFluxMesureR63).one()
         assert result.valeur == "00123.40"
         assert isinstance(result.valeur, str)
 
-    def test_duplicate_r6x_rows_allowed_and_cascade(self, db):
+    def test_duplicate_r63_rows_allowed_and_cascade(self, db):
         f = self._make_file(db)
         rows = [
-            EnedisFluxMesureR6x(
+            EnedisFluxMesureR63(
+                flux_file_id=f.id,
+                flux_type="R63",
+                source_format="CSV",
+                archive_member_name="payload.csv",
+                point_id="30000210411333",
+                grandeur_physique="EA",
+                horodatage="2026-03-07T00:00:00+01:00",
+                pas="PT5M",
+                nature_point="R",
+                valeur=value,
+            )
+            for value in ("100", "101")
+        ]
+        db.add_all(rows)
+        db.commit()
+
+        db.refresh(f)
+        assert len(f.mesures_r63) == 2
+        db.delete(f)
+        db.commit()
+        assert db.query(EnedisFluxMesureR63).count() == 0
+
+
+class TestEnedisFluxIndexR64:
+    def _make_file(self, db, file_hash="r64_file"):
+        f = EnedisFluxFile(filename="r64.zip", file_hash=file_hash, flux_type="R64", status="parsed")
+        db.add(f)
+        db.flush()
+        return f
+
+    def test_create_r64_index_raw_strings_and_context(self, db):
+        f = self._make_file(db)
+        m = EnedisFluxIndexR64(
+            flux_file_id=f.id,
+            flux_type="R64",
+            source_format="JSON",
+            archive_member_name="ENEDIS_R64_P_INDEX_M06IFF1Z_00001_20240627165441.json",
+            point_id="30000210411333",
+            periode_date_debut="2026-03-07T00:00:00+01:00",
+            periode_date_fin="2026-03-07T23:59:59+01:00",
+            contexte_releve="NORMAL",
+            type_releve="INDEX",
+            grandeur_metier="CONS",
+            grandeur_physique="EA",
+            unite="Wh",
+            horodatage="2026-03-07T00:00:00+01:00",
+            valeur="00123.40",
+            indice_vraisemblance="0",
+            id_calendrier="CAL1",
+            id_classe_temporelle="HP",
+            code_cadran="01",
+        )
+        db.add(m)
+        db.commit()
+
+        result = db.query(EnedisFluxIndexR64).one()
+        assert result.valeur == "00123.40"
+        assert isinstance(result.valeur, str)
+        assert result.id_calendrier == "CAL1"
+        assert result.id_classe_temporelle == "HP"
+        assert result.code_cadran == "01"
+
+    def test_duplicate_r64_rows_allowed_and_cascade(self, db):
+        f = self._make_file(db)
+        rows = [
+            EnedisFluxIndexR64(
                 flux_file_id=f.id,
                 flux_type="R64",
                 source_format="CSV",
@@ -340,10 +407,10 @@ class TestEnedisFluxMesureR6x:
         db.commit()
 
         db.refresh(f)
-        assert len(f.mesures_r6x) == 2
+        assert len(f.indexes_r64) == 2
         db.delete(f)
         db.commit()
-        assert db.query(EnedisFluxMesureR6x).count() == 0
+        assert db.query(EnedisFluxIndexR64).count() == 0
 
 
 # ---------------------------------------------------------------------------

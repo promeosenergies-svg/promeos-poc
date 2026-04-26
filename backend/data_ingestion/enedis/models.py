@@ -8,6 +8,8 @@ Tables:
   enedis_flux_mesure_r171  — one row per mesureDatee R171 index C2-C4
   enedis_flux_mesure_r50   — one row per PDC R50 courbe de charge C5
   enedis_flux_mesure_r151  — one row per valeur R151 index+puissance max C5
+  enedis_flux_mesure_r63   — one row per R63 load-curve point
+  enedis_flux_index_r64    — one row per R64 cumulative index value
 
 Design decisions:
   - Uses the dedicated FluxDataBase so raw Enedis tables live in flux_data.db
@@ -90,7 +92,8 @@ class EnedisFluxFile(Base, TimestampMixin):
     mesures_r171 = relationship("EnedisFluxMesureR171", back_populates="flux_file", cascade="all, delete-orphan")
     mesures_r50 = relationship("EnedisFluxMesureR50", back_populates="flux_file", cascade="all, delete-orphan")
     mesures_r151 = relationship("EnedisFluxMesureR151", back_populates="flux_file", cascade="all, delete-orphan")
-    mesures_r6x = relationship("EnedisFluxMesureR6x", back_populates="flux_file", cascade="all, delete-orphan")
+    mesures_r63 = relationship("EnedisFluxMesureR63", back_populates="flux_file", cascade="all, delete-orphan")
+    indexes_r64 = relationship("EnedisFluxIndexR64", back_populates="flux_file", cascade="all, delete-orphan")
     itc_c68 = relationship("EnedisFluxItcC68", back_populates="flux_file", cascade="all, delete-orphan")
     errors = relationship(
         "EnedisFluxFileError",
@@ -299,19 +302,18 @@ class EnedisFluxMesureR151(Base, TimestampMixin):
         return f"<EnedisFluxMesureR151 {self.point_id} {self.date_releve} {self.valeur}>"
 
 
-class EnedisFluxMesureR6x(Base, TimestampMixin):
-    """Raw atomic R63/R64 measurement or index value.
+class EnedisFluxMesureR63(Base, TimestampMixin):
+    """Raw R63 load-curve point.
 
     Values remain raw strings. There is deliberately no unique constraint:
     republications and corrections are archived side by side.
     """
 
-    __tablename__ = "enedis_flux_mesure_r6x"
+    __tablename__ = "enedis_flux_mesure_r63"
     __table_args__ = (
-        Index("ix_enedis_mesure_r6x_point_horodatage", "point_id", "horodatage"),
-        Index("ix_enedis_mesure_r6x_flux_file", "flux_file_id"),
-        Index("ix_enedis_mesure_r6x_flux_type", "flux_type"),
-        Index("ix_enedis_mesure_r6x_point_flux_gp", "point_id", "flux_type", "grandeur_physique"),
+        Index("ix_enedis_mesure_r63_point_horodatage", "point_id", "horodatage"),
+        Index("ix_enedis_mesure_r63_flux_file", "flux_file_id"),
+        Index("ix_enedis_mesure_r63_point_gp", "point_id", "grandeur_physique"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -321,7 +323,7 @@ class EnedisFluxMesureR6x(Base, TimestampMixin):
         nullable=False,
         comment="FK vers enedis_flux_file",
     )
-    flux_type = Column(String(10), nullable=False, comment="R63/R64")
+    flux_type = Column(String(10), nullable=False, comment="R63")
     source_format = Column(String(10), nullable=False, comment="JSON/CSV")
     archive_member_name = Column(String(255), nullable=False, comment="Nom du payload dans l'archive")
     point_id = Column(String(14), nullable=False, comment="Identifiant PRM")
@@ -329,9 +331,6 @@ class EnedisFluxMesureR6x(Base, TimestampMixin):
     periode_date_fin = Column(String(50), nullable=True, comment="Fin de periode brut")
     etape_metier = Column(String(20), nullable=True, comment="Etape metier brute")
     mode_calcul = Column(String(20), nullable=True, comment="Mode calcul R63")
-    contexte_releve = Column(String(20), nullable=True, comment="Contexte releve R64")
-    type_releve = Column(String(20), nullable=True, comment="Type releve R64")
-    motif_releve = Column(String(20), nullable=True, comment="Motif releve R64")
     grandeur_metier = Column(String(20), nullable=True, comment="Grandeur metier brute")
     grandeur_physique = Column(String(20), nullable=True, comment="Grandeur physique brute")
     unite = Column(String(20), nullable=True, comment="Unite brute")
@@ -342,6 +341,51 @@ class EnedisFluxMesureR6x(Base, TimestampMixin):
     valeur = Column(String(30), nullable=True, comment="Valeur brute")
     indice_vraisemblance = Column(String(10), nullable=True, comment="Indice vraisemblance brut")
     etat_complementaire = Column(String(10), nullable=True, comment="Etat complementaire R63")
+
+    flux_file = relationship("EnedisFluxFile", back_populates="mesures_r63")
+
+    def __repr__(self) -> str:
+        return f"<EnedisFluxMesureR63 {self.point_id} {self.horodatage} {self.valeur}>"
+
+
+class EnedisFluxIndexR64(Base, TimestampMixin):
+    """Raw R64 cumulative index reading.
+
+    R64 values are indexes, not interval load-curve values. They remain raw
+    strings and are archived without unique constraints.
+    """
+
+    __tablename__ = "enedis_flux_index_r64"
+    __table_args__ = (
+        Index("ix_enedis_index_r64_point_horodatage", "point_id", "horodatage"),
+        Index("ix_enedis_index_r64_flux_file", "flux_file_id"),
+        Index("ix_enedis_index_r64_point_gp", "point_id", "grandeur_physique"),
+        Index("ix_enedis_index_r64_point_calendar", "point_id", "id_calendrier", "id_classe_temporelle"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    flux_file_id = Column(
+        Integer,
+        ForeignKey("enedis_flux_file.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="FK vers enedis_flux_file",
+    )
+    flux_type = Column(String(10), nullable=False, comment="R64")
+    source_format = Column(String(10), nullable=False, comment="JSON/CSV")
+    archive_member_name = Column(String(255), nullable=False, comment="Nom du payload dans l'archive")
+    point_id = Column(String(14), nullable=False, comment="Identifiant PRM")
+    periode_date_debut = Column(String(50), nullable=True, comment="Debut de periode brut")
+    periode_date_fin = Column(String(50), nullable=True, comment="Fin de periode brut")
+    etape_metier = Column(String(20), nullable=True, comment="Etape metier brute")
+    contexte_releve = Column(String(20), nullable=True, comment="Contexte releve R64")
+    type_releve = Column(String(20), nullable=True, comment="Type releve R64")
+    motif_releve = Column(String(20), nullable=True, comment="Motif releve R64")
+    grandeur_metier = Column(String(20), nullable=True, comment="Grandeur metier brute")
+    grandeur_physique = Column(String(20), nullable=True, comment="Grandeur physique brute")
+    unite = Column(String(20), nullable=True, comment="Unite brute")
+    horodatage = Column(String(50), nullable=False, comment="Horodatage brut de l'index")
+    valeur = Column(String(30), nullable=True, comment="Index cumulatif brut")
+    indice_vraisemblance = Column(String(10), nullable=True, comment="Indice vraisemblance brut")
     code_grille = Column(String(20), nullable=True, comment="Code grille R64")
     id_calendrier = Column(String(30), nullable=True, comment="Identifiant calendrier R64")
     libelle_calendrier = Column(String(100), nullable=True, comment="Libelle calendrier R64")
@@ -350,10 +394,10 @@ class EnedisFluxMesureR6x(Base, TimestampMixin):
     libelle_classe_temporelle = Column(String(100), nullable=True, comment="Libelle classe temporelle R64")
     code_cadran = Column(String(30), nullable=True, comment="Code cadran R64")
 
-    flux_file = relationship("EnedisFluxFile", back_populates="mesures_r6x")
+    flux_file = relationship("EnedisFluxFile", back_populates="indexes_r64")
 
     def __repr__(self) -> str:
-        return f"<EnedisFluxMesureR6x {self.flux_type} {self.point_id} {self.horodatage} {self.valeur}>"
+        return f"<EnedisFluxIndexR64 {self.point_id} {self.horodatage} {self.valeur}>"
 
 
 class EnedisFluxItcC68(Base, TimestampMixin):
@@ -497,7 +541,8 @@ ENEDIS_RAW_TABLES = (
     "enedis_flux_mesure_r171",
     "enedis_flux_mesure_r50",
     "enedis_flux_mesure_r151",
-    "enedis_flux_mesure_r6x",
+    "enedis_flux_mesure_r63",
+    "enedis_flux_index_r64",
     "enedis_flux_itc_c68",
     "enedis_flux_file_error",
     "enedis_ingestion_run",

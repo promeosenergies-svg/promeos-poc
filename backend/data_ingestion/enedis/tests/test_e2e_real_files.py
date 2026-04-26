@@ -14,11 +14,12 @@ from data_ingestion.enedis.decrypt import decrypt_file
 from data_ingestion.enedis.enums import FluxStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
+    EnedisFluxIndexR64,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR50,
     EnedisFluxMesureR151,
     EnedisFluxMesureR171,
-    EnedisFluxMesureR6x,
+    EnedisFluxMesureR63,
     EnedisFluxItcC68,
 )
 from data_ingestion.enedis.pipeline import ingest_directory, ingest_file
@@ -85,8 +86,8 @@ SUPPORTED_FLUX_NAMES = [spec[0] for spec in FLUX_SPECS]
 
 _RUN_REAL_SF5 = os.environ.get("PROMEOS_RUN_REAL_SF5_TESTS") == "1"
 SF5_FLUX_SPECS = [
-    ("R63", EnedisFluxMesureR6x, ["point_id", "horodatage", "valeur", "flux_type"]),
-    ("R64", EnedisFluxMesureR6x, ["point_id", "horodatage", "valeur", "flux_type"]),
+    ("R63", EnedisFluxMesureR63, ["point_id", "horodatage", "valeur", "flux_type"]),
+    ("R64", EnedisFluxIndexR64, ["point_id", "horodatage", "valeur", "flux_type"]),
     ("C68", EnedisFluxItcC68, ["point_id", "payload_raw"]),
 ]
 
@@ -246,7 +247,8 @@ class TestSF5RealSamples:
         counters = ingest_directory(root, db, real_keys, recursive=True)
 
         assert counters["error"] == 0, f"Ingestion errors: {_get_error_details(db)}"
-        assert db.query(EnedisFluxMesureR6x).count() > 0
+        assert db.query(EnedisFluxMesureR63).count() > 0
+        assert db.query(EnedisFluxIndexR64).count() > 0
         assert db.query(EnedisFluxItcC68).count() > 0
 
 

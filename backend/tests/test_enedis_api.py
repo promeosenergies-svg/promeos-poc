@@ -28,12 +28,13 @@ from database import get_db, get_flux_data_db
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
     EnedisFluxFileError,
+    EnedisFluxIndexR64,
     EnedisFluxItcC68,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR151,
     EnedisFluxMesureR171,
     EnedisFluxMesureR50,
-    EnedisFluxMesureR6x,
+    EnedisFluxMesureR63,
     IngestionRun,
 )
 from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
@@ -188,10 +189,26 @@ def _seed_measure_r151(session, flux_file, point_id="30002222222222"):
     return m
 
 
-def _seed_measure_r6x(session, flux_file, point_id="30003333333333"):
-    m = EnedisFluxMesureR6x(
+def _seed_measure_r63(session, flux_file, point_id="30003333333333"):
+    m = EnedisFluxMesureR63(
         flux_file_id=flux_file.id,
-        flux_type=flux_file.flux_type,
+        flux_type="R63",
+        source_format="JSON",
+        archive_member_name="payload.json",
+        point_id=point_id,
+        horodatage="2026-03-01T00:00:00+01:00",
+        pas="PT5M",
+        nature_point="R",
+    )
+    session.add(m)
+    session.flush()
+    return m
+
+
+def _seed_index_r64(session, flux_file, point_id="30005555555555"):
+    m = EnedisFluxIndexR64(
+        flux_file_id=flux_file.id,
+        flux_type="R64",
         source_format="JSON",
         archive_member_name="payload.json",
         point_id=point_id,
@@ -635,6 +652,8 @@ class TestStatsEndpoint:
 
         assert data["measures"]["r4x"] == 1
         assert data["measures"]["r171"] == 1
+        assert data["measures"]["r63"] == 0
+        assert data["measures"]["r64"] == 0
         assert data["measures"]["r6x"] == 0
         assert data["measures"]["c68"] == 0
         assert data["measures"]["total"] == 2
@@ -642,27 +661,32 @@ class TestStatsEndpoint:
         assert data["last_ingestion"] is not None
         assert data["last_ingestion"]["triggered_by"] == "api"
 
-    def test_stats_include_sf5_r6x_c68_rows_and_prms(self, client):
+    def test_stats_include_sf5_r63_r64_r6x_c68_rows_and_prms(self, client):
         c, session = client
 
         r63_file = _seed_flux_file(session, "r63.zip", file_hash="h_r63", flux_type="R63", measures_count=2)
+        r64_file = _seed_flux_file(session, "r64.zip", file_hash="h_r64", flux_type="R64", measures_count=1)
         c68_file = _seed_flux_file(session, "c68.zip", file_hash="h_c68", flux_type="C68", measures_count=1)
-        _seed_measure_r6x(session, r63_file, "30003333333333")
-        _seed_measure_r6x(session, r63_file, "30003333333334")
+        _seed_measure_r63(session, r63_file, "30003333333333")
+        _seed_measure_r63(session, r63_file, "30003333333334")
+        _seed_index_r64(session, r64_file, "30005555555555")
         _seed_itc_c68(session, c68_file, "30004444444444")
 
         r = c.get("/api/enedis/stats")
 
         assert r.status_code == 200
         data = r.json()
-        assert data["measures"]["r6x"] == 2
+        assert data["measures"]["r63"] == 2
+        assert data["measures"]["r64"] == 1
+        assert data["measures"]["r6x"] == 3
         assert data["measures"]["c68"] == 1
-        assert data["measures"]["total"] == 3
-        assert data["prms"]["count"] == 3
+        assert data["measures"]["total"] == 4
+        assert data["prms"]["count"] == 4
         assert sorted(data["prms"]["identifiers"]) == [
             "30003333333333",
             "30003333333334",
             "30004444444444",
+            "30005555555555",
         ]
 
     def test_stats_prms_distinct(self, client):

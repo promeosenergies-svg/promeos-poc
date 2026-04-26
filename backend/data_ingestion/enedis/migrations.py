@@ -17,6 +17,8 @@ def run_flux_data_migrations(engine) -> None:
     _rename_enedis_mesure_table(engine)
     _create_enedis_tables(engine)
     _add_enedis_columns(engine)
+    _split_legacy_r6x_table(engine)
+    _create_r6x_compatibility_view(engine)
 
 
 def _rename_enedis_mesure_table(engine) -> None:
@@ -115,3 +117,139 @@ def _add_enedis_columns(engine) -> None:
                     continue
                 conn.execute(text(f'ALTER TABLE "{table_name}" ADD COLUMN "{col_name}" {col_type}'))
                 logger.info("flux-data migration: added %s.%s", table_name, col_name)
+
+
+def _split_legacy_r6x_table(engine) -> None:
+    """Move the former shared R63/R64 physical table into canonical split tables."""
+    insp = inspect(engine)
+    if "enedis_flux_mesure_r6x" not in insp.get_table_names():
+        return
+    if not insp.has_table("enedis_flux_mesure_r63") or not insp.has_table("enedis_flux_index_r64"):
+        return
+
+    with engine.begin() as conn:
+        legacy_total = conn.execute(
+            text("SELECT COUNT(*) FROM \"enedis_flux_mesure_r6x\" WHERE flux_type IN ('R63', 'R64')")
+        ).scalar_one()
+        existing_r63 = conn.execute(text('SELECT COUNT(*) FROM "enedis_flux_mesure_r63"')).scalar_one()
+        existing_r64 = conn.execute(text('SELECT COUNT(*) FROM "enedis_flux_index_r64"')).scalar_one()
+        existing_total = existing_r63 + existing_r64
+
+        if existing_total == 0:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO "enedis_flux_mesure_r63" (
+                        id, flux_file_id, flux_type, source_format, archive_member_name,
+                        point_id, periode_date_debut, periode_date_fin, etape_metier,
+                        mode_calcul, grandeur_metier, grandeur_physique, unite,
+                        horodatage, pas, nature_point, type_correction, valeur,
+                        indice_vraisemblance, etat_complementaire, created_at, updated_at
+                    )
+                    SELECT
+                        id, flux_file_id, flux_type, source_format, archive_member_name,
+                        point_id, periode_date_debut, periode_date_fin, etape_metier,
+                        mode_calcul, grandeur_metier, grandeur_physique, unite,
+                        horodatage, pas, nature_point, type_correction, valeur,
+                        indice_vraisemblance, etat_complementaire, created_at, updated_at
+                    FROM "enedis_flux_mesure_r6x"
+                    WHERE flux_type = 'R63'
+                    """
+                )
+            )
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO "enedis_flux_index_r64" (
+                        id, flux_file_id, flux_type, source_format, archive_member_name,
+                        point_id, periode_date_debut, periode_date_fin, etape_metier,
+                        contexte_releve, type_releve, motif_releve, grandeur_metier,
+                        grandeur_physique, unite, horodatage, valeur, indice_vraisemblance,
+                        code_grille, id_calendrier, libelle_calendrier, libelle_grille,
+                        id_classe_temporelle, libelle_classe_temporelle, code_cadran,
+                        created_at, updated_at
+                    )
+                    SELECT
+                        id, flux_file_id, flux_type, source_format, archive_member_name,
+                        point_id, periode_date_debut, periode_date_fin, etape_metier,
+                        contexte_releve, type_releve, motif_releve, grandeur_metier,
+                        grandeur_physique, unite, horodatage, valeur, indice_vraisemblance,
+                        code_grille, id_calendrier, libelle_calendrier, libelle_grille,
+                        id_classe_temporelle, libelle_classe_temporelle, code_cadran,
+                        created_at, updated_at
+                    FROM "enedis_flux_mesure_r6x"
+                    WHERE flux_type = 'R64'
+                    """
+                )
+            )
+            existing_r63 = conn.execute(text('SELECT COUNT(*) FROM "enedis_flux_mesure_r63"')).scalar_one()
+            existing_r64 = conn.execute(text('SELECT COUNT(*) FROM "enedis_flux_index_r64"')).scalar_one()
+            existing_total = existing_r63 + existing_r64
+
+        if existing_total != legacy_total:
+            raise RuntimeError(
+                "flux-data migration refused to drop enedis_flux_mesure_r6x: "
+                f"legacy rows={legacy_total}, split rows={existing_total}"
+            )
+
+        conn.execute(text('DROP TABLE "enedis_flux_mesure_r6x"'))
+        logger.info(
+            "flux-data migration: split enedis_flux_mesure_r6x into R63=%d and R64=%d rows",
+            existing_r63,
+            existing_r64,
+        )
+
+
+def _create_r6x_compatibility_view(engine) -> None:
+    """Create a read-only non-canonical view with the former shared table name."""
+    insp = inspect(engine)
+    if "enedis_flux_mesure_r6x" in insp.get_table_names():
+        return
+    if not insp.has_table("enedis_flux_mesure_r63") or not insp.has_table("enedis_flux_index_r64"):
+        return
+
+    with engine.begin() as conn:
+        conn.execute(text('DROP VIEW IF EXISTS "enedis_flux_mesure_r6x"'))
+        conn.execute(
+            text(
+                """
+                CREATE VIEW "enedis_flux_mesure_r6x" AS
+                SELECT
+                    id, flux_file_id, flux_type, source_format, archive_member_name,
+                    point_id, periode_date_debut, periode_date_fin, etape_metier,
+                    mode_calcul,
+                    NULL AS contexte_releve,
+                    NULL AS type_releve,
+                    NULL AS motif_releve,
+                    grandeur_metier, grandeur_physique, unite, horodatage,
+                    pas, nature_point, type_correction, valeur, indice_vraisemblance,
+                    etat_complementaire,
+                    NULL AS code_grille,
+                    NULL AS id_calendrier,
+                    NULL AS libelle_calendrier,
+                    NULL AS libelle_grille,
+                    NULL AS id_classe_temporelle,
+                    NULL AS libelle_classe_temporelle,
+                    NULL AS code_cadran,
+                    created_at, updated_at
+                FROM "enedis_flux_mesure_r63"
+                UNION ALL
+                SELECT
+                    id, flux_file_id, flux_type, source_format, archive_member_name,
+                    point_id, periode_date_debut, periode_date_fin, etape_metier,
+                    NULL AS mode_calcul,
+                    contexte_releve, type_releve, motif_releve,
+                    grandeur_metier, grandeur_physique, unite, horodatage,
+                    NULL AS pas,
+                    NULL AS nature_point,
+                    NULL AS type_correction,
+                    valeur, indice_vraisemblance,
+                    NULL AS etat_complementaire,
+                    code_grille, id_calendrier, libelle_calendrier, libelle_grille,
+                    id_classe_temporelle, libelle_classe_temporelle, code_cadran,
+                    created_at, updated_at
+                FROM "enedis_flux_index_r64"
+                """
+            )
+        )
+        logger.info("flux-data migration: created non-canonical enedis_flux_mesure_r6x compatibility view")

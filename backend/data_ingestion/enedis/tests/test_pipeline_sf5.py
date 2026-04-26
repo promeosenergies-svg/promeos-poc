@@ -6,7 +6,7 @@ import zipfile
 
 from data_ingestion.enedis.enums import FluxStatus
 from data_ingestion.enedis.config import MAX_RETRIES
-from data_ingestion.enedis.models import EnedisFluxFile, EnedisFluxItcC68, EnedisFluxMesureR6x
+from data_ingestion.enedis.models import EnedisFluxFile, EnedisFluxIndexR64, EnedisFluxItcC68, EnedisFluxMesureR63
 from data_ingestion.enedis.pipeline import ingest_directory, ingest_file
 
 from .conftest import TEST_IV, TEST_KEY, aes_encrypt, make_encrypted_zip
@@ -176,8 +176,9 @@ def test_ingest_r63_direct_json_zip_without_keys(db, tmp_path):
     header_raw = file_row.get_header_raw()
     assert header_raw["filename_metadata"]["num_sequence"] == "00001"
     assert header_raw["archive_manifest"]["payload_member_name"] == member
-    rows = db.query(EnedisFluxMesureR6x).order_by(EnedisFluxMesureR6x.horodatage).all()
+    rows = db.query(EnedisFluxMesureR63).order_by(EnedisFluxMesureR63.horodatage).all()
     assert [row.valeur for row in rows] == ["10", "11"]
+    assert db.query(EnedisFluxIndexR64).count() == 0
 
 
 def test_ingest_r63_direct_csv_zip(db, tmp_path):
@@ -192,7 +193,8 @@ def test_ingest_r63_direct_csv_zip(db, tmp_path):
     file_row = db.query(EnedisFluxFile).one()
     assert file_row.payload_format == "CSV"
     assert file_row.measures_count == 1
-    assert db.query(EnedisFluxMesureR6x).one().source_format == "CSV"
+    assert db.query(EnedisFluxMesureR63).one().source_format == "CSV"
+    assert db.query(EnedisFluxIndexR64).count() == 0
 
 
 def test_ingest_r63_aes_wrapped_zip(db, tmp_path, test_keys):
@@ -204,7 +206,8 @@ def test_ingest_r63_aes_wrapped_zip(db, tmp_path, test_keys):
     status = ingest_file(path, db, keys=test_keys)
 
     assert status == FluxStatus.PARSED
-    assert db.query(EnedisFluxMesureR6x).count() == 2
+    assert db.query(EnedisFluxMesureR63).count() == 2
+    assert db.query(EnedisFluxIndexR64).count() == 0
 
 
 def test_ingest_r63_payload_filename_mismatch_records_error_and_rolls_back(db, tmp_path):
@@ -217,7 +220,8 @@ def test_ingest_r63_payload_filename_mismatch_records_error_and_rolls_back(db, t
 
     assert status == FluxStatus.ERROR
     assert db.query(EnedisFluxFile).one().status == FluxStatus.ERROR
-    assert db.query(EnedisFluxMesureR6x).count() == 0
+    assert db.query(EnedisFluxMesureR63).count() == 0
+    assert db.query(EnedisFluxIndexR64).count() == 0
 
 
 def test_ingest_r63_malformed_csv_records_error_and_rolls_back(db, tmp_path):
@@ -229,7 +233,8 @@ def test_ingest_r63_malformed_csv_records_error_and_rolls_back(db, tmp_path):
     status = ingest_file(path, db, keys=[])
 
     assert status == FluxStatus.ERROR
-    assert db.query(EnedisFluxMesureR6x).count() == 0
+    assert db.query(EnedisFluxMesureR63).count() == 0
+    assert db.query(EnedisFluxIndexR64).count() == 0
 
 
 def test_ingest_r64_direct_json_zip_without_keys(db, tmp_path):
@@ -245,10 +250,11 @@ def test_ingest_r64_direct_json_zip_without_keys(db, tmp_path):
     assert file_row.flux_type == "R64"
     assert file_row.payload_format == "JSON"
     assert file_row.measures_count == 1
-    row = db.query(EnedisFluxMesureR6x).one()
+    row = db.query(EnedisFluxIndexR64).one()
     assert row.id_calendrier == "CAL1"
     assert row.code_cadran == "01"
     assert row.valeur == "100"
+    assert db.query(EnedisFluxMesureR63).count() == 0
 
 
 def test_ingest_r64_direct_csv_zip(db, tmp_path):
@@ -261,7 +267,8 @@ def test_ingest_r64_direct_csv_zip(db, tmp_path):
 
     assert status == FluxStatus.PARSED
     assert db.query(EnedisFluxFile).one().payload_format == "CSV"
-    assert db.query(EnedisFluxMesureR6x).one().source_format == "CSV"
+    assert db.query(EnedisFluxIndexR64).one().source_format == "CSV"
+    assert db.query(EnedisFluxMesureR63).count() == 0
 
 
 def test_ingest_r64_aes_wrapped_zip(db, tmp_path, test_keys):
@@ -273,7 +280,8 @@ def test_ingest_r64_aes_wrapped_zip(db, tmp_path, test_keys):
     status = ingest_file(path, db, keys=test_keys)
 
     assert status == FluxStatus.PARSED
-    assert db.query(EnedisFluxMesureR6x).count() == 1
+    assert db.query(EnedisFluxIndexR64).count() == 1
+    assert db.query(EnedisFluxMesureR63).count() == 0
 
 
 def test_ingest_r64_payload_filename_mismatch_records_error_and_rolls_back(db, tmp_path):
@@ -285,7 +293,8 @@ def test_ingest_r64_payload_filename_mismatch_records_error_and_rolls_back(db, t
     status = ingest_file(path, db, keys=[])
 
     assert status == FluxStatus.ERROR
-    assert db.query(EnedisFluxMesureR6x).count() == 0
+    assert db.query(EnedisFluxIndexR64).count() == 0
+    assert db.query(EnedisFluxMesureR63).count() == 0
 
 
 def test_ingest_c68_json_primary_zip(db, tmp_path):
@@ -407,7 +416,8 @@ def test_ingest_directory_mixed_legacy_sf5_skipped_and_corrupt(db, tmp_path, tes
     assert counters["skipped"] == 1
     assert counters["error"] == 1
     assert db.query(EnedisFluxFile).count() == 5
-    assert db.query(EnedisFluxMesureR6x).count() == 2
+    assert db.query(EnedisFluxMesureR63).count() == 2
+    assert db.query(EnedisFluxIndexR64).count() == 0
     assert db.query(EnedisFluxItcC68).count() == 1
 
 
@@ -446,7 +456,8 @@ def test_sf5_same_filename_different_hash_is_republication(db, tmp_path):
     files = db.query(EnedisFluxFile).order_by(EnedisFluxFile.version).all()
     assert [file.version for file in files] == [1, 2]
     assert files[1].supersedes_file_id == files[0].id
-    assert db.query(EnedisFluxMesureR6x).count() == 3
+    assert db.query(EnedisFluxMesureR63).count() == 3
+    assert db.query(EnedisFluxIndexR64).count() == 0
 
 
 def test_sf5_retry_after_parse_error_archives_error_history(db, tmp_path):
@@ -496,4 +507,5 @@ def test_sf5_storage_error_rolls_back_rows(db, tmp_path):
 
     assert status == FluxStatus.ERROR
     assert "disk full" in db.query(EnedisFluxFile).one().error_message
-    assert db.query(EnedisFluxMesureR6x).count() == 0
+    assert db.query(EnedisFluxMesureR63).count() == 0
+    assert db.query(EnedisFluxIndexR64).count() == 0

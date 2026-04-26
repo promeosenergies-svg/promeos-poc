@@ -45,8 +45,9 @@ from data_ingestion.enedis.enums import FluxStatus, FluxType, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
     EnedisFluxFileError,
+    EnedisFluxIndexR64,
     EnedisFluxItcC68,
-    EnedisFluxMesureR6x,
+    EnedisFluxMesureR63,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR50,
     EnedisFluxMesureR151,
@@ -1022,7 +1023,7 @@ def _iter_r63(parsed: Any, flux_file: EnedisFluxFile):
 
 
 def _store_r63(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
-    return _batch_insert(session, EnedisFluxMesureR6x, _iter_r63(parsed, flux_file), chunk_size)
+    return _batch_insert(session, EnedisFluxMesureR63, _iter_r63(parsed, flux_file), chunk_size)
 
 
 def _iter_r64(parsed: Any, flux_file: EnedisFluxFile):
@@ -1056,7 +1057,7 @@ def _iter_r64(parsed: Any, flux_file: EnedisFluxFile):
 
 
 def _store_r64(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
-    return _batch_insert(session, EnedisFluxMesureR6x, _iter_r64(parsed, flux_file), chunk_size)
+    return _batch_insert(session, EnedisFluxIndexR64, _iter_r64(parsed, flux_file), chunk_size)
 
 
 def _iter_c68(archive_payload: Any, parsed_payloads: list[Any], flux_file: EnedisFluxFile):

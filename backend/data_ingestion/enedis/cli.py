@@ -33,12 +33,13 @@ from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus  # noqa: 
 from data_ingestion.enedis.migrations import run_flux_data_migrations  # noqa: E402
 from data_ingestion.enedis.models import (  # noqa: E402
     EnedisFluxFile,
+    EnedisFluxIndexR64,
     EnedisFluxItcC68,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR50,
     EnedisFluxMesureR151,
     EnedisFluxMesureR171,
-    EnedisFluxMesureR6x,
+    EnedisFluxMesureR63,
     IngestionRun,
 )
 from data_ingestion.enedis.pipeline import ingest_directory  # noqa: E402
@@ -134,7 +135,9 @@ def _print_report(
     r171_total = session.query(EnedisFluxMesureR171).count()
     r50_total = session.query(EnedisFluxMesureR50).count()
     r151_total = session.query(EnedisFluxMesureR151).count()
-    r6x_total = session.query(EnedisFluxMesureR6x).count()
+    r63_total = session.query(EnedisFluxMesureR63).count()
+    r64_total = session.query(EnedisFluxIndexR64).count()
+    r6x_total = r63_total + r64_total
     c68_total = session.query(EnedisFluxItcC68).count()
     grand_total = r4x_total + r171_total + r50_total + r151_total + r6x_total + c68_total
 
@@ -143,7 +146,9 @@ def _print_report(
     print(f"  R171:   {r171_total:>8,}")
     print(f"  R50:    {r50_total:>8,}")
     print(f"  R151:   {r151_total:>8,}")
-    print(f"  R6X:    {r6x_total:>8,}")
+    print(f"  R63:    {r63_total:>8,}")
+    print(f"  R64:    {r64_total:>8,}")
+    print(f"  R6X*:   {r6x_total:>8,}  (compat aggregate)")
     print(f"  C68:    {c68_total:>8,}")
     print(f"  TOTAL:  {grand_total:>8,}")
 

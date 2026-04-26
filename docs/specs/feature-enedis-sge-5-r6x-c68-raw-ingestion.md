@@ -322,8 +322,9 @@ SF5 still ends at raw persistence. The later `backend/data_staging/` module from
 - add raw-ingestion support for `R63`, `R64`, and `C68`
 - support both **JSON and CSV** for these families on day one
 - support `C68` nested archive extraction
-- add 2 new raw archive tables in `flux_data.db`:
-  - one shared raw table for atomic `R63` / `R64` rows
+- add 3 new canonical raw archive tables in `flux_data.db`:
+  - one raw table for `R63` load-curve points
+  - one raw table for `R64` cumulative index rows
   - one raw table for `C68` per-PRM snapshots
 - extend file metadata capture so request/publication fields from filenames are queryable
 - extend CLI/API/stats/tests so the existing raw-ingestion operational surfaces cover the new tables without changing the `promeos.db` contract
@@ -359,8 +360,8 @@ This is intentional, not an accidental gap. The v1.5.2 R6X guide identifies `R63
 | D1 | Supported formats | **JSON + CSV required from day one** | The official guides allow both and the local corpus is already mixed; shipping JSON-only would knowingly reject real files |
 | D2 | Transport handling | **One transport resolver detects whether decrypt/unwrap is needed per file** | Operators should not sort direct ZIP and encrypted deliveries into separate pipelines |
 | D3 | Invalid/non-openable files | **Try generic AES unwrap when keys exist, then fail as file-level `ERROR` if the expected container is still not coherent** | Non-ZIP may mean encrypted transport, but corrupt or incoherent files must not enter the raw archive |
-| D4 | Table count | **2 new raw archive tables total** | Aligns with roadmap scope and keeps SF5 bounded |
-| D5 | `R63` + `R64` storage model | **One shared raw table** with nullable context columns | Both are R6X measurement publication families with one atomic temporal value per leaf row |
+| D4 | Table count | **3 canonical raw archive tables total** | Keeps C68 unchanged while making the R63/R64 business split explicit |
+| D5 | `R63` + `R64` storage model | **Separate physical tables**: `enedis_flux_mesure_r63` for load-curve points and `enedis_flux_index_r64` for cumulative indexes | Prevents R64 indexes from being mistaken for R63 interval consumption before SF6 promotion |
 | D6 | `C68` storage model | **One per-PRM snapshot table with full raw payload + curated extracted columns** | C68 is too wide and heterogeneous for a pure all-columns-first model in SF5, but a pure blob would be too opaque |
 | D7 | Metadata authority | **Filename nomenclature is authoritative** for request/publication fields; payload headers are supplemental | CSV variants and C68 do not provide all metadata inside the payload |
 | D8 | Raw typing | **Store extracted raw-archive values as raw strings, including C68 power values and units** | Preserve fidelity; numeric conversion belongs to later promotion/product layers |
@@ -433,60 +434,91 @@ Example SF5 `header_raw` shape:
 
 This keeps one raw-file registry abstraction in `flux_data.db` instead of creating a parallel file table or leaking raw-ingestion metadata into `promeos.db`.
 
-### 6.2 New Raw Table: `enedis_flux_mesure_r6x`
+### 6.2 New Raw Tables: `enedis_flux_mesure_r63` and `enedis_flux_index_r64`
 
-Shared raw archive table in `flux_data.db` for atomic `R63` and `R64` rows.
+Canonical raw archive storage in `flux_data.db` keeps `R63` and `R64` in separate physical tables because they are different business objects:
+
+- `R63` rows are load-curve points. They are timestamped interval points and are the future source for `meter_load_curve`.
+- `R64` rows are cumulative index readings. They carry reading/calendar/class/cadran context and are the future source for `meter_energy_index`.
+
+This split is a product guardrail. R64 index values must not be summed or charted as if they were R63 interval consumption points; downstream promotion must interpret them as indexes and derive deltas where appropriate.
 
 **Granularity**
 
 - `R63`: 1 row per point of `points[]` or CSV measurement line
 - `R64`: 1 row per leaf value of `valeur[]` or CSV value line
 
-**Why one shared table**
-
-- both families are M023-requested R6X measurement publication datasets
-- both are flattened into one atomic time/value leaf row
-- both share query keys: PRM, period, physical quantity, business quantity, timestamp/value, file provenance
+#### `enedis_flux_mesure_r63`
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | Integer PK | |
 | `flux_file_id` | FK → `enedis_flux_file.id` | physical source file |
-| `flux_type` | String(10) | `R63` or `R64` |
+| `flux_type` | String(10) | `R63` |
 | `source_format` | String(10) | `JSON` or `CSV` |
 | `archive_member_name` | String(255) | actual payload member filename inside the ZIP |
 | `point_id` | String(14) | PRM |
 | `periode_date_debut` | String(50) | raw period start |
 | `periode_date_fin` | String(50) | raw period end |
 | `etape_metier` | String(20) nullable | raw stage/business step |
-| `mode_calcul` | String(20) nullable | `R63` only |
-| `contexte_releve` | String(20) nullable | `R64` only |
-| `type_releve` | String(20) nullable | `R64` only |
-| `motif_releve` | String(20) nullable | `R64` only |
+| `mode_calcul` | String(20) nullable | raw calculation mode |
 | `grandeur_metier` | String(20) nullable | raw |
 | `grandeur_physique` | String(20) nullable | raw |
 | `unite` | String(20) nullable | raw |
-| `horodatage` | String(50) | raw measurement/index timestamp |
-| `pas` | String(20) nullable | `R63` only, raw ISO duration like `PT5M` |
-| `nature_point` | String(10) nullable | `R63` only |
-| `type_correction` | String(10) nullable | `R63` only, raw text form of `tc` |
+| `horodatage` | String(50) | raw point timestamp |
+| `pas` | String(20) nullable | raw ISO duration like `PT5M` |
+| `nature_point` | String(10) nullable | raw point nature |
+| `type_correction` | String(10) nullable | raw text form of `tc` |
 | `valeur` | String(30) nullable | raw value as text |
 | `indice_vraisemblance` | String(10) nullable | raw text form of `iv` |
-| `etat_complementaire` | String(10) nullable | `R63` only, raw text form of `ec` |
-| `code_grille` | String(20) nullable | `R64` CSV/derived grid code when available |
-| `id_calendrier` | String(30) nullable | `R64` only |
-| `libelle_calendrier` | String(100) nullable | `R64` only |
-| `libelle_grille` | String(100) nullable | `R64` JSON only when available |
-| `id_classe_temporelle` | String(30) nullable | `R64` only |
-| `libelle_classe_temporelle` | String(100) nullable | `R64` only |
-| `code_cadran` | String(30) nullable | `R64` only |
+| `etat_complementaire` | String(10) nullable | raw text form of `ec` |
 
 **Indexes**
 
 - `(point_id, horodatage)`
 - `(flux_file_id)`
-- `(flux_type)`
-- `(point_id, flux_type, grandeur_physique)`
+- `(point_id, grandeur_physique)`
+
+#### `enedis_flux_index_r64`
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | Integer PK | |
+| `flux_file_id` | FK → `enedis_flux_file.id` | physical source file |
+| `flux_type` | String(10) | `R64` |
+| `source_format` | String(10) | `JSON` or `CSV` |
+| `archive_member_name` | String(255) | actual payload member filename inside the ZIP |
+| `point_id` | String(14) | PRM |
+| `periode_date_debut` | String(50) | raw period start |
+| `periode_date_fin` | String(50) | raw period end |
+| `etape_metier` | String(20) nullable | raw stage/business step |
+| `contexte_releve` | String(20) nullable | raw reading context |
+| `type_releve` | String(20) nullable | raw reading type |
+| `motif_releve` | String(20) nullable | raw reading reason |
+| `grandeur_metier` | String(20) nullable | raw |
+| `grandeur_physique` | String(20) nullable | raw |
+| `unite` | String(20) nullable | raw |
+| `horodatage` | String(50) | raw index timestamp |
+| `valeur` | String(30) nullable | raw cumulative index value as text |
+| `indice_vraisemblance` | String(10) nullable | raw text form of `iv` |
+| `code_grille` | String(20) nullable | CSV/derived grid code when available |
+| `id_calendrier` | String(30) nullable | raw calendar identifier |
+| `libelle_calendrier` | String(100) nullable | raw calendar label |
+| `libelle_grille` | String(100) nullable | raw grid label when available |
+| `id_classe_temporelle` | String(30) nullable | raw time-class identifier |
+| `libelle_classe_temporelle` | String(100) nullable | raw time-class label |
+| `code_cadran` | String(30) nullable | raw cadran code |
+
+**Indexes**
+
+- `(point_id, horodatage)`
+- `(flux_file_id)`
+- `(point_id, grandeur_physique)`
+- `(point_id, id_calendrier, id_classe_temporelle)`
+
+#### Compatibility view
+
+`enedis_flux_mesure_r6x` may exist only as a read-only SQL compatibility view that `UNION ALL`s the two canonical tables into the former wide shape. It is non-canonical: new storage, promotion, tests, and documentation should use `enedis_flux_mesure_r63` or `enedis_flux_index_r64` directly.
 
 **No unique constraint**
 
@@ -862,8 +894,8 @@ The current XML-specific `decrypt_file()` behavior should remain available for l
 | `R171` | transport resolver -> XML | existing | `enedis_flux_mesure_r171` |
 | `R50` | transport resolver -> XML | existing | `enedis_flux_mesure_r50` |
 | `R151` | transport resolver -> XML | existing | `enedis_flux_mesure_r151` |
-| `R63` | transport resolver -> ZIP -> JSON/CSV | new | `enedis_flux_mesure_r6x` |
-| `R64` | transport resolver -> ZIP -> JSON/CSV | new | `enedis_flux_mesure_r6x` |
+| `R63` | transport resolver -> ZIP -> JSON/CSV | new | `enedis_flux_mesure_r63` |
+| `R64` | transport resolver -> ZIP -> JSON/CSV | new | `enedis_flux_index_r64` |
 | `C68` | transport resolver -> ZIP -> ZIP -> JSON/CSV | new | `enedis_flux_itc_c68` |
 
 ### 8.3 Key Loading / CLI Behavior
@@ -915,9 +947,11 @@ The raw-ingestion operational surface stays bound to the dedicated raw database:
 
 The existing `python -m data_ingestion.enedis.cli ingest` command stays the only CLI entrypoint.
 
-The report must include the two new raw archive totals, queried from `flux_data.db`:
+The report must include the new raw archive totals, queried from `flux_data.db`:
 
-- `R6X`
+- `R63`
+- `R64`
+- `R6X` as a compatibility aggregate only
 - `C68`
 
 Suggested output section:
@@ -928,7 +962,9 @@ Measures stored (raw archive totals):
   R171:    ...
   R50:     ...
   R151:    ...
-  R6X:     ...
+  R63:     ...
+  R64:     ...
+  R6X*:    ... (compat aggregate)
   C68:     ...
   TOTAL:   ...
 ```
@@ -1065,8 +1101,9 @@ Legacy SF1-SF4 tests must continue to pass unchanged for:
 
 Add explicit boundary tests so the SGE4.5 split remains enforced after SF5:
 
-- bootstrapping `promeos.db` must **not** create `enedis_flux_mesure_r6x` or `enedis_flux_itc_c68`
-- bootstrapping `flux_data.db` **must** create `enedis_flux_mesure_r6x` and `enedis_flux_itc_c68`
+- bootstrapping `promeos.db` must **not** create `enedis_flux_mesure_r63`, `enedis_flux_index_r64`, or `enedis_flux_itc_c68`
+- bootstrapping `flux_data.db` **must** create `enedis_flux_mesure_r63`, `enedis_flux_index_r64`, and `enedis_flux_itc_c68`
+- `enedis_flux_mesure_r6x`, when present, must be a compatibility view only, not a canonical table
 - raw ingestion stats/list endpoints must still read through the dedicated raw DB dependency
 - ingesting representative SF5 files must change `flux_data.db` only; promoted/product tables in `promeos.db` remain untouched
 - SF5 decrypted ZIP/JSON/CSV artifacts must not be written to ordinary file storage by default
@@ -1079,7 +1116,7 @@ Add explicit boundary tests so the SGE4.5 split remains enforced after SF5:
 |----|-------|--------|-------|
 | OQ1 | C68 extracted column set | Settled for SF5 | Use `payload_raw` + curated allowlisted query columns, including SIRET/SIREN and raw string value/unit columns for the small high-value power set. Full all-columns flattening remains out of scope |
 | OQ2 | Out-of-scope R6X recognition | Settled for SF5 | Classify `R63A/B`, `R64A/B`, `R65`, `R66`, `R66B`, `R67`, and standalone `CR.M023` explicitly as known-but-skipped |
-| OQ3 | `R6X` table naming | Settled for SF5 | Use `enedis_flux_mesure_r6x`; the table intentionally stores supported punctual `R63` / `R64` rows while preserving `flux_type` and `code_flux` for clarity |
+| OQ3 | `R6X` table naming | Settled for SF5 | Canonical storage uses `enedis_flux_mesure_r63` and `enedis_flux_index_r64`; `enedis_flux_mesure_r6x` is allowed only as a read-only compatibility view |
 | OQ4 | Stats granularity | Settled for SF5 | Row totals and distinct PRM counts are required; JSON vs CSV breakdown is optional/debug-level if cheap from existing format fields |
 | OQ5 | R63/R64 punctual vs recurrent semantics | Settled for SF5 | The newer R6X v1.5.2 guide identifies unsuffixed `R63` / `R64` as punctual M023 flows and suffixed `R63A/B` / `R64A/B` as recurrent R6X-REC flows. SF5 supports only observed unsuffixed `R63` / `R64`; recurrent suffixed flows are recognized and skipped |
 | OQ6 | Production C68 privacy/RGPD architecture | Open for production | Original encrypted archives should remain encrypted in file storage. Decrypted SF5 content exists transiently in memory and persists only inside protected raw DB tables; before production, finalize DB encryption/access/backup/retention/deletion/anonymization policy |
@@ -1088,7 +1125,8 @@ Add explicit boundary tests so the SGE4.5 split remains enforced after SF5:
 
 SF5 should use idempotent additive raw DB migrations:
 
-- create `enedis_flux_mesure_r6x` and `enedis_flux_itc_c68` if absent
+- create `enedis_flux_mesure_r63`, `enedis_flux_index_r64`, and `enedis_flux_itc_c68` if absent
+- migrate any legacy physical `enedis_flux_mesure_r6x` rows into the split tables, then replace the old name with a non-canonical compatibility view
 - add nullable `enedis_flux_file` columns if missing
 - preserve existing raw data in `flux_data.db`
 - do not introduce a full migration framework solely for SF5 unless the project adopts one separately
@@ -1098,7 +1136,7 @@ SF5 should use idempotent additive raw DB migrations:
 ## 12. Acceptance Checklist
 
 - [ ] `FluxType` and classification support `R63`, `R64`, `C68`, and known-skipped `R63A/B`, `R64A/B`, `R65`, `R66`, `R66B`, `R67`, `CR_M023`
-- [ ] raw DB bootstrap creates `enedis_flux_mesure_r6x` and `enedis_flux_itc_c68` in `flux_data.db`
+- [ ] raw DB bootstrap creates `enedis_flux_mesure_r63`, `enedis_flux_index_r64`, and `enedis_flux_itc_c68` in `flux_data.db`
 - [ ] raw DB bootstrap additively creates missing nullable `enedis_flux_file` metadata columns including `code_flux`, `siren_publication`, and `code_contrat_publication`
 - [ ] main `promeos.db` bootstrap does not create the new raw Enedis tables
 - [ ] one mixed `ingest_directory()` run can process legacy XML flows and new ZIP publication flows together
@@ -1106,10 +1144,10 @@ SF5 should use idempotent additive raw DB migrations:
 - [ ] encrypted synthetic SF5 ZIP publications decrypt in memory and ingest successfully with valid AES keys
 - [ ] files that need decrypt/unwrap but have missing keys become file-level `ERROR`, without blocking direct-openable files in the same run
 - [ ] `R63A/B` and `R64A/B` are recognized as known recurrent R6X-REC flows and recorded as `SKIPPED`, never silently routed through the punctual `R63` / `R64` parser
-- [ ] `R63` JSON ingests successfully into `enedis_flux_mesure_r6x`
-- [ ] `R63` CSV ingests successfully into `enedis_flux_mesure_r6x`
-- [ ] `R64` JSON ingests successfully into `enedis_flux_mesure_r6x`
-- [ ] `R64` CSV ingests successfully into `enedis_flux_mesure_r6x`
+- [ ] `R63` JSON ingests successfully into `enedis_flux_mesure_r63`
+- [ ] `R63` CSV ingests successfully into `enedis_flux_mesure_r63`
+- [ ] `R64` JSON ingests successfully into `enedis_flux_index_r64`
+- [ ] `R64` CSV ingests successfully into `enedis_flux_index_r64`
 - [ ] `C68` JSON ingests successfully into `enedis_flux_itc_c68`
 - [ ] `C68` CSV ingests successfully into `enedis_flux_itc_c68`
 - [ ] `C68` legacy 207-column CSV and v1.2 211-column CSV both ingest successfully

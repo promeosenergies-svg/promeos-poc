@@ -193,12 +193,14 @@ Extend `EnedisFluxFile` with nullable columns:
 - `publication_horodatage`
 - `archive_members_count`
 
-Add `EnedisFluxMesureR6x` table:
+Add split R63/R64 raw tables:
 
-- table name: `enedis_flux_mesure_r6x`
-- one row per `R63` point or `R64` value
+- `EnedisFluxMesureR63` / `enedis_flux_mesure_r63`: one row per `R63` load-curve point
+- `EnedisFluxIndexR64` / `enedis_flux_index_r64`: one row per `R64` cumulative index value
 - raw strings only; no numeric or timezone normalization
-- indexes on `(point_id, horodatage)`, `flux_file_id`, `flux_type`, `(point_id, flux_type, grandeur_physique)`
+- R63 indexes on `(point_id, horodatage)`, `flux_file_id`, and `(point_id, grandeur_physique)`
+- R64 indexes on `(point_id, horodatage)`, `flux_file_id`, `(point_id, grandeur_physique)`, and calendar/class context
+- optional `enedis_flux_mesure_r6x` compatibility object is a read-only SQL view, never canonical storage
 
 Add `EnedisFluxItcC68` table:
 
@@ -214,7 +216,7 @@ Implementation notes:
 
 - New models must inherit from `FluxDataBase` through `data_ingestion.enedis.models.Base`, not `models.base.Base`.
 - Add new nullable `enedis_flux_file` columns through both the ORM model and `_add_enedis_columns()`.
-- Add the two new raw table names to `ENEDIS_RAW_TABLES`; this is how the raw DB bootstrap and split tests know about them.
+- Add the three canonical raw table names to `ENEDIS_RAW_TABLES`; this is how the raw DB bootstrap and split tests know about them.
 - Keep all SF5 metadata columns nullable so existing SF1-SF4 rows and databases migrate additively.
 - Store `payload_format` as a short raw string such as `JSON` or `CSV`; do not infer product semantics from it.
 
@@ -227,7 +229,8 @@ Implementation notes:
 
 ### Acceptance Criteria
 
-- `run_flux_data_migrations()` creates `enedis_flux_mesure_r6x` and `enedis_flux_itc_c68` in `flux_data.db`.
+- `run_flux_data_migrations()` creates `enedis_flux_mesure_r63`, `enedis_flux_index_r64`, and `enedis_flux_itc_c68` in `flux_data.db`.
+- `run_flux_data_migrations()` splits any legacy physical `enedis_flux_mesure_r6x` rows into the new R63/R64 tables, verifies row counts, drops the old physical table, and recreates `enedis_flux_mesure_r6x` as a non-canonical compatibility view.
 - `run_flux_data_migrations()` additively creates all new nullable `enedis_flux_file` metadata columns when missing.
 - `Base.metadata.create_all()` for `promeos.db` plus main migrations does not create SF5 raw tables.
 - Raw table relationships cascade on file delete like existing raw tables.
@@ -237,7 +240,7 @@ Implementation notes:
 
 ### Test Coverage
 
-- Model creation tests for both new tables.
+- Model creation tests for all three new canonical tables.
 - Duplicate raw rows allowed.
 - Relationship/cascade tests.
 - Migration idempotence tests.
@@ -353,7 +356,7 @@ pytest data_ingestion/enedis/tests/test_decrypt.py \
 
 ### Functional Outcome
 
-Punctual `R63` JSON and CSV load curve publications archive into `enedis_flux_mesure_r6x`.
+Punctual `R63` JSON and CSV load curve publications archive into `enedis_flux_mesure_r63`.
 
 What this means for the user:
 
@@ -406,7 +409,7 @@ Preserve raw fields:
 - `indice_vraisemblance`
 - `etat_complementaire`
 
-Add R63 pipeline storage into `EnedisFluxMesureR6x`.
+Add R63 pipeline storage into `EnedisFluxMesureR63`.
 
 ### Files Likely Touched
 
@@ -455,11 +458,13 @@ pytest data_ingestion/enedis/tests/test_parsers_r63.py \
 
 ### Functional Outcome
 
-Punctual `R64` JSON and CSV index publications archive into `enedis_flux_mesure_r6x`.
+Punctual `R64` JSON and CSV index publications archive into `enedis_flux_index_r64`.
 
 What this means for the user:
 
 Raw index values are preserved with their read context, grid/calendar/class, and plausibility information for future interpretation.
+
+R64 values are cumulative indexes, not interval load-curve points. They must stay physically separate from R63 so SF6 cannot accidentally sum or chart indexes as interval consumption.
 
 ### Implementation Scope
 
@@ -788,7 +793,7 @@ CLI reports and REST stats include SF5 totals while continuing to read from the 
 
 What this means for the user:
 
-After a run, operators can see R6X and C68 row totals and distinct PRM coverage without querying SQLite manually.
+After a run, operators can see separate R63 load-curve, R64 index, compatibility R6X aggregate, and C68 row totals without querying SQLite manually.
 
 ### Implementation Scope
 
@@ -801,7 +806,9 @@ CLI:
   - `R171`
   - `R50`
   - `R151`
-  - `R6X`
+  - `R63`
+  - `R64`
+  - `R6X` compatibility aggregate
   - `C68`
   - `TOTAL`
 
@@ -810,10 +817,12 @@ API:
 - update `/api/enedis/ingest` to match lazy key behavior
 - extend `FluxFileResponse`/detail with SF5 metadata if appropriate
 - extend `/api/enedis/stats` with:
+  - `r63`
+  - `r64`
   - `r6x`
   - `c68`
   - total including all raw rows
-  - distinct PRMs from R6X and C68
+  - distinct PRMs from R63, R64, and C68
   - optional source format breakdown if cheap
 
 Keep promotion endpoints unchanged. SF5 must not wire R63/R64/C68 into SF6 promotion unless a separate staging milestone explicitly does that.
@@ -822,7 +831,7 @@ Compatibility notes:
 
 - Existing CLI/API tests patch `load_keys_from_env()` and `ingest_directory()`; update them to assert lazy behavior rather than eager preflight failure.
 - Preserve additive API response changes. Do not remove existing fields from `FluxFileResponse`, `MeasureStats`, `PrmStats`, or `StatsResponse`.
-- Stats currently derive row totals from `EnedisFluxFile.measures_count` and distinct PRMs from a `UNION` across raw measure tables. Add R6X and C68 explicitly to both calculations.
+- Stats currently derive row totals from `EnedisFluxFile.measures_count` and distinct PRMs from a `UNION` across raw measure tables. Add R63, R64, and C68 explicitly to both calculations; keep `r6x = r63 + r64` only as a compatibility aggregate.
 
 ### Files Likely Touched
 
@@ -835,9 +844,9 @@ Compatibility notes:
 
 - CLI runs with direct-openable SF5 files even when AES env vars are absent.
 - CLI still records per-file `ERROR` for encrypted files that need missing keys.
-- CLI report displays R6X and C68 totals.
-- `/api/enedis/stats` returns R6X and C68 row totals.
-- `/api/enedis/stats` distinct PRM count includes R6X and C68 PRMs.
+- CLI report displays separate R63/R64 totals plus an R6X compatibility aggregate and C68 totals.
+- `/api/enedis/stats` returns separate R63/R64 totals plus an R6X compatibility aggregate and C68 row totals.
+- `/api/enedis/stats` distinct PRM count includes R63, R64, and C68 PRMs.
 - API and CLI still use `get_flux_data_db` / `FluxDataSessionLocal`, not main DB.
 - Promotion endpoints continue to use main `get_db` plus raw `get_flux_data_db` exactly as before.
 
@@ -1006,5 +1015,5 @@ PROMEOS_RUN_REAL_SF5_TESTS=1 pytest data_ingestion/enedis/tests/test_e2e_real_fi
 - C68 corrected sequence/timestamp rule is covered by tests.
 - Synthetic fixtures cover default CI without sensitive real payloads.
 - Opt-in real-sample tests validate observed local corpus behavior.
-- CLI and API stats expose R6X and C68 raw archive totals.
+- CLI and API stats expose R63, R64, R6X compatibility, and C68 raw archive totals.
 - `promeos.db` remains untouched by SF5 raw ingestion.

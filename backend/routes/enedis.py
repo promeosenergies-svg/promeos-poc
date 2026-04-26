@@ -23,12 +23,13 @@ from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
     EnedisFluxFileError,
+    EnedisFluxIndexR64,
     EnedisFluxItcC68,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR151,
     EnedisFluxMesureR171,
     EnedisFluxMesureR50,
-    EnedisFluxMesureR6x,
+    EnedisFluxMesureR63,
     IngestionRun,
 )
 from data_ingestion.enedis.pipeline import ingest_directory
@@ -175,6 +176,8 @@ class MeasureStats(BaseModel):
     r171: int
     r50: int
     r151: int
+    r63: int
+    r64: int
     r6x: int
     c68: int
 
@@ -391,16 +394,19 @@ def get_stats(db: Session = Depends(get_flux_data_db)):
     r171 = measure_by_type.get("R171", 0)
     r50 = measure_by_type.get("R50", 0)
     r151 = measure_by_type.get("R151", 0)
-    r6x = sum(v for k, v in measure_by_type.items() if k in ("R63", "R64"))
+    r63 = measure_by_type.get("R63", 0)
+    r64 = measure_by_type.get("R64", 0)
+    r6x = r63 + r64
     c68 = measure_by_type.get("C68", 0)
 
-    # --- PRMs: UNION DISTINCT across 4 measure tables (distinct point_id only) ---
+    # --- PRMs: UNION DISTINCT across raw row tables (distinct point_id only) ---
     prm_union = union(
         db.query(EnedisFluxMesureR4x.point_id.distinct()),
         db.query(EnedisFluxMesureR171.point_id.distinct()),
         db.query(EnedisFluxMesureR50.point_id.distinct()),
         db.query(EnedisFluxMesureR151.point_id.distinct()),
-        db.query(EnedisFluxMesureR6x.point_id.distinct()),
+        db.query(EnedisFluxMesureR63.point_id.distinct()),
+        db.query(EnedisFluxIndexR64.point_id.distinct()),
         db.query(EnedisFluxItcC68.point_id.distinct()),
     )
     prm_rows = db.execute(prm_union).fetchall()
@@ -442,6 +448,8 @@ def get_stats(db: Session = Depends(get_flux_data_db)):
             r171=r171,
             r50=r50,
             r151=r151,
+            r63=r63,
+            r64=r64,
             r6x=r6x,
             c68=c68,
         ),

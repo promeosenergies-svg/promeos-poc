@@ -19,9 +19,10 @@ import pytest
 from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
+    EnedisFluxIndexR64,
     EnedisFluxItcC68,
     EnedisFluxMesureR4x,
-    EnedisFluxMesureR6x,
+    EnedisFluxMesureR63,
     IngestionRun,
 )
 from data_ingestion.enedis.cli import cmd_ingest, _print_report, _dry_run_report
@@ -363,7 +364,8 @@ class TestCliMissingKeys:
         assert exit_code == 0
         assert db.query(IngestionRun).one().status == IngestionRunStatus.COMPLETED
         assert db.query(EnedisFluxFile).one().status == FluxStatus.PARSED
-        assert db.query(EnedisFluxMesureR6x).count() == 1
+        assert db.query(EnedisFluxMesureR63).count() == 1
+        assert db.query(EnedisFluxIndexR64).count() == 0
 
     def test_missing_keys_records_error_for_encrypted_file(self, db, tmp_path):
         _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_20260301.zip")
@@ -383,7 +385,7 @@ class TestCliMissingKeys:
         assert db.query(IngestionRun).one().files_error == 1
 
 
-def test_print_report_includes_r6x_and_c68_totals(db, capsys):
+def test_print_report_includes_r63_r64_r6x_and_c68_totals(db, capsys):
     run = IngestionRun(
         started_at=datetime.now(timezone.utc),
         directory="/tmp/flux",
@@ -393,17 +395,30 @@ def test_print_report_includes_r6x_and_c68_totals(db, capsys):
         triggered_by="cli",
     )
     db.add(run)
-    file_r6x = EnedisFluxFile(filename="r63.zip", file_hash="r63", flux_type="R63", status=FluxStatus.PARSED)
+    file_r63 = EnedisFluxFile(filename="r63.zip", file_hash="r63", flux_type="R63", status=FluxStatus.PARSED)
+    file_r64 = EnedisFluxFile(filename="r64.zip", file_hash="r64", flux_type="R64", status=FluxStatus.PARSED)
     file_c68 = EnedisFluxFile(filename="c68.zip", file_hash="c68", flux_type="C68", status=FluxStatus.PARSED)
-    db.add_all([file_r6x, file_c68])
+    db.add_all([file_r63, file_r64, file_c68])
     db.flush()
     db.add(
-        EnedisFluxMesureR6x(
-            flux_file_id=file_r6x.id,
+        EnedisFluxMesureR63(
+            flux_file_id=file_r63.id,
             flux_type="R63",
             source_format="JSON",
             archive_member_name="payload.json",
             point_id="30000000000001",
+            horodatage="2026-01-01T00:00:00+01:00",
+            pas="PT5M",
+            nature_point="R",
+        )
+    )
+    db.add(
+        EnedisFluxIndexR64(
+            flux_file_id=file_r64.id,
+            flux_type="R64",
+            source_format="JSON",
+            archive_member_name="payload.json",
+            point_id="30000000000003",
             horodatage="2026-01-01T00:00:00+01:00",
         )
     )
@@ -438,7 +453,9 @@ def test_print_report_includes_r6x_and_c68_totals(db, capsys):
     )
 
     output = capsys.readouterr().out
-    assert "R6X:" in output
+    assert "R63:" in output
+    assert "R64:" in output
+    assert "R6X*:" in output
     assert "C68:" in output
 
 
