@@ -56,6 +56,11 @@ import CsatModal from '../components/CsatModal';
 import NpsModal from '../components/NpsModal';
 import PriorityHero from './cockpit/PriorityHero';
 import DashboardHeroFeatured from './dashboard/DashboardHeroFeatured';
+// Sprint 1.1 — grammaire Sol industrialisée (ADR-001)
+import SolNarrative from '../ui/sol/SolNarrative';
+import SolWeekCards from '../ui/sol/SolWeekCards';
+import SolPageFooter from '../ui/sol/SolPageFooter';
+import { usePageBriefing } from '../hooks/usePageBriefing';
 import TopDeriveSitesCard from './cockpit/TopDeriveSitesCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
 import CockpitTabs from '../ui/CockpitTabs';
@@ -117,6 +122,11 @@ export default function CommandCenter() {
   // ── Hooks enrichissement Step 5 ──
   const { weekSeries, hourlyProfile, kpisJ1, loading: cmdLoading } = useCommandCenterData();
   const { trajectoire, kpis: cockpitKpis } = useCockpitData();
+  // Sprint 1.1 — briefing éditorial Sol §5 (ADR-001 grammaire industrialisée).
+  // Backend orchestre KPIs + narrative + week-cards via /api/pages/cockpit_daily/briefing.
+  const { briefing: solBriefing, loading: solBriefingLoading } = usePageBriefing('cockpit_daily', {
+    persona: 'daily',
+  });
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -334,16 +344,20 @@ export default function CommandCenter() {
     );
   }
 
+  // Fallback header pendant le chargement du briefing Sol — on garde la
+  // signature visuelle même si le backend tarde à répondre.
+  const solHeaderFallback = (
+    <SolPageHeader
+      kicker={solBriefing?.kicker || scopeKicker('ACCUEIL', org?.nom, scopedSites?.length)}
+      title={solBriefing?.title || 'Tableau de bord'}
+      italicHook={solBriefing?.italicHook || 'opérationnel'}
+      subtitle={<ScopeSummary />}
+    />
+  );
+
   return (
     <PageShell
-      editorialHeader={
-        <SolPageHeader
-          kicker={scopeKicker('ACCUEIL', org?.nom, scopedSites?.length)}
-          title="Tableau de bord"
-          italicHook="opérationnel"
-          subtitle={<ScopeSummary />}
-        />
-      }
+      editorialHeader={solHeaderFallback}
       actions={
         <div className="flex items-center gap-2">
           {/* Trust signals : fraîcheur des données + couverture périmètre. */}
@@ -422,17 +436,43 @@ export default function CommandCenter() {
         </button>
       </div>
 
-      {/* Hero featured 1+3 — Phase 4 quick win 2 : pattern asymétrique 5/7
-          aligné sur /cockpit pour homogénéiser la signature Sol entre les
-          2 vues. Featured = ratio sites sains/total (gauge 56px Mono),
-          Secondary = Conso hier / Conso mois / Pic horaire J-1.
-          Cf. audit CX 26/04/2026 quick win 3. */}
-      <DashboardHeroFeatured
-        kpis={kpis}
-        kpisJ1={kpisJ1}
-        loading={loading || cmdLoading}
-        sitesCount={scopedSites.length}
-      />
+      {/* Sprint 1.1 — Grammaire éditoriale Sol §5 (ADR-001).
+          Backend renvoie kicker + titre Fraunces + narrative 2-3 lignes
+          sourcée + 3 KPIs avec tooltip. Briefing-grade au sens doctrine §1
+          (briefing au lieu du dashboard) — remplace l'ancienne grille KPI
+          Phase 4 qui était l'anti-pattern §6.1 "page commençant par grille
+          sans préambule". */}
+      {solBriefing && (
+        <SolNarrative
+          kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
+          title={null /* idem — éviter doublon */}
+          narrative={solBriefing.narrative}
+          kpis={solBriefing.kpis}
+        />
+      )}
+
+      {/* Week-cards "Cette semaine chez vous" §5 (ADR-001 + ADR-002 chantier α S2).
+          MVP S1.1 : cards générées depuis l'état conformité courant. Sprint 2
+          alimentera depuis le moteur d'événements proactif (events bus). */}
+      {solBriefing && (
+        <SolWeekCards
+          cards={solBriefing.weekCards}
+          fallbackBody={solBriefing.fallbackBody}
+          onNavigate={navigate}
+        />
+      )}
+
+      {/* Fallback Hero pendant chargement initial briefing Sol (avant 1ère réponse API).
+          Doctrine §4 : densité éditoriale, pas de zone vide. À supprimer Sprint 1.2
+          quand briefing backend sera mature. */}
+      {!solBriefing && solBriefingLoading && (
+        <DashboardHeroFeatured
+          kpis={kpis}
+          kpisJ1={kpisJ1}
+          loading={loading || cmdLoading}
+          sitesCount={scopedSites.length}
+        />
+      )}
 
       {/* Top 5 sites en dérive (drill-down vers détail site). */}
       <TopDeriveSitesCard sites={scopedSites} totalSites={kpis?.total} />
@@ -811,6 +851,18 @@ export default function CommandCenter() {
       )}
 
       {/* ModuleLaunchers masqué — accessible via /cockpit expert mode */}
+
+      {/* Sprint 1.1 — SolPageFooter §5 grammaire (ADR-001).
+          Source · Confiance · Mis à jour — crédibilité B2B éditoriale.
+          Provenance vient du briefing backend (envelope SCM standardisée). */}
+      {solBriefing?.provenance && (
+        <SolPageFooter
+          source={solBriefing.provenance.source}
+          confidence={solBriefing.provenance.confidence}
+          updatedAt={solBriefing.provenance.updated_at}
+          methodologyUrl={solBriefing.provenance.methodology_url}
+        />
+      )}
     </PageShell>
   );
 }

@@ -268,6 +268,13 @@ from routes.pilotage import router as pilotage_router
 
 app.include_router(pilotage_router)
 
+# Pages briefing (refonte sol2 Sprint 1.1 — ADR-001 grammaire Sol industrialisée)
+# Endpoint unique /api/pages/{page_key}/briefing pour récit éditorial complet.
+# MVP cockpit_daily — S1.2-S1.3 étendra aux 9 autres pages Sol.
+from routes.pages_briefing import router as pages_briefing_router
+
+app.include_router(pages_briefing_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 
