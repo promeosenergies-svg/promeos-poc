@@ -10,6 +10,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck, Plus, RotateCcw, RefreshCw, Coins, ShoppingCart } from 'lucide-react';
 import { toUsages } from '../services/routes';
 import { Button, PageShell, ActiveFiltersBar, Explain } from '../ui';
+// Sprint 1.4 — grammaire Sol industrialisée (ADR-001) sur /conformite
+import SolPageHeader from '../ui/sol/SolPageHeader';
+import SolNarrative from '../ui/sol/SolNarrative';
+import SolWeekCards from '../ui/sol/SolWeekCards';
+import SolPageFooter from '../ui/sol/SolPageFooter';
+import { usePageBriefing } from '../hooks/usePageBriefing';
+import { scopeKicker } from '../utils/format';
 import ObligationsTab from './conformite-tabs/ObligationsTab';
 import DonneesTab from './conformite-tabs/DonneesTab';
 import ExecutionTab from './conformite-tabs/ExecutionTab';
@@ -92,6 +99,15 @@ export { DevScopeBadge };
 
 export default function ConformitePage() {
   const { org, scope, scopedSites, portefeuilles, sitesCount, sitesLoading } = useScope();
+
+  // Sprint 1.4 — briefing éditorial Sol §5 vue conformité (ADR-001).
+  // Backend orchestre KPIs + narrative + week-cards par jalon réglementaire
+  // (OPERAT, Audit SMÉ 11/10/2026, BACS 2030, APER) via /api/pages/conformite/briefing.
+  const {
+    briefing: solBriefing,
+    error: solBriefingError,
+    refetch: solBriefingRefetch,
+  } = usePageBriefing('conformite', { persona: 'daily' });
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -578,6 +594,14 @@ export default function ConformitePage() {
         </>
       }
       subtitle={scopeLabel}
+      editorialHeader={
+        <SolPageHeader
+          kicker={solBriefing?.kicker || scopeKicker('CONFORMITÉ', org?.nom, scopedSites?.length)}
+          title={solBriefing?.title || 'Conformité réglementaire'}
+          italicHook={solBriefing?.italicHook || 'trajectoire 2030'}
+          subtitle={scopeLabel}
+        />
+      }
       actions={
         <>
           <Button variant="secondary" size="sm" onClick={handleRecompute} disabled={recomputing}>
@@ -590,6 +614,30 @@ export default function ConformitePage() {
         </>
       }
     >
+      {/* ── Préambule éditorial Sol §5 vue Conformité (S1.4 — ADR-001) ──
+          Échéancier réglementaire vivant : Audit SMÉ 11/10/2026, OPERAT
+          annuel 30/09, BACS 2030, APER. Audit Navigation fin S1 : Conformité
+          reçoit 5/8 CTAs week-cards des autres pages — destination la plus
+          sollicitée du parcours utilisateur. */}
+      {solBriefingError && !solBriefing && (
+        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
+      )}
+      {solBriefing && (
+        <SolNarrative
+          kicker={null}
+          title={null}
+          narrative={solBriefing.narrative}
+          kpis={solBriefing.kpis}
+        />
+      )}
+      {solBriefing && (
+        <SolWeekCards
+          cards={solBriefing.weekCards}
+          fallbackBody={solBriefing.fallbackBody}
+          tone={solBriefing.narrativeTone}
+          onNavigate={navigate}
+        />
+      )}
       {/* Freshness — dernière évaluation + fallback */}
       {bundle?.meta?.generated_at ? (
         <span className="text-xs text-gray-400 ml-2">
@@ -885,6 +933,18 @@ export default function ConformitePage() {
             : null,
         }}
       />
+
+      {/* Sprint 1.4 — SolPageFooter §5 (ADR-001).
+          Source · Confiance · Mis à jour. Calendrier réglementaire 2026-2030
+          + RegOps. Lien méthodologie /methodologie/conformite-regops. */}
+      {solBriefing?.provenance && (
+        <SolPageFooter
+          source={solBriefing.provenance.source}
+          confidence={solBriefing.provenance.confidence}
+          updatedAt={solBriefing.provenance.updated_at}
+          methodologyUrl={solBriefing.provenance.methodology_url}
+        />
+      )}
     </PageShell>
   );
 }

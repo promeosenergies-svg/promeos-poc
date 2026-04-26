@@ -705,6 +705,254 @@ def _build_patrimoine(
     )
 
 
+# ── Builder conformite (Sprint 1.4 — DAF Marie + CFO Jean-Marc) ──────
+
+
+def _build_conformite(
+    db: Session,
+    org_id: int,
+    org_name: str,
+    sites_count: int,
+) -> Narrative:
+    """Sprint 1.4 — Vue Conformité réglementaire.
+
+    Promesse §4.3 doctrine : « La conformité devient une trajectoire claire
+    avec étapes, échéances, scénarios. Pas un tableau d'obligations à
+    cocher — un récit de progression. »
+
+    Sert Marie ("que dois-je faire et quand ?") + Jean-Marc ("échéancier
+    provisionnement € par jalon"). Audit Navigation fin S1 : Conformité
+    reçoit 5/8 CTAs week-cards des 3 pages migrées — destination la plus
+    sollicitée, à doctriner en priorité.
+
+    Réutilise :
+      - KpiService (compliance_score, financial_risk_eur)
+      - DATE_DEADLINE_P1 audit_sme_service (11/10/2026)
+      - StatutConformite (non_conformes / a_risque)
+      - compute_mutualisation pour économie cumulée
+    """
+    from datetime import date
+
+    from models import EntiteJuridique, Portefeuille, Site, StatutConformite, not_deleted
+    from services.kpi_service import KpiScope, KpiService
+
+    kpi_svc = KpiService(db)
+    scope = KpiScope(org_id=org_id)
+
+    risque_total = kpi_svc.get_financial_risk_eur(scope).value
+    conformite_kpi = kpi_svc.get_compliance_score(scope)
+    conformite_score = int(round(conformite_kpi.value)) if conformite_kpi.value is not None else None
+
+    site_q = (
+        not_deleted(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
+    non_conformes = site_q.filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME).count()
+    a_risque = site_q.filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
+    en_derive = non_conformes + a_risque
+
+    # ── Échéances réglementaires §8.3 doctrine ──
+    today = date.today()
+
+    # Audit SMÉ deadline — constante doctrine inviolable §8.3
+    AUDIT_SME_DEADLINE = date(2026, 10, 11)
+    days_until_audit_sme = (AUDIT_SME_DEADLINE - today).days
+
+    # OPERAT déclaration annuelle — 30 septembre N pour conso N-1.
+    operat_year = today.year if today.month < 9 else today.year + 1
+    operat_deadline = date(operat_year, 9, 30)
+    days_until_operat = (operat_deadline - today).days
+
+    # BACS classe C 2030 (Décret 2020-887)
+    BACS_DEADLINE = date(2030, 1, 1)
+    days_until_bacs = (BACS_DEADLINE - today).days
+
+    # Pénalité provisionnable (provision comptable CFO)
+    provision_penalite_eur = non_conformes * 7500.0 + a_risque * 3750.0
+
+    # ── Kicker + titre ──
+    kicker = (
+        f"CONFORMITÉ · {sites_count} SITE{'S' if sites_count > 1 else ''} · AUDIT SMÉ J-{days_until_audit_sme}"
+        if days_until_audit_sme >= 0
+        else f"CONFORMITÉ · {sites_count} SITE{'S' if sites_count > 1 else ''}"
+    )
+    title = "Conformité réglementaire"
+    italic_hook = "trajectoire 2030 et échéances par jalon"
+
+    # ── Narrative 2-3 lignes orientée "que faire et quand" ──
+    narr_parts = []
+    if days_until_audit_sme > 0 and days_until_audit_sme <= 365:
+        narr_parts.append(
+            f"Audit énergétique obligatoire dans {days_until_audit_sme} jours "
+            f"({AUDIT_SME_DEADLINE.strftime('%d/%m/%Y')}, Loi 2025-391)."
+        )
+    if non_conformes > 0:
+        narr_parts.append(
+            f"{non_conformes} site{'s' if non_conformes > 1 else ''} non conforme"
+            f"{'s' if non_conformes > 1 else ''} — provisionner "
+            f"{_fmt_eur_short(provision_penalite_eur)} de pénalités potentielles."
+        )
+    elif a_risque > 0:
+        narr_parts.append(
+            f"{a_risque} site{'s' if a_risque > 1 else ''} sous tension sur la "
+            "trajectoire 2030 — audit énergétique recommandé."
+        )
+    elif conformite_score is not None and conformite_score >= 75:
+        narr_parts.append(
+            "Patrimoine bien positionné sur la trajectoire 2030 — maintenir la qualité des déclarations OPERAT."
+        )
+    narr_parts.append(
+        f"Score consolidé {conformite_score}/100 (Décret n°2019-771)."
+        if conformite_score is not None
+        else "Score consolidé en cours d'évaluation."
+    )
+    narrative = " ".join(narr_parts)
+
+    # ── 3 KPIs hero §5 ──
+    kpis: list[NarrativeKpi] = [
+        NarrativeKpi(
+            label="Trajectoire 2030",
+            value=f"{conformite_score}/100" if conformite_score is not None else "—",
+            tooltip=(
+                "Score pondéré DT 45 % · BACS 30 % · APER 25 % "
+                "(Décret n°2019-771, jalons -40 %/2030, -50 %/2040, -60 %/2050)."
+            ),
+            source="RegOps + Décret 2019-771",
+        ),
+        NarrativeKpi(
+            label="Provision pénalités",
+            value=_fmt_eur_short(provision_penalite_eur),
+            tooltip=(
+                "Pénalités potentielles cumulées : 7 500 €/site non conforme + "
+                "3 750 €/site à risque (Décret n°2019-771)."
+            ),
+            source="Décret 2019-771",
+        ),
+        NarrativeKpi(
+            label="Prochaine échéance",
+            value=(
+                f"J-{days_until_audit_sme}"
+                if 0 <= days_until_audit_sme < days_until_operat
+                else f"J-{days_until_operat}"
+                if days_until_operat >= 0
+                else "—"
+            ),
+            tooltip=(
+                f"Audit énergétique obligatoire {AUDIT_SME_DEADLINE.strftime('%d/%m/%Y')} "
+                f"(Loi 2025-391) · Déclaration OPERAT {operat_deadline.strftime('%d/%m/%Y')} "
+                "(Décret 2019-771)."
+            ),
+            source="Calendrier réglementaire",
+        ),
+    ]
+
+    # ── Week-cards Conformité par jalon ──
+    week_cards: list[NarrativeWeekCard] = []
+
+    if 0 <= days_until_audit_sme <= 365:
+        urgency = "critical" if days_until_audit_sme <= 90 else "todo"
+        week_cards.append(
+            NarrativeWeekCard(
+                type="todo" if urgency == "todo" else "todo",
+                title=(f"Audit énergétique obligatoire J-{days_until_audit_sme}"),
+                body=(
+                    "Diagnostic ISO 50001 ou audit Art. L233-1 du code de "
+                    f"l'énergie — échéance {AUDIT_SME_DEADLINE.strftime('%d/%m/%Y')} "
+                    "(Loi 2025-391). Démarrer le marché 90 jours avant."
+                ),
+                cta_path="/conformite?tab=execution",
+                cta_label="Lancer l'audit",
+                urgency_days=days_until_audit_sme,
+            )
+        )
+
+    if non_conformes > 0:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="todo",
+                title=(f"Provisionner {_fmt_eur_short(non_conformes * 7500.0)} de pénalités"),
+                body=(
+                    f"{non_conformes} site{'s' if non_conformes > 1 else ''} "
+                    f"non conforme{'s' if non_conformes > 1 else ''} — "
+                    "déclaration OPERAT 2024 + plan de réduction conso "
+                    "à activer avant le prochain CODIR."
+                ),
+                cta_path="/conformite?tab=execution",
+                cta_label="Plan d'actions",
+                impact_eur=non_conformes * 7500.0,
+                urgency_days=180,
+            )
+        )
+
+    if 0 <= days_until_operat <= 90:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="watch",
+                title=(f"Déclaration OPERAT {operat_year} J-{days_until_operat}"),
+                body=(
+                    "Déclaration annuelle conso énergétique sur la plateforme "
+                    "OPERAT (ADEME) avant le 30 septembre — sites tertiaires "
+                    "≥ 1 000 m²."
+                ),
+                cta_path="/conformite?tab=donnees",
+                cta_label="Préparer la déclaration",
+                urgency_days=days_until_operat,
+            )
+        )
+
+    if non_conformes == 0 and a_risque == 0 and conformite_score is not None and conformite_score >= 75:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="good_news",
+                title="Trajectoire 2030 tenue",
+                body=(
+                    f"Score {conformite_score}/100 — patrimoine bien positionné. "
+                    f"BACS classe C obligatoire dans {days_until_bacs // 30} mois."
+                ),
+            )
+        )
+
+    fallback_body = (
+        "Calendrier réglementaire 2026-2030 sous contrôle — aucune échéance critique dans les 90 prochains jours."
+    )
+
+    # Tone narrative selon urgence
+    if non_conformes > 0 or (0 <= days_until_audit_sme <= 90):
+        narrative_tone: NarrativeTone = "critical"
+    elif a_risque > 0 or (0 <= days_until_audit_sme <= 365):
+        narrative_tone = "tension"
+    elif conformite_score is not None and conformite_score >= 75:
+        narrative_tone = "positive"
+    else:
+        narrative_tone = "neutral"
+
+    confidence = (
+        ProvenanceConfidence.HIGH if conformite_score is not None and sites_count > 0 else ProvenanceConfidence.MEDIUM
+    )
+    provenance = build_provenance(
+        source="RegOps + Calendrier réglementaire 2026-2030",
+        confidence=confidence,
+        updated_at=datetime.now(timezone.utc),
+        methodology_url="/methodologie/conformite-regops",
+    )
+
+    return Narrative(
+        page_key="conformite",
+        persona="daily",
+        kicker=kicker,
+        title=title,
+        italic_hook=italic_hook,
+        narrative=narrative,
+        narrative_tone=narrative_tone,
+        kpis=tuple(kpis),
+        week_cards=tuple(week_cards),
+        fallback_body=fallback_body,
+        provenance=provenance,
+    )
+
+
 # ── Helpers format FR ───────────────────────────────────────────────
 
 
@@ -746,8 +994,9 @@ _BUILDERS = {
     "cockpit_daily": _build_cockpit_daily,
     "cockpit_comex": _build_cockpit_comex,
     "patrimoine": _build_patrimoine,
-    # Sprint 1.4+ : ajouter conformite, bill_intel, achat, monitoring,
-    # diagnostic, anomalies, flex.
+    "conformite": _build_conformite,
+    # Sprint 1.5+ : ajouter bill_intel, achat, monitoring, diagnostic,
+    # anomalies, flex.
 }
 
 

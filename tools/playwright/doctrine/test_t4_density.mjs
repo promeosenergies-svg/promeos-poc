@@ -27,9 +27,11 @@ const OUT_DIR = path.join(
 );
 
 const PAGES = [
-  { route: '/cockpit', name: 'cockpit' },
   { route: '/', name: 'tableau_de_bord' },
-  // Sprint 1+ : ajouter Conformité/Bill-Intel/Achat/Patrimoine/Monitoring/Diagnostic/Anomalies/Flex
+  { route: '/cockpit?angle=comex', name: 'cockpit_comex' },
+  { route: '/patrimoine', name: 'patrimoine' },
+  { route: '/conformite', name: 'conformite' },
+  // Sprint 1.5+ : ajouter Bill-Intel/Achat/Monitoring/Diagnostic/Anomalies/Flex
 ];
 
 async function login(page) {

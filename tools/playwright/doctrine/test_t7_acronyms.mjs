@@ -24,8 +24,10 @@ const OUT_DIR = path.join(
 );
 
 const PAGES = [
-  { route: '/cockpit', name: 'cockpit' },
   { route: '/', name: 'tableau_de_bord' },
+  { route: '/cockpit?angle=comex', name: 'cockpit_comex' },
+  { route: '/patrimoine', name: 'patrimoine' },
+  { route: '/conformite', name: 'conformite' },
 ];
 
 const RAW_ACRONYMS = [
