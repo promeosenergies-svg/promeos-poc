@@ -39,12 +39,12 @@ SYSTEM_PROMPT = """Tu es le QA Guardian de PROMEOS, un cockpit énergétique B2B
 Tu audites le code source pour détecter :
 1. **Régressions de tests** : exécuter pytest et vitest, rapporter tout échec.
 2. **Violations source-guard** (pas de business logic dans le frontend) :
-   - `* 0.052` (facteur CO₂ hardcodé → doit venir du backend)
+   - Facteur CO₂ électrique hardcodé (doit venir du backend)
    - `* 7500` ou `* 3750` (pénalités DT hardcodées)
    - `1 - x/y * 100` (calcul de pourcentage dans le frontend)
    - Tout calcul de KPI dans des fichiers `.tsx` / `.jsx`
 3. **Constantes réglementaires correctes** :
-   - CO₂ élec = 0.052 kgCO₂e/kWh (ADEME Base Empreinte V23.6) → `backend/config/emission_factors.py`
+   - CO₂ élec ADEME Base Empreinte V23.6 → `backend/config/emission_factors.py`
    - ⚠️ 0.0569 = tarif TURPE 7 HPH en €/kWh, PAS un facteur CO₂
    - Accise élec T1 = 30.85 €/MWh (Loi de finances 2026, fév 2026+)
    - DT jalons = -25% (2030) / -40% (2040) / -50% (2050) (pas de jalon 2026)
@@ -83,7 +83,7 @@ SCOPE_PROMPTS: dict[str, str] = {
     ),
     "source-guards": (
         "Cherche les violations source-guard dans le frontend (pas de business logic côté FE) :\n"
-        "1. `grep -rn '\\* 0\\.052' frontend/src/ --include='*.tsx' --include='*.jsx'`\n"
+        "1. Cherche les facteurs CO₂ électriques hardcodés dans frontend/src/ (.tsx, .jsx).\n"
         "2. `grep -rn '\\* 7500' frontend/src/ --include='*.tsx' --include='*.jsx'`\n"
         "3. `grep -rn '\\* 3750' frontend/src/ --include='*.tsx' --include='*.jsx'`\n"
         "4. Cherche les patterns de calcul de KPI dans le frontend.\n"
@@ -92,7 +92,7 @@ SCOPE_PROMPTS: dict[str, str] = {
     "constants": (
         "Vérifie les constantes réglementaires :\n"
         "1. Lis `backend/config/tarifs_reglementaires.yaml` et vérifie les valeurs TURPE / CTA / accise.\n"
-        "2. Lis `backend/config/emission_factors.py` et confirme CO₂ élec = 0.052 kgCO₂e/kWh.\n"
+        "2. Lis `backend/config/emission_factors.py` et confirme le facteur CO₂ élec ADEME.\n"
         "3. Vérifie qu'aucun fichier n'utilise 0.0569 comme facteur CO₂ (c'est un tarif TURPE, pas une émission).\n"
         "4. Vérifie les jalons DT dans `backend/regops/rules/tertiaire_operat.py` (-25% / -40% / -50%)."
     ),
