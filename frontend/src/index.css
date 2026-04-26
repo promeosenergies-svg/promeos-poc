@@ -1,6 +1,14 @@
 @import 'tailwindcss';
+@import './ui/sol/tokens.css';
 
-/* ── PROMEOS Animations ── */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* sol2 (refonte POC + skin Sol) — Phase 1 : identité visuelle Sol            */
+/* Source : portage depuis promeos-audit-refonte-sol/frontend/src/index.css   */
+/* Stratégie minimale-disruptive : CSS overrides remappent les classes        */
+/* Tailwind du POC vers les vars --sol-* sans toucher aux composants React.   */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Animations PROMEOS conservées du POC ── */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -40,15 +48,364 @@
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Global body + typography — base Sol                                        */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+html,
 body {
   margin: 0;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
-    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background: var(--sol-bg-canvas);
+  color: var(--sol-ink-900);
+  font-family: var(--sol-font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  font-feature-settings: 'ss01', 'cv11';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+code,
+pre,
+.font-mono {
+  font-family: var(--sol-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum', 'zero';
+}
+
+h1,
+h2,
+h3,
+h4,
+.serif,
+.font-serif {
+  font-family: var(--sol-font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+h2 {
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+h3 {
+  font-size: 17px;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+/* italic hook pour hero titles éditoriaux */
+em.italic-hook,
+.italic-hook {
+  font-style: italic;
+  color: var(--sol-ink-500);
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Overrides Tailwind → palette Sol warm « journal en terrasse »              */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+/* Backgrounds neutres → Sol slate */
+.bg-white {
+  background-color: var(--sol-bg-paper) !important;
+}
+.bg-gray-50,
+.bg-slate-50 {
+  background-color: var(--sol-bg-canvas) !important;
+}
+.bg-gray-100,
+.bg-slate-100 {
+  background-color: var(--sol-bg-panel) !important;
+}
+.bg-gray-200,
+.bg-slate-200 {
+  background-color: var(--sol-ink-200) !important;
+}
+
+/* Textes neutres → ink Sol */
+.text-gray-900,
+.text-slate-900,
+.text-black {
+  color: var(--sol-ink-900) !important;
+}
+.text-gray-800,
+.text-slate-800,
+.text-gray-700,
+.text-slate-700 {
+  color: var(--sol-ink-700) !important;
+}
+.text-gray-600,
+.text-slate-600,
+.text-gray-500,
+.text-slate-500 {
+  color: var(--sol-ink-500) !important;
+}
+.text-gray-400,
+.text-slate-400 {
+  color: var(--sol-ink-400) !important;
+}
+
+/* Bordures neutres → rule Sol */
+.border-gray-100,
+.border-slate-100 {
+  border-color: var(--sol-ink-100) !important;
+}
+.border-gray-200,
+.border-slate-200 {
+  border-color: var(--sol-rule) !important;
+}
+.border-gray-300,
+.border-slate-300 {
+  border-color: var(--sol-ink-300) !important;
+}
+
+/* Blue (primary POC) → Sol calme (bleu-vert doux warm) */
+.bg-blue-50,
+.bg-blue-100 {
+  background-color: var(--sol-calme-bg) !important;
+}
+.bg-blue-500,
+.bg-blue-600,
+.bg-blue-700 {
+  background-color: var(--sol-calme-fg) !important;
+}
+.text-blue-500,
+.text-blue-600,
+.text-blue-700,
+.text-blue-800,
+.text-blue-900 {
+  color: var(--sol-calme-fg) !important;
+}
+.border-blue-200,
+.border-blue-300,
+.border-blue-500,
+.border-blue-600 {
+  border-color: var(--sol-calme-fg) !important;
+}
+.ring-blue-500,
+.ring-blue-600 {
+  --tw-ring-color: var(--sol-calme-fg) !important;
+}
+.hover\:bg-blue-700:hover {
+  background-color: var(--sol-calme-fg-hover) !important;
+}
+
+/* Indigo (alt primary POC) → Sol calme aussi */
+.bg-indigo-50,
+.bg-indigo-100 {
+  background-color: var(--sol-calme-bg) !important;
+}
+.bg-indigo-500,
+.bg-indigo-600 {
+  background-color: var(--sol-calme-fg) !important;
+}
+.text-indigo-600,
+.text-indigo-700 {
+  color: var(--sol-calme-fg) !important;
+}
+.border-indigo-200 {
+  border-color: var(--sol-calme-fg) !important;
+}
+
+/* Emerald/Green → Sol succes */
+.bg-emerald-50,
+.bg-green-50 {
+  background-color: var(--sol-succes-bg) !important;
+}
+.bg-emerald-500,
+.bg-emerald-600,
+.bg-green-500,
+.bg-green-600 {
+  background-color: var(--sol-succes-fg) !important;
+}
+.text-emerald-500,
+.text-emerald-600,
+.text-emerald-700,
+.text-green-500,
+.text-green-600,
+.text-green-700,
+.text-green-800,
+.text-green-900 {
+  color: var(--sol-succes-fg) !important;
+}
+.border-emerald-200,
+.border-emerald-300,
+.border-green-200 {
+  border-color: var(--sol-succes-fg) !important;
+}
+
+/* Amber/Yellow → Sol attention */
+.bg-amber-50,
+.bg-yellow-50 {
+  background-color: var(--sol-attention-bg) !important;
+}
+.bg-amber-500,
+.bg-amber-600,
+.bg-yellow-500 {
+  background-color: var(--sol-attention-fg) !important;
+}
+.text-amber-500,
+.text-amber-600,
+.text-amber-700,
+.text-amber-800,
+.text-amber-900,
+.text-yellow-600 {
+  color: var(--sol-attention-fg) !important;
+}
+.border-amber-200,
+.border-amber-300,
+.border-yellow-200 {
+  border-color: var(--sol-attention-fg) !important;
+}
+
+/* Orange → Sol afaire */
+.bg-orange-50 {
+  background-color: var(--sol-afaire-bg) !important;
+}
+.bg-orange-500,
+.bg-orange-600 {
+  background-color: var(--sol-afaire-fg) !important;
+}
+.text-orange-500,
+.text-orange-600,
+.text-orange-700 {
+  color: var(--sol-afaire-fg) !important;
+}
+.border-orange-200,
+.border-orange-500 {
+  border-color: var(--sol-afaire-fg) !important;
+}
+
+/* Red → Sol refuse */
+.bg-red-50 {
+  background-color: var(--sol-refuse-bg) !important;
+}
+.bg-red-500,
+.bg-red-600 {
+  background-color: var(--sol-refuse-fg) !important;
+}
+.text-red-500,
+.text-red-600,
+.text-red-700,
+.text-red-800,
+.text-red-900 {
+  color: var(--sol-refuse-fg) !important;
+}
+.border-red-200,
+.border-red-300,
+.border-red-500 {
+  border-color: var(--sol-refuse-fg) !important;
+}
+
+/* Violet (mode expert POC) → Sol attention warm */
+.bg-violet-50 {
+  background-color: var(--sol-attention-bg) !important;
+}
+.text-violet-700 {
+  color: var(--sol-attention-fg) !important;
+}
+.border-violet-200 {
+  border-color: var(--sol-attention-fg) !important;
+}
+
+/* Teal (CO₂ POC) → ink-700 neutre éditorial */
+.bg-teal-50 {
+  background-color: var(--sol-ink-100) !important;
+}
+.text-teal-700 {
+  color: var(--sol-ink-700) !important;
+}
+.border-teal-200 {
+  border-color: var(--sol-ink-300) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Cards : radius modernes (6-8px) + shadows softer                           */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+.rounded,
+.rounded-md,
+.rounded-lg,
+.rounded-xl {
+  border-radius: 6px !important;
+}
+.rounded-2xl,
+.rounded-3xl {
+  border-radius: 8px !important;
+}
+
+.shadow-sm,
+.shadow {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+.shadow-md {
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06) !important;
+}
+.shadow-lg,
+.shadow-xl,
+.shadow-2xl {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Patterns éditoriaux Sol — utilisables par les futurs composants Phase 2+   */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+.sol-page-kicker {
+  font-family: var(--sol-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sol-ink-500);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.sol-page-title {
+  font-family: var(--sol-font-body);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--sol-ink-900);
+  letter-spacing: -0.015em;
+  margin-bottom: 4px;
+}
+
+.sol-page-title em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--sol-ink-500);
+}
+
+.sol-page-subtitle {
+  font-family: var(--sol-font-body);
+  font-size: 13px;
+  color: var(--sol-ink-500);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.sol-section-head {
+  font-family: var(--sol-font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sol-ink-900);
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+.sol-numeric {
+  font-family: var(--sol-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum', 'zero';
+  letter-spacing: -0.01em;
 }
