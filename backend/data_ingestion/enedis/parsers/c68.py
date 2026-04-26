@@ -139,6 +139,9 @@ def _parse_csv(payload_bytes: bytes, member_name: str) -> ParsedC68Payload:
 def _extract_json_columns(prm_obj: dict[str, Any], warnings: list[dict[str, str]]) -> dict[str, str | None]:
     selected = _select_latest_contractual_situation(prm_obj.get("situationsContractuelles"), warnings)
     contractual_ambiguous = any(warning.get("code") == "ambiguous_contractual_situation" for warning in warnings)
+    structure_tarifaire = selected.get("structureTarifaire") if isinstance(selected, dict) else {}
+    if not isinstance(structure_tarifaire, dict):
+        structure_tarifaire = {}
     columns = {
         "date_debut_situation_contractuelle": _optional_str(selected.get("dateDebut")) if selected else None,
         "segment": None
@@ -146,31 +149,41 @@ def _extract_json_columns(prm_obj: dict[str, Any], warnings: list[dict[str, str]
         else _optional_str((selected or {}).get("segment") or _find_value(prm_obj, "segment")),
         "etat_contractuel": None
         if contractual_ambiguous
-        else _optional_str((selected or {}).get("etatContractuel") or _find_value(prm_obj, "etatContractuel")),
+        else _optional_str(_find_value(selected, "etatContractuel") or _find_value(prm_obj, "etatContractuel")),
         "formule_tarifaire_acheminement": _optional_str(
-            (selected or {}).get("formuleTarifaireAcheminement") or _find_value(prm_obj, "formuleTarifaireAcheminement")
+            _code_or_value(
+                structure_tarifaire.get("formuleTarifaireAcheminement")
+                or _find_value(selected, "formuleTarifaireAcheminement")
+                or _find_value(prm_obj, "formuleTarifaireAcheminement")
+            )
         )
         if not contractual_ambiguous
         else None,
         "code_tarif_acheminement": _optional_str(
-            (selected or {}).get("codeTarifAcheminement") or _find_value(prm_obj, "codeTarifAcheminement")
+            _find_value(selected, "codeTarifAcheminement") or _find_value(prm_obj, "codeTarifAcheminement")
         )
         if not contractual_ambiguous
         else None,
-        "siret": _optional_str(_find_value(prm_obj, "siret")),
-        "siren": _optional_str(_find_value(prm_obj, "siren")),
+        "siret": _optional_str(_find_value(prm_obj, "siret") or _find_value(prm_obj, "numSiret")),
+        "siren": _optional_str(_find_value(prm_obj, "siren") or _find_value(prm_obj, "numSiren")),
         "domaine_tension": _optional_str(_find_value(prm_obj, "domaineTension")),
         "tension_livraison": _optional_str(_find_value(prm_obj, "tensionLivraison")),
         "type_comptage": _optional_str(_find_value(prm_obj, "typeComptage")),
         "mode_releve": _optional_str(_find_value(prm_obj, "modeReleve")),
-        "media_comptage": _optional_str(_find_value(prm_obj, "mediaComptage")),
-        "periodicite_releve": _optional_str(_find_value(prm_obj, "periodiciteReleve")),
+        "media_comptage": _optional_str(_find_value(prm_obj, "mediaComptage") or _find_value(prm_obj, "media")),
+        "periodicite_releve": _optional_str(
+            _find_value(prm_obj, "periodiciteReleve") or _find_value(prm_obj, "periodicite")
+        ),
         "type_injection": None
         if contractual_ambiguous
-        else _optional_str((selected or {}).get("typeInjection") or prm_obj.get("typeInjection")),
+        else _optional_str(_find_value(selected, "typeInjection") or prm_obj.get("typeInjection")),
         "borne_fixe": _optional_str(_find_value(prm_obj, "borneFixe")),
-        "refus_pose_linky": _optional_str(_find_value(prm_obj, "refusPoseLinky")),
-        "date_refus_pose_linky": _optional_str(_find_value(prm_obj, "dateRefusPoseLinky")),
+        "refus_pose_linky": _optional_str(
+            _find_value(prm_obj, "refusPoseLinky") or _find_value(prm_obj, "refusPoseAMM")
+        ),
+        "date_refus_pose_linky": _optional_str(
+            _find_value(prm_obj, "dateRefusPoseLinky") or _find_value(prm_obj, "dateRefusPoseAMM")
+        ),
     }
     columns.update(_extract_power_json(prm_obj, "puissanceSouscrite", "puissance_souscrite"))
     columns.update(_extract_power_json(prm_obj, "puissanceLimiteSoutirage", "puissance_limite_soutirage"))
@@ -226,11 +239,16 @@ def _select_latest_contractual_situation(value: Any, warnings: list[dict[str, st
     if not isinstance(value, list):
         warnings.append({"code": "ambiguous_contractual_situation", "reason": "situationsContractuelles_not_array"})
         return None
+    if not value:
+        return None
+    if not all(isinstance(item, dict) for item in value):
+        warnings.append({"code": "ambiguous_contractual_situation", "reason": "item_not_object"})
+        return None
+    if len(value) == 1:
+        return value[0]
+
     dated: list[tuple[date, dict[str, Any]]] = []
     for item in value:
-        if not isinstance(item, dict):
-            warnings.append({"code": "ambiguous_contractual_situation", "reason": "item_not_object"})
-            return None
         raw_date = item.get("dateDebut")
         if not isinstance(raw_date, str):
             warnings.append({"code": "ambiguous_contractual_situation", "reason": "missing_dateDebut"})
@@ -240,8 +258,6 @@ def _select_latest_contractual_situation(value: Any, warnings: list[dict[str, st
         except ValueError:
             warnings.append({"code": "ambiguous_contractual_situation", "reason": "invalid_dateDebut"})
             return None
-    if not dated:
-        return None
     max_date = max(item[0] for item in dated)
     latest = [item for item_date, item in dated if item_date == max_date]
     if len(latest) != 1:
@@ -295,6 +311,12 @@ def _optional_str(value: Any) -> str | None:
     return str(value)
 
 
+def _code_or_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return value.get("code") or value.get("valeur") or value.get("libelle")
+    return value
+
+
 def _csv_cell(row: dict[str, str | None], raw_name: str) -> str | None:
     value = row.get(raw_name)
     if value is None:
@@ -312,7 +334,10 @@ def _normalize_header(value: str) -> str:
 _JSON_ALLOWED_TOP_LEVEL = {
     "idPrm",
     "donneesGenerales",
+    "situationAlimentation",
+    "situationComptage",
     "situationsContractuelles",
+    "syntheseContractuelle",
     "rattachements",
     "installationsProduction",
     "optionsContractuelles",

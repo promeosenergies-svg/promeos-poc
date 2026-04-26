@@ -598,8 +598,11 @@ JSON parsing:
 - missing `idPrm` is fatal
 - full PRM object stored in `payload_raw`
 - `situationsContractuelles[]` remains nested
-- extracted contractual columns use latest parseable `dateDebut`
-- ambiguous latest contractual situation stores raw payload, nulls summary columns, and records a structured warning
+- extracted contractual columns use the sole `situationsContractuelles[]` item when only one exists, even if `dateDebut` is absent
+- when multiple contractual situations exist, extracted contractual columns use latest parseable `dateDebut`
+- ambiguous multi-situation contractual selection stores raw payload, nulls summary columns, and records a structured warning
+- real-file reality check on 2026-04-26: local row `enedis_flux_itc_c68.id = 22` / PRM `30000119007533` had a single undated contractual situation with `segment = C1`, `informationsContractuelles.etatContractuel = SERVC`, and `structureTarifaire.formuleTarifaireAcheminement.code = HTALU5`; the parser must extract those dedicated columns instead of treating the row as ambiguous
+- also extract observed nested v1.2 aliases such as `situationComptage.dispositifComptage.media`, `situationComptage.caracteristiquesReleve.periodicite`, `clientFinal.informationsClient.personneMorale.numSiret`, and `numSiren`
 
 CSV parsing:
 
@@ -655,10 +658,12 @@ Storage notes:
 - One invalid secondary rolls back the whole physical file.
 - Missing JSON `idPrm` or CSV `PRM` fails and rolls back.
 - Unknown fields/columns are preserved and warning-recorded.
+- A single undated `situationsContractuelles[]` item is accepted as the selected contractual situation and projects `segment`, contract status, and tariff fields.
 
 ### Test Coverage
 
 - Synthetic C68 JSON top-level array.
+- Synthetic C68 JSON regression matching the real id `22` nested shape: one undated contractual situation projects `segment = C1`, `etat_contractuel = SERVC`, `formule_tarifaire_acheminement = HTALU5`, `media_comptage = IP`, and `periodicite_releve = QUOTID`.
 - Synthetic C68 CSV 207-column-style fixture.
 - Synthetic C68 CSV 211-column-style fixture with fake `Type Injection`, `Refus de pose Linky`, `Date refus de pose Linky`, and `Borne Fixe`.
 - Multi-secondary archive where primary timestamp differs from secondary/payload timestamp.

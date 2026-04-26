@@ -245,6 +245,8 @@ Observed content examples:
   - one top-level array
   - one object per PRM
   - nested sections such as `donneesGenerales`, `situationAlimentation`, `situationComptage`, `syntheseContractuelle`, `situationsContractuelles`
+  - real-file reality check on 2026-04-26: local DB row `enedis_flux_itc_c68.id = 22` / PRM `30000119007533` had `situationsContractuelles` with one object, no direct `dateDebut`, and valid nested contractual fields; `segment = C1`, `informationsContractuelles.etatContractuel = SERVC`, and `structureTarifaire.formuleTarifaireAcheminement.code = HTALU5` must be extracted instead of nulling contractual summary columns
+  - the same real payload confirmed that some high-value C68 query fields use v1.2 nested names rather than older flat names: `situationComptage.dispositifComptage.media`, `situationComptage.caracteristiquesReleve.periodicite`, `clientFinal.informationsClient.personneMorale.numSiret`, and `numSiren`
 - `C68` CSV sample:
   - one flat row per PRM
   - very wide contract/technical export
@@ -547,7 +549,7 @@ Unlike `R63` / `R64`, `C68` is not a compact measurement family. It is a very wi
 | `point_id` | String(14) | PRM |
 | `payload_raw` | Text | full per-PRM payload serialized as JSON text |
 | `contractual_situation_count` | Integer nullable | number of `situationsContractuelles[]` items when available |
-| `date_debut_situation_contractuelle` | String(30) nullable | `dateDebut` of the contractual situation used for extracted contractual columns |
+| `date_debut_situation_contractuelle` | String(30) nullable | `dateDebut` of the contractual situation used for extracted contractual columns, when the selected situation provides one |
 | `segment` | String(20) nullable | extracted when available |
 | `etat_contractuel` | String(20) nullable | extracted when available |
 | `formule_tarifaire_acheminement` | String(50) nullable | extracted when available |
@@ -841,8 +843,10 @@ parse_c68_payload(payload_bytes: bytes, source_format: str, member_name: str) ->
   - one row per top-level PRM object
   - `payload_raw` stores that PRM object
   - `situationsContractuelles[]` remains nested inside `payload_raw`; it does not multiply raw rows
-  - extracted contractual columns come from the latest contractual situation by greatest parseable `dateDebut`
+  - when there is exactly one contractual situation, extracted contractual columns come from that object even if `dateDebut` is absent
+  - when there are multiple contractual situations, extracted contractual columns come from the latest contractual situation by greatest parseable `dateDebut`
   - if `dateDebut` is missing/tied/ambiguous across multiple contractual situations, ingest the PRM snapshot, preserve all raw situations in `payload_raw`, set contractual summary columns to null, and record a structured warning
+  - nested v1.2 fields are valid extraction sources; for example `informationsContractuelles.etatContractuel`, `structureTarifaire.formuleTarifaireAcheminement.code`, `clientFinal.informationsClient.personneMorale.numSiret`, and `situationComptage.dispositifComptage.media`
 - CSV:
   - one row per CSV line
   - `payload_raw` stores the row converted to JSON object `{csv_header: raw_string_value}`
@@ -1026,7 +1030,8 @@ Mandatory assertions:
 - C68 v1.2 fields are preserved/extracted when present and tolerated when absent
 - unknown C68 CSV columns and JSON fields remain in `payload_raw` and produce warnings rather than hard failures
 - C68 JSON nested arrays such as `rattachements`, `installationsProduction`, and `optionsContractuelles` remain intact in `payload_raw`
-- C68 extracted contractual columns use the latest `situationsContractuelles[]` item by `dateDebut`
+- C68 extracted contractual columns use a single `situationsContractuelles[]` item even without `dateDebut`, and use the latest item by `dateDebut` only when multiple situations exist
+- C68 real-file regression: a sanitized fixture matching local DB row id `22` must prove `segment = C1`, `etat_contractuel = SERVC`, `formule_tarifaire_acheminement = HTALU5`, `media_comptage = IP`, and `periodicite_releve = QUOTID` are extracted from the nested JSON shape
 - ambiguous C68 contractual-situation selection produces a warning
 - C68 missing `idPrm` / `PRM` fails the physical file and rolls back inserts
 - malformed mandatory CSV rows fail the physical file and roll back inserts
@@ -1153,7 +1158,7 @@ SF5 should use idempotent additive raw DB migrations:
 - [ ] `C68` legacy 207-column CSV and v1.2 211-column CSV both ingest successfully
 - [ ] C68 unknown CSV/JSON fields are preserved in `payload_raw` and surfaced as warnings, not hard failures
 - [ ] C68 missing `idPrm` / `PRM` fails the physical file and rolls back inserts
-- [ ] C68 extracted contractual columns use the latest unambiguous `situationsContractuelles[]` item by `dateDebut`; ambiguous selection nulls contractual summary columns and records a warning
+- [ ] C68 extracted contractual columns use the sole `situationsContractuelles[]` item when only one exists, even if `dateDebut` is absent; multiple situations use the latest unambiguous item by `dateDebut`; ambiguous multi-situation selection nulls contractual summary columns and records a warning
 - [ ] `C68` primary archives with multiple secondary ZIPs ingest correctly
 - [ ] C68 multi-secondary archives allow secondary sequence/timestamp values that differ from the primary when each secondary archive matches its own payload and all files share request-level metadata
 - [ ] one invalid C68 secondary archive, filename mismatch, sequence gap, sidecar member, or mixed payload format rolls back the whole physical file
