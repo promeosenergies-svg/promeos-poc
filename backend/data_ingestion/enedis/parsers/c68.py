@@ -41,6 +41,7 @@ class ParsedC68Row:
     puissance_raccordement_soutirage_unite: str | None = None
     puissance_raccordement_injection_valeur: str | None = None
     puissance_raccordement_injection_unite: str | None = None
+    type_injection: str | None = None
     borne_fixe: str | None = None
     refus_pose_linky: str | None = None
     date_refus_pose_linky: str | None = None
@@ -164,6 +165,9 @@ def _extract_json_columns(prm_obj: dict[str, Any], warnings: list[dict[str, str]
         "mode_releve": _optional_str(_find_value(prm_obj, "modeReleve")),
         "media_comptage": _optional_str(_find_value(prm_obj, "mediaComptage")),
         "periodicite_releve": _optional_str(_find_value(prm_obj, "periodiciteReleve")),
+        "type_injection": None
+        if contractual_ambiguous
+        else _optional_str((selected or {}).get("typeInjection") or prm_obj.get("typeInjection")),
         "borne_fixe": _optional_str(_find_value(prm_obj, "borneFixe")),
         "refus_pose_linky": _optional_str(_find_value(prm_obj, "refusPoseLinky")),
         "date_refus_pose_linky": _optional_str(_find_value(prm_obj, "dateRefusPoseLinky")),
@@ -209,6 +213,7 @@ def _extract_csv_columns(csv_row: dict[str, str | None], headers: dict[str, str]
         "puissance_raccordement_soutirage_unite": h("Puissance Raccordement Soutirage Unite"),
         "puissance_raccordement_injection_valeur": h("Puissance Raccordement Injection Valeur"),
         "puissance_raccordement_injection_unite": h("Puissance Raccordement Injection Unite"),
+        "type_injection": h("Type Injection"),
         "borne_fixe": h("Borne Fixe"),
         "refus_pose_linky": h("Refus de pose Linky"),
         "date_refus_pose_linky": h("Date refus de pose Linky"),
@@ -323,6 +328,7 @@ _JSON_ALLOWED_TOP_LEVEL = {
     "puissanceLimiteSoutirage",
     "puissanceRaccordementSoutirage",
     "puissanceRaccordementInjection",
+    "typeInjection",
     "borneFixe",
     "refusPoseLinky",
     "dateRefusPoseLinky",

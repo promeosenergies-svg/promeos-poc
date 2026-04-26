@@ -93,7 +93,7 @@ def test_r63_json_missing_structural_field_fails():
 def test_r63_csv_maps_accented_and_optional_headers():
     csv_payload = (
         "Identifiant PRM;Date de début;Date de fin;Grandeur physique;Grandeur métier;Etape métier;Unité;"
-        "Horodate;Valeur;Nature;Pas;Mode calcul;tc;iv;ec\n"
+        "Horodate;Valeur;Nature;Pas;Mode calcul;tc;Indice de vraisemblance;ec\n"
         "30000000000001;2026-01-01;2026-01-02;EA;CONS;MESURE;Wh;"
         "2026-01-01T00:00:00+01:00;10;R;PT5M;BRUT;A;0;1\n"
     ).encode("utf-8-sig")

@@ -234,14 +234,14 @@ _CSV_OPTIONAL = {
     "contexte_releve": ("contexte releve",),
     "type_releve": ("type releve",),
     "motif_releve": ("motif releve",),
-    "code_grille": ("code grille",),
-    "id_calendrier": ("id calendrier",),
+    "code_grille": ("code grille", "grille"),
+    "id_calendrier": ("id calendrier", "identifiant calendrier"),
     "libelle_calendrier": ("libelle calendrier",),
     "libelle_grille": ("libelle grille",),
-    "id_classe_temporelle": ("id classe temporelle",),
+    "id_classe_temporelle": ("id classe temporelle", "identifiant classe temporelle"),
     "libelle_classe_temporelle": ("libelle classe temporelle",),
-    "code_cadran": ("code cadran",),
-    "indice_vraisemblance": ("indice vraisemblance", "iv"),
+    "code_cadran": ("code cadran", "cadran"),
+    "indice_vraisemblance": ("indice vraisemblance", "indice de vraisemblance", "iv"),
 }
 
 

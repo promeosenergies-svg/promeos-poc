@@ -406,6 +406,7 @@ class EnedisFluxItcC68(Base, TimestampMixin):
     puissance_raccordement_injection_unite = Column(
         String(20), nullable=True, comment="Unite puissance raccord injection"
     )
+    type_injection = Column(String(30), nullable=True, comment="Type injection brut")
     borne_fixe = Column(String(10), nullable=True, comment="Borne fixe brute")
     refus_pose_linky = Column(String(10), nullable=True, comment="Refus pose Linky brut")
     date_refus_pose_linky = Column(String(30), nullable=True, comment="Date refus pose Linky brute")

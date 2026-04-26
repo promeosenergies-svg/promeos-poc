@@ -1091,6 +1091,7 @@ def _iter_c68(archive_payload: Any, parsed_payloads: list[Any], flux_file: Enedi
                 puissance_raccordement_soutirage_unite=row.puissance_raccordement_soutirage_unite,
                 puissance_raccordement_injection_valeur=row.puissance_raccordement_injection_valeur,
                 puissance_raccordement_injection_unite=row.puissance_raccordement_injection_unite,
+                type_injection=row.type_injection,
                 borne_fixe=row.borne_fixe,
                 refus_pose_linky=row.refus_pose_linky,
                 date_refus_pose_linky=row.date_refus_pose_linky,

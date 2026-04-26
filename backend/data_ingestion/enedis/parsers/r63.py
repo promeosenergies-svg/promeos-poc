@@ -149,7 +149,7 @@ _CSV_REQUIRED = {
 _CSV_OPTIONAL = {
     "mode_calcul": ("mode calcul",),
     "type_correction": ("type correction", "tc"),
-    "indice_vraisemblance": ("indice vraisemblance", "iv"),
+    "indice_vraisemblance": ("indice vraisemblance", "indice de vraisemblance", "iv"),
     "etat_complementaire": ("etat complementaire", "ec"),
 }
 

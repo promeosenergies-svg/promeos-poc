@@ -97,14 +97,21 @@ def _add_enedis_columns(engine) -> None:
         ("archive_members_count", "INTEGER"),
         ("header_raw", "TEXT"),
     ]
+    enedis_flux_itc_c68_columns = [
+        ("type_injection", "VARCHAR(30)"),
+    ]
 
-    if not insp.has_table("enedis_flux_file"):
-        return
-
-    existing_cols = {c["name"] for c in insp.get_columns("enedis_flux_file")}
+    table_column_map = {
+        "enedis_flux_file": enedis_flux_file_columns,
+        "enedis_flux_itc_c68": enedis_flux_itc_c68_columns,
+    }
     with engine.begin() as conn:
-        for col_name, col_type in enedis_flux_file_columns:
-            if col_name in existing_cols:
+        for table_name, columns in table_column_map.items():
+            if not insp.has_table(table_name):
                 continue
-            conn.execute(text(f'ALTER TABLE "enedis_flux_file" ADD COLUMN "{col_name}" {col_type}'))
-            logger.info("flux-data migration: added enedis_flux_file.%s", col_name)
+            existing_cols = {c["name"] for c in insp.get_columns(table_name)}
+            for col_name, col_type in columns:
+                if col_name in existing_cols:
+                    continue
+                conn.execute(text(f'ALTER TABLE "{table_name}" ADD COLUMN "{col_name}" {col_type}'))
+                logger.info("flux-data migration: added %s.%s", table_name, col_name)

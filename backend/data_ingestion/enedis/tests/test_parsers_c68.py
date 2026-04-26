@@ -42,6 +42,22 @@ def test_c68_json_top_level_array_extracts_one_row_per_prm():
     assert json.loads(row.payload_raw)["rattachements"] == [{"role": "synthetic"}]
 
 
+def test_c68_json_extracts_type_injection_from_latest_contractual_situation():
+    payload = [
+        {
+            "idPrm": "30000000000001",
+            "situationsContractuelles": [
+                {"dateDebut": "2024-01-01", "typeInjection": "ANCIEN"},
+                {"dateDebut": "2025-01-01", "typeInjection": "SURPLUS"},
+            ],
+        }
+    ]
+
+    parsed = parse_c68_payload(json.dumps(payload).encode(), "JSON", "payload.json")
+
+    assert parsed.rows[0].type_injection == "SURPLUS"
+
+
 def test_c68_json_ambiguous_contractual_situation_warns_and_nulls_summary():
     payload = [
         {
@@ -90,6 +106,7 @@ def test_c68_csv_211_style_extracts_v12_additions():
 
     parsed = parse_c68_payload(csv_payload, "CSV", "payload.csv")
 
+    assert parsed.rows[0].type_injection == "SURPLUS"
     assert parsed.rows[0].borne_fixe == "OUI"
     assert parsed.rows[0].refus_pose_linky == "NON"
     assert json.loads(parsed.rows[0].payload_raw)["Type Injection"] == "SURPLUS"

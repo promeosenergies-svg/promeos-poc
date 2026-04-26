@@ -104,8 +104,9 @@ def test_r64_json_disconnected_grandeur_fails():
 def test_r64_csv_maps_observed_headers():
     csv_payload = (
         "Identifiant PRM;Date de début;Date de fin;Grandeur physique;Grandeur métier;Etape métier;Unité;"
-        "Horodate;Valeur;Contexte relève;Type relève;Motif relève;Code grille;Id calendrier;"
-        "Libellé calendrier;Libellé grille;Id classe temporelle;Libellé classe temporelle;Code cadran;iv\n"
+        "Horodate;Valeur;Contexte relève;Type relève;Motif relève;Grille;Identifiant calendrier;"
+        "Libellé calendrier;Libellé grille;Identifiant classe temporelle;Libellé classe temporelle;"
+        "Cadran;Indice de vraisemblance\n"
         "30000000000001;2026-01-01;2026-01-02;EA;CONS;RELEVE;Wh;"
         "2026-01-01T00:00:00+01:00;100;NORMAL;INDEX;PERIODIQUE;GRD;CAL1;"
         "Calendrier;Grille;HP;Heures pleines;01;0\n"
@@ -117,6 +118,10 @@ def test_r64_csv_maps_observed_headers():
     row = parsed.rows[0]
     assert row.contexte_releve == "NORMAL"
     assert row.code_grille == "GRD"
+    assert row.id_calendrier == "CAL1"
+    assert row.id_classe_temporelle == "HP"
+    assert row.code_cadran == "01"
+    assert row.indice_vraisemblance == "0"
     assert row.valeur == "100"
 
 
