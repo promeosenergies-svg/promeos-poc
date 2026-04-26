@@ -29,6 +29,13 @@ import {
   Clock,
 } from 'lucide-react';
 import { Card, Badge, Button, EmptyState, PageShell, Drawer, Tabs, Tooltip } from '../ui';
+// Sprint 1.3 — grammaire Sol industrialisée (ADR-001) sur /patrimoine
+import SolPageHeader from '../ui/sol/SolPageHeader';
+import SolNarrative from '../ui/sol/SolNarrative';
+import SolWeekCards from '../ui/sol/SolWeekCards';
+import SolPageFooter from '../ui/sol/SolPageFooter';
+import { usePageBriefing } from '../hooks/usePageBriefing';
+import { scopeKicker } from '../utils/format';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import { useToast } from '../ui';
@@ -155,6 +162,11 @@ export default function Patrimoine() {
   const { isExpert } = useExpertMode(); // eslint-disable-line no-unused-vars
   const searchRef = useRef(null);
   const [dataVersion, setDataVersion] = useState(0);
+
+  // Sprint 1.3 — briefing éditorial Sol §5 vue patrimoine (ADR-001).
+  // Backend orchestre KPIs + narrative + week-cards via /api/pages/patrimoine/briefing.
+  // Différenciateur §4.1 : mutualisation Décret Tertiaire promue en bonne nouvelle.
+  const { briefing: solBriefing } = usePageBriefing('patrimoine', { persona: 'daily' });
 
   // Refresh cible apres mutation (creation, edition, enrichissement)
   const handleDataMutation = useCallback(() => {
@@ -707,6 +719,14 @@ export default function Patrimoine() {
       icon={Building2}
       title="Sites & bâtiments"
       subtitle={subtitle}
+      editorialHeader={
+        <SolPageHeader
+          kicker={solBriefing?.kicker || scopeKicker('PATRIMOINE', org?.nom, scopedSites?.length)}
+          title={solBriefing?.title || 'Votre patrimoine'}
+          italicHook={solBriefing?.italicHook || 'sites, surfaces et opportunités'}
+          subtitle={subtitle}
+        />
+      }
       actions={
         <>
           {!isEmptyPatrimoine && (
@@ -734,6 +754,26 @@ export default function Patrimoine() {
         </>
       }
     >
+      {/* ── Préambule éditorial Sol §5 vue Patrimoine (S1.3 — ADR-001) ──
+          Différenciateur §4.1 doctrine : mutualisation Décret Tertiaire promue
+          comme bonne nouvelle chiffrée (économie €/an en consolidant les
+          efforts portefeuille). Audit Sprint 0 Patrimoine 3.4/10 :
+          mutualisation cachée onglet Conformité, désormais visible Patrimoine. */}
+      {!isEmptyPatrimoine && solBriefing && (
+        <SolNarrative
+          kicker={null /* déjà rendu dans editorialHeader SolPageHeader */}
+          title={null /* idem — éviter doublon */}
+          narrative={solBriefing.narrative}
+          kpis={solBriefing.kpis}
+        />
+      )}
+      {!isEmptyPatrimoine && solBriefing && (
+        <SolWeekCards
+          cards={solBriefing.weekCards}
+          fallbackBody={solBriefing.fallbackBody}
+          onNavigate={navigate}
+        />
+      )}
       {/* ── Welcome empty state ── */}
       {isEmptyPatrimoine ? (
         <EmptyState
@@ -1616,6 +1656,17 @@ export default function Patrimoine() {
         />
       )}
       {showSegModal && <SegmentationQuestionnaireModal onClose={() => setShowSegModal(false)} />}
+
+      {/* Sprint 1.3 — SolPageFooter §5 grammaire (ADR-001).
+          Source · Confiance · Mis à jour. Lien méthodologie /docs/methodologie/conformite-regops. */}
+      {!isEmptyPatrimoine && solBriefing?.provenance && (
+        <SolPageFooter
+          source={solBriefing.provenance.source}
+          confidence={solBriefing.provenance.confidence}
+          updatedAt={solBriefing.provenance.updated_at}
+          methodologyUrl={solBriefing.provenance.methodology_url}
+        />
+      )}
     </PageShell>
   );
 }

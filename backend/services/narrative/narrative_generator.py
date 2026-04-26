@@ -449,7 +449,222 @@ def _build_cockpit_comex(
     )
 
 
+# ── Builder patrimoine (Sprint 1.3 — DAF tertiaire midmarket Marie) ──
+
+
+def _build_patrimoine(
+    db: Session,
+    org_id: int,
+    org_name: str,
+    sites_count: int,
+) -> Narrative:
+    """Sprint 1.3 — Vue Patrimoine DAF.
+
+    Promesse §4.1 doctrine : « Votre patrimoine est lisible comme un récit
+    d'entreprise. EUI vs ADEME, surfaces, contrats, conformité — tout est
+    mis en perspective dans une narrative qui parle de votre business. »
+
+    Différenciateur §4.1 : simulation mutualisation Décret Tertiaire (-40%
+    en 2030) — feature unique B2B multisite. Promu comme bonne nouvelle
+    chiffrée dans les week-cards (audit Patrimoine Sprint 0 : caché onglet
+    Conformité, à promouvoir Patrimoine).
+
+    Réutilise :
+      - compute_mutualisation() (services/tertiaire_mutualisation_service)
+      - KpiService (sites en dérive)
+      - Site model (surface_m2 cumulée)
+    """
+    from models import EntiteJuridique, Portefeuille, Site, StatutConformite, not_deleted
+    from services.tertiaire_mutualisation_service import compute_mutualisation
+
+    # Surface totale + sites en dérive
+    site_q = (
+        not_deleted(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
+    sites_list = site_q.all()
+    surface_total_m2 = sum((s.surface_m2 or 0) for s in sites_list)
+    non_conformes = sum(1 for s in sites_list if s.statut_decret_tertiaire == StatutConformite.NON_CONFORME)
+    a_risque = sum(1 for s in sites_list if s.statut_decret_tertiaire == StatutConformite.A_RISQUE)
+    en_derive = non_conformes + a_risque
+
+    # Mutualisation DT 2030 — différenciateur §4.1
+    economie_mutualisation_eur = 0.0
+    mutualisation_conforme = False
+    nb_sites_surplus = 0
+    try:
+        mutualisation = compute_mutualisation(db, org_id, jalon=2030)
+        economie_mutualisation_eur = mutualisation.economie_mutualisation_eur
+        mutualisation_conforme = mutualisation.conforme_mutualise
+        nb_sites_surplus = mutualisation.nb_sites_surplus
+    except Exception:
+        # Données EFA partielles — fallback narrative sans chiffrage mutualisation
+        pass
+
+    # ── Kicker + titre ──
+    kicker = f"PATRIMOINE · {sites_count} SITE{'S' if sites_count > 1 else ''} · {_fmt_m2_short(surface_total_m2)}"
+    title = "Votre patrimoine"
+    italic_hook = "sites, surfaces et opportunités"
+
+    # ── Narrative 2-3 lignes orientée business DAF ──
+    narr_parts = [
+        f"Patrimoine de {sites_count} site{'s' if sites_count > 1 else ''} tertiaire"
+        f"{'s' if sites_count > 1 else ''} totalisant {_fmt_m2_full(surface_total_m2)}."
+    ]
+    if economie_mutualisation_eur > 0:
+        narr_parts.append(
+            f"Mutualisation Décret Tertiaire 2030 : {_fmt_eur_short(economie_mutualisation_eur)} "
+            f"d'économie potentielle en consolidant les efforts entre sites du portefeuille."
+        )
+    elif en_derive > 0:
+        narr_parts.append(
+            f"{en_derive} site{'s' if en_derive > 1 else ''} en dérive de la trajectoire "
+            "2030 — plan de réduction conso prioritaire."
+        )
+    else:
+        narr_parts.append(
+            "Patrimoine bien positionné sur la trajectoire 2030 — maintenir la qualité des déclarations OPERAT."
+        )
+    narrative = " ".join(narr_parts)
+
+    # ── 3 KPIs hero §5 — patrimoine business ──
+    kpis: list[NarrativeKpi] = [
+        NarrativeKpi(
+            label="Surface tertiaire",
+            value=_fmt_m2_full(surface_total_m2),
+            tooltip=(
+                "Surface cumulée des sites du périmètre Décret Tertiaire (>1000 m² obligation déclarative OPERAT)."
+            ),
+            source="Patrimoine PROMEOS",
+        ),
+        NarrativeKpi(
+            label="Sites en dérive",
+            value=f"{en_derive}/{sites_count}" if sites_count > 0 else "—",
+            tooltip="Sites non-conformes ou à risque sur la trajectoire 2030.",
+            source="RegAssessment",
+        ),
+        NarrativeKpi(
+            label="Mutualisation 2030",
+            value=(f"{_fmt_eur_short(economie_mutualisation_eur)}/an" if economie_mutualisation_eur > 0 else "—"),
+            tooltip=(
+                "Économie potentielle en consolidant les efforts de réduction "
+                "entre sites du portefeuille (Art. 4 Décret n°2019-771 — "
+                "feature multisite PROMEOS)."
+            ),
+            source="Décret 2019-771 art. 4",
+        ),
+    ]
+
+    # ── Week-cards Patrimoine ──
+    week_cards: list[NarrativeWeekCard] = []
+    if economie_mutualisation_eur > 0:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="good_news",
+                title=(f"Mutualisation 2030 : {_fmt_eur_short(economie_mutualisation_eur)}/an"),
+                body=(
+                    f"En consolidant les efforts entre vos {sites_count} sites, "
+                    "vous évitez les pénalités sur les sites en dérive grâce aux "
+                    "sites en avance. Feature unique multi-sites PROMEOS."
+                ),
+                cta_path="/conformite?tab=mutualisation",
+                cta_label="Voir la simulation",
+                impact_eur=economie_mutualisation_eur,
+            )
+        )
+    if non_conformes > 0:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="todo",
+                title=(
+                    f"{non_conformes} site{'s' if non_conformes > 1 else ''} "
+                    "non conforme"
+                    f"{'s' if non_conformes > 1 else ''} à régulariser"
+                ),
+                body=("Plan d'actions prioritaire — déclaration OPERAT 2024 + audit énergétique recommandé."),
+                cta_path="/conformite",
+                cta_label="Plan d'actions",
+                impact_eur=non_conformes * 7500.0,
+                urgency_days=180,
+            )
+        )
+    if a_risque > 0 and non_conformes == 0:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="watch",
+                title=f"{a_risque} site{'s' if a_risque > 1 else ''} à surveiller",
+                body=(
+                    "Trajectoire 2030 sous tension. Audit énergétique recommandé "
+                    "pour identifier les leviers de réduction conso."
+                ),
+                cta_path="/conformite",
+                cta_label="Voir détails",
+            )
+        )
+    if mutualisation_conforme and economie_mutualisation_eur > 0:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="good_news",
+                title="Patrimoine conforme via mutualisation",
+                body=(
+                    f"L'effet de portefeuille rend votre patrimoine conforme "
+                    f"à la trajectoire 2030 ({nb_sites_surplus} site"
+                    f"{'s' if nb_sites_surplus > 1 else ''} en avance)."
+                ),
+            )
+        )
+
+    fallback_body = (
+        f"Patrimoine de {sites_count} site{'s' if sites_count > 1 else ''} stable — "
+        "consultez le détail par site pour explorer les opportunités."
+    )
+
+    confidence = (
+        ProvenanceConfidence.HIGH if economie_mutualisation_eur > 0 and sites_count > 0 else ProvenanceConfidence.MEDIUM
+    )
+    provenance = build_provenance(
+        source="Patrimoine PROMEOS + simulation mutualisation Décret 2019-771",
+        confidence=confidence,
+        updated_at=datetime.now(timezone.utc),
+        methodology_url="/docs/methodologie/conformite-regops",
+    )
+
+    return Narrative(
+        page_key="patrimoine",
+        persona="daily",
+        kicker=kicker,
+        title=title,
+        italic_hook=italic_hook,
+        narrative=narrative,
+        kpis=tuple(kpis),
+        week_cards=tuple(week_cards),
+        fallback_body=fallback_body,
+        provenance=provenance,
+    )
+
+
 # ── Helpers format FR ───────────────────────────────────────────────
+
+
+def _fmt_m2_short(m2: float) -> str:
+    """Format compact m² : 12.3k m², 1.5M m², 500 m²."""
+    if m2 is None or m2 == 0:
+        return "0 m²"
+    abs_m2 = abs(m2)
+    if abs_m2 >= 1_000_000:
+        return f"{round(m2 / 100_000) / 10}M m²"
+    if abs_m2 >= 1_000:
+        return f"{round(m2 / 100) / 10}k m²"
+    return f"{int(m2)} m²"
+
+
+def _fmt_m2_full(m2: float) -> str:
+    """Format complet m² : 12 345 m²."""
+    if m2 is None or m2 == 0:
+        return "0 m²"
+    return f"{int(m2):,}".replace(",", " ") + " m²"
 
 
 def _fmt_eur_short(amount: Optional[float]) -> str:
@@ -470,8 +685,9 @@ def _fmt_eur_short(amount: Optional[float]) -> str:
 _BUILDERS = {
     "cockpit_daily": _build_cockpit_daily,
     "cockpit_comex": _build_cockpit_comex,
-    # Sprint 1.3+ : ajouter patrimoine, conformite, bill_intel, achat,
-    # monitoring, diagnostic, anomalies, flex.
+    "patrimoine": _build_patrimoine,
+    # Sprint 1.4+ : ajouter conformite, bill_intel, achat, monitoring,
+    # diagnostic, anomalies, flex.
 }
 
 
