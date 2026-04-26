@@ -4,6 +4,10 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Cache isolé par worktree — sinon POC et refonte-sol2 (qui partagent
+  // node_modules via symlink) écrivent dans le même .vite/deps ⇒ corruption
+  // (Invalid hook call : 2 copies React optimisées concurrentes).
+  cacheDir: 'node_modules/.vite-poc',
   server: {
     // Port 5173 — poc principal (la refonte audit-sol coexiste sur 5174).
     port: 5173,
