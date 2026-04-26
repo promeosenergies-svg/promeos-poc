@@ -5,8 +5,10 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    // Port 5173 — poc principal (la refonte audit-sol coexiste sur 5174).
-    port: 5173,
+    // Port 5175 — refonte-sol2 (branche claude/refonte-sol2, fork POC + skin Sol).
+    // Règle figée 3 ports : POC=5173 (main), refonte audit-sol=5174, refonte-sol2=5175.
+    // Backend partagé sur 8001. Ne jamais inverser — comparaison live des 3 UIs.
+    port: 5175,
     strictPort: true,
     host: '127.0.0.1',
     proxy: {
