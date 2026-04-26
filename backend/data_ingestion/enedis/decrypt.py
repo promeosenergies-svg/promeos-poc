@@ -130,6 +130,22 @@ def _aes_cbc_decrypt(ciphertext: bytes, key: bytes, iv: bytes) -> bytes | None:
         return None
 
 
+def aes_unwrap_bytes(ciphertext: bytes, keys: list[tuple[bytes, bytes]]) -> tuple[bytes, int]:
+    """Return the first AES-CBC plaintext without XML/ZIP validation.
+
+    The returned key index is 1-based to match KEY_1/IV_1 environment naming.
+    """
+    if not ciphertext:
+        raise DecryptError("File is empty")
+
+    for index, (key, iv) in enumerate(keys, start=1):
+        plaintext = _aes_cbc_decrypt(ciphertext, key, iv)
+        if plaintext is not None:
+            return plaintext, index
+
+    raise DecryptError(f"Decryption failed: none of the {len(keys)} key(s) produced valid plaintext")
+
+
 def _extract_xml_from_zip(data: bytes) -> bytes:
     """Extract the first file from an in-memory ZIP archive."""
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
