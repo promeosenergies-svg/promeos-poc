@@ -5,6 +5,22 @@
 
 const FR = 'fr-FR';
 
+/**
+ * Kicker mono uppercase pour SolPageHeader éditorial — pattern
+ * « LABEL · ORG · N SITE(S) ». Centralise la dupliction CommandCenter +
+ * Cockpit (audit /simplify Phase 3).
+ *
+ * @example
+ *   scopeKicker('ACCUEIL', 'Groupe HELIOS', 5)
+ *   // → 'ACCUEIL · GROUPE HELIOS · 5 SITES'
+ */
+export function scopeKicker(label, orgName, sitesCount) {
+  const safeOrg = (orgName || 'Patrimoine').toUpperCase();
+  const n = Number.isFinite(sitesCount) ? sitesCount : 0;
+  const plural = n > 1 ? 'SITES' : 'SITE';
+  return `${label} · ${safeOrg} · ${n} ${plural}`;
+}
+
 // ── Guard universel ──────────────────────────────────────────────────────────
 function _safe(v) {
   if (v == null) return null;

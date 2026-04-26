@@ -25,7 +25,7 @@ import {
   getFlexPrixSignal,
 } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
-import { fmtKwh, fmtEur } from '../utils/format';
+import { fmtKwh, fmtEur, scopeKicker } from '../utils/format';
 import { toActionsList, toUsages } from '../services/routes';
 import {
   PageShell,
@@ -504,16 +504,13 @@ const Cockpit = () => {
     );
   }
 
-  const scopeSitesCountCk = scopedSites?.length ?? 0;
-  const orgKickerLabelCk = (org?.nom || 'Patrimoine').toUpperCase();
-
   return (
     <PageShell
       editorialHeader={
         <SolPageHeader
-          kicker={`COCKPIT · ${orgKickerLabelCk} · ${scopeSitesCountCk} SITE${scopeSitesCountCk > 1 ? 'S' : ''}`}
+          kicker={scopeKicker('COCKPIT', org?.nom, scopedSites?.length)}
           title="Vue exécutive"
-          hook="stratégique"
+          italicHook="stratégique"
           subtitle={<ScopeSummary />}
         />
       }

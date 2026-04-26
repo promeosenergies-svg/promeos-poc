@@ -14,7 +14,12 @@ import { formatRiskEur } from '../../lib/risk/normalizeRisk';
 
 // ── Gauge helpers (display-only) ─────────────────────────────────────
 
-const CIRCUMFERENCE = Math.PI * 45;
+// SVG gauge : viewBox 120×80, radius 48 (path "M 12 64 A 48 48 0 0 1 108 64").
+// CIRCUMFERENCE = π × r pour un demi-cercle. Bug fix /simplify Phase 3 :
+// avant on avait 45 (mauvaise valeur) → score 100/100 ne remplissait pas
+// la totalité de l'arc (~6% manquant).
+const GAUGE_RADIUS = 48;
+const CIRCUMFERENCE = Math.PI * GAUGE_RADIUS;
 
 function gaugeColor(score) {
   if (score == null) return '#9ca3af';
@@ -286,7 +291,7 @@ export default function CockpitHero({
           )}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-4xl font-bold text-amber-600 sol-numeric leading-none">
+          <span className="text-4xl font-bold text-amber-600 sol-numeric">
             {fmtEur(kpis?.risqueTotal)}
           </span>
           <span
@@ -314,7 +319,7 @@ export default function CockpitHero({
       <div className="p-4 flex flex-col gap-2" data-testid="kpi-reduction-dt">
         <span className="text-xs text-gray-500">Réduction DT cumulée</span>
         <span
-          className={`text-4xl font-bold sol-numeric leading-none ${reductionPct == null ? 'text-gray-400' : isRetard ? 'text-red-600' : 'text-green-700'}`}
+          className={`text-4xl font-bold sol-numeric ${reductionPct == null ? 'text-gray-400' : isRetard ? 'text-red-600' : 'text-green-700'}`}
         >
           {reductionPct != null ? `${reductionPct}%` : trajectoire?.partial ? 'En attente' : '—'}
         </span>
@@ -335,7 +340,7 @@ export default function CockpitHero({
       {/* ── Card 4 : Actions en cours ── */}
       <div className="p-4 flex flex-col gap-2 rounded-r-xl" data-testid="kpi-actions-encours">
         <span className="text-xs text-gray-500">Actions en cours</span>
-        <span className="text-4xl font-bold text-gray-900 sol-numeric leading-none">
+        <span className="text-4xl font-bold text-gray-900 sol-numeric">
           {actions?.enCours != null ? actions.enCours : '—'}
           {actions?.total != null && (
             <span className="text-xl font-normal text-gray-400"> / {actions.total}</span>

@@ -50,7 +50,7 @@ export default function MorningBriefCard({ alerts = 0, invoices = 0, actionsClos
   // → bandeau 32px de bienvenue plutôt que 80px. Audit UX : ~50px gagnés ATF.
   if (!hasNews && ago == null) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-50 border border-blue-100 text-xs text-blue-700 max-w-[840px]">
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-50 border border-blue-100 text-xs text-blue-700 max-w-sol-strip">
         <Sunrise size={13} className="text-amber-500 shrink-0" aria-hidden="true" />
         <span className="font-medium">Bienvenue sur PROMEOS</span>
         <span className="text-blue-500">— vos prochaines actions seront listées ici.</span>
@@ -67,7 +67,7 @@ export default function MorningBriefCard({ alerts = 0, invoices = 0, actionsClos
   }
 
   return (
-    <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4 max-w-[840px]">
+    <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4 max-w-sol-strip">
       <button
         type="button"
         onClick={handleAck}

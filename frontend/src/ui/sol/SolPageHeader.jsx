@@ -14,10 +14,14 @@
  * Display-only — aucun calcul métier.
  */
 
+/**
+ * Prop `italicHook` (renommée depuis `hook` /simplify Phase 3 — éviter
+ * la collision sémantique avec les React hooks à la lecture).
+ */
 export default function SolPageHeader({
   kicker,
   title,
-  hook,
+  italicHook,
   subtitle,
   rightSlot,
   className = '',
@@ -31,10 +35,10 @@ export default function SolPageHeader({
         {kicker && <p className="sol-page-kicker">{kicker}</p>}
         <h1 className="sol-page-title">
           {title}
-          {hook && (
+          {italicHook && (
             <>
               {' '}
-              — <em>{hook}</em>
+              — <em>{italicHook}</em>
             </>
           )}
         </h1>

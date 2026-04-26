@@ -77,7 +77,7 @@ import {
   ReferenceLine,
   ReferenceArea,
 } from 'recharts';
-import { fmtKwh, fmtEur } from '../utils/format';
+import { fmtKwh, fmtEur, scopeKicker } from '../utils/format';
 import SitesBaselineCard from './cockpit/SitesBaselineCard';
 
 const PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -355,16 +355,13 @@ export default function CommandCenter() {
     );
   }
 
-  const scopeSitesCount = scopedSites?.length ?? 0;
-  const orgKickerLabel = (org?.nom || 'Patrimoine').toUpperCase();
-
   return (
     <PageShell
       editorialHeader={
         <SolPageHeader
-          kicker={`ACCUEIL · ${orgKickerLabel} · ${scopeSitesCount} SITE${scopeSitesCount > 1 ? 'S' : ''}`}
+          kicker={scopeKicker('ACCUEIL', org?.nom, scopedSites?.length)}
           title="Tableau de bord"
-          hook="opérationnel"
+          italicHook="opérationnel"
           subtitle={<ScopeSummary />}
         />
       }

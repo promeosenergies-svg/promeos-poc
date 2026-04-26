@@ -35,7 +35,7 @@ export default function PriorityHero({ priority, onNavigate }) {
   return (
     <section
       data-testid="priority-hero"
-      className={`relative overflow-hidden rounded-xl border ${cfg.border} ${cfg.bg} ${cfg.accentBar} px-5 py-4 shadow-sm max-w-[920px]`}
+      className={`relative overflow-hidden rounded-xl border ${cfg.border} ${cfg.bg} ${cfg.accentBar} px-5 py-4 shadow-sm max-w-sol-hero`}
       aria-label="Priorité du jour"
     >
       <div className="flex items-start gap-4">

@@ -408,4 +408,17 @@ em.italic-hook,
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum', 'zero';
   letter-spacing: -0.01em;
+  /* leading-none par défaut sur tout chiffre Sol — cohérence DS quand
+     utilisé avec text-3xl/4xl Hero KPIs (audit /simplify Phase 3 reuse). */
+  line-height: 1;
+}
+
+/* Largeur max canonique pour les bandeaux d'info de page (DeadlineBanner,
+   MorningBriefCard, etc.). Token DS pour éviter `max-w-[840px]` magic
+   répété (audit /simplify Phase 3 reuse). */
+.max-w-sol-strip {
+  max-width: 840px;
+}
+.max-w-sol-hero {
+  max-width: 920px;
 }
