@@ -94,7 +94,7 @@ function KpiJ1Card({ label, value, sub, accent = 'neutral', loading: isLoading }
       {isLoading ? (
         <div className="h-6 w-20 bg-gray-100 rounded animate-pulse" />
       ) : (
-        <div className="text-xl font-semibold text-gray-900">{value}</div>
+        <div className="text-xl font-semibold text-gray-900 sol-numeric">{value}</div>
       )}
       <div className="text-xs text-gray-400 mt-1 truncate">{sub}</div>
     </div>

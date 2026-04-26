@@ -57,7 +57,10 @@ function DeltaPill({ text, tone = 'neutral' }) {
 // Polarity = direction "souhaitable" : higher_is_good (conformité, actions),
 // higher_is_bad (risque, factures). Détermine le tone good/bad du DeltaPill.
 
-const N1_FALLBACK = { text: 'vs N-1 : historique 12 mois requis', tone: 'neutral' };
+const N1_FALLBACK = {
+  text: 'Comparaison N-1 disponible après 12 mois de données',
+  tone: 'neutral',
+};
 
 function compactEur(n) {
   return Math.abs(n) >= 1000 ? `${Math.round(n / 1000)} k€` : `${Math.round(n)} €`;
@@ -207,13 +210,18 @@ export default function CockpitHero({
               strokeDashoffset={dashOffset}
               className="transition-all duration-1000 ease-out"
             />
-            {/* Score number inside arc */}
+            {/* Score number inside arc — Mono tabular pour identité Sol */}
             <text
               x="60"
               y="56"
               textAnchor="middle"
               className="fill-gray-900"
-              style={{ fontSize: '22px', fontWeight: 700 }}
+              style={{
+                fontSize: '22px',
+                fontWeight: 700,
+                fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+                fontVariantNumeric: 'tabular-nums',
+              }}
             >
               {score != null ? Math.round(score) : '—'}
             </text>
@@ -273,7 +281,9 @@ export default function CockpitHero({
           )}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-xl font-bold text-amber-600">{fmtEur(kpis?.risqueTotal)}</span>
+          <span className="text-xl font-bold text-amber-600 sol-numeric">
+            {fmtEur(kpis?.risqueTotal)}
+          </span>
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${(kpis?.risqueTotal ?? 0) > 0 ? 'bg-amber-500' : 'bg-green-500'}`}
           />
@@ -299,7 +309,7 @@ export default function CockpitHero({
       <div className="p-4 flex flex-col gap-2" data-testid="kpi-reduction-dt">
         <span className="text-xs text-gray-500">Réduction DT cumulée</span>
         <span
-          className={`text-2xl font-bold ${reductionPct == null ? 'text-gray-400' : isRetard ? 'text-red-600' : 'text-green-700'}`}
+          className={`text-2xl font-bold sol-numeric ${reductionPct == null ? 'text-gray-400' : isRetard ? 'text-red-600' : 'text-green-700'}`}
         >
           {reductionPct != null ? `${reductionPct}%` : trajectoire?.partial ? 'En attente' : '—'}
         </span>
@@ -320,7 +330,7 @@ export default function CockpitHero({
       {/* ── Card 4 : Actions en cours ── */}
       <div className="p-4 flex flex-col gap-2 rounded-r-xl" data-testid="kpi-actions-encours">
         <span className="text-xs text-gray-500">Actions en cours</span>
-        <span className="text-2xl font-bold text-gray-900">
+        <span className="text-2xl font-bold text-gray-900 sol-numeric">
           {actions?.enCours != null ? actions.enCours : '—'}
           {actions?.total != null && (
             <span className="text-lg font-normal text-gray-400"> / {actions.total}</span>

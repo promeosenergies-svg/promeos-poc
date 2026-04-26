@@ -22,7 +22,7 @@ function ackVisit() {
 }
 
 function formatAgo(date) {
-  if (!date) return 'votre première visite';
+  if (!date) return null;
   const diff = Date.now() - date.getTime();
   const h = Math.floor(diff / 3_600_000);
   if (h < 1) return "moins d'une heure";
@@ -47,7 +47,7 @@ export default function MorningBriefCard({ alerts = 0, invoices = 0, actionsClos
   };
 
   return (
-    <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4">
+    <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4 max-w-[840px]">
       <button
         type="button"
         onClick={handleAck}
@@ -63,9 +63,13 @@ export default function MorningBriefCard({ alerts = 0, invoices = 0, actionsClos
         </div>
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-gray-900">
-            {hasNews ? 'Depuis votre dernière visite' : 'Rien de neuf depuis votre dernière visite'}
+            {ago == null
+              ? 'Bienvenue sur PROMEOS'
+              : hasNews
+                ? 'Depuis votre dernière visite'
+                : 'Rien de neuf depuis votre dernière visite'}
           </h3>
-          <p className="text-[11px] text-gray-500 mt-0.5">Il y a {ago}</p>
+          {ago != null && <p className="text-[11px] text-gray-500 mt-0.5">Il y a {ago}</p>}
         </div>
       </div>
 

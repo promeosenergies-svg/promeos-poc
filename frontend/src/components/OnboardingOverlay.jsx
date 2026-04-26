@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 
 const ONBOARDING_KEY = 'promeos_onboarding_done';
+const ONBOARDING_REQUEST_KEY = 'promeos_onboarding_requested';
 
 const STEPS = [
   {
@@ -26,9 +27,19 @@ export default function OnboardingOverlay() {
   const [step, setStep] = useState(0);
   const [visible, setVisible] = useState(false);
 
+  // Audit CX 26/04 : auto-show 1st visit masquait above-the-fold (PriorityHero,
+  // KPIs, BriefCodex) sur les 2 vues. On passe en opt-in : l'overlay ne se
+  // déclenche que si l'utilisateur a explicitement demandé le tour
+  // (localStorage.promeos_onboarding_requested = '1' depuis menu help).
+  // Cohérent avec DemoSpotlight qui a la même logique.
   useEffect(() => {
     try {
-      if (!localStorage.getItem(ONBOARDING_KEY)) setVisible(true);
+      const requested = localStorage.getItem(ONBOARDING_REQUEST_KEY);
+      const done = localStorage.getItem(ONBOARDING_KEY);
+      if (requested && !done) {
+        localStorage.removeItem(ONBOARDING_REQUEST_KEY);
+        setVisible(true);
+      }
     } catch {
       /* noop */
     }
