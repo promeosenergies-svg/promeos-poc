@@ -33,7 +33,9 @@
   --sol-calme-fg: #2f6b5e;
   --sol-calme-bg: #e3f0ed; /* bleu-vert doux « tout va bien » */
   --sol-calme-fg-hover: #245047; /* -10% luminosité pour hover */
-  --sol-attention-fg: #a06b1a;
+  /* Audit Ergonomie 26/04 : #a06b1a / #f6ead2 = 3.99:1 (FAIL WCAG AA 4.5:1).
+     Assombri à #8a5a14 → ratio ~5.0:1 (PASS AA), impact visuel quasi-nul. */
+  --sol-attention-fg: #8a5a14;
   --sol-attention-bg: #f6ead2; /* ambre chaleureux */
   --sol-afaire-fg: #b8552e;
   --sol-afaire-bg: #f7e4d8; /* orange corail, pas punitif */

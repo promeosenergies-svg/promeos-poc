@@ -22,13 +22,15 @@ const ROUTE_BY_ID = {
 
 export default function CockpitTabs({ active }) {
   const navigate = useNavigate();
+  // Guard tab actif : éviter navigate() inutile (perte focus + scroll-to-top)
+  // Audit Ergonomie + Navigation 26/04 (P1 double-action accidentelle).
+  const handleChange = (id) => {
+    if (id === active) return;
+    navigate(ROUTE_BY_ID[id] ?? '/');
+  };
   return (
     <div className="sticky top-0 z-10 bg-white -mx-6 px-6 pt-2 mb-4">
-      <Tabs
-        tabs={COCKPIT_TABS}
-        active={active}
-        onChange={(id) => navigate(ROUTE_BY_ID[id] ?? '/')}
-      />
+      <Tabs tabs={COCKPIT_TABS} active={active} onChange={handleChange} />
     </div>
   );
 }

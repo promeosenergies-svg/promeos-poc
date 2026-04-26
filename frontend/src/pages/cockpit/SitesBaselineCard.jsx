@@ -5,10 +5,12 @@
  * la baseline journalière. TRANSFORMATION DE PRÉSENTATION documentée :
  * baseline_j = conso_kwh_an / 365 (estimation, pas un KPI backend).
  */
+import { useNavigate } from 'react-router-dom';
 import { useScope } from '../../contexts/ScopeContext';
 
 export default function SitesBaselineCard({ consoJ1BySite, consoHierTotal }) {
   const { scopedSites } = useScope();
+  const navigate = useNavigate();
 
   if (!scopedSites?.length) return null;
 
@@ -56,7 +58,13 @@ export default function SitesBaselineCard({ consoJ1BySite, consoHierTotal }) {
             site.baselineJ != null ? Math.min(100, Math.round((site.baselineJ / maxVal) * 100)) : 0;
 
           return (
-            <div key={site.id}>
+            <button
+              type="button"
+              key={site.id}
+              onClick={() => navigate(`/sites/${site.id}`)}
+              className="w-full text-left rounded-md p-1 -m-1 hover:bg-blue-50/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              aria-label={`Voir le détail du site ${site.nom}`}
+            >
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-medium text-gray-700">{site.nom}</span>
                 <span
@@ -88,7 +96,7 @@ export default function SitesBaselineCard({ consoJ1BySite, consoHierTotal }) {
                   />
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
