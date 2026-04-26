@@ -642,8 +642,13 @@ For `C68`:
 - the primary sequence is expected to be `00001`
 - secondary archive and payload filenames must also match the official nomenclature and use sequence values from `00001` to `00010`
 - mismatched secondary/payload names are fatal provenance errors, not warnings
-- secondary sequence gaps are fatal unless real Enedis samples later prove a legitimate gap pattern
-- code flux, mode publication, type donnée, request id, sequence, and horodatage must remain coherent across outer archive, secondary archive, and payload filename
+- secondary sequence gaps are fatal: for `N` secondary archives, observed secondary sequence values must be exactly `00001..N`
+- C68 coherence is request-level across the primary archive and secondary archives:
+  - `code_flux`, `mode_publication`, `type_donnee`, and `id_demande` must match across primary archive, every secondary archive, and every payload file
+  - primary sequence must be `00001`
+  - secondary archive sequence and payload sequence must match each other, but they do not need to equal the primary sequence
+  - secondary archive `horodatage` and payload `horodatage` must match each other, but they do not need to equal the primary archive `horodatage`
+  - this matches observed valid multi-secondary archives where the primary archive timestamp is a package timestamp and each secondary/payload pair has its own extraction timestamp
 
 ### 7.3 Container Rules
 
@@ -670,7 +675,7 @@ For `C68`:
 - iterate all secondary ZIP members
 - for each secondary ZIP:
   - require exactly 1 non-directory payload file
-  - require secondary archive and payload filenames to match the C68 filename contract and remain coherent with the primary archive metadata
+  - require secondary archive and payload filenames to match the C68 filename contract and the request-level coherence rules above
   - detect `JSON` vs `CSV`
   - parse and flatten into per-PRM raw archive rows
 - require one payload format per physical C68 archive; mixed JSON/CSV secondary payloads are a file-level `ERROR`
@@ -1004,7 +1009,8 @@ Add extraction tests for:
 - C68 primary ZIP where one secondary archive is invalid and the entire physical file is rolled back
 - R63/R64 payload filename mismatch that fails the physical file
 - C68 secondary/payload filename mismatch that fails the physical file
-- C68 sequence gap or metadata mismatch that fails the physical file
+- C68 sequence gap or request-level metadata mismatch that fails the physical file
+- C68 valid multi-secondary archive where secondary sequence/timestamp differ from the primary but each secondary matches its payload
 - C68 primary archive with any sidecar or extra non-directory member that fails the physical file
 - R63/R64 direct ZIP with `.DS_Store` / `__MACOSX` / any extra non-directory member that fails the physical file
 - C68 primary archive with mixed JSON/CSV secondary payload formats that fails the physical file
@@ -1111,6 +1117,7 @@ SF5 should use idempotent additive raw DB migrations:
 - [ ] C68 missing `idPrm` / `PRM` fails the physical file and rolls back inserts
 - [ ] C68 extracted contractual columns use the latest unambiguous `situationsContractuelles[]` item by `dateDebut`; ambiguous selection nulls contractual summary columns and records a warning
 - [ ] `C68` primary archives with multiple secondary ZIPs ingest correctly
+- [ ] C68 multi-secondary archives allow secondary sequence/timestamp values that differ from the primary when each secondary archive matches its own payload and all files share request-level metadata
 - [ ] one invalid C68 secondary archive, filename mismatch, sequence gap, sidecar member, or mixed payload format rolls back the whole physical file
 - [ ] R63/R64 archives with extra non-directory members or mismatched payload filenames fail the whole physical file
 - [ ] malformed `R63` / `C68` archives are recorded as clean file errors
