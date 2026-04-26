@@ -1,0 +1,79 @@
+{
+  "timestamp": "2026-04-26T07:18:46.959Z",
+  "fe_url": "http://localhost:5174",
+  "be_url": "http://localhost:8001",
+  "home": {
+    "markers": {
+      "vos_actions_du_jour": true,
+      "sol_propose": true,
+      "a_traiter_aujourdhui": true,
+      "a_surveiller": true,
+      "activite_7_jours": true,
+      "heures_pleines_creuses": true,
+      "profil_horaire": true,
+      "acces_rapide_modules": true
+    },
+    "dom": {
+      "recharts_area": {
+        "count": 1,
+        "ok": true
+      },
+      "recharts_bar": {
+        "count": 1,
+        "ok": true
+      },
+      "recharts_reference_line": {
+        "count": 2,
+        "ok": true
+      },
+      "recharts_reference_area": {
+        "count": 3,
+        "ok": true
+      },
+      "recharts_reference_dot": {
+        "count": 0,
+        "ok": false
+      }
+    },
+    "console_errors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "api_errors": [],
+    "screenshot": "/home/user/promeos-poc/audit/v6/screenshot_home_1440.png"
+  },
+  "cockpit": {
+    "markers": {
+      "semaine_en_briefing": true,
+      "briefing_exec": true,
+      "trajectoire_dt": true,
+      "performance_sites": true,
+      "vecteurs": true,
+      "evenements_recents": true,
+      "rapport_comex": true,
+      "co2_empreinte": true
+    },
+    "dom": {
+      "kpi_facture": {
+        "count": 5,
+        "ok": true
+      },
+      "kpi_conformite": {
+        "count": 5,
+        "ok": true
+      },
+      "kpi_consommation": {
+        "count": 4,
+        "ok": true
+      },
+      "kpi_co2": {
+        "count": 4,
+        "ok": true
+      }
+    },
+    "console_errors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "api_errors": [],
+    "screenshot": "/home/user/promeos-poc/audit/v6/screenshot_cockpit_1440.png"
+  }
+}
