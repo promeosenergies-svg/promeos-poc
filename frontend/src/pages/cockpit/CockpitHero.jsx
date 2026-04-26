@@ -59,17 +59,20 @@ function DeltaPill({ text, tone = 'neutral' }) {
   );
 }
 
-// SVG <text> styles — const module-level (recharts diff inégal sinon, audit
-// efficiency 26/04 P1 : objet style recréé à chaque render Hero).
-// Phase 3 : taille passée à 32px pour cohérence Hero KPI 30-36px (audit UI
-// "Hero KPIs sous-dimensionnés CFO").
+// SVG <text> styles — const module-level.
+// Phase 3.6 polish : score 56px Mono pour la card FEATURED Conformité
+// (asymétrie hero : 1 KPI dominant + 3 secondaires — Datadog pattern).
 const SCORE_TEXT_STYLE = Object.freeze({
-  fontSize: '32px',
-  fontWeight: 700,
+  fontSize: '56px',
+  fontWeight: 600,
   fontFamily: 'JetBrains Mono, ui-monospace, monospace',
   fontVariantNumeric: 'tabular-nums',
+  letterSpacing: '-0.02em',
 });
-const SCORE_UNIT_STYLE = Object.freeze({ fontSize: '11px' });
+const SCORE_UNIT_STYLE = Object.freeze({
+  fontSize: '14px',
+  fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+});
 
 // ── N-1 helpers ──
 // Polarity = direction "souhaitable" : higher_is_good (conformité, actions),
@@ -174,12 +177,12 @@ export default function CockpitHero({
 
   return (
     <div
-      className="bg-white border border-gray-200 rounded-xl grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100"
+      className="bg-white border border-gray-200 rounded-xl grid grid-cols-12 overflow-hidden"
       data-testid="cockpit-hero"
     >
-      {/* ── Card 1 : Conformité réglementaire (jauge + détails) ── */}
+      {/* ── Card 1 FEATURED : Conformité (41% width — Phase 3.6) ── */}
       <div
-        className="p-4 flex flex-col gap-1.5 cursor-pointer hover:bg-blue-50/30 transition-colors rounded-l-xl"
+        className="col-span-12 md:col-span-5 p-5 md:p-6 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col gap-2 cursor-pointer hover:bg-blue-50/30 transition-colors rounded-l-xl"
         data-testid="gauge-conformite"
         onClick={() => navigate('/conformite')}
         role="button"
@@ -202,33 +205,30 @@ export default function CockpitHero({
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          {/* Gauge SVG : agrandie Phase 3 pour cohérence Hero KPI Vue exécutive
-              (audit UI : score-roi sous-dimensionné CFO/CODIR). */}
-          <svg viewBox="0 0 120 80" width={104} height={68} className="shrink-0">
-            {/* Track */}
+        <div className="flex items-center gap-3">
+          {/* Gauge SVG FEATURED — Phase 3.6 polish : 200×130 vs 104×68
+              avant. Score 56px Mono pour dominance CFO/COMEX. */}
+          <svg viewBox="0 0 120 80" width={180} height={120} className="shrink-0">
             <path
               d="M 12 64 A 48 48 0 0 1 108 64"
               fill="none"
               stroke="#e5e7eb"
-              strokeWidth={9}
+              strokeWidth={8}
               strokeLinecap="round"
             />
-            {/* Value arc */}
             <path
               d="M 12 64 A 48 48 0 0 1 108 64"
               fill="none"
               stroke={color}
-              strokeWidth={9}
+              strokeWidth={8}
               strokeLinecap="round"
               strokeDasharray={CIRCUMFERENCE}
               strokeDashoffset={dashOffset}
               className="transition-all duration-1000 ease-out"
             />
-            {/* Score number inside arc — Mono tabular pour identité Sol */}
             <text
               x="60"
-              y="56"
+              y="58"
               textAnchor="middle"
               className="fill-gray-900"
               style={SCORE_TEXT_STYLE}
@@ -237,7 +237,7 @@ export default function CockpitHero({
             </text>
             <text
               x="60"
-              y="72"
+              y="75"
               textAnchor="middle"
               className="fill-gray-400"
               style={SCORE_UNIT_STYLE}
@@ -245,10 +245,10 @@ export default function CockpitHero({
               /100
             </text>
           </svg>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold text-gray-900">{label}</span>
+          <div className="flex flex-col gap-1">
+            <span className="text-base font-semibold text-gray-900">{label}</span>
             <span
-              className={`w-2 h-2 rounded-full shrink-0 ${score == null ? 'bg-gray-300' : score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}
+              className={`w-2.5 h-2.5 rounded-full shrink-0 ${score == null ? 'bg-gray-300' : score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}
             />
           </div>
         </div>
@@ -265,94 +265,100 @@ export default function CockpitHero({
         </p>
       </div>
 
-      {/* ── Card 2 : Risque financier (détaillé) ── */}
-      <div
-        className="p-4 flex flex-col gap-1.5 cursor-pointer hover:bg-amber-50/30 transition-colors"
-        data-testid="kpi-risque"
-        onClick={() => navigate('/actions')}
-        role="button"
-        tabIndex={0}
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
-            Risque financier
-          </span>
-          {onEvidence && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEvidence('risque');
-              }}
-              className="text-gray-400 hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
-              aria-label="Détail risque"
-            >
-              <HelpCircle size={14} />
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-4xl font-bold text-amber-600 sol-numeric">
-            {fmtEur(kpis?.risqueTotal)}
-          </span>
-          <span
-            className={`w-2 h-2 rounded-full shrink-0 ${(kpis?.risqueTotal ?? 0) > 0 ? 'bg-amber-500' : 'bg-green-500'}`}
-          />
-        </div>
-        <DeltaPill text={risqueTrend.text} tone={risqueTrend.tone} />
-        <p className="text-xs text-gray-500">
-          {sitesARisque ?? 0} site{(sitesARisque ?? 0) > 1 ? 's' : ''} concerné
-          {(sitesARisque ?? 0) > 1 ? 's' : ''} (périmètre sélectionné)
-        </p>
-        {(kpis?.risqueTotal ?? 0) > 0 && (
-          <p className="text-[10px] text-red-600">Actions correctives urgentes.</p>
-        )}
-        <p className="text-[10px] text-gray-400">
-          Source :{' '}
-          {kpis?.conformiteSource === 'RegAssessment'
-            ? 'Moteur conformité'
-            : (kpis?.conformiteSource ?? 'Moteur conformité')}{' '}
-          · Confiance : {kpis?.conformiteConfidence ?? 'moyenne'}
-        </p>
-      </div>
-
-      {/* ── Card 3 : Réduction DT cumulée ── */}
-      <div className="p-4 flex flex-col gap-2" data-testid="kpi-reduction-dt">
-        <span className="text-xs text-gray-500">Réduction DT cumulée</span>
-        <span
-          className={`text-4xl font-bold sol-numeric ${reductionPct == null ? 'text-gray-400' : isRetard ? 'text-red-600' : 'text-green-700'}`}
+      {/* ── Cards 2-3-4 SECONDARY : sous-grid 3 cols (59% width) ── */}
+      <div className="col-span-12 md:col-span-7 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+        {/* ── Card 2 : Risque financier (détaillé) ── */}
+        <div
+          className="p-4 flex flex-col gap-1.5 cursor-pointer hover:bg-amber-50/30 transition-colors"
+          data-testid="kpi-risque"
+          onClick={() => navigate('/actions')}
+          role="button"
+          tabIndex={0}
         >
-          {reductionPct != null ? `${reductionPct}%` : trajectoire?.partial ? 'En attente' : '—'}
-        </span>
-        {reductionDeltaText && <DeltaPill text={reductionDeltaText} tone={reductionDeltaTone} />}
-        <span className="text-[10px] text-gray-400">
-          {trajectoire?.partial ? (
-            'Données annuelles en cours de collecte'
-          ) : (
-            <>
-              Objectif 2030 :{' '}
-              <span className="text-blue-600">{trajectoire?.objectifPremierJalonPct ?? -40}%</span>
-              {isRetard && <span className="text-red-500 ml-1">· retard</span>}
-            </>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+              Risque financier
+            </span>
+            {onEvidence && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEvidence('risque');
+                }}
+                className="text-gray-400 hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+                aria-label="Détail risque"
+              >
+                <HelpCircle size={14} />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-2xl font-bold text-amber-600 sol-numeric">
+              {fmtEur(kpis?.risqueTotal)}
+            </span>
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${(kpis?.risqueTotal ?? 0) > 0 ? 'bg-amber-500' : 'bg-green-500'}`}
+            />
+          </div>
+          <DeltaPill text={risqueTrend.text} tone={risqueTrend.tone} />
+          <p className="text-xs text-gray-500">
+            {sitesARisque ?? 0} site{(sitesARisque ?? 0) > 1 ? 's' : ''} concerné
+            {(sitesARisque ?? 0) > 1 ? 's' : ''} (périmètre sélectionné)
+          </p>
+          {(kpis?.risqueTotal ?? 0) > 0 && (
+            <p className="text-[10px] text-red-600">Actions correctives urgentes.</p>
           )}
-        </span>
-      </div>
+          <p className="text-[10px] text-gray-400">
+            Source :{' '}
+            {kpis?.conformiteSource === 'RegAssessment'
+              ? 'Moteur conformité'
+              : (kpis?.conformiteSource ?? 'Moteur conformité')}{' '}
+            · Confiance : {kpis?.conformiteConfidence ?? 'moyenne'}
+          </p>
+        </div>
 
-      {/* ── Card 4 : Actions en cours ── */}
-      <div className="p-4 flex flex-col gap-2 rounded-r-xl" data-testid="kpi-actions-encours">
-        <span className="text-xs text-gray-500">Actions en cours</span>
-        <span className="text-4xl font-bold text-gray-900 sol-numeric">
-          {actions?.enCours != null ? actions.enCours : '—'}
-          {actions?.total != null && (
-            <span className="text-xl font-normal text-gray-400"> / {actions.total}</span>
-          )}
-        </span>
-        <DeltaPill text={actionsTrend.text} tone={actionsTrend.tone} />
-        <span className="text-[10px] text-green-700 font-medium">
-          {actions?.potentielEur > 0
-            ? `+${fmtEur(actions.potentielEur)}/an potentiel`
-            : "Plan d'actions"}
-        </span>
+        {/* ── Card 3 : Réduction DT cumulée ── */}
+        <div className="p-4 flex flex-col gap-2" data-testid="kpi-reduction-dt">
+          <span className="text-xs text-gray-500">Réduction DT cumulée</span>
+          <span
+            className={`text-2xl font-bold sol-numeric ${reductionPct == null ? 'text-gray-400' : isRetard ? 'text-red-600' : 'text-green-700'}`}
+          >
+            {reductionPct != null ? `${reductionPct}%` : trajectoire?.partial ? 'En attente' : '—'}
+          </span>
+          {reductionDeltaText && <DeltaPill text={reductionDeltaText} tone={reductionDeltaTone} />}
+          <span className="text-[10px] text-gray-400">
+            {trajectoire?.partial ? (
+              'Données annuelles en cours de collecte'
+            ) : (
+              <>
+                Objectif 2030 :{' '}
+                <span className="text-blue-600">
+                  {trajectoire?.objectifPremierJalonPct ?? -40}%
+                </span>
+                {isRetard && <span className="text-red-500 ml-1">· retard</span>}
+              </>
+            )}
+          </span>
+        </div>
+
+        {/* ── Card 4 : Actions en cours ── */}
+        <div className="p-4 flex flex-col gap-2 rounded-r-xl" data-testid="kpi-actions-encours">
+          <span className="text-xs text-gray-500">Actions en cours</span>
+          <span className="text-2xl font-bold text-gray-900 sol-numeric">
+            {actions?.enCours != null ? actions.enCours : '—'}
+            {actions?.total != null && (
+              <span className="text-xl font-normal text-gray-400"> / {actions.total}</span>
+            )}
+          </span>
+          <DeltaPill text={actionsTrend.text} tone={actionsTrend.tone} />
+          <span className="text-[10px] text-green-700 font-medium">
+            {actions?.potentielEur > 0
+              ? `+${fmtEur(actions.potentielEur)}/an potentiel`
+              : "Plan d'actions"}
+          </span>
+        </div>
       </div>
+      {/* ── /Cards 2-3-4 SECONDARY ── */}
     </div>
   );
 }

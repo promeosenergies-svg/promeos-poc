@@ -370,20 +370,28 @@ em.italic-hook,
   font-weight: 600;
 }
 
+/* Phase 3.6 polish editorial : Fraunces VISIBLE sur le titre.
+   Avant : DM Sans (font-body) — la signature Sol était portée mais invisible.
+   Après : Fraunces opsz 60 + italic-hook opsz 90 (Stripe Atlas pattern). */
 .sol-page-title {
-  font-family: var(--sol-font-body);
-  font-weight: 600;
-  font-size: 24px;
-  line-height: 1.2;
+  font-family: var(--sol-font-display);
+  font-optical-sizing: auto;
+  font-variation-settings: 'opsz' 60;
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1.05;
   color: var(--sol-ink-900);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.025em;
   margin-bottom: 4px;
 }
 
 .sol-page-title em {
-  font-style: normal;
-  font-weight: 500;
+  font-family: var(--sol-font-display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 90;
+  font-weight: 400;
   color: var(--sol-ink-500);
+  margin-left: -0.05em;
 }
 
 .sol-page-subtitle {
@@ -421,4 +429,115 @@ em.italic-hook,
 }
 .max-w-sol-hero {
   max-width: 920px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Phase 3.6 polish editorial — premium dashboard touches                     */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+/* Card premium : accent-bar 1px top gradient + hover lift —
+   pattern Linear Insights / Vercel Observability. */
+.sol-card {
+  position: relative;
+  background: var(--sol-bg-paper);
+  border: 1px solid var(--sol-rule);
+  border-radius: 8px;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.6, 0.2, 1),
+    box-shadow 180ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.sol-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--sol-calme-fg) 30%,
+    var(--sol-calme-fg) 70%,
+    transparent 100%
+  );
+  opacity: 0.4;
+  pointer-events: none;
+}
+.sol-card[data-tone='attention']::before {
+  background: linear-gradient(90deg, transparent, var(--sol-attention-fg), transparent);
+}
+.sol-card[data-tone='refuse']::before {
+  background: linear-gradient(90deg, transparent, var(--sol-refuse-fg), transparent);
+}
+.sol-card[data-tone='succes']::before {
+  background: linear-gradient(90deg, transparent, var(--sol-succes-fg), transparent);
+}
+.sol-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+.sol-card:hover::before {
+  opacity: 0.7;
+}
+
+/* Texture grain « papier journal » — métaphore éditoriale Sol.
+   2.5% noise SVG inline (~1KB), pas de requête réseau. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
+  mix-blend-mode: multiply;
+}
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* Stagger reveal — sections du PageShell apparaissent en cascade 60ms
+   (Linear / Notion pattern) au mount initial. */
+@keyframes sol-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+[class*='animate-[slideInUp'] > * {
+  opacity: 0;
+  animation: sol-rise 380ms cubic-bezier(0.2, 0.6, 0.2, 1) both;
+}
+[class*='animate-[slideInUp'] > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+[class*='animate-[slideInUp'] > *:nth-child(2) {
+  animation-delay: 60ms;
+}
+[class*='animate-[slideInUp'] > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+[class*='animate-[slideInUp'] > *:nth-child(4) {
+  animation-delay: 180ms;
+}
+[class*='animate-[slideInUp'] > *:nth-child(5) {
+  animation-delay: 240ms;
+}
+[class*='animate-[slideInUp'] > *:nth-child(n + 6) {
+  animation-delay: 280ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*='animate-[slideInUp'] > * {
+    animation: none;
+    opacity: 1;
+  }
+  body::before {
+    display: none;
+  }
 }
