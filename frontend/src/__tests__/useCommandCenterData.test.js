@@ -12,6 +12,10 @@ const hookPath = join(__dirname, '..', 'hooks', 'useCommandCenterData.js');
 const hookSrc = readFileSync(hookPath, 'utf-8');
 const ccPath = join(__dirname, '..', 'pages', 'CommandCenter.jsx');
 const ccSrc = readFileSync(ccPath, 'utf-8');
+// Phase 4 quick win 2 : KPIs J-1 délégués à DashboardHeroFeatured (Hero 1+3
+// porté de /cockpit). On vérifie donc les marqueurs côté composant dédié.
+const heroPath = join(__dirname, '..', 'pages', 'dashboard', 'DashboardHeroFeatured.jsx');
+const heroSrc = readFileSync(heroPath, 'utf-8');
 
 // ── Hook Source Guards ───────────────────────────────────────────────
 
@@ -76,8 +80,10 @@ describe('CommandCenter — enrichissement Step 5', () => {
     expect(ccSrc).toMatch(/useCockpitData/);
   });
 
-  it('contient data-testid kpis-j1', () => {
-    expect(ccSrc).toContain('data-testid="kpis-j1"');
+  it('rend DashboardHeroFeatured (Hero 1+3 J-1 + ratio sites sains)', () => {
+    expect(ccSrc).toMatch(/DashboardHeroFeatured/);
+    expect(heroSrc).toContain('data-testid="dashboard-hero"');
+    expect(heroSrc).toContain('data-testid="gauge-patrimoine"');
   });
 
   it('contient data-testid charts-conso', () => {
@@ -104,8 +110,8 @@ describe('CommandCenter — enrichissement Step 5', () => {
     expect(ccSrc).toMatch(/ComposedChart/);
   });
 
-  it('utilise fmtKwh pour les valeurs', () => {
-    expect(ccSrc).toMatch(/fmtKwh/);
+  it('utilise fmtKwh pour les valeurs (delegated to DashboardHeroFeatured)', () => {
+    expect(heroSrc).toMatch(/fmtKwh/);
   });
 
   it('normalizeDashboardModel est toujours exporte', () => {

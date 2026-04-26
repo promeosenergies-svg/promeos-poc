@@ -31,15 +31,30 @@ function formatAgo(date) {
   return `${d}j`;
 }
 
-export default function MorningBriefCard({ alerts = 0, invoices = 0, actionsClosed = 0 }) {
+// Phase 4 quick win — Marie revient lundi 8h45 avec sitesCount > 0 et
+// dernière visite récente : pas besoin de re-saluer, on laisse l'ATF au
+// contenu décisionnel (Priority + KPIs J-1). Cf. audit CX 26/04/2026.
+const RECENT_VISIT_HOURS = 168; // 7 jours
+
+export default function MorningBriefCard({
+  alerts = 0,
+  invoices = 0,
+  actionsClosed = 0,
+  sitesCount = 0,
+}) {
   const [lastVisit] = useState(() => getLastVisit());
   const [dismissed, setDismissed] = useState(false);
 
   // Don't sum positive + negative news
   const hasNews = alerts > 0 || invoices > 0 || actionsClosed > 0;
   const ago = formatAgo(lastVisit);
+  const hoursSinceVisit = lastVisit ? (Date.now() - lastVisit.getTime()) / 3_600_000 : null;
+  const isRecentReturnWithSites =
+    sitesCount > 0 && hoursSinceVisit !== null && hoursSinceVisit < RECENT_VISIT_HOURS;
 
-  if (dismissed) return null;
+  // Auto-hide : utilisateur récurrent (<7j) avec patrimoine peuplé et aucune
+  // news → on supprime le bandeau plutôt que d'écraser l'ATF.
+  if (dismissed || (isRecentReturnWithSites && !hasNews)) return null;
 
   const handleAck = () => {
     ackVisit();

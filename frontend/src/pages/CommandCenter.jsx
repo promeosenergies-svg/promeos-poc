@@ -55,6 +55,7 @@ import ValueCounterCard from '../components/ValueCounterCard';
 import CsatModal from '../components/CsatModal';
 import NpsModal from '../components/NpsModal';
 import PriorityHero from './cockpit/PriorityHero';
+import DashboardHeroFeatured from './dashboard/DashboardHeroFeatured';
 import TopDeriveSitesCard from './cockpit/TopDeriveSitesCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
 import CockpitTabs from '../ui/CockpitTabs';
@@ -77,32 +78,10 @@ import {
   ReferenceLine,
   ReferenceArea,
 } from 'recharts';
-import { fmtKwh, fmtEur, scopeKicker } from '../utils/format';
+import { fmtEur, scopeKicker } from '../utils/format';
 import SitesBaselineCard from './cockpit/SitesBaselineCard';
 
 const PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
-
-// ── KpiJ1Card — mini card J-1 pour CommandCenter (Step 5) ──
-function KpiJ1Card({ label, value, sub, accent = 'neutral', loading: isLoading }) {
-  const accentCls =
-    {
-      neutral: 'border-gray-200',
-      warn: 'border-amber-300 bg-amber-50',
-      ok: 'border-green-200 bg-green-50',
-    }[accent] ?? 'border-gray-200';
-
-  return (
-    <div className={`bg-white border rounded-lg p-3 ${accentCls}`}>
-      <div className="text-xs text-gray-500 mb-1">{label}</div>
-      {isLoading ? (
-        <div className="h-6 w-20 bg-gray-100 rounded animate-pulse" />
-      ) : (
-        <div className="text-xl font-semibold text-gray-900 sol-numeric">{value}</div>
-      )}
-      <div className="text-xs text-gray-400 mt-1 truncate">{sub}</div>
-    </div>
-  );
-}
 
 /* ── normalizeDashboardModel: prevent contradictions ── */
 export function normalizeDashboardModel({ kpis, topActions, alertsCount }) {
@@ -412,7 +391,7 @@ export default function CommandCenter() {
           (compteur cumulé PROMEOS) déplacé en footer, expert-only. */}
       <div className="space-y-2">
         <DeadlineBanner />
-        <MorningBriefCard alerts={alertsCount} />
+        <MorningBriefCard alerts={alertsCount} sitesCount={scopedSites?.length || 0} />
       </div>
 
       {/* Modals fixed-position (n'affectent pas le flow visuel) */}
@@ -443,59 +422,17 @@ export default function CommandCenter() {
         </button>
       </div>
 
-      {/* KPIs J-1 — 4 tuiles : conso hier, conso mois, pic max horaire, sites en dérive. */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-testid="kpis-j1">
-        <KpiJ1Card
-          label="Conso hier (J-1)"
-          value={kpisJ1?.consoHierKwh != null ? fmtKwh(kpisJ1.consoHierKwh) : '—'}
-          sub={
-            cmdLoading
-              ? 'Chargement...'
-              : kpisJ1?.consoHierKwh != null
-                ? `${scopedSites.length} sites · données ${kpisJ1.consoDate ? `du ${kpisJ1.consoDate.slice(5).replace('-', '/')}` : 'réelles'}`
-                : 'Aucune donnée EMS disponible'
-          }
-          loading={cmdLoading}
-        />
-        <KpiJ1Card
-          label={`Conso ${new Date().toLocaleDateString('fr-FR', { month: 'long' })}`}
-          value={kpisJ1?.consoMoisMwh != null ? `${kpisJ1.consoMoisMwh} MWh` : '—'}
-          sub={
-            kpisJ1?.consoMoisMwh != null
-              ? kpisJ1.consoMoisDeltaPct != null
-                ? `${kpisJ1.consoMoisDeltaPct > 0 ? '+' : ''}${kpisJ1.consoMoisDeltaPct}% vs mois préc.`
-                : `${kpisJ1.consoMoisSites ?? 0} sites`
-              : 'Données mensuelles à venir'
-          }
-          loading={cmdLoading}
-        />
-        <KpiJ1Card
-          label="Pic max horaire J-1"
-          value={kpisJ1?.picKw != null ? `${kpisJ1.picKw} kW` : '—'}
-          sub={
-            kpisJ1?.picKw != null
-              ? `Agrégé sur ${scopedSites.length} sites`
-              : 'Pas de données horaires'
-          }
-          accent={kpisJ1?.picKw > 40 ? 'warn' : 'neutral'}
-          loading={cmdLoading}
-        />
-        <KpiJ1Card
-          label="Sites en dérive"
-          value={
-            (kpis?.nonConformes ?? 0) + (kpis?.aRisque ?? 0) > 0
-              ? `${(kpis?.nonConformes ?? 0) + (kpis?.aRisque ?? 0)} / ${kpis?.total ?? 0}`
-              : '0'
-          }
-          sub={
-            kpis?.risque > 0
-              ? `${Math.round(kpis.risque / 1000)} k€ d'exposition`
-              : 'Aucun site à risque'
-          }
-          accent={(kpis?.nonConformes ?? 0) + (kpis?.aRisque ?? 0) > 0 ? 'warn' : 'ok'}
-          loading={loading}
-        />
-      </div>
+      {/* Hero featured 1+3 — Phase 4 quick win 2 : pattern asymétrique 5/7
+          aligné sur /cockpit pour homogénéiser la signature Sol entre les
+          2 vues. Featured = ratio sites sains/total (gauge 56px Mono),
+          Secondary = Conso hier / Conso mois / Pic horaire J-1.
+          Cf. audit CX 26/04/2026 quick win 3. */}
+      <DashboardHeroFeatured
+        kpis={kpis}
+        kpisJ1={kpisJ1}
+        loading={loading || cmdLoading}
+        sitesCount={scopedSites.length}
+      />
 
       {/* Top 5 sites en dérive (drill-down vers détail site). */}
       <TopDeriveSitesCard sites={scopedSites} totalSites={kpis?.total} />

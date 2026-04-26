@@ -114,10 +114,15 @@ function buildBriefBullets(args) {
     `• Périmètre · ${totalSites} sites tertiaires`,
     `• Facture énergie · ${fmtEurFull(facture)} HT (${fmtMwh(consoMwh)})`,
     `• Score conformité DT · ${conformityScore != null ? Math.round(conformityScore) + '/100' : '—'}${sitesAtRisk > 0 ? ` · ${sitesAtRisk} site${sitesAtRisk > 1 ? 's' : ''} à risque 2030` : ''}`,
+    // Phase 4 quick win 3 : ligne CO₂ toujours rendue (parité Bullets/Narratif).
+    // Le narratif l'inclut systématiquement quand co2 > 0 ; on s'aligne avec un
+    // fallback explicite « donnée non calculée » plutôt que disparition silencieuse.
+    `• Empreinte carbone · ${
+      co2Tco2 != null && co2Tco2 > 0
+        ? `${Math.round(co2Tco2)} tCO₂eq (scopes 1+2 ADEME V23.6)`
+        : '— (donnée non calculée)'
+    }`,
   ];
-  if (co2Tco2 != null && co2Tco2 > 0) {
-    bullets.push(`• Empreinte carbone · ${Math.round(co2Tco2)} tCO₂eq (scopes 1+2 ADEME V23.6)`);
-  }
   if (actionsCount > 0 && totalImpactEur > 0) {
     bullets.push(
       `• Leviers identifiés · ${actionsCount} actions · ${fmtEurFull(totalImpactEur)}/an potentiel cumulé · payback cible ≤ 3 ans`
@@ -138,6 +143,29 @@ const MODES = {
   narrative: { label: 'Narratif COMEX', Icon: AlignLeft, build: buildBriefNarrative },
 };
 
+// Persistance utilisateur du mode choisi (Phase 4 quick win 3) — le CFO en
+// présentation veut presque toujours « Narratif COMEX » alors que le default
+// produit reste « Bullets DAF ». Sans persistance, +1 clic systématique à
+// chaque visite. Cf. audit CX 26/04/2026.
+const BRIEF_MODE_STORAGE_KEY = 'promeos_brief_codex_mode';
+
+function readStoredMode() {
+  try {
+    const v = localStorage.getItem(BRIEF_MODE_STORAGE_KEY);
+    return v && v in MODES ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistMode(mode) {
+  try {
+    localStorage.setItem(BRIEF_MODE_STORAGE_KEY, mode);
+  } catch {
+    /* noop */
+  }
+}
+
 export default function BriefCodexCard({
   orgName,
   totalSites = 0,
@@ -153,7 +181,13 @@ export default function BriefCodexCard({
   defaultExpanded = false,
   defaultMode = 'bullets',
 }) {
-  const [mode, setMode] = useState(defaultMode in MODES ? defaultMode : 'bullets');
+  const [mode, setMode] = useState(
+    () => readStoredMode() ?? (defaultMode in MODES ? defaultMode : 'bullets')
+  );
+  const handleModeChange = (key) => {
+    setMode(key);
+    persistMode(key);
+  };
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(defaultExpanded);
 
@@ -266,7 +300,7 @@ export default function BriefCodexCard({
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  onClick={() => setMode(key)}
+                  onClick={() => handleModeChange(key)}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                     active
                       ? 'bg-white text-gray-900 shadow-sm'
