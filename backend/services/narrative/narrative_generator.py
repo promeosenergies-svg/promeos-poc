@@ -263,6 +263,192 @@ def _build_cockpit_daily(
     )
 
 
+# ── Builder cockpit_comex (Sprint 1.2 — Jean-Marc CFO) ──────────────
+
+
+def _build_cockpit_comex(
+    db: Session,
+    org_id: int,
+    org_name: str,
+    sites_count: int,
+) -> Narrative:
+    """Sprint 1.2 — Vue COMEX Jean-Marc CFO.
+
+    Différences vs cockpit_daily :
+      - Persona = comex (vue mensuelle/hebdo synthèse direction, pas daily)
+      - Narrative orientée € : exposition financière + leviers économies €/an
+      - 3 KPIs : trajectoire DT 2030 + risque exposition + leviers cumulés
+      - Week-cards focalisées CFO (économies vs pertes vs échéances)
+      - Méthodologie URL pointe vers la page conformite-regops + brief CODIR
+
+    Réutilise KpiService + RegAssessment existants. Sprint 2 chantier α
+    enrichira les week-cards depuis le moteur d'événements (Bill-Intel
+    reclaims, Achat scénarios, Capacité Nov 2026).
+    """
+    from models import EntiteJuridique, Portefeuille, Site, StatutConformite, not_deleted
+    from services.kpi_service import KpiScope, KpiService
+
+    kpi_svc = KpiService(db)
+    scope = KpiScope(org_id=org_id)
+
+    risque_total = kpi_svc.get_financial_risk_eur(scope).value
+    conformite_kpi = kpi_svc.get_compliance_score(scope)
+    conformite_score = int(round(conformite_kpi.value)) if conformite_kpi.value is not None else None
+
+    site_q = (
+        not_deleted(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
+    non_conformes = site_q.filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME).count()
+    a_risque = site_q.filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
+    en_derive = non_conformes + a_risque
+
+    # Estimation leviers économies — heuristique S1.2 (5% de la facture annuelle
+    # moyenne tertiaire ETI ≈ 30 €/m²/an × surface estimée). Sprint 5 affinera
+    # via Bill-Intel reclaims réels + simulateur achat post-ARENH.
+    leviers_estimes_eur = max(0, en_derive * 8500.0)  # ordre grandeur €/an évitable
+
+    # ── Kicker + titre ──
+    week_iso = datetime.now(timezone.utc).isocalendar().week
+    kicker = f"VUE COMEX · SEMAINE {week_iso} · {sites_count} SITE{'S' if sites_count > 1 else ''}"
+    title = "Synthèse exécutive du portefeuille"
+    italic_hook = "vue mensuelle direction"
+
+    # ── Narrative 2-3 lignes orientée CFO (€ + trajectoire 2030) ──
+    narr_parts = []
+    if en_derive > 0 and risque_total:
+        narr_parts.append(
+            f"Exposition réglementaire cumulée : {_fmt_eur_short(risque_total)} "
+            f"sur {en_derive}/{sites_count} sites en dérive de la trajectoire 2030."
+        )
+    elif sites_count > 0:
+        narr_parts.append(
+            f"Patrimoine de {sites_count} site{'s' if sites_count > 1 else ''} "
+            f"sous contrôle réglementaire — aucune exposition immédiate."
+        )
+
+    if conformite_score is not None:
+        statut_phrase = (
+            "trajectoire tenue"
+            if conformite_score >= 75
+            else "vigilance requise"
+            if conformite_score >= 50
+            else "écart significatif vs cible 2030"
+        )
+        narr_parts.append(
+            f"Score conformité {conformite_score}/100 — {statut_phrase} "
+            f"(Décret n°2019-771, jalons -40%/2030, -50%/2040, -60%/2050)."
+        )
+    if leviers_estimes_eur > 0:
+        narr_parts.append(
+            f"Leviers économies estimés à {_fmt_eur_short(leviers_estimes_eur)}/an "
+            f"sur les sites en dérive — détail dans le plan d'actions."
+        )
+    narrative = " ".join(narr_parts)
+
+    # ── 3 KPIs hero §5 — angle CFO ──
+    kpis: list[NarrativeKpi] = [
+        NarrativeKpi(
+            label="Trajectoire 2030",
+            value=f"{conformite_score}/100" if conformite_score is not None else "—",
+            tooltip=(
+                "Score pondéré DT 45% · BACS 30% · APER 25% (ou 39/28/17/16 si "
+                "audit énergétique applicable). Cible 2030 : -40% conso vs 2010."
+            ),
+            source="RegOps + Décret 2019-771",
+        ),
+        NarrativeKpi(
+            label="Exposition financière",
+            value=_fmt_eur_short(risque_total),
+            tooltip=(
+                "Cumul pénalités Décret Tertiaire (7 500 €/site non conforme, "
+                "3 750 €/site à risque) sur la trajectoire 2030."
+            ),
+            source="Décret 2019-771",
+        ),
+        NarrativeKpi(
+            label="Leviers économies",
+            value=f"{_fmt_eur_short(leviers_estimes_eur)}/an" if leviers_estimes_eur else "—",
+            tooltip=(
+                "Ordre de grandeur des économies évitables sur les sites en dérive. "
+                "Affinage via Bill-Intel + simulateur achat post-ARENH."
+            ),
+            source="Estimation PROMEOS",
+        ),
+    ]
+
+    # ── Week-cards CFO (Sprint 2 chantier α enrichira depuis events bus) ──
+    week_cards: list[NarrativeWeekCard] = []
+    if non_conformes > 0:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="todo",
+                title=(f"Provisionner {_fmt_eur_short(non_conformes * 7500.0)} de pénalité maximale"),
+                body=(
+                    f"{non_conformes} site{'s' if non_conformes > 1 else ''} non "
+                    f"conforme{'s' if non_conformes > 1 else ''} — pénalité 7 500 €/"
+                    f"site (Décret n°2019-771)."
+                ),
+                cta_path="/conformite",
+                cta_label="Plan d'actions",
+                impact_eur=non_conformes * 7500.0,
+                urgency_days=180,
+            )
+        )
+    if leviers_estimes_eur > 0:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="watch",
+                title=f"Leviers économies {_fmt_eur_short(leviers_estimes_eur)}/an",
+                body=("Sites en dérive — opportunités de réduction conso ou renégociation contrat avant échéance."),
+                cta_path="/achat-energie",
+                cta_label="Voir scénarios",
+                impact_eur=leviers_estimes_eur,
+            )
+        )
+    if conformite_score is not None and conformite_score >= 75:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="good_news",
+                title="Trajectoire 2030 tenue",
+                body=(
+                    "Score conformité ≥75/100 — patrimoine bien positionné. "
+                    "Maintenir la qualité des déclarations OPERAT."
+                ),
+            )
+        )
+
+    fallback_body = (
+        f"Portefeuille de {sites_count} site{'s' if sites_count > 1 else ''} stable — "
+        "à présenter en l'état au prochain CODIR."
+    )
+
+    confidence = (
+        ProvenanceConfidence.HIGH if conformite_score is not None and sites_count > 0 else ProvenanceConfidence.MEDIUM
+    )
+    provenance = build_provenance(
+        source="RegOps + RegAssessment + estimation leviers",
+        confidence=confidence,
+        updated_at=datetime.now(timezone.utc),
+        methodology_url="/docs/methodologie/conformite-regops",
+    )
+
+    return Narrative(
+        page_key="cockpit_comex",
+        persona="comex",
+        kicker=kicker,
+        title=title,
+        italic_hook=italic_hook,
+        narrative=narrative,
+        kpis=tuple(kpis),
+        week_cards=tuple(week_cards),
+        fallback_body=fallback_body,
+        provenance=provenance,
+    )
+
+
 # ── Helpers format FR ───────────────────────────────────────────────
 
 
@@ -283,8 +469,9 @@ def _fmt_eur_short(amount: Optional[float]) -> str:
 
 _BUILDERS = {
     "cockpit_daily": _build_cockpit_daily,
-    # Sprint 1.2+ : ajouter cockpit_comex, patrimoine, conformite, bill_intel,
-    # achat, monitoring, diagnostic, anomalies, flex.
+    "cockpit_comex": _build_cockpit_comex,
+    # Sprint 1.3+ : ajouter patrimoine, conformite, bill_intel, achat,
+    # monitoring, diagnostic, anomalies, flex.
 }
 
 

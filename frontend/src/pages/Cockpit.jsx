@@ -43,6 +43,11 @@ import AlertStack from '../ui/AlertStack';
 import CockpitTabs from '../ui/CockpitTabs';
 import DataFreshnessBadge from '../ui/DataFreshnessBadge';
 import SolPageHeader from '../ui/sol/SolPageHeader';
+// Sprint 1.2 — grammaire Sol industrialisée pour vue COMEX (Jean-Marc CFO).
+import SolNarrative from '../ui/sol/SolNarrative';
+import SolWeekCards from '../ui/sol/SolWeekCards';
+import SolPageFooter from '../ui/sol/SolPageFooter';
+import { usePageBriefing } from '../hooks/usePageBriefing';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import ErrorState from '../ui/ErrorState';
@@ -114,6 +119,11 @@ const Cockpit = () => {
   const [error, setError] = useState(null);
   const [showDetail, setShowDetail] = useState(false); // V3: toggle zone 4
   const sitePageSize = 20;
+
+  // Sprint 1.2 — briefing éditorial Sol §5 vue COMEX (ADR-001).
+  // Backend orchestre KPIs CFO + narrative trajectoire 2030 + leviers €/an
+  // via /api/pages/cockpit_comex/briefing (persona=comex).
+  const { briefing: solBriefing } = usePageBriefing('cockpit_comex', { persona: 'comex' });
 
   // A.2: Unified compliance score from backend
   const [complianceApi, setComplianceApi] = useState(null);
@@ -582,6 +592,31 @@ const Cockpit = () => {
       {/* ── Tabs navigation (sticky sous le header) — extrait dans ui/CockpitTabs.jsx ── */}
       <CockpitTabs active="cockpit" />
 
+      {/* ── Préambule éditorial Sol §5 vue COMEX (S1.2 — ADR-001) ──
+          Briefing CFO orchestré backend : narrative trajectoire 2030 +
+          3 KPIs (Trajectoire / Exposition financière / Leviers économies)
+          + week-cards CFO (Provisionner pénalité / Leviers €/an / Bonne nouvelle)
+          + footer SCM RegOps + estimation leviers.
+
+          Le CockpitHero existant + BriefCodexCard descendent en détail
+          expert post-briefing. Sprint 1.3 fusionnera CockpitHero dans la
+          narrative pour atteindre la grammaire §5 stricte. */}
+      {solBriefing && (
+        <SolNarrative
+          kicker={null /* déjà rendu par SolPageHeader éditorialHeader */}
+          title={null /* idem — éviter doublon */}
+          narrative={solBriefing.narrative}
+          kpis={solBriefing.kpis}
+        />
+      )}
+      {solBriefing && (
+        <SolWeekCards
+          cards={solBriefing.weekCards}
+          fallbackBody={solBriefing.fallbackBody}
+          onNavigate={navigate}
+        />
+      )}
+
       {/* Phase 3.3 — Inversion ordre : CockpitHero EN PREMIER (chiffre-roi
           "où je suis"), puis Brief CODIR (synthèse copiable), puis Top 3
           priorités ("quoi faire"). Audit UX/Personas : Maslow KPI > task list. */}
@@ -773,8 +808,10 @@ const Cockpit = () => {
 
       <section className="space-y-3" data-testid="cockpit-achat-post-arenh">
         <div className="flex items-baseline justify-between">
+          {/* S1.2 transformation §10 (ADR-004) : "post-ARENH" est un acronyme
+              brut interdit en titre. Récit non-sachant : "fin du tarif régulé". */}
           <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
-            Achat énergie post-ARENH
+            Marché de l'électricité — fin du tarif régulé
           </h2>
           <span className="text-[10px] text-gray-400">
             Post-ARENH 01/01/2026 · TURPE 7 · <Explain term="vnu">VNU</Explain> CRE ·{' '}
@@ -1232,6 +1269,18 @@ const Cockpit = () => {
 
       {/* ── Onboarding spotlight (C.2b) ── */}
       <DemoSpotlight />
+
+      {/* Sprint 1.2 — SolPageFooter §5 grammaire (ADR-001).
+          Source · Confiance · Mis à jour de l'ensemble du briefing COMEX.
+          Lien méthodologie pointe vers /docs/methodologie/conformite-regops. */}
+      {solBriefing?.provenance && (
+        <SolPageFooter
+          source={solBriefing.provenance.source}
+          confidence={solBriefing.provenance.confidence}
+          updatedAt={solBriefing.provenance.updated_at}
+          methodologyUrl={solBriefing.provenance.methodology_url}
+        />
+      )}
     </PageShell>
   );
 };
