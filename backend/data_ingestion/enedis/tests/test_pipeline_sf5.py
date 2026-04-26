@@ -5,7 +5,7 @@ import json
 import zipfile
 
 from data_ingestion.enedis.enums import FluxStatus
-from data_ingestion.enedis.models import EnedisFluxFile, EnedisFluxMesureR6x
+from data_ingestion.enedis.models import EnedisFluxFile, EnedisFluxItcC68, EnedisFluxMesureR6x
 from data_ingestion.enedis.pipeline import ingest_file
 
 from .conftest import TEST_IV, TEST_KEY, aes_encrypt
@@ -124,6 +124,38 @@ def _r64_csv() -> bytes:
         "30000000000001;2026-01-01;2026-01-02;EA;CONS;RELEVE;Wh;2026-01-01T00:00:00+01:00;"
         "100;NORMAL;INDEX;PERIODIQUE;GRD;CAL1;Calendrier;Grille;HP;Heures pleines;01;0\n"
     ).encode()
+
+
+def _c68_json(point_id: str = "30000000000001") -> bytes:
+    return json.dumps(
+        [
+            {
+                "idPrm": point_id,
+                "siret": "12345678900011",
+                "siren": "123456789",
+                "domaineTension": "BT",
+                "situationsContractuelles": [{"dateDebut": "2025-01-01", "segment": "C5", "etatContractuel": "ACTIF"}],
+                "puissanceSouscrite": {"valeur": "36", "unite": "kVA"},
+            }
+        ]
+    ).encode()
+
+
+def _c68_csv(point_id: str = "30000000000001", *, v12: bool = False) -> bytes:
+    if v12:
+        return (
+            "PRM;Segment;SIRET;SIREN;Refus de pose Linky;Date refus de pose Linky;Borne Fixe;Type Injection\n"
+            f"{point_id};C5;12345678900011;123456789;NON;;OUI;SURPLUS\n"
+        ).encode()
+    return (
+        "PRM;Segment;Etat contractuel;SIRET;SIREN;Domaine Tension;Puissance Souscrite Valeur;"
+        "Puissance Souscrite Unite\n"
+        f"{point_id};C5;ACTIF;12345678900011;123456789;BT;36;kVA\n"
+    ).encode()
+
+
+def _c68_primary(entries: dict[str, bytes]) -> bytes:
+    return _zip_bytes(entries)
 
 
 def test_ingest_r63_direct_json_zip_without_keys(db, tmp_path):
@@ -253,3 +285,86 @@ def test_ingest_r64_payload_filename_mismatch_records_error_and_rolls_back(db, t
 
     assert status == FluxStatus.ERROR
     assert db.query(EnedisFluxMesureR6x).count() == 0
+
+
+def test_ingest_c68_json_primary_zip(db, tmp_path):
+    primary = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094139.zip"
+    secondary = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094140.zip"
+    member = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094140.json"
+    path = tmp_path / primary
+    path.write_bytes(_c68_primary({secondary: _zip_bytes({member: _c68_json()})}))
+
+    status = ingest_file(path, db, keys=[])
+
+    assert status == FluxStatus.PARSED
+    file_row = db.query(EnedisFluxFile).one()
+    assert file_row.flux_type == "C68"
+    assert file_row.payload_format == "JSON"
+    assert file_row.measures_count == 1
+    assert file_row.archive_members_count == 1
+    header_raw = file_row.get_header_raw()
+    assert header_raw["archive_manifest"]["secondary_archives"][0]["payload_member_name"] == member
+    row = db.query(EnedisFluxItcC68).one()
+    assert row.point_id == "30000000000001"
+    assert row.segment == "C5"
+    assert row.siret == "12345678900011"
+    assert row.puissance_souscrite_valeur == "36"
+
+
+def test_ingest_c68_csv_legacy_and_v12_layouts(db, tmp_path):
+    primary = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094139.zip"
+    secondary_1 = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094140.zip"
+    secondary_2 = "ENEDIS_C68_P_ITC_M05J6FUB_00002_20231219094141.zip"
+    path = tmp_path / primary
+    path.write_bytes(
+        _c68_primary(
+            {
+                secondary_1: _zip_bytes({"ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094140.csv": _c68_csv()}),
+                secondary_2: _zip_bytes(
+                    {"ENEDIS_C68_P_ITC_M05J6FUB_00002_20231219094141.csv": _c68_csv("30000000000002", v12=True)}
+                ),
+            }
+        )
+    )
+
+    status = ingest_file(path, db, keys=[])
+
+    assert status == FluxStatus.PARSED
+    assert db.query(EnedisFluxFile).one().measures_count == 2
+    rows = db.query(EnedisFluxItcC68).order_by(EnedisFluxItcC68.point_id).all()
+    assert rows[0].puissance_souscrite_valeur == "36"
+    assert rows[1].borne_fixe == "OUI"
+    assert rows[1].refus_pose_linky == "NON"
+
+
+def test_ingest_c68_aes_wrapped_primary_zip(db, tmp_path, test_keys):
+    primary = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094139.zip"
+    secondary = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094140.zip"
+    member = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094140.json"
+    path = tmp_path / primary
+    path.write_bytes(aes_encrypt(_c68_primary({secondary: _zip_bytes({member: _c68_json()})}), TEST_KEY, TEST_IV))
+
+    status = ingest_file(path, db, keys=test_keys)
+
+    assert status == FluxStatus.PARSED
+    assert db.query(EnedisFluxItcC68).count() == 1
+
+
+def test_ingest_c68_bad_second_secondary_rolls_back_whole_file(db, tmp_path):
+    primary = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094139.zip"
+    secondary_1 = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094140.zip"
+    secondary_2 = "ENEDIS_C68_P_ITC_M05J6FUB_00002_20231219094141.zip"
+    path = tmp_path / primary
+    path.write_bytes(
+        _c68_primary(
+            {
+                secondary_1: _zip_bytes({"ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094140.json": _c68_json()}),
+                secondary_2: _zip_bytes({"ENEDIS_C68_P_ITC_M05J6FUB_00002_20231219094141.json": b"[{}]"}),
+            }
+        )
+    )
+
+    status = ingest_file(path, db, keys=[])
+
+    assert status == FluxStatus.ERROR
+    assert db.query(EnedisFluxItcC68).count() == 0

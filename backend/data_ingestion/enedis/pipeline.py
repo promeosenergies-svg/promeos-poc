@@ -39,12 +39,13 @@ from data_ingestion.enedis.decrypt import (
     classify_flux,
     decrypt_file,
 )
-from data_ingestion.enedis.containers import ContainerError, extract_r6x_payload
+from data_ingestion.enedis.containers import ContainerError, extract_c68_payloads, extract_r6x_payload
 from data_ingestion.enedis.config import MAX_RETRIES
 from data_ingestion.enedis.enums import FluxStatus, FluxType, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
     EnedisFluxFileError,
+    EnedisFluxItcC68,
     EnedisFluxMesureR6x,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR50,
@@ -52,6 +53,7 @@ from data_ingestion.enedis.models import (
     EnedisFluxMesureR171,
     IngestionRun,
 )
+from data_ingestion.enedis.parsers.c68 import C68ParseError, parse_c68_payload
 from data_ingestion.enedis.parsers.r63 import R63ParseError, parse_r63_payload
 from data_ingestion.enedis.parsers.r4 import R4xParseError, parse_r4x
 from data_ingestion.enedis.parsers.r50 import R50ParseError, parse_r50
@@ -166,6 +168,26 @@ def ingest_file(
             chunk_size,
             file_hash,
             flux_type,
+            pre_registered,
+            previous_file,
+        )
+
+    if flux_type == FluxType.C68:
+        previous_file = (
+            session.query(EnedisFluxFile)
+            .filter(
+                EnedisFluxFile.filename == filename,
+                EnedisFluxFile.status.in_([FluxStatus.PARSED, FluxStatus.NEEDS_REVIEW]),
+            )
+            .order_by(EnedisFluxFile.version.desc())
+            .first()
+        )
+        return _ingest_c68_file(
+            file_path,
+            session,
+            keys,
+            chunk_size,
+            file_hash,
             pre_registered,
             previous_file,
         )
@@ -638,6 +660,136 @@ def _create_sf5_flux_file(
     return target
 
 
+def _create_c68_flux_file(
+    filename: str,
+    file_hash: str,
+    status: FluxStatus,
+    version: int,
+    supersedes_id: int | None,
+    archive_payload: Any,
+    parsed_payloads: list[Any],
+    existing: EnedisFluxFile | None = None,
+) -> EnedisFluxFile:
+    primary_meta = archive_payload.primary_metadata
+    secondary_archives = []
+    warnings = []
+    for payload, parsed in zip(archive_payload.payloads, parsed_payloads):
+        row_warnings = list(parsed.warnings)
+        warnings.extend(row_warnings)
+        secondary_archives.append(
+            {
+                "name": payload.secondary_archive_name,
+                "payload_member_name": payload.payload_member_name,
+                "payload_format": payload.payload_format,
+                "row_count": parsed.total_prms,
+                "warnings": row_warnings,
+            }
+        )
+
+    header_raw = {
+        "source": "filename+archive",
+        "filename_metadata": {
+            "code_flux": primary_meta.code_flux,
+            "mode_publication": primary_meta.mode_publication,
+            "type_donnee": primary_meta.type_donnee,
+            "id_demande": primary_meta.id_demande,
+            "num_sequence": primary_meta.num_sequence,
+            "publication_horodatage": primary_meta.publication_horodatage,
+            "extension": primary_meta.extension,
+        },
+        "archive_manifest": {
+            "primary_archive_name": filename,
+            "outer_member_count": archive_payload.archive_members_count,
+            "secondary_archives": secondary_archives,
+        },
+        "payload_header": None,
+        "warnings": warnings,
+    }
+
+    target = existing or EnedisFluxFile(filename=filename, file_hash=file_hash, flux_type=FluxType.C68.value)
+    target.status = status
+    target.version = version
+    target.supersedes_file_id = supersedes_id
+    target.code_flux = primary_meta.code_flux
+    target.mode_publication = primary_meta.mode_publication
+    target.type_donnee = primary_meta.type_donnee
+    target.id_demande = primary_meta.id_demande
+    target.payload_format = archive_payload.payloads[0].payload_format if archive_payload.payloads else None
+    target.num_sequence = primary_meta.num_sequence
+    target.siren_publication = primary_meta.siren_publication
+    target.code_contrat_publication = primary_meta.code_contrat_publication
+    target.publication_horodatage = primary_meta.publication_horodatage
+    target.archive_members_count = archive_payload.archive_members_count
+    target.frequence_publication = None
+    target.nature_courbe_demandee = None
+    target.identifiant_destinataire = None
+    target.set_header_raw(header_raw)
+    return target
+
+
+def _ingest_c68_file(
+    file_path: Path,
+    session: Session,
+    keys: list[tuple[bytes, bytes]],
+    chunk_size: int,
+    file_hash: str,
+    pre_registered: EnedisFluxFile | None,
+    previous_file: EnedisFluxFile | None,
+) -> FluxStatus:
+    filename = file_path.name
+    try:
+        resolved = resolve_payload(file_path, "zip", keys=keys or None)
+        archive_payload = extract_c68_payloads(filename, resolved.payload_bytes)
+        parsed_payloads = [
+            parse_c68_payload(payload.payload_bytes, payload.payload_format, payload.payload_member_name)
+            for payload in archive_payload.payloads
+        ]
+    except (TransportError, ContainerError, C68ParseError) as exc:
+        logger.error("SF5 C68 ingest failed for %s: %s", filename, exc)
+        _record_file(
+            session, filename, file_hash, FluxType.C68.value, FluxStatus.ERROR, str(exc), existing=pre_registered
+        )
+        session.commit()
+        return FluxStatus.ERROR
+
+    try:
+        if previous_file is not None:
+            file_status = FluxStatus.NEEDS_REVIEW
+            file_version = previous_file.version + 1
+            supersedes_id = previous_file.id
+        else:
+            file_status = FluxStatus.PARSED
+            file_version = 1
+            supersedes_id = None
+
+        flux_file = _create_c68_flux_file(
+            filename,
+            file_hash,
+            file_status,
+            file_version,
+            supersedes_id,
+            archive_payload,
+            parsed_payloads,
+            existing=pre_registered,
+        )
+        if pre_registered is None:
+            session.add(flux_file)
+        session.flush()
+        total_inserted = _store_c68(archive_payload, parsed_payloads, flux_file, session, chunk_size)
+        flux_file.measures_count = total_inserted
+        session.commit()
+        return file_status
+    except Exception as exc:
+        session.rollback()
+        logger.error("SF5 C68 storage failed for %s: %s", filename, exc)
+        refetched = (
+            session.query(EnedisFluxFile).filter_by(file_hash=file_hash).first() if pre_registered is not None else None
+        )
+        _record_file(session, filename, file_hash, FluxType.C68.value, FluxStatus.ERROR, str(exc), existing=refetched)
+        session.commit()
+        return FluxStatus.ERROR
+
+
 def _ingest_r6x_file(
     file_path: Path,
     session: Session,
@@ -905,6 +1057,54 @@ def _iter_r64(parsed: Any, flux_file: EnedisFluxFile):
 
 def _store_r64(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
     return _batch_insert(session, EnedisFluxMesureR6x, _iter_r64(parsed, flux_file), chunk_size)
+
+
+def _iter_c68(archive_payload: Any, parsed_payloads: list[Any], flux_file: EnedisFluxFile):
+    for payload, parsed in zip(archive_payload.payloads, parsed_payloads):
+        for row in parsed.rows:
+            yield dict(
+                flux_file_id=flux_file.id,
+                source_format=parsed.source_format,
+                secondary_archive_name=payload.secondary_archive_name,
+                payload_member_name=payload.payload_member_name,
+                point_id=row.point_id,
+                payload_raw=row.payload_raw,
+                contractual_situation_count=row.contractual_situation_count,
+                date_debut_situation_contractuelle=row.date_debut_situation_contractuelle,
+                segment=row.segment,
+                etat_contractuel=row.etat_contractuel,
+                formule_tarifaire_acheminement=row.formule_tarifaire_acheminement,
+                code_tarif_acheminement=row.code_tarif_acheminement,
+                siret=row.siret,
+                siren=row.siren,
+                domaine_tension=row.domaine_tension,
+                tension_livraison=row.tension_livraison,
+                type_comptage=row.type_comptage,
+                mode_releve=row.mode_releve,
+                media_comptage=row.media_comptage,
+                periodicite_releve=row.periodicite_releve,
+                puissance_souscrite_valeur=row.puissance_souscrite_valeur,
+                puissance_souscrite_unite=row.puissance_souscrite_unite,
+                puissance_limite_soutirage_valeur=row.puissance_limite_soutirage_valeur,
+                puissance_limite_soutirage_unite=row.puissance_limite_soutirage_unite,
+                puissance_raccordement_soutirage_valeur=row.puissance_raccordement_soutirage_valeur,
+                puissance_raccordement_soutirage_unite=row.puissance_raccordement_soutirage_unite,
+                puissance_raccordement_injection_valeur=row.puissance_raccordement_injection_valeur,
+                puissance_raccordement_injection_unite=row.puissance_raccordement_injection_unite,
+                borne_fixe=row.borne_fixe,
+                refus_pose_linky=row.refus_pose_linky,
+                date_refus_pose_linky=row.date_refus_pose_linky,
+            )
+
+
+def _store_c68(
+    archive_payload: Any,
+    parsed_payloads: list[Any],
+    flux_file: EnedisFluxFile,
+    session: Session,
+    chunk_size: int,
+) -> int:
+    return _batch_insert(session, EnedisFluxItcC68, _iter_c68(archive_payload, parsed_payloads, flux_file), chunk_size)
 
 
 # ---------------------------------------------------------------------------
