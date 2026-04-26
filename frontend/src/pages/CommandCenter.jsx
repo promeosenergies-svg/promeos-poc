@@ -58,6 +58,7 @@ import PriorityHero from './cockpit/PriorityHero';
 import TopDeriveSitesCard from './cockpit/TopDeriveSitesCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
 import CockpitTabs from '../ui/CockpitTabs';
+import SolPageHeader from '../ui/sol/SolPageHeader';
 import _ModuleLaunchers from './cockpit/ModuleLaunchers';
 import _EssentialsRow from './cockpit/EssentialsRow';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
@@ -354,18 +355,19 @@ export default function CommandCenter() {
     );
   }
 
+  const scopeSitesCount = scopedSites?.length ?? 0;
+  const orgKickerLabel = (org?.nom || 'Patrimoine').toUpperCase();
+
   return (
     <PageShell
-      icon={LayoutDashboard}
-      title={
-        <>
-          Tableau de bord
-          <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600">
-            Opérationnel
-          </span>
-        </>
+      editorialHeader={
+        <SolPageHeader
+          kicker={`ACCUEIL · ${orgKickerLabel} · ${scopeSitesCount} SITE${scopeSitesCount > 1 ? 'S' : ''}`}
+          title="Tableau de bord"
+          hook="opérationnel"
+          subtitle={<ScopeSummary />}
+        />
       }
-      subtitle={<ScopeSummary />}
       actions={
         <div className="flex items-center gap-2">
           {/* Trust signals : fraîcheur des données + couverture périmètre. */}

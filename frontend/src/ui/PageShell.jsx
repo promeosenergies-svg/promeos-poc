@@ -11,29 +11,39 @@ export default function PageShell({
   subtitle,
   actions,
   inlineActions,
+  editorialHeader,
   children,
   className = '',
   tintColor = 'text-blue-600',
   moduleKey,
 }) {
+  // Si editorialHeader fourni (ex. <SolPageHeader>), il remplace entièrement
+  // le bloc title/icon/subtitle — sol2 Phase 3 signature éditoriale.
   return (
     <div className={`px-6 py-6 space-y-6 animate-[slideInUp_0.3s_ease-out] ${className}`}>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0 flex-1" style={{ minWidth: '280px' }}>
-          {Icon && (
-            <Icon
-              size={26}
-              className={`${moduleKey ? tint.module(moduleKey).icon() : tintColor} shrink-0`}
-            />
-          )}
-          <div className={`min-w-0 ${inlineActions ? '' : 'flex-1'}`}>
-            <h1 className="text-2xl font-bold text-gray-900 truncate">{title}</h1>
-            {subtitle && <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{subtitle}</p>}
-          </div>
-          {inlineActions}
+      {editorialHeader ? (
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0 flex-1">{editorialHeader}</div>
+          {actions && <div className="flex items-center gap-2 flex-wrap shrink-0">{actions}</div>}
         </div>
-        {actions && <div className="flex items-center gap-2 flex-wrap shrink-0">{actions}</div>}
-      </div>
+      ) : (
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0 flex-1" style={{ minWidth: '280px' }}>
+            {Icon && (
+              <Icon
+                size={26}
+                className={`${moduleKey ? tint.module(moduleKey).icon() : tintColor} shrink-0`}
+              />
+            )}
+            <div className={`min-w-0 ${inlineActions ? '' : 'flex-1'}`}>
+              <h1 className="text-2xl font-bold text-gray-900 truncate">{title}</h1>
+              {subtitle && <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{subtitle}</p>}
+            </div>
+            {inlineActions}
+          </div>
+          {actions && <div className="flex items-center gap-2 flex-wrap shrink-0">{actions}</div>}
+        </div>
+      )}
       {children}
     </div>
   );

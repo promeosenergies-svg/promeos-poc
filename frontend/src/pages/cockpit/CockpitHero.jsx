@@ -56,13 +56,15 @@ function DeltaPill({ text, tone = 'neutral' }) {
 
 // SVG <text> styles — const module-level (recharts diff inégal sinon, audit
 // efficiency 26/04 P1 : objet style recréé à chaque render Hero).
+// Phase 3 : taille passée à 32px pour cohérence Hero KPI 30-36px (audit UI
+// "Hero KPIs sous-dimensionnés CFO").
 const SCORE_TEXT_STYLE = Object.freeze({
-  fontSize: '22px',
+  fontSize: '32px',
   fontWeight: 700,
   fontFamily: 'JetBrains Mono, ui-monospace, monospace',
   fontVariantNumeric: 'tabular-nums',
 });
-const SCORE_UNIT_STYLE = Object.freeze({ fontSize: '9px' });
+const SCORE_UNIT_STYLE = Object.freeze({ fontSize: '11px' });
 
 // ── N-1 helpers ──
 // Polarity = direction "souhaitable" : higher_is_good (conformité, actions),
@@ -196,8 +198,9 @@ export default function CockpitHero({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {/* V1: Gauge SVG agrandie avec score intégré */}
-          <svg viewBox="0 0 120 76" width={72} height={46} className="shrink-0">
+          {/* Gauge SVG : agrandie Phase 3 pour cohérence Hero KPI Vue exécutive
+              (audit UI : score-roi sous-dimensionné CFO/CODIR). */}
+          <svg viewBox="0 0 120 80" width={104} height={68} className="shrink-0">
             {/* Track */}
             <path
               d="M 12 64 A 48 48 0 0 1 108 64"
@@ -283,7 +286,7 @@ export default function CockpitHero({
           )}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-xl font-bold text-amber-600 sol-numeric">
+          <span className="text-4xl font-bold text-amber-600 sol-numeric leading-none">
             {fmtEur(kpis?.risqueTotal)}
           </span>
           <span
@@ -311,7 +314,7 @@ export default function CockpitHero({
       <div className="p-4 flex flex-col gap-2" data-testid="kpi-reduction-dt">
         <span className="text-xs text-gray-500">Réduction DT cumulée</span>
         <span
-          className={`text-2xl font-bold sol-numeric ${reductionPct == null ? 'text-gray-400' : isRetard ? 'text-red-600' : 'text-green-700'}`}
+          className={`text-4xl font-bold sol-numeric leading-none ${reductionPct == null ? 'text-gray-400' : isRetard ? 'text-red-600' : 'text-green-700'}`}
         >
           {reductionPct != null ? `${reductionPct}%` : trajectoire?.partial ? 'En attente' : '—'}
         </span>
@@ -332,10 +335,10 @@ export default function CockpitHero({
       {/* ── Card 4 : Actions en cours ── */}
       <div className="p-4 flex flex-col gap-2 rounded-r-xl" data-testid="kpi-actions-encours">
         <span className="text-xs text-gray-500">Actions en cours</span>
-        <span className="text-2xl font-bold text-gray-900 sol-numeric">
+        <span className="text-4xl font-bold text-gray-900 sol-numeric leading-none">
           {actions?.enCours != null ? actions.enCours : '—'}
           {actions?.total != null && (
-            <span className="text-lg font-normal text-gray-400"> / {actions.total}</span>
+            <span className="text-xl font-normal text-gray-400"> / {actions.total}</span>
           )}
         </span>
         <DeltaPill text={actionsTrend.text} tone={actionsTrend.tone} />

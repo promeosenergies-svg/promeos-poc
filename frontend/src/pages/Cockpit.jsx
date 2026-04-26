@@ -42,6 +42,7 @@ import {
 import AlertStack from '../ui/AlertStack';
 import CockpitTabs from '../ui/CockpitTabs';
 import DataFreshnessBadge from '../ui/DataFreshnessBadge';
+import SolPageHeader from '../ui/sol/SolPageHeader';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import ErrorState from '../ui/ErrorState';
@@ -503,18 +504,19 @@ const Cockpit = () => {
     );
   }
 
+  const scopeSitesCountCk = scopedSites?.length ?? 0;
+  const orgKickerLabelCk = (org?.nom || 'Patrimoine').toUpperCase();
+
   return (
     <PageShell
-      icon={FileText}
-      title={
-        <>
-          Vue exécutive
-          <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 text-blue-700">
-            Stratégique
-          </span>
-        </>
+      editorialHeader={
+        <SolPageHeader
+          kicker={`COCKPIT · ${orgKickerLabelCk} · ${scopeSitesCountCk} SITE${scopeSitesCountCk > 1 ? 'S' : ''}`}
+          title="Vue exécutive"
+          hook="stratégique"
+          subtitle={<ScopeSummary />}
+        />
       }
-      subtitle={<ScopeSummary />}
       actions={
         <div className="flex items-center gap-3">
           <DataFreshnessBadge
