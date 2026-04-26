@@ -40,6 +40,7 @@ import {
   Explain,
 } from '../ui';
 import AlertStack from '../ui/AlertStack';
+import CockpitTabs from '../ui/CockpitTabs';
 import DataFreshnessBadge from '../ui/DataFreshnessBadge';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
@@ -579,18 +580,8 @@ const Cockpit = () => {
         </div>
       )}
 
-      {/* ── Tabs navigation (sticky sous le header) ── */}
-      <div className="flex gap-6 border-b border-gray-200 mb-4 sticky top-0 z-10 bg-white -mx-6 px-6 pt-2">
-        <button className="pb-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600">
-          Vue exécutive
-        </button>
-        <button
-          onClick={() => navigate('/')}
-          className="pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
-        >
-          Tableau de bord
-        </button>
-      </div>
+      {/* ── Tabs navigation (sticky sous le header) — extrait dans ui/CockpitTabs.jsx ── */}
+      <CockpitTabs active="cockpit" />
 
       {/* Brief CODIR ouvert par défaut sur /cockpit — c'est la 1re info que
           le Directeur Énergie consulte le lundi matin avant le brief CFO. */}

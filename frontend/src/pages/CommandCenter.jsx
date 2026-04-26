@@ -47,6 +47,7 @@ import {
 } from '../models/dashboardEssentials';
 import { buildPriority1 } from '../models/priorityModel';
 import DataFreshnessBadge from '../ui/DataFreshnessBadge';
+import CrossModuleCTA from '../components/CrossModuleCTA';
 import _HealthSummary from '../components/HealthSummary';
 import MorningBriefCard from '../components/MorningBriefCard';
 import DeadlineBanner from '../components/DeadlineBanner';
@@ -56,6 +57,7 @@ import NpsModal from '../components/NpsModal';
 import PriorityHero from './cockpit/PriorityHero';
 import TopDeriveSitesCard from './cockpit/TopDeriveSitesCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
+import CockpitTabs from '../ui/CockpitTabs';
 import _ModuleLaunchers from './cockpit/ModuleLaunchers';
 import _EssentialsRow from './cockpit/EssentialsRow';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
@@ -97,35 +99,6 @@ function KpiJ1Card({ label, value, sub, accent = 'neutral', loading: isLoading }
         <div className="text-xl font-semibold text-gray-900 sol-numeric">{value}</div>
       )}
       <div className="text-xs text-gray-400 mt-1 truncate">{sub}</div>
-    </div>
-  );
-}
-
-// ── CockpitTabs — navigation Tableau de bord / Vue exécutive ──
-function CockpitTabs({ active }) {
-  const nav = useNavigate();
-  return (
-    <div className="flex gap-6 border-b border-gray-200 mb-4 sticky top-0 z-10 bg-white -mx-6 px-6 pt-2">
-      <button
-        onClick={() => nav('/')}
-        className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
-          active === 'dashboard'
-            ? 'border-blue-600 text-blue-600'
-            : 'border-transparent text-gray-500 hover:text-gray-700'
-        }`}
-      >
-        Tableau de bord
-      </button>
-      <button
-        onClick={() => nav('/cockpit')}
-        className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
-          active === 'cockpit'
-            ? 'border-blue-600 text-blue-600'
-            : 'border-transparent text-gray-500 hover:text-gray-700'
-        }`}
-      >
-        Vue exécutive
-      </button>
     </div>
   );
 }
@@ -446,6 +419,27 @@ export default function CommandCenter() {
       {/* Modals fixed-position (n'affectent pas le flow visuel) */}
       <CsatModal orgId={org?.id} />
       <NpsModal orgId={org?.id} userCreatedAt={org?.created_at} />
+
+      {/* Cross-module funnel CTAs — parité avec Cockpit (audit Nav 26/04 :
+          asymétrie « Tableau de bord = sans funnel, Cockpit = avec »). */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <CrossModuleCTA
+          icon={FileText}
+          title="Vue exécutive"
+          desc="Brief CFO + KPIs santé + plan"
+          to="/cockpit"
+          label="Préparer le brief CFO"
+          tint="blue"
+        />
+        <CrossModuleCTA
+          icon={Scan}
+          title="Conformité"
+          desc="Score, obligations à traiter"
+          to="/conformite"
+          label="Ouvrir conformité"
+          tint="emerald"
+        />
+      </div>
 
       {/* KPIs J-1 — 4 tuiles : conso hier, conso mois, pic max horaire, sites en dérive. */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-testid="kpis-j1">
