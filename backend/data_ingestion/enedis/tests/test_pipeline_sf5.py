@@ -5,10 +5,11 @@ import json
 import zipfile
 
 from data_ingestion.enedis.enums import FluxStatus
+from data_ingestion.enedis.config import MAX_RETRIES
 from data_ingestion.enedis.models import EnedisFluxFile, EnedisFluxItcC68, EnedisFluxMesureR6x
-from data_ingestion.enedis.pipeline import ingest_file
+from data_ingestion.enedis.pipeline import ingest_directory, ingest_file
 
-from .conftest import TEST_IV, TEST_KEY, aes_encrypt
+from .conftest import TEST_IV, TEST_KEY, aes_encrypt, make_encrypted_zip
 
 
 def _zip_bytes(entries: dict[str, bytes]) -> bytes:
@@ -368,3 +369,131 @@ def test_ingest_c68_bad_second_secondary_rolls_back_whole_file(db, tmp_path):
 
     assert status == FluxStatus.ERROR
     assert db.query(EnedisFluxItcC68).count() == 0
+
+
+def test_ingest_directory_mixed_legacy_sf5_skipped_and_corrupt(db, tmp_path, test_keys):
+    legacy_xml = b"""\
+<?xml version="1.0" encoding="UTF-8"?>
+<Courbe>
+  <Entete><Identifiant_Flux>R4x</Identifiant_Flux><Frequence_Publication>H</Frequence_Publication></Entete>
+  <Corps>
+    <Identifiant_PRM>30000000000001</Identifiant_PRM>
+    <Donnees_Courbe>
+      <Donnees_Point_Mesure Horodatage="2026-01-01T00:00:00+01:00" Valeur_Point="1" Statut_Point="R"/>
+    </Donnees_Courbe>
+  </Corps>
+</Courbe>"""
+    (tmp_path / "ENEDIS_23X--TEST_R4H_CDC_20260101.zip").write_bytes(
+        make_encrypted_zip(legacy_xml, "legacy.xml", TEST_KEY, TEST_IV)
+    )
+    r63_outer = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.zip"
+    (tmp_path / r63_outer).write_bytes(_zip_bytes({"ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.json": _r63_json()}))
+    c68_outer = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094139.zip"
+    (tmp_path / c68_outer).write_bytes(
+        _c68_primary(
+            {
+                "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094140.zip": _zip_bytes(
+                    {"ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094140.json": _c68_json()}
+                )
+            }
+        )
+    )
+    (tmp_path / "ENEDIS_R63A_R_CDC_M01ABCDE_GRD-F345_00001_20230918161101.zip").write_bytes(b"known skipped")
+    (tmp_path / "ENEDIS_C68_P_ITC_BAD_00001_20231219094139.zip").write_bytes(b"not a zip")
+
+    counters = ingest_directory(tmp_path, db, test_keys, recursive=False)
+
+    assert counters["parsed"] == 3
+    assert counters["skipped"] == 1
+    assert counters["error"] == 1
+    assert db.query(EnedisFluxFile).count() == 5
+    assert db.query(EnedisFluxMesureR6x).count() == 2
+    assert db.query(EnedisFluxItcC68).count() == 1
+
+
+def test_ingest_directory_dry_run_classifies_sf5_without_keys_or_db_mutation(db, tmp_path):
+    (tmp_path / "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.zip").write_bytes(b"not inspected")
+    (tmp_path / "ENEDIS_R63A_R_CDC_M01ABCDE_GRD-F345_00001_20230918161101.zip").write_bytes(b"not inspected")
+
+    counters = ingest_directory(tmp_path, db, keys=[], recursive=False, dry_run=True)
+
+    assert counters["received"] == 2
+    assert db.query(EnedisFluxFile).count() == 0
+
+
+def test_sf5_direct_file_idempotence(db, tmp_path):
+    outer = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094139.zip"
+    secondary = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094140.zip"
+    member = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094140.json"
+    path = tmp_path / outer
+    path.write_bytes(_c68_primary({secondary: _zip_bytes({member: _c68_json()})}))
+
+    assert ingest_file(path, db, keys=[]) == FluxStatus.PARSED
+    assert ingest_file(path, db, keys=[]) == FluxStatus.PARSED
+    assert db.query(EnedisFluxFile).count() == 1
+    assert db.query(EnedisFluxItcC68).count() == 1
+
+
+def test_sf5_same_filename_different_hash_is_republication(db, tmp_path):
+    outer = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.zip"
+    path = tmp_path / outer
+    path.write_bytes(_zip_bytes({"ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.json": _r63_json()}))
+
+    assert ingest_file(path, db, keys=[]) == FluxStatus.PARSED
+    path.write_bytes(_zip_bytes({"ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.csv": _r63_csv()}))
+
+    assert ingest_file(path, db, keys=[]) == FluxStatus.NEEDS_REVIEW
+    files = db.query(EnedisFluxFile).order_by(EnedisFluxFile.version).all()
+    assert [file.version for file in files] == [1, 2]
+    assert files[1].supersedes_file_id == files[0].id
+    assert db.query(EnedisFluxMesureR6x).count() == 3
+
+
+def test_sf5_retry_after_parse_error_archives_error_history(db, tmp_path):
+    outer = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.zip"
+    member = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.csv"
+    path = tmp_path / outer
+    path.write_bytes(_zip_bytes({member: b"Identifiant PRM;Date de debut\n30000000000001;2026-01-01\n"}))
+
+    assert ingest_file(path, db, keys=[]) == FluxStatus.ERROR
+    assert ingest_file(path, db, keys=[]) == FluxStatus.ERROR
+    file_row = db.query(EnedisFluxFile).one()
+    assert file_row.status == FluxStatus.ERROR
+    assert len(file_row.errors) == 1
+
+
+def test_sf5_permanent_failure_after_max_retries(db, tmp_path):
+    outer = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.zip"
+    member = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.csv"
+    path = tmp_path / outer
+    path.write_bytes(_zip_bytes({member: b"Identifiant PRM;Date de debut\n30000000000001;2026-01-01\n"}))
+
+    for _ in range(MAX_RETRIES + 2):
+        status = ingest_file(path, db, keys=[])
+
+    assert status == FluxStatus.PERMANENTLY_FAILED
+    assert db.query(EnedisFluxFile).one().status == FluxStatus.PERMANENTLY_FAILED
+
+
+def test_sf5_storage_error_rolls_back_rows(db, tmp_path):
+    from unittest.mock import patch
+
+    from sqlalchemy import Insert
+
+    outer = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.zip"
+    member = "ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.json"
+    path = tmp_path / outer
+    path.write_bytes(_zip_bytes({member: _r63_json()}))
+    original_execute = db.execute
+
+    def execute_that_fails_on_insert(stmt, *args, **kwargs):
+        if isinstance(stmt, Insert):
+            raise Exception("disk full")
+        return original_execute(stmt, *args, **kwargs)
+
+    with patch.object(db, "execute", side_effect=execute_that_fails_on_insert):
+        status = ingest_file(path, db, keys=[])
+
+    assert status == FluxStatus.ERROR
+    assert "disk full" in db.query(EnedisFluxFile).one().error_message
+    assert db.query(EnedisFluxMesureR6x).count() == 0
