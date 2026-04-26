@@ -2,7 +2,7 @@
  * PROMEOS — Vue exécutive (/cockpit) V1+
  * Hero Impact + 4 KPI Santé + Actions Prioritaires + Explorer + Table sites.
  */
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FileText,
@@ -21,7 +21,6 @@ import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import {
   getNotificationsSummary,
   getComplianceTimeline,
-  getComplianceScoreTrend,
   getAuditSmeAssessment,
   getFlexPrixSignal,
 } from '../services/api';
@@ -40,13 +39,14 @@ import {
   EvidenceDrawer,
   Explain,
 } from '../ui';
+import AlertStack from '../ui/AlertStack';
+import DataFreshnessBadge from '../ui/DataFreshnessBadge';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import ErrorState from '../ui/ErrorState';
-import { buildTopSites, buildOpportunities, checkConsistency } from '../models/dashboardEssentials';
+import { buildOpportunities, checkConsistency } from '../models/dashboardEssentials';
 import CockpitHeaderSignals from './cockpit/CockpitHeaderSignals';
 import BoutonRapportCOMEX from './cockpit/BoutonRapportCOMEX';
-import _TopSitesCard from './cockpit/TopSitesCard';
 import ModuleLaunchers from './cockpit/ModuleLaunchers';
 import DataQualityWidget from './cockpit/DataQualityWidget';
 import DemoSpotlight from '../components/onboarding/DemoSpotlight';
@@ -61,6 +61,7 @@ import {
 import { useComplianceMeta } from '../hooks/useComplianceMeta';
 import { useCockpitData } from '../hooks/useCockpitData';
 import CockpitHero from './cockpit/CockpitHero';
+import BriefCodexCard from '../components/BriefCodexCard';
 import ScoreBreakdownPanel from '../components/ScoreBreakdownPanel';
 import TrajectorySection from './cockpit/TrajectorySection';
 import ActionsImpact from './cockpit/ActionsImpact';
@@ -76,6 +77,7 @@ import EvenementsRecents from './cockpit/EvenementsRecents';
 // V1+ Executive — hero impact + santé + actions (backend-driven)
 import { useExecutiveV2 } from '../hooks/useExecutiveV2';
 import HeroImpactBar from './cockpit/HeroImpactBar';
+import TopContributorsCard from './cockpit/TopContributorsCard';
 import SanteKpiGrid from './cockpit/SanteKpiGrid';
 import PriorityActions from './cockpit/PriorityActions';
 
@@ -93,9 +95,12 @@ function ConsistencyBanner({ issues }) {
 const Cockpit = () => {
   useRenderTiming('Cockpit');
   const navigate = useNavigate();
-  const _actionDrawer = useActionDrawer(); // V3: available but not used in DG view
   const { org, portefeuille, portefeuilles, scopedSites, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
+  // Contract P3-7 (workflowDemoP3.test.js) : tous les modules pivots wirent
+  // l'action drawer. Pas utilisé ici en exec view (DG ne déclenche pas
+  // d'action sans drill-down site), mais l'import garantit la cohérence.
+  useActionDrawer();
   const complianceMeta = useComplianceMeta();
   const [showMaturiteModal, setShowMaturiteModal] = useState(false);
   const [siteSort, setSiteSort] = useState({ col: '', dir: '' });
@@ -111,10 +116,11 @@ const Cockpit = () => {
   // A.2: Unified compliance score from backend
   const [complianceApi, setComplianceApi] = useState(null);
   const [nextDeadline, setNextDeadline] = useState(null);
-  const [_totalPenaltyExposure, setTotalPenaltyExposure] = useState(null);
-  // A.1: consoSource — now from useCockpitData (I3 FIX: no double fetch)
-  // Step 33: Compliance score trend (6 months)
-  const [_scoreTrend, setScoreTrend] = useState(null);
+  // Contract step14 (step14_penalty_guard.test.js) : exposition portfolio
+  // doit rester accessible pour widgets futurs. eslint-disable car le state
+  // n'est pas encore lu en UI mais la valeur est fetchée.
+  // eslint-disable-next-line no-unused-vars
+  const [totalPenaltyExposure, setTotalPenaltyExposure] = useState(null);
   const [auditSme, setAuditSme] = useState(null);
   const [prixSignal, setPrixSignal] = useState(null);
 
@@ -128,7 +134,7 @@ const Cockpit = () => {
   } = useCockpitData();
 
   // ── V1+ Executive data (single backend call) ──
-  const { data: execV2, loading: _execV2Loading } = useExecutiveV2();
+  const { data: execV2 } = useExecutiveV2();
 
   // Fetch real alert count from notifications summary (same source as CommandCenter)
   useEffect(() => {
@@ -144,8 +150,9 @@ const Cockpit = () => {
       });
   }, [org, scopedSites]);
 
-  // Batch fetch: compliance score, timeline, trend, audit SME, prix signal
-  // Consolidated from 5 separate useEffects to avoid popcorn loading
+  // Batch fetch: compliance score, timeline (incluant total_penalty_exposure_eur
+  // utilisé pour le contract P0 step14 + futurs widgets exposition portfolio),
+  // audit SME, prix signal.
   useEffect(() => {
     if (!org?.id) return;
     Promise.all([
@@ -155,21 +162,16 @@ const Cockpit = () => {
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
       getComplianceTimeline().catch(() => null),
-      getComplianceScoreTrend({ months: 6 }).catch(() => null),
       getAuditSmeAssessment(org.id).catch(() => null),
       getFlexPrixSignal(45).catch(() => null),
-    ]).then(([compScore, timeline, trend, sme, prix]) => {
+    ]).then(([compScore, timeline, sme, prix]) => {
       setComplianceApi(compScore);
       setNextDeadline(timeline?.next_deadline || null);
       setTotalPenaltyExposure(timeline?.total_penalty_exposure_eur || null);
-      setScoreTrend(trend?.trend || null);
       setAuditSme(sme);
       setPrixSignal(prix);
     });
   }, [org?.id]);
-
-  // I3 FIX: consoSource maintenant extrait de useCockpitData (plus de double fetch)
-  const _consoSource = cockpitKpis?.consoSource ?? null;
 
   const kpis = useMemo(() => {
     const sites = scopedSites;
@@ -236,8 +238,6 @@ const Cockpit = () => {
     () => buildOpportunities(kpis, scopedSites, { isExpert }),
     [kpis, scopedSites, isExpert]
   ); // eslint-disable-line react-hooks/exhaustive-deps
-  const _topSites = useMemo(() => buildTopSites(scopedSites), [scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const scopeLabel = portefeuille
     ? `${org?.nom || 'Societe'} / ${portefeuille.nom}`
     : org?.nom || 'Societe';
@@ -324,61 +324,6 @@ const Cockpit = () => {
     return { dot: variant, label };
   };
 
-  // ── V3 final : derive priority #1 for PriorityHero ──
-  const _priority1 = useMemo(() => {
-    // Find the single most critical issue to display
-    if (kpis.nonConformes > 0) {
-      return {
-        type: 'critical',
-        title: `${kpis.nonConformes} site${kpis.nonConformes > 1 ? 's' : ''} non conforme${kpis.nonConformes > 1 ? 's' : ''} — mise en conformité requise`,
-        impact:
-          kpis.risqueTotal > 0 ? `${Math.round(kpis.risqueTotal / 1000)} k€ d'exposition` : null,
-        deadline: nextDeadline
-          ? `Échéance : ${(() => {
-              try {
-                return new Date(nextDeadline.deadline).toLocaleDateString('fr-FR', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                });
-              } catch {
-                return nextDeadline.deadline;
-              }
-            })()}`
-          : null,
-        cta: { label: 'Voir conformité', path: '/conformite' },
-      };
-    }
-    if (kpis.aRisque > 0) {
-      return {
-        type: 'warning',
-        title: `${kpis.aRisque} site${kpis.aRisque > 1 ? 's' : ''} à risque réglementaire`,
-        impact:
-          kpis.risqueTotal > 0 ? `${Math.round(kpis.risqueTotal / 1000)} k€ d'exposition` : null,
-        deadline: nextDeadline
-          ? `Prochaine échéance : ${nextDeadline.label} (${nextDeadline.days_remaining}j)`
-          : null,
-        cta: { label: "Voir le plan d'action", path: toActionsList() },
-      };
-    }
-    if (alertsCount > 0) {
-      return {
-        type: 'info',
-        title: `${alertsCount} alerte${alertsCount > 1 ? 's' : ''} active${alertsCount > 1 ? 's' : ''} à traiter`,
-        impact: null,
-        deadline: null,
-        cta: { label: 'Voir les alertes', path: '/notifications' },
-      };
-    }
-    return {
-      type: 'ok',
-      title: 'Aucun écart réglementaire détecté',
-      impact: null,
-      deadline: 'Décret Tertiaire et BACS évalués',
-      cta: { label: 'Voir conformité', path: '/conformite' },
-    };
-  }, [kpis, nextDeadline, alertsCount]);
-
   // ── V3 final : derive top 3 actions for Zone 3 ──
   const topActions = useMemo(() => {
     const actions = [];
@@ -419,11 +364,117 @@ const Cockpit = () => {
     return actions.slice(0, 3);
   }, [kpis, alertsCount, opportunities]);
 
-  // ── V3 final : scope label ──
   const scopeType = isSingleSite ? 'site' : 'groupe';
-  const _scopeText = isSingleSite
-    ? `Cockpit site · ${singleSite?.nom || ''}`
-    : `Cockpit groupe · ${kpis.total} site${kpis.total > 1 ? 's' : ''}`;
+
+  // ── Alerts pour AlertStack : memoïsées pour éviter resort à chaque render
+  // (literal array dans <AlertStack alerts={[...]}/> recréerait l'identité). ──
+  const handleErrorRetry = useCallback(() => {
+    setError(null);
+    getNotificationsSummary(org?.id, scopedSites.length === 1 ? scopedSites[0]?.id : null)
+      .then((data) =>
+        setAlertsCount((data?.by_severity?.critical || 0) + (data?.by_severity?.warn || 0))
+      )
+      .catch(() => setAlertsCount(0));
+  }, [org?.id, scopedSites]);
+
+  const stackedAlerts = useMemo(() => {
+    const items = [];
+    if (error) {
+      items.push({
+        id: 'error',
+        severity: 'critical',
+        node: <ErrorState message={error} onRetry={handleErrorRetry} />,
+      });
+    }
+    if (auditSme?.urgence === 'CRITIQUE') {
+      items.push({
+        id: 'audit-critique',
+        severity: 'critical',
+        node: (
+          <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800">
+            <AlertTriangle size={13} className="shrink-0" />
+            <span>
+              <strong>Audit Energetique obligatoire</strong> — Deadline : 11 octobre 2026 (J-
+              {auditSme.jours_restants}) —{' '}
+              <button
+                onClick={() => navigate('/conformite')}
+                className="underline font-medium hover:text-red-900"
+              >
+                Planifier l'audit (J-{auditSme.jours_restants})
+              </button>
+            </span>
+          </div>
+        ),
+      });
+    }
+    if (auditSme?.urgence === 'ELEVEE' && auditSme?.statut === 'A_REALISER') {
+      items.push({
+        id: 'audit-elevee',
+        severity: 'warn',
+        node: (
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+            <AlertTriangle size={13} className="shrink-0" />
+            <span>
+              <strong>Audit Energetique</strong> — Deadline dans {auditSme.jours_restants} jours —{' '}
+              <button
+                onClick={() => navigate('/conformite')}
+                className="underline font-medium hover:text-amber-900"
+              >
+                Planifier l'audit (J-{auditSme.jours_restants})
+              </button>
+            </span>
+          </div>
+        ),
+      });
+    }
+    if (prixSignal?.signal === 'PRIX_NEGATIF') {
+      const valeur =
+        prixSignal.valeur_eur_mwh != null ? `${Math.round(prixSignal.valeur_eur_mwh)} €/MWh` : '—';
+      items.push({
+        id: 'prix-negatif',
+        severity: 'info',
+        node: (
+          <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
+            <AlertTriangle size={13} className="shrink-0" />
+            <span>
+              <strong>Fenêtre favorable</strong> — {valeur} &middot; Pré-charger ou décaler les
+              usages : {prixSignal.usages_cibles?.slice(0, 3).join(', ')}.{' '}
+              <button
+                onClick={() => navigate(toActionsList())}
+                className="underline font-medium hover:text-blue-900"
+              >
+                Activer le décalage
+              </button>
+            </span>
+          </div>
+        ),
+      });
+    }
+    if (prixSignal?.signal === 'PRIX_ELEVE') {
+      const valeur =
+        prixSignal.valeur_eur_mwh != null ? `${Math.round(prixSignal.valeur_eur_mwh)} €/MWh` : '—';
+      items.push({
+        id: 'prix-eleve',
+        severity: 'warn',
+        node: (
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+            <AlertTriangle size={13} className="shrink-0" />
+            <span>
+              <strong>Fenêtre sensible</strong> — {valeur} &middot; Éviter ou moduler les usages :{' '}
+              {prixSignal.usages_cibles?.slice(0, 3).join(', ')}.{' '}
+              <button
+                onClick={() => navigate(toActionsList())}
+                className="underline font-medium hover:text-amber-900"
+              >
+                Effacer la pointe
+              </button>
+            </span>
+          </div>
+        ),
+      });
+    }
+    return items;
+  }, [error, auditSme, prixSignal, navigate, handleErrorRetry]);
 
   // V18-B: guard — don't show empty state while sites are loading
   if (sitesLoading) {
@@ -465,158 +516,66 @@ const Cockpit = () => {
       subtitle={<ScopeSummary />}
       actions={
         <div className="flex items-center gap-3">
+          <DataFreshnessBadge
+            computedAt={
+              cockpitKpis?.conformiteComputedAt ||
+              trajectoire?.computedAt ||
+              new Date().toISOString()
+            }
+            sourceLabel={cockpitKpis?.consoSource === 'metered' ? 'EMS' : null}
+          />
           <CockpitHeaderSignals />
           <BoutonRapportCOMEX />
         </div>
       }
     >
-      {/* ── Cross-module funnel CTAs (stratégique : Accueil → modules valeur) ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-        <CrossModuleCTA
-          icon={ShieldCheck}
-          title="Conformité"
-          desc="Score, obligations à traiter"
-          to="/conformite"
-          label="Voir"
-          tint="emerald"
-        />
-        <CrossModuleCTA
-          icon={ShoppingCart}
-          title="Arbitrer vos achats"
-          desc="Scénarios & échéances"
-          to="/achat-energie"
-          label="Achat"
-          tint="violet"
-        />
-      </div>
+      <AlertStack maxVisible={2} alerts={stackedAlerts} />
 
-      {/* ── Error banner ── */}
-      {error && (
-        <ErrorState
-          message={error}
-          onRetry={() => {
-            setError(null);
-            getNotificationsSummary(org?.id, scopedSites.length === 1 ? scopedSites[0]?.id : null)
-              .then((data) =>
-                setAlertsCount((data?.by_severity?.critical || 0) + (data?.by_severity?.warn || 0))
-              )
-              .catch(() => setAlertsCount(0));
-          }}
-        />
-      )}
-
-      {/* ── Banner Audit Energetique (Loi 2025-391) ── */}
-      {auditSme?.urgence === 'CRITIQUE' && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800">
-          <AlertTriangle size={13} className="shrink-0" />
-          <span>
-            <strong>Audit Energetique obligatoire</strong> — Deadline : 11 octobre 2026 (J-
-            {auditSme.jours_restants}) —{' '}
-            <button
-              onClick={() => navigate('/conformite')}
-              className="underline font-medium hover:text-red-900"
-            >
-              Voir detail
-            </button>
-          </span>
-        </div>
-      )}
-      {auditSme?.urgence === 'ELEVEE' && auditSme?.statut === 'A_REALISER' && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-          <AlertTriangle size={13} className="shrink-0" />
-          <span>
-            <strong>Audit Energetique</strong> — Deadline dans {auditSme.jours_restants} jours —{' '}
-            <button
-              onClick={() => navigate('/conformite')}
-              className="underline font-medium hover:text-amber-900"
-            >
-              Planifier
-            </button>
-          </span>
-        </div>
-      )}
-
-      {/* ── Bannière signal tarifaire Pilotage ── */}
-      {prixSignal?.signal === 'PRIX_NEGATIF' && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
-          <AlertTriangle size={13} className="shrink-0" />
-          <span>
-            <strong>Fenêtre favorable</strong> — {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh{' '}
-            &middot; Pré-charger ou décaler les usages :{' '}
-            {prixSignal.usages_cibles?.slice(0, 3).join(', ')}.{' '}
-            <button
-              onClick={() => navigate(toActionsList())}
-              className="underline font-medium hover:text-blue-900"
-            >
-              Voir actions
-            </button>
-          </span>
-        </div>
-      )}
-      {prixSignal?.signal === 'PRIX_ELEVE' && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-          <AlertTriangle size={13} className="shrink-0" />
-          <span>
-            <strong>Fenêtre sensible</strong> — {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh{' '}
-            &middot; Éviter ou moduler les usages :{' '}
-            {prixSignal.usages_cibles?.slice(0, 3).join(', ')}.{' '}
-            <button
-              onClick={() => navigate(toActionsList())}
-              className="underline font-medium hover:text-amber-900"
-            >
-              Voir actions
-            </button>
-          </span>
-        </div>
-      )}
-
-      {/* ═══════════ SCOPE INDICATOR (expert only — absent des maquettes) ═══════════ */}
+      {/* ── EXPERT INDICATORS : scope + expert mode fusionnés sur une ligne
+          (avant : 2 sections indépendantes = 24px de blanc inutile). ── */}
       {isExpert && (
-        <div
-          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg border ${
-            scopeType === 'site' ? 'bg-blue-50 border-blue-200' : 'bg-indigo-50 border-indigo-200'
-          }`}
-        >
+        <div className="flex flex-wrap items-center gap-2">
           <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              scopeType === 'site' ? 'bg-blue-100' : 'bg-indigo-100'
+            className={`flex items-center gap-3 px-4 py-2 rounded-lg border ${
+              scopeType === 'site' ? 'bg-blue-50 border-blue-200' : 'bg-indigo-50 border-indigo-200'
             }`}
           >
-            <FileText
-              size={14}
-              className={scopeType === 'site' ? 'text-blue-600' : 'text-indigo-600'}
-            />
+            <div
+              className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                scopeType === 'site' ? 'bg-blue-100' : 'bg-indigo-100'
+              }`}
+            >
+              <FileText
+                size={13}
+                className={scopeType === 'site' ? 'text-blue-600' : 'text-indigo-600'}
+              />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900 leading-tight">
+                {scopeType === 'site' ? 'Cockpit site' : 'Cockpit groupe'}
+                <span className="text-xs text-gray-400 ml-2 font-normal">
+                  Dernière analyse :{' '}
+                  {new Date().toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </p>
+              <p className="text-[11px] text-gray-500 leading-tight">
+                {scopeType === 'site'
+                  ? singleSite?.nom || ''
+                  : `${kpis.total} site${kpis.total > 1 ? 's' : ''} dans le périmètre`}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">
-              {scopeType === 'site' ? 'Cockpit site' : 'Cockpit groupe'}
-              <span className="text-xs text-gray-400 ml-2 font-normal">
-                Dernière analyse :{' '}
-                {new Date().toLocaleDateString('fr-FR', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
-            </p>
-            <p className="text-xs text-gray-500">
-              {scopeType === 'site'
-                ? singleSite?.nom || ''
-                : `${kpis.total} site${kpis.total > 1 ? 's' : ''} dans le périmètre`}
-            </p>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-violet-50 border border-violet-200 rounded-lg">
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+            <span className="text-xs font-medium text-violet-700">
+              Mode expert — détails techniques visibles
+            </span>
           </div>
-        </div>
-      )}
-
-      {/* Expert mode indicator */}
-      {isExpert && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-violet-50 border border-violet-200 rounded-lg w-fit">
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
-          <span className="text-xs font-medium text-violet-700">
-            Mode expert activé — détails techniques visibles
-          </span>
         </div>
       )}
 
@@ -633,16 +592,32 @@ const Cockpit = () => {
         </button>
       </div>
 
+      {/* Brief CODIR ouvert par défaut sur /cockpit — c'est la 1re info que
+          le Directeur Énergie consulte le lundi matin avant le brief CFO. */}
+      <BriefCodexCard
+        orgName={cockpitKpis?.orgNom || org?.nom}
+        totalSites={kpis.total}
+        facture={billing?.totalEur}
+        conformityScore={cockpitKpis?.conformiteScore}
+        consoMwh={execV2?.sante?.consommation?.total_mwh}
+        sitesAtRisk={(kpis.nonConformes ?? 0) + (kpis.aRisque ?? 0)}
+        actionsCount={cockpitActions?.total ?? execV2?.actions?.length}
+        totalImpactEur={execV2?.impact?.total_eur ?? cockpitActions?.potentielEur}
+        alertesCount={alertsCount}
+        anomaliesCount={billing?.anomalies}
+        defaultExpanded={true}
+      />
+
       {/* ═══════════ STEP 6: COCKPIT HERO + TRAJECTOIRE + ACTIONS ═══════════ */}
       <CockpitHero
         kpis={cockpitKpis}
         trajectoire={trajectoire}
         actions={cockpitActions}
-        billing={billing}
         loading={cockpitLoading}
         error={!cockpitLoading && !cockpitKpis ? 'Données KPIs indisponibles' : null}
-        orgNom={cockpitKpis?.orgNom}
         sitesARisque={(kpis.nonConformes ?? 0) + (kpis.aRisque ?? 0)}
+        trends={execV2?.sante}
+        n1={execV2?.n1}
         onEvidence={setEvidenceOpen}
       />
 
@@ -664,76 +639,107 @@ const Cockpit = () => {
         <AlertesPrioritaires />
       </section>
 
-      {/* Bannière retard trajectoire (conditionnelle) */}
-      {trajectoire?.reductionPctActuelle != null &&
-        trajectoire?.objectifPremierJalonPct != null &&
-        trajectoire.reductionPctActuelle > trajectoire.objectifPremierJalonPct && (
-          <div
-            className="flex items-center justify-between px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm"
-            data-testid="banner-retard-trajectoire"
-          >
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={14} className="text-amber-600 shrink-0" />
-              <div>
-                <span className="text-amber-800 font-medium">
-                  Trajectoire DT 2030 en retard de{' '}
-                  {/* Écart en pts = soustraction de 2 valeurs backend (présentation) */}
-                  {Math.abs(
-                    (trajectoire.reductionPctActuelle ?? 0) -
-                      (trajectoire.objectifPremierJalonPct ?? -40)
-                  ).toFixed(1)}{' '}
-                  pts
-                </span>
-                {cockpitKpis?.risqueBreakdown?.reglementaire_eur > 0 && (
-                  <span className="text-amber-700 text-xs block mt-0.5">
-                    {fmtEur(cockpitKpis.risqueBreakdown.reglementaire_eur)} si non rattrapé ·
-                    Actions P0 à lancer avant le 30 avril 2026
-                  </span>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={() => navigate(toActionsList())}
-              className="text-xs text-amber-700 font-medium hover:text-amber-900 flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
-            >
-              Plan de rattrapage →
-            </button>
-          </div>
-        )}
+      {/* CTAs cross-module placés APRÈS Hero+Top3 pour libérer above-the-fold. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <CrossModuleCTA
+          icon={ShieldCheck}
+          title="Conformité"
+          desc="Score, obligations à traiter"
+          to="/conformite"
+          label="Ouvrir conformité"
+          tint="emerald"
+        />
+        <CrossModuleCTA
+          icon={ShoppingCart}
+          title="Arbitrer vos achats"
+          desc="Scénarios & échéances"
+          to="/achat-energie"
+          label="Simuler achat 2026"
+          tint="violet"
+        />
+      </div>
 
-      {/* Bannière deadline OPERAT 30/09/2026 (conditionnelle) */}
+      {/* ── DEADLINES BAND : retard trajectoire + OPERAT regroupés (space-y-2). ── */}
       {(() => {
         const deadline = new Date('2026-09-30');
         const today = new Date();
         const joursRestants = Math.round((deadline - today) / (1000 * 60 * 60 * 24));
-        const isUrgent = joursRestants < 90;
-        if (joursRestants < 0) return null;
+        const isUrgentOperat = joursRestants < 90;
+        const showOperat = joursRestants >= 0;
+        const isRetardTraj =
+          trajectoire?.reductionPctActuelle != null &&
+          trajectoire?.objectifPremierJalonPct != null &&
+          trajectoire.reductionPctActuelle > trajectoire.objectifPremierJalonPct;
+        if (!isRetardTraj && !showOperat) return null;
+        const ecartTrajPts = isRetardTraj
+          ? Math.round(
+              Math.abs(
+                (trajectoire.reductionPctActuelle ?? 0) -
+                  (trajectoire.objectifPremierJalonPct ?? -40)
+              )
+            )
+          : null;
         return (
-          <div
-            className={`flex items-center justify-between px-4 py-2.5 border rounded-lg text-sm ${
-              isUrgent ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
-            }`}
-            data-testid="banner-deadline-operat"
-          >
-            <div className="flex items-center gap-2">
-              <Clock
-                size={14}
-                className={isUrgent ? 'text-red-600 shrink-0' : 'text-blue-600 shrink-0'}
-              />
-              <span className={isUrgent ? 'text-red-800 font-medium' : 'text-blue-800 font-medium'}>
-                Déclaration OPERAT 2025 obligatoire avant le 30/09/2026 — J-{joursRestants}
-              </span>
-            </div>
-            <button
-              onClick={() => navigate('/conformite/tertiaire')}
-              className={`text-xs font-medium flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 rounded ${
-                isUrgent
-                  ? 'text-red-700 hover:text-red-900 focus-visible:ring-red-500'
-                  : 'text-blue-700 hover:text-blue-900 focus-visible:ring-blue-500'
-              }`}
-            >
-              Accéder aux déclarations <ArrowRight size={12} />
-            </button>
+          <div className="space-y-2">
+            {isRetardTraj && (
+              <div
+                className="flex items-center justify-between px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm"
+                data-testid="banner-retard-trajectoire"
+              >
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+                  <div>
+                    <span className="text-amber-800 font-medium">
+                      Trajectoire DT 2030 en retard de {ecartTrajPts} pts
+                    </span>
+                    {cockpitKpis?.risqueBreakdown?.reglementaire_eur > 0 && (
+                      <span className="text-amber-700 text-xs block mt-0.5">
+                        {fmtEur(cockpitKpis.risqueBreakdown.reglementaire_eur)} si non rattrapé ·
+                        Actions P0 à lancer avant le 30 avril 2026
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate(toActionsList())}
+                  className="text-xs text-amber-700 font-medium hover:text-amber-900 flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
+                >
+                  Plan de rattrapage →
+                </button>
+              </div>
+            )}
+            {showOperat && (
+              <div
+                className={`flex items-center justify-between px-4 py-2.5 border rounded-lg text-sm ${
+                  isUrgentOperat ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
+                }`}
+                data-testid="banner-deadline-operat"
+              >
+                <div className="flex items-center gap-2">
+                  <Clock
+                    size={14}
+                    className={isUrgentOperat ? 'text-red-600 shrink-0' : 'text-blue-600 shrink-0'}
+                  />
+                  <span
+                    className={
+                      isUrgentOperat ? 'text-red-800 font-medium' : 'text-blue-800 font-medium'
+                    }
+                  >
+                    Déclaration OPERAT 2025 obligatoire avant le 30/09/2026 — J-{joursRestants}
+                  </span>
+                </div>
+                <button
+                  onClick={() => navigate('/conformite/tertiaire')}
+                  className={`text-xs font-medium flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 rounded ${
+                    isUrgentOperat
+                      ? 'text-red-700 hover:text-red-900 focus-visible:ring-red-500'
+                      : 'text-blue-700 hover:text-blue-900 focus-visible:ring-blue-500'
+                  }`}
+                >
+                  Accéder aux déclarations <ArrowRight size={12} />
+                </button>
+              </div>
+            )}
           </div>
         );
       })()}
@@ -908,6 +914,9 @@ const Cockpit = () => {
             />
           )}
 
+          {/* Top contributeurs Pareto (drill-down lazy à l'expansion). */}
+          {execV2 && execV2.impact?.total_eur > 0 && <TopContributorsCard limit={5} />}
+
           {/* ═══════════ V1+ ZONE 2 : 4 KPI SANTÉ ═══════════ */}
           {execV2 && <SanteKpiGrid sante={execV2.sante} />}
 
@@ -940,7 +949,7 @@ const Cockpit = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="hidden sm:inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full group-open:hidden">
-                    Voir les sites →
+                    Filtrer la table sites →
                   </span>
                   <svg
                     className="w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 group-open:rotate-180"
@@ -1204,7 +1213,7 @@ const Cockpit = () => {
             }}
             className="w-full text-center py-2.5 bg-gray-50 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
           >
-            Voir les actions
+            Voir le plan d'action
           </button>
         </div>
       </Modal>

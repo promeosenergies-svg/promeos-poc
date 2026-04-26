@@ -21,6 +21,12 @@ export const resolveAlerte = async (id) => {
 // ── Dashboard 2 Minutes ──
 export const getDashboard2min = () => api.get('/dashboard/2min').then((r) => r.data);
 
+// ── Top contributeurs Pareto (audit Jean-Marc 26/04 — drill-down "où sont mes 386 k€ ?") ──
+// Shape : { contributors: [{ site_id, site_nom, total_eur, conformite_eur,
+//   factures_eur, optimisation_eur, certainty }], total_eur, site_count, pareto_share_pct }
+export const getTopContributors = (limit = 5) =>
+  api.get(`/cockpit/top-contributors?limit=${limit}`).then((r) => r.data);
+
 // ── Segmentation ──
 export const getSegmentationQuestions = () =>
   api.get('/segmentation/questions').then((r) => r.data);

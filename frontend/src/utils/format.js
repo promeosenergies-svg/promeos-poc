@@ -64,6 +64,16 @@ export function fmtKwh(v) {
   return `${n.toLocaleString(FR)} kWh`;
 }
 
+/** Pour les valeurs déjà en MWh (backend `total_mwh`, etc.) — évite la
+ *  conversion manuelle `mwh * 1000` au site d'appel. */
+export function fmtMwh(v) {
+  const n = _safe(v);
+  if (n == null || n === 0) return '—';
+  if (Math.abs(n) >= 1_000)
+    return `${(n / 1_000).toLocaleString(FR, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} GWh`;
+  return `${Math.round(n).toLocaleString(FR)} MWh`;
+}
+
 /** Return the appropriate unit for a kWh value: 'kWh', 'MWh', or 'GWh' */
 export function kwhUnit(v) {
   const n = _safe(v);

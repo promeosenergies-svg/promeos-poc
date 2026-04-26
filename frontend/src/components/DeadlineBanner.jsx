@@ -34,7 +34,7 @@ export default function DeadlineBanner() {
 
   return (
     <div
-      className={`border rounded-lg px-4 py-3 flex items-center gap-3 mb-4 ${URGENCY_STYLES[status.urgency] || URGENCY_STYLES.medium}`}
+      className={`border rounded-lg px-4 py-3 flex items-center gap-3 ${URGENCY_STYLES[status.urgency] || URGENCY_STYLES.medium}`}
     >
       <AlertTriangle className="h-4 w-4 flex-shrink-0" />
       <span className="text-sm flex-1">

@@ -9,7 +9,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   ArrowRight,
-  Clock,
   Upload,
   Scan,
   RefreshCw,
@@ -46,12 +45,16 @@ import {
   buildTodayActions,
   computeHealthState,
 } from '../models/dashboardEssentials';
+import { buildPriority1 } from '../models/priorityModel';
+import DataFreshnessBadge from '../ui/DataFreshnessBadge';
 import _HealthSummary from '../components/HealthSummary';
 import MorningBriefCard from '../components/MorningBriefCard';
 import DeadlineBanner from '../components/DeadlineBanner';
 import ValueCounterCard from '../components/ValueCounterCard';
 import CsatModal from '../components/CsatModal';
 import NpsModal from '../components/NpsModal';
+import PriorityHero from './cockpit/PriorityHero';
+import TopDeriveSitesCard from './cockpit/TopDeriveSitesCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
 import _ModuleLaunchers from './cockpit/ModuleLaunchers';
 import _EssentialsRow from './cockpit/EssentialsRow';
@@ -66,8 +69,10 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
   ReferenceLine,
+  ReferenceArea,
 } from 'recharts';
 import { fmtKwh, fmtEur } from '../utils/format';
 import SitesBaselineCard from './cockpit/SitesBaselineCard';
@@ -283,6 +288,16 @@ export default function CommandCenter() {
     [rawKpis, rawTopActions, rawAlertsCount]
   );
 
+  // ── Priority #1 above-the-fold (logique partagée via priorityModel.js) ──
+  const priority1 = useMemo(() => {
+    const k = {
+      nonConformes: kpis.nonConformes,
+      aRisque: kpis.aRisque,
+      risqueTotal: kpis.risque,
+    };
+    return buildPriority1({ kpis: k, nextDeadline: null, alertsCount });
+  }, [kpis.nonConformes, kpis.aRisque, kpis.risque, alertsCount]);
+
   // Briefing from scope data (pure model — no extra API call)
   const watchlist = useMemo(() => buildWatchlist(kpis, scopedSites), [kpis, scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
   const briefing = useMemo(
@@ -380,19 +395,22 @@ export default function CommandCenter() {
       subtitle={<ScopeSummary />}
       actions={
         <div className="flex items-center gap-2">
-          {/* Trust signals — compact */}
-          <div className="hidden sm:flex items-center gap-3 mr-2 text-[11px] text-gray-400">
-            {lastSync && (
-              <span className="flex items-center gap-1">
-                <Clock size={11} />
-                {lastSync.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
-            <span className="flex items-center gap-1" title="Couverture données">
-              <Database size={11} />
-              {coveragePct}%
-            </span>
-          </div>
+          {/* Trust signals : fraîcheur des données + couverture périmètre. */}
+          <DataFreshnessBadge
+            computedAt={
+              kpisJ1?.consoDate
+                ? `${kpisJ1.consoDate}T08:00:00Z`
+                : (lastSync?.toISOString() ?? null)
+            }
+            sourceLabel={cockpitKpis?.consoSource === 'metered' ? 'EMS' : null}
+          />
+          <span
+            className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-50 text-gray-600 text-[11px] font-medium border border-gray-200"
+            title="Couverture données"
+          >
+            <Database size={10} />
+            {coveragePct}%
+          </span>
           <Button variant="secondary" size="sm" onClick={() => navigate('/cockpit')}>
             <FileText size={14} /> Vue exécutive
           </Button>
@@ -415,22 +433,21 @@ export default function CommandCenter() {
     >
       <CockpitTabs active="dashboard" />
 
-      {/* ── Deadline DT — CX Gap #3 ── */}
-      <DeadlineBanner />
+      {/* Priorité #1 above-the-fold (avant le pavé info ci-dessous). */}
+      <PriorityHero priority={priority1} onNavigate={navigate} />
 
-      {/* ── Value Counter — CX Gap #6 ── */}
-      <ValueCounterCard orgId={org?.id} />
+      {/* Info strip compact : Deadline DT + Morning brief. ValueCounter
+          (compteur cumulé PROMEOS) déplacé en footer, expert-only. */}
+      <div className="space-y-2">
+        <DeadlineBanner />
+        <MorningBriefCard alerts={alertsCount} />
+      </div>
 
-      {/* ── CSAT J+14 — CX Gap #7 (fixed position bottom-right) ── */}
+      {/* Modals fixed-position (n'affectent pas le flow visuel) */}
       <CsatModal orgId={org?.id} />
-
-      {/* ── NPS J+30 — Sprint CX P1 residual (scorecard 10% NPS/CES) ── */}
       <NpsModal orgId={org?.id} userCreatedAt={org?.created_at} />
 
-      {/* ── Morning Brief — ce qui a bougé depuis la dernière visite ── */}
-      <MorningBriefCard alerts={alertsCount} />
-
-      {/* ── KPIs J-1 (maquette : section 1 après tabs) ── */}
+      {/* KPIs J-1 — 4 tuiles : conso hier, conso mois, pic max horaire, sites en dérive. */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-testid="kpis-j1">
         <KpiJ1Card
           label="Conso hier (J-1)"
@@ -457,21 +474,39 @@ export default function CommandCenter() {
           loading={cmdLoading}
         />
         <KpiJ1Card
-          label="Pic puissance J-1"
+          label="Pic max horaire J-1"
           value={kpisJ1?.picKw != null ? `${kpisJ1.picKw} kW` : '—'}
-          sub={kpisJ1?.picKw != null ? 'Maximum horaire agrégé' : 'Pas de données horaires'}
+          sub={
+            kpisJ1?.picKw != null
+              ? `Agrégé sur ${scopedSites.length} sites`
+              : 'Pas de données horaires'
+          }
           accent={kpisJ1?.picKw > 40 ? 'warn' : 'neutral'}
           loading={cmdLoading}
         />
         <KpiJ1Card
-          label="Intensité CO₂ réseau"
-          value={kpisJ1?.co2ResKgKwh != null ? `${kpisJ1.co2ResKgKwh} g/kWh` : '—'}
-          sub="Connecteur RTE à brancher"
-          loading={cmdLoading}
+          label="Sites en dérive"
+          value={
+            (kpis?.nonConformes ?? 0) + (kpis?.aRisque ?? 0) > 0
+              ? `${(kpis?.nonConformes ?? 0) + (kpis?.aRisque ?? 0)} / ${kpis?.total ?? 0}`
+              : '0'
+          }
+          sub={
+            kpis?.risque > 0
+              ? `${Math.round(kpis.risque / 1000)} k€ d'exposition`
+              : 'Aucun site à risque'
+          }
+          accent={(kpis?.nonConformes ?? 0) + (kpis?.aRisque ?? 0) > 0 ? 'warn' : 'ok'}
+          loading={loading}
         />
       </div>
 
-      {/* ── Graphiques consommation (Step 5 — toujours visibles) ── */}
+      {/* Top 5 sites en dérive (drill-down vers détail site). */}
+      <TopDeriveSitesCard sites={scopedSites} totalSites={kpis?.total} />
+
+      {/* ── Graphiques consommation (Step 5 — toujours visibles) ──
+          Audit Marie/Jean-Marc : axes lisibles, légendes claires (jour précédent
+          vs hier), zones HP/HC visualisées sur le profil journalier. */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="charts-conso">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
@@ -479,16 +514,32 @@ export default function CommandCenter() {
           </div>
           {weekSeries?.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={weekSeries}>
+              <BarChart data={weekSeries} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 10, fill: '#9ca3af' }}
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
                   tickFormatter={(d) => {
+                    // Audit : "il manque le mois avec le jour" — afficher
+                    // jour court + numéro + mois court (ex. "Mar 22 avr.").
                     if (!d) return '';
                     const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+                    const months = [
+                      'janv.',
+                      'févr.',
+                      'mars',
+                      'avr.',
+                      'mai',
+                      'juin',
+                      'juil.',
+                      'août',
+                      'sept.',
+                      'oct.',
+                      'nov.',
+                      'déc.',
+                    ];
                     const dt = new Date(d);
-                    return `${days[dt.getDay()]} ${d.slice(8)}`;
+                    return `${days[dt.getDay()]} ${dt.getDate()} ${months[dt.getMonth()]}`;
                   }}
                 />
                 <YAxis
@@ -503,7 +554,16 @@ export default function CommandCenter() {
                 />
                 <Tooltip
                   formatter={(v) => [v != null ? `${(v / 1000).toFixed(1)} MWh` : '—', 'Conso']}
-                  labelFormatter={(l) => `Jour : ${l}`}
+                  labelFormatter={(l) => {
+                    if (!l) return '';
+                    const dt = new Date(l);
+                    return dt.toLocaleDateString('fr-FR', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    });
+                  }}
                 />
                 <Bar dataKey="kwh" name="Cette semaine" fill="#378ADD" radius={[3, 3, 0, 0]} />
               </BarChart>
@@ -516,33 +576,87 @@ export default function CommandCenter() {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-            Profil journalier J-1 (kW agrégé)
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Profil journalier — agrégé courbe de charge
+            </div>
+            {/* Légende HP/HC : zones tarifaires standard FR (HC = 22h-7h).
+                Audit : "il manque le dégradé de couleur HP/HC". */}
+            <div className="flex items-center gap-3 text-[10px] text-gray-500">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2.5 h-2.5 rounded-sm bg-amber-100 ring-1 ring-amber-200" />
+                Heures pleines
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2.5 h-2.5 rounded-sm bg-indigo-100 ring-1 ring-indigo-200" />
+                Heures creuses (22h–7h)
+              </span>
+            </div>
           </div>
           {hourlyProfile?.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <ComposedChart data={hourlyProfile}>
+            <ResponsiveContainer width="100%" height={240}>
+              <ComposedChart
+                data={hourlyProfile}
+                margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
+              >
+                <defs>
+                  <linearGradient id="hphcAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#378ADD" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#378ADD" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="heure" tick={{ fontSize: 9, fill: '#9ca3af' }} interval={3} />
+                {/* Zones tarifaires : HC standard FR = 22h00 → 06h59 */}
+                <ReferenceArea
+                  x1="0h"
+                  x2="7h"
+                  fill="#6366f1"
+                  fillOpacity={0.06}
+                  ifOverflow="extendDomain"
+                />
+                <ReferenceArea
+                  x1="22h"
+                  x2="23h"
+                  fill="#6366f1"
+                  fillOpacity={0.06}
+                  ifOverflow="extendDomain"
+                />
+                <XAxis dataKey="heure" tick={{ fontSize: 9, fill: '#9ca3af' }} interval={2} />
                 <YAxis
                   tick={{ fontSize: 10, fill: '#9ca3af' }}
-                  tickFormatter={(v) => `${v} kW`}
+                  /* Axe Y propre : unité kW affichée une seule fois en label
+                     (audit : "attention à l'axe des Y en kW") */
+                  tickFormatter={(v) => `${v}`}
                   label={{
                     value: 'kW',
                     angle: -90,
                     position: 'insideLeft',
-                    style: { fontSize: 10, fill: '#9ca3af' },
+                    offset: 8,
+                    style: { fontSize: 10, fill: '#6b7280' },
                   }}
                 />
-                <Tooltip formatter={(v, name) => [v != null ? `${v} kW` : '—', name]} />
+                <Tooltip
+                  formatter={(v, name) => [v != null ? `${v} kW` : '—', name]}
+                  labelFormatter={(h) => `Heure : ${h}`}
+                />
+                <Legend
+                  verticalAlign="bottom"
+                  height={20}
+                  iconType="line"
+                  wrapperStyle={{ fontSize: 10, color: '#6b7280' }}
+                />
                 <Area
                   type="monotone"
                   dataKey="kw"
-                  name="Réel J-1"
+                  /* Audit : légende "jour précédent / hier" — désambiguïser :
+                     les données affichées sont la moyenne agrégée du dernier
+                     jour disponible (typiquement hier). */
+                  name="Hier (J-1) — agrégé"
                   stroke="#378ADD"
-                  fill="rgba(55,138,221,0.07)"
+                  fill="url(#hphcAreaGradient)"
                   strokeWidth={2}
                   dot={false}
+                  isAnimationActive={false}
                 />
                 {/* Seuil puissance : 80% du pic comme alerte visuelle */}
                 {kpisJ1?.picKw > 0 && (
@@ -561,8 +675,13 @@ export default function CommandCenter() {
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[140px] flex items-center justify-center text-xs text-gray-400">
-              Profil horaire indisponible
+            <div className="h-[200px] flex flex-col items-center justify-center gap-2 text-xs text-gray-400">
+              {/* Audit P0.1 : pas de fake data. Si la courbe n'est pas raccordée,
+                  on affiche un état explicite plutôt qu'un profil estimé. */}
+              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200 text-[10px] font-medium uppercase tracking-wide">
+                Donnée indisponible
+              </span>
+              <span>Courbe de charge non raccordée — connecter Enedis pour activer</span>
             </div>
           )}
         </div>
@@ -674,6 +793,10 @@ export default function CommandCenter() {
 
       {/* ── Sites J-1 vs Baseline ── */}
       <SitesBaselineCard consoHierTotal={kpisJ1?.consoHierKwh} />
+
+      {/* Compteur valeur cumulée PROMEOS — footer expert-only (pas de
+          vente UI dans le flow principal du dashboard). */}
+      {isExpert && <ValueCounterCard orgId={org?.id} />}
 
       {/* Sections legacy masquées — redondantes avec les widgets cockpit world-class */}
       {/* HealthSummary, BriefingHeroCard, EssentialsRow déplacés dans /cockpit expert mode */}

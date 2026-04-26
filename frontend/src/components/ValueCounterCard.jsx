@@ -30,7 +30,7 @@ export default function ValueCounterCard({ orgId }) {
   if (!data || !data.total_eur || data.total_eur <= 0) return null;
 
   return (
-    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 mb-4">
+    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-0.5">

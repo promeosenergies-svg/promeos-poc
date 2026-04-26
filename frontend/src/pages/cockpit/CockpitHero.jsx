@@ -7,7 +7,7 @@
  * Tout calcul métier est fait backend (P0).
  */
 import { useNavigate } from 'react-router-dom';
-import { HelpCircle, AlertTriangle as _AlertTriangle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { Skeleton, ErrorState } from '../../ui';
 import { fmtEur } from '../../utils/format';
 
@@ -31,17 +31,75 @@ function gaugeLabel(score) {
   return 'Critique';
 }
 
+// ── Trend/Delta helpers ──────────────────────────────────────────────
+// Audit Jean-Marc P0.5 : "386 972 €, c'est plus ou moins que l'an dernier ?"
+// → afficher un mini-delta sous chaque chiffre-roi quand dispo (sinon "—").
+
+function DeltaPill({ text, tone = 'neutral' }) {
+  if (!text) return null;
+  const toneCls =
+    {
+      good: 'bg-green-50 text-green-700 ring-green-200',
+      warn: 'bg-amber-50 text-amber-700 ring-amber-200',
+      bad: 'bg-red-50 text-red-700 ring-red-200',
+      neutral: 'bg-gray-50 text-gray-600 ring-gray-200',
+    }[tone] ?? 'bg-gray-50 text-gray-600 ring-gray-200';
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ring-1 ${toneCls}`}
+    >
+      {text}
+    </span>
+  );
+}
+
+// ── N-1 helpers ──
+// Polarity = direction "souhaitable" : higher_is_good (conformité, actions),
+// higher_is_bad (risque, factures). Détermine le tone good/bad du DeltaPill.
+
+const N1_FALLBACK = { text: 'vs N-1 : historique 12 mois requis', tone: 'neutral' };
+
+function compactEur(n) {
+  return Math.abs(n) >= 1000 ? `${Math.round(n / 1000)} k€` : `${Math.round(n)} €`;
+}
+
+function formatDelta(value, unit) {
+  if (unit === 'eur') return compactEur(value);
+  if (unit === 'pct') return `${value}%`;
+  if (unit === 'pts') return `${value} pt${Math.abs(value) > 1 ? 's' : ''}`;
+  return `${value}`;
+}
+
+function buildTrendPill(n1, deltaKey, unit, polarity) {
+  if (!n1 || n1.data_status !== 'available' || n1[deltaKey] == null) return N1_FALLBACK;
+  const v = n1[deltaKey];
+  if (v === 0) return { text: `stable vs N-1`, tone: 'neutral' };
+  const isGood = polarity === 'higher_is_good' ? v > 0 : v < 0;
+  const tone = isGood ? 'good' : 'bad';
+  const sign = v > 0 ? '+' : '';
+  const suffix = unit === 'pts' ? ' vs N-1' : ' vs N-1';
+  return { text: `${sign}${formatDelta(v, unit)}${suffix}`, tone };
+}
+
+// Fallback dédié à conformité : si N-1 indisponible, on retombe sur le trend
+// 6 mois fourni par execV2.sante.conformite.trend (chaîne déjà formatée).
+function buildConformiteTrendText(n1, fallbackTrend) {
+  const pill = buildTrendPill(n1, 'delta_pts', 'pts', 'higher_is_good');
+  if (pill === N1_FALLBACK) return fallbackTrend ?? null;
+  return pill.text;
+}
+
 // ── Component ────────────────────────────────────────────────────────
 
 export default function CockpitHero({
   kpis,
   trajectoire,
   actions,
-  _billing,
   loading,
   error,
-  _orgNom,
   sitesARisque,
+  trends,
+  n1,
   onEvidence,
 }) {
   const navigate = useNavigate();
@@ -74,6 +132,28 @@ export default function CockpitHero({
     reductionPct != null &&
     trajectoire?.objectifPremierJalonPct != null &&
     reductionPct > trajectoire.objectifPremierJalonPct;
+
+  // Trends : N-1 backend prime sur trend 6 mois (fallback execV2.sante).
+  const conformiteTrend = buildConformiteTrendText(n1?.conformite, trends?.conformite?.trend);
+  const conformiteTrendTone = conformiteTrend?.startsWith('+')
+    ? 'good'
+    : conformiteTrend?.startsWith('-')
+      ? 'bad'
+      : 'neutral';
+  const risqueTrend = buildTrendPill(n1?.risque, 'delta_eur', 'eur', 'higher_is_bad');
+  const actionsTrend = buildTrendPill(n1?.actions, 'delta_pct', 'pct', 'higher_is_good');
+  // Math.round (pas de fixed-decimals) — pts entiers pour le delta DT
+  const reductionDeltaPts =
+    reductionPct != null && trajectoire?.objectifPremierJalonPct != null
+      ? Math.round(Math.abs(reductionPct - trajectoire.objectifPremierJalonPct))
+      : null;
+  const reductionDeltaText =
+    reductionDeltaPts == null
+      ? null
+      : isRetard
+        ? `+${reductionDeltaPts} pt vs obj.`
+        : `−${reductionDeltaPts} pt vs obj.`;
+  const reductionDeltaTone = isRetard ? 'bad' : reductionPct != null ? 'good' : 'neutral';
 
   return (
     <div
@@ -154,6 +234,7 @@ export default function CockpitHero({
             />
           </div>
         </div>
+        {conformiteTrend && <DeltaPill text={conformiteTrend} tone={conformiteTrendTone} />}
         <p className="text-xs text-gray-500">
           Pondération standard : DT 45% · BACS 30% · APER 25% · {kpis?.totalSites ?? 0} sites
         </p>
@@ -197,6 +278,7 @@ export default function CockpitHero({
             className={`w-2 h-2 rounded-full shrink-0 ${(kpis?.risqueTotal ?? 0) > 0 ? 'bg-amber-500' : 'bg-green-500'}`}
           />
         </div>
+        <DeltaPill text={risqueTrend.text} tone={risqueTrend.tone} />
         <p className="text-xs text-gray-500">
           {sitesARisque ?? 0} site{(sitesARisque ?? 0) > 1 ? 's' : ''} concerné
           {(sitesARisque ?? 0) > 1 ? 's' : ''} (périmètre sélectionné)
@@ -221,6 +303,7 @@ export default function CockpitHero({
         >
           {reductionPct != null ? `${reductionPct}%` : trajectoire?.partial ? 'En attente' : '—'}
         </span>
+        {reductionDeltaText && <DeltaPill text={reductionDeltaText} tone={reductionDeltaTone} />}
         <span className="text-[10px] text-gray-400">
           {trajectoire?.partial ? (
             'Données annuelles en cours de collecte'
@@ -243,6 +326,7 @@ export default function CockpitHero({
             <span className="text-lg font-normal text-gray-400"> / {actions.total}</span>
           )}
         </span>
+        <DeltaPill text={actionsTrend.text} tone={actionsTrend.tone} />
         <span className="text-[10px] text-green-700 font-medium">
           {actions?.potentielEur > 0
             ? `+${fmtEur(actions.potentielEur)}/an potentiel`

@@ -47,7 +47,7 @@ export default function MorningBriefCard({ alerts = 0, invoices = 0, actionsClos
   };
 
   return (
-    <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4 mb-4">
+    <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4">
       <button
         type="button"
         onClick={handleAck}
