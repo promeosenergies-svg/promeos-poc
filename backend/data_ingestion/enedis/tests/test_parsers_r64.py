@@ -104,7 +104,7 @@ def test_r64_json_disconnected_grandeur_fails():
 def test_r64_csv_maps_observed_headers():
     csv_payload = (
         "Identifiant PRM;Date de début;Date de fin;Grandeur physique;Grandeur métier;Etape métier;Unité;"
-        "Horodate;Valeur;Contexte relève;Type relève;Motif relève;Grille;Identifiant calendrier;"
+        "Horodate;Valeur;Contexte de relève;Type de releve;Motif de relève;Grille;Identifiant calendrier;"
         "Libellé calendrier;Libellé grille;Identifiant classe temporelle;Libellé classe temporelle;"
         "Cadran;Indice de vraisemblance\n"
         "30000000000001;2026-01-01;2026-01-02;EA;CONS;RELEVE;Wh;"

@@ -231,9 +231,9 @@ _CSV_REQUIRED = {
 }
 
 _CSV_OPTIONAL = {
-    "contexte_releve": ("contexte releve",),
-    "type_releve": ("type releve",),
-    "motif_releve": ("motif releve",),
+    "contexte_releve": ("contexte releve", "contexte de releve"),
+    "type_releve": ("type releve", "type de releve"),
+    "motif_releve": ("motif releve", "motif de releve"),
     "code_grille": ("code grille", "grille"),
     "id_calendrier": ("id calendrier", "identifiant calendrier"),
     "libelle_calendrier": ("libelle calendrier",),

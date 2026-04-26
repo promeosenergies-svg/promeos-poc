@@ -744,6 +744,7 @@ CSV rules:
 - preserve original header labels through explicit column mapping
 - validate headers before row iteration and fail the whole physical file when mandatory identity/value headers are missing
 - fail the whole physical file when any row is malformed for a mandatory field; partial CSV ingestion is not allowed
+- optional R64 read-context headers must accept both compact labels and real export labels with `de`, for example `Contexte relève` / `Contexte de relève`, `Type relève` / `Type de releve`, and `Motif relève` / `Motif de relève`
 - for `R63`, mandatory CSV headers are:
   - `Identifiant PRM`
   - `Date de début`
@@ -1035,6 +1036,7 @@ Mandatory assertions:
 - PRM format preserved
 - JSON arrays and nested contexts/classes are fully exploded
 - CSV header mapping is correct
+- R64 CSV header mapping preserves observed read-context fields from real exports, especially `Contexte de relève`, `Type de releve`, and `Motif de relève`
 - C68 CSV extraction is header-name based, not position-based
 - C68 CSV combined `Puissance souscrite` values split into separate value/unit columns
 - C68 v1.2 fields are preserved/extracted when present and tolerated when absent

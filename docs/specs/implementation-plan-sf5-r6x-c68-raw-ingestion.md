@@ -534,13 +534,23 @@ No cross-product synthesis is allowed. Ambiguous or disconnected JSON structures
 ### Test Coverage
 
 - Synthetic JSON fixture with context/calendar/class/value nesting.
-- Synthetic CSV fixture with observed R64 headers.
+- Synthetic CSV fixture with observed R64 headers, including the real export labels `Contexte de relève`, `Type de releve`, and `Motif de relève`.
 - Missing mandatory CSV header fails.
 - Ambiguous JSON structure fails.
 - Payload filename mismatch fails.
 - Direct ZIP with no keys succeeds.
 - AES-wrapped synthetic R64 succeeds with test keys.
 - Parser unit tests stay pure and do not require database setup; pipeline tests cover storage.
+
+### 2026-04-26 Real-Load Finding
+
+While comparing the 8 loaded local R64 files for request `M06CX26D` against `flux_data.db`, row counts matched exactly (`81,925` raw CSV rows and `81,925` stored `enedis_flux_index_r64` rows), and 16 of 19 CSV columns mapped correctly. The parser missed the three read-context columns because the real CSV headers include `de`:
+
+- `Contexte de relève` was not mapped to `contexte_releve`
+- `Type de releve` was not mapped to `type_releve`
+- `Motif de relève` was not mapped to `motif_releve`
+
+The implementation must accept both compact aliases such as `Contexte relève` and real export aliases such as `Contexte de relève`. After parser fixes, the affected files must be reprocessed or backfilled so those first-class raw columns reflect the source file.
 
 ### Validation Commands
 
