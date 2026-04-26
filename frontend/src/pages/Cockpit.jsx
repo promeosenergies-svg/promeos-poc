@@ -585,8 +585,22 @@ const Cockpit = () => {
       {/* ── Tabs navigation (sticky sous le header) — extrait dans ui/CockpitTabs.jsx ── */}
       <CockpitTabs active="cockpit" />
 
-      {/* Brief CODIR ouvert par défaut sur /cockpit — c'est la 1re info que
-          le Directeur Énergie consulte le lundi matin avant le brief CFO. */}
+      {/* Phase 3.3 — Inversion ordre : CockpitHero EN PREMIER (chiffre-roi
+          "où je suis"), puis Brief CODIR (synthèse copiable), puis Top 3
+          priorités ("quoi faire"). Audit UX/Personas : Maslow KPI > task list. */}
+      <CockpitHero
+        kpis={cockpitKpis}
+        trajectoire={trajectoire}
+        actions={cockpitActions}
+        loading={cockpitLoading}
+        error={!cockpitLoading && !cockpitKpis ? 'Données KPIs indisponibles' : null}
+        sitesARisque={(kpis.nonConformes ?? 0) + (kpis.aRisque ?? 0)}
+        trends={execV2?.sante}
+        n1={execV2?.n1}
+        onEvidence={setEvidenceOpen}
+      />
+
+      {/* Brief CODIR ouvert par défaut — synthèse copiable juste sous les KPIs. */}
       <BriefCodexCard
         orgName={cockpitKpis?.orgNom || org?.nom}
         totalSites={kpis.total}
@@ -601,20 +615,7 @@ const Cockpit = () => {
         defaultExpanded={true}
       />
 
-      {/* ═══════════ STEP 6: COCKPIT HERO + TRAJECTOIRE + ACTIONS ═══════════ */}
-      <CockpitHero
-        kpis={cockpitKpis}
-        trajectoire={trajectoire}
-        actions={cockpitActions}
-        loading={cockpitLoading}
-        error={!cockpitLoading && !cockpitKpis ? 'Données KPIs indisponibles' : null}
-        sitesARisque={(kpis.nonConformes ?? 0) + (kpis.aRisque ?? 0)}
-        trends={execV2?.sante}
-        n1={execV2?.n1}
-        onEvidence={setEvidenceOpen}
-      />
-
-      {/* ═══════════ Sprint CX 2 — Exception-first : Top 3 à traiter ═══════════ */}
+      {/* Top 3 à traiter cette semaine — APRÈS Hero+Brief (Maslow). */}
       <section
         data-testid="cockpit-top-priorities"
         className="bg-gradient-to-br from-red-50/30 to-white border border-red-100 rounded-xl p-4 shadow-sm"

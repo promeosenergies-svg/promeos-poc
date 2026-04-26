@@ -422,25 +422,28 @@ export default function CommandCenter() {
       <CsatModal orgId={org?.id} />
       <NpsModal orgId={org?.id} userCreatedAt={org?.created_at} />
 
-      {/* Cross-module funnel CTAs — parité avec Cockpit (audit Nav 26/04 :
-          asymétrie « Tableau de bord = sans funnel, Cockpit = avec »). */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <CrossModuleCTA
-          icon={FileText}
-          title="Vue exécutive"
-          desc="Brief CFO + KPIs santé + plan"
-          to="/cockpit"
-          label="Préparer le brief CFO"
-          tint="blue"
-        />
-        <CrossModuleCTA
-          icon={Scan}
-          title="Conformité"
-          desc="Score, obligations à traiter"
-          to="/conformite"
-          label="Ouvrir conformité"
-          tint="emerald"
-        />
+      {/* Funnel CTAs compacts (Phase 3.2 — densité ATF) : 1 ligne 36px au
+          lieu de 2 cards verticales 80px chacune. Audit UX : ATF gagnait
+          ~250px en compactant le top de page. */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => navigate('/cockpit')}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          <FileText size={14} aria-hidden="true" />
+          Préparer le brief CFO
+          <ArrowRight size={12} aria-hidden="true" className="opacity-60" />
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/conformite')}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+        >
+          <Scan size={14} aria-hidden="true" />
+          Ouvrir conformité
+          <ArrowRight size={12} aria-hidden="true" className="opacity-60" />
+        </button>
       </div>
 
       {/* KPIs J-1 — 4 tuiles : conso hier, conso mois, pic max horaire, sites en dérive. */}
