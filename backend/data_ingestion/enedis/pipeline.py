@@ -39,21 +39,25 @@ from data_ingestion.enedis.decrypt import (
     classify_flux,
     decrypt_file,
 )
+from data_ingestion.enedis.containers import ContainerError, extract_r6x_payload
 from data_ingestion.enedis.config import MAX_RETRIES
 from data_ingestion.enedis.enums import FluxStatus, FluxType, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
     EnedisFluxFileError,
+    EnedisFluxMesureR6x,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR50,
     EnedisFluxMesureR151,
     EnedisFluxMesureR171,
     IngestionRun,
 )
+from data_ingestion.enedis.parsers.r63 import R63ParseError, parse_r63_payload
 from data_ingestion.enedis.parsers.r4 import R4xParseError, parse_r4x
 from data_ingestion.enedis.parsers.r50 import R50ParseError, parse_r50
 from data_ingestion.enedis.parsers.r151 import R151ParseError, parse_r151
 from data_ingestion.enedis.parsers.r171 import R171ParseError, parse_r171
+from data_ingestion.enedis.transport import TransportError, resolve_payload
 
 logger = logging.getLogger("promeos.enedis.pipeline")
 
@@ -141,6 +145,28 @@ def ingest_file(
         _record_file(session, filename, file_hash, flux_type.value, FluxStatus.SKIPPED, existing=pre_registered)
         session.commit()
         return FluxStatus.SKIPPED
+
+    # SF5 direct/encrypted ZIP flows use transport + container handlers, not
+    # the legacy decrypt-to-XML dispatch table.
+    if flux_type == FluxType.R63:
+        previous_file = (
+            session.query(EnedisFluxFile)
+            .filter(
+                EnedisFluxFile.filename == filename,
+                EnedisFluxFile.status.in_([FluxStatus.PARSED, FluxStatus.NEEDS_REVIEW]),
+            )
+            .order_by(EnedisFluxFile.version.desc())
+            .first()
+        )
+        return _ingest_r63_file(
+            file_path,
+            session,
+            keys,
+            chunk_size,
+            file_hash,
+            pre_registered,
+            previous_file,
+        )
 
     # Dispatch lookup — skip flux types without a handler
     handler = _DISPATCH.get(flux_type)
@@ -555,6 +581,126 @@ def _create_flux_file(
     return flux_file
 
 
+def _create_sf5_flux_file(
+    filename: str,
+    file_hash: str,
+    flux_type: FluxType,
+    status: FluxStatus,
+    version: int,
+    supersedes_id: int | None,
+    container_payload: Any,
+    parsed: Any,
+    existing: EnedisFluxFile | None = None,
+) -> EnedisFluxFile:
+    outer_meta = container_payload.outer_metadata
+    header_raw = {
+        "source": "filename+archive",
+        "filename_metadata": {
+            "code_flux": outer_meta.code_flux,
+            "mode_publication": outer_meta.mode_publication,
+            "type_donnee": outer_meta.type_donnee,
+            "id_demande": outer_meta.id_demande,
+            "num_sequence": outer_meta.num_sequence,
+            "publication_horodatage": outer_meta.publication_horodatage,
+            "siren_publication": outer_meta.siren_publication,
+            "code_contrat_publication": outer_meta.code_contrat_publication,
+            "extension": outer_meta.extension,
+        },
+        "archive_manifest": {
+            "outer_member_count": container_payload.archive_members_count,
+            "payload_member_name": container_payload.member_name,
+            "payload_format": container_payload.payload_format,
+        },
+        "payload_header": parsed.header.raw,
+        "warnings": parsed.header.raw.get("warnings", []),
+    }
+
+    target = existing or EnedisFluxFile(filename=filename, file_hash=file_hash, flux_type=flux_type.value)
+    target.status = status
+    target.version = version
+    target.supersedes_file_id = supersedes_id
+    target.code_flux = outer_meta.code_flux
+    target.mode_publication = outer_meta.mode_publication
+    target.type_donnee = outer_meta.type_donnee
+    target.id_demande = outer_meta.id_demande
+    target.payload_format = container_payload.payload_format
+    target.num_sequence = outer_meta.num_sequence
+    target.siren_publication = outer_meta.siren_publication
+    target.code_contrat_publication = outer_meta.code_contrat_publication
+    target.publication_horodatage = outer_meta.publication_horodatage
+    target.archive_members_count = container_payload.archive_members_count
+    target.frequence_publication = None
+    target.nature_courbe_demandee = None
+    target.identifiant_destinataire = None
+    target.set_header_raw(header_raw)
+    return target
+
+
+def _ingest_r63_file(
+    file_path: Path,
+    session: Session,
+    keys: list[tuple[bytes, bytes]],
+    chunk_size: int,
+    file_hash: str,
+    pre_registered: EnedisFluxFile | None,
+    previous_file: EnedisFluxFile | None,
+) -> FluxStatus:
+    filename = file_path.name
+    try:
+        resolved = resolve_payload(file_path, "zip", keys=keys or None)
+        container_payload = extract_r6x_payload(filename, resolved.payload_bytes)
+        parsed = parse_r63_payload(
+            container_payload.payload_bytes,
+            container_payload.payload_format,
+            container_payload.member_name,
+        )
+    except (TransportError, ContainerError, R63ParseError) as exc:
+        logger.error("SF5 R63 ingest failed for %s: %s", filename, exc)
+        _record_file(
+            session, filename, file_hash, FluxType.R63.value, FluxStatus.ERROR, str(exc), existing=pre_registered
+        )
+        session.commit()
+        return FluxStatus.ERROR
+
+    try:
+        if previous_file is not None:
+            file_status = FluxStatus.NEEDS_REVIEW
+            file_version = previous_file.version + 1
+            supersedes_id = previous_file.id
+        else:
+            file_status = FluxStatus.PARSED
+            file_version = 1
+            supersedes_id = None
+
+        flux_file = _create_sf5_flux_file(
+            filename,
+            file_hash,
+            FluxType.R63,
+            file_status,
+            file_version,
+            supersedes_id,
+            container_payload,
+            parsed,
+            existing=pre_registered,
+        )
+        if pre_registered is None:
+            session.add(flux_file)
+        session.flush()
+        total_inserted = _store_r63(parsed, flux_file, session, chunk_size)
+        flux_file.measures_count = total_inserted
+        session.commit()
+        return file_status
+    except Exception as exc:
+        session.rollback()
+        logger.error("SF5 R63 storage failed for %s: %s", filename, exc)
+        refetched = (
+            session.query(EnedisFluxFile).filter_by(file_hash=file_hash).first() if pre_registered is not None else None
+        )
+        _record_file(session, filename, file_hash, FluxType.R63.value, FluxStatus.ERROR, str(exc), existing=refetched)
+        session.commit()
+        return FluxStatus.ERROR
+
+
 def _prm_summary(parsed: Any) -> str:
     """Return a concise PRM summary for log output.
 
@@ -692,6 +838,35 @@ def _iter_r151(parsed: Any, flux_file: EnedisFluxFile):
 
 def _store_r151(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
     return _batch_insert(session, EnedisFluxMesureR151, _iter_r151(parsed, flux_file), chunk_size)
+
+
+def _iter_r63(parsed: Any, flux_file: EnedisFluxFile):
+    for row in parsed.rows:
+        yield dict(
+            flux_file_id=flux_file.id,
+            flux_type=flux_file.flux_type,
+            source_format=parsed.source_format,
+            archive_member_name=parsed.member_name,
+            point_id=row.point_id,
+            periode_date_debut=row.periode_date_debut,
+            periode_date_fin=row.periode_date_fin,
+            etape_metier=row.etape_metier,
+            mode_calcul=row.mode_calcul,
+            grandeur_metier=row.grandeur_metier,
+            grandeur_physique=row.grandeur_physique,
+            unite=row.unite,
+            horodatage=row.horodatage,
+            pas=row.pas,
+            nature_point=row.nature_point,
+            type_correction=row.type_correction,
+            valeur=row.valeur,
+            indice_vraisemblance=row.indice_vraisemblance,
+            etat_complementaire=row.etat_complementaire,
+        )
+
+
+def _store_r63(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
+    return _batch_insert(session, EnedisFluxMesureR6x, _iter_r63(parsed, flux_file), chunk_size)
 
 
 # ---------------------------------------------------------------------------
