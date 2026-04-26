@@ -5,7 +5,9 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    // Port 5173 — poc principal (la refonte audit-sol coexiste sur 5174).
     port: 5173,
+    strictPort: true,
     host: '127.0.0.1',
     proxy: {
       '/api': {
