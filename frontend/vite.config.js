@@ -5,8 +5,10 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    // Port 5174 : refonte-visuelle-sol coexiste avec main sur 5173
+    // Port 5174 — refonte-visuelle-sol (le poc principal tourne sur 5173).
+    // Règle figée : ne PAS inverser les ports — comparaison live des 2 UIs.
     port: 5174,
+    strictPort: true,
     host: '127.0.0.1',
     proxy: {
       '/api': {
