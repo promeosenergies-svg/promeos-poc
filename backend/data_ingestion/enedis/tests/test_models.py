@@ -7,10 +7,12 @@ from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
     EnedisFluxFileError,
+    EnedisFluxItcC68,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR171,
     EnedisFluxMesureR50,
     EnedisFluxMesureR151,
+    EnedisFluxMesureR6x,
     IngestionRun,
 )
 
@@ -119,6 +121,30 @@ class TestEnedisFluxFile:
         result = db.query(EnedisFluxFile).filter_by(frequence_publication="H").first()
         assert result is not None
         assert result.nature_courbe_demandee == "Corrigee"
+
+    def test_sf5_filename_metadata_fields_are_nullable_and_queryable(self, db):
+        legacy = EnedisFluxFile(filename="legacy.zip", file_hash="legacy", flux_type="R4H", status="parsed")
+        sf5 = EnedisFluxFile(
+            filename="ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.zip",
+            file_hash="sf5",
+            flux_type="R63",
+            status="parsed",
+            code_flux="R63",
+            mode_publication="P",
+            type_donnee="CdC",
+            id_demande="M053Q0D3",
+            payload_format="JSON",
+            num_sequence="00001",
+            publication_horodatage="20230918161101",
+            archive_members_count=1,
+        )
+        db.add_all([legacy, sf5])
+        db.commit()
+
+        assert db.query(EnedisFluxFile).filter_by(code_flux=None).one().filename == "legacy.zip"
+        result = db.query(EnedisFluxFile).filter_by(id_demande="M053Q0D3").one()
+        assert result.payload_format == "JSON"
+        assert result.archive_members_count == 1
 
 
 # ---------------------------------------------------------------------------
@@ -257,6 +283,128 @@ class TestEnedisFluxMesureR4x:
 
         db.refresh(f)
         assert len(f.mesures_r4x) == 3
+
+
+# ---------------------------------------------------------------------------
+# EnedisFluxMesureR6x
+# ---------------------------------------------------------------------------
+
+
+class TestEnedisFluxMesureR6x:
+    def _make_file(self, db, file_hash="r6x_file"):
+        f = EnedisFluxFile(filename="r6x.zip", file_hash=file_hash, flux_type="R63", status="parsed")
+        db.add(f)
+        db.flush()
+        return f
+
+    def test_create_r6x_mesure_raw_strings(self, db):
+        f = self._make_file(db)
+        m = EnedisFluxMesureR6x(
+            flux_file_id=f.id,
+            flux_type="R63",
+            source_format="JSON",
+            archive_member_name="ENEDIS_R63_P_CdC_M053Q0D3_00001_20230918161101.json",
+            point_id="30000210411333",
+            periode_date_debut="2026-03-07T00:00:00+01:00",
+            periode_date_fin="2026-03-07T23:59:59+01:00",
+            grandeur_metier="CONS",
+            grandeur_physique="EA",
+            unite="Wh",
+            horodatage="2026-03-07T00:00:00+01:00",
+            valeur="00123.40",
+            indice_vraisemblance="0",
+        )
+        db.add(m)
+        db.commit()
+
+        result = db.query(EnedisFluxMesureR6x).one()
+        assert result.valeur == "00123.40"
+        assert isinstance(result.valeur, str)
+
+    def test_duplicate_r6x_rows_allowed_and_cascade(self, db):
+        f = self._make_file(db)
+        rows = [
+            EnedisFluxMesureR6x(
+                flux_file_id=f.id,
+                flux_type="R64",
+                source_format="CSV",
+                archive_member_name="payload.csv",
+                point_id="30000210411333",
+                grandeur_physique="EA",
+                horodatage="2026-03-07T00:00:00+01:00",
+                valeur=value,
+            )
+            for value in ("100", "101")
+        ]
+        db.add_all(rows)
+        db.commit()
+
+        db.refresh(f)
+        assert len(f.mesures_r6x) == 2
+        db.delete(f)
+        db.commit()
+        assert db.query(EnedisFluxMesureR6x).count() == 0
+
+
+# ---------------------------------------------------------------------------
+# EnedisFluxItcC68
+# ---------------------------------------------------------------------------
+
+
+class TestEnedisFluxItcC68:
+    def _make_file(self, db, file_hash="c68_file"):
+        f = EnedisFluxFile(filename="c68.zip", file_hash=file_hash, flux_type="C68", status="parsed")
+        db.add(f)
+        db.flush()
+        return f
+
+    def test_create_c68_snapshot_with_payload_raw_and_extracted_strings(self, db):
+        f = self._make_file(db)
+        snapshot = EnedisFluxItcC68(
+            flux_file_id=f.id,
+            source_format="CSV",
+            secondary_archive_name="secondary.zip",
+            payload_member_name="payload.csv",
+            point_id="30000210411333",
+            payload_raw='{"PRM":"30000210411333","Puissance souscrite":"36"}',
+            contractual_situation_count=1,
+            date_debut_situation_contractuelle="2026-01-01",
+            segment="C5",
+            etat_contractuel="ACTIF",
+            siret="12345678900011",
+            siren="123456789",
+            puissance_souscrite_valeur="36,0",
+            puissance_souscrite_unite="kVA",
+        )
+        db.add(snapshot)
+        db.commit()
+
+        result = db.query(EnedisFluxItcC68).filter_by(siret="12345678900011").one()
+        assert result.payload_raw.startswith("{")
+        assert result.puissance_souscrite_valeur == "36,0"
+        assert isinstance(result.puissance_souscrite_valeur, str)
+
+    def test_duplicate_c68_snapshots_allowed_and_cascade(self, db):
+        f = self._make_file(db)
+        rows = [
+            EnedisFluxItcC68(
+                flux_file_id=f.id,
+                source_format="JSON",
+                secondary_archive_name="secondary.zip",
+                payload_member_name="payload.json",
+                point_id="30000210411333",
+                payload_raw='{"idPrm":"30000210411333"}',
+            )
+            for _ in range(2)
+        ]
+        db.add_all(rows)
+        db.commit()
+
+        db.refresh(f)
+        assert len(f.itc_c68) == 2
+        db.delete(f)
+        db.commit()
+        assert db.query(EnedisFluxItcC68).count() == 0
 
 
 # ---------------------------------------------------------------------------

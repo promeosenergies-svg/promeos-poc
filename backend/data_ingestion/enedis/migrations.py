@@ -85,6 +85,16 @@ def _add_enedis_columns(engine) -> None:
         ("frequence_publication", "VARCHAR(5)"),
         ("nature_courbe_demandee", "VARCHAR(20)"),
         ("identifiant_destinataire", "VARCHAR(100)"),
+        ("code_flux", "VARCHAR(20)"),
+        ("type_donnee", "VARCHAR(20)"),
+        ("id_demande", "VARCHAR(20)"),
+        ("mode_publication", "VARCHAR(5)"),
+        ("payload_format", "VARCHAR(10)"),
+        ("num_sequence", "VARCHAR(10)"),
+        ("siren_publication", "VARCHAR(20)"),
+        ("code_contrat_publication", "VARCHAR(50)"),
+        ("publication_horodatage", "VARCHAR(20)"),
+        ("archive_members_count", "INTEGER"),
         ("header_raw", "TEXT"),
     ]
 
