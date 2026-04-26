@@ -154,6 +154,18 @@ def test_c68_csv_207_style_extracts_allowlisted_columns_and_preserves_unknowns()
     assert parsed.warnings[0]["code"] == "unknown_csv_columns"
 
 
+@pytest.mark.parametrize("raw_power", ["36 kVA", "36kVA"])
+def test_c68_csv_combined_puissance_souscrite_splits_value_and_unit(raw_power):
+    csv_payload = f"PRM;Puissance souscrite\n30000000000001;{raw_power}\n".encode()
+
+    parsed = parse_c68_payload(csv_payload, "CSV", "payload.csv")
+
+    row = parsed.rows[0]
+    assert row.puissance_souscrite_valeur == "36"
+    assert row.puissance_souscrite_unite == "kVA"
+    assert parsed.warnings == []
+
+
 def test_c68_csv_211_style_extracts_v12_additions():
     csv_payload = (
         "PRM;Type Injection;Refus de pose Linky;Date refus de pose Linky;Borne Fixe\n30000000000001;SURPLUS;NON;;OUI\n"

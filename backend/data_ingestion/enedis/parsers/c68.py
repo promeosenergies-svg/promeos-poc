@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from datetime import date
 import io
 import json
+import re
 import unicodedata
 from typing import Any
 
@@ -200,6 +201,14 @@ def _extract_csv_columns(csv_row: dict[str, str | None], headers: dict[str, str]
                 return _csv_cell(csv_row, raw)
         return None
 
+    puissance_souscrite_valeur = h("Puissance Souscrite Valeur", "Puissance souscrite valeur")
+    puissance_souscrite_unite = h("Puissance Souscrite Unite", "Puissance souscrite unite")
+    if puissance_souscrite_valeur is None:
+        puissance_souscrite_valeur, puissance_souscrite_unite = _split_csv_power(
+            h("Puissance souscrite"),
+            puissance_souscrite_unite,
+        )
+
     return {
         "date_debut_situation_contractuelle": h(
             "Date debut situation contractuelle", "Date de debut situation contractuelle"
@@ -216,10 +225,8 @@ def _extract_csv_columns(csv_row: dict[str, str | None], headers: dict[str, str]
         "mode_releve": h("Mode Releve", "Mode releve", "Mode relève"),
         "media_comptage": h("Media Comptage", "Media comptage"),
         "periodicite_releve": h("Periodicite Releve", "Periodicite releve", "Périodicité relève"),
-        "puissance_souscrite_valeur": h(
-            "Puissance Souscrite Valeur", "Puissance souscrite valeur", "Puissance souscrite"
-        ),
-        "puissance_souscrite_unite": h("Puissance Souscrite Unite", "Puissance souscrite unite"),
+        "puissance_souscrite_valeur": puissance_souscrite_valeur,
+        "puissance_souscrite_unite": puissance_souscrite_unite,
         "puissance_limite_soutirage_valeur": h("Puissance Limite Soutirage Valeur"),
         "puissance_limite_soutirage_unite": h("Puissance Limite Soutirage Unite"),
         "puissance_raccordement_soutirage_valeur": h("Puissance Raccordement Soutirage Valeur"),
@@ -325,6 +332,15 @@ def _csv_cell(row: dict[str, str | None], raw_name: str) -> str | None:
     return stripped or None
 
 
+def _split_csv_power(value: str | None, explicit_unit: str | None = None) -> tuple[str | None, str | None]:
+    if value is None:
+        return None, explicit_unit
+    match = re.fullmatch(r"([+-]?\d+(?:[.,]\d+)?)\s*([A-Za-z][A-Za-z0-9/_-]*)", value)
+    if match:
+        return match.group(1), explicit_unit or match.group(2)
+    return value, explicit_unit
+
+
 def _normalize_header(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
     without_accents = "".join(ch for ch in normalized if not unicodedata.combining(ch))
@@ -373,6 +389,7 @@ _CSV_ALLOWED_RAW_HEADERS = {
     "Mode Releve",
     "Media Comptage",
     "Periodicite Releve",
+    "Puissance souscrite",
     "Puissance Souscrite Valeur",
     "Puissance Souscrite Unite",
     "Puissance Limite Soutirage Valeur",
