@@ -108,6 +108,16 @@ def test_c68_invalid_secondary_zip_is_fatal():
         extract_c68_payloads(primary, primary_zip)
 
 
+def test_c68_malformed_secondary_sequence_is_container_error():
+    primary = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094139.zip"
+    secondary = "ENEDIS_C68_P_ITC_M05J6FUB_ABC01_20231219094140.zip"
+    payload_name = "ENEDIS_C68_P_ITC_M05J6FUB_ABC01_20231219094140.json"
+    primary_zip = _zip_bytes({secondary: _zip_bytes({payload_name: b"[]"})})
+
+    with pytest.raises(ContainerError, match="C68 secondary sequence must be numeric.*ABC01"):
+        extract_c68_payloads(primary, primary_zip)
+
+
 def test_c68_mixed_payload_formats_are_fatal():
     primary = "ENEDIS_C68_P_ITC_M05J6FUB_00001_20231219094139.zip"
     primary_zip = _zip_bytes(

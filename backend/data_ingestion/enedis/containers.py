@@ -133,12 +133,23 @@ def extract_c68_payloads(primary_filename: str, zip_bytes: bytes) -> C68Archive:
     if len(formats) > 1:
         raise ContainerError(f"{primary_filename}: mixed C68 payload formats are not supported")
 
-    sequences = sorted(int(payload.secondary_metadata.num_sequence) for payload in payloads)
+    sequences = sorted(_c68_secondary_sequence_number(primary_filename, payload) for payload in payloads)
     expected = list(range(1, len(payloads) + 1))
     if sequences != expected:
         raise ContainerError(f"{primary_filename}: C68 secondary sequences must be contiguous 00001..N")
 
     return C68Archive(primary_metadata=primary_meta, payloads=payloads, archive_members_count=len(payloads))
+
+
+def _c68_secondary_sequence_number(primary_filename: str, payload: C68Payload) -> int:
+    sequence = payload.secondary_metadata.num_sequence
+    try:
+        return int(sequence)
+    except ValueError as exc:
+        raise ContainerError(
+            f"{primary_filename}: C68 secondary sequence must be numeric for "
+            f"{payload.secondary_archive_name}: {sequence}"
+        ) from exc
 
 
 def detect_payload_format(member_name: str, payload_bytes: bytes) -> str:
