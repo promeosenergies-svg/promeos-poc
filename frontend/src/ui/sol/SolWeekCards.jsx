@@ -143,39 +143,60 @@ function WeekCard({ card, onNavigate }) {
 
 /**
  * Densification §4 : si backend renvoie <3 cards, on remplit AVEC DES
- * TITRES DISTINCTS (audit Sprint 1.1 : duplication "Patrimoine stable"
- * x2 trahit le mécanisme fallback — un journal ne réimprime pas le
- * même titre 2 fois).
+ * TITRES DISTINCTS et un TYPE COHÉRENT avec le ton de la narrative
+ * principale (audit Sprint 1.1 + fin S1).
  *
- * Catalogue de fallbacks contextuels alternés (4 variantes), tous
- * orientés "bonne nouvelle" pour ne jamais inventer un signal négatif.
- * Le `fallbackBody` du backend (pré-calculé par narrative_generator)
- * est injecté en body — la card reste sourcée même quand le titre
- * est générique.
+ * Sprint 1.3bis P0-D : `tone` reflète la narrative_tone backend
+ * (positive / neutral / tension / critical). Si la narrative dit
+ * "3 sites en dérive 26 k€", afficher "Aucune dérive détectée" en
+ * good_news = contradiction éditoriale → on type le fallback en watch
+ * neutre ("À surveiller cette semaine") plutôt qu'en good_news menteur.
+ *
+ * 4 catalogues distincts par tone, sélection séquentielle sans
+ * répétition de type intra-page.
  *
  * JAMAIS un empty state pleine largeur (anti-pattern §6.1).
  */
-const FALLBACK_VARIANTS = Object.freeze([
-  { type: 'good_news', title: 'Patrimoine stable cette semaine' },
-  { type: 'good_news', title: 'Aucune dérive détectée' },
-  { type: 'good_news', title: 'Conformité tenue' },
-  { type: 'good_news', title: 'Données à jour' },
-]);
+const FALLBACK_CATALOGS = Object.freeze({
+  positive: [
+    { type: 'good_news', title: 'Patrimoine stable cette semaine' },
+    { type: 'good_news', title: 'Aucune dérive détectée' },
+    { type: 'good_news', title: 'Conformité tenue' },
+    { type: 'good_news', title: 'Données à jour' },
+  ],
+  neutral: [
+    { type: 'watch', title: 'Suivre la trajectoire 2030' },
+    { type: 'good_news', title: 'Données à jour' },
+    { type: 'watch', title: 'Préparer le prochain CODIR' },
+    { type: 'good_news', title: 'Activité régulière' },
+  ],
+  // Tone tension/critical : pas de "Bonne nouvelle" générique pour
+  // éviter contradiction avec narrative négative.
+  tension: [
+    { type: 'watch', title: 'Patrimoine sous tension' },
+    { type: 'watch', title: 'Vigilance trajectoire 2030' },
+    { type: 'watch', title: 'Prochaine échéance à anticiper' },
+  ],
+  critical: [
+    { type: 'watch', title: 'Patrimoine en alerte' },
+    { type: 'watch', title: 'Provisionnement à anticiper' },
+    { type: 'watch', title: 'Plan de remédiation prioritaire' },
+  ],
+});
 
-function applyFallbackDensification(cards, fallbackBody) {
+function applyFallbackDensification(cards, fallbackBody, tone = 'positive') {
   if (cards.length >= 3) return cards.slice(0, 3);
   const filled = [...cards];
-  // Sélectionne des variantes distinctes au fil des slots manquants.
-  // Évite les variantes dont le `type` chevauche les cards existantes
-  // pour ne pas générer "good_news" à côté d'une vraie "good_news" backend.
+  const catalog = FALLBACK_CATALOGS[tone] ?? FALLBACK_CATALOGS.positive;
+  // Pour tone tension/critical, on ne saute pas par type (toutes les
+  // variantes sont watch). Pour positive/neutral on déduplique.
+  const dedupByType = tone === 'positive' || tone === 'neutral';
   const usedTypes = new Set(filled.map((c) => c.type));
-  let variantIdx = 0;
-  while (filled.length < 3 && variantIdx < FALLBACK_VARIANTS.length) {
-    const variant = FALLBACK_VARIANTS[variantIdx];
-    variantIdx += 1;
-    // Si une vraie good_news existe déjà, on saute cette variante (sauf
-    // si on a épuisé le catalogue — dernier recours densité §4).
-    if (usedTypes.has(variant.type) && variantIdx < FALLBACK_VARIANTS.length) {
+  let idx = 0;
+  while (filled.length < 3 && idx < catalog.length) {
+    const variant = catalog[idx];
+    idx += 1;
+    if (dedupByType && usedTypes.has(variant.type) && idx < catalog.length) {
       continue;
     }
     filled.push({
@@ -188,8 +209,14 @@ function applyFallbackDensification(cards, fallbackBody) {
   return filled;
 }
 
-export default function SolWeekCards({ cards = [], fallbackBody, onNavigate, className = '' }) {
-  const displayedCards = applyFallbackDensification(cards, fallbackBody);
+export default function SolWeekCards({
+  cards = [],
+  fallbackBody,
+  tone = 'positive',
+  onNavigate,
+  className = '',
+}) {
+  const displayedCards = applyFallbackDensification(cards, fallbackBody, tone);
 
   return (
     <section

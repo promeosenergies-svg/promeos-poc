@@ -44,7 +44,10 @@
   --sol-attention-fg: #8a5a14;
   --sol-attention-bg: #f6ead2; /* ambre chaleureux */
   --sol-attention-line: #d4a85a; /* bordure ambre 35% — séparation card "à regarder" */
-  --sol-afaire-fg: #b8552e;
+  /* Sprint 1.3bis P0-E (audit Ergo fin S1) : #b8552e / #f7e4d8 = 4.13:1
+     FAIL WCAG AA texte normal (seuil 4.5:1). Assombri à #a04525 → 5.0:1
+     PASS AA, écart visuel quasi nul. */
+  --sol-afaire-fg: #a04525;
   --sol-afaire-bg: #f7e4d8; /* orange corail, pas punitif */
   --sol-afaire-line: #d68a5e; /* bordure corail 35% — séparation card "à faire" */
   --sol-succes-fg: #2e6b4a;

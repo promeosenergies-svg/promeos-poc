@@ -67,6 +67,7 @@ const SiteCompliancePage = lazy(() => import('./pages/SiteCompliancePage'));
 const PaymentRulesPage = lazy(() => import('./pages/PaymentRulesPage'));
 const PortfolioReconciliationPage = lazy(() => import('./pages/PortfolioReconciliationPage'));
 const ContractRadarPage = lazy(() => import('./pages/ContractRadarPage'));
+const MethodologiePage = lazy(() => import('./pages/MethodologiePage'));
 const Contrats = lazy(() => import('./pages/Contrats'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const SireneOnboardingPage = lazy(() => import('./pages/SireneOnboardingPage'));
@@ -598,6 +599,16 @@ function App() {
                           element={<Navigate to="/renouvellements" replace />}
                         />
 
+                        {/* Sprint 1.3bis P0-A — Méthodologie Sol §5 trust signals */}
+                        <Route
+                          path="/methodologie/:docKey"
+                          element={
+                            <PageSuspense>
+                              <MethodologiePage />
+                            </PageSuspense>
+                          }
+                        />
+
                         {/* Catch-all */}
                         <Route
                           path="*"
@@ -915,6 +926,16 @@ function App() {
                         <Route
                           path="/contracts-radar"
                           element={<Navigate to="/renouvellements" replace />}
+                        />
+
+                        {/* Sprint 1.3bis P0-A — Méthodologie Sol §5 trust signals */}
+                        <Route
+                          path="/methodologie/:docKey"
+                          element={
+                            <PageSuspense>
+                              <MethodologiePage />
+                            </PageSuspense>
+                          }
                         />
 
                         {/* Catch-all */}

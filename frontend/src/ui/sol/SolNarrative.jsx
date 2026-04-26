@@ -13,9 +13,13 @@
  * Tout le contenu vient de l'endpoint backend
  * `/api/pages/{page_key}/briefing` via narrative_generator.py.
  *
+ * Sprint 1.3bis P0-B : prop optionnelle `error` — quand le hook
+ * usePageBriefing échoue, on affiche un ErrorState dédié au lieu de
+ * masquer silencieusement le préambule (audit CX fin S1).
+ *
  * Cf. ADR-001 grammaire Sol industrialisée.
  */
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, AlertCircle } from 'lucide-react';
 
 function KpiTile({ kpi }) {
   const showTooltip = Boolean(kpi.tooltip);
@@ -32,7 +36,7 @@ function KpiTile({ kpi }) {
         {showTooltip && (
           <button
             type="button"
-            className="text-[var(--sol-ink-500)] hover:text-[var(--sol-ink-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)] rounded-sm p-0.5 -m-0.5 cursor-help"
+            className="text-[var(--sol-ink-500)] hover:text-[var(--sol-ink-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)] rounded-sm p-1.5 -m-1.5 cursor-help"
             title={kpi.tooltip}
             aria-label={`Définition : ${kpi.tooltip}`}
           >
@@ -63,11 +67,48 @@ export default function SolNarrative({
   italicHook,
   narrative,
   kpis = [],
+  error = null,
+  onRetry,
   className = '',
 }) {
   // Doctrine §5 : "3 KPIs max". Tronquer silencieusement si backend
   // renvoie davantage — c'est un bug backend mais on tient l'invariant frontend.
   const safeKpis = kpis.slice(0, 3);
+
+  // Sprint 1.3bis P0-B (audit CX) : si le briefing backend échoue, on
+  // remplace le préambule par un ErrorState explicite plutôt que de
+  // masquer silencieusement (page mutilée sans signal user).
+  if (error) {
+    return (
+      <section
+        data-testid="sol-narrative-error"
+        className={`flex items-start gap-3 p-4 rounded-lg border border-[var(--sol-refuse-line)] bg-[var(--sol-refuse-bg)] ${className}`}
+        role="alert"
+        aria-live="polite"
+      >
+        <AlertCircle
+          size={18}
+          className="text-[var(--sol-refuse-fg)] shrink-0 mt-0.5"
+          aria-hidden="true"
+        />
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-[var(--sol-refuse-fg)]">Briefing indisponible</p>
+          <p className="text-xs text-[var(--sol-ink-700)] mt-1">
+            {typeof error === 'string' ? error : 'Erreur de chargement du briefing éditorial.'}
+          </p>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-2 text-xs font-medium text-[var(--sol-calme-fg)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)] rounded px-1 py-0.5 -mx-1"
+            >
+              Réessayer
+            </button>
+          )}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section

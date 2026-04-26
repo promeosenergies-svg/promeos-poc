@@ -13,7 +13,7 @@
  *
  * Doctrine §8.1 règle d'or : aucun calcul métier ici.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../services/api/core';
 import { useScope } from '../contexts/ScopeContext';
 
@@ -23,7 +23,14 @@ export function usePageBriefing(pageKey, { persona = 'daily', archetype } = {}) 
   const [briefing, setBriefing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Sprint 1.3bis P0-B : compteur de retry pour relancer le fetch sans
+  // changer les dépendances primaires (utilisé par <SolNarrative onRetry>).
+  const [retryCount, setRetryCount] = useState(0);
   const mountedRef = useRef(true);
+
+  const refetch = useCallback(() => {
+    setRetryCount((c) => c + 1);
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -50,6 +57,7 @@ export function usePageBriefing(pageKey, { persona = 'daily', archetype } = {}) 
           title: payload?.title,
           italicHook: payload?.italic_hook,
           narrative: payload?.narrative,
+          narrativeTone: payload?.narrative_tone || 'neutral',
           kpis: payload?.kpis || [],
           weekCards: payload?.week_cards || [],
           fallbackBody: payload?.fallback_body,
@@ -67,7 +75,7 @@ export function usePageBriefing(pageKey, { persona = 'daily', archetype } = {}) 
       cancelled = true;
       mountedRef.current = false;
     };
-  }, [pageKey, persona, archetype, orgId, selectedSiteId]);
+  }, [pageKey, persona, archetype, orgId, selectedSiteId, retryCount]);
 
-  return { briefing, loading, error };
+  return { briefing, loading, error, refetch };
 }

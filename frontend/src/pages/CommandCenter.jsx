@@ -125,9 +125,12 @@ export default function CommandCenter() {
   const { trajectoire, kpis: cockpitKpis } = useCockpitData();
   // Sprint 1.1 — briefing éditorial Sol §5 (ADR-001 grammaire industrialisée).
   // Backend orchestre KPIs + narrative + week-cards via /api/pages/cockpit_daily/briefing.
-  const { briefing: solBriefing, loading: solBriefingLoading } = usePageBriefing('cockpit_daily', {
-    persona: 'daily',
-  });
+  const {
+    briefing: solBriefing,
+    loading: solBriefingLoading,
+    error: solBriefingError,
+    refetch: solBriefingRefetch,
+  } = usePageBriefing('cockpit_daily', { persona: 'daily' });
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -409,6 +412,9 @@ export default function CommandCenter() {
           DashboardHeroFeatured fallback chargement supprimé — SolNarrative
           gère son propre état loading via solBriefingLoading + skeleton
           intrinsèque (3 KPIs avec animate-pulse). */}
+      {solBriefingError && !solBriefing && (
+        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
+      )}
       {solBriefing && (
         <SolNarrative
           kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
@@ -425,6 +431,7 @@ export default function CommandCenter() {
         <SolWeekCards
           cards={solBriefing.weekCards}
           fallbackBody={solBriefing.fallbackBody}
+          tone={solBriefing.narrativeTone}
           onNavigate={navigate}
         />
       )}

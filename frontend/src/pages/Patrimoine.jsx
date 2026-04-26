@@ -166,7 +166,11 @@ export default function Patrimoine() {
   // Sprint 1.3 — briefing éditorial Sol §5 vue patrimoine (ADR-001).
   // Backend orchestre KPIs + narrative + week-cards via /api/pages/patrimoine/briefing.
   // Différenciateur §4.1 : mutualisation Décret Tertiaire promue en bonne nouvelle.
-  const { briefing: solBriefing } = usePageBriefing('patrimoine', { persona: 'daily' });
+  const {
+    briefing: solBriefing,
+    error: solBriefingError,
+    refetch: solBriefingRefetch,
+  } = usePageBriefing('patrimoine', { persona: 'daily' });
 
   // Refresh cible apres mutation (creation, edition, enrichissement)
   const handleDataMutation = useCallback(() => {
@@ -759,6 +763,9 @@ export default function Patrimoine() {
           comme bonne nouvelle chiffrée (économie €/an en consolidant les
           efforts portefeuille). Audit Sprint 0 Patrimoine 3.4/10 :
           mutualisation cachée onglet Conformité, désormais visible Patrimoine. */}
+      {!isEmptyPatrimoine && solBriefingError && !solBriefing && (
+        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
+      )}
       {!isEmptyPatrimoine && solBriefing && (
         <SolNarrative
           kicker={null /* déjà rendu dans editorialHeader SolPageHeader */}
@@ -771,6 +778,7 @@ export default function Patrimoine() {
         <SolWeekCards
           cards={solBriefing.weekCards}
           fallbackBody={solBriefing.fallbackBody}
+          tone={solBriefing.narrativeTone}
           onNavigate={navigate}
         />
       )}

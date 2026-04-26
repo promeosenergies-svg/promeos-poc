@@ -58,7 +58,7 @@ export default function SolPageFooter({
       data-testid="sol-page-footer"
       role="contentinfo"
       aria-label="Provenance des données"
-      className={`mt-10 pt-3 border-t border-[var(--sol-line)] flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[var(--sol-ink-500)] ${className}`}
+      className={`mt-6 pt-3 border-t border-[var(--sol-line)] flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[var(--sol-ink-500)] ${className}`}
     >
       {source && (
         <span>
@@ -83,9 +83,9 @@ export default function SolPageFooter({
       {methodologyUrl && (
         <a
           href={methodologyUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-[var(--sol-ink-500)] hover:text-[var(--sol-ink-700)] underline-offset-2 hover:underline"
+          target={methodologyUrl.startsWith('http') ? '_blank' : undefined}
+          rel={methodologyUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
+          className="inline-flex items-center gap-1 text-[var(--sol-ink-500)] hover:text-[var(--sol-ink-700)] underline-offset-2 hover:underline py-2 px-1 -my-2 -mx-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)]"
         >
           <Info size={11} aria-hidden="true" />
           Méthodologie

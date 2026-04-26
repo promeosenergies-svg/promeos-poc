@@ -123,7 +123,11 @@ const Cockpit = () => {
   // Sprint 1.2 — briefing éditorial Sol §5 vue COMEX (ADR-001).
   // Backend orchestre KPIs CFO + narrative trajectoire 2030 + leviers €/an
   // via /api/pages/cockpit_comex/briefing (persona=comex).
-  const { briefing: solBriefing } = usePageBriefing('cockpit_comex', { persona: 'comex' });
+  const {
+    briefing: solBriefing,
+    error: solBriefingError,
+    refetch: solBriefingRefetch,
+  } = usePageBriefing('cockpit_comex', { persona: 'comex' });
 
   // A.2: Unified compliance score from backend
   const [complianceApi, setComplianceApi] = useState(null);
@@ -601,6 +605,9 @@ const Cockpit = () => {
           Le CockpitHero existant + BriefCodexCard descendent en détail
           expert post-briefing. Sprint 1.3 fusionnera CockpitHero dans la
           narrative pour atteindre la grammaire §5 stricte. */}
+      {solBriefingError && !solBriefing && (
+        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
+      )}
       {solBriefing && (
         <SolNarrative
           kicker={null /* déjà rendu par SolPageHeader éditorialHeader */}
@@ -613,39 +620,52 @@ const Cockpit = () => {
         <SolWeekCards
           cards={solBriefing.weekCards}
           fallbackBody={solBriefing.fallbackBody}
+          tone={solBriefing.narrativeTone}
           onNavigate={navigate}
         />
       )}
 
-      {/* Phase 3.3 — Inversion ordre : CockpitHero EN PREMIER (chiffre-roi
-          "où je suis"), puis Brief CODIR (synthèse copiable), puis Top 3
-          priorités ("quoi faire"). Audit UX/Personas : Maslow KPI > task list. */}
-      <CockpitHero
-        kpis={cockpitKpis}
-        trajectoire={trajectoire}
-        actions={cockpitActions}
-        loading={cockpitLoading}
-        error={!cockpitLoading && !cockpitKpis ? 'Données KPIs indisponibles' : null}
-        sitesARisque={(kpis.nonConformes ?? 0) + (kpis.aRisque ?? 0)}
-        trends={execV2?.sante}
-        n1={execV2?.n1}
-        onEvidence={setEvidenceOpen}
-      />
+      {/* Sprint 1.3bis P0-C (audit fin S1) : CockpitHero/BriefCodexCard
+          étaient l'empilement legacy au-dessus de la grammaire Sol et
+          créaient 2 violations T4 densité (kpi-reduction-dt 233px,
+          vecteur-energetique 274px). Désormais conditionnels au toggle
+          "Voir le détail complet" (showDetail) — déjà existant ligne 893
+          mais non câblé sur ces composants. Le briefing Sol §5 reste le
+          préambule unique CFO. Sprint 2 chantier α absorbera ces signaux
+          dans des week-cards typées poussées par le moteur d'événements. */}
+      {showDetail && (
+        <CockpitHero
+          kpis={cockpitKpis}
+          trajectoire={trajectoire}
+          actions={cockpitActions}
+          loading={cockpitLoading}
+          error={!cockpitLoading && !cockpitKpis ? 'Données KPIs indisponibles' : null}
+          sitesARisque={(kpis.nonConformes ?? 0) + (kpis.aRisque ?? 0)}
+          trends={execV2?.sante}
+          n1={execV2?.n1}
+          onEvidence={setEvidenceOpen}
+        />
+      )}
 
-      {/* Brief CODIR ouvert par défaut — synthèse copiable juste sous les KPIs. */}
-      <BriefCodexCard
-        orgName={cockpitKpis?.orgNom || org?.nom}
-        totalSites={kpis.total}
-        facture={billing?.totalEur}
-        conformityScore={cockpitKpis?.conformiteScore}
-        consoMwh={execV2?.sante?.consommation?.total_mwh}
-        sitesAtRisk={(kpis.nonConformes ?? 0) + (kpis.aRisque ?? 0)}
-        actionsCount={cockpitActions?.total ?? execV2?.actions?.length}
-        totalImpactEur={execV2?.impact?.total_eur ?? cockpitActions?.potentielEur}
-        alertesCount={alertsCount}
-        anomaliesCount={billing?.anomalies}
-        defaultExpanded={true}
-      />
+      {/* Brief CODIR : utile CFO mais lourd ATF. Désormais conditionné
+          au toggle "Voir le détail complet" + `defaultExpanded=false`
+          quand visible (audit Jean-Marc fin S1 : "BriefCodexCard
+          defaultExpanded=true aggrave TTFV `/cockpit` ~6s"). */}
+      {showDetail && (
+        <BriefCodexCard
+          orgName={cockpitKpis?.orgNom || org?.nom}
+          totalSites={kpis.total}
+          facture={billing?.totalEur}
+          conformityScore={cockpitKpis?.conformiteScore}
+          consoMwh={execV2?.sante?.consommation?.total_mwh}
+          sitesAtRisk={(kpis.nonConformes ?? 0) + (kpis.aRisque ?? 0)}
+          actionsCount={cockpitActions?.total ?? execV2?.actions?.length}
+          totalImpactEur={execV2?.impact?.total_eur ?? cockpitActions?.potentielEur}
+          alertesCount={alertsCount}
+          anomaliesCount={billing?.anomalies}
+          defaultExpanded={false}
+        />
+      )}
 
       {/* Top 3 à traiter cette semaine — APRÈS Hero+Brief (Maslow). */}
       <section
@@ -775,10 +795,14 @@ const Cockpit = () => {
 
       <TrajectorySection trajectoire={trajectoire} loading={cockpitLoading} sites={scopedSites} />
 
-      {/* ── Performance sites + Vecteur énergétique (2 colonnes) ── */}
+      {/* ── Performance sites + Vecteur énergétique (2 colonnes) ──
+          Sprint 1.3bis P0-C : VecteurEnergetiqueCard reste derrière le
+          toggle "Voir le détail complet" tant que les données vecteur
+          ne sont pas câblées (empty state 274px = anti-pattern §6.1
+          détecté par T4). PerformanceSitesCard reste exposé. */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <PerformanceSitesCard fallbackSites={scopedSites} />
-        <VecteurEnergetiqueCard />
+        {showDetail && <VecteurEnergetiqueCard />}
       </div>
 
       <ActionsImpact actions={cockpitActions} loading={cockpitLoading} />

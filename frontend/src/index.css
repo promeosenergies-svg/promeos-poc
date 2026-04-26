@@ -540,4 +540,10 @@ body::before {
   body::before {
     display: none;
   }
+  /* Sprint 1.3bis P1 (audit Ergo fin S1) : hover translateY trigger
+     vestibulaire — neutralisé pour les utilisateurs prefers-reduced-motion. */
+  .sol-card:hover {
+    transform: none;
+    transition: none;
+  }
 }

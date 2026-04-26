@@ -77,6 +77,9 @@ class NarrativeWeekCard:
     urgency_days: Optional[int] = None
 
 
+NarrativeTone = Literal["positive", "neutral", "tension", "critical"]
+
+
 @dataclass(frozen=True)
 class Narrative:
     """Récit éditorial complet d'une page Sol §5."""
@@ -87,6 +90,7 @@ class Narrative:
     title: str
     italic_hook: Optional[str]
     narrative: str  # 2-3 lignes sourcée
+    narrative_tone: NarrativeTone  # P0-D : densification fallback typé
     kpis: tuple[NarrativeKpi, ...]  # max 3
     week_cards: tuple[NarrativeWeekCard, ...]  # exactement 3 (post-fallback)
     fallback_body: str  # densification §4 si week_cards <3
@@ -100,6 +104,7 @@ class Narrative:
             "title": self.title,
             "italic_hook": self.italic_hook,
             "narrative": self.narrative,
+            "narrative_tone": self.narrative_tone,
             "kpis": [asdict(k) for k in self.kpis],
             "week_cards": [asdict(c) for c in self.week_cards],
             "fallback_body": self.fallback_body,
@@ -246,8 +251,19 @@ def _build_cockpit_daily(
         source="RegOps + RegAssessment",
         confidence=confidence,
         updated_at=datetime.now(timezone.utc),
-        methodology_url="/docs/methodologie/conformite-regops",
+        methodology_url="/methodologie/conformite-regops",
     )
+
+    # Tone narrative : critical si dérive significative (>30% sites),
+    # tension si quelques sites, positive si patrimoine bien positionné.
+    if non_conformes > 0 or (sites_count > 0 and en_derive / sites_count > 0.3):
+        narrative_tone: NarrativeTone = "critical"
+    elif a_risque > 0:
+        narrative_tone = "tension"
+    elif conformite_score is not None and conformite_score >= 75:
+        narrative_tone = "positive"
+    else:
+        narrative_tone = "neutral"
 
     return Narrative(
         page_key="cockpit_daily",
@@ -256,6 +272,7 @@ def _build_cockpit_daily(
         title=title,
         italic_hook=italic_hook,
         narrative=narrative,
+        narrative_tone=narrative_tone,
         kpis=tuple(kpis),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
@@ -305,10 +322,14 @@ def _build_cockpit_comex(
     a_risque = site_q.filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
     en_derive = non_conformes + a_risque
 
-    # Estimation leviers économies — heuristique S1.2 (5% de la facture annuelle
-    # moyenne tertiaire ETI ≈ 30 €/m²/an × surface estimée). Sprint 5 affinera
-    # via Bill-Intel reclaims réels + simulateur achat post-ARENH.
-    leviers_estimes_eur = max(0, en_derive * 8500.0)  # ordre grandeur €/an évitable
+    # Estimation leviers économies — heuristique S1.2 transparente :
+    # ordre de grandeur ~8 500 €/site dérive (5% facture annuelle moyenne
+    # tertiaire ETI ≈ 30 €/m²/an × 600 m² médian × 5%). Bill-Intel S5
+    # affinera via reclaims réels + simulateur achat post-ARENH.
+    # Affiché avec source explicite "estimation modélisée" pour ne pas
+    # confondre avec un chiffrage sourcé.
+    LEVIER_ESTIME_PAR_SITE_EUR = 8500.0  # heuristique modélisée, à remplacer S5
+    leviers_estimes_eur = max(0, en_derive * LEVIER_ESTIME_PAR_SITE_EUR)
 
     # ── Kicker + titre ──
     week_iso = datetime.now(timezone.utc).isocalendar().week
@@ -369,13 +390,14 @@ def _build_cockpit_comex(
             source="Décret 2019-771",
         ),
         NarrativeKpi(
-            label="Leviers économies",
+            label="Leviers économies (estimés)",
             value=f"{_fmt_eur_short(leviers_estimes_eur)}/an" if leviers_estimes_eur else "—",
             tooltip=(
-                "Ordre de grandeur des économies évitables sur les sites en dérive. "
-                "Affinage via Bill-Intel + simulateur achat post-ARENH."
+                "Ordre de grandeur estimé : ~8 500 €/site en dérive "
+                "(5 % facture annuelle moyenne ETI tertiaire). Chiffrage sourcé "
+                "Bill-Intel + simulateur achat post-ARENH livré Sprint 5."
             ),
-            source="Estimation PROMEOS",
+            source="Estimation modélisée PROMEOS",
         ),
     ]
 
@@ -432,8 +454,17 @@ def _build_cockpit_comex(
         source="RegOps + RegAssessment + estimation leviers",
         confidence=confidence,
         updated_at=datetime.now(timezone.utc),
-        methodology_url="/docs/methodologie/conformite-regops",
+        methodology_url="/methodologie/conformite-regops",
     )
+
+    if non_conformes > 0:
+        narrative_tone_comex: NarrativeTone = "critical"
+    elif a_risque > 0:
+        narrative_tone_comex = "tension"
+    elif conformite_score is not None and conformite_score >= 75:
+        narrative_tone_comex = "positive"
+    else:
+        narrative_tone_comex = "neutral"
 
     return Narrative(
         page_key="cockpit_comex",
@@ -442,6 +473,7 @@ def _build_cockpit_comex(
         title=title,
         italic_hook=italic_hook,
         narrative=narrative,
+        narrative_tone=narrative_tone_comex,
         kpis=tuple(kpis),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
@@ -550,10 +582,10 @@ def _build_patrimoine(
             value=(f"{_fmt_eur_short(economie_mutualisation_eur)}/an" if economie_mutualisation_eur > 0 else "—"),
             tooltip=(
                 "Économie potentielle en consolidant les efforts de réduction "
-                "entre sites du portefeuille (Art. 4 Décret n°2019-771 — "
+                "entre sites du portefeuille (Art. 3 Décret n°2019-771 — "
                 "feature multisite PROMEOS)."
             ),
-            source="Décret 2019-771 art. 4",
+            source="Décret 2019-771 art. 3 (L111-10-3)",
         ),
     ]
 
@@ -572,6 +604,24 @@ def _build_patrimoine(
                 cta_path="/conformite?tab=mutualisation",
                 cta_label="Voir la simulation",
                 impact_eur=economie_mutualisation_eur,
+            )
+        )
+    elif sites_count >= 3:
+        # Sprint 1.3bis (audit UX fin S1) : si la mutualisation ne se
+        # déclenche pas (données EFA partielles), exposer quand même
+        # le différenciateur §4.1 doctrine via une card watch invitant
+        # à compléter les données pour activer le calcul.
+        week_cards.append(
+            NarrativeWeekCard(
+                type="watch",
+                title="Évaluer le potentiel de mutualisation 2030",
+                body=(
+                    "Compléter les déclarations OPERAT débloquera la "
+                    "simulation de mutualisation Décret Tertiaire — "
+                    "économies portefeuille chiffrées en €/an."
+                ),
+                cta_path="/conformite?tab=mutualisation",
+                cta_label="Compléter les données",
             )
         )
     if non_conformes > 0:
@@ -628,8 +678,17 @@ def _build_patrimoine(
         source="Patrimoine PROMEOS + simulation mutualisation Décret 2019-771",
         confidence=confidence,
         updated_at=datetime.now(timezone.utc),
-        methodology_url="/docs/methodologie/conformite-regops",
+        methodology_url="/methodologie/conformite-regops",
     )
+
+    if non_conformes > 0:
+        narrative_tone_patrimoine: NarrativeTone = "critical"
+    elif a_risque > 0:
+        narrative_tone_patrimoine = "tension"
+    elif economie_mutualisation_eur > 0 or sites_count == 0:
+        narrative_tone_patrimoine = "positive"
+    else:
+        narrative_tone_patrimoine = "neutral"
 
     return Narrative(
         page_key="patrimoine",
@@ -638,6 +697,7 @@ def _build_patrimoine(
         title=title,
         italic_hook=italic_hook,
         narrative=narrative,
+        narrative_tone=narrative_tone_patrimoine,
         kpis=tuple(kpis),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
