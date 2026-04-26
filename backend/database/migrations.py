@@ -46,7 +46,6 @@ def run_migrations(engine):
     _create_tertiaire_tables(engine)
     # V2-Conso — Dedup meter_reading + unique constraint
     _dedup_meter_reading(engine)
-    _add_unique_meter_reading_index(engine)
     # V101 — Add frequency to meter_reading unique constraint
     _upgrade_meter_reading_unique_constraint(engine)
     # Étape 4 — Action Engine: evidence_required column
@@ -66,6 +65,8 @@ def run_migrations(engine):
     _add_meter_unified_columns(engine)
     # Step 26 — Geocoding columns on sites
     _add_site_geocoding_columns(engine)
+    # Pilotage / Flex Ready — columns used by Site Intelligence and pilotage views
+    _add_site_pilotage_columns(engine)
     # P3 CBAM — colonnes JSON d'exposition importations hors UE sur sites
     _add_site_cbam_columns(engine)
     # V1.1 Usage — usage_id FK + usage enrichment + usage_baselines table
@@ -780,7 +781,7 @@ def _dedup_meter_reading(engine):
 
 
 def _add_unique_meter_reading_index(engine):
-    """Add UNIQUE index on (meter_id, timestamp) to prevent future duplicates."""
+    """Legacy migration for the old (meter_id, timestamp) uniqueness rule."""
     idx_name = "uq_meter_reading_meter_ts"
     insp = inspect(engine)
 
@@ -1236,6 +1237,41 @@ def _add_site_geocoding_columns(engine):
         logger.info("migration: Step 26 — added %d geocoding column(s) to sites", added)
     else:
         logger.debug("migration: Step 26 — sites geocoding columns already present")
+
+
+def _add_site_pilotage_columns(engine):
+    """Pilotage / Flex Ready — add site columns used by the current Site model."""
+    insp = inspect(engine)
+    if not insp.has_table("sites"):
+        return
+
+    existing_cols = {c["name"] for c in insp.get_columns("sites")}
+    columns = [
+        ("archetype_code", "VARCHAR(50)"),
+        ("puissance_pilotable_kw", "FLOAT"),
+    ]
+
+    added = 0
+    with engine.begin() as conn:
+        for col_name, col_type in columns:
+            if col_name in existing_cols:
+                continue
+            try:
+                conn.execute(text(f'ALTER TABLE "sites" ADD COLUMN "{col_name}" {col_type}'))
+                added += 1
+                logger.info("migration: Pilotage — added sites.%s (%s)", col_name, col_type)
+            except Exception as e:
+                logger.warning("migration: Pilotage — could not add sites.%s: %s", col_name, e)
+
+        try:
+            conn.execute(text('CREATE INDEX IF NOT EXISTS "ix_sites_archetype_code" ON "sites" ("archetype_code")'))
+        except Exception as e:
+            logger.warning("migration: Pilotage — could not create ix_sites_archetype_code: %s", e)
+
+    if added > 0:
+        logger.info("migration: Pilotage — added %d site column(s)", added)
+    else:
+        logger.debug("migration: Pilotage — sites columns already present")
 
 
 def _add_site_cbam_columns(engine):
