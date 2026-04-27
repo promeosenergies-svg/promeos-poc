@@ -40,6 +40,12 @@ const METHODOLOGIE_CATALOG = Object.freeze({
     kicker: 'MÉTHODOLOGIE · PATRIMOINE',
     publicPath: '/docs/methodologie/patrimoine-mutualisation.md',
   },
+  'bill-intel-shadow': {
+    title: 'Shadow Billing v4.2',
+    italicHook: 'audit factures TURPE 7 / ATRD / accise / CTA / TVA',
+    kicker: 'MÉTHODOLOGIE · BILL-INTEL',
+    publicPath: '/docs/methodologie/bill-intel-shadow.md',
+  },
 });
 
 // Mini-renderer markdown : titre, paragraphes, listes, tables, code,

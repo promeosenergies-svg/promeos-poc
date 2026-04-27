@@ -1011,6 +1011,223 @@ def _build_conformite(
     )
 
 
+# ── Builder bill_intel (Sprint 1.5 — CFO Jean-Marc + DAF Marie) ──────
+
+
+def _build_bill_intel(
+    db: Session,
+    org_id: int,
+    org_name: str,
+    sites_count: int,
+) -> Narrative:
+    """Sprint 1.5 — Vue Bill Intelligence (shadow billing v4.2).
+
+    Promesse §4.4 doctrine : « Audit factures, détection anomalies,
+    contestations, récupération. Chaque ligne de facture est challengeable.
+    TURPE 7, ATRD, accises, CTA, TVA — moteur shadow v4.2 compare aux
+    barèmes en vigueur et explique les écarts. »
+
+    Sert Jean-Marc (€ à récupérer immédiatement) + Marie (qu'est-ce qui
+    cloche dans ma facture ?). Audit Investisseur fin S1.4 demande
+    /bill-intel comme preuve de scaling au-delà du régulatoire.
+
+    Réutilise :
+      - BillingInsight (anomalies détectées par shadow v4.2)
+      - InsightStatus (open / ack / resolved / false_positive)
+      - estimated_loss_eur (perte chiffrée par anomalie)
+      - 17 mécanismes shadow v4.2 (TURPE 7 / ATRD T1-T4-TP / accises élec
+        et gaz / CTA gaz additive / TVA / CSPE / capacité / CEE / TDN…)
+    """
+    from models import (
+        BillingInsight,
+        EntiteJuridique,
+        Portefeuille,
+        Site,
+        not_deleted,
+    )
+    from models.enums import InsightStatus
+
+    # Sprint 1.4bis : helper centralisé (sites + scope)
+    ctx = _load_org_context(db, org_id)
+    site_ids = [s.id for s in ctx.sites]
+
+    # ── Récupérer les insights de facturation par scope ──
+    insights_q = (
+        db.query(BillingInsight)
+        .join(Site, Site.id == BillingInsight.site_id)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
+    insights = insights_q.all() if site_ids else []
+
+    open_insights = [i for i in insights if i.insight_status == InsightStatus.OPEN]
+    ack_insights = [i for i in insights if i.insight_status == InsightStatus.ACK]
+    resolved_insights = [i for i in insights if i.insight_status == InsightStatus.RESOLVED]
+
+    nb_anomalies_open = len(open_insights)
+    nb_contestations = len(ack_insights)
+    nb_reclaims = len(resolved_insights)
+
+    # Pertes chiffrées
+    perte_open_eur = sum((i.estimated_loss_eur or 0.0) for i in open_insights)
+    contestation_eur = sum((i.estimated_loss_eur or 0.0) for i in ack_insights)
+    reclaim_ytd_eur = sum((i.estimated_loss_eur or 0.0) for i in resolved_insights)
+
+    # ── Kicker + titre ──
+    week_iso = datetime.now(timezone.utc).isocalendar().week
+    kicker = f"FACTURATION · SEMAINE {week_iso} · {sites_count} SITE{'S' if sites_count > 1 else ''}"
+    title = "Vos factures — vérifiées, recalculées, expliquées"
+    italic_hook = "shadow billing v4.2"
+
+    # ── Narrative orientée € à récupérer ──
+    narr_parts = []
+    if nb_anomalies_open > 0:
+        narr_parts.append(
+            f"{nb_anomalies_open} anomalie{'s' if nb_anomalies_open > 1 else ''} "
+            f"détectée{'s' if nb_anomalies_open > 1 else ''} sur vos factures — "
+            f"perte estimée {_fmt_eur_short(perte_open_eur)} à récupérer."
+        )
+    elif sites_count > 0:
+        narr_parts.append(
+            f"Aucune anomalie ouverte sur vos {sites_count} site"
+            f"{'s' if sites_count > 1 else ''} — facturation sous contrôle."
+        )
+
+    if nb_contestations > 0:
+        narr_parts.append(
+            f"{nb_contestations} contestation{'s' if nb_contestations > 1 else ''} en cours auprès des fournisseurs."
+        )
+
+    if reclaim_ytd_eur > 0:
+        narr_parts.append(f"Récupérations validées YTD : {_fmt_eur_short(reclaim_ytd_eur)} (reclaims confirmés).")
+    narr_parts.append(
+        "Shadow billing PROMEOS recalcule chaque ligne : TURPE 7, accise, "
+        "contribution acheminement (CTA), TVA, capacité (CRE)."
+    )
+    narrative = " ".join(narr_parts)
+
+    # ── 3 KPIs hero §5 — angle CFO ──
+    kpis: list[NarrativeKpi] = [
+        NarrativeKpi(
+            label="Anomalies à traiter",
+            value=str(nb_anomalies_open) if nb_anomalies_open >= 0 else "—",
+            tooltip=(
+                "Nombre d'anomalies détectées par le moteur shadow v4.2 et "
+                "non encore traitées (status open). Comparaison facture vs "
+                "barèmes officiels CRE/JORF."
+            ),
+            source="Shadow Billing v4.2",
+        ),
+        NarrativeKpi(
+            label="Pertes à récupérer",
+            value=_fmt_eur_short(perte_open_eur),
+            tooltip=(
+                "Cumul des pertes estimées sur les anomalies ouvertes. "
+                "Récupérables via contestation auprès du fournisseur."
+            ),
+            source="Bill-Intel",
+        ),
+        NarrativeKpi(
+            label="Récupérations YTD",
+            value=_fmt_eur_short(reclaim_ytd_eur),
+            tooltip=(
+                "Cumul des reclaims validés depuis le début de l'année — "
+                "économies déjà encaissées grâce aux contestations."
+            ),
+            source="Bill-Intel reclaims",
+        ),
+    ]
+
+    # ── Week-cards Bill-Intel ──
+    week_cards: list[NarrativeWeekCard] = []
+
+    # Anomalies critiques (perte > 500€) en priorité
+    critical_open = [i for i in open_insights if (i.estimated_loss_eur or 0) >= 500]
+    if critical_open:
+        top = critical_open[0]
+        week_cards.append(
+            NarrativeWeekCard(
+                type="drift",
+                title=(f"Anomalie facture · {_fmt_eur_short(top.estimated_loss_eur or 0)}"),
+                body=(
+                    (top.message[:120] if top.message else "Écart détecté")
+                    + " — moteur shadow v4.2 a recalculé la facture."
+                ),
+                cta_path=f"/bill-intel?insight={top.id}",
+                cta_label="Voir l'anomalie",
+                impact_eur=top.estimated_loss_eur or 0,
+            )
+        )
+
+    if nb_anomalies_open > (1 if critical_open else 0):
+        remaining = nb_anomalies_open - (1 if critical_open else 0)
+        week_cards.append(
+            NarrativeWeekCard(
+                type="todo",
+                title=(f"Formaliser {remaining} contestation{'s' if remaining > 1 else ''}"),
+                body=(
+                    "Chaque anomalie ouvre droit à contestation auprès du "
+                    "fournisseur — récupération typique 30-90 jours."
+                ),
+                cta_path="/bill-intel?status=open",
+                cta_label="Liste contestations",
+                impact_eur=perte_open_eur,
+                urgency_days=90,
+            )
+        )
+
+    if reclaim_ytd_eur > 0:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="good_news",
+                title=f"{_fmt_eur_short(reclaim_ytd_eur)} récupérés YTD",
+                body=(
+                    f"{nb_reclaims} reclaim{'s' if nb_reclaims > 1 else ''} "
+                    "validé(s) — économies encaissées grâce au shadow billing."
+                ),
+                impact_eur=reclaim_ytd_eur,
+            )
+        )
+
+    fallback_body = (
+        "Aucune anomalie critique détectée cette semaine — facturation alignée sur les barèmes officiels CRE/JORF."
+    )
+
+    # Sprint 1.4bis : helpers _compute_tone + _build_provenance_canonical
+    # Tone CRITICAL si pertes > 1 k€, TENSION si anomalies non traitées,
+    # POSITIVE si récupérations actives.
+    if perte_open_eur >= 1000:
+        narrative_tone = NarrativeTone.CRITICAL
+    elif nb_anomalies_open > 0:
+        narrative_tone = NarrativeTone.TENSION
+    elif reclaim_ytd_eur > 0:
+        narrative_tone = NarrativeTone.POSITIVE
+    else:
+        narrative_tone = NarrativeTone.NEUTRAL
+
+    provenance = _build_provenance_canonical(
+        "Bill-Intel shadow v4.2 + 17 mécanismes (TURPE 7 / ATRD / accise / CTA / TVA)",
+        conformite_score=ctx.conformite_score,
+        sites_count=sites_count,
+        methodology_url="/methodologie/bill-intel-shadow",
+    )
+
+    return Narrative(
+        page_key="bill_intel",
+        persona="daily",
+        kicker=kicker,
+        title=title,
+        italic_hook=italic_hook,
+        narrative=narrative,
+        narrative_tone=narrative_tone,
+        kpis=tuple(kpis),
+        week_cards=tuple(week_cards),
+        fallback_body=fallback_body,
+        provenance=provenance,
+    )
+
+
 # ── Helpers format FR ───────────────────────────────────────────────
 
 
@@ -1053,8 +1270,8 @@ _BUILDERS = {
     "cockpit_comex": _build_cockpit_comex,
     "patrimoine": _build_patrimoine,
     "conformite": _build_conformite,
-    # Sprint 1.5+ : ajouter bill_intel, achat, monitoring, diagnostic,
-    # anomalies, flex.
+    "bill_intel": _build_bill_intel,
+    # Sprint 1.6+ : ajouter achat, monitoring, diagnostic, anomalies, flex.
 }
 
 

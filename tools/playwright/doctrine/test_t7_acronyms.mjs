@@ -28,6 +28,7 @@ const PAGES = [
   { route: '/cockpit?angle=comex', name: 'cockpit_comex' },
   { route: '/patrimoine', name: 'patrimoine' },
   { route: '/conformite', name: 'conformite' },
+  { route: '/bill-intel', name: 'bill_intel' },
 ];
 
 const RAW_ACRONYMS = [

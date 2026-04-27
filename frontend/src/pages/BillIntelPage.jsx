@@ -17,6 +17,13 @@ import {
   getInsightDetail,
 } from '../services/api';
 import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState, Explain } from '../ui';
+// Sprint 1.5 — grammaire Sol industrialisée (ADR-001) sur /bill-intel
+import SolPageHeader from '../ui/sol/SolPageHeader';
+import SolNarrative from '../ui/sol/SolNarrative';
+import SolWeekCards from '../ui/sol/SolWeekCards';
+import SolPageFooter from '../ui/sol/SolPageFooter';
+import { usePageBriefing } from '../hooks/usePageBriefing';
+import { scopeKicker } from '../utils/format';
 import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
 import ErrorState from '../ui/ErrorState';
 import Tooltip from '../ui/Tooltip';
@@ -129,8 +136,17 @@ export default function BillIntelPage() {
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { selectedSiteId: scopeSiteId, scope } = useScope();
+  const { org, scopedSites, selectedSiteId: scopeSiteId, scope } = useScope();
   const [searchParams] = useSearchParams();
+
+  // Sprint 1.5 — briefing éditorial Sol §5 vue Bill-Intel (ADR-001).
+  // Backend orchestre KPIs + narrative + week-cards via /api/pages/bill_intel/briefing.
+  // Différenciateur §4.4 : shadow billing v4.2 décomposé TURPE/ATRD/accise/CTA/TVA.
+  const {
+    briefing: solBriefing,
+    error: solBriefingError,
+    refetch: solBriefingRefetch,
+  } = usePageBriefing('bill_intel', { persona: 'daily' });
   const anomaliesRef = useRef(null);
 
   // Deep-link params: ?site_id=X&month=YYYY-MM — init from scope global
@@ -471,6 +487,14 @@ export default function BillIntelPage() {
       icon={FileText}
       title="Facturation"
       subtitle="Vérifiez vos factures : PROMEOS recalcule le montant attendu et détecte les écarts."
+      editorialHeader={
+        <SolPageHeader
+          kicker={solBriefing?.kicker || scopeKicker('FACTURATION', org?.nom, scopedSites?.length)}
+          title={solBriefing?.title || 'Vos factures'}
+          italicHook={solBriefing?.italicHook || 'shadow billing v4.2'}
+          subtitle="Vérifiez vos factures : PROMEOS recalcule le montant attendu et détecte les écarts."
+        />
+      }
       actions={
         <>
           <Button
@@ -555,6 +579,31 @@ export default function BillIntelPage() {
         </>
       }
     >
+      {/* ── Préambule éditorial Sol §5 vue Bill-Intel (S1.5 — ADR-001) ──
+          Shadow billing v4.2 — différenciateur §4.4 doctrine. KPIs CFO :
+          Anomalies à traiter / Pertes à récupérer / Récupérations YTD.
+          Audit fin S1.4 demandait Bill-Intel pour démontrer scaling
+          au-delà du régulatoire (Investisseur P0). */}
+      {solBriefingError && !solBriefing && (
+        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
+      )}
+      {solBriefing && (
+        <SolNarrative
+          kicker={null}
+          title={null}
+          narrative={solBriefing.narrative}
+          kpis={solBriefing.kpis}
+        />
+      )}
+      {solBriefing && (
+        <SolWeekCards
+          cards={solBriefing.weekCards}
+          fallbackBody={solBriefing.fallbackBody}
+          tone={solBriefing.narrativeTone}
+          onNavigate={navigate}
+        />
+      )}
+
       {/* CTA vers achat énergie */}
       <button
         onClick={() => navigate('/achat-energie')}
@@ -1248,6 +1297,18 @@ export default function BillIntelPage() {
         sourceLabel={dossierSource?.label}
         insightDetail={dossierInsightDetail}
       />
+
+      {/* Sprint 1.5 — SolPageFooter §5 (ADR-001).
+          Source · Confiance · Mis à jour. Methodology URL pointe vers
+          /methodologie/bill-intel-shadow (17 mécanismes audités). */}
+      {solBriefing?.provenance && (
+        <SolPageFooter
+          source={solBriefing.provenance.source}
+          confidence={solBriefing.provenance.confidence}
+          updatedAt={solBriefing.provenance.updated_at}
+          methodologyUrl={solBriefing.provenance.methodology_url}
+        />
+      )}
     </PageShell>
   );
 }

@@ -31,7 +31,8 @@ const PAGES = [
   { route: '/cockpit?angle=comex', name: 'cockpit_comex' },
   { route: '/patrimoine', name: 'patrimoine' },
   { route: '/conformite', name: 'conformite' },
-  // Sprint 1.5+ : ajouter Bill-Intel/Achat/Monitoring/Diagnostic/Anomalies/Flex
+  { route: '/bill-intel', name: 'bill_intel' },
+  // Sprint 1.6+ : ajouter Achat/Monitoring/Diagnostic/Anomalies/Flex
 ];
 
 async function login(page) {

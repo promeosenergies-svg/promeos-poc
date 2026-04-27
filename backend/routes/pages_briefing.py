@@ -32,7 +32,13 @@ router = APIRouter(prefix="/api/pages", tags=["pages-briefing"])
 
 # Liste des page_keys actuellement supportés. Étendre au fur et à mesure
 # que les builders sont ajoutés dans `narrative_generator._BUILDERS`.
-SUPPORTED_PAGE_KEYS = {"cockpit_daily", "cockpit_comex", "patrimoine", "conformite"}
+SUPPORTED_PAGE_KEYS = {
+    "cockpit_daily",
+    "cockpit_comex",
+    "patrimoine",
+    "conformite",
+    "bill_intel",
+}
 
 
 @router.get("/{page_key}/briefing")
