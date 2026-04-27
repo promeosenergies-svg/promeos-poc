@@ -3,14 +3,19 @@
  * Bidirectional URL + localStorage sync for the Anomalies Centre d'actions.
  * Priority: URL params > localStorage > defaults (empty).
  *
- * URL params: fw, sev, site, q, tab
+ * URL params: fw, sev, site, q, tab, status (Sprint 1.9bis P0-1)
  * localStorage key: promeos_anomaly_filters
+ *
+ * Sprint 1.9bis P0-1 (audit Nav P0 — récurrence S1.6/1.7/1.8/1.9) :
+ * `status` ajouté aux FILTER_KEYS pour honorer les CTA week-cards backend
+ * (?status=open|done&action={id}). Sans ça → fallback silencieux sur la
+ * liste complète (pattern récurrent corrigé après 4 sprints).
  */
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 const LS_KEY = 'promeos_anomaly_filters';
-const FILTER_KEYS = ['fw', 'sev', 'site', 'q'];
+const FILTER_KEYS = ['fw', 'sev', 'site', 'q', 'status'];
 
 function readLocalStorage() {
   try {

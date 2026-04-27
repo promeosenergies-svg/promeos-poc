@@ -4,7 +4,7 @@
  * Route : /anomalies   — ?tab=actions pour le plan d'actions.
  */
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
   Search,
@@ -61,17 +61,21 @@ const CENTRE_TABS = [
 const MAX_SITES = 20;
 
 const SEV_LABEL = { CRITICAL: 'Critique', HIGH: 'Élevé', MEDIUM: 'Moyen', LOW: 'Faible' };
-const SEV_COLOR = {
-  CRITICAL: 'bg-red-100 text-red-700',
-  HIGH: 'bg-orange-100 text-orange-700',
-  MEDIUM: 'bg-amber-100 text-amber-700',
-  LOW: 'bg-blue-100 text-blue-700',
+// Sprint 1.9bis P0-5 (audit UI/Visual + Ergo) : palette migrée tokens warm
+// Sol §6.2 « journal en terrasse » + contrastes WCAG AA. Inline style
+// pour Tailwind v4 arbitrary-value bug (cf S1.5bis P0-4 leçon).
+const SEV_STYLES = {
+  CRITICAL: { background: 'var(--sol-refuse-bg)', color: 'var(--sol-refuse-fg)' },
+  HIGH: { background: 'var(--sol-afaire-bg)', color: 'var(--sol-afaire-fg)' },
+  MEDIUM: { background: 'var(--sol-attention-bg)', color: 'var(--sol-attention-fg)' },
+  LOW: { background: 'var(--sol-ink-100)', color: 'var(--sol-ink-700)' },
 };
 const FW_LABEL = { DECRET_TERTIAIRE: 'Décret Tertiaire', FACTURATION: 'Facturation', BACS: 'BACS' };
-const FW_COLOR = {
-  DECRET_TERTIAIRE: 'bg-purple-50 text-purple-700',
-  FACTURATION: 'bg-blue-50 text-blue-700',
-  BACS: 'bg-teal-50 text-teal-700',
+// Frameworks → 1 chip neutre slate + couleur sévérité distincte (pattern Linear).
+const FW_STYLES = {
+  DECRET_TERTIAIRE: { background: 'var(--sol-bg-panel)', color: 'var(--sol-ink-700)' },
+  FACTURATION: { background: 'var(--sol-bg-panel)', color: 'var(--sol-ink-700)' },
+  BACS: { background: 'var(--sol-bg-panel)', color: 'var(--sol-ink-700)' },
 };
 
 /* fmtEur imported from ../utils/format */
@@ -110,6 +114,24 @@ export default function AnomaliesPage() {
   // Evidence drawer
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [evidenceData, setEvidenceData] = useState(null);
+
+  // Sprint 1.9bis P0-1 : honorer deep-link `?action={id}` venant des
+  // week-cards backend → ouvrir Evidence Drawer post-load.
+  // Récurrence S1.6/1.7/1.8/1.9 corrigée via useSearchParams direct.
+  const [searchParams] = useSearchParams();
+  const queryActionId = searchParams.get('action');
+  useEffect(() => {
+    if (!queryActionId || anomalies.length === 0 || evidenceOpen) return;
+    const target = anomalies.find(
+      (a) =>
+        String(a.code || a.id) === String(queryActionId) || String(a.id) === String(queryActionId)
+    );
+    if (target) {
+      setEvidenceData(buildAnomalyEvidence(target));
+      setEvidenceOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryActionId, anomalies]);
 
   /* ── Fetch anomalies ── */
   useEffect(() => {
@@ -174,11 +196,27 @@ export default function AnomaliesPage() {
   }, [scopedSites]);
 
   /* ── Filtrage + tri ── */
+  // Sprint 1.9bis P0-1 : filtre `status` honore deep-link week-cards backend
+  // (?status=open|done). Mappe vers anomalyStatuses V117 (open/dismissed/done).
   const filtered = useMemo(() => {
     let r = [...anomalies];
     if (filters.fw) r = r.filter((a) => a.regulatory_impact?.framework === filters.fw);
     if (filters.sev) r = r.filter((a) => a.severity === filters.sev);
     if (filters.site) r = r.filter((a) => String(a.site_id) === filters.site);
+    if (filters.status) {
+      r = r.filter((a) => {
+        const key = `${a._isBilling ? 'billing' : 'patrimoine'}:${a.code || a.id}:${a.site_id || ''}`;
+        const st = anomalyStatuses[key];
+        if (filters.status === 'open') return !st || st.status === 'open';
+        if (filters.status === 'done' || filters.status === 'resolved') {
+          return st?.status === 'resolved' || st?.status === 'done';
+        }
+        if (filters.status === 'dismissed' || filters.status === 'false_positive') {
+          return st?.status === 'dismissed' || st?.status === 'false_positive';
+        }
+        return true;
+      });
+    }
     if (filters.q) {
       const q = filters.q.toLowerCase();
       r = r.filter(
@@ -193,7 +231,15 @@ export default function AnomaliesPage() {
       return (b.priority_score ?? 0) - (a.priority_score ?? 0);
     });
     return r;
-  }, [anomalies, filters.fw, filters.sev, filters.site, filters.q]);
+  }, [
+    anomalies,
+    anomalyStatuses,
+    filters.fw,
+    filters.sev,
+    filters.site,
+    filters.status,
+    filters.q,
+  ]);
 
   /* ── KPIs (reflètent les filtres actifs) ── */
   const kpis = useMemo(() => {
@@ -271,13 +317,33 @@ export default function AnomaliesPage() {
   }
 
   /* ── Rendu ── */
+  // Sprint 1.9bis P0-3 (audit CX P0-1 + UX P0 + Espaces P0-2) : préambule
+  // éditorial Sol §5 garanti dans toutes les branches dégradées (pattern
+  // S1.7bis monitoringEditorialFallback). Évite flash legacy + rupture
+  // grammaire + EmptyState plein écran sans contexte (§6.1).
+  const anomaliesEditorialFallback = (
+    <SolPageHeader
+      kicker={scopeKicker("CENTRE D'ACTIONS", org?.nom, scopedSites?.length)}
+      title="Vos anomalies, regroupées et priorisées"
+      italicHook="4 piliers, 1 plan d'actions priorisé"
+    />
+  );
 
   if (sitesLoading) {
     return (
-      <PageShell icon={AlertTriangle} title="Centre d'actions" subtitle="Chargement...">
-        <div className="space-y-2 animate-pulse">
+      <PageShell
+        icon={AlertTriangle}
+        title="Centre d'actions"
+        editorialHeader={anomaliesEditorialFallback}
+      >
+        <div role="status" aria-live="polite" className="space-y-2 animate-pulse">
+          <span className="sr-only">Chargement</span>
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-14 bg-gray-100 rounded-lg" />
+            <div
+              key={i}
+              className="h-14 rounded-lg"
+              style={{ background: 'var(--sol-bg-panel)' }}
+            />
           ))}
         </div>
       </PageShell>
@@ -286,7 +352,11 @@ export default function AnomaliesPage() {
 
   if (scopedSites.length === 0) {
     return (
-      <PageShell icon={AlertTriangle} title="Centre d'actions" subtitle="Aucun site dans le scope">
+      <PageShell
+        icon={AlertTriangle}
+        title="Centre d'actions"
+        editorialHeader={anomaliesEditorialFallback}
+      >
         <EmptyState
           icon={Building2}
           title="Aucun site dans le scope"
@@ -382,37 +452,11 @@ export default function AnomaliesPage() {
         </Suspense>
       ) : (
         <div className="space-y-4">
-          {/* ── KPI row ── */}
-          <div className="grid grid-cols-3 gap-3">
-            <KpiCardInline
-              icon={AlertTriangle}
-              iconBg="bg-blue-600"
-              color="text-white"
-              label={
-                <>
-                  <Explain term="anomalie">Anomalies</Explain> totales
-                </>
-              }
-              value={kpis.total}
-              loading={loading}
-            />
-            <KpiCardInline
-              icon={AlertTriangle}
-              iconBg="bg-red-600"
-              color="text-white"
-              label="Critiques"
-              value={kpis.critiques}
-              loading={loading}
-            />
-            <KpiCardInline
-              icon={Euro}
-              iconBg="bg-amber-600"
-              color="text-white"
-              label="Risque estimé"
-              value={fmtEur(kpis.risque)}
-              loading={loading}
-            />
-          </div>
+          {/* Sprint 1.9bis P0-2 (audit UX/UI/Densité/Frontend-design) :
+              KPI row supprimée — dupliquait les 3 KPIs hero SolNarrative
+              (36px Stripe-grade) + cassait hiérarchie avec icônes blanches
+              sur bg-blue-600/red-600/amber-600 saturés. SoT unique
+              above-the-fold = SolNarrative.kpis. */}
 
           {/* ── Toolbar ── */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -568,17 +612,29 @@ export default function AnomaliesPage() {
                         <span className="text-[10px] font-medium text-gray-500 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">
                           {anom.site_nom}
                         </span>
-                        {/* Severity */}
+                        {/* Severity — Sprint 1.9bis tokens warm Sol §6.2 */}
                         <span
-                          className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${SEV_COLOR[anom.severity] ?? 'bg-gray-100 text-gray-600'}`}
+                          className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
+                          style={
+                            SEV_STYLES[anom.severity] || {
+                              background: 'var(--sol-ink-100)',
+                              color: 'var(--sol-ink-700)',
+                            }
+                          }
                         >
                           {SEV_LABEL[anom.severity] ?? anom.severity}
                         </span>
-                        {/* Framework */}
+                        {/* Framework — Sprint 1.9bis chip neutre slate (pattern Linear) */}
                         {anom.regulatory_impact?.framework &&
                           anom.regulatory_impact.framework !== 'NONE' && (
                             <span
-                              className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${FW_COLOR[anom.regulatory_impact.framework] ?? 'bg-gray-50 text-gray-600'}`}
+                              className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0"
+                              style={
+                                FW_STYLES[anom.regulatory_impact.framework] || {
+                                  background: 'var(--sol-ink-100)',
+                                  color: 'var(--sol-ink-700)',
+                                }
+                              }
                             >
                               {FW_LABEL[anom.regulatory_impact.framework] ??
                                 anom.regulatory_impact.framework}

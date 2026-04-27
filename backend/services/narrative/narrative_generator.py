@@ -2141,8 +2141,13 @@ def _build_diagnostic(
 
 # Sprint 1.9 — constantes module Anomalies / Centre d'actions.
 # Sourçage : doctrine §3 P11 (le bon endroit pour chaque brique).
-_ANOMALIES_SEUIL_IMPACT_CRITIQUE_EUR = 5_000  # cumul → tone CRITICAL
+# Sprint 1.9bis Reuse P1 : seuil aligné sur _DIAGNOSTIC_SEUIL_ECONOMIE_VISIBLE_EUR
+# (~1% budget ETI 5 sites = critère « économie/impact significatif » partagé).
+_ANOMALIES_SEUIL_IMPACT_CRITIQUE_EUR = _DIAGNOSTIC_SEUIL_ECONOMIE_VISIBLE_EUR  # 5 000 € SoT partagée
 _ANOMALIES_HORIZON_URGENT_DAYS = 30  # échéance < 30j = urgent
+_ANOMALIES_PRIORITE_CRITIQUE_THRESHOLD = 2  # priority ≤ 2 (sur 1-5) = critique
+# Sprint 1.9bis Quality P2 : wording fallback centralisé (dupliqué narrative + fallback_body).
+_ANOMALIES_ZERO_LABEL = "Aucune anomalie à traiter cette semaine — patrimoine sous contrôle."
 
 # SoT FR labels source_type ActionItem (cross-pillar).
 _ACTION_SOURCE_LABELS_FR: dict[str, str] = {
@@ -2152,6 +2157,31 @@ _ACTION_SOURCE_LABELS_FR: dict[str, str] = {
     "purchase": "Achat",
     "monitoring": "Performance",
 }
+
+
+def _action_source_str(source_type) -> str:
+    """Sprint 1.9bis Quality P1 : helper centralise hasattr dead-code dupliqué 2×.
+
+    ActionSourceType est un SAEnum donc `.value` est toujours présent. Le
+    fallback `str(source_type)` était dead-code trompeur ; on garde un
+    fallback `"autre"` si source_type est None (action org-level).
+    """
+    if source_type is None:
+        return "autre"
+    return source_type.value if hasattr(source_type, "value") else str(source_type)
+
+
+def _is_critical_action(a) -> bool:
+    """Sprint 1.9bis Quality P2 : helper condition critique cross-prio/severity.
+
+    Une action est critique si priority ≤ 2 (sur échelle 1-5) ou
+    severity = critical (Severity enum models.enums S1.8bis).
+    """
+    from models.enums import Severity
+
+    if a.priority is not None and a.priority <= _ANOMALIES_PRIORITE_CRITIQUE_THRESHOLD:
+        return True
+    return a.severity == Severity.CRITICAL.value
 
 
 def _build_anomalies(
@@ -2206,18 +2236,19 @@ def _build_anomalies(
     horizon_urgent = today + timedelta(days=_ANOMALIES_HORIZON_URGENT_DAYS)
     urgent_actions: list[ActionItem] = []
 
+    # Sprint 1.9bis Quality P1 : helpers _is_critical_action + _action_source_str
+    # (severity enum-aware + dead-code hasattr supprimé).
     for a in actions:
         if a.status == ActionStatus.OPEN:
             open_actions.append(a)
             gain = a.estimated_gain_eur or 0.0
             impact_total_eur += gain
-            # priority 1-2 = critique (1 plus urgent), severity critical aussi.
-            if (a.priority is not None and a.priority <= 2) or (a.severity == "critical"):
+            if _is_critical_action(a):
                 critical_actions.append(a)
                 critical_total_eur += gain
             if a.due_date and a.due_date <= horizon_urgent:
                 urgent_actions.append(a)
-            src = (a.source_type.value if hasattr(a.source_type, "value") else str(a.source_type)) or "autre"
+            src = _action_source_str(a.source_type)
             sources_seen[src] = sources_seen.get(src, 0) + 1
         elif a.status == ActionStatus.IN_PROGRESS:
             in_progress_actions.append(a)
@@ -2232,6 +2263,8 @@ def _build_anomalies(
     nb_urgent = len(urgent_actions)
 
     # ── Kicker + titre + italic hook §5 ──
+    # Sprint 1.9bis Investisseur P0 : italic_hook hisse wedge concurrentiel
+    # (différenciation §3 P11 vs Advizeo/Deepki/Citron/Energisme/Trinergy).
     week_iso = datetime.now(timezone.utc).isocalendar().week
     if nb_actions_open > 0:
         kicker = (
@@ -2241,7 +2274,7 @@ def _build_anomalies(
     else:
         kicker = f"CENTRE D'ACTIONS · SEMAINE {week_iso} · PATRIMOINE SOUS CONTRÔLE"
     title = "Vos anomalies, regroupées et priorisées"
-    italic_hook = "conformité · performance · facturation · achat"
+    italic_hook = "4 piliers, 1 plan d'actions priorisé"
 
     # ── Narrative orientée Marie DAF + Energy Manager ──
     narr_parts = []
@@ -2255,14 +2288,14 @@ def _build_anomalies(
         p_open = _s(nb_actions_open)
         narr_parts.append(
             f"{nb_actions_open} anomalie{p_open} active{p_open} regroupée{p_open} "
-            f"et classée{p_open} par impact financier et échéance."
+            f"et classée{p_open} par enjeu € et urgence."
         )
     elif nb_actions_in_progress > 0:
         narr_parts.append(
             f"{nb_actions_in_progress} action{_s(nb_actions_in_progress)} en cours — exécution conforme au plan."
         )
     else:
-        narr_parts.append("Aucune anomalie à traiter cette semaine — votre patrimoine est sous contrôle.")
+        narr_parts.append(_ANOMALIES_ZERO_LABEL)
 
     if nb_urgent > 0:
         narr_parts.append(
@@ -2280,17 +2313,29 @@ def _build_anomalies(
             f"({nb_actions_done} action{_s(nb_actions_done)} clôturée{_s(nb_actions_done)})."
         )
 
+    # Sprint 1.9bis Investisseur P0/P1 : phrase wedge concurrentiel rendue
+    # inconditionnellement (vs « PROMEOS unifie cross-pilier — un seul flux
+    # vs un dashboard par module chez les acteurs du marché »).
     if sources_seen:
         sources_top = sorted(sources_seen.items(), key=lambda kv: -kv[1])[:3]
         sources_fr = ", ".join(_ACTION_SOURCE_LABELS_FR.get(src, src) for src, _ in sources_top)
         narr_parts.append(
-            f"Sources principales : {sources_fr}. Le Centre d'actions agrège les "
-            "anomalies des 4 piliers PROMEOS — Patrimoine, Performance, Facturation, Achat."
+            f"Sources principales : {sources_fr}. PROMEOS Sol unifie les anomalies "
+            "des 4 piliers en un flux unique — vs un dashboard par module chez les "
+            "concurrents."
+        )
+    else:
+        narr_parts.append(
+            "PROMEOS Sol unifie les anomalies des 4 piliers en un flux unique — "
+            "vs un dashboard par module chez les concurrents."
         )
 
     narrative = " ".join(narr_parts)
 
     # ── 3 KPIs hero §5 — angle CFO orchestration ──
+    # Sprint 1.9bis Marie P0 : tooltip workflow reformulé FR-first (« à faire →
+    # en cours → terminée » vs « OPEN → IN_PROGRESS → DONE » jargon dev).
+    # « ActionItem cross-pillar » → vocabulaire utilisateur.
     unit_critical = f"dont {nb_actions_critical} critique{_s(nb_actions_critical)}" if nb_actions_critical > 0 else None
     unit_urgent = f"dont {nb_urgent} sous {_ANOMALIES_HORIZON_URGENT_DAYS}j" if nb_urgent > 0 else None
     kpis: list[NarrativeKpi] = [
@@ -2300,10 +2345,10 @@ def _build_anomalies(
             unit=unit_critical,
             tooltip=(
                 "Anomalies détectées par les 4 piliers PROMEOS et non encore "
-                "traitées (workflow OPEN → IN_PROGRESS → DONE). Priorité 1-2 ou "
-                "sévérité critique = à traiter cette semaine."
+                "traitées (à faire → en cours → terminée). Priorité 1 ou 2 sur 5 "
+                "ou criticité = à traiter cette semaine."
             ),
-            source="ActionItem cross-pillar (status=OPEN)",
+            source="Plan d'actions consolidé · 4 piliers PROMEOS",
         ),
         NarrativeKpi(
             label="Impact financier",
@@ -2314,7 +2359,7 @@ def _build_anomalies(
                 "récupérables par actions correctives. Source unifiée : chaque "
                 "pilier estime son propre gain (€/an évité)."
             ),
-            source="ActionItem.estimated_gain_eur agrégé",
+            source="Plan d'actions · gains estimés agrégés",
         ),
         NarrativeKpi(
             label="Économies sécurisées",
@@ -2322,10 +2367,10 @@ def _build_anomalies(
             unit=f"sur {nb_actions_done} clôturée{_s(nb_actions_done)}" if nb_actions_done > 0 else None,
             tooltip=(
                 "Cumul des gains validés depuis le 1er janvier — actions "
-                "clôturées (status=DONE). Base solide pour audit ISO 50001 et "
-                "reporting CSRD."
+                "clôturées (statut « terminée »). Base solide pour audit ISO "
+                "50001 et reporting CSRD."
             ),
-            source="ActionItem DONE depuis le 1er janvier",
+            source="Plan d'actions · clôturées depuis le 1er janvier",
         ),
     ]
 
@@ -2333,19 +2378,17 @@ def _build_anomalies(
     week_cards: list[NarrativeWeekCard] = []
 
     # DRIFT — action critique avec plus fort impact.
+    # Sprint 1.9bis Quality P1 : helpers _action_source_str + site_label
+    # « Action transverse » plus parlant que « Toutes sources ».
     if critical_actions:
         top_critical = max(critical_actions, key=lambda a: a.estimated_gain_eur or 0)
         critical_gain = top_critical.estimated_gain_eur or 0
         site_label = (
             site_name_by_id.get(top_critical.site_id, f"site #{top_critical.site_id}")
             if top_critical.site_id
-            else "Toutes sources"
+            else "Action transverse"
         )
-        src_value = (
-            top_critical.source_type.value
-            if hasattr(top_critical.source_type, "value")
-            else str(top_critical.source_type)
-        )
+        src_value = _action_source_str(top_critical.source_type)
         source_label = _ACTION_SOURCE_LABELS_FR.get(src_value, src_value)
         week_cards.append(
             NarrativeWeekCard(
@@ -2398,9 +2441,8 @@ def _build_anomalies(
         )
 
     fallback_body = (
-        "Aucune anomalie à traiter cette semaine — patrimoine sous contrôle. "
-        "Le Centre d'actions surveille en continu Conformité, Performance, "
-        "Facturation et Achat."
+        f"{_ANOMALIES_ZERO_LABEL} Le Centre d'actions surveille en continu "
+        "Conformité, Performance, Facturation et Achat."
     )
 
     # Tone : CRITICAL si action critique ou impact ≥5k€, TENSION si actions
