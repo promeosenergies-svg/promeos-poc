@@ -6,7 +6,7 @@
  * V79: + Tarif Heures Solaires KPI card, cross-brique CTA vers Achats.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Activity,
   AlertTriangle,
@@ -1581,6 +1581,11 @@ export default function MonitoringPage() {
     error: solBriefingError,
     refetch: solBriefingRefetch,
   } = usePageBriefing('monitoring', { persona: 'daily' });
+
+  // Sprint 1.7bis P0-2 (audit Nav P0-1) : deep-link `?site_id=X&alert=Y`
+  // honoré pour ouvrir directement le drawer alerte depuis week-card DRIFT.
+  // Récurrence corrigée vs leçon S1.6 (`?tab=renewals` ignoré silencieusement).
+  const [searchParams] = useSearchParams();
   // Step 11: unified period from URL (default 90 days for monitoring)
   const { period, periodQueryString: _periodQueryString } = usePeriodParams(90);
   const monitoringDays = period.days;
@@ -1751,6 +1756,27 @@ export default function MonitoringPage() {
     setDrawerAlert(alert);
     track('monitoring_drawer_open', { alert_type: alert.alert_type });
   };
+
+  // Sprint 1.7bis P0-2 : honorer deep-link `?site_id=X&alert=Y` post-load.
+  // (a) Si site_id query diffère du scope → setSite ; (b) après chargement
+  // alertes, ouvrir le drawer si alert={id} est trouvé. Pattern aligné PR
+  // PurchasePage (?tab=&filter=) corrigé en S1.6bis.
+  useEffect(() => {
+    const querySiteId = Number(searchParams.get('site_id')) || null;
+    if (querySiteId && querySiteId !== siteId) {
+      setSite(querySiteId);
+    }
+  }, [searchParams, siteId, setSite]);
+
+  useEffect(() => {
+    const alertId = Number(searchParams.get('alert')) || null;
+    if (!alertId || alerts.length === 0) return;
+    const target = alerts.find((a) => a.id === alertId);
+    if (target && drawerAlert?.id !== alertId) {
+      openInsightDrawer(target);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alerts, searchParams]);
 
   const handleCreateAction = (alert) => {
     openActionDrawer(
@@ -1940,17 +1966,35 @@ export default function MonitoringPage() {
     }
   }, [siteId, sitesLoading, orgSites, setSite]);
 
+  // Sprint 1.7bis P0-3/P0-4 : tous les états dégradés (loading sites,
+  // no-site-selected, loading data, error) rendent le préambule Sol §5
+  // (kicker + Fraunces + italic_hook). Évite le flash de l'ancien layout
+  // et la rupture éditoriale documentée audit UX P0-2/P0-3 + CX P0-1.
+  const monitoringEditorialFallback = (
+    <SolPageHeader
+      kicker={scopeKicker('MONITORING', org?.nom, scopedSites?.length)}
+      title="Vos sites énergie en temps réel"
+      italicHook="performance · alertes · qualité données"
+      subtitle="Surveillez vos sites : puissance, qualité des relevés, alertes."
+    />
+  );
+
   // V18-B: guard — don't show empty state while sites are loading
   if (sitesLoading) {
     return (
       <PageShell
         icon={Activity}
         title="Performance Électrique"
-        subtitle="Synchronisation du périmètre…"
+        editorialHeader={monitoringEditorialFallback}
       >
-        <div className="p-8 flex items-center justify-center text-gray-400 text-sm gap-2">
-          <Loader2 size={16} className="animate-spin" />
-          Synchronisation du périmètre…
+        <div
+          role="status"
+          aria-live="polite"
+          className="p-8 flex items-center justify-center text-[var(--sol-ink-500)] text-sm gap-2"
+        >
+          <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+          <span className="sr-only">Chargement</span>
+          Chargement de vos sites…
         </div>
       </PageShell>
     );
@@ -1963,46 +2007,60 @@ export default function MonitoringPage() {
       <PageShell
         icon={Activity}
         title="Performance Électrique"
-        subtitle="KPIs, puissance, qualité de données & alertes"
+        editorialHeader={monitoringEditorialFallback}
         actions={
-          <select
-            className="border rounded-lg px-3 py-2 text-sm min-w-[200px]"
-            value=""
-            onChange={(e) => setSite(Number(e.target.value))}
-          >
-            <option value="">Choisir un site...</option>
-            {allOrgSites.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nom || `Site ${s.id}`}
-              </option>
-            ))}
-          </select>
+          <>
+            <label htmlFor="monitoring-site-select-empty" className="sr-only">
+              Sélection du site à surveiller
+            </label>
+            <select
+              id="monitoring-site-select-empty"
+              aria-label="Sélection du site à surveiller"
+              className="border rounded-lg px-3 py-2 text-sm min-w-[200px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)]"
+              value=""
+              onChange={(e) => setSite(Number(e.target.value))}
+            >
+              <option value="">Choisir un site...</option>
+              {allOrgSites.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nom || `Site ${s.id}`}
+                </option>
+              ))}
+            </select>
+          </>
         }
       >
-        <EmptyState
-          icon={Activity}
-          title="Sélectionnez un site"
-          text="Choisissez un site dans le sélecteur ci-dessus pour voir les KPIs de performance électrique."
+        <SolNarrative
+          kicker={null}
+          title={null}
+          narrative="Choisissez un site dans le sélecteur en haut à droite pour démarrer le briefing de performance électrique."
+          kpis={[]}
         />
       </PageShell>
     );
   }
 
   // --- Loading skeleton ---
-
+  // Sprint 1.7bis P0-3 : skeleton aligné grammaire Sol §5 (3 KPIs + 3 cards),
+  // pas le legacy 6 SkeletonCard. Préambule éditorial préservé via
+  // editorialHeader fallback.
   if (loading && !kpis && alerts.length === 0) {
     return (
       <PageShell
         icon={Activity}
         title="Performance Électrique"
-        subtitle="KPIs, puissance, qualité de données & alertes"
+        editorialHeader={monitoringEditorialFallback}
       >
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
             <SkeletonCard key={i} />
           ))}
         </div>
-        <Skeleton rows={6} />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       </PageShell>
     );
   }
@@ -2012,7 +2070,7 @@ export default function MonitoringPage() {
       <PageShell
         icon={Activity}
         title="Performance Électrique"
-        subtitle="KPIs, puissance, qualité de données & alertes"
+        editorialHeader={monitoringEditorialFallback}
       >
         <ErrorState message={error || 'Erreur de chargement'} onRetry={loadAll} />
       </PageShell>
@@ -2023,9 +2081,12 @@ export default function MonitoringPage() {
 
   // Sprint 1.7 P0-C : subtitle node Sol — éviter duplication PageShell ↔
   // SolPageHeader (leçon S1.6bis P0-4 : un seul rendu DOM).
+  // Sprint 1.7bis (audit Marie P1-1) : wording « Performance électrique » →
+  // « Surveiller vos sites » (CFO/DAF benefit-oriented vs technique).
   const monitoringSubtitleNode = (
     <>
-      Suivez vos sites en temps réel : puissance, qualité données, alertes.{' '}
+      Surveiller vos sites en temps réel : puissance contractuelle, qualité des relevés, alertes
+      automatiques.{' '}
       <span className="text-xs text-[var(--sol-ink-400)] ml-2">
         Période : {period.start} — {period.end} ({period.days}j)
       </span>
@@ -2046,8 +2107,15 @@ export default function MonitoringPage() {
       }
       actions={
         <>
+          {/* Sprint 1.7bis P0-14 (audit Ergo P0-1) : <label htmlFor> + aria-label
+              + focus-visible Sol calme pour conformité WCAG 1.3.1 + 4.1.2. */}
+          <label htmlFor="monitoring-site-select" className="sr-only">
+            Sélection du site à surveiller
+          </label>
           <select
-            className="border rounded-lg px-3 py-2 text-sm min-w-[200px]"
+            id="monitoring-site-select"
+            aria-label="Sélection du site à surveiller"
+            className="border rounded-lg px-3 py-2 text-sm min-w-[200px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)]"
             value={siteId || ''}
             onChange={(e) => setSite(Number(e.target.value))}
           >
@@ -2139,8 +2207,11 @@ export default function MonitoringPage() {
 
       {hasData && (
         <>
-          {/* ═══ SECTION A — Header pilotage ═══ */}
-          <div data-section="header-pilotage" className="mb-6">
+          {/* ═══ SECTION A — Header pilotage ═══
+              Sprint 1.7bis P0-10 (audit Espaces P0) : retrait `mb-6` (24px)
+              qui s'additionnait au `space-y-8` (32px) du PageShell parent
+              → asymétrie 32/56. Le rythme parent gère le gap entre sections. */}
+          <div data-section="header-pilotage">
             {/* Usage Panel — expert only (schedule details are technical) */}
             {isExpert && (
               <UsagePanel

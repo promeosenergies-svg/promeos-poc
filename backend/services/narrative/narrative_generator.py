@@ -803,8 +803,7 @@ def _build_conformite(
       - StatutConformite (non_conformes / a_risque)
       - compute_mutualisation pour économie cumulée
     """
-    from datetime import date
-
+    # Sprint 1.7bis /simplify Quality P1 : `date` désormais top-level (l.27).
     # Sprint 1.4bis : helper centralisé
     ctx = _load_org_context(db, org_id)
     risque_total = ctx.risque_total  # noqa: F841 (réservé S2 chantier α exposition)
@@ -1496,9 +1495,15 @@ def _build_achat_energie(
 
 # Sprint 1.7 — constantes module Monitoring (audit /simplify Quality).
 # Sourçage doctrine §4.2 (EMS/Performance) + ISO 50001 + COSTIC.
-_MONITORING_DATA_QUALITY_GOOD = 80  # seuil score qualité données satisfaisante
-_MONITORING_DATA_QUALITY_CRITICAL = 50  # seuil score qualité critique
-_MONITORING_SEUIL_IMPACT_CRITIQUE_EUR = 1_000  # impact € → tone CRITICAL
+# ISO 50001 §8.5.1 demande des « données fiables et reproductibles » sans
+# valeur chiffrée — le seuil 80 est un choix produit calibré sur observations
+# pilote Enedis SGE (complétude ≥ 95% requise pour audit SMÉ formel).
+_MONITORING_DATA_QUALITY_GOOD = 80  # seuil score qualité données satisfaisante (pilotage fiable)
+_MONITORING_DATA_QUALITY_CRITICAL = 50  # seuil score qualité critique (recommandation réinstrumentation)
+# COSTIC NF EN 16247-2 §6 : impact ≥ 0,5 % budget annuel énergie d'un site = significatif.
+# 1 000 € = plancher CFO ETI tertiaire (≈5 GWh/an, 250 k€ budget énergie typique).
+# Cohérent avec _build_bill_intel ligne 1201 (même seuil critique).
+_MONITORING_SEUIL_IMPACT_CRITIQUE_EUR = 1_000  # impact € cumulé → tone CRITICAL
 
 
 def _build_monitoring(
@@ -1532,17 +1537,37 @@ def _build_monitoring(
         MonitoringSnapshot,
     )
 
+    from sqlalchemy import func
+
     ctx = _load_org_context(db, org_id)
     site_ids = [s.id for s in ctx.sites]
+    # Sprint 1.7bis Quality P1 : dict pré-calculé pour lookup O(1) dans
+    # week-cards. Évite next((s.nom for s in ctx.sites if s.id == X)) O(n)
+    # par alerte critique.
+    site_name_by_id: dict[int, str] = {s.id: (s.nom or f"site #{s.id}") for s in ctx.sites}
 
     # ── Récupérer les alertes actives + dernier snapshot par site ──
+    # Sprint 1.7bis Efficiency P1-A : snapshot query bornée. Subquery
+    # MAX(created_at) GROUP BY site_id puis JOIN — résultat = len(site_ids)
+    # rows max au lieu de toute l'historique (évite 900 rows pour 10 sites).
     if site_ids:
         alerts = db.query(MonitoringAlert).filter(MonitoringAlert.site_id.in_(site_ids)).all()
-        # Dernier snapshot par site pour data_quality_score moyen
+        latest_subq = (
+            db.query(
+                MonitoringSnapshot.site_id,
+                func.max(MonitoringSnapshot.created_at).label("max_created"),
+            )
+            .filter(MonitoringSnapshot.site_id.in_(site_ids))
+            .group_by(MonitoringSnapshot.site_id)
+            .subquery()
+        )
         snapshots = (
             db.query(MonitoringSnapshot)
-            .filter(MonitoringSnapshot.site_id.in_(site_ids))
-            .order_by(MonitoringSnapshot.created_at.desc())
+            .join(
+                latest_subq,
+                (MonitoringSnapshot.site_id == latest_subq.c.site_id)
+                & (MonitoringSnapshot.created_at == latest_subq.c.max_created),
+            )
             .all()
         )
     else:
@@ -1563,18 +1588,12 @@ def _build_monitoring(
     nb_alerts_open = len(open_alerts)
     nb_alerts_critical = len(critical_alerts)
 
-    # Score qualité données : moyenne des derniers snapshots par site
-    seen_sites: set[int] = set()
-    quality_scores: list[float] = []
-    for snap in snapshots:
-        if snap.site_id in seen_sites:
-            continue
-        seen_sites.add(snap.site_id)
-        if snap.data_quality_score is not None:
-            quality_scores.append(snap.data_quality_score)
-
+    # Score qualité données : moyenne des derniers snapshots par site.
+    # Sprint 1.7bis : snapshots retourne déjà 1 row par site (subquery MAX),
+    # plus besoin de dédupliquer en Python.
+    quality_scores = [s.data_quality_score for s in snapshots if s.data_quality_score is not None]
     data_quality_avg = round(sum(quality_scores) / len(quality_scores)) if quality_scores else None
-    sites_monitored = len(seen_sites)
+    sites_monitored = len(snapshots)
 
     # ── Kicker + titre + italic hook §5 ──
     week_iso = datetime.now(timezone.utc).isocalendar().week
@@ -1589,18 +1608,22 @@ def _build_monitoring(
     italic_hook = "performance · alertes · qualité données"
 
     # ── Narrative orientée Marie DAF + Energy Manager ──
+    # Sprint 1.7bis P0 (audit Marie + CX) : reformulations « intervention
+    # immédiate » → « à corriger sous 7 jours », « warnings » → « alertes
+    # secondaires » (FR-first §10), ISO 50001 explicité « norme management
+    # énergie » (acronyme nu interdit).
     narr_parts = []
     if nb_alerts_critical > 0:
         narr_parts.append(
             f"{nb_alerts_critical} alerte{'s' if nb_alerts_critical > 1 else ''} "
-            f"critique{'s' if nb_alerts_critical > 1 else ''} en cours — "
-            "intervention immédiate recommandée."
+            f"critique{'s' if nb_alerts_critical > 1 else ''} sur votre patrimoine — "
+            "à corriger cette semaine pour limiter l'impact."
         )
     elif nb_alerts_open > 0:
         narr_parts.append(
             f"{nb_alerts_open} alerte{'s' if nb_alerts_open > 1 else ''} "
             f"active{'s' if nb_alerts_open > 1 else ''} sur votre patrimoine — "
-            "à traiter selon priorité."
+            "à programmer selon priorité."
         )
     elif sites_monitored > 0:
         narr_parts.append(
@@ -1611,35 +1634,37 @@ def _build_monitoring(
         narr_parts.append("Aucun site sous surveillance active — lancez l'analyse pour activer le pilotage temps réel.")
 
     if impact_total_eur >= _MONITORING_SEUIL_IMPACT_CRITIQUE_EUR:
-        narr_parts.append(
-            f"Impact estimé des dérives ouvertes : {_fmt_eur_short(impact_total_eur)} récupérables via correction."
-        )
+        narr_parts.append(f"Impact estimé : {_fmt_eur_short(impact_total_eur)} récupérables par correction.")
 
     if data_quality_avg is not None:
         if data_quality_avg >= _MONITORING_DATA_QUALITY_GOOD:
-            narr_parts.append(f"Qualité données {data_quality_avg}/100 — pilotage fiable.")
+            narr_parts.append(f"Qualité des relevés {data_quality_avg}/100 — pilotage fiable.")
         elif data_quality_avg < _MONITORING_DATA_QUALITY_CRITICAL:
             narr_parts.append(
-                f"Qualité données {data_quality_avg}/100 — fiabilité dégradée, vérifier la collecte télérelevé."
+                f"Qualité des relevés {data_quality_avg}/100 — fiabilité dégradée, vérifier la collecte compteur."
             )
 
     narr_parts.append(
-        "Le moteur monitoring suit en continu puissance souscrite, charge réseau, "
-        "consommation hors-horaires et qualité des relevés — conforme ISO 50001."
+        "Le moteur surveille en continu la puissance contractuelle, la charge "
+        "instantanée du réseau, la consommation hors heures d'ouverture et la "
+        "qualité des relevés. Conforme ISO 50001 (norme management énergie) "
+        "et COSTIC (méthode audit énergétique tertiaire FR)."
     )
     narrative = " ".join(narr_parts)
 
     # ── 3 KPIs hero §5 — angle pilotage opérationnel ──
+    # Tooltips Sprint 1.7bis (audit Marie P0-3 + CX P1-3) reformulés non-sachant :
+    # 1ère phrase = bénéfice CFO/DAF, 2e phrase = définition technique courte.
     kpis: list[NarrativeKpi] = [
         NarrativeKpi(
             label="Confiance données",
             value=f"{data_quality_avg}/100" if data_quality_avg is not None else "—",
             tooltip=(
-                "Score de qualité des relevés énergétiques (0-100). Calculé "
-                "sur la complétude, la cohérence temporelle et la régularité "
-                "des télérelevés. Seuil fiable : ≥ 80/100."
+                "Vos compteurs envoient-ils des données fiables ? Score 80/100 = "
+                "oui, pilotage budget possible. Calculé sur 3 axes : complétude "
+                "des relevés, cohérence des valeurs, régularité des intervalles."
             ),
-            source="MonitoringSnapshot.data_quality_score",
+            source="ISO 50001 §8.5.1 — données fiables et reproductibles",
         ),
         NarrativeKpi(
             label="Alertes actives",
@@ -1648,33 +1673,33 @@ def _build_monitoring(
             if nb_alerts_critical > 0
             else None,
             tooltip=(
-                "Nombre de signaux de dérive détectés et non encore traités. "
-                "Une alerte critique nécessite une intervention immédiate ; les "
-                "warnings sont à programmer dans la semaine."
+                "Signaux de dérive détectés automatiquement et non encore traités "
+                "(workflow OPEN → ACK → RESOLVED). Une alerte critique nécessite "
+                "intervention sous 7 jours, les autres sont à programmer dans le mois."
             ),
-            source="MonitoringAlert.status=OPEN",
+            source="MonitoringAlert workflow lifecycle",
         ),
         NarrativeKpi(
             label="Impact dérives",
             value=_fmt_eur_short(impact_total_eur),
             tooltip=(
-                "Cumul des pertes estimées sur les alertes ouvertes — surconsommation, "
-                "dépassement puissance, profil anormal. Récupérables par correction."
+                "Estimation modélisée du surcoût annuel cumulé des alertes ouvertes "
+                "(surconsommation, dépassement puissance, profil anormal). Pas une "
+                "perte mesurée — montant récupérable par correction."
             ),
-            source="MonitoringAlert.estimated_impact_eur",
+            source="MonitoringAlert.estimated_impact_eur · COSTIC NF EN 16247-2",
         ),
     ]
 
     # ── Week-cards Monitoring ──
     week_cards: list[NarrativeWeekCard] = []
 
-    # DRIFT — alerte critique avec plus fort impact
+    # DRIFT — alerte critique avec plus fort impact.
+    # Sprint 1.7bis Quality P1 : site_name_by_id pré-calculé (lookup O(1)).
     if critical_alerts:
         top_critical = max(critical_alerts, key=lambda a: a.estimated_impact_eur or 0)
         critical_impact = top_critical.estimated_impact_eur or 0
-        site_label = (
-            next((s.nom for s in ctx.sites if s.id == top_critical.site_id), None) or f"site #{top_critical.site_id}"
-        )
+        site_label = site_name_by_id.get(top_critical.site_id, f"site #{top_critical.site_id}")
         week_cards.append(
             NarrativeWeekCard(
                 type="drift",
@@ -1690,7 +1715,10 @@ def _build_monitoring(
             )
         )
 
-    # TODO — autres alertes ouvertes à programmer
+    # TODO — autres alertes ouvertes à programmer.
+    # Sprint 1.7bis Energy Manager P0-1 : CTA `?status=open` pour drill-down
+    # liste filtrée (vs page nue qui obligeait à re-filtrer).
+    # CX P1-2 : "warning" → "secondaires" + body explicite.
     other_open = nb_alerts_open - nb_alerts_critical
     if other_open > 0:
         week_cards.append(
@@ -1698,11 +1726,11 @@ def _build_monitoring(
                 type="todo",
                 title=f"Programmer {other_open} action{'s' if other_open > 1 else ''} corrective{'s' if other_open > 1 else ''}",
                 body=(
-                    "Alertes warning à intégrer au plan de maintenance — "
-                    "économies cumulées progressives, conformité ISO 50001."
+                    "Alertes secondaires à intégrer au plan de maintenance — "
+                    "économies cumulées progressives, contribution audit ISO 50001."
                 ),
-                cta_path="/monitoring",
-                cta_label="Liste alertes",
+                cta_path="/monitoring?status=open",
+                cta_label="Voir alertes ouvertes",
                 impact_eur=impact_total_eur - sum((a.estimated_impact_eur or 0) for a in critical_alerts),
                 urgency_days=30,
             )
@@ -1715,21 +1743,24 @@ def _build_monitoring(
                 type="good_news",
                 title=f"Patrimoine stable · qualité {data_quality_avg}/100",
                 body=(
-                    "Aucune dérive détectée et collecte télérelevé fiable — "
+                    "Aucune dérive détectée et collecte des relevés fiable — "
                     "pilotage en routine, base solide pour optimisation continue."
                 ),
-                cta_path="/diagnostic",
+                cta_path="/diagnostic-conso",
                 cta_label="Identifier leviers",
             )
         )
 
     fallback_body = (
         "Aucune alerte cette semaine — patrimoine sous contrôle. Le moteur "
-        "surveille puissance, charge et qualité données en continu."
+        "surveille puissance, charge et qualité des relevés en continu."
     )
 
-    # Tone : CRITICAL si critique ou impact >1k€, TENSION si alertes warning,
-    # POSITIVE si data_quality fiable + 0 alerte, NEUTRAL sinon.
+    # Sprint 1.7bis Reuse P1-1 : tone monitoring-specific. _compute_tone
+    # s'appuie sur non_conformes/a_risque (statut DT), inapplicable au
+    # domaine monitoring (alertes/impact). On garde la cascade inline
+    # documentée — futur refactor : ajouter param domain à _compute_tone si
+    # plus de 2 builders dévient (S1.8+).
     if nb_alerts_critical > 0 or impact_total_eur >= _MONITORING_SEUIL_IMPACT_CRITIQUE_EUR:
         narrative_tone = NarrativeTone.CRITICAL
     elif nb_alerts_open > 0:
@@ -1739,10 +1770,20 @@ def _build_monitoring(
     else:
         narrative_tone = NarrativeTone.NEUTRAL
 
-    provenance = _build_provenance_canonical(
-        "Monitoring Performance Électrique + ISO 50001 + COSTIC",
-        conformite_score=ctx.conformite_score,
-        sites_count=sites_count,
+    # Sprint 1.7bis CX P0-2 : provenance HIGH basée sur data_quality_avg
+    # plutôt que conformite_score (helper canonique inadéquat pour vue
+    # monitoring — un site avec data_quality 35/100 ne peut pas être HIGH).
+    if data_quality_avg is not None and data_quality_avg >= _MONITORING_DATA_QUALITY_GOOD and sites_monitored > 0:
+        confidence = ProvenanceConfidence.HIGH
+    elif data_quality_avg is not None and data_quality_avg >= _MONITORING_DATA_QUALITY_CRITICAL:
+        confidence = ProvenanceConfidence.MEDIUM
+    else:
+        confidence = ProvenanceConfidence.LOW
+
+    provenance = build_provenance(
+        source="Monitoring Performance Électrique + ISO 50001 + COSTIC NF EN 16247-2",
+        confidence=confidence,
+        updated_at=datetime.now(timezone.utc),
         methodology_url="/methodologie/performance-monitoring",
     )
 

@@ -77,9 +77,11 @@ describe('B. Performance page layout', () => {
     expect(code).toMatch(/xl:grid-cols-4/);
   });
 
-  it('skeleton grid uses xl: breakpoint (not lg:)', () => {
-    expect(code).toMatch(/xl:grid-cols-6 gap-3 mb-6/);
-    expect(code).not.toMatch(/lg:grid-cols-6 gap-3 mb-6/);
+  it('skeleton aligned with Sol §5 grammar (3 KPIs not 6)', () => {
+    // Sprint 1.7bis P0-3 (audit CX/UX) : skeleton migré 3 KPIs Sol §5
+    // (anciennement xl:grid-cols-6 hors grammaire Sol).
+    expect(code).toMatch(/grid-cols-1 sm:grid-cols-3 gap-4/);
+    expect(code).not.toMatch(/xl:grid-cols-6/);
   });
 
   it('CTA container uses flex-wrap to avoid overflow', () => {
