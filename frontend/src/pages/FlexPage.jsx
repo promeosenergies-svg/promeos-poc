@@ -2,19 +2,19 @@
  * FlexPage — Sprint 1.10 (page 10/10 — couverture nav 100%).
  *
  * Pillar §4.6 doctrine PROMEOS Sol : Flex Intelligence — Effacement comme
- * revenu. Audit potentiel flex (CVC / batterie / PV / process) par site,
- * éligibilité NEBCO RTE, Flex Score 4 dimensions, neutralité aggregateur.
+ * revenu. Audit potentiel flex (chauffage/clim / batterie / PV / process)
+ * par site, éligibilité NEBCO RTE, Flex Score 4 dimensions, neutralité
+ * agrégateur.
  *
- * Différenciation marché vs Voltalis / GreenFlex / Smart Energie :
- *   - PROMEOS ne contractualise pas l'effacement
- *   - Données restent chez le client
- *   - Permet auto-effacement OU choix d'aggregateur informé
+ * Différenciation marché : PROMEOS ne contractualise pas l'effacement —
+ * vos données restent chez vous, vous gardez 100 % du revenu en mode
+ * auto-effacement OU choisissez un partenaire agrégateur informé.
  *
  * Cf. ADR-001 grammaire Sol industrialisée.
  */
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Zap, Activity, Settings2 } from 'lucide-react';
-import { PageShell, EmptyState, Button } from '../ui';
+import { Zap, ShieldCheck, Settings2 } from 'lucide-react';
+import { PageShell, EmptyState } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { scopeKicker } from '../utils/format';
@@ -48,11 +48,10 @@ export default function FlexPage() {
       kicker={
         solBriefing?.kicker || scopeKicker('FLEX INTELLIGENCE', org?.nom, scopedSites?.length)
       }
-      title={solBriefing?.title || "Votre potentiel d'effacement, sans engagement"}
+      title={solBriefing?.title || 'Votre potentiel d’effacement, sans engagement'}
       italicHook={
-        solBriefing?.italicHook || 'neutralité · pas d’aggregateur · vos données chez vous'
+        solBriefing?.italicHook || 'neutralité · pas d’agrégateur · vos données chez vous'
       }
-      subtitle="Audit Flex sans engagement — comparez aggregateurs ou choisissez l'auto-effacement."
     />
   );
 
@@ -80,38 +79,77 @@ export default function FlexPage() {
         />
       )}
 
-      {/* Phase 1 page minimale : audit + inventaire flex en cours d'industrialisation
-          (cf. project_flex_usage_sprint.md + project_flexibilite_strategie_produit.md).
-          Roadmap S2+ : carpet plot puissance pilotable, simulateur revenus NEBCO,
-          comparateur aggregateurs, signal RTE temps réel. */}
+      {/* Sprint 1.10bis Investisseur P0 + Frontend-design P4 : panneau
+          Neutralité promu top-level (vs caché derrière isExpert). C'est LE
+          message wedge §4.6 face à Voltalis/GreenFlex/Smart Energie/Veolia/
+          EDF Effacement — doit être visible 10s pour démo investisseur.
+          Concurrents → formulation générique pour éviter risque marketing
+          dans le DOM (Quality P1). */}
+      <section
+        role="region"
+        aria-labelledby="flex-neutralite-heading"
+        className="rounded-lg p-6 border"
+        style={{
+          background: 'var(--sol-calme-bg)',
+          borderColor: 'var(--sol-calme-fg)',
+        }}
+      >
+        <div className="flex items-start gap-3">
+          <ShieldCheck
+            size={20}
+            className="mt-0.5 shrink-0"
+            style={{ color: 'var(--sol-calme-fg)' }}
+            aria-hidden="true"
+          />
+          <div>
+            <h3
+              id="flex-neutralite-heading"
+              className="font-semibold text-base"
+              style={{ color: 'var(--sol-calme-fg-hover)' }}
+            >
+              Neutralité agrégateur — moat structurel PROMEOS Sol
+            </h3>
+            <p className="text-sm mt-1.5 leading-relaxed" style={{ color: 'var(--sol-ink-700)' }}>
+              Les autres acteurs du marché B2B contractualisent l’agrégation : ils prennent une
+              commission sur chaque effacement, vos données partent chez eux. PROMEOS Sol fait
+              l’inverse — vos données restent chez vous, aucune commission, vous choisissez
+              librement entre auto-effacement (100&nbsp;% du revenu marché capacité) et un
+              partenaire agrégateur, comparé objectivement. Si la régulation ouvre l’effacement à
+              tous post-décret 2026, vous y êtes déjà ; si l’oligopole persiste, PROMEOS reste
+              l’outil de comparaison neutre.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Phase 1 page minimale — audit + inventaire flex en construction
+          progressive (cf. project_flexibilite_strategie_produit.md).
+          Roadmap S2+ : carpet plot puissance pilotable 24×7, simulateur
+          revenus NEBCO/AOFD, comparateur agrégateurs partenaires. */}
       <EmptyState
-        icon={Activity}
-        title="Audit Flex en construction"
+        icon={ShieldCheck}
+        title="Audit Flex — phase 1 disponible"
         text={
           <>
-            La cartographie complète des actifs pilotables (CVC, froid, batterie, photovoltaïque,
-            process) et le simulateur de revenus marché capacité sont en cours de construction.{' '}
+            Le briefing ci-dessus reflète votre potentiel d’effacement à partir des données déjà
+            collectées par PROMEOS Sol (patrimoine, actifs pilotables, scores Flex). La cartographie
+            24×7 détaillée et le simulateur de revenus marché capacité (NEBCO, AOFD) arrivent en
+            Sprint&nbsp;2.{' '}
             {queryStatus === 'actionable' && (
-              <strong>Filtrer sur les actifs déjà identifiés comme pilotables.</strong>
+              <em>Vue filtrée : actifs déjà identifiés comme pilotables.</em>
             )}
-            {queryStatus === 'not_assessed' && (
-              <strong>Filtrer sur les sites non encore évalués.</strong>
-            )}
-            {!queryStatus && (
-              <>
-                Le briefing éditorial ci-dessus reflète l'état de votre patrimoine selon les données
-                déjà collectées par les autres modules.
-              </>
-            )}
+            {queryStatus === 'not_assessed' && <em>Vue filtrée : sites non encore évalués.</em>}
           </>
         }
-        ctaLabel="Voir les anomalies actives"
-        onCta={() => navigate('/anomalies?status=open')}
+        ctaLabel="Comprendre la méthodologie"
+        onCta={() =>
+          navigate(solBriefing?.provenance?.methodology_url || '/methodologie/flex-effacement')
+        }
       />
 
       {isExpert && (
         <div
-          className="rounded-lg p-4 text-sm border"
+          className="rounded-lg p-6 text-sm border"
           style={{
             background: 'var(--sol-bg-panel)',
             borderColor: 'var(--sol-line)',
@@ -123,13 +161,13 @@ export default function FlexPage() {
               size={16}
               className="mt-0.5 shrink-0"
               style={{ color: 'var(--sol-ink-500)' }}
+              aria-hidden="true"
             />
             <div>
-              <span className="font-semibold">Roadmap technique S2+ :</span> carpet plot puissance
-              pilotable 24×7, simulateur revenus NEBCO/AOFD avec courbes tarifaires RTE, comparateur
-              aggregateurs (Voltalis / GreenFlex / Smart Energie / Veolia / EDF Effacement). Signal
-              Tempo + EcoWatt en temps réel. Toutes données restent chez le client — neutralité
-              contractuelle PROMEOS.
+              <span className="font-semibold">Roadmap technique Sprint&nbsp;2+ :</span> carpet plot
+              puissance pilotable 24×7, simulateur revenus NEBCO/AOFD avec courbes tarifaires RTE,
+              comparateur multi-agrégateurs partenaires (≥&nbsp;4 acteurs certifiés), signal Tempo +
+              EcoWatt en temps réel.
             </div>
           </div>
         </div>
