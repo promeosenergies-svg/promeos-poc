@@ -38,6 +38,7 @@ SUPPORTED_PAGE_KEYS = {
     "patrimoine",
     "conformite",
     "bill_intel",
+    "achat_energie",
 }
 
 

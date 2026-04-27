@@ -46,6 +46,12 @@ const METHODOLOGIE_CATALOG = Object.freeze({
     kicker: 'MÉTHODOLOGIE · BILL-INTEL',
     publicPath: '/docs/methodologie/bill-intel-shadow.md',
   },
+  'achat-post-arenh': {
+    title: 'Achat énergie post-ARENH',
+    italicHook: 'neutralité fournisseur · 30+ offres CRE · shadow 6 composantes',
+    kicker: 'MÉTHODOLOGIE · ACHAT',
+    publicPath: '/docs/methodologie/achat-post-arenh.md',
+  },
 });
 
 // Mini-renderer markdown : titre, paragraphes, listes, tables, code,

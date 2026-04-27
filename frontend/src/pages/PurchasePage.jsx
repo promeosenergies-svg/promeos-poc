@@ -50,7 +50,12 @@ import {
   seedWowDirty,
   getMarketContext,
 } from '../services/api';
-import { fmtKwh, fmtNum, fmtEur as _fmtEur, kwhUnit } from '../utils/format';
+import { fmtKwh, fmtNum, fmtEur as _fmtEur, kwhUnit, scopeKicker } from '../utils/format';
+import SolPageHeader from '../ui/sol/SolPageHeader';
+import SolNarrative from '../ui/sol/SolNarrative';
+import SolWeekCards from '../ui/sol/SolWeekCards';
+import SolPageFooter from '../ui/sol/SolPageFooter';
+import { usePageBriefing } from '../hooks/usePageBriefing';
 import MarketContextBanner from '../components/purchase/MarketContextBanner';
 import { TariffWindowsCard } from '../components/flex';
 import {
@@ -185,12 +190,23 @@ const STRATEGY_WHY = {
 };
 
 export default function PurchasePage() {
-  const { scopedSites, scope, selectedSiteId: scopeSiteId } = useScope();
+  const { scopedSites, scope, selectedSiteId: scopeSiteId, org } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { openActionDrawer } = useActionDrawer();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Sprint 1.6 — briefing éditorial Sol §5 vue Achat (ADR-001).
+  // Backend orchestre KPIs + narrative + week-cards via
+  // /api/pages/achat_energie/briefing. Différenciateur §4.6 doctrine :
+  // neutralité fournisseur + 30+ fournisseurs CRE + shadow billing 6
+  // composantes (TURPE 7 / accise / CTA / capacité Nov 2026 / ATRD7 / VNU).
+  const {
+    briefing: solBriefing,
+    error: solBriefingError,
+    refetch: solBriefingRefetch,
+  } = usePageBriefing('achat_energie', { persona: 'daily' });
 
   // Data confidence (Step 3.1)
   const purchaseKpis = useMemo(
@@ -563,7 +579,57 @@ export default function PurchasePage() {
             )}
           </span>
         }
+        editorialHeader={
+          <SolPageHeader
+            kicker={
+              solBriefing?.kicker || scopeKicker('ACHAT ÉNERGIE', org?.nom, scopedSites?.length)
+            }
+            title={solBriefing?.title || 'Vos contrats'}
+            italicHook={solBriefing?.italicHook || '30+ fournisseurs comparés'}
+            subtitle={
+              <span className="flex items-center gap-2">
+                Simuler &amp; arbitrer vos stratégies d'achat
+                {dataConfidence && (
+                  <Tooltip text={dataConfidence.tooltipFR}>
+                    <span
+                      className="inline-flex items-center gap-1"
+                      data-testid="purchase-confidence"
+                    >
+                      <Badge status={dataConfidence.badgeStatus}>
+                        <Explain term="data_confidence">Confiance : {dataConfidence.label}</Explain>
+                      </Badge>
+                    </span>
+                  </Tooltip>
+                )}
+              </span>
+            }
+          />
+        }
       >
+        {/* Sprint 1.6 — préambule éditorial Sol §5 vue Achat (ADR-001).
+            Différenciateur §4.6 : neutralité fournisseur + shadow billing
+            6 composantes (TURPE 7 / accise / CTA / capacité Nov 2026 /
+            ATRD7 / VNU post-ARENH). Sert Jean-Marc CFO + Marie DAF. */}
+        {solBriefingError && !solBriefing && (
+          <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
+        )}
+        {solBriefing && (
+          <SolNarrative
+            kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
+            title={null /* idem — éviter doublon */}
+            narrative={solBriefing.narrative}
+            kpis={solBriefing.kpis}
+          />
+        )}
+        {solBriefing && (
+          <SolWeekCards
+            cards={solBriefing.weekCards}
+            fallbackBody={solBriefing.fallbackBody}
+            tone={solBriefing.narrativeTone}
+            onNavigate={navigate}
+          />
+        )}
+
         {/* Step 24: Market context banner */}
         <MarketContextBanner
           marketContext={marketContext}
@@ -2142,6 +2208,18 @@ export default function PurchasePage() {
           selectedSiteId={selectedSiteId}
           seedResult={seedResult}
         />
+
+        {/* Sprint 1.6 — SolPageFooter §5 (ADR-001).
+            Source · Confiance · Mis à jour. Methodology URL pointe vers
+            /methodologie/achat-post-arenh (CRE + 30 fournisseurs + ARENH). */}
+        {solBriefing?.provenance && (
+          <SolPageFooter
+            source={solBriefing.provenance.source}
+            confidence={solBriefing.provenance.confidence}
+            updatedAt={solBriefing.provenance.updated_at}
+            methodologyUrl={solBriefing.provenance.methodology_url}
+          />
+        )}
       </PageShell>
     </PurchaseErrorBoundary>
   );
