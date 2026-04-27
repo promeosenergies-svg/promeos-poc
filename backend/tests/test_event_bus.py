@@ -950,6 +950,146 @@ def test_market_window_detector_emits_capacity_2026_until_deadline(db, org_with_
     assert len(e.linked_assets.site_ids) >= 1
 
 
+def test_contract_renewal_detector_emits_when_contract_near_end(db, org_with_sites):
+    """ét13c : contract_renewal event quand date_fin contrat < 180 jours.
+
+    Stratégie : créer un ContratCadre avec date_fin imminente sur l'org de
+    test, vérifier qu'un event est émis avec severity adaptée.
+    """
+    from datetime import date, timedelta
+
+    from models.contract_v2_models import ContratCadre
+    from models.enums import BillingEnergyType, ContractIndexation
+    from services.event_bus.detectors import contract_renewal_detector
+
+    org_id = org_with_sites["org_id"]
+
+    # Contrat échéance dans 60 jours → severity warning
+    contrat = ContratCadre(
+        org_id=org_id,
+        reference="CC-2026-TEST",
+        fournisseur="EDF Test",
+        energie=BillingEnergyType.ELEC,
+        date_debut=date.today() - timedelta(days=365),
+        date_fin=date.today() + timedelta(days=60),
+        date_preavis=date.today() + timedelta(days=30),
+        type_prix=ContractIndexation.FIXE,
+    )
+    db.add(contrat)
+    db.commit()
+
+    events = contract_renewal_detector.detect(db, org_id)
+    assert events, "Contrat échéance J+60 doit émettre un event"
+    e = events[0]
+    assert e.event_type == "contract_renewal"
+    assert e.severity in ("warning", "critical")
+    assert e.action.owner_role == "DAF"
+    assert "EDF Test" in e.title
+    # linked_assets.contract_ids doit être peuplé (audit EM P0-2)
+    assert contrat.id in e.linked_assets.contract_ids
+
+
+def test_data_quality_issue_detector_emits_when_gaps_detected(db, org_with_sites, monkeypatch):
+    """ét13d : data_quality_issue event quand insight type=data_gap > seuil."""
+    from services.event_bus.detectors import data_quality_issue_detector
+
+    fake_summary = {
+        "insights": [
+            {
+                "type": "data_gap",
+                "site_id": 1,
+                "site_label": "Site Test",
+                "severity": "high",
+                "message": "Trous CDC Enedis détectés",
+                "metrics": {"missing_pct": 22.5, "period_days": 30},
+            }
+        ]
+    }
+    monkeypatch.setattr(
+        "services.consumption_diagnostic.get_insights_summary",
+        lambda db, org_id: fake_summary,
+    )
+
+    events = data_quality_issue_detector.detect(db, org_with_sites["org_id"])
+    assert events, "data_gap > 5% doit émettre un event"
+    e = events[0]
+    assert e.event_type == "data_quality_issue"
+    assert e.severity == "warning"  # 22.5% est dans la plage warning (15-30)
+    assert e.action.owner_role == "Energy Manager"
+    assert e.impact.unit == "%"
+
+
+def test_asset_registry_issue_detector_emits_when_dp_without_grd(db, org_with_sites):
+    """ét13e : asset_registry_issue event si DeliveryPoint sans grd_code.
+
+    La fixture org_with_sites crée des sites sans DeliveryPoint, donc le
+    test vérifie surtout que le détecteur ne crashe pas et retourne []
+    quand aucun problème détectable. Pour tester le cas positif, créer
+    un DP sans grd_code.
+    """
+    from models.enums import DeliveryPointEnergyType
+    from models.patrimoine import DeliveryPoint
+    from services.event_bus.detectors import asset_registry_issue_detector
+
+    # Créer un DP sans grd_code sur le premier site de l'org
+    from models import Site
+
+    site = db.query(Site).filter(Site.id.isnot(None)).first()
+    assert site is not None, "Fixture doit fournir au moins un site"
+
+    dp = DeliveryPoint(
+        code="12345678901234",
+        energy_type=DeliveryPointEnergyType.ELEC,
+        grd_code=None,  # ← le défaut testé
+        site_id=site.id,
+    )
+    db.add(dp)
+    db.commit()
+
+    events = asset_registry_issue_detector.detect(db, org_with_sites["org_id"])
+    grd_events = [e for e in events if "réseau" in e.title.lower() or "grd" in e.id.lower()]
+    assert grd_events, "DP sans grd_code doit émettre un event no_grd"
+    e = grd_events[0]
+    assert e.event_type == "asset_registry_issue"
+    assert e.action.owner_role == "DAF"
+
+
+def test_action_overdue_detector_emits_for_overdue_action(db, org_with_sites):
+    """ét13f : action_overdue event quand ActionPlanItem en retard."""
+    from datetime import datetime, timedelta, timezone
+
+    from models import Site
+    from models.action_plan_item import ActionPlanItem
+    from services.event_bus.detectors import action_overdue_detector
+
+    site = db.query(Site).filter(Site.id.isnot(None)).first()
+    assert site is not None
+
+    # Action critique en retard de 10 jours → severity critical (priority high → critical dès J+0)
+    action = ActionPlanItem(
+        issue_id="test-issue-001",
+        domain="compliance",
+        severity="critical",
+        site_id=site.id,
+        issue_code="DT_NON_CONFORME",
+        issue_label="Site non conforme Décret Tertiaire",
+        priority="high",
+        sla_days=30,
+        status="open",
+        owner="DAF Test",
+        due_date=datetime.now(timezone.utc) - timedelta(days=10),
+    )
+    db.add(action)
+    db.commit()
+
+    events = action_overdue_detector.detect(db, org_with_sites["org_id"])
+    assert events, "Action en retard doit émettre un event"
+    e = events[0]
+    assert e.event_type == "action_overdue"
+    assert e.severity == "critical"  # priority high + retard >= 0 → critical
+    assert e.action.owner_role == "DAF"  # owner string contient "DAF"
+
+
 def test_market_window_detector_skips_when_org_has_no_sites(db):
     """ét13b : org vide → aucun event (pas de surcoût applicable)."""
     from models import EntiteJuridique, Organisation, Portefeuille

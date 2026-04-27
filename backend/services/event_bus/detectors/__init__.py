@@ -15,9 +15,13 @@ Pour ajouter un détecteur :
 """
 
 from . import (
+    action_overdue_detector,
+    asset_registry_issue_detector,
     billing_anomaly_detector,
     compliance_deadline_detector,
     consumption_drift_detector,
+    contract_renewal_detector,
+    data_quality_issue_detector,
     flex_opportunity_detector,
     market_window_detector,
 )
@@ -25,14 +29,17 @@ from ._protocol import EventDetector
 
 # Registry consommé par `event_service.compute_events`. Order ne porte pas
 # de sémantique (le tri severity stable est appliqué après agrégation).
-# Sprint 2 Vague C ét13a/b : +flex_opportunity (différenciant VC NEBCO
-# post-ARENH) et +market_window (capacité 1/11/2026 obligatoire).
+# Sprint 2 Vague C ét11→ét13f : 9/9 détecteurs doctrine §10 livrés.
 DETECTORS: list[EventDetector] = [
     compliance_deadline_detector,  # type: ignore[list-item]
     billing_anomaly_detector,  # type: ignore[list-item]
     consumption_drift_detector,  # type: ignore[list-item]
     flex_opportunity_detector,  # type: ignore[list-item]
     market_window_detector,  # type: ignore[list-item]
+    contract_renewal_detector,  # type: ignore[list-item]
+    data_quality_issue_detector,  # type: ignore[list-item]
+    asset_registry_issue_detector,  # type: ignore[list-item]
+    action_overdue_detector,  # type: ignore[list-item]
 ]
 
 __all__ = ["DETECTORS", "EventDetector"]
