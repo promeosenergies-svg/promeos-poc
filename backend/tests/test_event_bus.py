@@ -373,6 +373,119 @@ def test_compute_events_uses_detectors_registry(db, org_with_sites):
         DETECTORS.extend(original_detectors)
 
 
+# ── Sprint 2 Vague C ét12a : billing_anomaly_detector ──────────────
+
+
+def _seed_billing_insights(db, site_id, *, open_eur, resolved_eur=0, resolved_payback_days=0):
+    """Helper : crée des BillingInsight avec montants paramétrables."""
+    from datetime import datetime, timedelta, timezone
+
+    from models.billing_models import BillingInsight
+    from models.enums import InsightStatus
+
+    now = datetime.now(timezone.utc)
+    if open_eur > 0:
+        b1 = BillingInsight(
+            site_id=site_id,
+            type="shadow_gap",
+            severity="high",
+            message="Test open",
+            estimated_loss_eur=open_eur,
+            insight_status=InsightStatus.OPEN,
+        )
+        db.add(b1)
+    if resolved_eur > 0:
+        b2 = BillingInsight(
+            site_id=site_id,
+            type="shadow_gap",
+            severity="high",
+            message="Test resolved",
+            estimated_loss_eur=resolved_eur,
+            insight_status=InsightStatus.RESOLVED,
+        )
+        db.add(b2)
+        db.flush()
+        b2.created_at = now - timedelta(days=resolved_payback_days)
+        b2.updated_at = now
+    db.commit()
+
+
+def test_billing_detector_emits_critical_above_10k(db, org_with_sites):
+    """Pertes ouvertes ≥ 10 k€ → événement critical billing_anomaly."""
+    from services.event_bus.detectors import billing_anomaly_detector
+
+    site_id = db.query(Site).first().id
+    _seed_billing_insights(db, site_id, open_eur=15_000)
+    events = billing_anomaly_detector.detect(db, org_with_sites["org_id"])
+    critical = [e for e in events if e.severity == "critical" and e.event_type == "billing_anomaly"]
+    assert len(critical) == 1
+    assert critical[0].impact.value == 15_000
+    assert critical[0].impact.unit == "€"
+    assert critical[0].action.route == "/bill-intel"
+    assert critical[0].source.system == "invoice"
+
+
+def test_billing_detector_emits_warning_2k_to_10k(db, org_with_sites):
+    """Pertes ouvertes 2-10 k€ → warning billing_anomaly."""
+    from services.event_bus.detectors import billing_anomaly_detector
+
+    site_id = db.query(Site).first().id
+    _seed_billing_insights(db, site_id, open_eur=5_000)
+    events = billing_anomaly_detector.detect(db, org_with_sites["org_id"])
+    warning = [e for e in events if e.severity == "warning"]
+    assert len(warning) == 1
+
+
+def test_billing_detector_emits_nothing_below_500(db, org_with_sites):
+    """Pertes ouvertes < 500 € → aucun événement billing (densification fallback)."""
+    from services.event_bus.detectors import billing_anomaly_detector
+
+    site_id = db.query(Site).first().id
+    _seed_billing_insights(db, site_id, open_eur=200)
+    events = billing_anomaly_detector.detect(db, org_with_sites["org_id"])
+    assert all(e.event_type != "billing_anomaly" or e.severity == "info" for e in events)
+
+
+def test_billing_detector_emits_info_for_reclaim_ytd(db, org_with_sites):
+    """Reclaim YTD ≥ 500 € → événement info (good_news : récupérations validées)."""
+    from datetime import datetime, timedelta, timezone
+
+    from services.event_bus.detectors import billing_anomaly_detector
+
+    site_id = db.query(Site).first().id
+    _seed_billing_insights(db, site_id, open_eur=0, resolved_eur=3_000, resolved_payback_days=10)
+    events = billing_anomaly_detector.detect(db, org_with_sites["org_id"])
+    info = [e for e in events if e.severity == "info" and e.event_type == "billing_anomaly"]
+    assert len(info) == 1
+    assert info[0].impact.value == 3_000
+
+
+def test_billing_detector_includes_mitigation_with_payback(db, org_with_sites):
+    """Si payback observé, EventMitigation rempli pour CFO arbitrage."""
+    from services.event_bus.detectors import billing_anomaly_detector
+
+    site_id = db.query(Site).first().id
+    _seed_billing_insights(db, site_id, open_eur=15_000, resolved_eur=2_000, resolved_payback_days=14)
+    events = billing_anomaly_detector.detect(db, org_with_sites["org_id"])
+    critical = next(e for e in events if e.severity == "critical")
+    assert critical.impact.mitigation is not None
+    # 14 jours / 30 ≈ 0.46 mois → max(1, round(0.46)) = 1 mois
+    assert critical.impact.mitigation.payback_months == 1
+    assert critical.impact.mitigation.npv_eur == 15_000
+
+
+def test_billing_detector_uses_losses_service_sot(db, org_with_sites):
+    """Détecteur consomme losses_service (SoT canonique) — pas de SQL inline."""
+    import inspect
+
+    from services.event_bus.detectors import billing_anomaly_detector
+
+    src = inspect.getsource(billing_anomaly_detector.detect)
+    # Doit appeler compute_billing_losses_summary — pas de query directe BillingInsight
+    assert "compute_billing_losses_summary" in src
+    assert "db.query(BillingInsight" not in src
+
+
 def test_org_isolation_no_cross_leak(db):
     """Multi-tenant : org A ne voit pas les événements d'org B."""
     org_a = Organisation(nom="Org A")

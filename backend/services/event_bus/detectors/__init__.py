@@ -14,13 +14,14 @@ Pour ajouter un détecteur :
 3. Ajouter test conformité Protocol dans `test_event_bus.py`.
 """
 
-from . import compliance_deadline_detector
+from . import billing_anomaly_detector, compliance_deadline_detector
 from ._protocol import EventDetector
 
 # Registry consommé par `event_service.compute_events`. Order ne porte pas
 # de sémantique (le tri severity stable est appliqué après agrégation).
 DETECTORS: list[EventDetector] = [
     compliance_deadline_detector,  # type: ignore[list-item]
+    billing_anomaly_detector,  # type: ignore[list-item]
 ]
 
 __all__ = ["DETECTORS", "EventDetector"]
