@@ -64,6 +64,12 @@ const METHODOLOGIE_CATALOG = Object.freeze({
     kicker: 'MÉTHODOLOGIE · DIAGNOSTIC',
     publicPath: '/docs/methodologie/diagnostic-conso.md',
   },
+  'centre-actions': {
+    title: "Centre d'actions cross-pillar",
+    italicHook: 'orchestration · ActionItem unifié · workflow lifecycle',
+    kicker: "MÉTHODOLOGIE · CENTRE D'ACTIONS",
+    publicPath: '/docs/methodologie/centre-actions.md',
+  },
 });
 
 // Mini-renderer markdown : titre, paragraphes, listes, tables, code,

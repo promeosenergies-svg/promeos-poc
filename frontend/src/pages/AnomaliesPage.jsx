@@ -31,6 +31,12 @@ import {
 } from '../ui';
 import Tabs from '../ui/Tabs';
 import { useScope } from '../contexts/ScopeContext';
+import { scopeKicker } from '../utils/format';
+import SolPageHeader from '../ui/sol/SolPageHeader';
+import SolNarrative from '../ui/sol/SolNarrative';
+import SolWeekCards from '../ui/sol/SolWeekCards';
+import SolPageFooter from '../ui/sol/SolPageFooter';
+import { usePageBriefing } from '../hooks/usePageBriefing';
 import {
   getPatrimoineAnomalies,
   getBillingAnomaliesScoped,
@@ -76,8 +82,19 @@ export default function AnomaliesPage() {
   const navigate = useNavigate();
   const { filters, hasFilters, setFilters, resetFilters } = useAnomalyFilters();
   const activeTab = filters.tab;
-  const { scopedSites, sitesLoading } = useScope();
+  const { scopedSites, sitesLoading, org } = useScope();
   const { openActionDrawer } = useActionDrawer();
+
+  // Sprint 1.9 — briefing éditorial Sol §5 vue Centre d'actions (ADR-001).
+  // Page transverse §3 P11 : agrège anomalies cross-pillar (Conformité +
+  // Performance + Facturation + Achat) via ActionItem (SoT unifiée).
+  // Sert Marie DAF (priorisation hebdomadaire) + Investisseur (orchestration
+  // produit unifié vs concurrents siloés).
+  const {
+    briefing: solBriefing,
+    error: solBriefingError,
+    refetch: solBriefingRefetch,
+  } = usePageBriefing('anomalies', { persona: 'daily' });
 
   const { toast } = useToast();
 
@@ -310,8 +327,40 @@ export default function AnomaliesPage() {
     <PageShell
       icon={AlertTriangle}
       title="Centre d'actions"
-      subtitle={activeTab === 'anomalies' ? subtitle : undefined}
+      editorialHeader={
+        <SolPageHeader
+          kicker={
+            solBriefing?.kicker || scopeKicker("CENTRE D'ACTIONS", org?.nom, scopedSites?.length)
+          }
+          title={solBriefing?.title || 'Vos anomalies, regroupées et priorisées'}
+          italicHook={solBriefing?.italicHook || 'conformité · performance · facturation · achat'}
+          subtitle={activeTab === 'anomalies' ? subtitle : undefined}
+        />
+      }
     >
+      {/* Sprint 1.9 — préambule éditorial Sol §5 vue Centre d'actions
+          (ADR-001). Page transverse §3 P11 — orchestration cross-pillar
+          via ActionItem (SoT unifiée OPEN/IN_PROGRESS/DONE). */}
+      {solBriefingError && !solBriefing && (
+        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
+      )}
+      {solBriefing && (
+        <SolNarrative
+          kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
+          title={null /* idem — éviter doublon */}
+          narrative={solBriefing.narrative}
+          kpis={solBriefing.kpis}
+        />
+      )}
+      {solBriefing && (
+        <SolWeekCards
+          cards={solBriefing.weekCards}
+          fallbackBody={solBriefing.fallbackBody}
+          tone={solBriefing.narrativeTone}
+          onNavigate={navigate}
+        />
+      )}
+
       <Tabs
         tabs={CENTRE_TABS}
         active={activeTab}
@@ -693,6 +742,18 @@ export default function AnomaliesPage() {
         onClose={() => setEvidenceOpen(false)}
         evidence={evidenceData}
       />
+
+      {/* Sprint 1.9 — SolPageFooter §5 (ADR-001).
+          Source · Confiance · Mis à jour. Methodology URL pointe vers
+          /methodologie/centre-actions (orchestration cross-pillar). */}
+      {solBriefing?.provenance && (
+        <SolPageFooter
+          source={solBriefing.provenance.source}
+          confidence={solBriefing.provenance.confidence}
+          updatedAt={solBriefing.provenance.updated_at}
+          methodologyUrl={solBriefing.provenance.methodology_url}
+        />
+      )}
     </PageShell>
   );
 }

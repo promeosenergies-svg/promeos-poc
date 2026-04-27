@@ -41,6 +41,7 @@ SUPPORTED_PAGE_KEYS = {
     "achat_energie",
     "monitoring",
     "diagnostic",
+    "anomalies",
 }
 
 

@@ -2139,6 +2139,303 @@ def _build_diagnostic(
     )
 
 
+# Sprint 1.9 — constantes module Anomalies / Centre d'actions.
+# Sourçage : doctrine §3 P11 (le bon endroit pour chaque brique).
+_ANOMALIES_SEUIL_IMPACT_CRITIQUE_EUR = 5_000  # cumul → tone CRITICAL
+_ANOMALIES_HORIZON_URGENT_DAYS = 30  # échéance < 30j = urgent
+
+# SoT FR labels source_type ActionItem (cross-pillar).
+_ACTION_SOURCE_LABELS_FR: dict[str, str] = {
+    "compliance": "Conformité",
+    "consumption": "Consommation",
+    "billing": "Facturation",
+    "purchase": "Achat",
+    "monitoring": "Performance",
+}
+
+
+def _build_anomalies(
+    db: Session,
+    org_id: int,
+    org_name: str,
+    sites_count: int,
+) -> Narrative:
+    """Sprint 1.9 — Vue Centre d'actions (anomalies cross-pillar).
+
+    Page transverse §3 P11 doctrine : agrège toutes les anomalies du
+    patrimoine (Conformité / Performance / Facturation / Achat) en un
+    seul flux d'actions priorisées par impact € et échéance.
+
+    Sert Marie DAF (« qu'est-ce que je dois traiter cette semaine ? »),
+    Energy Manager (priorisation), Investisseur (orchestration cross-
+    pillar = preuve produit unifié vs concurrents siloés).
+
+    Données réelles :
+      - ActionItem (SoT cross-source) : status, priority, severity,
+        estimated_gain_eur, due_date, source_type
+      - Workflow : OPEN → IN_PROGRESS → DONE / BLOCKED / FALSE_POSITIVE
+    """
+    from models.action_item import ActionItem
+    from models.enums import ActionStatus
+
+    ctx = _load_org_context(db, org_id)
+    site_name_by_id: dict[int, str] = {s.id: (s.nom or f"site #{s.id}") for s in ctx.sites}
+
+    # ── Récupérer les actions actives (org-scoped via ActionItem.org_id) ──
+    # Sprint 1.9 : filtre directement sur org_id (modèle ActionItem porte
+    # cette colonne, pas besoin de joindre Site). Bornage temporel : OPEN
+    # + IN_PROGRESS + DONE depuis 1er janvier (Économies sécurisées YTD).
+    today = date.today()
+    horizon_floor = min(date(today.year, 1, 1), today - timedelta(days=365))
+    actions = (
+        db.query(ActionItem)
+        .filter(ActionItem.org_id == org_id)
+        .filter(ActionItem.created_at >= datetime.combine(horizon_floor, datetime.min.time()))
+        .all()
+    )
+
+    # Single-pass partitioning par status × priorité × source.
+    open_actions: list[ActionItem] = []
+    critical_actions: list[ActionItem] = []
+    in_progress_actions: list[ActionItem] = []
+    done_actions: list[ActionItem] = []
+    impact_total_eur = 0.0
+    critical_total_eur = 0.0
+    economies_realisees_eur = 0.0
+    sources_seen: dict[str, int] = {}
+    horizon_urgent = today + timedelta(days=_ANOMALIES_HORIZON_URGENT_DAYS)
+    urgent_actions: list[ActionItem] = []
+
+    for a in actions:
+        if a.status == ActionStatus.OPEN:
+            open_actions.append(a)
+            gain = a.estimated_gain_eur or 0.0
+            impact_total_eur += gain
+            # priority 1-2 = critique (1 plus urgent), severity critical aussi.
+            if (a.priority is not None and a.priority <= 2) or (a.severity == "critical"):
+                critical_actions.append(a)
+                critical_total_eur += gain
+            if a.due_date and a.due_date <= horizon_urgent:
+                urgent_actions.append(a)
+            src = (a.source_type.value if hasattr(a.source_type, "value") else str(a.source_type)) or "autre"
+            sources_seen[src] = sources_seen.get(src, 0) + 1
+        elif a.status == ActionStatus.IN_PROGRESS:
+            in_progress_actions.append(a)
+        elif a.status == ActionStatus.DONE:
+            done_actions.append(a)
+            economies_realisees_eur += a.estimated_gain_eur or 0.0
+
+    nb_actions_open = len(open_actions)
+    nb_actions_critical = len(critical_actions)
+    nb_actions_in_progress = len(in_progress_actions)
+    nb_actions_done = len(done_actions)
+    nb_urgent = len(urgent_actions)
+
+    # ── Kicker + titre + italic hook §5 ──
+    week_iso = datetime.now(timezone.utc).isocalendar().week
+    if nb_actions_open > 0:
+        kicker = (
+            f"CENTRE D'ACTIONS · SEMAINE {week_iso} · "
+            f"{nb_actions_open} ANOMALIE{_s(nb_actions_open).upper()} ACTIVE{_s(nb_actions_open).upper()}"
+        )
+    else:
+        kicker = f"CENTRE D'ACTIONS · SEMAINE {week_iso} · PATRIMOINE SOUS CONTRÔLE"
+    title = "Vos anomalies, regroupées et priorisées"
+    italic_hook = "conformité · performance · facturation · achat"
+
+    # ── Narrative orientée Marie DAF + Energy Manager ──
+    narr_parts = []
+    if nb_actions_critical > 0:
+        p_crit = _s(nb_actions_critical)
+        narr_parts.append(
+            f"{nb_actions_critical} anomalie{p_crit} critique{p_crit} sur votre patrimoine — "
+            "à traiter cette semaine pour limiter l'impact."
+        )
+    elif nb_actions_open > 0:
+        p_open = _s(nb_actions_open)
+        narr_parts.append(
+            f"{nb_actions_open} anomalie{p_open} active{p_open} regroupée{p_open} "
+            f"et classée{p_open} par impact financier et échéance."
+        )
+    elif nb_actions_in_progress > 0:
+        narr_parts.append(
+            f"{nb_actions_in_progress} action{_s(nb_actions_in_progress)} en cours — exécution conforme au plan."
+        )
+    else:
+        narr_parts.append("Aucune anomalie à traiter cette semaine — votre patrimoine est sous contrôle.")
+
+    if nb_urgent > 0:
+        narr_parts.append(
+            f"{nb_urgent} échéance{_s(nb_urgent)} dans les {_ANOMALIES_HORIZON_URGENT_DAYS} prochains jours."
+        )
+
+    if impact_total_eur > 0:
+        narr_parts.append(
+            f"Impact estimé : {_fmt_eur_short(impact_total_eur)} récupérables par actions correctives priorisées."
+        )
+
+    if economies_realisees_eur > 0:
+        narr_parts.append(
+            f"Économies déjà sécurisées depuis janvier : {_fmt_eur_short(economies_realisees_eur)} "
+            f"({nb_actions_done} action{_s(nb_actions_done)} clôturée{_s(nb_actions_done)})."
+        )
+
+    if sources_seen:
+        sources_top = sorted(sources_seen.items(), key=lambda kv: -kv[1])[:3]
+        sources_fr = ", ".join(_ACTION_SOURCE_LABELS_FR.get(src, src) for src, _ in sources_top)
+        narr_parts.append(
+            f"Sources principales : {sources_fr}. Le Centre d'actions agrège les "
+            "anomalies des 4 piliers PROMEOS — Patrimoine, Performance, Facturation, Achat."
+        )
+
+    narrative = " ".join(narr_parts)
+
+    # ── 3 KPIs hero §5 — angle CFO orchestration ──
+    unit_critical = f"dont {nb_actions_critical} critique{_s(nb_actions_critical)}" if nb_actions_critical > 0 else None
+    unit_urgent = f"dont {nb_urgent} sous {_ANOMALIES_HORIZON_URGENT_DAYS}j" if nb_urgent > 0 else None
+    kpis: list[NarrativeKpi] = [
+        NarrativeKpi(
+            label="Anomalies actives",
+            value=str(nb_actions_open),
+            unit=unit_critical,
+            tooltip=(
+                "Anomalies détectées par les 4 piliers PROMEOS et non encore "
+                "traitées (workflow OPEN → IN_PROGRESS → DONE). Priorité 1-2 ou "
+                "sévérité critique = à traiter cette semaine."
+            ),
+            source="ActionItem cross-pillar (status=OPEN)",
+        ),
+        NarrativeKpi(
+            label="Impact financier",
+            value=_fmt_eur_short(impact_total_eur),
+            unit=unit_urgent,
+            tooltip=(
+                "Cumul des gains estimés sur les anomalies ouvertes — "
+                "récupérables par actions correctives. Source unifiée : chaque "
+                "pilier estime son propre gain (€/an évité)."
+            ),
+            source="ActionItem.estimated_gain_eur agrégé",
+        ),
+        NarrativeKpi(
+            label="Économies sécurisées",
+            value=_fmt_eur_short(economies_realisees_eur),
+            unit=f"sur {nb_actions_done} clôturée{_s(nb_actions_done)}" if nb_actions_done > 0 else None,
+            tooltip=(
+                "Cumul des gains validés depuis le 1er janvier — actions "
+                "clôturées (status=DONE). Base solide pour audit ISO 50001 et "
+                "reporting CSRD."
+            ),
+            source="ActionItem DONE depuis le 1er janvier",
+        ),
+    ]
+
+    # ── Week-cards Centre d'actions ──
+    week_cards: list[NarrativeWeekCard] = []
+
+    # DRIFT — action critique avec plus fort impact.
+    if critical_actions:
+        top_critical = max(critical_actions, key=lambda a: a.estimated_gain_eur or 0)
+        critical_gain = top_critical.estimated_gain_eur or 0
+        site_label = (
+            site_name_by_id.get(top_critical.site_id, f"site #{top_critical.site_id}")
+            if top_critical.site_id
+            else "Toutes sources"
+        )
+        src_value = (
+            top_critical.source_type.value
+            if hasattr(top_critical.source_type, "value")
+            else str(top_critical.source_type)
+        )
+        source_label = _ACTION_SOURCE_LABELS_FR.get(src_value, src_value)
+        week_cards.append(
+            NarrativeWeekCard(
+                type="drift",
+                title=f"{source_label} · {site_label}",
+                body=(
+                    (top_critical.title[:140] if top_critical.title else "Anomalie critique") + " — agir cette semaine."
+                ),
+                cta_path=f"/anomalies?status=open&action={top_critical.id}",
+                cta_label="Voir l'anomalie",
+                impact_eur=critical_gain,
+                urgency_days=7,
+            )
+        )
+
+    # TODO — autres anomalies à programmer.
+    other_open = nb_actions_open - nb_actions_critical
+    if other_open > 0:
+        autres_gain = impact_total_eur - critical_total_eur
+        p_other = _s(other_open)
+        week_cards.append(
+            NarrativeWeekCard(
+                type="todo",
+                title=f"Programmer {other_open} action{p_other} corrective{p_other}",
+                body=(
+                    "Anomalies secondaires regroupées par impact et échéance — "
+                    "visibilité unique cross-pilier vs traitement séparé par brique."
+                ),
+                cta_path="/anomalies?status=open",
+                cta_label="Voir liste complète",
+                impact_eur=autres_gain,
+                urgency_days=30,
+            )
+        )
+
+    # GOOD_NEWS — économies sécurisées YTD significatives.
+    if economies_realisees_eur >= _ANOMALIES_SEUIL_IMPACT_CRITIQUE_EUR:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="good_news",
+                title=f"{_fmt_eur_short(economies_realisees_eur)} d'économies validées",
+                body=(
+                    f"{nb_actions_done} action{_s(nb_actions_done)} clôturée{_s(nb_actions_done)} "
+                    "depuis janvier — patrimoine en routine d'amélioration continue."
+                ),
+                cta_path="/anomalies?status=done",
+                cta_label="Voir actions clôturées",
+                impact_eur=economies_realisees_eur,
+            )
+        )
+
+    fallback_body = (
+        "Aucune anomalie à traiter cette semaine — patrimoine sous contrôle. "
+        "Le Centre d'actions surveille en continu Conformité, Performance, "
+        "Facturation et Achat."
+    )
+
+    # Tone : CRITICAL si action critique ou impact ≥5k€, TENSION si actions
+    # ouvertes, POSITIVE si in_progress + clôtures, NEUTRAL sinon.
+    if nb_actions_critical > 0 or impact_total_eur >= _ANOMALIES_SEUIL_IMPACT_CRITIQUE_EUR:
+        narrative_tone = NarrativeTone.CRITICAL
+    elif nb_actions_open > 0:
+        narrative_tone = NarrativeTone.TENSION
+    elif nb_actions_in_progress > 0 or economies_realisees_eur > 0:
+        narrative_tone = NarrativeTone.POSITIVE
+    else:
+        narrative_tone = NarrativeTone.NEUTRAL
+
+    provenance = _build_provenance_volume_based(
+        source="Centre d'actions cross-pillar (Conformité + Performance + Facturation + Achat)",
+        has_data=(nb_actions_open + nb_actions_done) > 0,
+        sites_count=sites_count,
+        methodology_url="/methodologie/centre-actions",
+    )
+
+    return Narrative(
+        page_key="anomalies",
+        persona="daily",
+        kicker=kicker,
+        title=title,
+        italic_hook=italic_hook,
+        narrative=narrative,
+        narrative_tone=narrative_tone,
+        kpis=tuple(kpis),
+        week_cards=tuple(week_cards),
+        fallback_body=fallback_body,
+        provenance=provenance,
+    )
+
+
 # ── Helpers format FR ───────────────────────────────────────────────
 
 
@@ -2185,7 +2482,8 @@ _BUILDERS = {
     "achat_energie": _build_achat_energie,
     "monitoring": _build_monitoring,
     "diagnostic": _build_diagnostic,
-    # Sprint 1.9+ : ajouter anomalies, flex.
+    "anomalies": _build_anomalies,
+    # Sprint 1.10 : ajouter flex.
 }
 
 
