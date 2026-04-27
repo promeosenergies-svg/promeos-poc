@@ -1,1 +1,17 @@
+#!/usr/bin/env sh
+# Sprint 2 Vague B + Doctrine P0 — pre-commit chain :
+#  1. lint-staged (Node — eslint --fix + prettier sur fichiers staged)
+#  2. doctrine compliance tests (Python — tests/doctrine/ exécutés sur HEAD)
+#
+# Note : pre-commit Python natif refuse d'installer son hook tant que
+# core.hooksPath=.husky/_ (conflit). On consolide ici pour cohabiter.
+# Skip silencieux si venv backend absent (CI ou clone fraîche sans setup).
+
+set -e
+
 npx lint-staged
+
+if [ -x "$(pwd)/backend/venv/bin/python" ] && [ -d "tests/doctrine" ]; then
+  echo "→ doctrine compliance tests"
+  ./backend/venv/bin/python -m pytest tests/doctrine/ -x --quiet
+fi
