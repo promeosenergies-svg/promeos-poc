@@ -1,10 +1,11 @@
 /**
- * priorityModel — dérive la "priorité #1" du jour pour le PriorityHero.
+ * priorityModel — dérive la "priorité #1" du jour à partir des KPIs.
  *
  * RÈGLE : pas d'appel API, pas de side-effect. Pure function depuis kpis +
  * nextDeadline + alertsCount déjà résolus côté hook.
  *
- * Usage : <PriorityHero priority={buildPriority1({...})} />
+ * Consommé par : Cockpit.jsx, ConformitePage.jsx, PriorityActions.jsx
+ * (PriorityHero supprimé Sprint 2 Vague A ét4' — voir CommandCenter.jsx).
  */
 import { toActionsList } from '../services/routes';
 

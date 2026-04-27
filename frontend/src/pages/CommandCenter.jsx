@@ -45,18 +45,16 @@ import {
   buildTodayActions,
   computeHealthState,
 } from '../models/dashboardEssentials';
-import { buildPriority1 } from '../models/priorityModel';
 import DataFreshnessBadge from '../ui/DataFreshnessBadge';
 import CrossModuleCTA from '../components/CrossModuleCTA';
 import _HealthSummary from '../components/HealthSummary';
-import MorningBriefCard from '../components/MorningBriefCard';
-import DeadlineBanner from '../components/DeadlineBanner';
 import ValueCounterCard from '../components/ValueCounterCard';
 import CsatModal from '../components/CsatModal';
 import NpsModal from '../components/NpsModal';
-import PriorityHero from './cockpit/PriorityHero';
-// DashboardHeroFeatured retiré S1.1bis P0-4 (audit 10 agents : empilement legacy ATF avant SolNarrative)
-// import DashboardHeroFeatured from './dashboard/DashboardHeroFeatured';
+// Sprint 2 Vague A ét4' — empilement legacy supprimé (PriorityHero +
+// DeadlineBanner + MorningBriefCard) au profit du briefing Sol §5 unique.
+// Audit personas Marie : « patch isolé », doctrine v2 §6.3. SolNarrative +
+// SolWeekCards portent désormais l'intégralité du récit ATF.
 // Sprint 1.1 — grammaire Sol industrialisée (ADR-001)
 import SolNarrative from '../ui/sol/SolNarrative';
 import SolWeekCards from '../ui/sol/SolWeekCards';
@@ -255,16 +253,6 @@ export default function CommandCenter() {
     [rawKpis, rawTopActions, rawAlertsCount]
   );
 
-  // ── Priority #1 above-the-fold (logique partagée via priorityModel.js) ──
-  const priority1 = useMemo(() => {
-    const k = {
-      nonConformes: kpis.nonConformes,
-      aRisque: kpis.aRisque,
-      risqueTotal: kpis.risque,
-    };
-    return buildPriority1({ kpis: k, nextDeadline: null, alertsCount });
-  }, [kpis.nonConformes, kpis.aRisque, kpis.risque, alertsCount]);
-
   // Briefing from scope data (pure model — no extra API call)
   const watchlist = useMemo(() => buildWatchlist(kpis, scopedSites), [kpis, scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
   const briefing = useMemo(
@@ -436,18 +424,12 @@ export default function CommandCenter() {
         />
       )}
 
-      {/* ── Rappels secondaires (rétrogradés en S1.1bis) ──
-          PriorityHero + DeadlineBanner + MorningBriefCard + funnel CTAs
-          étaient l'empilement legacy ATF. Désormais après le briefing Sol
-          en complément contextuel. À fusionner Sprint 2 (chantier α) :
-          ces signaux deviendront des week-cards typées poussées par le
-          moteur d'événements. */}
-      <PriorityHero priority={priority1} onNavigate={navigate} />
-
-      <div className="space-y-2">
-        <DeadlineBanner />
-        <MorningBriefCard alerts={alertsCount} sitesCount={scopedSites?.length || 0} />
-      </div>
+      {/* Sprint 2 Vague A ét4' — bloc legacy supprimé (PriorityHero +
+          DeadlineBanner + MorningBriefCard). Les signaux portés par ces
+          composants sont désormais incarnés par SolWeekCards (briefing Sol
+          §5 ci-dessus). Audit Marie post-Vague A ét2 : la cohabitation
+          rétrogradée gâchait l'effet "page nettoyée" attendu de la
+          grammaire Sol. */}
 
       {/* Modals fixed-position (n'affectent pas le flow visuel) */}
       <CsatModal orgId={org?.id} />

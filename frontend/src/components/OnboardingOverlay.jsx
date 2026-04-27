@@ -27,7 +27,7 @@ export default function OnboardingOverlay() {
   const [step, setStep] = useState(0);
   const [visible, setVisible] = useState(false);
 
-  // Audit CX 26/04 : auto-show 1st visit masquait above-the-fold (PriorityHero,
+  // Audit CX 26/04 : auto-show 1st visit masquait above-the-fold (SolNarrative,
   // KPIs, BriefCodex) sur les 2 vues. On passe en opt-in : l'overlay ne se
   // déclenche que si l'utilisateur a explicitement demandé le tour
   // (localStorage.promeos_onboarding_requested = '1' depuis menu help).

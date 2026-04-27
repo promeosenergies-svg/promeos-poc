@@ -2,7 +2,7 @@
  * Source de vérité pour les niveaux de sévérité — frontend.
  *
  * Audit /simplify 26/04/2026 : avant ce fichier, le lexique sévérité était
- * dispersé en 3 endroits (PriorityHero, AlertStack, TopContributors) avec
+ * dispersé en 3 endroits (CommandCenter, AlertStack, TopContributors) avec
  * 3 mappings tailwind quasi-identiques + le backend qui retourne `crit/warn/ok`
  * (3e lexique). Cette source unique unifie : `critical/warn/info/ok` côté FE.
  *
