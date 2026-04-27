@@ -1,0 +1,165 @@
+"""Détecteur pilote `compliance_deadline` — chantier α MVP (Vague C ét11).
+
+Doctrine §10 event_type `compliance_deadline` : émet un événement quand
+des sites sont non-conformes ou à risque vis-à-vis du Décret Tertiaire,
+avec calcul d'impact financier sourcé `backend/doctrine/constants.py`
+(DT_PENALTY_EUR=7500, DT_PENALTY_AT_RISK_EUR=3750).
+
+Remplace le calcul inline `narrative_generator._build_cockpit_daily`
+lignes 405-435 (week-cards statiques) par un événement typé doctrine §10.
+
+Pattern futur (Vague C ét12+) : tous les autres détecteurs suivent ce
+modèle (consumption_drift, billing_anomaly, contract_renewal, etc.).
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+from sqlalchemy.orm import Session
+
+from ..types import (
+    EventAction,
+    EventImpact,
+    EventLinkedAssets,
+    EventSource,
+    SolEventCard,
+)
+
+
+def detect(db: Session, org_id: int) -> list[SolEventCard]:
+    """Émet 1-2 événements `compliance_deadline` selon état conformité org.
+
+    Logique alignée sur narrative_generator._build_cockpit_daily lignes 405-435 :
+    - 1 événement `critical` si non_conformes > 0 (impact = pénalité totale)
+    - 1 événement `warning` si a_risque > 0 (impact = pénalité conditionnelle)
+
+    Ne renvoie aucun événement si tout est conforme — `compute_events`
+    retournera la liste vide (le SolWeekCards fera son fallback densifié).
+    """
+    # Imports locaux pour éviter cycle imports (constants doctrine + helpers narrative)
+    from doctrine.constants import (
+        DT_PENALTY_AT_RISK_EUR,
+        DT_PENALTY_EUR,
+    )
+    from models.enums import StatutConformite
+    from services.narrative.narrative_generator import _load_org_context
+
+    ctx = _load_org_context(db, org_id)
+    now = datetime.now(timezone.utc)
+    events: list[SolEventCard] = []
+
+    # Doctrine §10 « quel périmètre est concerné ? » : linked_assets.site_ids
+    # filtré par statut réel (pas tous les sites de l'org).
+    non_conforme_site_ids = [
+        s.id for s in ctx.sites if getattr(s, "statut_decret_tertiaire", None) == StatutConformite.NON_CONFORME
+    ]
+    a_risque_site_ids = [
+        s.id for s in ctx.sites if getattr(s, "statut_decret_tertiaire", None) == StatutConformite.A_RISQUE
+    ]
+
+    if ctx.non_conformes > 0:
+        impact_total_eur = ctx.non_conformes * DT_PENALTY_EUR
+        events.append(
+            SolEventCard(
+                id=f"compliance_deadline:org:{org_id}:non_conforme",
+                event_type="compliance_deadline",
+                severity="critical",
+                title=(
+                    f"{ctx.non_conformes} site"
+                    f"{'s' if ctx.non_conformes > 1 else ''} non conforme"
+                    f"{'s' if ctx.non_conformes > 1 else ''} Décret Tertiaire"
+                ),
+                narrative=(
+                    "Action prioritaire : déclarer la consommation 2024 dans "
+                    "OPERAT avant échéance. Pénalité réglementaire de "
+                    f"{DT_PENALTY_EUR:,} € par site non-conforme (Décret n°2019-771)."
+                ).replace(",", " "),  # FR : séparateur millier = espace insécable visuel
+                impact=EventImpact(
+                    value=float(impact_total_eur),
+                    unit="€",
+                    period="year",
+                ),
+                source=EventSource(
+                    system="RegOps",
+                    last_updated_at=now,
+                    confidence="high",
+                ),
+                action=EventAction(
+                    label="Ouvrir conformité",
+                    route="/conformite",
+                    owner_role="DAF",
+                ),
+                linked_assets=EventLinkedAssets(
+                    org_id=org_id,
+                    site_ids=non_conforme_site_ids,
+                ),
+            )
+        )
+
+    if ctx.a_risque > 0:
+        impact_at_risk_eur = ctx.a_risque * DT_PENALTY_AT_RISK_EUR
+        events.append(
+            SolEventCard(
+                id=f"compliance_deadline:org:{org_id}:a_risque",
+                event_type="compliance_deadline",
+                severity="warning",
+                title=(f"{ctx.a_risque} site{'s' if ctx.a_risque > 1 else ''} à risque sur la trajectoire 2030"),
+                narrative=(
+                    "Trajectoire 2030 sous tension. Audit énergétique recommandé "
+                    "pour identifier les leviers de réduction. Pénalité conditionnelle "
+                    f"{DT_PENALTY_AT_RISK_EUR:,} €/site si non-conforme à échéance."
+                ).replace(",", " "),  # FR : séparateur millier = espace insécable visuel
+                impact=EventImpact(
+                    value=float(impact_at_risk_eur),
+                    unit="€",
+                    period="year",
+                ),
+                source=EventSource(
+                    system="RegOps",
+                    last_updated_at=now,
+                    confidence="high",
+                ),
+                action=EventAction(
+                    label="Voir les sites à risque",
+                    route="/conformite",
+                    owner_role="DAF",
+                ),
+                linked_assets=EventLinkedAssets(
+                    org_id=org_id,
+                    site_ids=a_risque_site_ids,
+                ),
+            )
+        )
+
+    if not events and ctx.conformite_score is not None and ctx.conformite_score >= 80:
+        # Pas de risque : émettre un événement `info` (good_news) pour densifier.
+        events.append(
+            SolEventCard(
+                id=f"compliance_deadline:org:{org_id}:positive",
+                event_type="compliance_deadline",
+                severity="info",
+                title="Conformité au-dessus de 80/100",
+                narrative=(
+                    "Patrimoine bien positionné sur la trajectoire 2030. Maintenir la qualité des déclarations OPERAT."
+                ),
+                impact=EventImpact(
+                    value=float(ctx.conformite_score),
+                    unit="%",
+                    period="year",
+                ),
+                source=EventSource(
+                    system="RegOps",
+                    last_updated_at=now,
+                    confidence="high",
+                ),
+                action=EventAction(
+                    label="Voir la conformité",
+                    route="/conformite",
+                    owner_role="DAF",
+                ),
+                linked_assets=EventLinkedAssets(org_id=org_id),
+            )
+        )
+
+    return events

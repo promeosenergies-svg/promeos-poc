@@ -398,41 +398,16 @@ def _build_cockpit_daily(
         ),
     ]
 
-    # ── 3 week-cards (MVP Sprint 1.1 — densification §4) ──
-    # Sprint 2 chantier α remplacera ces cards par les events réels du moteur
-    # d'événements proactif. Pour S1.1 on génère depuis l'état courant.
-    week_cards: list[NarrativeWeekCard] = []
-    if non_conformes > 0:
-        week_cards.append(
-            NarrativeWeekCard(
-                type="todo",
-                title=f"{non_conformes} site{'s' if non_conformes > 1 else ''} non conforme{'s' if non_conformes > 1 else ''}",
-                body="Action prioritaire : déclarer la consommation 2024 dans OPERAT avant échéance.",
-                cta_path="/conformite",
-                cta_label="Ouvrir conformité",
-                impact_eur=non_conformes * 7500.0,
-                urgency_days=30,
-            )
-        )
-    if a_risque > 0:
-        week_cards.append(
-            NarrativeWeekCard(
-                type="watch",
-                title=f"{a_risque} site{'s' if a_risque > 1 else ''} à risque",
-                body="Trajectoire 2030 sous tension. Audit énergétique recommandé pour identifier les leviers.",
-                cta_path="/conformite",
-                cta_label="Voir les sites à risque",
-                impact_eur=a_risque * 3750.0,
-            )
-        )
-    if conformite_score is not None and conformite_score >= 80:
-        week_cards.append(
-            NarrativeWeekCard(
-                type="good_news",
-                title="Conformité au-dessus de 80/100",
-                body="Patrimoine bien positionné sur la trajectoire 2030. Maintenir la qualité des données OPERAT.",
-            )
-        )
+    # ── Week-cards via event_bus (Sprint 2 Vague C ét11 — chantier α) ──
+    # Doctrine v1.1 §6 P6 « produit pousse, ne tire pas » + §10 SolEventCard.
+    # Les week-cards sont désormais produites par le moteur d'événements
+    # proactif (`event_bus.compute_events`) qui détecte/priorise/source
+    # à partir de l'état DB courant — résout §14 Test 6 J vs J+1 FAIL.
+    # Conversion `to_narrative_week_cards` pour rétro-compat SolWeekCards.
+    from services.event_bus import compute_events, to_narrative_week_cards
+
+    events = compute_events(db, org_id)
+    week_cards: list[NarrativeWeekCard] = list(to_narrative_week_cards(events))
 
     # Fallback densifié §4 — JAMAIS d'empty state pleine largeur
     fallback_body = (
