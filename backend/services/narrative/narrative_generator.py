@@ -52,6 +52,7 @@ PageKey = Literal[
     "anomalies",
     "flex",
 ]
+# Sprint 1.8 — diagnostic ajouté ; cohérent SUPPORTED_PAGE_KEYS + _BUILDERS.
 
 
 @dataclass(frozen=True)
@@ -1802,6 +1803,279 @@ def _build_monitoring(
     )
 
 
+# Sprint 1.8 — constantes module Diagnostic (audit /simplify Quality).
+# Sourçage doctrine §4.2 (EMS/Performance) + ISO 50001 + COSTIC.
+# Seuils sévérité ConsumptionInsight alignés sur la modélisation moteur
+# (cf services/consumption_diag/), pas modifiables ici.
+_DIAGNOSTIC_SEUIL_GAIN_PRIORITE_EUR = 1_000  # gain individuel ≥ 1 k€/an = priorité élevée
+_DIAGNOSTIC_SEUIL_ECONOMIE_VISIBLE_EUR = 5_000  # cumul économies → tone POSITIVE / good_news
+
+
+def _build_diagnostic(
+    db: Session,
+    org_id: int,
+    org_name: str,
+    sites_count: int,
+) -> Narrative:
+    """Sprint 1.8 — Vue Diagnostic Consommation (différenciateur §4.2).
+
+    Promesse §4.2 doctrine : « Diagnostics consommation — détection
+    automatique des anomalies (hors-horaires / talon excessif / pointes /
+    dérives), chiffrage € des leviers d'économies, plan d'actions
+    priorisées par effort/gain. Conforme ISO 50001 + COSTIC NF EN 16247-2. »
+
+    Sert Marie DAF (« où sont mes économies cachées ? »), Energy Manager
+    (priorisation actions), Investisseur (preuve EMS pillar §4.2 vs
+    dashboards passifs Advizeo/Deepki).
+
+    Données réelles :
+      - ConsumptionInsight : type, severity, estimated_loss_eur,
+        recommended_actions_json, insight_status (open/ack/resolved/
+        false_positive)
+      - 5 types diagnostics : hors_horaires, base_load, pointe, derive,
+        data_gap
+
+    Doctrine §10 : vocabulaire FR — « hors-horaires », « talon excessif »,
+    « dérive » au lieu d'acronymes EMS jargon.
+    """
+    from models.consumption_insight import ConsumptionInsight
+    from models.enums import InsightStatus
+
+    ctx = _load_org_context(db, org_id)
+    site_ids = [s.id for s in ctx.sites]
+    site_name_by_id: dict[int, str] = {s.id: (s.nom or f"site #{s.id}") for s in ctx.sites}
+
+    # ── Récupérer les insights de diagnostic du scope ──
+    if site_ids:
+        insights = db.query(ConsumptionInsight).filter(ConsumptionInsight.site_id.in_(site_ids)).all()
+    else:
+        insights = []
+
+    # Single-pass partitioning par status + severity
+    open_insights: list[ConsumptionInsight] = []
+    critical_insights: list[ConsumptionInsight] = []
+    resolved_insights: list[ConsumptionInsight] = []
+    economies_potentielles_eur = 0.0
+    economies_realisees_eur = 0.0
+    for i in insights:
+        if i.insight_status == InsightStatus.OPEN:
+            open_insights.append(i)
+            economies_potentielles_eur += i.estimated_loss_eur or 0.0
+            if i.severity == "critical":
+                critical_insights.append(i)
+        elif i.insight_status == InsightStatus.RESOLVED:
+            resolved_insights.append(i)
+            economies_realisees_eur += i.estimated_loss_eur or 0.0
+
+    nb_leviers_open = len(open_insights)
+    nb_critical = len(critical_insights)
+    nb_resolved = len(resolved_insights)
+
+    # ── Kicker + titre + italic hook §5 ──
+    week_iso = datetime.now(timezone.utc).isocalendar().week
+    if nb_leviers_open > 0:
+        kicker = (
+            f"DIAGNOSTIC · SEMAINE {week_iso} · "
+            f"{nb_leviers_open} LEVIER{'S' if nb_leviers_open > 1 else ''} IDENTIFIÉ{'S' if nb_leviers_open > 1 else ''}"
+        )
+    else:
+        kicker = f"DIAGNOSTIC · SEMAINE {week_iso} · {sites_count} SITE{'S' if sites_count != 1 else ''} ANALYSÉ{'S' if sites_count != 1 else ''}"
+    title = "Vos économies d'énergie identifiées"
+    italic_hook = "leviers chiffrés · plan d'actions priorisé"
+
+    # ── Narrative orientée Marie DAF + Energy Manager ──
+    # Sprint 1.8 P0 : reformulation acronymes FR-first (audit Marie attendu).
+    # Pas de jargon EMS — vocabulaire CFO « économies cachées », « gisement ».
+    narr_parts = []
+    if nb_critical > 0:
+        plural = "s" if nb_critical > 1 else ""
+        narr_parts.append(
+            f"{nb_critical} levier{plural} prioritaire{plural} détecté{plural} sur "
+            "votre patrimoine — actionnable immédiatement."
+        )
+    elif nb_leviers_open > 0:
+        narr_parts.append(
+            f"{nb_leviers_open} levier{'s' if nb_leviers_open > 1 else ''} d'économies "
+            f"détecté{'s' if nb_leviers_open > 1 else ''} — actions priorisées par effort/gain."
+        )
+    elif sites_count > 0:
+        narr_parts.append(
+            f"Aucun gisement d'économies détecté sur {sites_count} site{'s' if sites_count > 1 else ''} — "
+            "patrimoine déjà optimisé."
+        )
+    else:
+        narr_parts.append("Aucun site analysé — lancez le diagnostic pour identifier les leviers d'économies.")
+
+    if economies_potentielles_eur > 0:
+        narr_parts.append(
+            f"Gisement total chiffré : {_fmt_eur_short(economies_potentielles_eur)}/an "
+            "récupérables par actions correctives."
+        )
+
+    if economies_realisees_eur > 0:
+        narr_parts.append(
+            f"Économies déjà sécurisées YTD : {_fmt_eur_short(economies_realisees_eur)} "
+            f"({nb_resolved} action{'s' if nb_resolved > 1 else ''} validée{'s' if nb_resolved > 1 else ''})."
+        )
+
+    narr_parts.append(
+        "Le moteur diagnostic analyse en continu 5 catégories — consommation hors "
+        "heures d'ouverture, talon excessif (consommation de base anormale), pics de "
+        "puissance, dérives saisonnières, trous de données. Conforme ISO 50001 (norme "
+        "management énergie) et COSTIC (méthode audit énergétique tertiaire FR)."
+    )
+    narrative = " ".join(narr_parts)
+
+    # ── 3 KPIs hero §5 — angle CFO pilotage économies ──
+    kpis: list[NarrativeKpi] = [
+        NarrativeKpi(
+            label="Leviers identifiés",
+            value=str(nb_leviers_open),
+            unit=f"dont {nb_critical} prioritaire{'s' if nb_critical > 1 else ''}" if nb_critical > 0 else None,
+            tooltip=(
+                "Anomalies de consommation détectées par le moteur diagnostic et non "
+                "encore traitées (workflow OPEN → ACK → RESOLVED). Chacune est chiffrée "
+                "en euros/an récupérables par action corrective."
+            ),
+            source="ConsumptionInsight workflow lifecycle",
+        ),
+        NarrativeKpi(
+            label="Gisement annuel",
+            value=_fmt_eur_short(economies_potentielles_eur),
+            tooltip=(
+                "Cumul des pertes estimées sur les leviers ouverts — surconsommation "
+                "vs benchmark archétype + réf horaires d'ouverture. Estimation "
+                "modélisée, récupérable par actions correctives priorisées."
+            ),
+            source="ConsumptionInsight.estimated_loss_eur · COSTIC NF EN 16247-2",
+        ),
+        NarrativeKpi(
+            label="Économies sécurisées YTD",
+            value=_fmt_eur_short(economies_realisees_eur),
+            unit=f"sur {nb_resolved} action{'s' if nb_resolved > 1 else ''}" if nb_resolved > 0 else None,
+            tooltip=(
+                "Cumul des gains validés depuis le début de l'année calendaire — "
+                "actions correctives implémentées et insights passés au statut RESOLVED."
+            ),
+            source="ConsumptionInsight RESOLVED YTD",
+        ),
+    ]
+
+    # ── Week-cards Diagnostic ──
+    week_cards: list[NarrativeWeekCard] = []
+
+    # DRIFT — levier critique avec plus fort gain.
+    # Sprint 1.8 : site_name_by_id pré-calculé (lookup O(1)).
+    if critical_insights:
+        top_critical = max(critical_insights, key=lambda i: i.estimated_loss_eur or 0)
+        critical_gain = top_critical.estimated_loss_eur or 0
+        site_label = site_name_by_id.get(top_critical.site_id, f"site #{top_critical.site_id}")
+        type_fr = {
+            "hors_horaires": "Consommation hors horaires",
+            "base_load": "Talon excessif",
+            "pointe": "Pic de puissance",
+            "derive": "Dérive consommation",
+            "data_gap": "Trou de données",
+        }.get(top_critical.type, "Anomalie consommation")
+        week_cards.append(
+            NarrativeWeekCard(
+                type="drift",
+                title=f"{type_fr} · {site_label}",
+                body=(
+                    (top_critical.message[:140] if top_critical.message else "Anomalie détectée")
+                    + " — gain immédiat à activer."
+                ),
+                cta_path=f"/diagnostic-conso?site_id={top_critical.site_id}&insight={top_critical.id}",
+                cta_label="Voir le levier",
+                impact_eur=critical_gain,
+                urgency_days=14,
+            )
+        )
+
+    # TODO — autres leviers ouverts à programmer
+    other_open = nb_leviers_open - nb_critical
+    if other_open > 0:
+        autres_gain = economies_potentielles_eur - sum((i.estimated_loss_eur or 0) for i in critical_insights)
+        week_cards.append(
+            NarrativeWeekCard(
+                type="todo",
+                title=f"Programmer {other_open} action{'s' if other_open > 1 else ''} corrective{'s' if other_open > 1 else ''}",
+                body=(
+                    "Leviers secondaires à intégrer au plan d'actions trimestriel — "
+                    "économies cumulées progressives, contribution audit ISO 50001."
+                ),
+                cta_path="/diagnostic-conso?status=open",
+                cta_label="Voir leviers ouverts",
+                impact_eur=autres_gain,
+                urgency_days=90,
+            )
+        )
+
+    # GOOD_NEWS — économies sécurisées YTD significatives
+    if economies_realisees_eur >= _DIAGNOSTIC_SEUIL_ECONOMIE_VISIBLE_EUR:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="good_news",
+                title=f"{_fmt_eur_short(economies_realisees_eur)} d'économies sécurisées",
+                body=(
+                    f"{nb_resolved} action{'s' if nb_resolved > 1 else ''} validée{'s' if nb_resolved > 1 else ''} "
+                    "depuis janvier — base solide pour audit ISO 50001 et reporting CSRD."
+                ),
+                cta_path="/diagnostic-conso?status=resolved",
+                cta_label="Voir actions validées",
+                impact_eur=economies_realisees_eur,
+            )
+        )
+
+    fallback_body = (
+        "Aucun levier détecté cette semaine — patrimoine sous contrôle. Le moteur "
+        "analyse en continu 5 catégories d'anomalies pour identifier les économies."
+    )
+
+    # Tone diagnostic-specific (cohérent avec _build_monitoring) :
+    # CRITICAL si leviers critiques, TENSION si leviers ouverts à traiter,
+    # POSITIVE si économies YTD significatives, NEUTRAL sinon.
+    if nb_critical > 0:
+        narrative_tone = NarrativeTone.CRITICAL
+    elif nb_leviers_open > 0:
+        narrative_tone = NarrativeTone.TENSION
+    elif economies_realisees_eur >= _DIAGNOSTIC_SEUIL_ECONOMIE_VISIBLE_EUR:
+        narrative_tone = NarrativeTone.POSITIVE
+    else:
+        narrative_tone = NarrativeTone.NEUTRAL
+
+    # Provenance : confidence basée sur volume d'insights analysés sur le
+    # patrimoine (fiabilité dépend de la profondeur d'analyse, pas du
+    # conformite_score statique du helper canonique).
+    if nb_leviers_open + nb_resolved > 0 and sites_count > 0:
+        confidence = ProvenanceConfidence.HIGH
+    elif sites_count > 0:
+        confidence = ProvenanceConfidence.MEDIUM
+    else:
+        confidence = ProvenanceConfidence.LOW
+
+    provenance = build_provenance(
+        source="Moteur diagnostic 5 catégories + ISO 50001 + COSTIC NF EN 16247-2",
+        confidence=confidence,
+        updated_at=datetime.now(timezone.utc),
+        methodology_url="/methodologie/diagnostic-conso",
+    )
+
+    return Narrative(
+        page_key="diagnostic",
+        persona="daily",
+        kicker=kicker,
+        title=title,
+        italic_hook=italic_hook,
+        narrative=narrative,
+        narrative_tone=narrative_tone,
+        kpis=tuple(kpis),
+        week_cards=tuple(week_cards),
+        fallback_body=fallback_body,
+        provenance=provenance,
+    )
+
+
 # ── Helpers format FR ───────────────────────────────────────────────
 
 
@@ -1847,7 +2121,8 @@ _BUILDERS = {
     "bill_intel": _build_bill_intel,
     "achat_energie": _build_achat_energie,
     "monitoring": _build_monitoring,
-    # Sprint 1.8+ : ajouter diagnostic, anomalies, flex.
+    "diagnostic": _build_diagnostic,
+    # Sprint 1.9+ : ajouter anomalies, flex.
 }
 
 

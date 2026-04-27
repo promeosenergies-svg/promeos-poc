@@ -38,7 +38,12 @@ import {
 import { useToast } from '../ui/ToastProvider';
 import { track } from '../services/tracker';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
-import { fmtEur, fmtKwh, fmtCo2, fmtDateFR } from '../utils/format';
+import { fmtEur, fmtKwh, fmtCo2, fmtDateFR, scopeKicker } from '../utils/format';
+import SolPageHeader from '../ui/sol/SolPageHeader';
+import SolNarrative from '../ui/sol/SolNarrative';
+import SolWeekCards from '../ui/sol/SolWeekCards';
+import SolPageFooter from '../ui/sol/SolPageFooter';
+import { usePageBriefing } from '../hooks/usePageBriefing';
 import { deepLinkWithContext } from '../services/deepLink';
 import { toConsoExplorer, toMonitoring, toUsages, toBillIntel } from '../services/routes';
 import usePeriodParams from '../hooks/usePeriodParams';
@@ -732,8 +737,18 @@ function EvidenceTab({ insight }) {
 export default function ConsumptionDiagPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { org, selectedSiteId, scopeLabel, sitesCount } = useScope();
+  const { org, selectedSiteId, scopeLabel, sitesCount, scopedSites } = useScope();
   const co2Factor = useElecCo2Factor();
+
+  // Sprint 1.8 — briefing éditorial Sol §5 vue Diagnostic (ADR-001).
+  // Pillar §4.2 doctrine (suite Monitoring) : EMS / Performance — détection
+  // automatique anomalies + chiffrage € leviers + plan d'actions priorisées.
+  // Sert Marie DAF (économies cachées) + Energy Manager (priorisation).
+  const {
+    briefing: solBriefing,
+    error: solBriefingError,
+    refetch: solBriefingRefetch,
+  } = usePageBriefing('diagnostic', { persona: 'daily' });
   // Step 11: unified period from URL (default 90 days for diagnostic)
   const { period, periodQueryString: _periodQueryString } = usePeriodParams(90);
   const [summary, setSummary] = useState(null);
@@ -917,18 +932,29 @@ export default function ConsumptionDiagPage() {
     ? filteredInsights.filter((i) => i.type === filterType)
     : filteredInsights;
 
+  // Sprint 1.8 P0-C : subtitle node Sol — éviter duplication PageShell ↔
+  // SolPageHeader (pattern S1.6bis P0-4).
+  const diagnosticSubtitleNode = (
+    <>
+      Identifier vos économies d'énergie cachées : horaires inhabituels, talon excessif, pics de
+      puissance, dérives.{' '}
+      <span className="text-xs text-[var(--sol-ink-400)] ml-2">
+        Période : {period.start} — {period.end} ({period.days}j)
+      </span>
+    </>
+  );
+
   return (
     <PageShell
       icon={Zap}
       title="Diagnostic"
-      subtitle={
-        <>
-          Détectez automatiquement les anomalies de consommation : horaires inhabituels, talon
-          excessif, pointes, dérives.{' '}
-          <span className="text-xs text-gray-400 ml-2">
-            Période : {period.start} — {period.end} ({period.days}j)
-          </span>
-        </>
+      editorialHeader={
+        <SolPageHeader
+          kicker={solBriefing?.kicker || scopeKicker('DIAGNOSTIC', org?.nom, scopedSites?.length)}
+          title={solBriefing?.title || "Vos économies d'énergie identifiées"}
+          italicHook={solBriefing?.italicHook || "leviers chiffrés · plan d'actions priorisé"}
+          subtitle={diagnosticSubtitleNode}
+        />
       }
       actions={
         <>
@@ -963,6 +989,30 @@ export default function ConsumptionDiagPage() {
         </>
       }
     >
+      {/* Sprint 1.8 — préambule éditorial Sol §5 vue Diagnostic (ADR-001).
+          Pillar §4.2 : EMS / Performance — détection anomalies + chiffrage
+          € leviers + plan d'actions priorisé. Sert Marie DAF (économies
+          cachées) + Energy Manager (priorisation) + Investisseur. */}
+      {solBriefingError && !solBriefing && (
+        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
+      )}
+      {solBriefing && (
+        <SolNarrative
+          kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
+          title={null /* idem — éviter doublon */}
+          narrative={solBriefing.narrative}
+          kpis={solBriefing.kpis}
+        />
+      )}
+      {solBriefing && (
+        <SolWeekCards
+          cards={solBriefing.weekCards}
+          fallbackBody={solBriefing.fallbackBody}
+          tone={solBriefing.narrativeTone}
+          onNavigate={navigate}
+        />
+      )}
+
       {/* V15-B: Scope badge */}
       <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
         <span>Périmètre :</span>
@@ -1187,6 +1237,18 @@ export default function ConsumptionDiagPage() {
       </div>
 
       {/* Action creation handled by ActionDrawerContext */}
+
+      {/* Sprint 1.8 — SolPageFooter §5 (ADR-001).
+          Source · Confiance · Mis à jour. Methodology URL pointe vers
+          /methodologie/diagnostic-conso (5 catégories + ISO 50001 + COSTIC). */}
+      {solBriefing?.provenance && (
+        <SolPageFooter
+          source={solBriefing.provenance.source}
+          confidence={solBriefing.provenance.confidence}
+          updatedAt={solBriefing.provenance.updated_at}
+          methodologyUrl={solBriefing.provenance.methodology_url}
+        />
+      )}
     </PageShell>
   );
 }

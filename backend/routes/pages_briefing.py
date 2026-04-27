@@ -40,6 +40,7 @@ SUPPORTED_PAGE_KEYS = {
     "bill_intel",
     "achat_energie",
     "monitoring",
+    "diagnostic",
 }
 
 
