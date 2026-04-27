@@ -28,6 +28,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from ..freshness import compute_freshness
 from ..types import (
     EventAction,
     EventImpact,
@@ -63,13 +64,33 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     """
     # Imports locaux pour éviter cycle (services/billing → narrative → event_bus)
     from services.billing.losses_service import (
+        _scope_billing_insights,
         compute_billing_losses_summary,
         fmt_payback_human,
     )
+    from models.enums import InsightStatus
 
-    losses = compute_billing_losses_summary(db, org_id)
+    # Charger les insights une seule fois pour calculer summary + granularité site
+    insights = _scope_billing_insights(db, org_id)
+    losses = compute_billing_losses_summary(db, org_id, insights=insights)
     now = datetime.now(timezone.utc)
     events: list[SolEventCard] = []
+
+    # Vague C ét12d (audit EM P0-2) : granularité site exposée pour
+    # action terrain. EM doit savoir où intervenir parmi 50 sites.
+    open_insights = [i for i in insights if i.insight_status == InsightStatus.OPEN]
+    open_site_ids = sorted({i.site_id for i in open_insights if i.site_id is not None})
+    resolved_site_ids = sorted(
+        {i.site_id for i in insights if i.insight_status == InsightStatus.RESOLVED and i.site_id is not None}
+    )
+
+    # Vague C ét12d (audit Marie/EM P0-3) : freshness depuis insight le plus
+    # récent (max updated_at) plutôt que `now` mensonger. TTL `invoice` = 31j.
+    last_insight_updated = max(
+        (i.updated_at for i in insights if i.updated_at is not None),
+        default=now,
+    )
+    invoice_freshness = compute_freshness("invoice", last_insight_updated, now=now)
 
     # ── Événement principal selon volume pertes ouvertes ──
     perte_open = losses.perte_open_eur
@@ -102,6 +123,14 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
             payback_str = fmt_payback_human(losses.payback_avg_days)
             payback_phrase = f" Payback moyen observé : {payback_str}." if losses.payback_avg_days is not None else ""
 
+            # Vague C ét12d : phrase granularité site (EM P0-2)
+            nb_sites_open = len(open_site_ids)
+            site_phrase = ""
+            if nb_sites_open == 1:
+                site_phrase = " Concentration sur 1 site."
+            elif nb_sites_open > 1:
+                site_phrase = f" Réparties sur {nb_sites_open} sites."
+
             events.append(
                 SolEventCard(
                     id=f"billing_anomaly:org:{org_id}:open",
@@ -112,7 +141,7 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                         f"{losses.nb_open} anomalie{'s' if losses.nb_open > 1 else ''} "
                         "détectée"
                         f"{'s' if losses.nb_open > 1 else ''} sur vos factures par le "
-                        f"shadow billing v4.2 — pertes estimées à récupérer.{payback_phrase}"
+                        f"shadow billing v4.2 — pertes estimées à récupérer.{site_phrase}{payback_phrase}"
                     ),
                     impact=EventImpact(
                         value=perte_open,
@@ -124,14 +153,17 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                         system="invoice",
                         last_updated_at=losses.losses_provenance.computed_at,
                         confidence=losses.losses_provenance.confidence,  # type: ignore[arg-type]
-                        freshness_status="fresh",  # losses_service consomme les insights actuels
+                        freshness_status=invoice_freshness,
                     ),
                     action=EventAction(
                         label="Voir les anomalies",
                         route="/bill-intel",
                         owner_role="DAF",
                     ),
-                    linked_assets=EventLinkedAssets(org_id=org_id),
+                    linked_assets=EventLinkedAssets(
+                        org_id=org_id,
+                        site_ids=open_site_ids,
+                    ),
                 )
             )
 
@@ -157,14 +189,17 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                     system="invoice",
                     last_updated_at=losses.recovery_provenance.computed_at,
                     confidence=losses.recovery_provenance.confidence,  # type: ignore[arg-type]
-                    freshness_status="fresh",
+                    freshness_status=invoice_freshness,
                 ),
                 action=EventAction(
                     label="Voir le bilan reclaims",
                     route="/bill-intel",
                     owner_role="DAF",
                 ),
-                linked_assets=EventLinkedAssets(org_id=org_id),
+                linked_assets=EventLinkedAssets(
+                    org_id=org_id,
+                    site_ids=resolved_site_ids,
+                ),
             )
         )
 

@@ -185,126 +185,162 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
   }
   const mitigationLine = mitigationParts.join(' · ');
 
-  const Wrapper = route ? 'button' : 'article';
-  const wrapperProps = route
+  // Vague C ét12d (audit Architecture P0 #1 + UX P0-A) : `<button><article>`
+  // est invalide HTML5 (button ne peut pas contenir d'éléments interactifs
+  // ni d'éléments avec rôle implicite comme <article>). On utilise un
+  // unique <article role="button"> + handlers clavier (Enter/Espace) pour
+  // conserver la sémantique "événement" sans casser l'accessibilité.
+  const interactiveProps = route
     ? {
-        type: 'button',
+        role: 'button',
+        tabIndex: 0,
         onClick: () => onNavigate?.(route),
+        onKeyDown: (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onNavigate?.(route);
+          }
+        },
         className:
-          'text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)] rounded-lg',
+          'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)]',
       }
     : {};
 
+  // Vague C ét12d (audit EM P0-2 + CFO P0) : afficher le nombre de sites
+  // concernés (granularité actionnable terrain).
+  const siteIds = event.linked_assets?.site_ids || [];
+  const siteCount = siteIds.length;
+
+  // Vague C ét12d (UX P0-C) : aria-label agrégé pour lecteurs d'écran
+  // (sinon AT lit chaque micro-zone séparément = bruit sémantique).
+  const ariaLabelParts = [
+    severityCfg.label,
+    event.title,
+    impactValue ? `impact ${impactValue}${periodLabel}` : null,
+    ownerRole ? `suivi ${ownerRole}` : null,
+    route ? `action ${event.action.label}` : null,
+  ].filter(Boolean);
+  const ariaLabel = ariaLabelParts.join(', ');
+
   return (
-    <Wrapper data-testid={`sol-event-card-${event.event_type}`} {...wrapperProps}>
-      <article
-        className={`flex flex-col gap-2.5 rounded-lg border h-full sol-card transition-colors hover:brightness-[0.98] ${
-          compact ? 'p-4' : 'p-5'
-        }`}
-        style={severityCfg.style}
-        data-tone={severityCfg.tone}
-        data-severity={event.severity}
-      >
-        {/* ── Header : severity badge + freshness ── */}
-        <header className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            <Icon size={13} className={severityCfg.iconCls} aria-hidden="true" />
-            <span
-              className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${severityCfg.iconCls}`}
-            >
-              {severityCfg.label}
+    <article
+      data-testid={`sol-event-card-${event.event_type}`}
+      data-tone={severityCfg.tone}
+      data-severity={event.severity}
+      aria-label={route ? ariaLabel : undefined}
+      className={`flex flex-col gap-2.5 rounded-lg border h-full sol-card transition-colors hover:brightness-[0.98] ${
+        compact ? 'p-4' : 'p-5'
+      } ${interactiveProps.className || ''}`}
+      style={severityCfg.style}
+      {...interactiveProps}
+    >
+      {/* ── Header : severity badge + freshness ── */}
+      <header className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Icon size={13} className={severityCfg.iconCls} aria-hidden="true" />
+          <span
+            className={`text-[11px] font-mono uppercase tracking-wider font-semibold truncate ${severityCfg.iconCls}`}
+          >
+            {severityCfg.label}
+          </span>
+        </div>
+        {freshness && (
+          <span
+            className="text-[11px] px-1.5 py-0.5 rounded-full font-medium shrink-0"
+            style={{
+              background: `var(--sol-${freshness.tone}-bg)`,
+              color: `var(--sol-${freshness.tone}-fg)`,
+            }}
+            title={`Statut donnée : ${freshness.label}`}
+          >
+            {freshness.label}
+          </span>
+        )}
+      </header>
+
+      {/* ── Title + narrative ── */}
+      <h3 className="text-sm font-semibold text-[var(--sol-ink-900)] leading-snug">
+        {event.title}
+      </h3>
+      {event.narrative && (
+        <p className="text-xs text-[var(--sol-ink-700)] leading-relaxed line-clamp-3">
+          {event.narrative}
+        </p>
+      )}
+
+      {/* ── Impact value + period ── */}
+      {impactValue && (
+        <div className="flex items-baseline gap-1 mt-0.5">
+          <span className="text-base font-semibold text-[var(--sol-ink-900)] sol-numeric">
+            {impactValue}
+          </span>
+          {periodLabel && (
+            <span className="text-[11px] text-[var(--sol-ink-500)]">{periodLabel}</span>
+          )}
+        </div>
+      )}
+
+      {/* ── Mitigation (CFO arbitrage CAPEX/payback/NPV) ── */}
+      {mitigationLine && (
+        <div className="flex items-center gap-1.5 text-[11px] text-[var(--sol-ink-700)]">
+          <Wallet size={11} className="text-[var(--sol-ink-500)]" aria-hidden="true" />
+          <span>{mitigationLine}</span>
+        </div>
+      )}
+
+      {/* ── Footer : source + owner + CTA ── */}
+      <footer className="flex flex-col gap-1.5 mt-auto pt-2 border-t border-[var(--sol-ink-100)]">
+        {/* Ligne 1 : source + confidence + horodatage */}
+        <div className="flex items-center justify-between gap-2 text-[11px] text-[var(--sol-ink-500)]">
+          <div className="flex items-center gap-1 min-w-0">
+            <ShieldCheck size={11} aria-hidden="true" />
+            <span className="truncate">
+              Source <strong className="text-[var(--sol-ink-700)]">{event.source.system}</strong>
+              {confidenceLabel && (
+                <>
+                  {' · '}
+                  <span title={`Confiance : ${event.source.confidence}`}>{confidenceLabel}</span>
+                </>
+              )}
             </span>
           </div>
-          {freshness && (
-            <span
-              className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-              style={{
-                background: `var(--sol-${freshness.tone}-bg)`,
-                color: `var(--sol-${freshness.tone}-fg)`,
-              }}
-              title={`Statut donnée : ${freshness.label}`}
-            >
-              {freshness.label}
+          {lastUpdated && (
+            <span className="flex items-center gap-0.5 shrink-0">
+              <Clock size={11} aria-hidden="true" />
+              {lastUpdated}
             </span>
           )}
-        </header>
+        </div>
 
-        {/* ── Title + narrative ── */}
-        <h3 className="text-sm font-semibold text-[var(--sol-ink-900)] leading-snug">
-          {event.title}
-        </h3>
-        {event.narrative && (
-          <p className="text-xs text-[var(--sol-ink-700)] leading-relaxed line-clamp-3">
-            {event.narrative}
-          </p>
-        )}
-
-        {/* ── Impact value + period ── */}
-        {impactValue && (
-          <div className="flex items-baseline gap-1 mt-0.5">
-            <span className="text-base font-semibold text-[var(--sol-ink-900)] sol-numeric">
-              {impactValue}
-            </span>
-            {periodLabel && (
-              <span className="text-[11px] text-[var(--sol-ink-500)]">{periodLabel}</span>
-            )}
-          </div>
-        )}
-
-        {/* ── Mitigation (CFO arbitrage CAPEX/payback/NPV) ── */}
-        {mitigationLine && (
-          <div className="flex items-center gap-1.5 text-[11px] text-[var(--sol-ink-700)]">
-            <Wallet size={11} className="text-[var(--sol-ink-500)]" aria-hidden="true" />
-            <span>{mitigationLine}</span>
-          </div>
-        )}
-
-        {/* ── Footer : source + owner + CTA ── */}
-        <footer className="flex flex-col gap-1.5 mt-auto pt-2 border-t border-[var(--sol-ink-100)]">
-          {/* Ligne 1 : source + confidence + horodatage */}
-          <div className="flex items-center justify-between gap-2 text-[10px] text-[var(--sol-ink-500)]">
-            <div className="flex items-center gap-1 min-w-0">
-              <ShieldCheck size={10} aria-hidden="true" />
-              <span className="truncate">
-                Source <strong className="text-[var(--sol-ink-700)]">{event.source.system}</strong>
-                {confidenceLabel && (
-                  <>
-                    {' · '}
-                    <span title={`Confiance : ${event.source.confidence}`}>{confidenceLabel}</span>
-                  </>
-                )}
-              </span>
-            </div>
-            {lastUpdated && (
-              <span className="flex items-center gap-0.5 shrink-0">
-                <Clock size={10} aria-hidden="true" />
-                {lastUpdated}
-              </span>
-            )}
-          </div>
-
-          {/* Ligne 2 : owner role + CTA */}
-          {(ownerRole || route) && (
-            <div className="flex items-center justify-between gap-2">
-              {ownerRole ? (
-                <span className="flex items-center gap-1 text-[10px] text-[var(--sol-ink-500)]">
-                  <User size={10} aria-hidden="true" />
+        {/* Ligne 2 : owner role + scope sites + CTA */}
+        {(ownerRole || siteCount > 0 || route) && (
+          <div className="flex items-center justify-between gap-2 text-[11px]">
+            <div className="flex items-center gap-2 text-[var(--sol-ink-500)] min-w-0">
+              {ownerRole && (
+                <span className="flex items-center gap-1">
+                  <User size={11} aria-hidden="true" />
                   Suivi <strong className="text-[var(--sol-ink-700)]">{ownerRole}</strong>
                 </span>
-              ) : (
-                <span />
               )}
-              {route && (
-                <span className="inline-flex items-center gap-0.5 text-xs font-medium text-[var(--sol-ink-700)]">
-                  {event.action.label}
-                  <ArrowRight size={11} aria-hidden="true" />
+              {siteCount > 0 && (
+                <span
+                  className="text-[var(--sol-ink-700)] font-medium"
+                  title={`${siteCount} site${siteCount > 1 ? 's' : ''} concerné${siteCount > 1 ? 's' : ''}`}
+                >
+                  {siteCount} site{siteCount > 1 ? 's' : ''}
                 </span>
               )}
             </div>
-          )}
-        </footer>
-      </article>
-    </Wrapper>
+            {route && (
+              <span className="inline-flex items-center gap-0.5 text-xs font-medium text-[var(--sol-ink-700)] shrink-0">
+                {event.action.label}
+                <ArrowRight size={11} aria-hidden="true" />
+              </span>
+            )}
+          </div>
+        )}
+      </footer>
+    </article>
   );
 }
 

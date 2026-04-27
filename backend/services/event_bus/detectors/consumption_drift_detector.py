@@ -33,6 +33,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from ..freshness import compute_freshness
 from ..types import (
     EventAction,
     EventImpact,
@@ -122,6 +123,22 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
         insight_severity = (insight.get("severity") or "medium").lower()
         confidence = "high" if insight_severity in ("high", "critical") else "medium"
 
+        # Vague C ét12d (audit Marie/EM P0-3) : freshness depuis l'horodatage
+        # réel de la donnée IoT/Enedis si disponible. Source IoT = TTL 1h
+        # (temps réel attendu), source Enedis = TTL 24h (CDC J+1).
+        source_system = "IoT" if metrics else "Enedis"
+        insight_updated_raw = insight.get("updated_at") or insight.get("computed_at")
+        if isinstance(insight_updated_raw, str):
+            try:
+                insight_updated = datetime.fromisoformat(insight_updated_raw.replace("Z", "+00:00"))
+            except ValueError:
+                insight_updated = now
+        elif isinstance(insight_updated_raw, datetime):
+            insight_updated = insight_updated_raw
+        else:
+            insight_updated = now
+        freshness = compute_freshness(source_system, insight_updated, now=now)
+
         events.append(
             SolEventCard(
                 id=f"consumption_drift:org:{org_id}:site:{site_id}:{type_code}",
@@ -144,10 +161,10 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                     ),
                 ),
                 source=EventSource(
-                    system="IoT" if metrics else "manual",
-                    last_updated_at=now,
+                    system=source_system,  # type: ignore[arg-type]
+                    last_updated_at=insight_updated,
                     confidence=confidence,  # type: ignore[arg-type]
-                    freshness_status="fresh",
+                    freshness_status=freshness,
                 ),
                 action=EventAction(
                     label="Voir le diagnostic",

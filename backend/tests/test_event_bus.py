@@ -643,3 +643,82 @@ def test_narrative_exposes_events_for_frontend(db, org_with_sites):
         assert "T" in first["source"]["last_updated_at"]  # marker ISO datetime
         # freshness_status présent (défaut "fresh") — §7.2 statuts data
         assert first["source"]["freshness_status"] in ("fresh", "stale", "estimated", "incomplete", "demo")
+
+
+# ── Vague C ét12d — corrections P0 audit ──────────────────────────────
+
+
+def test_freshness_helper_demo_mode_overrides_ttl(monkeypatch):
+    """ét12d P0-3 : DEMO_MODE=true → freshness_status='demo' quel que soit TTL."""
+    from datetime import datetime, timezone
+
+    from services.event_bus.freshness import compute_freshness
+
+    monkeypatch.setenv("PROMEOS_DEMO_MODE", "true")
+    # Donnée vieille de 1 an mais demo mode → "demo"
+    old = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    assert compute_freshness("Enedis", old, now=now) == "demo"
+
+
+def test_freshness_helper_ttl_thresholds(monkeypatch):
+    """ét12d P0-3 : âge ≤ TTL → fresh, TTL < âge ≤ 3×TTL → stale, > 3×TTL → incomplete."""
+    from datetime import datetime, timedelta, timezone
+
+    from services.event_bus.freshness import compute_freshness
+
+    monkeypatch.setenv("PROMEOS_DEMO_MODE", "false")
+    now = datetime(2026, 4, 27, 12, 0, 0, tzinfo=timezone.utc)
+
+    # Enedis TTL = 24h : fresh à 12h, stale à 48h, incomplete à 80h
+    assert compute_freshness("Enedis", now - timedelta(hours=12), now=now) == "fresh"
+    assert compute_freshness("Enedis", now - timedelta(hours=48), now=now) == "stale"
+    assert compute_freshness("Enedis", now - timedelta(hours=80), now=now) == "incomplete"
+
+    # IoT TTL = 1h
+    assert compute_freshness("IoT", now - timedelta(minutes=30), now=now) == "fresh"
+    assert compute_freshness("IoT", now - timedelta(hours=2), now=now) == "stale"
+
+
+def test_freshness_helper_estimated_short_circuits(monkeypatch):
+    """ét12d P0-3 : is_estimated=True → 'estimated' indépendamment du TTL.
+
+    Demo mode désactivé explicitement (sinon override prioritaire — comportement voulu).
+    """
+    from datetime import datetime, timezone
+
+    from services.event_bus.freshness import compute_freshness
+
+    monkeypatch.setenv("PROMEOS_DEMO_MODE", "false")
+    now = datetime.now(timezone.utc)
+    assert compute_freshness("Enedis", now, now=now, is_estimated=True) == "estimated"
+
+
+def test_compliance_detector_includes_mitigation(db, org_with_sites):
+    """ét12d P0-4 (CFO) : compliance_deadline events portent EventMitigation."""
+    org_id = org_with_sites["org_id"]
+    events = compliance_deadline_detector.detect(db, org_id)
+    # Au moins un événement critical/warning attendu (fixture org_with_sites
+    # crée des sites NON_CONFORME / A_RISQUE).
+    risk_events = [e for e in events if e.severity in ("critical", "warning")]
+    assert risk_events, "Fixture org_with_sites doit produire au moins un risque DT"
+    for e in risk_events:
+        assert e.impact.mitigation is not None, f"{e.id} sans mitigation"
+        assert e.impact.mitigation.capex_eur is not None
+        assert e.impact.mitigation.payback_months is not None
+        assert e.impact.mitigation.npv_eur is not None
+        assert e.impact.mitigation.npv_horizon_year == 2030
+
+
+def test_billing_detector_emits_site_ids_granularity(db, org_with_sites):
+    """ét12d P0-5 (EM) : billing_anomaly events exposent linked_assets.site_ids."""
+    from services.event_bus.detectors import billing_anomaly_detector
+
+    org_id = org_with_sites["org_id"]
+    events = billing_anomaly_detector.detect(db, org_id)
+    # Si pertes ouvertes → site_ids non vide ; si reclaims YTD → site_ids non vide
+    for e in events:
+        # site_ids peut être [] si zéro insight (cas trivial), mais le champ
+        # doit toujours exister (linked_assets.site_ids: list, jamais None).
+        assert hasattr(e.linked_assets, "site_ids")
+        assert isinstance(e.linked_assets.site_ids, list)

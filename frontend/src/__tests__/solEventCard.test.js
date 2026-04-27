@@ -103,6 +103,37 @@ describe('B. SolEventCard — pile doctrine §10 affichée', () => {
   });
 });
 
+// ── B-bis. ét12d corrections P0 audit (a11y + granularité site) ─────
+
+describe('B-bis. SolEventCard — corrections P0 audit ét12d', () => {
+  const src = readSrc('ui/sol/SolEventCard.jsx');
+
+  it("utilise role='button' + tabIndex + onKeyDown au lieu de <button><article> (P0-1 a11y)", () => {
+    // Doctrine §13 a11y : <button> ne peut pas contenir <article>.
+    // Pattern correct : <article role="button" tabIndex={0} onKeyDown>.
+    expect(src).toMatch(/role: 'button'/);
+    expect(src).toMatch(/tabIndex: 0/);
+    expect(src).toMatch(/onKeyDown/);
+    // Anti-régression : pas de Wrapper dynamique button|article
+    expect(src).not.toMatch(/Wrapper = route \? 'button'/);
+  });
+
+  it('expose aria-label agrégé (lecteurs écran, UX P0-C)', () => {
+    expect(src).toMatch(/ariaLabelParts/);
+    expect(src).toMatch(/aria-label=\{route \? ariaLabel/);
+  });
+
+  it('affiche linked_assets.site_ids count (granularité site EM P0-2)', () => {
+    expect(src).toMatch(/event\.linked_assets\?\.site_ids/);
+    expect(src).toMatch(/siteCount/);
+  });
+
+  it('passe le footer text à 11px minimum (UX P0-C WCAG)', () => {
+    // Anti-régression : plus de text-[10px] dans le composant
+    expect(src).not.toMatch(/text-\[10px\]/);
+  });
+});
+
 // ── C. SolEventStream — grille top N ────────────────────────────────
 
 describe('C. SolEventStream — collection', () => {
@@ -132,17 +163,49 @@ describe('D. usePageBriefing — exposition events', () => {
   });
 });
 
-// ── E. Cockpit — pilote consume SolEventStream ──────────────────────
+// ── E. Cockpit — pilote opt-in SolBriefingHead useEventStream ───────
 
-describe('E. Cockpit page-pilote consume SolEventStream', () => {
+describe('E. Cockpit page-pilote opt-in useEventStream (P0-2)', () => {
   const src = readSrc('pages/Cockpit.jsx');
 
-  it('importe SolEventStream depuis SolEventCard.jsx', () => {
-    expect(src).toMatch(/import\s*{\s*SolEventStream\s*}\s*from\s*'\.\.\/ui\/sol\/SolEventCard'/);
+  it('passe useEventStream à SolBriefingHead (switch week-cards → events)', () => {
+    expect(src).toMatch(/<SolBriefingHead[^>]*useEventStream/);
   });
 
-  it('rend SolEventStream conditionnellement (only if events présents)', () => {
-    expect(src).toMatch(/solBriefing\?\.events\?\.length\s*>\s*0/);
-    expect(src).toMatch(/<SolEventStream/);
+  it("n'importe plus SolEventStream directement (factorisé via HOC ét12d)", () => {
+    expect(src).not.toMatch(/import\s*{\s*SolEventStream\s*}\s*from/);
+  });
+});
+
+// ── F. SolBriefingHead — switch SolWeekCards ↔ SolEventStream ───────
+
+describe('F. SolBriefingHead — switch week-cards / event-stream (P0-2)', () => {
+  const src = readSrc('ui/sol/SolBriefingHead.jsx');
+
+  it('importe SolEventStream depuis SolEventCard', () => {
+    expect(src).toMatch(/import\s*{\s*SolEventStream\s*}\s*from\s*'\.\/SolEventCard'/);
+  });
+
+  it('expose useEventStream prop (défaut false → rétro-compat)', () => {
+    expect(src).toMatch(/useEventStream\s*=\s*false/);
+  });
+
+  it('bascule vers SolEventStream si useEventStream && events.length > 0', () => {
+    expect(src).toMatch(/showEventStream\s*=\s*useEventStream\s*&&\s*hasEvents/);
+    expect(src).toMatch(/showEventStream\s*\?[\s\S]*<SolEventStream/);
+  });
+
+  it("fallback SolWeekCards si pas d'events ou pas opt-in", () => {
+    expect(src).toMatch(/<SolWeekCards/);
+  });
+});
+
+// ── G. Backend freshness helper ─────────────────────────────────────
+
+describe('G. Backend event_bus.freshness — P0-3 TTL réel', () => {
+  const helperPath = join(SRC, '../../backend/services/event_bus/freshness.py');
+
+  it('le helper compute_freshness existe (3 détecteurs partagent la SoT)', () => {
+    expect(existsSync(helperPath)).toBe(true);
   });
 });

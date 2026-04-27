@@ -15,18 +15,26 @@
  *
  * Props :
  *   - briefing  : objet retourné par usePageBriefing (kicker/title/narrative/
- *                 kpis/weekCards/fallbackBody/narrativeTone)
+ *                 kpis/weekCards/events/fallbackBody/narrativeTone)
  *   - error     : string|null — passé à SolNarrative pour error state
  *   - onRetry   : function|null — invoke fetchBriefing pour retry
  *   - omitHeader: bool — true si SolPageHeader est rendu ailleurs
  *                 (PageShell.editorialHeader). Défaut : false.
  *   - onNavigate: function — handler navigation pour week-cards CTA.
+ *   - useEventStream : bool — Sprint 2 Vague C ét12d (audit Marie + UX P0-B).
+ *                 Si true ET briefing.events présents, on rend
+ *                 <SolEventStream> (pile §10 native source/confidence/
+ *                 owner_role/mitigation visibles) au lieu de <SolWeekCards>.
+ *                 Évite le doublon sémantique 6 cards typologiquement
+ *                 proches sur Cockpit. Défaut : false (rétro-compat).
+ *   - eventStreamTitle : surtitre §5 du SolEventStream si activé.
  *
  * Doctrine §5 + ADR-001 — invariant grammaire éditoriale.
  * Doctrine §8.1 — zéro logique métier (composant pur display).
  */
 import SolNarrative from './SolNarrative';
 import SolWeekCards from './SolWeekCards';
+import { SolEventStream } from './SolEventCard';
 
 export default function SolBriefingHead({
   briefing,
@@ -34,6 +42,8 @@ export default function SolBriefingHead({
   onRetry = null,
   omitHeader = false,
   onNavigate,
+  useEventStream = false,
+  eventStreamTitle = 'Cette semaine chez vous',
 }) {
   // Erreur briefing : SolNarrative s'occupe de l'affichage error state
   // (memory feedback CX 27/04 : ne pas masquer silencieusement).
@@ -41,6 +51,13 @@ export default function SolBriefingHead({
     return <SolNarrative error={error} onRetry={onRetry} />;
   }
   if (!briefing) return null;
+
+  // Vague C ét12d : si la page-pilote a opt-in pour la pile §10 native ET
+  // que le moteur d'événements a poussé au moins un événement, on bascule
+  // vers SolEventStream. Sinon fallback SolWeekCards (pages legacy +
+  // cockpit dont events.length===0).
+  const hasEvents = briefing.events && briefing.events.length > 0;
+  const showEventStream = useEventStream && hasEvents;
 
   return (
     <>
@@ -51,12 +68,21 @@ export default function SolBriefingHead({
         narrative={briefing.narrative}
         kpis={briefing.kpis}
       />
-      <SolWeekCards
-        cards={briefing.weekCards}
-        fallbackBody={briefing.fallbackBody}
-        tone={briefing.narrativeTone}
-        onNavigate={onNavigate}
-      />
+      {showEventStream ? (
+        <SolEventStream
+          events={briefing.events}
+          max={3}
+          onNavigate={onNavigate}
+          title={eventStreamTitle}
+        />
+      ) : (
+        <SolWeekCards
+          cards={briefing.weekCards}
+          fallbackBody={briefing.fallbackBody}
+          tone={briefing.narrativeTone}
+          onNavigate={onNavigate}
+        />
+      )}
     </>
   );
 }
