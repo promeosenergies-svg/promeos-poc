@@ -17,6 +17,14 @@ import {
   getInsightDetail,
 } from '../services/api';
 import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState, Explain } from '../ui';
+// Sprint 2 Vague B ét6' — labels FR centralisés (label_registries cross-vue).
+import {
+  BILLING_INSIGHT_TYPE_LABELS,
+  BILLING_INSIGHT_STATUS_LABELS,
+  BILLING_INVOICE_STATUS_LABELS,
+  BILLING_SEVERITY_LABELS,
+  BILLING_SEVERITY_BADGE,
+} from '../domain/billing/billingLabels.fr';
 // Sprint 1.5 — grammaire Sol industrialisée (ADR-001) sur /bill-intel
 import SolPageHeader from '../ui/sol/SolPageHeader';
 import SolNarrative from '../ui/sol/SolNarrative';
@@ -63,19 +71,16 @@ import { fmtEur, fmtKwh } from '../utils/format';
 
 const VALID_STATUSES = ['open', 'ack', 'resolved', 'false_positive'];
 
-const SEVERITY_BADGE = {
-  critical: 'crit',
-  high: 'warn',
-  medium: 'info',
-  low: 'neutral',
-};
+const SEVERITY_BADGE = BILLING_SEVERITY_BADGE;
 
-// Sprint 2 Vague A ét2 — δ-2 récit Bill-Intel (doctrine v2 §5 + ADR-004).
-// 14 codes techniques transformés en phrases narratives lisibles par un
-// non-sachant (audit Marie 5.5 → cible 7+). Acronymes restants encapsulés
-// dans <Explain> pour pédagogie inline (TURPE/TTC/accise/CTA/kWh/shadow).
-// Anti-pattern §6.3 : zéro acronyme brut dans un label affiché.
+// Sprint 2 Vague A ét2 — récit Bill-Intel (doctrine v2 §5 + ADR-004).
+// Sprint 2 Vague B ét6' — texte canonique migré dans
+// `domain/billing/billingLabels.fr.js`. Cette table local ne porte que les
+// 5 wrappers JSX qui encapsulent un `<Explain>` inline (kWh/TTC/TURPE/
+// accise/shadow). Les 10 entrées plain-text sont consommées telles quelles
+// depuis le registry — pas de duplication de wording.
 const TYPE_LABELS = {
+  ...BILLING_INSIGHT_TYPE_LABELS,
   shadow_gap: (
     <>
       Cette facture coûte plus que la <Explain term="shadow_billing">facturation théorique</Explain>
@@ -86,24 +91,16 @@ const TYPE_LABELS = {
       Le prix au <Explain term="kwh">kWh</Explain> dépasse vos repères
     </>
   ),
-  duplicate_invoice: 'Cette facture semble facturée deux fois',
-  missing_period: "Une période de facturation n'a pas été couverte",
-  period_too_long: 'Cette période dépasse la durée habituelle',
   negative_kwh: (
     <>
       Une consommation négative en <Explain term="kwh">kWh</Explain> est apparue
     </>
   ),
-  zero_amount: 'Le montant facturé est nul',
-  lines_sum_mismatch: 'Le total ne se reconstitue pas à partir des lignes',
-  consumption_spike: 'Pic de consommation inhabituel détecté',
-  price_drift: 'Le prix unitaire dérive depuis plusieurs mois',
   ttc_coherence: (
     <>
       Le total <Explain term="ttc">TTC</Explain> ne se reconstitue pas
     </>
   ),
-  contract_expiry: 'Votre contrat est arrivé à échéance',
   reseau_mismatch: (
     <>
       L'acheminement réseau dépasse le tarif <Explain term="turpe">TURPE</Explain> attendu
@@ -130,20 +127,9 @@ const STATUS_COLORS = {
   archived: 'bg-gray-100 text-gray-500',
 };
 
-const STATUS_LABELS = {
-  imported: 'Importé',
-  validated: 'Validé',
-  audited: 'Audité',
-  anomaly: 'Anomalie',
-  archived: 'Archivé',
-};
+const STATUS_LABELS = BILLING_INVOICE_STATUS_LABELS;
 
-const SEVERITY_LABELS = {
-  critical: 'Critique',
-  high: 'Élevé',
-  medium: 'Moyen',
-  low: 'Faible',
-};
+const SEVERITY_LABELS = BILLING_SEVERITY_LABELS;
 
 // Sprint 1.5bis P0-4 — palette migrée tokens warm Sol (audit Visual/UX 26/04 :
 // arc-en-ciel yellow/blue/green/gray cassait la signature « journal en
@@ -155,12 +141,7 @@ const INSIGHT_STATUS_STYLES = {
   false_positive: { background: 'var(--sol-ink-100)', color: 'var(--sol-ink-500)' },
 };
 
-const INSIGHT_STATUS_LABELS = {
-  open: 'Ouvert',
-  ack: 'Pris en charge',
-  resolved: 'Résolu',
-  false_positive: 'Faux positif',
-};
+const INSIGHT_STATUS_LABELS = BILLING_INSIGHT_STATUS_LABELS;
 
 const INSIGHT_FILTER_OPTIONS = [
   { value: 'all', label: 'Tous' },

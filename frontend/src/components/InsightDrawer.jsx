@@ -8,6 +8,12 @@ import { useState, useEffect } from 'react';
 import { AlertTriangle, ChevronDown, FileText, Info } from 'lucide-react';
 import Drawer from '../ui/Drawer';
 import { Badge, Explain } from '../ui';
+// Sprint 2 Vague B ét6' — labels FR centralisés (label_registries cross-vue).
+import {
+  BILLING_INSIGHT_TYPE_LABELS,
+  BILLING_SEVERITY_LABELS,
+  BILLING_SEVERITY_BADGE,
+} from '../domain/billing/billingLabels.fr';
 import { SkeletonCard } from '../ui/Skeleton';
 import {
   getInsightDetail,
@@ -51,30 +57,17 @@ const _RECON_STATUS_COLOR = {
   minimal: 'red',
 };
 
-// Sprint 2 Vague A ét2 — δ-2 récit Bill-Intel (doctrine v2 §5 + ADR-004).
-// Aligné sur TYPE_LABELS de pages/BillIntelPage.jsx pour cohérence cross-vue.
-// TYPE_LABELS_TEXT : version plain-string pour contextes non-JSX (titres
-// d'actions générées). TYPE_LABELS : version JSX pour rendu enrichi avec
-// <Explain> pédagogique inline.
-const TYPE_LABELS_TEXT = {
-  shadow_gap: 'Cette facture coûte plus que la facturation théorique',
-  unit_price_high: 'Le prix au kWh dépasse vos repères',
-  duplicate_invoice: 'Cette facture semble facturée deux fois',
-  missing_period: "Une période de facturation n'a pas été couverte",
-  period_too_long: 'Cette période dépasse la durée habituelle',
-  negative_kwh: 'Une consommation négative en kWh est apparue',
-  zero_amount: 'Le montant facturé est nul',
-  lines_sum_mismatch: 'Le total ne se reconstitue pas à partir des lignes',
-  consumption_spike: 'Pic de consommation inhabituel détecté',
-  price_drift: 'Le prix unitaire dérive depuis plusieurs mois',
-  ttc_coherence: 'Le total TTC ne se reconstitue pas',
-  contract_expiry: 'Votre contrat est arrivé à échéance',
-  reseau_mismatch: "L'acheminement réseau dépasse le tarif TURPE attendu",
-  taxes_mismatch: "Les taxes dépassent l'accise et la CTA en vigueur",
-  reconciliation_mismatch: 'Écart compteur / facture détecté',
-};
+// Sprint 2 Vague B ét6' — texte canonique migré dans
+// `domain/billing/billingLabels.fr.js` (BILLING_INSIGHT_TYPE_LABELS).
+// `TYPE_LABELS_TEXT` est désormais un alias direct vers le registry partagé
+// avec BillIntelPage. Cette table local ne porte que les wrappers JSX qui
+// encapsulent un `<Explain>` inline pour pédagogie (kWh/TTC/TURPE/accise/
+// CTA/shadow). Les autres entrées sont consommées depuis le registry tel
+// quel — pas de duplication de wording.
+const TYPE_LABELS_TEXT = BILLING_INSIGHT_TYPE_LABELS;
 
 const TYPE_LABELS = {
+  ...BILLING_INSIGHT_TYPE_LABELS,
   shadow_gap: (
     <>
       Cette facture coûte plus que la <Explain term="shadow_billing">facturation théorique</Explain>
@@ -85,24 +78,16 @@ const TYPE_LABELS = {
       Le prix au <Explain term="kwh">kWh</Explain> dépasse vos repères
     </>
   ),
-  duplicate_invoice: TYPE_LABELS_TEXT.duplicate_invoice,
-  missing_period: TYPE_LABELS_TEXT.missing_period,
-  period_too_long: TYPE_LABELS_TEXT.period_too_long,
   negative_kwh: (
     <>
       Une consommation négative en <Explain term="kwh">kWh</Explain> est apparue
     </>
   ),
-  zero_amount: TYPE_LABELS_TEXT.zero_amount,
-  lines_sum_mismatch: TYPE_LABELS_TEXT.lines_sum_mismatch,
-  consumption_spike: TYPE_LABELS_TEXT.consumption_spike,
-  price_drift: TYPE_LABELS_TEXT.price_drift,
   ttc_coherence: (
     <>
       Le total <Explain term="ttc">TTC</Explain> ne se reconstitue pas
     </>
   ),
-  contract_expiry: TYPE_LABELS_TEXT.contract_expiry,
   reseau_mismatch: (
     <>
       L'acheminement réseau dépasse le tarif <Explain term="turpe">TURPE</Explain> attendu
@@ -121,19 +106,8 @@ const TYPE_LABELS = {
   ),
 };
 
-const SEVERITY_LABELS = {
-  critical: 'Critique',
-  high: 'Élevé',
-  medium: 'Moyen',
-  low: 'Faible',
-};
-
-const SEVERITY_BADGE = {
-  critical: 'crit',
-  high: 'warn',
-  medium: 'info',
-  low: 'neutral',
-};
+const SEVERITY_LABELS = BILLING_SEVERITY_LABELS;
+const SEVERITY_BADGE = BILLING_SEVERITY_BADGE;
 
 const CAUSE_LABELS = {
   shadow_gap: (m) =>

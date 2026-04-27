@@ -105,36 +105,52 @@ describe('E. KPI — pertes estimées only active', () => {
   });
 });
 
-/* ── F. TYPE_LABELS 14 types ── */
-describe('F. TYPE_LABELS — all 14 types present', () => {
-  const page = src('src/pages/BillIntelPage.jsx');
+/* ── F. TYPE_LABELS 14 types ──
+   Sprint 2 Vague B ét6' : SoT migrée dans le registry centralisé
+   `domain/billing/billingLabels.fr.js`. Test redirigé pour refléter
+   la nouvelle source de vérité. BillIntelPage et InsightDrawer
+   importent ce registry et n'ajoutent que les wrappers JSX `<Explain>`. */
+describe('F. TYPE_LABELS — all 14 types present in canonical registry', () => {
+  const registry = src('src/domain/billing/billingLabels.fr.js');
 
   it('has ttc_coherence', () => {
-    expect(page).toMatch(/ttc_coherence/);
+    expect(registry).toMatch(/ttc_coherence/);
   });
 
   it('has contract_expiry', () => {
-    expect(page).toMatch(/contract_expiry/);
+    expect(registry).toMatch(/contract_expiry/);
   });
 
   it('has reseau_mismatch', () => {
-    expect(page).toMatch(/reseau_mismatch/);
+    expect(registry).toMatch(/reseau_mismatch/);
   });
 
   it('has taxes_mismatch', () => {
-    expect(page).toMatch(/taxes_mismatch/);
+    expect(registry).toMatch(/taxes_mismatch/);
   });
 
   it('has all original 10 types', () => {
-    expect(page).toMatch(/shadow_gap/);
-    expect(page).toMatch(/unit_price_high/);
-    expect(page).toMatch(/duplicate_invoice/);
-    expect(page).toMatch(/missing_period/);
-    expect(page).toMatch(/period_too_long/);
-    expect(page).toMatch(/negative_kwh/);
-    expect(page).toMatch(/zero_amount/);
-    expect(page).toMatch(/lines_sum_mismatch/);
-    expect(page).toMatch(/consumption_spike/);
-    expect(page).toMatch(/price_drift/);
+    expect(registry).toMatch(/shadow_gap/);
+    expect(registry).toMatch(/unit_price_high/);
+    expect(registry).toMatch(/duplicate_invoice/);
+    expect(registry).toMatch(/missing_period/);
+    expect(registry).toMatch(/period_too_long/);
+    expect(registry).toMatch(/negative_kwh/);
+    expect(registry).toMatch(/zero_amount/);
+    expect(registry).toMatch(/lines_sum_mismatch/);
+    expect(registry).toMatch(/consumption_spike/);
+    expect(registry).toMatch(/price_drift/);
+  });
+
+  it('BillIntelPage imports the registry (no inline duplication)', () => {
+    const page = src('src/pages/BillIntelPage.jsx');
+    expect(page).toMatch(/from '\.\.\/domain\/billing\/billingLabels\.fr'/);
+    expect(page).toMatch(/BILLING_INSIGHT_TYPE_LABELS/);
+  });
+
+  it('InsightDrawer imports the registry (no inline duplication)', () => {
+    const drawer = src('src/components/InsightDrawer.jsx');
+    expect(drawer).toMatch(/from '\.\.\/domain\/billing\/billingLabels\.fr'/);
+    expect(drawer).toMatch(/BILLING_INSIGHT_TYPE_LABELS/);
   });
 });

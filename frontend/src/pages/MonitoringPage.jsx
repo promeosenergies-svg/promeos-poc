@@ -75,6 +75,11 @@ import SolNarrative from '../ui/sol/SolNarrative';
 import SolWeekCards from '../ui/sol/SolWeekCards';
 import SolPageFooter from '../ui/sol/SolPageFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
+// Sprint 2 Vague B ét6' — labels FR centralisés (label_registries cross-vue).
+import {
+  MONITORING_ALERT_TYPE_LABELS,
+  MONITORING_KPI_TOOLTIPS,
+} from '../domain/monitoring/monitoringLabels.fr';
 import {
   toConsoExplorer,
   toConsoDiag,
@@ -126,37 +131,11 @@ const STATUS_CONFIG = {
   resolved: { label: 'Résolu', badge: 'ok' },
 };
 
-// Sprint 2 Vague A ét5' — δ-3 labels alertes Monitoring (doctrine §5).
-// Acronymes déjargonnés (DST → "heure d'été", P95 → "pointe récurrente",
-// "Dépassement puissance" → "Dépassement puissance souscrite"). Labels
-// déjà FR-readable conservés. Compromis EM : termes techniques (P95, talon,
-// signature climatique) gardés car vocabulaire métier de l'EM.
-const ALERT_TYPE_LABELS = {
-  BASE_NUIT_ELEVEE: 'Base nuit élevée',
-  WEEKEND_ANORMAL: 'Week-end anormal',
-  DERIVE_TALON: 'Dérive du talon',
-  PIC_ANORMAL: 'Pic anormal',
-  P95_HAUSSE: 'Pointe récurrente en hausse',
-  DEPASSEMENT_PUISSANCE: 'Dépassement puissance souscrite',
-  RUPTURE_PROFIL: 'Rupture de profil',
-  HORS_HORAIRES: 'Consommation hors horaires',
-  COURBE_PLATE: 'Courbe plate',
-  DONNEES_MANQUANTES: 'Données manquantes',
-  DOUBLONS_DST: "Doublons au passage à l'heure d'été",
-  VALEURS_NEGATIVES: 'Valeurs négatives',
-  SENSIBILITE_CLIMATIQUE: 'Sensibilité climatique',
-  // snake_case variants from monitoring engine
-  off_hours_consumption: 'Consommation hors horaires',
-  high_night_base: 'Base nuit élevée',
-  power_risk: 'Risque dépassement puissance souscrite',
-  weekend_anomaly: 'Anomalie week-end',
-  high_base_load: 'Talon élevé',
-  peak_anomaly: 'Pic anormal',
-  profile_break: 'Rupture de profil',
-  flat_curve: 'Courbe plate',
-  missing_data: 'Données manquantes',
-  climate_sensitivity: 'Sensibilité climatique',
-};
+// Sprint 2 Vague B ét6' — registry centralisé `domain/monitoring/
+// monitoringLabels.fr.js`. Alias local conservé pour minimiser le diff
+// dans les ~6 sites de consommation au sein du fichier (lignes 580+, 1430+,
+// 1790+, 2375+, 3010+).
+const ALERT_TYPE_LABELS = MONITORING_ALERT_TYPE_LABELS;
 
 const KPI_THRESHOLDS = {
   quality: { ok: 80, warn: 60 },
@@ -165,21 +144,10 @@ const KPI_THRESHOLDS = {
   climate: { ok: 2, warn: 4 },
 };
 
-// Sprint 2 Vague A ét5' — δ-3 récit Monitoring (doctrine v2 §5 + ADR-004).
-// Compromis EM (audit personas) : narratif lisible non-sachant en premier
-// + formule technique (P=E/dt, kWh/j par °C, P95) préservée comme preuve
-// pour ne pas régresser le power-user EM. Anti-pattern §6.3 levé sur
-// formules brutes Pmax / loadFactor / signature climatique.
-const KPI_TOOLTIPS = {
-  pmax: 'Puissance maximale réellement appelée sur la période. Le P95 (95ᵉ centile) sert à neutraliser les pics ponctuels et représente la pointe récurrente. Calcul : puissance = énergie / durée.',
-  loadFactor:
-    'À quel point votre courbe est plate : 100 % = consommation parfaitement constante, 0 % = pic isolé sur fond nul. Calcul : énergie totale / (Pmax × heures de la période).',
-  risk: 'Probabilité de dépasser votre puissance souscrite et déclencher une pénalité. Combine 4 signaux : ratio P95/puissance souscrite, fréquence des pointes, volatilité minute, dépassements observés.',
-  quality:
-    'Fiabilité de vos données de comptage : trous, doublons, valeurs négatives, valeurs aberrantes (outliers) et complétude globale.',
-  climate:
-    "À quel point votre conso suit la météo : pente kWh/jour par °C de la signature énergétique. Élevé = forte dépendance chauffage ou climatisation, opportunité d'optimisation thermique.",
-};
+// Sprint 2 Vague B ét6' — registry centralisé `domain/monitoring/
+// monitoringLabels.fr.js`. Alias local conservé pour minimiser le diff
+// dans les sites de consommation tooltip (lignes ~2440-2640).
+const KPI_TOOLTIPS = MONITORING_KPI_TOOLTIPS;
 
 const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const HOURS_24 = Array.from({ length: 24 }, (_, i) => `${i}h`);
