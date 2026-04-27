@@ -126,24 +126,29 @@ const STATUS_CONFIG = {
   resolved: { label: 'Résolu', badge: 'ok' },
 };
 
+// Sprint 2 Vague A ét5' — δ-3 labels alertes Monitoring (doctrine §5).
+// Acronymes déjargonnés (DST → "heure d'été", P95 → "pointe récurrente",
+// "Dépassement puissance" → "Dépassement puissance souscrite"). Labels
+// déjà FR-readable conservés. Compromis EM : termes techniques (P95, talon,
+// signature climatique) gardés car vocabulaire métier de l'EM.
 const ALERT_TYPE_LABELS = {
   BASE_NUIT_ELEVEE: 'Base nuit élevée',
   WEEKEND_ANORMAL: 'Week-end anormal',
-  DERIVE_TALON: 'Dérive talon',
+  DERIVE_TALON: 'Dérive du talon',
   PIC_ANORMAL: 'Pic anormal',
-  P95_HAUSSE: 'Hausse P95',
-  DEPASSEMENT_PUISSANCE: 'Dépassement puissance',
+  P95_HAUSSE: 'Pointe récurrente en hausse',
+  DEPASSEMENT_PUISSANCE: 'Dépassement puissance souscrite',
   RUPTURE_PROFIL: 'Rupture de profil',
   HORS_HORAIRES: 'Consommation hors horaires',
   COURBE_PLATE: 'Courbe plate',
   DONNEES_MANQUANTES: 'Données manquantes',
-  DOUBLONS_DST: 'Doublons DST',
+  DOUBLONS_DST: "Doublons au passage à l'heure d'été",
   VALEURS_NEGATIVES: 'Valeurs négatives',
   SENSIBILITE_CLIMATIQUE: 'Sensibilité climatique',
   // snake_case variants from monitoring engine
   off_hours_consumption: 'Consommation hors horaires',
   high_night_base: 'Base nuit élevée',
-  power_risk: 'Risque puissance souscrite',
+  power_risk: 'Risque dépassement puissance souscrite',
   weekend_anomaly: 'Anomalie week-end',
   high_base_load: 'Talon élevé',
   peak_anomaly: 'Pic anormal',
@@ -160,12 +165,20 @@ const KPI_THRESHOLDS = {
   climate: { ok: 2, warn: 4 },
 };
 
+// Sprint 2 Vague A ét5' — δ-3 récit Monitoring (doctrine v2 §5 + ADR-004).
+// Compromis EM (audit personas) : narratif lisible non-sachant en premier
+// + formule technique (P=E/dt, kWh/j par °C, P95) préservée comme preuve
+// pour ne pas régresser le power-user EM. Anti-pattern §6.3 levé sur
+// formules brutes Pmax / loadFactor / signature climatique.
 const KPI_TOOLTIPS = {
-  pmax: 'Puissance max atteinte (P = E / dt). P95 = 95e centile.',
-  loadFactor: 'E_totale / (Pmax x heures). Élevé = courbe plate.',
-  risk: 'Risque dépassement Psub. 4 facteurs: P95/Psub, fréquence, volatilité, pics.',
-  quality: 'Qualité données: complétude, trous, doublons, négatifs, outliers.',
-  climate: 'Pente (kWh/j)/°C de la signature énergétique. Élevé = forte dépendance climatique.',
+  pmax: 'Puissance maximale réellement appelée sur la période. Le P95 (95ᵉ centile) sert à neutraliser les pics ponctuels et représente la pointe récurrente. Calcul : puissance = énergie / durée.',
+  loadFactor:
+    'À quel point votre courbe est plate : 100 % = consommation parfaitement constante, 0 % = pic isolé sur fond nul. Calcul : énergie totale / (Pmax × heures de la période).',
+  risk: 'Probabilité de dépasser votre puissance souscrite et déclencher une pénalité. Combine 4 signaux : ratio P95/puissance souscrite, fréquence des pointes, volatilité minute, dépassements observés.',
+  quality:
+    'Fiabilité de vos données de comptage : trous, doublons, valeurs négatives, valeurs aberrantes (outliers) et complétude globale.',
+  climate:
+    "À quel point votre conso suit la météo : pente kWh/jour par °C de la signature énergétique. Élevé = forte dépendance chauffage ou climatisation, opportunité d'optimisation thermique.",
 };
 
 const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
