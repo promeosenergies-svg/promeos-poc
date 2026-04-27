@@ -24,9 +24,21 @@ import SolPageHeader from '../ui/sol/SolPageHeader';
 const METHODOLOGIE_CATALOG = Object.freeze({
   'conformite-regops': {
     title: 'Score conformité RegOps',
-    italicHook: 'pondérations DT / BACS / APER / Audit SMÉ',
+    italicHook: 'pondérations DT / BACS / APER / Audit énergétique',
     kicker: 'MÉTHODOLOGIE · CONFORMITÉ',
     publicPath: '/docs/methodologie/conformite-regops.md',
+  },
+  'cockpit-comex': {
+    title: 'Vue COMEX (cockpit Jean-Marc CFO)',
+    italicHook: 'trajectoire 2030, exposition financière, leviers économies',
+    kicker: 'MÉTHODOLOGIE · COCKPIT COMEX',
+    publicPath: '/docs/methodologie/cockpit-comex.md',
+  },
+  'patrimoine-mutualisation': {
+    title: 'Mutualisation Décret Tertiaire',
+    italicHook: 'différenciateur §4.1 multisite chiffré €/an',
+    kicker: 'MÉTHODOLOGIE · PATRIMOINE',
+    publicPath: '/docs/methodologie/patrimoine-mutualisation.md',
   },
 });
 

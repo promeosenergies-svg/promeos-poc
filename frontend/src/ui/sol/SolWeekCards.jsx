@@ -19,36 +19,54 @@
  *
  * Display-only. Tout vient backend events_service.
  */
+import { useMemo } from 'react';
 import { Eye, AlertCircle, Sparkles, TrendingDown, ArrowRight } from 'lucide-react';
 
+/**
+ * Sprint 1.4bis P0 (audit UI/Visual) : Tailwind v4 ne compile pas les classes
+ * arbitraires `bg-[var(--sol-*-bg)]` + `border-[var(--sol-*-line)]` à la
+ * volée → bordures fantômes en runtime, palette warm Sol invisible.
+ *
+ * Workaround : `style={{ background, borderColor }}` inline qui consomme
+ * directement les CSS variables tokens.css. Performance équivalente,
+ * runtime garanti.
+ */
 const CARD_TYPE_CONFIG = Object.freeze({
   watch: {
     label: 'À regarder',
     Icon: Eye,
     iconCls: 'text-[var(--sol-attention-fg)]',
-    bgCls: 'bg-[var(--sol-attention-bg)]',
-    borderCls: 'border-[var(--sol-attention-line)]',
+    style: {
+      background: 'var(--sol-attention-bg)',
+      borderColor: 'var(--sol-attention-line)',
+    },
   },
   todo: {
     label: 'À faire',
     Icon: AlertCircle,
     iconCls: 'text-[var(--sol-afaire-fg)]',
-    bgCls: 'bg-[var(--sol-afaire-bg)]',
-    borderCls: 'border-[var(--sol-afaire-line)]',
+    style: {
+      background: 'var(--sol-afaire-bg)',
+      borderColor: 'var(--sol-afaire-line)',
+    },
   },
   good_news: {
     label: 'Bonne nouvelle',
     Icon: Sparkles,
     iconCls: 'text-[var(--sol-succes-fg)]',
-    bgCls: 'bg-[var(--sol-succes-bg)]',
-    borderCls: 'border-[var(--sol-succes-line)]',
+    style: {
+      background: 'var(--sol-succes-bg)',
+      borderColor: 'var(--sol-succes-line)',
+    },
   },
   drift: {
     label: 'Dérive détectée',
     Icon: TrendingDown,
     iconCls: 'text-[var(--sol-refuse-fg)]',
-    bgCls: 'bg-[var(--sol-refuse-bg)]',
-    borderCls: 'border-[var(--sol-refuse-line)]',
+    style: {
+      background: 'var(--sol-refuse-bg)',
+      borderColor: 'var(--sol-refuse-line)',
+    },
   },
 });
 
@@ -89,7 +107,8 @@ function WeekCard({ card, onNavigate }) {
   return (
     <Wrapper data-testid={`sol-week-card-${card.type}`} role="listitem" {...wrapperProps}>
       <article
-        className={`flex flex-col gap-2.5 p-5 rounded-lg border ${cfg.bgCls} ${cfg.borderCls} h-full sol-card transition-colors hover:brightness-[0.98]`}
+        className="flex flex-col gap-2.5 p-5 rounded-lg border h-full sol-card transition-colors hover:brightness-[0.98]"
+        style={cfg.style}
         data-tone={
           card.type === 'good_news'
             ? 'succes'
@@ -176,6 +195,7 @@ const FALLBACK_CATALOGS = Object.freeze({
     { type: 'watch', title: 'Patrimoine sous tension' },
     { type: 'watch', title: 'Vigilance trajectoire 2030' },
     { type: 'watch', title: 'Prochaine échéance à anticiper' },
+    { type: 'watch', title: 'Anticiper l’échéance trimestrielle' },
   ],
   critical: [
     { type: 'watch', title: 'Patrimoine en alerte' },
@@ -216,7 +236,12 @@ export default function SolWeekCards({
   onNavigate,
   className = '',
 }) {
-  const displayedCards = applyFallbackDensification(cards, fallbackBody, tone);
+  // Sprint 1.4bis /simplify Efficiency P1 : memoize la densification —
+  // évite ré-exécution algorithme O(n×m) à chaque render parent.
+  const displayedCards = useMemo(
+    () => applyFallbackDensification(cards, fallbackBody, tone),
+    [cards, fallbackBody, tone]
+  );
 
   return (
     <section

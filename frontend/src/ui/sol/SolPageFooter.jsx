@@ -13,6 +13,7 @@
  * Cf. ADR-001 grammaire Sol industrialisée.
  */
 import { Info } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const CONFIDENCE_LABELS = Object.freeze({
   high: { label: 'haute', cls: 'text-emerald-700' },
@@ -80,17 +81,28 @@ export default function SolPageFooter({
         </span>
         <span>{updatedLabel}</span>
       </span>
-      {methodologyUrl && (
-        <a
-          href={methodologyUrl}
-          target={methodologyUrl.startsWith('http') ? '_blank' : undefined}
-          rel={methodologyUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
-          className="inline-flex items-center gap-1 text-[var(--sol-ink-500)] hover:text-[var(--sol-ink-700)] underline-offset-2 hover:underline py-2 px-1 -my-2 -mx-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)]"
-        >
-          <Info size={11} aria-hidden="true" />
-          Méthodologie
-        </a>
-      )}
+      {methodologyUrl &&
+        (methodologyUrl.startsWith('http') ? (
+          <a
+            href={methodologyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[var(--sol-ink-500)] hover:text-[var(--sol-ink-700)] underline-offset-2 hover:underline py-2 px-1 -my-2 -mx-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)]"
+          >
+            <Info size={11} aria-hidden="true" />
+            Méthodologie
+          </a>
+        ) : (
+          /* Sprint 1.4bis P0 (audit CX) : <a> → <Link> pour préserver
+             ScopeContext (org/site localStorage) sur retour navigation. */
+          <Link
+            to={methodologyUrl}
+            className="inline-flex items-center gap-1 text-[var(--sol-ink-500)] hover:text-[var(--sol-ink-700)] underline-offset-2 hover:underline py-2 px-1 -my-2 -mx-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)]"
+          >
+            <Info size={11} aria-hidden="true" />
+            Méthodologie
+          </Link>
+        ))}
     </footer>
   );
 }

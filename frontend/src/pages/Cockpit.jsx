@@ -3,7 +3,7 @@
  * Hero Impact + 4 KPI Santé + Actions Prioritaires + Explorer + Table sites.
  */
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FileText,
   ArrowRight,
@@ -102,6 +102,15 @@ function ConsistencyBanner({ issues }) {
 const Cockpit = () => {
   useRenderTiming('Cockpit');
   const navigate = useNavigate();
+  // Sprint 1.4bis P0 (audit Nav fin S1) : si /cockpit sans ?angle=, on
+  // matérialise dans l'URL pour que la nav et le partage de lien
+  // reflètent l'angle réellement consommé. Default = comex (Jean-Marc CFO).
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (!searchParams.get('angle')) {
+      setSearchParams({ angle: 'comex' }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   const { org, portefeuille, portefeuilles, scopedSites, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
   // Contract P3-7 (workflowDemoP3.test.js) : tous les modules pivots wirent

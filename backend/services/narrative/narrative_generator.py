@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
+from enum import Enum
 from typing import Literal, Optional
 
 from sqlalchemy.orm import Session
@@ -77,7 +78,22 @@ class NarrativeWeekCard:
     urgency_days: Optional[int] = None
 
 
-NarrativeTone = Literal["positive", "neutral", "tension", "critical"]
+class NarrativeTone(str, Enum):
+    """Tone narrative §5 (S1.3bis P0-D + S1.4bis /simplify Quality).
+
+    Pattern aligné sur ProvenanceConfidence (provenance_service.py) — Enum
+    str pour validation runtime + sérialisation JSON automatique.
+
+    POSITIVE  — patrimoine bien positionné (score >= 75, pas de dérive)
+    NEUTRAL   — état stable sans signal fort
+    TENSION   — sites à risque ou échéance proche (90-365j)
+    CRITICAL  — non-conformes ou échéance critique (<90j)
+    """
+
+    POSITIVE = "positive"
+    NEUTRAL = "neutral"
+    TENSION = "tension"
+    CRITICAL = "critical"
 
 
 @dataclass(frozen=True)
@@ -113,6 +129,107 @@ class Narrative:
         return d
 
 
+# ── Helpers partagés (S1.4bis /simplify Code Reuse + Quality P0) ─────
+
+
+@dataclass(frozen=True)
+class OrgContext:
+    """Contexte org chargé une fois par requête.
+
+    Sprint 1.4bis : factorise le bloc dupliqué 4x dans les builders
+    (KpiService + scope + site_q + non_conformes + a_risque + en_derive).
+    Réduit ~100 LOC dupliquées et centralise la requête jointurisée.
+    """
+
+    risque_total: float
+    conformite_score: Optional[int]
+    non_conformes: int
+    a_risque: int
+    en_derive: int
+    sites: list  # liste Site complète (utile pour Patrimoine surface_m2)
+
+
+def _load_org_context(db: Session, org_id: int) -> OrgContext:
+    """Charge le contexte org canonique consommé par les 4 builders.
+
+    Une seule requête jointurisée (Site + Portefeuille + EntiteJuridique)
+    + 2 appels KpiService. Pattern centralisé pour cohérence cross-builders.
+    """
+    from models import EntiteJuridique, Portefeuille, Site, StatutConformite, not_deleted
+    from services.kpi_service import KpiScope, KpiService
+
+    kpi_svc = KpiService(db)
+    scope = KpiScope(org_id=org_id)
+
+    risque_total = kpi_svc.get_financial_risk_eur(scope).value
+    conformite_kpi = kpi_svc.get_compliance_score(scope)
+    conformite_score = int(round(conformite_kpi.value)) if conformite_kpi.value is not None else None
+
+    site_q = (
+        not_deleted(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
+    sites = site_q.all()
+    non_conformes = sum(1 for s in sites if s.statut_decret_tertiaire == StatutConformite.NON_CONFORME)
+    a_risque = sum(1 for s in sites if s.statut_decret_tertiaire == StatutConformite.A_RISQUE)
+
+    return OrgContext(
+        risque_total=risque_total or 0.0,
+        conformite_score=conformite_score,
+        non_conformes=non_conformes,
+        a_risque=a_risque,
+        en_derive=non_conformes + a_risque,
+        sites=sites,
+    )
+
+
+def _compute_tone(
+    non_conformes: int,
+    a_risque: int,
+    conformite_score: Optional[int],
+    *,
+    urgency_critical: bool = False,
+) -> NarrativeTone:
+    """Calcule le tone narrative à partir de l'état patrimoine.
+
+    Sprint 1.4bis /simplify Quality P0 : 4× dupliqué dans les builders.
+    `urgency_critical` permet aux builders avec deadline (Conformité audit
+    SMÉ <90j) de forcer le tone CRITICAL même sans non-conforme.
+    """
+    if non_conformes > 0 or urgency_critical:
+        return NarrativeTone.CRITICAL
+    if a_risque > 0:
+        return NarrativeTone.TENSION
+    if conformite_score is not None and conformite_score >= 75:
+        return NarrativeTone.POSITIVE
+    return NarrativeTone.NEUTRAL
+
+
+def _build_provenance_canonical(
+    source: str,
+    *,
+    conformite_score: Optional[int],
+    sites_count: int,
+    methodology_url: str = "/methodologie/conformite-regops",
+) -> Provenance:
+    """Pattern build_provenance canonique : confidence HIGH si données réelles.
+
+    Sprint 1.4bis : factorisation du pattern répété 4× dans les builders
+    (lignes 247-255 / 450-458 / 673-682 / 931-938 du diff initial).
+    """
+    confidence = (
+        ProvenanceConfidence.HIGH if conformite_score is not None and sites_count > 0 else ProvenanceConfidence.MEDIUM
+    )
+    return build_provenance(
+        source=source,
+        confidence=confidence,
+        updated_at=datetime.now(timezone.utc),
+        methodology_url=methodology_url,
+    )
+
+
 # ── Builders MVP — cockpit_daily ────────────────────────────────────
 
 
@@ -132,32 +249,20 @@ def _build_cockpit_daily(
     Sprint 1.1 = MVP avec données réelles agrégées + 3 week-cards
     densifiées via fallback. Sprint 2 alimentera depuis event bus.
     """
-    from services.kpi_service import KpiScope, KpiService
-    from models import Site, EntiteJuridique, Portefeuille, not_deleted
-    from models import StatutConformite
-
-    kpi_svc = KpiService(db)
-    scope = KpiScope(org_id=org_id)
-
-    risque_total = kpi_svc.get_financial_risk_eur(scope).value
-    conformite_kpi = kpi_svc.get_compliance_score(scope)
-    conformite_score = int(round(conformite_kpi.value)) if conformite_kpi.value is not None else None
-
-    # Sites en dérive (non-conformes + à risque)
-    site_q = (
-        not_deleted(db.query(Site), Site)
-        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-    )
-    non_conformes = site_q.filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME).count()
-    a_risque = site_q.filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
-    en_derive = non_conformes + a_risque
+    # Sprint 1.4bis : helper centralisé (KpiService + sites + non_conformes/a_risque)
+    ctx = _load_org_context(db, org_id)
+    risque_total = ctx.risque_total
+    conformite_score = ctx.conformite_score
+    non_conformes = ctx.non_conformes
+    a_risque = ctx.a_risque
+    en_derive = ctx.en_derive
 
     # ── Kicker + titre ──
-    kicker = f"BRIEFING DU JOUR · {org_name.upper() if org_name else 'PATRIMOINE'} · {sites_count} SITE{'S' if sites_count > 1 else ''}"
+    # Sprint 1.4bis /simplify Quality P0 : fix dead-code kicker (l.158 du
+    # diff initial, calculée avec org_name puis écrasée par kicker_full
+    # avec week_iso). Désormais une seule définition canonique.
     week_iso = datetime.now(timezone.utc).isocalendar().week
-    kicker_full = f"BRIEFING DU JOUR · SEMAINE {week_iso} · {sites_count} SITE{'S' if sites_count > 1 else ''}"
+    kicker = f"BRIEFING DU JOUR · SEMAINE {week_iso} · {sites_count} SITE{'S' if sites_count > 1 else ''}"
 
     title = "Bonjour — voici votre journée"
     italic_hook = "ce qui mérite votre attention"
@@ -243,32 +348,21 @@ def _build_cockpit_daily(
         "aucun signal critique détecté."
     )
 
-    # ── Provenance ──
-    confidence = (
-        ProvenanceConfidence.HIGH if conformite_score is not None and sites_count > 0 else ProvenanceConfidence.MEDIUM
+    # Sprint 1.4bis : helpers _compute_tone + _build_provenance_canonical
+    # CRITICAL si dérive significative (>30% sites en dérive) — préservé
+    # depuis l'implémentation S1.1.
+    urgency_critical = sites_count > 0 and en_derive / sites_count > 0.3
+    narrative_tone = _compute_tone(non_conformes, a_risque, conformite_score, urgency_critical=urgency_critical)
+    provenance = _build_provenance_canonical(
+        "RegOps + RegAssessment",
+        conformite_score=conformite_score,
+        sites_count=sites_count,
     )
-    provenance = build_provenance(
-        source="RegOps + RegAssessment",
-        confidence=confidence,
-        updated_at=datetime.now(timezone.utc),
-        methodology_url="/methodologie/conformite-regops",
-    )
-
-    # Tone narrative : critical si dérive significative (>30% sites),
-    # tension si quelques sites, positive si patrimoine bien positionné.
-    if non_conformes > 0 or (sites_count > 0 and en_derive / sites_count > 0.3):
-        narrative_tone: NarrativeTone = "critical"
-    elif a_risque > 0:
-        narrative_tone = "tension"
-    elif conformite_score is not None and conformite_score >= 75:
-        narrative_tone = "positive"
-    else:
-        narrative_tone = "neutral"
 
     return Narrative(
         page_key="cockpit_daily",
         persona="daily",
-        kicker=kicker_full,
+        kicker=kicker,
         title=title,
         italic_hook=italic_hook,
         narrative=narrative,
@@ -302,25 +396,13 @@ def _build_cockpit_comex(
     enrichira les week-cards depuis le moteur d'événements (Bill-Intel
     reclaims, Achat scénarios, Capacité Nov 2026).
     """
-    from models import EntiteJuridique, Portefeuille, Site, StatutConformite, not_deleted
-    from services.kpi_service import KpiScope, KpiService
-
-    kpi_svc = KpiService(db)
-    scope = KpiScope(org_id=org_id)
-
-    risque_total = kpi_svc.get_financial_risk_eur(scope).value
-    conformite_kpi = kpi_svc.get_compliance_score(scope)
-    conformite_score = int(round(conformite_kpi.value)) if conformite_kpi.value is not None else None
-
-    site_q = (
-        not_deleted(db.query(Site), Site)
-        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-    )
-    non_conformes = site_q.filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME).count()
-    a_risque = site_q.filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
-    en_derive = non_conformes + a_risque
+    # Sprint 1.4bis : helper centralisé
+    ctx = _load_org_context(db, org_id)
+    risque_total = ctx.risque_total
+    conformite_score = ctx.conformite_score
+    non_conformes = ctx.non_conformes
+    a_risque = ctx.a_risque
+    en_derive = ctx.en_derive
 
     # Estimation leviers économies — heuristique S1.2 transparente :
     # ordre de grandeur ~8 500 €/site dérive (5% facture annuelle moyenne
@@ -447,24 +529,14 @@ def _build_cockpit_comex(
         "à présenter en l'état au prochain CODIR."
     )
 
-    confidence = (
-        ProvenanceConfidence.HIGH if conformite_score is not None and sites_count > 0 else ProvenanceConfidence.MEDIUM
+    # Sprint 1.4bis : helpers _compute_tone + _build_provenance_canonical
+    narrative_tone = _compute_tone(non_conformes, a_risque, conformite_score)
+    provenance = _build_provenance_canonical(
+        "RegOps + RegAssessment + estimation leviers",
+        conformite_score=conformite_score,
+        sites_count=sites_count,
+        methodology_url="/methodologie/cockpit-comex",
     )
-    provenance = build_provenance(
-        source="RegOps + RegAssessment + estimation leviers",
-        confidence=confidence,
-        updated_at=datetime.now(timezone.utc),
-        methodology_url="/methodologie/conformite-regops",
-    )
-
-    if non_conformes > 0:
-        narrative_tone_comex: NarrativeTone = "critical"
-    elif a_risque > 0:
-        narrative_tone_comex = "tension"
-    elif conformite_score is not None and conformite_score >= 75:
-        narrative_tone_comex = "positive"
-    else:
-        narrative_tone_comex = "neutral"
 
     return Narrative(
         page_key="cockpit_comex",
@@ -473,7 +545,7 @@ def _build_cockpit_comex(
         title=title,
         italic_hook=italic_hook,
         narrative=narrative,
-        narrative_tone=narrative_tone_comex,
+        narrative_tone=narrative_tone,
         kpis=tuple(kpis),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
@@ -506,21 +578,16 @@ def _build_patrimoine(
       - KpiService (sites en dérive)
       - Site model (surface_m2 cumulée)
     """
-    from models import EntiteJuridique, Portefeuille, Site, StatutConformite, not_deleted
     from services.tertiaire_mutualisation_service import compute_mutualisation
 
-    # Surface totale + sites en dérive
-    site_q = (
-        not_deleted(db.query(Site), Site)
-        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-    )
-    sites_list = site_q.all()
+    # Sprint 1.4bis : helper centralisé (charge sites + KPIs en une passe)
+    ctx = _load_org_context(db, org_id)
+    sites_list = ctx.sites
     surface_total_m2 = sum((s.surface_m2 or 0) for s in sites_list)
-    non_conformes = sum(1 for s in sites_list if s.statut_decret_tertiaire == StatutConformite.NON_CONFORME)
-    a_risque = sum(1 for s in sites_list if s.statut_decret_tertiaire == StatutConformite.A_RISQUE)
-    en_derive = non_conformes + a_risque
+    non_conformes = ctx.non_conformes
+    a_risque = ctx.a_risque
+    conformite_score = ctx.conformite_score
+    en_derive = ctx.en_derive  # noqa: F841 (réservé future enrichment narrative Patrimoine)
 
     # Mutualisation DT 2030 — différenciateur §4.1
     economie_mutualisation_eur = 0.0
@@ -671,6 +738,19 @@ def _build_patrimoine(
         "consultez le détail par site pour explorer les opportunités."
     )
 
+    # Sprint 1.4bis : helpers _compute_tone + _build_provenance_canonical.
+    # Note Patrimoine : tone POSITIVE également si mutualisation active OU
+    # patrimoine vide — nuance préservée vs builder générique.
+    if non_conformes > 0:
+        narrative_tone = NarrativeTone.CRITICAL
+    elif a_risque > 0:
+        narrative_tone = NarrativeTone.TENSION
+    elif economie_mutualisation_eur > 0 or sites_count == 0:
+        narrative_tone = NarrativeTone.POSITIVE
+    else:
+        narrative_tone = NarrativeTone.NEUTRAL
+
+    # Provenance HIGH conditionnée à la mutualisation (différenciateur §4.1)
     confidence = (
         ProvenanceConfidence.HIGH if economie_mutualisation_eur > 0 and sites_count > 0 else ProvenanceConfidence.MEDIUM
     )
@@ -678,17 +758,8 @@ def _build_patrimoine(
         source="Patrimoine PROMEOS + simulation mutualisation Décret 2019-771",
         confidence=confidence,
         updated_at=datetime.now(timezone.utc),
-        methodology_url="/methodologie/conformite-regops",
+        methodology_url="/methodologie/patrimoine-mutualisation",
     )
-
-    if non_conformes > 0:
-        narrative_tone_patrimoine: NarrativeTone = "critical"
-    elif a_risque > 0:
-        narrative_tone_patrimoine = "tension"
-    elif economie_mutualisation_eur > 0 or sites_count == 0:
-        narrative_tone_patrimoine = "positive"
-    else:
-        narrative_tone_patrimoine = "neutral"
 
     return Narrative(
         page_key="patrimoine",
@@ -697,7 +768,7 @@ def _build_patrimoine(
         title=title,
         italic_hook=italic_hook,
         narrative=narrative,
-        narrative_tone=narrative_tone_patrimoine,
+        narrative_tone=narrative_tone,
         kpis=tuple(kpis),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
@@ -733,25 +804,13 @@ def _build_conformite(
     """
     from datetime import date
 
-    from models import EntiteJuridique, Portefeuille, Site, StatutConformite, not_deleted
-    from services.kpi_service import KpiScope, KpiService
-
-    kpi_svc = KpiService(db)
-    scope = KpiScope(org_id=org_id)
-
-    risque_total = kpi_svc.get_financial_risk_eur(scope).value
-    conformite_kpi = kpi_svc.get_compliance_score(scope)
-    conformite_score = int(round(conformite_kpi.value)) if conformite_kpi.value is not None else None
-
-    site_q = (
-        not_deleted(db.query(Site), Site)
-        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-    )
-    non_conformes = site_q.filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME).count()
-    a_risque = site_q.filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
-    en_derive = non_conformes + a_risque
+    # Sprint 1.4bis : helper centralisé
+    ctx = _load_org_context(db, org_id)
+    risque_total = ctx.risque_total  # noqa: F841 (réservé S2 chantier α exposition)
+    conformite_score = ctx.conformite_score
+    non_conformes = ctx.non_conformes
+    a_risque = ctx.a_risque
+    en_derive = ctx.en_derive  # noqa: F841 (réservé future enrichment Conformité)
 
     # ── Échéances réglementaires §8.3 doctrine ──
     today = date.today()
@@ -774,7 +833,7 @@ def _build_conformite(
 
     # ── Kicker + titre ──
     kicker = (
-        f"CONFORMITÉ · {sites_count} SITE{'S' if sites_count > 1 else ''} · AUDIT SMÉ J-{days_until_audit_sme}"
+        f"CONFORMITÉ · {sites_count} SITE{'S' if sites_count > 1 else ''} · AUDIT ÉNERGÉTIQUE J-{days_until_audit_sme}"
         if days_until_audit_sme >= 0
         else f"CONFORMITÉ · {sites_count} SITE{'S' if sites_count > 1 else ''}"
     )
@@ -852,10 +911,14 @@ def _build_conformite(
     week_cards: list[NarrativeWeekCard] = []
 
     if 0 <= days_until_audit_sme <= 365:
-        urgency = "critical" if days_until_audit_sme <= 90 else "todo"
+        # Sprint 1.4bis /simplify Quality P0 : ternaire no-op corrigé.
+        # Avant : `type="todo" if urgency=="todo" else "todo"` (toujours todo,
+        # masque le signal critical). Désormais drift si <90j (signal ATF
+        # plus visible : "À regarder" rouge), sinon todo standard.
+        is_critical = days_until_audit_sme <= 90
         week_cards.append(
             NarrativeWeekCard(
-                type="todo" if urgency == "todo" else "todo",
+                type="drift" if is_critical else "todo",
                 title=(f"Audit énergétique obligatoire J-{days_until_audit_sme}"),
                 body=(
                     "Diagnostic ISO 50001 ou audit Art. L233-1 du code de "
@@ -918,24 +981,19 @@ def _build_conformite(
         "Calendrier réglementaire 2026-2030 sous contrôle — aucune échéance critique dans les 90 prochains jours."
     )
 
-    # Tone narrative selon urgence
-    if non_conformes > 0 or (0 <= days_until_audit_sme <= 90):
-        narrative_tone: NarrativeTone = "critical"
-    elif a_risque > 0 or (0 <= days_until_audit_sme <= 365):
-        narrative_tone = "tension"
-    elif conformite_score is not None and conformite_score >= 75:
-        narrative_tone = "positive"
-    else:
-        narrative_tone = "neutral"
+    # Sprint 1.4bis : helpers _compute_tone (urgency_critical=audit <90j)
+    # + _build_provenance_canonical.
+    audit_imminent = 0 <= days_until_audit_sme <= 90
+    narrative_tone = _compute_tone(non_conformes, a_risque, conformite_score, urgency_critical=audit_imminent)
+    # Conformité bascule TENSION si audit dans année (90-365j) même sans
+    # site à risque — préservé depuis l'implémentation S1.4.
+    if narrative_tone == NarrativeTone.NEUTRAL and 0 <= days_until_audit_sme <= 365:
+        narrative_tone = NarrativeTone.TENSION
 
-    confidence = (
-        ProvenanceConfidence.HIGH if conformite_score is not None and sites_count > 0 else ProvenanceConfidence.MEDIUM
-    )
-    provenance = build_provenance(
-        source="RegOps + Calendrier réglementaire 2026-2030",
-        confidence=confidence,
-        updated_at=datetime.now(timezone.utc),
-        methodology_url="/methodologie/conformite-regops",
+    provenance = _build_provenance_canonical(
+        "RegOps + Calendrier réglementaire 2026-2030",
+        conformite_score=conformite_score,
+        sites_count=sites_count,
     )
 
     return Narrative(
