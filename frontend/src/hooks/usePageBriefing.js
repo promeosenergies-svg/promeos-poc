@@ -60,6 +60,11 @@ export function usePageBriefing(pageKey, { persona = 'daily', archetype } = {}) 
           narrativeTone: payload?.narrative_tone || 'neutral',
           kpis: payload?.kpis || [],
           weekCards: payload?.week_cards || [],
+          // Sprint 2 Vague C ét12c : events natifs §10 SolEventCard exposés
+          // en parallèle des week_cards (rétro-compat). Pages pilotes peuvent
+          // rendre <SolEventCard>/<SolEventStream> pour visibilité complète
+          // source/confidence/owner_role/mitigation (Marie unblock visuel).
+          events: payload?.events || [],
           fallbackBody: payload?.fallback_body,
           provenance,
         });

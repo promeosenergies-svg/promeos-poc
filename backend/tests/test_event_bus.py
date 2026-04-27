@@ -598,3 +598,48 @@ def test_org_isolation_no_cross_leak(db):
     assert any(e.severity == "critical" for e in events_a)
     # Org B n'a aucun site non-conforme/à risque → pas de critical/warning
     assert not any(e.severity in ("critical", "warning") for e in events_b)
+
+
+# ── Vague C ét12c — Narrative expose events natifs §10 SolEventCard ───
+
+
+def test_narrative_exposes_events_for_frontend(db, org_with_sites):
+    """Vague C ét12c : `Narrative.events` est peuplé pour <SolEventCard> natif.
+
+    Le frontend (Cockpit pilot) lit `briefing.events` pour rendre
+    <SolEventStream> avec source/confidence/owner_role/mitigation visibles.
+    Sans ce champ, Marie reste bloquée sur les week-cards condensées.
+    """
+    from services.narrative.narrative_generator import _build_cockpit_daily
+
+    org_id = org_with_sites["org_id"]
+    narr = _build_cockpit_daily(db, org_id, org_name="Org Test", sites_count=2)
+
+    # Le champ existe et est un tuple (frozen — cohérent week_cards)
+    assert hasattr(narr, "events")
+    assert isinstance(narr.events, tuple)
+
+    # to_dict() sérialise events[] avec le schéma JSON §10 attendu
+    payload = narr.to_dict()
+    assert "events" in payload
+    assert isinstance(payload["events"], list)
+
+    # Si au moins un événement est produit, vérifier la pile §10 complète
+    if payload["events"]:
+        first = payload["events"][0]
+        assert {
+            "id",
+            "event_type",
+            "severity",
+            "title",
+            "narrative",
+            "impact",
+            "source",
+            "action",
+            "linked_assets",
+        }.issubset(first.keys())
+        # source.last_updated_at sérialisé en ISO (cf SolEventCard.to_dict)
+        assert isinstance(first["source"]["last_updated_at"], str)
+        assert "T" in first["source"]["last_updated_at"]  # marker ISO datetime
+        # freshness_status présent (défaut "fresh") — §7.2 statuts data
+        assert first["source"]["freshness_status"] in ("fresh", "stale", "estimated", "incomplete", "demo")

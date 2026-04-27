@@ -118,6 +118,11 @@ class Narrative:
     week_cards: tuple[NarrativeWeekCard, ...]  # exactement 3 (post-fallback)
     fallback_body: str  # densification §4 si week_cards <3
     provenance: Provenance
+    # Sprint 2 Vague C ét12c : exposition events natifs SolEventCard pour
+    # le frontend (en parallèle des week_cards rétro-compat). Les pages
+    # peuvent rendre <SolEventCard> directement avec source/confidence/
+    # owner_role/mitigation visibles (Marie unblock visuel doctrine §10).
+    events: tuple = ()  # tuple[SolEventCard, ...] — pas annoté pour éviter cycle import
 
     def to_dict(self) -> dict:
         d = {
@@ -130,6 +135,7 @@ class Narrative:
             "narrative_tone": self.narrative_tone,
             "kpis": [asdict(k) for k in self.kpis],
             "week_cards": [asdict(c) for c in self.week_cards],
+            "events": [e.to_dict() for e in self.events],
             "fallback_body": self.fallback_body,
             "provenance": self.provenance.to_dict(),
         }
@@ -438,6 +444,7 @@ def _build_cockpit_daily(
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
+        events=tuple(events),  # Vague C ét12c — exposé natif §10 SolEventCard
     )
 
 

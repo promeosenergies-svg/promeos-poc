@@ -47,6 +47,8 @@ import SolPageHeader from '../ui/sol/SolPageHeader';
 // Sprint 2 Vague B ét8'-bis — HOC SolBriefingHead/Footer factorise grammaire §5.
 import SolBriefingHead from '../ui/sol/SolBriefingHead';
 import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
+// Sprint 2 Vague C ét12c — Cockpit pilot expose <SolEventStream> natif §10.
+import { SolEventStream } from '../ui/sol/SolEventCard';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
@@ -622,6 +624,19 @@ const Cockpit = () => {
         omitHeader
         onNavigate={navigate}
       />
+
+      {/* Sprint 2 Vague C ét12c — pile §10 SolEventCard native (Marie unblock
+          visuel source/confidence/owner_role/mitigation). Affichée seulement
+          si le moteur d'événements (`event_bus.compute_events`) a poussé au
+          moins un événement — sinon la grammaire week-cards reste suffisante. */}
+      {solBriefing?.events?.length > 0 && (
+        <SolEventStream
+          events={solBriefing.events}
+          max={3}
+          onNavigate={navigate}
+          title="Évènements détaillés cette semaine"
+        />
+      )}
 
       {/* Sprint 1.3bis P0-C (audit fin S1) : CockpitHero/BriefCodexCard
           étaient l'empilement legacy au-dessus de la grammaire Sol et
