@@ -81,8 +81,10 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     - quelle confiance : depuis insight.severity → mapping confidence
     """
     # Imports locaux pour éviter cycle (services/consumption → narrative → event_bus)
+    from config.mitigation_loader import get_consumption_drift_defaults
     from services.consumption_diagnostic import get_insights_summary
 
+    drift_defaults = get_consumption_drift_defaults()  # Vague C ét12e YAML SoT
     summary = get_insights_summary(db, org_id)
     raw_insights = summary.get("insights", [])
 
@@ -113,9 +115,18 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
         # Amplitude technique extraite des metrics si disponible (compromis EM)
         metrics = insight.get("metrics") or {}
         delta_pct = metrics.get("delta_pct") or metrics.get("drift_pct")
+        # Vague C ét12e (audit EM P0-1) : exposition σ baseline / z-score si
+        # le service amont (`consumption_diagnostic`) les calcule. Permet à
+        # l'EM de distinguer dérive vs bruit (z>2σ = dérive significative).
+        z_score = metrics.get("z_score") or metrics.get("z")
+        sigma_baseline = metrics.get("sigma_baseline_kwh") or metrics.get("sigma")
         amplitude_phrase = ""
         if delta_pct is not None:
             amplitude_phrase = f" Écart {delta_pct:+.1f}% vs baseline."
+            if z_score is not None:
+                amplitude_phrase += f" Z-score {z_score:+.1f}σ (significatif si > 2σ)."
+            elif sigma_baseline is not None:
+                amplitude_phrase += f" σ baseline {int(sigma_baseline)} kWh."
         elif insight.get("estimated_loss_kwh"):
             amplitude_phrase = f" Surconsommation estimée : {int(insight['estimated_loss_kwh'])} kWh."
 
@@ -154,8 +165,8 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                     unit="€",
                     period="year",
                     mitigation=EventMitigation(
-                        capex_eur=None,  # action comportementale (consignes, horaires)
-                        payback_months=1,  # impact immédiat dès correction
+                        capex_eur=drift_defaults.capex_eur,  # YAML : null = comportemental
+                        payback_months=drift_defaults.payback_months,  # YAML : 1 mois
                         npv_eur=loss_eur,  # récupérable à 1 an
                         npv_horizon_year=now.year,
                     ),
@@ -165,6 +176,12 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                     last_updated_at=insight_updated,
                     confidence=confidence,  # type: ignore[arg-type]
                     freshness_status=freshness,
+                    methodology=(
+                        f"Insight type « {type_code} » détecté par "
+                        "consumption_diagnostic (signature énergétique COSTIC + DJU). "
+                        f"Perte estimée {int(loss_eur):,} €/an basée sur le tarif "
+                        "moyen site et l'écart vs baseline calculée."
+                    ).replace(",", " "),
                 ),
                 action=EventAction(
                     label="Voir le diagnostic",

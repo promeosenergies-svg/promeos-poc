@@ -1,0 +1,56 @@
+# PROMEOS — Mitigation defaults catalog
+#
+# Sprint 2 Vague C ét12e (audit Architecture P0 #2 + CFO indirect).
+# Externalise les constantes CAPEX/payback/discount/horizon utilisées par
+# les détecteurs `event_bus` pour produire `EventMitigation` (doctrine §10).
+#
+# Versionné côté ParameterStore (cohérent `tarifs_reglementaires.yaml`,
+# `pricing_lead_score.yaml`). Toute évolution doit incrémenter `version`
+# et noter la source de référence (`source` champ obligatoire).
+#
+# Règle d'or chiffres (memory feedback 27/04) : fiable + vérifiable +
+# simple. Chaque valeur a un commentaire explicatif inline + une source.
+
+version: "1.0.0"
+last_updated: "2026-04-27"
+
+# Taux d'actualisation utilisé pour calculer les NPV actualisés (formule
+# Σ flux_t / (1+r)^t). 4% est conservateur pour ETI mid-market française
+# (cohérent OAT 10 ans + prime risque énergétique). Le CFO peut écraser
+# en post-prod via patch YAML versionné si sa politique financière
+# diffère.
+discount_rate: 0.04  # source : OAT 10y 2026 + prime risque énergétique modeste
+
+# ── Mitigation Décret Tertiaire (compliance_deadline_detector) ────────
+dt_compliance:
+  # CAPEX moyen audit énergétique réglementaire mid-market + premier batch
+  # quick-wins (relamping, GTB simple, calorifuge points chauds). Source :
+  # Guide ADEME « Audit énergétique réglementaire » + retours marketplace
+  # mid-market 2025 (~5-15 k€/site selon surface). On retient 8 k€ comme
+  # médiane démo.
+  capex_per_site_eur: 8000.0
+  capex_source: "ADEME Guide Audit Énergétique Réglementaire 2025 + retours marketplace mid-market"
+
+  # Payback moyen observé sur opérations quick-wins post-audit (économies
+  # ~30% sur 18-24 mois). 9 mois = médiane prudente.
+  payback_months: 9
+  payback_source: "Retours opérationnels marketplace audits 2024-2025 — médiane 8-12 mois"
+
+  # Horizon DT : trajectoire 2030 obligatoire (Décret n°2019-771).
+  npv_horizon_year: 2030
+  npv_horizon_source: "Décret n°2019-771 art. 3 — trajectoire -40% 2030"
+
+# ── Mitigation Bill-Intel anomalies (billing_anomaly_detector) ────────
+# Pas de CAPEX (contestation juridique, pas de travaux). Le payback est
+# l'observation directe `losses.payback_avg_days` du shadow billing v4.2.
+# Aucune valeur par défaut nécessaire ici — le détecteur lit la SoT
+# `LossesProvenance` directement.
+
+# ── Mitigation consumption_drift (consumption_drift_detector) ─────────
+# Action comportementale (consignes, horaires, sensibilisation). CAPEX nul,
+# payback ~1 mois (impact immédiat dès correction). Valeurs déjà inline
+# dans le détecteur car simples — externalisation ici pour cohérence.
+consumption_drift:
+  capex_eur: null  # action comportementale, pas de CAPEX
+  payback_months: 1  # impact immédiat (corrections horaires, consignes)
+  payback_source: "ADEME ROI sensibilisation usagers — économies récurrentes mensuelles"

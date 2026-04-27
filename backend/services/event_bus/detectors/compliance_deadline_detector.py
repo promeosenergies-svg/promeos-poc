@@ -28,17 +28,11 @@ from ..types import (
     SolEventCard,
 )
 
-# Sprint 2 Vague C ét12d (audit CFO P0 + Marie P0 #1) : indicatifs
-# CAPEX/payback pour arbitrage CFO Décret Tertiaire. Sources :
-#   - Audit énergétique réglementaire mid-market : ~5-15 k€/site (ADEME)
-#   - Travaux d'optimisation moyens (relamping, GTB, calorifuge) :
-#     ~50-300 €/m². On retient 8 k€/site comme proxy audit + premières
-#     actions quick-wins (ordre de grandeur démo, pas de précision feinte).
-# La formule reste simple et défendable en CODIR (pas d'étude TRI fine
-# fictive). Refacto Vague D quand `audits_marketplace` exposera devis réels.
-_DT_AUDIT_PROXY_CAPEX_EUR = 8_000.0  # par site (audit + premier batch quick-wins)
-_DT_AUDIT_PAYBACK_MONTHS_PROXY = 9  # proxy mid-market (économies ~30% sur 24 mois)
-_DT_NPV_HORIZON_YEAR = 2030  # échéance trajectoire DT
+# Sprint 2 Vague C ét12e (audit Architecture P0 #2) : constantes externalisées
+# vers `backend/config/mitigation_defaults.yaml` (versionné ParameterStore).
+# Avant ét12e : 3 constantes hardcoded dans ce fichier — viole règle d'or
+# chiffres « SoT canonique, pas magic constant ». Désormais lues via
+# `mitigation_loader.get_dt_compliance_defaults()` avec source citée.
 
 
 def detect(db: Session, org_id: int) -> list[SolEventCard]:
@@ -52,6 +46,10 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     retournera la liste vide (le SolWeekCards fera son fallback densifié).
     """
     # Imports locaux pour éviter cycle imports (constants doctrine + helpers narrative)
+    from config.mitigation_loader import (
+        compute_npv_actualized,
+        get_dt_compliance_defaults,
+    )
     from doctrine.constants import (
         DT_PENALTY_AT_RISK_EUR,
         DT_PENALTY_EUR,
@@ -62,6 +60,9 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     ctx = _load_org_context(db, org_id)
     now = datetime.now(timezone.utc)
     events: list[SolEventCard] = []
+
+    # Vague C ét12e : defaults YAML versionnés (CAPEX/payback/horizon NPV)
+    dt_defaults = get_dt_compliance_defaults()
 
     # Doctrine §10 « quel périmètre est concerné ? » : linked_assets.site_ids
     # filtré par statut réel (pas tous les sites de l'org).
@@ -81,12 +82,17 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
 
     if ctx.non_conformes > 0:
         impact_total_eur = ctx.non_conformes * DT_PENALTY_EUR
-        # Vague C ét12d (audit CFO P0 #1) : mitigation CAPEX/payback/NPV
-        # indicative. Permet l'arbitrage CODIR « audit 8 k€/site → éviter
-        # 7 500 €/site/an » sur l'horizon DT 2030.
-        capex_audit_total = ctx.non_conformes * _DT_AUDIT_PROXY_CAPEX_EUR
-        years_to_horizon = max(1, _DT_NPV_HORIZON_YEAR - now.year)
-        npv_eur = float(impact_total_eur * years_to_horizon - capex_audit_total)
+        # Vague C ét12e (audit CFO P0 #1) : NPV ACTUALISÉ (Σ flux/(1+r)^t)
+        # via `compute_npv_actualized` au lieu de `flux × années` nominal.
+        # Évite la surévaluation 35-40% sur 5 ans qui faisait corriger le
+        # CFO en CODIR. Taux d'actualisation lu depuis YAML (4% conservateur).
+        capex_audit_total = ctx.non_conformes * dt_defaults.capex_per_site_eur
+        npv_eur = compute_npv_actualized(
+            annual_flow_eur=float(impact_total_eur),
+            horizon_year=dt_defaults.npv_horizon_year,
+            capex_eur=capex_audit_total,
+            current_year=now.year,
+        )
 
         events.append(
             SolEventCard(
@@ -109,9 +115,9 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                     period="year",
                     mitigation=EventMitigation(
                         capex_eur=capex_audit_total,
-                        payback_months=_DT_AUDIT_PAYBACK_MONTHS_PROXY,
+                        payback_months=dt_defaults.payback_months,
                         npv_eur=npv_eur,
-                        npv_horizon_year=_DT_NPV_HORIZON_YEAR,
+                        npv_horizon_year=dt_defaults.npv_horizon_year,
                     ),
                 ),
                 source=EventSource(
@@ -119,6 +125,13 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                     last_updated_at=now,
                     confidence="high",
                     freshness_status=freshness,
+                    methodology=(
+                        f"Pénalité {DT_PENALTY_EUR:,} €/site (Décret n°2019-771) × "
+                        f"{ctx.non_conformes} sites non-conformes. Mitigation : "
+                        f"audit énergétique {dt_defaults.capex_per_site_eur:,.0f} €/site "
+                        f"({dt_defaults.capex_source}). NPV actualisé horizon "
+                        f"{dt_defaults.npv_horizon_year}."
+                    ).replace(",", " "),
                 ),
                 action=EventAction(
                     label="Ouvrir conformité",
@@ -134,9 +147,13 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
 
     if ctx.a_risque > 0:
         impact_at_risk_eur = ctx.a_risque * DT_PENALTY_AT_RISK_EUR
-        capex_audit_risk = ctx.a_risque * _DT_AUDIT_PROXY_CAPEX_EUR
-        years_to_horizon = max(1, _DT_NPV_HORIZON_YEAR - now.year)
-        npv_at_risk = float(impact_at_risk_eur * years_to_horizon - capex_audit_risk)
+        capex_audit_risk = ctx.a_risque * dt_defaults.capex_per_site_eur
+        npv_at_risk = compute_npv_actualized(
+            annual_flow_eur=float(impact_at_risk_eur),
+            horizon_year=dt_defaults.npv_horizon_year,
+            capex_eur=capex_audit_risk,
+            current_year=now.year,
+        )
 
         events.append(
             SolEventCard(
@@ -155,9 +172,9 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                     period="year",
                     mitigation=EventMitigation(
                         capex_eur=capex_audit_risk,
-                        payback_months=_DT_AUDIT_PAYBACK_MONTHS_PROXY,
+                        payback_months=dt_defaults.payback_months,
                         npv_eur=npv_at_risk,
-                        npv_horizon_year=_DT_NPV_HORIZON_YEAR,
+                        npv_horizon_year=dt_defaults.npv_horizon_year,
                     ),
                 ),
                 source=EventSource(
@@ -165,6 +182,13 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                     last_updated_at=now,
                     confidence="high",
                     freshness_status=freshness,
+                    methodology=(
+                        f"Pénalité conditionnelle {DT_PENALTY_AT_RISK_EUR:,} €/site × "
+                        f"{ctx.a_risque} sites à risque. Mitigation : audit énergétique "
+                        f"{dt_defaults.capex_per_site_eur:,.0f} €/site "
+                        f"({dt_defaults.capex_source}). NPV actualisé horizon "
+                        f"{dt_defaults.npv_horizon_year}."
+                    ).replace(",", " "),
                 ),
                 action=EventAction(
                     label="Voir les sites à risque",

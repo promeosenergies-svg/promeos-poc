@@ -154,6 +154,7 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                         last_updated_at=losses.losses_provenance.computed_at,
                         confidence=losses.losses_provenance.confidence,  # type: ignore[arg-type]
                         freshness_status=invoice_freshness,
+                        methodology=losses.losses_provenance.methodology,
                     ),
                     action=EventAction(
                         label="Voir les anomalies",
@@ -190,6 +191,7 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                     last_updated_at=losses.recovery_provenance.computed_at,
                     confidence=losses.recovery_provenance.confidence,  # type: ignore[arg-type]
                     freshness_status=invoice_freshness,
+                    methodology=losses.recovery_provenance.methodology,
                 ),
                 action=EventAction(
                     label="Voir le bilan reclaims",

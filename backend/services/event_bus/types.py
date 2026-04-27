@@ -111,12 +111,18 @@ class EventSource:
     Sprint 2 Vague C ét11bis : ajout `freshness_status` (audit doctrine P0
     pour atteindre 9+) — couvre §7.2 statuts obligatoires (Réel/Estimé/
     Incomplet/Stale/Démo). Frontend doit afficher un badge correspondant.
+
+    Sprint 2 Vague C ét12e : ajout `methodology` (audit CFO P0 #3 « drill-down
+    provenance »). Phrase 1-2 lignes décrivant la formule + sources citées.
+    Frontend affiche en popover/tooltip au clic sur l'icône info de la source.
+    Optionnel — détecteur peut omettre si formule triviale (ex: data_quality).
     """
 
     system: EventSourceSystem
     last_updated_at: datetime
     confidence: EventConfidence
     freshness_status: EventFreshnessStatus = "fresh"  # défaut sain : donnée temps réel/à jour
+    methodology: Optional[str] = None  # drill-down CFO « comment c'est calculé ? »
 
 
 @dataclass(frozen=True)

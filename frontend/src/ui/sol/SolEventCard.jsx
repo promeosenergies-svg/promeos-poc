@@ -21,7 +21,7 @@
  * Props : `event` = objet SolEventCard JSON (cf eventTypes.js isValidEvent),
  * `onNavigate(route)` callback CTA, `compact` (bool) pour densifier.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   AlertTriangle,
   AlertCircle,
@@ -32,6 +32,7 @@ import {
   ShieldCheck,
   Wallet,
   User,
+  Info,
 } from 'lucide-react';
 import {
   EVENT_FRESHNESS_STATUSES,
@@ -158,6 +159,10 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
   // plutôt qu'un crash (cohérent avec WeekCard tolérant). En dev, le hook
   // useMemo isole le coût de validation (1 fois par event).
   const isValid = useMemo(() => isValidEvent(event), [event]);
+  // ét12e (audit CFO P0 #3) : popover drill-down methodology. Hook AVANT
+  // l'early return pour respecter l'ordre des hooks React.
+  const [methodologyOpen, setMethodologyOpen] = useState(false);
+
   if (!isValid) return null;
 
   const severityCfg = SEVERITY_CONFIG[event.severity] ?? SEVERITY_CONFIG.watch;
@@ -167,6 +172,7 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
   const freshness = FRESHNESS_LABELS[event.source?.freshness_status] ?? null;
   const confidenceLabel = CONFIDENCE_LABELS[event.source?.confidence] ?? null;
   const lastUpdated = formatRelativeTime(event.source?.last_updated_at);
+  const methodology = event.source?.methodology;
   const mitigation = event.impact?.mitigation;
   const ownerRole = event.action?.owner_role;
   const route = event.action?.route;
@@ -280,17 +286,23 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
         </div>
       )}
 
-      {/* ── Mitigation (CFO arbitrage CAPEX/payback/NPV) ── */}
+      {/* ── Mitigation (CFO arbitrage CAPEX/payback/NPV) ──
+          Vague C ét12e (audit CFO P0 #2) : bandeau dédié 14px sur fond
+          --sol-calme-bg pour visibilité présentation Teams 1080p. Avant
+          ét12e : ligne 11px noyée dans le footer = invisible CFO. */}
       {mitigationLine && (
-        <div className="flex items-center gap-1.5 text-[11px] text-[var(--sol-ink-700)]">
-          <Wallet size={11} className="text-[var(--sol-ink-500)]" aria-hidden="true" />
-          <span>{mitigationLine}</span>
+        <div
+          className="flex items-center gap-2 text-sm font-medium text-[var(--sol-ink-900)] rounded-md px-2.5 py-1.5"
+          style={{ background: 'var(--sol-calme-bg)' }}
+        >
+          <Wallet size={14} className="text-[var(--sol-calme-fg)] shrink-0" aria-hidden="true" />
+          <span className="sol-numeric">{mitigationLine}</span>
         </div>
       )}
 
       {/* ── Footer : source + owner + CTA ── */}
       <footer className="flex flex-col gap-1.5 mt-auto pt-2 border-t border-[var(--sol-ink-100)]">
-        {/* Ligne 1 : source + confidence + horodatage */}
+        {/* Ligne 1 : source + confidence + horodatage + drill-down methodology */}
         <div className="flex items-center justify-between gap-2 text-[11px] text-[var(--sol-ink-500)]">
           <div className="flex items-center gap-1 min-w-0">
             <ShieldCheck size={11} aria-hidden="true" />
@@ -303,6 +315,21 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
                 </>
               )}
             </span>
+            {methodology && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMethodologyOpen((o) => !o);
+                }}
+                onKeyDown={(e) => e.stopPropagation()}
+                aria-label="Voir la méthodologie de calcul"
+                aria-expanded={methodologyOpen}
+                className="ml-1 inline-flex items-center justify-center rounded-full p-0.5 hover:bg-[var(--sol-ink-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)]"
+              >
+                <Info size={11} className="text-[var(--sol-calme-fg)]" aria-hidden="true" />
+              </button>
+            )}
           </div>
           {lastUpdated && (
             <span className="flex items-center gap-0.5 shrink-0">
@@ -311,6 +338,18 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
             </span>
           )}
         </div>
+
+        {/* Popover methodology drill-down (audit CFO P0 #3) */}
+        {methodology && methodologyOpen && (
+          <div
+            role="region"
+            aria-label="Méthodologie de calcul"
+            className="text-xs text-[var(--sol-ink-700)] rounded-md p-2 border border-[var(--sol-ink-100)]"
+            style={{ background: 'var(--sol-ink-50, #fafaf7)' }}
+          >
+            <p className="leading-relaxed">{methodology}</p>
+          </div>
+        )}
 
         {/* Ligne 2 : owner role + scope sites + CTA */}
         {(ownerRole || siteCount > 0 || route) && (

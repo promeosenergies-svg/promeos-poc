@@ -134,6 +134,56 @@ describe('B-bis. SolEventCard — corrections P0 audit ét12d', () => {
   });
 });
 
+// ── B-ter. ét12e corrections P0 résiduels (mitigation 14px + drill-down) ─
+
+describe('B-ter. SolEventCard — corrections P0 résiduels ét12e', () => {
+  const src = readSrc('ui/sol/SolEventCard.jsx');
+
+  it('mitigation rendue en 14px (text-sm) sur fond --sol-calme-bg (CFO P0 #2)', () => {
+    // Avant ét12e : text-[11px] noyée dans footer. Après : text-sm bandeau dédié.
+    expect(src).toMatch(/text-sm font-medium text-\[var\(--sol-ink-900\)\]/);
+    expect(src).toMatch(/background:\s*'var\(--sol-calme-bg\)'/);
+    expect(src).toMatch(/<Wallet size=\{14\}/);
+  });
+
+  it('expose drill-down methodology via popover (CFO P0 #3)', () => {
+    expect(src).toMatch(/methodology = event\.source\?\.methodology/);
+    expect(src).toMatch(/<Info size=\{11\}/);
+    expect(src).toMatch(/methodologyOpen/);
+    expect(src).toMatch(/setMethodologyOpen/);
+    // Le popover s'ouvre/ferme indépendamment de la navigation card
+    expect(src).toMatch(/e\.stopPropagation\(\)/);
+    // Le bouton porte un aria-label explicite
+    expect(src).toMatch(/aria-label="Voir la méthodologie de calcul"/);
+    expect(src).toMatch(/aria-expanded=\{methodologyOpen\}/);
+  });
+
+  it('le popover affiche la méthodologie complète (rôle region accessible)', () => {
+    expect(src).toMatch(/role="region"/);
+    expect(src).toMatch(/aria-label="Méthodologie de calcul"/);
+  });
+});
+
+// ── H. Backend mitigation YAML loader (P0 #4 ét12e) ─────────────────
+
+describe('H. Backend mitigation_defaults.yaml + loader (P0 #4 ét12e)', () => {
+  const yamlPath = join(SRC, '../../backend/config/mitigation_defaults.yaml');
+  const loaderPath = join(SRC, '../../backend/config/mitigation_loader.py');
+
+  it('le YAML versionné existe (SoT canonique constantes mitigation)', () => {
+    expect(existsSync(yamlPath)).toBe(true);
+  });
+
+  it('le loader Python expose compute_npv_actualized (P0 #1 CFO)', () => {
+    expect(existsSync(loaderPath)).toBe(true);
+    const src = readFileSync(loaderPath, 'utf-8');
+    expect(src).toMatch(/def compute_npv_actualized/);
+    expect(src).toMatch(/discount_rate/);
+    // Formule annuité actualisée : (1 - (1+r)^-N) / r
+    expect(src).toMatch(/annuity_factor/);
+  });
+});
+
 // ── C. SolEventStream — grille top N ────────────────────────────────
 
 describe('C. SolEventStream — collection', () => {

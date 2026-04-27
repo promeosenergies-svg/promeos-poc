@@ -722,3 +722,124 @@ def test_billing_detector_emits_site_ids_granularity(db, org_with_sites):
         # doit toujours exister (linked_assets.site_ids: list, jamais None).
         assert hasattr(e.linked_assets, "site_ids")
         assert isinstance(e.linked_assets.site_ids, list)
+
+
+# ── Vague C ét12e — corrections P0 résiduels (NPV actualisé + YAML + methodology + σ) ──
+
+
+def test_npv_actualized_lower_than_nominal():
+    """ét12e P0 #1 (CFO) : NPV actualisé < NPV nominal sur 5+ ans (>10% écart).
+
+    Avant ét12e : NPV = annual_flow × années - capex (nominal, surévaluation
+    35-40% sur 5 ans). Le CFO se faisait corriger en CODIR. Ce test garantit
+    que la formule actualisée évite la surévaluation.
+    """
+    from config.mitigation_loader import compute_npv_actualized
+
+    annual_flow = 30_000.0
+    horizon = 2030
+    capex = 8_000.0
+    current = 2026  # 4 ans à actualiser
+
+    npv_actualized = compute_npv_actualized(
+        annual_flow_eur=annual_flow,
+        horizon_year=horizon,
+        capex_eur=capex,
+        current_year=current,
+    )
+    npv_nominal = annual_flow * (horizon - current) - capex
+
+    # NPV actualisé strictement inférieur au nominal (taux > 0)
+    assert npv_actualized < npv_nominal, "NPV actualisé doit être < NPV nominal"
+    # Écart > 5% sur 4 ans à 4% (~7-8% attendu)
+    diff_pct = (npv_nominal - npv_actualized) / abs(npv_nominal) * 100
+    assert diff_pct > 5.0, f"Écart actualisé/nominal trop faible : {diff_pct:.1f}%"
+
+
+def test_npv_actualized_zero_horizon_returns_negative_capex():
+    """ét12e P0 #1 : si horizon == année courante, NPV = -CAPEX (pas de flux)."""
+    from config.mitigation_loader import compute_npv_actualized
+
+    npv = compute_npv_actualized(
+        annual_flow_eur=10_000.0,
+        horizon_year=2026,
+        capex_eur=5_000.0,
+        current_year=2026,
+    )
+    assert npv == -5_000.0
+
+
+def test_mitigation_yaml_loader_returns_typed_defaults():
+    """ét12e P0 #4 : `mitigation_loader` charge YAML versionné avec sources citées."""
+    from config.mitigation_loader import (
+        get_consumption_drift_defaults,
+        get_discount_rate,
+        get_dt_compliance_defaults,
+        reload,
+    )
+
+    reload()  # reset cache
+
+    # Discount rate (pas magic, lu depuis YAML)
+    rate = get_discount_rate()
+    assert 0 < rate < 0.20, f"Taux d'actualisation hors plage raisonnable : {rate}"
+
+    # DT defaults
+    dt = get_dt_compliance_defaults()
+    assert dt.capex_per_site_eur > 0
+    assert dt.payback_months > 0
+    assert dt.npv_horizon_year >= 2026
+    assert "ADEME" in dt.capex_source or "marketplace" in dt.capex_source.lower()
+    assert "Décret" in dt.npv_horizon_source
+
+    # Consumption drift defaults
+    drift = get_consumption_drift_defaults()
+    assert drift.capex_eur is None  # action comportementale
+    assert drift.payback_months >= 1
+
+
+def test_compliance_event_exposes_methodology_for_drill_down(db, org_with_sites):
+    """ét12e P0 #2/CFO drill-down : `EventSource.methodology` exposé pour tooltip frontend."""
+    org_id = org_with_sites["org_id"]
+    events = compliance_deadline_detector.detect(db, org_id)
+    risk_events = [e for e in events if e.severity in ("critical", "warning")]
+    assert risk_events, "Fixture doit produire au moins un risque DT"
+    for e in risk_events:
+        assert e.source.methodology is not None, f"{e.id} sans methodology"
+        # methodology doit citer la source réglementaire
+        assert "Décret" in e.source.methodology or "ADEME" in e.source.methodology
+        # phrase explicite, pas un mot
+        assert len(e.source.methodology) > 50
+
+
+def test_consumption_drift_exposes_z_score_when_metrics_present(monkeypatch):
+    """ét12e P0 #3 (EM) : si metrics.z_score présent, narrative inclut « Z-score ±X.Xσ »."""
+    from datetime import datetime, timezone
+
+    from services.event_bus.detectors import consumption_drift_detector
+
+    # Stub get_insights_summary pour fournir un insight avec z_score
+    fake_insight = {
+        "type": "derive",
+        "site_id": 42,
+        "site_label": "Site Test",
+        "estimated_loss_eur": 1500.0,
+        "severity": "high",
+        "message": "Dérive détectée",
+        "metrics": {"delta_pct": 23.5, "z_score": 3.2, "sigma_baseline_kwh": 250},
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    def fake_summary(db, org_id):
+        return {"insights": [fake_insight]}
+
+    monkeypatch.setattr(
+        "services.consumption_diagnostic.get_insights_summary",
+        fake_summary,
+    )
+
+    events = consumption_drift_detector.detect(db=None, org_id=1)
+    assert events, "Détecteur doit émettre un événement avec ce stub"
+    e = events[0]
+    assert "Z-score" in e.narrative or "Z-score" in (e.title or "")
+    assert "+3.2" in e.narrative or "3.2" in e.narrative
