@@ -191,6 +191,12 @@ export const GLOSSARY = {
       "Accès Régulé à l'Électricité Nucléaire Historique. Prix fixe 42 €/MWh. Dispositif terminé le 31/12/2025, remplacé par le VNU (Versement Nucléaire Universel, taxe redistributive sur EDF).",
     // Source : Loi Énergie-Climat 2019, fin ARENH confirmée LFI 2023. VNU : PPE3 2026-2035.
   },
+  post_arenh: {
+    term: 'Nouveau cadre marché électricité 2026',
+    short:
+      "Depuis le 01/01/2026, les règles de l'électricité ont changé : trois composantes impactent vos factures — coûts réseau (TURPE 7), versement nucléaire universel (VNU) en remplacement de l'ancien quota ARENH, et mécanisme de capacité RTE renforcé en novembre 2026.",
+    long: "Le 01/01/2026 a marqué la fin de l'ARENH (100 TWh à 42 €/MWh disparus du marché B2B). Le nouveau cadre comporte 3 composantes que les factures intègrent désormais : (a) TURPE 7 — grille acheminement révisée 2025-2029 par la CRE ; (b) VNU — taxe redistributive sur EDF dormante tant que les prix forward restent < 78 €/MWh ; (c) Mécanisme de capacité RTE — réforme novembre 2026 avec enchères centralisées PL-4/PL-1. Voir aussi : TURPE, VNU, Mécanisme de capacité. Source : Loi 2023-491, Décret 2026-55, CRE 2026-52, RTE Règles Mécanisme Capacité.",
+  },
 
   // ── Pricing achat ────────────────────────────────────────────────────────────
   forward_price: {

@@ -840,15 +840,17 @@ const Cockpit = () => {
       </section>
 
       <section className="space-y-3" data-testid="cockpit-achat-post-arenh">
-        <div className="flex items-baseline justify-between">
-          {/* S1.2 transformation §10 (ADR-004) : "post-ARENH" est un acronyme
-              brut interdit en titre. Récit non-sachant : "fin du tarif régulé". */}
-          <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+        {/* Doctrine §10 — récit humain, profondeur via Explain §2.2 */}
+        <div className="flex items-baseline justify-between gap-4 flex-wrap">
+          <h2
+            className="text-lg font-medium text-[var(--sol-ink-900)]"
+            style={{ fontFamily: 'var(--sol-font-display)' }}
+          >
             Marché de l'électricité — fin du tarif régulé
           </h2>
-          <span className="text-[10px] text-gray-400">
-            Post-ARENH 01/01/2026 · TURPE 7 · <Explain term="vnu">VNU</Explain> CRE ·{' '}
-            <Explain term="capacite">capacité</Explain> RTE
+          <span className="text-xs text-[var(--sol-ink-500)]">
+            Nouveau cadre 2026 — coûts réseau, taxes énergie et marché capacité.{' '}
+            <Explain term="post_arenh">Comprendre</Explain>
           </span>
         </div>
         <CostSimulationCard
