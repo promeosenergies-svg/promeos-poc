@@ -30,6 +30,11 @@ from typing import Literal, Optional
 
 from sqlalchemy.orm import Session
 
+from services.billing.losses_service import (
+    compute_billing_losses_summary,
+    fmt_payback_human,
+    fmt_recovery_rate,
+)
 from services.data_provenance import (
     Provenance,
     ProvenanceConfidence,
@@ -1130,7 +1135,6 @@ def _build_bill_intel(
         EntiteJuridique,
         Portefeuille,
         Site,
-        not_deleted,
     )
     from models.enums import InsightStatus
 
@@ -1139,6 +1143,10 @@ def _build_bill_intel(
     site_ids = [s.id for s in ctx.sites]
 
     # ── Récupérer les insights de facturation par scope ──
+    # Sprint 2 Vague B ét7' : la SOMME des pertes vient désormais de
+    # `losses_service` (SoT règle d'or chiffres). On garde la query brute
+    # ici pour la liste détaillée (week-cards critiques) — pas de double
+    # calcul sur les agrégats financiers.
     insights_q = (
         db.query(BillingInsight)
         .join(Site, Site.id == BillingInsight.site_id)
@@ -1156,10 +1164,12 @@ def _build_bill_intel(
     nb_contestations = len(ack_insights)
     nb_reclaims = len(resolved_insights)
 
-    # Pertes chiffrées
-    perte_open_eur = sum((i.estimated_loss_eur or 0.0) for i in open_insights)
-    contestation_eur = sum((i.estimated_loss_eur or 0.0) for i in ack_insights)
-    reclaim_ytd_eur = sum((i.estimated_loss_eur or 0.0) for i in resolved_insights)
+    # Sprint 2 Vague B ét7' — agrégats financiers via losses_service (SoT).
+    # `insights` est passée pour éviter une 2ᵉ query SQL (P1 /simplify ét7').
+    losses = compute_billing_losses_summary(db, org_id, insights=insights)
+    perte_open_eur = losses.perte_open_eur
+    contestation_eur = losses.contestation_eur
+    reclaim_ytd_eur = losses.reclaim_ytd_eur
 
     # ── Kicker + titre ──
     week_iso = datetime.now(timezone.utc).isocalendar().week
@@ -1195,6 +1205,23 @@ def _build_bill_intel(
     narrative = " ".join(narr_parts)
 
     # ── 3 KPIs hero §5 — angle CFO ──
+    # Sprint 2 Vague B ét7' : tooltips enrichis avec payback + recovery rate
+    # (audit personas Vague A — CFO réclame "26 k€ payback 14 jours, taux
+    # de récupération 67 %"). Provenance attestée via losses_service —
+    # règle d'or chiffres respectée (sample size + confidence exposés).
+    payback_str = fmt_payback_human(losses.payback_avg_days)
+    recovery_str = fmt_recovery_rate(losses.recovery_rate_pct)
+    payback_tooltip_extra = (
+        f" Payback moyen observé : {payback_str} (confiance "
+        f"{losses.payback_provenance.confidence}, {losses.payback_provenance.sample_size} reclaim"
+        f"{'s' if losses.payback_provenance.sample_size > 1 else ''})."
+        if losses.payback_avg_days is not None
+        else ""
+    )
+    recovery_tooltip_extra = (
+        f" Taux de récupération YTD : {recovery_str}." if losses.recovery_rate_pct is not None else ""
+    )
+
     kpis: list[NarrativeKpi] = [
         NarrativeKpi(
             label="Anomalies à traiter",
@@ -1211,7 +1238,7 @@ def _build_bill_intel(
             value=_fmt_eur_short(perte_open_eur),
             tooltip=(
                 "Cumul des pertes estimées sur les anomalies ouvertes. "
-                "Récupérables via contestation auprès du fournisseur."
+                "Récupérables via contestation auprès du fournisseur." + payback_tooltip_extra
             ),
             source="Bill-Intel",
         ),
@@ -1220,11 +1247,17 @@ def _build_bill_intel(
             value=_fmt_eur_short(reclaim_ytd_eur),
             tooltip=(
                 "Cumul des reclaims validés depuis le début de l'année — "
-                "économies déjà encaissées grâce aux contestations."
+                "économies déjà encaissées grâce aux contestations." + recovery_tooltip_extra
             ),
             source="Bill-Intel reclaims",
         ),
     ]
+
+    # Sprint 2 Vague B ét7' : si payback observé, l'injecter dans la
+    # narrative pour le CFO ("récupère 26 k€ en moyenne 14 jours").
+    if losses.payback_avg_days is not None and reclaim_ytd_eur > 0:
+        narr_parts.append(f"Délai moyen de récupération observé : {payback_str}.")
+        narrative = " ".join(narr_parts)
 
     # ── Week-cards Bill-Intel ──
     week_cards: list[NarrativeWeekCard] = []
