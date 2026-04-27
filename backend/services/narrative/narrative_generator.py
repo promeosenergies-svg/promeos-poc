@@ -231,6 +231,38 @@ def _build_provenance_canonical(
     )
 
 
+def _build_provenance_volume_based(
+    source: str,
+    *,
+    has_data: bool,
+    sites_count: int,
+    methodology_url: str,
+) -> "Provenance":
+    """Provenance pour vues volume-based (monitoring/diagnostic).
+
+    Sprint 1.8bis Reuse P1 (audit /simplify) : pattern monitoring + diagnostic
+    dupliqué — confidence cascade HIGH/MEDIUM/LOW selon présence données réelles.
+    Différent de _build_provenance_canonical (basé conformite_score statique).
+    """
+    if has_data and sites_count > 0:
+        confidence = ProvenanceConfidence.HIGH
+    elif sites_count > 0:
+        confidence = ProvenanceConfidence.MEDIUM
+    else:
+        confidence = ProvenanceConfidence.LOW
+    return build_provenance(
+        source=source,
+        confidence=confidence,
+        updated_at=datetime.now(timezone.utc),
+        methodology_url=methodology_url,
+    )
+
+
+def _s(n: int) -> str:
+    """Helper pluriel FR (audit /simplify Quality P2 — pattern dupliqué 15+×)."""
+    return "s" if n > 1 else ""
+
+
 # ── Builders MVP — cockpit_daily ────────────────────────────────────
 
 
@@ -1807,8 +1839,21 @@ def _build_monitoring(
 # Sourçage doctrine §4.2 (EMS/Performance) + ISO 50001 + COSTIC.
 # Seuils sévérité ConsumptionInsight alignés sur la modélisation moteur
 # (cf services/consumption_diag/), pas modifiables ici.
-_DIAGNOSTIC_SEUIL_GAIN_PRIORITE_EUR = 1_000  # gain individuel ≥ 1 k€/an = priorité élevée
-_DIAGNOSTIC_SEUIL_ECONOMIE_VISIBLE_EUR = 5_000  # cumul économies → tone POSITIVE / good_news
+# Sprint 1.8bis (audit /simplify Reuse P1) : _DIAGNOSTIC_SEUIL_GAIN_PRIORITE_EUR
+# supprimée — dead constant jamais référencée. Sévérité critique vient du
+# moteur consumption_diag/ (SoT canonique via ConsumptionInsight.severity).
+_DIAGNOSTIC_SEUIL_ECONOMIE_VISIBLE_EUR = 5_000  # cumul économies → tone POSITIVE / good_news (~1% budget ETI 5 sites)
+
+# Sprint 1.8bis (audit /simplify Quality P1) : SoT FR labels diagnostic.
+# Frontend ConsumptionDiagPage.jsx:72 TYPE_LABELS dupliquait — à terme
+# exposer via API serializer ConsumptionInsight.type_label.
+_INSIGHT_TYPE_LABELS_FR: dict[str, str] = {
+    "hors_horaires": "Consommation hors horaires",
+    "base_load": "Talon excessif",
+    "pointe": "Pic de puissance",
+    "derive": "Dérive consommation",
+    "data_gap": "Trou de données",
+}
 
 
 def _build_diagnostic(
@@ -1839,30 +1884,47 @@ def _build_diagnostic(
     « dérive » au lieu d'acronymes EMS jargon.
     """
     from models.consumption_insight import ConsumptionInsight
-    from models.enums import InsightStatus
+    from models.enums import InsightStatus, Severity
 
     ctx = _load_org_context(db, org_id)
     site_ids = [s.id for s in ctx.sites]
     site_name_by_id: dict[int, str] = {s.id: (s.nom or f"site #{s.id}") for s in ctx.sites}
 
     # ── Récupérer les insights de diagnostic du scope ──
+    # Sprint 1.8bis Efficiency P1 : bornage YTD + 365j rolling pour éviter
+    # de matérialiser tout l'historique en RAM (10k+ insights cross-org
+    # possible). YTD couvre Économies sécurisées, rolling 365j couvre
+    # contexte saisonnier.
+    today = date.today()
+    horizon_floor = min(date(today.year, 1, 1), today - timedelta(days=365))
     if site_ids:
-        insights = db.query(ConsumptionInsight).filter(ConsumptionInsight.site_id.in_(site_ids)).all()
+        insights = (
+            db.query(ConsumptionInsight)
+            .filter(ConsumptionInsight.site_id.in_(site_ids))
+            .filter(ConsumptionInsight.created_at >= datetime.combine(horizon_floor, datetime.min.time()))
+            .all()
+        )
     else:
         insights = []
 
-    # Single-pass partitioning par status + severity
+    # Single-pass partitioning par status + severity.
+    # Sprint 1.8bis Efficiency P2 : critical_total_eur dans le single-pass
+    # (vs ré-itération sum() pour autres_gain).
+    # Sprint 1.8bis Quality P1 : Severity enum vs stringly-typed.
     open_insights: list[ConsumptionInsight] = []
     critical_insights: list[ConsumptionInsight] = []
     resolved_insights: list[ConsumptionInsight] = []
     economies_potentielles_eur = 0.0
     economies_realisees_eur = 0.0
+    critical_total_eur = 0.0
     for i in insights:
         if i.insight_status == InsightStatus.OPEN:
             open_insights.append(i)
-            economies_potentielles_eur += i.estimated_loss_eur or 0.0
-            if i.severity == "critical":
+            i_loss = i.estimated_loss_eur or 0.0
+            economies_potentielles_eur += i_loss
+            if i.severity == Severity.CRITICAL.value:
                 critical_insights.append(i)
+                critical_total_eur += i_loss
         elif i.insight_status == InsightStatus.RESOLVED:
             resolved_insights.append(i)
             economies_realisees_eur += i.estimated_loss_eur or 0.0
@@ -1872,36 +1934,40 @@ def _build_diagnostic(
     nb_resolved = len(resolved_insights)
 
     # ── Kicker + titre + italic hook §5 ──
+    # Sprint 1.8bis Quality : helper _s pour pluriel FR (audit /simplify P2).
     week_iso = datetime.now(timezone.utc).isocalendar().week
     if nb_leviers_open > 0:
         kicker = (
             f"DIAGNOSTIC · SEMAINE {week_iso} · "
-            f"{nb_leviers_open} LEVIER{'S' if nb_leviers_open > 1 else ''} IDENTIFIÉ{'S' if nb_leviers_open > 1 else ''}"
+            f"{nb_leviers_open} LEVIER{_s(nb_leviers_open).upper()} IDENTIFIÉ{_s(nb_leviers_open).upper()}"
         )
     else:
-        kicker = f"DIAGNOSTIC · SEMAINE {week_iso} · {sites_count} SITE{'S' if sites_count != 1 else ''} ANALYSÉ{'S' if sites_count != 1 else ''}"
+        sites_plural = _s(sites_count).upper()
+        kicker = f"DIAGNOSTIC · SEMAINE {week_iso} · {sites_count} SITE{sites_plural} ANALYSÉ{sites_plural}"
     title = "Vos économies d'énergie identifiées"
     italic_hook = "leviers chiffrés · plan d'actions priorisé"
 
     # ── Narrative orientée Marie DAF + Energy Manager ──
-    # Sprint 1.8 P0 : reformulation acronymes FR-first (audit Marie attendu).
-    # Pas de jargon EMS — vocabulaire CFO « économies cachées », « gisement ».
+    # Doctrine §10 : acronymes EMS interdits dans narrative — vocabulaire DAF
+    # non-sachant. Sprint 1.8bis CX P1 : « actionnable immédiatement » →
+    # « à activer cette semaine » + « priorisées par effort/gain » →
+    # « classées du plus rentable au plus simple ».
     narr_parts = []
     if nb_critical > 0:
-        plural = "s" if nb_critical > 1 else ""
+        p_crit = _s(nb_critical)
         narr_parts.append(
-            f"{nb_critical} levier{plural} prioritaire{plural} détecté{plural} sur "
-            "votre patrimoine — actionnable immédiatement."
+            f"{nb_critical} levier{p_crit} prioritaire{p_crit} détecté{p_crit} sur "
+            "votre patrimoine — à activer cette semaine."
         )
     elif nb_leviers_open > 0:
+        p_open = _s(nb_leviers_open)
         narr_parts.append(
-            f"{nb_leviers_open} levier{'s' if nb_leviers_open > 1 else ''} d'économies "
-            f"détecté{'s' if nb_leviers_open > 1 else ''} — actions priorisées par effort/gain."
+            f"{nb_leviers_open} levier{p_open} d'économies détecté{p_open} — "
+            "classés du plus rentable au plus simple à mettre en œuvre."
         )
     elif sites_count > 0:
         narr_parts.append(
-            f"Aucun gisement d'économies détecté sur {sites_count} site{'s' if sites_count > 1 else ''} — "
-            "patrimoine déjà optimisé."
+            f"Aucun gisement d'économies détecté sur {sites_count} site{_s(sites_count)} — patrimoine déjà optimisé."
         )
     else:
         narr_parts.append("Aucun site analysé — lancez le diagnostic pour identifier les leviers d'économies.")
@@ -1914,8 +1980,8 @@ def _build_diagnostic(
 
     if economies_realisees_eur > 0:
         narr_parts.append(
-            f"Économies déjà sécurisées YTD : {_fmt_eur_short(economies_realisees_eur)} "
-            f"({nb_resolved} action{'s' if nb_resolved > 1 else ''} validée{'s' if nb_resolved > 1 else ''})."
+            f"Économies déjà sécurisées depuis janvier : {_fmt_eur_short(economies_realisees_eur)} "
+            f"({nb_resolved} action{_s(nb_resolved)} validée{_s(nb_resolved)})."
         )
 
     narr_parts.append(
@@ -1927,15 +1993,20 @@ def _build_diagnostic(
     narrative = " ".join(narr_parts)
 
     # ── 3 KPIs hero §5 — angle CFO pilotage économies ──
+    # Sprint 1.8bis Marie P0-1 : "YTD" → "depuis janvier" (FR-first §10).
+    # Variables intermédiaires pour lisibilité (audit Quality P2 ternaire imbriqué).
+    unit_critical = f"dont {nb_critical} prioritaire{_s(nb_critical)}" if nb_critical > 0 else None
+    unit_resolved = f"sur {nb_resolved} action{_s(nb_resolved)}" if nb_resolved > 0 else None
     kpis: list[NarrativeKpi] = [
         NarrativeKpi(
             label="Leviers identifiés",
             value=str(nb_leviers_open),
-            unit=f"dont {nb_critical} prioritaire{'s' if nb_critical > 1 else ''}" if nb_critical > 0 else None,
+            unit=unit_critical,
             tooltip=(
                 "Anomalies de consommation détectées par le moteur diagnostic et non "
                 "encore traitées (workflow OPEN → ACK → RESOLVED). Chacune est chiffrée "
-                "en euros/an récupérables par action corrective."
+                "en euros/an récupérables par action corrective. Fenêtre d'analyse : "
+                "12 mois glissants."
             ),
             source="ConsumptionInsight workflow lifecycle",
         ),
@@ -1944,20 +2015,22 @@ def _build_diagnostic(
             value=_fmt_eur_short(economies_potentielles_eur),
             tooltip=(
                 "Cumul des pertes estimées sur les leviers ouverts — surconsommation "
-                "vs benchmark archétype + réf horaires d'ouverture. Estimation "
-                "modélisée, récupérable par actions correctives priorisées."
+                "vs benchmark archétype et horaires d'ouverture. Estimation modélisée "
+                "(pas une perte mesurée), récupérable par actions correctives. "
+                "Détail méthode /methodologie/diagnostic-conso."
             ),
             source="ConsumptionInsight.estimated_loss_eur · COSTIC NF EN 16247-2",
         ),
         NarrativeKpi(
-            label="Économies sécurisées YTD",
+            label="Économies sécurisées",
             value=_fmt_eur_short(economies_realisees_eur),
-            unit=f"sur {nb_resolved} action{'s' if nb_resolved > 1 else ''}" if nb_resolved > 0 else None,
+            unit=unit_resolved,
             tooltip=(
-                "Cumul des gains validés depuis le début de l'année calendaire — "
-                "actions correctives implémentées et insights passés au statut RESOLVED."
+                "Cumul des gains validés depuis le 1er janvier — actions correctives "
+                "implémentées et insights passés au statut RESOLVED. Base solide pour "
+                "audit ISO 50001 et reporting CSRD."
             ),
-            source="ConsumptionInsight RESOLVED YTD",
+            source="ConsumptionInsight RESOLVED depuis le 1er janvier",
         ),
     ]
 
@@ -1966,21 +2039,16 @@ def _build_diagnostic(
 
     # DRIFT — levier critique avec plus fort gain.
     # Sprint 1.8 : site_name_by_id pré-calculé (lookup O(1)).
+    # Sprint 1.8bis Quality P1 : type_fr → constante module _INSIGHT_TYPE_LABELS_FR.
     if critical_insights:
         top_critical = max(critical_insights, key=lambda i: i.estimated_loss_eur or 0)
         critical_gain = top_critical.estimated_loss_eur or 0
         site_label = site_name_by_id.get(top_critical.site_id, f"site #{top_critical.site_id}")
-        type_fr = {
-            "hors_horaires": "Consommation hors horaires",
-            "base_load": "Talon excessif",
-            "pointe": "Pic de puissance",
-            "derive": "Dérive consommation",
-            "data_gap": "Trou de données",
-        }.get(top_critical.type, "Anomalie consommation")
+        type_label = _INSIGHT_TYPE_LABELS_FR.get(top_critical.type, "Anomalie consommation")
         week_cards.append(
             NarrativeWeekCard(
                 type="drift",
-                title=f"{type_fr} · {site_label}",
+                title=f"{type_label} · {site_label}",
                 body=(
                     (top_critical.message[:140] if top_critical.message else "Anomalie détectée")
                     + " — gain immédiat à activer."
@@ -1992,14 +2060,16 @@ def _build_diagnostic(
             )
         )
 
-    # TODO — autres leviers ouverts à programmer
+    # TODO — autres leviers ouverts à programmer.
+    # Sprint 1.8bis Efficiency P2 : critical_total_eur calculé dans single-pass.
     other_open = nb_leviers_open - nb_critical
     if other_open > 0:
-        autres_gain = economies_potentielles_eur - sum((i.estimated_loss_eur or 0) for i in critical_insights)
+        autres_gain = economies_potentielles_eur - critical_total_eur
+        p_other = _s(other_open)
         week_cards.append(
             NarrativeWeekCard(
                 type="todo",
-                title=f"Programmer {other_open} action{'s' if other_open > 1 else ''} corrective{'s' if other_open > 1 else ''}",
+                title=f"Programmer {other_open} action{p_other} corrective{p_other}",
                 body=(
                     "Leviers secondaires à intégrer au plan d'actions trimestriel — "
                     "économies cumulées progressives, contribution audit ISO 50001."
@@ -2011,14 +2081,14 @@ def _build_diagnostic(
             )
         )
 
-    # GOOD_NEWS — économies sécurisées YTD significatives
+    # GOOD_NEWS — économies sécurisées depuis janvier significatives.
     if economies_realisees_eur >= _DIAGNOSTIC_SEUIL_ECONOMIE_VISIBLE_EUR:
         week_cards.append(
             NarrativeWeekCard(
                 type="good_news",
                 title=f"{_fmt_eur_short(economies_realisees_eur)} d'économies sécurisées",
                 body=(
-                    f"{nb_resolved} action{'s' if nb_resolved > 1 else ''} validée{'s' if nb_resolved > 1 else ''} "
+                    f"{nb_resolved} action{_s(nb_resolved)} validée{_s(nb_resolved)} "
                     "depuis janvier — base solide pour audit ISO 50001 et reporting CSRD."
                 ),
                 cta_path="/diagnostic-conso?status=resolved",
@@ -2044,20 +2114,13 @@ def _build_diagnostic(
     else:
         narrative_tone = NarrativeTone.NEUTRAL
 
-    # Provenance : confidence basée sur volume d'insights analysés sur le
-    # patrimoine (fiabilité dépend de la profondeur d'analyse, pas du
-    # conformite_score statique du helper canonique).
-    if nb_leviers_open + nb_resolved > 0 and sites_count > 0:
-        confidence = ProvenanceConfidence.HIGH
-    elif sites_count > 0:
-        confidence = ProvenanceConfidence.MEDIUM
-    else:
-        confidence = ProvenanceConfidence.LOW
-
-    provenance = build_provenance(
+    # Provenance : confidence basée sur volume d'insights analysés.
+    # Sprint 1.8bis Reuse P1 : helper _build_provenance_volume_based extrait
+    # (pattern monitoring + diagnostic dédupliqué).
+    provenance = _build_provenance_volume_based(
         source="Moteur diagnostic 5 catégories + ISO 50001 + COSTIC NF EN 16247-2",
-        confidence=confidence,
-        updated_at=datetime.now(timezone.utc),
+        has_data=(nb_leviers_open + nb_resolved) > 0,
+        sites_count=sites_count,
         methodology_url="/methodologie/diagnostic-conso",
     )
 

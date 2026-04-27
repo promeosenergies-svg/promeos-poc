@@ -4,7 +4,7 @@
  * Evidence Drawer, prix editable, workflow ACK/Resolve, cross-page nav.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   AreaChart,
   Area,
@@ -749,6 +749,13 @@ export default function ConsumptionDiagPage() {
     error: solBriefingError,
     refetch: solBriefingRefetch,
   } = usePageBriefing('diagnostic', { persona: 'daily' });
+
+  // Sprint 1.8bis P0-1 (audit Nav P0-1 — récurrence S1.6/S1.7) : honorer
+  // deep-link `?status=open|resolved` + `?insight={id}` venant des week-cards
+  // backend. Sans ça, clic week-card → page sans filtre/drawer = trahison UX.
+  const [searchParams] = useSearchParams();
+  const queryStatus = searchParams.get('status');
+  const queryInsightId = searchParams.get('insight');
   // Step 11: unified period from URL (default 90 days for diagnostic)
   const { period, periodQueryString: _periodQueryString } = usePeriodParams(90);
   const [summary, setSummary] = useState(null);
@@ -911,14 +918,29 @@ export default function ConsumptionDiagPage() {
   const insights = useMemo(() => summary?.insights || [], [summary]);
 
   // V15-B: scope-aware filtering
+  // Sprint 1.8bis P0-1 : ajout filtre `?status=open|resolved` (deep-link week-cards).
   const filteredInsights = useMemo(() => {
     if (!insights.length) return [];
     // V16-D: normalizeId prevents type mismatch (API number vs store number/string)
-    if (selectedSiteId)
-      return insights.filter((i) => normalizeId(i.site_id) === normalizeId(selectedSiteId));
-    return insights;
+    let scoped = selectedSiteId
+      ? insights.filter((i) => normalizeId(i.site_id) === normalizeId(selectedSiteId))
+      : insights;
+    if (queryStatus) {
+      scoped = scoped.filter((i) => (i.insight_status || 'open') === queryStatus);
+    }
+    return scoped;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [insights, selectedSiteId]);
+  }, [insights, selectedSiteId, queryStatus]);
+
+  // Sprint 1.8bis P0-1 : ouvrir drawer sur `?insight={id}` post-load.
+  useEffect(() => {
+    if (!queryInsightId || insights.length === 0) return;
+    const target = insights.find((i) => String(i.id) === String(queryInsightId));
+    if (target && drawerInsight?.id !== target.id) {
+      setDrawerInsight(target);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryInsightId, insights]);
 
   const displayedSummary = useMemo(
     () => computeSummaryFromInsights(filteredInsights),
@@ -1014,9 +1036,12 @@ export default function ConsumptionDiagPage() {
       )}
 
       {/* V15-B: Scope badge */}
-      <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+      {/* Sprint 1.8bis P0-10 (audit Espaces P0) : retrait `mb-2` legacy
+          qui s'additionnait au `space-y-8` PageShell parent (asymétrie
+          32→40px). Pattern leçon S1.7bis. */}
+      <div className="flex items-center gap-2 text-xs text-[var(--sol-ink-500)]">
         <span>Périmètre :</span>
-        <span className="font-medium text-gray-700">{scopeLabel}</span>
+        <span className="font-medium text-[var(--sol-ink-700)]">{scopeLabel}</span>
         {isSiteScoped && (
           <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
             Vue filtrée
@@ -1026,7 +1051,15 @@ export default function ConsumptionDiagPage() {
 
       {/* V15-B: Scope mismatch banner */}
       {hasMismatch && (
-        <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 mb-2">
+        <div
+          className="flex items-start gap-2 px-3 py-2 rounded-lg text-xs"
+          style={{
+            background: 'var(--sol-attention-bg)',
+            borderColor: 'var(--sol-attention-line)',
+            border: '1px solid var(--sol-attention-line)',
+            color: 'var(--sol-attention-fg)',
+          }}
+        >
           <Info size={14} className="shrink-0 mt-0.5" />
           <span className="flex-1">
             Diagnostic lancé sur{' '}
@@ -1039,64 +1072,63 @@ export default function ConsumptionDiagPage() {
         </div>
       )}
 
-      {message && <div className="p-3 bg-blue-50 text-blue-800 rounded-lg text-sm">{message}</div>}
+      {message && (
+        <div
+          className="p-3 rounded-lg text-sm"
+          style={{
+            background: 'var(--sol-calme-bg)',
+            color: 'var(--sol-calme-fg-hover)',
+          }}
+        >
+          {message}
+        </div>
+      )}
 
       {loading ? (
-        <div className="grid grid-cols-5 gap-4 mb-6">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
+        // Sprint 1.8bis P0-3 (audit CX P0-1 + UX P0-3) : skeleton aligné
+        // grammaire Sol §5 (3 KPIs + 3 week-cards) — évite flash legacy
+        // 5-cards. Pattern hérité de S1.7bis (MonitoringPage skeleton Sol).
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <SkeletonCard key={`wc-${i}`} />
+            ))}
+          </div>
+        </>
       ) : !summary || filteredInsights.length === 0 ? (
+        // Sprint 1.8bis P0-4 (audit UX P0-2 + CX P0-2 + Densité P1) :
+        // EmptyState compact + préambule Sol garanti (déjà rendu plus haut
+        // via SolNarrative). Pas de plein écran §6.1 — instructions inline
+        // sobres, vocabulaire CFO (« données démo » → « jeu de données
+        // d'essai »).
         <EmptyState
           icon={Zap}
-          title="Aucun insight de consommation"
-          text="Générez des données démo puis lancez le diagnostic pour détecter les anomalies."
+          title="Aucun gisement détecté"
+          text="Lancez le diagnostic sur votre patrimoine pour identifier les leviers d'économies."
           actions={
             <div className="flex gap-3 justify-center">
               <Button variant="secondary" onClick={handleSeedDemo} disabled={seeding}>
-                1. Générer conso démo
+                Charger un jeu d'essai
               </Button>
               <Button onClick={handleDiagnose} disabled={diagnosing}>
-                2. Lancer le diagnostic
+                Lancer le diagnostic
               </Button>
             </div>
           }
         />
       ) : (
         <>
-          {/* À retenir — top 3 key insights */}
-          <div className="bg-white border border-blue-100 rounded-xl p-4 mb-4">
-            <h4 className="text-sm font-semibold text-gray-800 mb-3">À retenir</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="bg-gray-50 rounded-lg p-3 text-center">
-                <div className="text-xs text-gray-500">Insights</div>
-                <div className="text-lg font-bold text-blue-700">
-                  {displayedSummary.total_insights || 0}
-                </div>
-                <div className="text-[11px] text-gray-400">
-                  {displayedSummary.sites_with_insights || 0} site
-                  {(displayedSummary.sites_with_insights || 0) > 1 ? 's' : ''}
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3 text-center">
-                <div className="text-xs text-gray-500">Pertes estimées</div>
-                <div className="text-lg font-bold text-red-600">
-                  {fmtEur(Math.round(displayedSummary.total_loss_eur || 0))}
-                </div>
-                <div className="text-[11px] text-gray-400">
-                  {fmtKwh(Math.round(displayedSummary.total_loss_kwh || 0))}
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3 text-center">
-                <div className="text-xs text-gray-500">CO₂e évitable</div>
-                <div className="text-lg font-bold text-emerald-600">
-                  {fmtCo2((displayedSummary.total_loss_kwh || 0) * co2Factor)}
-                </div>
-                <div className="text-[11px] text-gray-400">Impact carbone</div>
-              </div>
-            </div>
-          </div>
+          {/* Sprint 1.8bis P0-2 (audit UX P0-1 + Visual P0 + Densité P0) :
+              card « À retenir » supprimée — dupliquait sémantiquement les
+              3 KPIs hero SolNarrative (Leviers / Gisement / Économies)
+              + cassait la hiérarchie 36px Stripe-grade avec text-lg
+              (~18px) coloré bg-blue-700/red-600/emerald-600. SolNarrative
+              KPIs servent désormais de SoT unique above-the-fold. */}
 
           <DiagHeader
             insights={filteredInsights}
