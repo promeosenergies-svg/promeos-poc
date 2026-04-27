@@ -373,6 +373,91 @@ def test_compute_events_uses_detectors_registry(db, org_with_sites):
         DETECTORS.extend(original_detectors)
 
 
+# ── Sprint 2 Vague C ét12b : consumption_drift_detector ───────────
+
+
+def _seed_consumption_insight(db, site_id, *, type_="hors_horaires", loss_eur=3000, severity="high", delta_pct=None):
+    """Helper : crée un ConsumptionInsight."""
+    import json
+
+    from models.consumption_insight import ConsumptionInsight
+
+    metrics = {"delta_pct": delta_pct} if delta_pct is not None else None
+    ci = ConsumptionInsight(
+        site_id=site_id,
+        type=type_,
+        severity=severity,
+        message=f"Test insight {type_}",
+        estimated_loss_eur=loss_eur,
+        estimated_loss_kwh=loss_eur * 5,  # arbitrary ratio
+        metrics_json=json.dumps(metrics) if metrics else None,
+    )
+    db.add(ci)
+    db.commit()
+
+
+def test_consumption_drift_detector_emits_critical_above_5k(db, org_with_sites):
+    """Perte ≥ 5 k€ → événement critical consumption_drift."""
+    from services.event_bus.detectors import consumption_drift_detector
+
+    site_id = db.query(Site).first().id
+    _seed_consumption_insight(db, site_id, loss_eur=8_000, type_="derive")
+    events = consumption_drift_detector.detect(db, org_with_sites["org_id"])
+    critical = [e for e in events if e.severity == "critical"]
+    assert len(critical) >= 1
+    assert critical[0].event_type == "consumption_drift"
+    assert critical[0].action.owner_role == "Energy Manager"
+
+
+def test_consumption_drift_detector_top_2_only(db, org_with_sites):
+    """Détecteur garde top 2 insights par perte décroissante (focus CFO €)."""
+    from services.event_bus.detectors import consumption_drift_detector
+
+    site_id = db.query(Site).first().id
+    for loss in [500, 1500, 8000, 12000]:
+        _seed_consumption_insight(db, site_id, loss_eur=loss, type_="hors_horaires")
+    events = consumption_drift_detector.detect(db, org_with_sites["org_id"])
+    drift_events = [e for e in events if e.event_type == "consumption_drift"]
+    assert len(drift_events) == 2
+    # Top 2 = 12000 et 8000
+    values = sorted([e.impact.value for e in drift_events], reverse=True)
+    assert values == [12_000.0, 8_000.0]
+
+
+def test_consumption_drift_detector_uses_diagnostic_sot(db, org_with_sites):
+    """Détecteur consomme consumption_diagnostic.get_insights_summary (SoT)."""
+    import inspect
+
+    from services.event_bus.detectors import consumption_drift_detector
+
+    src = inspect.getsource(consumption_drift_detector.detect)
+    assert "get_insights_summary" in src
+    # Pas de query DB directe sur ConsumptionInsight
+    assert "db.query(ConsumptionInsight" not in src
+
+
+def test_consumption_drift_detector_includes_amplitude_when_available(db, org_with_sites):
+    """Si delta_pct présent dans metrics, narrative l'expose (compromis EM levé)."""
+    from services.event_bus.detectors import consumption_drift_detector
+
+    site_id = db.query(Site).first().id
+    _seed_consumption_insight(db, site_id, loss_eur=3000, type_="derive", delta_pct=23.4)
+    events = consumption_drift_detector.detect(db, org_with_sites["org_id"])
+    drift = next(e for e in events if e.event_type == "consumption_drift")
+    assert "+23.4%" in drift.narrative or "23.4" in drift.narrative
+
+
+def test_consumption_drift_detector_links_site(db, org_with_sites):
+    """linked_assets.site_ids contient le site concerné (granularité §10)."""
+    from services.event_bus.detectors import consumption_drift_detector
+
+    site_id = db.query(Site).first().id
+    _seed_consumption_insight(db, site_id, loss_eur=3000)
+    events = consumption_drift_detector.detect(db, org_with_sites["org_id"])
+    drift = next(e for e in events if e.event_type == "consumption_drift")
+    assert drift.linked_assets.site_ids == [site_id]
+
+
 # ── Sprint 2 Vague C ét12a : billing_anomaly_detector ──────────────
 
 
