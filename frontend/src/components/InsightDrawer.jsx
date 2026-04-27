@@ -51,44 +51,72 @@ const _RECON_STATUS_COLOR = {
   minimal: 'red',
 };
 
+// Sprint 2 Vague A ét2 — δ-2 récit Bill-Intel (doctrine v2 §5 + ADR-004).
+// Aligné sur TYPE_LABELS de pages/BillIntelPage.jsx pour cohérence cross-vue.
+// TYPE_LABELS_TEXT : version plain-string pour contextes non-JSX (titres
+// d'actions générées). TYPE_LABELS : version JSX pour rendu enrichi avec
+// <Explain> pédagogique inline.
+const TYPE_LABELS_TEXT = {
+  shadow_gap: 'Cette facture coûte plus que la facturation théorique',
+  unit_price_high: 'Le prix au kWh dépasse vos repères',
+  duplicate_invoice: 'Cette facture semble facturée deux fois',
+  missing_period: "Une période de facturation n'a pas été couverte",
+  period_too_long: 'Cette période dépasse la durée habituelle',
+  negative_kwh: 'Une consommation négative en kWh est apparue',
+  zero_amount: 'Le montant facturé est nul',
+  lines_sum_mismatch: 'Le total ne se reconstitue pas à partir des lignes',
+  consumption_spike: 'Pic de consommation inhabituel détecté',
+  price_drift: 'Le prix unitaire dérive depuis plusieurs mois',
+  ttc_coherence: 'Le total TTC ne se reconstitue pas',
+  contract_expiry: 'Votre contrat est arrivé à échéance',
+  reseau_mismatch: "L'acheminement réseau dépasse le tarif TURPE attendu",
+  taxes_mismatch: "Les taxes dépassent l'accise et la CTA en vigueur",
+  reconciliation_mismatch: 'Écart compteur / facture détecté',
+};
+
 const TYPE_LABELS = {
   shadow_gap: (
     <>
-      Écart <Explain term="shadow_billing">facturation théorique</Explain>
+      Cette facture coûte plus que la <Explain term="shadow_billing">facturation théorique</Explain>
     </>
   ),
-  unit_price_high: 'Prix unitaire élevé',
-  duplicate_invoice: 'Doublon facture',
-  missing_period: 'Période manquante',
-  period_too_long: 'Période longue',
+  unit_price_high: (
+    <>
+      Le prix au <Explain term="kwh">kWh</Explain> dépasse vos repères
+    </>
+  ),
+  duplicate_invoice: TYPE_LABELS_TEXT.duplicate_invoice,
+  missing_period: TYPE_LABELS_TEXT.missing_period,
+  period_too_long: TYPE_LABELS_TEXT.period_too_long,
   negative_kwh: (
     <>
-      <Explain term="kwh">kWh</Explain> négatifs
+      Une consommation négative en <Explain term="kwh">kWh</Explain> est apparue
     </>
   ),
-  zero_amount: 'Montant zéro',
-  lines_sum_mismatch: 'Écart lignes/total',
-  consumption_spike: 'Pic de consommation',
-  price_drift: 'Dérive de prix',
+  zero_amount: TYPE_LABELS_TEXT.zero_amount,
+  lines_sum_mismatch: TYPE_LABELS_TEXT.lines_sum_mismatch,
+  consumption_spike: TYPE_LABELS_TEXT.consumption_spike,
+  price_drift: TYPE_LABELS_TEXT.price_drift,
   ttc_coherence: (
     <>
-      Cohérence <Explain term="ttc">TTC</Explain>
+      Le total <Explain term="ttc">TTC</Explain> ne se reconstitue pas
     </>
   ),
-  contract_expiry: 'Contrat expiré',
+  contract_expiry: TYPE_LABELS_TEXT.contract_expiry,
   reseau_mismatch: (
     <>
-      Écart réseau / <Explain term="turpe">TURPE</Explain>
+      L'acheminement réseau dépasse le tarif <Explain term="turpe">TURPE</Explain> attendu
     </>
   ),
   taxes_mismatch: (
     <>
-      Écart taxes / <Explain term="accise">accise</Explain>
+      Les taxes dépassent l'<Explain term="accise">accise</Explain> et la{' '}
+      <Explain term="cta">CTA</Explain> en vigueur
     </>
   ),
   reconciliation_mismatch: (
     <>
-      <Explain term="reconciliation_auto">Écart compteur / facture</Explain>
+      <Explain term="reconciliation_auto">Écart compteur / facture</Explain> détecté
     </>
   ),
 };
@@ -359,7 +387,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
     if (!detail || actionLoading || actionDone) return;
     setActionLoading(true);
     try {
-      const title = `Action insight : ${typeof TYPE_LABELS[detail.type] === 'string' ? TYPE_LABELS[detail.type] : detail.type}`;
+      const title = `Action insight : ${TYPE_LABELS_TEXT[detail.type] || detail.type}`;
       await createActionFromBillingInsight(insightId, title, detail.site_id);
       setActionDone(true);
     } catch {

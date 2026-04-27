@@ -70,21 +70,56 @@ const SEVERITY_BADGE = {
   low: 'neutral',
 };
 
+// Sprint 2 Vague A ét2 — δ-2 récit Bill-Intel (doctrine v2 §5 + ADR-004).
+// 14 codes techniques transformés en phrases narratives lisibles par un
+// non-sachant (audit Marie 5.5 → cible 7+). Acronymes restants encapsulés
+// dans <Explain> pour pédagogie inline (TURPE/TTC/accise/CTA/kWh/shadow).
+// Anti-pattern §6.3 : zéro acronyme brut dans un label affiché.
 const TYPE_LABELS = {
-  shadow_gap: 'Écart facture / consommation',
-  unit_price_high: 'Prix unitaire élevé',
-  duplicate_invoice: 'Doublon facture',
-  missing_period: 'Période manquante',
-  period_too_long: 'Période longue',
-  negative_kwh: 'kWh négatifs',
-  zero_amount: 'Montant zéro',
-  lines_sum_mismatch: 'Écart lignes/total',
-  consumption_spike: 'Pic de consommation',
-  price_drift: 'Dérive de prix',
-  ttc_coherence: 'Cohérence TTC',
-  contract_expiry: 'Contrat expiré',
-  reseau_mismatch: 'Écart réseau / TURPE',
-  taxes_mismatch: 'Écart taxes / accise',
+  shadow_gap: (
+    <>
+      Cette facture coûte plus que la <Explain term="shadow_billing">facturation théorique</Explain>
+    </>
+  ),
+  unit_price_high: (
+    <>
+      Le prix au <Explain term="kwh">kWh</Explain> dépasse vos repères
+    </>
+  ),
+  duplicate_invoice: 'Cette facture semble facturée deux fois',
+  missing_period: "Une période de facturation n'a pas été couverte",
+  period_too_long: 'Cette période dépasse la durée habituelle',
+  negative_kwh: (
+    <>
+      Une consommation négative en <Explain term="kwh">kWh</Explain> est apparue
+    </>
+  ),
+  zero_amount: 'Le montant facturé est nul',
+  lines_sum_mismatch: 'Le total ne se reconstitue pas à partir des lignes',
+  consumption_spike: 'Pic de consommation inhabituel détecté',
+  price_drift: 'Le prix unitaire dérive depuis plusieurs mois',
+  ttc_coherence: (
+    <>
+      Le total <Explain term="ttc">TTC</Explain> ne se reconstitue pas
+    </>
+  ),
+  contract_expiry: 'Votre contrat est arrivé à échéance',
+  reseau_mismatch: (
+    <>
+      L'acheminement réseau dépasse le tarif <Explain term="turpe">TURPE</Explain> attendu
+    </>
+  ),
+  taxes_mismatch: (
+    <>
+      Les taxes dépassent l'<Explain term="accise">accise</Explain> et la{' '}
+      <Explain term="cta">CTA</Explain> en vigueur
+    </>
+  ),
+  reconciliation_mismatch: (
+    <>
+      <Explain term="reconciliation_auto">Écart compteur / facture</Explain> détecté
+    </>
+  ),
 };
 
 const STATUS_COLORS = {
@@ -1046,33 +1081,7 @@ export default function BillIntelPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-900">
-                          {[
-                            'shadow_gap',
-                            'unit_price_high',
-                            'duplicate_invoice',
-                            'consumption_spike',
-                            'price_drift',
-                          ].includes(insight.type) ? (
-                            <Explain term={insight.type}>{TYPE_LABELS[insight.type]}</Explain>
-                          ) : insight.type === 'ttc_coherence' ? (
-                            <>
-                              Cohérence <Explain term="ttc">TTC</Explain>
-                            </>
-                          ) : insight.type === 'reseau_mismatch' ? (
-                            <>
-                              Écart réseau / <Explain term="turpe">TURPE</Explain>
-                            </>
-                          ) : insight.type === 'taxes_mismatch' ? (
-                            <>
-                              Écart taxes / <Explain term="accise">accise</Explain>
-                            </>
-                          ) : insight.type === 'negative_kwh' ? (
-                            <>
-                              <Explain term="kwh">kWh</Explain> négatifs
-                            </>
-                          ) : (
-                            TYPE_LABELS[insight.type] || insight.type
-                          )}
+                          {TYPE_LABELS[insight.type] || insight.type}
                         </span>
                         <Badge status={SEVERITY_BADGE[insight.severity] || 'neutral'}>
                           {SEVERITY_LABELS[insight.severity] || insight.severity}
