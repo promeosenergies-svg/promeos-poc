@@ -73,6 +73,7 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     - quelle confiance : depuis volumétrie échantillon sites
     """
     # Imports locaux pour éviter cycle (services/flex → narrative → event_bus)
+    from config.mitigation_loader import compute_npv_actualized  # WACC actualisé
     from services.flex_nebco_service import compute_flex_portfolio
     from services.narrative.narrative_generator import _load_org_context
 
@@ -103,7 +104,14 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
 
     mitigation = None
     if bacs_capex > 0 and bacs_roi_months:
-        npv_eur = bacs_revenue_year * _FLEX_NPV_HORIZON_YEARS - bacs_capex
+        # ét12g (audit CFO #2) : NPV actualisé via WACC YAML (formule annuité)
+        # au lieu de revenue × N - capex (VAN nominale, surévaluée 35-40% sur 5 ans).
+        npv_eur = compute_npv_actualized(
+            annual_flow_eur=bacs_revenue_year,
+            horizon_year=now.year + _FLEX_NPV_HORIZON_YEARS,
+            capex_eur=bacs_capex,
+            current_year=now.year,
+        )
         mitigation = EventMitigation(
             capex_eur=bacs_capex,
             payback_months=int(bacs_roi_months),

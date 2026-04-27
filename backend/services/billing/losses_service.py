@@ -212,33 +212,35 @@ def compute_billing_losses_summary(
         sample_size=len(insights),
         computed_at=now,
         methodology=(
-            "Cumul des estimated_loss_eur par statut workflow "
-            "(open/ack/resolved). Reclaims YTD : insights résolus depuis le 1ᵉʳ janvier."
+            "Cumul des pertes estimées (€) par statut de traitement "
+            "(à contester / en cours / récupérée). Récupérations cette année : "
+            "anomalies résolues depuis le 1ᵉʳ janvier."
         ),
     )
 
     payback_provenance = LossesProvenance(
-        source="Bill-Intel reclaims YTD",
+        source="Bill-Intel récupérations cette année",
         confidence=_confidence_for_sample(len(payback_samples)),
         sample_size=len(payback_samples),
         computed_at=now,
         methodology=(
-            "Moyenne arithmétique du délai entre la détection (created_at) "
-            "et la résolution (updated_at) des insights status=resolved YTD. "
-            "Confiance HIGH ≥10 échantillons, MEDIUM ≥3, LOW sinon."
+            "Délai moyen entre la détection de l'anomalie et sa résolution "
+            "(récupération validée par le fournisseur). Calcul sur les anomalies "
+            "déjà récupérées cette année. Fiabilité élevée ≥ 10 cas, moyenne ≥ 3, "
+            "limitée sinon."
         ),
     )
 
     recovery_provenance = LossesProvenance(
-        source="Bill-Intel reclaims YTD",
+        source="Bill-Intel récupérations cette année",
         confidence=_confidence_for_sample(len(resolved_ytd) + len(open_insights) + len(ack_insights)),
         sample_size=len(resolved_ytd) + len(open_insights) + len(ack_insights),
         computed_at=now,
         methodology=(
-            "Reclaim YTD divisé par la somme reclaim YTD + pertes ouvertes "
-            "+ contestations en cours. Indique le taux de succès du processus "
-            "de contestation, hors faux positifs. None si aucune anomalie "
-            "n'a été remontée (dénominateur zéro)."
+            "Récupérations validées cette année divisées par le total des "
+            "anomalies (récupérées + à contester + en cours). Indique le taux "
+            "de succès du processus de contestation. Non calculable si aucune "
+            "anomalie n'a été remontée."
         ),
     )
 

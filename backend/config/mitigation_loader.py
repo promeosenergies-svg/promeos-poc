@@ -64,6 +64,18 @@ class ConsumptionDriftDefaults:
     payback_source: str
 
 
+@dataclass(frozen=True)
+class MarketCapacity2026Defaults:
+    """Defaults market_window_detector capacité 1/11/2026 (audit Sarah P0 #2)."""
+
+    cost_per_mwh_eur: float
+    cost_source: str
+    deadline_iso: str  # YYYY-MM-DD parsée par le détecteur
+    deadline_source: str
+    proxy_consumption_mwh_per_site: int
+    proxy_consumption_source: str
+
+
 # ── API publique ─────────────────────────────────────────────────────
 
 
@@ -92,6 +104,19 @@ def get_consumption_drift_defaults() -> ConsumptionDriftDefaults:
         capex_eur=raw["capex_eur"],  # peut être None (action comportementale)
         payback_months=int(raw["payback_months"]),
         payback_source=str(raw["payback_source"]),
+    )
+
+
+def get_market_capacity_2026_defaults() -> MarketCapacity2026Defaults:
+    """Charge les defaults market_window capacité 1/11/2026 (ét12g)."""
+    raw = _load_raw()["market_capacity_2026"]
+    return MarketCapacity2026Defaults(
+        cost_per_mwh_eur=float(raw["cost_per_mwh_eur"]),
+        cost_source=str(raw["cost_source"]),
+        deadline_iso=str(raw["deadline_iso"]),
+        deadline_source=str(raw["deadline_source"]),
+        proxy_consumption_mwh_per_site=int(raw["proxy_consumption_mwh_per_site"]),
+        proxy_consumption_source=str(raw["proxy_consumption_source"]),
     )
 
 
@@ -144,9 +169,11 @@ def compute_npv_actualized(
 __all__ = [
     "ConsumptionDriftDefaults",
     "DtComplianceDefaults",
+    "MarketCapacity2026Defaults",
     "compute_npv_actualized",
     "get_consumption_drift_defaults",
     "get_discount_rate",
     "get_dt_compliance_defaults",
+    "get_market_capacity_2026_defaults",
     "reload",
 ]

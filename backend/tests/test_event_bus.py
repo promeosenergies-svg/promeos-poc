@@ -870,6 +870,66 @@ def test_flex_opportunity_detector_skips_when_no_revenue(monkeypatch, db, org_wi
     assert events == []
 
 
+def test_market_capacity_2026_yaml_loader_returns_typed_defaults():
+    """ét12g (Sarah Sequoia P0 #2) : externalisation _CAPACITY_COST_PER_MWH_EUR vers YAML."""
+    from config.mitigation_loader import get_market_capacity_2026_defaults, reload
+
+    reload()
+    defaults = get_market_capacity_2026_defaults()
+    assert defaults.cost_per_mwh_eur > 0
+    assert defaults.deadline_iso == "2026-11-01"
+    assert defaults.proxy_consumption_mwh_per_site > 0
+    assert "CRE" in defaults.cost_source
+    assert "ADEME" in defaults.proxy_consumption_source
+
+
+def test_billing_reclaim_event_includes_eur_amount_in_title(db, org_with_sites, monkeypatch):
+    """ét12g (Marie #3) : titre de la card good_news affiche le montant € récupéré.
+
+    Avant : « 12 anomalies récupérées cette année » → Marie : « combien en € ? ».
+    Après : « 18 k€ récupérés cette année — 12 anomalies traitées ».
+    """
+    from services.event_bus.detectors import billing_anomaly_detector
+
+    org_id = org_with_sites["org_id"]
+
+    # Stub losses pour garantir reclaim_ytd_eur > seuil
+    class FakeLosses:
+        nb_open = 0
+        nb_resolved = 12
+        perte_open_eur = 0.0
+        reclaim_ytd_eur = 18_000.0
+        payback_avg_days = 14.5
+
+        class _Prov:
+            confidence = "medium"
+            methodology = "Test methodology"
+            from datetime import datetime, timezone
+
+            computed_at = datetime.now(timezone.utc)
+
+        losses_provenance = _Prov()
+        recovery_provenance = _Prov()
+
+    monkeypatch.setattr(
+        "services.billing.losses_service.compute_billing_losses_summary",
+        lambda db, org_id, insights=None: FakeLosses(),
+    )
+    monkeypatch.setattr(
+        "services.billing.losses_service._scope_billing_insights",
+        lambda db, org_id: [],
+    )
+
+    events = billing_anomaly_detector.detect(db, org_id)
+    reclaim_events = [e for e in events if e.severity == "info"]
+    assert reclaim_events, "Reclaim YTD > seuil doit produire un event info"
+    title = reclaim_events[0].title
+    # Titre doit contenir le montant €, pas seulement le compteur
+    assert "k€" in title or "M€" in title or "€" in title, f"Titre sans montant € : {title}"
+    # Compteur d'anomalies présent aussi (cohérence)
+    assert "12" in title
+
+
 def test_market_window_detector_emits_capacity_2026_until_deadline(db, org_with_sites):
     """ét13b (Sarah Sequoia P0 #3) : market_window event capacité 1/11/2026 visible jusqu'à J+0."""
     from services.event_bus.detectors import market_window_detector

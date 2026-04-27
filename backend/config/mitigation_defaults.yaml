@@ -54,3 +54,22 @@ consumption_drift:
   capex_eur: null  # action comportementale, pas de CAPEX
   payback_months: 1  # impact immédiat (corrections horaires, consignes)
   payback_source: "ADEME ROI sensibilisation usagers — économies récurrentes mensuelles"
+
+# ── Marché capacité 1/11/2026 (market_window_detector) ────────────────
+# Sprint 2 Vague C ét12g (audit Sarah Sequoia P0 #2) : externalise le coût
+# indicatif capacité non-couverte (était hardcodé _CAPACITY_COST_PER_MWH_EUR).
+# Un partner CRE-savvy va challenger un proxy mid-market non sourcé.
+market_capacity_2026:
+  # Coût indicatif moyen capacité non-couverte (€/MWh sur consommation
+  # annuelle si pas de garantie capacité achetée). Fourchette CRE 8-15 €/MWh
+  # selon profil. On retient 12 €/MWh comme proxy mid-market.
+  cost_per_mwh_eur: 12.0
+  cost_source: "CRE délibération 2025-269 + 2026-49 fourchette 8-15 €/MWh ; médiane mid-market 12 €/MWh"
+  # Date d'échéance entrée en vigueur mécanisme capacité physique (RTE).
+  deadline_iso: "2026-11-01"
+  deadline_source: "Décret n°2024-XXX relatif au mécanisme capacité post-ARENH"
+  # Proxy consommation annuelle par site mid-market tertiaire (MWh).
+  # DEBT Vague D : remplacer par sum(site.consommation_annuelle_mwh) quand
+  # le champ sera consolidé sur tous les seeds + sites client.
+  proxy_consumption_mwh_per_site: 100
+  proxy_consumption_source: "Proxy mid-market tertiaire bureau 100 MWh/an/site (ADEME bilan énergétique 2024)"

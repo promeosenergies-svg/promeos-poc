@@ -711,10 +711,18 @@ def _detect_derive(readings: List[MeterReading]) -> Optional[dict]:
     if z_score is not None:
         metrics["z_score"] = round(z_score, 2)
 
+    # Sprint 2 Vague C ét12g (audit EM #3) : injecter z-score dans le `message`
+    # string lui-même (pas seulement dans metrics JSON). Un EM ne lit pas le
+    # JSON brut — la phrase narrative doit porter la significativité statistique.
+    z_phrase = ""
+    if z_score is not None and z_score > 0:
+        significativity = "significatif" if z_score > 2 else "à confirmer"
+        z_phrase = f" (Z-score {z_score:.1f}σ — {significativity})"
+
     return {
         "type": "derive",
         "severity": severity,
-        "message": f"Derive de +{final_drift:.1f}% sur la periode ({avg_first:.1f} → {avg_last:.1f} kW moyen) — verifier les reglages et la maintenance",
+        "message": f"Dérive de +{final_drift:.1f}% sur la période ({avg_first:.1f} → {avg_last:.1f} kW moyen){z_phrase} — vérifier les réglages et la maintenance",
         "metrics": metrics,
         "estimated_loss_kwh": round(max(0, excess_kwh * 12), 0),
     }

@@ -1,48 +1,48 @@
 {
-  "start": "2026-04-27T19:53:07.126Z",
-  "total_ms": 6147,
+  "start": "2026-04-27T20:17:29.729Z",
+  "total_ms": 6251,
   "steps": [
     {
       "name": "auth_start",
-      "t": 1777319587227,
+      "t": 1777321049952,
       "elapsed_ms": 0,
       "elapsed_sec": "0.0"
     },
     {
       "name": "auth_done",
-      "t": 1777319587574,
-      "elapsed_ms": 347,
-      "elapsed_sec": "0.3"
+      "t": 1777321050325,
+      "elapsed_ms": 373,
+      "elapsed_sec": "0.4"
     },
     {
       "name": "cockpit_loaded",
-      "t": 1777319590262,
-      "elapsed_ms": 3035,
-      "elapsed_sec": "3.0"
-    },
-    {
-      "name": "event_card_zoom",
-      "t": 1777319590374,
-      "elapsed_ms": 3147,
+      "t": 1777321053079,
+      "elapsed_ms": 3127,
       "elapsed_sec": "3.1"
     },
     {
+      "name": "event_card_zoom",
+      "t": 1777321053206,
+      "elapsed_ms": 3254,
+      "elapsed_sec": "3.3"
+    },
+    {
       "name": "methodology_popover_open",
-      "t": 1777319591232,
-      "elapsed_ms": 4005,
-      "elapsed_sec": "4.0"
+      "t": 1777321054041,
+      "elapsed_ms": 4089,
+      "elapsed_sec": "4.1"
     },
     {
       "name": "cta_navigated",
-      "t": 1777319593291,
-      "elapsed_ms": 6064,
+      "t": 1777321056098,
+      "elapsed_ms": 6146,
       "elapsed_sec": "6.1"
     },
     {
       "name": "end",
-      "t": 1777319593374,
-      "elapsed_ms": 6147,
-      "elapsed_sec": "6.1"
+      "t": 1777321056203,
+      "elapsed_ms": 6251,
+      "elapsed_sec": "6.3"
     }
   ]
 }

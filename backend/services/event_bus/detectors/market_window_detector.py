@@ -35,18 +35,12 @@ from ..types import (
     SolEventCard,
 )
 
-# Jalon réglementaire RTE — entrée en vigueur mécanisme capacité physique.
-# Source : CRE délib 2025-269 + 2026-49 (coef A flexibilité capacité).
-_CAPACITY_DEADLINE = date(2026, 11, 1)
+# Sprint 2 Vague C ét12g (audit Sarah Sequoia P0 #2) : constantes lues depuis
+# `mitigation_defaults.yaml` versionné (deadline + coût €/MWh + proxy conso).
+# Avant : hardcoded inline avec note DEBT — challengeable par partner CRE-savvy.
 
-# Coût indicatif moyen capacité non-couverte (€/MWh sur consommation
-# annuelle si pas de garantie capacité achetée). Fourchette CRE :
-# 8-15 €/MWh selon profil. On retient 12 €/MWh comme proxy mid-market.
-# DEBT Vague D : externaliser dans config/mitigation_defaults.yaml quand
-# le pattern de défauts marché sera consolidé.
-_CAPACITY_COST_PER_MWH_EUR = 12.0
-
-# Seuils urgence (jours avant échéance) → severity doctrine §10
+# Seuils urgence (jours avant échéance) → severity doctrine §10.
+# Restent inline car non controversés (logique métier produit, pas data).
 _URGENCY_CRITICAL_DAYS = 90  # J-90 → critical (action immédiate)
 _URGENCY_WARNING_DAYS = 180  # J-180 → warning (planifier)
 _URGENCY_WATCH_DAYS = 365  # J-365 → watch (à anticiper)
@@ -77,10 +71,15 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     - quelle confiance : high (date réglementaire publique)
     """
     # Imports locaux pour éviter cycle (services/narrative → event_bus)
+    from config.mitigation_loader import get_market_capacity_2026_defaults
     from services.narrative.narrative_generator import _load_org_context
 
+    # ét12g : defaults YAML versionnés (Sarah Sequoia P0 #2)
+    market_defaults = get_market_capacity_2026_defaults()
+    capacity_deadline = date.fromisoformat(market_defaults.deadline_iso)
+
     today = date.today()
-    days_remaining = (_CAPACITY_DEADLINE - today).days
+    days_remaining = (capacity_deadline - today).days
     severity = _severity_for_urgency(days_remaining)
     if severity is None:
         return []
@@ -89,11 +88,11 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     if not ctx.sites:
         return []
 
-    # Estimer la consommation portefeuille (proxy : 100 MWh/site mid-market)
+    # Estimer la consommation portefeuille (proxy YAML : MWh/site mid-market)
     # DEBT Vague D : remplacer par sum(site.consommation_annuelle_mwh) quand
-    # le champ sera consolidé sur tous les seeds.
-    estimated_consumption_mwh = len(ctx.sites) * 100
-    impact_eur = estimated_consumption_mwh * _CAPACITY_COST_PER_MWH_EUR
+    # le champ sera consolidé sur tous les seeds + sites client.
+    estimated_consumption_mwh = len(ctx.sites) * market_defaults.proxy_consumption_mwh_per_site
+    impact_eur = estimated_consumption_mwh * market_defaults.cost_per_mwh_eur
 
     now = datetime.now(timezone.utc)
 
@@ -105,7 +104,7 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     elif days_remaining <= 365:
         urgency_phrase = f"dans {days_remaining // 30} mois"
     else:
-        urgency_phrase = f"le {_CAPACITY_DEADLINE.strftime('%d/%m/%Y')}"
+        urgency_phrase = f"le {capacity_deadline.strftime('%d/%m/%Y')}"
 
     return [
         SolEventCard(
@@ -119,7 +118,7 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                 f"Sans garantie capacité couvrant votre portefeuille "
                 f"({len(ctx.sites)} site{'s' if len(ctx.sites) > 1 else ''}), "
                 f"surcoût estimé à {int(impact_eur):,} €/an "
-                f"({_CAPACITY_COST_PER_MWH_EUR:.0f} €/MWh × {estimated_consumption_mwh} MWh)."
+                f"({market_defaults.cost_per_mwh_eur:.0f} €/MWh × {estimated_consumption_mwh} MWh)."
             ).replace(",", " "),
             impact=EventImpact(
                 value=impact_eur,
@@ -132,10 +131,10 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                 confidence="high",  # date réglementaire publique CRE
                 freshness_status=compute_freshness("RegOps", now, now=now),
                 methodology=(
-                    "Source : CRE délibération 2025-269 + 2026-49 (coef A capacité). "
+                    f"Source : {market_defaults.cost_source}. "
                     "Surcoût estimé = consommation portefeuille × coût indicatif "
-                    f"capacité non-couverte ({_CAPACITY_COST_PER_MWH_EUR:.0f} €/MWh "
-                    "fourchette CRE 8-15 €/MWh). "
+                    f"capacité non-couverte ({market_defaults.cost_per_mwh_eur:.0f} €/MWh). "
+                    f"Proxy consommation : {market_defaults.proxy_consumption_source}. "
                     "Action : sécuriser une garantie capacité avant la date butoir "
                     "via votre fournisseur ou un agrégateur certifié RTE."
                 ),

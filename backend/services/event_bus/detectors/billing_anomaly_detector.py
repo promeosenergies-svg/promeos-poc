@@ -170,16 +170,26 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
 
     # ── Événement positif si récupérations YTD significatives ──
     if losses.reclaim_ytd_eur >= _THRESHOLD_WATCH_EUR:
+        # ét12g (audit Marie #3) : afficher le MONTANT € récupéré dans le titre
+        # (pas seulement le compteur d'anomalies). « Une bonne nouvelle sans €
+        # chiffré ne convertit pas en argument CODIR » — Marie DAF 27/04.
+        reclaim_str = (
+            f"{losses.reclaim_ytd_eur / 1_000_000:.1f} M€".replace(".", ",")
+            if losses.reclaim_ytd_eur >= 1_000_000
+            else f"{int(losses.reclaim_ytd_eur / 1000)} k€"
+            if losses.reclaim_ytd_eur >= 1000
+            else f"{int(losses.reclaim_ytd_eur)} €"
+        )
         events.append(
             SolEventCard(
                 id=f"billing_anomaly:org:{org_id}:reclaim_ytd",
                 event_type="billing_anomaly",
                 severity="info",
-                title=f"{losses.nb_resolved} anomalie{'s' if losses.nb_resolved > 1 else ''} récupérée{'s' if losses.nb_resolved > 1 else ''} cette année",
+                title=f"{reclaim_str} récupérés cette année — {losses.nb_resolved} anomalie{'s' if losses.nb_resolved > 1 else ''} traitée{'s' if losses.nb_resolved > 1 else ''}",
                 narrative=(
-                    f"Récupérations validées YTD : reclaims confirmés grâce aux "
+                    f"Récupérations validées : {reclaim_str} obtenus grâce aux "
                     "contestations auprès des fournisseurs. Continuez le processus "
-                    "shadow billing pour maintenir le rythme."
+                    "de contrôle des factures pour maintenir le rythme."
                 ),
                 impact=EventImpact(
                     value=losses.reclaim_ytd_eur,
