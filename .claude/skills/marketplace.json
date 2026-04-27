@@ -1,0 +1,28 @@
+{
+  "skills": [
+    {
+      "id": "promeos-doctrine",
+      "name": "PROMEOS Doctrine",
+      "version": "1.1",
+      "description": "Doctrine produit/UX/data/engineering PROMEOS Sol v1.1",
+      "triggers": [
+        "cockpit",
+        "kpi",
+        "ems",
+        "conformity",
+        "conformité",
+        "billing",
+        "facture",
+        "achat",
+        "design",
+        "ux",
+        "scoring",
+        "event",
+        "patrimoine",
+        "doctrine"
+      ],
+      "path": ".claude/skills/promeos-doctrine/SKILL.md",
+      "priority": "high"
+    }
+  ]
+}
