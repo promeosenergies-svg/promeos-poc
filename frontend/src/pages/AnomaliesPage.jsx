@@ -33,9 +33,9 @@ import Tabs from '../ui/Tabs';
 import { useScope } from '../contexts/ScopeContext';
 import { scopeKicker } from '../utils/format';
 import SolPageHeader from '../ui/sol/SolPageHeader';
-import SolNarrative from '../ui/sol/SolNarrative';
-import SolWeekCards from '../ui/sol/SolWeekCards';
-import SolPageFooter from '../ui/sol/SolPageFooter';
+// Sprint 2 Vague B ét8' — HOC SolBriefingHead/Footer factorise grammaire §5.
+import SolBriefingHead from '../ui/sol/SolBriefingHead';
+import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 import {
   getPatrimoineAnomalies,
@@ -408,28 +408,14 @@ export default function AnomaliesPage() {
         />
       }
     >
-      {/* Sprint 1.9 — préambule éditorial Sol §5 vue Centre d'actions
-          (ADR-001). Page transverse §3 P11 — orchestration cross-pillar
-          via ActionItem (SoT unifiée OPEN/IN_PROGRESS/DONE). */}
-      {solBriefingError && !solBriefing && (
-        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
-      )}
-      {solBriefing && (
-        <SolNarrative
-          kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
-          title={null /* idem — éviter doublon */}
-          narrative={solBriefing.narrative}
-          kpis={solBriefing.kpis}
-        />
-      )}
-      {solBriefing && (
-        <SolWeekCards
-          cards={solBriefing.weekCards}
-          fallbackBody={solBriefing.fallbackBody}
-          tone={solBriefing.narrativeTone}
-          onNavigate={navigate}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8' — préambule §5 factorisé via SolBriefingHead. */}
+      <SolBriefingHead
+        briefing={solBriefing}
+        error={solBriefingError}
+        onRetry={solBriefingRefetch}
+        omitHeader
+        onNavigate={navigate}
+      />
 
       <Tabs
         tabs={CENTRE_TABS}
@@ -802,14 +788,8 @@ export default function AnomaliesPage() {
       {/* Sprint 1.9 — SolPageFooter §5 (ADR-001).
           Source · Confiance · Mis à jour. Methodology URL pointe vers
           /methodologie/centre-actions (orchestration cross-pillar). */}
-      {solBriefing?.provenance && (
-        <SolPageFooter
-          source={solBriefing.provenance.source}
-          confidence={solBriefing.provenance.confidence}
-          updatedAt={solBriefing.provenance.updated_at}
-          methodologyUrl={solBriefing.provenance.methodology_url}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8' — SolPageFooter §5 factorisé via HOC. */}
+      <SolBriefingFooter briefing={solBriefing} />
     </PageShell>
   );
 }

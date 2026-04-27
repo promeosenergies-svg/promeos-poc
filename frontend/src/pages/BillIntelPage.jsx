@@ -27,9 +27,9 @@ import {
 } from '../domain/billing/billingLabels.fr';
 // Sprint 1.5 — grammaire Sol industrialisée (ADR-001) sur /bill-intel
 import SolPageHeader from '../ui/sol/SolPageHeader';
-import SolNarrative from '../ui/sol/SolNarrative';
-import SolWeekCards from '../ui/sol/SolWeekCards';
-import SolPageFooter from '../ui/sol/SolPageFooter';
+// Sprint 2 Vague B ét8' — HOC SolBriefingHead/Footer factorise grammaire §5.
+import SolBriefingHead from '../ui/sol/SolBriefingHead';
+import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 import { scopeKicker } from '../utils/format';
 import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
@@ -598,30 +598,16 @@ export default function BillIntelPage() {
         </>
       }
     >
-      {/* ── Préambule éditorial Sol §5 vue Bill-Intel (S1.5 — ADR-001) ──
-          Shadow billing v4.2 — différenciateur §4.4 doctrine. KPIs CFO :
-          Anomalies à traiter / Pertes à récupérer / Récupérations YTD.
-          Audit fin S1.4 demandait Bill-Intel pour démontrer scaling
-          au-delà du régulatoire (Investisseur P0). */}
-      {solBriefingError && !solBriefing && (
-        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
-      )}
-      {solBriefing && (
-        <SolNarrative
-          kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
-          title={null /* idem — éviter doublon */}
-          narrative={solBriefing.narrative}
-          kpis={solBriefing.kpis}
-        />
-      )}
-      {solBriefing && (
-        <SolWeekCards
-          cards={solBriefing.weekCards}
-          fallbackBody={solBriefing.fallbackBody}
-          tone={solBriefing.narrativeTone}
-          onNavigate={navigate}
-        />
-      )}
+      {/* Préambule éditorial Sol §5 vue Bill-Intel (S1.5 ADR-001).
+          Sprint 2 Vague B ét8' : factorisé via SolBriefingHead. omitHeader
+          car SolPageHeader rend kicker/title via PageShell.editorialHeader. */}
+      <SolBriefingHead
+        briefing={solBriefing}
+        error={solBriefingError}
+        onRetry={solBriefingRefetch}
+        omitHeader
+        onNavigate={navigate}
+      />
 
       {/* CTA vers achat énergie — Sprint 1.5bis P0-4 token calme Sol */}
       <button
@@ -1399,17 +1385,8 @@ export default function BillIntelPage() {
         insightDetail={dossierInsightDetail}
       />
 
-      {/* Sprint 1.5 — SolPageFooter §5 (ADR-001).
-          Source · Confiance · Mis à jour. Methodology URL pointe vers
-          /methodologie/bill-intel-shadow (17 mécanismes audités). */}
-      {solBriefing?.provenance && (
-        <SolPageFooter
-          source={solBriefing.provenance.source}
-          confidence={solBriefing.provenance.confidence}
-          updatedAt={solBriefing.provenance.updated_at}
-          methodologyUrl={solBriefing.provenance.methodology_url}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8' — SolPageFooter §5 factorisé via HOC. */}
+      <SolBriefingFooter briefing={solBriefing} />
     </PageShell>
   );
 }

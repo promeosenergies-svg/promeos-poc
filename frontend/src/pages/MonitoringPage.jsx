@@ -72,8 +72,9 @@ import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtDateFR, fmtEur, fmtKwh, fmtKw, fmtCo2, scopeKicker } from '../utils/format';
 import SolPageHeader from '../ui/sol/SolPageHeader';
 import SolNarrative from '../ui/sol/SolNarrative';
-import SolWeekCards from '../ui/sol/SolWeekCards';
-import SolPageFooter from '../ui/sol/SolPageFooter';
+// Sprint 2 Vague B ét8' — HOC SolBriefingHead/Footer factorise grammaire §5.
+import SolBriefingHead from '../ui/sol/SolBriefingHead';
+import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 // Sprint 2 Vague B ét6' — labels FR centralisés (label_registries cross-vue).
 import {
@@ -2011,6 +2012,10 @@ export default function MonitoringPage() {
           </>
         }
       >
+        {/* Sprint 2 Vague B ét8' — empty-state no-site-selected : exception
+            volontaire §8.1, on ne passe PAS par SolBriefingHead car il n'y
+            a pas d'objet briefing (narrative est une string littérale, pas
+            une réponse usePageBriefing). À conserver tel quel. */}
         <SolNarrative
           kicker={null}
           title={null}
@@ -2137,25 +2142,14 @@ export default function MonitoringPage() {
       {/* Sprint 1.7 — préambule éditorial Sol §5 vue Monitoring (ADR-001).
           Pillar §4.2 : EMS / Performance — pilotage temps réel + alertes
           + qualité données. Sert Marie DAF + Energy Manager. */}
-      {solBriefingError && !solBriefing && (
-        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
-      )}
-      {solBriefing && (
-        <SolNarrative
-          kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
-          title={null /* idem — éviter doublon */}
-          narrative={solBriefing.narrative}
-          kpis={solBriefing.kpis}
-        />
-      )}
-      {solBriefing && (
-        <SolWeekCards
-          cards={solBriefing.weekCards}
-          fallbackBody={solBriefing.fallbackBody}
-          tone={solBriefing.narrativeTone}
-          onNavigate={navigate}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8' — factorisation grammaire §5 via SolBriefingHead. */}
+      <SolBriefingHead
+        briefing={solBriefing}
+        error={solBriefingError}
+        onRetry={solBriefingRefetch}
+        omitHeader
+        onNavigate={navigate}
+      />
 
       {error && <ErrorState message={error} onRetry={loadAll} />}
 
@@ -3230,17 +3224,8 @@ export default function MonitoringPage() {
 
       {/* Action creation handled by ActionDrawerContext */}
 
-      {/* Sprint 1.7 — SolPageFooter §5 (ADR-001).
-          Source · Confiance · Mis à jour. Methodology URL pointe vers
-          /methodologie/performance-monitoring (ISO 50001 + COSTIC). */}
-      {solBriefing?.provenance && (
-        <SolPageFooter
-          source={solBriefing.provenance.source}
-          confidence={solBriefing.provenance.confidence}
-          updatedAt={solBriefing.provenance.updated_at}
-          methodologyUrl={solBriefing.provenance.methodology_url}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8' — SolPageFooter §5 factorisé via HOC. */}
+      <SolBriefingFooter briefing={solBriefing} />
     </PageShell>
   );
 }
