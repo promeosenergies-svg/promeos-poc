@@ -23,7 +23,7 @@ Cf. ADR-001 grammaire Sol industrialisée.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from typing import Literal, Optional
 
@@ -46,7 +46,7 @@ PageKey = Literal[
     "patrimoine",
     "conformite",
     "bill_intel",
-    "achat",
+    "achat_energie",
     "monitoring",
     "diagnostic",
     "anomalies",
@@ -1229,92 +1229,96 @@ def _build_bill_intel(
     )
 
 
+# Sprint 1.6bis — constantes module nommées (audit /simplify Quality P1).
+# Sourçage doctrine §4.5 + observatoire CRE T4 2025.
+_ACHAT_SITE_MEDIAN_ANNUAL_KWH = 250_000  # = 250 MWh/an — benchmark ETI tertiaire moyen
+_ACHAT_DEFAULT_VOLUME_EUR_PER_CONTRACT = 50_000  # plancher contrat ETI tertiaire
+_ACHAT_ECONOMIE_TAUX_BENCHMARK = 0.08  # CRE T4 2025 médiane B2B post-ARENH 30 fournisseurs
+_ACHAT_SEUIL_GOOD_NEWS_EUR = 5_000  # seuil signal positif économie identifiée
+_ACHAT_SEUIL_CRITIQUE_VOLUME_EUR = 100_000  # exposition forte → tone CRITICAL
+
+
 def _build_achat_energie(
     db: Session,
     org_id: int,
     org_name: str,
     sites_count: int,
 ) -> Narrative:
-    """Sprint 1.6 — Vue Achat énergie post-ARENH (différenciateur §4.6).
+    """Sprint 1.6 — Vue Achat énergie post-ARENH (différenciateur §4.5).
 
-    Promesse §4.6 doctrine : « Neutralité fournisseur — PROMEOS ne vend
+    Promesse §4.5 doctrine : « Neutralité fournisseur — PROMEOS ne vend
     pas d'énergie. Comparaison transparente des 30+ fournisseurs CRE,
     shadow billing 6 composantes (TURPE 7 / accise / CTA / capacité Nov
     2026 / ATRD7 / VNU post-ARENH) pour challenger chaque offre. »
 
     Sert Jean-Marc CFO (échéances + volume exposé) + Marie DAF
     (renouvellements à formaliser) + Investisseur (preuve neutralité
-    non-fournisseur, moat durable).
+    non-fournisseur, moat durable vs Advizeo/Deepki/Trinergy).
 
     Données réelles :
       - EnergyContract : end_date, supplier_name, price_ref_eur_per_kwh
-      - Volume estimé via somme abonnement annuel
-      - Heuristique économie 8-12% via mise en concurrence (benchmark
-        observatoire CRE T4 2025 — 30 fournisseurs actifs).
-    """
-    from datetime import date, timedelta
+      - Volume estimé via prix réf × ~250 MWh/site (benchmark ETI)
+      - Heuristique économie 8% (médiane CRE T4 2025 sur appels d'offres
+        post-ARENH B2B 30 fournisseurs).
 
-    from models import (
-        EnergyContract,
-        EntiteJuridique,
-        Portefeuille,
-        Site,
-        not_deleted,
-    )
+    Sprint 1.6bis : doctrine §4.6→§4.5 (Achat est §4.5, Flex est §4.6),
+    triple JOIN simplifié via site_ids.in_(), magic numbers extraits en
+    constantes module, neutralité hissée dans italic_hook.
+    """
+    from models import EnergyContract, not_deleted
 
     ctx = _load_org_context(db, org_id)
     site_ids = [s.id for s in ctx.sites]
 
     # ── Récupérer les contrats actifs du scope ──
+    # Sprint 1.6bis /simplify Efficiency P1 : site_ids déjà org-scopé via
+    # _load_org_context — pas besoin de re-joindre Site→Portefeuille→EJ.
     today = date.today()
-    contracts_q = (
-        db.query(EnergyContract)
-        .join(Site, Site.id == EnergyContract.site_id)
-        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-    )
     if site_ids:
-        contracts = not_deleted(contracts_q, EnergyContract).all()
+        contracts = (
+            not_deleted(db.query(EnergyContract), EnergyContract).filter(EnergyContract.site_id.in_(site_ids)).all()
+        )
     else:
         contracts = []
 
-    actifs = [c for c in contracts if c.end_date is None or c.end_date >= today]
-    nb_contrats = len(actifs)
-
-    # Échéances < 12 mois et < 90 jours
+    # Single-pass partitionnement (Efficiency P2) : 1 itération vs 4.
     horizon_12m = today + timedelta(days=365)
     horizon_90j = today + timedelta(days=90)
-    echeance_12m = [c for c in actifs if c.end_date and c.end_date <= horizon_12m]
-    echeance_90j = [c for c in actifs if c.end_date and c.end_date <= horizon_90j]
+    actifs: list[EnergyContract] = []
+    echeance_12m: list[EnergyContract] = []
+    echeance_90j: list[EnergyContract] = []
+    for c in contracts:
+        if c.end_date is not None and c.end_date < today:
+            continue
+        actifs.append(c)
+        if c.end_date and c.end_date <= horizon_12m:
+            echeance_12m.append(c)
+            if c.end_date <= horizon_90j:
+                echeance_90j.append(c)
+
+    nb_contrats = len(actifs)
     nb_echeance_12m = len(echeance_12m)
     nb_echeance_90j = len(echeance_90j)
 
     # ── Volume EUR exposé sur renouvellements <12 mois ──
-    # Heuristique conservative : prix réf × consommation annuelle estimée.
-    # En l'absence de conso fine, on estime via abonnement annuel * 12 ratio.
-    # Benchmark mid-market : ~50 k€/an/site moyen pour ETI tertiaire.
-    DEFAULT_VOLUME_EUR_PAR_CONTRAT = 50_000  # ETI tertiaire moyen, à raffiner S2
-    volume_expose_eur = sum(
-        max(
-            (c.price_ref_eur_per_kwh or 0) * 250_000,  # ~250 MWh/an site moyen
-            DEFAULT_VOLUME_EUR_PAR_CONTRAT,
-        )
-        for c in echeance_12m
-    )
+    # Quality P1 : explicit branching plutôt que max() — clarifie l'intention
+    # (None → plancher, sinon prix × volume). Unités : prix en €/kWh × kWh = €.
+    def _contract_volume_eur(c: EnergyContract) -> float:
+        if c.price_ref_eur_per_kwh:
+            return c.price_ref_eur_per_kwh * _ACHAT_SITE_MEDIAN_ANNUAL_KWH
+        return float(_ACHAT_DEFAULT_VOLUME_EUR_PER_CONTRACT)
 
-    # ── Économie potentielle via mise en concurrence ──
-    # Heuristique 8% retenue (médiane observatoire CRE T4 2025 sur appels
-    # d'offres post-ARENH B2B 30 fournisseurs). Conservatif vs 10-12%
-    # publié par Hello Watt sur petites ETI.
-    ECONOMIE_TAUX_BENCHMARK = 0.08
-    economie_potentielle_eur = volume_expose_eur * ECONOMIE_TAUX_BENCHMARK
+    volume_expose_eur = sum(_contract_volume_eur(c) for c in echeance_12m)
+    economie_potentielle_eur = volume_expose_eur * _ACHAT_ECONOMIE_TAUX_BENCHMARK
 
     # ── Kicker + titre + italic hook §5 ──
+    # Sprint 1.6bis P0-3/P0-4 : neutralité hissée en italic_hook
+    # (différenciateur §4.5 visible 10s investisseur + Marie). Acronymes
+    # nus retirés de la narrative — reformulation en français.
     week_iso = datetime.now(timezone.utc).isocalendar().week
-    kicker = f"ACHAT ÉNERGIE · SEMAINE {week_iso} · {nb_contrats} CONTRAT{'S' if nb_contrats > 1 else ''}"
-    title = "Vos contrats — neutralité fournisseur, transparence CRE"
-    italic_hook = "30+ fournisseurs comparés"
+    kicker = f"ACHAT ÉNERGIE · SEMAINE {week_iso} · {nb_contrats} CONTRAT{'S' if nb_contrats != 1 else ''}"
+    title = "Vos contrats énergie"
+    italic_hook = "PROMEOS ne vend pas d'énergie · 30+ offres CRE comparées"
 
     # ── Narrative orientée Jean-Marc (€ exposé / écart marché) ──
     narr_parts = []
@@ -1322,11 +1326,15 @@ def _build_achat_energie(
         narr_parts.append(
             f"{nb_echeance_90j} contrat{'s' if nb_echeance_90j > 1 else ''} "
             f"arrive{'nt' if nb_echeance_90j > 1 else ''} à échéance dans les "
-            "90 jours — fenêtre négociation critique."
+            "90 jours — préavis 1 à 3 mois selon contrat, fenêtre critique pour "
+            "ne pas reconduire tacitement."
         )
     if nb_echeance_12m > nb_echeance_90j:
         suite = nb_echeance_12m - nb_echeance_90j
-        narr_parts.append(f"{suite} renouvellement{'s' if suite > 1 else ''} dans les 12 mois à anticiper.")
+        narr_parts.append(
+            f"{suite} renouvellement{'s' if suite > 1 else ''} dans les "
+            "12 mois à anticiper (mise en concurrence ~6 mois avant)."
+        )
     if volume_expose_eur > 0:
         narr_parts.append(
             f"Volume exposé {_fmt_eur_short(volume_expose_eur)} — économie "
@@ -1335,16 +1343,23 @@ def _build_achat_energie(
         )
     elif nb_contrats == 0:
         narr_parts.append(
-            "Aucun contrat actif référencé — importez vos contrats pour activer la comparaison 30+ fournisseurs CRE."
+            "Aucun contrat actif référencé — importez vos contrats pour activer la comparaison neutre 30+ fournisseurs."
         )
+    # Reformulation acronymes nus (audit Marie P0-1) : explication inline
+    # avant chaque sigle. SolNarrative rend en plain text donc pas
+    # d'<Explain> wrapper possible — on dégage le jargon.
     narr_parts.append(
-        "PROMEOS ne vend pas d'énergie : shadow billing 6 composantes "
-        "(TURPE 7, accise, CTA, capacité, ATRD7, VNU post-ARENH) compare "
-        "les offres aux barèmes officiels."
+        "Le moteur shadow audit 6 composantes — réseau (TURPE 7), accises "
+        "énergie, contribution acheminement (CTA), capacité (RTE Nov 2026), "
+        "réseau gaz (ATRD7), fond nucléaire VNU post-ARENH — face aux barèmes "
+        "officiels CRE."
     )
     narrative = " ".join(narr_parts)
 
     # ── 3 KPIs hero §5 — angle CFO ──
+    # Tooltip P0 (Jean-Marc) : exposer les hypothèses de calcul (250 MWh +
+    # plancher 50 k€). Tooltip économie expose la fourchette 5-12% du
+    # benchmark CRE pour rigueur.
     kpis: list[NarrativeKpi] = [
         NarrativeKpi(
             label="Échéances < 12 mois",
@@ -1353,7 +1368,7 @@ def _build_achat_energie(
             tooltip=(
                 "Nombre de contrats énergie arrivant à échéance dans les "
                 "12 prochains mois. Anticiper la mise en concurrence 6 mois "
-                "avant l'échéance pour obtenir les meilleures offres."
+                "avant pour challenger 30+ fournisseurs."
             ),
             source="Contrats EnergyContract.end_date",
         ),
@@ -1361,19 +1376,19 @@ def _build_achat_energie(
             label="Volume exposé",
             value=_fmt_eur_short(volume_expose_eur),
             tooltip=(
-                "Somme estimée des budgets énergie annuels concernés par "
-                "les renouvellements <12 mois. Base de calcul : prix de "
-                "référence contrat × consommation annuelle estimée."
+                "Estimation budget énergie annuel des renouvellements à "
+                "venir. Calcul : prix de référence × 250 MWh/site (benchmark "
+                "ETI tertiaire), avec plancher 50 k€/contrat si prix manquant."
             ),
-            source="EnergyContract + estimation 250 MWh/site",
+            source="EnergyContract + benchmark CRE 250 MWh/site",
         ),
         NarrativeKpi(
             label="Économie potentielle",
             value=_fmt_eur_short(economie_potentielle_eur),
             tooltip=(
-                "Estimation conservative basée sur médiane observatoire "
-                "CRE T4 2025 (~8% d'économie sur appels d'offres B2B "
-                "post-ARENH avec 30 fournisseurs actifs)."
+                "Estimation conservative ~8 % du volume exposé, médiane "
+                "observatoire CRE T4 2025 (fourchette publique 5-12 %). "
+                "Détail méthodologie /methodologie/achat-post-arenh."
             ),
             source="Observatoire CRE T4 2025",
         ),
@@ -1382,24 +1397,26 @@ def _build_achat_energie(
     # ── Week-cards Achat ──
     week_cards: list[NarrativeWeekCard] = []
 
-    # Échéance critique <90j sur contrat à fort volume
+    # Échéance critique <90j sur contrat à fort volume.
+    # Sprint 1.6bis P0-2 : ?tab=renewals → ?tab=echeances (TABS frontend
+    # déclare 'echeances' pas 'renewals' — fallback silencieux corrigé).
+    # P1 (CFO) : DRIFT week-card transporte impact_eur pour priorisation.
     if echeance_90j:
-        critical = sorted(
-            echeance_90j,
-            key=lambda c: c.end_date or today,
-        )[0]
+        critical = min(echeance_90j, key=lambda c: c.end_date or today)
         days_left = (critical.end_date - today).days if critical.end_date else 90
+        critical_volume = _contract_volume_eur(critical)
         week_cards.append(
             NarrativeWeekCard(
                 type="drift",
                 title=(f"Renouvellement urgent · {critical.supplier_name or 'fournisseur'} (J-{days_left})"),
                 body=(
-                    "Préavis de résiliation à respecter. Lancer l'appel "
-                    "d'offres maintenant pour comparer 30+ fournisseurs CRE "
-                    "et challenger les conditions actuelles."
+                    "Préavis 1 à 3 mois selon contrat — agir maintenant pour "
+                    "ne pas reconduire tacitement. Lancer l'appel d'offres pour "
+                    "comparer 30+ fournisseurs CRE."
                 ),
-                cta_path="/achat-energie?tab=renewals",
+                cta_path="/achat-energie?tab=echeances",
                 cta_label="Voir échéances",
+                impact_eur=critical_volume,
                 urgency_days=days_left,
             )
         )
@@ -1411,9 +1428,9 @@ def _build_achat_energie(
                 type="todo",
                 title=f"Anticiper {remaining} renouvellement{'s' if remaining > 1 else ''}",
                 body=(
-                    "Mise en concurrence 6 mois avant échéance pour "
-                    "négocier dans les meilleures conditions — économie "
-                    "type 8% sur volume exposé."
+                    "Mise en concurrence 6 mois avant échéance pour négocier "
+                    "dans les meilleures conditions — économie type 8 % sur "
+                    "volume exposé (médiane CRE T4 2025)."
                 ),
                 cta_path="/achat-energie?tab=simulation",
                 cta_label="Simuler scénarios",
@@ -1422,15 +1439,15 @@ def _build_achat_energie(
             )
         )
 
-    if economie_potentielle_eur > 5000:
+    if economie_potentielle_eur > _ACHAT_SEUIL_GOOD_NEWS_EUR:
         week_cards.append(
             NarrativeWeekCard(
                 type="good_news",
-                title=f"{_fmt_eur_short(economie_potentielle_eur)} d'économie identifiée",
+                title=f"{_fmt_eur_short(economie_potentielle_eur)} d'écart marché identifié",
                 body=(
-                    "Différentiel marché vs contrats actuels. Shadow "
-                    "billing 6 composantes confirme le wedge — "
-                    "neutralité fournisseur PROMEOS."
+                    "Différentiel entre vos contrats actuels et les conditions "
+                    "marché post-ARENH. Comparer les offres en 5 minutes via "
+                    "les scénarios PROMEOS."
                 ),
                 cta_path="/achat-energie?tab=simulation",
                 cta_label="Comparer offres",
@@ -1446,11 +1463,11 @@ def _build_achat_energie(
     # Tone : CRITICAL si <90j sur contrat exposé fort, TENSION si plusieurs
     # échéances 12 mois, POSITIVE si économie identifiée significative,
     # NEUTRAL sinon.
-    if nb_echeance_90j > 0 and volume_expose_eur >= 100_000:
+    if nb_echeance_90j > 0 and volume_expose_eur >= _ACHAT_SEUIL_CRITIQUE_VOLUME_EUR:
         narrative_tone = NarrativeTone.CRITICAL
     elif nb_echeance_12m > 0:
         narrative_tone = NarrativeTone.TENSION
-    elif economie_potentielle_eur > 5000:
+    elif economie_potentielle_eur > _ACHAT_SEUIL_GOOD_NEWS_EUR:
         narrative_tone = NarrativeTone.POSITIVE
     else:
         narrative_tone = NarrativeTone.NEUTRAL

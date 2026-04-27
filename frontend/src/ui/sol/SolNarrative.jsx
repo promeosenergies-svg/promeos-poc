@@ -118,7 +118,9 @@ export default function SolNarrative({
   return (
     <section
       data-testid="sol-narrative"
-      className={`flex flex-col gap-5 mt-2 ${className}`}
+      // Sprint 1.6bis P0-9 (audit Espaces) : `mt-2` retire 8px du rythme
+      // 32px du PageShell space-y-8 (effet 24/32/32). Le parent gère le rhythm.
+      className={`flex flex-col gap-5 ${className}`}
       aria-label="Briefing éditorial"
     >
       <header className="flex flex-col gap-1">
@@ -145,7 +147,10 @@ export default function SolNarrative({
       )}
       {safeKpis.length > 0 && (
         <div
-          className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+          // Sprint 1.6bis (audit Espaces P1-1) : gap-3 (12px) désaccordé
+          // avec sections gap-4 (16px). Harmonisation 16px standard
+          // 3-col Stripe/Linear.
+          className="grid grid-cols-1 sm:grid-cols-3 gap-4"
           data-testid="sol-narrative-kpis"
           role="list"
           aria-label="Indicateurs clés"

@@ -199,7 +199,7 @@ export default function PurchasePage() {
 
   // Sprint 1.6 — briefing éditorial Sol §5 vue Achat (ADR-001).
   // Backend orchestre KPIs + narrative + week-cards via
-  // /api/pages/achat_energie/briefing. Différenciateur §4.6 doctrine :
+  // /api/pages/achat_energie/briefing. Différenciateur §4.5 doctrine :
   // neutralité fournisseur + 30+ fournisseurs CRE + shadow billing 6
   // composantes (TURPE 7 / accise / CTA / capacité Nov 2026 / ATRD7 / VNU).
   const {
@@ -529,10 +529,24 @@ export default function PurchasePage() {
   };
 
   if (loading && !estimate && scenarios.length === 0) {
+    // Sprint 1.6bis P0-5 : skeleton aligné grammaire Sol §5 — placeholder
+    // SolPageHeader (kicker + titre Fraunces + italic_hook) + 3 KPIs + 3
+    // week-cards. Évite le flash de l'ancien layout 4-KPIs flat (audit CX P0-1).
     return (
-      <PageShell icon={ShoppingCart} title="Achats énergie" subtitle="Chargement...">
-        <SkeletonKpi count={4} />
-        <SkeletonTable rows={5} cols={4} />
+      <PageShell
+        icon={ShoppingCart}
+        title="Achats énergie"
+        editorialHeader={
+          <SolPageHeader
+            kicker={scopeKicker('ACHAT ÉNERGIE', org?.nom, scopedSites?.length)}
+            title="Vos contrats énergie"
+            italicHook="PROMEOS ne vend pas d’énergie · 30+ offres CRE"
+            subtitle="Chargement du briefing achat..."
+          />
+        }
+      >
+        <SkeletonKpi count={3} />
+        <SkeletonCard count={3} />
       </PageShell>
     );
   }
@@ -560,54 +574,44 @@ export default function PurchasePage() {
     );
   }
 
+  // Sprint 1.6bis P0-4 : extrait variable pour éliminer la duplication
+  // PageShell.subtitle ↔ SolPageHeader.subtitle (audit UX/Ergo : double
+  // DOM + double `data-testid="purchase-confidence"` collision Playwright
+  // + lecture double a11y). Subtitle conservé uniquement dans
+  // editorialHeader (PageShell.subtitle ignoré quand editorialHeader fourni).
+  const purchaseSubtitleNode = (
+    <span className="flex items-center gap-2">
+      Comparer &amp; renouveler vos contrats énergie
+      {dataConfidence && (
+        <Tooltip text={dataConfidence.tooltipFR}>
+          <span className="inline-flex items-center gap-1" data-testid="purchase-confidence">
+            <Badge status={dataConfidence.badgeStatus}>
+              <Explain term="data_confidence">Confiance : {dataConfidence.label}</Explain>
+            </Badge>
+          </span>
+        </Tooltip>
+      )}
+    </span>
+  );
+
   return (
     <PurchaseErrorBoundary>
       <PageShell
         icon={ShoppingCart}
         title="Scénarios d'achat"
-        subtitle={
-          <span className="flex items-center gap-2">
-            Simuler &amp; arbitrer vos stratégies d'achat
-            {dataConfidence && (
-              <Tooltip text={dataConfidence.tooltipFR}>
-                <span className="inline-flex items-center gap-1" data-testid="purchase-confidence">
-                  <Badge status={dataConfidence.badgeStatus}>
-                    <Explain term="data_confidence">Confiance : {dataConfidence.label}</Explain>
-                  </Badge>
-                </span>
-              </Tooltip>
-            )}
-          </span>
-        }
         editorialHeader={
           <SolPageHeader
             kicker={
               solBriefing?.kicker || scopeKicker('ACHAT ÉNERGIE', org?.nom, scopedSites?.length)
             }
-            title={solBriefing?.title || 'Vos contrats'}
-            italicHook={solBriefing?.italicHook || '30+ fournisseurs comparés'}
-            subtitle={
-              <span className="flex items-center gap-2">
-                Simuler &amp; arbitrer vos stratégies d'achat
-                {dataConfidence && (
-                  <Tooltip text={dataConfidence.tooltipFR}>
-                    <span
-                      className="inline-flex items-center gap-1"
-                      data-testid="purchase-confidence"
-                    >
-                      <Badge status={dataConfidence.badgeStatus}>
-                        <Explain term="data_confidence">Confiance : {dataConfidence.label}</Explain>
-                      </Badge>
-                    </span>
-                  </Tooltip>
-                )}
-              </span>
-            }
+            title={solBriefing?.title || 'Vos contrats énergie'}
+            italicHook={solBriefing?.italicHook || 'PROMEOS ne vend pas d’énergie · 30+ offres CRE'}
+            subtitle={purchaseSubtitleNode}
           />
         }
       >
         {/* Sprint 1.6 — préambule éditorial Sol §5 vue Achat (ADR-001).
-            Différenciateur §4.6 : neutralité fournisseur + shadow billing
+            Différenciateur §4.5 : neutralité fournisseur + shadow billing
             6 composantes (TURPE 7 / accise / CTA / capacité Nov 2026 /
             ATRD7 / VNU post-ARENH). Sert Jean-Marc CFO + Marie DAF. */}
         {solBriefingError && !solBriefing && (
@@ -640,22 +644,47 @@ export default function PurchasePage() {
         {/* Fenêtres tarifaires actives */}
         <TariffWindowsCard />
 
-        {/* Tab bar */}
-        <div className="flex border-b border-gray-200">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => handleTabChange(tab.key)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition ${
-                activeTab === tab.key
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <tab.icon size={16} />
-              {tab.label}
-            </button>
-          ))}
+        {/* Tab bar — Sprint 1.6bis P0-6 : role="tablist" + role="tab" +
+            aria-selected + aria-controls + focus-visible ring Sol calme +
+            tokens warm (audit Ergo P0-1 + UI P0). Bleu Microsoft remplacé
+            par ink-900 underline (pattern Linear : tab actif = ink-900). */}
+        <div
+          role="tablist"
+          aria-label="Navigation Achat énergie"
+          className="flex border-b border-[var(--sol-line)]"
+        >
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`achat-panel-${tab.key}`}
+                id={`achat-tab-${tab.key}`}
+                tabIndex={isActive ? 0 : -1}
+                onClick={() => handleTabChange(tab.key)}
+                className="flex items-center gap-2 px-4 py-3 text-sm border-b-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)] rounded-t"
+                style={
+                  isActive
+                    ? {
+                        borderBottomColor: 'var(--sol-ink-900)',
+                        color: 'var(--sol-ink-900)',
+                        fontWeight: 600,
+                      }
+                    : {
+                        borderBottomColor: 'transparent',
+                        color: 'var(--sol-ink-500)',
+                        fontWeight: 500,
+                      }
+                }
+              >
+                <tab.icon size={16} />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* ══ TAB: Simulation (V2 — V72 UX) ══ */}
@@ -711,41 +740,102 @@ export default function PurchasePage() {
                 </div>
                 {estimate && (
                   <>
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <div className="text-xs text-blue-600 font-medium uppercase">
+                    {/* Sprint 1.6bis P0-7 (audit UI/Visual) — palette warm Sol §6.2.
+                        bg-blue-50/text-blue-900 + bg-purple-50/text-purple-900 cassent
+                        la signature « journal en terrasse ». Tokens calme/ink + KPI
+                        font-mono tabular-nums (Stripe Atlas pattern). */}
+                    <div
+                      className="rounded-lg p-4 border"
+                      style={{
+                        background: 'var(--sol-calme-bg)',
+                        borderColor: 'var(--sol-calme-fg)',
+                      }}
+                    >
+                      <div
+                        className="text-xs font-medium uppercase tracking-wider"
+                        style={{ color: 'var(--sol-calme-fg)' }}
+                      >
                         Volume estimé
                       </div>
-                      <div className="text-2xl font-bold text-blue-900">
+                      <div
+                        className="font-mono font-semibold tabular-nums"
+                        style={{
+                          fontSize: '1.875rem',
+                          lineHeight: '1.1',
+                          color: 'var(--sol-ink-900)',
+                        }}
+                      >
                         {fmtKwh(Math.round(estimate.volume_kwh_an))}/an
                       </div>
-                      <div className="text-xs text-blue-500 mt-1">
+                      <div className="text-xs mt-1" style={{ color: 'var(--sol-ink-500)' }}>
                         {isExpert
                           ? `Source: ${estimate.source} (${estimate.months_covered} mois)`
                           : `Basé sur vos relevés (${estimate.months_covered} mois)`}
                       </div>
-                      {/* V72: confidence badges */}
+                      {/* V72 confidence badges — tokens succes/attention Sol */}
                       <div className="flex gap-1.5 mt-2" data-testid="confidence-badges">
                         <span
-                          className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${estimate.source === 'compteur' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}
+                          className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                          style={
+                            estimate.source === 'compteur'
+                              ? {
+                                  background: 'var(--sol-succes-bg)',
+                                  color: 'var(--sol-succes-fg)',
+                                }
+                              : {
+                                  background: 'var(--sol-attention-bg)',
+                                  color: 'var(--sol-attention-fg)',
+                                }
+                          }
                         >
                           <BadgeCheck size={10} />{' '}
                           {estimate.source === 'compteur' ? 'Relevé réel' : 'Estimé'}
                         </span>
                         <span
-                          className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${(estimate.months_covered || 0) >= 12 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}
+                          className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                          style={
+                            (estimate.months_covered || 0) >= 12
+                              ? {
+                                  background: 'var(--sol-succes-bg)',
+                                  color: 'var(--sol-succes-fg)',
+                                }
+                              : {
+                                  background: 'var(--sol-afaire-bg)',
+                                  color: 'var(--sol-afaire-fg)',
+                                }
+                          }
                         >
                           {estimate.months_covered || 0} mois
                         </span>
                       </div>
                     </div>
-                    <div className="bg-purple-50 rounded-lg p-4">
-                      <div className="text-xs text-purple-600 font-medium uppercase">
+                    <div
+                      className="rounded-lg p-4 border"
+                      style={{
+                        background: 'var(--sol-ink-100)',
+                        borderColor: 'var(--sol-line)',
+                      }}
+                    >
+                      <div
+                        className="text-xs font-medium uppercase tracking-wider"
+                        style={{ color: 'var(--sol-ink-500)' }}
+                      >
                         Profil de charge
                       </div>
-                      <div className="text-2xl font-bold text-purple-900">
+                      <div
+                        className="font-mono font-semibold tabular-nums"
+                        style={{
+                          fontSize: '1.875rem',
+                          lineHeight: '1.1',
+                          color: 'var(--sol-ink-900)',
+                        }}
+                      >
                         {fmtNum(estimate.profile_factor, 2)}
                       </div>
-                      <div className="text-xs text-purple-500 mt-1 flex items-center gap-1">
+                      <div
+                        className="text-xs mt-1 flex items-center gap-1"
+                        style={{ color: 'var(--sol-ink-500)' }}
+                      >
                         {estimate.profile_factor > 1
                           ? 'Profil pointe'
                           : estimate.profile_factor < 1
@@ -760,7 +850,11 @@ export default function PurchasePage() {
                                 : 'Consommation standard sans pic particulier'
                           }
                         >
-                          <HelpCircle size={10} className="text-purple-400 cursor-help" />
+                          <HelpCircle
+                            size={10}
+                            className="cursor-help"
+                            style={{ color: 'var(--sol-ink-400)' }}
+                          />
                         </Tooltip>
                       </div>
                     </div>
