@@ -1,0 +1,13 @@
+# Pre-commit hooks PROMEOS — doctrine compliance
+# Installation : pip install pre-commit && pre-commit install
+# Cohabite avec .husky/pre-commit (lint-staged Node) sans conflit.
+repos:
+  - repo: local
+    hooks:
+      - id: doctrine-tests
+        name: Doctrine compliance tests (tests/doctrine/)
+        entry: bash -c 'cd backend && ./venv/bin/python -m pytest ../tests/doctrine/ -x --quiet'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]

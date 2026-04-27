@@ -1,6 +1,7 @@
 <!--
-PROMEOS Sol — PR template doctrine compliance §11.3
-Référence : docs/vision/promeos_sol_doctrine.md v1.0.1
+PROMEOS Sol — PR template doctrine compliance
+Référence narrative : docs/doctrine/doctrine_promeos_sol_v1_1.md (v1.1, 27/04/2026)
+Référence exécutable : backend/doctrine/ (constants + kpi_registry + error_codes)
 Toute PR significative doit pouvoir être justifiée vis-à-vis de la doctrine.
 -->
 
@@ -8,7 +9,30 @@ Toute PR significative doit pouvoir être justifiée vis-à-vis de la doctrine.
 
 <!-- 1-3 phrases factuelles. Quoi change, pourquoi, impact périmètre. -->
 
-## Doctrine compliance §11.3
+## Doctrine compliance v1.1 — engineering (§16)
+
+- **Principes respectés** : <!-- numéros, ex: 1, 5, 10, 13 -->
+- **Risques ou tensions** : <!-- ex: données partielles sur le site X -->
+- **KPIs impactés** : <!-- ex: annual_consumption_mwh, energy_cost_eur — sinon "aucun" -->
+- **Sources utilisées** : <!-- Enedis, facture, RegOps, manuel… -->
+- **Tests ajoutés** : <!-- unit KPI, integration API, e2e cockpit, source-guard… -->
+- **États UX couverts** : <!-- loading, empty, error, partial data — ou "n/a" -->
+- **Constantes utilisées** : <!-- import depuis backend/doctrine/constants.py — sinon "aucune" -->
+
+### Critères de rejet engineering (Doctrine §16)
+
+- [ ] Aucun KPI sans fiche dans `backend/doctrine/kpi_registry.py`
+- [ ] Aucune règle métier dans le frontend (`tests/doctrine/test_no_frontend_business_logic.py` PASS)
+- [ ] Aucune valeur affichée sans unité
+- [ ] Aucune route morte introduite
+- [ ] Aucune action non reliée à un objet métier
+- [ ] Cohérence transverse préservée
+- [ ] Aucune donnée incertaine masquée comme certaine
+- [ ] `tests/doctrine/` : 20/20 PASS
+
+---
+
+## Doctrine compliance §11.3 — produit/UX (v1.0.1)
 
 > Format obligatoire pour toute PR refonte sol2. Cocher les principes/anti-patterns/tests/personas concernés et justifier en 1 ligne.
 
@@ -70,6 +94,7 @@ Toute PR significative doit pouvoir être justifiée vis-à-vis de la doctrine.
 
 ## Test plan
 
+- [ ] Tests doctrinaux : `pytest tests/doctrine/` → 20/20 PASS
 - [ ] Backend : pytest baseline ≥ 6 027 (non-régression)
 - [ ] Frontend : vitest baseline ≥ 4 102 + 0 console error
 - [ ] Source-guards : tous PASS (`pytest tests/source_guards/`)
@@ -84,4 +109,5 @@ Toute PR significative doit pouvoir être justifiée vis-à-vis de la doctrine.
 
 ---
 
-**Doctrine v1.0.1** — `docs/vision/promeos_sol_doctrine.md`
+**Doctrine v1.1** — `docs/doctrine/doctrine_promeos_sol_v1_1.md` · executable : `backend/doctrine/`
+**Doctrine v1.0.1 (refonte sol2 produit/UX)** — `docs/vision/promeos_sol_doctrine.md`
