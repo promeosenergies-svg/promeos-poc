@@ -44,9 +44,9 @@ import CockpitTabs from '../ui/CockpitTabs';
 import DataFreshnessBadge from '../ui/DataFreshnessBadge';
 import SolPageHeader from '../ui/sol/SolPageHeader';
 // Sprint 1.2 — grammaire Sol industrialisée pour vue COMEX (Jean-Marc CFO).
-import SolNarrative from '../ui/sol/SolNarrative';
-import SolWeekCards from '../ui/sol/SolWeekCards';
-import SolPageFooter from '../ui/sol/SolPageFooter';
+// Sprint 2 Vague B ét8'-bis — HOC SolBriefingHead/Footer factorise grammaire §5.
+import SolBriefingHead from '../ui/sol/SolBriefingHead';
+import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
@@ -614,25 +614,14 @@ const Cockpit = () => {
           Le CockpitHero existant + BriefCodexCard descendent en détail
           expert post-briefing. Sprint 1.3 fusionnera CockpitHero dans la
           narrative pour atteindre la grammaire §5 stricte. */}
-      {solBriefingError && !solBriefing && (
-        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
-      )}
-      {solBriefing && (
-        <SolNarrative
-          kicker={null /* déjà rendu par SolPageHeader éditorialHeader */}
-          title={null /* idem — éviter doublon */}
-          narrative={solBriefing.narrative}
-          kpis={solBriefing.kpis}
-        />
-      )}
-      {solBriefing && (
-        <SolWeekCards
-          cards={solBriefing.weekCards}
-          fallbackBody={solBriefing.fallbackBody}
-          tone={solBriefing.narrativeTone}
-          onNavigate={navigate}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8'-bis — factorisation grammaire §5 via SolBriefingHead. */}
+      <SolBriefingHead
+        briefing={solBriefing}
+        error={solBriefingError}
+        onRetry={solBriefingRefetch}
+        omitHeader
+        onNavigate={navigate}
+      />
 
       {/* Sprint 1.3bis P0-C (audit fin S1) : CockpitHero/BriefCodexCard
           étaient l'empilement legacy au-dessus de la grammaire Sol et
@@ -1305,17 +1294,8 @@ const Cockpit = () => {
       {/* ── Onboarding spotlight (C.2b) ── */}
       <DemoSpotlight />
 
-      {/* Sprint 1.2 — SolPageFooter §5 grammaire (ADR-001).
-          Source · Confiance · Mis à jour de l'ensemble du briefing COMEX.
-          Lien méthodologie pointe vers /docs/methodologie/conformite-regops. */}
-      {solBriefing?.provenance && (
-        <SolPageFooter
-          source={solBriefing.provenance.source}
-          confidence={solBriefing.provenance.confidence}
-          updatedAt={solBriefing.provenance.updated_at}
-          methodologyUrl={solBriefing.provenance.methodology_url}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8'-bis — SolPageFooter §5 factorisé via HOC. */}
+      <SolBriefingFooter briefing={solBriefing} />
     </PageShell>
   );
 };

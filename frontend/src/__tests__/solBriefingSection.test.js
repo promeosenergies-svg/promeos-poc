@@ -169,6 +169,46 @@ describe('E. Migration AnomaliesPage', () => {
   });
 });
 
+// ── Sprint 2 Vague B ét8'-bis : 7 pages restantes propagées ─────────
+
+/**
+ * Couverture exhaustive du HOC sur les 10 pages PROMEOS qui consomment
+ * `usePageBriefing`. Le HOC est désormais le SoT unique pour la grammaire
+ * §5 — toute régression future (réintroduction du pattern dupliqué) sera
+ * attrapée par ces source-guards.
+ */
+const REMAINING_PAGES = [
+  ['pages/Cockpit.jsx', 'Cockpit'],
+  ['pages/CommandCenter.jsx', 'CommandCenter'],
+  ['pages/ConformitePage.jsx', 'ConformitePage'],
+  ['pages/Patrimoine.jsx', 'Patrimoine'],
+  ['pages/FlexPage.jsx', 'FlexPage'],
+  ['pages/PurchasePage.jsx', 'PurchasePage'],
+  ['pages/ConsumptionDiagPage.jsx', 'ConsumptionDiagPage'],
+];
+
+describe.each(REMAINING_PAGES)("ét8'-bis migration %s — pattern factorisé", (path, name) => {
+  const src = readSrc(path);
+
+  it(`${name} importe SolBriefingHead + SolBriefingFooter`, () => {
+    expect(src).toMatch(/import SolBriefingHead/);
+    expect(src).toMatch(/import SolBriefingFooter/);
+  });
+
+  it(`${name} rend <SolBriefingHead> et <SolBriefingFooter>`, () => {
+    expect(src).toMatch(/<SolBriefingHead/);
+    expect(src).toMatch(/<SolBriefingFooter/);
+  });
+
+  it(`${name} ne réintroduit pas le pattern dupliqué (week-cards inline)`, () => {
+    expect(src).not.toMatch(/cards=\{solBriefing\.weekCards\}/);
+  });
+
+  it(`${name} ne réintroduit pas le pattern dupliqué (footer inline)`, () => {
+    expect(src).not.toMatch(/source=\{solBriefing\.provenance\.source\}/);
+  });
+});
+
 // ── F. Doctrine §8.1 — composants stateless ─────────────────────────
 
 describe('F. Doctrine §8.1 — pureté display', () => {

@@ -40,9 +40,9 @@ import { track } from '../services/tracker';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtEur, fmtKwh, fmtCo2, fmtDateFR, scopeKicker } from '../utils/format';
 import SolPageHeader from '../ui/sol/SolPageHeader';
-import SolNarrative from '../ui/sol/SolNarrative';
-import SolWeekCards from '../ui/sol/SolWeekCards';
-import SolPageFooter from '../ui/sol/SolPageFooter';
+// Sprint 2 Vague B ét8'-bis — HOC SolBriefingHead/Footer factorise grammaire §5.
+import SolBriefingHead from '../ui/sol/SolBriefingHead';
+import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 import { deepLinkWithContext } from '../services/deepLink';
 import { toConsoExplorer, toMonitoring, toUsages, toBillIntel } from '../services/routes';
@@ -1015,25 +1015,14 @@ export default function ConsumptionDiagPage() {
           Pillar §4.2 : EMS / Performance — détection anomalies + chiffrage
           € leviers + plan d'actions priorisé. Sert Marie DAF (économies
           cachées) + Energy Manager (priorisation) + Investisseur. */}
-      {solBriefingError && !solBriefing && (
-        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
-      )}
-      {solBriefing && (
-        <SolNarrative
-          kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
-          title={null /* idem — éviter doublon */}
-          narrative={solBriefing.narrative}
-          kpis={solBriefing.kpis}
-        />
-      )}
-      {solBriefing && (
-        <SolWeekCards
-          cards={solBriefing.weekCards}
-          fallbackBody={solBriefing.fallbackBody}
-          tone={solBriefing.narrativeTone}
-          onNavigate={navigate}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8'-bis — factorisation grammaire §5 via SolBriefingHead. */}
+      <SolBriefingHead
+        briefing={solBriefing}
+        error={solBriefingError}
+        onRetry={solBriefingRefetch}
+        omitHeader
+        onNavigate={navigate}
+      />
 
       {/* V15-B: Scope badge */}
       {/* Sprint 1.8bis P0-10 (audit Espaces P0) : retrait `mb-2` legacy
@@ -1270,17 +1259,8 @@ export default function ConsumptionDiagPage() {
 
       {/* Action creation handled by ActionDrawerContext */}
 
-      {/* Sprint 1.8 — SolPageFooter §5 (ADR-001).
-          Source · Confiance · Mis à jour. Methodology URL pointe vers
-          /methodologie/diagnostic-conso (5 catégories + ISO 50001 + COSTIC). */}
-      {solBriefing?.provenance && (
-        <SolPageFooter
-          source={solBriefing.provenance.source}
-          confidence={solBriefing.provenance.confidence}
-          updatedAt={solBriefing.provenance.updated_at}
-          methodologyUrl={solBriefing.provenance.methodology_url}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8'-bis — SolPageFooter §5 factorisé via HOC. */}
+      <SolBriefingFooter briefing={solBriefing} />
     </PageShell>
   );
 }

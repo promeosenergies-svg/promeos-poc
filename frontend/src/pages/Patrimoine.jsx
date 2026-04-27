@@ -31,9 +31,9 @@ import {
 import { Card, Badge, Button, EmptyState, PageShell, Drawer, Tabs, Tooltip } from '../ui';
 // Sprint 1.3 — grammaire Sol industrialisée (ADR-001) sur /patrimoine
 import SolPageHeader from '../ui/sol/SolPageHeader';
-import SolNarrative from '../ui/sol/SolNarrative';
-import SolWeekCards from '../ui/sol/SolWeekCards';
-import SolPageFooter from '../ui/sol/SolPageFooter';
+// Sprint 2 Vague B ét8'-bis — HOC SolBriefingHead/Footer factorise grammaire §5.
+import SolBriefingHead from '../ui/sol/SolBriefingHead';
+import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 import { scopeKicker } from '../utils/format';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
@@ -763,22 +763,15 @@ export default function Patrimoine() {
           comme bonne nouvelle chiffrée (économie €/an en consolidant les
           efforts portefeuille). Audit Sprint 0 Patrimoine 3.4/10 :
           mutualisation cachée onglet Conformité, désormais visible Patrimoine. */}
-      {!isEmptyPatrimoine && solBriefingError && !solBriefing && (
-        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
-      )}
-      {!isEmptyPatrimoine && solBriefing && (
-        <SolNarrative
-          kicker={null /* déjà rendu dans editorialHeader SolPageHeader */}
-          title={null /* idem — éviter doublon */}
-          narrative={solBriefing.narrative}
-          kpis={solBriefing.kpis}
-        />
-      )}
-      {!isEmptyPatrimoine && solBriefing && (
-        <SolWeekCards
-          cards={solBriefing.weekCards}
-          fallbackBody={solBriefing.fallbackBody}
-          tone={solBriefing.narrativeTone}
+      {/* Sprint 2 Vague B ét8'-bis — factorisation grammaire §5 via SolBriefingHead.
+          Wrap !isEmptyPatrimoine : on n'affiche pas le briefing tant qu'aucun
+          site n'est dans le scope (l'EmptyState ci-dessous prend le relais). */}
+      {!isEmptyPatrimoine && (
+        <SolBriefingHead
+          briefing={solBriefing}
+          error={solBriefingError}
+          onRetry={solBriefingRefetch}
+          omitHeader
           onNavigate={navigate}
         />
       )}
@@ -1665,16 +1658,9 @@ export default function Patrimoine() {
       )}
       {showSegModal && <SegmentationQuestionnaireModal onClose={() => setShowSegModal(false)} />}
 
-      {/* Sprint 1.3 — SolPageFooter §5 grammaire (ADR-001).
-          Source · Confiance · Mis à jour. Lien méthodologie /docs/methodologie/conformite-regops. */}
-      {!isEmptyPatrimoine && solBriefing?.provenance && (
-        <SolPageFooter
-          source={solBriefing.provenance.source}
-          confidence={solBriefing.provenance.confidence}
-          updatedAt={solBriefing.provenance.updated_at}
-          methodologyUrl={solBriefing.provenance.methodology_url}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8'-bis — SolPageFooter §5 factorisé via HOC
+          (wrap !isEmptyPatrimoine : pas de footer sans briefing). */}
+      {!isEmptyPatrimoine && <SolBriefingFooter briefing={solBriefing} />}
     </PageShell>
   );
 }

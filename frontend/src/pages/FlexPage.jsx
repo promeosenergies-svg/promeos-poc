@@ -19,9 +19,9 @@ import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { scopeKicker } from '../utils/format';
 import SolPageHeader from '../ui/sol/SolPageHeader';
-import SolNarrative from '../ui/sol/SolNarrative';
-import SolWeekCards from '../ui/sol/SolWeekCards';
-import SolPageFooter from '../ui/sol/SolPageFooter';
+// Sprint 2 Vague B ét8'-bis — HOC SolBriefingHead/Footer factorise grammaire §5.
+import SolBriefingHead from '../ui/sol/SolBriefingHead';
+import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 
 export default function FlexPage() {
@@ -59,25 +59,14 @@ export default function FlexPage() {
     <PageShell icon={Zap} title="Flex Intelligence" editorialHeader={flexEditorialFallback}>
       {/* Sprint 1.10 — préambule éditorial Sol §5 vue Flex (ADR-001).
           Pillar §4.6 : Effacement comme revenu — neutralité aggregateur. */}
-      {solBriefingError && !solBriefing && (
-        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
-      )}
-      {solBriefing && (
-        <SolNarrative
-          kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
-          title={null /* idem — éviter doublon */}
-          narrative={solBriefing.narrative}
-          kpis={solBriefing.kpis}
-        />
-      )}
-      {solBriefing && (
-        <SolWeekCards
-          cards={solBriefing.weekCards}
-          fallbackBody={solBriefing.fallbackBody}
-          tone={solBriefing.narrativeTone}
-          onNavigate={navigate}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8'-bis — factorisation grammaire §5 via SolBriefingHead. */}
+      <SolBriefingHead
+        briefing={solBriefing}
+        error={solBriefingError}
+        onRetry={solBriefingRefetch}
+        omitHeader
+        onNavigate={navigate}
+      />
 
       {/* Sprint 1.10bis Investisseur P0 + Frontend-design P4 : panneau
           Neutralité promu top-level (vs caché derrière isExpert). C'est LE
@@ -173,16 +162,8 @@ export default function FlexPage() {
         </div>
       )}
 
-      {/* Sprint 1.10 — SolPageFooter §5 (ADR-001).
-          Methodology /methodologie/flex-effacement. */}
-      {solBriefing?.provenance && (
-        <SolPageFooter
-          source={solBriefing.provenance.source}
-          confidence={solBriefing.provenance.confidence}
-          updatedAt={solBriefing.provenance.updated_at}
-          methodologyUrl={solBriefing.provenance.methodology_url}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8'-bis — SolPageFooter §5 factorisé via HOC. */}
+      <SolBriefingFooter briefing={solBriefing} />
     </PageShell>
   );
 }

@@ -56,9 +56,9 @@ import NpsModal from '../components/NpsModal';
 // Audit personas Marie : « patch isolé », doctrine v2 §6.3. SolNarrative +
 // SolWeekCards portent désormais l'intégralité du récit ATF.
 // Sprint 1.1 — grammaire Sol industrialisée (ADR-001)
-import SolNarrative from '../ui/sol/SolNarrative';
-import SolWeekCards from '../ui/sol/SolWeekCards';
-import SolPageFooter from '../ui/sol/SolPageFooter';
+// Sprint 2 Vague B ét8'-bis — HOC SolBriefingHead/Footer factorise grammaire §5.
+import SolBriefingHead from '../ui/sol/SolBriefingHead';
+import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 import TopDeriveSitesCard from './cockpit/TopDeriveSitesCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
@@ -400,29 +400,17 @@ export default function CommandCenter() {
           DashboardHeroFeatured fallback chargement supprimé — SolNarrative
           gère son propre état loading via solBriefingLoading + skeleton
           intrinsèque (3 KPIs avec animate-pulse). */}
-      {solBriefingError && !solBriefing && (
-        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
-      )}
-      {solBriefing && (
-        <SolNarrative
-          kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
-          title={null /* idem — éviter doublon */}
-          narrative={solBriefing.narrative}
-          kpis={solBriefing.kpis}
-        />
-      )}
-
-      {/* Week-cards "Cette semaine chez vous" §5 (ADR-001 + ADR-002 chantier α S2).
-          MVP S1.1 : cards générées depuis l'état conformité courant. Sprint 2
-          alimentera depuis le moteur d'événements proactif (events bus). */}
-      {solBriefing && (
-        <SolWeekCards
-          cards={solBriefing.weekCards}
-          fallbackBody={solBriefing.fallbackBody}
-          tone={solBriefing.narrativeTone}
-          onNavigate={navigate}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8'-bis — factorisation grammaire §5 via SolBriefingHead.
+          Week-cards "Cette semaine chez vous" alimentées via le HOC (ADR-001 +
+          ADR-002 chantier α S2 : Sprint 2 alimentera depuis le moteur
+          d'événements proactif). */}
+      <SolBriefingHead
+        briefing={solBriefing}
+        error={solBriefingError}
+        onRetry={solBriefingRefetch}
+        omitHeader
+        onNavigate={navigate}
+      />
 
       {/* Sprint 2 Vague A ét4' — bloc legacy supprimé (PriorityHero +
           DeadlineBanner + MorningBriefCard). Les signaux portés par ces
@@ -835,17 +823,8 @@ export default function CommandCenter() {
 
       {/* ModuleLaunchers masqué — accessible via /cockpit expert mode */}
 
-      {/* Sprint 1.1 — SolPageFooter §5 grammaire (ADR-001).
-          Source · Confiance · Mis à jour — crédibilité B2B éditoriale.
-          Provenance vient du briefing backend (envelope SCM standardisée). */}
-      {solBriefing?.provenance && (
-        <SolPageFooter
-          source={solBriefing.provenance.source}
-          confidence={solBriefing.provenance.confidence}
-          updatedAt={solBriefing.provenance.updated_at}
-          methodologyUrl={solBriefing.provenance.methodology_url}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8'-bis — SolPageFooter §5 factorisé via HOC. */}
+      <SolBriefingFooter briefing={solBriefing} />
     </PageShell>
   );
 }

@@ -12,9 +12,9 @@ import { toUsages } from '../services/routes';
 import { Button, PageShell, ActiveFiltersBar, Explain } from '../ui';
 // Sprint 1.4 — grammaire Sol industrialisée (ADR-001) sur /conformite
 import SolPageHeader from '../ui/sol/SolPageHeader';
-import SolNarrative from '../ui/sol/SolNarrative';
-import SolWeekCards from '../ui/sol/SolWeekCards';
-import SolPageFooter from '../ui/sol/SolPageFooter';
+// Sprint 2 Vague B ét8'-bis — HOC SolBriefingHead/Footer factorise grammaire §5.
+import SolBriefingHead from '../ui/sol/SolBriefingHead';
+import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 import { scopeKicker } from '../utils/format';
 import ObligationsTab from './conformite-tabs/ObligationsTab';
@@ -619,25 +619,14 @@ export default function ConformitePage() {
           annuel 30/09, BACS 2030, APER. Audit Navigation fin S1 : Conformité
           reçoit 5/8 CTAs week-cards des autres pages — destination la plus
           sollicitée du parcours utilisateur. */}
-      {solBriefingError && !solBriefing && (
-        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
-      )}
-      {solBriefing && (
-        <SolNarrative
-          kicker={null}
-          title={null}
-          narrative={solBriefing.narrative}
-          kpis={solBriefing.kpis}
-        />
-      )}
-      {solBriefing && (
-        <SolWeekCards
-          cards={solBriefing.weekCards}
-          fallbackBody={solBriefing.fallbackBody}
-          tone={solBriefing.narrativeTone}
-          onNavigate={navigate}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8'-bis — factorisation grammaire §5 via SolBriefingHead. */}
+      <SolBriefingHead
+        briefing={solBriefing}
+        error={solBriefingError}
+        onRetry={solBriefingRefetch}
+        omitHeader
+        onNavigate={navigate}
+      />
       {/* Freshness — dernière évaluation + fallback */}
       {bundle?.meta?.generated_at ? (
         <span className="text-xs text-gray-400 ml-2">
@@ -934,17 +923,8 @@ export default function ConformitePage() {
         }}
       />
 
-      {/* Sprint 1.4 — SolPageFooter §5 (ADR-001).
-          Source · Confiance · Mis à jour. Calendrier réglementaire 2026-2030
-          + RegOps. Lien méthodologie /methodologie/conformite-regops. */}
-      {solBriefing?.provenance && (
-        <SolPageFooter
-          source={solBriefing.provenance.source}
-          confidence={solBriefing.provenance.confidence}
-          updatedAt={solBriefing.provenance.updated_at}
-          methodologyUrl={solBriefing.provenance.methodology_url}
-        />
-      )}
+      {/* Sprint 2 Vague B ét8'-bis — SolPageFooter §5 factorisé via HOC. */}
+      <SolBriefingFooter briefing={solBriefing} />
     </PageShell>
   );
 }
