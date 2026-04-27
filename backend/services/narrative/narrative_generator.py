@@ -603,6 +603,14 @@ def _build_cockpit_comex(
         "à présenter en l'état au prochain CODIR."
     )
 
+    # Vague C ét12f : pile §10 events native pour <SolEventStream> CFO.
+    # Cohérent avec _build_cockpit_daily — le builder COMEX consomme aussi
+    # le moteur d'événements proactif (compute_events) afin d'exposer
+    # source/confidence/owner_role/mitigation au CFO en présentation Teams.
+    from services.event_bus import compute_events
+
+    events_comex = compute_events(db, org_id)
+
     # Sprint 1.4bis : helpers _compute_tone + _build_provenance_canonical
     narrative_tone = _compute_tone(non_conformes, a_risque, conformite_score)
     provenance = _build_provenance_canonical(
@@ -624,6 +632,7 @@ def _build_cockpit_comex(
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
+        events=tuple(events_comex),
     )
 
 
