@@ -2,6 +2,43 @@
 
 Ce fichier est chargé automatiquement à chaque session Claude Code.
 
+## 🎯 Doctrine cardinale (v1.1 — 2026-04-27)
+
+**Source complète** : `docs/doctrine/doctrine_promeos_sol_v1_1.md` (881 lignes)
+**Version exécutable** : `backend/doctrine/` (constants, kpi_registry, error_codes)
+**Skill activable** : `.claude/skills/promeos-doctrine/SKILL.md`
+
+### Les 10 règles non-négociables
+
+1. **Tout est lié** — patrimoine → données → KPIs → alertes → actions → conformité → factures → achat. Aucune feature isolée.
+2. **Non-sachants d'abord** — copy simple, profondeur via "voir le calcul". Jamais d'acronyme brut en titre.
+3. **Zéro KPI magique** — tout KPI a fiche YAML (label, unit, formula, source, scope, period, confidence). Source : `backend/doctrine/kpi_registry.py`.
+4. **Constantes inviolables** — CO₂ 0.052, primary energy 1.9, fallback prix 0.068, DT jalons -40/-50/-60 (PAS 2026), NEBCO 100kW, accise élec T1 30.85 / T2 26.58 €/MWh, accise gaz 10.73 €/MWh. Source unique : `backend/doctrine/constants.py`. Importer, jamais redéfinir.
+5. **Statuts data obligatoires** — réel | estimé | incomplet | incohérent | en attente | démo. Aucun fallback silencieux.
+6. **Zéro logique métier dans le frontend** — tout calcul (trajectoire, score, %, intensité kWh/m²) côté backend. Test source-guard : `tests/doctrine/test_no_frontend_business_logic.py`.
+7. **Cohérence transverse** — mêmes valeurs entre cockpit, portfolio, site, conformité, billing, achat. Test : `tests/doctrine/test_cross_view_consistency.py`.
+8. **Chaque chiffre a son unité** — kWh/MWh, kW/kVA, €/MWh, HT/TTC explicités. Période et source visibles.
+9. **Erreurs API standard** — `{code, message, hint, correlation_id, scope}`. Source : `backend/doctrine/error_codes.py`.
+10. **Org-scoping obligatoire** — tout endpoint applique `resolve_org_id`. Aucune fuite cross-org.
+
+### Anti-patterns rejetés en PR
+
+Page démarrant par tableau sans synthèse · KPI sans source · graphique sans période · bouton sans destination · route accessible uniquement par URL · ajout de menu au lieu d'améliorer le centre d'action · mock non signalé · règle réglementaire non versionnée · KPI calculé différemment selon la page · valeur estimée affichée comme certaine.
+
+### Activation skill doctrine
+
+Pour toute tâche touchant cockpit, KPI, UX cœur, conformité, billing, achat, scoring, événements ou tout écran user-facing : **lire `.claude/skills/promeos-doctrine/SKILL.md` AVANT d'écrire du code**.
+
+### MCP obligatoires
+
+Context7 · code-review · simplify · (futur) doctrine-check
+
+### Convention commits
+
+`feat(<scope>): Phase N — description` · `fix(p0): ...` · atomic per phase.
+
+---
+
 ## Skill PROMEOS obligatoire
 
 Lis `SKILL.md` à la racine AVANT toute action sur ce repo. Toutes les règles non-négociables y sont encodées. Skills détaillés dans `.claude/skills/`.
