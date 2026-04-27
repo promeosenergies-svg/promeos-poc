@@ -110,11 +110,14 @@ const SEVERITY_LABELS = {
   low: 'Faible',
 };
 
-const INSIGHT_STATUS_COLORS = {
-  open: 'bg-yellow-100 text-yellow-700',
-  ack: 'bg-blue-100 text-blue-700',
-  resolved: 'bg-green-100 text-green-700',
-  false_positive: 'bg-gray-100 text-gray-700',
+// Sprint 1.5bis P0-4 — palette migrée tokens warm Sol (audit Visual/UX 26/04 :
+// arc-en-ciel yellow/blue/green/gray cassait la signature « journal en
+// terrasse »). Inline style cf. Tailwind v4 bug arbitrary CSS variables.
+const INSIGHT_STATUS_STYLES = {
+  open: { background: 'var(--sol-attention-bg)', color: 'var(--sol-attention-fg)' },
+  ack: { background: 'var(--sol-afaire-bg)', color: 'var(--sol-afaire-fg)' },
+  resolved: { background: 'var(--sol-succes-bg)', color: 'var(--sol-succes-fg)' },
+  false_positive: { background: 'var(--sol-ink-100)', color: 'var(--sol-ink-500)' },
 };
 
 const INSIGHT_STATUS_LABELS = {
@@ -589,8 +592,8 @@ export default function BillIntelPage() {
       )}
       {solBriefing && (
         <SolNarrative
-          kicker={null}
-          title={null}
+          kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
+          title={null /* idem — éviter doublon */}
           narrative={solBriefing.narrative}
           kpis={solBriefing.kpis}
         />
@@ -604,22 +607,30 @@ export default function BillIntelPage() {
         />
       )}
 
-      {/* CTA vers achat énergie */}
+      {/* CTA vers achat énergie — Sprint 1.5bis P0-4 token calme Sol */}
       <button
         onClick={() => navigate('/achat-energie')}
-        className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+        className="text-sm hover:underline flex items-center gap-1"
+        style={{ color: 'var(--sol-calme-fg)' }}
       >
         Optimiser l'achat énergie →
       </button>
 
-      {/* Navigation interne Facturation */}
-      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-        <span className="px-3 py-1.5 text-sm font-medium rounded-md bg-white text-blue-700 shadow-sm">
+      {/* Navigation interne Facturation — Sprint 1.5bis P0-4 token calme actif */}
+      <div
+        className="flex items-center gap-1 rounded-lg p-1 w-fit"
+        style={{ background: 'var(--sol-ink-100)' }}
+      >
+        <span
+          className="px-3 py-1.5 text-sm font-medium rounded-md shadow-sm"
+          style={{ background: 'var(--sol-bg-paper)', color: 'var(--sol-calme-fg)' }}
+        >
           Anomalies & Audit
         </span>
         <Link
           to={`/billing${siteFilter ? `?site_id=${siteFilter}` : ''}`}
-          className="px-3 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 hover:bg-white/60 transition"
+          className="px-3 py-1.5 text-sm font-medium rounded-md hover:bg-white/60 transition"
+          style={{ color: 'var(--sol-ink-500)' }}
         >
           <span className="flex items-center gap-1.5">
             <CalendarRange size={14} />
@@ -628,16 +639,25 @@ export default function BillIntelPage() {
         </Link>
       </div>
 
-      {/* Breadcrumb filtres actifs */}
+      {/* Breadcrumb filtres actifs — Sprint 1.5bis P0-4 tokens warm Sol */}
       {(siteFilter || monthFilter) && (
-        <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+        <div
+          className="flex items-center gap-2 text-xs flex-wrap"
+          style={{ color: 'var(--sol-ink-500)' }}
+        >
           {siteFilter && (
-            <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full">
+            <span
+              className="px-2 py-1 rounded-full"
+              style={{ background: 'var(--sol-calme-bg)', color: 'var(--sol-calme-fg)' }}
+            >
               Site : {siteFilter}
             </span>
           )}
           {monthFilter && (
-            <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded-full">
+            <span
+              className="px-2 py-1 rounded-full"
+              style={{ background: 'var(--sol-attention-bg)', color: 'var(--sol-attention-fg)' }}
+            >
               Mois : {monthFilter}
             </span>
           )}
@@ -653,10 +673,19 @@ export default function BillIntelPage() {
         </div>
       )}
 
-      {/* Shadow billing explainer — methodology block */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800">
+      {/* Shadow billing explainer — methodology block.
+          Sprint 1.5bis P0-4 : palette migrée tokens calme Sol §6.2 (audit
+          Visual 26/04 : bleu corporate cassait signature warm). */}
+      <div
+        className="border rounded-lg px-4 py-3 text-sm"
+        style={{
+          background: 'var(--sol-calme-bg)',
+          borderColor: 'var(--sol-calme-fg)',
+          color: 'var(--sol-calme-fg-hover)',
+        }}
+      >
         <div className="flex items-start gap-3">
-          <Zap size={16} className="mt-0.5 shrink-0 text-blue-600" />
+          <Zap size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--sol-calme-fg)' }} />
           <div>
             <span className="font-semibold">Comment ça marche ?</span> PROMEOS recalcule le montant
             attendu de chaque facture à partir de votre consommation réelle, de votre contrat et des
@@ -666,38 +695,47 @@ export default function BillIntelPage() {
         </div>
         {isExpert && (
           <details className="mt-2 ml-7">
-            <summary className="cursor-pointer text-[11px] font-medium text-blue-700 hover:text-blue-900">
+            <summary
+              className="cursor-pointer text-[11px] font-medium"
+              style={{ color: 'var(--sol-calme-fg)' }}
+            >
               Méthodologie détaillée
             </summary>
-            <div className="mt-1.5 text-[11px] text-blue-700 space-y-1.5 leading-relaxed">
+            <div
+              className="mt-1.5 text-[11px] space-y-1.5 leading-relaxed"
+              style={{ color: 'var(--sol-calme-fg)' }}
+            >
               <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                 <div>
                   <span className="font-semibold">Données réelles</span>
-                  <p className="text-blue-600">
+                  <p style={{ color: 'var(--sol-ink-700)' }}>
                     Consommation (kWh) issue des compteurs ou factures importées.
                   </p>
                 </div>
                 <div>
                   <span className="font-semibold">Données contractuelles</span>
-                  <p className="text-blue-600">
+                  <p style={{ color: 'var(--sol-ink-700)' }}>
                     Prix fourniture, puissance souscrite, option tarifaire — extraits de votre
                     contrat.
                   </p>
                 </div>
                 <div>
                   <span className="font-semibold">Tarifs réglementaires</span>
-                  <p className="text-blue-600">
+                  <p style={{ color: 'var(--sol-ink-700)' }}>
                     TURPE (C5 BT), accise électricité, CTA, TVA — catalogue PROMEOS versionné.
                   </p>
                 </div>
                 <div>
                   <span className="font-semibold">Valeurs par défaut</span>
-                  <p className="text-blue-600">
+                  <p style={{ color: 'var(--sol-ink-700)' }}>
                     Si le contrat est absent, un prix moyen marché est utilisé (indiqué « estimé »).
                   </p>
                 </div>
               </div>
-              <p className="border-t border-blue-200 pt-1.5">
+              <p
+                className="pt-1.5"
+                style={{ borderTop: '1px solid var(--sol-calme-fg)', opacity: 0.9 }}
+              >
                 <span className="font-semibold">Couverture :</span> fourniture, réseau (TURPE),
                 taxes (accise + CTA), TVA, abonnement.{' '}
                 <span className="font-semibold">Non couvert :</span> pénalités dépassement, services
@@ -877,35 +915,67 @@ export default function BillIntelPage() {
         />
       )}
 
-      {/* Top anomalie — hero card */}
+      {/* Top anomalie — hero card.
+          Sprint 1.5bis P1 (audit a11y) : <div onClick> → role="button" tabIndex
+          + keyboard handler Enter/Space + tokens warm Sol refuse (palette §6.2). */}
       {topInsight && (
         <div
-          className="flex items-center gap-4 p-4 bg-red-50 border border-red-200 rounded-lg cursor-pointer hover:bg-red-100 transition"
+          className="flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-refuse-fg)]"
+          style={{
+            background: 'var(--sol-refuse-bg)',
+            borderColor: 'var(--sol-refuse-line)',
+          }}
           onClick={() => setDrawerInsightId(topInsight.id)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setDrawerInsightId(topInsight.id);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label={`Anomalie prioritaire : ${topInsight.message}, écart estimé ${topInsight.estimated_loss_eur.toLocaleString('fr-FR')} euros`}
           data-testid="top-anomaly-hero"
         >
-          <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
-            <AlertTriangle size={20} className="text-red-600" />
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+            style={{
+              background: 'var(--sol-refuse-bg)',
+              border: '1px solid var(--sol-refuse-line)',
+            }}
+          >
+            <AlertTriangle size={20} style={{ color: 'var(--sol-refuse-fg)' }} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-red-500 font-medium uppercase tracking-wide">
+            <p
+              className="text-xs font-medium uppercase tracking-wide"
+              style={{ color: 'var(--sol-refuse-fg)' }}
+            >
               Anomalie prioritaire
             </p>
-            <p className="text-sm font-semibold text-gray-900 mt-0.5 truncate">
+            <p
+              className="text-sm font-semibold mt-0.5 truncate"
+              style={{ color: 'var(--sol-ink-900)' }}
+            >
               {topInsight.message}
             </p>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs mt-0.5" style={{ color: 'var(--sol-ink-500)' }}>
               {TYPE_LABELS[topInsight.type] || topInsight.type}
               {topInsight.site_label && ` · ${topInsight.site_label}`}
             </p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-lg font-bold text-red-600">
+            <p
+              className="font-mono font-semibold tabular-nums"
+              style={{ fontSize: '1.25rem', color: 'var(--sol-refuse-fg)' }}
+            >
               {topInsight.estimated_loss_eur.toLocaleString('fr-FR')} €
             </p>
-            <p className="text-xs text-gray-400">écart estimé</p>
+            <p className="text-xs" style={{ color: 'var(--sol-ink-500)' }}>
+              écart estimé
+            </p>
           </div>
-          <ArrowRight size={16} className="text-red-400 shrink-0" />
+          <ArrowRight size={16} className="shrink-0" style={{ color: 'var(--sol-refuse-fg)' }} />
         </div>
       )}
 
@@ -921,22 +991,32 @@ export default function BillIntelPage() {
                 <Download size={14} /> Exporter CSV
               </Button>
             </div>
-            <div className="flex items-center gap-1">
+            {/* Sprint 1.5bis P1 (audit a11y) : aria-pressed sur filter pills
+                + tokens calme actif Sol §6.2. */}
+            <div
+              className="flex items-center gap-1"
+              role="group"
+              aria-label="Filtres anomalies par statut"
+            >
               {INSIGHT_FILTER_OPTIONS.map((opt) => {
                 const count =
                   opt.value === 'all'
                     ? allInsights.length
                     : allInsights.filter((i) => (i.insight_status || i.status) === opt.value)
                         .length;
+                const isActive = insightFilter === opt.value;
                 return (
                   <button
                     key={opt.value}
+                    type="button"
                     onClick={() => setInsightFilter(opt.value)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                      insightFilter === opt.value
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    aria-pressed={isActive}
+                    className="px-2.5 py-1 rounded-full text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)]"
+                    style={
+                      isActive
+                        ? { background: 'var(--sol-calme-fg)', color: 'var(--sol-bg-paper)' }
+                        : { background: 'var(--sol-ink-100)', color: 'var(--sol-ink-700)' }
+                    }
                   >
                     {opt.label}
                     <span className="ml-1 opacity-70">{count}</span>
@@ -1004,7 +1084,8 @@ export default function BillIntelPage() {
                           <span className="text-[10px] font-mono text-gray-400">#{insight.id}</span>
                         )}
                         <span
-                          className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${INSIGHT_STATUS_COLORS[istatus] || INSIGHT_STATUS_COLORS.open}`}
+                          className="inline-block px-2 py-0.5 rounded text-xs font-medium"
+                          style={INSIGHT_STATUS_STYLES[istatus] || INSIGHT_STATUS_STYLES.open}
                         >
                           {INSIGHT_STATUS_LABELS[istatus] || istatus}
                         </span>
@@ -1147,33 +1228,63 @@ export default function BillIntelPage() {
           </div>
           <Card>
             <div className="overflow-x-auto">
+              {/* Sprint 1.5bis P1 (audit a11y) : <caption sr-only> + scope="col"
+                  pour lecteurs d'écran. */}
               <table className="w-full text-sm">
+                <caption className="sr-only">
+                  Liste des factures importées avec montant, consommation, statut d'audit et type
+                  d'énergie. Cliquez sur une ligne pour ouvrir le détail.
+                </caption>
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase"
+                    >
                       N° facture
                     </th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase"
+                    >
                       Période
                     </th>
-                    <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
+                    <th
+                      scope="col"
+                      className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase"
+                    >
                       Total EUR
                     </th>
-                    <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
+                    <th
+                      scope="col"
+                      className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase"
+                    >
                       <Explain term="kwh">kWh</Explain>
                     </th>
-                    <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
+                    <th
+                      scope="col"
+                      className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase"
+                    >
                       Statut
                     </th>
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase"
+                    >
                       Source
                     </th>
                     {isExpert && (
-                      <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
+                      <th
+                        scope="col"
+                        className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase"
+                      >
                         €/kWh
                       </th>
                     )}
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase"
+                    >
                       Type énergie
                     </th>
                   </tr>
@@ -1313,40 +1424,39 @@ export default function BillIntelPage() {
   );
 }
 
-function SummaryCard({ icon: Icon, label, value, color }) {
-  const bg =
-    {
-      blue: 'bg-blue-50',
-      indigo: 'bg-indigo-50',
-      purple: 'bg-purple-50',
-      red: 'bg-red-50',
-      orange: 'bg-orange-50',
-    }[color] || 'bg-gray-50';
-  const textColor =
-    {
-      blue: 'text-blue-700',
-      indigo: 'text-indigo-700',
-      purple: 'text-purple-700',
-      red: 'text-red-700',
-      orange: 'text-orange-700',
-    }[color] || 'text-gray-700';
-  const iconColor =
-    {
-      blue: 'text-blue-500',
-      indigo: 'text-indigo-500',
-      purple: 'text-purple-500',
-      red: 'text-red-500',
-      orange: 'text-orange-500',
-    }[color] || 'text-gray-500';
+// Sprint 1.5bis P0-4 — palette migrée tokens warm Sol §6.2 (audit Visual/UX
+// 26/04 : 5 couleurs arc-en-ciel cassaient la signature « journal en
+// terrasse »). Mapping sémantique :
+//  · blue (Factures) → calme bleu-vert (volume neutre)
+//  · indigo (Total €) → ink slate (statement comptable)
+//  · purple (Total kWh) → ink slate (statement énergie)
+//  · red (Anomalies) → attention ambre (signal)
+//  · orange (Pertes €) → afaire corail (à-récupérer)
+const SUMMARY_TONE = {
+  blue: { bg: 'var(--sol-calme-bg)', fg: 'var(--sol-calme-fg)' },
+  indigo: { bg: 'var(--sol-ink-100)', fg: 'var(--sol-ink-700)' },
+  purple: { bg: 'var(--sol-ink-100)', fg: 'var(--sol-ink-700)' },
+  red: { bg: 'var(--sol-attention-bg)', fg: 'var(--sol-attention-fg)' },
+  orange: { bg: 'var(--sol-afaire-bg)', fg: 'var(--sol-afaire-fg)' },
+};
 
+function SummaryCard({ icon: Icon, label, value, color }) {
+  const tone = SUMMARY_TONE[color] || SUMMARY_TONE.indigo;
   return (
     <Card>
-      <CardBody className={bg}>
+      <CardBody style={{ background: tone.bg }}>
         <div className="flex items-center gap-2 mb-1">
-          <Icon size={16} className={iconColor} />
-          <p className="text-xs text-gray-500 font-medium">{label}</p>
+          <Icon size={16} style={{ color: tone.fg, opacity: 0.75 }} />
+          <p className="text-xs font-medium" style={{ color: 'var(--sol-ink-500)' }}>
+            {label}
+          </p>
         </div>
-        <p className={`text-2xl font-bold ${textColor}`}>{value}</p>
+        <p
+          className="font-mono font-semibold tabular-nums"
+          style={{ fontSize: '1.875rem', lineHeight: '1.1', color: tone.fg }}
+        >
+          {value}
+        </p>
       </CardBody>
     </Card>
   );

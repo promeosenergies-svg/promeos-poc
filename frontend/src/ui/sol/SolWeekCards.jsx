@@ -100,7 +100,8 @@ function WeekCard({ card, onNavigate }) {
     ? {
         type: 'button',
         onClick: () => onNavigate?.(ctaPath),
-        className: `text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500`,
+        // Sprint 1.5bis P0-5 — focus ring migré token calme Sol (audit Visual 26/04).
+        className: `text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)] rounded-lg`,
       }
     : {};
 

@@ -738,19 +738,20 @@ def _build_patrimoine(
         "consultez le détail par site pour explorer les opportunités."
     )
 
-    # Sprint 1.4bis : helpers _compute_tone + _build_provenance_canonical.
-    # Note Patrimoine : tone POSITIVE également si mutualisation active OU
-    # patrimoine vide — nuance préservée vs builder générique.
-    if non_conformes > 0:
-        narrative_tone = NarrativeTone.CRITICAL
-    elif a_risque > 0:
-        narrative_tone = NarrativeTone.TENSION
-    elif economie_mutualisation_eur > 0 or sites_count == 0:
+    # Sprint 1.5bis /simplify Code Reuse P0 : utilise les helpers canoniques
+    # _compute_tone et _build_provenance_canonical comme les 4 autres builders
+    # (l'audit S1.5 a relevé que _build_patrimoine bypassait ces helpers).
+    # Nuance §4.1 : si tone neutre mais mutualisation active OU patrimoine
+    # vide, on remonte à POSITIVE (différenciateur §4.1 ne tombe jamais en
+    # neutre quand l'effet portefeuille est documenté).
+    narrative_tone = _compute_tone(non_conformes, a_risque, conformite_score)
+    if narrative_tone == NarrativeTone.NEUTRAL and (economie_mutualisation_eur > 0 or sites_count == 0):
         narrative_tone = NarrativeTone.POSITIVE
-    else:
-        narrative_tone = NarrativeTone.NEUTRAL
 
-    # Provenance HIGH conditionnée à la mutualisation (différenciateur §4.1)
+    # Provenance HIGH conditionnée à la mutualisation (différenciateur §4.1) —
+    # critère distinct des 3 autres builders (qui conditionnent sur
+    # conformite_score), donc on garde l'appel direct mais explicitement
+    # documenté comme déviation intentionnelle.
     confidence = (
         ProvenanceConfidence.HIGH if economie_mutualisation_eur > 0 and sites_count > 0 else ProvenanceConfidence.MEDIUM
     )

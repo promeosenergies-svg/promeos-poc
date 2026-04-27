@@ -25,7 +25,7 @@ function KpiTile({ kpi }) {
   const showTooltip = Boolean(kpi.tooltip);
   return (
     <div
-      className="flex flex-col gap-1 px-4 py-3 bg-white border border-[var(--sol-line)] rounded-lg sol-card"
+      className="flex flex-col gap-2 px-5 py-4 bg-white border border-[var(--sol-line)] rounded-lg sol-card"
       data-testid={`sol-kpi-${kpi.label}`}
       role="listitem"
     >
@@ -44,12 +44,17 @@ function KpiTile({ kpi }) {
           </button>
         )}
       </div>
-      <div className="flex items-baseline gap-1">
-        <span className="sol-numeric text-[var(--sol-ink-900)] text-2xl font-semibold">
+      {/* Sprint 1.5bis P0-6 — Hero KPI hierarchy Stripe Atlas / Linear Insights :
+          24px → 36px tabular-nums tight leading. Echelle exécutive premium. */}
+      <div className="flex items-baseline gap-1.5">
+        <span
+          className="sol-numeric text-[var(--sol-ink-900)] font-semibold tabular-nums"
+          style={{ fontSize: '2.25rem', lineHeight: '1.05', letterSpacing: '-0.01em' }}
+        >
           {kpi.value}
         </span>
         {kpi.unit && (
-          <span className="text-xs text-[var(--sol-ink-500)] font-medium">{kpi.unit}</span>
+          <span className="text-sm text-[var(--sol-ink-500)] font-medium">{kpi.unit}</span>
         )}
       </div>
       {kpi.source && (

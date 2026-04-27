@@ -19,8 +19,10 @@ export default function PageShell({
 }) {
   // Si editorialHeader fourni (ex. <SolPageHeader>), il remplace entièrement
   // le bloc title/icon/subtitle — sol2 Phase 3 signature éditoriale.
+  // Sprint 1.5bis P0-6 — vertical rhythm 24px → 32px Stripe-grade (audit
+  // Visual 26/04 : space-y-6 trop dense above-the-fold 1440×900).
   return (
-    <div className={`px-6 py-6 space-y-6 animate-[slideInUp_0.3s_ease-out] ${className}`}>
+    <div className={`px-6 py-6 space-y-8 animate-[slideInUp_0.3s_ease-out] ${className}`}>
       {editorialHeader ? (
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0 flex-1">{editorialHeader}</div>

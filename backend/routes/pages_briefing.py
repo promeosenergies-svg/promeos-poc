@@ -81,7 +81,12 @@ def get_page_briefing(
     if not org:
         raise HTTPException(status_code=404, detail="Organisation non trouvée")
 
-    # Sites du scope org pour densification narrative
+    # Sites du scope org pour densification narrative.
+    # Note S1.5bis : trade-off assumé — `count()` léger ici + `.all()` dans
+    # le builder via `_load_org_context()`. La factorisation `org_context=ctx`
+    # paramétrable demanderait de refactorer les 5 signatures builders pour
+    # un gain perf marginal (count est trivial). À reconsidérer S2 si la
+    # liste de pages_briefing devient un hot-path.
     sites_count = (
         not_deleted(db.query(Site), Site)
         .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)

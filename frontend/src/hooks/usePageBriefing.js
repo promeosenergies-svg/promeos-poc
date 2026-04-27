@@ -11,6 +11,10 @@
  * + selectedSiteId). Sans ça, le briefing reste figé sur le scope initial
  * même quand l'utilisateur switche de site dans le ScopeContext.
  *
+ * Sprint 1.5bis P0-7 (audit Quality) : fetch extrait dans un callback
+ * réutilisable. Le retryCount pseudo-state qui forçait useEffect à se
+ * relancer est supprimé — `refetch` appelle directement le callback.
+ *
  * Doctrine §8.1 règle d'or : aucun calcul métier ici.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -23,18 +27,14 @@ export function usePageBriefing(pageKey, { persona = 'daily', archetype } = {}) 
   const [briefing, setBriefing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Sprint 1.3bis P0-B : compteur de retry pour relancer le fetch sans
-  // changer les dépendances primaires (utilisé par <SolNarrative onRetry>).
-  const [retryCount, setRetryCount] = useState(0);
-  const mountedRef = useRef(true);
+  const cancelTokenRef = useRef({ cancelled: false });
 
-  const refetch = useCallback(() => {
-    setRetryCount((c) => c + 1);
-  }, []);
+  const fetchBriefing = useCallback(() => {
+    // Annule le fetch précédent (anti-race condition) avant de relancer.
+    cancelTokenRef.current.cancelled = true;
+    const token = { cancelled: false };
+    cancelTokenRef.current = token;
 
-  useEffect(() => {
-    mountedRef.current = true;
-    let cancelled = false;
     setLoading(true);
     setError(null);
 
@@ -48,7 +48,7 @@ export function usePageBriefing(pageKey, { persona = 'daily', archetype } = {}) 
     api
       .get(`/pages/${pageKey}/briefing?${params.toString()}`)
       .then((res) => {
-        if (cancelled) return;
+        if (token.cancelled) return;
         // Convention API Sol §5 : { data: Narrative, provenance: {...} }
         const payload = res.data?.data || res.data;
         const provenance = res.data?.provenance || payload?.provenance || null;
@@ -65,17 +65,19 @@ export function usePageBriefing(pageKey, { persona = 'daily', archetype } = {}) 
         });
       })
       .catch((err) => {
-        if (!cancelled) setError(err?.message || `Erreur briefing ${pageKey}`);
+        if (!token.cancelled) setError(err?.message || `Erreur briefing ${pageKey}`);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!token.cancelled) setLoading(false);
       });
+  }, [pageKey, persona, archetype, orgId, selectedSiteId]);
 
+  useEffect(() => {
+    fetchBriefing();
     return () => {
-      cancelled = true;
-      mountedRef.current = false;
+      cancelTokenRef.current.cancelled = true;
     };
-  }, [pageKey, persona, archetype, orgId, selectedSiteId, retryCount]);
+  }, [fetchBriefing]);
 
-  return { briefing, loading, error, refetch };
+  return { briefing, loading, error, refetch: fetchBriefing };
 }

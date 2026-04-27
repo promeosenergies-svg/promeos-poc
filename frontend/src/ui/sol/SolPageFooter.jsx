@@ -15,10 +15,13 @@
 import { Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+// Sprint 1.5bis P0-5 — confidence labels migrés tokens warm Sol §6.2
+// (audit Visual 26/04 : emerald-700/amber-700/red-700 cassaient signature
+// « journal en terrasse »). Mapping sémantique : succes/attention/refuse.
 const CONFIDENCE_LABELS = Object.freeze({
-  high: { label: 'haute', cls: 'text-emerald-700' },
-  medium: { label: 'moyenne', cls: 'text-amber-700' },
-  low: { label: 'faible', cls: 'text-red-700' },
+  high: { label: 'haute', color: 'var(--sol-succes-fg)' },
+  medium: { label: 'moyenne', color: 'var(--sol-attention-fg)' },
+  low: { label: 'faible', color: 'var(--sol-refuse-fg)' },
 });
 
 function formatRelativeTime(updatedAt) {
@@ -59,7 +62,7 @@ export default function SolPageFooter({
       data-testid="sol-page-footer"
       role="contentinfo"
       aria-label="Provenance des données"
-      className={`mt-6 pt-3 border-t border-[var(--sol-line)] flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[var(--sol-ink-500)] ${className}`}
+      className={`mt-10 pt-3 border-t border-[var(--sol-line)] flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[var(--sol-ink-500)] ${className}`}
     >
       {source && (
         <span>
@@ -73,7 +76,9 @@ export default function SolPageFooter({
         <span className="font-mono uppercase tracking-wider text-[10px] text-[var(--sol-ink-500)] mr-1">
           Confiance
         </span>
-        <span className={`font-medium ${confCfg.cls}`}>{confCfg.label}</span>
+        <span className="font-medium" style={{ color: confCfg.color }}>
+          {confCfg.label}
+        </span>
       </span>
       <span>
         <span className="font-mono uppercase tracking-wider text-[10px] text-[var(--sol-ink-500)] mr-1">
