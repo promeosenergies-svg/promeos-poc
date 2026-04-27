@@ -22,6 +22,7 @@ Cf. ADR-001 grammaire Sol industrialisée.
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
@@ -263,6 +264,59 @@ def _s(n: int) -> str:
     return "s" if n > 1 else ""
 
 
+# ── Hook € hero universel — Sprint 2 Vague A ét3' (audit personas) ──
+
+# Pattern reconnu par _has_meaningful_eur : nombre + suffixe optionnel (k|M)
+# + €. Couvre "450 €", "26 k€", "1.2 M€", "26 k€/an", "1,2 M€".
+# Anti-faux-positif : "0 €", "0,0 k€", "—" rejetés.
+_EUR_LEADING_NUMBER_RE = re.compile(r"^-?(\d+(?:[.,]\d+)?)")
+
+
+def _has_meaningful_eur(value: Optional[str]) -> bool:
+    """True si value contient un montant € non-nul exploitable comme hero.
+
+    Reconnaît les formats produits par `_fmt_eur_short` ("450 €", "26 k€",
+    "1.2 M€") et leurs variantes "/an" (leviers économies). Rejette "—",
+    "0 €", "0,0 k€" et tout ce qui ne commence pas par un nombre > 0.
+    """
+    if not isinstance(value, str) or "€" not in value or value.startswith("—"):
+        return False
+    match = _EUR_LEADING_NUMBER_RE.match(value)
+    if match is None:
+        return False
+    try:
+        return float(match.group(1).replace(",", ".")) > 0
+    except ValueError:
+        return False
+
+
+def _promote_eur_kpi_to_hero(kpis: list[NarrativeKpi]) -> list[NarrativeKpi]:
+    """Doctrine §5 hook € hero universel — kpis[0] = chiffre rétine 3s.
+
+    Audit personas Sprint 2 ét2 : convergence CFO + Marie + Investisseur sur
+    « kpis[0] doit être un montant € mémorable si la page a du sens financier,
+    sinon l'unité métier dominante » (kW pour Flex, /100 pour Conformité
+    quand aucune € disponible).
+
+    Stratégie : si un KPI contient un montant € non-zero ET n'est pas déjà
+    en position [0], le promouvoir en [0] tout en préservant l'ordre relatif
+    des autres. Si aucun € détecté → retourne kpis inchangé (graceful fallback
+    pour Flex et cas dégradés sans donnée €).
+
+    Ce helper centralise l'invariant doctrinal : 1 modification = 1 source
+    de vérité, propageable Vague B aux nouvelles pages sans recoder.
+
+    Pureté : retourne `kpis` inchangé dans les branches no-op (caller wrappe
+    immédiatement `tuple(...)`, copie défensive superflue — /simplify Eff P2).
+    """
+    if not kpis or _has_meaningful_eur(kpis[0].value):
+        return kpis
+    for idx in range(1, len(kpis)):
+        if _has_meaningful_eur(kpis[idx].value):
+            return [kpis[idx], *kpis[:idx], *kpis[idx + 1 :]]
+    return kpis
+
+
 # ── Builders MVP — cockpit_daily ────────────────────────────────────
 
 
@@ -400,7 +454,7 @@ def _build_cockpit_daily(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(kpis),
+        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -579,7 +633,7 @@ def _build_cockpit_comex(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(kpis),
+        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -803,7 +857,7 @@ def _build_patrimoine(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(kpis),
+        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -1037,7 +1091,7 @@ def _build_conformite(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(kpis),
+        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -1254,7 +1308,7 @@ def _build_bill_intel(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(kpis),
+        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -1519,7 +1573,7 @@ def _build_achat_energie(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(kpis),
+        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -1828,7 +1882,7 @@ def _build_monitoring(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(kpis),
+        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -2132,7 +2186,7 @@ def _build_diagnostic(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(kpis),
+        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -2471,7 +2525,7 @@ def _build_anomalies(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(kpis),
+        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -2765,7 +2819,7 @@ def _build_flex(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(kpis),
+        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
