@@ -52,6 +52,12 @@ const METHODOLOGIE_CATALOG = Object.freeze({
     kicker: 'MÉTHODOLOGIE · ACHAT',
     publicPath: '/docs/methodologie/achat-post-arenh.md',
   },
+  'performance-monitoring': {
+    title: 'Monitoring Performance Électrique',
+    italicHook: 'pilotage temps réel · ISO 50001 · COSTIC · alertes auto',
+    kicker: 'MÉTHODOLOGIE · MONITORING',
+    publicPath: '/docs/methodologie/performance-monitoring.md',
+  },
 });
 
 // Mini-renderer markdown : titre, paragraphes, listes, tables, code,

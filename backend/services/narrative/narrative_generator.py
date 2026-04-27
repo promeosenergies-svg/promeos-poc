@@ -1494,6 +1494,273 @@ def _build_achat_energie(
     )
 
 
+# Sprint 1.7 — constantes module Monitoring (audit /simplify Quality).
+# Sourçage doctrine §4.2 (EMS/Performance) + ISO 50001 + COSTIC.
+_MONITORING_DATA_QUALITY_GOOD = 80  # seuil score qualité données satisfaisante
+_MONITORING_DATA_QUALITY_CRITICAL = 50  # seuil score qualité critique
+_MONITORING_SEUIL_IMPACT_CRITIQUE_EUR = 1_000  # impact € → tone CRITICAL
+
+
+def _build_monitoring(
+    db: Session,
+    org_id: int,
+    org_name: str,
+    sites_count: int,
+) -> Narrative:
+    """Sprint 1.7 — Vue Monitoring Performance Électrique (différenciateur §4.2).
+
+    Promesse §4.2 doctrine : « Performance et diagnostics — pilotage temps
+    réel, KPIs électriques, qualité données, alertes automatiques.
+    Conforme ISO 50001 + COSTIC. »
+
+    Sert Marie DAF (« est-ce que ça marche bien ? »), Energy Manager
+    (alertes + dérives), Investisseur (preuve EMS pillar §4.2).
+
+    Données réelles :
+      - MonitoringSnapshot : data_quality_score, kpis_json (load_factor,
+        pmax_kw, total_kwh)
+      - MonitoringAlert : status (open/ack/resolved), severity (info/
+        warning/high/critical), estimated_impact_eur
+
+    Doctrine §10 « simplifier la complexité » — vocabulaire FR pour
+    non-sachants : alertes au lieu de NEBCO/aFRR jargon.
+    """
+    from models.energy_models import (
+        AlertSeverity,
+        AlertStatus,
+        MonitoringAlert,
+        MonitoringSnapshot,
+    )
+
+    ctx = _load_org_context(db, org_id)
+    site_ids = [s.id for s in ctx.sites]
+
+    # ── Récupérer les alertes actives + dernier snapshot par site ──
+    if site_ids:
+        alerts = db.query(MonitoringAlert).filter(MonitoringAlert.site_id.in_(site_ids)).all()
+        # Dernier snapshot par site pour data_quality_score moyen
+        snapshots = (
+            db.query(MonitoringSnapshot)
+            .filter(MonitoringSnapshot.site_id.in_(site_ids))
+            .order_by(MonitoringSnapshot.created_at.desc())
+            .all()
+        )
+    else:
+        alerts = []
+        snapshots = []
+
+    # Single-pass partitioning des alertes
+    open_alerts: list[MonitoringAlert] = []
+    critical_alerts: list[MonitoringAlert] = []
+    impact_total_eur = 0.0
+    for a in alerts:
+        if a.status == AlertStatus.OPEN:
+            open_alerts.append(a)
+            impact_total_eur += a.estimated_impact_eur or 0.0
+            if a.severity == AlertSeverity.CRITICAL:
+                critical_alerts.append(a)
+
+    nb_alerts_open = len(open_alerts)
+    nb_alerts_critical = len(critical_alerts)
+
+    # Score qualité données : moyenne des derniers snapshots par site
+    seen_sites: set[int] = set()
+    quality_scores: list[float] = []
+    for snap in snapshots:
+        if snap.site_id in seen_sites:
+            continue
+        seen_sites.add(snap.site_id)
+        if snap.data_quality_score is not None:
+            quality_scores.append(snap.data_quality_score)
+
+    data_quality_avg = round(sum(quality_scores) / len(quality_scores)) if quality_scores else None
+    sites_monitored = len(seen_sites)
+
+    # ── Kicker + titre + italic hook §5 ──
+    week_iso = datetime.now(timezone.utc).isocalendar().week
+    if nb_alerts_open > 0:
+        kicker = (
+            f"MONITORING · SEMAINE {week_iso} · "
+            f"{nb_alerts_open} ALERTE{'S' if nb_alerts_open > 1 else ''} ACTIVE{'S' if nb_alerts_open > 1 else ''}"
+        )
+    else:
+        kicker = f"MONITORING · SEMAINE {week_iso} · {sites_monitored} SITE{'S' if sites_monitored != 1 else ''} SUIVI{'S' if sites_monitored != 1 else ''}"
+    title = "Vos sites énergie en temps réel"
+    italic_hook = "performance · alertes · qualité données"
+
+    # ── Narrative orientée Marie DAF + Energy Manager ──
+    narr_parts = []
+    if nb_alerts_critical > 0:
+        narr_parts.append(
+            f"{nb_alerts_critical} alerte{'s' if nb_alerts_critical > 1 else ''} "
+            f"critique{'s' if nb_alerts_critical > 1 else ''} en cours — "
+            "intervention immédiate recommandée."
+        )
+    elif nb_alerts_open > 0:
+        narr_parts.append(
+            f"{nb_alerts_open} alerte{'s' if nb_alerts_open > 1 else ''} "
+            f"active{'s' if nb_alerts_open > 1 else ''} sur votre patrimoine — "
+            "à traiter selon priorité."
+        )
+    elif sites_monitored > 0:
+        narr_parts.append(
+            f"{sites_monitored} site{'s' if sites_monitored > 1 else ''} sous "
+            "surveillance — aucune dérive détectée cette semaine."
+        )
+    else:
+        narr_parts.append("Aucun site sous surveillance active — lancez l'analyse pour activer le pilotage temps réel.")
+
+    if impact_total_eur >= _MONITORING_SEUIL_IMPACT_CRITIQUE_EUR:
+        narr_parts.append(
+            f"Impact estimé des dérives ouvertes : {_fmt_eur_short(impact_total_eur)} récupérables via correction."
+        )
+
+    if data_quality_avg is not None:
+        if data_quality_avg >= _MONITORING_DATA_QUALITY_GOOD:
+            narr_parts.append(f"Qualité données {data_quality_avg}/100 — pilotage fiable.")
+        elif data_quality_avg < _MONITORING_DATA_QUALITY_CRITICAL:
+            narr_parts.append(
+                f"Qualité données {data_quality_avg}/100 — fiabilité dégradée, vérifier la collecte télérelevé."
+            )
+
+    narr_parts.append(
+        "Le moteur monitoring suit en continu puissance souscrite, charge réseau, "
+        "consommation hors-horaires et qualité des relevés — conforme ISO 50001."
+    )
+    narrative = " ".join(narr_parts)
+
+    # ── 3 KPIs hero §5 — angle pilotage opérationnel ──
+    kpis: list[NarrativeKpi] = [
+        NarrativeKpi(
+            label="Confiance données",
+            value=f"{data_quality_avg}/100" if data_quality_avg is not None else "—",
+            tooltip=(
+                "Score de qualité des relevés énergétiques (0-100). Calculé "
+                "sur la complétude, la cohérence temporelle et la régularité "
+                "des télérelevés. Seuil fiable : ≥ 80/100."
+            ),
+            source="MonitoringSnapshot.data_quality_score",
+        ),
+        NarrativeKpi(
+            label="Alertes actives",
+            value=str(nb_alerts_open),
+            unit=f"dont {nb_alerts_critical} critique{'s' if nb_alerts_critical > 1 else ''}"
+            if nb_alerts_critical > 0
+            else None,
+            tooltip=(
+                "Nombre de signaux de dérive détectés et non encore traités. "
+                "Une alerte critique nécessite une intervention immédiate ; les "
+                "warnings sont à programmer dans la semaine."
+            ),
+            source="MonitoringAlert.status=OPEN",
+        ),
+        NarrativeKpi(
+            label="Impact dérives",
+            value=_fmt_eur_short(impact_total_eur),
+            tooltip=(
+                "Cumul des pertes estimées sur les alertes ouvertes — surconsommation, "
+                "dépassement puissance, profil anormal. Récupérables par correction."
+            ),
+            source="MonitoringAlert.estimated_impact_eur",
+        ),
+    ]
+
+    # ── Week-cards Monitoring ──
+    week_cards: list[NarrativeWeekCard] = []
+
+    # DRIFT — alerte critique avec plus fort impact
+    if critical_alerts:
+        top_critical = max(critical_alerts, key=lambda a: a.estimated_impact_eur or 0)
+        critical_impact = top_critical.estimated_impact_eur or 0
+        site_label = (
+            next((s.nom for s in ctx.sites if s.id == top_critical.site_id), None) or f"site #{top_critical.site_id}"
+        )
+        week_cards.append(
+            NarrativeWeekCard(
+                type="drift",
+                title=f"Dérive critique · {site_label}",
+                body=(
+                    (top_critical.explanation[:140] if top_critical.explanation else "Anomalie détectée")
+                    + " — agir cette semaine pour limiter l'impact."
+                ),
+                cta_path=f"/monitoring?site_id={top_critical.site_id}&alert={top_critical.id}",
+                cta_label="Voir l'alerte",
+                impact_eur=critical_impact,
+                urgency_days=7,
+            )
+        )
+
+    # TODO — autres alertes ouvertes à programmer
+    other_open = nb_alerts_open - nb_alerts_critical
+    if other_open > 0:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="todo",
+                title=f"Programmer {other_open} action{'s' if other_open > 1 else ''} corrective{'s' if other_open > 1 else ''}",
+                body=(
+                    "Alertes warning à intégrer au plan de maintenance — "
+                    "économies cumulées progressives, conformité ISO 50001."
+                ),
+                cta_path="/monitoring",
+                cta_label="Liste alertes",
+                impact_eur=impact_total_eur - sum((a.estimated_impact_eur or 0) for a in critical_alerts),
+                urgency_days=30,
+            )
+        )
+
+    # GOOD_NEWS — qualité données fiable
+    if data_quality_avg is not None and data_quality_avg >= _MONITORING_DATA_QUALITY_GOOD and nb_alerts_open == 0:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="good_news",
+                title=f"Patrimoine stable · qualité {data_quality_avg}/100",
+                body=(
+                    "Aucune dérive détectée et collecte télérelevé fiable — "
+                    "pilotage en routine, base solide pour optimisation continue."
+                ),
+                cta_path="/diagnostic",
+                cta_label="Identifier leviers",
+            )
+        )
+
+    fallback_body = (
+        "Aucune alerte cette semaine — patrimoine sous contrôle. Le moteur "
+        "surveille puissance, charge et qualité données en continu."
+    )
+
+    # Tone : CRITICAL si critique ou impact >1k€, TENSION si alertes warning,
+    # POSITIVE si data_quality fiable + 0 alerte, NEUTRAL sinon.
+    if nb_alerts_critical > 0 or impact_total_eur >= _MONITORING_SEUIL_IMPACT_CRITIQUE_EUR:
+        narrative_tone = NarrativeTone.CRITICAL
+    elif nb_alerts_open > 0:
+        narrative_tone = NarrativeTone.TENSION
+    elif data_quality_avg is not None and data_quality_avg >= _MONITORING_DATA_QUALITY_GOOD:
+        narrative_tone = NarrativeTone.POSITIVE
+    else:
+        narrative_tone = NarrativeTone.NEUTRAL
+
+    provenance = _build_provenance_canonical(
+        "Monitoring Performance Électrique + ISO 50001 + COSTIC",
+        conformite_score=ctx.conformite_score,
+        sites_count=sites_count,
+        methodology_url="/methodologie/performance-monitoring",
+    )
+
+    return Narrative(
+        page_key="monitoring",
+        persona="daily",
+        kicker=kicker,
+        title=title,
+        italic_hook=italic_hook,
+        narrative=narrative,
+        narrative_tone=narrative_tone,
+        kpis=tuple(kpis),
+        week_cards=tuple(week_cards),
+        fallback_body=fallback_body,
+        provenance=provenance,
+    )
+
+
 # ── Helpers format FR ───────────────────────────────────────────────
 
 
@@ -1538,7 +1805,8 @@ _BUILDERS = {
     "conformite": _build_conformite,
     "bill_intel": _build_bill_intel,
     "achat_energie": _build_achat_energie,
-    # Sprint 1.7+ : ajouter monitoring, diagnostic, anomalies, flex.
+    "monitoring": _build_monitoring,
+    # Sprint 1.8+ : ajouter diagnostic, anomalies, flex.
 }
 
 

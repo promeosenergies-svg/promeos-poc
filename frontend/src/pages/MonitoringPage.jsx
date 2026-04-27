@@ -69,7 +69,12 @@ import { track } from '../services/tracker';
 import { getKpiMessage } from '../services/kpiMessaging';
 import { getKpiLabel } from '../shared/kpiLabels';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
-import { fmtDateFR, fmtEur, fmtKwh, fmtKw, fmtCo2 } from '../utils/format';
+import { fmtDateFR, fmtEur, fmtKwh, fmtKw, fmtCo2, scopeKicker } from '../utils/format';
+import SolPageHeader from '../ui/sol/SolPageHeader';
+import SolNarrative from '../ui/sol/SolNarrative';
+import SolWeekCards from '../ui/sol/SolWeekCards';
+import SolPageFooter from '../ui/sol/SolPageFooter';
+import { usePageBriefing } from '../hooks/usePageBriefing';
 import {
   toConsoExplorer,
   toConsoDiag,
@@ -1561,11 +1566,21 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
 // --- Main component ---
 
 export default function MonitoringPage() {
-  const { scope, setSite, sitesLoading, orgSites } = useScope();
+  const { scope, setSite, sitesLoading, orgSites, org, scopedSites } = useScope();
   const { isExpert } = useExpertMode();
   const navigate = useNavigate();
   const { toast } = useToast();
   const siteId = scope.siteId;
+
+  // Sprint 1.7 — briefing éditorial Sol §5 vue Monitoring (ADR-001).
+  // Pillar §4.2 doctrine : EMS / Performance — pilotage temps réel,
+  // alertes automatiques, qualité données, conformité ISO 50001.
+  // Sert Marie DAF (santé patrimoine) + Energy Manager (dérives).
+  const {
+    briefing: solBriefing,
+    error: solBriefingError,
+    refetch: solBriefingRefetch,
+  } = usePageBriefing('monitoring', { persona: 'daily' });
   // Step 11: unified period from URL (default 90 days for monitoring)
   const { period, periodQueryString: _periodQueryString } = usePeriodParams(90);
   const monitoringDays = period.days;
@@ -2006,18 +2021,28 @@ export default function MonitoringPage() {
 
   const hasData = kpis || alerts.length > 0 || snapshots.length > 0;
 
+  // Sprint 1.7 P0-C : subtitle node Sol — éviter duplication PageShell ↔
+  // SolPageHeader (leçon S1.6bis P0-4 : un seul rendu DOM).
+  const monitoringSubtitleNode = (
+    <>
+      Suivez vos sites en temps réel : puissance, qualité données, alertes.{' '}
+      <span className="text-xs text-[var(--sol-ink-400)] ml-2">
+        Période : {period.start} — {period.end} ({period.days}j)
+      </span>
+    </>
+  );
+
   return (
     <PageShell
       icon={Activity}
       title="Performance Électrique"
-      subtitle={
-        <>
-          Suivez les KPIs électriques en temps réel : puissance souscrite, qualité de données,
-          alertes automatiques.{' '}
-          <span className="text-xs text-gray-400 ml-2">
-            Période : {period.start} — {period.end} ({period.days}j)
-          </span>
-        </>
+      editorialHeader={
+        <SolPageHeader
+          kicker={solBriefing?.kicker || scopeKicker('MONITORING', org?.nom, scopedSites?.length)}
+          title={solBriefing?.title || 'Vos sites énergie en temps réel'}
+          italicHook={solBriefing?.italicHook || 'performance · alertes · qualité données'}
+          subtitle={monitoringSubtitleNode}
+        />
       }
       actions={
         <>
@@ -2060,6 +2085,29 @@ export default function MonitoringPage() {
         </>
       }
     >
+      {/* Sprint 1.7 — préambule éditorial Sol §5 vue Monitoring (ADR-001).
+          Pillar §4.2 : EMS / Performance — pilotage temps réel + alertes
+          + qualité données. Sert Marie DAF + Energy Manager. */}
+      {solBriefingError && !solBriefing && (
+        <SolNarrative error={solBriefingError} onRetry={solBriefingRefetch} />
+      )}
+      {solBriefing && (
+        <SolNarrative
+          kicker={null /* déjà rendu dans SolPageHeader éditorialHeader */}
+          title={null /* idem — éviter doublon */}
+          narrative={solBriefing.narrative}
+          kpis={solBriefing.kpis}
+        />
+      )}
+      {solBriefing && (
+        <SolWeekCards
+          cards={solBriefing.weekCards}
+          fallbackBody={solBriefing.fallbackBody}
+          tone={solBriefing.narrativeTone}
+          onNavigate={navigate}
+        />
+      )}
+
       {error && <ErrorState message={error} onRetry={loadAll} />}
 
       {/* Empty state with demo CTA */}
@@ -3129,6 +3177,18 @@ export default function MonitoringPage() {
       />
 
       {/* Action creation handled by ActionDrawerContext */}
+
+      {/* Sprint 1.7 — SolPageFooter §5 (ADR-001).
+          Source · Confiance · Mis à jour. Methodology URL pointe vers
+          /methodologie/performance-monitoring (ISO 50001 + COSTIC). */}
+      {solBriefing?.provenance && (
+        <SolPageFooter
+          source={solBriefing.provenance.source}
+          confidence={solBriefing.provenance.confidence}
+          updatedAt={solBriefing.provenance.updated_at}
+          methodologyUrl={solBriefing.provenance.methodology_url}
+        />
+      )}
     </PageShell>
   );
 }

@@ -39,6 +39,7 @@ SUPPORTED_PAGE_KEYS = {
     "conformite",
     "bill_intel",
     "achat_energie",
+    "monitoring",
 }
 
 
