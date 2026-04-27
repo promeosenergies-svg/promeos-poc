@@ -62,6 +62,7 @@ const TertiaireEfaDetailPage = lazy(() => import('./pages/tertiaire/TertiaireEfa
 const TertiaireAnomaliesPage = lazy(() => import('./pages/tertiaire/TertiaireAnomaliesPage'));
 const ConsumptionContextPage = lazy(() => import('./pages/ConsumptionContextPage'));
 const AnomaliesPage = lazy(() => import('./pages/AnomaliesPage'));
+const FlexPage = lazy(() => import('./pages/FlexPage'));
 const CompliancePipelinePage = lazy(() => import('./pages/CompliancePipelinePage'));
 const SiteCompliancePage = lazy(() => import('./pages/SiteCompliancePage'));
 const PaymentRulesPage = lazy(() => import('./pages/PaymentRulesPage'));
@@ -564,6 +565,15 @@ function App() {
                             </PageSuspense>
                           }
                         />
+                        {/* Sprint 1.10 — page 10/10 Flex Intelligence (couverture nav 100%). */}
+                        <Route
+                          path="/flex"
+                          element={
+                            <PageSuspense>
+                              <FlexPage />
+                            </PageSuspense>
+                          }
+                        />
                         <Route
                           path="/diagnostic"
                           element={<Navigate to="/diagnostic-conso" replace />}
@@ -890,6 +900,15 @@ function App() {
                           element={
                             <PageSuspense>
                               <AnomaliesPage />
+                            </PageSuspense>
+                          }
+                        />
+                        {/* Sprint 1.10 — page 10/10 Flex Intelligence (couverture nav 100%). */}
+                        <Route
+                          path="/flex"
+                          element={
+                            <PageSuspense>
+                              <FlexPage />
                             </PageSuspense>
                           }
                         />

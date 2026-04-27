@@ -42,6 +42,7 @@ SUPPORTED_PAGE_KEYS = {
     "monitoring",
     "diagnostic",
     "anomalies",
+    "flex",
 }
 
 

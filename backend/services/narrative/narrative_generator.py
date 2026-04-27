@@ -2478,6 +2478,278 @@ def _build_anomalies(
     )
 
 
+# Sprint 1.10 — constantes module Flex Intelligence (§4.6 doctrine).
+# Sourçage : NEBCO/AOFD mécanismes RTE + ISO 50001 + observatoire CRE T4 2025.
+_FLEX_SCORE_GOOD = 60  # score ≥ 60/100 = potentiel actionnable
+_FLEX_SCORE_CRITICAL = 30  # score < 30/100 = potentiel limité (à renforcer)
+_FLEX_SEUIL_KW_SIGNIFICATIF = 100  # ≥ 100 kW pilotables = bloc d'effacement viable
+
+# SoT FR labels asset_type (cf models.flex_models.FlexAssetType).
+_FLEX_ASSET_LABELS_FR: dict[str, str] = {
+    "hvac": "CVC (climatisation)",
+    "irve": "Bornes recharge",
+    "cold_storage": "Froid industriel",
+    "thermal_storage": "Stockage thermique",
+    "battery": "Batterie stationnaire",
+    "pv": "Photovoltaïque",
+    "lighting": "Éclairage",
+    "process": "Process industriel",
+    "other": "Autre actif",
+}
+
+
+def _build_flex(
+    db: Session,
+    org_id: int,
+    org_name: str,
+    sites_count: int,
+) -> Narrative:
+    """Sprint 1.10 — Vue Flex Intelligence (différenciateur §4.6).
+
+    Promesse §4.6 doctrine : « Effacement comme revenu — éligibilité NEBCO
+    (mécanisme effacement RTE), Flex Score, bridge aggregateurs. PROMEOS
+    industrialise l'audit flex sans contrainte : pas d'engagement
+    aggregateur, neutralité, données chez le client. »
+
+    Sert Energy Manager (priorisation actifs flex), Marie DAF (gisement €
+    via revenus NEBCO/AOFD), Investisseur (preuve §4.6 pillar = wedge
+    durable face à Voltalis, GreenFlex, Smart Energie).
+
+    Données réelles :
+      - FlexAsset : asset_type, power_kw, is_controllable, gtb_class
+      - FlexAssessment : flex_score, potential_kw, levers_json,
+        4 dimensions (technical/data/economic/regulatory)
+    """
+    from models.flex_models import FlexAsset, FlexAssessment
+
+    ctx = _load_org_context(db, org_id)
+    site_ids = [s.id for s in ctx.sites]
+
+    # ── Récupérer assets + assessments ──
+    if site_ids:
+        assets = db.query(FlexAsset).filter(FlexAsset.site_id.in_(site_ids)).all()
+        assessments = db.query(FlexAssessment).filter(FlexAssessment.site_id.in_(site_ids)).all()
+    else:
+        assets = []
+        assessments = []
+
+    # Single-pass agrégats assets : controllable_kw, asset_type counts.
+    controllable_kw = 0.0
+    nb_controllable = 0
+    nb_total_assets = len(assets)
+    asset_types_seen: dict[str, int] = {}
+    for a in assets:
+        if a.is_controllable:
+            nb_controllable += 1
+            controllable_kw += a.power_kw or 0.0
+        type_key = a.asset_type.value if hasattr(a.asset_type, "value") else str(a.asset_type)
+        asset_types_seen[type_key] = asset_types_seen.get(type_key, 0) + 1
+
+    # Single-pass agrégats assessments : score moyen, potential cumulé.
+    nb_assessed = len(assessments)
+    sum_flex_score = sum((ass.flex_score or 0) for ass in assessments)
+    flex_score_avg = round(sum_flex_score / nb_assessed) if nb_assessed > 0 else None
+    potential_kw_total = sum((ass.potential_kw or 0.0) for ass in assessments)
+    potential_kwh_year_total = sum((ass.potential_kwh_year or 0.0) for ass in assessments)
+
+    # ── Kicker + titre + italic hook §5 ──
+    week_iso = datetime.now(timezone.utc).isocalendar().week
+    if nb_total_assets > 0:
+        kicker = (
+            f"FLEX INTELLIGENCE · SEMAINE {week_iso} · "
+            f"{nb_total_assets} ACTIF{_s(nb_total_assets).upper()} INVENTORIÉ{_s(nb_total_assets).upper()}"
+        )
+    else:
+        kicker = f"FLEX INTELLIGENCE · SEMAINE {week_iso} · POTENTIEL EFFACEMENT À ÉVALUER"
+    title = "Votre potentiel d'effacement, sans engagement"
+    italic_hook = "neutralité · pas d'aggregateur · vos données chez vous"
+
+    # ── Narrative orientée Marie DAF + Energy Manager ──
+    # Doctrine §10 : NEBCO/AOFD/GTB explicités inline (vocabulaire FR-first).
+    narr_parts = []
+    if nb_total_assets == 0:
+        narr_parts.append(
+            "Aucun actif pilotable inventorié — lancez l'audit Flex pour identifier "
+            "votre potentiel d'effacement (CVC, froid, batterie, photovoltaïque)."
+        )
+    elif nb_controllable == 0:
+        narr_parts.append(
+            f"{nb_total_assets} actif{_s(nb_total_assets)} inventorié{_s(nb_total_assets)} "
+            "mais aucun n'est encore pilotable — installer une GTB (gestion "
+            "technique du bâtiment) débloque le potentiel."
+        )
+    else:
+        narr_parts.append(
+            f"{nb_controllable} actif{_s(nb_controllable)} pilotable{_s(nb_controllable)} "
+            f"sur {nb_total_assets} — potentiel {round(controllable_kw)} kW d'effacement "
+            "instantané activable."
+        )
+
+    if flex_score_avg is not None:
+        if flex_score_avg >= _FLEX_SCORE_GOOD:
+            narr_parts.append(
+                f"Score Flex moyen {flex_score_avg}/100 — potentiel actionnable, "
+                "passage en revenu NEBCO (mécanisme effacement RTE) envisageable."
+            )
+        elif flex_score_avg < _FLEX_SCORE_CRITICAL:
+            narr_parts.append(
+                f"Score Flex moyen {flex_score_avg}/100 — potentiel limité, renforcement instrumentation prioritaire."
+            )
+        else:
+            narr_parts.append(
+                f"Score Flex moyen {flex_score_avg}/100 — potentiel intermédiaire, "
+                "leviers à activer pour passer le cap des 60/100."
+            )
+
+    if potential_kwh_year_total > 0:
+        narr_parts.append(
+            f"Potentiel énergétique annuel : {round(potential_kwh_year_total / 1000)} MWh — "
+            "convertible en revenus marché capacité ou appels d'offres effacement (AOFD RTE)."
+        )
+
+    narr_parts.append(
+        "PROMEOS Sol industrialise l'audit Flex sans engagement aggregateur "
+        "— vos données restent chez vous, neutralité totale vs Voltalis, "
+        "GreenFlex, Smart Energie."
+    )
+    narrative = " ".join(narr_parts)
+
+    # ── 3 KPIs hero §5 — angle Energy Manager + DAF ──
+    kpis: list[NarrativeKpi] = [
+        NarrativeKpi(
+            label="Potentiel pilotable",
+            value=f"{round(controllable_kw)} kW" if controllable_kw > 0 else "—",
+            unit=f"sur {nb_total_assets} actif{_s(nb_total_assets)}" if nb_total_assets > 0 else None,
+            tooltip=(
+                "Puissance instantanée mobilisable pour effacement (somme des "
+                "actifs pilotables avec GTB/API). Seuil bloc d'effacement viable "
+                "RTE : 100 kW minimum pour rentrer en NEBCO."
+            ),
+            source="FlexAsset.is_controllable agrégé",
+        ),
+        NarrativeKpi(
+            label="Score Flex moyen",
+            value=f"{flex_score_avg}/100" if flex_score_avg is not None else "—",
+            unit=f"sur {nb_assessed} site{_s(nb_assessed)}" if nb_assessed > 0 else None,
+            tooltip=(
+                "Score 0-100 sur 4 dimensions : maturité technique (assets "
+                "contrôlables), confiance données, pertinence économique, "
+                "alignement réglementaire. Seuil actionnable : ≥ 60/100."
+            ),
+            source="FlexAssessment · 4 dimensions",
+        ),
+        NarrativeKpi(
+            label="Énergie annuelle",
+            value=(f"{round(potential_kwh_year_total / 1000)} MWh" if potential_kwh_year_total > 0 else "—"),
+            tooltip=(
+                "Énergie annuelle modulable estimée. Convertible en revenu "
+                "via NEBCO (mécanisme effacement RTE) ou AOFD (appels d'offres "
+                "effacement diffus). Estimation modélisée, pas un revenu garanti."
+            ),
+            source="FlexAssessment.potential_kwh_year",
+        ),
+    ]
+
+    # ── Week-cards Flex ──
+    week_cards: list[NarrativeWeekCard] = []
+
+    # DRIFT — site avec score < CRITICAL.
+    critical_assessments = [a for a in assessments if (a.flex_score or 100) < _FLEX_SCORE_CRITICAL]
+    if critical_assessments:
+        worst = min(critical_assessments, key=lambda a: a.flex_score or 0)
+        site_label = next(
+            (s.nom or f"site #{s.id}" for s in ctx.sites if s.id == worst.site_id), f"site #{worst.site_id}"
+        )
+        week_cards.append(
+            NarrativeWeekCard(
+                type="drift",
+                title=f"Score Flex faible · {site_label}",
+                body=(
+                    f"Score {round(worst.flex_score or 0)}/100 — instrumentation à renforcer "
+                    "(GTB, métrologie temps réel) pour débloquer le potentiel d'effacement."
+                ),
+                cta_path=f"/flex?site_id={worst.site_id}",
+                cta_label="Voir le diagnostic",
+                urgency_days=60,
+            )
+        )
+
+    # TODO — sites non évalués.
+    sites_not_assessed = sites_count - nb_assessed
+    if sites_not_assessed > 0:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="todo",
+                title=f"Évaluer {sites_not_assessed} site{_s(sites_not_assessed)}",
+                body=(
+                    "Lancer l'audit Flex pour cartographier le potentiel d'effacement "
+                    "et estimer les revenus marché capacité — sans engagement aggregateur."
+                ),
+                cta_path="/flex?status=not_assessed",
+                cta_label="Lancer audit Flex",
+                urgency_days=90,
+            )
+        )
+
+    # GOOD_NEWS — potentiel ≥ seuil viable NEBCO.
+    if controllable_kw >= _FLEX_SEUIL_KW_SIGNIFICATIF:
+        week_cards.append(
+            NarrativeWeekCard(
+                type="good_news",
+                title=f"{round(controllable_kw)} kW pilotables identifiés",
+                body=(
+                    "Au-dessus du seuil NEBCO 100 kW — éligibilité mécanisme effacement "
+                    "RTE confirmée. Passage en revenus marché capacité possible "
+                    "via aggregateur OU mode auto-effacement (neutralité PROMEOS)."
+                ),
+                cta_path="/flex?status=actionable",
+                cta_label="Voir les actifs pilotables",
+                impact_eur=potential_kwh_year_total * 0.030,  # ~30 €/MWh estim. revenu effacement
+            )
+        )
+
+    fallback_body = (
+        "Aucun audit Flex en cours — lancez l'évaluation pour cartographier "
+        "votre potentiel d'effacement et estimer les revenus marché capacité."
+    )
+
+    # Tone : CRITICAL si score moyen < critique, TENSION si non évalué,
+    # POSITIVE si score ≥ good + potential significatif, NEUTRAL sinon.
+    if flex_score_avg is not None and flex_score_avg < _FLEX_SCORE_CRITICAL:
+        narrative_tone = NarrativeTone.CRITICAL
+    elif sites_not_assessed > 0 or nb_assessed == 0:
+        narrative_tone = NarrativeTone.TENSION
+    elif (
+        flex_score_avg is not None
+        and flex_score_avg >= _FLEX_SCORE_GOOD
+        and controllable_kw >= _FLEX_SEUIL_KW_SIGNIFICATIF
+    ):
+        narrative_tone = NarrativeTone.POSITIVE
+    else:
+        narrative_tone = NarrativeTone.NEUTRAL
+
+    provenance = _build_provenance_volume_based(
+        source="Flex Intelligence + NEBCO RTE + AOFD + ISO 50001",
+        has_data=(nb_total_assets + nb_assessed) > 0,
+        sites_count=sites_count,
+        methodology_url="/methodologie/flex-effacement",
+    )
+
+    return Narrative(
+        page_key="flex",
+        persona="daily",
+        kicker=kicker,
+        title=title,
+        italic_hook=italic_hook,
+        narrative=narrative,
+        narrative_tone=narrative_tone,
+        kpis=tuple(kpis),
+        week_cards=tuple(week_cards),
+        fallback_body=fallback_body,
+        provenance=provenance,
+    )
+
+
 # ── Helpers format FR ───────────────────────────────────────────────
 
 
@@ -2525,7 +2797,8 @@ _BUILDERS = {
     "monitoring": _build_monitoring,
     "diagnostic": _build_diagnostic,
     "anomalies": _build_anomalies,
-    # Sprint 1.10 : ajouter flex.
+    "flex": _build_flex,
+    # Couverture nav 10/10 (100%) — Sprint 2 : event-bus densification.
 }
 
 

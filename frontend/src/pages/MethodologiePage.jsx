@@ -70,6 +70,12 @@ const METHODOLOGIE_CATALOG = Object.freeze({
     kicker: "MÉTHODOLOGIE · CENTRE D'ACTIONS",
     publicPath: '/docs/methodologie/centre-actions.md',
   },
+  'flex-effacement': {
+    title: 'Flex Intelligence — Effacement comme revenu',
+    italicHook: 'neutralité · pas d’aggregateur · NEBCO/AOFD RTE · 4 dimensions',
+    kicker: 'MÉTHODOLOGIE · FLEX',
+    publicPath: '/docs/methodologie/flex-effacement.md',
+  },
 });
 
 // Mini-renderer markdown : titre, paragraphes, listes, tables, code,
