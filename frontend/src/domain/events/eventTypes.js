@@ -56,6 +56,21 @@ export const EVENT_SOURCE_SYSTEMS = Object.freeze([
 /** Niveaux confidence (doctrine §10 + §7.1 contrat data). */
 export const EVENT_CONFIDENCES = Object.freeze(['high', 'medium', 'low']);
 
+/**
+ * Statuts fraîcheur data (doctrine §7.2 statuts obligatoires).
+ * Frontend doit afficher un badge visuel pour chaque statut non-`fresh`
+ * (« estimé » ambré, « incomplet » jaune, « stale » gris, « démo » bleu).
+ *
+ * SoT canonique : `backend/services/event_bus/types.py::EventFreshnessStatus`.
+ */
+export const EVENT_FRESHNESS_STATUSES = Object.freeze([
+  'fresh',
+  'stale',
+  'estimated',
+  'incomplete',
+  'demo',
+]);
+
 /** Roles owner action (doctrine §10). */
 export const EVENT_OWNER_ROLES = Object.freeze([
   'DAF',
@@ -94,6 +109,7 @@ export function isValidEvent(event) {
     event.source &&
     EVENT_SOURCE_SYSTEMS.includes(event.source.system) &&
     EVENT_CONFIDENCES.includes(event.source.confidence) &&
+    EVENT_FRESHNESS_STATUSES.includes(event.source.freshness_status || 'fresh') &&
     event.action &&
     typeof event.action.label === 'string' &&
     typeof event.action.route === 'string' &&

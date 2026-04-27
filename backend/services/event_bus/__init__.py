@@ -28,6 +28,7 @@ from .types import (
     EventAction,
     EventImpact,
     EventLinkedAssets,
+    EventMitigation,
     EventSource,
     SolEventCard,
 )
@@ -35,6 +36,7 @@ from .types import (
 __all__ = [
     "SolEventCard",
     "EventImpact",
+    "EventMitigation",
     "EventSource",
     "EventAction",
     "EventLinkedAssets",

@@ -49,6 +49,14 @@ EventSourceSystem = Literal[
 
 EventConfidence = Literal["high", "medium", "low"]
 
+# Doctrine v1.1 §7.2 statuts data obligatoires (mapping vers EventSource.freshness_status).
+# - "fresh"     → donnée temps réel ou < TTL système (Enedis 24h, factures 7j…)
+# - "stale"     → donnée valide mais ancienne (TTL dépassé, à rafraîchir)
+# - "estimated" → donnée extrapolée (badge UI obligatoire §7.2)
+# - "incomplete" → période ou périmètre partiel
+# - "demo"      → donnée seed démonstration (badge visible §7.2)
+EventFreshnessStatus = Literal["fresh", "stale", "estimated", "incomplete", "demo"]
+
 EventOwnerRole = Literal["DAF", "Energy Manager", "Site Manager", "Admin", "Operator"]
 
 
@@ -56,27 +64,59 @@ EventOwnerRole = Literal["DAF", "Energy Manager", "Site Manager", "Admin", "Oper
 
 
 @dataclass(frozen=True)
+class EventMitigation:
+    """Optionnel : ratio CAPEX/payback/NPV pour décision arbitrage CFO.
+
+    Sprint 2 Vague C ét11bis (audit CFO P0) : « le CFO décide toujours sur
+    le ratio, jamais sur le risque brut ». Sans ces 3 champs, un événement
+    `compliance_deadline` impact=1,5 M€/an ne dit pas si on doit dégager
+    300 k€ ou 4 M€ de CAPEX. Tous champs optionnels — un événement n'a pas
+    forcément de levier de mitigation chiffré.
+    """
+
+    capex_eur: Optional[float] = None  # Investissement requis pour éviter l'impact
+    payback_months: Optional[int] = None  # Délai de retour sur investissement
+    npv_eur: Optional[float] = None  # Valeur actualisée nette (taux d'actualisation 8% par défaut)
+    npv_horizon_year: Optional[int] = None  # Horizon NPV (2030/2040/2050 typique)
+
+
+@dataclass(frozen=True)
 class EventImpact:
-    """Impact estimé : valeur + unité + période. Doctrine §6 P13 « pas de KPI magique » :
-    `value=None` autorisé pour les événements sans chiffrage immédiat (ex: data_quality_issue
-    avant calcul de perte). Dans ce cas le frontend affiche « impact à qualifier »."""
+    """Impact estimé : valeur + unité + période + mitigation optionnelle.
+
+    Doctrine §6 P13 « pas de KPI magique » : `value=None` autorisé pour les
+    événements sans chiffrage immédiat (ex: data_quality_issue avant calcul
+    de perte). Dans ce cas le frontend affiche « impact à qualifier ».
+
+    Sprint 2 Vague C ét11bis : ajout `mitigation` optionnel (CFO arbitrage
+    CAPEX). Backward-compatible avec ét11 — détecteurs existants ne le
+    renseignent pas, futurs détecteurs (billing_anomaly, compliance_deadline
+    avec étude TRI) le rempliront.
+    """
 
     value: Optional[float]
     unit: EventUnit
     period: EventPeriod
+    mitigation: Optional["EventMitigation"] = None
 
 
 @dataclass(frozen=True)
 class EventSource:
-    """Source de l'événement — système + horodatage + niveau de confiance.
+    """Source de l'événement — système + horodatage + niveau de confiance + statut.
 
     Doctrine v1.1 §7.1 contrat de confiance data : tout événement doit porter
-    son identité (source primaire, dernière mise à jour, confiance évaluable).
+    son identité (source primaire, dernière mise à jour, confiance évaluable,
+    statut fraîcheur).
+
+    Sprint 2 Vague C ét11bis : ajout `freshness_status` (audit doctrine P0
+    pour atteindre 9+) — couvre §7.2 statuts obligatoires (Réel/Estimé/
+    Incomplet/Stale/Démo). Frontend doit afficher un badge correspondant.
     """
 
     system: EventSourceSystem
     last_updated_at: datetime
     confidence: EventConfidence
+    freshness_status: EventFreshnessStatus = "fresh"  # défaut sain : donnée temps réel/à jour
 
 
 @dataclass(frozen=True)

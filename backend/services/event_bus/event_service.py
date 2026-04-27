@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from .detectors import compliance_deadline_detector
+from .detectors import DETECTORS
 from .types import SEVERITY_TO_CARD_TYPE, EventSeverity, SolEventCard
 
 # Ordre de tri severity (le plus urgent d'abord).
@@ -48,7 +48,10 @@ def compute_events(db: Session, org_id: int) -> list[SolEventCard]:
         `compliance_deadline_detector`. Liste vide si rien à signaler.
     """
     events: list[SolEventCard] = []
-    events.extend(compliance_deadline_detector.detect(db, org_id))
+    # Sprint 2 Vague C ét11bis : itération sur DETECTORS registry (PEP 544
+    # Protocol). Ajouter un détecteur ne nécessite plus de modifier ce fichier.
+    for detector in DETECTORS:
+        events.extend(detector.detect(db, org_id))
 
     # Tri stable par severity ascendant (critical=0 d'abord).
     events.sort(key=lambda e: _SEVERITY_ORDER.get(e.severity, 99))

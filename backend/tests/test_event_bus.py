@@ -47,6 +47,7 @@ from services.event_bus.types import (
     EventAction,
     EventImpact,
     EventLinkedAssets,
+    EventMitigation,
     EventSource,
 )
 
@@ -290,6 +291,86 @@ def test_to_narrative_week_cards_preserves_route(db, org_with_sites):
 
 
 # ── Test isolation org ──────────────────────────────────────────────
+
+
+# ── Sprint 2 Vague C ét11bis : Protocol + freshness + mitigation ────
+
+
+def test_detector_module_satisfies_event_detector_protocol():
+    """Vérifie que les modules détecteurs respectent le Protocol structurel."""
+    from services.event_bus.detectors import DETECTORS, EventDetector
+
+    assert len(DETECTORS) >= 1
+    for detector in DETECTORS:
+        assert isinstance(detector, EventDetector), (
+            f"Détecteur {detector} ne respecte pas le Protocol EventDetector "
+            "— vérifier signature `detect(db, org_id) -> list[SolEventCard]`."
+        )
+
+
+def test_event_source_freshness_status_default_fresh():
+    """EventSource.freshness_status défaut = 'fresh' pour rétro-compat ét11."""
+    from datetime import datetime, timezone
+
+    src = EventSource(
+        system="RegOps",
+        last_updated_at=datetime.now(timezone.utc),
+        confidence="high",
+    )
+    # Pas de freshness_status passé → défaut 'fresh'
+    assert src.freshness_status == "fresh"
+
+
+def test_event_source_freshness_status_demo_seed():
+    """Doctrine §7.2 : statut 'demo' pour données seed (badge UI obligatoire)."""
+    from datetime import datetime, timezone
+
+    src = EventSource(
+        system="manual",
+        last_updated_at=datetime.now(timezone.utc),
+        confidence="low",
+        freshness_status="demo",
+    )
+    assert src.freshness_status == "demo"
+
+
+def test_event_impact_mitigation_optional():
+    """EventImpact.mitigation optionnel — backward-compat ét11."""
+    impact = EventImpact(value=10000.0, unit="€", period="year")
+    assert impact.mitigation is None
+
+
+def test_event_impact_mitigation_full():
+    """EventMitigation : capex + payback + npv pour CFO arbitrage."""
+    mitigation = EventMitigation(
+        capex_eur=50000.0,
+        payback_months=18,
+        npv_eur=120000.0,
+        npv_horizon_year=2030,
+    )
+    impact = EventImpact(
+        value=15000.0,
+        unit="€",
+        period="year",
+        mitigation=mitigation,
+    )
+    assert impact.mitigation.capex_eur == 50000.0
+    assert impact.mitigation.payback_months == 18
+
+
+def test_compute_events_uses_detectors_registry(db, org_with_sites):
+    """compute_events itère sur DETECTORS registry (ét11bis Architecture P0)."""
+    from services.event_bus.detectors import DETECTORS
+
+    # Simulation : si on retire le détecteur du registry, compute_events
+    # doit retourner une liste vide.
+    original_detectors = DETECTORS.copy()
+    DETECTORS.clear()
+    try:
+        events = compute_events(db, org_with_sites["org_id"])
+        assert events == []
+    finally:
+        DETECTORS.extend(original_detectors)
 
 
 def test_org_isolation_no_cross_leak(db):
