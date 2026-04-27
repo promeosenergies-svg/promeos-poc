@@ -10,7 +10,20 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 
-Unit = Literal["kWh", "MWh", "kW", "kVA", "€", "€/MWh", "€/kWh", "kgCO2e", "%", "days", "kWhEF/m²/an"]
+Unit = Literal[
+    "kWh",
+    "MWh",
+    "kW",
+    "kVA",
+    "€",
+    "€/MWh",
+    "€/kWh",
+    "kgCO2e",
+    "%",
+    "days",
+    "count",  # Sprint 2 Vague B ét10 : remplace "days" pour les compteurs (#anomalies, #actions, #reclaims).
+    "kWhEF/m²/an",
+]
 Scope = Literal["site", "building", "meter", "portfolio", "organization"]
 Period = Literal["day", "week", "month", "year", "rolling_12_months", "calendar_year", "contract_year"]
 Confidence = Literal["high", "medium", "low"]
@@ -88,7 +101,7 @@ KPI_REGISTRY: dict[str, KPIDefinition] = {
     "open_actions_count": KPIDefinition(
         kpi_id="open_actions_count",
         label="Actions ouvertes",
-        unit="days",  # impropre mais on stocke le count comme int — voir validation
+        unit="count",  # Sprint 2 Vague B ét10 : corrigé depuis "days" (impropre).
         formula="count(actions WHERE status IN ('open','in_progress'))",
         source="actions_service",
         scope=["site", "portfolio", "organization"],
@@ -114,11 +127,92 @@ KPI_REGISTRY: dict[str, KPIDefinition] = {
     "billing_anomalies_count": KPIDefinition(
         kpi_id="billing_anomalies_count",
         label="Anomalies facture",
-        unit="days",  # idem, count int
+        unit="count",  # Sprint 2 Vague B ét10 : corrigé depuis "days" (impropre).
         formula="count(billing_anomalies WHERE resolved=false)",
         source="bill_intelligence/anomaly_detector",
         scope=["site", "portfolio", "organization"],
         period=["rolling_12_months"],
+        freshness="on_import",
+        confidence_rule="high",
+        owner="bill_intelligence",
+        used_in=["cockpit", "bill_intelligence"],
+    ),
+    # ─── Sprint 2 Vague B ét7' — losses_service KPIs (§8 doctrine) ───────
+    # Source : backend/services/billing/losses_service.py — BillingLossesSummary
+    # frozen + LossesProvenance × 3 (couvre §7.1 contrat de confiance data).
+    "billing_perte_open_eur": KPIDefinition(
+        kpi_id="billing_perte_open_eur",
+        label="Pertes à récupérer",
+        unit="€",
+        formula="sum(estimated_loss_eur for insight WHERE insight_status=OPEN)",
+        source="losses_service.compute_billing_losses_summary (Bill-Intel shadow billing v4.2)",
+        scope=["site", "portfolio", "organization"],
+        period=["day"],
+        freshness="on_import",
+        confidence_rule="high si anomalies estimated_loss_eur renseignées",
+        owner="bill_intelligence",
+        used_in=["cockpit", "bill_intelligence"],
+    ),
+    "billing_contestation_eur": KPIDefinition(
+        kpi_id="billing_contestation_eur",
+        label="Contestations en cours",
+        unit="€",
+        formula="sum(estimated_loss_eur for insight WHERE insight_status=ACK)",
+        source="losses_service.compute_billing_losses_summary",
+        scope=["site", "portfolio", "organization"],
+        period=["day"],
+        freshness="on_import",
+        confidence_rule="high",
+        owner="bill_intelligence",
+        used_in=["bill_intelligence"],
+    ),
+    "billing_reclaim_ytd_eur": KPIDefinition(
+        kpi_id="billing_reclaim_ytd_eur",
+        label="Récupérations YTD",
+        unit="€",
+        formula="sum(estimated_loss_eur for insight WHERE insight_status=RESOLVED AND updated_at >= 1er janvier)",
+        source="losses_service.compute_billing_losses_summary (reclaim_ytd_eur)",
+        scope=["site", "portfolio", "organization"],
+        period=["calendar_year"],
+        freshness="on_import",
+        confidence_rule="high si insights horodatés correctement",
+        owner="bill_intelligence",
+        used_in=["cockpit", "bill_intelligence"],
+    ),
+    "billing_payback_avg_days": KPIDefinition(
+        kpi_id="billing_payback_avg_days",
+        label="Payback moyen",
+        unit="days",
+        formula="mean(updated_at - created_at).days for insight WHERE insight_status=RESOLVED YTD",
+        source="losses_service.compute_billing_losses_summary (payback_avg_days)",
+        scope=["site", "portfolio", "organization"],
+        period=["calendar_year"],
+        freshness="on_import",
+        confidence_rule="HIGH si ≥10 reclaims, MEDIUM si ≥3, LOW sinon (cf _confidence_for_sample)",
+        owner="bill_intelligence",
+        used_in=["bill_intelligence"],
+    ),
+    "billing_recovery_rate_pct": KPIDefinition(
+        kpi_id="billing_recovery_rate_pct",
+        label="Taux de récupération",
+        unit="%",
+        formula="100 × reclaim_ytd_eur / (reclaim_ytd_eur + perte_open_eur + contestation_eur)",
+        source="losses_service.compute_billing_losses_summary (recovery_rate_pct)",
+        scope=["site", "portfolio", "organization"],
+        period=["calendar_year"],
+        freshness="on_import",
+        confidence_rule="HIGH si ≥10 anomalies actionnées, MEDIUM si ≥3, LOW sinon. None si dénominateur zéro.",
+        owner="bill_intelligence",
+        used_in=["bill_intelligence"],
+    ),
+    "billing_open_anomalies_count": KPIDefinition(
+        kpi_id="billing_open_anomalies_count",
+        label="Anomalies ouvertes",
+        unit="count",
+        formula="count(insight WHERE insight_status=OPEN)",
+        source="losses_service.compute_billing_losses_summary (nb_open)",
+        scope=["site", "portfolio", "organization"],
+        period=["day"],
         freshness="on_import",
         confidence_rule="high",
         owner="bill_intelligence",
