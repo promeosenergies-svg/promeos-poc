@@ -678,18 +678,44 @@ def _detect_derive(readings: List[MeterReading]) -> Optional[dict]:
     total_hours = len(readings)
     excess_kwh = (avg_last - avg_first) * total_hours if avg_last > avg_first else 0
 
+    # Sprint 2 Vague C ét12f-C (audit EM Stéphane P0-EM-1) : exposer
+    # σ baseline interday + z-score normalisé. Avant : seul `drift_pct`
+    # remonté → un EM ne peut pas distinguer dérive vs bruit (un Δ+12%
+    # régulier diffère d'un Δ+12% sporadique). σ porte cette information.
+    # Source : ISO 50001 §A.6.4.5 (« seuils basés sur σ baseline ») +
+    # COSTIC EM&V (z-score > 2σ = significatif).
+    import math
+
+    sigma_baseline_kwh = None
+    z_score = None
+    if len(daily_means) >= 14:
+        # σ interday (écart-type des moyennes journalières)
+        variance = sum((d - mean_val) ** 2 for d in daily_means) / len(daily_means)
+        sigma_baseline_kwh = math.sqrt(variance)
+        if sigma_baseline_kwh > 0:
+            # z-score = écart total normalisé par σ
+            # (« combien de σ représente la dérive observée »)
+            z_score = abs(total_change) / sigma_baseline_kwh
+
+    metrics = {
+        "drift_pct": round(final_drift, 1),
+        "drift_pct_linreg": round(drift_pct, 1),
+        "drift_pct_fallback": round(fallback_drift, 1),
+        "avg_first_week_kw": round(avg_first, 2),
+        "avg_last_week_kw": round(avg_last, 2),
+        "slope_kw_per_day": round(slope, 4),
+    }
+    # σ et z-score optionnels (None si calcul impossible — fallback safe)
+    if sigma_baseline_kwh is not None:
+        metrics["sigma_baseline_kwh"] = round(sigma_baseline_kwh, 2)
+    if z_score is not None:
+        metrics["z_score"] = round(z_score, 2)
+
     return {
         "type": "derive",
         "severity": severity,
         "message": f"Derive de +{final_drift:.1f}% sur la periode ({avg_first:.1f} → {avg_last:.1f} kW moyen) — verifier les reglages et la maintenance",
-        "metrics": {
-            "drift_pct": round(final_drift, 1),
-            "drift_pct_linreg": round(drift_pct, 1),
-            "drift_pct_fallback": round(fallback_drift, 1),
-            "avg_first_week_kw": round(avg_first, 2),
-            "avg_last_week_kw": round(avg_last, 2),
-            "slope_kw_per_day": round(slope, 4),
-        },
+        "metrics": metrics,
         "estimated_loss_kwh": round(max(0, excess_kwh * 12), 0),
     }
 

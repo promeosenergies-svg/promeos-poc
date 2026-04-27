@@ -18,15 +18,21 @@ from . import (
     billing_anomaly_detector,
     compliance_deadline_detector,
     consumption_drift_detector,
+    flex_opportunity_detector,
+    market_window_detector,
 )
 from ._protocol import EventDetector
 
 # Registry consommé par `event_service.compute_events`. Order ne porte pas
 # de sémantique (le tri severity stable est appliqué après agrégation).
+# Sprint 2 Vague C ét13a/b : +flex_opportunity (différenciant VC NEBCO
+# post-ARENH) et +market_window (capacité 1/11/2026 obligatoire).
 DETECTORS: list[EventDetector] = [
     compliance_deadline_detector,  # type: ignore[list-item]
     billing_anomaly_detector,  # type: ignore[list-item]
     consumption_drift_detector,  # type: ignore[list-item]
+    flex_opportunity_detector,  # type: ignore[list-item]
+    market_window_detector,  # type: ignore[list-item]
 ]
 
 __all__ = ["DETECTORS", "EventDetector"]

@@ -259,3 +259,61 @@ describe('G. Backend event_bus.freshness — P0-3 TTL réel', () => {
     expect(existsSync(helperPath)).toBe(true);
   });
 });
+
+// ── I. Backend détecteurs ét13a/b (flex_opportunity + market_window) ─
+
+describe('I. Backend détecteurs ét13a/b — différenciants VC Series A', () => {
+  const flexPath = join(
+    SRC,
+    '../../backend/services/event_bus/detectors/flex_opportunity_detector.py'
+  );
+  const marketPath = join(
+    SRC,
+    '../../backend/services/event_bus/detectors/market_window_detector.py'
+  );
+  const registryPath = join(SRC, '../../backend/services/event_bus/detectors/__init__.py');
+
+  it('flex_opportunity_detector existe (P0 #3 Sarah Sequoia — NEBCO post-ARENH)', () => {
+    expect(existsSync(flexPath)).toBe(true);
+    const src = readFileSync(flexPath, 'utf-8');
+    expect(src).toMatch(/event_type="flex_opportunity"/);
+    expect(src).toMatch(/owner_role="Energy Manager"/);
+    expect(src).toMatch(/route="\/flex"/);
+    // Réutilise SoT canonique flex_nebco_service (règle §10 P3)
+    expect(src).toMatch(/from services\.flex_nebco_service import compute_flex_portfolio/);
+  });
+
+  it('market_window_detector existe (P0 #3 Sarah Sequoia — capacité 1/11/2026)', () => {
+    expect(existsSync(marketPath)).toBe(true);
+    const src = readFileSync(marketPath, 'utf-8');
+    expect(src).toMatch(/event_type="market_window"/);
+    expect(src).toMatch(/_CAPACITY_DEADLINE = date\(2026, 11, 1\)/);
+    expect(src).toMatch(/owner_role="DAF"/);
+    expect(src).toMatch(/route="\/achat-energie"/);
+    // Methodology cite la source réglementaire
+    expect(src).toMatch(/CRE délibération 2025-269/);
+  });
+
+  it('les 2 détecteurs sont enregistrés dans DETECTORS registry', () => {
+    const src = readFileSync(registryPath, 'utf-8');
+    expect(src).toMatch(/flex_opportunity_detector/);
+    expect(src).toMatch(/market_window_detector/);
+    // Total 5 détecteurs maintenant (3 ét12 + 2 ét13)
+    const matches = src.match(/_detector,\s*#\s*type:\s*ignore/g) || [];
+    expect(matches.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+// ── J. Backend σ amont consumption_diagnostic (P0 EM ét12f-C) ──────
+
+describe('J. consumption_diagnostic._detect_derive expose σ + z-score (P0 EM)', () => {
+  const cdPath = join(SRC, '../../backend/services/consumption_diagnostic.py');
+
+  it('_detect_derive calcule sigma_baseline_kwh dans metrics', () => {
+    const src = readFileSync(cdPath, 'utf-8');
+    expect(src).toMatch(/sigma_baseline_kwh/);
+    expect(src).toMatch(/z_score/);
+    // Calcul σ : variance + sqrt
+    expect(src).toMatch(/math\.sqrt\(variance\)/);
+  });
+});

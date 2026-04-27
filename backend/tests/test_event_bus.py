@@ -812,6 +812,134 @@ def test_compliance_event_exposes_methodology_for_drill_down(db, org_with_sites)
         assert len(e.source.methodology) > 50
 
 
+# ── Vague C ét13a/b — flex_opportunity + market_window détecteurs ────
+
+
+def test_flex_opportunity_detector_emits_when_revenue_above_threshold(monkeypatch, db, org_with_sites):
+    """ét13a (Sarah Sequoia P0 #3) : flex_opportunity event quand revenu > 2 k€/an."""
+    from services.event_bus.detectors import flex_opportunity_detector
+
+    org_id = org_with_sites["org_id"]
+
+    # Stub compute_flex_portfolio pour fournir un revenu > seuil critical
+    def fake_portfolio(db, site_ids):
+        return {
+            "total_kw": 250.0,
+            "total_sites": len(site_ids),
+            "nebco_sites": 8,
+            "revenue_mid_eur": 75_000,  # > 50 k€ → critical
+            "bacs_portfolio": {
+                "total_kw_unlockable": 120.0,
+                "total_cost_eur": 35_000,
+                "total_revenue_eur_year": 18_000,
+                "portfolio_roi_months": 24,
+            },
+            "sites": [{"site_id": sid} for sid in site_ids],
+        }
+
+    monkeypatch.setattr(
+        "services.flex_nebco_service.compute_flex_portfolio",
+        fake_portfolio,
+    )
+
+    events = flex_opportunity_detector.detect(db, org_id)
+    assert events, "Détecteur doit émettre un événement avec revenu > seuil"
+    e = events[0]
+    assert e.event_type == "flex_opportunity"
+    assert e.severity == "critical"
+    assert e.impact.value == 75_000
+    # Mitigation BACS calculée depuis stub
+    assert e.impact.mitigation is not None
+    assert e.impact.mitigation.capex_eur == 35_000
+    # Owner = Energy Manager (différent de DAF)
+    assert e.action.owner_role == "Energy Manager"
+    assert e.action.route == "/flex"
+    # Methodology cite NEBCO
+    assert "NEBCO" in (e.source.methodology or "") or "flex_nebco_service" in (e.source.methodology or "")
+
+
+def test_flex_opportunity_detector_skips_when_no_revenue(monkeypatch, db, org_with_sites):
+    """ét13a : revenue_mid_eur=0 → aucun événement (pas de bruit)."""
+    from services.event_bus.detectors import flex_opportunity_detector
+
+    monkeypatch.setattr(
+        "services.flex_nebco_service.compute_flex_portfolio",
+        lambda db, site_ids: {"revenue_mid_eur": 0, "sites": [], "total_kw": 0, "nebco_sites": 0, "bacs_portfolio": {}},
+    )
+    events = flex_opportunity_detector.detect(db, org_with_sites["org_id"])
+    assert events == []
+
+
+def test_market_window_detector_emits_capacity_2026_until_deadline(db, org_with_sites):
+    """ét13b (Sarah Sequoia P0 #3) : market_window event capacité 1/11/2026 visible jusqu'à J+0."""
+    from services.event_bus.detectors import market_window_detector
+
+    events = market_window_detector.detect(db, org_with_sites["org_id"])
+    # En avril 2026, échéance Nov 2026 ≈ J-180 → severity warning
+    assert events, "Capacité 1/11/2026 doit générer un event en avril 2026"
+    e = events[0]
+    assert e.event_type == "market_window"
+    assert e.severity in ("critical", "warning", "watch")
+    assert e.impact.value > 0  # surcoût estimé > 0
+    assert e.action.owner_role == "DAF"
+    assert e.action.route == "/achat-energie"
+    # Source RegOps + methodology cite CRE
+    assert e.source.system == "RegOps"
+    assert "CRE" in (e.source.methodology or "")
+    # Site_ids peuplés (impact transversal)
+    assert len(e.linked_assets.site_ids) >= 1
+
+
+def test_market_window_detector_skips_when_org_has_no_sites(db):
+    """ét13b : org vide → aucun event (pas de surcoût applicable)."""
+    from models import EntiteJuridique, Organisation, Portefeuille
+    from services.event_bus.detectors import market_window_detector
+
+    org = Organisation(nom="Empty Org")
+    db.add(org)
+    db.flush()
+    ej = EntiteJuridique(nom="EJ Empty", siren="333333333", organisation_id=org.id)
+    db.add(ej)
+    db.flush()
+    db.add(Portefeuille(nom="P Empty", entite_juridique_id=ej.id))
+    db.commit()
+
+    events = market_window_detector.detect(db, org.id)
+    assert events == []
+
+
+def test_consumption_diagnostic_calculates_sigma_and_zscore_in_detect_derive():
+    """ét12f-C (EM P0-EM-1) : `_detect_derive` calcule désormais σ baseline + z-score.
+
+    Avant ét12f-C : seul `drift_pct` était calculé. EM ne pouvait pas
+    distinguer dérive significative (Δ régulier) vs bruit (Δ sporadique).
+    Après : σ_interday = stdev(daily_means), z = |total_change| / σ.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from services.consumption_diagnostic import MeterReading, _detect_derive
+
+    # Génère 30 jours de readings horaires avec une dérive nette (+25%)
+    start = datetime(2026, 4, 1, tzinfo=timezone.utc)
+    readings = []
+    for d in range(30):
+        for h in range(24):
+            ts = start + timedelta(days=d, hours=h)
+            # Baseline 10 kW, drift linéaire +0.1 kW/jour → +25% sur 30 jours
+            value = 10.0 + d * 0.1
+            readings.append(MeterReading(timestamp=ts, value_kwh=value))
+
+    result = _detect_derive(readings)
+    assert result is not None, "Drift +25% sur 30 jours doit être détecté"
+
+    metrics = result["metrics"]
+    # Les deux nouveaux champs doivent être présents
+    assert "sigma_baseline_kwh" in metrics, "σ baseline doit être exposée (audit EM)"
+    assert "z_score" in metrics, "z-score doit être exposé (audit EM)"
+    assert metrics["sigma_baseline_kwh"] > 0
+    assert metrics["z_score"] > 0
+
+
 def test_consumption_drift_exposes_z_score_when_metrics_present(monkeypatch):
     """ét12e P0 #3 (EM) : si metrics.z_score présent, narrative inclut « Z-score ±X.Xσ »."""
     from datetime import datetime, timezone
