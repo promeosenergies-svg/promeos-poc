@@ -28,9 +28,12 @@
   --color-border-danger: rgba(163, 45, 45, 0.3);
   --color-border-success: rgba(59, 109, 17, 0.3);
   --color-border-warning: rgba(133, 79, 11, 0.3);
-  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
-  --font-serif: "Fraunces", "Source Serif Pro", Georgia, serif;
-  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
+  /* Vague H Phase 0bis (P1 #3) : typo alignée sur tokens production Sol —
+     DM Sans body + Fraunces display + JetBrains Mono numeric. Inter/IBM
+     remplacés pour cohérence avec frontend/src/ui/sol/tokens.css. */
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-serif: "Fraunces", "Tiempos", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
 }
@@ -195,14 +198,14 @@ body {
   Audience : energy manager · 30 secondes · "quoi traiter aujourd'hui"
   Doctrine §11.3 : page de pilotage, source unique partagée avec Synthèse stratégique
 
-  Composants attendus :
+  Composants attendus (convention naming Sol — préfixe <Sol*> obligatoire) :
   - <SolKickerWithSwitch> avec scope + mode switch
   - <SolBriefingHead> avec H1 Fraunces + narrative
-  - <CockpitHeaderPills> alertes + Centre d'action
-  - <KpiTriptyqueEnergetique> (Conso J-1 / Surconso 7j / Pic puissance)
-  - <ConsoSevenDaysBars> visuel glanceable
-  - <CourbeChargeJMinus1> visuel glanceable HP/HC
-  - <FileTraitement> liste priorisée par impact énergétique
+  - <SolCockpitHeaderPills> alertes + Centre d'action
+  - <SolKpiTriptyqueEnergetique> (Conso J-1 / Surconso 7j / Pic puissance)
+  - <SolConsoSevenDaysBars> visuel glanceable
+  - <SolCourbeChargeJMinus1> visuel glanceable HP/HC
+  - <SolFileTraitement> liste priorisée par impact énergétique
   - <SolFooter> source/confiance/MAJ/méthodologie
 ==============================================================================
 -->

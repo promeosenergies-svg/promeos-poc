@@ -47,10 +47,10 @@ Le prompt `PROMPT_REFONTE_COCKPIT_DUAL_SOL2_EXECUTION.md` mentionne déjà les m
 | `<SolKickerWithSwitch>` | Header en haut · scope + switch jour/stratégique | Phase 3.1 | `/api/cockpit/_facts.scope` |
 | `<SolBriefingHead>` | H1 "Bonjour — voici ce qui mérite votre attention" + narrative | Phase 1.3 | `/api/cockpit/_facts` |
 | `<CockpitHeaderPills>` | Bandeau alertes + bouton Centre d'action | Phase 1.3 | `/api/cockpit/_facts.alerts` + `/api/action-center/actions/summary` |
-| `<KpiTriptyqueEnergetique>` | 3 KPI (Conso J-1 · Surconso 7 j · Pic puissance) | Phase 2.1 | `/api/cockpit/_facts.consumption + .power` |
-| `<ConsoSevenDaysBars>` | SVG barres 7 jours avec annotation samedi | Phase 1.3 | `/api/ems/timeseries?period=7d` |
-| `<CourbeChargeJMinus1>` | SVG courbe HP/HC + ligne souscrite | Phase 1.3 | `/api/cockpit/cdc?period=j_minus_1` |
-| `<FileTraitement>` | Liste 5 lignes priorisées par impact énergétique | Phase 0.2 (réécriture) + Phase 2.3 | `/api/cockpit/priorities` |
+| `<SolKpiTriptyqueEnergetique>` | 3 KPI (Conso J-1 · Surconso 7 j · Pic puissance) | Phase 2.1 | `/api/cockpit/_facts.consumption + .power` |
+| `<SolConsoSevenDaysBars>` | SVG barres 7 jours avec annotation samedi | Phase 1.3 | `/api/ems/timeseries?period=7d` |
+| `<SolCourbeChargeJMinus1>` | SVG courbe HP/HC + ligne souscrite | Phase 1.3 | `/api/cockpit/cdc?period=j_minus_1` |
+| `<SolFileTraitement>` | Liste 5 lignes priorisées par impact énergétique | Phase 0.2 (réécriture) + Phase 2.3 | `/api/cockpit/priorities` |
 | `<SolFooter>` | Source · confiance · MAJ · méthodologie | partout | `/api/cockpit/_facts.metadata` |
 
 ### Page Synthèse stratégique (`cockpit-synthese-strategique.html`)
@@ -59,11 +59,11 @@ Le prompt `PROMPT_REFONTE_COCKPIT_DUAL_SOL2_EXECUTION.md` mentionne déjà les m
 |---|---|---|---|
 | `<SolKickerWithSwitch>` | Réutilisé du Pilotage | Phase 3.1 | `/api/cockpit/_facts.scope` |
 | `<SolBriefingHead>` exécutif | H1 "Synthèse stratégique" + narrative dense | Phase 1.3 | `/api/cockpit/_facts` |
-| `<KpiTriptyqueHybride>` | 3 KPI hybride (Trajectoire score · Exposition€ · Potentiel MWh) avec badges Calculé/Modélisé | Phase 2.1 + 2.2 | `/api/cockpit/_facts.compliance + .exposure + .potential_recoverable` |
-| `<DecisionsTopThree>` | 3 décisions narrées avec drill-downs preuve op | Phase 2.3 + 3.2 | `/api/cockpit/decisions/top3` |
-| `<TrajectoryDTSmoothed>` | SVG trajectoire 2030 lissée par échéance | Phase 1.6 | `/api/cockpit/trajectory` |
-| `<FacturePortefeuille>` | Facture prévisionnelle 5 sites avec composantes inactives collapsées | Phase 1.7 + 0.5 | `/api/purchase/cost-simulation/portfolio/{org_id}` |
-| `<FlexTeaser>` | 1 card minimaliste vers Flex Intelligence | Phase 0.3 | `/api/cockpit/_facts.flex_potential` |
+| `<SolKpiTriptyqueHybride>` | 3 KPI hybride (Trajectoire score · Exposition€ · Potentiel MWh) avec badges Calculé/Modélisé | Phase 2.1 + 2.2 | `/api/cockpit/_facts.compliance + .exposure + .potential_recoverable` |
+| `<SolDecisionsTopThree>` | 3 décisions narrées avec drill-downs preuve op | Phase 2.3 + 3.2 | `/api/cockpit/decisions/top3` |
+| `<SolTrajectoryDT>` | SVG trajectoire 2030 lissée par échéance | Phase 1.6 | `/api/cockpit/trajectory` |
+| `<SolFacturePortefeuille>` | Facture prévisionnelle 5 sites avec composantes inactives collapsées | Phase 1.7 + 0.5 | `/api/purchase/cost-simulation/portfolio/{org_id}` |
+| `<SolFlexTeaser>` | 1 card minimaliste vers Flex Intelligence | Phase 0.3 | `/api/cockpit/_facts.flex_potential` |
 | `<SolFooter>` | Réutilisé | partout | `/api/cockpit/_facts.metadata` |
 
 ## Tokens visuels Sol — référence
@@ -71,8 +71,10 @@ Le prompt `PROMPT_REFONTE_COCKPIT_DUAL_SOL2_EXECUTION.md` mentionne déjà les m
 Les 2 maquettes utilisent les mêmes tokens CSS que le design system Sol existant. Le bloc `:root {}` en haut de chaque fichier est une copie volontairement dupliquée pour que les maquettes soient autonomes (ouvrables dans n'importe quel navigateur sans dépendance).
 
 **En production**, ces tokens viennent de :
-- `frontend/src/styles/sol-tokens.css` (light + dark mode)
-- `frontend/src/styles/sol-typography.css` (Fraunces / Inter / IBM Plex Mono)
+- `frontend/src/ui/sol/tokens.css` (light mode + animations + reduced-motion)
+- Convention typo Sol : **Fraunces** display · **DM Sans** body · **JetBrains Mono** numeric (cf `--sol-font-display`/`-body`/`-mono`)
+- Vague H Phase 0bis (28/04/2026) : maquettes alignées sur ces 3 fontes
+  (Inter/IBM Plex Mono retirés — anti-pattern §6.1 mélange typo hors triptyque)
 
 Si Claude Code détecte des écarts entre tokens des maquettes et tokens en production : **les tokens en production font foi**, les maquettes sont indicatives sur les valeurs.
 

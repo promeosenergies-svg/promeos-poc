@@ -27,9 +27,12 @@
   --color-border-danger: rgba(163, 45, 45, 0.3);
   --color-border-success: rgba(59, 109, 17, 0.3);
   --color-border-warning: rgba(133, 79, 11, 0.3);
-  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
-  --font-serif: "Fraunces", "Source Serif Pro", Georgia, serif;
-  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
+  /* Vague H Phase 0bis (P1 #3) : typo alignée sur tokens production Sol —
+     DM Sans body + Fraunces display + JetBrains Mono numeric. Inter/IBM
+     remplacés pour cohérence avec frontend/src/ui/sol/tokens.css. */
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-serif: "Fraunces", "Tiempos", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
 }
@@ -65,15 +68,15 @@ body { margin: 0; padding: 24px; background: var(--color-background-tertiary); f
   Audience : DG / CFO / dirigeant non-sachant · 3 minutes · "où en sommes-nous, quoi décider"
   Doctrine §11.3 : page de décision, source unique partagée avec Briefing du jour
 
-  Composants attendus :
+  Composants attendus (convention naming Sol — préfixe <Sol*> obligatoire) :
   - <SolKickerWithSwitch> avec scope + mode switch (réutilisé)
   - <SolBriefingHead> avec H1 Fraunces "Synthèse stratégique" + narrative
-  - <CockpitHeaderPills> EPEX + Rapport COMEX
-  - <KpiTriptyqueHybride> (Trajectoire + Exposition€ + Potentiel MWh) avec badges Calculé/Modélisé
-  - <DecisionsTopThree> 3 décisions arbitrales avec drill-downs preuve op
-  - <TrajectoryDTSmoothed> visuel trajectoire 2030 lissé par échéance
-  - <FacturePortefeuille> facture prévisionnelle 5 sites avec composantes inactives collapsées
-  - <FlexTeaser> 1 card minimaliste vers Flex Intelligence
+  - <SolCockpitHeaderPills> EPEX + Rapport COMEX
+  - <SolKpiTriptyqueHybride> (Trajectoire + Exposition€ + Potentiel MWh) avec badges Calculé/Modélisé
+  - <SolDecisionsTopThree> 3 décisions arbitrales avec drill-downs preuve op
+  - <SolTrajectoryDT> visuel trajectoire 2030 lissé par échéance
+  - <SolFacturePortefeuille> facture prévisionnelle 5 sites avec composantes inactives collapsées
+  - <SolFlexTeaser> 1 card minimaliste vers Flex Intelligence
   - <SolFooter> source/confiance/MAJ/méthodologie (réutilisé)
 ==============================================================================
 -->
