@@ -63,7 +63,11 @@ describe('Cockpit.jsx — sections existantes conservees', () => {
     expect(cockpitSrc).toMatch(/useState\(null\).*KPI id or null|evidenceOpen/);
   });
 
-  it('conserve HeroImpactBar (V1+ remplace ExecutiveKpiRow)', () => {
+  // Phase 0.2 du sprint refonte cockpit dual sol2 (ADR-S1) : ExecutiveKpiRow
+  // décommissionné. HeroImpactBar reste le canonique post-décommission.
+  // (Le label précédent mentionnait ExecutiveKpiRow — historicité préservée
+  // via cette note, label actualisé pour ne pas créer de dette cognitive.)
+  it('conserve HeroImpactBar (canonique post-décommission ADR-S1)', () => {
     expect(cockpitSrc).toMatch(/<HeroImpactBar/);
   });
 
