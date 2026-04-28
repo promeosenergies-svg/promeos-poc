@@ -42,11 +42,12 @@ export default function RoiFlexReadyCard({ siteId: siteIdProp }) {
   const navigate = useNavigate();
   const { scope, scopedSites } = useScope();
 
-  // Phase 0.7 : pas de fallback démo legacy — siteId résolu vient soit
-  // du prop, soit du scope, soit du 1er site HELIOS du scopedSites courant.
-  const resolvedSiteId = String(
-    siteIdProp || scope?.siteId || (scopedSites && scopedSites[0]?.id) || ''
-  );
+  // Phase 0.7bis (audit P1 #1) : suppression du fallback `scopedSites[0]?.id`
+  // qui est de la business logic frontend (anti-pattern §8.1).
+  // Le siteId vient explicitement du prop ou du scope user. Si aucun des
+  // deux : empty state propre invitant à sélectionner un site. Le scope
+  // switcher du shell UI est responsable du choix du site par défaut.
+  const resolvedSiteId = String(siteIdProp || scope?.siteId || '');
 
   const siteNom = useMemo(() => {
     if (!resolvedSiteId) return null;

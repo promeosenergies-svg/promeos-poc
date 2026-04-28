@@ -71,9 +71,10 @@ export default function NebcoSimulationCard({ siteId: siteIdProp, periodDays = 3
   const navigate = useNavigate();
   const { scope, scopedSites } = useScope();
 
-  const resolvedSiteId = String(
-    siteIdProp || scope?.siteId || (scopedSites && scopedSites[0]?.id) || ''
-  );
+  // Phase 0.7bis (audit P1 #1) : pas de fallback `scopedSites[0]?.id`
+  // (anti-pattern §8.1 zero business logic frontend). User choisit
+  // explicitement le site via scope switcher, sinon empty state.
+  const resolvedSiteId = String(siteIdProp || scope?.siteId || '');
 
   const siteNom = useMemo(() => {
     if (!resolvedSiteId) return null;
