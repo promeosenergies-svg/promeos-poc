@@ -16,7 +16,9 @@ import { fmtEur } from '../../utils/format';
 import { Skeleton, InfoTip } from '../../ui';
 import { humaniseArchetype, humaniseSiteId } from './archetypeLabels';
 
-const DEMO_FALLBACK_SITE = 'retail-001';
+// Phase 0.7 (sprint Cockpit dual sol2) : fallback `'retail-001'` retiré.
+// Si pas de siteId résolu (scope HELIOS sans site sélectionné), on rend
+// un empty state au lieu de leak Hypermarché Montreuil.
 
 function ComposanteBar({ label, value, total, color, tooltip }) {
   const pct = total > 0 ? Math.max(2, Math.round((value / total) * 100)) : 0;
@@ -40,19 +42,27 @@ export default function RoiFlexReadyCard({ siteId: siteIdProp }) {
   const navigate = useNavigate();
   const { scope, scopedSites } = useScope();
 
-  const resolvedSiteId = String(siteIdProp || scope?.siteId || DEMO_FALLBACK_SITE);
+  // Phase 0.7 : pas de fallback démo legacy — siteId résolu vient soit
+  // du prop, soit du scope, soit du 1er site HELIOS du scopedSites courant.
+  const resolvedSiteId = String(
+    siteIdProp || scope?.siteId || (scopedSites && scopedSites[0]?.id) || ''
+  );
 
   const siteNom = useMemo(() => {
-    if (!scope?.siteId) return null;
+    if (!resolvedSiteId) return null;
     const found = scopedSites?.find((s) => String(s.id) === resolvedSiteId);
     return found?.nom || null;
-  }, [scope?.siteId, scopedSites, resolvedSiteId]);
+  }, [scopedSites, resolvedSiteId]);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!resolvedSiteId) {
+      setLoading(false);
+      return;
+    }
     let cancel = false;
     setLoading(true);
     setError(null);
@@ -70,6 +80,18 @@ export default function RoiFlexReadyCard({ siteId: siteIdProp }) {
       cancel = true;
     };
   }, [resolvedSiteId]);
+
+  // Empty state propre quand aucun site dans le scope HELIOS courant
+  if (!resolvedSiteId && !loading) {
+    return (
+      <div
+        className="bg-white border border-gray-200 rounded-xl p-4 text-sm text-gray-500"
+        data-testid="pilotage-roi-card-empty"
+      >
+        Sélectionnez un site du portefeuille pour estimer le ROI Flex Ready®.
+      </div>
+    );
+  }
 
   if (loading) {
     return (

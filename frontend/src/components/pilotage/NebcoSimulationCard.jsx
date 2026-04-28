@@ -20,7 +20,9 @@ import { fmtEur } from '../../utils/format';
 import { Skeleton, InfoTip } from '../../ui';
 import { humaniseArchetype, humaniseSiteId } from './archetypeLabels';
 
-const DEMO_FALLBACK_SITE = 'retail-001';
+// Phase 0.7 (sprint Cockpit dual sol2) : fallback `'retail-001'` retiré.
+// Si pas de siteId résolu (scope HELIOS sans site sélectionné), on rend
+// un empty state au lieu de leak Hypermarché Montreuil.
 
 // Formatteur Intl force sur Europe/Paris pour afficher la periode de rejeu
 // independamment du fuseau navigateur (backend renvoie ISO YYYY-MM-DD).
@@ -69,13 +71,15 @@ export default function NebcoSimulationCard({ siteId: siteIdProp, periodDays = 3
   const navigate = useNavigate();
   const { scope, scopedSites } = useScope();
 
-  const resolvedSiteId = String(siteIdProp || scope?.siteId || DEMO_FALLBACK_SITE);
+  const resolvedSiteId = String(
+    siteIdProp || scope?.siteId || (scopedSites && scopedSites[0]?.id) || ''
+  );
 
   const siteNom = useMemo(() => {
-    if (!scope?.siteId) return null;
+    if (!resolvedSiteId) return null;
     const found = scopedSites?.find((s) => String(s.id) === resolvedSiteId);
     return found?.nom || null;
-  }, [scope?.siteId, scopedSites, resolvedSiteId]);
+  }, [scopedSites, resolvedSiteId]);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -83,6 +87,10 @@ export default function NebcoSimulationCard({ siteId: siteIdProp, periodDays = 3
   const [expandedDays, setExpandedDays] = useState(periodDays);
 
   useEffect(() => {
+    if (!resolvedSiteId) {
+      setLoading(false);
+      return;
+    }
     let cancel = false;
     setLoading(true);
     setError(null);
@@ -106,6 +114,18 @@ export default function NebcoSimulationCard({ siteId: siteIdProp, periodDays = 3
       cancel = true;
     };
   }, [resolvedSiteId, expandedDays]);
+
+  // Empty state propre quand aucun site dans le scope HELIOS courant
+  if (!resolvedSiteId && !loading) {
+    return (
+      <div
+        className="bg-white border border-gray-200 rounded-xl p-4 text-sm text-gray-500"
+        data-testid="pilotage-nebco-card-empty"
+      >
+        Sélectionnez un site du portefeuille pour estimer le revenu d'effacement.
+      </div>
+    );
+  }
 
   if (loading) {
     return (

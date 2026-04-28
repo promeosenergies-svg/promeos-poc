@@ -21,15 +21,20 @@ export const ARCHETYPE_LABELS = {
 };
 
 /**
- * Labels humains des cles DEMO_SITES (fallback quand scope = "Tous les sites").
- * Source : `backend/routes/pilotage.py` DEMO_SITES (clef `nom`).
+ * Phase 0.7 (sprint Cockpit dual sol2) — DEMO_SITE_LABELS supprimé.
+ *
+ * Audit Amine 2026-04-28 : « Card Hypermarché Montreuil en scope HELIOS
+ * (leak slug retail-001) » → anti-pattern §6.3. Quand le scope est HELIOS
+ * (5 sites Paris/Toulouse/Lyon/Nice/...), la production ne doit jamais
+ * afficher un site démo legacy ('retail-001' = Hypermarché Montreuil,
+ * 'bureau-001' = Bureau Haussmann, 'entrepot-001' = Entrepôt Rungis).
+ *
+ * Source-guard `test_helios_no_demo_sites_leak` (pilotage_archetype_labels.test.js)
+ * verrouille l'absence de ces 3 slugs dans les composants Pilotage.
+ *
+ * Si un siteId n'est pas dans `scopedSites`, retourner '' et laisser le
+ * composant rendre un empty state propre (« Sélectionnez un site »).
  */
-export const DEMO_SITE_LABELS = {
-  'retail-001': 'Hypermarché Montreuil',
-  'bureau-001': 'Bureau Haussmann',
-  'entrepot-001': 'Entrepôt Rungis',
-};
-
 export function humaniseArchetype(code) {
   if (!code) return 'Indéterminé';
   return ARCHETYPE_LABELS[code] || code;
@@ -37,5 +42,5 @@ export function humaniseArchetype(code) {
 
 export function humaniseSiteId(siteId) {
   if (!siteId) return '';
-  return DEMO_SITE_LABELS[siteId] || siteId;
+  return siteId;
 }
