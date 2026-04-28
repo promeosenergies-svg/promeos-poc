@@ -98,3 +98,48 @@
     animation: none !important;
   }
 }
+
+/* ── Vague G P1 #3 — Print / PDF export (audit Yannick + EM) ─────────
+ *
+ * Pitch deck investisseur : Sequoia/Index exportent souvent les slides
+ * en PDF haute qualité. Sans @media print, les couleurs warm de fond
+ * Sol disparaissent (CSS print n'imprime pas les backgrounds par défaut)
+ * → SolEventCard apparaît en blanc sur blanc, lisibilité ruinée.
+ *
+ * Stratégie : forcer `print-color-adjust: exact` + maintenir backgrounds
+ * + bordures épaisses pour compenser. Texte ink-900 forcé (contraste max).
+ */
+@media print {
+  /* Préserve les couleurs de fond (par défaut Chrome désactive en print) */
+  .sol-card,
+  [data-tone],
+  [data-testid^='sol-event-card-'],
+  [data-testid='sol-event-stream'] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* SolEventCard : bordures plus épaisses pour compenser le rendu print */
+  [data-testid^='sol-event-card-'] {
+    border-width: 2px !important;
+    page-break-inside: avoid;
+  }
+
+  /* Forcer texte ink-900 pour lisibilité maximale en print */
+  [data-testid^='sol-event-card-'] h3,
+  [data-testid^='sol-event-card-'] p,
+  [data-testid^='sol-event-card-'] span {
+    color: var(--sol-ink-900) !important;
+  }
+
+  /* Mitigation bandeau : ressort en print avec fond gris clair */
+  [data-testid^='sol-event-card-'] [style*='--sol-calme-bg'],
+  [data-testid^='sol-event-card-'] [style*='--sol-attention-bg'] {
+    border: 1px solid var(--sol-ink-300) !important;
+  }
+
+  /* Popover methodology : ouvert par défaut en print pour capturer le drill-down */
+  [role='region'][aria-label='Méthodologie de calcul'] {
+    display: block !important;
+  }
+}

@@ -19,6 +19,7 @@
  */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SolAcronym from '../ui/sol/SolAcronym';
 import {
   AlertTriangle,
   Euro,
@@ -67,7 +68,7 @@ function FrameworkPill({ framework, count }) {
     <span
       className={`inline-flex items-center gap-0.5 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border shrink-0 ${color}`}
     >
-      {label}
+      <SolAcronym code={label}>{label}</SolAcronym>
       {count != null && (
         <span className="font-normal opacity-70 normal-case tracking-normal">({count})</span>
       )}

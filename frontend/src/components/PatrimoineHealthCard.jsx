@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { getPatrimoineAnomalies } from '../services/api';
 import { fmtEur } from '../utils/format';
+import SolAcronym from '../ui/sol/SolAcronym';
 
 /* ── Constantes ──────────────────────────────────────────────────────────── */
 
@@ -117,7 +118,7 @@ function FrameworkChip({ framework }) {
     <span
       className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${cfg.color}`}
     >
-      {cfg.label}
+      <SolAcronym code={cfg.label}>{cfg.label}</SolAcronym>
     </span>
   );
 }

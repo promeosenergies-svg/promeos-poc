@@ -1304,6 +1304,50 @@ def test_action_overdue_yaml_loader():
     assert d.overdue_critical_days > d.overdue_warning_days > 0
 
 
+def test_compute_events_sorts_by_severity_then_eur_desc(db, org_with_sites, monkeypatch):
+    """Vague G P1 #2 (audit CFO) : à severity égale, tri impact € descendant.
+
+    Avant : tri severity uniquement → 1ʳᵉ heure CFO peut tomber sur un
+    event critical 2 k€ alors qu'un autre critical 50 k€ existe.
+    Après : tri composite (severity, -impact_eur) → gros pertes en premier.
+    """
+    from datetime import datetime, timezone
+
+    from services.event_bus.event_service import _event_sort_key
+    from services.event_bus.types import (
+        EventAction,
+        EventImpact,
+        EventLinkedAssets,
+        EventSource,
+        SolEventCard,
+    )
+
+    now = datetime.now(timezone.utc)
+
+    def make_event(eid, severity, impact_eur):
+        return SolEventCard(
+            id=eid,
+            event_type="billing_anomaly",
+            severity=severity,
+            title=f"Event {eid}",
+            narrative="Test",
+            impact=EventImpact(value=impact_eur, unit="€", period="year"),
+            source=EventSource(system="invoice", last_updated_at=now, confidence="high"),
+            action=EventAction(label="Voir", route="/test", owner_role="DAF"),
+            linked_assets=EventLinkedAssets(org_id=1),
+        )
+
+    events = [
+        make_event("a", "critical", 2_000.0),
+        make_event("b", "critical", 50_000.0),
+        make_event("c", "warning", 100_000.0),
+        make_event("d", "critical", 10_000.0),
+    ]
+    sorted_events = sorted(events, key=_event_sort_key)
+    # critical d'abord, puis tri impact € descendant à severity égale
+    assert [e.id for e in sorted_events] == ["b", "d", "a", "c"]
+
+
 def test_canonical_kpi_template_eur_then_score_then_other():
     """ét16 audit Marie #3 : gabarit canonique €/score/échéance figé.
 

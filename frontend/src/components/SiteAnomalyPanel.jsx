@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, ShieldCheck, AlertCircle, Info, Euro, RefreshCw } from 'lucide-react';
 import { getPatrimoineAnomalies } from '../services/api';
+import SolAcronym from '../ui/sol/SolAcronym';
 import { fmtEur } from '../utils/format';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 
@@ -252,7 +253,7 @@ export default function SiteAnomalyPanel({ siteId, orgId: _orgId }) {
                         <span
                           className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${fwCfg.color}`}
                         >
-                          {fwCfg.label}
+                          <SolAcronym code={fwCfg.label}>{fwCfg.label}</SolAcronym>
                         </span>
                       )}
                       <span className="text-xs font-medium text-gray-800 truncate">

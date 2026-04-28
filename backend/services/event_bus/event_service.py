@@ -53,9 +53,30 @@ def compute_events(db: Session, org_id: int) -> list[SolEventCard]:
     for detector in DETECTORS:
         events.extend(detector.detect(db, org_id))
 
-    # Tri stable par severity ascendant (critical=0 d'abord).
-    events.sort(key=lambda e: _SEVERITY_ORDER.get(e.severity, 99))
+    # Vague G P1 #2 (audit CFO) : tri stable composite —
+    # 1) severity ascendant (critical=0 d'abord)
+    # 2) impact € descendant à severity égale (CFO arbitre par cash)
+    # Cohérent doctrine §10 + règle d'or chiffres : la 1re heure CFO va sur
+    # le plus gros pertes, pas sur le 1er event aléatoirement émis.
+    events.sort(key=_event_sort_key)
     return events
+
+
+def _event_sort_key(event: SolEventCard) -> tuple[int, float]:
+    """Clé de tri composite : (severity, -impact_eur).
+
+    severity ascendant (critical d'abord).
+    À severity égale, impact € descendant (gros pertes en premier).
+    Events sans impact € (unit ≠ '€' ou value=None) → impact 0 (ordre stable).
+    """
+    severity_rank = _SEVERITY_ORDER.get(event.severity, 99)
+    impact_eur = (
+        float(event.impact.value)
+        if event.impact and event.impact.unit == "€" and event.impact.value is not None
+        else 0.0
+    )
+    # Negate impact_eur pour tri descendant (-1000 < -100 < 0 → 1000 € avant 100 €)
+    return (severity_rank, -impact_eur)
 
 
 def to_narrative_week_cards(events: list[SolEventCard]) -> list:
