@@ -179,15 +179,10 @@ describe('G. Format — structure du message', () => {
 // ── H. Intégration source-guard ─────────────────────────────────────────────
 
 describe('H. Intégration — source-guard', () => {
-  it('ExecutiveKpiRow importe getKpiMessage', () => {
-    const src = readSrc('pages/cockpit/ExecutiveKpiRow.jsx');
-    expect(src).toContain('getKpiMessage');
-  });
-
-  it('ExecutiveKpiRow a data-testid kpi-message', () => {
-    const src = readSrc('pages/cockpit/ExecutiveKpiRow.jsx');
-    expect(src).toContain('kpi-message');
-  });
+  // Phase 0.2 (sprint Cockpit dual sol2) : ExecutiveKpiRow décommissionné.
+  // Le contrat `getKpiMessage` + `data-testid="kpi-message"` sera vérifié
+  // sur les futurs <KpiTriptyqueEnergetique> et <KpiTriptyqueHybride>
+  // (Phase 2.1, cf docs/maquettes/cockpit-sol2/).
 
   it('dashboardEssentials fournit rawValue', () => {
     const src = readSrc('models/dashboardEssentials.js');

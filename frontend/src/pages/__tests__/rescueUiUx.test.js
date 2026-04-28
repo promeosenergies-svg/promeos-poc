@@ -32,10 +32,9 @@ describe('P0-3: KPI value-first — no truncate on numeric values', () => {
     expect(code).toMatch(/line-clamp-2/);
   });
 
-  it('ExecutiveKpiRow value uses break-words', () => {
-    const code = src('pages/cockpit/ExecutiveKpiRow.jsx');
-    expect(code).toMatch(/font-bold.*text-gray-900.*break-words/);
-  });
+  // Phase 0.2 (sprint Cockpit dual sol2) : ExecutiveKpiRow décommissionné —
+  // remplacé par <KpiTriptyqueEnergetique> (Pilotage) et <KpiTriptyqueHybride>
+  // (Synthèse stratégique) en Phase 2.1 (cf docs/maquettes/cockpit-sol2/).
 
   it('EssentialsRow value uses break-words', () => {
     const code = src('pages/cockpit/EssentialsRow.jsx');

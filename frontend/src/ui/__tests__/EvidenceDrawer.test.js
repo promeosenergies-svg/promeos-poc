@@ -122,28 +122,13 @@ describe('EvidenceDrawer barrel export', () => {
 });
 
 // ── 5) Cockpit integration ─────────────────────────────────────────────────
+//
+// Phase 0.2 (sprint Cockpit dual sol2) : ExecutiveKpiRow décommissionné.
+// Le contrat `evidence-open-*` + `HelpCircle` + `onEvidence` + `EVIDENCE_KPIS`
+// sera vérifié sur les futurs <KpiTriptyqueEnergetique> et
+// <KpiTriptyqueHybride> en Phase 2.1 (cf docs/maquettes/cockpit-sol2/).
 describe('Cockpit EvidenceDrawer integration', () => {
-  const kpiRowSrc = readSrc('pages/cockpit/ExecutiveKpiRow.jsx');
   const cockpitSrc = readSrc('pages/Cockpit.jsx');
-
-  it('ExecutiveKpiRow has evidence-open data-testid', () => {
-    expect(kpiRowSrc).toContain('data-testid');
-    expect(kpiRowSrc).toContain('evidence-open-');
-  });
-
-  it('ExecutiveKpiRow has HelpCircle icon', () => {
-    expect(kpiRowSrc).toContain('HelpCircle');
-  });
-
-  it('ExecutiveKpiRow accepts onEvidence prop', () => {
-    expect(kpiRowSrc).toContain('onEvidence');
-  });
-
-  it('ExecutiveKpiRow defines EVIDENCE_KPIS set', () => {
-    expect(kpiRowSrc).toContain('EVIDENCE_KPIS');
-    expect(kpiRowSrc).toContain('conformite');
-    expect(kpiRowSrc).toContain('risque');
-  });
 
   it('Cockpit.jsx imports EvidenceDrawer', () => {
     expect(cockpitSrc).toContain('EvidenceDrawer');
@@ -159,9 +144,9 @@ describe('Cockpit EvidenceDrawer integration', () => {
     expect(cockpitSrc).toContain('evidenceMap');
   });
 
-  it('Cockpit.jsx has Pourquoi ce chiffre aria-label', () => {
-    expect(kpiRowSrc).toContain('Pourquoi ce chiffre');
-  });
+  // Phase 0.2 (sprint Cockpit dual sol2) : ExecutiveKpiRow décommissionné.
+  // Le contrat aria-label « Pourquoi ce chiffre » sera vérifié sur les
+  // futurs <KpiTriptyqueEnergetique> et <KpiTriptyqueHybride> (Phase 2.1).
 });
 
 // ── 6) Explorer integration ────────────────────────────────────────────────
