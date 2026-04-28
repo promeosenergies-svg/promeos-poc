@@ -10,6 +10,7 @@
 import { useMemo, useState } from 'react';
 import { Copy, Check, FileText, ChevronDown, ChevronUp, List, AlignLeft } from 'lucide-react';
 import { fmtEurFull, fmtMwh } from '../utils/format';
+import SolNarrativeText from '../ui/sol/SolNarrativeText';
 
 const SENTINEL_FALLBACKS = new Set(['votre patrimoine', 'patrimoine', 'organisation']);
 
@@ -314,8 +315,8 @@ export default function BriefCodexCard({
             })}
           </div>
 
-          <div className="bg-gray-50 border border-gray-100 rounded-md px-4 py-3 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
-            {briefText}
+          <div className="bg-gray-50 border border-gray-100 rounded-md px-4 py-3 text-sm leading-relaxed text-gray-700">
+            <SolNarrativeText text={briefText} />
           </div>
           <p className="text-[10.5px] text-gray-400 font-mono tracking-wide">
             Texte généré automatiquement — modifiable avant envoi

@@ -545,6 +545,14 @@ function App() {
                             </PageSuspense>
                           }
                         />
+                        <Route
+                          path="/admin/cx-dashboard"
+                          element={
+                            <PageSuspense>
+                              <CxDashboardPage />
+                            </PageSuspense>
+                          }
+                        />
 
                         {/* URL aliases (redirect to canonical routes) */}
                         <Route

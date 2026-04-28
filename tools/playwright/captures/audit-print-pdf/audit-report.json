@@ -1,0 +1,29 @@
+{
+  "date": "2026-04-28T18:31:19.245Z",
+  "sprint": "Vague H P2 #3",
+  "url": "http://localhost:5175/cockpit",
+  "cards_found": 3,
+  "checks": [
+    {
+      "name": "print_color_adjust_exact",
+      "pass": true,
+      "value": "exact"
+    },
+    {
+      "name": "background_preserved",
+      "pass": true,
+      "value": "rgb(243, 221, 219)"
+    },
+    {
+      "name": "border_width_thickened",
+      "pass": true,
+      "value": "2px"
+    },
+    {
+      "name": "page_break_inside_avoid",
+      "pass": true,
+      "value": "avoid"
+    }
+  ],
+  "verdict": "GO Sequoia PDF export"
+}

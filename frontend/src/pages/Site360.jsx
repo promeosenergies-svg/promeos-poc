@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import SolAcronym from '../ui/sol/SolAcronym';
 import {
   ArrowLeft,
   ShieldCheck,
@@ -2076,7 +2077,9 @@ export default function Site360() {
                 <span
                   className={`w-2 h-2 rounded-full ${dtScore >= 80 ? 'bg-green-600' : 'bg-amber-600'}`}
                 />
-                <span className="text-gray-500">Décret Tertiaire</span>
+                <span className="text-gray-500">
+                  <SolAcronym code="Décret Tertiaire" />
+                </span>
                 <span
                   className={`font-semibold text-[13px] ${dtScore >= 80 ? 'text-green-700' : 'text-amber-700'}`}
                 >

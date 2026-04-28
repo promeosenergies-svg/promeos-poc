@@ -15,6 +15,7 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Zap, ShieldCheck, Settings2 } from 'lucide-react';
 import { PageShell, EmptyState } from '../ui';
+import SolAcronym from '../ui/sol/SolAcronym';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { scopeKicker } from '../utils/format';
@@ -122,8 +123,8 @@ export default function FlexPage() {
           <>
             Le briefing ci-dessus reflète votre potentiel d’effacement à partir des données déjà
             collectées par PROMEOS Sol (patrimoine, actifs pilotables, scores Flex). La cartographie
-            24×7 détaillée et le simulateur de revenus marché capacité (NEBCO, AOFD) arrivent en
-            Sprint&nbsp;2.{' '}
+            24×7 détaillée et le simulateur de revenus marché capacité (
+            <SolAcronym code="NEBCO" />, <SolAcronym code="AOFD" />) arrivent en Sprint&nbsp;2.{' '}
             {queryStatus === 'actionable' && (
               <em>Vue filtrée : actifs déjà identifiés comme pilotables.</em>
             )}
@@ -154,9 +155,10 @@ export default function FlexPage() {
             />
             <div>
               <span className="font-semibold">Roadmap technique Sprint&nbsp;2+ :</span> carpet plot
-              puissance pilotable 24×7, simulateur revenus NEBCO/AOFD avec courbes tarifaires RTE,
-              comparateur multi-agrégateurs partenaires (≥&nbsp;4 acteurs certifiés), signal Tempo +
-              EcoWatt en temps réel.
+              puissance pilotable 24×7, simulateur revenus <SolAcronym code="NEBCO" />/
+              <SolAcronym code="AOFD" /> avec courbes tarifaires RTE, comparateur multi-agrégateurs
+              partenaires (≥&nbsp;4 acteurs certifiés), signal <SolAcronym code="Tempo" /> +{' '}
+              <SolAcronym code="EcoWatt" /> en temps réel.
             </div>
           </div>
         </div>

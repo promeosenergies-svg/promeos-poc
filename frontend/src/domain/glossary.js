@@ -44,6 +44,7 @@ export const GLOSSARY = Object.freeze({
   PEG: "Point d'Échange de Gaz — bourse spot gaz France (équivalent EPEX pour gaz).",
   NEBCO:
     "Notification d'Effacement Bloc COllectif — mécanisme RTE de rémunération de l'effacement industriel/tertiaire.",
+  AOFD: "Appel d'Offres Flexibilité Demande — mécanisme RTE complémentaire NEBCO pour effacement contractualisé annuel.",
   Tempo:
     'Option tarifaire EDF avec 22 jours rouges/an pic prix — différenciation HP/HC + couleurs jour.',
   EcoWatt:
