@@ -21,7 +21,7 @@
  * Props : `event` = objet SolEventCard JSON (cf eventTypes.js isValidEvent),
  * `onNavigate(route)` callback CTA, `compact` (bool) pour densifier.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   AlertCircle,
@@ -162,6 +162,23 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
   // ét12e (audit CFO P0 #3) : popover drill-down methodology. Hook AVANT
   // l'early return pour respecter l'ordre des hooks React.
   const [methodologyOpen, setMethodologyOpen] = useState(false);
+  // Vague E ét16 (audit EM #3 a11y WCAG) : refs pour focus retour bouton
+  // après close popover (norme WCAG 2.4.3 Focus Order + 2.1.2 No Trap).
+  const methodologyButtonRef = useRef(null);
+
+  // Vague E ét16 (audit EM #3 a11y) : Escape close popover + focus retour.
+  useEffect(() => {
+    if (!methodologyOpen) return;
+    const handler = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setMethodologyOpen(false);
+        methodologyButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [methodologyOpen]);
 
   if (!isValid) return null;
 
@@ -177,7 +194,10 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
   const ownerRole = event.action?.owner_role;
   const route = event.action?.route;
 
-  // Mitigation phrase : « 12 k€ CAPEX, payback 8 mois, NPV 145 k€ »
+  // Mitigation phrase : « 12 k€ CAPEX · payback 8 mois · NPV 145 k€ »
+  // Vague E ét16 (audit CFO P0 #3 28/04/2026) : afficher AU MOINS un
+  // placeholder « payback à étudier » pour les events sans mitigation
+  // chiffrée. Une carte sans payback = CFO décroche du Cockpit matinal.
   const mitigationParts = [];
   if (mitigation?.capex_eur != null) {
     mitigationParts.push(`${formatImpactValue(mitigation.capex_eur, '€')} CAPEX`);
@@ -189,7 +209,18 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
   if (mitigation?.npv_eur != null) {
     mitigationParts.push(`NPV ${formatImpactValue(mitigation.npv_eur, '€')}`);
   }
-  const mitigationLine = mitigationParts.join(' · ');
+  // Fallback CFO : si aucune mitigation chiffrée mais event a un impact €
+  // > 0, afficher « Mitigation à qualifier » plutôt que de masquer le
+  // bandeau (signal au CFO « il faut creuser », pas « rien à faire »).
+  const hasFinancialImpact = event.impact?.unit === '€' && (event.impact?.value ?? 0) > 0;
+  let mitigationLine = mitigationParts.join(' · ');
+  let mitigationVariant = 'chiffree'; // chiffree | aQualifier | none
+  if (!mitigationLine && hasFinancialImpact && event.severity !== 'info') {
+    mitigationLine = 'Mitigation à qualifier — données financières insuffisantes';
+    mitigationVariant = 'aQualifier';
+  } else if (!mitigationLine) {
+    mitigationVariant = 'none';
+  }
 
   // Vague C ét12d (audit Architecture P0 #1 + UX P0-A) : `<button><article>`
   // est invalide HTML5 (button ne peut pas contenir d'éléments interactifs
@@ -245,14 +276,14 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
         <div className="flex items-center gap-1.5 min-w-0">
           <Icon size={13} className={severityCfg.iconCls} aria-hidden="true" />
           <span
-            className={`text-[11px] font-mono uppercase tracking-wider font-semibold truncate ${severityCfg.iconCls}`}
+            className={`text-xs font-mono uppercase tracking-wider font-semibold truncate ${severityCfg.iconCls}`}
           >
             {severityCfg.label}
           </span>
         </div>
         {freshness && (
           <span
-            className="text-[11px] px-1.5 py-0.5 rounded-full font-medium shrink-0"
+            className="text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0"
             style={{
               background: `var(--sol-${freshness.tone}-bg)`,
               color: `var(--sol-${freshness.tone}-fg)`,
@@ -280,30 +311,50 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
           <span className="text-base font-semibold text-[var(--sol-ink-900)] sol-numeric">
             {impactValue}
           </span>
-          {periodLabel && (
-            <span className="text-[11px] text-[var(--sol-ink-500)]">{periodLabel}</span>
-          )}
+          {periodLabel && <span className="text-xs text-[var(--sol-ink-700)]">{periodLabel}</span>}
         </div>
       )}
 
       {/* ── Mitigation (CFO arbitrage CAPEX/payback/NPV) ──
           Vague C ét12e (audit CFO P0 #2) : bandeau dédié 14px sur fond
-          --sol-calme-bg pour visibilité présentation Teams 1080p. Avant
-          ét12e : ligne 11px noyée dans le footer = invisible CFO. */}
+          --sol-calme-bg pour visibilité présentation Teams 1080p.
+          Vague E ét16 (audit CFO P0 #3 28/04/2026) : variant `aQualifier`
+          quand impact € > 0 mais aucune mitigation chiffrée — italic gris
+          pour signaler « il faut creuser » sans crier comme une vraie
+          mitigation chiffrée. Évite le silence CFO qui décroche. */}
       {mitigationLine && (
         <div
-          className="flex items-center gap-2 text-sm font-medium text-[var(--sol-ink-900)] rounded-md px-2.5 py-1.5"
-          style={{ background: 'var(--sol-calme-bg)' }}
+          className={`flex items-center gap-2 rounded-md px-2.5 py-1.5 ${
+            mitigationVariant === 'aQualifier'
+              ? 'text-xs italic text-[var(--sol-ink-700)]'
+              : 'text-sm font-medium text-[var(--sol-ink-900)]'
+          }`}
+          style={{
+            background:
+              mitigationVariant === 'aQualifier'
+                ? 'var(--sol-attention-bg)'
+                : 'var(--sol-calme-bg)',
+          }}
         >
-          <Wallet size={14} className="text-[var(--sol-calme-fg)] shrink-0" aria-hidden="true" />
-          <span className="sol-numeric">{mitigationLine}</span>
+          <Wallet
+            size={mitigationVariant === 'aQualifier' ? 12 : 14}
+            className={
+              mitigationVariant === 'aQualifier'
+                ? 'text-[var(--sol-attention-fg)] shrink-0'
+                : 'text-[var(--sol-calme-fg)] shrink-0'
+            }
+            aria-hidden="true"
+          />
+          <span className={mitigationVariant === 'aQualifier' ? '' : 'sol-numeric'}>
+            {mitigationLine}
+          </span>
         </div>
       )}
 
       {/* ── Footer : source + owner + CTA ── */}
       <footer className="flex flex-col gap-1.5 mt-auto pt-2 border-t border-[var(--sol-ink-100)]">
         {/* Ligne 1 : source + confidence + horodatage + drill-down methodology */}
-        <div className="flex items-center justify-between gap-2 text-[11px] text-[var(--sol-ink-500)]">
+        <div className="flex items-center justify-between gap-2 text-xs text-[var(--sol-ink-700)]">
           <div className="flex items-center gap-1 min-w-0">
             <ShieldCheck size={11} aria-hidden="true" />
             <span className="truncate">
@@ -317,7 +368,9 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
             </span>
             {methodology && (
               <button
+                ref={methodologyButtonRef}
                 type="button"
+                id={`sol-event-${event.id}-methodology-btn`}
                 onClick={(e) => {
                   e.stopPropagation();
                   setMethodologyOpen((o) => !o);
@@ -325,9 +378,11 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
                 onKeyDown={(e) => e.stopPropagation()}
                 aria-label="Voir la méthodologie de calcul"
                 aria-expanded={methodologyOpen}
-                className="ml-1 inline-flex items-center justify-center rounded-full p-0.5 hover:bg-[var(--sol-ink-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)]"
+                aria-controls={`sol-event-${event.id}-methodology`}
+                title="Voir la méthodologie de calcul (Échap pour fermer)"
+                className="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full hover:bg-[var(--sol-ink-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)]"
               >
-                <Info size={11} className="text-[var(--sol-calme-fg)]" aria-hidden="true" />
+                <Info size={14} className="text-[var(--sol-calme-fg)]" aria-hidden="true" />
               </button>
             )}
           </div>
@@ -339,13 +394,14 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
           )}
         </div>
 
-        {/* Popover methodology drill-down (audit CFO P0 #3) */}
+        {/* Popover methodology drill-down (audit CFO P0 #3 + EM ét16 a11y) */}
         {methodology && methodologyOpen && (
           <div
+            id={`sol-event-${event.id}-methodology`}
             role="region"
             aria-label="Méthodologie de calcul"
-            className="text-xs text-[var(--sol-ink-700)] rounded-md p-2 border border-[var(--sol-ink-100)]"
-            style={{ background: 'var(--sol-ink-50, #fafaf7)' }}
+            className="text-xs text-[var(--sol-ink-700)] rounded-md p-2 border border-[var(--sol-ink-200)]"
+            style={{ background: 'var(--sol-ink-50)' }}
           >
             <p className="leading-relaxed">{methodology}</p>
           </div>
@@ -353,8 +409,8 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
 
         {/* Ligne 2 : owner role + scope sites + CTA */}
         {(ownerRole || siteCount > 0 || route) && (
-          <div className="flex items-center justify-between gap-2 text-[11px]">
-            <div className="flex items-center gap-2 text-[var(--sol-ink-500)] min-w-0">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 text-[var(--sol-ink-700)] min-w-0">
               {ownerRole && (
                 <span className="flex items-center gap-1">
                   <User size={11} aria-hidden="true" />

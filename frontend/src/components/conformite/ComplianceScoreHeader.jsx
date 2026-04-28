@@ -8,6 +8,7 @@ import {
   resolvePortfolioConfidence,
 } from '../../domain/compliance/confidence';
 import { Explain } from '../../ui';
+import SolAcronym from '../../ui/sol/SolAcronym';
 
 export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
   if (!complianceScore) return null;
@@ -48,7 +49,10 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
             <div className="hidden group-hover:block absolute z-50 left-0 top-6 w-72 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-600">
               <div className="font-semibold text-gray-800 mb-1">Comment c'est calculé</div>
               <div className="space-y-1">
-                <div>Décret Tertiaire × 45% + BACS × 30% + APER × 25%</div>
+                <div>
+                  <SolAcronym code="Décret Tertiaire" /> × 45% + <SolAcronym code="BACS" /> × 30% +{' '}
+                  <SolAcronym code="APER" /> × 25%
+                </div>
                 <div>Pénalité : −5 pts par finding critique (max −20)</div>
                 <div className="text-gray-400 mt-1">
                   Périmètre : sites du scope actif · Instantané

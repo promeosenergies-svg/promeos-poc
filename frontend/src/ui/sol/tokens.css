@@ -27,6 +27,9 @@
   --sol-ink-300: #cbd5e1;
   --sol-ink-200: #e2e8f0;
   --sol-ink-100: #f1f5f9;
+  /* Vague E ét16 (audit Yannick UI #2) : token le plus clair pour fond
+     popover methodology (était hex inline #fafaf7 — anti-pattern §6.5). */
+  --sol-ink-50: #fafaf7;
   --sol-rule: #e2e8f0;
 
   /* Borderlines tonales — Sprint 1.1bis P0-1 (audit UI/Visual + Ergo 26/04).

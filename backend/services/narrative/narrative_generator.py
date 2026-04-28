@@ -328,6 +328,69 @@ def _promote_eur_kpi_to_hero(kpis: list[NarrativeKpi]) -> list[NarrativeKpi]:
     return kpis
 
 
+# ── Vague E ét16 (audit Marie #3) — Gabarit canonique KPIs hero ──────
+
+
+def _is_score_kpi(value: Optional[str]) -> bool:
+    """True si le KPI ressemble à un score conformité (X/100 ou X%).
+
+    Marie ét16 : « kpis[1] = score conformité (toujours /100 ou %) ».
+    Volontairement strict — exclut les ratios "3/12 sites" (qui sont des
+    comptages, pas des scores). Match :
+      - "37/100"           ✓ score conformité
+      - "73%" ou "73 %"    ✓ pourcentage utilisation
+      - "3/12"             ✗ comptage (denominator non standard)
+      - "11 562 m²"        ✗ unité physique
+    """
+    if not value or not isinstance(value, str):
+        return False
+    v = value.strip()
+    import re
+
+    # Score conformité strict : X/100 (denominator exactement 100)
+    if re.match(r"^-?\d+(?:[.,]\d+)?\s*/\s*100\b", v):
+        return True
+    # Pourcentage : X%
+    if re.match(r"^-?\d+(?:[.,]\d+)?\s*%$", v):
+        return True
+    return False
+
+
+def _enforce_canonical_kpi_template(kpis: list[NarrativeKpi]) -> list[NarrativeKpi]:
+    """Vague E ét16 (audit Marie #3) — Gabarit canonique 3 KPIs hero.
+
+    Audit Marie DAF 28/04/2026 : « Les 3 pages utilisent 3 trios différents
+    (€/score/€an vs €/m²/note vs €/score/J-jour) → je ré-apprends la
+    grammaire à chaque page → casse l'intuition Sol "journal exécutif" ».
+
+    Convention canonique figée Sol §5 :
+      - kpis[0] = exposition € (montant mémorable, retina 3s)
+      - kpis[1] = score / état (X/100 conformité, X% utilisation, X/Y sites)
+      - kpis[2] = échéance ou levier (J-N jours, MWh économisables, etc.)
+
+    Stratégie de tri stable :
+      1. € en [0] (déjà géré par _promote_eur_kpi_to_hero, idempotent)
+      2. Score en [1] si pas déjà → swap [1] ↔ [position du score]
+      3. Position [2] = ce qui reste
+
+    Si moins de 3 KPIs ou aucun match : retourne kpis inchangé (graceful).
+    Idempotent : appelable plusieurs fois sans effet de bord.
+    """
+    promoted = _promote_eur_kpi_to_hero(kpis)
+    if len(promoted) < 3:
+        return promoted
+    # kpis[0] est désormais l'€ (ou le premier si pas d'€). On range kpis[1].
+    if _is_score_kpi(promoted[1].value):
+        return promoted  # déjà conforme
+    # Chercher un score dans kpis[2:] et le swap en [1]
+    for idx in range(2, len(promoted)):
+        if _is_score_kpi(promoted[idx].value):
+            new_kpis = list(promoted)
+            new_kpis[1], new_kpis[idx] = new_kpis[idx], new_kpis[1]
+            return new_kpis
+    return promoted
+
+
 # ── Builders MVP — cockpit_daily ────────────────────────────────────
 
 
@@ -440,7 +503,7 @@ def _build_cockpit_daily(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
+        kpis=tuple(_enforce_canonical_kpi_template(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -628,7 +691,7 @@ def _build_cockpit_comex(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
+        kpis=tuple(_enforce_canonical_kpi_template(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -853,7 +916,7 @@ def _build_patrimoine(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
+        kpis=tuple(_enforce_canonical_kpi_template(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -1087,7 +1150,7 @@ def _build_conformite(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
+        kpis=tuple(_enforce_canonical_kpi_template(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -1332,7 +1395,7 @@ def _build_bill_intel(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
+        kpis=tuple(_enforce_canonical_kpi_template(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -1597,7 +1660,7 @@ def _build_achat_energie(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
+        kpis=tuple(_enforce_canonical_kpi_template(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -1906,7 +1969,7 @@ def _build_monitoring(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
+        kpis=tuple(_enforce_canonical_kpi_template(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -2210,7 +2273,7 @@ def _build_diagnostic(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
+        kpis=tuple(_enforce_canonical_kpi_template(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -2549,7 +2612,7 @@ def _build_anomalies(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
+        kpis=tuple(_enforce_canonical_kpi_template(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
@@ -2843,7 +2906,7 @@ def _build_flex(
         italic_hook=italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
-        kpis=tuple(_promote_eur_kpi_to_hero(kpis)),
+        kpis=tuple(_enforce_canonical_kpi_template(kpis)),
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,

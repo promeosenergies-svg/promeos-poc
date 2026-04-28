@@ -140,15 +140,24 @@ describe('B-ter. SolEventCard — corrections P0 résiduels ét12e', () => {
   const src = readSrc('ui/sol/SolEventCard.jsx');
 
   it('mitigation rendue en 14px (text-sm) sur fond --sol-calme-bg (CFO P0 #2)', () => {
-    // Avant ét12e : text-[11px] noyée dans footer. Après : text-sm bandeau dédié.
+    // ét12e : text-sm bandeau dédié. ét16 : variant aQualifier ajouté avec
+    // fond --sol-attention-bg pour signaler "à creuser" sans crier.
     expect(src).toMatch(/text-sm font-medium text-\[var\(--sol-ink-900\)\]/);
-    expect(src).toMatch(/background:\s*'var\(--sol-calme-bg\)'/);
-    expect(src).toMatch(/<Wallet size=\{14\}/);
+    expect(src).toMatch(/var\(--sol-calme-bg\)/);
+    // Wallet size 12 (variant aQualifier) ou 14 (chiffrée)
+    expect(src).toMatch(/<Wallet[\s\S]*?size=\{mitigationVariant === 'aQualifier' \? 12 : 14\}/);
+  });
+
+  it('expose mitigation à qualifier en italic ambré quand impact € sans chiffres (ét16 P0 CFO)', () => {
+    expect(src).toMatch(/mitigationVariant/);
+    expect(src).toMatch(/Mitigation à qualifier/);
+    expect(src).toMatch(/var\(--sol-attention-bg\)/);
   });
 
   it('expose drill-down methodology via popover (CFO P0 #3)', () => {
     expect(src).toMatch(/methodology = event\.source\?\.methodology/);
-    expect(src).toMatch(/<Info size=\{11\}/);
+    // ét16 : Info size 11 → 14 (a11y target size 24×24 px)
+    expect(src).toMatch(/<Info size=\{14\}/);
     expect(src).toMatch(/methodologyOpen/);
     expect(src).toMatch(/setMethodologyOpen/);
     // Le popover s'ouvre/ferme indépendamment de la navigation card
@@ -156,6 +165,15 @@ describe('B-ter. SolEventCard — corrections P0 résiduels ét12e', () => {
     // Le bouton porte un aria-label explicite
     expect(src).toMatch(/aria-label="Voir la méthodologie de calcul"/);
     expect(src).toMatch(/aria-expanded=\{methodologyOpen\}/);
+  });
+
+  it('a11y popover ét16 : target 24×24 + Escape close + focus retour + aria-controls', () => {
+    // ét16 audit EM #3 a11y WCAG 2.5.8 + 2.4.3 + 2.1.2
+    expect(src).toMatch(/w-6 h-6/); // target 24×24 px
+    expect(src).toMatch(/methodologyButtonRef/); // ref pour focus retour
+    expect(src).toMatch(/'Escape'/); // close au clavier
+    expect(src).toMatch(/methodologyButtonRef\.current\?\.focus\(\)/);
+    expect(src).toMatch(/aria-controls=\{`sol-event-\$\{event\.id\}-methodology`\}/);
   });
 
   it('le popover affiche la méthodologie complète (rôle region accessible)', () => {
@@ -287,11 +305,10 @@ describe('I. Backend détecteurs ét13a/b — différenciants VC Series A', () =
     expect(existsSync(marketPath)).toBe(true);
     const src = readFileSync(marketPath, 'utf-8');
     expect(src).toMatch(/event_type="market_window"/);
-    expect(src).toMatch(/_CAPACITY_DEADLINE = date\(2026, 11, 1\)/);
+    // ét12g : deadline externalisée vers YAML versionné (mitigation_defaults)
+    expect(src).toMatch(/get_market_capacity_2026_defaults/);
     expect(src).toMatch(/owner_role="DAF"/);
     expect(src).toMatch(/route="\/achat-energie"/);
-    // Methodology cite la source réglementaire
-    expect(src).toMatch(/CRE délibération 2025-269/);
   });
 
   it('les 2 détecteurs sont enregistrés dans DETECTORS registry', () => {

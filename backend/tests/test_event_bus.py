@@ -1304,6 +1304,67 @@ def test_action_overdue_yaml_loader():
     assert d.overdue_critical_days > d.overdue_warning_days > 0
 
 
+def test_canonical_kpi_template_eur_then_score_then_other():
+    """ét16 audit Marie #3 : gabarit canonique €/score/échéance figé.
+
+    Marie : « les 3 pages utilisent 3 trios différents → je ré-apprends la
+    grammaire à chaque page → casse l'intuition Sol "journal exécutif" ».
+    Convention : kpis[0] = € exposition, kpis[1] = score X/100 ou X%,
+    kpis[2] = autre (échéance, levier, m²…).
+    """
+    from services.narrative.narrative_generator import (
+        NarrativeKpi,
+        _enforce_canonical_kpi_template,
+    )
+
+    # Cas 1 : ordre désordonné (autre, €, score) → réordonné €, score, autre
+    kpis = [
+        NarrativeKpi(label="Sites en dérive", value="3/12"),
+        NarrativeKpi(label="Risque financier", value="26 k€"),
+        NarrativeKpi(label="Conformité", value="37/100"),
+    ]
+    result = _enforce_canonical_kpi_template(kpis)
+    assert result[0].value == "26 k€", "kpis[0] doit être €"
+    assert result[1].value == "37/100", "kpis[1] doit être le score"
+    assert result[2].value == "3/12", "kpis[2] = reste"
+
+
+def test_canonical_kpi_template_idempotent():
+    """ét16 : idempotent — appel répété ne change rien."""
+    from services.narrative.narrative_generator import (
+        NarrativeKpi,
+        _enforce_canonical_kpi_template,
+    )
+
+    kpis = [
+        NarrativeKpi(label="€", value="26 k€"),
+        NarrativeKpi(label="Score", value="37/100"),
+        NarrativeKpi(label="Sites", value="3 sites"),
+    ]
+    once = _enforce_canonical_kpi_template(kpis)
+    twice = _enforce_canonical_kpi_template(once)
+    assert [k.value for k in once] == [k.value for k in twice]
+
+
+def test_canonical_kpi_template_graceful_no_score():
+    """ét16 : si pas de score, garde l'ordre € first + autres."""
+    from services.narrative.narrative_generator import (
+        NarrativeKpi,
+        _enforce_canonical_kpi_template,
+    )
+
+    kpis = [
+        NarrativeKpi(label="Surface", value="11 562 m²"),
+        NarrativeKpi(label="€", value="26 k€"),
+        NarrativeKpi(label="Sites", value="12 sites"),
+    ]
+    result = _enforce_canonical_kpi_template(kpis)
+    assert result[0].value == "26 k€"  # € en [0]
+    # Pas de score → ordre relatif des 2 autres préservé
+    assert result[1].value == "11 562 m²"
+    assert result[2].value == "12 sites"
+
+
 def test_data_quality_owns_photo_d020_freshness_not_asset_registry(db, org_with_sites, monkeypatch):
     """ét15 P1 #3 (audit EM) : frontière responsabilité PHOTO D020 obsolète.
 
