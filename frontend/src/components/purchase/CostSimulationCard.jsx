@@ -374,27 +374,76 @@ export default function CostSimulationCard({ siteId: siteIdProp, year: yearProp 
         </div>
       )}
 
-      {/* ── 6 composantes empilées ───────────────────────────────────── */}
-      <div className="space-y-2.5">
-        {COMPOSANTES.map((c) => {
+      {/* ── Composantes empilées — Phase 0.6 (sprint cockpit dual sol2) ──
+          Cible maquette `cockpit-synthese-strategique.html` section
+          « FACTURE PRÉVISIONNELLE 5 SITES » : split actives (toujours
+          rendues) vs inactives (repliées dans <details>).
+          - Actives : Fourniture, TURPE 7, Capacité RTE, Taxes (4 lignes)
+          - Inactives : VNU dormant + CBAM non applicable (0 à 2 lignes)
+          Anti-pattern §6.3 : afficher VNU/CBAM zéro en clair dilue
+          l'attention CFO sur les 4 composantes qui pèsent réellement. */}
+      {(() => {
+        const inactiveComposantes = COMPOSANTES.filter((c) => {
           const value = composantes[c.key] ?? 0;
-          const isVnu = c.key === 'vnu_eur';
-          const isCbam = c.key === 'cbam_scope';
-          return (
-            <ComposanteBar
-              key={c.key}
-              composanteKey={c.key}
-              label={c.label}
-              value={value}
-              total={total}
-              color={c.color}
-              tooltip={c.tooltip}
-              isDormant={isVnu && !vnuActif}
-              isNotApplicable={isCbam && (value == null || value === 0)}
-            />
-          );
-        })}
-      </div>
+          if (c.key === 'vnu_eur') return !vnuActif;
+          if (c.key === 'cbam_scope') return value == null || value === 0;
+          return false;
+        });
+        const activeComposantes = COMPOSANTES.filter((c) => !inactiveComposantes.includes(c));
+        return (
+          <>
+            <div className="space-y-2.5">
+              {activeComposantes.map((c) => {
+                const value = composantes[c.key] ?? 0;
+                return (
+                  <ComposanteBar
+                    key={c.key}
+                    composanteKey={c.key}
+                    label={c.label}
+                    value={value}
+                    total={total}
+                    color={c.color}
+                    tooltip={c.tooltip}
+                    isDormant={false}
+                    isNotApplicable={false}
+                  />
+                );
+              })}
+            </div>
+            {inactiveComposantes.length > 0 && (
+              <details
+                className="mt-3 border-t border-gray-100 pt-3"
+                data-testid="cost-sim-composantes-inactives"
+              >
+                <summary className="text-[11px] uppercase tracking-wide text-gray-400 cursor-pointer font-medium list-none hover:text-gray-600">
+                  + Composantes inactives · {inactiveComposantes.length} ligne
+                  {inactiveComposantes.length > 1 ? 's' : ''}
+                </summary>
+                <div className="mt-2.5 space-y-2.5">
+                  {inactiveComposantes.map((c) => {
+                    const value = composantes[c.key] ?? 0;
+                    const isVnu = c.key === 'vnu_eur';
+                    const isCbam = c.key === 'cbam_scope';
+                    return (
+                      <ComposanteBar
+                        key={c.key}
+                        composanteKey={c.key}
+                        label={c.label}
+                        value={value}
+                        total={total}
+                        color={c.color}
+                        tooltip={c.tooltip}
+                        isDormant={isVnu && !vnuActif}
+                        isNotApplicable={isCbam && (value == null || value === 0)}
+                      />
+                    );
+                  })}
+                </div>
+              </details>
+            )}
+          </>
+        );
+      })()}
 
       {/* ── CTA ──────────────────────────────────────────────────────── */}
       <button
