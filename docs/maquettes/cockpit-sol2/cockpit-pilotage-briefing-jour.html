@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROMEOS — Cockpit Pilotage (Briefing du jour) — sol2 cible</title>
+<style>
+:root {
+  /* Sol design tokens — light mode */
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f7f5ef;
+  --color-background-tertiary: #f1efe8;
+  --color-background-info: #e6f1fb;
+  --color-background-danger: #fcebeb;
+  --color-background-success: #eaf3de;
+  --color-background-warning: #faeeda;
+  --color-text-primary: #1a1815;
+  --color-text-secondary: #5a5853;
+  --color-text-tertiary: #8a8780;
+  --color-text-info: #185fa5;
+  --color-text-danger: #a32d2d;
+  --color-text-success: #3b6d11;
+  --color-text-warning: #854f0b;
+  --color-border-tertiary: rgba(26, 24, 21, 0.12);
+  --color-border-secondary: rgba(26, 24, 21, 0.22);
+  --color-border-primary: rgba(26, 24, 21, 0.4);
+  --color-border-info: rgba(24, 95, 165, 0.3);
+  --color-border-danger: rgba(163, 45, 45, 0.3);
+  --color-border-success: rgba(59, 109, 17, 0.3);
+  --color-border-warning: rgba(133, 79, 11, 0.3);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+  --font-serif: "Fraunces", "Source Serif Pro", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 24px;
+  background: var(--color-background-tertiary);
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pv-mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.pv-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.4rem 1.6rem 1.2rem;
+  background: var(--color-background-primary);
+  border-radius: var(--border-radius-lg);
+  border: .5px solid var(--color-border-tertiary);
+}
+
+.pv-h1 {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.2;
+  margin: .3rem 0 .15rem;
+}
+
+.pv-h1 em {
+  font-style: italic;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+
+.pv-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border: .5px solid var(--color-border-tertiary);
+  color: var(--color-text-secondary);
+  background: var(--color-background-primary);
+}
+
+.pv-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.pv-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 11px 13px;
+  border-radius: var(--border-radius-md);
+  border: .5px solid var(--color-border-tertiary);
+  background: var(--color-background-primary);
+  margin-bottom: 5px;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.pv-row:hover {
+  background: var(--color-background-secondary);
+}
+
+.pv-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--border-radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  border: .5px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.pv-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.pv-switch a {
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.pv-switch a.active {
+  color: var(--color-text-primary);
+  background: var(--color-background-secondary);
+}
+
+.pv-card {
+  background: var(--color-background-primary);
+  border: .5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 13px 15px;
+}
+
+.pv-kpi {
+  background: var(--color-background-secondary);
+  border-radius: var(--border-radius-md);
+  padding: 14px 16px;
+}
+
+.pv-kpi-value {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.pv-tooltip-trigger {
+  cursor: help;
+  border-bottom: 1px dotted var(--color-text-tertiary);
+}
+</style>
+</head>
+<body>
+
+<!--
+==============================================================================
+  MAQUETTE COCKPIT PILOTAGE (BRIEFING DU JOUR) — sol2 cible Phase 2 finie
+
+  Audience : energy manager · 30 secondes · "quoi traiter aujourd'hui"
+  Doctrine §11.3 : page de pilotage, source unique partagée avec Synthèse stratégique
+
+  Composants attendus :
+  - <SolKickerWithSwitch> avec scope + mode switch
+  - <SolBriefingHead> avec H1 Fraunces + narrative
+  - <CockpitHeaderPills> alertes + Centre d'action
+  - <KpiTriptyqueEnergetique> (Conso J-1 / Surconso 7j / Pic puissance)
+  - <ConsoSevenDaysBars> visuel glanceable
+  - <CourbeChargeJMinus1> visuel glanceable HP/HC
+  - <FileTraitement> liste priorisée par impact énergétique
+  - <SolFooter> source/confiance/MAJ/méthodologie
+==============================================================================
+-->
+
+<div class="pv-page">
+
+  <!-- ============ HEADER ============ -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">
+    <div style="flex:1;min-width:260px">
+      <div class="pv-mono">
+        Cockpit · groupe HELIOS — 5 sites ·
+        <span class="pv-switch">
+          <a href="/cockpit/jour" class="active">Briefing du jour</a>
+          <span>·</span>
+          <a href="/cockpit/strategique">Synthèse stratégique</a>
+        </span>
+      </div>
+      <h1 class="pv-h1">Bonjour — voici ce qui mérite votre attention <em>· lundi 27 avril</em></h1>
+      <div class="pv-mono" style="margin-top:5px">Données EMS il y a 2 h · qualité 94 % · semaine 18</div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <span class="pv-pill">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--color-text-warning)"></span>
+        11 alertes
+      </span>
+      <button class="pv-cta">Centre d'action →</button>
+    </div>
+  </div>
+
+  <!-- ============ TRIPTYQUE KPI ÉNERGÉTIQUE (option E2) ============ -->
+  <!--
+    Doctrine §11.3 : 3 KPI hero maximum
+    Décision Amine : KPI énergétiques honnêtes (pas d'euros tant que pas contrat)
+    Backend : alimenté par /api/cockpit/_facts.consumption + .power
+  -->
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:1rem 0 1.1rem">
+
+    <div class="pv-kpi">
+      <div class="pv-mono" style="margin-bottom:6px">
+        Conso J-1 · groupe ·
+        <span class="pv-tooltip-trigger" title="Baseline A · moyenne 12 lundis précédents · confiance haute">?</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+        <div class="pv-kpi-value">9,3 <span style="font-size:14px">MWh</span></div>
+        <div style="font-size:12px;color:var(--color-text-danger);font-weight:500">+ 11 % vs baseline</div>
+      </div>
+      <div class="pv-mono" style="margin-top:5px;font-size:10.5px">Réf. 8,4 MWh · même jour S-1</div>
+    </div>
+
+    <div class="pv-kpi">
+      <div class="pv-mono" style="margin-bottom:6px">
+        Surconso 7 j ·
+        <span class="pv-tooltip-trigger" title="Baseline B · DJU-ajustée · r² 0.87 · calibrée 20/04/2026">?</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+        <div class="pv-kpi-value">4,7 <span style="font-size:14px">MWh</span></div>
+        <div style="font-size:12px;color:var(--color-text-danger);font-weight:500">2 sites</div>
+      </div>
+      <div class="pv-mono" style="margin-top:5px;font-size:10.5px">Hôtel Nice · Toulouse</div>
+    </div>
+
+    <div class="pv-kpi">
+      <div class="pv-mono" style="margin-bottom:6px">
+        Pic puissance J-1 ·
+        <span class="pv-tooltip-trigger" title="Mesure CDC 30 min agrégée 5 sites · vs puissance souscrite contractuelle">?</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+        <div class="pv-kpi-value">528 <span style="font-size:14px">kW</span></div>
+        <div style="font-size:12px;color:var(--color-text-danger);font-weight:500">+ 10 % vs souscrite</div>
+      </div>
+      <div class="pv-mono" style="margin-top:5px;font-size:10.5px">Souscrite 480 kW · 11 h 30</div>
+    </div>
+
+  </div>
+
+  <!-- ============ VISUELS GLANCEABLES (2 max selon doctrine) ============ -->
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:1rem">
+
+    <!-- Conso 7 jours barres -->
+    <div class="pv-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+        <div>
+          <div class="pv-mono" style="margin-bottom:3px">Conso 7 jours · 5 sites · MWh/j</div>
+          <div style="font-size:12.5px;color:var(--color-text-secondary);line-height:1.4">
+            Sam. 25 avril : <strong style="font-weight:500;color:var(--color-text-danger)">+ 39 %</strong> vs baseline — anomalie Hôtel Nice
+          </div>
+        </div>
+        <a href="#" style="font-size:11px;font-family:var(--font-mono);color:var(--color-text-secondary);text-decoration:none;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0">Détail →</a>
+      </div>
+      <svg viewBox="0 0 320 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;margin-top:6px" role="img" aria-label="Barres consommation 7 jours, samedi en rouge anomalie">
+        <line x1="32" y1="20" x2="320" y2="20" stroke="currentColor" stroke-opacity=".08" stroke-dasharray="2,3"/>
+        <line x1="32" y1="55" x2="320" y2="55" stroke="currentColor" stroke-opacity=".08" stroke-dasharray="2,3"/>
+        <line x1="32" y1="90" x2="320" y2="90" stroke="currentColor" stroke-opacity=".15" stroke-dasharray="3,3"/>
+        <text x="28" y="23" text-anchor="end" font-family="var(--font-mono)" font-size="9" fill="currentColor" fill-opacity=".5">12</text>
+        <text x="28" y="58" text-anchor="end" font-family="var(--font-mono)" font-size="9" fill="currentColor" fill-opacity=".5">8</text>
+        <text x="28" y="93" text-anchor="end" font-family="var(--font-mono)" font-size="9" fill="currentColor" fill-opacity=".5">4</text>
+        <text x="28" y="74" text-anchor="end" font-family="var(--font-mono)" font-size="8.5" fill="currentColor" fill-opacity=".4">baseline</text>
+        <line x1="32" y1="68" x2="320" y2="68" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="2,2"/>
+        <g fill="#1D9E75">
+          <rect x="42" y="48" width="32" height="55" rx="2"/>
+          <rect x="84" y="50" width="32" height="53" rx="2"/>
+          <rect x="126" y="44" width="32" height="59" rx="2"/>
+          <rect x="168" y="46" width="32" height="57" rx="2"/>
+          <rect x="210" y="49" width="32" height="54" rx="2"/>
+        </g>
+        <rect x="252" y="22" width="32" height="81" rx="2" fill="#E24B4A"/>
+        <rect x="294" y="55" width="22" height="48" rx="2" fill="#1D9E75" fill-opacity=".5"/>
+        <text x="266" y="14" text-anchor="middle" font-family="var(--font-sans)" font-size="9" font-weight="500" fill="#A32D2D">+ 39 %</text>
+        <g font-family="var(--font-mono)" font-size="9" fill="currentColor" fill-opacity=".55" text-anchor="middle">
+          <text x="58" y="120">L</text>
+          <text x="100" y="120">M</text>
+          <text x="142" y="120">M</text>
+          <text x="184" y="120">J</text>
+          <text x="226" y="120">V</text>
+          <text x="268" y="120" font-weight="500" fill="#A32D2D" fill-opacity="1">S</text>
+          <text x="305" y="120">D</text>
+        </g>
+      </svg>
+      <div class="pv-mono" style="margin-top:6px;font-size:10px">Source EMS · MAJ il y a 2 h · confiance haute</div>
+    </div>
+
+    <!-- Courbe de charge J-1 -->
+    <div class="pv-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+        <div>
+          <div class="pv-mono" style="margin-bottom:3px">Courbe de charge J-1 · groupe · kW</div>
+          <div style="font-size:12.5px;color:var(--color-text-secondary);line-height:1.4">
+            Pic 9 h-11 h : <strong style="font-weight:500">528 kW</strong> · talon nuit <strong style="font-weight:500">122 kW</strong>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <span style="font-size:10px;font-family:var(--font-mono);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;display:inline-flex;align-items:center;gap:3px">
+            <span style="width:8px;height:2px;background:#EF9F27"></span>HP
+          </span>
+          <span style="font-size:10px;font-family:var(--font-mono);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;display:inline-flex;align-items:center;gap:3px">
+            <span style="width:8px;height:2px;background:#378ADD"></span>HC
+          </span>
+        </div>
+      </div>
+      <svg viewBox="0 0 320 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;margin-top:6px" role="img" aria-label="Courbe de charge J moins 1 du groupe HELIOS">
+        <defs>
+          <linearGradient id="hp-fill-pilotage" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#EF9F27" stop-opacity=".18"/>
+            <stop offset="100%" stop-color="#EF9F27" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <rect x="32" y="10" width="46" height="95" fill="#378ADD" fill-opacity=".05"/>
+        <rect x="284" y="10" width="36" height="95" fill="#378ADD" fill-opacity=".05"/>
+        <line x1="32" y1="20" x2="320" y2="20" stroke="currentColor" stroke-opacity=".08" stroke-dasharray="2,3"/>
+        <line x1="32" y1="55" x2="320" y2="55" stroke="currentColor" stroke-opacity=".08" stroke-dasharray="2,3"/>
+        <line x1="32" y1="90" x2="320" y2="90" stroke="currentColor" stroke-opacity=".15" stroke-dasharray="3,3"/>
+        <text x="28" y="23" text-anchor="end" font-family="var(--font-mono)" font-size="9" fill="currentColor" fill-opacity=".5">600</text>
+        <text x="28" y="58" text-anchor="end" font-family="var(--font-mono)" font-size="9" fill="currentColor" fill-opacity=".5">300</text>
+        <text x="28" y="93" text-anchor="end" font-family="var(--font-mono)" font-size="9" fill="currentColor" fill-opacity=".5">0</text>
+        <line x1="32" y1="34" x2="320" y2="34" stroke="#A32D2D" stroke-opacity=".55" stroke-dasharray="3,3" stroke-width="1"/>
+        <text x="318" y="31" text-anchor="end" font-family="var(--font-mono)" font-size="8.5" fill="#A32D2D" fill-opacity=".85">P. souscrite 480 kW</text>
+        <path d="M32,90 L78,80 L92,68 L106,46 L120,40 L134,42 L148,52 L162,58 L176,52 L190,46 L204,42 L218,46 L232,50 L246,56 L260,64 L274,76 L284,82 L284,105 L32,105 Z" fill="url(#hp-fill-pilotage)" fill-opacity=".7"/>
+        <path d="M32,92 L48,90 L60,88 L72,84 L78,80" fill="none" stroke="#378ADD" stroke-width="1.6"/>
+        <path d="M78,80 L92,68 L106,46 L120,40 L134,42 L148,52 L162,58 L176,52 L190,46 L204,42 L218,46 L232,50 L246,56 L260,64 L274,76 L284,82" fill="none" stroke="#EF9F27" stroke-width="1.6"/>
+        <path d="M284,82 L296,86 L308,90 L320,93" fill="none" stroke="#378ADD" stroke-width="1.6"/>
+        <circle cx="106" cy="46" r="2.5" fill="#EF9F27"/>
+        <circle cx="120" cy="40" r="2.5" fill="#EF9F27"/>
+        <text x="113" y="33" text-anchor="middle" font-family="var(--font-sans)" font-size="9" font-weight="500" fill="#854F0B">528 kW</text>
+        <g font-family="var(--font-mono)" font-size="9" fill="currentColor" fill-opacity=".55" text-anchor="middle">
+          <text x="32" y="120">0 h</text>
+          <text x="106" y="120">8 h</text>
+          <text x="176" y="120">12 h</text>
+          <text x="250" y="120">18 h</text>
+          <text x="320" y="120">22 h</text>
+        </g>
+      </svg>
+      <div class="pv-mono" style="margin-top:6px;font-size:10px">Source EMS CDC 30 min · J-1 · agrégé 5 sites · confiance haute</div>
+    </div>
+
+  </div>
+
+  <!-- ============ FILE DE TRAITEMENT ============ -->
+  <!--
+    Doctrine §11.3 : page de pilotage, file priorisée par impact énergétique
+    Réciprocité : P1, P2, P5 portent un lien "voir impact stratégique" vers /cockpit/strategique
+    Backend : alimenté par /api/cockpit/_facts.alerts + service action_hub_service
+  -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+    <div class="pv-mono">File de traitement · 5 lignes priorisées</div>
+    <div class="pv-mono" style="font-size:10.5px">Tri impact énergétique décroissant ↓</div>
+  </div>
+
+  <div class="pv-row" style="background:var(--color-background-danger);border-color:var(--color-border-danger)">
+    <span class="pv-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-danger);justify-self:center">P1</span>
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap">
+        <span style="font-weight:500;font-size:14px">Hôtel HELIOS Nice</span>
+        <span class="pv-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-danger)">Anomalie</span>
+        <span style="font-size:10.5px;color:var(--color-text-danger);font-weight:500">• nouveau</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--color-text-secondary);line-height:1.45">
+        Chauffage actif samedi/dimanche — 2 510 kWh/j vs baseline 1 800 kWh/j · programmation horaire CVC à reprogrammer ·
+        <a href="/cockpit/strategique#decision-hotel-nice" style="color:var(--color-text-danger);text-decoration:none;font-weight:500">voir impact stratégique →</a>
+      </div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:var(--color-text-tertiary)">il y a 2 h</div>
+    <div style="text-align:right">
+      <div style="font-family:var(--font-serif);font-size:14px;font-weight:500;color:var(--color-text-danger)">+ 39 %</div>
+      <div style="font-size:10.5px;color:var(--color-text-tertiary)">710 kWh/j</div>
+    </div>
+  </div>
+
+  <div class="pv-row" style="background:var(--color-background-danger);border-color:var(--color-border-danger)">
+    <span class="pv-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-danger);justify-self:center">P2</span>
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap">
+        <span style="font-weight:500;font-size:14px">Entrepôt HELIOS Toulouse</span>
+        <span class="pv-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-danger)">Dépassement</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--color-text-secondary);line-height:1.45">
+        Puissance souscrite 320 kW dépassée 12 fois en 90 j · pic mesuré 407 kW · ajustement contrat à étudier ·
+        <a href="/cockpit/strategique#decision-toulouse-puissance" style="color:var(--color-text-danger);text-decoration:none;font-weight:500">voir impact stratégique →</a>
+      </div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:var(--color-text-tertiary)">hier 17 h</div>
+    <div style="text-align:right">
+      <div style="font-family:var(--font-serif);font-size:14px;font-weight:500;color:var(--color-text-danger)">+ 27 %</div>
+      <div style="font-size:10.5px;color:var(--color-text-tertiary)">87 kW au-dessus</div>
+    </div>
+  </div>
+
+  <div class="pv-row" style="background:var(--color-background-warning);border-color:var(--color-border-warning)">
+    <span class="pv-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-warning);justify-self:center">P3</span>
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap">
+        <span style="font-weight:500;font-size:14px">Bureau Régional Lyon</span>
+        <span class="pv-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-warning)">Hors horaires</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--color-text-secondary);line-height:1.45">
+        Consommation CVC 21 h-6 h significative · 5 % de la conso totale hors plage d'occupation
+      </div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:var(--color-text-tertiary)">vendredi 14 h</div>
+    <div style="text-align:right">
+      <div style="font-family:var(--font-serif);font-size:14px;font-weight:500;color:var(--color-text-warning)">38 MWh/an</div>
+      <div style="font-size:10.5px;color:var(--color-text-tertiary)">récupérables</div>
+    </div>
+  </div>
+
+  <div class="pv-row" style="background:var(--color-background-warning);border-color:var(--color-border-warning)">
+    <span class="pv-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-warning);justify-self:center">P4</span>
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap">
+        <span style="font-weight:500;font-size:14px">Entrepôt HELIOS Toulouse</span>
+        <span class="pv-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-warning)">Data manquante</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--color-text-secondary);line-height:1.45">
+        2 trous d'index sur les 24 dernières heures — relance Enedis SGE recommandée
+      </div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:var(--color-text-tertiary)">il y a 6 h</div>
+    <div style="text-align:right">
+      <div style="font-family:var(--font-serif);font-size:13px;font-weight:500;color:var(--color-text-tertiary)">94 %</div>
+      <div style="font-size:10.5px;color:var(--color-text-tertiary)">qualité data</div>
+    </div>
+  </div>
+
+  <div class="pv-row" style="background:var(--color-background-warning);border-color:var(--color-border-warning);margin-bottom:1.1rem">
+    <span class="pv-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-warning);justify-self:center">P5</span>
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap">
+        <span style="font-weight:500;font-size:14px">Siège HELIOS Paris</span>
+        <span class="pv-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-warning)">Conformité op</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--color-text-secondary);line-height:1.45">
+        Décret BACS · pilotage CVC obligatoire absent — 290 kW de puissance CVC non régulés (système GTB classe A/B requis) ·
+        <a href="/cockpit/strategique#decision-bacs-siege" style="color:var(--color-text-warning);text-decoration:none;font-weight:500">voir impact stratégique →</a>
+      </div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:var(--color-text-tertiary)">jeudi 9 h</div>
+    <div style="text-align:right">
+      <div style="font-family:var(--font-serif);font-size:14px;font-weight:500;color:var(--color-text-warning)">290 kW</div>
+      <div style="font-size:10.5px;color:var(--color-text-tertiary)">non régulés</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-bottom:1.1rem">
+    <a href="#" class="pv-mono" style="color:var(--color-text-secondary);text-decoration:none">+ Voir 2 lignes restantes (P6, P7) →</a>
+  </div>
+
+  <!-- ============ FOOTER SOL ============ -->
+  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;padding-top:.7rem;border-top:.5px solid var(--color-border-tertiary)">
+    <div class="pv-mono">
+      Source EMS + RegOps + RegAssessment · confiance haute · mis à jour il y a 2 h ·
+      <a href="#" style="color:var(--color-text-secondary);text-decoration:none;border-bottom:.5px dotted">méthodologie</a>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

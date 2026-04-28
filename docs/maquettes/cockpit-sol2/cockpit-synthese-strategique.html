@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROMEOS — Cockpit Synthèse stratégique — sol2 cible</title>
+<style>
+:root {
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f7f5ef;
+  --color-background-tertiary: #f1efe8;
+  --color-background-info: #e6f1fb;
+  --color-background-danger: #fcebeb;
+  --color-background-success: #eaf3de;
+  --color-background-warning: #faeeda;
+  --color-text-primary: #1a1815;
+  --color-text-secondary: #5a5853;
+  --color-text-tertiary: #8a8780;
+  --color-text-info: #185fa5;
+  --color-text-danger: #a32d2d;
+  --color-text-success: #3b6d11;
+  --color-text-warning: #854f0b;
+  --color-border-tertiary: rgba(26, 24, 21, 0.12);
+  --color-border-secondary: rgba(26, 24, 21, 0.22);
+  --color-border-primary: rgba(26, 24, 21, 0.4);
+  --color-border-info: rgba(24, 95, 165, 0.3);
+  --color-border-danger: rgba(163, 45, 45, 0.3);
+  --color-border-success: rgba(59, 109, 17, 0.3);
+  --color-border-warning: rgba(133, 79, 11, 0.3);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+  --font-serif: "Fraunces", "Source Serif Pro", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; padding: 24px; background: var(--color-background-tertiary); font-family: var(--font-sans); color: var(--color-text-primary); font-size: 14px; line-height: 1.5; }
+
+.fd-mono { font-family: var(--font-mono); font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--color-text-tertiary); }
+.fd-page { max-width: 1280px; margin: 0 auto; padding: 1.5rem 1.6rem 1.2rem; background: var(--color-background-primary); border-radius: var(--border-radius-lg); border: .5px solid var(--color-border-tertiary); }
+.fd-h1 { font-family: var(--font-serif); font-size: 26px; font-weight: 500; line-height: 1.2; margin: .4rem 0 .2rem; }
+.fd-h1 em { font-style: italic; color: var(--color-text-secondary); font-weight: 400; }
+.fd-pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; border: .5px solid var(--color-border-tertiary); color: var(--color-text-secondary); background: var(--color-background-primary); }
+.fd-tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 500; }
+.fd-cta { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--border-radius-md); font-size: 13px; font-weight: 500; border: .5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; }
+.fd-decision { display: grid; grid-template-columns: 42px 1fr; gap: 14px; padding: 14px 16px; border-radius: var(--border-radius-md); margin-bottom: 8px; border: .5px solid; }
+.fd-switch { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-tertiary); }
+.fd-switch a { color: var(--color-text-tertiary); text-decoration: none; padding: 3px 8px; border-radius: 4px; }
+.fd-switch a.active { color: var(--color-text-primary); background: var(--color-background-secondary); }
+.fd-conf { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase; font-weight: 500; padding: 1px 5px; border-radius: 3px; }
+.fd-conf.calc { background: var(--color-background-success); color: var(--color-text-success); }
+.fd-conf.mod { background: var(--color-background-warning); color: var(--color-text-warning); }
+.fd-kpi-value { font-family: var(--font-serif); font-size: 32px; font-weight: 500; line-height: 1; }
+.fd-decision-title { font-family: var(--font-serif); font-size: 18px; font-weight: 500; line-height: 1.3; }
+</style>
+</head>
+<body>
+
+<!--
+==============================================================================
+  MAQUETTE COCKPIT SYNTHÈSE STRATÉGIQUE — sol2 cible Phase 2 finie
+
+  Audience : DG / CFO / dirigeant non-sachant · 3 minutes · "où en sommes-nous, quoi décider"
+  Doctrine §11.3 : page de décision, source unique partagée avec Briefing du jour
+
+  Composants attendus :
+  - <SolKickerWithSwitch> avec scope + mode switch (réutilisé)
+  - <SolBriefingHead> avec H1 Fraunces "Synthèse stratégique" + narrative
+  - <CockpitHeaderPills> EPEX + Rapport COMEX
+  - <KpiTriptyqueHybride> (Trajectoire + Exposition€ + Potentiel MWh) avec badges Calculé/Modélisé
+  - <DecisionsTopThree> 3 décisions arbitrales avec drill-downs preuve op
+  - <TrajectoryDTSmoothed> visuel trajectoire 2030 lissé par échéance
+  - <FacturePortefeuille> facture prévisionnelle 5 sites avec composantes inactives collapsées
+  - <FlexTeaser> 1 card minimaliste vers Flex Intelligence
+  - <SolFooter> source/confiance/MAJ/méthodologie (réutilisé)
+==============================================================================
+-->
+
+<div class="fd-page">
+
+  <!-- ============ HEADER ============ -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+    <div style="flex:1;min-width:260px">
+      <div class="fd-mono">
+        Cockpit · groupe HELIOS — 5 sites ·
+        <span class="fd-switch">
+          <a href="/cockpit/jour">Briefing du jour</a>
+          <span>·</span>
+          <a href="/cockpit/strategique" class="active">Synthèse stratégique</a>
+        </span>
+      </div>
+      <h1 class="fd-h1">Synthèse stratégique <em>· semaine 18 · pour CODIR</em></h1>
+      <div class="fd-mono" style="margin-top:6px">Données il y a 16 h · pour comité direction du jeudi 30 avril</div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <span class="fd-pill">EPEX 78 €/MWh</span>
+      <button class="fd-cta">Rapport COMEX →</button>
+    </div>
+  </div>
+
+  <!-- ============ NARRATIVE STRATÉGIQUE 4 LIGNES ============ -->
+  <p style="font-size:15px;line-height:1.65;color:var(--color-text-secondary);margin:1.1rem 0 1.25rem;max-width:64ch">
+    Votre patrimoine de 5 sites présente <strong style="color:var(--color-text-primary);font-weight:500">3 sites en dérive</strong> de la trajectoire 2030 (Décret n°2019-771, jalons −40 % / 2030, −50 % / 2040, −60 % / 2050). Score conformité <strong style="color:var(--color-text-primary);font-weight:500">37/100</strong>. Exposition aux pénalités réglementaires <strong style="color:var(--color-text-primary);font-weight:500">26,2 k€</strong> calculée loi à la main, en hausse de <strong style="color:var(--color-text-primary);font-weight:500">+ 3,8 k€</strong> vs semaine précédente. Trois décisions à arbitrer cette semaine pour mobiliser <strong style="color:var(--color-text-primary);font-weight:500">245 MWh/an</strong> de potentiel énergétique récupérable.
+  </p>
+
+  <!-- ============ TRIPTYQUE KPI HYBRIDE ============ -->
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:1.5rem">
+
+    <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:14px 16px">
+      <div class="fd-mono" style="margin-bottom:8px">Trajectoire 2030 · ?</div>
+      <div class="fd-kpi-value">37<span style="font-size:18px;color:var(--color-text-tertiary)">/100</span></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <span class="fd-conf calc">Calculé</span>
+        <span class="fd-mono" style="font-size:10.5px">RegOps + Décret 2019-771</span>
+      </div>
+      <div style="margin-top:6px">
+        <a href="/conformite?scope=org&filter=non_conform" style="font-size:11.5px;color:var(--color-text-secondary);text-decoration:none;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.05em">Voir Conformité →</a>
+      </div>
+    </div>
+
+    <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:14px 16px">
+      <div class="fd-mono" style="margin-bottom:8px">Exposition pénalités · ?</div>
+      <div class="fd-kpi-value">26,2 <span style="font-size:18px">k€</span></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <span class="fd-conf calc">Calculé</span>
+        <span class="fd-mono" style="font-size:10.5px">Décret 2019-771 art. 9</span>
+      </div>
+      <div style="margin-top:6px">
+        <a href="/conformite?scope=org&view=exposure_components" style="font-size:11.5px;color:var(--color-text-secondary);text-decoration:none;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.05em">Voir 3 sites NC →</a>
+      </div>
+    </div>
+
+    <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:14px 16px">
+      <div class="fd-mono" style="margin-bottom:8px">Potentiel récupérable · ?</div>
+      <div class="fd-kpi-value">245 <span style="font-size:18px">MWh/an</span></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <span class="fd-conf mod">Modélisé</span>
+        <span class="fd-mono" style="font-size:10.5px">CEE BAT-TH-116 · 3 leviers</span>
+      </div>
+      <div style="margin-top:6px">
+        <a href="/actions?filter=open&sort=mwh_desc" style="font-size:11.5px;color:var(--color-text-secondary);text-decoration:none;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.05em">Voir 11 actions →</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ 3 DÉCISIONS À ARBITRER ============ -->
+  <div class="fd-mono" style="margin-bottom:.65rem">3 décisions à arbitrer · semaine 18 · classement par échéance</div>
+
+  <div class="fd-decision" id="decision-bacs-siege" style="background:var(--color-background-danger);border-color:var(--color-border-danger)">
+    <div style="background:var(--color-background-primary);border-radius:6px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:15px;font-weight:500;color:var(--color-text-danger);align-self:start">1</div>
+    <div style="min-width:0">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:5px">
+        <span class="fd-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-danger)">Investissement</span>
+        <span class="fd-mono">Conformité · Siège HELIOS Paris</span>
+      </div>
+      <div class="fd-decision-title" style="margin-bottom:5px">
+        Faut-il installer un système de pilotage CVC obligatoire (Décret BACS) ?
+      </div>
+      <div style="font-size:13.5px;line-height:1.6;color:var(--color-text-secondary);margin-bottom:10px">
+        Votre Siège dépasse 290 kW de puissance CVC sans pilotage automatisé conforme. Sans installation avant le 1ᵉʳ janvier 2027, exposition <strong style="font-weight:500">7 500 €</strong> de pénalité légale annuelle (Décret 2019-771 art. 9).
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;font-size:12.5px;color:var(--color-text-secondary);margin-bottom:10px">
+        <div><span class="fd-mono" style="display:block">Puissance CVC</span><span style="font-weight:500;color:var(--color-text-primary)">290 kW</span></div>
+        <div><span class="fd-mono" style="display:block">Économies modélisées</span><span style="font-weight:500;color:var(--color-text-primary)">115 MWh/an</span></div>
+        <div><span class="fd-mono" style="display:block">Référentiel</span><span style="font-weight:500;color:var(--color-text-primary)">CEE BAT-TH-116</span></div>
+        <div><span class="fd-mono" style="display:block">Échéance</span><span style="font-weight:500;color:var(--color-text-danger)">J-132</span></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="/cockpit/jour#row-bacs-siege" style="font-size:12.5px;font-weight:500;color:var(--color-text-danger);text-decoration:none">Voir preuve opérationnelle →</a>
+        <span style="color:var(--color-text-tertiary)">·</span>
+        <a href="#" style="font-size:12.5px;font-weight:500;color:var(--color-text-danger);text-decoration:none">Méthodologie levier →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="fd-decision" id="decision-renouvellement-paris" style="background:var(--color-background-warning);border-color:var(--color-border-warning)">
+    <div style="background:var(--color-background-primary);border-radius:6px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:15px;font-weight:500;color:var(--color-text-warning);align-self:start">2</div>
+    <div style="min-width:0">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:5px">
+        <span class="fd-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-warning)">Achat énergie</span>
+        <span class="fd-mono">Achat · Siège HELIOS Paris</span>
+      </div>
+      <div class="fd-decision-title" style="margin-bottom:5px">
+        Quelle stratégie de renouvellement post-ARENH pour le Siège ?
+      </div>
+      <div style="font-size:13.5px;line-height:1.6;color:var(--color-text-secondary);margin-bottom:10px">
+        Contrat actuel à échéance dans 3 mois. Marché post-ARENH (depuis 01/01/2026) + Versement Nucléaire Universel actif. Fenêtre EPEX favorable J+30.
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;font-size:12.5px;color:var(--color-text-secondary);margin-bottom:10px">
+        <div><span class="fd-mono" style="display:block">Volume annuel</span><span style="font-weight:500;color:var(--color-text-primary)">595 MWh</span></div>
+        <div><span class="fd-mono" style="display:block">Profil HP/HC</span><span style="font-weight:500;color:var(--color-text-primary)">68 / 32 %</span></div>
+        <div><span class="fd-mono" style="display:block">Fenêtre signature</span><span style="font-weight:500;color:var(--color-text-primary)">15 mai → 15 juin</span></div>
+        <div><span class="fd-mono" style="display:block">Échéance</span><span style="font-weight:500;color:var(--color-text-warning)">J-48</span></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="#" style="font-size:12.5px;font-weight:500;color:var(--color-text-warning);text-decoration:none">Voir scénarios →</a>
+        <span style="color:var(--color-text-tertiary)">·</span>
+        <a href="#" style="font-size:12.5px;font-weight:500;color:var(--color-text-warning);text-decoration:none">Lancer consultation marché →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="fd-decision" id="decision-audit-energetique" style="background:var(--color-background-warning);border-color:var(--color-border-warning);margin-bottom:1.5rem">
+    <div style="background:var(--color-background-primary);border-radius:6px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:15px;font-weight:500;color:var(--color-text-warning);align-self:start">3</div>
+    <div style="min-width:0">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:5px">
+        <span class="fd-tag" style="background:rgba(0,0,0,.06);color:var(--color-text-warning)">Conformité</span>
+        <span class="fd-mono">Audit énergétique · 5 sites</span>
+      </div>
+      <div class="fd-decision-title" style="margin-bottom:5px">
+        Quel prestataire retenir pour l'audit énergétique obligatoire ?
+      </div>
+      <div style="font-size:13.5px;line-height:1.6;color:var(--color-text-secondary);margin-bottom:10px">
+        Audit obligatoire tous les 4 ans (consommation > 2,75 GWh). Sans audit avant le 11 octobre 2026 : exposition <strong style="font-weight:500">15 000 €</strong> de sanction administrative + perte d'éligibilité ISO 50001.
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;font-size:12.5px;color:var(--color-text-secondary);margin-bottom:10px">
+        <div><span class="fd-mono" style="display:block">Sites concernés</span><span style="font-weight:500;color:var(--color-text-primary)">5 / 5</span></div>
+        <div><span class="fd-mono" style="display:block">Conso périmètre</span><span style="font-weight:500;color:var(--color-text-primary)">4 229 MWh/an</span></div>
+        <div><span class="fd-mono" style="display:block">Levier estimé</span><span style="font-weight:500;color:var(--color-text-primary)">130 MWh/an</span></div>
+        <div><span class="fd-mono" style="display:block">Échéance</span><span style="font-weight:500;color:var(--color-text-warning)">J-167</span></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="#" style="font-size:12.5px;font-weight:500;color:var(--color-text-warning);text-decoration:none">Voir 3 prestataires recommandés →</a>
+        <span style="color:var(--color-text-tertiary)">·</span>
+        <a href="#" style="font-size:12.5px;font-weight:500;color:var(--color-text-warning);text-decoration:none">Préparer dossier audit →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TRAJECTOIRE 2030 LISSÉE ============ -->
+  <div class="fd-mono" style="margin-bottom:.65rem">Trajectoire 2030 · réel 5 sites HELIOS vs cible Décret Tertiaire</div>
+  <div style="background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:14px 16px;margin-bottom:1.25rem">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:8px">
+      <div style="font-size:13px;color:var(--color-text-secondary);line-height:1.5;max-width:50ch">
+        Avec les actions planifiées et leurs échéances réelles, l'objectif <strong style="font-weight:500">−40 % / 2030</strong> reste atteignable. Réel HELIOS 2025 : <strong style="font-weight:500">4 229 MWh/an</strong>. Lissage temporel par échéance d'action.
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <span style="font-size:10px;font-family:var(--font-mono);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;display:inline-flex;align-items:center;gap:4px">
+          <span style="width:10px;height:2px;background:#378ADD"></span>Réel
+        </span>
+        <span style="font-size:10px;font-family:var(--font-mono);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;display:inline-flex;align-items:center;gap:4px">
+          <span style="width:10px;height:2px;background:#A32D2D;border-top:1px dashed #A32D2D"></span>Cible DT
+        </span>
+        <span style="font-size:10px;font-family:var(--font-mono);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;display:inline-flex;align-items:center;gap:4px">
+          <span style="width:10px;height:2px;background:#1D9E75"></span>Projection
+        </span>
+      </div>
+    </div>
+    <svg viewBox="0 0 800 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;margin-top:6px" role="img" aria-label="Trajectoire DT lissée 2020 à 2030, réel jusqu'en 2025 puis projection actions planifiées en pente continue jusqu'à 2700 MWh en 2030">
+      <line x1="64" y1="20" x2="780" y2="20" stroke="currentColor" stroke-opacity=".08" stroke-dasharray="2,3"/>
+      <line x1="64" y1="70" x2="780" y2="70" stroke="currentColor" stroke-opacity=".08" stroke-dasharray="2,3"/>
+      <line x1="64" y1="120" x2="780" y2="120" stroke="currentColor" stroke-opacity=".08" stroke-dasharray="2,3"/>
+      <line x1="64" y1="170" x2="780" y2="170" stroke="currentColor" stroke-opacity=".15" stroke-dasharray="2,3"/>
+      <text x="58" y="23" text-anchor="end" font-family="var(--font-mono)" font-size="10" fill="currentColor" fill-opacity=".5">5 000</text>
+      <text x="58" y="73" text-anchor="end" font-family="var(--font-mono)" font-size="10" fill="currentColor" fill-opacity=".5">4 000</text>
+      <text x="58" y="123" text-anchor="end" font-family="var(--font-mono)" font-size="10" fill="currentColor" fill-opacity=".5">3 000</text>
+      <text x="58" y="173" text-anchor="end" font-family="var(--font-mono)" font-size="10" fill="currentColor" fill-opacity=".5">2 000</text>
+      <path d="M 64 60 L 136 60 L 208 68 L 280 60 L 352 78 L 424 60 L 496 96 L 568 132 L 640 156 L 712 170 L 780 180" fill="none" stroke="#A32D2D" stroke-width="1.4" stroke-dasharray="4,4"/>
+      <path d="M 64 60 L 136 60 L 208 68 L 280 60 L 352 78 L 424 60" fill="none" stroke="#378ADD" stroke-width="2"/>
+      <circle cx="64" cy="60" r="3" fill="#378ADD"/>
+      <circle cx="136" cy="60" r="3" fill="#378ADD"/>
+      <circle cx="208" cy="68" r="3" fill="#378ADD"/>
+      <circle cx="280" cy="60" r="3" fill="#378ADD"/>
+      <circle cx="352" cy="78" r="3" fill="#378ADD"/>
+      <circle cx="424" cy="60" r="4" fill="#378ADD"/>
+      <path d="M 424 60 L 496 90 L 568 120 L 640 144 L 712 165 L 780 182" fill="none" stroke="#1D9E75" stroke-width="2"/>
+      <circle cx="496" cy="90" r="3" fill="#1D9E75"/>
+      <circle cx="568" cy="120" r="3" fill="#1D9E75"/>
+      <circle cx="640" cy="144" r="3" fill="#1D9E75"/>
+      <circle cx="712" cy="165" r="3" fill="#1D9E75"/>
+      <circle cx="780" cy="182" r="3" fill="#1D9E75"/>
+      <line x1="424" y1="20" x2="424" y2="220" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="2,3"/>
+      <text x="424" y="14" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="currentColor" fill-opacity=".55">aujourd'hui</text>
+      <g font-family="var(--font-mono)" font-size="10" fill="currentColor" fill-opacity=".55" text-anchor="middle">
+        <text x="64" y="232">2020</text>
+        <text x="208" y="232">2022</text>
+        <text x="352" y="232">2024</text>
+        <text x="496" y="232">2026</text>
+        <text x="640" y="232">2028</text>
+        <text x="780" y="232">2030</text>
+      </g>
+    </svg>
+    <div class="fd-mono" style="margin-top:6px;font-size:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <span>Source consumption_unified_service · projection lissée par action.echeance</span>
+      <span>Réf. surface 17 500 m² · jalons −40 % / 2030 · −50 % / 2040 · −60 % / 2050</span>
+    </div>
+  </div>
+
+  <!-- ============ FACTURE PRÉVISIONNELLE 5 SITES ============ -->
+  <div class="fd-mono" style="margin-bottom:.5rem">Marché de l'électricité · facture prévisionnelle 2026 · 5 sites HELIOS</div>
+  <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:16px 18px;margin-bottom:1.25rem">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:12px">
+      <div>
+        <div style="font-family:var(--font-serif);font-size:18px;font-weight:500;margin-bottom:3px">
+          Facture énergie prévisionnelle 5 sites
+          <span class="fd-conf calc" style="margin-left:6px">Calculé</span>
+        </div>
+        <div class="fd-mono">Périmètre 5 sites HELIOS · 4 229 MWh/an · post-ARENH 01/01/2026</div>
+      </div>
+      <div style="text-align:right">
+        <div class="fd-kpi-value">562 <span style="font-size:18px">k€</span></div>
+        <div class="fd-mono" style="color:var(--color-text-success);margin-top:4px">− 22,5 % vs 2024</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span>Fourniture énergie</span><span style="font-weight:500">288 k€</span></div>
+      <div style="height:6px;background:var(--color-background-primary);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:51%;background:var(--color-text-success)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:4px"><span>Tarif d'acheminement (TURPE 7)</span><span style="font-weight:500">57 k€</span></div>
+      <div style="height:6px;background:var(--color-background-primary);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:10%;background:var(--color-text-secondary)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:4px"><span>Taxes (accise + CTA + TVA)</span><span style="font-weight:500">205 k€</span></div>
+      <div style="height:6px;background:var(--color-background-primary);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:36%;background:var(--color-text-warning)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:4px"><span>Mécanisme capacité (RTE PL-4 / PL-1)</span><span style="font-weight:500">12 k€</span></div>
+      <div style="height:6px;background:var(--color-background-primary);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:2%;background:var(--color-text-secondary)"></div>
+      </div>
+    </div>
+
+    <details style="margin-top:14px;border-top:.5px solid var(--color-border-tertiary);padding-top:10px">
+      <summary style="font-size:12.5px;color:var(--color-text-tertiary);cursor:pointer;list-style:none;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em">
+        + Composantes inactives · 2 lignes
+      </summary>
+      <div style="margin-top:8px;font-size:12.5px;color:var(--color-text-tertiary);line-height:1.6">
+        <div>Versement Nucléaire Universel (VNU) — <em>dormant</em>, activation prévue 2027</div>
+        <div>Taxe carbone aux frontières (CBAM) — <em>non applicable</em>, secteur tertiaire hors périmètre</div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ============ TEASER FLEX INTELLIGENCE ============ -->
+  <div style="background:var(--color-background-info);border-radius:var(--border-radius-md);padding:12px 16px;margin-bottom:1.25rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px;font-size:13.5px;line-height:1.5;color:var(--color-text-secondary)">
+      <strong style="color:var(--color-text-info);font-weight:500">Gisement Flex portefeuille — 21 k€/an</strong> identifié sur 5 sites (Logistique frigorifique · Hôtellerie · Bureau standard). Activation possible via partenaire d'agrégation.
+    </div>
+    <a href="/flex" class="fd-cta" style="font-size:12.5px">Voir Flex Intelligence →</a>
+  </div>
+
+  <!-- ============ FOOTER SOL ============ -->
+  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;padding-top:.75rem;border-top:.5px solid var(--color-border-tertiary)">
+    <div class="fd-mono">
+      Source RegOps + RegAssessment + Décret 2019-771 art. 9 · confiance haute · mis à jour il y a 16 h ·
+      <a href="#" style="color:var(--color-text-secondary);text-decoration:none;border-bottom:.5px dotted">méthodologie</a>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
