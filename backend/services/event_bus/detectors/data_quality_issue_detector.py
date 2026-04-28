@@ -1,4 +1,4 @@
-"""Détecteur `data_quality_issue` — chantier α Vague C ét13d.
+"""Détecteur `data_quality_issue` — chantier α Vague C ét13d / ét15.
 
 Doctrine §10 event_type `data_quality_issue` : émet un événement quand
 le diagnostic de consommation détecte des trous de données significatifs
@@ -11,6 +11,25 @@ silencieuse du moteur d'événements.
 
 Réutilise SoT canonique `consumption_diagnostic.get_insights_summary`
 (règle d'or §10 P3). Owner Energy Manager (responsabilité collecte data).
+
+## Vague E ét15 — Ownership PHOTO D020 obsolète (clarification audit EM)
+
+L'EM a signalé un risque de doublon entre `data_quality_issue` et
+`asset_registry_issue` pour le contrôle « PHOTO D020 SGE/Enedis obsolète
+> 90 jours ». **Décision tranchée** :
+
+  - **`data_quality_issue` est responsable de la fraîcheur des données
+    SGE/Enedis (D020, R6X CDC, etc.)** car l'âge d'une PHOTO impacte la
+    qualité des analyses (signature énergétique, dérive, factures shadow).
+  - **`asset_registry_issue` reste responsable de la cohérence
+    structurelle du registre** (PRM/PCE rattachement, GRD code, contrats
+    orphelins) — la fraîcheur des données réseau n'y figure pas.
+
+Le détecteur `data_quality_issue` consomme tout insight type matchant
+`('data_gap', 'photo_d020_stale', 'sge_snapshot_stale')` produit en
+amont par `consumption_diagnostic` (extension future, pas de mock ici).
+Le test `test_data_quality_owns_photo_d020_freshness_not_asset_registry`
+verrouille cette frontière de responsabilité.
 """
 
 from __future__ import annotations
@@ -28,20 +47,27 @@ from ..types import (
     SolEventCard,
 )
 
-# Seuils de criticité basés sur le pourcentage de données manquantes
-# (calculé par _detect_data_gaps dans consumption_diagnostic).
-_THRESHOLD_CRITICAL_PCT = 30.0  # > 30 % manquant → diagnostic invalide
-_THRESHOLD_WARNING_PCT = 15.0
-_THRESHOLD_WATCH_PCT = 5.0
+# Vague E ét15 (audit P1 tier-2 étendu) : seuils externalisés YAML
+# `data_quality.threshold_*_pct` (ADR-005 convention tier-2).
 
 
-def _severity_for_gap(missing_pct: float) -> str | None:
-    """Mappe pourcentage manquant → severity doctrine §10."""
-    if missing_pct >= _THRESHOLD_CRITICAL_PCT:
+def _severity_for_gap(missing_pct: float, defaults=None) -> str | None:
+    """Mappe pourcentage manquant → severity doctrine §10.
+
+    Vague E ét15 : seuils injectés depuis YAML via `defaults` DTO.
+    Fallback magic constants conservé pour compat tests.
+    """
+    if defaults is None:
+        critical, warning, watch = 30.0, 15.0, 5.0
+    else:
+        critical = defaults.threshold_critical_pct
+        warning = defaults.threshold_warning_pct
+        watch = defaults.threshold_watch_pct
+    if missing_pct >= critical:
         return "critical"
-    if missing_pct >= _THRESHOLD_WARNING_PCT:
+    if missing_pct >= warning:
         return "warning"
-    if missing_pct >= _THRESHOLD_WATCH_PCT:
+    if missing_pct >= watch:
         return "watch"
     return None
 
@@ -58,13 +84,20 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     - quelle confiance : high (la détection des gaps est déterministe)
     """
     # Imports locaux pour éviter cycle (services/consumption → narrative → event_bus)
+    from config.mitigation_loader import get_data_quality_defaults
     from services.consumption_diagnostic import get_insights_summary
 
+    dq_defaults = get_data_quality_defaults()  # ét15 tier-2 étendu
     summary = get_insights_summary(db, org_id)
     raw_insights = summary.get("insights", [])
 
-    # Filtrer les insights de type "data_gap" uniquement
-    gaps = [i for i in raw_insights if i.get("type") == "data_gap"]
+    # ét15 (P1 #3 audit EM) : ownership PHOTO D020 obsolète clarifié
+    # vs asset_registry_issue. Tout insight de type data freshness consommé
+    # par ce détecteur (data_gap = trous CDC, photo_d020_stale = PHOTO SGE
+    # > 90j, sge_snapshot_stale = R6X obsolète). asset_registry_issue ne
+    # touche PAS la fraîcheur de la donnée réseau (responsabilité distincte).
+    _DATA_FRESHNESS_TYPES = ("data_gap", "photo_d020_stale", "sge_snapshot_stale")
+    gaps = [i for i in raw_insights if i.get("type") in _DATA_FRESHNESS_TYPES]
     if not gaps:
         return []
 
@@ -81,7 +114,7 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     for insight in gaps_sorted:
         metrics = insight.get("metrics") or {}
         missing_pct = float(metrics.get("missing_pct") or 0)
-        severity = _severity_for_gap(missing_pct)
+        severity = _severity_for_gap(missing_pct, defaults=dq_defaults)
         if severity is None:
             continue
 

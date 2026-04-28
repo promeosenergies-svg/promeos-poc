@@ -38,11 +38,10 @@ from ..types import (
     SolEventCard,
 )
 
-# Seuils CFO B2B PROMEOS (mid-market 5-200 sites). Ajustables sans
-# casser le contrat doctrine §10 — signal de tri éditorial uniquement.
-_THRESHOLD_CRITICAL_EUR = 10_000.0
-_THRESHOLD_WARNING_EUR = 2_000.0
-_THRESHOLD_WATCH_EUR = 500.0
+# Vague E ét15 (audit P1 tier-2 étendu) : seuils externalisés vers
+# `mitigation_defaults.yaml` section `billing_anomaly` (cohérent ADR-005).
+# Avant : magic constants inline. Après : lus via get_billing_anomaly_defaults()
+# au runtime du detect() — patch YAML versionné sans déploiement code.
 
 
 def detect(db: Session, org_id: int) -> list[SolEventCard]:
@@ -63,12 +62,15 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     - quelle confiance : depuis losses.payback_provenance.confidence
     """
     # Imports locaux pour éviter cycle (services/billing → narrative → event_bus)
+    from config.mitigation_loader import get_billing_anomaly_defaults
     from services.billing.losses_service import (
         _scope_billing_insights,
         compute_billing_losses_summary,
         fmt_payback_human,
     )
     from models.enums import InsightStatus
+
+    ba_defaults = get_billing_anomaly_defaults()  # ét15 tier-2 étendu
 
     # Charger les insights une seule fois pour calculer summary + granularité site
     insights = _scope_billing_insights(db, org_id)
@@ -95,13 +97,13 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     # ── Événement principal selon volume pertes ouvertes ──
     perte_open = losses.perte_open_eur
     if perte_open > 0:
-        if perte_open >= _THRESHOLD_CRITICAL_EUR:
+        if perte_open >= ba_defaults.threshold_critical_eur:
             severity = "critical"
             title_prefix = "Pertes facturation critiques"
-        elif perte_open >= _THRESHOLD_WARNING_EUR:
+        elif perte_open >= ba_defaults.threshold_warning_eur:
             severity = "warning"
             title_prefix = "Pertes facturation à contester"
-        elif perte_open >= _THRESHOLD_WATCH_EUR:
+        elif perte_open >= ba_defaults.threshold_watch_eur:
             severity = "watch"
             title_prefix = "Pertes facturation à surveiller"
         else:
@@ -169,7 +171,7 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
             )
 
     # ── Événement positif si récupérations YTD significatives ──
-    if losses.reclaim_ytd_eur >= _THRESHOLD_WATCH_EUR:
+    if losses.reclaim_ytd_eur >= ba_defaults.threshold_watch_eur:
         # ét12g (audit Marie #3) : afficher le MONTANT € récupéré dans le titre
         # (pas seulement le compteur d'anomalies). « Une bonne nouvelle sans €
         # chiffré ne convertit pas en argument CODIR » — Marie DAF 27/04.

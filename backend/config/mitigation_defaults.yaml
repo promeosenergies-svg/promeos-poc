@@ -43,17 +43,32 @@ dt_compliance:
 # ── Mitigation Bill-Intel anomalies (billing_anomaly_detector) ────────
 # Pas de CAPEX (contestation juridique, pas de travaux). Le payback est
 # l'observation directe `losses.payback_avg_days` du shadow billing v4.2.
-# Aucune valeur par défaut nécessaire ici — le détecteur lit la SoT
-# `LossesProvenance` directement.
+# Vague E ét15 (audit P1 tier-2 étendu) : seuils severity et NPV horizon
+# externalisés pour cohérence convention ADR-005. Détecteur consommait
+# auparavant 3 magic constants inline.
+billing_anomaly:
+  threshold_critical_eur: 10000.0
+  threshold_warning_eur: 2000.0
+  threshold_watch_eur: 500.0
+  threshold_source: "Calibration mid-market PROMEOS — fourchette ETI 5-200 sites cible Marie/CFO"
+  # Horizon NPV : pertes facturation considérées récupérables sur 1 an
+  # (cycle contestation typique 3-12 mois). Au-delà, prescription juridique.
+  npv_horizon_year_offset: 1
+  npv_horizon_source: "Cycle contestation Bill-Intel mid-market 3-12 mois (médiane 4-6 mois)"
 
 # ── Mitigation consumption_drift (consumption_drift_detector) ─────────
 # Action comportementale (consignes, horaires, sensibilisation). CAPEX nul,
 # payback ~1 mois (impact immédiat dès correction). Valeurs déjà inline
 # dans le détecteur car simples — externalisation ici pour cohérence.
+# Vague E ét15 : ajout seuils severity € (auparavant magic constants inline).
 consumption_drift:
   capex_eur: null  # action comportementale, pas de CAPEX
   payback_months: 1  # impact immédiat (corrections horaires, consignes)
   payback_source: "ADEME ROI sensibilisation usagers — économies récurrentes mensuelles"
+  threshold_critical_eur: 5000.0
+  threshold_warning_eur: 1000.0
+  threshold_watch_eur: 200.0
+  threshold_source: "Calibration mid-market PROMEOS — top insights consumption_diagnostic priorisés CFO €"
 
 # ── Renégociation contrat (contract_renewal_detector) ─────────────────
 # Sprint 2 Vague C ét14 (audit CFO+Marie P0 #1) : chiffrer la fourchette
@@ -77,6 +92,24 @@ contract_renewal:
   # Volume annuel proxy par annexe site (MWh/an) — cohérent market_capacity_2026
   proxy_volume_per_annex_mwh: 100
   proxy_volume_source: "ADEME bilan énergétique mid-market tertiaire bureau 100 MWh/an/site"
+
+# ── Data quality issue — seuils % données manquantes (data_quality_issue_detector) ──
+# Vague E ét15 (audit P1 tier-2 étendu) : seuils basés sur ISO 50001
+# §A.6.4.5 (« seuil > 5 % données manquantes invalide signature énergétique »).
+# 30/15/5 % mappés sur critical/warning/watch pour priorisation EM.
+data_quality:
+  threshold_critical_pct: 30.0
+  threshold_warning_pct: 15.0
+  threshold_watch_pct: 5.0
+  threshold_source: "ISO 50001 §A.6.4.5 — seuil > 5 % données manquantes invalide signature énergétique ; 30 % = diagnostic non exploitable"
+
+# ── Action overdue — seuils retard (action_overdue_detector) ──────────
+# Vague E ét15 (audit P1 tier-2 étendu) : seuils retard mappés sur la
+# matrice (priority initiale × jours retard) → severity. Médiane SLA mid-market.
+action_overdue:
+  overdue_critical_days: 30
+  overdue_warning_days: 7
+  overdue_source: "Médiane SLA mid-market PROMEOS — critique/haute = critique dès J+0 ; medium = warning J+7 puis critical J+30 ; low = watch J+30"
 
 # ── Asset registry — coût risque shadow billing aveugle (asset_registry_issue) ──
 # Sprint 2 Vague C ét14 (audit CFO P0 #2) : convertir le proxy `count`

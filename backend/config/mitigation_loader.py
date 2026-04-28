@@ -106,6 +106,60 @@ class AssetRegistryDefaults:
     orphan_contract_source: str
 
 
+@dataclass(frozen=True)
+class BillingAnomalyDefaults:
+    """Defaults billing_anomaly_detector (Vague E ét15 tier-2 étendu).
+
+    Externalise les 3 seuils € severity (critical/warning/watch) +
+    horizon NPV pour cohérence convention ADR-005.
+    """
+
+    threshold_critical_eur: float
+    threshold_warning_eur: float
+    threshold_watch_eur: float
+    threshold_source: str
+    npv_horizon_year_offset: int  # années ajoutées à now.year pour horizon NPV
+    npv_horizon_source: str
+
+
+@dataclass(frozen=True)
+class ConsumptionDriftThresholds:
+    """Defaults seuils severity consumption_drift_detector (ét15).
+
+    Étend `ConsumptionDriftDefaults` avec les seuils € (auparavant inline).
+    """
+
+    threshold_critical_eur: float
+    threshold_warning_eur: float
+    threshold_watch_eur: float
+    threshold_source: str
+
+
+@dataclass(frozen=True)
+class DataQualityDefaults:
+    """Defaults data_quality_issue_detector (ét15).
+
+    Seuils % données manquantes basés ISO 50001 §A.6.4.5.
+    """
+
+    threshold_critical_pct: float
+    threshold_warning_pct: float
+    threshold_watch_pct: float
+    threshold_source: str
+
+
+@dataclass(frozen=True)
+class ActionOverdueDefaults:
+    """Defaults action_overdue_detector (ét15).
+
+    Seuils retard pour matrice (priority × jours).
+    """
+
+    overdue_critical_days: int
+    overdue_warning_days: int
+    overdue_source: str
+
+
 # ── API publique ─────────────────────────────────────────────────────
 
 
@@ -175,6 +229,51 @@ def get_asset_registry_defaults() -> AssetRegistryDefaults:
     )
 
 
+def get_billing_anomaly_defaults() -> BillingAnomalyDefaults:
+    """Charge les defaults billing_anomaly (ét15 tier-2 étendu)."""
+    raw = _load_raw()["billing_anomaly"]
+    return BillingAnomalyDefaults(
+        threshold_critical_eur=float(raw["threshold_critical_eur"]),
+        threshold_warning_eur=float(raw["threshold_warning_eur"]),
+        threshold_watch_eur=float(raw["threshold_watch_eur"]),
+        threshold_source=str(raw["threshold_source"]),
+        npv_horizon_year_offset=int(raw["npv_horizon_year_offset"]),
+        npv_horizon_source=str(raw["npv_horizon_source"]),
+    )
+
+
+def get_consumption_drift_thresholds() -> ConsumptionDriftThresholds:
+    """Charge les seuils severity consumption_drift (ét15)."""
+    raw = _load_raw()["consumption_drift"]
+    return ConsumptionDriftThresholds(
+        threshold_critical_eur=float(raw["threshold_critical_eur"]),
+        threshold_warning_eur=float(raw["threshold_warning_eur"]),
+        threshold_watch_eur=float(raw["threshold_watch_eur"]),
+        threshold_source=str(raw["threshold_source"]),
+    )
+
+
+def get_data_quality_defaults() -> DataQualityDefaults:
+    """Charge les defaults data_quality_issue (ét15)."""
+    raw = _load_raw()["data_quality"]
+    return DataQualityDefaults(
+        threshold_critical_pct=float(raw["threshold_critical_pct"]),
+        threshold_warning_pct=float(raw["threshold_warning_pct"]),
+        threshold_watch_pct=float(raw["threshold_watch_pct"]),
+        threshold_source=str(raw["threshold_source"]),
+    )
+
+
+def get_action_overdue_defaults() -> ActionOverdueDefaults:
+    """Charge les defaults action_overdue (ét15)."""
+    raw = _load_raw()["action_overdue"]
+    return ActionOverdueDefaults(
+        overdue_critical_days=int(raw["overdue_critical_days"]),
+        overdue_warning_days=int(raw["overdue_warning_days"]),
+        overdue_source=str(raw["overdue_source"]),
+    )
+
+
 def compute_npv_actualized(
     annual_flow_eur: float,
     horizon_year: int,
@@ -222,15 +321,23 @@ def compute_npv_actualized(
 
 
 __all__ = [
+    "ActionOverdueDefaults",
     "AssetRegistryDefaults",
+    "BillingAnomalyDefaults",
     "ConsumptionDriftDefaults",
+    "ConsumptionDriftThresholds",
     "ContractRenewalDefaults",
+    "DataQualityDefaults",
     "DtComplianceDefaults",
     "MarketCapacity2026Defaults",
     "compute_npv_actualized",
+    "get_action_overdue_defaults",
     "get_asset_registry_defaults",
+    "get_billing_anomaly_defaults",
     "get_consumption_drift_defaults",
+    "get_consumption_drift_thresholds",
     "get_contract_renewal_defaults",
+    "get_data_quality_defaults",
     "get_discount_rate",
     "get_dt_compliance_defaults",
     "get_market_capacity_2026_defaults",

@@ -1206,6 +1206,175 @@ def test_market_capacity_decree_reference_resolved():
     assert "2025-1441" in d.deadline_source
 
 
+# ── Vague C ét15 — P1 résiduels (mutation YAML + tier-2 étendu + PHOTO D020) ──
+
+
+def test_yaml_mutation_invalidates_cache_and_recomputes_npv(tmp_path, monkeypatch):
+    """ét15 P1 #1 (engagement ADR-005 §"Plan suivi") : mutation YAML +
+    `reload()` doit invalider le cache @lru_cache et recalculer le NPV.
+
+    Scénario : un CFO d'org client patche `discount_rate` de 4 % à 8 %
+    (politique financière interne) en réécrivant le YAML versionné.
+    Sans `reload()` après le patch, le cache `@lru_cache` retourne
+    l'ancienne valeur → NPV faussé. Ce test garantit que `reload()`
+    invalide bien et que le NPV est recalculé.
+    """
+    import yaml
+
+    from config import mitigation_loader
+    from config.mitigation_loader import compute_npv_actualized, get_discount_rate, reload
+
+    # Lecture initiale (taux 4 % YAML)
+    reload()
+    initial_rate = get_discount_rate()
+    assert initial_rate == 0.04, f"YAML init doit être 4 %, lu {initial_rate}"
+    npv_initial = compute_npv_actualized(
+        annual_flow_eur=10_000.0,
+        horizon_year=2030,
+        capex_eur=20_000.0,
+        current_year=2026,
+    )
+
+    # Simuler un patch YAML versionné : écrire un YAML temporaire avec
+    # discount_rate=0.08 puis pointer _YAML_PATH dessus + reload().
+    original_yaml = mitigation_loader._YAML_PATH.read_text(encoding="utf-8")
+    raw = yaml.safe_load(original_yaml)
+    raw["discount_rate"] = 0.08
+    patched_path = tmp_path / "mitigation_defaults_patched.yaml"
+    patched_path.write_text(yaml.safe_dump(raw, allow_unicode=True), encoding="utf-8")
+
+    monkeypatch.setattr(mitigation_loader, "_YAML_PATH", patched_path)
+    reload()
+
+    new_rate = get_discount_rate()
+    assert new_rate == 0.08, f"reload() n'a pas invalidé le cache : {new_rate}"
+
+    # Recalcul NPV avec nouveau taux (lu via le patch)
+    npv_new = compute_npv_actualized(
+        annual_flow_eur=10_000.0,
+        horizon_year=2030,
+        capex_eur=20_000.0,
+        current_year=2026,
+    )
+    # Taux plus élevé → NPV plus faible (actualisation plus forte)
+    assert npv_new < npv_initial, "NPV à 8 % doit être < NPV à 4 %"
+    # Restaurer l'état initial pour ne pas polluer les tests suivants
+    monkeypatch.setattr(mitigation_loader, "_YAML_PATH", mitigation_loader._YAML_PATH)  # no-op cosmétique
+    reload()  # cache_clear final pour repartir propre
+
+
+def test_billing_anomaly_yaml_loader_returns_typed_defaults():
+    """ét15 P1 #2 : BillingAnomalyDefaults chargé avec sources citées."""
+    from config.mitigation_loader import get_billing_anomaly_defaults, reload
+
+    reload()
+    d = get_billing_anomaly_defaults()
+    assert d.threshold_critical_eur > d.threshold_warning_eur > d.threshold_watch_eur > 0
+    assert d.npv_horizon_year_offset >= 1
+    assert "mid-market" in d.threshold_source.lower() or "PROMEOS" in d.threshold_source
+
+
+def test_consumption_drift_thresholds_yaml_loader():
+    """ét15 P1 #2 : ConsumptionDriftThresholds chargé."""
+    from config.mitigation_loader import get_consumption_drift_thresholds, reload
+
+    reload()
+    t = get_consumption_drift_thresholds()
+    assert t.threshold_critical_eur > t.threshold_warning_eur > t.threshold_watch_eur > 0
+
+
+def test_data_quality_yaml_loader():
+    """ét15 P1 #2 : DataQualityDefaults chargé avec source ISO 50001."""
+    from config.mitigation_loader import get_data_quality_defaults, reload
+
+    reload()
+    d = get_data_quality_defaults()
+    assert d.threshold_critical_pct > d.threshold_warning_pct > d.threshold_watch_pct > 0
+    assert d.threshold_critical_pct <= 100.0
+    # Source cite la norme ISO
+    assert "ISO 50001" in d.threshold_source
+
+
+def test_action_overdue_yaml_loader():
+    """ét15 P1 #2 : ActionOverdueDefaults chargé."""
+    from config.mitigation_loader import get_action_overdue_defaults, reload
+
+    reload()
+    d = get_action_overdue_defaults()
+    assert d.overdue_critical_days > d.overdue_warning_days > 0
+
+
+def test_data_quality_owns_photo_d020_freshness_not_asset_registry(db, org_with_sites, monkeypatch):
+    """ét15 P1 #3 (audit EM) : frontière responsabilité PHOTO D020 obsolète.
+
+    `data_quality_issue` consomme les insights de fraîcheur data
+    (data_gap / photo_d020_stale / sge_snapshot_stale).
+    `asset_registry_issue` traite UNIQUEMENT la cohérence structurelle
+    (FK, GRD, soft-delete) — pas la fraîcheur données réseau.
+    """
+    from services.event_bus.detectors import (
+        asset_registry_issue_detector,
+        data_quality_issue_detector,
+    )
+
+    # Stub un insight `photo_d020_stale` (PHOTO SGE > 90 jours)
+    fake_summary = {
+        "insights": [
+            {
+                "type": "photo_d020_stale",
+                "site_id": 1,
+                "site_label": "Site Test PHOTO",
+                "severity": "high",
+                "message": "PHOTO D020 obsolète depuis 110 jours",
+                "metrics": {"missing_pct": 18.0, "period_days": 110},
+            }
+        ]
+    }
+    monkeypatch.setattr(
+        "services.consumption_diagnostic.get_insights_summary",
+        lambda db, org_id: fake_summary,
+    )
+
+    # data_quality_issue DOIT capter
+    dq_events = data_quality_issue_detector.detect(db, org_with_sites["org_id"])
+    photo_events = [e for e in dq_events if "site:1" in e.id or "Site Test PHOTO" in e.title]
+    assert photo_events, "PHOTO D020 obsolète doit être capté par data_quality_issue"
+
+    # asset_registry_issue NE DOIT PAS capter (pas dans son périmètre)
+    ar_events = asset_registry_issue_detector.detect(db, org_with_sites["org_id"])
+    photo_in_ar = [e for e in ar_events if "photo" in e.id.lower() or "PHOTO" in e.title]
+    assert not photo_in_ar, "PHOTO D020 ne doit PAS apparaître dans asset_registry_issue (frontière de responsabilité)"
+
+
+def test_tier2_yaml_no_magic_constants_remain_in_detectors():
+    """ét15 P1 #2 anti-régression : 4 détecteurs migrés ne contiennent plus
+    de magic constants `_THRESHOLD_*_EUR` au top-level (lus via YAML loader).
+
+    Le seul usage admis est en fallback dans une signature de fonction
+    (« thresholds=None » → defaults inline pour compat tests).
+    """
+    import inspect
+
+    from services.event_bus.detectors import (
+        action_overdue_detector,
+        billing_anomaly_detector,
+        consumption_drift_detector,
+        data_quality_issue_detector,
+    )
+
+    for module in (
+        billing_anomaly_detector,
+        consumption_drift_detector,
+        data_quality_issue_detector,
+        action_overdue_detector,
+    ):
+        src = inspect.getsource(module)
+        # Pas de définition top-level _THRESHOLD_X = constant
+        assert "_THRESHOLD_CRITICAL_EUR = " not in src, f"Magic _THRESHOLD_CRITICAL_EUR dans {module.__name__}"
+        assert "_THRESHOLD_WARNING_EUR = " not in src, f"Magic _THRESHOLD_WARNING_EUR dans {module.__name__}"
+        assert "_OVERDUE_CRITICAL_DAYS = " not in src, f"Magic _OVERDUE_CRITICAL_DAYS dans {module.__name__}"
+
+
 def test_action_overdue_detector_emits_for_overdue_action(db, org_with_sites):
     """ét13f : action_overdue event quand ActionPlanItem en retard."""
     from datetime import datetime, timedelta, timezone

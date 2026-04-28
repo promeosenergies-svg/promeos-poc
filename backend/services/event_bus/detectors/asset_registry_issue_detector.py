@@ -1,4 +1,4 @@
-"""Détecteur `asset_registry_issue` — chantier α Vague C ét13e/14.
+"""Détecteur `asset_registry_issue` — chantier α Vague C ét13e/14/15.
 
 Doctrine §10 event_type `asset_registry_issue` : émet un événement quand
 le registre patrimoine présente des incohérences (PRM/PCE non rattaché à
@@ -13,6 +13,18 @@ Owner DAF (responsabilité contractuelle / patrimoine). 3 contrôles MVP :
 2. ContratCadre sans annexes (couvre 0 site) — ét13e
 3. PRM/PCE rattaché à un Site soft-deleted (FK pointing vers cadavre) — ét14
    (audit EM P0 #3 : 3ᵉ contrôle annoncé docstring mais non livré ét13e)
+
+## Frontière vs `data_quality_issue_detector` (ét15 audit EM P1 #3)
+
+Ce détecteur s'occupe **uniquement de la cohérence STRUCTURELLE** du
+registre (champs manquants, FK orphelins, soft-delete cadavres). Il ne
+touche **PAS** à la fraîcheur des données réseau (PHOTO D020 obsolète,
+R6X CDC ancien, SGE snapshot non rafraîchi) — cette responsabilité
+revient à `data_quality_issue_detector` (consume tout insight type
+`('data_gap', 'photo_d020_stale', 'sge_snapshot_stale')`).
+
+Cette frontière de responsabilité est verrouillée par le test
+`test_data_quality_owns_photo_d020_freshness_not_asset_registry`.
 
 Vague C ét14 (audit CFO P0 #2) : convertit les counts en € risque shadow
 billing via `asset_registry` defaults YAML (exposition par DP/contrat

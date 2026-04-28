@@ -43,10 +43,8 @@ from ..types import (
     SolEventCard,
 )
 
-# Seuils € EM/CFO mid-market (cohérent billing_anomaly_detector ét12a).
-_THRESHOLD_CRITICAL_EUR = 5_000.0
-_THRESHOLD_WARNING_EUR = 1_000.0
-_THRESHOLD_WATCH_EUR = 200.0
+# Vague E ét15 (audit P1 tier-2 étendu) : seuils externalisés YAML
+# `consumption_drift.threshold_*_eur` (ADR-005 convention tier-2).
 
 # Mapping insight.type → titre narratif doctrine §10 (transformation acronymes).
 _TYPE_TO_TITLE: dict[str, str] = {
@@ -58,13 +56,25 @@ _TYPE_TO_TITLE: dict[str, str] = {
 }
 
 
-def _severity_for_loss(loss_eur: float) -> str | None:
-    """Mappe perte estimée → severity doctrine §10."""
-    if loss_eur >= _THRESHOLD_CRITICAL_EUR:
+def _severity_for_loss(loss_eur: float, thresholds=None) -> str | None:
+    """Mappe perte estimée → severity doctrine §10.
+
+    Vague E ét15 : seuils injectés depuis YAML via `thresholds` DTO.
+    Fallback magic constants conservé pour compatibilité ascendante (tests
+    existants qui appellent _severity_for_loss(value) sans DTO).
+    """
+    if thresholds is None:
+        # Fallback rétro-compat (anciens tests qui n'injectent pas thresholds)
+        critical, warning, watch = 5_000.0, 1_000.0, 200.0
+    else:
+        critical = thresholds.threshold_critical_eur
+        warning = thresholds.threshold_warning_eur
+        watch = thresholds.threshold_watch_eur
+    if loss_eur >= critical:
         return "critical"
-    if loss_eur >= _THRESHOLD_WARNING_EUR:
+    if loss_eur >= warning:
         return "warning"
-    if loss_eur >= _THRESHOLD_WATCH_EUR:
+    if loss_eur >= watch:
         return "watch"
     return None
 
@@ -81,10 +91,14 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     - quelle confiance : depuis insight.severity → mapping confidence
     """
     # Imports locaux pour éviter cycle (services/consumption → narrative → event_bus)
-    from config.mitigation_loader import get_consumption_drift_defaults
+    from config.mitigation_loader import (
+        get_consumption_drift_defaults,
+        get_consumption_drift_thresholds,
+    )
     from services.consumption_diagnostic import get_insights_summary
 
     drift_defaults = get_consumption_drift_defaults()  # Vague C ét12e YAML SoT
+    drift_thresholds = get_consumption_drift_thresholds()  # ét15 tier-2 étendu
     summary = get_insights_summary(db, org_id)
     raw_insights = summary.get("insights", [])
 
@@ -103,7 +117,7 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
 
     for insight in insights_sorted:
         loss_eur = float(insight.get("estimated_loss_eur") or 0)
-        severity = _severity_for_loss(loss_eur)
+        severity = _severity_for_loss(loss_eur, thresholds=drift_thresholds)
         if severity is None:
             continue
 

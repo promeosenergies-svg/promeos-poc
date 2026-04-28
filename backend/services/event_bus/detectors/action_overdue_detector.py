@@ -28,32 +28,37 @@ from ..types import (
     SolEventCard,
 )
 
-# Seuils retard (jours) → severity. Aligné avec l'esprit des autres détecteurs :
-# une action critique en retard de 30j devient un risque majeur ; une action
-# medium en retard de 7j est juste à surveiller.
-_OVERDUE_CRITICAL_DAYS = 30
-_OVERDUE_WARNING_DAYS = 7
+# Vague E ét15 (audit P1 tier-2 étendu) : seuils externalisés YAML
+# `action_overdue.overdue_*_days` (ADR-005 convention tier-2).
 
 
-def _severity_for_overdue(days_overdue: int, priority: str) -> str | None:
+def _severity_for_overdue(days_overdue: int, priority: str, defaults=None) -> str | None:
     """Mappe (retard, priorité initiale) → severity doctrine §10.
 
     Une action critique en retard est toujours critique.
     Une action medium devient warning à J+7, critical à J+30.
     Une action low n'apparait qu'à J+30 en watch.
+
+    Vague E ét15 : seuils injectés depuis YAML via `defaults` DTO.
+    Fallback magic constants pour compat tests.
     """
+    if defaults is None:
+        critical_days, warning_days = 30, 7
+    else:
+        critical_days = defaults.overdue_critical_days
+        warning_days = defaults.overdue_warning_days
     if priority in ("critical", "high"):
         if days_overdue >= 0:
             return "critical"
     if priority == "medium":
-        if days_overdue >= _OVERDUE_CRITICAL_DAYS:
+        if days_overdue >= critical_days:
             return "critical"
-        if days_overdue >= _OVERDUE_WARNING_DAYS:
+        if days_overdue >= warning_days:
             return "warning"
         if days_overdue >= 0:
             return "watch"
     if priority == "low":
-        if days_overdue >= _OVERDUE_CRITICAL_DAYS:
+        if days_overdue >= critical_days:
             return "watch"
     return None
 
@@ -61,9 +66,11 @@ def _severity_for_overdue(days_overdue: int, priority: str) -> str | None:
 def detect(db: Session, org_id: int) -> list[SolEventCard]:
     """Émet 0..3 événements `action_overdue` (top actions les plus en retard)."""
     # Imports locaux pour éviter cycle
+    from config.mitigation_loader import get_action_overdue_defaults
     from models import EntiteJuridique, Portefeuille, Site
     from models.action_plan_item import ActionPlanItem
 
+    ao_defaults = get_action_overdue_defaults()  # ét15 tier-2 étendu
     now = datetime.now(timezone.utc)
     today = now.date()
 
@@ -89,7 +96,7 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
         if days_overdue < 0:
             continue
         priority = (a.priority or "medium").lower()
-        severity = _severity_for_overdue(days_overdue, priority)
+        severity = _severity_for_overdue(days_overdue, priority, defaults=ao_defaults)
         if severity is None:
             continue
         candidates.append((a, days_overdue, severity))
