@@ -154,20 +154,12 @@ describe('Lever engine V43 rationale bullets', () => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 5. ImpactDecisionPanel — lever reasons display
+// 5. ImpactDecisionPanel — DÉCOMMISSIONNÉ Phase 0.3 sprint Cockpit dual sol2
+//
+// Le contrat lever.reasons_fr + lever-reasons-* sera vérifié sur le futur
+// <DecisionsTopThree> (3 décisions arbitrales narrées) en Phase 2.3
+// (cf docs/maquettes/cockpit-sol2/cockpit-synthese-strategique.html).
 // ══════════════════════════════════════════════════════════════════════════════
-
-describe('ImpactDecisionPanel renders lever reasons_fr (V43)', () => {
-  const panel = src('pages/cockpit/ImpactDecisionPanel.jsx');
-
-  it('renders lever.reasons_fr bullets', () => {
-    expect(panel).toContain('lever.reasons_fr');
-  });
-
-  it('has lever-reasons test id pattern', () => {
-    expect(panel).toContain('lever-reasons-');
-  });
-});
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 6. Backend V43 source guards (from frontend test)

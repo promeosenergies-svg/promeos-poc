@@ -41,10 +41,9 @@ describe('P0-3: KPI value-first — no truncate on numeric values', () => {
     expect(code).toMatch(/font-bold.*text-gray-900.*break-words/);
   });
 
-  it('ImpactDecisionPanel value uses break-words', () => {
-    const code = src('pages/cockpit/ImpactDecisionPanel.jsx');
-    expect(code).toMatch(/font-bold.*text-gray-900.*break-words/);
-  });
+  // Phase 0.3 (sprint Cockpit dual sol2) : ImpactDecisionPanel décommissionné —
+  // remplacé par <DecisionsTopThree> (3 décisions arbitrales narrées)
+  // sur la page Synthèse stratégique en Phase 2.3 (cf docs/maquettes/cockpit-sol2/).
 });
 
 // ── P0-5: Performance page layout — responsive grid ─────────────────────

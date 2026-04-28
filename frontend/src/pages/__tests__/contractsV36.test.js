@@ -361,68 +361,15 @@ describe('LeverActionModel V36 — achat templates', () => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 5) ImpactDecisionPanel — V36 guards
+// 5) ImpactDecisionPanel — DÉCOMMISSIONNÉ Phase 0.3 sprint Cockpit dual sol2
+//
+// Le contrat V36 (purchase signals + section "Achats d'énergie" + drill-downs
+// /achat-energie + computeActionableLevers) sera vérifié sur le futur
+// <DecisionsTopThree> (3 décisions arbitrales narrées) + son point d'entrée
+// "Quelle stratégie de renouvellement post-ARENH ?" en Phase 2.3
+// (cf docs/maquettes/cockpit-sol2/cockpit-synthese-strategique.html
+// section #decision-renouvellement-paris).
 // ══════════════════════════════════════════════════════════════════════════════
-
-describe("V36: ImpactDecisionPanel — achats d'energie", () => {
-  const panelSrc = readSrc('pages/cockpit/ImpactDecisionPanel.jsx');
-
-  it('importe ShoppingCart depuis lucide-react', () => {
-    expect(panelSrc).toContain('ShoppingCart');
-  });
-
-  it('receives activationData as prop (I4: hoisted to Cockpit.jsx)', () => {
-    expect(panelSrc).toContain('activationData');
-    expect(panelSrc).toContain('purchaseSignals');
-  });
-
-  it('still imports isPurchaseAvailable from purchaseSignalsContract', () => {
-    expect(panelSrc).toContain('isPurchaseAvailable');
-    expect(panelSrc).toContain('purchaseSignalsContract');
-  });
-
-  it('affiche la section "Achats d\'energie"', () => {
-    expect(panelSrc).toMatch(/Achats d&apos;[eé]nergie/);
-  });
-
-  it('a un data-testid purchase-section', () => {
-    expect(panelSrc).toContain('data-testid="purchase-section"');
-  });
-
-  it('navigue vers /achat-energie pour le drill-down achat (via toPurchase)', () => {
-    expect(panelSrc).toContain("toPurchase({ filter: 'renewal' })");
-    expect(panelSrc).toContain("toPurchase({ filter: 'missing' })");
-  });
-
-  it('affiche les 3 metriques achat (contrats 90j, couverture, manquants)', () => {
-    expect(panelSrc).toContain('expiringSoonCount');
-    expect(panelSrc).toContain('coverageContractsPct');
-    expect(panelSrc).toContain('missingContractsCount');
-  });
-
-  it('les KPIs achat cliquables ont un aria-label FR', () => {
-    expect(panelSrc).toContain('Voir les contrats');
-    expect(panelSrc).toContain('Voir les sites sans contrat');
-  });
-
-  it('le tooltip mentionne calculs V1 (via TOOLTIPS centralisés)', () => {
-    expect(panelSrc).toContain('TOOLTIPS.executive.calculsV1');
-  });
-
-  it('affiche "Donnees manquantes" quand pas de purchase signals', () => {
-    expect(panelSrc).toContain('manquantes');
-    expect(panelSrc).toContain('Patrimoine');
-  });
-
-  it('passe purchaseSignals a computeActionableLevers', () => {
-    expect(panelSrc).toContain('computeActionableLevers({ kpis, billingSummary');
-    expect(panelSrc).toContain('purchaseSignals');
-  });
-
-  it('affiche le type achat dans le resume des leviers', () => {
-    expect(panelSrc).toContain('levers.leversByType.achat');
-  });
-});
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 6) Guard: modules purs (no React, no API)
