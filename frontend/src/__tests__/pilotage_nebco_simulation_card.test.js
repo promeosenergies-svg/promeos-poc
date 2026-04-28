@@ -151,10 +151,12 @@ describe('NebcoSimulationCard — data-testid stables', () => {
 });
 
 // ── Integration Cockpit ──────────────────────────────────────────────
-describe('Cockpit.jsx — integre NebcoSimulationCard', () => {
-  it('importe et rend la carte dans la section Pilotage', () => {
-    const cockpitSrc = readFileSync(join(__dirname, '..', 'pages', 'Cockpit.jsx'), 'utf-8');
-    expect(cockpitSrc).toMatch(/import\s+NebcoSimulationCard/);
-    expect(cockpitSrc).toMatch(/<NebcoSimulationCard\b/);
-  });
-});
+//
+// Phase 0.4 (sprint refonte cockpit dual sol2 — 28/04/2026) :
+// NebcoSimulationCard a été retiré de Cockpit.jsx. Le bandeau « Pilotage
+// des usages » 4 sub-cards (Radar / RoiFlexReady / Portefeuille / Nebco)
+// violait l'anti-pattern §6.3 et a été remplacé par <SolFlexTeaser>
+// minimaliste vers /flex. NebcoSimulationCard est conservé en tant que
+// composant et sera re-câblé sur la page /flex Phase 1+ (Flex
+// Intelligence dédiée). Le contrat « importe et rend » sera retesté à
+// ce moment-là sur le composant Flex parent.

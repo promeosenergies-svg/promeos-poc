@@ -72,10 +72,12 @@ import BriefCodexCard from '../components/BriefCodexCard';
 import ScoreBreakdownPanel from '../components/ScoreBreakdownPanel';
 import TrajectorySection from './cockpit/TrajectorySection';
 import ActionsImpact from './cockpit/ActionsImpact';
-import RadarPrixNegatifsCard from '../components/pilotage/RadarPrixNegatifsCard';
-import RoiFlexReadyCard from '../components/pilotage/RoiFlexReadyCard';
-import PortefeuilleScoringCard from '../components/pilotage/PortefeuilleScoringCard';
-import NebcoSimulationCard from '../components/pilotage/NebcoSimulationCard';
+// Phase 0.4 du sprint refonte cockpit dual sol2 (28/04/2026) : les 4
+// composants Pilotage (Radar/Roi/Portefeuille/Nebco) ne sont plus
+// importés en Vue Exécutive Cockpit — ils seront re-câblés sur la page
+// /flex (Flex Intelligence dédiée) en Phase 1+. Le bandeau « Pilotage
+// des usages » 4 sub-cards est remplacé par <SolFlexTeaser>.
+import SolFlexTeaser from '../ui/sol/SolFlexTeaser';
 import CostSimulationCard from '../components/purchase/CostSimulationCard';
 import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
 import VecteurEnergetiqueCard from './cockpit/VecteurEnergetiqueCard';
@@ -813,27 +815,18 @@ const Cockpit = () => {
 
       <ActionsImpact actions={cockpitActions} loading={cockpitLoading} />
 
-      {/* ═══════════ PILOTAGE DES USAGES — insights V1 (Baromètre Flex 2026) ═══════════ */}
+      {/* Phase 0.4 (sprint refonte cockpit dual sol2 — 28/04/2026) :
+          le bandeau « Pilotage des usages » 4 sub-cards (Radar /
+          RoiFlexReady / Portefeuille / Nebco) violait l'anti-pattern
+          §6.3 « bandeau usages 4 sub-cards en Vue Exécutive ». Replacé
+          par <SolFlexTeaser> minimaliste qui pointe vers /flex (Flex
+          Intelligence dédiée), conforme à la cible maquette
+          docs/maquettes/cockpit-sol2/cockpit-synthese-strategique.html
+          section « TEASER FLEX INTELLIGENCE ».
+          Le détail Radar + ROI Flex + Classement portefeuille reste
+          disponible sur /flex (re-câblage Phase 1+). */}
       <section className="space-y-3" data-testid="cockpit-pilotage-v1">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
-            Pilotage des usages
-          </h2>
-          <span className="text-[10px] text-gray-400">
-            Baromètre Flex 2026 · RTE / Enedis / GIMELEC
-          </span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <RadarPrixNegatifsCard horizonDays={7} />
-          <RoiFlexReadyCard />
-          <PortefeuilleScoringCard />
-        </div>
-        {/* Vague 2 — Preuve chiffrée : "voici les X € du mois dernier" */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2">
-            <NebcoSimulationCard periodDays={30} />
-          </div>
-        </div>
+        <SolFlexTeaser flexPotential={cockpitKpis?.flex_potential} />
       </section>
 
       <section className="space-y-3" data-testid="cockpit-achat-post-arenh">
