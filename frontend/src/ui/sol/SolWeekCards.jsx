@@ -130,7 +130,7 @@ function WeekCard({ card, onNavigate }) {
             </span>
           </div>
           {urgency && (
-            <span className="text-[10px] text-[var(--sol-ink-500)] font-medium">{urgency}</span>
+            <span className="text-xs text-[var(--sol-ink-700)] font-medium">{urgency}</span>
           )}
         </header>
         <h3 className="text-sm font-semibold text-[var(--sol-ink-900)] leading-snug">

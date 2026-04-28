@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { getPortfolioDtProgress } from '../../services/api';
+import SolAcronym from '../../ui/sol/SolAcronym';
 
 const STATUS_CONFIG = {
   on_track: { label: 'En trajectoire', cls: 'bg-green-100 text-green-800', bar: 'bg-green-500' },
@@ -81,7 +82,7 @@ export default function DtProgressMultiSite({ orgId }) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-gray-900">
-            Trajectoire Décret Tertiaire — Vue multi-sites
+            Trajectoire <SolAcronym code="Décret Tertiaire" /> — Vue multi-sites
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
             Jalons officiels : -40% 2030 · -50% 2040 · -60% 2050

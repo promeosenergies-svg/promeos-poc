@@ -23,6 +23,7 @@ import {
   recomputeComplianceRules,
 } from '../services/api';
 import { useToast } from '../ui/ToastProvider';
+import SolAcronym from '../ui/sol/SolAcronym';
 
 const STATUS_CONFIG = {
   OK: { label: 'Conforme', color: 'text-green-700 bg-green-100', icon: ShieldCheck },
@@ -248,7 +249,8 @@ export default function CompliancePage() {
             Conformité réglementaire
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Évaluation multi-sites — Décret Tertiaire, BACS, Loi APER
+            Évaluation multi-sites — <SolAcronym code="Décret Tertiaire" />,{' '}
+            <SolAcronym code="BACS" />, <SolAcronym code="APER">Loi APER</SolAcronym>
           </p>
         </div>
         <button

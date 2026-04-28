@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import SolAcronym from '../../ui/sol/SolAcronym';
 
 export default function ComplianceCard({ data, archetypeFilter }) {
   const navigate = useNavigate();
@@ -50,13 +51,17 @@ export default function ComplianceCard({ data, archetypeFilter }) {
           title={bacsTooltip}
           onClick={() => navigate(conformiteUrl)}
         >
-          BACS {Math.round(bacsScore)}
+          <SolAcronym code="BACS" /> {Math.round(bacsScore)}
         </span>
       </div>
       <div className="grid gap-0.5 text-[11px]" style={{ gridTemplateColumns: 'auto 1fr 1fr 1fr' }}>
         <div className="p-1.5" />
-        <div className="p-1.5 text-center font-semibold text-gray-400 text-[10px]">BACS</div>
-        <div className="p-1.5 text-center font-semibold text-gray-400 text-[10px]">DT</div>
+        <div className="p-1.5 text-center font-semibold text-gray-400 text-[10px]">
+          <SolAcronym code="BACS" />
+        </div>
+        <div className="p-1.5 text-center font-semibold text-gray-400 text-[10px]">
+          <SolAcronym code="DT" />
+        </div>
         <div className="p-1.5 text-center font-semibold text-gray-400 text-[10px]">ISO</div>
         {items.slice(0, 4).map((item) => (
           <React.Fragment key={item.type || item.label}>

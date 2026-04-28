@@ -209,13 +209,21 @@ export default function SolEventCard({ event, onNavigate, compact = false }) {
   if (mitigation?.npv_eur != null) {
     mitigationParts.push(`NPV ${formatImpactValue(mitigation.npv_eur, '€')}`);
   }
-  // Fallback CFO : si aucune mitigation chiffrée mais event a un impact €
-  // > 0, afficher « Mitigation à qualifier » plutôt que de masquer le
-  // bandeau (signal au CFO « il faut creuser », pas « rien à faire »).
-  const hasFinancialImpact = event.impact?.unit === '€' && (event.impact?.value ?? 0) > 0;
+  // Fallback CFO : si aucune mitigation chiffrée mais event a un impact
+  // significatif (€ > 0 OU énergie kWh/MWh OU severity ∈ critical/warning),
+  // afficher « Mitigation à qualifier » plutôt que de masquer le bandeau.
+  // Vague F (audit CFO P1 #2) : étendu aux units kWh/MWh — un event
+  // « 15 GWh dérive » sans payback était silencieux côté CFO.
+  const hasMonetaryImpact = event.impact?.unit === '€' && (event.impact?.value ?? 0) > 0;
+  const hasEnergyImpact =
+    (event.impact?.unit === 'kWh' || event.impact?.unit === 'MWh') &&
+    (event.impact?.value ?? 0) > 0;
+  const isActionable = event.severity === 'critical' || event.severity === 'warning';
+  const needsMitigationCue = (hasMonetaryImpact || hasEnergyImpact) && isActionable;
+
   let mitigationLine = mitigationParts.join(' · ');
   let mitigationVariant = 'chiffree'; // chiffree | aQualifier | none
-  if (!mitigationLine && hasFinancialImpact && event.severity !== 'info') {
+  if (!mitigationLine && needsMitigationCue) {
     mitigationLine = 'Mitigation à qualifier — données financières insuffisantes';
     mitigationVariant = 'aQualifier';
   } else if (!mitigationLine) {

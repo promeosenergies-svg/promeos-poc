@@ -19,6 +19,8 @@ function daysBetween(a, b) {
   return Math.round((new Date(b) - new Date(a)) / 86400000);
 }
 
+import SolAcronym from '../../ui/sol/SolAcronym';
+
 const FRAMEWORK_COLORS = {
   DECRET_TERTIAIRE: 'bg-blue-500',
   BACS: 'bg-purple-500',
@@ -71,7 +73,9 @@ function EventTooltip({ evt }) {
         <span
           className={`px-1.5 py-0.5 rounded text-[11px] font-bold uppercase text-white ${FRAMEWORK_COLORS[evt.framework] || 'bg-gray-500'}`}
         >
-          {FRAMEWORK_LABELS[evt.framework] || evt.framework}
+          <SolAcronym code={FRAMEWORK_LABELS[evt.framework]}>
+            {FRAMEWORK_LABELS[evt.framework] || evt.framework}
+          </SolAcronym>
         </span>
         <span className={`text-xs font-medium ${style.text}`}>{style.label}</span>
       </div>
@@ -213,7 +217,9 @@ function HorizontalTimeline({ events, today }) {
                 <span
                   className={`inline-block px-1.5 py-0.5 rounded text-[7px] font-bold uppercase text-white mb-0.5 leading-none ${FRAMEWORK_COLORS[evt.framework] || 'bg-gray-500'}`}
                 >
-                  {FRAMEWORK_LABELS[evt.framework] || evt.framework}
+                  <SolAcronym code={FRAMEWORK_LABELS[evt.framework]}>
+                    {FRAMEWORK_LABELS[evt.framework] || evt.framework}
+                  </SolAcronym>
                 </span>
                 <p className="text-[11px] font-semibold text-gray-700 leading-tight line-clamp-2">
                   {evt.label}
@@ -291,7 +297,9 @@ function VerticalTimeline({ events, today }) {
                 <span
                   className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase text-white ${FRAMEWORK_COLORS[evt.framework] || 'bg-gray-500'}`}
                 >
-                  {FRAMEWORK_LABELS[evt.framework] || evt.framework}
+                  <SolAcronym code={FRAMEWORK_LABELS[evt.framework]}>
+                    {FRAMEWORK_LABELS[evt.framework] || evt.framework}
+                  </SolAcronym>
                 </span>
                 <span className={`text-xs font-medium ${style.text}`}>{style.label}</span>
               </div>

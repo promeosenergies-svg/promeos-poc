@@ -78,7 +78,7 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
         {/* Breakdown bars */}
         <div className="flex-1 space-y-2">
           {(complianceScore.breakdown || []).map((fw) => {
-            const fwLabel =
+            const fwCode =
               fw.framework === 'tertiaire_operat'
                 ? 'Décret Tertiaire'
                 : fw.framework === 'bacs'
@@ -89,7 +89,7 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
             return (
               <div key={fw.framework} className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 w-36 truncate">
-                  {fwLabel}
+                  <SolAcronym code={fwCode} />
                   {weightPct && isAvailable ? ` (${weightPct})` : ''}
                 </span>
                 {isAvailable ? (
@@ -116,11 +116,13 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
           {!complianceScore.breakdown &&
             complianceScore.breakdown_avg &&
             Object.entries(complianceScore.breakdown_avg).map(([fw, score]) => {
-              const fwLabel =
+              const fwCode =
                 fw === 'tertiaire_operat' ? 'Décret Tertiaire' : fw === 'bacs' ? 'BACS' : 'APER';
               return (
                 <div key={fw} className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 w-36 truncate">{fwLabel}</span>
+                  <span className="text-xs text-gray-500 w-36 truncate">
+                    <SolAcronym code={fwCode} />
+                  </span>
                   <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full ${score >= COMPLIANCE_SCORE_THRESHOLDS.ok ? 'bg-green-500' : score >= COMPLIANCE_SCORE_THRESHOLDS.warn ? 'bg-amber-500' : 'bg-red-500'}`}
