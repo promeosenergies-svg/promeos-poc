@@ -1054,6 +1054,158 @@ def test_asset_registry_issue_detector_emits_when_dp_without_grd(db, org_with_si
     assert e.action.owner_role == "DAF"
 
 
+# ── Vague C ét14 — P0 résiduels (impact € chiffré + 3ᵉ contrôle) ─────
+
+
+def test_contract_renewal_event_chiffre_impact_eur_via_yaml(db, org_with_sites):
+    """ét14 P0 #1 (CFO+Marie) : impact.value chiffré (plus None) via YAML defaults.
+
+    Un contrat élec échéance 60 jours doit produire un event avec un
+    impact € calculé : nb_annexes × volume_proxy × prix_marché × spread.
+    """
+    from datetime import date, timedelta
+
+    from models.contract_v2_models import ContratCadre
+    from models.enums import BillingEnergyType, ContractIndexation
+    from services.event_bus.detectors import contract_renewal_detector
+
+    org_id = org_with_sites["org_id"]
+    contrat = ContratCadre(
+        org_id=org_id,
+        reference="CC-2026-IMPACT-EUR",
+        fournisseur="EDF Test",
+        energie=BillingEnergyType.ELEC,
+        date_debut=date.today() - timedelta(days=365),
+        date_fin=date.today() + timedelta(days=60),
+        type_prix=ContractIndexation.FIXE,
+    )
+    db.add(contrat)
+    db.commit()
+
+    events = contract_renewal_detector.detect(db, org_id)
+    assert events
+    e = events[0]
+    # ét14 : impact.value n'est plus None — il est chiffré.
+    assert e.impact.value is not None, "ét14 P0 #1 : impact.value doit être chiffré (CFO data-room)"
+    assert e.impact.value > 0
+    assert e.impact.unit == "€"
+    assert e.impact.period == "year"  # année (pas contract — alignement règle d'or)
+    # Methodology cite la formule + sources
+    assert "spread tacite" in (e.source.methodology or "").lower()
+    assert "Observatoire CRE" in (e.source.methodology or "") or "marché" in (e.source.methodology or "").lower()
+
+
+def test_asset_registry_event_chiffre_impact_eur_via_yaml(db, org_with_sites):
+    """ét14 P0 #1 (CFO P0 #2) : impact.value chiffré € (plus proxy kWh ambigu)."""
+    from models import Site
+    from models.enums import DeliveryPointEnergyType
+    from models.patrimoine import DeliveryPoint
+    from services.event_bus.detectors import asset_registry_issue_detector
+
+    site = db.query(Site).filter(Site.id.isnot(None)).first()
+    assert site
+
+    # Créer 5 DP sans grd_code pour déclencher warning
+    for i in range(5):
+        db.add(
+            DeliveryPoint(
+                code=f"1234567890123{i}",
+                energy_type=DeliveryPointEnergyType.ELEC,
+                grd_code=None,
+                site_id=site.id,
+            )
+        )
+    db.commit()
+
+    events = asset_registry_issue_detector.detect(db, org_with_sites["org_id"])
+    no_grd_events = [e for e in events if "grd" in e.id.lower() or "réseau" in e.title.lower()]
+    assert no_grd_events
+    e = no_grd_events[0]
+    # ét14 : unit € (plus kWh proxy)
+    assert e.impact.unit == "€", f"ét14 P0 #1 : asset_registry.impact.unit doit être €, pas {e.impact.unit}"
+    assert e.impact.value > 0
+    # Methodology cite la formule + sources Bill-Intel
+    assert "Exposition" in (e.source.methodology or "") or "exposition" in (e.source.methodology or "")
+
+
+def test_asset_registry_3rd_control_dp_orphan_site_soft_deleted(db, org_with_sites):
+    """ét14 P0 #3 (EM) : 3ᵉ contrôle MVP — DP rattaché à Site soft-deleted.
+
+    Site.site_id NOT NULL côté schéma → impossible d'avoir un FK orphan
+    strict. Le cas réel = Site soft-deleted (deleted_at NOT NULL) mais DP
+    actif → comptage TURPE pointe vers cadavre.
+    """
+    from datetime import datetime, timezone
+
+    from models import Site
+    from models.enums import DeliveryPointEnergyType
+    from models.patrimoine import DeliveryPoint
+    from services.event_bus.detectors import asset_registry_issue_detector
+
+    # Soft-delete un site
+    site_to_delete = db.query(Site).filter(Site.id.isnot(None)).first()
+    assert site_to_delete
+    site_to_delete.deleted_at = datetime.now(timezone.utc)
+    db.flush()
+
+    # Créer un DP encore actif rattaché à ce site supprimé
+    db.add(
+        DeliveryPoint(
+            code="99999999999999",
+            energy_type=DeliveryPointEnergyType.ELEC,
+            grd_code="ENEDIS",
+            site_id=site_to_delete.id,
+        )
+    )
+    db.commit()
+
+    events = asset_registry_issue_detector.detect(db, org_with_sites["org_id"])
+    orphan_dp_events = [e for e in events if "dp_orphan_site" in e.id]
+    assert orphan_dp_events, "DP rattaché à site soft-deleted doit déclencher le 3ᵉ contrôle"
+    e = orphan_dp_events[0]
+    assert e.event_type == "asset_registry_issue"
+    assert e.impact.unit == "€"
+    assert e.impact.value > 0
+    assert e.action.owner_role == "DAF"
+
+
+def test_contract_renewal_yaml_loader_returns_typed_defaults():
+    """ét14 P0 #1 : ContractRenewalDefaults chargé avec sources citées."""
+    from config.mitigation_loader import get_contract_renewal_defaults, reload
+
+    reload()
+    d = get_contract_renewal_defaults()
+    assert 0 < d.tacite_spread_pct < 0.30  # plage raisonnable +0/+30%
+    assert d.market_price_elec_eur_per_mwh > 0
+    assert d.market_price_gaz_eur_per_mwh > 0
+    assert d.proxy_volume_per_annex_mwh > 0
+    assert "Observatoire CRE" in d.tacite_spread_source or "marketplace" in d.tacite_spread_source
+    assert "EPEX" in d.market_price_source or "PEG" in d.market_price_source
+
+
+def test_asset_registry_yaml_loader_returns_typed_defaults():
+    """ét14 P0 #1 : AssetRegistryDefaults chargé avec sources citées."""
+    from config.mitigation_loader import get_asset_registry_defaults, reload
+
+    reload()
+    d = get_asset_registry_defaults()
+    assert d.blind_billing_exposure_per_dp_eur > 0
+    assert d.orphan_contract_exposure_eur > 0
+    assert "Bill-Intel" in d.blind_billing_source or "shadow" in d.blind_billing_source.lower()
+
+
+def test_market_capacity_decree_reference_resolved():
+    """ét14 P0 #2 (Sarah Sequoia) : placeholder Décret 2024-XXX résolu."""
+    from config.mitigation_loader import get_market_capacity_2026_defaults, reload
+
+    reload()
+    d = get_market_capacity_2026_defaults()
+    # Plus de placeholder XXX
+    assert "XXX" not in d.deadline_source, f"Décret placeholder non résolu : {d.deadline_source}"
+    # Décret 2025-1441 (cf project_echeances_2026_q2_q3.md)
+    assert "2025-1441" in d.deadline_source
+
+
 def test_action_overdue_detector_emits_for_overdue_action(db, org_with_sites):
     """ét13f : action_overdue event quand ActionPlanItem en retard."""
     from datetime import datetime, timedelta, timezone

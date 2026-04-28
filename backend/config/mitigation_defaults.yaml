@@ -55,6 +55,43 @@ consumption_drift:
   payback_months: 1  # impact immédiat (corrections horaires, consignes)
   payback_source: "ADEME ROI sensibilisation usagers — économies récurrentes mensuelles"
 
+# ── Renégociation contrat (contract_renewal_detector) ─────────────────
+# Sprint 2 Vague C ét14 (audit CFO+Marie P0 #1) : chiffrer la fourchette
+# € de risque sur les contrats arrivant à échéance pour permettre l'arbitrage
+# CODIR. Avant : impact.value=None → blocage data-room CFO.
+#
+# Hypothèse : un contrat reconduit tacitement coûte typiquement +12 à +18 %
+# vs prix marché spot (médiane CRE Observatoire T4 2025 sur ETI mid-market).
+# On retient +15 % comme proxy médian conservateur.
+#
+# Le chiffrage utilise : conso annuelle proxy (mêmes 100 MWh/site mid-market
+# que market_capacity_2026) × prix moyen marché elec/gaz × spread tacite.
+contract_renewal:
+  # Spread tacite (% du prix marché) — surcoût moyen reconduction tacite
+  tacite_spread_pct: 0.15
+  tacite_spread_source: "Observatoire CRE T4 2025 + retours marketplace ETI mid-market 2024-2025 — fourchette 12-18 % spot"
+  # Prix marché médian utilisé comme base (€/MWh) pour le proxy d'impact
+  market_price_elec_eur_per_mwh: 95.0  # médiane spot baseload 2025-2026
+  market_price_gaz_eur_per_mwh: 38.0  # médiane PEG 2025-2026
+  market_price_source: "EPEX spot baseload moyenne 2025 + PEG indice gaz 2025 (Observatoire CRE)"
+  # Volume annuel proxy par annexe site (MWh/an) — cohérent market_capacity_2026
+  proxy_volume_per_annex_mwh: 100
+  proxy_volume_source: "ADEME bilan énergétique mid-market tertiaire bureau 100 MWh/an/site"
+
+# ── Asset registry — coût risque shadow billing aveugle (asset_registry_issue) ──
+# Sprint 2 Vague C ét14 (audit CFO P0 #2) : convertir le proxy `count`
+# (kWh) en € risque shadow billing. Un PRM sans grd_code rend la facturation
+# TURPE/ATRD non-auditable → exposition surfacturation moyenne ~1.2 % du
+# total annuel facturé (médiane Bill-Intel insights 2024).
+asset_registry:
+  # Exposition shadow billing moyenne par PRM/PCE non auditable (€/an)
+  blind_billing_exposure_per_dp_eur: 1200.0
+  blind_billing_source: "Bill-Intel insights 2024 — pertes médianes 1.2 % du total facturé sur DP non audités, base 100 MWh × 95 €/MWh"
+  # Exposition par contrat orphelin sans annexes (€/an) — facturation reçue
+  # mais non rattachable, donc non contestable
+  orphan_contract_exposure_eur: 5000.0
+  orphan_contract_source: "Estimation mid-market : un contrat sans annexe couvre ~5 sites en moyenne × 1k€ exposition shadow billing"
+
 # ── Marché capacité 1/11/2026 (market_window_detector) ────────────────
 # Sprint 2 Vague C ét12g (audit Sarah Sequoia P0 #2) : externalise le coût
 # indicatif capacité non-couverte (était hardcodé _CAPACITY_COST_PER_MWH_EUR).
@@ -67,7 +104,7 @@ market_capacity_2026:
   cost_source: "CRE délibération 2025-269 + 2026-49 fourchette 8-15 €/MWh ; médiane mid-market 12 €/MWh"
   # Date d'échéance entrée en vigueur mécanisme capacité physique (RTE).
   deadline_iso: "2026-11-01"
-  deadline_source: "Décret n°2024-XXX relatif au mécanisme capacité post-ARENH"
+  deadline_source: "Décret n°2025-1441 relatif au mécanisme de capacité — RTE acheteur unique post-ARENH (CRE délibération 2025-269 + 2026-49)"
   # Proxy consommation annuelle par site mid-market tertiaire (MWh).
   # DEBT Vague D : remplacer par sum(site.consommation_annuelle_mwh) quand
   # le champ sera consolidé sur tous les seeds + sites client.

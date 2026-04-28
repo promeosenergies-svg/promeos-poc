@@ -55,8 +55,12 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
     Limite à top 3 contrats les plus urgents (densification cards Sol §5).
     """
     # Imports locaux pour éviter cycle (services → models → event_bus)
+    from config.mitigation_loader import get_contract_renewal_defaults
     from models import not_deleted
-    from models.contract_v2_models import ContratCadre
+    from models.contract_v2_models import ContractAnnexe, ContratCadre
+    from models.enums import BillingEnergyType
+
+    cr_defaults = get_contract_renewal_defaults()  # ét14 P0 #1 CFO+Marie
 
     today = date.today()
     contrats = not_deleted(db.query(ContratCadre), ContratCadre).filter(ContratCadre.org_id == org_id).all()
@@ -96,9 +100,23 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
             elif days_to_notice <= 30:
                 notice_phrase = f" Préavis à respecter sous {days_to_notice} jour{'s' if days_to_notice > 1 else ''}."
 
-        # Impact estimé : risque de reconduction tacite à prix défavorable.
-        # Approximation simple : pénalité +15 % vs marché si tacite (proxy CRE).
-        # Pas de chiffre précis sans connaître le volume — on indique "à étudier".
+        # ét14 (audit CFO+Marie P0 #1) : chiffrer la fourchette € de risque
+        # tacite. Volume proxy = nb_annexes × MWh/site YAML. Prix marché
+        # selon énergie. Surcoût = volume × prix × spread tacite (15 %).
+        nb_annexes = (
+            not_deleted(db.query(ContractAnnexe), ContractAnnexe)
+            .filter(ContractAnnexe.contrat_cadre_id == c.id)
+            .count()
+        )
+        # Si pas d'annexes, on estime un site mini (sinon 0 €/an = trompeur)
+        nb_annexes_proxy = max(1, nb_annexes)
+        volume_mwh = nb_annexes_proxy * cr_defaults.proxy_volume_per_annex_mwh
+        market_price = (
+            cr_defaults.market_price_gaz_eur_per_mwh
+            if c.energie == BillingEnergyType.GAZ
+            else cr_defaults.market_price_elec_eur_per_mwh
+        )
+        impact_tacite_eur = volume_mwh * market_price * cr_defaults.tacite_spread_pct
 
         events.append(
             SolEventCard(
@@ -108,13 +126,14 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                 title=f"Contrat {c.fournisseur} ({c.energie.value}) — échéance {urgency_phrase}",
                 narrative=(
                     f"Le contrat {c.reference} avec {c.fournisseur} arrive à échéance.{notice_phrase} "
-                    "Anticiper la renégociation pour éviter une reconduction tacite "
-                    "à conditions défavorables (jusqu'à +15 % vs marché spot)."
-                ),
+                    f"Anticiper la renégociation pour éviter une reconduction tacite estimée à "
+                    f"+{int(impact_tacite_eur):,} €/an (volume proxy {volume_mwh} MWh × "
+                    f"{market_price:.0f} €/MWh × spread tacite {cr_defaults.tacite_spread_pct * 100:.0f} %)."
+                ).replace(",", " "),
                 impact=EventImpact(
-                    value=None,  # impact à qualifier (volume + spread marché)
+                    value=impact_tacite_eur,
                     unit="€",
-                    period="contract",
+                    period="year",
                 ),
                 source=EventSource(
                     system="manual",  # contrat saisi côté DAF (pas système ERP intégré)
@@ -126,7 +145,11 @@ def detect(db: Session, org_id: int) -> list[SolEventCard]:
                         f"et ContratCadre.date_preavis ({c.date_preavis or 'non renseignée'}). "
                         "Severity dynamique selon urgence : préavis dépassé ou < 30j → critique ; "
                         "échéance < 90j → à faire ; < 180j → à surveiller. "
-                        "Impact non chiffré (dépend du volume contractuel et du spread marché)."
+                        f"Impact € = nb_annexes ({nb_annexes_proxy}) × volume proxy "
+                        f"({cr_defaults.proxy_volume_per_annex_mwh} MWh/site) × prix marché "
+                        f"({market_price:.0f} €/MWh, source : {cr_defaults.market_price_source}) "
+                        f"× spread tacite ({cr_defaults.tacite_spread_pct * 100:.0f} %, "
+                        f"source : {cr_defaults.tacite_spread_source})."
                     ),
                 ),
                 action=EventAction(

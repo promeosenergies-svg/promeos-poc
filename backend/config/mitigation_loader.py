@@ -76,6 +76,36 @@ class MarketCapacity2026Defaults:
     proxy_consumption_source: str
 
 
+@dataclass(frozen=True)
+class ContractRenewalDefaults:
+    """Defaults contract_renewal_detector (audit CFO+Marie P0 #1 ét14).
+
+    Permet de chiffrer la fourchette € de risque tacite reconduction.
+    Avant ét14 : impact.value=None bloquait l'arbitrage data-room CFO.
+    """
+
+    tacite_spread_pct: float  # ex: 0.15 = +15 % vs spot
+    tacite_spread_source: str
+    market_price_elec_eur_per_mwh: float
+    market_price_gaz_eur_per_mwh: float
+    market_price_source: str
+    proxy_volume_per_annex_mwh: int
+    proxy_volume_source: str
+
+
+@dataclass(frozen=True)
+class AssetRegistryDefaults:
+    """Defaults asset_registry_issue_detector (audit CFO P0 #2 ét14).
+
+    Convertit les counts d'incohérences registre en € risque shadow billing.
+    """
+
+    blind_billing_exposure_per_dp_eur: float
+    blind_billing_source: str
+    orphan_contract_exposure_eur: float
+    orphan_contract_source: str
+
+
 # ── API publique ─────────────────────────────────────────────────────
 
 
@@ -117,6 +147,31 @@ def get_market_capacity_2026_defaults() -> MarketCapacity2026Defaults:
         deadline_source=str(raw["deadline_source"]),
         proxy_consumption_mwh_per_site=int(raw["proxy_consumption_mwh_per_site"]),
         proxy_consumption_source=str(raw["proxy_consumption_source"]),
+    )
+
+
+def get_contract_renewal_defaults() -> ContractRenewalDefaults:
+    """Charge les defaults contract_renewal (ét14 P0 #1 CFO+Marie)."""
+    raw = _load_raw()["contract_renewal"]
+    return ContractRenewalDefaults(
+        tacite_spread_pct=float(raw["tacite_spread_pct"]),
+        tacite_spread_source=str(raw["tacite_spread_source"]),
+        market_price_elec_eur_per_mwh=float(raw["market_price_elec_eur_per_mwh"]),
+        market_price_gaz_eur_per_mwh=float(raw["market_price_gaz_eur_per_mwh"]),
+        market_price_source=str(raw["market_price_source"]),
+        proxy_volume_per_annex_mwh=int(raw["proxy_volume_per_annex_mwh"]),
+        proxy_volume_source=str(raw["proxy_volume_source"]),
+    )
+
+
+def get_asset_registry_defaults() -> AssetRegistryDefaults:
+    """Charge les defaults asset_registry (ét14 P0 #2 CFO)."""
+    raw = _load_raw()["asset_registry"]
+    return AssetRegistryDefaults(
+        blind_billing_exposure_per_dp_eur=float(raw["blind_billing_exposure_per_dp_eur"]),
+        blind_billing_source=str(raw["blind_billing_source"]),
+        orphan_contract_exposure_eur=float(raw["orphan_contract_exposure_eur"]),
+        orphan_contract_source=str(raw["orphan_contract_source"]),
     )
 
 
@@ -167,11 +222,15 @@ def compute_npv_actualized(
 
 
 __all__ = [
+    "AssetRegistryDefaults",
     "ConsumptionDriftDefaults",
+    "ContractRenewalDefaults",
     "DtComplianceDefaults",
     "MarketCapacity2026Defaults",
     "compute_npv_actualized",
+    "get_asset_registry_defaults",
     "get_consumption_drift_defaults",
+    "get_contract_renewal_defaults",
     "get_discount_rate",
     "get_dt_compliance_defaults",
     "get_market_capacity_2026_defaults",
