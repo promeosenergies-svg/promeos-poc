@@ -1455,3 +1455,43 @@ def get_cockpit_data_activation(
 
     result = build_activation_checklist(kpis_payload, billing_payload, purchase_payload)
     return result.to_dict()
+
+
+# ---------------------------------------------------------------------------
+# EurAmount proof endpoint — Cockpit Sol2 Phase 1.1 (Décision A §0.D)
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/cockpit/eur_amount/{eur_amount_id}/proof",
+    summary="Preuve de traçabilité d'un montant € typé",
+    tags=["Cockpit", "EurAmount"],
+)
+def get_eur_amount_proof(
+    eur_amount_id: int,
+    db: Session = Depends(get_db),
+):
+    """GET /api/cockpit/eur_amount/{id}/proof
+
+    Retourne la preuve de traçabilité d'un EurAmount (catégorie + article
+    réglementaire OU contract_id).
+
+    Org-scoping : non-strict en lecture seule — les preuves ne contiennent
+    pas de PII. Un lien proof_url peut être partagé dans un export PDF/audit.
+    Si des données sensibles devaient être ajoutées, activer resolve_org_id.
+
+    Returns:
+        dict EurAmount complet avec proof_url canonique
+    Raises:
+        404 si introuvable
+    """
+    from models.eur_amount import EurAmount
+    from services.eur_amount_service import to_dict_with_proof
+
+    eur = db.query(EurAmount).filter(EurAmount.id == eur_amount_id).first()
+    if eur is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"EurAmount id={eur_amount_id} introuvable",
+        )
+    return to_dict_with_proof(eur)

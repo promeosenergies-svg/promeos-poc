@@ -350,6 +350,9 @@ from .sirene import (
     CustomerCreationTrace,
 )
 
+# EurAmount typé — Cockpit Sol2 Phase 1.1 (Décision A §0.D)
+from .eur_amount import EurAmount, EurAmountCategory
+
 __all__ = [
     "Base",
     "TimestampMixin",
@@ -626,4 +629,7 @@ __all__ = [
     "PowerContract",
     "HCPlageReference",
     "FTA_SEGMENTS",
+    # EurAmount typé — Cockpit Sol2 Phase 1.1
+    "EurAmount",
+    "EurAmountCategory",
 ]
