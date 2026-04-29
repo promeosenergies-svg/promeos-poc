@@ -1126,3 +1126,232 @@ def get_cockpit_impact_decision(
         "impact": impact.to_dict(),
         "recommendation": recommendation.to_dict(),
     }
+
+
+@router.get("/cockpit/essentials")
+def get_cockpit_essentials(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/cockpit/essentials
+
+    Phase 1.4.d — Dashboard Essentials (migration ex-`models/dashboardEssentials.js`).
+
+    Agrège tous les modèles dashboard (watchlist, briefing, topSites, opportunities,
+    todayActions, executiveSummary, executiveKpis, healthState) depuis les données
+    scope. Source of Truth backend posée en 1.4.d — migration des 4 pages frontend
+    (Cockpit, ConformitePage, CommandCenter, billingHealthModel) différée à Phase 1.4.d.bis.
+
+    Réponse :
+        DashboardEssentials.to_dict() — structure agrégée complète
+    """
+    from services.dashboard_essentials_service import build_dashboard_essentials
+
+    org_id = resolve_org_id(request, auth, db)
+
+    # Récupérer les sites du scope
+    sites_objs = _sites_for_org(db, org_id).all()
+
+    # KPIs conformité depuis KpiService (source canonique)
+    kpi_svc = KpiService(db)
+    _scope = KpiScope(org_id=org_id)
+
+    compliance_score = None
+    compliance_confidence = None
+    try:
+        compliance_kpi = kpi_svc.get_compliance_score(_scope)
+        compliance_score = compliance_kpi.value
+        compliance_confidence = compliance_kpi.confidence
+    except Exception:
+        pass
+
+    # Alertes actives scoped
+    site_ids = [s.id for s in sites_objs]
+    alerts_count = (
+        db.query(Alerte).filter(Alerte.resolue == False, Alerte.site_id.in_(site_ids)).count() if site_ids else 0
+    )
+
+    # Construire la liste de dicts sites (payload pour build_dashboard_essentials)
+    sites_payload = []
+    for s in sites_objs:
+        statut = None
+        if s.statut_decret_tertiaire is not None:
+            raw = s.statut_decret_tertiaire
+            statut = raw.value if hasattr(raw, "value") else str(raw)
+        sites_payload.append(
+            {
+                "id": s.id,
+                "nom": s.nom or "",
+                "ville": getattr(s, "ville", None) or getattr(s, "city", None),
+                "statut_conformite": statut,
+                "risque_eur": float(getattr(s, "risque_eur", 0) or 0),
+                "conso_kwh_an": float(s.annual_kwh_total or 0),
+                "compliance_score": compliance_score,
+                "compliance_confidence": compliance_confidence,
+            }
+        )
+
+    # Injecter compliance_score dans le premier site ou via kpis patch
+    # build_dashboard_essentials agrège les sites, mais compliance_score
+    # est un KPI organisationnel → on le transmet via un site fictif «patch»
+    # plutôt que de modifier la signature. Contournement propre : on enrichit
+    # le kpis dict après construction.
+    essentials = build_dashboard_essentials(
+        sites=sites_payload,
+        is_expert=False,
+        alerts_count=alerts_count,
+    )
+
+    # Patch compliance_score dans les kpis retournés (SoT = KpiService)
+    result_dict = essentials.to_dict()
+    if compliance_score is not None:
+        result_dict["kpis"]["compliance_score"] = compliance_score
+        result_dict["kpis"]["compliance_confidence"] = compliance_confidence
+
+    return result_dict
+
+
+@router.get("/cockpit/essentials/health")
+def get_cockpit_essentials_health(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/cockpit/essentials/health
+
+    Sous-endpoint HealthState uniquement — consommé par billingHealthModel.js
+    et ConformitePage.jsx (Phase 1.4.d.bis migration différée).
+
+    Retourne HealthState.to_dict()
+    """
+    from services.dashboard_essentials_service import (
+        build_watchlist,
+        check_consistency,
+        compute_health_state,
+    )
+
+    org_id = resolve_org_id(request, auth, db)
+    sites_objs = _sites_for_org(db, org_id).all()
+    site_ids = [s.id for s in sites_objs]
+
+    total = len(sites_objs)
+    nc = sum(
+        1
+        for s in sites_objs
+        if s.statut_decret_tertiaire is not None
+        and (
+            s.statut_decret_tertiaire.value
+            if hasattr(s.statut_decret_tertiaire, "value")
+            else str(s.statut_decret_tertiaire)
+        )
+        == "non_conforme"
+    )
+    ar = sum(
+        1
+        for s in sites_objs
+        if s.statut_decret_tertiaire is not None
+        and (
+            s.statut_decret_tertiaire.value
+            if hasattr(s.statut_decret_tertiaire, "value")
+            else str(s.statut_decret_tertiaire)
+        )
+        == "a_risque"
+    )
+    conformes = sum(
+        1
+        for s in sites_objs
+        if s.statut_decret_tertiaire is not None
+        and (
+            s.statut_decret_tertiaire.value
+            if hasattr(s.statut_decret_tertiaire, "value")
+            else str(s.statut_decret_tertiaire)
+        )
+        == "conforme"
+    )
+    couverture = round(sum(1 for s in sites_objs if (s.annual_kwh_total or 0) > 0) / total * 100) if total > 0 else 0
+
+    kpis = {
+        "total": total,
+        "conformes": conformes,
+        "nonConformes": nc,
+        "aRisque": ar,
+        "risqueTotal": 0.0,
+        "couvertureDonnees": couverture,
+    }
+
+    alerts_count = (
+        db.query(Alerte).filter(Alerte.resolue == False, Alerte.site_id.in_(site_ids)).count() if site_ids else 0
+    )
+
+    watchlist = build_watchlist(
+        kpis, [{"conso_kwh_an": s.annual_kwh_total, "statut_conformite": kpis.get("nonConformes")} for s in sites_objs]
+    )
+    consistency = check_consistency(kpis)
+    health = compute_health_state(
+        kpis=kpis,
+        watchlist=watchlist,
+        consistency=consistency,
+        alerts_count=alerts_count,
+    )
+
+    return health.to_dict()
+
+
+@router.get("/cockpit/essentials/watchlist")
+def get_cockpit_essentials_watchlist(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/cockpit/essentials/watchlist
+
+    Sous-endpoint Watchlist uniquement — consommé par ConformitePage.jsx
+    (Phase 1.4.d.bis migration différée).
+
+    Retourne { watchlist: WatchItem[] }
+    """
+    from services.dashboard_essentials_service import build_watchlist
+
+    org_id = resolve_org_id(request, auth, db)
+    sites_objs = _sites_for_org(db, org_id).all()
+
+    total = len(sites_objs)
+    nc = sum(
+        1
+        for s in sites_objs
+        if s.statut_decret_tertiaire is not None
+        and (
+            s.statut_decret_tertiaire.value
+            if hasattr(s.statut_decret_tertiaire, "value")
+            else str(s.statut_decret_tertiaire)
+        )
+        == "non_conforme"
+    )
+    ar = sum(
+        1
+        for s in sites_objs
+        if s.statut_decret_tertiaire is not None
+        and (
+            s.statut_decret_tertiaire.value
+            if hasattr(s.statut_decret_tertiaire, "value")
+            else str(s.statut_decret_tertiaire)
+        )
+        == "a_risque"
+    )
+    couverture = round(sum(1 for s in sites_objs if (s.annual_kwh_total or 0) > 0) / total * 100) if total > 0 else 0
+
+    kpis = {
+        "total": total,
+        "nonConformes": nc,
+        "aRisque": ar,
+        "couvertureDonnees": couverture,
+    }
+
+    sites_payload = [{"conso_kwh_an": s.annual_kwh_total} for s in sites_objs]
+    watchlist = build_watchlist(kpis, sites_payload)
+
+    return {"watchlist": [w.to_dict() for w in watchlist]}
