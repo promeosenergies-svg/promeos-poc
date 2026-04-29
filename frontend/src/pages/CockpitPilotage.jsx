@@ -39,6 +39,8 @@ import { Bell, ArrowRight, Clock } from 'lucide-react';
 import useCockpitFacts from '../hooks/useCockpitFacts';
 import SolKickerWithSwitch from '../ui/sol/SolKickerWithSwitch';
 import AcronymTooltip from '../ui/sol/AcronymTooltip';
+import KpiCard from '../components/cockpit/KpiCard';
+import KpiSkeleton from '../components/cockpit/KpiSkeleton';
 import { getCockpitPriorities } from '../services/api/cockpit';
 import { useScope } from '../contexts/ScopeContext';
 import { splitMwh, splitKw, fmtPct, fmtEurShort, deltaSeverity } from '../utils/format';
@@ -54,18 +56,11 @@ function fmtDeltaPct(v) {
   return `${sign}${fmtPct(Math.abs(v), false, 0)}`;
 }
 
-/** Coloration delta KPI : neutre/warning/danger via deltaSeverity SoT. */
-const DELTA_FG = {
-  neutral: 'var(--sol-ink-700)',
-  warning: 'var(--sol-attention-fg)',
-  danger: 'var(--sol-refuse-fg)',
-};
-
-// SEVERITY_TONE / URGENCY_TONE / getIsoWeek / relativeTime / FR_DATE
-// → hissés en SoT (Étape 2.bis) :
-//   - severityTone() depuis ui/sol/solTones.js
-//   - getIsoWeek + relativeTime + fmtDateLong depuis utils/date.js
-//   - DELTA_FG mapping local pour la coloration delta KPI uniquement.
+// Étape 11 : KpiCard + KpiSkeleton factorisés dans components/cockpit/
+// (voir /Users/amine/projects/promeos-poc/frontend/src/components/cockpit/KpiCard.jsx).
+// Avant : 2 implémentations inlinées (Pilotage + Décision) avec 80% structure
+// commune — audit /simplify P1 fin Étape 9. Après : 1 composant unifié avec
+// variant='temporal' (Pilotage) | 'confidence' (Décision).
 
 // ── Triptyque KPI temporel multi-échelle ─────────────────────────────
 
@@ -74,103 +69,6 @@ const SCALE_LABEL = {
   medium: 'Moyen terme',
   contract: 'Contractuel',
 };
-
-function KpiCard({ scaleLabel, label, tooltip, value, unit, deltaText, deltaSev, hint }) {
-  const deltaFg = DELTA_FG[deltaSev || 'neutral'];
-  return (
-    <div className="rounded-lg p-4" style={{ background: 'var(--sol-bg-canvas)' }}>
-      {/* Étape 1.bis P0-2 — label d'échelle temporelle au-dessus du KPI. */}
-      <div
-        className="font-mono uppercase tracking-[0.08em] mb-2"
-        style={{
-          fontSize: '9.5px',
-          color: 'var(--sol-ink-400)',
-          letterSpacing: '0.1em',
-        }}
-      >
-        {scaleLabel}
-      </div>
-      {/* Étape 7 P0-E : le `?` muet n'expliquait rien (audit user 29/04).
-          Remplacé par underline pointillée sur le label entier — la souris
-          au-dessus du label révèle le tooltip natif HTML, plus de pictogramme
-          ambigu. Le `hint` mono sous la valeur reste auto-explicatif. */}
-      <div
-        className="font-mono uppercase tracking-[0.07em] text-[11px] mb-1.5"
-        style={{ color: 'var(--sol-ink-500)' }}
-      >
-        {tooltip ? (
-          <span
-            tabIndex={0}
-            title={tooltip}
-            aria-label={tooltip}
-            className="cursor-help"
-            style={{ borderBottom: '1px dotted var(--sol-ink-400)' }}
-          >
-            {label}
-          </span>
-        ) : (
-          label
-        )}
-      </div>
-      <div className="flex items-baseline gap-2 flex-wrap">
-        <div
-          style={{
-            fontFamily: 'var(--sol-font-display)',
-            fontSize: '28px',
-            fontWeight: 500,
-            lineHeight: 1,
-            color: 'var(--sol-ink-900)',
-          }}
-        >
-          {value}
-          {unit && (
-            <span className="ml-1" style={{ fontSize: '14px', color: 'var(--sol-ink-700)' }}>
-              {unit}
-            </span>
-          )}
-        </div>
-        {deltaText && (
-          <div className="text-xs font-medium" style={{ color: deltaFg }}>
-            {deltaText}
-          </div>
-        )}
-      </div>
-      {hint && (
-        <div
-          className="mt-1.5 font-mono uppercase tracking-[0.07em]"
-          style={{ fontSize: '10.5px', color: 'var(--sol-ink-500)' }}
-        >
-          {hint}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function KpiSkeleton({ scaleLabel }) {
-  return (
-    <div className="rounded-lg p-4 animate-pulse" style={{ background: 'var(--sol-bg-canvas)' }}>
-      <div
-        className="font-mono uppercase tracking-[0.08em] mb-2"
-        style={{ fontSize: '9.5px', color: 'var(--sol-ink-400)', letterSpacing: '0.1em' }}
-      >
-        {scaleLabel}
-      </div>
-      <div
-        className="rounded mb-2"
-        style={{ height: 11, width: '60%', background: 'var(--sol-ink-200)' }}
-      />
-      <div
-        className="rounded"
-        style={{ height: 28, width: '45%', background: 'var(--sol-ink-200)' }}
-      />
-      <div
-        className="rounded mt-2"
-        style={{ height: 10, width: '70%', background: 'var(--sol-ink-200)', opacity: 0.7 }}
-      />
-    </div>
-  );
-}
 
 function KpiTriptyqueEnergetique({ facts }) {
   const c = facts?.consumption || {};
@@ -830,7 +728,29 @@ function FileTraitementRow({ rank, item }) {
             </div>
           </div>
         )}
-        <ArrowRight size={14} style={{ color: tone.fg, opacity: 0.4 }} aria-hidden="true" />
+        {/* Étape 11 fix : la flèche horizontale est désormais cliquable
+            (audit user 29/04 : "les flèches horizontales n'ont pas de route").
+            Elle reproduit la cible "Traiter →" pour les utilisateurs qui
+            scannent l'extrémité droite de la ligne avant la zone texte. */}
+        <Link
+          to={item.action_url || '/anomalies'}
+          aria-label={`Traiter : ${item.title}`}
+          className="inline-flex items-center justify-center transition-opacity hover:opacity-100"
+          style={{
+            color: tone.fg,
+            opacity: 0.6,
+            padding: '6px',
+            borderRadius: 4,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '1';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '0.6';
+          }}
+        >
+          <ArrowRight size={14} aria-hidden="true" />
+        </Link>
       </div>
     </div>
   );
@@ -1027,9 +947,9 @@ export default function CockpitPilotage() {
       {/* Triptyque KPI temporel multi-échelle */}
       {factsLoading && !facts ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 my-4">
-          <KpiSkeleton scaleLabel={SCALE_LABEL.medium} />
-          <KpiSkeleton scaleLabel={SCALE_LABEL.short} />
-          <KpiSkeleton scaleLabel={SCALE_LABEL.contract} />
+          <KpiSkeleton variant="temporal" scaleLabel={SCALE_LABEL.medium} />
+          <KpiSkeleton variant="temporal" scaleLabel={SCALE_LABEL.short} />
+          <KpiSkeleton variant="temporal" scaleLabel={SCALE_LABEL.contract} />
         </div>
       ) : (
         <KpiTriptyqueEnergetique facts={facts} />

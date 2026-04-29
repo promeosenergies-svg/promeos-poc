@@ -30,6 +30,8 @@ import { ArrowRight, FileText, Sparkles } from 'lucide-react';
 import useCockpitFacts from '../hooks/useCockpitFacts';
 import SolKickerWithSwitch from '../ui/sol/SolKickerWithSwitch';
 import AcronymTooltip from '../ui/sol/AcronymTooltip';
+import KpiCard from '../components/cockpit/KpiCard';
+import KpiSkeleton from '../components/cockpit/KpiSkeleton';
 import {
   getCockpitDecisionsTop3,
   getCockpitTrajectory,
@@ -38,91 +40,12 @@ import {
 import { useScope } from '../contexts/ScopeContext';
 import { splitMwh, fmtEurShort } from '../utils/format';
 import { getIsoWeek, relativeTime, daysUntil } from '../utils/date';
-import { severityTone, confidenceTone } from '../ui/sol/solTones';
+import { severityTone } from '../ui/sol/solTones';
 
 // ── Triptyque KPI hybride avec badges ────────────────────────────
-// Tons confiance hissés en SoT (Étape 2.bis) → confidenceTone() depuis solTones.js
-
-function KpiHybrideCard({ label, value, unit, badge, source, drillHref, drillLabel }) {
-  const tone = confidenceTone(badge);
-  return (
-    <div className="rounded-md p-4" style={{ background: 'var(--sol-bg-canvas)' }}>
-      <div
-        className="font-mono uppercase tracking-[0.07em] mb-2"
-        style={{ fontSize: 11, color: 'var(--sol-ink-500)' }}
-      >
-        {label}
-      </div>
-      <div className="flex items-baseline gap-2 flex-wrap">
-        <div
-          style={{
-            fontFamily: 'var(--sol-font-display)',
-            fontSize: 32,
-            fontWeight: 500,
-            lineHeight: 1,
-            color: 'var(--sol-ink-900)',
-          }}
-        >
-          {value}
-          {unit && (
-            <span className="ml-1" style={{ fontSize: 16, color: 'var(--sol-ink-700)' }}>
-              {unit}
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="flex items-center gap-1.5 flex-wrap mt-2">
-        <span
-          className="inline-flex items-center px-1.5 py-0.5 rounded font-mono uppercase tracking-[0.06em]"
-          style={{
-            fontSize: 9.5,
-            background: tone.bg,
-            color: tone.fg,
-            fontWeight: 500,
-          }}
-        >
-          {tone.label}
-        </span>
-        <span
-          className="font-mono uppercase tracking-[0.05em]"
-          style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
-        >
-          {source}
-        </span>
-      </div>
-      {drillHref && (
-        <div className="mt-1.5">
-          <Link
-            to={drillHref}
-            className="font-mono uppercase tracking-[0.05em] no-underline hover:underline inline-flex items-center gap-1"
-            style={{ fontSize: 11, color: 'var(--sol-ink-700)' }}
-          >
-            {drillLabel} →
-          </Link>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function KpiSkeleton() {
-  return (
-    <div className="rounded-md p-4 animate-pulse" style={{ background: 'var(--sol-bg-canvas)' }}>
-      <div
-        className="rounded mb-2"
-        style={{ height: 11, width: '60%', background: 'var(--sol-ink-200)' }}
-      />
-      <div
-        className="rounded mb-2"
-        style={{ height: 32, width: '50%', background: 'var(--sol-ink-200)' }}
-      />
-      <div
-        className="rounded"
-        style={{ height: 14, width: '70%', background: 'var(--sol-ink-200)', opacity: 0.7 }}
-      />
-    </div>
-  );
-}
+// Étape 11 : KpiCard + KpiSkeleton factorisés dans `components/cockpit/`.
+// `KpiHybrideCard` local supprimé → utilise `<KpiCard variant="confidence" .../>`.
+// KpiSkeleton local supprimé → utilise `<KpiSkeleton variant="confidence" />`.
 
 function KpiTriptyqueHybride({ facts }) {
   const compliance = facts?.compliance || {};
@@ -143,7 +66,8 @@ function KpiTriptyqueHybride({ facts }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-      <KpiHybrideCard
+      <KpiCard
+        variant="confidence"
         label="Trajectoire 2030"
         value={compliance.score != null ? compliance.score : '—'}
         unit={compliance.score != null ? `/${compliance.max || 100}` : ''}
@@ -152,7 +76,8 @@ function KpiTriptyqueHybride({ facts }) {
         drillHref="/conformite?scope=org&filter=non_conform"
         drillLabel={`Voir ${compliance.non_conform_sites || 0} sites NC`}
       />
-      <KpiHybrideCard
+      <KpiCard
+        variant="confidence"
         label="Exposition pénalités"
         value={expSplit.value}
         unit={expSplit.unit}
@@ -161,7 +86,8 @@ function KpiTriptyqueHybride({ facts }) {
         drillHref="/conformite?scope=org&view=exposure_components"
         drillLabel="Voir détail composantes"
       />
-      <KpiHybrideCard
+      <KpiCard
+        variant="confidence"
         label="Potentiel récupérable"
         value={potSplit.value !== '—' ? potSplit.value : '—'}
         unit={potSplit.unit ? `${potSplit.unit}/an` : ''}
@@ -1166,7 +1092,7 @@ export default function CockpitDecision() {
       {factsLoading && !facts ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
           {[0, 1, 2].map((i) => (
-            <KpiSkeleton key={i} />
+            <KpiSkeleton key={i} variant="confidence" />
           ))}
         </div>
       ) : (
