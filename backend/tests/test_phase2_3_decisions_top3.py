@@ -73,7 +73,13 @@ class TestInferRegulatoryArticle:
 
 class TestSerializeActionForDecision:
     def test_action_with_gain_exposes_mwh_year(self):
-        """Une action avec gain >0 expose estimated_gain_mwh_year, pas _eur."""
+        """Une action avec gain >0 expose estimated_gain_mwh_year, pas _eur.
+
+        Phase 13.A P0-3 : prix unifié SoT — gain_mwh = raw_gain /
+        PRICE_ELEC_ETI_2026_EUR_PER_MWH (130 €/MWh post-ARENH ETI 2026).
+        Avant : 68 €/MWh (DEFAULT_PRICE_ELEC_EUR_KWH × 1000) → divergence
+        avec _estimate_capex_payback inflait savings ×1,91.
+        """
         action = SimpleNamespace(
             id=42,
             title="Installer pilotage CVC (BAT-TH-116)",
@@ -81,7 +87,7 @@ class TestSerializeActionForDecision:
             description=None,
             site_id=1,
             due_date=date(2026, 12, 1),
-            estimated_gain_eur=68000,  # → 1000 MWh @ 0.068 €/kWh
+            estimated_gain_eur=130000,  # → 1000 MWh @ 130 €/MWh (SoT 2026)
             severity="high",
             priority="P1",
             source_type="compliance",

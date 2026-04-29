@@ -59,9 +59,13 @@ PRICE_FALLBACK_EUR_PER_KWH = 0.068
 PRICE_ELEC_ETI_2026_EUR_PER_MWH = 130.0
 
 # Ratio facture 2026 vs 2024 post-ARENH (médiane CRE T4 2025 sur ETI tertiaire).
-# Utilisé par /api/purchase/cost-simulation/portfolio pour exposer delta_vs_2024
-# sans appel au moteur de simulation 2024 (économise 50% temps backend).
-POST_ARENH_RATIO_2026_VS_2024 = 1.225  # +22.5% médiane CRE T4 2025
+# Référence sectorielle indicative pour communication CFO.
+# Phase 13.A P0-4 (audit véracité 5.5/10) : NE PLUS utiliser pour calculer un
+# delta portfolio — l'agrégation circulaire `total / 1.225` retournait toujours
+# +22,5 % par construction. Désormais le delta portfolio est calculé en
+# agrégeant les `baseline_2024.fourniture_ht_eur` réels per-site (cf
+# `routes/purchase_cost_simulation.py::get_cost_simulation_portfolio`).
+POST_ARENH_RATIO_2026_VS_2024 = 1.225  # +22.5% médiane CRE T4 2025 (référence sectorielle)
 
 # Prix marché effacement industriel/tertiaire 2026 (NEBCO + AOFD blend CRE T4 2025).
 # Utilisé pour estimation Flex potential eur_year sur _facts.

@@ -5,7 +5,8 @@ contrat doctrine §0.D décision A : tout € exposé doit être traçable
 réglementaire (article cité) ou contractuel. Sinon, conversion MWh/an.
 
 Pour chaque action retournée par `/api/cockpit/decisions/top3` :
-  - estimated_gain_mwh_year : conversion kWh via DEFAULT_PRICE_ELEC_EUR_KWH
+  - estimated_gain_mwh_year : conversion via PRICE_ELEC_ETI_2026_EUR_PER_MWH
+    (Phase 13.A P0-3 : prix unique SoT des 2 côtés, plus de double standard)
   - reference : CEE BAT-TH-* extrait du title/rationale ou article réglementaire
   - regulatory_penalty_eur : EurAmount typé via build_regulatory si action de
     mise en conformité (source_type='compliance' + severity='critical')
@@ -25,7 +26,6 @@ from typing import Optional
 from sqlalchemy import case
 from sqlalchemy.orm import Session
 
-from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 from doctrine.acronyms import transform_acronym
 from doctrine.constants import (
     CO2_FACTOR_ELEC_KGCO2_PER_KWH,
@@ -128,8 +128,15 @@ def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> di
     Returns:
         dict avec champs canoniques (cf prompt §3.B Phase 2.3)
     """
+    # Phase 13.A P0-3 (audit véracité 5.5/10) : prix énergie unifié SoT.
+    # Avant : `raw_gain / DEFAULT_PRICE_ELEC_EUR_KWH / 1000` utilisait
+    # 68 €/MWh (EPEX baseline) pour convertir € → MWh, puis le calcul
+    # `_estimate_capex_payback` ré-utilisait 130 €/MWh (post-ARENH ETI 2026)
+    # pour reconvertir MWh → savings_eur_year, gonflant artificiellement
+    # tous les CapEx/savings BACS par ×1,91. Désormais : prix unique
+    # PRICE_ELEC_ETI_2026_EUR_PER_MWH des 2 côtés (cohérent).
     raw_gain = action.estimated_gain_eur or 0
-    gain_mwh = round(raw_gain / DEFAULT_PRICE_ELEC_EUR_KWH / 1000) if raw_gain > 0 else 0
+    gain_mwh = round(raw_gain / PRICE_ELEC_ETI_2026_EUR_PER_MWH) if raw_gain > 0 else 0
 
     # Étape 6.bis : titre interrogatif si levier connu, sinon titre brut narrativisé.
     lever_key = _classify_lever(action)

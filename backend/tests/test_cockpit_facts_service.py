@@ -429,12 +429,13 @@ class TestFallbackGracieux:
 class TestMonthlyComparisonService:
     def test_empty_org_returns_zeros_and_faible(self):
         """org sans sites → zéros + confidence='faible' (pas d'exception).
-        On patche _meter_ids_for_org pour simuler un org sans compteurs."""
+        On patche _portfolio_kwh (Phase 13.A P0-2 : SoT canonique délégué
+        à consumption_unified_service) pour simuler un org sans compteurs."""
         from services.monthly_comparison_service import get_monthly_vs_previous_year
 
         db_mock = MagicMock(spec=Session)
 
-        with patch("services.monthly_comparison_service._meter_ids_for_org", return_value=[]):
+        with patch("services.monthly_comparison_service._portfolio_kwh", return_value=0.0):
             result = get_monthly_vs_previous_year(db_mock, org_id=999, today=date(2026, 4, 27))
 
         assert result["current_month_mwh"] == 0.0
@@ -448,7 +449,7 @@ class TestMonthlyComparisonService:
 
         db_mock = MagicMock(spec=Session)
 
-        with patch("services.monthly_comparison_service._meter_ids_for_org", return_value=[]):
+        with patch("services.monthly_comparison_service._portfolio_kwh", return_value=0.0):
             result = get_monthly_vs_previous_year(db_mock, org_id=999, today=date(2026, 4, 27))
 
         required_keys = [
@@ -470,7 +471,7 @@ class TestMonthlyComparisonService:
 
         db_mock = MagicMock(spec=Session)
 
-        with patch("services.monthly_comparison_service._meter_ids_for_org", return_value=[]):
+        with patch("services.monthly_comparison_service._portfolio_kwh", return_value=0.0):
             result = get_monthly_vs_previous_year(db_mock, org_id=999, today=date(2026, 4, 27))
         assert result["baseline_method"] in ("b_dju_adjusted", "a_historical")
 

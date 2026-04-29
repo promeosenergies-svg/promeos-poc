@@ -192,6 +192,15 @@ def get_cost_simulation_portfolio(
     total_portfolio_eur = 0.0
     total_vnu_eur = 0.0
     total_cbam_eur = 0.0
+    # Phase 13.A P0-4 (audit véracité 5.5/10) : agrégation HT énergie 2026 vs
+    # 2024 pour delta portfolio réellement basé données. Avant : delta =
+    # `total / POST_ARENH_RATIO_2026_VS_2024` était circulaire — toujours
+    # +22,5 % par construction. Désormais : on somme les baseline_2024
+    # fourniture HT par site (estimation ARENH 42 × 50 % + spot pondéré
+    # peakload_multiplier de l'archétype, déjà calculée par le simulateur)
+    # et la fourniture_eur 2026, puis on calcule le delta réel HT énergie.
+    total_fourniture_2026_eur = 0.0
+    total_baseline_2024_fourniture_eur = 0.0
 
     for site in sites:
         # Ignorer les sites sans annual_kwh renseigné
@@ -204,6 +213,9 @@ def get_cost_simulation_portfolio(
             total_portfolio_eur += site_total
             total_vnu_eur += composantes.get("vnu_eur", 0.0)
             total_cbam_eur += composantes.get("cbam_scope", 0.0)
+            # Phase 13.A P0-4 : alimenter delta réel HT énergie portfolio
+            total_fourniture_2026_eur += composantes.get("fourniture_eur", 0.0)
+            total_baseline_2024_fourniture_eur += sim.get("baseline_2024", {}).get("fourniture_ht_eur", 0.0)
             results_sites.append(
                 {
                     "site_id": site.id,
@@ -223,17 +235,16 @@ def get_cost_simulation_portfolio(
             logger.warning("Simulation site %s ignorée: %s", site.id, exc)
             continue
 
-    # Étape 4 P1 backend : delta_vs_2024 pour effet WOW CFO Marie/Jean-Marc.
-    # Étape 6.bis : ratio hissé en SoT canonique (doctrine/constants.py)
-    # — audit /simplify P0 : magic number 1.225 inline était orphelin testable.
-    from doctrine.constants import POST_ARENH_RATIO_2026_VS_2024
-
-    total_2024_implicit = (
-        round(total_portfolio_eur / POST_ARENH_RATIO_2026_VS_2024, 2) if total_portfolio_eur > 0 else 0.0
-    )
+    # Phase 13.A P0-4 : delta HT énergie réel (apples-to-apples) au lieu du
+    # delta circulaire facture totale / ratio post-ARENH constant.
     delta_pct_vs_2024 = (
-        round((total_portfolio_eur - total_2024_implicit) / total_2024_implicit * 100, 1)
-        if total_2024_implicit > 0
+        round(
+            (total_fourniture_2026_eur - total_baseline_2024_fourniture_eur)
+            / total_baseline_2024_fourniture_eur
+            * 100.0,
+            1,
+        )
+        if total_baseline_2024_fourniture_eur > 0
         else 0.0
     )
 
@@ -248,10 +259,12 @@ def get_cost_simulation_portfolio(
             "cbam_eur": round(total_cbam_eur, 2),
         },
         "delta_vs_2024": {
-            "previous_year_eur": total_2024_implicit,
+            "previous_year_eur": round(total_baseline_2024_fourniture_eur, 2),
+            "current_year_eur": round(total_fourniture_2026_eur, 2),
             "delta_pct": delta_pct_vs_2024,
-            "method": "median_cre_t4_2025_post_arenh",
-            "source": "Observatoire CRE T4 2025 · ETI tertiaire post-ARENH",
+            "scope": "fourniture_ht_energie",
+            "method": "agg_per_site_baseline_arenh_42_x_50pct_spot_peakload",
+            "source": "Simulator per-site (ARENH 42 + spot 2024 pondéré peakload_multiplier)",
         },
         "confiance": "indicative",
     }

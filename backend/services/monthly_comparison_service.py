@@ -8,8 +8,14 @@ Logique :
   - Correction DJU via baseline_service.get_baseline_b si disponible.
   - Confidence basée sur r² baseline B — fallback 'faible' si absent.
 
-Implémentation pragmatique : agrège MeterReading sur les 2 fenêtres puis
-applique le ratio DJU si baseline B disponible pour le premier site du scope.
+Phase 13.A P0-2 (audit véracité 5.5/10) : la consommation est désormais
+**délégué intégralement** à `consumption_unified_service.get_portfolio_consumption`
+(SoT canonique CLAUDE.md règle non-négociable #6). Avant : ce service
+ré-implémentait sa propre agrégation MeterReading (filtrage ad-hoc,
+pas de `resolve_best_freq` → risque de double-comptage frequencies
+15min+30min+hourly+daily si plusieurs présentes pour un même meter).
+Maintenant : 1 SoT pour les 2 sources (cockpit_facts + monthly_comparison).
+
 Retourne des zéros + confidence='faible' en cas de données insuffisantes.
 
 Ref : PROMPT_REFONTE_COCKPIT_DUAL_SOL2_EXECUTION.md §2.B Phase 1.3
@@ -21,7 +27,6 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from models import (
@@ -30,8 +35,11 @@ from models import (
     EntiteJuridique,
     not_deleted,
 )
-from models.energy_models import Meter, MeterReading
 from services.baseline_service import get_baseline_b
+from services.consumption_unified_service import (
+    ConsumptionSource,
+    get_portfolio_consumption,
+)
 
 # ─── Constantes internes ────────────────────────────────────────────────────
 
@@ -47,41 +55,19 @@ _DJU_FALLBACK_DAILY = 3.0
 # ─── Helpers ────────────────────────────────────────────────────────────────
 
 
-def _meter_ids_for_org(db: Session, org_id: int) -> list[int]:
-    """Retourne tous les meter.id du périmètre org."""
-    site_ids = (
-        not_deleted(db.query(Site.id), Site)
-        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-        .all()
-    )
-    sid_list = [r[0] for r in site_ids]
-    if not sid_list:
-        return []
-    rows = db.query(Meter.id).filter(Meter.site_id.in_(sid_list)).all()
-    return [r[0] for r in rows]
+def _portfolio_kwh(db: Session, org_id: int, start: date, end: date) -> float:
+    """Somme conso élec portfolio sur fenêtre [start, end] via SoT canonique.
 
+    Délègue à `consumption_unified_service.get_portfolio_consumption` avec
+    `source=METERED` (on veut la donnée mesurée brute, pas réconciliée avec
+    factures, pour la comparaison N vs N-1).
 
-def _sum_readings(
-    db: Session,
-    meter_ids: list[int],
-    start: datetime,
-    end: datetime,
-) -> float:
-    """Somme MeterReading.value_kwh sur une fenêtre temporelle."""
-    if not meter_ids:
-        return 0.0
-    total = (
-        db.query(func.sum(MeterReading.value_kwh))
-        .filter(
-            MeterReading.meter_id.in_(meter_ids),
-            MeterReading.timestamp >= start,
-            MeterReading.timestamp <= end,
-        )
-        .scalar()
-    )
-    return float(total) if total else 0.0
+    Le service canonique applique :
+      - `get_site_meter_ids` (parent_meter_id IS NULL + is_active TRUE)
+      - `resolve_best_freq` (1 seule fréquence par site → zéro double-counting)
+    """
+    portfolio = get_portfolio_consumption(db, org_id, start, end, source=ConsumptionSource.METERED)
+    return float(portfolio.get("total_kwh") or 0.0)
 
 
 def _month_label(year: int, month: int, day_end: int) -> str:
@@ -154,26 +140,24 @@ def get_monthly_vs_previous_year(db: Session, org_id: int, today: date) -> dict:
         "confidence": _CONFIDENCE_FAIBLE,
     }
 
-    meter_ids = _meter_ids_for_org(db, org_id)
-    if not meter_ids:
-        return _empty
+    # Fenêtre mois courant : 1er → today
+    month_start_curr = date(today.year, today.month, 1)
+    month_end_curr = date(today.year, today.month, today.day)
 
-    # Fenêtre mois courant : 1er → today (23:59:59)
-    month_start_curr = datetime(today.year, today.month, 1, 0, 0, 0)
-    month_end_curr = datetime(today.year, today.month, today.day, 23, 59, 59)
-
-    # Fenêtre même mois N-1 : même fenêtre de jours
+    # Fenêtre même mois N-1 : même fenêtre de jours, clamp si mois plus court
     prev_year = today.year - 1
-    # Clamp le jour de fin au dernier jour du mois N-1 (ex: 31 mars si mois courant = mars)
     import calendar
 
     max_day_prev = calendar.monthrange(prev_year, today.month)[1]
     day_end_prev = min(today.day, max_day_prev)
-    month_start_prev = datetime(prev_year, today.month, 1, 0, 0, 0)
-    month_end_prev = datetime(prev_year, today.month, day_end_prev, 23, 59, 59)
+    month_start_prev = date(prev_year, today.month, 1)
+    month_end_prev = date(prev_year, today.month, day_end_prev)
 
-    curr_kwh = _sum_readings(db, meter_ids, month_start_curr, month_end_curr)
-    prev_kwh = _sum_readings(db, meter_ids, month_start_prev, month_end_prev)
+    curr_kwh = _portfolio_kwh(db, org_id, month_start_curr, month_end_curr)
+    prev_kwh = _portfolio_kwh(db, org_id, month_start_prev, month_end_prev)
+
+    if curr_kwh <= 0 and prev_kwh <= 0:
+        return _empty
 
     curr_mwh = round(curr_kwh / 1000.0, 3)
     prev_mwh_raw = round(prev_kwh / 1000.0, 3)
