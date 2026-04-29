@@ -65,6 +65,55 @@ def _statut_dt_value(site) -> str | None:
     return raw.value if hasattr(raw, "value") else str(raw)
 
 
+def _project_with_action_echeances(
+    reel_baseline_mwh: float,
+    actions: list,
+    target_year: int,
+    current_year: int,
+) -> float:
+    """Projection trajectoire lissée par action.due_date (Phase 1.6 / Q5).
+
+    Avant Phase 1.6 : tous les `estimated_gain_eur` étaient cumulés 100% dès
+    l'année courante → drop YoY brutal -43 % visuellement faux. Après :
+    chaque action contribue selon sa due_date — lissage proportionnel sur
+    les mois restants de l'année cible.
+
+    Args:
+        reel_baseline_mwh: conso année dernière complète, en MWh
+        actions: liste d'ActionItem (with .estimated_gain_eur, .due_date)
+        target_year: année de projection
+        current_year: année en cours (pour fenêtre de lissage)
+
+    Returns:
+        Conso projetée pour target_year en MWh, plancher 0.
+
+    Source-guard : test_trajectory_smoothed_by_echeance (drop YoY < 15 %).
+    Ref : PROMPT_REFONTE_COCKPIT_DUAL_SOL2_EXECUTION.md §2.B Phase 1.6.
+    """
+    cumul_savings_mwh = 0.0
+    for action in actions:
+        gain_eur = getattr(action, "estimated_gain_eur", 0) or 0
+        if gain_eur <= 0:
+            continue
+        gain_mwh = gain_eur / DEFAULT_PRICE_ELEC_EUR_KWH / 1000
+        due = getattr(action, "due_date", None)
+        if due is None:
+            # Action sans échéance → gain applicable dès current_year (best-case)
+            if target_year >= current_year:
+                cumul_savings_mwh += gain_mwh
+            continue
+        if due.year > target_year:
+            continue  # action pas encore due → 0 contribution
+        if due.year == target_year:
+            # Lissage proportionnel : gain réparti sur mois restants à partir de la due_date
+            months_active = max(0, 12 - (due.month - 1))
+            cumul_savings_mwh += gain_mwh * (months_active / 12)
+        else:
+            # due.year < target_year → gain plein (action déjà réalisée)
+            cumul_savings_mwh += gain_mwh
+    return max(0, reel_baseline_mwh - cumul_savings_mwh)
+
+
 def _count_dt_statuts(sites_objs) -> dict:
     """Count sites by Decret Tertiaire status in a single Python pass.
 
@@ -563,7 +612,10 @@ def get_cockpit_trajectory(
     # Surface totale
     surface_total = (db.query(func.sum(Batiment.surface_m2)).filter(Batiment.site_id.in_(site_ids)).scalar()) or 0
 
-    # 8. Projection trajectoire depuis actions planifiées (P1)
+    # 8. Projection trajectoire lissée par action.due_date — Phase 1.6 (Q5)
+    # Avant : tous les savings appliqués 100% dès current_year → drop -43 % brutal.
+    # Après : chaque action contribue selon sa due_date, lissé sur les mois restants.
+    # Source-guard : test_trajectory_smoothed_by_echeance (drop YoY < 15 %).
     from models.action_item import ActionItem
 
     _proj_actions = (
@@ -577,14 +629,18 @@ def get_cockpit_trajectory(
     projection_mwh = []
     _cy = datetime.now(tz=None).year
     if _savings_kwh > 0:
-        # Base de projection = dernière année COMPLÈTE (pas l'année en cours partielle)
         _lr = reel_by_year.get(_cy - 1)
         for y in annees:
             if y < _cy or _lr is None:
                 projection_mwh.append(None)
             else:
-                # Les savings s'appliquent UNE FOIS (réduction permanente), pas cumulativement
-                projection_mwh.append(max(0, round((_lr - _savings_kwh) / 1000, 1)))
+                projected_mwh = _project_with_action_echeances(
+                    reel_baseline_mwh=_lr / 1000,
+                    actions=_proj_actions,
+                    target_year=y,
+                    current_year=_cy,
+                )
+                projection_mwh.append(round(projected_mwh, 1))
 
     return {
         "ref_year": ref_year,
