@@ -1355,3 +1355,92 @@ def get_cockpit_essentials_watchlist(
     watchlist = build_watchlist(kpis, sites_payload)
 
     return {"watchlist": [w.to_dict() for w in watchlist]}
+
+
+@router.get("/cockpit/data_activation")
+def get_cockpit_data_activation(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/cockpit/data_activation
+
+    Phase 1.4.e — Endpoint Data Activation (migration ex-`models/dataActivationModel.js`).
+
+    Retourne la checklist d'activation des 5 dimensions canoniques
+    (patrimoine, conformité, consommation, facturation, achat) +
+    agrégats (activated_count, overall_coverage, next_action).
+
+    Org-scoping via resolve_org_id (CLAUDE.md règle #2). Délègue à
+    services/data_activation_service.build_activation_checklist().
+    """
+    from services.data_activation_service import build_activation_checklist
+
+    org_id = resolve_org_id(request, auth, db)
+    sites_objs = _sites_for_org(db, org_id).all()
+    site_ids = [s.id for s in sites_objs]
+    total_sites = len(site_ids)
+
+    conformes = 0
+    nc = 0
+    ar = 0
+    try:
+        conformes = _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.CONFORME).count()
+        nc = _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME).count()
+        ar = _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
+    except Exception:
+        pass
+
+    sites_with_conso = sum(1 for s in sites_objs if (s.annual_kwh_total or 0) > 0)
+    couverture = round((sites_with_conso / total_sites) * 100) if total_sites > 0 else 0
+
+    total_eur = 0.0
+    total_invoices = 0
+    try:
+        from models import EnergyInvoice
+
+        if site_ids:
+            total_eur = (
+                db.query(func.sum(EnergyInvoice.amount_eur)).filter(EnergyInvoice.site_id.in_(site_ids)).scalar()
+            ) or 0.0
+            total_invoices = db.query(EnergyInvoice).filter(EnergyInvoice.site_id.in_(site_ids)).count()
+    except Exception:
+        pass
+
+    total_contracts = 0
+    try:
+        from models.energy_contract import EnergyContract
+
+        if site_ids:
+            total_contracts = db.query(EnergyContract).filter(EnergyContract.site_id.in_(site_ids)).count()
+    except Exception:
+        pass
+
+    coverage_contracts_pct = (
+        round((total_contracts / total_sites) * 100) if total_sites > 0 and total_contracts > 0 else 0
+    )
+
+    kpis_payload = {
+        "total": total_sites,
+        "conformes": conformes,
+        "non_conformes": nc,
+        "a_risque": ar,
+        "couverture_donnees": couverture,
+    }
+    billing_payload = {
+        "total_invoices": total_invoices,
+        "total_eur": float(total_eur),
+    }
+    purchase_payload = (
+        {
+            "totalContracts": total_contracts,
+            "totalSites": total_sites,
+            "coverageContractsPct": coverage_contracts_pct,
+        }
+        if total_contracts > 0
+        else None
+    )
+
+    result = build_activation_checklist(kpis_payload, billing_payload, purchase_payload)
+    return result.to_dict()
