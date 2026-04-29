@@ -130,7 +130,14 @@ describe('Nav V7 — Cibles de redirects résolues par le rail', () => {
   }
 
   it('au moins 10 redirects détectés (sanity check du parser)', () => {
-    expect(redirects.length).toBeGreaterThanOrEqual(10);
+    // Phase 3.bis.a : redirects factorisés dans routes/legacyRedirects.js
+    const redirectsSrc = readFileSync(
+      resolve(__dirname, '..', 'routes', 'legacyRedirects.js'),
+      'utf8'
+    );
+    const matches = redirectsSrc.match(/\[['"]\/[^'"]+['"],\s*['"]\/[^'"]+['"]\]/g);
+    expect(matches).toBeTruthy();
+    expect(matches.length).toBeGreaterThanOrEqual(10);
   });
 
   it('chaque cible de redirect est mappée à un module dans ROUTE_MODULE_MAP', () => {

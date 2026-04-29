@@ -8,10 +8,8 @@ import { readFileSync, existsSync as _existsSync } from 'fs';
 
 describe('Purchase fusion source guard', () => {
   it('PurchaseAssistantPage route redirects to fused tab', () => {
-    // The route /achat-assistant must redirect — check App.jsx uses Navigate
-    const appContent = readFileSync('src/App.jsx', 'utf8');
-    expect(appContent).toContain('path="/achat-assistant"');
-    expect(appContent).toContain('Navigate to="/achat-energie?tab=assistant"');
+    const redirectsSrc = readFileSync('src/routes/legacyRedirects.js', 'utf8');
+    expect(redirectsSrc).toMatch(/\['\/achat-assistant',\s*'\/achat-energie\?tab=assistant'\]/);
   });
 
   it("App.jsx n'importe pas PurchaseAssistantPage directement", () => {

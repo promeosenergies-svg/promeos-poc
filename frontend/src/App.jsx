@@ -8,6 +8,7 @@ import { EmissionFactorsProvider } from './contexts/EmissionFactorsContext';
 import { PriceReferenceProvider } from './contexts/PriceReferenceContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import RequireAuth from './components/RequireAuth';
+import { LEGACY_REDIRECTS } from './routes/legacyRedirects';
 import UpgradeWizard from './components/UpgradeWizard';
 import AppShell from './layout/AppShell';
 import { SkeletonCard } from './ui/Skeleton';
@@ -141,12 +142,7 @@ function App() {
                               <Patrimoine />
                             </PageSuspense>
                           }
-                        />
-                        <Route
-                          path="/patrimoine/nouveau"
-                          element={<Navigate to="/patrimoine?wizard=open" replace />}
-                        />
-                        <Route path="/sites" element={<Navigate to="/patrimoine" replace />} />
+                        />{' '}
                         <Route
                           path="/sites/:id"
                           element={
@@ -228,10 +224,7 @@ function App() {
                           }
                         />
                         {/* Energy Copilot — route supprimée (Sprint B P0-7 + Sprint C cleanup) */}
-
-                        {/* Legacy redirects */}
-                        <Route path="/dashboard-legacy" element={<Navigate to="/" replace />} />
-
+                        {/* Legacy redirects */}{' '}
                         {/* Phase 3.1 — Cockpit dual sol2 routes canoniques :
                             /cockpit/jour       → Pilotage (CommandCenter, energy manager 30s)
                             /cockpit/strategique → Décision (Cockpit, dirigeant 3min)
@@ -252,12 +245,7 @@ function App() {
                               <Cockpit />
                             </PageSuspense>
                           }
-                        />
-                        <Route path="/cockpit" element={<Navigate to="/cockpit/jour" replace />} />
-                        <Route
-                          path="/sites-legacy/:id"
-                          element={<Navigate to="/patrimoine" replace />}
-                        />
+                        />{' '}
                         <Route
                           path="/action-center"
                           element={
@@ -265,8 +253,7 @@ function App() {
                               <ActionCenterPage />
                             </PageSuspense>
                           }
-                        />
-                        <Route path="/action-plan" element={<Navigate to="/anomalies" replace />} />
+                        />{' '}
                         <Route
                           path="/regops/:id"
                           element={
@@ -344,8 +331,7 @@ function App() {
                               <MonitoringPage />
                             </PageSuspense>
                           }
-                        />
-                        <Route path="/compliance" element={<Navigate to="/conformite" replace />} />
+                        />{' '}
                         <Route
                           path="/compliance/pipeline"
                           element={
@@ -361,11 +347,7 @@ function App() {
                               <SiteCompliancePage />
                             </PageSuspense>
                           }
-                        />
-                        <Route
-                          path="/compliance/sites"
-                          element={<Navigate to="/conformite" replace />}
-                        />
+                        />{' '}
                         <Route
                           path="/diagnostic-conso"
                           element={
@@ -413,11 +395,7 @@ function App() {
                               <PurchasePage />
                             </PageSuspense>
                           }
-                        />
-                        <Route
-                          path="/achat-assistant"
-                          element={<Navigate to="/achat-energie?tab=assistant" replace />}
-                        />
+                        />{' '}
                         <Route
                           path="/kb"
                           element={
@@ -449,11 +427,7 @@ function App() {
                               <NotificationsPage />
                             </PageSuspense>
                           }
-                        />
-                        <Route
-                          path="/explorer"
-                          element={<Navigate to="/consommations/portfolio" replace />}
-                        />
+                        />{' '}
                         <Route
                           path="/activation"
                           element={
@@ -518,7 +492,6 @@ function App() {
                             </PageSuspense>
                           }
                         />
-
                         {/* IAM pages */}
                         <Route
                           path="/admin/users"
@@ -568,18 +541,7 @@ function App() {
                             </PageSuspense>
                           }
                         />
-
-                        {/* URL aliases (redirect to canonical routes) */}
-                        <Route
-                          path="/plan-action"
-                          element={<Navigate to="/anomalies?tab=actions" replace />}
-                        />
-                        <Route
-                          path="/plan-actions"
-                          element={<Navigate to="/anomalies?tab=actions" replace />}
-                        />
-                        <Route path="/factures" element={<Navigate to="/bill-intel" replace />} />
-                        <Route path="/facturation" element={<Navigate to="/billing" replace />} />
+                        {/* URL aliases (redirect to canonical routes) */}{' '}
                         <Route
                           path="/anomalies"
                           element={
@@ -596,56 +558,8 @@ function App() {
                               <FlexPage />
                             </PageSuspense>
                           }
-                        />
-                        <Route
-                          path="/diagnostic"
-                          element={<Navigate to="/diagnostic-conso" replace />}
-                        />
-                        <Route
-                          path="/performance"
-                          element={<Navigate to="/monitoring" replace />}
-                        />
-                        <Route path="/achats" element={<Navigate to="/achat-energie" replace />} />
-                        <Route
-                          path="/purchase"
-                          element={<Navigate to="/achat-energie" replace />}
-                        />
-                        <Route path="/referentiels" element={<Navigate to="/kb" replace />} />
-                        {/* Legacy redirects → routes Phase 3.1 (alias mode strategique pour CFO/DG) */}
-                        <Route
-                          path="/synthese"
-                          element={<Navigate to="/cockpit/strategique" replace />}
-                        />
-                        <Route
-                          path="/executive"
-                          element={<Navigate to="/cockpit/strategique" replace />}
-                        />
-                        <Route
-                          path="/dashboard"
-                          element={<Navigate to="/cockpit/strategique" replace />}
-                        />
-                        <Route
-                          path="/tableau-de-bord"
-                          element={<Navigate to="/cockpit/jour" replace />}
-                        />
-                        <Route
-                          path="/conso"
-                          element={<Navigate to="/consommations/portfolio" replace />}
-                        />
-                        <Route path="/imports" element={<Navigate to="/import" replace />} />
-                        <Route path="/connexions" element={<Navigate to="/connectors" replace />} />
-                        <Route path="/veille" element={<Navigate to="/watchers" replace />} />
-                        <Route path="/alertes" element={<Navigate to="/notifications" replace />} />
-                        <Route
-                          path="/ems"
-                          element={<Navigate to="/consommations/portfolio" replace />}
-                        />
-                        <Route path="/donnees" element={<Navigate to="/activation" replace />} />
-                        <Route
-                          path="/contracts-radar"
-                          element={<Navigate to="/renouvellements" replace />}
-                        />
-
+                        />{' '}
+                        {/* Legacy redirects → routes Phase 3.1 (alias mode strategique pour CFO/DG) */}{' '}
                         {/* Sprint 1.3bis P0-A — Méthodologie Sol §5 trust signals */}
                         <Route
                           path="/methodologie/:docKey"
@@ -655,7 +569,13 @@ function App() {
                             </PageSuspense>
                           }
                         />
-
+                        {/* Phase 3.bis.a — 31 redirects legacy factorisés
+                            (cf routes/legacyRedirects.js).
+                            React Router résoud les paths les plus spécifiques
+                            d'abord, donc l'ordre n'a pas d'impact sur le matching. */}
+                        {LEGACY_REDIRECTS.map(([from, to]) => (
+                          <Route key={from} path={from} element={<Navigate to={to} replace />} />
+                        ))}
                         {/* Catch-all */}
                         <Route
                           path="*"

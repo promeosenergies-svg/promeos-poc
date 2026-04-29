@@ -19,6 +19,10 @@ import { resolve } from 'path';
 const APP_PATH = resolve(__dirname, '..', 'App.jsx');
 const APP_SRC = readFileSync(APP_PATH, 'utf-8');
 
+// Phase 3.bis.a : redirects legacy factorisés dans routes/legacyRedirects.js
+const REDIRECTS_PATH = resolve(__dirname, '..', 'routes', 'legacyRedirects.js');
+const REDIRECTS_SRC = readFileSync(REDIRECTS_PATH, 'utf-8');
+
 const HOOK_PATH = resolve(__dirname, '..', 'hooks', 'useCockpitFacts.js');
 const HOOK_SRC = readFileSync(HOOK_PATH, 'utf-8');
 
@@ -48,31 +52,27 @@ describe('Phase 3.1 — routes Cockpit dual sol2', () => {
   });
 
   it('route /cockpit redirect vers /cockpit/jour (default mode)', () => {
-    // Pattern : path="/cockpit" element={<Navigate to="/cockpit/jour" replace />}
-    expect(APP_SRC).toMatch(
-      /path=["']\/cockpit["']\s+element=\{\s*<Navigate\s+to=["']\/cockpit\/jour["']/
-    );
+    expect(REDIRECTS_SRC).toMatch(/\['\/cockpit',\s*'\/cockpit\/jour'\]/);
   });
 
   it('route /dashboard redirect vers /cockpit/strategique (CFO mode)', () => {
-    expect(APP_SRC).toMatch(
-      /path=["']\/dashboard["']\s+element=\{\s*<Navigate\s+to=["']\/cockpit\/strategique["']/
-    );
+    expect(REDIRECTS_SRC).toMatch(/\['\/dashboard',\s*'\/cockpit\/strategique'\]/);
   });
 
   it('routes /executive et /synthese redirect vers /cockpit/strategique', () => {
-    expect(APP_SRC).toMatch(
-      /path=["']\/executive["']\s+element=\{\s*<Navigate\s+to=["']\/cockpit\/strategique["']/
-    );
-    expect(APP_SRC).toMatch(
-      /path=["']\/synthese["']\s+element=\{\s*<Navigate\s+to=["']\/cockpit\/strategique["']/
-    );
+    expect(REDIRECTS_SRC).toMatch(/\['\/executive',\s*'\/cockpit\/strategique'\]/);
+    expect(REDIRECTS_SRC).toMatch(/\['\/synthese',\s*'\/cockpit\/strategique'\]/);
   });
 
   it('route /tableau-de-bord redirect vers /cockpit/jour (energy manager)', () => {
+    expect(REDIRECTS_SRC).toMatch(/\['\/tableau-de-bord',\s*'\/cockpit\/jour'\]/);
+  });
+
+  it('Phase 3.bis.a : App.jsx consomme LEGACY_REDIRECTS factorisé', () => {
     expect(APP_SRC).toMatch(
-      /path=["']\/tableau-de-bord["']\s+element=\{\s*<Navigate\s+to=["']\/cockpit\/jour["']/
+      /import\s*\{\s*LEGACY_REDIRECTS\s*\}\s*from\s*['"]\.\/routes\/legacyRedirects['"]/
     );
+    expect(APP_SRC).toMatch(/LEGACY_REDIRECTS\.map\(/);
   });
 });
 

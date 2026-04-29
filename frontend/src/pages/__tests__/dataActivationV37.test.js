@@ -348,7 +348,11 @@ describe('ActivationPage + App — V37 guards', () => {
   });
 
   it('alias /donnees vers /activation', () => {
-    expect(appSrc).toContain('path="/donnees"');
+    const redirectsSrc = readFileSync(
+      resolve(__dirname, '..', '..', 'routes', 'legacyRedirects.js'),
+      'utf8'
+    );
+    expect(redirectsSrc).toMatch(/\['\/donnees',\s*'\/activation'\]/);
   });
 
   it('ActivationPage importe buildActivationChecklist', () => {

@@ -11,9 +11,8 @@ const API_SRC = fs.readFileSync('src/services/api/patrimoine.js', 'utf8');
 
 describe('Phase 1 — Navigation /sites redirect', () => {
   it('/sites route redirects to /patrimoine in App.jsx', () => {
-    // Vérifie qu'il existe une route path="/sites" avec Navigate to="/patrimoine"
-    expect(APP_SRC).toMatch(/path="\/sites"/);
-    expect(APP_SRC).toMatch(/Navigate\s+to="\/patrimoine"/);
+    const redirectsSrc = fs.readFileSync('src/routes/legacyRedirects.js', 'utf8');
+    expect(redirectsSrc).toMatch(/\['\/sites',\s*'\/patrimoine'\]/);
   });
 
   it('/sites/:id route still exists for Site360', () => {
