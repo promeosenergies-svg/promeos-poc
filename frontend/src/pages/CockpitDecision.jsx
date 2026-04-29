@@ -470,9 +470,13 @@ function TrajectoryDTSmoothed({ trajectory }) {
   const minVal = Math.min(...allValues);
   const range = maxVal - minVal || 1;
 
+  // Étape 12 user feedback : SVG H=240 + label année à y=H−4 → texte 2030/2050
+  // coupé visuellement en bas. Augmentation H + padding.bottom pour laisser
+  // respirer les labels année (cf. screenshot user 29/04 "courbe trajectoire
+  // coupée"). preserveAspectRatio xMidYMid meet par défaut.
   const W = 800;
-  const H = 240;
-  const padding = { top: 20, right: 20, bottom: 20, left: 64 };
+  const H = 280;
+  const padding = { top: 20, right: 20, bottom: 40, left: 64 };
   const innerW = W - padding.left - padding.right;
   const innerH = H - padding.top - padding.bottom;
 
@@ -642,13 +646,13 @@ function TrajectoryDTSmoothed({ trajectory }) {
         >
           aujourd'hui
         </text>
-        {/* X axis labels */}
+        {/* X axis labels — y positionné dans la zone padding.bottom (40px) */}
         {annees.map((annee, i) =>
           i % 2 === 0 ? (
             <text
               key={annee}
               x={xFor(i)}
-              y={H - 4}
+              y={H - 14}
               textAnchor="middle"
               fontFamily="var(--sol-font-mono)"
               fontSize="10"
