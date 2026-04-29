@@ -466,7 +466,10 @@ def _build_cockpit_daily(
         NarrativeKpi(
             label="Risque financier",
             value=_fmt_eur_short(risque_total),
-            tooltip="Exposition cumulée pénalités Décret Tertiaire (7 500 €/site, 3 750 € si à risque).",
+            tooltip=(
+                f"Exposition cumulée pénalités Décret Tertiaire ({int(DT_PENALTY_EUR)} €/site, "
+                f"{int(DT_PENALTY_AT_RISK_EUR)} € si à risque)."
+            ),
             source="Décret 2019-771",
         ),
         NarrativeKpi(
@@ -580,10 +583,21 @@ def _build_cockpit_comex(
         sum(a.estimated_gain_eur or 0 for a in open_actions) / DEFAULT_PRICE_ELEC_EUR_KWH if open_actions else 0
     )
     levers_mwh_year = round(levers_savings_kwh / 1000) if levers_savings_kwh > 0 else 0
-    levers_references = sorted({a.cee_reference for a in open_actions if getattr(a, "cee_reference", None)})[:3] or [
-        "BAT-TH-116",
-        "BAT-TH-104",
-    ]
+
+    # P1 audit /simplify : ActionItem n'a pas de colonne cee_reference.
+    # Extraction par regex BAT-TH-NNN sur title/rationale (réutilise pattern
+    # cockpit_decisions_service._extract_cee_reference Phase 2.3).
+    from services.cockpit_decisions_service import _extract_cee_reference
+
+    extracted_refs = sorted(
+        {
+            ref
+            for a in open_actions
+            for ref in [_extract_cee_reference(a.title) or _extract_cee_reference(a.rationale)]
+            if ref
+        }
+    )[:3]
+    levers_references = extracted_refs or ["BAT-TH-116", "BAT-TH-104"]
 
     # ── Kicker + titre ──
     week_iso = datetime.now(timezone.utc).isocalendar().week
@@ -1077,8 +1091,8 @@ def _build_conformite(
             label="Provision pénalités",
             value=_fmt_eur_short(provision_penalite_eur),
             tooltip=(
-                "Pénalités potentielles cumulées : 7 500 €/site non conforme + "
-                "3 750 €/site à risque (Décret n°2019-771)."
+                f"Pénalités potentielles cumulées : {int(DT_PENALTY_EUR)} €/site non conforme + "
+                f"{int(DT_PENALTY_AT_RISK_EUR)} €/site à risque (Décret n°2019-771)."
             ),
             source="Décret 2019-771",
         ),

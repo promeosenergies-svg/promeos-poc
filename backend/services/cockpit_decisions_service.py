@@ -22,13 +22,18 @@ from __future__ import annotations
 import re
 from typing import Optional
 
+from sqlalchemy import case
 from sqlalchemy.orm import Session
 
 from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 from doctrine.acronyms import transform_acronym
 from doctrine.constants import DT_PENALTY_EUR
 from models.action_item import ActionItem
+from models.enums import ActionSourceType, Severity
 
+
+# Constante article DT canonique — single SoT, partagée avec _build_regulatory.
+DT_REGULATORY_ARTICLE = "Décret 2019-771 art. 9"
 
 _CEE_PATTERN = re.compile(r"BAT-TH-\d+", re.IGNORECASE)
 
@@ -41,18 +46,32 @@ def _extract_cee_reference(text: Optional[str]) -> Optional[str]:
     return match.group(0).upper() if match else None
 
 
+def _enum_str(value) -> str:
+    """Normalise un Enum SQLAlchemy ou str ORM en string lowercase.
+
+    ActionItem.severity est `Column(String(20))` — déjà str au runtime.
+    ActionItem.source_type est `Column(SAEnum(ActionSourceType))` — instance Enum.
+    Cet helper unifie les 2 cas (extraction valid pour comparaison enum.value).
+    """
+    if value is None:
+        return ""
+    if hasattr(value, "value"):
+        return str(value.value).lower()
+    return str(value).lower()
+
+
 def _infer_regulatory_article(action: ActionItem) -> Optional[str]:
     """Détermine l'article réglementaire applicable selon source_type + sévérité.
 
     Phase 2.3 : règle simple — actions critiques de mise en conformité DT
-    sont rattachées à Décret 2019-771 art. 9 (pénalité 7 500 €/site NC).
+    sont rattachées à Décret 2019-771 art. 9 (pénalité DT_PENALTY_EUR/site NC).
+    Utilise les enums canoniques `ActionSourceType` + `Severity` (P1 audit).
     """
-    source = (
-        action.source_type.value if hasattr(action.source_type, "value") else str(action.source_type or "")
-    ).lower()
-    severity = (action.severity.value if hasattr(action.severity, "value") else str(action.severity or "")).lower()
-    if source == "compliance" and severity == "critical":
-        return "Décret 2019-771 art. 9"
+    if (
+        _enum_str(action.source_type) == ActionSourceType.COMPLIANCE.value
+        and _enum_str(action.severity) == Severity.CRITICAL.value
+    ):
+        return DT_REGULATORY_ARTICLE
     return None
 
 
@@ -79,8 +98,10 @@ def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> di
 
     regulatory_article = _infer_regulatory_article(action)
     regulatory_penalty: Optional[dict] = None
-    if regulatory_article == "Décret 2019-771 art. 9":
-        # Mise en conformité DT : pénalité 7 500 €/site (Phase 1.1 EurAmount typé).
+    if regulatory_article == DT_REGULATORY_ARTICLE:
+        # Read-only contract dict aligné Phase 1.1 EurAmount.to_dict_with_proof()
+        # (mêmes clés id-less : value_eur, category, regulatory_article, formula_text).
+        # Pas de persist DB sur GET (cohérent /simplify Phase 1 P1 EurAmount POST-on-GET).
         regulatory_penalty = {
             "value_eur": float(DT_PENALTY_EUR),
             "category": "calculated_regulatory",
@@ -95,8 +116,8 @@ def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> di
         "site_id": action.site_id,
         "site": site_name,
         "echeance": action.due_date.isoformat() if action.due_date else None,
-        "severity": action.severity.value if hasattr(action.severity, "value") else str(action.severity or ""),
-        "priority": action.priority.value if hasattr(action.priority, "value") else str(action.priority or ""),
+        "severity": _enum_str(action.severity),
+        "priority": _enum_str(action.priority),
         "estimated_gain_mwh_year": gain_mwh,
         "reference": cee_ref or regulatory_article,
         "regulatory_penalty_eur": regulatory_penalty,
@@ -112,16 +133,28 @@ def get_top3_decisions(db: Session, site_ids: list[int]) -> list[dict]:
     if not site_ids:
         return []
 
+    # Tri severity SÉMANTIQUE (critical=0 → high=1 → medium=2 → low=3)
+    # via SQL CASE — ActionItem.severity est Column(String(20)) donc le
+    # tri natif `.desc()` est alphabétique (medium > low > high > critical),
+    # ce qui inverse l'ordre attendu. Bug P0 /simplify audit fin Phase 2.
+    severity_rank = case(
+        {
+            Severity.CRITICAL.value: 0,
+            Severity.HIGH.value: 1,
+            Severity.MEDIUM.value: 2,
+            Severity.LOW.value: 3,
+        },
+        value=ActionItem.severity,
+        else_=4,
+    )
+
     rows = (
         db.query(ActionItem)
         .filter(
             ActionItem.site_id.in_(site_ids),
             ActionItem.status.in_(["open", "in_progress"]),
         )
-        .order_by(
-            ActionItem.severity.desc(),  # critical avant high (alphabétique inverse)
-            ActionItem.due_date.asc().nullslast(),
-        )
+        .order_by(severity_rank.asc(), ActionItem.due_date.asc().nullslast())
         .limit(3)
         .all()
     )

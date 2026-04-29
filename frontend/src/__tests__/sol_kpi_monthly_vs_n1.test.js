@@ -119,9 +119,10 @@ describe('SolKpiMonthlyVsN1 — doctrine §8.1', () => {
     expect(codeOnly).not.toMatch(/useEffect|useState|fetch\(|axios/);
   });
 
-  it('format MWh utilise locale fr-FR + normalisation U+202F', () => {
-    expect(SRC).toMatch(/toLocaleString\(['"]fr-FR['"]\)/);
-    expect(SRC).toMatch(/replace\(\/\\u202f\/g/);
+  it('format MWh consomme le helper canonique utils/format.js (dedup /simplify P0)', () => {
+    expect(SRC).toMatch(/import\s*\{\s*fmtMwh\s*\}\s*from\s*['"]\.\.\/\.\.\/utils\/format['"]/);
+    // Locale fr-FR + U+202F normalisation déjà couvertes par utils/format.js
+    expect(SRC).not.toMatch(/^function fmtMwh\(v\) \{/m);
   });
 });
 

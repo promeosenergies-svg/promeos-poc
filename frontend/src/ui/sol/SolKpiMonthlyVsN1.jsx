@@ -23,12 +23,9 @@
  * Props :
  *   - data : objet monthly_vs_n1 (8 champs canoniques) ou null
  */
-function fmtMwh(v) {
-  if (v == null || !Number.isFinite(v)) return '—';
-  return `${Math.round(v)
-    .toLocaleString('fr-FR')
-    .replace(/\u202f/g, ' ')} MWh`;
-}
+// fmtMwh canonique partagé avec autres composants Sol (cf. /simplify audit
+// fin Phase 2 P0 — déduplication helper depuis frontend/src/utils/format.js).
+import { fmtMwh } from '../../utils/format';
 
 function fmtDate(iso) {
   if (!iso) return '';
