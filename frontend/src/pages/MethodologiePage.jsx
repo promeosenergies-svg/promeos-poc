@@ -34,22 +34,19 @@ const METHODOLOGIE_CATALOG = Object.freeze({
     kicker: 'MÉTHODOLOGIE · COCKPIT COMEX',
     publicPath: '/docs/methodologie/cockpit-comex.md',
   },
-  // Étape 7 P0-B : aliases Refonte Cockpit dual sol2 — les footers Sol
-  // Pilotage et Décision pointent respectivement sur ces clés (audit
-  // Phase 5 : `cockpit` + `cockpit-decision` aboutissaient à "Document
-  // non répertorié"). Réutilise le doc cockpit-comex existant en attendant
-  // la rédaction de docs dédiés Phase 5.4.
+  // Étape 8 : docs propres Refonte Cockpit dual sol2 (suite Étape 7 alias).
+  // Footers Sol Pilotage et Décision pointent sur ces docs dédiés.
   cockpit: {
-    title: 'Cockpit dual — Briefing du jour & Synthèse stratégique',
-    italicHook: 'doctrine §11.3 · source unique partagée · 30s ↔ 3min',
+    title: 'Cockpit Pilotage — Briefing du jour',
+    italicHook: 'energy manager 30 s · triptyque temporel multi-échelle · file priorisée',
     kicker: 'MÉTHODOLOGIE · COCKPIT PILOTAGE',
-    publicPath: '/docs/methodologie/cockpit-comex.md',
+    publicPath: '/docs/methodologie/cockpit-pilotage.md',
   },
   'cockpit-decision': {
-    title: 'Synthèse stratégique (Vue Décision)',
-    italicHook: 'arbitrage CODIR · trajectoire 2030 · 3 décisions narrées',
+    title: 'Cockpit Décision — Synthèse stratégique',
+    italicHook: 'CODIR 3 min · trajectoire 2030 · 3 décisions narrées · CapEx/Payback/CO₂',
     kicker: 'MÉTHODOLOGIE · COCKPIT DÉCISION',
-    publicPath: '/docs/methodologie/cockpit-comex.md',
+    publicPath: '/docs/methodologie/cockpit-decision.md',
   },
   'patrimoine-mutualisation': {
     title: 'Mutualisation Décret Tertiaire',

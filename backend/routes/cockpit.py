@@ -941,7 +941,35 @@ def get_cockpit_priorities(
     # /frontend-design : "5 lignes 'compliance critique' identiques sans
     # discriminant" → ajouter le poids € pénalité ou MWh/an récupérable.
 
-    # Source 1 : Issues action center critiques/high
+    # Source 1 : Issues action center critiques/high.
+    # Étape 8 backend : si action_center_service ne renvoie pas d'estimated_loss_eur
+    # (cas seed HELIOS V1 : issues compliance review sans chiffrage), on dérive un
+    # impact heuristique par site selon la catégorie. Audit Marc Phase 5 P0-1
+    # ("4 lignes sans impact € chiffré").
+    from doctrine.constants import (
+        DT_PENALTY_AT_RISK_EUR,
+        DT_PENALTY_EUR,
+        BACS_PENALTY_EUR,
+    )
+
+    def _heuristic_impact_eur(issue):
+        """Estime l'exposition € pour une issue compliance.
+
+        Les seeds HELIOS V1 ne renseignent pas estimated_loss_eur sur les
+        revues conformité. On retourne le ratio worst-case = pénalité DT
+        à risque (3 750 €) — suffisant pour donner un ordre de grandeur
+        en file P1-P5. Plus précis quand le serializer expose vraiment
+        estimated_loss_eur (V2).
+        """
+        if issue.get("estimated_loss_eur"):
+            return issue["estimated_loss_eur"]
+        domain = (issue.get("domain") or "").lower()
+        if "compliance" in domain or "conformite" in domain or "conform" in domain:
+            return float(DT_PENALTY_AT_RISK_EUR)
+        if "bacs" in domain:
+            return float(BACS_PENALTY_EUR)
+        return None
+
     try:
         from services.action_center_service import get_action_center_issues
 
@@ -956,7 +984,7 @@ def get_cockpit_priorities(
                         "domain": issue.get("domain", ""),
                         "action_url": f"/anomalies?issue={issue.get('issue_id', '')}",
                         "category_label": "Conformité",
-                        "impact_value_eur": issue.get("estimated_loss_eur"),
+                        "impact_value_eur": _heuristic_impact_eur(issue),
                         "impact_value_mwh_year": None,
                         "_sort_key": 0 if sev == "critical" else 1,
                     }
