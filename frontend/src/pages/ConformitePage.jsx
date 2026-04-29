@@ -121,7 +121,16 @@ export default function ConformitePage() {
   const [sitesData, setSitesData] = useState([]);
   const [auditFindingId, setAuditFindingId] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'obligations');
+  // Étape 7 P0-B : reconnaître les params Décision drill-downs.
+  // - `view=exposure_components` (KPI "Voir détail composantes") → ouvre
+  //   directement l'onglet Plan d'exécution (décomposition exposition).
+  // - `filter=non_conform` (KPI "Voir N sites NC") → applique le filtre
+  //   statut au mount via useEffect plus bas.
+  const initialView = searchParams.get('view');
+  const initialTab =
+    searchParams.get('tab') ||
+    (initialView === 'exposure_components' ? 'execution' : 'obligations');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const rawRegulationFilter = searchParams.get('regulation');
   const regulationFilter = ALLOWED_REGULATION_FILTERS.includes(rawRegulationFilter)
     ? rawRegulationFilter
@@ -178,6 +187,16 @@ export default function ConformitePage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Étape 7 P0-B : pré-sélection du filtre statut depuis l'URL au mount
+  // (deep-link KPI Décision "Voir N sites NC" via /conformite?filter=non_conform).
+  useEffect(() => {
+    const f = searchParams.get('filter');
+    if (f && f !== statusFilter) {
+      setStatusFilter(f);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // A.2: Fetch unified compliance score
   useEffect(() => {

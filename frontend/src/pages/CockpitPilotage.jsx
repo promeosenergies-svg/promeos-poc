@@ -90,21 +90,26 @@ function KpiCard({ scaleLabel, label, tooltip, value, unit, deltaText, deltaSev,
       >
         {scaleLabel}
       </div>
+      {/* Étape 7 P0-E : le `?` muet n'expliquait rien (audit user 29/04).
+          Remplacé par underline pointillée sur le label entier — la souris
+          au-dessus du label révèle le tooltip natif HTML, plus de pictogramme
+          ambigu. Le `hint` mono sous la valeur reste auto-explicatif. */}
       <div
         className="font-mono uppercase tracking-[0.07em] text-[11px] mb-1.5"
         style={{ color: 'var(--sol-ink-500)' }}
       >
-        {label}
-        {tooltip && (
+        {tooltip ? (
           <span
             tabIndex={0}
             title={tooltip}
             aria-label={tooltip}
-            className="ml-1 cursor-help"
+            className="cursor-help"
             style={{ borderBottom: '1px dotted var(--sol-ink-400)' }}
           >
-            ?
+            {label}
           </span>
+        ) : (
+          label
         )}
       </div>
       <div className="flex items-baseline gap-2 flex-wrap">
@@ -220,7 +225,31 @@ function KpiTriptyqueEnergetique({ facts }) {
   })();
 
   return (
+    /* Étape 7 P0-D : ordre triptyque réordonné — moyen terme (mois courant)
+       en 1er position. Audit user 29/04 : la mesure mensuelle DJU-ajustée
+       est plus stable et plus parlante "vue météo portefeuille" que le J−1
+       volatile, et la conso contractuelle reste en clôture pour les seuils.
+       Logique narrative : MOYEN (carte de référence) → COURT (alerte vive)
+       → CONTRACTUEL (signal de risque tarifaire). */
     <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 my-4">
+      <KpiCard
+        scaleLabel={SCALE_LABEL.medium}
+        label="Conso mois courant"
+        tooltip={monthlyTooltip}
+        value={monthlySplit.value}
+        unit={monthlySplit.unit}
+        deltaText={
+          monthlyDeltaPct != null ? `${fmtDeltaPct(monthlyDeltaPct)} vs ${previousYearLabel}` : null
+        }
+        deltaSev={deltaSeverity(monthlyDeltaPct)}
+        hint={
+          calibDate
+            ? `DJU-ajusté · calibrée ${calibDate}`
+            : monthly.current_month_label
+              ? `DJU-ajusté · ${monthly.current_month_label}`
+              : null
+        }
+      />
       <KpiCard
         scaleLabel={SCALE_LABEL.short}
         label="Conso J−1 · groupe"
@@ -239,24 +268,6 @@ function KpiTriptyqueEnergetique({ facts }) {
               : baseJm1 != null
                 ? `Réf. ${splitMwh(baseJm1).value} ${splitMwh(baseJm1).unit} · même jour S−1`
                 : null
-        }
-      />
-      <KpiCard
-        scaleLabel={SCALE_LABEL.medium}
-        label="Conso mois courant"
-        tooltip={monthlyTooltip}
-        value={monthlySplit.value}
-        unit={monthlySplit.unit}
-        deltaText={
-          monthlyDeltaPct != null ? `${fmtDeltaPct(monthlyDeltaPct)} vs ${previousYearLabel}` : null
-        }
-        deltaSev={deltaSeverity(monthlyDeltaPct)}
-        hint={
-          calibDate
-            ? `DJU-ajusté · calibrée ${calibDate}`
-            : monthly.current_month_label
-              ? `DJU-ajusté · ${monthly.current_month_label}`
-              : null
         }
       />
       <KpiCard
@@ -673,14 +684,21 @@ function FileTraitementRow({ rank, item }) {
   const impactMwh = item.impact_value_mwh_year;
   const categoryLabel = item.category_label;
   const hasImpact = (impactEur != null && impactEur > 0) || (impactMwh != null && impactMwh > 0);
+  // Étape 7 P0-B anchor : la page Décision link "Voir preuve opérationnelle →"
+  // utilise `/cockpit/jour#decision-{id}`. On expose un `id` HTML sur chaque
+  // ligne pour que le scroll vers l'ancre fonctionne (audit Phase 5 : ancre
+  // absente précédemment).
+  const anchorId = `decision-${item.rank}`;
   return (
     <div
+      id={anchorId}
       className="block rounded-md mb-1.5 transition-shadow"
       style={{
         background: tone.bg,
         border: `0.5px solid ${tone.line}`,
         padding: '11px 13px',
         color: 'var(--sol-ink-900)',
+        scrollMarginTop: '80px', // évite que le header sticky cache la ligne au scroll-to
       }}
     >
       <div
@@ -980,8 +998,8 @@ export default function CockpitPilotage() {
       {/* Triptyque KPI temporel multi-échelle */}
       {factsLoading && !facts ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 my-4">
-          <KpiSkeleton scaleLabel={SCALE_LABEL.short} />
           <KpiSkeleton scaleLabel={SCALE_LABEL.medium} />
+          <KpiSkeleton scaleLabel={SCALE_LABEL.short} />
           <KpiSkeleton scaleLabel={SCALE_LABEL.contract} />
         </div>
       ) : (

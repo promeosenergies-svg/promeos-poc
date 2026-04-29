@@ -72,7 +72,14 @@ def _sites_for_org(db: Session, org_id: int):
 
 
 def _meter_ids_for_site(db: Session, site_id: int) -> list[int]:
-    rows = db.query(Meter.id).filter(Meter.site_id == site_id).all()
+    """Compteurs principaux du site (parent_meter_id IS NULL).
+
+    Étape 7 P0-A : sommer aussi les sous-compteurs (CVC, éclairage, IT…)
+    crée du double-counting × 4-5 sur annual_mwh et trajectory_score
+    (audit Phase 5 : annual_mwh 18 845 vs ~4 229 attendu).
+    Les sous-compteurs servent au drill-down par usage, pas à l'agrégation.
+    """
+    rows = db.query(Meter.id).filter(Meter.site_id == site_id, Meter.parent_meter_id.is_(None)).all()
     return [r[0] for r in rows]
 
 
@@ -119,9 +126,15 @@ def j_minus_1_with_fallback(
 
 
 def _meter_ids_for_org(db: Session, site_ids: list[int]) -> list[int]:
+    """Compteurs principaux multi-sites (parent_meter_id IS NULL).
+
+    Étape 7 P0-A : voir _meter_ids_for_site pour le contexte du fix.
+    Sommer les sous-compteurs (CVC, Éclairage, IT…) crée du double-counting
+    × 4.5 sur annual_mwh et casse la cohérence trajectory.
+    """
     if not site_ids:
         return []
-    rows = db.query(Meter.id).filter(Meter.site_id.in_(site_ids)).all()
+    rows = db.query(Meter.id).filter(Meter.site_id.in_(site_ids), Meter.parent_meter_id.is_(None)).all()
     return [r[0] for r in rows]
 
 

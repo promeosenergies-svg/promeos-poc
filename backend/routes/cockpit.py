@@ -609,8 +609,11 @@ def get_cockpit_trajectory(
         # Convention maquette : négatif = réduction (ex: -18% = 18% de réduction)
         reduction_pct = round((best_reel / ref_kwh - 1) * 100, 1)
 
-    # Surface totale
-    surface_total = (db.query(func.sum(Batiment.surface_m2)).filter(Batiment.site_id.in_(site_ids)).scalar()) or 0
+    # Surface totale — Étape 7 P0-A : aligner sur Site.surface_m2 (cohérent avec
+    # _facts.scope.surface_total_m2 = 17 500 m²). Avant on agrégeait Batiment.surface_m2
+    # qui doublait (2 bâtiments/site × 5 sites × 3 500 = 35 000) — incohérence
+    # détectée par audit Phase 5 (trajectory.surface_m2_total ≠ _facts.scope.surface_total_m2).
+    surface_total = (db.query(func.sum(Site.surface_m2)).filter(Site.id.in_(site_ids)).scalar()) or 0
 
     # 8. Projection trajectoire lissée par action.due_date — Phase 1.6 (Q5)
     # Avant : tous les savings appliqués 100% dès current_year → drop -43 % brutal.
@@ -1014,20 +1017,25 @@ def get_cockpit_priorities(
     except Exception:
         pass
 
-    # Source 3 : Risque financier élevé (>5000 EUR)
+    # Source 3 : Risque financier élevé (>5 000 EUR).
+    # Étape 7 P0-A : aligner la valeur sur `_facts.exposure.total.value_eur`
+    # (DT NC + DT à risque + BACS NC + OPERAT manquant) au lieu de
+    # KpiService.get_financial_risk_eur qui pouvait diverger silencieusement.
+    # Audit Phase 5 : "12 750 € (_facts) vs 26 250 € (P5)" → divergence fixée.
     try:
-        kpi = KpiService(db)
-        _scope = KpiScope(org_id=org_id)
-        risque = kpi.get_financial_risk_eur(_scope).value
+        from services.cockpit_facts_service import _build_exposure
+
+        exposure_struct = _build_exposure(db, org_id, site_ids)
+        risque = float((exposure_struct.get("total") or {}).get("value_eur") or 0.0)
         if risque > 5000:
             priorities.append(
                 {
                     "title": f"Risque financier réglementaire : {round(risque):,} EUR",
                     "urgency": "high",
                     "domain": "compliance",
-                    "action_url": "/cockpit",
+                    "action_url": "/cockpit/strategique?focus=exposure",
                     "category_label": "Exposition",
-                    "impact_value_eur": float(risque),
+                    "impact_value_eur": risque,
                     "impact_value_mwh_year": None,
                     "_sort_key": 1,
                 }
