@@ -1458,6 +1458,47 @@ def get_cockpit_data_activation(
 
 
 # ---------------------------------------------------------------------------
+# Endpoint _facts unifié — Cockpit Sol2 Phase 1.3.a (§2.B Phase 1.3)
+# Source unique partagée Cockpit Daily + Comex. Org-scoped via resolve_org_id.
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/cockpit/_facts",
+    summary="Payload atomique unifié Cockpit Daily + Comex (v1.1)",
+    tags=["Cockpit"],
+)
+def get_cockpit_facts_endpoint(
+    request: Request,
+    period: str = "current_week",
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """GET /api/cockpit/_facts?period={current_week|current_month|current_year}
+
+    Retourne tous les faits atomiques nécessaires aux 2 vues Cockpit :
+      - scope       : périmètre org + sites + surface + ref_year
+      - consumption : j-1, 7j, mensuel vs N-1 DJU (monthly_vs_n1 v1.1), annuel, trajectoire
+      - power       : pic J-1, puissance souscrite, delta%
+      - compliance  : score, pondérations, sites non-conformes/à-risque, obligations
+      - exposure    : montant réglementaire total + composantes DT/BACS/OPERAT
+      - potential_recoverable : économies potentielles CEE modeled
+      - alerts      : total + by_severity + by_type
+      - data_quality: couverture EMS, complétude données
+      - metadata    : horodatage, confiance, sources
+
+    Org-scoping strict via resolve_org_id (doctrine CLAUDE.md règle #2).
+    Fallback gracieux : chaque section retourne valeurs neutres si données absentes.
+
+    Ref : PROMPT_REFONTE_COCKPIT_DUAL_SOL2_EXECUTION.md §2.B Phase 1.3
+    """
+    from services.cockpit_facts_service import get_cockpit_facts
+
+    org_id = resolve_org_id(request, auth, db)
+    return get_cockpit_facts(db, org_id, period=period)
+
+
+# ---------------------------------------------------------------------------
 # EurAmount proof endpoint — Cockpit Sol2 Phase 1.1 (Décision A §0.D)
 # ---------------------------------------------------------------------------
 

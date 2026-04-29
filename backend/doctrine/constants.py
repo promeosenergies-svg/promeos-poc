@@ -24,6 +24,12 @@ DT_PENALTY_EUR = 7500
 DT_PENALTY_AT_RISK_EUR = 3750
 DT_REF_YEAR_DEFAULT = 2020  # année de référence par défaut pour la baseline
 
+# ─── BACS (Décret n°2020-887) ──────────────────────────────────────────────
+BACS_PENALTY_EUR = 1500  # amende par site non conforme BACS
+
+# ─── OPERAT / Décret Tertiaire déclaration ─────────────────────────────────
+OPERAT_PENALTY_EUR = 1500  # amende par déclaration OPERAT manquante (Circulaire DGEC 2024)
+
 # ─── NEBCO (depuis 01/09/2025) ─────────────────────────────────────────────
 NEBCO_THRESHOLD_KW_PER_STEP = 100
 NEBCO_NOTIFICATION_DEADLINE_HOUR = "09:30"  # J-1
@@ -87,4 +93,6 @@ __all__ = [
     "OID_OFFICE_BENCHMARK_KWHEF_PER_M2_YEAR",
     "COCKPIT_ACTIVATION_THRESHOLD",
     "COCKPIT_OPTIM_RATE_V1",
+    "BACS_PENALTY_EUR",
+    "OPERAT_PENALTY_EUR",
 ]
