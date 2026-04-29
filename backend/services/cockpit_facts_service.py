@@ -81,63 +81,11 @@ def _meter_ids_for_org(db: Session, site_ids: list[int]) -> list[int]:
     return [r[0] for r in rows]
 
 
-# ─── Helper Phase 3.3 — push événementiel "+X vs S-1" ──────────────────────
+# ─── Helper Phase 3.3 — alias historique vers doctrine.delta canonique ─────
+# Phase 3.bis.b : hoist du helper vers `doctrine/delta.py` (single SoT).
+# L'alias privé est conservé pour compat callers + tests internes du service.
 
-
-def _weekly_delta_struct(current_value, previous_value=None, *, unit: str = "") -> dict:
-    """Construit le payload canonique d'un delta hebdomadaire push.
-
-    Phase 3.3 (cockpit-sol2 §11.3 push événementiel) — structure exposée par
-    chaque métrique sujette à push hebdo (Exposition, Potentiel, Sites en
-    dérive, Score conformité).
-
-    MVP : `previous_value` peut être None tant que l'historique semaine
-    n'est pas seedé en DB (cf. Phase 3.3.bis pour calibration). Le contrat
-    de réponse reste stable — le frontend gère le cas `direction='unknown'`
-    en n'affichant pas le push.
-
-    Args:
-        current_value: valeur actuelle de la métrique
-        previous_value: valeur S-1 (None tant que non disponible)
-        unit: suffixe lisible affichage ('k€', 'MWh/an', 'sites', 'pts')
-
-    Returns:
-        dict {current, previous, delta_absolute, delta_pct, direction, unit}
-    """
-    if current_value is None:
-        return {
-            "current": None,
-            "previous": None,
-            "delta_absolute": None,
-            "delta_pct": None,
-            "direction": "unknown",
-            "unit": unit,
-        }
-    if previous_value is None:
-        return {
-            "current": current_value,
-            "previous": None,
-            "delta_absolute": None,
-            "delta_pct": None,
-            "direction": "unknown",
-            "unit": unit,
-        }
-    delta_abs = current_value - previous_value
-    delta_pct = (delta_abs / previous_value) if previous_value else None
-    if delta_abs > 0:
-        direction = "up"
-    elif delta_abs < 0:
-        direction = "down"
-    else:
-        direction = "stable"
-    return {
-        "current": current_value,
-        "previous": previous_value,
-        "delta_absolute": delta_abs,
-        "delta_pct": round(delta_pct, 4) if delta_pct is not None else None,
-        "direction": direction,
-        "unit": unit,
-    }
+from doctrine.delta import weekly_delta_struct as _weekly_delta_struct  # noqa: E402
 
 
 # ─── Section scope ──────────────────────────────────────────────────────────
