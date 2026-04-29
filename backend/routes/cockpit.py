@@ -931,3 +931,100 @@ def get_cockpit_priorities(
             break
 
     return {"priorities": top5, "total": len(top5)}
+
+
+@router.get("/cockpit/impact_decision")
+def get_cockpit_impact_decision(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/cockpit/impact_decision
+
+    Phase 1.4.b — Endpoint Impact & Décision (migration ex-`models/impactDecisionModel.js`).
+
+    Calcule les 3 KPIs Impact & Décision déterministes (risque conformité,
+    surcoût facture, opportunité optimisation) + recommandation prioritaire
+    rule-based à partir des données scope + billing.
+
+    Réponse :
+        {
+            "impact": ImpactKpis (3 valeurs + 3 drapeaux available),
+            "recommendation": Recommendation (key/titre/bullets/cta/cta_path)
+        }
+    """
+    from services.impact_decision_service import compute_impact_kpis, compute_recommendation
+
+    org_id = resolve_org_id(request, auth, db)
+    site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
+    total_sites = len(site_ids)
+
+    # Risque financier conformité
+    risque_total = 0.0
+    non_conformes = 0
+    a_risque = 0
+    try:
+        kpi = KpiService(db)
+        _scope = KpiScope(org_id=org_id)
+        risque_total = kpi.get_financial_risk_eur(_scope).value or 0.0
+    except Exception:
+        risque_total = 0.0
+
+    # Compte non_conformes / à_risque depuis statut DT
+    try:
+        from models import StatutConformite
+
+        non_conformes = (
+            _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME).count()
+        )
+        a_risque = _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
+    except Exception:
+        pass
+
+    # Billing summary — total facturé + total loss
+    total_eur = 0.0
+    total_loss_eur = 0.0
+    total_invoices = 0
+    try:
+        from models import EnergyInvoice
+
+        if site_ids:
+            total_eur = (
+                db.query(func.sum(EnergyInvoice.amount_eur)).filter(EnergyInvoice.site_id.in_(site_ids)).scalar()
+            ) or 0.0
+            total_invoices = db.query(EnergyInvoice).filter(EnergyInvoice.site_id.in_(site_ids)).count()
+        from models import BillingInsight
+        from models.enums import InsightStatus
+
+        if site_ids:
+            total_loss_eur = (
+                db.query(func.sum(BillingInsight.estimated_loss_eur))
+                .filter(
+                    BillingInsight.site_id.in_(site_ids),
+                    BillingInsight.insight_status.notin_([InsightStatus.RESOLVED, InsightStatus.FALSE_POSITIVE]),
+                )
+                .scalar()
+            ) or 0.0
+    except Exception:
+        pass
+
+    kpis_payload = {
+        "risque_total_eur": float(risque_total),
+        "total": total_sites,
+        "non_conformes": non_conformes,
+        "a_risque": a_risque,
+    }
+    billing_payload = {
+        "total_eur": float(total_eur),
+        "total_loss_eur": float(total_loss_eur),
+        "total_invoices": total_invoices,
+    }
+
+    impact = compute_impact_kpis(kpis_payload, billing_payload)
+    recommendation = compute_recommendation(impact, kpis_payload)
+
+    return {
+        "impact": impact.to_dict(),
+        "recommendation": recommendation.to_dict(),
+    }

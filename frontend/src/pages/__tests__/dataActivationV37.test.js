@@ -480,10 +480,9 @@ describe('Guard: modules purs V37', () => {
     expect(src).toContain('purchaseSignalsContract');
   });
 
-  it("impactDecisionModel inchange (pas d'import dataActivation)", () => {
-    const src = readSrc('models/impactDecisionModel.js');
-    expect(src).not.toContain('dataActivation');
-  });
+  // Phase 1.4.b (29/04/2026) : impactDecisionModel.js migré vers
+  // backend/services/impact_decision_service.py. Source-guard équivalent
+  // désormais côté pytest. Test JS supprimé.
 
   it('Cockpit.jsx importe SanteKpiGrid (V1+ remplace DataActivationPanel)', () => {
     const src = readSrc('pages/Cockpit.jsx');

@@ -406,9 +406,9 @@ describe('GUARD: V36 purchaseSignalsContract est un module pur', () => {
     expect(engineSrc).toContain('billingInsightsContract');
   });
 
-  it('impactDecisionModel est inchange (pas de purchaseSignals)', () => {
-    const modelSrc = readSrc('models/impactDecisionModel.js');
-    expect(modelSrc).not.toContain('purchaseSignals');
-    expect(modelSrc).not.toContain('achat');
-  });
+  // Phase 1.4.b (29/04/2026) : impactDecisionModel.js migré vers
+  // backend/services/impact_decision_service.py (CLAUDE.md règle d'or
+  // zero business logic frontend). Source-guard équivalent désormais
+  // côté pytest dans backend/tests/test_impact_decision_service.py.
+  // Test JS supprimé pour éviter référence à un fichier disparu.
 });
