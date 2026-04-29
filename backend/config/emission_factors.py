@@ -34,10 +34,18 @@ EMISSION_FACTORS = {
 }
 
 
-# ── Penalites reglementaires (Code de la construction, Art. L174-1) ──────
-BASE_PENALTY_EURO = 7_500  # Non-declaration OPERAT
+# ── Penalites reglementaires (Decret n2019-771 art. 9 + Code construction L174-1) ──
+# Étape 9 P0-B : alias vers la SoT canonique doctrine/constants.py.
+# Avant : BASE_PENALTY_EURO = 7_500 inline + DT_PENALTY_EUR doctrine = dual SoT
+# silencieux (audit /simplify). Si la pénalité change (Loi de finances 2026),
+# une seule constante doit évoluer. Le commentaire historique "Non-declaration
+# OPERAT" était trompeur — c'est bien la pénalité DT non-conforme (OPERAT a sa
+# propre constante OPERAT_PENALTY_EUR=1500 dans doctrine).
+from doctrine.constants import DT_PENALTY_EUR, DT_PENALTY_AT_RISK_EUR
+
+BASE_PENALTY_EURO = DT_PENALTY_EUR  # 7 500 € — DT site non conforme (alias)
 A_RISQUE_PENALTY_RATIO = 0.5  # 50% pour sites a risque
-A_RISQUE_PENALTY_EURO = int(BASE_PENALTY_EURO * A_RISQUE_PENALTY_RATIO)  # 3 750
+A_RISQUE_PENALTY_EURO = DT_PENALTY_AT_RISK_EUR  # 3 750 € — alias canonique
 
 # ── Seuils BACS (Decret n2020-887, Art. R175-2) ────────────────────────
 BACS_SEUIL_HAUT = 290.0  # kW CVC, deadline 2025-01-01

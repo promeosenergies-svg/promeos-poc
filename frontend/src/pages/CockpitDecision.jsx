@@ -246,15 +246,10 @@ function DecisionCard({ decision, index }) {
   const paybackMonths = decision.payback_months;
   const co2AvoidedT = decision.co2_avoided_t_year;
   const estimationMethod = decision.estimation_method;
-  const tagLabel = (() => {
-    if (penaltyArticle && penaltyArticle.includes('Décret')) return 'Conformité';
-    if (
-      decision.title.toLowerCase().includes('contrat') ||
-      decision.title.toLowerCase().includes('renouvel')
-    )
-      return 'Achat énergie';
-    return 'Investissement';
-  })();
+  // Étape 9 P0-D : consume backend `category_label` (SoT _classify_lever)
+  // au lieu de business logic textuelle FE (audit /simplify règle d'or).
+  // Fallback minimal pour rétro-compat si backend ne fournit pas le champ.
+  const tagLabel = decision.category_label || 'Investissement';
 
   return (
     <div
@@ -466,8 +461,13 @@ function DecisionCard({ decision, index }) {
           </div>
         )}
         <div className="flex gap-2 flex-wrap">
+          {/* Étape 9 P0-C : link vers Pilotage avec query focus pour permettre
+              au futur Pilotage d'highlighter l'action correspondante (V2).
+              Avant : anchor #decision-${decision.id} cassée car Pilotage rend
+              id="decision-{rank}" sur les priorities (rank 1-5) — pas d'id
+              action backend (audit nav Phase 5 P0). */}
           <Link
-            to={`/cockpit/jour#decision-${decision.id}`}
+            to={`/cockpit/jour?focus=action-${decision.id}`}
             className="no-underline hover:underline"
             style={{ fontSize: 12.5, fontWeight: 500, color: tone.fg }}
           >
@@ -1126,15 +1126,31 @@ export default function CockpitDecision() {
               <AcronymTooltip acronym="EPEX">EPEX</AcronymTooltip> {epexPrice} €/MWh
             </span>
           )}
+          {/* Étape 9 P0-C : bouton "Rapport COMEX" — câblé en attendant
+              l'export PDF V2 (P1 audit Jean-Marc CFO). Pour l'instant :
+              window.print() qui produit un PDF browser-natif satisfaisant
+              pour démo investisseur (en attendant un PDF généré backend
+              avec watermark provenance). Audit nav Phase 5 P0 résolu :
+              le bouton n'est plus inerte. */}
           <button
             type="button"
+            onClick={() => {
+              try {
+                window.print();
+              } catch (e) {
+                // Fallback navigation vers méthodologie si print indisponible
+                window.location.href = '/methodologie/cockpit-decision';
+              }
+            }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-colors hover:bg-[var(--sol-bg-canvas)]"
             style={{
               fontSize: 13,
               border: '0.5px solid var(--sol-ink-300)',
               background: 'var(--sol-bg-paper)',
               color: 'var(--sol-ink-900)',
+              cursor: 'pointer',
             }}
+            title="Imprimer la synthèse stratégique au format PDF (export PDF dédié V2)"
           >
             <FileText size={14} aria-hidden="true" />
             Rapport COMEX

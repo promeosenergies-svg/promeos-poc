@@ -157,6 +157,19 @@ def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> di
     # "indicative" — frontend rendra le badge "Estimation".
     capex_estimation = _estimate_capex_payback(action, gain_mwh)
 
+    # Étape 9 P0-D : exposer category_label depuis lever_key au lieu de
+    # laisser le frontend deviner par parsing textuel (audit /simplify P0
+    # "tagLabel = decision.title.toLowerCase().includes('contrat')" violait
+    # la règle d'or zéro business logic frontend).
+    _LEVER_TO_CATEGORY = {
+        "bacs": "Conformité",
+        "audit_sme": "Conformité",
+        "operat": "Conformité",
+        "aper": "Conformité",
+        "achat": "Achat énergie",
+    }
+    category_label = _LEVER_TO_CATEGORY.get(lever_key, "Investissement")
+
     return {
         "id": action.id,
         "title": title,
@@ -166,6 +179,8 @@ def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> di
         "echeance": action.due_date.isoformat() if action.due_date else None,
         "severity": _enum_str(action.severity),
         "priority": _enum_str(action.priority),
+        "lever_key": lever_key,  # backend SoT pour mapping FE
+        "category_label": category_label,
         "estimated_gain_mwh_year": gain_mwh,
         "estimated_savings_eur_year": capex_estimation.get("savings_eur_year"),
         "investment_capex_eur": capex_estimation.get("capex_eur"),

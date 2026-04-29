@@ -564,13 +564,15 @@ def get_cockpit_trajectory(
 
     # 5. Jalons réglementaires DT (décret n°2019-771 — Art. R131-39 CCH)
     # Source : legifrance.gouv.fr/jorf/id/JORFTEXT000038812251
-    # NOTE : pas de jalon officiel en 2026 — le premier jalon est 2030
-    DT_TARGETS = {2030: -0.40, 2040: -0.50, 2050: -0.60}
+    # NOTE : pas de jalon officiel en 2026 — le premier jalon est 2030.
+    # Étape 9 P0-B : SoT canonique doctrine/constants.DT_MILESTONES (audit
+    # /simplify : DT_TARGETS inline était un duplicat silencieux).
+    from doctrine.constants import DT_MILESTONES
 
     def _interpolate_dt_target(year: int) -> float:
         if year <= ref_year:
             return 0.0
-        milestones = sorted(DT_TARGETS.items())
+        milestones = sorted(DT_MILESTONES.items())
         for i, (my, mr) in enumerate(milestones):
             if year <= my:
                 prev_y = ref_year if i == 0 else milestones[i - 1][0]
