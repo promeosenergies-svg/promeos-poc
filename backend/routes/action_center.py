@@ -115,7 +115,10 @@ def actions_summary(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
     db: Session = Depends(get_db),
 ):
-    """Summary of persisted actions by status, priority, domain."""
+    """Summary of persisted actions by status, priority, domain.
+
+    Inclut top_urgences : 5 actions ouvertes triées par priority + due_date asc.
+    """
     from services.action_workflow_service import list_actions, serialize_action, compute_sla_status
 
     items = list_actions(db)
@@ -145,6 +148,26 @@ def actions_summary(
         if item.evidence_required and not item.evidence_received and item.status not in ("resolved", "dismissed")
     )
 
+    # top_urgences : 5 actions ouvertes triées priority asc (critical=1) + due_date asc
+    _priority_order = {"critical": 1, "high": 2, "medium": 3, "low": 4}
+    open_items = [i for i in items if i.status in ("open", "in_progress", "reopened")]
+    open_items.sort(
+        key=lambda i: (
+            _priority_order.get(i.priority or "medium", 3),
+            i.due_date or "9999-12-31",
+        )
+    )
+    top_urgences = [
+        {
+            "id": i.id,
+            "title": i.issue_label,
+            "priority": i.priority or "medium",
+            "domain": i.domain,
+            "due_date": i.due_date.isoformat() if i.due_date else None,
+        }
+        for i in open_items[:5]
+    ]
+
     return {
         "total": len(items),
         "by_status": by_status,
@@ -156,6 +179,7 @@ def actions_summary(
         "open_count": by_status.get("open", 0) + by_status.get("in_progress", 0) + by_status.get("reopened", 0),
         "resolved_count": by_status.get("resolved", 0),
         "needs_evidence_count": needs_evidence,
+        "top_urgences": top_urgences,
     }
 
 

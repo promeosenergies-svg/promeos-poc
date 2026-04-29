@@ -652,3 +652,282 @@ def get_co2(
 
     effective_org_id = resolve_org_id(request, auth, db)
     return compute_portfolio_co2(db, effective_org_id)
+
+
+# ── Endpoint #1 : GET /api/cockpit/_facts.scope ───────────────────────────
+
+
+@router.get("/cockpit/_facts.scope")
+def get_cockpit_facts_scope(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/cockpit/_facts.scope
+    Périmètre organisationnel du scope courant : org_id, org_name, site_count,
+    portefeuille_count. Utilisé par le frontend pour afficher le scope actif.
+    """
+    org_id = resolve_org_id(request, auth, db)
+    org = db.query(Organisation).filter(Organisation.id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organisation non trouvée")
+
+    site_count = _sites_for_org(db, org_id).count()
+    portefeuille_count = (
+        not_deleted(db.query(Portefeuille), Portefeuille)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .count()
+    )
+
+    return {
+        "org_id": org_id,
+        "org_name": org.nom,
+        "site_count": site_count,
+        "portefeuille_count": portefeuille_count,
+    }
+
+
+# ── Endpoint #2 : GET /api/cockpit/_facts.alerts ─────────────────────────
+
+
+@router.get("/cockpit/_facts.alerts")
+def get_cockpit_facts_alerts(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/cockpit/_facts.alerts
+    Agrégation alertes + issues action center pour le scope courant.
+    Retourne {count, top:[{id, title, priority, domain}]} (top 5 critiques).
+    """
+    org_id = resolve_org_id(request, auth, db)
+    site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
+
+    # Alertes DB actives (Alerte model)
+    alerte_rows = (
+        db.query(Alerte).filter(Alerte.resolue == False, Alerte.site_id.in_(site_ids)).all() if site_ids else []
+    )
+    alert_count = len(alerte_rows)
+
+    # Issues action center (cross-domain)
+    top_items = []
+    try:
+        from services.action_center_service import get_action_center_issues
+
+        issues_data = get_action_center_issues(db, org_id)
+        for issue in issues_data.get("issues", [])[:5]:
+            top_items.append(
+                {
+                    "id": issue.get("issue_id", ""),
+                    "title": issue.get("title", issue.get("issue_label", "")),
+                    "priority": issue.get("severity", "medium"),
+                    "domain": issue.get("domain", ""),
+                }
+            )
+        # Add alert count from action center total
+        ac_total = issues_data.get("total", 0)
+    except Exception:
+        ac_total = 0
+
+    return {
+        "count": alert_count + ac_total,
+        "alerte_db_count": alert_count,
+        "action_center_count": ac_total,
+        "top": top_items,
+    }
+
+
+# ── Endpoint #4 : GET /api/cockpit/cdc ───────────────────────────────────
+
+
+@router.get("/cockpit/cdc")
+def get_cockpit_cdc(
+    request: Request,
+    period: str = "j_minus_1",
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/cockpit/cdc?period=j_minus_1
+    Courbe de charge J-1 du compteur principal du scope.
+    Délègue à cdc_service.query_cdc. Retourne hp_kwh[], hc_kwh[],
+    puissance_souscrite_kva, puissance_max_kva.
+    """
+    from models.energy_models import Meter
+    from services.ems.cdc_service import query_cdc
+
+    org_id = resolve_org_id(request, auth, db)
+    site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
+
+    if not site_ids:
+        return {
+            "period": period,
+            "error": "no_sites",
+            "hp_kwh": [],
+            "hc_kwh": [],
+            "puissance_souscrite_kva": None,
+            "puissance_max_kva": None,
+        }
+
+    # Résolution J-1
+    today = date.today()
+    if period == "j_minus_1":
+        target_date = today - timedelta(days=1)
+    elif period == "j_minus_7":
+        target_date = today - timedelta(days=7)
+    else:
+        target_date = today - timedelta(days=1)
+
+    # Trouver le compteur principal du premier site avec un compteur
+    meter = None
+    for sid in site_ids:
+        meter = db.query(Meter).filter(Meter.site_id == sid, Meter.is_active == True).first()
+        if meter:
+            break
+
+    if not meter:
+        return {
+            "period": period,
+            "error": "no_meter",
+            "hp_kwh": [],
+            "hc_kwh": [],
+            "puissance_souscrite_kva": None,
+            "puissance_max_kva": None,
+        }
+
+    cdc = query_cdc(db, meter.id, target_date, target_date)
+
+    # Agréger les points par slot HP/HC
+    hp_points = [p["kw"] for p in cdc.get("points", []) if p.get("slot") in ("HP", "HPH", "HPE", "Pointe")]
+    hc_points = [p["kw"] for p in cdc.get("points", []) if p.get("slot") in ("HC", "HCH", "HCE", "Base")]
+    all_kw = [p["kw"] for p in cdc.get("points", []) if p.get("kw") is not None]
+    puissance_max = round(max(all_kw), 2) if all_kw else None
+
+    # Puissance souscrite depuis ps_map (contrat)
+    ps_map = cdc.get("ps", {})
+    puissance_souscrite = None
+    if ps_map:
+        ps_vals = [v for v in ps_map.values() if v]
+        puissance_souscrite = round(max(ps_vals), 2) if ps_vals else None
+
+    return {
+        "period": period,
+        "date": target_date.isoformat(),
+        "meter_id": meter.id,
+        "hp_kwh": hp_points,
+        "hc_kwh": hc_points,
+        "puissance_souscrite_kva": puissance_souscrite,
+        "puissance_max_kva": puissance_max,
+        "point_count": len(cdc.get("points", [])),
+    }
+
+
+# ── Endpoint #5 : GET /api/cockpit/priorities ────────────────────────────
+
+
+@router.get("/cockpit/priorities")
+def get_cockpit_priorities(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/cockpit/priorities
+    Top-5 priorités cross-pillar pour le scope : alertes + actions overdue
+    + risque financier. Retourne [{rank, title, urgency, domain, action_url}].
+    """
+    from datetime import datetime as _dt
+
+    org_id = resolve_org_id(request, auth, db)
+    site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
+
+    priorities = []
+
+    # Source 1 : Issues action center critiques/high
+    try:
+        from services.action_center_service import get_action_center_issues
+
+        issues_data = get_action_center_issues(db, org_id)
+        for issue in issues_data.get("issues", []):
+            sev = issue.get("severity", "medium")
+            if sev in ("critical", "high"):
+                priorities.append(
+                    {
+                        "title": issue.get("title", issue.get("issue_label", "")),
+                        "urgency": sev,
+                        "domain": issue.get("domain", ""),
+                        "action_url": f"/anomalies?issue={issue.get('issue_id', '')}",
+                        "_sort_key": 0 if sev == "critical" else 1,
+                    }
+                )
+    except Exception:
+        pass
+
+    # Source 2 : Actions plan items overdue (status open/in_progress + due_date dépassée)
+    try:
+        from models.action_plan_item import ActionPlanItem
+
+        now = _dt.utcnow()
+        overdue = (
+            (
+                db.query(ActionPlanItem)
+                .filter(
+                    ActionPlanItem.site_id.in_(site_ids),
+                    ActionPlanItem.status.in_(["open", "in_progress"]),
+                    ActionPlanItem.due_date != None,  # noqa: E711
+                    ActionPlanItem.due_date < now,
+                )
+                .order_by(ActionPlanItem.due_date.asc())
+                .limit(5)
+                .all()
+            )
+            if site_ids
+            else []
+        )
+
+        for item in overdue:
+            priorities.append(
+                {
+                    "title": item.issue_label,
+                    "urgency": item.priority or "high",
+                    "domain": item.domain,
+                    "action_url": f"/action-center?action={item.id}",
+                    "_sort_key": 0 if item.priority == "critical" else 1,
+                }
+            )
+    except Exception:
+        pass
+
+    # Source 3 : Risque financier élevé (>5000 EUR)
+    try:
+        kpi = KpiService(db)
+        _scope = KpiScope(org_id=org_id)
+        risque = kpi.get_financial_risk_eur(_scope).value
+        if risque > 5000:
+            priorities.append(
+                {
+                    "title": f"Risque financier réglementaire : {round(risque):,} EUR",
+                    "urgency": "high",
+                    "domain": "compliance",
+                    "action_url": "/cockpit",
+                    "_sort_key": 1,
+                }
+            )
+    except Exception:
+        pass
+
+    # Trier par urgency + dédupliquer + limiter top-5
+    priorities.sort(key=lambda x: (x.pop("_sort_key", 1), x.get("title", "")))
+    seen_titles = set()
+    top5 = []
+    for p in priorities:
+        if p["title"] not in seen_titles:
+            seen_titles.add(p["title"])
+            top5.append({**p, "rank": len(top5) + 1})
+        if len(top5) >= 5:
+            break
+
+    return {"priorities": top5, "total": len(top5)}

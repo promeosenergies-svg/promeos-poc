@@ -22,12 +22,13 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import AuthContext, get_optional_auth
+from services.scope_utils import resolve_org_id
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +150,94 @@ def _resolve_site(db: Session, site_id: str, auth: Optional[AuthContext]) -> Any
     return site
 
 
-# ───────────────────────── Endpoint ─────────────────────────
+# ───────────────────────── Endpoint portfolio ─────────────────────────
+
+
+@router.get("/portfolio/{org_id}")
+def get_cost_simulation_portfolio(
+    org_id: int,
+    request: Request,
+    year: int = Query(2026, ge=2026, le=2030, description="Année prévisionnelle (2026-2030)"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/purchase/cost-simulation/portfolio/{org_id}
+
+    Agrège la simulation de facture annuelle 2026 pour tous les sites du
+    portefeuille. Retourne {org_id, sites:[{site_id, total_eur, composantes}],
+    total_portfolio_eur, composantes_inactives:{vnu_eur, cbam_eur}}.
+
+    Org-scoping : org_id validé via resolve_org_id + chaîne Site→PF→EJ.
+    Sites sans annual_kwh sont ignorés (simulation incomplète).
+    """
+    from models import Site, Portefeuille, EntiteJuridique, not_deleted
+    from services.purchase.cost_simulator_2026 import simulate_annual_cost_2026
+
+    # Valider que le org_id du path est bien le scope courant
+    effective_org_id = resolve_org_id(request, auth, db)
+    if org_id != effective_org_id:
+        raise HTTPException(status_code=403, detail="org_id hors scope")
+
+    # Récupérer tous les sites du scope
+    sites = (
+        not_deleted(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == effective_org_id)
+        .all()
+    )
+
+    results_sites = []
+    total_portfolio_eur = 0.0
+    total_vnu_eur = 0.0
+    total_cbam_eur = 0.0
+
+    for site in sites:
+        # Ignorer les sites sans annual_kwh renseigné
+        if not site.annual_kwh_total or site.annual_kwh_total <= 0:
+            continue
+        try:
+            sim = simulate_annual_cost_2026(site=site, db=db, year=year)
+            composantes = sim.get("composantes", {})
+            site_total = sim.get("facture_totale_eur", 0.0)
+            total_portfolio_eur += site_total
+            total_vnu_eur += composantes.get("vnu_eur", 0.0)
+            total_cbam_eur += composantes.get("cbam_scope", 0.0)
+            results_sites.append(
+                {
+                    "site_id": site.id,
+                    "site_nom": site.nom,
+                    "total_eur": round(site_total, 2),
+                    "composantes": {
+                        "fourniture_eur": round(composantes.get("fourniture_eur", 0.0), 2),
+                        "turpe_eur": round(composantes.get("turpe_eur", 0.0), 2),
+                        "vnu_eur": round(composantes.get("vnu_eur", 0.0), 2),
+                        "capacite_eur": round(composantes.get("capacite_eur", 0.0), 2),
+                        "cbam_scope": round(composantes.get("cbam_scope", 0.0), 2),
+                        "accise_cta_tva_eur": round(composantes.get("accise_cta_tva_eur", 0.0), 2),
+                    },
+                }
+            )
+        except Exception as exc:
+            logger.warning("Simulation site %s ignorée: %s", site.id, exc)
+            continue
+
+    return {
+        "org_id": effective_org_id,
+        "year": year,
+        "sites": results_sites,
+        "total_portfolio_eur": round(total_portfolio_eur, 2),
+        "site_count": len(results_sites),
+        "composantes_inactives": {
+            "vnu_eur": round(total_vnu_eur, 2),
+            "cbam_eur": round(total_cbam_eur, 2),
+        },
+        "confiance": "indicative",
+    }
+
+
+# ───────────────────────── Endpoint site ─────────────────────────
 
 
 @router.get("/{site_id}", response_model=CostSimulation2026Response)
