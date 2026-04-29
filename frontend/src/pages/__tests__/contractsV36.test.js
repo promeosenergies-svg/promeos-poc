@@ -1,12 +1,14 @@
 /**
- * PROMEOS — V36 Achat d'Energie Contracts + Lever Engine tests
+ * PROMEOS — V36 Achat d'Energie Contracts tests
  *
  * 1) PurchaseSignalsContract: normalize, empty, available
- * 2) Lever Engine V36: achat levers (renewal, missing, none)
- * 3) Lever Engine V36: fallback (sans purchaseSignals)
- * 4) LeverActionModel: achat templates
- * 5) ImpactDecisionPanel: V36 guards
- * 6) Guard: modules purs (no React, no API)
+ * 2) LeverActionModel: achat templates
+ * 3) Guard: modules purs (no React, no API)
+ *
+ * NOTE Phase 1.4.c (29/04/2026) : Les sections Lever Engine V36 (2, 3 legacy)
+ * qui invoquaient computeActionableLevers ont été supprimées — la logique
+ * est désormais dans backend/services/lever_engine_service.py.
+ * Couverture équivalente dans backend/tests/test_lever_engine_service.py.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
@@ -18,7 +20,6 @@ import {
   isPurchaseAvailable,
 } from '../../models/purchaseSignalsContract';
 
-import { computeActionableLevers } from '../../models/leverEngineModel';
 import { LEVER_ACTION_TEMPLATES, buildActionPayload } from '../../models/leverActionModel';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -26,23 +27,6 @@ import { LEVER_ACTION_TEMPLATES, buildActionPayload } from '../../models/leverAc
 const readSrc = (relPath) => readFileSync(resolve(__dirname, '..', '..', relPath), 'utf8');
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
-
-const makeKpis = (ov = {}) => ({
-  total: 10,
-  conformes: 7,
-  nonConformes: 2,
-  aRisque: 1,
-  risqueTotal: 30000,
-  ...ov,
-});
-
-const makeBilling = (ov = {}) => ({
-  total_invoices: 50,
-  total_eur: 500000,
-  total_loss_eur: 8000,
-  invoices_with_anomalies: 5,
-  ...ov,
-});
 
 const makeRenewalsResponse = (count = 3) => ({
   total: count,
@@ -174,136 +158,7 @@ describe('PurchaseSignalsContract', () => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 2) Lever Engine V36 — achat levers
-// ══════════════════════════════════════════════════════════════════════════════
-
-describe('Lever Engine V36 — achat levers', () => {
-  it('genere lev-achat-renew quand expiringSoonCount > 0', () => {
-    const ps = makePurchaseSignals();
-    const result = computeActionableLevers({
-      kpis: makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 }),
-      billingSummary: {},
-      purchaseSignals: ps,
-    });
-
-    const renew = result.topLevers.find((l) => l.actionKey === 'lev-achat-renew');
-    expect(renew).toBeTruthy();
-    expect(renew.type).toBe('achat');
-    expect(renew.label).toContain('contrat');
-    expect(renew.label).toContain('énergie');
-    expect(renew.ctaPath).toContain('/achat-energie');
-  });
-
-  it('genere lev-achat-data quand missingContractsCount > 0', () => {
-    const ps = makePurchaseSignals();
-    const result = computeActionableLevers({
-      kpis: makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 }),
-      billingSummary: {},
-      purchaseSignals: ps,
-    });
-
-    const data = result.topLevers.find((l) => l.actionKey === 'lev-achat-data');
-    expect(data).toBeTruthy();
-    expect(data.type).toBe('achat');
-    expect(data.label).toContain('sans contrat');
-    expect(data.ctaPath).toContain('/achat-energie');
-  });
-
-  it('leversByType.achat reflete le compte', () => {
-    const ps = makePurchaseSignals();
-    const result = computeActionableLevers({
-      kpis: makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 }),
-      billingSummary: {},
-      purchaseSignals: ps,
-    });
-
-    expect(result.leversByType.achat).toBe(2);
-  });
-
-  it('impactEur est null pour les levers achat V1', () => {
-    const ps = makePurchaseSignals();
-    const result = computeActionableLevers({
-      kpis: makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 }),
-      billingSummary: {},
-      purchaseSignals: ps,
-    });
-
-    const achatLevers = result.topLevers.filter((l) => l.type === 'achat');
-    achatLevers.forEach((l) => expect(l.impactEur).toBeNull());
-  });
-
-  it("pas de levers achat quand tout couvert et pas d'echeances", () => {
-    const ps = normalizePurchaseSignals({
-      renewals: { total: 0, renewals: [] },
-      contracts: makeContractsResponse(10),
-      totalSites: 10,
-    });
-    const result = computeActionableLevers({
-      kpis: makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 }),
-      billingSummary: {},
-      purchaseSignals: ps,
-    });
-
-    expect(result.leversByType.achat).toBe(0);
-  });
-
-  it('uniquement lev-achat-renew quand couverture complete mais echeances', () => {
-    const renewals = makeRenewalsResponse(2);
-    const contracts = makeContractsResponse(10);
-    const ps = normalizePurchaseSignals({ renewals, contracts, totalSites: 10 });
-
-    const result = computeActionableLevers({
-      kpis: makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 }),
-      billingSummary: {},
-      purchaseSignals: ps,
-    });
-
-    expect(result.topLevers.find((l) => l.actionKey === 'lev-achat-renew')).toBeTruthy();
-    expect(result.topLevers.find((l) => l.actionKey === 'lev-achat-data')).toBeFalsy();
-  });
-});
-
-// ══════════════════════════════════════════════════════════════════════════════
-// 3) Lever Engine V36 — fallback sans purchaseSignals
-// ══════════════════════════════════════════════════════════════════════════════
-
-describe('Lever Engine V36 — fallback sans purchaseSignals', () => {
-  it('fonctionne identiquement a V35 sans purchaseSignals', () => {
-    const result = computeActionableLevers({
-      kpis: makeKpis(),
-      billingSummary: makeBilling(),
-    });
-
-    expect(result.leversByType.achat).toBe(0);
-    expect(result.leversByType.conformite).toBe(2);
-    expect(result.leversByType.facturation).toBe(1);
-    expect(result.leversByType.optimisation).toBe(1);
-    expect(result.totalLevers).toBe(4);
-  });
-
-  it('pas de crash avec purchaseSignals null', () => {
-    const result = computeActionableLevers({
-      kpis: makeKpis(),
-      billingSummary: makeBilling(),
-      purchaseSignals: null,
-    });
-    expect(result.leversByType.achat).toBe(0);
-    expect(result.totalLevers).toBe(4);
-  });
-
-  it('pas de crash avec purchaseSignals EMPTY', () => {
-    const result = computeActionableLevers({
-      kpis: makeKpis(),
-      billingSummary: makeBilling(),
-      purchaseSignals: EMPTY_PURCHASE_SIGNALS,
-    });
-    expect(result.leversByType.achat).toBe(0);
-    expect(result.totalLevers).toBe(4);
-  });
-});
-
-// ══════════════════════════════════════════════════════════════════════════════
-// 4) LeverActionModel — achat templates
+// 2) LeverActionModel — achat templates
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('LeverActionModel V36 — achat templates', () => {
@@ -361,18 +216,7 @@ describe('LeverActionModel V36 — achat templates', () => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 5) ImpactDecisionPanel — DÉCOMMISSIONNÉ Phase 0.3 sprint Cockpit dual sol2
-//
-// Le contrat V36 (purchase signals + section "Achats d'énergie" + drill-downs
-// /achat-energie + computeActionableLevers) sera vérifié sur le futur
-// <DecisionsTopThree> (3 décisions arbitrales narrées) + son point d'entrée
-// "Quelle stratégie de renouvellement post-ARENH ?" en Phase 2.3
-// (cf docs/maquettes/cockpit-sol2/cockpit-synthese-strategique.html
-// section #decision-renouvellement-paris).
-// ══════════════════════════════════════════════════════════════════════════════
-
-// ══════════════════════════════════════════════════════════════════════════════
-// 6) Guard: modules purs (no React, no API)
+// 3) Guard: modules purs (no React, no API)
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('GUARD: V36 purchaseSignalsContract est un module pur', () => {
@@ -395,20 +239,12 @@ describe('GUARD: V36 purchaseSignalsContract est un module pur', () => {
     expect(purchaseSrc).toContain('export const EMPTY_PURCHASE_SIGNALS');
   });
 
-  it('leverEngineModel importe purchaseSignalsContract', () => {
-    const engineSrc = readSrc('models/leverEngineModel.js');
-    expect(engineSrc).toContain('purchaseSignalsContract');
-  });
-
-  it('leverEngineModel importe toujours les 2 contracts V35', () => {
-    const engineSrc = readSrc('models/leverEngineModel.js');
-    expect(engineSrc).toContain('complianceSignalsContract');
-    expect(engineSrc).toContain('billingInsightsContract');
-  });
-
   // Phase 1.4.b (29/04/2026) : impactDecisionModel.js migré vers
-  // backend/services/impact_decision_service.py (CLAUDE.md règle d'or
-  // zero business logic frontend). Source-guard équivalent désormais
+  // backend/services/impact_decision_service.py. Source-guard équivalent désormais
   // côté pytest dans backend/tests/test_impact_decision_service.py.
   // Test JS supprimé pour éviter référence à un fichier disparu.
+
+  // Phase 1.4.c (29/04/2026) : leverEngineModel.js migré vers
+  // backend/services/lever_engine_service.py. Guards leverEngineModel supprimés.
+  // Couverture dans backend/tests/test_lever_engine_service.py.
 });

@@ -128,8 +128,10 @@ describe('Dashboard V43 deep-links work', () => {
 // 4. Lever engine — reasons_fr injected (V43)
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('Lever engine V43 rationale bullets', () => {
-  const engine = src('models/leverEngineModel.js');
+// Phase 1.4.c (29/04/2026) : leverEngineModel.js migré vers
+// backend/services/lever_engine_service.py. Guards redirectés vers le backend.
+describe('Lever engine V43 rationale bullets (backend source guard)', () => {
+  const engine = backendSrc('services/lever_engine_service.py');
 
   it('injects reasons_fr into lev-tertiaire-create-efa', () => {
     expect(engine).toContain('reasons_fr');
@@ -145,7 +147,7 @@ describe('Lever engine V43 rationale bullets', () => {
   });
 
   it('reads signal sites for sample reasons', () => {
-    expect(engine).toContain('signalSites');
+    expect(engine).toContain('signal_sites');
   });
 
   it('includes V1 heuristic disclaimer in rationale', () => {
@@ -220,13 +222,15 @@ describe('V43 labels are 100% FR', () => {
     expect(dash).toContain('Entités Fonctionnelles Assujetties');
   });
 
-  const engine = src('models/leverEngineModel.js');
-
-  it('lever rationale uses FR text', () => {
+  // Phase 1.4.c (29/04/2026) : leverEngineModel.js migré vers
+  // backend/services/lever_engine_service.py. Guards redirectés vers le backend.
+  it('lever rationale uses FR text (backend source guard)', () => {
+    const engine = backendSrc('services/lever_engine_service.py');
     expect(engine).toContain('Aucune EFA créée — action recommandée');
   });
 
-  it('lever rationale mentions "données incomplètes"', () => {
+  it('lever rationale mentions "données incomplètes" (backend source guard)', () => {
+    const engine = backendSrc('services/lever_engine_service.py');
     expect(engine).toContain('données incomplètes');
   });
 });

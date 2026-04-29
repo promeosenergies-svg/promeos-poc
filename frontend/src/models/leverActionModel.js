@@ -177,7 +177,7 @@ const _FALLBACK = {
 /**
  * Construit un payload compatible ActionCreate à partir d'un levier.
  *
- * @param {import('./leverEngineModel').Lever} lever
+ * @param {{ type: string, actionKey: string, label: string, impactEur: number|null, ctaPath: string }} lever
  * @returns {{ title: string, source_type: string, source_id: string, severity: string,
  *             rationale: string, estimated_gain_eur: number|null, due_date: string,
  *             priority: number, idempotency_key: string,
@@ -212,7 +212,7 @@ export function buildActionPayload(lever) {
 /**
  * Construit un deep-link vers la création d'action avec contexte levier.
  *
- * @param {import('./leverEngineModel').Lever} lever
+ * @param {{ type: string, actionKey: string, label: string, impactEur: number|null, ctaPath: string }} lever
  * @returns {string}
  */
 export function buildLeverDeepLink(lever) {

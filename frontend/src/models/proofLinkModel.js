@@ -63,7 +63,7 @@ export function hasProofData(lever) {
 /**
  * Construit un deep-link vers la Memobox avec pre-filtrage contextuel.
  *
- * @param {object} lever — levier issu de leverEngineModel
+ * @param {object} lever — levier issu de /api/cockpit/levers (backend)
  * @returns {string} URL path + query string
  */
 export function buildProofLink(lever) {

@@ -20,7 +20,6 @@ import {
   computeActivatedCount,
 } from '../../models/dataActivationModel';
 
-import { computeActionableLevers } from '../../models/leverEngineModel';
 import {
   LEVER_ACTION_TEMPLATES,
   buildActionPayload,
@@ -222,78 +221,11 @@ describe('dataActivationModel — computeActivatedCount', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 3) Lever Engine V37 — data_activation lever
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe('Lever Engine V37 — data_activation lever', () => {
-  it('pas de levier quand activatedCount >= 3 (scenario standard V36)', () => {
-    const result = computeActionableLevers({
-      kpis: makeKpis(),
-      billingSummary: makeBilling(),
-      purchaseSignals: makePurchaseSignals(),
-    });
-    const daLevers = result.topLevers.filter((l) => l.type === 'data_activation');
-    expect(daLevers).toHaveLength(0);
-    expect(result.leversByType.data_activation).toBe(0);
-  });
-
-  it('levier quand activatedCount < 3', () => {
-    // kpis.total > 0, pas de conformite, pas de conso, pas de billing, pas de purchase → 1 brique (patrimoine)
-    const result = computeActionableLevers({
-      kpis: {
-        total: 5,
-        conformes: 0,
-        nonConformes: 0,
-        aRisque: 0,
-        couvertureDonnees: 0,
-        risqueTotal: 0,
-      },
-      billingSummary: {},
-    });
-    const daLevers = result.topLevers.filter((l) => l.type === 'data_activation');
-    expect(daLevers).toHaveLength(1);
-    expect(daLevers[0].actionKey).toBe('lev-data-cover');
-    expect(daLevers[0].ctaPath).toBe('/activation');
-    expect(result.leversByType.data_activation).toBe(1);
-  });
-
-  it('leversByType.data_activation = 0 quand pas actif', () => {
-    const result = computeActionableLevers({
-      kpis: makeKpis(),
-      billingSummary: makeBilling(),
-      purchaseSignals: makePurchaseSignals(),
-    });
-    expect(result.leversByType.data_activation).toBe(0);
-  });
-
-  it('pas de levier quand kpis.total === 0', () => {
-    const result = computeActionableLevers({
-      kpis: { total: 0 },
-      billingSummary: {},
-    });
-    const daLevers = result.topLevers.filter((l) => l.type === 'data_activation');
-    expect(daLevers).toHaveLength(0);
-  });
-
-  it('label indique le nombre de briques manquantes', () => {
-    const result = computeActionableLevers({
-      kpis: {
-        total: 5,
-        conformes: 0,
-        nonConformes: 0,
-        aRisque: 0,
-        couvertureDonnees: 0,
-        risqueTotal: 0,
-      },
-      billingSummary: {},
-    });
-    const lever = result.topLevers.find((l) => l.type === 'data_activation');
-    expect(lever.label).toContain('4');
-    expect(lever.label).toContain('briques');
-    expect(lever.label).toContain('manquantes');
-  });
-});
-
+// NOTE Phase 1.4.c (29/04/2026) : section "Lever Engine V37 — data_activation
+// lever" supprimée — la logique est désormais dans
+// backend/services/lever_engine_service.py.
+// Couverture dans backend/tests/test_lever_engine_service.py
+// (classe TestV37DataActivation).
 // ═══════════════════════════════════════════════════════════════════════════
 // 4) LeverActionModel — data_activation template
 // ═══════════════════════════════════════════════════════════════════════════
@@ -466,23 +398,13 @@ describe('Guard: modules purs V37', () => {
     expect(src).toContain('purchaseSignalsContract');
   });
 
-  it('leverEngineModel importe computeActivatedCount + ACTIVATION_THRESHOLD', () => {
-    const src = readSrc('models/leverEngineModel.js');
-    expect(src).toContain('computeActivatedCount');
-    expect(src).toContain('ACTIVATION_THRESHOLD');
-    expect(src).toContain('dataActivationModel');
-  });
-
-  it('leverEngineModel importe toujours V35/V36 contracts', () => {
-    const src = readSrc('models/leverEngineModel.js');
-    expect(src).toContain('complianceSignalsContract');
-    expect(src).toContain('billingInsightsContract');
-    expect(src).toContain('purchaseSignalsContract');
-  });
-
   // Phase 1.4.b (29/04/2026) : impactDecisionModel.js migré vers
   // backend/services/impact_decision_service.py. Source-guard équivalent
   // désormais côté pytest. Test JS supprimé.
+
+  // Phase 1.4.c (29/04/2026) : leverEngineModel.js migré vers
+  // backend/services/lever_engine_service.py. Guards leverEngineModel supprimés.
+  // Couverture dans backend/tests/test_lever_engine_service.py.
 
   it('Cockpit.jsx importe SanteKpiGrid (V1+ remplace DataActivationPanel)', () => {
     const src = readSrc('pages/Cockpit.jsx');

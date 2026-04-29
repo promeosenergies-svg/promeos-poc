@@ -1,12 +1,14 @@
 /**
- * PROMEOS — V35 Contracts + Lever Engine enrichment tests
+ * PROMEOS — V35 Contracts tests
  *
  * 1) ComplianceSignalsContract: normalize, empty, invalid
  * 2) BillingInsightsContract: normalize, empty, invalid
- * 3) Lever Engine: fallback V33 (sans contracts)
- * 4) Lever Engine: enrichment avec complianceSignals
- * 5) Lever Engine: enrichment avec billingInsights
- * 6) Guard: aucun crash si contracts absents/vides
+ * 3) Guard: modules purs (no React, no API)
+ *
+ * NOTE Phase 1.4.c (29/04/2026) : Les sections Lever Engine (3, 4, 5 legacy)
+ * qui invoquaient computeActionableLevers ont été supprimées — la logique
+ * est désormais dans backend/services/lever_engine_service.py.
+ * Couverture équivalente dans backend/tests/test_lever_engine_service.py.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
@@ -24,26 +26,7 @@ import {
   isBillingInsightsAvailable,
 } from '../../models/billingInsightsContract';
 
-import { computeActionableLevers } from '../../models/leverEngineModel';
-
 // ── Fixtures ─────────────────────────────────────────────────────────────────
-
-const makeKpis = (ov = {}) => ({
-  total: 10,
-  conformes: 7,
-  nonConformes: 2,
-  aRisque: 1,
-  risqueTotal: 30000,
-  ...ov,
-});
-
-const makeBilling = (ov = {}) => ({
-  total_invoices: 50,
-  total_eur: 500000,
-  total_loss_eur: 8000,
-  invoices_with_anomalies: 5,
-  ...ov,
-});
 
 const makeComplianceSignals = () => ({
   signals: [
@@ -156,144 +139,7 @@ describe('BillingInsightsContract', () => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 3) Lever Engine: fallback V33 (sans contracts)
-// ══════════════════════════════════════════════════════════════════════════════
-
-describe('Lever Engine V35 — fallback sans contracts', () => {
-  it('fonctionne identiquement a V33 sans contracts', () => {
-    const result = computeActionableLevers({ kpis: makeKpis(), billingSummary: makeBilling() });
-
-    expect(result.totalLevers).toBe(4);
-    expect(result.leversByType.conformite).toBe(2);
-    expect(result.leversByType.facturation).toBe(1);
-    expect(result.leversByType.optimisation).toBe(1);
-  });
-
-  it('pas de crash avec contracts undefined', () => {
-    const result = computeActionableLevers({
-      kpis: makeKpis(),
-      billingSummary: makeBilling(),
-      complianceSignals: undefined,
-      billingInsights: undefined,
-    });
-    expect(result.totalLevers).toBe(4);
-  });
-
-  it('pas de crash avec contracts null', () => {
-    const result = computeActionableLevers({
-      kpis: makeKpis(),
-      billingSummary: makeBilling(),
-      complianceSignals: null,
-      billingInsights: null,
-    });
-    expect(result.totalLevers).toBe(4);
-  });
-
-  it('pas de crash avec contracts EMPTY', () => {
-    const result = computeActionableLevers({
-      kpis: makeKpis(),
-      billingSummary: makeBilling(),
-      complianceSignals: EMPTY_COMPLIANCE_SIGNALS,
-      billingInsights: EMPTY_BILLING_INSIGHTS,
-    });
-    expect(result.totalLevers).toBe(4);
-  });
-});
-
-// ══════════════════════════════════════════════════════════════════════════════
-// 4) Lever Engine: enrichment avec complianceSignals
-// ══════════════════════════════════════════════════════════════════════════════
-
-describe('Lever Engine V35 — complianceSignals enrichment', () => {
-  it('enrichit le label conformite avec le compte de signaux critiques', () => {
-    const signals = normalizeComplianceSignals(makeComplianceSignals());
-    const result = computeActionableLevers({
-      kpis: makeKpis(),
-      billingSummary: {},
-      complianceSignals: signals,
-    });
-
-    const ncLever = result.topLevers.find((l) => l.actionKey === 'lev-conf-nc');
-    expect(ncLever).toBeTruthy();
-    expect(ncLever.label).toContain('signal');
-    expect(ncLever.label).toContain('critique');
-  });
-
-  it('ajoute proofHint depuis le premier signal avec proof_expected', () => {
-    const signals = normalizeComplianceSignals(makeComplianceSignals());
-    const result = computeActionableLevers({
-      kpis: makeKpis(),
-      billingSummary: {},
-      complianceSignals: signals,
-    });
-
-    const ncLever = result.topLevers.find((l) => l.actionKey === 'lev-conf-nc');
-    expect(ncLever.proofHint).toContain('OPERAT');
-  });
-});
-
-// ══════════════════════════════════════════════════════════════════════════════
-// 5) Lever Engine: enrichment avec billingInsights
-// ══════════════════════════════════════════════════════════════════════════════
-
-describe('Lever Engine V35 — billingInsights enrichment', () => {
-  it('utilise anomalies_count de billingInsights quand disponible', () => {
-    const insights = normalizeBillingInsights(makeBillingInsights());
-    const result = computeActionableLevers({
-      kpis: makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 }),
-      billingSummary: makeBilling({ invoices_with_anomalies: 3 }),
-      billingInsights: insights,
-    });
-
-    const factLever = result.topLevers.find((l) => l.actionKey === 'lev-fact-anom');
-    expect(factLever).toBeTruthy();
-    // billingInsights.anomalies_count = 8 overrides billingSummary.invoices_with_anomalies = 3
-    expect(factLever.label).toContain('8 anomalie');
-  });
-
-  it('ajoute le label confiance dans le label facturation', () => {
-    const insights = normalizeBillingInsights(makeBillingInsights());
-    const result = computeActionableLevers({
-      kpis: makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 }),
-      billingSummary: makeBilling(),
-      billingInsights: insights,
-    });
-
-    const factLever = result.topLevers.find((l) => l.actionKey === 'lev-fact-anom');
-    expect(factLever.label).toContain('confiance haute');
-  });
-
-  it('prend le max entre billingInsights.total_loss et billingSummary.total_loss', () => {
-    const insights = normalizeBillingInsights({
-      anomalies_count: 2,
-      total_loss_eur: 15000,
-      confidence: 'medium',
-    });
-    const result = computeActionableLevers({
-      kpis: makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 }),
-      billingSummary: { total_loss_eur: 8000, total_eur: 0 },
-      billingInsights: insights,
-    });
-
-    const factLever = result.topLevers.find((l) => l.type === 'facturation');
-    expect(factLever.impactEur).toBe(15000); // max(15000, 8000)
-  });
-
-  it('ajoute proofLinks depuis billingInsights', () => {
-    const insights = normalizeBillingInsights(makeBillingInsights());
-    const result = computeActionableLevers({
-      kpis: makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 }),
-      billingSummary: makeBilling(),
-      billingInsights: insights,
-    });
-
-    const factLever = result.topLevers.find((l) => l.type === 'facturation');
-    expect(factLever.proofLinks).toContain('invoice-audit-2024-q3.pdf');
-  });
-});
-
-// ══════════════════════════════════════════════════════════════════════════════
-// 6) Guard: modules purs
+// 3) Guard: modules purs
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('GUARD: V35 contracts sont des modules purs', () => {
@@ -319,12 +165,8 @@ describe('GUARD: V35 contracts sont des modules purs', () => {
     expect(billSrc).not.toContain('services/api');
   });
 
-  it('leverEngineModel importe les 2 contracts', () => {
-    const engineSrc = readFileSync(
-      resolve(__dirname, '..', '..', 'models', 'leverEngineModel.js'),
-      'utf8'
-    );
-    expect(engineSrc).toContain('complianceSignalsContract');
-    expect(engineSrc).toContain('billingInsightsContract');
-  });
+  // Phase 1.4.c (29/04/2026) : leverEngineModel.js migré vers
+  // backend/services/lever_engine_service.py. Source-guard équivalent
+  // désormais côté pytest dans backend/tests/test_lever_engine_service.py.
+  // Tests JS invoquant computeActionableLevers supprimés.
 });

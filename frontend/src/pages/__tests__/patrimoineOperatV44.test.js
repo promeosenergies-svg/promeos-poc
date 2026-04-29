@@ -54,24 +54,28 @@ describe('Wizard V44 prefills EFA name from site_nom', () => {
 // 2. Lever engine — site_id in ctaPath
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('Lever engine V44 deep-links with site_id', () => {
-  const engine = src('models/leverEngineModel.js');
+// Phase 1.4.c (29/04/2026) : leverEngineModel.js migré vers
+// backend/services/lever_engine_service.py. Guards redirectés vers le backend.
+describe('Lever engine V44 deep-links with site_id (backend source guard)', () => {
+  const engine = backendSrc('services/lever_engine_service.py');
 
-  it('has ctaSiteId variable for create-efa lever', () => {
-    expect(engine).toContain('ctaSiteId');
+  it('has cta_site_id variable for create-efa lever', () => {
+    expect(engine).toContain('cta_site_id');
   });
 
-  it('builds ctaPath with site_id query param', () => {
+  it('builds cta_path with site_id query param', () => {
     expect(engine).toContain('wizard?site_id=');
-    expect(engine).toContain('ctaSiteId');
+    expect(engine).toContain('cta_site_id');
   });
 
   it('falls back to /conformite/tertiaire without site_id', () => {
-    expect(engine).toContain("'/conformite/tertiaire'");
+    // Python uses double quotes; check for the path string itself
+    expect(engine).toContain('/conformite/tertiaire');
   });
 
-  it('extracts site_id from sampleSite', () => {
-    expect(engine).toContain('sampleSite?.site_id');
+  it('extracts site_id from sample_site', () => {
+    expect(engine).toContain('sample_site');
+    expect(engine).toContain('site_id');
   });
 });
 

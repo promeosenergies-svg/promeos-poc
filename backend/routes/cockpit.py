@@ -933,6 +933,104 @@ def get_cockpit_priorities(
     return {"priorities": top5, "total": len(top5)}
 
 
+@router.get("/cockpit/levers")
+def get_cockpit_levers(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/cockpit/levers
+
+    Phase 1.4.c — Moteur de leviers actionables (migration ex-`models/leverEngineModel.js`).
+
+    Agrège les leviers conformité + facturation + optimisation + achat d'énergie
+    à partir des données scope. Tri par impact_eur desc (null en dernier).
+
+    Réponse :
+        {
+            "lever_result": LeverResult.to_dict()
+        }
+    """
+    from services.lever_engine_service import compute_actionable_levers
+    from models.enums import InsightStatus
+
+    org_id = resolve_org_id(request, auth, db)
+    site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
+    total_sites = len(site_ids)
+
+    # KPIs conformité
+    kpi = KpiService(db)
+    _scope = KpiScope(org_id=org_id)
+    risque_total = 0.0
+    non_conformes = 0
+    a_risque = 0
+    try:
+        risque_total = kpi.get_financial_risk_eur(_scope).value or 0.0
+    except Exception:
+        risque_total = 0.0
+    try:
+        non_conformes = (
+            _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME).count()
+        )
+        a_risque = _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
+    except Exception:
+        pass
+
+    kpis_payload = {
+        "total": total_sites,
+        "nonConformes": non_conformes,
+        "aRisque": a_risque,
+        "risqueTotal": float(risque_total),
+    }
+
+    # Billing summary
+    total_eur = 0.0
+    total_loss_eur = 0.0
+    invoices_with_anomalies = 0
+    total_invoices = 0
+    try:
+        from models import EnergyInvoice, BillingInsight
+
+        if site_ids:
+            total_eur = (
+                db.query(func.sum(EnergyInvoice.amount_eur)).filter(EnergyInvoice.site_id.in_(site_ids)).scalar()
+            ) or 0.0
+            total_invoices = db.query(EnergyInvoice).filter(EnergyInvoice.site_id.in_(site_ids)).count()
+            total_loss_eur = (
+                db.query(func.sum(BillingInsight.estimated_loss_eur))
+                .filter(
+                    BillingInsight.site_id.in_(site_ids),
+                    BillingInsight.insight_status.notin_([InsightStatus.RESOLVED, InsightStatus.FALSE_POSITIVE]),
+                )
+                .scalar()
+            ) or 0.0
+            invoices_with_anomalies = (
+                db.query(BillingInsight)
+                .filter(
+                    BillingInsight.site_id.in_(site_ids),
+                    BillingInsight.insight_status.notin_([InsightStatus.RESOLVED, InsightStatus.FALSE_POSITIVE]),
+                )
+                .count()
+            )
+    except Exception:
+        pass
+
+    billing_payload = {
+        "total_eur": float(total_eur),
+        "total_loss_eur": float(total_loss_eur),
+        "invoices_with_anomalies": invoices_with_anomalies,
+        "total_invoices": total_invoices,
+    }
+
+    lever_result = compute_actionable_levers(
+        kpis=kpis_payload,
+        billing_summary=billing_payload,
+    )
+
+    return {"lever_result": lever_result.to_dict()}
+
+
 @router.get("/cockpit/impact_decision")
 def get_cockpit_impact_decision(
     request: Request,
