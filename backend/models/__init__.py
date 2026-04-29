@@ -353,6 +353,9 @@ from .sirene import (
 # EurAmount typé — Cockpit Sol2 Phase 1.1 (Décision A §0.D)
 from .eur_amount import EurAmount, EurAmountCategory
 
+# BaselineCalibration — Cockpit Sol2 Phase 1.2 (Décisions B+D §0.D)
+from .baseline_calibration import BaselineCalibration, BaselineMethod
+
 __all__ = [
     "Base",
     "TimestampMixin",
@@ -632,4 +635,7 @@ __all__ = [
     # EurAmount typé — Cockpit Sol2 Phase 1.1
     "EurAmount",
     "EurAmountCategory",
+    # BaselineCalibration — Cockpit Sol2 Phase 1.2
+    "BaselineCalibration",
+    "BaselineMethod",
 ]
