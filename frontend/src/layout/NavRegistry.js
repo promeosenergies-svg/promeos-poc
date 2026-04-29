@@ -513,23 +513,26 @@ export const NAV_SECTIONS = [
     items: [
       // Refonte WOW Cockpit dual sol2 (29/04/2026) : la sidebar pointe désormais
       // directement sur les routes canoniques §11.3 doctrine.
-      // - Tableau de bord = Briefing du jour = page Pilotage (energy manager 30s)
       // - Vue exécutive = Synthèse stratégique = page Décision (DG/CFO 3min)
-      // Inversion historique corrigée : "Vue exécutive" → /cockpit redirigeait
-      // sur /cockpit/jour (Pilotage), masquant la vraie page de Décision.
-      {
-        to: '/cockpit/jour',
-        icon: LayoutDashboard,
-        label: 'Tableau de bord',
-        desc: "Briefing du jour — quoi traiter aujourd'hui (30 s)",
-        keywords: ['dashboard', 'accueil', 'home', 'tableau', 'briefing', 'pilotage', 'jour'],
-      },
+      // - Tableau de bord = Briefing du jour = page Pilotage (energy manager 30s)
+      //
+      // Phase 13.D — Démo CFO/investisseur : Vue exécutive en premier.
+      // Audience démo principale = CFO/DG/VC (Marie, Sophie). Le briefing
+      // énergie manager (Marc, 30s) reste accessible mais en second. Cohérent
+      // avec doctrine §11.3 page de décision = aboutissement narratif.
       {
         to: '/cockpit/strategique',
         icon: BarChart3,
         label: 'Vue exécutive',
         desc: 'Synthèse stratégique — où en sommes-nous (3 min)',
         keywords: ['cockpit', 'executive', 'synthese', 'strategique', 'decision', 'codir', 'cfo'],
+      },
+      {
+        to: '/cockpit/jour',
+        icon: LayoutDashboard,
+        label: 'Tableau de bord',
+        desc: "Briefing du jour — quoi traiter aujourd'hui (30 s)",
+        keywords: ['dashboard', 'accueil', 'home', 'tableau', 'briefing', 'pilotage', 'jour'],
       },
     ],
   },

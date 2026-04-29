@@ -1178,6 +1178,67 @@ export default function CockpitDecision() {
         <FlexTeaser flexPotential={facts?.flex_potential} />
       </div>
 
+      {/* Phase 13.D — Footer signaux moat (caché print).
+          Doctrine simple+différenciant : 3 mécanismes réglementaires uniquement
+          tracés par PROMEOS post-ARENH (VNU + TURPE 7 méridiennes + APER).
+          Marie/Sophie investisseur voit instantanément les moats vs Tilt /
+          Selectra / Deepki / Metron / ProcuraGate (cf reference_mix_e_2026
+          + reference_competitive_intelligence_2026). */}
+      <div
+        data-print-hide
+        className="mt-3 mb-3 flex gap-1.5 flex-wrap items-center"
+        style={{
+          paddingTop: 12,
+          borderTop: '0.5px dashed var(--sol-rule)',
+        }}
+      >
+        <div
+          className="font-mono uppercase tracking-[0.07em] mr-1"
+          style={{ fontSize: 9.5, color: 'var(--sol-ink-400)' }}
+        >
+          Suivi exclusif post-ARENH
+        </div>
+        <span
+          className="inline-flex items-center px-2 py-0.5 rounded-md font-mono uppercase tracking-[0.05em]"
+          style={{
+            fontSize: 10,
+            border: '0.5px solid var(--sol-rule)',
+            color: 'var(--sol-ink-700)',
+            background: 'var(--sol-bg-paper)',
+          }}
+          title="Versement Nucléaire Universel — Décret 2026-55 + CRE 2026-52. Seuils 78 / 110 €/MWh. Activation 2027 si EPEX dépasse seuil."
+        >
+          <AcronymTooltip acronym="VNU">VNU</AcronymTooltip>{' '}
+          <span style={{ marginLeft: 4, color: 'var(--sol-ink-500)' }}>seuil 78 €/MWh</span>
+        </span>
+        <span
+          className="inline-flex items-center px-2 py-0.5 rounded-md font-mono uppercase tracking-[0.05em]"
+          style={{
+            fontSize: 10,
+            border: '0.5px solid var(--sol-rule)',
+            color: 'var(--sol-ink-700)',
+            background: 'var(--sol-bg-paper)',
+          }}
+          title="TURPE 7 reprogrammation HC — méridiennes 11h-17h obligatoires (CRE 2025-78, brochure Enedis p.13-14). Cycle 5 ans."
+        >
+          <AcronymTooltip acronym="TURPE">TURPE 7</AcronymTooltip>{' '}
+          <span style={{ marginLeft: 4, color: 'var(--sol-ink-500)' }}>HC méridiennes</span>
+        </span>
+        <span
+          className="inline-flex items-center px-2 py-0.5 rounded-md font-mono uppercase tracking-[0.05em]"
+          style={{
+            fontSize: 10,
+            border: '0.5px solid var(--sol-rule)',
+            color: 'var(--sol-ink-700)',
+            background: 'var(--sol-bg-paper)',
+          }}
+          title="Loi APER 2023-175 — solarisation parkings >1500 m². Échéance 1/07/2026 ou 1/07/2028 selon surface. Sanction 20 €/m²/an."
+        >
+          <AcronymTooltip acronym="APER">APER</AcronymTooltip>{' '}
+          <span style={{ marginLeft: 4, color: 'var(--sol-ink-500)' }}>parkings &gt; 1 500 m²</span>
+        </span>
+      </div>
+
       {/* Footer Sol (visible écran + print) */}
       <div
         className="flex justify-between flex-wrap gap-2.5 pt-3"

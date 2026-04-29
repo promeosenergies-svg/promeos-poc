@@ -4,7 +4,7 @@
  * Verrouille :
  *   - /cockpit/jour   → CommandCenter (page Pilotage)
  *   - /cockpit/strategique → Cockpit (page Décision)
- *   - /cockpit → redirect /cockpit/jour (default mode)
+ *   - /cockpit → redirect /cockpit/strategique (Phase 13.D : démo CFO)
  *   - /dashboard, /executive, /synthese → redirect /cockpit/strategique (CFO)
  *   - /tableau-de-bord → redirect /cockpit/jour
  *   - <SolKpiMonthlyVsN1Container> consomme useCockpitFacts → endpoint Phase 1.3.a
@@ -51,8 +51,11 @@ describe('Phase 3.1 — routes Cockpit dual sol2', () => {
     expect(APP_SRC).toMatch(/path=["']\/cockpit\/strategique["']/);
   });
 
-  it('route /cockpit redirect vers /cockpit/jour (default mode)', () => {
-    expect(REDIRECTS_SRC).toMatch(/\['\/cockpit',\s*'\/cockpit\/jour'\]/);
+  it('route /cockpit redirect vers /cockpit/strategique (Phase 13.D : démo CFO)', () => {
+    // Phase 13.D — la redirection /cockpit pointe désormais sur Vue exécutive
+    // (Synthèse stratégique CFO 3min) au lieu du Briefing du jour. Audience
+    // démo principale = CFO/DG/VC.
+    expect(REDIRECTS_SRC).toMatch(/\['\/cockpit',\s*'\/cockpit\/strategique'\]/);
   });
 
   it('route /dashboard redirect vers /cockpit/strategique (CFO mode)', () => {

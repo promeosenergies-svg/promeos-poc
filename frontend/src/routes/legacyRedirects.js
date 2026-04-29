@@ -18,8 +18,12 @@ export const LEGACY_REDIRECTS = [
   ['/sites', '/patrimoine'],
   ['/sites-legacy/:id', '/patrimoine'],
 
-  // ── Cockpit dual sol2 (Phase 3.1) ──────────────────────────────────────
-  ['/cockpit', '/cockpit/jour'],
+  // ── Cockpit dual sol2 (Phase 3.1, MAJ Phase 13.D) ─────────────────────
+  // Phase 13.D — Démo CFO/investisseur : /cockpit redirige vers la Vue
+  // exécutive (Synthèse stratégique CFO 3min) au lieu du Briefing du jour
+  // (Energy Manager 30s). Cohérent avec la sidebar qui place "Vue exécutive"
+  // en premier (audience démo principale = CFO/DG/VC).
+  ['/cockpit', '/cockpit/strategique'],
   ['/synthese', '/cockpit/strategique'],
   ['/executive', '/cockpit/strategique'],
   ['/dashboard', '/cockpit/strategique'],
