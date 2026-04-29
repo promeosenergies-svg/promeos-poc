@@ -50,6 +50,15 @@ PRICE_FALLBACK_EUR_PER_KWH = 0.068
 # ─── Benchmarks ────────────────────────────────────────────────────────────
 OID_OFFICE_BENCHMARK_KWHEF_PER_M2_YEAR = 146  # OID 2022, ~25 300 bâtiments
 
+# ─── Cockpit dual Sol2 ─────────────────────────────────────────────────────
+# Seuil minimum de dimensions activées avant que le levier "data_activation"
+# devienne prioritaire dans le moteur de leviers V37 (cf. lever_engine_service
+# + data_activation_service). Sprint refonte cockpit dual sol2 — 29/04/2026.
+COCKPIT_ACTIVATION_THRESHOLD = 3
+# Heuristique V1 : opportunité d'optimisation = 1 % du montant facturé total.
+# À remplacer Phase 2 par calcul rigoureux (CEE BAT-TH-* + référentiels).
+COCKPIT_OPTIM_RATE_V1 = 0.01
+
 # ─── Garde-fous unitaires ──────────────────────────────────────────────────
 # ⚠️  0.0569 est un tarif TURPE 7 HPH (€/kWh), PAS un facteur CO₂.
 # ⚠️  Ne JAMAIS utiliser PRICE_FALLBACK pour 0.18 (ancienne valeur prohibée).
@@ -76,4 +85,6 @@ __all__ = [
     "REGOPS_WEIGHTS_DEFAULT",
     "PRICE_FALLBACK_EUR_PER_KWH",
     "OID_OFFICE_BENCHMARK_KWHEF_PER_M2_YEAR",
+    "COCKPIT_ACTIVATION_THRESHOLD",
+    "COCKPIT_OPTIM_RATE_V1",
 ]

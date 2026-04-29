@@ -31,10 +31,12 @@ compatibilité avec les KpiService + BillingService existants.
 from dataclasses import dataclass
 from typing import Optional
 
+from doctrine.constants import COCKPIT_OPTIM_RATE_V1
 
-# Heuristique V1 : opportunité optimisation = 1 % du montant facturé total.
-# À remplacer Phase 2 par calcul rigoureux (CEE BAT-TH-* + référentiels).
-OPTIM_RATE_V1 = 0.01
+
+# Single SoT : doctrine/constants.py (cf /simplify audit P0 — dedup avec
+# lever_engine_service.py qui importe la même constante).
+OPTIM_RATE_V1 = COCKPIT_OPTIM_RATE_V1
 
 
 @dataclass(frozen=True)

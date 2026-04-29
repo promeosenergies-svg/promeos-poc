@@ -34,6 +34,9 @@ couvertureDonnees) en plus des clés snake_case.
 from dataclasses import dataclass, field
 from typing import Optional
 
+from doctrine.constants import COCKPIT_ACTIVATION_THRESHOLD
+from services.lever_engine_service import is_purchase_available as _is_purchase_available
+
 
 ACTIVATION_DIMENSIONS = [
     "patrimoine",
@@ -43,8 +46,9 @@ ACTIVATION_DIMENSIONS = [
     "achat",
 ]
 
-# Seuil canonique cohérent avec services/lever_engine_service.py (Phase 1.4.c)
-ACTIVATION_THRESHOLD = 3
+# Single SoT : doctrine/constants.py (cf /simplify audit P0 — dedup avec
+# lever_engine_service.py qui importe la même constante).
+ACTIVATION_THRESHOLD = COCKPIT_ACTIVATION_THRESHOLD
 
 
 @dataclass
@@ -91,14 +95,6 @@ class ActivationResult:
             "overall_coverage": self.overall_coverage,
             "next_action": self.next_action.to_dict() if self.next_action else None,
         }
-
-
-def _is_purchase_available(purchase_signals: Optional[dict]) -> bool:
-    """Détection présence signals achat (pattern aligné lever_engine_service)."""
-    if not purchase_signals or not isinstance(purchase_signals, dict):
-        return False
-    total_contracts = purchase_signals.get("totalContracts", purchase_signals.get("total_contracts", 0)) or 0
-    return total_contracts > 0
 
 
 def build_activation_checklist(

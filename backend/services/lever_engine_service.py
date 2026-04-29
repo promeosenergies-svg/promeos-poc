@@ -31,17 +31,18 @@ risqueTotal) en plus des clés snake_case.
 from dataclasses import dataclass, field
 from typing import Optional
 
-# ── Constantes canoniques ────────────────────────────────────────────────────
+from doctrine.constants import COCKPIT_ACTIVATION_THRESHOLD, COCKPIT_OPTIM_RATE_V1
 
-# Seuil d'activation données : si activatedCount < seuil, levier data_activation déclenché.
-# Transposé depuis dataActivationModel.js : ACTIVATION_THRESHOLD = 3
-ACTIVATION_THRESHOLD = 3
+# ── Constantes canoniques ────────────────────────────────────────────────────
+# Single SoT : doctrine/constants.py (cf /simplify audit P0 — dedup avec
+# data_activation_service.py qui importe les mêmes constantes).
+
+ACTIVATION_THRESHOLD = COCKPIT_ACTIVATION_THRESHOLD
 
 # Nombre total de dimensions d'activation (transposé depuis ACTIVATION_DIMENSIONS.length = 5)
 TOTAL_ACTIVATION_DIMENSIONS = 5
 
-# Heuristique V1 optimisation : 1% du montant facturé (identique à impact_decision_service.py)
-OPTIM_RATE_V1 = 0.01
+OPTIM_RATE_V1 = COCKPIT_OPTIM_RATE_V1
 
 
 # ── Dataclasses ──────────────────────────────────────────────────────────────
@@ -136,12 +137,19 @@ def is_billing_insights_available(billing_insights: Optional[dict]) -> bool:
 
 
 def is_purchase_available(purchase_signals: Optional[dict]) -> bool:
-    """Vérifie si des signaux achat d'énergie sont disponibles et non vides."""
+    """Vérifie si des signaux achat d'énergie sont disponibles et non vides.
+
+    Sémantique stricte : au moins un contrat existant (totalContracts > 0).
+    `totalSites > 0` seul ne suffit pas — un site sans contrat ne fournit
+    pas de signal d'achat exploitable. Tolère snake_case `total_contracts`.
+
+    Aligné /simplify audit P0 (29/04/2026) : SoT unique pour les 2 services
+    cockpit (lever_engine + data_activation).
+    """
     if not purchase_signals or not isinstance(purchase_signals, dict):
         return False
-    total_contracts = purchase_signals.get("totalContracts", 0) or 0
-    total_sites = purchase_signals.get("totalSites", 0) or 0
-    return total_contracts > 0 or total_sites > 0
+    total_contracts = purchase_signals.get("totalContracts", purchase_signals.get("total_contracts", 0)) or 0
+    return total_contracts > 0
 
 
 def _compute_activated_count(kpis: dict, billing_summary: dict, purchase_signals: Optional[dict]) -> int:

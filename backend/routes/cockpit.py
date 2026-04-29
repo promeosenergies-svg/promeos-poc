@@ -53,6 +53,36 @@ def _sites_for_org(db: Session, org_id: int | None):
     return q
 
 
+def _statut_dt_value(site) -> str | None:
+    """Extract Decret Tertiaire status string from Site model (handles enum or str).
+
+    Returns the canonical lowercase value ("conforme"/"non_conforme"/"a_risque"/...)
+    or None if the site has no status set.
+    """
+    raw = getattr(site, "statut_decret_tertiaire", None)
+    if raw is None:
+        return None
+    return raw.value if hasattr(raw, "value") else str(raw)
+
+
+def _count_dt_statuts(sites_objs) -> dict:
+    """Count sites by Decret Tertiaire status in a single Python pass.
+
+    Replaces N separate `_sites_for_org(...).filter(...).count()` SQL queries
+    with one in-memory iteration over already-loaded site objects (perf F1+F3
+    from /simplify audit).
+
+    Returns dict: {conforme, non_conforme, a_risque, en_evaluation, total}.
+    """
+    counts = {"conforme": 0, "non_conforme": 0, "a_risque": 0, "en_evaluation": 0}
+    for s in sites_objs:
+        v = _statut_dt_value(s)
+        if v in counts:
+            counts[v] += 1
+    counts["total"] = len(sites_objs)
+    return counts
+
+
 @router.get("/cockpit", responses={200: {"model": CockpitResponse}})
 def get_cockpit(
     request: Request,
@@ -956,31 +986,24 @@ def get_cockpit_levers(
     from models.enums import InsightStatus
 
     org_id = resolve_org_id(request, auth, db)
-    site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
+    sites_objs = _sites_for_org(db, org_id).all()
+    site_ids = [s.id for s in sites_objs]
     total_sites = len(site_ids)
 
-    # KPIs conformité
+    # KPIs conformité — single fetch sites + Python count (perf F1+F3 /simplify audit)
     kpi = KpiService(db)
     _scope = KpiScope(org_id=org_id)
     risque_total = 0.0
-    non_conformes = 0
-    a_risque = 0
     try:
         risque_total = kpi.get_financial_risk_eur(_scope).value or 0.0
     except Exception:
         risque_total = 0.0
-    try:
-        non_conformes = (
-            _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME).count()
-        )
-        a_risque = _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
-    except Exception:
-        pass
 
+    statut_counts = _count_dt_statuts(sites_objs)
     kpis_payload = {
         "total": total_sites,
-        "nonConformes": non_conformes,
-        "aRisque": a_risque,
+        "nonConformes": statut_counts["non_conforme"],
+        "aRisque": statut_counts["a_risque"],
         "risqueTotal": float(risque_total),
     }
 
@@ -1055,13 +1078,12 @@ def get_cockpit_impact_decision(
     from services.impact_decision_service import compute_impact_kpis, compute_recommendation
 
     org_id = resolve_org_id(request, auth, db)
-    site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
+    sites_objs = _sites_for_org(db, org_id).all()
+    site_ids = [s.id for s in sites_objs]
     total_sites = len(site_ids)
 
     # Risque financier conformité
     risque_total = 0.0
-    non_conformes = 0
-    a_risque = 0
     try:
         kpi = KpiService(db)
         _scope = KpiScope(org_id=org_id)
@@ -1069,16 +1091,10 @@ def get_cockpit_impact_decision(
     except Exception:
         risque_total = 0.0
 
-    # Compte non_conformes / à_risque depuis statut DT
-    try:
-        from models import StatutConformite
-
-        non_conformes = (
-            _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME).count()
-        )
-        a_risque = _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
-    except Exception:
-        pass
+    # Comptage statuts DT — single Python pass sur sites_objs déjà chargés
+    statut_counts = _count_dt_statuts(sites_objs)
+    non_conformes = statut_counts["non_conforme"]
+    a_risque = statut_counts["a_risque"]
 
     # Billing summary — total facturé + total loss
     total_eur = 0.0
@@ -1286,9 +1302,8 @@ def get_cockpit_essentials_health(
         db.query(Alerte).filter(Alerte.resolue == False, Alerte.site_id.in_(site_ids)).count() if site_ids else 0
     )
 
-    watchlist = build_watchlist(
-        kpis, [{"conso_kwh_an": s.annual_kwh_total, "statut_conformite": kpis.get("nonConformes")} for s in sites_objs]
-    )
+    sites_payload = [{"conso_kwh_an": s.annual_kwh_total, "statut_conformite": _statut_dt_value(s)} for s in sites_objs]
+    watchlist = build_watchlist(kpis, sites_payload)
     consistency = check_consistency(kpis)
     health = compute_health_state(
         kpis=kpis,
@@ -1382,15 +1397,11 @@ def get_cockpit_data_activation(
     site_ids = [s.id for s in sites_objs]
     total_sites = len(site_ids)
 
-    conformes = 0
-    nc = 0
-    ar = 0
-    try:
-        conformes = _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.CONFORME).count()
-        nc = _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME).count()
-        ar = _sites_for_org(db, org_id).filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
-    except Exception:
-        pass
+    # Comptage statuts DT — single Python pass sur sites_objs déjà chargés
+    statut_counts = _count_dt_statuts(sites_objs)
+    conformes = statut_counts["conforme"]
+    nc = statut_counts["non_conforme"]
+    ar = statut_counts["a_risque"]
 
     sites_with_conso = sum(1 for s in sites_objs if (s.annual_kwh_total or 0) > 0)
     couverture = round((sites_with_conso / total_sites) * 100) if total_sites > 0 else 0
