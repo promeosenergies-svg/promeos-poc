@@ -38,15 +38,12 @@ import { Bell, ArrowRight, Clock } from 'lucide-react';
 
 import useCockpitFacts from '../hooks/useCockpitFacts';
 import SolKickerWithSwitch from '../ui/sol/SolKickerWithSwitch';
+import AcronymTooltip from '../ui/sol/AcronymTooltip';
 import { getCockpitPriorities } from '../services/api/cockpit';
 import { useScope } from '../contexts/ScopeContext';
 import { splitMwh, splitKw, fmtPct, deltaSeverity } from '../utils/format';
-
-const FR_DATE = new Intl.DateTimeFormat('fr-FR', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-});
+import { getIsoWeek, relativeTime, fmtDateLong } from '../utils/date';
+import { severityTone } from '../ui/sol/solTones';
 
 /** Format delta percent for KPI tone — adds explicit sign + spacing pour
  *  lisibilité Marc 30s. fmtPct SoT n'ajoute pas le signe + et accepte un
@@ -57,60 +54,18 @@ function fmtDeltaPct(v) {
   return `${sign}${fmtPct(Math.abs(v), false, 0)}`;
 }
 
-const SEVERITY_TONE = {
-  neutral: { fg: 'var(--sol-ink-700)' },
-  warning: { fg: 'var(--sol-attention-fg)' },
-  danger: { fg: 'var(--sol-refuse-fg)' },
+/** Coloration delta KPI : neutre/warning/danger via deltaSeverity SoT. */
+const DELTA_FG = {
+  neutral: 'var(--sol-ink-700)',
+  warning: 'var(--sol-attention-fg)',
+  danger: 'var(--sol-refuse-fg)',
 };
 
-const URGENCY_TONE = {
-  critical: {
-    bg: 'var(--sol-refuse-bg)',
-    line: 'var(--sol-refuse-line)',
-    fg: 'var(--sol-refuse-fg)',
-    label: 'Critique',
-  },
-  high: {
-    bg: 'var(--sol-attention-bg)',
-    line: 'var(--sol-attention-line)',
-    fg: 'var(--sol-attention-fg)',
-    label: 'Important',
-  },
-  medium: {
-    bg: 'var(--sol-attention-bg)',
-    line: 'var(--sol-attention-line)',
-    fg: 'var(--sol-attention-fg)',
-    label: 'À surveiller',
-  },
-  low: {
-    bg: 'var(--sol-bg-canvas)',
-    line: 'var(--sol-rule)',
-    fg: 'var(--sol-ink-700)',
-    label: 'Information',
-  },
-};
-
-const urgencyTone = (u) => URGENCY_TONE[u] || URGENCY_TONE.medium;
-
-/** ISO week (lundi début) — calcul standard sans dépendance externe. */
-function getIsoWeek(d = new Date()) {
-  const date = new Date(d);
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() + 4 - (date.getDay() || 7));
-  const yearStart = new Date(date.getFullYear(), 0, 1);
-  return Math.ceil(((date - yearStart) / 86_400_000 + 1) / 7);
-}
-
-function relativeTime(iso) {
-  if (!iso) return '—';
-  const diffMin = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (diffMin < 1) return "à l'instant";
-  if (diffMin < 60) return `il y a ${diffMin} min`;
-  const h = Math.round(diffMin / 60);
-  if (h < 24) return `il y a ${h} h`;
-  const d = Math.round(h / 24);
-  return `il y a ${d} j`;
-}
+// SEVERITY_TONE / URGENCY_TONE / getIsoWeek / relativeTime / FR_DATE
+// → hissés en SoT (Étape 2.bis) :
+//   - severityTone() depuis ui/sol/solTones.js
+//   - getIsoWeek + relativeTime + fmtDateLong depuis utils/date.js
+//   - DELTA_FG mapping local pour la coloration delta KPI uniquement.
 
 // ── Triptyque KPI temporel multi-échelle ─────────────────────────────
 
@@ -121,7 +76,7 @@ const SCALE_LABEL = {
 };
 
 function KpiCard({ scaleLabel, label, tooltip, value, unit, deltaText, deltaSev, hint }) {
-  const tone = SEVERITY_TONE[deltaSev || 'neutral'];
+  const deltaFg = DELTA_FG[deltaSev || 'neutral'];
   return (
     <div className="rounded-lg p-4" style={{ background: 'var(--sol-bg-canvas)' }}>
       {/* Étape 1.bis P0-2 — label d'échelle temporelle au-dessus du KPI. */}
@@ -170,7 +125,7 @@ function KpiCard({ scaleLabel, label, tooltip, value, unit, deltaText, deltaSev,
           )}
         </div>
         {deltaText && (
-          <div className="text-xs font-medium" style={{ color: tone.fg }}>
+          <div className="text-xs font-medium" style={{ color: deltaFg }}>
             {deltaText}
           </div>
         )}
@@ -686,7 +641,7 @@ function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
 const STRATEGIC_HREF = '/cockpit/strategique';
 
 function FileTraitementRow({ rank, item }) {
-  const tone = urgencyTone(item.urgency);
+  const tone = severityTone(item.urgency);
   const showStrategicLink = rank <= 3;
   return (
     <div
@@ -861,7 +816,7 @@ export default function CockpitPilotage() {
   const confidence = facts?.metadata?.confidence;
 
   const today = new Date();
-  const todayLabel = FR_DATE.format(today);
+  const todayLabel = fmtDateLong(today);
   const weekIso = getIsoWeek(today);
   const lastUpdateRel = relativeTime(lastUpdate);
 

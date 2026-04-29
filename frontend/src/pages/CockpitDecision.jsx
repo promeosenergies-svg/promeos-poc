@@ -29,78 +29,22 @@ import { ArrowRight, FileText, Sparkles } from 'lucide-react';
 
 import useCockpitFacts from '../hooks/useCockpitFacts';
 import SolKickerWithSwitch from '../ui/sol/SolKickerWithSwitch';
+import AcronymTooltip from '../ui/sol/AcronymTooltip';
 import {
   getCockpitDecisionsTop3,
   getCockpitTrajectory,
   getPurchasePortfolioCostSimulation,
 } from '../services/api/cockpit';
 import { useScope } from '../contexts/ScopeContext';
-import { fmtEur, splitMwh } from '../utils/format';
-
-// ── Helpers ────────────────────────────────────────────────────────
-
-function getIsoWeek(d = new Date()) {
-  const date = new Date(d);
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() + 4 - (date.getDay() || 7));
-  const yearStart = new Date(date.getFullYear(), 0, 1);
-  return Math.ceil(((date - yearStart) / 86_400_000 + 1) / 7);
-}
-
-function relativeTime(iso) {
-  if (!iso) return '—';
-  const diffMin = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (diffMin < 1) return "à l'instant";
-  if (diffMin < 60) return `il y a ${diffMin} min`;
-  const h = Math.round(diffMin / 60);
-  if (h < 24) return `il y a ${h} h`;
-  const d = Math.round(h / 24);
-  return `il y a ${d} j`;
-}
-
-function fmtEurShort(v) {
-  if (v == null || !Number.isFinite(v)) return '—';
-  if (Math.abs(v) >= 1_000_000)
-    return `${(v / 1_000_000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} M€`;
-  if (Math.abs(v) >= 1_000)
-    return `${(v / 1_000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} k€`;
-  return fmtEur(v);
-}
-
-function daysUntil(iso) {
-  if (!iso) return null;
-  const target = new Date(iso);
-  const now = new Date();
-  return Math.ceil((target - now) / 86_400_000);
-}
+import { splitMwh, fmtEurShort } from '../utils/format';
+import { getIsoWeek, relativeTime, daysUntil } from '../utils/date';
+import { severityTone, confidenceTone } from '../ui/sol/solTones';
 
 // ── Triptyque KPI hybride avec badges ────────────────────────────
-
-const CONFIDENCE_TONE = {
-  calculated_regulatory: {
-    bg: 'var(--sol-succes-bg)',
-    fg: 'var(--sol-succes-fg)',
-    label: 'Calculé',
-  },
-  calculated_contractual: {
-    bg: 'var(--sol-succes-bg)',
-    fg: 'var(--sol-succes-fg)',
-    label: 'Calculé',
-  },
-  modeled_cee: {
-    bg: 'var(--sol-attention-bg)',
-    fg: 'var(--sol-attention-fg)',
-    label: 'Modélisé',
-  },
-  modeled: {
-    bg: 'var(--sol-attention-bg)',
-    fg: 'var(--sol-attention-fg)',
-    label: 'Modélisé',
-  },
-};
+// Tons confiance hissés en SoT (Étape 2.bis) → confidenceTone() depuis solTones.js
 
 function KpiHybrideCard({ label, value, unit, badge, source, drillHref, drillLabel }) {
-  const tone = CONFIDENCE_TONE[badge] || CONFIDENCE_TONE.calculated_regulatory;
+  const tone = confidenceTone(badge);
   return (
     <div className="rounded-md p-4" style={{ background: 'var(--sol-bg-canvas)' }}>
       <div
@@ -266,8 +210,8 @@ function StrategicNarrative({ facts }) {
     >
       Votre patrimoine de {sitesCount} site{sitesCount > 1 ? 's' : ''} présente{' '}
       <strong style={{ color: 'var(--sol-ink-900)', fontWeight: 500 }}>{driftText}</strong> de la
-      trajectoire 2030 (Décret n°2019-771, jalons −40 % / 2030, −50 % / 2040, −60 % / 2050). Score
-      conformité{' '}
+      trajectoire 2030 (<AcronymTooltip acronym="DT">Décret Tertiaire</AcronymTooltip> n°2019-771,
+      jalons −40 % / 2030, −50 % / 2040, −60 % / 2050). Score conformité{' '}
       <strong style={{ color: 'var(--sol-ink-900)', fontWeight: 500 }}>
         {c.score != null ? `${c.score}/${c.max || 100}` : '—'}
       </strong>
@@ -286,30 +230,10 @@ function potSplitInline(v) {
 }
 
 // ── 3 décisions à arbitrer ────────────────────────────────────────
-
-const SEVERITY_TO_TONE = {
-  critical: {
-    bg: 'var(--sol-refuse-bg)',
-    line: 'var(--sol-refuse-line)',
-    fg: 'var(--sol-refuse-fg)',
-    chipBg: 'rgba(0,0,0,0.06)',
-  },
-  high: {
-    bg: 'var(--sol-attention-bg)',
-    line: 'var(--sol-attention-line)',
-    fg: 'var(--sol-attention-fg)',
-    chipBg: 'rgba(0,0,0,0.06)',
-  },
-  medium: {
-    bg: 'var(--sol-attention-bg)',
-    line: 'var(--sol-attention-line)',
-    fg: 'var(--sol-attention-fg)',
-    chipBg: 'rgba(0,0,0,0.06)',
-  },
-};
+// Tons sévérité hissés en SoT (Étape 2.bis) → severityTone() depuis solTones.js
 
 function DecisionCard({ decision, index }) {
-  const tone = SEVERITY_TO_TONE[decision.severity] || SEVERITY_TO_TONE.medium;
+  const tone = severityTone(decision.severity);
   const days = daysUntil(decision.echeance);
   const echeanceText = days != null ? `J−${days}` : '—';
   const gainMwh = decision.estimated_gain_mwh_year;
@@ -385,6 +309,9 @@ function DecisionCard({ decision, index }) {
             marginBottom: 5,
           }}
         >
+          {/* TODO Étape 4 backend : retirer le replace `système système` une
+              fois le serializer cockpit_decisions_service corrigé (typo issue
+              repérée par /frontend-design audit Étape 2). */}
           {decision.title.replace(/\bsystème système\b/gi, 'système')}
         </div>
         {decision.narrative && (
@@ -759,13 +686,15 @@ function FacturePortefeuille({ portfolio }) {
       color: 'var(--sol-succes-fg)',
     },
     {
-      label: "Tarif d'acheminement (TURPE 7)",
+      label: "Tarif d'acheminement TURPE 7",
+      acronym: 'TURPE',
       value: compsAgg.turpe,
       pct: pct(compsAgg.turpe),
       color: 'var(--sol-ink-700)',
     },
     {
       label: 'Taxes (accise + CTA + TVA)',
+      acronym: 'CTA',
       value: compsAgg.taxes,
       pct: pct(compsAgg.taxes),
       color: 'var(--sol-attention-fg)',
@@ -781,9 +710,14 @@ function FacturePortefeuille({ portfolio }) {
   const inactives =
     compsAgg.vnu === 0 && compsAgg.cbam === 0
       ? [
-          { label: 'Versement Nucléaire Universel (VNU)', desc: 'dormant, activation prévue 2027' },
           {
-            label: 'Taxe carbone aux frontières (CBAM)',
+            label: 'Versement Nucléaire Universel',
+            acronym: 'VNU',
+            desc: 'dormant, activation prévue 2027',
+          },
+          {
+            label: 'Taxe carbone aux frontières',
+            acronym: 'CBAM',
             desc: 'non applicable, secteur tertiaire hors périmètre',
           },
         ]
@@ -820,7 +754,8 @@ function FacturePortefeuille({ portfolio }) {
             className="font-mono uppercase tracking-[0.07em]"
             style={{ fontSize: 11, color: 'var(--sol-ink-500)' }}
           >
-            Périmètre {portfolio.site_count} sites · post-ARENH 01/01/2026
+            Périmètre {portfolio.site_count} sites · post-
+            <AcronymTooltip acronym="ARENH">ARENH</AcronymTooltip> 01/01/2026
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
@@ -842,7 +777,13 @@ function FacturePortefeuille({ portfolio }) {
         {composantes.map((c) => (
           <div key={c.label}>
             <div className="flex justify-between" style={{ fontSize: 13 }}>
-              <span>{c.label}</span>
+              <span>
+                {c.acronym ? (
+                  <AcronymTooltip acronym={c.acronym}>{c.label}</AcronymTooltip>
+                ) : (
+                  c.label
+                )}
+              </span>
               <span style={{ fontWeight: 500 }}>{fmtEurShort(c.value)}</span>
             </div>
             <div
@@ -877,7 +818,8 @@ function FacturePortefeuille({ portfolio }) {
           >
             {inactives.map((i) => (
               <div key={i.label}>
-                {i.label} — <em style={{ fontStyle: 'italic' }}>{i.desc}</em>
+                <AcronymTooltip acronym={i.acronym}>{i.label}</AcronymTooltip> ({i.acronym}) —{' '}
+                <em style={{ fontStyle: 'italic' }}>{i.desc}</em>
               </div>
             ))}
           </div>
@@ -947,7 +889,29 @@ export default function CockpitDecision() {
     setDecisionsLoading(true);
     Promise.all([
       getCockpitDecisionsTop3()
-        .then((d) => (cancelled ? null : setDecisions(d?.decisions || [])))
+        .then((d) => {
+          if (cancelled) return;
+          // TODO Étape 4 backend : dédup côté serializer cockpit_decisions_service
+          // (cf. /frontend-design audit Étape 2 — doublon BACS Siège détecté).
+          // En attendant, dédup FE par site_id + leverage type pour assurer
+          // 3 décisions distinctes en démo CFO/CODIR.
+          const seen = new Set();
+          const unique = (d?.decisions || []).filter((dec) => {
+            const lever = dec.title.toLowerCase().includes('bacs')
+              ? 'bacs'
+              : dec.title.toLowerCase().includes('contrat') ||
+                  dec.title.toLowerCase().includes('renouvel')
+                ? 'achat'
+                : dec.title.toLowerCase().includes('audit')
+                  ? 'audit'
+                  : `other-${dec.id}`;
+            const key = `${dec.site_id || dec.id}:${lever}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          setDecisions(unique);
+        })
         .catch(() => (cancelled ? null : setDecisions([]))),
       getCockpitTrajectory()
         .then((d) => (cancelled ? null : setTrajectory(d)))
@@ -979,8 +943,12 @@ export default function CockpitDecision() {
   const lastUpdateRel = relativeTime(lastUpdate);
   const weekIso = getIsoWeek();
 
-  // EPEX placeholder — sera alimenté par /api/marche/spot Étape 4
-  const epexPrice = 78;
+  // EPEX placeholder — sera alimenté par /api/marche/spot Étape 4 backend
+  // gap-filler. En attendant, badge "Indicatif" pour respecter règle d'or
+  // chiffres fiables (cf. simplify P0 audit Étape 2).
+  const epexPrice = facts?.market?.epex_eur_per_mwh ?? null;
+  const epexIndicative = epexPrice == null;
+  const epexDisplay = epexPrice ?? 78;
 
   const scopeLabel = `${orgName}${sitesCount ? ` — ${sitesCount} sites` : ''}`;
 
@@ -1035,8 +1003,27 @@ export default function CockpitDecision() {
               color: 'var(--sol-ink-700)',
               background: 'var(--sol-bg-paper)',
             }}
+            title={
+              epexIndicative
+                ? "Cours indicatif J−1 — connexion EPEX SPOT en cours d'intégration"
+                : 'Cours EPEX SPOT day-ahead'
+            }
           >
-            EPEX {epexPrice} €/MWh
+            <AcronymTooltip acronym="EPEX">EPEX</AcronymTooltip> {epexDisplay} €/MWh
+            {epexIndicative && (
+              <span
+                className="px-1 py-0 rounded font-mono"
+                style={{
+                  fontSize: 9,
+                  background: 'var(--sol-hce-bg)',
+                  color: 'var(--sol-hce-fg)',
+                  fontWeight: 500,
+                  letterSpacing: '0.06em',
+                }}
+              >
+                Indicatif
+              </span>
+            )}
           </span>
           <button
             type="button"

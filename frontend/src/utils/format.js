@@ -90,6 +90,22 @@ export function fmtMwh(v) {
   return `${Math.round(n).toLocaleString(FR)} MWh`;
 }
 
+/** Format court € avec bascule auto vers k€/M€ pour les contextes
+ *  exécutifs (CFO/DG) qui veulent une magnitude rapide (Étape 2.bis SoT).
+ *  - 1 234 567 → "1,2 M€"
+ *  - 26 200 → "26,2 k€"
+ *  - 750 → fmtEur(750) (locale standard)
+ *  Cohérent avec la convention CFO Sol §6.6 (chiffres compactés exécutifs). */
+export function fmtEurShort(v) {
+  const n = _safe(v);
+  if (n == null) return '—';
+  if (Math.abs(n) >= 1_000_000)
+    return `${(n / 1_000_000).toLocaleString(FR, { maximumFractionDigits: 1 })} M€`;
+  if (Math.abs(n) >= 1_000)
+    return `${(n / 1_000).toLocaleString(FR, { maximumFractionDigits: 1 })} k€`;
+  return fmtEur(n);
+}
+
 /** Variante split valeur ↔ unité pour les KPI Sol où la value est rendue
  *  en typo display (Fraunces 28px) et l'unité en typo body (DM Sans 14px).
  *  Conserve 1 décimale si |v| < 100 MWh pour précision sur petits volumes
