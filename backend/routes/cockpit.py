@@ -1078,18 +1078,37 @@ def get_cockpit_priorities(
     except Exception:
         pass
 
-    # Trier par urgency + dédupliquer + limiter top-5
-    priorities.sort(key=lambda x: (x.pop("_sort_key", 1), x.get("title", "")))
+    # Phase 13.C P1 (audit Antoine 7,2/10) : tri Pareto à 2 niveaux.
+    # Dans une urgency tier, ranger par impact € décroissant (les sites
+    # les plus exposés en premier — pour qu'un gestionnaire 80 sites voie
+    # tout de suite OÙ son budget pénalité est concentré).
+    # Avant : tri alphabétique sur titre dans une même urgency = noise.
+    def _pareto_key(p):
+        urgency_tier = p.pop("_sort_key", 1)
+        impact_eur = p.get("impact_value_eur") or 0
+        # Tri ascendant : plus petite tier d'abord, puis impact € décroissant
+        # (signe inversé) puis title pour stabilité.
+        return (urgency_tier, -float(impact_eur), p.get("title", ""))
+
+    priorities.sort(key=_pareto_key)
     seen_titles = set()
     top5 = []
+    total_filtered = 0
     for p in priorities:
         if p["title"] not in seen_titles:
             seen_titles.add(p["title"])
-            top5.append({**p, "rank": len(top5) + 1})
-        if len(top5) >= 5:
-            break
+            if len(top5) < 5:
+                top5.append({**p, "rank": len(top5) + 1})
+            else:
+                total_filtered += 1
 
-    return {"priorities": top5, "total": len(top5)}
+    return {
+        "priorities": top5,
+        "total": len(top5),
+        # Phase 13.C : compte les priorités masquées (au-delà du top 5) pour
+        # que le frontend affiche "+ N autres priorités" sur gros portfolio.
+        "remaining_count": total_filtered,
+    }
 
 
 @router.get("/cockpit/levers")

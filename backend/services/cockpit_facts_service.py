@@ -46,7 +46,12 @@ from models import (
 )
 from models.energy_models import Meter, MeterReading
 from models.power import PowerReading
-from services.baseline_service import get_baseline_a, get_baseline_b, get_baseline_c
+from services.baseline_service import (
+    get_baseline_a,
+    get_baseline_b,
+    get_baseline_c,
+    get_baselines_a_batch,
+)
 from services.monthly_comparison_service import get_monthly_vs_previous_year
 
 _logger = logging.getLogger("promeos.cockpit_facts")
@@ -252,14 +257,17 @@ def _build_consumption(
                 _logger.debug("baseline_b 7d failed: %s", exc)
 
         # Sites en dérive (surconso > 10% vs baseline A)
-        # Étape 10 P1-4 : optim N+1 → 2 queries (audit /simplify P0).
-        # Avant : pour chaque site, 1 query baseline_a + 1 query MeterReading
-        # par site = N×2 queries hot path /_facts. Sur 20 sites → 40 queries.
-        # Après : 1 query batch agrégeant Meter→site_id + sum(MeterReading) en
-        # 1 passe SQL + N appels in-memory get_baseline_a (déjà cachable).
+        # Phase 13.C P0-1 (audit Antoine 7,2/10) : N+1 totalement éliminé.
+        # Étape 10 P1-4 avait déjà batché la conso J−1 par site (1 query SQL)
+        # mais laissait `get_baseline_a` dans la boucle = 2N queries résiduelles
+        # (meter_ids + readings 12 sem par site). Sur 80 sites Antoine → 160
+        # queries → +1 à 3s hot path /_facts.
+        # Désormais : `get_baselines_a_batch` agrège tout en 1 query JOIN +
+        # group-by Python. 2 queries totales pour `sites_in_drift` quel que
+        # soit le nombre de sites.
         sites_in_drift = 0
         try:
-            # Batch query : conso J−1 par site_id en 1 round-trip SQL.
+            # Batch query 1 : conso J−1 par site_id en 1 round-trip SQL.
             # Filter parent_meter_id IS NULL = compteurs principaux uniquement
             # (cohérent avec _meter_ids_for_site).
             day_consumption_by_site: dict[int, float] = {}
@@ -277,14 +285,15 @@ def _build_consumption(
                 )
                 day_consumption_by_site = {sid: float(kwh or 0.0) for sid, kwh in rows}
 
+            # Batch query 2 : baseline A pour tous les sites en 1 round-trip
+            # (au lieu de N appels). Phase 13.C P0-1.
+            baselines_by_site = get_baselines_a_batch(db, site_ids, j_minus_1) if site_ids else {}
             for sid in site_ids:
-                try:
-                    ba = get_baseline_a(db, sid, j_minus_1)
-                    total_site = day_consumption_by_site.get(sid, 0.0)
-                    if ba["value_kwh"] > 0 and total_site > ba["value_kwh"] * 1.10:
-                        sites_in_drift += 1
-                except Exception as exc:
-                    _logger.debug("baseline check failed for site %s: %s", sid, exc)
+                ba = baselines_by_site.get(sid, {})
+                base_kwh = ba.get("value_kwh", 0.0)
+                total_site = day_consumption_by_site.get(sid, 0.0)
+                if base_kwh > 0 and total_site > base_kwh * 1.10:
+                    sites_in_drift += 1
         except Exception as exc:
             _logger.debug("sites_in_drift batch query failed: %s", exc)
 

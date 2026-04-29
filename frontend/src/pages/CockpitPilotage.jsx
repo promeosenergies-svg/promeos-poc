@@ -756,7 +756,7 @@ function FileTraitementRow({ rank, item }) {
   );
 }
 
-function FileTraitement({ priorities, loading }) {
+function FileTraitement({ priorities, loading, remainingCount = 0 }) {
   if (loading) {
     return (
       <div className="space-y-1.5">
@@ -810,6 +810,19 @@ function FileTraitement({ priorities, loading }) {
       {priorities.map((p) => (
         <FileTraitementRow key={`${p.rank}-${p.title}`} rank={p.rank} item={p} />
       ))}
+      {/* Phase 13.C P1 (Antoine 80 sites) : affordance Pareto si gros portfolio. */}
+      {remainingCount > 0 && (
+        <div className="mt-2 flex justify-end">
+          <Link
+            to="/anomalies?status=open&sort=urgency_then_impact_desc"
+            className="font-mono uppercase tracking-[0.06em] no-underline hover:underline inline-flex items-center gap-1"
+            style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
+          >
+            + {remainingCount} autre{remainingCount > 1 ? 's' : ''} priorité
+            {remainingCount > 1 ? 's' : ''} →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
@@ -821,6 +834,7 @@ export default function CockpitPilotage() {
   const { facts, loading: factsLoading } = useCockpitFacts('current_month');
   const { org } = useScope();
   const [priorities, setPriorities] = useState(null);
+  const [prioritiesRemaining, setPrioritiesRemaining] = useState(0);
   const [prioritiesLoading, setPrioritiesLoading] = useState(true);
 
   useEffect(() => {
@@ -828,7 +842,11 @@ export default function CockpitPilotage() {
     setPrioritiesLoading(true);
     getCockpitPriorities()
       .then((data) => {
-        if (!cancelled) setPriorities(data?.priorities || []);
+        if (!cancelled) {
+          setPriorities(data?.priorities || []);
+          // Phase 13.C P1 : affordance "+ N autres priorités" pour gros pf.
+          setPrioritiesRemaining(data?.remaining_count || 0);
+        }
       })
       .catch(() => {
         if (!cancelled) setPriorities([]);
@@ -971,7 +989,11 @@ export default function CockpitPilotage() {
 
       {/* File de traitement */}
       <div className="mb-4">
-        <FileTraitement priorities={priorities} loading={prioritiesLoading} />
+        <FileTraitement
+          priorities={priorities}
+          loading={prioritiesLoading}
+          remainingCount={prioritiesRemaining}
+        />
       </div>
 
       {/* Footer Sol */}

@@ -323,8 +323,13 @@ def get_top3_decisions(db: Session, site_ids: list[int]) -> list[dict]:
         else_=4,
     )
 
-    # On élargit la fenêtre à 12 actions candidates (3 × 4 leviers max) puis
-    # on dédup côté Python (vs filtrer côté SQL — moins lisible et fragile).
+    # Phase 13.C (audit Antoine 80 sites) : fenêtre candidate proportionnelle
+    # au nombre de sites. Si BACS domine (ex : 80 actions BACS × 5 sites les
+    # plus critiques = 12), un fixed-12 ratait audit/achat/APER plus bas dans
+    # le ranking. Désormais : N candidats = max(12, 3 × len(site_ids)) capé
+    # à 80 — assez large pour 4 leviers distincts × top sites par sévérité,
+    # tout en bornant la mémoire / temps de tri.
+    candidate_window = min(max(12, 3 * len(site_ids)), 80)
     rows = (
         db.query(ActionItem)
         .filter(
@@ -332,7 +337,7 @@ def get_top3_decisions(db: Session, site_ids: list[int]) -> list[dict]:
             ActionItem.status.in_(["open", "in_progress"]),
         )
         .order_by(severity_rank.asc(), ActionItem.due_date.asc().nullslast())
-        .limit(12)
+        .limit(candidate_window)
         .all()
     )
 
