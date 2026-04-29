@@ -1597,3 +1597,35 @@ def get_eur_amount_proof(
         )
     proof_url = EUR_AMOUNT_PROOF_PATH_TEMPLATE.format(eur_amount_id=eur.id)
     return to_dict_with_proof(eur, proof_url=proof_url)
+
+
+# ---------------------------------------------------------------------------
+# Cockpit Decisions Top 3 — Phase 2.3 (Q1 chiffrage doctrinal MWh/an)
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/cockpit/decisions/top3",
+    summary="Top 3 actions Décision (impact MWh/an + traçabilité € pénalité)",
+    tags=["Cockpit"],
+)
+def get_cockpit_decisions_top3(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """GET /api/cockpit/decisions/top3
+
+    Phase 2.3 — Sérialise les 3 actions Top de la Vue Exécutive selon doctrine
+    §0.D décision A : chaque action expose son impact en MWh/an
+    (estimated_gain_mwh_year) et, si applicable, une pénalité légale tracée
+    en EurAmount (regulatory_penalty_eur avec article Décret 2019-771 art. 9).
+
+    Source-guard : test_actions_decision_show_mwh_or_traced_eur.
+    """
+    from services.cockpit_decisions_service import get_top3_decisions
+
+    org_id = resolve_org_id(request, auth, db)
+    site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
+    decisions = get_top3_decisions(db, site_ids)
+    return {"decisions": decisions, "total": len(decisions)}
