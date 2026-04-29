@@ -127,3 +127,20 @@ describe('SolKpiMonthlyVsN1Container — câblage Phase 3.1', () => {
     expect(codeOnly).not.toMatch(/Math\.round|\.reduce\(|\baggregate\b|\bsum\s*=\s*0/);
   });
 });
+
+// ── Phase 3.bis.e — Wiring CommandCenter ────────────────────────────
+
+const CC_PATH = resolve(__dirname, '..', 'pages', 'CommandCenter.jsx');
+const CC_SRC = readFileSync(CC_PATH, 'utf-8');
+
+describe('Phase 3.bis.e — SolKpiMonthlyVsN1Container câblé dans CommandCenter', () => {
+  it('CommandCenter importe SolKpiMonthlyVsN1Container', () => {
+    expect(CC_SRC).toMatch(
+      /import\s+SolKpiMonthlyVsN1Container\s+from\s+['"]\.\.\/components\/cockpit\/SolKpiMonthlyVsN1Container['"]/
+    );
+  });
+
+  it('CommandCenter rend <SolKpiMonthlyVsN1Container /> dans la page Pilotage', () => {
+    expect(CC_SRC).toMatch(/<SolKpiMonthlyVsN1Container\s*\/?>/);
+  });
+});

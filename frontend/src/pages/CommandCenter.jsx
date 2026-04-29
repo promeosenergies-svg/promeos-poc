@@ -60,6 +60,7 @@ import NpsModal from '../components/NpsModal';
 import SolBriefingHead from '../ui/sol/SolBriefingHead';
 import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
+import SolKpiMonthlyVsN1Container from '../components/cockpit/SolKpiMonthlyVsN1Container';
 import TopDeriveSitesCard from './cockpit/TopDeriveSitesCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
 import CockpitTabs from '../ui/CockpitTabs';
@@ -411,6 +412,13 @@ export default function CommandCenter() {
         omitHeader
         onNavigate={navigate}
       />
+
+      {/* Phase 3.bis.e — KPI moyen terme « mois courant vs N-1 DJU-ajustée ».
+          Cible maquette `cockpit-pilotage-briefing-jour.html` §triptyque
+          temporel multi-échelle (court/moyen/contractuel). Wrapper data-fetch
+          sur `_facts.consumption.monthly_vs_n1` (cockpit_facts_service Phase
+          1.3.a). Doctrine §8.1 — display delegate, return null si absent. */}
+      <SolKpiMonthlyVsN1Container />
 
       {/* Sprint 2 Vague A ét4' — bloc legacy supprimé (PriorityHero +
           DeadlineBanner + MorningBriefCard). Les signaux portés par ces
