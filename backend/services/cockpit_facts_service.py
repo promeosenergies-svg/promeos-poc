@@ -26,6 +26,7 @@ from sqlalchemy.orm import Session
 
 from doctrine.constants import (
     BACS_PENALTY_EUR,
+    DT_MILESTONES,
     DT_PENALTY_AT_RISK_EUR,
     DT_PENALTY_EUR,
     DT_REF_YEAR_DEFAULT,
@@ -295,10 +296,11 @@ def _build_consumption(
             try:
                 b_c = get_baseline_c(db, site_ids[0], year=DT_REF_YEAR_DEFAULT)
                 ref_kwh = b_c.get("value_kwh_year", 0.0)
-                # cible -40% en 2030 → avancement = (1 - annuel/ref) / 0.40 × 100, clamped 0-100
+                # cible -40% en 2030 → avancement = (1 - annuel/ref) / abs(jalon) × 100, clamped 0-100
                 if ref_kwh > 0 and annual_kwh > 0:
                     reduction = 1.0 - annual_kwh / ref_kwh
-                    trajectory_score = int(min(max(reduction / 0.40 * 100, 0), 100))
+                    target_2030 = abs(DT_MILESTONES[2030])  # 0.40 — single SoT doctrine
+                    trajectory_score = int(min(max(reduction / target_2030 * 100, 0), 100))
             except Exception as exc:
                 _logger.debug("trajectory_2030 baseline_c failed: %s", exc)
 

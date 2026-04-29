@@ -5,8 +5,11 @@
 import api, { cachedGet } from './core';
 
 // ── Cockpit Facts (Phase 1.3.a SoT unifié — endpoint atomique) ──
+// P0 fix /simplify Phase 3 : `.then(r => r.data)` aligné aux autres exports
+// du fichier — sans cela, `facts` recevrait l'AxiosResponse complète et
+// `facts?.consumption?.monthly_vs_n1` retournait undefined silencieusement.
 export const getCockpitFacts = (period = 'current_week') =>
-  cachedGet(`/cockpit/_facts?period=${encodeURIComponent(period)}`);
+  cachedGet(`/cockpit/_facts?period=${encodeURIComponent(period)}`).then((r) => r.data);
 
 // ── Alertes ──
 export const getAlertes = async (params = {}) => {

@@ -11,7 +11,7 @@
  *
  * Pattern aligné useCockpitData.js (RÈGLE : fetch + normalize, pas de calcul).
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 import { getCockpitFacts } from '../services/api';
 import { logger } from '../services/logger';
@@ -22,24 +22,37 @@ export function useCockpitFacts(period = 'current_week') {
   const [facts, setFacts] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Race-safe : si period change ou unmount avant fin du fetch, on évite
+  // setState sur composant démonté ou écrasement d'une réponse plus récente
+  // par une plus ancienne (P1 fix /simplify Phase 3 efficiency F3).
+  const cancelRef = useRef(false);
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(() => {
+    cancelRef.current = false;
     setLoading(true);
     setError(null);
-    try {
-      const data = await getCockpitFacts(period);
-      setFacts(data);
-    } catch (err) {
-      logger.warn(TAG, 'fetch failed', err);
-      setError(err);
-      setFacts(null);
-    } finally {
-      setLoading(false);
-    }
+    return getCockpitFacts(period)
+      .then((data) => {
+        if (cancelRef.current) return;
+        setFacts(data);
+      })
+      .catch((err) => {
+        if (cancelRef.current) return;
+        logger.warn(TAG, 'fetch failed', err);
+        setError(err);
+        setFacts(null);
+      })
+      .finally(() => {
+        if (!cancelRef.current) setLoading(false);
+      });
   }, [period]);
 
   useEffect(() => {
+    cancelRef.current = false;
     reload();
+    return () => {
+      cancelRef.current = true;
+    };
   }, [reload]);
 
   return { facts, loading, error, reload };
