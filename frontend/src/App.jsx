@@ -231,14 +231,29 @@ function App() {
 
                         {/* Legacy redirects */}
                         <Route path="/dashboard-legacy" element={<Navigate to="/" replace />} />
+
+                        {/* Phase 3.1 — Cockpit dual sol2 routes canoniques :
+                            /cockpit/jour       → Pilotage (CommandCenter, energy manager 30s)
+                            /cockpit/strategique → Décision (Cockpit, dirigeant 3min)
+                            /cockpit            → redirect /cockpit/jour (default mode)
+                            Ref : PROMPT_REFONTE_COCKPIT_DUAL_SOL2_EXECUTION.md §4.B Phase 3.1 */}
                         <Route
-                          path="/cockpit"
+                          path="/cockpit/jour"
+                          element={
+                            <PageSuspense>
+                              <CommandCenter />
+                            </PageSuspense>
+                          }
+                        />
+                        <Route
+                          path="/cockpit/strategique"
                           element={
                             <PageSuspense>
                               <Cockpit />
                             </PageSuspense>
                           }
                         />
+                        <Route path="/cockpit" element={<Navigate to="/cockpit/jour" replace />} />
                         <Route
                           path="/sites-legacy/:id"
                           element={<Navigate to="/patrimoine" replace />}
@@ -596,9 +611,23 @@ function App() {
                           element={<Navigate to="/achat-energie" replace />}
                         />
                         <Route path="/referentiels" element={<Navigate to="/kb" replace />} />
-                        <Route path="/synthese" element={<Navigate to="/cockpit" replace />} />
-                        <Route path="/executive" element={<Navigate to="/cockpit" replace />} />
-                        <Route path="/dashboard" element={<Navigate to="/cockpit" replace />} />
+                        {/* Legacy redirects → routes Phase 3.1 (alias mode strategique pour CFO/DG) */}
+                        <Route
+                          path="/synthese"
+                          element={<Navigate to="/cockpit/strategique" replace />}
+                        />
+                        <Route
+                          path="/executive"
+                          element={<Navigate to="/cockpit/strategique" replace />}
+                        />
+                        <Route
+                          path="/dashboard"
+                          element={<Navigate to="/cockpit/strategique" replace />}
+                        />
+                        <Route
+                          path="/tableau-de-bord"
+                          element={<Navigate to="/cockpit/jour" replace />}
+                        />
                         <Route
                           path="/conso"
                           element={<Navigate to="/consommations/portfolio" replace />}

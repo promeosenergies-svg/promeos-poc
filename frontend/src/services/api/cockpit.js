@@ -4,6 +4,10 @@
  */
 import api, { cachedGet } from './core';
 
+// ── Cockpit Facts (Phase 1.3.a SoT unifié — endpoint atomique) ──
+export const getCockpitFacts = (period = 'current_week') =>
+  cachedGet(`/cockpit/_facts?period=${encodeURIComponent(period)}`);
+
 // ── Alertes ──
 export const getAlertes = async (params = {}) => {
   const response = await api.get('/alertes', { params });
