@@ -66,6 +66,9 @@ export const ROUTE_MODULE_MAP = {
   // Cockpit (ex-pilotage)
   '/': 'cockpit',
   '/cockpit': 'cockpit',
+  // Refonte WOW Cockpit dual sol2 (29/04/2026) : routes canoniques §11.3
+  '/cockpit/jour': 'cockpit', // Briefing du jour = Pilotage 30s
+  '/cockpit/strategique': 'cockpit', // Synthèse stratégique = Décision 3min
   '/onboarding': 'cockpit',
   '/onboarding/sirene': 'patrimoine',
   // Backward compat (redirigés vers Centre d'actions via AppShell)
@@ -508,19 +511,25 @@ export const NAV_SECTIONS = [
     expertOnly: false,
     order: 1,
     items: [
+      // Refonte WOW Cockpit dual sol2 (29/04/2026) : la sidebar pointe désormais
+      // directement sur les routes canoniques §11.3 doctrine.
+      // - Tableau de bord = Briefing du jour = page Pilotage (energy manager 30s)
+      // - Vue exécutive = Synthèse stratégique = page Décision (DG/CFO 3min)
+      // Inversion historique corrigée : "Vue exécutive" → /cockpit redirigeait
+      // sur /cockpit/jour (Pilotage), masquant la vraie page de Décision.
       {
-        to: '/',
+        to: '/cockpit/jour',
         icon: LayoutDashboard,
         label: 'Tableau de bord',
-        desc: 'KPIs J-1, alertes, trajectoire mensuelle',
-        keywords: ['dashboard', 'accueil', 'home', 'tableau'],
+        desc: "Briefing du jour — quoi traiter aujourd'hui (30 s)",
+        keywords: ['dashboard', 'accueil', 'home', 'tableau', 'briefing', 'pilotage', 'jour'],
       },
       {
-        to: '/cockpit',
+        to: '/cockpit/strategique',
         icon: BarChart3,
         label: 'Vue exécutive',
-        desc: 'Synthèse portefeuille pour la direction',
-        keywords: ['cockpit', 'executive', 'synthese', 'strategique'],
+        desc: 'Synthèse stratégique — où en sommes-nous (3 min)',
+        keywords: ['cockpit', 'executive', 'synthese', 'strategique', 'decision', 'codir', 'cfo'],
       },
     ],
   },

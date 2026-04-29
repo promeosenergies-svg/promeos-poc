@@ -15,10 +15,14 @@ import {
 } from '../../layout/NavRegistry';
 
 describe('V7 Nav Refactor guard-rails', () => {
+  // Refonte WOW Cockpit dual sol2 (29/04/2026) : routes canoniques §11.3 doctrine
+  // /cockpit/jour (Briefing du jour = Pilotage 30s) + /cockpit/strategique
+  // (Synthèse stratégique = Décision 3min) — au lieu de l'ancienne paire
+  // / + /cockpit qui exposait une inversion (cf. issue sidebar Tableau de bord).
   it('Cockpit has exactly 2 items (Tableau de bord + Vue exécutive)', () => {
     const cockpit = NAV_SECTIONS.find((s) => s.key === 'cockpit');
     expect(cockpit.items).toHaveLength(2);
-    expect(cockpit.items.map((i) => i.to)).toEqual(['/', '/cockpit']);
+    expect(cockpit.items.map((i) => i.to)).toEqual(['/cockpit/jour', '/cockpit/strategique']);
   });
 
   it('Patrimoine has 3 items (Sites + Contrats + Facturation expert)', () => {

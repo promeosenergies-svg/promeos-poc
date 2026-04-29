@@ -13,10 +13,20 @@ import {
 import { normalizeDashboardModel } from '../CommandCenter';
 
 describe('NavRegistry V7 — routes canoniques', () => {
-  it('"Vue exécutive" pointe vers "/cockpit"', () => {
+  // Refonte WOW Cockpit dual sol2 (29/04/2026) : "Vue exécutive" pointe désormais
+  // sur /cockpit/strategique (Synthèse stratégique = page Décision DG/CFO 3min).
+  // Avant cette refonte : pointait sur /cockpit qui redirigeait sur /cockpit/jour
+  // (Pilotage), masquant la vraie page Décision — cf. issue inversion sidebar.
+  it('"Vue exécutive" pointe vers "/cockpit/strategique" (page Décision)', () => {
     const item = ALL_NAV_ITEMS.find((i) => i.label === 'Vue exécutive');
     expect(item).toBeDefined();
-    expect(item.to).toBe('/cockpit');
+    expect(item.to).toBe('/cockpit/strategique');
+  });
+
+  it('"Tableau de bord" pointe vers "/cockpit/jour" (page Pilotage)', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Tableau de bord');
+    expect(item).toBeDefined();
+    expect(item.to).toBe('/cockpit/jour');
   });
 
   it("/cockpit-2min n'est pas une destination de menu (canonique = /cockpit)", () => {
@@ -42,8 +52,8 @@ describe('NavRegistry V7 — routes canoniques', () => {
 });
 
 describe('NavRegistry V7 — labels FR avec accents', () => {
-  it('label "Vue exécutive" pour /cockpit', () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.to === '/cockpit');
+  it('label "Vue exécutive" pour /cockpit/strategique', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.to === '/cockpit/strategique');
     expect(item?.label).toBe('Vue exécutive');
   });
 
