@@ -309,10 +309,7 @@ function DecisionCard({ decision, index }) {
             marginBottom: 5,
           }}
         >
-          {/* TODO Étape 4 backend : retirer le replace `système système` une
-              fois le serializer cockpit_decisions_service corrigé (typo issue
-              repérée par /frontend-design audit Étape 2). */}
-          {decision.title.replace(/\bsystème système\b/gi, 'système')}
+          {decision.title}
         </div>
         {decision.narrative && (
           <div
@@ -888,30 +885,11 @@ export default function CockpitDecision() {
     let cancelled = false;
     setDecisionsLoading(true);
     Promise.all([
+      // Backend Étape 4 P0-A + P0-B : serializer dédoublonne désormais
+      // site×levier et le typo "système système" est purgé via
+      // _dedup_adjacent_words. Plus besoin de dédup FE.
       getCockpitDecisionsTop3()
-        .then((d) => {
-          if (cancelled) return;
-          // TODO Étape 4 backend : dédup côté serializer cockpit_decisions_service
-          // (cf. /frontend-design audit Étape 2 — doublon BACS Siège détecté).
-          // En attendant, dédup FE par site_id + leverage type pour assurer
-          // 3 décisions distinctes en démo CFO/CODIR.
-          const seen = new Set();
-          const unique = (d?.decisions || []).filter((dec) => {
-            const lever = dec.title.toLowerCase().includes('bacs')
-              ? 'bacs'
-              : dec.title.toLowerCase().includes('contrat') ||
-                  dec.title.toLowerCase().includes('renouvel')
-                ? 'achat'
-                : dec.title.toLowerCase().includes('audit')
-                  ? 'audit'
-                  : `other-${dec.id}`;
-            const key = `${dec.site_id || dec.id}:${lever}`;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
-          setDecisions(unique);
-        })
+        .then((d) => (cancelled ? null : setDecisions(d?.decisions || [])))
         .catch(() => (cancelled ? null : setDecisions([]))),
       getCockpitTrajectory()
         .then((d) => (cancelled ? null : setTrajectory(d)))

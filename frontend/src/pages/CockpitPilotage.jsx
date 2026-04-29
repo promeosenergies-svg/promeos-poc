@@ -173,10 +173,13 @@ function KpiTriptyqueEnergetique({ facts }) {
   const monthly = c.monthly_vs_n1 || {};
 
   // KPI 1 — Conso J−1 court terme (baseline historique A)
+  // Backend Étape 4 P0-C : `j_minus_1_source` indique J−1 (canonique) ou
+  // J−2/J−3… si fallback. Si encore 0, on affiche "—" + hint synchronisation.
   const jm1 = c.j_minus_1_mwh;
   const baseJm1 = c.baseline_j_minus_1?.value_mwh;
   const deltaJm1 = c.baseline_j_minus_1?.delta_pct;
-  // P0-3 : si valeur=0 ET baseline existe → traiter comme data-not-available
+  const jm1Source = c.j_minus_1_source || 'j-1';
+  const jm1IsFallback = jm1Source !== 'j-1';
   const jm1Stale = (jm1 === 0 || jm1 == null) && baseJm1 != null && baseJm1 > 0;
   const jm1Split = jm1Stale ? { value: '—', unit: '' } : splitMwh(jm1);
 
@@ -203,6 +206,8 @@ function KpiTriptyqueEnergetique({ facts }) {
   const subscribedKw = p.subscribed_kw;
   const peakDeltaPct = p.delta_pct;
   const peakTime = p.peak_time;
+  const peakSource = p.peak_source || 'j-1';
+  const peakIsFallback = peakSource !== 'j-1';
   const peakStale = (peakKw === 0 || peakKw == null) && subscribedKw != null && subscribedKw > 0;
   const peakSplit = peakStale ? { value: '—', unit: '' } : splitKw(peakKw);
 
@@ -229,9 +234,11 @@ function KpiTriptyqueEnergetique({ facts }) {
         hint={
           jm1Stale
             ? 'Données J−1 en synchronisation EMS · MAJ ce matin'
-            : baseJm1 != null
-              ? `Réf. ${splitMwh(baseJm1).value} ${splitMwh(baseJm1).unit} · même jour S−1`
-              : null
+            : jm1IsFallback
+              ? `Mesure du ${jm1Source.replace('j-', 'J−')} (J−1 en synchro EMS) · réf. ${splitMwh(baseJm1).value} ${splitMwh(baseJm1).unit}`
+              : baseJm1 != null
+                ? `Réf. ${splitMwh(baseJm1).value} ${splitMwh(baseJm1).unit} · même jour S−1`
+                : null
         }
       />
       <KpiCard
@@ -269,9 +276,11 @@ function KpiTriptyqueEnergetique({ facts }) {
         hint={
           peakStale
             ? 'Pic CDC J−1 en synchronisation Enedis SGE'
-            : subscribedKw != null
-              ? `Souscrite ${splitKw(subscribedKw).value} ${splitKw(subscribedKw).unit}${peakTime && peakTime !== '00:00' ? ` · ${peakTime}` : ''}`
-              : null
+            : peakIsFallback
+              ? `Mesure du ${peakSource.replace('j-', 'J−')} (CDC J−1 en synchro SGE) · souscrite ${splitKw(subscribedKw).value} ${splitKw(subscribedKw).unit}`
+              : subscribedKw != null
+                ? `Souscrite ${splitKw(subscribedKw).value} ${splitKw(subscribedKw).unit}${peakTime && peakTime !== '00:00' ? ` · ${peakTime}` : ''}`
+                : null
         }
       />
     </div>

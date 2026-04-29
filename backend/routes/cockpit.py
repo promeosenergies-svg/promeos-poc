@@ -932,6 +932,12 @@ def get_cockpit_priorities(
 
     priorities = []
 
+    # Étape 4 P0-D : enrichir chaque priorité avec impact_value (chiffré) +
+    # impact_unit + category_label pour permettre la 4ᵉ colonne Fraunces
+    # de la file P1-P5 maquette Pilotage. Convergence audit Marc + audit
+    # /frontend-design : "5 lignes 'compliance critique' identiques sans
+    # discriminant" → ajouter le poids € pénalité ou MWh/an récupérable.
+
     # Source 1 : Issues action center critiques/high
     try:
         from services.action_center_service import get_action_center_issues
@@ -946,6 +952,9 @@ def get_cockpit_priorities(
                         "urgency": sev,
                         "domain": issue.get("domain", ""),
                         "action_url": f"/anomalies?issue={issue.get('issue_id', '')}",
+                        "category_label": "Conformité",
+                        "impact_value_eur": issue.get("estimated_loss_eur"),
+                        "impact_value_mwh_year": None,
                         "_sort_key": 0 if sev == "critical" else 1,
                     }
                 )
@@ -975,12 +984,30 @@ def get_cockpit_priorities(
         )
 
         for item in overdue:
+            # Catégorie discriminante selon domain : conformité / consommation /
+            # achat / monitoring → la maquette demande à Marc de voir d'un coup
+            # d'œil POURQUOI cette priorité (badge typologique vs urgency).
+            domain_str = (item.domain or "").lower()
+            category_label = (
+                "Anomalie"
+                if "anomal" in domain_str or "monitor" in domain_str
+                else "Dépassement"
+                if "power" in domain_str or "puissance" in domain_str
+                else "Hors horaires"
+                if "horaire" in domain_str
+                else "Conformité op"
+                if "compliance" in domain_str or "conform" in domain_str
+                else "À traiter"
+            )
             priorities.append(
                 {
                     "title": item.issue_label,
                     "urgency": item.priority or "high",
                     "domain": item.domain,
                     "action_url": f"/action-center?action={item.id}",
+                    "category_label": category_label,
+                    "impact_value_eur": getattr(item, "estimated_loss_eur", None),
+                    "impact_value_mwh_year": getattr(item, "estimated_savings_mwh", None),
                     "_sort_key": 0 if item.priority == "critical" else 1,
                 }
             )
@@ -999,6 +1026,9 @@ def get_cockpit_priorities(
                     "urgency": "high",
                     "domain": "compliance",
                     "action_url": "/cockpit",
+                    "category_label": "Exposition",
+                    "impact_value_eur": float(risque),
+                    "impact_value_mwh_year": None,
                     "_sort_key": 1,
                 }
             )

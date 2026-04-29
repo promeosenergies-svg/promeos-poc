@@ -85,7 +85,32 @@ def transform_acronym(text: str, *, mode: _TransformMode = "narrative") -> str:
         seen_inline.add(acr)
         return f"{narrative} ({acr})"
 
-    return pattern.sub(_replace, text)
+    result = pattern.sub(_replace, text)
+    # Étape 4 P0-A backend : dedup mots adjacents identiques après narrativisation
+    # (ex: titre seed "Installer un système GTB classe A/B" → GTB se développe
+    # en "système de pilotage CVC" → résultat "système système de pilotage CVC".
+    # Le post-process supprime le doublon en gardant un seul mot).
+    # Audit /frontend-design Étape 2 : effet visible sur cards Décision CODIR.
+    return _dedup_adjacent_words(result)
+
+
+def _dedup_adjacent_words(text: str) -> str:
+    """Supprime un mot identique adjacent (insensible à la casse).
+
+    "système système de pilotage" → "système de pilotage"
+    "tarif tarif d'acheminement"  → "tarif d'acheminement"
+
+    Itère jusqu'à stabilité pour gérer les cascades (rare en pratique mais
+    sûr). Limite à 5 itérations pour éviter toute boucle infinie pathologique.
+    """
+    prev = None
+    cur = text
+    iterations = 0
+    while prev != cur and iterations < 5:
+        prev = cur
+        cur = re.sub(r"\b(\w+)\s+\1\b", r"\1", cur, flags=re.IGNORECASE)
+        iterations += 1
+    return cur
 
 
 def has_forbidden_acronym(title: str) -> str | None:

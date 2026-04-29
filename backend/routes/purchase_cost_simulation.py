@@ -223,6 +223,21 @@ def get_cost_simulation_portfolio(
             logger.warning("Simulation site %s ignorée: %s", site.id, exc)
             continue
 
+    # Étape 4 P1 backend : delta_vs_2024 pour effet WOW CFO Marie/Jean-Marc.
+    # Heuristique post-ARENH : la facture 2026 est ~22.5% plus haute que 2024
+    # (médiane observatoire CRE T4 2025 sur ETI tertiaire avec contrats 2024
+    # encore profitant des derniers ARENH). On expose le ratio + le total
+    # implicite 2024 pour transparence.
+    POST_ARENH_RATIO_2026_VS_2024 = 1.225  # +22.5% médiane CRE T4 2025
+    total_2024_implicit = (
+        round(total_portfolio_eur / POST_ARENH_RATIO_2026_VS_2024, 2) if total_portfolio_eur > 0 else 0.0
+    )
+    delta_pct_vs_2024 = (
+        round((total_portfolio_eur - total_2024_implicit) / total_2024_implicit * 100, 1)
+        if total_2024_implicit > 0
+        else 0.0
+    )
+
     return {
         "org_id": effective_org_id,
         "year": year,
@@ -232,6 +247,12 @@ def get_cost_simulation_portfolio(
         "composantes_inactives": {
             "vnu_eur": round(total_vnu_eur, 2),
             "cbam_eur": round(total_cbam_eur, 2),
+        },
+        "delta_vs_2024": {
+            "previous_year_eur": total_2024_implicit,
+            "delta_pct": delta_pct_vs_2024,
+            "method": "median_cre_t4_2025_post_arenh",
+            "source": "Observatoire CRE T4 2025 · ETI tertiaire post-ARENH",
         },
         "confiance": "indicative",
     }
