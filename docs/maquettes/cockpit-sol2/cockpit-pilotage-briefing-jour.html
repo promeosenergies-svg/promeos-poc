@@ -202,7 +202,8 @@ body {
   - <SolKickerWithSwitch> avec scope + mode switch
   - <SolBriefingHead> avec H1 Fraunces + narrative
   - <SolCockpitHeaderPills> alertes + Centre d'action
-  - <SolKpiTriptyqueEnergetique> (Conso J-1 / Surconso 7j / Pic puissance)
+  - <SolKpiTriptyqueEnergetique> triptyque temporel multi-échelle :
+      Conso J-1 (court terme) / Conso mois vs N-1 DJU-ajustée (moyen terme) / Pic puissance (contractuel)
   - <SolConsoSevenDaysBars> visuel glanceable
   - <SolCourbeChargeJMinus1> visuel glanceable HP/HC
   - <SolFileTraitement> liste priorisée par impact énergétique
@@ -235,11 +236,18 @@ body {
     </div>
   </div>
 
-  <!-- ============ TRIPTYQUE KPI ÉNERGÉTIQUE (option E2) ============ -->
+  <!-- ============ TRIPTYQUE KPI ÉNERGÉTIQUE (option E2bis v1.1) ============ -->
   <!--
     Doctrine §11.3 : 3 KPI hero maximum
-    Décision Amine : KPI énergétiques honnêtes (pas d'euros tant que pas contrat)
+    Décision Amine v1.1 (29/04/2026) : triptyque temporel multi-échelle
+      - KPI 1 : court terme (J-1 vs baseline historique)
+      - KPI 2 : moyen terme (mois courant vs même mois N-1, DJU-ajusté)
+      - KPI 3 : contractuel (pic puissance vs souscrite)
+    Le KPI Surconso 7 j est sorti du hero — l'info reste accessible via :
+      - <SolConsoSevenDaysBars> juste sous le triptyque (samedi rouge + 39 %)
+      - <SolFileTraitement> P1/P2 affichant les sites en surconso (Nice + Toulouse)
     Backend : alimenté par /api/cockpit/_facts.consumption + .power
+              + service backend/services/monthly_comparison_service.py (Phase 1.3)
   -->
   <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:1rem 0 1.1rem">
 
@@ -257,14 +265,14 @@ body {
 
     <div class="pv-kpi">
       <div class="pv-mono" style="margin-bottom:6px">
-        Surconso 7 j ·
-        <span class="pv-tooltip-trigger" title="Baseline B · DJU-ajustée · r² 0.87 · calibrée 20/04/2026">?</span>
+        Conso mois courant ·
+        <span class="pv-tooltip-trigger" title="avril 2026 (j 1-27) vs avril 2025 (j 1-27 normalisé) · Baseline B DJU-ajustée · r² 0.87 · calibrée 20/04/2026">?</span>
       </div>
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-        <div class="pv-kpi-value">4,7 <span style="font-size:14px">MWh</span></div>
-        <div style="font-size:12px;color:var(--color-text-danger);font-weight:500">2 sites</div>
+        <div class="pv-kpi-value">187 <span style="font-size:14px">MWh</span></div>
+        <div style="font-size:12px;color:var(--color-text-warning);font-weight:500">+ 5 % vs avr. 2025</div>
       </div>
-      <div class="pv-mono" style="margin-top:5px;font-size:10.5px">Hôtel Nice · Toulouse</div>
+      <div class="pv-mono" style="margin-top:5px;font-size:10.5px">DJU-ajusté · 27 j cumulés</div>
     </div>
 
     <div class="pv-kpi">

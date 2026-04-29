@@ -47,7 +47,7 @@ Le prompt `PROMPT_REFONTE_COCKPIT_DUAL_SOL2_EXECUTION.md` mentionne déjà les m
 | `<SolKickerWithSwitch>` | Header en haut · scope + switch jour/stratégique | Phase 3.1 | `/api/cockpit/_facts.scope` |
 | `<SolBriefingHead>` | H1 "Bonjour — voici ce qui mérite votre attention" + narrative | Phase 1.3 | `/api/cockpit/_facts` |
 | `<CockpitHeaderPills>` | Bandeau alertes + bouton Centre d'action | Phase 1.3 | `/api/cockpit/_facts.alerts` + `/api/action-center/actions/summary` |
-| `<SolKpiTriptyqueEnergetique>` | 3 KPI (Conso J-1 · Surconso 7 j · Pic puissance) | Phase 2.1 | `/api/cockpit/_facts.consumption + .power` |
+| `<SolKpiTriptyqueEnergetique>` | 3 KPI temporels multi-échelle (Conso J-1 court · Conso mois vs N-1 DJU-ajustée moyen · Pic puissance contractuel) | Phase 2.1 + 2.1bis | `/api/cockpit/_facts.consumption + .power + .monthly_vs_n1` |
 | `<SolConsoSevenDaysBars>` | SVG barres 7 jours avec annotation samedi | Phase 1.3 | `/api/ems/timeseries?period=7d` |
 | `<SolCourbeChargeJMinus1>` | SVG courbe HP/HC + ligne souscrite | Phase 1.3 | `/api/cockpit/cdc?period=j_minus_1` |
 | `<SolFileTraitement>` | Liste 5 lignes priorisées par impact énergétique | Phase 0.2 (réécriture) + Phase 2.3 | `/api/cockpit/priorities` |
@@ -120,6 +120,7 @@ Avant de considérer une phase comme terminée, comparer maquette vs production 
 | Date | Changement | Trigger |
 |---|---|---|
 | 2026-04-28 | v1.0 — maquettes finales validées Amine | Décisions arbitrages 1-10 + EUR/MWh + baseline |
+| 2026-04-29 | v1.1 — swap KPI 2 Pilotage : Surconso 7 j → Conso mois vs N-1 DJU-ajustée | Demande Amine après revue maquette : besoin lecture moyen terme · doctrine 3 KPI conservée · triptyque temporel multi-échelle (court/moyen/contractuel). Phase 2.1bis ajoutée au prompt. Nouveau service backend `monthly_comparison_service.py` (Phase 1.3). Surconso 7 j déplacée dans `<SolConsoSevenDaysBars>` + `<SolFileTraitement>` P1/P2. |
 
 Ces maquettes seront mises à jour à la fin de chaque sprint si nécessaire (ex: Phase 4 test utilisateur révèle un point bloquant). Toute mise à jour fait l'objet d'un commit séparé avec changelog ici.
 
