@@ -119,6 +119,14 @@ export const autoDetectOnboarding = (orgId) =>
 // ── Cockpit Executive ──
 export const getCockpit = () => cachedGet('/cockpit').then((r) => r.data);
 export const getCockpitTrajectory = () => cachedGet('/cockpit/trajectory').then((r) => r.data);
+// Phase Refonte WOW : décisions Top 3 narrées (page Décision)
+export const getCockpitDecisionsTop3 = () =>
+  cachedGet('/cockpit/decisions/top3').then((r) => r.data);
+// Phase Refonte WOW : facture portefeuille agrégée 5 sites (page Décision)
+export const getPurchasePortfolioCostSimulation = (orgId) =>
+  cachedGet(`/purchase/cost-simulation/portfolio/${orgId}`).then((r) => r.data);
+// Phase Refonte WOW : priorités opérationnelles P1-P5 (page Pilotage file)
+export const getCockpitPriorities = () => cachedGet('/cockpit/priorities').then((r) => r.data);
 export const getCockpitBenchmark = () => cachedGet('/cockpit/benchmark').then((r) => r.data);
 export const getCockpitCo2 = () => cachedGet('/cockpit/co2').then((r) => r.data);
 export const getCockpitConsoMonth = () => cachedGet('/cockpit/conso-month').then((r) => r.data);

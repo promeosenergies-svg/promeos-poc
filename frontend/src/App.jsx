@@ -15,6 +15,7 @@ import { SkeletonCard } from './ui/Skeleton';
 
 // Lazy-loaded pages — code-split per route
 const CommandCenter = lazy(() => import('./pages/CommandCenter'));
+const CockpitPilotage = lazy(() => import('./pages/CockpitPilotage'));
 const Patrimoine = lazy(() => import('./pages/Patrimoine'));
 const Site360 = lazy(() => import('./pages/Site360'));
 const ActionsPage = lazy(() => import('./pages/ActionsPage'));
@@ -225,16 +226,17 @@ function App() {
                         />
                         {/* Energy Copilot — route supprimée (Sprint B P0-7 + Sprint C cleanup) */}
                         {/* Legacy redirects */}{' '}
-                        {/* Phase 3.1 — Cockpit dual sol2 routes canoniques :
-                            /cockpit/jour       → Pilotage (CommandCenter, energy manager 30s)
+                        {/* Phase Refonte WOW (29/04/2026) — Cockpit dual sol2 :
+                            /cockpit/jour       → Pilotage (CockpitPilotage, energy manager 30s)
                             /cockpit/strategique → Décision (Cockpit, dirigeant 3min)
                             /cockpit            → redirect /cockpit/jour (default mode)
-                            Ref : PROMPT_REFONTE_COCKPIT_DUAL_SOL2_EXECUTION.md §4.B Phase 3.1 */}
+                            CommandCenter est conservé temporairement pour rétro-compat
+                            d'autres routes legacy ; sera décommissionné Étape 3 du sprint. */}
                         <Route
                           path="/cockpit/jour"
                           element={
                             <PageSuspense>
-                              <CommandCenter />
+                              <CockpitPilotage />
                             </PageSuspense>
                           }
                         />
