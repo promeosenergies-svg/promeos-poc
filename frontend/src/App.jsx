@@ -16,6 +16,7 @@ import { SkeletonCard } from './ui/Skeleton';
 // Lazy-loaded pages — code-split per route
 const CommandCenter = lazy(() => import('./pages/CommandCenter'));
 const CockpitPilotage = lazy(() => import('./pages/CockpitPilotage'));
+const CockpitDecision = lazy(() => import('./pages/CockpitDecision'));
 const Patrimoine = lazy(() => import('./pages/Patrimoine'));
 const Site360 = lazy(() => import('./pages/Site360'));
 const ActionsPage = lazy(() => import('./pages/ActionsPage'));
@@ -244,7 +245,7 @@ function App() {
                           path="/cockpit/strategique"
                           element={
                             <PageSuspense>
-                              <Cockpit />
+                              <CockpitDecision />
                             </PageSuspense>
                           }
                         />{' '}
