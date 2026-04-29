@@ -80,6 +80,65 @@ def _meter_ids_for_org(db: Session, site_ids: list[int]) -> list[int]:
     return [r[0] for r in rows]
 
 
+# ─── Helper Phase 3.3 — push événementiel "+X vs S-1" ──────────────────────
+
+
+def _weekly_delta_struct(current_value, previous_value=None, *, unit: str = "") -> dict:
+    """Construit le payload canonique d'un delta hebdomadaire push.
+
+    Phase 3.3 (cockpit-sol2 §11.3 push événementiel) — structure exposée par
+    chaque métrique sujette à push hebdo (Exposition, Potentiel, Sites en
+    dérive, Score conformité).
+
+    MVP : `previous_value` peut être None tant que l'historique semaine
+    n'est pas seedé en DB (cf. Phase 3.3.bis pour calibration). Le contrat
+    de réponse reste stable — le frontend gère le cas `direction='unknown'`
+    en n'affichant pas le push.
+
+    Args:
+        current_value: valeur actuelle de la métrique
+        previous_value: valeur S-1 (None tant que non disponible)
+        unit: suffixe lisible affichage ('k€', 'MWh/an', 'sites', 'pts')
+
+    Returns:
+        dict {current, previous, delta_absolute, delta_pct, direction, unit}
+    """
+    if current_value is None:
+        return {
+            "current": None,
+            "previous": None,
+            "delta_absolute": None,
+            "delta_pct": None,
+            "direction": "unknown",
+            "unit": unit,
+        }
+    if previous_value is None:
+        return {
+            "current": current_value,
+            "previous": None,
+            "delta_absolute": None,
+            "delta_pct": None,
+            "direction": "unknown",
+            "unit": unit,
+        }
+    delta_abs = current_value - previous_value
+    delta_pct = (delta_abs / previous_value) if previous_value else None
+    if delta_abs > 0:
+        direction = "up"
+    elif delta_abs < 0:
+        direction = "down"
+    else:
+        direction = "stable"
+    return {
+        "current": current_value,
+        "previous": previous_value,
+        "delta_absolute": delta_abs,
+        "delta_pct": round(delta_pct, 4) if delta_pct is not None else None,
+        "direction": direction,
+        "unit": unit,
+    }
+
+
 # ─── Section scope ──────────────────────────────────────────────────────────
 
 
@@ -100,7 +159,7 @@ def _build_scope(db: Session, org_id: int) -> dict:
             "surface_total_m2": round(surface_total, 1),
             "ref_year": DT_REF_YEAR_DEFAULT,
         }
-    except Exception as exc:
+    except Exception as exc:  # noqa: F841 — _logger.warning prend exc explicit
         _logger.warning("_build_scope error: %s", exc)
         return {
             "org_id": org_id,
@@ -769,6 +828,32 @@ def get_cockpit_facts(
         "period": period,
     }
 
+    # 10. Phase 3.3 — push événementiel "+X vs S-1" (4 métriques canoniques)
+    # MVP : previous_value=None tant que l'historique semaine n'est pas seedé.
+    # Le frontend gère direction='unknown' en n'affichant pas le push.
+    weekly_deltas = {
+        "exposure_eur": _weekly_delta_struct(
+            current_value=(exposure.get("total") or {}).get("value_eur"),
+            previous_value=None,
+            unit="€",
+        ),
+        "potential_mwh_year": _weekly_delta_struct(
+            current_value=potential_recoverable.get("value_mwh_year"),
+            previous_value=None,
+            unit="MWh/an",
+        ),
+        "sites_in_drift": _weekly_delta_struct(
+            current_value=consumption.get("sites_in_drift"),
+            previous_value=None,
+            unit="sites",
+        ),
+        "compliance_score": _weekly_delta_struct(
+            current_value=compliance.get("score"),
+            previous_value=None,
+            unit="pts",
+        ),
+    }
+
     return {
         "scope": scope,
         "consumption": consumption,
@@ -779,4 +864,5 @@ def get_cockpit_facts(
         "alerts": alerts,
         "data_quality": data_quality,
         "metadata": metadata,
+        "weekly_deltas": weekly_deltas,
     }
