@@ -223,13 +223,30 @@ export default function AnomaliesPage() {
         (a) => a.title_fr?.toLowerCase().includes(q) || a.site_nom?.toLowerCase().includes(q)
       );
     }
-    // Tri : impact € DESC puis priority_score DESC
-    r.sort((a, b) => {
-      const ra = a.business_impact?.estimated_risk_eur ?? 0;
-      const rb = b.business_impact?.estimated_risk_eur ?? 0;
-      if (rb !== ra) return rb - ra;
-      return (b.priority_score ?? 0) - (a.priority_score ?? 0);
-    });
+    // Étape 10 P1-3 : reconnaître `?sort=mwh_desc` (deep-link KPI Décision
+    // "Voir N actions") qui demande un tri par MWh récupérable décroissant.
+    // Audit Phase 5 nav P1 : param ignoré silencieusement précédemment.
+    const sortMode = searchParams.get('sort');
+    if (sortMode === 'mwh_desc') {
+      r.sort((a, b) => {
+        const ma = a.business_impact?.estimated_savings_mwh ?? a.estimated_savings_mwh ?? 0;
+        const mb = b.business_impact?.estimated_savings_mwh ?? b.estimated_savings_mwh ?? 0;
+        if (mb !== ma) return mb - ma;
+        // Fallback : impact € si MWh manquant
+        return (
+          (b.business_impact?.estimated_risk_eur ?? 0) -
+          (a.business_impact?.estimated_risk_eur ?? 0)
+        );
+      });
+    } else {
+      // Tri par défaut : impact € DESC puis priority_score DESC
+      r.sort((a, b) => {
+        const ra = a.business_impact?.estimated_risk_eur ?? 0;
+        const rb = b.business_impact?.estimated_risk_eur ?? 0;
+        if (rb !== ra) return rb - ra;
+        return (b.priority_score ?? 0) - (a.priority_score ?? 0);
+      });
+    }
     return r;
   }, [
     anomalies,
@@ -239,6 +256,7 @@ export default function AnomaliesPage() {
     filters.site,
     filters.status,
     filters.q,
+    searchParams,
   ]);
 
   /* ── KPIs (reflètent les filtres actifs) ── */

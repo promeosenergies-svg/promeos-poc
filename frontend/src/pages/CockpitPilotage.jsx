@@ -41,7 +41,7 @@ import SolKickerWithSwitch from '../ui/sol/SolKickerWithSwitch';
 import AcronymTooltip from '../ui/sol/AcronymTooltip';
 import { getCockpitPriorities } from '../services/api/cockpit';
 import { useScope } from '../contexts/ScopeContext';
-import { splitMwh, splitKw, fmtPct, deltaSeverity } from '../utils/format';
+import { splitMwh, splitKw, fmtPct, fmtEurShort, deltaSeverity } from '../utils/format';
 import { getIsoWeek, relativeTime, fmtDateLong } from '../utils/date';
 import { severityTone } from '../ui/sol/solTones';
 
@@ -684,6 +684,25 @@ function FileTraitementRow({ rank, item }) {
   const impactMwh = item.impact_value_mwh_year;
   const categoryLabel = item.category_label;
   const hasImpact = (impactEur != null && impactEur > 0) || (impactMwh != null && impactMwh > 0);
+  // Étape 10 P1-2 : badge confidence (Calculé / Modélisé / Indicatif) pour
+  // cohérence visuelle avec les KPI hybride Décision (audit /frontend-design).
+  const confidenceBadge = item.confidence_badge;
+  const confidenceLabel =
+    confidenceBadge === 'calculated_regulatory' || confidenceBadge === 'calculated_contractual'
+      ? 'Calculé'
+      : confidenceBadge === 'modeled_cee' || confidenceBadge === 'modeled'
+        ? 'Modélisé'
+        : confidenceBadge === 'indicative'
+          ? 'Indicatif'
+          : null;
+  const confidenceTone =
+    confidenceLabel === 'Calculé'
+      ? { bg: 'var(--sol-succes-bg)', fg: 'var(--sol-succes-fg)' }
+      : confidenceLabel === 'Modélisé'
+        ? { bg: 'var(--sol-attention-bg)', fg: 'var(--sol-attention-fg)' }
+        : confidenceLabel === 'Indicatif'
+          ? { bg: 'var(--sol-hce-bg)', fg: 'var(--sol-hce-fg)' }
+          : null;
   // Étape 7 P0-B anchor : la page Décision link "Voir preuve opérationnelle →"
   // utilise `/cockpit/jour#decision-{id}`. On expose un `id` HTML sur chaque
   // ligne pour que le scroll vers l'ancre fonctionne (audit Phase 5 : ancre
@@ -786,18 +805,28 @@ function FileTraitementRow({ rank, item }) {
               }}
             >
               {impactEur != null && impactEur > 0
-                ? impactEur >= 1000
-                  ? `${(impactEur / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} k€`
-                  : `${Math.round(impactEur).toLocaleString('fr-FR')} €`
+                ? fmtEurShort(impactEur)
                 : `${Math.round(impactMwh).toLocaleString('fr-FR')} MWh/an`}
             </div>
             <div
-              style={{
-                fontSize: 10.5,
-                color: 'var(--sol-ink-500)',
-              }}
+              className="flex items-center justify-end gap-1 mt-0.5"
+              style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
             >
-              {impactEur != null ? "d'exposition" : 'récupérable'}
+              {confidenceLabel && confidenceTone && (
+                <span
+                  className="inline-flex items-center px-1 py-0 rounded font-mono uppercase tracking-[0.06em]"
+                  style={{
+                    fontSize: 9,
+                    background: confidenceTone.bg,
+                    color: confidenceTone.fg,
+                    fontWeight: 500,
+                  }}
+                  title={item.confidence_source || 'Source canonique'}
+                >
+                  {confidenceLabel}
+                </span>
+              )}
+              <span>{impactEur != null ? "d'exposition" : 'récupérable'}</span>
             </div>
           </div>
         )}

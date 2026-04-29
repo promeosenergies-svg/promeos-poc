@@ -1065,6 +1065,11 @@ def get_cockpit_priorities(
                     "domain": "compliance",
                     "action_url": "/cockpit/strategique?focus=exposure",
                     "category_label": "Exposition",
+                    # Étape 10 P1-2 : badge confidence pour cohérence cross-pages
+                    # (audit /frontend-design : la card P5 affichait un montant
+                    # sans badge "Calculé" alors que la Décision en a un).
+                    "confidence_badge": "calculated_regulatory",
+                    "confidence_source": "Décret 2019-771 art. 9",
                     "impact_value_eur": risque,
                     "impact_value_mwh_year": None,
                     "_sort_key": 1,

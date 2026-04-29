@@ -252,25 +252,41 @@ def _build_consumption(
                 _logger.debug("baseline_b 7d failed: %s", exc)
 
         # Sites en dérive (surconso > 10% vs baseline A)
+        # Étape 10 P1-4 : optim N+1 → 2 queries (audit /simplify P0).
+        # Avant : pour chaque site, 1 query baseline_a + 1 query MeterReading
+        # par site = N×2 queries hot path /_facts. Sur 20 sites → 40 queries.
+        # Après : 1 query batch agrégeant Meter→site_id + sum(MeterReading) en
+        # 1 passe SQL + N appels in-memory get_baseline_a (déjà cachable).
         sites_in_drift = 0
-        for sid in site_ids:
-            try:
-                ba = get_baseline_a(db, sid, j_minus_1)
-                mids = _meter_ids_for_site(db, sid)
-                if mids:
-                    total_site = (
-                        db.query(func.sum(MeterReading.value_kwh))
-                        .filter(
-                            MeterReading.meter_id.in_(mids),
-                            MeterReading.timestamp >= d_start,
-                            MeterReading.timestamp <= d_end,
-                        )
-                        .scalar()
-                    ) or 0.0
+        try:
+            # Batch query : conso J−1 par site_id en 1 round-trip SQL.
+            # Filter parent_meter_id IS NULL = compteurs principaux uniquement
+            # (cohérent avec _meter_ids_for_site).
+            day_consumption_by_site: dict[int, float] = {}
+            if site_ids:
+                rows = (
+                    db.query(Meter.site_id, func.sum(MeterReading.value_kwh))
+                    .join(MeterReading, MeterReading.meter_id == Meter.id)
+                    .filter(
+                        Meter.site_id.in_(site_ids),
+                        Meter.parent_meter_id.is_(None),
+                        func.date(MeterReading.timestamp) == j_minus_1.isoformat(),
+                    )
+                    .group_by(Meter.site_id)
+                    .all()
+                )
+                day_consumption_by_site = {sid: float(kwh or 0.0) for sid, kwh in rows}
+
+            for sid in site_ids:
+                try:
+                    ba = get_baseline_a(db, sid, j_minus_1)
+                    total_site = day_consumption_by_site.get(sid, 0.0)
                     if ba["value_kwh"] > 0 and total_site > ba["value_kwh"] * 1.10:
                         sites_in_drift += 1
-            except Exception as exc:
-                _logger.debug("site drift check failed: %s", exc)
+                except Exception as exc:
+                    _logger.debug("baseline check failed for site %s: %s", sid, exc)
+        except Exception as exc:
+            _logger.debug("sites_in_drift batch query failed: %s", exc)
 
         # Annuel agrégé (12 mois glissants)
         y_start = datetime.combine(today - timedelta(days=365), datetime.min.time())

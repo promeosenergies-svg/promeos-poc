@@ -304,11 +304,45 @@ export default function MethodologiePage() {
       )}
 
       {content && (
-        <article
-          className="max-w-3xl prose-sol"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
-        />
+        <>
+          {/* Étape 10 P1-1 : carte papier Sol éditorial — signature Cockpit
+              prolongée à la méthodologie (audit /frontend-design : "écart
+              de signature visible si l'investisseur clique"). */}
+          <article
+            className="prose-sol mx-auto"
+            style={{
+              maxWidth: 760,
+              background: 'var(--sol-bg-paper)',
+              border: '0.5px solid var(--sol-rule)',
+              borderRadius: 12,
+              padding: '1.6rem 1.8rem 1.4rem',
+            }}
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+          />
+          {/* Footer Sol cohérent avec les pages Cockpit */}
+          <div
+            className="mx-auto mt-3 flex justify-between flex-wrap gap-2.5 pt-3"
+            style={{
+              maxWidth: 760,
+              borderTop: '0.5px solid var(--sol-rule)',
+              fontFamily: 'var(--sol-font-mono)',
+              fontSize: 11,
+              letterSpacing: '0.07em',
+              textTransform: 'uppercase',
+              color: 'var(--sol-ink-500)',
+            }}
+          >
+            <span>Document méthodologique · doctrine PROMEOS Sol v1.1</span>
+            <Link
+              to="/"
+              className="no-underline hover:underline inline-flex items-center gap-1"
+              style={{ color: 'var(--sol-ink-500)' }}
+            >
+              ← Retour au tableau de bord
+            </Link>
+          </div>
+        </>
       )}
     </PageShell>
   );
