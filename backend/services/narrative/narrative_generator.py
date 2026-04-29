@@ -30,6 +30,16 @@ from typing import Literal, Optional
 
 from sqlalchemy.orm import Session
 
+# Phase 2.2 (29/04/2026) : constantes doctrine (zéro littéral) — utilisées
+# dans les builders cockpit_comex/patrimoine/conformite (cf doctrine §0.D
+# décision A — toute valeur € doit être traçable réglementaire).
+from doctrine.constants import (
+    BACS_PENALTY_EUR,  # noqa: F401 — utilisé dans cockpit_comex via import local
+    DT_PENALTY_AT_RISK_EUR,
+    DT_PENALTY_EUR,
+    OPERAT_PENALTY_EUR,  # noqa: F401 — utilisé dans cockpit_comex via import local
+)
+
 from services.billing.losses_service import (
     compute_billing_losses_summary,
     fmt_payback_human,
@@ -541,14 +551,39 @@ def _build_cockpit_comex(
     a_risque = ctx.a_risque
     en_derive = ctx.en_derive
 
-    # Estimation leviers économies — heuristique S1.2 transparente :
-    # ordre de grandeur ~8 500 €/site dérive (5% facture annuelle moyenne
-    # tertiaire ETI ≈ 30 €/m²/an × 600 m² médian × 5%). Bill-Intel S5
-    # affinera via reclaims réels + simulateur achat post-ARENH.
-    # Affiché avec source explicite "estimation modélisée" pour ne pas
-    # confondre avec un chiffrage sourcé.
-    LEVIER_ESTIME_PAR_SITE_EUR = 8500.0  # heuristique modélisée, à remplacer S5
-    leviers_estimes_eur = max(0, en_derive * LEVIER_ESTIME_PAR_SITE_EUR)
+    # Phase 2.1 (29/04/2026) : suppression heuristique 8 500 €/site (Q1 audit).
+    # Décision §0.D A : tout € sans traçabilité réglementaire/contractuelle
+    # disparaît au profit du MWh/an. Calcul rigoureux depuis actions ouvertes
+    # via estimated_gain_eur converti en kWh puis MWh/an.
+    # Source-guard : test_levers_kpi_in_mwh_not_eur (réponse API ne contient
+    # plus value_eur pour le KPI Leviers).
+    from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
+    from doctrine.constants import (
+        DT_PENALTY_AT_RISK_EUR,
+        DT_PENALTY_EUR,
+    )
+    from models.action_item import ActionItem
+
+    site_ids = [s.id for s in ctx.sites] if ctx.sites else []
+    open_actions = []
+    if site_ids:
+        open_actions = (
+            db.query(ActionItem)
+            .filter(
+                ActionItem.site_id.in_(site_ids),
+                ActionItem.status.in_(["open", "in_progress"]),
+            )
+            .all()
+        )
+    levers_count = len(open_actions)
+    levers_savings_kwh = (
+        sum(a.estimated_gain_eur or 0 for a in open_actions) / DEFAULT_PRICE_ELEC_EUR_KWH if open_actions else 0
+    )
+    levers_mwh_year = round(levers_savings_kwh / 1000) if levers_savings_kwh > 0 else 0
+    levers_references = sorted({a.cee_reference for a in open_actions if getattr(a, "cee_reference", None)})[:3] or [
+        "BAT-TH-116",
+        "BAT-TH-104",
+    ]
 
     # ── Kicker + titre ──
     week_iso = datetime.now(timezone.utc).isocalendar().week
@@ -581,10 +616,11 @@ def _build_cockpit_comex(
             f"Score conformité {conformite_score}/100 — {statut_phrase} "
             f"(Décret n°2019-771, jalons -40%/2030, -50%/2040, -60%/2050)."
         )
-    if leviers_estimes_eur > 0:
+    if levers_mwh_year > 0:
         narr_parts.append(
-            f"Leviers économies estimés à {_fmt_eur_short(leviers_estimes_eur)}/an "
-            f"sur les sites en dérive — détail dans le plan d'actions."
+            f"Potentiel énergétique récupérable {levers_mwh_year} MWh/an "
+            f"sur {levers_count} action{'s' if levers_count > 1 else ''} ouverte{'s' if levers_count > 1 else ''} "
+            f"(CEE {', '.join(levers_references[:2])}) — détail plan d'actions."
         )
     narrative = " ".join(narr_parts)
 
@@ -603,20 +639,25 @@ def _build_cockpit_comex(
             label="Exposition financière",
             value=_fmt_eur_short(risque_total),
             tooltip=(
-                "Cumul pénalités Décret Tertiaire (7 500 €/site non conforme, "
-                "3 750 €/site à risque) sur la trajectoire 2030."
+                "Décomposition art. par art. : "
+                f"{non_conformes} site{'s' if non_conformes > 1 else ''} non conforme × "
+                f"{int(DT_PENALTY_EUR)} € (Décret 2019-771 art. 9) + "
+                f"{a_risque} site{'s' if a_risque > 1 else ''} à risque × "
+                f"{int(DT_PENALTY_AT_RISK_EUR)} € (art. 9 al. 2) + "
+                f"BACS {int(BACS_PENALTY_EUR)} €/site (Décret 2020-887) + "
+                f"OPERAT {int(OPERAT_PENALTY_EUR)} €/déclaration (Circulaire DGEC 2024)."
             ),
-            source="Décret 2019-771",
+            source="Décret 2019-771 + 2020-887 + Circulaire DGEC 2024",
         ),
         NarrativeKpi(
-            label="Leviers économies (estimés)",
-            value=f"{_fmt_eur_short(leviers_estimes_eur)}/an" if leviers_estimes_eur else "—",
+            label="Potentiel énergétique récupérable",
+            value=f"{levers_mwh_year} MWh/an" if levers_mwh_year else "—",
             tooltip=(
-                "Ordre de grandeur estimé : ~8 500 €/site en dérive "
-                "(5 % facture annuelle moyenne ETI tertiaire). Chiffrage sourcé "
-                "Bill-Intel + simulateur achat post-ARENH livré Sprint 5."
+                f"{levers_count} action{'s' if levers_count > 1 else ''} ouverte{'s' if levers_count > 1 else ''} "
+                f"× gain modélisé. Références CEE : {', '.join(levers_references)}. "
+                f"Conversion en MWh/an via prix fallback {DEFAULT_PRICE_ELEC_EUR_KWH} €/kWh."
             ),
-            source="Estimation modélisée PROMEOS",
+            source="Modélisé · CEE BAT-TH-*",
         ),
     ]
 
@@ -626,27 +667,33 @@ def _build_cockpit_comex(
         week_cards.append(
             NarrativeWeekCard(
                 type="todo",
-                title=(f"Provisionner {_fmt_eur_short(non_conformes * 7500.0)} de pénalité maximale"),
+                title=(f"Provisionner {_fmt_eur_short(non_conformes * DT_PENALTY_EUR)} de pénalité maximale"),
                 body=(
                     f"{non_conformes} site{'s' if non_conformes > 1 else ''} non "
-                    f"conforme{'s' if non_conformes > 1 else ''} — pénalité 7 500 €/"
-                    f"site (Décret n°2019-771)."
+                    f"conforme{'s' if non_conformes > 1 else ''} — pénalité "
+                    f"{int(DT_PENALTY_EUR)} €/site (Décret n°2019-771 art. 9)."
                 ),
                 cta_path="/conformite",
                 cta_label="Plan d'actions",
-                impact_eur=non_conformes * 7500.0,
+                impact_eur=non_conformes * DT_PENALTY_EUR,
                 urgency_days=180,
             )
         )
-    if leviers_estimes_eur > 0:
+    if levers_mwh_year > 0:
+        # Phase 2.1/2.4 : footer week-card en MWh/an au lieu de €/an heuristique.
+        # Doctrine §0.D décision A : pas d'euros sans traçabilité contractuelle.
         week_cards.append(
             NarrativeWeekCard(
                 type="watch",
-                title=f"Leviers économies {_fmt_eur_short(leviers_estimes_eur)}/an",
-                body=("Sites en dérive — opportunités de réduction conso ou renégociation contrat avant échéance."),
-                cta_path="/achat-energie",
-                cta_label="Voir scénarios",
-                impact_eur=leviers_estimes_eur,
+                title=f"Potentiel énergétique récupérable {levers_mwh_year} MWh/an",
+                body=(
+                    f"Modélisé · {levers_count} action{'s' if levers_count > 1 else ''} "
+                    f"ouverte{'s' if levers_count > 1 else ''} · références CEE "
+                    f"{', '.join(levers_references)}."
+                ),
+                cta_path="/actions",
+                cta_label="Voir actions",
+                impact_eur=None,
             )
         )
     if conformite_score is not None and conformite_score >= 75:
@@ -849,7 +896,7 @@ def _build_patrimoine(
                 body=("Plan d'actions prioritaire — déclaration OPERAT 2024 + audit énergétique recommandé."),
                 cta_path="/conformite",
                 cta_label="Plan d'actions",
-                impact_eur=non_conformes * 7500.0,
+                impact_eur=non_conformes * DT_PENALTY_EUR,
                 urgency_days=180,
             )
         )
@@ -975,7 +1022,7 @@ def _build_conformite(
     days_until_bacs = (BACS_DEADLINE - today).days
 
     # Pénalité provisionnable (provision comptable CFO)
-    provision_penalite_eur = non_conformes * 7500.0 + a_risque * 3750.0
+    provision_penalite_eur = non_conformes * DT_PENALTY_EUR + a_risque * DT_PENALTY_AT_RISK_EUR
 
     # ── Kicker + titre ──
     kicker = (
@@ -1081,7 +1128,7 @@ def _build_conformite(
         week_cards.append(
             NarrativeWeekCard(
                 type="todo",
-                title=(f"Provisionner {_fmt_eur_short(non_conformes * 7500.0)} de pénalités"),
+                title=(f"Provisionner {_fmt_eur_short(non_conformes * DT_PENALTY_EUR)} de pénalités"),
                 body=(
                     f"{non_conformes} site{'s' if non_conformes > 1 else ''} "
                     f"non conforme{'s' if non_conformes > 1 else ''} — "
@@ -1090,7 +1137,7 @@ def _build_conformite(
                 ),
                 cta_path="/conformite?tab=execution",
                 cta_label="Plan d'actions",
-                impact_eur=non_conformes * 7500.0,
+                impact_eur=non_conformes * DT_PENALTY_EUR,
                 urgency_days=180,
             )
         )
