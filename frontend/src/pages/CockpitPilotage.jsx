@@ -644,14 +644,19 @@ function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
 
 // ── File de traitement P1-P5 ─────────────────────────────────────────
 
-/** Maquette §11.3 réciprocité P1-P3 portent un lien stratégique (DoD 5).
- *  En attendant l'enrichissement backend (Étape 4 — impact_value, decision_id),
- *  on cible /cockpit/strategique en ancre racine. */
+/** Maquette §11.3 réciprocité P1-P3 portent un lien stratégique (DoD 5). */
 const STRATEGIC_HREF = '/cockpit/strategique';
 
 function FileTraitementRow({ rank, item }) {
   const tone = severityTone(item.urgency);
   const showStrategicLink = rank <= 3;
+  // Étape 4.bis FE : 4ᵉ colonne Impact maquette §11.3 (signal métier #1).
+  // Backend P0-D : impact_value_eur ou impact_value_mwh_year + category_label
+  // depuis /cockpit/priorities. Si impact non chiffré, on n'affiche que P-rank.
+  const impactEur = item.impact_value_eur;
+  const impactMwh = item.impact_value_mwh_year;
+  const categoryLabel = item.category_label;
+  const hasImpact = (impactEur != null && impactEur > 0) || (impactMwh != null && impactMwh > 0);
   return (
     <div
       className="block rounded-md mb-1.5 transition-shadow"
@@ -662,7 +667,12 @@ function FileTraitementRow({ rank, item }) {
         color: 'var(--sol-ink-900)',
       }}
     >
-      <div className="grid items-center gap-3" style={{ gridTemplateColumns: '36px 1fr auto' }}>
+      <div
+        className="grid items-center gap-3"
+        style={{
+          gridTemplateColumns: hasImpact ? '36px 1fr auto auto' : '36px 1fr auto',
+        }}
+      >
         <span
           className="font-mono font-medium text-center px-2 py-0.5 rounded"
           style={{
@@ -683,13 +693,9 @@ function FileTraitementRow({ rank, item }) {
             className="flex items-center gap-2 flex-wrap"
             style={{ fontSize: 11.5, color: 'var(--sol-ink-700)' }}
           >
-            <span
-              className="font-mono uppercase tracking-[0.05em]"
-              style={{ fontSize: 10, color: 'var(--sol-ink-500)' }}
-            >
-              {item.domain}
-            </span>
-            {item.urgency && (
+            {/* Backend P0-D : category_label (Anomalie / Dépassement / Hors horaires
+                / Conformité op / Exposition) discrimine visuellement P1-P5. */}
+            {categoryLabel && (
               <span
                 className="inline-flex items-center px-1.5 py-0.5 rounded font-mono uppercase tracking-[0.05em]"
                 style={{
@@ -699,7 +705,15 @@ function FileTraitementRow({ rank, item }) {
                   fontWeight: 500,
                 }}
               >
-                {tone.label}
+                {categoryLabel}
+              </span>
+            )}
+            {item.domain && (
+              <span
+                className="font-mono uppercase tracking-[0.05em]"
+                style={{ fontSize: 10, color: 'var(--sol-ink-500)' }}
+              >
+                {item.domain}
               </span>
             )}
             <Link
@@ -725,6 +739,34 @@ function FileTraitementRow({ rank, item }) {
             )}
           </div>
         </div>
+        {/* 4ᵉ colonne Impact Fraunces — signal métier #1 maquette. */}
+        {hasImpact && (
+          <div style={{ textAlign: 'right' }}>
+            <div
+              style={{
+                fontFamily: 'var(--sol-font-display)',
+                fontSize: 14,
+                fontWeight: 500,
+                color: tone.fg,
+                lineHeight: 1.1,
+              }}
+            >
+              {impactEur != null && impactEur > 0
+                ? impactEur >= 1000
+                  ? `${(impactEur / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} k€`
+                  : `${Math.round(impactEur).toLocaleString('fr-FR')} €`
+                : `${Math.round(impactMwh).toLocaleString('fr-FR')} MWh/an`}
+            </div>
+            <div
+              style={{
+                fontSize: 10.5,
+                color: 'var(--sol-ink-500)',
+              }}
+            >
+              {impactEur != null ? "d'exposition" : 'récupérable'}
+            </div>
+          </div>
+        )}
         <ArrowRight size={14} style={{ color: tone.fg, opacity: 0.4 }} aria-hidden="true" />
       </div>
     </div>

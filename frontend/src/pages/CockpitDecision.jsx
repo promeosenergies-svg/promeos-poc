@@ -239,6 +239,13 @@ function DecisionCard({ decision, index }) {
   const gainMwh = decision.estimated_gain_mwh_year;
   const penaltyEur = decision.regulatory_penalty_eur?.value_eur;
   const penaltyArticle = decision.regulatory_penalty_eur?.regulatory_article;
+  // Étape 4.bis FE : consume les nouveaux champs backend cockpit_decisions_service.
+  // Audit Marie + Jean-Marc : "manque CapEx + Économie €/an + Payback + ROI/CO₂".
+  const capexEur = decision.investment_capex_eur;
+  const savingsEurYear = decision.estimated_savings_eur_year;
+  const paybackMonths = decision.payback_months;
+  const co2AvoidedT = decision.co2_avoided_t_year;
+  const estimationMethod = decision.estimation_method;
   const tagLabel = (() => {
     if (penaltyArticle && penaltyArticle.includes('Décret')) return 'Conformité';
     if (
@@ -323,6 +330,9 @@ function DecisionCard({ decision, index }) {
             {decision.narrative}
           </div>
         )}
+        {/* Cards CFO grade : 1ère ligne = signal métier (Volume/Économies/Réf/Échéance).
+            2ᵉ ligne = arbitrage financier (CapEx/Payback/CO₂) si données dispos.
+            Étape 4.bis FE : audits Marie + Jean-Marc convergents. */}
         <div
           className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-2.5"
           style={{ fontSize: 12.5, color: 'var(--sol-ink-700)' }}
@@ -336,6 +346,14 @@ function DecisionCard({ decision, index }) {
                 Économies modélisées
               </span>
               <span style={{ fontWeight: 500, color: 'var(--sol-ink-900)' }}>{gainMwh} MWh/an</span>
+              {savingsEurYear != null && savingsEurYear > 0 && (
+                <span
+                  className="block"
+                  style={{ fontSize: 11, color: 'var(--sol-succes-fg)', fontWeight: 500 }}
+                >
+                  ≈ {fmtEurShort(savingsEurYear)}/an
+                </span>
+              )}
             </div>
           )}
           {penaltyEur != null && (
@@ -372,6 +390,81 @@ function DecisionCard({ decision, index }) {
             <span style={{ fontWeight: 500, color: tone.fg }}>{echeanceText}</span>
           </div>
         </div>
+        {/* Ligne 2 — Arbitrage financier CFO (CapEx + Payback + CO₂) si data dispo. */}
+        {(capexEur != null || paybackMonths != null || co2AvoidedT != null) && (
+          <div
+            className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-2.5 pt-2"
+            style={{
+              fontSize: 12.5,
+              color: 'var(--sol-ink-700)',
+              borderTop: '0.5px solid rgba(0,0,0,0.06)',
+            }}
+          >
+            {capexEur != null && (
+              <div>
+                <span
+                  className="block font-mono uppercase tracking-[0.05em]"
+                  style={{ fontSize: 10, color: 'var(--sol-ink-500)' }}
+                >
+                  Engagement CapEx
+                </span>
+                <span style={{ fontWeight: 500, color: 'var(--sol-ink-900)' }}>
+                  {fmtEurShort(capexEur)}
+                </span>
+              </div>
+            )}
+            {paybackMonths != null && paybackMonths > 0 && (
+              <div>
+                <span
+                  className="block font-mono uppercase tracking-[0.05em]"
+                  style={{ fontSize: 10, color: 'var(--sol-ink-500)' }}
+                >
+                  Payback
+                </span>
+                <span style={{ fontWeight: 500, color: 'var(--sol-ink-900)' }}>
+                  {paybackMonths < 24
+                    ? `${paybackMonths} mois`
+                    : `${(paybackMonths / 12).toFixed(1)} ans`}
+                </span>
+              </div>
+            )}
+            {co2AvoidedT != null && co2AvoidedT > 0 && (
+              <div>
+                <span
+                  className="block font-mono uppercase tracking-[0.05em]"
+                  style={{ fontSize: 10, color: 'var(--sol-ink-500)' }}
+                >
+                  CO₂ évité
+                </span>
+                <span style={{ fontWeight: 500, color: 'var(--sol-succes-fg)' }}>
+                  {co2AvoidedT} t/an
+                </span>
+              </div>
+            )}
+            {estimationMethod && (
+              <div>
+                <span
+                  className="block font-mono uppercase tracking-[0.05em]"
+                  style={{ fontSize: 10, color: 'var(--sol-ink-500)' }}
+                >
+                  Méthode
+                </span>
+                <span
+                  className="inline-flex items-center px-1.5 py-0.5 rounded font-mono uppercase tracking-[0.05em]"
+                  style={{
+                    fontSize: 9.5,
+                    background: 'var(--sol-attention-bg)',
+                    color: 'var(--sol-attention-fg)',
+                    fontWeight: 500,
+                  }}
+                  title={estimationMethod}
+                >
+                  Estimation
+                </span>
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex gap-2 flex-wrap">
           <Link
             to={`/cockpit/jour#decision-${decision.id}`}
@@ -767,6 +860,27 @@ function FacturePortefeuille({ portfolio }) {
           >
             {fmtEurShort(total)}
           </div>
+          {/* Étape 4.bis FE : delta vs 2024 backend (P1 audit Jean-Marc CFO).
+              Effet WOW : "562 k€" seul → "562 k€ · −22,5% vs 2024" sourcé. */}
+          {portfolio.delta_vs_2024?.delta_pct != null && (
+            <div
+              className="font-mono uppercase tracking-[0.07em] mt-1"
+              style={{
+                fontSize: 11,
+                color:
+                  portfolio.delta_vs_2024.delta_pct < 0
+                    ? 'var(--sol-succes-fg)'
+                    : 'var(--sol-attention-fg)',
+                fontWeight: 500,
+              }}
+              title={
+                portfolio.delta_vs_2024.source || 'Médiane CRE T4 2025 · ETI tertiaire post-ARENH'
+              }
+            >
+              {portfolio.delta_vs_2024.delta_pct > 0 ? '+ ' : '− '}
+              {Math.abs(portfolio.delta_vs_2024.delta_pct)} % vs 2024
+            </div>
+          )}
         </div>
       </div>
 
@@ -828,8 +942,15 @@ function FacturePortefeuille({ portfolio }) {
 
 // ── Teaser Flex Intelligence ──────────────────────────────────────
 
-function FlexTeaser({ flexPotentialEurYear }) {
-  const eurText = flexPotentialEurYear != null ? fmtEurShort(flexPotentialEurYear) : '~21 k€';
+function FlexTeaser({ flexPotential }) {
+  // Étape 4.bis FE : consume backend `_facts.flex_potential` sourcé (P0-E).
+  // Plus de fallback "~21 k€" non sourcé qui violait la règle d'or chiffres
+  // fiables (audit Sophie VC). Affiche `Indicatif` si méthode heuristique.
+  const eurYear = flexPotential?.eur_year;
+  const method = flexPotential?.method;
+  const source = flexPotential?.source;
+  const eurText = eurYear != null ? fmtEurShort(eurYear) : '—';
+  const isIndicative = method === 'heuristic_per_site' || method === 'indicative';
   return (
     <div
       className="rounded-md p-3 mb-5 flex items-center gap-3 flex-wrap"
@@ -850,9 +971,26 @@ function FlexTeaser({ flexPotentialEurYear }) {
       >
         <strong style={{ color: 'var(--sol-hce-fg)', fontWeight: 500 }}>
           Gisement Flex portefeuille — {eurText}/an
-        </strong>{' '}
-        identifié sur logistique frigorifique · hôtellerie · bureau standard. Activation possible
-        via partenaire d'agrégation.
+        </strong>
+        {isIndicative && (
+          <span
+            className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded font-mono uppercase tracking-[0.06em]"
+            style={{
+              fontSize: 9,
+              background: 'var(--sol-hce-bg)',
+              color: 'var(--sol-hce-fg)',
+              fontWeight: 500,
+              border: '0.5px solid var(--sol-rule)',
+            }}
+            title={source || 'Estimation indicative'}
+          >
+            Indicatif
+          </span>
+        )}{' '}
+        identifié sur logistique frigorifique ·{' '}
+        <AcronymTooltip acronym="NEBCO">NEBCO</AcronymTooltip> /{' '}
+        <AcronymTooltip acronym="AOFD">AOFD</AcronymTooltip>. Activation possible via partenaire
+        d'agrégation.
       </div>
       <Link
         to="/flex"
@@ -1052,7 +1190,7 @@ export default function CockpitDecision() {
       {portfolio && <FacturePortefeuille portfolio={portfolio} />}
 
       {/* Teaser Flex Intelligence */}
-      <FlexTeaser flexPotentialEurYear={facts?.flex_potential?.eur_year} />
+      <FlexTeaser flexPotential={facts?.flex_potential} />
 
       {/* Footer Sol */}
       <div
