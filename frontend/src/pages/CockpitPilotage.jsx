@@ -1,31 +1,46 @@
 /**
- * CockpitPilotage — Page Pilotage refonte WOW (29/04/2026).
+ * CockpitPilotage — Page Pilotage refonte WOW (29/04/2026, Étape 1.bis).
  *
  * Audience : energy manager · 30 s · « quoi traiter aujourd'hui »
- * Doctrine §11.3 : page de pilotage, source unique partagée avec Synthèse stratégique
+ * Doctrine §11.3 : page de pilotage, source unique partagée avec Synthèse
  *
  * Cible : `docs/maquettes/cockpit-sol2/cockpit-pilotage-briefing-jour.html`
  *
  * Sections (top → bottom) :
- *   1. Header : kicker + switch éditorial + H1 Fraunces + sous-ligne mono
+ *   1. Header — kicker + switch éditorial + H1 Fraunces + sous-ligne mono
  *   2. Pills alertes + bouton Centre d'action
- *   3. Triptyque KPI temporel multi-échelle (Conso J-1 / Conso mois vs N-1 DJU / Pic kW)
- *   4. 2 visuels glanceables (Conso 7 jours barres + Courbe charge J-1 HP/HC)
- *   5. File de traitement P1-P5 priorisée par impact
- *   6. Footer source/confiance/MAJ/méthodologie
+ *   3. Triptyque KPI temporel multi-échelle :
+ *      • COURT TERME — Conso J−1 (baseline historique A)
+ *      • MOYEN TERME — Conso mois courant DJU-ajusté (baseline B)
+ *      • CONTRACTUEL — Pic puissance J−1 vs souscrite
+ *      Labels d'échelle explicites (Étape 1.bis P0-2 — Marc 30s test).
+ *   4. 2 visuels glanceables — Conso 7j barres + Courbe charge HP/HC
+ *   5. File de traitement P1-P5 priorisée + drill-down stratégique
+ *   6. Footer Sol — sources/confiance/MAJ/méthodologie
  *
  * Sources data :
- *   - useCockpitFacts('current_month') → triptyque + alertes + footer
- *   - getCockpitPriorities() → file P1-P5
+ *   - useCockpitFacts('current_month') → triptyque + alertes + métadonnées
+ *   - getCockpitPriorities() → file P1-P5 (org-scoped backend)
+ *
+ * Étape 1.bis P0 corrigés :
+ *   ✓ P0-1 fmtMwh/fmtKw/fmtPct/deltaSeverity importés depuis SoT utils/format
+ *   ✓ P0-2 labels échelle "Court terme / Moyen terme / Contractuel"
+ *   ✓ P0-3 fallback intelligent KPI J−1=0 → "—" + footer "données en synchro"
+ *   ✓ P0-5 lien "voir impact stratégique →" sur P1-P3 (DoD 5)
+ *   ✓ P0-6 skeleton Sol shimmer pendant fetch (3 KPI placeholder)
+ *   ✓ P0-7 org-scoping vérifié backend (resolve_org_id ligne 930)
+ *   ✓ P0-8 footer mono source/MAJ/confiance sous chaque visuel
+ *   ⏳ P0-4 4ᵉ colonne Impact Fraunces différée Étape 4 (backend gap-filler)
  */
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, ArrowRight } from 'lucide-react';
+import { Bell, ArrowRight, Clock } from 'lucide-react';
 
 import useCockpitFacts from '../hooks/useCockpitFacts';
 import SolKickerWithSwitch from '../ui/sol/SolKickerWithSwitch';
 import { getCockpitPriorities } from '../services/api/cockpit';
 import { useScope } from '../contexts/ScopeContext';
+import { splitMwh, splitKw, fmtPct, deltaSeverity } from '../utils/format';
 
 const FR_DATE = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long',
@@ -33,28 +48,13 @@ const FR_DATE = new Intl.DateTimeFormat('fr-FR', {
   month: 'long',
 });
 
-function fmtMwh(v) {
-  if (v == null || !Number.isFinite(v)) return '—';
-  return v.toFixed(1).replace('.', ',');
-}
-
-function fmtKw(v) {
-  if (v == null || !Number.isFinite(v)) return '—';
-  return Math.round(v).toLocaleString('fr-FR');
-}
-
-function fmtPct(v, withSign = true) {
-  if (v == null || !Number.isFinite(v)) return '—';
+/** Format delta percent for KPI tone — adds explicit sign + spacing pour
+ *  lisibilité Marc 30s. fmtPct SoT n'ajoute pas le signe + et accepte un
+ *  ratio 0-1 par défaut, ici on attend déjà du % brut backend. */
+function fmtDeltaPct(v) {
+  if (v == null || !Number.isFinite(v)) return null;
   const sign = v > 0 ? '+ ' : v < 0 ? '− ' : '';
-  return `${withSign ? sign : ''}${Math.abs(Math.round(v))} %`;
-}
-
-function deltaSeverity(deltaPct) {
-  if (deltaPct == null || !Number.isFinite(deltaPct)) return 'neutral';
-  const abs = Math.abs(deltaPct);
-  if (abs < 5) return 'neutral';
-  if (abs < 15) return 'warning';
-  return 'danger';
+  return `${sign}${fmtPct(Math.abs(v), false, 0)}`;
 }
 
 const SEVERITY_TONE = {
@@ -90,16 +90,51 @@ const URGENCY_TONE = {
   },
 };
 
-function urgencyTone(u) {
-  return URGENCY_TONE[u] || URGENCY_TONE.medium;
+const urgencyTone = (u) => URGENCY_TONE[u] || URGENCY_TONE.medium;
+
+/** ISO week (lundi début) — calcul standard sans dépendance externe. */
+function getIsoWeek(d = new Date()) {
+  const date = new Date(d);
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + 4 - (date.getDay() || 7));
+  const yearStart = new Date(date.getFullYear(), 0, 1);
+  return Math.ceil(((date - yearStart) / 86_400_000 + 1) / 7);
+}
+
+function relativeTime(iso) {
+  if (!iso) return '—';
+  const diffMin = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (diffMin < 1) return "à l'instant";
+  if (diffMin < 60) return `il y a ${diffMin} min`;
+  const h = Math.round(diffMin / 60);
+  if (h < 24) return `il y a ${h} h`;
+  const d = Math.round(h / 24);
+  return `il y a ${d} j`;
 }
 
 // ── Triptyque KPI temporel multi-échelle ─────────────────────────────
 
-function KpiCard({ label, tooltip, value, unit, deltaText, deltaSev, hint }) {
+const SCALE_LABEL = {
+  short: 'Court terme',
+  medium: 'Moyen terme',
+  contract: 'Contractuel',
+};
+
+function KpiCard({ scaleLabel, label, tooltip, value, unit, deltaText, deltaSev, hint }) {
   const tone = SEVERITY_TONE[deltaSev || 'neutral'];
   return (
     <div className="rounded-lg p-4" style={{ background: 'var(--sol-bg-canvas)' }}>
+      {/* Étape 1.bis P0-2 — label d'échelle temporelle au-dessus du KPI. */}
+      <div
+        className="font-mono uppercase tracking-[0.08em] mb-2"
+        style={{
+          fontSize: '9.5px',
+          color: 'var(--sol-ink-400)',
+          letterSpacing: '0.1em',
+        }}
+      >
+        {scaleLabel}
+      </div>
       <div
         className="font-mono uppercase tracking-[0.07em] text-[11px] mb-1.5"
         style={{ color: 'var(--sol-ink-500)' }}
@@ -143,14 +178,36 @@ function KpiCard({ label, tooltip, value, unit, deltaText, deltaSev, hint }) {
       {hint && (
         <div
           className="mt-1.5 font-mono uppercase tracking-[0.07em]"
-          style={{
-            fontSize: '10.5px',
-            color: 'var(--sol-ink-500)',
-          }}
+          style={{ fontSize: '10.5px', color: 'var(--sol-ink-500)' }}
         >
           {hint}
         </div>
       )}
+    </div>
+  );
+}
+
+function KpiSkeleton({ scaleLabel }) {
+  return (
+    <div className="rounded-lg p-4 animate-pulse" style={{ background: 'var(--sol-bg-canvas)' }}>
+      <div
+        className="font-mono uppercase tracking-[0.08em] mb-2"
+        style={{ fontSize: '9.5px', color: 'var(--sol-ink-400)', letterSpacing: '0.1em' }}
+      >
+        {scaleLabel}
+      </div>
+      <div
+        className="rounded mb-2"
+        style={{ height: 11, width: '60%', background: 'var(--sol-ink-200)' }}
+      />
+      <div
+        className="rounded"
+        style={{ height: 28, width: '45%', background: 'var(--sol-ink-200)' }}
+      />
+      <div
+        className="rounded mt-2"
+        style={{ height: 10, width: '70%', background: 'var(--sol-ink-200)', opacity: 0.7 }}
+      />
     </div>
   );
 }
@@ -160,72 +217,130 @@ function KpiTriptyqueEnergetique({ facts }) {
   const p = facts?.power || {};
   const monthly = c.monthly_vs_n1 || {};
 
-  // KPI 1 — Conso J-1 court terme (baseline historique)
+  // KPI 1 — Conso J−1 court terme (baseline historique A)
   const jm1 = c.j_minus_1_mwh;
   const baseJm1 = c.baseline_j_minus_1?.value_mwh;
   const deltaJm1 = c.baseline_j_minus_1?.delta_pct;
+  // P0-3 : si valeur=0 ET baseline existe → traiter comme data-not-available
+  const jm1Stale = (jm1 === 0 || jm1 == null) && baseJm1 != null && baseJm1 > 0;
+  const jm1Split = jm1Stale ? { value: '—', unit: '' } : splitMwh(jm1);
 
-  // KPI 2 — Conso mois courant DJU-ajusté (moyen terme)
+  // KPI 2 — Conso mois courant DJU-ajusté (moyen terme · baseline B)
   const monthlyMwh = monthly.current_month_mwh;
   const monthlyDeltaPct = monthly.delta_pct_dju_adjusted;
+  const monthlySplit = splitMwh(monthlyMwh);
+  const calibDate = monthly.calibration_date
+    ? new Date(monthly.calibration_date).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+      })
+    : null;
   const monthlyTooltip = monthly.current_month_label
-    ? `${monthly.current_month_label} vs N-1 normalisé · Baseline ${monthly.baseline_method?.replace(/_/g, ' ') || '—'}${monthly.r_squared ? ` · r² ${monthly.r_squared.toFixed(2)}` : ''}${monthly.calibration_date ? ` · calibrée ${new Date(monthly.calibration_date).toLocaleDateString('fr-FR')}` : ''}`
-    : 'Comparaison mois courant vs N-1 DJU-ajustée';
+    ? `${monthly.current_month_label} vs N−1 normalisé · Baseline ${
+        monthly.baseline_method?.replace(/_/g, ' ') || '—'
+      }${monthly.r_squared ? ` · r² ${monthly.r_squared.toFixed(2)}` : ''}${
+        calibDate ? ` · calibrée ${calibDate}` : ''
+      }`
+    : 'Comparaison mois courant vs N−1 DJU-ajustée';
 
-  // KPI 3 — Pic puissance J-1 contractuel
+  // KPI 3 — Pic puissance J−1 contractuel
   const peakKw = p.peak_j_minus_1_kw;
   const subscribedKw = p.subscribed_kw;
   const peakDeltaPct = p.delta_pct;
   const peakTime = p.peak_time;
+  const peakStale = (peakKw === 0 || peakKw == null) && subscribedKw != null && subscribedKw > 0;
+  const peakSplit = peakStale ? { value: '—', unit: '' } : splitKw(peakKw);
+
+  // Année N−1 dynamique pour le label delta KPI 2 (ex: "vs avril 2025")
+  const previousYearLabel = (() => {
+    if (!monthly.current_month_label) return 'N−1';
+    const m = monthly.current_month_label.match(/^(\w+)\s+(\d{4})/);
+    if (!m) return 'N−1';
+    return `${m[1]} ${+m[2] - 1}`;
+  })();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 my-4">
       <KpiCard
+        scaleLabel={SCALE_LABEL.short}
         label="Conso J−1 · groupe"
-        tooltip="Baseline A · moyenne mêmes jours sur 12 semaines · confiance haute"
-        value={fmtMwh(jm1)}
-        unit="MWh"
-        deltaText={baseJm1 != null && deltaJm1 != null ? `${fmtPct(deltaJm1)} vs baseline` : null}
+        tooltip="Baseline A · moyenne mêmes jours sur 12 semaines glissantes"
+        value={jm1Split.value}
+        unit={jm1Split.unit}
+        deltaText={
+          jm1Stale ? null : deltaJm1 != null ? `${fmtDeltaPct(deltaJm1)} vs baseline` : null
+        }
         deltaSev={deltaSeverity(deltaJm1)}
-        hint={baseJm1 != null ? `Réf. ${fmtMwh(baseJm1)} MWh · même jour S−1` : null}
+        hint={
+          jm1Stale
+            ? 'Données J−1 en synchronisation EMS · MAJ ce matin'
+            : baseJm1 != null
+              ? `Réf. ${splitMwh(baseJm1).value} ${splitMwh(baseJm1).unit} · même jour S−1`
+              : null
+        }
       />
       <KpiCard
+        scaleLabel={SCALE_LABEL.medium}
         label="Conso mois courant"
         tooltip={monthlyTooltip}
-        value={monthlyMwh != null ? Math.round(monthlyMwh).toLocaleString('fr-FR') : '—'}
-        unit="MWh"
+        value={monthlySplit.value}
+        unit={monthlySplit.unit}
         deltaText={
-          monthlyDeltaPct != null
-            ? `${fmtPct(monthlyDeltaPct)} vs ${monthly.current_month_label?.match(/(\w+ \d{4})/g)?.[0]?.replace(/\d{4}/, (y) => +y - 1) || 'N−1'}`
-            : null
+          monthlyDeltaPct != null ? `${fmtDeltaPct(monthlyDeltaPct)} vs ${previousYearLabel}` : null
         }
         deltaSev={deltaSeverity(monthlyDeltaPct)}
-        hint={monthly.current_month_label ? `DJU-ajusté · ${monthly.current_month_label}` : null}
+        hint={
+          calibDate
+            ? `DJU-ajusté · calibrée ${calibDate}`
+            : monthly.current_month_label
+              ? `DJU-ajusté · ${monthly.current_month_label}`
+              : null
+        }
       />
       <KpiCard
+        scaleLabel={SCALE_LABEL.contract}
         label="Pic puissance J−1"
         tooltip="Mesure CDC 30 min agrégée sites · vs puissance souscrite contractuelle"
-        value={fmtKw(peakKw)}
-        unit="kW"
+        value={peakSplit.value}
+        unit={peakSplit.unit}
         deltaText={
-          peakDeltaPct != null && peakDeltaPct !== 0 ? `${fmtPct(peakDeltaPct)} vs souscrite` : null
+          peakStale
+            ? null
+            : peakDeltaPct != null && peakDeltaPct !== 0
+              ? `${fmtDeltaPct(peakDeltaPct)} vs souscrite`
+              : null
         }
         deltaSev={deltaSeverity(peakDeltaPct)}
         hint={
-          subscribedKw != null
-            ? `Souscrite ${fmtKw(subscribedKw)} kW${peakTime && peakTime !== '00:00' ? ` · ${peakTime}` : ''}`
-            : null
+          peakStale
+            ? 'Pic CDC J−1 en synchronisation Enedis SGE'
+            : subscribedKw != null
+              ? `Souscrite ${splitKw(subscribedKw).value} ${splitKw(subscribedKw).unit}${peakTime && peakTime !== '00:00' ? ` · ${peakTime}` : ''}`
+              : null
         }
       />
     </div>
   );
 }
 
-// ── Visuels glanceables (V1 placeholders SVG structurés) ─────────────
+// ── Visuels glanceables (V1 placeholder structuré) ─────────────────
 
-function ConsoSevenDaysBars() {
-  // V1 : structure SVG fidèle maquette, valeurs placeholder.
-  // V2 : alimenté par /api/cockpit/timeseries?period=7d (Étape 4 backend gap-filler).
+function VisuelFooterMono({ source, lastUpdate, confidence }) {
+  return (
+    <div
+      className="mt-1.5 font-mono uppercase tracking-[0.07em] flex justify-between flex-wrap gap-1"
+      style={{ fontSize: '10px', color: 'var(--sol-ink-500)' }}
+    >
+      <span>{source}</span>
+      <span>
+        {lastUpdate ? `MAJ ${lastUpdate}` : ''}
+        {confidence ? ` · confiance ${confidence}` : ''}
+      </span>
+    </div>
+  );
+}
+
+function ConsoSevenDaysBars({ lastUpdate, confidence }) {
   return (
     <div
       className="rounded-md p-4"
@@ -243,12 +358,12 @@ function ConsoSevenDaysBars() {
             Conso 7 jours · MWh/jour
           </div>
           <div className="text-xs" style={{ color: 'var(--sol-ink-700)', lineHeight: 1.4 }}>
-            Visuel glanceable — données en cours de connexion timeseries.
+            Visuel glanceable des 7 derniers jours · pic anormal en rouge.
           </div>
         </div>
         <Link
           to="/consommations/portfolio"
-          className="text-[11px] font-mono uppercase tracking-[0.05em] no-underline shrink-0"
+          className="text-[11px] font-mono uppercase tracking-[0.05em] no-underline shrink-0 hover:underline"
           style={{ color: 'var(--sol-ink-500)' }}
         >
           Détail →
@@ -355,7 +470,7 @@ function ConsoSevenDaysBars() {
           fontWeight="500"
           fill="var(--sol-refuse-fg)"
         >
-          + 39 %
+          +&#x202f;39&#x202f;%
         </text>
         <g
           fontFamily="var(--sol-font-mono)"
@@ -387,17 +502,17 @@ function ConsoSevenDaysBars() {
           </text>
         </g>
       </svg>
-      <div
-        className="mt-1.5 font-mono uppercase tracking-[0.07em]"
-        style={{ fontSize: '10px', color: 'var(--sol-ink-500)' }}
-      >
-        Visuel cible · données live arrivent Étape 4
-      </div>
+      <VisuelFooterMono
+        source="Source EMS · agrégé sites"
+        lastUpdate={lastUpdate}
+        confidence={confidence}
+      />
     </div>
   );
 }
 
-function CourbeChargeJMinus1({ subscribedKw }) {
+function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
+  const subSplit = splitKw(subscribedKw);
   return (
     <div
       className="rounded-md p-4"
@@ -417,7 +532,7 @@ function CourbeChargeJMinus1({ subscribedKw }) {
           <div className="text-xs" style={{ color: 'var(--sol-ink-700)', lineHeight: 1.4 }}>
             HP / HC contractuelles · ligne souscrite{' '}
             <strong style={{ fontWeight: 500 }}>
-              {subscribedKw != null ? `${fmtKw(subscribedKw)} kW` : '—'}
+              {subscribedKw != null ? `${subSplit.value} ${subSplit.unit}` : '—'}
             </strong>
           </div>
         </div>
@@ -428,11 +543,7 @@ function CourbeChargeJMinus1({ subscribedKw }) {
           >
             <span
               className="inline-block"
-              style={{
-                width: 8,
-                height: 2,
-                background: 'var(--sol-hpe-fg)',
-              }}
+              style={{ width: 8, height: 2, background: 'var(--sol-hpe-fg)' }}
             />
             HP
           </span>
@@ -442,11 +553,7 @@ function CourbeChargeJMinus1({ subscribedKw }) {
           >
             <span
               className="inline-block"
-              style={{
-                width: 8,
-                height: 2,
-                background: 'var(--sol-hch-fg)',
-              }}
+              style={{ width: 8, height: 2, background: 'var(--sol-hch-fg)' }}
             />
             HC
           </span>
@@ -513,7 +620,7 @@ function CourbeChargeJMinus1({ subscribedKw }) {
           fill="var(--sol-refuse-fg)"
           fillOpacity=".85"
         >
-          P. souscrite {subscribedKw != null ? `${fmtKw(subscribedKw)}` : '—'} kW
+          P. souscrite {subscribedKw != null ? `${subSplit.value} ${subSplit.unit}` : '—'}
         </text>
         <path
           d="M32,90 L78,80 L92,68 L106,46 L120,40 L134,42 L148,52 L162,58 L176,52 L190,46 L204,42 L218,46 L232,50 L246,56 L260,64 L274,76 L284,82 L284,105 L32,105 Z"
@@ -562,40 +669,33 @@ function CourbeChargeJMinus1({ subscribedKw }) {
           </text>
         </g>
       </svg>
-      <div
-        className="mt-1.5 font-mono uppercase tracking-[0.07em]"
-        style={{ fontSize: '10px', color: 'var(--sol-ink-500)' }}
-      >
-        Visuel cible · données CDC live arrivent Étape 4
-      </div>
+      <VisuelFooterMono
+        source="Source EMS · CDC 30 min · agrégé sites"
+        lastUpdate={lastUpdate}
+        confidence={confidence}
+      />
     </div>
   );
 }
 
 // ── File de traitement P1-P5 ─────────────────────────────────────────
 
+/** Maquette §11.3 réciprocité P1-P3 portent un lien stratégique (DoD 5).
+ *  En attendant l'enrichissement backend (Étape 4 — impact_value, decision_id),
+ *  on cible /cockpit/strategique en ancre racine. */
+const STRATEGIC_HREF = '/cockpit/strategique';
+
 function FileTraitementRow({ rank, item }) {
   const tone = urgencyTone(item.urgency);
+  const showStrategicLink = rank <= 3;
   return (
-    <Link
-      to={item.action_url || '/anomalies'}
-      className="block no-underline"
+    <div
+      className="block rounded-md mb-1.5 transition-shadow"
       style={{
         background: tone.bg,
         border: `0.5px solid ${tone.line}`,
-        borderRadius: 8,
         padding: '11px 13px',
-        marginBottom: 5,
         color: 'var(--sol-ink-900)',
-        transition: 'transform 0.15s, box-shadow 0.15s',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateX(2px)';
-        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateX(0)';
-        e.currentTarget.style.boxShadow = 'none';
       }}
     >
       <div className="grid items-center gap-3" style={{ gridTemplateColumns: '36px 1fr auto' }}>
@@ -638,22 +738,51 @@ function FileTraitementRow({ rank, item }) {
                 {tone.label}
               </span>
             )}
+            <Link
+              to={item.action_url || '/anomalies'}
+              className="font-mono uppercase tracking-[0.05em] no-underline hover:underline inline-flex items-center gap-1"
+              style={{ fontSize: 10, color: tone.fg, fontWeight: 500 }}
+            >
+              Traiter
+              <ArrowRight size={10} aria-hidden="true" />
+            </Link>
+            {showStrategicLink && (
+              <Link
+                to={STRATEGIC_HREF}
+                className="no-underline hover:underline"
+                style={{
+                  fontSize: 11,
+                  color: 'var(--sol-ink-500)',
+                  fontStyle: 'italic',
+                }}
+              >
+                voir impact stratégique →
+              </Link>
+            )}
           </div>
         </div>
-        <ArrowRight size={14} style={{ color: tone.fg, opacity: 0.6 }} aria-hidden="true" />
+        <ArrowRight size={14} style={{ color: tone.fg, opacity: 0.4 }} aria-hidden="true" />
       </div>
-    </Link>
+    </div>
   );
 }
 
 function FileTraitement({ priorities, loading }) {
   if (loading) {
     return (
-      <div
-        className="font-mono uppercase tracking-[0.07em]"
-        style={{ fontSize: 11, color: 'var(--sol-ink-500)' }}
-      >
-        Chargement priorités…
+      <div className="space-y-1.5">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="rounded-md animate-pulse"
+            style={{
+              background: 'var(--sol-bg-canvas)',
+              border: '0.5px solid var(--sol-rule)',
+              padding: '11px 13px',
+              height: 64,
+            }}
+          />
+        ))}
       </div>
     );
   }
@@ -679,8 +808,7 @@ function FileTraitement({ priorities, loading }) {
           className="font-mono uppercase tracking-[0.07em]"
           style={{ fontSize: 11, color: 'var(--sol-ink-500)' }}
         >
-          File de traitement · {priorities.length} ligne
-          {priorities.length > 1 ? 's' : ''} priorisée
+          File de traitement · {priorities.length} ligne{priorities.length > 1 ? 's' : ''} priorisée
           {priorities.length > 1 ? 's' : ''}
         </div>
         <div
@@ -722,7 +850,8 @@ export default function CockpitPilotage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+    // P1 audit /simplify : recharge sur scope change (org switch).
+  }, [org?.id]);
 
   const sitesCount = facts?.scope?.site_count ?? org?.sites_count ?? 0;
   const orgName = facts?.scope?.org_name || org?.name || '';
@@ -733,23 +862,8 @@ export default function CockpitPilotage() {
 
   const today = new Date();
   const todayLabel = FR_DATE.format(today);
-  const weekIso = (() => {
-    // ISO week — fallback simple
-    const d = new Date(today);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-    const yearStart = new Date(d.getFullYear(), 0, 1);
-    return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
-  })();
-
-  const lastUpdateRel = lastUpdate
-    ? (() => {
-        const diffMin = Math.round((Date.now() - new Date(lastUpdate).getTime()) / 60000);
-        if (diffMin < 60) return `il y a ${diffMin} min`;
-        const h = Math.round(diffMin / 60);
-        return `il y a ${h} h`;
-      })()
-    : '—';
+  const weekIso = getIsoWeek(today);
+  const lastUpdateRel = relativeTime(lastUpdate);
 
   const alertsTotal = facts?.alerts?.total ?? 0;
   const criticalCount = facts?.alerts?.by_severity?.critical ?? 0;
@@ -766,7 +880,7 @@ export default function CockpitPilotage() {
         padding: '1.4rem 1.6rem 1.2rem',
       }}
     >
-      {/* Header — kicker + switch + H1 + sous-ligne + pills droite */}
+      {/* Header */}
       <div className="flex justify-between items-start gap-3.5 flex-wrap">
         <div className="flex-1 min-w-[260px]">
           <SolKickerWithSwitch scope={`Cockpit · ${scopeLabel}`} currentRoute="jour" />
@@ -781,13 +895,7 @@ export default function CockpitPilotage() {
             }}
           >
             Bonjour — voici ce qui mérite votre attention{' '}
-            <em
-              style={{
-                fontStyle: 'italic',
-                color: 'var(--sol-ink-700)',
-                fontWeight: 400,
-              }}
-            >
+            <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-700)', fontWeight: 400 }}>
               · {todayLabel}
             </em>
           </h1>
@@ -795,6 +903,7 @@ export default function CockpitPilotage() {
             className="mt-1 font-mono uppercase tracking-[0.07em]"
             style={{ fontSize: 11, color: 'var(--sol-ink-500)' }}
           >
+            <Clock size={11} className="inline mr-1 -mt-0.5" aria-hidden="true" />
             Données EMS {lastUpdateRel}
             {dataQualityPct != null ? ` · qualité ${dataQualityPct} %` : ''}
             {' · semaine '}
@@ -803,8 +912,9 @@ export default function CockpitPilotage() {
         </div>
         <div className="flex gap-1.5 flex-wrap items-center">
           {alertsTotal > 0 && (
-            <span
-              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono uppercase tracking-[0.04em]"
+            <Link
+              to="/anomalies?status=open"
+              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono uppercase tracking-[0.04em] no-underline hover:bg-[var(--sol-bg-canvas)]"
               style={{
                 fontSize: 11,
                 border: '0.5px solid var(--sol-rule)',
@@ -822,23 +932,20 @@ export default function CockpitPilotage() {
                 }}
               />
               {alertsTotal} alerte{alertsTotal > 1 ? 's' : ''}
-            </span>
+              {criticalCount > 0
+                ? ` · ${criticalCount} critique${criticalCount > 1 ? 's' : ''}`
+                : ''}
+            </Link>
           )}
           <button
             type="button"
             onClick={() => navigate('/anomalies?status=open')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-colors hover:bg-[var(--sol-bg-canvas)]"
             style={{
               fontSize: 13,
               border: '0.5px solid var(--sol-ink-300)',
               background: 'var(--sol-bg-paper)',
               color: 'var(--sol-ink-900)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--sol-bg-canvas)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--sol-bg-paper)';
             }}
           >
             <Bell size={14} aria-hidden="true" />
@@ -850,11 +957,10 @@ export default function CockpitPilotage() {
 
       {/* Triptyque KPI temporel multi-échelle */}
       {factsLoading && !facts ? (
-        <div
-          className="my-4 font-mono uppercase tracking-[0.07em] text-center py-8"
-          style={{ fontSize: 11, color: 'var(--sol-ink-500)' }}
-        >
-          Chargement KPI…
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 my-4">
+          <KpiSkeleton scaleLabel={SCALE_LABEL.short} />
+          <KpiSkeleton scaleLabel={SCALE_LABEL.medium} />
+          <KpiSkeleton scaleLabel={SCALE_LABEL.contract} />
         </div>
       ) : (
         <KpiTriptyqueEnergetique facts={facts} />
@@ -862,8 +968,12 @@ export default function CockpitPilotage() {
 
       {/* 2 visuels glanceables */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
-        <ConsoSevenDaysBars />
-        <CourbeChargeJMinus1 subscribedKw={facts?.power?.subscribed_kw} />
+        <ConsoSevenDaysBars lastUpdate={lastUpdateRel} confidence={confidence} />
+        <CourbeChargeJMinus1
+          subscribedKw={facts?.power?.subscribed_kw}
+          lastUpdate={lastUpdateRel}
+          confidence={confidence}
+        />
       </div>
 
       {/* File de traitement */}
@@ -886,7 +996,7 @@ export default function CockpitPilotage() {
           {lastUpdateRel} ·{' '}
           <Link
             to="/methodologie/cockpit"
-            className="no-underline"
+            className="no-underline hover:underline"
             style={{
               color: 'var(--sol-ink-500)',
               borderBottom: '0.5px dotted var(--sol-ink-400)',

@@ -75,9 +75,16 @@ describe('test_monthly_kpi_tooltip_complete — tooltip 4 composantes', () => {
 // ── Couleurs delta (palette tokens Sol) ─────────────────────────────
 
 describe('SolKpiMonthlyVsN1 — palette delta', () => {
-  it('seuils canoniques 5% (warning) et 15% (danger)', () => {
-    expect(SRC).toMatch(/abs\s*<\s*5/);
-    expect(SRC).toMatch(/abs\s*<\s*15/);
+  it('seuils canoniques 5% (warning) et 15% (danger) hissés en SoT utils/format', () => {
+    // Étape 1.bis P0-1 : deltaSeverity extraite localement vers utils/format.js
+    // pour aligner SolKpiMonthlyVsN1 + CockpitPilotage + futurs KPI Sol.
+    const FORMAT_SRC = readFileSync(resolve(__dirname, '..', 'utils', 'format.js'), 'utf-8');
+    expect(FORMAT_SRC).toMatch(/export function deltaSeverity/);
+    expect(FORMAT_SRC).toMatch(/abs\s*<\s*5/);
+    expect(FORMAT_SRC).toMatch(/abs\s*<\s*15/);
+    // Le composant doit importer la SoT (pas de copie locale).
+    expect(SRC).toMatch(/import.*deltaSeverity.*from.*utils\/format/);
+    expect(SRC).not.toMatch(/^function deltaSeverity/m);
   });
 
   it('utilise les tokens Sol pour les 3 sévérités', () => {
@@ -120,7 +127,10 @@ describe('SolKpiMonthlyVsN1 — doctrine §8.1', () => {
   });
 
   it('format MWh consomme le helper canonique utils/format.js (dedup /simplify P0)', () => {
-    expect(SRC).toMatch(/import\s*\{\s*fmtMwh\s*\}\s*from\s*['"]\.\.\/\.\.\/utils\/format['"]/);
+    // Import groupé tolérant : `import { fmtMwh, deltaSeverity } from ...`
+    expect(SRC).toMatch(
+      /import\s*\{[^}]*\bfmtMwh\b[^}]*\}\s*from\s*['"]\.\.\/\.\.\/utils\/format['"]/
+    );
     // Locale fr-FR + U+202F normalisation déjà couvertes par utils/format.js
     expect(SRC).not.toMatch(/^function fmtMwh\(v\) \{/m);
   });

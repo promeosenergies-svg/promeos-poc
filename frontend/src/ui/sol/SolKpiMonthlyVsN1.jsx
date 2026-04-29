@@ -23,9 +23,10 @@
  * Props :
  *   - data : objet monthly_vs_n1 (8 champs canoniques) ou null
  */
-// fmtMwh canonique partagé avec autres composants Sol (cf. /simplify audit
-// fin Phase 2 P0 — déduplication helper depuis frontend/src/utils/format.js).
-import { fmtMwh } from '../../utils/format';
+// Helpers SoT — cf. utils/format.js (déduplication /simplify Étape 1.bis P0-1
+// audit fin commit 708b1b6e). deltaSeverity hissé en SoT pour aligner les
+// seuils 5/15% entre SolKpiMonthlyVsN1 + CockpitPilotage + futurs KPI Sol.
+import { fmtMwh, deltaSeverity } from '../../utils/format';
 
 function fmtDate(iso) {
   if (!iso) return '';
@@ -38,14 +39,6 @@ function fmtDate(iso) {
   } catch {
     return iso;
   }
-}
-
-function deltaSeverity(deltaPct) {
-  if (deltaPct == null || !Number.isFinite(deltaPct)) return 'neutral';
-  const abs = Math.abs(deltaPct);
-  if (abs < 5) return 'neutral';
-  if (abs < 15) return 'warning';
-  return 'danger';
 }
 
 const SEVERITY_TOKEN = {

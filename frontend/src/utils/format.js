@@ -90,6 +90,31 @@ export function fmtMwh(v) {
   return `${Math.round(n).toLocaleString(FR)} MWh`;
 }
 
+/** Variante split valeur ↔ unité pour les KPI Sol où la value est rendue
+ *  en typo display (Fraunces 28px) et l'unité en typo body (DM Sans 14px).
+ *  Conserve 1 décimale si |v| < 100 MWh pour précision sur petits volumes
+ *  (ex : conso jour ~9,3 MWh où l'arrondi entier perd la lisibilité). */
+export function splitMwh(v) {
+  const n = _safe(v);
+  if (n == null || n === 0) return { value: '—', unit: '' };
+  if (Math.abs(n) >= 1_000)
+    return {
+      value: (n / 1_000).toLocaleString(FR, {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }),
+      unit: 'GWh',
+    };
+  const decimals = Math.abs(n) < 100 ? 1 : 0;
+  return {
+    value: n.toLocaleString(FR, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }),
+    unit: 'MWh',
+  };
+}
+
 /** Return the appropriate unit for a kWh value: 'kWh', 'MWh', or 'GWh' */
 export function kwhUnit(v) {
   const n = _safe(v);
@@ -108,6 +133,34 @@ export function fmtKw(v) {
   if (Math.abs(n) >= 1_000)
     return `${(n / 1_000).toLocaleString(FR, { maximumFractionDigits: 1 })}k kW`;
   return `${n.toLocaleString(FR, { maximumFractionDigits: 1 })} kW`;
+}
+
+/** Variante split kW value ↔ unité (idem splitMwh, voir doc).
+ *  Bascule en MW au-delà de 1 000 kW. */
+export function splitKw(v) {
+  const n = _safe(v);
+  if (n == null || n === 0) return { value: '—', unit: '' };
+  if (Math.abs(n) >= 1_000)
+    return {
+      value: (n / 1_000).toLocaleString(FR, { maximumFractionDigits: 1 }),
+      unit: 'MW',
+    };
+  return {
+    value: Math.round(n).toLocaleString(FR),
+    unit: 'kW',
+  };
+}
+
+/** Sévérité d'un delta % vs baseline pour coloration KPI Sol §6.6.
+ *  Seuils canoniques : neutre <5% / warning 5-15% / danger ≥15%.
+ *  Centralisé ici pour éviter divergence (cf. SolKpiMonthlyVsN1 + CockpitPilotage). */
+export function deltaSeverity(deltaPct) {
+  const n = _safe(deltaPct);
+  if (n == null) return 'neutral';
+  const abs = Math.abs(n);
+  if (abs < 5) return 'neutral';
+  if (abs < 15) return 'warning';
+  return 'danger';
 }
 
 /** Generic number with configurable decimals + unit. fmtNum(1234.5, 1, '°C') => "1 234,5 °C" */
