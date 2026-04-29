@@ -23,7 +23,7 @@
  *   - getCockpitTrajectory() → réel + objectif + projection + jalons
  *   - getPurchasePortfolioCostSimulation(orgId) → facture composantes
  */
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, FileText, Sparkles } from 'lucide-react';
 
@@ -158,7 +158,11 @@ function potSplitInline(v) {
 // ── 3 décisions à arbitrer ────────────────────────────────────────
 // Tons sévérité hissés en SoT (Étape 2.bis) → severityTone() depuis solTones.js
 
-function DecisionCard({ decision, index }) {
+// Phase 13.E — DecisionCard wrappé `memo` : la liste cycle sur 3 cards
+// quand le parent re-render (fetch facts/portfolio/trajectory). Sans memo,
+// chaque DecisionCard re-render à chaque parent render même si `decision`
+// inchangé — coût visible sur le tooltip provenance hover.
+function DecisionCardImpl({ decision, index }) {
   const tone = severityTone(decision.severity);
   const days = daysUntil(decision.echeance);
   const echeanceText = days != null ? `J−${days}` : '—';
@@ -412,6 +416,8 @@ function DecisionCard({ decision, index }) {
     </div>
   );
 }
+
+const DecisionCard = memo(DecisionCardImpl);
 
 function DecisionsList({ decisions, loading }) {
   if (loading) {
@@ -986,8 +992,11 @@ export default function CockpitDecision() {
   const lastUpdate = facts?.metadata?.last_update;
   const sources = facts?.metadata?.sources || [];
   const confidence = facts?.metadata?.confidence;
-  const lastUpdateRel = relativeTime(lastUpdate);
-  const weekIso = getIsoWeek();
+  // Phase 13.E : memo des derived values stables (lastUpdate change rarement,
+  // weekIso ne change qu'en rollover hebdomadaire, printGenDate calcul Date+
+  // toLocale inutile à chaque render).
+  const lastUpdateRel = useMemo(() => relativeTime(lastUpdate), [lastUpdate]);
+  const weekIso = useMemo(() => getIsoWeek(), []);
 
   // EPEX live — backend exposera /api/marche/spot V2 (post-Refonte sprint).
   // Étape 6.bis : masquer la pill complètement si null plutôt qu'afficher
@@ -1001,11 +1010,16 @@ export default function CockpitDecision() {
 
   // Phase 13.B — Rapport COMEX print : date génération formatée FR pour
   // l'en-tête PDF natif (visible uniquement via window.print()).
-  const printGenDate = new Date().toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
+  // Phase 13.E memo : Date + toLocale est cher relativement à un render React.
+  const printGenDate = useMemo(
+    () =>
+      new Date().toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      }),
+    []
+  );
 
   return (
     <div

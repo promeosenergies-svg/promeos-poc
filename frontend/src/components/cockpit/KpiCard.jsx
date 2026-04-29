@@ -30,6 +30,7 @@
  *   - drillHref : string optionnel — link footer
  *   - drillLabel : string — "Voir 3 sites NC →"
  */
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 
 import { confidenceTone } from '../../ui/sol/solTones';
@@ -50,7 +51,7 @@ const UNIT_FONT_SIZE_BY_VARIANT = {
   confidence: 16,
 };
 
-export default function KpiCard({
+function KpiCardImpl({
   variant = 'temporal',
   // Props communes
   label,
@@ -188,3 +189,10 @@ export default function KpiCard({
     </div>
   );
 }
+
+// Phase 13.E — React.memo : KpiCard reçoit des props primitives stables
+// (label, value, unit, hint, badge, source). Wrap mémoïsation : évite les
+// re-renders quand un parent re-render mais ces props n'ont pas changé.
+// Triptyque KPI hero × 6 KPIs cumulés Pilotage + Décision = gain visible.
+const KpiCard = memo(KpiCardImpl);
+export default KpiCard;

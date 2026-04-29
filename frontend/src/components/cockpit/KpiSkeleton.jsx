@@ -8,13 +8,14 @@
  *   - variant: 'temporal' (Pilotage 28px) | 'confidence' (Décision 32px)
  *   - scaleLabel: string optionnel — kicker COURT/MOYEN/CONTRACTUEL Pilotage
  */
+import { memo } from 'react';
 
 const VALUE_HEIGHT_BY_VARIANT = {
   temporal: 28,
   confidence: 32,
 };
 
-export default function KpiSkeleton({ variant = 'temporal', scaleLabel }) {
+function KpiSkeletonImpl({ variant = 'temporal', scaleLabel }) {
   const isTemporal = variant === 'temporal';
   const valueHeight = VALUE_HEIGHT_BY_VARIANT[variant] || 28;
 
@@ -46,3 +47,7 @@ export default function KpiSkeleton({ variant = 'temporal', scaleLabel }) {
     </div>
   );
 }
+
+// Phase 13.E — React.memo : props primitives stables (variant, scaleLabel).
+const KpiSkeleton = memo(KpiSkeletonImpl);
+export default KpiSkeleton;
