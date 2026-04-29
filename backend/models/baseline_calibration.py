@@ -27,6 +27,19 @@ class BaselineMethod(str, PyEnum):
     C_REGULATORY_DT = "c_regulatory_dt"
 
 
+class ConfidenceLevel(str, PyEnum):
+    """Niveau de confiance canonique pour baselines + monthly_comparison.
+
+    Aligné /simplify audit Phase 1 P1 : remplace les 3 strings magiques
+    'haute'/'moyenne'/'faible' utilisées dans baseline_service.py +
+    monthly_comparison_service.py + cockpit_facts_service.py.
+    """
+
+    HAUTE = "haute"
+    MOYENNE = "moyenne"
+    FAIBLE = "faible"
+
+
 class BaselineCalibration(Base):
     """Calibration d'une baseline pour un site donné (décision D §0.D).
 

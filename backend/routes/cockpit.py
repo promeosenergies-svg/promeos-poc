@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import Optional
+from typing import Literal, Optional
 from database import get_db
 from schemas.cockpit_schemas import (
     CockpitResponse,
@@ -1470,7 +1470,7 @@ def get_cockpit_data_activation(
 )
 def get_cockpit_facts_endpoint(
     request: Request,
-    period: str = "current_week",
+    period: Literal["current_week", "current_month", "current_year"] = "current_week",
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
@@ -1501,6 +1501,10 @@ def get_cockpit_facts_endpoint(
 # ---------------------------------------------------------------------------
 # EurAmount proof endpoint — Cockpit Sol2 Phase 1.1 (Décision A §0.D)
 # ---------------------------------------------------------------------------
+
+# Constante canonique URL proof — couplage service→routing inversé (P1
+# /simplify audit fin Phase 1) : le service ne hard-code plus l'URL.
+EUR_AMOUNT_PROOF_PATH_TEMPLATE = "/api/cockpit/eur_amount/{eur_amount_id}/proof"
 
 
 @router.get(
@@ -1535,4 +1539,5 @@ def get_eur_amount_proof(
             status_code=404,
             detail=f"EurAmount id={eur_amount_id} introuvable",
         )
-    return to_dict_with_proof(eur)
+    proof_url = EUR_AMOUNT_PROOF_PATH_TEMPLATE.format(eur_amount_id=eur.id)
+    return to_dict_with_proof(eur, proof_url=proof_url)

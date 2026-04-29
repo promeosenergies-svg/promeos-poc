@@ -17,7 +17,9 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Optional
+from typing import Literal, Optional
+
+CockpitFactsPeriod = Literal["current_week", "current_month", "current_year"]
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -152,8 +154,8 @@ def _build_consumption(
                     "method": "a_historical",
                     "delta_pct": delta_pct,
                 }
-            except Exception:
-                pass
+            except Exception as exc:
+                _logger.debug("baseline_a J-1 failed: %s", exc)
 
         # Surconso 7j agrégée
         w_start = datetime.combine(today - timedelta(days=7), datetime.min.time())
@@ -187,8 +189,8 @@ def _build_consumption(
                     "r_squared": b_b.get("r_squared"),
                     "calibration_date": b_b.get("calibration_date", datetime.utcnow().isoformat()),
                 }
-            except Exception:
-                pass
+            except Exception as exc:
+                _logger.debug("baseline_b 7d failed: %s", exc)
 
         # Sites en dérive (surconso > 10% vs baseline A)
         sites_in_drift = 0
@@ -208,8 +210,8 @@ def _build_consumption(
                     ) or 0.0
                     if ba["value_kwh"] > 0 and total_site > ba["value_kwh"] * 1.10:
                         sites_in_drift += 1
-            except Exception:
-                pass
+            except Exception as exc:
+                _logger.debug("site drift check failed: %s", exc)
 
         # Annuel agrégé (12 mois glissants)
         y_start = datetime.combine(today - timedelta(days=365), datetime.min.time())
@@ -238,8 +240,8 @@ def _build_consumption(
                 if ref_kwh > 0 and annual_kwh > 0:
                     reduction = 1.0 - annual_kwh / ref_kwh
                     trajectory_score = int(min(max(reduction / 0.40 * 100, 0), 100))
-            except Exception:
-                pass
+            except Exception as exc:
+                _logger.debug("trajectory_2030 baseline_c failed: %s", exc)
 
         # monthly_vs_n1 — KPI 2 maquette v1.1
         monthly_vs_n1 = get_monthly_vs_previous_year(db, org_id, today)
@@ -385,7 +387,7 @@ def _build_compliance(db: Session, org_id: int, site_ids: list[int]) -> dict:
 
             issues_data = get_action_center_issues(db, org_id)
             obligations_to_treat = issues_data.get("total", 0)
-        except Exception:
+        except Exception as exc:
             obligations_to_treat = non_conform + at_risk
 
         return {
@@ -497,7 +499,7 @@ def _build_exposure(db: Session, org_id: int, site_ids: list[int]) -> dict:
                     regulatory_article="Décret 2019-771 art. 9 + Décret 2020-887 + Circulaire DGEC 2024",
                     formula_text=" + ".join(formula_parts),
                 )
-            except Exception:
+            except Exception as exc:
                 pass  # Persistance non-bloquante
 
         # Delta vs semaine dernière (non-calculé ici — donnée dynamique)
@@ -555,10 +557,10 @@ def _build_potential_recoverable(db: Session, org_id: int, site_ids: list[int]) 
                                         "reference": rec.get("cee_reference", "CEE BAT-TH-116"),
                                     }
                                 )
-                    except Exception:
-                        pass
-            except Exception:
-                pass
+                    except Exception as exc:
+                        _logger.debug("analytics potential_recoverable inner failed: %s", exc)
+            except Exception as exc:
+                _logger.debug("analytics potential_recoverable outer failed: %s", exc)
 
         if not levers_out:
             # Fallback : estimation modèle CEE sur surface totale
@@ -586,7 +588,7 @@ def _build_potential_recoverable(db: Session, org_id: int, site_ids: list[int]) 
                             "reference": "Code Énergie L233-1",
                         },
                     ]
-            except Exception:
+            except Exception as exc:
                 levers_out = _CEE_DEFAULT_LEVERS
 
         value_mwh = int(round(total_kwh / 1000.0))
@@ -637,8 +639,8 @@ def _build_alerts(db: Session, org_id: int, site_ids: list[int]) -> dict:
                 by_severity[sev] = by_severity.get(sev, 0) + 1
                 domain = issue.get("domain", "other")
                 by_type[domain] = by_type.get(domain, 0) + 1
-        except Exception:
-            pass
+        except Exception as exc:
+            _logger.debug("alerts action_center fallback failed: %s", exc)
 
         return {
             "total": alert_count + ac_total,
@@ -712,7 +714,7 @@ def _build_data_quality(db: Session, site_ids: list[int], today: date) -> dict:
 def get_cockpit_facts(
     db: Session,
     org_id: int,
-    period: str = "current_week",
+    period: CockpitFactsPeriod = "current_week",
 ) -> dict:
     """Endpoint atomique unifié — source unique pour Cockpit Daily + Comex.
 

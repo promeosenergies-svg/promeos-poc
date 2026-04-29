@@ -14,6 +14,7 @@ Ref : PROMPT_REFONTE_COCKPIT_DUAL_SOL2_EXECUTION.md §2.B Phase 1.1
 """
 
 from datetime import datetime
+from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -114,15 +115,19 @@ def build_contractual(
     return eur
 
 
-def to_dict_with_proof(eur_amount: EurAmount) -> dict:
+def to_dict_with_proof(eur_amount: EurAmount, proof_url: Optional[str] = None) -> dict:
     """Sérialise un EurAmount pour l'API avec champ proof_url.
 
-    Le proof_url pointe vers l'endpoint GET /api/cockpit/eur_amount/{id}/proof
-    qui retourne ce même dict — permettant aux clients de récupérer la preuve
-    de traçabilité par lien direct (dashboard, export PDF, audit trail).
+    Le proof_url pointe vers l'endpoint qui retourne ce dict (audit trail,
+    export PDF, dashboard). Le router est responsable de fournir l'URL
+    canonique — le service ne hard-code pas le préfixe routing (P1
+    /simplify audit fin Phase 1 : couplage service→routing).
 
     Args:
         eur_amount: instance EurAmount chargée depuis la DB
+        proof_url:  URL canonique vers le proof endpoint (fournie par le
+                    router via constante EUR_AMOUNT_PROOF_PATH). Si None,
+                    fallback heuristique pour rétro-compat tests.
 
     Returns:
         dict avec tous les champs + proof_url canonique
@@ -141,5 +146,5 @@ def to_dict_with_proof(eur_amount: EurAmount) -> dict:
         "contract_id": eur_amount.contract_id,
         "formula_text": eur_amount.formula_text,
         "computed_at": computed_at_str,
-        "proof_url": f"/api/cockpit/eur_amount/{eur_amount.id}/proof",
+        "proof_url": proof_url or f"/api/cockpit/eur_amount/{eur_amount.id}/proof",
     }

@@ -354,7 +354,7 @@ from .sirene import (
 from .eur_amount import EurAmount, EurAmountCategory
 
 # BaselineCalibration — Cockpit Sol2 Phase 1.2 (Décisions B+D §0.D)
-from .baseline_calibration import BaselineCalibration, BaselineMethod
+from .baseline_calibration import BaselineCalibration, BaselineMethod, ConfidenceLevel
 
 __all__ = [
     "Base",
@@ -638,4 +638,5 @@ __all__ = [
     # BaselineCalibration — Cockpit Sol2 Phase 1.2
     "BaselineCalibration",
     "BaselineMethod",
+    "ConfidenceLevel",
 ]
