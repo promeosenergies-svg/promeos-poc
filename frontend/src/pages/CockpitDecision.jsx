@@ -1059,12 +1059,13 @@ export default function CockpitDecision() {
   const lastUpdateRel = relativeTime(lastUpdate);
   const weekIso = getIsoWeek();
 
-  // EPEX placeholder — sera alimenté par /api/marche/spot Étape 4 backend
-  // gap-filler. En attendant, badge "Indicatif" pour respecter règle d'or
-  // chiffres fiables (cf. simplify P0 audit Étape 2).
+  // EPEX live — backend exposera /api/marche/spot V2 (post-Refonte sprint).
+  // Étape 6.bis : masquer la pill complètement si null plutôt qu'afficher
+  // une valeur hardcodée 78 €/MWh — règle d'or chiffres fiables 27/04
+  // (audit /simplify P0 + audit Sophie VC : "perte de confiance immédiate"
+  // si placeholder sans source affiché à un investisseur).
   const epexPrice = facts?.market?.epex_eur_per_mwh ?? null;
-  const epexIndicative = epexPrice == null;
-  const epexDisplay = epexPrice ?? 78;
+  const showEpexPill = epexPrice != null && Number.isFinite(epexPrice);
 
   const scopeLabel = `${orgName}${sitesCount ? ` — ${sitesCount} sites` : ''}`;
 
@@ -1111,36 +1112,20 @@ export default function CockpitDecision() {
           </div>
         </div>
         <div className="flex gap-1.5 flex-wrap items-center">
-          <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono uppercase tracking-[0.04em]"
-            style={{
-              fontSize: 11,
-              border: '0.5px solid var(--sol-rule)',
-              color: 'var(--sol-ink-700)',
-              background: 'var(--sol-bg-paper)',
-            }}
-            title={
-              epexIndicative
-                ? "Cours indicatif J−1 — connexion EPEX SPOT en cours d'intégration"
-                : 'Cours EPEX SPOT day-ahead'
-            }
-          >
-            <AcronymTooltip acronym="EPEX">EPEX</AcronymTooltip> {epexDisplay} €/MWh
-            {epexIndicative && (
-              <span
-                className="px-1 py-0 rounded font-mono"
-                style={{
-                  fontSize: 9,
-                  background: 'var(--sol-hce-bg)',
-                  color: 'var(--sol-hce-fg)',
-                  fontWeight: 500,
-                  letterSpacing: '0.06em',
-                }}
-              >
-                Indicatif
-              </span>
-            )}
-          </span>
+          {showEpexPill && (
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono uppercase tracking-[0.04em]"
+              style={{
+                fontSize: 11,
+                border: '0.5px solid var(--sol-rule)',
+                color: 'var(--sol-ink-700)',
+                background: 'var(--sol-bg-paper)',
+              }}
+              title="Cours EPEX SPOT day-ahead (J−1, publication 12h45)"
+            >
+              <AcronymTooltip acronym="EPEX">EPEX</AcronymTooltip> {epexPrice} €/MWh
+            </span>
+          )}
           <button
             type="button"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-colors hover:bg-[var(--sol-bg-canvas)]"

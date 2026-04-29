@@ -30,7 +30,9 @@ from doctrine.constants import (
     DT_PENALTY_AT_RISK_EUR,
     DT_PENALTY_EUR,
     DT_REF_YEAR_DEFAULT,
+    FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR,
     OPERAT_PENALTY_EUR,
+    PRICE_FLEX_NEBCO_EUR_PER_MWH,
     REGOPS_WEIGHTS_DEFAULT,
 )
 from models import (
@@ -924,22 +926,23 @@ def _build_flex_potential(db: Session, org_id: int, site_ids: list[int]) -> dict
             assessments = db.query(FlexAssessment).filter(FlexAssessment.site_id.in_(site_ids)).all()
             if assessments:
                 mwh_total = sum((a.potential_kwh_year or 0) / 1000 for a in assessments)
-                # Prix moyen effacement ~80 €/MWh (NEBCO+AOFD blend 2026 CRE T4 2025)
-                eur_total = mwh_total * 80
+                # Étape 6.bis : prix marché effacement = SoT canonique
+                # PRICE_FLEX_NEBCO_EUR_PER_MWH (doctrine/constants.py).
+                eur_total = mwh_total * PRICE_FLEX_NEBCO_EUR_PER_MWH
                 return {
                     "eur_year": round(eur_total),
                     "mwh_year": round(mwh_total),
                     "method": "modeled_nebco",
-                    "source": "FlexAssessment × prix effacement CRE 80 €/MWh",
+                    "source": (f"FlexAssessment × prix effacement CRE {int(PRICE_FLEX_NEBCO_EUR_PER_MWH)} €/MWh"),
                     "leverage_count": len(assessments),
                 }
-        # Fallback heuristique
+        # Fallback heuristique — Étape 6.bis : SoT canonique.
         site_count = len(site_ids)
         return {
-            "eur_year": site_count * 4_200,  # ~21 k€ pour 5 sites
+            "eur_year": site_count * FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR,
             "mwh_year": site_count * 50,
             "method": "heuristic_per_site",
-            "source": "Heuristique NEBCO 4 200 €/site CRE T4 2025",
+            "source": (f"Heuristique NEBCO {FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR}€/site CRE T4 2025"),
             "leverage_count": 0,
         }
     except Exception as exc:

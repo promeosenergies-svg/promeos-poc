@@ -304,7 +304,23 @@ function VisuelFooterMono({ source, lastUpdate, confidence }) {
   );
 }
 
-function ConsoSevenDaysBars({ lastUpdate, confidence }) {
+function ConsoSevenDaysBars({ lastUpdate, confidence, weeklyAnomaly }) {
+  // Étape 6.bis P1 : sous-titre narratif chiffré nommé (audit /frontend-design
+  // pixel-perfect Étape 5). Si backend expose `consumption.weekly_anomaly` :
+  // {day_label, site_name, delta_pct} → on rend "Sam 25 avril : +39% vs
+  // baseline — anomalie Hôtel Nice". Sinon fallback générique honnête.
+  const anomalyText = weeklyAnomaly ? (
+    <>
+      {weeklyAnomaly.day_label} :{' '}
+      <strong style={{ fontWeight: 500, color: 'var(--sol-refuse-fg)' }}>
+        {weeklyAnomaly.delta_pct > 0 ? '+ ' : '− '}
+        {Math.abs(weeklyAnomaly.delta_pct)} %
+      </strong>{' '}
+      vs baseline — anomalie {weeklyAnomaly.site_name}
+    </>
+  ) : (
+    'Pic anormal de la semaine en rouge · scan visuel 5 secondes.'
+  );
   return (
     <div
       className="rounded-md p-4"
@@ -322,7 +338,7 @@ function ConsoSevenDaysBars({ lastUpdate, confidence }) {
             Conso 7 jours · MWh/jour
           </div>
           <div className="text-xs" style={{ color: 'var(--sol-ink-700)', lineHeight: 1.4 }}>
-            Visuel glanceable des 7 derniers jours · pic anormal en rouge.
+            {anomalyText}
           </div>
         </div>
         <Link
@@ -974,7 +990,11 @@ export default function CockpitPilotage() {
 
       {/* 2 visuels glanceables */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
-        <ConsoSevenDaysBars lastUpdate={lastUpdateRel} confidence={confidence} />
+        <ConsoSevenDaysBars
+          lastUpdate={lastUpdateRel}
+          confidence={confidence}
+          weeklyAnomaly={facts?.consumption?.weekly_anomaly}
+        />
         <CourbeChargeJMinus1
           subscribedKw={facts?.power?.subscribed_kw}
           lastUpdate={lastUpdateRel}

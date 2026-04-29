@@ -27,7 +27,11 @@ from sqlalchemy.orm import Session
 
 from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 from doctrine.acronyms import transform_acronym
-from doctrine.constants import DT_PENALTY_EUR
+from doctrine.constants import (
+    CO2_FACTOR_ELEC_KGCO2_PER_KWH,
+    DT_PENALTY_EUR,
+    PRICE_ELEC_ETI_2026_EUR_PER_MWH,
+)
 from models.action_item import ActionItem
 from models.enums import ActionSourceType, Severity
 
@@ -75,6 +79,36 @@ def _infer_regulatory_article(action: ActionItem) -> Optional[str]:
     return None
 
 
+_DECISION_QUESTION_TEMPLATES = {
+    "bacs": "Faut-il installer un système de pilotage CVC obligatoire (Décret BACS) ?",
+    "audit_sme": "Quel prestataire retenir pour l'audit énergétique obligatoire ?",
+    "achat": "Quelle stratégie de renouvellement post-ARENH retenir ?",
+    "aper": "Faut-il engager le solaire parking obligatoire (loi APER) ?",
+    "operat": "Faut-il finaliser la déclaration OPERAT annuelle ?",
+}
+
+
+def _question_title_for_lever(lever_key: str, site_name: str = "") -> str | None:
+    """Étape 6.bis P1 : transforme un titre action en question décisionnelle.
+
+    Audit Marie + /frontend-design : les titres prod ("Installer un système…")
+    annonçaient une action au lieu de poser la question d'arbitrage. Cette
+    transformation rend les cards conversation cadre↔outil (§5 grammaire).
+
+    Returns:
+        Titre interrogatif suffixé du nom du site, ou None si le levier n'a
+        pas de template (caller utilisera le titre brut transformé).
+    """
+    template = _DECISION_QUESTION_TEMPLATES.get(lever_key)
+    if not template:
+        return None
+    if site_name:
+        # On retire le "?" final pour ajouter le site avant
+        base = template.rstrip("? ").rstrip()
+        return f"{base} — {site_name} ?"
+    return template
+
+
 def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> dict:
     """Sérialise un ActionItem en payload Décision (vue exécutive).
 
@@ -82,6 +116,10 @@ def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> di
     montant € est exclu — seul le MWh/an est exposé. Si action de mise
     en conformité, on rattache l'EurAmount via build_regulatory avec
     article cité.
+
+    Étape 6.bis P1 : titre transformé en question décisionnelle pour
+    les leviers connus (BACS, audit SMÉ, achat, APER, OPERAT) — effet
+    "conseiller" plutôt qu'"injonction" (audit Marie 8.2/10).
 
     Args:
         action: ActionItem ORM
@@ -93,7 +131,10 @@ def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> di
     raw_gain = action.estimated_gain_eur or 0
     gain_mwh = round(raw_gain / DEFAULT_PRICE_ELEC_EUR_KWH / 1000) if raw_gain > 0 else 0
 
-    title = transform_acronym(action.title or "")
+    # Étape 6.bis : titre interrogatif si levier connu, sinon titre brut narrativisé.
+    lever_key = _classify_lever(action)
+    question_title = _question_title_for_lever(lever_key, site_name)
+    title = question_title if question_title else transform_acronym(action.title or "")
     cee_ref = _extract_cee_reference(action.title) or _extract_cee_reference(action.rationale)
 
     regulatory_article = _infer_regulatory_article(action)
@@ -136,9 +177,11 @@ def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> di
     }
 
 
-# Constantes heuristique CapEx — séparées en module-level pour testabilité.
-# Sources : médiane référentiels CEE BAT-TH-* + retours opérateurs OPERA
-# 2024-2025 sur tertiaire mid-market.
+# Heuristique CapEx € par MWh évité par type de levier — médiane référentiels
+# CEE BAT-TH-* + retours opérateurs 2024-2025 sur tertiaire mid-market.
+# Étape 6.bis : indexé par clé _classify_lever() pour DRY (audit /simplify P1
+# divergence silencieuse possible — un levier classé `bacs` côté dedup mais
+# `default` côté CapEx héritait des mauvaises constantes).
 _CAPEX_HEURISTIC_BY_LEVER = {
     "bacs": {
         "capex_per_mwh_year": 1_200,  # GTB classe A/B ~1 200 €/MWh éco
@@ -156,20 +199,26 @@ _CAPEX_HEURISTIC_BY_LEVER = {
         "capex_per_mwh_year": 1_500,  # Solaire parking ~1 500 €/MWh éco
         "method": "Retour benchmark APER tertiaire",
     },
+    "operat": {
+        "capex_per_mwh_year": 50,  # Déclaration OPERAT ~50 €/MWh éco
+        "method": "Référentiel ADEME OPERAT",
+    },
     "default": {
         "capex_per_mwh_year": 1_000,
         "method": "Heuristique CEE générique",
     },
 }
 
-# Coût marginal énergie ETI tertiaire 2026 (post-ARENH) — médiane CRE T4 2025.
-_PRICE_ELEC_EUR_PER_MWH_2026 = 130.0
-# Facteur émission CO₂ électricité France ADEME V23.6 (kgCO₂/kWh).
-_CO2_FACTOR_KG_PER_KWH = 0.052
-
 
 def _estimate_capex_payback(action: ActionItem, gain_mwh_year: int) -> dict:
     """Estime CapEx + payback + CO₂ évité selon levier + potentiel énergie.
+
+    Étape 6.bis :
+    - Réutilise `_classify_lever()` au lieu de dupliquer le parsing titre
+      (audit /simplify P1 — divergence silencieuse possible).
+    - Sources canoniques :
+        - PRICE_ELEC_ETI_2026_EUR_PER_MWH (doctrine/constants.py SoT)
+        - CO2_FACTOR_ELEC_KGCO2_PER_KWH (ADEME Base Empreinte V23.6)
 
     Retourne {capex_eur, savings_eur_year, payback_months, co2_avoided_t_year,
     method} — tous None si gain_mwh_year=0 (pas d'estimation possible).
@@ -183,23 +232,17 @@ def _estimate_capex_payback(action: ActionItem, gain_mwh_year: int) -> dict:
             "method": None,
         }
 
-    # Détecter le levier (réutilise la classification de get_top3_decisions)
-    title = (action.title or "").lower()
-    if "bacs" in title or "gtb" in title or "pilotage cvc" in title:
-        params = _CAPEX_HEURISTIC_BY_LEVER["bacs"]
-    elif "audit" in title and ("énergétique" in title or "energie" in title or "iso" in title):
-        params = _CAPEX_HEURISTIC_BY_LEVER["audit_sme"]
-    elif "renouvel" in title or "contrat" in title or "achat" in title or "marché" in title:
-        params = _CAPEX_HEURISTIC_BY_LEVER["achat"]
-    elif "aper" in title or "solaire" in title:
-        params = _CAPEX_HEURISTIC_BY_LEVER["aper"]
-    else:
-        params = _CAPEX_HEURISTIC_BY_LEVER["default"]
+    # _classify_lever() retourne `other_<id>` pour leviers non catégorisés
+    # → fallback sur "default" du mapping CapEx.
+    lever_key = _classify_lever(action)
+    params = _CAPEX_HEURISTIC_BY_LEVER.get(lever_key, _CAPEX_HEURISTIC_BY_LEVER["default"])
 
     capex_eur = round(gain_mwh_year * params["capex_per_mwh_year"])
-    savings_eur_year = round(gain_mwh_year * _PRICE_ELEC_EUR_PER_MWH_2026)
+    savings_eur_year = round(gain_mwh_year * PRICE_ELEC_ETI_2026_EUR_PER_MWH)
     payback_months = round(capex_eur / savings_eur_year * 12) if savings_eur_year > 0 and capex_eur > 0 else None
-    co2_avoided_t_year = round(gain_mwh_year * 1000 * _CO2_FACTOR_KG_PER_KWH / 1000, 1)
+    # Conversion : MWh × 1 000 (→ kWh) × kgCO₂/kWh / 1 000 (→ tCO₂)
+    # = MWh × CO2_FACTOR (kg/kWh est numériquement = t/MWh, propriété SI).
+    co2_avoided_t_year = round(gain_mwh_year * CO2_FACTOR_ELEC_KGCO2_PER_KWH, 1)
 
     return {
         "capex_eur": capex_eur if capex_eur > 0 else None,

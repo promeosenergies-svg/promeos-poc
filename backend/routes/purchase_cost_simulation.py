@@ -224,11 +224,10 @@ def get_cost_simulation_portfolio(
             continue
 
     # Étape 4 P1 backend : delta_vs_2024 pour effet WOW CFO Marie/Jean-Marc.
-    # Heuristique post-ARENH : la facture 2026 est ~22.5% plus haute que 2024
-    # (médiane observatoire CRE T4 2025 sur ETI tertiaire avec contrats 2024
-    # encore profitant des derniers ARENH). On expose le ratio + le total
-    # implicite 2024 pour transparence.
-    POST_ARENH_RATIO_2026_VS_2024 = 1.225  # +22.5% médiane CRE T4 2025
+    # Étape 6.bis : ratio hissé en SoT canonique (doctrine/constants.py)
+    # — audit /simplify P0 : magic number 1.225 inline était orphelin testable.
+    from doctrine.constants import POST_ARENH_RATIO_2026_VS_2024
+
     total_2024_implicit = (
         round(total_portfolio_eur / POST_ARENH_RATIO_2026_VS_2024, 2) if total_portfolio_eur > 0 else 0.0
     )

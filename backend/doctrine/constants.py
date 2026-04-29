@@ -53,6 +53,24 @@ REGOPS_WEIGHTS_DEFAULT = {"DT": 0.45, "BACS": 0.30, "APER": 0.25}
 # Fallback pour calculs en absence de contrat — JAMAIS 0.18
 PRICE_FALLBACK_EUR_PER_KWH = 0.068
 
+# Prix marginal énergie ETI tertiaire 2026 post-ARENH (médiane CRE T4 2025).
+# Utilisé pour conversion gain MWh→€/an dans les heuristiques décisions/CEE.
+# Source : Observatoire CRE T4 2025 § ETI tertiaire post-ARENH.
+PRICE_ELEC_ETI_2026_EUR_PER_MWH = 130.0
+
+# Ratio facture 2026 vs 2024 post-ARENH (médiane CRE T4 2025 sur ETI tertiaire).
+# Utilisé par /api/purchase/cost-simulation/portfolio pour exposer delta_vs_2024
+# sans appel au moteur de simulation 2024 (économise 50% temps backend).
+POST_ARENH_RATIO_2026_VS_2024 = 1.225  # +22.5% médiane CRE T4 2025
+
+# Prix marché effacement industriel/tertiaire 2026 (NEBCO + AOFD blend CRE T4 2025).
+# Utilisé pour estimation Flex potential eur_year sur _facts.
+PRICE_FLEX_NEBCO_EUR_PER_MWH = 80.0
+
+# Heuristique fallback Flex eur/site/an pour estimation indicative quand
+# FlexAssessment absent (médiane sites tertiaires NEBCO 100 kW pilotable).
+FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR = 4_200
+
 # ─── Benchmarks ────────────────────────────────────────────────────────────
 OID_OFFICE_BENCHMARK_KWHEF_PER_M2_YEAR = 146  # OID 2022, ~25 300 bâtiments
 
@@ -90,6 +108,10 @@ __all__ = [
     "REGOPS_WEIGHTS_AUDIT_APPLICABLE",
     "REGOPS_WEIGHTS_DEFAULT",
     "PRICE_FALLBACK_EUR_PER_KWH",
+    "PRICE_ELEC_ETI_2026_EUR_PER_MWH",
+    "POST_ARENH_RATIO_2026_VS_2024",
+    "PRICE_FLEX_NEBCO_EUR_PER_MWH",
+    "FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR",
     "OID_OFFICE_BENCHMARK_KWHEF_PER_M2_YEAR",
     "COCKPIT_ACTIVATION_THRESHOLD",
     "COCKPIT_OPTIM_RATE_V1",
