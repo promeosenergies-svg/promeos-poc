@@ -80,6 +80,7 @@ class NarrativeKpi:
     unit: Optional[str] = None
     tooltip: Optional[str] = None  # Définition non-sachant
     source: Optional[str] = None  # Référentiel court (ADEME / RegOps / EPEX)
+    drill_down_href: Optional[str] = None  # Phase 3.2 : lien drill-down preuve op
 
 
 @dataclass(frozen=True)
@@ -638,7 +639,9 @@ def _build_cockpit_comex(
         )
     narrative = " ".join(narr_parts)
 
-    # ── 3 KPIs hero §5 — angle CFO ──
+    # ── 3 KPIs hero §5 — angle CFO + drill-downs Phase 3.2 (Q8) ──
+    # Chaque KPI hero porte un drill_down_href explicite vers la preuve op.
+    # Source-guard : test_kpi_hero_has_drill_down (chaque KPI un href cible).
     kpis: list[NarrativeKpi] = [
         NarrativeKpi(
             label="Trajectoire 2030",
@@ -648,6 +651,7 @@ def _build_cockpit_comex(
                 "audit énergétique applicable). Cible 2030 : -40% conso vs 2010."
             ),
             source="RegOps + Décret 2019-771",
+            drill_down_href="/conformite?scope=org&filter=non_conform",
         ),
         NarrativeKpi(
             label="Exposition financière",
@@ -662,6 +666,7 @@ def _build_cockpit_comex(
                 f"OPERAT {int(OPERAT_PENALTY_EUR)} €/déclaration (Circulaire DGEC 2024)."
             ),
             source="Décret 2019-771 + 2020-887 + Circulaire DGEC 2024",
+            drill_down_href="/conformite?scope=org&view=exposure_components",
         ),
         NarrativeKpi(
             label="Potentiel énergétique récupérable",
@@ -672,6 +677,7 @@ def _build_cockpit_comex(
                 f"Conversion en MWh/an via prix fallback {DEFAULT_PRICE_ELEC_EUR_KWH} €/kWh."
             ),
             source="Modélisé · CEE BAT-TH-*",
+            drill_down_href="/actions?filter=open&sort=mwh_desc",
         ),
     ]
 
