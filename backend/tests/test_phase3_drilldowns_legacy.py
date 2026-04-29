@@ -83,6 +83,44 @@ class TestKpiHeroHasDrillDown:
         assert "filter=open" in href and "mwh_desc" in href, f"href={href}"
 
 
+# ── Phase 3.bis.c : Cross-builder drill_down_href ──────────────────────
+
+
+class TestDrillDownHrefCrossBuilder:
+    """Phase 3.bis.c — chaque builder de page expose au moins un KPI hero
+    avec drill_down_href. Verrouillage anti-régression : un nouveau builder
+    ajouté sans drill_down_href doit faire échouer la CI.
+    """
+
+    PAGES = [
+        ("cockpit_daily", "/cockpit/jour"),
+        ("cockpit_comex", "/conformite"),
+        ("patrimoine", "/patrimoine"),
+        ("conformite", "/conformite"),
+        ("bill_intel", "/bill-intel"),
+        ("achat_energie", "/achat-energie"),
+        ("monitoring", "/monitoring"),
+        ("diagnostic", "/diagnostic-conso"),
+        ("anomalies", "/anomalies"),
+        ("flex", "/flex"),
+    ]
+
+    @pytest.mark.parametrize("page,expected_prefix", PAGES)
+    def test_each_builder_exposes_drill_down(self, client, page, expected_prefix):
+        response = client.get(f"/api/pages/{page}/briefing", headers=HEADERS)
+        assert response.status_code == 200, f"page={page} status={response.status_code}"
+        kpis = response.json().get("data", {}).get("kpis", [])
+        with_drilldown = [k for k in kpis if k.get("drill_down_href")]
+        assert with_drilldown, (
+            f"Builder {page} n'expose AUCUN KPI hero avec drill_down_href (KPIs: {[k.get('label') for k in kpis]})"
+        )
+        # Au moins un href doit cibler la page principale du pillar
+        hrefs = [k.get("drill_down_href", "") for k in with_drilldown]
+        assert any(expected_prefix in h for h in hrefs), (
+            f"Builder {page} : aucun drill_down_href ne cible {expected_prefix} (observed: {hrefs})"
+        )
+
+
 # ── Phase 3.4 : Routes legacy backend ──────────────────────────────────
 
 

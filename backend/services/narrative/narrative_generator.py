@@ -478,6 +478,7 @@ def _build_cockpit_daily(
             value=f"{en_derive}/{sites_count}" if sites_count > 0 else "—",
             tooltip="Sites non-conformes ou à risque sur la trajectoire 2030.",
             source="RegAssessment",
+            drill_down_href="/cockpit/jour",
         ),
     ]
 
@@ -856,6 +857,7 @@ def _build_patrimoine(
             value=f"{en_derive}/{sites_count}" if sites_count > 0 else "—",
             tooltip="Sites non-conformes ou à risque sur la trajectoire 2030.",
             source="RegAssessment",
+            drill_down_href="/patrimoine",
         ),
         NarrativeKpi(
             label="Mutualisation 2030",
@@ -1117,6 +1119,7 @@ def _build_conformite(
                 "(Décret 2019-771)."
             ),
             source="Calendrier réglementaire",
+            drill_down_href="/conformite",
         ),
     ]
 
@@ -1353,6 +1356,7 @@ def _build_bill_intel(
                 "barèmes officiels CRE/JORF."
             ),
             source="Shadow Billing v4.2",
+            drill_down_href="/bill-intel?status=open",
         ),
         NarrativeKpi(
             label="Pertes à récupérer",
@@ -1611,6 +1615,7 @@ def _build_achat_energie(
                 "avant pour challenger 30+ fournisseurs."
             ),
             source="Contrats EnergyContract.end_date",
+            drill_down_href="/achat-energie?tab=echeances",
         ),
         NarrativeKpi(
             label="Volume exposé",
@@ -1906,6 +1911,7 @@ def _build_monitoring(
                 "des relevés, cohérence des valeurs, régularité des intervalles."
             ),
             source="ISO 50001 §8.5.1 — données fiables et reproductibles",
+            drill_down_href="/monitoring",
         ),
         NarrativeKpi(
             label="Alertes actives",
@@ -2217,6 +2223,7 @@ def _build_diagnostic(
                 "12 mois glissants."
             ),
             source="ConsumptionInsight workflow lifecycle",
+            drill_down_href="/diagnostic-conso?status=open",
         ),
         NarrativeKpi(
             label="Gisement annuel",
@@ -2557,6 +2564,7 @@ def _build_anomalies(
                 "ou criticité = à traiter cette semaine."
             ),
             source="Plan d'actions consolidé · 4 piliers PROMEOS",
+            drill_down_href="/anomalies?status=open",
         ),
         NarrativeKpi(
             label="Impact financier",
@@ -2853,6 +2861,7 @@ def _build_flex(
                 "RTE : 100 kW minimum pour rentrer en NEBCO."
             ),
             source="FlexAsset.is_controllable agrégé",
+            drill_down_href="/flex?filter=controllable",
         ),
         NarrativeKpi(
             label="Score Flex moyen",
