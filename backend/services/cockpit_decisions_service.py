@@ -341,19 +341,41 @@ def get_top3_decisions(db: Session, site_ids: list[int]) -> list[dict]:
         .all()
     )
 
-    # Dédup site_id × lever : on garde l'action de plus haute priorité par
-    # combo. Si l'action n'a pas de site_id, on ne dédup que par levier.
-    seen_keys: set[tuple] = set()
+    # Phase 14.D (audit Marie/Sophie 29/04) : dédup par lever_key GLOBAL.
+    # Avant : dédup (site_id, lever) → si BACS dominait sur 5 sites, le Top 3
+    # remontait 3× BACS sur 3 sites différents = "produit ne sait dire qu'une
+    # chose" pour Marie/Sophie. Cassait la promesse "3 décisions à arbitrer"
+    # de la maquette doctrine §11.3.
+    # Après : un seul levier par Top 3 (BACS le plus critique + audit + achat
+    # ou APER ou OPERAT). Si moins de 3 leviers distincts dans la fenêtre
+    # candidate (ex 1 seul site, 1 seul levier), on complète avec d'autres
+    # actions du même levier (fallback explicite).
+    seen_levers: set[str] = set()
     deduped: list[ActionItem] = []
+    fallback_pool: list[ActionItem] = []
     for action in rows:
         lever = _classify_lever(action)
-        key = (action.site_id or 0, lever)
-        if key in seen_keys:
+        if lever in seen_levers:
+            fallback_pool.append(action)
             continue
-        seen_keys.add(key)
+        seen_levers.add(lever)
         deduped.append(action)
         if len(deduped) >= 3:
             break
+
+    # Fallback si < 3 leviers distincts disponibles : on ajoute des actions
+    # du pool dédoublonné (même levier, sites différents) pour quand même
+    # remplir le Top 3 plutôt que d'afficher 1 ou 2 cards.
+    if len(deduped) < 3:
+        seen_combos: set[tuple] = {(a.site_id or 0, _classify_lever(a)) for a in deduped}
+        for action in fallback_pool:
+            combo = (action.site_id or 0, _classify_lever(action))
+            if combo in seen_combos:
+                continue
+            seen_combos.add(combo)
+            deduped.append(action)
+            if len(deduped) >= 3:
+                break
 
     # Site name resolver — single query
     site_names: dict[int, str] = {}

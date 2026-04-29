@@ -66,13 +66,20 @@ function KpiTriptyqueHybride({ facts }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+      {/* Phase 14.B (audit véracité Sophie) : le label "Trajectoire 2030"
+          était trompeur — il mappait sur compliance.score (score conformité
+          DT/BACS/APER pondéré RegOps), pas sur consumption.trajectory_2030_score
+          (avancement -40 % MWh DT, exposé séparément dans la SVG ci-dessous).
+          Renommé "Score conformité" cohérent avec la donnée réelle. La
+          trajectoire MWh DT reste visible via TrajectoryDTSmoothed plus bas. */}
       <KpiCard
         variant="confidence"
-        label="Trajectoire 2030"
+        label="Score conformité"
+        tooltip="Score pondéré RegOps : Décret Tertiaire (DT) + Décret BACS + loi APER. Note /100 — 100 = entièrement conforme. Pour la trajectoire MWh DT cf. graphique ci-dessous."
         value={compliance.score != null ? compliance.score : '—'}
         unit={compliance.score != null ? `/${compliance.max || 100}` : ''}
         badge="calculated_regulatory"
-        source="RegOps · Décret 2019-771"
+        source="RegOps · DT + BACS + APER pondéré"
         drillHref="/conformite?scope=org&filter=non_conform"
         drillLabel={`Voir ${compliance.non_conform_sites || 0} sites NC`}
       />
@@ -112,11 +119,22 @@ function StrategicNarrative({ facts }) {
   const exp = facts.exposure?.total || {};
   const expDelta = facts.exposure?.delta_vs_last_week;
   const pot = facts.potential_recoverable || {};
-  const drift = facts.consumption?.sites_in_drift ?? 0;
+  const consDrift = facts.consumption?.sites_in_drift ?? 0;
   const sitesCount = facts.scope?.site_count ?? 0;
+  const ncSites = c.non_conform_sites ?? 0;
+  const atRiskSites = c.at_risk_sites ?? 0;
 
+  // Phase 14.E (audit véracité Sophie/Marie) : la narrative disait "tous les
+  // sites alignés" si consumption.sites_in_drift = 0, ignorant le statut
+  // conformité réglementaire (NC + à risque) — contradiction frontale avec
+  // le KPI exposition 12,8 k€ et le score 37/100 visibles dans la page.
+  // Désormais : "drift" agrège dérive conso ET sites NC/à risque (la cible
+  // de la narrative = ce qui n'est pas aligné sur la trajectoire 2030).
+  const sitesOff = Math.max(consDrift, ncSites + atRiskSites);
   const driftText =
-    drift > 0 ? `${drift} site${drift > 1 ? 's' : ''} en dérive` : `tous les sites alignés`;
+    sitesOff > 0
+      ? `${sitesOff} site${sitesOff > 1 ? 's' : ''} en écart de la trajectoire`
+      : `tous les sites alignés`;
   const expText = exp.value_eur != null ? fmtEurShort(exp.value_eur) : '—';
   const expDeltaText =
     expDelta?.value_eur != null && expDelta.value_eur !== 0
@@ -157,6 +175,44 @@ function potSplitInline(v) {
 
 // ── 3 décisions à arbitrer ────────────────────────────────────────
 // Tons sévérité hissés en SoT (Étape 2.bis) → severityTone() depuis solTones.js
+
+// Phase 14.F — Templates narratives par levier pour les ActionItem dépourvus
+// de `rationale`. Garde la grammaire §5 doctrine (énoncé descriptif court,
+// chiffre quand disponible, ouverture sur l'arbitrage CFO).
+const _NARRATIVE_TEMPLATE_BY_LEVER = {
+  bacs: 'Site assujetti au Décret BACS — système de pilotage CVC obligatoire avant 2027. Impact technique (GTB classe A/B) + arbitrage CapEx vs pénalité 1 500 €/an évitée.',
+  audit_sme:
+    'Audit énergétique réglementaire (Code Énergie L233-1) — réalisation par OPQIBI ou ISO 50001. Levier généralement à payback rapide (~12-18 mois).',
+  achat:
+    'Renouvellement contrat fourniture post-ARENH — fenêtre forward Y+1 ouverte. Arbitrage entre baseload, profilé peakload et fixation partielle.',
+  aper: "Solarisation parking obligatoire (Loi APER) — surface > 1 500 m² assujettie. Couverture mini 50 % d'ici juillet 2028, sanction 20 €/m²/an si non engagée.",
+  operat:
+    'Déclaration OPERAT annuelle obligatoire (Décret Tertiaire) — collecte conso + pièces justificatives. Sanction 1 500 € + name & shame ADEME.',
+};
+
+function NarrativeFallback({ decision }) {
+  const lever = decision.lever_key || '';
+  const tpl = _NARRATIVE_TEMPLATE_BY_LEVER[lever];
+  const echeance = decision.echeance;
+  const dueLine = echeance
+    ? ` Échéance ${new Date(echeance).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}.`
+    : '';
+  if (tpl)
+    return (
+      <span>
+        {tpl}
+        {dueLine}
+      </span>
+    );
+  // Fallback de fallback : action générique avec échéance.
+  return (
+    <span>
+      Action ouverte sur ce site, à arbitrer cette semaine selon priorité métier et contraintes
+      réglementaires.
+      {dueLine}
+    </span>
+  );
+}
 
 // Phase 13.E — DecisionCard wrappé `memo` : la liste cycle sur 3 cards
 // quand le parent re-render (fetch facts/portfolio/trajectory). Sans memo,
@@ -243,18 +299,22 @@ function DecisionCardImpl({ decision, index }) {
         >
           {decision.title}
         </div>
-        {decision.narrative && (
-          <div
-            style={{
-              fontSize: 13.5,
-              lineHeight: 1.6,
-              color: 'var(--sol-ink-700)',
-              marginBottom: 10,
-            }}
-          >
-            {decision.narrative}
-          </div>
-        )}
+        {/* Phase 14.F (audit Marie/Jean-Marc) : fallback narrative si rationale
+            ActionItem absent côté seed. Avant : la card affichait juste un
+            titre interrogatif sans contexte → impression "démo pas finie".
+            Désormais : narrative dérivée du levier + impact financier
+            disponibles (échéance + €/an + référentiel). Garde la grammaire
+            §5 doctrine (verbe d'action + chiffre + source). */}
+        <div
+          style={{
+            fontSize: 13.5,
+            lineHeight: 1.6,
+            color: 'var(--sol-ink-700)',
+            marginBottom: 10,
+          }}
+        >
+          {decision.narrative ? decision.narrative : <NarrativeFallback decision={decision} />}
+        </div>
         {/* Cards CFO grade : 1ère ligne = signal métier (Volume/Économies/Réf/Échéance).
             2ᵉ ligne = arbitrage financier (CapEx/Payback/CO₂) si données dispos.
             Étape 4.bis FE : audits Marie + Jean-Marc convergents. */}
@@ -330,8 +390,10 @@ function DecisionCardImpl({ decision, index }) {
                 <span
                   className="block font-mono uppercase tracking-[0.05em]"
                   style={{ fontSize: 10, color: 'var(--sol-ink-500)' }}
+                  title="CapEx — Capital Expenditure : investissement initial estimé pour engager le levier (équipement + installation + mise en service). Source : référentiel CEE BAT-TH-* + benchmarks ADEME tertiaire."
                 >
-                  Engagement CapEx
+                  Engagement{' '}
+                  <span style={{ borderBottom: '1px dotted var(--sol-ink-400)' }}>CapEx</span>
                 </span>
                 <span style={{ fontWeight: 500, color: 'var(--sol-ink-900)' }}>
                   {fmtEurShort(capexEur)}
@@ -343,8 +405,9 @@ function DecisionCardImpl({ decision, index }) {
                 <span
                   className="block font-mono uppercase tracking-[0.05em]"
                   style={{ fontSize: 10, color: 'var(--sol-ink-500)' }}
+                  title="Payback — durée de retour sur investissement (mois) : CapEx ÷ Économies annuelles. N'inclut pas la pénalité légale évitée."
                 >
-                  Payback
+                  <span style={{ borderBottom: '1px dotted var(--sol-ink-400)' }}>Payback</span>
                 </span>
                 <span style={{ fontWeight: 500, color: 'var(--sol-ink-900)' }}>
                   {paybackMonths < 24

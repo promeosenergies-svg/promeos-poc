@@ -170,7 +170,14 @@ function KpiTriptyqueEnergetique({ facts }) {
       />
       <KpiCard
         scaleLabel={SCALE_LABEL.contract}
-        label="Pic puissance J−1"
+        // Phase 14.C (audit véracité Marc) : label dynamique selon peak_source.
+        // Avant : "Pic puissance J−1" en dur même quand la mesure datait de J−29
+        // (peak_source = "j-29") → titre faux, perte confiance EM immédiate.
+        // Après : si fallback, on affiche "Pic puissance J−N" avec N = jours
+        // d'ancienneté pour que Marc voie immédiatement la fraîcheur.
+        label={
+          peakIsFallback ? `Pic puissance ${peakSource.replace('j-', 'J−')}` : 'Pic puissance J−1'
+        }
         tooltip="Mesure CDC 30 min agrégée sites · vs puissance souscrite contractuelle"
         value={peakSplit.value}
         unit={peakSplit.unit}

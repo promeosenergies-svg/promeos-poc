@@ -114,13 +114,25 @@ def j_minus_1_with_fallback(
     j_minus_1 = today - timedelta(days=1)
     if not meter_ids:
         return j_minus_1, 0.0, 1
+    # Phase 14.A P0-1 (audit véracité) : filtrer sur la fréquence la plus fine
+    # disponible pour éviter le cumul ×4 (MIN_15 + HOURLY + DAILY + MONTHLY
+    # peuvent coexister pour le même meter — cf cockpit_facts_service ligne ~250
+    # et observatoire véracité 5,5/10). On utilise l'algorithme `resolve_best_freq`
+    # canonique du SoT timeseries (ems/timeseries_service) pour rester cohérent
+    # avec consumption_unified_service.
+    from services.ems.timeseries_service import resolve_best_freq
+
     for offset in range(1, max_days_back + 1):
         target = today - timedelta(days=offset)
+        date_from = datetime.combine(target, datetime.min.time())
+        date_to = datetime.combine(target, datetime.max.time())
+        best = resolve_best_freq(db, meter_ids, date_from, date_to, granularity="daily")
         total = (
             db.query(func.sum(MeterReading.value_kwh))
             .filter(
                 MeterReading.meter_id.in_(meter_ids),
                 func.date(MeterReading.timestamp) == target.isoformat(),
+                MeterReading.frequency.in_(best),
             )
             .scalar()
         )
@@ -222,20 +234,23 @@ def _build_consumption(
                 _logger.debug("baseline_a J-1 failed: %s", exc)
 
         # Surconso 7j agrégée
-        w_start = datetime.combine(today - timedelta(days=7), datetime.min.time())
-        w_end = datetime.combine(today - timedelta(days=1), datetime.max.time())
+        # Phase 14.A P0-1 (audit véracité) : délègue à consumption_unified_service
+        # (SoT canonique, applique resolve_best_freq → 1 seule fréquence pour
+        # éviter le cumul ×4 MIN_15+HOURLY+DAILY+MONTHLY).
+        from services.consumption_unified_service import (
+            ConsumptionSource,
+            get_portfolio_consumption,
+        )
+
+        w_start_d = today - timedelta(days=7)
+        w_end_d = today - timedelta(days=1)
         surconso_7d_kwh = 0.0
-        if meter_ids:
-            total_7d = (
-                db.query(func.sum(MeterReading.value_kwh))
-                .filter(
-                    MeterReading.meter_id.in_(meter_ids),
-                    MeterReading.timestamp >= w_start,
-                    MeterReading.timestamp <= w_end,
-                )
-                .scalar()
-            )
-            surconso_7d_kwh = float(total_7d) if total_7d else 0.0
+        if site_ids:
+            try:
+                p7d = get_portfolio_consumption(db, org_id, w_start_d, w_end_d, source=ConsumptionSource.METERED)
+                surconso_7d_kwh = float(p7d.get("total_kwh") or 0.0)
+            except Exception as exc:
+                _logger.debug("portfolio 7d failed: %s", exc)
         surconso_7d_mwh = round(surconso_7d_kwh / 1000.0, 3)
 
         # Baseline B (7j, premier site)
@@ -298,20 +313,25 @@ def _build_consumption(
             _logger.debug("sites_in_drift batch query failed: %s", exc)
 
         # Annuel agrégé (12 mois glissants)
-        y_start = datetime.combine(today - timedelta(days=365), datetime.min.time())
-        y_end = datetime.combine(today, datetime.max.time())
+        # Phase 14.A P0-1 (audit véracité 5,5/10) : délègue au SoT canonique
+        # consumption_unified_service. Avant : somme MeterReading sans filtre
+        # frequency → cumulait MIN_15 + HOURLY + DAILY + MONTHLY pour les mêmes
+        # périodes, gonflant annual_mwh ×4,1 (11 381 affichés vs 2 760 réels →
+        # kWh/m²/an = 650 hors range tertiaire 80-350). Après : 1 seule fréquence
+        # via resolve_best_freq, plausibilité physique restaurée (~157 kWh/m²/an).
         annual_kwh = 0.0
-        if meter_ids:
-            total_annual = (
-                db.query(func.sum(MeterReading.value_kwh))
-                .filter(
-                    MeterReading.meter_id.in_(meter_ids),
-                    MeterReading.timestamp >= y_start,
-                    MeterReading.timestamp <= y_end,
+        if site_ids:
+            try:
+                p_annual = get_portfolio_consumption(
+                    db,
+                    org_id,
+                    today - timedelta(days=365),
+                    today,
+                    source=ConsumptionSource.METERED,
                 )
-                .scalar()
-            )
-            annual_kwh = float(total_annual) if total_annual else 0.0
+                annual_kwh = float(p_annual.get("total_kwh") or 0.0)
+            except Exception as exc:
+                _logger.debug("portfolio annual failed: %s", exc)
         annual_mwh = round(annual_kwh / 1000.0, 1)
 
         # Trajectoire 2030 via baseline C (premier site) → avancement
