@@ -999,6 +999,14 @@ export default function CockpitDecision() {
 
   const scopeLabel = `${orgName}${sitesCount ? ` — ${sitesCount} sites` : ''}`;
 
+  // Phase 13.B — Rapport COMEX print : date génération formatée FR pour
+  // l'en-tête PDF natif (visible uniquement via window.print()).
+  const printGenDate = new Date().toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
   return (
     <div
       className="max-w-[1280px] mx-auto"
@@ -1009,6 +1017,37 @@ export default function CockpitDecision() {
         padding: '1.5rem 1.6rem 1.2rem',
       }}
     >
+      {/* Phase 13.B — Header impression (caché écran, visible PDF print).
+          Rendu autoportant pour partage CODIR : nom client, période,
+          date de génération, source d'autorité PROMEOS. */}
+      <div data-print-header>
+        <div className="flex justify-between items-baseline">
+          <div
+            style={{
+              fontFamily: 'var(--sol-font-display)',
+              fontSize: 18,
+              fontWeight: 500,
+              color: 'var(--sol-ink-900)',
+              letterSpacing: '0.01em',
+            }}
+          >
+            PROMEOS · Cockpit énergétique
+          </div>
+          <div
+            className="font-mono uppercase tracking-[0.06em]"
+            style={{ fontSize: 9, color: 'var(--sol-ink-500)' }}
+          >
+            Généré le {printGenDate}
+          </div>
+        </div>
+        <div
+          className="mt-1 font-mono uppercase tracking-[0.07em]"
+          style={{ fontSize: 10, color: 'var(--sol-ink-700)' }}
+        >
+          Synthèse stratégique · {scopeLabel} · semaine {weekIso}
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex justify-between items-start gap-4 flex-wrap">
         <div className="flex-1 min-w-[260px]">
@@ -1090,40 +1129,56 @@ export default function CockpitDecision() {
       </div>
 
       {/* Narrative stratégique 4 lignes denses + push hebdo */}
-      <StrategicNarrative facts={facts} />
+      <div data-print-section>
+        <StrategicNarrative facts={facts} />
+      </div>
 
       {/* Triptyque KPI hybride avec badges Calculé/Modélisé */}
-      {factsLoading && !facts ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          {[0, 1, 2].map((i) => (
-            <KpiSkeleton key={i} variant="confidence" />
-          ))}
-        </div>
-      ) : (
-        <KpiTriptyqueHybride facts={facts} />
-      )}
+      <div data-print-section>
+        {factsLoading && !facts ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+            {[0, 1, 2].map((i) => (
+              <KpiSkeleton key={i} variant="confidence" />
+            ))}
+          </div>
+        ) : (
+          <KpiTriptyqueHybride facts={facts} />
+        )}
+      </div>
 
       {/* 3 décisions à arbitrer */}
-      <div
-        className="font-mono uppercase tracking-[0.07em] mb-2"
-        style={{ fontSize: 11, color: 'var(--sol-ink-500)' }}
-      >
-        3 décisions à arbitrer · semaine {weekIso} · classement par échéance
-      </div>
-      <div className="mb-6">
-        <DecisionsList decisions={decisions} loading={decisionsLoading} />
+      <div data-print-section>
+        <div
+          className="font-mono uppercase tracking-[0.07em] mb-2"
+          style={{ fontSize: 11, color: 'var(--sol-ink-500)' }}
+        >
+          3 décisions à arbitrer · semaine {weekIso} · classement par échéance
+        </div>
+        <div className="mb-6">
+          <DecisionsList decisions={decisions} loading={decisionsLoading} />
+        </div>
       </div>
 
       {/* Trajectoire 2030 */}
-      {trajectory && <TrajectoryDTSmoothed trajectory={trajectory} />}
+      {trajectory && (
+        <div data-print-section>
+          <TrajectoryDTSmoothed trajectory={trajectory} />
+        </div>
+      )}
 
       {/* Facture portefeuille */}
-      {portfolio && <FacturePortefeuille portfolio={portfolio} />}
+      {portfolio && (
+        <div data-print-section>
+          <FacturePortefeuille portfolio={portfolio} />
+        </div>
+      )}
 
       {/* Teaser Flex Intelligence */}
-      <FlexTeaser flexPotential={facts?.flex_potential} />
+      <div data-print-section>
+        <FlexTeaser flexPotential={facts?.flex_potential} />
+      </div>
 
-      {/* Footer Sol */}
+      {/* Footer Sol (visible écran + print) */}
       <div
         className="flex justify-between flex-wrap gap-2.5 pt-3"
         style={{ borderTop: '0.5px solid var(--sol-rule)' }}
@@ -1147,6 +1202,17 @@ export default function CockpitDecision() {
             méthodologie
           </Link>
         </div>
+      </div>
+
+      {/* Phase 13.B — Footer impression (caché écran, visible PDF print).
+          Signature de provenance + URL méthodologie pour traçabilité CODIR. */}
+      <div data-print-footer>
+        Document généré par PROMEOS · Synthèse stratégique {scopeLabel} · {printGenDate} · semaine{' '}
+        {weekIso}
+        <br />
+        Sources : {sources.join(' + ') || 'PROMEOS'}
+        {confidence ? ` · niveau de confiance ${confidence}` : ''} · méthodologie complète sur{' '}
+        promeos.io/methodologie/cockpit-decision
       </div>
     </div>
   );

@@ -143,3 +143,144 @@
     display: block !important;
   }
 }
+
+/* ── Phase 13.B — Rapport COMEX print (Cockpit dual sol2) ──────────────
+ *
+ * Audit Marie CFO P0 : "Rapport COMEX" doit produire un PDF natif
+ * autoportant pour partage CODIR (slack/mail) sans capture d'écran.
+ * Stratégie : window.print() + CSS @media print exhaustif (zéro
+ * dépendance npm, doctrine simple+différenciant).
+ *
+ * Déclencheur : la page Cockpit pose `data-print-target="cockpit"` sur
+ * son root pendant l'impression (ou universellement si la classe est
+ * appliquée au body via `document.body.classList.add('printing-cockpit')`).
+ *
+ * Comportement :
+ *   - Cache rail Sidebar + header AppShell + breadcrumb + scope switcher
+ *   - Force <main> en pleine page (pas de marges sticky)
+ *   - Affiche le header/footer d'impression dédié (data-print-header/footer)
+ *   - Force page-break-inside:avoid sur les sections clés
+ *   - print-color-adjust:exact pour préserver palette Sol
+ *   - @page A4 portrait avec marges 14mm
+ */
+@page {
+  size: A4 portrait;
+  margin: 14mm 12mm;
+}
+
+/* Headers/footers print-only : cachés à l'écran par défaut */
+[data-print-header],
+[data-print-footer] {
+  display: none;
+}
+
+@media print {
+  /* Headers / footers d'impression : visibles uniquement en print */
+  [data-print-header] {
+    display: block !important;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1.5px solid var(--sol-ink-300);
+    page-break-after: avoid;
+  }
+  [data-print-footer] {
+    display: block !important;
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 0.5px solid var(--sol-ink-300);
+    font-size: 9.5px;
+    color: var(--sol-ink-500);
+    text-align: center;
+  }
+
+  /* Cache l'app shell global : rail + header + drawers + toasts + footer Sol */
+  body > * > * > nav,
+  aside,
+  [role='dialog'],
+  [data-testid='action-drawer'],
+  [data-testid='command-palette'],
+  [data-testid='breadcrumb'],
+  [data-testid='scope-switcher'],
+  [data-testid='data-readiness-badge'],
+  [data-testid='user-menu'],
+  [data-testid='sol-footer'],
+  [data-print-hide],
+  .no-print {
+    display: none !important;
+  }
+
+  /* AppShell header (sticky top) : caché en print */
+  body header.sticky,
+  body > div > div > header {
+    display: none !important;
+  }
+
+  /* <main> : pleine page, pas de scroll */
+  main#main-content {
+    overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+
+  /* Contenu page : pleine largeur, pas de gradient bg */
+  body,
+  html {
+    background: white !important;
+    color: var(--sol-ink-900) !important;
+  }
+
+  /* Préserver palette Sol (couleurs de fond, badges, KPIs) */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Sections Cockpit : page-break-inside avoid (KPI hero, décisions, trajectoire) */
+  [data-print-section] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 14px;
+  }
+
+  /* Page break forcé entre sections majeures (pour layouts longs) */
+  [data-print-page-break='before'] {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  /* Boutons / liens cliquables : retirer underline + curseur (visuel print propre) */
+  button,
+  a {
+    color: var(--sol-ink-900) !important;
+    text-decoration: none !important;
+  }
+
+  /* Ne pas imprimer les boutons d'action (ne servent à rien en PDF) */
+  button[type='button'] {
+    display: none !important;
+  }
+
+  /* Liens internes : conserver href en notes */
+  a[href^='/']::after {
+    content: '';
+  }
+
+  /* Triptyque KPI hero : 3 colonnes même sur A4 portrait */
+  .grid.md\:grid-cols-3 {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* Tooltips natifs (title=) : déjà gérés par browser, pas d'override */
+
+  /* Ne pas couper l'intérieur d'un KPI ou d'une décision narrée */
+  [data-testid^='kpi-card-'],
+  [data-testid^='decision-card-'],
+  [data-testid='strategic-narrative'] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
