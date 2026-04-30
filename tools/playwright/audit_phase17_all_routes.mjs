@@ -78,15 +78,31 @@ for (const r of ROUTES) {
     // Phase 20.bis.A (audit triple pre-Phase 21) : `domcontentloaded` seul
     // capturait avant hydratation React → 13/16 PNG identiques (page login)
     // + manifests vides. Désormais : domcontentloaded rapide + waitForFunction
-    // qui attend que `<main>` ait du contenu réel (>200 chars) ou un timeout
-    // 8s. Capture authentique de la page hydratée.
+    // qui attend que `<main>` ait du contenu réel (>120 chars) ou un timeout
+    // 12s. Capture authentique de la page hydratée.
     // Phase 23.bis (audit Vérif #3 Phase 23) : timeout 12s laissait 12/16
     // routes en échec sur `domcontentloaded` (backend lent + bundles lazy
     // Vite). Bumpé à 25s pour absorber le cold-start des pages lazy.
-    const resp = await page.goto(`${FRONT}${r.path}`, {
-      waitUntil: 'domcontentloaded',
-      timeout: 25000,
-    });
+    // Phase 24.1 (followup audit P22 / P23.bis 12 timeouts résiduels) :
+    // bump 25s → 40s, fallback `commit` si `domcontentloaded` timeout +
+    // waitForFunction permissive (≥120 chars vs 200) car certaines pages
+    // /flex et /achat-energie ont un main court mais valide. Scope strict :
+    // outil d'audit dev uniquement, pas de prod.
+    let resp;
+    try {
+      resp = await page.goto(`${FRONT}${r.path}`, {
+        waitUntil: 'domcontentloaded',
+        timeout: 40000,
+      });
+    } catch (gotoErr) {
+      // Fallback `commit` : URL changée mais doc pas encore parsé. Suffisant
+      // pour que `waitForFunction` ci-dessous attende l'hydratation React.
+      console.log(`  ⚠ domcontentloaded timeout, fallback commit: ${gotoErr.message}`);
+      resp = await page.goto(`${FRONT}${r.path}`, {
+        waitUntil: 'commit',
+        timeout: 8000,
+      });
+    }
     // Attente hydratation React : main rempli OU timeout.
     await page
       .waitForFunction(
@@ -94,9 +110,9 @@ for (const r of ROUTES) {
           const main = document.querySelector('main');
           if (!main) return false;
           const text = main.innerText || '';
-          return text.length > 200;
+          return text.length > 120;
         },
-        { timeout: 8000 },
+        { timeout: 12000 },
       )
       .catch(() => {
         /* timeout silencieux : capture quand même l'état dégradé */
