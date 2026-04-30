@@ -19,10 +19,13 @@ describe('V7 Nav Refactor guard-rails', () => {
   // /cockpit/jour (Briefing du jour = Pilotage 30s) + /cockpit/strategique
   // (Synthèse stratégique = Décision 3min) — au lieu de l'ancienne paire
   // / + /cockpit qui exposait une inversion (cf. issue sidebar Tableau de bord).
-  it('Cockpit has exactly 2 items (Tableau de bord + Vue exécutive)', () => {
+  // Phase 13.D : ordre inversé pour démo CFO/investisseur — Vue exécutive
+  // (Synthèse stratégique 3min) en premier, Tableau de bord (Briefing
+  // Energy Manager 30s) en second. Cohérent avec audience démo principale.
+  it('Cockpit has exactly 2 items (Vue exécutive + Tableau de bord)', () => {
     const cockpit = NAV_SECTIONS.find((s) => s.key === 'cockpit');
     expect(cockpit.items).toHaveLength(2);
-    expect(cockpit.items.map((i) => i.to)).toEqual(['/cockpit/jour', '/cockpit/strategique']);
+    expect(cockpit.items.map((i) => i.to)).toEqual(['/cockpit/strategique', '/cockpit/jour']);
   });
 
   it('Patrimoine has 3 items (Sites + Contrats + Facturation expert)', () => {

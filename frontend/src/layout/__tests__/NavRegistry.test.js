@@ -124,16 +124,19 @@ describe('NAV_SECTIONS V7', () => {
     }
   });
 
-  it('conformite section exists with 2 items (parent + APER)', () => {
+  // Phase 17.bis.C : Décret Tertiaire / OPERAT promu en item sidebar
+  // (module Conformité) → 2 items → 3 items.
+  it('conformite section exists with 3 items (parent + Décret Tertiaire + APER)', () => {
     const conformite = NAV_SECTIONS.find((s) => s.module === 'conformite');
     expect(conformite).toBeDefined();
-    expect(conformite.items).toHaveLength(2);
+    expect(conformite.items).toHaveLength(3);
   });
 
-  it('conformite section contains Conformité and APER (tabs merged)', () => {
+  it('conformite section contains Conformité, Décret Tertiaire et APER', () => {
     const conformite = NAV_SECTIONS.find((s) => s.module === 'conformite');
     const labels = conformite.items.map((i) => i.label);
     expect(labels).toContain('Conformité');
+    expect(labels).toContain('Décret Tertiaire / OPERAT');
     expect(labels).toContain('Solarisation (APER)');
   });
 
@@ -176,18 +179,20 @@ describe('NAV_SECTIONS V7', () => {
 
 /* ── Expert filtering (item level) ── */
 describe('Expert filtering V7', () => {
-  it('normal mode: 13 visible items (Flex WIP hidden)', () => {
+  // Phase 17.bis.B + 17.bis.C : Flex Intelligence ajouté module Énergie +
+  // Décret Tertiaire/OPERAT promu module Conformité → 13 → 15 items.
+  it('normal mode: 15 visible items (Flex Intelligence + Décret Tertiaire promus Phase 17.bis)', () => {
     const normal = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, false)
     );
-    expect(normal).toHaveLength(13);
+    expect(normal).toHaveLength(15);
   });
 
-  it('expert mode: same 13 items (no expertOnly items left)', () => {
+  it('expert mode: same 15 items (no expertOnly items left)', () => {
     const expert = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, true)
     );
-    expect(expert).toHaveLength(13);
+    expect(expert).toHaveLength(15);
   });
 
   it('zero expert-only items (all tabs merged into parent pages)', () => {

@@ -39,7 +39,9 @@ const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
 const page = await ctx.newPage();
 
 // Login démo
-await page.goto(`${FRONT}/login`, { waitUntil: 'networkidle' });
+// Phase 20.bis.A : `networkidle` ne se résout jamais en dev Vite (HMR)
+// → timeout 30s. Désormais `domcontentloaded` + petit délai post-mount.
+await page.goto(`${FRONT}/login`, { waitUntil: 'domcontentloaded', timeout: 8000 });
 await page.waitForTimeout(800);
 const emailField = await page.$('input[type=email]');
 if (emailField) {
@@ -56,16 +58,32 @@ for (const r of ROUTES) {
   console.log(`→ ${r.path}`);
   const t0 = Date.now();
   try {
-    // Phase 19.C (audit Phase 17 cumulée P1) : `networkidle` était incompatible
-    // avec backend lent ou absent (14/16 timeouts à 15s mesurés). Désormais :
-    // `domcontentloaded` (rapide, ne dépend pas des fetchs) + waitForTimeout
-    // pour laisser hydrater. Si le backend tarde, on capture quand même la
-    // page en état squelette (preuve UX dégradée mesurable).
+    // Phase 19.C (audit P17 P1) : `networkidle` était incompatible avec
+    // backend lent (14/16 timeouts 15s).
+    // Phase 20.bis.A (audit triple pre-Phase 21) : `domcontentloaded` seul
+    // capturait avant hydratation React → 13/16 PNG identiques (page login)
+    // + manifests vides. Désormais : domcontentloaded rapide + waitForFunction
+    // qui attend que `<main>` ait du contenu réel (>200 chars) ou un timeout
+    // 8s. Capture authentique de la page hydratée.
     const resp = await page.goto(`${FRONT}${r.path}`, {
       waitUntil: 'domcontentloaded',
-      timeout: 8000,
+      timeout: 12000,
     });
-    await page.waitForTimeout(2500);
+    // Attente hydratation React : main rempli OU timeout.
+    await page
+      .waitForFunction(
+        () => {
+          const main = document.querySelector('main');
+          if (!main) return false;
+          const text = main.innerText || '';
+          return text.length > 200;
+        },
+        { timeout: 8000 },
+      )
+      .catch(() => {
+        /* timeout silencieux : capture quand même l'état dégradé */
+      });
+    await page.waitForTimeout(800);
     const tElapsed = Date.now() - t0;
 
     // Capture above-the-fold + texts visibles

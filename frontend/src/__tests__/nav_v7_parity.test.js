@@ -94,16 +94,19 @@ describe('Nav V7 — Structure', () => {
     expect(expertModules[0].key).toBe('admin');
   });
 
-  it('13 items visible in normal mode (Flex hidden)', () => {
+  // Phase 17.bis.B : Flex Intelligence ajouté module Énergie ;
+  // Phase 17.bis.C : Décret Tertiaire / OPERAT promu module Conformité.
+  // Total 13 → 15 items.
+  it('15 items visible in normal mode (Flex Intelligence + Décret Tertiaire promus Phase 17.bis)', () => {
     const mainSections = NAV_SECTIONS.filter((s) => !s.expertOnly);
     const items = mainSections.flatMap((s) => getVisibleItems(s.items, false));
-    expect(items).toHaveLength(13);
+    expect(items).toHaveLength(15);
   });
 
   it('same count in expert mode (no expertOnly items left)', () => {
     const mainSections = NAV_SECTIONS.filter((s) => !s.expertOnly);
     const items = mainSections.flatMap((s) => getVisibleItems(s.items, true));
-    expect(items).toHaveLength(13);
+    expect(items).toHaveLength(15);
   });
 
   it('zero expertOnly items in main modules (tabs merged into parent pages)', () => {
