@@ -10,6 +10,13 @@ import { resolve, join } from 'path';
 const glossaryPath = resolve(__dirname, '../ui/glossary.js');
 const glossary = readFileSync(glossaryPath, 'utf-8');
 
+// Phase 21.B.1 a centralisé les taux numériques dans `domain/regulatory_rates.js`
+// (SoT FE). Les source-guards qui cherchent les chiffres doivent désormais
+// scanner ce SoT en plus du glossaire (le glossaire ne contient plus les
+// valeurs numériques duppliquées — uniquement les définitions textuelles).
+const ratesPath = resolve(__dirname, '../domain/regulatory_rates.js');
+const rates = readFileSync(ratesPath, 'utf-8');
+
 const emissionPath = resolve(__dirname, '../../../backend/config/emission_factors.py');
 const emissionSrc = readFileSync(emissionPath, 'utf-8');
 
@@ -38,9 +45,11 @@ describe('Source guards — CO₂ (ADEME Base Empreinte V23.6)', () => {
 // ── Accise / CSPE : LFI 2026, Code des impositions ──────────────────────────
 
 describe('Source guards — Accise électricité', () => {
-  it('glossary mentions taux 2026 (26.58), not 22.50', () => {
-    expect(glossary).toMatch(/26[.,]58/);
-    expect(glossary).not.toMatch(/22[.,]50/);
+  it('regulatory_rates SoT mentions taux 2026 (26.58), not 22.50', () => {
+    // Phase 21.B.1 : taux centralisés dans `domain/regulatory_rates.js`,
+    // plus dans `ui/glossary.js` (qui ne contient que les définitions).
+    expect(rates).toMatch(/26[.,]58/);
+    expect(rates).not.toMatch(/22[.,]50/);
   });
 });
 

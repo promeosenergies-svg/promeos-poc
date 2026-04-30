@@ -136,6 +136,20 @@ export const REGULATORY_RATES = Object.freeze({
     source: 'Circulaire DGEC 2024 + Décret 2019-771 art. 6',
     description: 'Pénalité OPERAT déclaration manquante',
   },
+
+  // ─── Heuristique marché — prix énergie ETI tertiaire ────────────────
+  // Phase 24.3 (audit P22 P1-B) : médiane CRE T4 2025 ETI post-ARENH
+  // utilisée pour conversion MWh → €/an dans cards Décision (cohérent
+  // backend/doctrine/constants.py::PRICE_ELEC_ETI_2026_EUR_PER_MWH).
+  // Non réglementaire stricto sensu mais publiée par la CRE — actualiser
+  // au moins T+2 chaque année quand l'observatoire CRE publie le bulletin.
+  price_elec_eti_2026: {
+    value: 130,
+    unit: 'EUR/MWh',
+    valid_from: '2026-01-01',
+    source: 'Observatoire CRE T4 2025 § ETI tertiaire post-ARENH',
+    description: 'Prix marginal énergie ETI tertiaire 2026 — heuristique CRE',
+  },
 });
 
 /**

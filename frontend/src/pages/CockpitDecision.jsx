@@ -343,9 +343,22 @@ function DecisionCardImpl({ decision, index }) {
               </span>
               <span style={{ fontWeight: 500, color: 'var(--sol-ink-900)' }}>{gainMwh} MWh/an</span>
               {savingsEurYear != null && savingsEurYear > 0 && (
+                // Phase 24.3 (audit P22 P1-B) : tooltip explicite sur la
+                // conversion € — formule + provenance heuristique CRE T4 2025.
+                // Le FE n'invente plus le prix : il affiche ce que le backend
+                // expose dans `decision.price_assumption` (SoT doctrine).
                 <span
-                  className="block"
+                  className="block cursor-help"
                   style={{ fontSize: 11, color: 'var(--sol-succes-fg)', fontWeight: 500 }}
+                  title={
+                    decision.price_assumption
+                      ? `Calcul : ${gainMwh} MWh × ${decision.price_assumption.value
+                          .toFixed(0)
+                          .replace('.', ',')} €/MWh = ${fmtEurShort(savingsEurYear)}/an · ${
+                          decision.price_assumption.source
+                        }`
+                      : `≈ ${fmtEurShort(savingsEurYear)}/an`
+                  }
                 >
                   ≈ {fmtEurShort(savingsEurYear)}/an
                 </span>

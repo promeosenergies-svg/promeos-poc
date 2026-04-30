@@ -333,6 +333,9 @@ def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> di
         "category_label": category_label,
         "estimated_gain_mwh_year": gain_mwh,
         "estimated_savings_eur_year": capex_estimation.get("savings_eur_year"),
+        # Phase 24.3 : provenance prix € utilisée pour la conversion MWh → € —
+        # exposée pour permettre au FE d'afficher un tooltip vérifiable.
+        "price_assumption": capex_estimation.get("price_assumption"),
         "investment_capex_eur": capex_estimation.get("capex_eur"),
         "payback_months": capex_estimation.get("payback_months"),
         # Phase 15.D : payback CFO net pénalité évitée (champs additifs,
@@ -446,6 +449,16 @@ def _estimate_capex_payback(action: ActionItem, gain_mwh_year: int) -> dict:
         "penalty_avoided_eur_year": (round(penalty_avoided_eur_year) if penalty_avoided_eur_year > 0 else None),
         "co2_avoided_t_year": co2_avoided_t_year,
         "method": params["method"],
+        # Phase 24.3 (audit P22 P1-B) : provenance prix énergie utilisé pour
+        # convertir MWh → savings_eur_year. Permet au FE d'afficher un tooltip
+        # explicite sur la valeur "≈ X €/an" (formule + source vérifiable).
+        # Cohérent avec la règle d'or « tout chiffre exposé doit être sourcé ».
+        "price_assumption": {
+            "value": float(PRICE_ELEC_ETI_2026_EUR_PER_MWH),
+            "unit": "EUR/MWh",
+            "source": "Observatoire CRE T4 2025 § ETI tertiaire post-ARENH",
+            "description": "Prix marginal énergie ETI tertiaire 2026 (médiane CRE)",
+        },
     }
 
 
