@@ -1,0 +1,195 @@
+{
+  "scope": {
+    "org_id": 1,
+    "org_name": "Groupe HELIOS",
+    "site_count": 5,
+    "site_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "surface_total_m2": 17500.0,
+    "ref_year": 2020
+  },
+  "consumption": {
+    "j_minus_1_mwh": 25.56,
+    "j_minus_1_source": "j-1",
+    "baseline_j_minus_1": {
+      "value_mwh": 8.757,
+      "method": "a_historical",
+      "delta_pct": 192
+    },
+    "surconso_7d_mwh": 40.913,
+    "baseline_7d": {
+      "method": "a_historical",
+      "r_squared": null,
+      "calibration_date": "2026-04-30T19:33:11.585918"
+    },
+    "monthly_vs_n1": {
+      "current_month_label": "avril 2026 (j 1-30)",
+      "current_month_mwh": 207.244,
+      "previous_year_month_normalized_mwh": 204.467,
+      "delta_pct_dju_adjusted": 1,
+      "baseline_method": "a_historical",
+      "calibration_date": "2026-04-30T19:33:11.749729",
+      "r_squared": null,
+      "confidence": "faible"
+    },
+    "sites_in_drift": 0,
+    "annual_mwh": 2764.2,
+    "annual_mwh_scope": "elec_metered_365d_rolling",
+    "annual_mwh_dt": 4229.2,
+    "annual_mwh_dt_scope": "elec_plus_gaz_consumption_target_yearly_dt",
+    "trajectory_2030_score": 0,
+    "trajectory_method": "c_regulatory_dt"
+  },
+  "power": {
+    "peak_j_minus_1_kw": 284.2,
+    "subscribed_kw": 1480.0,
+    "delta_pct": -81,
+    "peak_time": "10:00",
+    "peak_source": "j-30"
+  },
+  "compliance": {
+    "score": 37,
+    "max": 100,
+    "weighting": {
+      "DT": 0.45,
+      "BACS": 0.3,
+      "APER": 0.25
+    },
+    "non_conform_sites": 1,
+    "at_risk_sites": 3,
+    "obligations_to_treat": 4
+  },
+  "exposure": {
+    "total": {
+      "value_eur": 264750.0,
+      "category": "calculated_regulatory",
+      "regulatory_article": "Décret 2019-771 art. 9"
+    },
+    "delta_vs_last_week": {
+      "value_eur": 0.0,
+      "category": "calculated_regulatory"
+    },
+    "components": [
+      {
+        "label": "DT à risque",
+        "count": 3,
+        "unit_value_eur": 3750,
+        "value_eur": 11250,
+        "regulatory_article": "Décret 2019-771 art. 9"
+      },
+      {
+        "label": "BACS non conforme",
+        "count": 1,
+        "unit_value_eur": 1500,
+        "value_eur": 1500,
+        "regulatory_article": "Décret 2020-887"
+      },
+      {
+        "label": "APER non engagement (parkings)",
+        "count": 12600,
+        "unit_value_eur": 20.0,
+        "value_eur": 252000.0,
+        "regulatory_article": "Loi 2023-175 art. 40 + Décret 2022-1726",
+        "unit_label": "m²",
+        "sites_count": 4,
+        "deadline": "2028-01-01"
+      }
+    ]
+  },
+  "potential_recoverable": {
+    "value_mwh_year": 262,
+    "method": "modeled_cee",
+    "references": [
+      "CEE BAT-TH-116",
+      "Code Énergie L233-1"
+    ],
+    "leverage_count": 2,
+    "by_lever": [
+      {
+        "name": "Système pilotage CVC",
+        "value_mwh_year": 123.4,
+        "reference": "CEE BAT-TH-116"
+      },
+      {
+        "name": "Audit énergétique sites",
+        "value_mwh_year": 139.1,
+        "reference": "Code Énergie L233-1"
+      }
+    ]
+  },
+  "flex_potential": {
+    "eur_year": 21000,
+    "mwh_year": 250,
+    "method": "heuristic_per_site",
+    "source": "Heuristique NEBCO 4200€/site CRE T4 2025",
+    "leverage_count": 0
+  },
+  "alerts": {
+    "total": 8,
+    "by_severity": {
+      "critical": 4,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "by_type": {
+      "compliance": 4
+    }
+  },
+  "data_quality": {
+    "ems_coverage_pct": 100,
+    "data_completeness_pct": 100,
+    "missing_indices_24h": 0,
+    "sites_with_gaps": []
+  },
+  "metadata": {
+    "last_update": "2026-04-30T19:33:11.889602Z",
+    "confidence": "haute",
+    "sources": [
+      "RegOps",
+      "RegAssessment",
+      "EMS",
+      "Décret 2019-771"
+    ],
+    "period": "current_week"
+  },
+  "weekly_deltas": {
+    "exposure_eur": {
+      "current": 264750.0,
+      "previous": null,
+      "delta_absolute": null,
+      "delta_pct": null,
+      "direction": "unknown",
+      "unit": "€"
+    },
+    "potential_mwh_year": {
+      "current": 262,
+      "previous": null,
+      "delta_absolute": null,
+      "delta_pct": null,
+      "direction": "unknown",
+      "unit": "MWh/an"
+    },
+    "sites_in_drift": {
+      "current": 0,
+      "previous": null,
+      "delta_absolute": null,
+      "delta_pct": null,
+      "direction": "unknown",
+      "unit": "sites"
+    },
+    "compliance_score": {
+      "current": 37,
+      "previous": null,
+      "delta_absolute": null,
+      "delta_pct": null,
+      "direction": "unknown",
+      "unit": "pts"
+    }
+  }
+}

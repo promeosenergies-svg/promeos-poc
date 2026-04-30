@@ -1,0 +1,31 @@
+=== Section 1.F — Cleanup frontend models JS Phase 1.4 ===
+
+--- ls frontend/src/models/ ---
+total 320
+drwxr-xr-x@ 20 amine  staff    640 Apr 29 07:42 .
+drwxr-xr-x@ 21 amine  staff    672 Apr 30 07:12 ..
+drwxr-xr-x@ 12 amine  staff    384 Apr 27 17:59 __tests__
+-rw-r--r--@  1 amine  staff   7065 Apr 22 12:36 actionProofLinkModel.js
+-rw-r--r--@  1 amine  staff  11153 Apr 22 12:36 billingHealthModel.js
+-rw-r--r--@  1 amine  staff   2351 Apr 22 12:36 billingInsightsContract.js
+-rw-r--r--@  1 amine  staff   8622 Apr 22 12:36 complianceProfileRules.js
+-rw-r--r--@  1 amine  staff   2618 Apr 22 12:36 complianceSignalsContract.js
+-rw-r--r--@  1 amine  staff  25800 Apr 22 12:36 dashboardEssentials.js
+-rw-r--r--@  1 amine  staff   5644 Apr 22 12:36 dataActivationModel.js
+-rw-r--r--@  1 amine  staff  13248 Apr 22 12:36 dataReadinessModel.js
+-rw-r--r--@  1 amine  staff   7016 Apr 22 12:36 dossierModel.js
+-rw-r--r--@  1 amine  staff   4678 Apr 22 12:36 evidenceRules.js
+-rw-r--r--@  1 amine  staff  10678 Apr 22 12:36 guidedModeModel.js
+-rw-r--r--@  1 amine  staff   2616 Apr 27 17:59 kbRecoActionModel.js
+-rw-r--r--@  1 amine  staff   8335 Apr 29 07:42 leverActionModel.js
+-rw-r--r--@  1 amine  staff   6208 Apr 22 12:36 operatActionModel.js
+-rw-r--r--@  1 amine  staff   2148 Apr 22 12:36 operatSignalsContract.js
+-rw-r--r--@  1 amine  staff   3140 Apr 29 07:42 proofLinkModel.js
+-rw-r--r--@  1 amine  staff   4428 Apr 22 12:36 purchaseSignalsContract.js
+
+--- Recherche fichiers résiduels (scope prompt) ---
+✅ impactDecisionModel.js supprimé
+✅ leverEngineModel.js supprimé
+❌ dashboardEssentials.js encore présent : frontend/src/models/dashboardEssentials.js
+✅ priorityModel.js supprimé
+❌ dataActivationModel.js encore présent : frontend/src/models/dataActivationModel.js

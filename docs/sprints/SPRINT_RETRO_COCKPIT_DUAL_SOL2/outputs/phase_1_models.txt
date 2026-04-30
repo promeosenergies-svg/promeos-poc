@@ -1,0 +1,9 @@
+=== Section 1.D — Modèles SQLAlchemy Phase 1 ===
+
+✅ EurAmount défini :
+backend/models/eur_amount.py:31:class EurAmountCategory(str, PyEnum):
+backend/models/eur_amount.py:42:class EurAmount(Base):
+
+✅ BaselineCalibration défini :
+backend/models/baseline_calibration.py:43:class BaselineCalibration(Base):
+

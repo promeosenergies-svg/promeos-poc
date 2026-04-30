@@ -1,0 +1,49 @@
+=== Section 4.B — Densité visuelle (≤ 7 blocs) ===
+
+NB: comptage réalisé à partir des captures `sprint-end/*.png` viewport
+1440×900, sans scroll. Cible doctrine §11.3 = ≤ 7 blocs visibles
+above-the-fold pour respecter le rythme attentionnel non-sachant.
+
+----------------------------------------------------------------------
+Cockpit Pilotage (/cockpit/jour) — sprint-end/cockpit-pilotage.png
+----------------------------------------------------------------------
+Above-the-fold viewport 1440×900 :
+  1. Header "Pilotage" + scope (sites, kWh)
+  2. Triptyque Quoi traiter / Comment ça va / Surveillance
+  3. Visuels glanceables (jauges + spark)
+  4. File de traitement (3 lignes priorité)
+
+TOTAL VISIBLE : 4/7 ✅ conforme cible doctrine
+
+----------------------------------------------------------------------
+Cockpit Synthèse stratégique (/cockpit/strategique) — sprint-end/cockpit-strategique.png
+----------------------------------------------------------------------
+Above-the-fold :
+  1. Header "Vue exécutive" + scope multi-sites
+  2. KPI hero (3 metrics : Score / Exposition / Trajectoire)
+  3. Narrative briefing (1 paragraphe sourcé)
+  4. Top 3 décisions (expandable, count 1)
+  5. Trajectoire 2030 (graphique)
+
+TOTAL VISIBLE : 5/7 ✅ conforme cible doctrine
+
+----------------------------------------------------------------------
+Conformité (/conformite) — sprint-end/conformite.png
+----------------------------------------------------------------------
+Above-the-fold :
+  1. Header + résumé
+  2. KPI Score conformité
+  3. KPI Échéances (DT / BACS / APER)
+  4. KPI Exposition pénalité
+  5. Cards par dispositif (DT, BACS, APER, OPERAT, AUDIT)
+  6. Trajectoire 2030
+
+TOTAL VISIBLE : ~6/7 ✅ limite atteinte mais conforme
+
+----------------------------------------------------------------------
+Bilan densité
+----------------------------------------------------------------------
+3/3 routes auditées sous la cible 7 blocs above-the-fold.
+Note : limitations Phase 24.1 Playwright (13/16 routes timeout) empêchent
+audit densité sur 13 autres routes — followup à régler post-sprint via
+build prod (`vite build && vite preview`).

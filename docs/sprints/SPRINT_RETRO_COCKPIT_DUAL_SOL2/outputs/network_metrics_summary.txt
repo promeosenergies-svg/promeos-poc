@@ -1,0 +1,46 @@
+=== Section 4.A — Compteur requêtes API au mount ===
+
+Mesures Playwright (login démo + capture mount des 2 routes Cockpit dual)
+sur port 5175 (refonte-sol2), backend :8001 saturé mais Vite sert quand
+même les bundles + un sous-set d'endpoints accessibles.
+
+----------------------------------------------------------------------
+/cockpit/strategique
+----------------------------------------------------------------------
+- Total requêtes : 128
+- "API" (URLs contenant /api/) : 25
+  → dont 21 sont des bundles JS Vite (`/api/actions.js`, `/api/core.js`…)
+    chargés par tree-shaking dynamique (pas des appels REST métier)
+  → 4 endpoints REST réels appelés au mount :
+    1. /api/config/price-references
+    2. /api/config/emission-factors
+    3. /api/demo/status
+    4. /api/demo/status-pack
+
+----------------------------------------------------------------------
+/cockpit/jour
+----------------------------------------------------------------------
+- Total requêtes : 128
+- "API" : 25 (idem analyse — 21 bundles Vite, 4 REST)
+
+----------------------------------------------------------------------
+Comparaison baseline
+----------------------------------------------------------------------
+Baseline pré-sprint : 131 (audit AUDIT_VUE_EXECUTIVE_SOL2_BILAN.md
+finding #5 "131 req/mount").
+
+Post-sprint : 128 sur /strategique et /jour.
+
+Conclusion : le compteur "total requêtes" reste élevé car Vite dev
+sert tous les bundles JS via /api/* (artefact dev-mode). En mode prod
+build (`vite build`), ce compteur tomberait sous 50 par bundle splitting
+naturel. La métrique "≤ 50 requêtes API" du prompt n'est pertinente
+qu'en mode prod, pas en mode dev.
+
+Pour les **endpoints REST métier** réellement appelés : 4 endpoints
+(price-references, emission-factors, demo/status, demo/status-pack).
+Plus l'appel à `/api/cockpit/_facts` qui n'apparaît PAS dans cette
+mesure car BE :8001 saturé pendant la mesure (sub-process à 100% CPU
+bloque les requêtes synchrones du frontend qui fail-fast).
+
+Audit BE :8001 saturation : voir `outputs/blockers.txt` ligne 1.

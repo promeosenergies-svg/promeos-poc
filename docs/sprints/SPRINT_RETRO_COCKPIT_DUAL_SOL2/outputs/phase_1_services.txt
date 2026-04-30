@@ -1,0 +1,22 @@
+=== Section 1.C — Services backend Phase 1 ===
+
+✅ eur_amount_service.py —      150 lignes
+✅ baseline_service.py —      378 lignes
+✅ monthly_comparison_service.py —      224 lignes
+✅ cockpit_facts_service.py —     1082 lignes
+✅ impact_decision_service.py —      219 lignes
+✅ lever_engine_service.py —      480 lignes
+✅ dashboard_essentials_service.py —     1240 lignes
+❌ priority_service.py MANQUANT
+✅ data_activation_service.py —      233 lignes
+
+=== Doctrine acronymes ===
+✅ acronyms.py —      135 lignes
+
+=== Doctrine constants/codes (services réellement implémentés) ===
+  ✅ backend/doctrine/__init__.py
+  ✅ backend/doctrine/acronyms.py
+  ✅ backend/doctrine/constants.py
+  ✅ backend/doctrine/delta.py
+  ✅ backend/doctrine/error_codes.py
+  ✅ backend/doctrine/kpi_registry.py

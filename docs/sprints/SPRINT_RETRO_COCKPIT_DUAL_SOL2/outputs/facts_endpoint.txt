@@ -1,0 +1,20 @@
+=== Section 1.G — Endpoint /api/cockpit/_facts ===
+(Note: prompt utilise port 8000 ; CLAUDE.md SoT = 8001)
+
+--- État backend ---
+BE listening 127.0.0.1:8001 : PID 58541
+Sub-process multiprocessing-fork (PID 56869) à 100% CPU depuis 11h+
+→ tous les requests HTTP timeout 5s (HTTP 000)
+→ mode dégradé : payload récupéré via FastAPI TestClient pytest
+
+--- Test direct via TestClient (offline) ---
+Migration Phase 1 OK — tout existe deja, rien a faire.
+Migration Phase 5 OK — tout existe deja, rien a faire.
+HTTP 200
+Top-level keys: ['scope', 'consumption', 'power', 'compliance', 'exposure', 'potential_recoverable', 'flex_potential', 'alerts', 'data_quality', 'metadata', 'weekly_deltas']
+scope.density_mode = None
+scope.surface_total_m2 = 17500.0
+consumption.monthly_vs_n1 keys = ['current_month_label', 'current_month_mwh', 'previous_year_month_normalized_mwh', 'delta_pct_dju_adjusted', 'baseline_method', 'calibration_date', 'r_squared', 'confidence']
+exposure.components count = 3
+potential_recoverable = {'value_mwh_year': 262, 'method': 'modeled_cee', 'references': ['CEE BAT-TH-116', 'Code Énergie L233-1'], 'leverage_count': 2, 'by_lever': [{'name': 'Système pilotage CVC', 'value_mwh_year': 123.4, 'reference': 'CEE BAT-TH-116'}, {'name': 'Audit énergétique sites', 'value_mwh_year': 139.1, 'reference': 'Code Énergie L233-1'}]}
+metadata.sources = ['RegOps', 'RegAssessment', 'EMS', 'Décret 2019-771']

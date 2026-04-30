@@ -1,0 +1,99 @@
+=== Section 2.A — Source-guards créés ou modifiés pendant le sprint ===
+
+--- Tests touchés depuis SPRINT_START ---
+backend/tests/doctrine/test_weekly_delta_canonical.py
+backend/tests/test_acronyms.py
+backend/tests/test_baseline_service.py
+backend/tests/test_cockpit_facts_service.py
+backend/tests/test_cockpit_phase1_2bis.py
+backend/tests/test_dashboard_essentials_service.py
+backend/tests/test_data_activation_service.py
+backend/tests/test_doctrine_sol_source_guards.py
+backend/tests/test_eur_amount_service.py
+backend/tests/test_event_bus.py
+backend/tests/test_event_bus_cross_stack_sync.py
+backend/tests/test_helios_surface.py
+backend/tests/test_impact_decision_service.py
+backend/tests/test_lever_engine_service.py
+backend/tests/test_losses_service.py
+backend/tests/test_narrative_eur_hero.py
+backend/tests/test_notifications_distribution.py
+backend/tests/test_phase13c_scale_query_count.py
+backend/tests/test_phase2_3_decisions_top3.py
+backend/tests/test_phase2_chiffrage_doctrinal.py
+backend/tests/test_phase3_3_weekly_deltas.py
+backend/tests/test_phase3_drilldowns_legacy.py
+backend/tests/test_trajectory_smoothed.py
+frontend/src/__tests__/CockpitIntegration.test.js
+frontend/src/__tests__/acronymToNarrative.test.js
+frontend/src/__tests__/cockpit_no_dead_cards.test.js
+frontend/src/__tests__/kpiMessaging.test.js
+frontend/src/__tests__/labelRegistries.test.js
+frontend/src/__tests__/nav_v7_parity.test.js
+frontend/src/__tests__/no_business_logic_in_frontend_cockpit.test.js
+frontend/src/__tests__/phase17_jargon_glossary_coverage.test.js
+frontend/src/__tests__/phase1_site360_nav_unified.test.js
+frontend/src/__tests__/phase3_1_routes_cockpit_dual.test.js
+frontend/src/__tests__/pilotage_archetype_labels.test.js
+frontend/src/__tests__/pilotage_nebco_simulation_card.test.js
+frontend/src/__tests__/purchase_fusion_guard.test.js
+frontend/src/__tests__/solBriefingSection.test.js
+frontend/src/__tests__/solEventCard.test.js
+frontend/src/__tests__/sol_cockpit_header_phase1_2.test.js
+frontend/src/__tests__/sol_kpi_monthly_vs_n1.test.js
+frontend/src/__tests__/sol_trajectory_dt_phase1_5.test.js
+frontend/src/__tests__/sourceGuards.test.js
+frontend/src/__tests__/step3_no_legacy.test.js
+frontend/src/__tests__/useCommandCenterData.test.js
+frontend/src/layout/__tests__/NavRegistry.test.js
+frontend/src/pages/__tests__/ImpactDecisionPanel.test.js
+frontend/src/pages/__tests__/RoutingSmoke.test.js
+frontend/src/pages/__tests__/billingTrustGate.page.test.js
+frontend/src/pages/__tests__/contractsV35.test.js
+frontend/src/pages/__tests__/contractsV36.test.js
+frontend/src/pages/__tests__/dataActivationV37.test.js
+frontend/src/pages/__tests__/kpiFreeze.test.js
+frontend/src/pages/__tests__/leverEngineModel.test.js
+frontend/src/pages/__tests__/navRefactorV114.test.js
+frontend/src/pages/__tests__/patrimoineOperatV44.test.js
+frontend/src/pages/__tests__/rescueUiUx.test.js
+frontend/src/pages/__tests__/siteSignalsV43Explain.test.js
+frontend/src/ui/__tests__/EvidenceDrawer.test.js
+
+=== Sentinels attendus présents ===
+❌ test_helios_no_demo_sites_leak  MANQUANT
+✅ test_eur_amount_typed  →  backend/tests/test_eur_amount_service.py
+✅ test_eur_amount_traceability  →  backend/tests/test_eur_amount_service.py
+✅ test_no_modeled_eur_amount  →  backend/tests/test_eur_amount_service.py
+✅ test_baseline_method_documented  →  backend/tests/test_baseline_service.py
+❌ test_baseline_r_squared_threshold  MANQUANT
+✅ test_no_baseline_computation_in_frontend  →  backend/tests/test_baseline_service.py
+❌ test_baseline_a_fallback  MANQUANT
+❌ test_cockpit_facts_unique_source  MANQUANT
+❌ test_cockpit_facts_no_recompute  MANQUANT
+✅ test_cockpit_facts_dt_penalty_doctrine  →  backend/tests/test_cockpit_facts_service.py
+✅ test_monthly_kpi_dju_adjusted  →  backend/tests/test_cockpit_facts_service.py
+✅ test_monthly_kpi_normalized_window  →  backend/tests/test_cockpit_facts_service.py
+❌ test_density_mode_consistent  MANQUANT
+❌ test_density_mode_helios_direct  MANQUANT
+❌ test_no_business_logic_in_frontend_cockpit  MANQUANT
+✅ test_helios_surface_total  →  backend/tests/test_helios_surface.py
+✅ test_trajectory_smoothed_by_echeance  →  backend/tests/test_trajectory_smoothed.py
+❌ test_facture_portfolio_aggregation  MANQUANT
+❌ test_acronyms_transformed_vue_executive  MANQUANT
+❌ test_notifications_timestamps_distributed  MANQUANT
+❌ test_levers_kpi_in_mwh_not_eur  MANQUANT
+❌ test_pilotage_triptyque_temporal_scales  MANQUANT
+❌ test_no_surconso_7d_in_kpi_hero  MANQUANT
+❌ test_monthly_kpi_tooltip_complete  MANQUANT
+❌ test_exposure_kpi_decomposed  MANQUANT
+❌ test_dt_penalty_uses_doctrine_constants  MANQUANT
+❌ test_actions_decision_show_mwh_or_traced_eur  MANQUANT
+❌ test_kpi_hero_has_drill_down  MANQUANT
+❌ test_pilotage_action_has_decision_link  MANQUANT
+❌ test_vue_executive_pushes_weekly_evolution  MANQUANT
+❌ test_no_route_legacy_executive  MANQUANT
+
+=== Bilan ===
+Sentinels présents : 10/32
+Sentinels manquants : 22/32

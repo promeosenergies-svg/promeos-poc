@@ -1,0 +1,16 @@
+=== Section 2.C — Comparaison baselines ===
+
+Baseline pré-sprint (CLAUDE.md + memory) :
+  - BE collected : 5 861 (pre-V120) / 6 027 (post-V120 floor avril 2026)
+  - FE passed : 4 237 (Nav V7 marathon)
+
+Post-sprint (mesures 2026-04-30) :
+  - BE passed : 6 183 (+322 vs baseline pre-V120 / +156 vs floor V120)
+  - BE failed : 93 (test_ai_client + test_ems_overlay + test_kb_telemetry
+    pré-existants — modules ignorés ou rouges sur HEAD pré-modif)
+  - BE errors : 14 (idem pré-existants)
+  - FE passed : 4 255 (+18 vs baseline)
+
+Source-guards Phase 24-3 :
+  - sourceGuards.test.js : 8/8 verts (post-fix migration regex
+    glossary→regulatory_rates)

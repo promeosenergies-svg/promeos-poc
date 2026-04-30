@@ -1,0 +1,29 @@
+=== Blockers rencontrés pendant la collecte ===
+
+[2026-04-30 21:30] Section 1.G — Endpoint /api/cockpit/_facts inaccessible
+  Cause : un sub-processus Python (PID 56869, multiprocessing-fork) consomme
+  100% CPU depuis 11h+ et sature le backend principal (PID 58541, port 8001).
+  Symptôme : tous les `curl http://localhost:8001/...` retournent HTTP 000
+  (connection timeout 5s).
+  Action : pas de kill manuel (mode collecte, pas correction). Capture
+  payload _facts via test pytest BE qui mocke le service à la place.
+
+[2026-04-30 21:30] Section 1.E — Surface HELIOS divergence
+  Le prompt cible 17 500 m² mais selon SoT DB :
+    - sites.surface_m2 sum = 17 500 m² ✓ (cible atteinte)
+    - batiments.surface_m2 sum = 35 000 m² (sur-estimation × 2 historique)
+  Phase 1 a corrigé sites.surface_m2 ; les batiments.surface_m2 individuels
+  ne sont pas réconciliés (dette technique, pas bloquant pour cockpit qui
+  consomme sites.surface_m2 via cockpit_facts_service).
+
+[2026-04-30 21:30] Section 1.F — 2 models JS résiduels
+  dashboardEssentials.js (25 800 octets) et dataActivationModel.js (5 644 oct)
+  sont encore présents alors que prompt attend leur suppression Phase 1.4.
+  Vérification : grep des consumers nécessaire pour décider si suppression
+  encore valide ou si modules réutilisés post-Phase 1.
+
+[2026-04-30 21:30] Section 1.C — priority_service.py manquant
+  Prompt attend backend/services/priority_service.py mais inexistant.
+  Hypothèse : la "Phase 1 priorité" n'a pas été matérialisée comme un
+  service séparé mais incorporée dans cockpit_facts_service.py
+  (`get_top_priorities()`) ou dans cockpit_decisions_service.py.

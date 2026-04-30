@@ -1,0 +1,11 @@
+SPRINT_START_SHA: 492a0db2
+SPRINT_START_DATE: 2026-04-26
+SPRINT_END_SHA: 0e346c4b
+SPRINT_END_DATE: 2026-04-30
+TOTAL_COMMITS: 140
+DURATION_DAYS: 5
+
+NOTE: Le prompt cherchait le commit "Phase 0.1". Le sprint refonte-sol2
+n'a pas suivi un naming "Phase 0.1" littéral mais "Phase 0", puis
+"Phase 1.1", "Phase 1.2", … "Phase 24.3". Le SHA 492a0db2 est le
+premier commit explicite du sprint avec le préfixe "Phase 0 — fork POC".

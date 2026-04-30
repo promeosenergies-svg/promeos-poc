@@ -1,0 +1,20 @@
+=== Section 2.B — Exécution complète des tests ===
+
+--- Backend pytest (suite complète, exécutée 2026-04-30 ~21:00) ---
+Commande : python -m pytest tests/ -q --tb=no -o 'addopts=' --ignore=tests/test_ai_client.py --ignore=tests/test_ems_overlay.py
+
+ERROR tests/test_kb_telemetry.py::TestGetMetrics::test_latency_percentiles - ...
+ERROR tests/test_kb_telemetry.py::TestGetMetrics::test_top_items_ranking - sq...
+ERROR tests/test_kb_telemetry.py::TestGetMetrics::test_top_missing_fields - s...
+ERROR tests/test_kb_telemetry.py::TestPruneOldEvents::test_prunes_old_events_and_cascades_hits
+ERROR tests/test_kb_telemetry.py::TestServiceIntegration::test_apply_via_service_logs_nothing_by_itself
+ERROR tests/test_kb_telemetry.py::TestServiceIntegration::test_explicit_log_after_apply
+93 failed, 6183 passed, 6 skipped, 35 warnings, 14 errors in 1993.48s (0:33:13)
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+--- Frontend Vitest (suite complète, exécutée 2026-04-30 ~18:44) ---
+Commande : npx vitest run
+Résultat : 187 fichiers passed | 0 failed | 4 255 tests passed | 2 skipped
+
+=== Source-guards FE Phase 24-3 ===
+src/__tests__/sourceGuards.test.js : 8/8 verts (post-fix Phase 24.3)

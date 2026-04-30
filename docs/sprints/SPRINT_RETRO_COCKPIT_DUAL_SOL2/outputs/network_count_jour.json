@@ -1,0 +1,133 @@
+{
+  "summary": {
+    "url": "http://localhost:5175/cockpit/jour",
+    "total": 128,
+    "api": 25,
+    "api_endpoints": [
+      "/api/actions.js",
+      "/api/core.js",
+      "/api/index.js",
+      "/api/auth.js",
+      "/api/patrimoine.js",
+      "/api/conformite.js",
+      "/api/billing.js",
+      "/api/purchase.js",
+      "/api/energy.js",
+      "/api/cockpit.js",
+      "/api/admin.js",
+      "/api/market.js",
+      "/api/contractsV2.js",
+      "/api/pilotage.js",
+      "/api/cxDashboard.js",
+      "/api/nps.js",
+      "/api/ems.js",
+      "/api/config/price-references",
+      "/api/config/emission-factors",
+      "/api/demo/status",
+      "/api/demo/status-pack"
+    ],
+    "api_endpoints_count": 21
+  },
+  "requests": [
+    {
+      "url": "http://localhost:5175/src/services/api/actions.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/core.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/index.js?t=1777472206837",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/auth.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/patrimoine.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/conformite.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/billing.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/purchase.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/energy.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/cockpit.js?t=1777472206837",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/admin.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/market.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/contractsV2.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/pilotage.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/cxDashboard.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/nps.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/src/services/api/ems.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/api/config/price-references",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/api/config/emission-factors",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/api/demo/status",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/api/config/price-references",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/api/config/emission-factors",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/api/demo/status",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/api/demo/status-pack",
+      "method": "GET"
+    },
+    {
+      "url": "http://localhost:5175/api/demo/status-pack",
+      "method": "GET"
+    }
+  ]
+}

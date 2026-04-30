@@ -1,0 +1,31 @@
+=== Décompte commits par phase ===
+
+--- Phase 0 ---
+1
+--- Phase 1 ---
+6
+--- Phase 2 ---
+11
+--- Phase 3 ---
+13
+--- Phase 4 ---
+1
+--- Phase 5 ---
+2
+
+=== Sprint refonte-sol2 a utilisé un naming étendu Phase 13 → Phase 24 (post-pivot) ===
+Phase 13 : 5 commits
+Phase 14 : 3 commits
+Phase 15 : 3 commits
+Phase 16 : 2 commits
+Phase 17 : 3 commits
+Phase 18 : 1 commits
+Phase 19 : 1 commits
+Phase 20 : 2 commits
+Phase 21 : 3 commits
+Phase 22 : 2 commits
+Phase 23 : 2 commits
+Phase 24 : 3 commits
+
+=== Phases bilan Sprint 1 (S1.x) ===
+19

@@ -1,0 +1,140 @@
+86d4eacf | fix(vite): cacheDir isolé node_modules/.vite-sol2 — évite Invalid hook call | 2026-04-26
+24607a25 | feat(refonte-sol2): Phase 1 — identité visuelle Sol portée (tokens + fonts + overrides) | 2026-04-26
+6f524e7f | fix(refonte-sol2): Phase 2.1 — fixes P0 audit (DemoSpotlight + Mono numerics + bandeaux + N-1 + bug copy) | 2026-04-26
+b015a157 | refactor(refonte-sol2): Phase 2.2 — extraire <CockpitTabs> + CrossModuleCTA CommandCenter | 2026-04-26
+92e1d120 | feat(refonte-sol2): Phase 2.3 — severity.js gain getSeverityInlineStyles (tokens Sol natifs) | 2026-04-26
+0817db14 | refactor(refonte-sol2): /simplify Phase 3 — fixes audit reuse/quality/efficiency | 2026-04-26
+0febbb38 | fix(refonte-sol2): Phase 2.4 hardening — 3 quick wins audit final 5 agents | 2026-04-26
+dab984f2 | feat(refonte-sol2): Phase 3.1 — signature éditoriale Sol (SolPageHeader + Hero KPI 36px) | 2026-04-26
+fae4e02e | feat(refonte-sol2): Phase 3.2+3.3+3.5 — densité ATF + inversion Cockpit + deep-link tabs | 2026-04-26
+4e9f7e9c | refactor(refonte-sol2): /simplify Phase 3 — fixes audit reuse/quality (bug gauge + tokens + DRY) | 2026-04-26
+6b805ec6 | feat(refonte-sol2): Phase 3.6 polish editorial — 5 polish premium dashboard | 2026-04-26
+374df46a | feat(refonte-sol2): Phase 4 — 3 quick wins audit CX 26/04 | 2026-04-26
+ce0ea54e | docs(doctrine): Sprint 0bis — fondations refonte 12 semaines | 2026-04-26
+9800abb5 | feat(refonte-sol2): S1.1 — grammaire Sol industrialisée + migration / | 2026-04-26
+d30dd8c9 | fix(refonte-sol2): S1.1bis — corrections P0/P1/P2 audit 10 agents | 2026-04-26
+0aca620a | feat(refonte-sol2): S1.2 — migration /cockpit?angle=comex Jean-Marc CFO | 2026-04-26
+87f713d2 | feat(refonte-sol2): S1.3 — migration /patrimoine + mutualisation DT promue | 2026-04-26
+7ae6e6bc | fix(refonte-sol2): S1.3bis — corrections P0/P1 + dette backend audit fin S1 | 2026-04-26
+f652e5ca | feat(refonte-sol2): S1.4 — migration /conformite + échéancier réglementaire | 2026-04-26
+79695574 | fix(refonte-sol2): S1.4bis — corrections P0/P1 audit + /simplify | 2026-04-27
+14bb66f9 | feat(refonte-sol2): S1.5 — migration /bill-intel + shadow billing v4.2 | 2026-04-27
+f8d6ecd8 | fix(refonte-sol2): S1.5bis — corrections P0/P1 audit 10 agents fin S1.5 | 2026-04-27
+6a2b8b22 | feat(refonte-sol2): S1.6 — migration /achat-energie post-ARENH | 2026-04-27
+27235910 | fix(refonte-sol2): S1.6bis — corrections P0/P1 audit 14 agents fin S1.6 | 2026-04-27
+97a30ae9 | feat(refonte-sol2): S1.7 — migration /monitoring page Sol §4.2 EMS | 2026-04-27
+aec40b35 | fix(refonte-sol2): S1.7bis — corrections P0/P1 audit 14 agents fin S1.7 | 2026-04-27
+9378e378 | feat(refonte-sol2): S1.8 — migration /diagnostic page Sol §4.2 EMS | 2026-04-27
+b63c9490 | fix(refonte-sol2): S1.8bis — corrections P0/P1 audit 14 agents fin S1.8 | 2026-04-27
+52039c3b | feat(refonte-sol2): S1.9 — migration /anomalies Centre d'actions cross-pillar | 2026-04-27
+9f1805fb | fix(refonte-sol2): S1.9bis — corrections P0/P1 audit 14 agents fin S1.9 | 2026-04-27
+e71ef64a | feat(refonte-sol2): S1.10 — migration /flex Flex Intelligence §4.6 — couverture nav 100% | 2026-04-27
+9ff7df97 | fix(refonte-sol2): S1.10bis — corrections P0/P1 audit final 14 agents | 2026-04-27
+1b5e93d5 | fix(sprint2-vagueA-ét1): δ-1 Cockpit purge acronymes (Marie P0) | 2026-04-27
+1245049d | fix(sprint2-vagueA-ét2): δ-2 Bill-Intel TYPE_LABELS récit narratif | 2026-04-27
+ab51e7bb | feat(sprint2-vagueA-ét3'): Hook € hero universel SolNarrative.kpis[0] | 2026-04-27
+1bacd7b2 | fix(sprint2-vagueA-ét4'): Cockpit purge legacy — delete 3 composants | 2026-04-27
+99512ecd | fix(sprint2-vagueA-ét5'): δ-3 Monitoring KPI_TOOLTIPS narratif + EM-friendly | 2026-04-27
+4008c7f2 | feat(sprint2-vagueB-ét6'): label_registries cross-vue (billing + monitoring) | 2026-04-27
+a9ed4994 | feat(sprint2-vagueB-ét7'): backend recalcLosses — payback + recovery rate CFO | 2026-04-27
+70dfbb1e | feat(sprint2-vagueB-ét8'): SolBriefingHead/Footer HOC factorise grammaire §5 | 2026-04-27
+fb695721 | feat(sprint2-vagueB-ét8'bis): propage SolBriefingHead/Footer aux 7 pages restantes | 2026-04-27
+f951c617 | fix(sprint2-vagueB-ét9): App.jsx dedup — supprimer double bloc Routes (-338 LOC) | 2026-04-27
+72b9ad44 | feat(doctrine): Phase 5 — backend/doctrine exécutable (constants SoT + KPI registry + error codes) | 2026-04-27
+20fa6286 | feat(sprint2-vagueC-ét11): chantier α moteur événements MVP — résout §14 T6 J vs J+1 | 2026-04-27
+1f0950ea | feat(sprint2-vagueC-ét11bis): 4 P0 prérequis avant scaling multi-détecteurs | 2026-04-27
+f0dab4ad | feat(sprint2-vagueC-ét12a): détecteur billing_anomaly — CFO cash + EM amplitude | 2026-04-27
+725b8ab7 | feat(sprint2-vagueC-ét12b): détecteur consumption_drift — résout compromis EM Vague A | 2026-04-27
+837070e6 | feat(sprint2-vagueC-ét12c): SolEventCard natif §10 — Marie unblock visuel | 2026-04-27
+f41bca3a | fix(sprint2-vagueC-ét12d): 5 P0 transverses post-audit 6 dimensions | 2026-04-27
+eb81b71c | fix(sprint2-vagueC-ét12e): 4 P0 résiduels post-audit (NPV actualisé + YAML + UI mitigation + σ) | 2026-04-27
+854e00dc | feat(sprint2-vagueC-ét12f-A): démo Playwright Marie 90s + Cockpit COMEX events natifs | 2026-04-27
+9916ac73 | feat(sprint2-vagueC-ét12f-BC): détecteurs flex+market différenciants VC + σ amont EM | 2026-04-27
+9458060c | fix(sprint2-vagueC-ét12g): 5 P0 transverses post-audit ét12f (jargon UI / WACC flex / reclaim € / capacity YAML / z-score) | 2026-04-27
+0cf34224 | feat(sprint2-vagueC-ét13c-f): 9/9 détecteurs doctrine §10 livrés + Loom narration + WebM vidéo | 2026-04-27
+092bebf3 | feat(sprint2-vagueC-ét14): 3 P0 résiduels Vague D — impact € chiffré + 3ᵉ contrôle asset + ADR-005 | 2026-04-28
+766a2bf4 | feat(sprint2-vagueC-ét15): Vague E — tier-2 étendu 4 détecteurs + test mutation YAML + ownership PHOTO D020 | 2026-04-28
+b6c4117f | feat(sprint2-vagueE-ét16): audit UX/UI/CX 8 dim post-capture — Bloc 1+2+3 livré | 2026-04-28
+4f0e14b6 | fix(sprint2-vagueF): 3 P0 résiduels post-ét16 — glossaire 5 fichiers + aQualifier kWh/MWh + ink-700 | 2026-04-28
+9c1c13d1 | fix(sprint2-vagueG): 3 P1 résiduels — glossaire batch + tri € CFO + print/PDF Sequoia | 2026-04-28
+3e19f6eb | feat(sprint2-vagueH): 3 P2 résiduels — SolNarrativeText + CxDashboard route + E2E print PDF | 2026-04-28
+92d849f7 | docs(maquettes): cockpit dual sol2 — cibles Phase 2 validées Amine 2026-04-28 | 2026-04-28
+221a39ed | refactor(cockpit-p0.2): décommission ExecutiveKpiRow — sera remplacé Phase 2.1 | 2026-04-28
+59e27705 | refactor(cockpit-p0.3): décommission ImpactDecisionPanel — sera remplacé Phase 2.3 | 2026-04-28
+dc1094f0 | fix(cockpit-p0.7): leak Hypermarché Montreuil retail-001 — source-guard test_helios_no_demo_sites_leak | 2026-04-28
+4b2e9dc0 | docs(maquettes-sol2): align component naming + typo with Sol convention (P1 audit Phase 0) | 2026-04-28
+76915bf1 | fix(cockpit-p0.7ter): retire fallback scopedSites[0] — anti-pattern §8.1 (P1 #1 audit) | 2026-04-28
+3bc9fc21 | chore(cockpit-p0.7quater): rename test label HeroImpactBar (ADR-S1) — décision (a) audit | 2026-04-28
+a754afe1 | refactor(cockpit-p0.4): plier bandeau Pilotage usages → SolFlexTeaser | 2026-04-28
+f5ba5208 | test(cockpit-p0.5): source-guard préventif anti-cards mortes Cockpit | 2026-04-28
+4412a81f | refactor(cockpit-p0.6): replier composantes inactives VNU + CBAM dans <details> | 2026-04-28
+adb99138 | chore(cockpit-p0): captures Playwright phase-0-end clôture session 2 | 2026-04-28
+3a4567d2 | feat(refonte-sol2): 1.1 — dictionnaire acronymToNarrative + 16 tests | 2026-04-29
+d187151b | feat(refonte-sol2): 1.2 — SolKickerWithSwitch + SolCockpitHeaderPills + 22 tests | 2026-04-29
+d7baf194 | feat(refonte-sol2): 1.5 — SolTrajectoryDT SVG natif + 18 tests | 2026-04-29
+a75d5f53 | feat(refonte-sol2-be): 1.2bis — 6 endpoints backend cockpit/action/purchase | 2026-04-29
+76a4d6e5 | refactor(refonte-sol2): 1.4.a — suppression priorityModel.js orphelin (Q9 + règle d'or) | 2026-04-29
+e4b5be59 | refactor(refonte-sol2): 1.4.b — migration impactDecisionModel.js → impact_decision_service.py | 2026-04-29
+658820f7 | refactor(refonte-sol2): 1.4.c — migration leverEngineModel.js → lever_engine_service.py | 2026-04-29
+fc8b8960 | docs(maquettes): cockpit-sol2 v1.1 — swap KPI 2 Pilotage + intégration prompt repo | 2026-04-29
+5a0a7697 | feat(refonte-sol2-be): 1.4.d — backend dashboard_essentials_service (frontend différé) | 2026-04-29
+f34f1238 | feat(refonte-sol2-be): 1.4.e — backend data_activation_service (frontend différé) | 2026-04-29
+46fce78a | test(refonte-sol2): 1.4 — source-guard zero business logic frontend cockpit (seuil glissant) | 2026-04-29
+53152b7f | refactor(refonte-sol2-be): 1.4 — /simplify P0 fixes (bug watchlist + dedup constants/helpers + perf counts) | 2026-04-29
+ea70e55a | feat(cockpit-sol2): Phase 1.1 — modèle EurAmount typé + traçabilité (décision A) | 2026-04-29
+38545ee3 | feat(cockpit-sol2): Phase 1.2 — service baseline_service avec 3 méthodes A/B/C (décisions B+D) | 2026-04-29
+4b0a0f51 | feat(cockpit-sol2): Phase 1.3.a — endpoint atomique _facts partagé + monthly_comparison_service (v1.1) | 2026-04-29
+23fe1331 | refactor(refonte-sol2-be): Phase 1 — /simplify P1 fixes (logger fallbacks + Literal period + ConfidenceLevel + proof_url router-side) | 2026-04-29
+883b4d9b | feat(cockpit-sol2): Phase 1 dette — surface HELIOS 17500 + trajectoire lissée + acronymes BE + seed notifs distribué (Option B audit qa-guardian) | 2026-04-29
+68d7deb6 | feat(cockpit-sol2): Phase 2.1+2.2+2.4 — chiffrage doctrinal MWh/an + KPI Exposition décomposé + zéro hardcoding | 2026-04-29
+47a7b8e7 | feat(cockpit-sol2): Phase 2.3 — Top 3 actions Décision impact MWh/an + traçabilité € pénalité | 2026-04-29
+c45952cf | feat(cockpit-sol2): Phase 2.1bis — SolKpiMonthlyVsN1 composant FE distinctive (KPI 2 maquette v1.1) | 2026-04-29
+5baf30ec | refactor(refonte-sol2): Phase 2 — /simplify P0+P1 fixes (tri severity sémantique + dedup helpers + bug cee_reference) | 2026-04-29
+6992988d | feat(cockpit-sol2): Phase 3.1 — routes /cockpit/jour | /strategique + câblage SolKpiMonthlyVsN1 | 2026-04-29
+52d0da24 | feat(cockpit-sol2): Phase 3.2+3.4 — drill-downs KPI hero + verrou routes legacy backend | 2026-04-29
+8e9b4538 | feat(cockpit-sol2): Phase 3.3 — push événementiel +X vs S-1 (4 métriques) | 2026-04-29
+5fecddc4 | fix(cockpit-sol2): Phase 3 — /simplify P0 bug + 2 P1 critiques | 2026-04-29
+f54b9bd2 | refactor(cockpit-sol2): Phase 3.bis.b — hoist weekly_delta_struct vers doctrine canonique | 2026-04-29
+731efb9f | refactor(cockpit-sol2): Phase 3.bis.a — factorisation 31 redirects legacy App.jsx | 2026-04-29
+4e0cee6c | feat(cockpit-sol2): Phase 3.bis.c — drill_down_href cross-builders (7→10) | 2026-04-29
+3f931da5 | feat(cockpit-sol2): Phase 3.bis.e — wiring SolKpiMonthlyVsN1Container | 2026-04-29
+708b1b6e | feat(cockpit-sol2): Refonte WOW Étape 1 — CockpitPilotage page from scratch | 2026-04-29
+da309038 | feat(cockpit-sol2): Refonte WOW Étape 1.bis — correctifs P0 audits | 2026-04-29
+d8ce9578 | fix(cockpit-sol2): NavRegistry — résolution inversion sidebar Tableau de bord ↔ Vue exécutive | 2026-04-29
+bbccee40 | feat(cockpit-sol2): Refonte WOW Étape 2 — CockpitDecision page from scratch | 2026-04-29
+408a374e | feat(cockpit-sol2): Refonte WOW Étape 2.bis — glossaire + EPEX disclaimer + DRY refactor | 2026-04-29
+ada3d731 | feat(cockpit-sol2): Refonte WOW Étape 4 — backend gap-fillers + FE cleanup | 2026-04-29
+5bee210a | feat(cockpit-sol2): Refonte WOW Étape 4.bis FE — consume backend gap-fillers | 2026-04-29
+6c8975f6 | feat(cockpit-sol2): Refonte WOW Étape 6.bis — polish final + SoT canoniques | 2026-04-29
+5e91278f | feat(cockpit-sol2): Refonte WOW Étape 7 — réconciliation data + UX user feedback | 2026-04-29
+d1cf6925 | feat(cockpit-sol2): Refonte WOW Étape 8 — polish final post re-audit Phase 5 | 2026-04-29
+731b59d9 | feat(cockpit-sol2): Refonte WOW Étape 9 — fix 4 P0 audit méga-complet | 2026-04-29
+13c8bde1 | feat(cockpit-sol2): Refonte WOW Étape 10 — P1 polish post-audit méga | 2026-04-29
+d677ae09 | feat(cockpit-sol2): Refonte WOW Étape 11 — flèches cliquables + factorisation KpiCard | 2026-04-29
+e8ec8e92 | feat(cockpit-sol2): Refonte WOW Étape 12 — fix trajectoire SVG coupée | 2026-04-29
+984468e8 | fix(cockpit-sol2): Phase 13.A — véracité calculs (5 P0 critiques) | 2026-04-29
+38baa14c | feat(cockpit-sol2): Phase 13.B — Rapport COMEX print PDF natif | 2026-04-29
+7300826b | perf(cockpit-sol2): Phase 13.C — scale 80+ sites (Antoine 7.2/10) | 2026-04-29
+d12e6829 | feat(cockpit-sol2): Phase 13.D — nav démo CFO + footer signaux moat | 2026-04-29
+26474146 | perf(cockpit-sol2): Phase 13.E — React.memo + useMemo polish | 2026-04-29
+8373bc72 | fix(cockpit-sol2): Phase 14 — NO-GO fixes audit véracité 6,6/10 → cible 8,5 | 2026-04-29
+2475d644 | fix(cockpit-sol2): Phase 14.bis — régression courbe de charge tronquée + axe Y manquant | 2026-04-30
+b6ef09b2 | fix(cockpit-sol2): Phase 15 — 4 P0 résiduels audit Phase 14 (cible 8,5/10) | 2026-04-30
+0fcfff03 | fix(cockpit-sol2): Phase 15.bis — login redirige sur Vue exécutive (régression user) | 2026-04-30
+741f2825 | fix(cockpit-sol2): Phase 16 — P1 résiduels audit Phase 15 (cible 9,2/10) | 2026-04-30
+6a0ab519 | fix(cockpit-sol2): Phase 16.bis — corrections audits sévères /simplify + /frontend-design | 2026-04-30
+b99a1a6f | fix(cockpit-sol2): Phase 17.bis — fixes P0 audits 16 routes (cible 8+/10) | 2026-04-30
+1edf2f77 | feat(cockpit-sol2): Phase 17.ter — JargonText HOC + source-guard glossaire | 2026-04-30
+33717d03 | fix(cockpit-sol2): Phase 17.quater — glossaire +5 entrées billing/achat | 2026-04-30
+232ba8e2 | fix(cockpit-sol2): Phase 18 — fixes nav doublon + harmonisation glossaires | 2026-04-30
+06d2d592 | fix(cockpit-sol2): Phase 19 — APER backend + Playwright fix | 2026-04-30
+0de795dc | fix(cockpit-sol2): Phase 20 — wirer SolNarrativeText sur briefings Sol + BillIntel | 2026-04-30
+afcab0a9 | fix(cockpit-sol2): Phase 20.bis — corrections audit triple pre-Phase 21 | 2026-04-30
+5f25a1b4 | fix(cockpit-sol2): Phase 21.A — REG-3 réconciliation FE annual_mwh dual-source | 2026-04-30
+86c9eff6 | fix(cockpit-sol2): Phase 21.B — taux régul SoT + tooltips KPI € | 2026-04-30
+801aa624 | fix(cockpit-sol2): Phase 22 — consolidation 3 systèmes glossaire (façades + SoT) | 2026-04-30
+2c656bb8 | fix(cockpit-sol2): Phase 23 — fixes P0 convergents 3 agents Phase 22 | 2026-04-30
+4be359a1 | fix(cockpit-sol2): Phase 23.bis — correction arithmétique APER + tooltip FE | 2026-04-30
+75beabd6 | fix(cockpit-sol2): Phase 24.3 — annotation provenance prix énergie ETI 2026 | 2026-04-30
+5fa7a915 | fix(cockpit-sol2): Phase 24.2 — corriger CTA valid_from erroné (audit P22 REG-3) | 2026-04-30
+0e346c4b | fix(cockpit-sol2): Phase 24.1 — bump timeout Playwright + commit fallback | 2026-04-30

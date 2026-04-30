@@ -1,0 +1,22 @@
+=== Section 1.B — Suppressions Phase 0 ===
+
+--- ExecutiveKpiRow supprimé ? ---
+frontend/src/pages/cockpit/ExecutiveKpiRow.jsx
+
+--- ImpactDecisionPanel supprimé ? ---
+frontend/src/pages/__tests__/ImpactDecisionPanel.test.js
+frontend/src/pages/cockpit/ImpactDecisionPanel.jsx
+
+--- Models JS supprimés ? ---
+frontend/src/models/leverEngineModel.js
+frontend/src/models/impactDecisionModel.js
+frontend/src/models/priorityModel.js
+
+=== Présence ACTUELLE des composants/models attendus supprimés ===
+✅ ExecutiveKpiRow absent
+✅ ImpactDecisionPanel absent
+✅ impactDecisionModel.js absent
+✅ leverEngineModel.js absent
+❌ dashboardEssentials.js encore présent : frontend/src/models/dashboardEssentials.js
+✅ priorityModel.js absent
+❌ dataActivationModel.js encore présent : frontend/src/models/dataActivationModel.js

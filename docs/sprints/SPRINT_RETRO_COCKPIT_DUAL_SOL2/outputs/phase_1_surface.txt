@@ -1,0 +1,26 @@
+=== Section 1.E — Surface bâtiments HELIOS ===
+(Note: prompt utilise 'batiment'/'site' au singulier avec 'org_id' direct.
+ Schéma réel : tables 'batiments'/'sites' au pluriel + hiérarchie
+ sites → portefeuilles → entites_juridiques → organisations
+ (pas de FK org_id directe sur sites). HELIOS = org_id=1 unique.)
+
+--- Surface par site (org HELIOS via chaîne) ---
+1|Siège HELIOS Paris|3|7000.0
+2|Bureau Régional Lyon|2|2400.0
+3|Entrepôt HELIOS Toulouse|2|12000.0
+4|Hôtel HELIOS Nice|3|8000.0
+5|École Jules Ferry Marseille|3|5600.0
+
+--- Surface totale HELIOS (somme batiments) ---
+35000.0
+(Target attendu : 17500)
+
+--- Surface totale via colonne sites.surface_m2 (alternative) ---
+17500.0
+
+--- Sites HELIOS (vérification présence) ---
+1|Siège HELIOS Paris|3500.0
+2|Bureau Régional Lyon|1200.0
+3|Entrepôt HELIOS Toulouse|6000.0
+4|Hôtel HELIOS Nice|4000.0
+5|École Jules Ferry Marseille|2800.0

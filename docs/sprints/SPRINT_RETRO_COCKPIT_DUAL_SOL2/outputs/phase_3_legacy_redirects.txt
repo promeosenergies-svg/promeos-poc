@@ -1,0 +1,37 @@
+=== Section 1.H — Routes legacy redirects (FE) ===
+(Note: prompt teste sur port 8000 BE mais les redirects sont CÔTÉ FE
+ React Router. Ces routes sont des redirects FE Phase 3.4, pas BE.)
+
+--- Redirects et nav dans App.jsx ---
+2:import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+41:// CompliancePage deprecated — /compliance root redirects to /conformite (V92)
+47:// PurchaseAssistantPage — now embedded as tab in PurchasePage, route redirects
+139:                        <Route path="/" element={<Navigate to="/cockpit/strategique" replace />} />
+237:                        {/* Legacy redirects */}{' '}
+241:                            /cockpit            → redirect /cockpit/jour (default mode)
+287:                            element={<Navigate to="/consommations/portfolio" replace />}
+555:                        {/* URL aliases (redirect to canonical routes) */}{' '}
+573:                        {/* Legacy redirects → routes Phase 3.1 (alias mode strategique pour CFO/DG) */}{' '}
+583:                        {/* Phase 3.bis.a — 31 redirects legacy factorisés
+588:                          <Route key={from} path={from} element={<Navigate to={to} replace />} />
+
+--- Routes legacy attendues (dans App.jsx) ---
+  /dashboard : 0 entrée(s) route
+  /executive : 0 entrée(s) route
+  /synthese : 0 entrée(s) route
+  /tableau-de-bord : 0 entrée(s) route
+
+--- Routes nouvelles Phase 3.1 ---
+  /cockpit/jour : 1 entrée(s) route
+  /cockpit/strategique : 1 entrée(s) route
+
+--- Routes legacy via table factorisée frontend/src/routes/legacyRedirects.js (Phase 3.bis.a) ---
+27:  ['/synthese', '/cockpit/strategique'],
+28:  ['/executive', '/cockpit/strategique'],
+29:  ['/dashboard', '/cockpit/strategique'],
+30:  ['/dashboard-legacy', '/'],
+31:  ['/tableau-de-bord', '/cockpit/jour'],
+
+✅ Toutes les routes legacy attendues redirigent vers /cockpit/* via la
+   table factorisée — confirmé en code (pas testé via HTTP car FE Vite
+   route les redirects côté client, pas serveur).
