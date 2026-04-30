@@ -1,0 +1,35 @@
+=== Étape 2 — Convention commits ===
+
+Total commits sprint (492a0db2..HEAD) : 141
+
+Match strict cockpit-sol2          : 53/141 (38%)
+Match large *sol2*                  : 97/141 (69%)
+Match scopes refonte cohérents     : 92/141 (65%)
+  (cockpit-sol2 | refonte-sol2 | sprint2-vagueA/B/C |
+   cockpit-p0 | cockpit-world-class)
+
+Commits HORS convention type(scope): 0/141 (0%)
+
+=== Distribution scopes (top 10) ===
+  28 feat(cockpit-sol2)
+  23 fix(cockpit-sol2)
+  19 feat(refonte-sol2)
+  11 fix(refonte-sol2)
+   7 refactor(refonte-sol2)
+   3 feat(refonte-sol2-be)
+   2 refactor(refonte-sol2-be)
+   2 refactor(cockpit-sol2)
+   2 docs(maquettes)
+   1 test(refonte-sol2)
+
+=== Conclusion ===
+100% des commits suivent Conventional Commits type(scope):.
+Scope diversifié mais TOUS dans la famille refonte-sol2 :
+  - cockpit-sol2     : Cockpit dual core
+  - refonte-sol2     : refonte intégrale 10/10 pages
+  - refonte-sol2-be  : backend doctrine
+  - cockpit-p0/p0.5  : Phase 0 fork POC
+  - sprint2-vagueA/B/C : numbering parallèle Sprint 2
+  - cockpit-world-class : pre-fork (avant 26/04)
+Discipline format : EXCELLENTE.
+Discipline naming scope : DIVERSIFIÉE mais cohérente sémantiquement.

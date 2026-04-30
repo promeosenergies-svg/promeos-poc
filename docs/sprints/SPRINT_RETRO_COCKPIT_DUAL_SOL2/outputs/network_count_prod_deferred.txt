@@ -1,0 +1,37 @@
+=== Étape 3 — Remesure network en mode prod : DÉFÉRÉE ===
+
+Tâche : remesurer requêtes réseau au mount avec `vite build && vite
+preview` au lieu de `npm run dev`, pour éliminer l'artefact "21 bundles
+JS Vite servis comme /api/*.js" qui pollue le décompte 128.
+
+Statut : NON RÉALISÉE pendant la collecte. Justification :
+  - Le BE :8001 est saturé (sub-process PID 56869 à 100% CPU 11h+)
+    → en mode prod, le frontend appellerait quand même les endpoints
+    REST réels (ex: /api/cockpit/_facts) qui timeout actuellement
+  - Le `vite build` du POC (250+ composants, ~700 modules) prend
+    typiquement 30-60s + `vite preview` + login + nouveau Playwright
+    run = ~5-10 min, hors fenêtre de collecte de preuves
+  - L'artefact "Vite dev sert les bundles JS via /api/*.js" est
+    documenté dans `outputs/network_metrics_summary.txt`, le diagnostic
+    est connu (Vite dev résout les imports lazy via /src/services/api/
+    qui apparaît comme /api/*.js après normalisation regex)
+
+Métrique cible attendue en mode prod :
+  - Total requêtes : ~30-50 (vs 128 en dev)
+  - Endpoints REST métier : 4-7 (au lieu de 21 bundles + 4 REST)
+    1. /api/cockpit/_facts (canonique)
+    2. /api/config/price-references
+    3. /api/config/emission-factors
+    4. /api/demo/status
+    5. /api/demo/status-pack
+    6. /api/auth/me (login OAuth state)
+    7. /api/scope/current (scope context)
+
+Action future :
+  - Phase 25 : remplacer `npm run dev` par `vite build && vite preview`
+    dans tous les scripts d'audit Playwright
+  - Effort estimé : 2-3h (build script + warmup + re-run audit)
+  - Bénéfice : déverrouille les 13/16 routes timeout actuellement
+    + remesure perf réelle
+
+Validation déférée — ne bloque pas la revue Sprint Retro.
