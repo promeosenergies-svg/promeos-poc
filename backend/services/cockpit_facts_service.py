@@ -639,14 +639,17 @@ def _build_exposure(db: Session, org_id: int, site_ids: list[int]) -> dict:
             total_eur += val
 
         # OPERAT manquante → OPERAT_PENALTY_EUR (sites sans déclaration OPERAT)
+        # Phase 23.C (audit Phase 22 REG-1) : suppression du fallback "sites
+        # sans statut DT = OPERAT manquante" qui sur-estimait l'exposition
+        # systématiquement (5 sites sans statut DT défini → +37 500 € OPERAT
+        # erroné). Désormais : seuls les sites avec `operat_declared=False`
+        # explicite OU `statut_operat='non_declared'` sont comptés. Pour les
+        # sites sans information OPERAT, on n'impute rien (conservatisme).
         operat_missing = [
             s
             for s in sites
             if getattr(s, "operat_declared", None) is False or getattr(s, "statut_operat", None) == "non_declared"
         ]
-        if not operat_missing:
-            # Fallback : sites sans statut DT défini interprétés comme OPERAT manquante
-            operat_missing = [s for s in sites if getattr(s, "statut_decret_tertiaire", None) is None]
         if operat_missing:
             val = len(operat_missing) * OPERAT_PENALTY_EUR
             components.append(
@@ -659,6 +662,37 @@ def _build_exposure(db: Session, org_id: int, site_ids: list[int]) -> dict:
                 }
             )
             total_eur += val
+
+        # Phase 23.B (audit Phase 22 P1-A) : injecter la composante APER
+        # dans `components` pour que le tooltip décomposition Phase 21.B.2
+        # (CockpitDecision KpiCard "Exposition pénalités") l'affiche aussi.
+        # Avant : APER calculé séparément dans aper_service mais jamais agrégé
+        # avec DT/BACS/OPERAT côté `_build_exposure` → le CFO voyait "Exposition
+        # 12 750 €" sans inclure le risque APER pourtant exposé sur /conformite/
+        # aper. Désormais : appel défensif à get_aper_dashboard si parkings
+        # >1 500 m² éligibles ; ajoute la pénalité au total + composante.
+        try:
+            from services.aper_service import get_aper_dashboard
+
+            aper = get_aper_dashboard(db, org_id)
+            penalty_risk = aper.get("penalty_risk") or {}
+            aper_penalty_eur = float(penalty_risk.get("penalty_eur_year") or 0)
+            if aper_penalty_eur > 0:
+                surface_m2 = penalty_risk.get("surface_assujettie_m2", 0)
+                components.append(
+                    {
+                        "label": "APER non engagement (parkings)",
+                        "count": int(aper.get("total_eligible_sites", 0)),
+                        "unit_value_eur": penalty_risk.get("penalty_eur_per_m2_per_year"),
+                        "value_eur": aper_penalty_eur,
+                        "regulatory_article": penalty_risk.get("regulatory_article", "Loi 2023-175 art. 40"),
+                        "surface_m2": surface_m2,
+                        "deadline": penalty_risk.get("deadline"),
+                    }
+                )
+                total_eur += aper_penalty_eur
+        except Exception as exc:
+            _logger.debug("APER injection in exposure failed: %s", exc)
 
         # Persistance EurAmount via eur_amount_service (traçabilité Phase 1.1)
         if total_eur > 0:

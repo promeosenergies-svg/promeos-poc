@@ -41,15 +41,30 @@ const page = await ctx.newPage();
 // Login démo
 // Phase 20.bis.A : `networkidle` ne se résout jamais en dev Vite (HMR)
 // → timeout 30s. Désormais `domcontentloaded` + petit délai post-mount.
+// Phase 23.A (audit Phase 22 P0 BLOQUANT) : 3 agents convergents flagué
+// que les 16 captures précédentes étaient toutes la page /login (`page.press
+// Enter` ne déclenchait pas le submit + waitForURL timeout silencieux). Fix :
+// click explicite sur button[type=submit] + attente robuste du redirect.
+console.log('→ Login démo (auth obligatoire pour audit hydratation)');
 await page.goto(`${FRONT}/login`, { waitUntil: 'domcontentloaded', timeout: 8000 });
-await page.waitForTimeout(800);
-const emailField = await page.$('input[type=email]');
-if (emailField) {
-  await page.fill('input[type=email]', 'promeos@promeos.io');
-  await page.fill('input[type=password]', 'promeos2024');
-  await page.press('input[type=password]', 'Enter');
-  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 8000 }).catch(() => {});
+await page.waitForSelector('input[type=email]', { timeout: 8000 });
+await page.fill('input[type=email]', 'promeos@promeos.io');
+await page.fill('input[type=password]', 'promeos2024');
+// Click explicite vs Enter (LoginPage.jsx:164 button[type=submit] consume
+// onSubmit handler React qui peut ne pas déclencher sur keypress fragile).
+await page.click('button[type="submit"]');
+// Attendre la redirection effective (URL ne contient plus /login).
+const loginOK = await page
+  .waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 12000 })
+  .then(() => true)
+  .catch(() => false);
+if (!loginOK) {
+  console.error('❌ ÉCHEC LOGIN — captures invalides garanties. Abort.');
+  await browser.close();
+  process.exit(1);
 }
+await page.waitForTimeout(1500);
+console.log(`✓ Auth OK → redirect ${page.url()}`);
 
 const manifest = [];
 
