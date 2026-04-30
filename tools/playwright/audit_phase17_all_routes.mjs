@@ -56,8 +56,16 @@ for (const r of ROUTES) {
   console.log(`→ ${r.path}`);
   const t0 = Date.now();
   try {
-    const resp = await page.goto(`${FRONT}${r.path}`, { waitUntil: 'networkidle', timeout: 15000 });
-    await page.waitForTimeout(2000);
+    // Phase 19.C (audit Phase 17 cumulée P1) : `networkidle` était incompatible
+    // avec backend lent ou absent (14/16 timeouts à 15s mesurés). Désormais :
+    // `domcontentloaded` (rapide, ne dépend pas des fetchs) + waitForTimeout
+    // pour laisser hydrater. Si le backend tarde, on capture quand même la
+    // page en état squelette (preuve UX dégradée mesurable).
+    const resp = await page.goto(`${FRONT}${r.path}`, {
+      waitUntil: 'domcontentloaded',
+      timeout: 8000,
+    });
+    await page.waitForTimeout(2500);
     const tElapsed = Date.now() - t0;
 
     // Capture above-the-fold + texts visibles

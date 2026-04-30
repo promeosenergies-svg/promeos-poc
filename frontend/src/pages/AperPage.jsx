@@ -184,47 +184,44 @@ export default function AperPage() {
         />
       </div>
 
-      {/* Phase 17.bis.E (audit véracité Phase 17 P0-O10) — bandeau pénalité
-          APER 20 €/m²/an explicite avec source réglementaire. Avant : surfaces
-          affichées sans contextualisation du risque financier. Désormais :
-          calcul direct surface_assujettie × 20 €/m²/an (Loi APER 2023-175
-          art. 40, sanctions à compter du 01/01/2028 si non engagement). */}
-      {(() => {
-        const surfaceTotale =
-          (dashboard?.parking?.total_surface_m2 || 0) + (dashboard?.roof?.total_surface_m2 || 0);
-        const APER_PENALTY_EUR_PER_M2_PER_YEAR = 20;
-        const penaltyEurYear = surfaceTotale * APER_PENALTY_EUR_PER_M2_PER_YEAR;
-        if (penaltyEurYear <= 0) return null;
-        const fmtKEur =
-          penaltyEurYear >= 1000
-            ? `${(penaltyEurYear / 1000).toFixed(1).replace('.', ',')} k€`
-            : `${Math.round(penaltyEurYear)} €`;
-        return (
-          <div
-            className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm"
-            style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}
-          >
-            <div>
-              <span
-                className="font-mono uppercase tracking-wide block mb-1"
-                style={{ fontSize: 10.5, color: 'var(--sol-attention-fg, #92400e)' }}
-              >
-                Risque financier APER · Loi 2023-175 art. 40
-              </span>
-              <span style={{ color: 'var(--sol-ink-900, #111)' }}>
-                {fmt(surfaceTotale)} m² assujettis × 20 €/m²/an = <strong>{fmtKEur}/an</strong> de
-                sanction si non engagement avant le 01/01/2028.
-              </span>
-            </div>
+      {/* Phase 19.A (audit Phase 17 cumulée P0-NEW-2) — bandeau pénalité
+          APER désormais alimenté backend via `dashboard.penalty_risk`
+          (doctrine/constants.py APER_PENALTY_EUR_PER_M2_PER_YEAR=20,
+          APER_DEADLINE_DATE=2028-01-01). Avant Phase 17.bis.E : calcul
+          inline FE — violait "zero business logic in frontend". */}
+      {dashboard?.penalty_risk && dashboard.penalty_risk.penalty_eur_year > 0 && (
+        <div
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm"
+          style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}
+        >
+          <div>
             <span
-              className="font-mono uppercase tracking-wide self-center"
-              style={{ fontSize: 10, color: 'var(--sol-ink-500, #64748b)' }}
+              className="font-mono uppercase tracking-wide block mb-1"
+              style={{ fontSize: 10.5, color: 'var(--sol-attention-fg, #92400e)' }}
             >
-              Source : Loi 2023-175 + Décret 2022-1726
+              Risque financier APER · {dashboard.penalty_risk.regulatory_article}
+            </span>
+            <span style={{ color: 'var(--sol-ink-900, #111)' }}>
+              {fmt(dashboard.penalty_risk.surface_assujettie_m2)} m² assujettis ×{' '}
+              {dashboard.penalty_risk.penalty_eur_per_m2_per_year} €/m²/an ={' '}
+              <strong>
+                {dashboard.penalty_risk.penalty_eur_year >= 1000
+                  ? `${(dashboard.penalty_risk.penalty_eur_year / 1000).toFixed(1).replace('.', ',')} k€`
+                  : `${Math.round(dashboard.penalty_risk.penalty_eur_year)} €`}
+                /an
+              </strong>{' '}
+              de sanction si non engagement avant le{' '}
+              {new Date(dashboard.penalty_risk.deadline).toLocaleDateString('fr-FR')}.
             </span>
           </div>
-        );
-      })()}
+          <span
+            className="font-mono uppercase tracking-wide self-center"
+            style={{ fontSize: 10, color: 'var(--sol-ink-500, #64748b)' }}
+          >
+            Source backend : doctrine.constants.APER_PENALTY_EUR_PER_M2_PER_YEAR
+          </span>
+        </div>
+      )}
 
       {/* Tableau sites eligibles */}
       {allSites.length > 0 ? (

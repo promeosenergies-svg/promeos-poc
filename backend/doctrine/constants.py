@@ -30,6 +30,15 @@ BACS_PENALTY_EUR = 1500  # amende par site non conforme BACS
 # ─── OPERAT / Décret Tertiaire déclaration ─────────────────────────────────
 OPERAT_PENALTY_EUR = 1500  # amende par déclaration OPERAT manquante (Circulaire DGEC 2024)
 
+# ─── APER (Loi 2023-175 art. 40 + Décret 2022-1726) ────────────────────────
+# Phase 19.A : remontée de la constante côté backend (audit Phase 17 cumulée
+# P0-NEW-2 — pénalité hardcodée frontend AperPage.jsx ligne 195 violait
+# "zero business logic in frontend"). Sanction 20 €/m²/an applicable à partir
+# du 01/01/2028 si non engagement de solarisation des parkings >1 500 m².
+APER_PENALTY_EUR_PER_M2_PER_YEAR = 20
+APER_DEADLINE_DATE = "2028-01-01"
+APER_PARKING_MIN_SURFACE_M2 = 1500
+
 # ─── NEBCO (depuis 01/09/2025) ─────────────────────────────────────────────
 NEBCO_THRESHOLD_KW_PER_STEP = 100
 NEBCO_NOTIFICATION_DEADLINE_HOUR = "09:30"  # J-1

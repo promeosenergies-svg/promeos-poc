@@ -85,6 +85,19 @@ def get_aper_dashboard(db: Session, org_id: int) -> dict:
     total_parking_m2 = sum(s["surface_m2"] for s in parking_eligible)
     total_roof_m2 = sum(s["surface_m2"] for s in roof_eligible)
 
+    # Phase 19.A (audit Phase 17 cumulée P0-NEW-2) : exposer le risque financier
+    # APER calculé côté backend (zero business logic frontend). Pénalité
+    # 20 €/m²/an applicable à compter du 01/01/2028 si non engagement
+    # solarisation parkings >1 500 m² (Loi 2023-175 art. 40 + Décret 2022-1726).
+    from doctrine.constants import (
+        APER_DEADLINE_DATE,
+        APER_PARKING_MIN_SURFACE_M2,
+        APER_PENALTY_EUR_PER_M2_PER_YEAR,
+    )
+
+    surface_assujettie_m2 = total_parking_m2 + total_roof_m2
+    penalty_eur_year = surface_assujettie_m2 * APER_PENALTY_EUR_PER_M2_PER_YEAR
+
     return {
         "parking": {
             "eligible_count": len(parking_eligible),
@@ -100,6 +113,16 @@ def get_aper_dashboard(db: Session, org_id: int) -> dict:
             set([s["site_id"] for s in parking_eligible] + [s["site_id"] for s in roof_eligible])
         ),
         "next_deadline": _get_next_aper_deadline(parking_eligible, roof_eligible),
+        # Phase 19.A — risque financier APER backend (cohérent avec
+        # _build_exposure du Cockpit, sourcé doctrine/constants.py).
+        "penalty_risk": {
+            "surface_assujettie_m2": surface_assujettie_m2,
+            "penalty_eur_per_m2_per_year": float(APER_PENALTY_EUR_PER_M2_PER_YEAR),
+            "penalty_eur_year": float(penalty_eur_year),
+            "deadline": APER_DEADLINE_DATE,
+            "min_surface_assujettie_m2": APER_PARKING_MIN_SURFACE_M2,
+            "regulatory_article": "Loi 2023-175 art. 40 + Décret 2022-1726",
+        },
     }
 
 
