@@ -58,27 +58,33 @@ export const REGULATORY_RATES = Object.freeze({
   },
 
   // ─── CTA — Contribution Tarifaire d'Acheminement ────────────────────
-  // Coefficients 2026 (arrêté CRE) — pré-février 2026 : 15 %/5 %.
-  cta_elec_gestion: {
-    value: 21.93,
+  // Phase 24.2 (audit P22 REG-3) : avant ce fix, les coefficients 21,93%
+  // et 10,11% étaient annoncés `valid_from: 2026-02-01`, ce qui était
+  // contradictoire — le YAML SoT backend (`config/tarifs_reglementaires.
+  // yaml::cta`) précise que ces taux historiques (arrêté 26/07/2021) ont
+  // expiré le 31/01/2026 et ont été remplacés depuis le 1/02/2026 par
+  // 15% (distribution) et 5% (transport ≥50 kV) selon CRE 2026-14.
+  // Désormais : valeurs alignées sur le BE actif aujourd'hui (avril 2026).
+  cta_elec_distribution: {
+    value: 15.0,
     unit: '%',
     valid_from: '2026-02-01',
-    source: 'Code de la sécurité sociale + arrêté CRE',
-    description: 'CTA électricité — coef sur part gestion TURPE',
+    source: 'Arrêté CTA 27/01/2026 — CRE délibération 2026-14',
+    description: 'CTA électricité — coef sur TURPE fixe distribution (BT/HTA)',
   },
-  cta_elec_abonnement: {
-    value: 10.11,
+  cta_elec_transport: {
+    value: 5.0,
     unit: '%',
     valid_from: '2026-02-01',
-    source: 'Arrêté CRE',
-    description: 'CTA électricité — coef sur abonnement TURPE',
+    source: 'Arrêté CTA 27/01/2026 — CRE délibération 2026-14',
+    description: 'CTA électricité — coef sur TURPE fixe transport (≥50 kV)',
   },
-  cta_gaz_fixe: {
+  cta_gaz_distribution: {
     value: 20.8,
     unit: '%',
-    valid_from: '2026-02-01',
-    source: 'Arrêté CRE',
-    description: 'CTA gaz — coefficient fixe',
+    valid_from: '2021-08-01',
+    source: 'Arrêté CTA 20/07/2021 — coef stable distribution gaz',
+    description: 'CTA gaz — coef fixe sur abonnement ATRD annuel',
   },
 
   // ─── TVA (LFI 2025 art. 278) ────────────────────────────────────────
