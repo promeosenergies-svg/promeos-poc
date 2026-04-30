@@ -27,6 +27,7 @@ import {
 } from '../domain/billing/billingLabels.fr';
 // Sprint 1.5 — grammaire Sol industrialisée (ADR-001) sur /bill-intel
 import SolPageHeader from '../ui/sol/SolPageHeader';
+import SolNarrativeText from '../ui/sol/SolNarrativeText';
 // Sprint 2 Vague B ét8' — HOC SolBriefingHead/Footer factorise grammaire §5.
 import SolBriefingHead from '../ui/sol/SolBriefingHead';
 import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
@@ -959,7 +960,9 @@ export default function BillIntelPage() {
               className="text-sm font-semibold mt-0.5 truncate"
               style={{ color: 'var(--sol-ink-900)' }}
             >
-              {topInsight.message}
+              {/* Phase 20.A : auto-tooltipage TURPE/CTA/ATRD/TVA/GRDF dans
+                  les messages d'anomalie (audit Phase 17 jargon P0). */}
+              <SolNarrativeText text={topInsight.message} />
             </p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--sol-ink-500)' }}>
               {TYPE_LABELS[topInsight.type] || topInsight.type}
@@ -1066,7 +1069,9 @@ export default function BillIntelPage() {
                           {INSIGHT_STATUS_LABELS[istatus] || istatus}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5 truncate">{insight.message}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">
+                        <SolNarrativeText text={insight.message} />
+                      </p>
                       {insight.owner && (
                         <p className="text-xs text-gray-400 mt-0.5">Responsable: {insight.owner}</p>
                       )}

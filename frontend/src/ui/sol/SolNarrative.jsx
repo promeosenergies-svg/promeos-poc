@@ -21,6 +21,8 @@
  */
 import { HelpCircle, AlertCircle } from 'lucide-react';
 
+import SolNarrativeText from './SolNarrativeText';
+
 function KpiTile({ kpi }) {
   const showTooltip = Boolean(kpi.tooltip);
   return (
@@ -142,7 +144,14 @@ export default function SolNarrative({
           className="text-[15px] leading-relaxed text-[var(--sol-ink-700)] max-w-prose"
           data-testid="sol-narrative-body"
         >
-          {narrative}
+          {/* Phase 20.A — auto-tooltipage acronymes connus dans la narrative
+              générée backend. SolNarrativeText utilise le glossaire SoT
+              `domain/glossary.js` (62 entrées post Phase 18.B) pour wrapper
+              automatiquement BACS/TURPE/CRE/RTE/ATRD/CSRD/etc. visibles sur
+              tous les briefings Sol (Cockpit, Achat, Conformité, Patrimoine,
+              Énergie). Couvre les pages problématiques sans toucher leurs
+              fichiers individuels. */}
+          <SolNarrativeText text={narrative} />
         </p>
       )}
       {safeKpis.length > 0 && (
