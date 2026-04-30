@@ -137,6 +137,20 @@ export const ACRONYM_GLOSSARY = Object.freeze({
     meaning: 'Marché carbone UE étendu au bâtiment et au transport routier — application 2027.',
     source: 'Directive UE 2023/959',
   },
+  // Phase 15.C — entrées CFO ajoutées pour passer les tooltips title="" non
+  // accessibles vers AcronymTooltip (tabIndex + role=button + aria-label).
+  CAPEX: {
+    long: 'Capital Expenditure',
+    meaning:
+      'Investissement initial estimé pour engager un levier (équipement + installation + mise en service). Hors charges récurrentes (OpEx).',
+    source: 'Référentiels CEE BAT-TH-* + benchmarks ADEME tertiaire',
+  },
+  PAYBACK: {
+    long: 'Délai de retour sur investissement',
+    meaning:
+      'Durée (en mois) avant que les économies cumulées remboursent le CapEx. Formule simple : CapEx ÷ Économies annuelles. N’intègre pas la pénalité légale évitée par défaut.',
+    source: 'Méthodologie indicateur PROMEOS',
+  },
 });
 
 /** Retourne le tooltip text à mettre dans `title=`/`aria-label`. */

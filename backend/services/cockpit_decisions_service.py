@@ -87,6 +87,59 @@ _DECISION_QUESTION_TEMPLATES = {
     "operat": "Faut-il finaliser la déclaration OPERAT annuelle ?",
 }
 
+# Phase 15.B (audit Phase 14 P1-A : "zero business logic in frontend").
+# Avant : `frontend/src/pages/CockpitDecision.jsx::NarrativeFallback`
+# dupliquait ce mapping côté FE. Désormais : SoT unique côté backend, exposé
+# via `narrative_fallback` dans `serialize_action_for_decision`. Garde la
+# grammaire §5 doctrine (énoncé descriptif court + chiffre sourcé).
+_DECISION_NARRATIVE_FALLBACK_BY_LEVER = {
+    "bacs": (
+        "Site assujetti au Décret BACS — système de pilotage CVC obligatoire "
+        "avant 2027. Impact technique (GTB classe A/B) + arbitrage CapEx vs "
+        "pénalité 1 500 €/an évitée."
+    ),
+    "audit_sme": (
+        "Audit énergétique réglementaire (Code Énergie L233-1) — réalisation "
+        "par OPQIBI ou ISO 50001. Levier généralement à payback rapide "
+        "(~12-18 mois)."
+    ),
+    "achat": (
+        "Renouvellement contrat fourniture post-ARENH — fenêtre forward Y+1 "
+        "ouverte. Arbitrage entre baseload, profilé peakload et fixation "
+        "partielle."
+    ),
+    "aper": (
+        "Solarisation parking obligatoire (Loi APER) — surface > 1 500 m² "
+        "assujettie. Couverture mini 50 % d'ici juillet 2028, sanction "
+        "20 €/m²/an si non engagée."
+    ),
+    "operat": (
+        "Déclaration OPERAT annuelle obligatoire (Décret Tertiaire) — collecte "
+        "conso + pièces justificatives. Sanction 1 500 € + name & shame ADEME."
+    ),
+}
+
+
+def _narrative_fallback_for_lever(lever_key: str, action: ActionItem) -> Optional[str]:
+    """Retourne un narrative cadre pour un levier connu, sinon None.
+
+    Phase 15.B : utilisé par `serialize_action_for_decision` pour pré-remplir
+    le champ `narrative` quand `action.rationale` et `action.description` sont
+    absents (cas seed ou actions auto-créées). Le frontend n'a alors plus
+    besoin de templates JS dupliqués.
+    """
+    tpl = _DECISION_NARRATIVE_FALLBACK_BY_LEVER.get(lever_key)
+    if tpl:
+        return tpl
+    # Fallback générique avec date d'échéance si dispo.
+    if action.due_date:
+        return (
+            "Action ouverte sur ce site, à arbitrer cette semaine selon "
+            f"priorité métier et contraintes réglementaires. Échéance "
+            f"{action.due_date.strftime('%d/%m/%Y')}."
+        )
+    return None
+
 
 def _question_title_for_lever(lever_key: str, site_name: str = "") -> str | None:
     """Étape 6.bis P1 : transforme un titre action en question décisionnelle.
@@ -177,10 +230,16 @@ def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> di
     }
     category_label = _LEVER_TO_CATEGORY.get(lever_key, "Investissement")
 
+    # Phase 15.B : narrative_fallback SoT backend (un seul mapping levier→texte).
+    # Le frontend ne duplique plus _NARRATIVE_TEMPLATE_BY_LEVER.
+    narrative = action.rationale or action.description or ""
+    if not narrative:
+        narrative = _narrative_fallback_for_lever(lever_key, action) or ""
+
     return {
         "id": action.id,
         "title": title,
-        "narrative": action.rationale or action.description or "",
+        "narrative": narrative,
         "site_id": action.site_id,
         "site": site_name,
         "echeance": action.due_date.isoformat() if action.due_date else None,
@@ -192,6 +251,10 @@ def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> di
         "estimated_savings_eur_year": capex_estimation.get("savings_eur_year"),
         "investment_capex_eur": capex_estimation.get("capex_eur"),
         "payback_months": capex_estimation.get("payback_months"),
+        # Phase 15.D : payback CFO net pénalité évitée (champs additifs,
+        # n'invalide pas payback_months brut conservé pour rétro-compat).
+        "payback_months_net_penalty": capex_estimation.get("payback_months_net_penalty"),
+        "penalty_avoided_eur_year": capex_estimation.get("penalty_avoided_eur_year"),
         "co2_avoided_t_year": capex_estimation.get("co2_avoided_t_year"),
         "estimation_method": capex_estimation.get("method"),
         "reference": cee_ref or regulatory_article,
@@ -266,10 +329,52 @@ def _estimate_capex_payback(action: ActionItem, gain_mwh_year: int) -> dict:
     # = MWh × CO2_FACTOR (kg/kWh est numériquement = t/MWh, propriété SI).
     co2_avoided_t_year = round(gain_mwh_year * CO2_FACTOR_ELEC_KGCO2_PER_KWH, 1)
 
+    # Phase 15.D (audit Phase 14 personas Jean-Marc CFO) : payback NET de la
+    # pénalité réglementaire évitée. Pour les leviers de mise en conformité,
+    # le ROI réel intègre la pénalité légale qui ne sera plus due une fois
+    # l'action engagée. Le payback brut surestime le délai pour BACS/OPERAT/
+    # APER/audit_sme. Calculé séparément pour préserver la transparence
+    # (exposition simultanée brut + net pour audit terrain).
+    penalty_avoided_eur_year = 0.0
+    if action.severity and str(action.severity).lower() in ("critical", "high"):
+        # Source pénalité = doctrine selon levier (cf cockpit_facts_service
+        # _build_exposure components). Une action de mise en conformité évite
+        # la pénalité annuelle correspondante au levier.
+        from doctrine.constants import (
+            BACS_PENALTY_EUR,
+            DT_PENALTY_AT_RISK_EUR,
+            DT_PENALTY_EUR,
+            OPERAT_PENALTY_EUR,
+        )
+
+        _LEVER_TO_PENALTY = {
+            "bacs": float(BACS_PENALTY_EUR),
+            "operat": float(OPERAT_PENALTY_EUR),
+            "aper": 0.0,  # APER : sanction 20 €/m²/an parking, pas constante
+            "audit_sme": 0.0,  # Audit SMÉ : pas de pénalité directe ETI
+            # default DT (autres compliance critiques) : at_risk si severity=high,
+            # full DT_PENALTY si severity=critical.
+        }
+        penalty = _LEVER_TO_PENALTY.get(lever_key)
+        if penalty is None and lever_key.startswith("other_"):
+            penalty = (
+                float(DT_PENALTY_EUR) if str(action.severity).lower() == "critical" else float(DT_PENALTY_AT_RISK_EUR)
+            )
+        if penalty:
+            penalty_avoided_eur_year = penalty
+
+    payback_months_net = None
+    if capex_eur > 0 and savings_eur_year + penalty_avoided_eur_year > 0 and penalty_avoided_eur_year > 0:
+        payback_months_net = round(capex_eur / (savings_eur_year + penalty_avoided_eur_year) * 12)
+
     return {
         "capex_eur": capex_eur if capex_eur > 0 else None,
         "savings_eur_year": savings_eur_year,
         "payback_months": payback_months,
+        # Phase 15.D : payback NET = CapEx / (savings + pénalité évitée) × 12
+        # — exposé séparément pour transparence Jean-Marc CFO.
+        "payback_months_net_penalty": payback_months_net,
+        "penalty_avoided_eur_year": (round(penalty_avoided_eur_year) if penalty_avoided_eur_year > 0 else None),
         "co2_avoided_t_year": co2_avoided_t_year,
         "method": params["method"],
     }

@@ -176,43 +176,11 @@ function potSplitInline(v) {
 // ── 3 décisions à arbitrer ────────────────────────────────────────
 // Tons sévérité hissés en SoT (Étape 2.bis) → severityTone() depuis solTones.js
 
-// Phase 14.F — Templates narratives par levier pour les ActionItem dépourvus
-// de `rationale`. Garde la grammaire §5 doctrine (énoncé descriptif court,
-// chiffre quand disponible, ouverture sur l'arbitrage CFO).
-const _NARRATIVE_TEMPLATE_BY_LEVER = {
-  bacs: 'Site assujetti au Décret BACS — système de pilotage CVC obligatoire avant 2027. Impact technique (GTB classe A/B) + arbitrage CapEx vs pénalité 1 500 €/an évitée.',
-  audit_sme:
-    'Audit énergétique réglementaire (Code Énergie L233-1) — réalisation par OPQIBI ou ISO 50001. Levier généralement à payback rapide (~12-18 mois).',
-  achat:
-    'Renouvellement contrat fourniture post-ARENH — fenêtre forward Y+1 ouverte. Arbitrage entre baseload, profilé peakload et fixation partielle.',
-  aper: "Solarisation parking obligatoire (Loi APER) — surface > 1 500 m² assujettie. Couverture mini 50 % d'ici juillet 2028, sanction 20 €/m²/an si non engagée.",
-  operat:
-    'Déclaration OPERAT annuelle obligatoire (Décret Tertiaire) — collecte conso + pièces justificatives. Sanction 1 500 € + name & shame ADEME.',
-};
-
-function NarrativeFallback({ decision }) {
-  const lever = decision.lever_key || '';
-  const tpl = _NARRATIVE_TEMPLATE_BY_LEVER[lever];
-  const echeance = decision.echeance;
-  const dueLine = echeance
-    ? ` Échéance ${new Date(echeance).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}.`
-    : '';
-  if (tpl)
-    return (
-      <span>
-        {tpl}
-        {dueLine}
-      </span>
-    );
-  // Fallback de fallback : action générique avec échéance.
-  return (
-    <span>
-      Action ouverte sur ce site, à arbitrer cette semaine selon priorité métier et contraintes
-      réglementaires.
-      {dueLine}
-    </span>
-  );
-}
+// Phase 15.B (audit Phase 14 P1-A : règle d'or zero business logic in
+// frontend) : NarrativeFallback retiré. Le backend cockpit_decisions_service
+// pré-remplit `decision.narrative` avec un template SoT
+// (_DECISION_NARRATIVE_FALLBACK_BY_LEVER) — un seul mapping levier→texte,
+// plus de duplication FE/BE possible.
 
 // Phase 13.E — DecisionCard wrappé `memo` : la liste cycle sur 3 cards
 // quand le parent re-render (fetch facts/portfolio/trajectory). Sans memo,
@@ -230,6 +198,8 @@ function DecisionCardImpl({ decision, index }) {
   const capexEur = decision.investment_capex_eur;
   const savingsEurYear = decision.estimated_savings_eur_year;
   const paybackMonths = decision.payback_months;
+  const paybackMonthsNet = decision.payback_months_net_penalty;
+  const penaltyAvoidedEurYear = decision.penalty_avoided_eur_year;
   const co2AvoidedT = decision.co2_avoided_t_year;
   const estimationMethod = decision.estimation_method;
   // Étape 9 P0-D : consume backend `category_label` (SoT _classify_lever)
@@ -299,22 +269,22 @@ function DecisionCardImpl({ decision, index }) {
         >
           {decision.title}
         </div>
-        {/* Phase 14.F (audit Marie/Jean-Marc) : fallback narrative si rationale
-            ActionItem absent côté seed. Avant : la card affichait juste un
-            titre interrogatif sans contexte → impression "démo pas finie".
-            Désormais : narrative dérivée du levier + impact financier
-            disponibles (échéance + €/an + référentiel). Garde la grammaire
-            §5 doctrine (verbe d'action + chiffre + source). */}
-        <div
-          style={{
-            fontSize: 13.5,
-            lineHeight: 1.6,
-            color: 'var(--sol-ink-700)',
-            marginBottom: 10,
-          }}
-        >
-          {decision.narrative ? decision.narrative : <NarrativeFallback decision={decision} />}
-        </div>
+        {/* Phase 15.B : `decision.narrative` est désormais TOUJOURS pré-rempli
+            par le backend `cockpit_decisions_service.serialize_action_for_decision`
+            avec un fallback SoT par lever_key si action.rationale absent.
+            Le frontend rend simplement la chaîne — plus de duplication. */}
+        {decision.narrative && (
+          <div
+            style={{
+              fontSize: 13.5,
+              lineHeight: 1.6,
+              color: 'var(--sol-ink-700)',
+              marginBottom: 10,
+            }}
+          >
+            {decision.narrative}
+          </div>
+        )}
         {/* Cards CFO grade : 1ère ligne = signal métier (Volume/Économies/Réf/Échéance).
             2ᵉ ligne = arbitrage financier (CapEx/Payback/CO₂) si données dispos.
             Étape 4.bis FE : audits Marie + Jean-Marc convergents. */}
@@ -387,13 +357,14 @@ function DecisionCardImpl({ decision, index }) {
           >
             {capexEur != null && (
               <div>
+                {/* Phase 15.C : AcronymTooltip accessible (tabIndex + role +
+                    aria-label) au lieu de title="" sur span parent — WCAG
+                    1.4.13 conforme + utilisable au clavier et tactile. */}
                 <span
                   className="block font-mono uppercase tracking-[0.05em]"
                   style={{ fontSize: 10, color: 'var(--sol-ink-500)' }}
-                  title="CapEx — Capital Expenditure : investissement initial estimé pour engager le levier (équipement + installation + mise en service). Source : référentiel CEE BAT-TH-* + benchmarks ADEME tertiaire."
                 >
-                  Engagement{' '}
-                  <span style={{ borderBottom: '1px dotted var(--sol-ink-400)' }}>CapEx</span>
+                  Engagement <AcronymTooltip acronym="CapEx">CapEx</AcronymTooltip>
                 </span>
                 <span style={{ fontWeight: 500, color: 'var(--sol-ink-900)' }}>
                   {fmtEurShort(capexEur)}
@@ -405,15 +376,35 @@ function DecisionCardImpl({ decision, index }) {
                 <span
                   className="block font-mono uppercase tracking-[0.05em]"
                   style={{ fontSize: 10, color: 'var(--sol-ink-500)' }}
-                  title="Payback — durée de retour sur investissement (mois) : CapEx ÷ Économies annuelles. N'inclut pas la pénalité légale évitée."
                 >
-                  <span style={{ borderBottom: '1px dotted var(--sol-ink-400)' }}>Payback</span>
+                  <AcronymTooltip acronym="Payback">Payback</AcronymTooltip>
                 </span>
                 <span style={{ fontWeight: 500, color: 'var(--sol-ink-900)' }}>
                   {paybackMonths < 24
                     ? `${paybackMonths} mois`
                     : `${(paybackMonths / 12).toFixed(1)} ans`}
                 </span>
+                {/* Phase 15.D : payback net pénalité évitée — exposé en sous-ligne
+                    pour permettre au CFO de voir le ROI réel (économies + sanction
+                    légale évitée). Le payback brut reste affiché pour transparence. */}
+                {paybackMonthsNet != null &&
+                  paybackMonthsNet > 0 &&
+                  paybackMonthsNet < paybackMonths && (
+                    <span
+                      className="block"
+                      style={{ fontSize: 11, color: 'var(--sol-succes-fg)', fontWeight: 500 }}
+                      title={
+                        penaltyAvoidedEurYear
+                          ? `ROI net intégrant la pénalité légale évitée (${penaltyAvoidedEurYear} €/an).`
+                          : ''
+                      }
+                    >
+                      net pénalité :{' '}
+                      {paybackMonthsNet < 24
+                        ? `${paybackMonthsNet} mois`
+                        : `${(paybackMonthsNet / 12).toFixed(1)} ans`}
+                    </span>
+                  )}
               </div>
             )}
             {co2AvoidedT != null && co2AvoidedT > 0 && (

@@ -351,6 +351,35 @@ def _build_consumption(
         # monthly_vs_n1 — KPI 2 maquette v1.1
         monthly_vs_n1 = get_monthly_vs_previous_year(db, org_id, today)
 
+        # Phase 15.A (audit véracité Phase 14 P1-1) : `annual_mwh` mesure ELEC
+        # METERED 12 mois glissants (cohérent avec le KPI de pilotage), mais
+        # la trajectoire DT (`/api/cockpit/trajectory`) somme ELEC + GAZ depuis
+        # ConsumptionTarget annuel (loi DT n°2019-771 art R131-39 = TOUS usages
+        # énergétiques). Cela créait un écart visible 4 229 (trajectory 2025) vs
+        # 2 764 (annual_mwh) sans réconciliation.
+        # Désormais : on expose aussi `annual_mwh_dt` (multi-énergie via
+        # ConsumptionTarget yearly) pour faire converger les 2 sources lors
+        # d'un audit terrain. Le `annual_mwh` historique reste pour rétro-compat
+        # (toujours ELEC METERED, KPI temps réel).
+        annual_mwh_dt = 0.0
+        try:
+            from models.consumption_target import ConsumptionTarget
+            from sqlalchemy import func as _func
+
+            last_full_year = today.year - 1 if today.month < 10 else today.year
+            row = (
+                db.query(_func.sum(ConsumptionTarget.actual_kwh))
+                .filter(
+                    ConsumptionTarget.site_id.in_(site_ids),
+                    ConsumptionTarget.period == "yearly",
+                    ConsumptionTarget.year == last_full_year,
+                )
+                .scalar()
+            )
+            annual_mwh_dt = round(float(row or 0) / 1000.0, 1)
+        except Exception as exc:
+            _logger.debug("annual_mwh_dt failed: %s", exc)
+
         return {
             "j_minus_1_mwh": j_minus_1_mwh,
             "j_minus_1_source": j_minus_1_source,  # Étape 4 P0-C : transparence
@@ -360,6 +389,9 @@ def _build_consumption(
             "monthly_vs_n1": monthly_vs_n1,
             "sites_in_drift": sites_in_drift,
             "annual_mwh": annual_mwh,
+            "annual_mwh_scope": "elec_metered_365d_rolling",
+            "annual_mwh_dt": annual_mwh_dt,
+            "annual_mwh_dt_scope": "elec_plus_gaz_consumption_target_yearly_dt",
             "trajectory_2030_score": trajectory_score,
             "trajectory_method": "c_regulatory_dt",
         }
