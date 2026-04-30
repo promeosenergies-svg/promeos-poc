@@ -261,6 +261,37 @@ export const ACRONYM_GLOSSARY = Object.freeze({
       "Organisme de qualification des bureaux d'études énergétiques. Qualification OPQIBI 1905 = audit énergétique réglementaire ETI.",
     source: 'opqibi.com',
   },
+  // Phase 17.quater — entrées complémentaires (pages billing / achat / APER).
+  TVA: {
+    long: 'Taxe sur la Valeur Ajoutée',
+    meaning:
+      'Taxe française 20 % sur tous les composants HT de la facture énergie depuis le 01/08/2025. Avant : taux réduits 5,5 %/20 % selon la composante.',
+    source: 'CGI art. 278 + LFI 2025',
+  },
+  GRDF: {
+    long: 'Gaz Réseau Distribution France',
+    meaning:
+      'Gestionnaire du réseau de distribution gaz français (filiale Engie). Opère ATRD7, MMR, portail ADICT pour les relevés PCE.',
+    source: 'grdf.fr',
+  },
+  HTA: {
+    long: 'Haute Tension A',
+    meaning:
+      'Niveau de tension entre 1 kV et 50 kV (poste de livraison entreprise > 250 kVA). Tarif TURPE 7 dédié, plus avantageux que BT pour gros consommateurs.',
+    source: 'CRE TURPE 7 §4',
+  },
+  HTB: {
+    long: 'Haute Tension B',
+    meaning:
+      'Niveau de tension > 50 kV (transport RTE). Site directement raccordé au réseau de transport — TURPE 7 HTB1/HTB2/HTB3.',
+    source: 'RTE / CRE TURPE 7',
+  },
+  ENR: {
+    long: 'Énergies Renouvelables',
+    meaning:
+      "Sources d'énergie renouvelables : solaire, éolien, hydraulique, géothermie, biomasse. Couverture obligatoire APER >50 % d'ici 2028.",
+    source: 'Loi APER 2023-175 + Code Énergie',
+  },
 });
 
 /** Retourne le tooltip text à mettre dans `title=`/`aria-label`. */
