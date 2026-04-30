@@ -34,6 +34,7 @@ import { memo } from 'react';
 import { Link } from 'react-router-dom';
 
 import { confidenceTone } from '../../ui/sol/solTones';
+import JargonText from '../../ui/sol/JargonText';
 
 const TEMPORAL_DELTA_FG = {
   neutral: 'var(--sol-ink-700)',
@@ -158,7 +159,10 @@ function KpiCardImpl({
               className="font-mono uppercase tracking-[0.05em]"
               style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
             >
-              {source}
+              {/* Phase 17.ter.C — auto-tooltip acronymes connus dans la
+                  source (ex "REGOPS · DT + BACS + APER PONDÉRÉ" → DT/BACS/
+                  APER deviennent hovorables/focusables). */}
+              <JargonText>{source}</JargonText>
             </span>
           )}
         </div>
@@ -170,7 +174,7 @@ function KpiCardImpl({
           className="mt-1.5 font-mono uppercase tracking-[0.07em]"
           style={{ fontSize: '10.5px', color: 'var(--sol-ink-500)' }}
         >
-          {hint}
+          <JargonText>{hint}</JargonText>
         </div>
       )}
 
