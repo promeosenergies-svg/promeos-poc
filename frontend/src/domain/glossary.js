@@ -75,6 +75,33 @@ export const GLOSSARY = Object.freeze({
   DJU: 'Degré Jour Unifié — référence COSTIC des besoins thermiques selon climat (utilisé pour normaliser conso vs météo).',
   CUSUM:
     'Cumulative Sum control chart — détection statistique de dérive baseline énergétique (norme ISO 50001).',
+  // Phase 18.B (audit Phase 17 cumulée) — entrées Phase 17.bis/quater
+  // ajoutées ici pour permettre à SolAcronym/SolNarrativeText (présent sur
+  // 10+ pages : Compliance, Site360, Flex, BriefCodexCard, etc.) de glosser
+  // automatiquement les acronymes apparaissant dans les textes narratifs.
+  // Cohérent avec frontend/src/utils/acronyms.js (Phase 17 SoT JargonText).
+  CRE: "Commission de Régulation de l'Énergie — autorité française régulant TURPE, ATRD, ARENH, capacité, NEBCO.",
+  RTE: "Réseau de Transport d'Électricité — gestionnaire haute tension français. Opère mécanisme capacité, NEBCO, AOFD.",
+  'ISO 50001':
+    "Norme internationale Système de Management de l'Énergie. Certification SMÉ vaut audit énergétique réglementaire ETI.",
+  COSTIC:
+    'Comité Scientifique et Technique des Industries Climatiques — référence française du calcul DJU + méthode NF EN 16247-2.',
+  EFA: 'Entité Fonctionnelle Assujettie — unité de déclaration OPERAT (>1 000 m² tertiaire). Assujettie aux jalons -40/-50/-60 %.',
+  DPE: 'Diagnostic de Performance Énergétique — étiquette énergie/climat A→G obligatoire location/vente bâtiment.',
+  SME: "Système de Management de l'Énergie — démarche ISO 50001, vaut audit réglementaire ETI.",
+  GTC: 'Gestion Technique Centralisée — système de pilotage centralisé multi-équipements (variante GTB Décret BACS).',
+  COFRAC:
+    "Comité Français d'Accréditation — accrédite les auditeurs énergétiques. Tout audit réglementaire ETI doit être COFRAC.",
+  IPE: "Indicateur de Performance Énergétique — ratio énergie/activité d'un site (kWh/m²/an, kWh/jour ouvré). ISO 50001 §6.3.",
+  ADEME:
+    'Agence de la transition écologique — publie Base Empreinte (CO₂), benchmarks tertiaires OID, fiches CEE.',
+  OPQIBI:
+    'Office Professionnel de Qualification (Ingénierie Bâtiment). Qualification 1905 = audit énergétique réglementaire ETI.',
+  TVA: 'Taxe sur la Valeur Ajoutée — 20 % uniforme sur tous composants HT facture énergie depuis 01/08/2025 (LFI 2025).',
+  GRDF: 'Gaz Réseau Distribution France — gestionnaire distribution gaz (filiale Engie). Opère ATRD7, MMR, ADICT pour PCE.',
+  HTA: 'Haute Tension A — tension 1 kV à 50 kV (poste entreprise > 250 kVA). Tarif TURPE 7 dédié, plus avantageux que BT.',
+  HTB: 'Haute Tension B — tension > 50 kV (transport RTE). TURPE 7 HTB1/HTB2/HTB3 pour sites raccordés transport.',
+  ENR: "Énergies Renouvelables — solaire/éolien/hydraulique/géothermie/biomasse. Couverture obligatoire APER >50 % d'ici 2028.",
 });
 
 /** Helper : retourne la définition ou le code lui-même si non glossé. */

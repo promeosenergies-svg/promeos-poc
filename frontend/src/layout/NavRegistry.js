@@ -907,14 +907,10 @@ export const HIDDEN_PAGES = [
     section: 'Énergie',
     hidden: true,
   },
-  {
-    to: '/conformite/tertiaire',
-    icon: Building2,
-    label: 'Tertiaire / OPERAT',
-    keywords: ['tertiaire', 'operat', 'efa', 'décret'],
-    section: 'Conformité',
-    hidden: true,
-  },
+  // Phase 18.A — `/conformite/tertiaire` retiré de HIDDEN_PAGES (doublon
+  // signalé audit Phase 17 cumulée). La route est désormais item visible
+  // dans NAV_SECTIONS module Conformité (Phase 17.bis.C). Conserver dans
+  // HIDDEN_PAGES créait un doublon CommandPalette via ALL_MAIN_ITEMS.
   {
     to: '/compliance/pipeline',
     icon: ListChecks,
