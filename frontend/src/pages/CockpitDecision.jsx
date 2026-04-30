@@ -83,9 +83,31 @@ function KpiTriptyqueHybride({ facts }) {
         drillHref="/conformite?scope=org&filter=non_conform"
         drillLabel={`Voir ${compliance.non_conform_sites || 0} sites NC`}
       />
+      {/* Phase 21.B.2 (audit Phase 17 P0 KPI orphelin) — tooltip décomposition
+          des composantes pénalités. Le backend expose `exposure.components`
+          avec [{label, count, unit_value_eur, value_eur, regulatory_article}]
+          (cf cockpit_facts_service::_build_exposure). On affiche désormais
+          le détail "3× DT à risque (3 750 €) + 1× BACS NC (1 500 €) = 12,8 k€"
+          au survol/focus du KPI — plus besoin de cliquer "Voir détail".
+          Chaque CFO/DAF non-sachant peut auditer le calcul en 1 hover. */}
       <KpiCard
         variant="confidence"
         label="Exposition pénalités"
+        tooltip={
+          (facts?.exposure?.components || []).length > 0
+            ? (() => {
+                const comps = facts.exposure.components;
+                const lines = comps
+                  .map(
+                    (c) =>
+                      `${c.count}× ${c.label} (${(c.unit_value_eur || 0).toLocaleString('fr-FR')} €/an) = ${(c.value_eur || 0).toLocaleString('fr-FR')} € · ${c.regulatory_article || ''}`
+                  )
+                  .join(' | ');
+                const total = (exposure.value_eur || 0).toLocaleString('fr-FR');
+                return `Décomposition : ${lines} → Total ${total} €/an. Chaque pénalité est calculée loi à la main (article réglementaire affiché par composante).`;
+              })()
+            : 'Risque pénalités calculé loi à la main : Décret Tertiaire (7 500 €/site NC, 3 750 €/site à risque) + BACS (1 500 €/site NC) + OPERAT (1 500 €/déclaration manquante). Source doctrine PROMEOS canonique.'
+        }
         value={expSplit.value}
         unit={expSplit.unit}
         badge={exposure.category || 'calculated_regulatory'}

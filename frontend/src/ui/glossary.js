@@ -36,10 +36,15 @@ export const GLOSSARY = {
   },
   accise_electricite: {
     term: 'Accise électricité (TIEE)',
+    // Phase 21.B.1 (audit Phase 17 cumulée P0-NEW-1) : taux désormais
+    // référencés depuis `domain/regulatory_rates.js` SoT (pas hardcoded
+    // dans le texte). Si la LFI change le taux, modifier `REGULATORY_RATES`
+    // et le tooltip sera à jour automatiquement (côté Sol2 callers
+    // utilisant rateTooltip()).
     short:
-      "Taxe intérieure sur l'électricité (ex-CSPE/TICFE), rebaptisée TIEE depuis 2022. Taux 2026 : 26,58 EUR/MWh (C4 pro).",
-    // Source : Code des impositions sur les biens et services, arrêté février 2026. Taux C5 ménages : 25,09 EUR/MWh.
-    long: "L'accise sur l'électricité (TIEE) est fixée par la Loi de finances. Depuis février 2026 : 26,58 EUR/MWh pour les professionnels C4 (0,02658 EUR/kWh). Elle s'applique sur la consommation totale (kWh). TVA 20 % applicable. Source : LFI 2026, Code des impositions.",
+      "Taxe intérieure sur l'électricité (ex-CSPE/TICFE), rebaptisée TIEE depuis 2022. Cf. taux dynamique via `formatRate('accise_elec_c4_pro')`.",
+    long: "L'accise sur l'électricité (TIEE) est fixée par la Loi de finances. Taux et dates d'effet maintenus dans `frontend/src/domain/regulatory_rates.js` (SoT FE) — mirroir de `backend/doctrine/constants.py`. TVA 20 % applicable sur la consommation. Pour les pros C4 mid-market et les ménages C5, voir REGULATORY_RATES.accise_elec_c4_pro/c5_menage.",
+    rateKey: 'accise_elec_c4_pro', // Phase 21.B.1 : référence SoT
   },
   cspe: {
     term: 'CSPE',
