@@ -80,9 +80,12 @@ for (const r of ROUTES) {
     // + manifests vides. Désormais : domcontentloaded rapide + waitForFunction
     // qui attend que `<main>` ait du contenu réel (>200 chars) ou un timeout
     // 8s. Capture authentique de la page hydratée.
+    // Phase 23.bis (audit Vérif #3 Phase 23) : timeout 12s laissait 12/16
+    // routes en échec sur `domcontentloaded` (backend lent + bundles lazy
+    // Vite). Bumpé à 25s pour absorber le cold-start des pages lazy.
     const resp = await page.goto(`${FRONT}${r.path}`, {
       waitUntil: 'domcontentloaded',
-      timeout: 12000,
+      timeout: 25000,
     });
     // Attente hydratation React : main rempli OU timeout.
     await page

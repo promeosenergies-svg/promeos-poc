@@ -679,14 +679,22 @@ def _build_exposure(db: Session, org_id: int, site_ids: list[int]) -> dict:
             aper_penalty_eur = float(penalty_risk.get("penalty_eur_year") or 0)
             if aper_penalty_eur > 0:
                 surface_m2 = penalty_risk.get("surface_assujettie_m2", 0)
+                # Phase 23.bis (audit Phase 23 anomalie arithmétique) : pour APER
+                # la formule réelle est `surface_m2 × 20 €/m²/an`, pas
+                # `nb_sites × 20 €/an`. Garder cohérence `count × unit_value_eur =
+                # value_eur` impose d'utiliser surface_m2 comme `count` (pas le
+                # nombre de sites). Le tooltip Phase 21.B.2 produira alors :
+                # "12 600× APER (20 €) = 252 000 €" — arithmétique correcte.
+                # Le nombre de sites éligibles reste accessible via `sites_count`.
                 components.append(
                     {
                         "label": "APER non engagement (parkings)",
-                        "count": int(aper.get("total_eligible_sites", 0)),
+                        "count": int(round(surface_m2)),
                         "unit_value_eur": penalty_risk.get("penalty_eur_per_m2_per_year"),
                         "value_eur": aper_penalty_eur,
                         "regulatory_article": penalty_risk.get("regulatory_article", "Loi 2023-175 art. 40"),
-                        "surface_m2": surface_m2,
+                        "unit_label": "m²",  # marqueur formatage tooltip FE
+                        "sites_count": int(aper.get("total_eligible_sites", 0)),
                         "deadline": penalty_risk.get("deadline"),
                     }
                 )

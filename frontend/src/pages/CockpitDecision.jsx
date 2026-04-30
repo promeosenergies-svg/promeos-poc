@@ -89,7 +89,9 @@ function KpiTriptyqueHybride({ facts }) {
           (cf cockpit_facts_service::_build_exposure). On affiche désormais
           le détail "3× DT à risque (3 750 €) + 1× BACS NC (1 500 €) = 12,8 k€"
           au survol/focus du KPI — plus besoin de cliquer "Voir détail".
-          Chaque CFO/DAF non-sachant peut auditer le calcul en 1 hover. */}
+          Phase 23.bis : si la composante a un `unit_label` (ex APER "m²"),
+          le format devient "12 600 m² × 20 €/m²/an = 252 000 €" pour
+          arithmétique correcte (count = surface, unit = €/m²/an). */}
       <KpiCard
         variant="confidence"
         label="Exposition pénalités"
@@ -98,10 +100,15 @@ function KpiTriptyqueHybride({ facts }) {
             ? (() => {
                 const comps = facts.exposure.components;
                 const lines = comps
-                  .map(
-                    (c) =>
-                      `${c.count}× ${c.label} (${(c.unit_value_eur || 0).toLocaleString('fr-FR')} €/an) = ${(c.value_eur || 0).toLocaleString('fr-FR')} € · ${c.regulatory_article || ''}`
-                  )
+                  .map((c) => {
+                    const countDisp = (c.count || 0).toLocaleString('fr-FR');
+                    const unitLabel = c.unit_label ? `${c.unit_label} ` : '× ';
+                    const unitSuffix = c.unit_label ? `/${c.unit_label}/an` : '/an';
+                    const unitValue = (c.unit_value_eur || 0).toLocaleString('fr-FR');
+                    const valueEur = (c.value_eur || 0).toLocaleString('fr-FR');
+                    const article = c.regulatory_article || '';
+                    return `${countDisp} ${unitLabel}${c.label} (${unitValue} €${unitSuffix}) = ${valueEur} € · ${article}`;
+                  })
                   .join(' | ');
                 const total = (exposure.value_eur || 0).toLocaleString('fr-FR');
                 return `Décomposition : ${lines} → Total ${total} €/an. Chaque pénalité est calculée loi à la main (article réglementaire affiché par composante).`;
