@@ -151,11 +151,20 @@ _DECISION_NARRATIVE_FALLBACK_BY_LEVER = {
 
 
 def _fmt_eur_short(v: float) -> str:
-    """Formatte un montant en € compact FR (ex 135 600 → '135,6 k€')."""
+    """Formatte un montant en € compact FR (ex 135 600 → '135,6 k€').
+
+    Phase 16.bis.C (audit /simplify) : ajout du tier M€ pour aligner avec
+    `frontend/src/utils/format.js::fmtEurShort` (qui gère déjà M€). Avant :
+    1 500 000 → '1500,0 k€' (incohérent FE qui retournait '1,5 M€').
+    Cross-référence SoT : si tu modifies ici, modifie aussi le FE.
+    """
     if v is None:
         return "—"
-    if abs(v) >= 1000:
-        return f"{(v / 1000):.1f} k€".replace(".", ",")
+    abs_v = abs(v)
+    if abs_v >= 1_000_000:
+        return f"{(v / 1_000_000):.1f} M€".replace(".", ",")
+    if abs_v >= 1_000:
+        return f"{(v / 1_000):.1f} k€".replace(".", ",")
     return f"{int(round(v))} €"
 
 

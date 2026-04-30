@@ -133,14 +133,19 @@ function StrategicNarrative({ facts }) {
   // présente 5 sites en écart" qui dégrade la crédibilité (audit Phase 15
   // /code-reviewer P2). On dit "l'ensemble du patrimoine est en écart" pour
   // signaler la sévérité avec une formule moins mécanique.
+  // Phase 16.bis.A (régression audit /simplify Phase 16) : `driftText` ne
+  // contient plus "de la trajectoire" — la JSX ci-dessous l'ajoute en suffixe
+  // (" de la trajectoire 2030"). Avant : la branche "ensemble" + suffix
+  // produisait "...l'ensemble du patrimoine en écart de la trajectoire de la
+  // trajectoire 2030" (double phrase visible démo).
   const sitesOff = Math.max(consDrift, ncSites + atRiskSites);
   let driftText;
   if (sitesOff <= 0) {
     driftText = 'tous les sites alignés';
   } else if (sitesCount > 0 && sitesOff >= sitesCount) {
-    driftText = "l'ensemble du patrimoine en écart de la trajectoire";
+    driftText = "l'ensemble du patrimoine en écart";
   } else {
-    driftText = `${sitesOff} site${sitesOff > 1 ? 's' : ''} en écart de la trajectoire`;
+    driftText = `${sitesOff} site${sitesOff > 1 ? 's' : ''} en écart`;
   }
   const expText = exp.value_eur != null ? fmtEurShort(exp.value_eur) : '—';
   const expDeltaText =
@@ -391,33 +396,28 @@ function DecisionCardImpl({ decision, index }) {
                     ? `${paybackMonths} mois`
                     : `${(paybackMonths / 12).toFixed(1)} ans`}
                 </span>
-                {/* Phase 15.D + 16.E : payback net pénalité évitée. Reformulé
-                    "avec pénalité évitée" (au lieu de "net pénalité" jargon
-                    financier ambigu pour CFO non-énergie). Pénalité évitée
-                    exposée en clair sous la valeur (audit Phase 15 P1) au lieu
-                    d'un title="" inaccessible clavier. */}
+                {/* Phase 16.bis.D (audit /frontend-design sévère) — fusion
+                    des 2 sous-lignes (payback net + sanction évitée) en 1
+                    seule phrase body 11px pour éviter le triple-stack mono
+                    "valeur · sub1 · sub2 mono". Plus lisible CFO. */}
                 {paybackMonthsNet != null &&
                   paybackMonthsNet > 0 &&
                   paybackMonthsNet < paybackMonths && (
-                    <>
-                      <span
-                        className="block"
-                        style={{ fontSize: 11, color: 'var(--sol-succes-fg)', fontWeight: 500 }}
-                      >
-                        avec pénalité évitée :{' '}
-                        {paybackMonthsNet < 24
-                          ? `${paybackMonthsNet} mois`
-                          : `${(paybackMonthsNet / 12).toFixed(1)} ans`}
-                      </span>
-                      {penaltyAvoidedEurYear ? (
-                        <span
-                          className="block font-mono"
-                          style={{ fontSize: 10, color: 'var(--sol-ink-500)', marginTop: 1 }}
-                        >
-                          + {fmtEurShort(penaltyAvoidedEurYear)}/an sanction évitée
-                        </span>
-                      ) : null}
-                    </>
+                    <span
+                      className="block"
+                      style={{
+                        fontSize: 11,
+                        color: 'var(--sol-succes-fg)',
+                        fontWeight: 500,
+                        marginTop: 1,
+                      }}
+                    >
+                      {paybackMonthsNet < 24
+                        ? `${paybackMonthsNet} mois`
+                        : `${(paybackMonthsNet / 12).toFixed(1)} ans`}{' '}
+                      avec sanction évitée
+                      {penaltyAvoidedEurYear ? ` (+ ${fmtEurShort(penaltyAvoidedEurYear)}/an)` : ''}
+                    </span>
                   )}
               </div>
             )}
