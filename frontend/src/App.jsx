@@ -128,9 +128,17 @@ function App() {
                           </RequireAuth>
                         }
                       >
-                        {/* V1 + V2 pages */}
+                        {/* Phase 15.bis (régression user 30/04) : à la connexion,
+                            React Router redirigeait sur "/" qui rendait `<CommandCenter />`
+                            (page legacy V1) au lieu du Cockpit dual sol2 refonte.
+                            L'utilisateur devait refresh manuellement pour atteindre la
+                            nouvelle Vue exécutive — UX cassée première impression démo.
+                            Désormais : "/" redirige vers /cockpit/strategique (cohérent
+                            Phase 13.D nav démo CFO). CommandCenter reste accessible via
+                            /command-center pour rétro-compat audits/tests. */}
+                        <Route path="/" element={<Navigate to="/cockpit/strategique" replace />} />
                         <Route
-                          path="/"
+                          path="/command-center"
                           element={
                             <PageSuspense>
                               <CommandCenter />
