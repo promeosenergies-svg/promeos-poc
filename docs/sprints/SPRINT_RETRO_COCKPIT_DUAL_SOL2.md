@@ -79,6 +79,144 @@ refactor. Ce qui a buggé : régression Playwright login (Phase 20→23),
 arithmétique APER (Phase 23→23.bis), 13/16 routes timeout sur Vite dev
 (non résolu, root cause infra). Trade-offs acceptés : Phase 4 panel
 humain non réalisée (proxy IA seul), 2 models JS résiduels, dette
-pré-existante 93 fails non touchée. Recommandation prochaine : Phase 25
+pré-existante 93 fails non touchée. **Mini-sprint Phase 4bis correctif
+livré post-revue Claude externe (6 nouveaux source-guards, 42 tests,
+density_mode implémenté).** Recommandation prochaine : Phase 25
 `vite build && vite preview` pour déverrouiller audit Playwright +
 Phase 26 panel utilisateur réel avant merge sur `main`.
+
+## Mini-sprint Phase 4bis correctif (post-revue Claude externe)
+
+Suite à la revue par Claude (instance externe) du Sprint Retro initial,
+3 zones doctrinales ont été identifiées comme insuffisamment garde-fou-ées.
+Mini-sprint Phase 4bis livré le 2026-04-30 (~2h, 4 commits).
+
+### Phase 4bis.1 — Verrouillage source unique `_facts` (commit `697ca99c`)
+
+Sentinels #9 + #10 du remapping. Avant : "source unique" tenue de
+fait mais sans garde-fou test.
+
+- `test_cockpit_facts_unique_source.py` (3 tests) : AST scan garantit
+  `def get_cockpit_facts` défini UNE SEULE FOIS dans backend/, route
+  `/api/cockpit/_facts` appelle directement le service (pas de fork),
+  aucune autre route ne reconstruit ≥ 5 CANONICAL_KEYS.
+- `test_cockpit_facts_no_recompute.py` (10 tests) : 9 tests parametrize
+  sur les 9 helpers `_build_*` (chacun défini une seule fois) +
+  `test_get_cockpit_facts_orchestrates_all_builders` (orchestration
+  complète vérifiée par AST unparse).
+- **Résultat : 13/13 tests verts.**
+
+### Phase 4bis.2 — Implémentation `density_mode` (commit `1417644c`)
+
+Sentinels #14 + #15 du remapping. Avant : `scope.density_mode = null`
+en runtime, feature annoncée par contrat API mais non implémentée.
+
+- 2 constantes SoT : `DENSITY_THRESHOLD_DIRECT_MAX = 5` /
+  `DENSITY_THRESHOLD_CONDENSED_MAX = 15`.
+- Helper `_compute_density_mode(site_count)` retourne
+  `"direct" | "condensed" | "clusters"` (doctrine §11.3).
+- `_build_scope` étend le payload avec `density_mode` + `density_thresholds`
+  pour que le frontend puisse expliquer le mode au CFO sans business
+  logic FE.
+- `test_density_mode_consistent.py` (12 tests) : 9 paramétrés sur les
+  bornes (0,1,5,6,10,15,16,50,200), constantes module-level vérifiées,
+  ordre strict des seuils, edge case négatif.
+- `test_density_mode_helios_direct.py` (4 tests) : présence dans
+  payload, thresholds SoT, HELIOS 5 sites = `direct`, cohérence
+  site_count ↔ mode.
+- **Résultat : 16/16 tests verts.**
+
+### Phase 4bis.3 — Triptyque temporel + drill-down réciproque (commit `449696ae`)
+
+Sentinels #23 + #30 du remapping. Avant : triptyque tenu de fait, link
+Décision↔Pilotage déjà implémenté Phase 17.bis.D mais sans garde-fou.
+
+- `test_pilotage_triptyque_temporal_scales.py` (8 tests) : présence
+  simultanée des 3 échelles dans `_facts` :
+  - Court terme : `consumption.j_minus_1_mwh` + `power.peak_j_minus_1_kw`
+  - Moyen terme : `consumption.monthly_vs_n1` (4 sous-clés canoniques)
+  - Long terme : `consumption.annual_mwh` + `trajectory_2030_score`
+  - Test combiné : alerte si une échelle droppe silencieusement.
+  - Sanity check unités : MWh < 100 000 (jamais kWh ni Wh).
+- `test_pilotage_action_has_decision_link.py` (5 tests) : verrouille
+  les 2 directions du drill-down — Décision→Pilotage
+  (`/cockpit/jour?focus=action-{id}`), Pilotage→Décision (parsing
+  `?focus=action-` + `?focus=decision-` côté FE), interdiction
+  régression vers ancres legacy `#decision-X`.
+- **Résultat : 13/13 tests verts.**
+
+### Phase 4bis.4 — Documentation dette technique restante
+
+Cette section. Mise à jour SPRINT_RETRO avec :
+- 5 source-guards partiels listés explicitement (cf ci-dessous)
+- Phase 4 panel humain dette doctrinale (à mobiliser Sprint Q3 2026)
+- Network prod mesure différée (à valider avant production)
+
+### Bilan mini-sprint Phase 4bis
+
+| Phase | Sentinels traités | Tests créés | Statut |
+|---|---|---|---|
+| 4bis.1 | #9 + #10 | 13 | ✅ verts |
+| 4bis.2 | #14 + #15 (+ feature `density_mode`) | 16 | ✅ verts |
+| 4bis.3 | #23 + #30 | 13 | ✅ verts |
+| 4bis.4 | (doc) | — | ✅ |
+| **Total** | **6/6 vrais trous fermés** | **42 nouveaux tests** | **✅** |
+
+Couverture sentinels post Phase 4bis : **27/32 (84 %) couverts solidement**
+(7 exact + 14 renommés confirmés + 6 ajoutés) + 5 partiels = **32/32 traités**.
+
+## Dette technique restante après Phase 4bis
+
+### Source-guards partiels (à raffiner Phase 25+)
+
+Les 5 sentinels classés "partiel" dans `outputs/source_guards_remapping.md`
+couvrent la sémantique mais pas la spec littérale. Acceptable, mais
+peuvent être renforcés :
+
+| # | Sentinel partiel | Lacune | Action future |
+|---|---|---|---|
+| 1 | `test_helios_no_demo_sites_leak` | couvre seeding strict, pas le leak per se | ajouter test "site_ids ne contient PAS de site issu d'un autre pack" |
+| 6 | `test_baseline_r_squared_threshold` | couvre présence champ, pas le seuil | ajouter test "r_squared > 0.7 quand baseline=b_dju_adjusted" |
+| 19 | `test_facture_portfolio_aggregation` | seuil unitaire, pas aggregation | ajouter test "sum(facture_per_site) == facture_portfolio" |
+| 24 | `test_no_surconso_7d_in_kpi_hero` | concept présent (`surconso_7d_mwh` exposé) mais pas garde-fou "absent du KPI hero" | ajouter test FE "KPI hero ne contient pas surconso_7d" |
+| 25 | `test_monthly_kpi_tooltip_complete` | couvre présence bloc, pas tooltip exhaustif | ajouter test FE "tooltip monthly contient ≥ 5 lignes" |
+
+### Phase 4 — Panel utilisateur humain (dette doctrinale)
+
+**Statut** : non réalisé. Documenté dans `outputs/phase_4_user_tests.md`.
+Proxy effectué : 14 agents Claude IA en audits parallèles.
+
+**Plan rattrapage** : Sprint Q3 2026 (juin-juillet, alignement programme
+12 semaines `project_refonte_sol_doctrine_3mois.md`) :
+
+- Session 1 — CFO Jean-Marc (DAF tertiaire mid-market, 30s)
+- Session 2 — Energy Manager Marie (responsable conformité, 30s)
+- Session 3 — DG investisseur (préparation démo intégrale juillet 2026)
+
+Critères chronométrés :
+
+- Délai jusqu'à identification du risque réglementaire (cible ≤ 30s)
+- Délai jusqu'à identification des 3 décisions à arbitrer (cible ≤ 60s)
+- Verbatim post-démo (1 phrase libre)
+
+### Network prod mesure (dette technique pré-production)
+
+**Statut** : déféré. Documenté dans `outputs/network_count_prod_deferred.txt`.
+
+Mesure actuelle (Vite dev) : 128 requêtes au mount, dont 21 bundles JS
+servis comme `/api/*.js`. **4 endpoints REST métier réels** identifiés.
+
+Mesure cible (`vite build && vite preview`) attendue : ≤ 50 requêtes
+totales, 4-7 endpoints REST.
+
+**À valider avant tout déploiement production**. Effort estimé Phase 25 :
+2-3h (build script + warmup + Playwright re-run).
+
+### Tests pré-existants rouges (dette baseline)
+
+- `test_ai_client.py` : `_stub_response()` missing kb_context arg
+- `test_ems_overlay.py` : 403 org-scoping sur certains endpoints
+- `test_kb_telemetry.py` : cascades hits sqlite IntegrityError
+
+**93 fails + 14 errors total**, hors scope Cockpit dual. Issues
+incident V120 / sprint Agent SDK migration. À traiter Phase 27.
