@@ -184,6 +184,48 @@ export default function AperPage() {
         />
       </div>
 
+      {/* Phase 17.bis.E (audit véracité Phase 17 P0-O10) — bandeau pénalité
+          APER 20 €/m²/an explicite avec source réglementaire. Avant : surfaces
+          affichées sans contextualisation du risque financier. Désormais :
+          calcul direct surface_assujettie × 20 €/m²/an (Loi APER 2023-175
+          art. 40, sanctions à compter du 01/01/2028 si non engagement). */}
+      {(() => {
+        const surfaceTotale =
+          (dashboard?.parking?.total_surface_m2 || 0) + (dashboard?.roof?.total_surface_m2 || 0);
+        const APER_PENALTY_EUR_PER_M2_PER_YEAR = 20;
+        const penaltyEurYear = surfaceTotale * APER_PENALTY_EUR_PER_M2_PER_YEAR;
+        if (penaltyEurYear <= 0) return null;
+        const fmtKEur =
+          penaltyEurYear >= 1000
+            ? `${(penaltyEurYear / 1000).toFixed(1).replace('.', ',')} k€`
+            : `${Math.round(penaltyEurYear)} €`;
+        return (
+          <div
+            className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm"
+            style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}
+          >
+            <div>
+              <span
+                className="font-mono uppercase tracking-wide block mb-1"
+                style={{ fontSize: 10.5, color: 'var(--sol-attention-fg, #92400e)' }}
+              >
+                Risque financier APER · Loi 2023-175 art. 40
+              </span>
+              <span style={{ color: 'var(--sol-ink-900, #111)' }}>
+                {fmt(surfaceTotale)} m² assujettis × 20 €/m²/an = <strong>{fmtKEur}/an</strong> de
+                sanction si non engagement avant le 01/01/2028.
+              </span>
+            </div>
+            <span
+              className="font-mono uppercase tracking-wide self-center"
+              style={{ fontSize: 10, color: 'var(--sol-ink-500, #64748b)' }}
+            >
+              Source : Loi 2023-175 + Décret 2022-1726
+            </span>
+          </div>
+        );
+      })()}
+
       {/* Tableau sites eligibles */}
       {allSites.length > 0 ? (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">

@@ -33,7 +33,7 @@
  *   ⏳ P0-4 4ᵉ colonne Impact Fraunces différée Étape 4 (backend gap-filler)
  */
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Bell, ArrowRight, Clock } from 'lucide-react';
 
 import useCockpitFacts from '../hooks/useCockpitFacts';
@@ -892,6 +892,7 @@ export default function CockpitPilotage() {
   const [priorities, setPriorities] = useState(null);
   const [prioritiesRemaining, setPrioritiesRemaining] = useState(0);
   const [prioritiesLoading, setPrioritiesLoading] = useState(true);
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     let cancelled = false;
@@ -915,6 +916,36 @@ export default function CockpitPilotage() {
     };
     // P1 audit /simplify : recharge sur scope change (org switch).
   }, [org?.id]);
+
+  // Phase 17.bis.D — drill-down depuis Vue exécutive (`?focus=action-{id}`
+  // ou `?focus=decision-{rank}`). Audit Phase 17 nav P0 : la cible était
+  // câblée côté Décision mais Pilotage ignorait le query param. Désormais :
+  // scroll-to-anchor si l'élément #decision-{rank} ou #action-{id} existe.
+  useEffect(() => {
+    if (prioritiesLoading) return;
+    const focus = searchParams.get('focus');
+    if (!focus) return;
+    // Anchors actuels : `decision-{rank}` (rendus par FileTraitementRow).
+    // Format accepté : "action-{id}" ou "decision-{rank}" — fallback brut.
+    const targetIds = [focus, focus.replace('action-', 'decision-')];
+    const tryScroll = () => {
+      for (const id of targetIds) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.style.outline = '2px solid var(--sol-attention-fg)';
+          setTimeout(() => {
+            el.style.outline = '';
+          }, 2400);
+          return true;
+        }
+      }
+      return false;
+    };
+    // Petit délai pour laisser le DOM se hydrater.
+    const t = setTimeout(tryScroll, 200);
+    return () => clearTimeout(t);
+  }, [searchParams, prioritiesLoading]);
 
   const sitesCount = facts?.scope?.site_count ?? org?.sites_count ?? 0;
   const orgName = facts?.scope?.org_name || org?.name || '';

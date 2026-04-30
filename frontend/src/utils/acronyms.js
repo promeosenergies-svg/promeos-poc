@@ -151,6 +151,116 @@ export const ACRONYM_GLOSSARY = Object.freeze({
       'Durée (en mois) avant que les économies cumulées remboursent le CapEx. Formule simple : CapEx ÷ Économies annuelles. N’intègre pas la pénalité légale évitée par défaut.',
     source: 'Méthodologie indicateur PROMEOS',
   },
+  // Phase 17.bis.A — 18 acronymes manquants (audit jargon : 14 routes/16 sans
+  // tooltip, hors-glossaire critique). Cible : zéro acronyme métier exposé brut.
+  CVC: {
+    long: 'Chauffage Ventilation Climatisation',
+    meaning:
+      "Système thermique d'un bâtiment : production chaud/froid + traitement d'air. Premier poste de consommation tertiaire (~50 % conso annuelle bureau).",
+    source: 'Doctrine bâtiment tertiaire ADEME',
+  },
+  CRE: {
+    long: "Commission de Régulation de l'Énergie",
+    meaning:
+      'Autorité administrative indépendante française (loi 2000-108). Régule TURPE, ATRD, ARENH, capacité, NEBCO, prix repère gaz et électricité.',
+    source: 'cre.fr',
+  },
+  RTE: {
+    long: "Réseau de Transport d'Électricité",
+    meaning:
+      'Gestionnaire du réseau haute tension français. Opère le mécanisme capacité, NEBCO, AOFD, équilibrage.',
+    source: 'rte-france.com',
+  },
+  ATRD: {
+    long: 'Accès des Tiers au Réseau de Distribution',
+    meaning:
+      "Tarif d'acheminement gaz (équivalent TURPE pour l'électricité). Versions ATRD7 GRDF en vigueur depuis 01/07/2026.",
+    source: 'CRE 2026-83 ATRD7 GRDF',
+  },
+  ATRT: {
+    long: 'Accès des Tiers au Réseau de Transport',
+    meaning:
+      "Tarif acheminement gaz haute pression GRTgaz/Teréga. Couvre l'amont du réseau de distribution.",
+    source: 'CRE délibérations ATRT',
+  },
+  ISO: {
+    long: "Norme ISO 50001 (Système de Management de l'Énergie)",
+    meaning:
+      "Norme internationale de management de l'énergie. Certification SMÉ vaut audit énergétique réglementaire — exonère de l'audit obligatoire ETI.",
+    source: 'ISO 50001:2018',
+  },
+  COSTIC: {
+    long: 'Comité Scientifique et Technique des Industries Climatiques',
+    meaning:
+      'Référence française pour le calcul des Degrés Jours Unifiés (DJU). Méthode COSTIC NF EN 16247-2 = base normalisation conso vs météo.',
+    source: 'costic.fr / NF EN 16247-2',
+  },
+  EFA: {
+    long: 'Entité Fonctionnelle Assujettie',
+    meaning:
+      'Unité de déclaration OPERAT (un site ou groupe de bâtiments cohérents > 1 000 m² tertiaire). Doit déclarer conso annuelle + atteindre les jalons -40/-50/-60 %.',
+    source: 'Décret Tertiaire 2019-771 art. R131-39',
+  },
+  CSRD: {
+    long: 'Corporate Sustainability Reporting Directive',
+    meaning:
+      'Directive UE 2022/2464 — reporting durabilité obligatoire grands groupes (>250 ETP, >40M€ CA, >20M€ bilan). Premier exercice 2024.',
+    source: 'Directive UE 2022/2464 + Omnibus 2025',
+  },
+  DPE: {
+    long: 'Diagnostic de Performance Énergétique',
+    meaning:
+      "Étiquette énergie/climat A→G d'un bâtiment, obligatoire location/vente. Pour le tertiaire, méthode 3CL ou conventionnelle CSTB.",
+    source: 'CCH art. L126-26 + Décret 2021-872',
+  },
+  SME: {
+    long: "Système de Management de l'Énergie",
+    meaning:
+      "Démarche ISO 50001 — plan d'action énergétique pluriannuel + revue de direction + amélioration continue. Vaut audit énergétique réglementaire ETI.",
+    source: 'ISO 50001 + Code Énergie L233-1',
+  },
+  GTC: {
+    long: 'Gestion Technique Centralisée',
+    meaning:
+      'Système de pilotage centralisé multi-équipements (CVC + éclairage + IT). Variante de la GTB — Décret BACS exige une classe A ou B.',
+    source: 'Décret BACS 2020-887',
+  },
+  COFRAC: {
+    long: "Comité Français d'Accréditation",
+    meaning:
+      "Organisme officiel d'accréditation des auditeurs énergétiques en France. Tout audit réglementaire ETI doit être réalisé par un auditeur accrédité COFRAC.",
+    source: 'cofrac.fr',
+  },
+  IPE: {
+    long: 'Indicateur de Performance Énergétique',
+    meaning:
+      "Ratio énergie/activité d'un site (ex kWh/m²/an, kWh/jour ouvré, kWh/repas servi). ISO 50001 demande au moins 1 IPE de référence.",
+    source: 'ISO 50001 § 6.3',
+  },
+  ADEME: {
+    long: 'Agence de la transition écologique',
+    meaning:
+      "Établissement public référence transition énergétique. Publie Base Empreinte (CO₂), benchmarks tertiaires OID, méthodes d'audit, fiches CEE.",
+    source: 'ademe.fr + Base Empreinte V23.6',
+  },
+  PRM: {
+    long: 'Point de Référence Mesure',
+    meaning:
+      "Identifiant unique 14 chiffres d'un point de livraison électrique Enedis. Donne accès aux relevés CDC 30 minutes via SGE.",
+    source: 'Enedis SGE',
+  },
+  PCE: {
+    long: "Point de Comptage et d'Estimation",
+    meaning:
+      "Identifiant unique 14 chiffres d'un point de livraison gaz GRDF. Donne accès aux relevés MMR via portail ADICT.",
+    source: 'GRDF ADICT',
+  },
+  OPQIBI: {
+    long: "Office Professionnel de Qualification dans l'Ingénierie Bâtiment et Infrastructure",
+    meaning:
+      "Organisme de qualification des bureaux d'études énergétiques. Qualification OPQIBI 1905 = audit énergétique réglementaire ETI.",
+    source: 'opqibi.com',
+  },
 });
 
 /** Retourne le tooltip text à mettre dans `title=`/`aria-label`. */

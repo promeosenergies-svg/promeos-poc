@@ -103,6 +103,9 @@ export const ROUTE_MODULE_MAP = {
   '/usages': 'energie',
   '/usages-horaires': 'energie',
   '/monitoring': 'energie',
+  // Phase 17.bis.B — Flex Intelligence rattachée au module Énergie
+  // (auparavant orpheline → fallback 'cockpit' dans matchRouteToModule).
+  '/flex': 'energie',
 
   // Patrimoine (Facturation migrée ici)
   '/patrimoine': 'patrimoine',
@@ -569,6 +572,17 @@ export const NAV_SECTIONS = [
         ],
       },
       {
+        // Phase 17.bis.C — promotion Tertiaire/OPERAT en item sidebar
+        // (était hidden, accessible uniquement via Quick Action ou breadcrumb).
+        // Persona Marie DAF tertiaire : c'est la page principale de son funnel
+        // (déclaration OPERAT annuelle + jalons -40 % / -50 % / -60 %).
+        to: '/conformite/tertiaire',
+        icon: Building2,
+        label: 'Décret Tertiaire / OPERAT',
+        desc: 'EFA, jalons 2030/2040/2050, simulation mutualisation',
+        keywords: ['tertiaire', 'operat', 'dt', 'efa', 'jalons', 'mutualisation'],
+      },
+      {
         to: '/conformite/aper',
         icon: Sun,
         label: 'Solarisation (APER)',
@@ -614,6 +628,16 @@ export const NAV_SECTIONS = [
         label: 'Diagnostics',
         desc: 'Détection anomalies & gisements',
         keywords: ['diagnostic', 'anomalies', 'analyse'],
+      },
+      {
+        // Phase 17.bis.B — Flex Intelligence rattaché au module Énergie
+        // (était orpheline nav après S1.10 — accessible via deep-link uniquement).
+        // Différenciant produit majeur (NEBCO + AOFD + capacité RTE).
+        to: '/flex',
+        icon: Zap,
+        label: 'Flex Intelligence',
+        desc: 'Effacement industriel — NEBCO, AOFD, mécanisme capacité',
+        keywords: ['flex', 'effacement', 'nebco', 'aofd', 'capacite', 'rte', 'agregateur'],
       },
     ],
   },
