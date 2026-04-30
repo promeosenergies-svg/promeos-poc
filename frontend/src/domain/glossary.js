@@ -104,14 +104,45 @@ export const GLOSSARY = Object.freeze({
   ENR: "Énergies Renouvelables — solaire/éolien/hydraulique/géothermie/biomasse. Couverture obligatoire APER >50 % d'ici 2028.",
 });
 
-/** Helper : retourne la définition ou le code lui-même si non glossé. */
+// Phase 22.3 — fallback vers le SoT canonique `utils/acronyms.js` si la clé
+// n'est pas trouvée localement. Conserve les 10 consumers SolAcronym sans
+// refactor + garantit accès aux 45 entrées du SoT central depuis ce système.
+//
+// Architecture finale glossaires (post Phase 22) :
+//   1. utils/acronyms.js = SoT canonique 45 entrées (Phase 13/15/17 :
+//      structure riche {long, meaning, source} + helpers acronymTooltip).
+//   2. domain/glossary.js = façade Sol briefings (54 entrées, simple
+//      `code → string`) + fallback SoT.
+//   3. ui/glossary.js = façade legacy V1 (453 lignes, {term, short, long}).
+//
+// Aucun consumer ne change. Toute nouvelle entrée doit être ajoutée au SoT
+// `utils/acronyms.js`. Les façades sont maintenues pour rétro-compat tant
+// que le refactor cross-pages n'est pas fait.
+import { acronymTooltip as _soTooltip, isKnownAcronym as _soIsKnown } from '../utils/acronyms';
+
+/** Helper : retourne la définition ou la chaîne vide si non glossé.
+ *  Phase 22.3 : fallback vers SoT canonique `utils/acronyms.js` si absent. */
 export function getDefinition(code) {
   if (!code) return '';
-  return GLOSSARY[code] || GLOSSARY[code.toUpperCase()] || '';
+  const local = GLOSSARY[code] || GLOSSARY[code.toUpperCase()];
+  if (local) return local;
+  // Fallback SoT — extrait la `meaning` (description courte) qui est la plus
+  // proche du format `domain/glossary.js` (1 phrase non-sachant).
+  const sotKey = code.split(/\s+/)[0]?.toUpperCase();
+  if (_soIsKnown(sotKey)) {
+    const fullTooltip = _soTooltip(sotKey) || '';
+    // Le tooltip SoT a le format "Long — Meaning · Source : X" — on extrait
+    // la partie "Meaning" pour rester compatible avec le format domain/glossary.
+    const m = fullTooltip.match(/—\s*(.+?)(?:\s*·\s*Source\s*:|$)/);
+    return m ? m[1].trim() : fullTooltip;
+  }
+  return '';
 }
 
-/** Helper : true si le code a une définition glossée. */
+/** Helper : true si le code a une définition glossée (SoT compris). */
 export function isGlossed(code) {
   if (!code) return false;
-  return Boolean(GLOSSARY[code] || GLOSSARY[code.toUpperCase()]);
+  if (GLOSSARY[code] || GLOSSARY[code.toUpperCase()]) return true;
+  const sotKey = code.split(/\s+/)[0]?.toUpperCase();
+  return _soIsKnown(sotKey);
 }

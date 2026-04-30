@@ -17,6 +17,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { GLOSSARY } from './glossary';
+// Phase 22.3 — fallback vers SoT canonique si terme absent du glossaire legacy.
+import { acronymTooltip as _soTooltip, isKnownAcronym as _soIsKnown } from '../utils/acronyms';
 
 const DELAY_MS = 150;
 const OFFSET = 6;
@@ -25,7 +27,16 @@ const MAX_W = 320;
 export default function Explain({ term, content, children, position = 'top', className = '' }) {
   const entry = term ? GLOSSARY[term] : null;
   const label = children || (entry && entry.term) || term;
-  const definition = content || (entry && entry.short);
+  // Phase 22.3 : si pas dans GLOSSARY legacy, on tente le SoT canonique.
+  // Bénéfice : 5 consumers Explain (DataQualityBadge, ConformiteCard…) ont
+  // désormais accès aux 45 acronymes du SoT (CRE/RTE/ATRD/CSRD/etc.).
+  let definition = content || (entry && entry.short);
+  if (!definition && term) {
+    const sotKey = String(term).split(/\s+/)[0]?.toUpperCase();
+    if (_soIsKnown(sotKey)) {
+      definition = _soTooltip(sotKey);
+    }
+  }
 
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState(null);
