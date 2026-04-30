@@ -423,7 +423,7 @@ function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
             className="font-mono uppercase tracking-[0.07em] mb-1"
             style={{ fontSize: '11px', color: 'var(--sol-ink-500)' }}
           >
-            Courbe de charge J−1 · groupe · kW
+            Courbe de charge J−1 · groupe · {subSplit.unit || 'kW'}
           </div>
           <div className="text-xs" style={{ color: 'var(--sol-ink-700)', lineHeight: 1.4 }}>
             HP / HC contractuelles · ligne souscrite{' '}
@@ -455,8 +455,17 @@ function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
           </span>
         </div>
       </div>
+      {/* Phase 14.bis (régression utilisateur 29/04 fin Phase 14) :
+          - viewBox élargi 360×140 + plot-area 36→340 pour libérer marge gauche
+            (axe Y kW) et marge droite (label "22 h" clipped en textAnchor middle
+            à x=320 = bord viewBox).
+          - Ajout axe Y avec graduations kW/MW (4 ticks : 0 / souscrite × 0.33 /
+            ×0.66 / souscrite). Référence visible = la dashed rouge P. souscrite.
+          - Axe X : "0 h" textAnchor=start, "22 h" textAnchor=end pour éviter
+            tout débordement viewBox sur extrémités.
+          - "P. souscrite X MW" déplacé à droite avec padding (x=336 textAnchor=end). */}
       <svg
-        viewBox="0 0 320 130"
+        viewBox="0 0 360 140"
         xmlns="http://www.w3.org/2000/svg"
         style={{ width: '100%', height: 'auto', display: 'block', marginTop: 6 }}
         role="img"
@@ -468,39 +477,42 @@ function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
             <stop offset="100%" stopColor="var(--sol-hpe-fg)" stopOpacity="0" />
           </linearGradient>
         </defs>
-        <rect x="32" y="10" width="46" height="95" fill="var(--sol-hch-fg)" fillOpacity=".05" />
-        <rect x="284" y="10" width="36" height="95" fill="var(--sol-hch-fg)" fillOpacity=".05" />
+        {/* HC zones (matin avant 8h + soir après 22h) : background grisé */}
+        <rect x="36" y="10" width="50" height="95" fill="var(--sol-hch-fg)" fillOpacity=".05" />
+        <rect x="304" y="10" width="36" height="95" fill="var(--sol-hch-fg)" fillOpacity=".05" />
+        {/* Grid horizontale (3 niveaux de référence) */}
         <line
-          x1="32"
+          x1="36"
           y1="20"
-          x2="320"
+          x2="340"
           y2="20"
           stroke="currentColor"
           strokeOpacity=".08"
           strokeDasharray="2,3"
         />
         <line
-          x1="32"
+          x1="36"
           y1="55"
-          x2="320"
+          x2="340"
           y2="55"
           stroke="currentColor"
           strokeOpacity=".08"
           strokeDasharray="2,3"
         />
         <line
-          x1="32"
+          x1="36"
           y1="90"
-          x2="320"
+          x2="340"
           y2="90"
           stroke="currentColor"
           strokeOpacity=".15"
           strokeDasharray="3,3"
         />
+        {/* Ligne souscrite + label déporté à droite */}
         <line
-          x1="32"
+          x1="36"
           y1="34"
-          x2="320"
+          x2="340"
           y2="34"
           stroke="var(--sol-refuse-fg)"
           strokeOpacity=".55"
@@ -508,8 +520,8 @@ function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
           strokeWidth="1"
         />
         <text
-          x="318"
-          y="31"
+          x="338"
+          y="30"
           textAnchor="end"
           fontFamily="var(--sol-font-mono)"
           fontSize="8.5"
@@ -518,49 +530,86 @@ function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
         >
           P. souscrite {subscribedKw != null ? `${subSplit.value} ${subSplit.unit}` : '—'}
         </text>
+        {/* Phase 14.bis — Axe Y avec graduations (4 ticks). Source ligne souscrite
+            comme référence (= y=34). 0 kW = y=90 (baseline). */}
+        {(() => {
+          const ySouscrite = 34;
+          const yZero = 90;
+          const ratio = (frac) => yZero - (yZero - ySouscrite) * frac;
+          const subVal = subscribedKw != null ? Number(subSplit.value.replace(',', '.')) || 0 : 0;
+          const fmt = (v) => {
+            if (subSplit.unit === 'MW') return `${v.toFixed(2)}`;
+            return `${Math.round(v)}`;
+          };
+          return (
+            <g
+              fontFamily="var(--sol-font-mono)"
+              fontSize="8"
+              fill="currentColor"
+              fillOpacity=".5"
+              textAnchor="end"
+            >
+              <text x="32" y={yZero + 3}>
+                0
+              </text>
+              <text x="32" y={ratio(0.33) + 3}>
+                {fmt(subVal * 0.33)}
+              </text>
+              <text x="32" y={ratio(0.66) + 3}>
+                {fmt(subVal * 0.66)}
+              </text>
+              <text x="32" y={ySouscrite + 3}>
+                {subSplit.value}
+              </text>
+              {/* Unité affichée en kicker au-dessus de l'axe */}
+              <text x="32" y="14" fillOpacity=".7" fontSize="7.5">
+                {subSplit.unit || 'kW'}
+              </text>
+            </g>
+          );
+        })()}
+        {/* Aire HP sous la courbe (gradient) */}
         <path
-          d="M32,90 L78,80 L92,68 L106,46 L120,40 L134,42 L148,52 L162,58 L176,52 L190,46 L204,42 L218,46 L232,50 L246,56 L260,64 L274,76 L284,82 L284,105 L32,105 Z"
+          d="M36,90 L86,80 L100,68 L114,46 L128,40 L142,42 L156,52 L170,58 L184,52 L198,46 L212,42 L226,46 L240,50 L254,56 L268,64 L282,76 L296,82 L304,86 L304,105 L36,105 Z"
           fill="url(#hp-fill-pilotage)"
           fillOpacity=".7"
         />
+        {/* HC matin */}
         <path
-          d="M32,92 L48,90 L60,88 L72,84 L78,80"
+          d="M36,92 L52,90 L64,88 L76,84 L86,80"
           fill="none"
           stroke="var(--sol-hch-fg)"
           strokeWidth="1.6"
         />
+        {/* HP journée */}
         <path
-          d="M78,80 L92,68 L106,46 L120,40 L134,42 L148,52 L162,58 L176,52 L190,46 L204,42 L218,46 L232,50 L246,56 L260,64 L274,76 L284,82"
+          d="M86,80 L100,68 L114,46 L128,40 L142,42 L156,52 L170,58 L184,52 L198,46 L212,42 L226,46 L240,50 L254,56 L268,64 L282,76 L296,82 L304,86"
           fill="none"
           stroke="var(--sol-hpe-fg)"
           strokeWidth="1.6"
         />
+        {/* HC soir */}
         <path
-          d="M284,82 L296,86 L308,90 L320,93"
+          d="M304,86 L316,90 L328,93 L340,95"
           fill="none"
           stroke="var(--sol-hch-fg)"
           strokeWidth="1.6"
         />
-        <g
-          fontFamily="var(--sol-font-mono)"
-          fontSize="9"
-          fill="currentColor"
-          fillOpacity=".55"
-          textAnchor="middle"
-        >
-          <text x="32" y="120">
+        {/* Axe X (heures) */}
+        <g fontFamily="var(--sol-font-mono)" fontSize="9" fill="currentColor" fillOpacity=".55">
+          <text x="36" y="125" textAnchor="start">
             0 h
           </text>
-          <text x="106" y="120">
+          <text x="114" y="125" textAnchor="middle">
             8 h
           </text>
-          <text x="176" y="120">
+          <text x="188" y="125" textAnchor="middle">
             12 h
           </text>
-          <text x="250" y="120">
+          <text x="262" y="125" textAnchor="middle">
             18 h
           </text>
-          <text x="320" y="120">
+          <text x="340" y="125" textAnchor="end">
             22 h
           </text>
         </g>
