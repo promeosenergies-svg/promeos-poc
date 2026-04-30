@@ -1321,6 +1321,42 @@ export default function CockpitDecision() {
         </span>
       </div>
 
+      {/* Phase 21.A (REG-3 audit triple Phase 20.bis) — réconciliation cross-source
+          de la consommation annuelle. Le backend `_facts.consumption` expose
+          désormais 2 valeurs distinctes pour aider l'auditeur terrain :
+            - `annual_mwh` (élec metered 365j glissants, KPI temps réel)
+            - `annual_mwh_dt` (élec + gaz multi-énergie via ConsumptionTarget,
+              aligné Décret Tertiaire 2019-771 art. R131-39)
+          Avant : audit constatait 595 / 746 / 262 MWh sur 3 routes sans
+          réconciliation. Désormais : la note explicite expose les 2 valeurs
+          avec leur scope. */}
+      {(facts?.consumption?.annual_mwh != null || facts?.consumption?.annual_mwh_dt != null) && (
+        <div
+          className="mt-3 font-mono uppercase tracking-[0.06em]"
+          style={{
+            fontSize: 10,
+            color: 'var(--sol-ink-500)',
+            paddingTop: 8,
+            borderTop: '0.5px dashed var(--sol-rule)',
+          }}
+        >
+          <span style={{ color: 'var(--sol-ink-700)' }}>Conso annuelle</span>{' '}
+          {facts.consumption.annual_mwh != null && (
+            <>
+              · <strong>{facts.consumption.annual_mwh.toLocaleString('fr-FR')} MWh</strong> élec
+              metered 365j
+            </>
+          )}
+          {facts.consumption.annual_mwh_dt != null && (
+            <>
+              {' · '}
+              <strong>{facts.consumption.annual_mwh_dt.toLocaleString('fr-FR')} MWh</strong> élec +
+              gaz aligné <AcronymTooltip acronym="DT">DT</AcronymTooltip>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Footer Sol (visible écran + print) */}
       <div
         className="flex justify-between flex-wrap gap-2.5 pt-3"
