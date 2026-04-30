@@ -127,14 +127,21 @@ function StrategicNarrative({ facts }) {
   // Phase 14.E (audit véracité Sophie/Marie) : la narrative disait "tous les
   // sites alignés" si consumption.sites_in_drift = 0, ignorant le statut
   // conformité réglementaire (NC + à risque) — contradiction frontale avec
-  // le KPI exposition 12,8 k€ et le score 37/100 visibles dans la page.
-  // Désormais : "drift" agrège dérive conso ET sites NC/à risque (la cible
-  // de la narrative = ce qui n'est pas aligné sur la trajectoire 2030).
+  // le KPI exposition 12,8 k€ et le score 37/100.
+  // Phase 16.F : si sitesOff = sitesCount (tous les sites en écart), on
+  // reformule pour éviter la phrase redondante "patrimoine de 5 sites
+  // présente 5 sites en écart" qui dégrade la crédibilité (audit Phase 15
+  // /code-reviewer P2). On dit "l'ensemble du patrimoine est en écart" pour
+  // signaler la sévérité avec une formule moins mécanique.
   const sitesOff = Math.max(consDrift, ncSites + atRiskSites);
-  const driftText =
-    sitesOff > 0
-      ? `${sitesOff} site${sitesOff > 1 ? 's' : ''} en écart de la trajectoire`
-      : `tous les sites alignés`;
+  let driftText;
+  if (sitesOff <= 0) {
+    driftText = 'tous les sites alignés';
+  } else if (sitesCount > 0 && sitesOff >= sitesCount) {
+    driftText = "l'ensemble du patrimoine en écart de la trajectoire";
+  } else {
+    driftText = `${sitesOff} site${sitesOff > 1 ? 's' : ''} en écart de la trajectoire`;
+  }
   const expText = exp.value_eur != null ? fmtEurShort(exp.value_eur) : '—';
   const expDeltaText =
     expDelta?.value_eur != null && expDelta.value_eur !== 0
@@ -384,26 +391,33 @@ function DecisionCardImpl({ decision, index }) {
                     ? `${paybackMonths} mois`
                     : `${(paybackMonths / 12).toFixed(1)} ans`}
                 </span>
-                {/* Phase 15.D : payback net pénalité évitée — exposé en sous-ligne
-                    pour permettre au CFO de voir le ROI réel (économies + sanction
-                    légale évitée). Le payback brut reste affiché pour transparence. */}
+                {/* Phase 15.D + 16.E : payback net pénalité évitée. Reformulé
+                    "avec pénalité évitée" (au lieu de "net pénalité" jargon
+                    financier ambigu pour CFO non-énergie). Pénalité évitée
+                    exposée en clair sous la valeur (audit Phase 15 P1) au lieu
+                    d'un title="" inaccessible clavier. */}
                 {paybackMonthsNet != null &&
                   paybackMonthsNet > 0 &&
                   paybackMonthsNet < paybackMonths && (
-                    <span
-                      className="block"
-                      style={{ fontSize: 11, color: 'var(--sol-succes-fg)', fontWeight: 500 }}
-                      title={
-                        penaltyAvoidedEurYear
-                          ? `ROI net intégrant la pénalité légale évitée (${penaltyAvoidedEurYear} €/an).`
-                          : ''
-                      }
-                    >
-                      net pénalité :{' '}
-                      {paybackMonthsNet < 24
-                        ? `${paybackMonthsNet} mois`
-                        : `${(paybackMonthsNet / 12).toFixed(1)} ans`}
-                    </span>
+                    <>
+                      <span
+                        className="block"
+                        style={{ fontSize: 11, color: 'var(--sol-succes-fg)', fontWeight: 500 }}
+                      >
+                        avec pénalité évitée :{' '}
+                        {paybackMonthsNet < 24
+                          ? `${paybackMonthsNet} mois`
+                          : `${(paybackMonthsNet / 12).toFixed(1)} ans`}
+                      </span>
+                      {penaltyAvoidedEurYear ? (
+                        <span
+                          className="block font-mono"
+                          style={{ fontSize: 10, color: 'var(--sol-ink-500)', marginTop: 1 }}
+                        >
+                          + {fmtEurShort(penaltyAvoidedEurYear)}/an sanction évitée
+                        </span>
+                      ) : null}
+                    </>
                   )}
               </div>
             )}

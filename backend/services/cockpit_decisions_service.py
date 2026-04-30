@@ -28,8 +28,11 @@ from sqlalchemy.orm import Session
 
 from doctrine.acronyms import transform_acronym
 from doctrine.constants import (
+    BACS_PENALTY_EUR,
     CO2_FACTOR_ELEC_KGCO2_PER_KWH,
+    DT_PENALTY_AT_RISK_EUR,
     DT_PENALTY_EUR,
+    OPERAT_PENALTY_EUR,
     PRICE_ELEC_ETI_2026_EUR_PER_MWH,
 )
 from models.action_item import ActionItem
@@ -87,6 +90,33 @@ _DECISION_QUESTION_TEMPLATES = {
     "operat": "Faut-il finaliser la déclaration OPERAT annuelle ?",
 }
 
+# Phase 16.C — mappings levier → catégorie + pénalité hissés au scope module
+# (audit /simplify Phase 15) : auparavant `_LEVER_TO_CATEGORY` était local à
+# `serialize_action_for_decision` et `_LEVER_TO_PENALTY` local à
+# `_estimate_capex_payback`. Cohérent avec `_CAPEX_HEURISTIC_BY_LEVER` et
+# `_DECISION_NARRATIVE_FALLBACK_BY_LEVER` qui sont déjà module-level → un seul
+# endroit pour tester / étendre / documenter.
+_LEVER_TO_CATEGORY = {
+    "bacs": "Conformité",
+    "audit_sme": "Conformité",
+    "operat": "Conformité",
+    "aper": "Conformité",
+    "achat": "Achat énergie",
+}
+
+# Pénalité légale annuelle évitée par levier — utilisée pour calculer
+# `payback_months_net_penalty` (Phase 15.D).  Constantes doctrine canoniques
+# (cf doctrine/constants.py BACS_PENALTY_EUR, OPERAT_PENALTY_EUR…).
+# - APER : sanction 20 €/m²/an parking, dépend surface — pas de constante
+#   (à hisser quand SiteSurfaceParking sera exposé).
+# - audit_sme : pas de pénalité directe ETI < 250 ETP.
+_LEVER_TO_PENALTY_EUR_YEAR = {
+    "bacs": float(BACS_PENALTY_EUR),
+    "operat": float(OPERAT_PENALTY_EUR),
+    "aper": 0.0,
+    "audit_sme": 0.0,
+}
+
 # Phase 15.B (audit Phase 14 P1-A : "zero business logic in frontend").
 # Avant : `frontend/src/pages/CockpitDecision.jsx::NarrativeFallback`
 # dupliquait ce mapping côté FE. Désormais : SoT unique côté backend, exposé
@@ -120,24 +150,64 @@ _DECISION_NARRATIVE_FALLBACK_BY_LEVER = {
 }
 
 
-def _narrative_fallback_for_lever(lever_key: str, action: ActionItem) -> Optional[str]:
+def _fmt_eur_short(v: float) -> str:
+    """Formatte un montant en € compact FR (ex 135 600 → '135,6 k€')."""
+    if v is None:
+        return "—"
+    if abs(v) >= 1000:
+        return f"{(v / 1000):.1f} k€".replace(".", ",")
+    return f"{int(round(v))} €"
+
+
+def _narrative_fallback_for_lever(
+    lever_key: str,
+    action: ActionItem,
+    capex_eur: Optional[float] = None,
+    savings_eur_year: Optional[float] = None,
+    penalty_eur_year: Optional[float] = None,
+    payback_months: Optional[int] = None,
+) -> Optional[str]:
     """Retourne un narrative cadre pour un levier connu, sinon None.
+
+    Phase 16.B (audit Phase 15 P1) : interpole les chiffres réels du levier
+    (CapEx + savings + pénalité évitée + payback) dans la narrative pour
+    éviter le "démo scriptée" — 2 actions BACS sur 2 sites distincts ne
+    portent plus la même phrase identique mot-à-mot.
 
     Phase 15.B : utilisé par `serialize_action_for_decision` pour pré-remplir
     le champ `narrative` quand `action.rationale` et `action.description` sont
-    absents (cas seed ou actions auto-créées). Le frontend n'a alors plus
-    besoin de templates JS dupliqués.
+    absents.
     """
     tpl = _DECISION_NARRATIVE_FALLBACK_BY_LEVER.get(lever_key)
+
+    # Suffixe chiffré dynamique (Phase 16.B). Ajouté à la fin du template
+    # cadre pour conserver la grammaire éditoriale §5 + ajouter du concret.
+    extras = []
+    if capex_eur and capex_eur > 0:
+        extras.append(f"CapEx ~{_fmt_eur_short(capex_eur)}")
+    if payback_months and payback_months > 0:
+        if payback_months < 24:
+            extras.append(f"payback ~{payback_months} mois")
+        else:
+            extras.append(f"payback ~{payback_months / 12:.1f} ans")
+    if penalty_eur_year and penalty_eur_year > 0:
+        extras.append(f"pénalité {_fmt_eur_short(penalty_eur_year)}/an évitée")
+
     if tpl:
+        if extras:
+            return f"{tpl} ({' · '.join(extras)})"
         return tpl
+
     # Fallback générique avec date d'échéance si dispo.
     if action.due_date:
-        return (
+        base = (
             "Action ouverte sur ce site, à arbitrer cette semaine selon "
             f"priorité métier et contraintes réglementaires. Échéance "
             f"{action.due_date.strftime('%d/%m/%Y')}."
         )
+        if extras:
+            base = base.rstrip(".") + f" ({' · '.join(extras)})."
+        return base
     return None
 
 
@@ -217,24 +287,29 @@ def serialize_action_for_decision(action: ActionItem, site_name: str = "") -> di
     # "indicative" — frontend rendra le badge "Estimation".
     capex_estimation = _estimate_capex_payback(action, gain_mwh)
 
+    # Phase 16.C : `_LEVER_TO_CATEGORY` désormais hissé au scope module.
     # Étape 9 P0-D : exposer category_label depuis lever_key au lieu de
-    # laisser le frontend deviner par parsing textuel (audit /simplify P0
-    # "tagLabel = decision.title.toLowerCase().includes('contrat')" violait
-    # la règle d'or zéro business logic frontend).
-    _LEVER_TO_CATEGORY = {
-        "bacs": "Conformité",
-        "audit_sme": "Conformité",
-        "operat": "Conformité",
-        "aper": "Conformité",
-        "achat": "Achat énergie",
-    }
+    # laisser le frontend deviner par parsing textuel (règle d'or zéro
+    # business logic frontend).
     category_label = _LEVER_TO_CATEGORY.get(lever_key, "Investissement")
 
-    # Phase 15.B : narrative_fallback SoT backend (un seul mapping levier→texte).
+    # Phase 15.B + 16.B : narrative_fallback SoT backend, désormais chiffrée
+    # avec CapEx + payback + pénalité évitée (interpolés depuis capex_estimation).
     # Le frontend ne duplique plus _NARRATIVE_TEMPLATE_BY_LEVER.
     narrative = action.rationale or action.description or ""
     if not narrative:
-        narrative = _narrative_fallback_for_lever(lever_key, action) or ""
+        narrative = (
+            _narrative_fallback_for_lever(
+                lever_key,
+                action,
+                capex_eur=capex_estimation.get("capex_eur"),
+                savings_eur_year=capex_estimation.get("savings_eur_year"),
+                penalty_eur_year=capex_estimation.get("penalty_avoided_eur_year"),
+                payback_months=capex_estimation.get("payback_months_net_penalty")
+                or capex_estimation.get("payback_months"),
+            )
+            or ""
+        )
 
     return {
         "id": action.id,
@@ -335,28 +410,13 @@ def _estimate_capex_payback(action: ActionItem, gain_mwh_year: int) -> dict:
     # l'action engagée. Le payback brut surestime le délai pour BACS/OPERAT/
     # APER/audit_sme. Calculé séparément pour préserver la transparence
     # (exposition simultanée brut + net pour audit terrain).
+    # Phase 16.C/D : imports doctrine + mapping levier→pénalité hissés au
+    # scope module (audit /simplify Phase 15 — anti-pattern lazy import résolu).
     penalty_avoided_eur_year = 0.0
     if action.severity and str(action.severity).lower() in ("critical", "high"):
-        # Source pénalité = doctrine selon levier (cf cockpit_facts_service
-        # _build_exposure components). Une action de mise en conformité évite
-        # la pénalité annuelle correspondante au levier.
-        from doctrine.constants import (
-            BACS_PENALTY_EUR,
-            DT_PENALTY_AT_RISK_EUR,
-            DT_PENALTY_EUR,
-            OPERAT_PENALTY_EUR,
-        )
-
-        _LEVER_TO_PENALTY = {
-            "bacs": float(BACS_PENALTY_EUR),
-            "operat": float(OPERAT_PENALTY_EUR),
-            "aper": 0.0,  # APER : sanction 20 €/m²/an parking, pas constante
-            "audit_sme": 0.0,  # Audit SMÉ : pas de pénalité directe ETI
-            # default DT (autres compliance critiques) : at_risk si severity=high,
-            # full DT_PENALTY si severity=critical.
-        }
-        penalty = _LEVER_TO_PENALTY.get(lever_key)
+        penalty = _LEVER_TO_PENALTY_EUR_YEAR.get(lever_key)
         if penalty is None and lever_key.startswith("other_"):
+            # Fallback DT pour leviers compliance critiques non typés explicitement.
             penalty = (
                 float(DT_PENALTY_EUR) if str(action.severity).lower() == "critical" else float(DT_PENALTY_AT_RISK_EUR)
             )

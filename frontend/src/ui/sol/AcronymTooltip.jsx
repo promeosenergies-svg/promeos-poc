@@ -19,6 +19,7 @@
  *   - className : string
  */
 import { acronymTooltip, isKnownAcronym } from '../../utils/acronyms';
+import SolTooltip from './SolTooltip';
 
 export default function AcronymTooltip({ acronym, children, className = '' }) {
   // Si l'acronyme contient un suffixe (ex. "TURPE 7" → utiliser "TURPE")
@@ -27,19 +28,13 @@ export default function AcronymTooltip({ acronym, children, className = '' }) {
   if (!tooltip) {
     return <span className={className}>{children || acronym}</span>;
   }
+  // Phase 16.A — délégation à SolTooltip (popover focusable, hover/focus/tap
+  // accessible, dismissable ESC, conforme WCAG 1.4.13). Le `title=""` HTML
+  // natif n'était pas visible au focus clavier sur Chrome 120+, et silencieux
+  // au tap mobile — anti-pattern résolu.
   return (
-    <span
-      tabIndex={0}
-      role="button"
-      aria-label={tooltip}
-      title={tooltip}
-      className={`cursor-help ${className}`}
-      style={{
-        borderBottom: '1px dotted var(--sol-ink-400)',
-        textDecoration: 'none',
-      }}
-    >
+    <SolTooltip content={tooltip} className={className}>
       {children || acronym}
-    </span>
+    </SolTooltip>
   );
 }
