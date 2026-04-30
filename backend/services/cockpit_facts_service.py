@@ -165,6 +165,26 @@ from doctrine.delta import weekly_delta_struct as _weekly_delta_struct  # noqa: 
 # ─── Section scope ──────────────────────────────────────────────────────────
 
 
+# Phase 4bis.2 — seuils de densité d'affichage (doctrine §11.3, sentinels #14/15).
+# Selon le nombre de sites du scope, le Cockpit dual rend en :
+#   - "direct"    : ≤ 5 sites — KPI individuels per-site visibles d'emblée
+#   - "condensed" : 6–15 sites — agrégat global + top 3-5 sites prioritaires
+#   - "clusters"  : > 15 sites — clustering par archétype NAF + top 3 clusters
+# Les seuils sont SoT et exposés dans le payload `_facts.scope.density_thresholds`
+# pour que le frontend puisse expliquer le mode appliqué au CFO.
+DENSITY_THRESHOLD_DIRECT_MAX = 5
+DENSITY_THRESHOLD_CONDENSED_MAX = 15
+
+
+def _compute_density_mode(site_count: int) -> str:
+    """Mode d'affichage Cockpit selon volume sites. Sentinel #14 helios_direct."""
+    if site_count <= DENSITY_THRESHOLD_DIRECT_MAX:
+        return "direct"
+    if site_count <= DENSITY_THRESHOLD_CONDENSED_MAX:
+        return "condensed"
+    return "clusters"
+
+
 def _build_scope(db: Session, org_id: int) -> dict:
     try:
         org = db.query(Organisation).filter(Organisation.id == org_id).first()
@@ -174,13 +194,21 @@ def _build_scope(db: Session, org_id: int) -> dict:
         site_ids = [s.id for s in sites]
         surface_total = sum((s.surface_m2 or 0.0) for s in sites)
 
+        site_count = len(site_ids)
         return {
             "org_id": org_id,
             "org_name": org_name,
-            "site_count": len(site_ids),
+            "site_count": site_count,
             "site_ids": site_ids,
             "surface_total_m2": round(surface_total, 1),
             "ref_year": DT_REF_YEAR_DEFAULT,
+            # Phase 4bis.2 (sentinels #14/15) : mode d'affichage déterminé par
+            # le SoT, pas par le frontend (règle d'or zéro business logic FE).
+            "density_mode": _compute_density_mode(site_count),
+            "density_thresholds": {
+                "direct_max": DENSITY_THRESHOLD_DIRECT_MAX,
+                "condensed_max": DENSITY_THRESHOLD_CONDENSED_MAX,
+            },
         }
     except Exception as exc:  # noqa: F841 — _logger.warning prend exc explicit
         _logger.warning("_build_scope error: %s", exc)
@@ -191,6 +219,11 @@ def _build_scope(db: Session, org_id: int) -> dict:
             "site_ids": [],
             "surface_total_m2": 0.0,
             "ref_year": DT_REF_YEAR_DEFAULT,
+            "density_mode": _compute_density_mode(0),
+            "density_thresholds": {
+                "direct_max": DENSITY_THRESHOLD_DIRECT_MAX,
+                "condensed_max": DENSITY_THRESHOLD_CONDENSED_MAX,
+            },
         }
 
 
