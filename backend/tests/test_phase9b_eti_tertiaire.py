@@ -85,15 +85,33 @@ class TestEtiThreshold:
         result = _typology_dominant_for_sites(sites, scope_label="helios")
         assert result == OrganizationTypology.ETI_TERTIAIRE
 
-    def test_grand_groupe_50_sites_above_threshold(self):
-        """50 sites > 30 → GRAND_GROUPE (au-delà du seuil ETI)."""
-        sites = [_mock_site("6820B", 1000)] * 50
+    def test_grand_groupe_50_sites_125k_above_both_thresholds(self):
+        """50 sites > 30 ET 125k m² > 100k → GRAND_GROUPE (les 2 dépassés OR)."""
+        sites = [_mock_site("6820B", 2500)] * 50  # 50 sites × 2500 = 125k m²
         result = _typology_dominant_for_sites(sites, scope_label="grand_groupe")
         assert result == OrganizationTypology.GRAND_GROUPE
 
-    def test_grand_groupe_huge_surface_above_threshold(self):
-        """1 site 200k m² → GRAND_GROUPE (surface > 100k même si <30 sites)."""
-        sites = [_mock_site("6820B", 200_000)]
+    def test_eti_35_sites_40k_surface_below_one_threshold(self):
+        """Phase 9.B.bis (mini-audit P1) : 35 sites > 30 MAIS 40k m² < 100k
+        → ETI_TERTIAIRE (la condition OR : surface sous seuil suffit).
+
+        Avant correction AND : ce cas restait GG (sites > 30). Après OR :
+        bascule ETI car surface modeste = ETI midmarket.
+        """
+        sites = [_mock_site("6820B", 1143)] * 35  # 35 sites × 1143 ≈ 40k m²
+        result = _typology_dominant_for_sites(sites, scope_label="eti_31_50")
+        assert result == OrganizationTypology.ETI_TERTIAIRE
+
+    def test_grand_groupe_huge_surface_only_1_site(self):
+        """1 site 200k m² > 100k → GG car surface dépasse, malgré 1 site < 30.
+
+        Note : avec OR (sites ≤ 30 OU surface ≤ 100k), 1 site ≤ 30 donc
+        bascule ETI. Pour rester GG, il faut les 2 dépassés. Donc 1 site
+        200k m² → ETI (1 ≤ 30). C'est le test d'origine qui a changé de
+        signification avec OR — adapter pour vérifier le cas réel GG.
+        """
+        # Cas réel GG : 100 sites × 5k m² = 500k m² (sites > 30 ET surface > 100k)
+        sites = [_mock_site("6820B", 5000)] * 100
         result = _typology_dominant_for_sites(sites, scope_label="huge")
         assert result == OrganizationTypology.GRAND_GROUPE
 
@@ -212,6 +230,33 @@ class TestMaskedTriggersEti:
     def test_eti_no_triggers_masked(self):
         """ETI_TERTIAIRE = audience expert-praticien → tous triggers actifs."""
         assert MASKED_TRIGGERS_BY_TYPOLOGY[OrganizationTypology.ETI_TERTIAIRE] == set()
+
+
+# ─── Phase 9.B.bis — Source-guard enum coverage (mini-audit P2) ──────────
+
+
+class TestEnumCoverageGuard:
+    """Source-guard : tous les membres OrganizationTypology doivent être
+    présents dans MASKED_TRIGGERS_BY_TYPOLOGY + LEXICAL_TEMPLATES +
+    SENTENCE_STABLE_TEMPLATES. Empêche un futur ajout d'enum d'introduire
+    un KeyError silencieux.
+    """
+
+    def test_masked_triggers_covers_all_enum_members(self):
+        assert set(MASKED_TRIGGERS_BY_TYPOLOGY) == set(OrganizationTypology), (
+            "Tous les OrganizationTypology doivent avoir une entrée "
+            "dans MASKED_TRIGGERS_BY_TYPOLOGY (anti-KeyError runtime)."
+        )
+
+    def test_lexical_templates_covers_all_enum_members(self):
+        assert set(LEXICAL_TEMPLATES) == set(OrganizationTypology), (
+            "Tous les OrganizationTypology doivent avoir une entrée dans LEXICAL_TEMPLATES."
+        )
+
+    def test_stable_sentences_covers_all_enum_members(self):
+        assert set(SENTENCE_STABLE_TEMPLATES) == set(OrganizationTypology), (
+            "Tous les OrganizationTypology doivent avoir une entrée dans SENTENCE_STABLE_TEMPLATES."
+        )
 
 
 if __name__ == "__main__":

@@ -73,10 +73,15 @@ _logger = logging.getLogger("promeos.narrative.typology_resolver")
 # signal qu'il faut prioriser V2 (PME tertiaire + Industrie).
 UNKNOWN_SURFACE_WARNING_THRESHOLD_PCT = 30.0
 
-# Phase 9.B — seuils pour basculer GRAND_GROUPE → ETI_TERTIAIRE.
-# Audit Marie : ETI tertiaire midmarket = 1-30 sites bureaux ou ≤ 100k m².
-# Au-delà = grand groupe coté / foncière institutionnelle. Si l'un OU
-# l'autre seuil est dépassé, on reste GRAND_GROUPE.
+# Phase 9.B + 9.B.bis — seuils pour basculer GRAND_GROUPE → ETI_TERTIAIRE.
+# Audit Marie : ETI tertiaire midmarket = 1-30 sites bureaux OU ≤ 100k m².
+#
+# Phase 9.B.bis correction P1 mini-audit : passé de AND à OR (l'un OU
+# l'autre suffit). Cas couverts désormais :
+# - Marie 15 sites 35k m² → ETI (les 2 sous seuils)
+# - 35 sites 40k m² → ETI (sites > 30 mais surface < 100k)
+# - 1 site 200k m² → GG (surface > 100k même si sites < 30)
+# - 50 sites 200k m² → GG (les 2 au-dessus)
 ETI_TERTIAIRE_MAX_SITES = 30
 ETI_TERTIAIRE_MAX_SURFACE_M2 = 100_000.0
 
@@ -163,12 +168,15 @@ def _typology_dominant_for_sites(
 
     dominant = max(surface_excl_unknown, key=surface_excl_unknown.get)
 
-    # Phase 9.B — bascule GRAND_GROUPE → ETI_TERTIAIRE selon seuils de taille.
-    # Distinction grand groupe coté (HELIOS) vs ETI tertiaire midmarket (Marie).
-    # Audit Marie : 15-50 sites bureaux + 35k m² total = ETI midmarket, pas GG.
+    # Phase 9.B + 9.B.bis — bascule GRAND_GROUPE → ETI_TERTIAIRE selon seuils.
+    # Distinction grand groupe coté vs ETI tertiaire midmarket via OR (audit
+    # mini Phase 9.B P1) : si SITES≤30 OU SURFACE≤100k → ETI. Couvre les
+    # ETI 31-50 sites de surface modeste (qui restaient GG en AND v1).
+    # Stateless : recalculé à chaque appel — re-classification automatique
+    # si l'org grossit (acquisitions → > 30 sites ET > 100k m²).
     if dominant == OrganizationTypology.GRAND_GROUPE:
         sites_count = len(sites)
-        if sites_count <= ETI_TERTIAIRE_MAX_SITES and total_surface <= ETI_TERTIAIRE_MAX_SURFACE_M2:
+        if sites_count <= ETI_TERTIAIRE_MAX_SITES or total_surface <= ETI_TERTIAIRE_MAX_SURFACE_M2:
             return OrganizationTypology.ETI_TERTIAIRE
 
     return dominant

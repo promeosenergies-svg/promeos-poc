@@ -112,6 +112,8 @@ def run_migrations(engine):
     _create_sirene_tables(engine)
     # Sprint Refonte Narrative dynamique — Phase 1.4 (user typology override)
     _create_user_preferences_table(engine)
+    # Sprint Refonte Narrative dynamique — Phase 9.D (event store temporel)
+    _create_event_history_snapshots_table(engine)
 
 
 def _create_user_preferences_table(engine):
@@ -132,6 +134,27 @@ def _create_user_preferences_table(engine):
         checkfirst=True,
     )
     logger.info("migration: created user_preferences table (Phase 1.4 narrative-sol2)")
+
+
+def _create_event_history_snapshots_table(engine):
+    """Create event_history_snapshots table if missing (idempotent).
+
+    Sprint Refonte Narrative dynamique — Phase 9.D (2026-05-01).
+    Append-only journal des SolEventCard détectés. Permet re-jouer la
+    narrative à une date historique (`simulate_date` Phase 6 V2).
+    """
+    insp = inspect(engine)
+    if insp.has_table("event_history_snapshots"):
+        return
+    import models.event_history_snapshot  # noqa: F401
+    from models.base import Base
+
+    Base.metadata.create_all(
+        bind=engine,
+        tables=[Base.metadata.tables["event_history_snapshots"]],
+        checkfirst=True,
+    )
+    logger.info("migration: created event_history_snapshots table (Phase 9.D narrative-sol2)")
 
 
 def _create_sirene_tables(engine):
