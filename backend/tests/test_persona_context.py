@@ -361,5 +361,101 @@ class TestPhase8bFeminisation:
         assert "acheteuse énergie" in mention
 
 
+# ─── Phase 8.bis — Corrections heuristique féminisation (audit P0) ────────
+
+
+class TestPhase8bisEpiceneHandling:
+    """Audit Phase 8 P0 : prénoms épicènes ne doivent PAS être fléchis féminin."""
+
+    def test_dominique_epicene_not_feminized(self):
+        """Dominique épicène → label par défaut (masculin/neutre), pas féminisé."""
+        mention = compose_persona_mention(
+            "Dominique",
+            PersonaRole.DIRECTOR_ERP,
+            {"compliance_score": 64},
+            OrganizationTypology.ERP,
+        )
+        # Phase 8.bis : Dominique n'est pas fléchi en féminin (épicène)
+        assert "directrice" not in mention
+        assert "directeur" in mention
+
+    def test_camille_epicene_not_feminized(self):
+        mention = compose_persona_mention(
+            "Camille",
+            PersonaRole.DIRECTOR_ERP,
+            {"compliance_score": 64},
+            OrganizationTypology.ERP,
+        )
+        assert "directrice" not in mention
+        assert "directeur" in mention
+
+    def test_andrea_epicene_not_feminized(self):
+        mention = compose_persona_mention(
+            "Andrea",
+            PersonaRole.ENERGY_BUYER,
+            {"avg_price_eur_mwh": 87},
+            OrganizationTypology.GRAND_GROUPE,
+        )
+        # Andrea épicène → label par défaut "acheteur énergie"
+        assert "acheteuse" not in mention
+        assert "acheteur" in mention
+
+    def test_anne_feminine_override(self):
+        """Anne reste féminin sans ambiguïté (override _FEMININE_OVERRIDE)."""
+        mention = compose_persona_mention(
+            "Anne",
+            PersonaRole.DIRECTOR_ERP,
+            {"compliance_score": 64},
+            OrganizationTypology.ERP,
+        )
+        assert "directrice" in mention
+
+    def test_marie_feminine_override(self):
+        """Marie reste féminin (override explicite, pas via heuristique)."""
+        mention = compose_persona_mention(
+            "Marie",
+            PersonaRole.DIRECTOR_ERP,
+            {"compliance_score": 64},
+            OrganizationTypology.ERP,
+        )
+        assert "directrice" in mention
+
+    def test_compound_first_name_uses_first_part(self):
+        """Marie-Pierre (composé) → fléchi sur 'Marie' (féminin selon override)."""
+        mention = compose_persona_mention(
+            "Marie-Pierre",
+            PersonaRole.DIRECTOR_ERP,
+            {"compliance_score": 64},
+            OrganizationTypology.ERP,
+        )
+        # Marie-Pierre composé → 1ère partie "marie" = féminin override
+        assert "directrice" in mention
+
+    def test_jean_pierre_compound_masculine(self):
+        """Jean-Pierre composé → 1ère partie 'jean' = masculin (exception -e)."""
+        mention = compose_persona_mention(
+            "Jean-Pierre",
+            PersonaRole.DIRECTOR_ERP,
+            {"compliance_score": 64},
+            OrganizationTypology.ERP,
+        )
+        # Jean = exception masculine en -e (alors que naïvement -e → féminin)
+        assert "directeur" in mention
+        assert "directrice" not in mention
+
+
+class TestPhase8bisOperatDateNotHardcoded:
+    """Audit Phase 8 P1 : date OPERAT 2026 ne doit pas être hardcodée."""
+
+    def test_stable_gg_no_year_hardcoded(self):
+        """SENTENCE_STABLE_TEMPLATES[GG] ne contient plus '2026' (obsolète après)."""
+        from services.narrative.sentence_composer import SENTENCE_STABLE_TEMPLATES
+
+        sentence = SENTENCE_STABLE_TEMPLATES[OrganizationTypology.GRAND_GROUPE]
+        # Phase 8.bis : remplacé par "OPERAT annuelles" (pas "OPERAT 2026")
+        assert "2026" not in sentence
+        assert "annuelles" in sentence
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

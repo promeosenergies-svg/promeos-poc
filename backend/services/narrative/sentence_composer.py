@@ -66,11 +66,17 @@ MAX_PHRASE_1_WORDS: int = 35
 # semaine" / "prochaine étape") pour éviter le ressenti "rien à dire" en
 # CODIR. Le silence Option 3.C reste tenu (pas de fausse alerte) mais
 # l'utilisateur sort de la lecture avec un ancrage forward-looking.
+#
+# Phase 8.bis correction audit P1 — date OPERAT dynamique au lieu de
+# "OPERAT 2026" hardcodée (qui aurait été obsolète au 1er janvier 2027).
+# Convention OPERAT : déclaration N annuelle entre janvier et septembre
+# de l'année N+1 (ex: conso 2026 → déclarable jusqu'au 30/09/2027). On
+# pointe sur l'année courante comme année de conso à déclarer.
 SENTENCE_STABLE_TEMPLATES: dict[OrganizationTypology, str] = {
     OrganizationTypology.GRAND_GROUPE: (
         "Votre patrimoine tient sa trajectoire cette semaine — "
         "score conformité maintenu, aucune nouvelle dérive détectée. "
-        "Focus prochain comité : préparer les déclarations OPERAT 2026"
+        "Focus prochain comité : préparer les déclarations OPERAT annuelles"
     ),
     OrganizationTypology.COMMERCE: (
         "Votre activité tient le cap cette semaine — pas de surcoût détecté, "

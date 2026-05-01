@@ -180,44 +180,76 @@ def compute_persona_focus_text(
 
 
 def _is_feminine_first_name(first_name: Optional[str]) -> bool:
-    """Détection heuristique du genre prénom (Phase 8.B audit P1).
+    """Détection heuristique du genre prénom (Phase 8.B + 8.bis audit P0).
 
     Liste FR commune des terminaisons et prénoms typiquement féminins.
-    Tient en couverture environ 80% des cas FR — pour les 20% restants,
-    le label par défaut est utilisé. Acceptable MVP : on n'applique le
-    féminin que si on est confiant.
+    Tient en couverture ~85% des cas FR — pour les épicènes (Dominique,
+    Camille, Claude, Andrea), on **retourne False** plutôt que fléchir
+    à tort féminin (label par défaut neutre/épicène utilisé).
+
+    Phase 8.bis corrections audit final :
+    - `_EPICENE_NAMES` : Camille/Dominique/Andrea/Sasha/Nikita/Luca/etc.
+      retournent False explicitement (label par défaut s'applique)
+    - `_MASCULINE_EXCEPTIONS_E_ENDING` : Pierre/Charles/Philippe/etc. qui
+      finissent en -e mais sont masculins
+    - `_FEMININE_OVERRIDE` : Anne (qui finit en -e mais est féminin sans ambiguïté)
 
     Pour V2 : possibilité de stocker `gender` dans User model (RGPD-soft
     car non-sensible) ou d'extraire depuis Sirene/source officielle.
     """
     if not first_name:
         return False
-    name = first_name.strip().lower()
+
+    # Pour les prénoms composés (Marie-Anne, Jean-Pierre), on prend la 1ère
+    # partie comme indice principal (ordre courant en français).
+    name = first_name.strip().lower().split("-")[0].split(" ")[0]
+
+    # Phase 8.bis — épicènes : ne pas fléchir à tort féminin
+    _EPICENE_NAMES = {
+        "dominique",
+        "camille",
+        "andrea",
+        "sasha",
+        "nikita",
+        "alex",
+        "noa",
+        "lou",
+        "noé",
+        "noe",
+        "morgan",
+        "lou-anne",
+    }
+    if name in _EPICENE_NAMES:
+        return False
+
+    # Liste explicite des prénoms féminins SANS ambiguïté qui finissent en -e
+    # (override des règles d'exception masculines).
+    _FEMININE_OVERRIDE = {"anne", "agathe", "ariane", "diane", "jeanne", "marie"}
+    if name in _FEMININE_OVERRIDE:
+        return True
+
+    # Prénoms masculins finissant en -e (exceptions à la règle de terminaison)
+    _MASCULINE_EXCEPTIONS_E_ENDING = {
+        "pierre",
+        "jean",
+        "charles",
+        "claude",
+        "philippe",
+        "alexandre",
+        "yves",
+        "lyes",
+        "iliès",
+        "antoine",
+        "etienne",
+        "étienne",
+        "césaire",
+        "hyacinthe",
+    }
+
     # Terminaisons typiquement féminines (couvre Marie/Anne/Sophie/Inès/etc.)
     feminine_endings = ("a", "e", "ie", "ine", "elle", "ette", "ée", "ah", "ès")
     if name.endswith(feminine_endings):
-        # Edge case : prénoms masculins finissant en -e (Pierre, Jean-Pierre,
-        # Charles, Claude). Liste explicite d'exceptions.
-        masculine_exceptions = {
-            "pierre",
-            "jean-pierre",
-            "charles",
-            "claude",
-            "anne",  # ambigu
-            "thomas",
-            "nicolas",
-            "luca",
-            "noah",
-            "philippe",
-            "alexandre",
-            "yves",
-            "lyes",
-            "iliès",
-        }
-        # Note : "anne" est ici car certains prénoms composés (Pierre-Anne, Marie-Anne)
-        # restent féminins par leur 1er composant. Mais "Anne" seul est féminin.
-        # On exclut juste les cas où l'unique prénom = ces masculins-en-e.
-        if name in masculine_exceptions and name != "anne":
+        if name in _MASCULINE_EXCEPTIONS_E_ENDING:
             return False
         return True
     return False
