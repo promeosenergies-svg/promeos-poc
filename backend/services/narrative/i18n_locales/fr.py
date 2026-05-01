@@ -12,29 +12,41 @@ Convention placeholder : `{name}` interpolé via `i18n.t()`.
 
 CATALOG: dict[str, str] = {
     # ─── Phrases stables (silence Option 3.C avec action implicite Phase 8.C) ──
+    # Phase 11.A — sourçage §7 systématique (audit personas P0-1)
     "stable.grand_groupe": (
         "Votre patrimoine tient sa trajectoire cette semaine — "
         "score conformité maintenu, aucune nouvelle dérive détectée. "
-        "Focus prochain comité : préparer les déclarations OPERAT annuelles"
+        "Focus prochain comité : préparer les déclarations OPERAT annuelles "
+        "(source synthèse hebdo PROMEOS, confiance haute)"
     ),
     "stable.eti_tertiaire": (
         "Votre parc tient sa trajectoire cette semaine — "
         "score conformité maintenu, aucune nouvelle dérive détectée. "
-        "Focus prochain comité : préparer les déclarations OPERAT annuelles"
+        "Focus prochain comité : préparer les déclarations OPERAT annuelles "
+        "(source synthèse hebdo PROMEOS, confiance haute)"
+    ),
+    "stable.industrie": (
+        "Votre groupe industriel tient sa trajectoire cette semaine — "
+        "émissions scope 1-2-3 alignées sur la trajectoire CSRD. "
+        "Focus prochain comité : préparer le reporting CBAM trimestriel "
+        "(source synthèse hebdo PROMEOS, confiance haute)"
     ),
     "stable.commerce": (
         "Votre activité tient le cap cette semaine — pas de surcoût détecté, "
         "consommation alignée sur votre profil. "
-        "Focus prochain mois : vérifier la facture S+2 vs profil"
+        "Focus prochain mois : vérifier la facture S+2 vs profil "
+        "(source synthèse hebdo PROMEOS, confiance haute)"
     ),
     "stable.erp": (
         "Votre établissement tient sa trajectoire cette semaine — "
         "service public maintenu, pas d'écart sur la conformité. "
-        "Focus prochain conseil : préparer l'audit énergétique annuel"
+        "Focus prochain conseil : préparer l'audit énergétique annuel "
+        "(source synthèse hebdo PROMEOS, confiance haute)"
     ),
     "stable.unknown": (
         "Votre périmètre tient le cap cette semaine — pas de signal saillant. "
-        "Focus suggéré : vérifier les prochaines échéances réglementaires"
+        "Focus suggéré : vérifier les prochaines échéances réglementaires "
+        "(source synthèse hebdo PROMEOS, confiance haute)"
     ),
     # ─── DT_drift composers (Phase 1 événementielle) ───────────────────────
     "composer.dt_drift.grand_groupe": (

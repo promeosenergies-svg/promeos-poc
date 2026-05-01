@@ -119,6 +119,25 @@ LEXICAL_TEMPLATES: dict[OrganizationTypology, dict[str, object]] = {
         "improvement_term": "économies",
         "degradation_term": "écart",
     },
+    OrganizationTypology.INDUSTRIE: {
+        # Phase 11.C — Industrie manufacturière (audit personas Inès CSR_MANAGER).
+        # Vocabulaire : "site industriel", "directeur usine"/"DAF", "CSRD"
+        # / CBAM scope. Audience expert-praticien industriel (proche ETI mais
+        # registre énergie process / scope 1-2-3 spécifique).
+        "scope_singular": "votre site industriel",
+        "scope_plural": "vos sites industriels",
+        "scope_qualifier": "industriel",
+        "decision_body": "comité de direction",
+        "decision_short": "comité",
+        "owner_term": "directeur d'usine",
+        "owner_alt_term": "responsable HSE",
+        "structural_term": "groupe industriel",
+        "structural_term_alt": "sites de production",
+        "regulatory_audience": "expert-praticien industriel",
+        "avg_lecture_seconds": 120,  # CSRD/CBAM = lecture intermédiaire
+        "improvement_term": "réduction émissions",
+        "degradation_term": "écart énergétique",
+    },
     OrganizationTypology.UNKNOWN: {
         # Fallback : hérite GRAND_GROUPE (audience experte, registre neutre).
         # Si on tombe ici en prod, c'est qu'on a une org non mappée — la

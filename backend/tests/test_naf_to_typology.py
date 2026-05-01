@@ -52,7 +52,8 @@ class TestNafToTypology:
         assert resolve_typology("Z") == OrganizationTypology.UNKNOWN  # 1 char
         assert resolve_typology("ZZZZZ") == OrganizationTypology.UNKNOWN  # NAF inexistant
         assert resolve_typology("0111Z") == OrganizationTypology.UNKNOWN  # agriculture (hors MVP)
-        assert resolve_typology("2410Z") == OrganizationTypology.UNKNOWN  # sidérurgie (hors MVP)
+        # Phase 11.C : sidérurgie (préfixe 24) désormais mappée INDUSTRIE
+        assert resolve_typology("2410Z") == OrganizationTypology.INDUSTRIE
 
     # ── Couverture mapping ────────────────────────────────────────────────
 

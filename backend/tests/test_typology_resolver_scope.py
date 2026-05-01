@@ -128,9 +128,11 @@ class TestOptionAUnknownExcluded:
 
     def test_all_unknown_returns_unknown(self):
         """Si 100 % des sites sont UNKNOWN → typologie UNKNOWN (pas crash)."""
+        # Phase 11.C : sidérurgie (24) → INDUSTRIE désormais. On utilise
+        # uniquement des NAF non mappés (agriculture 0111Z + entreposage 5210B).
         sites = [
-            _mock_site("Usine", "2410Z", 5000),  # UNKNOWN
-            _mock_site("Ferme", "0111Z", 1000),  # UNKNOWN
+            _mock_site("Ferme", "0111Z", 1000),  # UNKNOWN (agriculture)
+            _mock_site("Entrepôt", "5210B", 5000),  # UNKNOWN (entreposage)
         ]
         result = _typology_dominant_for_sites(sites, scope_label="test")
         assert result == OrganizationTypology.UNKNOWN

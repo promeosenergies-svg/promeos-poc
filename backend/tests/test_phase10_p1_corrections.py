@@ -193,6 +193,7 @@ class TestPhase10dSyncStableTemplates:
         OrganizationTypology.ETI_TERTIAIRE: "eti_tertiaire",
         OrganizationTypology.COMMERCE: "commerce",
         OrganizationTypology.ERP: "erp",
+        OrganizationTypology.INDUSTRIE: "industrie",
         OrganizationTypology.UNKNOWN: "unknown",
     }
 

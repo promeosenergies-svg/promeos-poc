@@ -54,9 +54,9 @@ class TestEnumExtension:
     def test_eti_tertiaire_in_enum(self):
         assert OrganizationTypology.ETI_TERTIAIRE.value == "eti_tertiaire"
 
-    def test_enum_has_5_typologies(self):
-        """Phase 9.B : 5 typologies (GG / ETI / COMMERCE / ERP / UNKNOWN)."""
-        assert len(list(OrganizationTypology)) == 5
+    def test_enum_has_6_typologies(self):
+        """Phase 9.B + 11.C : 6 typologies (GG / ETI / COMMERCE / ERP / INDUSTRIE / UNKNOWN)."""
+        assert len(list(OrganizationTypology)) == 6
 
 
 # ─── Threshold logic ───────────────────────────────────────────────────────

@@ -25,26 +25,31 @@ CATALOG: dict[str, str] = {
     "stable.grand_groupe": (
         "Your portfolio is on track this week — "
         "compliance score maintained, no new drift detected. "
-        "Next committee focus: prepare annual OPERAT declarations"
+        "Next committee focus: prepare annual OPERAT declarations "
+        "(source: PROMEOS weekly synthesis, confidence: high)"
     ),
     "stable.eti_tertiaire": (
         "Your real estate portfolio is on track this week — "
         "compliance score maintained, no new drift detected. "
-        "Next committee focus: prepare annual OPERAT declarations"
+        "Next committee focus: prepare annual OPERAT declarations "
+        "(source: PROMEOS weekly synthesis, confidence: high)"
     ),
     "stable.commerce": (
         "Your business is on track this week — no overcharge detected, "
         "consumption aligned with your profile. "
-        "Next month focus: check S+2 invoice vs profile"
+        "Next month focus: check S+2 invoice vs profile "
+        "(source: PROMEOS weekly synthesis, confidence: high)"
     ),
     "stable.erp": (
         "Your facility is on track this week — "
         "public service maintained, no compliance gap. "
-        "Next council focus: prepare annual energy audit"
+        "Next council focus: prepare annual energy audit "
+        "(source: PROMEOS weekly synthesis, confidence: high)"
     ),
     "stable.unknown": (
         "Your perimeter is on track this week — no notable signal. "
-        "Suggested focus: review upcoming regulatory deadlines"
+        "Suggested focus: review upcoming regulatory deadlines "
+        "(source: PROMEOS weekly synthesis, confidence: high)"
     ),
     # ─── Source / confidence suffix (EN) ───────────────────────────────────
     "source_suffix": "(source: {source}, confidence: {confidence})",

@@ -45,6 +45,8 @@ class OrganizationTypology(str, Enum):
 
     Phase 1.1 : 3 typologies MVP + UNKNOWN.
     Phase 9.B : ajout ETI_TERTIAIRE (sous-typologie GG raffinée par taille).
+    Phase 11.C : ajout INDUSTRIE (NAF préfixes 10-33 manufacturier) pour
+                 le persona CSR_MANAGER groupe industriel + CBAM scope.
 
     UNKNOWN = fallback explicite (jamais erreur sur NAF inconnu).
     """
@@ -53,6 +55,7 @@ class OrganizationTypology(str, Enum):
     ETI_TERTIAIRE = "eti_tertiaire"
     COMMERCE = "commerce"
     ERP = "etablissement_recevant_public"
+    INDUSTRIE = "industrie"
     UNKNOWN = "unknown"
 
 
@@ -63,6 +66,31 @@ class OrganizationTypology(str, Enum):
 # (0X) → UNKNOWN car hors cible MVP.
 
 NAF_PREFIX_TO_TYPOLOGY: dict[str, OrganizationTypology] = {
+    # ─── Industrie manufacturière (Phase 11.C — CSR_MANAGER + CBAM) ──────
+    "10": OrganizationTypology.INDUSTRIE,  # Industries alimentaires
+    "11": OrganizationTypology.INDUSTRIE,  # Fabrication boissons
+    "12": OrganizationTypology.INDUSTRIE,  # Industrie tabac
+    "13": OrganizationTypology.INDUSTRIE,  # Fabrication textiles
+    "14": OrganizationTypology.INDUSTRIE,  # Industrie habillement
+    "15": OrganizationTypology.INDUSTRIE,  # Industrie cuir / chaussure
+    "16": OrganizationTypology.INDUSTRIE,  # Travail bois (hors meubles)
+    "17": OrganizationTypology.INDUSTRIE,  # Industrie papier / carton
+    "18": OrganizationTypology.INDUSTRIE,  # Imprimerie / reproduction
+    "19": OrganizationTypology.INDUSTRIE,  # Cokéfaction / raffinage
+    "20": OrganizationTypology.INDUSTRIE,  # Industrie chimique
+    "21": OrganizationTypology.INDUSTRIE,  # Industrie pharmaceutique
+    "22": OrganizationTypology.INDUSTRIE,  # Caoutchouc / plastiques
+    "23": OrganizationTypology.INDUSTRIE,  # Autres produits minéraux non-métal
+    "24": OrganizationTypology.INDUSTRIE,  # Métallurgie
+    "25": OrganizationTypology.INDUSTRIE,  # Produits métalliques
+    "26": OrganizationTypology.INDUSTRIE,  # Produits informatiques / électroniques
+    "27": OrganizationTypology.INDUSTRIE,  # Équipements électriques
+    "28": OrganizationTypology.INDUSTRIE,  # Machines / équipements
+    "29": OrganizationTypology.INDUSTRIE,  # Industrie automobile
+    "30": OrganizationTypology.INDUSTRIE,  # Autres matériels transport
+    "31": OrganizationTypology.INDUSTRIE,  # Fabrication meubles
+    "32": OrganizationTypology.INDUSTRIE,  # Autres industries manufacturières
+    "33": OrganizationTypology.INDUSTRIE,  # Réparation / installation machines
     # ─── Grand groupe tertiaire (sièges + foncières + finance) ───────────
     "64": OrganizationTypology.GRAND_GROUPE,  # Activités services financiers (holdings)
     "65": OrganizationTypology.GRAND_GROUPE,  # Assurance

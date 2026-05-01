@@ -116,6 +116,8 @@ MASKED_TRIGGERS_BY_TYPOLOGY: dict[OrganizationTypology, set[TriggerType]] = {
     OrganizationTypology.GRAND_GROUPE: set(),
     # Phase 9.B — ETI_TERTIAIRE : tous triggers actifs (audience expert-praticien)
     OrganizationTypology.ETI_TERTIAIRE: set(),
+    # Phase 11.C — INDUSTRIE : tous triggers actifs (audience CSR/HSE expert)
+    OrganizationTypology.INDUSTRIE: set(),
     OrganizationTypology.UNKNOWN: set(),  # Conservateur — tout actif si on ne sait pas
 }
 

@@ -76,27 +76,39 @@ SENTENCE_STABLE_TEMPLATES: dict[OrganizationTypology, str] = {
     OrganizationTypology.GRAND_GROUPE: (
         "Votre patrimoine tient sa trajectoire cette semaine — "
         "score conformité maintenu, aucune nouvelle dérive détectée. "
-        "Focus prochain comité : préparer les déclarations OPERAT annuelles"
+        "Focus prochain comité : préparer les déclarations OPERAT annuelles "
+        "(source synthèse hebdo PROMEOS, confiance haute)"
     ),
     OrganizationTypology.ETI_TERTIAIRE: (
         # Phase 9.B — Marie audit : "parc" pas "patrimoine"
         "Votre parc tient sa trajectoire cette semaine — "
         "score conformité maintenu, aucune nouvelle dérive détectée. "
-        "Focus prochain comité : préparer les déclarations OPERAT annuelles"
+        "Focus prochain comité : préparer les déclarations OPERAT annuelles "
+        "(source synthèse hebdo PROMEOS, confiance haute)"
+    ),
+    OrganizationTypology.INDUSTRIE: (
+        # Phase 11.C — Industrie manufacturière (Inès CSR_MANAGER)
+        "Votre groupe industriel tient sa trajectoire cette semaine — "
+        "émissions scope 1-2-3 alignées sur la trajectoire CSRD. "
+        "Focus prochain comité : préparer le reporting CBAM trimestriel "
+        "(source synthèse hebdo PROMEOS, confiance haute)"
     ),
     OrganizationTypology.COMMERCE: (
         "Votre activité tient le cap cette semaine — pas de surcoût détecté, "
         "consommation alignée sur votre profil. "
-        "Focus prochain mois : vérifier la facture S+2 vs profil"
+        "Focus prochain mois : vérifier la facture S+2 vs profil "
+        "(source synthèse hebdo PROMEOS, confiance haute)"
     ),
     OrganizationTypology.ERP: (
         "Votre établissement tient sa trajectoire cette semaine — "
         "service public maintenu, pas d'écart sur la conformité. "
-        "Focus prochain conseil : préparer l'audit énergétique annuel"
+        "Focus prochain conseil : préparer l'audit énergétique annuel "
+        "(source synthèse hebdo PROMEOS, confiance haute)"
     ),
     OrganizationTypology.UNKNOWN: (
         "Votre périmètre tient le cap cette semaine — pas de signal saillant. "
-        "Focus suggéré : vérifier les prochaines échéances réglementaires"
+        "Focus suggéré : vérifier les prochaines échéances réglementaires "
+        "(source synthèse hebdo PROMEOS, confiance haute)"
     ),
 }
 
@@ -148,6 +160,34 @@ from services.narrative.formatters import (
 )
 
 
+# ─── Phase 11.B — closing_clause forward-looking par typology ───────────────
+# Audit personas P0-2 : la phrase 1 raconte un fait mais ne suggère pas
+# d'action. Phase 11.B ajoute une closing_clause par typology + trigger
+# pour ancrer un cadrage temporel ou un canal d'arbitrage.
+#
+# Convention :
+#   GG/ETI : "à porter au prochain comité" (canal d'arbitrage)
+#   COMMERCE : "à vérifier sur la prochaine facture" (canal pratique)
+#   ERP : "à porter au prochain conseil" (canal officiel)
+#   UNKNOWN : pas de closing (fallback safe)
+
+
+_CLOSING_CLAUSE_BY_TYPOLOGY: dict[OrganizationTypology, str] = {
+    OrganizationTypology.GRAND_GROUPE: "à porter au prochain comité",
+    OrganizationTypology.ETI_TERTIAIRE: "à porter au prochain comité",
+    OrganizationTypology.COMMERCE: "à traiter cette semaine",
+    OrganizationTypology.ERP: "à porter au prochain conseil",
+    OrganizationTypology.INDUSTRIE: "à intégrer au reporting CSRD",
+    OrganizationTypology.UNKNOWN: "",
+}
+
+
+def _closing_for(typology: OrganizationTypology) -> str:
+    """Retourne la closing_clause typology-aware ou chaîne vide si UNKNOWN."""
+    clause = _CLOSING_CLAUSE_BY_TYPOLOGY.get(typology, "")
+    return f" — {clause}" if clause else ""
+
+
 # ─── Composeurs spécialisés par trigger ────────────────────────────────────
 
 
@@ -167,13 +207,15 @@ def compose_dt_drift_sentence(
     """
     sites_count = len(event.linked_assets.site_ids) or 1
     source_suffix = _format_source_suffix(event)
+    # Phase 11.B — closing forward-looking par typology (audit personas P0-2)
+    tail = f"{_closing_for(typology)} {source_suffix}".strip()
 
     if typology == OrganizationTypology.GRAND_GROUPE:
         plural = "s" if sites_count > 1 else ""
         verb = "ont" if sites_count > 1 else "a"
         return (
             f"{sites_count} site{plural} de votre patrimoine {verb} basculé en dérive "
-            f"du jalon Décret Tertiaire -40 % cette semaine {source_suffix}"
+            f"du jalon Décret Tertiaire -40 % cette semaine {tail}"
         )
 
     # Phase 9.B — ETI_TERTIAIRE : "parc" au lieu de "patrimoine" (audit Marie)
@@ -182,7 +224,16 @@ def compose_dt_drift_sentence(
         verb = "ont" if sites_count > 1 else "a"
         return (
             f"{sites_count} site{plural} de votre parc {verb} basculé en dérive "
-            f"du jalon Décret Tertiaire -40 % cette semaine {source_suffix}"
+            f"du jalon Décret Tertiaire -40 % cette semaine {tail}"
+        )
+
+    # Phase 11.C — INDUSTRIE : "site industriel" + scope CSRD
+    if typology == OrganizationTypology.INDUSTRIE:
+        plural = "s" if sites_count > 1 else ""
+        verb = "ont" if sites_count > 1 else "a"
+        return (
+            f"{sites_count} site industriel{plural} {verb} dépassé son budget énergétique "
+            f"cette semaine, impact scope 1-2-3 à reporter CSRD {tail}"
         )
 
     if typology == OrganizationTypology.COMMERCE:
@@ -198,15 +249,14 @@ def compose_dt_drift_sentence(
             # qualifie l'écart même sans chiffre.
             magnitude = "écart marqué"
         return (
-            f"Votre {activity} consomme {magnitude} vs la moyenne des {activity}s "
-            f"de votre région cette semaine {source_suffix}"
+            f"Votre {activity} consomme {magnitude} vs la moyenne des {activity}s de votre région cette semaine {tail}"
         )
 
     if typology == OrganizationTypology.ERP:
-        return f"Votre établissement a basculé en dérive du jalon Décret Tertiaire -40 % cette semaine {source_suffix}"
+        return f"Votre établissement a basculé en dérive du jalon Décret Tertiaire -40 % cette semaine {tail}"
 
     # UNKNOWN fallback
-    return f"Votre périmètre s'éloigne de la trajectoire 2030 cette semaine {source_suffix}"
+    return f"Votre périmètre s'éloigne de la trajectoire 2030 cette semaine {tail}"
 
 
 def compose_major_anomaly_sentence(event: SolEventCard, typology: OrganizationTypology) -> str:
@@ -214,61 +264,69 @@ def compose_major_anomaly_sentence(event: SolEventCard, typology: OrganizationTy
 
     Phase 4.0.A : `event.title` injecté SANS `.lower()` (préserve sigles
     TURPE/CTA/etc) + source + confiance.
+    Phase 11.B : closing forward-looking typology-aware.
     """
     source_suffix = _format_source_suffix(event)
     title = event.title  # Phase 4.0.A — sigles préservés (pas de .lower())
+    tail = f"{_closing_for(typology)} {source_suffix}".strip()
 
     if typology == OrganizationTypology.GRAND_GROUPE:
-        return f"Anomalie majeure détectée sur votre patrimoine cette semaine : {title} {source_suffix}"
-    # Phase 9.B — ETI_TERTIAIRE : "parc" au lieu de "patrimoine"
+        return f"Anomalie majeure détectée sur votre patrimoine cette semaine : {title} {tail}"
     if typology == OrganizationTypology.ETI_TERTIAIRE:
-        return f"Anomalie majeure détectée sur votre parc cette semaine : {title} {source_suffix}"
+        return f"Anomalie majeure détectée sur votre parc cette semaine : {title} {tail}"
+    if typology == OrganizationTypology.INDUSTRIE:
+        return f"Anomalie majeure détectée sur votre groupe industriel cette semaine : {title} {tail}"
     if typology == OrganizationTypology.COMMERCE:
-        # Empathie + verbe d'action implicite via formule "à vérifier"
-        return f"Anomalie détectée cette semaine, à vérifier : {title} {source_suffix}"
+        return f"Anomalie détectée cette semaine, à vérifier : {title} {tail}"
     if typology == OrganizationTypology.ERP:
-        return f"Anomalie majeure détectée sur votre établissement cette semaine : {title} {source_suffix}"
-    return f"Anomalie détectée cette semaine : {title} {source_suffix}"
+        return f"Anomalie majeure détectée sur votre établissement cette semaine : {title} {tail}"
+    return f"Anomalie détectée cette semaine : {title} {tail}"
 
 
 def compose_audit_deadline_sentence(event: SolEventCard, typology: OrganizationTypology) -> str:
     """Phrase 1 pour `AUDIT_DEADLINE_IMMINENT` (priorité 4).
 
     Phase 4.0.A : sigles préservés + source + confiance.
+    Phase 11.B : closing forward-looking typology-aware.
     """
     source_suffix = _format_source_suffix(event)
     title = event.title
+    tail = f"{_closing_for(typology)} {source_suffix}".strip()
 
     if typology == OrganizationTypology.GRAND_GROUPE:
-        return f"Échéance réglementaire imminente sur votre patrimoine : {title} {source_suffix}"
-    # Phase 9.B — ETI_TERTIAIRE
+        return f"Échéance réglementaire imminente sur votre patrimoine : {title} {tail}"
     if typology == OrganizationTypology.ETI_TERTIAIRE:
-        return f"Échéance réglementaire imminente sur votre parc : {title} {source_suffix}"
+        return f"Échéance réglementaire imminente sur votre parc : {title} {tail}"
+    if typology == OrganizationTypology.INDUSTRIE:
+        return f"Échéance réglementaire imminente sur votre groupe industriel : {title} {tail}"
     if typology == OrganizationTypology.COMMERCE:
-        return f"Échéance imminente, à traiter rapidement : {title} {source_suffix}"
+        return f"Échéance imminente, à traiter rapidement : {title} {tail}"
     if typology == OrganizationTypology.ERP:
-        return f"Échéance réglementaire imminente sur votre établissement : {title} {source_suffix}"
-    return f"Échéance imminente : {title} {source_suffix}"
+        return f"Échéance réglementaire imminente sur votre établissement : {title} {tail}"
+    return f"Échéance imminente : {title} {tail}"
 
 
 def compose_purchase_window_sentence(event: SolEventCard, typology: OrganizationTypology) -> str:
     """Phrase 1 pour `PURCHASE_WINDOW_OPEN` (priorité 5).
 
     Phase 4.0.A : sigles préservés + source + confiance.
+    Phase 11.B : closing forward-looking typology-aware.
     """
     source_suffix = _format_source_suffix(event)
     title = event.title
+    tail = f"{_closing_for(typology)} {source_suffix}".strip()
 
     if typology == OrganizationTypology.GRAND_GROUPE:
-        return f"Fenêtre achat ouverte sur votre patrimoine : {title} {source_suffix}"
-    # Phase 9.B — ETI_TERTIAIRE
+        return f"Fenêtre achat ouverte sur votre patrimoine : {title} {tail}"
     if typology == OrganizationTypology.ETI_TERTIAIRE:
-        return f"Fenêtre achat ouverte sur votre parc : {title} {source_suffix}"
+        return f"Fenêtre achat ouverte sur votre parc : {title} {tail}"
+    if typology == OrganizationTypology.INDUSTRIE:
+        return f"Fenêtre achat ouverte sur votre groupe industriel : {title} {tail}"
     if typology == OrganizationTypology.COMMERCE:
-        return f"Bonne fenêtre pour renégocier votre contrat : {title} {source_suffix}"
+        return f"Bonne fenêtre pour renégocier votre contrat : {title} {tail}"
     if typology == OrganizationTypology.ERP:
-        return f"Fenêtre achat ouverte sur votre établissement : {title} {source_suffix}"
-    return f"Fenêtre achat ouverte : {title} {source_suffix}"
+        return f"Fenêtre achat ouverte sur votre établissement : {title} {tail}"
+    return f"Fenêtre achat ouverte : {title} {tail}"
 
 
 # ─── Dispatch trigger → composer ───────────────────────────────────────────
