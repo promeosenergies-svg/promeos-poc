@@ -88,6 +88,8 @@ def get_page_briefing(
         )
 
     # Phase 6 — Parse simulate_date si fourni (ISO 8601 strict).
+    # Phase 7 correctif A audit P0 — bornes 1970 ≤ year ≤ now+1 an
+    # (anti-DoS doux + anti-week_iso aberrant en démo).
     simulated_now = None
     if simulate_date:
         from datetime import datetime as _dt
@@ -105,6 +107,18 @@ def get_page_briefing(
             )
         # Normaliser en UTC-aware pour cohérence avec datetime.now(timezone.utc)
         simulated_now = parsed if parsed.tzinfo else parsed.replace(tzinfo=_tz.utc)
+        # Borne anti-abus (Phase 7 correctif audit)
+        _now_utc = _dt.now(_tz.utc)
+        _max_year = _now_utc.year + 1
+        if simulated_now.year < 1970 or simulated_now.year > _max_year:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"simulate_date={simulate_date} hors plage autorisée "
+                    f"(année 1970 ≤ X ≤ {_max_year}). Évite les week_iso aberrants "
+                    f"et les abus de cache."
+                ),
+            )
 
     effective_org_id = resolve_org_id(request, auth, db)
     org = db.query(Organisation).filter(Organisation.id == effective_org_id).first()
@@ -125,6 +139,21 @@ def get_page_briefing(
         .count()
     )
 
+    # Phase 7 correctif C — extraire user info depuis auth context pour
+    # mention persona italique. Fallback safe sur None si auth absente
+    # (DEMO_MODE lenient) ou user sans prenom — la mention sera omise.
+    user_first_name = None
+    user_role = None
+    if auth and hasattr(auth, "user") and auth.user:
+        user_first_name = getattr(auth.user, "prenom", None) or None
+    # Mapping persona param → PersonaRole MVP : comex→cfo, daily→energy_manager
+    # (DG/asset_manager/owner_commerce/director_erp restent V2 ; le builder
+    # tombera sur fallback générique si role inconnu).
+    if persona == "comex":
+        user_role = "cfo"
+    elif persona == "daily":
+        user_role = "energy_manager"
+
     narrative = generate_page_narrative(
         db=db,
         page_key=page_key,
@@ -134,6 +163,8 @@ def get_page_briefing(
         persona=persona,
         archetype=archetype,
         now=simulated_now,
+        user_first_name=user_first_name,
+        user_role=user_role,
     )
 
     payload = narrative.to_dict()

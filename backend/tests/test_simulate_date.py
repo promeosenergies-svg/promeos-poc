@@ -239,5 +239,93 @@ class TestRouteSimulateDate:
             app.dependency_overrides.clear()
 
 
+# ─── Phase 7 correctif A — bornes simulate_date (P0-2 audit) ──────────────
+
+
+class TestSimulateDateBounds:
+    """Source-guards : simulate_date borné 1970 ≤ year ≤ now+1 an."""
+
+    def test_simulate_date_year_1900_rejected(self, db_session, helios_org):
+        """Année 1900 → 400 (avant 1970)."""
+        from fastapi.testclient import TestClient
+
+        from database import get_db
+        from main import app
+
+        org, _ = helios_org
+
+        def _override_db():
+            try:
+                yield db_session
+            finally:
+                pass
+
+        app.dependency_overrides[get_db] = _override_db
+        try:
+            client = TestClient(app)
+            response = client.get(
+                f"/api/pages/cockpit_comex/briefing?org_id={org.id}&persona=comex&simulate_date=1900-06-15"
+            )
+            assert response.status_code == 400
+            assert "hors plage" in response.json().get("message", "")
+        finally:
+            app.dependency_overrides.clear()
+
+    def test_simulate_date_year_9999_rejected(self, db_session, helios_org):
+        """Année 9999 → 400 (au-delà now+1 an)."""
+        from fastapi.testclient import TestClient
+
+        from database import get_db
+        from main import app
+
+        org, _ = helios_org
+
+        def _override_db():
+            try:
+                yield db_session
+            finally:
+                pass
+
+        app.dependency_overrides[get_db] = _override_db
+        try:
+            client = TestClient(app)
+            response = client.get(
+                f"/api/pages/cockpit_comex/briefing?org_id={org.id}&persona=comex&simulate_date=9999-12-31"
+            )
+            assert response.status_code == 400
+            assert "hors plage" in response.json().get("message", "")
+        finally:
+            app.dependency_overrides.clear()
+
+    def test_simulate_date_current_year_accepted(self, db_session, helios_org):
+        """Année courante → 200 (cas nominal)."""
+        from datetime import datetime, timezone
+        from fastapi.testclient import TestClient
+        from unittest.mock import patch
+
+        from database import get_db
+        from main import app
+
+        org, _ = helios_org
+        current_year = datetime.now(timezone.utc).year
+
+        def _override_db():
+            try:
+                yield db_session
+            finally:
+                pass
+
+        app.dependency_overrides[get_db] = _override_db
+        try:
+            client = TestClient(app)
+            with patch("services.event_bus.compute_events", return_value=[]):
+                response = client.get(
+                    f"/api/pages/cockpit_comex/briefing?org_id={org.id}&persona=comex&simulate_date={current_year}-06-15"
+                )
+            assert response.status_code == 200
+        finally:
+            app.dependency_overrides.clear()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

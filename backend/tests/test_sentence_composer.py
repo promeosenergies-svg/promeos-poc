@@ -109,6 +109,46 @@ class TestSentence1DriftByTypology:
         assert "magasin" in sentence  # fallback NAF None
         assert "région" in sentence
 
+    def test_sentence_1_drift_commerce_naf_propagated_uses_boulangerie(self):
+        """Phase 7 correctif B : NAF 4724Z propagé → 'boulangerie' (pas 'magasin')."""
+        event = _make_event("consumption_drift", site_ids=[1])
+        sentence = compose_dt_drift_sentence(event, OrganizationTypology.COMMERCE, naf_code="4724Z")
+        assert "boulangerie" in sentence
+        assert "magasin" not in sentence
+
+    def test_sentence_1_drift_commerce_naf_5610a_uses_restaurant(self):
+        """Phase 7 correctif B : NAF 5610A → 'restaurant'."""
+        event = _make_event("consumption_drift", site_ids=[1])
+        sentence = compose_dt_drift_sentence(event, OrganizationTypology.COMMERCE, naf_code="5610A")
+        assert "restaurant" in sentence
+
+    def test_compose_sentence_1_eventful_propagates_naf(self):
+        """compose_sentence_1_eventful propage naf_code à compose_dt_drift_sentence."""
+        event = _make_event("consumption_drift", site_ids=[1])
+        prioritization = {
+            "primary": TriggerType.DT_TRAJECTORY_DRIFT,
+            "primary_event": event,
+            "secondary": None,
+            "secondary_event": None,
+            "all_active_triggers": [TriggerType.DT_TRAJECTORY_DRIFT],
+        }
+        sentence = compose_sentence_1_eventful(prioritization, OrganizationTypology.COMMERCE, naf_code="4724Z")
+        assert "boulangerie" in sentence
+
+    def test_compose_sentence_1_eventful_naf_ignored_for_non_drift(self):
+        """naf_code ignoré silencieusement pour composers qui ne l'acceptent pas."""
+        event = _make_event("billing_anomaly", title="TURPE")
+        prioritization = {
+            "primary": TriggerType.MAJOR_ANOMALY,
+            "primary_event": event,
+            "secondary": None,
+            "secondary_event": None,
+            "all_active_triggers": [TriggerType.MAJOR_ANOMALY],
+        }
+        # naf_code passé mais major_anomaly_sentence ne l'utilise pas → pas d'erreur
+        sentence = compose_sentence_1_eventful(prioritization, OrganizationTypology.COMMERCE, naf_code="4724Z")
+        assert "TURPE" in sentence
+
     def test_sentence_1_drift_erp_uses_etablissement(self):
         """Phrase ERP utilise 'établissement' (vocabulaire service public)."""
         event = _make_event("consumption_drift", site_ids=[1])

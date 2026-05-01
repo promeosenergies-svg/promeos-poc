@@ -552,6 +552,8 @@ def _build_cockpit_comex(
     sites_count: int,
     *,
     now: Optional[datetime] = None,  # Phase 6 — simulate_date
+    user_first_name: Optional[str] = None,  # Phase 7 correctif C — persona mention
+    user_role: Optional[str] = None,  # PersonaRole.value (ex: "cfo")
 ) -> Narrative:
     """Sprint 1.2 — Vue COMEX Jean-Marc CFO.
 
@@ -792,9 +794,55 @@ def _build_cockpit_comex(
     from services.narrative.trigger_prioritizer import prioritize_triggers
 
     prioritization = prioritize_triggers(events_comex, typology)
-    sentence_1 = compose_sentence_1_eventful(prioritization, typology)
+    # Phase 7 correctif B — résoudre le NAF du site primaire pour propager
+    # à compose_dt_drift_sentence (Commerce → boulangerie/restaurant/etc.).
+    primary_naf_code = None
+    if prioritization.get("primary_event"):
+        ev = prioritization["primary_event"]
+        primary_site_ids = list(ev.linked_assets.site_ids)
+        if primary_site_ids:
+            from models import Site
+
+            primary_site = db.query(Site).filter(Site.id == primary_site_ids[0], Site.deleted_at.is_(None)).first()
+            if primary_site:
+                primary_naf_code = primary_site.naf_code
+    sentence_1 = compose_sentence_1_eventful(prioritization, typology, naf_code=primary_naf_code)
     if sentence_1:
         narrative = (sentence_1 + ". " + narrative).strip()
+
+    # ── Phase 7 correctif C — variation tonale lexicale (audit P1) ──
+    # Adapter le registre du body au tone calculé (CRITICAL/TENSION/POSITIVE).
+    # Le calcul de tone est déjà en place ligne ~782 (narrative_tone =
+    # _compute_tone(...)). On l'avance ici pour l'utiliser.
+    _tone_for_variation = _compute_tone(non_conformes, a_risque, conformite_score)
+    from services.narrative.tone_variator import apply_tone_variation
+
+    narrative = apply_tone_variation(narrative, _tone_for_variation.value, typology)
+
+    # ── Phase 7 correctif C — mention persona italique (audit P1) ──
+    # Si user_first_name + user_role fournis, on compose la mention italique
+    # qui surchargera l'italic_hook par défaut "vue mensuelle direction".
+    persona_mention: Optional[str] = None
+    if user_first_name and user_role:
+        try:
+            from services.narrative.persona_context import PersonaRole, compose_persona_mention
+
+            role_enum = PersonaRole(user_role)
+            persona_facts = {
+                "exposure_eur": risque_total,
+                "compliance_score": conformite_score,
+                "levers_mwh_year": levers_mwh_year,
+            }
+            persona_mention = compose_persona_mention(
+                user_first_name,
+                role_enum,
+                persona_facts,
+                typology,
+                naf_code=primary_naf_code,
+            )
+        except (ValueError, KeyError):
+            # user_role inconnu → fallback silencieux sur italic_hook par défaut
+            persona_mention = None
 
     # Phase 4.0.B — payload structuré pour FE (chip primary, drill-down site_id)
     primary_trigger_payload = None
@@ -832,7 +880,8 @@ def _build_cockpit_comex(
         persona="comex",
         kicker=kicker,
         title=title,
-        italic_hook=italic_hook,
+        # Phase 7 correctif C — italic_hook = mention persona si dispo, sinon default
+        italic_hook=persona_mention if persona_mention else italic_hook,
         narrative=narrative,
         narrative_tone=narrative_tone,
         kpis=tuple(_enforce_canonical_kpi_template(kpis)),
@@ -3133,6 +3182,8 @@ def generate_page_narrative(
     persona: Persona = "daily",
     archetype: Optional[str] = None,  # Sprint 3 chantier β
     now: Optional[datetime] = None,  # Phase 6 — simulate_date override
+    user_first_name: Optional[str] = None,  # Phase 7 correctif C — mention persona
+    user_role: Optional[str] = None,  # PersonaRole.value
 ) -> Narrative:
     """Entry point public : génère le récit complet d'une page Sol.
 
@@ -3154,11 +3205,16 @@ def generate_page_narrative(
             f"Narrative builder pour page_key='{page_key}' pas encore implémenté. "
             f"MVP Sprint 1.1 : cockpit_daily. Sprint 1.2-1.3 étendra aux autres pages."
         )
-    # Phase 6 — kwargs propagés aux builders qui les acceptent. inspect.signature
-    # check pour rétrocompat builders legacy qui ne connaissent pas `now`.
+    # Phase 6+7 — kwargs propagés aux builders qui les acceptent.
+    # inspect.signature check pour rétrocompat builders legacy.
     import inspect
 
     sig = inspect.signature(builder)
+    optional_kwargs = {}
     if "now" in sig.parameters:
-        return builder(db, org_id, org_name, sites_count, now=now)
-    return builder(db, org_id, org_name, sites_count)
+        optional_kwargs["now"] = now
+    if "user_first_name" in sig.parameters:
+        optional_kwargs["user_first_name"] = user_first_name
+    if "user_role" in sig.parameters:
+        optional_kwargs["user_role"] = user_role
+    return builder(db, org_id, org_name, sites_count, **optional_kwargs)

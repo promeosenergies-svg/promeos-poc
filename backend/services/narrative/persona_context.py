@@ -77,24 +77,9 @@ PERSONA_FOCUS: dict[PersonaRole, str] = {
 }
 
 
-def _format_eur_short(value: Optional[float]) -> str:
-    """Formatage court € (k€, M€) pour mention persona inline.
-
-    Examples:
-        >>> _format_eur_short(12750)
-        '12,7 k€'
-        >>> _format_eur_short(1500000)
-        '1,5 M€'
-        >>> _format_eur_short(450)
-        '450 €'
-    """
-    if value is None:
-        return "—"
-    if abs(value) >= 1_000_000:
-        return f"{value / 1_000_000:.1f} M€".replace(".", ",")
-    if abs(value) >= 1_000:
-        return f"{value / 1_000:.1f} k€".replace(".", ",")
-    return f"{round(value)} €"
+# Phase 7 correctif D — délégation au SoT canonique services/narrative/formatters.py
+# Conserve l'alias _format_eur_short pour rétrocompat des tests.
+from services.narrative.formatters import format_eur_short as _format_eur_short  # noqa: F401
 
 
 def compute_persona_focus_text(

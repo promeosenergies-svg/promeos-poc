@@ -119,46 +119,31 @@ def _format_source_suffix(event: SolEventCard) -> str:
     return f"(source {src}, confiance {conf})"
 
 
-def _format_eur_fr(value: float) -> str:
-    """Formate un montant en € avec espaces français comme séparateurs milliers.
-
-    Examples:
-        >>> _format_eur_fr(1234)
-        '1 234 €'
-        >>> _format_eur_fr(1234567.5)
-        '1 234 568 €'
-    """
-    rounded = round(value)
-    # Format avec séparateur espace insécable (\xa0 → ' ' simple pour SQL/log compat)
-    formatted = f"{rounded:,}".replace(",", " ")
-    return f"{formatted} €"
-
-
-def _format_pct_fr(value: float) -> str:
-    """Formate un pourcentage avec signe explicite et 0 décimale.
-
-    Examples:
-        >>> _format_pct_fr(14.3)
-        '+14 %'
-        >>> _format_pct_fr(-12.7)
-        '−13 %'
-    """
-    rounded = round(value)
-    if rounded > 0:
-        return f"+{rounded} %"
-    if rounded < 0:
-        return f"−{abs(rounded)} %"
-    return "0 %"
+# Phase 7 correctif D — délégation au SoT canonique services/narrative/formatters.py.
+# Aliases internes conservent les noms historiques (_format_eur_fr / _format_pct_fr)
+# pour minimiser la surface de modification et préserver les imports test existants.
+from services.narrative.formatters import (
+    format_eur_thousand as _format_eur_fr,  # noqa: F401
+    format_pct_short as _format_pct_fr,  # noqa: F401
+)
 
 
 # ─── Composeurs spécialisés par trigger ────────────────────────────────────
 
 
-def compose_dt_drift_sentence(event: SolEventCard, typology: OrganizationTypology) -> str:
+def compose_dt_drift_sentence(
+    event: SolEventCard,
+    typology: OrganizationTypology,
+    naf_code: Optional[str] = None,
+) -> str:
     """Phrase 1 pour `DT_TRAJECTORY_DRIFT` (priorité 1).
 
     Phase 4.0.A : injecte source + confiance ; Commerce reçoit un chiffre
     `event.impact.value` formaté FR pour ancrage quantitatif (anti-paternalisme §6).
+
+    Phase 7 correctif B : `naf_code` propage le NAF du site lié pour Commerce
+    → "boulangerie" / "restaurant" / etc. au lieu du générique "magasin"
+    (bug audit final P0 latent).
     """
     sites_count = len(event.linked_assets.site_ids) or 1
     source_suffix = _format_source_suffix(event)
@@ -172,8 +157,8 @@ def compose_dt_drift_sentence(event: SolEventCard, typology: OrganizationTypolog
         )
 
     if typology == OrganizationTypology.COMMERCE:
-        # Phase 4.0.A — anti-paternalisme : injection chiffre concret
-        activity = get_activity_name(None)
+        # Phase 4.0.A + Phase 7 correctif B — NAF résolu, plus de "magasin" générique
+        activity = get_activity_name(naf_code)
         impact = event.impact.value
         if impact is not None and event.impact.unit == "%":
             magnitude = _format_pct_fr(impact)
@@ -269,6 +254,7 @@ TRIGGER_TO_COMPOSER: dict[TriggerType, Callable[[SolEventCard, OrganizationTypol
 def compose_sentence_1_eventful(
     prioritization: TriggerPrioritization,
     typology: OrganizationTypology,
+    naf_code: Optional[str] = None,
 ) -> str:
     """Compose la phrase 1 événementielle du body narratif.
 
@@ -278,6 +264,9 @@ def compose_sentence_1_eventful(
     Args:
         prioritization: sortie de `prioritize_triggers` (Phase 3.2).
         typology: typologie organisationnelle (Phase 1.2).
+        naf_code: code NAF du site primaire (Phase 7 correctif B). Propagé
+            uniquement à `compose_dt_drift_sentence` qui en a besoin pour
+            résoudre l'activity Commerce. Les autres composers ignorent.
 
     Returns:
         Phrase 1 prête à insérer en début de body. Pas de point final
@@ -294,6 +283,14 @@ def compose_sentence_1_eventful(
         # Trigger non event-driven → fallback stable typologique
         return SENTENCE_STABLE_TEMPLATES.get(typology, SENTENCE_STABLE_TEMPLATES[OrganizationTypology.UNKNOWN])
 
+    # Phase 7 correctif B — propager naf_code uniquement aux composers qui
+    # l'acceptent (cf inspect.signature). DT_drift l'utilise, les autres
+    # ignorent silencieusement (rétrocompat).
+    import inspect
+
+    sig = inspect.signature(composer)
+    if "naf_code" in sig.parameters:
+        return composer(primary_event, typology, naf_code=naf_code)
     return composer(primary_event, typology)
 
 
