@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROMEOS — Narrative dynamique typologie Établissement recevant du public</title>
+<style>
+:root {
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f7f5ef;
+  --color-background-tertiary: #f1efe8;
+  --color-background-info: #e6f1fb;
+  --color-background-danger: #fcebeb;
+  --color-background-success: #eaf3de;
+  --color-background-warning: #faeeda;
+  --color-text-primary: #1a1815;
+  --color-text-secondary: #5a5853;
+  --color-text-tertiary: #8a8780;
+  --color-text-info: #185fa5;
+  --color-text-danger: #a32d2d;
+  --color-text-success: #3b6d11;
+  --color-text-warning: #854f0b;
+  --color-border-tertiary: rgba(26, 24, 21, 0.12);
+  --color-border-secondary: rgba(26, 24, 21, 0.22);
+  --color-border-danger: rgba(163, 45, 45, 0.3);
+  --color-border-warning: rgba(133, 79, 11, 0.3);
+  --color-border-success: rgba(59, 109, 17, 0.3);
+  --color-border-info: rgba(24, 95, 165, 0.3);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+  --font-serif: "Fraunces", "Source Serif Pro", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+* { box-sizing: border-box; }
+body { margin:0; padding:24px; background:var(--color-background-tertiary); font-family:var(--font-sans); color:var(--color-text-primary); font-size:14px; line-height:1.5; }
+.er-mono { font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--color-text-tertiary); }
+.er-page { max-width:1280px; margin:0 auto; padding:1.4rem 1.6rem 1.2rem; background:var(--color-background-primary); border-radius:var(--border-radius-lg); border:.5px solid var(--color-border-tertiary); margin-bottom:24px; }
+.er-h1 { font-family:var(--font-serif); font-size:24px; font-weight:500; line-height:1.2; margin:.3rem 0 .15rem; }
+.er-h1 em { font-style:italic; color:var(--color-text-secondary); font-weight:400; }
+.er-narrative { font-size:15px; line-height:1.65; color:var(--color-text-secondary); margin:1rem 0 1.2rem; max-width:64ch; }
+.er-narrative .lead { color:var(--color-text-primary); font-weight:500; }
+.er-narrative .delta-up { color:var(--color-text-danger); font-weight:500; }
+.er-narrative .delta-down { color:var(--color-text-success); font-weight:500; }
+.er-narrative .persona-mention { font-style:italic; color:var(--color-text-info); display:block; margin-top:.6rem; padding-left:.7rem; border-left:2px solid var(--color-border-info); }
+.er-variant-label { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--color-text-secondary); padding:3px 9px; border-radius:4px; background:var(--color-background-secondary); display:inline-block; margin-bottom:.7rem; }
+.er-variant-label.danger { background:var(--color-background-danger); color:var(--color-text-danger); }
+.er-variant-label.warning { background:var(--color-background-warning); color:var(--color-text-warning); }
+.er-variant-label.info { background:var(--color-background-info); color:var(--color-text-info); }
+.er-variant-label.success { background:var(--color-background-success); color:var(--color-text-success); }
+.er-doctrine-note { background:var(--color-background-secondary); border-left:3px solid var(--color-text-info); padding:10px 14px; border-radius:4px; font-size:12.5px; color:var(--color-text-secondary); line-height:1.5; margin:1rem 0 1.5rem; max-width:72ch; }
+.er-footer-source { font-family:var(--font-mono); font-size:10px; letter-spacing:.05em; color:var(--color-text-tertiary); padding-top:.7rem; border-top:.5px solid var(--color-border-tertiary); margin-top:1rem; }
+</style>
+</head>
+<body>
+
+<!--
+==============================================================================
+  MAQUETTE NARRATIVE DYNAMIQUE — TYPOLOGIE ÉTABLISSEMENT RECEVANT DU PUBLIC
+
+  Audience : directeur école / directeur EHPAD / directeur hôpital / directeur médiathèque
+  NAF : 8510Z (enseignement primaire), 8531Z (collège), 8610Z (hôpital), 8730A (EHPAD)
+  Vocabulaire : "établissement", "usagers", "élèves", "résidents", "équipe direction"
+                PAS de patrimoine, PAS de CODIR, PAS de propriétaire
+  Personas : Mme Durand (directrice école) · M. Lefèvre (directeur EHPAD) · Dr Martin (DG hôpital)
+
+  Différences vs Grand groupe :
+  - Vocabulaire mission de service public ("usagers", "élèves", "résidents", "patients")
+  - Mention contraintes spécifiques : occupation, sécurité, confort, périodes vacances
+  - Audit énergétique obligatoire = enjeu plus prégnant (financement public souvent)
+  - "Conseil d'administration" ou "comité de direction" au lieu de CODIR
+  - Réglementation expliquée pédagogiquement
+  - Sourçage en footer
+
+  Différences vs Commerce :
+  - Conso significative (école 95 kWh/m²/an, EHPAD 280 kWh/m²/an, hôpital 350 kWh/m²/an)
+  - Enjeu confort des usagers prend autant de place que enjeu financier
+  - Lien vers tutelle (préfecture, ARS, rectorat) parfois pertinent
+
+  6 déclencheurs hiérarchisés visualisés ci-dessous + 1 variante stable.
+==============================================================================
+-->
+
+<div class="er-page">
+  <div class="er-mono">Cockpit · Synthèse stratégique · Maquette narrative</div>
+  <h1 class="er-h1">Typologie <em>Établissement recevant du public</em> — 6 variantes de déclencheurs</h1>
+
+  <div class="er-doctrine-note">
+    <strong>Doctrine ERP</strong> : narrative équilibrée entre enjeu financier et mission de service public. Vocabulaire <em>« votre établissement »</em>, <em>« les usagers »</em>, <em>« les élèves »</em>, <em>« les résidents »</em>. Contraintes spécifiques d'occupation, sécurité, confort. Réglementation pédagogique sans jargon. Mention <em>« conseil d'administration »</em> ou <em>« comité de direction »</em> au lieu de CODIR. Audit énergétique souvent enjeu prégnant.
+  </div>
+</div>
+
+<!-- VARIANTE 1 — Trigger 1 : Dérive trajectoire DT -->
+<div class="er-page">
+  <span class="er-variant-label danger">Trigger #1 · Dérive trajectoire 2030</span>
+  <div class="er-narrative">
+    <span class="lead">Votre école a basculé en dérive de la trajectoire 2030 cette semaine</span> — la consommation a augmenté de 15 % alors que la loi vous demande de la réduire de 40 % d'ici 2030 par rapport à 2020. L'écart est rattrapable avec des actions ciblées (programmation horaire CVC pendant les vacances scolaires, isolation des fenêtres mansardes), mais sans intervention l'établissement s'expose à une pénalité administrative de 7 500 € par an à partir de 2031.
+    <span class="persona-mention">Pour <strong>Mme Durand</strong>, directrice : sujet à présenter au prochain conseil d'administration — note de 2 pages disponible dans votre espace Conformité.</span>
+  </div>
+  <div class="er-footer-source">
+    Sources réglementaires · Décret tertiaire n°2019-771 art. 9 (jalons obligatoires −40 % / 2030, −50 % / 2040, −60 % / 2050) · Pénalité légale 7 500 €/an si non-conformité 2031 · Référence consommation année 2020 · Surface utile 2 800 m² · 6 200 élèves cumulés sur 5 années.
+  </div>
+</div>
+
+<!-- VARIANTE 2 — Trigger 2 : Anomalie majeure semaine -->
+<div class="er-page">
+  <span class="er-variant-label danger">Trigger #2 · Anomalie majeure semaine</span>
+  <div class="er-narrative">
+    <span class="lead">Le chauffage de votre école a fonctionné samedi et dimanche dernier alors que l'établissement était fermé</span> — consommation atypique de 1 200 kWh sur ces 2 jours, soit environ 100 € jetés en coût direct. Probable défaut de programmation horaire ou thermostat resté actif. Aucun impact sur le confort des élèves le lundi matin, mais reproduction à éviter pour la semaine prochaine.
+    <span class="persona-mention">Pour <strong>Mme Durand</strong>, directrice : signaler à votre régisseur technique — la programmation horaire CVC doit être vérifiée avant le prochain week-end.</span>
+  </div>
+  <div class="er-footer-source">
+    Sources données · Compteur Enedis 30 minutes · Détection anomalie via algorithme PROMEOS · Calculé sur tarif électricité moyen 0,082 €/kWh contrat actuel · Décret BACS n°2020-887 (pilotage CVC obligatoire ≥ 70 kW à partir du 01/01/2030).
+  </div>
+</div>
+
+<!-- VARIANTE 3 — Trigger 3 : Variation forte coût vs S-1 -->
+<div class="er-page">
+  <span class="er-variant-label warning">Trigger #3 · Augmentation budget énergie vs semaine dernière</span>
+  <div class="er-narrative">
+    <span class="lead">La consommation de votre EHPAD a augmenté de <span class="delta-up">+ 14 % cette semaine</span></span>, équivalent à environ 380 € de surcoût hebdomadaire. La cause principale est météo : 18 % de degrés-jours unifiés en plus que la semaine précédente, ce qui sollicite davantage le chauffage. Le confort des résidents est préservé (températures dans la fourchette cible 20-22 °C). Pas d'action requise immédiate, mais surveillance recommandée si vague de froid prolongée.
+    <span class="persona-mention">Pour <strong>M. Lefèvre</strong>, directeur : si la météo se maintient, prévoir +1 540 €/mois sur la facture — le budget annuel reste tenu à ce stade.</span>
+  </div>
+  <div class="er-footer-source">
+    Sources données · Comparaison semaine 17 vs 18 corrigée DJU · Mesure température ambiante via sondes EMS · Sources tarifs · TURPE 7 + accise gaz 10,73 €/MWh actif depuis février 2026 · Calcul tarif moyen 0,094 €/kWh contrat actuel.
+  </div>
+</div>
+
+<!-- VARIANTE 4 — Trigger 4 : Échéance audit énergétique imminente -->
+<div class="er-page">
+  <span class="er-variant-label warning">Trigger #4 · Audit énergétique obligatoire à programmer</span>
+  <div class="er-narrative">
+    <span class="lead">L'audit énergétique obligatoire de votre hôpital est à programmer avant le 11 octobre 2026</span> — soit dans 167 jours. Sans audit réalisé d'ici cette date, l'établissement risque 15 000 € de sanction administrative et la perte d'éligibilité aux aides financières CEE pour les futures rénovations. L'audit permet aussi d'identifier 8 à 12 % d'économies sur la facture annuelle, soit potentiellement 35 000 à 52 000 € d'économies par an pour un établissement de votre taille.
+    <span class="persona-mention">Pour <strong>Dr Martin</strong>, DG : trois auditeurs accrédités spécialisés santé identifiés dans la région — devis moyen 8 500 € sur le scope complet de l'établissement.</span>
+  </div>
+  <div class="er-footer-source">
+    Sources réglementaires · Code de l'énergie L233-1 (audit obligatoire entreprises > 250 salariés OU > 50 M€ CA · ce qui concerne votre établissement) · Code L233-2 (sanction administrative DGEC 15 000 €) · Norme ISO 50001 · Annuaire OPQIBI auditeurs accrédités · Surface utile 8 400 m² · 4 600 MWh/an.
+  </div>
+</div>
+
+<!-- VARIANTE 5 — Trigger 5 : Fenêtre achat marché favorable -->
+<div class="er-page">
+  <span class="er-variant-label info">Trigger #5 · Bonne période pour renégocier votre contrat électricité</span>
+  <div class="er-narrative">
+    <span class="lead">Votre contrat électricité actuel arrive à échéance dans 3 mois et le marché est favorable cette semaine</span> — les prix de gros sont 22 % en dessous de leur niveau de 2024. Sur le profil de consommation de votre EHPAD (environ 720 MWh/an avec pointes hivernales), vous pourriez économiser <span class="delta-down">entre 12 000 € et 18 000 € par an</span> en renégociant maintenant avec un nouveau fournisseur. Cet argent économisé peut financer 2 à 3 actions de réduction de consommation supplémentaires.
+    <span class="persona-mention">Pour <strong>M. Lefèvre</strong>, directeur : si l'établissement dépend d'une centrale d'achat publique, vérifier l'éligibilité à un avenant — sinon 4 fournisseurs identifiés sur votre profil.</span>
+  </div>
+  <div class="er-footer-source">
+    Sources marché · EPEX spot semaine 18, prix moyen 78 €/MWh vs 100 €/MWh moyenne 2024 · Contrat actuel échéance 15/07/2026 · Sources réglementaires · post-ARENH 01/01/2026 · TURPE 7 · Versement Nucléaire Universel · UGAP centrale d'achat publique éligible.
+  </div>
+</div>
+
+<!-- VARIANTE 6 — Trigger 6 : Score conformité bascule sous seuil -->
+<div class="er-page">
+  <span class="er-variant-label warning">Trigger #6 · Score conformité bascule sous seuil critique</span>
+  <div class="er-narrative">
+    <span class="lead">Le score conformité de votre établissement a basculé sous le seuil de 40/100 cette semaine</span> — il passe de 41 à 37/100 après dégradation de l'obligation Décret BACS (système de pilotage CVC absent sur la zone hospitalisation conventionnelle). L'écart vs la trajectoire 2030 reste rattrapable, mais l'établissement a maintenant deux obligations réglementaires simultanées à traiter : Décret tertiaire (réduction conso) et Décret BACS (installation pilotage CVC).
+    <span class="persona-mention">Pour <strong>Dr Martin</strong>, DG : décision structurante pour le prochain conseil de surveillance — l'investissement BACS est éligible aux aides CEE (~ 25 % du coût pris en charge).</span>
+  </div>
+  <div class="er-footer-source">
+    Sources réglementaires · Décret BACS n°2020-887 (pilotage CVC ≥ 70 kW depuis 01/01/2030 pour bâtiments existants) · Pondération PROMEOS · Décret tertiaire 45 % / Décret BACS 30 % / Loi APER 25 % · Programme CEE BAT-TH-116 (aide installation BACS) · Surface 8 400 m².
+  </div>
+</div>
+
+<!-- VARIANTE 7 — Stable, aucun déclencheur actif -->
+<div class="er-page">
+  <span class="er-variant-label success">Aucun signal · semaine stable</span>
+  <div class="er-narrative">
+    <span class="lead">Votre établissement est stable cette semaine — aucune dérive ni alerte significative à signaler.</span> La consommation reste dans la moyenne attendue pour un EHPAD de votre taille et la trajectoire 2030 reste rattrapable. Trois actions structurantes restent ouvertes dans votre plan d'action : reprogrammation horaire CVC pendant les vacances, audit énergétique à programmer, et étude de remplacement des chaudières.
+    <span class="persona-mention">Pour <strong>M. Lefèvre</strong>, directeur : période propice à arbitrage des 3 actions ouvertes — agenda comité de direction du jeudi 30 avril.</span>
+  </div>
+  <div class="er-footer-source">
+    Sources · Compteur Enedis + GRDF 30 minutes · RegOps + RegAssessment · Décret tertiaire n°2019-771 · Décret BACS n°2020-887 · Code de l'énergie L233-1 · Surface 4 800 m² · 1 800 MWh/an · Mise à jour il y a 14 h.
+  </div>
+</div>
+
+</body>
+</html>

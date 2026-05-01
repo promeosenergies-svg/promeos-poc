@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROMEOS — Narrative dynamique typologie Grand groupe tertiaire</title>
+<style>
+:root {
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f7f5ef;
+  --color-background-tertiary: #f1efe8;
+  --color-background-info: #e6f1fb;
+  --color-background-danger: #fcebeb;
+  --color-background-success: #eaf3de;
+  --color-background-warning: #faeeda;
+  --color-text-primary: #1a1815;
+  --color-text-secondary: #5a5853;
+  --color-text-tertiary: #8a8780;
+  --color-text-info: #185fa5;
+  --color-text-danger: #a32d2d;
+  --color-text-success: #3b6d11;
+  --color-text-warning: #854f0b;
+  --color-border-tertiary: rgba(26, 24, 21, 0.12);
+  --color-border-secondary: rgba(26, 24, 21, 0.22);
+  --color-border-danger: rgba(163, 45, 45, 0.3);
+  --color-border-warning: rgba(133, 79, 11, 0.3);
+  --color-border-success: rgba(59, 109, 17, 0.3);
+  --color-border-info: rgba(24, 95, 165, 0.3);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+  --font-serif: "Fraunces", "Source Serif Pro", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+* { box-sizing: border-box; }
+body { margin:0; padding:24px; background:var(--color-background-tertiary); font-family:var(--font-sans); color:var(--color-text-primary); font-size:14px; line-height:1.5; }
+.gg-mono { font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--color-text-tertiary); }
+.gg-page { max-width:1280px; margin:0 auto; padding:1.4rem 1.6rem 1.2rem; background:var(--color-background-primary); border-radius:var(--border-radius-lg); border:.5px solid var(--color-border-tertiary); margin-bottom:24px; }
+.gg-h1 { font-family:var(--font-serif); font-size:24px; font-weight:500; line-height:1.2; margin:.3rem 0 .15rem; }
+.gg-h1 em { font-style:italic; color:var(--color-text-secondary); font-weight:400; }
+.gg-narrative { font-size:15px; line-height:1.65; color:var(--color-text-secondary); margin:1rem 0 1.2rem; max-width:64ch; }
+.gg-narrative .lead { color:var(--color-text-primary); font-weight:500; }
+.gg-narrative .neutral { color:var(--color-text-secondary); }
+.gg-narrative .delta-up { color:var(--color-text-danger); font-weight:500; }
+.gg-narrative .delta-down { color:var(--color-text-success); font-weight:500; }
+.gg-narrative .persona-mention { font-style:italic; color:var(--color-text-info); display:block; margin-top:.6rem; padding-left:.7rem; border-left:2px solid var(--color-border-info); }
+.gg-variant-label { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--color-text-secondary); padding:3px 9px; border-radius:4px; background:var(--color-background-secondary); display:inline-block; margin-bottom:.7rem; }
+.gg-variant-label.danger { background:var(--color-background-danger); color:var(--color-text-danger); }
+.gg-variant-label.warning { background:var(--color-background-warning); color:var(--color-text-warning); }
+.gg-variant-label.info { background:var(--color-background-info); color:var(--color-text-info); }
+.gg-variant-label.success { background:var(--color-background-success); color:var(--color-text-success); }
+.gg-variant-label.neutral { background:var(--color-background-tertiary); color:var(--color-text-tertiary); }
+.gg-section-title { font-family:var(--font-serif); font-size:18px; font-weight:500; margin:1.5rem 0 .8rem; }
+.gg-section-title em { font-style:italic; color:var(--color-text-secondary); font-weight:400; font-size:14px; }
+.gg-doctrine-note { background:var(--color-background-secondary); border-left:3px solid var(--color-text-info); padding:10px 14px; border-radius:4px; font-size:12.5px; color:var(--color-text-secondary); line-height:1.5; margin:1rem 0 1.5rem; max-width:72ch; }
+.gg-footer-source { font-family:var(--font-mono); font-size:10px; letter-spacing:.05em; color:var(--color-text-tertiary); padding-top:.7rem; border-top:.5px solid var(--color-border-tertiary); margin-top:1rem; }
+.gg-pill { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:999px; font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; border:.5px solid var(--color-border-tertiary); color:var(--color-text-secondary); background:var(--color-background-primary); }
+</style>
+</head>
+<body>
+
+<!--
+==============================================================================
+  MAQUETTE NARRATIVE DYNAMIQUE — TYPOLOGIE GRAND GROUPE TERTIAIRE
+
+  Audience : DG / CFO / Asset Manager / Property Manager d'ETI tertiaire
+  Vocabulaire : "patrimoine", "CODIR", "entité juridique", "portefeuille"
+  Personas : Jean-Marc (CFO) · Sophie (Asset Manager) · Marc (DG)
+
+  Architecture narrative (selon arbitrages Amine 2026-05-01) :
+  - Phrase 1 : événementiel (primary trigger de la semaine)
+  - Phrases 2-3 : structurelles (situation patrimoine + décisions)
+  - Mention persona-spécifique en italique (P&L pour CFO, asset perf pour AM, etc.)
+  - Aucun acronyme brut en body, sourçage réglementaire en footer
+  - Push "+X vs S-1" tissé naturellement quand actif
+
+  6 déclencheurs hiérarchisés visualisés ci-dessous + 1 variante stable.
+==============================================================================
+-->
+
+<div class="gg-page">
+  <div class="gg-mono">Cockpit · Synthèse stratégique · Maquette narrative</div>
+  <h1 class="gg-h1">Typologie <em>Grand groupe tertiaire</em> — 6 variantes de déclencheurs</h1>
+
+  <div class="gg-doctrine-note">
+    <strong>Doctrine</strong> : la narrative est composée de 3 phrases — phrase 1 événementielle (primary trigger semaine), phrases 2-3 structurelles. Mention persona en italique selon utilisateur connecté. Push "+X vs S-1" tissé naturellement quand un signal actif. Aucun acronyme brut dans le body. Sourçage réglementaire détaillé en footer.
+  </div>
+</div>
+
+<!-- VARIANTE 1 — Trigger 1 : Dérive trajectoire DT -->
+<div class="gg-page">
+  <span class="gg-variant-label danger">Trigger #1 · Dérive trajectoire 2030</span>
+  <div class="gg-narrative">
+    <span class="lead">Trois sites de votre patrimoine ont basculé en dérive de la trajectoire 2030 cette semaine</span>, exposant 3,8 k€ supplémentaires de pénalités réglementaires. Votre score conformité passe à 37/100 — l'écart vs la cible obligatoire 2030 (réduction −40 % de consommation finale) reste rattrapable mais nécessite arbitrage CODIR. Trois décisions structurantes sont à valider cette semaine pour mobiliser <span class="delta-down">245 MWh/an de potentiel énergétique</span> récupérable.
+    <span class="persona-mention">Pour <strong>Jean-Marc</strong>, CFO : impact P&L 2026 estimé +18 k€ vs budget de référence si dérive se poursuit.</span>
+  </div>
+  <div class="gg-footer-source">
+    Sources réglementaires · Décret n°2019-771 art. 9 (jalons −40 % / 2030, −50 % / 2040, −60 % / 2050) · Référentiels d'économies modélisées · CEE BAT-TH-116, BAT-TH-104 · Scope 5 sites HELIOS · 17 500 m² · ref_year 2020.
+  </div>
+</div>
+
+<!-- VARIANTE 2 — Trigger 2 : Anomalie majeure semaine -->
+<div class="gg-page">
+  <span class="gg-variant-label danger">Trigger #2 · Anomalie majeure semaine</span>
+  <div class="gg-narrative">
+    <span class="lead">Une anomalie significative est apparue ce week-end sur l'Hôtel HELIOS Nice</span> — chauffage actif samedi/dimanche pour 710 kWh/jour de consommation atypique. L'investigation opérationnelle est en cours côté responsable exploitation. Sur le portefeuille global, votre situation patrimoniale reste stable cette semaine : score conformité 37/100, exposition aux pénalités réglementaires 26,2 k€, deux autres décisions stratégiques en arbitrage CODIR.
+    <span class="persona-mention">Pour <strong>Sophie</strong>, Asset Manager : reproduction possible sur Bureau Lyon (même typologie occupation), à investiguer en priorité.</span>
+  </div>
+  <div class="gg-footer-source">
+    Sources données · EMS courbe de charge 30 min · Baseline B DJU-ajustée r² 0,87 · Sources réglementaires · Décret n°2019-771 art. 9 · Scope 5 sites HELIOS.
+  </div>
+</div>
+
+<!-- VARIANTE 3 — Trigger 3 : Variation forte exposition vs S-1 -->
+<div class="gg-page">
+  <span class="gg-variant-label warning">Trigger #3 · Variation forte exposition vs S-1</span>
+  <div class="gg-narrative">
+    <span class="lead">Votre exposition aux pénalités réglementaires a augmenté de <span class="delta-up">+ 18 % cette semaine</span></span>, passant de 22,4 k€ à 26,2 k€ après bascule de l'Entrepôt Toulouse en catégorie « non conforme » suite à l'absence de pilotage CVC obligatoire. Le score conformité reste à 37/100 mais la trajectoire 2030 se durcit : 3 sites en dérive sur 5. Trois décisions sont à arbitrer en CODIR pour stabiliser, dont le renouvellement contractuel du Siège Paris à échéance 48 jours.
+    <span class="persona-mention">Pour <strong>Jean-Marc</strong>, CFO : impact P&L 2026 = +3,8 k€ instantané + 7,5 k€/an pénalité légale si non rattrapage avant 1ᵉʳ janvier 2027.</span>
+  </div>
+  <div class="gg-footer-source">
+    Sources réglementaires · Décret n°2019-771 art. 9 (pénalité légale 7 500 €/site) · Décret BACS n°2020-887 (pilotage CVC obligatoire) · Sources contractuelles · contrat HELIOS_SIEGE_2026 (échéance 28/06/2026).
+  </div>
+</div>
+
+<!-- VARIANTE 4 — Trigger 4 : Échéance audit énergétique imminente -->
+<div class="gg-page">
+  <span class="gg-variant-label warning">Trigger #4 · Échéance audit énergétique imminente</span>
+  <div class="gg-narrative">
+    <span class="lead">L'audit énergétique obligatoire de votre patrimoine est à programmer dans les 167 jours</span> — l'absence de prestataire retenu d'ici septembre exposerait 15 k€ de sanction administrative et la perte d'éligibilité ISO 50001. Votre patrimoine reste par ailleurs stable cette semaine : 3 sites en dérive de la trajectoire 2030, exposition 26,2 k€, score conformité 37/100. Une décision de sourcing prestataire est à programmer en CODIR pour décembre 2026.
+    <span class="persona-mention">Pour <strong>Marc</strong>, DG : trois prestataires accrédités identifiés, premier devis 28 k€ sur scope 5 sites avec livrable 8 semaines.</span>
+  </div>
+  <div class="gg-footer-source">
+    Sources réglementaires · Code de l'énergie L233-1 (audit obligatoire tous les 4 ans, conso > 2,75 GWh) · Code L233-2 (sanction administrative DGEC 15 k€) · Norme ISO 50001 · Scope 5 sites HELIOS · 4 229 MWh/an.
+  </div>
+</div>
+
+<!-- VARIANTE 5 — Trigger 5 : Fenêtre achat marché favorable -->
+<div class="gg-page">
+  <span class="gg-variant-label info">Trigger #5 · Fenêtre achat marché favorable</span>
+  <div class="gg-narrative">
+    <span class="lead">Une fenêtre de signature post-ARENH s'ouvre cette semaine sur deux contrats de votre portefeuille</span> — Siège Paris (échéance 48 jours) et Bureau Lyon (échéance 92 jours). Le prix spot EPEX à 78 €/MWh combiné à la baisse <span class="delta-down">−22,5 % vs 2024</span> de la facture prévisionnelle 2026 crée un contexte favorable de renégociation. Votre patrimoine reste structurellement stable : 3 sites en dérive trajectoire 2030, exposition 26,2 k€, 245 MWh/an récupérables.
+    <span class="persona-mention">Pour <strong>Jean-Marc</strong>, CFO : économie estimée 18 k€/an sur volume cumulé 187 MWh à profil HP/HC 68 / 32 %, sous réserve simulation contractuelle.</span>
+  </div>
+  <div class="gg-footer-source">
+    Sources marché · EPEX spot 28/04/2026 · Sources contractuelles · contrat HELIOS_SIEGE_2026, HELIOS_LYON_2026 · Sources réglementaires · post-ARENH 01/01/2026 · TURPE 7 · Versement Nucléaire Universel.
+  </div>
+</div>
+
+<!-- VARIANTE 6 — Trigger 6 : Score conformité bascule sous seuil -->
+<div class="gg-page">
+  <span class="gg-variant-label warning">Trigger #6 · Score conformité bascule sous seuil critique</span>
+  <div class="gg-narrative">
+    <span class="lead">Votre score conformité a basculé sous le seuil critique de 40/100 cette semaine</span> — passage de 41 à 37/100 après dégradation Décret BACS sur Siège Paris (290 kW de puissance CVC sans pilotage automatisé conforme). L'écart vs la cible obligatoire 2030 reste rattrapable mais s'élargit : 3 sites en dérive, exposition 26,2 k€ <span class="delta-up">en hausse de + 3,8 k€ vs semaine précédente</span>. Trois décisions structurantes sont à valider cette semaine.
+    <span class="persona-mention">Pour <strong>Sophie</strong>, Asset Manager : repondération obligations à risque/non conformes recalibre les pénalités amorties à 27 k€/an si statu quo prolongé.</span>
+  </div>
+  <div class="gg-footer-source">
+    Sources réglementaires · Décret BACS n°2020-887 (pilotage CVC ≥70 kW depuis 01/01/2030) · Pondération RegOps · DT 45 % / BACS 30 % / APER 25 % · Scope 5 sites HELIOS.
+  </div>
+</div>
+
+<!-- VARIANTE 7 — Stable, aucun déclencheur actif -->
+<div class="gg-page">
+  <span class="gg-variant-label success">Aucun signal saillant · semaine stable</span>
+  <div class="gg-narrative">
+    <span class="lead">Patrimoine stable cette semaine — aucune dérive ni alerte significative à signaler.</span> Votre situation reste sur trajectoire de rattrapage : 3 sites en dérive 2030, score conformité 37/100, exposition aux pénalités 26,2 k€. Trois décisions structurantes restent en arbitrage CODIR : pilotage CVC Siège, renouvellement contractuel post-ARENH, sourcing prestataire audit énergétique.
+    <span class="persona-mention">Pour <strong>Marc</strong>, DG : période propice à arbitrage des 3 décisions ouvertes — agenda CODIR du jeudi 30 avril.</span>
+  </div>
+  <div class="gg-footer-source">
+    Sources · RegOps + RegAssessment · Décret n°2019-771 · Décret BACS n°2020-887 · Code L233-1 · Scope 5 sites HELIOS · Mise à jour il y a 16 h · Confiance haute.
+  </div>
+</div>
+
+</body>
+</html>
