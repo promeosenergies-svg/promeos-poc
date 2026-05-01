@@ -872,7 +872,16 @@ def _build_cockpit_comex(
             primary_site = db.query(Site).filter(Site.id == primary_site_ids[0], Site.deleted_at.is_(None)).first()
             if primary_site:
                 primary_naf_code = primary_site.naf_code
-    sentence_1 = compose_sentence_1_eventful(prioritization, typology, naf_code=primary_naf_code)
+    # Phase 12.A — sites_count + surface totale pour enrichir phrase stable
+    # (Marie 8/10 → ancrage chiffré "Votre parc tertiaire de 15 sites, 35 k m²").
+    surface_m2_total = sum(float(s.surface_m2 or 0) for s in ctx.sites)
+    sentence_1 = compose_sentence_1_eventful(
+        prioritization,
+        typology,
+        naf_code=primary_naf_code,
+        sites_count=sites_count,
+        surface_m2_total=surface_m2_total,
+    )
     if sentence_1:
         narrative = (sentence_1 + ". " + narrative).strip()
 

@@ -182,8 +182,75 @@ _CLOSING_CLAUSE_BY_TYPOLOGY: dict[OrganizationTypology, str] = {
 }
 
 
-def _closing_for(typology: OrganizationTypology) -> str:
-    """Retourne la closing_clause typology-aware ou chaîne vide si UNKNOWN."""
+# Phase 12.B — closing urgence si deadline imminente (audit personas P2 friction 2).
+# Audit ERP : "à porter au prochain conseil" peut être à 3 mois (CA trimestriel
+# école), risque de dilution urgence sur AUDIT_DEADLINE imminente. Si l'event
+# porte une deadline < 30j, on substitue la closing par "à traiter avant échéance"
+# pour ramener l'urgence dans la phrase 1.
+URGENT_DEADLINE_THRESHOLD_DAYS: int = 30
+_URGENT_CLOSING_CLAUSE: str = "à traiter avant échéance"
+
+
+def _is_deadline_urgent(event: Optional[SolEventCard]) -> bool:
+    """Détecte si l'event porte une deadline imminente (< 30 jours).
+
+    Heuristique : on inspecte `event.title` à la recherche d'une date au
+    format ISO `YYYY-MM-DD` ou français `DD/MM/YYYY`. Si trouvée et que
+    `(target - now()).days < URGENT_DEADLINE_THRESHOLD_DAYS`, on considère
+    l'échéance urgente.
+
+    Approche minimale : on n'enrichit pas SolEventCard avec un champ
+    `deadline` explicite (refacto cross-stack hors scope Phase 12.B).
+    """
+    if event is None or not event.title:
+        return False
+
+    import re
+    from datetime import datetime, timezone
+
+    # Cherche `YYYY-MM-DD` ou `DD/MM/YYYY` dans le title
+    iso_match = re.search(r"(\d{4})-(\d{2})-(\d{2})", event.title)
+    fr_match = re.search(r"(\d{1,2})/(\d{1,2})/(\d{4})", event.title)
+
+    target_date = None
+    try:
+        if iso_match:
+            target_date = datetime(
+                int(iso_match.group(1)),
+                int(iso_match.group(2)),
+                int(iso_match.group(3)),
+                tzinfo=timezone.utc,
+            )
+        elif fr_match:
+            target_date = datetime(
+                int(fr_match.group(3)),
+                int(fr_match.group(2)),
+                int(fr_match.group(1)),
+                tzinfo=timezone.utc,
+            )
+    except (ValueError, OverflowError):
+        return False
+
+    if target_date is None:
+        return False
+
+    now = datetime.now(timezone.utc)
+    delta_days = (target_date - now).days
+    return 0 <= delta_days < URGENT_DEADLINE_THRESHOLD_DAYS
+
+
+def _closing_for(
+    typology: OrganizationTypology,
+    event: Optional[SolEventCard] = None,
+) -> str:
+    """Retourne la closing_clause typology-aware avec override urgence (Phase 12.B).
+
+    Si `event` est fourni et porte une deadline imminente (< 30 j), on
+    substitue par `_URGENT_CLOSING_CLAUSE` pour ramener l'urgence dans
+    la phrase 1 quel que soit le canal d'arbitrage typologique.
+    """
+    if _is_deadline_urgent(event):
+        return f" — {_URGENT_CLOSING_CLAUSE}"
     clause = _CLOSING_CLAUSE_BY_TYPOLOGY.get(typology, "")
     return f" — {clause}" if clause else ""
 
@@ -208,7 +275,7 @@ def compose_dt_drift_sentence(
     sites_count = len(event.linked_assets.site_ids) or 1
     source_suffix = _format_source_suffix(event)
     # Phase 11.B — closing forward-looking par typology (audit personas P0-2)
-    tail = f"{_closing_for(typology)} {source_suffix}".strip()
+    tail = f"{_closing_for(typology, event)} {source_suffix}".strip()
 
     if typology == OrganizationTypology.GRAND_GROUPE:
         plural = "s" if sites_count > 1 else ""
@@ -268,7 +335,7 @@ def compose_major_anomaly_sentence(event: SolEventCard, typology: OrganizationTy
     """
     source_suffix = _format_source_suffix(event)
     title = event.title  # Phase 4.0.A — sigles préservés (pas de .lower())
-    tail = f"{_closing_for(typology)} {source_suffix}".strip()
+    tail = f"{_closing_for(typology, event)} {source_suffix}".strip()
 
     if typology == OrganizationTypology.GRAND_GROUPE:
         return f"Anomalie majeure détectée sur votre patrimoine cette semaine : {title} {tail}"
@@ -291,7 +358,7 @@ def compose_audit_deadline_sentence(event: SolEventCard, typology: OrganizationT
     """
     source_suffix = _format_source_suffix(event)
     title = event.title
-    tail = f"{_closing_for(typology)} {source_suffix}".strip()
+    tail = f"{_closing_for(typology, event)} {source_suffix}".strip()
 
     if typology == OrganizationTypology.GRAND_GROUPE:
         return f"Échéance réglementaire imminente sur votre patrimoine : {title} {tail}"
@@ -314,7 +381,7 @@ def compose_purchase_window_sentence(event: SolEventCard, typology: Organization
     """
     source_suffix = _format_source_suffix(event)
     title = event.title
-    tail = f"{_closing_for(typology)} {source_suffix}".strip()
+    tail = f"{_closing_for(typology, event)} {source_suffix}".strip()
 
     if typology == OrganizationTypology.GRAND_GROUPE:
         return f"Fenêtre achat ouverte sur votre patrimoine : {title} {tail}"
@@ -344,6 +411,85 @@ TRIGGER_TO_COMPOSER: dict[TriggerType, Callable[[SolEventCard, OrganizationTypol
 }
 
 
+# ─── Phase 12.A — Phrase stable enrichie avec ancrage chiffré ──────────────
+# Audit personas Phase 11 friction 1 (Marie 8/10 accroche silence) :
+# la phrase NEUTRAL générique "Votre parc tient sa trajectoire" ne mobilise
+# pas de levier identitaire. Quand on connaît `sites_count` + `surface_m2_total`,
+# on enrichit avec un ancrage chiffré ("Votre parc tertiaire de 15 sites,
+# 35k m²") qui personnalise et rassure.
+
+
+def compose_sentence_stable_with_archetype(
+    typology: OrganizationTypology,
+    sites_count: Optional[int] = None,
+    surface_m2_total: Optional[float] = None,
+) -> str:
+    """Compose la phrase stable avec ancrage chiffré si dispo (Phase 12.A).
+
+    Si `sites_count` et `surface_m2_total` sont fournis et > 0, on injecte
+    un descriptor ("parc tertiaire de N sites, X k m²") en début de phrase
+    pour personnaliser. Sinon, fallback sur le template SENTENCE_STABLE_TEMPLATES.
+
+    Couvre uniquement les typologies multi-sites (GG / ETI / INDUSTRIE).
+    COMMERCE / ERP gardent leur phrase générique (mono-site typique).
+
+    Args:
+        typology: typologie organisationnelle.
+        sites_count: nombre de sites (≥ 0). None = pas d'enrichissement.
+        surface_m2_total: surface totale m². None = pas d'enrichissement.
+
+    Returns:
+        Phrase stable enrichie ou fallback.
+
+    Examples:
+        >>> compose_sentence_stable_with_archetype(
+        ...     OrganizationTypology.ETI_TERTIAIRE, sites_count=15, surface_m2_total=35000
+        ... )
+        'Votre parc tertiaire de 15 sites (35 k m²) tient sa trajectoire ...'
+    """
+    base = SENTENCE_STABLE_TEMPLATES.get(typology, SENTENCE_STABLE_TEMPLATES[OrganizationTypology.UNKNOWN])
+    if sites_count is None or sites_count <= 0:
+        return base
+    if surface_m2_total is None or surface_m2_total <= 0:
+        return base
+
+    # Enrichissement uniquement pour typologies multi-sites
+    if typology not in (
+        OrganizationTypology.GRAND_GROUPE,
+        OrganizationTypology.ETI_TERTIAIRE,
+        OrganizationTypology.INDUSTRIE,
+    ):
+        return base
+
+    # Format surface : k m² court (35 000 → "35 k m²")
+    if surface_m2_total >= 1_000:
+        surface_str = f"{round(surface_m2_total / 1_000)} k m²"
+    else:
+        surface_str = f"{round(surface_m2_total)} m²"
+
+    sites_word = "site" if sites_count == 1 else "sites"
+
+    if typology == OrganizationTypology.GRAND_GROUPE:
+        descriptor = f"Votre patrimoine de {sites_count} {sites_word} ({surface_str})"
+    elif typology == OrganizationTypology.ETI_TERTIAIRE:
+        descriptor = f"Votre parc tertiaire de {sites_count} {sites_word} ({surface_str})"
+    elif typology == OrganizationTypology.INDUSTRIE:
+        descriptor = f"Votre groupe industriel de {sites_count} {sites_word} ({surface_str})"
+    else:
+        return base
+
+    # Remplacer le préfixe générique du template par le descriptor enrichi
+    # Ex: "Votre patrimoine tient sa trajectoire..." → "Votre patrimoine de
+    # 5 sites (200 k m²) tient sa trajectoire..."
+    if base.startswith("Votre patrimoine "):
+        return descriptor + base[len("Votre patrimoine") :]
+    if base.startswith("Votre parc "):
+        return descriptor + base[len("Votre parc") :]
+    if base.startswith("Votre groupe industriel "):
+        return descriptor + base[len("Votre groupe industriel") :]
+    return base
+
+
 # ─── API publique ──────────────────────────────────────────────────────────
 
 
@@ -351,6 +497,8 @@ def compose_sentence_1_eventful(
     prioritization: TriggerPrioritization,
     typology: OrganizationTypology,
     naf_code: Optional[str] = None,
+    sites_count: Optional[int] = None,
+    surface_m2_total: Optional[float] = None,
 ) -> str:
     """Compose la phrase 1 événementielle du body narratif.
 
@@ -372,7 +520,10 @@ def compose_sentence_1_eventful(
     primary_event: Optional[SolEventCard] = prioritization.get("primary_event")
 
     if primary is None or primary_event is None:
-        return SENTENCE_STABLE_TEMPLATES.get(typology, SENTENCE_STABLE_TEMPLATES[OrganizationTypology.UNKNOWN])
+        # Phase 12.A — phrase stable enrichie avec ancrage chiffré si dispo
+        return compose_sentence_stable_with_archetype(
+            typology, sites_count=sites_count, surface_m2_total=surface_m2_total
+        )
 
     composer = TRIGGER_TO_COMPOSER.get(primary)
     if composer is None:
