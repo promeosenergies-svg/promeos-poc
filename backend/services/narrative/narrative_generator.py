@@ -236,12 +236,33 @@ def _resolve_org_typology_value(db: Session, org_id: int) -> str:
     Sécurité fail-safe : retourne `unknown` si la résolution échoue
     (org introuvable, scope invalide, etc.). Ne lève jamais d'exception
     — la narrative doit toujours être servie au FE.
+
+    Phase 9.A.bis correctif mini-audit P1 :
+    - Distingue exceptions attendues (NoResultFound, AttributeError) des
+      erreurs SQL fatales (OperationalError, ProgrammingError) qui sont
+      logguées via `_logger.exception` pour observabilité prod.
     """
+    from sqlalchemy.exc import SQLAlchemyError
+
     try:
         from services.narrative.typology_resolver import resolve_typology_for_scope
 
         return resolve_typology_for_scope({"org_id": org_id}, db).value
-    except Exception:  # noqa: BLE001 — fail-safe explicite
+    except (AttributeError, KeyError):
+        # Org introuvable / scope mal formé — fallback silencieux légitime
+        return "unknown"
+    except SQLAlchemyError:
+        # Erreur SQL fatale — logger pour observabilité, fallback safe
+        import logging
+
+        logging.getLogger("promeos.narrative").exception("_resolve_org_typology_value SQL error org_id=%s", org_id)
+        return "unknown"
+    except Exception:  # noqa: BLE001 — derniers remparts inattendus
+        import logging
+
+        logging.getLogger("promeos.narrative").exception(
+            "_resolve_org_typology_value unexpected error org_id=%s", org_id
+        )
         return "unknown"
 
 

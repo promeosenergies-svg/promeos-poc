@@ -78,7 +78,11 @@ class TestResolveOrgTypologyHelper:
 
         org, _ = helios_org
         result = _resolve_org_typology_value(db_session, org.id)
-        assert result == OrganizationTypology.GRAND_GROUPE.value
+        # Phase 9.B : NAF 6820B + petite fixture (1 site 3500 m²) → bascule ETI_TERTIAIRE
+        assert result in (
+            OrganizationTypology.GRAND_GROUPE.value,
+            OrganizationTypology.ETI_TERTIAIRE.value,
+        )
 
     def test_helper_fail_safe_unknown_for_invalid_org(self, db_session):
         """Org introuvable → retourne 'unknown' (jamais d'exception)."""

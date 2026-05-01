@@ -78,12 +78,15 @@ PERSONA_ROLE_LABEL_FEMININE: dict[PersonaRole, str] = {
 }
 
 
-# Phase 8.B — différenciation CFO/DAF selon typology (audit final CX).
+# Phase 8.B + 9.B — différenciation CFO/DAF selon typology (audit final CX).
 # "DAF" est l'usage ETI/PME tertiaire, "Directeur Financier" plutôt
-# grand groupe coté + finance. Pour HELIOS GG, on utilise le libellé
-# long ; pour Marie ETI, "DAF" reste juste.
+# grand groupe coté + finance.
+# Phase 9.B : ETI_TERTIAIRE est explicitement "DAF" (audit Marie midmarket).
 PERSONA_ROLE_LABEL_BY_TYPOLOGY: dict[tuple[PersonaRole, OrganizationTypology], str] = {
     (PersonaRole.CFO, OrganizationTypology.GRAND_GROUPE): "Directeur Financier",
+    # ETI_TERTIAIRE conserve le label par défaut "DAF" (épicène à l'oral)
+    # Si V2 demande féminisation : "Directrice Administrative et Financière"
+    # forme longue, mais "DAF" reste le standard ETI.
 }
 
 

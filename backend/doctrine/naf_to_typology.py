@@ -1,11 +1,19 @@
-"""Mapping NAF → typologie organisationnelle PROMEOS Sol2 (3 typologies MVP).
+"""Mapping NAF → typologie organisationnelle PROMEOS Sol2 (5 typologies V2).
 
-Sprint Refonte Narrative dynamique — Phase 1.1 (2026-05-01).
+Sprint Refonte Narrative dynamique — Phase 1.1 (2026-05-01) + Phase 9.B
+(2026-05-01 V2 ETI_TERTIAIRE).
 
-3 typologies MVP livrées (V2 ajoutera PME_TERTIAIRE et INDUSTRIE Q3 2026) :
+5 typologies livrées :
 
-- **GRAND_GROUPE** : ETI tertiaire / holdings / sièges sociaux / foncières.
-  Audience CFO / DG / Asset Manager. Vocabulaire patrimoine / CODIR.
+- **GRAND_GROUPE** : groupe coté / foncière institutionnelle / holdings >
+  30 sites tertiaires ou > 100k m². Audience CFO / DG / Asset Manager.
+  Vocabulaire patrimoine / CODIR / Directeur Financier.
+
+- **ETI_TERTIAIRE** (Phase 9.B) : ETI tertiaire midmarket 1-30 sites
+  bureaux / ≤ 100k m². Audience DAF / DG opérationnel. Vocabulaire
+  parc / comité de direction / DAF (sans CODIR ni patrimoine).
+  Distinction GG vs ETI faite via `_typology_dominant_for_sites` selon
+  seuils de taille (cf typology_resolver).
 
 - **COMMERCE** : commerce indépendant ou multi-magasins (1-10 sites). Audience
   propriétaire / gérant. Vocabulaire métier-concret (boulangerie, magasin, four).
@@ -15,12 +23,15 @@ Sprint Refonte Narrative dynamique — Phase 1.1 (2026-05-01).
   Audience directeur / DG. Vocabulaire usagers / élèves / résidents. "Conseil
   d'administration" ou "comité de direction" (jamais CODIR).
 
-Le mapping NAF → typologie est dérivé du préfixe NAF (2 premiers chars). Pour
-les NAF non couverts (industrie 1X-3X, agriculture 0X, etc.) → UNKNOWN avec
-fallback narrative générique.
+- **UNKNOWN** : fallback NAF non couvert (industrie 1X-3X, agriculture 0X).
+
+Le mapping NAF → typologie est dérivé du préfixe NAF (2 premiers chars).
+GRAND_GROUPE et ETI_TERTIAIRE partagent les mêmes préfixes NAF (sièges
+sociaux, foncières) — la distinction se fait par TAILLE (cf typology_resolver
+`_apply_eti_threshold`).
 
 Source : nomenclature NAF rév 2 INSEE 2008.
-Ref : `docs/maquettes/narrative-sol2/PROMPT_REFONTE_NARRATIVE_DYNAMIQUE_EXECUTION.md` Phase 1.1.
+Ref : `docs/maquettes/narrative-sol2/PROMPT_REFONTE_NARRATIVE_DYNAMIQUE_EXECUTION.md` Phase 1.1 + 9.B.
 """
 
 from __future__ import annotations
@@ -32,12 +43,14 @@ from typing import Optional
 class OrganizationTypology(str, Enum):
     """Typologie organisationnelle pour adaptation narrative.
 
-    3 typologies MVP livrées Phase 1.1. UNKNOWN = fallback explicite (jamais
-    erreur sur NAF inconnu — la narrative tombe sur templates GRAND_GROUPE
-    par défaut, audience experte la plus large).
+    Phase 1.1 : 3 typologies MVP + UNKNOWN.
+    Phase 9.B : ajout ETI_TERTIAIRE (sous-typologie GG raffinée par taille).
+
+    UNKNOWN = fallback explicite (jamais erreur sur NAF inconnu).
     """
 
     GRAND_GROUPE = "grand_groupe_tertiaire"
+    ETI_TERTIAIRE = "eti_tertiaire"
     COMMERCE = "commerce"
     ERP = "etablissement_recevant_public"
     UNKNOWN = "unknown"

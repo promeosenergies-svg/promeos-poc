@@ -78,6 +78,12 @@ SENTENCE_STABLE_TEMPLATES: dict[OrganizationTypology, str] = {
         "score conformité maintenu, aucune nouvelle dérive détectée. "
         "Focus prochain comité : préparer les déclarations OPERAT annuelles"
     ),
+    OrganizationTypology.ETI_TERTIAIRE: (
+        # Phase 9.B — Marie audit : "parc" pas "patrimoine"
+        "Votre parc tient sa trajectoire cette semaine — "
+        "score conformité maintenu, aucune nouvelle dérive détectée. "
+        "Focus prochain comité : préparer les déclarations OPERAT annuelles"
+    ),
     OrganizationTypology.COMMERCE: (
         "Votre activité tient le cap cette semaine — pas de surcoût détecté, "
         "consommation alignée sur votre profil. "
@@ -170,6 +176,15 @@ def compose_dt_drift_sentence(
             f"du jalon Décret Tertiaire -40 % cette semaine {source_suffix}"
         )
 
+    # Phase 9.B — ETI_TERTIAIRE : "parc" au lieu de "patrimoine" (audit Marie)
+    if typology == OrganizationTypology.ETI_TERTIAIRE:
+        plural = "s" if sites_count > 1 else ""
+        verb = "ont" if sites_count > 1 else "a"
+        return (
+            f"{sites_count} site{plural} de votre parc {verb} basculé en dérive "
+            f"du jalon Décret Tertiaire -40 % cette semaine {source_suffix}"
+        )
+
     if typology == OrganizationTypology.COMMERCE:
         # Phase 4.0.A + Phase 7 correctif B — NAF résolu, plus de "magasin" générique
         activity = get_activity_name(naf_code)
@@ -205,6 +220,9 @@ def compose_major_anomaly_sentence(event: SolEventCard, typology: OrganizationTy
 
     if typology == OrganizationTypology.GRAND_GROUPE:
         return f"Anomalie majeure détectée sur votre patrimoine cette semaine : {title} {source_suffix}"
+    # Phase 9.B — ETI_TERTIAIRE : "parc" au lieu de "patrimoine"
+    if typology == OrganizationTypology.ETI_TERTIAIRE:
+        return f"Anomalie majeure détectée sur votre parc cette semaine : {title} {source_suffix}"
     if typology == OrganizationTypology.COMMERCE:
         # Empathie + verbe d'action implicite via formule "à vérifier"
         return f"Anomalie détectée cette semaine, à vérifier : {title} {source_suffix}"
@@ -223,6 +241,9 @@ def compose_audit_deadline_sentence(event: SolEventCard, typology: OrganizationT
 
     if typology == OrganizationTypology.GRAND_GROUPE:
         return f"Échéance réglementaire imminente sur votre patrimoine : {title} {source_suffix}"
+    # Phase 9.B — ETI_TERTIAIRE
+    if typology == OrganizationTypology.ETI_TERTIAIRE:
+        return f"Échéance réglementaire imminente sur votre parc : {title} {source_suffix}"
     if typology == OrganizationTypology.COMMERCE:
         return f"Échéance imminente, à traiter rapidement : {title} {source_suffix}"
     if typology == OrganizationTypology.ERP:
@@ -240,6 +261,9 @@ def compose_purchase_window_sentence(event: SolEventCard, typology: Organization
 
     if typology == OrganizationTypology.GRAND_GROUPE:
         return f"Fenêtre achat ouverte sur votre patrimoine : {title} {source_suffix}"
+    # Phase 9.B — ETI_TERTIAIRE
+    if typology == OrganizationTypology.ETI_TERTIAIRE:
+        return f"Fenêtre achat ouverte sur votre parc : {title} {source_suffix}"
     if typology == OrganizationTypology.COMMERCE:
         return f"Bonne fenêtre pour renégocier votre contrat : {title} {source_suffix}"
     if typology == OrganizationTypology.ERP:

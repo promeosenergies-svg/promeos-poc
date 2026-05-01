@@ -259,11 +259,18 @@ class TestETITertiaireFollowupADR:
     - le mapping NAF 6820B→GRAND_GROUPE est conservateur
     """
 
-    def test_eti_tertiaire_not_in_enum_yet(self):
-        """ETI_TERTIAIRE est PAS encore dans l'enum (sera V2 Q3 2026)."""
+    def test_eti_tertiaire_now_in_enum_phase_9b(self):
+        """Phase 9.B (Q3 2026 anticipée) : ETI_TERTIAIRE désormais dans l'enum.
+
+        Sentinelle inversé : Phase 4.0.C vérifiait l'ABSENCE pour signaler
+        au futur dev de mettre à jour ADR. Phase 9.B livre la typologie —
+        le sentinelle valide désormais sa présence (audit Marie BL-3 closé).
+        """
         values = {t.value for t in OrganizationTypology}
-        assert "eti_tertiaire" not in values, (
-            "Si ETI_TERTIAIRE est ajoutée à l'enum, mettre à jour cet ADR + supprimer ce test sentinelle."
+        assert "eti_tertiaire" in values, (
+            "Phase 9.B : ETI_TERTIAIRE doit être dans l'enum. Si retiré, "
+            "vérifier MASKED_TRIGGERS_BY_TYPOLOGY + SENTENCE_STABLE_TEMPLATES "
+            "+ LEXICAL_TEMPLATES cohérence."
         )
 
     def test_grand_groupe_stable_no_codir_marie_friendly(self):

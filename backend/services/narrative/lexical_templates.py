@@ -100,6 +100,25 @@ LEXICAL_TEMPLATES: dict[OrganizationTypology, dict[str, object]] = {
         "improvement_term": "amélioration",
         "degradation_term": "dérive",
     },
+    OrganizationTypology.ETI_TERTIAIRE: {
+        # Phase 9.B — ETI tertiaire midmarket (audit Marie).
+        # Vocabulaire : "parc/sites" pas "patrimoine", "DAF" pas "CFO",
+        # "comité de direction" pas "CODIR". Audience expert-praticien
+        # (vs expert pure GG).
+        "scope_singular": "votre parc",
+        "scope_plural": "vos sites",
+        "scope_qualifier": "tertiaire",
+        "decision_body": "comité de direction",
+        "decision_short": "comité",
+        "owner_term": "DAF",
+        "owner_alt_term": "DG opérationnel",
+        "structural_term": "parc",
+        "structural_term_alt": "sites tertiaires",
+        "regulatory_audience": "expert-praticien",
+        "avg_lecture_seconds": 90,  # entre GG 180 et COMMERCE 60
+        "improvement_term": "économies",
+        "degradation_term": "écart",
+    },
     OrganizationTypology.UNKNOWN: {
         # Fallback : hérite GRAND_GROUPE (audience experte, registre neutre).
         # Si on tombe ici en prod, c'est qu'on a une org non mappée — la

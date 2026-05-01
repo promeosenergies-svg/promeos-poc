@@ -182,9 +182,11 @@ class TestBuilderWiring:
         with patch("services.event_bus.compute_events", return_value=[]):
             narrative = _build_cockpit_comex(db_session, org.id, org.nom, sites_count=1)
 
-        # NAF 6820B → préfixe 68 → GRAND_GROUPE
-        assert narrative.typology == OrganizationTypology.GRAND_GROUPE.value
-        assert narrative.typology == "grand_groupe_tertiaire"
+        # NAF 6820B → préfixe 68 → GRAND_GROUPE (ou ETI_TERTIAIRE si small org Phase 9.B)
+        assert narrative.typology in (
+            OrganizationTypology.GRAND_GROUPE.value,
+            OrganizationTypology.ETI_TERTIAIRE.value,
+        )
 
     def test_builder_injects_stable_sentence_when_no_events(self, db_session, helios_org):
         """Pas d'events → narrative préfixée par phrase de stabilité positive."""
@@ -240,8 +242,10 @@ class TestBuilderWiring:
         ):
             narrative = _build_cockpit_comex(db_session, org.id, org.nom, sites_count=1)
 
-        # Phase 1 événementielle GG injectée en préfixe
-        assert "patrimoine" in narrative.narrative
+        # Phase 1 événementielle GG/ETI injectée en préfixe.
+        # Phase 9.B : org petite (1 site 3500 m²) → bascule ETI_TERTIAIRE,
+        # phrase 1 dit "votre parc" au lieu de "votre patrimoine".
+        assert "patrimoine" in narrative.narrative or "parc" in narrative.narrative
         assert "Décret Tertiaire" in narrative.narrative
         # Sourçage §7 visible (Phase 4.0.A)
         assert "(source " in narrative.narrative

@@ -73,6 +73,13 @@ _logger = logging.getLogger("promeos.narrative.typology_resolver")
 # signal qu'il faut prioriser V2 (PME tertiaire + Industrie).
 UNKNOWN_SURFACE_WARNING_THRESHOLD_PCT = 30.0
 
+# Phase 9.B — seuils pour basculer GRAND_GROUPE → ETI_TERTIAIRE.
+# Audit Marie : ETI tertiaire midmarket = 1-30 sites bureaux ou ≤ 100k m².
+# Au-delà = grand groupe coté / foncière institutionnelle. Si l'un OU
+# l'autre seuil est dépassé, on reste GRAND_GROUPE.
+ETI_TERTIAIRE_MAX_SITES = 30
+ETI_TERTIAIRE_MAX_SURFACE_M2 = 100_000.0
+
 
 class NarrativeScope(TypedDict, total=False):
     """Scope canonique d'une narrative.
@@ -154,7 +161,17 @@ def _typology_dominant_for_sites(
         # 100 % UNKNOWN — aucune typologie valide à retourner
         return OrganizationTypology.UNKNOWN
 
-    return max(surface_excl_unknown, key=surface_excl_unknown.get)
+    dominant = max(surface_excl_unknown, key=surface_excl_unknown.get)
+
+    # Phase 9.B — bascule GRAND_GROUPE → ETI_TERTIAIRE selon seuils de taille.
+    # Distinction grand groupe coté (HELIOS) vs ETI tertiaire midmarket (Marie).
+    # Audit Marie : 15-50 sites bureaux + 35k m² total = ETI midmarket, pas GG.
+    if dominant == OrganizationTypology.GRAND_GROUPE:
+        sites_count = len(sites)
+        if sites_count <= ETI_TERTIAIRE_MAX_SITES and total_surface <= ETI_TERTIAIRE_MAX_SURFACE_M2:
+            return OrganizationTypology.ETI_TERTIAIRE
+
+    return dominant
 
 
 def _sites_for_org(db: Session, org_id: int) -> list[Site]:
@@ -258,5 +275,7 @@ def resolve_typology_for_scope(
 __all__ = [
     "NarrativeScope",
     "UNKNOWN_SURFACE_WARNING_THRESHOLD_PCT",
+    "ETI_TERTIAIRE_MAX_SITES",
+    "ETI_TERTIAIRE_MAX_SURFACE_M2",
     "resolve_typology_for_scope",
 ]
