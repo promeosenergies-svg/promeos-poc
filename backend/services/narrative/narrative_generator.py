@@ -640,6 +640,26 @@ def _build_cockpit_comex(
         )
     narrative = " ".join(narr_parts)
 
+    # ── Phase 2.2 — push événementiel "+X vs S-1" (Option 3.C silence strict) ──
+    # Construit `weekly_deltas` à partir des valeurs déjà calculées (pas
+    # d'appel à get_cockpit_facts pour éviter N+1). Tant que l'historique
+    # `previous_value` n'est pas seedé, tous les pushes sont en silence —
+    # le wiring active automatiquement les pushes quand le seed atterrit.
+    from doctrine.delta import weekly_delta_struct
+    from services.narrative.event_push import compose_primary_push
+    from services.narrative.typology_resolver import resolve_typology_for_scope
+
+    typology = resolve_typology_for_scope({"org_id": org_id}, db)
+    weekly_deltas_for_push = {
+        "exposure_eur": weekly_delta_struct(risque_total, None, unit="€"),
+        "potential_mwh_year": weekly_delta_struct(levers_mwh_year, None, unit="MWh/an"),
+        "sites_in_drift": weekly_delta_struct(en_derive, None, unit="sites"),
+        "compliance_score": weekly_delta_struct(conformite_score, None, unit="pts"),
+    }
+    primary_push = compose_primary_push(weekly_deltas_for_push, typology)
+    if primary_push:
+        narrative = (narrative + " " + primary_push["clause"] + ".").strip()
+
     # ── 3 KPIs hero §5 — angle CFO + drill-downs Phase 3.2 (Q8) ──
     # Chaque KPI hero porte un drill_down_href explicite vers la preuve op.
     # Source-guard : test_kpi_hero_has_drill_down (chaque KPI un href cible).

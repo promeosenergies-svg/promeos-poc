@@ -152,9 +152,66 @@ def format_push_clause(
     return f"{direction}{abs(relative_pct):.0f} % {suffix}"
 
 
+# ─── Orchestration : sélection du push primaire ─────────────────────────────
+
+
+def compose_primary_push(
+    weekly_deltas: dict[str, dict],
+    typology: OrganizationTypology,
+) -> Optional[dict]:
+    """Sélectionne le push primaire à injecter dans la narrative.
+
+    **Option 4.C** (Phase 2.2) — max 1 push tissé en body. Si plusieurs
+    métriques dépassent le seuil simultanément, on garde celle de plus
+    grande magnitude absolue (signal le plus saillant pour le CFO).
+
+    Args:
+        weekly_deltas: payload canonique exposé par cockpit_facts_service
+            section `weekly_deltas` (clés = métriques canoniques, valeurs =
+            `WeeklyDeltaPayload` avec `current` / `previous` / etc.).
+        typology: typologie organisationnelle (Phase 1.1) pour formatter
+            la clause dans le bon registre lexical.
+
+    Returns:
+        `{"metric": str, "clause": str, "magnitude": float}` si push à
+        émettre, `None` si silence (toutes métriques sous seuil ou
+        baseline `previous` non disponible).
+
+    Examples:
+        >>> deltas = {
+        ...   "exposure_eur": {"current": 118_000, "previous": 100_000, "unit": "€"},
+        ...   "potential_mwh_year": {"current": 102, "previous": 100, "unit": "MWh/an"},
+        ... }
+        >>> compose_primary_push(deltas, OrganizationTypology.GRAND_GROUPE)
+        {'metric': 'exposure_eur', 'clause': '+ 18 % vs semaine précédente', 'magnitude': 18000}
+        # potential_mwh_year sous seuil → ignoré ; exposure dominant en magnitude
+    """
+    candidates = []
+    for metric_name, payload in weekly_deltas.items():
+        current = payload.get("current")
+        previous = payload.get("previous")
+        if not should_push_metric(metric_name, current, previous):
+            continue
+        candidates.append(
+            {
+                "metric": metric_name,
+                "clause": format_push_clause(metric_name, current, previous, typology),
+                "magnitude": abs(current - previous),
+            }
+        )
+
+    if not candidates:
+        return None
+
+    # Tri par magnitude décroissante, max 1 push (Option 4.C)
+    candidates.sort(key=lambda p: p["magnitude"], reverse=True)
+    return candidates[0]
+
+
 __all__ = [
     "PUSH_THRESHOLDS",
     "DEFAULT_REL_THRESHOLD_PCT",
     "should_push_metric",
     "format_push_clause",
+    "compose_primary_push",
 ]

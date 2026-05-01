@@ -199,5 +199,83 @@ class TestPushThresholdsStructure:
         assert PUSH_THRESHOLDS["compliance_score"] == (3.0, None)
 
 
+# ─── Tests compose_primary_push — orchestration max 1 push ──────────────────
+
+
+def _delta(current, previous, unit=""):
+    """Helper test : construit un payload weekly_delta minimal."""
+    return {"current": current, "previous": previous, "unit": unit}
+
+
+class TestComposePrimaryPush:
+    """Source-guards Phase 2.2 — orchestration max 1 push (Option 4.C)."""
+
+    def test_narrative_silence_when_no_push(self):
+        """Tous deltas sous seuil → silence (None retourné)."""
+        from services.narrative.event_push import compose_primary_push
+
+        deltas = {
+            "exposure_eur": _delta(100_500, 100_000, "€"),  # +0,5 % +500€
+            "compliance_score": _delta(72, 71, "pts"),  # +1,4 % < 3 %
+            "potential_mwh_year": _delta(102, 100, "MWh/an"),  # +2 % +2 MWh
+            "sites_in_drift": _delta(3, 3, "sites"),  # 0 variation
+        }
+        result = compose_primary_push(deltas, OrganizationTypology.GRAND_GROUPE)
+        assert result is None, f"Tous deltas sous seuil → silence attendu, push retourné : {result}"
+
+    def test_narrative_includes_weekly_push_when_active(self):
+        """Au moins un delta franchi → push retourné avec clause 'vs semaine'."""
+        from services.narrative.event_push import compose_primary_push
+
+        deltas = {
+            "exposure_eur": _delta(118_000, 100_000, "€"),  # +18 %
+            "compliance_score": _delta(72, 71, "pts"),  # silence
+        }
+        result = compose_primary_push(deltas, OrganizationTypology.GRAND_GROUPE)
+        assert result is not None
+        assert "vs semaine" in result["clause"]
+        assert result["metric"] == "exposure_eur"
+
+    def test_narrative_max_one_push(self):
+        """Plusieurs deltas franchissent → 1 seul push retourné (max magnitude)."""
+        from services.narrative.event_push import compose_primary_push
+
+        deltas = {
+            "exposure_eur": _delta(120_000, 100_000, "€"),  # +20 % | mag=20 000
+            "potential_mwh_year": _delta(150, 100, "MWh/an"),  # +50 % | mag=50
+            "compliance_score": _delta(80, 70, "pts"),  # +14,3 % | mag=10
+            "sites_in_drift": _delta(5, 3, "sites"),  # +66 % | mag=2
+        }
+        result = compose_primary_push(deltas, OrganizationTypology.GRAND_GROUPE)
+        assert result is not None
+        # exposure_eur a la plus grande magnitude absolue (20 000 vs 50, 10, 2)
+        assert result["metric"] == "exposure_eur", (
+            f"Option 4.C max magnitude : exposure_eur (20 000) doit dominer, "
+            f"trouvé {result['metric']!r} (mag={result.get('magnitude')})"
+        )
+
+    def test_compose_primary_push_typology_format(self):
+        """compose_primary_push respecte le format typologique (Phase 1.3)."""
+        from services.narrative.event_push import compose_primary_push
+
+        deltas = {"exposure_eur": _delta(118_000, 100_000, "€")}
+
+        gg = compose_primary_push(deltas, OrganizationTypology.GRAND_GROUPE)
+        commerce = compose_primary_push(deltas, OrganizationTypology.COMMERCE)
+        assert "vs semaine précédente" in gg["clause"]
+        assert "vs la semaine dernière" in commerce["clause"]
+
+    def test_compose_primary_push_silence_when_previous_none(self):
+        """MVP état actuel : previous=None partout → silence garanti."""
+        from services.narrative.event_push import compose_primary_push
+
+        deltas = {
+            "exposure_eur": _delta(100_000, None, "€"),
+            "compliance_score": _delta(75, None, "pts"),
+        }
+        result = compose_primary_push(deltas, OrganizationTypology.GRAND_GROUPE)
+        assert result is None
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
