@@ -217,10 +217,10 @@ def resolve_typology_for_scope(
         <OrganizationTypology.COMMERCE: 'commerce'>  # si override = COMMERCE
     """
     # 0. Phase 1.4 — User typology_override (priorité absolue).
-    # Import local pour casser le cycle (routes.user_preferences importe
-    # potentiellement des modules qui importent ce resolver).
+    # Import depuis services/ (pas routes/) — respect du layering :
+    # services ne doivent jamais dépendre de routes.
     if user_id is not None:
-        from routes.user_preferences import get_user_typology_override
+        from services.user_preference_service import get_user_typology_override
 
         override = get_user_typology_override(db, user_id)
         if override is not None:

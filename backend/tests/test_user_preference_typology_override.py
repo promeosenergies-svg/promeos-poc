@@ -38,12 +38,12 @@ from models import (
     User,
     UserPreference,
 )
-from routes.user_preferences import (
+from services.iam_service import hash_password
+from services.narrative.typology_resolver import resolve_typology_for_scope
+from services.user_preference_service import (
     get_or_create_user_preference,
     get_user_typology_override,
 )
-from services.iam_service import hash_password
-from services.narrative.typology_resolver import resolve_typology_for_scope
 
 
 # ─── Fixtures ───────────────────────────────────────────────────────────────
@@ -281,6 +281,104 @@ class TestUserPreferencesEndpoints:
             json={"typology": "valeur_inconnue_xyz"},
         )
         assert response.status_code == 422
+
+    def test_put_double_idempotent_uniqueness(self, client, db_session, helios_user):
+        """PUT commerce → PUT erp → 1 seule ligne en table (UniqueConstraint user_id).
+
+        Source-guard contre régression UniqueConstraint user_preferences.user_id.
+        """
+        user, _, _ = helios_user
+        client.put("/api/user/preferences/typology", json={"typology": "commerce"})
+        client.put(
+            "/api/user/preferences/typology",
+            json={"typology": "etablissement_recevant_public"},
+        )
+
+        rows = db_session.query(UserPreference).filter(UserPreference.user_id == user.id).all()
+        assert len(rows) == 1, f"UniqueConstraint user_id violée — {len(rows)} lignes en DB"
+        assert rows[0].typology_override == OrganizationTypology.ERP
+
+
+# ─── Tests auth strict (401 sans token) ─────────────────────────────────────
+
+
+class TestUserPreferencesAuthStrict:
+    """Source-guards : route exige `get_current_user` strict, jamais lenient."""
+
+    def test_get_typology_unauthenticated_401(self, db_session):
+        """GET sans auth → 401 quel que soit DEMO_MODE.
+
+        Documente le choix Phase 1.4 : `get_current_user` strict (pas
+        `get_optional_auth`). Empêche une régression accidentelle vers
+        lenient auth qui exposerait les préférences à un default user.
+        """
+        from main import app
+
+        def _override_db():
+            try:
+                yield db_session
+            finally:
+                pass
+
+        app.dependency_overrides[get_db] = _override_db
+        # NB: PAS d'override get_current_user → la dépendance par défaut
+        # s'exécute, exige token, lève 401.
+        try:
+            client_no_auth = TestClient(app)
+            response = client_no_auth.get("/api/user/preferences/typology")
+            assert response.status_code == 401
+        finally:
+            app.dependency_overrides.clear()
+
+    def test_put_typology_unauthenticated_401(self, db_session):
+        """PUT sans auth → 401 (même règle que GET)."""
+        from main import app
+
+        def _override_db():
+            try:
+                yield db_session
+            finally:
+                pass
+
+        app.dependency_overrides[get_db] = _override_db
+        try:
+            client_no_auth = TestClient(app)
+            response = client_no_auth.put(
+                "/api/user/preferences/typology",
+                json={"typology": "commerce"},
+            )
+            assert response.status_code == 401
+        finally:
+            app.dependency_overrides.clear()
+
+
+# ─── Tests scope portfolio + override ───────────────────────────────────────
+
+
+class TestTypologyOverridePortfolioScope:
+    """Source-guard : override prime aussi sur scope portfolio (pas seulement org/site)."""
+
+    def test_typology_override_overrides_portfolio_scope(self, db_session, helios_user):
+        """Override user prioritaire sur scope `{"portfolio_id": X}`.
+
+        Comble le gap couverture des tests Phase 1.4 initiaux (scope org +
+        site couverts, scope portfolio non testé avec override).
+        """
+        user, _, site = helios_user
+        # Récupérer le portfolio_id du site seedé dans la fixture
+        portfolio_id = site.portefeuille_id
+
+        # Sans override : scope portfolio → GRAND_GROUPE (NAF 6820B dominant)
+        result_auto = resolve_typology_for_scope({"portfolio_id": portfolio_id}, db_session)
+        assert result_auto == OrganizationTypology.GRAND_GROUPE
+
+        # Avec override : COMMERCE forcé
+        pref = get_or_create_user_preference(db_session, user.id)
+        pref.typology_override = OrganizationTypology.COMMERCE
+        db_session.commit()
+
+        result_with_override = resolve_typology_for_scope({"portfolio_id": portfolio_id}, db_session, user_id=user.id)
+        assert result_with_override == OrganizationTypology.COMMERCE
 
 
 if __name__ == "__main__":

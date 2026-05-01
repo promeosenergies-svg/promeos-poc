@@ -14,6 +14,19 @@ NAF est jugée non représentative).
 Si `typology_override IS NULL` → l'auto-détection NAF (`typology_resolver`)
 prend le relais.
 
+## Design choice cross-org (Amine 2026-05-01)
+
+L'override est **global par user** : la table porte une UniqueConstraint
+sur `user_id` seul, **pas** `(user_id, org_id)`. Conséquence : un user
+multi-org partage son override entre toutes ses orgs.
+
+Justification produit : la typologie est une perception personnelle du
+user (« mes briefings, mon registre lexical »), pas une caractéristique
+de l'org. Si V2 multi-org révèle un besoin d'override scopé à l'org
+active (ex : DAF d'un groupe holding multi-secteurs), migrer vers
+`(user_id, org_id)` unique composite — ADR P1-1 Phase 2 dans
+`docs/maquettes/narrative-sol2/`.
+
 Ref : `docs/maquettes/narrative-sol2/PROMPT_REFONTE_NARRATIVE_DYNAMIQUE_EXECUTION.md`
 Phase 1.4.
 """
