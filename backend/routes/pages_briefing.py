@@ -52,6 +52,7 @@ def get_page_briefing(
     request: Request,
     persona: str = "daily",
     archetype: Optional[str] = None,
+    simulate_date: Optional[str] = None,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
@@ -61,6 +62,11 @@ def get_page_briefing(
         page_key : identifiant page Sol canonique (cf SUPPORTED_PAGE_KEYS).
         persona  : "daily" (Marie 8h45) ou "comex" (Jean-Marc CFO).
         archetype: Sprint 3 chantier β — branchement multi-archetype.
+        simulate_date: Phase 6 — date ISO 8601 (YYYY-MM-DD) pour simuler
+            la narrative comme si on était à cette date. Override le
+            `datetime.now()` interne du builder (kicker week_iso, deltas
+            S-1, etc.). Si None, on utilise la date courante. Format
+            invalide → 400.
 
     Response:
         { data: Narrative, provenance: { source, confidence, updated_at } }
@@ -80,6 +86,25 @@ def get_page_briefing(
             status_code=400,
             detail=f"persona='{persona}' invalide. Valeurs : 'daily' (Marie) | 'comex' (Jean-Marc).",
         )
+
+    # Phase 6 — Parse simulate_date si fourni (ISO 8601 strict).
+    simulated_now = None
+    if simulate_date:
+        from datetime import datetime as _dt
+        from datetime import timezone as _tz
+
+        try:
+            parsed = _dt.fromisoformat(simulate_date)
+        except (ValueError, TypeError):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"simulate_date='{simulate_date}' invalide. "
+                    f"Format attendu : ISO 8601 (YYYY-MM-DD ou YYYY-MM-DDTHH:MM:SS)."
+                ),
+            )
+        # Normaliser en UTC-aware pour cohérence avec datetime.now(timezone.utc)
+        simulated_now = parsed if parsed.tzinfo else parsed.replace(tzinfo=_tz.utc)
 
     effective_org_id = resolve_org_id(request, auth, db)
     org = db.query(Organisation).filter(Organisation.id == effective_org_id).first()
@@ -108,6 +133,7 @@ def get_page_briefing(
         sites_count=sites_count,
         persona=persona,
         archetype=archetype,
+        now=simulated_now,
     )
 
     payload = narrative.to_dict()

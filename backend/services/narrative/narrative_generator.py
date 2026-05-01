@@ -550,6 +550,8 @@ def _build_cockpit_comex(
     org_id: int,
     org_name: str,
     sites_count: int,
+    *,
+    now: Optional[datetime] = None,  # Phase 6 — simulate_date
 ) -> Narrative:
     """Sprint 1.2 — Vue COMEX Jean-Marc CFO.
 
@@ -618,7 +620,9 @@ def _build_cockpit_comex(
     levers_references = extracted_refs or ["BAT-TH-116", "BAT-TH-104"]
 
     # ── Kicker + titre ──
-    week_iso = datetime.now(timezone.utc).isocalendar().week
+    # Phase 6 — `now` override pour simulate_date (sinon datetime.now() courant)
+    effective_now = now if now is not None else datetime.now(timezone.utc)
+    week_iso = effective_now.isocalendar().week
     kicker = f"VUE COMEX · SEMAINE {week_iso} · {sites_count} SITE{'S' if sites_count > 1 else ''}"
     title = "Synthèse exécutive du portefeuille"
     italic_hook = "vue mensuelle direction"
@@ -3128,6 +3132,7 @@ def generate_page_narrative(
     sites_count: int = 0,
     persona: Persona = "daily",
     archetype: Optional[str] = None,  # Sprint 3 chantier β
+    now: Optional[datetime] = None,  # Phase 6 — simulate_date override
 ) -> Narrative:
     """Entry point public : génère le récit complet d'une page Sol.
 
@@ -3137,6 +3142,11 @@ def generate_page_narrative(
     Sprint 3 ADR-003 : `archetype` brancera vers builders dédiés
     (tertiaire_midmarket / industriel_agroalim / hotelier / collectivite /
     mono_site_pme).
+
+    Phase 6 : `now` permet de simuler la narrative à une date arbitraire
+    (override `datetime.now(timezone.utc)`). Utile pour tests dynamiques
+    J vs J+30 sans attendre le temps réel. Tous les builders qui acceptent
+    `now` l'utiliseront ; les autres l'ignorent silencieusement.
     """
     builder = _BUILDERS.get(page_key)
     if builder is None:
@@ -3144,4 +3154,11 @@ def generate_page_narrative(
             f"Narrative builder pour page_key='{page_key}' pas encore implémenté. "
             f"MVP Sprint 1.1 : cockpit_daily. Sprint 1.2-1.3 étendra aux autres pages."
         )
+    # Phase 6 — kwargs propagés aux builders qui les acceptent. inspect.signature
+    # check pour rétrocompat builders legacy qui ne connaissent pas `now`.
+    import inspect
+
+    sig = inspect.signature(builder)
+    if "now" in sig.parameters:
+        return builder(db, org_id, org_name, sites_count, now=now)
     return builder(db, org_id, org_name, sites_count)
