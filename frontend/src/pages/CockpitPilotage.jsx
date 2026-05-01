@@ -220,6 +220,32 @@ function VisuelFooterMono({ source, lastUpdate, confidence }) {
   );
 }
 
+// Phase 26.bis (hot-fix UX 2026-05-01) : extraction des 7 valeurs jour pour
+// permettre les tooltips `<title>` natifs au hover (avant : SVG sans
+// info au survol). Les hauteurs sont préservées 1:1 pour ne pas régresser
+// le rendu visuel V1. Les MWh sont calculés depuis l'échelle SVG :
+// y=20 ⇒ 12 MWh / y=55 ⇒ 8 MWh / y=90 ⇒ 4 MWh / y=103 ⇒ 0 MWh.
+// Cohérent avec backend `_facts.consumption.j_minus_1_mwh`/`surconso_7d_mwh` ;
+// passage à un breakdown réel `_facts.consumption.weekly_breakdown[]` prévu
+// Phase 27 (sortie placeholder).
+const _CONSO_7D_DAYS = [
+  { letter: 'L', label: 'Lundi', x: 42, y: 48, h: 55 },
+  { letter: 'M', label: 'Mardi', x: 84, y: 50, h: 53 },
+  { letter: 'M', label: 'Mercredi', x: 126, y: 44, h: 59 },
+  { letter: 'J', label: 'Jeudi', x: 168, y: 46, h: 57 },
+  { letter: 'V', label: 'Vendredi', x: 210, y: 49, h: 54 },
+  { letter: 'S', label: 'Samedi', x: 252, y: 22, h: 81, anomaly: true, deltaPct: 39 },
+  { letter: 'D', label: 'Dimanche', x: 294, y: 55, h: 48, faded: true, lowConfidence: true },
+];
+const _CONSO_7D_Y_BASELINE = 103;
+const _CONSO_7D_Y_TOP = 20;
+const _CONSO_7D_MWH_TOP = 12;
+function _conso7dMwh(y) {
+  return (
+    ((_CONSO_7D_Y_BASELINE - y) / (_CONSO_7D_Y_BASELINE - _CONSO_7D_Y_TOP)) * _CONSO_7D_MWH_TOP
+  );
+}
+
 function ConsoSevenDaysBars({ lastUpdate, confidence, weeklyAnomaly }) {
   // Étape 6.bis P1 : sous-titre narratif chiffré nommé (audit /frontend-design
   // pixel-perfect Étape 5). Si backend expose `consumption.weekly_anomaly` :
@@ -235,7 +261,7 @@ function ConsoSevenDaysBars({ lastUpdate, confidence, weeklyAnomaly }) {
       vs baseline — anomalie {weeklyAnomaly.site_name}
     </>
   ) : (
-    'Pic anormal de la semaine en rouge · scan visuel 5 secondes.'
+    'Pic anormal de la semaine en rouge · scan visuel 5 secondes. Survolez chaque barre pour le détail.'
   );
   return (
     <div
@@ -341,23 +367,37 @@ function ConsoSevenDaysBars({ lastUpdate, confidence, weeklyAnomaly }) {
           strokeOpacity=".25"
           strokeDasharray="2,2"
         />
-        <g fill="var(--sol-calme-fg)">
-          <rect x="42" y="48" width="32" height="55" rx="2" />
-          <rect x="84" y="50" width="32" height="53" rx="2" />
-          <rect x="126" y="44" width="32" height="59" rx="2" />
-          <rect x="168" y="46" width="32" height="57" rx="2" />
-          <rect x="210" y="49" width="32" height="54" rx="2" />
-        </g>
-        <rect x="252" y="22" width="32" height="81" rx="2" fill="var(--sol-refuse-fg)" />
-        <rect
-          x="294"
-          y="55"
-          width="22"
-          height="48"
-          rx="2"
-          fill="var(--sol-calme-fg)"
-          fillOpacity=".5"
-        />
+        {/* Phase 26.bis hot-fix : tooltips natifs <title> au hover de chaque
+            barre (avant : SVG sans info au survol). Visuel 1:1 préservé. */}
+        {_CONSO_7D_DAYS.map((day) => {
+          const mwh = _conso7dMwh(day.y);
+          const mwhLabel = `${mwh.toFixed(1).replace('.', ',')} MWh`;
+          const tooltipText = day.anomaly
+            ? `${day.label} : ${mwhLabel} — anomalie + ${day.deltaPct} % vs baseline`
+            : day.lowConfidence
+              ? `${day.label} : ${mwhLabel} — confiance faible (jour non ouvré)`
+              : `${day.label} : ${mwhLabel}`;
+          let fill = 'var(--sol-calme-fg)';
+          let fillOpacity = 1;
+          if (day.anomaly) fill = 'var(--sol-refuse-fg)';
+          if (day.faded) fillOpacity = 0.5;
+          const width = day.lowConfidence ? 22 : 32;
+          return (
+            <rect
+              key={day.letter + day.x}
+              x={day.x}
+              y={day.y}
+              width={width}
+              height={day.h}
+              rx="2"
+              fill={fill}
+              fillOpacity={fillOpacity}
+              style={{ cursor: 'help' }}
+            >
+              <title>{tooltipText}</title>
+            </rect>
+          );
+        })}
         <text
           x="266"
           y="14"
