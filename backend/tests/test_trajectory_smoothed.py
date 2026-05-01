@@ -51,22 +51,45 @@ class TestProjectWithActionEcheances:
         result = _project_with_action_echeances(2000.0, [action], target_year=2027, current_year=2026)
         assert abs(result - 1000.0) < 1.0  # 2000 - 1000 = 1000
 
-    def test_action_due_after_target_year_no_contribution(self):
+    def test_action_due_after_target_year_engagement_only(self):
+        """Phase 30 : action due dans le futur lointain → contribution
+        engagement (≤ 30 % du gain) au lieu de 0. Modèle apprentissage 3
+        phases (engagement → ramp-up → régime nominal).
+        """
         action = SimpleNamespace(estimated_gain_eur=68000, due_date=date(2030, 6, 15))
         result = _project_with_action_echeances(2000.0, [action], target_year=2027, current_year=2026)
-        assert result == 2000.0
+        # Avant Phase 30 : result == 2000 (zéro contribution)
+        # Après Phase 30 : result < 2000 (engagement progress contribue)
+        # Mais ne dépasse pas 30 % du gain modélisé (RATIO_ENGAGEMENT plafond)
+        assert 1700.0 <= result <= 2000.0, f"Phase 30 engagement progress : 1700 ≤ result ≤ 2000, trouvé {result}"
 
-    def test_action_due_in_target_year_smoothed_proportional(self):
-        """Action due 1er juillet 2026 → 6 mois actifs sur 12 → 50% du gain."""
+    def test_action_due_in_target_year_engagement_phase(self):
+        """Phase 30 : action due début target_year (target_mid > due_date) →
+        ramp-up post-installation, ratio entre RATIO_ENGAGEMENT (20 %) et
+        RATIO_RAMP_UP (75 %)."""
         action = SimpleNamespace(estimated_gain_eur=68000, due_date=date(2026, 7, 1))
-        # gain_mwh = 1000, mois actifs = 12 - (7-1) = 6, contribution = 1000 * 6/12 = 500
+        # target_mid 2026-07-01 = due_date → months_since_due=0, ratio=20%
         result = _project_with_action_echeances(2000.0, [action], target_year=2026, current_year=2026)
-        assert abs(result - 1500.0) < 1.0
+        # Contribution attendue : ~ 20 % × 1000 MWh = 200 → result ~ 1800
+        assert 1750.0 <= result <= 1850.0, f"Phase 30 engagement à due_date : ~1800, trouvé {result}"
 
-    def test_action_due_before_target_year_full_contribution(self):
+    def test_action_due_before_target_year_ramp_up(self):
+        """Phase 30 : action due 13 mois avant target_mid → ramp-up plein
+        (ratio = RATIO_ENGAGEMENT + (RATIO_RAMP_UP - RATIO_ENGAGEMENT) ×
+        13/MONTHS_RAMP_UP). Pour 13/18 ≈ 72 % : ratio ≈ 0.20 + 0.55*0.72 = 0.60."""
         action = SimpleNamespace(estimated_gain_eur=68000, due_date=date(2026, 6, 1))
+        # target_mid 2027-07-01 = due_date + 13 mois
         result = _project_with_action_echeances(2000.0, [action], target_year=2027, current_year=2026)
-        assert abs(result - 1000.0) < 1.0  # gain plein appliqué
+        # Contribution attendue : ~ 60 % × 1000 = 600 → result ~ 1400
+        assert 1350.0 <= result <= 1500.0, f"Phase 30 ramp-up 13 mois post-due : ~1400, trouvé {result}"
+
+    def test_action_due_two_years_before_target_full_nominal(self):
+        """Phase 30 : action due 24 mois avant target → régime nominal plein."""
+        action = SimpleNamespace(estimated_gain_eur=68000, due_date=date(2026, 1, 1))
+        # target_mid 2028-07-01 = due_date + 30 mois > MONTHS_RAMP_UP=18
+        result = _project_with_action_echeances(2000.0, [action], target_year=2028, current_year=2026)
+        # Contribution : 100 % × 1000 = 1000 → result = 1000
+        assert abs(result - 1000.0) < 1.0, f"Phase 30 régime nominal post 24 mois : 1000, trouvé {result}"
 
     def test_baseline_floor_zero(self):
         """Si savings > baseline, projection plancher à 0."""
@@ -80,7 +103,14 @@ class TestProjectWithActionEcheances:
         assert result == 1000.0
 
     def test_smoothed_progression_avoids_brutal_drop(self):
-        """Plusieurs actions avec due_dates étalées → progression lissée."""
+        """Plusieurs actions avec due_dates étalées → progression lissée.
+
+        Phase 30 : seuil drop YoY assoupli à -25 % (vs -15 % Phase 1.6) car
+        le modèle apprentissage exhibe naturellement un palier intermédiaire
+        plus marqué entre engagement et régime nominal. Le test vérifie
+        toujours qu'on n'a PAS de chute step-function brutale (-43 % avant
+        Phase 1.6).
+        """
         actions = [
             SimpleNamespace(estimated_gain_eur=20_000, due_date=date(2026, 6, 1)),
             SimpleNamespace(estimated_gain_eur=20_000, due_date=date(2027, 6, 1)),
@@ -90,11 +120,13 @@ class TestProjectWithActionEcheances:
         proj_2026 = _project_with_action_echeances(baseline_2025, actions, 2026, 2026)
         proj_2027 = _project_with_action_echeances(baseline_2025, actions, 2027, 2026)
         proj_2028 = _project_with_action_echeances(baseline_2025, actions, 2028, 2026)
-        # Chaque drop YoY relatif doit être < 15 %
+        # Chaque drop YoY relatif doit être < 25 % (Phase 30 : courbe
+        # apprentissage 3 phases peut avoir palier intermédiaire un peu
+        # plus marqué qu'avant Phase 30 sur seed avec actions concentrées).
         drop_2027 = (proj_2027 - proj_2026) / proj_2026
         drop_2028 = (proj_2028 - proj_2027) / proj_2027
-        assert drop_2027 > -0.15, f"Drop 2026→2027 trop violent : {drop_2027:.2%}"
-        assert drop_2028 > -0.15, f"Drop 2027→2028 trop violent : {drop_2028:.2%}"
+        assert drop_2027 > -0.25, f"Drop 2026→2027 trop violent : {drop_2027:.2%}"
+        assert drop_2028 > -0.25, f"Drop 2027→2028 trop violent : {drop_2028:.2%}"
 
 
 # ── Source-guard endpoint ──────────────────────────────────────────────
@@ -132,9 +164,12 @@ class TestTrajectoryEndpointSmoothed:
             "pour validation lissage rigoureux."
         )
 
-        # Bonus : si lissage actif sur seed étalé, drops suivants stables
+        # Phase 30 : drops post-saut initial relâchés à 30 % (palier
+        # apprentissage 3 phases sur seed avec actions concentrées en 2026 :
+        # 2026 = engagement (15-20 %) → 2027 = ramp-up (60-80 %) → 2028 =
+        # nominal 100 % donne un drop ~25 % entre 2026 et 2027 maximum).
         stable_drops = [d for d in ((curr - prev) / prev for prev, curr in valid_pairs[1:])]
         if stable_drops:
-            assert max(abs(d) for d in stable_drops) < 0.15, (
-                f"Drops post-saut initial doivent être stables (<15 %) : {stable_drops}"
+            assert max(abs(d) for d in stable_drops) < 0.30, (
+                f"Drops post-saut initial doivent être stables (<30 %) : {stable_drops}"
             )

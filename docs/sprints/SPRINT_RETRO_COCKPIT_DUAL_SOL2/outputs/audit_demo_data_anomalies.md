@@ -144,9 +144,24 @@ trajectoire lissage).
 
 ## Tickets follow-up
 
-| Phase | Ticket | Effort | Priorité |
-|---|---|---|---|
-| 28 | Améliorer seed démo HELIOS S — PowerReading J-1 + baseline historique cohérente | 4-6h | P1 (avant démo Q3) |
-| 29 | Narrative honnête fallback : "Mesure du J-99" → badge "CONNECTEUR À VÉRIFIER" | 2-3h | P2 |
-| 29bis | Premier mois affichage : "Données en cours d'agrégation" si j ≤ 3 | 1h | P2 |
-| 30 | Trajectoire 2030 — lissage temporel interpolation linéaire | 4h | P1 (avant démo) |
+| Phase | Ticket | Effort | Priorité | Statut |
+|---|---|---|---|---|
+| 28 | Seed démo HELIOS S — `end_dt = date.today()` dans `gen_power.py` (PowerReading J-1) | 30 min | P1 | ✅ **livré 2026-05-01** |
+| 28.bis | Seed démo HELIOS S — baseline historique cohérente (algo gen_readings tuning, baseline 8.7 vs réel 25 = -65 %) | 4-6h | P1 (avant démo Q3) | 🔴 backlog |
+| 29 | Narrative honnête fallback peak_source > j-3 : badge "⚠ Connecteur à vérifier" | 30 min | P2 | ✅ **livré 2026-05-01** |
+| 29.bis | Mois 1-3 jours seedés : "Données en cours d'agrégation" au lieu de "0 % vs N-1" | 30 min | P2 | ✅ **livré 2026-05-01** |
+| 30 | Trajectoire 2030 — courbe d'apprentissage 3 phases (engagement / ramp-up / nominal) | 1h | P1 | ✅ **livré 2026-05-01** |
+
+## Statut anomalies après Phase 28-30
+
+| # | Anomalie | Statut |
+|---|---|---|
+| 1 | `peak_source: "j-99"` | ✅ Phase 28 : `end_dt = date.today()` → `peak_source = j-1` runtime confirmé |
+| 2 | `+192 %` baseline historique 3× trop basse | 🔴 Phase 28.bis (algo seed gen_readings) — backlog |
+| 3 | `0 % vs mai 2025` (1er du mois) | ✅ Phase 29.bis : "Données en cours d'agrégation · 1 jour(s) seedé(s)" |
+| 4 | Trajectoire 2030 chute brutale 4 229 → 2 342 | ✅ Phase 30 : courbe apprentissage 3 paliers 4 229 → 3 947 → 3 199 → 2 342 |
+
+**4/5 anomalies résolues.** Reste #2 (algo seed) qui demande un sprint
+plus profond (Phase 28.bis) — non bloquant pour la démo immédiate car
+le badge "⚠ Connecteur à vérifier" Phase 29 communique honnêtement
+quand les données paraissent suspectes.

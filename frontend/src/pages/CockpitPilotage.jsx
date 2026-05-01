@@ -96,6 +96,18 @@ function KpiTriptyqueEnergetique({ facts }) {
         month: '2-digit',
       })
     : null;
+  // Phase 29 (audit anomalies seed 2026-05-01) : si current_month_label
+  // contient `(j 1-X)` avec X ≤ 3, on est en début de mois et la comparaison
+  // vs N-1 est mathématiquement vraie mais business-faussée (0 MWh seedé
+  // sur 1 jour ne dit rien sur la tendance mensuelle). On affiche un
+  // état honnête "Données en cours d'agrégation" au lieu du delta 0 %.
+  const monthlyEarlyMonth = (() => {
+    if (!monthly.current_month_label) return null;
+    const m = monthly.current_month_label.match(/\(j\s+1-(\d+)\)/);
+    if (!m) return null;
+    const daysIn = parseInt(m[1], 10);
+    return daysIn <= 3 ? daysIn : null;
+  })();
   const monthlyTooltip = monthly.current_month_label
     ? `${monthly.current_month_label} vs N−1 normalisé · Baseline ${
         monthly.baseline_method?.replace(/_/g, ' ') || '—'
@@ -111,6 +123,15 @@ function KpiTriptyqueEnergetique({ facts }) {
   const peakTime = p.peak_time;
   const peakSource = p.peak_source || 'j-1';
   const peakIsFallback = peakSource !== 'j-1';
+  // Phase 29 : seuil "fallback acceptable" = 3 jours. Au-delà (peak_source
+  // = j-7, j-30, j-99...), la mesure est trop ancienne pour être présentée
+  // comme "synchro J-1 en cours" → on affiche un badge CONNECTEUR À
+  // VÉRIFIER pour signaler honnêtement qu'il y a un problème de fraîcheur.
+  const peakDaysOld = (() => {
+    const m = peakSource.match(/^j-(\d+)$/);
+    return m ? parseInt(m[1], 10) : 1;
+  })();
+  const peakConnectorIssue = peakDaysOld > 3;
   const peakStale = (peakKw === 0 || peakKw == null) && subscribedKw != null && subscribedKw > 0;
   const peakSplit = peakStale ? { value: '—', unit: '' } : splitKw(peakKw);
 
@@ -133,19 +154,31 @@ function KpiTriptyqueEnergetique({ facts }) {
       <KpiCard
         scaleLabel={SCALE_LABEL.medium}
         label="Conso mois courant"
-        tooltip={monthlyTooltip}
+        tooltip={
+          monthlyEarlyMonth
+            ? `Début de mois — ${monthlyEarlyMonth} jour(s) seedé(s) seulement. Comparaison vs N−1 différée jusqu'à 4+ jours pour rester honnête.`
+            : monthlyTooltip
+        }
         value={monthlySplit.value}
         unit={monthlySplit.unit}
         deltaText={
-          monthlyDeltaPct != null ? `${fmtDeltaPct(monthlyDeltaPct)} vs ${previousYearLabel}` : null
-        }
-        deltaSev={deltaSeverity(monthlyDeltaPct)}
-        hint={
-          calibDate
-            ? `DJU-ajusté · calibrée ${calibDate}`
-            : monthly.current_month_label
-              ? `DJU-ajusté · ${monthly.current_month_label}`
+          // Phase 29 : si début de mois (≤ 3 jours), on suspend le delta
+          // pour éviter d'afficher "0 % vs N−1" trompeur (numérateur 0/0).
+          monthlyEarlyMonth
+            ? null
+            : monthlyDeltaPct != null
+              ? `${fmtDeltaPct(monthlyDeltaPct)} vs ${previousYearLabel}`
               : null
+        }
+        deltaSev={monthlyEarlyMonth ? null : deltaSeverity(monthlyDeltaPct)}
+        hint={
+          monthlyEarlyMonth
+            ? `Données en cours d'agrégation · ${monthlyEarlyMonth} jour(s) seedé(s)`
+            : calibDate
+              ? `DJU-ajusté · calibrée ${calibDate}`
+              : monthly.current_month_label
+                ? `DJU-ajusté · ${monthly.current_month_label}`
+                : null
         }
       />
       <KpiCard
@@ -192,11 +225,13 @@ function KpiTriptyqueEnergetique({ facts }) {
         hint={
           peakStale
             ? 'Pic CDC J−1 en synchronisation Enedis SGE'
-            : peakIsFallback
-              ? `Mesure du ${peakSource.replace('j-', 'J−')} (CDC J−1 en synchro SGE) · souscrite ${splitKw(subscribedKw).value} ${splitKw(subscribedKw).unit}`
-              : subscribedKw != null
-                ? `Souscrite ${splitKw(subscribedKw).value} ${splitKw(subscribedKw).unit}${peakTime && peakTime !== '00:00' ? ` · ${peakTime}` : ''}`
-                : null
+            : peakConnectorIssue
+              ? `⚠ Connecteur à vérifier · dernière mesure il y a ${peakDaysOld} jours (souscrite ${splitKw(subscribedKw).value} ${splitKw(subscribedKw).unit})`
+              : peakIsFallback
+                ? `Mesure du ${peakSource.replace('j-', 'J−')} (CDC J−1 en synchro SGE) · souscrite ${splitKw(subscribedKw).value} ${splitKw(subscribedKw).unit}`
+                : subscribedKw != null
+                  ? `Souscrite ${splitKw(subscribedKw).value} ${splitKw(subscribedKw).unit}${peakTime && peakTime !== '00:00' ? ` · ${peakTime}` : ''}`
+                  : null
         }
       />
     </div>
@@ -505,8 +540,48 @@ function ConsoSevenDaysBars({ lastUpdate, confidence, weeklyAnomaly, weeklyBreak
   );
 }
 
+// Phase 27.bis (hot-fix UX 2026-05-01) — points clés courbe charge J-1 pour
+// tooltips natifs au hover (avant : courbe path SVG sans aucune info au
+// survol, signalé par utilisateur même symptôme que Conso 7 jours).
+// Format : [{ x, y, hour, kw_ratio, label }] où kw_ratio = fraction de
+// puissance souscrite (0.0 à 1.0), label = heure au format "8 h".
+// Le path SVG actuel est placeholder (coordonnées hardcodées HP/HC) —
+// passage à un breakdown réel `_facts.power.hourly_breakdown[]` prévu
+// followup Phase 31 (cohérent avec Phase 27 weekly_breakdown).
+const _CHARGE_J1_KEY_POINTS = [
+  { x: 36, y: 90, hour: '0 h', kwRatio: 0.0, period: 'HC' },
+  { x: 86, y: 80, hour: '4 h', kwRatio: 0.18, period: 'HC' },
+  { x: 114, y: 46, hour: '8 h', kwRatio: 0.79, period: 'HP' },
+  { x: 142, y: 42, hour: '10 h', kwRatio: 0.86, period: 'HP' },
+  { x: 170, y: 58, hour: '12 h', kwRatio: 0.57, period: 'HP' },
+  { x: 198, y: 46, hour: '14 h', kwRatio: 0.79, period: 'HP' },
+  { x: 226, y: 46, hour: '16 h', kwRatio: 0.79, period: 'HP' },
+  { x: 254, y: 56, hour: '17 h', kwRatio: 0.61, period: 'HP' },
+  { x: 282, y: 76, hour: '19 h', kwRatio: 0.25, period: 'HP' },
+  { x: 304, y: 86, hour: '20 h', kwRatio: 0.07, period: 'HP→HC' },
+  { x: 340, y: 95, hour: '23 h', kwRatio: 0.0, period: 'HC' },
+];
+
 function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
   const subSplit = splitKw(subscribedKw);
+  // Phase 27.bis : pic max et heure pour tooltip global du SVG
+  const peakPoint = _CHARGE_J1_KEY_POINTS.reduce(
+    (best, p) => (p.kwRatio > best.kwRatio ? p : best),
+    _CHARGE_J1_KEY_POINTS[0]
+  );
+  const peakKw = subscribedKw != null ? subscribedKw * peakPoint.kwRatio : null;
+  const peakKwLabel =
+    peakKw != null
+      ? subSplit.unit === 'MW'
+        ? `${(peakKw / 1000).toFixed(2).replace('.', ',')} MW`
+        : `${Math.round(peakKw)} kW`
+      : '—';
+  const margePct = subscribedKw && peakKw ? Math.round((1 - peakKw / subscribedKw) * 100) : null;
+  const summaryTitle =
+    subscribedKw != null
+      ? `Pic ${peakKwLabel} à ${peakPoint.hour} · souscrite ${subSplit.value} ${subSplit.unit} · marge ${margePct >= 0 ? '+' : ''}${margePct} %`
+      : 'Courbe de charge J-1 — données indisponibles';
+
   return (
     <div
       className="rounded-md p-4"
@@ -565,10 +640,12 @@ function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
       <svg
         viewBox="0 0 360 140"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ width: '100%', height: 'auto', display: 'block', marginTop: 6 }}
+        style={{ width: '100%', height: 'auto', display: 'block', marginTop: 6, cursor: 'help' }}
         role="img"
         aria-label="Courbe de charge J moins 1 du groupe"
       >
+        {/* Phase 27.bis hot-fix : tooltip natif global au survol du SVG. */}
+        <title>{summaryTitle}</title>
         <defs>
           <linearGradient id="hp-fill-pilotage" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor="var(--sol-hpe-fg)" stopOpacity=".18" />
@@ -711,6 +788,36 @@ function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
             22 h
           </text>
         </g>
+        {/* Phase 27.bis hot-fix : cercles invisibles aux points clés pour
+            tooltips natifs <title> au hover (avant : courbe path SVG sans
+            info au survol, signalé par utilisateur 2026-05-01). Rayon
+            généreux pour zone hover plus large. */}
+        {_CHARGE_J1_KEY_POINTS.map((p) => {
+          const ptKw = subscribedKw != null ? subscribedKw * p.kwRatio : null;
+          const ptKwLabel =
+            ptKw != null
+              ? subSplit.unit === 'MW'
+                ? `${(ptKw / 1000).toFixed(2).replace('.', ',')} MW`
+                : `${Math.round(ptKw)} kW`
+              : '—';
+          const tooltipText = `${p.hour} (${p.period}) : ${ptKwLabel}${
+            subscribedKw != null && ptKw != null
+              ? ` · ${Math.round((ptKw / subscribedKw) * 100)} % de la souscrite`
+              : ''
+          }`;
+          return (
+            <circle
+              key={`pt-${p.x}`}
+              cx={p.x}
+              cy={p.y}
+              r="6"
+              fill="transparent"
+              style={{ cursor: 'help' }}
+            >
+              <title>{tooltipText}</title>
+            </circle>
+          );
+        })}
       </svg>
       <VisuelFooterMono
         source="Source EMS · CDC 30 min · agrégé sites"

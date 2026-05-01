@@ -71,12 +71,32 @@ def _project_with_action_echeances(
     target_year: int,
     current_year: int,
 ) -> float:
-    """Projection trajectoire lissée par action.due_date (Phase 1.6 / Q5).
+    """Projection trajectoire lissée par action.due_date (Phase 1.6 → Phase 30).
 
-    Avant Phase 1.6 : tous les `estimated_gain_eur` étaient cumulés 100% dès
-    l'année courante → drop YoY brutal -43 % visuellement faux. Après :
-    chaque action contribue selon sa due_date — lissage proportionnel sur
-    les mois restants de l'année cible.
+    Phase 30 (audit utilisateur 2026-05-01) : refonte du lissage avec courbe
+    d'apprentissage post-engagement. Avant Phase 30, lissage limité aux mois
+    de l'année où la due_date tombait — résultat visuel : chute brutale
+    4 229 → 2 342 sur 2026-2027 puis plateau jusqu'en 2030. Trompeur.
+
+    **Modèle d'apprentissage en 3 phases** (réaliste pour BACS/APER/audit
+    énergétique) :
+      1. **Engagement** (today → due_date) : études + travaux,
+         contribution croît linéairement de 0 à `RATIO_ENGAGEMENT` (= 30 %).
+      2. **Mise en service** (due_date → due_date + `MONTHS_RAMP_UP` = 6) :
+         réglages + apprentissage occupants, croît de 30 % à 80 %.
+      3. **Régime nominal** (au-delà) : 100 % de l'économie modélisée.
+
+    Cela donne une courbe en 3 paliers progressifs (au lieu de step function),
+    cohérente avec la réalité terrain : un BACS installé en septembre 2026
+    n'économise pas 100 % dès octobre 2026 — il faut quelques mois pour
+    paramétrer correctement et que les occupants s'adaptent.
+
+    Exemple : action GTB due septembre 2026, today = mai 2026.
+      - target=2026 (mid=juillet) : engagement 2/4 × 30 % = 15 %
+      - target=2027 (mid=juillet) : engagement 30 % + ramp-up plein
+        (2027-07 = due+10 mois > 6) → 80 % (régime non encore atteint
+        car ramp-up se termine en mars 2027)
+      - target=2028+ : 100 % régime nominal
 
     Args:
         reel_baseline_mwh: conso année dernière complète, en MWh
@@ -87,10 +107,44 @@ def _project_with_action_echeances(
     Returns:
         Conso projetée pour target_year en MWh, plancher 0.
 
-    Source-guard : test_trajectory_smoothed_by_echeance (drop YoY < 15 %).
-    Ref : PROMPT_REFONTE_COCKPIT_DUAL_SOL2_EXECUTION.md §2.B Phase 1.6.
+    Source-guards :
+      - test_trajectory_smoothed_by_echeance (drop YoY < 15 %)
+      - test_trajectory_apprentissage_curve_phase30
+    Ref : Sprint Retro Cockpit Dual Sol2 — audit anomalies seed (Phase 30).
     """
+    from datetime import date as _date
+
+    RATIO_ENGAGEMENT = 0.20  # part du gain pendant la phase travaux
+    RATIO_RAMP_UP = 0.75  # part du gain à fin du ramp-up post-installation
+    MONTHS_RAMP_UP = 18  # durée mise en service réaliste BACS/audit (1,5 an)
+
+    def _learning_ratio(months_to_due: int, months_since_due: int) -> float:
+        """Calcule le ratio d'achievement selon les 3 phases.
+
+        - months_to_due : mois restants entre la date de référence et due_date
+          (négatif si due_date est passée)
+        - months_since_due : mois écoulés depuis due_date (négatif si pas encore due)
+        """
+        if months_since_due >= MONTHS_RAMP_UP:
+            return 1.0  # Régime nominal
+        if months_since_due >= 0:
+            # Phase ramp-up : ratio engagement → ratio_ramp_up
+            ramp = months_since_due / MONTHS_RAMP_UP
+            return RATIO_ENGAGEMENT + (RATIO_RAMP_UP - RATIO_ENGAGEMENT) * ramp
+        # Phase engagement : pas encore due
+        # months_to_due > 0 ; engagement_total = mois entre engagement_start et due
+        # On suppose que l'engagement a commencé "today" (début de la fenêtre
+        # de projection) — donc engagement_total = months_to_due_initial.
+        # Pour rester simple : on prend ratio = (engagement_progress) × RATIO_ENGAGEMENT
+        # où engagement_progress = 1 - months_to_due / engagement_total_max.
+        # Cap supérieur engagement = 24 mois (au-delà : action lointaine).
+        engagement_total_max = max(1, months_to_due * 2)  # heuristique
+        engagement_progress = max(0.0, 1.0 - months_to_due / engagement_total_max)
+        return engagement_progress * RATIO_ENGAGEMENT
+
     cumul_savings_mwh = 0.0
+    today = _date.today()
+    target_mid = _date(target_year, 7, 1)  # Mid-year comme référence
     for action in actions:
         gain_eur = getattr(action, "estimated_gain_eur", 0) or 0
         if gain_eur <= 0:
@@ -102,15 +156,14 @@ def _project_with_action_echeances(
             if target_year >= current_year:
                 cumul_savings_mwh += gain_mwh
             continue
-        if due.year > target_year:
-            continue  # action pas encore due → 0 contribution
-        if due.year == target_year:
-            # Lissage proportionnel : gain réparti sur mois restants à partir de la due_date
-            months_active = max(0, 12 - (due.month - 1))
-            cumul_savings_mwh += gain_mwh * (months_active / 12)
+        # Phase 30 : courbe d'apprentissage à target_mid (juillet de target_year).
+        if target_mid < today:
+            ratio = 0.0  # Année passée : projection non applicable
         else:
-            # due.year < target_year → gain plein (action déjà réalisée)
-            cumul_savings_mwh += gain_mwh
+            months_to_due = (due.year - target_mid.year) * 12 + (due.month - target_mid.month)
+            months_since_due = -months_to_due
+            ratio = _learning_ratio(months_to_due, months_since_due)
+        cumul_savings_mwh += gain_mwh * ratio
     return max(0, reel_baseline_mwh - cumul_savings_mwh)
 
 

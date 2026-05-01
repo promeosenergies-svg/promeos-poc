@@ -135,7 +135,14 @@ def seed_power(db: Session, days: int = 365) -> dict:
 
     # 2. PowerContracts + PowerReadings
     sites = db.query(Site).all()
-    end_dt = datetime(2026, 4, 1, 0, 0)
+    # Phase 28 (audit anomalies seed 2026-05-01) : avant cette phase,
+    # `end_dt` était hardcodé `datetime(2026, 4, 1)` → quand on lance un
+    # seed après cette date (ex: aujourd'hui 2026-05-01), les PowerReadings
+    # s'arrêtent à J-30 minimum. Le helper `_build_power` cherche en
+    # fallback jusqu'à J-99 et affiche "Mesure du J-99 (CDC J-1 en synchro
+    # SGE)" — trompeur. Désormais : end_dt = today, donc PowerReadings
+    # toujours à J-1 (cohérent avec MeterReadings via `gen_readings.py`).
+    end_dt = datetime.combine(date.today(), datetime.min.time())
     start_dt = end_dt - timedelta(days=days)
 
     for site in sites:
