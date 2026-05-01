@@ -135,6 +135,16 @@ class Narrative:
     # owner_role/mitigation visibles (Marie unblock visuel doctrine §10).
     events: tuple = ()  # tuple[SolEventCard, ...] — pas annoté pour éviter cycle import
 
+    # Sprint Refonte Narrative dynamique — Phase 4.0.B (audit P0-3)
+    # Exposition au FE des structures Phase 1-3 pour styling structuré
+    # (chip up/down, drill-down site_id, badge typologie, etc.). None
+    # tant que le builder n'est pas wiré (rétrocompat builders legacy).
+    typology: Optional[str] = None  # OrganizationTypology.value
+    primary_trigger: Optional[dict] = None  # {type, event_id, linked_site_ids}
+    secondary_trigger: Optional[dict] = None
+    weekly_deltas: Optional[dict] = None  # {metric: WeeklyDeltaPayload}
+    primary_push: Optional[dict] = None  # {metric, clause, magnitude} — Phase 2.2
+
     def to_dict(self) -> dict:
         d = {
             "page_key": self.page_key,
@@ -149,6 +159,12 @@ class Narrative:
             "events": [e.to_dict() for e in self.events],
             "fallback_body": self.fallback_body,
             "provenance": self.provenance.to_dict(),
+            # Phase 4.0.B — exposition structurée Phase 1-3
+            "typology": self.typology,
+            "primary_trigger": self.primary_trigger,
+            "secondary_trigger": self.secondary_trigger,
+            "weekly_deltas": self.weekly_deltas,
+            "primary_push": self.primary_push,
         }
         return d
 
@@ -762,6 +778,42 @@ def _build_cockpit_comex(
 
     events_comex = compute_events(db, org_id)
 
+    # ── Phase 4.0.B — wiring phrase 1 événementielle (audit P0-1) ──
+    # Hiérarchise les events en primary/secondary (Option 4.C), compose
+    # la phrase 1 dans le registre typologique, et prepend au narrative.
+    # Dédup : si le primary trigger est DT_drift et narr_parts[0] (exposition
+    # avec mention "sites en dérive") existe, la phrase 1 prend le relais
+    # sur le sujet "drift" — narr_parts[0] reste pour son apport € unique.
+    from services.narrative.sentence_composer import compose_sentence_1_eventful
+    from services.narrative.trigger_prioritizer import prioritize_triggers
+
+    prioritization = prioritize_triggers(events_comex, typology)
+    sentence_1 = compose_sentence_1_eventful(prioritization, typology)
+    if sentence_1:
+        narrative = (sentence_1 + ". " + narrative).strip()
+
+    # Phase 4.0.B — payload structuré pour FE (chip primary, drill-down site_id)
+    primary_trigger_payload = None
+    if prioritization.get("primary") and prioritization.get("primary_event"):
+        ev = prioritization["primary_event"]
+        primary_trigger_payload = {
+            "type": prioritization["primary"].value,
+            "event_id": ev.id,
+            "event_title": ev.title,
+            "linked_site_ids": list(ev.linked_assets.site_ids),
+            "severity": ev.severity,
+        }
+    secondary_trigger_payload = None
+    if prioritization.get("secondary") and prioritization.get("secondary_event"):
+        ev = prioritization["secondary_event"]
+        secondary_trigger_payload = {
+            "type": prioritization["secondary"].value,
+            "event_id": ev.id,
+            "event_title": ev.title,
+            "linked_site_ids": list(ev.linked_assets.site_ids),
+            "severity": ev.severity,
+        }
+
     # Sprint 1.4bis : helpers _compute_tone + _build_provenance_canonical
     narrative_tone = _compute_tone(non_conformes, a_risque, conformite_score)
     provenance = _build_provenance_canonical(
@@ -784,6 +836,12 @@ def _build_cockpit_comex(
         fallback_body=fallback_body,
         provenance=provenance,
         events=tuple(events_comex),
+        # Phase 4.0.B — exposition Phase 1-3 au FE
+        typology=typology.value,
+        primary_trigger=primary_trigger_payload,
+        secondary_trigger=secondary_trigger_payload,
+        weekly_deltas=weekly_deltas_for_push,
+        primary_push=primary_push,
     )
 
 
