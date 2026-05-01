@@ -32,7 +32,9 @@ class TestApplyToneCritical:
     """Source-guards : tone CRITICAL → registre d'urgence."""
 
     def test_critical_replaces_stable_with_ecart(self):
-        body = "Score 80/100, stable cette semaine."
+        # Phase 4.bis3 : score < 70 pour ne pas déclencher le garde-fou numérique
+        # (cf TestPhase4bis3NumericGuard pour le test du garde-fou).
+        body = "Score 50/100, stable cette semaine."
         result = apply_tone_variation(body, "critical")
         assert "stable" not in result
         assert "écart significatif" in result
@@ -75,7 +77,8 @@ class TestApplyToneTension:
     """Source-guards : tone TENSION → registre de vigilance."""
 
     def test_tension_replaces_stable_with_vigilance(self):
-        body = "Score 70/100, stable."
+        # Phase 4.bis3 : score < 70 pour éviter le garde-fou numérique
+        body = "Score 60/100, stable."
         result = apply_tone_variation(body, "tension")
         assert "sous vigilance" in result
 
@@ -153,6 +156,75 @@ class TestCoverage:
     def test_neutral_has_zero_markers(self):
         """NEUTRAL est l'identité (0 marqueurs)."""
         assert get_tone_marker_count("neutral") == 0
+
+
+# ─── Phase 4.bis3 — garde-fou numérique anti-contradiction ─────────────────
+
+
+class TestPhase4bis3NumericGuard:
+    """Audit CX : score ≥ 70 + 'stable' → ne pas dégrader (anti-contradiction)."""
+
+    def test_critical_skip_stable_when_high_score(self):
+        """Score 80/100 dans body → 'stable' préservé en CRITICAL (pas d'écart)."""
+        body = "Score 80/100, situation stable cette semaine."
+        result = apply_tone_variation(body, "critical")
+        # Garde-fou actif : "stable" préservé (incompatible avec 80/100)
+        assert "stable" in result
+        assert "écart significatif" not in result
+
+    def test_tension_skip_favorable_when_high_score(self):
+        """Score 75/100 + 'favorable' → préservé en TENSION."""
+        body = "Score 75/100, vue favorable."
+        result = apply_tone_variation(body, "tension")
+        assert "favorable" in result
+
+    def test_critical_applies_stable_when_low_score(self):
+        """Score 50/100 < 70 → garde-fou inactif, "stable" → "écart significatif"."""
+        body = "Score 50/100, vue stable."
+        result = apply_tone_variation(body, "critical")
+        assert "écart significatif" in result
+        assert "stable" not in result
+
+    def test_critical_applies_other_markers_even_with_high_score(self):
+        """Garde-fou cible UNIQUEMENT 'stable'/'favorable', les autres marqueurs
+        s'appliquent normalement même avec score élevé.
+        """
+        body = "Score 80/100, patrimoine bien positionné, vigilance requise."
+        result = apply_tone_variation(body, "critical")
+        # "stable" pas présent, mais "patrimoine bien positionné" ET
+        # "vigilance requise" doivent être remplacés (pas des _NUMERIC_GUARDED)
+        assert "écart critique" in result
+
+    def test_no_score_in_body_no_guard(self):
+        """Pas de score → garde-fou inactif (comportement normal)."""
+        body = "Vue stable cette semaine."
+        result = apply_tone_variation(body, "critical")
+        assert "écart significatif" in result
+
+
+# ─── Phase 4.bis3 — validation enum ToneValue ──────────────────────────────
+
+
+class TestPhase4bis3ToneValidation:
+    """Audit code : tone non validé → fail-safe explicite."""
+
+    def test_invalid_tone_returns_body_unchanged(self):
+        """tone='TENSION' (uppercase) → invalide, body inchangé."""
+        body = "Vue stable."
+        # Les valeurs valides sont en lowercase (cf NarrativeTone.value)
+        result = apply_tone_variation(body, "TENSION")
+        assert result == body
+
+    def test_invalid_tone_string_returns_body_unchanged(self):
+        body = "Vue stable."
+        result = apply_tone_variation(body, "invalid_xyz")
+        assert result == body
+
+    def test_valid_tones_constant_exposed(self):
+        """VALID_TONES exposé pour usage caller."""
+        from services.narrative.tone_variator import VALID_TONES
+
+        assert VALID_TONES == frozenset({"positive", "neutral", "tension", "critical"})
 
 
 if __name__ == "__main__":

@@ -43,9 +43,15 @@ Phase 4.2.
 
 from __future__ import annotations
 
-from typing import Optional
+import re
+from typing import Literal, Optional, Union
 
 from doctrine.naf_to_typology import OrganizationTypology
+
+# Phase 4.bis3 — typage strict du tone (ValidationError si valeur inconnue).
+# Aligné sur narrative_generator.NarrativeTone enum values.
+ToneValue = Literal["positive", "neutral", "tension", "critical"]
+VALID_TONES: frozenset = frozenset({"positive", "neutral", "tension", "critical"})
 
 
 # ─── Marqueurs tonals de référence ─────────────────────────────────────────
@@ -84,9 +90,44 @@ TONE_LEXICAL_VARIANTS: dict[str, dict[str, str]] = {
 # ─── API publique ──────────────────────────────────────────────────────────
 
 
+# ─── Garde-fou numérique Phase 4.bis3 (audit CX bug crédibilité) ───────────
+
+
+# Score adjacent ≥ ce seuil → on n'applique pas la dégradation tonale
+# CRITICAL/TENSION sur "stable"/"favorable" (sinon contradiction visible
+# avec le chiffre cité juste à côté). Ex: "Score 80/100, stable" en CRITICAL
+# devient "Score 80/100, écart significatif" — incohérent.
+NUMERIC_GUARD_SCORE_THRESHOLD: int = 70
+
+# Marqueurs où le garde-fou s'applique : ceux où l'effet tonal est de
+# DÉGRADER une formulation neutre (incompatible avec un score positif).
+_NUMERIC_GUARDED_MARKERS: frozenset = frozenset({"stable", "favorable"})
+
+# Regex pour détecter "score X/100" avec X capturé.
+_SCORE_RE = re.compile(r"score\s+(\d{1,3})\s*/\s*100", re.IGNORECASE)
+
+
+def _has_high_score_nearby(body: str) -> bool:
+    """Détecte un score X/100 ≥ NUMERIC_GUARD_SCORE_THRESHOLD dans le body.
+
+    Phase 4.bis3 audit CX : si on a "score 80/100" et qu'on s'apprête à
+    dégrader "stable" → "écart significatif" en CRITICAL, le résultat
+    "score 80/100, écart significatif" est une contradiction visible
+    qui décrédibilise la narrative. On skip dans ce cas.
+    """
+    for match in _SCORE_RE.finditer(body):
+        try:
+            score = int(match.group(1))
+            if score >= NUMERIC_GUARD_SCORE_THRESHOLD:
+                return True
+        except ValueError:
+            continue
+    return False
+
+
 def apply_tone_variation(
     body: str,
-    tone: str,
+    tone: Union[ToneValue, str],
     typology: Optional[OrganizationTypology] = None,
 ) -> str:
     """Applique la variation lexicale au body narratif selon le tone.
@@ -94,37 +135,58 @@ def apply_tone_variation(
     Args:
         body: texte narratif (peut contenir plusieurs phrases concaténées).
         tone: l'un de "positive" / "neutral" / "tension" / "critical"
-            (cf NarrativeTone enum dans narrative_generator).
+            (cf NarrativeTone enum dans narrative_generator). Phase 4.bis3 :
+            valeur inconnue → return body inchangé (fail-safe).
         typology: typologie organisationnelle (réservé V2 — différenciation
             tonale par typologie : commerce plus pédagogique, ERP plus
             institutionnel, etc.).
 
     Returns:
         Body avec marqueurs remplacés par leur variante tonale.
-        Si tone inconnu ou "neutral" → body inchangé.
+        - tone inconnu ou "neutral" → body inchangé
+        - garde-fou numérique : si score ≥ 70 dans body, on ne dégrade pas
+          "stable"/"favorable" en CRITICAL/TENSION (anti-contradiction).
 
     Examples:
         >>> apply_tone_variation(
-        ...     "Patrimoine bien positionné. Score 80/100, vigilance requise.",
+        ...     "patrimoine bien positionné. vigilance requise.",
         ...     "critical",
         ... )
-        'Patrimoine en écart critique. Score 80/100, écart critique à arbitrer.'
+        'patrimoine en écart critique. écart critique à arbitrer.'
 
         >>> apply_tone_variation("Score 78/100, stable.", "tension")
-        'Score 78/100, sous vigilance.'
+        # Score 78 ≥ 70 → garde-fou numérique active, "stable" préservé
+        'Score 78/100, stable.'
+
+        >>> apply_tone_variation("Score 50/100, stable.", "tension")
+        # Score 50 < 70 → tension applique
+        'Score 50/100, sous vigilance.'
     """
     if not body:
+        return body
+
+    # Phase 4.bis3 — fail-safe sur tone inconnu (V1 acceptait str libre)
+    if tone not in VALID_TONES:
         return body
 
     variants = TONE_LEXICAL_VARIANTS.get(tone, {})
     if not variants:
         return body
 
+    # Phase 4.bis3 — garde-fou numérique : si score ≥ 70 dans body,
+    # on skip les marqueurs "stable"/"favorable" pour TENSION/CRITICAL
+    # (sinon contradiction "Score 80/100, écart significatif").
+    skip_numeric_guarded = False
+    if tone in ("tension", "critical") and _has_high_score_nearby(body):
+        skip_numeric_guarded = True
+
     result = body
     # Tri par longueur descendante : remplace les marqueurs longs avant
     # les courts (évite "stable" qui mangerait "écart significatif" → "stable")
     sorted_keys = sorted(variants.keys(), key=lambda k: -len(k))
     for marker in sorted_keys:
+        if skip_numeric_guarded and marker in _NUMERIC_GUARDED_MARKERS:
+            continue
         replacement = variants[marker]
         result = result.replace(marker, replacement)
     return result
@@ -137,6 +199,9 @@ def get_tone_marker_count(tone: str) -> int:
 
 __all__ = [
     "TONE_LEXICAL_VARIANTS",
+    "VALID_TONES",
+    "ToneValue",
+    "NUMERIC_GUARD_SCORE_THRESHOLD",
     "apply_tone_variation",
     "get_tone_marker_count",
 ]

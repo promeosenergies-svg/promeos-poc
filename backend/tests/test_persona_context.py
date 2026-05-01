@@ -62,7 +62,8 @@ class TestComposePersonaMention:
         )
         assert "Marie" in mention
         assert "DAF" in mention
-        assert "exposition" in mention.lower()
+        # Phase 4.bis3 audit P2 : pas de .lower() sur la mention (préserve sigles)
+        assert "exposition" in mention
         assert "12,7 k€" in mention
 
     def test_persona_mention_owner_commerce_simple_no_jargon(self):
@@ -157,6 +158,109 @@ class TestPersonaCoverage:
         assert PersonaRole.CFO.value == "cfo"
         assert PersonaRole.OWNER_COMMERCE.value == "owner_commerce"
         assert PersonaRole.DIRECTOR_ERP.value == "director_erp"
+
+
+# ─── Phase 4.bis3 — Corrections audit CX ───────────────────────────────────
+
+
+class TestPhase4bis3NewRoles:
+    """Audit gap stratégique : ENERGY_BUYER + CSR_MANAGER ajoutés."""
+
+    def test_energy_buyer_role_exists(self):
+        assert PersonaRole.ENERGY_BUYER.value == "energy_buyer"
+        assert PersonaRole.ENERGY_BUYER in PERSONA_ROLE_LABEL
+        assert PERSONA_ROLE_LABEL[PersonaRole.ENERGY_BUYER] == "acheteur énergie"
+
+    def test_csr_manager_role_exists(self):
+        assert PersonaRole.CSR_MANAGER.value == "csr_manager"
+        assert PERSONA_ROLE_LABEL[PersonaRole.CSR_MANAGER] == "responsable RSE"
+
+    def test_energy_buyer_mention_focuses_eur_mwh(self):
+        """ENERGY_BUYER avec avg_price_eur_mwh → 'prix moyen X €/MWh'."""
+        mention = compose_persona_mention(
+            "Lucas",
+            PersonaRole.ENERGY_BUYER,
+            {"avg_price_eur_mwh": 87.5},
+            OrganizationTypology.GRAND_GROUPE,
+        )
+        assert "Lucas" in mention
+        assert "acheteur énergie" in mention
+        assert "88 €/MWh" in mention or "87 €/MWh" in mention
+
+    def test_csr_manager_mention_focuses_co2(self):
+        """CSR_MANAGER avec emissions_tco2e → 'émissions X tCO₂e'."""
+        mention = compose_persona_mention(
+            "Inès",
+            PersonaRole.CSR_MANAGER,
+            {"emissions_tco2e": 1245},
+            OrganizationTypology.GRAND_GROUPE,
+        )
+        assert "Inès" in mention
+        assert "responsable RSE" in mention
+        assert "1245 tCO₂e" in mention or "1 245 tCO₂e" in mention
+        assert "scope" in mention.lower()
+
+
+class TestPhase4bis3TypologyAwareCommerce:
+    """Audit Hervé : OWNER_COMMERCE clinique → typology-aware via NAF."""
+
+    def test_owner_commerce_with_naf_4724z_uses_boulanger(self):
+        """NAF 4724Z (boulangerie) → libellé 'boulanger', pas 'propriétaire'."""
+        mention = compose_persona_mention(
+            "Hervé",
+            PersonaRole.OWNER_COMMERCE,
+            {"surcout_eur_mois": 230},
+            OrganizationTypology.COMMERCE,
+            naf_code="4724Z",
+        )
+        assert "Hervé" in mention
+        assert "boulanger" in mention
+        assert "propriétaire" not in mention  # remplacé par métier réel
+        assert "230 €" in mention
+
+    def test_owner_commerce_with_naf_5610a_uses_restaurateur(self):
+        """NAF 5610A (restaurant) → libellé 'restaurateur'."""
+        mention = compose_persona_mention(
+            "Sophie",
+            PersonaRole.OWNER_COMMERCE,
+            {"surcout_eur_mois": 450},
+            OrganizationTypology.COMMERCE,
+            naf_code="5610A",
+        )
+        assert "restaurateur" in mention
+
+    def test_owner_commerce_with_naf_5510z_uses_hotelier(self):
+        """NAF 5510Z (hôtel) → libellé 'hôtelier'."""
+        mention = compose_persona_mention(
+            "Marc",
+            PersonaRole.OWNER_COMMERCE,
+            {},
+            OrganizationTypology.COMMERCE,
+            naf_code="5510Z",
+        )
+        assert "hôtelier" in mention
+
+    def test_owner_commerce_without_naf_falls_back_proprietaire(self):
+        """NAF absent → fallback 'propriétaire' (rétrocompat)."""
+        mention = compose_persona_mention(
+            "Test",
+            PersonaRole.OWNER_COMMERCE,
+            {},
+            OrganizationTypology.COMMERCE,
+        )
+        assert "propriétaire" in mention
+
+    def test_cfo_role_unchanged_by_naf_code(self):
+        """NAF code n'affecte pas CFO/DG/etc — uniquement OWNER_COMMERCE."""
+        mention = compose_persona_mention(
+            "Marie",
+            PersonaRole.CFO,
+            {"exposure_eur": 10000},
+            OrganizationTypology.GRAND_GROUPE,
+            naf_code="4724Z",  # ignoré pour CFO
+        )
+        assert "DAF" in mention
+        assert "boulanger" not in mention
 
 
 if __name__ == "__main__":
