@@ -1,0 +1,27 @@
+=== Métriques narrative_generator.py ===
+Lignes totales        :     3069
+Nombre de fonctions   : 25
+Classes               : 5
+f-string templates    : 206
+Conditions if (top)   : 124
+Imports doctrine      : 2
+Imports services      : 7
+Imports event_bus     : 4
+
+=== Builders par page (registry _BUILDERS) ===
+71:# Sprint 1.8 — diagnostic ajouté ; cohérent SUPPORTED_PAGE_KEYS + _BUILDERS.
+3029:_BUILDERS = {
+3063:    builder = _BUILDERS.get(page_key)
+
+=== Sections du fichier (commentaires hauts niveaux ── ──) ===
+54:# ── Types canoniques ────────────────────────────────────────────────
+156:# ── Helpers partagés (S1.4bis /simplify Code Reuse + Quality P0) ─────
+289:# ── Hook € hero universel — Sprint 2 Vague A ét3' (audit personas) ──
+342:# ── Vague E ét16 (audit Marie #3) — Gabarit canonique KPIs hero ──────
+405:# ── Builders MVP — cockpit_daily ────────────────────────────────────
+529:# ── Builder cockpit_comex (Sprint 1.2 — Jean-Marc CFO) ──────────────
+770:# ── Builder patrimoine (Sprint 1.3 — DAF tertiaire midmarket Marie) ──
+995:# ── Builder conformite (Sprint 1.4 — DAF Marie + CFO Jean-Marc) ──────
+1230:# ── Builder bill_intel (Sprint 1.5 — CFO Jean-Marc + DAF Marie) ──────
+2992:# ── Helpers format FR ───────────────────────────────────────────────
+3026:# ── Entry point public ────────────────────────────────────────────────

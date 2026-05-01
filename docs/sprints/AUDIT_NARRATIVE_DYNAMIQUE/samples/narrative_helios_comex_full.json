@@ -1,0 +1,468 @@
+{
+  "data": {
+    "page_key": "cockpit_comex",
+    "persona": "comex",
+    "kicker": "VUE COMEX · SEMAINE 18 · 5 SITES",
+    "title": "Synthèse exécutive du portefeuille",
+    "italic_hook": "vue mensuelle direction",
+    "narrative": "Exposition réglementaire cumulée : 26.2 k€ sur 3/5 sites en dérive de la trajectoire 2030. Score conformité 37/100 — écart significatif vs cible 2030 (Décret n°2019-771, jalons -40%/2030, -50%/2040, -60%/2050). Potentiel énergétique récupérable 1794 MWh/an sur 29 actions ouvertes (CEE BAT-TH-116, BAT-TH-104) — détail plan d'actions.",
+    "narrative_tone": "tension",
+    "kpis": [
+      {
+        "label": "Exposition financière",
+        "value": "26.2 k€",
+        "unit": null,
+        "tooltip": "Décomposition art. par art. : 0 site non conforme × 7500 € (Décret 2019-771 art. 9) + 3 sites à risque × 3750 € (art. 9 al. 2) + BACS 1500 €/site (Décret 2020-887) + OPERAT 1500 €/déclaration (Circulaire DGEC 2024).",
+        "source": "Décret 2019-771 + 2020-887 + Circulaire DGEC 2024",
+        "drill_down_href": "/conformite?scope=org&view=exposure_components"
+      },
+      {
+        "label": "Trajectoire 2030",
+        "value": "37/100",
+        "unit": null,
+        "tooltip": "Score pondéré DT 45% · BACS 30% · APER 25% (ou 39/28/17/16 si audit énergétique applicable). Cible 2030 : -40% conso vs 2010.",
+        "source": "RegOps + Décret 2019-771",
+        "drill_down_href": "/conformite?scope=org&filter=non_conform"
+      },
+      {
+        "label": "Potentiel énergétique récupérable",
+        "value": "1794 MWh/an",
+        "unit": null,
+        "tooltip": "29 actions ouvertes × gain modélisé. Références CEE : BAT-TH-116, BAT-TH-104. Conversion en MWh/an via prix fallback 0.068 €/kWh.",
+        "source": "Modélisé · CEE BAT-TH-*",
+        "drill_down_href": "/actions?filter=open&sort=mwh_desc"
+      }
+    ],
+    "week_cards": [
+      {
+        "type": "watch",
+        "title": "Potentiel énergétique récupérable 1794 MWh/an",
+        "body": "Modélisé · 29 actions ouvertes · références CEE BAT-TH-116, BAT-TH-104.",
+        "cta_path": "/actions",
+        "cta_label": "Voir actions",
+        "impact_eur": null,
+        "urgency_days": null
+      }
+    ],
+    "events": [
+      {
+        "id": "asset_registry_issue:org:1:no_grd",
+        "event_type": "asset_registry_issue",
+        "severity": "critical",
+        "title": "16 points de livraison sans gestionnaire de réseau",
+        "narrative": "16 PRM/PCE n'ont pas de gestionnaire de réseau renseigné (Enedis  GRDF  ELD…). Sans cette information  le calcul TURPE/ATRD est faussé et la conformité OPERAT à risque. Exposition shadow billing estimée : 19 200 €/an.",
+        "impact": {
+          "value": 19200.0,
+          "unit": "€",
+          "period": "year",
+          "mitigation": null
+        },
+        "source": {
+          "system": "manual",
+          "last_updated_at": "2026-05-01T09:27:36.896372+00:00",
+          "confidence": "high",
+          "freshness_status": "demo",
+          "methodology": "Comptage des DeliveryPoint dont grd_code est NULL. Le code GRD (gestionnaire de réseau) détermine la grille tarifaire réglementée applicable (TURPE pour Enedis  ATRD pour GRDF  etc.). Exposition € = count × 1 200 €/PRM/an (Bill-Intel insights 2024 — pertes médianes 1.2 % du total facturé sur DP non audités  base 100 MWh × 95 €/MWh)."
+        },
+        "action": {
+          "label": "Voir le patrimoine",
+          "route": "/patrimoine",
+          "owner_role": "DAF"
+        },
+        "linked_assets": {
+          "org_id": 1,
+          "portfolio_id": null,
+          "site_ids": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "building_ids": [],
+          "meter_ids": [],
+          "invoice_ids": [],
+          "contract_ids": []
+        }
+      },
+      {
+        "id": "consumption_drift:org:1:site:4:base_load",
+        "event_type": "consumption_drift",
+        "severity": "critical",
+        "title": "Talon de consommation élevé — site #4",
+        "narrative": "Talon de puissance eleve : 54.6 kW (58% de Pmoy).. Surconsommation estimée : 95677 kWh. Action recommandée pour récupérer ~14 352 €/an.",
+        "impact": {
+          "value": 14352.0,
+          "unit": "€",
+          "period": "year",
+          "mitigation": {
+            "capex_eur": null,
+            "payback_months": 1,
+            "npv_eur": 14352.0,
+            "npv_horizon_year": 2026
+          }
+        },
+        "source": {
+          "system": "Enedis",
+          "last_updated_at": "2026-05-01T09:27:36.840177+00:00",
+          "confidence": "high",
+          "freshness_status": "demo",
+          "methodology": "Insight type « base_load » détecté par consumption_diagnostic (signature énergétique COSTIC + DJU). Perte estimée 14 352 €/an basée sur le tarif moyen site et l'écart vs baseline calculée."
+        },
+        "action": {
+          "label": "Voir le diagnostic",
+          "route": "/diagnostic-conso?site_id=4",
+          "owner_role": "Energy Manager"
+        },
+        "linked_assets": {
+          "org_id": 1,
+          "portfolio_id": null,
+          "site_ids": [
+            4
+          ],
+          "building_ids": [],
+          "meter_ids": [],
+          "invoice_ids": [],
+          "contract_ids": []
+        }
+      },
+      {
+        "id": "consumption_drift:org:1:site:4:base_load",
+        "event_type": "consumption_drift",
+        "severity": "critical",
+        "title": "Talon de consommation élevé — site #4",
+        "narrative": "Talon de puissance eleve : 53.0 kW (58% de Pmoy).. Surconsommation estimée : 92821 kWh. Action recommandée pour récupérer ~13 923 €/an.",
+        "impact": {
+          "value": 13923.0,
+          "unit": "€",
+          "period": "year",
+          "mitigation": {
+            "capex_eur": null,
+            "payback_months": 1,
+            "npv_eur": 13923.0,
+            "npv_horizon_year": 2026
+          }
+        },
+        "source": {
+          "system": "Enedis",
+          "last_updated_at": "2026-05-01T09:27:36.840177+00:00",
+          "confidence": "high",
+          "freshness_status": "demo",
+          "methodology": "Insight type « base_load » détecté par consumption_diagnostic (signature énergétique COSTIC + DJU). Perte estimée 13 923 €/an basée sur le tarif moyen site et l'écart vs baseline calculée."
+        },
+        "action": {
+          "label": "Voir le diagnostic",
+          "route": "/diagnostic-conso?site_id=4",
+          "owner_role": "Energy Manager"
+        },
+        "linked_assets": {
+          "org_id": 1,
+          "portfolio_id": null,
+          "site_ids": [
+            4
+          ],
+          "building_ids": [],
+          "meter_ids": [],
+          "invoice_ids": [],
+          "contract_ids": []
+        }
+      },
+      {
+        "id": "billing_anomaly:org:1:open",
+        "event_type": "billing_anomaly",
+        "severity": "critical",
+        "title": "Pertes facturation critiques : 48 anomalies",
+        "narrative": "48 anomalies détectées sur vos factures par le shadow billing v4.2 — pertes estimées à récupérer. Réparties sur 5 sites. Payback moyen observé : —.",
+        "impact": {
+          "value": 13821.199999999999,
+          "unit": "€",
+          "period": "year",
+          "mitigation": null
+        },
+        "source": {
+          "system": "invoice",
+          "last_updated_at": "2026-05-01T09:27:36.834289+00:00",
+          "confidence": "high",
+          "freshness_status": "demo",
+          "methodology": "Cumul des pertes estimées (€) par statut de traitement (à contester / en cours / récupérée). Récupérations cette année : anomalies résolues depuis le 1ᵉʳ janvier."
+        },
+        "action": {
+          "label": "Voir les anomalies",
+          "route": "/bill-intel",
+          "owner_role": "DAF"
+        },
+        "linked_assets": {
+          "org_id": 1,
+          "portfolio_id": null,
+          "site_ids": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "building_ids": [],
+          "meter_ids": [],
+          "invoice_ids": [],
+          "contract_ids": []
+        }
+      },
+      {
+        "id": "flex_opportunity:org:1:portfolio",
+        "event_type": "flex_opportunity",
+        "severity": "warning",
+        "title": "Opportunité d'effacement à étudier : 265 kW pilotables",
+        "narrative": "Potentiel d'effacement portefeuille estimé à 49 193 €/an (rémunération mécanismes RTE). Investissement GTB 125 k€ déverrouille 187 kW supplémentaires.",
+        "impact": {
+          "value": 49193.0,
+          "unit": "€",
+          "period": "year",
+          "mitigation": {
+            "capex_eur": 125000.0,
+            "payback_months": 57,
+            "npv_eur": -7952.687272921859,
+            "npv_horizon_year": 2031
+          }
+        },
+        "source": {
+          "system": "benchmark",
+          "last_updated_at": "2026-05-01T09:27:36.889986+00:00",
+          "confidence": "medium",
+          "freshness_status": "demo",
+          "methodology": "Potentiel calculé sur 5 sites via flex_nebco_service. Revenu mid = moyenne plage NEBCO low/high RTE (rémunération effacement) + capacité 1/11/2026. Mitigation BACS = coût GTB pour déverrouiller pilotage HVAC/froid/IRVE."
+        },
+        "action": {
+          "label": "Voir les opportunités flex",
+          "route": "/flex",
+          "owner_role": "Energy Manager"
+        },
+        "linked_assets": {
+          "org_id": 1,
+          "portfolio_id": null,
+          "site_ids": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "building_ids": [],
+          "meter_ids": [],
+          "invoice_ids": [],
+          "contract_ids": []
+        }
+      },
+      {
+        "id": "asset_registry_issue:org:1:orphan_contract",
+        "event_type": "asset_registry_issue",
+        "severity": "warning",
+        "title": "4 contrats sans site rattaché",
+        "narrative": "4 contrats fournisseur ne couvre aucun site dans le registre PROMEOS. Risque : facturation reçue sans pouvoir l'imputer ou la contester. Exposition estimée : 20 000 €/an. Vérifier les annexes site et compléter les rattachements.",
+        "impact": {
+          "value": 20000.0,
+          "unit": "€",
+          "period": "year",
+          "mitigation": null
+        },
+        "source": {
+          "system": "manual",
+          "last_updated_at": "2026-05-01T09:27:36.896372+00:00",
+          "confidence": "high",
+          "freshness_status": "demo",
+          "methodology": "Comptage ContratCadre dont COUNT(ContractAnnexe.contrat_cadre_id) = 0. Un contrat cadre sans annexe site est techniquement actif (facturation reçue) mais non auditable. Exposition € = count × 5 000 €/contrat (Estimation mid-market : un contrat sans annexe couvre ~5 sites en moyenne × 1k€ exposition shadow billing)."
+        },
+        "action": {
+          "label": "Voir les contrats",
+          "route": "/contrats",
+          "owner_role": "DAF"
+        },
+        "linked_assets": {
+          "org_id": 1,
+          "portfolio_id": null,
+          "site_ids": [],
+          "building_ids": [],
+          "meter_ids": [],
+          "invoice_ids": [],
+          "contract_ids": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      },
+      {
+        "id": "compliance_deadline:org:1:a_risque",
+        "event_type": "compliance_deadline",
+        "severity": "warning",
+        "title": "3 sites à risque sur la trajectoire 2030",
+        "narrative": "Trajectoire 2030 sous tension. Audit énergétique recommandé pour identifier les leviers de réduction. Pénalité conditionnelle 3 750 €/site si non-conforme à échéance.",
+        "impact": {
+          "value": 11250.0,
+          "unit": "€",
+          "period": "year",
+          "mitigation": {
+            "capex_eur": 24000.0,
+            "payback_months": 9,
+            "npv_eur": 16836.32127288964,
+            "npv_horizon_year": 2030
+          }
+        },
+        "source": {
+          "system": "RegOps",
+          "last_updated_at": "2026-05-01T09:27:36.833809+00:00",
+          "confidence": "high",
+          "freshness_status": "demo",
+          "methodology": "Pénalité conditionnelle 3 750 €/site × 3 sites à risque. Mitigation : audit énergétique 8 000 €/site (ADEME Guide Audit Énergétique Réglementaire 2025 + retours marketplace mid-market). NPV actualisé horizon 2030."
+        },
+        "action": {
+          "label": "Voir les sites à risque",
+          "route": "/conformite",
+          "owner_role": "DAF"
+        },
+        "linked_assets": {
+          "org_id": 1,
+          "portfolio_id": null,
+          "site_ids": [
+            2,
+            3,
+            5
+          ],
+          "building_ids": [],
+          "meter_ids": [],
+          "invoice_ids": [],
+          "contract_ids": []
+        }
+      },
+      {
+        "id": "contract_renewal:org:1:contrat:4",
+        "event_type": "contract_renewal",
+        "severity": "warning",
+        "title": "Contrat Ekwateur (elec) — échéance dans 30 jours (action immédiate)",
+        "narrative": "Le contrat CC-2025-004 avec Ekwateur arrive à échéance. Anticiper la renégociation pour éviter une reconduction tacite estimée à +1 425 €/an (volume proxy 100 MWh × 95 €/MWh × spread tacite 15 %).",
+        "impact": {
+          "value": 1425.0,
+          "unit": "€",
+          "period": "year",
+          "mitigation": null
+        },
+        "source": {
+          "system": "manual",
+          "last_updated_at": "2026-05-01T09:27:36.890452+00:00",
+          "confidence": "high",
+          "freshness_status": "demo",
+          "methodology": "Détection basée sur ContratCadre.date_fin (2026-05-31) et ContratCadre.date_preavis (non renseignée). Severity dynamique selon urgence : préavis dépassé ou < 30j → critique ; échéance < 90j → à faire ; < 180j → à surveiller. Impact € = nb_annexes (1) × volume proxy (100 MWh/site) × prix marché (95 €/MWh, source : EPEX spot baseload moyenne 2025 + PEG indice gaz 2025 (Observatoire CRE)) × spread tacite (15 %, source : Observatoire CRE T4 2025 + retours marketplace ETI mid-market 2024-2025 — fourchette 12-18 % spot)."
+        },
+        "action": {
+          "label": "Renégocier le contrat",
+          "route": "/achat-energie",
+          "owner_role": "DAF"
+        },
+        "linked_assets": {
+          "org_id": 1,
+          "portfolio_id": null,
+          "site_ids": [],
+          "building_ids": [],
+          "meter_ids": [],
+          "invoice_ids": [],
+          "contract_ids": [
+            4
+          ]
+        }
+      },
+      {
+        "id": "market_window:org:1:capacity_nov_2026",
+        "event_type": "market_window",
+        "severity": "watch",
+        "title": "Mécanisme capacité obligatoire — échéance dans 6 mois",
+        "narrative": "Fin du mécanisme ARENH au 31/12/2025  remplacé par le mécanisme capacité physique obligatoire à compter du 1er novembre 2026. Sans garantie capacité couvrant votre portefeuille (5 sites)  surcoût estimé à 6 000 €/an (12 €/MWh × 500 MWh).",
+        "impact": {
+          "value": 6000.0,
+          "unit": "€",
+          "period": "year",
+          "mitigation": null
+        },
+        "source": {
+          "system": "RegOps",
+          "last_updated_at": "2026-05-01T09:27:36.890252+00:00",
+          "confidence": "high",
+          "freshness_status": "demo",
+          "methodology": "Source : CRE délibération 2025-269 + 2026-49 fourchette 8-15 €/MWh ; médiane mid-market 12 €/MWh. Surcoût estimé = consommation portefeuille × coût indicatif capacité non-couverte (12 €/MWh). Proxy consommation : Proxy mid-market tertiaire bureau 100 MWh/an/site (ADEME bilan énergétique 2024). Action : sécuriser une garantie capacité avant la date butoir via votre fournisseur ou un agrégateur certifié RTE."
+        },
+        "action": {
+          "label": "Voir les scénarios d'achat",
+          "route": "/achat-energie",
+          "owner_role": "DAF"
+        },
+        "linked_assets": {
+          "org_id": 1,
+          "portfolio_id": null,
+          "site_ids": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "building_ids": [],
+          "meter_ids": [],
+          "invoice_ids": [],
+          "contract_ids": []
+        }
+      },
+      {
+        "id": "billing_anomaly:org:1:reclaim_ytd",
+        "event_type": "billing_anomaly",
+        "severity": "info",
+        "title": "1 k€ récupérés cette année — 11 anomalies traitées",
+        "narrative": "Récupérations validées : 1 k€ obtenus grâce aux contestations auprès des fournisseurs. Continuez le processus de contrôle des factures pour maintenir le rythme.",
+        "impact": {
+          "value": 1674.11,
+          "unit": "€",
+          "period": "year",
+          "mitigation": null
+        },
+        "source": {
+          "system": "invoice",
+          "last_updated_at": "2026-05-01T09:27:36.834289+00:00",
+          "confidence": "high",
+          "freshness_status": "demo",
+          "methodology": "Récupérations validées cette année divisées par le total des anomalies (récupérées + à contester + en cours). Indique le taux de succès du processus de contestation. Non calculable si aucune anomalie n'a été remontée."
+        },
+        "action": {
+          "label": "Voir le bilan reclaims",
+          "route": "/bill-intel",
+          "owner_role": "DAF"
+        },
+        "linked_assets": {
+          "org_id": 1,
+          "portfolio_id": null,
+          "site_ids": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "building_ids": [],
+          "meter_ids": [],
+          "invoice_ids": [],
+          "contract_ids": []
+        }
+      }
+    ],
+    "fallback_body": "Portefeuille de 5 sites stable — à présenter en l'état au prochain CODIR.",
+    "provenance": {
+      "source": "RegOps + RegAssessment + estimation leviers",
+      "confidence": "high",
+      "updated_at": "2026-05-01T09:27:36.897565+00:00",
+      "methodology_url": "/methodologie/cockpit-comex"
+    }
+  },
+  "provenance": {
+    "source": "RegOps + RegAssessment + estimation leviers",
+    "confidence": "high",
+    "updated_at": "2026-05-01T09:27:36.897565+00:00",
+    "methodology_url": "/methodologie/cockpit-comex"
+  }
+}

@@ -1,0 +1,80 @@
+=== Push événementiel J vs S-1 ===
+
+Recherche métriques avec delta vs S-1 / S-7 :
+backend/services/cockpit_facts_service.py:162:from doctrine.delta import weekly_delta_struct as _weekly_delta_struct  # noqa: E402
+backend/services/cockpit_facts_service.py:744:        "delta_vs_last_week": {"value_eur": 0.0, "category": "calculated_regulatory"},
+backend/services/cockpit_facts_service.py:888:            "delta_vs_last_week": {
+backend/services/cockpit_facts_service.py:1159:    # 10. Phase 3.3 — push événementiel "+X vs S-1" (4 métriques canoniques)
+backend/services/cockpit_facts_service.py:1162:    weekly_deltas = {
+backend/services/cockpit_facts_service.py:1163:        "exposure_eur": _weekly_delta_struct(
+backend/services/cockpit_facts_service.py:1168:        "potential_mwh_year": _weekly_delta_struct(
+backend/services/cockpit_facts_service.py:1173:        "sites_in_drift": _weekly_delta_struct(
+backend/services/cockpit_facts_service.py:1178:        "compliance_score": _weekly_delta_struct(
+backend/services/cockpit_facts_service.py:1197:        "weekly_deltas": weekly_deltas,
+
+=== Phase 3.3 sprint Cockpit Dual : push hebdo livré ? ===
+backend/services/cockpit_facts_service.py:416:        # Phase 27 — weekly_breakdown[] : breakdown jour-par-jour des 7
+backend/services/cockpit_facts_service.py:440:        weekly_breakdown: list[dict] = []
+backend/services/cockpit_facts_service.py:478:                weekly_breakdown.append(
+backend/services/cockpit_facts_service.py:492:            _logger.warning("weekly_breakdown failed: %s", exc)
+backend/services/cockpit_facts_service.py:500:            "weekly_breakdown": weekly_breakdown,  # Phase 27 — data-driven SVG
+backend/services/cockpit_facts_service.py:522:            "weekly_breakdown": [],  # Phase 27 fallback
+backend/services/cockpit_facts_service.py:1162:    weekly_deltas = {
+backend/services/cockpit_facts_service.py:1197:        "weekly_deltas": weekly_deltas,
+
+=== Push événementiel exposé dans payload narrative ===
+132:    # Sprint 2 Vague C ét12c : exposition events natifs SolEventCard pour
+136:    events: tuple = ()  # tuple[SolEventCard, ...] — pas annoté pour éviter cycle import
+149:            "events": [e.to_dict() for e in self.events],
+488:    # proactif (`event_bus.compute_events`) qui détecte/priorise/source
+491:    from services.event_bus import compute_events, to_narrative_week_cards
+493:    events = compute_events(db, org_id)
+494:    week_cards: list[NarrativeWeekCard] = list(to_narrative_week_cards(events))
+525:        events=tuple(events),  # Vague C ét12c — exposé natif §10 SolEventCard
+685:    # ── Week-cards CFO (Sprint 2 chantier α enrichira depuis events bus) ──
+737:    # Vague C ét12f : pile §10 events native pour <SolEventStream> CFO.
+
+=== Champ events exposé runtime (via capture sample) ===
+[
+  {
+    "id": "asset_registry_issue:org:1:no_grd",
+    "event_type": "asset_registry_issue",
+    "severity": "critical",
+    "title": "16 points de livraison sans gestionnaire de réseau",
+    "narrative": "16 PRM/PCE n'ont pas de gestionnaire de réseau renseigné (Enedis  GRDF  ELD…). Sans cette information  le calcul TURPE/ATRD est faussé et la conformité OPERAT à risque. Exposition shadow billing estimée : 19 200 €/an.",
+    "impact": {
+      "value": 19200.0,
+      "unit": "€",
+      "period": "year",
+      "mitigation": null
+    },
+    "source": {
+      "system": "manual",
+      "last_updated_at": "2026-05-01T09:27:36.896372+00:00",
+      "confidence": "high",
+      "freshness_status": "demo",
+      "methodology": "Comptage des DeliveryPoint dont grd_code est NULL. Le code GRD (gestionnaire de réseau) détermine la grille tarifaire réglementée applicable (TURPE pour Enedis  ATRD pour GRDF  etc.). Exposition € = count × 1 200 €/PRM/an (Bill-Intel insights 2024 — pertes médianes 1.2 % du total facturé sur DP non audités  base 100 MWh × 95 €/MWh)."
+    },
+
+=== event_bus DETECTORS existants (qui mappent aux 6 cibles) ===
+backend/services/event_bus/detectors/action_overdue_detector.py
+backend/services/event_bus/detectors/asset_registry_issue_detector.py
+backend/services/event_bus/detectors/billing_anomaly_detector.py
+backend/services/event_bus/detectors/compliance_deadline_detector.py
+backend/services/event_bus/detectors/consumption_drift_detector.py
+backend/services/event_bus/detectors/contract_renewal_detector.py
+backend/services/event_bus/detectors/data_quality_issue_detector.py
+backend/services/event_bus/detectors/flex_opportunity_detector.py
+backend/services/event_bus/detectors/market_window_detector.py
+
+=== Mapping détecteurs ↔ cibles narrative §11.3 ===
+Cible 1 (Dérive trajectoire DT)        → consumption_drift_detector ✅ (drift mensuel)
+Cible 2 (Fenêtre achat marché)         → contract_renewal_detector ✅ (renewal)
+Cible 3 (Échéance audit énergétique)   → compliance_deadline_detector ✅ (deadlines)
+Cible 4 (Anomalie majeure semaine)     → billing_anomaly_detector ✅
+Cible 5 (Variation forte exposition)   → ? PAS de détecteur dédié (à confirmer)
+Cible 6 (Score conformité bascule)     → compliance_deadline_detector partiellement
+
+=== compute_events (orchestre les détecteurs) ===
+30:def compute_events(db: Session, org_id: int) -> list[SolEventCard]:
+62:    return events

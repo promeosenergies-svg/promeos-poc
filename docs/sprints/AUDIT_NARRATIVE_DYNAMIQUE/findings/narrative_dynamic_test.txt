@@ -1,0 +1,18 @@
+=== Diff today vs tomorrow (sans trailing newline) ===
+2d1
+< 
+(différences détectées)
+
+=== Verdict dynamique ===
+Narrative IDENTIQUE today vs simulate_date=2026-04-28 (J-3) :
+  Le param  est ACCEPTÉ par le endpoint (HTTP 200) mais IGNORÉ.
+  Toute narrative est calculée 'à l'instant t' depuis l'état DB courant.
+  → AUCUNE dynamique paramétrable J vs J+1 disponible.
+  → La dynamique ne peut venir que d'un changement DES DONNÉES SOUS-JACENTES
+    (re-seed, nouveaux MeterReading, nouvelles ActionItem, etc.)
+
+Implication doctrine §11.3 :
+  - Un user qui consulte la Synthèse stratégique 2 jours d'affilée verra
+    EXACTEMENT le même texte sauf si la DB a évolué entre-temps.
+  - Pas de push événementiel '+X vs S-1' visible dans la narrative.
+  - Pas de variation lexicale 'aujourd'hui vous avez X' vs 'depuis lundi'.

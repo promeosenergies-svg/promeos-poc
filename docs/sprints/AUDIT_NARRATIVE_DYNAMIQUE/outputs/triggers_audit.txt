@@ -1,0 +1,36 @@
+=== Système de déclencheurs hiérarchisés ===
+Cibles à identifier dans le code :
+  1. Dérive trajectoire DT
+  2. Fenêtre achat marché favorable
+  3. Échéance audit énergétique imminente
+  4. Anomalie majeure semaine
+  5. Variation forte exposition vs S-1
+  6. Score conformité bascule sous seuil
+
+Pattern: trajectory_drift|drift_detected|drift_pct
+  ❌ AUCUNE OCCURRENCE
+---
+Pattern: purchase_window|signature_window|achat_window|forward_window
+  ❌ AUCUNE OCCURRENCE
+---
+Pattern: audit_deadline|audit_imminent|sme_deadline
+  ❌ AUCUNE OCCURRENCE
+---
+Pattern: anomaly_major|major_anomaly|anomalie_majeure
+  ❌ AUCUNE OCCURRENCE
+---
+Pattern: exposure_variation|exposure_delta|delta_exposition
+  ❌ AUCUNE OCCURRENCE
+---
+Pattern: compliance_threshold|score_below|seuil_conformite
+  ❌ AUCUNE OCCURRENCE
+---
+
+=== Logique de hiérarchisation explicite ===
+
+=== narrative_tone (champ payload exposé) ===
+127:    narrative_tone: NarrativeTone  # P0-D : densification fallback typé
+146:            "narrative_tone": self.narrative_tone,
+506:    narrative_tone = _compute_tone(non_conformes, a_risque, conformite_score, urgency_critical=urgency_critical)
+520:        narrative_tone=narrative_tone,
+746:    narrative_tone = _compute_tone(non_conformes, a_risque, conformite_score)

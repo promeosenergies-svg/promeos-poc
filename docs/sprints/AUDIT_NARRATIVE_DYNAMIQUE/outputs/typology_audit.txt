@@ -1,0 +1,39 @@
+=== NAF code stockage ===
+backend/models/site.py:67:    naf_code = Column(String(10), nullable=True, comment="Code NAF override (ex: 47.11F)")
+backend/models/patrimoine.py:112:    naf_code = Column(String(5), nullable=True)
+backend/models/kb_models.py:110:    naf_code = Column(String(10), nullable=False, index=True)
+backend/models/kb_models.py:128:        return f"<KBMappingCode(naf='{self.naf_code}', archetype_id={self.archetype_id})>"
+backend/models/entite_juridique.py:19:    naf_code = Column(String(10), nullable=True, comment="Code NAF principal (ex: 47.11F)")
+backend/models/segmentation.py:48:    naf_code = Column(
+
+=== Helper naf_resolver existant ===
+✅ naf_resolver.py existe (      51 lignes)
+19:def naf_prefix(naf_code: Optional[str]) -> Optional[str]:
+32:def resolve_naf_code(site: "Site", db: "Session") -> Optional[str]:
+
+=== Mapping typologie organisationnelle ===
+❌ naf_to_typology.py ABSENT (à créer en sprint exécution)
+
+=== Valeurs NAF dans la base (HELIOS) ===
+1|Siège HELIOS Paris|6820B
+2|Bureau Régional Lyon|6820B
+3|Entrepôt HELIOS Toulouse|5210B
+4|Hôtel HELIOS Nice|5510Z
+5|École Jules Ferry Marseille|8520Z
+
+=== Org HELIOS NAF (si exposé sur Organisation) ===
+CREATE TABLE organisations (
+	id INTEGER NOT NULL, 
+	nom VARCHAR NOT NULL, 
+	type_client VARCHAR, 
+	logo_url VARCHAR, 
+	siren VARCHAR(9), 
+	actif BOOLEAN, 
+	is_demo BOOLEAN, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	deleted_at DATETIME, 
+	deleted_by VARCHAR(200), 
+	delete_reason VARCHAR(500), 
+	PRIMARY KEY (id)
+);

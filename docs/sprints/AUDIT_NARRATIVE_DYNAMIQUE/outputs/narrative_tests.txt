@@ -1,0 +1,19 @@
+=== Tests narrative existants ===
+backend/tests/__pycache__/test_narrative_eur_hero.cpython-311-pytest-9.0.3.pyc
+backend/tests/test_narrative_eur_hero.py
+
+=== Tests narrative coverage ===
+backend/tests/test_narrative_eur_hero.py
+backend/tests/test_dashboard_essentials_service.py
+backend/tests/test_event_bus.py
+backend/tests/test_losses_service.py
+backend/tests/test_phase2_chiffrage_doctrinal.py
+
+=== Total tests narrative BE ===
+       7
+
+=== FE tests qui mentionnent briefing/narrative ===
+frontend/src/__tests__/solBriefingSection.test.js
+frontend/src/__tests__/labelRegistries.test.js
+frontend/src/__tests__/sol_cockpit_header_phase1_2.test.js
+frontend/src/__tests__/acronymToNarrative.test.js

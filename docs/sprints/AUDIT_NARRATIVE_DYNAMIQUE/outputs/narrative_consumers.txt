@@ -1,0 +1,37 @@
+=== Endpoints qui consomment narrative_generator ===
+backend/routes/pages_briefing.py:10:intégralement à `narrative_generator.generate_page_narrative()`.
+backend/routes/pages_briefing.py:25:from services.narrative import generate_page_narrative
+backend/routes/pages_briefing.py:34:# que les builders sont ajoutés dans `narrative_generator._BUILDERS`.
+backend/routes/pages_briefing.py:103:    narrative = generate_page_narrative(
+
+=== Composants frontend qui affichent la narrative ===
+frontend/src/pages/CockpitPilotage.jsx:7: * Cible : `docs/maquettes/cockpit-sol2/cockpit-pilotage-briefing-jour.html`
+frontend/src/pages/CockpitPilotage.jsx:162:       Logique narrative : MOYEN (carte de référence) → COURT (alerte vive)
+frontend/src/pages/CockpitDecision.jsx:21: *   - useCockpitFacts('current_year') → triptyque + narrative + push hebdo
+frontend/src/pages/CockpitDecision.jsx:156:  // Phase 14.E (audit véracité Sophie/Marie) : la narrative disait "tous les
+frontend/src/pages/CockpitDecision.jsx:222:// pré-remplit `decision.narrative` avec un template SoT
+frontend/src/pages/CockpitDecision.jsx:313:        {/* Phase 15.B : `decision.narrative` est désormais TOUJOURS pré-rempli
+frontend/src/pages/CockpitDecision.jsx:317:        {decision.narrative && (
+frontend/src/pages/CockpitDecision.jsx:326:            {decision.narrative}
+frontend/src/pages/Cockpit.jsx:134:  // Sprint 1.2 — briefing éditorial Sol §5 vue COMEX (ADR-001).
+frontend/src/pages/Cockpit.jsx:135:  // Backend orchestre KPIs CFO + narrative trajectoire 2030 + leviers €/an
+frontend/src/pages/Cockpit.jsx:136:  // via /api/pages/cockpit_comex/briefing (persona=comex).
+frontend/src/pages/Cockpit.jsx:138:    briefing: solBriefing,
+frontend/src/pages/Cockpit.jsx:611:          Briefing CFO orchestré backend : narrative trajectoire 2030 +
+frontend/src/pages/Cockpit.jsx:617:          expert post-briefing. Sprint 1.3 fusionnera CockpitHero dans la
+frontend/src/pages/Cockpit.jsx:618:          narrative pour atteindre la grammaire §5 stricte. */}
+frontend/src/pages/Cockpit.jsx:627:        briefing={solBriefing}
+frontend/src/pages/Cockpit.jsx:641:          mais non câblé sur ces composants. Le briefing Sol §5 reste le
+frontend/src/pages/Cockpit.jsx:1299:      <SolBriefingFooter briefing={solBriefing} />
+
+=== Composants Sol qui rendent la narrative ===
+frontend/src/ui/sol/SolBriefingHead.jsx
+frontend/src/ui/sol/SolBriefingFooter.jsx
+frontend/src/ui/sol/SolNarrativeText.jsx
+frontend/src/ui/sol/SolNarrative.jsx
+frontend/src/components/BriefCodexCard.jsx
+frontend/src/components/OnboardingOverlay.jsx
+frontend/src/pages/ConformitePage.jsx
+frontend/src/pages/Cockpit.jsx
+frontend/src/pages/ConsumptionDiagPage.jsx
+frontend/src/pages/AnomaliesPage.jsx

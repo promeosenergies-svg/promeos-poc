@@ -1,0 +1,68 @@
+=== Fichiers narrative_generator ===
+-rw-r--r--@ 1 amine  staff  117307 Apr 29 15:38 backend/services/narrative/__pycache__/narrative_generator.cpython-311.pyc
+-rw-r--r--@ 1 amine  staff  130851 Apr 29 15:38 backend/services/narrative/narrative_generator.py
+-rw-r--r--@ 1 amine  staff     788 Apr 27 17:59 backend/services/narrative/__init__.py
+-rw-r--r--@ 1 amine  staff     985 Apr 27 17:59 backend/services/narrative/__pycache__/__init__.cpython-311.pyc
+-rw-r--r--@ 1 amine  staff  117307 Apr 29 15:38 backend/services/narrative/__pycache__/narrative_generator.cpython-311.pyc
+-rw-r--r--@ 1 amine  staff  130851 Apr 29 15:38 backend/services/narrative/narrative_generator.py
+
+=== Tous fichiers liés narrative (BE+FE) ===
+backend/ai_layer/agents/exec_brief_agent.py
+backend/doctrine/__init__.py
+backend/doctrine/acronyms.py
+backend/doctrine/constants.py
+backend/orchestration/agents/lead.py
+backend/orchestration/cli.py
+backend/routes/pages_briefing.py
+backend/services/billing/losses_service.py
+backend/services/cockpit_decisions_service.py
+backend/services/consumption_diagnostic.py
+backend/services/dashboard_essentials_service.py
+backend/services/data_provenance/provenance_service.py
+backend/services/event_bus/__init__.py
+backend/services/event_bus/detectors/action_overdue_detector.py
+backend/services/event_bus/detectors/asset_registry_issue_detector.py
+backend/services/event_bus/detectors/billing_anomaly_detector.py
+backend/services/event_bus/detectors/compliance_deadline_detector.py
+backend/services/event_bus/detectors/consumption_drift_detector.py
+backend/services/event_bus/detectors/contract_renewal_detector.py
+backend/services/event_bus/detectors/data_quality_issue_detector.py
+backend/services/event_bus/detectors/flex_opportunity_detector.py
+backend/services/event_bus/detectors/market_window_detector.py
+backend/services/event_bus/event_service.py
+backend/services/event_bus/types.py
+backend/services/narrative/__init__.py
+backend/services/narrative/narrative_generator.py
+backend/tests/test_acronyms.py
+backend/tests/test_dashboard_essentials_service.py
+backend/tests/test_doctrine_sol_source_guards.py
+backend/tests/test_event_bus.py
+backend/tests/test_losses_service.py
+backend/tests/test_narrative_eur_hero.py
+backend/tests/test_notifications_distribution.py
+backend/tests/test_phase2_chiffrage_doctrinal.py
+backend/venv/lib/python3.11/site-packages/pygments/lexers/testing.py
+backend/venv/lib/python3.11/site-packages/sqlalchemy/orm/_orm_constructors.py
+frontend/src/__tests__/acronymToNarrative.test.js
+frontend/src/__tests__/labelRegistries.test.js
+frontend/src/__tests__/solBriefingSection.test.js
+frontend/src/components/BriefCodexCard.jsx
+frontend/src/domain/acronymToNarrative.js
+frontend/src/domain/billing/billingLabels.fr.js
+frontend/src/domain/events/eventTypes.js
+frontend/src/domain/monitoring/monitoringLabels.fr.js
+frontend/src/hooks/usePageBriefing.js
+frontend/src/pages/BillIntelPage.jsx
+frontend/src/pages/Cockpit.jsx
+frontend/src/pages/CockpitDecision.jsx
+frontend/src/pages/CockpitPilotage.jsx
+frontend/src/pages/CommandCenter.jsx
+frontend/src/pages/ConformitePage.jsx
+frontend/src/pages/MonitoringPage.jsx
+frontend/src/pages/Patrimoine.jsx
+frontend/src/pages/PurchasePage.jsx
+frontend/src/ui/sol/SolBriefingHead.jsx
+frontend/src/ui/sol/SolEventCard.jsx
+frontend/src/ui/sol/SolNarrative.jsx
+frontend/src/ui/sol/SolNarrativeText.jsx
+frontend/src/ui/sol/SolWeekCards.jsx

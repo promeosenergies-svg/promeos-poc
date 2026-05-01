@@ -1,0 +1,34 @@
+=== Signatures fonctions narrative_generator.py ===
+75:class NarrativeKpi:
+87:class NarrativeWeekCard:
+99:class NarrativeTone(str, Enum):
+118:class Narrative:
+160:class OrgContext:
+176:def _load_org_context(db: Session, org_id: int) -> OrgContext:
+212:def _compute_tone(
+234:def _build_provenance_canonical(
+257:def _build_provenance_volume_based(
+284:def _s(n: int) -> str:
+297:def _has_meaningful_eur(value: Optional[str]) -> bool:
+315:def _promote_eur_kpi_to_hero(kpis: list[NarrativeKpi]) -> list[NarrativeKpi]:
+345:def _is_score_kpi(value: Optional[str]) -> bool:
+370:def _enforce_canonical_kpi_template(kpis: list[NarrativeKpi]) -> list[NarrativeKpi]:
+408:def _build_cockpit_daily(
+532:def _build_cockpit_comex(
+773:def _build_patrimoine(
+998:def _build_conformite(
+1233:def _build_bill_intel(
+1485:def _build_achat_energie(
+1755:def _build_monitoring(
+2073:def _build_diagnostic(
+2377:def _action_source_str(source_type) -> str:
+2389:def _is_critical_action(a) -> bool:
+2402:def _build_anomalies(
+2721:def _build_flex(
+2995:def _fmt_m2_short(m2: float) -> str:
+3007:def _fmt_m2_full(m2: float) -> str:
+3014:def _fmt_eur_short(amount: Optional[float]) -> str:
+3044:def generate_page_narrative(
+
+=== Total ===
+30

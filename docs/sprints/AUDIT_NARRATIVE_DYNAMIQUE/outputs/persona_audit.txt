@@ -1,0 +1,45 @@
+=== User role / persona stockage ===
+
+=== Schéma table users ===
+
+=== Personas utilisés en frontend ===
+frontend/src/App.jsx
+frontend/src/ui/glossary.js
+frontend/src/ui/sol/SolAcronym.jsx
+frontend/src/ui/sol/SolEventCard.jsx
+frontend/src/ui/sol/SolKickerWithSwitch.jsx
+frontend/src/layout/NavRail.jsx
+frontend/src/layout/AppShell.jsx
+frontend/src/layout/NavRegistry.js
+frontend/src/utils/format.js
+frontend/src/layout/NavPanel.jsx
+
+=== Personas dans le narrative_generator ===
+122:    persona: Persona
+141:            "persona": self.persona,
+515:        persona="daily",
+756:        persona="comex",
+982:        persona="daily",
+1217:        persona="daily",
+1463:        persona="daily",
+1729:        persona="daily",
+2039:        persona="daily",
+2344:        persona="daily",
+2684:        persona="daily",
+2979:        persona="daily",
+3051:    persona: Persona = "daily",
+
+=== Distinct roles en base ===
+Error: in prepare, no such column: role
+  SELECT DISTINCT role FROM users WHERE deleted_at IS NULL;
+                  ^--- error here
+
+=== CONSTAT users ===
+Table users : aucun champ 'role' ni 'persona' au schéma.
+Le persona est passé en QUERY PARAM (?persona=daily|comex), pas stocké.
+Le user n'a pas de typologie. La narrative est servie selon le param URL.
+
+=== Persona Literal type narrative ===
+58:Persona = Literal["daily", "comex"]
+541:      - Persona = comex (vue mensuelle/hebdo synthèse direction, pas daily)
+3051:    persona: Persona = "daily",
