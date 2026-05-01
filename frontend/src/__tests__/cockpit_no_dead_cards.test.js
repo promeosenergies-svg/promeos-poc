@@ -12,7 +12,9 @@
  * - 4 KPI hero (le triptyque est inviolable — exactement 3)
  * - Acronymes bruts en titres (DT/BACS/GTB/TURPE) — déjà couvert par
  *   SolAcronym + glossary, on duplique le check ici pour Cockpit
- * - Bandeau Pilotage usages avec 4 sub-cards en Vue Exécutive
+ * - Bandeau Pilotage usages avec 4 sub-cards en Synthèse stratégique
+ *   (anciennement "Vue exécutive", renommé Phase 1.A P0.2 vers le libellé
+ *   canonique doctrine Sol §11.3)
  * - Card Hypermarché Montreuil en scope HELIOS (déjà couvert par
  *   test_helios_no_demo_sites_leak Phase 0.7, on ne duplique pas)
  *

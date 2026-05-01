@@ -52,9 +52,10 @@ describe('Phase 3.1 — routes Cockpit dual sol2', () => {
   });
 
   it('route /cockpit redirect vers /cockpit/strategique (Phase 13.D : démo CFO)', () => {
-    // Phase 13.D — la redirection /cockpit pointe désormais sur Vue exécutive
-    // (Synthèse stratégique CFO 3min) au lieu du Briefing du jour. Audience
-    // démo principale = CFO/DG/VC.
+    // Phase 13.D — la redirection /cockpit pointe sur la Synthèse stratégique
+    // (page Décision CFO 3 min) au lieu du Briefing du jour. Audience démo
+    // principale = CFO/DG/VC. Libellé Phase 1.A — P0.2 : "Vue exécutive" →
+    // "Synthèse stratégique" (doctrine Sol §11.3).
     expect(REDIRECTS_SRC).toMatch(/\['\/cockpit',\s*'\/cockpit\/strategique'\]/);
   });
 

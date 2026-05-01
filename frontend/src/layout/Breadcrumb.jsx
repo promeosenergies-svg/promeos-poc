@@ -125,9 +125,11 @@ export default function Breadcrumb() {
 
   // Root path → simple breadcrumb
   // Phase 1.A — P0.2 : `/` redirige sur `/cockpit/strategique` (Phase 13.D),
-  // donc le crumb root affiche le libellé canonique Sol §11.3.
+  // donc le crumb root affiche le libellé canonique Sol §11.3. La SoT
+  // est le LABELS map ci-dessus (segment '' → "Synthèse stratégique") —
+  // on le réutilise au lieu de hardcoder le libellé.
   if (parts.length === 0) {
-    crumbs.push({ label: 'Synthèse stratégique', to: '/' });
+    crumbs.push({ label: LABELS[''], to: '/' });
     return <BreadcrumbNav crumbs={crumbs} tintText={tint?.activeText} />;
   }
 

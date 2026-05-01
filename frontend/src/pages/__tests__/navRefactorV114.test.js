@@ -1,7 +1,9 @@
 /**
  * V7 Navigation Refactor — Guard-rail tests
  * Remplace V114 obsolète. Vérifie la structure V7 :
- *  - Cockpit: 2 items (Tableau de bord + Vue exécutive)
+ *  - Cockpit: 2 items (Synthèse stratégique + Briefing du jour) — libellés
+ *    canoniques Sol §11.3 (Phase 1.A P0.2, ex "Vue exécutive" / "Tableau
+ *    de bord")
  *  - Conformité: module autonome 4-5 items
  *  - Achat visible en normal
  *  - /actions et /notifications retirés de la nav (déplacés vers Centre d'actions)
@@ -18,11 +20,15 @@ describe('V7 Nav Refactor guard-rails', () => {
   // Refonte WOW Cockpit dual sol2 (29/04/2026) : routes canoniques §11.3 doctrine
   // /cockpit/jour (Briefing du jour = Pilotage 30s) + /cockpit/strategique
   // (Synthèse stratégique = Décision 3min) — au lieu de l'ancienne paire
-  // / + /cockpit qui exposait une inversion (cf. issue sidebar Tableau de bord).
-  // Phase 13.D : ordre inversé pour démo CFO/investisseur — Vue exécutive
-  // (Synthèse stratégique 3min) en premier, Tableau de bord (Briefing
-  // Energy Manager 30s) en second. Cohérent avec audience démo principale.
-  it('Cockpit has exactly 2 items (Vue exécutive + Tableau de bord)', () => {
+  // / + /cockpit qui exposait une inversion.
+  //
+  // Phase 1.A — P0.2 (audit navigation_audit_20260501.md, 2026-05-01) :
+  // hard-cut renommage des libellés panel Cockpit vers les libellés canoniques
+  // Sol §11.3 — "Vue exécutive" → "Synthèse stratégique", "Tableau de bord"
+  // → "Briefing du jour". Anciens libellés conservés en `keywords`
+  // (rétro-compat ⌘K). Phase 13.D : ordre inversé pour démo CFO — Synthèse
+  // stratégique en premier, Briefing du jour en second.
+  it('Cockpit has exactly 2 items (Synthèse stratégique + Briefing du jour)', () => {
     const cockpit = NAV_SECTIONS.find((s) => s.key === 'cockpit');
     expect(cockpit.items).toHaveLength(2);
     expect(cockpit.items.map((i) => i.to)).toEqual(['/cockpit/strategique', '/cockpit/jour']);

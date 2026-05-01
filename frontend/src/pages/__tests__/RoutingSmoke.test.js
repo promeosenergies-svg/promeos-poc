@@ -72,6 +72,35 @@ describe('NavRegistry V7 — labels FR avec accents', () => {
   });
 });
 
+describe('NavRegistry — Phase 1.A P0.2 rétro-compat keywords legacy', () => {
+  // Q5 audit : hard-cut renommage des libellés panel Cockpit ("Vue exécutive"
+  // / "Tableau de bord" → "Synthèse stratégique" / "Briefing du jour"), mais
+  // les anciens libellés restent indexés via `keywords` pour que la search
+  // palette (⌘K) reste fonctionnelle quand un utilisateur tape l'ancien nom.
+  // Garde-fou contre régression silencieuse de la rétro-compat search.
+  it("'Synthèse stratégique' garde 'vue' et 'executive' en keywords", () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Synthèse stratégique');
+    expect(item).toBeDefined();
+    expect(item.keywords).toEqual(expect.arrayContaining(['vue', 'executive']));
+  });
+
+  it("'Briefing du jour' garde 'tableau' et 'dashboard' en keywords", () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Briefing du jour');
+    expect(item).toBeDefined();
+    expect(item.keywords).toEqual(expect.arrayContaining(['tableau', 'dashboard']));
+  });
+
+  it('aucun item de nav ne porte plus le libellé legacy "Vue exécutive"', () => {
+    const legacy = ALL_NAV_ITEMS.find((i) => i.label === 'Vue exécutive');
+    expect(legacy).toBeUndefined();
+  });
+
+  it('aucun item de nav ne porte plus le libellé legacy "Tableau de bord"', () => {
+    const legacy = ALL_NAV_ITEMS.find((i) => i.label === 'Tableau de bord');
+    expect(legacy).toBeUndefined();
+  });
+});
+
 describe('CommandCenter — exports fonctionnels', () => {
   it('normalizeDashboardModel est une fonction', () => {
     expect(typeof normalizeDashboardModel).toBe('function');
