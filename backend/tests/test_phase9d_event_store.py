@@ -105,9 +105,11 @@ class TestRecordEventSnapshot:
         db_session.commit()
 
         payload = json.loads(snapshot.payload_json)
+        # Champs structurels safe préservés
         assert payload["event_type"] == "billing_anomaly"
         assert payload["severity"] == "warning"
-        assert payload["title"] == "Test"
+        # Phase 10.C : title est PII-redacted (allowlist filter audit P1-3)
+        assert payload["title"] == "[REDACTED]"
 
     def test_record_uses_event_source_last_updated_when_no_recorded_at(self, db_session, org):
         """Si recorded_at non fourni, utilise event.source.last_updated_at."""

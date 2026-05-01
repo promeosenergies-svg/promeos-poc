@@ -66,9 +66,46 @@ CATALOG: dict[str, str] = {
     "role.csr_manager.default": "CSR manager",
     # ─── Persona mention pattern EN ────────────────────────────────────────
     "persona.mention": "For {first_name}, {role_label}: {focus_text}",
-    # NB : les composers événementiels (DT_drift / MAJOR_ANOMALY / etc.)
-    # ne sont PAS traduits Phase 9.C MVP — fallback automatique sur FR.
-    # V2 (post panel UK) livrera les traductions composers.
+    # ─── Phase 10.B — Composers événementiels traduits (P1-2 audit Phase 9) ──
+    # DT_drift composers (Phase 1 événementielle)
+    "composer.dt_drift.grand_groupe": (
+        "{sites_count} {sites_word} of your portfolio {verb} drifted off-track "
+        "from the French Tertiary Decree -40% target this week {source_suffix}"
+    ),
+    "composer.dt_drift.eti_tertiaire": (
+        "{sites_count} {sites_word} of your real estate portfolio {verb} drifted "
+        "off-track from the French Tertiary Decree -40% target this week {source_suffix}"
+    ),
+    "composer.dt_drift.commerce": (
+        "Your {activity} consumes {magnitude} vs the regional {activity} average this week {source_suffix}"
+    ),
+    "composer.dt_drift.erp": (
+        "Your facility has drifted off-track from the French Tertiary Decree -40% target this week {source_suffix}"
+    ),
+    "composer.dt_drift.unknown": ("Your perimeter is drifting from the 2030 trajectory this week {source_suffix}"),
+    # MAJOR_ANOMALY composers
+    "composer.major_anomaly.grand_groupe": (
+        "Major anomaly detected on your portfolio this week: {title} {source_suffix}"
+    ),
+    "composer.major_anomaly.eti_tertiaire": (
+        "Major anomaly detected on your real estate portfolio this week: {title} {source_suffix}"
+    ),
+    "composer.major_anomaly.commerce": "Anomaly detected this week, please review: {title} {source_suffix}",
+    "composer.major_anomaly.erp": ("Major anomaly detected on your facility this week: {title} {source_suffix}"),
+    # AUDIT_DEADLINE composers
+    "composer.audit_deadline.grand_groupe": ("Imminent regulatory deadline on your portfolio: {title} {source_suffix}"),
+    "composer.audit_deadline.eti_tertiaire": (
+        "Imminent regulatory deadline on your real estate portfolio: {title} {source_suffix}"
+    ),
+    "composer.audit_deadline.commerce": "Imminent deadline, prompt action required: {title} {source_suffix}",
+    "composer.audit_deadline.erp": ("Imminent regulatory deadline on your facility: {title} {source_suffix}"),
+    # PURCHASE_WINDOW composers
+    "composer.purchase_window.grand_groupe": "Purchase window open on your portfolio: {title} {source_suffix}",
+    "composer.purchase_window.eti_tertiaire": (
+        "Purchase window open on your real estate portfolio: {title} {source_suffix}"
+    ),
+    "composer.purchase_window.commerce": "Good window to renegotiate your contract: {title} {source_suffix}",
+    "composer.purchase_window.erp": "Purchase window open on your facility: {title} {source_suffix}",
 }
 
 

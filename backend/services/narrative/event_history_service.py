@@ -35,6 +35,41 @@ from models import EventHistorySnapshot
 from services.event_bus.types import SolEventCard
 
 
+# Phase 10.C — Allowlist PII (P1-3 audit Phase 9).
+# `payload_json` stocke `to_dict()` d'un SolEventCard. Les champs libres
+# `title` et `narrative` peuvent contenir des données nominatives ou des
+# identifiants (SIRET, PDL, prénom dans message d'erreur). Phase 10.C
+# expurge ces champs vers `[REDACTED]` avant persistence pour éviter
+# d'accumuler des PII dans un journal append-only sans TTL.
+#
+# Champs préservés (whitelist) : event_type, severity, impact, source,
+# linked_assets — utiles pour analytics/replay sans PII.
+# Champs expurgés : title, narrative, action.label.
+_PII_REDACTED_FIELDS = ("title", "narrative")
+_PII_REDACTED_NESTED = {
+    "action": ("label",),  # action.label peut contenir prénom/SIRET
+}
+_REDACTED_PLACEHOLDER = "[REDACTED]"
+
+
+def _sanitize_pii_payload(payload: dict) -> dict:
+    """Applique l'allowlist PII sur le payload SolEventCard.to_dict().
+
+    Modifie en place puis retourne le dict (pratique mais pure-function-like
+    car le caller passe un nouveau dict via `to_dict()` qui n'est pas
+    réutilisé après).
+    """
+    for field in _PII_REDACTED_FIELDS:
+        if field in payload and payload[field]:
+            payload[field] = _REDACTED_PLACEHOLDER
+    for parent, sub_fields in _PII_REDACTED_NESTED.items():
+        if parent in payload and isinstance(payload[parent], dict):
+            for sub in sub_fields:
+                if sub in payload[parent] and payload[parent][sub]:
+                    payload[parent][sub] = _REDACTED_PLACEHOLDER
+    return payload
+
+
 def record_event_snapshot(
     db: Session,
     org_id: int,
@@ -44,23 +79,26 @@ def record_event_snapshot(
 ) -> EventHistorySnapshot:
     """Enregistre un snapshot d'event dans le journal append-only.
 
+    Phase 10.C : applique l'allowlist PII sur le `payload_json` avant
+    persistence (champs `title` et `narrative` expurgés vers `[REDACTED]`).
+
     Args:
         db: session SQLAlchemy.
         org_id: org-scoping (cf cardinal PROMEOS).
         event: SolEventCard à enregistrer (frozen dataclass).
         recorded_at: timestamp de détection. Si None, utilise
             `event.source.last_updated_at` (instant de mesure source).
-            Permet de stocker un event "vu il y a 3h" sans appeler now().
 
     Returns:
         EventHistorySnapshot persisté (avec id généré).
 
-    Note : le caller est responsable du `db.commit()` — ce service
-    fait `db.add() + db.flush()` mais laisse le commit transactionnel
-    au caller (cohérent avec helpers user_preference_service).
+    Note : le caller est responsable du `db.commit()`.
     """
     if recorded_at is None:
         recorded_at = event.source.last_updated_at
+
+    # Phase 10.C : sanitize payload via allowlist PII
+    safe_payload = _sanitize_pii_payload(event.to_dict())
 
     snapshot = EventHistorySnapshot(
         org_id=org_id,
@@ -68,8 +106,7 @@ def record_event_snapshot(
         event_type=event.event_type,
         severity=event.severity,
         recorded_at=recorded_at,
-        # Sérialisation JSON-safe (datetime → ISO via to_dict())
-        payload_json=json.dumps(event.to_dict(), ensure_ascii=False, default=str),
+        payload_json=json.dumps(safe_payload, ensure_ascii=False, default=str),
     )
     db.add(snapshot)
     db.flush()

@@ -230,6 +230,15 @@ def _load_org_context(db: Session, org_id: int) -> OrgContext:
 # font appel pour exposer la typologie au FE — permet styling + drill-down
 # adaptés. Pour cockpit_comex, on garde l'appel local existant qui réutilise
 # le même résolveur (pas de double-résolution).
+#
+# Phase 10.A — Cache request-scoped (P1-1 audit Phase 9 N+1).
+# Évite N+1 queries SQL identiques quand 9 builders appellent le résolveur
+# dans la même request. Cache via `id(db)` qui change quand la session
+# SQLAlchemy est fermée et recréée.
+_TYPOLOGY_CACHE: dict[tuple[int, int], str] = {}
+_TYPOLOGY_CACHE_MAX_ENTRIES = 1000
+
+
 def _resolve_org_typology_value(db: Session, org_id: int) -> str:
     """Résout typology.value pour exposition Narrative (Phase 9.A wiring).
 
@@ -237,33 +246,48 @@ def _resolve_org_typology_value(db: Session, org_id: int) -> str:
     (org introuvable, scope invalide, etc.). Ne lève jamais d'exception
     — la narrative doit toujours être servie au FE.
 
-    Phase 9.A.bis correctif mini-audit P1 :
-    - Distingue exceptions attendues (NoResultFound, AttributeError) des
-      erreurs SQL fatales (OperationalError, ProgrammingError) qui sont
-      logguées via `_logger.exception` pour observabilité prod.
+    Phase 9.A.bis : exception logging distinct (SQLAlchemyError vs autre).
+    Phase 10.A : cache request-scoped via `id(db)` (P1-1 audit Phase 9 N+1).
     """
     from sqlalchemy.exc import SQLAlchemyError
+
+    # Phase 10.A — Cache hit : même session SQLAlchemy + même org → résoudre 1×
+    cache_key = (id(db), org_id)
+    if cache_key in _TYPOLOGY_CACHE:
+        return _TYPOLOGY_CACHE[cache_key]
 
     try:
         from services.narrative.typology_resolver import resolve_typology_for_scope
 
-        return resolve_typology_for_scope({"org_id": org_id}, db).value
+        result = resolve_typology_for_scope({"org_id": org_id}, db).value
     except (AttributeError, KeyError):
-        # Org introuvable / scope mal formé — fallback silencieux légitime
-        return "unknown"
+        result = "unknown"
     except SQLAlchemyError:
-        # Erreur SQL fatale — logger pour observabilité, fallback safe
         import logging
 
         logging.getLogger("promeos.narrative").exception("_resolve_org_typology_value SQL error org_id=%s", org_id)
-        return "unknown"
+        result = "unknown"
     except Exception:  # noqa: BLE001 — derniers remparts inattendus
         import logging
 
         logging.getLogger("promeos.narrative").exception(
             "_resolve_org_typology_value unexpected error org_id=%s", org_id
         )
-        return "unknown"
+        result = "unknown"
+
+    # Cache miss → store. Bornage anti-leak mémoire (FIFO sur dict ordonné).
+    _TYPOLOGY_CACHE[cache_key] = result
+    if len(_TYPOLOGY_CACHE) > _TYPOLOGY_CACHE_MAX_ENTRIES:
+        keys_to_drop = list(_TYPOLOGY_CACHE.keys())[: _TYPOLOGY_CACHE_MAX_ENTRIES // 2]
+        for k in keys_to_drop:
+            _TYPOLOGY_CACHE.pop(k, None)
+
+    return result
+
+
+def _clear_typology_cache() -> None:
+    """Vide le cache typology — utilisé en tests pour isolation."""
+    _TYPOLOGY_CACHE.clear()
 
 
 def _compute_tone(

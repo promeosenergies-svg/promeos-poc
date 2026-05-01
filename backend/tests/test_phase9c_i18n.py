@@ -71,12 +71,30 @@ class TestTFallbackFr:
     """Si une clé EN est absente, fallback automatique sur FR."""
 
     def test_en_fallback_to_fr_for_missing_key(self):
-        """`composer.dt_drift.grand_groupe` n'est pas traduit EN MVP →
-        fallback automatique sur FR."""
-        result_en = t("composer.dt_drift.grand_groupe", Locale.EN)
-        result_fr = t("composer.dt_drift.grand_groupe", Locale.FR)
-        # EN tombe sur FR (skeleton incomplet)
-        assert result_en == result_fr
+        """Phase 10.B : composers traduits EN. On teste le fallback sur
+        une clé qui reste uniquement en FR (`persona.mention` est en FR
+        et EN, mais une clé inventée force le fallback)."""
+        # Clé qui n'existe ni en EN ni en FR → format `[key]` (signal bug)
+        result_inexistant = t("clef.absente.partout", Locale.EN)
+        assert result_inexistant.startswith("[")
+
+        # Test de fallback réel : si on supprime ou n'a jamais traduit une
+        # clé EN, t() la retrouve en FR. On utilise temporairement une
+        # clé qu'on sait absente du catalogue EN pour tester le fallback.
+        from services.narrative.i18n import _CATALOGS
+
+        # `confidence.medium` est traduit dans les 2 → on ne peut pas
+        # tester le fallback sur une clé existante. Utiliser une clé
+        # injectée temporairement en FR uniquement pour valider le
+        # mécanisme.
+        _CATALOGS[Locale.FR]["test.fallback.only_fr"] = "Phrase FR uniquement"
+        try:
+            result_en = t("test.fallback.only_fr", Locale.EN)
+            result_fr = t("test.fallback.only_fr", Locale.FR)
+            assert result_en == result_fr  # EN tombe sur FR
+            assert result_en == "Phrase FR uniquement"
+        finally:
+            _CATALOGS[Locale.FR].pop("test.fallback.only_fr", None)
 
     def test_unknown_key_returns_bracketed_signal(self):
         """Clé inexistante → `[key]` littéral pour debug."""
@@ -186,13 +204,16 @@ class TestListKeys:
         assert keys_fr == sorted(keys_fr)
         assert len(keys_fr) > 20  # MVP a ~30+ clés
 
-    def test_list_keys_en_smaller_than_fr_skeleton_phase(self):
-        """Phase 9.C MVP : EN skeleton < FR (composers non traduits)."""
+    def test_list_keys_en_parity_with_fr_post_phase_10b(self):
+        """Phase 10.B (P1-2 audit Phase 9) : EN catalogue enrichi avec
+        composers événementiels. EN ≈ FR désormais (le squelette MVP
+        Phase 9.C devient un catalogue ~complet Phase 10.B)."""
         keys_fr = list_keys(Locale.FR)
         keys_en = list_keys(Locale.EN)
-        assert len(keys_en) < len(keys_fr), (
-            f"Phase 9.C MVP : EN doit être plus petit que FR (skeleton). FR={len(keys_fr)} EN={len(keys_en)}"
-        )
+        # Tolérance ±5 clés — FR peut avoir quelques clés persona genrées
+        # de plus (épicène EN ne fléchit pas).
+        delta = abs(len(keys_fr) - len(keys_en))
+        assert delta <= 5, f"Phase 10.B : EN doit être proche de FR. FR={len(keys_fr)} EN={len(keys_en)} delta={delta}"
 
 
 if __name__ == "__main__":
