@@ -67,6 +67,17 @@ export function usePageBriefing(pageKey, { persona = 'daily', archetype } = {}) 
           events: payload?.events || [],
           fallbackBody: payload?.fallback_body,
           provenance,
+          // Sprint Refonte Narrative dynamique — Phase 4.bis.A (audit P0-3 wiring)
+          // Expose les payloads structurés Phase 4.0.B au frontend pour
+          // styling (chip up/down primary_push, drill-down primary_trigger,
+          // badge typologie). Tous null tant que le builder cockpit_comex
+          // n'est pas le builder appelé OU tant que le payload n'a pas été
+          // étendu — défaults safe `null`.
+          typology: payload?.typology || null,
+          primaryTrigger: payload?.primary_trigger || null,
+          secondaryTrigger: payload?.secondary_trigger || null,
+          weeklyDeltas: payload?.weekly_deltas || null,
+          primaryPush: payload?.primary_push || null,
         });
       })
       .catch((err) => {

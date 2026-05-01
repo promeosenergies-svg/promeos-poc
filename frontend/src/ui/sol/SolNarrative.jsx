@@ -17,11 +17,18 @@
  * usePageBriefing échoue, on affiche un ErrorState dédié au lieu de
  * masquer silencieusement le préambule (audit CX fin S1).
  *
+ * Sprint Refonte Narrative dynamique — Phase 4.bis.C (audit P1-7+P1-8 wiring) :
+ * - Push +X vs S-1 rendu en `<SolWeeklyDeltaBadge>` à côté du titre
+ *   (plus noyé dans le `<p>` monochrome).
+ * - primary_trigger.linked_site_ids[0] expose un drill-down cliquable
+ *   "Voir les sites en dérive" sous la narrative.
+ *
  * Cf. ADR-001 grammaire Sol industrialisée.
  */
-import { HelpCircle, AlertCircle } from 'lucide-react';
+import { HelpCircle, AlertCircle, ExternalLink } from 'lucide-react';
 
 import SolNarrativeText from './SolNarrativeText';
+import SolWeeklyDeltaBadge from './SolWeeklyDeltaBadge';
 
 function KpiTile({ kpi }) {
   const showTooltip = Boolean(kpi.tooltip);
@@ -68,12 +75,38 @@ function KpiTile({ kpi }) {
   );
 }
 
+// Phase 4.bis.C — mapping trigger → drill-down route + label.
+// Toutes les routes sont relatives à la nav existante (cf App.jsx).
+// Si linked_site_ids est non vide, on filtre la route sur le 1er site.
+const TRIGGER_DRILL_DOWN = {
+  dt_trajectory_drift: { route: '/conformite', label: 'Voir les sites en dérive' },
+  major_anomaly: { route: '/anomalies', label: 'Voir l’anomalie' },
+  audit_deadline_imminent: { route: '/conformite', label: 'Voir l’échéance' },
+  purchase_window_open: { route: '/achat', label: 'Ouvrir la fenêtre achat' },
+};
+
+function buildDrillDownHref(primaryTrigger) {
+  if (!primaryTrigger?.type) return null;
+  const config = TRIGGER_DRILL_DOWN[primaryTrigger.type];
+  if (!config) return null;
+  const siteIds = primaryTrigger.linked_site_ids || [];
+  if (siteIds.length === 0) return { ...config, href: config.route };
+  // Filtrage 1er site (le plus saillant — event_bus a trié)
+  return {
+    ...config,
+    href: `${config.route}?site_id=${siteIds[0]}`,
+  };
+}
+
 export default function SolNarrative({
   kicker,
   title,
   italicHook,
   narrative,
   kpis = [],
+  // Sprint Refonte Narrative dynamique — Phase 4.bis.C
+  primaryPush = null,
+  primaryTrigger = null,
   error = null,
   onRetry,
   className = '',
@@ -139,20 +172,46 @@ export default function SolNarrative({
           </h1>
         )}
       </header>
-      {narrative && (
-        <p
-          className="text-[15px] leading-relaxed text-[var(--sol-ink-700)] max-w-prose"
-          data-testid="sol-narrative-body"
-        >
-          {/* Phase 20.A — auto-tooltipage acronymes connus dans la narrative
-              générée backend. SolNarrativeText utilise le glossaire SoT
-              `domain/glossary.js` (62 entrées post Phase 18.B) pour wrapper
-              automatiquement BACS/TURPE/CRE/RTE/ATRD/CSRD/etc. visibles sur
-              tous les briefings Sol (Cockpit, Achat, Conformité, Patrimoine,
-              Énergie). Couvre les pages problématiques sans toucher leurs
-              fichiers individuels. */}
-          <SolNarrativeText text={narrative} />
-        </p>
+      {(narrative || primaryPush) && (
+        <div className="flex flex-col gap-3">
+          {/* Phase 4.bis.C — push event chip exposé en tête, plus noyé dans <p> */}
+          {primaryPush && (
+            <div data-testid="sol-narrative-push-row" className="flex flex-wrap items-center gap-2">
+              <SolWeeklyDeltaBadge primaryPush={primaryPush} />
+            </div>
+          )}
+          {narrative && (
+            <p
+              className="text-[15px] leading-relaxed text-[var(--sol-ink-700)] max-w-prose"
+              data-testid="sol-narrative-body"
+            >
+              {/* Phase 20.A — auto-tooltipage acronymes connus dans la narrative
+                  générée backend. SolNarrativeText utilise le glossaire SoT
+                  `domain/glossary.js` (62 entrées post Phase 18.B) pour wrapper
+                  automatiquement BACS/TURPE/CRE/RTE/ATRD/CSRD/etc. visibles sur
+                  tous les briefings Sol (Cockpit, Achat, Conformité, Patrimoine,
+                  Énergie). Couvre les pages problématiques sans toucher leurs
+                  fichiers individuels. */}
+              <SolNarrativeText text={narrative} />
+            </p>
+          )}
+          {/* Phase 4.bis.C — drill-down cliquable depuis primary_trigger */}
+          {(() => {
+            const drill = buildDrillDownHref(primaryTrigger);
+            if (!drill) return null;
+            return (
+              <a
+                href={drill.href}
+                data-testid="sol-narrative-drill-down"
+                data-trigger-type={primaryTrigger?.type}
+                className="inline-flex items-center gap-1.5 self-start text-xs font-medium text-[var(--sol-calme-fg)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-calme-fg)] rounded px-1 py-0.5"
+              >
+                {drill.label}
+                <ExternalLink size={12} aria-hidden="true" />
+              </a>
+            );
+          })()}
+        </div>
       )}
       {safeKpis.length > 0 && (
         <div
