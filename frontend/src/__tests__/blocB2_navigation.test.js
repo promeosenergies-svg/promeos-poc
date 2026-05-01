@@ -100,8 +100,14 @@ describe('B.2 — Breadcrumb contextuel', () => {
     expect(src).toContain('resolveSectionLabel');
   });
 
-  it('contains Tableau de bord reference for section mapping', () => {
-    expect(src).toMatch(/Tableau de bord/i);
+  it('contains canonical Sol §11.3 cockpit labels (Phase 1.A — P0.2)', () => {
+    // Hard-cut renommage 2026-05-01 : Breadcrumb consomme désormais les
+    // libellés canoniques doctrine Sol §11.3 — "Tableau de bord" et "Vue
+    // exécutive" ont été remplacés par "Briefing du jour" (root path +
+    // segment `dashboard`) et "Synthèse stratégique" (segments `synthese`
+    // et `executive`).
+    expect(src).toMatch(/Briefing du jour/);
+    expect(src).toMatch(/Synthèse stratégique/);
   });
 });
 

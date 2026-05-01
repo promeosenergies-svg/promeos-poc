@@ -14,8 +14,13 @@ const LABELS = Object.fromEntries(
 );
 
 // Segment-level overrides not covered by NavRegistry
+// Phase 1.A — P0.2 : labels legacy redirect ("synthese", "executive",
+// "dashboard") résolus en libellés canoniques Sol §11.3 ("Synthèse
+// stratégique" / "Briefing du jour") pour cohérence breadcrumb avec
+// le panel rail. Root path `/` (redirige `/cockpit/strategique` via
+// Phase 13.D) → "Synthèse stratégique".
 Object.assign(LABELS, {
-  '': 'Tableau de bord',
+  '': 'Synthèse stratégique',
   sites: 'Site',
   conformite: 'Conformité',
   compliance: 'Conformité',
@@ -38,9 +43,9 @@ Object.assign(LABELS, {
   purchase: 'Achats énergie',
   referentiels: 'Mémobox',
   kb: 'Mémobox',
-  synthese: 'Vue exécutive',
-  executive: 'Vue exécutive',
-  dashboard: 'Tableau de bord',
+  synthese: 'Synthèse stratégique',
+  executive: 'Synthèse stratégique',
+  dashboard: 'Briefing du jour',
   conso: 'Consommations',
   imports: 'Imports',
   connexions: 'Connexions',
@@ -119,8 +124,10 @@ export default function Breadcrumb() {
   const crumbs = [{ label: 'PROMEOS', to: '/' }];
 
   // Root path → simple breadcrumb
+  // Phase 1.A — P0.2 : `/` redirige sur `/cockpit/strategique` (Phase 13.D),
+  // donc le crumb root affiche le libellé canonique Sol §11.3.
   if (parts.length === 0) {
-    crumbs.push({ label: 'Tableau de bord', to: '/' });
+    crumbs.push({ label: 'Synthèse stratégique', to: '/' });
     return <BreadcrumbNav crumbs={crumbs} tintText={tint?.activeText} />;
   }
 

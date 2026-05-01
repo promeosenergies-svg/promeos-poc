@@ -13,18 +13,21 @@ import {
 import { normalizeDashboardModel } from '../CommandCenter';
 
 describe('NavRegistry V7 — routes canoniques', () => {
-  // Refonte WOW Cockpit dual sol2 (29/04/2026) : "Vue exécutive" pointe désormais
-  // sur /cockpit/strategique (Synthèse stratégique = page Décision DG/CFO 3min).
-  // Avant cette refonte : pointait sur /cockpit qui redirigeait sur /cockpit/jour
-  // (Pilotage), masquant la vraie page Décision — cf. issue inversion sidebar.
-  it('"Vue exécutive" pointe vers "/cockpit/strategique" (page Décision)', () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Vue exécutive');
+  // Phase 1.A — P0.2 (audit navigation_audit_20260501.md) : hard-cut
+  // renommage des libellés panel Cockpit vers les libellés canoniques
+  // doctrine Sol §11.3 + grammaire éditoriale §5 :
+  //   - "Vue exécutive"   → "Synthèse stratégique" (`/cockpit/strategique`)
+  //   - "Tableau de bord" → "Briefing du jour"     (`/cockpit/jour`)
+  // Anciens libellés conservés en `keywords` pour la rétro-compat search
+  // palette (⌘K) — cf. NavRegistry.js:526-559.
+  it('"Synthèse stratégique" pointe vers "/cockpit/strategique" (page Décision)', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Synthèse stratégique');
     expect(item).toBeDefined();
     expect(item.to).toBe('/cockpit/strategique');
   });
 
-  it('"Tableau de bord" pointe vers "/cockpit/jour" (page Pilotage)', () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Tableau de bord');
+  it('"Briefing du jour" pointe vers "/cockpit/jour" (page Pilotage)', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Briefing du jour');
     expect(item).toBeDefined();
     expect(item.to).toBe('/cockpit/jour');
   });
@@ -52,9 +55,9 @@ describe('NavRegistry V7 — routes canoniques', () => {
 });
 
 describe('NavRegistry V7 — labels FR avec accents', () => {
-  it('label "Vue exécutive" pour /cockpit/strategique', () => {
+  it('label "Synthèse stratégique" pour /cockpit/strategique', () => {
     const item = ALL_NAV_ITEMS.find((i) => i.to === '/cockpit/strategique');
-    expect(item?.label).toBe('Vue exécutive');
+    expect(item?.label).toBe('Synthèse stratégique');
   });
 
   it('module Achat has correct label', () => {

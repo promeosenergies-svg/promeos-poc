@@ -514,28 +514,58 @@ export const NAV_SECTIONS = [
     expertOnly: false,
     order: 1,
     items: [
-      // Refonte WOW Cockpit dual sol2 (29/04/2026) : la sidebar pointe désormais
-      // directement sur les routes canoniques §11.3 doctrine.
-      // - Vue exécutive = Synthèse stratégique = page Décision (DG/CFO 3min)
-      // - Tableau de bord = Briefing du jour = page Pilotage (energy manager 30s)
+      // Phase 1.A — P0.2 (audit navigation_audit_20260501.md §3 trou P0 #2) :
+      // hard-cut renommage des libellés legacy panel Cockpit vers les libellés
+      // canoniques doctrine Sol §11.3 (page de décision = aboutissement
+      // narratif) + grammaire éditoriale §5 (titres narratifs).
+      //   - "Vue exécutive"   → "Synthèse stratégique" (`/cockpit/strategique`,
+      //                          page Décision DG/CFO 3 min).
+      //   - "Tableau de bord" → "Briefing du jour"     (`/cockpit/jour`, page
+      //                          Pilotage energy manager 30 s).
       //
-      // Phase 13.D — Démo CFO/investisseur : Vue exécutive en premier.
-      // Audience démo principale = CFO/DG/VC (Marie, Sophie). Le briefing
-      // énergie manager (Marc, 30s) reste accessible mais en second. Cohérent
-      // avec doctrine §11.3 page de décision = aboutissement narratif.
+      // Q5 audit (arbitrage Amine 2026-05-01) : keywords étendus pour
+      // rétro-compat search palette (⌘K) — anciens libellés (`vue`,
+      // `executive`, `tableau`, `dashboard`) restent indexés ; aucun terme
+      // legacy retiré des keywords.
+      //
+      // Phase 13.D — démo CFO/investisseur : Synthèse stratégique en
+      // premier (audience démo principale = CFO/DG/VC, Marie + Sophie).
+      // Le briefing énergie manager (Marc, 30 s) reste accessible en
+      // second. Cohérent avec doctrine §11.3.
       {
         to: '/cockpit/strategique',
         icon: BarChart3,
-        label: 'Vue exécutive',
-        desc: 'Synthèse stratégique — où en sommes-nous (3 min)',
-        keywords: ['cockpit', 'executive', 'synthese', 'strategique', 'decision', 'codir', 'cfo'],
+        label: 'Synthèse stratégique',
+        desc: 'Où en sommes-nous (3 min)',
+        keywords: [
+          'synthese',
+          'strategique',
+          'cockpit',
+          'decision',
+          'codir',
+          'cfo',
+          'comex',
+          // rétro-compat search palette — anciens libellés legacy
+          'vue',
+          'executive',
+        ],
       },
       {
         to: '/cockpit/jour',
         icon: LayoutDashboard,
-        label: 'Tableau de bord',
-        desc: "Briefing du jour — quoi traiter aujourd'hui (30 s)",
-        keywords: ['dashboard', 'accueil', 'home', 'tableau', 'briefing', 'pilotage', 'jour'],
+        label: 'Briefing du jour',
+        desc: "Quoi traiter aujourd'hui (30 s)",
+        keywords: [
+          'briefing',
+          'jour',
+          'pilotage',
+          'accueil',
+          'home',
+          'aujourdhui',
+          // rétro-compat search palette — anciens libellés legacy
+          'tableau',
+          'dashboard',
+        ],
       },
     ],
   },
