@@ -140,21 +140,34 @@ def _create_user_preferences_table(engine):
         logger.info("migration: created user_preferences table (Phase 1.4+13.B)")
         return
 
-    # Phase 13.B — Migration upgrade : add org_id column si absente
+    # Phase 13.B — Migration upgrade : add org_id column si absente.
+    # Phase 13.bis — correction P1 mini-audit : SQLite ne supporte pas
+    # `ALTER TABLE ADD CONSTRAINT UNIQUE`. Pour enforcer (user_id, org_id)
+    # composite UNIQUE sur les bases existantes, on crée un UNIQUE INDEX
+    # (équivalent fonctionnel SQLite + PostgreSQL).
     existing_cols = {c["name"] for c in insp.get_columns("user_preferences")}
     if "org_id" not in existing_cols:
         with engine.begin() as conn:
             conn.execute(
                 text('ALTER TABLE "user_preferences" ADD COLUMN "org_id" INTEGER REFERENCES "organisations"("id")')
             )
-            # Index pour query priority (user_id, org_id)
             try:
                 conn.execute(
                     text('CREATE INDEX IF NOT EXISTS "ix_user_preferences_org_id" ON "user_preferences" ("org_id")')
                 )
             except Exception as e:  # noqa: BLE001
                 logger.warning("ix_user_preferences_org_id creation skipped: %s", e)
-        logger.info("migration: added org_id column to user_preferences (Phase 13.B BL-7)")
+            # Phase 13.bis — UNIQUE INDEX (user_id, org_id) composite
+            try:
+                conn.execute(
+                    text(
+                        'CREATE UNIQUE INDEX IF NOT EXISTS "uq_user_preferences_user_org" '
+                        'ON "user_preferences" ("user_id", "org_id")'
+                    )
+                )
+            except Exception as e:  # noqa: BLE001
+                logger.warning("uq_user_preferences_user_org creation skipped: %s", e)
+        logger.info("migration: added org_id column + UNIQUE INDEX to user_preferences (Phase 13.B+13.bis BL-7)")
 
 
 def _create_event_history_snapshots_table(engine):

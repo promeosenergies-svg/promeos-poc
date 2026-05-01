@@ -214,7 +214,8 @@ _EPICENE_NAMES_V2: frozenset = frozenset(
         "charlie",
         "loan",
         "eden",
-        "ange",
+        # NB Phase 13.bis : 'ange' retiré ici car déjà traité comme exception
+        # masculine dans _MASCULINE_EXCEPTIONS_V2 (mini-audit P2 dédoublonnage).
         "maxime",  # ambigu (Maxime fille existe mais rare)
         "elia",  # ambigu IT
         "elya",
