@@ -67,6 +67,13 @@ export default function SolBriefingHead({
         italicHook={omitHeader ? null : briefing.italicHook}
         narrative={briefing.narrative}
         kpis={briefing.kpis}
+        // Sprint Refonte Narrative dynamique — Phase 4.bis2 (audit P0-1+P1-7+P1-8)
+        // Cascade des payloads structurés Phase 4.0.B exposés par
+        // narrative_generator BE → SolWeeklyDeltaBadge + drill-down cliquable.
+        // Defaults safe `null` pour les pages dont le builder n'est pas
+        // encore wiré (cockpit_daily, patrimoine, etc.).
+        primaryPush={briefing.primaryPush}
+        primaryTrigger={briefing.primaryTrigger}
       />
       {showEventStream ? (
         <SolEventStream
