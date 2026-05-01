@@ -1,8 +1,8 @@
 {
   "summary": {
     "url": "http://127.0.0.1:5176/cockpit/strategique",
-    "total": 37,
-    "api": 24,
+    "total": 31,
+    "api": 19,
     "api_endpoints": [
       "/api/config/price-references",
       "/api/config/emission-factors",
@@ -11,20 +11,19 @@
       "/api/auth/me",
       "/api/notifications/summary",
       "/api/monitoring/alerts",
-      "/api/billing/summary",
-      "/api/purchase/renewals",
-      "/api/patrimoine/contracts",
-      "/api/tertiaire/dashboard",
-      "/api/connectors/list",
+      "/api/cockpit/_facts",
       "/api/action-templates",
       "/api/action-center/actions/summary",
       "/api/action-center/notifications",
-      "/api/cockpit/_facts",
       "/api/cockpit/decisions/top3",
       "/api/cockpit/trajectory",
-      "/api/purchase/cost-simulation/portfolio/1"
+      "/api/purchase/cost-simulation/portfolio/1",
+      "/api/purchase/renewals",
+      "/api/patrimoine/contracts",
+      "/api/tertiaire/dashboard",
+      "/api/connectors/list"
     ],
-    "api_endpoints_count": 19
+    "api_endpoints_count": 18
   },
   "requests": [
     {
@@ -56,23 +55,7 @@
       "method": "GET"
     },
     {
-      "url": "http://127.0.0.1:5176/api/billing/summary",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/purchase/renewals",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/patrimoine/contracts",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/tertiaire/dashboard",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/connectors/list",
+      "url": "http://127.0.0.1:5176/api/cockpit/_facts?period=current_week",
       "method": "GET"
     },
     {
@@ -85,26 +68,6 @@
     },
     {
       "url": "http://127.0.0.1:5176/api/action-center/notifications?unread_only=true",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/billing/summary",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/purchase/renewals",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/patrimoine/contracts",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/tertiaire/dashboard",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/connectors/list",
       "method": "GET"
     },
     {
@@ -121,6 +84,22 @@
     },
     {
       "url": "http://127.0.0.1:5176/api/purchase/cost-simulation/portfolio/1",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/purchase/renewals",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/patrimoine/contracts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/tertiaire/dashboard",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/connectors/list",
       "method": "GET"
     }
   ]

@@ -9,6 +9,7 @@ import { Database, ArrowRight, AlertTriangle, TrendingUp, TrendingDown } from 'l
 import { useScope } from '../contexts/ScopeContext';
 import { useDemo } from '../contexts/DemoContext';
 import useDataReadiness from '../hooks/useDataReadiness';
+import { useCockpitFacts } from '../hooks/useCockpitFacts';
 import Badge from '../ui/Badge';
 import {
   loadReadinessSnapshot,
@@ -52,7 +53,26 @@ export default function DataReadinessBadge() {
     return { total, conformes, nonConformes, aRisque, couvertureDonnees };
   }, [scopedSites]);
 
-  const { readinessState, loading } = useDataReadiness(kpis, { demoEnabled });
+  // Phase 26 (sprint retro Cockpit Dual Sol2 audit prod 2026-05-01) :
+  // si le payload _facts est dispo (badge mounted dans AppShell, donc page
+  // courante peut être /cockpit/* qui charge déjà _facts), on réutilise
+  // _facts.billing au lieu de refetch /api/billing/summary.
+  // Le cache in-flight sur useCockpitFacts (Phase 26) garantit qu'un seul
+  // appel _facts est fait même si la page parent l'utilise aussi.
+  // `waitForFacts` diffère le fetch activation tant que _facts n'a pas
+  // répondu (évite billing/summary parasite au 1er render avant async).
+  const {
+    facts: cockpitFacts,
+    loading: factsLoading,
+    error: factsError,
+  } = useCockpitFacts('current_week');
+  const { readinessState, loading } = useDataReadiness(kpis, {
+    demoEnabled,
+    cockpitFactsBilling: cockpitFacts?.billing || null,
+    // Si _facts est en cours OU erreur, on attend OU on fallback vers
+    // l'appel direct billing/summary (factsError = endpoint non dispo).
+    waitForFacts: factsLoading && !factsError,
+  });
 
   // Snapshot scope
   const snapshotScope = useMemo(

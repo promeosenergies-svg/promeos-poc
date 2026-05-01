@@ -10,6 +10,13 @@
  * Phase 3.3 push hebdo).
  *
  * Pattern aligné useCockpitData.js (RÈGLE : fetch + normalize, pas de calcul).
+ *
+ * Phase 26 (sprint retro Cockpit Dual Sol2 — audit prod 2026-05-01) :
+ *   Ajout d'un cache in-flight (`_inflight` Map keyé sur period) pour éviter
+ *   les fetches dupliqués quand plusieurs composants montent simultanément
+ *   avec la même period (ex: page Cockpit + DataReadinessBadge AppShell).
+ *   Avant Phase 26 : 2 appels /api/cockpit/_facts au mount /cockpit/strategique.
+ *   Après : 1 seul appel partagé.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -17,6 +24,20 @@ import { getCockpitFacts } from '../services/api';
 import { logger } from '../services/logger';
 
 const TAG = 'CockpitFacts';
+
+// Phase 26 : cache in-flight pour dédup multi-mount (cf useActivationData
+// pattern). La promise est partagée entre tous les hooks qui demandent la
+// même period au même moment. Supprimée du cache une fois résolue.
+const _inflight = new Map();
+
+function _fetchOnce(period) {
+  if (_inflight.has(period)) return _inflight.get(period);
+  const p = getCockpitFacts(period).finally(() => {
+    _inflight.delete(period);
+  });
+  _inflight.set(period, p);
+  return p;
+}
 
 export function useCockpitFacts(period = 'current_week') {
   const [facts, setFacts] = useState(null);
@@ -31,7 +52,7 @@ export function useCockpitFacts(period = 'current_week') {
     cancelRef.current = false;
     setLoading(true);
     setError(null);
-    return getCockpitFacts(period)
+    return _fetchOnce(period)
       .then((data) => {
         if (cancelRef.current) return;
         setFacts(data);

@@ -1,8 +1,8 @@
 {
   "summary": {
     "url": "http://127.0.0.1:5176/cockpit/jour",
-    "total": 35,
-    "api": 22,
+    "total": 29,
+    "api": 17,
     "api_endpoints": [
       "/api/config/price-references",
       "/api/config/emission-factors",
@@ -11,18 +11,17 @@
       "/api/auth/me",
       "/api/notifications/summary",
       "/api/monitoring/alerts",
-      "/api/billing/summary",
-      "/api/purchase/renewals",
-      "/api/patrimoine/contracts",
-      "/api/tertiaire/dashboard",
-      "/api/connectors/list",
+      "/api/cockpit/_facts",
       "/api/action-templates",
       "/api/action-center/actions/summary",
       "/api/action-center/notifications",
-      "/api/cockpit/_facts",
-      "/api/cockpit/priorities"
+      "/api/cockpit/priorities",
+      "/api/purchase/renewals",
+      "/api/patrimoine/contracts",
+      "/api/tertiaire/dashboard",
+      "/api/connectors/list"
     ],
-    "api_endpoints_count": 17
+    "api_endpoints_count": 16
   },
   "requests": [
     {
@@ -54,23 +53,7 @@
       "method": "GET"
     },
     {
-      "url": "http://127.0.0.1:5176/api/billing/summary",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/purchase/renewals",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/patrimoine/contracts",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/tertiaire/dashboard",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/connectors/list",
+      "url": "http://127.0.0.1:5176/api/cockpit/_facts?period=current_week",
       "method": "GET"
     },
     {
@@ -86,7 +69,11 @@
       "method": "GET"
     },
     {
-      "url": "http://127.0.0.1:5176/api/billing/summary",
+      "url": "http://127.0.0.1:5176/api/cockpit/_facts?period=current_month",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/cockpit/priorities",
       "method": "GET"
     },
     {
@@ -103,14 +90,6 @@
     },
     {
       "url": "http://127.0.0.1:5176/api/connectors/list",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/cockpit/_facts?period=current_month",
-      "method": "GET"
-    },
-    {
-      "url": "http://127.0.0.1:5176/api/cockpit/priorities",
       "method": "GET"
     }
   ]

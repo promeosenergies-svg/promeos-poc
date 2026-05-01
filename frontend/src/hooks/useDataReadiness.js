@@ -2,6 +2,12 @@
  * PROMEOS — useDataReadiness
  * Composed hook: activation + readiness gate.
  * Combines useActivationData + buildActivationChecklist + computeDataReadinessState.
+ *
+ * Phase 26 (sprint retro Cockpit Dual Sol2 — audit prod 2026-05-01) :
+ *   Accepte un nouveau param `cockpitFactsBilling` qui, si fourni, est
+ *   propagé à useActivationData pour skipper l'appel /api/billing/summary.
+ *   Permet à DataReadinessBadge de réutiliser le payload `_facts` quand il
+ *   est déjà chargé par la page Cockpit hôte (single source).
  */
 import { useMemo } from 'react';
 import useActivationData from './useActivationData';
@@ -10,15 +16,24 @@ import { computeDataReadinessState } from '../models/dataReadinessModel';
 
 /**
  * @param {object} kpis — { total, conformes, nonConformes, aRisque, couvertureDonnees }
- * @param {{ operatModuleActive?: boolean }} options
+ * @param {object} [options]
+ * @param {boolean} [options.operatModuleActive]
+ * @param {boolean} [options.demoEnabled]
+ * @param {object} [options.cockpitFactsBilling] — `_facts.billing` si dispo (Phase 26).
  * @returns {{ readinessState: ReadinessState|null, activation: ActivationResult, loading: boolean }}
  */
 export default function useDataReadiness(
   kpis,
-  { operatModuleActive = false, demoEnabled = false } = {}
+  {
+    operatModuleActive = false,
+    demoEnabled = false,
+    cockpitFactsBilling = null,
+    waitForFacts = false,
+  } = {}
 ) {
   const { billingSummary, purchaseSignals, efaDashboard, connectors, loading } = useActivationData(
-    kpis?.total
+    kpis?.total,
+    { cockpitFactsBilling, waitForFacts }
   );
 
   const activation = useMemo(

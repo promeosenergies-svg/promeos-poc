@@ -1007,6 +1007,14 @@ def get_cockpit_facts(
     # 8. Data quality
     data_quality = _build_data_quality(db, site_ids, today)
 
+    # 8bis. Billing summary — Phase 26 (audit prod 2026-05-01) : avant cette
+    # phase, `useActivationData` côté FE appelait `/api/billing/summary`
+    # 2× au mount /cockpit/strategique (mesure preview prod). Phase 1.3
+    # avait promis "billing remplacé par _facts" mais l'avait pas tenu pour
+    # le badge transversal DataReadinessBadge. Désormais : section
+    # canonique `_facts.billing` exposée, FE peut consommer sans 2e fetch.
+    billing = _build_billing(db, org_id, site_ids)
+
     # 9bis. Flex potential — Étape 4 P0-E : teaser carte Décision exige
     # un eur_year crédible. MVP : heuristique sur sites_count ; sera
     # remplacé par flex_assessment_service Phase 5.
@@ -1056,9 +1064,58 @@ def get_cockpit_facts(
         "flex_potential": flex_potential,
         "alerts": alerts,
         "data_quality": data_quality,
+        "billing": billing,
         "metadata": metadata,
         "weekly_deltas": weekly_deltas,
     }
+
+
+def _build_billing(db: Session, org_id: int, site_ids: list[int]) -> dict:
+    """Phase 26 — section billing minimale pour DataReadinessBadge.
+
+    Avant Phase 26, `useActivationData` (consommé par DataReadinessBadge
+    dans AppShell, donc transversal) appelait `/api/billing/summary` 2×
+    au mount de chaque page Cockpit. Mesure preview prod 2026-05-01 :
+    bug confirmé. Phase 1.3 du sprint avait promis "billing remplacé par
+    _facts" sans le tenir pour le badge AppShell.
+
+    Cette section expose les 3 champs réellement consommés par
+    `useActivationData` + `useDataReadiness` (cf
+    `frontend/src/hooks/useActivationData.js` + `useDataReadiness.js`) :
+      - `total_invoices` (utilisé pour activation gauge)
+      - `total_eur`      (idem fallback)
+      - `coverage_months` (réelle nb mois distincts couverts par factures)
+
+    Champ supplémentaire (read-side) : `total_kwh` pour cohérence
+    cross-pillar avec `consumption.annual_mwh` (sanity check FE).
+
+    Source : `models.energy_invoice.EnergyInvoice` filtré par site_ids
+    de l'org. Aucun calcul nouveau, juste agrégation lecture seule.
+    """
+    _empty = {
+        "total_invoices": 0,
+        "total_eur": 0.0,
+        "total_kwh": 0.0,
+        "coverage_months": 0,
+    }
+    if not site_ids:
+        return _empty
+    try:
+        from models.billing_models import EnergyInvoice
+
+        invoices = db.query(EnergyInvoice).filter(EnergyInvoice.site_id.in_(site_ids)).all()
+        total_eur = sum((inv.total_eur or 0) for inv in invoices)
+        total_kwh = sum((inv.energy_kwh or 0) for inv in invoices)
+        distinct_months = {(inv.period_start.year, inv.period_start.month) for inv in invoices if inv.period_start}
+        return {
+            "total_invoices": len(invoices),
+            "total_eur": round(total_eur, 2),
+            "total_kwh": round(total_kwh, 0),
+            "coverage_months": len(distinct_months),
+        }
+    except Exception as exc:
+        _logger.warning("_build_billing error: %s", exc)
+        return _empty
 
 
 def _build_flex_potential(db: Session, org_id: int, site_ids: list[int]) -> dict:
