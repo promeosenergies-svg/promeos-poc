@@ -28,7 +28,9 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, FileText, Sparkles } from 'lucide-react';
 
 import useCockpitFacts from '../hooks/useCockpitFacts';
+import { usePageBriefing } from '../hooks/usePageBriefing';
 import SolKickerWithSwitch from '../ui/sol/SolKickerWithSwitch';
+import SolNarrative from '../ui/sol/SolNarrative';
 import AcronymTooltip from '../ui/sol/AcronymTooltip';
 import KpiCard from '../components/cockpit/KpiCard';
 import KpiSkeleton from '../components/cockpit/KpiSkeleton';
@@ -140,79 +142,17 @@ function KpiTriptyqueHybride({ facts }) {
   );
 }
 
-// ── Narrative stratégique avec push hebdo ─────────────────────────
-
-function StrategicNarrative({ facts }) {
-  if (!facts) return null;
-  const c = facts.compliance || {};
-  const exp = facts.exposure?.total || {};
-  const expDelta = facts.exposure?.delta_vs_last_week;
-  const pot = facts.potential_recoverable || {};
-  const consDrift = facts.consumption?.sites_in_drift ?? 0;
-  const sitesCount = facts.scope?.site_count ?? 0;
-  const ncSites = c.non_conform_sites ?? 0;
-  const atRiskSites = c.at_risk_sites ?? 0;
-
-  // Phase 14.E (audit véracité Sophie/Marie) : la narrative disait "tous les
-  // sites alignés" si consumption.sites_in_drift = 0, ignorant le statut
-  // conformité réglementaire (NC + à risque) — contradiction frontale avec
-  // le KPI exposition 12,8 k€ et le score 37/100.
-  // Phase 16.F : si sitesOff = sitesCount (tous les sites en écart), on
-  // reformule pour éviter la phrase redondante "patrimoine de 5 sites
-  // présente 5 sites en écart" qui dégrade la crédibilité (audit Phase 15
-  // /code-reviewer P2). On dit "l'ensemble du patrimoine est en écart" pour
-  // signaler la sévérité avec une formule moins mécanique.
-  // Phase 16.bis.A (régression audit /simplify Phase 16) : `driftText` ne
-  // contient plus "de la trajectoire" — la JSX ci-dessous l'ajoute en suffixe
-  // (" de la trajectoire 2030"). Avant : la branche "ensemble" + suffix
-  // produisait "...l'ensemble du patrimoine en écart de la trajectoire de la
-  // trajectoire 2030" (double phrase visible démo).
-  const sitesOff = Math.max(consDrift, ncSites + atRiskSites);
-  let driftText;
-  if (sitesOff <= 0) {
-    driftText = 'tous les sites alignés';
-  } else if (sitesCount > 0 && sitesOff >= sitesCount) {
-    driftText = "l'ensemble du patrimoine en écart";
-  } else {
-    driftText = `${sitesOff} site${sitesOff > 1 ? 's' : ''} en écart`;
-  }
-  const expText = exp.value_eur != null ? fmtEurShort(exp.value_eur) : '—';
-  const expDeltaText =
-    expDelta?.value_eur != null && expDelta.value_eur !== 0
-      ? `, en hausse de ${fmtEurShort(Math.abs(expDelta.value_eur))} vs semaine précédente`
-      : '';
-  const potText = pot.value_mwh_year != null ? `${potSplitInline(pot.value_mwh_year)}` : '—';
-
-  return (
-    <p
-      className="my-5"
-      style={{
-        fontSize: 15,
-        lineHeight: 1.65,
-        color: 'var(--sol-ink-700)',
-        maxWidth: '64ch',
-      }}
-    >
-      Votre patrimoine de {sitesCount} site{sitesCount > 1 ? 's' : ''} présente{' '}
-      <strong style={{ color: 'var(--sol-ink-900)', fontWeight: 500 }}>{driftText}</strong> de la
-      trajectoire 2030 (<AcronymTooltip acronym="DT">Décret Tertiaire</AcronymTooltip> n°2019-771,
-      jalons −40 % / 2030, −50 % / 2040, −60 % / 2050). Score conformité{' '}
-      <strong style={{ color: 'var(--sol-ink-900)', fontWeight: 500 }}>
-        {c.score != null ? `${c.score}/${c.max || 100}` : '—'}
-      </strong>
-      . Exposition aux pénalités réglementaires{' '}
-      <strong style={{ color: 'var(--sol-ink-900)', fontWeight: 500 }}>{expText}</strong> calculée
-      loi à la main{expDeltaText}. Trois décisions à arbitrer cette semaine pour mobiliser{' '}
-      <strong style={{ color: 'var(--sol-ink-900)', fontWeight: 500 }}>{potText}</strong> de
-      potentiel énergétique récupérable.
-    </p>
-  );
-}
-
-function potSplitInline(v) {
-  const s = splitMwh(v);
-  return `${s.value} ${s.unit}/an`;
-}
+// ── Narrative stratégique (Phase 14.A) ────────────────────────────
+// Phase 14.A — migration audit Sol2 : suppression du composant inline
+// `StrategicNarrative` (rendu legacy non typology-aware). La narrative est
+// désormais consommée depuis l'endpoint `/api/pages/cockpit_comex/briefing`
+// via `usePageBriefing` puis branchée dans <SolNarrative> (cf. corps de la
+// page). Bénéfices vs ancien rendu inline :
+//   - Phase 9.B/13.bis : "Votre parc tertiaire" si typology=ETI_TERTIAIRE.
+//   - Phase 4.0.A : sourcing §7 "(source X, confiance Y)" exposé.
+//   - Phase 11.B : closing forward-looking "à porter au prochain comité".
+//   - Phase 12.A : archetype enrichi "15 sites (35 k m²)".
+//   - Doctrine §8.1 / règle d'or : zéro logique métier frontend.
 
 // ── 3 décisions à arbitrer ────────────────────────────────────────
 // Tons sévérité hissés en SoT (Étape 2.bis) → severityTone() depuis solTones.js
@@ -1059,6 +999,15 @@ function FlexTeaser({ flexPotential }) {
 
 export default function CockpitDecision() {
   const { facts, loading: factsLoading } = useCockpitFacts('current_month');
+  // Phase 14.A — briefing typology-aware (Sprint Refonte Narrative dynamique).
+  // Branchement direct sur l'endpoint canonique /api/pages/cockpit_comex/briefing
+  // qui sert le builder _build_cockpit_comex (typology + primary_trigger +
+  // primary_push + closing forward-looking + archetype enrichi).
+  const {
+    briefing,
+    error: briefingError,
+    refetch: briefingRefetch,
+  } = usePageBriefing('cockpit_comex', { persona: 'comex' });
   const { org } = useScope();
   const [decisions, setDecisions] = useState(null);
   const [decisionsLoading, setDecisionsLoading] = useState(true);
@@ -1194,7 +1143,16 @@ export default function CockpitDecision() {
                 fontWeight: 400,
               }}
             >
-              · semaine {weekIso} · pour CODIR
+              {/* Phase 14.A — "pour CODIR" est un sigle Grand Groupe exclusif
+                  (audit Marie / lexical_templates §14.B). Pour ETI tertiaire
+                  ou Commerce, le suffix devient "pour la direction", à
+                  l'image du registre éditorial typologique. */}
+              · semaine {weekIso}
+              {briefing?.typology === 'grand_groupe_tertiaire'
+                ? ' · pour CODIR'
+                : briefing?.typology
+                  ? ' · pour la direction'
+                  : ''}
             </em>
           </h1>
           <div
@@ -1253,8 +1211,24 @@ export default function CockpitDecision() {
       </div>
 
       {/* Narrative stratégique 4 lignes denses + push hebdo */}
+      {/* Phase 14.A — branchée sur _build_cockpit_comex backend (typology +
+          primary_push + primary_trigger + closing forward-looking). Le H1 et
+          les KPI hero restent gérés par le layout WOW custom : on ne pousse
+          ici QUE le paragraphe `narrative` (kicker/title/kpis null pour
+          éviter le doublon visuel avec l'en-tête page). */}
       <div data-print-section>
-        <StrategicNarrative facts={facts} />
+        <SolNarrative
+          kicker={null}
+          title={null}
+          italicHook={null}
+          narrative={briefing?.narrative}
+          primaryPush={briefing?.primaryPush}
+          primaryTrigger={briefing?.primaryTrigger}
+          typology={briefing?.typology}
+          kpis={[]}
+          error={briefingError && !briefing ? briefingError : null}
+          onRetry={briefingRefetch}
+        />
       </div>
 
       {/* Triptyque KPI hybride avec badges Calculé/Modélisé */}
