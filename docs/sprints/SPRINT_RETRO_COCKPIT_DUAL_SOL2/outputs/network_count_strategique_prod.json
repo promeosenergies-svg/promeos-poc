@@ -1,0 +1,127 @@
+{
+  "summary": {
+    "url": "http://127.0.0.1:5176/cockpit/strategique",
+    "total": 37,
+    "api": 24,
+    "api_endpoints": [
+      "/api/config/price-references",
+      "/api/config/emission-factors",
+      "/api/demo/status",
+      "/api/sites",
+      "/api/auth/me",
+      "/api/notifications/summary",
+      "/api/monitoring/alerts",
+      "/api/billing/summary",
+      "/api/purchase/renewals",
+      "/api/patrimoine/contracts",
+      "/api/tertiaire/dashboard",
+      "/api/connectors/list",
+      "/api/action-templates",
+      "/api/action-center/actions/summary",
+      "/api/action-center/notifications",
+      "/api/cockpit/_facts",
+      "/api/cockpit/decisions/top3",
+      "/api/cockpit/trajectory",
+      "/api/purchase/cost-simulation/portfolio/1"
+    ],
+    "api_endpoints_count": 19
+  },
+  "requests": [
+    {
+      "url": "http://127.0.0.1:5176/api/config/price-references",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/config/emission-factors",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/demo/status",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/sites?org_id=1&limit=2000",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/auth/me",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/notifications/summary",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/monitoring/alerts?status=open&limit=200",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/billing/summary",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/purchase/renewals",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/patrimoine/contracts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/tertiaire/dashboard",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/connectors/list",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/action-templates",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/action-center/actions/summary",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/action-center/notifications?unread_only=true",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/billing/summary",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/purchase/renewals",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/patrimoine/contracts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/tertiaire/dashboard",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/connectors/list",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/cockpit/_facts?period=current_month",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/cockpit/decisions/top3",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/cockpit/trajectory",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:5176/api/purchase/cost-simulation/portfolio/1",
+      "method": "GET"
+    }
+  ]
+}

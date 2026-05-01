@@ -11,8 +11,9 @@
 import { chromium } from 'playwright';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-const FRONT = 'http://localhost:5175';
-const OUT = 'tools/playwright/captures/phase17_all_routes';
+// Phase 25 : env vars FRONT_URL + OUT_DIR pour réutiliser sur preview prod (5176).
+const FRONT = process.env.FRONT_URL || 'http://localhost:5175';
+const OUT = process.env.OUT_DIR || 'tools/playwright/captures/phase17_all_routes';
 mkdirSync(OUT, { recursive: true });
 
 const ROUTES = [
