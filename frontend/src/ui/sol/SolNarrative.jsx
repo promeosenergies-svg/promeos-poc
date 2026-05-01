@@ -160,16 +160,18 @@ export default function SolNarrative({
     >
       <header className="flex flex-col gap-1">
         {kicker && <p className="sol-page-kicker">{kicker}</p>}
-        {title && (
-          <h1 className="sol-page-title">
-            {title}
-            {italicHook && (
-              <>
-                {' '}
-                — <em>{italicHook}</em>
-              </>
-            )}
-          </h1>
+        {title && <h1 className="sol-page-title">{title}</h1>}
+        {/* Phase 8.A — italic_hook séparé du h1 (audit final UX P0).
+            Avant : `{title} — <em>{hook}</em>` inline dans le <h1> à la même
+            taille → mention persona avait autant de poids que le titre éditorial.
+            Maintenant : sous-titre subordonné, hiérarchie visuelle restaurée. */}
+        {italicHook && (
+          <p
+            data-testid="sol-narrative-italic-hook"
+            className="text-sm font-normal italic text-[var(--sol-ink-500)] mt-0.5 max-w-prose"
+          >
+            {italicHook}
+          </p>
         )}
       </header>
       {(narrative || primaryPush) && (

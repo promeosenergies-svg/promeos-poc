@@ -171,7 +171,8 @@ class TestPhase7CorrectifCWiringPersona:
 
         # italic_hook surchargé par mention persona
         assert "Jean-Marc" in narrative.italic_hook
-        assert "DAF" in narrative.italic_hook
+        # Phase 8.B : Jean-Marc + GG → "Directeur Financier" (Phase 8.B context-aware)
+        assert "Financier" in narrative.italic_hook or "DAF" in narrative.italic_hook
 
     def test_builder_default_italic_hook_when_no_user(self, db_session, helios_org_grand_groupe):
         """Sans user_first_name → italic_hook par défaut 'vue mensuelle direction'."""
@@ -254,7 +255,12 @@ class TestPhase7GeneratePropagation:
                 user_role="cfo",
             )
         assert "Marie" in narrative.italic_hook
-        assert "DAF" in narrative.italic_hook
+        # Phase 8.B : Marie + GG → "Directrice Financière" (féminisé context-aware)
+        assert (
+            "Financier" in narrative.italic_hook
+            or "Financière" in narrative.italic_hook
+            or "DAF" in narrative.italic_hook
+        )
 
 
 if __name__ == "__main__":

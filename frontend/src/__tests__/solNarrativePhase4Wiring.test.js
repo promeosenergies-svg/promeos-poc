@@ -162,6 +162,52 @@ describe('Phase 4.bis.C — SolNarrative wiring Phase 4.0.B', () => {
   });
 });
 
+// ─── Phase 8.A — UX patch hiérarchie + a11y daltonisme ─────────────────
+
+describe('Phase 8.A — UX patch hiérarchie italic_hook', () => {
+  const src = readSrc('ui/sol/SolNarrative.jsx');
+
+  it('italic_hook rendu hors du <h1> (sous-titre subordonné)', () => {
+    // Avant Phase 8.A : `{title} — <em>{italicHook}</em>` dans <h1>
+    // Après : `<p data-testid="sol-narrative-italic-hook">` séparé
+    expect(src).toMatch(/data-testid="sol-narrative-italic-hook"/);
+  });
+
+  it('italic_hook utilise text-sm + italic + ink-500 (sous-titre)', () => {
+    expect(src).toMatch(/text-sm font-normal italic text-\[var\(--sol-ink-500\)\]/);
+  });
+
+  it("h1 ne contient plus l'em italicHook inline", () => {
+    // Le pattern "{title}\n            {italicHook && (" dans <h1> doit avoir disparu
+    expect(src).not.toMatch(
+      /<h1[^>]*>[^<]*\{title\}[\s\S]*?\{italicHook[\s\S]*?<em>\{italicHook\}/
+    );
+  });
+});
+
+describe('Phase 8.A — a11y daltonisme SolWeeklyDeltaBadge', () => {
+  const src = readSrc('ui/sol/SolWeeklyDeltaBadge.jsx');
+
+  it('expose borderStyle distinct par tone (dashed vs solid)', () => {
+    expect(src).toMatch(/borderStyle.*?'border-dashed'/s);
+    expect(src).toMatch(/borderStyle.*?'border-solid'/s);
+  });
+
+  it('expose srLabel sémantique (tension / positif / neutre)', () => {
+    expect(src).toMatch(/srLabel.*?'tension'/);
+    expect(src).toMatch(/srLabel.*?'positif'/);
+    expect(src).toMatch(/srLabel.*?'neutre'/);
+  });
+
+  it('rend un span sr-only avec le srLabel', () => {
+    expect(src).toMatch(/sr-only/);
+  });
+
+  it('aria-label inclut le tone sémantique avant le clause', () => {
+    expect(src).toMatch(/aria-label=.*?Signal \$\{styles\.srLabel\}/);
+  });
+});
+
 // ─── Cohérence cross-stack BE ↔ FE ──────────────────────────────────────
 
 describe('Cohérence BE ↔ FE Phase 4.bis', () => {

@@ -56,21 +56,32 @@ function _toneForPush(metric, direction) {
   return 'calme';
 }
 
+// Phase 8.A — différenciation a11y daltonienne (audit final P1) :
+// la couleur seule ne suffit pas (~8% deutéranopes/protanopes voient
+// rouge/vert identiques). On ajoute un `borderStyle` distinct (dashed
+// pour tension, solid pour calme) ET un préfixe `srLabel` pour
+// lecteur d'écran qui différencie sémantiquement.
 const TONE_STYLES = {
   tension: {
     bg: 'bg-[var(--sol-refuse-bg)]',
     fg: 'text-[var(--sol-refuse-fg)]',
     border: 'border-[var(--sol-refuse-line)]',
+    borderStyle: 'border-dashed',
+    srLabel: 'tension',
   },
   calme: {
     bg: 'bg-[var(--sol-calme-bg)]',
     fg: 'text-[var(--sol-calme-fg)]',
     border: 'border-[var(--sol-calme-line)]',
+    borderStyle: 'border-solid',
+    srLabel: 'positif',
   },
   neutral: {
     bg: 'bg-[var(--sol-ink-100)]',
     fg: 'text-[var(--sol-ink-700)]',
     border: 'border-[var(--sol-line)]',
+    borderStyle: 'border-solid',
+    srLabel: 'neutre',
   },
 };
 
@@ -89,10 +100,13 @@ export default function SolWeeklyDeltaBadge({ primaryPush, className = '' }) {
       data-metric={primaryPush.metric}
       data-direction={direction}
       data-tone={tone}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${styles.bg} ${styles.fg} ${styles.border} text-xs font-medium ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${styles.bg} ${styles.fg} ${styles.border} ${styles.borderStyle} text-xs font-medium ${className}`}
       role="status"
-      aria-label={`Variation hebdomadaire : ${primaryPush.clause}`}
+      aria-label={`Signal ${styles.srLabel}, variation hebdomadaire : ${primaryPush.clause}`}
     >
+      {/* Phase 8.A — préfixe lecteur d'écran a11y daltonisme : annonce
+          le tone sémantique en plus de la couleur visuelle. */}
+      <span className="sr-only">{styles.srLabel} :</span>
       <Icon size={12} aria-hidden="true" className="shrink-0" />
       <span className="tabular-nums">{primaryPush.clause}</span>
     </span>

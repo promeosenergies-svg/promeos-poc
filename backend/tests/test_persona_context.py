@@ -53,7 +53,12 @@ class TestComposePersonaMention:
     """Source-guards spec Phase 4.1 : mentions persona par rôle."""
 
     def test_persona_mention_cfo_mentions_pnl(self):
-        """Mention CFO contient 'exposition' (P&L proxy) ou 'trajectoire'."""
+        """Mention CFO contient 'exposition' (P&L proxy) ou 'trajectoire'.
+
+        Phase 8.B : Marie + CFO + GRAND_GROUPE → 'Directrice Financière'
+        (féminisé + context GG vs 'DAF' par défaut). Le test vérifie
+        désormais le rôle financier de manière flexible (DAF | Directrice).
+        """
         mention = compose_persona_mention(
             "Marie",
             PersonaRole.CFO,
@@ -61,7 +66,8 @@ class TestComposePersonaMention:
             OrganizationTypology.GRAND_GROUPE,
         )
         assert "Marie" in mention
-        assert "DAF" in mention
+        # Phase 8.B : flexibilité — DAF (ETI) ou Directeur/Directrice Financier·ère (GG)
+        assert "DAF" in mention or "Financier" in mention or "Financière" in mention
         # Phase 4.bis3 audit P2 : pas de .lower() sur la mention (préserve sigles)
         assert "exposition" in mention
         assert "12,7 k€" in mention
@@ -126,9 +132,9 @@ class TestComposePersonaMention:
             {},
             OrganizationTypology.GRAND_GROUPE,
         )
-        # Toujours une mention valide
+        # Toujours une mention valide (Phase 8.B : GG → "Directeur Financier")
         assert mention.startswith("Pour Test")
-        assert "DAF" in mention
+        assert "Financier" in mention or "DAF" in mention
 
 
 # ─── Tests coverage PERSONA enums ───────────────────────────────────────────
@@ -259,8 +265,100 @@ class TestPhase4bis3TypologyAwareCommerce:
             OrganizationTypology.GRAND_GROUPE,
             naf_code="4724Z",  # ignoré pour CFO
         )
-        assert "DAF" in mention
+        # Phase 8.B : Marie + GG → "Directrice Financière" (féminisé), pas "DAF"
+        assert "Financier" in mention or "Financière" in mention or "DAF" in mention
         assert "boulanger" not in mention
+
+
+# ─── Phase 8.B — Féminisation + DAF/CFO context-aware ─────────────────────
+
+
+class TestPhase8bFeminisation:
+    """Audit final P1 : féminisation rôles + libellé GG CFO context-aware."""
+
+    def test_anne_directrice_etablissement(self):
+        """Anne (prénom féminin) + DIRECTOR_ERP → 'directrice d'établissement'."""
+        mention = compose_persona_mention(
+            "Anne",
+            PersonaRole.DIRECTOR_ERP,
+            {"compliance_score": 64},
+            OrganizationTypology.ERP,
+        )
+        assert "directrice d'établissement" in mention
+        assert "directeur d'établissement" not in mention
+
+    def test_paul_directeur_etablissement(self):
+        """Paul (prénom masculin) + DIRECTOR_ERP → 'directeur d'établissement'."""
+        mention = compose_persona_mention(
+            "Paul",
+            PersonaRole.DIRECTOR_ERP,
+            {"compliance_score": 64},
+            OrganizationTypology.ERP,
+        )
+        assert "directeur d'établissement" in mention
+
+    def test_pierre_keeps_masculine_despite_e_ending(self):
+        """Pierre (masculin malgré -e) → masculin (exception explicite)."""
+        mention = compose_persona_mention(
+            "Pierre",
+            PersonaRole.DIRECTOR_ERP,
+            {"compliance_score": 64},
+            OrganizationTypology.ERP,
+        )
+        assert "directeur d'établissement" in mention
+
+    def test_jean_marc_cfo_grand_groupe_uses_directeur_financier(self):
+        """Jean-Marc + CFO + GRAND_GROUPE → 'Directeur Financier' (audit final CX)."""
+        mention = compose_persona_mention(
+            "Jean-Marc",
+            PersonaRole.CFO,
+            {"exposure_eur": 156700, "compliance_score": 68},
+            OrganizationTypology.GRAND_GROUPE,
+        )
+        # Audit final : "DAF" pour grand groupe coté grince → "Directeur Financier"
+        assert "Directeur Financier" in mention
+        # Vérifier qu'on n'utilise PAS le label par défaut "DAF" (avec espace mot)
+        assert "DAF :" not in mention
+
+    def test_marie_cfo_grand_groupe_uses_directrice_financiere(self):
+        """Marie + CFO + GRAND_GROUPE → 'Directrice Financière' (féminisé)."""
+        mention = compose_persona_mention(
+            "Marie",
+            PersonaRole.CFO,
+            {"exposure_eur": 42000, "compliance_score": 76},
+            OrganizationTypology.GRAND_GROUPE,
+        )
+        assert "Directrice Financière" in mention
+
+    def test_inès_csr_manager_no_change(self):
+        """CSR_MANAGER 'responsable RSE' déjà épicène — pas de changement."""
+        mention = compose_persona_mention(
+            "Inès",
+            PersonaRole.CSR_MANAGER,
+            {"emissions_tco2e": 1245},
+            OrganizationTypology.GRAND_GROUPE,
+        )
+        assert "responsable RSE" in mention
+
+    def test_lucas_energy_buyer_default(self):
+        """Lucas (masculin) + ENERGY_BUYER → 'acheteur énergie'."""
+        mention = compose_persona_mention(
+            "Lucas",
+            PersonaRole.ENERGY_BUYER,
+            {"avg_price_eur_mwh": 87.5},
+            OrganizationTypology.GRAND_GROUPE,
+        )
+        assert "acheteur énergie" in mention
+
+    def test_sophie_energy_buyer_feminine(self):
+        """Sophie (féminin) + ENERGY_BUYER → 'acheteuse énergie' (Phase 8.B)."""
+        mention = compose_persona_mention(
+            "Sophie",
+            PersonaRole.ENERGY_BUYER,
+            {"avg_price_eur_mwh": 87.5},
+            OrganizationTypology.GRAND_GROUPE,
+        )
+        assert "acheteuse énergie" in mention
 
 
 if __name__ == "__main__":

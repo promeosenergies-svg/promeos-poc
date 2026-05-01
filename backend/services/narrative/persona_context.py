@@ -49,7 +49,8 @@ class PersonaRole(str, Enum):
     CSR_MANAGER = "csr_manager"  # Responsable RSE / CSRD (CBAM scope 1-2-3)
 
 
-# Libellés FR courts à injecter dans la phrase persona.
+# Libellés FR (par défaut masculin/neutre) — utilisés si typology ≠ GG corporate.
+# Phase 8.B : DAF/CFO context-aware via PERSONA_ROLE_LABEL_BY_TYPOLOGY.
 PERSONA_ROLE_LABEL: dict[PersonaRole, str] = {
     PersonaRole.DG: "DG",
     PersonaRole.CFO: "DAF",
@@ -60,6 +61,29 @@ PERSONA_ROLE_LABEL: dict[PersonaRole, str] = {
     PersonaRole.OWNER_COMMERCE: "propriétaire",
     PersonaRole.ENERGY_BUYER: "acheteur énergie",
     PersonaRole.CSR_MANAGER: "responsable RSE",
+}
+
+
+# Phase 8.B — féminisation des libellés rôle (audit final P1).
+# Mapping libellé masculin/neutre → libellé féminin. Si rôle absent du
+# mapping, le label par défaut est unisexe (DG, DAF, Asset Manager, etc.)
+# Note : "DAF" et "DG" ne sont pas fléchis (les sigles s'utilisent
+# indifféremment). Seuls les rôles avec article ou suffixe genré
+# nécessitent une fléchissement.
+PERSONA_ROLE_LABEL_FEMININE: dict[PersonaRole, str] = {
+    PersonaRole.DIRECTOR_ERP: "directrice d'établissement",
+    PersonaRole.OWNER_COMMERCE: "propriétaire",  # déjà épicène
+    PersonaRole.ENERGY_BUYER: "acheteuse énergie",
+    PersonaRole.CSR_MANAGER: "responsable RSE",  # déjà épicène
+}
+
+
+# Phase 8.B — différenciation CFO/DAF selon typology (audit final CX).
+# "DAF" est l'usage ETI/PME tertiaire, "Directeur Financier" plutôt
+# grand groupe coté + finance. Pour HELIOS GG, on utilise le libellé
+# long ; pour Marie ETI, "DAF" reste juste.
+PERSONA_ROLE_LABEL_BY_TYPOLOGY: dict[tuple[PersonaRole, OrganizationTypology], str] = {
+    (PersonaRole.CFO, OrganizationTypology.GRAND_GROUPE): "Directeur Financier",
 }
 
 
@@ -155,33 +179,98 @@ def compute_persona_focus_text(
     return PERSONA_FOCUS.get(role, "vue synthétique")
 
 
-def _resolve_role_label(user_role: PersonaRole, typology: OrganizationTypology, naf_code: Optional[str]) -> str:
-    """Résout le libellé rôle adapté à la typologie + NAF (Phase 4.bis3 audit CX).
+def _is_feminine_first_name(first_name: Optional[str]) -> bool:
+    """Détection heuristique du genre prénom (Phase 8.B audit P1).
 
-    Pour OWNER_COMMERCE, "propriétaire" générique remplacé par le métier
-    réel : "boulanger" (NAF 4724Z), "restaurateur" (5610A), "hôtelier" (5510Z).
-    Tombe sur "propriétaire" si NAF absent ou typologie non-Commerce.
+    Liste FR commune des terminaisons et prénoms typiquement féminins.
+    Tient en couverture environ 80% des cas FR — pour les 20% restants,
+    le label par défaut est utilisé. Acceptable MVP : on n'applique le
+    féminin que si on est confiant.
+
+    Pour V2 : possibilité de stocker `gender` dans User model (RGPD-soft
+    car non-sensible) ou d'extraire depuis Sirene/source officielle.
     """
-    if user_role != PersonaRole.OWNER_COMMERCE:
-        return PERSONA_ROLE_LABEL.get(user_role, "responsable")
+    if not first_name:
+        return False
+    name = first_name.strip().lower()
+    # Terminaisons typiquement féminines (couvre Marie/Anne/Sophie/Inès/etc.)
+    feminine_endings = ("a", "e", "ie", "ine", "elle", "ette", "ée", "ah", "ès")
+    if name.endswith(feminine_endings):
+        # Edge case : prénoms masculins finissant en -e (Pierre, Jean-Pierre,
+        # Charles, Claude). Liste explicite d'exceptions.
+        masculine_exceptions = {
+            "pierre",
+            "jean-pierre",
+            "charles",
+            "claude",
+            "anne",  # ambigu
+            "thomas",
+            "nicolas",
+            "luca",
+            "noah",
+            "philippe",
+            "alexandre",
+            "yves",
+            "lyes",
+            "iliès",
+        }
+        # Note : "anne" est ici car certains prénoms composés (Pierre-Anne, Marie-Anne)
+        # restent féminins par leur 1er composant. Mais "Anne" seul est féminin.
+        # On exclut juste les cas où l'unique prénom = ces masculins-en-e.
+        if name in masculine_exceptions and name != "anne":
+            return False
+        return True
+    return False
 
-    # OWNER_COMMERCE — métier réel via NAF
-    from services.narrative.lexical_templates import get_activity_name
 
-    activity = get_activity_name(naf_code, fallback="propriétaire")
-    # Mapping court "boulangerie" → "boulanger" (forme persona)
-    activity_to_persona = {
-        "boulangerie": "boulanger",
-        "boucherie": "boucher",
-        "poissonnerie": "poissonnier",
-        "primeur": "primeur",
-        "épicerie": "épicier",
-        "pharmacie": "pharmacien",
-        "restaurant": "restaurateur",
-        "hôtel": "hôtelier",
-        "café-bar": "patron de café",
-    }
-    return activity_to_persona.get(activity, "propriétaire")
+def _resolve_role_label(
+    user_role: PersonaRole,
+    typology: OrganizationTypology,
+    naf_code: Optional[str],
+    first_name: Optional[str] = None,
+) -> str:
+    """Résout le libellé rôle adapté à la typologie + NAF + genre (Phase 4.bis3 + 8.B).
+
+    Phase 4.bis3 — OWNER_COMMERCE : "propriétaire" → métier NAF (boulanger/...).
+    Phase 8.B — CFO + GRAND_GROUPE → "Directeur Financier" (vs "DAF" ETI).
+    Phase 8.B — fléchissement féminin si first_name suggère prénom féminin
+    (DIRECTOR_ERP → "directrice d'établissement", ENERGY_BUYER → "acheteuse").
+    """
+    # 1. OWNER_COMMERCE — métier réel via NAF (Phase 4.bis3)
+    if user_role == PersonaRole.OWNER_COMMERCE:
+        from services.narrative.lexical_templates import get_activity_name
+
+        activity = get_activity_name(naf_code, fallback="propriétaire")
+        activity_to_persona = {
+            "boulangerie": "boulanger",
+            "boucherie": "boucher",
+            "poissonnerie": "poissonnier",
+            "primeur": "primeur",
+            "épicerie": "épicier",
+            "pharmacie": "pharmacien",
+            "restaurant": "restaurateur",
+            "hôtel": "hôtelier",
+            "café-bar": "patron de café",
+        }
+        # Note : féminisation Commerce non implémentée V1 (boulangère /
+        # restauratrice → manque mapping ; à enrichir V2 si panel le demande).
+        return activity_to_persona.get(activity, "propriétaire")
+
+    # 2. Phase 8.B — context-aware GG CFO → "Directeur Financier"
+    contextual_key = (user_role, typology)
+    if contextual_key in PERSONA_ROLE_LABEL_BY_TYPOLOGY:
+        base_label = PERSONA_ROLE_LABEL_BY_TYPOLOGY[contextual_key]
+        # Féminisation : "Directeur Financier" → "Directrice Financière"
+        if _is_feminine_first_name(first_name) and base_label == "Directeur Financier":
+            return "Directrice Financière"
+        return base_label
+
+    # 3. Phase 8.B — féminisation rôles éligibles
+    if _is_feminine_first_name(first_name) and user_role in PERSONA_ROLE_LABEL_FEMININE:
+        return PERSONA_ROLE_LABEL_FEMININE[user_role]
+
+    # 4. Default masculin/neutre
+    return PERSONA_ROLE_LABEL.get(user_role, "responsable")
 
 
 def compose_persona_mention(
@@ -227,7 +316,8 @@ def compose_persona_mention(
         'Pour Hervé, boulanger : surcoût mensuel 230 €'
     """
     focus_text = compute_persona_focus_text(user_role, facts, typology)
-    role_label = _resolve_role_label(user_role, typology, naf_code)
+    # Phase 8.B — propage first_name pour féminisation + context typology
+    role_label = _resolve_role_label(user_role, typology, naf_code, first_name=user_first_name)
     # Capitalisation préservée du prénom (peut contenir tiret/composé)
     return f"Pour {user_first_name}, {role_label} : {focus_text}"
 
@@ -235,6 +325,8 @@ def compose_persona_mention(
 __all__ = [
     "PersonaRole",
     "PERSONA_ROLE_LABEL",
+    "PERSONA_ROLE_LABEL_FEMININE",
+    "PERSONA_ROLE_LABEL_BY_TYPOLOGY",
     "PERSONA_FOCUS",
     "compute_persona_focus_text",
     "compose_persona_mention",

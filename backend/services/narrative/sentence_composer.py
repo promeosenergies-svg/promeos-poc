@@ -62,22 +62,30 @@ MAX_PHRASE_1_WORDS: int = 35
 
 
 # Audit Marie + CX : ancrage chiffré + ton confiant > "rien à remonter".
-# Variables {score} / {sites_count} sont substituées au runtime via
-# render_stable_sentence si les données sont disponibles. Sinon, fallback
-# sur la version générique sans variable.
+# Phase 8.C audit final P0 : ajout d'une action implicite ("focus de la
+# semaine" / "prochaine étape") pour éviter le ressenti "rien à dire" en
+# CODIR. Le silence Option 3.C reste tenu (pas de fausse alerte) mais
+# l'utilisateur sort de la lecture avec un ancrage forward-looking.
 SENTENCE_STABLE_TEMPLATES: dict[OrganizationTypology, str] = {
     OrganizationTypology.GRAND_GROUPE: (
         "Votre patrimoine tient sa trajectoire cette semaine — "
-        "score conformité maintenu, aucune nouvelle dérive détectée"
+        "score conformité maintenu, aucune nouvelle dérive détectée. "
+        "Focus prochain comité : préparer les déclarations OPERAT 2026"
     ),
     OrganizationTypology.COMMERCE: (
-        "Votre activité tient le cap cette semaine — pas de surcoût détecté, consommation alignée sur votre profil"
+        "Votre activité tient le cap cette semaine — pas de surcoût détecté, "
+        "consommation alignée sur votre profil. "
+        "Focus prochain mois : vérifier la facture S+2 vs profil"
     ),
     OrganizationTypology.ERP: (
         "Votre établissement tient sa trajectoire cette semaine — "
-        "service public maintenu, pas d'écart sur la conformité"
+        "service public maintenu, pas d'écart sur la conformité. "
+        "Focus prochain conseil : préparer l'audit énergétique annuel"
     ),
-    OrganizationTypology.UNKNOWN: ("Votre périmètre tient le cap cette semaine — pas de signal saillant"),
+    OrganizationTypology.UNKNOWN: (
+        "Votre périmètre tient le cap cette semaine — pas de signal saillant. "
+        "Focus suggéré : vérifier les prochaines échéances réglementaires"
+    ),
 }
 
 # Backward-compat alias — anciens imports.
