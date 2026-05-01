@@ -456,6 +456,24 @@ def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
     Short-circuits when a frequency achieves 100% bucket coverage.
     Otherwise picks the frequency covering the most output buckets
     (ties go to the coarsest — checked first).
+
+    Phase 28.bis (audit Cockpit dual Sol2 2026-05-01) : fix double-counting
+    silencieux. Avant cette phase :
+      1. SQLite stocke timestamps en ISO 'YYYY-MM-DDTHH:MM:SS' (T séparateur)
+         mais SQLAlchemy sérialise datetime → 'YYYY-MM-DD HH:MM:SS' (espace)
+         → comparaison `>= date_from` faillit silencieusement → bucket_count=0
+         pour TOUTES les fréquences.
+      2. Fallback ligne `return compatible` retournait alors les 4 fréquences
+         compatibles (MIN_15 + MIN_30 + HOURLY + DAILY) → callers utilisant
+         `frequency.in_(best)` cumulaient les 4 = quadruple-counting × 4
+         (J-1 affichait 25.6 MWh au lieu de ~8 MWh réels).
+
+    Fix Phase 28.bis :
+      A. Remplacer `>= date_from` (compare strings TZ-aware) par
+         `func.date(timestamp) >= date_from.date().isoformat()` (string-safe).
+      B. Si toutes les freq donnent bucket_count=0 (vraiment aucune data),
+         retourner UNE seule freq (la plus grossière) au lieu de toutes —
+         évite tout cumul accidentel chez les callers.
     """
     compatible = _COMPATIBLE_FREQS.get(granularity, list(FrequencyType))
     if len(compatible) <= 1:
@@ -470,6 +488,11 @@ def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
     bucket_fmt = _STRFTIME_FORMATS.get(granularity, _STRFTIME_FORMATS["hourly"])
     expected = _expected_buckets(date_from, date_to, granularity)
 
+    # Phase 28.bis : extraire la date ISO côté DB pour matcher le format
+    # de stockage SQLite ('YYYY-MM-DDTHH:MM:SS' vs SQLAlchemy 'YYYY-MM-DD HH:MM:SS').
+    df_iso = date_from.date().isoformat() if hasattr(date_from, "date") else str(date_from)
+    dt_iso = date_to.date().isoformat() if hasattr(date_to, "date") else str(date_to)
+
     best_freq = None
     best_buckets = 0
 
@@ -479,8 +502,8 @@ def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
             .filter(
                 meter_filter,
                 MeterReading.frequency == freq,
-                MeterReading.timestamp >= date_from,
-                MeterReading.timestamp < date_to,
+                func.date(MeterReading.timestamp) >= df_iso,
+                func.date(MeterReading.timestamp) <= dt_iso,
             )
             .scalar()
             or 0
@@ -493,7 +516,11 @@ def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
 
     if best_freq is not None:
         return [best_freq]
-    return compatible
+    # Phase 28.bis : aucune data trouvée → retourner UNE freq seule (la plus
+    # grossière, "représentative" du bucket cible) au lieu de toutes les freq
+    # pour éviter tout cumul accidentel par les callers utilisant
+    # `frequency.in_(best)`. La query downstream retournera 0 de toute façon.
+    return [compatible[-1]]
 
 
 def _base_query(db, meter_ids, bucket_expr, date_from, date_to, granularity: str = "daily"):

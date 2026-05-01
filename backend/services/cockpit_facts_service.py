@@ -620,15 +620,63 @@ def _build_power(db: Session, site_ids: list[int], today: date) -> dict:
         if subscribed_kw_total > 0 and peak_kw > 0:
             delta_pct = round((peak_kw - subscribed_kw_total) / subscribed_kw_total * 100)
 
+        # Phase 31 — hourly_breakdown[] : courbe de charge horaire de la
+        # journée du pic (target_date). Avant Phase 31, le SVG FE
+        # CourbeChargeJMinus1 rendait 11 points hardcodés `_CHARGE_J1_KEY_POINTS`
+        # avec kwRatio inventés (violation "zero business logic FE"). Désormais
+        # data-driven : agrégation horaire des PowerReading sur target_date,
+        # multi-sites somme. Format : 24 buckets [{hour_iso, hour_label, kw,
+        # kw_ratio, period}] où period = 'HC' (avant 8h ou après 22h) ou 'HP'.
+        hourly_breakdown: list[dict] = []
+        try:
+            for hour in range(24):
+                # Filtrer PowerReading sur target_date entre [hour:00, hour:59]
+                # via func.strftime — string-safe SQLite (cf bug ISO T vs espace).
+                ts_pattern = f"{target_date.isoformat()}T{hour:02d}:%"
+                # Note : func.strftime % alternative — on filtre par func.date() ET
+                # func.cast(func.strftime('%H', ts_debut), Integer) == hour.
+                from sqlalchemy import Integer as SAInteger, cast
+
+                hourly_kw = (
+                    db.query(func.avg(PowerReading.P_active_kw))
+                    .filter(
+                        PowerReading.meter_id.in_(meter_ids),
+                        PowerReading.sens == "CONS",
+                        func.date(PowerReading.ts_debut) == target_date.isoformat(),
+                        cast(func.strftime("%H", PowerReading.ts_debut), SAInteger) == hour,
+                    )
+                    .scalar()
+                )
+                kw_value = round(float(hourly_kw or 0.0), 1)
+                # Période HP/HC : convention TURPE 7 BT (HC entre 22h-6h).
+                # Cohérent avec _CHARGE_J1_KEY_POINTS placeholder Phase 27.bis.
+                period = "HC" if hour < 7 or hour >= 22 else "HP"
+                if hour == 7 or hour == 21:
+                    period = "HP→HC" if hour == 21 else "HC→HP"
+                kw_ratio = round(kw_value / subscribed_kw_total, 3) if subscribed_kw_total > 0 else 0.0
+                hourly_breakdown.append(
+                    {
+                        "hour": hour,
+                        "hour_label": f"{hour} h",
+                        "kw": kw_value,
+                        "kw_ratio": kw_ratio,
+                        "period": period,
+                    }
+                )
+        except Exception as exc:
+            _logger.warning("hourly_breakdown failed: %s", exc)
+
         return {
             "peak_j_minus_1_kw": peak_kw,
             "subscribed_kw": round(subscribed_kw_total, 1),
             "delta_pct": delta_pct,
             "peak_time": peak_time,
             "peak_source": "j-1" if peak_offset == 1 else f"j-{peak_offset}",
+            "hourly_breakdown": hourly_breakdown,  # Phase 31 — data-driven SVG
         }
     except Exception as exc:
         _logger.warning("_build_power error: %s", exc)
+        _empty["hourly_breakdown"] = []  # Phase 31 fallback
         return _empty
 
 

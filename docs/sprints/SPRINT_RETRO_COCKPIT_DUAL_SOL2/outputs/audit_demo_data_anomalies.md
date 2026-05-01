@@ -157,7 +157,7 @@ trajectoire lissage).
 | # | Anomalie | Statut |
 |---|---|---|
 | 1 | `peak_source: "j-99"` | ✅ Phase 28 : `end_dt = date.today()` → `peak_source = j-1` runtime confirmé |
-| 2 | `+192 %` baseline historique 3× trop basse | 🔴 Phase 28.bis (algo seed gen_readings) — backlog |
+| 2 | `+192 %` baseline historique 3× trop basse | ✅ Phase 28.bis : root cause = quadruple-counting `_resolve_best_freq` (bug ISO `T` vs espace SQLite + fallback `return compatible`). Fix 1 ligne, j_minus_1_mwh 25.6 → 9.28 (delta +6 % normal). PAS un bug seed, bug résolveur fréquence. |
 | 3 | `0 % vs mai 2025` (1er du mois) | ✅ Phase 29.bis : "Données en cours d'agrégation · 1 jour(s) seedé(s)" |
 | 4 | Trajectoire 2030 chute brutale 4 229 → 2 342 | ✅ Phase 30 : courbe apprentissage 3 paliers 4 229 → 3 947 → 3 199 → 2 342 |
 

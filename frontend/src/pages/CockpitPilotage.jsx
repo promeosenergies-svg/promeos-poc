@@ -580,10 +580,55 @@ const _CHARGE_J1_PEAK_POINT = _CHARGE_J1_KEY_POINTS.reduce(
   _CHARGE_J1_KEY_POINTS[0]
 );
 
-function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
+// Phase 31 : geom SVG pour la courbe data-driven (24h plot area).
+// L'axe Y est dynamique (max kW observé) ; l'axe X est divisé en 24
+// buckets uniformes entre x_min et x_max.
+const _CHARGE_J1_X_MIN = 36;
+const _CHARGE_J1_X_MAX = 340;
+const _CHARGE_J1_Y_BASELINE = 90; // y=90 = 0 kW
+const _CHARGE_J1_Y_TOP = 22; // y=22 = max kW (= souscrite)
+
+/** Phase 31 — projette `power.hourly_breakdown[]` (24 entries) en path SVG.
+ *  Échelle Y dynamique : max(kw observé, subscribed_kw) pour préserver la
+ *  ligne souscrite visible. Retourne `null` si pas de breakdown
+ *  (fallback placeholder). */
+function _projectHourlyToPath(hourlyBreakdown, subscribedKw) {
+  if (!Array.isArray(hourlyBreakdown) || hourlyBreakdown.length === 0) return null;
+  const maxKw = Math.max(subscribedKw || 0, ...hourlyBreakdown.map((h) => h.kw || 0));
+  if (maxKw <= 0) return null;
+  const xRange = _CHARGE_J1_X_MAX - _CHARGE_J1_X_MIN;
+  const yRange = _CHARGE_J1_Y_BASELINE - _CHARGE_J1_Y_TOP;
+  return hourlyBreakdown.map((h, idx) => {
+    const ratio = (h.kw || 0) / maxKw;
+    const x = _CHARGE_J1_X_MIN + (idx / 23) * xRange; // 23 = 24-1 (intervalles)
+    const y = _CHARGE_J1_Y_BASELINE - ratio * yRange;
+    return {
+      x: Math.round(x * 10) / 10,
+      y: Math.round(y * 10) / 10,
+      kw: h.kw || 0,
+      kwRatio: h.kw_ratio || (subscribedKw > 0 ? h.kw / subscribedKw : 0),
+      hour: h.hour_label || `${h.hour} h`,
+      hourNum: h.hour,
+      period: h.period || 'HP',
+    };
+  });
+}
+
+function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence, hourlyBreakdown }) {
   const subSplit = splitKw(subscribedKw);
-  const peakPoint = _CHARGE_J1_PEAK_POINT;
-  const peakKw = subscribedKw != null ? subscribedKw * peakPoint.kwRatio : null;
+  // Phase 31 : si breakdown backend dispo, on projette les vraies kW.
+  // Sinon fallback placeholder Phase 27.bis (pour 1er render avant fetch).
+  const projected = _projectHourlyToPath(hourlyBreakdown, subscribedKw);
+  const isDataDriven = projected !== null;
+  const keyPoints = projected || _CHARGE_J1_KEY_POINTS;
+  const peakPoint = isDataDriven
+    ? keyPoints.reduce((best, p) => (p.kwRatio > best.kwRatio ? p : best), keyPoints[0])
+    : _CHARGE_J1_PEAK_POINT;
+  const peakKw = isDataDriven
+    ? peakPoint.kw
+    : subscribedKw != null
+      ? subscribedKw * peakPoint.kwRatio
+      : null;
   const peakKwLabel =
     peakKw != null
       ? subSplit.unit === 'MW'
@@ -757,33 +802,52 @@ function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
             </g>
           );
         })()}
-        {/* Aire HP sous la courbe (gradient) */}
-        <path
-          d="M36,90 L86,80 L100,68 L114,46 L128,40 L142,42 L156,52 L170,58 L184,52 L198,46 L212,42 L226,46 L240,50 L254,56 L268,64 L282,76 L296,82 L304,86 L304,105 L36,105 Z"
-          fill="url(#hp-fill-pilotage)"
-          fillOpacity=".7"
-        />
-        {/* HC matin */}
-        <path
-          d="M36,92 L52,90 L64,88 L76,84 L86,80"
-          fill="none"
-          stroke="var(--sol-hch-fg)"
-          strokeWidth="1.6"
-        />
-        {/* HP journée */}
-        <path
-          d="M86,80 L100,68 L114,46 L128,40 L142,42 L156,52 L170,58 L184,52 L198,46 L212,42 L226,46 L240,50 L254,56 L268,64 L282,76 L296,82 L304,86"
-          fill="none"
-          stroke="var(--sol-hpe-fg)"
-          strokeWidth="1.6"
-        />
-        {/* HC soir */}
-        <path
-          d="M304,86 L316,90 L328,93 L340,95"
-          fill="none"
-          stroke="var(--sol-hch-fg)"
-          strokeWidth="1.6"
-        />
+        {/* Phase 31 : 3 paths SVG calculés depuis keyPoints (data-driven si
+            backend hourly_breakdown dispo, sinon fallback placeholder). On
+            sépare HC matin (avant 7h), HP journée (7h-21h), HC soir (>=22h)
+            pour conserver les 2 couleurs distinctes contractuelles. */}
+        {(() => {
+          // Helpers : segments par période + path d
+          const toL = (pts) =>
+            pts.length > 0
+              ? `M${pts[0].x},${pts[0].y} ` +
+                pts
+                  .slice(1)
+                  .map((p) => `L${p.x},${p.y}`)
+                  .join(' ')
+              : '';
+          // Indices par période (24 entries data-driven, ou les 11 placeholder)
+          const hcMorning = keyPoints.filter((p) => {
+            const h =
+              p.hourNum != null ? p.hourNum : parseInt((p.hour || '0').replace(' h', ''), 10);
+            return !Number.isNaN(h) && h <= 7;
+          });
+          const hpDay = keyPoints.filter((p) => {
+            const h =
+              p.hourNum != null ? p.hourNum : parseInt((p.hour || '0').replace(' h', ''), 10);
+            return !Number.isNaN(h) && h >= 7 && h <= 21;
+          });
+          const hcEvening = keyPoints.filter((p) => {
+            const h =
+              p.hourNum != null ? p.hourNum : parseInt((p.hour || '0').replace(' h', ''), 10);
+            return !Number.isNaN(h) && h >= 21;
+          });
+          // Aire HP sous la courbe : ferme le path en bas (y=baseline+2 pour
+          // descendre sous la grille).
+          const hpAreaPts = hpDay;
+          const hpAreaD =
+            hpAreaPts.length > 0
+              ? `${toL(hpAreaPts)} L${hpAreaPts[hpAreaPts.length - 1].x},${_CHARGE_J1_Y_BASELINE + 15} L${hpAreaPts[0].x},${_CHARGE_J1_Y_BASELINE + 15} Z`
+              : '';
+          return (
+            <>
+              <path d={hpAreaD} fill="url(#hp-fill-pilotage)" fillOpacity=".7" />
+              <path d={toL(hcMorning)} fill="none" stroke="var(--sol-hch-fg)" strokeWidth="1.6" />
+              <path d={toL(hpDay)} fill="none" stroke="var(--sol-hpe-fg)" strokeWidth="1.6" />
+              <path d={toL(hcEvening)} fill="none" stroke="var(--sol-hch-fg)" strokeWidth="1.6" />
+            </>
+          );
+        })()}
         {/* Axe X (heures) */}
         <g fontFamily="var(--sol-font-mono)" fontSize="9" fill="currentColor" fillOpacity=".55">
           <text x="36" y="125" textAnchor="start">
@@ -802,12 +866,13 @@ function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
             22 h
           </text>
         </g>
-        {/* Phase 27.bis hot-fix : cercles invisibles aux points clés pour
-            tooltips natifs <title> au hover (avant : courbe path SVG sans
-            info au survol, signalé par utilisateur 2026-05-01). Rayon
-            généreux pour zone hover plus large. */}
-        {_CHARGE_J1_KEY_POINTS.map((p) => {
-          const ptKw = subscribedKw != null ? subscribedKw * p.kwRatio : null;
+        {/* Phase 27.bis + 31 : cercles invisibles aux points clés pour
+            tooltips natifs <title> au hover. En mode data-driven (24 points),
+            on rend 1 cercle par heure ; en placeholder, 11 points clés. */}
+        {keyPoints.map((p) => {
+          // Phase 31 : si data-driven, kw vient du backend ; sinon calcul
+          // depuis kwRatio × subscribed.
+          const ptKw = isDataDriven ? p.kw : subscribedKw != null ? subscribedKw * p.kwRatio : null;
           const ptKwLabel =
             ptKw != null
               ? subSplit.unit === 'MW'
@@ -1291,6 +1356,7 @@ export default function CockpitPilotage() {
           subscribedKw={facts?.power?.subscribed_kw}
           lastUpdate={lastUpdateRel}
           confidence={confidence}
+          hourlyBreakdown={facts?.power?.hourly_breakdown}
         />
       </div>
 
