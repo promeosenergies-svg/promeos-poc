@@ -46,15 +46,38 @@
 
 ---
 
-## 3 — Question ouverte (3 min — verbatim brut)
+## 3 — Question ouverte libre (3-5 min — verbatim brut)
 
 À la fin du timer :
 
-> *« Stop. En 30 secondes maximum, dites-moi : qu'est-ce que vous avez compris ? Et ce que vous feriez ensuite ? »*
+> *« Stop. Racontez-moi librement ce que vous avez retenu de cette page. Prenez le temps qu'il vous faut. »*
 
-⚠️ **Ne pas reformuler** la question. Laisser le silence si nécessaire (15 sec OK). Ne pas guider.
+**Phase 5.bis correction (mini-audit P0)** : pas de chronomètre sur cette
+réponse — chronométrer 30 sec biaise le cadrage et favorise la complaisance
+superficielle ("c'était bien"). Laisser le participant organiser sa pensée
+spontanément.
 
-**Animateur** : prendre note du **verbatim brut** (mot pour mot des 30 premières secondes). Pas de résumé. Pas d'interprétation.
+⚠️ **Ne pas reformuler** la question initiale. Laisser le silence si
+nécessaire (15-20 sec OK).
+
+**Relances neutres autorisées** quand le participant marque une pause
+visible :
+
+- *« Et quoi d'autre ? »*
+- *« Autre chose qui vous a marqué ? »*
+- *« Autre chose qui vous a moins parlé ? »*
+
+⚠️ **JAMAIS** :
+
+- ❌ « Vous voulez dire que … ? » (reformulation = biais)
+- ❌ « C'est intéressant ce que vous dites » (acquiescement = biais)
+- ❌ « Mais vous avez vu le … ? » (guidage)
+
+Continuer les relances neutres jusqu'à épuisement spontané (généralement
+2-5 min selon profil).
+
+**Animateur** : prendre note du **verbatim brut** (mot pour mot). Pas de
+résumé. Pas d'interprétation.
 
 ---
 

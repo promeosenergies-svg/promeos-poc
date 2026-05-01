@@ -133,6 +133,25 @@ ____________________________________________________________
 
 ---
 
+## Critère C8 — Densité informationnelle saine (Phase 5.bis correction P1)
+
+> Audit vue exécutive 29/04 : findings "leak retail-001 dans scope HELIOS"
+> et "10 KPI vs ≤ 3 doctrine" = bugs de scope perçus par utilisateur.
+> Ce critère vérifie que la narrative livrée Phase 1-4 ne reproduit pas
+> ces frictions.
+
+- [ ] Aucune mention spontanée de chiffre incohérent ou suspect
+- [ ] Aucune mention spontanée de site/org étranger ("c'est quoi retail-001 ?")
+- [ ] Aucune mention de "trop de chiffres" / "surcharge" / "perdu·e dans les KPI"
+- [ ] ≤ 3 KPIs hero visibles (doctrine §11.3 — vérifier captures écran)
+
+**Verdict C8** : ☐ VALIDÉ ☐ RATÉ
+**Commentaire** :
+
+____________________________________________________________
+
+---
+
 ## Synthèse session
 
 | Critère | Verdict | Note |
@@ -144,6 +163,7 @@ ____________________________________________________________
 | C5 — Action implicite | ☐V ☐R | — |
 | C6 — Push visible | ☐V ☐R | — |
 | C7 — Drill-down | ☐V ☐R | — |
+| C8 — Densité saine (Phase 5.bis) | ☐V ☐R | — |
 
 **Note Q12 globale** : ___ / 10
 

@@ -20,6 +20,14 @@ Aucune donnée nominative n'est conservée au-delà de la session (votre nom + e
 
 ---
 
+## Base légale (Phase 5.bis correction P0 — étanchéité juridique)
+
+Le traitement de vos données est fondé sur votre **consentement explicite**
+au sens de l'**article 6.1.a du RGPD**. Vous pouvez retirer ce consentement
+à tout moment, sans justification, par simple email à
+<amine.bena13@gmail.com> — l'enregistrement audio + verbatim seront alors
+supprimés sous 7 jours.
+
 ## Vos droits (RGPD)
 
 Conformément au Règlement Général sur la Protection des Données (RGPD) :
