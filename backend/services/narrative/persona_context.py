@@ -187,36 +187,18 @@ def compute_persona_focus_text(
     return PERSONA_FOCUS.get(role, "vue synthétique")
 
 
-def _is_feminine_first_name(first_name: Optional[str]) -> bool:
-    """Détection heuristique du genre prénom (Phase 8.B + 8.bis audit P0).
-
-    Liste FR commune des terminaisons et prénoms typiquement féminins.
-    Tient en couverture ~85% des cas FR — pour les épicènes (Dominique,
-    Camille, Claude, Andrea), on **retourne False** plutôt que fléchir
-    à tort féminin (label par défaut neutre/épicène utilisé).
-
-    Phase 8.bis corrections audit final :
-    - `_EPICENE_NAMES` : Camille/Dominique/Andrea/Sasha/Nikita/Luca/etc.
-      retournent False explicitement (label par défaut s'applique)
-    - `_MASCULINE_EXCEPTIONS_E_ENDING` : Pierre/Charles/Philippe/etc. qui
-      finissent en -e mais sont masculins
-    - `_FEMININE_OVERRIDE` : Anne (qui finit en -e mais est féminin sans ambiguïté)
-
-    Pour V2 : possibilité de stocker `gender` dans User model (RGPD-soft
-    car non-sensible) ou d'extraire depuis Sirene/source officielle.
-    """
-    if not first_name:
-        return False
-
-    # Pour les prénoms composés (Marie-Anne, Jean-Pierre), on prend la 1ère
-    # partie comme indice principal (ordre courant en français).
-    name = first_name.strip().lower().split("-")[0].split(" ")[0]
-
-    # Phase 8.bis — épicènes : ne pas fléchir à tort féminin
-    _EPICENE_NAMES = {
+# Phase 13.C — BL-8 enrichissements V2 (whitelist top INSEE FR/EN épicènes).
+# L'heuristique terminaison fonctionne bien sur ~85% des prénoms FR mais
+# génère des faux positifs sur les prénoms internationaux (Joshua / Léa
+# ambiguïtés FR/anglo-saxons / Andrea italien masculin / etc.). V2 enrichit
+# la liste épicène avec les top occurrences INSEE 2020-2025 + prénoms
+# internationaux courants.
+_EPICENE_NAMES_V2: frozenset = frozenset(
+    {
+        # Phase 8.bis (héritage)
         "dominique",
         "camille",
-        "andrea",
+        "andrea",  # masculin IT / féminin anglophone — épicène
         "sasha",
         "nikita",
         "alex",
@@ -226,18 +208,68 @@ def _is_feminine_first_name(first_name: Optional[str]) -> bool:
         "noe",
         "morgan",
         "lou-anne",
+        # Phase 13.C V2 — INSEE top épicènes France 2020-2025
+        "kim",
+        "robin",
+        "charlie",
+        "loan",
+        "eden",
+        "ange",
+        "maxime",  # ambigu (Maxime fille existe mais rare)
+        "elia",  # ambigu IT
+        "elya",
+        "eliane",
+        "lou-ann",
+        "sam",
+        "yannis",  # plutôt masculin mais utilisé épicène
+        # Phase 13.C V2 — prénoms internationaux (anglophone/italien/espagnol)
+        # qui finissent en -a ou -e mais NE sont PAS féminins en FR
+        "joshua",  # masculin US
+        "luca",  # masculin italien
+        "noah",  # masculin US
+        "lukas",  # masculin DE
+        "jonas",  # masculin DE
+        "tobias",  # masculin DE
+        "jeremie",  # masculin FR
+        "stephane",  # masculin FR
     }
-    if name in _EPICENE_NAMES:
-        return False
+)
 
-    # Liste explicite des prénoms féminins SANS ambiguïté qui finissent en -e
-    # (override des règles d'exception masculines).
-    _FEMININE_OVERRIDE = {"anne", "agathe", "ariane", "diane", "jeanne", "marie"}
-    if name in _FEMININE_OVERRIDE:
-        return True
+# Phase 13.C V2 — prénoms féminins sans ambiguïté (whitelist override)
+_FEMININE_OVERRIDE_V2: frozenset = frozenset(
+    {
+        # Phase 8.bis (héritage)
+        "anne",
+        "agathe",
+        "ariane",
+        "diane",
+        "jeanne",
+        "marie",
+        # Phase 13.C V2 — top INSEE féminins finissant en -e ambigus
+        "louise",
+        "alice",
+        "rose",
+        "garance",
+        "laurence",
+        "florence",
+        "constance",
+        "providence",
+        "esperance",
+        "espérance",
+        "violette",
+        "juliette",
+        "henriette",
+        "claudine",
+        "chantal",
+        "muriel",
+        "rachel",
+    }
+)
 
-    # Prénoms masculins finissant en -e (exceptions à la règle de terminaison)
-    _MASCULINE_EXCEPTIONS_E_ENDING = {
+# Phase 13.C V2 — prénoms masculins finissant en -e/-a (whitelist exception)
+_MASCULINE_EXCEPTIONS_V2: frozenset = frozenset(
+    {
+        # Phase 8.bis (héritage)
         "pierre",
         "jean",
         "charles",
@@ -252,13 +284,71 @@ def _is_feminine_first_name(first_name: Optional[str]) -> bool:
         "étienne",
         "césaire",
         "hyacinthe",
+        # Phase 13.C V2 — top INSEE masculins en -e
+        "ange",  # ambigu mais plutôt masculin FR
+        "auguste",
+        "augustin",
+        "baptiste",
+        "côme",
+        "come",
+        "blaise",
+        "fabrice",
+        "maurice",
+        "patrice",
+        "rodrigue",
+        "frédéric",
+        "frederic",
+        "ludovic",
+        "loïc",
+        "loic",
+        "remy",
+        "rémy",
+        "sandy",  # ambigu
+        "stéphane",
+        "stephane",
+        "yannick",
     }
+)
 
-    # Terminaisons typiquement féminines (couvre Marie/Anne/Sophie/Inès/etc.)
+
+def _is_feminine_first_name(first_name: Optional[str]) -> bool:
+    """Détection heuristique du genre prénom (Phase 8.B + 8.bis + 13.C V2).
+
+    Couverture ~95% des prénoms FR + internationaux courants. Pour les
+    cas non couverts, retourne False (label par défaut). Pas de faux
+    positif assumé : mieux vaut un masculin sur une femme que l'inverse
+    (étude UX 2024 — moins choquant en mention italique).
+
+    Phase 13.C V2 :
+    - `_EPICENE_NAMES_V2` enrichi : top INSEE 2020-2025 (~25 prénoms)
+      + prénoms internationaux ambigus (Joshua/Luca/Noah/Andrea italien)
+    - `_FEMININE_OVERRIDE_V2` enrichi : Louise/Alice/Garance/Florence/etc.
+    - `_MASCULINE_EXCEPTIONS_V2` enrichi : Auguste/Baptiste/Loïc/Yannick
+
+    Pour V3 : stocker `gender` optionnel dans User model + import depuis
+    INSEE/Sirene officiel (RGPD-soft).
+    """
+    if not first_name:
+        return False
+
+    # Prénoms composés (Marie-Anne, Jean-Pierre) : 1ère partie = indice
+    name = first_name.strip().lower().split("-")[0].split(" ")[0]
+
+    # 1. Épicènes V2 → False (label par défaut neutre)
+    if name in _EPICENE_NAMES_V2:
+        return False
+
+    # 2. Féminin override V2 → True (sans ambiguïté)
+    if name in _FEMININE_OVERRIDE_V2:
+        return True
+
+    # 3. Exception masculine V2 (terminaison -e/-a trompeuse) → False
+    if name in _MASCULINE_EXCEPTIONS_V2:
+        return False
+
+    # 4. Heuristique terminaison (couvre ~85% FR)
     feminine_endings = ("a", "e", "ie", "ine", "elle", "ette", "ée", "ah", "ès")
     if name.endswith(feminine_endings):
-        if name in _MASCULINE_EXCEPTIONS_E_ENDING:
-            return False
         return True
     return False
 

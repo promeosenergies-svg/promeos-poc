@@ -4,6 +4,9 @@
  * Sprint 2 Vague E ét16 (audit Marie DAF P0 #2 28/04/2026) :
  * « BACS/APER/Décret Tertiaire sans gloss = je décroche dès la 3ᵉ ligne ».
  *
+ * Phase 13.D — BL-9 audit final closé : prop `typology` pour priorité
+ * `GLOSSARY_COMMERCE` (vulgarisé Hervé boulanger) sur `GLOSSARY` standard.
+ *
  * Doctrine §5 grammaire éditoriale + §13 a11y WCAG 2.2 :
  *   - `<abbr title="...">` natif HTML5 (lecteurs d'écran)
  *   - underline dotted Sol token (signal visuel "il y a quelque chose")
@@ -11,21 +14,20 @@
  *   - tooltip survol (titre HTML natif — pas de modale, lisible mobile)
  *
  * Usage :
- *   <SolAcronym code="BACS" /> → rend "BACS" + tooltip
- *   <SolAcronym code="Décret Tertiaire" />
- *   <SolAcronym code="BACS">décret BACS</SolAcronym> → texte custom + tooltip BACS
- *   <SolAcronym code="UNKNOWN">Whatever</SolAcronym> → fallback : pas de gloss
+ *   <SolAcronym code="BACS" /> → rend "BACS" + tooltip CFO standard
+ *   <SolAcronym code="TURPE" typology="commerce" /> → tooltip vulgarisé
+ *   <SolAcronym code="BACS">décret BACS</SolAcronym> → texte custom
  *
- * Source de vérité : `frontend/src/domain/glossary.js` (GLOSSARY map).
+ * Source de vérité : `frontend/src/domain/glossary.js` (GLOSSARY + GLOSSARY_COMMERCE).
  */
 import { getDefinition, isGlossed } from '../../domain/glossary';
 
-export default function SolAcronym({ code, children, className = '' }) {
-  const definition = getDefinition(code);
+export default function SolAcronym({ code, children, typology = null, className = '' }) {
+  const definition = getDefinition(code, typology);
   const display = children ?? code;
 
   // Si pas de définition glossée, on rend le texte brut (pas de friction visuelle)
-  if (!isGlossed(code)) {
+  if (!isGlossed(code, typology)) {
     return <span className={className}>{display}</span>;
   }
 

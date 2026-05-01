@@ -3226,15 +3226,20 @@ def _fmt_m2_full(m2: float) -> str:
 
 
 def _fmt_eur_short(amount: Optional[float]) -> str:
-    """Format compact € : 26 k€, 1.2 M€, 450 €."""
-    if amount is None or amount == 0:
-        return "0 €"
-    abs_amount = abs(amount)
-    if abs_amount >= 1_000_000:
-        return f"{round(amount / 100_000) / 10} M€"
-    if abs_amount >= 1_000:
-        return f"{round(amount / 100) / 10} k€"
-    return f"{round(amount)} €"
+    """Format compact € : 26 k€, 1,2 M€, 450 €.
+
+    Phase 13.A — BL-2 closé : délégué au SoT canonique
+    `services/narrative/formatters.format_eur_short` avec
+    `none_as_zero=True` pour préserver le comportement legacy
+    (None → "0 €" attendu par 37 callsites week_cards/KPIs hero).
+
+    Convention SoT : virgule décimale FR (`1,2 M€` vs ancien `1.2 M€`).
+    Effet visible cosmétique : tous les montants narratifs passent
+    désormais à la virgule décimale FR (correction §11.3 cohérence).
+    """
+    from services.narrative.formatters import format_eur_short
+
+    return format_eur_short(amount, none_as_zero=True)
 
 
 # ── Entry point public ────────────────────────────────────────────────

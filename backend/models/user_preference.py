@@ -1,34 +1,35 @@
-"""User preferences — Sprint Refonte Narrative dynamique Phase 1.4.
+"""User preferences — Sprint Refonte Narrative dynamique Phase 1.4 + 13.B.
 
-Table dédiée `user_preferences` (1 ligne par user, unique). Permet à un user
-de surcharger des paramètres dérivés automatiquement, sans polluer la table
-`users` (qui reste minimale auth-only).
+Table dédiée `user_preferences`. Permet à un user de surcharger des
+paramètres dérivés automatiquement, sans polluer la table `users`.
 
-## Phase 1.4 — typology_override
+## Phase 1.4 — typology_override (1 ligne / user, design global)
 
-Première utilisation : permettre à un CFO d'une org mixte (ex: HELIOS scope
-org → GRAND_GROUPE auto-détecté) de forcer une autre typologie pour ses
-narratives (ex: si l'org pivote sur un nouveau métier, ou si l'auto-détection
-NAF est jugée non représentative).
+Première utilisation : permettre à un CFO d'une org mixte (ex: HELIOS
+scope org → GRAND_GROUPE auto-détecté) de forcer une autre typologie
+pour ses narratives.
 
-Si `typology_override IS NULL` → l'auto-détection NAF (`typology_resolver`)
-prend le relais.
+## Phase 13.B — BL-7 cross-org typology_override (audit final P1)
 
-## Design choice cross-org (Amine 2026-05-01)
+Migration `(user_id) UNIQUE` → `(user_id, org_id) UNIQUE` composite
+pour permettre des overrides différents selon l'org active. Cas d'usage :
+DAF de holding multi-secteurs qui veut "patrimoine" pour HELIOS Tertiaire
+et "groupe industriel" pour HELIOS Manufacturing.
 
-L'override est **global par user** : la table porte une UniqueConstraint
-sur `user_id` seul, **pas** `(user_id, org_id)`. Conséquence : un user
-multi-org partage son override entre toutes ses orgs.
+Convention V2 : `org_id IS NULL` reste autorisé (override global user
+si défini), `org_id != NULL` priorise sur global. Le résolveur lookup :
 
-Justification produit : la typologie est une perception personnelle du
-user (« mes briefings, mon registre lexical »), pas une caractéristique
-de l'org. Si V2 multi-org révèle un besoin d'override scopé à l'org
-active (ex : DAF d'un groupe holding multi-secteurs), migrer vers
-`(user_id, org_id)` unique composite — ADR P1-1 Phase 2 dans
-`docs/maquettes/narrative-sol2/`.
+  1. (user_id, current_org_id) → si présent, utiliser
+  2. (user_id, NULL) → si présent (override global), utiliser
+  3. Sinon → auto-détection NAF typology_resolver
+
+Si `typology_override IS NULL` → auto-détection NAF reprend la main.
+
+Migration safe : `org_id` colonne nullable ajoutée sans casser les
+override globaux existants (qui passent en `org_id=NULL`).
 
 Ref : `docs/maquettes/narrative-sol2/PROMPT_REFONTE_NARRATIVE_DYNAMIQUE_EXECUTION.md`
-Phase 1.4.
+Phase 1.4 + audit final BL-7 Phase 13.B.
 """
 
 from __future__ import annotations
@@ -48,18 +49,26 @@ from .base import Base, TimestampMixin
 
 
 class UserPreference(Base, TimestampMixin):
-    """Préférences personnelles d'un user (1 ligne / user).
+    """Préférences personnelles d'un user (Phase 13.B : 1 ligne / (user, org)).
 
     Extensible : à terme contiendra `narrative_style`, `push_threshold`,
-    `email_digest_frequency`, etc. Pour l'instant uniquement
-    `typology_override` (Phase 1.4).
+    `email_digest_frequency`, etc. Phase 1.4 : `typology_override` ;
+    Phase 13.B : ajout `org_id` nullable pour scope cross-org.
     """
 
     __tablename__ = "user_preferences"
-    __table_args__ = (UniqueConstraint("user_id", name="uq_user_preferences_user"),)
+    # Phase 13.B — UniqueConstraint composite (user_id, org_id).
+    # Note : SQLite tolère plusieurs (user_id, NULL) car NULL ≠ NULL en SQL standard.
+    # PostgreSQL idem. Pour empêcher 2 overrides globaux pour le même user, ajout
+    # d'un index partiel WHERE org_id IS NULL en migration ad-hoc V3 si nécessaire.
+    # MVP Phase 13.B : on accepte la contrainte composite simple.
+    __table_args__ = (UniqueConstraint("user_id", "org_id", name="uq_user_preferences_user_org"),)
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    # Phase 13.B — org_id NULL = override global user (rétrocompat Phase 1.4)
+    # org_id != NULL = override scopé à cette org (priorité dans le résolveur)
+    org_id = Column(Integer, ForeignKey("organisations.id"), nullable=True, index=True)
 
     # Phase 1.4 — override typologie auto-détectée (None = auto-détection NAF)
     typology_override = Column(
@@ -74,6 +83,8 @@ class UserPreference(Base, TimestampMixin):
 
     # Relations
     user = relationship("User")
+    organisation = relationship("Organisation")
 
     def __repr__(self):
-        return f"<UserPreference user_id={self.user_id} typology_override={self.typology_override}>"
+        scope = f"org_id={self.org_id}" if self.org_id else "global"
+        return f"<UserPreference user_id={self.user_id} {scope} typology_override={self.typology_override}>"

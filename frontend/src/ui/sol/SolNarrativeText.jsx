@@ -38,7 +38,7 @@ function escapeRegex(s) {
 // au plural (acronymes invariables).
 const ACRONYM_PATTERN = new RegExp(`\\b(${GLOSSARY_KEYS.map(escapeRegex).join('|')})\\b`, 'g');
 
-export default function SolNarrativeText({ text, className = '' }) {
+export default function SolNarrativeText({ text, typology = null, className = '' }) {
   const segments = useMemo(() => {
     if (!text || typeof text !== 'string') return [];
     // String.split avec capture group → garde les acronymes dans l'array.
@@ -53,8 +53,9 @@ export default function SolNarrativeText({ text, className = '' }) {
     <span className={`whitespace-pre-wrap ${className}`}>
       {segments.map((segment, idx) => {
         // Indices impairs = acronymes capturés ; pairs = texte brut entre.
+        // Phase 13.D — propage typology pour glossaire COMMERCE vulgarisé.
         if (idx % 2 === 1 && GLOSSARY[segment]) {
-          return <SolAcronym key={idx} code={segment} />;
+          return <SolAcronym key={idx} code={segment} typology={typology} />;
         }
         return segment;
       })}

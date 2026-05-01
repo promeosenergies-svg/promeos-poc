@@ -107,6 +107,8 @@ export default function SolNarrative({
   // Sprint Refonte Narrative dynamique — Phase 4.bis.C
   primaryPush = null,
   primaryTrigger = null,
+  // Phase 13.D — typology pour glossaire COMMERCE inline (BL-9)
+  typology = null,
   error = null,
   onRetry,
   className = '',
@@ -194,7 +196,7 @@ export default function SolNarrative({
                   tous les briefings Sol (Cockpit, Achat, Conformité, Patrimoine,
                   Énergie). Couvre les pages problématiques sans toucher leurs
                   fichiers individuels. */}
-              <SolNarrativeText text={narrative} />
+              <SolNarrativeText text={narrative} typology={typology} />
             </p>
           )}
           {/* Phase 4.bis.C — drill-down cliquable depuis primary_trigger */}

@@ -121,19 +121,40 @@ def _create_user_preferences_table(engine):
 
     Sprint Refonte Narrative dynamique — Phase 1.4 (2026-05-01).
     1 ligne par user, override typologie auto-détectée NAF pour narratives.
+
+    Phase 13.B — BL-7 cross-org : ajoute `org_id` nullable + composite
+    UNIQUE (user_id, org_id). Migration safe : org_id nullable, les
+    overrides Phase 1.4 existants restent valides (org_id=NULL = global).
     """
     insp = inspect(engine)
-    if insp.has_table("user_preferences"):
-        return
-    import models.user_preference  # noqa: F401
-    from models.base import Base
+    if not insp.has_table("user_preferences"):
+        # Création initiale (Phase 1.4 + Phase 13.B schema dès le départ)
+        import models.user_preference  # noqa: F401
+        from models.base import Base
 
-    Base.metadata.create_all(
-        bind=engine,
-        tables=[Base.metadata.tables["user_preferences"]],
-        checkfirst=True,
-    )
-    logger.info("migration: created user_preferences table (Phase 1.4 narrative-sol2)")
+        Base.metadata.create_all(
+            bind=engine,
+            tables=[Base.metadata.tables["user_preferences"]],
+            checkfirst=True,
+        )
+        logger.info("migration: created user_preferences table (Phase 1.4+13.B)")
+        return
+
+    # Phase 13.B — Migration upgrade : add org_id column si absente
+    existing_cols = {c["name"] for c in insp.get_columns("user_preferences")}
+    if "org_id" not in existing_cols:
+        with engine.begin() as conn:
+            conn.execute(
+                text('ALTER TABLE "user_preferences" ADD COLUMN "org_id" INTEGER REFERENCES "organisations"("id")')
+            )
+            # Index pour query priority (user_id, org_id)
+            try:
+                conn.execute(
+                    text('CREATE INDEX IF NOT EXISTS "ix_user_preferences_org_id" ON "user_preferences" ("org_id")')
+                )
+            except Exception as e:  # noqa: BLE001
+                logger.warning("ix_user_preferences_org_id creation skipped: %s", e)
+        logger.info("migration: added org_id column to user_preferences (Phase 13.B BL-7)")
 
 
 def _create_event_history_snapshots_table(engine):

@@ -39,14 +39,25 @@ from __future__ import annotations
 from typing import Optional
 
 
-def format_eur_short(value: Optional[float]) -> str:
+def format_eur_short(value: Optional[float], *, none_as_zero: bool = False) -> str:
     """Formatage € court canonique FR (k€, M€).
 
     Convention :
     - virgule décimale FR (`12,7 k€`)
     - séparateur milliers espace (`1 234 567 €`)
-    - fallback None → `—` (donnée absente)
+    - fallback None → `—` par défaut (donnée absente)
     - zéro → `0 €` (montant nul ≠ inconnu)
+
+    Phase 13.A : paramètre `none_as_zero` pour la migration `_fmt_eur_short`
+    legacy de `narrative_generator.py` qui attendait None → "0 €" (37 call-
+    sites week_cards/KPIs hero). Permet de factoriser sans casser le
+    comportement runtime hérité.
+
+    Args:
+        value: montant en euros (None autorisé).
+        none_as_zero: si True, None → "0 €" au lieu de "—". Défaut False
+            (convention SoT canonique = donnée absente différencie de
+            montant nul).
 
     Examples:
         >>> format_eur_short(12700)
@@ -59,9 +70,11 @@ def format_eur_short(value: Optional[float]) -> str:
         '0 €'
         >>> format_eur_short(None)
         '—'
+        >>> format_eur_short(None, none_as_zero=True)
+        '0 €'
     """
     if value is None:
-        return "—"
+        return "0 €" if none_as_zero else "—"
     if value == 0:
         return "0 €"
     abs_value = abs(value)

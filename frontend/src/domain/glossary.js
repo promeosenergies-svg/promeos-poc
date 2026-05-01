@@ -120,10 +120,41 @@ export const GLOSSARY = Object.freeze({
 // que le refactor cross-pages n'est pas fait.
 import { acronymTooltip as _soTooltip, isKnownAcronym as _soIsKnown } from '../utils/acronyms';
 
+// Phase 13.D — BL-9 audit final : glossaire COMMERCE (registre vulgarisé).
+// Hervé boulanger lit "TURPE" et ne sait pas ce que c'est. Le glossary
+// standard (vocabulaire CFO) n'est pas adapté au commerçant non-sachant.
+// Phase 13.D livre des overrides pour ~10 acronymes courants en COMMERCE.
+//
+// Convention : phrases courtes, vocabulaire concret, pas de sigle technique
+// dans la définition (éviter spirale).
+export const GLOSSARY_COMMERCE = {
+  TURPE:
+    "Frais d'acheminement de votre électricité, prélevés par Enedis sur votre facture (≈ 30 % du total HT).",
+  ATRD: "Frais d'acheminement de votre gaz, prélevés par GRDF sur votre facture.",
+  CTA: 'Petite contribution sur votre facture qui finance les retraites des employés Enedis/GRDF.',
+  CRE: "Autorité publique qui fixe les tarifs Enedis/GRDF chaque année (équivalent État pour l'énergie).",
+  RTE: "Gestionnaire des grandes lignes électriques en France (équivalent autoroute pour l'électricité).",
+  EPEX: "Bourse européenne de l'électricité — prix qui change toutes les heures selon l'offre/demande.",
+  HP: "Heures pleines — créneaux où l'électricité coûte plus cher (typiquement journée).",
+  HC: "Heures creuses — créneaux où l'électricité coûte moins cher (typiquement nuit + week-end).",
+  CDC: 'Le détail heure par heure de votre consommation électrique (récupérable depuis Enedis).',
+  PRM: 'Numéro de votre compteur électrique (14 chiffres). Aussi appelé PDL en ancien langage.',
+  PDL: 'Numéro de votre compteur électrique (terme historique, voir PRM).',
+  OPERAT:
+    'Plateforme officielle où certains commerces > 1000 m² doivent déclarer leur consommation chaque année.',
+  CEE: "Subventions versées par les fournisseurs d'énergie pour aider à financer vos travaux d'économies (rénovation, LED, isolation).",
+};
+
 /** Helper : retourne la définition ou la chaîne vide si non glossé.
- *  Phase 22.3 : fallback vers SoT canonique `utils/acronyms.js` si absent. */
-export function getDefinition(code) {
+ *  Phase 22.3 : fallback vers SoT canonique `utils/acronyms.js` si absent.
+ *  Phase 13.D : `typology="commerce"` priorise GLOSSARY_COMMERCE (BL-9). */
+export function getDefinition(code, typology = null) {
   if (!code) return '';
+  // Phase 13.D — Override COMMERCE si typology fournie
+  if (typology === 'commerce') {
+    const commerceOverride = GLOSSARY_COMMERCE[code] || GLOSSARY_COMMERCE[code.toUpperCase()];
+    if (commerceOverride) return commerceOverride;
+  }
   const local = GLOSSARY[code] || GLOSSARY[code.toUpperCase()];
   if (local) return local;
   // Fallback SoT — extrait la `meaning` (description courte) qui est la plus
@@ -131,17 +162,19 @@ export function getDefinition(code) {
   const sotKey = code.split(/\s+/)[0]?.toUpperCase();
   if (_soIsKnown(sotKey)) {
     const fullTooltip = _soTooltip(sotKey) || '';
-    // Le tooltip SoT a le format "Long — Meaning · Source : X" — on extrait
-    // la partie "Meaning" pour rester compatible avec le format domain/glossary.
     const m = fullTooltip.match(/—\s*(.+?)(?:\s*·\s*Source\s*:|$)/);
     return m ? m[1].trim() : fullTooltip;
   }
   return '';
 }
 
-/** Helper : true si le code a une définition glossée (SoT compris). */
-export function isGlossed(code) {
+/** Helper : true si le code a une définition glossée (SoT compris).
+ *  Phase 13.D : couverture COMMERCE incluse (BL-9). */
+export function isGlossed(code, typology = null) {
   if (!code) return false;
+  if (typology === 'commerce') {
+    if (GLOSSARY_COMMERCE[code] || GLOSSARY_COMMERCE[code.toUpperCase()]) return true;
+  }
   if (GLOSSARY[code] || GLOSSARY[code.toUpperCase()]) return true;
   const sotKey = code.split(/\s+/)[0]?.toUpperCase();
   return _soIsKnown(sotKey);
