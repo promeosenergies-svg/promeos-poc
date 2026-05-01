@@ -167,6 +167,7 @@ from .notification import (
 
 # IAM (Users / Roles / Scopes)
 from .iam import User, UserOrgRole, UserScope, AuditLog
+from .user_preference import UserPreference  # Phase 1.4 narrative-sol2
 
 # CSAT (CX Gap #7)
 from .csat import CsatResponse  # noqa: F401
@@ -478,6 +479,7 @@ __all__ = [
     "UserOrgRole",
     "UserScope",
     "AuditLog",
+    "UserPreference",  # Phase 1.4 narrative-sol2
     "UserRole",
     "ScopeLevel",
     "PermissionAction",

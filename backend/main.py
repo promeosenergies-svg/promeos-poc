@@ -275,6 +275,14 @@ from routes.pages_briefing import router as pages_briefing_router
 
 app.include_router(pages_briefing_router)
 
+# Sprint Refonte Narrative dynamique — Phase 1.4 (2026-05-01)
+# GET/PUT /api/user/preferences/typology — override utilisateur typologie
+# auto-détectée par NAF. Permet à un CFO de forcer une typologie pour ses
+# narratives. typology=null → reset (auto-détection NAF reprend la main).
+from routes.user_preferences import router as user_preferences_router
+
+app.include_router(user_preferences_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 

@@ -110,6 +110,28 @@ def run_migrations(engine):
     _create_sf5_promotion_tables(engine)
     # Referentiel Sirene — tables isolees (DIAMANT)
     _create_sirene_tables(engine)
+    # Sprint Refonte Narrative dynamique — Phase 1.4 (user typology override)
+    _create_user_preferences_table(engine)
+
+
+def _create_user_preferences_table(engine):
+    """Create user_preferences table if missing (idempotent).
+
+    Sprint Refonte Narrative dynamique — Phase 1.4 (2026-05-01).
+    1 ligne par user, override typologie auto-détectée NAF pour narratives.
+    """
+    insp = inspect(engine)
+    if insp.has_table("user_preferences"):
+        return
+    import models.user_preference  # noqa: F401
+    from models.base import Base
+
+    Base.metadata.create_all(
+        bind=engine,
+        tables=[Base.metadata.tables["user_preferences"]],
+        checkfirst=True,
+    )
+    logger.info("migration: created user_preferences table (Phase 1.4 narrative-sol2)")
 
 
 def _create_sirene_tables(engine):

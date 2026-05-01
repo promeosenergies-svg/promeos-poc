@@ -176,11 +176,16 @@ def _sites_for_portfolio(db: Session, portfolio_id: int) -> list[Site]:
 def resolve_typology_for_scope(
     scope: NarrativeScope,
     db: Session,
+    user_id: Optional[int] = None,
 ) -> OrganizationTypology:
     """Résout la typologie selon le scope demandé.
 
-    Priorité de résolution (du plus spécifique au plus large) :
+    Ordre de priorité :
 
+    0. **User override** (Phase 1.4) — si `user_id` fourni et que
+       `user_preferences.typology_override` est défini, on respecte la
+       préférence utilisateur. Permet à un CFO de figer une typologie
+       même si l'auto-détection NAF la classe autrement.
     1. `scope["site_id"]` → typologie du site (NAF du site directement).
     2. `scope["portfolio_id"]` → typologie dominante du portefeuille
        (Option A, exclusion UNKNOWN).
@@ -190,6 +195,9 @@ def resolve_typology_for_scope(
         scope: dict avec au moins une des 3 clés. Si plusieurs présentes,
             la plus spécifique l'emporte (site > portfolio > org).
         db: session SQLAlchemy.
+        user_id: id du user authentifié (optionnel). Si fourni, on
+            consulte `user_preferences.typology_override` en priorité.
+            En l'absence d'override, la résolution scope reprend la main.
 
     Returns:
         `OrganizationTypology`. Jamais d'exception ; UNKNOWN en fallback
@@ -203,7 +211,27 @@ def resolve_typology_for_scope(
         >>> # Scope Hôtel Nice site → COMMERCE (NAF 5510Z direct)
         >>> resolve_typology_for_scope({"site_id": 4}, db)
         <OrganizationTypology.COMMERCE: 'commerce'>
+
+        >>> # User override → respecté quel que soit le scope
+        >>> resolve_typology_for_scope({"org_id": 1}, db, user_id=42)
+        <OrganizationTypology.COMMERCE: 'commerce'>  # si override = COMMERCE
     """
+    # 0. Phase 1.4 — User typology_override (priorité absolue).
+    # Import local pour casser le cycle (routes.user_preferences importe
+    # potentiellement des modules qui importent ce resolver).
+    if user_id is not None:
+        from routes.user_preferences import get_user_typology_override
+
+        override = get_user_typology_override(db, user_id)
+        if override is not None:
+            _logger.debug(
+                "resolve_typology_for_scope: user_id=%s override=%s (scope=%s ignoré)",
+                user_id,
+                override,
+                scope,
+            )
+            return override
+
     # 1. site_id (le plus spécifique)
     site_id = scope.get("site_id")
     if site_id is not None:
