@@ -225,6 +225,26 @@ def _load_org_context(db: Session, org_id: int) -> OrgContext:
     )
 
 
+# Phase 9.A — Helper partagé : résout la typologie d'une org pour exposition
+# au frontend (champ `Narrative.typology`). Tous les builders (10 pages) y
+# font appel pour exposer la typologie au FE — permet styling + drill-down
+# adaptés. Pour cockpit_comex, on garde l'appel local existant qui réutilise
+# le même résolveur (pas de double-résolution).
+def _resolve_org_typology_value(db: Session, org_id: int) -> str:
+    """Résout typology.value pour exposition Narrative (Phase 9.A wiring).
+
+    Sécurité fail-safe : retourne `unknown` si la résolution échoue
+    (org introuvable, scope invalide, etc.). Ne lève jamais d'exception
+    — la narrative doit toujours être servie au FE.
+    """
+    try:
+        from services.narrative.typology_resolver import resolve_typology_for_scope
+
+        return resolve_typology_for_scope({"org_id": org_id}, db).value
+    except Exception:  # noqa: BLE001 — fail-safe explicite
+        return "unknown"
+
+
 def _compute_tone(
     non_conformes: int,
     a_risque: int,
@@ -539,6 +559,7 @@ def _build_cockpit_daily(
         fallback_body=fallback_body,
         provenance=provenance,
         events=tuple(events),  # Vague C ét12c — exposé natif §10 SolEventCard
+        typology=_resolve_org_typology_value(db, org_id),
     )
 
 
@@ -1120,6 +1141,7 @@ def _build_patrimoine(
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
+        typology=_resolve_org_typology_value(db, org_id),
     )
 
 
@@ -1355,6 +1377,7 @@ def _build_conformite(
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
+        typology=_resolve_org_typology_value(db, org_id),
     )
 
 
@@ -1601,6 +1624,7 @@ def _build_bill_intel(
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
+        typology=_resolve_org_typology_value(db, org_id),
     )
 
 
@@ -1867,6 +1891,7 @@ def _build_achat_energie(
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
+        typology=_resolve_org_typology_value(db, org_id),
     )
 
 
@@ -2177,6 +2202,7 @@ def _build_monitoring(
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
+        typology=_resolve_org_typology_value(db, org_id),
     )
 
 
@@ -2482,6 +2508,7 @@ def _build_diagnostic(
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
+        typology=_resolve_org_typology_value(db, org_id),
     )
 
 
@@ -2822,6 +2849,7 @@ def _build_anomalies(
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
+        typology=_resolve_org_typology_value(db, org_id),
     )
 
 
@@ -3117,6 +3145,7 @@ def _build_flex(
         week_cards=tuple(week_cards),
         fallback_body=fallback_body,
         provenance=provenance,
+        typology=_resolve_org_typology_value(db, org_id),
     )
 
 
