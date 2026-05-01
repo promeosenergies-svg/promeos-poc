@@ -20,15 +20,23 @@ Usage:
     factor = get_emission_factor("GAZ")    # 0.227
 """
 
+# Phase 12.bis correction P0 mini-audit Phase 12 — version ADEME extraite
+# en constante pour centraliser les références "ADEME Vxx" dans le codebase
+# narrative (cf services/narrative/persona_context.py CSR_MANAGER focus_text).
+# Quand ADEME publie une nouvelle version (V24+), changer ici met à jour
+# automatiquement toutes les citations narrative.
+EMISSION_FACTORS_VERSION: str = "V23.6"
+EMISSION_FACTORS_DATE: str = "juillet 2025"  # Date publication ADEME
+
 EMISSION_FACTORS = {
     "ELEC": {
         "kgco2e_per_kwh": 0.052,
-        "source": "ADEME Base Empreinte V23.6 — electricite reseau France, mix moyen annuel, ACV",
+        "source": f"ADEME Base Empreinte {EMISSION_FACTORS_VERSION} — electricite reseau France, mix moyen annuel, ACV",
         "year": 2024,
     },
     "GAZ": {
         "kgco2e_per_kwh": 0.227,
-        "source": "ADEME Base Empreinte V23.6 — gaz naturel PCI, combustion + amont",
+        "source": f"ADEME Base Empreinte {EMISSION_FACTORS_VERSION} — gaz naturel PCI, combustion + amont",
         "year": 2024,
     },
 }

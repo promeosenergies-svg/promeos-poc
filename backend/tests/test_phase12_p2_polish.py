@@ -261,5 +261,104 @@ class TestPhase12cIndustrieScopeSource:
         assert "ADEME V23.6" not in mention
 
 
+# ─── Phase 12.bis — Source-guards mini-audit Phase 12 ─────────────────────
+
+
+class TestPhase12bisAdemeVersionConstant:
+    """P0 mini-audit : citation ADEME extraite en constante (auto-update V24+)."""
+
+    def test_emission_factors_version_constant_exposed(self):
+        from config.emission_factors import EMISSION_FACTORS_VERSION
+
+        assert isinstance(EMISSION_FACTORS_VERSION, str)
+        assert EMISSION_FACTORS_VERSION.startswith("V")
+
+    def test_csr_manager_focus_uses_constant(self):
+        """CSR_MANAGER cite la version courante (pas hardcoded V23.6)."""
+        from config.emission_factors import EMISSION_FACTORS_VERSION
+
+        mention = compose_persona_mention(
+            "Inès",
+            PersonaRole.CSR_MANAGER,
+            {"emissions_tco2e": 1245},
+            OrganizationTypology.INDUSTRIE,
+        )
+        assert f"ADEME {EMISSION_FACTORS_VERSION}" in mention
+
+
+class TestPhase12bisDeadlineParsingLastDate:
+    """P1 mini-audit : prendre la dernière date du title (deadline cible)."""
+
+    def test_two_dates_in_title_uses_last(self):
+        """Title 'déclaré le 2026-04-15, échéance 2026-XX-XX' → urgence basée
+        sur la dernière date (deadline), pas la première (déjà passée).
+        """
+        from datetime import datetime, timedelta, timezone
+
+        # Date 1 : 60j passée. Date 2 : 15j future (urgent)
+        date1 = (datetime.now(timezone.utc) - timedelta(days=60)).strftime("%Y-%m-%d")
+        date2 = (datetime.now(timezone.utc) + timedelta(days=15)).strftime("%Y-%m-%d")
+        title = f"OPERAT déclaré le {date1}, échéance {date2}"
+
+        from services.event_bus.types import (
+            EventAction,
+            EventImpact,
+            EventLinkedAssets,
+            EventSource,
+            SolEventCard,
+        )
+
+        event = SolEventCard(
+            id="t",
+            event_type="compliance_deadline",
+            severity="warning",
+            title=title,
+            narrative="t",
+            impact=EventImpact(value=None, unit="€", period="deadline"),
+            source=EventSource(
+                system="RegOps",
+                last_updated_at=datetime.now(timezone.utc),
+                confidence="high",
+            ),
+            action=EventAction(label="Voir", route="/test"),
+            linked_assets=EventLinkedAssets(org_id=1, site_ids=[1]),
+        )
+        result = compose_audit_deadline_sentence(event, OrganizationTypology.ERP)
+        # La 2e date (J+15) doit déclencher l'urgence
+        assert "avant échéance" in result
+
+
+class TestPhase12bisTemplatePrefixCoupling:
+    """P1 mini-audit : source-guard couplage template prefix ↔ enrichment logic.
+
+    Si SENTENCE_STABLE_TEMPLATES change ses préfixes ("Votre patrimoine X"
+    → "Le patrimoine de votre groupe X"), `compose_sentence_stable_with_archetype`
+    retombe silencieusement sur le fallback (perd l'enrichissement). Source-guard
+    : verrouille les préfixes attendus.
+    """
+
+    def test_grand_groupe_template_starts_with_votre_patrimoine(self):
+        from services.narrative.sentence_composer import SENTENCE_STABLE_TEMPLATES
+
+        assert SENTENCE_STABLE_TEMPLATES[OrganizationTypology.GRAND_GROUPE].startswith("Votre patrimoine "), (
+            "Phase 12.A : si on modifie le préfixe GG, mettre à jour le replace "
+            "logic dans compose_sentence_stable_with_archetype (ligne `if base.startswith(...)`)."
+        )
+
+    def test_eti_tertiaire_template_starts_with_votre_parc(self):
+        from services.narrative.sentence_composer import SENTENCE_STABLE_TEMPLATES
+
+        assert SENTENCE_STABLE_TEMPLATES[OrganizationTypology.ETI_TERTIAIRE].startswith("Votre parc "), (
+            "Phase 12.A : préfixe ETI doit rester 'Votre parc ' pour enrichment Marie."
+        )
+
+    def test_industrie_template_starts_with_votre_groupe_industriel(self):
+        from services.narrative.sentence_composer import SENTENCE_STABLE_TEMPLATES
+
+        assert SENTENCE_STABLE_TEMPLATES[OrganizationTypology.INDUSTRIE].startswith("Votre groupe industriel "), (
+            "Phase 11.C + 12.A : préfixe INDUSTRIE doit rester 'Votre groupe industriel '."
+        )
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

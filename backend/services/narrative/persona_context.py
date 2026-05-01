@@ -174,9 +174,13 @@ def compute_persona_focus_text(
     if role == PersonaRole.CSR_MANAGER:
         # Phase 4.bis3 audit gap stratégique : RSE / CBAM
         # Phase 12.C audit personas P2 friction 3 : sourcer le facteur émission.
+        # Phase 12.bis correction P0 mini-audit : import constante ADEME version
+        # (au lieu de "V23.6" hardcodé) — auto-update quand ADEME publie V24+.
         co2 = facts.get("emissions_tco2e")
         if co2 is not None:
-            return f"émissions {round(co2)} tCO₂e scope 1-2-3 (facteurs ADEME V23.6)"
+            from config.emission_factors import EMISSION_FACTORS_VERSION
+
+            return f"émissions {round(co2)} tCO₂e scope 1-2-3 (facteurs ADEME {EMISSION_FACTORS_VERSION})"
         return PERSONA_FOCUS[role]
 
     # ASSET_MANAGER, PROPERTY_MANAGER : focus générique pour V1

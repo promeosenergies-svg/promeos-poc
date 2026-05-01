@@ -199,6 +199,12 @@ def _is_deadline_urgent(event: Optional[SolEventCard]) -> bool:
     `(target - now()).days < URGENT_DEADLINE_THRESHOLD_DAYS`, on considère
     l'échéance urgente.
 
+    Phase 12.bis correction P1 mini-audit Phase 12 : on prend la **dernière**
+    date du title (via `re.findall()[-1]`) au lieu de la première — convention
+    « dernière date = deadline cible » couvre le cas typique
+    "déclaré le X, échéance Y" sans nécessiter de schéma SolEventCard
+    enrichi (refacto cross-stack reporté V2).
+
     Approche minimale : on n'enrichit pas SolEventCard avec un champ
     `deadline` explicite (refacto cross-stack hors scope Phase 12.B).
     """
@@ -208,26 +214,18 @@ def _is_deadline_urgent(event: Optional[SolEventCard]) -> bool:
     import re
     from datetime import datetime, timezone
 
-    # Cherche `YYYY-MM-DD` ou `DD/MM/YYYY` dans le title
-    iso_match = re.search(r"(\d{4})-(\d{2})-(\d{2})", event.title)
-    fr_match = re.search(r"(\d{1,2})/(\d{1,2})/(\d{4})", event.title)
+    # Phase 12.bis : prend la DERNIÈRE date trouvée (convention "deadline cible")
+    iso_dates = re.findall(r"(\d{4})-(\d{2})-(\d{2})", event.title)
+    fr_dates = re.findall(r"(\d{1,2})/(\d{1,2})/(\d{4})", event.title)
 
     target_date = None
     try:
-        if iso_match:
-            target_date = datetime(
-                int(iso_match.group(1)),
-                int(iso_match.group(2)),
-                int(iso_match.group(3)),
-                tzinfo=timezone.utc,
-            )
-        elif fr_match:
-            target_date = datetime(
-                int(fr_match.group(3)),
-                int(fr_match.group(2)),
-                int(fr_match.group(1)),
-                tzinfo=timezone.utc,
-            )
+        if iso_dates:
+            y, m, d = iso_dates[-1]  # dernière occurrence
+            target_date = datetime(int(y), int(m), int(d), tzinfo=timezone.utc)
+        elif fr_dates:
+            d, m, y = fr_dates[-1]  # dernière occurrence
+            target_date = datetime(int(y), int(m), int(d), tzinfo=timezone.utc)
     except (ValueError, OverflowError):
         return False
 
