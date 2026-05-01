@@ -33,6 +33,11 @@ from models.reg_assessment import RegAssessment
 from middleware.auth import get_optional_auth, AuthContext
 from middleware.cx_logger import log_cx_event
 from services.scope_utils import resolve_org_id
+from doctrine.constants import (
+    TRAJECTORY_LEARNING_MONTHS_RAMP_UP,
+    TRAJECTORY_LEARNING_RATIO_ENGAGEMENT,
+    TRAJECTORY_LEARNING_RATIO_RAMP_UP,
+)
 from services.kpi_service import KpiService, KpiScope
 from services.consumption_unified_service import get_portfolio_consumption, ConsumptionSource
 from schemas.kpi_catalog import wrap_kpi_runtime
@@ -65,44 +70,52 @@ def _statut_dt_value(site) -> str | None:
     return raw.value if hasattr(raw, "value") else str(raw)
 
 
+def _trajectory_learning_ratio(months_to_due: int, months_since_due: int) -> float:
+    """Ratio d'achievement courbe apprentissage Phase 30 (3 phases).
+
+    - regime nominal (months_since_due ≥ MONTHS_RAMP_UP) : 1.0
+    - ramp-up      (0 ≤ months_since_due < MONTHS_RAMP_UP) : RATIO_ENGAGEMENT
+                    → RATIO_RAMP_UP linéaire
+    - engagement   (months_to_due > 0) : 0 → RATIO_ENGAGEMENT linéaire avec
+                    cap heuristique engagement_total_max = 2 × months_to_due
+
+    Constants doctrine SoT (cf `backend/doctrine/constants.py`).
+    """
+    if months_since_due >= TRAJECTORY_LEARNING_MONTHS_RAMP_UP:
+        return 1.0
+    if months_since_due >= 0:
+        ramp = months_since_due / TRAJECTORY_LEARNING_MONTHS_RAMP_UP
+        return (
+            TRAJECTORY_LEARNING_RATIO_ENGAGEMENT
+            + (TRAJECTORY_LEARNING_RATIO_RAMP_UP - TRAJECTORY_LEARNING_RATIO_ENGAGEMENT) * ramp
+        )
+    engagement_total_max = max(1, months_to_due * 2)
+    engagement_progress = max(0.0, 1.0 - months_to_due / engagement_total_max)
+    return engagement_progress * TRAJECTORY_LEARNING_RATIO_ENGAGEMENT
+
+
 def _project_with_action_echeances(
     reel_baseline_mwh: float,
     actions: list,
     target_year: int,
     current_year: int,
+    today: Optional[date] = None,
 ) -> float:
     """Projection trajectoire lissée par action.due_date (Phase 1.6 → Phase 30).
 
-    Phase 30 (audit utilisateur 2026-05-01) : refonte du lissage avec courbe
-    d'apprentissage post-engagement. Avant Phase 30, lissage limité aux mois
-    de l'année où la due_date tombait — résultat visuel : chute brutale
-    4 229 → 2 342 sur 2026-2027 puis plateau jusqu'en 2030. Trompeur.
-
-    **Modèle d'apprentissage en 3 phases** (réaliste pour BACS/APER/audit
-    énergétique) :
-      1. **Engagement** (today → due_date) : études + travaux,
-         contribution croît linéairement de 0 à `RATIO_ENGAGEMENT` (= 30 %).
-      2. **Mise en service** (due_date → due_date + `MONTHS_RAMP_UP` = 6) :
-         réglages + apprentissage occupants, croît de 30 % à 80 %.
-      3. **Régime nominal** (au-delà) : 100 % de l'économie modélisée.
-
-    Cela donne une courbe en 3 paliers progressifs (au lieu de step function),
-    cohérente avec la réalité terrain : un BACS installé en septembre 2026
-    n'économise pas 100 % dès octobre 2026 — il faut quelques mois pour
-    paramétrer correctement et que les occupants s'adaptent.
-
-    Exemple : action GTB due septembre 2026, today = mai 2026.
-      - target=2026 (mid=juillet) : engagement 2/4 × 30 % = 15 %
-      - target=2027 (mid=juillet) : engagement 30 % + ramp-up plein
-        (2027-07 = due+10 mois > 6) → 80 % (régime non encore atteint
-        car ramp-up se termine en mars 2027)
-      - target=2028+ : 100 % régime nominal
+    Modèle apprentissage 3 phases (engagement → ramp-up → nominal) — cf
+    `_trajectory_learning_ratio` et constants `TRAJECTORY_LEARNING_*` dans
+    `backend/doctrine/constants.py`. Avant Phase 30, lissage limité aux
+    mois de l'année où la due_date tombait → chute step-function brutale.
 
     Args:
         reel_baseline_mwh: conso année dernière complète, en MWh
         actions: liste d'ActionItem (with .estimated_gain_eur, .due_date)
         target_year: année de projection
         current_year: année en cours (pour fenêtre de lissage)
+        today: date de référence (default = date.today()). Doit être passé
+            par la route appelante pour éviter N appels système quand le
+            helper est invoqué N fois pour N années (perf hot-path).
 
     Returns:
         Conso projetée pour target_year en MWh, plancher 0.
@@ -112,39 +125,10 @@ def _project_with_action_echeances(
       - test_trajectory_apprentissage_curve_phase30
     Ref : Sprint Retro Cockpit Dual Sol2 — audit anomalies seed (Phase 30).
     """
-    from datetime import date as _date
-
-    RATIO_ENGAGEMENT = 0.20  # part du gain pendant la phase travaux
-    RATIO_RAMP_UP = 0.75  # part du gain à fin du ramp-up post-installation
-    MONTHS_RAMP_UP = 18  # durée mise en service réaliste BACS/audit (1,5 an)
-
-    def _learning_ratio(months_to_due: int, months_since_due: int) -> float:
-        """Calcule le ratio d'achievement selon les 3 phases.
-
-        - months_to_due : mois restants entre la date de référence et due_date
-          (négatif si due_date est passée)
-        - months_since_due : mois écoulés depuis due_date (négatif si pas encore due)
-        """
-        if months_since_due >= MONTHS_RAMP_UP:
-            return 1.0  # Régime nominal
-        if months_since_due >= 0:
-            # Phase ramp-up : ratio engagement → ratio_ramp_up
-            ramp = months_since_due / MONTHS_RAMP_UP
-            return RATIO_ENGAGEMENT + (RATIO_RAMP_UP - RATIO_ENGAGEMENT) * ramp
-        # Phase engagement : pas encore due
-        # months_to_due > 0 ; engagement_total = mois entre engagement_start et due
-        # On suppose que l'engagement a commencé "today" (début de la fenêtre
-        # de projection) — donc engagement_total = months_to_due_initial.
-        # Pour rester simple : on prend ratio = (engagement_progress) × RATIO_ENGAGEMENT
-        # où engagement_progress = 1 - months_to_due / engagement_total_max.
-        # Cap supérieur engagement = 24 mois (au-delà : action lointaine).
-        engagement_total_max = max(1, months_to_due * 2)  # heuristique
-        engagement_progress = max(0.0, 1.0 - months_to_due / engagement_total_max)
-        return engagement_progress * RATIO_ENGAGEMENT
-
+    if today is None:
+        today = date.today()
     cumul_savings_mwh = 0.0
-    today = _date.today()
-    target_mid = _date(target_year, 7, 1)  # Mid-year comme référence
+    target_mid = date(target_year, 7, 1)  # Mid-year comme référence
     for action in actions:
         gain_eur = getattr(action, "estimated_gain_eur", 0) or 0
         if gain_eur <= 0:
@@ -156,13 +140,11 @@ def _project_with_action_echeances(
             if target_year >= current_year:
                 cumul_savings_mwh += gain_mwh
             continue
-        # Phase 30 : courbe d'apprentissage à target_mid (juillet de target_year).
         if target_mid < today:
             ratio = 0.0  # Année passée : projection non applicable
         else:
             months_to_due = (due.year - target_mid.year) * 12 + (due.month - target_mid.month)
-            months_since_due = -months_to_due
-            ratio = _learning_ratio(months_to_due, months_since_due)
+            ratio = _trajectory_learning_ratio(months_to_due, -months_to_due)
         cumul_savings_mwh += gain_mwh * ratio
     return max(0, reel_baseline_mwh - cumul_savings_mwh)
 
@@ -688,6 +670,9 @@ def get_cockpit_trajectory(
     _cy = datetime.now(tz=None).year
     if _savings_kwh > 0:
         _lr = reel_by_year.get(_cy - 1)
+        # Phase 30 /simplify P1 : hoist `today` hors du helper pour éviter
+        # 5 syscalls `date.today()` par requête (1 par année projetée).
+        _today = date.today()
         for y in annees:
             if y < _cy or _lr is None:
                 projection_mwh.append(None)
@@ -697,6 +682,7 @@ def get_cockpit_trajectory(
                     actions=_proj_actions,
                     target_year=y,
                     current_year=_cy,
+                    today=_today,
                 )
                 projection_mwh.append(round(projected_mwh, 1))
 

@@ -96,6 +96,20 @@ COCKPIT_ACTIVATION_THRESHOLD = 3
 # À remplacer Phase 2 par calcul rigoureux (CEE BAT-TH-* + référentiels).
 COCKPIT_OPTIM_RATE_V1 = 0.01
 
+# ─── Trajectoire 2030 — courbe d'apprentissage Phase 30 ────────────────────
+# Modèle 3 phases pour la projection de l'effet des actions BACS/audit/APER
+# sur la trajectoire DT. Avant Phase 30 : effet "step function" appliqué
+# brutalement à due_date (chute -45 % en 1 an, narrative cassée).
+# Après : (1) engagement linéaire today→due_date capé à TRAJECTORY_LEARNING_RATIO_ENGAGEMENT,
+# (2) ramp-up post-due jusqu'à TRAJECTORY_LEARNING_RATIO_RAMP_UP sur
+# TRAJECTORY_LEARNING_MONTHS_RAMP_UP, (3) régime nominal 100 %.
+# Source : retours terrain BACS classe A/B (paramétrage GTB + apprentissage
+# occupants ≈ 1,5 an) + audits CEE BAT-TH-116 SAS Promeos.
+# Ref : Sprint Retro Cockpit Dual Sol2 — Phase 30 (audit utilisateur 2026-05-01).
+TRAJECTORY_LEARNING_RATIO_ENGAGEMENT = 0.20
+TRAJECTORY_LEARNING_RATIO_RAMP_UP = 0.75
+TRAJECTORY_LEARNING_MONTHS_RAMP_UP = 18
+
 # ─── Garde-fous unitaires ──────────────────────────────────────────────────
 # ⚠️  0.0569 est un tarif TURPE 7 HPH (€/kWh), PAS un facteur CO₂.
 # ⚠️  Ne JAMAIS utiliser PRICE_FALLBACK pour 0.18 (ancienne valeur prohibée).
@@ -128,6 +142,9 @@ __all__ = [
     "OID_OFFICE_BENCHMARK_KWHEF_PER_M2_YEAR",
     "COCKPIT_ACTIVATION_THRESHOLD",
     "COCKPIT_OPTIM_RATE_V1",
+    "TRAJECTORY_LEARNING_RATIO_ENGAGEMENT",
+    "TRAJECTORY_LEARNING_RATIO_RAMP_UP",
+    "TRAJECTORY_LEARNING_MONTHS_RAMP_UP",
     "BACS_PENALTY_EUR",
     "OPERAT_PENALTY_EUR",
 ]

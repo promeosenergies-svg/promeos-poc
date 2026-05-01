@@ -32,7 +32,7 @@
  *   ✓ P0-8 footer mono source/MAJ/confiance sous chaque visuel
  *   ⏳ P0-4 4ᵉ colonne Impact Fraunces différée Étape 4 (backend gap-filler)
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Bell, ArrowRight, Clock } from 'lucide-react';
 
@@ -70,6 +70,14 @@ const SCALE_LABEL = {
   contract: 'Contractuel',
 };
 
+// /simplify Phase 30+ : regex au scope module (réutilisées dans 2 IIFE).
+// Évite la ré-allocation regex à chaque render et permet à useMemo de
+// rester stable sur référence.
+const REGEX_EARLY_MONTH = /\(j\s+1-(\d+)\)/;
+const REGEX_J_MINUS_X = /^j-(\d+)$/;
+// Phase 29 fallback acceptable = jour de mesure ≤ 3 jours
+const PEAK_CONNECTOR_DAYS_THRESHOLD = 3;
+
 function KpiTriptyqueEnergetique({ facts }) {
   const c = facts?.consumption || {};
   const p = facts?.power || {};
@@ -101,13 +109,13 @@ function KpiTriptyqueEnergetique({ facts }) {
   // vs N-1 est mathématiquement vraie mais business-faussée (0 MWh seedé
   // sur 1 jour ne dit rien sur la tendance mensuelle). On affiche un
   // état honnête "Données en cours d'agrégation" au lieu du delta 0 %.
-  const monthlyEarlyMonth = (() => {
+  const monthlyEarlyMonth = useMemo(() => {
     if (!monthly.current_month_label) return null;
-    const m = monthly.current_month_label.match(/\(j\s+1-(\d+)\)/);
+    const m = monthly.current_month_label.match(REGEX_EARLY_MONTH);
     if (!m) return null;
     const daysIn = parseInt(m[1], 10);
     return daysIn <= 3 ? daysIn : null;
-  })();
+  }, [monthly.current_month_label]);
   const monthlyTooltip = monthly.current_month_label
     ? `${monthly.current_month_label} vs N−1 normalisé · Baseline ${
         monthly.baseline_method?.replace(/_/g, ' ') || '—'
@@ -127,11 +135,14 @@ function KpiTriptyqueEnergetique({ facts }) {
   // = j-7, j-30, j-99...), la mesure est trop ancienne pour être présentée
   // comme "synchro J-1 en cours" → on affiche un badge CONNECTEUR À
   // VÉRIFIER pour signaler honnêtement qu'il y a un problème de fraîcheur.
-  const peakDaysOld = (() => {
-    const m = peakSource.match(/^j-(\d+)$/);
-    return m ? parseInt(m[1], 10) : 1;
-  })();
-  const peakConnectorIssue = peakDaysOld > 3;
+  // /simplify Phase 30+ : si format inconnu (`unknown`, `manual`...), on
+  // retourne null et on déclenche le badge connecteur (audit code-reviewer
+  // P1 : fallback silencieux à 1 cachait les formats inattendus).
+  const peakDaysOld = useMemo(() => {
+    const m = peakSource.match(REGEX_J_MINUS_X);
+    return m ? parseInt(m[1], 10) : null;
+  }, [peakSource]);
+  const peakConnectorIssue = peakDaysOld === null || peakDaysOld > PEAK_CONNECTOR_DAYS_THRESHOLD;
   const peakStale = (peakKw === 0 || peakKw == null) && subscribedKw != null && subscribedKw > 0;
   const peakSplit = peakStale ? { value: '—', unit: '' } : splitKw(peakKw);
 
@@ -226,7 +237,7 @@ function KpiTriptyqueEnergetique({ facts }) {
           peakStale
             ? 'Pic CDC J−1 en synchronisation Enedis SGE'
             : peakConnectorIssue
-              ? `⚠ Connecteur à vérifier · dernière mesure il y a ${peakDaysOld} jours (souscrite ${splitKw(subscribedKw).value} ${splitKw(subscribedKw).unit})`
+              ? `⚠ Connecteur à vérifier · ${peakDaysOld === null ? `format ${peakSource} inattendu` : `dernière mesure il y a ${peakDaysOld} jours`} (souscrite ${splitKw(subscribedKw).value} ${splitKw(subscribedKw).unit})`
               : peakIsFallback
                 ? `Mesure du ${peakSource.replace('j-', 'J−')} (CDC J−1 en synchro SGE) · souscrite ${splitKw(subscribedKw).value} ${splitKw(subscribedKw).unit}`
                 : subscribedKw != null
@@ -562,13 +573,16 @@ const _CHARGE_J1_KEY_POINTS = [
   { x: 340, y: 95, hour: '23 h', kwRatio: 0.0, period: 'HC' },
 ];
 
+// /simplify Phase 30+ : peak constant immuable (input never changes)
+// → hoist au scope module pour éviter le reduce à chaque render.
+const _CHARGE_J1_PEAK_POINT = _CHARGE_J1_KEY_POINTS.reduce(
+  (best, p) => (p.kwRatio > best.kwRatio ? p : best),
+  _CHARGE_J1_KEY_POINTS[0]
+);
+
 function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence }) {
   const subSplit = splitKw(subscribedKw);
-  // Phase 27.bis : pic max et heure pour tooltip global du SVG
-  const peakPoint = _CHARGE_J1_KEY_POINTS.reduce(
-    (best, p) => (p.kwRatio > best.kwRatio ? p : best),
-    _CHARGE_J1_KEY_POINTS[0]
-  );
+  const peakPoint = _CHARGE_J1_PEAK_POINT;
   const peakKw = subscribedKw != null ? subscribedKw * peakPoint.kwRatio : null;
   const peakKwLabel =
     peakKw != null
