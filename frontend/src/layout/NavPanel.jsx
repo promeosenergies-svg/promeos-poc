@@ -357,47 +357,6 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
         </button>
       </div>
 
-      {/* Progress bars Conformité — visibles uniquement si data réelle disponible */}
-      {activeModule === 'conformite' &&
-        (badges.conformiteDt != null ||
-          badges.conformiteBacs != null ||
-          badges.conformiteAper != null) && (
-          <div className="px-3 pt-2 pb-1" role="group" aria-label="Progression obligations">
-            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-              Progression obligations
-            </p>
-            {[
-              { label: 'DT', pct: badges.conformiteDt, color: 'bg-emerald-500' },
-              { label: 'BACS', pct: badges.conformiteBacs, color: 'bg-indigo-500' },
-              { label: 'APER', pct: badges.conformiteAper, color: 'bg-amber-500' },
-            ]
-              .filter((row) => row.pct != null)
-              .map((row) => {
-                const pct = Math.min(100, Math.max(0, row.pct));
-                return (
-                  <div
-                    key={row.label}
-                    className="flex items-center gap-2 mb-1 last:mb-0"
-                    role="progressbar"
-                    aria-label={`${row.label} ${pct}%`}
-                    aria-valuenow={pct}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                  >
-                    <span className="text-[10px] font-medium text-slate-500 w-9">{row.label}</span>
-                    <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${row.color} transition-all duration-300`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="text-[10px] text-slate-400 w-7 text-right">{pct}%</span>
-                  </div>
-                );
-              })}
-          </div>
-        )}
-
       {/* Quick actions — Raccourcis (expert only) */}
       {isExpert && moduleQuickActions.length > 0 && (
         <div className="px-3 py-2 border-b border-slate-200/40">
