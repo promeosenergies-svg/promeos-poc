@@ -29,7 +29,8 @@ describe('Phase 26.bis — Conso 7 jours tooltips', () => {
   });
 
   it('mention spéciale anomalie + confiance faible dans le tooltip', () => {
-    expect(SRC).toMatch(/anomalie\s*\+/);
+    // Phase 27 : pattern data-driven `anomalie ${sign}${pct} % vs baseline`
+    expect(SRC).toMatch(/anomalie\s*\$\{[^}]*\}/);
     expect(SRC).toMatch(/confiance faible/);
   });
 

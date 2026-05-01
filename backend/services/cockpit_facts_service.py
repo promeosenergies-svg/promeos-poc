@@ -413,12 +413,91 @@ def _build_consumption(
         except Exception as exc:
             _logger.debug("annual_mwh_dt failed: %s", exc)
 
+        # Phase 27 — weekly_breakdown[] : breakdown jour-par-jour des 7
+        # derniers jours pour rendre le SVG ConsoSevenDaysBars data-driven
+        # (avant Phase 27 : hauteurs hardcodées dans le SVG, tooltips
+        # estimés depuis position pixel — cf Phase 26.bis hot-fix).
+        # Format canonique : 7 entries [J-7, J-1] avec :
+        #   - day_iso        : "2026-04-25"
+        #   - day_label      : "Samedi"
+        #   - day_letter     : "S"
+        #   - mwh            : float (peut être 0 si pas de données)
+        #   - is_anomaly     : bool (delta_pct > 25 % vs baseline jour)
+        #   - delta_pct      : int (vs baseline historique du même jour)
+        #   - low_confidence : bool (jour weekend OU coverage faible)
+        # Utilise les batch queries déjà construites pour `sites_in_drift`
+        # mais sur 7 jours au lieu de J-1.
+        DAY_LABELS_FR = [
+            "Lundi",
+            "Mardi",
+            "Mercredi",
+            "Jeudi",
+            "Vendredi",
+            "Samedi",
+            "Dimanche",
+        ]
+        DAY_LETTERS = ["L", "M", "M", "J", "V", "S", "D"]
+        weekly_breakdown: list[dict] = []
+        try:
+            for day_offset in range(7, 0, -1):
+                target_day = today - timedelta(days=day_offset)
+                # Total org agrégé pour ce jour
+                day_kwh = 0.0
+                if site_ids and meter_ids:
+                    from services.ems.timeseries_service import resolve_best_freq
+
+                    d_start_day = datetime.combine(target_day, datetime.min.time())
+                    d_end_day = datetime.combine(target_day, datetime.max.time())
+                    best = resolve_best_freq(db, meter_ids, d_start_day, d_end_day, granularity="daily")
+                    total_kwh = (
+                        db.query(func.sum(MeterReading.value_kwh))
+                        .filter(
+                            MeterReading.meter_id.in_(meter_ids),
+                            func.date(MeterReading.timestamp) == target_day.isoformat(),
+                            MeterReading.frequency.in_(best),
+                        )
+                        .scalar()
+                    )
+                    day_kwh = float(total_kwh) if total_kwh else 0.0
+                day_mwh = round(day_kwh / 1000.0, 2)
+                # Baseline pour ce jour (réutilise A_historical du 1er site
+                # comme proxy — cohérent avec baseline_j_minus_1 ci-dessus).
+                day_baseline_mwh = 0.0
+                day_delta_pct = 0
+                day_is_anomaly = False
+                if site_ids:
+                    try:
+                        b_a_day = get_baseline_a(db, site_ids[0], target_day)
+                        day_baseline_mwh = round(b_a_day["value_kwh"] / 1000.0, 2)
+                        if day_baseline_mwh > 0 and day_mwh > 0:
+                            day_delta_pct = round((day_mwh - day_baseline_mwh) / day_baseline_mwh * 100)
+                            day_is_anomaly = abs(day_delta_pct) > 25
+                    except Exception as exc:
+                        _logger.debug("baseline_a day %s failed: %s", target_day, exc)
+                weekday_idx = target_day.weekday()  # 0=Lundi, 6=Dimanche
+                weekly_breakdown.append(
+                    {
+                        "day_iso": target_day.isoformat(),
+                        "day_label": DAY_LABELS_FR[weekday_idx],
+                        "day_letter": DAY_LETTERS[weekday_idx],
+                        "mwh": day_mwh,
+                        "baseline_mwh": day_baseline_mwh,
+                        "is_anomaly": day_is_anomaly,
+                        "delta_pct": day_delta_pct,
+                        # Weekend = confiance faible (régime non ouvré spécifique)
+                        "low_confidence": weekday_idx >= 5,
+                    }
+                )
+        except Exception as exc:
+            _logger.warning("weekly_breakdown failed: %s", exc)
+
         return {
             "j_minus_1_mwh": j_minus_1_mwh,
             "j_minus_1_source": j_minus_1_source,  # Étape 4 P0-C : transparence
             "baseline_j_minus_1": baseline_j_minus_1,
             "surconso_7d_mwh": surconso_7d_mwh,
             "baseline_7d": baseline_7d,
+            "weekly_breakdown": weekly_breakdown,  # Phase 27 — data-driven SVG
             "monthly_vs_n1": monthly_vs_n1,
             "sites_in_drift": sites_in_drift,
             "annual_mwh": annual_mwh,
@@ -440,6 +519,7 @@ def _build_consumption(
                 "r_squared": None,
                 "calibration_date": datetime.utcnow().isoformat(),
             },
+            "weekly_breakdown": [],  # Phase 27 fallback
             "monthly_vs_n1": {
                 "current_month_label": "",
                 "current_month_mwh": 0.0,

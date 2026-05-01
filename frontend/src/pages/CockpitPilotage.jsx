@@ -228,6 +228,10 @@ function VisuelFooterMono({ source, lastUpdate, confidence }) {
 // Cohérent avec backend `_facts.consumption.j_minus_1_mwh`/`surconso_7d_mwh` ;
 // passage à un breakdown réel `_facts.consumption.weekly_breakdown[]` prévu
 // Phase 27 (sortie placeholder).
+// Phase 27 : `_CONSO_7D_DAYS` désormais utilisé seulement comme PLACEHOLDER
+// (1er render avant que useCockpitFacts ait répondu). Quand le backend
+// répond, `_projectBreakdownToBars` ci-dessous projette les vraies valeurs
+// `_facts.consumption.weekly_breakdown[]` en bars dynamiques.
 const _CONSO_7D_DAYS = [
   { letter: 'L', label: 'Lundi', x: 42, y: 48, h: 55 },
   { letter: 'M', label: 'Mardi', x: 84, y: 50, h: 53 },
@@ -240,13 +244,51 @@ const _CONSO_7D_DAYS = [
 const _CONSO_7D_Y_BASELINE = 103;
 const _CONSO_7D_Y_TOP = 20;
 const _CONSO_7D_MWH_TOP = 12;
+const _CONSO_7D_X_START = 42;
+const _CONSO_7D_X_PITCH = 42;
+
 function _conso7dMwh(y) {
   return (
     ((_CONSO_7D_Y_BASELINE - y) / (_CONSO_7D_Y_BASELINE - _CONSO_7D_Y_TOP)) * _CONSO_7D_MWH_TOP
   );
 }
 
-function ConsoSevenDaysBars({ lastUpdate, confidence, weeklyAnomaly }) {
+/** Phase 27 — projette `weekly_breakdown[]` backend en bars SVG.
+ *  Échelle Y dynamique : max(MWh observé, 12) pour préserver la lisibilité
+ *  même si tous les jours sont sous 12 MWh, et étire si un jour dépasse
+ *  (ex: anomalie réelle). Retourne null si pas de breakdown (fallback
+ *  placeholder). */
+function _projectBreakdownToBars(breakdown) {
+  if (!Array.isArray(breakdown) || breakdown.length === 0) return null;
+  const maxMwh = Math.max(_CONSO_7D_MWH_TOP, ...breakdown.map((d) => d?.mwh || 0));
+  return breakdown.map((d, idx) => {
+    const ratio = maxMwh > 0 ? Math.max(0, Math.min(1, (d.mwh || 0) / maxMwh)) : 0;
+    const h = Math.round((_CONSO_7D_Y_BASELINE - _CONSO_7D_Y_TOP) * ratio);
+    const y = _CONSO_7D_Y_BASELINE - h;
+    return {
+      letter: d.day_letter || '?',
+      label: d.day_label || '',
+      dayIso: d.day_iso || '',
+      x: _CONSO_7D_X_START + idx * _CONSO_7D_X_PITCH,
+      y,
+      h: Math.max(2, h), // hauteur min 2px pour rester visible si MWh ≈ 0
+      mwh: d.mwh || 0,
+      baselineMwh: d.baseline_mwh || 0,
+      deltaPct: d.delta_pct || 0,
+      anomaly: !!d.is_anomaly,
+      faded: !!d.low_confidence,
+      lowConfidence: !!d.low_confidence,
+    };
+  });
+}
+
+function ConsoSevenDaysBars({ lastUpdate, confidence, weeklyAnomaly, weeklyBreakdown }) {
+  // Phase 27 : si le backend a fourni `weekly_breakdown`, on rend les vraies
+  // valeurs MWh ; sinon fallback placeholder Phase 26.bis (pour le 1er render
+  // avant que useCockpitFacts ait répondu).
+  const projected = _projectBreakdownToBars(weeklyBreakdown);
+  const days = projected || _CONSO_7D_DAYS;
+  const isDataDriven = projected !== null;
   // Étape 6.bis P1 : sous-titre narratif chiffré nommé (audit /frontend-design
   // pixel-perfect Étape 5). Si backend expose `consumption.weekly_anomaly` :
   // {day_label, site_name, delta_pct} → on rend "Sam 25 avril : +39% vs
@@ -367,16 +409,29 @@ function ConsoSevenDaysBars({ lastUpdate, confidence, weeklyAnomaly }) {
           strokeOpacity=".25"
           strokeDasharray="2,2"
         />
-        {/* Phase 26.bis hot-fix : tooltips natifs <title> au hover de chaque
-            barre (avant : SVG sans info au survol). Visuel 1:1 préservé. */}
-        {_CONSO_7D_DAYS.map((day) => {
-          const mwh = _conso7dMwh(day.y);
+        {/* Phase 27 : si `weeklyBreakdown` backend dispo (isDataDriven=true),
+            on rend les vraies valeurs MWh + delta vs baseline. Sinon fallback
+            placeholder Phase 26.bis. Tooltip <title> identique dans les 2 cas. */}
+        {days.map((day) => {
+          // En data-driven : MWh = day.mwh réel ; en placeholder : inférence pixel.
+          const mwh = isDataDriven ? day.mwh : _conso7dMwh(day.y);
           const mwhLabel = `${mwh.toFixed(1).replace('.', ',')} MWh`;
-          const tooltipText = day.anomaly
-            ? `${day.label} : ${mwhLabel} — anomalie + ${day.deltaPct} % vs baseline`
-            : day.lowConfidence
-              ? `${day.label} : ${mwhLabel} — confiance faible (jour non ouvré)`
-              : `${day.label} : ${mwhLabel}`;
+          // Phase 27 : delta réel + nom complet jour + date ISO si data-driven.
+          const dateSuffix =
+            isDataDriven && day.dayIso
+              ? ` (${new Date(day.dayIso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })})`
+              : '';
+          const deltaPart =
+            day.anomaly && day.deltaPct !== 0
+              ? ` — anomalie ${day.deltaPct > 0 ? '+ ' : '− '}${Math.abs(day.deltaPct)} % vs baseline`
+              : day.lowConfidence
+                ? ' — confiance faible (jour non ouvré)'
+                : '';
+          const baselinePart =
+            isDataDriven && day.baselineMwh > 0
+              ? ` · baseline ${day.baselineMwh.toFixed(1).replace('.', ',')} MWh`
+              : '';
+          const tooltipText = `${day.label}${dateSuffix} : ${mwhLabel}${baselinePart}${deltaPart}`;
           let fill = 'var(--sol-calme-fg)';
           let fillOpacity = 1;
           if (day.anomaly) fill = 'var(--sol-refuse-fg)';
@@ -398,16 +453,25 @@ function ConsoSevenDaysBars({ lastUpdate, confidence, weeklyAnomaly }) {
             </rect>
           );
         })}
-        <text
-          x="266"
-          y="14"
-          textAnchor="middle"
-          fontSize="9"
-          fontWeight="500"
-          fill="var(--sol-refuse-fg)"
-        >
-          +&#x202f;39&#x202f;%
-        </text>
+        {/* Phase 27 : labels delta + lettres jour rendus depuis le data set
+            (vrai delta % des anomalies au lieu de "+ 39 %" hardcodé). */}
+        {days
+          .filter((d) => d.anomaly && d.deltaPct !== 0)
+          .map((day) => (
+            <text
+              key={`anom-${day.x}`}
+              x={day.x + 16}
+              y="14"
+              textAnchor="middle"
+              fontSize="9"
+              fontWeight="500"
+              fill="var(--sol-refuse-fg)"
+            >
+              {day.deltaPct > 0 ? '+ ' : '− '}
+              {Math.abs(day.deltaPct)}
+              {' %'}
+            </text>
+          ))}
         <g
           fontFamily="var(--sol-font-mono)"
           fontSize="9"
@@ -415,27 +479,21 @@ function ConsoSevenDaysBars({ lastUpdate, confidence, weeklyAnomaly }) {
           fillOpacity=".55"
           textAnchor="middle"
         >
-          <text x="58" y="120">
-            L
-          </text>
-          <text x="100" y="120">
-            M
-          </text>
-          <text x="142" y="120">
-            M
-          </text>
-          <text x="184" y="120">
-            J
-          </text>
-          <text x="226" y="120">
-            V
-          </text>
-          <text x="268" y="120" fontWeight="500" fill="var(--sol-refuse-fg)" fillOpacity="1">
-            S
-          </text>
-          <text x="305" y="120">
-            D
-          </text>
+          {days.map((day) => {
+            const isAnomaly = day.anomaly;
+            return (
+              <text
+                key={`label-${day.x}`}
+                x={day.x + 16}
+                y="120"
+                fontWeight={isAnomaly ? '500' : undefined}
+                fill={isAnomaly ? 'var(--sol-refuse-fg)' : undefined}
+                fillOpacity={isAnomaly ? 1 : undefined}
+              >
+                {day.letter}
+              </text>
+            );
+          })}
         </g>
       </svg>
       <VisuelFooterMono
@@ -1106,6 +1164,7 @@ export default function CockpitPilotage() {
           lastUpdate={lastUpdateRel}
           confidence={confidence}
           weeklyAnomaly={facts?.consumption?.weekly_anomaly}
+          weeklyBreakdown={facts?.consumption?.weekly_breakdown}
         />
         <CourbeChargeJMinus1
           subscribedKw={facts?.power?.subscribed_kw}
