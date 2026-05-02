@@ -44,7 +44,7 @@ describe('V7 Nav Refactor guard-rails', () => {
     expect(cockpit.items.map((i) => i.to)).toEqual([
       '/cockpit/jour',
       '/cockpit/strategique',
-      '/action-center',
+      '/anomalies',
     ]);
   });
 

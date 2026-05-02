@@ -102,14 +102,15 @@ describe('NavRegistry — Phase 1.A P0.2 rétro-compat keywords legacy', () => {
 });
 
 describe("NavRegistry — Phase 1.C P0.3 Centre d'action en panel Accueil", () => {
-  // Audit §4.4 : Centre d'action n'était accessible que via cloche header
-  // (AppShell) ou raccourci Ctrl+Shift+L → discoverability faible (≥ 2 clics
-  // ou connaissance raccourci). Phase 1.C l'expose en 3e position du panel
-  // Accueil avec route /action-center, icône Inbox, badge actionCenter.
-  it("'Centre d'action' pointe vers /action-center", () => {
+  // Audit §4.4 : Centre d'action exposé en 3e position du panel Accueil
+  // (icône Inbox, badge actionCenter) pour discoverability. 2026-05-02 :
+  // route repointée /action-center → /anomalies. AnomaliesPage est le hub
+  // canonique 4 piliers (déjà adopté par CockpitDecision "Voir N actions").
+  // Doctrine §6.2 anti-pattern "chemins multiples" : une seule page sœur.
+  it("'Centre d'action' pointe vers /anomalies (hub canonique 4 piliers)", () => {
     const item = ALL_NAV_ITEMS.find((i) => i.label === "Centre d'action");
     expect(item).toBeDefined();
-    expect(item.to).toBe('/action-center');
+    expect(item.to).toBe('/anomalies');
   });
 
   it("'Centre d'action' est dans la section Accueil (module cockpit)", () => {

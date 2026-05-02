@@ -358,33 +358,36 @@ describe('Vocabulary V7', () => {
 
 /* ── Phase 1.C — P0.3 : Centre d'action en panel Accueil ── */
 describe("Phase 1.C — P0.3 Centre d'action (panel Accueil)", () => {
-  // Audit navigation_audit_20260501.md §4.4 + §7 Q2 : Centre d'action
-  // qualifié de "hub" par la doctrine, devait être discoverable depuis
-  // le panel Accueil (auparavant accessible uniquement via cloche header
-  // ou raccourci Ctrl+Shift+L). Item exposé en 3e position de la section
-  // Accueil avec route /action-center, icône Inbox et badge actionCenter.
+  // Audit §4.4 + §7 Q2 : Centre d'action exposé en 3e position du panel
+  // Accueil pour discoverability (icône Inbox, badge actionCenter).
+  // 2026-05-02 : route repointée /action-center → /anomalies. AnomaliesPage
+  // est le hub canonique 4 piliers (déjà adopté par CockpitDecision "Voir
+  // N actions"). Doctrine §6.2 anti-pattern "chemins multiples" : une
+  // seule page sœur. La route /action-center reste mappée module cockpit
+  // dans ROUTE_MODULE_MAP pour la rétro-compat des bookmarks (redirect
+  // App.jsx vers /anomalies).
 
   it("Centre d'action est en 3e position de la section Accueil", () => {
     const cockpit = NAV_SECTIONS.find((s) => s.module === 'cockpit');
     expect(cockpit.items).toHaveLength(3);
-    expect(cockpit.items[2].to).toBe('/action-center');
+    expect(cockpit.items[2].to).toBe('/anomalies');
     expect(cockpit.items[2].label).toBe("Centre d'action");
   });
 
   it("Centre d'action utilise le badgeKey actionCenter (réutilise fetch AppShell)", () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.to === '/action-center');
+    const item = ALL_NAV_ITEMS.find((i) => i.label === "Centre d'action");
     expect(item).toBeDefined();
     expect(item.badgeKey).toBe('actionCenter');
   });
 
   it("Centre d'action keywords couvrent les axes prompt P0.3", () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.to === '/action-center');
+    const item = ALL_NAV_ITEMS.find((i) => i.label === "Centre d'action");
     expect(item.keywords).toEqual(
       expect.arrayContaining(['action', 'actions', 'centre', 'inbox', 'anomalies', 'notifications'])
     );
   });
 
-  it('/action-center est mappé au module cockpit dans ROUTE_MODULE_MAP', () => {
+  it('/action-center est mappé au module cockpit dans ROUTE_MODULE_MAP (rétro-compat bookmarks)', () => {
     expect(ROUTE_MODULE_MAP['/action-center']).toBe('cockpit');
   });
 });

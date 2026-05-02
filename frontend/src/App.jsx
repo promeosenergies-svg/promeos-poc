@@ -21,7 +21,6 @@ const CockpitDecision = lazy(() => import('./pages/CockpitDecision'));
 const Patrimoine = lazy(() => import('./pages/Patrimoine'));
 const Site360 = lazy(() => import('./pages/Site360'));
 const ActionsPage = lazy(() => import('./pages/ActionsPage'));
-const ActionCenterPage = lazy(() => import('./pages/ActionCenterPage'));
 const ConformitePage = lazy(() => import('./pages/ConformitePage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Cockpit = lazy(() => import('./pages/Cockpit'));
@@ -262,13 +261,13 @@ function App() {
                               </PageSuspense>
                             }
                           />{' '}
+                          {/* 2026-05-02 — Repoint /action-center → /anomalies.
+                              AnomaliesPage est le hub canonique 4 piliers (cf
+                              NavRegistry §Sol nav + Quick Action 'centre').
+                              Redirect préservé pour rétro-compat bookmarks. */}
                           <Route
                             path="/action-center"
-                            element={
-                              <PageSuspense>
-                                <ActionCenterPage />
-                              </PageSuspense>
-                            }
+                            element={<Navigate to="/anomalies" replace />}
                           />{' '}
                           <Route
                             path="/regops/:id"
