@@ -15,9 +15,7 @@ import DataReadinessBadge from '../components/DataReadinessBadge';
 import DevPanel from './DevPanel';
 import OnboardingOverlay from '../components/OnboardingOverlay';
 import CommandPalette from '../ui/CommandPalette';
-import ActionCenterSlideOver, {
-  computeActionCenterBadge,
-} from '../components/ActionCenterSlideOver';
+import ActionCenterSlideOver from '../components/ActionCenterSlideOver';
 import { ToastProvider } from '../ui/ToastProvider';
 import { ActionDrawerProvider } from '../contexts/ActionDrawerContext';
 import { Toggle } from '../ui';
@@ -25,10 +23,13 @@ import { trackRouteChange } from '../services/tracker';
 import { useAuth } from '../contexts/AuthContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { resolveModule, MODULE_TINTS } from './NavRegistry';
-import {
-  getActionCenterActionsSummary,
-  getActionCenterNotifications,
-} from '../services/api/actions';
+// Phase 2.B — P1.2.bis : badge cloche Action Center vient désormais
+// du NavigationBadgesContext (source unique). Suppression des fetches
+// directs getActionCenterActionsSummary + getActionCenterNotifications +
+// computeActionCenterBadge — résolution dette TECH-badge-context-dedup.
+// (Ces fonctions restent utilisées en interne par ActionCenterSlideOver
+// pour son contenu détaillé — out-of-scope ici.)
+import { useNavigationBadges } from '../contexts/NavigationBadgesContext';
 
 const BADGE_COLOR_CLASS = {
   red: 'bg-red-500 text-white',
@@ -184,7 +185,19 @@ export default function AppShell() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [actionCenterOpen, setActionCenterOpen] = useState(false);
   const [actionCenterTab, setActionCenterTab] = useState('actions');
-  const [actionCenterBadge, setActionCenterBadge] = useState({ count: null, color: 'gray' });
+  // Phase 2.B — P1.2.bis : badge cloche Action Center alimenté par
+  // NavigationBadgesContext (source unique pour rail + cloche). Le
+  // contrat reste { count, color } pour ne pas casser le rendu — count
+  // null = mode dégradé (badge masqué), comportement identique à avant.
+  const { data: navBadges } = useNavigationBadges();
+  const actionCenterBadge = useMemo(() => {
+    const count = navBadges?.action_center;
+    if (count == null) return { count: null, color: 'gray' };
+    if (count === 0) return { count: 0, color: 'gray' };
+    // Couleur héritée de l'ancien `computeActionCenterBadge` : red si
+    // critique potentiel (>= 5 actions), amber sinon.
+    return { count, color: count >= 5 ? 'red' : 'amber' };
+  }, [navBadges]);
   const { isExpert, toggleExpert, showOnboarding } = useExpertMode();
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -213,31 +226,11 @@ export default function AppShell() {
     }
   }, [location.search, location.pathname, navigate]);
 
-  useEffect(() => {
-    if (actionCenterOpen) return undefined;
-    let cancelled = false;
-    const fetchBadge = async () => {
-      try {
-        const [summary, notif] = await Promise.all([
-          getActionCenterActionsSummary().catch(() => null),
-          getActionCenterNotifications({ unread_only: true }).catch(() => ({ notifications: [] })),
-        ]);
-        if (cancelled) return;
-        const next = computeActionCenterBadge(summary, notif?.notifications || []);
-        setActionCenterBadge((prev) =>
-          prev.count === next.count && prev.color === next.color ? prev : next
-        );
-      } catch {
-        /* ignore */
-      }
-    };
-    fetchBadge();
-    const interval = setInterval(fetchBadge, 60_000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [actionCenterOpen]);
+  // Phase 2.B — P1.2.bis : useEffect fetchBadge supprimé. Le badge
+  // cloche est désormais dérivé du NavigationBadgesContext via
+  // useNavigationBadges() — voir bloc actionCenterBadge ci-dessus.
+  // Le polling est centralisé dans le Provider (interval piloté par
+  // cache_ttl_seconds du payload backend, default 60 s).
 
   useEffect(() => {
     function onKey(e) {

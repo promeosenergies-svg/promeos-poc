@@ -9,13 +9,13 @@ import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import NavRail from './NavRail';
 import NavPanel from './NavPanel';
 import { resolveModule, matchRouteToModule, ALL_NAV_ITEMS } from './NavRegistry';
-import {
-  getNotificationsSummary,
-  getMonitoringAlerts,
-  getActionCenterActionsSummary,
-  getActionCenterNotifications,
-} from '../services/api';
-import { computeActionCenterBadge } from '../components/ActionCenterSlideOver';
+// Phase 2.B — P1.2.bis : les compteurs nav rail/panel viennent désormais
+// d'un seul fetch consolidé via NavigationBadgesContext (endpoint backend
+// /api/v1/navigation/badges). Suppression des fetches dispersés
+// getNotificationsSummary, getMonitoringAlerts,
+// getActionCenterActionsSummary, getActionCenterNotifications +
+// computeActionCenterBadge — résolution dette TECH-badge-context-dedup.
+import { useNavigationBadges } from '../contexts/NavigationBadgesContext';
 import { addRecent } from '../utils/navRecent';
 import { resolveBreadcrumbLabel } from './Breadcrumb';
 
@@ -89,56 +89,35 @@ export default function Sidebar() {
     });
   }, []);
 
-  /* ── Badges ── */
-  const [alertBadge, setAlertBadge] = useState(0);
-  const [monitoringBadge, setMonitoringBadge] = useState(0);
-  // Phase 1.C — P0.3 : badge actionCenter pour l'item "Centre d'action"
-  // panel Accueil. Fetch indépendant d'AppShell (cloche header) — léger
-  // double fetch transitoire (AppShell 60 s + Sidebar 2 min) à dédupliquer
-  // P1 via context partagé. Cf. audit navigation_audit_20260501.md §4.4
-  // + commit message Phase 1.C pour rationale.
-  const [actionCenterBadge, setActionCenterBadge] = useState(0);
-
-  // Fetch badges on mount + auto-refresh every 2 minutes
-  useEffect(() => {
-    let cancelled = false;
-    const fetchBadges = () => {
-      getNotificationsSummary()
-        .then((s) => {
-          if (!cancelled) setAlertBadge(s.new_critical + s.new_warn);
-        })
-        .catch(() => {});
-      getMonitoringAlerts(null, 'open', 200)
-        .then((alerts) => {
-          if (!cancelled) setMonitoringBadge(Array.isArray(alerts) ? alerts.length : 0);
-        })
-        .catch(() => {});
-      Promise.all([
-        getActionCenterActionsSummary().catch(() => null),
-        getActionCenterNotifications({ unread_only: true }).catch(() => ({ notifications: [] })),
-      ])
-        .then(([summary, notif]) => {
-          if (cancelled) return;
-          const next = computeActionCenterBadge(summary, notif?.notifications || []);
-          setActionCenterBadge(typeof next.count === 'number' ? next.count : 0);
-        })
-        .catch(() => {});
-    };
-    fetchBadges();
-    const interval = setInterval(fetchBadges, 2 * 60 * 1000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, []);
-
+  /* ── Badges (Phase 2.B — P1.2.bis) ──
+   * Source unique : NavigationBadgesContext (endpoint backend
+   * /api/v1/navigation/badges agrégeant 8 compteurs en un call). Fini
+   * les 3 fetches dispersés (notifs + monitoring + action-center) qui
+   * doublaient avec AppShell — résolution dette TECH-badge-context-dedup.
+   *
+   * Mapping doctrine §11.3 :
+   *   - rail Conformité    ← compliance_alerts (notifs critical+warn)
+   *   - rail Énergie       ← energy_alerts (monitoring open)
+   *   - rail Facturation   ← billing_anomalies (Phase 1.D module)
+   *   - rail Achat         ← purchase_deadlines (contrats <= 90 j)
+   *   - item Centre d'action ← action_center (issues ouvertes)
+   * Stale-while-revalidate côté Context : pas de flicker pendant refetch.
+   */
+  const { data: navBadges } = useNavigationBadges();
   const badges = useMemo(
     () => ({
-      alerts: alertBadge,
-      monitoring: monitoringBadge,
-      actionCenter: actionCenterBadge,
+      alerts: navBadges?.compliance_alerts ?? 0,
+      monitoring: navBadges?.energy_alerts ?? 0,
+      actionCenter: navBadges?.action_center ?? 0,
+      facturation: navBadges?.billing_anomalies ?? 0,
+      achat: navBadges?.purchase_deadlines ?? 0,
+      // Progress conformité — recâblage post-P0.4 (dead-code retiré
+      // en Phase 1.B faute de source). NavPanel les rend désormais.
+      conformiteDt: navBadges?.conformite_dt_progress ?? 0,
+      conformiteBacs: navBadges?.conformite_bacs_progress ?? 0,
+      conformiteAper: navBadges?.conformite_aper_progress ?? 0,
     }),
-    [alertBadge, monitoringBadge, actionCenterBadge]
+    [navBadges]
   );
 
   /* ── Track recents on route change (V2: with label + module) ── */

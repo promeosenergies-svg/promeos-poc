@@ -362,6 +362,48 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
         </button>
       </div>
 
+      {/* Phase 2.B — P1.2.bis : recâblage progress conformité (DT/BACS/APER).
+          Le bloc avait été retiré en Phase 1.B P0.4 (dead-code, props jamais
+          peuplées). Désormais alimenté par NavigationBadgesContext (source
+          unique backend `compute_portfolio_compliance` — moyenne pondérée
+          surface_m2). Affiché uniquement quand le module Conformité est
+          actif. Sémantique état zéro : barres rendues à 0 % (cohérent
+          doctrine §6.2 "menus muets"), pas de masquage. */}
+      {activeModule === 'conformite' && (
+        <div className="px-3 pt-2 pb-1" role="group" aria-label="Progression obligations">
+          <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            Progression obligations
+          </p>
+          {[
+            { label: 'DT', pct: badges.conformiteDt ?? 0, color: 'bg-emerald-500' },
+            { label: 'BACS', pct: badges.conformiteBacs ?? 0, color: 'bg-indigo-500' },
+            { label: 'APER', pct: badges.conformiteAper ?? 0, color: 'bg-amber-500' },
+          ].map((row) => {
+            const pct = Math.min(100, Math.max(0, row.pct));
+            return (
+              <div
+                key={row.label}
+                className="flex items-center gap-2 mb-1 last:mb-0"
+                role="progressbar"
+                aria-label={`${row.label} ${pct}%`}
+                aria-valuenow={pct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <span className="text-[10px] font-medium text-slate-500 w-9">{row.label}</span>
+                <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${row.color} transition-all duration-300`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-slate-400 w-7 text-right">{pct}%</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Quick actions — Raccourcis (expert only) */}
       {isExpert && moduleQuickActions.length > 0 && (
         <div className="px-3 py-2 border-b border-slate-200/40">
