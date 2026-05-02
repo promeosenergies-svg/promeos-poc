@@ -53,14 +53,20 @@ const allFiles = walk(SRC_ROOT);
 
 // ── SG_EVENTS_FE_01 ─────────────────────────────────────────────────────
 
+// Strip comments helper (block + line). Évite faux positifs sur les
+// docstrings explicatives qui mentionnent l'endpoint canonique.
+function stripComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+}
+
 describe('SG_EVENTS_FE_01 — fetch /api/v1/events/upcoming uniquement via Context', () => {
   it('aucun fetch direct vers /api/v1/events hors EventsContext + api/events', () => {
     const violations = [];
     const FORBIDDEN = /\/api\/v1\/events\/upcoming/;
     for (const file of allFiles) {
       if (GET_UPCOMING_DIRECT_WHITELIST.has(file)) continue;
-      const src = readFileSync(file, 'utf-8');
-      if (FORBIDDEN.test(src)) {
+      const cleaned = stripComments(readFileSync(file, 'utf-8'));
+      if (FORBIDDEN.test(cleaned)) {
         violations.push(file);
       }
     }
@@ -72,8 +78,8 @@ describe('SG_EVENTS_FE_01 — fetch /api/v1/events/upcoming uniquement via Conte
     const PATTERN = /\bgetUpcomingEvents\b/;
     for (const file of allFiles) {
       if (GET_UPCOMING_DIRECT_WHITELIST.has(file)) continue;
-      const src = readFileSync(file, 'utf-8');
-      if (PATTERN.test(src)) {
+      const cleaned = stripComments(readFileSync(file, 'utf-8'));
+      if (PATTERN.test(cleaned)) {
         violations.push(file);
       }
     }
@@ -142,5 +148,61 @@ describe('SG_EVENTS_FE_04 — Provider unique (pas de duplication)', () => {
     const src = readFileSync(appPath, 'utf-8');
     expect(src).toMatch(/<EventsProvider>/);
     expect(src).toMatch(/<\/EventsProvider>/);
+  });
+});
+
+// ── SG_EVENTS_FE_05 ─────────────────────────────────────────────────────
+
+describe('SG_EVENTS_FE_05 — buildWatchlist forbidden (use useEvents instead)', () => {
+  // Les SG eux-mêmes peuvent mentionner les noms interdits dans leur
+  // propre logique de garde-fou (auto-référence). Tolérance whitelist :
+  const SG_SELF_REFERENCE_WHITELIST = new Set([
+    join(SRC_ROOT, '__tests__', 'source_guards', 'events_fe_source_guards.test.js'),
+    join(SRC_ROOT, '__tests__', 'source_guards', 'nav_fe_source_guards.test.js'),
+  ]);
+
+  it('aucun fichier frontend ne référence buildWatchlist / computeWatchlist / generateWatchlist', () => {
+    const FORBIDDEN_PATTERNS = ['buildWatchlist', 'computeWatchlist', 'generateWatchlist'];
+    const violations = [];
+
+    for (const file of allFiles) {
+      if (SG_SELF_REFERENCE_WHITELIST.has(file)) continue;
+      const src = readFileSync(file, 'utf-8');
+      // Strip line comments + block comments pour éviter faux positifs
+      // (les commentaires explicatifs Phase 1.D peuvent légitimement
+      // mentionner l'ancienne fonction supprimée).
+      const cleaned = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+
+      for (const pattern of FORBIDDEN_PATTERNS) {
+        if (cleaned.includes(pattern)) {
+          violations.push(`${file} → "${pattern}"`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it('useEvents whitelist contient ConformitePage et CommandCenter (pages cibles Phase 1.C/1.D)', () => {
+    // Vérifie que ces pages utilisent bien useEvents en remplacement
+    // des appels buildWatchlist supprimés.
+    const conformitePath = join(SRC_ROOT, 'pages', 'ConformitePage.jsx');
+    const commandCenterPath = join(SRC_ROOT, 'pages', 'CommandCenter.jsx');
+
+    const conformiteSrc = readFileSync(conformitePath, 'utf-8');
+    const commandCenterSrc = readFileSync(commandCenterPath, 'utf-8');
+
+    expect(conformiteSrc).toMatch(/from\s*['"][^'"]*\/hooks\/useEvents['"]/);
+    expect(conformiteSrc).toMatch(/useEvents\(\s*['"]conformite['"]/);
+
+    expect(commandCenterSrc).toMatch(/from\s*['"][^'"]*\/hooks\/useEvents['"]/);
+    expect(commandCenterSrc).toMatch(/useEvents\(\s*['"]cockpit_daily['"]/);
+  });
+
+  it("aucun fichier dans pages/cockpit/ ne s'appelle WatchlistCard.jsx (orphelin supprimé)", () => {
+    // Garde-fou contre une réintroduction du composant orphelin.
+    const cockpitDir = join(SRC_ROOT, 'pages', 'cockpit');
+    const files = readdirSync(cockpitDir);
+    expect(files).not.toContain('WatchlistCard.jsx');
   });
 });

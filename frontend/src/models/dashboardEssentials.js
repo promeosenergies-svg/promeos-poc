@@ -4,7 +4,6 @@
  * No React imports — fully testable in isolation.
  *
  * Exports:
- *   buildWatchlist(kpis, sites)                 → WatchItem[] (max 5, severity-sorted)
  *   checkConsistency(kpis)                      → { ok, issues }
  *   buildTopSites(sites)                        → { worst: SiteItem[], best: SiteItem[] }
  *   buildOpportunities(kpis, sites, opts)       → Opportunity[] (max 3)
@@ -13,90 +12,25 @@
  *   buildExecutiveSummary(kpis, topSites)       → ExecBullet[] (max 3)
  *   buildExecutiveKpis(kpis, sites)             → ExecKpi[] (4 tuiles décideur)
  *   buildDashboardEssentials(sites, opts)       → aggregated result object
+ *
+ * Sprint α-fin Phase 1.D — `buildWatchlist` retiré (anti-pattern §8.1
+ * doctrine v1.1 : logique métier frontend). Les signaux non-conformes /
+ * sites à risque / coverage sont désormais détectés côté backend par
+ * `event_bus.compliance_deadline_detector` + `data_quality_issue_detector`,
+ * exposés via `GET /api/v1/events/upcoming` et consommés FE via
+ * `useEvents(pageKey, persona)` (cf. ADR-006 commit aa789c7d).
  */
-import { formatPercentFR } from '../utils/format';
 import {
-  RISK_THRESHOLDS,
   COVERAGE_THRESHOLDS,
   CONFORMITY_THRESHOLDS,
   MATURITY_THRESHOLDS,
   READINESS_WEIGHTS,
-  getRiskStatus,
+  RISK_THRESHOLDS,
   SEVERITY_RANK,
   COMPLIANCE_SCORE_THRESHOLDS,
+  getRiskStatus,
 } from '../lib/constants';
-
-// ── buildWatchlist ──────────────────────────────────────────────────────────
-
-/**
- * Build sorted watchlist from precomputed kpis + raw sites.
- * Returns max 5 items ordered by severity (critical first).
- *
- * @param {object} kpis         — from computeKpis(sites)
- * @param {object[]} sites      — scopedSites array
- * @returns {WatchItem[]}
- *
- * WatchItem: { id, label, severity, path, cta }
- */
-export function buildWatchlist(kpis, sites = []) {
-  const items = [];
-
-  // 1. Non-conformes — critical
-  const nc = kpis.nonConformes;
-  if (nc > 0) {
-    items.push({
-      id: 'non_conformes',
-      label: `${nc} site${nc > 1 ? 's' : ''} non conforme${nc > 1 ? 's' : ''} — actions requises`,
-      severity: 'critical',
-      path: '/conformite',
-      cta: 'Voir conformité',
-    });
-  }
-
-  // 2. Sites à risque — high
-  const ar = kpis.aRisque;
-  if (ar > 0) {
-    items.push({
-      id: 'a_risque',
-      label: `${ar} site${ar > 1 ? 's' : ''} à risque réglementaire`,
-      severity: 'high',
-      path: '/actions',
-      cta: "Plan d'action",
-    });
-  }
-
-  // 3. Sites without consumption data — warn
-  const sitesWithoutData = sites.filter((s) => !s.conso_kwh_an || s.conso_kwh_an === 0);
-  if (sitesWithoutData.length > 0) {
-    const n = sitesWithoutData.length;
-    items.push({
-      id: 'no_conso_data',
-      label: `Données manquantes sur ${n} site${n > 1 ? 's' : ''}`,
-      severity: 'warn',
-      path: '/consommations/import',
-      cta: 'Importer',
-    });
-  }
-
-  // 4. Low data coverage — medium (only if N >= 3 and not already covered by #3)
-  if (
-    kpis.couvertureDonnees < COVERAGE_THRESHOLDS.warn &&
-    kpis.total >= 3 &&
-    sitesWithoutData.length === 0
-  ) {
-    items.push({
-      id: 'low_coverage',
-      label: `Couverture données insuffisante : ${formatPercentFR(kpis.couvertureDonnees)}`,
-      severity: 'medium',
-      path: '/consommations/import',
-      cta: 'Compléter',
-    });
-  }
-
-  // Sort by severity rank, cap at 5
-  items.sort((a, b) => (SEVERITY_RANK[a.severity] ?? 99) - (SEVERITY_RANK[b.severity] ?? 99));
-  return items.slice(0, 5);
-}
+import { formatPercentFR } from '../utils/format';
 
 // ── checkConsistency ────────────────────────────────────────────────────────
 
@@ -241,7 +175,7 @@ export function buildOpportunities(kpis, _sites = [], { isExpert = false } = {})
  * Items are ordered by severity: critical → high → warn.
  *
  * @param {object} kpis          — from computeKpis(sites)
- * @param {object[]} watchlist   — from buildWatchlist()
+ * @param {object[]} watchlist   — accepts [] (legacy param, retiré Phase 1.D)
  * @param {number}   alertsCount — nombre d'alertes actives (depuis API)
  * @returns {BriefingItem[]}   max 3 items
  *
@@ -303,7 +237,7 @@ export function buildBriefing(kpis, _watchlist = [], alertsCount = 0) {
  * Sorted by severity: critical → high → warn → medium → info.
  *
  * @param {object}   kpis
- * @param {object[]} watchlist    — from buildWatchlist()
+ * @param {object[]} watchlist    — accepts [] (legacy param, retiré Phase 1.D)
  * @param {object[]} opportunities — from buildOpportunities()
  * @returns {TodayAction[]}  max 5 items
  *
@@ -589,7 +523,13 @@ export function buildDashboardEssentials(sites = [], { isExpert = false } = {}) 
     total > 0 ? Math.round((sites.filter((s) => s.conso_kwh_an > 0).length / total) * 100) : 0;
 
   const kpis = { total, conformes, nonConformes, aRisque, risqueTotal, couvertureDonnees };
-  const watchlist = buildWatchlist(kpis, sites);
+  // Sprint α-fin Phase 1.D — `watchlist = []` (ex-`buildWatchlist(kpis, sites)`).
+  // La détection des items watchlist (non_conformes / a_risque / no_conso_data /
+  // low_coverage) est désormais côté backend via event_bus détecteurs +
+  // exposée par /api/v1/events/upcoming (Phase 1.A) consommée par useEvents
+  // (Phase 1.C). Les fonctions buildBriefing / buildTodayActions / computeHealthState
+  // tolèrent `watchlist = []` (boucles for sur tableau vide = no-op).
+  const watchlist = [];
   const topSites = buildTopSites(sites);
   const opportunities = buildOpportunities(kpis, sites, { isExpert });
 
@@ -618,7 +558,7 @@ export function buildDashboardEssentials(sites = [], { isExpert = false } = {}) 
  *
  * @param {object} signals
  * @param {object}   signals.kpis         — { nonConformes, aRisque, ... }
- * @param {object[]} signals.watchlist     — from buildWatchlist()
+ * @param {object[]} signals.watchlist     — accepts [] (legacy param, retiré Phase 1.D)
  * @param {object[]} signals.briefing      — from buildBriefing()
  * @param {{ ok, issues }} signals.consistency — from checkConsistency()
  * @param {number}   signals.alertsCount   — critical + warn alert count

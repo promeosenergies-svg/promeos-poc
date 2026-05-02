@@ -38,7 +38,7 @@ import { RiskBadge } from '../lib/risk/normalizeRisk';
 import EmptyState from '../ui/EmptyState';
 import ErrorState from '../ui/ErrorState';
 import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
-import { buildWatchlist, buildBriefing, computeHealthState } from '../models/dashboardEssentials';
+import { buildBriefing, computeHealthState } from '../models/dashboardEssentials';
 import { useAuth } from '../contexts/AuthContext';
 import { useEvents } from '../hooks/useEvents';
 import { computeObligationProfileTags } from '../models/complianceProfileRules';
@@ -101,9 +101,10 @@ export { DevScopeBadge };
 
 export default function ConformitePage() {
   const { org, scope, scopedSites, portefeuilles, sitesCount, sitesLoading } = useScope();
-  // Sprint α-fin Phase 1.C — useEvents en parallèle (préparation Phase 1.D
-  // qui supprimera buildWatchlist au profit de cette source unique).
-  // Pour l'instant, on conserve buildWatchlist pour ne casser aucun flow.
+  // Sprint α-fin Phase 1.C/1.D — useEvents source canonique des signaux
+  // de conformité (compliance_deadline + data_quality_issue détecteurs
+  // event_bus, exposés par /api/v1/events/upcoming). Remplace l'ancienne
+  // logique métier frontend supprimée en Phase 1.D.
   // eslint-disable-next-line no-unused-vars
   const { role: authRole } = useAuth();
   // eslint-disable-next-line no-unused-vars
@@ -299,7 +300,11 @@ export default function ConformitePage() {
       risqueTotal: 0,
       couvertureDonnees: 100,
     };
-    const wl = buildWatchlist(simpleKpis, sitesData);
+    // Sprint α-fin Phase 1.D — watchlist=[] (ex-`buildWatchlist(simpleKpis, sitesData)`).
+    // Signaux non_conformes/a_risque détectés désormais par event_bus +
+    // exposés via useEvents('conformite', authRole) consommé en haut de cette page.
+    // computeHealthState tolère watchlist=[] (boucle for no-op).
+    const wl = [];
     const br = buildBriefing(simpleKpis, wl);
     return computeHealthState({
       kpis: simpleKpis,
