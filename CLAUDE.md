@@ -10,6 +10,10 @@ Lis `SKILL.md` à la racine AVANT toute action sur ce repo. Toutes les règles n
 
 Lire et appliquer `docs/dev/workframe-contract.md`. Matériel personnel jamais dans le repo — il vit dans `../workspace/personal/<person>/` hors boundary git. Pas de `docs/drafts/` ni `docs/notes/` — utiliser Draft PRs GitHub.
 
+## Conventions de développement
+
+Référence stable des conventions stack + paths canoniques + modèles Claude par défaut + filtres pytest : [`docs/dev/conventions.md`](docs/dev/conventions.md). À consulter avant tout sprint régulatoire ou refacto cross-modules.
+
 ## Stack technique
 
 - Backend : Python 3.11 / FastAPI / SQLAlchemy / SQLite (PostgreSQL-ready)
