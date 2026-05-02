@@ -131,7 +131,12 @@ class TestAgentStubs:
     """Verify agents work in stub mode."""
 
     def test_regops_explainer_stub_has_fields(self):
-        """regops_explainer._stub_response should return required fields."""
+        """regops_explainer._stub_response should return required fields.
+
+        Note 2026-05-02 : la signature `_stub_response(site, kb_context)`
+        a évolué (KB anchoring) ; le test fournit désormais un kb_context
+        vide pour exercer la branche fallback "aucun item applicable".
+        """
         from ai_layer.agents.regops_explainer import _stub_response
 
         class FakeSite:
@@ -141,7 +146,8 @@ class TestAgentStubs:
             statut_bacs = "A_RISQUE"
             risque_financier_euro = 5000
 
-        result = _stub_response(FakeSite())
+        kb_context = {"applicable_items": [], "kb_item_ids": []}
+        result = _stub_response(FakeSite(), kb_context)
         assert "brief" in result
         assert "sources_used" in result
         assert "confidence" in result
