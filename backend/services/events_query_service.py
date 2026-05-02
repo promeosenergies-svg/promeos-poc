@@ -1,14 +1,16 @@
 """Events query service — couche d'adaptation REST sur event_bus (Voie C, Phase 1.A).
 
 Sprint α-fin Phase 1.A — endpoint REST `/api/v1/events/upcoming`.
+Sprint α-push Phase 2.A — orchestrateur multi-org `refresh_all_active_orgs`
+appelé par cron `.github/workflows/digest-daily.yml` à 7h45 Paris.
 
 Principe : `event_bus/` reste strictement intact (réutilisation pure de
 `compute_events`). Cette couche query applique les filtres requis par
 l'API REST (persona, page_key, horizon_days) + pagination cursor MVP
 sur la liste retournée.
 
-Aucune logique métier de détection ici — seulement filtrage et pagination
-sur la sortie de `compute_events`.
+Aucune logique métier de détection ici — seulement filtrage, pagination
+et orchestration multi-org sur la sortie de `compute_events`.
 
 Réf : docs/audits/sprint_alpha_phase0_audit_20260502.md (Voie C),
 docs/adr/ADR-002-chantier-alpha-moteur-evenements.md.
@@ -214,3 +216,54 @@ def _decode_cursor(cursor: Optional[str]) -> int:
 def _encode_cursor(offset: int) -> str:
     """Encode un offset entier en cursor base64."""
     return base64.b64encode(str(offset).encode("utf-8")).decode("utf-8")
+
+
+# ── Orchestration multi-org (Sprint α-push Phase 2.A) ───────────────
+
+
+def refresh_all_active_orgs(db: Session) -> dict:
+    """Recalcule `compute_events` pour toutes les orgs actives.
+
+    Appelé par l'endpoint admin `POST /api/v1/events/refresh` qui est
+    déclenché par le workflow GitHub Actions cron quotidien 7h45 Paris.
+
+    Erreurs par org sont capturées (pas de propagation) — une org en
+    échec n'empêche pas les suivantes d'être rafraîchies. Réponse
+    structurée pour traçabilité GHA Actions log.
+
+    Idempotent : `compute_events` est stateless (détection à la volée
+    sur l'état DB courant), pas d'effet de bord en table `events`
+    (Phase 1.B/2.D introduiront le store si besoin audit régulatoire).
+
+    Returns
+    -------
+    dict
+        {
+          'refreshed_orgs': int,
+          'total_events': int,
+          'errors': list[{'org_id': int, 'error': str}],
+          'computed_at': str (ISO 8601 UTC),
+        }
+    """
+    from models import Organisation
+
+    refreshed_orgs = 0
+    total_events = 0
+    errors: list[dict] = []
+
+    active_orgs = db.query(Organisation).filter(Organisation.actif.is_(True)).all()
+
+    for org in active_orgs:
+        try:
+            events = compute_events(db, org.id)
+            total_events += len(events)
+            refreshed_orgs += 1
+        except Exception as exc:
+            errors.append({"org_id": org.id, "error": str(exc)})
+
+    return {
+        "refreshed_orgs": refreshed_orgs,
+        "total_events": total_events,
+        "errors": errors,
+        "computed_at": datetime.now(timezone.utc).isoformat(),
+    }

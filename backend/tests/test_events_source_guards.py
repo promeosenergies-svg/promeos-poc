@@ -160,3 +160,34 @@ class TestEventsSourceGuards:
         assert "DETECTORS.append" not in src
         assert "DETECTORS.extend" not in src
         assert "DETECTORS[" not in src
+
+    def test_sg_events_06_refresh_uses_strict_platform_admin(self):
+        """SG_EVENTS_06 : POST /refresh utilise `require_platform_admin`
+        (strict, pas de bypass DEMO_MODE).
+
+        Q4 audit Phase 0.bis arbitrée : sécurité prod prime sur confort
+        dev. Le cron GitHub Actions utilise un secret token réel admin,
+        pas de bypass DEMO_MODE nécessaire.
+
+        Garde-fou anti-régression : si quelqu'un remplace par
+        `require_admin()` (lenient) ou `get_optional_auth`, ce test
+        échoue avant le merge.
+        """
+        import inspect
+
+        from routes.events import refresh_events_endpoint
+
+        body = inspect.getsource(refresh_events_endpoint)
+
+        # Doit utiliser le strict
+        assert "require_platform_admin" in body, (
+            "POST /refresh doit utiliser `require_platform_admin` "
+            "(strict, pas de bypass DEMO_MODE) — cf. Q4 audit Phase 0.bis."
+        )
+
+        # NE doit PAS utiliser les variantes lenient
+        # Note: `require_platform_admin` contient `require_admin` en sous-chaîne.
+        # On checke `require_admin(` (avec parenthèse) ou `require_admin)` qui
+        # ne match pas `require_platform_admin`.
+        for forbidden in ("require_admin()", "Depends(require_admin)", "get_optional_auth"):
+            assert forbidden not in body, f"POST /refresh ne doit pas utiliser {forbidden!r} (auth lenient/bypass)"

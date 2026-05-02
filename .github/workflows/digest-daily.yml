@@ -1,0 +1,77 @@
+name: Daily Events Refresh + Digest Dispatch
+
+# Sprint α-push Phase 2.A — déclenche POST /api/v1/events/refresh chaque
+# matin à 7h45 Paris (été) / 6h45 Paris (hiver). GitHub Actions cron est
+# strictement UTC : on choisit '45 5 * * *' = 5h45 UTC.
+#
+# DST handling (Q5 audit Phase 0.bis trade-off accepté) :
+#   - été (UTC+2, mars→octobre)  → digest 7h45 Paris ✅ cible
+#   - hiver (UTC+1, novembre→février) → digest 6h45 Paris (acceptable
+#                                       pour démarrer la journée tôt)
+# Bascule été↔hiver = ~1h de décalage. Pas de cron dual (complexité
+# supplémentaire pour bénéfice marginal). Pivot vers cron OS systemd
+# timer si latence devient bloquante (cf. ADR-002 §scheduler).
+#
+# Calque le pattern .github/workflows/sirene-monthly-import.yml
+# (cron `0 3 2 * *` mensuel).
+
+on:
+  schedule:
+    - cron: '45 5 * * *'  # 5h45 UTC = 7h45 Paris été / 6h45 Paris hiver
+  workflow_dispatch:  # déclenchement manuel pour tests
+
+jobs:
+  refresh-events:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger /api/v1/events/refresh
+        env:
+          PROMEOS_API_URL: ${{ secrets.PROMEOS_API_URL }}
+          PROMEOS_PLATFORM_ADMIN_TOKEN: ${{ secrets.PROMEOS_PLATFORM_ADMIN_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PROMEOS_API_URL:-}" ]; then
+            echo "::error::Secret PROMEOS_API_URL not set"
+            exit 1
+          fi
+          if [ -z "${PROMEOS_PLATFORM_ADMIN_TOKEN:-}" ]; then
+            echo "::error::Secret PROMEOS_PLATFORM_ADMIN_TOKEN not set"
+            exit 1
+          fi
+
+          echo "::notice::Triggering events refresh at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          # -f → fail on HTTP 4xx/5xx
+          # --max-time 240 → endpoint timeout (compute_events sur N orgs)
+          # --silent --show-error → no progress meter, but errors visible
+          curl -X POST \
+            -H "Authorization: Bearer $PROMEOS_PLATFORM_ADMIN_TOKEN" \
+            -H "Content-Type: application/json" \
+            -f --silent --show-error --max-time 240 \
+            "$PROMEOS_API_URL/api/v1/events/refresh" \
+            | tee refresh_output.json
+
+          # Parse response (response schema = events_query_service.refresh_all_active_orgs)
+          REFRESHED=$(jq -r '.refreshed_orgs // 0' refresh_output.json)
+          TOTAL_EVENTS=$(jq -r '.total_events // 0' refresh_output.json)
+          ERRORS=$(jq -r '.errors | length' refresh_output.json)
+
+          echo "::notice::Refreshed $REFRESHED orgs, $TOTAL_EVENTS events total, $ERRORS errors"
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::warning::$ERRORS org(s) failed to refresh — see response payload"
+            jq '.errors' refresh_output.json
+            # Non-bloquant : autres orgs ont été rafraîchies. À monitorer
+            # si ERRORS > seuil (ex: > 10% des orgs) — ajouter alerte
+            # Slack/email Phase 2.E si besoin.
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Daily events refresh failed at $(date -u +%Y-%m-%dT%H:%M:%SZ). Check logs."
+          # TODO Phase 2.E : hook Slack/email via secret SLACK_WEBHOOK
+          # (calque pattern sirene-monthly-import.yml ligne 96-97).

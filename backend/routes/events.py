@@ -1,14 +1,21 @@
-"""Route REST /api/v1/events/* — Phase 1.A Sprint α-fin.
+"""Route REST /api/v1/events/* — Phase 1.A + 2.A Sprint α.
 
-Expose `compute_events` (event_bus) à des consommateurs Tier3 (mobile,
-email digest, intégrations 3rd party) via une couche query d'adaptation
+Phase 1.A (Sprint α-fin) — `GET /api/v1/events/upcoming` : expose
+`compute_events` (event_bus) à des consommateurs Tier3 (mobile, email
+digest, intégrations 3rd party) via la couche query d'adaptation
 (`services/events_query_service.py`).
 
-Le handler est strictement délégateur — aucune logique métier inline,
-toute la transformation est dans la couche query.
+Phase 2.A (Sprint α-push) — `POST /api/v1/events/refresh` : endpoint
+admin déclenché par cron GitHub Actions à 7h45 Paris pour rafraîchir
+les events de toutes les orgs actives. Auth strict
+(`require_platform_admin`, pas de bypass DEMO_MODE).
+
+Les handlers sont strictement délégateurs — aucune logique métier
+inline, toute la transformation est dans la couche query.
 
 Réf : docs/adr/ADR-002-chantier-alpha-moteur-evenements.md (§endpoint),
-docs/audits/sprint_alpha_phase0_audit_20260502.md (Voie C arbitrée).
+docs/audits/sprint_alpha_phase0_audit_20260502.md (Voie C arbitrée),
+docs/audits/sprint_alpha_push_phase0_audit_20260502.md (Q3+Q4 arbitrées).
 """
 
 from __future__ import annotations
@@ -20,12 +27,13 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from database import get_db
-from middleware.auth import AuthContext, get_optional_auth
+from middleware.auth import AuthContext, get_optional_auth, require_platform_admin
 from schemas.events import EventCardSchema, EventUpcomingResponse
 from services.events_query_service import (
     DEFAULT_HORIZON_DAYS,
     DEFAULT_LIMIT,
     get_upcoming_events,
+    refresh_all_active_orgs,
 )
 from services.scope_utils import resolve_org_id
 
@@ -64,3 +72,32 @@ def get_upcoming_events_endpoint(
         total=result["total"],
         computed_at=datetime.now(timezone.utc),
     )
+
+
+@router.post("/refresh", status_code=200)
+def refresh_events_endpoint(
+    request: Request,
+    _admin: dict = Depends(require_platform_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Recalcule les events pour toutes les orgs actives.
+
+    Endpoint admin appelé par cron GitHub Actions à 7h45 Paris
+    (`.github/workflows/digest-daily.yml`). Auth strict via
+    `require_platform_admin` — pas de bypass DEMO_MODE (Q4 audit
+    Phase 0.bis arbitrée).
+
+    Délégation pure à `events_query_service.refresh_all_active_orgs` —
+    aucune logique métier dans ce handler.
+
+    Idempotent : `compute_events` est stateless. Appels répétés sans
+    effet de bord cumulatif. Erreurs par org sont capturées (continue
+    sur les suivantes) et retournées dans `errors`.
+
+    Returns
+    -------
+    dict
+        Voir `events_query_service.refresh_all_active_orgs` —
+        `{refreshed_orgs, total_events, errors, computed_at}`.
+    """
+    return refresh_all_active_orgs(db)
