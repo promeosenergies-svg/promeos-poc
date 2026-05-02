@@ -107,6 +107,9 @@ from routes.contracts_v2 import router as contracts_v2_router
 # Sprint α-fin Phase 1.A — Events REST endpoint (Tier3 unblocked)
 from routes.events import router as events_router
 
+# Sprint α-push Phase 2.C — User notification preferences (digest opt-in)
+from routes.users import router as users_router
+
 # Créer l'application FastAPI (lifespan assigned after startup funcs are defined)
 app = FastAPI(
     title="PROMEOS API",
@@ -167,6 +170,7 @@ app.include_router(regops_router)
 app.include_router(connectors_router)
 app.include_router(watchers_router)
 app.include_router(events_router)  # Sprint α-fin Phase 1.A — /api/v1/events/upcoming
+app.include_router(users_router)  # Sprint α-push Phase 2.C — /api/v1/users/me/notification-preferences
 app.include_router(ai_router)
 app.include_router(kb_router)  # Knowledge Base (generic)
 app.include_router(kb_usages_router)  # KB Usages (archetypes, rules, recommendations)

@@ -114,6 +114,41 @@ def run_migrations(engine):
     _create_user_preferences_table(engine)
     # Sprint Refonte Narrative dynamique — Phase 9.D (event store temporel)
     _create_event_history_snapshots_table(engine)
+    # Sprint α-push Phase 2.C — user_notification_preferences (digest user-scoped)
+    _create_user_notification_preferences_table(engine)
+
+
+def _create_user_notification_preferences_table(engine):
+    """Create user_notification_preferences table if missing (idempotent).
+
+    Sprint α-push Phase 2.C (Q2 audit Phase 0.bis arbitré).
+
+    Table user-scoped pour opt-in digest matinal Brevo (Phase 2.D).
+    Distincte de :
+    - `notification_preferences` (org-scoped, V1 badges/snooze)
+    - `digest_preferences` (org-scoped, V2 digest org-level)
+    - `user_preferences` (user-scoped, override typologie narratives Phase 1.4)
+
+    Idempotent : skip si table déjà présente. Pattern aligné
+    `_create_user_preferences_table` (Phase 1.4).
+
+    Downgrade : drop_table('user_notification_preferences')
+    (à ajouter manuellement si rollback nécessaire — pas de pattern
+    automatique dans migrations.py custom).
+    """
+    insp = inspect(engine)
+    if insp.has_table("user_notification_preferences"):
+        return
+
+    import models.user_notification_preference  # noqa: F401
+    from models.base import Base
+
+    Base.metadata.create_all(
+        bind=engine,
+        tables=[Base.metadata.tables["user_notification_preferences"]],
+        checkfirst=True,
+    )
+    logger.info("migration: created user_notification_preferences table (Sprint α-push 2.C)")
 
 
 def _create_user_preferences_table(engine):
