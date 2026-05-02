@@ -72,13 +72,15 @@ export function NavigationBadgesProvider({ children }) {
     cancelledRef.current = false;
     fetchBadges();
 
-    // Reschedule interval à chaque fetch réussi pour adopter le TTL
-    // courant (un endpoint qui changerait son TTL en réponse propage
-    // sa valeur sans redémarrer le Provider).
+    // Reschedule via setTimeout récursif pour adopter le TTL courant
+    // (le payload backend pilote ttlRef.current). Le guard cancelledRef
+    // est vérifié AVANT chaque setTimeout — sinon un tick exécuté
+    // pendant l'unmount planifierait un nouveau handle qui échapperait
+    // au cleanup (fuite vers double polling au remount rapide).
     const tick = () => {
+      if (cancelledRef.current) return;
       fetchBadges();
-      // Replanifie avec la valeur courante de ttlRef (peut avoir bougé).
-      if (intervalRef.current) clearTimeout(intervalRef.current);
+      if (cancelledRef.current) return;
       intervalRef.current = setTimeout(tick, ttlRef.current * 1000);
     };
     intervalRef.current = setTimeout(tick, ttlRef.current * 1000);
