@@ -450,11 +450,18 @@ export const QUICK_ACTIONS = [
   },
   { key: 'import', label: 'Importer', icon: Import, to: '/import', keywords: ['csv', 'upload'] },
   {
+    // Phase 3.B — P1.5 : retargeté `/anomalies` → `/action-center`. Le
+    // Centre d'action panel Accueil (Phase 1.C — P0.3) est devenu le
+    // hub canonique pour anomalies + actions + notifications. Pointer
+    // la Quick Action sur la page dédiée évite le doublon sémantique
+    // signalé audit Phase 0.bis §5 (`/anomalies` brut redondant avec
+    // l'item panel "Centre d'action"). L'URL `/anomalies` reste
+    // accessible (HIDDEN_PAGES + redirect implicite côté ActionCenterPage).
     key: 'centre',
     label: 'Détection automatique',
     icon: AlertTriangle,
-    to: '/anomalies',
-    keywords: ['anomalies', 'actions', 'inbox', 'plan'],
+    to: '/action-center',
+    keywords: ['anomalies', 'actions', 'inbox', 'centre', 'detection'],
   },
   {
     key: 'diag',
