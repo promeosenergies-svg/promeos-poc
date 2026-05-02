@@ -233,6 +233,14 @@ export const NAV_MODULES = [
     order: 3,
     desc: 'Consommations & performance',
   },
+  // Phase 1.E — P0.5 (audit navigation_audit_20260501.md §4 + §7 Q4) :
+  // `groupBoundary: 'config'` marque la frontière "config / lookup" dans
+  // l'ordre rail. NavRail rend un séparateur visuel discret AVANT ce
+  // module (cf. NavRail.jsx). Patrimoine est systématiquement en dernière
+  // position visible peu importe le persona — usage one-shot setup
+  // (audit §5.3 fréquence).
+  // Anti-pattern §6.2 strict : pas de label "Configuration", pas de
+  // groupement niveau menu. Juste un trait fin de séparation rendering.
   {
     key: 'patrimoine',
     label: 'Patrimoine',
@@ -241,6 +249,7 @@ export const NAV_MODULES = [
     expertOnly: false,
     order: 4,
     desc: 'Sites, contrats & factures',
+    groupBoundary: 'config',
   },
   {
     key: 'achat',
@@ -942,33 +951,40 @@ export function getModuleTint(keyOrPath) {
  * ROLE-BASED module ordering — each role sees its most relevant
  * modules first on the rail. Fallback to default order.
  * ══════════════════════════════════════════════════════════════════ */
-// Phase 1.D — P0.1 : insertion `facturation` dans chaque ordre persona
-// selon la table fréquence d'usage §5.3 audit navigation_audit_20260501.md.
-//   - DG : `facturation` mensuel → après achat (mensuel/quotidien).
-//   - DAF : `facturation` HEBDO ⇒ priorité haute, juste après cockpit.
-//   - Acheteur : `facturation` mensuel → après achat (proximité métier).
-//   - Energy Manager : `facturation` HEBDO ⇒ après conformité, avant
-//     patrimoine.
-//   - RegOps : `facturation` mensuel → en queue (peu de proximité métier).
-//   - Resp. immobilier / Resp. site : `facturation` rare → en queue.
-//   - default : insertion en avant-dernière position (pré-P0.5 qui fixera
-//     l'ordre cible Sol v1.1 Accueil → Énergie → Conformité → Facturation
-//     → Achat → [sep] → Patrimoine).
-// L'ordre rail final cible reste sous P0.5 (decoupling structure / ordre).
+// Phase 1.E — P0.5 (audit navigation_audit_20260501.md §4 matrice d'écart
+// + §7 Q3) : adoption de l'ordre rail final cible Sol v1.1 pour persona
+// dominant Energy Manager (= default) :
+//   Accueil → Énergie → Conformité → Facturation → Achat → [sep] → Patrimoine
+//
+// Multi-persona conservé (8 ROLE_MODULE_ORDER) — la matrice n'est pas
+// supprimée (différenciation B2B forte). Mais Patrimoine est désormais
+// systématiquement en dernière position visible peu importe le rôle :
+// l'usage one-shot setup (audit §5.3) le justifie. Le séparateur graphique
+// rendu par NavRail signale visuellement la frontière "config / lookup".
+//
+// Insertion `facturation` selon table fréquence §5.3 :
+//   - DAF / DG : facturation #2 (hebdo / mensuel finance)
+//   - Acheteur : facturation #3 (proximité achat)
+//   - Energy Manager / default / resp_site : facturation #4
+//   - RegOps / Resp. immobilier : facturation #4 (alignés default)
+//
+// Le séparateur lui-même est un détail rendering (groupBoundary='config'
+// sur NAV_MODULES.patrimoine, cf. infra) — il n'apparaît jamais dans
+// les arrays d'ordre.
 const ROLE_MODULE_ORDER = {
   // Direction / finance : focus décisionnel
-  dg_owner: ['cockpit', 'achat', 'facturation', 'conformite', 'patrimoine', 'energie'],
-  daf: ['cockpit', 'facturation', 'patrimoine', 'achat', 'conformite', 'energie'],
-  acheteur: ['cockpit', 'achat', 'facturation', 'patrimoine', 'conformite', 'energie'],
+  dg_owner: ['cockpit', 'facturation', 'achat', 'conformite', 'energie', 'patrimoine'],
+  daf: ['cockpit', 'facturation', 'conformite', 'energie', 'achat', 'patrimoine'],
+  acheteur: ['cockpit', 'achat', 'facturation', 'energie', 'conformite', 'patrimoine'],
 
   // Technique / opérationnel : focus données + action
-  energy_manager: ['cockpit', 'energie', 'conformite', 'facturation', 'patrimoine', 'achat'],
-  resp_conformite: ['cockpit', 'conformite', 'patrimoine', 'energie', 'achat', 'facturation'],
-  resp_immobilier: ['cockpit', 'patrimoine', 'conformite', 'energie', 'achat', 'facturation'],
-  resp_site: ['cockpit', 'patrimoine', 'energie', 'conformite', 'achat', 'facturation'],
+  energy_manager: ['cockpit', 'energie', 'conformite', 'facturation', 'achat', 'patrimoine'],
+  resp_conformite: ['cockpit', 'conformite', 'energie', 'facturation', 'achat', 'patrimoine'],
+  resp_immobilier: ['cockpit', 'conformite', 'energie', 'facturation', 'achat', 'patrimoine'],
+  resp_site: ['cockpit', 'energie', 'conformite', 'facturation', 'achat', 'patrimoine'],
 
-  // Default order (no role or unknown)
-  default: ['cockpit', 'conformite', 'energie', 'patrimoine', 'achat', 'facturation'],
+  // Default order (no role or unknown) = aligné sur energy_manager (cible Sol §2)
+  default: ['cockpit', 'energie', 'conformite', 'facturation', 'achat', 'patrimoine'],
 };
 
 /**

@@ -1,8 +1,14 @@
 /**
- * PROMEOS — NavRail (Premium 5-Module Rail)
+ * PROMEOS — NavRail (Premium 6-Module Rail)
  * Glass surface with tinted active states from TINT_PALETTE.
  * Tooltip on hover. Logo at top, expert badge at bottom.
+ *
+ * Phase 1.E — P0.5 (audit navigation_audit_20260501.md §4 + §7 Q4) :
+ * rendering du séparateur `groupBoundary` avant les modules qui portent
+ * cette propriété (NAV_MODULES.patrimoine = 'config'). Discret, sans
+ * label texte — anti-pattern §6.2 strict.
  */
+import { Fragment } from 'react';
 import { TooltipPortal } from '../ui';
 import { TINT_PALETTE, getOrderedModules } from './NavRegistry';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -67,14 +73,27 @@ export default function NavRail({ activeModule, onSelectModule, badges = {} }) {
 
       {/* Module icons */}
       <div className="flex-1 flex flex-col items-center gap-1.5">
-        {visibleModules.map((mod) => (
-          <RailIcon
-            key={mod.key}
-            mod={mod}
-            isActive={activeModule === mod.key}
-            onClick={onSelectModule}
-            badgeCount={badges[MODULE_BADGE_KEY[mod.key]] || 0}
-          />
+        {visibleModules.map((mod, idx) => (
+          <Fragment key={mod.key}>
+            {/* Phase 1.E — P0.5 : séparateur graphique avant les modules
+                portant `groupBoundary` (Patrimoine = 'config'). Discret,
+                sans label, non focusable — détache visuellement les
+                modules de référentiel des modules opérationnels. */}
+            {mod.groupBoundary && idx > 0 && (
+              <div
+                role="separator"
+                aria-orientation="vertical"
+                data-group-boundary={mod.groupBoundary}
+                className="w-8 h-[0.5px] my-2 bg-slate-300/60"
+              />
+            )}
+            <RailIcon
+              mod={mod}
+              isActive={activeModule === mod.key}
+              onClick={onSelectModule}
+              badgeCount={badges[MODULE_BADGE_KEY[mod.key]] || 0}
+            />
+          </Fragment>
         ))}
       </div>
 

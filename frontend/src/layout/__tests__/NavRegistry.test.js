@@ -22,6 +22,7 @@ import {
   resolveModule,
   matchRouteToModule,
   getModuleTint,
+  getOrderedModules,
 } from '../NavRegistry';
 
 /* ── Module definitions V7 ── */
@@ -619,5 +620,119 @@ describe('Guard-rails — IDs and labels', () => {
         expect(item.label.toLowerCase()).not.toContain(word.toLowerCase());
       }
     }
+  });
+});
+
+/* ── Phase 1.E — P0.5 : ordre rail final cible Sol v1.1 ── */
+// Audit navigation_audit_20260501.md §4 + §7 Q3+Q4 :
+//   Accueil → Énergie → Conformité → Facturation → Achat → [sep] → Patrimoine
+// Patrimoine porte `groupBoundary: 'config'` et est systématiquement en
+// dernière position visible peu importe le persona. Le séparateur est rendu
+// par NavRail (cf. NavRail.jsx + NavRail rendering tests).
+describe('Phase 1.E — P0.5 ordre rail cible Sol v1.1', () => {
+  const PERSONAS = [
+    'default',
+    'energy_manager',
+    'daf',
+    'acheteur',
+    'dg_owner',
+    'resp_conformite',
+    'resp_immobilier',
+    'resp_site',
+  ];
+
+  // ── Module group boundary ──
+  it("NAV_MODULES.patrimoine porte groupBoundary='config'", () => {
+    const patrimoine = NAV_MODULES.find((m) => m.key === 'patrimoine');
+    expect(patrimoine).toBeDefined();
+    expect(patrimoine.groupBoundary).toBe('config');
+  });
+
+  it('aucun autre module visible ne porte de groupBoundary', () => {
+    const others = NAV_MODULES.filter((m) => m.key !== 'patrimoine' && !m.expertOnly);
+    for (const mod of others) {
+      expect(mod.groupBoundary).toBeUndefined();
+    }
+  });
+
+  // ── Patrimoine toujours en dernière position visible ──
+  PERSONAS.forEach((role) => {
+    it(`Patrimoine est la dernière position visible pour persona '${role}'`, () => {
+      const ordered = getOrderedModules(role, false);
+      const visibleKeys = ordered.map((m) => m.key);
+      expect(visibleKeys[visibleKeys.length - 1]).toBe('patrimoine');
+    });
+  });
+
+  // ── Default ordre = cible Sol v1.1 ──
+  it('default order = Accueil → Énergie → Conformité → Facturation → Achat → Patrimoine', () => {
+    const ordered = getOrderedModules('default', false);
+    expect(ordered.map((m) => m.key)).toEqual([
+      'cockpit',
+      'energie',
+      'conformite',
+      'facturation',
+      'achat',
+      'patrimoine',
+    ]);
+  });
+
+  // ── Default = energy_manager (cible Sol §2 persona dominant) ──
+  it("default ordre identique à 'energy_manager' (persona dominant Sol §2)", () => {
+    const defaultOrdered = getOrderedModules('default', false).map((m) => m.key);
+    const emOrdered = getOrderedModules('energy_manager', false).map((m) => m.key);
+    expect(defaultOrdered).toEqual(emOrdered);
+  });
+
+  // ── DAF priorité Facturation #2 (audit §5.3 hebdo) ──
+  it('daf : Facturation est en position 2 (juste après cockpit)', () => {
+    const ordered = getOrderedModules('daf', false).map((m) => m.key);
+    expect(ordered[0]).toBe('cockpit');
+    expect(ordered[1]).toBe('facturation');
+  });
+
+  // ── Tous les personas ont les 6 modules visibles, sans doublon ──
+  PERSONAS.forEach((role) => {
+    it(`persona '${role}' expose 6 modules visibles uniques`, () => {
+      const ordered = getOrderedModules(role, false).map((m) => m.key);
+      expect(ordered).toHaveLength(6);
+      expect(new Set(ordered).size).toBe(6);
+    });
+  });
+
+  // ── Expert mode : admin ajouté en queue (post-patrimoine) ──
+  it('expert mode : admin ajouté en queue (après patrimoine)', () => {
+    const ordered = getOrderedModules('default', true).map((m) => m.key);
+    expect(ordered[ordered.length - 2]).toBe('patrimoine');
+    expect(ordered[ordered.length - 1]).toBe('admin');
+  });
+});
+
+/* ── Phase 1.E — NavRail rendering séparateur ── */
+describe('Phase 1.E — NavRail rendering séparateur (source-guard)', () => {
+  // Source-guard : vérifie que NavRail.jsx implémente bien le rendering
+  // du séparateur lié à `groupBoundary` selon les contraintes a11y du
+  // prompt P0.5 (role="separator", aria-orientation="vertical", non
+  // focusable). Évite les régressions silencieuses du rendering.
+  const fs = require('fs');
+  const path = require('path');
+  const NAV_RAIL_SRC = fs.readFileSync(path.join(__dirname, '..', 'NavRail.jsx'), 'utf8');
+
+  it('NavRail détecte mod.groupBoundary dans le map des modules', () => {
+    expect(NAV_RAIL_SRC).toMatch(/mod\.groupBoundary/);
+  });
+
+  it('NavRail rend un élément role="separator"', () => {
+    expect(NAV_RAIL_SRC).toMatch(/role="separator"/);
+  });
+
+  it('NavRail rend aria-orientation="vertical" sur le séparateur', () => {
+    expect(NAV_RAIL_SRC).toMatch(/aria-orientation="vertical"/);
+  });
+
+  it("NavRail n'insère le séparateur qu'à partir du 2e module (idx > 0)", () => {
+    // Garde-fou : ne JAMAIS rendre un séparateur en tête de liste —
+    // le séparateur est sémantiquement entre 2 groupes.
+    expect(NAV_RAIL_SRC).toMatch(/groupBoundary\s*&&\s*idx\s*>\s*0/);
   });
 });
