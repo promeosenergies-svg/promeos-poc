@@ -1,11 +1,16 @@
 /**
  * PROMEOS — NavPanel (Contextual Module Panel — Premium Life)
  * Glass surface. Module-tinted header from TINT_PALETTE.
- * Quick actions, recents, pins, sections with premium hover/active.
+ * Quick actions, pins, sections with premium hover/active.
+ *
+ * Phase 3.F (2026-05-02) : feature "Récents" retirée — décision UX
+ * cohérente avec audit docs/audits/ui_ux/02_navpanel_ux_audit_20260502.md
+ * P0.2 (duplication store) + P2.2 (sub-utilité). Le Command Palette ⌘K
+ * reste l'entrée canonique pour retrouver une page récemment visitée.
  */
 import { useState, useEffect, useMemo, useCallback, useRef, Fragment } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Star, X, Search, Clock, Sparkles } from 'lucide-react';
+import { Star, X, Search, Sparkles } from 'lucide-react';
 import {
   getActiveSite,
   clearActiveSite,
@@ -29,7 +34,6 @@ import {
   TINT_PALETTE,
   NAV_ADMIN_ITEMS,
   NAV_ADMIN_ICON,
-  ALL_NAV_ITEMS,
   getSectionsForModule,
 } from './NavRegistry';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -160,39 +164,11 @@ function highlightMatch(text, query) {
   );
 }
 
-/* ── Recents (last 5 visited nav pages, persisted in localStorage) ── */
-const RECENTS_KEY = 'promeos_nav_recents';
-const MAX_RECENTS = 5;
-
-function loadRecents() {
-  try {
-    return JSON.parse(localStorage.getItem(RECENTS_KEY) || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function pushRecent(path) {
-  const recents = loadRecents().filter((r) => r !== path);
-  recents.unshift(path);
-  localStorage.setItem(RECENTS_KEY, JSON.stringify(recents.slice(0, MAX_RECENTS)));
-}
-
 /* ── Main Panel ── */
 export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
   const _location = useLocation();
   const _navigate = useNavigate();
   const { isExpert } = useExpertMode();
-
-  // Track recent nav pages
-  const [recents, setRecents] = useState(loadRecents);
-  useEffect(() => {
-    const base = _location.pathname.split('?')[0].split('#')[0];
-    if (base !== '/' && !base.startsWith('/login')) {
-      pushRecent(base);
-      setRecents(loadRecents());
-    }
-  }, [_location.pathname]);
 
   // Active site context (for contextual nav item in patrimoine)
   const [activeSiteCtx, setActiveSiteCtx] = useState(() => getActiveSite());
@@ -290,7 +266,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
     [isAuthenticated, hasPermission]
   );
 
-  /* ── Visible sections for this module (legacy — used by pins/recents) ── */
+  /* ── Visible sections for this module (used by pins) ── */
   const moduleSections = useMemo(() => {
     return getSectionsForModule(activeModule)
       .filter((s) => !s.expertOnly || isExpert)
@@ -470,28 +446,6 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
             ))}
           </div>
         )}
-
-        {/* Recents — cross-module pages (excludes items already in current module) */}
-        {(() => {
-          if (pinnedItems.length > 0) return null;
-          const currentPaths = new Set(allModuleItems.map((i) => i.to.split('?')[0]));
-          const crossModuleRecents = recents
-            .filter((path) => !currentPaths.has(path))
-            .map((path) => ALL_NAV_ITEMS.find((item) => item.to.split('?')[0] === path))
-            .filter(Boolean)
-            .slice(0, 3);
-          if (crossModuleRecents.length === 0) return null;
-          return (
-            <div className="pb-2 mb-1 border-b border-slate-200/40">
-              <p className="px-2.5 pb-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <Clock size={8} className="text-slate-400" /> Récents
-              </p>
-              {crossModuleRecents.map((item) => (
-                <PanelLink key={`recent-${item.to}`} {...item} badge={0} tint={tint} />
-              ))}
-            </div>
-          );
-        })()}
 
         {/* Main sections — only for active module */}
         {moduleSections.map((section) => {

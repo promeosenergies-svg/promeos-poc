@@ -13,19 +13,34 @@ function src(relPath) {
   return readFileSync(resolve(root, relPath), 'utf-8');
 }
 
-/* ── A. Récents légers dans le panneau (3 max, localStorage) ── */
-describe('A. Récents dans le panneau', () => {
+/* ── A. Récents retirés Phase 3.F (2026-05-02) ──
+ *
+ * La feature "Récents" du panel a été retirée — décision UX (audit
+ * docs/audits/ui_ux/02_navpanel_ux_audit_20260502.md P0.2 duplication
+ * store + P2.2 sub-utilité). Le Command Palette ⌘K reste l'entrée
+ * canonique pour retrouver une page récemment visitée.
+ *
+ * Ce describe block joue désormais le rôle de garde-fou anti-régression :
+ * empêche la réintroduction silencieuse de la feature.
+ */
+describe('A. Récents retirés du panneau (Phase 3.F)', () => {
   const navPanel = src('src/layout/NavPanel.jsx');
 
-  it('Clock icon imported for recents section', () => {
-    expect(navPanel).toMatch(/Clock/);
+  it('Clock icon NOT imported (recents section removed)', () => {
+    expect(navPanel).not.toMatch(/\bClock\b/);
   });
 
-  it('recents capped at MAX_RECENTS', () => {
-    expect(navPanel).toMatch(/MAX_RECENTS/);
+  it('RECENTS_KEY / MAX_RECENTS constants NOT present', () => {
+    expect(navPanel).not.toMatch(/RECENTS_KEY/);
+    expect(navPanel).not.toMatch(/MAX_RECENTS/);
   });
 
-  it('uses moduleSections for contextual display', () => {
+  it('loadRecents / pushRecent helpers NOT present', () => {
+    expect(navPanel).not.toMatch(/\bloadRecents\b/);
+    expect(navPanel).not.toMatch(/\bpushRecent\b/);
+  });
+
+  it('still uses moduleSections for contextual display (sections preserved)', () => {
     expect(navPanel).toMatch(/moduleSections\.map/);
   });
 });

@@ -1,23 +1,26 @@
 /**
  * PROMEOS — Sidebar (Rail + Panel Orchestrator)
  * Composes NavRail (64px icon strip) + NavPanel (208px contextual content).
- * Manages shared state: active module, pins, badges, recents tracking.
+ * Manages shared state: active module, pins, badges.
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import NavRail from './NavRail';
 import NavPanel from './NavPanel';
-import { resolveModule, matchRouteToModule, ALL_NAV_ITEMS } from './NavRegistry';
+import { resolveModule } from './NavRegistry';
 // Phase 2.B — P1.2.bis : les compteurs nav rail/panel viennent désormais
 // d'un seul fetch consolidé via NavigationBadgesContext (endpoint backend
 // /api/v1/navigation/badges). Suppression des fetches dispersés
 // getNotificationsSummary, getMonitoringAlerts,
 // getActionCenterActionsSummary, getActionCenterNotifications +
 // computeActionCenterBadge — résolution dette TECH-badge-context-dedup.
+//
+// Phase 3.F (2026-05-02) : feature "Récents" retirée — décision UX
+// audit docs/audits/ui_ux/02_navpanel_ux_audit_20260502.md (P0.2 dup
+// store + P2.2 sub-utilité). Le Command Palette ⌘K reste l'entrée
+// canonique pour retrouver une page récemment visitée.
 import { useNavigationBadges } from '../contexts/NavigationBadgesContext';
-import { addRecent } from '../utils/navRecent';
-import { resolveBreadcrumbLabel } from './Breadcrumb';
 
 const PINS_KEY = 'promeos_sidebar_pins';
 const COLLAPSED_KEY = 'promeos_sidebar_collapsed';
@@ -119,22 +122,6 @@ export default function Sidebar() {
     }),
     [navBadges]
   );
-
-  /* ── Track recents on route change (V2: with label + module) ── */
-  useEffect(() => {
-    const path = location.pathname;
-    // Match against nav items OR dynamic patterns
-    const navItem = ALL_NAV_ITEMS.find((item) => path === item.to);
-    const isNavRoute = navItem || ALL_NAV_ITEMS.some((item) => path.startsWith(item.to + '/'));
-    if (isNavRoute || matchRouteToModule(path).pattern) {
-      const { moduleId } = matchRouteToModule(path);
-      // Build label: use nav item label, or derive from last path segment
-      const parts = path.split('/').filter(Boolean);
-      const label =
-        navItem?.label || resolveBreadcrumbLabel(parts[parts.length - 1], parts[parts.length - 2]);
-      addRecent(path, { label, module: moduleId });
-    }
-  }, [location.pathname]);
 
   return (
     // ── Z-index layer map ─────────────────────────────────────────────────────
