@@ -79,13 +79,18 @@ export const downloadAuditPDF = (orgId = null) =>
   api.get('/reports/audit.pdf', { params: orgId ? { org_id: orgId } : {}, responseType: 'blob' });
 
 // ── Action Center (unified issues) ──
+// 2026-05-02 — Bug fix : ces wrappers oubliaient `.then((r) => r.data)` →
+// retournaient l'AxiosResponse complet au lieu de la data. Conséquence :
+// `result.issues` était toujours `undefined` côté consommateur (slideover
+// + ActionCenterPage), masquant 4+ issues live derrière "Tout est en ordre".
 export const getActionCenterIssues = (params = {}) =>
-  cachedGet('/action-center/issues', { params }, 30000);
-export const getActionCenterSummary = () => cachedGet('/action-center/summary', {}, 30000);
+  cachedGet('/action-center/issues', { params }, 30000).then((r) => r.data);
+export const getActionCenterSummary = () =>
+  cachedGet('/action-center/summary', {}, 30000).then((r) => r.data);
 
 // ── Action Center Workflow ──
 export const getActionCenterActions = (params = {}) =>
-  cachedGet('/action-center/actions', { params }, 15000);
+  cachedGet('/action-center/actions', { params }, 15000).then((r) => r.data);
 export const createActionCenterAction = (data) =>
   api.post('/action-center/actions', data).then((r) => r.data);
 export const updateActionCenterAction = (id, data) =>
@@ -97,7 +102,7 @@ export const reopenActionCenterAction = (id, data = {}) =>
 
 // ── Action Center Summary (persisted actions) ──
 export const getActionCenterActionsSummary = () =>
-  cachedGet('/action-center/actions/summary', {}, 15000);
+  cachedGet('/action-center/actions/summary', {}, 15000).then((r) => r.data);
 
 // ── Action Center Audit Trail ──
 export const getActionCenterHistory = (actionId) =>
@@ -111,7 +116,7 @@ export const exportActionCenterDossier = (actionId) =>
 
 // ── Action Center Notifications ──
 export const getActionCenterNotifications = (params = {}) =>
-  cachedGet('/action-center/notifications', { params }, 10000);
+  cachedGet('/action-center/notifications', { params }, 10000).then((r) => r.data);
 export const markNotificationRead = (id) =>
   api.post(`/action-center/notifications/${id}/read`).then((r) => r.data);
 
