@@ -1,9 +1,9 @@
 /**
  * V7 Navigation Refactor — Guard-rail tests
  * Remplace V114 obsolète. Vérifie la structure V7 :
- *  - Cockpit: 2 items (Synthèse stratégique + Briefing du jour) — libellés
- *    canoniques Sol §11.3 (Phase 1.A P0.2, ex "Vue exécutive" / "Tableau
- *    de bord")
+ *  - Cockpit: 3 items (Synthèse stratégique + Briefing du jour + Centre
+ *    d'action) — libellés canoniques Sol §11.3 (Phase 1.A P0.2) + Centre
+ *    d'action exposé en panel Accueil (Phase 1.C P0.3)
  *  - Conformité: module autonome 4-5 items
  *  - Achat visible en normal
  *  - /actions et /notifications retirés de la nav (déplacés vers Centre d'actions)
@@ -26,12 +26,26 @@ describe('V7 Nav Refactor guard-rails', () => {
   // hard-cut renommage des libellés panel Cockpit vers les libellés canoniques
   // Sol §11.3 — "Vue exécutive" → "Synthèse stratégique", "Tableau de bord"
   // → "Briefing du jour". Anciens libellés conservés en `keywords`
-  // (rétro-compat ⌘K). Phase 13.D : ordre inversé pour démo CFO — Synthèse
-  // stratégique en premier, Briefing du jour en second.
-  it('Cockpit has exactly 2 items (Synthèse stratégique + Briefing du jour)', () => {
+  // (rétro-compat ⌘K).
+  //
+  // Phase 1.C — P0.3 ordre révisé : Briefing du jour → Synthèse stratégique
+  // → Centre d'action. Cohérent avec persona dominant Energy Manager (Marc),
+  // entrée par le briefing opérationnel 30 s puis montée vers la synthèse 3 min.
+  // Override l'ordre Phase 13.D (Synthèse premier pour démo CFO) — la démo
+  // CFO reste servie par le redirect /cockpit → /cockpit/strategique.
+  it("Cockpit has exactly 3 items (Briefing + Synthèse + Centre d'action)", () => {
+    // Phase 1.C — P0.3 (audit navigation_audit_20260501.md §4.4 + Q2) :
+    // Centre d'action exposé en 3e position du panel Accueil, complémentaire
+    // de la cloche header AppShell + raccourci Ctrl+Shift+L. Les 3 surfaces
+    // sont contextes d'usage distincts (cf. doctrine §6.2 anti-pattern
+    // "chemins multiples" — exception justifiée).
     const cockpit = NAV_SECTIONS.find((s) => s.key === 'cockpit');
-    expect(cockpit.items).toHaveLength(2);
-    expect(cockpit.items.map((i) => i.to)).toEqual(['/cockpit/strategique', '/cockpit/jour']);
+    expect(cockpit.items).toHaveLength(3);
+    expect(cockpit.items.map((i) => i.to)).toEqual([
+      '/cockpit/jour',
+      '/cockpit/strategique',
+      '/action-center',
+    ]);
   });
 
   it('Patrimoine has 3 items (Sites + Contrats + Facturation expert)', () => {

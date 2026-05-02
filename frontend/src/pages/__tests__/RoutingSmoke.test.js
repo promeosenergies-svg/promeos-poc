@@ -101,6 +101,23 @@ describe('NavRegistry — Phase 1.A P0.2 rétro-compat keywords legacy', () => {
   });
 });
 
+describe("NavRegistry — Phase 1.C P0.3 Centre d'action en panel Accueil", () => {
+  // Audit §4.4 : Centre d'action n'était accessible que via cloche header
+  // (AppShell) ou raccourci Ctrl+Shift+L → discoverability faible (≥ 2 clics
+  // ou connaissance raccourci). Phase 1.C l'expose en 3e position du panel
+  // Accueil avec route /action-center, icône Inbox, badge actionCenter.
+  it("'Centre d'action' pointe vers /action-center", () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.label === "Centre d'action");
+    expect(item).toBeDefined();
+    expect(item.to).toBe('/action-center');
+  });
+
+  it("'Centre d'action' est dans la section Accueil (module cockpit)", () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.label === "Centre d'action");
+    expect(item?.module).toBe('cockpit');
+  });
+});
+
 describe('CommandCenter — exports fonctionnels', () => {
   it('normalizeDashboardModel est une fonction', () => {
     expect(typeof normalizeDashboardModel).toBe('function');

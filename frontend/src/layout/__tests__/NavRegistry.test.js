@@ -181,18 +181,19 @@ describe('NAV_SECTIONS V7', () => {
 describe('Expert filtering V7', () => {
   // Phase 17.bis.B + 17.bis.C : Flex Intelligence ajouté module Énergie +
   // Décret Tertiaire/OPERAT promu module Conformité → 13 → 15 items.
-  it('normal mode: 15 visible items (Flex Intelligence + Décret Tertiaire promus Phase 17.bis)', () => {
+  // Phase 1.C P0.3 : Centre d'action exposé en panel Accueil → 15 → 16 items.
+  it("normal mode: 16 visible items (+ Centre d'action Phase 1.C P0.3)", () => {
     const normal = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, false)
     );
-    expect(normal).toHaveLength(15);
+    expect(normal).toHaveLength(16);
   });
 
-  it('expert mode: same 15 items (no expertOnly items left)', () => {
+  it('expert mode: same 16 items (no expertOnly items left)', () => {
     const expert = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, true)
     );
-    expect(expert).toHaveLength(15);
+    expect(expert).toHaveLength(16);
   });
 
   it('zero expert-only items (all tabs merged into parent pages)', () => {
@@ -318,6 +319,39 @@ describe('Vocabulary V7', () => {
     const scenarios = achat.items.find((i) => i.to === '/achat-energie');
     expect(scenarios.keywords).toContain('simulateur');
     expect(scenarios.keywords).toContain('assistant');
+  });
+});
+
+/* ── Phase 1.C — P0.3 : Centre d'action en panel Accueil ── */
+describe("Phase 1.C — P0.3 Centre d'action (panel Accueil)", () => {
+  // Audit navigation_audit_20260501.md §4.4 + §7 Q2 : Centre d'action
+  // qualifié de "hub" par la doctrine, devait être discoverable depuis
+  // le panel Accueil (auparavant accessible uniquement via cloche header
+  // ou raccourci Ctrl+Shift+L). Item exposé en 3e position de la section
+  // Accueil avec route /action-center, icône Inbox et badge actionCenter.
+
+  it("Centre d'action est en 3e position de la section Accueil", () => {
+    const cockpit = NAV_SECTIONS.find((s) => s.module === 'cockpit');
+    expect(cockpit.items).toHaveLength(3);
+    expect(cockpit.items[2].to).toBe('/action-center');
+    expect(cockpit.items[2].label).toBe("Centre d'action");
+  });
+
+  it("Centre d'action utilise le badgeKey actionCenter (réutilise fetch AppShell)", () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.to === '/action-center');
+    expect(item).toBeDefined();
+    expect(item.badgeKey).toBe('actionCenter');
+  });
+
+  it("Centre d'action keywords couvrent les axes prompt P0.3", () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.to === '/action-center');
+    expect(item.keywords).toEqual(
+      expect.arrayContaining(['action', 'actions', 'centre', 'inbox', 'anomalies', 'notifications'])
+    );
+  });
+
+  it('/action-center est mappé au module cockpit dans ROUTE_MODULE_MAP', () => {
+    expect(ROUTE_MODULE_MAP['/action-center']).toBe('cockpit');
   });
 });
 

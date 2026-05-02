@@ -40,6 +40,11 @@ import { useScope } from '../contexts/ScopeContext';
 const BADGE_STYLES = {
   alerts: 'bg-red-50 text-red-700 ring-1 ring-red-200',
   monitoring: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+  // Phase 1.C — P0.3 : badge actionCenter (item "Centre d'action" panel
+  // Accueil). Sémantique = "événements à traiter", couleur cohérente avec
+  // la cloche header (AppShell BADGE_COLOR_CLASS) — bleu pour neutre,
+  // l'urgence est portée par le compteur lui-même.
+  actionCenter: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
   _default: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
 };
 

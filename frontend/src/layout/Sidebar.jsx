@@ -9,7 +9,13 @@ import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import NavRail from './NavRail';
 import NavPanel from './NavPanel';
 import { resolveModule, matchRouteToModule, ALL_NAV_ITEMS } from './NavRegistry';
-import { getNotificationsSummary, getMonitoringAlerts } from '../services/api';
+import {
+  getNotificationsSummary,
+  getMonitoringAlerts,
+  getActionCenterActionsSummary,
+  getActionCenterNotifications,
+} from '../services/api';
+import { computeActionCenterBadge } from '../components/ActionCenterSlideOver';
 import { addRecent } from '../utils/navRecent';
 import { resolveBreadcrumbLabel } from './Breadcrumb';
 
@@ -86,6 +92,12 @@ export default function Sidebar() {
   /* ── Badges ── */
   const [alertBadge, setAlertBadge] = useState(0);
   const [monitoringBadge, setMonitoringBadge] = useState(0);
+  // Phase 1.C — P0.3 : badge actionCenter pour l'item "Centre d'action"
+  // panel Accueil. Fetch indépendant d'AppShell (cloche header) — léger
+  // double fetch transitoire (AppShell 60 s + Sidebar 2 min) à dédupliquer
+  // P1 via context partagé. Cf. audit navigation_audit_20260501.md §4.4
+  // + commit message Phase 1.C pour rationale.
+  const [actionCenterBadge, setActionCenterBadge] = useState(0);
 
   // Fetch badges on mount + auto-refresh every 2 minutes
   useEffect(() => {
@@ -101,6 +113,16 @@ export default function Sidebar() {
           if (!cancelled) setMonitoringBadge(Array.isArray(alerts) ? alerts.length : 0);
         })
         .catch(() => {});
+      Promise.all([
+        getActionCenterActionsSummary().catch(() => null),
+        getActionCenterNotifications({ unread_only: true }).catch(() => ({ notifications: [] })),
+      ])
+        .then(([summary, notif]) => {
+          if (cancelled) return;
+          const next = computeActionCenterBadge(summary, notif?.notifications || []);
+          setActionCenterBadge(typeof next.count === 'number' ? next.count : 0);
+        })
+        .catch(() => {});
     };
     fetchBadges();
     const interval = setInterval(fetchBadges, 2 * 60 * 1000);
@@ -111,8 +133,12 @@ export default function Sidebar() {
   }, []);
 
   const badges = useMemo(
-    () => ({ alerts: alertBadge, monitoring: monitoringBadge }),
-    [alertBadge, monitoringBadge]
+    () => ({
+      alerts: alertBadge,
+      monitoring: monitoringBadge,
+      actionCenter: actionCenterBadge,
+    }),
+    [alertBadge, monitoringBadge, actionCenterBadge]
   );
 
   /* ── Track recents on route change (V2: with label + module) ── */

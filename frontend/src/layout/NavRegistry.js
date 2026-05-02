@@ -59,6 +59,7 @@ import {
   Building,
   SearchCheck,
   PieChart,
+  Inbox,
 } from 'lucide-react';
 
 /* ── Route → module mapping ── */
@@ -528,10 +529,31 @@ export const NAV_SECTIONS = [
       // `executive`, `tableau`, `dashboard`) restent indexés ; aucun terme
       // legacy retiré des keywords.
       //
-      // Phase 13.D — démo CFO/investisseur : Synthèse stratégique en
-      // premier (audience démo principale = CFO/DG/VC, Marie + Sophie).
-      // Le briefing énergie manager (Marc, 30 s) reste accessible en
-      // second. Cohérent avec doctrine §11.3.
+      // Phase 1.C — P0.3 (audit navigation_audit_20260501.md §5 cible
+      // persona Energy Manager dominant Sol §2) : ordre cockpit panel
+      // révisé Briefing du jour → Synthèse stratégique. Cohérent avec
+      // l'usage quotidien EM (Marc) : entrée par le briefing
+      // opérationnel 30 s puis montée vers la synthèse stratégique 3 min.
+      // Override l'ordre Phase 13.D (Synthèse premier pour démo CFO) —
+      // la démo CFO reste servie par le redirect /cockpit → /cockpit/strategique
+      // (legacyRedirects.js) qui ouvre directement la page Décision.
+      {
+        to: '/cockpit/jour',
+        icon: LayoutDashboard,
+        label: 'Briefing du jour',
+        desc: "Quoi traiter aujourd'hui (30 s)",
+        keywords: [
+          'briefing',
+          'jour',
+          'pilotage',
+          'accueil',
+          'home',
+          'aujourdhui',
+          // rétro-compat search palette — anciens libellés legacy
+          'tableau',
+          'dashboard',
+        ],
+      },
       {
         to: '/cockpit/strategique',
         icon: BarChart3,
@@ -550,21 +572,31 @@ export const NAV_SECTIONS = [
           'executive',
         ],
       },
+      // Phase 1.C — P0.3 (audit navigation_audit_20260501.md §4.4 + §7 Q2) :
+      // exposition du Centre d'action en item Accueil. La cloche header
+      // (AppShell.jsx:328-332) reste autonome — surface complémentaire,
+      // contexte d'usage distinct (cloche = peek transverse, item panel =
+      // navigation explicite). Voir doctrine §6.2 anti-pattern "chemins
+      // multiples" : 3 surfaces (panel / cloche / Ctrl+Shift+L) acceptables
+      // car contextes d'usage distincts.
       {
-        to: '/cockpit/jour',
-        icon: LayoutDashboard,
-        label: 'Briefing du jour',
-        desc: "Quoi traiter aujourd'hui (30 s)",
+        to: '/action-center',
+        icon: Inbox,
+        label: "Centre d'action",
+        desc: 'Anomalies, actions et notifications à traiter',
+        badgeKey: 'actionCenter',
         keywords: [
-          'briefing',
-          'jour',
-          'pilotage',
-          'accueil',
-          'home',
-          'aujourdhui',
-          // rétro-compat search palette — anciens libellés legacy
-          'tableau',
-          'dashboard',
+          'action',
+          'actions',
+          'centre',
+          'inbox',
+          'anomalies',
+          'notifications',
+          'alertes',
+          'detection',
+          'todo',
+          'todos',
+          'tâches',
         ],
       },
     ],
@@ -986,12 +1018,17 @@ export const COMMAND_SHORTCUTS = [
     keywords: ['import', 'csv', 'upload', 'données'],
   },
   {
+    // Phase 1.C — P0.3 : libellé harmonisé en singulier "Centre d'action"
+    // pour cohérence avec l'item panel Accueil + grammaire éditoriale Sol
+    // §5. La route diffère intentionnellement de l'item panel (slide-over
+    // peek transverse `?actionCenter=open` vs page dédiée `/action-center`)
+    // — contextes d'usage distincts (raccourci power user vs navigation).
     key: 'centre-actions',
-    label: "Centre d'actions",
+    label: "Centre d'action",
     icon: AlertTriangle,
     to: '/?actionCenter=open&tab=actions',
     shortcut: 'Ctrl+Shift+L',
-    keywords: ['alertes', 'anomalies', 'actions', 'centre', 'notifications'],
+    keywords: ['alertes', 'anomalies', 'actions', 'centre', 'notifications', 'inbox'],
   },
   {
     key: 'cockpit',

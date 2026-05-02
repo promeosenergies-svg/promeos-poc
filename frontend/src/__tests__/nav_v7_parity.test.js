@@ -95,18 +95,18 @@ describe('Nav V7 — Structure', () => {
   });
 
   // Phase 17.bis.B : Flex Intelligence ajouté module Énergie ;
-  // Phase 17.bis.C : Décret Tertiaire / OPERAT promu module Conformité.
-  // Total 13 → 15 items.
-  it('15 items visible in normal mode (Flex Intelligence + Décret Tertiaire promus Phase 17.bis)', () => {
+  // Phase 17.bis.C : Décret Tertiaire / OPERAT promu module Conformité ;
+  // Phase 1.C P0.3 : Centre d'action exposé en panel Accueil → 15 → 16 items.
+  it("16 items visible in normal mode (+ Centre d'action Phase 1.C P0.3)", () => {
     const mainSections = NAV_SECTIONS.filter((s) => !s.expertOnly);
     const items = mainSections.flatMap((s) => getVisibleItems(s.items, false));
-    expect(items).toHaveLength(15);
+    expect(items).toHaveLength(16);
   });
 
   it('same count in expert mode (no expertOnly items left)', () => {
     const mainSections = NAV_SECTIONS.filter((s) => !s.expertOnly);
     const items = mainSections.flatMap((s) => getVisibleItems(s.items, true));
-    expect(items).toHaveLength(15);
+    expect(items).toHaveLength(16);
   });
 
   it('zero expertOnly items in main modules (tabs merged into parent pages)', () => {
