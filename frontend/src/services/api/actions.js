@@ -106,11 +106,13 @@ export const getActionCenterActionsSummary = () =>
 
 // ── Action Center Audit Trail ──
 export const getActionCenterHistory = (actionId) =>
-  cachedGet(`/action-center/actions/${actionId}/history`, {}, 10000);
+  cachedGet(`/action-center/actions/${actionId}/history`, {}, 10000).then((r) => r.data);
 export const getActionCenterEvidence = (actionId) =>
-  cachedGet(`/action-center/actions/${actionId}/evidence`, {}, 10000);
+  cachedGet(`/action-center/actions/${actionId}/evidence`, {}, 10000).then((r) => r.data);
 export const addActionCenterEvidence = (actionId, data) =>
   api.post(`/action-center/actions/${actionId}/evidence`, data).then((r) => r.data);
+// Note : pas de .then((r) => r.data) — retourne AxiosResponse complet pour
+// permettre l'accès aux headers (Content-Disposition, etc.) côté consumer.
 export const exportActionCenterDossier = (actionId) =>
   cachedGet(`/action-center/actions/${actionId}/export`, {}, 5000);
 
@@ -121,7 +123,8 @@ export const markNotificationRead = (id) =>
   api.post(`/action-center/notifications/${id}/read`).then((r) => r.data);
 
 // ── Action Center Saved Views ──
-export const getActionCenterViews = () => cachedGet('/action-center/views', {}, 60000);
+export const getActionCenterViews = () =>
+  cachedGet('/action-center/views', {}, 60000).then((r) => r.data);
 
 // ── Action Center Bulk ──
 export const bulkAssignOwner = (actionIds, owner) =>
@@ -142,19 +145,19 @@ export const bulkUpdateStatus = (actionIds, status) =>
 
 // ── Action Center Management ──
 export const getActionCenterManagementSummary = () =>
-  cachedGet('/action-center/management-summary', {}, 15000);
+  cachedGet('/action-center/management-summary', {}, 15000).then((r) => r.data);
 
 // ── Action Center Executive ──
 export const getActionCenterExecutiveSummary = (period = 30) =>
-  cachedGet('/action-center/executive-summary', { params: { period } }, 15000);
+  cachedGet('/action-center/executive-summary', { params: { period } }, 15000).then((r) => r.data);
 export const getActionCenterTrends = (window = 30) =>
-  cachedGet('/action-center/trends', { params: { window } }, 15000);
+  cachedGet('/action-center/trends', { params: { window } }, 15000).then((r) => r.data);
 
 // ── Action Center Recommendations ──
 export const getActionCenterRecommendations = (params = {}) =>
-  cachedGet('/action-center/recommendations', { params }, 15000);
+  cachedGet('/action-center/recommendations', { params }, 15000).then((r) => r.data);
 export const getActionCenterRecommendationsSummary = () =>
-  cachedGet('/action-center/recommendations/summary', {}, 15000);
+  cachedGet('/action-center/recommendations/summary', {}, 15000).then((r) => r.data);
 
 // ── Recommendation Decisions ──
 export const acceptRecommendation = (recId, data = {}) =>
@@ -166,19 +169,25 @@ export const deferRecommendation = (recId, data = {}) =>
 export const convertRecommendationToAction = (recId, data) =>
   api.post(`/action-center/recommendations/${recId}/create-action`, data).then((r) => r.data);
 export const getRecommendationDecisionStats = () =>
-  cachedGet('/action-center/recommendations/decisions', {}, 15000);
+  cachedGet('/action-center/recommendations/decisions', {}, 15000).then((r) => r.data);
 
 // ── Recommendation Quality & Calibration ──
 export const getRecommendationQualitySummary = (period = 30) =>
-  cachedGet('/action-center/recommendations/quality-summary', { params: { period } }, 15000);
+  cachedGet('/action-center/recommendations/quality-summary', { params: { period } }, 15000).then(
+    (r) => r.data
+  );
 export const getRecommendationCalibration = () =>
-  cachedGet('/action-center/recommendations/calibration', {}, 60000);
+  cachedGet('/action-center/recommendations/calibration', {}, 60000).then((r) => r.data);
 
 // ── Calibration Governance ──
 export const getCalibrationHistory = () =>
-  cachedGet('/action-center/recommendations/calibration/history', {}, 30000);
+  cachedGet('/action-center/recommendations/calibration/history', {}, 30000).then((r) => r.data);
 export const compareCalibrations = (v1, v2) =>
-  cachedGet('/action-center/recommendations/calibration/compare', { params: { v1, v2 } }, 15000);
+  cachedGet(
+    '/action-center/recommendations/calibration/compare',
+    { params: { v1, v2 } },
+    15000
+  ).then((r) => r.data);
 export const createCalibration = (data) =>
   api.post('/action-center/recommendations/calibration', data).then((r) => r.data);
 export const activateCalibration = (version) =>
@@ -188,19 +197,24 @@ export const rollbackCalibration = () =>
 
 // ── Recommendation Outcomes ──
 export const getRecommendationOutcomes = (limit = 50) =>
-  cachedGet('/action-center/recommendations/outcomes', { params: { limit } }, 15000);
+  cachedGet('/action-center/recommendations/outcomes', { params: { limit } }, 15000).then(
+    (r) => r.data
+  );
 export const recordRecommendationOutcome = (data) =>
   api.post('/action-center/recommendations/outcomes', data).then((r) => r.data);
 
 // ── Flex Foundation (Sprint 21) ──
-export const getFlexAssets = (params = {}) => cachedGet('/flex/assets', { params }, 15000);
+export const getFlexAssets = (params = {}) =>
+  cachedGet('/flex/assets', { params }, 15000).then((r) => r.data);
 export const createFlexAsset = (data) => api.post('/flex/assets', data).then((r) => r.data);
 export const updateFlexAsset = (id, data) =>
   api.patch(`/flex/assets/${id}`, data).then((r) => r.data);
 export const syncBacsToFlexAssets = (siteId) =>
-  cachedGet('/flex/assets/sync-from-bacs', { params: { site_id: siteId } }, 5000);
+  cachedGet('/flex/assets/sync-from-bacs', { params: { site_id: siteId } }, 5000).then(
+    (r) => r.data
+  );
 export const getFlexAssessment = (siteId) =>
-  cachedGet('/flex/assessment', { params: { site_id: siteId } }, 15000);
+  cachedGet('/flex/assessment', { params: { site_id: siteId } }, 15000).then((r) => r.data);
 
 // ── Flex Score Engine ──
 export const getFlexScore = (siteId) =>
@@ -247,11 +261,11 @@ export const getPurchaseStrategy = (siteId) =>
 
 // ── Flex v2 (Sprint 21 corrections) ──
 export const getRegulatoryOpportunities = (params = {}) =>
-  cachedGet('/flex/regulatory-opportunities', { params }, 15000);
+  cachedGet('/flex/regulatory-opportunities', { params }, 15000).then((r) => r.data);
 export const createRegulatoryOpportunity = (data) =>
   api.post('/flex/regulatory-opportunities', data).then((r) => r.data);
 export const getTariffWindows = (params = {}) =>
-  cachedGet('/flex/tariff-windows', { params }, 30000);
+  cachedGet('/flex/tariff-windows', { params }, 30000).then((r) => r.data);
 export const createTariffWindow = (data) =>
   api.post('/flex/tariff-windows', data).then((r) => r.data);
-export const getFlexPortfolio = () => cachedGet('/flex/portfolio', {}, 15000);
+export const getFlexPortfolio = () => cachedGet('/flex/portfolio', {}, 15000).then((r) => r.data);
