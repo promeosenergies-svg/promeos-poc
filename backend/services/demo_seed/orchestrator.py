@@ -1123,7 +1123,18 @@ class SeedOrchestrator:
             from services.iam_service import hash_password
 
             demo_users = [
-                {"email": "promeos@promeos.io", "nom": "Admin", "prenom": "Promeos", "role": UserRole.DG_OWNER},
+                # Phase 3.E — P1.8 : compte démo principal réaligné DG_OWNER → ENERGY_MANAGER
+                # pour cohérence avec doctrine §2 (persona dominant Sol = Energy Manager)
+                # et le wedge MVP. L'ordre rail rendu devient l'ordre default Sol v1.1
+                # (Accueil → Énergie → Conformité → Facturation → Achat → [sep] → Patrimoine).
+                # Audit ref : docs/audits/nav_render_diagnosis_20260502.md (Phase 0.ter)
+                # + docs/nav/persona_demo_mapping.md.
+                {
+                    "email": "promeos@promeos.io",
+                    "nom": "Admin",
+                    "prenom": "Promeos",
+                    "role": UserRole.ENERGY_MANAGER,
+                },
                 {
                     "email": "m.leclerc@helios-energie.fr",
                     "nom": "Leclerc",

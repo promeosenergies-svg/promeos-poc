@@ -1,11 +1,13 @@
 # Mapping Persona Démo PROMEOS — Navigation Rail
 
 > **But** : éviter la confusion lors d'audits visuels du rail nav. L'ordre
-> rendu dépend du `UserRole` du compte connecté — et le compte démo
-> principal `promeos@promeos.io` est seedé `DG_OWNER`, **pas** `default`.
-> Si vous attendez l'ordre cible Sol v1.1 (= `default` = `energy_manager`)
-> mais voyez un autre ordre, c'est probablement le persona du compte
-> connecté qui dicte l'ordre — pas une régression nav.
+> rendu dépend du `UserRole` du compte connecté.
+>
+> **Phase 3.E — P1.8** (2026-05-02) : le compte démo principal
+> `promeos@promeos.io` a été réaligné `DG_OWNER → ENERGY_MANAGER` pour
+> cohérence avec doctrine §2 (persona dominant Sol = Energy Manager) et
+> le wedge MVP. L'ordre rail rendu correspond désormais à l'ordre
+> `default` Sol v1.1.
 >
 > Référence audit : [docs/audits/nav_render_diagnosis_20260502.md](../audits/nav_render_diagnosis_20260502.md) (Phase 0.ter).
 
@@ -15,8 +17,10 @@
 
 | Email | UserRole | Source seed |
 |---|---|---|
-| `promeos@promeos.io` | `DG_OWNER` | [backend/services/demo_seed/orchestrator.py:1126](../../backend/services/demo_seed/orchestrator.py) |
-| (autres comptes ajoutés au fil des sprints) | … | … |
+| `promeos@promeos.io` | `ENERGY_MANAGER` (Phase 3.E P1.8 — ex DG_OWNER) | [backend/services/demo_seed/orchestrator.py:1132](../../backend/services/demo_seed/orchestrator.py) |
+| `m.leclerc@helios-energie.fr` | `ENERGY_MANAGER` | orchestrator.py |
+| `j.dupont@helios-energie.fr` | `AUDITEUR` | orchestrator.py |
+| `s.moreau@helios-energie.fr` | … | orchestrator.py |
 
 → Mot de passe demo (CLAUDE.md / MEMORY.md) : `promeos2024`
 
