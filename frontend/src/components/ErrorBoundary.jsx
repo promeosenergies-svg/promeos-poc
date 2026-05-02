@@ -32,13 +32,28 @@ export default class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
+      // Phase 3.H — Étape 6b : sanitize error.message pour ne pas leaker
+      // de stack trace technique à l'utilisateur non-tech (audit CS UX
+      // §8 error-clarity — "state cause + how to fix, not stack").
+      // Le détail technique reste loggé via componentDidCatch ci-dessus.
+      const rawMessage = this.state.error?.message || '';
+      const looksTechnical =
+        /\bat\s+\w+\b|undefined is not|Cannot read|TypeError|ReferenceError/i.test(rawMessage);
+      const safeMessage = looksTechnical
+        ? "Une erreur technique est survenue. L'équipe a été notifiée."
+        : rawMessage || 'Erreur inattendue.';
+
       return (
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8">
-          <div className="text-5xl mb-4">&#9888;</div>
+        <div
+          className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8"
+          role="alert"
+          aria-live="assertive"
+        >
+          <div className="text-5xl mb-4" aria-hidden="true">
+            &#9888;
+          </div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">Une erreur est survenue</h2>
-          <p className="text-gray-500 text-sm mb-4 max-w-md">
-            {this.state.error?.message || 'Erreur inattendue.'}
-          </p>
+          <p className="text-gray-500 text-sm mb-4 max-w-md">{safeMessage}</p>
           <div className="flex gap-3">
             <button
               onClick={() => this.setState({ hasError: false, error: null })}

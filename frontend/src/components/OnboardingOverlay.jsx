@@ -7,11 +7,11 @@ const ONBOARDING_REQUEST_KEY = 'promeos_onboarding_requested';
 const STEPS = [
   {
     title: 'Navigation par module',
-    text: 'Le rail regroupe 5 modules : Accueil, Conformite, Energie, Patrimoine, Achat. Cliquez sur une icone pour basculer.',
+    text: 'Le rail regroupe 6 modules : Accueil, Energie, Conformite, Facturation, Achat, Patrimoine. Cliquez sur une icone pour basculer.',
   },
   {
     title: 'Panneau contextuel',
-    text: 'Chaque module affiche ses pages. Epinglez vos favoris, retrouvez vos recents.',
+    text: 'Chaque module affiche ses pages. Epinglez vos favoris dans le panel.',
   },
   {
     title: 'Recherche rapide (Ctrl+K)',
