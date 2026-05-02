@@ -1,0 +1,62 @@
+{
+  "ts": "2026-05-02T08:21:07.685Z",
+  "passed": 11,
+  "failed": 0,
+  "results": [
+    {
+      "name": "P0.5 — default rail order = Sol v1.1 cible",
+      "ok": true,
+      "details": "Accueil → Énergie → Conformité → Facturation → Achat → Patrimoine"
+    },
+    {
+      "name": "P0.5 — Patrimoine en dernière position visible",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "P0.5 — séparateur DOM rendu (role=\"separator\")",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "P0.5 — séparateur aria-orientation=\"vertical\"",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "P0.2 — panel Cockpit contient 'Briefing du jour'",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "P0.2 — panel Cockpit contient 'Synthèse stratégique'",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "P0.3 — panel Cockpit contient 'Centre d'action'",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "P0.3 — ⌘K + 'centre' affiche match Centre d'action",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "P0.1 — panel Facturation contient 'Vue d'ensemble'",
+      "ok": true,
+      "details": ""
+    },
+    {
+      "name": "P0.5 — daf rail Facturation en position 2",
+      "ok": true,
+      "details": "Accueil → Facturation → Conformité → Énergie → Achat → Patrimoine"
+    },
+    {
+      "name": "P0.5 — daf Patrimoine toujours en dernière position",
+      "ok": true,
+      "details": ""
+    }
+  ]
+}
