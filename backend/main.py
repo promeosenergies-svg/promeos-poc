@@ -283,6 +283,17 @@ from routes.user_preferences import router as user_preferences_router
 
 app.include_router(user_preferences_router)
 
+# Navigation badges agrégés (Phase 2.A — P1.2, audit nav §3.3 + §5)
+# GET /api/v1/navigation/badges → 8 compteurs (rail/panel) + metadata.
+# Source de vérité unique remplaçant les 3 fetches FE dispersés
+# (Sidebar getNotificationsSummary + getMonitoringAlerts + AppShell
+# getActionCenter*Summary). Réutilisation pure : aucun service métier
+# nouveau, agrégation de notification_service / action_center_service /
+# compute_portfolio_compliance / queries SQLAlchemy simples.
+from routes.navigation import router as navigation_router
+
+app.include_router(navigation_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 
