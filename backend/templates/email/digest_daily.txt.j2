@@ -1,0 +1,36 @@
+{# Sprint α-push Phase 2.D — Fallback text/plain pour deliverability.
+Cat A/B traçabilité respectée idem version HTML.
+#}PROMEOS — Digest du {{ date_fr }}
+================================
+
+Bonjour {{ user.prenom or 'à toi' }},
+
+Voici tes signaux PROMEOS pour le {{ date_fr }} ({{ events|length }} {% if events|length > 1 %}signaux{% else %}signal{% endif %}) :
+
+{% for event in events %}
+[{{ event.severity|upper }}] {{ event.title }}
+{{ event.narrative }}
+
+{% if event.impact and event.impact.value is not none %}
+{% if event.impact.unit == '€' %}
+{% if event.source and event.source.methodology %}
+Impact : {{ "{:,.0f}".format(event.impact.value).replace(',', ' ') }} € ({{ event.impact.period }})
+Source : {{ event.source.methodology|truncate(140) }}
+{% else %}
+Impact : à préciser — voir détail dans PROMEOS
+{% endif %}
+{% else %}
+Impact : {{ event.impact.value }} {{ event.impact.unit }} ({{ event.impact.period }})
+{% endif %}
+{% endif %}
+{% if event.action and event.action.route %}
+Action : {{ event.action.label or 'Voir le détail' }}
+Lien : {{ app_base_url }}{{ event.action.route }}
+{% endif %}
+
+---
+{% endfor %}
+
+Tu reçois ce digest car tu es abonné(e) aux notifications quotidiennes PROMEOS.
+Désabonner : {{ app_base_url }}/settings/notifications
+Ouvrir PROMEOS : {{ app_base_url }}

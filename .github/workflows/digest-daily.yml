@@ -44,9 +44,6 @@ jobs:
 
           echo "::notice::Triggering events refresh at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-          # -f → fail on HTTP 4xx/5xx
-          # --max-time 240 → endpoint timeout (compute_events sur N orgs)
-          # --silent --show-error → no progress meter, but errors visible
           curl -X POST \
             -H "Authorization: Bearer $PROMEOS_PLATFORM_ADMIN_TOKEN" \
             -H "Content-Type: application/json" \
@@ -54,7 +51,6 @@ jobs:
             "$PROMEOS_API_URL/api/v1/events/refresh" \
             | tee refresh_output.json
 
-          # Parse response (response schema = events_query_service.refresh_all_active_orgs)
           REFRESHED=$(jq -r '.refreshed_orgs // 0' refresh_output.json)
           TOTAL_EVENTS=$(jq -r '.total_events // 0' refresh_output.json)
           ERRORS=$(jq -r '.errors | length' refresh_output.json)
@@ -64,9 +60,6 @@ jobs:
           if [ "$ERRORS" -gt 0 ]; then
             echo "::warning::$ERRORS org(s) failed to refresh — see response payload"
             jq '.errors' refresh_output.json
-            # Non-bloquant : autres orgs ont été rafraîchies. À monitorer
-            # si ERRORS > seuil (ex: > 10% des orgs) — ajouter alerte
-            # Slack/email Phase 2.E si besoin.
           fi
 
       - name: Notify on failure
@@ -74,4 +67,44 @@ jobs:
         run: |
           echo "::error::Daily events refresh failed at $(date -u +%Y-%m-%dT%H:%M:%SZ). Check logs."
           # TODO Phase 2.E : hook Slack/email via secret SLACK_WEBHOOK
-          # (calque pattern sirene-monthly-import.yml ligne 96-97).
+
+  dispatch-digest:
+    needs: refresh-events
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Trigger /api/v1/digest/dispatch
+        env:
+          PROMEOS_API_URL: ${{ secrets.PROMEOS_API_URL }}
+          PROMEOS_PLATFORM_ADMIN_TOKEN: ${{ secrets.PROMEOS_PLATFORM_ADMIN_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          echo "::notice::Triggering digest dispatch at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          # POST avec body vide → DispatchRequest() defaults (dry_run=False, user_filter=None)
+          # --max-time 540 → 9 min (digest peut être long si beaucoup d'orgs/users)
+          curl -X POST \
+            -H "Authorization: Bearer $PROMEOS_PLATFORM_ADMIN_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            -f --silent --show-error --max-time 540 \
+            "$PROMEOS_API_URL/api/v1/digest/dispatch" \
+            | tee dispatch_output.json
+
+          SENT=$(jq -r '.sent // 0' dispatch_output.json)
+          SKIPPED=$(jq -r '.skipped_no_events // 0' dispatch_output.json)
+          FAILED=$(jq -r '.failed // 0' dispatch_output.json)
+          CID=$(jq -r '.correlation_id // "?"' dispatch_output.json)
+
+          echo "::notice::Digest cid=$CID sent=$SENT skipped_no_events=$SKIPPED failed=$FAILED"
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::warning::$FAILED digest send(s) failed — see Brevo dashboard for details (cid=$CID)"
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Daily digest dispatch failed at $(date -u +%Y-%m-%dT%H:%M:%SZ). Check logs."

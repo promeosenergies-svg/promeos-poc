@@ -1,0 +1,88 @@
+{# Sprint α-push Phase 2.D — Email digest matinal HTML.
+
+Anti-leak PII : pas d'identifiants techniques (event.id, source.system,
+internal IDs). Cat A/B traçabilité : impact € avec source.methodology
+visible, fallback "à préciser" si pas de provenance.
+
+Variables contexte :
+- user.prenom : prénom destinataire (PII rendu en HTML, pas en log)
+- date_fr : date courante format dd/mm/YYYY
+- events : list[SolEventCard dict] (déjà filtrés persona + horizon)
+- app_base_url : URL absolue PROMEOS (deep-links)
+#}<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROMEOS — Digest du {{ date_fr }}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+           color: #1a1a1a; max-width: 640px; margin: 0 auto; padding: 24px;
+           background: #fafafa; line-height: 1.5; }
+    h1 { color: #0a0a0a; margin-bottom: 4px; font-weight: 600; }
+    .subtitle { color: #666; font-size: 14px; margin-top: 0; }
+    .event-card { padding: 16px; margin: 12px 0; border-radius: 6px;
+                  background: #fff; border-left: 4px solid #888; }
+    .severity-critical { border-left-color: #c00; background: #fef5f5; }
+    .severity-warning  { border-left-color: #f0a000; background: #fffaf0; }
+    .severity-watch    { border-left-color: #1976d2; background: #f3f9ff; }
+    .severity-info     { border-left-color: #888; background: #f8f8f8; }
+    .event-title { font-size: 15px; font-weight: 600; margin: 0 0 6px 0; }
+    .event-narrative { margin: 6px 0; color: #333; font-size: 14px; }
+    .event-impact { margin: 8px 0; font-size: 13px; color: #555; }
+    .event-impact .label { font-weight: 600; color: #333; }
+    .event-source { font-size: 12px; color: #777; font-style: italic; margin-top: 4px; }
+    .event-cta { margin-top: 10px; }
+    .event-cta a { color: #0066cc; text-decoration: none; font-weight: 500; font-size: 14px; }
+    .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #ddd;
+              font-size: 12px; color: #888; }
+    .footer a { color: #888; }
+  </style>
+</head>
+<body>
+  <h1>Bonjour {{ user.prenom or 'à toi' }},</h1>
+  <p class="subtitle">Voici tes signaux PROMEOS pour le {{ date_fr }} ({{ events|length }} {% if events|length > 1 %}signaux{% else %}signal{% endif %}).</p>
+
+  {% for event in events %}
+  <div class="event-card severity-{{ event.severity }}">
+    <p class="event-title">{{ event.title }}</p>
+    <p class="event-narrative">{{ event.narrative }}</p>
+
+    {% if event.impact and event.impact.value is not none %}
+      {% if event.impact.unit == '€' %}
+        {# Cat A/B traçabilité requise pour impact € — fallback "à préciser" si pas de methodology #}
+        {% if event.source and event.source.methodology %}
+          <p class="event-impact">
+            <span class="label">Impact :</span>
+            {{ "{:,.0f}".format(event.impact.value).replace(',', ' ') }} €
+            ({{ event.impact.period }})
+          </p>
+          <p class="event-source">Source : {{ event.source.methodology|truncate(140) }}</p>
+        {% else %}
+          <p class="event-impact">
+            <span class="label">Impact :</span>
+            <em>à préciser — voir détail dans PROMEOS</em>
+          </p>
+        {% endif %}
+      {% else %}
+        <p class="event-impact">
+          <span class="label">Impact :</span>
+          {{ event.impact.value }} {{ event.impact.unit }} ({{ event.impact.period }})
+        </p>
+      {% endif %}
+    {% endif %}
+
+    {% if event.action and event.action.route %}
+    <p class="event-cta">
+      <a href="{{ app_base_url }}{{ event.action.route }}">{{ event.action.label or 'Voir le détail' }} →</a>
+    </p>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <div class="footer">
+    <p>Tu reçois ce digest car tu es abonné(e) aux notifications quotidiennes PROMEOS.</p>
+    <p><a href="{{ app_base_url }}/settings/notifications">Désabonner</a> · <a href="{{ app_base_url }}">Ouvrir PROMEOS</a></p>
+  </div>
+</body>
+</html>
