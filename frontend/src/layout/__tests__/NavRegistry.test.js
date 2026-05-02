@@ -708,6 +708,55 @@ describe('Phase 1.E — P0.5 ordre rail cible Sol v1.1', () => {
   });
 });
 
+/* ── Phase 3.D — P1.7 persona dominant module position parity ──
+ *
+ * Audit Phase 0.ter §5 + Q3 : tests parité par persona pour la position
+ * 2 du rail (= module dominant après Cockpit). Cette suite complète le
+ * test isolé `daf : Facturation #2` (P0.5) — couvre les 8 personas
+ * pour qu'aucune dérive silencieuse de ROLE_MODULE_ORDER ne passe sans
+ * détection.
+ *
+ * Si un test échoue ici → ROLE_MODULE_ORDER a été modifié sans mise à
+ * jour de la matrice attendue. STOP audit forensique nécessaire avant
+ * tout fix (cf. discipline Phase 0.ter Hypothèse C).
+ */
+describe('Phase 3.D — P1.7 persona dominant module position parity', () => {
+  // Mapping persona → module dominant (position 2 du rail rendu).
+  // Source : ROLE_MODULE_ORDER (NavRegistry.js:981-995) figé en P0.5.
+  const POSITION_2_BY_PERSONA = {
+    default: 'energie', // = energy_manager (cible Sol §2)
+    energy_manager: 'energie',
+    daf: 'facturation', // hebdo finance — audit §5.3
+    dg_owner: 'facturation', // mensuel finance + décisionnel
+    acheteur: 'achat',
+    resp_conformite: 'conformite',
+    resp_immobilier: 'conformite',
+    resp_site: 'energie',
+  };
+
+  for (const [persona, expectedModule] of Object.entries(POSITION_2_BY_PERSONA)) {
+    it(`${persona} → ${expectedModule} en position 2`, () => {
+      const ordered = getOrderedModules(persona, false);
+      expect(ordered[1].key).toBe(expectedModule);
+    });
+  }
+
+  // Cross-cutting : Patrimoine en dernière position visible pour tous
+  // (filtre expertOnly pour ignorer admin en mode expert). Doublonne
+  // intentionnellement le forEach P0.5 mais avec un angle filtre
+  // expertOnly explicite — couvre le cas où admin serait inséré ailleurs.
+  it('cross-cutting : Patrimoine est le dernier module visible pour les 8 personas', () => {
+    const personas = Object.keys(POSITION_2_BY_PERSONA);
+    for (const persona of personas) {
+      const ordered = getOrderedModules(persona, false);
+      const lastVisible = ordered.filter((m) => !m.expertOnly).slice(-1)[0];
+      expect(lastVisible.key, `persona '${persona}' : dernier visible attendu = patrimoine`).toBe(
+        'patrimoine'
+      );
+    }
+  });
+});
+
 /* ── Phase 1.E — NavRail rendering séparateur ── */
 describe('Phase 1.E — NavRail rendering séparateur (source-guard)', () => {
   // Source-guard : vérifie que NavRail.jsx implémente bien le rendering

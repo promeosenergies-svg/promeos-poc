@@ -295,3 +295,70 @@ describe('SG_NAV_FE_04 — HIDDEN_PAGES require documented `reason`', () => {
     expect(violations, `Placeholders détectés :\n  ${violations.join('\n  ')}`).toEqual([]);
   });
 });
+
+// ── SG_NAV_FE_05 : NavRail ne mute pas l'output getOrderedModules ───────
+
+describe('SG_NAV_FE_05 — NavRail must not mutate getOrderedModules output', () => {
+  // Phase 3.D — P1.7 (audit Phase 0.ter recommandation §5) : verrou
+  // statique anti-régression rendu rail. Si NavRail.jsx chaînait un
+  // .sort/.reverse/.filter/.splice après getOrderedModules, l'ordre
+  // ROLE_MODULE_ORDER serait silencieusement corrompu — les tests pure
+  // logique resteraient verts mais le DOM divergerait.
+  //
+  // L'output de getOrderedModules est doctrine §11 source de vérité —
+  // toute manipulation post-call doit passer par une extension de
+  // ROLE_MODULE_ORDER (config-driven), pas par un patch inline.
+
+  it('NavRail.jsx ne chaîne aucun mutateur sur getOrderedModules(...)', () => {
+    const navRailPath = join(SRC_ROOT, 'layout', 'NavRail.jsx');
+    const content = readFileSync(navRailPath, 'utf-8');
+    const cleaned = stripComments(content);
+
+    const FORBIDDEN_PATTERNS = [
+      { name: '.sort()', re: /getOrderedModules\([^)]*\)\s*\.\s*sort\b/ },
+      { name: '.reverse()', re: /getOrderedModules\([^)]*\)\s*\.\s*reverse\b/ },
+      { name: '.filter()', re: /getOrderedModules\([^)]*\)\s*\.\s*filter\b/ },
+      { name: '.splice()', re: /getOrderedModules\([^)]*\)\s*\.\s*splice\b/ },
+    ];
+
+    const violations = [];
+    for (const { name, re } of FORBIDDEN_PATTERNS) {
+      if (re.test(cleaned)) {
+        violations.push(name);
+      }
+    }
+    expect(
+      violations,
+      `NavRail.jsx mute l'output getOrderedModules via : ${violations.join(', ')}.\n` +
+        `L'ordre retourné par ROLE_MODULE_ORDER doit être consommé as-is — ` +
+        `toute manipulation doit passer par une extension de ROLE_MODULE_ORDER ` +
+        `(config-driven, doctrine §11 + audit Phase 0.ter §5).`
+    ).toEqual([]);
+  });
+
+  it('NavRail.jsx ne tri pas la variable visibleModules après assignation', () => {
+    // Garde-fou symétrique : couvre `const x = getOrderedModules(...); x.sort(...)`
+    // (pattern non-chainé). Heuristique simple : aucune des méthodes
+    // mutables n'apparaît juste après le mot-clé visibleModules.
+    const navRailPath = join(SRC_ROOT, 'layout', 'NavRail.jsx');
+    const content = readFileSync(navRailPath, 'utf-8');
+    const cleaned = stripComments(content);
+
+    const FORBIDDEN_VAR_PATTERNS = [
+      /visibleModules\.sort\(/,
+      /visibleModules\.reverse\(/,
+      /visibleModules\.splice\(/,
+      // .filter peut être légitime (ex: filter expertOnly) — on tolère
+      // mais on flag .sort/.reverse/.splice qui ne devraient jamais
+      // appartenir au rendu rail.
+    ];
+    const violations = [];
+    for (const re of FORBIDDEN_VAR_PATTERNS) {
+      if (re.test(cleaned)) violations.push(re.source);
+    }
+    expect(
+      violations,
+      `NavRail.jsx contient un mutateur sur visibleModules :\n  ${violations.join('\n  ')}`
+    ).toEqual([]);
+  });
+});
