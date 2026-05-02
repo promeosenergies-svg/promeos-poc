@@ -450,17 +450,18 @@ export const QUICK_ACTIONS = [
   },
   { key: 'import', label: 'Importer', icon: Import, to: '/import', keywords: ['csv', 'upload'] },
   {
-    // Phase 3.B — P1.5 : retargeté `/anomalies` → `/action-center`. Le
-    // Centre d'action panel Accueil (Phase 1.C — P0.3) est devenu le
-    // hub canonique pour anomalies + actions + notifications. Pointer
-    // la Quick Action sur la page dédiée évite le doublon sémantique
-    // signalé audit Phase 0.bis §5 (`/anomalies` brut redondant avec
-    // l'item panel "Centre d'action"). L'URL `/anomalies` reste
-    // accessible (HIDDEN_PAGES + redirect implicite côté ActionCenterPage).
+    // 2026-05-02 — Repoint `/action-center` → `/anomalies`. La page dédiée
+    // ActionCenterPage avait un bug de rendu silencieux (.catch(()=>[]) qui
+    // masque les erreurs API), tandis que /anomalies (AnomaliesPage) sert
+    // déjà le hub unifié 4 piliers — adoptée par CockpitDecision "Voir
+    // actions" + briefing du jour. Doctrine §6.2 anti-pattern "chemins
+    // multiples" : on consolide sur la route qui marche. La route
+    // `/action-center` redirige vers `/anomalies` côté App.jsx pour
+    // rétro-compat bookmarks.
     key: 'centre',
     label: 'Détection automatique',
     icon: AlertTriangle,
-    to: '/action-center',
+    to: '/anomalies',
     keywords: ['anomalies', 'actions', 'inbox', 'centre', 'detection'],
   },
   {
@@ -634,15 +635,15 @@ export const NAV_SECTIONS = [
           'executive',
         ],
       },
-      // Phase 1.C — P0.3 (audit navigation_audit_20260501.md §4.4 + §7 Q2) :
-      // exposition du Centre d'action en item Accueil. La cloche header
-      // (AppShell.jsx:328-332) reste autonome — surface complémentaire,
-      // contexte d'usage distinct (cloche = peek transverse, item panel =
-      // navigation explicite). Voir doctrine §6.2 anti-pattern "chemins
-      // multiples" : 3 surfaces (panel / cloche / Ctrl+Shift+L) acceptables
-      // car contextes d'usage distincts.
+      // Phase 1.C — P0.3 : exposition du Centre d'action en item Accueil.
+      // 2026-05-02 — Repoint `/action-center` → `/anomalies`. AnomaliesPage
+      // est le hub canonique 4 piliers (déjà adopté par CockpitDecision
+      // "Voir N actions"). Doctrine §6.2 anti-pattern "chemins multiples" :
+      // une seule page sœur pour la même intention. Cloche header
+      // (AppShell.jsx) + raccourci Ctrl+Shift+L restent surfaces
+      // complémentaires (peek transverse vs navigation explicite).
       {
-        to: '/action-center',
+        to: '/anomalies',
         icon: Inbox,
         label: "Centre d'action",
         desc: 'Anomalies, actions et notifications à traiter',
@@ -1124,14 +1125,14 @@ export const HIDDEN_PAGES = [
       'workflow-specialise : audience RegOps spécialisée (revue findings DT/BACS/APER batch). Audit Phase 0.bis Q3 a explicitement choisi keep-hidden — promotion item Conformité jugée non justifiée pour la majorité des persona (Marie DAF, Marc EM, Sophie DG).',
   },
   {
-    to: '/anomalies',
+    to: '/action-center',
     icon: AlertTriangle,
-    label: 'Détection automatique',
-    keywords: ['anomalies', 'inbox', 'detection', 'automatique'],
+    label: "Centre d'action (legacy)",
+    keywords: ['anomalies', 'inbox', 'detection', 'automatique', 'action-center'],
     section: 'Accueil',
     hidden: true,
     reason:
-      "deep-link-only : URL legacy maintenue pour rétro-compat search palette + redirects. Le hub canonique est désormais /action-center (Phase 1.C — P0.3). Phase 3.B — P1.5 a retargeté la Quick Action 'centre' vers /action-center ; cette HIDDEN_PAGE reste pour search ⌘K avec les keywords historiques.",
+      'deep-link-only : URL legacy maintenue pour rétro-compat bookmarks + search palette ⌘K. Repoint 2026-05-02 — le hub canonique est désormais /anomalies (AnomaliesPage). La route /action-center redirige côté App.jsx vers /anomalies pour préserver les liens externes.',
   },
 ];
 
