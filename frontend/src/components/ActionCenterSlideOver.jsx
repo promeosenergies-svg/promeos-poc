@@ -13,6 +13,7 @@ import EmptyState from '../ui/EmptyState';
 import {
   getActionCenterActionsSummary,
   getActionCenterActions,
+  getActionCenterIssues,
   getActionCenterNotifications,
 } from '../services/api/actions';
 
@@ -59,19 +60,33 @@ function useActionCenterData(open, pollingMs = 60_000) {
 
   const fetchAll = useCallback(async () => {
     try {
-      const [summary, actionsRaw, notifRaw, historyRaw] = await Promise.all([
+      const [summary, actionsRaw, issuesRaw, notifRaw, historyRaw] = await Promise.all([
         getActionCenterActionsSummary().catch(() => null),
         getActionCenterActions({ status: 'open,in_progress', limit: 20 }).catch(() => ({
           actions: [],
         })),
+        // 2026-05-02 — Fetch issues live (anomalies auto-détectées) en plus des
+        // actions persistées. Sans ça, la cloche reste muette tant qu'aucune
+        // action n'a été créée manuellement, alors que /anomalies affiche déjà
+        // les issues. Doctrine §6.2 : cohérence inter-surfaces.
+        getActionCenterIssues({ limit: 20 }).catch(() => ({ issues: [] })),
         getActionCenterNotifications({ unread_only: true }).catch(() => ({ notifications: [] })),
         getActionCenterActions({ status: 'resolved,dismissed', limit: 20 }).catch(() => ({
           actions: [],
         })),
       ]);
+      const normalizedIssues = (issuesRaw?.issues || []).map((i) => ({
+        id: i.issue_id,
+        title: i.issue_label,
+        priority: i.severity,
+        site_name: i.site_name,
+        domain: i.domain,
+        estimated_impact_eur: i.estimated_impact_eur,
+        __type: 'issue',
+      }));
       const next = {
         actionsSummary: summary,
-        actionsList: actionsRaw?.actions || [],
+        actionsList: [...normalizedIssues, ...(actionsRaw?.actions || [])],
         notifications: notifRaw?.notifications || [],
         history: historyRaw?.actions || [],
         loading: false,
@@ -241,7 +256,11 @@ export default function ActionCenterSlideOver({ open, onClose, defaultTab = 'act
   );
 
   const handleActionClick = useCallback(
-    (action) => navigateAndClose(action.id ? `/actions/${action.id}` : '/anomalies'),
+    // Issues (auto-détectées) → hub /anomalies. Actions persistées → page dédiée.
+    (action) =>
+      navigateAndClose(
+        action.__type === 'issue' || !action.id ? '/anomalies' : `/actions/${action.id}`
+      ),
     [navigateAndClose]
   );
 
