@@ -76,15 +76,18 @@ describe('Nav V7 — Source guard (labels interdits)', () => {
 });
 
 describe('Nav V7 — Structure', () => {
-  it('5 modules visible in normal mode (Flex WIP hidden)', () => {
+  // Phase 1.D — P0.1 : Bill Intelligence promu module rail (compteur passe
+  // de 5 → 6 normal). Ordre rail final cible Sol v1.1 sera fixé par P0.5.
+  it('6 modules visible in normal mode (Phase 1.D — Facturation promue)', () => {
     const normalModules = NAV_MODULES.filter((m) => !m.expertOnly);
-    expect(normalModules).toHaveLength(5);
+    expect(normalModules).toHaveLength(6);
     expect(normalModules.map((m) => m.key)).toEqual([
       'cockpit',
       'conformite',
       'energie',
       'patrimoine',
       'achat',
+      'facturation',
     ]);
   });
 

@@ -1,7 +1,8 @@
 /**
  * PROMEOS — NavRegistry Tests V7 (Rail + Panel Architecture)
- * Covers: 6 modules (5 normal + admin expertOnly), conformité autonome,
- *         vocabulaire v7, route mapping, expert filtering au niveau item.
+ * Covers: 7 modules (6 normal + admin expertOnly), conformité autonome,
+ *         facturation autonome (Phase 1.D — P0.1), vocabulaire v7, route
+ *         mapping, expert filtering au niveau item.
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -25,18 +26,31 @@ import {
 
 /* ── Module definitions V7 ── */
 describe('NAV_MODULES V7', () => {
-  it('has exactly 6 modules (5 normal + admin expert, Flex WIP hidden)', () => {
-    expect(NAV_MODULES).toHaveLength(6);
+  // Phase 1.D — P0.1 (audit navigation_audit_20260501.md §4.5) : Bill
+  // Intelligence promu en module rail dédié. Compteurs passent de 6 → 7
+  // total et 5 → 6 normal. L'ordre rail final cible Sol v1.1
+  // (Accueil → Énergie → Conformité → Facturation → Achat → [sep] →
+  // Patrimoine) sera fixé par P0.5 (decoupling structure / ordre).
+  it('has exactly 7 modules (6 normal + admin expert, Flex WIP hidden)', () => {
+    expect(NAV_MODULES).toHaveLength(7);
   });
 
   it('modules are in correct order with correct keys', () => {
     const keys = NAV_MODULES.map((m) => m.key);
-    expect(keys).toEqual(['cockpit', 'conformite', 'energie', 'patrimoine', 'achat', 'admin']);
+    expect(keys).toEqual([
+      'cockpit',
+      'conformite',
+      'energie',
+      'patrimoine',
+      'achat',
+      'facturation',
+      'admin',
+    ]);
   });
 
-  it('order field is sequential 1-6', () => {
+  it('order field is sequential 1-7', () => {
     const orders = NAV_MODULES.map((m) => m.order);
-    expect(orders).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(orders).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
   it('each module has icon, label, tint, expertOnly, desc', () => {
@@ -51,15 +65,16 @@ describe('NAV_MODULES V7', () => {
     }
   });
 
-  it('normal mode shows 5 modules (Flex WIP hidden)', () => {
+  it('normal mode shows 6 modules (Flex WIP hidden)', () => {
     const normal = NAV_MODULES.filter((m) => !m.expertOnly);
-    expect(normal).toHaveLength(5);
+    expect(normal).toHaveLength(6);
     expect(normal.map((m) => m.key)).toEqual([
       'cockpit',
       'conformite',
       'energie',
       'patrimoine',
       'achat',
+      'facturation',
     ]);
   });
 
@@ -113,8 +128,9 @@ describe('MODULE_TINTS', () => {
 
 /* ── Section definitions V7 ── */
 describe('NAV_SECTIONS V7', () => {
-  it('has exactly 6 sections (one per module, Flex WIP hidden)', () => {
-    expect(NAV_SECTIONS).toHaveLength(6);
+  // Phase 1.D — P0.1 : 1 section ajoutée (`facturation`). Total 6 → 7.
+  it('has exactly 7 sections (one per module, Flex WIP hidden)', () => {
+    expect(NAV_SECTIONS).toHaveLength(7);
   });
 
   it('every section references a valid module', () => {
@@ -140,18 +156,28 @@ describe('NAV_SECTIONS V7', () => {
     expect(labels).toContain('Solarisation (APER)');
   });
 
-  it('facturation is under patrimoine (not energie)', () => {
-    const patrimoine = NAV_SECTIONS.find((s) => s.module === 'patrimoine');
-    const energie = NAV_SECTIONS.find((s) => s.module === 'energie');
-    expect(patrimoine.items.find((i) => i.label === 'Facturation')).toBeDefined();
-    expect(energie.items.find((i) => i.label === 'Facturation')).toBeUndefined();
+  // Phase 1.D — P0.1 : Bill Intelligence promu de l'item enfoui dans
+  // Patrimoine vers module rail dédié `facturation`. Doctrine §4.4 +
+  // §11 intention "Facture, anomalie, contestation".
+  it('facturation is a standalone module (Phase 1.D — P0.1)', () => {
+    const facturation = NAV_SECTIONS.find((s) => s.module === 'facturation');
+    expect(facturation).toBeDefined();
+    expect(facturation.items.length).toBeGreaterThan(0);
   });
 
-  it('facturation is visible in normal mode (promoted from expertOnly)', () => {
+  it('facturation panel exposes /bill-intel as primary entry', () => {
+    const facturation = NAV_SECTIONS.find((s) => s.module === 'facturation');
+    const overview = facturation.items.find((i) => i.to === '/bill-intel');
+    expect(overview).toBeDefined();
+    expect(overview.expertOnly).toBeFalsy();
+  });
+
+  it('facturation no longer appears under patrimoine (Phase 1.D extraction)', () => {
     const patrimoine = NAV_SECTIONS.find((s) => s.module === 'patrimoine');
-    const facturation = patrimoine.items.find((i) => i.label === 'Facturation');
-    expect(facturation).toBeDefined();
-    expect(facturation.expertOnly).toBeFalsy();
+    const energie = NAV_SECTIONS.find((s) => s.module === 'energie');
+    expect(patrimoine.items.find((i) => i.label === 'Facturation')).toBeUndefined();
+    expect(patrimoine.items.find((i) => i.to === '/bill-intel')).toBeUndefined();
+    expect(energie.items.find((i) => i.label === 'Facturation')).toBeUndefined();
   });
 
   it('usages is visible in normal mode (not expertOnly)', () => {
@@ -246,9 +272,16 @@ describe('Route mapping V7', () => {
     expect(resolveModule('/compliance')).toBe('conformite');
   });
 
-  it('patrimoine routes include bill-intel (facturation)', () => {
-    expect(resolveModule('/bill-intel')).toBe('patrimoine');
+  it('patrimoine routes are limited to sites + contrats (Phase 1.D — P0.1)', () => {
     expect(resolveModule('/contrats')).toBe('patrimoine');
+    expect(resolveModule('/patrimoine')).toBe('patrimoine');
+  });
+
+  it('facturation routes resolve to facturation module (Phase 1.D — P0.1)', () => {
+    expect(resolveModule('/bill-intel')).toBe('facturation');
+    expect(resolveModule('/billing')).toBe('facturation');
+    expect(resolveModule('/payment-rules')).toBe('facturation');
+    expect(resolveModule('/portfolio-reconciliation')).toBe('facturation');
   });
 
   it('/ resolves to cockpit', () => {
@@ -524,8 +557,9 @@ describe('NAV_MAIN_SECTIONS', () => {
     expect(adminInMain).toBeUndefined();
   });
 
-  it('has 5 main sections (Flex WIP hidden)', () => {
-    expect(NAV_MAIN_SECTIONS).toHaveLength(5);
+  // Phase 1.D — P0.1 : 1 section ajoutée (`facturation`). Total 5 → 6.
+  it('has 6 main sections (Flex WIP hidden)', () => {
+    expect(NAV_MAIN_SECTIONS).toHaveLength(6);
   });
 
   it('is synchronized with NAV_SECTIONS (same items)', () => {

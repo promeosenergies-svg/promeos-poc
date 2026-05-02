@@ -48,10 +48,19 @@ describe('V7 Nav Refactor guard-rails', () => {
     ]);
   });
 
-  it('Patrimoine has 3 items (Sites + Contrats + Facturation expert)', () => {
+  // Phase 1.D — P0.1 : Facturation extraite vers module dédié `facturation`.
+  // Patrimoine ne porte plus que Sites & bâtiments + Contrats énergie.
+  it('Patrimoine has 2 items (Sites + Contrats — Phase 1.D extraction)', () => {
     const patrimoine = NAV_SECTIONS.find((s) => s.key === 'patrimoine');
-    expect(patrimoine.items).toHaveLength(3);
-    expect(patrimoine.items.map((i) => i.to)).toEqual(['/patrimoine', '/contrats', '/bill-intel']);
+    expect(patrimoine.items).toHaveLength(2);
+    expect(patrimoine.items.map((i) => i.to)).toEqual(['/patrimoine', '/contrats']);
+  });
+
+  it('Facturation is a standalone module with /bill-intel item (Phase 1.D — P0.1)', () => {
+    const facturation = NAV_SECTIONS.find((s) => s.key === 'facturation');
+    expect(facturation).toBeDefined();
+    expect(facturation.items).toHaveLength(1);
+    expect(facturation.items[0].to).toBe('/bill-intel');
   });
 
   it("/actions and /notifications are NOT in nav items (moved to Centre d'actions)", () => {

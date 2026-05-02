@@ -37,16 +37,18 @@ describe('A. Energie + Achat modules', () => {
   });
 });
 
-/* ── B. Labels: items now in energie / achat / patrimoine sections ── */
+/* ── B. Labels: items now in energie / achat / patrimoine / facturation ── */
 describe('B. Labels in new modules V7', () => {
   const energieItems = getSectionsForModule('energie').flatMap((s) => s.items);
   const achatItems = getSectionsForModule('achat').flatMap((s) => s.items);
-  const patrimoineItems = getSectionsForModule('patrimoine').flatMap((s) => s.items);
+  // Phase 1.D — P0.1 : Facturation extraite de Patrimoine vers module dédié
+  // `facturation`. Patrimoine ne porte plus que Sites + Contrats énergie.
+  const facturationItems = getSectionsForModule('facturation').flatMap((s) => s.items);
 
-  it('Facturation (/bill-intel) is in patrimoine section (V7 migration)', () => {
-    const item = patrimoineItems.find((i) => i.to === '/bill-intel');
+  it("Vue d'ensemble (/bill-intel) is in facturation section (Phase 1.D — P0.1)", () => {
+    const item = facturationItems.find((i) => i.to === '/bill-intel');
     expect(item).toBeDefined();
-    expect(item.label).toBe('Facturation');
+    expect(item.label).toBe("Vue d'ensemble");
   });
 
   it('Consommations (/consommations) is in energie section', () => {
@@ -118,10 +120,10 @@ describe('D. Tooltips & aria-label in NavPanel', () => {
 /* ── E. Routes in new modules V7 ── */
 describe('E. Routes in new modules V7', () => {
   const achatItems = getSectionsForModule('achat').flatMap((s) => s.items);
-  const patrimoineItems = getSectionsForModule('patrimoine').flatMap((s) => s.items);
+  const facturationItems = getSectionsForModule('facturation').flatMap((s) => s.items);
 
-  it('billing route is in patrimoine section (V7 migration)', () => {
-    const routes = patrimoineItems.map((i) => i.to);
+  it('billing route is in facturation section (Phase 1.D — P0.1 promotion module rail)', () => {
+    const routes = facturationItems.map((i) => i.to);
     expect(routes).toContain('/bill-intel');
   });
 

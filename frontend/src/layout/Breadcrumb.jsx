@@ -33,7 +33,11 @@ Object.assign(LABELS, {
   efa: 'EFA',
   new: 'Nouveau',
   // Aliases for redirect paths
-  'bill-intel': 'Facturation',
+  // Phase 1.D — P0.1 : `bill-intel` retiré des overrides — le segment est
+  // désormais auto-dérivé depuis NAV_SECTIONS.facturation.items (label
+  // "Vue d'ensemble"). Avec la section "Facturation" ajoutée en amont
+  // par resolveSectionLabel, le breadcrumb devient
+  // "Facturation > Vue d'ensemble" (au lieu du doublon Facturation/Facturation).
   factures: 'Facturation',
   facturation: 'Facturation',
   'plan-action': "Plan d'actions",

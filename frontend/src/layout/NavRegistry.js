@@ -108,15 +108,21 @@ export const ROUTE_MODULE_MAP = {
   // (auparavant orpheline → fallback 'cockpit' dans matchRouteToModule).
   '/flex': 'energie',
 
-  // Patrimoine (Facturation migrée ici)
+  // Patrimoine
+  // Phase 1.D — P0.1 : Facturation extraite vers module dédié `facturation`
+  // (cf. ROUTE_MODULE_MAP section facturation infra). Patrimoine garde
+  // sites + contrats uniquement.
   '/patrimoine': 'patrimoine',
   '/patrimoine/nouveau': 'patrimoine',
   '/sites/:id': 'patrimoine',
   '/contrats': 'patrimoine',
-  '/billing': 'patrimoine',
-  '/bill-intel': 'patrimoine',
-  '/payment-rules': 'patrimoine',
-  '/portfolio-reconciliation': 'patrimoine',
+
+  // Facturation (Phase 1.D — P0.1 : Bill Intelligence pilier doctrine
+  // §4.4 promu module rail autonome)
+  '/billing': 'facturation',
+  '/bill-intel': 'facturation',
+  '/payment-rules': 'facturation',
+  '/portfolio-reconciliation': 'facturation',
 
   // Achat
   '/achat-energie': 'achat',
@@ -245,13 +251,30 @@ export const NAV_MODULES = [
     order: 5,
     desc: 'Échéances & arbitrage énergie',
   },
+  // Phase 1.D — P0.1 (audit navigation_audit_20260501.md §4.5 trou MVP P0
+  // + §11 intention "Facture, anomalie, contestation" + doctrine §4.4
+  // Bill Intelligence pilier autonome) : promotion de Bill Intelligence
+  // depuis item enfoui sous Patrimoine vers module rail dédié.
+  // Position 6 = avant-dernière (avant admin). L'ordre cible Sol v1.1
+  // (Accueil → Énergie → Conformité → Facturation → Achat → [sep] →
+  // Patrimoine) sera fixé par P0.5 séparément (decoupling structure /
+  // ordre). Tint cyan ajouté à TINT_PALETTE.
+  {
+    key: 'facturation',
+    label: 'Facturation',
+    icon: Receipt,
+    tint: 'cyan',
+    expertOnly: false,
+    order: 6,
+    desc: 'Audit factures & anomalies',
+  },
   {
     key: 'admin',
     label: 'Administration',
     icon: Settings,
     tint: 'slate',
     expertOnly: true,
-    order: 6,
+    order: 7,
     desc: 'Import, utilisateurs et système',
   },
 ];
@@ -342,6 +365,29 @@ export const TINT_PALETTE = {
     pillBg: 'bg-violet-50',
     pillText: 'text-violet-700',
     pillRing: 'ring-violet-200/60',
+  },
+  // Phase 1.D — P0.1 (audit navigation_audit_20260501.md §4.5 trou MVP P0
+  // #1) : tint dédié pour le module Bill Intelligence promu en module rail.
+  // Cyan choisi pour le différencier du blue/indigo/emerald (modules voisins
+  // Cockpit/Énergie/Conformité) tout en restant dans la famille "froide"
+  // sémantique factures/audit. Pattern identique aux autres tints existants
+  // (12 propriétés Tailwind v4) — aucun divergence.
+  cyan: {
+    headerBand: 'from-cyan-50/50 to-transparent',
+    panelHeader: 'from-cyan-50/30 to-transparent',
+    softBg: 'bg-cyan-50/40',
+    hoverBg: 'bg-cyan-50/30',
+    activeBg: 'bg-cyan-50/60',
+    activeText: 'text-cyan-700',
+    activeBorder: 'border-cyan-500',
+    railActiveBg: 'bg-cyan-50/70',
+    railActiveRing: 'ring-cyan-300/50',
+    railActiveText: 'text-cyan-600',
+    dot: 'bg-cyan-400',
+    icon: 'text-cyan-500',
+    pillBg: 'bg-cyan-50',
+    pillText: 'text-cyan-700',
+    pillRing: 'ring-cyan-200/60',
   },
   yellow: {
     headerBand: 'from-yellow-50/50 to-transparent',
@@ -727,19 +773,43 @@ export const NAV_SECTIONS = [
         desc: 'Contrats cadre, annexes, tarifs',
         keywords: ['contrats', 'cadre', 'annexe', 'fournisseur', 'tarif', 'pricing'],
       },
+      // Phase 1.D — P0.1 : item Facturation extrait vers module dédié
+      // `facturation` (NAV_SECTIONS.facturation infra). Doctrine §4.4 +
+      // §11 — pilier autonome, plus enfoui sous Patrimoine.
+    ],
+  },
+
+  // === FACTURATION (cyan) — Phase 1.D — P0.1 ===
+  // Promotion Bill Intelligence depuis item enfoui sous Patrimoine vers
+  // module rail. 1 item panel "Vue d'ensemble" pointant sur /bill-intel
+  // (point d'entrée unique : pas de sous-routes /bill-intel/* exposées
+  // dans App.jsx — les variantes utilisent query-strings ?filter=...).
+  {
+    key: 'facturation',
+    module: 'facturation',
+    label: 'Facturation',
+    expertOnly: false,
+    order: 6,
+    items: [
       {
         to: '/bill-intel',
         icon: Receipt,
-        label: 'Facturation',
+        label: "Vue d'ensemble",
         desc: 'Anomalies factures, shadow billing',
         keywords: [
+          'facturation',
           'factures',
           'billing',
+          'bill-intel',
           'anomalies',
           'surfacturation',
           'historique',
           'shadow',
           'timeline',
+          'reclaim',
+          'audit',
+          // rétro-compat search palette — ancien emplacement Patrimoine
+          'patrimoine',
         ],
       },
     ],
@@ -872,20 +942,33 @@ export function getModuleTint(keyOrPath) {
  * ROLE-BASED module ordering — each role sees its most relevant
  * modules first on the rail. Fallback to default order.
  * ══════════════════════════════════════════════════════════════════ */
+// Phase 1.D — P0.1 : insertion `facturation` dans chaque ordre persona
+// selon la table fréquence d'usage §5.3 audit navigation_audit_20260501.md.
+//   - DG : `facturation` mensuel → après achat (mensuel/quotidien).
+//   - DAF : `facturation` HEBDO ⇒ priorité haute, juste après cockpit.
+//   - Acheteur : `facturation` mensuel → après achat (proximité métier).
+//   - Energy Manager : `facturation` HEBDO ⇒ après conformité, avant
+//     patrimoine.
+//   - RegOps : `facturation` mensuel → en queue (peu de proximité métier).
+//   - Resp. immobilier / Resp. site : `facturation` rare → en queue.
+//   - default : insertion en avant-dernière position (pré-P0.5 qui fixera
+//     l'ordre cible Sol v1.1 Accueil → Énergie → Conformité → Facturation
+//     → Achat → [sep] → Patrimoine).
+// L'ordre rail final cible reste sous P0.5 (decoupling structure / ordre).
 const ROLE_MODULE_ORDER = {
   // Direction / finance : focus décisionnel
-  dg_owner: ['cockpit', 'achat', 'conformite', 'patrimoine', 'energie'],
-  daf: ['cockpit', 'patrimoine', 'achat', 'conformite', 'energie'],
-  acheteur: ['cockpit', 'achat', 'patrimoine', 'conformite', 'energie'],
+  dg_owner: ['cockpit', 'achat', 'facturation', 'conformite', 'patrimoine', 'energie'],
+  daf: ['cockpit', 'facturation', 'patrimoine', 'achat', 'conformite', 'energie'],
+  acheteur: ['cockpit', 'achat', 'facturation', 'patrimoine', 'conformite', 'energie'],
 
   // Technique / opérationnel : focus données + action
-  energy_manager: ['cockpit', 'energie', 'conformite', 'patrimoine', 'achat'],
-  resp_conformite: ['cockpit', 'conformite', 'patrimoine', 'energie', 'achat'],
-  resp_immobilier: ['cockpit', 'patrimoine', 'conformite', 'energie', 'achat'],
-  resp_site: ['cockpit', 'patrimoine', 'energie', 'conformite', 'achat'],
+  energy_manager: ['cockpit', 'energie', 'conformite', 'facturation', 'patrimoine', 'achat'],
+  resp_conformite: ['cockpit', 'conformite', 'patrimoine', 'energie', 'achat', 'facturation'],
+  resp_immobilier: ['cockpit', 'patrimoine', 'conformite', 'energie', 'achat', 'facturation'],
+  resp_site: ['cockpit', 'patrimoine', 'energie', 'conformite', 'achat', 'facturation'],
 
   // Default order (no role or unknown)
-  default: ['cockpit', 'conformite', 'energie', 'patrimoine', 'achat'],
+  default: ['cockpit', 'conformite', 'energie', 'patrimoine', 'achat', 'facturation'],
 };
 
 /**

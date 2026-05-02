@@ -99,23 +99,26 @@ describe('Step 24b — CommandPalette hidden pages', () => {
 });
 
 describe('Step 24b — NavRail modules V7', () => {
-  it('NAV_MODULES has 6 entries (5 normal + admin expert, Flex WIP hidden)', () => {
+  // Phase 1.D — P0.1 : Facturation promue module rail. NAV_MODULES passe
+  // de 6 → 7 entrées (6 normal + admin expert).
+  it('NAV_MODULES has 7 entries (6 normal + admin expert, Phase 1.D)', () => {
     const src = fs.readFileSync(navFile, 'utf8');
     const start = src.indexOf('export const NAV_MODULES');
-    const block = src.slice(start, start + 3000);
+    const block = src.slice(start, start + 3500);
     const firstClose = block.indexOf('];');
     const moduleBlock = block.slice(0, firstClose);
     const keys = moduleBlock.match(/key:\s*['"][^'"]+['"]/g) || [];
-    expect(keys.length).toBe(6);
+    expect(keys.length).toBe(7);
   });
 
-  it('NAV_MODULES V7 includes cockpit, conformite, energie, patrimoine, achat, admin', () => {
+  it('NAV_MODULES V7 includes cockpit, conformite, energie, patrimoine, achat, facturation, admin', () => {
     const src = fs.readFileSync(navFile, 'utf8');
     expect(src).toMatch(/key:\s*['"]cockpit['"]/);
     expect(src).toMatch(/key:\s*['"]conformite['"]/);
     expect(src).toMatch(/key:\s*['"]patrimoine['"]/);
     expect(src).toMatch(/key:\s*['"]energie['"]/);
     expect(src).toMatch(/key:\s*['"]achat['"]/);
+    expect(src).toMatch(/key:\s*['"]facturation['"]/);
     expect(src).toMatch(/key:\s*['"]admin['"]/);
   });
 });

@@ -23,8 +23,12 @@ describe('matchRouteToModule — exact matches', () => {
     expect(matchRouteToModule('/consommations').moduleId).toBe('energie');
   });
 
-  it('/bill-intel → patrimoine (migré V7)', () => {
-    expect(matchRouteToModule('/bill-intel').moduleId).toBe('patrimoine');
+  it('/bill-intel → facturation (Phase 1.D — P0.1 promotion module rail)', () => {
+    expect(matchRouteToModule('/bill-intel').moduleId).toBe('facturation');
+  });
+
+  it('/billing → facturation (Phase 1.D — P0.1)', () => {
+    expect(matchRouteToModule('/billing').moduleId).toBe('facturation');
   });
 
   it('/patrimoine → patrimoine', () => {
@@ -106,8 +110,8 @@ describe('matchRouteToModule — best match wins', () => {
 
 /* ── Querystring & hash ignored ── */
 describe('matchRouteToModule — ignores querystring and hash', () => {
-  it('/bill-intel?site_id=1&month=2024-01 → patrimoine (migré V7)', () => {
-    expect(matchRouteToModule('/bill-intel?site_id=1&month=2024-01').moduleId).toBe('patrimoine');
+  it('/bill-intel?site_id=1&month=2024-01 → facturation (Phase 1.D — P0.1)', () => {
+    expect(matchRouteToModule('/bill-intel?site_id=1&month=2024-01').moduleId).toBe('facturation');
   });
 
   it('/actions/123?tab=detail → cockpit', () => {
@@ -145,7 +149,8 @@ describe('resolveModule (uses matchRouteToModule)', () => {
   it('static routes resolve correctly', () => {
     expect(resolveModule('/')).toBe('cockpit');
     expect(resolveModule('/conformite')).toBe('conformite');
-    expect(resolveModule('/bill-intel')).toBe('patrimoine');
+    // Phase 1.D — P0.1 : /bill-intel migré vers module dédié `facturation`.
+    expect(resolveModule('/bill-intel')).toBe('facturation');
   });
 
   it('dynamic routes resolve correctly', () => {
