@@ -232,3 +232,66 @@ describe('SG_NAV_FE_03 — useNavigationBadges consumed only by allowed componen
     ).toEqual([]);
   });
 });
+
+// ── SG_NAV_FE_04 : HIDDEN_PAGES masquage justifié explicitement ─────────
+
+describe('SG_NAV_FE_04 — HIDDEN_PAGES require documented `reason`', () => {
+  // Phase 3.C — P1.6 : tout futur ajout HIDDEN_PAGES doit justifier
+  // doctrinalement son masquage via le champ `reason`. Empêche le
+  // pattern "caché par négligence" — chaque entrée doit pouvoir être
+  // défendue à l'audit (audit Phase 0.bis §5 Q3 + livrable
+  // docs/audits/navigation_panels_audit_20260502.md).
+
+  it('chaque entrée HIDDEN_PAGES expose un champ `reason` non-vide', async () => {
+    const { HIDDEN_PAGES } = await import('../../layout/NavRegistry');
+
+    expect(Array.isArray(HIDDEN_PAGES), 'HIDDEN_PAGES doit être un tableau').toBe(true);
+    expect(HIDDEN_PAGES.length, 'HIDDEN_PAGES ne doit pas être vide (à ce stade)').toBeGreaterThan(
+      0
+    );
+
+    const violations = [];
+    for (const page of HIDDEN_PAGES) {
+      if (typeof page.reason !== 'string') {
+        violations.push(
+          `${page.to} (label "${page.label}") : champ \`reason\` absent ou non-string`
+        );
+        continue;
+      }
+      // Min 30 caractères pour forcer une justification réelle (pas
+      // un placeholder type "TODO" / "n/a"). Encourage à pointer la
+      // doctrine ou le sprint qui a décidé du masquage.
+      if (page.reason.trim().length < 30) {
+        violations.push(
+          `${page.to} (label "${page.label}") : \`reason\` trop courte (${page.reason.trim().length} chars, minimum 30) — justifier doctrinalement`
+        );
+      }
+    }
+
+    expect(
+      violations,
+      `HIDDEN_PAGES non documentées :\n  ${violations.join('\n  ')}\n\n` +
+        `Convention : chaque entrée HIDDEN_PAGES expose un champ \`reason\` (string, ≥ 30 chars) ` +
+        `qui justifie pourquoi la page n'est pas exposée en panel rail. ` +
+        `Catégories acceptées : doublon-sub-page, outil-interne, setup-technique, ` +
+        `workflow-specialise, deep-link-only, doctrine-§N.N. ` +
+        `Cf. NavRegistry.js:HIDDEN_PAGES docstring + audit Phase 0.bis Q3.`
+    ).toEqual([]);
+  });
+
+  it('aucune entrée HIDDEN_PAGES ne contient un placeholder de raison (TODO, n/a, ...)', async () => {
+    const { HIDDEN_PAGES } = await import('../../layout/NavRegistry');
+    const FORBIDDEN_PLACEHOLDERS = [/^\s*todo\b/i, /^\s*n\/?a\b/i, /^\s*tbd\b/i, /^\s*\?\?\?/];
+
+    const violations = [];
+    for (const page of HIDDEN_PAGES) {
+      const reason = (page.reason || '').trim();
+      for (const pattern of FORBIDDEN_PLACEHOLDERS) {
+        if (pattern.test(reason)) {
+          violations.push(`${page.to} : placeholder "${reason.slice(0, 40)}" interdit`);
+        }
+      }
+    }
+    expect(violations, `Placeholders détectés :\n  ${violations.join('\n  ')}`).toEqual([]);
+  });
+});

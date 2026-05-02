@@ -1041,7 +1041,30 @@ export const ROUTE_SECTION_MAP = Object.fromEntries(
   )
 );
 
-/** Pages retirées du menu mais trouvables via CommandPalette (Ctrl+K) */
+/**
+ * HIDDEN_PAGES — Pages retirées du menu rail/panel mais indexées dans
+ * la CommandPalette (⌘K) pour discovery via search.
+ *
+ * Phase 3.C — P1.6 (audit Phase 0.bis Q3) : chaque entrée DOIT
+ * désormais documenter sa raison de masquage via le champ `reason`
+ * (string non-vide). Le source-guard SG_NAV_FE_04 vérifie cette
+ * convention en CI — empêche tout futur "caché par négligence".
+ *
+ * Catégories de raison acceptées (libre, mais cohérentes) :
+ *   - "doublon-sub-page"   : sub-page d'un item visible (variante)
+ *   - "outil-interne"      : page admin/marketing non destinée aux
+ *                            persona client
+ *   - "setup-technique"    : config/connecteurs accédés par admin
+ *   - "workflow-specialise" : audience persona très réduite (RegOps...)
+ *   - "deep-link-only"     : URL utile en deep-link mais sans entrée
+ *                            rail (ex: alias d'un item promu)
+ *   - "doctrine-§N.N"      : justification doctrinale explicite
+ *
+ * Phase 18.A — `/conformite/tertiaire` retiré de HIDDEN_PAGES (doublon
+ * signalé audit Phase 17 cumulée). La route est désormais item visible
+ * dans NAV_SECTIONS module Conformité (Phase 17.bis.C). Conserver dans
+ * HIDDEN_PAGES créait un doublon CommandPalette via ALL_MAIN_ITEMS.
+ */
 export const HIDDEN_PAGES = [
   {
     to: '/kb',
@@ -1050,6 +1073,8 @@ export const HIDDEN_PAGES = [
     keywords: ['kb', 'knowledge', 'memobox', 'documents'],
     section: 'Autres',
     hidden: true,
+    reason:
+      'outil-interne : référence documentaire pour power users. Search ⌘K adapté à un usage ponctuel — pas de signal rail justifiant un slot module dédié (doctrine §6.2 anti-pattern menu surchargé).',
   },
   {
     to: '/segmentation',
@@ -1058,6 +1083,8 @@ export const HIDDEN_PAGES = [
     keywords: ['segment', 'profil'],
     section: 'Autres',
     hidden: true,
+    reason:
+      'outil-interne : profilage marketing/produit, audience PROMEOS-team uniquement. Non destinée aux persona client — pas exposée rail.',
   },
   {
     to: '/connectors',
@@ -1066,6 +1093,8 @@ export const HIDDEN_PAGES = [
     keywords: ['connecteurs', 'api', 'sync'],
     section: 'Autres',
     hidden: true,
+    reason:
+      'setup-technique : configuration des connecteurs Enedis/GRDF/CSV. Accédée via /admin (rôle admin) ou onboarding. Pas de slot rail justifié — usage one-shot par admin.',
   },
   {
     to: '/usages-horaires',
@@ -1074,11 +1103,9 @@ export const HIDDEN_PAGES = [
     keywords: ['usages', 'horaires', 'profil', 'heatmap', 'comportement'],
     section: 'Énergie',
     hidden: true,
+    reason:
+      'doublon-sub-page : variante détaillée de /usages (item visible Énergie). Exposer les deux créerait un doublon pathologique anti-pattern §6.2 — keep hidden, reachable via search ou drill-down /usages.',
   },
-  // Phase 18.A — `/conformite/tertiaire` retiré de HIDDEN_PAGES (doublon
-  // signalé audit Phase 17 cumulée). La route est désormais item visible
-  // dans NAV_SECTIONS module Conformité (Phase 17.bis.C). Conserver dans
-  // HIDDEN_PAGES créait un doublon CommandPalette via ALL_MAIN_ITEMS.
   {
     to: '/compliance/pipeline',
     icon: ListChecks,
@@ -1086,6 +1113,8 @@ export const HIDDEN_PAGES = [
     keywords: ['pipeline', 'findings'],
     section: 'Conformité',
     hidden: true,
+    reason:
+      'workflow-specialise : audience RegOps spécialisée (revue findings DT/BACS/APER batch). Audit Phase 0.bis Q3 a explicitement choisi keep-hidden — promotion item Conformité jugée non justifiée pour la majorité des persona (Marie DAF, Marc EM, Sophie DG).',
   },
   {
     to: '/anomalies',
@@ -1094,6 +1123,8 @@ export const HIDDEN_PAGES = [
     keywords: ['anomalies', 'inbox', 'detection', 'automatique'],
     section: 'Accueil',
     hidden: true,
+    reason:
+      "deep-link-only : URL legacy maintenue pour rétro-compat search palette + redirects. Le hub canonique est désormais /action-center (Phase 1.C — P0.3). Phase 3.B — P1.5 a retargeté la Quick Action 'centre' vers /action-center ; cette HIDDEN_PAGE reste pour search ⌘K avec les keywords historiques.",
   },
 ];
 
