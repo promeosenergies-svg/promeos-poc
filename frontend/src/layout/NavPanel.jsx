@@ -310,7 +310,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
       {/* Module header — tinted gradient, animated on module change */}
       <div
         key={`header-${activeModule}`}
-        className={`px-3 pt-3 pb-2 border-b border-slate-200/50 bg-gradient-to-b ${t.panelHeader} animate-[fadeIn_0.2s_ease-out]`}
+        className={`px-3 pt-3 pb-2 border-b border-slate-200/50 bg-gradient-to-b ${t.panelHeader} animate-[fadeIn_0.2s_ease-out] motion-reduce:animate-none`}
       >
         <div className="flex items-center gap-2">
           <mod.icon size={16} className={t.icon} />
@@ -367,9 +367,9 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
                 aria-valuemax={100}
               >
                 <span className="text-[10px] font-medium text-slate-500 w-9">{row.label}</span>
-                <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div
-                    className={`h-full ${row.color} transition-all duration-300`}
+                    className={`h-full ${row.color} transition-all duration-300 motion-reduce:transition-none`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>

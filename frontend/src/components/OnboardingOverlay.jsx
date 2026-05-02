@@ -66,10 +66,10 @@ export default function OnboardingOverlay() {
   return (
     <div className="fixed inset-0 z-[280] flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/50 animate-[fadeIn_0.3s_ease-out]"
+        className="absolute inset-0 bg-black/50 animate-[fadeIn_0.3s_ease-out] motion-reduce:animate-none"
         onClick={dismiss}
       />
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 animate-[slideInUp_0.3s_ease-out]">
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 animate-[slideInUp_0.3s_ease-out] motion-reduce:animate-none">
         <button
           onClick={dismiss}
           className="absolute top-3 right-3 p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition"

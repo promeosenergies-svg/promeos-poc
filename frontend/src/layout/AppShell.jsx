@@ -5,7 +5,16 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Search, LogOut, ChevronDown, Building2, Command, Bell, Menu } from 'lucide-react';
+import {
+  Search,
+  LogOut,
+  ChevronDown,
+  Building2,
+  Command,
+  Bell,
+  Menu,
+  FlaskConical,
+} from 'lucide-react';
 import Sidebar from './Sidebar';
 import Drawer from '../ui/Drawer';
 import useMediaQuery from '../hooks/useMediaQuery';
@@ -21,6 +30,7 @@ import { ActionDrawerProvider } from '../contexts/ActionDrawerContext';
 import { Toggle } from '../ui';
 import { trackRouteChange } from '../services/tracker';
 import { useAuth } from '../contexts/AuthContext';
+import { useDemo } from '../contexts/DemoContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { resolveModule, MODULE_TINTS } from './NavRegistry';
 // Phase 2.B — P1.2.bis : badge cloche Action Center vient désormais
@@ -199,6 +209,11 @@ export default function AppShell() {
     return { count, color: count >= 5 ? 'red' : 'amber' };
   }, [navBadges]);
   const { isExpert, toggleExpert, showOnboarding } = useExpertMode();
+  // Phase 3.L — quick win CS étape 10 R1 : signal "MODE DÉMO" subtil
+  // dans le header pour clarifier au user qu'il manipule des données
+  // fictives (audit cs_audit_20260502.md §3.3 P0.1 — éviter confusion
+  // demo/prod en first-login).
+  const { demoEnabled } = useDemo();
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -273,15 +288,17 @@ export default function AppShell() {
       )}
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header — glass surface */}
-        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/70 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
+        {/* Header — glass surface
+            Phase 3.L — fix UX étape 4 : px-4 sm:px-6 (mobile responsive)
+            + p-2.5 hamburger (touch target ≥44pt Apple HIG). */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/70 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-40">
           <div className="flex items-center gap-4">
-            {/* Mobile hamburger */}
+            {/* Mobile hamburger — touch target ≥44pt */}
             {!isDesktop && (
               <button
                 onClick={() => setMobileNavOpen(true)}
                 aria-label="Ouvrir le menu"
-                className="p-2 -ml-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition"
+                className="p-2.5 -ml-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition motion-reduce:transition-none"
               >
                 <Menu size={20} />
               </button>
@@ -291,6 +308,20 @@ export default function AppShell() {
               <ScopeSwitcher />
             </div>
             <DataReadinessBadge />
+            {/* Phase 3.L — CS R1 : signal mode démo subtil — visible
+                uniquement quand DEMO_MODE actif. Évite la confusion
+                first-login (user manipule données HELIOS fictives, pas
+                ses vraies données). */}
+            {demoEnabled && (
+              <span
+                className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-amber-50 text-amber-700 ring-1 ring-amber-200/70 rounded"
+                title="Vous manipulez des données de démonstration HELIOS — pas vos vraies données."
+                aria-label="Mode démonstration actif"
+              >
+                <FlaskConical size={10} aria-hidden="true" />
+                Démo
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {/* Command Palette trigger */}
@@ -307,22 +338,23 @@ export default function AppShell() {
               </kbd>
             </button>
 
-            {/* Centre d'actions — cloche (V7) */}
+            {/* Centre d'actions — cloche (V7)
+                Phase 3.L — touch target ≥44pt (p-2.5) + motion-reduce
+                + badge text-xs (12px) au lieu de text-[10px] limite. */}
             <button
               onClick={() => {
                 setActionCenterTab('actions');
                 setActionCenterOpen(true);
               }}
               aria-label="Centre d'actions"
-              title="Centre d'actions"
-              className="relative p-2 bg-white/60 border border-slate-200/80 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-white hover:border-slate-300 transition-all shadow-sm"
+              className="relative p-2.5 bg-white/60 border border-slate-200/80 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-white hover:border-slate-300 transition-all motion-reduce:transition-none shadow-sm"
             >
               <Bell size={16} />
-              {actionCenterBadge.count !== null && (
+              {actionCenterBadge.count !== null && actionCenterBadge.count > 0 && (
                 <span
-                  className={`absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full min-w-[18px] text-center leading-tight ${badgeColorClass}`}
+                  className={`absolute -top-1 -right-1 px-1.5 py-0.5 text-xs font-bold rounded-full min-w-[20px] text-center leading-tight ${badgeColorClass}`}
                 >
-                  {actionCenterBadge.count}
+                  {actionCenterBadge.count > 99 ? '99+' : actionCenterBadge.count}
                 </span>
               )}
             </button>

@@ -30,7 +30,7 @@ function RailIcon({ mod, isActive, onClick, badgeCount }) {
     <TooltipPortal text={tipText} position="right">
       <button
         onClick={() => onClick(mod.key)}
-        className={`relative flex flex-col items-center justify-center w-12 h-14 rounded-xl transition-all duration-150
+        className={`relative flex flex-col items-center justify-center w-12 h-14 rounded-xl transition-all duration-150 motion-reduce:transition-none
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1
           ${
             isActive
