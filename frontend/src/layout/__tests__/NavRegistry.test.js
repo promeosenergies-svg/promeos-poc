@@ -722,7 +722,8 @@ describe('Phase 1.E — P0.5 ordre rail cible Sol v1.1', () => {
  */
 describe('Phase 3.D — P1.7 persona dominant module position parity', () => {
   // Mapping persona → module dominant (position 2 du rail rendu).
-  // Source : ROLE_MODULE_ORDER (NavRegistry.js:981-995) figé en P0.5.
+  // Source : ROLE_MODULE_ORDER (NavRegistry.js:981-995) figé en P0.5
+  // + AUDITEUR ajouté Phase 3.G (audit personas P0.1).
   const POSITION_2_BY_PERSONA = {
     default: 'energie', // = energy_manager (cible Sol §2)
     energy_manager: 'energie',
@@ -732,6 +733,7 @@ describe('Phase 3.D — P1.7 persona dominant module position parity', () => {
     resp_conformite: 'conformite',
     resp_immobilier: 'conformite',
     resp_site: 'energie',
+    auditeur: 'conformite', // Phase 3.G — fonction audit réglementaire
   };
 
   for (const [persona, expectedModule] of Object.entries(POSITION_2_BY_PERSONA)) {

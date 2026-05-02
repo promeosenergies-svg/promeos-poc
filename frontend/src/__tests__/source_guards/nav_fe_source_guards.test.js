@@ -296,6 +296,80 @@ describe('SG_NAV_FE_04 — HIDDEN_PAGES require documented `reason`', () => {
   });
 });
 
+// ── SG_NAV_FE_06 : tout UserRole couvert ou fallback documenté ──────────
+
+describe('SG_NAV_FE_06 — UserRole coverage in ROLE_MODULE_ORDER', () => {
+  // Phase 3.G — P5.0.1 (audit personas docs/audits/personas/personas_audit_20260502.md
+  // §4 P0.1 + §5 R2.1) : garde-fou anti-régression couverture personas.
+  // Tout UserRole défini backend doit avoir un ordre rail dédié OU être
+  // explicitement listé en fallback intentionnel.
+  //
+  // Si une dérive silencieuse fait disparaître un persona ou en ajoute un
+  // sans ordre dédié, ce test flag immédiatement avant qu'un user impacté
+  // ne le découvre en prod.
+
+  // Source de vérité côté backend : models/enums.py UserRole (11 rôles).
+  // Cette liste est dupliquée ici intentionnellement — la cohérence est
+  // vérifiée par un test backend dédié (test_user_role_nav_coverage).
+  const ALL_USER_ROLES = [
+    'dg_owner',
+    'dsi_admin',
+    'daf',
+    'acheteur',
+    'resp_conformite',
+    'energy_manager',
+    'resp_immobilier',
+    'resp_site',
+    'prestataire',
+    'auditeur',
+    'pmo_acc',
+  ];
+
+  // Fallback intentionnel = rôles documentés comme retombant sur `default`
+  // par décision produit. Ajouter ici tout nouveau rôle qui DOIT rester
+  // sur le fallback (ex: rôle technique sans nav métier dédiée).
+  const ALLOWED_FALLBACKS = new Set([
+    'dsi_admin', // power user, mode expert auto-on prévu (P1)
+    'prestataire', // audit ponctuel mandat — fallback acceptable
+    'pmo_acc', // pilotage ACC — fallback acceptable
+  ]);
+
+  it('tout UserRole défini doit avoir un ordre dédié ou être un fallback documenté', async () => {
+    const navRegistrySrc = readFileSync(join(SRC_ROOT, 'layout', 'NavRegistry.js'), 'utf-8');
+
+    const violations = [];
+    for (const role of ALL_USER_ROLES) {
+      // Cherche `role:` au début d'une ligne dans ROLE_MODULE_ORDER.
+      const re = new RegExp(`^\\s+${role}:\\s*\\[`, 'm');
+      const hasDedicatedOrder = re.test(navRegistrySrc);
+      if (!hasDedicatedOrder && !ALLOWED_FALLBACKS.has(role)) {
+        violations.push(
+          `${role} : pas d'ordre dédié dans ROLE_MODULE_ORDER et pas dans ALLOWED_FALLBACKS`
+        );
+      }
+    }
+    expect(
+      violations,
+      `Personas non couverts :\n  ${violations.join('\n  ')}\n\n` +
+        `Solutions : (a) ajouter un ordre dédié dans ROLE_MODULE_ORDER, ` +
+        `OU (b) ajouter le rôle à ALLOWED_FALLBACKS dans ce test avec ` +
+        `commentaire de justification.`
+    ).toEqual([]);
+  });
+
+  it('aucun rôle dans ALLOWED_FALLBACKS ne doit avoir un ordre dédié (sinon retirer du fallback)', async () => {
+    const navRegistrySrc = readFileSync(join(SRC_ROOT, 'layout', 'NavRegistry.js'), 'utf-8');
+    const violations = [];
+    for (const role of ALLOWED_FALLBACKS) {
+      const re = new RegExp(`^\\s+${role}:\\s*\\[`, 'm');
+      if (re.test(navRegistrySrc)) {
+        violations.push(`${role} : a un ordre dédié — retirer de ALLOWED_FALLBACKS`);
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+});
+
 // ── SG_NAV_FE_05 : NavRail ne mute pas l'output getOrderedModules ───────
 
 describe('SG_NAV_FE_05 — NavRail must not mutate getOrderedModules output', () => {

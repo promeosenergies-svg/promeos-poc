@@ -990,6 +990,13 @@ const ROLE_MODULE_ORDER = {
   resp_immobilier: ['cockpit', 'conformite', 'energie', 'facturation', 'achat', 'patrimoine'],
   resp_site: ['cockpit', 'energie', 'conformite', 'facturation', 'achat', 'patrimoine'],
 
+  // Phase 3.G — P5.0.1 (audit personas docs/audits/personas/personas_audit_20260502.md
+  // P0.1) : AUDITEUR avait fallback default (Énergie #2) alors que la fonction
+  // métier privilégie Conformité (audits CSRD, Audit Énergie ISO 50001, OPERAT).
+  // Compte démo j.dupont@helios-energie.fr (UserRole.AUDITEUR) impacté.
+  // Mapping aligné sur resp_conformite — même focus réglementaire.
+  auditeur: ['cockpit', 'conformite', 'energie', 'facturation', 'achat', 'patrimoine'],
+
   // Default order (no role or unknown) = aligné sur energy_manager (cible Sol §2)
   default: ['cockpit', 'energie', 'conformite', 'facturation', 'achat', 'patrimoine'],
 };
