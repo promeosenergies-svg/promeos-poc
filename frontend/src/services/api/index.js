@@ -32,3 +32,4 @@ export * from './pilotage';
 export * from './cxDashboard';
 export * from './nps';
 export * from './navigation';
+export * from './events';

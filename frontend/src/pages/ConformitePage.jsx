@@ -39,6 +39,8 @@ import EmptyState from '../ui/EmptyState';
 import ErrorState from '../ui/ErrorState';
 import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
 import { buildWatchlist, buildBriefing, computeHealthState } from '../models/dashboardEssentials';
+import { useAuth } from '../contexts/AuthContext';
+import { useEvents } from '../hooks/useEvents';
 import { computeObligationProfileTags } from '../models/complianceProfileRules';
 import HealthSummary from '../components/HealthSummary';
 import CrossModuleCTA from '../components/CrossModuleCTA';
@@ -99,6 +101,13 @@ export { DevScopeBadge };
 
 export default function ConformitePage() {
   const { org, scope, scopedSites, portefeuilles, sitesCount, sitesLoading } = useScope();
+  // Sprint α-fin Phase 1.C — useEvents en parallèle (préparation Phase 1.D
+  // qui supprimera buildWatchlist au profit de cette source unique).
+  // Pour l'instant, on conserve buildWatchlist pour ne casser aucun flow.
+  // eslint-disable-next-line no-unused-vars
+  const { role: authRole } = useAuth();
+  // eslint-disable-next-line no-unused-vars
+  const { events: upcomingEvents } = useEvents('conformite', authRole);
 
   // Sprint 1.4 — briefing éditorial Sol §5 vue conformité (ADR-001).
   // Backend orchestre KPIs + narrative + week-cards par jalon réglementaire

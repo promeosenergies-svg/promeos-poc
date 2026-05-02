@@ -38,6 +38,8 @@ import {
 import { useScope } from '../contexts/ScopeContext';
 import { getRiskStatus } from '../lib/constants';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useEvents } from '../hooks/useEvents';
 import {
   buildWatchlist,
   buildBriefing,
@@ -109,6 +111,13 @@ export function normalizeDashboardModel({ kpis, topActions, alertsCount }) {
 export default function CommandCenter() {
   const navigate = useNavigate();
   const { org, scopedSites, selectedSiteId } = useScope();
+  // Sprint α-fin Phase 1.C — useEvents en parallèle (préparation Phase 1.D
+  // qui supprimera buildWatchlist au profit de cette source unique).
+  // Pour l'instant, on conserve buildWatchlist pour ne casser aucun flow.
+  // eslint-disable-next-line no-unused-vars
+  const { role: authRole } = useAuth();
+  // eslint-disable-next-line no-unused-vars
+  const { events: upcomingEvents } = useEvents('cockpit_daily', authRole);
   const { isExpert } = useExpertMode();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
