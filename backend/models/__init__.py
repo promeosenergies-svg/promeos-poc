@@ -93,6 +93,7 @@ from .portefeuille import Portefeuille
 # Site (coeur)
 from .site import Site
 from .batiment import Batiment
+from .site_portefeuille_history import SitePortefeuilleHistory  # Sprint C-2 Phase 2
 from .usage import Usage, UsageBaseline
 
 # Assets energie

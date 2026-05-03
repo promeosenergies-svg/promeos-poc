@@ -119,6 +119,9 @@ from routes.cascade import router as cascade_router
 # Sprint C-2 Phase 1.4 — Site production-ready status (matrice v1 §9.2)
 from routes.site_readiness import router as site_readiness_router
 
+# Sprint C-2 Phase 2 — Site portefeuille transfer + history (matrice v1 §6.5)
+from routes.site_portefeuille import router as site_portefeuille_router
+
 # Créer l'application FastAPI (lifespan assigned after startup funcs are defined)
 app = FastAPI(
     title="PROMEOS API",
@@ -183,6 +186,7 @@ app.include_router(users_router)  # Sprint α-push Phase 2.C — /api/v1/users/m
 app.include_router(digest_router)  # Sprint α-push Phase 2.D — /api/v1/digest/dispatch
 app.include_router(cascade_router)  # Sprint C-1 Phase 6 — /api/v1/sites/{id}/cascade-impact
 app.include_router(site_readiness_router)  # Sprint C-2 Phase 1.4 — /api/v1/sites/{id}/production-ready-status
+app.include_router(site_portefeuille_router)  # Sprint C-2 Phase 2 — /api/v1/sites/{id}/portefeuille (PATCH + history)
 app.include_router(ai_router)
 app.include_router(kb_router)  # Knowledge Base (generic)
 app.include_router(kb_usages_router)  # KB Usages (archetypes, rules, recommendations)
