@@ -153,11 +153,36 @@ les formats UI ("Réunion", "La Réunion") avec mapping vers la forme JSON.
 
 ---
 
+## D-Phase5-DtBacsAssujetti-Volatile-001 — `dt_assujetti` / `bacs_assujetti` calculés à la volée
+
+**Détecté** : Sprint C-1 Phase 5.1 (2026-05-03)
+
+**Comportement actuel** :
+- `dt_assujetti` calculé à la volée via `_is_dt_assujetti(site)` = `site.tertiaire_area_m2 >= 1000`
+- `bacs_assujetti` calculé à la volée via `_is_bacs_assujetti(site)` = `sum(b.cvc_power_kw for b in site.batiments) >= 70`
+- `aper_assujetti` est stocké en colonne DB (ajouté Phase 3)
+
+**Décision Phase 5** : ne pas dénormaliser ces 2 champs maintenant pour ne pas scope creep migration (Option A retenue).
+
+**Action** :
+- Phase 6 (cascade_recompute_service) : si performance OK avec calcul à la volée, peut rester
+- OU Sprint C-6 (Modèles enrichis) : dénormalisation en colonnes stockées avec recalcul cascade
+- Décision finale : à arbitrer en Phase 6 ou C-6 selon impact perf observé
+
+**Effort estimé** : 1-2 j-h (migration Alembic + cascade trigger)
+**Priorité** : 🟡 P2 (fonctionnel sans dénorm)
+**Sprint cible** : Phase 6 ou Sprint C-6 (à arbitrer)
+
+**Traces** :
+- Service : `backend/services/compliance_score_service.py::_is_dt_assujetti` / `_is_bacs_assujetti`
+
+---
+
 ## Métriques tracker
 
 | Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
 |---|---|---|---|---|
-| 2026-05-03 | 4 | 0 | 1 | 3 |
+| 2026-05-03 | 5 | 0 | 1 | 4 |
 
 ---
 
