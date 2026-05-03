@@ -357,6 +357,31 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
+## D-Phase1-4-Batiment-SDP-Proxy-001 — Modèle Batiment minimal (6/23 champs matrice v1 §4.5)
+
+**Détecté** : Sprint C-2 Phase 1.4 (2026-05-03)
+
+**Périmètre** : Modèle `Batiment` actuel = 6 champs (`id`, `site_id`, `nom`, `surface_m2`, `annee_construction`, `cvc_power_kw`). Matrice v1 §4.5 cible 23 champs incluant : `surface_de_plancher_sdp_m2`, `categorie_operat_batiment`, `rnb_id`, `dpe_*`, `efa_id`, `etage_count`, `parties_communes_pct`, etc.
+
+**Workarounds actuels** :
+- `is_site_production_ready` Check 3 : utilise `Batiment.surface_m2` comme proxy SDP
+- `is_site_production_ready` Check 3 : fallback `Site.operat_sous_categorie_id` au lieu de `Batiment.categorie_operat_batiment`
+- `OperatValeursAbsoluesService.compute_cabs_2030` Phase 4 : même fallback pattern
+- `cascade_recompute_service._recompute_cabs` Phase 6 : utilise `Site.tertiaire_area_m2` ou `Site.surface_m2` au lieu d'une agrégation Bâtiment
+
+**Action** : enrichir modèle Batiment avec les 17 champs manquants (RNB ID, DPE classes, EFA ID, parties communes, etage_count, etc.). Migration Alembic dédiée + Pydantic schemas Bâtiment + tests.
+
+**Effort estimé** : 4-6 j-h (migration Alembic + Pydantic schemas + service + tests)
+**Priorité** : 🟡 P2 (workarounds fonctionnels, pas bloquant)
+**Sprint cible** : Sprint C-6 (Modèles enrichis + EFA — déjà planifié plan Phase B)
+
+**Traces** :
+- Site_readiness_service Phase 1.4 : check 3 documente l'adaptation
+- Operat_cabs_service Phase 4 : `compute_cabs_2030` n'agrège pas multi-bâtiments
+- Compute_cabs Phase 6 : utilise sous-cat unique site
+
+---
+
 ## Métriques tracker
 
 | Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
@@ -364,6 +389,7 @@ non couverts par les tests existants (notamment dashboards aggregations).
 | 2026-05-03 | 11 | 0 | 4 | 7 |
 | 2026-05-03 | 12 | 0 | 4 | 8 |
 | 2026-05-03 | 13 | 0 | 4 | 9 |
+| 2026-05-03 | 14 | 0 | 4 | 10 |
 
 ---
 
