@@ -12,7 +12,7 @@ import json
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -282,3 +282,130 @@ def _manifest_to_dict(m):
         "baseline_normalization_status": getattr(m, "baseline_normalization_status", None),
         "promeos_version": getattr(m, "promeos_version", "1.0"),
     }
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Sprint C-1 Phase 4 — endpoint Cabs 2030 (matrice v1 §5.3)
+# ════════════════════════════════════════════════════════════════════════════
+#
+# GET /api/operat/cabs/{site_id} — chaîne 4 lookups OPERAT pour un site donné.
+# Org-scoping enforced via Site → Portefeuille → EntiteJuridique → Organisation.
+
+
+@router.get("/cabs/{site_id}", tags=["operat-cabs"])
+def get_cabs_for_site(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Calcule Cabs 2030 ajusté pour un site (chaîne 4 lookups OPERAT).
+
+    Source : Arrêté ATDL2430864A annexes I+II + LOGL2005904A v2 (zones).
+
+    Org-scoping : le site doit appartenir à l'org de l'utilisateur authentifié.
+
+    Réponse type :
+        {
+            "cabs_2030_kwh_m2_an": 107.0,
+            "components": [...],
+            "surface_totale_m2": 1500.0,
+            "tracability_complete": {...}
+        }
+
+    Erreurs :
+    - 404 site introuvable ou hors org
+    - 422 données incomplètes (code_postal/altitude_m manquants ou sous-cat absente)
+    - 422 site hors périmètre OPERAT (COM 975/977/978)
+    - 422 sous-catégorie introuvable dans Annexe I
+    """
+    from regops.services.operat_cabs_service import (
+        OperatNonAssujettiError,
+        OperatSousCategorieIntrouvableError,
+        OperatValeursAbsoluesService,
+    )
+    from models import EntiteJuridique, Portefeuille, Site, not_deleted
+    from services.scope_utils import resolve_org_id
+
+    org_id = resolve_org_id(request, auth, db)
+
+    # Org-scoping via la chaîne Site → Portefeuille → EntiteJuridique → Organisation
+    site_query = (
+        db.query(Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(
+            Site.id == site_id,
+            EntiteJuridique.organisation_id == org_id,
+            not_deleted(Site),
+        )
+    )
+    site = site_query.first()
+
+    if not site:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "SITE_INTROUVABLE",
+                "message": "Site introuvable ou hors périmètre de l'organisation",
+            },
+        )
+
+    missing_fields = []
+    if not site.code_postal:
+        missing_fields.append("code_postal")
+    if site.altitude_m is None:
+        missing_fields.append("altitude_m")
+    if missing_fields:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "DONNEES_INCOMPLETES",
+                "message": "code_postal et altitude_m requis pour calcul Cabs",
+                "missing_fields": missing_fields,
+            },
+        )
+
+    # Sous-catégories : pour MVP, utiliser uniquement le champ Site.operat_sous_categorie_id
+    # (les bâtiments multi-sous-cat sont matrice v1 §4.5 — Phase ultérieure)
+    if not site.operat_sous_categorie_id:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "SOUS_CATEGORIE_NON_DECLAREE",
+                "message": "Site.operat_sous_categorie_id requis pour calcul Cabs",
+            },
+        )
+
+    sous_categories_declared = [
+        {
+            "title": site.operat_sous_categorie_id,
+            "surface_m2": site.tertiaire_area_m2 or site.surface_m2 or 0.0,
+        }
+    ]
+
+    service = OperatValeursAbsoluesService()
+
+    try:
+        result = service.compute_cabs_2030(
+            code_postal=site.code_postal,
+            altitude_m=site.altitude_m,
+            sous_categories_declared=sous_categories_declared,
+        )
+    except OperatNonAssujettiError as e:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "OPERAT_NON_ASSUJETTI", "message": str(e)},
+        )
+    except OperatSousCategorieIntrouvableError as e:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "SOUS_CATEGORIE_INTROUVABLE", "message": str(e)},
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "DONNEES_INVALIDES", "message": str(e)},
+        )
+
+    return result

@@ -59,6 +59,7 @@ _ALLOWED_PATH_FRAGMENTS = (
     "alembic/",  # migrations historiques
     "scripts/operat_extract_",  # scripts d'extraction OPERAT
     "regops/operat_zones.py",  # resolver zone authentifié
+    "regops/services/operat_cabs_service.py",  # SoT normalize zone Annexe I (Phase 4)
     "data/",
     "docs/",
 )
