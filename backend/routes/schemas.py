@@ -3,7 +3,7 @@ PROMEOS - Schémas Pydantic pour validation des données API
 """
 
 from pydantic import BaseModel, ConfigDict, model_validator
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime, date
 from models import (
     TypeSite,
@@ -13,6 +13,14 @@ from models import (
     TypeObligation,
     TypeEvidence,
     StatutEvidence,
+)
+from models.enums import (
+    AperCategorieTailleEnum,
+    AperExemptionMotifEnum,
+    OperatModulationMotifEnum,
+    OperatPalierAltitudeEnum,
+    OperatUsagePrincipalEnum,
+    OperatZoneClimatiqueEnum,
 )
 
 # ========================================
@@ -52,6 +60,28 @@ class SiteResponse(SiteBase):
     portefeuille_nom: Optional[str] = None
     entite_juridique_nom: Optional[str] = None
     organisation_nom: Optional[str] = None
+
+    # ─── OPERAT/APER/EFA — Sprint C-1 Phase 3 — matrice v1 §4.4.C/D/G ───
+    # Tous Optional. Renseignés progressivement par OperatValeursAbsoluesService
+    # (Phase 4), compliance_score V2 (Phase 5), cascade_recompute (Phase 6).
+    operat_zone_climatique: Optional[OperatZoneClimatiqueEnum] = None
+    operat_palier_altitude: Optional[OperatPalierAltitudeEnum] = None
+    altitude_m: Optional[int] = None
+    operat_sous_categorie_id: Optional[str] = None
+    operat_iiu_temporels: Optional[Dict[str, Any]] = None
+    operat_iiu_surfaciques: Optional[Dict[str, Any]] = None
+    cabs_kwh_m2_an: Optional[float] = None
+    crelat_kwh_m2_an: Optional[float] = None
+    usage_principal: Optional[OperatUsagePrincipalEnum] = None
+    efa_id: Optional[str] = None
+    annee_reference_operat: Optional[int] = None
+    methode_modulation_dt: Optional[OperatModulationMotifEnum] = None
+    dossier_modulation_id: Optional[str] = None
+    aper_assujetti: Optional[bool] = None
+    aper_categorie_taille: Optional[AperCategorieTailleEnum] = None
+    aper_deadline: Optional[date] = None
+    parking_solar_pct_engaged: Optional[float] = None
+    aper_exemption_motif: Optional[AperExemptionMotifEnum] = None
 
     @model_validator(mode="wrap")
     @classmethod

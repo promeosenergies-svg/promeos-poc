@@ -1,0 +1,104 @@
+# Tracker dette technique PROMEOS
+
+> Document interne — référencé par les commits, source-guards, et issues.
+> À revue trimestrielle (ou plus fréquente si dette > 5 entrées).
+
+## Légende criticité
+- 🔴 **P0** : bloquant production / sécurité
+- 🟠 **P1** : crédibilité B2B / différenciateur perdu
+- 🟡 **P2** : polish / dette technique non bloquante
+
+---
+
+## D-Enedis-Legacy-001 — Tables Enedis legacy sans modèle SQLAlchemy
+
+**Détecté** : Sprint C-1 Phase 3 étape 5 (autogenerate Alembic, 2026-05-03)
+
+**Tables concernées** (17) :
+- annotations, annotator_profiles
+- meter_load_curve, meter_energy_index, meter_power_peak
+- enedis_opendata_conso_inf36, enedis_opendata_conso_sup36
+- enedis_flux_mesure_r151, enedis_flux_mesure_r171, enedis_flux_mesure_r4x, enedis_flux_mesure_r50
+- enedis_flux_file, enedis_flux_file_error, enedis_ingestion_run
+- unmatched_prm, promotion_run, promotion_event
+
+**Hypothèse** : vestiges archi pré-`data_ingestion/` actuel. Anciens modèles supprimés sans migration de drop.
+
+**Symptôme** : `alembic revision --autogenerate` détecte les tables comme "à dropper" parce qu'elles n'ont plus de modèle SQLAlchemy correspondant. Le fichier de migration `c8f1246522f9_*.py` a été nettoyé manuellement Phase 3 pour retirer ces 17 `op.drop_table()`.
+
+**Action** :
+- Audit data lineage Enedis (sprint séparé, post C-1)
+- Identifier table par table : drop ou rétablir modèle
+- Migration ad-hoc séparée pour les drops confirmés
+
+**Effort estimé** : 1-2 j-h
+**Priorité** : 🟡 P2 (pas bloquant Phase C)
+**Sprint cible** : à planifier post Sprint C-7
+
+**Traces** :
+- Commit Phase 3 nettoyage migration : `c8f1246522f9` (retire 17 drop_table de l'autogenerate)
+- Backup migration originale : `backend/alembic/versions/c8f1246522f9_*.py.original-autogenerate`
+
+---
+
+## D-Phase3-Legacy-Zones-001 — Zones OPERAT (H1a..H3) en string littéral dans 3 services
+
+**Détecté** : Sprint C-1 Phase 3 étape 9 (source-guard, 2026-05-03)
+
+**Fichiers concernés (8 occurrences)** :
+
+| Fichier:ligne | Snippet | Contexte |
+|---|---|---|
+| `backend/regops/rules/cee_p6.py:97` | `zone = "H2b"` | CEE P6 calculs zone-spécifiques |
+| `backend/services/weather_provider.py:16` | `"H3": 1600` | Lookup table altitude |
+| `backend/services/weather_provider.py:98` | `"H3" for d in [...]` | Mapping département → zone |
+| `backend/services/aper_service.py:136-148` | `"Occitanie": "H3", "H3": [5,6,...]` | Mapping régions → zones (DJU mensuel) |
+| `backend/services/aper_service.py:220` | `{"H1": 1050, "H2": 1150, "H3": 1350}` | Hours équiv production solaire |
+
+**Cause** : code legacy pré-Phase 3, écrit avant la création de `OperatZoneClimatiqueEnum`.
+
+**Risque** :
+- 🟡 P2 : pas de bug fonctionnel — strings et `enums.value` sont équivalents au runtime
+- ⚠️ Fragilité : si l'enum change ses values (ex : rename "H3" → "H_3"), ces 3 fichiers ne suivront pas
+- 🔧 Cohérence doctrinale : viole "single source of truth" pour les zones
+
+**Action** :
+- Refactor 3 fichiers : remplacer strings par `OperatZoneClimatiqueEnum.X.value` ou `.X` selon contexte
+- Garder les tests métier existants verts (CEE, weather, aper)
+- Ajouter test paramétré pour valider migration sans régression
+
+**Effort estimé** : 30-60 min par fichier × 3 = 1.5-3 h ⋍ 0.5 j-h
+
+**Priorité** : 🟡 P2 (allowlist temporaire dans source-guard, pas bloquant Phase C)
+
+**Sprint cible** : Sprint C-4 (Tests + observabilité) ou Sprint C-2 (FE cleanup) selon disponibilité
+
+**Allowlist active** : `backend/tests/source_guards/test_operat_aper_enums_no_string_literal_source_guards.py::_LEGACY_FILES_GRANDFATHERED`
+
+**Traces** :
+- Source-guard avec allowlist : commit Phase 3 (sprint C-1)
+- DeprecationWarning émis à chaque exécution du source-guard (visibilité continue)
+
+---
+
+## Métriques tracker
+
+| Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
+|---|---|---|---|---|
+| 2026-05-03 | 2 | 0 | 0 | 2 |
+
+---
+
+## Procédure d'ouverture / clôture d'entrée
+
+**Pour ouvrir une nouvelle entrée** :
+1. Identifier un code unique : `D-<sprint/contexte>-<topic>-<NNN>` (ex : `D-C2-FE-Patrimoine-001`)
+2. Documenter : détection, fichiers, cause, risque, action, effort, priorité, sprint cible
+3. Ajouter une référence dans le commit qui détecte la dette
+4. Si grandfathering nécessaire (allowlist source-guard, exclusion test) : référencer l'entrée dans le code
+
+**Pour clôturer une entrée** :
+1. Une fois la dette résorbée : barrer l'entrée avec `~~D-...~~` et préfixer "✅ CLÔTURÉ <date>"
+2. Lien vers le commit/PR qui résout
+3. Mettre à jour la table métriques
+4. Conserver l'historique pour traçabilité (ne pas supprimer)

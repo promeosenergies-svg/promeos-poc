@@ -3,9 +3,19 @@ PROMEOS — Schemas Pydantic stricts pour les routes prioritaires Patrimoine.
 Quick-create site, update site, creation contrat.
 """
 
-from typing import Dict, List, Optional
+from datetime import date
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+from models.enums import (
+    AperCategorieTailleEnum,
+    AperExemptionMotifEnum,
+    OperatModulationMotifEnum,
+    OperatPalierAltitudeEnum,
+    OperatUsagePrincipalEnum,
+    OperatZoneClimatiqueEnum,
+)
 
 
 # ── Quick-Create Site ──────────────────────────────────────────────────────
@@ -74,6 +84,26 @@ class SiteUpdateRequest(BaseModel):
     nombre_employes: Optional[int] = Field(None, ge=0, le=1_000_000)
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
+
+    # ─── OPERAT/APER/EFA — Sprint C-1 Phase 3 — matrice v1 §4.4.C/D/G ───
+    operat_zone_climatique: Optional[OperatZoneClimatiqueEnum] = None
+    operat_palier_altitude: Optional[OperatPalierAltitudeEnum] = None
+    altitude_m: Optional[int] = None
+    operat_sous_categorie_id: Optional[str] = Field(None, max_length=50)
+    operat_iiu_temporels: Optional[Dict[str, Any]] = None
+    operat_iiu_surfaciques: Optional[Dict[str, Any]] = None
+    cabs_kwh_m2_an: Optional[float] = Field(None, ge=0)
+    crelat_kwh_m2_an: Optional[float] = Field(None, ge=0)
+    usage_principal: Optional[OperatUsagePrincipalEnum] = None
+    efa_id: Optional[str] = Field(None, max_length=50)
+    annee_reference_operat: Optional[int] = Field(None, ge=2010, le=2022)
+    methode_modulation_dt: Optional[OperatModulationMotifEnum] = None
+    dossier_modulation_id: Optional[str] = Field(None, max_length=50)
+    aper_assujetti: Optional[bool] = None
+    aper_categorie_taille: Optional[AperCategorieTailleEnum] = None
+    aper_deadline: Optional[date] = None
+    parking_solar_pct_engaged: Optional[float] = Field(None, ge=0, le=100)
+    aper_exemption_motif: Optional[AperExemptionMotifEnum] = None
 
     @field_validator("siret")
     @classmethod

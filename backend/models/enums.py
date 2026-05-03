@@ -995,3 +995,105 @@ class GasProfileGrdf(str, enum.Enum):
     B1 = "B1"  # chauffage individuel résidentiel
     B2I = "B2I"  # chauffage collectif ou tertiaire
     MODULANT = "MODULANT"  # gros site avec courbe de charge
+
+
+# ========================================
+# Enums OPERAT / APER (Sprint C-1 Phase 3 — matrice v1 §4.4.C/D)
+# ========================================
+#
+# Convention SQLAlchemy : utiliser sa.Enum(<EnumClass>, native_enum=False) sur
+# les colonnes Site → SQLite reçoit un CHECK constraint listant les valeurs,
+# PostgreSQL (cible roadmap) recevra un type ENUM natif sans cassure.
+
+
+class OperatZoneClimatiqueEnum(str, enum.Enum):
+    """13 zones climatiques OPERAT (8 métropole + 5 DOM).
+
+    Source primaire : Annexe III arrêté 10/04/2020 NOR LOGL2005904A,
+    version consolidée 07/09/2025 (modifié par arrêté 01/08/2025
+    NOR ATDL2430864A). Confidence 🟢 — recoupement direct PDF Légifrance v2.
+
+    ⚠️ Réunion (pas "La Réunion") : la chaîne authentifiée Annexe III utilise
+    "Réunion". Annexe I peut écrire "La Réunion" → normalisation requise dans
+    OperatValeursAbsoluesService (Sprint C-1 Phase 4).
+    """
+
+    H1A = "H1a"
+    H1B = "H1b"
+    H1C = "H1c"
+    H2A = "H2a"
+    H2B = "H2b"
+    H2C = "H2c"
+    H2D = "H2d"
+    H3 = "H3"
+    GUADELOUPE = "Guadeloupe"
+    MARTINIQUE = "Martinique"
+    GUYANE = "Guyane"
+    REUNION = "Réunion"
+    MAYOTTE = "Mayotte"
+
+
+class OperatPalierAltitudeEnum(str, enum.Enum):
+    """5 paliers altitude OPERAT (palier strict, pas interpolation).
+
+    Source primaire : Annexe I arrêté 01/08/2025 NOR ATDL2430864A.
+    Le CVCi de chaque sous-catégorie est tabulé pour chacun de ces 5 paliers
+    × 13 zones climatiques. Le palier est lu strictement, sans interpolation.
+    """
+
+    LT_400 = "alt_lt_400"
+    BETW_400_800 = "alt_400_800"
+    BETW_800_1200 = "alt_800_1200"
+    BETW_1200_1600 = "alt_1200_1600"
+    GTE_1600 = "alt_gte_1600"
+
+
+class OperatUsagePrincipalEnum(str, enum.Enum):
+    """Usage principal d'un site assujetti OPERAT (matrice v1 §4.4.C #32).
+
+    Catégorie macro qui guide le choix du sous-catégorie (operat_sous_categorie_id).
+    """
+
+    BUREAUX = "BUREAUX"
+    COMMERCES = "COMMERCES"
+    ENSEIGNEMENT = "ENSEIGNEMENT"
+    HOTELLERIE = "HOTELLERIE"
+    RESTAURATION = "RESTAURATION"
+    SANTE = "SANTE"
+    SPORT_LOISIRS = "SPORT_LOISIRS"
+    LOGISTIQUE = "LOGISTIQUE"
+    MIXTE = "MIXTE"
+
+
+class OperatModulationMotifEnum(str, enum.Enum):
+    """4 motifs officiels de modulation DT.
+
+    Source primaire : Arrêté 10/04/2020 art. 12 — dossier de modulation
+    (dépôt avant 30/09/2026 selon échéance Décret Tertiaire).
+    """
+
+    COUT_DISPROPORTIONNE = "COUT_DISPROPORTIONNE"
+    CONSEQUENCES_NEGATIVES = "CONSEQUENCES_NEGATIVES"
+    PATRIMOINE_INCOMPATIBILITE = "PATRIMOINE_INCOMPATIBILITE"
+    CHANGEMENT_ACTIVITE = "CHANGEMENT_ACTIVITE"
+
+
+class AperCategorieTailleEnum(str, enum.Enum):
+    """Catégories de taille parking pour APER.
+
+    Source primaire : Loi 2023-175 art. 40 + Décret 2024-1023.
+    - SMALL : 1 500 - 10 000 m² → deadline 01/07/2028
+    - LARGE : > 10 000 m²       → deadline 01/07/2026
+    """
+
+    SMALL = "SMALL"
+    LARGE = "LARGE"
+
+
+class AperExemptionMotifEnum(str, enum.Enum):
+    """4 motifs officiels d'exemption APER (matrice v1 §4.4.D #41)."""
+
+    CONTRAINTES_TECHNIQUES = "CONTRAINTES_TECHNIQUES"
+    CONTRAINTES_PATRIMONIALES = "CONTRAINTES_PATRIMONIALES"
+    CONTRAINTES_ECONOMIQUES = "CONTRAINTES_ECONOMIQUES"
+    CONTRAINTES_OPERATIONNELLES = "CONTRAINTES_OPERATIONNELLES"

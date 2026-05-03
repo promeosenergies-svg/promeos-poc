@@ -3,10 +3,21 @@ PROMEOS - Modèle Site
 Coeur du domaine : site de consommation énergétique
 """
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String
+from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin, SoftDeleteMixin
-from .enums import TypeSite, StatutConformite, ParkingType, OperatStatus
+from .enums import (
+    AperCategorieTailleEnum,
+    AperExemptionMotifEnum,
+    OperatModulationMotifEnum,
+    OperatPalierAltitudeEnum,
+    OperatStatus,
+    OperatUsagePrincipalEnum,
+    OperatZoneClimatiqueEnum,
+    ParkingType,
+    StatutConformite,
+    TypeSite,
+)
 
 
 class Site(Base, TimestampMixin, SoftDeleteMixin):
@@ -101,6 +112,114 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
         JSON,
         nullable=True,
         comment="Intensités carbone vérifiées par scope (tCO2/t) — surcharge défauts CE",
+    )
+
+    # ─── OPERAT/EFA — matrice v1 §4.4.C (Sprint C-1 Phase 3, 13 champs OPERAT + 1 EFA) ───
+    # Source primaire : Arrêté 10/04/2020 NOR LOGL2005904A modifié par
+    # arrêté 01/08/2025 NOR ATDL2430864A (consolidé 07/09/2025).
+    #
+    # Tous nullable=True : les sites existants n'ont pas ces données ; la cascade
+    # de calcul les remplit progressivement (Sprint C-1 Phase 6 cascade_recompute).
+    # native_enum=False : SQLite reçoit un CHECK constraint, PostgreSQL un type ENUM
+    # natif (compatibilité roadmap).
+
+    operat_zone_climatique = Column(
+        Enum(OperatZoneClimatiqueEnum, native_enum=False),
+        nullable=True,
+        comment="Matrice v1 §4.4.C #25 — Zone climatique OPERAT (résolue depuis code_postal/altitude)",
+    )
+    operat_palier_altitude = Column(
+        Enum(OperatPalierAltitudeEnum, native_enum=False),
+        nullable=True,
+        comment="Matrice v1 §4.4.C #26 — Palier altitude OPERAT (5 paliers stricts Annexe I)",
+    )
+    altitude_m = Column(
+        Integer,
+        nullable=True,
+        comment="Matrice v1 §4.4.C #27 — Altitude en mètres (input pour résoudre operat_palier_altitude)",
+    )
+    operat_sous_categorie_id = Column(
+        String(50),
+        nullable=True,
+        comment="Matrice v1 §4.4.C #28 — Identifiant sous-catégorie OPERAT (parmi 426 Annexe I)",
+    )
+    operat_iiu_temporels = Column(
+        JSON,
+        nullable=True,
+        default=dict,
+        comment="Matrice v1 §4.4.C #29 — Indicateurs Intensité Usage temporels (heures/jours)",
+    )
+    operat_iiu_surfaciques = Column(
+        JSON,
+        nullable=True,
+        default=dict,
+        comment="Matrice v1 §4.4.C #30 — Indicateurs Intensité Usage surfaciques (m²)",
+    )
+    cabs_kwh_m2_an = Column(
+        Float,
+        nullable=True,
+        comment="Matrice v1 §4.4.C #31 — Cabs 2030 calculé via OperatValeursAbsoluesService (kWh/m²/an)",
+    )
+    crelat_kwh_m2_an = Column(
+        Float,
+        nullable=True,
+        comment="Matrice v1 §4.4.C — Crelat (objectif relatif) calculé alternativement à Cabs (kWh/m²/an)",
+    )
+    usage_principal = Column(
+        Enum(OperatUsagePrincipalEnum, native_enum=False),
+        nullable=True,
+        comment="Matrice v1 §4.4.C #32 — Usage principal du site (catégorie macro OPERAT)",
+    )
+    efa_id = Column(
+        String(50),
+        nullable=True,
+        index=True,
+        comment="Matrice v1 §4.4.G — Identifiant EFA (Entité Fonctionnelle Assujettie OPERAT)",
+    )
+    annee_reference_operat = Column(
+        Integer,
+        nullable=True,
+        comment="Matrice v1 §4.4.C #33 — Année de référence OPERAT (entre 2010 et 2022)",
+    )
+    methode_modulation_dt = Column(
+        Enum(OperatModulationMotifEnum, native_enum=False),
+        nullable=True,
+        comment="Matrice v1 §4.4.C #34 — Motif de modulation DT (4 motifs officiels art. 12)",
+    )
+    dossier_modulation_id = Column(
+        String(50),
+        nullable=True,
+        comment="Matrice v1 §4.4.C #35 — ID dossier de modulation déposé (avant 30/09/2026)",
+    )
+
+    # ─── APER — matrice v1 §4.4.D (Sprint C-1 Phase 3, 5 champs) ───
+    # Source primaire : Loi 2023-175 art. 40 + Décret 2024-1023.
+    # parking_area_m2 + parking_type existent déjà (champs antérieurs).
+
+    aper_assujetti = Column(
+        Boolean,
+        nullable=True,
+        comment="Matrice v1 §4.4.D #37 — Site assujetti APER (calculé via parking_area_m2 ≥ 1500, cascade Phase 6)",
+    )
+    aper_categorie_taille = Column(
+        Enum(AperCategorieTailleEnum, native_enum=False),
+        nullable=True,
+        comment="Matrice v1 §4.4.D #38 — SMALL (1500-10000) ou LARGE (>10000) m²",
+    )
+    aper_deadline = Column(
+        Date,
+        nullable=True,
+        comment="Matrice v1 §4.4.D #39 — Échéance APER (01/07/2026 LARGE, 01/07/2028 SMALL)",
+    )
+    parking_solar_pct_engaged = Column(
+        Float,
+        nullable=True,
+        comment="Matrice v1 §4.4.D #40 — Pourcentage parking engagé en solarisation (0-100)",
+    )
+    aper_exemption_motif = Column(
+        Enum(AperExemptionMotifEnum, native_enum=False),
+        nullable=True,
+        comment="Matrice v1 §4.4.D #41 — Motif d'exemption APER si applicable",
     )
 
     @property
