@@ -721,6 +721,24 @@ def get_cockpit_trajectory(
                 )
                 projection_mwh.append(round(projected_mwh, 1))
 
+    # ─── Traçabilité KPI projection (Vague 3B VEX-Q5) ────────────────────────
+    # Règle cardinale 03/05/2026 : confidence + source_ref + formula_text.
+    # Lissage linéaire Phase 30 : chaque action contribue progressivement
+    # de 0 % (today) à 100 % (échéance) de son gain estimé, puis ramp-up
+    # post-échéance sur TRAJECTORY_LEARNING_MONTHS_RAMP_UP (18 mois).
+    # Confidence : 'calculated_regulatory' — ancré sur les due_dates actions
+    # (dates contractuelles projet DT) et jalons Décret n°2019-771.
+    _proj_action_count = len(_proj_actions) if _proj_actions else 0
+    _proj_confidence = "calculated_regulatory" if _proj_action_count > 0 else "modeled_pre_audit"
+    _proj_source_ref = "Décret n°2019-771, art. R131-39 CCH"
+    _proj_formula_text = (
+        f"Projection lissée linéairement : {_proj_action_count} action(s) ouverte(s), "
+        "chaque action contribue de 0 % (aujourd'hui) à 100 % (date échéance) de son gain estimé "
+        f"({round(_savings_kwh / 1000, 1)} MWh/an total). "
+        f"Ramp-up post-échéance sur {TRAJECTORY_LEARNING_MONTHS_RAMP_UP} mois. "
+        "Référence : Décret Tertiaire 2019-771 · modèle Phase 30 PROMEOS."
+    )
+
     return {
         "ref_year": ref_year,
         "ref_kwh": round(ref_kwh / 1000, 1),
@@ -732,6 +750,23 @@ def get_cockpit_trajectory(
         "objectif_mwh": objectif_mwh,
         "projection_mwh": projection_mwh,
         "projection_savings_kwh_an": round(_savings_kwh) if _savings_kwh > 0 else 0,
+        # ─── Traçabilité KPI (Vague 3B VEX-Q5) ───────────────────────────────
+        "projection_tracability": {
+            "confidence": _proj_confidence,
+            "confidence_label": (
+                "Calculé d'après source réglementaire"
+                if _proj_confidence == "calculated_regulatory"
+                else "Estimation pré-audit (heuristique sectorielle)"
+            ),
+            "source_ref": _proj_source_ref,
+            "formula_text": _proj_formula_text,
+            "action_count": _proj_action_count,
+            "tooltip": (
+                "Projection lissée linéairement entre aujourd'hui et échéance d'action"
+                " — basée sur les actions ouvertes (Décret Tertiaire 2019-771). "
+                "Chaque action contribue progressivement de 0 à 100 % de son gain."
+            ),
+        },
         # Jalons officiels Decret n°2019-771, art. R131-39 CCH
         # Il n'existe PAS de jalon 2026 dans le texte reglementaire
         "jalons": [

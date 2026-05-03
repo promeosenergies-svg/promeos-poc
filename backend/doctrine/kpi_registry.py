@@ -124,6 +124,49 @@ KPI_REGISTRY: dict[str, KPIDefinition] = {
         owner="bill_intelligence",
         used_in=["cockpit", "bill_intelligence"],
     ),
+    # ─── KPIs Vague 3B EPIC #274 ───────────────────────────────────────────
+    "leviers_mwh_year": KPIDefinition(
+        kpi_id="leviers_mwh_year",
+        label="Potentiel récupérable (leviers CEE)",
+        unit="MWh",
+        formula=(
+            "Σ(gains estimés fiches CEE BAT-TH-*) / 1 000 = MWh/an "
+            "× PRICE_ELEC_ETI_2026_EUR_PER_MWH = €/an. "
+            "Fallback : surface_m2 × 15 kWh/m²/an (modèle CEE conservatif)."
+        ),
+        source=(
+            "cockpit_facts_service._build_potential_recoverable "
+            "+ analytics_engine recommendations "
+            "+ CEE BAT-TH-116 / BAT-TH-104"
+        ),
+        scope=["organization", "portfolio"],
+        period=["year"],
+        freshness="daily",
+        confidence_rule="modeled_cee si analytics, modeled_pre_audit si surface fallback, unavailable si aucun site",
+        owner="action_center",
+        used_in=["cockpit", "executive", "conformity"],
+    ),
+    "trajectory_dt_projection": KPIDefinition(
+        kpi_id="trajectory_dt_projection",
+        label="Projection trajectoire DT lissée",
+        unit="MWh",
+        formula=(
+            "Pour chaque action ouverte : gain × _trajectory_learning_ratio(months_to_due, months_since_due). "
+            "Modèle 3 phases : engagement (0→20%), ramp-up (20→75% sur 18 mois), nominal (100%). "
+            "Projection = reel_baseline_mwh - cumul_savings_mwh."
+        ),
+        source=(
+            "routes/cockpit.py::_project_with_action_echeances "
+            "+ doctrine.constants.TRAJECTORY_LEARNING_* "
+            "— Décret n°2019-771, art. R131-39 CCH"
+        ),
+        scope=["organization"],
+        period=["year"],
+        freshness="daily",
+        confidence_rule="calculated_regulatory si actions présentes, modeled_pre_audit sinon",
+        owner="regops",
+        used_in=["cockpit", "executive"],
+    ),
 }
 
 

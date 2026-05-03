@@ -125,20 +125,50 @@ function KpiTriptyqueHybride({ facts }) {
         drillHref="/conformite?scope=org&view=exposure_components"
         drillLabel="Voir détail composantes"
       />
-      <KpiCard
-        variant="confidence"
-        label="Potentiel récupérable"
-        value={potSplit.value !== '—' ? potSplit.value : '—'}
-        unit={potSplit.unit ? `${potSplit.unit}/an` : ''}
-        badge={potential.method || 'modeled_cee'}
-        source={
-          potential.references?.length
-            ? `${potential.references[0]}${potential.leverage_count ? ` · ${potential.leverage_count} leviers` : ''}`
-            : 'CEE'
-        }
-        drillHref="/anomalies?status=open&sort=mwh_desc"
-        drillLabel={`Voir ${potential.leverage_count || 0} actions`}
-      />
+      {/* Phase Vague 3B VEX-Q1 : Potentiel récupérable → KPI MWh traçable.
+          Tooltip expose formula_text + source_ref + confidence_label depuis backend.
+          Sous-info : valeur €/an dérivée via prix CRE T4 2025 ETI tertiaire.
+          Si unavailable → affiche "—" + bouton audit (jamais valeur heuristique muette). */}
+      {(() => {
+        const leviersKpi = potential?.leviers_kpi;
+        const isUnavailable =
+          !leviersKpi || leviersKpi.confidence === 'unavailable' || leviersKpi.value == null;
+        const tooltipText = leviersKpi?.formula_text
+          ? `${leviersKpi.formula_text} · Confiance : ${leviersKpi.confidence_label || leviersKpi.confidence}`
+          : potential.references?.length
+            ? `Modélisé via ${potential.references[0]} · ${potential.leverage_count || 0} leviers`
+            : 'Modélisé via fiches CEE — à confirmer par audit';
+        const sourceText =
+          leviersKpi?.source_ref ||
+          (potential.references?.length ? potential.references[0] : 'CEE');
+        const valueDisplay = isUnavailable ? '—' : potSplit.value;
+        const unitDisplay = isUnavailable ? '' : potSplit.unit ? `${potSplit.unit}/an` : '';
+        const eurYear = leviersKpi?.value_eur_per_year;
+        return (
+          <KpiCard
+            variant="confidence"
+            label="Potentiel récupérable"
+            tooltip={tooltipText}
+            value={valueDisplay}
+            unit={unitDisplay}
+            subValue={
+              !isUnavailable && eurYear != null
+                ? `≈ ${(eurYear / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} k€/an`
+                : isUnavailable
+                  ? 'Lancer audit énergétique'
+                  : undefined
+            }
+            badge={leviersKpi?.confidence || potential.method || 'modeled_cee'}
+            source={`${sourceText}${potential.leverage_count ? ` · ${potential.leverage_count} leviers` : ''}`}
+            drillHref={
+              isUnavailable ? '/audit-energetique' : '/anomalies?status=open&sort=mwh_desc'
+            }
+            drillLabel={
+              isUnavailable ? 'Lancer audit' : `Voir ${potential.leverage_count || 0} actions`
+            }
+          />
+        );
+      })()}
     </div>
   );
 }
@@ -174,7 +204,7 @@ function DecisionCardImpl({ decision, index }) {
   const echeanceText = days != null ? `J−${days}` : '—';
   const gainMwh = decision.estimated_gain_mwh_year;
   const penaltyEur = decision.regulatory_penalty_eur?.value_eur;
-  const penaltyArticle = decision.regulatory_penalty_eur?.regulatory_article;
+  const _penaltyArticle = decision.regulatory_penalty_eur?.regulatory_article;
   // Étape 4.bis FE : consume les nouveaux champs backend cockpit_decisions_service.
   // Audit Marie + Jean-Marc : "manque CapEx + Économie €/an + Payback + ROI/CO₂".
   const capexEur = decision.investment_capex_eur;
@@ -518,7 +548,14 @@ function DecisionsList({ decisions, loading }) {
 
 function TrajectoryDTSmoothed({ trajectory }) {
   if (!trajectory?.annees?.length) return null;
-  const { annees, reel_mwh = [], objectif_mwh = [], projection_mwh = [] } = trajectory;
+  const {
+    annees,
+    reel_mwh = [],
+    objectif_mwh = [],
+    projection_mwh = [],
+    // Vague 3B VEX-Q5 : traçabilité KPI projection depuis backend
+    projection_tracability,
+  } = trajectory;
   const allValues = [...reel_mwh, ...objectif_mwh, ...projection_mwh].filter(
     (v) => v != null && Number.isFinite(v)
   );
@@ -543,7 +580,7 @@ function TrajectoryDTSmoothed({ trajectory }) {
   const todayIndex = reel_mwh.findIndex((v) => v == null);
   const todayX = xFor(todayIndex < 0 ? annees.length - 1 : todayIndex);
 
-  const pointsToPath = (values, color) => {
+  const pointsToPath = (values, _color) => {
     const points = values
       .map((v, i) => (v == null ? null : `${xFor(i)},${yFor(v)}`))
       .filter(Boolean);
@@ -721,13 +758,35 @@ function TrajectoryDTSmoothed({ trajectory }) {
           ) : null
         )}
       </svg>
+      {/* Vague 3B VEX-Q5 : tooltip traçabilité projection lissée depuis backend */}
       <div
         className="mt-1.5 font-mono uppercase tracking-[0.07em] flex justify-between flex-wrap gap-1"
         style={{ fontSize: 10, color: 'var(--sol-ink-500)' }}
       >
-        <span>Source consumption_unified · projection lissée par action.echeance</span>
+        <span
+          title={
+            projection_tracability?.tooltip ||
+            "Projection lissée linéairement entre aujourd'hui et échéance d'action — Décret Tertiaire 2019-771"
+          }
+          className="cursor-help"
+        >
+          Source consumption_unified · projection lissée par action.echeance
+          {projection_tracability?.action_count != null
+            ? ` (${projection_tracability.action_count} action(s))`
+            : ''}
+        </span>
         <span>Jalons −40%/2030 · −50%/2040 · −60%/2050</span>
       </div>
+      {/* Badge confiance projection — visible si non-contractuel */}
+      {projection_tracability && projection_tracability.confidence !== 'calculated_regulatory' && (
+        <div
+          className="mt-1 font-mono uppercase tracking-[0.07em]"
+          style={{ fontSize: 9.5, color: 'var(--sol-attention-fg)' }}
+          title={projection_tracability.formula_text}
+        >
+          {projection_tracability.confidence_label} · {projection_tracability.source_ref}
+        </div>
+      )}
     </div>
   );
 }

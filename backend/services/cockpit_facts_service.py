@@ -32,9 +32,11 @@ from doctrine.constants import (
     DT_REF_YEAR_DEFAULT,
     FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR,
     OPERAT_PENALTY_EUR,
+    PRICE_ELEC_ETI_2026_EUR_PER_MWH,
     PRICE_FLEX_NEBCO_EUR_PER_MWH,
     REGOPS_WEIGHTS_DEFAULT,
 )
+from doctrine.kpi_tracability import make_traceable_kpi, unavailable_kpi
 from models import (
     Alerte,
     EntiteJuridique,
@@ -969,15 +971,65 @@ def _build_potential_recoverable(db: Session, org_id: int, site_ids: list[int]) 
         value_mwh = int(round(total_kwh / 1000.0))
         references = list({lev["reference"] for lev in levers_out}) if levers_out else _CEE_DEFAULT_REFERENCES
 
+        # ─── leviers_kpi : KPI traçable Vague 3B (VEX-Q1) ────────────────
+        # Règle cardinale 03/05/2026 : confidence + source_ref + formula_text.
+        # Formule : Σ(gain estimé CEE) / 1 000 → MWh/an
+        #           × PRICE_ELEC_ETI_2026_EUR_PER_MWH → €/an
+        # Confidence : 'modeled_cee' si total > 0, 'unavailable' sinon.
+        # Source : fiches CEE BAT-TH-116 / BAT-TH-104 + Observatoire CRE T4 2025.
+        if value_mwh > 0:
+            value_eur_year = round(value_mwh * PRICE_ELEC_ETI_2026_EUR_PER_MWH)
+            leviers_kpi = make_traceable_kpi(
+                value=value_mwh,
+                confidence="modeled_cee",
+                source_ref=references[0] if references else "CEE BAT-TH-116",
+                formula_text=(
+                    f"Σ gains estimés CEE ({len(levers_out)} leviers) / 1 000 = {value_mwh} MWh/an"
+                    f" × {int(PRICE_ELEC_ETI_2026_EUR_PER_MWH)} €/MWh"
+                    f" (Observatoire CRE T4 2025 ETI tertiaire) = {value_eur_year:,} €/an"
+                    " · À confirmer par audit énergétique réel"
+                ),
+                unit="MWh/an",
+            )
+            leviers_kpi["value_eur_per_year"] = value_eur_year
+            leviers_kpi["action_count"] = len(levers_out)
+            leviers_kpi["price_assumption"] = {
+                "value": PRICE_ELEC_ETI_2026_EUR_PER_MWH,
+                "unit": "€/MWh",
+                "source": "Observatoire CRE T4 2025 — prix marginal ETI tertiaire post-ARENH",
+            }
+            _logger.debug(
+                "leviers_kpi computed: %d MWh/an → %d €/an (modeled_cee, %d leviers)",
+                value_mwh,
+                value_eur_year,
+                len(levers_out),
+            )
+        else:
+            leviers_kpi = unavailable_kpi(
+                reason="aucune_action_qualifiee",
+                formula_text="Σ gains estimés CEE / 1 000 — aucun levier qualifié détecté",
+                unit="MWh/an",
+            )
+            leviers_kpi["value_eur_per_year"] = None
+            leviers_kpi["action_count"] = 0
+
         return {
             "value_mwh_year": value_mwh,
             "method": "modeled_cee",
             "references": references,
             "leverage_count": len(levers_out),
             "by_lever": levers_out,
+            "leviers_kpi": leviers_kpi,
         }
     except Exception as exc:
         _logger.warning("_build_potential_recoverable error: %s", exc)
+        _empty["leviers_kpi"] = unavailable_kpi(
+            reason="erreur_calcul",
+            formula_text="Σ gains estimés CEE / 1 000",
+            unit="MWh/an",
+        )
+        _empty["leviers_kpi"]["value_eur_per_year"] = None
+        _empty["leviers_kpi"]["action_count"] = 0
         return _empty
 
 
