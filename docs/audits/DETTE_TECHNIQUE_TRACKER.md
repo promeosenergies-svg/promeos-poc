@@ -81,11 +81,38 @@
 
 ---
 
+## D-EMS-Overlay-Org-Scoping-001 — `test_overlay_two_sites` pré-existant rouge
+
+**Détecté** : Sprint C-1 Phase 3 baseline check (2026-05-03)
+
+**Test concerné** : `tests/test_ems_overlay.py::TestOverlayMode::test_overlay_two_sites`
+
+**Symptôme** : 403 "Organisation non résolue" (route `/api/ems/timeseries`)
+
+**Vérification** : test rouge déjà sur HEAD `claude/refonte-sol2` pré-Phase 3 — confirmé via `git stash` + re-test.
+
+**Suspicion** : org-scoping fragile sur route `/api/ems/timeseries`
+
+**Action** :
+- Investigation org-scoping route `/api/ems/timeseries`
+- Vérifier helper `_get_org_id` ou équivalent
+- Diagnostiquer : test factory cassée OU route mal scopée OU les deux
+
+**Effort estimé** : 1-2 j-h
+**Priorité** : 🟠 P1 (test rouge persistant = signal observabilité fragile)
+**Sprint cible** : Sprint C-2 (FE cleanup + temporalité, contexte org-scoping multi-tenant)
+
+**Traces** :
+- Bilan Sprint C-1 Phase 3 (ce sprint)
+- Ce test n'est PAS une régression Phase 3 (vérifié au stash)
+
+---
+
 ## Métriques tracker
 
 | Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
 |---|---|---|---|---|
-| 2026-05-03 | 2 | 0 | 0 | 2 |
+| 2026-05-03 | 3 | 0 | 1 | 2 |
 
 ---
 
