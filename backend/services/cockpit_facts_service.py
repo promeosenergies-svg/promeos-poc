@@ -698,19 +698,20 @@ def _build_compliance(db: Session, org_id: int, site_ids: list[int]) -> dict:
         portfolio = compute_portfolio_compliance(db, org_id)
         score = int(round(portfolio.get("avg_score", 0.0)))
 
-        # Compter non-conforme et à risque directement depuis Site
+        # Vague-7 perf : requête ciblée sur site_ids (déjà résolus par
+        # _build_scope) plutôt que re-JOIN full via _sites_for_org().
+        # Charge uniquement les 2 colonnes statut — pas d'objet Site complet.
         non_conform = 0
         at_risk = 0
-        sites = _sites_for_org(db, org_id).all()
-        for s in sites:
-            dt_status = getattr(s, "statut_decret_tertiaire", None)
-            bacs_status = getattr(s, "statut_bacs", None)
-            is_nc = dt_status == StatutConformite.NON_CONFORME or bacs_status == StatutConformite.NON_CONFORME
-            is_risk = dt_status == StatutConformite.A_RISQUE or bacs_status == StatutConformite.A_RISQUE
-            if is_nc:
-                non_conform += 1
-            elif is_risk:
-                at_risk += 1
+        if site_ids:
+            status_rows = db.query(Site.statut_decret_tertiaire, Site.statut_bacs).filter(Site.id.in_(site_ids)).all()
+            for dt_status, bacs_status in status_rows:
+                is_nc = dt_status == StatutConformite.NON_CONFORME or bacs_status == StatutConformite.NON_CONFORME
+                is_risk = dt_status == StatutConformite.A_RISQUE or bacs_status == StatutConformite.A_RISQUE
+                if is_nc:
+                    non_conform += 1
+                elif is_risk:
+                    at_risk += 1
 
         # Obligations à traiter via action center
         obligations_to_treat = 0
@@ -1030,6 +1031,17 @@ def _build_alerts(db: Session, org_id: int, site_ids: list[int]) -> dict:
 
 
 def _build_data_quality(db: Session, site_ids: list[int], today: date) -> dict:
+    """Couverture EMS + complétude données J-1.
+
+    Vague-7 perf (EPIC #274) : N+1 éliminé.
+    Avant : 1 query Meter/site + 1 query MeterReading/site = 2×N queries.
+    Après  : 1 query Meter batch (IN site_ids) + 1 query MeterReading batch
+             groupée par meter_id = 2 queries totales quelle que soit la
+             taille du portefeuille.
+
+    Invalidation : aucun cache applicatif — le résultat est recalculé à
+    chaque appel /api/cockpit/_facts (TTL piloté par cachedGet FE, 60s).
+    """
     _empty = {
         "ems_coverage_pct": 0,
         "data_completeness_pct": 0,
@@ -1040,35 +1052,63 @@ def _build_data_quality(db: Session, site_ids: list[int], today: date) -> dict:
         if not site_ids:
             return _empty
 
-        # Couverture EMS : sites avec au moins 1 compteur actif
-        sites_with_meters = 0
-        sites_with_gaps = []
+        # ── Batch 1 : tous les compteurs principaux pour les sites du scope ──
+        # 1 seule query IN au lieu de N appels _meter_ids_for_site().
+        meter_rows = (
+            db.query(Meter.id, Meter.site_id).filter(Meter.site_id.in_(site_ids), Meter.parent_meter_id.is_(None)).all()
+        )
+        # {site_id: [meter_id, ...]}
+        site_to_meters: dict[int, list[int]] = {}
+        all_meter_ids: list[int] = []
+        for m_id, s_id in meter_rows:
+            site_to_meters.setdefault(s_id, []).append(m_id)
+            all_meter_ids.append(m_id)
+
+        sites_with_meters = len(site_to_meters)
+
+        if not all_meter_ids:
+            ems_coverage = 0
+            return {
+                "ems_coverage_pct": ems_coverage,
+                "data_completeness_pct": 100,
+                "missing_indices_24h": 0,
+                "sites_with_gaps": [],
+            }
+
+        # ── Batch 2 : count lectures J-1 groupées par meter_id en 1 query ──
         d_start = datetime(today.year, today.month, today.day, 0, 0, 0) - timedelta(days=1)
         d_end = datetime(today.year, today.month, today.day, 23, 59, 59)
 
-        missing_24h = 0
-        for sid in site_ids:
-            mids = _meter_ids_for_site(db, sid)
-            if mids:
-                sites_with_meters += 1
-                # Vérifier données J-1
-                count_24h = (
-                    db.query(func.count(MeterReading.id))
-                    .filter(
-                        MeterReading.meter_id.in_(mids),
-                        MeterReading.timestamp >= d_start,
-                        MeterReading.timestamp <= d_end,
-                    )
-                    .scalar()
-                ) or 0
-                if count_24h == 0:
-                    missing_24h += len(mids)
-                    # Récupérer le nom du site pour le rapport
-                    site_obj = db.query(Site).filter(Site.id == sid).first()
-                    if site_obj and site_obj.nom:
-                        sites_with_gaps.append(site_obj.nom)
+        reading_rows = (
+            db.query(MeterReading.meter_id, func.count(MeterReading.id))
+            .filter(
+                MeterReading.meter_id.in_(all_meter_ids),
+                MeterReading.timestamp >= d_start,
+                MeterReading.timestamp <= d_end,
+            )
+            .group_by(MeterReading.meter_id)
+            .all()
+        )
+        # {meter_id: count}
+        meter_count: dict[int, int] = {mid: cnt for mid, cnt in reading_rows}
 
-        ems_coverage = int(sites_with_meters / len(site_ids) * 100) if site_ids else 0
+        # ── Batch 3 : noms des sites avec des lacunes (si besoin) ──
+        # Identifie d'abord les sites sans aucune lecture J-1, puis charge
+        # leurs noms en une seule query supplémentaire (vs N queries avant).
+        missing_24h = 0
+        gap_site_ids: list[int] = []
+        for s_id, mids in site_to_meters.items():
+            has_data = any(meter_count.get(m, 0) > 0 for m in mids)
+            if not has_data:
+                missing_24h += len(mids)
+                gap_site_ids.append(s_id)
+
+        sites_with_gaps: list[str] = []
+        if gap_site_ids:
+            gap_sites = db.query(Site.id, Site.nom).filter(Site.id.in_(gap_site_ids)).all()
+            sites_with_gaps = [nom for _, nom in gap_sites if nom]
+
+        ems_coverage = int(sites_with_meters / len(site_ids) * 100)
         data_completeness = max(0, 100 - int(missing_24h / max(len(site_ids), 1) * 10))
 
         return {

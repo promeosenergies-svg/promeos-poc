@@ -69,8 +69,11 @@ export const syncNotifications = (orgId = null) =>
   api
     .post('/notifications/sync', null, { params: orgId ? { org_id: orgId } : {} })
     .then((r) => r.data);
+// Phase Vague-7 perf : cachedGet pour déduplication in-flight des appels
+// simultanés (useCockpitSignals + EvenementsRecents) au mount Vue Exécutive.
+// TTL 60s (cache partagé core.js) — notifications < 1 min de stale acceptable.
 export const getNotificationsList = (params = {}) =>
-  api.get('/notifications/list', { params }).then((r) => r.data);
+  cachedGet('/notifications/list', { params }).then((r) => r.data);
 export const getNotificationsSummary = (orgId = null, siteId = null) => {
   const params = {};
   if (orgId) params.org_id = orgId;
