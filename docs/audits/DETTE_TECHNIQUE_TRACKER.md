@@ -227,11 +227,91 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
+## D-Phase6-Cascade-EJ-Sites-001 — Cascade EJ.consommation_3y → audit_sme + compliance multi-sites
+
+**Détecté** : Sprint C-1 Phase 6.1 audit pré-build (2026-05-03)
+
+**Périmètre** : Modification `EntiteJuridique.consommation_annuelle_moyenne_3y_gwh` doit cascade vers :
+- `audit_energetique.obligation` (recalcul AUCUNE / AUDIT_4ANS / SME_ISO50001 selon seuils 2.75 / 23.6 GWh)
+- Compliance score TOUS sites de l'EJ (impact dimensions AUDIT_SME / ISO_50001)
+
+**Pourquoi reporté** : Cascade EJ → tous sites = potentiel N+1 sur grande EJ (ex: 50 sites). Bulk recompute via `compliance_coordinator.recompute_organisation()` existe mais nécessite intégration cascade_recompute_service propre + tests perf.
+
+**Action** :
+- Ajouter entrée CASCADE_MAP[EntiteJuridique.consommation_annuelle_moyenne_3y_gwh]
+- Réutiliser `compliance_coordinator.recompute_organisation` pour bulk
+- Tests perf bulk recompute (50, 200, 500 sites)
+
+**Effort estimé** : 3-4 h
+**Priorité** : 🟠 P1 (déclencheur Audit SMÉ deadline 11/10/2026 critique)
+**Sprint cible** : Sprint C-2 (FE cleanup + temporalité, contexte multi-sites)
+
+---
+
+## D-Phase6-Cascade-Org-Consentements-001 — Cascade Org.consentement_dataconnect / grdf → tous DPs
+
+**Détecté** : Sprint C-1 Phase 6.1 audit pré-build (2026-05-03)
+
+**Périmètre** : Modification `Organisation.consentement_dataconnect_global` ou `Organisation.consentement_grdf_global` doit cascade vers tous DeliveryPoints élec/gaz de l'Org (avec court-circuit `gestionnaire_reseau != GRDF` pour ADICT).
+
+**Pourquoi reporté** : Touche modules Bill Intelligence + DataConnect connector (Phase 4 connector live = stub `sync()` returns []). Cascade nécessite intégration avec consent lifecycle automatisé (Sprint C-3).
+
+**Action** :
+- Ajouter entrées CASCADE_MAP[Organisation.consentement_*]
+- Wiring avec DataConnect token revocation/rotation
+- Audit RGPD : trace cascade dans audit_log_service
+
+**Effort estimé** : 4-6 h
+**Priorité** : 🟠 P1 (cascade RGPD critique)
+**Sprint cible** : Sprint C-3 (Sources + traçabilité, contexte consents)
+
+---
+
+## D-Phase6-Cascade-DeliveryPoint-Fta-001 — Cascade DeliveryPoint.code_fta → profil + Bill Intelligence
+
+**Détecté** : Sprint C-1 Phase 6.1 audit pré-build (2026-05-03)
+
+**Périmètre** : Modification `DeliveryPoint.code_fta` doit cascade vers :
+- `profil_tarifaire` (mapping FTA → BT_RESIDENTIEL / BT_PROFESSIONNEL / etc.)
+- Bill Intelligence A6 recheck (cohérence Σ conso compteurs ↔ Σ conso contrats, tolérance 1%)
+
+**Pourquoi reporté** : Touche module Bill Intelligence (A6 1% tolérance) — pas encore implémenté Sprint C-1.
+
+**Action** :
+- Mapping FTA TURPE 7 → profil tarifaire (15 valeurs FTA)
+- Endpoint `/api/billing/recheck-coherence/{site_id}`
+- Tests intégration bill engine
+
+**Effort estimé** : 3-4 h
+**Priorité** : 🟡 P2 (Bill Intelligence module Sprint C-3)
+**Sprint cible** : Sprint C-3 (Sources + traçabilité)
+
+---
+
+## D-Phase6-Cascade-Contract-Renewal-001 — Cascade Contract.date_fin_validite → alerte 90j
+
+**Détecté** : Sprint C-1 Phase 6.1 audit pré-build (2026-05-03)
+
+**Périmètre** : Modification `Contract.date_fin_validite` doit cascade vers création alerte 90j dans Centre d'action.
+
+**Pourquoi reporté** : Centre d'action backend pas encore complètement implémenté pour alertes proactives. Modèle alert/notification à clarifier.
+
+**Action** :
+- Définir modèle Alert (type, deadline, priorité, action_url)
+- Endpoint `/api/alerts` CRUD + cascade trigger
+- Wiring Centre d'action UI
+
+**Effort estimé** : 4-6 h
+**Priorité** : 🟡 P2 (Centre d'action Sprint C-2 ou C-5)
+**Sprint cible** : Sprint C-2 (temporalité) ou Sprint C-5 (Onboarding 3 parcours, contexte UI alertes)
+
+---
+
 ## Métriques tracker
 
 | Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
 |---|---|---|---|---|
-| 2026-05-03 | 7 | 0 | 2 | 5 |
+| 2026-05-03 | 11 | 0 | 4 | 7 |
 
 ---
 
