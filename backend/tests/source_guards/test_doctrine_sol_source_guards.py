@@ -28,9 +28,9 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 FRONTEND_SRC = REPO_ROOT / "frontend" / "src"
 
 # ── Scope refonte sol2 (Sprint 1+ progressif) ────────────────────────

@@ -23,7 +23,7 @@ import sys
 import unittest
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from doctrine.kpi_tracability import (
     CONFIDENCE_LEVELS,
@@ -208,7 +208,9 @@ class TestTrajectoryTracability(unittest.TestCase):
             import os
 
             route_path = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "routes", "cockpit.py"
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                "routes",
+                "cockpit.py",
             )
         else:
             route_path = spec.origin

@@ -15,9 +15,9 @@ import os
 import re
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-_BACKEND_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_BACKEND_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _FACTS_PATH = os.path.join(_BACKEND_ROOT, "services", "cockpit_facts_service.py")
 
 

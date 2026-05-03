@@ -20,16 +20,16 @@ import sys
 
 # Permet d'importer les modules backend depuis tests/ sans installer le
 # package — convention partagée avec les autres source-guards du repo.
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
 _SCHEMA_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "schemas",
     "navigation.py",
 )
 _SERVICE_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "services",
     "navigation_badges_service.py",
 )

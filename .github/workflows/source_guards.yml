@@ -19,7 +19,7 @@ jobs:
         run: pip install pytest pyyaml
 
       - name: Run source-guards pytest suite
-        run: pytest tests/source_guards/ -v --tb=short
+        run: pytest backend/tests/source_guards/ -v --tb=short
 
       - name: Verify agent definitions count (== 11)
         run: |

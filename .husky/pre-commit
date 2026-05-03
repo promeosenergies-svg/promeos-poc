@@ -1,1 +1,17 @@
+#!/bin/sh
+# Pre-commit hook : run lint-staged.
+#
+# `lint-staged` (cf .lintstagedrc.json) appelle `ruff check` et `ruff format`
+# sur les fichiers Python staged. Sur les machines de dev où `ruff` n'est pas
+# installé globalement, il vit uniquement dans `backend/venv/bin/`. On expose
+# donc ce répertoire au PATH avant l'invocation pour que les développeurs
+# n'aient pas à le faire manuellement (incident Sprint C-1 Phase 1).
+#
+# En CI, ruff est installé via pip (cf .github/workflows) → ce bloc est inerte.
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+if [ -x "$REPO_ROOT/backend/venv/bin/ruff" ]; then
+  export PATH="$REPO_ROOT/backend/venv/bin:$PATH"
+fi
+
 npx lint-staged
