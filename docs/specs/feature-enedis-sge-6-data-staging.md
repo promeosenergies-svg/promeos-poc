@@ -1,9 +1,9 @@
 # SF6 — Enedis Raw Archive → Functional Promotion Pipeline
 
-> **Status**: PRD v2.6 — reviewed on 2026-04-23 against the post-SGE4.5 raw/product DB split; feature renumbered from SF5 to SF6 after inserting a new SF5 raw-ingestion wave
-> **Depends on**: SF1 (decrypt), SF2 (CDC raw archive ingestion), SF3 (index raw archive ingestion), SF4 (operationalization), SGE4.5 (raw DB split to `flux_data.db`) — complete and validated; SF5 (R63/R64 R6X + C68 raw-ingestion extension) — upstream prerequisite
-> **Module**: `backend/data_staging/` (new, separate from `data_ingestion/`)
-> **Document note**: this spec now lives at `feature-enedis-sge-6-data-staging.md` to match the new **SF6** roadmap numbering.
+> **Status**: PRD v2.8 — scope reset started on 2026-05-02; source coverage and functional data model updated on 2026-05-04 against the implemented SF5 R6X + C68 raw archive and the post-SGE4.5 raw/product DB split
+> **Depends on**: SF1 (decrypt), SF2 (CDC raw archive ingestion), SF3 (index raw archive ingestion), SF4 (operationalization), SGE4.5 (raw DB split to `flux_data.db`) — complete and validated; SF5 (R63/R64 R6X + C68 raw-ingestion extension) — implemented and archived
+> **Module**: `backend/data_staging/` as the target promotion module; current scaffolding in that area is previous overflow and is not canonical
+> **Document note**: this spec now lives at `feature-enedis-sge-6-data-staging.md` to match the **SF6** roadmap numbering. The revised PRD defines the canonical architecture from product requirements first; existing promotion endpoints, bridge helpers, and service wiring may be reused only if they match this contract.
 
 ---
 
@@ -11,15 +11,20 @@
 
 SF1-SF4 delivered the first complete raw ingestion pipeline: 6 flux types parsed, 5 raw archive tables, 91 real files ingested, 123,846 measures — all stored as raw strings with zero transformation. Since SGE4.5, this raw archive is stored in `flux_data.db` and remains the **source of truth** for everything Enedis sends us.
 
-The roadmap now inserts a new **SF5** before this feature. That new SF5 extends the raw-ingestion layer with two additional raw archive tables covering `R63` / `R64` (R6X family) and `C68`. This document stays focused on the downstream **raw → functional promotion layer** and therefore becomes **SF6**.
+SF5 has now extended and archived the raw-ingestion layer for the R6X and C68 sources. SF6 therefore treats the following SF5 raw archive tables as implemented upstream inputs, not future prerequisites:
+- `enedis_flux_mesure_r63`
+- `enedis_flux_index_r64`
+- `enedis_flux_itc_c68`
 
-However, **no bridge exists** between the raw archive tables and a real-data functional layer that downstream services can later consume safely. Today, consumption dashboards, anomaly detection, monitoring alerts, regulatory compliance, and billing reconciliation still depend on seeded/demo structures rather than promoted Enedis data.
+What is still missing is a **canonical, validated promotion layer** between the raw archive tables and a real-data functional layer that downstream services can later consume safely. Some `backend/data_staging/` scaffolding, promotion endpoints, bridge helpers, and service wiring exist from previous overflow work, but they are not canonical for SF6. The revised PRD defines the intended architecture from scratch.
+
+Today, consumption dashboards, anomaly detection, monitoring alerts, regulatory compliance, and billing reconciliation still depend on seeded/demo structures rather than promoted Enedis data.
 
 Today, `MeterReading` is populated exclusively by synthetic seed data. The raw archive data — real Enedis measurements — is invisible to the application.
 
-This is intentional for the prototype: the current seeded/demo metering universe stays live during SF6 so we do not break the platform while the Enedis backbone is being built. SF6 creates and populates a **parallel real-data promotion layer**. It does **not** migrate existing services, dashboards, calculations, or client-facing product surfaces to those new tables; that cutover is a **separate feature wave**, not part of SF6 itself.
+This is intentional for the prototype: the current seeded/demo metering universe stays live during SF6 so we do not break the platform while the Enedis backbone is being built. SF6 creates and populates a **parallel real-data promotion layer**. It does **not** migrate existing services, dashboards, calculations, or client-facing product surfaces to those new tables; that cutover is a **separate feature wave** after high-volume backfill and validation, not part of SF6 itself.
 
-Since SGE4.5, SF6 is also explicitly a **cross-database bridge**:
+Since SGE4.5, SF6 is also explicitly a **cross-database promotion boundary**:
 - `flux_data.db` stores the raw Enedis file registry, raw archive rows, and ingest control state
 - `promeos.db` stores the promoted functional tables, promotion audit trail, and PRM backlog state
 - SF6 must preserve that split rather than reintroducing raw Enedis persistence into the main product database
@@ -38,6 +43,7 @@ Correctly and reliably handling Enedis data is one of Promeos's core MOATs. Comp
 - **Safe**: no unidentified data leaks to production — unknown PRMs are flagged, not silently promoted
 - **Auditable**: full trail of what was promoted, when, why, and what it replaced
 - **Incremental**: designed for scale (10,000 PRMs, 175M readings at 2 years hourly)
+- **Canonical**: governed by this PRD, not by non-canonical overflow scaffolding
 - **Modular**: the `data_staging/` module should stay extensible for later waves (GRDF, GTB, sub-meters, other ELDs) without making those extensions part of SF6
 
 ---
@@ -45,8 +51,8 @@ Correctly and reliably handling Enedis data is one of Promeos's core MOATs. Comp
 ## 2. Architecture Overview
 
 ```
-                SF1-SF5 (raw ingestion in `flux_data.db`)     SF6 (promotion in `promeos.db`)
-                ─────────────────────────────────────────     ───────────────────────────────
+                SF1-SF5 (implemented raw archive in `flux_data.db`)     SF6 (promotion in `promeos.db`)
+                ──────────────────────────────────────────────          ───────────────────────────────
 
 Encrypted ──→ Decrypt ──→ Parse ──→ Raw Archive         ──→  Promotion Pipeline
   .zip         (AES)      (XML)     (`enedis_flux_*`)       (data_staging/)
@@ -62,35 +68,60 @@ Encrypted ──→ Decrypt ──→ Parse ──→ Raw Archive         ──
                                      │              │  8. Audit Trail        │
                                      │              └────┬───────┬───────┬───┘
                                      │                   │       │       │
-                                PromotionRun       ┌─────▼──┐ ┌─▼────┐ ┌▼──────────┐
-                                (audit trail)      │ meter_ │ │meter_│ │meter_     │
-                                                   │ load_  │ │energy│ │power_peak │
-                                                   │ curve  │ │index │ │           │
-                                                   └────────┘ └──────┘ └───────────┘
-                                                   R4x, R50   R171 EA   R151 PMAX
-                                                   CDC power   R151      peak demand
-                                                   (kW)        CT/CT_D   (VA)
-                                                               energy
-                                                               (Wh)
+                                PromotionRun       ┌────────────────────┐
+                                (audit trail)      │ meter_load_curve   │ R4x/R50/R63 CDC power
+                                                   ├────────────────────┤
+                                                   │ meter_energy_index │ R171/R151/R64 active energy
+                                                   ├────────────────────┤
+                                                   │ meter_power_peak   │ R151 PMAX peak demand
+                                                   ├────────────────────┤
+                                                   │ delivery_point_    │ C68 technical/contract state
+                                                   │ technical_contract │
+                                                   │ _snapshot          │
+                                                   └────────────────────┘
 ```
 
-Operationally, SF6 is the first feature that bridges the two databases end to end: `flux_data.db` remains the raw source of truth, while `promeos.db` becomes the destination for promoted Enedis data and promotion observability.
+Operationally, SF6 is the first canonical feature that promotes data across the two databases end to end: `flux_data.db` remains the raw source of truth, while `promeos.db` becomes the destination for promoted Enedis data and promotion observability. In this document, "bridge" means this raw-to-functional promotion boundary; it does not make the current overflow bridge code canonical.
 
 SF6 does **not** replace the currently live prototype tables during this phase. `meter_reading` and `power_readings` remain part of the seeded/demo universe, while `meter_load_curve`, `meter_energy_index`, and `meter_power_peak` become the canonical promoted targets for a later real-data migration wave.
 
 SF6 includes **operational observability of the promotion pipeline itself**: run status, counters, blocked PRMs, skipped rows, replacements, and failures. SF6 preserves data absences as absences and records promotion outcomes, but it does **not** implement publication-SLA monitoring, file-delivery completeness monitoring, or explicit missing-data / gap alerting. Those remain deferred to a later wave.
 
+SF6 starts from raw source coverage that SF1-SF5 have already materialized in `flux_data.db`, including the SF5 tables `enedis_flux_mesure_r63`, `enedis_flux_index_r64`, and `enedis_flux_itc_c68`. The detailed source-by-source promotion, partial-promotion, or deferral status is defined in the source coverage and routing sections of this PRD.
+
+### Source Coverage Matrix
+
+This matrix is the SF6 source inventory. It decides whether each implemented raw source is in promotion scope, partially in scope, or explicitly deferred. It does **not** finalize column-level mappings, uniqueness rules, or source-specific conversion rules; those belong to the data-model and promotion-rule sections.
+
+| Raw table in `flux_data.db` | Flux family | Raw content | SF6 coverage status | Target direction | Boundary note |
+|-----------------------------|-------------|-------------|---------------------|------------------|---------------|
+| `enedis_flux_mesure_r4x` | `R4H`, `R4M`, `R4Q` | Historical CDC load-curve points by PRM, timestamp, grandeur, unit, status, and raw cadence | Promoted | `meter_load_curve` | Existing PRD rules already define CDC interval normalization, supported quantities, quality mapping, and merge behavior |
+| `enedis_flux_mesure_r50` | `R50` | C5 load-curve points with raw timestamp as interval end and active power in W | Promoted | `meter_load_curve` | Existing PRD rules already define the `H - 30 minutes` interval-start normalization and W-to-kW conversion |
+| `enedis_flux_mesure_r171` | `R171` | Daily dated C2-C4 measures by PRM, tariff calendar/class, physical quantity, and unit | Partially promoted | `CONS + EA + Wh` rows to `meter_energy_index`; other R171 quantities remain raw-only in SF6 | The current target model safely handles withdrawal active-energy indexes, but not production direction, reactive energy, durations, PMA, or other non-energy quantities |
+| `enedis_flux_mesure_r151` | `R151` | C5 supplier/distributor index rows and PMAX rows, with source type and file-level units | Partially promoted | `CT` and `CT_DIST` rows to `meter_energy_index`; `PMAX` rows to `meter_power_peak` | The current target model handles cumulative active-energy indexes and PMAX apparent power; unsupported shapes are skipped or blocked by guardrails |
+| `enedis_flux_mesure_r63` | `R63` | R6X one-off load-curve points from JSON/CSV, including PRM, period, business context, grandeur, unit, timestamp, raw `pas`, value, quality, correction, and complementary state | Promoted | `meter_load_curve` | R63 is the newer-generation CDC source family and must fit the same canonical interval model as legacy CDC. Conflict arbitration between R63 and legacy rows is a Step 4 promotion-rule decision |
+| `enedis_flux_index_r64` | `R64` | R6X one-off cumulative indexes from JSON/CSV, including PRM, reading context, grandeur, unit, timestamp, value, quality, grid/calendar/class, and totalizer cadran when present | Promoted | `meter_energy_index` | R64 is the newer-generation index source family and must fit the canonical index model, including richer register identity where needed |
+| `enedis_flux_itc_c68` | `C68` | One technical/contractual snapshot per PRM, with extracted fast-query fields and full `payload_raw` | Promoted | `delivery_point_technical_contract_snapshot` | C68 is not metering data. It needs a separate PRM/delivery-point technical and contractual snapshot table for comparisons, calculations, and future enrichment |
+
 > **Precondition from the official R4x guide**: an R4x ZIP archive may legally contain one or more XML files, one curve per XML. SF6 promotes only what SF1-SF5 have already materialized in the raw archive tables in `flux_data.db`. If upstream extraction misses XML members, those measurements cannot be promoted. Archive-extraction completeness is outside SF6 scope.
 
-### Three Functional Tables
+### Functional Tables
 
-| Table | Physical quantity | Unit | Source flux | Downstream consumers |
-|-------|------------------|------|-------------|---------------------|
-| **`meter_load_curve`** | Interval-valued CDC row: average power over `[timestamp ; timestamp + pas_minutes[` plus related reactive/tension values | kW / kVAr / V | R4x, R50 | Future real-data monitoring, anomaly detection, peak analysis, off-hours, load profile |
-| **`meter_energy_index`** | Cumulative energy per tariff class | Wh | R171 (`EA` only), R151 (CT/CT_DIST) | Billing reconciliation, regulatory compliance, annual kWh, OPERAT |
+| Table | Functional fact | Unit / value type | Source flux | Downstream consumers |
+|-------|-----------------|-------------------|-------------|---------------------|
+| **`meter_load_curve`** | Interval-valued CDC row: best canonical average power over `[timestamp ; timestamp + pas_minutes[` plus related reactive/tension values | kW / kVAr / V | R4x, R50, R63 | Future real-data monitoring, anomaly detection, peak analysis, off-hours, load profile |
+| **`meter_energy_index`** | Cumulative active-energy register reading by canonical index series/register identity | Wh | R171 (`EA` only), R151 (CT/CT_DIST), R64 | Billing reconciliation, regulatory compliance, annual kWh, OPERAT |
 | **`meter_power_peak`** | Max power demand per period | VA | R151 (PMAX) | Subscribed power optimization, depassement alerts |
+| **`delivery_point_technical_contract_snapshot`** | Technical and contractual state for one known PRM / delivery point at a source snapshot time | technical / contractual attributes | C68 | Subscribed-power comparison, tariff checks, tension/domain logic, meter configuration checks, future enrichment |
 
-### Data flow per CDC reading (R4x / R50 → `meter_load_curve`)
+Functional tables are source-neutral, but not source-blind:
+- fields that define product behavior, identity, calculations, or repeated filtering belong on functional tables
+- fields that only explain how Enedis produced a value stay in raw archive payloads and promotion audit lineage
+- source-specific context may influence quality scoring, conflict resolution, and skip/block reasons without becoming first-class product columns
+
+For example, R63 `pas` affects `meter_load_curve.pas_minutes` and therefore belongs in the functional model. R63 `nature_point`, `type_correction`, and `etat_complementaire` should be preserved in audit/source lineage and can feed quality/republication logic, but they should not become visible product columns unless a later feature needs users to query them directly.
+
+### Data flow per CDC reading (R4x / R50 / R63 → `meter_load_curve`)
 
 ```
 enedis_flux_mesure_r4x.point_id  (string "14-digit PRM")
@@ -105,7 +136,7 @@ Meter.delivery_point_id  (FK → delivery_points.id)
 meter_load_curve.meter_id  (FK → meter.id)
         with:
           timestamp                = start of covered interval (UTC-naive from ISO8601+TZ)
-          pas_minutes              = exact Enedis interval size (5 / 10 / 30)
+          pas_minutes              = exact Enedis interval size after source-specific parsing
           active_power_kw          = populated when grandeur_physique=EA
           reactive_inductive_kvar  = populated when grandeur_physique=ERI
           reactive_capacitive_kvar = populated when grandeur_physique=ERC
@@ -119,10 +150,15 @@ R50-specific normalization nuance:
 - therefore the canonical promoted interval start is `H - 30 minutes`, and `active_power_kw = valeur_w / 1000`
 - for `Date_Releve = D`, a complete local day covers `[D 00:00 ; D+1 00:00[` even though the raw `H` values run from `00:30` to `00:00` next day
 
+R63-specific model requirement:
+- R63 is promotable into the same canonical CDC table as legacy R4x/R50
+- R63 may carry newer R6X cadences such as `PT15M` or `PT60M`; the target table must not be constrained to only legacy `5`, `10`, and `30` minute intervals
+- when R63 and legacy CDC sources compete for the same `(meter_id, timestamp, pas_minutes, promoted quantity)` slot, the target table stores one best canonical value; the arbitration policy is defined in the promotion-rule section
+
 Rows with the same `(meter_id, timestamp, pas_minutes)` are merged into one logical promoted interval row before UPSERT.
 ```
 
-### Data flow per energy-index reading (R171 `EA` / R151 CT/CT_DIST → `meter_energy_index`)
+### Data flow per energy-index reading (R171 `EA` / R151 CT/CT_DIST / R64 → `meter_energy_index`)
 
 ```
 enedis_flux_mesure_r171.point_id  (string "14-digit PRM")
@@ -134,6 +170,10 @@ DeliveryPoint.code → Meter.delivery_point_id → meter.id
 meter_energy_index.meter_id  (FK → meter.id)
         with:
           date_releve       = parsed local reading date
+          reading_at        = canonical reading instant or normalized date boundary
+          reading_precision = source precision: date or datetime
+          register_key      = canonical functional identity for the index series/register
+          energy_direction  = withdrawal / injection / unknown, when supported by source rules
           tariff_class_code = code_classe_temporelle (HCE/HCH/HPE/HPH/P)
           tariff_class_label = libelle humain
           tariff_grid       = mapped from the source tariff grid
@@ -146,6 +186,11 @@ R171-specific guardrails:
 - `typeCalendrier='D'` maps to `tariff_grid='CT_DIST'`; `typeCalendrier='F'` maps to `tariff_grid='CT'`
 - `dateFin` is the **reading timestamp / J+1 dated index**, not the covered day label for downstream daily-consumption UX
 - non-energy R171 rows (`DD`, `DQ`, `TF`, `PMA`, `ERC`, `ERI`, and any future `ER` / `DE`) stay in the raw archive tables in `flux_data.db`
+
+R64-specific model requirement:
+- R64 is promotable into the same canonical cumulative-index table as legacy R171/R151
+- the functional index identity must be rich enough for R64 `code_grille`, `id_calendrier`, `id_classe_temporelle`, and `code_cadran`
+- R64 context fields such as `contexte_releve`, `type_releve`, and `motif_releve` are preserved in audit/source lineage unless Step 4 decides they affect promotability or conflict resolution
 ```
 
 ---
@@ -154,7 +199,7 @@ R171-specific guardrails:
 
 | # | Question | Decision | Justification |
 |---|----------|----------|---------------|
-| D1 | Scope | CDC (R4x, R50) **and** Index (R171, R151) | Both are in scope. Implementation phases will separate them, but the PRD and architecture cover both |
+| D1 | Scope | Raw-to-functional promotion for all implemented Enedis raw sources in SF1-SF5, including R4x, R50, R171, R151, R63, R64, and C68 | The PRD must cover every implemented upstream source. A source may be fully promoted, partially promoted, or explicitly deferred, but it must not disappear from SF6 source coverage |
 | D2 | Blocked PRMs | **Flag and block** — never promote unidentified or ambiguously linked data | No data leaks to production. The PRM backlog captures missing DeliveryPoints, missing active meters, and ambiguous meter matches. Once resolved, the next promotion run picks them up |
 | D3 | Pipeline mode | **Incremental + backlog replay** | Each run processes new raw archive rows beyond the high-water mark **and** previously blocked PRMs still pending resolution. This avoids missing historical data after a PRM is fixed |
 | D4 | Republication strategy | **Quality-first overwrite policy** | Better quality auto-promotes. Equal quality uses the latest republication. Worse quality is flagged and does not overwrite the current promoted row |
@@ -162,17 +207,17 @@ R171-specific guardrails:
 | D6 | Quality gate | **Promote all readings that satisfy the defined promotion rules, regardless of quality score** | Promotability is determined by the matching, routing, and validation rules in this spec. Low-quality-but-valid readings are still promoted with `quality_score` and `is_estimated` flags; unmatched, unsupported, invalid, or unparsable rows are not promoted |
 | D7 | Gap handling | **Preserve absence and promotion observability now; explicit completeness monitoring later** | Null or unparsable values are never converted to synthetic zeroes. Missing promoted rows remain visible as absences, and skipped/blocked outcomes are audited. Publication-SLA monitoring, file-delivery completeness tracking, and explicit gap alerting remain later-wave work |
 | D8 | Quality score mapping | **Official R4x status semantics + Promeos heuristic score** (see Section 5) | The Enedis guide defines the meaning of `statut_point`, but not a numeric confidence score. SF6 keeps a product-owned heuristic for republication comparison |
-| D9 | Module location | **`backend/data_staging/`** (new, separate module) | Separation of concerns. `data_ingestion/` = raw archive, `data_staging/` = normalization + promotion. The module should remain modular for later extensions, but non-Enedis expansion is not part of SF6 |
+| D9 | Module location | **`backend/data_staging/`** as the promotion module boundary | Separation of concerns. `data_ingestion/` = raw archive, `data_staging/` = normalization + promotion. Existing scaffolding under this module is not canonical and must be rebuilt, replaced, or selectively reused only after it is checked against this PRD |
 | D10 | Trigger model | **Separate from ingestion** — dedicated CLI command + minimal API | Natural break point: ingest → data backlog review → promote. Decoupled failure domains. POC: CLI `promote` command + minimal `/api/enedis/promotion/*` API |
 | D11 | Atomicity | **Per-PRM** | Each PRM is fully promoted or not at all. One bad PRM doesn't block the fleet. Prevents misleading partial data. Aligns with business unit (site managers care about their PRMs) |
 | D12 | Audit trail | **Yes — `PromotionRun` + `PromotionEvent` tables** | Core MOAT. Every promoted reading traceable to its source raw archive row, flux file, and promotion run. Every replacement logged |
-| D13 | API surface | **CLI + minimal promotion-operations API** (no review UX yet) | POST `/api/enedis/promotion/promote`, GET `/api/enedis/promotion/runs`, GET `/api/enedis/promotion/stats` support promotion execution and operational observability only |
+| D13 | API surface | **CLI + minimal promotion-operations API** (no review UX yet) | The canonical CLI/API contract is defined by this PRD. Current overflow endpoints are not assumed correct; promotion execution and operational observability are in scope, while service-read migration APIs are out |
 | D14 | Scale target | **175M rows** (10,000 PRMs x 2 years hourly) | Code must handle this volume even if POC runs on SQLite. Batch processing, chunked inserts, indexed lookups |
 | D15 | Initial run | **Full backfill of raw archive data** | First run processes all promotable historical data already present in the raw archive tables. Subsequent runs are incremental |
-| D16 | Functional data model | **Three separate promoted tables**: `meter_load_curve`, `meter_energy_index`, `meter_power_peak` | Power and energy are different physical quantities with different units, granularities, and consumers. Mixing them in one table creates semantic confusion |
-| D17 | Legacy/demo coexistence | **Coexist then migrate** — promoted Enedis tables are canonical for real data, while `meter_reading` and `power_readings` remain part of the prototype/demo universe until later migration | Don't break what works. SF6 builds the real backbone first; service migration happens later |
-| D18 | `meter_load_curve` schema | **One row per interval with separate columns** | `meter_load_curve` stores one row per `(meter_id, timestamp, pas_minutes)` and merges multiple CDC grandeurs into separate columns (`active_power_kw`, reactive columns, `voltage_v`) |
-| D19 | PRM matching ambiguity | **Exact-one-meter rule** | A PRM is promotable only when it resolves to exactly one valid active electricity meter. No active meter or multiple candidates both block promotion and create backlog entries |
+| D16 | Functional data model | **Four separate promoted targets**: `meter_load_curve`, `meter_energy_index`, `meter_power_peak`, `delivery_point_technical_contract_snapshot` | Power intervals, cumulative indexes, peak demand, and technical/contractual state are different product facts with different identities and consumers. Mixing them in one table creates semantic confusion |
+| D17 | Legacy/demo coexistence | **Coexist; do not migrate services in SF6** — promoted Enedis tables are canonical for validated real data, while `meter_reading` and `power_readings` remain part of the prototype/demo universe | Don't break what works. SF6 builds and validates the real backbone first. Service migration happens only in a later separate feature wave after high-volume backfill and dataset stabilization |
+| D18 | `meter_load_curve` schema | **One row per interval with separate columns, R6X-capable cadence** | `meter_load_curve` stores one row per `(meter_id, timestamp, pas_minutes)` and merges multiple CDC grandeurs into separate columns (`active_power_kw`, reactive columns, `voltage_v`). `pas_minutes` is not limited to legacy cadences because R63 may provide newer R6X intervals |
+| D19 | PRM matching ambiguity | **Exact product-entity rule** | Measurement rows are promotable only when the PRM resolves to exactly one valid active electricity meter. C68 technical/contract snapshots are promotable only when the PRM resolves to exactly one known DeliveryPoint. Missing or ambiguous matches block promotion and create backlog entries |
 | D20 | R4x timezone / DST handling | **Trust the XML offset, convert to UTC, and treat official DST patterns as expected** | The official R4x guide uses Paris legal time with offset. Autumn duplicate local hours must survive as distinct UTC instants; spring missing local hour is not a data gap |
 | D21 | CDC temporal semantics | **Store and expose CDC values as forward interval averages after flux-specific timestamp normalization** | R4x raw `H` is already an interval start; R50 raw `H` is an interval end and must be shifted back by 30 minutes. Analytics and UX must not present CDC as instantaneous spot readings |
 | D22 | Publication / completeness monitoring | **Deferred to a later wave** | SF6 may retain the information needed for future freshness/completeness logic, but it does not implement publication-SLA monitoring or missing-publication decisions |
@@ -180,21 +225,27 @@ R171-specific guardrails:
 | D24 | R50 publication cadence modeling | **Deferred to a later wave** | Filename cadence and file-group counters matter for future completeness monitoring, but they are not part of the SF6 promotion contract |
 | D25 | Canonical CDC contract | **Store one canonical interval model in promoted data, regardless of source flux** | `meter_load_curve` must normalize R4x and R50 into one source-independent interval model so future consumers do not need source-specific interpretation rules. SF6 defines that contract; it does not update client-facing surfaces yet |
 | D26 | R50 delivery-completeness signals | **Deferred to a later wave** | Per-file capacity and per-sequence completeness signals are relevant to later completeness monitoring, not to the core SF6 promotion boundary |
+| D27 | R6X compatibility | **R63 and R64 are first-class promotable sources** | R6X is the newer Enedis generation. The functional measurement tables must be able to represent R6X data and legacy flows through one canonical product model |
+| D28 | Source context fields | **Source-neutral, not source-blind** | Functional columns are added when they define identity, calculations, conflict resolution, or common filtering. Source-specific production context otherwise stays in raw archive and promotion audit lineage |
+| D29 | C68 functional target | **Separate technical/contract snapshot table** | C68 is not metering data. It stores technical and contractual state that supports comparisons and calculations, so it belongs in its own delivery-point-oriented functional table |
 
 ---
 
 ### SF6 In / SF6 Out
 
 **SF6 in**
-- Promote supported Enedis raw archive data already materialized by SF1-SF5 into `meter_load_curve`, `meter_energy_index`, and `meter_power_peak`
+- Promote supported Enedis raw archive data already materialized by SF1-SF5 into canonical functional product tables in `promeos.db`
+- Include source coverage decisions for `R4H`, `R4M`, `R4Q`, `R50`, `R171`, `R151`, `R63`, `R64`, and `C68`, with each source marked promoted, partially promoted, or explicitly deferred
 - Apply the promotability, PRM matching, normalization, routing, republication, and audit rules defined in this spec
 - Maintain backlog handling for unresolved PRMs and replay them in later runs
 - Provide operational observability for promotion runs: status, counters, blocked PRMs, skipped rows, replacements, and failures
 - Define one canonical CDC interval contract in promoted data so downstream consumers do not need source-specific timestamp interpretation rules
+- Rebuild, replace, or selectively reuse existing `backend/data_staging/` overflow scaffolding only where it conforms to the revised SF6 contract
 
 **SF6 out**
-- Implement raw ingestion for `R63`, `R64` (R6X family), and `C68`; that belongs to the new upstream SF5
+- Implement raw ingestion for `R63`, `R64` (R6X family), and `C68`; that belongs to completed upstream SF5
 - Migrate existing services, dashboards, calculations, or client-facing product surfaces to the new promoted tables
+- Treat current promotion endpoints, bridge helpers, or service wiring as canonical architecture
 - Implement publication-SLA monitoring, delivery-completeness monitoring, or explicit missing-data / gap alerting
 - Provide manual review UX or auto-resolution workflows for blocked PRMs
 - Promote readings that fail the defined promotability rules
@@ -206,27 +257,28 @@ R171-specific guardrails:
 
 #### `meter_load_curve` — CDC time-series power data
 
-The canonical promoted table for real Enedis load curve (courbe de charge) data. It is built in parallel to the current seeded/demo tables and will become the future real-data source for downstream migration.
+The canonical promoted table for real Enedis load curve (courbe de charge) data across legacy CDC flows and R6X. It is built in parallel to the current seeded/demo tables and will become the future real-data source for downstream migration.
 
 Each row represents **one canonical half-open interval** `[timestamp ; timestamp + pas_minutes[` for one meter:
 - `timestamp` is always the **canonical UTC interval start** after source-specific normalization
 - every populated measurement column refers to that same covered interval
 - the table stores **interval-average power-like quantities**, not instantaneous spot readings and not energy deltas
-- `source_flux_type` is provenance only; downstream consumers must interpret the row through this canonical interval contract, not reapply source-specific timestamp rules
+- `source_flux_type` is summary provenance only; full per-value lineage remains in `promotion_event`
+- downstream consumers must interpret the row through this canonical interval contract, not reapply source-specific timestamp rules
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | Integer PK | |
 | `meter_id` | FK → `meter.id` | Linked meter (resolved from PRM via DeliveryPoint) |
 | `timestamp` | DateTime | Canonical UTC interval start of the covered half-open interval |
-| `pas_minutes` | Integer | Exact interval duration in minutes; part of row identity; allowed values are `5`, `10`, `30` |
+| `pas_minutes` | Integer | Exact interval duration in minutes; part of row identity. Must support legacy cadences (`5`, `10`, `30`) and R6X cadences such as `15` and `60`; source-specific validation belongs to routing rules |
 | `active_power_kw` | Float | nullable — canonical winning average active power (`EA`) over the covered interval, in kW |
 | `reactive_inductive_kvar` | Float | nullable — canonical winning interval-average inductive reactive power (`ERI`) over the same interval, in kVAr |
 | `reactive_capacitive_kvar` | Float | nullable — canonical winning interval-average capacitive reactive power (`ERC`) over the same interval, in kVAr |
 | `voltage_v` | Float | nullable — canonical winning promoted voltage (`E`, unit `V`) over the same interval |
-| `quality_score` | Float | Promeos ordinal quality heuristic in `[0,1]`, used for conflict resolution and filtering; not a calibrated probability/confidence value |
-| `is_estimated` | Boolean | True when the promoted value is treated as estimated/reconstructed from source-status semantics; not a synonym for low quality |
-| `source_flux_type` | String(10) | `R4H`/`R4M`/`R4Q`/`R50` — provenance of the winning promoted row, not business identity |
+| `quality_score` | Float | Conservative row-level summary quality for filtering; per-candidate comparison rules remain source-specific and are audited. Not a calibrated probability/confidence value |
+| `is_estimated` | Boolean | True when any promoted value in the row is treated as estimated/reconstructed from source-status semantics; not a synonym for low quality |
+| `source_flux_type` | String(10) | `R4H`/`R4M`/`R4Q`/`R50`/`R63` — summary provenance for the last canonical winner; not business identity and not complete lineage for merged rows |
 | `promotion_run_id` | FK → `promotion_run.id` | nullable — last promotion run that created or overwrote the current row state |
 | `created_at` | DateTime | |
 | `updated_at` | DateTime | |
@@ -238,43 +290,55 @@ Each row represents **one canonical half-open interval** `[timestamp ; timestamp
 **Invariants / semantics**:
 - at least one of `active_power_kw`, `reactive_inductive_kvar`, `reactive_capacitive_kvar`, `voltage_v` must be non-null
 - null in a measurement column means that quantity was not promoted for that interval; it never means synthetic zero
-- R50 rows only populate `active_power_kw`; R4x rows may populate one or more CDC quantity columns depending on `grandeur_physique`
+- R50 rows only populate `active_power_kw`; R4x and R63 rows may populate one or more CDC quantity columns depending on their accepted `grandeur_physique` / unit contracts
 - different source rows may contribute different quantities to the same interval row, but **each quantity column has at most one canonical winning value**
+- if R63 and legacy CDC sources both provide a candidate for the same `(meter_id, timestamp, pas_minutes, quantity)`, SF6 stores one best canonical value; the source-priority / quality / recency arbitration policy is defined in Section 6
 - absence of a row means no promotable canonical CDC row exists for that interval under SF6 rules; it does not by itself prove zero load or source non-delivery
 
 **Merge rule**: when the raw archive layer carries multiple CDC rows for the same `(meter_id, timestamp, pas_minutes)`, SF6 merges different promotable `grandeur_physique` values into one canonical interval row before UPSERT. Competing candidates for the same promoted quantity are resolved to one winning value before the row is considered final. The raw archive tables preserve the original row-per-grandeur fidelity.
 
-#### `meter_energy_index` — Cumulative energy index per tariff class
+#### `meter_energy_index` — Cumulative energy index per register
 
-The canonical table for promoted **active-energy cumulative counters**. Each row represents one canonical cumulative counter reading for one meter, one tariff grid, one tariff class, on one local reading date.
+The canonical table for promoted **active-energy cumulative counters** across legacy index flows and R6X. Each row represents one canonical cumulative counter reading for one meter and one functional index register at one canonical reading point.
+
+The table must be able to represent both legacy tariff-class indexes and R64's richer calendar/class/cadran structure. The product-facing identity is therefore the canonical `register_key`; source-specific fields remain available as structured identity columns when they are meaningful.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | Integer PK | |
 | `meter_id` | FK → `meter.id` | Linked meter |
-| `date_releve` | Date | Canonical local reading-date label for the counter reading; not the covered consumption day and not a timestamp-granular identity |
-| `tariff_class_code` | String(10) | Authoritative tariff-class identifier (`HCE`/`HCH`/`HPE`/`HPH`/`P`/`HC`/`HP`/`HCB`/`HPB` etc.); part of series identity |
+| `date_releve` | Date | Canonical local reading-date label for the counter reading; not the covered consumption day |
+| `reading_at` | DateTime | Canonical reading instant when source provides one, or normalized date boundary when the source is date-only; part of row identity |
+| `reading_precision` | String(10) | `date` / `datetime` — whether the source provided only a date or a timestamp-granular reading |
+| `energy_direction` | String(10) | Source-backed direction such as `CONS` or `PROD` when promotable; defaults to `CONS` for current legacy withdrawal-only rules |
+| `register_key` | String(100) | Required canonical identity for the index series/register. Examples: `CT_DIST:HPE`, `CT:HCH`, `R64:<code_grille>:<id_calendrier>:<id_classe_temporelle>`, or `R64:<code_grille>:CADRAN:<code_cadran>` |
+| `tariff_grid` | String(20) | nullable — canonical tariff-grid family when known, such as `CT`, `CT_DIST`, or a mapped R64 grid family |
+| `source_tariff_grid_code` | String(50) | nullable — source-backed grid code such as R64 `code_grille`; useful for preserving R6X tariff identity without overloading `tariff_grid` |
+| `tariff_calendar_id` | String(50) | nullable — source-backed calendar identifier such as R64 `id_calendrier` |
+| `tariff_calendar_label` | String(100) | nullable — human-readable source calendar/grid label for display/debug only |
+| `tariff_class_code` | String(50) | nullable — authoritative tariff-class identifier when the source provides one (`HCE`/`HCH`/`HPE`/`HPH`/`P`/R64 `id_classe_temporelle`, etc.) |
 | `tariff_class_label` | String(100) | nullable — human-readable source label for display/debug only; not authoritative identity |
-| `tariff_grid` | String(10) | Required tariff-grid identifier; allowed values `CT` (supplier) or `CT_DIST` (distributor); part of series identity |
+| `totalizer_code` | String(50) | nullable — R64 `code_cadran` or equivalent totalizer/register code when the value is not tied to a tariff class |
 | `value_wh` | Float | Canonical winning cumulative active-energy counter in Wh; not a period-consumption delta |
 | `quality_score` | Float | Promeos ordinal quality heuristic in `[0,1]`, used for conflict resolution and filtering; not a calibrated probability/confidence value |
 | `is_estimated` | Boolean | True when the promoted value is treated as estimated/reconstructed from source-status semantics; not a synonym for low quality |
-| `source_flux_type` | String(10) | `R171`/`R151` — provenance of the winning promoted row, not business identity |
+| `source_flux_type` | String(10) | `R171`/`R151`/`R64` — summary provenance of the winning promoted row, not business identity |
 | `promotion_run_id` | FK → `promotion_run.id` | nullable — last promotion run that created or overwrote the current row state |
 | `created_at` | DateTime | |
 | `updated_at` | DateTime | |
 
-**Unique constraint**: `(meter_id, date_releve, tariff_class_code, tariff_grid)` — one canonical counter reading per meter, reading date, tariff class, and tariff grid.
+**Unique constraint**: `(meter_id, reading_at, energy_direction, register_key)` — one canonical counter reading per meter, reading point, direction, and functional register.
 
-**Indexes**: `(meter_id, date_releve)`, `promotion_run_id`.
+**Indexes**: `(meter_id, date_releve)`, `(meter_id, register_key, reading_at)`, `(meter_id, energy_direction, register_key)`, `promotion_run_id`.
 
 **Invariants / semantics**:
 - only promoted **active energy** belongs in this table; reactive energy, durations, PMA, and other non-`EA`/`Wh` quantities stay outside this contract
-- the promoted model is intentionally **day-labeled**, not timestamp-granular; source time-of-day is not part of canonical row identity
+- the promoted model is **date-labeled and timestamp-capable**: `date_releve` supports daily UX, while `reading_at` preserves timestamp-granular R64/R171 readings when available
+- `register_key` is the product identity for computing deltas; optional tariff/grid/calendar/class/cadran columns explain that identity without creating a second business fact
 - if multiple promotable source rows map to the same canonical slot, they compete to produce **one** canonical promoted row; provenance does not create a second business fact
 - absence of a row means no promotable canonical counter reading exists for that series/date under SF6 rules; it does not by itself prove zero consumption or source non-delivery
 
-> **Note on consumption computation**: Energy consumed between two readings = `index[t] - index[t-1]` only within the same `(meter_id, tariff_grid, tariff_class_code)` series. This delta computation is a downstream service responsibility, not a promotion concern. The promotion pipeline stores the raw counter faithfully.
+> **Note on consumption computation**: Energy consumed between two readings = `index[t] - index[t-1]` only within the same `(meter_id, energy_direction, register_key)` series. This delta computation is a downstream service responsibility, not a promotion concern. The promotion pipeline stores the raw counter faithfully.
 
 #### `meter_power_peak` — Maximum power demand per period
 
@@ -302,6 +366,59 @@ The canonical table for promoted PMAX readings (puissance maximale atteinte). Ea
 - `source_flux_type` is provenance only and does not create a second business identity for the same PMAX period
 - absence of a row means no promotable canonical PMAX reading exists for that meter/period under SF6 rules
 
+#### `delivery_point_technical_contract_snapshot` — Technical and contractual PRM state
+
+The canonical table for promoted C68 technical and contractual snapshots. C68 is not metering data and must not be mixed into `meter_load_curve`, `meter_energy_index`, or `meter_power_peak`.
+
+Each row represents one promoted technical/contractual snapshot for one known delivery point / PRM. It supports calculations and comparisons such as subscribed-power checks, tariff consistency, domain/tension validation, metering-mode interpretation, and future enrichment of promoted measurement data.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | Integer PK | |
+| `delivery_point_id` | FK → `delivery_points.id` | Linked delivery point resolved from C68 PRM; required for functional promotion |
+| `point_id` | String(14) | Source PRM copied for traceability and easier joins/debugging |
+| `snapshot_key` | String(120) | Required canonical identity for this technical/contract snapshot, derived from source snapshot time, effective date, and source-row identity when needed |
+| `source_snapshot_at` | DateTime | Source snapshot / file timestamp when available, otherwise promotion-time fallback; part of snapshot identity |
+| `effective_from` | Date | nullable — selected C68 contractual situation start date (`date_debut_situation_contractuelle`) when source can identify it without ambiguity |
+| `contractual_situation_count` | Integer | nullable — count of contractual situations present in the C68 payload |
+| `segment` | String(20) | nullable — contract segment |
+| `etat_contractuel` | String(50) | nullable — contract state |
+| `formule_tarifaire_acheminement` | String(100) | nullable — FTA or source-backed tariff formula label/code |
+| `code_tarif_acheminement` | String(50) | nullable — raw tariff-routing code when available |
+| `siret` | String(20) | nullable — final customer establishment identifier |
+| `siren` | String(20) | nullable — final customer company identifier |
+| `domaine_tension` | String(50) | nullable — technical voltage domain |
+| `tension_livraison` | String(50) | nullable — delivery voltage information |
+| `type_comptage` | String(50) | nullable — metering type |
+| `mode_releve` | String(50) | nullable — reading mode |
+| `media_comptage` | String(50) | nullable — metering/media information |
+| `periodicite_releve` | String(50) | nullable — reading periodicity |
+| `puissance_souscrite_valeur` | Float | nullable — subscribed power value when available |
+| `puissance_souscrite_unite` | String(20) | nullable — subscribed power unit, usually `kVA` |
+| `puissance_raccordement_soutirage_valeur` | Float | nullable — withdrawal connection power when available |
+| `puissance_raccordement_soutirage_unite` | String(20) | nullable — withdrawal connection power unit |
+| `puissance_raccordement_injection_valeur` | Float | nullable — injection connection power when available |
+| `puissance_raccordement_injection_unite` | String(20) | nullable — injection connection power unit |
+| `type_injection` | String(50) | nullable — injection type when available |
+| `borne_fixe` | String(50) | nullable — C68 fixed-boundary field when available |
+| `refus_pose_linky` | Boolean | nullable — Linky refusal flag when available |
+| `date_refus_pose_linky` | Date | nullable — Linky refusal date when available |
+| `source_flux_type` | String(10) | `C68` — summary provenance |
+| `promotion_run_id` | FK → `promotion_run.id` | nullable — last promotion run that created this snapshot |
+| `created_at` | DateTime | |
+| `updated_at` | DateTime | |
+
+**Unique constraint**: `(delivery_point_id, snapshot_key)` — one promoted C68 snapshot per delivery point and canonical snapshot identity.
+
+**Indexes**: `(delivery_point_id, source_snapshot_at)`, `(delivery_point_id, effective_from)`, `(point_id)`, `promotion_run_id`.
+
+**Invariants / semantics**:
+- C68 promotion requires a safe PRM → DeliveryPoint match. Unknown or ambiguous PRMs stay in raw archive/backlog and do not produce functional technical rows.
+- this table stores extracted functional fields needed for product calculations and comparisons; full C68 `payload_raw` remains in the raw archive and audit lineage
+- rich nested source structures such as `rattachements` and `optionsContractuelles` are not normalized in SF6 unless they become explicit product requirements
+- if C68 publishes multiple contractual situations, SF6 promotes the selected non-ambiguous situation summary and preserves selection details in audit metadata
+- current technical/contractual state is derived by choosing the latest applicable snapshot/effective date; this table intentionally preserves snapshot history instead of overwriting all history into a single row
+
 ### 4.2 New Operational Tables
 
 #### `promotion_run` — Execution audit trail
@@ -316,17 +433,18 @@ Mirrors `IngestionRun` pattern from SF4.
 | `status` | String | `running` / `completed` / `failed` |
 | `triggered_by` | String | `cli` / `api` |
 | `mode` | String | `incremental` / `full` |
-| `scope_flux_types` | String | Comma-separated flux types in execution scope for this run (e.g. "R4H,R4M,R50"); execution scope only, not a completeness or provenance guarantee |
+| `scope_flux_types` | String | Comma-separated flux types in execution scope for this run (e.g. "R4H,R4M,R50,R63,R64,C68"); execution scope only, not a completeness or provenance guarantee |
 | `high_water_mark_before` | JSON | Per-table discovery/progress markers at start of run; not a guarantee that all earlier raw archive rows are already canonicalized |
 | `high_water_mark_after` | JSON | Per-table discovery/progress markers at end of run; not a guarantee that all earlier raw archive rows are already canonicalized |
 | `prms_total` | Integer | Distinct PRMs found in raw archive data to process |
-| `prms_matched` | Integer | PRMs successfully matched to a Meter |
+| `prms_matched` | Integer | PRMs successfully matched to the required product entity for the scoped rows: Meter for measurements, DeliveryPoint for C68 |
 | `prms_unmatched` | Integer | PRMs blocked from promotion for unresolved matching reasons (`no_delivery_point`, `no_active_meter`, `multiple_active_meters`); not a source-completeness counter |
-| `prms_promoted` | Integer | PRMs whose readings were successfully promoted |
+| `prms_promoted` | Integer | PRMs whose readings or technical/contract snapshots were successfully promoted |
 | `prms_failed` | Integer | PRMs that failed during promotion |
 | `rows_load_curve` | Integer | Canonical `meter_load_curve` rows upserted by this run |
 | `rows_energy_index` | Integer | Canonical `meter_energy_index` rows upserted by this run |
 | `rows_power_peak` | Integer | Canonical `meter_power_peak` rows upserted by this run |
+| `rows_technical_contract_snapshot` | Integer | Canonical `delivery_point_technical_contract_snapshot` rows inserted by this run |
 | `rows_skipped` | Integer | Source rows/candidates examined by this run but not promoted under SF6 rules |
 | `rows_flagged` | Integer | Source rows/candidates examined by this run and retained as flagged audit outcomes (e.g. non-winning quality degradation) |
 | `error_message` | Text | nullable — run-level error if failed |
@@ -345,10 +463,10 @@ For merged promoted rows, audit must preserve lineage to **all contributing raw 
 |--------|------|-------------|
 | `id` | Integer PK | |
 | `promotion_run_id` | FK → `promotion_run.id` | Which run produced this event |
-| `target_table` | String | `meter_load_curve` / `meter_energy_index` / `meter_power_peak` |
+| `target_table` | String | `meter_load_curve` / `meter_energy_index` / `meter_power_peak` / `delivery_point_technical_contract_snapshot` |
 | `target_row_id` | Integer | nullable in semantics — PK of the canonical target row when one exists; absent/undefined for pure source-side skipped or rejected outcomes |
 | `action` | String | `created` / `updated` / `skipped` / `flagged` |
-| `source_table` | String | `enedis_flux_mesure_r4x` / `r50` / `r171` / `r151` |
+| `source_table` | String | `enedis_flux_mesure_r4x` / `enedis_flux_mesure_r50` / `enedis_flux_mesure_r171` / `enedis_flux_mesure_r151` / `enedis_flux_mesure_r63` / `enedis_flux_index_r64` / `enedis_flux_itc_c68` |
 | `source_row_id` | Integer | PK of one originating raw archive row when the event concerns a single source row; merged CDC promotions require additional lineage to all contributing rows |
 | `source_flux_file_id` | FK → `enedis_flux_file.id` | One originating flux file reference when applicable; merged promotions may require more than one source reference to preserve total audit |
 | `previous_payload_json` | JSON | nullable — prior promoted payload for the target row before update |
@@ -364,7 +482,7 @@ For merged promoted rows, audit must preserve lineage to **all contributing raw 
 
 Historical name kept for the POC. In practice this table covers both truly unmatched PRMs and PRMs blocked by ambiguous meter linkage.
 
-Semantically, one row means: raw archive data exists for this PRM, but SF6 could not safely map it to exactly one promotable meter at the time of the run. It is a promotion-blocking backlog, not evidence of zero usage, source non-delivery, or a confirmed canonical data gap.
+Semantically, one row means: raw archive data exists for this PRM, but SF6 could not safely map it to the required product entity at the time of the run. Measurement rows require exactly one active electricity Meter; C68 rows require exactly one known DeliveryPoint. It is a promotion-blocking backlog, not evidence of zero usage, source non-delivery, or a confirmed canonical data gap.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -378,6 +496,7 @@ Semantically, one row means: raw archive data exists for this PRM, but SF6 could
 | `block_reason` | String | `no_delivery_point` / `no_active_meter` / `multiple_active_meters` |
 | `resolved_at` | DateTime | nullable |
 | `resolved_by` | String | nullable — user or "auto" |
+| `resolved_delivery_point_id` | FK → `delivery_points.id` | nullable — the DeliveryPoint it was linked to, required for C68 technical promotion |
 | `resolved_meter_id` | FK → `meter.id` | nullable — the Meter it was linked to |
 | `notes` | Text | nullable — data manager comments |
 
@@ -385,7 +504,7 @@ Semantically, one row means: raw archive data exists for this PRM, but SF6 could
 
 `meter_reading` remains unchanged. It continues to serve existing services with seed/demo consumption data during SF6. `power_readings` also remains part of the current prototype universe for existing power-focused services.
 
-SF6 does **not** migrate product services to the new promoted tables. It creates the canonical real-data targets first. A later migration effort will transition services to read from `meter_load_curve`, `meter_energy_index`, and `meter_power_peak`.
+SF6 does **not** migrate product services to the new promoted tables. It creates the canonical real-data targets first. A later migration effort will transition services to read from `meter_load_curve`, `meter_energy_index`, `meter_power_peak`, and `delivery_point_technical_contract_snapshot` where appropriate.
 
 During the transition period:
 - **`meter_reading`** = seed/demo consumption data + CSV imports (legacy/demo)
@@ -393,6 +512,7 @@ During the transition period:
 - **`meter_load_curve`** = real Enedis promoted CDC data (new, canonical for future migration)
 - **`meter_energy_index`** = real Enedis promoted index data (new, canonical for future migration)
 - **`meter_power_peak`** = real Enedis promoted PMAX data (new, canonical for future migration)
+- **`delivery_point_technical_contract_snapshot`** = real Enedis promoted technical/contractual PRM state from C68 (new, canonical for future calculations and comparisons)
 
 During SF6, there is no product cutover. Existing services stay on the legacy/demo universe while the promoted Enedis layer is validated in parallel.
 
@@ -445,6 +565,10 @@ R171 does not carry a per-value quality indicator. All promotable R171 values ar
 
 > **To refine**: the official R4x meanings are now validated by Enedis v2.0.3. The remaining work is calibrating the Promeos heuristic ordering on real republications and outage-heavy samples. Current working order: `R > C > S=T=F=G > D > H > K > P > E > unknown`.
 
+### 5.5 R6X fluxes (R63/R64) — To define in Step 4
+
+R63 and R64 are promotable in SF6, but their quality mapping is source-specific and must be finalized in the promotion-rule pass. The mapping must consider R6X context fields such as `nature_point`, `type_correction`, `indice_vraisemblance`, `etat_complementaire`, and reading context without turning all of those source fields into functional table columns.
+
 ---
 
 ## 6. Routing & Cadence Mapping
@@ -456,6 +580,8 @@ Routing in SF6 is determined by the canonical target slot the source row can leg
 
 If a row fails PRM resolution, promotion is **blocked** at PRM level. If it fails a supported row contract, it is **skipped** and remains in the raw archive tables. If an R151 file declares header units incompatible with the routed family, promotion is **blocked** at file level.
 
+> **Step 3 model note**: R63, R64, and C68 are now confirmed as promotable source families in the functional data model. The detailed source-row contracts, quality mappings, and conflict arbitration for those flows are defined in Step 4 and are not yet fully reflected in the routing tables below.
+
 ### 6.1 Strict Routing Matrix
 
 | Raw source | Flux type | Source quantity contract | Guardrails required before routing | Target table / canonical slot | Outcome if contract not met |
@@ -465,9 +591,9 @@ If a row fails PRM resolution, promotion is **blocked** at PRM level. If it fail
 | `enedis_flux_mesure_r4x` | `R4H` / `R4M` / `R4Q` | `grandeur_physique='ERC'` and `unite_mesure='kWr'` | `granularite` parses to `5` or `10`; timestamp/value parse | `meter_load_curve.reactive_capacitive_kvar` at `(meter_id, timestamp, pas_minutes)` | Skip row |
 | `enedis_flux_mesure_r4x` | `R4H` / `R4M` / `R4Q` | `grandeur_physique='E'` and `unite_mesure='V'` | `granularite` parses to `5` or `10`; timestamp/value parse | `meter_load_curve.voltage_v` at `(meter_id, timestamp, pas_minutes)` | Skip row |
 | `enedis_flux_mesure_r50` | `R50` | raw CDC average active power in `W` | timestamp/value parse | `meter_load_curve.active_power_kw` at `(meter_id, horodatage-30min, 30)` | Skip row |
-| `enedis_flux_mesure_r171` | `R171` | `grandeur_metier='CONS'`, `grandeur_physique='EA'`, `unite='Wh'` | `type_mesure` belongs to the index family; `type_calendrier in {'D','F'}`; `code_classe_temporelle` present; `date_fin`/value parse | `meter_energy_index` at `(meter_id, date_releve, tariff_grid, tariff_class_code)` | Skip row |
-| `enedis_flux_mesure_r151` | `R151` + `type_donnee='CT'` | supplier energy index | file header `Unite_Mesure_Index='Wh'`; `id_classe_temporelle` present; `date_releve`/value parse | `meter_energy_index` at `(meter_id, date_releve, 'CT', tariff_class_code)` | Block file on bad header unit, otherwise skip row |
-| `enedis_flux_mesure_r151` | `R151` + `type_donnee='CT_DIST'` | distributor energy index | file header `Unite_Mesure_Index='Wh'`; `id_classe_temporelle` present; `date_releve`/value parse | `meter_energy_index` at `(meter_id, date_releve, 'CT_DIST', tariff_class_code)` | Block file on bad header unit, otherwise skip row |
+| `enedis_flux_mesure_r171` | `R171` | `grandeur_metier='CONS'`, `grandeur_physique='EA'`, `unite='Wh'` | `type_mesure` belongs to the index family; `type_calendrier in {'D','F'}`; `code_classe_temporelle` present; `date_fin`/value parse | `meter_energy_index` at `(meter_id, reading_at, energy_direction='CONS', register_key)` | Skip row |
+| `enedis_flux_mesure_r151` | `R151` + `type_donnee='CT'` | supplier energy index | file header `Unite_Mesure_Index='Wh'`; `id_classe_temporelle` present; `date_releve`/value parse | `meter_energy_index` at `(meter_id, reading_at, energy_direction='CONS', register_key)` | Block file on bad header unit, otherwise skip row |
+| `enedis_flux_mesure_r151` | `R151` + `type_donnee='CT_DIST'` | distributor energy index | file header `Unite_Mesure_Index='Wh'`; `id_classe_temporelle` present; `date_releve`/value parse | `meter_energy_index` at `(meter_id, reading_at, energy_direction='CONS', register_key)` | Block file on bad header unit, otherwise skip row |
 | `enedis_flux_mesure_r151` | `R151` + `type_donnee='PMAX'` | PMAX apparent power | file header `Unite_Mesure_Puissance='VA'`; `date_releve`/value parse | `meter_power_peak` at `(meter_id, date_releve)` | Block file on bad header unit, otherwise skip row |
 | any raw archive source | unsupported family | any other quantity/unit/type combination | none | no promoted target in SF6 | Skip row |
 
@@ -480,7 +606,7 @@ If a row fails PRM resolution, promotion is **blocked** at PRM level. If it fail
 - **R151 header-unit guardrail**: `type_donnee` chooses the target family, but routing is allowed only if the file header declares the expected unit for that family. A header-unit mismatch blocks the file because the source contract is internally inconsistent.
 - **Republication guardrail**: republication comparison occurs only among candidates competing for the same canonical target slot, not merely among rows sharing the same PRM and timestamp/date. In practice:
   - `meter_load_curve`: competition is scoped to one promoted quantity column inside one `(meter_id, timestamp, pas_minutes)` interval row
-  - `meter_energy_index`: competition is scoped to one `(meter_id, date_releve, tariff_grid, tariff_class_code)` series point
+  - `meter_energy_index`: competition is scoped to one `(meter_id, reading_at, energy_direction, register_key)` series point
   - `meter_power_peak`: competition is scoped to one `(meter_id, date_releve)` PMAX point
 - **Unsupported-family guardrail**: unsupported rows are handled explicitly as `skipped` outcomes, not as implicit non-routing.
 
@@ -584,7 +710,7 @@ That distinction is important for ingestion correctness, but it is **not accepta
 ### Stage 1: Discover — Identify new raw archive data
 
 ```
-For each raw archive table (r4x, r50, r171, r151):
+For each raw archive table (r4x, r50, r171, r151, r63, r64, c68):
     1. Discover new candidates:
         SELECT DISTINCT point_id, flux_file_id, COUNT(*)
         FROM enedis_flux_mesure_<table>
@@ -614,7 +740,7 @@ For R50 specifically:
 - `num_seq` groups the delivery sequence to evaluate, but the actual "did we receive all files?" check is: exactly one file for each `XXXXX` from `00001` to `YYYYY`
 - the official per-ZIP PRM caps (`3000` daily, `100` monthly) are useful sanity bounds when diagnosing suspiciously fragmented or oversized deliveries
 
-### Stage 2: Match — Resolve PRMs to Meters
+### Stage 2: Match — Resolve PRMs to product entities
 
 ```
 For each distinct point_id found in Stage 1:
@@ -622,6 +748,11 @@ For each distinct point_id found in Stage 1:
     IF NOT FOUND:
         → INSERT or UPDATE unmatched_prm (status=pending, block_reason=no_delivery_point)
         → Skip this PRM entirely
+    IF C68 technical/contract rows are in scope for this PRM:
+        → DeliveryPoint is the functional target entity for those C68 rows
+        → C68 promotion does not require an active Meter
+    IF no measurement rows are in scope for this PRM:
+        → Proceed to Stage 3 for C68 only
     Meters = SELECT * FROM meter
              WHERE delivery_point_id = DeliveryPoint.id
                AND is_active = True
@@ -633,7 +764,7 @@ For each distinct point_id found in Stage 1:
         → INSERT or UPDATE unmatched_prm (status=pending, block_reason=multiple_active_meters)
         → Skip
     Meter = the single matching meter
-    → PRM is matched: proceed to Stage 3
+    → PRM is matched for measurement promotion: proceed to Stage 3
 ```
 
 ### Stage 3: Resolve — Handle republications
@@ -662,7 +793,7 @@ Quality comparison uses the working hierarchy from Section 5: `R > C > S=T=F=G >
 
 For each raw archive row to promote, determine the target table and convert values:
 
-**CDC rows (R4x, R50) → `meter_load_curve`:**
+**CDC rows (R4x, R50, R63) → `meter_load_curve`:**
 ```
 if flux_type in ('R4H', 'R4M', 'R4Q'):
     timestamp     = parse_iso8601_to_naive_utc(horodatage)  # raw H is already interval start
@@ -676,6 +807,13 @@ elif flux_type == 'R50':
     quality_score = R50_IV_QUALITY_MAP[indice_vraisemblance]  # Section 5.2
     is_estimated  = False  # IV is a caution flag, not an estimation flag
     active_power_kw = float(valeur) / 1000  # raw V is average power in W
+elif flux_type == 'R63':
+    # R6X CDC rows promote into the same canonical interval contract.
+    # Exact quantity/unit allowlist, pas parsing, timestamp semantics, and quality mapping
+    # are finalized in the Step 4 promotion-rule revision.
+    timestamp     = parse_r6x_cdc_timestamp(horodatage)
+    pas_minutes   = parse_r6x_pas_to_minutes(pas)
+    quality_score = map_r6x_quality(nature_point, type_correction, indice_vraisemblance, etat_complementaire)
 
 source_flux_type = flux_type
 
@@ -701,19 +839,27 @@ before UPSERT.
 # any later aggregation to hourly/daily energy must respect this half-open interval model
 ```
 
-**Energy-index rows (R171 `EA` only, R151 CT/CT_DIST) → `meter_energy_index`:**
+**Energy-index rows (R171 `EA` only, R151 CT/CT_DIST, R64) → `meter_energy_index`:**
 ```
 date_releve         = parse_date(date_fin or date_releve)
+reading_at          = parse_reading_instant_or_date_boundary(source timestamp/date)
+reading_precision   = 'datetime' if source supplies timestamp precision else 'date'
+energy_direction    = map_source_direction(grandeur_metier)  # current legacy rules default to CONS
+register_key        = build_register_key(source grid/calendar/class/cadran identity)
 tariff_class_code   = code_classe_temporelle or id_classe_temporelle
 tariff_class_label  = libelle_classe_temporelle
 tariff_grid         = (
                         'CT_DIST' if source is R171 and type_calendrier == 'D'
                         else 'CT' if source is R171 and type_calendrier == 'F'
                         else 'CT' / 'CT_DIST' from R151 type_donnee
+                        else mapped R64 grid family when source is R64
                       )
+source_tariff_grid_code = code_grille when source is R64
+tariff_calendar_id      = id_calendrier when source is R64
+totalizer_code          = code_cadran when source is R64
 value_wh            = float(valeur)
-quality_score       = 0.90 for R171 (no quality indicator) or R50/R151 mapping from Section 5
-is_estimated        = False for R171 or mapped from the source quality indicator
+quality_score       = 0.90 for R171 (no quality indicator) or mapped from R151/R64 source quality rules
+is_estimated        = False for R171 or mapped from the source quality indicator/context
 source_flux_type    = flux_type
 
 if source is R171 and (grandeur_physique != 'EA' or unite != 'Wh'):
@@ -727,6 +873,18 @@ value_va       = float(valeur)
 quality_score  = 0.90  # PMAX has no quality indicator; assumed reliable
 is_estimated   = False
 source_flux_type = 'R151'
+```
+
+**Technical/contract rows (C68) → `delivery_point_technical_contract_snapshot`:**
+```
+delivery_point_id = resolve point_id to exactly one known DeliveryPoint
+snapshot_key = build_c68_snapshot_key(source snapshot/effective date/source row identity)
+source_snapshot_at = derive from source file timestamp or promotion fallback
+effective_from = selected date_debut_situation_contractuelle when non-ambiguous
+functional_fields = extracted C68 allowlist needed for calculations/comparisons
+source_flux_type = 'C68'
+
+full payload_raw remains in flux_data.db; promotion_event stores source lineage and selection notes
 ```
 
 **Error handling per value:**
@@ -744,14 +902,17 @@ For each PRM (within a DB transaction):
     load_curve_batch = []    # merged CDC interval rows → meter_load_curve
     energy_index_batch = []  # Index rows → meter_energy_index
     power_peak_batch = []    # PMAX rows → meter_power_peak
+    technical_contract_batch = []  # C68 rows → delivery_point_technical_contract_snapshot
     
     For each converted row:
         route to appropriate batch based on Stage 4 routing
     
     # Bulk UPSERT each table
     # meter_load_curve: conflict on (meter_id, timestamp, pas_minutes)
-    # meter_energy_index: conflict on (meter_id, date_releve, tariff_class_code, tariff_grid)
+    # meter_energy_index: conflict on (meter_id, reading_at, energy_direction, register_key)
     # meter_power_peak: conflict on (meter_id, date_releve)
+    # delivery_point_technical_contract_snapshot: conflict on
+    #   (delivery_point_id, snapshot_key)
     # On conflict: UPDATE the merged interval columns, quality_score, is_estimated,
     # promotion_run_id, updated_at
     
@@ -905,7 +1066,7 @@ python -m data_staging.cli promote [OPTIONS]
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--mode` | `incremental` | `incremental` (new data only) or `full` (rebuild from scratch) |
-| `--flux-types` | All | Comma-separated: `R4H,R4M,R4Q,R50,R171,R151` |
+| `--flux-types` | All | Comma-separated: `R4H,R4M,R4Q,R50,R171,R151,R63,R64,C68` |
 | `--dry-run` | Off | Analyze without writing to promoted tables |
 | `--verbose` | Off | Detailed per-PRM logging |
 
@@ -928,6 +1089,8 @@ Rows promoted:
   meter_load_curve:    11,200 created  +  1,256 updated  =  12,456
   meter_energy_index:     830 created  +     42 updated  =     872
   meter_power_peak:        68 created  +      0 updated  =      68
+  delivery_point_technical_contract_snapshot:
+                         42 created  +      0 updated  =      42
   Skipped:         34  (superseded by better republication)
   Flagged:          8  (quality degradation — review needed)
 
@@ -954,11 +1117,11 @@ Manual review workflows for blocked PRMs remain out of scope for SF6.
 
 ## 12. Implementation Phases
 
-This feature is too large for a single implementation session. Proposed phasing:
+This feature is too large for a single implementation session. Proposed phasing must be treated as a rebuild plan, not an endorsement of the current overflow scaffolding. Existing `backend/data_staging/` code, promotion endpoints, bridge helpers, and service wiring must be audited against this PRD; anything that does not match the canonical contract should be replaced or removed.
 
 ### Phase A: Foundation & Data Model (1-2 sessions)
-- Create `backend/data_staging/` module skeleton
-- New functional tables: `meter_load_curve`, `meter_energy_index`, `meter_power_peak`
+- Establish the canonical `backend/data_staging/` module boundary, replacing or pruning non-canonical overflow scaffolding as needed
+- New functional tables: `meter_load_curve`, `meter_energy_index`, `meter_power_peak`, `delivery_point_technical_contract_snapshot`
 - Operational tables: `PromotionRun`, `PromotionEvent`, `UnmatchedPrm`
 - PRM matching logic (point_id → DeliveryPoint → exactly one active electricity Meter)
 - High-water mark tracking
@@ -967,8 +1130,9 @@ This feature is too large for a single implementation session. Proposed phasing:
 - Migration script for new tables
 - Tests: matching logic, unmatched PRM detection, model creation
 
-### Phase B: CDC Promotion — R4x (2-3 sessions)
+### Phase B: CDC Promotion — R4x + R63 (2-3 sessions)
 - R4x promotion pipeline (R4H/R4M/R4Q → `meter_load_curve`)
+- R63 promotion pipeline (→ `meter_load_curve`) once Step 4 rules define quantity/unit, cadence, timestamp, quality, and legacy-arbitration behavior
 - Value conversion (string → typed power columns, ISO8601 → datetime UTC-naive)
 - Quality score mapping (statut_point → quality_score)
 - `pas_minutes` fidelity (preserve raw `granularite`, do not map to `FrequencyType`)
@@ -988,16 +1152,22 @@ This feature is too large for a single implementation session. Proposed phasing:
 - PromotionEvent logging for updates
 - Tests: republication scenarios
 
-### Phase E: Index Promotion — R171 + R151 (2-3 sessions)
-- R171 promotion (→ `meter_energy_index`, day-labeled cumulative index per tariff class)
+### Phase E: Index Promotion — R171 + R151 + R64 (2-3 sessions)
+- R171 promotion (→ `meter_energy_index`, cumulative index per register/tariff identity)
 - R151 CT/CT_DIST promotion (→ `meter_energy_index`, with `tariff_grid` column)
 - R151 PMAX promotion (→ `meter_power_peak`)
+- R64 promotion (→ `meter_energy_index`) once Step 4 rules define register identity, direction, quality, and context behavior
 - Tests: index promotion, PMAX routing, tariff class handling
 
+### Phase E2: C68 Technical/Contract Promotion (1 session)
+- C68 promotion (→ `delivery_point_technical_contract_snapshot`)
+- DeliveryPoint-level PRM matching without requiring an active Meter
+- Tests: C68 snapshot identity, extracted field promotion, ambiguous contractual situation handling
+
 ### Phase F: API + Operations (1 session)
-- Minimal REST endpoints (trigger, runs, stats)
+- Canonical minimal REST endpoints (trigger, runs, stats), reusing current endpoints only if they match this PRD
 - Stats endpoint (per-table breakdowns)
-- Wiring into `main.py`
+- Promotion-operations wiring into `main.py`, without migrating product services to promoted tables
 - Tests
 
 ### Phase G: Backfill + Validation (1 session)
@@ -1022,7 +1192,7 @@ This feature is too large for a single implementation session. Proposed phasing:
 |---|----------|--------|---------|
 | OQ1 | ~~R171 index storage: store raw index, computed delta, or both?~~ | **Resolved (D16)** | Store raw index in `meter_energy_index`. Delta is downstream service responsibility |
 | OQ2 | ~~R151 PMAX: separate table or metadata in MeterReading?~~ | **Resolved (D16)** | Separate `meter_power_peak` table |
-| OQ3 | ~~R171 tariff class columns: extend MeterReading or new model?~~ | **Resolved (D16)** | `meter_energy_index` has `tariff_class_code` and `tariff_grid` columns |
+| OQ3 | ~~R171/R64 tariff and register identity: extend MeterReading or new model?~~ | **Resolved (D16, D27)** | `meter_energy_index` is the canonical target and now includes `register_key`, timestamp-capable reading identity, and optional grid/calendar/class/cadran fields |
 | OQ4 | `promotion_event` table growth at scale (175M+ rows) | Open | May need partitioning, archival, or selective logging strategy |
 | OQ5 | Gap detection, completeness scoring, and interpolation / estimation service | Open | Future feature to detect missing intervals explicitly, score completeness, and optionally fill gaps with statistical estimates |
 | OQ6 | R4x `statut_point` score calibration on real republications/outage cases | Open | Official meanings are now validated by Enedis R4x v2.0.3; the remaining question is whether Promeos' heuristic scores and `is_estimated` buckets need tuning on real data |
@@ -1030,14 +1200,17 @@ This feature is too large for a single implementation session. Proposed phasing:
 | OQ8 | Multi-XML R4x archive support in SF1-SF4 raw ingestion | Open | The official guide allows 1..n XML per ZIP archive. Current POC observations were mono-XML, but raw archive completeness depends on hardening this assumption |
 | OQ9 | Business-day calendar for R4H/R4M SLA evaluation | Open | "3rd business day" needs an explicit calendar/timezone policy before we operationalize `late_publication` detection |
 | OQ10 | R50 cadence/file-group completeness tracking from filename nomenclature | Open | Daily vs monthly cadence, subscription monthly day, and `XXXXX`/`YYYYY` completeness are official R50 rules but are not yet modeled as first-class raw archive metadata |
+| OQ11 | R63 vs legacy CDC arbitration | Open | The functional model stores one best canonical value when R63 and legacy flows compete for the same slot; Step 4 must define quality/source/recency ordering |
+| OQ12 | R63/R64 quality mapping | Open | R6X quality context (`nature_point`, `type_correction`, `indice_vraisemblance`, `etat_complementaire`, reading context) must be mapped to Promeos quality and skip/flag behavior in Step 4 |
 
 ---
 
 ## 14. Success Criteria
 
-- [ ] CDC data (R4x, R50) promoted to `meter_load_curve` with correct typed power columns and exact `pas_minutes`
-- [ ] Index data (R171, R151 CT/CT_DIST) promoted to `meter_energy_index` with tariff class granularity
+- [ ] CDC data (R4x, R50, R63) promoted to `meter_load_curve` with correct typed power columns and exact `pas_minutes`
+- [ ] Index data (R171, R151 CT/CT_DIST, R64) promoted to `meter_energy_index` with register/tariff identity granularity
 - [ ] PMAX data (R151) promoted to `meter_power_peak`
+- [ ] C68 technical/contractual snapshots promoted to `delivery_point_technical_contract_snapshot`
 - [ ] Unmatched PRMs are flagged, zero unidentified data in production
 - [ ] Ambiguous PRM mappings are blocked and replayed from backlog once resolved
 - [ ] Every promoted row is traceable to its source raw archive row(s) via `promotion_event`

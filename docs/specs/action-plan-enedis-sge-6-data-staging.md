@@ -1,6 +1,6 @@
 # SF6 Action Plan — Enedis Raw Archive to Functional Promotion
 
-> **Status**: working action plan for revising `feature-enedis-sge-6-data-staging.md`
+> **Status**: working action plan for revising `feature-enedis-sge-6-data-staging.md`; Steps 1-3 complete, Step 4 next
 > **Created**: 2026-04-27
 > **Branch**: `feature/sf6-phase`
 > **Purpose**: preserve the agreed SF6 reset decisions so future sessions can revise the spec step by step without treating previous overflow scaffolding as canonical.
@@ -104,35 +104,34 @@ These must be resolved while revising the spec.
 
 ### OQ1 — R63 Promotion Target
 
-Likely direction:
+Resolved target direction:
 - Promote `R63` load-curve points into `meter_load_curve`.
 
-Questions:
+Remaining Step 4 questions:
 - Which `R63` physical quantities map to active power, reactive power, and voltage?
 - Which units are allowed?
 - How should `pas` values map to `pas_minutes`?
 - How should `nature_point`, `type_correction`, `indice_vraisemblance`, and `etat_complementaire` affect quality?
+- How should R63 compete with legacy CDC rows when both exist for the same PRM and interval?
 
 ### OQ2 — R64 Promotion Target
 
-Likely direction:
+Resolved target direction:
 - Promote `R64` cumulative indexes into `meter_energy_index`.
 
-Questions:
+Remaining Step 4 questions:
 - How do `code_grille`, `id_calendrier`, `id_classe_temporelle`, and `code_cadran` map to canonical tariff identity?
-- Does `R64` need a richer target model than `meter_energy_index`?
 - How should source context fields such as `contexte_releve`, `type_releve`, and `motif_releve` be preserved?
 
 ### OQ3 — C68 Promotion Target
 
-Unresolved.
+Resolved target direction:
+- Promote selected C68 contractual/technical fields into a dedicated `delivery_point_technical_contract_snapshot` table.
+- Keep full C68 `payload_raw` in the raw archive and audit lineage, not in measurement tables.
 
-Possible directions:
-- Defer C68 promotion and keep it raw-only for SF6.
-- Promote selected C68 contractual/technical fields into a dedicated functional table.
-- Use C68 only as PRM/meter enrichment evidence during SF6, without a promoted C68 table.
-
-Decision needed before finalizing the data model.
+Remaining Step 4 questions:
+- How should C68 choose the non-ambiguous contractual situation when multiple situations exist?
+- Which C68 fields are required for promotion versus optional enrichment?
 
 ### OQ4 — Functional Table Set
 
@@ -141,10 +140,12 @@ Current PRD defines three promoted tables:
 - `meter_energy_index`
 - `meter_power_peak`
 
-Questions:
-- Are these still sufficient after adding `R63` and `R64`?
-- Does `C68` require a fourth table?
-- Should any target table include source-family-specific metadata columns, or should that remain only in audit lineage?
+Resolved:
+- Three measurement tables remain, but C68 adds a fourth functional target:
+  - `delivery_point_technical_contract_snapshot`
+- `meter_load_curve` is R63-capable.
+- `meter_energy_index` is R64-capable through `register_key`, `reading_at`, direction, and optional grid/calendar/class/cadran identity fields.
+- Source-specific context stays in raw/audit unless it defines identity, calculations, conflict resolution, or common filtering.
 
 ### OQ5 — Audit Granularity At High Volume
 
@@ -161,7 +162,7 @@ Decision needed:
 
 Revise the SF6 spec in this order.
 
-### Step 1 — Scope And Boundaries
+### Step 1 — Scope And Boundaries — Complete
 
 Outcome:
 - SF6 in/out is unambiguous.
@@ -169,7 +170,13 @@ Outcome:
 - Existing overflow scaffolding is explicitly non-canonical.
 - SF5 is complete and included as upstream source coverage.
 
-### Step 2 — Source Coverage Matrix
+Applied in `feature-enedis-sge-6-data-staging.md` on 2026-05-02:
+- Metadata now marks SF5 R6X + C68 as implemented/archived.
+- Problem framing now says SF6 lacks a canonical validated promotion layer, not that no bridge code exists.
+- SF6 in/out now excludes service migration and excludes treating overflow endpoints/bridge/service wiring as canonical.
+- Implementation phasing now starts from a rebuild/audit posture for existing `backend/data_staging/` scaffolding.
+
+### Step 2 — Source Coverage Matrix — Complete
 
 Outcome:
 - One matrix lists every raw source table and supported flux family:
@@ -180,20 +187,41 @@ Outcome:
   - `R63`
   - `R64`
   - `C68`
-- Each source has a preliminary status: promoted, partially promoted, or deferred.
+- Each source has a preliminary status: promoted, partially promoted, deferred, or decision-needed.
 
-### Step 3 — Functional Data Model
+Applied in `feature-enedis-sge-6-data-staging.md` on 2026-05-02:
+- Added a `Source Coverage Matrix` under the architecture overview.
+- Marked R4x and R50 as promoted to `meter_load_curve`.
+- Marked R171 and R151 as partially promoted with current target directions.
+- Initially marked R63 and R64 as decision-needed but likely promoted, pending Step 3/4 decisions.
+- Initially marked C68 as decision-needed and likely deferred or enrichment-only, pending Step 3.
+- Kept Step 2 at coverage/status level only; detailed mapping remains for the data-model and promotion-rule deep dives.
+
+### Step 3 — Functional Data Model — Complete
 
 Outcome:
 - Confirm target table set.
 - Add any needed table for C68 or explicit deferral.
 - Validate uniqueness, units, identity, and downstream semantics.
 
-### Step 4 — Promotion Rules
+Applied in `feature-enedis-sge-6-data-staging.md` on 2026-05-04:
+- Replaced "Three Functional Tables" with four functional targets.
+- Confirmed R63 promotes to `meter_load_curve` and expanded cadence semantics beyond legacy `5/10/30`.
+- Confirmed R64 promotes to `meter_energy_index` and added register/timestamp/direction/grid/calendar/class/cadran identity support.
+- Added `delivery_point_technical_contract_snapshot` for promoted C68 technical/contractual state.
+- Added the rule that functional tables are source-neutral but not source-blind: product identity/calculation fields become columns; production context stays in raw/audit unless it affects behavior.
+
+### Step 4 — Promotion Rules — Next
 
 Outcome:
 - Define routing, value conversion, timestamp handling, quality scoring, skip/block behavior, and republication rules source by source.
 - Include strict guardrails for unknown units, missing tariff identity, ambiguous PRM matching, and unparseable values.
+
+Current section-plan gate:
+- Do not edit the SF6 PRD for Step 4 until the promotion-rule revision plan is validated.
+- Step 4 should fill in R63/R64/C68 routing rows now that their functional targets are decided.
+- Step 4 must decide R63-vs-legacy CDC arbitration when both provide the same canonical slot.
+- Step 4 must define R6X quality mapping and C68 required/optional field behavior.
 
 ### Step 5 — Audit, Replay, And Republication
 
