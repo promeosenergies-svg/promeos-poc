@@ -141,8 +141,33 @@ def _count_critical_findings(findings_json: Optional[str]) -> int:
 
 
 def compute_site_compliance_score(db: Session, site_id: int) -> ComplianceScoreResult:
+    """Score conformité unifié pour un site — wrapper V2 adaptatif (default) ou V1 legacy.
+
+    Refonte Sprint C-1 Phase 5 (matrice v1 §6.2, doctrine PROMEOS §6.4.1 V2) :
+    - V2 (default) : pondération adaptative 0 → N obligations, recalcul à 100%
+      sur le périmètre réellement applicable au site (DT/BACS/APER/AUDIT_SME/
+      ISO_50001/SOLAR_TOITURE).
+    - V1 (rollback via env var COMPLIANCE_SCORE_VERSION=V1) : pondération figée
+      45/30/25 sur 3 frameworks. Conservée pour A/B testing — retrait Sprint C-7.
+
+    API publique inchangée : signature + type de retour identiques à pré-Phase 5
+    (wrapper pattern → 0 callsite à migrer).
     """
-    Score conformité unifié pour un site.
+    version = os.getenv("COMPLIANCE_SCORE_VERSION", "V2").upper()
+    if version == "V1":
+        import warnings as _warnings
+
+        _warnings.warn(
+            "COMPLIANCE_SCORE_VERSION=V1 actif — rollback temporaire (retrait Sprint C-7)",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _compute_v1_legacy(db, site_id)
+    return _compute_v2_adaptive(db, site_id)
+
+
+def _compute_v1_legacy(db: Session, site_id: int) -> ComplianceScoreResult:
+    """V1 figée 45/30/25 — DÉPRÉCIÉE (conservée pour rollback flag).
 
     Algorithme :
     1. Récupère RegAssessment pour chaque framework (DT, BACS, APER)
@@ -150,6 +175,8 @@ def compute_site_compliance_score(db: Session, site_id: int) -> ComplianceScoreR
     3. Score composite = weighted_average(DT 45%, BACS 30%, APER 25%)
     4. Pénalité findings critiques : -5 pts par finding critique (max -20)
     5. Clamp [0, 100]
+
+    Retrait prévu Sprint C-7 après validation V2 sur snapshots historiques.
     """
     from models import RegAssessment, Site
 
@@ -338,13 +365,17 @@ def compute_portfolio_compliance(db: Session, org_id: int) -> dict:
         r = compute_site_compliance_score(db, site.id)
         results.append((site, r))
 
-    # Moyenne pondérée par surface (fallback = poids égal)
+    # Moyenne pondérée par surface (fallback = poids égal).
+    # Phase 5 V2 : filtrer les sites avec score=None (confidence='non_applicable',
+    # 0 obligation réglementaire active) — ils ne contribuent pas à la moyenne.
     total_weight = 0.0
     weighted_score = 0.0
     fw_sums: dict[str, float] = {}
     fw_counts: dict[str, int] = {}
 
-    for site, r in results:
+    scorable_results = [(s, r) for s, r in results if r.score is not None]
+
+    for site, r in scorable_results:
         w = site.surface_m2 if site.surface_m2 and site.surface_m2 > 0 else 1000.0
         total_weight += w
         weighted_score += r.score * w
@@ -354,9 +385,9 @@ def compute_portfolio_compliance(db: Session, org_id: int) -> dict:
             fw_counts[fs.framework] = fw_counts.get(fs.framework, 0) + 1
 
     avg_score = round(weighted_score / total_weight, 1) if total_weight > 0 else 0.0
-    scores = [r.score for _, r in results]
+    scores = [r.score for _, r in scorable_results]
 
-    worst = sorted(results, key=lambda x: x[1].score)[:5]
+    worst = sorted(scorable_results, key=lambda x: x[1].score)[:5]
     worst_sites = [{"site_id": s.id, "nom": s.nom, "score": r.score, "confidence": r.confidence} for s, r in worst]
 
     breakdown_avg = {fw: round(fw_sums[fw] / fw_counts[fw], 1) for fw in fw_sums if fw_counts.get(fw, 0) > 0}
@@ -568,3 +599,238 @@ def _fallback_site_score(site, fw_key: str, db: Session = None) -> float:
     # APER n'a pas de snapshot dédié → score par défaut
     _logger.debug("_fallback_site_score site=%d fw=%s: default 50.0 (no data)", site.id, fw_key)
     return 50.0
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# V2 ADAPTATIF — Sprint C-1 Phase 5 (matrice v1 §6.2)
+# ════════════════════════════════════════════════════════════════════════════
+#
+# Pondération relative recalculée à 100% sur le périmètre RÉELLEMENT applicable
+# au site (vs V1 figée 45/30/25). 6 dimensions possibles avec exclusion mutuelle
+# AUDIT_SME ↔ ISO_50001 (un seul des deux selon obligation art. L.233-1 CCH).
+#
+# Poids officiels de référence (matrice v1 §6.2) :
+#   DT 45 / BACS 30 / APER 25 / AUDIT_SME 16 / ISO_50001 20 / SOLAR_TOITURE 15
+
+_OFFICIAL_WEIGHTS_V2 = {
+    "tertiaire_operat": 45,
+    "bacs": 30,
+    "aper": 25,
+    "audit_sme": 16,
+    "iso_50001": 20,
+    "solar_toiture": 15,
+}
+
+
+# ─── Helpers — calcul à la volée assujettissement (Option A, D-Phase5-DtBacsAssujetti-Volatile-001) ───
+
+
+def _is_dt_assujetti(site) -> bool:
+    """Site DT-assujetti si surface tertiaire ≥ 1000 m² (matrice v1 §4.4 + Décret 2019-771)."""
+    return (site.tertiaire_area_m2 or 0) >= 1000
+
+
+def _is_bacs_assujetti(site) -> bool:
+    """Site BACS-assujetti si Σ(cvc_power_kw bâtiments) ≥ 70 kW (Décret 2020-887)."""
+    try:
+        total_cvc_kw = sum((b.cvc_power_kw or 0) for b in site.batiments)
+    except Exception:
+        total_cvc_kw = 0
+    return total_cvc_kw >= 70
+
+
+def _get_audit_energetique(site):
+    """Récupère l'AuditEnergetique de l'EJ via cascade Site → Portefeuille → EJ.
+
+    Retourne None si table absente, EJ absente, ou aucun audit lié.
+    """
+    if not site.portefeuille:
+        return None
+    entite = site.portefeuille.entite_juridique
+    if not entite:
+        return None
+    # AuditEnergetique pointe sur organisation_id → on doit rechercher via org
+    try:
+        from models.audit_sme import AuditEnergetique
+        from sqlalchemy.orm import object_session
+
+        sess = object_session(site)
+        if sess is None:
+            return None
+        return (
+            sess.query(AuditEnergetique)
+            .filter(AuditEnergetique.organisation_id == entite.organisation_id)
+            .order_by(AuditEnergetique.id.desc())
+            .first()
+        )
+    except Exception:
+        return None
+
+
+def _solar_toiture_obligation_active(site) -> bool:
+    """Site soumis à obligation solarisation toiture (Article L.171-4 CCH + décret 18/12/2023).
+
+    MVP simplifié : seuil 500 m² emprise toiture. Affinement futur : prendre en
+    compte date_permis_construire + nature extension/rénovation.
+    """
+    return (site.roof_area_m2 or 0) >= 500
+
+
+# ─── Scorers individuels V2 ───
+
+
+def _v2_score_tertiaire_operat(site, db: Session) -> float:
+    """Score DT (utilise même fallback que V1 pour cohérence)."""
+    return _fallback_site_score(site, "tertiaire_operat", db) or 50.0
+
+
+def _v2_score_bacs(site, db: Session) -> float:
+    """Score BACS (utilise même fallback que V1)."""
+    return _fallback_site_score(site, "bacs", db) or 50.0
+
+
+def _v2_score_aper(site, db: Session) -> float:
+    """Score APER : 100 si engagement, sinon fallback findings."""
+    if site.parking_solar_pct_engaged and site.parking_solar_pct_engaged >= 100:
+        return 100.0
+    if site.aper_exemption_motif:
+        return 80.0  # Exemption documentée
+    fallback = _fallback_site_score(site, "aper", db)
+    return fallback if fallback is not None else 50.0
+
+
+def _v2_score_audit_sme(site, db: Session) -> float:
+    """Score AUDIT_SME basé sur audit_energetique.score_audit_sme (Float 0-1)."""
+    audit = _get_audit_energetique(site)
+    if not audit:
+        return 0.0
+    if audit.audit_realise:
+        # score_audit_sme est 0-1 → convertir en 0-100
+        return round((audit.score_audit_sme or 0.0) * 100, 1)
+    return 0.0
+
+
+def _v2_score_iso_50001(site, db: Session) -> float:
+    """Score ISO_50001 basé sur certif_iso50001 + dernier audit."""
+    audit = _get_audit_energetique(site)
+    if not audit:
+        return 0.0
+    return 100.0 if audit.sme_certifie_iso50001 else 0.0
+
+
+def _v2_score_solar_toiture(site, db: Session) -> float:
+    """Score SOLAR_TOITURE basé sur parking_solar_pct_engaged (proxy MVP).
+
+    Affinement futur : champ dédié `roof_solar_pct_engaged` distinct du parking.
+    """
+    pct = site.parking_solar_pct_engaged or 0.0
+    return min(100.0, max(0.0, pct))
+
+
+# ─── V2 dispatcher ───
+
+
+def _compute_v2_adaptive(db: Session, site_id: int) -> ComplianceScoreResult:
+    """V2 adaptatif : pondération relative à 100% sur périmètre actif.
+
+    Stratégie :
+      1. Détecte les obligations applicables au site (jusqu'à 6 dimensions)
+      2. Si 0 obligation : score=None, confidence='non_applicable'
+      3. Sinon : recalcul pondération relative + score composite + breakdown
+    """
+    from datetime import datetime
+
+    from models import Site
+
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        return ComplianceScoreResult(score=50.0, confidence="low")
+
+    obligations = []  # liste de tuples (code, poids_officiel, scorer_fn)
+
+    if _is_dt_assujetti(site):
+        obligations.append(("tertiaire_operat", _OFFICIAL_WEIGHTS_V2["tertiaire_operat"], _v2_score_tertiaire_operat))
+
+    if _is_bacs_assujetti(site):
+        obligations.append(("bacs", _OFFICIAL_WEIGHTS_V2["bacs"], _v2_score_bacs))
+
+    if site.aper_assujetti:
+        obligations.append(("aper", _OFFICIAL_WEIGHTS_V2["aper"], _v2_score_aper))
+
+    audit_sme = _get_audit_energetique(site)
+    if audit_sme:
+        # Exclusion mutuelle AUDIT_SME ↔ ISO_50001 (loi DDADUE 2025-391)
+        if audit_sme.obligation == "SME_ISO50001":
+            obligations.append(("iso_50001", _OFFICIAL_WEIGHTS_V2["iso_50001"], _v2_score_iso_50001))
+        elif audit_sme.obligation == "AUDIT_4ANS" and not audit_sme.sme_certifie_iso50001:
+            obligations.append(("audit_sme", _OFFICIAL_WEIGHTS_V2["audit_sme"], _v2_score_audit_sme))
+
+    if _solar_toiture_obligation_active(site):
+        obligations.append(("solar_toiture", _OFFICIAL_WEIGHTS_V2["solar_toiture"], _v2_score_solar_toiture))
+
+    # Cas 0 obligation : NON_APPLICABLE
+    if not obligations:
+        return ComplianceScoreResult(
+            score=None,
+            breakdown=[],
+            critical_penalty=0.0,
+            confidence="non_applicable",
+            frameworks_evaluated=0,
+            frameworks_total=0,
+            last_computed=datetime.utcnow().isoformat(),
+            formula="V2 adaptatif — aucune obligation réglementaire active sur ce site",
+        )
+
+    # Cas N obligations : pondération relative recalculée à 100%
+    poids_total = sum(p for _, p, _ in obligations)
+    breakdown = []
+    weighted_sum = 0.0
+
+    for code, poids_off, scorer in obligations:
+        sub_score = scorer(site, db)
+        weight_relatif = poids_off / poids_total
+        weighted_sum += weight_relatif * sub_score
+        breakdown.append(
+            FrameworkScore(
+                framework=code,
+                score=round(sub_score, 1),
+                weight=round(weight_relatif, 4),
+                available=True,
+                source="v2_adaptive",
+            )
+        )
+
+    # Confidence selon nb dimensions actives
+    n = len(obligations)
+    if n >= 5:
+        confidence = "high"
+    elif n >= 3:
+        confidence = "medium"
+    else:
+        confidence = "low"
+
+    formula_summary = f"V2 adaptatif {n}-D : " + " + ".join(
+        f"{c} {round(p / poids_total * 100, 1)}%" for c, p, _ in obligations
+    )
+
+    final_score = round(max(0.0, min(100.0, weighted_sum)), 1)
+
+    _logger.info(
+        "compliance_score_v2 site=%d: %.1f (confidence=%s, dims=%d, codes=%s)",
+        site_id,
+        final_score,
+        confidence,
+        n,
+        [c for c, _, _ in obligations],
+    )
+
+    return ComplianceScoreResult(
+        score=final_score,
+        breakdown=breakdown,
+        critical_penalty=0.0,
+        confidence=confidence,
+        frameworks_evaluated=n,
+        frameworks_total=n,
+        last_computed=datetime.utcnow().isoformat(),
+        formula=formula_summary,
+    )
