@@ -38,8 +38,9 @@ import {
 import { useScope } from '../contexts/ScopeContext';
 import { getRiskStatus } from '../lib/constants';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useEvents } from '../hooks/useEvents';
 import {
-  buildWatchlist,
   buildBriefing,
   buildOpportunities,
   buildTodayActions,
@@ -109,6 +110,13 @@ export function normalizeDashboardModel({ kpis, topActions, alertsCount }) {
 export default function CommandCenter() {
   const navigate = useNavigate();
   const { org, scopedSites, selectedSiteId } = useScope();
+  // Sprint α-fin Phase 1.C/1.D — useEvents source canonique des signaux
+  // cockpit (9 EventTypes event_bus, exposés par /api/v1/events/upcoming).
+  // Remplace l'ancienne logique buildWatchlist supprimée en Phase 1.D.
+  // eslint-disable-next-line no-unused-vars
+  const { role: authRole } = useAuth();
+  // eslint-disable-next-line no-unused-vars
+  const { events: upcomingEvents } = useEvents('cockpit_daily', authRole);
   const { isExpert } = useExpertMode();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -254,8 +262,12 @@ export default function CommandCenter() {
     [rawKpis, rawTopActions, rawAlertsCount]
   );
 
-  // Briefing from scope data (pure model — no extra API call)
-  const watchlist = useMemo(() => buildWatchlist(kpis, scopedSites), [kpis, scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Sprint α-fin Phase 1.D — `watchlist = []` (ex-`buildWatchlist(kpis, scopedSites)`).
+  // Signaux non_conformes/a_risque/coverage détectés désormais par event_bus +
+  // exposés via useEvents('cockpit_daily', authRole) consommé en haut de cette page.
+  // buildBriefing / buildTodayActions / computeHealthState tolèrent watchlist=[]
+  // (boucles for no-op). Anti-pattern §8.1 doctrine v1.1 retiré.
+  const watchlist = useMemo(() => [], []);
   const briefing = useMemo(
     () => buildBriefing(kpis, watchlist, alertsCount),
     [kpis, watchlist, alertsCount]

@@ -4,7 +4,6 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-  buildWatchlist,
   checkConsistency,
   buildTopSites,
   buildOpportunities,
@@ -36,50 +35,11 @@ const makeSites = (n = 5, overrides = {}) =>
     ...overrides,
   }));
 
-// ── describe: buildWatchlist ──────────────────────────────────────────────────
-
-describe('buildWatchlist', () => {
-  it('nonConformes=3 → item severity=critical, path=/conformite', () => {
-    const kpis = makeKpis({ nonConformes: 3, total: 5 });
-    const result = buildWatchlist(kpis, []);
-    const item = result.find((i) => i.id === 'non_conformes');
-    expect(item).toBeDefined();
-    expect(item.severity).toBe('critical');
-    expect(item.path).toBe('/conformite');
-  });
-
-  it('sites without conso_kwh_an → item severity=warn, path=/consommations/import', () => {
-    const kpis = makeKpis({ couvertureDonnees: 0, total: 5 });
-    const sites = makeSites(5, { conso_kwh_an: 0 });
-    const result = buildWatchlist(kpis, sites);
-    const item = result.find((i) => i.id === 'no_conso_data');
-    expect(item).toBeDefined();
-    expect(item.severity).toBe('warn');
-    expect(item.path).toBe('/consommations/import');
-  });
-
-  it('all conformes + all have conso data → returns empty array', () => {
-    const kpis = makeKpis({ nonConformes: 0, aRisque: 0, couvertureDonnees: 100 });
-    const sites = makeSites(5);
-    const result = buildWatchlist(kpis, sites);
-    expect(result).toHaveLength(0);
-  });
-
-  it('6 conditions triggered → result is capped at 5 items', () => {
-    // Force all 4 conditions + extra by having non-conformes, a_risque,
-    // sites without data, and multiple kpis thresholds
-    const kpis = makeKpis({
-      nonConformes: 2,
-      aRisque: 3,
-      couvertureDonnees: 20,
-      total: 10,
-    });
-    // Sites without data triggers condition #3 (overrides #4 since length > 0)
-    const sites = makeSites(10, { conso_kwh_an: 0 });
-    const result = buildWatchlist(kpis, sites);
-    expect(result.length).toBeLessThanOrEqual(5);
-  });
-});
+// Sprint α-fin Phase 1.D — describe `buildWatchlist` retiré (4 tests).
+// La fonction a été supprimée de dashboardEssentials.js (anti-pattern §8.1).
+// Les signaux non_conformes/a_risque/no_conso_data/low_coverage sont
+// désormais détectés côté backend (event_bus) et exposés via
+// /api/v1/events/upcoming. Cf. ADR-006.
 
 // ── describe: checkConsistency ────────────────────────────────────────────────
 
@@ -317,16 +277,9 @@ describe('formatPercentFR', () => {
 describe('copy hygiene — no raw \\u00a0 escape sequences in model strings', () => {
   const _NBSP_ESCAPE = '\u00a0'; // actual non-breaking space — check strings don't use raw esc
 
-  it('buildWatchlist labels contain no raw \\u00a0 literal escape (6-char sequence)', () => {
-    const kpis = makeKpis({ nonConformes: 2, aRisque: 1, couvertureDonnees: 30, total: 5 });
-    const sites = makeSites(5, { conso_kwh_an: 0 });
-    const watchlist = buildWatchlist(kpis, sites);
-    for (const item of watchlist) {
-      // Check the label doesn't contain the 6-char literal escape sequence
-      // (which would appear as text in output if not processed)
-      expect(item.label).not.toContain('\\u00a0');
-    }
-  });
+  // Sprint α-fin Phase 1.D — test buildWatchlist labels supprimé
+  // (fonction supprimée). La couverture copy hygiene est maintenue par
+  // les tests buildBriefing + buildOpportunities ci-dessous.
 
   it('buildBriefing labels contain no raw \\u00a0 literal escape', () => {
     const kpis = makeKpis({ nonConformes: 2, aRisque: 1, couvertureDonnees: 40, total: 5 });

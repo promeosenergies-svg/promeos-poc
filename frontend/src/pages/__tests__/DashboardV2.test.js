@@ -2,21 +2,21 @@
  * PROMEOS — DashboardV2 pure-logic tests
  * Covers:
  *   - normalizeDashboardModel  (contradictions, isAllClear, actions gate)
- *   - buildWatchlist           (non-conformes, a_risque, coverage items)
- *   - buildBriefing            (headline, items from watchlist)
+ *   - buildBriefing            (headline, items)
  *   - buildOpportunities       (coverage, expert mode)
- *   - buildTodayActions        (dedup, sort, max 5 — re-tested via CommandCenter data flow)
+ *
+ * Sprint α-fin Phase 1.D — describe `buildWatchlist` + describe data-flow
+ * `CommandCenter (watchlist→briefing→todayActions)` retirés. La fonction
+ * `buildWatchlist` a été supprimée (anti-pattern §8.1). Le pipeline
+ * watchlist→todayActions n'existe plus côté FE — les signaux passent
+ * désormais par /api/v1/events/upcoming (Phase 1.A) consommés via
+ * `useEvents` hook (Phase 1.C). Cf. ADR-006.
  *
  * All tests run in Vitest node environment (no DOM).
  */
 import { describe, it, expect } from 'vitest';
 import { normalizeDashboardModel } from '../CommandCenter';
-import {
-  buildWatchlist,
-  buildBriefing,
-  buildOpportunities,
-  buildTodayActions,
-} from '../../models/dashboardEssentials';
+import { buildBriefing, buildOpportunities } from '../../models/dashboardEssentials';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -102,48 +102,21 @@ describe('normalizeDashboardModel', () => {
   });
 });
 
-// ── buildWatchlist ────────────────────────────────────────────────────────────
-
-describe('buildWatchlist', () => {
-  it('returns non_conformes item when nonConformes > 0', () => {
-    const kpis = makeKpis({ nonConformes: 2 });
-    const result = buildWatchlist(kpis, makeSites());
-    expect(result.some((w) => w.id === 'non_conformes')).toBe(true);
-  });
-
-  it('returns a_risque item when aRisque > 0', () => {
-    const kpis = makeKpis({ aRisque: 1, nonConformes: 0 });
-    const result = buildWatchlist(kpis, makeSites());
-    expect(result.some((w) => w.id === 'a_risque')).toBe(true);
-  });
-
-  it('returns no items when all conformes and coverage is good', () => {
-    const kpis = makeKpis({ nonConformes: 0, aRisque: 0, couvertureDonnees: 90 });
-    const result = buildWatchlist(kpis, makeSites());
-    expect(result.some((w) => w.id === 'non_conformes')).toBe(false);
-    expect(result.some((w) => w.id === 'a_risque')).toBe(false);
-  });
-
-  it('all watchlist items have required fields: id, label, severity, path, cta', () => {
-    const kpis = makeKpis({ nonConformes: 1, aRisque: 1, couvertureDonnees: 50 });
-    const result = buildWatchlist(kpis, makeSites());
-    for (const item of result) {
-      expect(item).toHaveProperty('id');
-      expect(item).toHaveProperty('label');
-      expect(item).toHaveProperty('severity');
-      expect(item).toHaveProperty('path');
-      expect(item).toHaveProperty('cta');
-    }
-  });
-});
+// Sprint α-fin Phase 1.D — describes `buildWatchlist` (4 tests) +
+// `CommandCenter data-flow (watchlist→briefing→todayActions)` (4 tests)
+// retirés. La fonction `buildWatchlist` a été supprimée de
+// dashboardEssentials.js (anti-pattern §8.1). Les signaux passent désormais
+// par /api/v1/events/upcoming consommé via useEvents (Phase 1.C). Les
+// tests `buildBriefing` et `buildOpportunities` sont conservés car ils
+// testent des fonctions encore exportées (qui tolèrent watchlist=[]
+// désormais).
 
 // ── buildBriefing ─────────────────────────────────────────────────────────────
 
 describe('buildBriefing', () => {
   it('returns an array of bullet objects', () => {
     const kpis = makeKpis();
-    const watchlist = buildWatchlist(kpis, makeSites());
-    const result = buildBriefing(kpis, watchlist);
+    const result = buildBriefing(kpis, []);
     expect(Array.isArray(result)).toBe(true);
   });
 
@@ -161,14 +134,13 @@ describe('buildBriefing', () => {
 
   it('bullets list is bounded (≤ 3)', () => {
     const kpis = makeKpis({ nonConformes: 3, aRisque: 2, couvertureDonnees: 30 });
-    const watchlist = buildWatchlist(kpis, makeSites());
-    const result = buildBriefing(kpis, watchlist);
+    const result = buildBriefing(kpis, []);
     expect(result.length).toBeLessThanOrEqual(3);
   });
 
   it('each bullet has id, label, severity, path', () => {
     const kpis = makeKpis({ nonConformes: 1 });
-    const result = buildBriefing(kpis, buildWatchlist(kpis, makeSites()));
+    const result = buildBriefing(kpis, []);
     for (const b of result) {
       expect(b).toHaveProperty('id');
       expect(b).toHaveProperty('label');
@@ -178,7 +150,7 @@ describe('buildBriefing', () => {
 
   it('includes non_conformes bullet when nonConformes > 0', () => {
     const kpis = makeKpis({ nonConformes: 2 });
-    const result = buildBriefing(kpis, buildWatchlist(kpis, makeSites()));
+    const result = buildBriefing(kpis, []);
     expect(result.some((b) => b.id === 'non_conformes')).toBe(true);
   });
 });
@@ -199,50 +171,5 @@ describe('buildOpportunities', () => {
       expect(opp).toHaveProperty('path');
       expect(opp).toHaveProperty('cta');
     }
-  });
-});
-
-// ── Data-flow integration: CommandCenter pipeline ─────────────────────────────
-
-describe('CommandCenter data-flow (watchlist→briefing→todayActions)', () => {
-  it('todayActions contains watchlist items when problems exist', () => {
-    const kpis = makeKpis({ nonConformes: 2, aRisque: 1 });
-    const sites = makeSites();
-    const watchlist = buildWatchlist(kpis, sites);
-    const opps = buildOpportunities(kpis, sites, {});
-    const todayActions = buildTodayActions(kpis, watchlist, opps);
-    const watchlistIds = watchlist.map((w) => w.id);
-    const todayIds = todayActions.map((t) => t.id);
-    const hasWatchlistItem = watchlistIds.some((id) => todayIds.includes(id));
-    expect(hasWatchlistItem).toBe(true);
-  });
-
-  it('todayActions is empty when no watchlist items and no opportunities', () => {
-    const kpis = makeKpis({ nonConformes: 0, aRisque: 0, couvertureDonnees: 100 });
-    const sites = makeSites(5).map((s) => ({ ...s, statut_conformite: 'conforme' }));
-    const watchlist = buildWatchlist(kpis, sites);
-    const todayActions = buildTodayActions(kpis, watchlist, []);
-    expect(todayActions.filter((t) => t.type === 'watchlist')).toHaveLength(0);
-  });
-
-  it('briefing bullet path values are non-empty strings', () => {
-    const kpis = makeKpis();
-    const watchlist = buildWatchlist(kpis, makeSites());
-    const bullets = buildBriefing(kpis, watchlist);
-    for (const b of bullets) {
-      if (b.path !== undefined) {
-        expect(typeof b.path).toBe('string');
-        expect(b.path.length).toBeGreaterThan(0);
-      }
-    }
-  });
-
-  it('EssentialsRow receives correct couvertureDonnees from kpis', () => {
-    // Simulate the kpis shape CommandCenter passes to EssentialsRow
-    const sites = makeSites(10); // 7 with conso_kwh_an > 0
-    const total = sites.length;
-    const couvertureDonnees =
-      total > 0 ? Math.round((sites.filter((s) => s.conso_kwh_an > 0).length / total) * 100) : 0;
-    expect(couvertureDonnees).toBe(70);
   });
 });
