@@ -108,11 +108,56 @@
 
 ---
 
+## D-Phase4-Fuzzy-Mapping-Annexes-001 — Coeff DJU non résolus pour sous-cat Annexe I non listées Annexe II
+
+**Détecté** : Sprint C-1 Phase 4 (2026-05-03)
+
+**Comportement actuel** :
+- `OperatValeursAbsoluesService.get_coeff_dju()` retourne `None` si sous-catégorie
+  Annexe I non listée dans `Annexe II.categories_couvertes`
+- `compute_cabs_2030()` skip proprement l'ajustement DJU dans ce cas
+- Cabs résultant = CVC étalon + USE étalon (pas d'ajustement climat DJU)
+
+**Risque** : Cabs imprécis pour les sous-cat sans Coeff DJU. Pas faux mathématiquement, mais pas optimal pour les sites réels avec données météo non-étalon.
+
+**Action** :
+- Audit complet Annexe I (426 sous-cat) vs Annexe II (13 groupes G1-G13)
+- Identifier les sous-cat orphelines (sans groupe Coeff DJU)
+- Décider : (a) mapping fuzzy "best-match" via similarité texte, (b) defaults par catégorie parent, (c) tracker explicite côté Site (`coeff_dju_status` enum : RESOLVED/MISSING/DEFAULTED)
+
+**Effort estimé** : 2-3 j-h (audit + impl + tests)
+**Priorité** : 🟡 P2 (MVP fonctionnel, optimisation différée)
+**Sprint cible** : Sprint C-6 (Modèles enrichis) ou sprint séparé "OPERAT precision"
+
+**Traces** :
+- Test : `tests/test_operat_cabs_service.py::test_get_coeff_dju_returns_none_when_not_mapped`
+- Service : `backend/regops/services/operat_cabs_service.py::OperatValeursAbsoluesService.get_coeff_dju`
+
+---
+
+## ✅ CLÔTURÉ 2026-05-03 — D-Phase4-Encoding-Reunion-001 (Annexe I utilise bien "Reunion" sans accent)
+
+**Détecté** : Sprint C-1 Phase 4 normalisation zones DOM (2026-05-03)
+
+**Investigation** : Audit du fichier `backend/config/operat_annexe_i_sous_categories.json` :
+- `zones_order` contient bien `"Reunion"` (sans accent) — 1 occurrence
+- 0 occurrence de `"Réunion"` (avec accent) ou `"La Réunion"` dans le JSON
+
+**Conclusion** : la normalisation `_normalize_zone_for_annexe_i()` du service est cohérente
+avec l'encodage du JSON. Aucune action corrective requise. La normalisation accepte aussi
+les formats UI ("Réunion", "La Réunion") avec mapping vers la forme JSON.
+
+**Action** : ❌ AUCUNE — comportement actuel correct.
+
+**Statut** : ✅ Clôturé Sprint C-1 Phase 5 (avant build, audit en passant).
+
+---
+
 ## Métriques tracker
 
 | Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
 |---|---|---|---|---|
-| 2026-05-03 | 3 | 0 | 1 | 2 |
+| 2026-05-03 | 4 | 0 | 1 | 3 |
 
 ---
 
