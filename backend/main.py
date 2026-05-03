@@ -113,6 +113,9 @@ from routes.users import router as users_router
 # Sprint α-push Phase 2.D — Digest dispatch endpoint
 from routes.digest import router as digest_router
 
+# Sprint C-1 Phase 6 — Cascade recompute preview (matrice v1 §8.4)
+from routes.cascade import router as cascade_router
+
 # Créer l'application FastAPI (lifespan assigned after startup funcs are defined)
 app = FastAPI(
     title="PROMEOS API",
@@ -175,6 +178,7 @@ app.include_router(watchers_router)
 app.include_router(events_router)  # Sprint α-fin Phase 1.A — /api/v1/events/upcoming
 app.include_router(users_router)  # Sprint α-push Phase 2.C — /api/v1/users/me/notification-preferences
 app.include_router(digest_router)  # Sprint α-push Phase 2.D — /api/v1/digest/dispatch
+app.include_router(cascade_router)  # Sprint C-1 Phase 6 — /api/v1/sites/{id}/cascade-impact
 app.include_router(ai_router)
 app.include_router(kb_router)  # Knowledge Base (generic)
 app.include_router(kb_usages_router)  # KB Usages (archetypes, rules, recommendations)
