@@ -474,9 +474,11 @@ def update_site(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Update a site (partial update). V110: audit trail before/after."""
-    import json as _json
-    from models.iam import AuditLog
+    """Update a site (partial update). V110: audit trail before/after.
+
+    Sprint C-2 Phase 1.2 — migration vers audit_log_service.log_patrimoine_change.
+    """
+    from services.audit_log_service import log_patrimoine_change
 
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
@@ -504,15 +506,19 @@ def update_site(
 
     diff = {k: {"before": before.get(k), "after": after[k]} for k in after if before.get(k) != after[k]}
     if diff:
-        db.add(
-            AuditLog(
-                user_id=auth.user_id if auth else None,
-                action="site.update",
-                resource_type="site",
-                resource_id=str(site_id),
-                detail_json=_json.dumps(diff, default=str, ensure_ascii=False),
-                ip_address=request.client.host if request.client else None,
-            )
+        log_patrimoine_change(
+            db,
+            user_id=auth.user_id if auth else None,
+            org_id=org_id,
+            entity_type="site",
+            entity_id=site_id,
+            action="site.update",
+            field_modified=",".join(diff.keys()) if len(diff) > 1 else next(iter(diff.keys())),
+            old_value={k: v["before"] for k, v in diff.items()},
+            new_value={k: v["after"] for k, v in diff.items()},
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            detail=diff,
         )
 
     db.commit()
@@ -537,8 +543,11 @@ def archive_site(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Soft-delete a site. V110: audit trail."""
-    from models.iam import AuditLog
+    """Soft-delete a site. V110: audit trail.
+
+    Sprint C-2 Phase 1.2 — migration vers audit_log_service.log_patrimoine_change.
+    """
+    from services.audit_log_service import log_patrimoine_change
 
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
@@ -550,15 +559,16 @@ def archive_site(
     from services.patrimoine_conformite_sync import cascade_site_archive
 
     cascade_result = cascade_site_archive(db, site_id)
-    db.add(
-        AuditLog(
-            user_id=auth.user_id if auth else None,
-            action="site.archive",
-            resource_type="site",
-            resource_id=str(site_id),
-            detail_json=f'{{"nom": "{site.nom}"}}',
-            ip_address=request.client.host if request.client else None,
-        )
+    log_patrimoine_change(
+        db,
+        user_id=auth.user_id if auth else None,
+        org_id=org_id,
+        entity_type="site",
+        entity_id=site_id,
+        action="site.archive",
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        detail={"nom": site.nom, "cascade_result": cascade_result},
     )
     db.commit()
     return {"detail": "Site archive", "site_id": site_id, "cascade": cascade_result}

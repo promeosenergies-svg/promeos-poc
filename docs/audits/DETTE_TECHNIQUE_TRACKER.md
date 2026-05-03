@@ -307,11 +307,36 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
+## D-Phase1-Audit-Log-Legacy-Callsites-001 — 7-9 callsites legacy AuditLog directs
+
+**Détecté** : Sprint C-2 Phase 1.1 audit pré-build (2026-05-03)
+
+**Périmètre** : N callsites legacy créent des AuditLog directement (pas via audit_log_service.py).
+
+**Fichiers concernés** :
+- `middleware/cx_logger.py:252` (CX events — refactor lourd, garder)
+- `services/intake_service.py:485` (Intake — refactor moyen)
+- `services/operat_export_service.py:270` (OPERAT export — refactor faisable)
+- `services/copilot_engine.py:443, 494` (Copilot — refactor moyen)
+- `services/iam_service.py:504` (IAM — refactor faisable)
+- (potentiellement) `routes/patrimoine/sites.py:508, 554` (si non migrés Phase 1.2)
+
+**Action** : refactor progressif vers `audit_log_service.log_*()` méthodes appropriées.
+
+**Allowlist active** : `backend/tests/source_guards/test_audit_log_no_direct_writes_source_guards.py::_LEGACY_CALLSITES_GRANDFATHERED`
+
+**Effort estimé** : 30 min × 7 fichiers ≈ 3-4 h cumulés
+**Priorité** : 🟡 P2 (fonctionnel, cohérence cosmétique)
+**Sprint cible** : Sprint C-4 (Tests + observabilité, contexte cleanup audit)
+
+---
+
 ## Métriques tracker
 
 | Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
 |---|---|---|---|---|
 | 2026-05-03 | 11 | 0 | 4 | 7 |
+| 2026-05-03 | 12 | 0 | 4 | 8 |
 
 ---
 

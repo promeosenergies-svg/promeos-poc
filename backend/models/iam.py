@@ -82,6 +82,11 @@ class AuditLog(Base):
     # optimiser les queries CX dashboard (T2V, IAR, WAU/MAU) qui filtrent sur
     # (action IN (...), resource_type='cx_event', created_at >= cutoff) +
     # group_by(resource_id, action) + distinct(user_id).
+    #
+    # Sprint C-2 Phase 1 — extension patrimoine + cascade :
+    # - 6 nouvelles colonnes nullable (compat backward 9 callsites legacy)
+    # - 2 nouveaux index : correlation_id + (org_id, resource_type, created_at)
+    # Source : matrice v1 §6.10 + audit Phase B R9.
     __table_args__ = (
         Index(
             "ix_audit_cx_action_resource_created",
@@ -91,6 +96,14 @@ class AuditLog(Base):
         ),
         Index("ix_audit_user_id", "user_id"),
         Index("ix_audit_resource_id", "resource_id"),
+        # Sprint C-2 Phase 1
+        Index("ix_audit_correlation_id", "correlation_id"),
+        Index(
+            "ix_audit_org_id_resource_type_created",
+            "org_id",
+            "resource_type",
+            "created_at",
+        ),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -101,6 +114,38 @@ class AuditLog(Base):
     detail_json = Column(Text, nullable=True)
     ip_address = Column(String(45), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # ─── Sprint C-2 Phase 1 — extension patrimoine + cascade (matrice v1 §6.10) ───
+    correlation_id = Column(
+        String(64),
+        nullable=True,
+        comment="Sprint C-2 Phase 1 — corrélation cross-services (request_id, batch_id, etc.)",
+    )
+    org_id = Column(
+        Integer,
+        nullable=True,
+        comment="Sprint C-2 Phase 1 — scoping multi-tenant queries audit (FK organisations.id, nullable car CX events org-scopés via user)",
+    )
+    field_modified = Column(
+        String(100),
+        nullable=True,
+        comment="Sprint C-2 Phase 1 — champ modifié (cascade trigger ou PATCH event)",
+    )
+    old_value = Column(
+        Text,
+        nullable=True,
+        comment="Sprint C-2 Phase 1 — valeur avant modification (JSON serialized)",
+    )
+    new_value = Column(
+        Text,
+        nullable=True,
+        comment="Sprint C-2 Phase 1 — valeur après modification (JSON serialized)",
+    )
+    user_agent = Column(
+        String(500),
+        nullable=True,
+        comment="Sprint C-2 Phase 1 — User-Agent HTTP du client (traçabilité)",
+    )
 
     def __repr__(self):
         return f"<AuditLog {self.action} {self.resource_type}>"
