@@ -1,0 +1,202 @@
+{
+  "source": "docs/sources/regulatory/operat/atdl2430864a_annexe_ii.pdf",
+  "nor": "ATDL2430864A",
+  "extraction_method": "Mapping manuel verifie ligne a ligne (annexe II 3 pages)",
+  "extraction_date": "2026-05-03",
+  "unite": "/°C/j (par degré-jour)",
+  "usage": "Coefficients d'ajustement de la composante CVC en fonction des DJU reels du site (chauffage Coeff_ch et refroidissement Coeff_fr)",
+  "formule": "CVC_ajuste = CVC_etalon × (1 + Coeff_ch × (DJU_chauffage_site - DJU_chauffage_etalon) + Coeff_fr × (DJU_refroidissement_site - DJU_refroidissement_etalon))",
+  "groupes_count": 13,
+  "groupes": [
+    {
+      "groupe_id": "G1_bureaux_admin",
+      "coeff_ch_par_dj": 0.000247,
+      "coeff_fr_par_dj": 0.000198,
+      "description": "Toutes sous-categories Administration et bureaux (Bureaux Standards), Administration et redaction, Centre hospitalier - Administration non integree dans un service de soins (Bureaux standards)",
+      "categories_couvertes": [
+        "Bureaux standards (toutes categories tertiaires confondues)",
+        "Centre hospitalier - Administration non integree dans un service de soins"
+      ],
+      "source_text_anchor": "Annexe II p.2 paragraphe introductif"
+    },
+    {
+      "groupe_id": "G2_education_hotellerie_sport_hors_aquatique",
+      "coeff_ch_par_dj": 0.000314,
+      "coeff_fr_par_dj": 5.35e-05,
+      "description": "Categories educatives + hotellerie/hebergement (sauf piscines associees) + Sport (sauf aquatique/patinoire/non-couvert/stand de tir) + Camping",
+      "categories_couvertes": [
+        "Accueil petite enfance",
+        "Enseignement primaire",
+        "Enseignement secondaire",
+        "Enseignement superieur",
+        "Enseignement - formation continue pour adultes",
+        "Hebergement touristique de courte duree (auberge de jeunesse, centre-sportif, colonies de vacances, gite d'etape et refuge de montagne)",
+        "Hotellerie (sauf sous-categorie Hotel - Piscine)",
+        "Residence de tourisme, village ou club de vacances, ERP (sauf sous-categorie Piscine)",
+        "Sport (sauf sous-categories Centre equestre, Patinoires, Piscine, Stade/velodrome, Hippodrome et Cynodrome - non couvert, Stand de tir)",
+        "Terrain de camping et parcs pour caravanes ou vehicules de loisirs"
+      ],
+      "source_text_anchor": "Annexe II p.2 ligne 46-47"
+    },
+    {
+      "groupe_id": "G3_aquatique_balneotherapie",
+      "coeff_ch_par_dj": 0.000314,
+      "coeff_fr_par_dj": 0.0,
+      "description": "Sous-categories piscines/bassins/aqua-ludique/balneotherapie (vestiaires, douches, sanitaires associes)",
+      "categories_couvertes": [
+        "Hotel - Piscine (dont vestiaires, douches et sanitaires associes)",
+        "Residence de tourisme, village ou club de vacances, ERP - Piscine (dont vestiaires, douches et sanitaires associes)",
+        "Sport - Piscine (dont vestiaires, douches et sanitaires)",
+        "Etablissement de nuit et de loisirs - espace aqua ludique",
+        "Etablissement de Balneotherapie - Bassin et Piscine (dont vestiaires et douches)"
+      ],
+      "source_text_anchor": "Annexe II p.2 ligne 69-70"
+    },
+    {
+      "groupe_id": "G4_bureaux_publics_culture_justice_commerce_non_alimentaire",
+      "coeff_ch_par_dj": 0.000247,
+      "coeff_fr_par_dj": 0.000198,
+      "description": "Bureaux services publics + Banques + Laboratoire + Audiovisuel + Culture/spectacles + Etablissements nuit/loisirs (sauf aqua) + Parcs attractions (sauf attraction semi-ouvert) + Justice (Tribunal/Penitentiaire/PJJ) + Palais des congres + Vente services vehicules + Imprimerie + Commerce non-alimentaire (toutes formes)",
+      "categories_couvertes": [
+        "Bureaux - Services Publics - Banques",
+        "Laboratoire (hors perimetre medical : etalonnage, suivi ecologique...)",
+        "Audiovisuel",
+        "Culture et spectacles",
+        "Etablissement de nuit et de loisirs (sauf sous-categorie Espace aqua ludique)",
+        "Parc d'attractions et parc a themes (sauf sous-categorie Attraction batiment semi-ouvert)",
+        "Tribunal",
+        "Etablissement penitentiaire",
+        "Protection judiciaire de la Jeunesse",
+        "Palais des congres",
+        "Vente et services vehicules legers",
+        "Vente et services vehicules utilitaires et vehicules industriels",
+        "Vente et services motocycle",
+        "Vente et services engins nautiques et de plaisance",
+        "Imprimerie et reprographie",
+        "Commerce et services de detail - Equipement de la maison (surface < 800 m²)",
+        "Commerce et services de detail - Equipement de la personne et loisirs (surface < 800 m²)",
+        "Grande surface de bricolage (GSB) et Negoce et distribution de materiaux",
+        "Grande Surface Specialisee - Equipement automobile et moto",
+        "Grande Surface specialisee - Equipement de la maison (surface ≥ 800 m²)",
+        "Grande Surface Specialisee - Equipement de la personne et loisirs (surface ≥ 800 m²)"
+      ],
+      "source_text_anchor": "Annexe II p.2 lignes 120-121"
+    },
+    {
+      "groupe_id": "G5_centres_commerciaux_drive_grands_magasins_sante",
+      "coeff_ch_par_dj": 0.000247,
+      "coeff_fr_par_dj": 5.35e-05,
+      "description": "Parties communes centres commerciaux + Drive isole non-alimentaire + Grands magasins + Service funeraire (sauf chambres froid) + Sante (Centre hospitalier hors admin + Etablissement medico-social hors balneotherapie + Sante liberale)",
+      "categories_couvertes": [
+        "Parties communes des centres commerciaux et des galeries commerciales",
+        "Drive isole non-alimentaire",
+        "Grands magasins",
+        "Service funeraire (sauf sous-categories Chambre et/ou meubles froid negatif, Service funeraire - Zone de preparation et cremation)",
+        "Centre hospitalier",
+        "Etablissement medico-social (sauf sous-categorie Etablissement de Balneotherapie)",
+        "Sante liberale"
+      ],
+      "source_text_anchor": "Annexe II p.3 lignes 142-143"
+    },
+    {
+      "groupe_id": "G6_transport_sauf_remisage",
+      "coeff_ch_par_dj": 0.000141,
+      "coeff_fr_par_dj": 0.000198,
+      "description": "Transport (sauf sous-categories Transport ferroviaire/routier de voyageurs - Zone de remisage couvertes et closes)",
+      "categories_couvertes": [
+        "Transport aerien de voyageurs - Site aeroportuaire",
+        "Transport ferroviaire et guide de voyageurs (sauf zone remisage)",
+        "Transport maritime ou fluvial de voyageurs",
+        "Transport routier de voyageurs (sauf zone remisage)"
+      ],
+      "source_text_anchor": "Annexe II p.3 lignes 148-149"
+    },
+    {
+      "groupe_id": "G7_restauration",
+      "coeff_ch_par_dj": 0.000141,
+      "coeff_fr_par_dj": 5.35e-05,
+      "description": "Restauration - Debit de boisson",
+      "categories_couvertes": [
+        "Restauration"
+      ],
+      "source_text_anchor": "Annexe II p.3 lignes 152-153"
+    },
+    {
+      "groupe_id": "G8_entrepot_temperature_ambiante",
+      "coeff_ch_par_dj": 0.000141,
+      "coeff_fr_par_dj": 0.0,
+      "description": "Sous-categorie Entrepot a temperature ambiante (evolution libre +12°C/+26°C ou maintien hors-gel)",
+      "categories_couvertes": [
+        "Entrepot a temperature ambiante (evolution libre entre +12°C et +26°C) ou avec maintien hors-gel pour les besoins du produit"
+      ],
+      "source_text_anchor": "Annexe II p.3 lignes 157-158"
+    },
+    {
+      "groupe_id": "G9_commerce_alimentaire",
+      "coeff_ch_par_dj": 6.5e-05,
+      "coeff_fr_par_dj": 0.000158,
+      "description": "Commerce alimentaire (detail + grande surface + drive)",
+      "categories_couvertes": [
+        "Commerce et services de detail - Alimentaire",
+        "Grande surface alimentaire",
+        "Drive isole alimentaire"
+      ],
+      "source_text_anchor": "Annexe II p.3 lignes 165-166"
+    },
+    {
+      "groupe_id": "G10_logistique_commerce_gros_halles_meubles_froid",
+      "coeff_ch_par_dj": 0.0,
+      "coeff_fr_par_dj": 0.1,
+      "description": "Logistique (sauf entrepots maintien T° ou sans maintien) + Commerce de gros + Halles meubles froid + Service funeraire chambres froid negatif",
+      "categories_couvertes": [
+        "Logistique (sauf sous-categories Entrepot a temperature ambiante, Entrepot ou messagerie sans besoin de maintien en temperature)",
+        "Commerce de gros",
+        "Halles et marche couvert - Etal ou stand avec meubles de froid",
+        "Service funeraire - Chambre et/ou meubles froid negatif"
+      ],
+      "source_text_anchor": "Annexe II p.3 lignes 179-180"
+    },
+    {
+      "groupe_id": "G11_data_center",
+      "coeff_ch_par_dj": 0.0,
+      "coeff_fr_par_dj": 0.00068,
+      "description": "Salle Serveurs et centre d'exploitation informatique (Data Center)",
+      "categories_couvertes": [
+        "Data Center"
+      ],
+      "source_text_anchor": "Annexe II p.3 lignes 183-184"
+    },
+    {
+      "groupe_id": "G12_patinoire",
+      "coeff_ch_par_dj": 0.0,
+      "coeff_fr_par_dj": 0.00032,
+      "description": "Sport - Patinoire (dont vestiaires, douches et sanitaires)",
+      "categories_couvertes": [
+        "Sport - Patinoire (dont vestiaires, douches et sanitaires)"
+      ],
+      "source_text_anchor": "Annexe II p.3 lignes 187-188"
+    },
+    {
+      "groupe_id": "G13_zero_zero_residual",
+      "coeff_ch_par_dj": 0.0,
+      "coeff_fr_par_dj": 0.0,
+      "description": "Pas d'ajustement DJU : Blanchisserie + Parc d'exposition + Stationnement + Sport non-couvert (centre equestre, stade/velodrome, hippodrome/cynodrome, stand de tir) + Parc d'attraction batiment semi-ouvert + Zones remisage transport voyageurs + Entrepot sans maintien T° + Service funeraire zone preparation/cremation + Halles couvert (sauf meubles froid)",
+      "categories_couvertes": [
+        "Blanchisserie",
+        "Parc d'exposition",
+        "Stationnement",
+        "Sport - Centre equestre",
+        "Sport - Stade/velodrome non couvert",
+        "Sport - Hippodrome et Cynodrome - non couvert",
+        "Sport - Stand de tir",
+        "Parc d'attractions parc a theme - Attraction batiment semi-ouvert",
+        "Transport ferroviaire et guide de voyageurs - Zone de remisage couvertes et closes",
+        "Transport routier de voyageurs - Zone de remisage couvertes et closes",
+        "Entrepot ou messagerie sans besoin de maintien en temperature du produit (avec ou sans maintien hors-gel des locaux)",
+        "Service funeraire - Zone de preparation et cremation (avec four)",
+        "Halles et marche couvert (sauf sous-categorie Halles et marche couvert - Etal ou stand avec meubles de froid)"
+      ],
+      "source_text_anchor": "Annexe II p.3 lignes 213-214"
+    }
+  ]
+}

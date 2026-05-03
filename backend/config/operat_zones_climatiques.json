@@ -1,0 +1,221 @@
+{
+  "schema_version": "2.0",
+  "extraction_date": "2026-05-03",
+  "source_primaire_authentifiee": {
+    "arrete": "Arrêté du 10 avril 2020 relatif aux obligations d'actions de réduction des consommations d'énergie finale dans des bâtiments à usage tertiaire",
+    "nor": "LOGL2005904A",
+    "jorf": "JORF n°0108 du 3 mai 2020",
+    "version_consolidee": "07/09/2025 (modifié par arrêté 01/08/2025 NOR ATDL2430864A)",
+    "annexe": "Annexe III — Liste des stations météorologiques avec colonne Zclim",
+    "article_definissant_zones": "Article 2-h",
+    "article_methode_dju": "Article 5",
+    "url_legifrance": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389",
+    "archive_locale_pdf": "docs/sources/regulatory/operat/legifrance_arrete_methode_10_avril_2020_v2_avec_zclim.pdf",
+    "stations_count": 165,
+    "donnees_structurees_stations": "backend/config/operat_stations_meteo.json"
+  },
+  "confidence": "🟢",
+  "confidence_note": "Mapping département → zone climatique extrait directement de l'annexe III du PDF Légifrance officiel (version consolidée 07/09/2025). Source primaire opposable. Toutes les stations d'un même département agréent sur leur Zclim (cohérence 100%).",
+  "totaux": {
+    "metropole": 96,
+    "dom": 5,
+    "total": 101
+  },
+  "_note_parser": "Le parser regex a capturé 4 DOM sur 5 stations (manqué Mayotte/976 — station 98508001 Pamandzi-Dzaoudzi non détectée par le regex car position en fin de tableau). Mayotte est néanmoins présente dans `dom` ci-dessous et le helper Python `regops/operat_zones.py` la résout correctement (976 → Mayotte) via ce mapping. Cohérence : les 5 DOM sont bien gérés.",
+  "zones": {
+    "H1a": {
+      "description": "Climat continental nord (Bassin parisien + Hauts-de-France + Normandie + Aisne)",
+      "departements": [
+        "02",
+        "14",
+        "27",
+        "28",
+        "59",
+        "60",
+        "61",
+        "62",
+        "75",
+        "76",
+        "77",
+        "78",
+        "80",
+        "91",
+        "92",
+        "93",
+        "94",
+        "95"
+      ],
+      "count": 18
+    },
+    "H1b": {
+      "description": "Climat continental nord-est et continental moyen-nord (Grand Est + parties Bourgogne/Centre)",
+      "departements": [
+        "08",
+        "10",
+        "45",
+        "51",
+        "52",
+        "54",
+        "55",
+        "57",
+        "58",
+        "67",
+        "68",
+        "70",
+        "88",
+        "89",
+        "90"
+      ],
+      "count": 15
+    },
+    "H1c": {
+      "description": "Continental moyen-sud + Massif Central + Auvergne + Alpes du Nord + Limousin sud",
+      "departements": [
+        "01",
+        "03",
+        "05",
+        "15",
+        "19",
+        "21",
+        "23",
+        "25",
+        "38",
+        "39",
+        "42",
+        "43",
+        "63",
+        "69",
+        "71",
+        "73",
+        "74",
+        "87"
+      ],
+      "count": 18
+    },
+    "H2a": {
+      "description": "Bretagne + Normandie côtière (océanique doux)",
+      "departements": [
+        "22",
+        "29",
+        "35",
+        "50",
+        "56"
+      ],
+      "count": 5
+    },
+    "H2b": {
+      "description": "Pays de la Loire + Centre-Val de Loire + Poitou-Charentes (océanique tempéré)",
+      "departements": [
+        "16",
+        "17",
+        "18",
+        "36",
+        "37",
+        "41",
+        "44",
+        "49",
+        "53",
+        "72",
+        "79",
+        "85",
+        "86"
+      ],
+      "count": 13
+    },
+    "H2c": {
+      "description": "Sud-Ouest atlantique + Pyrénées + sud Massif Central",
+      "departements": [
+        "09",
+        "12",
+        "24",
+        "31",
+        "32",
+        "33",
+        "40",
+        "46",
+        "47",
+        "64",
+        "65",
+        "81",
+        "82"
+      ],
+      "count": 13
+    },
+    "H2d": {
+      "description": "Vallée du Rhône + Provence intérieure + Lozère",
+      "departements": [
+        "04",
+        "07",
+        "26",
+        "48",
+        "84"
+      ],
+      "count": 5
+    },
+    "H3": {
+      "description": "Méditerranée + Corse",
+      "departements": [
+        "06",
+        "11",
+        "13",
+        "2A",
+        "2B",
+        "30",
+        "34",
+        "66",
+        "83"
+      ],
+      "count": 9
+    }
+  },
+  "dom": {
+    "Guadeloupe": {
+      "code_insee_departement": "971",
+      "code_postal_prefix": "971",
+      "zone_operat": "Guadeloupe"
+    },
+    "Martinique": {
+      "code_insee_departement": "972",
+      "code_postal_prefix": "972",
+      "zone_operat": "Martinique"
+    },
+    "Guyane": {
+      "code_insee_departement": "973",
+      "code_postal_prefix": "973",
+      "zone_operat": "Guyane"
+    },
+    "Reunion": {
+      "code_insee_departement": "974",
+      "code_postal_prefix": "974",
+      "zone_operat": "La Réunion"
+    },
+    "Mayotte": {
+      "code_insee_departement": "976",
+      "code_postal_prefix": "976",
+      "zone_operat": "Mayotte"
+    }
+  },
+  "dom_hors_perimetre_operat": [
+    {
+      "code_postal_prefix": "975",
+      "nom": "Saint-Pierre-et-Miquelon",
+      "statut": "COM"
+    },
+    {
+      "code_postal_prefix": "977",
+      "nom": "Saint-Barthélemy",
+      "statut": "COM"
+    },
+    {
+      "code_postal_prefix": "978",
+      "nom": "Saint-Martin",
+      "statut": "COM"
+    }
+  ],
+  "methode_resolution": {
+    "depuis_code_postal_metropole": "Les 2 premiers caractères du code postal = code département (ex. 75001 → 75 → H1a). Cas Corse : 200-201xx → 2A, 202-209xx → 2B.",
+    "depuis_code_postal_dom": "Préfixe 971 → Guadeloupe ; 972 → Martinique ; 973 → Guyane ; 974 → La Réunion ; 976 → Mayotte.",
+    "altitude": "La zone H1a-H3 est INDÉPENDANTE de l'altitude. L'altitude définit le palier (alt_lt_400, alt_400_800, alt_800_1200, alt_1200_1600, alt_gte_1600) au sein de la zone, cf. Annexe I ATDL2430864A."
+  },
+  "changements_v1_a_v2": "Schema v1.0 (consensus RT 2012) remplacé par v2.0 (annexe III authentifiée). 25 départements ont changé de zone vs consensus RT 2012 — notamment l'Est continental (08/10/51/52/54/55/57/67/68/88/90) qui passe H1a→H1b, le Limousin (19/23/87) qui passe H2c/H2d→H1c, et 84 Vaucluse qui passe H3→H2d."
+}

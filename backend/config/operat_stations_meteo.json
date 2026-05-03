@@ -1,0 +1,1494 @@
+{
+  "source": "Annexe III arrete 10/04/2020 NOR LOGL2005904A (v2 avec Zclim)",
+  "extraction_date": "2026-05-03",
+  "extraction_method": "PyMuPDF + regex (backend/scripts/operat_extract_zclim_annexe_iii.py)",
+  "archive_locale_pdf": "docs/sources/regulatory/operat/legifrance_arrete_methode_10_avril_2020_v2_avec_zclim.pdf",
+  "stations_count": 165,
+  "stations": [
+    {
+      "numero": "1089001",
+      "nom": "Ambérieu-en- Bugey",
+      "departement": "01",
+      "altitude_m": 251,
+      "latitude": 45.976,
+      "longitude": 5.329,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "1414001",
+      "nom": "Sutrieu",
+      "departement": "01",
+      "altitude_m": 878,
+      "latitude": 45.916,
+      "longitude": 5.625,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "2320001",
+      "nom": "Saint Quentin",
+      "departement": "02",
+      "altitude_m": 98,
+      "latitude": 49.818,
+      "longitude": 3.206,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "3060001",
+      "nom": "Vichy-Charmeil",
+      "departement": "03",
+      "altitude_m": 249,
+      "latitude": 46.166,
+      "longitude": 3.398,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "3248001",
+      "nom": "Saint-Nicolas",
+      "departement": "03",
+      "altitude_m": 878,
+      "latitude": 45.916,
+      "longitude": 5.625,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "4049001",
+      "nom": "Saint-Auban-sur- Durance",
+      "departement": "04",
+      "altitude_m": 458,
+      "latitude": 44.062,
+      "longitude": 5.989,
+      "zclim": "H2d"
+    },
+    {
+      "numero": "4019001",
+      "nom": "Barcelonnette",
+      "departement": "04",
+      "altitude_m": 1155,
+      "latitude": 44.391,
+      "longitude": 6.67,
+      "zclim": "H2d"
+    },
+    {
+      "numero": "5046001",
+      "nom": "Embrun",
+      "departement": "05",
+      "altitude_m": 871,
+      "latitude": 44.566,
+      "longitude": 6.502,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "5183001",
+      "nom": "Villar-Saint- Pancrace",
+      "departement": "05",
+      "altitude_m": 1310,
+      "latitude": 44.88,
+      "longitude": 6.64,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "6088001",
+      "nom": "Nice",
+      "departement": "06",
+      "altitude_m": 2,
+      "latitude": 43.648,
+      "longitude": 7.209,
+      "zclim": "H3"
+    },
+    {
+      "numero": "6163007",
+      "nom": "Tende_SAPC",
+      "departement": "06",
+      "altitude_m": 636,
+      "latitude": 44.043,
+      "longitude": 7.586,
+      "zclim": "H3"
+    },
+    {
+      "numero": "6077006",
+      "nom": "Peira Cava",
+      "departement": "06",
+      "altitude_m": 1443,
+      "latitude": 43.929,
+      "longitude": 7.363,
+      "zclim": "H3"
+    },
+    {
+      "numero": "7131001",
+      "nom": "Lanas - Syn",
+      "departement": "07",
+      "altitude_m": 280,
+      "latitude": 44.538,
+      "longitude": 4.367,
+      "zclim": "H2d"
+    },
+    {
+      "numero": "7068001",
+      "nom": "Colombier-le- Jeune",
+      "departement": "07",
+      "altitude_m": 566,
+      "latitude": 45.015,
+      "longitude": 4.671,
+      "zclim": "H2d"
+    },
+    {
+      "numero": "7154005",
+      "nom": "Mazan-l'Abbaye",
+      "departement": "07",
+      "altitude_m": 1240,
+      "latitude": 44.734,
+      "longitude": 4.084,
+      "zclim": "H2d"
+    },
+    {
+      "numero": "8105005",
+      "nom": "Charleville- Mézières",
+      "departement": "08",
+      "altitude_m": 147,
+      "latitude": 49.782,
+      "longitude": 4.643,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "9289001",
+      "nom": "Saint-Girons - Antichan",
+      "departement": "09",
+      "altitude_m": 414,
+      "latitude": 43.005,
+      "longitude": 1.106,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "9024004",
+      "nom": "Aston",
+      "departement": "09",
+      "altitude_m": 1781,
+      "latitude": 42.724,
+      "longitude": 1.691,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "10030001",
+      "nom": "Troyes-Barberey",
+      "departement": "10",
+      "altitude_m": 112,
+      "latitude": 48.324,
+      "longitude": 4.02,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "11069001",
+      "nom": "Carcassonne - Salvaza",
+      "departement": "11",
+      "altitude_m": 128,
+      "latitude": 43.215,
+      "longitude": 2.295,
+      "zclim": "H3"
+    },
+    {
+      "numero": "11262005",
+      "nom": "Narbonne",
+      "departement": "11",
+      "altitude_m": 110,
+      "latitude": 43.15,
+      "longitude": 2.956,
+      "zclim": "H3"
+    },
+    {
+      "numero": "12145001",
+      "nom": "Millau - Soulobres",
+      "departement": "12",
+      "altitude_m": 712,
+      "latitude": 44.118,
+      "longitude": 3.019,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "12254001",
+      "nom": "Rodez",
+      "departement": "12",
+      "altitude_m": 578,
+      "latitude": 44.41,
+      "longitude": 2.483,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "12014001",
+      "nom": "Aurelle- Verlac_SAPC",
+      "departement": "12",
+      "altitude_m": 1076,
+      "latitude": 44.534,
+      "longitude": 3.008,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "13054001",
+      "nom": "Marseille - Marignane",
+      "departement": "13",
+      "altitude_m": 9,
+      "latitude": 43.437,
+      "longitude": 5.216,
+      "zclim": "H3"
+    },
+    {
+      "numero": "13103001",
+      "nom": "Salon-de-Provence",
+      "departement": "13",
+      "altitude_m": 58,
+      "latitude": 43.603,
+      "longitude": 5.104,
+      "zclim": "H3"
+    },
+    {
+      "numero": "14137001",
+      "nom": "Caen - Carpiquet",
+      "departement": "14",
+      "altitude_m": 67,
+      "latitude": 49.18,
+      "longitude": -0.456,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "15014004",
+      "nom": "Aurillac",
+      "departement": "15",
+      "altitude_m": 639,
+      "latitude": 44.898,
+      "longitude": 2.421,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "15053001",
+      "nom": "Coltines",
+      "departement": "15",
+      "altitude_m": 979,
+      "latitude": 45.075,
+      "longitude": 2.991,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "15101004",
+      "nom": "Le Lioran_SAPC",
+      "departement": "15",
+      "altitude_m": 1238,
+      "latitude": 45.082,
+      "longitude": 2.751,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "16089001",
+      "nom": "Cognac",
+      "departement": "16",
+      "altitude_m": 30,
+      "latitude": 45.665,
+      "longitude": -0.315,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "17300009",
+      "nom": "La Rochelle - Ile de Ré",
+      "departement": "17",
+      "altitude_m": 20,
+      "latitude": 46.178,
+      "longitude": -1.193,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "17415003",
+      "nom": "Saintes",
+      "departement": "17",
+      "altitude_m": 38,
+      "latitude": 45.761,
+      "longitude": -0.652,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "18033001",
+      "nom": "Bourges",
+      "departement": "18",
+      "altitude_m": 161,
+      "latitude": 47.059,
+      "longitude": 2.359,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "19031008",
+      "nom": "Brive - La Roche",
+      "departement": "19",
+      "altitude_m": 115,
+      "latitude": 45.148,
+      "longitude": 1.474,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "21473001",
+      "nom": "Dijon - Longvic",
+      "departement": "21",
+      "altitude_m": 219,
+      "latitude": 47.267,
+      "longitude": 5.088,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "22372001",
+      "nom": "Saint-Brieuc",
+      "departement": "22",
+      "altitude_m": 136,
+      "latitude": 48.534,
+      "longitude": -2.852,
+      "zclim": "H2a"
+    },
+    {
+      "numero": "23176001",
+      "nom": "La Souterraine",
+      "departement": "23",
+      "altitude_m": 370,
+      "latitude": 46.243,
+      "longitude": 1.452,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "24138004",
+      "nom": "Coulounieix - Périgueux",
+      "departement": "24",
+      "altitude_m": 213,
+      "latitude": 45.16,
+      "longitude": 0.677,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "25056001",
+      "nom": "Besançon",
+      "departement": "25",
+      "altitude_m": 307,
+      "latitude": 47.249,
+      "longitude": 5.988,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "25462001",
+      "nom": "Pontarlier",
+      "departement": "25",
+      "altitude_m": 831,
+      "latitude": 46.902,
+      "longitude": 6.341,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "26198001",
+      "nom": "Montélimar",
+      "departement": "26",
+      "altitude_m": 73,
+      "latitude": 44.581,
+      "longitude": 4.733,
+      "zclim": "H2d"
+    },
+    {
+      "numero": "26168001",
+      "nom": "Lus La Croix Haute",
+      "departement": "26",
+      "altitude_m": 1059,
+      "latitude": 44.673,
+      "longitude": 5.711,
+      "zclim": "H2d"
+    },
+    {
+      "numero": "27347001",
+      "nom": "Evreux - Huest",
+      "departement": "27",
+      "altitude_m": 138,
+      "latitude": 49.025,
+      "longitude": 1.221,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "28070001",
+      "nom": "Chartres",
+      "departement": "28",
+      "altitude_m": 155,
+      "latitude": 48.46,
+      "longitude": 1.501,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "29075001",
+      "nom": "Brest - Guipavas",
+      "departement": "29",
+      "altitude_m": 94,
+      "latitude": 48.444,
+      "longitude": -4.412,
+      "zclim": "H2a"
+    },
+    {
+      "numero": "29216001",
+      "nom": "Quimper",
+      "departement": "29",
+      "altitude_m": 82,
+      "latitude": 47.973,
+      "longitude": -4.16,
+      "zclim": "H2a"
+    },
+    {
+      "numero": "20114002",
+      "nom": "Figari",
+      "departement": "2A",
+      "altitude_m": 20,
+      "latitude": 41.505,
+      "longitude": 9.103,
+      "zclim": "H3"
+    },
+    {
+      "numero": "20268001",
+      "nom": "Sampolo",
+      "departement": "2A",
+      "altitude_m": 837,
+      "latitude": 41.943,
+      "longitude": 9.123,
+      "zclim": "H3"
+    },
+    {
+      "numero": "20148001",
+      "nom": "Bastia",
+      "departement": "2B",
+      "altitude_m": 10,
+      "latitude": 42.54,
+      "longitude": 9.485,
+      "zclim": "H3"
+    },
+    {
+      "numero": "30189001",
+      "nom": "Nîmes - Courbessac",
+      "departement": "30",
+      "altitude_m": 59,
+      "latitude": 43.856,
+      "longitude": 4.406,
+      "zclim": "H3"
+    },
+    {
+      "numero": "30003001",
+      "nom": "Aigues-Mortes",
+      "departement": "30",
+      "altitude_m": 1,
+      "latitude": 43.537,
+      "longitude": 4.207,
+      "zclim": "H3"
+    },
+    {
+      "numero": "30339001",
+      "nom": "Val-d'Aigoual - Mont Aigoual",
+      "departement": "30",
+      "altitude_m": 1567,
+      "latitude": 44.121,
+      "longitude": 3.582,
+      "zclim": "H3"
+    },
+    {
+      "numero": "31069001",
+      "nom": "Toulouse - Blagnac",
+      "departement": "31",
+      "altitude_m": 151,
+      "latitude": 43.621,
+      "longitude": 1.378,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "31042012",
+      "nom": "Bagnères-de- Luchon",
+      "departement": "31",
+      "altitude_m": 618,
+      "latitude": 42.802,
+      "longitude": 0.6,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "32013005",
+      "nom": "Auch",
+      "departement": "32",
+      "altitude_m": 122,
+      "latitude": 43.689,
+      "longitude": 0.601,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "33281001",
+      "nom": "Bordeaux - Mérignac",
+      "departement": "33",
+      "altitude_m": 47,
+      "latitude": 44.83,
+      "longitude": -0.691,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "33529001",
+      "nom": "La Teste-de-Buch - Cazaux",
+      "departement": "33",
+      "altitude_m": 23,
+      "latitude": 44.534,
+      "longitude": -1.132,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "34154001",
+      "nom": "Montpellier",
+      "departement": "34",
+      "altitude_m": 2,
+      "latitude": 43.577,
+      "longitude": 3.963,
+      "zclim": "H3"
+    },
+    {
+      "numero": "34205001",
+      "nom": "Les Plans",
+      "departement": "34",
+      "altitude_m": 846,
+      "latitude": 43.786,
+      "longitude": 3.246,
+      "zclim": "H3"
+    },
+    {
+      "numero": "35281001",
+      "nom": "Rennes - St Jacques",
+      "departement": "35",
+      "altitude_m": 36,
+      "latitude": 48.068,
+      "longitude": -1.734,
+      "zclim": "H2a"
+    },
+    {
+      "numero": "35228001",
+      "nom": "Dinard",
+      "departement": "35",
+      "altitude_m": 65,
+      "latitude": 48.585,
+      "longitude": -2.076,
+      "zclim": "H2a"
+    },
+    {
+      "numero": "36063001",
+      "nom": "Châteauroux - Déols",
+      "departement": "36",
+      "altitude_m": 158,
+      "latitude": 46.869,
+      "longitude": 1.741,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "37179001",
+      "nom": "Tours",
+      "departement": "37",
+      "altitude_m": 108,
+      "latitude": 47.444,
+      "longitude": 0.727,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "38384001",
+      "nom": "Grenoble - Saint- Geoirs",
+      "departement": "38",
+      "altitude_m": 384,
+      "latitude": 45.364,
+      "longitude": 5.313,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "38548001",
+      "nom": "Villard-de-Lans",
+      "departement": "38",
+      "altitude_m": 1027,
+      "latitude": 45.078,
+      "longitude": 5.561,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "38567002",
+      "nom": "Chamrousse",
+      "departement": "38",
+      "altitude_m": 1730,
+      "latitude": 45.128,
+      "longitude": 5.878,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "39362001",
+      "nom": "Lons-le-Saunier",
+      "departement": "39",
+      "altitude_m": 298,
+      "latitude": 46.413,
+      "longitude": 5.31,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "39413001",
+      "nom": "La Pesse",
+      "departement": "39",
+      "altitude_m": 1133,
+      "latitude": 46.303,
+      "longitude": 5.843,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "40192001",
+      "nom": "Mont-de-Marsan",
+      "departement": "40",
+      "altitude_m": 59,
+      "latitude": 43.909,
+      "longitude": -0.5,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "40046001",
+      "nom": "Biscarrosse",
+      "departement": "40",
+      "altitude_m": 35,
+      "latitude": 44.25,
+      "longitude": -1.14,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "41097001",
+      "nom": "Romorantin",
+      "departement": "41",
+      "altitude_m": 83,
+      "latitude": 47.319,
+      "longitude": 1.687,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "42005001",
+      "nom": "St Etienne - Bouthéon",
+      "departement": "42",
+      "altitude_m": 400,
+      "latitude": 45.533,
+      "longitude": 4.293,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "42039003",
+      "nom": "Chalmazel",
+      "departement": "42",
+      "altitude_m": 990,
+      "latitude": 45.699,
+      "longitude": 3.844,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "43062001",
+      "nom": "Le Puy - Loudes",
+      "departement": "43",
+      "altitude_m": 833,
+      "latitude": 45.074,
+      "longitude": 3.764,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "43111002",
+      "nom": "Landos-Charbon",
+      "departement": "43",
+      "altitude_m": 1148,
+      "latitude": 44.858,
+      "longitude": 3.844,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "44020001",
+      "nom": "Nantes - Bouguenais",
+      "departement": "44",
+      "altitude_m": 26,
+      "latitude": 47.15,
+      "longitude": -1.608,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "45055001",
+      "nom": "Orléans",
+      "departement": "45",
+      "altitude_m": 123,
+      "latitude": 47.99,
+      "longitude": 1.778,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "46127001",
+      "nom": "Gourdon",
+      "departement": "46",
+      "altitude_m": 260,
+      "latitude": 44.745,
+      "longitude": 1.396,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "47091001",
+      "nom": "Agen",
+      "departement": "47",
+      "altitude_m": 58,
+      "latitude": 44.172,
+      "longitude": 0.594,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "48095005",
+      "nom": "Mende - Chabrits",
+      "departement": "48",
+      "altitude_m": 932,
+      "latitude": 44.534,
+      "longitude": 3.454,
+      "zclim": "H2d"
+    },
+    {
+      "numero": "48027003",
+      "nom": "Mont Lozère et Goulet - Le Bleymard",
+      "departement": "48",
+      "altitude_m": 1418,
+      "latitude": 44.452,
+      "longitude": 3.74,
+      "zclim": "H2d"
+    },
+    {
+      "numero": "49020001",
+      "nom": "Angers - Beaucouzé",
+      "departement": "49",
+      "altitude_m": 50,
+      "latitude": 47.479,
+      "longitude": -0.614,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "50209001",
+      "nom": "Cherbourg - Maupertus",
+      "departement": "50",
+      "altitude_m": 135,
+      "latitude": 49.65,
+      "longitude": -1.48,
+      "zclim": "H2a"
+    },
+    {
+      "numero": "51595002",
+      "nom": "Bussy-Lettrée - aéroport Paris- Vatry",
+      "departement": "51",
+      "altitude_m": 179,
+      "latitude": 48.777,
+      "longitude": 4.165,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "52269001",
+      "nom": "Langres",
+      "departement": "52",
+      "altitude_m": 466,
+      "latitude": 47.844,
+      "longitude": 5.337,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "52448001",
+      "nom": "Saint-Dizier",
+      "departement": "52",
+      "altitude_m": 139,
+      "latitude": 48.631,
+      "longitude": 4.903,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "53110002",
+      "nom": "Grez-en-Brouère",
+      "departement": "53",
+      "altitude_m": 93,
+      "latitude": 47.891,
+      "longitude": -0.542,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "54526001",
+      "nom": "Nancy - Essey",
+      "departement": "54",
+      "altitude_m": 212,
+      "latitude": 48.687,
+      "longitude": 6.221,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "55386002",
+      "nom": "Nonsard",
+      "departement": "55",
+      "altitude_m": 230,
+      "latitude": 48.934,
+      "longitude": 5.764,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "55484001",
+      "nom": "Septsarges",
+      "departement": "55",
+      "altitude_m": 293,
+      "latitude": 49.276,
+      "longitude": 5.155,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "56185001",
+      "nom": "Lorient - Lann Bihoue",
+      "departement": "56",
+      "altitude_m": 45,
+      "latitude": 47.762,
+      "longitude": -3.435,
+      "zclim": "H2a"
+    },
+    {
+      "numero": "56243001",
+      "nom": "Vannes-Sene",
+      "departement": "56",
+      "altitude_m": 3,
+      "latitude": 47.605,
+      "longitude": -2.714,
+      "zclim": "H2a"
+    },
+    {
+      "numero": "57039001",
+      "nom": "Metz - Frescaty",
+      "departement": "57",
+      "altitude_m": 192,
+      "latitude": 49.069,
+      "longitude": 6.125,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "58160001",
+      "nom": "Nevers - Marzy",
+      "departement": "58",
+      "altitude_m": 175,
+      "latitude": 46.998,
+      "longitude": 3.112,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "59183001",
+      "nom": "Dunkerque",
+      "departement": "59",
+      "altitude_m": 11,
+      "latitude": 51.05,
+      "longitude": 2.34,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "59343001",
+      "nom": "Lille - Lesquin",
+      "departement": "59",
+      "altitude_m": 47,
+      "latitude": 50.57,
+      "longitude": 3.097,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "60639001",
+      "nom": "Beauvais - Tillé",
+      "departement": "60",
+      "altitude_m": 89,
+      "latitude": 49.446,
+      "longitude": 2.127,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "61001001",
+      "nom": "Alençon",
+      "departement": "61",
+      "altitude_m": 143,
+      "latitude": 48.445,
+      "longitude": 0.11,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "62160001",
+      "nom": "Boulogne-sur-Mer",
+      "departement": "62",
+      "altitude_m": 73,
+      "latitude": 50.73,
+      "longitude": 1.6,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "62298001",
+      "nom": "Cambrai - Epinoy",
+      "departement": "62",
+      "altitude_m": 76,
+      "latitude": 50.225,
+      "longitude": 3.163,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "63113001",
+      "nom": "Clermont-Ferrand",
+      "departement": "63",
+      "altitude_m": 331,
+      "latitude": 45.786,
+      "longitude": 3.149,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "63353003",
+      "nom": "Saint-Germain- L'Herm",
+      "departement": "63",
+      "altitude_m": 1070,
+      "latitude": 45.461,
+      "longitude": 3.533,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "63098001",
+      "nom": "Chastreix",
+      "departement": "63",
+      "altitude_m": 1385,
+      "latitude": 45.533,
+      "longitude": 2.775,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "64024001",
+      "nom": "Biarritz - Anglet",
+      "departement": "64",
+      "altitude_m": 71,
+      "latitude": 43.469,
+      "longitude": -1.534,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "64549001",
+      "nom": "Pau - Uzein",
+      "departement": "64",
+      "altitude_m": 183,
+      "latitude": 43.385,
+      "longitude": -0.416,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "64316003",
+      "nom": "Larrau - Iraty",
+      "departement": "64",
+      "altitude_m": 1427,
+      "latitude": 43.034,
+      "longitude": -1.034,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "65344001",
+      "nom": "Tarbes - Ossun",
+      "departement": "65",
+      "altitude_m": 360,
+      "latitude": 43.188,
+      "longitude": 0.0,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "65075001",
+      "nom": "Bazus-Aure",
+      "departement": "65",
+      "altitude_m": 767,
+      "latitude": 42.858,
+      "longitude": 0.349,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "65283001",
+      "nom": "Loudervielle",
+      "departement": "65",
+      "altitude_m": 1587,
+      "latitude": 42.797,
+      "longitude": 0.44,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "66136001",
+      "nom": "Perpignan",
+      "departement": "66",
+      "altitude_m": 42,
+      "latitude": 42.737,
+      "longitude": 2.872,
+      "zclim": "H3"
+    },
+    {
+      "numero": "66194002",
+      "nom": "Serralongue",
+      "departement": "66",
+      "altitude_m": 700,
+      "latitude": 42.4,
+      "longitude": 2.558,
+      "zclim": "H3"
+    },
+    {
+      "numero": "67124001",
+      "nom": "Strasbourg - Entzheim",
+      "departement": "67",
+      "altitude_m": 150,
+      "latitude": 48.549,
+      "longitude": 7.64,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "68205001",
+      "nom": "Colmar - Meyenheim",
+      "departement": "68",
+      "altitude_m": 207,
+      "latitude": 47.928,
+      "longitude": 7.407,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "68247003",
+      "nom": "Markstein Crête",
+      "departement": "68",
+      "altitude_m": 1184,
+      "latitude": 47.923,
+      "longitude": 7.032,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "69029001",
+      "nom": "Lyon - Bron",
+      "departement": "69",
+      "altitude_m": 197,
+      "latitude": 45.726,
+      "longitude": 4.937,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "70473001",
+      "nom": "Luxeuil",
+      "departement": "70",
+      "altitude_m": 272,
+      "latitude": 47.787,
+      "longitude": 6.364,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "71105001",
+      "nom": "Macon",
+      "departement": "71",
+      "altitude_m": 216,
+      "latitude": 46.296,
+      "longitude": 4.798,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "72181001",
+      "nom": "Le Mans",
+      "departement": "72",
+      "altitude_m": 48,
+      "latitude": 47.94,
+      "longitude": 0.189,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "73329001",
+      "nom": "Chambery - Aix- les-Bains",
+      "departement": "73",
+      "altitude_m": 235,
+      "latitude": 45.641,
+      "longitude": 5.878,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "73054001",
+      "nom": "Bourg-Saint- Maurice",
+      "departement": "73",
+      "altitude_m": 865,
+      "latitude": 45.612,
+      "longitude": 6.763,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "73132003",
+      "nom": "Hauteluce - Col des Saisies",
+      "departement": "73",
+      "altitude_m": 1614,
+      "latitude": 45.755,
+      "longitude": 6.535,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "74182001",
+      "nom": "Annecy - Meythet",
+      "departement": "74",
+      "altitude_m": 455,
+      "latitude": 45.55,
+      "longitude": 6.05,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "74119003",
+      "nom": "Evian",
+      "departement": "74",
+      "altitude_m": 725,
+      "latitude": 46.382,
+      "longitude": 6.583,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "74191003",
+      "nom": "Le Plenay",
+      "departement": "74",
+      "altitude_m": 1515,
+      "latitude": 46.168,
+      "longitude": 6.693,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "75114001",
+      "nom": "Paris - Montsouris",
+      "departement": "75",
+      "altitude_m": 75,
+      "latitude": 48.821,
+      "longitude": 2.337,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "76481001",
+      "nom": "Le Havre - Octeville",
+      "departement": "76",
+      "altitude_m": 94,
+      "latitude": 49.533,
+      "longitude": 0.092,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "76116001",
+      "nom": "Rouen - Boos",
+      "departement": "76",
+      "altitude_m": 151,
+      "latitude": 49.383,
+      "longitude": 1.181,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "77306001",
+      "nom": "Melun",
+      "departement": "77",
+      "altitude_m": 91,
+      "latitude": 48.61,
+      "longitude": 2.679,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "78621001",
+      "nom": "Trappes",
+      "departement": "78",
+      "altitude_m": 167,
+      "latitude": 48.774,
+      "longitude": 2.01,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "79191005",
+      "nom": "Niort",
+      "departement": "79",
+      "altitude_m": 57,
+      "latitude": 46.315,
+      "longitude": -0.4,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "80001001",
+      "nom": "Abbeville",
+      "departement": "80",
+      "altitude_m": 69,
+      "latitude": 50.136,
+      "longitude": 1.834,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "80523001",
+      "nom": "Meaulte",
+      "departement": "80",
+      "altitude_m": 107,
+      "latitude": 49.582,
+      "longitude": 2.421,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "81284001",
+      "nom": "Albi",
+      "departement": "81",
+      "altitude_m": 172,
+      "latitude": 43.914,
+      "longitude": 2.116,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "81192005",
+      "nom": "Murat-sur-Vèbre",
+      "departement": "81",
+      "altitude_m": 1022,
+      "latitude": 43.38,
+      "longitude": 2.493,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "82121002",
+      "nom": "Montauban",
+      "departement": "82",
+      "altitude_m": 106,
+      "latitude": 44.028,
+      "longitude": 1.376,
+      "zclim": "H2c"
+    },
+    {
+      "numero": "83031001",
+      "nom": "Le Luc",
+      "departement": "83",
+      "altitude_m": 80,
+      "latitude": 43.383,
+      "longitude": 6.386,
+      "zclim": "H3"
+    },
+    {
+      "numero": "83044003",
+      "nom": "Comps-sur-Artuby",
+      "departement": "83",
+      "altitude_m": 892,
+      "latitude": 43.393,
+      "longitude": 6.281,
+      "zclim": "H3"
+    },
+    {
+      "numero": "83137001",
+      "nom": "Toulon",
+      "departement": "83",
+      "altitude_m": 23,
+      "latitude": 43.103,
+      "longitude": 5.931,
+      "zclim": "H3"
+    },
+    {
+      "numero": "84031001",
+      "nom": "Carpentras",
+      "departement": "84",
+      "altitude_m": 99,
+      "latitude": 44.05,
+      "longitude": 5.031,
+      "zclim": "H2d"
+    },
+    {
+      "numero": "84107002",
+      "nom": "Saint Christol",
+      "departement": "84",
+      "altitude_m": 836,
+      "latitude": 44.041,
+      "longitude": 5.493,
+      "zclim": "H2d"
+    },
+    {
+      "numero": "85060002",
+      "nom": "Les Sables- d'Olonne - Château d'olonne",
+      "departement": "85",
+      "altitude_m": 27,
+      "latitude": 46.284,
+      "longitude": 1.433,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "85191003",
+      "nom": "La Roche-sur-Yon",
+      "departement": "85",
+      "altitude_m": 90,
+      "latitude": 46.7,
+      "longitude": -1.381,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "86027001",
+      "nom": "Poitiers - Biard",
+      "departement": "86",
+      "altitude_m": 123,
+      "latitude": 46.593,
+      "longitude": 0.314,
+      "zclim": "H2b"
+    },
+    {
+      "numero": "87085006",
+      "nom": "Limoges - Bellegarde",
+      "departement": "87",
+      "altitude_m": 402,
+      "latitude": 45.861,
+      "longitude": 1.175,
+      "zclim": "H1c"
+    },
+    {
+      "numero": "88136001",
+      "nom": "Epinal",
+      "departement": "88",
+      "altitude_m": 317,
+      "latitude": 48.21,
+      "longitude": 6.45,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "89387002",
+      "nom": "Sens",
+      "departement": "89",
+      "altitude_m": 70,
+      "latitude": 48.168,
+      "longitude": 3.289,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "90052002",
+      "nom": "Giromagny",
+      "departement": "90",
+      "altitude_m": 473,
+      "latitude": 47.742,
+      "longitude": 6.835,
+      "zclim": "H1b"
+    },
+    {
+      "numero": "91027002",
+      "nom": "Orly - Athis-Mons",
+      "departement": "91",
+      "altitude_m": 86,
+      "latitude": 48.716,
+      "longitude": 2.384,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "75114001",
+      "nom": "Paris - Montsouris",
+      "departement": "92",
+      "altitude_m": 75,
+      "latitude": 48.821,
+      "longitude": 2.337,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "95527001",
+      "nom": "Roissy",
+      "departement": "93",
+      "altitude_m": 108,
+      "latitude": 49.005,
+      "longitude": 2.32,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "91027002",
+      "nom": "Orly - Athis-Mons",
+      "departement": "94",
+      "altitude_m": 89,
+      "latitude": 48.716,
+      "longitude": 2.384,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "95088001",
+      "nom": "Paris - Le Bourget",
+      "departement": "95",
+      "altitude_m": 49,
+      "latitude": 48.967,
+      "longitude": 2.427,
+      "zclim": "H1a"
+    },
+    {
+      "numero": "97101015",
+      "nom": "Les Abymes - Le Raizet",
+      "departement": "971",
+      "altitude_m": 11,
+      "latitude": 16.27,
+      "longitude": -61.52,
+      "zclim": "Guadeloupe"
+    },
+    {
+      "numero": "97107002",
+      "nom": "Capesterre Belle- eau Neufchateau",
+      "departement": "971",
+      "altitude_m": 28,
+      "latitude": 16.04,
+      "longitude": -61.57,
+      "zclim": "Guadeloupe"
+    },
+    {
+      "numero": "97117013",
+      "nom": "Le Moule",
+      "departement": "971",
+      "altitude_m": 6,
+      "latitude": 16.33,
+      "longitude": -61.35,
+      "zclim": "Guadeloupe"
+    },
+    {
+      "numero": "97124006",
+      "nom": "Saint Claude",
+      "departement": "971",
+      "altitude_m": 607,
+      "latitude": 16.04,
+      "longitude": -61.7,
+      "zclim": "Guadeloupe"
+    },
+    {
+      "numero": "97213004",
+      "nom": "Lamentin",
+      "departement": "972",
+      "altitude_m": 5,
+      "latitude": 14.6,
+      "longitude": -61.0,
+      "zclim": "Martinique"
+    },
+    {
+      "numero": "97208001",
+      "nom": "Fond-Denis-Cadet",
+      "departement": "972",
+      "altitude_m": 493,
+      "latitude": 14.735,
+      "longitude": -61.145,
+      "zclim": "Martinique"
+    },
+    {
+      "numero": "97224004",
+      "nom": "Saint-Joseph- Lézard",
+      "departement": "972",
+      "altitude_m": 65,
+      "latitude": 14.659,
+      "longitude": -60.999,
+      "zclim": "Martinique"
+    },
+    {
+      "numero": "97307001",
+      "nom": "Cayenne - Matoury",
+      "departement": "973",
+      "altitude_m": 4,
+      "latitude": 4.492,
+      "longitude": -52.215,
+      "zclim": "Guyane"
+    },
+    {
+      "numero": "97308001",
+      "nom": "Saint-Georges",
+      "departement": "973",
+      "altitude_m": 6,
+      "latitude": 3.891,
+      "longitude": -51.805,
+      "zclim": "Guyane"
+    },
+    {
+      "numero": "97353001",
+      "nom": "Maripasoula",
+      "departement": "973",
+      "altitude_m": 106,
+      "latitude": 3.382,
+      "longitude": -54.01,
+      "zclim": "Guyane"
+    },
+    {
+      "numero": "97418110",
+      "nom": "Saint Denis - Gillot",
+      "departement": "974",
+      "altitude_m": 21,
+      "latitude": -20.88,
+      "longitude": 55.52,
+      "zclim": "La Réunion"
+    },
+    {
+      "numero": "97410238",
+      "nom": "Saint-Benoît",
+      "departement": "974",
+      "altitude_m": 43,
+      "latitude": -21.05,
+      "longitude": 55.73,
+      "zclim": "La Réunion"
+    }
+  ]
+}
