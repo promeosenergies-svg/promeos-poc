@@ -178,11 +178,60 @@ les formats UI ("Réunion", "La Réunion") avec mapping vers la forme JSON.
 
 ---
 
+## D-Phase5-Frontend-NonApplicable-001 — Frontend doit gérer score=null + confidence="non_applicable"
+
+**Détecté** : Sprint C-1 Phase 5 livraison (2026-05-03)
+
+**Comportement actuel** :
+- API `compute_site_compliance_score` retourne désormais `score=None` + `confidence="non_applicable"`
+  quand site sans obligation active
+- Format breakdown : `[{framework, score, weight, available, source}]` (inchangé V1)
+
+**Impact frontend** (16 fichiers identifiés Phase 5.1) :
+- `ScoreBreakdownPanel.jsx` : peut crasher sur `null.toFixed()` ou similaire
+- `ScoreCircle` : assume `score: Number`
+- `ConformitePage`, `RegOps`, `BacsWizard`, `ComplianceScoreHeader`, `SitesMap`, `useCockpitData` :
+  assume confidence ∈ {high, medium, low}
+
+**Action Sprint C-2** :
+- Audit défensif des 16 consommateurs
+- Affichage label "Non applicable" pour cas `score=null`
+- Confidence `non_applicable` → état UI dédié (pas erreur)
+- Tests E2E couvrant les 2 cas (avec/sans obligation)
+
+**Effort estimé** : 4-6 h (audit + fix + tests E2E)
+**Priorité** : 🟠 P1 (régression UX possible avant fix)
+**Sprint cible** : Sprint C-2 (FE cleanup) en P0 — bloquant si site démo HELIOS sans obligation
+
+---
+
+## D-Phase5-Score-None-Propagation-001 — Audit callsites pattern `r.score * weight` autres
+
+**Détecté** : Sprint C-1 Phase 5 régression mid-flight (2026-05-03)
+
+**Symptôme corrigé** : `compute_portfolio_compliance:377` crashait sur `r.score * weight`
+pour sites V2 NON_APPLICABLE (`score=None`). Fix : filtre `scorable_results` avant agrégation.
+
+**Suspicion** : d'autres callsites du même pattern peuvent crasher dans des cas
+non couverts par les tests existants (notamment dashboards aggregations).
+
+**Action** :
+- `grep -rn "score\s*\*\|\*\s*r\.score\|score.*weight\|weighted.*score" backend/`
+- Identifier callsites suspects
+- Pour chacun : vérifier gestion `None` propagation
+- Ajouter tests d'intégration multi-sites mix V2-applicable / V2-non_applicable
+
+**Effort estimé** : 2-3 h
+**Priorité** : 🟡 P2 (defensive — pas de bug connu actuellement)
+**Sprint cible** : Sprint C-2 ou C-4
+
+---
+
 ## Métriques tracker
 
 | Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
 |---|---|---|---|---|
-| 2026-05-03 | 5 | 0 | 1 | 4 |
+| 2026-05-03 | 7 | 0 | 2 | 5 |
 
 ---
 
