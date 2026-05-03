@@ -80,6 +80,11 @@ import ActionsImpact from './cockpit/ActionsImpact';
 // des usages » 4 sub-cards est remplacé par <SolFlexTeaser>.
 import SolFlexTeaser from '../ui/sol/SolFlexTeaser';
 import CostSimulationCard from '../components/purchase/CostSimulationCard';
+// VEX-Q2 fix (EPIC #274 Vague 3A) : remplace l'appel site_id=1 hardcodé
+// par l'endpoint portfolio agrégé `/api/purchase/cost-simulation/portfolio/{org_id}`
+// quand le scope contient plusieurs sites. Supprime l'exposition de 595 MWh
+// Siège HELIOS Paris sur la Vue Exécutive portefeuille.
+import CostSimulationPortfolioCard from '../components/purchase/CostSimulationPortfolioCard';
 import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
 import VecteurEnergetiqueCard from './cockpit/VecteurEnergetiqueCard';
 import AlertesPrioritaires from './cockpit/AlertesPrioritaires';
@@ -853,10 +858,15 @@ const Cockpit = () => {
             <Explain term="post_arenh">Comprendre</Explain>
           </span>
         </div>
-        <CostSimulationCard
-          siteId={isSingleSite ? singleSite?.id : scopedSites[0]?.id}
-          year={2026}
-        />
+        {/* VEX-Q2 fix (EPIC #274) : multi-site → portfolio agrégé (sum-of-parts
+            tous sites du scope). Single-site → card site-level inchangée.
+            Supprime le fallback scopedSites[0]?.id = site_id=1 HELIOS Paris
+            qui exposait 595 MWh au lieu de la facture portefeuille réelle. */}
+        {isSingleSite ? (
+          <CostSimulationCard siteId={singleSite?.id} year={2026} />
+        ) : (
+          <CostSimulationPortfolioCard year={2026} />
+        )}
       </section>
 
       {/* ═══════════ ZONE 2 : KPI DÉCIDEUR — déplacé dans ZONE 4 (détail) ═══════════ */}
