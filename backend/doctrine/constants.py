@@ -8,9 +8,13 @@ Référence engineering : SKILL.md PROMEOS — Constantes canoniques.
 """
 
 # ─── Facteurs CO₂ (kgCO2e/kWh) ─────────────────────────────────────────────
-# Source : ADEME Base Empreinte V23.6
+# Sources :
+#   - ELEC + GAZ NATUREL : ADEME Base Empreinte V23.6
+#   - GNL (gaz naturel liquéfié) : Arrêté 01/08/2025 NOR ATDL2430864A
+#     (annexe VII — ajout après 5e ligne tableau facteurs CO₂ vecteurs énergie)
 CO2_FACTOR_ELEC_KGCO2_PER_KWH = 0.052
 CO2_FACTOR_GAS_KGCO2_PER_KWH = 0.227
+CO2_FACTOR_GNL_KGCO2_PER_KWH = 0.238
 
 # ─── Énergie primaire ──────────────────────────────────────────────────────
 # Coefficient en vigueur depuis janvier 2026
@@ -126,6 +130,7 @@ TRAJECTORY_LEARNING_MONTHS_RAMP_UP = 18
 __all__ = [
     "CO2_FACTOR_ELEC_KGCO2_PER_KWH",
     "CO2_FACTOR_GAS_KGCO2_PER_KWH",
+    "CO2_FACTOR_GNL_KGCO2_PER_KWH",
     "PRIMARY_ENERGY_COEF_ELEC",
     "PRIMARY_ENERGY_COEF_GAS",
     "DT_MILESTONES",
