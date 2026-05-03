@@ -1,0 +1,71 @@
+{
+  "head": "ccfb6420",
+  "branch": "claude/refonte-sol2",
+  "generated_at": "2026-05-03T06:11:54.098Z",
+  "objectives": {
+    "obj1_boot_redirect": {
+      "ok": true,
+      "detail": "post-login landed on http://localhost:5175/cockpit/strategique",
+      "screenshot": "/Users/amine/projects/promeos-poc/tools/playwright/captures/sprint_alpha_smoke/01-boot-redirect.png"
+    },
+    "obj2_conformite_fetch": {
+      "ok": true,
+      "detail": "1x fetch — first: http://localhost:5175/api/v1/events/upcoming?page_key=conformite&persona=energy_manager&horizon_days=30&limit=20",
+      "screenshot": "/Users/amine/projects/promeos-poc/tools/playwright/captures/sprint_alpha_smoke/02-conformite.png",
+      "fetchCount": 1
+    },
+    "obj3_command_center_fetch": {
+      "ok": true,
+      "detail": "1x fetch — first: http://localhost:5175/api/v1/events/upcoming?page_key=cockpit_daily&persona=energy_manager&horizon_days=30&limit=20",
+      "screenshot": "/Users/amine/projects/promeos-poc/tools/playwright/captures/sprint_alpha_smoke/03-command-center.png",
+      "fetchCount": 1
+    },
+    "obj4_no_scattered": {
+      "ok": true,
+      "detail": "conformite=1, cockpit_daily=1 (max acceptable=3 pour StrictMode dev)"
+    },
+    "obj5_no_console_errors": {
+      "ok": false,
+      "detail": "console=2, pageErrors=0 — premier: Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s \n\nCheck the render method of `KBObligationsSection`.  \n    at Card ",
+      "errorCount": 2
+    }
+  },
+  "latency_ms_avg": 206,
+  "events_fetch_count_total": 5,
+  "events_fetch_404_count": 0,
+  "events_fetch_200_count": 5,
+  "console_errors_count": 2,
+  "page_errors_count": 0,
+  "sample_events_fetches": [
+    {
+      "url": "http://localhost:5175/api/v1/events/upcoming?horizon_days=30&limit=20",
+      "status": 200,
+      "durMs": 234
+    },
+    {
+      "url": "http://localhost:5175/api/v1/events/upcoming?page_key=conformite&persona=energy_manager&horizon_days=30&limit=20",
+      "status": 200,
+      "durMs": 178
+    },
+    {
+      "url": "http://localhost:5175/api/v1/events/upcoming?page_key=cockpit_daily&persona=energy_manager&horizon_days=30&limit=20",
+      "status": 200,
+      "durMs": 225
+    },
+    {
+      "url": "http://localhost:5175/api/v1/events/upcoming?page_key=conformite&persona=energy_manager&horizon_days=30&limit=20",
+      "status": 200,
+      "durMs": 169
+    },
+    {
+      "url": "http://localhost:5175/api/v1/events/upcoming?page_key=cockpit_daily&persona=energy_manager&horizon_days=30&limit=20",
+      "status": 200,
+      "durMs": 222
+    }
+  ],
+  "sample_console_errors": [
+    "Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s \n\nCheck the render method of `KBObligationsSection`.  \n    at Card (http://localhost:5175/src/ui/Card.jsx:17:32)\n    at KBObligationsSection (http://localhost:5175/src/pages/conformite-tabs/ObligationsTab.jsx?t=1777788212099:226:33)\n    at ObligationsTab (http://localhost:5175/src/pages/conformite-tabs/ObligationsTab.jsx?t=1777788212099:1768:3)\n    at div\n    at PageShell (http://localhost:5175/src/ui/PageShell.jsx?t=1777743424106:19:9)\n    at ConformitePage (http://localhost:5175/src/pages/ConformitePage.jsx?t=1777788212099:106:80)\n    at Suspense\n    at PageSuspense (http://localhost:5175/src/App.jsx?t=1777788212099:146:25)\n    at RenderedRoute (http://localhost:5175/node_modules/.vite-sol2/deps/react-router-dom.js?v=086574d1:4131:5)\n    at Outlet (http://localhost:5175/node_modules/.vite-sol2/deps/react-router-dom.js?v=086574d1:4537:26)\n    at ActionDrawerProvider (http://localhost:5175/src/contexts/ActionDrawerContext.jsx?t=1777788212099:22:40)\n    at ToastProvider (http://localhost:5175/src/ui/ToastProvider.jsx:34:33)\n    at main\n    at div\n    at div\n    at AppShell (http://localhost:5175/src/layout/AppShell.jsx?t=1777788212099:295:20)\n    at RequireAuth (http://localhost:5175/src/components/RequireAuth.jsx?t=1777788212099:20:39)\n    at RenderedRoute (http://localhost:5175/node_modules/.vite-sol2/deps/react-router-dom.js?v=086574d1:4131:5)\n    at Routes (http://localhost:5175/node_modules/.vite-sol2/deps/react-router-dom.js?v=086574d1:4601:5)\n    at Router (http://localhost:5175/node_modules/.vite-sol2/deps/react-router-dom.js?v=086574d1:4544:15)\n    at BrowserRouter (http://localhost:5175/node_modules/.vite-sol2/deps/react-router-dom.js?v=086574d1:5290:5)\n    at EventsProvider (http://localhost:5175/src/contexts/EventsContext.jsx?t=1777788212099:38:34)\n    at NavigationBadgesProvider (http://localhost:5175/src/contexts/NavigationBadgesContext.jsx?t=1777788212099:30:44)\n    at ErrorBoundary (http://localhost:5175/src/components/ErrorBoundary.jsx?t=1777725516189:8:5)\n    at PriceReferenceProvider (http://localhost:5175/src/contexts/PriceReferenceContext.jsx:27:42)\n    at EmissionFactorsProvider (http://localhost:5175/src/contexts/EmissionFactorsContext.jsx:34:43)\n    at ExpertModeProvider (http://localhost:5175/src/contexts/ExpertModeContext.jsx:29:38)\n    at ScopeProvider (http://localhost:5175/src/contexts/ScopeContext.jsx?t=1777788212099:65:33)\n    at DemoProvider (http://localhost:5175/src/contexts/DemoContext.jsx:20:32)\n    at AuthProvider (http://localhost:5175/src/contexts/AuthContext.jsx?t=1777788212099:22:32)\n    at App (http://localhost:5175/src/App.jsx?t=1777788212099:197:53)",
+    "Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s \n\nCheck the render method of `KBObligationsSection`.  \n    at Card (http://localhost:5175/src/ui/Card.jsx:17:32)\n    at KBObligationsSection (http://localhost:5175/src/pages/conformite-tabs/ObligationsTab.jsx?t=1777788212099:226:33)\n    at ObligationsTab (http://localhost:5175/src/pages/conformite-tabs/ObligationsTab.jsx?t=1777788212099:1768:3)\n    at div\n    at PageShell (http://localhost:5175/src/ui/PageShell.jsx?t=1777743424106:19:9)\n    at ConformitePage (http://localhost:5175/src/pages/ConformitePage.jsx?t=1777788212099:106:80)\n    at Suspense\n    at PageSuspense (http://localhost:5175/src/App.jsx?t=1777788212099:146:25)\n    at RenderedRoute (http://localhost:5175/node_modules/.vite-sol2/deps/react-router-dom.js?v=086574d1:4131:5)\n    at Outlet (http://localhost:5175/node_modules/.vite-sol2/deps/react-router-dom.js?v=086574d1:4537:26)\n    at ActionDrawerProvider (http://localhost:5175/src/contexts/ActionDrawerContext.jsx?t=1777788212099:22:40)\n    at ToastProvider (http://localhost:5175/src/ui/ToastProvider.jsx:34:33)\n    at main\n    at div\n    at div\n    at AppShell (http://localhost:5175/src/layout/AppShell.jsx?t=1777788212099:295:20)\n    at RequireAuth (http://localhost:5175/src/components/RequireAuth.jsx?t=1777788212099:20:39)\n    at RenderedRoute (http://localhost:5175/node_modules/.vite-sol2/deps/react-router-dom.js?v=086574d1:4131:5)\n    at Routes (http://localhost:5175/node_modules/.vite-sol2/deps/react-router-dom.js?v=086574d1:4601:5)\n    at Router (http://localhost:5175/node_modules/.vite-sol2/deps/react-router-dom.js?v=086574d1:4544:15)\n    at BrowserRouter (http://localhost:5175/node_modules/.vite-sol2/deps/react-router-dom.js?v=086574d1:5290:5)\n    at EventsProvider (http://localhost:5175/src/contexts/EventsContext.jsx?t=1777788212099:38:34)\n    at NavigationBadgesProvider (http://localhost:5175/src/contexts/NavigationBadgesContext.jsx?t=1777788212099:30:44)\n    at ErrorBoundary (http://localhost:5175/src/components/ErrorBoundary.jsx?t=1777725516189:8:5)\n    at PriceReferenceProvider (http://localhost:5175/src/contexts/PriceReferenceContext.jsx:27:42)\n    at EmissionFactorsProvider (http://localhost:5175/src/contexts/EmissionFactorsContext.jsx:34:43)\n    at ExpertModeProvider (http://localhost:5175/src/contexts/ExpertModeContext.jsx:29:38)\n    at ScopeProvider (http://localhost:5175/src/contexts/ScopeContext.jsx?t=1777788212099:65:33)\n    at DemoProvider (http://localhost:5175/src/contexts/DemoContext.jsx:20:32)\n    at AuthProvider (http://localhost:5175/src/contexts/AuthContext.jsx?t=1777788212099:22:32)\n    at App (http://localhost:5175/src/App.jsx?t=1777788212099:197:53)"
+  ],
+  "sample_page_errors": []
+}
