@@ -117,5 +117,21 @@ def preview_cascade_impact(
     coerced_value = _coerce_value(field, new_value)
     field_full = f"Site.{field}"
 
-    result = cascade_impact_preview(db, site, field_full, coerced_value)
+    # Sprint C-2 Phase 1.3 : propager contexte audit (correlation_id/ip/user_agent)
+    correlation_id = request.headers.get("X-Correlation-ID") if request else None
+    ip_address = request.client.host if request and request.client else None
+    user_agent = request.headers.get("user-agent") if request else None
+    user_id = getattr(auth, "user_id", None) if auth else None
+
+    result = cascade_impact_preview(
+        db,
+        site,
+        field_full,
+        coerced_value,
+        user_id=user_id,
+        org_id=org_id,
+        correlation_id=correlation_id,
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
     return result.to_dict()

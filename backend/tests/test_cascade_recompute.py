@@ -228,18 +228,31 @@ def test_cascade_preview_resilience_partial_data(site_with_operat_data):
         db.commit()
 
 
-def test_cascade_audit_log_emitted(site_with_operat_data, caplog):
-    """Preview cascade émet log structuré CASCADE_AUDIT."""
-    import logging
+def test_cascade_audit_log_emitted(site_with_operat_data):
+    """Cascade emit audit trail via audit_log_service.log_cascade.
 
-    from regops.services.cascade_recompute_service import cascade_impact_preview
+    Sprint C-2 Phase 1.3 — comportement migré : le legacy `_logger.info("CASCADE_AUDIT")`
+    a été remplacé par persistance via `audit_log_service.log_cascade()`.
+    Cf. tests/test_cascade_recompute_audit_log_wiring.py pour validation complète.
+
+    Ici on vérifie le contrat minimal : l'appel à log_cascade est bien effectué.
+    """
+
+    from regops.services.cascade_recompute_service import cascade_recompute_on_change
 
     site, db = site_with_operat_data
-    with caplog.at_level(logging.INFO, logger="regops.services.cascade_recompute_service"):
-        cascade_impact_preview(db, site, "Site.code_postal", "13001")
 
-    audit_logs = [r for r in caplog.records if "CASCADE_AUDIT" in r.message]
-    assert len(audit_logs) >= 1, "Aucun CASCADE_AUDIT log émis"
+    with patch("services.audit_log_service.log_cascade") as mock_log_cascade:
+        cascade_recompute_on_change(
+            db,
+            site,
+            "Site.altitude_m",
+            old_value=site.altitude_m,
+            new_value=site.altitude_m,
+            persist=True,
+            org_id=999_010,
+        )
+        assert mock_log_cascade.called, "log_cascade n'a pas été appelé par la cascade"
 
 
 # ─── Endpoint /api/v1/sites/{id}/cascade-impact ──────────────────────────────

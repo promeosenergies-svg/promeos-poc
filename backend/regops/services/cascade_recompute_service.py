@@ -265,6 +265,11 @@ def cascade_recompute_on_change(
     new_value: Any = None,
     *,
     persist: bool = True,
+    user_id: Optional[int] = None,
+    org_id: Optional[int] = None,
+    correlation_id: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
 ) -> CascadeResult:
     """Détection automatique des recalculs cascadants après modification.
 
@@ -274,12 +279,16 @@ def cascade_recompute_on_change(
         field_modified: ex "Site.code_postal" (format "ClassName.attr")
         old_value, new_value: valeurs avant/après pour audit
         persist: si True, applique les recalculs en DB (commit). Sinon dry-run.
+        user_id, org_id, correlation_id, ip_address, user_agent: contexte pour
+            audit trail (Sprint C-2 Phase 1.3 — propagés depuis routes/services
+            callers vers audit_log_service.log_cascade()).
 
     Returns:
         CascadeResult avec liste des actions + erreurs éventuelles.
 
     Résilience : si une cascade plante, les autres continuent. Les erreurs sont
-    collectées dans CascadeAction.error.
+    collectées dans CascadeAction.error. Un échec d'audit log NE BLOQUE PAS la
+    cascade (try/except autour de log_cascade).
     """
     cascade_callables = CASCADE_MAP_MVP_SPRINT_C1.get(field_modified, [])
     actions: list[CascadeAction] = []
@@ -332,12 +341,42 @@ def cascade_recompute_on_change(
         computed_at=datetime.utcnow().isoformat(),
     )
 
-    # Audit trail (logs structurés MVP — table dédiée audit_log_patrimoine = R9 Sprint C-2)
-    _logger.info(
-        "CASCADE_AUDIT: %s",
-        result.to_dict(),
-        extra={"cascade_audit": True},
-    )
+    # Audit trail Sprint C-2 Phase 1.3 — wiring vers audit_log_service.log_cascade()
+    # ⚠️ Résilience : un échec d'audit log NE BLOQUE PAS la cascade. La fonction
+    # de cascade reste fonctionnelle même si la persistance audit échoue (ex:
+    # AuditLog table absente, FK invalide, contrainte DB). L'erreur est loggée
+    # en warning + fallback sur logger.info structuré (compat backward Phase 6 MVP).
+    try:
+        from services.audit_log_service import log_cascade
+
+        log_cascade(
+            db,
+            user_id=user_id,
+            org_id=org_id,
+            cascade_result=result,
+            correlation_id=correlation_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+        if persist:
+            # Commit le log si on est en mode persist (sinon laissé au caller / SAVEPOINT)
+            try:
+                db.commit()
+            except Exception:
+                db.rollback()
+    except Exception as audit_err:
+        # Fallback log structuré stdout — cascade reste fonctionnelle
+        _logger.warning(
+            "audit_log_service.log_cascade failed for %s: %s — fallback stdout log",
+            field_modified,
+            audit_err,
+            exc_info=True,
+        )
+        _logger.info(
+            "CASCADE_AUDIT_FALLBACK: %s",
+            result.to_dict(),
+            extra={"cascade_audit": True, "fallback": True},
+        )
 
     return result
 
@@ -347,6 +386,12 @@ def cascade_impact_preview(
     entity: Any,
     field_modified: str,
     new_value: Any,
+    *,
+    user_id: Optional[int] = None,
+    org_id: Optional[int] = None,
+    correlation_id: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
 ) -> CascadeResult:
     """Preview cascade SANS modifier la donnée (dry-run strict via SAVEPOINT).
 
@@ -354,6 +399,10 @@ def cascade_impact_preview(
     (`db.begin_nested()`). Toute modification ORM (y compris `db.flush()`
     déclenché par sub-services comme `sync_site_unified_score`) est rollback à
     la fin → DB et session reviennent à l'état initial.
+
+    Sprint C-2 Phase 1.3 : kwargs audit propagés à `cascade_recompute_on_change`.
+    Le SAVEPOINT englobe AuditLog créé par `log_cascade` → preview ne persiste
+    AUCUN audit log (cohérent avec dry-run sémantique).
 
     Cela couvre les cas où des sous-services (compliance_coordinator) appellent
     `db.flush()` pendant la cascade — sans rollback explicite, leurs UPDATEs
@@ -365,7 +414,19 @@ def cascade_impact_preview(
     savepoint = db.begin_nested()
     try:
         setattr(entity, field_attr, new_value)
-        result = cascade_recompute_on_change(db, entity, field_modified, old_value, new_value, persist=False)
+        result = cascade_recompute_on_change(
+            db,
+            entity,
+            field_modified,
+            old_value,
+            new_value,
+            persist=False,
+            user_id=user_id,
+            org_id=org_id,
+            correlation_id=correlation_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
         return result
     finally:
         # Rollback du SAVEPOINT → toute modification ORM/DB pending est annulée
