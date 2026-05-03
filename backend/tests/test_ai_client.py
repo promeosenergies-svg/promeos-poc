@@ -154,11 +154,15 @@ class TestAgentStubs:
         assert result["mode"] == "stub"
 
     def test_exec_brief_stub_has_fields(self):
-        """exec_brief_agent._stub_response should return required fields."""
+        """exec_brief_agent._stub_response should return required fields.
+
+        Signature updated to (data, kb_context) after KB anchoring refactor.
+        """
         from ai_layer.agents.exec_brief_agent import _stub_response
 
         data = {"org_name": "Test Org", "total_sites": 5, "total_surface_m2": 10000, "total_risk_eur": 25000}
-        result = _stub_response(data)
+        kb_context = {"applicable_items": [], "kb_item_ids": [], "total_items": 0}
+        result = _stub_response(data, kb_context)
         assert "executive_summary" in result
         assert "key_metrics" in result
         assert result["mode"] == "stub"

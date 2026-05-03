@@ -217,12 +217,17 @@ function KBObligationsSection({ scopedSites }) {
 
       {items
         .sort((a, b) => (KB_SEVERITY_ORDER[a.severity] ?? 9) - (KB_SEVERITY_ORDER[b.severity] ?? 9))
-        .map((item) => (
-          <Card key={item.id} className="border-l-4 border-l-blue-400">
+        .map((item, idx) => (
+          <Card
+            key={item.kb_item_id ?? item.id ?? `kb-${idx}`}
+            className="border-l-4 border-l-blue-400"
+          >
             <CardBody className="py-3">
               <div
                 className="flex items-start gap-3 cursor-pointer"
-                onClick={() => setExpandedKb(expandedKb === item.id ? null : item.id)}
+                onClick={() =>
+                  setExpandedKb(expandedKb === item.kb_item_id ? null : item.kb_item_id)
+                }
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -243,10 +248,10 @@ function KBObligationsSection({ scopedSites }) {
                   <h4 className="text-sm font-semibold text-gray-900 leading-tight">
                     {item.title}
                   </h4>
-                  {expandedKb !== item.id && item.summary && (
+                  {expandedKb !== item.kb_item_id && item.summary && (
                     <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.summary}</p>
                   )}
-                  {item.why && expandedKb !== item.id && (
+                  {item.why && expandedKb !== item.kb_item_id && (
                     <p className="text-xs text-blue-600 mt-1">
                       <Zap size={11} className="inline mr-1" />
                       {item.why}
@@ -254,11 +259,15 @@ function KBObligationsSection({ scopedSites }) {
                   )}
                 </div>
                 <button className="p-1 text-gray-400 hover:text-gray-600 shrink-0">
-                  {expandedKb === item.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  {expandedKb === item.kb_item_id ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
                 </button>
               </div>
 
-              {expandedKb === item.id && (
+              {expandedKb === item.kb_item_id && (
                 <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
                   {item.why && (
                     <div className="p-3 bg-blue-50 rounded-lg">
@@ -335,7 +344,7 @@ function KBObligationsSection({ scopedSites }) {
                     </div>
                   )}
                   <div className="flex items-center gap-4 text-xs text-gray-400">
-                    {isExpert && <span>KB ID: {item.id}</span>}
+                    {isExpert && <span>KB ID: {item.kb_item_id}</span>}
                     {item.updated_at && <span>MAJ: {item.updated_at}</span>}
                   </div>
                 </div>

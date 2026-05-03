@@ -85,7 +85,7 @@ function PanelLink({
         ${
           isActive
             ? `${t.activeBg} text-slate-900 font-medium border-l-2 ${t.activeBorder} pl-2`
-            : `text-slate-600 hover:${t.hoverBg.replace('bg-', 'bg-')} hover:text-slate-900 font-normal`
+            : `text-slate-600 ${t.hoverClass ?? 'hover:bg-slate-100/30'} hover:text-slate-900 font-normal`
         }
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1`
       }

@@ -1217,13 +1217,14 @@ export default function CockpitPilotage() {
     // Anchors actuels : `decision-{rank}` (rendus par FileTraitementRow).
     // Format accepté : "action-{id}" ou "decision-{rank}" — fallback brut.
     const targetIds = [focus, focus.replace('action-', 'decision-')];
+    let t2 = null;
     const tryScroll = () => {
       for (const id of targetIds) {
         const el = document.getElementById(id);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           el.style.outline = '2px solid var(--sol-attention-fg)';
-          setTimeout(() => {
+          t2 = setTimeout(() => {
             el.style.outline = '';
           }, 2400);
           return true;
@@ -1233,7 +1234,10 @@ export default function CockpitPilotage() {
     };
     // Petit délai pour laisser le DOM se hydrater.
     const t = setTimeout(tryScroll, 200);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      if (t2) clearTimeout(t2);
+    };
   }, [searchParams, prioritiesLoading]);
 
   const sitesCount = facts?.scope?.site_count ?? org?.sites_count ?? 0;

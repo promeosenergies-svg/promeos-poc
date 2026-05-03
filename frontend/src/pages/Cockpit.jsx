@@ -764,7 +764,7 @@ const Cockpit = () => {
                     {cockpitKpis?.risqueBreakdown?.reglementaire_eur > 0 && (
                       <span className="text-amber-700 text-xs block mt-0.5">
                         {fmtEur(cockpitKpis.risqueBreakdown.reglementaire_eur)} si non rattrapé ·
-                        Actions P0 à lancer avant le 30 avril 2026
+                        Actions P0 à lancer rapidement
                       </span>
                     )}
                   </div>

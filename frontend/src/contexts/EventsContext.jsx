@@ -132,8 +132,7 @@ export function EventsProvider({ children }) {
       if (intervalRef.current) clearTimeout(intervalRef.current);
       if (abortRef.current) abortRef.current.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentParams.pageKey, currentParams.persona, currentParams.horizonDays]);
+  }, [currentParams.pageKey, currentParams.persona, currentParams.horizonDays, fetchEvents]);
 
   const value = { ...state, currentParams, refetch };
 

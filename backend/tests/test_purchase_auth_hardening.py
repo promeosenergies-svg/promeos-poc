@@ -185,7 +185,10 @@ class TestSeedEndpointGuards:
         _create_org_site(db_session)
         resp = client.post("/api/purchase/seed-demo")
         assert resp.status_code == 403
-        assert "DEMO_SEED_ENABLED" in resp.json()["detail"]
+        # error_handler.py wrap HTTPException en APIError (champ "message", pas "detail")
+        body = resp.json()
+        error_text = body.get("message") or body.get("detail", "")
+        assert "DEMO_SEED_ENABLED" in error_text
 
     @patch("routes.purchase.DEMO_SEED_ENABLED", False)
     def test_seed_wow_happy_403_when_disabled(self, client, db_session):
