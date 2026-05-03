@@ -1,0 +1,4745 @@
+
+===== PAGE 1 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 1 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Arrêté du 10 avril 2020 relatif aux obligations
+d'actions de réduction des consommations
+d'énergie finale dans des bâtiments à usage
+tertiaire
+EN VIGUEUR AU 03 MAI 2026
+Dernière mise à jour des données de ce texte : 07 septembre 2025
+NOR : LOGL2005904A
+JORF n°0108 du 3 mai 2020
+Le ministre auprès de la ministre de la cohésion des territoires et des
+relations avec les collectivités territoriales, la ministre de la transition
+écologique et solidaire, la ministre de la cohésion des territoires et des
+relations avec les collectivités territoriales, le ministre chargé de l'action et
+des comptes publics, la ministre des outre-mer et le ministre de la culture,
+Vu le code de la construction et de l'habitation , notamment ses articles R.
+174-22 à R. 174-32 et R. 185-2,
+Arrêtent :
+Titre Ier : GÉNÉRALITÉS (Articles 1 à 2)
+RÉPUBLIQUE
+FRANÇAISE
+Legifrance.gouv.fr
+Le service public de la diffusion du droit
+
+===== PAGE 2 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 2 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Article 1
+VERSION EN VIGUEUR DEPUIS LE 25 AVRIL 2022
+Modifié par Arrêté du 13 avril 2022 - art. 1
+Champ d'application.
+Le présent arrêté a pour objet de préciser les modalités d'application
+des dispositions prévues aux articles R. 174-22 à R. 174-32 du code de la
+construction et de l'habitation.
+Ces dispositions s'appliquent aux bâtiments, parties de bâtiments ou
+ensemble de bâtiments à usage tertiaire situés en France métropolitaine
+ainsi qu'en Guadeloupe, en Guyane, en Martinique, à La Réunion et à
+Mayotte.
+Article 2
+VERSION EN VIGUEUR DEPUIS LE 15 MARS 2024
+Modifié par Arrêté du 20 février 2024 - art. 2
+Définitions.
+Au sens du présent arrêté, doit être entendu comme étant :
+a) Une activité tertiaire, une activité économique (marchande ou non
+marchande) qui ne relève pas du secteur primaire ou du secteur
+secondaire. Le secteur primaire regroupe les activités dont la finalité
+consiste en une exploitation des ressources naturelles (l'agriculture et
+l'élevage, la pêche, l'exploitation forestière ainsi que les exploitations
+minières et gisements). Le secteur secondaire regroupe l'ensemble des
+activités consistant en une transformation plus ou moins élaborée des
+matières premières qui sont issues du secteur primaire et comprend des
+activités aussi variées que l'industrie du bois, l'industrie agro-
+alimentaire, le raffinage du pétrole, la production industrielle
+(métallurgie, automobile, aéronautique, navale, chimie,
+pharmaceutique, électronique, meubles, etc.), la construction.
+
+===== PAGE 3 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 3 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+b) Un propriétaire, celui qui dispose de la propriété immobilière à savoir
+un propriétaire unique, un coindivisaire ou un copropriétaire.
+c) Une catégorie d'activité, un secteur d'activité [économique] qui
+présente une même activité principale, marchande ou non marchande,
+exercée par une autorité publique ou privée, ou sous son contrôle.
+L'activité d'un secteur n'est pas toujours homogène et peut faire l'objet
+de subdivision en sous-catégories d'activités.
+d) Un local d'activité, tout local qui permet à une entreprise, un
+professionnel ou une autorité publique de réaliser ou regrouper ses
+activités en un lieu unique. Il existe divers types de locaux d'activités :
+bureaux professionnels, commerces, établissement d'enseignement,
+établissement de santé, locaux sportifs, locaux culturels, entrepôts, etc.
+e) Une entité fonctionnelle, une entité correspondant à un
+établissement au sens de la définition de l'Institut national de la
+statistique et des études économiques (INSEE), à savoir : une unité de
+production ou d'activité géographiquement individualisée, exploitée par
+une entité juridique. La notion d' “ unité géographiquement
+individualisée ” se rattache à une localisation géographique précise dans
+laquelle les activités sont hébergées. Une entité fonctionnelle peut être
+constituée soit par un local d'activité, soit par un ensemble de locaux
+d'activités connexes, contenu dans un bâtiment, une partie de bâtiment
+ou un ensemble de bâtiments situés sur une même unité foncière ou sur
+un même site. L'établissement produit des biens ou des services : ce
+peut-être un site industriel, un commerce, un hôtel, un restaurant, un
+établissement d'enseignement, un établissement hospitalier, un
+établissement culturel, un équipement sportif, etc.
+f) Des indicateurs d'intensité d'usage, tous les paramètres qui
+caractérisent de façon pertinente la situation d'une activité et leurs
+impacts en matière de consommations d'énergie. Ces indicateurs
+permettent en outre de comparer la situation d'une typologie d'activité
+
+===== PAGE 4 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 4 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+sur un même référentiel et de procéder à la modulation des objectifs de
+consommations d'énergie finale en fonction de la valeur de chacun de
+ces paramètres.
+g) L'énergie finale, l'énergie délivrée au consommateur final. La
+conversion en kilowattheures d'énergie finale des énergies relevées ou
+facturées s'effectue selon les modalités présentées en Annexe I du
+présent arrêté. Les consommations d'énergie finale prises en
+considération sont celles des postes de consommations énergétiques
+relatifs d'une part à l'ambiance thermique générale et à la ventilation
+des locaux, en tenant compte des modalités d'occupation, et d'autre
+part aux autres usages immobiliers ainsi qu'aux usages spécifiques et de
+procédés.
+h) Une zone climatique, nommée H1a, H1b, H1c, H2a, H2b, H2c, H2d ou
+H3, un regroupement de départements métropolitains ; la zone
+climatique correspondant à chaque département est précisée dans la
+dernière colonne “ Zclim ” du tableau en annexe III du présent arrêté.
+i) L'année de référence, les douze mois durant lesquels la consommation
+énergétique de référence est considérée. L'article 3 du présent arrêté
+précise les modalités de détermination de cette année ;
+j) La surface de consommations énergétiques, la surface sur laquelle
+l'ensemble des consommations énergétiques sont prises en compte,
+intégrant notamment les surfaces de stationnement intérieur et de
+locaux techniques de l'entité fonctionnelle, au contraire de la surface de
+plancher. Cette surface est utilisée pour déterminer les consommations
+surfaciques et les niveaux de consommation exprimés en valeur relative
+et en valeur absolue de l'entité fonctionnelle ;
+k) La consommation énergétique de référence, la consommation définie
+au I-1° de l'article R. 174-23 du code de la construction et de
+l'habitation. L'article 3 du présent arrêté précise les modalités de
+détermination de cette consommation, et l'article 5 les modalités de
+son ajustement en fonction des variations climatiques. Une fois ajustée
+en fonction des variations climatiques, elle est notée Créf ;
+
+===== PAGE 5 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 5 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+l) Le niveau de consommation exprimé en valeur relative (noté Crelat),
+l'objectif défini au I-1° de l'article L. 174-1 du code de la construction et
+de l'habitation. L'article 3 du présent arrêté précise les modalités de
+détermination de ce niveau, et le chapitre 2 les modalités de sa
+modulation ;
+m) Le niveau de consommation exprimé en valeur absolue (noté Cabs),
+l'objectif défini au I-2° de l'article L. 174-1 du code de la construction et
+de l'habitation. L'article 4 du présent arrêté précise les modalités de
+détermination de ce niveau, et le chapitre 2 les modalités de sa
+modulation ;
+n) Le dossier technique, le dossier visé au IV de l'article R. 174-26 du
+code de la construction et de l'habitation. Le contenu de ce dossier
+technique est précisé à l'article 7 du présent arrêté ;
+o) La plateforme de recueil et de suivi, la plateforme numérique visée à
+l'article R. 174-27 du code de la construction et de l'habitation. Les
+dispositions relatives à cette plateforme sont précisées au chapitre 3 du
+présent arrêté. Cette plateforme est également dénommée “
+plateforme OPERAT ” ;
+p) Etalon, la qualification pour toute valeur basée sur les intensités
+d'usage étalon fixées en annexe II pour chaque catégorie d'activité.
+Titre II : MODALITÉS D'APPLICATION (Articles 3 à 18)
+Chapitre Ier : Objectifs et niveaux de consommation
+d'énergie finale (Articles 3 à 5)
+Article 3
+VERSION EN VIGUEUR DEPUIS LE 15 MARS 2024
+Modifié par Arrêté du 20 février 2024 - art. 3
+Modifié par Arrêté du 20 février 2024 - art. 4
+Consommation énergétique de référence et niveau de
+consommation exprimé en valeur relative par rapport au niveau de
+consommation énergétique de référence.
+
+===== PAGE 6 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 6 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+I. - La consommation énergétique de référence visée au 1° du I de
+l'article R. 174-23 du code de la construction et de l'habitation
+porte sur la consommation énergétique totale, détaillée par type
+d'énergie consommée pour les besoins de fonctionnement des
+activités tertiaires au sein du bâtiment, de la partie de bâtiments ou
+ensembles de bâtiments concernés pour l'année de référence. Les
+données de consommations énergétiques détaillées sont fournies à
+partir de factures ou tout autre moyen approprié d'effet équivalent.
+Elles sont mesurées ou affectées par répartition.
+La donnée relative à la consommation énergétique de référence est
+complétée par la surface correspondante, en particulier s'il y a eu
+une évolution de la surface assujettie entre l'année de référence et
+la première remontée de données de consommations énergétiques
+annuelles.
+A défaut de renseignement portant sur l'année de référence avant
+le 30 septembre 2027, la consommation de référence correspond à
+la consommation de la première année pleine d'exploitation dont
+les consommations énergétiques sont remontées sur la plateforme
+OPERAT ;
+L'année de référence est comprise entre 2010 et 2022, ou
+correspond à la première année pleine d'exploitation dont les
+consommations énergétiques sont remontées sur la plateforme
+OPERAT.
+Pour les bâtiments neufs, la consommation énergétique de
+référence établie sur la base de la première année pleine
+d'exploitation pourra être corrigée à l'issue de la phase de mise en
+service et de réglage des systèmes techniques du bâtiment. Cette
+correction permettra de déduire les surconsommations
+énergétiques liées à la surcharge hygrométrique du bâtiment neuf et
+de prendre en considération l'optimisation du fonctionnement
+dynamique du bâtiment après réglage des systèmes techniques à
+leur rendement optimum et l'efficience des systèmes de contrôle et
+
+===== PAGE 7 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 7 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+de gestion active des équipements. Cette correction ne pourra pas
+être effectuée au-delà de trois ans après la date de réception du
+bâtiment.
+L'année de référence comporte 12 mois consécutifs. Les dates de
+début et de fin de l'année de référence sont précisées dans les
+données de référence remontées sur la plateforme OPERAT visée à
+l'article R. 174-27 du code de la construction et de l'habitation.
+Cette année de référence est rapportée, en identification, à l'année
+calendaire sur laquelle le nombre de mois de consommation
+d'énergie est majoritaire ou, à défaut, à l'année du premier mois
+référencé.
+Sur simple demande de l'autorité administrative compétente,
+l'assujetti doit pouvoir fournir les justificatifs des consommations
+d'énergie de l'année de référence, expurgées s'il le souhaite de
+toutes informations contractuelles et tarifaires dans un délai de 3
+mois.
+En cas d'inoccupation partielle des bâtiments, partie de bâtiments
+ou ensemble de bâtiments assujettis, il est permis de reconstituer la
+consommation énergétique de référence par l'application des ratios
+de consommation d'énergie finale, exprimés en kWh/m2, des
+parties exploitées aux parties non exploitées.
+Pour les entités fonctionnelles qui comprennent d'autres activités
+ne relevant pas du secteur tertiaire assujetti et qui ne bénéficient
+pas pour l'année de référence de données de consommations
+d'énergie différenciées entre les locaux d'activités tertiaires
+assujettis et les autres locaux d'activités non assujettis, la
+consommation énergétique de référence des locaux tertiaires
+assujettis peut être reconstituée. Cette reconstitution de
+consommation énergétique de référence s'établit sur la base de la
+caractérisation de la situation existante et sa comparaison avec des
+données d'activités historiques. La situation existante peut être
+déterminée à partir d'une campagne de mesures sur une durée
+suffisamment représentative, de sous comptage mis en place de
+
+===== PAGE 8 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 8 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+façon pérenne, ou à défaut par une simulation dont les données
+sont justifiées. La comparaison avec les données d'activités
+historiques s'appuie notamment sur la proportion des activités
+tertiaires assujetties et des autres activités non assujetties, sur la
+base d'indicateurs représentatifs des activités respectives, pour la
+situation existante et pour l'année de référence choisie.
+Les éléments explicatifs de reconstitution d'une consommation
+énergétique de référence sont renseignés ou importés sur la
+plateforme OPERAT.
+La consommation énergétique de l'année référence de
+combustibles stockables peut être déterminée à l'aide :
+-de données issues de comptage ;
+-d'une estimation des volumes de livraison basée sur des relevés de
+niveaux ;
+-d'une estimation par lissage des volumes de livraison sur une
+période regroupant les dernières années de consommations
+énergétiques dans laquelle l'année de référence est intégrée, sans
+dépasser 4 années de consommations.
+Dans la mesure où une source énergétique ne serait pas recensée
+dans le tableau des facteurs de conversion en énergie finale des
+énergies consommées figurant en annexe I du présent arrêté, une
+demande d'intégration de nouvelle source énergétique peut être
+adressée au ministre chargé de la construction et de l'habitation et
+au ministre chargé de l'énergie. Cette demande est établie par les
+représentants des sociétés chargées de la fourniture de cette source
+énergétique. Elle est composée d'une note technique qui précise les
+modes de production de la source énergétique, les modes
+d'acheminement de la source énergétique et l'unité de facturation
+afin de déterminer : son unité de facturation en énergie finale, le
+coefficient de conversion en kilowattheure d'énergie finale en PCI,
+
+===== PAGE 9 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 9 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+le coefficient de conversion en énergie primaire et le facteur en
+émission de gaz à effet de serre exprimé en équivalent en kg de
+CO2 par kilowattheure d'énergie finale en PCI.
+II. - Cette consommation de référence d'énergie finale, exprimée en
+kWh/m2/an de surface de consommations énergétiques (1) est
+ajustée en fonction des variations climatiques dans les conditions
+prévues à l'article 5 du présent arrêté. Une fois cet ajustement
+réalisé, elle est notée Créf.
+Afin de pouvoir bénéficier de la prise en compte des
+consommations de l'année de référence lors d'un changement
+d'assujetti (nouveau contrat de bail, acquisition), les assujettis
+déclarent la ou les entités fonctionnelles assujetties auxquelles ils
+succèdent, appelées “EFA liées”, en renseignant :
+- le numéro d'identification de ces entités fonctionnelles assujetties
+provenant de la plateforme OPERAT, fourni par les assujettis
+auxquels ils succèdent ;
+- les surfaces concernées pour chaque entité fonctionnelle
+assujettie à laquelle ils succèdent ;
+- la date de début de propriété le cas échéant.
+A défaut, l'année de référence ne pourra être antérieure à la date de
+changement d'assujetti.
+Lorsque l'entité fonctionnelle est située dans un bâtiment en multi-
+occupation, il convient d'intégrer à la surface de consommations
+énergétiques la part de surface des espaces communs qui lui est
+attribuée selon la clé de répartition des charges des consommations
+de ces espaces, à l'exception des centres commerciaux et galeries
+commerciales pour lesquels ces espaces constituent une entité
+fonctionnelle à part entière.
+Le cas échéant, les objectifs de réduction de la consommation
+d'énergie finale sont modulés en fonction du volume d'activité
+exercée, tel que prévu au II de l'article R. 174-26 du code de la
+construction et de l'habitation. A cette fin, les données relatives à la
+
+===== PAGE 10 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 10 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+consommation de référence renseignées sur la plateforme OPERAT
+sous la responsabilité de l'assujetti sont complétées par les données
+d'occupation et d'intensité d'usage propres à la typologie d'activités
+en cause.
+III. - Le niveau de consommation d'énergie finale exprimé en valeur
+relative, par rapport à la consommation énergétique de référence,
+est exprimé en kWh/m2/an de surface de consommations
+énergétiques et noté Crelat.
+Il s'établit respectivement pour chacune des échéances décennales
+de la façon suivante :
+- Pour l'échéance 2030 Crelat 2030 = (1 - 0,4) × Créf
+- Pour l'échéance 2040 Crelat 2040 = (1 - 0,5) × Créf
+- Pour l'échéance 2050 Crelat 2050 = (1 - 0,6) × Créf
+En cas de modulation des objectifs de réduction de la
+consommation d'énergie finale, les formules à utiliser sont détaillées
+à l'article 10 du présent arrêté.
+Article 4
+VERSION EN VIGUEUR DEPUIS LE 15 MARS 2024
+Modifié par Arrêté du 20 février 2024 - art. 5
+Niveau de consommation exprimé en valeur absolue par catégorie
+d'activité.
+
+===== PAGE 11 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 11 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Le niveau de consommation d'énergie finale, constituant l'objectif
+fixé en valeur absolue mentionné au 2° du I de l'article R. 174-23 du
+code de la construction et de l'habitation est déterminé, pour
+chaque catégorie d'activité recensée, et pour l'ensemble de ses
+usages énergétiques. Ce niveau de consommation maximale
+d'énergie finale fixé en valeur absolue, exprimé, en kWh/m2/an de
+surface de consommations énergétiques est noté Cabs. Il est
+déterminé pour chacune des échéances décennales.
+Ce niveau de consommation exprimé en valeur absolue Cabs est
+égal à la somme de deux composantes d'usages de l'énergie :
+- une composante de consommation énergétique relative à
+l'ambiance thermique générale et à la ventilation des locaux, notée
+CVC, définie pour une intensité d'usage étalon et déterminée en
+Annexe II du présent arrêté pour chaque catégorie d'activité en
+fonction de la zone climatique et de l'altitude ;
+- une composante de la consommation énergétique relative aux
+usages spécifiques énergétiques propres à l'activité ainsi qu'aux
+autres usages immobiliers tels que la production d'eau chaude
+sanitaire et d'éclairage, notée USE, définie pour une intensité
+d'usage étalon et déterminée en Annexe II du présent arrêté pour
+chaque catégorie d'activité. La composante USE intègre, le cas
+échéant, l'influence des modalités d'occupation des locaux sur la
+composante CVC relative à l'ambiance thermique générale et à la
+ventilation des locaux.
+Cabs = CVC + USE
+La composante de la consommation USE relative aux usages
+spécifiques énergétiques de chaque catégorie est associée à un ou
+des indicateurs d'intensité d'usage spécifiques à chaque catégorie
+d'activités. Ces indicateurs d'intensité d'usage constituent les
+paramètres permettant de procéder à la modulation des objectifs
+
+===== PAGE 12 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 12 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+de réduction de la consommation d'énergie finale en fonction du
+volume d'activité dans les conditions prévues à l'article 10 du
+présent arrêté.
+A défaut de pouvoir distinguer les composantes de consommation
+CVC et USE, pour certaines catégories, seul l'objectif Cabs est défini
+par arrêté pour une intensité d'usage étalon et les indicateurs
+d'intensité d'usage spécifiques à ces catégories constituent les
+paramètres permettant de procéder à la modulation des objectifs
+mentionnée à l'alinéa précédent.
+Dans le cas où plusieurs typologies d'activités sont hébergées au
+sein d'une même entité fonctionnelle, le niveau de consommation
+d'énergie finale constituant l'objectif visé au 2° du I de l'article R.
+174-23 du code de la construction et de l'habitation, est établi au
+prorata surfacique des niveaux des différents types d'activités ou
+zones fonctionnelles (sous-catégories d'activités) (2) qui sont exercés
+au sein de cette entité fonctionnelle.
+Article 5
+VERSION EN VIGUEUR DEPUIS LE 13 JUILLET 2024
+Modifié par Arrêté du 5 juillet 2024 - art. 2
+Modalités d'ajustement des données de consommation d'énergie
+finale en fonction des variations climatiques.
+I. - La consommation énergétique de référence, visée au 1° du I de
+l'article R. 174-23 du code de la construction et de l'habitation, ainsi
+que les consommations d'énergie annuelles visées à l'article R. 174-
+27 du même code sont ajustées en fonction des variations
+climatiques.
+
+===== PAGE 13 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 13 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+L'ajustement en fonction des variations climatiques est effectué à la
+maille départementale. Les données climatiques prises en
+considération sont celles de la station Météo France la plus
+représentative du site.
+L'ajustement en fonction des variations climatiques est effectué sur
+la base de Degré jour unifié moyen sur la période 2001-2020 de la
+station météo de référence.
+La plateforme OPERAT, visée par l'article R. 174-27 du code de la
+construction et de l'habitation, affecte automatiquement par
+défaut une station Météo-France du département dans lequel est
+situé le bâtiment concerné. La plateforme OPERAT permet à
+l'assujetti de changer de station météo pour le bâtiment concerné
+sur la base d'une liste des stations Météo-France du département
+concerné et des départements limitrophes avec indication de
+l'altitude respective de chacune de ces stations météorologiques,
+afin de se rapprocher de la configuration climatique la plus
+représentative de celle à laquelle le bâtiment concerné est exposé.
+La liste des stations météorologiques est fournie en annexe III du
+présent arrêté.
+L'ajustement de ces consommations par les degrés jours unifiés est
+réalisé automatiquement par la plateforme de recueil et de suivi,
+visée par l'article R. 174-27 du code de la construction et de
+l'habitation.
+II.-L'ajustement des consommations d'énergie relatives au chauffage
+et au refroidissement est effectué, en fonction des variations
+climatiques, sur la base des consommations réelles correspondantes
+lorsqu'elles sont mesurées ou affectées par répartition, ou par
+défaut sur la base d'une estimation des consommations d'énergie
+relatives au chauffage et au refroidissement telle que décrite aux 1°
+et 2° ci-après.
+
+===== PAGE 14 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 14 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Les degrés-jours sont déterminés suivant la méthode des
+professionnels de l'énergie présentée en annexe III du présent
+arrêté.
+Les consommations énergétiques annuelles de combustibles
+stockables peuvent être déterminées à l'aide :
+-de données issues de comptage ;
+-d'une estimation des volumes de livraison basée sur des relevés de
+niveaux ;
+-d'une estimation par lissage des volumes de livraison sur une
+période regroupant les dernières années de consommations
+énergétiques, sans dépasser 4 années de consommations.
+Les consommations d'énergie relatives au refroidissement
+comprennent les consommations de refroidissement liées à
+l'ambiance thermique générale et à la ventilation des locaux (CVC)
+et, le cas échéant, celles liées à des usages spécifiques liés au
+process de l'activité concerné (USE) en termes de production de
+froid ou de maintien d'un niveau d'hygrométrie spécifique
+nécessaire à la conservation de documents ou collections.
+1° L'ajustement en fonction des variations climatiques de la part des
+consommations d'énergie liées au chauffage s'effectue selon la
+méthode suivante :
+Lorsque la consommation de chauffage est connue à partir de
+compteurs d'énergie ou de factures :
+Vous pouvez consulter l'intégralité du texte avec ses images à partir
+de l'extrait du Journal officiel électronique authentifié accessible à
+
+===== PAGE 15 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 15 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+l'adresse suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=0gWqprsKqZcRM9PXD42fpNw8THC9Ur0eP8vGw73cWt4=
+sinon :
+Vous pouvez consulter l'intégralité du texte avec ses images à partir
+de l'extrait du Journal officiel électronique authentifié accessible à
+l'adresse suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=0gWqprsKqZcRM9PXD42fpNw8THC9Ur0eP8vGw73cWt4=
+avec :
+-Acefchauff n [kWh] : ajustement dû aux variations météorologiques
+de la quantité d'énergie finale nécessaire au chauffage pour l'année
+n. L'ajustement s'effectue sur la consommation contenant le poste
+chauffage. Il peut être positif ou négatif selon les conditions
+météorologiques ;
+-Consochauff n [kWh] : consommation relevée d'énergie finale de
+chauffage de l'année n ;
+-DJch moy [° C. jour] : nombre de degrés-jours chauffage moyen
+statistique sur la période 2001-2020 de la station météo considérée.
+Si DJch moy = 0, on prend DJch moy = 1 dans les formules ci-dessus ;
+-DJch n [° C. jour] : degrés-jours chauffage de l'année n de la station
+météo considérée. Si DJch n = 0, on prend DJch n = 1 dans les
+formules ci-dessus ;
+-Consotot n [kWh] : consommation énergétique totale pour l'année
+n de l'entité fonctionnelle assujettie ;
+
+===== PAGE 16 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 16 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+-Cabsss-cat n [kWh/ m2/ an] : objectif de consommation
+énergétique exprimé en valeur absolue, le cas échéant modulé, pour
+l'année n et la sous-catégorie considérée composant l'entité
+fonctionnelle assujettie ;
+-Sss-cat [m2] : la surface de plancher de la sous-catégorie considérée
+;
+-
+Vous pouvez consulter l'intégralité du texte avec ses images à partir
+de l'extrait du Journal officiel électronique authentifié accessible à
+l'adresse suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=0gWqprsKqZcRM9PXD42fpNw8THC9Ur0eP8vGw73cWt4=
+: la surface de plancher chauffée de la sous-catégorie considérée ;
+-
+Vous pouvez consulter l'intégralité du texte avec ses images à partir
+de l'extrait du Journal officiel électronique authentifié accessible à
+l'adresse suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=0gWqprsKqZcRM9PXD42fpNw8THC9Ur0eP8vGw73cWt4=
+: coefficient permettant d'estimer, en fonction des degrés-jours de
+chauffage de l'année n, la part de consommations de la sous-
+catégorie correspondant à des consommations de chauffage. Ces
+coefficients sont détaillés en annexe III ;
+2° L'ajustement en fonction des variations climatiques de la part des
+consommations d'énergie liées au refroidissement s'effectue selon
+la méthode suivante :
+
+===== PAGE 17 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 17 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Lorsque la consommation liée au refroidissement est connue à
+partir de compteurs d'énergie :
+Vous pouvez consulter l'intégralité du texte avec ses images à partir
+de l'extrait du Journal officiel électronique authentifié accessible à
+l'adresse suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=0gWqprsKqZcRM9PXD42fpNw8THC9Ur0eP8vGw73cWt4=
+sinon :
+Vous pouvez consulter l'intégralité du texte avec ses images à partir
+de l'extrait du Journal officiel électronique authentifié accessible à
+l'adresse suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=0gWqprsKqZcRM9PXD42fpNw8THC9Ur0eP8vGw73cWt4=
+avec :
+-Aceffr n [kWh] : ajustement dû aux variations météorologiques de
+la quantité d'énergie finale nécessaire au refroidissement des
+ambiances et des process de production de froid décentralisée pour
+l'année n. L'ajustement s'effectue sur la consommation contenant le
+poste refroidissement. Il peut être positif ou négatif selon les
+conditions météorologiques ;
+-Consofr n [kWh] : consommation relevée d'énergie finale de
+refroidissement de l'année n ;
+-DJfr moy [° C. jour] : nombre de degrés jour refroidissement moyen
+statistique sur la période 2001-2020 de la station météo considérée.
+Si DJfr moy = 0, on prend DJfr moy = 1 dans les formules ci-dessus ;
+
+===== PAGE 18 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 18 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+-DJfr n [° C. jour] : degrés jour refroidissement de l'année n de la
+station météo considérée. Si DJfr n = 0, on prend DJfr n = 1 dans les
+formules ci-dessus ;
+-Consotot n [kWh] : consommation énergétique totale pour l'année
+n de l'entité fonctionnelle assujettie ;
+-Cabsss-cat n [kWh/ m2/ an] : objectif de consommation
+énergétique exprimé en valeur absolue, le cas échéant modulé, pour
+l'année n et la sous-catégorie considérée composant l'entité
+fonctionnelle assujettie ;
+-Sss-cat [m2] : la surface de plancher de la sous-catégorie considérée
+;
+-
+Vous pouvez consulter l'intégralité du texte avec ses images à partir
+de l'extrait du Journal officiel électronique authentifié accessible à
+l'adresse suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=0gWqprsKqZcRM9PXD42fpNw8THC9Ur0eP8vGw73cWt4=
+: la surface de plancher refroidie de la sous-catégorie considérée ;
+-
+Vous pouvez consulter l'intégralité du texte avec ses images à partir
+de l'extrait du Journal officiel électronique authentifié accessible à
+l'adresse suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=0gWqprsKqZcRM9PXD42fpNw8THC9Ur0eP8vGw73cWt4=
+
+===== PAGE 19 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 19 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+: coefficient permettant d'estimer, en fonction des degrés-jours de
+refroidissement de l'année n, la part de consommations de la sous-
+catégorie correspondant à des consommations de refroidissement.
+Ces coefficients sont détaillés en annexe III.
+Chapitre 2 : Dispositions relatives aux conditions de
+modulation des objectifs (Articles 6 à 11)
+
+===== PAGE 20 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 20 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Article 6
+VERSION EN VIGUEUR DEPUIS LE 25 AVRIL 2022
+Modifié par Arrêté du 13 avril 2022 - art. 1
+Conditions de modulation des objectifs.
+Les modulations prévues au III de l'article R. 174-26 du code de la
+construction et de l'habitation sont, le cas échéant, déclarées 5 ans
+au maximum après la première échéance de remontée de
+consommations de chaque décennie. Elles peuvent être mises à jour
+à tout moment.
+Les modulations prévues au I de l'article R. 174-26 du code de la
+construction et de l'habitation peuvent être modifiées en fonction
+des prescriptions émises dans le cadre de l'instruction des
+autorisations de travaux au titre du code du patrimoine .
+Les principaux éléments justificatifs de modulation des objectifs
+récapitulés de façon synthétique dans le tableau standardisé visé au
+I de l'article 7 du présent arrêté font l'objet d'un contrôle de
+cohérence statistique sur la plateforme de recueil et de suivi.
+En cas d'écart notable constaté par rapport aux références
+statistiques, sur simple demande de l'autorité administrative visée
+au R. 185-2 du code de la construction et de l'habitation, l'assujetti
+doit fournir le dossier technique de modulation des objectifs sous
+quinze jours afin qu'il puisse être procédé à une vérification plus
+poussée des justificatifs de modulation des objectifs.
+Article 7
+VERSION EN VIGUEUR DEPUIS LE 15 MARS 2024
+Modifié par Arrêté du 20 février 2024 - art. 3
+Contenu du dossier technique.
+I. - Le dossier technique visé au IV de l'article R. 174-26 du code de la
+construction et de l'habitation, est établi notamment pour justifier
+les modulations des objectifs mentionnées au I et III de ce même
+article, qui couvrent tous les usages énergétiques des bâtiments :
+chauffage, refroidissement, ventilation, éclairage, eau chaude
+
+===== PAGE 21 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 21 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+sanitaire et tous les autres usages spécifiques à l'activité ou les
+activités concernées, ainsi que les actions de sensibilisation portant
+sur des usages économes en énergie.
+A ce titre, le dossier technique est élaboré à un niveau fonctionnel
+pertinent (3) qui permet de prendre en compte, pour chaque entité
+fonctionnelle assujettie, l'impact des actions de réduction de la
+consommation d'énergie mises en œuvre ou qui seront mises en
+œuvre par le ou les propriétaires et, le cas échéant, les preneurs à
+bail.
+Le dossier technique permet à chaque assujetti concerné :
+- d'identifier la situation de référence de leur bâtiment, parties de
+bâtiments ou ensemble de bâtiments ;
+- d'identifier les éventuelles contraintes techniques, architecturales
+ou patrimoniales qui concernent ces bâtiments et les traduire en
+contraintes de rénovations énergétiques ;
+- d'élaborer un programme d'actions permettant d'atteindre les
+objectifs de réduction des consommations d'énergie et la réduction
+des émissions de gaz à effets de serre, dans les conditions fixées à
+l'article 9 du présent arrêté ;
+- d'identifier les actions de réduction de la consommation
+énergétique et de moduler éventuellement le plan d'actions en
+fonction des temps de retour brut des investissements dans les
+conditions fixées à l'article 11 du présent arrêté.
+Le dossier technique comprend :
+1° Une étude énergétique portant sur les actions d'amélioration de
+la performance énergétique et environnementale du bâtiment se
+
+===== PAGE 22 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 22 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+traduisant par une réduction des consommations d'énergie finale et
+des émissions de gaz à effets de serre correspondantes.
+2° Une étude énergétique portant sur les actions visant à réduire les
+consommations des équipements liés aux usages spécifiques.
+3° Une identification des actions portant sur l'adaptation des locaux
+à un usage économe en énergie et sur le comportement des
+occupants.
+4° Un programme d'actions permettant d'atteindre l'objectif, qui
+s'appuie sur l'ensemble des leviers d'actions visés au II de l'article R.
+174-23 du code de la construction et de l'habitation.
+Le dossier technique est complété, en fonction de la nature des
+modulations dont il fait l'objet, par :
+- la note technique spécifique justifiant la modulation des objectifs
+en fonction de contraintes techniques, visée au III de l'article 9 du
+présent arrêté ;
+- l'avis circonstancié justifiant la modulation des objectifs en
+fonction de contraintes architecturales ou patrimoniales, visé au IV
+de l'article 9 du présent arrêté ;
+- la note de calcul des temps de retour brut sur investissement du
+programme d'actions d'amélioration de la performance énergétique
+du bâtiment, justifiant de la modulation des objectifs en cas de
+disproportion manifeste du coût des actions par rapport aux
+avantages attendus en terme de consommation d'énergie finale,
+visée à l'article 11 du présent arrêté.
+
+===== PAGE 23 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 23 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Ce dossier peut être mis à jour pour actualiser la justification des
+modulations des objectifs. Il est mis à disposition des agents chargés
+des contrôles visés à l'article R. 174-31 du code de la construction et
+de l'habitation.
+Le cadre type du dossier technique est présenté en Annexe IV du
+présent arrêté.
+Les principaux éléments justificatifs de modulation des objectifs ou
+de non atteinte des objectifs sont récapitulés de façon synthétique
+dans un tableau standardisé au format CSV dont le contenu est
+présenté en Annexe IV du présent arrêté. Ce fichier est versé sur la
+plateforme de recueil et de suivi.
+II. - L'étude énergétique mentionnée au 1° du I du présent article
+identifie toutes les parties prenantes de la gestion, de l'usage, de
+l'exploitation, de l'entretien et de la maintenance du bâtiment, et
+leur impact respectif sur la consommation d'énergie de chaque
+entité fonctionnelle assujettie au sein du bâtiment.
+Pour des bâtiments ayant des caractéristiques et des usages
+similaires, et sous réserve d'en justifier la pertinence, l'étude
+énergétique peut porter sur un échantillon de ces bâtiments suivant
+les modalités définies à l'Annexe V du présent arrêté.
+L'étude énergétique, réalisée sur la base d'un calcul de performance
+énergétique et environnementale du bâtiment tenant compte de
+ses conditions d'utilisation et de fonctionnement, comprend :
+1° Une évaluation de la performance énergétique et des émissions
+de gaz à effet de serre en exploitation initiale du bâtiment,
+constituant la situation de référence, et permettant de la
+corroborer à la consommation énergétique de référence mentionné
+au 1° du I de l'article R. 174-23 du code de la construction et de
+l'habitation ;
+
+===== PAGE 24 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 24 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+2° Le cas échéant, une traduction technique des contraintes
+techniques, architecturales ou patrimoniales, limitant les
+interventions possibles d'amélioration de la performance
+énergétique du bâtiment ;
+3° Une orientation des choix d'actions d'amélioration de la
+performance énergétique et environnementale, suivant divers
+scénarios avec pour objectif d'atteindre, aux termes des travaux
+programmés, le niveau de consommation cible Cabs, le cas échéant
+modulé noté Cabs modulé ;
+4° Une estimation de la réduction des consommations d'énergie et
+des émissions de gaz à effets de serre attendues sur chacun des
+postes de consommations énergétiques du bâtiment après
+réalisation des travaux programmés par rapport à la situation de
+référence. Lorsque le programme d'actions d'amélioration de la
+performance énergétique du bâtiment est prévu par étapes,
+l'estimation des réductions de consommation d'énergie est précisée
+pour chacune des étapes.
+Le niveau de consommation cible Cabs constitue la valeur cible
+commune à chaque catégorie d'activité. Ce niveau de
+consommation prend notamment en considération l'ensemble des
+leviers d'actions visés au II de l'article R. 174-23 du code de la
+construction et de l'habitation, et en particulier des modes
+d'exploitation des équipements efficaces et vertueux, ainsi que des
+usages économes en énergie. La modulation des objectifs s'appuie
+sur cette valeur cible commune à chaque catégorie d'activité.
+L'objectif modulé exprimé en valeur absolue, noté Cabs modulé, ne
+peut être supérieur ou égale à la consommation énergétique de
+référence, notée Cref : Cabs modulé < Cref.
+Sur la base de l'objectif modulé exprimé en valeur absolue, noté
+Cabs modulé, et renseigné sur la plateforme OPERAT, celle-ci
+
+===== PAGE 25 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 25 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+procède automatiquement à la modulation du niveau de
+consommation d'énergie finale Crelat exprimé en valeur relative de
+la façon suivante :
+L'objectif modulé exprimé en valeur relative, noté Crelat modulé, ne
+peut être supérieur à la consommation énergétique de référence,
+notée Cref : Crelat modulé < Cref.
+et sa valeur s'établit de la façon suivante :
+Si Crelat initial × (Cabs modulé/ Cabs référence) ≥ Cref ou Crelat
+initial ≥ Cabs modulé
+Alors Crelat modulé = Max (Cabs modulé ; Crelat initial)
+Sinon Crelat modulé = Crelat initial × (Cabs modulé/ Cabs référence)
+avec :
+-Cref : Consommation énergétique de référence ;
+-Crelat modulé : Objectif de consommation exprimé en valeur
+relative modulé ;
+-Cabs modulé : Objectif de consommation exprimé en valeur absolu
+modulé, faisant l'objet du dossier technique ;
+-Cabs référence : Objectif de consommation exprimé en valeur
+absolue de référence (avant modulation) ;
+-Crelat initial : Objectif de consommation exprimé en valeur relative
+initial (avant modulation) tel que déterminé à l'article 3.
+
+===== PAGE 26 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 26 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+L'étude énergétique présente les paramètres relatifs aux conditions
+d'occupation et de fonctionnement du bâtiment. A cet effet, sont
+détaillées les conditions d'occupation et d'usage du bâtiment pour
+la situation de référence et les hypothèses retenues après
+rénovation du bâtiment, le cas échéant en prenant en considération
+les évolutions prévisionnelles dans le cas d'une rénovation par
+étapes.
+III. - L'étude énergétique mentionnée au 2° du I du présent article
+comprend :
+- l'identification des équipements et procédés exploités dans les
+locaux à usage tertiaire, les éléments qualifiant leur consommation
+énergétique (à savoir leur niveau d'efficacité énergétique et leur
+modalité d'utilisation), ainsi que la source d'énergie qu'ils utilisent ;
+- l'évaluation de leur impact respectif sur la consommation
+d'énergie finale de chaque entité fonctionnelle tertiaire concernée ;
+- l'évaluation des sources de gain énergétique potentiel et de
+réduction des émissions de gaz à effets de serre correspondante
+d'une part au niveau du mode d'utilisation de ces équipements, et
+d'autre part au niveau de leur renouvellement.
+IV. - L'identification des actions mentionnées au 3° du I présent
+article s'attache à procéder à :
+- un descriptif sommaire de la configuration de référence du
+bâtiment et de l'aménagement des locaux, ainsi que des modalités
+d'usage de ces locaux ;
+- une identification des aménagements possibles des locaux et des
+postes de travail, des évolutions des comportements, des
+organisations et des réglages techniques qui permettraient de
+
+===== PAGE 27 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 27 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+contribuer à un usage économe en énergie, et une évaluation des
+gains énergétiques potentiels sur chacun des postes de
+consommations d'énergie concernés.
+V. - Le programme d'actions mentionnée au 4° du I du présent
+article s'attache à :
+- récapituler pour chacun des leviers d'actions mentionnés au II de
+l'article R. 174-23 du code de la construction et de l'habitation, les
+actions qui ont déjà été réalisées et celles qui sont programmées
+avec une indication de leur échéance prévisionnelle de réalisation ;
+- quantifier les gains énergétiques et en émissions de gaz à effets de
+serre déjà obtenus à partir des actions déjà réalisées et évaluer ceux
+attendus des actions restant à mettre en œuvre ;
+- identifier pour chaque action prévue si elle est de la responsabilité
+du propriétaire et/ou du preneur à bail.
+VI. - La modulation des objectifs au titre du I et du III de l'article R.
+174-26 du code de la construction et de l'habitation, ne pourra être
+prise en considération que si le programme d'actions démontre que
+l'ensemble des leviers d'actions mentionnés au II de l'article R. 174-
+23 du même code ont été mobilisés ou seront mobilisés.
+L'assujetti peut également renseigner, à titre indicatif, sur la
+plateforme OPERAT, les objectifs contractuels de Contrat de
+performance énergétique ou de tout autre contrat similaire visant à
+la réduction des consommations d'énergie, ainsi que les éventuelles
+modalités d'ajustement des consommations d'énergie en fonction
+des variations climatiques prévus dans ces contrats.
+
+===== PAGE 28 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 28 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Article 8
+VERSION EN VIGUEUR DEPUIS LE 25 AVRIL 2022
+Modifié par Arrêté du 13 avril 2022 - art. 1
+Compétences requises pour la réalisation du dossier technique.
+Les études énergétiques visées aux articles II et III de l'article 7 sont
+réalisées par un ou des prestataires ou personnel justifiant de
+compétences en énergétique du bâtiment, des équipements et des
+procédés exploités au sein du ou des locaux à usage tertiaire
+concernés. Ils peuvent être notamment :
+a) Un prestataire externe ou un personnel interne, répondant aux
+exigences de l'article 2 de l'arrêté du 24 novembre 2014 2014 relatif
+aux modalités d'application de l'audit énergétique prévu par le
+chapitre III du titre III du livre II du code de l'énergie,
+b) Un bureau d'étude ou un ingénieur-conseil, notamment pour
+l'étude énergétique visée au III de l'article 7 ;
+c) Un architecte au sens de l'article 2 de la loi n° 77-2 du 3 janvier
+1977 sur l'architecture, notamment pour les justifications pour
+contraintes techniques, architecturales ou patrimoniales.
+Ces compétences peuvent être rassemblées au sein d'une équipe
+pluridisciplinaire.
+Article 9
+VERSION EN VIGUEUR DEPUIS LE 25 AVRIL 2022
+Modifié par Arrêté du 13 avril 2022 - art. 1
+Conditions de modulation des objectifs pour des raisons
+techniques, architecturales ou patrimoniales.
+
+===== PAGE 29 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 29 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+I. - La modulation des objectifs en fonction de contraintes
+techniques, architecturales ou patrimoniales, prévue au I de l'article
+R. 174-26 du code de la construction et de l'habitation, concerne les
+actions d'amélioration de l'efficacité énergétique et
+environnementale du bâtiment et d'adaptation des locaux à un
+usage économe en énergie dans lequel sont hébergés les activités
+tertiaires.
+II. - Les assujettis doivent justifier cette modulation des objectifs sur
+la base de l'étude énergétique portant sur les actions d'amélioration
+de la performance énergétique du bâtiment, visée au II de l'article 7.
+III. - Pour les justifications de contraintes techniques, les assujettis
+s'appuient sur une note technique spécifique élaborée par un
+professionnel compétent dans les domaines des actions
+d'amélioration de la performance énergétique à réaliser, à savoir un
+architecte, un bureau d'études qualifié ou tout autre référent
+technique, y compris interne. Les contraintes techniques peuvent
+notamment être spécifiques et d'ordre réglementaire pour l'activité
+concernée.
+IV. - Pour les justifications de contraintes architecturales ou
+patrimoniales les assujettis doivent solliciter l'avis circonstancié :
+- d'un architecte en chef des monuments historiques ou d'un
+architecte titulaire du diplôme de spécialisation et
+d'approfondissement en architecture mention "architecture et
+patrimoine" ou de tout autre diplôme reconnu de niveau équivalent
+pour les monuments historiques classés ;
+- d'un architecte pour les monuments historiques inscrits, les
+immeubles situés en site patrimonial remarquable ou en abords de
+monuments historiques, les immeubles ayant reçu le label
+mentionné à l'article L. 650-1 du code du patrimoine  et les
+immeubles protégés en application de l'
+
+===== PAGE 30 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 30 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+article L. 151-19 du code de l'urbanisme  ou soumis à prescription
+architecturale en application de l'
+article L. 151-18 du code de l'urbanisme .
+Les travaux sur les immeubles protégés au titre des monuments
+historiques, de leurs abords ou des sites patrimoniaux remarquables
+et sur les immeubles ayant reçu le label mentionné à l'article L. 650-
+1 du code du patrimoine sont envisagés dans le programme d'action
+sans préjudice des dispositions du livre VI du code du patrimoine,
+relatives au contrôle scientifique et technique et aux déclarations et
+autorisations de travaux. La modulation tient compte, le cas
+échéant, des prescriptions émises à ce titre.
+Article 10
+VERSION EN VIGUEUR DEPUIS LE 15 MARS 2024
+Modifié par Arrêté du 20 février 2024 - art. 3
+Modifié par Arrêté du 20 février 2024 - art. 6
+Conditions de modulation des objectifs en fonction du volume
+d'activité.
+I. - La modulation des objectifs en fonction du volume de l'activité,
+prévue au II de l'article R. 174-26 du code de la construction et de
+l'habitation, est effectuée automatiquement par la plateforme
+OPERAT de la réduction de la consommation d'énergie finale
+mentionnée à l'article R. 174-27 du même code, dans les conditions
+suivantes :
+1° L'assujetti renseigne sur la plateforme de recueil et de suivi, les
+valeurs des indicateurs d'intensité d'usage relatifs aux activités
+hébergées dont leur validation par l'assujetti vaut engagement sur
+l'honneur et les documents justifiant ces valeurs sont mis à
+disposition des services de l'Etat sur simple demande ;
+
+===== PAGE 31 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 31 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+2° La plateforme OPERAT modifie automatiquement, lors de
+chaque déclaration, la composante de consommation USE de
+chacune des activités hébergées à partir des formules de
+modulation propre à chacune de ces activités, précisées en Annexe
+II du présent arrêté, sur la base des indicateurs d'intensité d'usage
+renseignés par l'assujetti, et fixe le nouveau niveau de
+consommation Cabs modulé.
+3° La plateforme OPERAT procède ensuite automatiquement, à
+chaque déclaration, à la modulation du niveau de consommation
+d'énergie finale Crelat exprimé en valeur relative, pour chacune des
+échéances décennales de la façon suivante :
+Crelat modulé (V) 2030 = (1 - 0,4) × Cref × [Cabs modulé (V) / Cabs
+modulé (Vréf)].
+Crelat modulé (V) 2040 = (1 - 0,5) × Cref × [Cabs modulé (V) / Cabs
+modulé (Vréf)].
+Crelat modulé (V) 2050 = (1 - 0,6) × Cref × [Cabs modulé (V) / Cabs
+modulé (Vréf)],
+avec :
+- Crelat modulé (V) : niveau de consommation en valeur relative,
+modulé en fonction du volume d'activité pour le volume d'activité
+V ;
+- Cref : consommation énergétique de référence ;
+- Cabs modulé (V) : niveau de consommation en valeur absolue de la
+décennie concernée modulé en fonction du volume d'activité pour
+le volume d'activité V ;
+- Vréf : niveau d'activité de l'année de référence.
+II. - Le renseignement des indicateurs d'intensité d'usage de la
+consommation de référence, sur la plateforme OPERAT de la
+réduction de la consommation d'énergie finale, fait l'objet d'un test
+
+===== PAGE 32 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 32 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+de cohérence comparatif avec la consommation de référence Créf,
+réalisé automatiquement par la plateforme OPERAT susvisée.
+Ce test de cohérence comparatif se fait à deux niveaux :
+1° Sur la base du ratio statistique des consommations de référence
+de la catégorie d'activité correspondante pour l'année de référence
+choisie et aux mailles géographiques nationale et départementale,
+ou à défaut régionale si les données départementales ne
+constituent pas un échantillon suffisant.
+Ce test de cohérence comparatif peut être réalisé plusieurs fois par
+le gestionnaire de la plateforme ou les services de l'Etat missionnés
+par le préfet compétent au regard de la localisation du bâtiment, de
+la partie de bâtiment ou de l'ensemble de bâtiment, au fur et à
+mesure que la base de données recueillies sur la plateforme
+s'enrichit.
+2° Sur la base d'une valeur approchée du niveau de consommation
+d'énergie finale Crelat, prenant en considération la part de la
+composante USE de l'objectif Cabs exprimé en valeur absolue pour
+les valeurs d'indicateurs d'intensité d'usage concernés.
+En cas d'écart notable de l'objectif modulé Crelat par rapport à ces
+deux valeurs comparatives, l'autorité administrative visée au R. 185-
+2 du code de la construction et de l'habitation  pourra procéder à
+une vérification plus poussées des informations recueillies sur la
+plateforme.
+Le changement de la valeur des indicateurs d'intensité d'usage et les
+justificatifs associés sont historiés sur la plateforme de recueil et de
+suivi.
+Article 11
+VERSION EN VIGUEUR DEPUIS LE 15 MARS 2024
+Modifié par Arrêté du 20 février 2024 - art. 7
+Condition de modulation des objectifs en cas de disproportion
+manifeste du coût des actions par rapport aux avantages attendus
+en termes de consommations d'énergie finale.
+
+===== PAGE 33 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 33 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+I. - La disproportion manifeste du coût des actions de réduction de
+la consommation énergétique, pour atteindre l'un des objectifs
+visés à l'article R. 174-23 du code de la construction et de
+l'habitation, par rapport aux avantages attendus en matière de
+consommation d'énergie finale, ne peut être invoquée, sur la base
+d'un calcul, que lorsque le temps estimé de retour brut sur
+investissement du coût global d'un des leviers d'actions
+d'amélioration de la performance énergétique et environnementale
+des bâtiments, déduction faite des aides financières perceptibles,
+est supérieur à :
+- 30 ans pour les actions de rénovations relatives à l'amélioration de
+l'efficacité énergétique et environnementale des bâtiments portant
+sur leur enveloppe ;
+- 15 ans pour les travaux de renouvellement des équipements
+énergétiques du bâtiment (hors consommables : ampoules et autres
+pièces de rechange dans le cadre de l'entretien courant des
+équipements) ;
+- 10 ans pour la mise en place de système d'optimisation et
+d'exploitation des systèmes et équipements, visant la gestion, la
+régulation, et l'optimisation en exploitation des équipements
+énergétiques.
+Le calcul du temps de retour brut sur investissement de chacun des
+leviers d'actions est effectué indépendamment de l'engagement
+des autres leviers d'actions.
+Lorsque le temps de retour brut sur investissement de l'un des
+leviers d'action d'amélioration de la performance énergétique et
+environnementale des bâtiments est supérieur aux seuils susvisés,
+une optimisation de la répartition du coût global des actions et des
+gains énergétiques doit être recherchée entre chacun des trois
+leviers d'actions susmentionnés.
+
+===== PAGE 34 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 34 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+L'évaluation du temps de retour sur investissement s'appuie sur une
+méthode de calcul de la consommation énergétique du bâtiment
+référencée dans un guide établi par le ministre chargé de la
+construction et publié dans les conditions prévues à l'
+article R. 312-3 du code des relations entre le public et
+l'administration
+.
+II. - Les objectifs de réduction des consommations d'énergie
+peuvent être modulés sur la base d'une étude technique et
+énergétique qui évalue le différentiel entre le niveau du scénario
+thermique permettant d'atteindre le niveau de consommation cible
+Cabs, et le scénario thermique modulé permettant de respecter les
+valeurs seuils des temps de retour brut sur investissement définies
+pour chacun des leviers d'actions visés précédemment.
+III.-Lorsque les bâtiments, partie de bâtiments ou ensemble de
+bâtiments assujettis sont situés sur la même unité foncière ou sur le
+même site que des activités non-tertiaires, l'assujetti peut
+également compléter les justificatifs qu'il apporte sur la modulation
+pour disproportion économique par des résultats de réduction des
+consommations d'énergie globale obtenue à l'échelle du site ou de
+l'unité foncière. Ces résultats doivent s'appuyer sur des preuves
+tangibles. Cette disposition n'exonère pas le déclarant de respecter
+les dispositions prévues au IV, V et VI de l'article 7 du présent
+arrêté.
+Chapitre 3 : Dispositions relatives à la plateforme
+numérique de recueil et de suivi (Articles 12 à 14)
+
+===== PAGE 35 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 35 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Article 12
+VERSION EN VIGUEUR DEPUIS LE 15 MARS 2024
+Modifié par Arrêté du 20 février 2024 - art. 3
+Désignation de l'opérateur en charge de la mise en place de la
+plateforme OPERAT et contenu de ses missions.
+L'Agence de l'environnement et de la maîtrise de l'énergie (ADEME)
+est l'autorité compétente chargée d'organiser la mise en place de la
+plateforme OPERAT visée à l'article R. 174-27 du code de la
+construction et de l'habitation.
+Chaque assujetti concerné par l'obligation est responsable de la
+transmission des informations à l'ADEME, pour chaque entité
+assujettie (bâtiment, partie de bâtiment, ensemble de bâtiments).
+Cette transmission est assurée par le biais d'une interface en ligne
+permettant le renseignement d'une base de données au sens du
+second alinéa de l'article L. 112-3 du code de la propriété
+intellectuelle
+.
+La plateforme de recueil et de suivi des consommations d'énergie
+du secteur tertiaire est nommée Observatoire de la Performance
+Energétique, de la Rénovation et des Actions du Tertiaire (OPERAT)
+L'ADEME est responsable de la constitution de cette base de
+données et de l'interface permettant d'y accéder, de la
+maintenance de celle-ci, ainsi que de l'assistance utilisateur.
+La plateforme OPERAT présente des fonctionnalités d'exploitation
+des données et de restitution anonymisée de ces données sous
+forme d'analyse comparative de la performance énergétique des
+bâtiments à différents mailles géographiques (national, régional et
+départemental) et par secteurs d'activités, accessible à tout public.
+La plateforme OPERAT présente des fonctionnalités accessibles aux
+seuls assujettis sur le bilan énergétique de leur patrimoine
+immobilier.
+
+===== PAGE 36 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 36 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Article 13
+VERSION EN VIGUEUR DEPUIS LE 07 SEPTEMBRE 2025
+Modifié par Arrêté du 1er août 2025 - art. 2
+
+===== PAGE 37 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 37 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Modalités de droits d'accès à la plateforme OPERAT, de transmission
+des données, d'exploitation, de capitalisation et de restitution de
+leur exploitation.
+I. - Pour garantir la confidentialité des données, plusieurs profils
+d'identification établissant des restrictions de droit sur le contenu
+de la base de données sont définis comme suit :
+- profil "Administrateur de la base de données" : l'Agence de
+l'environnement et de la maîtrise de l'énergie dispose des accès en
+écriture et en lecture de l'ensemble du contenu de l'application ;
+- profil "Agents chargés des contrôles" : les services de l'Etat
+disposent des accès en lecture de l'ensemble du contenu de
+l'application ;
+- profil “Assujetti : Représentant légal - Référent” : les propriétaires
+et, le cas échéant, les preneurs à bail ou occupant, de bâtiments,
+parties de bâtiment ou ensemble de bâtiments visés à l'
+article R. 174-22 du code de la construction et de l'habitation ,
+créent un profil “Assujetti” correspondant à leur périmètre
+d'assujettissement. Ils disposent d'un accès en modification des
+données annuelles à transmettre conformément à l'
+article R. 174-27 du même code . Ils peuvent déléguer leurs droits à
+des personnes compétentes (contributeurs internes :
+correspondant, responsable technique, responsable immobilier,
+exploitant). Ce profil dispose des fonctionnalités suivantes :
+- créer un compte ;
+- déclarer son patrimoine ;
+- ouvrir des comptes secondaires en interne et de prestataires (profil
+"Mandataire") ;
+
+===== PAGE 38 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 38 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+- renseigner sa consommation d'énergie finale de référence ;
+- renseigner ses consommations d'énergie finale annuelles ;
+- modifier les indicateurs d'intensité d'usage ;
+- renseigner le plan d'actions, les travaux et les améliorations
+réalisées ;
+- accéder à des statistiques relatives à son patrimoine ;
+- saisir des paramètres pour appliquer une correction et les
+modulations ;
+- éditer une attestation sur la base des éléments déclarés ;
+- utiliser l'interface de programmation d'application (API) ou le
+transfert de fichiers au format Excel ou CSV ou de transfert de
+données des gestionnaires de réseau de distribution ;
+- accéder à des statistiques anonymes agrégées au même titre que le
+profil "Grand public".
+- profils "Mandataire" : leurs droits sont définis par le profil qui leur
+est affecté par le propriétaire ou le preneur à bail assujettis ;
+- un accès "Grand public" qui permet à tout public de consulter les
+statistiques anonymes agrégées et dispose d'un accès en lecture
+seul à ces données statistiques.
+
+===== PAGE 39 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 39 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+II. - Les données transmises, conformément aux dispositions prévues
+par l'article R. 174-27 du code de la construction et de l'habitation
+peuvent être renseignées directement sur la plateforme OPERAT ou
+via l'interface de programmation d'application par un fichier
+récapitulatif standardisé au format CSV. Le contenu et la forme de
+ce fichier est présenté en Annexe VI du présent arrêté.
+Les données relatives à l'année 2020 sont transmises au plus tard le
+30 septembre 2022.
+Chaque année à partir de 2022 sont transmises, au plus tard le 30
+septembre, les données relatives à l'année précédente.
+Les consommations énergétiques annuelles de combustibles
+stockables peuvent déterminées à l'aide :
+-de données issues de comptage ;
+-d'une estimation des volumes de livraison basée sur des relevés de
+niveaux ;
+-d'une estimation par lissage des volumes de livraison sur une
+période regroupant les dernières années de consommations
+énergétiques, sans dépasser 4 années de consommations.
+III. - La plateforme OPERAT exploite les données déclarées et
+procède automatiquement à l'ajustement des données de
+consommations d'énergie finale en fonction des variations
+climatiques conformément aux dispositions de l'article 5 du présent
+arrêté, et le cas échéant à la modulation des objectifs Crelat et
+Cabs en fonction du volume d'activité dans les conditions fixées à
+l'article 10 du présent arrêté.
+Sur la base de ces données corrigées, la plateforme OPERAT génère
+l'attestation numérique annuelle mentionnée à l'
+article R. 174-32 du code de la construction et de l'habitation  dont
+
+===== PAGE 40 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 40 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+le modèle est présenté sur la plateforme OPERAT. Par mesure
+transitoire, jusqu'au 1er juillet 2026, l'évaluation du respect, sur la
+base de l'attestation numérique, de l'obligation mentionnée au
+dernier alinéa de l'
+article R. 174-31 du code de la construction et de l'habitation , et
+l'affichage demandé par l'article R. 174-32 du même code , sont
+facultatifs
+L'évaluation de l'émission de gaz à effet de serre correspondant aux
+données de consommation d'énergie finale, mentionnée à l'
+article R. 174-32 du code de la construction et de l'habitation , est
+établie sur la base des consommations effectives en énergie finale
+de chaque type d'énergie et de facteurs de conversion en gaz à
+effet de serre déterminés pour chaque type d'énergie selon le
+tableau présenté en Annexe VII du présent arrêté.
+L'attestation numérique annuelle est complétée par un système de
+notation "Eco Energie Tertiaire" qui qualifie l'avancée dans la
+démarche de réduction des consommations d'énergie finale, au
+regard des résultats obtenus par rapport à l'objectif exprimé en
+valeur absolue. Ce système de notation est présenté en Annexe VII
+du présent arrêté. La notation "Eco Energie Tertiaire" est attribuée
+aux bâtiments, parties de bâtiments ou ensemble de bâtiments
+visés au II de l'
+article R. 174-22 du code de la construction et de l'habitation .
+L'attestation numérique annuelle est complétée, pour les entités
+fonctionnelles qui sont intégrées dans un groupe de structures
+permettant la mutualisation des résultats à l'échelle de tout ou
+partie d'un patrimoine, par une évaluation des résultats à l'échelle
+de ce périmètre de mutualisation des résultats.
+L'attestation numérique annuelle est complétée, le cas échéant, par
+des informations relatives à :
+-l'agrégation des résultats de plusieurs entités fonctionnelles
+tertiaire présentes dans un bâtiment en multi-occupation ;
+
+===== PAGE 41 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 41 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+-la consolidation des résultats à l'échelle d'un parc immobilier dans
+le cadre de la constitution d'un groupe de structures immobilières.
+Une évaluation "Eco Energie Tertiaire" à l'échelle de l'ensemble du
+patrimoine d'une structure (SIREN) peut être réalisée via une
+requête sur la plateforme OPERAT par le profil “ Assujetti Référent ”
+de cette structure.
+IV. - La plateforme OPERAT procède annuellement, après l'échéance
+mentionnées au II du présent article, à l'exploitation de l'ensemble
+des données collectées sous la forme d'une restitution et d'une
+analyse comparative de la performance énergétique des bâtiments
+à différentes mailles géographiques (nationale, régionale et
+départementale) et par secteur d'activités.
+L'exploitation annuelle est complétée par une capitalisation des
+données depuis la mise en place du dispositif de suivi de la
+réduction de la consommation d'énergie finale de l'ensemble du
+parc tertiaire assujetti, qui permet de mesurer l'évolution des
+consommations d'énergie de façon globale et par secteurs
+d'activités.
+L'ensemble de ces informations sont consultables sur la plateforme
+OPERAT, sans nécessité de créer un compte, et téléchargeables sous
+forme de rapports, de fiches et de fichiers au format Excel ou CSV.
+Elles sont mises à jour, chaque année à partir de 2022, à compter du
+1er novembre.
+V. - Les données de consommations d'énergie finale et le
+renseignement des indicateurs d'intensité d'usages recueillies sur la
+plateforme OPERAT pour les années 2020 à 2023 seront capitalisées
+et feront l'objet d'une analyse détaillée par typologie d'activité.
+Cette analyse fera l'objet d'une restitution sur la plateforme
+OPERAT.
+
+===== PAGE 42 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 42 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Article 14
+VERSION EN VIGUEUR DEPUIS LE 25 AVRIL 2022
+Modifié par Arrêté du 13 avril 2022 - art. 1
+Modalités de mutualisation des résultats à l'échelle de tout ou
+partie d'un patrimoine.
+I. - Conformément aux dispositions prévues à l'article R. 174-31 du
+code de la construction et de l'habitation, les assujettis peuvent
+mutualiser les résultats à l'échelle de tout ou partie de leur
+patrimoine soumis à l'obligation pour la vérification du respect des
+objectifs de réduction de consommation d'énergie finale, visés au 1°
+et au 2° de l'article L. 111-10-3 du même code, à l'issue de chacune
+des échéances décennales.
+Le périmètre de mutualisation des résultats à l'échelle de tout ou
+partie d'un patrimoine est défini dans le cadre d'un “ groupe de
+structures ”, dont les données à renseigner sur la plateforme
+OPERAT sont présentées dans la table 1B de l'annexe IV du présent
+arrêté. L'intégration d'entités fonctionnelles assujetties au sein de ce
+périmètre de mutualisation des résultats nécessite une validation du
+représentant légal de chaque entité fonctionnelle qui vaut
+acceptation du principe de solidarité et d'intégration dans le
+groupe de structures.
+Une entité fonctionnelle ne peut pas être présente dans plusieurs
+groupes de structures. Les consommations énergétiques
+économisées supplémentaires présentées au III du présent article ne
+peuvent être redistribuées qu'une seule fois.
+
+===== PAGE 43 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 43 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+II. - La plateforme OPERAT procède automatiquement à la
+comparaison de la consommation d'énergie finale avec les deux
+objectifs Crelat et Cabs, pour chaque entité fonctionnelle assujettie
+de la façon suivante :
+1° la valeur de la consommation d'énergie finale exprimée en
+kWh/an/m2 pour l'année 2030, l'année 2040 et l'année 2050, est
+comparée respectivement aux valeurs Crelat2030, Crelat2040 et
+Crelat2050 déterminées en fonction de la consommation d'énergie
+finale de référence Créf.
+La plateforme indique si l'objectif est atteint ou non, et évalue
+l'écart de consommation d'énergie finale de l'entité fonctionnelle
+assujettie, exprimé en kWh, par rapport à l'objectif exprimé en
+valeur relative.
+2° la valeur de la consommation d'énergie finale exprimée en
+kWh/an/m2 pour l'année 2030, l'année 2040 et l'année 2050, est
+comparée à la valeur Cabs pour la décennie concernée. La
+plateforme indique si l'objectif est atteint ou non, et évalue l'écart
+de consommation d'énergie finale de l'entité fonctionnelle
+assujettie, exprimé en kWh, par rapport à l'objectif exprimé en
+valeur absolue.
+III.-En cas d'atteinte de l'un des deux objectifs, la part de
+consommations énergétiques économisées supplémentaires en
+deçà de l'objectif le moins contraignant, peut être réaffectée à une
+ou plusieurs entités du groupe de structures qui n'ont respecté
+aucun des deux objectifs. Le capital des consommations
+énergétiques économisées supplémentaires à l'échelle du périmètre
+de mutualisation des résultats est calculé automatiquement par la
+plateforme.
+La plateforme OPERAT présente un module “ Mutualisation des
+résultats à l'échelle d'un patrimoine ” qui permet à chacune des
+structures assujetties (niveau SIREN ou équivalent) ou groupes de
+structures constitués de procéder à des requêtes d'évaluation de
+leur situation à l'échelle de tout ou partie de leur patrimoine.
+
+===== PAGE 44 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 44 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Ce module présente en outre une requête automatique qui permet
+de proposer une répartition du capital des consommations
+énergétiques économisées supplémentaires correspondant au
+périmètre de mutualisation des résultats, de l'entité assujettie la
+plus proche de l'un des deux objectifs à celle qui est la plus éloignée
+de l'un des deux objectifs, jusqu'à épuisement de ce capital. Cette
+requête automatique peut être effectuée à différents niveaux de
+discrétisation géographique (national, régional ou départemental)
+selon le mode de responsabilité de la gestion patrimoniale adopté
+par l'assujetti.
+Cette requête permet d'établir une première identification des
+bâtiments qui n'ont pas remplis l'un des deux objectifs et d'alerter
+la structure assujettie (niveau SIREN ou équivalent) ou le groupe de
+structure constitué sur les justifications à apporter. Toutefois,
+l'assujetti peut modifier cette répartition théorique en fonction de
+choix de gestion qui lui sont propres et présente une note de calcul
+sur la répartition du capital des consommations énergétiques
+économisées supplémentaires.
+Cette requête peut être effectuée à tout moment par la structure
+assujettie (niveau SIREN ou équivalent) ou le groupe de structure
+constitué afin d'évaluer sa situation, à l'échelle de tout ou partie de
+son patrimoine, au regard des objectifs de réduction des
+consommations d'énergie finale.
+Chapitre 4 : Dispositions diverses (Articles 15 à 18)
+
+===== PAGE 45 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 45 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Article 15
+VERSION EN VIGUEUR DEPUIS LE 15 MARS 2024
+Modifié par Arrêté du 20 février 2024 - art. 8
+Modalités d'intégration de nouvelles activités tertiaires non
+recensées.
+Les assujettis d'activités tertiaires remplissent leurs obligations de
+remontée de consommation d'énergie sur la plateforme OPERAT en
+se rattachant à l'activité ou à la sous-catégorie d'activité se
+rapprochant le plus de celle qu'ils exercent. Ils indiquent le cas
+échéant dans le champ observation correspondant, la définition
+synthétique de leur activité si elle s'écarte de façon significative de
+celles à laquelle ils se sont rattachés.
+Dans le cas où les éléments relatifs à l'objectif fixé en valeur absolue
+de l'activité à laquelle ils se sont rattachés ne prennent pas en
+compte les spécificités d'une activité de leur activité spécifique,
+une demande d'intégration de nouvelle activité peut être adressée
+au ministre chargé de la construction et de l'habitation et au
+ministre chargé de l'énergie. Elle est composée d'un dossier, dont la
+trame est fixée en Annexe VIII, du présent arrêté, qui établit et
+justifie les propositions des valeurs des composantes CVC et USE de
+l'objectif de consommation d'énergie finale fixé en valeur absolue,
+les indicateurs d'intensité d'usage correspondant à cette activité
+ainsi que la formule de modulation des objectifs en fonction du
+volume d'activité correspondant.
+Le ministre chargé de la construction et de l'habitation et le
+ministre chargé de l'énergie agréent la proposition dans un délai de
+9 mois suivant la date de réception de la demande.
+
+===== PAGE 46 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 46 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Article 16
+VERSION EN VIGUEUR DEPUIS LE 25 AVRIL 2022
+Modifié par Arrêté du 13 avril 2022 - art. 1
+Changement de source d'énergie.
+Conformément aux disposition prévues au deuxième alinéa du I de
+l'article L. 174-1 et de l'article R. 174-25 du code de la construction
+et de l'habitation, le changement de type d'énergie utilisée ne doit
+pas entraîner, à volume d'activité constant :
+- d'augmentation des émissions de gaz à effet de serre ;
+- d'augmentation du recours aux énergies non renouvelables dont
+l'évaluation sera appréciée par conversion des consommations
+d'énergie finale en énergie primaire suivant les coefficients de
+conversion présentées en annexe VII.
+
+===== PAGE 47 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 47 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Article 17
+VERSION EN VIGUEUR DEPUIS LE 15 MARS 2024
+Modifié par Arrêté du 20 février 2024 - art. 9
+Mesures particulières
+Les mesures particulières, dérogeant aux principes méthodologiques
+généraux présentés dans les articles 3 à 14 du présent arrêté,
+adoptées sont les suivantes :
+- en raison du contexte sanitaire rencontré au cours des années
+2020 et 2021, les données de consommations énergétique de
+l'année 2020 ne peuvent être considérées comme représentatives. A
+cet égard :
+- les déclarations de consommations énergétiques pour les années
+2020 et 2021 ne feront pas l'objet d'une notation "Eco Energie
+Tertiaire" au titre des dispositions prévues au III de l'article 13 du
+présent arrêté ;
+
+===== PAGE 48 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 48 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Article 18
+VERSION EN VIGUEUR DEPUIS LE 25 AVRIL 2022
+Modifié par Arrêté du 13 avril 2022 - art. 1
+Exécution des dispositions de l'arrêté.
+Le directeur de l'habitat, de l'urbanisme et des paysages au
+ministère de la cohésion des territoires et des relations avec les
+collectivités territoriales, le directeur de l'habitat, de l'urbanisme et
+des paysages et le directeur général de l'énergie et du climat au
+ministère de la transition écologique et solidaire, le directeur
+général des finances publiques au ministère de l'action et des
+comptes publics, le directeur général des outre-mer au ministère des
+outre-mer, le directeur général des patrimoines au ministère de la
+culture sont chargés, chacun en ce qui le concerne, de l'exécution
+du présent arrêté, qui sera publié au Journal officiel de la
+République française.
+Notas :
+1.-(Article 3)-La surface de “ consommations énergétiques ”
+correspond à la surface sur laquelle l'ensemble des consommations
+énergétiques sont prises en compte. Cette surface de
+consommations énergétiques comprend notamment les surfaces de
+stationnement (en infrastructure ou en superstructure) qui ne sont
+pas prises en considération au niveau de l'identification de
+l'assujettissement. En effet, la surface prise en considération au
+niveau de l'assujettissement est la surface de plancher au sens de
+l'article R. 111-22 du code de l'urbanisme qui ne comprend pas les
+surfaces de plancher aménagées en vue du stationnement des
+véhicules motorisés ou non, y compris les rampes d'accès et les aires
+de manœuvre.
+2.-(Article 4) La segmentation en zones fonctionnelles permet de
+définir l'objectif en valeur absolue correspondant à la configuration
+
+===== PAGE 49 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 49 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+rencontrée. Le découpage en zone fonctionnelle n'impose pas
+l'identification des consommations énergétiques pour chacune des
+zones fonctionnelles. Ainsi, l'identification des surfaces des zones
+fonctionnelles n'impose pas de sous-comptage à cette échelle, et la
+déclaration des consommations énergétiques se fait au niveau de
+l'entité fonctionnelle (Consommations individuelles de l'entité
+fonctionnelle et, le cas échéant, les consommations réparties
+bénéficiant à l'entité fonctionnelle ainsi que les consommations des
+espaces communs affectées à l'entité fonctionnelle).
+3.-(Article 7) Les études énergétiques doivent être menées à un
+niveau fonctionnel pertinent c'est-à-dire celui du bâtiment afin de
+pouvoir décliner les résultats à l'échelle de chaque entité
+fonctionnelle en fonction de leur situation, notamment en cas de
+multi-occupation.
+Annexes (Articles Annexe I à Annexe VIII)
+Annexe I
+VERSION EN VIGUEUR DEPUIS LE 01 FÉVRIER 2024
+Modifié par Arrêté du 28 novembre 2023 - art. 7
+FACTEURS DE CONVERSION EN ÉNERGIE FINALE DES ÉNERGIES
+CONSOMMÉES
+PRODUIT ENERGETIQUE
+kWh (PCI)
+1 kWh d'énergie électrique
+1
+1 kWh (PCS) de gaz naturel (méthane) issu
+des réseaux
+0,90
+1 kg de gaz naturel liquéfié
+12.553
+
+===== PAGE 50 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 50 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+1 kg de gaz propane
+1 m3 de gaz propane
+12,66
+23,7
+1 kg de gaz butane
+1 m3 de gaz butane
+12,57
+30,45
+1 litre de fioul domestique
+9,97
+1 L de gazole non routier
+9,81
+1 kg de charbon (agglomérés et briquettes
+de lignite)
+1 kg de houille
+8,889
+7,222
+1 kg bois-plaquettes d'industrie
+2,200
+1 kg bois-plaquettes forestières
+2,700
+1 kg bois-granulés (pellets) ou briquettes
+4,600
+Bois-buches par stère
+1 680
+1 kWh de réseau de chaleur
+0,77
+1 kWh de réseau de froid
+0,25
+Production de froid industriel (logistique de
+
+===== PAGE 51 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 51 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+La saisie des quantités d'énergie sur la plateforme OPERAT s'effectue
+par type d'énergie et sont exprimées dans l'unité qui a présidé à leur
+achat. La plateforme convertit automatiquement les valeurs saisies en
+énergie finale.
+NOTA :
+Conformément à l'article 11 de l'arrêté du 28 novembre 2023 (NOR :
+TREL2307517A), ces dispositions entrent en vigueur au 1er février 2024.
+froid)
+1kWh électrique utilisé
+1
+Autre source énergétique non recensée
+Demande d'intégration
+(article 3)
+
+===== PAGE 52 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 52 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Annexe II
+VERSION EN VIGUEUR DEPUIS LE 07 SEPTEMBRE 2025
+Modifié par Arrêté du 1er août 2025 - art.
+Annexe non publiée au Journal officiel.
+NOTA :
+Conformément à l'article 6 de l'arrêté du 1er août 2025 modifiant
+l'arrêté du 10 avril 2020 relatif aux obligations d'actions de réduction
+des consommations d'énergie finale dans des bâtiments à usage
+tertiaire (NOR : ATDL2430864A), l'annexe II de l'arrêté du 10 avril 2020
+relatif aux obligations d'actions de réduction des consommations
+d'énergie finale dans des bâtiments à usage tertiaire est remplacée par
+l'annexe I de l'arrêté du 1er août 2025 précité. Cette annexe I est
+consultable au Bulletin officiel :
+https://www.bulletin-officiel.developpement-durable.gouv.fr/notice?
+id=Bulletinofficiel-0034142&reqId=4f33d0f3-5caf-4b06-8413-
+17e4fed1ccd5&pos=1
+.
+Annexe III
+VERSION EN VIGUEUR DEPUIS LE 07 SEPTEMBRE 2025
+Modifié par Arrêté du 1er août 2025 - art.
+AJUSTEMENT DES DONNÉES DE CONSOMMATION D'ÉNERGIE FINALE
+EN FONCTION DES VARIATIONS CLIMATIQUES
+Liste des stations météorologiques
+Com Part
+Géomor
+phologie
+Numéro
+Stat_Meteo_Dep
+Départ
+Alt_Stat_Meteo
+1089001
+Ambérieu-en-
+Bugey
+01
+251
+Altitude
+1414001
+Sutrieu
+01
+878
+2320001
+Saint Quentin
+02
+98
+3060001
+Vichy-Charmeil
+03
+249
+Altitude
+3248001
+Saint-Nicolas
+03
+878
+4049001
+Saint-Auban-sur-
+Durance
+04
+458
+
+===== PAGE 53 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 53 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Altitude
+4019001
+Barcelonnette
+04
+1155
+5046001
+Embrun
+05
+871
+Altitude
+5183001
+Villar-Saint-
+Pancrace
+05
+1310
+6088001
+Nice
+06
+2
+Altitude
+6163007
+Tende_SAPC
+06
+636
+Altitude
+6077006
+Peira Cava
+06
+1443
+7131001
+Lanas - Syn
+07
+280
+7068001
+Colombier-le-
+Jeune
+07
+566
+Altitude
+7154005
+Mazan-l'Abbaye
+07
+1240
+8105005
+Charleville-
+Mézières
+08
+147
+9289001
+Saint-Girons -
+Antichan
+09
+414
+Altitude
+9024004
+Aston
+09
+1781
+10030001
+Troyes-Barberey
+10
+112
+
+===== PAGE 54 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 54 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+11069001
+Carcassonne -
+Salvaza
+11
+128
+Littoral
+11262005
+Narbonne
+11
+110
+12145001
+Millau -
+Soulobres
+12
+712
+12254001
+Rodez
+12
+578
+Altitude
+12014001
+Aurelle-
+Verlac_SAPC
+12
+1076
+Ref -
+Littoral
+13054001
+Marseille -
+Marignane
+13
+9
+Arrière
+Pays
+13103001
+Salon-de-
+Provence
+13
+58
+14137001
+Caen -
+Carpiquet
+14
+67
+15014004
+Aurillac
+15
+639
+Altitude
+15053001
+Coltines
+15
+979
+Altitude
+15101004
+Le Lioran_SAPC
+15
+1238
+16089001
+Cognac
+16
+30
+Ref -
+17300009
+La Rochelle - Ile
+17
+20
+
+===== PAGE 55 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 55 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Littoral
+de Ré
+Intérieur
+Terres
+17415003
+Saintes
+17
+38
+18033001
+Bourges
+18
+161
+19031008
+Brive - La Roche
+19
+115
+21473001
+Dijon - Longvic
+21
+219
+22372001
+Saint-Brieuc
+22
+136
+23176001
+La Souterraine
+23
+370
+24138004
+Coulounieix -
+Périgueux
+24
+213
+25056001
+Besançon
+25
+307
+Altitude
+25462001
+Pontarlier
+25
+831
+26198001
+Montélimar
+26
+73
+Altitude
+26168001
+Lus La Croix
+Haute
+26
+1059
+27347001
+Evreux - Huest
+27
+138
+28070001
+Chartres
+28
+155
+
+===== PAGE 56 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 56 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Littoral
+29075001
+Brest - Guipavas
+29
+94
+Référence
+(Terres)
+29216001
+Quimper
+29
+82
+Littoral -
+Ref
+20114002
+Figari
+2A
+20
+Altitude
+20268001
+Sampolo
+2A
+837
+Littoral -
+Ref
+20148001
+Bastia
+2B
+10
+30189001
+Nîmes -
+Courbessac
+30
+59
+Littoral
+30003001
+Aigues-Mortes
+30
+1
+Altitude
+30339001
+Val-d'Aigoual -
+Mont Aigoual
+30
+1567
+Référence
+31069001
+Toulouse -
+Blagnac
+31
+151
+Altitude
+31042012
+Bagnères-de-
+Luchon
+31
+618
+32013005
+Auch
+32
+122
+33281001
+Bordeaux -
+Mérignac
+33
+47
+
+===== PAGE 57 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 57 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Littoral
+33529001
+La Teste-de-Buch
+- Cazaux
+33
+23
+34154001
+Montpellier
+34
+2
+Altitude -
+Intérieur
+34205001
+Les Plans
+34
+846
+35281001
+Rennes - St
+Jacques
+35
+36
+Littoral
+35228001
+Dinard
+35
+65
+36063001
+Châteauroux -
+Déols
+36
+158
+37179001
+Tours
+37
+108
+38384001
+Grenoble - Saint-
+Geoirs
+38
+384
+Altitude
+(800-
+1200)
+38548001
+Villard-de-Lans
+38
+1027
+Altitude
+(>1200)
+38567002
+Chamrousse
+38
+1730
+39362001
+Lons-le-Saunier
+39
+298
+Altitude
+39413001
+La Pesse
+39
+1133
+
+===== PAGE 58 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 58 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Référence
+40192001
+Mont-de-Marsan
+40
+59
+Littoral
+40046001
+Biscarrosse
+40
+35
+Référence
+a priori
+41097001
+Romorantin
+41
+83
+42005001
+St Etienne -
+Bouthéon
+42
+400
+Altitude
+42039003
+Chalmazel
+42
+990
+43062001
+Le Puy - Loudes
+43
+833
+Altitude
+43111002
+Landos-Charbon
+43
+1148
+44020001
+Nantes -
+Bouguenais
+44
+26
+45055001
+Orléans
+45
+123
+46127001
+Gourdon
+46
+260
+47091001
+Agen
+47
+58
+48095005
+Mende -
+Chabrits
+48
+932
+Altitude
+48027003
+Mont Lozère et
+Goulet - Le
+Bleymard
+48
+1418
+
+===== PAGE 59 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 59 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+49020001
+Angers -
+Beaucouzé
+49
+50
+Littoral
+50209001
+Cherbourg -
+Maupertus
+50
+135
+51595002
+Bussy-Lettrée -
+aéroport Paris-
+Vatry
+51
+179
+52269001
+Langres
+52
+466
+52448001
+Saint-Dizier
+52
+139
+53110002
+Grez-en-Brouère
+53
+93
+54526001
+Nancy - Essey
+54
+212
+55386002
+Nonsard
+55
+230
+55484001
+Septsarges
+55
+293
+56185001
+Lorient - Lann
+Bihoue
+56
+45
+56243001
+Vannes-Sene
+56
+3
+57039001
+Metz - Frescaty
+57
+192
+58160001
+Nevers - Marzy
+58
+175
+
+===== PAGE 60 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 60 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Littoral
+59183001
+Dunkerque
+59
+11
+Intérieur
+59343001
+Lille - Lesquin
+59
+47
+60639001
+Beauvais - Tillé
+60
+89
+61001001
+Alençon
+61
+143
+Littoral
+62160001
+Boulogne-sur-
+Mer
+62
+73
+Intérieur
+62298001
+Cambrai -
+Epinoy
+62
+76
+63113001
+Clermont-
+Ferrand
+63
+331
+Altitude
+63353003
+Saint-Germain-
+L'Herm
+63
+1070
+Altitude
+63098001
+Chastreix
+63
+1385
+Littoral
+64024001
+Biarritz - Anglet
+64
+71
+64549001
+Pau - Uzein
+64
+183
+Altitude
+64316003
+Larrau - Iraty
+64
+1427
+65344001
+Tarbes - Ossun
+65
+360
+
+===== PAGE 61 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 61 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Altitude
+(800-
+1200)
+65075001
+Bazus-Aure
+65
+767
+Altitude
+(>1200)
+65283001
+Loudervielle
+65
+1587
+66136001
+Perpignan
+66
+42
+Interieur
+66194002
+Serralongue
+66
+700
+67124001
+Strasbourg -
+Entzheim
+67
+150
+68205001
+Colmar -
+Meyenheim
+68
+207
+Altitude
+68247003
+Markstein Crête
+68
+1184
+69029001
+Lyon - Bron
+69
+197
+70473001
+Luxeuil
+70
+272
+71105001
+Macon
+71
+216
+72181001
+Le Mans
+72
+48
+Vallée
+73329001
+Chambery - Aix-
+les-Bains
+73
+235
+
+===== PAGE 62 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 62 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Moyenne
+altitude
+73054001
+Bourg-Saint-
+Maurice
+73
+865
+Altitude
+73132003
+Hauteluce - Col
+des Saisies
+73
+1614
+Vallée
+74182001
+Annecy -
+Meythet
+74
+455
+Moyenne
+altitude
+74119003
+Evian
+74
+725
+Altitude
+74191003
+Le Plenay
+74
+1515
+75114001
+Paris -
+Montsouris
+75
+75
+Littoral
+76481001
+Le Havre -
+Octeville
+76
+94
+76116001
+Rouen - Boos
+76
+151
+77306001
+Melun
+77
+91
+78621001
+Trappes
+78
+167
+79191005
+Niort
+79
+57
+Littoral
+80001001
+Abbeville
+80
+69
+80523001
+Meaulte
+80
+107
+
+===== PAGE 63 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 63 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+81284001
+Albi
+81
+172
+Altitude
+81192005
+Murat-sur-Vèbre
+81
+1022
+82121002
+Montauban
+82
+106
+Intérieur
+83031001
+Le Luc
+83
+80
+Altitude
+83044003
+Comps-sur-
+Artuby
+83
+892
+Littoral
+83137001
+Toulon
+83
+23
+84031001
+Carpentras
+84
+99
+Altitude
+84107002
+Saint Christol
+84
+836
+Littoral
+85060002
+Les Sables-
+d'Olonne -
+Château
+d'olonne
+85
+27
+85191003
+La Roche-sur-
+Yon
+85
+90
+86027001
+Poitiers - Biard
+86
+123
+87085006
+Limoges -
+Bellegarde
+87
+402
+
+===== PAGE 64 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 64 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+88136001
+Epinal
+88
+317
+89387002
+Sens
+89
+70
+90052002
+Giromagny
+90
+473
+91027002
+Orly - Athis-
+Mons
+91
+86
+75114001
+Paris -
+Montsouris
+92
+75
+95527001
+Roissy
+93
+108
+91027002
+Orly - Athis-
+Mons
+94
+89
+95088001
+Paris - Le Bourget
+95
+49
+97101015
+Les Abymes - Le
+Raizet
+971
+11
+97107002
+Capesterre
+Belle-eau
+Neufchateau
+971
+28
+97117013
+Le Moule
+971
+6
+97124006
+Saint Claude
+Matouba
+971
+607
+97213004
+Lamentin
+972
+5
+
+===== PAGE 65 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 65 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Détermination des degrés jours
+Altitude
+97208001
+Fond-Denis-
+Cadet
+972
+493
+Intérieur
+97224004
+Saint-Joseph-
+Lézard
+972
+65
+97307001
+Cayenne -
+Matoury
+973
+4
+97308001
+Saint-Georges
+973
+6
+97353001
+Maripasoula
+973
+106
+97418110
+Saint Denis -
+Gillot
+974
+21
+97410238
+Saint-Benoît
+974
+43
+97414409
+Plaine des
+Makes_SAPC
+974
+980
+Altitude
+97422440
+Le Tampon -
+Plaine des
+Caffres
+974
+1570
+98508001
+Pamandzi -
+Dzaoudzi
+976
+8
+
+===== PAGE 66 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 66 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Le degré jour unifié (DJU) est la différence entre la température
+moyenne extérieure et une température de référence qui permet de
+réaliser des estimations de consommations d'énergie thermique pour
+maintenir un bâtiment confortable en proportion de la rigueur de
+l'hiver ou de la chaleur de l'été.
+Sommés sur une période, ils permettent de calculer les besoins en
+chauffage et en refroidissement (ou rafraichissement) d'un bâtiment Ils
+sont également utilisés pour le suivi des consommations de chauffage et
+de rafraichissement des locaux ou l'ajustement de ces consommations
+en fonction des variations climatiques par rapport à des conditions
+climatiques de référence établies sur une base statistique.
+Méthode des professionnels de l'énergie .
+Le degré jour (DJ) est calculé à partir des températures météorologiques
+extrêmes du lieu et du jour J :
+- Tmin : Température minimale du Jour J mesurée à 2 m du sol sous abri
+et relevée entre J-1 (la veille) à 18 heures et J à 18 heures UTC - prise en
+compte du rafraîchissement nocturne ;
+- Tmax : Température maximale du Jour J mesurée à 2 m du sol sous abri
+et relevée entre J à 6 heures et J + 1 (le lendemain) à 6 heures UTC - prise
+en compte de l'ensoleillement diurne ;
+- S : Seuil de température de référence retenu est : S = 18 °C d'où
+l'expression DJ18 ;
+- Tmoy : Température moyenne de journée Tmoy = (Tmin + Tmax) / 2.
+Les degrés jour se divisent donc en degré-jour de chauffe (DJC ou
+DJChauf) et degré-jour froid (DJF ou DJRefroid).
+
+===== PAGE 67 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 67 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Vous pouvez consulter l'intégralité du texte avec ses images à partir de
+l'extrait du Journal officiel électronique authentifié à l'adresse suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=tT8Pn_noNUJrtHX0hN35x0kDKsw--9F4cO5LbLBvIoE=
+La méthode utilisée dans le dispositif Eco Energie Tertiaire est la
+méthode dite “Professionnel de l'énergie” qui s'approche le plus près de
+la réalité.
+Elle se distingue de la méthode simplifiée “Météo France” lorsque la
+température de référence est comprise entre les températures Tmin et
+Tmax (cas rencontrés notamment en “intersaisons” : printemps et
+automne).
+Calcul de déficit - Chauffage (Chauffagiste)
+- si S > Tmax (cas fréquent en hiver) : DJ = S - Tmoy ;
+- si S ≤ Tmin (cas exceptionnel en début ou fin de saison de chauffe) : DJ
+= 0 ;
+- si Tmin < S ≤ Tmax : affine méthode Météo DJ = (S - Tmin) * [0,08 + 0,42
+*(S -Tmin) / (Tmax -Tmin)].
+Calcul d'excédent - Refroidissement (Climaticien - Frigoriste)
+- si S > Tmax : DJ = 0 ;
+- si S ≤ Tmin : DJ = Tmoy - S ;
+- si Tmin < S ≤ Tmax : affine méthode Météo DJ = (Tmax - S) * [0,08 + 0,42
+*(Tmax - S) / (Tmax -Tmin)].
+
+===== PAGE 68 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 68 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+La température de référence retenue pour les DJChauf (chauffage) et les
+DJRefroid (refroidissement) est 18 °C, d'où les références en DJ18.
+Vous pouvez consulter l'intégralité du texte avec ses images à partir de
+l'extrait du Journal officiel électronique authentifié à l'adresse suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=tT8Pn_noNUJrtHX0hN35x0kDKsw--9F4cO5LbLBvIoE=
+Conformément au II de l'article 2 de l'arrêté du 5 juillet 2024 (NOR :
+TREL2412391A), la partie située entre les mots : " Valeur de la part
+chauffage CVC " et la fin de l'annexe III est remplacée par l'annexe II
+dudit arrêté. Vous pouvez consulter l'intégralité du texte avec ses
+images à partir de l'extrait du Journal officiel électronique authentifié
+accessible à l'adresse suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=0gWqprsKqZcRM9PXD42fpNw8THC9Ur0eP8vGw73cWt4=
+Conformément à l'article 6 de l'arrêté de l'arrêté du 1er août 2025
+modifiant l'arrêté du 10 avril 2020 relatif aux obligations d'actions de
+réduction des consommations d'énergie finale dans des bâtiments à
+usage tertiaire (NOR : ATDL2430864A), le dernier tableau de l'annexe III
+de l'arrêté du 10 avril 2020 relatif aux obligations d'actions de réduction
+des consommations d'énergie finale dans des bâtiments à usage
+tertiaire est remplacé. Ce tableau est consultable au Bulletin officiel :
+https://www.bulletin-officiel.developpement-durable.gouv.fr/notice?
+id=Bulletinofficiel-0034142&reqId=4f33d0f3-5caf-4b06-8413-
+17e4fed1ccd5&pos=1
+.
+Annexe IV
+VERSION EN VIGUEUR DEPUIS LE 11 DÉCEMBRE 2023
+Modifié par Arrêté du 28 novembre 2023 - art. 6
+CADRE TYPE DU DOSSIER TECHNIQUE
+
+===== PAGE 69 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 69 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Préambule
+La modulation pour contraintes techniques, architecturales ou
+patrimoniales est spécifique à un bâtiment. Dans ce contexte, les
+bâtiments concernés par une déclaration de modulation des objectifs
+pour ce motif doivent faire l'objet d'un dossier spécifique, à l'exception
+de certains bâtiments dont les caractéristiques sont similaires.
+Le dossier technique est décliné à l'échelle d'une entité fonctionnelle
+dans le cas de la multi-occupation, et conformément aux dispositions
+du second alinéa de l'article 7, l'étude énergétique portant sur la
+performance énergétique doit être menée à l'échelle du bâtiment.
+Chapitre Ier : Données administratives sur l'assujetti
+I.1. - Identification de la société - Identification du référent
+Synthèse des informations contenues dans la Table 1 de l'annexe VI
+I.2. - Données administratives bâtimentaires
+Identification du bâtiment, partie de bâtiment ou ensemble de
+bâtiments (Adresse, références foncières)
+Synthèse des informations contenues dans la Table 1 de l'annexe VI
+Chapitre II : Echantillonnage (le cas échéant ou Sans objet)
+II.1. - Identification des bâtiments concernés
+Identification des bâtiments dans un tableau
+
+===== PAGE 70 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 70 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+II.2. - Segmentation du patrimoine en famille(s) homogène(s)
+Exploitation des informations contenues dans les Tables 5a et 5b de
+l'annexe VI pour identifier des familles homogènes :
+- Contraintes techniques,
+- Contraintes architecturales,
+- Contraintes patrimoniales.
+Exploitation des données de consommations de référence (Cf. Table 3) à
+mettre en perspective avec les indicateurs d'intensité d'usages.
+Affiner éventuellement avec les informations contenues dans la Table 6
+relative aux systèmes techniques
+Vérification de la règle relative à l'échantillonnage (Cf. Annexe V)
+II.3. - Identification du (des) bâtiment(s) de référence
+Identification du bâtiment de référence
+Dans le cas de plusieurs échantillons, établir un tableau récapitulatif
+pour chaque échantillon des bâtiments composant cet échantillon et
+identifier le bâtiment de référence correspondant (Veiller à la
+cohérence de la segmentation).
+Référence des
+bâtiments
+Localis
+ation
+Zone
+géographiqu
+e
+Epoque de
+construction
+R
+éf
+ér
+en
+L
+o
+c
+Z
+o
+n
+e
+g
+E
+p
+o
+q
+u
+Carac
+téristi
+ques
+
+===== PAGE 71 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 71 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Chapitre III : Etude énergétique portant sur la performance énergétique
+III-1. - Caractéristiques du bâtiment (ou du bâtiment de référence
+correspondant à un échantillon)
+Présentation des caractéristiques initiales du bâtiment
+ce
+d
+es
+b
+ât
+i
+m
+en
+ts
+a
+li
+s
+a
+t
+i
+o
+n
+é
+o
+g
+r
+a
+p
+h
+i
+q
+u
+e
+e
+d
+e
+c
+o
+n
+st
+ru
+ct
+io
+n
+Car
+acté
+risti
+que
+s
+d'éc
+han
+tillo
+nna
+ge
+princi
+pales
+du
+bâti
+ment
+(initia
+les)
+Identification du
+bâtiment de référence
+de l'échantillon
+Ex
+:Typ
+olog
+ie
+bâti
+men
+tair
+e
+Mo
+de
+de
+cha
+uffa
+ge
+Ex :
+Haut
+eur
+sous-
+plafo
+nd
+Ou remplacer la colonne
+par l'identification des
+écarts par rapport aux
+caractéristiques
+principales du bâtiment
+de référence
+
+===== PAGE 72 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 72 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Exploitation des données contenues dans la Table 5 de l'annexe VI
+Traduction technique des contraintes techniques, architecturales ou
+patrimoniales (le cas échéant ou Sans objet)
+Verser en Annexe au dossier technique la note technique mentionnée
+au III de l'article 9, les justificatifs mentionnés au IV de l'article 9
+III-2. - Identification du scénario de base
+Orientation des choix d'actions d'amélioration de la performance
+énergétique du bâtiment
+Caractérisation de la performance énergétique de chaque élément
+constituant l'enveloppe du bâtiment - Identification du niveau de
+performance recherchée pour atteindre l'objectif Cabs.
+Nota. - Même si le seul niveau Cabs connu à ce jour est celui à horizon
+2030, celui-ci s'appuie sur un niveau de performance RT2012 qui semble
+suffisant au niveau de l'enveloppe et au regard des actions qui peuvent
+être menées sur celle-ci (isolation notamment) qui ont un TRI de 30 ans.
+Des informations prospectives 2040 et 2050 seront fournies à titre
+informatif et à une échelle macro (grande famille de catégorie d'activité)
+dans le guide d'accompagnement.
+La prise en compte des meilleures techniques disponibles va surtout
+influer sur les équipements bâtimentaires (TRI de 15 ans) ou encore les
+systèmes de gestion actives (TRI 6ans), et sur les équipements de
+process pour lesquels il n'y a pas d'objectif en termes de TRI.
+Récapitulatif en suivant les items de la RT éléments. Il convient de
+procéder à une simulation thermique pour identifier le niveau de
+performance du bâtiment et le mettre en corrélation avec les données
+de consommations correspondantes (diagnostic), puis de procéder à la
+simulation thermique après actions sur le bâtiment et ses systèmes
+techniques dans la perspective d'atteindre le niveau Cabs.
+Tableau récapitulatif scénario de base
+
+===== PAGE 73 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 73 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Détermination des TRI du scénario de base pour chacun des 3 leviers
+S'appuyer sur la méthode définie dans le Guide Ademe "RAVALEMENT,
+RÉNOVATION DE TOITURE, AMÉNAGEMENT DE PIÈCES - QUAND
+DEVEZ-VOUS ISOLER ?" - Comment calculer le temps de retour sur
+investissement ? pages 9 et 10
+Point de vigilance : Respecter les dispositions prévues à l'article 11 du
+présent arrêté
+Le calcul du temps de retour brut sur investissement de chacun des
+leviers d'actions est effectué indépendamment de l'engagement des
+autres leviers d'actions.
+III-3. - Justification de la modulation de l'objectif Cabs
+III-3-1. - Modulation pour contraintes techniques architecturales ou
+patrimoniales
+Eventuellement Sans objet
+Rappel du contenu de l'avis circonstancié prévu au IV de l'article 9 du
+présent arrêté (à verser en Annexe du dossier), complété, le cas échéant
+par les prescriptions émises dans le cadre du contrôle scientifique et
+technique et de l'instruction des déclarations et demandes
+d'autorisation de travaux
+El
+é
+m
+e
+n
+ts
+Perfor
+mance
+actuell
+e
+(Diagn
+ostic)
+Perform
+ance
+recherch
+ée
+(Atteinte
+de Cabs)
+Estimation de la réduction des
+consommations énergétiques et des
+émissions de GES
+
+===== PAGE 74 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 74 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Rappel des justifications identifiées au III.1
+Evaluation de l'écart en consommation par rapport au scénario de base
+Identification des actions qui pourraient être menées avec un niveau de
+performance supérieur à celui du scénario de base
+Calcul du TRI.
+Résultats du scénario 1
+Itérations éventuelles jusqu'au respect des dispositions prévues dans le
+présent arrêté
+Nota. - Les travaux sur l'enveloppe permettent d'améliorer l'efficacité
+énergétique de façon notable et d'optimiser les actions sur les systèmes
+techniques dans le cadre des opérations de renouvellement. En
+conséquence il convient de mesurer cet aspect au niveau des décisions
+à prendre en cas de dépassement du TRI.
+Tableau récapitulatif scénario de modulation
+III-3-2. - Modulation pour disproportion économique
+Eventuellement "Sans objet" si la modulation ne concerne que le cas de
+contraintes uniquement d'ordre techniques architecturales ou
+patrimoniales.
+Identification des actions sur l'enveloppe qui conduisent au
+dépassement du TRI (30 ans)
+Elém
+ents
+Performance
+actuelle
+(Diagnostic)
+Performance
+retenue
+(Atteinte de Cabs
+modulé)
+Commentaires
+techniques
+
+===== PAGE 75 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 75 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Identification éventuelle des actions portant sur le renouvellement des
+équipements énergétiques du bâtiment qui conduisent au dépassement
+du TRI (15 ans)
+Identification éventuelle des actions portant sur la mise en place de
+système d'optimisation et d'exploitation des systèmes et équipements
+(10 ans)
+Justifier de l'optimisation de la répartition du coût global des actions sur
+les 3 leviers susvisés.
+Tableau récapitulatif scénario de modulation
+Chapitre IV : Etude énergétique portant sur les équipements liés aux
+usages spécifiques
+IV-1. - Identification des différents usages spécifiques
+Cf. Contenu attendu au III de l'article 7
+Identification des équipements et procédés exploités dans les locaux à
+usage tertiaire, les éléments qualifiant leur consommation énergétique
+(à savoir : leur niveau d'efficacité énergétique et leur modalité
+d'utilisation), ainsi que la source d'énergie qu'ils utilisent.
+Il n'est pas proposé de tableau récapitulatif "type", car il convient de
+l'adapter à chacune des grandes typologie d'activité. Un récapitulatif
+d'éléments de benchmark peut se révéler intéressant en termes
+d'identification de pistes d'améliorations.
+El
+é
+m
+en
+ts
+Perform
+ance
+actuelle
+(Diagnos
+tic)
+Performanc
+e retenue
+(Atteinte
+de Cabs
+modulé)
+Commentaires techniques
+Rappel du niveau de TRI
+correspondant pour chacun
+des leviers
+
+===== PAGE 76 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 76 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+IV- 2. - Identifier des actions sur les modalités d'utilisation
+Cf. supra - Usage normal Cf. Actions visées au chapitre V.
+Evaluation de leur impact respectif sur la consommation d'énergie finale
+de chaque entité fonctionnelle tertiaire concernée
+Evaluation des sources de gain énergétique potentiel et des émissions
+de GES correspondantes.
+IV- 3. - Actions retenues sur les usages spécifiques
+Politique d'achat
+Modalité d'utilisation (comportement - gestion active)
+Chapitre V - Adaptation des locaux et usage économe en énergie
+IV-1. - Configuration des locaux en situation de référence
+Descriptif des locaux et de leur aménagement (Cf. référence aux
+indicateurs d'intensité d'usages).
+IV- 2. - Identification des pistes d'adaptation des locaux
+Perspectives et évaluation de l'impact sur les indicateurs d'intensité
+d'usages.
+IV- 3. - Etat des lieux sur le comportement des usagers, l'organisation
+Eléments de diagnostic
+IV- 4. - identification des améliorations potentielles au niveau de
+l'organisation et le comportement des usagers
+Chapitre VI : Programme d'actions
+Récapitulatif des actions pour chacun des leviers - Elaboration entre le
+propriétaire et le(s) preneur(s) à bail.
+
+===== PAGE 77 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 77 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Tableau récapitulatif qui pourra être communiqué et mis à jour en cas
+de transaction immobilière.
+Autant de lignes que d'actions par type de leviers d'action
+Tableau récapitulatif standardisé du scénario de modulation
+Leviers d'action
+Identificat
+ion des
+actions
+Répartition
+entre
+propriétaire et
+preneur(s) à
+bail(s)
+Echéance
+(réalisée -
+prévision
+nelle)
+Prop
+riéta
+ire
+Prene
+ur à
+bail
+Performance
+énergétique
+Equipements
+performants
+Dispositif de
+contrôle et de
+gestion active
+Adaptation des
+locaux
+Comportement
+des occupants
+
+===== PAGE 78 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 78 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Identifiant de l'établissement au
+niveau local
+SIRET : Siren (9
+chiffres) + le
+numéro NIC (5
+chiffres)
+Zone
+géograp
+hique
+Eléments
+Performance
+actuelle
+(Diagnostic)
+Perform
+ance
+retenue
+(Atteint
+e de
+Cabs
+modulé
+)
+Parois opaques (R exprimé en
+m².K/W) - Facade
+Parois opaques (R exprimé en
+m².K/W) - Pignon
+Façade rideaux vitrée (R exprimé
+en m².K/W)
+Mur en contact avec un volume
+chauffé (R exprimé en m².K/W)
+Toiture de pente < 60° (R
+exprimé en m².K/W)
+Toiture terrasse (R exprimé en
+m².K/W)
+
+===== PAGE 79 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 79 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Plancher de combles perdus (R
+exprimé en m².K/W)
+Plancher Bas (R exprimé en
+m².K/W)
+Plancher Bas donnant sur
+l'extérieur ou sur un local non
+chauffé (R exprimé en m².K/W)
+Menuiseries (U exprimé en
+W/m².K)
+Verrière (U exprimé en W/m².K)
+Chaudière (Etiquette énergie)
+Chaufferie (Rendement)
+PAC (Etiquette énergie)
+Chaudière à bois (Rendement)
+Chauffage électrique (Niveau de
+performance label)
+ECS - Chauffe-eau (étiquette
+énergie)
+ECS - Ballon d'eau chaude
+(étiquette énergie)
+
+===== PAGE 80 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 80 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Protections solaire mobiles
+(facteur solaire)
+Refroidissement Air-air (EER)
+Refroidissement Eau-air (EER)
+Refroidissement Air-eau (EER)
+Refroidissement Eau-eau (EER)
+Equipement de ventilation
+Equipement de traitement de
+l'air
+Ascenseurs
+Escalator
+Travelator
+Annexe V
+VERSION EN VIGUEUR DEPUIS LE 25 AVRIL 2022
+
+===== PAGE 81 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 81 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Modifié par Arrêté du 13 avril 2022 - art. 1
+PROCÉDURE D'ÉCHANTILLONNAGE
+La personne qui réalise l'étude énergétique recueille et analyse les
+caractéristiques et les usages de tous les bâtiments concernés afin de
+vérifier qu'ils sont similaires ou susceptibles d'être organisés en sous-
+ensembles homogènes de bâtiments similaires.
+Un sous ensemble homogène de bâtiments similaires induit que les
+bâtiments de ce sous-ensemble respectent l'ensemble des conditions
+suivantes :
+- même zone géographique thermique (composante CVC des sous-
+catégories-Annexe II) ;
+- même typologie constructive et comportement thermique dynamique
+similaire (caractéristiques intrinsèques similaires au niveau de
+l'enveloppe) ;
+- énergies utilisées et systèmes techniques CVC similaires ;
+-catégorie d'activités identique.
+Dans chaque sous-ensemble, la taille de l'échantillon y est au moins
+égale à la racine carrée du nombre de sites x : (y = √ x), arrondie au
+nombre entier supérieur.
+L'étude énergétique de chaque bâtiment de l'échantillon du ou des
+sous-ensemble (s) est établi conformément à la méthode prévue par le
+chapitre 2.
+
+===== PAGE 82 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 82 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Le rapport d'étude justifie les usages énergétiques similaires dans le ou
+les sous-ensemble (s) susmentionnés, et l'extrapolation à l'ensemble des
+bâtiments des résultats des études réalisées sur le ou les échantillon (s).
+Annexe VI
+VERSION EN VIGUEUR DEPUIS LE 11 DÉCEMBRE 2023
+Modifié par Arrêté du 28 novembre 2023 - art. 9
+MODALITÉS DE TRANSMISSION À LA BASE DE DONNÉES
+Modèle de fichier d'échange de données standardisées
+Les données sont organisées suivant 5 tables :
+Table 1 : Données administratives sur l'assujetti-Gestion des comptes
+utilisateurs : Identifiant société-Identification du référent-Identification
+des délégués et mandataires)
+Table 2 : Données administratives bâtimentaires : Identification du
+bâtiment, partie de bâtiment ou ensemble de bâtiments (Adresse,
+références foncières)
+Table 3 : Données sur la situation de référence : Identification de l'année
+de référence-Consommations énergétiques de l'année de référence-
+Catégories d'activités concernés et indicateurs d'intensité d'usages
+Table 4 : Données de consommations énergétiques annuelles par type
+d'énergie et des indicateurs d'intensité d'usage correspondants
+Table 5 : Données sur les caractéristiques bâtimentaires : Système
+constructif-Caractéristiques de l'enveloppe du bâtiment.
+
+===== PAGE 83 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 83 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Table 6 : Données sur les systèmes techniques bâtimentaire (types
+d'énergie, de générateur, d'émetteur, de ventilation, eau chaude
+sanitaire, éclairage, autres équipements immobiliers).
+Les tables 5 et 6 sont relatives à des données qui peuvent être
+renseignées de façon facultative sur OPERAT. Le renseignement de ces
+données permet aux assujettis de capitaliser leurs données
+patrimoniales et de procéder, le cas échéant, à des requêtes qui leur
+permettront d'établir des échantillons dans la perspective d'élaboration
+d'études diagnostiques ou de dossiers techniques de modulation des
+objectifs.
+Une grande majorité des données sont recueillies par sélection dans le
+cadre de menues déroulants.
+Les données attributaires de ces tables sont les suivantes :
+Table 1.-Données administratives sur l'assujetti-Gestion des comptes
+utilisateurs
+Cette table concerne la création de compte et d'accès sur OPERAT.
+Certaines données peuvent être récupérée par l'intermédiaire de
+l'application SIRENE (Cf. Guide utilisateur OPERAT)
+Désignation de la donnée attributaire
+Modalité de renseignement de
+la donnée
+Table 1A-Données administratives relative à la structure assujettie
+Sélection par menu déroulant
+(2 à 3 niveaux)
+-Etat et ses opérateurs
+
+===== PAGE 84 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 84 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Nature de la structure
+(Etat-Collectivités territoriales-Privé)
+-Ministère et services
+centraux de ministère
+-Services déconcentrés de
+l'Etat
+-Opérateur de l'Etat
+-Collectivités territoriales
+et leurs opérateurs
+-Région
+-Département
+-Etablissement Public de
+Coopération
+Intercommunale
+-Métropole
+-Communauté urbaine
+-Communauté
+d'agglomération
+-Communauté de
+communes
+
+===== PAGE 85 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 85 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+-Syndicat Intercommunal
+(vocation unique ou
+multiple)
+-Commune
+-Opérateur de Collectivité
+Territoriale
+-Entreprises tertiaires des
+secteurs public et privé
+(quel que soit le secteur
+d'activité)
+-Entreprise (plusieurs
+salariés)
+-Association
+-Profession libérale
+individuelle
+-Propriétaires immobiliers
+-Société civile immobilière
+et/ ou Foncière
+-Particulier.
+
+===== PAGE 86 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 86 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Nom de la structure
+Données alphanumérique
+(Recueil via API SIRENE)
+Identifiant national de la structure
+Numéro SIREN
+9 chiffres (Recueil via API
+SIRENE)
+Branche d'activité de la structure
+Code APE (Activité principale
+exercée)
+Code APE (ou code NAF) : 5
+caractères (4 chiffres et une
+lettre)
+(Recueil via API SIRENE)
+Adresse du siège de la structure
+Adresse correspondant au
+Siren (format adresse : n°-
+Voie-Code postale-Ville)
+(Recueil via API SIRENE)
+Identifiant de la sous-structure
+(établissement au niveau local)
+Numéro SIRET (le cas échéant)
+SIRET : Siren (9 chiffres) + le
+numéro NIC (5 chiffres)
+(Recueil via API SIRENE)
+Adresse de la sous-structure
+(établissement au niveau local)
+Adresse correspondant au
+Siret (format adresse : n°-Voie-
+Code postale-Ville)
+(Recueil via API SIRENE)
+Table 1B-Données administratives de Groupe de Structures assujetties
+
+===== PAGE 87 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 87 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Le cas échéant-Mutualisation des résultats à l'échelle de tout ou
+partie d'un patrimoine d'entités fonctionnelles
+Dénomination officielle du groupe de
+structures
+Données alphanumérique
+(déclaratif sur OPERAT)
+Adresse du groupe de structures
+Adresse correspondant au
+Siren (format adresse : n°-
+Voie-Code postale-Ville)
+(Recueil via API SIRENE)
+Dénomination de la structure référente
+du groupe de structures (si différente du
+groupe de structures)
+Données alphanumérique
+(déclaratif sur OPERAT)
+Identifiant national de la structure
+référente du groupe de structures
+Numéro SIREN
+9 chiffres (Récupération de la
+donnée déjà renseignée)
+Structures intégrées dans le groupe de
+structures-Identification Numéro SIRET
+concerné
+SIRET 1 : Siren (9 chiffres) + le
+numéro NIC (5 chiffres)
+SIRET 2 : Siren (9 chiffres)
++ le numéro NIC (5
+chiffres)
+SIRET x : Siren (9 chiffres)
++ le numéro NIC (5
+chiffres)
+
+===== PAGE 88 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 88 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Récupération de la
+donnée déjà renseignée
+Représentant légal de la structure
+référente du groupe de structures
+Nom-Prénom-Profil
+représentant légal
+Adresse mail du représentant légal du
+groupe de structures
+Adresse mail valide
+(nominative ou structure)
+Table 1C-Création de comptes utilisateurs de la structure et sous structures
+assujetties
+Représentant légal de la structure
+correspondant au SIREN
+Tout pouvoir sur les données
+OPERAT renseignées pour la
+structure
+Nom-Prénom-Profil
+représentant légal
+Courriel du représentant légal de la
+structure (droit d'accès par mot de passe)
+Adresse mail valide
+(nominative ou structure)
+Référent de la structure ou Référent d'une
+sous-structure
+Tout pouvoir sur les données
+OPERAT renseignées pour la
+structure ou la sous-structure mais
+sans responsabilité légale
+Nom-Prénom-Profil du
+référent
+Courriel du référent de la structure ou de
+Adresse mail valide
+
+===== PAGE 89 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 89 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+la sous-structure (établissement au niveau
+local)-Facultatif
+(nominative ou établissement)
+Correspondant
+Tout pouvoir sur les données
+OPERAT renseignées sur un
+périmètre déterminé, mais sans
+responsabilité légale
+Nom-Prénom-Profil
+correspondant
+Courriel du correspondant
+Adresse mail valide
+(nominative ou établissement)
+Table 1D-Création de comptes mandataires d'une structure ou sous-structure
+Identification Mandataire x
+Données alphanumérique
+Identité du mandataire
+Nom-Prénom-Profil
+mandataire
+Rôle du mandataire (facultatif)
+Habilité à renseigner des données
+techniques, des données
+Sélection par menu déroulant
+(choix)
+-Gestionnaire Immobilier
+de la Structure (interne à
+la structure ou au groupe)-
+Asset manager et Property
+manager
+-Gestionnaire technique
+(interne à la structure ou
+au groupe)-Energy
+manager ou Exploitant
+d'une entité fonctionnelle
+
+===== PAGE 90 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 90 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+d'occupation, de plans d'actions ou
+de données de consommations sur
+le périmètre bâtimentaire qui lui est
+affecté
+-Gestionnaire immobilier
+externe à la structure, ou
+propriétaire bailleur
+-Bureau d'études et
+conseils en performance
+énergétique, gestionnaire
+exploitant (externe à la
+structure ou au groupe de
+structure)
+-Autres (à préciser)
+Périmètre d'intervention du profil
+utilisateur
+(facultatif)
+Sélection par menu déroulant
+(choix)
+-Périmètre bâtimentaire
+(groupe de bâtiments) :
+définition d'un périmètre
+spécifique
+-Nationale pour la
+structure ou le groupe de
+structure
+Autre périmètre
+géographique
+-Régional
+-Départemental
+
+===== PAGE 91 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 91 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Table 2.-Données bâtimentaires
+Cette table concerne les données bâtimentaires qui permettent des
+modifications du périmètre de remontées de données de
+consommation notamment en cas de transaction immobilière (vente,
+nouveau contrat de bail) ou de mise en place de sous comptage au
+niveau de plusieurs bâtiments assujettis situés sur un même site. Une
+exploitation de Géoportail peut permettre d'accéder aux informations
+utiles au renseignement de cette table de données.
+-Supra-communal
+-Communal
+-Ponctuelle-lié à
+l'établissement assujetti
+Désignation de la donnée
+attributaire
+Modalité de renseignement de la donnée
+Table 2-Données bâtimentaires
+Bâtiment, parties de bâtiments ou ensemble de bâtiments
+Qualité de l'assujetti au niveau
+de l'entité fonctionnelle
+assujettie (bâtiment, partie de
+bâtiment ou ensemble de
+bâtiments)
+Sélection par menu déroulant
+-Propriétaire occupant
+-Propriétaire bailleur
+-Preneur à bail ou occupant
+
+===== PAGE 92 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 92 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Cas d'assujettissement
+(Cf. article
+II de l'article R 131-38 du
+code de la construction
+ou de l'habitation)
+Importation via API
+possible
+Sélection par menu déroulant (choix)
+- Cas 1a-Bâtiment hébergeant
+exclusivement des activités
+tertiaires (avec ou sans activités non
+tertiaires accessoires) sur une seule
+entité fonctionnelle (propriétaire
+occupant unique ou mono locataire)
+- Cas 1b-Bâtiment hébergeant
+exclusivement des activités
+tertiaires (avec ou sans activités non
+tertiaires) en multi-occupation-Lot
+(s)
+- Cas 2-Partie (s) de bâtiment
+hébergeant des activités tertiaires-
+Lot (s)
+- Cas 3-Ensemble de bâtiments
+situés sur une même unité foncière
+ou sur un même site hébergeant des
+activités tertiaires-Site
+Création d'un Identifiant unique bâtimentaire
+Référence cadastrale (Cas 1 à
+3)
+-Code commune INSEE-Dénomination
+commune
+-Référence cadastrale de la parcelle
+ou des parcelles :
+
+===== PAGE 93 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 93 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Références INSEE et
+cadastrales
+Importation via API
+possible
+Préfixe-Section-N° Parcelle
+https://www.geoportail.gouv.fr/donn
+ees/parcelles-cadastrales
+https://www.cadastre.gouv.fr/scpc/r
+echercherParReferenceCadastrale.d
+o
+Identifiant bâtiment unique
+(Cas 1 et 2)
+Identifiant des bâtiments
+hébergeant des activités
+tertiaires situés sur une
+même unité foncière ou
+sur un même site (Cas 3)
+Importation via API
+possible
+-Dénomination bâtiment 1 : Identifiant
+alphanumérique
+-Dénomination bâtiment 2 :
+Identifiant alphanumérique
+-Dénomination bâtiment 3 :
+Identifiant alphanumérique
+-Dénomination bâtiment 4 à x :
+Identifiant alphanumérique
+Identification de ou des
+parties de bâtiments (Cas
+1 à 3)-Numéro (s) de Lot (s)
+Importation via API
+possible
+-Numéro (s) de (s) Lot (s) concerné (s)
+pour la structure assujettie
+Référentiel patrimonial
+spécifique de l'assujetti
+Importation via API possible
+-Code identifiant du référentiel assujetti
+(alphanumérique 10-12 caractères)
+
+===== PAGE 94 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 94 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Table 3.-Données sur la situation de référence
+Cette table concerne les données sur la situation de référence :
+Identification de l'année de référence-Consommations énergétiques de
+l'année de référence-Catégories d'activités concernés et indicateurs
+d'intensité d'usages.
+Référence des points de
+livraisons de Gestionnaire de
+Réseau de Distribution
+Importation via API
+possible
+Sélection par menu déroulant (choix) et
+renseignement des références
+- Réseau électrique (Enedis, RTE,
+etc.) : Identifiant (s) de Point de
+livraison (PDL) ou Référence
+Acheminement Electricité à
+renseigner
+- Réseau gaz (GRDF) Identifiant (s)
+de PDL à renseigner
+- Réseau de chaleur :
+-Identifiant du Réseau de chaleur
+(liste)
+-Identifiant (s) de la sous-station
+- Point de livraison spécifique IRVE
+(Installation de recharge des
+véhicules électriques ou hybrides
+rechargeables)
+- Aucun point de livraison
+
+===== PAGE 95 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 95 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Désignation de la
+donnée attributaire
+Modalité de renseignement de la donnée
+Table 3-Données Situation de référence de l'entité fonctionnelle assujettie
+Identifiant de
+l'établissement au
+niveau local
+Numéro SIRET (le cas
+échéant)
+SIRET : Siren (9 chiffres) + le numéro NIC (5
+chiffres)
+(Recueil via API SIRENE)
+-Numéro de Département : à renseigner
+-Affectation automatique de la zone
+géographique (sélection des tables
+correspondantes pour la valeur CVC)
+Station météorologique
+de référence
+-Identification de la station météorologique de
+référence du département par défaut
+-Choix d'une autre station
+météorologique de départements
+limitrophes (adaptation au contexte local)
+Sélection par menu déroulant
+Année de référence
+Importation via API
+possible
+-Année antérieure à 2020 (comprise entre 2010
+et 2019) : Identification de l'année
+-Première année pleine d'exploitation
+remontée sur OPERAT
+-Mois de début de la plage de 12 mois
+consécutif (liste)
+
+===== PAGE 96 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 96 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+→ Détermination de la plage annuelle de
+consommation
+Consommation de
+référence
+Sélection par menu déroulant (choix) des types
+d'énergies utilisées et renseignement des
+données de consommations de l'année de
+référence
+-Electricité (kWh) : consommation année
+de référence
+-Gaz naturel-réseaux (kWh) :
+consommation année de référence
+-Gaz naturel liquéfié (kg) : consommation
+année de référence
+-Gaz propane (m3) : consommation année
+de référence
+-Gaz propane (kg) : consommation année
+de référence
+-Gaz butane (m3) : consommation année
+de référence
+-Gaz butane (kg) : consommation année
+de référence
+
+===== PAGE 97 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 97 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Importation via API
+possible
+-Fioul domestique (l) : consommation
+année de référence
+-Charbon-agglomérés et briquettes (kg) :
+consommation année de référence
+-Houille (kg) : consommation année de
+référence
+-Bois-Plaquettes d'industrie (kg) :
+consommation année de référence
+-Bois-Plaquettes forestières (kg) :
+consommation année de référence
+-Bois-Granulés (pellets) ou briquettes (kg) :
+consommation année de référence
+-Bois-Bûches (Stère) : consommation
+année de référence
+-Réseau de chaleur (kWh) : consommation
+année de référence
+-Réseau de froid (kWh électrique) :
+consommation année de référence
+Consommation
+énergétique relative à la
+recharge des véhicules
+électriques ou hybrides
+-Recharge des véhicules électriques ou hybrides
+rechargeables (IRVE)-consommation année de
+
+===== PAGE 98 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 98 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+rechargeables (IRVE)-
+Année de référence
+référence
+Catégories d'activités et
+sous-catégories
+d'activités
+Obligatoire permet
+de déterminer
+l'objectif exprimé en
+valeur absolue mais
+également l'objectif
+en valeur relative en
+prenant en
+considération la
+surface assujettie
+-Sélection des activités et des sous catégories
+éventuelles concernées Sélection par menu
+déroulant
+-Renseignement des données surfaciques
+correspondantes pour chaque catégories
+et sous-catégories sélectionnées
+Le détail en sous catégories n'est pas
+obligatoire si les données surfaciques
+correspondantes relatives à l'année de
+référence ne sont pas connues.
+Néanmoins, la détermination d'une
+surface totale est obligatoire ou par
+défaut elle correspondra à l'information
+recueillie pour la première remontée de
+consommation annuelle.
+Indicateurs d'intensité
+d'usage
+Si disponibles, sinon
+ils correspondront
+par défaut à ceux des
+valeurs étalons
+mentionnées dans
+les tables de valeurs
+absolues de l'Annexe
+II (Corrélation avec
+les consommations).
+Importation via API
+possible (nécessite
+Sélection par menu déroulant (choix)
+-Indicateurs d'intensité d'usages de
+l'année de référence connus :
+-Renseignement des indicateurs
+d'intensité d'usage temporels et
+surfaciques.
+
+===== PAGE 99 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 99 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Table 4.-Données de consommations énergétiques annuelles et des
+indicateurs d'intensité d'usage correspondants
+Cette table concerne les données de consommations énergétiques
+annuelles par type d'énergie. Elle est accessoirement complétée par le
+renseignement des indicateurs d'intensité d'usage s'ils ont évolués qui
+permettent de procéder à la modulation des objectifs en fonction du
+volume d'activité (Cf. article 10 du présent arrêté).
+des tables
+renseignées avec
+toutes les catégories
+ou les catégories
+concernées au même
+format.
+-Indicateurs d'intensité d'usage étalons
+par défaut
+Désignation de la donnée
+attributaire
+Modalité de renseignement de la
+donnée
+Table 4 a-Données de consommations énergétiques annuelles
+Référence de l'année et de la plage
+de consommation annuelle
+Donnée à rendre la plus
+pérenne possible
+Importation via API possible
+-Identification de l'année
+-Mois de début de la plage de 12
+mois consécutif (liste)
+→ Détermination de la plage
+annuelle de consommation
+Proposition automatique de
+l'information issue de la Table 3,
+mais qui peut être modifiée.
+
+===== PAGE 100 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 100 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Périmètre des consommations
+-Consommations individuelles de
+l'entité fonctionnelle
+-Consommations réparties
+bénéficiant à l'entité
+fonctionnelle
+-Consommations des espaces
+communs affectées à l'entité
+fonctionnelle
+Sélection par menu déroulant
+(choix) des types d'énergies utilisées
+et renseignement des données de
+consommations de l'année écoulée.
+-Electricité (kWh) :
+consommation année n-1
+-Gaz naturel-réseaux (kWh) :
+consommation année n-1
+-Gaz propane (m3) :
+consommation année n-1
+-Gaz propane (kg) :
+consommation année n-1
+-Gaz butane (m3) :
+consommation année n-1
+
+===== PAGE 101 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 101 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Consommations énergétiques
+annuelles
+Importation via API possible
+-Gaz butane (kg) :
+consommation année n-1
+-Charbon-agglomérés et
+briquettes (kg) : consommation
+année n-1
+-Houille (kg) : consommation
+année n-1
+-Bois-Plaquettes d'industrie (kg)
+: consommation année n-1
+-Bois-Plaquettes forestières (kg) :
+consommation année n-1
+-Bois-Granulés (pellets) ou
+briquettes (kg) : consommation
+année n-1
+-Bois-Bûches (Stère) :
+consommation année n-1
+-Réseau de chaleur (kWh) :
+consommation année n-1
+-Réseau de froid (kWh
+électrique) : consommation
+année n-1
+
+===== PAGE 102 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 102 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Consommation énergétique
+relative à la recharge des véhicules
+électriques ou hybrides
+rechargeables (IRVE)-
+Consommation annuelle
+-Recharge des véhicules électriques
+ou hybrides rechargeables (IRVE)-
+consommation annuelle
+Remontée de données de
+consommations par les
+gestionnaires de réseaux de
+distribution (GRD)
+Choix de l'option de collecte
+de données lorsqu'il existe une
+convention entre l'ADEME et
+les GRD
+- Electricité (Convention Enedis, RTE,
+etc)
+- Gaz (Convention GRDF)
+- Réseau de chaleur (liste de
+Réseau de chaleur urbain ayant
+passé une convention avec
+l'ADEME)
+- Réseau de froid (liste de
+Réseau de froid urbain ayant
+passé une convention avec
+l'ADEME)
+Table 4 b-Evolution des indicateurs d'intensité d'usage
+Evolution des indicateurs
+d'intensité d'usage
+Affichage par défaut des
+indicateurs de l'année
+Sélection par menu déroulant (choix)
+-Valeurs étalons des indicateurs
+d'intensité d'usage par défaut
+-Indicateurs d'intensité d'usages
+de l'année écoulée :
+
+===== PAGE 103 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 103 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Table 5.-Données sur les caractéristiques bâtimentaires (Facultative)
+Cette table concerne les données sur les caractéristiques bâtimentaires
+: Système constructif-Caractéristiques de l'enveloppe du bâtiment.
+précédente ou de l'année de
+référence (Corrélation avec les
+consommations).
+Importation via API possible
+(nécessite des tables
+renseignées avec toutes les
+catégories ou les catégories
+concernées au même format.
+-Sélection des activités et des
+sous catégories éventuelles
+concernées par une évolution ;
+-Renseignement éventuelle des
+données surfaciques
+correspondantes pour les
+catégories et sous-catégories
+sélectionnées (liées à l'évolution)
+;
+-Renseignement des indicateurs
+d'intensité d'usage temporel et
+surfaciques qui ont évolués.
+Désignation de
+la donnée
+attributaire
+Modalité de renseignement de la donnée
+Table 5a-Données sur les caractéristiques générales bâtimentaires
+Sélection par menu déroulant (choix) de
+l'époque de construction.
+- Avant 1400-Moyen âge et antiquité
+- 1400 à 1700-Renaissance
+- 1700 à 1800-Baroque
+
+===== PAGE 104 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 104 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Epoque de
+construction
+Importation
+via API
+possible
+- 1800 à 1899-Néoclassique, Haussmannien
+- 1900 à 1947-Moderne (Pré-rationalisme,
+Bauhaus, Style international)
+- 1948 à 1979-Post Moderne (Béton, charpentes
+métalliques, etc.)
+- 1980 à 2000-RT 1978 non contraignante
+- 2001-2012-RT 2000 et 2005 ou référence
+équivalente (non assujetti RT)
+- 2013-2021-RT 2012 ou référence équivalente
+(non assujetti RT)
+- A partir de 2021-RE2020 ou référence
+équivalente (non assujetti RE)
+Type de
+patrimoine
+Importation
+via API
+Sélection par menu déroulant (choix) de la typologie de
+patrimoine.
+-Bâtiment classé au titre des monuments
+historiques
+-Bâtiment inscrit au titre des monuments
+historiques
+-Bâtiment situés dans les abords de monuments
+historiques (à moins de 500 m et en covisibilité,
+ou périmètre délimité des abords)
+-Bâtiment situé en site patrimonial remarquable
+-Bâtiment bénéficiant du label Architecture
+contemporaine remarquable
+
+===== PAGE 105 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 105 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+possible
+-Bâtiment protégé ou soumis à prescription par
+le règlement du PLU (articles L151-18 et L151-19
+du code de l'urbanisme)
+-Bâtiment situé dans un site classé ou inscrit au
+titre du code de l'environnement
+-Construction courante
+-Construction atypique
+-Modèle industriel
+Sélection par menu déroulant (choix) de la forme du
+bâtiment.
+Forme (emprise au sol)
+-Rectangulaire ou carré
+-Rectangulaire avec décrochés
+-L ou U
+-Forme complexe
+Hauteur moyenne des niveaux
+
+===== PAGE 106 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 106 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Forme du
+bâtiment et
+mitoyenneté
+-Moins de 2,50 m
+-Entre 2,50 et 3,00 m
+-Entre 3,00 et 4,00 m
+-Plus de 4,00 m
+Mitoyenneté
+-Absence de paroi mitoyenne
+-Mitoyenneté limitée à un pignon
+-Mitoyenneté limitée à deux pignons
+Co-activité non tertiaire dans le bâtiment
+-Présence de co-activité non tertiaire
+Référence de la
+Base
+Permanente des
+équipements
+Sélection par menu déroulant (choix)
+Table 5b-Données sur les caractéristiques de l'enveloppe bâtimentaire
+
+===== PAGE 107 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 107 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Façade
+(Typologie)
+Importation
+via API
+possible
+Sélection par menu déroulant (choix) de la typologie de
+façade.
+-Mur porteur maçonné pierre
+-Mur porteur maçonné brique
+-Briques pleines autoporteuses (monomur)
+-Mur bloc alvéolé béton
+-Structure poteau BA et remplissage brique
+creuse
+-Structure poteau BA et remplissage brique
+pleine
+-Structure poteau BA et remplissage bloc alvéolé
+béton
+-Structure poteau BA et remplissage maçonné
+autre
+-Mur voile porteur Béton Armé
+-Panneaux béton préfabriqués
+-Structure bois porteuse et remplissage
+(Colombage)
+
+===== PAGE 108 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 108 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+-Panneaux ossatures bois
+-Panneaux léger simple peau (structure
+métallique, BA, bois lamellé collé ou lamellé
+croisé)
+-Panneaux léger double peau (structure
+métallique, BA, bois lamellé collé ou lamellé
+croisé)
+-Façade rideau vitrée simple peau
+-Façade rideau vitrée double peau
+Contraintes sur façade
+-Façade classé
+-Décor à valeur patrimoniale (modénature)
+Isolation
+thermique des
+façades
+Importation
+via API
+possible
+Sélection par menu déroulant (choix) de la présence
+d'isolation en façade.
+-Absence d'isolation
+-Isolation partielle
+-Isolation complète
+
+===== PAGE 109 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 109 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Isolation
+thermique des
+pignons
+Importation
+via API
+possible
+Sélection par menu déroulant (choix) de la présence
+d'isolation en pignon.
+-Absence d'isolation
+-Isolation partielle
+-Isolation complète
+Mode d'isolation
+thermique
+principal
+Importation
+via API
+possible
+Sélection par menu déroulant (choix) de la typologie
+d'isolation.
+-Contre cloison avec vide
+-Isolation par l'intérieur-épaisseur inférieure ou
+égale à 5 cm
+-Isolation par l'intérieur-épaisseur supérieure à 6
+cm
+-Isolation par l'extérieure
+-Isolation intégrée dans la paroi
+Traitement
+thermique des
+Sélection par menu déroulant (choix) de la typologie de
+vitrage
+-Simple vitrage
+
+===== PAGE 110 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 110 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+menuiseries
+Importation
+via API
+possible
+-Double vitrage avant 1995
+-Double vitrage après 1995
+-Triple vitrage
+Toiture
+(Typologie)
+Importation
+via API
+possible
+Sélection par menu déroulant (choix) de la typologie de
+toiture.
+-Local non contigu à la toiture (dernier niveau
+non tertiaire)
+-Plancher sous combles perdus
+-Toiture terrasse sur plancher haut lourd
+-Toiture bac acier-éléments métalliques
+-Toiture faible pente < 30°
+-Toiture faible pente 45° ou proche
+Traitement
+thermique de la
+Sélection par menu déroulant (choix) du traitement
+thermique en toiture.
+-Absence d'isolation
+
+===== PAGE 111 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 111 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+toiture
+Importation
+via API
+possible
+-Isolation-épaisseur < 5 cm
+-Isolation-épaisseur comprise entre 5 et 10 cm
+-Isolation-épaisseur comprise entre 10 et 20 cm
+-Isolation-épaisseur supérieure à 20 cm
+Plancher bas
+(Typologie)
+Importation
+via API
+possible
+Sélection par menu déroulant (choix) de l'époque de
+construction.
+-Local non contigu au plancher bas (niveau
+inférieur non tertiaire)
+-Dalle sur terre-plein
+-Vide sanitaire
+-Sous-Sol
+Isolation
+thermique du
+plancher bas
+Importation
+via API
+Sélection par menu déroulant (choix) de la typologie de
+patrimoine.
+-Absence d'isolation
+-Isolation-épaisseur < 5 cm
+-Isolation-épaisseur comprise entre 5 et 10 cm
+
+===== PAGE 112 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 112 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Table 6.-Données sur les systèmes techniques bâtimentaires (Facultative)
+Cette table concerne les données sur les systèmes techniques
+bâtimentaire (types d'énergie, de générateur, d'émetteur, de ventilation,
+eau chaude sanitaire, éclairage, autres équipements immobiliers).
+possible
+-Isolation-épaisseur comprise entre 10 et 20 cm
+-Isolation-épaisseur supérieure à 20 cm
+Désignation de la donnée attributaire
+Modalité de
+renseignement de la
+donnée
+Table 6-Données sur les systèmes techniques bâtimentaires
+Sélection par menu
+déroulant (choix) de
+l'époque de construction.
+-Absence de chauffage
+du local
+-Chaudière Gaz
+individuelle
+-Chaudière Gaz
+collective
+-Chaudière fioul
+domestique
+
+===== PAGE 113 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 113 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Générateur principal de chauffage
+Importation via API possible
+-Chaudière Biomasse
+individuelle
+-Chaudière Biomasse
+collective
+-PAC collective
+-PAC individuelle
+-PAC individuelle-
+Climatiseur réversible
+-Réseau de chaleur
+(sous-station)
+-Cogénération
+Sélection par menu
+déroulant (choix) de la
+typologie de patrimoine.
+-Absence d'émetteur
+-Radiateur à eau
+-Convecteur-casette
+
+===== PAGE 114 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 114 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Type principal d'émetteur de chauffage
+Importation via API possible
+-Radiateur à panneaux
+rayonnants
+-Radiateur à énergie
+maîtrisée sec
+(céramique-fonte)
+-Radiateur à énergie
+maîtrisée fluide (liquide
+caloporteur)
+-Plancher chauffant
+électrique
+-Plafond rayonnant
+électrique
+-Plancher chauffant
+boucle d'eau chaude
+-Centrale de
+traitement de l'air
+-Mur chauffant
+hydraulique
+-Vitrage chauffant
+-Autres : Compléter
+
+===== PAGE 115 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 115 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Générateur principal de rafraîchissement
+Importation via API possible
+Sélection par menu
+déroulant (choix) de
+l'époque de construction.
+-Absence de
+rafraichissement
+-Climatiseur
+-PAC réversible sur air
+-Groupe eau glacée
+-Tour aéroréfrigérante
+-Free Cooling
+(Surventilation
+nocturne)
+-Geo Cooling-Puits
+Canadiens
+-Chaudière Biomasse
+collective
+-Réseau de froid (sous-
+station)
+-Brassage de l'air
+
+===== PAGE 116 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 116 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Type principal de ventilation
+Importation via API possible
+Sélection par menu
+déroulant (choix) de
+l'époque de construction.
+-Absence de dispositif
+de ventilation
+-Ventilation naturelle
+par conduits d'aération
+-Ventilation mécanique
+simple flux dans les
+pièces humides
+-Ventilation mécanique
+double flux
+-Centrale de
+traitement de l'air
+-Autres : Compléter
+Sélection par menu
+déroulant (choix) de
+l'époque de construction.
+-Absence de
+production d'eau
+chaude sanitaire
+
+===== PAGE 117 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 117 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Type de production d'eau chaude sanitaire
+Importation via API possible
+-Chaudière Gaz
+individuelle
+-Chaudière Gaz
+collective
+-Chaudière fioul
+domestique
+-Chaudière Biomasse
+individuelle
+-Chaudière Biomasse
+collective
+-Ballon électrique
+-Chauffe-eau
+thermodynamique
+-PAC collective
+-Solaire thermique
+-Réseau de chaleur
+(sous-station)
+-Cogénération
+
+===== PAGE 118 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 118 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Type d'éclairage
+Importation via API possible
+Sélection par menu
+déroulant (choix) de
+l'époque de construction.
+Eclairage naturel des
+locaux
+-Absence d'éclairage
+naturel
+-Eclairage zénithal :
+-Verrière
+-Lanterneau
+-Shed orienté Nord
+Eclairage naturel des
+circulations
+-Non concerné
+-Absence d'éclairage
+naturel des circulations
+-Présence de second
+jour
+
+===== PAGE 119 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 119 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+-Eclairage zénithal :
+-Verrière
+-Lanterneau
+-Shed orienté Nord
+Eclairage artificiel des
+locaux
+-Lampes
+-Tubes
+-LED
+-OLED
+Sélection par menu
+déroulant (choix) de
+l'époque de construction.
+-Ascenseurs :
+-Nombre de niveau
+desservis : à renseigner
+
+===== PAGE 120 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 120 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Autres équipements immobiliers
+Importation via API possible
+-Nombre : à renseigner
+-Capacité individuelle :
+à renseigner personnes
+-Escalier mécanique :
+-Fonctionnement
+continu-Nombre : à
+renseigner
+-Asservi à la détection-
+Nombre : à renseigner
+-Trottoir mécanique :
+-Fonctionnement
+continu-Nombre : à
+renseigner
+-Asservi à la détection-
+Nombre : à renseigner
+Système d'automatisation et de contrôle des
+systèmes techniques (BACS-Building
+Sélection par menu
+déroulant (choix).
+- Niveau de régulation
+A (très évolué)
+
+===== PAGE 121 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 121 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Automation Control System)
+Classification selon la norme NF
+EN15232-1
+- Niveau de régulation
+B (évolué)
+- Niveau de régulation
+C (standard)
+- Niveau de régulation
+D (absence de
+régulation)
+Annexe VII
+VERSION EN VIGUEUR DEPUIS LE 07 SEPTEMBRE 2025
+Modifié par Arrêté du 1er août 2025 - art. 5
+ATTESTATION NUMÉRIQUE ANNUELLE
+
+===== PAGE 122 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 122 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Evaluation de l'émission de gaz à effet de serre (Tableau VII-2)
+Facteur de conversion en gaz à effet de serre (équivalent CO2) de
+l'énergie finale
+Type d'énergie par kWh EF PCI
+Equivalent kg CO2 par
+kilowattheure d'énergie finale en
+PCI
+Électricité (hors autoconsommation)
+tous usages confondus
+0,064
+Gaz méthane (naturel) issu des
+réseaux
+0,227
+Gaz butane
+0,272
+Gaz propane
+0,272
+Gaz Naturel Liquéfié (GNL)
+0,238
+Fioul domestique
+0,324
+Gazole non routier
+0,322
+Charbon (anthracite)
+0,385
+Bois, biomasse-Plaquettes
+d'industrie (10-15 % humidité)
+0,024
+Bois, biomasse-Plaquettes forestières
+
+===== PAGE 123 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 123 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Pour les réseaux de chaleur ou de froid, pour lesquels la dispersion du
+contenu CO2 est importante, la valeur à retenir est précisée à l'annexe 7
+de l'Arrêté du 15 septembre 2006 relatif au diagnostic de performance
+énergétique pour les bâtiments existants proposés à la vente en France
+métropolitaine.
+Pour l'application des dispositions prévues à l'article 16 du présent
+arrêté, relative au changement de source énergétique, les coefficients
+de conversion des consommations d'énergie finale déclarées sur la
+plateforme OPERAT en énergie primaire non renouvelable sont
+récapitulés dans le tableau suivant :
+(25 % humidité)
+0,024
+Bois, biomasse-Granulés (pellets) ou
+briquettes (8 % humidité)
+0,03
+Bois, biomasse-Buche (20 %
+humidité)
+0,03
+Autres combustibles fossiles
+0,324
+Autre source énergétique non
+recensée
+Demande d'intégration (article 3)
+Type d'énergie
+Coefficient de
+conversion des
+consommations
+en Energie Finale
+(exprimées en kWh
+PCI)
+
+===== PAGE 124 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 124 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Le ratio d'énergie renouvelable ou de récupération des réseaux de
+chaleur urbains est défini conformément aux dispositions de l'arrêté du
+4 août 2021 relatif aux exigences de performance énergétique et
+environnementale des constructions de bâtiments en France
+métropolitaine et portant approbation de la méthode de calcul prévue
+à l'article R. 172-6 du code de la construction et de l'habitation.
+Modalité relative à la notation "Eco Energie Tertiaire" (Annexe VII-3)
+La notation "Eco Energie Tertiaire" qui qualifie l'avancée dans la
+démarche de réduction des consommations d'énergie finale, au regard
+des remontées de consommations énergétiques annuelles ajustées des
+variations climatiques s'effectue de la façon suivante :
+en Energie Primaire
+non renouvelable
+Électricité (hors autoconsommation) tous
+usages confondus
+2,3
+Gaz méthane (naturel) issu des réseaux
+1
+Autres énergies fossiles (Gaz butane, Gaz
+propane, Gaz Naturel Liquéfié, Fioul
+domestique, Gazole non routier, Charbon)
+1
+Bois
+0
+Réseau urbain de chaleur
+1-Ratio d'énergie
+renouvelable ou de
+récupération du réseau
+(chaleur)
+Réseau urbain de froid
+1
+
+===== PAGE 125 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 125 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+-Critères d'appréciation pris en considération
+La situation de l'avancée dans la démarche de réduction des
+consommations d'énergie finale est appréciée chaque année sur la base
+du niveau de consommation énergétique, exprimé en kWh/ m ²/ an et sa
+situation par rapport à la droite de tendance reliant le niveau de la
+consommation énergétique de référence Cref (I de l'article 3 du présent
+arrêté), exprimé en kWh/ m ²/ an, et le niveau de consommation
+exprimé en valeur absolue Cabs (article 4 du présent arrêté), le cas
+échéant modulé.
+Le niveau de de consommation exprimé en valeur absolue représente
+l'objectif commun à chaque catégorie d'activité et constitue ainsi le seul
+référentiel pertinent permettant d'apprécier les assujettis entre eux au
+sein d'une même catégorie d'activité.
+-Critères de notation
+L'attribution des "feuilles" de la notation "Eco Energie Tertiaire" est
+effectuée de la façon suivante :
+Vous pouvez consulter l'intégralité du texte avec ses images à partir de
+l'extrait du Journal officiel électronique authentifié accessible à l'adresse
+suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=Liw289pOQhZyem6XgFjnQJ2zOEMPNS_l_Q0i6YubOeI
+=
+-Feuille grise : Le niveau de consommation énergétique annuelle est en
+augmentation sans qu'il n'y ait eu de justification (modulation en
+fonction du volume d'activité)
+-Feuille orange : Le niveau de consommation énergétique annuelle est
+situé en dessous du niveau de la consommation énergétique de
+référence mais au-dessus du fuseau enveloppe (+ 10 %-10 %) de la droite
+de tendance
+
+===== PAGE 126 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 126 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+-1 Feuille verte : Le niveau de consommation énergétique annuelle est
+situé dans le fuseau enveloppe (+ 10 %-10 %) de la droite de tendance
+-2 Feuilles vertes : Le niveau de consommation énergétique annuelle est
+situé en dessous du fuseau enveloppe (+ 10 %-10 %) de la droite de
+tendance
+-3 Feuilles vertes : Le niveau de consommation énergétique annuelle est
+situé en dessous de l'objectif exprimé en valeur absolue Cabs), le cas
+échéant modulé.
+Vous pouvez consulter l'intégralité du texte avec ses images à partir de
+l'extrait du Journal officiel électronique authentifié accessible à l'adresse
+suivante :
+https://www.legifrance.gouv.fr/download/pdf?
+id=Liw289pOQhZyem6XgFjnQJ2zOEMPNS_l_Q0i6YubOeI
+=
+Annexe VIII
+VERSION EN VIGUEUR DEPUIS LE 18 JANVIER 2021
+Création Arrêté du 24 novembre 2020 - art.
+MODÈLE DE DEMANDE D'INTÉGRATION DE NOUVELLE ACTIVITÉ
+Chapitre Ier : Présentation de la nouvelle activité tertiaire
+I.1. - Identification de l'activité
+Rappel de l'activité (Catégorie et sous-catégorie) dont se rapproche le
+plus la nouvelle activité
+Identification du code de la nomenclature NAF à laquelle l'activité est
+rattachée
+I.2. -Justification de la nécessité d'identification d'une nouvelle
+catégorie ou sous-catégorie d'activité tertiaire : Données administratives
+bâtimentaires
+
+===== PAGE 127 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 127 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Présentation des spécificités de la nouvelle activité.
+Eléments et données statistiques sur la nouvelle activité (nombre de
+locaux concernés, surface moyenne des locaux, surfaces concernées au
+niveau national).
+Chapitre II : Proposition du niveau de consommation exprimé en valeur
+absolue
+II.1. - Données statistiques sur les consommations
+Présentation des niveaux de consommation en énergie finale : plus
+faible, plus élevé, moyenne, médiane.
+Présentation des données du quartile inférieur.
+II.2. - Présentation des usages spécifiques
+Description des usages spécifiques
+Présentation des meilleures techniques disponibles (MTD) - Fourniture
+des fiches techniques des équipements spécifiques (niveau de
+consommation, raccordement à des organes de gestion active)
+II.3. - Identification de la composante CVC
+Justification du niveau de consommation de la composante CVC en
+région H2b sur la base des données de consommation du quartile
+inférieur
+Présentation d'un échantillon représentatif d'au moins 30 locaux
+répartis sur le territoire national.
+Fourniture des données de comptage et de Simulation Energétique
+Dynamique
+Déclinaison de la valeur CVC en fonction de la zone géographique et de
+l'altitude (exploitation des tables DJU - Cf. méthodologie CEREMA-DHUP
+utilisée dans la définition des valeurs CVC - Tableurs Excel mis à
+disposition)
+
+===== PAGE 128 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 128 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Fait le 10 avril 2020.
+Le ministre auprès de la ministre de la cohésion des territoires et des
+relations avec les collectivités territoriales, chargé de la ville et du logement,
+Pour le ministre et par délégation :
+Le directeur de l'habitat, de l'urbanisme et des paysages,
+F. Adam
+La ministre de la transition écologique et solidaire,
+Pour la ministre et par délégation :
+Le directeur de l'habitat, de l'urbanisme et des paysages,
+F. Adam
+Le directeur général de l'énergie et du climat,
+L. Michel
+Le ministre de l'action et des comptes publics,
+Pour le ministre et par délégation :
+II.4. - Identification de la composante USE
+Evaluation de l'impact de la conception architecturale, de la conception
+et du dimensionnement des systèmes, de l'optimisation du mix
+énergétique et "smart" (vision de la puissance appelée), optimisation de
+l'exploitation (gestion active - objectif de performance).
+Identification de(s) indicateur(s) d'intensité d'usage temporel et de leur
+valeur(s) étalon(s).
+Identification de(s) indicateur(s) d'intensité d'usage surfacique et de leur
+valeur(s) étalon(s).
+Proposition de formule de modulation de la valeur USE en fonction des
+indicateurs d'intensité d'usage (modulation en fonction du volume
+d'activité).
+
+===== PAGE 129 =====
+03/05/2026 16:28
+Arrêté du 10 avril 2020 relatif aux obligations d'actions de rédu…'énergie finale dans des bâtiments à usage tertiaire - Légifrance
+Page 129 sur 129
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389
+Le directeur général des finances publiques,
+J. Fournel
+La ministre de la cohésion des territoires et des relations avec les
+collectivités territoriales,
+Pour la ministre et par délégation :
+Le directeur de l'habitat, de l'urbanisme et des paysages,
+F. Adam
+La ministre des outre-mer,
+Pour la ministre et par délégation :
+Le directeur général des outre-mer,
+E. Berthier
+Le ministre de la culture,
+Pour le ministre et par délégation :
+Le directeur général des patrimoines,
+P. Barbat

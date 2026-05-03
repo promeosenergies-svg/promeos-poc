@@ -1,0 +1,216 @@
+
+===== PAGE 1 =====
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Annexe II de l’arrêté du modifiant l’arrêté du 10 avril 2020 relatif aux obligations d’actions de réduction des 
+consommations d’énergie finale dans des bâtiments à usage tertiaire 
+NOR : ATDL2430864A 
+ 
+ 
+
+===== PAGE 2 =====
+- pour toutes les sous-catégories Administration et bureaux (Bureaux Standards), Administration et rédaction, et la sous-catégorie 
+Centre hospitalier - Administration non intégrée dans un service de soins (Bureaux standards), 𝑪𝒐𝒆𝒇𝒇𝒄𝒉𝒔𝒔−𝒄𝒂𝒕= 0,000247/°C/j 
+et 𝑪𝒐𝒆𝒇𝒇𝒇𝒓𝒔𝒔−𝒄𝒂𝒕= 0,000198/°C/j. 
+- pour les autres catégories et sous-catégories : 
+Catégorie ou sous-catégorie 
+𝑪𝒐𝒆𝒇𝒇𝒄𝒉𝒔𝒔−𝒄𝒂𝒕 
+[/°C/j] 
+𝑪𝒐𝒆𝒇𝒇𝒇𝒓𝒔𝒔−𝒄𝒂𝒕 
+[/°C/j] 
+- 
+Accueil petite enfance  
+- 
+Enseignement primaire 
+- 
+Enseignement secondaire 
+- 
+Enseignement supérieur 
+- 
+Enseignement - formation continue pour adultes 
+- 
+Hébergement touristique de courte durée (auberge de jeunesse, centre-
+sportif, colonies de vacances, gîte d'étape et refuge de montagne) 
+- 
+Hôtellerie (sauf sous-catégorie Hôtel - Piscine (dont vestiaires, douches 
+et sanitaires associés)) 
+- 
+Résidence de tourisme, village ou club de vacances, ERP (sauf sous-
+catégorie Résidence de tourisme, village ou club de vacances, ERP - 
+Piscine (dont vestiaires, douches et sanitaires associés)) 
+0,000314 
+0,0000535 
+- 
+Sport (sauf sous-catégories Centre équestre, Patinoires (dont vestiaires, 
+douches et sanitaires), Piscine (dont vestiaires, douches et sanitaires), 
+Stade/vélodrome, Hippodrome et Cynodrome - non couvert, Stand de 
+tir) 
+- 
+Terrain de camping et parcs pour caravanes ou véhicules de loisirs 
+0,000314 
+0,000198 
+- 
+Hôtel - Piscine (dont vestiaires, douches et sanitaires associés)  
+- 
+Sous-catégorie Résidence de tourisme, village ou club de vacances, ERP 
+- Piscine (dont vestiaires, douches et sanitaires associés) 
+- 
+Sous-catégorie Sport - Piscine (dont vestiaires, douches et sanitaires) 
+- 
+Sous-catégorie Etablissement de nuit et de loisirs - espace aqua ludique 
+- 
+Sous-catégorie Etablissement de Balnéothérapie - Bassin et Piscine 
+(dont vestiaires et douches) 
+0,000314 
+0 
+- 
+Bureaux - Services Publics - Banques 
+- 
+Laboratoire (hors périmètre médical : étalonnage, suivi écologique…)  
+- 
+Audiovisuel 
+- 
+Culture et spectacles 
+- 
+Etablissement de nuit et de loisirs (sauf sous-catégorie Espace aqua 
+ludique) 
+- 
+Parc d'attractions et parc à thèmes (sauf sous-catégorie Attraction 
+bâtiment semi-ouvert) 
+- 
+Tribunal 
+- 
+Etablissement pénitentiaire 
+- 
+Protection judiciaire de la Jeunesse 
+- 
+Palais des congrès 
+- 
+Vente et services véhicules légers 
+- 
+Vente et services véhicules utilitaires et véhicules industriels 
+- 
+Vente et services motocycle 
+- 
+Vente et services engins nautiques et de plaisance 
+- 
+Imprimerie et reprographie 
+- 
+Commerce et services de détail - Equipement de la maison (surface de 
+vente < 800 m²) 
+- 
+Commerce et services de détail - Equipement de la personne et loisirs 
+(surface de vente < 800 m²) 
+- 
+Grande surface de bricolage (GSB) et Négoce et distribution de 
+matériaux 
+- 
+Grande Surface Spécialisée - Equipement automobile et moto 
+- 
+Grande Surface spécialisée - Equipement de la maison (surface de vente 
+≥ 800 m²) 
+- 
+Grande Surface Spécialisée - Equipement de la personne et loisirs 
+(surface de vente ≥ 800 m²) 
+0,000247 
+0,000198 
+
+===== PAGE 3 =====
+- 
+Parties communes des centres commerciaux et des galeries 
+commerciales 
+- 
+Drive isolé non-alimentaire 
+- 
+Grands magasins 
+- 
+Service funéraire (sauf sous-catégories Chambre et/ou meubles froid 
+négatif, Service funéraire - Zone de préparation et crémation (avec 
+four)) 
+- 
+Centre hospitalier 
+- 
+Etablissement médico-social (sauf sous-catégorie Etablissement de 
+Balnéothérapie - Bassin et Piscine (dont vestiaires et douches)) 
+- 
+Santé libérale 
+0,000247 
+0,0000535 
+- 
+Transport (sauf sous-catégories Transport ferroviaire et guidé de 
+voyageurs - Zone de remisage couvertes et closes, Transport routier de 
+voyageurs - Zone de remisage couvertes et closes) 
+0,000141 
+0,000198 
+- 
+Restauration 
+0,000141 
+0,0000535 
+- 
+Sous-catégorie Entrepôt à température ambiante (évolution libre entre 
++12°C et +26°C) ou avec maintien hors-gel pour les besoins du produit 
+0,000141 
+0 
+- 
+Commerce et services de détail - Alimentaire 
+- 
+Grande surface alimentaire 
+- 
+Drive isolé alimentaire 
+0,000065 
+0,000158 
+- 
+Logistique (sauf sous-catégories Entrepôt à température ambiante 
+(évolution libre entre +12°C et +26°C) ou avec maintien hors-gel pour les 
+besoins du produit, Entrepôt ou messagerie sans besoin de maintien en 
+température du produit (avec ou sans maintien hors-gel des locaux)) 
+- 
+Commerce de gros 
+- 
+Sous-catégorie Halles et marché couvert - Etal ou stand avec meubles 
+de froid 
+- 
+Sous-catégorie Service funéraire - Chambre et/ou meubles froid négatif 
+0 
+0,1 
+- 
+Data Center 
+0 
+0,00068 
+- 
+Sous-catégorie Sport - Patinoire (dont vestiaires, douches et sanitaires) 
+0 
+0,00032 
+- 
+Blanchisserie 
+- 
+Parc d’exposition  
+- 
+Stationnement 
+- 
+Sous-catégories Sport - Centre équestre, Sport - Stade/vélodrome, Sport 
+- Hippodrome et Cynodrome - non couvert, Sport - Stand de tir 
+- 
+Sous-catégorie Parc d’attractions parc à thème - Attraction bâtiment 
+semi-ouvert  
+- 
+Sous-catégories Transport ferroviaire et guidé de voyageurs - Zone de 
+remisage couvertes et closes, Transport routier de voyageurs - Zone de 
+remisage couvertes et closes 
+- 
+Sous-catégorie Entrepôt ou messagerie sans besoin de maintien en 
+température du produit (avec ou sans maintien hors-gel des locaux) 
+- 
+Sous-catégorie Service funéraire - Zone de préparation et crémation 
+(avec four) 
+- 
+Halles et marché couvert (sauf sous-catégorie Halles et marché couvert 
+- Etal ou stand avec meubles de froid) 
+0 
+0 
+ 

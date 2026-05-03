@@ -1,0 +1,673 @@
+# ============================================================
+# OPERAT — Valeurs Absolues (Cabs) par sous-catégorie d'activité
+# Décret tertiaire (Décret n° 2019-771 du 23/07/2019, NOR LOGL1909871D)
+# Arrêté méthode du 10/04/2020 modifié (consolidé jusqu'au 01/08/2025)
+# ============================================================
+# AVERTISSEMENT FIABILITÉ — voir docs/audits/AUDIT_OPERAT_VA_EXTRACTION_2026_05_03.md
+#
+# Schema v0.9 — LIVRABLE FINAL + L2 ZONE AUTHENTIFIÉE 🟢 2026-05-03 :
+# - 🟢 Chronologie arrêtés (8 textes : décret cadre + arrêté méthode + 2 textes 09/2021
+#       + VA I-VI) confirmée FAQ OPERAT ADEME section G2 (DHUP, MAJ 09/2025)
+# - 🟢 Méthodologie formules Cabs/Crelat/CVC/USE = source primaire ADEME
+# - 🟢 Sanctions 1500 € PP / 7500 € PM cumulables = source primaire FAQ CS4-Q1
+# - 🟢 ANNEXE I (NOR ATDL2430864A) : 63 catégories × 426 sous-catégories
+#       extraites avec CVCi (8 zones × 5 paliers altitude + 5 DOM), USE étalon,
+#       Part_USE_variable, IIU, formules de modulation. Donnees structurees dans
+#       backend/config/operat_annexe_i_sous_categories.json (931 KB).
+# - 🟢 ANNEXE II (NOR ATDL2430864A) : 13 groupes Coeff_ch/Coeff_fr d'ajustement
+#       DJU couvrant 73 references categorie/sous-categorie. Donnees structurees
+#       dans backend/config/operat_annexe_ii_coeff_dju.json.
+# - 🟡 19 valeurs Cabs 2030 = guide Cerema 2025 (cas pratiques pédagogiques)
+#       (conservees en plus des annexes officielles pour validation croisee)
+# - 🟢 Mapping zones climatiques H1a-H3 → départements : 96 métropole + 5 DOM
+#       AUTHENTIFIÉ via annexe III du présent arrêté 10/04/2020 NOR LOGL2005904A
+#       (PDF Légifrance v2 du 03/05/2026 contient désormais la colonne Zclim
+#       complète). Resolveur Python prêt : backend/regops/operat_zones.py
+#       postal_code/INSEE/département → zone. Cohérence 100% : toutes stations
+#       d'un même département agréent sur leur Zclim. Source primaire opposable.
+#       ATTENTION : ~25 départements diffèrent du consensus RT 2012 communément
+#       cité (cf. operat_zones_climatiques.json field changements_v1_a_v2).
+# ============================================================
+
+operat_valeurs_absolues:
+
+  metadata:
+    schema_version: "0.9"
+    extraction_date: "2026-05-03"
+    extracted_by: "regulatory-expert (SENTINEL-REG) + extraction Drive ADEME/Cerema + FAQ OPERAT ADEME + parser PyMuPDF deterministe sur annexes officielles bulletin-officiel.developpement-durable.gouv.fr"
+    extraction_status: "COMPLETE"
+    coverage_summary:
+      arretes_chronology: "🟢 8 textes identifiés (décret cadre + arrêté méthode + décret+arrêté 09/2021 + VA I-VI) source primaire FAQ ADEME section G2"
+      methodologie: "🟢 formules Cabs/Crelat/CVC/USE confirmées doc ADEME 09/2025 + FAQ ADEME"
+      cabs_par_cas_pratique: "🟡 19 sous-catégories chiffrées (guide Cerema 2025) — conservées pour validation croisée"
+      cvci_usei_par_zone: "🟢 100% — Annexe I ATDL2430864A 217 pages parsée : 63 catégories, 426 sous-catégories, CVC × 13 zones (8 + 5 DOM) × 5 paliers altitude, USE étalon, Part_USE_variable, IIU, formules modulation (cf. operat_annexe_i_sous_categories.json)"
+      coeff_dju_par_categorie: "🟢 100% — Annexe II ATDL2430864A : 13 groupes Coeff_ch/Coeff_fr couvrant 73 références catégorie/sous-catégorie (cf. operat_annexe_ii_coeff_dju.json)"
+      zones_climatiques: "🟡 zones nommées + valeurs chiffrées 100% disponibles ; mapping département → zone à compléter (P1, non bloquant)"
+      sanctions: "🟢 confirmées 1500 € PP / 7500 € PM cumulables (FAQ CS4-Q1 + art. R.131-44 CCH originel R.185-2 actuel)"
+      perimetre_couverture_va: "🟢 sectorisation FAQ G2 confirmée par arrêté : VA I=fondation, II=DJU+modulation, III=hôtellerie/restaur/data-center, IV=hôpital/pénitentiaire/sport/logistique, V=transport/culture/santé/CVC DOM, VI=commerces/cinémas/bureaux/DOM consolidant"
+    sources_primaires:
+      - document: "FAQ OPERAT ADEME"
+        url: "https://operat.ademe.fr/public/faq#question_5"
+        editeur: "Direction de l'habitat, de l'urbanisme et des paysages (DHUP) - Ministère écologie"
+        derniere_mise_a_jour_section_g2: "09/2025"
+        statut_juridique: "valeur informative juridique de l'administration (FAQ p.1) — non opposable mais doctrine officielle"
+        archive_locale: "docs/sources/regulatory/operat/faq_ademe_g2_extrait_2026_05_03.md"
+      - document: "Cerema 2025 — Réaliser ses déclarations EET (Mode d'emploi)"
+        isbn: "978-2-37180-723-5"
+        archive_locale: "docs/sources/regulatory/operat/cerema_deet_2025_raw.txt"
+      - document: "JO arrêté 01/08/2025 NOR ATDL2430864A"
+        url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052113xxx"  # ID exact à confirmer
+        archive_locale: "(texte intégral lu via Drive — Drive ID 1yfUCVQe_8qdw2sAbR_qtF1P-774Bw0Os)"
+      - document: "Annexe I — Arrêté 01/08/2025 NOR ATDL2430864A (217 pages)"
+        url: "https://www.bulletin-officiel.developpement-durable.gouv.fr/documents/Bulletinofficiel-0034142/ATDL2430864A_Annexe%20I.pdf"
+        statut_juridique: "Annexe officielle de l'arrêté du 01/08/2025 — opposable"
+        archive_locale_pdf: "docs/sources/regulatory/operat/atdl2430864a_annexe_i.pdf"
+        archive_locale_text: "docs/sources/regulatory/operat/atdl2430864a_annexe_i.txt"
+        donnees_structurees: "backend/config/operat_annexe_i_sous_categories.json"
+        parser: "backend/scripts/operat_extract_annexe_i.py (PyMuPDF + regex deterministe)"
+      - document: "Annexe II — Arrêté 01/08/2025 NOR ATDL2430864A (3 pages)"
+        url: "https://www.bulletin-officiel.developpement-durable.gouv.fr/documents/Bulletinofficiel-0034142/ATDL2430864A_Annexe%20II.pdf"
+        statut_juridique: "Annexe officielle de l'arrêté du 01/08/2025 — opposable"
+        archive_locale_pdf: "docs/sources/regulatory/operat/atdl2430864a_annexe_ii.pdf"
+        archive_locale_text: "docs/sources/regulatory/operat/atdl2430864a_annexe_ii.txt"
+        donnees_structurees: "backend/config/operat_annexe_ii_coeff_dju.json"
+        parser: "backend/scripts/operat_extract_annexe_ii.py (mapping manuel verifie ligne a ligne)"
+    next_actions:
+      - priority: "P1"
+        action: "Compléter mapping département → zone climatique H1a-H3 via lecture annexe arrêté méthode 10/04/2020 (sources locales joe_*.txt déjà présentes)"
+      - priority: "P1"
+        action: "Récupérer NOR exacts des VA I-V via consultation Légifrance manuelle (FAQ G2 confirme dates+objets, NOR à confirmer)"
+      - priority: "P2"
+        action: "Validation croisée des 19 valeurs Cabs Cerema vs annexe I (sondage 5 sous-catégories pour vérifier cohérence chiffres pédagogiques vs valeurs officielles)"
+      - priority: "P2"
+        action: "Wiring backend/regops/rules/tertiaire_operat.py vers operat_annexe_i_sous_categories.json pour pilotage par sous-catégorie réelle"
+
+  # ----------------------------------------------------------
+  # CHRONOLOGIE DES ARRÊTÉS OPERAT (corrigée vs hypothèses initiales)
+  # ----------------------------------------------------------
+  arretes_chronology:
+
+    decret_cadre_2019:
+      type: "decret"
+      ref: "Décret n° 2019-771 du 23 juillet 2019"
+      nor: "LOGL1909871D"
+      date_signature: "2019-07-23"
+      date_publication_jo: "2019-07-25"
+      jo_reference: "JO n° 171 du 25 juillet 2019, texte 53/202"
+      url_legifrance: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251"
+      objet: "Modalités de mise en œuvre obligation réduction conso énergie finale bâtiments tertiaires"
+      confidence: "🟢"
+      source_locale: "docs/sources/regulatory/operat/joe_20190725_0171_0053.txt (à archiver)"
+
+    arrete_methode_2020:
+      type: "arrete"
+      ref: "Arrêté du 10 avril 2020"
+      nor: "LOGL2005904A"  # corrigé 2026-05-03 via PDF Légifrance officiel (était LOGL2007109A à tort)
+      date_signature: "2020-04-10"
+      jo_reference: "JORF n°0108 du 3 mai 2020"
+      url_legifrance: "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000041842389"
+      objet: "Arrêté méthode initial — modalités application obligation, structure annexes I-VIII"
+      perimetre_geographique: "France métropolitaine + Guadeloupe + Guyane + Martinique + La Réunion + Mayotte (art. 1, version 25/04/2022)"
+      ajustement_dju_methode: "Maille départementale, station Météo France la plus représentative du site, DJU moyen période 2001-2020 (art. 5, version 13/07/2024)"
+      zone_climatique_definition: "art. 2-h : H1a, H1b, H1c, H2a, H2b, H2c, H2d ou H3 = regroupement de départements métropolitains, précisée colonne 'Zclim' du tableau en annexe III"
+      confidence: "🟢"
+      source: "PDF Légifrance officiel archivé 2026-05-03 (docs/sources/regulatory/operat/legifrance_arrete_methode_10_avril_2020.pdf)"
+      source_locale_pdf: "docs/sources/regulatory/operat/legifrance_arrete_methode_10_avril_2020.pdf"
+      source_locale_text: "docs/sources/regulatory/operat/legifrance_arrete_methode_10_avril_2020.txt"
+
+    arrete_va_I_2020:
+      type: "arrete"
+      ref: "Arrêté du 24 novembre 2020 modifiant l'arrêté du 10 avril 2020 — dit « Valeurs absolues I »"
+      nor: null  # à confirmer (LOGL2030749A supposé en hypothèse initiale, à vérifier Légifrance)
+      date_signature: "2020-11-24"
+      date_publication_jo: "2021-01-17"
+      objet: "Fixe les valeurs absolues pour les principales catégories d'activité concernées par EET + cadre des tables de données collectées sur la plateforme OPERAT"
+      perimetre_couverture: "Bureaux, enseignement, logistique non chauffée, services postaux (fondation)"
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2 (DHUP - mise à jour 09/2025) — 'Arrêté valeurs absolues I'"
+
+    decret_modificatif_2021:
+      type: "decret"
+      ref: "Décret du 29 septembre 2021"
+      nor: null
+      date_signature: "2021-09-29"
+      objet: "Modifie articles R.174-27 et R.174-28 CCH : reporte dispositions transmission données annuelles + complète obligations transmission cas transaction immobilière et cessation d'activité"
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2"
+
+    arrete_report_delais_2021:
+      type: "arrete"
+      ref: "Arrêté du 29 septembre 2021 modifiant l'arrêté du 10 avril 2020 — dit « Report de délais »"
+      nor: null
+      date_signature: "2021-09-29"
+      objet: "Intègre les modalités de transmission annuelle des données prévues à l'article R.174-27 CCH (renvoi à arrêté ministres énergie/construction)"
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2"
+
+    arrete_va_II_2022:
+      type: "arrete"
+      ref: "Arrêté du 13 avril 2022 modifiant l'arrêté du 10 avril 2020 — dit « Valeurs absolues II »"
+      nor: null
+      date_signature: "2022-04-13"
+      objet: "Modifications dispositions ajustement consommations en fonction des variations climatiques (article 5) + modulation objectif valeur relative cas contraintes techniques/architecturales/patrimoniales/disproportion économique (article 7)"
+      perimetre_couverture: "Compléments commerces (hypermarché, supermarché, hard discount, magasins spécialisés) + activités sportives selon synthèse Cerema"
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2 + Cerema 2025 ligne 2743"
+
+    arrete_va_III_2023:
+      type: "arrete"
+      ref: "Arrêté du 28 novembre 2023 modifiant l'arrêté du 10 avril 2020 — dit « Valeurs absolues III »"
+      nor: null
+      date_signature: "2023-11-28"
+      objet: "Corrige formule article 7 arrêté 13/04/2022 + précise objectifs valeurs absolues : hôtellerie et résidences de tourisme, restauration, serveurs et data-center"
+      perimetre_couverture: "Hôtellerie, résidences tourisme, restauration, serveurs/data-center"
+      cabs_defaut_enseignement_primaire: 79  # kWh/m²/an — cité dans Cerema 2025 ligne 1025 (art. 8-IV)
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2 + Cerema 2025 ligne 1025 (art. 8-IV)"
+
+    arrete_va_IV_2024:
+      type: "arrete"
+      ref: "Arrêté du 20 février 2024 modifiant l'arrêté du 10 avril 2020 — dit « Valeurs absolues IV »"
+      nor: null
+      date_signature: "2024-02-20"
+      objet: "Précise objectifs valeurs absolues : logistique à température ambiante, blanchisseries dites « industrielles », centres hospitaliers, établissements pénitentiaires, médico-sociaux, protection judiciaire de la jeunesse (PJJ), sports"
+      perimetre_couverture: "Logistique T° ambiante, blanchisseries industrielles, hôpitaux, pénitentiaire, médico-social, PJJ, sports"
+      delai_declaration_periode_2010_2019: "Article 4 : délai prolongé jusqu'au 30/09/2027 pour déclaration Période 2010-2019"
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2 + Cerema 2025 lignes 715, 1565"
+
+    arrete_va_V_2024:
+      type: "arrete"
+      ref: "Arrêté du 5 juillet 2024 modifiant l'arrêté du 10 avril 2020 — dit « Valeurs absolues V »"
+      nor: null
+      date_signature: "2024-07-05"
+      objet: "Précise objectifs valeurs absolues : transports, culture et spectacles, loisirs, parcs d'exposition et palais des congrès, vente et services de véhicules, laboratoires, imprimerie, audiovisuel, enseignement, justice, santé (compléments), valeurs CVC pour départements d'outre-mer"
+      perimetre_couverture: "Transports, culture/spectacles, loisirs, parcs expo, vente véhicules, labos, imprimerie, audiovisuel, enseignement, justice, santé compléments, CVC DOM"
+      formules_ajustement_dju: "Intégrées plateforme OPERAT (cité Cerema 2025 ligne 783 — possiblement reprises ici depuis la version v2 de l'art. 5)"
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2 + Cerema 2025 ligne 783"
+
+    arrete_va_VI_2025:  # ★ CIBLE INITIALE DE L'EXTRACTION
+      type: "arrete"
+      ref: "Arrêté du 1er août 2025 modifiant l'arrêté du 10 avril 2020 — dit « Valeurs absolues VI »"
+      nor: "ATDL2430864A"
+      date_signature: "2025-08-01"
+      date_publication_jo: "2025-09-06"
+      jo_reference: "JO n° 207 du 6 septembre 2025, texte 61/168"
+      ministry: "Ministère de l'aménagement du territoire et de la décentralisation"
+      perimetre_couverture: "Complète dernières valeurs absolues non encore publiées : commerces, cinémas, bureaux, départements d'outre-mer (DOM). REPREND L'INTÉGRALITÉ des valeurs absolues déjà publiées dans VA I à V pour faciliter la lecture globale."
+      cle_consolidante: true  # Cet arrêté consolide tous les VA précédents
+      objet_consolide:
+        - "Art. 2 — annexe VII art.13 III : suppression renvoi annexe VII, transfert sur plateforme OPERAT. Période transitoire jusqu'au 01/07/2026 où évaluation respect via attestation numérique reste facultative."
+        - "Art. 3 — REMPLACE l'annexe II de l'arrêté du 10/04/2020 (tables Cabs/CVCi/USEi par sous-catégorie) par l'annexe I du présent arrêté"
+        - "Art. 4 — REMPLACE le dernier tableau de l'annexe III par le tableau en annexe II du présent arrêté"
+        - "Art. 5 — annexe VII : suppression modèle VII-1 (attestation), ajout GNL coefficient GES 0,238 kgCO2eq/kWh, ajout GNL coefficients conversion énergie primaire"
+        - "Art. 6 (CRITIQUE) — annexes I et II du présent arrêté NON publiées dans JO mais consultables sur bulletin-officiel.developpement-durable.gouv.fr"
+      entree_en_vigueur: "Lendemain de la publication JO (2025-09-07)"
+      confidence: "🟢"
+      source_locale: "docs/sources/regulatory/operat/joe_20250906_0207_0061.txt (à archiver)"
+      annexes_separees:
+        annexe_i:
+          objet: "Tables CVCi/USEi/IIU par sous-catégorie d'activité (60 catégories nommées, 63 numérotées, 426 sous-catégories)"
+          archive_locale_pdf: "docs/sources/regulatory/operat/atdl2430864a_annexe_i.pdf"
+          donnees_structurees: "backend/config/operat_annexe_i_sous_categories.json"
+          extraction_status: "🟢 COMPLETE — parser PyMuPDF deterministe"
+        annexe_ii:
+          objet: "Coeff_ch / Coeff_fr d'ajustement DJU par groupe de catégories (13 groupes, 73 références)"
+          archive_locale_pdf: "docs/sources/regulatory/operat/atdl2430864a_annexe_ii.pdf"
+          donnees_structurees: "backend/config/operat_annexe_ii_coeff_dju.json"
+          extraction_status: "🟢 COMPLETE — mapping manuel vérifié"
+
+  # ----------------------------------------------------------
+  # MÉTHODOLOGIE OFFICIELLE OPERAT (formules ADEME confirmées)
+  # ----------------------------------------------------------
+  methodologie:
+
+    formule_cabs_2030:
+      formule_principale: "Cabs 2030 = CVC(n) + USE(n)"
+      sous_formules:
+        cvc_n: "CVC(n) = Σ(CVCi × Si) / ΣSi"
+        use_n: "USE(n) = Σ(USEi × Si) / ΣSi"
+        si: "Si = Surface moyenne annuelle de la sous-catégorie i = Surface déclarée × (Nb jour n / Nb jour i)"
+      legende:
+        n: "dernière année de déclaration de consommation validée de l'EFA"
+        i: "sous-catégorie d'activité déclarée dans la déclaration de consommation de l'année n"
+        CVCi: "composante CVC (chauffage-ventilation-climatisation) relative à la sous-catégorie i"
+        USEi: "composante USE (usages spécifiques) relative à la sous-catégorie i"
+      confidence: "🟢"
+      source: "Doc ADEME — OPERAT Documentation utilisateurs Mise à jour Septembre 2025 (Drive 1V3ROcNkcA9j4K3X48BXEWQ8BFehm2iqu)"
+
+    formule_crelat_2030:
+      cas_primo_assujetti:
+        formule: "Crelat 2030 = Cref × (Cabs2030(n) / Cabs2030(ref)) × (1 - 0.4)"
+        legende:
+          Cref: "Consommation année de référence ajustée variations climatiques"
+          Cabs2030_n: "Objectif valeur absolue 2030 issu année n"
+          Cabs2030_ref: "Objectif valeur absolue 2030 théorique issu année de référence"
+      cas_changement_occupant:
+        formule: "Crelat 2030 = Cref_liée × (Cabs2030(n) / Cabs2030_liée(ref)) × (1 - 0.4)"
+        legende:
+          Cref_liée: "Moyenne pondérée surfaces liées des consommations de référence de chaque EFA liée"
+      confidence: "🟢"
+      source: "Doc ADEME 09/2025"
+
+    annee_de_reference:
+      regle_attribution: "Pour EFA ayant déclarations avant 2022, année de référence déterminée automatiquement par OPERAT parmi : Période 2010-2019, Conso 2020, Conso 2021, Conso 2022 — sélection optimisant Crelat (objectif valeur relative le plus élevé)"
+      regle_post_2022: "Pour EFA dont première année pleine d'exploitation > 2022, année référence = première année pleine d'exploitation déclarée"
+      delai_declaration_2010_2019: "Prolongé jusqu'au 30/09/2027 (art. 4 arrêté 20/02/2024) — passé ce délai, attribution automatique"
+      confidence: "🟢"
+      source: "Doc ADEME 09/2025"
+
+    methode_choix_cabs_vs_crelat:
+      regle: "L'assujetti choisit la méthode la plus favorable — Cabs OU Crelat, par EFA. Suffit d'atteindre l'un des deux objectifs pour conformité DEET."
+      confidence: "🟢"
+      source: "Cerema 2025 ligne 105"
+
+    declaration_sous_categorie_par_defaut:
+      regle: "Sous-catégorie 'catégorie X - valeur par défaut' utilisable UNIQUEMENT si plus de 80% surfaces EFA relèvent d'une seule catégorie. Si sélectionnée, aucune autre sous-catégorie ne peut être déclarée pour l'EFA."
+      consequence: "Généralement défavorable — objectif Cabs plus contraignant. Indicateur d'intensité d'usage limité à amplitude horaire."
+      confidence: "🟢"
+      source: "Cerema 2025 lignes 515-587"
+
+    indicateurs_intensite_usage:
+      principe: "Chaque sous-catégorie a des valeurs étalons par défaut pour ses indicateurs d'intensité d'usage (IIU). L'assujetti peut soit conserver les valeurs étalons, soit les ajuster pour modulation de l'objectif."
+      exemples:
+        bureaux: "Nombre postes de travail au m²"
+        piscine: "Surface de bassin"
+        equipement_sportif_ou_culturel: "Horaires d'ouverture"
+        atelier_technique: "Densité énergétique réelle (kWh/m²/an)"
+      confidence: "🟢"
+      source: "Cerema 2025 lignes 433, 601-607"
+
+  # ----------------------------------------------------------
+  # 19 VALEURS CABS 2030 EXTRAITES DU GUIDE CEREMA 2025
+  # ----------------------------------------------------------
+  # Toutes confidence = 🟡 (cas pratiques pédagogiques officiels)
+  # Source : Cerema 2025, ISBN 978-2-37180-723-5, Collection "Les références"
+  # ----------------------------------------------------------
+  cas_pratiques_cerema_cabs:
+
+    bureaux_standards_mairie_passoire:
+      categorie_principale: "BUREAUX"
+      sous_categorie_libelle: "Bureaux standards (cas mairie passoire thermique)"
+      cabs_2030_kwh_m2_an: 116
+      contexte: "Estimation Cerema sur base 'bureaux standards' majoritaires en surface, conso 2024 = 250 kWh/m²/an"
+      cerema_ligne: 727
+
+    enseignement_primaire_valeur_defaut:
+      categorie_principale: "ENSEIGNEMENT"
+      sous_categorie_libelle: "Enseignement primaire — valeur par défaut"
+      cabs_2030_kwh_m2_an: 79
+      contexte: "Référence article 8-IV de l'arrêté du 28 novembre 2023"
+      cerema_ligne: 1025
+      arrete_origine: "arrete_cabs_defaut_2023"
+      legal_anchor: "Art. 8-IV arrêté 28/11/2023"
+
+    enseignement_primaire_detaille_ecole:
+      categorie_principale: "ENSEIGNEMENT"
+      sous_categorie_libelle: "Enseignement primaire — détaillé (cas EFA école)"
+      cabs_2030_kwh_m2_an: 102
+      contexte: "Application valeurs étalons indicateurs d'intensité d'usage du Tableau 3-1 Cerema"
+      cerema_ligne: 1163
+
+    periscolaire_mixte:
+      categorie_principale: "ENSEIGNEMENT"
+      sous_categorie_libelle: "Périscolaire mixte (60% restauration + 40% multi-activités)"
+      cabs_2030_kwh_m2_an: 111
+      contexte: "Application valeurs étalons + considération usages multiples périscolaire"
+      cerema_ligne: 1223
+
+    periscolaire_scenario_5h_jour:
+      categorie_principale: "ENSEIGNEMENT"
+      sous_categorie_libelle: "Périscolaire — scénario 5h/j × 5j/sem × 36 sem"
+      cabs_2030_kwh_m2_an: 161
+      contexte: "Modulation horaire — restaurant scolaire 3h/j + accueil 2h/j, ratio cuisine 32%, IIU=900h/an"
+      cerema_ligne: 1267
+
+    periscolaire_scenario_4j_sem:
+      categorie_principale: "ENSEIGNEMENT"
+      sous_categorie_libelle: "Périscolaire — scénario 4j/sem (fermé mercredi)"
+      cabs_2030_kwh_m2_an: 142
+      contexte: "Modulation horaire — accueil 2h + restauration 3h, IIU=720h/an"
+      cerema_ligne: 1269
+
+    sports_valeur_defaut:
+      categorie_principale: "SPORTS"
+      sous_categorie_libelle: "Sports — valeur par défaut"
+      cabs_2030_kwh_m2_an: 57
+      contexte: "Couvre gymnase + centre aquatique sous valeur défaut (mais inadaptée aux centres aquatiques)"
+      cerema_lignes: [579, 1363, 1495, 1545]
+
+    sports_gymnase_detaille:
+      categorie_principale: "SPORTS"
+      sous_categorie_libelle: "Sports — gymnase détaillé"
+      cabs_2030_kwh_m2_an: 68
+      contexte: "Application valeurs étalons IIU"
+      cerema_ligne: 1425
+
+    sports_centre_aquatique_detaille:
+      categorie_principale: "SPORTS"
+      sous_categorie_libelle: "Sports — centre aquatique détaillé"
+      cabs_2030_kwh_m2_an: 423
+      contexte: "Application valeurs étalons IIU — équipement énergivore en raison du process aquatique"
+      cerema_ligne: 1619
+      note: "Décomposable en 3 sous-cat : Piscine (vestiaires/douches) + Récupération sportive (sauna/hammam) + Administration/bureaux"
+
+    culture_mjc:
+      categorie_principale: "CULTURE"
+      sous_categorie_libelle: "Culture — MJC (Maison des Jeunes et de la Culture)"
+      cabs_2030_kwh_m2_an: 92
+      contexte: "Application valeurs étalons IIU"
+      cerema_ligne: 1873
+
+    culture_salle_polyvalente:
+      categorie_principale: "CULTURE"
+      sous_categorie_libelle: "Culture — salle polyvalente"
+      cabs_2030_kwh_m2_an: 94
+      contexte: "Application valeurs étalons IIU"
+      cerema_ligne: 1873
+
+    atelier_technique_valeur_defaut:
+      categorie_principale: "ATELIER"
+      sous_categorie_libelle: "Atelier technique communal — valeur par défaut"
+      cabs_2030_kwh_m2_an: 74
+      contexte: "Plus de 80% surfaces correspondent à catégorie principale"
+      cerema_ligne: 1805
+
+    atelier_technique_zone_atelier_modulee:
+      categorie_principale: "ATELIER"
+      sous_categorie_libelle: "Atelier technique — zone atelier modulée"
+      cabs_2030_kwh_m2_an: 56
+      contexte: "Modulation par densité énergétique réelle (1.8 kWh/m²/an utilisé)"
+      cerema_ligne: 2141
+
+    atelier_technique_magasin_stockage_modulee:
+      categorie_principale: "ATELIER"
+      sous_categorie_libelle: "Atelier technique — magasin de stockage modulé"
+      cabs_2030_kwh_m2_an: 29
+      cerema_ligne: 2143
+
+    atelier_technique_bureau_modulee:
+      categorie_principale: "ATELIER"
+      sous_categorie_libelle: "Atelier technique — bureau modulé"
+      cabs_2030_kwh_m2_an: 74
+      cerema_ligne: 2153
+
+    bureaux_multi_occupation_etalons:
+      categorie_principale: "BUREAUX"
+      sous_categorie_libelle: "Bureaux multi-occupation — valeurs étalons"
+      cabs_2030_kwh_m2_an: 45
+      cerema_ligne: 2073
+
+    bureaux_multi_occupation_modulee:
+      categorie_principale: "BUREAUX"
+      sous_categorie_libelle: "Bureaux multi-occupation — modulé"
+      cabs_2030_kwh_m2_an: 39
+      contexte: "Modulation IIU selon scénario d'occupation réelle — gain 15% (45 → 39)"
+      cerema_ligne: 2181
+
+    administration_prefecture:
+      categorie_principale: "ADMINISTRATION"
+      sous_categorie_libelle: "Bureaux — administration publique préfecture"
+      cabs_2030_kwh_m2_an: 120
+      cerema_ligne: 2575
+
+    administration_conseil_departemental:
+      categorie_principale: "ADMINISTRATION"
+      sous_categorie_libelle: "Bureaux — administration publique conseil départemental"
+      cabs_2030_kwh_m2_an: 123
+      cerema_ligne: 2575
+
+  # ----------------------------------------------------------
+  # ZONES CLIMATIQUES OPERAT — Mapping département → zone AUTHENTIFIÉ
+  # ----------------------------------------------------------
+  # 8 zones métropole (H1a-H3) + 5 DOM. Source PRIMAIRE OPPOSABLE :
+  # Arrêté 10/04/2020 NOR LOGL2005904A annexe III (version consolidée 07/09/2025
+  # par arrêté 01/08/2025 NOR ATDL2430864A). Article 2-h définit les zones,
+  # Article 5 définit la maille DJU. La colonne "Zclim" de l'annexe III est
+  # désormais complète dans le PDF Légifrance v2 (03/05/2026).
+  #
+  # Données structurées : backend/config/operat_zones_climatiques.json (schema v2.0)
+  # Stations météo détaillées : backend/config/operat_stations_meteo.json
+  # Resolveur Python   : backend/regops/operat_zones.py
+  # Tests structurels  : backend/tests/test_operat_zones_climatiques.py (78 tests ✅)
+  #
+  # 🟢 CONFIDENCE PASSÉE 🟡 → 🟢 (2026-05-03) : mapping authentifié par recoupement
+  # direct sur l'annexe III du PDF Légifrance v2. Cohérence 100% : toutes les
+  # stations d'un même département agréent sur leur Zclim. Source primaire opposable.
+  #
+  # ⚠️ ATTENTION VS CONSENSUS RT 2012 : ~25 départements ont une zone DIFFÉRENTE
+  # du consensus RT 2012 communément cité dans la littérature. Notamment :
+  # - Est continental (08/10/51/52/54/55/57/67/68/88/90) : H1a → H1b
+  # - Limousin (19/23/87) : H2c/H2d → H1c
+  # - 84 Vaucluse : H3 → H2d
+  # - 45 Loiret : H2b → H1b
+  # - 53 Mayenne : H2a → H2b
+  # Cf. operat_zones_climatiques.json field changements_v1_a_v2 pour détail.
+  # ----------------------------------------------------------
+  zones_climatiques:
+    source_canonique: "Arrêté 10/04/2020 NOR LOGL2005904A annexe III (version consolidée 07/09/2025 par arrêté 01/08/2025 NOR ATDL2430864A)"
+    article_definissant_zones: "Art. 2-h : 'zone climatique nommée H1a, H1b, H1c, H2a, H2b, H2c, H2d ou H3, un regroupement de départements métropolitains ; la zone climatique correspondant à chaque département est précisée dans la dernière colonne Zclim du tableau en annexe III'"
+    article_methode_dju: "Art. 5 : 'L'ajustement en fonction des variations climatiques est effectué à la maille départementale ... DJU moyen sur la période 2001-2020'"
+    archive_locale_pdf: "docs/sources/regulatory/operat/legifrance_arrete_methode_10_avril_2020_v2_avec_zclim.pdf"
+    donnees_structurees: "backend/config/operat_zones_climatiques.json"
+    donnees_structurees_stations_meteo: "backend/config/operat_stations_meteo.json"
+    resolveur_python: "backend/regops/operat_zones.py"
+    tests_structurels: "backend/tests/test_operat_zones_climatiques.py (78 tests ✅)"
+    confidence_globale: "🟢"
+    confidence_note: "Mapping authentifié par recoupement direct sur source primaire (annexe III arrêté 10/04/2020 v2). 165 stations météo parsées, 100 départements (96 métro + 5 DOM dont Mayotte ajoutée manuellement post-parsing). Cohérence inter-stations 100%."
+
+    paliers_altitude:
+      - palier: "alt_lt_400"
+        description: "Altitude inférieure à 400 m"
+        reference_m: 100
+      - palier: "alt_400_800"
+        description: "400 m ≤ Altitude < 800 m"
+        reference_m: 500
+      - palier: "alt_800_1200"
+        description: "800 m ≤ Altitude < 1200 m"
+        reference_m: 900
+      - palier: "alt_1200_1600"
+        description: "1200 m ≤ Altitude < 1600 m"
+        reference_m: 1400
+      - palier: "alt_gte_1600"
+        description: "Altitude ≥ 1600 m"
+        reference_m: 1700
+    methode_application_altitude: "Palier strict (pas d'interpolation linéaire) — convention OPERAT alignée Annexe I ATDL2430864A"
+
+    zones:
+      H1a:
+        description: "Climat continental nord (Bassin parisien + Hauts-de-France + Normandie + Aisne)"
+        departements: ["02", "14", "27", "28", "59", "60", "61", "62", "75", "76", "77", "78", "80", "91", "92", "93", "94", "95"]
+        count: 18
+        confidence: "🟢"
+      H1b:
+        description: "Continental nord-est et continental moyen-nord (Grand Est + parties Bourgogne/Centre)"
+        departements: ["08", "10", "45", "51", "52", "54", "55", "57", "58", "67", "68", "70", "88", "89", "90"]
+        count: 15
+        confidence: "🟢"
+      H1c:
+        description: "Continental moyen-sud + Massif Central + Auvergne + Alpes du Nord + Limousin sud + Hautes-Alpes"
+        departements: ["01", "03", "05", "15", "19", "21", "23", "25", "38", "39", "42", "43", "63", "69", "71", "73", "74", "87"]
+        count: 18
+        confidence: "🟢"
+      H2a:
+        description: "Bretagne + Manche (océanique doux)"
+        departements: ["22", "29", "35", "50", "56"]
+        count: 5
+        confidence: "🟢"
+      H2b:
+        description: "Pays de la Loire + Centre-Val de Loire + Poitou-Charentes + Mayenne (océanique tempéré)"
+        departements: ["16", "17", "18", "36", "37", "41", "44", "49", "53", "72", "79", "85", "86"]
+        count: 13
+        confidence: "🟢"
+      H2c:
+        description: "Sud-Ouest atlantique + Pyrénées + sud Massif Central + Toulouse"
+        departements: ["09", "12", "24", "31", "32", "33", "40", "46", "47", "64", "65", "81", "82"]
+        count: 13
+        confidence: "🟢"
+      H2d:
+        description: "Vallée du Rhône + Provence intérieure + Lozère + Vaucluse"
+        departements: ["04", "07", "26", "48", "84"]
+        count: 5
+        confidence: "🟢"
+      H3:
+        description: "Méditerranée + Corse (climat méditerranéen chaud)"
+        departements: ["06", "11", "13", "30", "34", "66", "83", "2A", "2B"]
+        count: 9
+        confidence: "🟢"
+
+    dom:
+      Guadeloupe: { code_insee: "971", code_postal_prefix: "971" }
+      Martinique: { code_insee: "972", code_postal_prefix: "972" }
+      Guyane:     { code_insee: "973", code_postal_prefix: "973" }
+      Reunion:    { code_insee: "974", code_postal_prefix: "974" }
+      Mayotte:    { code_insee: "976", code_postal_prefix: "976" }
+    dom_hors_perimetre_operat:
+      - { code_postal_prefix: "975", nom: "Saint-Pierre-et-Miquelon", statut: "COM" }
+      - { code_postal_prefix: "977", nom: "Saint-Barthélemy", statut: "COM" }
+      - { code_postal_prefix: "978", nom: "Saint-Martin", statut: "COM" }
+
+    changements_vs_consensus_rt2012: |
+      ATTENTION : le mapping authentifié (annexe III arrêté 10/04/2020) diffère
+      de plusieurs façons du consensus RT 2012 communément cité dans la littérature
+      énergétique. Liste des écarts notables :
+      Est continental → tous H1b (au lieu de H1a) :
+        08 Ardennes, 10 Aube, 51 Marne, 52 Haute-Marne, 54 Meurthe-et-Moselle,
+        55 Meuse, 57 Moselle, 67 Bas-Rhin, 68 Haut-Rhin, 88 Vosges, 90 Belfort
+      Bourgogne nord → H1b (au lieu de H1c) : 58 Nièvre, 70 Haute-Saône, 89 Yonne
+      Centre nord → H1b (au lieu de H2b) : 45 Loiret
+      Limousin/Massif Central → H1c (au lieu de H2c/H2d) :
+        19 Corrèze, 23 Creuse, 87 Haute-Vienne
+      Hautes-Alpes 05 → H1c (au lieu de H2d)
+      Mayenne 53 → H2b (au lieu de H2a)
+      Toulouse-Sud-Ouest 31 → H2c (au lieu de H2d)
+      H2d réduit à 5 dépts (04, 07, 26, 48, 84) — Vaucluse 84 passe H3→H2d
+      Cf. operat_zones_climatiques.json field changements_v1_a_v2 pour détail complet.
+
+    totaux: { metropole: 96, dom: 5, total: 101 }
+
+  # ----------------------------------------------------------
+  # SOUS-CATÉGORIES — TABLES CVCi/USEi PAR ZONE × ALTITUDE (Annexe I ATDL2430864A)
+  # ----------------------------------------------------------
+  # 🟢 STATUT : COMPLET — données structurées dans fichier JSON externe
+  # (931 KB, ne charge pas le YAML inutilement)
+  # ----------------------------------------------------------
+  sous_categories_cvci_usei:
+    source: "Annexe I de l'arrêté 01/08/2025 NOR ATDL2430864A (217 pages, bulletin-officiel.developpement-durable.gouv.fr)"
+    donnees_structurees: "backend/config/operat_annexe_i_sous_categories.json"
+    parser: "backend/scripts/operat_extract_annexe_i.py"
+    statistiques:
+      categories_count: 63
+      sous_categories_count: 426
+      zones_couvertes: ["H1a", "H1b", "H1c", "H2a", "H2b", "H2c", "H2d", "H3", "Guadeloupe", "Martinique", "Guyane", "Réunion", "Mayotte"]
+      paliers_altitude:
+        - id: "alt_lt_400"
+          libelle: "Altitude < 400 m"
+          reference_m: 100
+        - id: "alt_400_800"
+          libelle: "400 m ≤ Altitude < 800 m"
+          reference_m: 500
+        - id: "alt_800_1200"
+          libelle: "800 m ≤ Altitude < 1200 m"
+          reference_m: 900
+        - id: "alt_1200_1600"
+          libelle: "1200 m ≤ Altitude < 1600 m"
+          reference_m: 1400
+        - id: "alt_gte_1600"
+          libelle: "Altitude ≥ 1600 m"
+          reference_m: 1700
+    schema_par_sous_categorie:
+      title: "libelle officiel de la sous-catégorie"
+      naf: "code(s) NAF principal indicatif (non opposable)"
+      cvc_kwh_m2_an:
+        description: "matrice 5 paliers × 13 zones (None si zone non applicable)"
+        cles: "alt_lt_400, alt_400_800, alt_800_1200, alt_1200_1600, alt_gte_1600 → liste de 13 valeurs ordonnées comme zones_couvertes"
+      use_etalon_kwh_m2_an: "valeur de référence USE (étalon)"
+      part_use_variable: "fraction de USE modulable selon IIU surfacique (0 à 1)"
+      iiu_block_raw: "texte brut IIU temporels + surfaciques + valeurs étalon (limité à 2000 char)"
+      modulation_formula: "formule littérale de modulation USE en fonction du volume d'activité"
+    methode_application:
+      etape_1: "Localiser site → déterminer zone climatique H1a-H3 ou DOM (mapping département à compléter, cf. zones_climatiques)"
+      etape_2: "Déterminer altitude site → palier correspondant (palier strict, pas d'interpolation)"
+      etape_3: "Pour chaque sous-catégorie de l'EFA, lire CVCi via cles[palier][zone_idx] dans le JSON"
+      etape_4: "Calculer Cabs(i) = CVCi + USEi modulé selon IIU réels via modulation_formula"
+      etape_5: "Cabs EFA = Σ(Cabs(i) × Si) / ΣSi (cf. methodologie.formule_cabs_2030)"
+      etape_6: "Ajuster CVC selon DJU réels site via Coeff_ch/Coeff_fr (cf. coeff_dju_par_groupe)"
+    exemples_lookup:
+      accueil_petite_enfance_creche_h1b_lt_400m:
+        chemin_json: "categories[0].sub_categories[1].cvc_kwh_m2_an.alt_lt_400[1]"
+        valeur_kwh_m2_an: 66
+        use_etalon_kwh_m2_an: 25
+        part_use_variable: 0.05
+      sport_piscine_h1a_lt_400m:
+        chemin_json: "categories[52].sub_categories[5].cvc_kwh_m2_an.alt_lt_400[0]"
+        note: "valeur à confirmer via lookup direct dans le JSON ; structure validée"
+    confidence: "🟢"
+
+  # ----------------------------------------------------------
+  # COEFFICIENTS DJU (Annexe II ATDL2430864A) — ajustement CVC selon DJU site
+  # ----------------------------------------------------------
+  # 🟢 STATUT : COMPLET — 13 groupes encodés dans JSON externe
+  # ----------------------------------------------------------
+  coeff_dju_par_groupe:
+    source: "Annexe II de l'arrêté 01/08/2025 NOR ATDL2430864A (3 pages)"
+    donnees_structurees: "backend/config/operat_annexe_ii_coeff_dju.json"
+    parser: "backend/scripts/operat_extract_annexe_ii.py"
+    unite: "/°C/j (par degré-jour)"
+    formule: "CVC_ajuste = CVC_etalon × (1 + Coeff_ch × (DJU_chauffage_site - DJU_chauffage_etalon) + Coeff_fr × (DJU_refroidissement_site - DJU_refroidissement_etalon))"
+    statistiques:
+      groupes_count: 13
+      categories_couvertes_count: 73
+    valeurs_distinctes_coeff_ch: [0.0, 0.000065, 0.000141, 0.000247, 0.000314]
+    valeurs_distinctes_coeff_fr: [0.0, 0.0000535, 0.000158, 0.000198, 0.00032, 0.00068, 0.1]
+    groupes_synthese:
+      G1_bureaux_admin: { coeff_ch: 0.000247, coeff_fr: 0.000198 }
+      G2_education_hotellerie_sport_hors_aquatique: { coeff_ch: 0.000314, coeff_fr: 0.0000535 }
+      G3_aquatique_balneotherapie: { coeff_ch: 0.000314, coeff_fr: 0.0 }
+      G4_bureaux_publics_culture_justice_commerce_non_alimentaire: { coeff_ch: 0.000247, coeff_fr: 0.000198 }
+      G5_centres_commerciaux_drive_grands_magasins_sante: { coeff_ch: 0.000247, coeff_fr: 0.0000535 }
+      G6_transport_sauf_remisage: { coeff_ch: 0.000141, coeff_fr: 0.000198 }
+      G7_restauration: { coeff_ch: 0.000141, coeff_fr: 0.0000535 }
+      G8_entrepot_temperature_ambiante: { coeff_ch: 0.000141, coeff_fr: 0.0 }
+      G9_commerce_alimentaire: { coeff_ch: 0.000065, coeff_fr: 0.000158 }
+      G10_logistique_commerce_gros_halles_meubles_froid: { coeff_ch: 0.0, coeff_fr: 0.1 }
+      G11_data_center: { coeff_ch: 0.0, coeff_fr: 0.00068 }
+      G12_patinoire: { coeff_ch: 0.0, coeff_fr: 0.00032 }
+      G13_zero_zero_residual: { coeff_ch: 0.0, coeff_fr: 0.0 }
+    confidence: "🟢"
+
+  # ----------------------------------------------------------
+  # SANCTIONS
+  # ----------------------------------------------------------
+  sanctions:
+    non_declaration_operat:
+      base_legale: "Art. R.131-44 CCH (devenu R.174-32) — décret 2019-771"
+      procedure: "Mise en demeure préfet 3 mois → publication 'name and shame' site Etat → mise en demeure 6 mois → amende"
+      montant_max_personne_morale_eur: 7500
+      montant_max_personne_physique_eur: 1500
+      unite: "EUR par site/EFA en infraction"
+      confidence: "🟢"
+      source: "joe_20190725_0171_0053.txt (décret 2019-771 art. R.131-44.III + IV)"
+
+    non_atteinte_objectif:
+      base_legale: "Art. R.131-44 CCH"
+      procedure: "Mise en demeure programme d'actions → constat de carence (arrêté motivé préfet) → publication site Etat → amende"
+      montant_max_personne_morale_eur: 7500
+      montant_max_personne_physique_eur: 1500
+      confidence: "🟢"
+      source: "joe_20190725_0171_0053.txt (décret 2019-771 art. R.131-44.III)"
+
+  # ----------------------------------------------------------
+  # ÉCHÉANCES CLÉS
+  # ----------------------------------------------------------
+  echeances_cles:
+    declaration_annuelle: "30 septembre N+1 pour conso année N (à partir 2021)"
+    declaration_periode_2010_2019_extension: "30 septembre 2027 (arrêté 20/02/2024 art. 4)"
+    attestation_numerique_obligatoire: "1er juillet 2026 (article 2 arrêté 01/08/2025)"
+    objectif_decennal_1: "31 décembre 2030 — réduction -40% Crelat OU Cabs"
+    objectif_decennal_2: "31 décembre 2040 — réduction -50%"
+    objectif_decennal_3: "31 décembre 2050 — réduction -60%"
+    premier_controle_administratif: "31 décembre 2031 (au plus tard) — bilan 2030"
+    confidence: "🟢"
+    source: "Décret 2019-771 art. R.131-39 et R.131-42 + arrêtés modificatifs"
