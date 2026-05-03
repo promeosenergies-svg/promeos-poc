@@ -1,0 +1,2914 @@
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi 
+
+Les référencesRÉALISER SES DÉCLARATIONS
+
+ÉCO ÉNERGIE TERTIAIRE MODE D’EMPLOI
+
+RÉALISER SES DÉCLARATIONS ÉCO ÉNERGIE TERTIAIRE MODE D’EMPLOI
+
+Collection « Les références »
+
+Cette collection regroupe l’ensemble des documents de référence portant sur l’état de l’art dans les domaines d’expertise du Cerema (recommandations méthodologiques, règles techniques, savoir-faire…), dans une version stabilisée et validée. Destinée à un public de généralistes et de spécialistes, sa rédaction pédagogique et concrète facilite l’appropriation et l’application des recommandations par le professionnel en situation opérationnelle.
+
+Comment citer cet ouvrage : Cerema. Réaliser ses déclarations Éco Énergie Tertiaire. Mode d’emploi Lyon : Cerema, 2025. Collection : Les références. ISBN : 978-2-37180-723-5
+
+2
+
+REMERCIEMENTS
+
+Cet ouvrage, œuvre collective du Cerema, a été piloté par Céline Dubreuil et Ariane Lesage (Cerema).
+
+A contribué à sa rédaction : Benoît Erny (Cerema)
+
+Sont remerciés pour leur relecture : Lara Alberge (DHUP) ; Virginie Albert (DREAL Nouvelle Aquitaine) ; Lucile Bavay (Cerema) ; Laurélise Bernard (Cerema) ; Christophe Calvarin (Brest Métropole) ; Florian Chiffoleau (SYDEV Vendée) ; Mireille Duvignaud (Cerema) ; Quentin Legros (Cerema) ; Iara Le Saux (Cerema) ; Antoine Noly (DREAL AURA) ; Cécile Thézelais (Cerema) ; Aloïs Thiébaut (DHUP).
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploiAVANT-PROPOS
+
+Le Cerema travaille en étroite collaboration avec le ministère en charge de l’écologie pour l'élaboration, la mise en application et l’évaluation des réglementations environnementales et énergétiques du bâtiment. Le Cerema accompagne régulièrement dans le cadre du dispositif Éco Énergie Tertiaire, les assujettis et identifie les difficultés opérationnelles éventuelles rencontrées par les gestionnaires de patrimoines immobiliers publics dans la compréhension et la mise en œuvre de ce nouveau dispositif.
+
+Ce guide résulte de la volonté de clarifier la marche à suivre et les bonnes pratiques à adopter pour qu’un assujetti, et notamment une collectivité territoriale, effectue les déclarations de ses bâtiments le plus efficacement possible.
+
+L’implication des services du ministère en charge de l’écologie a permis de fiabiliser le décryptage réglementaire et le traitement des différents cas pratiques pour la déclaration des consommations énergétiques.
+
+3
+
+PARTIE Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Sommaire
+
+Remerciements 2 Avant-propos 3 Introduction 5
+
+1 Cadrage méthodologique 7 1.1 - Enjeux spécifiques au dispositif Éco Énergie Tertiaire 8 1.2 - Un dispositif basé sur des déclarations réelles et qui s’adapte aux usages tertiaires 10 1.3 - Méthodologie générale - Ce qu’il faut retenir 27
+
+PARTIE 2
+
+Cas pratiques 29 2.1 - Présentation des cas pratiques 30 2.2 - Groupe scolaire 31 2.3 - Établissement sportif : cas du gymnase 40 2.4 - Établissement sportif : cas du centre aquatique 45 2.5 - Salle polyvalente 50 2.6 - Centre technique communal (ateliers) 56 2.7 - Bâtiment administratif : cas des bureaux en multi-occupation 61 2.8 - Bâtiment administratif : cas de l’hôtel préfectoral (avec résidence) 66 2.9 - Conclusion des cas d’études 72
+
+Glossaire 74 Annexe 77
+
+4
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploiINTRODUCTION
+
+Le secteur du bâtiment est parmi tous les secteurs économiques le plus gros consommateur d’énergie. En France, en 2021, il représente près de 47 % des consommations énergétiques (pour son chauffage, sa climatisation, ses équipements, son éclairage, etc.) et les bâtiments tertiaires représentent à eux seuls 16 %.
+
+Le secteur du bâtiment contribue aussi à hauteur de 18 % des émissions de gaz à effet de serre (GES), en comptant les émissions directes en exploitation ainsi que les produits de construction et équipements divers. En incluant les émissions indirectes du bâtiment (attribuées à l’industrie de la construction), le secteur représenterait plus du quart des émissions nationales. C’est pourquoi la Stratégie nationale bas-carbone (SNBC) fixe des objectifs forts et ciblés pour le bâtiment, de -49 % d’émissions de GES en 2030 par rapport à 2015 et une décarbonation complète en 2050.
+
+Les bâtiments tertiaires représentent environ un tiers de la consommation énergétique du secteur du bâtiment1. Le secteur tertiaire regroupe toutes les activités qui ne relèvent pas du secteur primaire (production de matières premières) ou secondaire (activité de transformation de la matière). Les constructions relevant de ce secteur sont, par exemple, des bâtiments de bureaux, de services publics (administrations, enseignement, santé, action sociale, justice, culture, sport…), des locaux commerciaux, des sites logistiques, des data centers. Les bâtiments tertiaires totalisent ainsi près d’un milliard de mètres carrés en France (dont 15 à 20 % appartiennent aux collectivités territoriales).
+
+Ces chiffres montrent l’importance de projeter les bâtiments tertiaires dans des plans d’amélioration de leurs performances à long terme, reposant sur tous les leviers de réduction de leurs consommations d’énergie : sobriété (usage et gestion), efficacité des systèmes et performance intrinsèque (amélioration de l’enveloppe thermique).
+
+Dans ce contexte, la loi portant sur l’évolution du logement, de l’aménagement et du numérique, dite « loi Élan », du 24 novembre 2018, a fixé plusieurs objectifs en faveur de la diminution des consommations énergétiques. Le dispositif Éco Énergie Tertiaire (DEET\*)2, qui cible spécifiquement le parc de bâtiments tertiaires, vient préciser ces objectifs en définissant des seuils de consommation à atteindre à l’horizon 2030, puis 2040 et 2050. Près de 68 % du parc tertiaire est concerné par ce dispositif, selon les données du ministère de la Transition écologique.
+
+L’une des premières étapes de la démarche est la déclaration des consommations par le(s) responsable(s) des locaux concernés, sur une plateforme dédiée et gérée par l’ADEME : l’Observatoire de la performance énergétique, de la rénovation et des actions du tertiaire (OPERAT\*).
+
+Ce guide a pour but d'accompagner les gestionnaires immobiliers dans la saisie et la déclaration de leurs données dans le cadre du DEET. Il s'organise en deux parties :
+
+Partie 1 : Cadrage méthodologique La première partie est destinée à accompagner le lecteur technicien ou gestionnaire de bâtiments en collectivité territoriale dans la mise en application de la réglementation sur son parc de bâtiments. L’objectif est d’apporter un éclairage sur le volet déclaratif du DEET et son cadre d’application. Cette section guide le lecteur à travers les étapes essentielles des déclarations, en les illustrant par des exemples familiers pour les communes, afin de faciliter la compréhension de la démarche.
+
+Partie 2 : Cas pratiques La seconde partie présente des cas pratiques choisis parmi les typologies de bâtiments couramment rencontrés dans les collectivités. Elle explique la manière dont il convient de prendre en compte les surfaces, de décrire l’usage à l’aide des catégories et sous-catégories d’activité et de déclarer les consommations. Ces exemples permettent d’aborder les cas de la multi-occupation (bâtiment administratif), des entités sans compteur propre, des locaux aux usages multiples et intermittents, ou encore des logements de fonction indissociables d’une activité tertiaire.
+
+1 Source : données ADEME. 2 Les mots suivis d'un astérisque sont définis dans le glossaire.
+
+5
+
+PARTIE 1 Cadrage méthodologique
+
+7
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+8
+
+1\. CADRAGE MÉTHODOLOGIQUE
+
+1.1 - ENJEUX SPÉCIFIQUES AU DISPOSITIF ÉCO ÉNERGIE TERTIAIRE
+
+Peu de propriétaires et d’exploitants suivent leurs consommations. Un usage inapproprié d’un bâtiment, même performant au niveau de son enveloppe et des systèmes installés, peut conduire à des surconsommations d'énergie.
+
+Objectif du dispositif Éco Énergie Tertiaire (DEET) : inciter les propriétaires et exploitants des entités assujetties à suivre leurs consommations d’énergie et à entreprendre des actions pour les réduire. La réalisation de ce suivi nécessite la déclaration annuelle des données énergétiques associées aux données bâtimentaires. Cela tend également à améliorer la connaissance qu’ont les assujettis au DEET de leur patrimoine immobilier.
+
+La • • • démarche qui s’applique est celle des « 3 A » : Agir : obligation d’actions de réduction des consommations Adapter : possibilité d’adapter les objectifs de consommation Attester : déclarer les consommations annuelles d’énergie ; ; et attester des résultats obtenus.
+
+Le DEET concerne tous les locaux d’activité tertiaire, qu’ils accueillent ou non du public, dès lors que leur surface de plancher\* cumulée sur un même site\* ou une même unité foncière\* est supérieure à 1 000 m².
+
+Trois cas sont définis par la réglementation : bâtiment 1 ou partie de bâtiment à usage mixte 2 ou ensemble de bâtiments situés sur une même unité foncière ou sur un même site 3 .
+
+Figure 1-1 : Cas d’assujettissement
+
+1 2 3
+
+Au sein du patrimoine d’une collectivité, est assujetti l’ensemble des bâtiments administratifs, des services techniques, des bâtiments d’enseignement, des complexes sportifs, des piscines, des médiathèques, des musées, des gares routières, des maisons de santé, mais aussi des locaux souvent de petite taille (type crèches, cantines, locaux associatifs, salles de sport, archives, stockages, ateliers, etc.).
+
+Les seules exemptions sont les constructions provisoires, les lieux de culte et les bâtiments à usage opérationnel de défense, de sécurité civile et de sûreté intérieure (voir FAQ OPERAT A1 et A2).
+
+Les propriétaires et exploitants des bâtiments concernés par le dispositif doivent atteindre des objectifs de réduction des consommations d’énergie de leurs bâtiments en visant soit une valeur relative Crelat (-40 % en 2030, -50 % en 2040 et -60 % en 2050 par rapport à une consommation de référence en kWh/m².an comprise entre l’année 2010 et 2022), soit une valeur absolue Cabs en kWh/m².an définie sur la base des consommations des bâtiments performants d’une même catégorie d’activités\* et des meilleures techniques disponibles associées à des usages sobres. Il suffit d’atteindre l’un des deux objectifs pour être conforme au DEET.
+
+La plateforme OPERAT est l’outil qui permet de déterminer les objectifs à atteindre pour chaque bâtiment ou partie de bâtiment grâce aux données déclarées par les propriétaires et les exploitants.
+
+Ainsi, la première étape de la démarche consiste à déterminer la situation de référence de l’entité assujettie caractérisée par : • la nature de l’activité tertiaire exercée (catégories\* / sous-catégories\* d’activités tertiaires) ; • les surfaces correspondantes ; • les consommations d’énergie associées ; • l'intensité d'usage constatée.
+
+Le renseignement dans la plateforme OPERAT d’une consommation annuelle de référence choisie entre 2010 et 2019, puis des consommations annuelles depuis 2020, permet d’identifier la trajectoire prise par l’entité concernée au regard de ses jalons réglementaires (2030, 2040 et 2050).
+
+Il y a un intérêt à déclarer les caractéristiques de son patrimoine tertiaire au plus près de la réalité afin d’obtenir des objectifs de consommation d’énergie cohérents vis-à-vis du contexte et qui permettront de bâtir un plan d’action adapté.
+
+Assurer un suivi de ses consommations permet de mesurer l'impact de ses actions, qu'il s'agisse de travaux, de réglages ou de changements dans les pratiques énergétiques des usagers et de repérer d'éventuelles dérives ou possibilités d'optimisations afin de réduire sa consommation par des actions à faible investissement.
+
+Des travaux peuvent être nécessaires pour respecter les objectifs à l’horizon 2050. Anticiper ce besoin et l’inscrire dans une stratégie de gros entretien et de renouvellement permet de maîtriser l’impact budgétaire de cette réglementation. Le plan d’action prévu par la réglementation doit répondre à cet objectif de rationalisation des coûts. À l’échelle d’un parc immobilier, les interventions doivent s’organiser en fonction d’une stratégie patrimoniale globale entre aujourd’hui et 2050. Rappelons que la Stratégie nationale bas-carbone a fixé un objectif de neutralité carbone à horizon 2050.
+
+Mairie de Balan (Ardennes).
+
+Cadrage méthodologique
+
+9
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+10
+
+1.2 - UN DISPOSITIF BASÉ SUR DES DÉCLARATIONS RÉELLES ET QUI S’ADAPTE AUX USAGES TERTIAIRES
+
+1.2.1 - SCHÉMA DE PRINCIPE DE LA DÉMARCHE DE DÉCLARATION POUR LES ASSUJETTIS
+
+La démarche de déclaration nécessite d’avoir au préalable déterminé le périmètre assujetti, défini les entités fonctionnelles assujetties (EFA\*), puis identifié les consommations demandées. Ces trois étapes importantes sont détaillées dans les paragraphes suivants.
+
+Figure 1-2 : Démarche de déclaration pour les assujettis
+
+A. Déterminer
+
+le périmètre assujetti
+
+A. B. Déterminer le assujetti Définir les périmètre
+
+EFA
+
+et déclarer
+
+Toutes les déclarations de données administratives, de surfaces et de consommations relatives à une EFA s’effectuent sur la plateforme numérique OPERAT. Cette dernière laisse le choix à un assujetti entre une saisie directe des données sur la plateforme ou une saisie en masse au moyen de fichiers d’import.
+
+Il existe un fichier d’import pour décrire les EFA et un fichier d’import pour déclarer leurs données de consommation. Ils sont disponibles en téléchargement sur la plateforme OPERAT.
+
+Certains outils de suivi des fluides ou de gestion patrimoniale permettent de générer les données relatives aux EFA et / ou aux consommations.
+
+École primaire Jean Mentelin à Strasbourg (Bas-Rhin).
+
+C. Déterminer et déclarer
+
+les consommations
+
+1.2.2 - DÉTERMINATION DU PÉRIMÈTRE ASSUJETTI : UN RAISONNEMENT À MENER SUR UN PLAN CADASTRAL
+
+Il est recommandé de s’appuyer sur un plan cadastral, afin d’identifier les unités foncières et les sites (qui dépendent d’une proximité géographique). De plus, il ne faut pas oublier de déduire les surfaces des locaux non concernés (locaux non tertiaires) ou exclus de l’appréciation du seuil d’assujettissement (surfaces de stationnement, locaux techniques nécessaires au fonctionnement du bâtiment tels que chaufferie, centrale de traitement d’air, local de machinerie ascenseur, locaux déchets, surfaces des bassins des piscines, préaux, etc.).
+
+Exemple d’une commune
+
+La commune a repéré les parcelles cadastrales dont elle est propriétaire (hachures bleues) et ses bâtiments (représentés en rouge) : • l’école élémentaire et le périscolaire sont situés dans un bâtiment communal à usage tertiaire d’une surface supérieure à 1 000 m² (cas 1 de la Figure 1) ; • l’agence postale, la mairie et les cellules commerciales sont sur la même unité foncière que l’école élémentaire, dès lors, ces entités sont assujetties au dispositif (cas 3 de la Figure 1) ; • les logements communaux sur la même parcelle ne sont pas assujettis (le logement ne constitue pas une activité tertiaire) ; • l’église, l’école maternelle et la salle de réunion ne sont pas assujetties (lieu de culte exempté et les
+
+autres locaux en raison de leur surface inférieure à 1 000 m²).
+
+Ainsi, cinq bâtiments sont concernés dans ce centre-bourg.
+
+Figure 1-3 : Exemple d’un centre-bourg
+
+Cadrage méthodologique
+
+NON emple CONCERNÉS
+
+d’un centre-bourg
+
+CONCERNÉS
+
+intercommunal Périscolaire
+
+aire unal
+
+Logements
+
+loge
+
+(300 ²)
+
+m2)
+
+communaux (500 comm
+
+(50
+
+m2)
+
+École élémentaire
+
+entaire (950 ²)
+
+m2)
+
+Église (300 église
+
+m2)
+
+Agence postale
+
+stale (50 ²)m2)
+
+École école m
+
+maternelle
+
+Mairie (500 e²)m2)
+
+(650 (65
+
+m2)
+
+Cellules commerciales
+
+propriétés iales s de la
+
+de la commune (200 ne
+
+²)m2)
+
+Salle salle de
+
+de réunion + (80 local local m(80 d2)
+
+d'activités
+
+Le propriétaire a un devoir d'information auprès de son preneur à bail au regard de l'assujettissement de l'entité fonctionnelle.
+
+Ce qu’il faut retenir
+
+De nombreux cas d’assujettissement\* existent au-delà du cas « simple » d’un bâtiment de plus de 1 000 m² abritant une activité tertiaire.
+
+11
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+12
+
+1.2.3 - DÉFINITION DES ENTITÉS FONCTIONNELLES ASSUJETTIES EN LIEN AVEC LEURS PROPRIÉTAIRES ET EXPLOITANTS
+
+L’entité fonctionnelle assujettie (EFA) est une entité correspondant à un établissement au sens de la définition de l’Institut national de la statistique et des études économiques (Insee), à savoir : une unité de production ou d’activité géographiquement individualisée exploitée par une entité juridique.
+
+L’EFA est donc associée à un couple propriétaire-exploitant. En conséquence, un bâtiment ou un site peuvent être découpés en plusieurs EFA.
+
+Précision : il ne faut pas confondre la notion d’exploitant avec celle d’occupant.
+
+Par exemple, dans une maison des associations, la commune reste généralement l’exploitant du bâtiment (gestion des systèmes techniques du bâtiment), les associations ne sont que de simples occupants sans marge de manœuvre sur l’exploitation. Dès lors, ce bâtiment sera considéré comme une seule EFA.
+
+Exemple de la commune précédente
+
+Pour le groupe scolaire, deux EFA coexistent au sein d’un même bâtiment : • • une EFA correspondant à l’école (propriétaire : commune, exploitant : commune) ; une EFA correspondant au périscolaire (propriétaire : commune, exploitant : communauté
+
+d’agglomération).
+
+Les cellules commerciales sont toutes dans un même bâtiment, mais il y aura autant d’EFA que de commerçants (ex. : coiffeur et pharmacie sont des EFA distinctes).
+
+La mairie et l’agence postale constituent deux autres EFA.
+
+Tableau 1-1 : Identification des EFA et des binômes propriétaires-exploitants
+
+EFA École
+
+élémentaire Périscolaire Coiffeur Pharmacie postale Agence
+
+Mairie
+
+Propriétaire Commune Commune Commune Commune Commune Commune
+
+Exploitant Commune d'agglomération Communauté
+
+M. Y Mme Z Commune Commune
+
+Il est possible qu’une EFA soit constituée de plusieurs bâtiments (ex. : une école constituée de plusieurs bâtiments). Ces derniers sont alors identifiés au sein de l’EFA par leur identifiant unique bâtimentaire (IUB\*).
+
+Quand un site est composé de plusieurs bâtiments, la réglementation permet aux assujettis de déclarer une ou plusieurs EFA (voir FAQ OPERAT AN4) selon la configuration dans laquelle ils se trouvent. Réaliser une déclaration en plusieurs EFA n’est envisageable que si l’exploitant est en capacité de mesurer les consommations d’énergies réelles de chacune des entités.
+
+Cadrage méthodologique
+
+Réaliser la déclaration en une EFA donnera lieu à une seule attestation, sans permettre de distinguer les trajectoires énergétiques de chacun des bâtiments. Réaliser la déclaration en distinguant plusieurs EFA, en s’appuyant sur des données de consommation sous-comptées, permettra d’assurer un suivi énergétique plus fin.
+
+Les cas pratiques du groupe scolaire (2 bâtiments d’enseignement sans sous-comptage) et de la salle polyvalente - MJC (2 bâtiments avec sous-comptage) permettent d’illustrer ces deux alternatives.
+
+Figure 1-4 : Logigramme d’aide à la décision concernant le nombre d’EFA pouvant être déclarées pour un site assujetti
+
+Plusieurs bâtiments ?
+
+OUI NON
+
+Intérêts à distinguer les déclarations ? (performances intrinsèques différentes, usages…)
+
+OUI
+
+NON
+
+Sous-comptage ?
+
+OUI
+
+NON
+
+Plusieurs EFA
+
+1 EFA
+
+Pour chaque EFA, l’assujetti (le binôme constitué du propriétaire et de l’exploitant) doit identifier la ou les catégories et les sous-catégories d’activités de l’EFA et associer les surfaces correspondantes.
+
+1\. Estimer les surfaces de consommations énergétiques\* propres à l’EFA.
+
+2\. Dans le cas d’un bâtiment partagé entre plusieurs EFA, estimer les surfaces des communs et des espaces partagés et ventiler ces surfaces entre EFA selon la clé de répartition des charges des consommations de ces espaces, en général au tantième.
+
+3\. Calculer la surface de l’EFA par addition des surfaces de consommations énergétiques propres, communes et partagées et ventiler cette surface par sous-catégories en fonction de l’usage des locaux.
+
+4\. Estimer la valeur des indicateurs d’intensité d’usage (IIU\*) pour chaque sous-catégorie pour évaluer la pertinence du choix entre les valeurs étalons\* ou modulées, afin d’obtenir un objectif adapté à l’intensité réelle de l’activité. Cette dernière étape est facultative.
+
+Une EFA ne peut être déclarée qu'une fois, propriétaire et exploitant doivent se mettre d'accord sur les modalités de déclaration en amont de la saisie OPERAT.
+
+Nota : La surface de consommations énergétiques n’est pas forcément identique à la surface qui a permis de déterminer l’assujettissement.
+
+Par exemple, les surfaces des stationnements ou des locaux techniques ne sont pas comptées pour définir l’assujettissement mais elles sont à prendre en compte lors de la déclaration des sous-catégories d’activités, car ces surfaces sont des surfaces de consommations énergétiques.
+
+Pour le stationnement, il existe des sous-catégories dédiées. Quant aux locaux techniques, ils sont considérés comme des locaux non tertiaires accessoires à l’activité tertiaire : leur surface est à ventiler entre les différentes surfaces des sous-catégories desservies au sein de l’EFA.
+
+13
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+14
+
+1.2.3.1 - Les catégories d’activités
+
+Le dispositif prend en compte l’activité des bâtiments pour adapter les objectifs selon les contraintes propres aux usages tertiaires : un bâtiment de bureaux sera plus énergivore qu’un entrepôt à température ambiante, par exemple.
+
+Chaque EFA est associée à une catégorie d’activité majoritaire au regard des activités déclarées. Par exemple, une mairie sera identifiée comme un bâtiment de la catégorie d’activités « Bureaux, services publics, banque ». Le cas de la salle polyvalente, utilisée pour des activités diverses, montre toutefois que le choix de la catégorie n’est pas toujours évident.
+
+Tableau 1-2 : Exemples de catégories d’activités pour les cas d’usage développés ici
+
+EFA Catégorie d’activités
+
+École élémentaire Enseignement primaire
+
+Périscolaire Dépend des activités exercées
+
+Ex : « Restauration - débit de boissons » ou « Enseignement primaire »
+
+Coiffeur, pharmacie Commerces et services de détail - équipement de la personne et loisirs
+
+Agence postale, mairie, préfecture Bureaux - services publics - banque
+
+Atelier communal Dépend des activités exercées
+
+Ex. : « logistique » ou « vente et services aux véhicules utilitaires et industriels »
+
+Salle polyvalente
+
+Dépend des activités exercées Ex. : « culture et spectacle - salle de spectacles vivants » ou « sport » ou « restauration - débit de boissons »
+
+Centre aquatique, gymnase Sports
+
+1.2.3.2 - Les sous-catégories d’activités, pour caractériser l’usage de l’entité assujettie
+
+« La sélection de sous-catégories et le renseignement de la surface correspondante ne sont pas à considérer comme facultatifs, car si aucune sous-catégorie n’est sélectionnée, l’objectif exprimé en valeur absolue ne pourra être déterminé (il n’y a pas de valeur par défaut au niveau de chaque catégorie) » (extrait de la FAQ OPERAT O4).
+
+Chaque EFA est décrite à travers ses sous-catégories d’activités. Exemple pour une mairie :
+
+• sous-catégories associées à son usage principal « Bureaux - services publics - banque » :
+
+\- « bureaux - bureaux standards »,
+
+\- « bureaux - zone accueil public »,
+
+\- « bureaux - grande salle de réunion - auditorium - amphithéâtre (à partir de 30 places) » ;
+
+• sous-catégories autres, en lien avec son activité :
+
+\- « local serveurs (surface de salle IT3 inférieure à 20 m²) », - « stationnement en infrastructure (sous-sol en ventilation mécanique) ».
+
+3 Informatique et télécommunications.
+
+Cadrage méthodologique
+
+Le ministère précise qu’il n’y a pas de sous-catégories « sanitaires », « circulation », « tisanerie - lieu de pause ». Ces surfaces sont incorporées au niveau de chaque sous-catégorie d’activités. Dans l’exemple précédent de la mairie, les surfaces de ces espaces sont à ventiler dans les sous-catégories qui constituent l'EFA selon des modalités laissées à l'appréciation de l'assujetti (au prorata des surfaces, selon leur implantation, etc.)
+
+Exemple de ventilation dans les sous-catégories
+
+Tableau 1-3 : cas d’une école primaire d’une surface totale de 1 055 m²
+
+Local Surface Sous-catégorie d’activités
+
+Salles de classe 714 m2 94 % Enseignement primaire - salles d’enseignement
+
+élémentaire
+
+Bureau de la directrice, reprographie 43 m2 6 % Enseignement primaire - administration et bureaux
+
+Sanitaires 61 m2
+
+Ces locaux représentent 298 m²
+
+Salle de repos des enseignants de surface annexe à l’activité tertiaire.
+
+25 m2
+
+94 % de cette surface est attribuée à la sous-catégorie « salles d’enseignement élémentaire », Local ménage, chaufferie, local électrique 62 m2
+
+soit 280 m²,
+
+6 % à la sous-catégorie « administration et bureaux », soit 18 m².
+
+Circulations, dégagements 150 m2
+
+La déclaration OPERAT se déclinera à travers deux sous-catégories : • « enseignement primaire - salles d’enseignement élémentaire », pour une surface de 994 m² ; • « enseignement primaire - administration et bureaux », pour une surface de 61 m².
+
+Il est rappelé dans la FAQ OPERAT que « la sélection de sous-catégories non présentes sur l’entité fonctionnelle \[...\] permettant d’obtenir une meilleure notation Éco Énergie Tertiaire sera considérée comme des fausses déclarations \[...\]. Toutefois, il convient de faire une distinction entre la fausse déclaration et des informations qui ne sont pas précises. Ainsi, en termes de connaissance patrimoniale des entités fonctionnelles assujetties, il convient d’identifier les sous-catégories concernées sur l’entité fonctionnelle (établissement) considérée et de renseigner au mieux les surfaces correspondantes. Les informations en termes de surface peuvent être affinées et corrigées. »
+
+15
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+16
+
+Ces sous-catégories sont caractérisées par une valeur de consommation étalon à respecter à l’horizon 2030 composée d’une partie liée à l’usage « USE\* » et d’une partie liée à son ambiance thermique « CVC\* » (en kWh/m².an) qui est définie par arrêtés4.
+
+Ces valeurs étalons sont établies sur la base d’indicateurs d’intensité d’usage étalons qui leur sont propres (ex. : un indicateur pour les activités de bureaux est le nombre de postes de travail au m² ; pour une piscine, la surface de bassin ; pour un équipement sportif ou culturel, ses horaires d’ouverture…). Ces indicateurs et les modalités de calcul des valeurs de consommation étalon sont également précisés dans les arrêtés, pour chaque sous-catégorie.
+
+500
+
+Figure 1-5 : Exemple pour certaines de valeurs de consommation étalon, en zone H1b,
+
+sous-catégories d'activités
+
+USE
+
+50 20 9
+
+0
+
+66 79 50
+
+Ces valeurs peuvent être modulées selon l’usage réel (ex. : un gymnase qui est plus ou moins occupé pourra faire varier ses horaires d’occupation et ajuster son objectif en valeur absolue).
+
+Figure 1-6 : Impact de différents scénarios d'intensité d'usage sur l'objectif de consommation en valeur absolue d'un gymnase
+
+80 70) na.6050m/hWk(s baC) na.400
+
+CVC
+
+m/h300
+
+186
+
+Wk(s baC200 100
+
+252
+
+Bureaux
+
+Salle
+
+Gymnase Piscine standards
+
+d'enseignement élémentaire
+
+403068 65,7 77,4 79,7 20100Sans modulation :
+
+Scénario 1 :
+
+Scénario 2 :
+
+Scénario 3 : ouverture
+
+ouverture
+
+scénario 1
+
+scénario 2 2 600 h/an
+
+48 semaines/an
+
+\+ ouverture aux clubs
+
+\+ ouverture le samedi matin (soit 2 400 h/an)
+
+le soir jusqu'à 22 h
+
+(74 h/semaine (14 h /j soit 3 360 h/an)
+
+soit 3 552 h/an)
+
+Ce qu’il faut retenir
+
+La définition des sous-catégories d’activités permettra de caractériser l’activité de l’EFA et ainsi de définir des objectifs de consommation.
+
+L’impact de la modulation de ces indicateurs d’intensité d’usage n’est pas marginal. Ainsi, la seconde partie du guide permet de mesurer les effets concrets de ces modulations au travers d’exemples choisis.
+
+4 L’ensemble des textes réglementaires est rappelé en fin de document.
+
+Cadrage méthodologique
+
+1.2.3.3 - Une stratégie de déclaration à adapter au cas par cas
+
+Figure 1-7 : Niveaux de détail à fournir pour personnaliser l’objectif de consommation (d'après le schéma du ministère en charge de l’Écologie, DHUP)
+
+Un objectif qui peut se décliner à plusieurs niveaux
+
+1 Déclaration de la sous-catégorie « catégorie par défaut » (e.g., « Sport - Valeur par défaut ») • Objectif à atteindre plus ambitieux • Pas d'adaptation de l'objectif au plus près de la configuration de l'EFA
+
+2 Déclaration des surfaces associées à chaque sous-catégorie • Adaptation de l'objectif en fonction de la configuration de l'EFA
+
+3 Déclaration d'indicateur(s) d'intensité d'usage • Modulation de l'objectif en fonction du volume d'activité
+
+La réglementation permet aux assujettis de choisir une stratégie de déclaration adaptée à leur situation. La réponse à la FAQ O4 précise : « Il est rappelé que le dispositif est un outil d’accompagnement dans la transition énergétique et qu’il s’appuie sur un régime déclaratif et dans un cadre de transparence. »
+
+Dans ce contexte, l’objectif de réduction des consommations d’énergie d’une EFA peut se décliner à plusieurs niveaux : • une déclaration via la sous-catégorie « catégorie par défaut », dès lors que plus de 80 % des surfaces de l’EFA correspondent à une seule catégorie d’activités. Cette déclaration est la plus simple pour l’assujetti, mais elle offre moins de marge de personnalisation de l'objectif (avec un seul indicateur d'intensité d'usage : l'amplitude horaire). L’objectif qui en découle est plus ambitieux que pour les autres modalités de déclaration ; • une déclaration qui détaille l’ensemble des sous-catégories d’activités de l’EFA, qui est obligatoire dès lors que l’EFA est constituée de plusieurs catégories d’activités représentant toutes moins de 80 % de sa surface. Cette déclaration permet d’adapter l’objectif en fonction de la configuration de l’EFA ; • une déclaration qui détaille l’ensemble des sous-catégories d’activités de l’EFA et précise les indicateurs d’intensité d’usage réels pour chacune de ces sous-catégories. Il s’agit de la déclaration la plus précise, qui permet d’ajuster l’objectif au plus près des caractéristiques de l’EFA mais qui nécessite de fournir un niveau de détail élevé.
+
+Précision : s’il y a alternance d’activités au cours de l’année, alors une déclaration mixte est acceptable.
+
+Par exemple, si une salle est louée 60 % du temps pour des événements privés et 40 % du temps pour des spectacles, alors 60 % de la surface de la salle peut être déclarée en « restauration collective avec services - restauration interentreprises » et 40 % de sa surface déclarée en « salle de spectacles vivants sans protection patrimoniale - zone d’accueil du public ». Les cas pratiques de la salle polyvalente et du groupe scolaire illustrent cette situation.
+
+Ce qu’il faut retenir
+
+La réglementation permet aux assujettis d’adopter des stratégies de déclarations selon les enjeux qu’ils identifient au niveau de chacune de leurs EFA. Ces stratégies sont à déterminer en fonction d’un rapport coût (temps de recherche et saisie de l’information) / gain (niveau de personnalisation recherché de l’objectif).
+
+17
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+18
+
+1.2.3.4 - La sous-catégorie « catégorie X - valeur par défaut » : un choix défavorable
+
+La valeur par défaut n’a pas vocation à être une représentation de la catégorie, elle sert pour les assujettis ne souhaitant pas faire un découpage par zones de leur EFA. Les assujettis peuvent utiliser cette valeur lorsque 80 % de leur local appartient à la même catégorie d’activités.
+
+Par exemple, dans les cas d’études développés dans la seconde partie, l’atelier municipal ou le périscolaire présente une diversité d’usages rendant obligatoire la déclaration en sous-catégories.
+
+Dans les autres situations, si l’usage de la sous-catégorie par défaut n’est pas interdit (et peut même faciliter la première déclaration), le dispositif Éco Énergie Tertiaire est conçu pour inciter les assujettis à réaliser les déclarations les plus précises en découpant chaque EFA : l’utilisation des catégories d’activités par défaut conduit à définir des objectifs peu adaptés aux caractéristiques de l’EFA et plus contraignants. En effet, le recours à cette valeur est défavorable pour les assujettis qui devront viser des consommations encore plus faibles que s’ils renseignent précisément les sous-catégories. C’est ce qui est mis en évidence dans le tableau suivant.
+
+Tableau 1-4 : Valeur de l’objectif de consommation Cabs obtenu sans modulation de l’intensité d’usage, pour certains exemples étudiés (kWh/m².an)
+
+EFA
+
+Déclaration de la sous-catégorie Déclaration « catégorie - valeur par défaut » pour toute l’EFA
+
+détaillée des sous-catégories de l’EFA (utilisation des indicateurs d’intensité d’usage étalons)
+
+École primaire Enseignement primaire - Valeur par défaut 79 102
+
+Périscolaire Non permis (pas de sous-catégorie majoritaire
+
+à plus de 80 % de surface totale) 111
+
+Gymnase / dojo Sports - Valeur par défaut 57 68
+
+Centre aquatique Sports - Valeur par défaut 57 423
+
+Hôtel préfectoral Bureaux - Valeur par défaut 87 120
+
+Bureaux du conseil départemental Bureaux - Valeur par défaut 87 123
+
+Atelier municipal Non permis (pas de sous-catégorie majoritaire
+
+à plus de 80 % de surface totale) 45
+
+Salle polyvalente Salle de spectacles vivants sans protection patrimoniale 74 94
+
+Cadrage méthodologique
+
+L’exemple le plus explicite est celui du centre aquatique dont l’usage relève à 100 % de la catégorie « Sports ».
+
+Une déclaration en « Sports - Valeur par défaut » est possible puisque plus de 80 % de sa surface relève de la catégorie « Sports ». En revanche, elle conduit à fixer le même objectif de consommation pour le centre aquatique et le gymnase (57 kWh/m².an). Cette déclaration ne permet pas de caractériser le profil énergétique de cet équipement. En outre, les indicateurs d’intensité d’usage relatifs à cette catégorie par défaut ne sont pas adaptés à cette activité. Ils ne permettent pas de moduler l’objectif de consommation aussi finement qu’avec l’utilisation des sous-catégories.
+
+Dans ce cas, l’utilisation des sous-catégories d’activités est nécessaire. Elle consiste à mobiliser 3 sous-catégories : « Sports - Piscine (dont vestiaires et douches) » pour l’ensemble des surfaces de l’espace de baignade, de vestiaires, de douches et de locaux spécifiques au process de la piscine, « Sports - Récupération sportive (massage - cryothérapie en bassin ou cabine), sauna, hammam » pour les surfaces dédiées au sauna, hammam et « Sports - Administration et bureaux (bureaux standards) » pour les surfaces de bureaux, d’accueil.
+
+Comme vu en 1.2.3.2 (p. 14), les surfaces de locaux annexes à l’activité tertiaire (circulation, dégagements, locaux techniques type chaufferie ou TGBT5) seront ventilées entre les trois sous- catégories d’activités au prorata des surfaces des locaux associés à chacune de ces catégories.
+
+Ce qu’il faut retenir
+
+La sous-catégorie « catégorie X - valeur par défaut » ne peut être utilisée que si plus de 80 % des surfaces de l'EFA relèvent d'une seule catégorie d'activités. Si cette sous-catégorie est sélectionnée, alors aucune autre sous-catégorie ne peut être déclarée pour l'EFA. Elle est généralement défavorable aux assujettis, car elle conduit à définir des objectifs plus contraignants. Ce choix peut cependant s’avérer judicieux pour le patrimoine non pérenne ou le patrimoine voué à une rénovation énergétique globale.
+
+Établissement périscolaire de Château-Salins (Moselle).
+
+5 Tableau général basse tension.
+
+19
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+20
+
+1.2.3.5 - Modulation en fonction des indicateurs d’intensité d’usage afin de bien caractériser son activité
+
+Les indicateurs qualifiant le volume d’activité ou l’intensité d’usage (ex. : les heures d’ouverture, la densité surfacique d’occupation) sont utilisés pour calculer les objectifs de consommation de l’EFA. Au niveau des sous-catégories d’activités déclarées, l’assujetti a le choix entre conserver les valeurs étalons qui sont établies par défaut pour ces indicateurs ou bien les ajuster pour se rapprocher de sa situation réelle. La seconde option (facultative) a pour conséquence une modulation des objectifs.
+
+Cadre général de cette déclaration
+
+La déclaration des surfaces et des indicateurs d’intensité d’usage s’effectue annuellement, lors des déclarations de consommations, de manière à pouvoir prendre en compte une évolution de l’activité. Ces indicateurs d’intensité d’usage permettent de moduler à la fois l’objectif en valeur absolue et celui en valeur relative (par exemple si les horaires d’ouverture évoluent, l’objectif de - 40 % en valeur relative à l’horizon 2030 s’adaptera à cette évolution de l’activité, voir FAQ OPERAT O2-Q1)
+
+Les cas pratiques développés en Partie 2 montrent que la recherche de modulation des indicateurs d’intensité • d’usage est utile pour : les sous-catégories occupant le plus de surface au sein de l’EFA ; • les sous-catégories très consommatrices d’énergie (par exemple les salles serveurs).
+
+Les assujettis peuvent donc prioriser le suivi des valeurs des indicateurs d’intensité d’usage ayant le plus d’impact sur le calcul de leurs objectifs pour être plus efficaces dans leurs déclarations.
+
+Point de vigilance : il est évident qu’en cas de hausse de l’activité, les assujettis ont tout intérêt à déclarer leurs indicateurs d’intensité d’usage réels pour expliquer une surconsommation liée à une exploitation plus intense. En revanche, un assujetti qui constate une baisse de son activité pourrait décider de ne pas moduler ses objectifs en fonction de ses indicateurs d’intensité d’usage réels, et ainsi afficher de « bons résultats » en choisissant de conserver les valeurs étalons. Cette stratégie présente deux risques : • elle ne permet pas d’identifier d’éventuelles dérives de consommation liées à une exploitation non
+
+• vertueuse et elle vient masquer des surconsommations énergétiques (et donc des dépenses inutiles) ; en cas d’augmentation ultérieure du volume d’activité, la hausse des consommations ne pourrait pas être justifiée par l’assujetti qui se verrait alors pénalisé par sa notation éco énergie tertiaire.
+
+Ce qu’il faut retenir
+
+Il est possible de ne pas déclarer d’indicateur d’intensité d’usage et de rester sur les valeurs étalons, tout en gardant en tête les risques que cela représente. En revanche, il faut rappeler qu’en cas de contrôle, une déclaration d’indicateurs d’intensité d’usage erronée en vue de bénéficier d’une notation éco-énergie tertiaire plus favorable est considérée comme une fausse déclaration et peut être sanctionnée en vertu de l’article 441-1 du Code pénal.
+
+Cadrage méthodologique
+
+Impact relevé de cette déclaration
+
+Pour des utilisations qui diffèrent des valeurs étalons, l’impact de la déclaration des indicateurs d’intensité d’usage peut être assez notable sur la valeur de la consommation cible.
+
+Tableau 1-5 : Valeur de l’objectif de consommation Cabs obtenu avec modulation de l’intensité d’usage, pour certains exemples étudiés (kWh/m².an)
+
+EFA
+
+Déclaration détaillée des sous-catégories de l’EFA
+
+Déclaration détaillée avec indicateurs d’intensité d’usage réels (modulation)
+
+École primaire Enseignement primaire
+
+Valeur par défaut 79 102 91 (voir tableau 2-7)
+
+Périscolaire
+
+Déclaration de la sous-catégorie « catégorie - valeur par défaut » pour toute l’EFA
+
+Non permis (pas de sous-catégorie majoritaire à plus de 80 % de surface totale)
+
+111 142 (voir tableau 2-7)
+
+Gymnase / dojo Sports - Valeur par défaut 57 68 80 (voir tableau 2-10)
+
+Centre aquatique Sports - Valeur par défaut 57 423 548 (voir tableau 2-15)
+
+Hôtel préfectoral Bureaux - Valeur par défaut 87 120 119
+
+Bureaux du conseil départemental Bureaux - Valeur par défaut 87 123 Non réalisée
+
+Atelier municipal
+
+Non permis (pas de sous-catégorie majoritaire à plus de 80 % de surface totale)
+
+45 38
+
+Salle polyvalente Salle de spectacles vivants
+
+sans protection patrimoniale 74 94 46
+
+Ce qu’il faut retenir
+
+Il existe deux typologies d’indicateurs d’intensité d’usage (IIU) :
+
+• les indicateurs d’intensité temporelle qui reflètent la durée d’occupation des locaux ;
+
+• les indicateurs d’intensité surfacique qui reflètent l’impact de la densification de l’activité et des usages spécifiques (process).
+
+Ils permettent de moduler l’objectif de consommation en fonction des conditions réelles de fonctionnement de l’EFA et de prendre en compte les évolutions de l’usage du bâtiment au fil des années de suivi.
+
+Mais attention, il faut pouvoir justifier de ce qui est déclaré.
+
+Avertissement : À l’issue de la déclaration et dans le cadre de l’élaboration d’un plan d’action de réduction des consommations, il existe d’autres possibilités de moduler ses objectifs en raison de contraintes techniques, patrimoniales, architecturales ou encore à cause de disproportion économique. Ces motifs de modulation nécessitent l’élaboration d’un dossier technique, point qui n’est pas abordé dans ce guide relatif aux déclarations des entités assujetties.
+
+21
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+22
+
+1.2.4 - DÉTERMINATION DES CONSOMMATIONS POUR SUIVRE LEUR ÉVOLUTION À PARTIR D’UNE SITUATION DE RÉFÉRENCE
+
+1.2.4.1 - Les consommations à déclarer : la consommation de référence et les consommations annuelles
+
+Le dispositif prévoit que l’assujetti déclare une consommation énergétique de référence pour l’EFA, qui doit correspondre à la consommation de l’EFA sur une année pleine d’exploitation, c’est-à-dire sur 12 mois consécutifs. L’année de référence est comprise entre 2010 et 20226. À défaut de déclaration de l’année de référence sur OPERAT avant le 30 septembre 2027, celle-ci correspondra à la première année pleine d’exploitation dont les consommations énergétiques sont remontées sur la plateforme OPERAT. C’est à partir de la consommation de référence que sont calculés les objectifs en valeur relative, son choix est donc important.
+
+Nota : Pour optimiser le choix de la consommation de référence, il est judicieux de comparer les consommations entre 2010 et 2022 en prenant en considération la rigueur climatique (voir paragraphe 1.2.4.2 ci-après).
+
+Selon le contexte, il n’est pas nécessaire de procéder à une recherche « archéologique » dans les factures d’énergie, l’historique des dernières années peut suffire, comme expliqué dans le logigramme ci-après.
+
+Figure 1-8 : Logigramme d’aide au choix de l’année de référence (d'après : OPERAT)
+
+D'après les dernières factures, il sera plus facile d'atteindre Cabs que de réaliser 40 % d'économies d'énergie OU l’EFA vise volontairement Cabs plutôt que Crelat.
+
+Il est possible de retenir la consommation énergétique d’une année récente.
+
+NON
+
+Depuis 2010, l’EFA a engagé
+
+OUI OUI
+
+ou bénéficie d’actions de réduction des
+
+NON
+
+consommations d’énergie.
+
+Il est possible de retenir une année de référence antérieure aux actions réalisées afin de les valoriser.
+
+(1) Sauf incident, la consommation n'a pas dû beaucoup varier d'une année sur l'autre.
+
+6 D’après l’arrêté du 20 février 2024 modifiant l’arrêté du 10 avril 2020 relatif aux obligations d’actions de réduction
+
+des consommations d’énergie finale dans des bâtiments à usage tertiaire.
+
+Les dernières années de consommations énergétiques antérieures à la première année déclarée sur OPERAT suffisent(1).
+
+Cadrage méthodologique
+
+Exemples
+
+Une mairie qui est une « passoire thermique », consomme 250 kWh/m².an en 2024.
+
+Estimation des objectifs sur la base de la consommation 2024 : • Crelat 2030 \~ 150 kWh/m².an • Cabs \~ 116 kWh/m².an (en se basant sur la valeur « bureaux standards » majoritaire en surface).
+
+Depuis 2010, pas de travaux d’amélioration énergétique (donc a priori la consommation était stable entre 2010 et 2024).
+
+On choisit de déclarer la consommation d’une année favorable comme année de référence (par exemple : 2019).
+
+Un gymnase qui est un bâtiment rénové énergétiquement (par étapes ou de manière globale). En 2024, il consomme 120 kWh/m².an.
+
+Estimation des objectifs : • Crelat 2030 \> 72 kWh/m².an (les travaux ont en principe fait réduire sa consommation) • Cabs \~ 57 kWh/m².an.
+
+On cherche une année de référence antérieure aux actions afin de valoriser les travaux réalisés.
+
+Si les travaux ont eu lieu après 2015, on retiendra la consommation 2015 : 210 kWh/m².an
+
+Crelat 2030 = 126 kWh/m².an. L'objectif 2030 est d'ores et déjà atteint.
+
+Une école est un bâtiment basse consommation (BBC) livré en 2018. En 2024, elle consomme \~ 60 kWh/m².an
+
+Estimation des objectifs : • Crelat 2030 \~ 36 kWh/m².an • Cabs \~ 79 kWh/m².an
+
+On choisit de déclarer la consommation d’une année favorable comme année de référence (par exemple : 2019).
+
+Les consommations annuelles de l’EFA au cours de l’année N doivent également être déclarées dans OPERAT, chaque année avant le 30 septembre de l’année N+1, depuis le 30 septembre 2022 (premières consommations déclarées : années 2020 et 2021).
+
+Les consommations sont déclarées par type d’énergie et en distinguant les consommations de chauffage et de refroidissement des autres consommations énergétiques. L’objectif de cette distinction est de permettre un ajustement climatique plus adapté au fonctionnement de l’EFA. Ce sont des consommations réelles, basées sur des factures à conserver, car elles peuvent être demandées pour justifier les saisies.
+
+Nota : La FAQ OPERAT E7 apporte des précisions sur les modalités de déclaration des d'énergies captées sur site et auto consommées.
+
+Certaines consommations peuvent être déduites comme les consommations d’électricité des infrastructures de recharge de véhicules électriques (IRVE\*) qui ne sont pas concernées par le dispositif Éco Énergie Tertiaire. Cependant, ces consommations ne peuvent être déduites des consommations de l’EFA que si un sous-comptage\* spécifique existe.
+
+23
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+24
+
+Nota : L’interface OPERAT indique la manière de renseigner les informations en fonction de la situation : • si l’assujetti ne dispose pas d’un sous-comptage dédié aux IRVE : la déclaration de consommations dans
+
+• le champ « électricité (kWh) - hors IRVE sous-comptée » doit intégrer les consommations des IRVE ; si l’assujetti dispose d’un sous-comptage dédié aux IRVE : les consommations des IRVE ne doivent pas être intégrées au champ « électricité (kWh) - hors IRVE sous-comptée ». L’assujetti peut, de manière facultative à des fins de statistiques, renseigner les informations relatives aux IRVE dans un champ spécifique sur OPERAT.
+
+Point de vigilance : dans le cas où les IRVE ont été installées après le début des déclarations, l'absence de sous comptage de leurs consommations serait pénalisante pour l'assujetti.
+
+Ce qu’il faut retenir
+
+Chaque EFA fait l’objet d’une déclaration d’une consommation de référence (choisie entre 2010 et 2022). Depuis le 30 septembre 2022, les assujettis doivent déclarer leurs consommations annuelles avant le 30 septembre de l’année suivante (les consommations 2025 seront à déclarer avant le 30 septembre 2026).
+
+La déclaration de l’année de référence permet au logiciel de calculer les objectifs en valeur relative et de mesurer la trajectoire de l’EFA au fil de ses déclarations annuelles.
+
+L’objectif de réduction des consommations sera réputé atteint dès lors qu’un des deux objectifs (en valeur absolue ou relative) sera atteint par l’EFA.
+
+1.2.4.2 - L’ajustement au climat et son impact sur le choix de l’année de référence
+
+La consommation de l’EFA dépend de la rigueur du climat, qui varie d’une saison à une autre et d’une localisation à une autre. Ainsi la plateforme OPERAT ajuste les consommations d’énergies saisies par l’assujetti en fonction des données climatiques de la période concernée.
+
+Par défaut, les données climatiques correspondent à celles de la station météo la plus proche de l’adresse de l’EFA. Il est possible de modifier la station météo choisie et de la remplacer par une station météo d’un département limitrophe, si cette dernière s’avère plus représentative du climat auquel est soumise l’EFA.
+
+Cet ajustement est réalisé sur les consommations de chauffage et refroidissement si elles sont connues ou à défaut sur la consommation globale du bâtiment. Les formules d’ajustement sont fixées par arrêté (arrêté du 5 juillet 2024 modifiant l’arrêté du 10 avril 2020) et intégrées à la plateforme OPERAT.
+
+Cet ajustement peut avoir un impact non négligeable sur le choix de l’année de référence et la valeur de la consommation annuelle.
+
+Cadrage méthodologique
+
+Prenons l’exemple d’un immeuble de bureaux de l’État :
+
+Figure 1-9 : Comparaison des consommations d’énergie brutes et ajustées selon le climat (exemple d’un bâtiment de l’État)
+
+)
+
+165
+
+164 Consommation surfacique brute m/h160
+
+Consommation surfacique ajustée (variations climatiques)
+
+Wk(s euqicafrusn oitammosnoC155 150
+
+145
+
+147
+
+120
+
+153
+
+148 140
+
+135
+
+130
+
+125
+
+115
+
+2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020
+
+Ici, un raisonnement sans ajustement climatique aurait conduit à sélectionner l’année 2010 comme année de référence (année de consommation « brute » maximale), la consommation alors retenue par OPERAT n’aurait été que de 147 kWh/m².an. La saisie d’une consommation « brute » de 148 kWh/m².an en 2015 conduit au calcul d’une consommation ajustée de 153 kWh/m².an qui est la valeur la plus avantageuse pour l’assujetti.
+
+Figure 1-10 : Consommations totales brutes, ajustées et cibles d'un bâtiment de l'État 2015-2030
+
+650 000 ) hWK(e igrené’de latotn oitammosnoC500 600 550 350 300 000 000
+
+000
+
+000
+
+450 000
+
+400 000
+
+000
+
+2015 Consommation totales brutes
+
+Linéaire (consommations totales brutes)
+
+Objectif 2030
+
+2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026 2027 2028 20292030 Consommation totales ajustées
+
+Linéaire (consommations totales ajustées)
+
+En outre, la tendance relevée sur l’évolution des consommations « brutes » pourrait faire croire que l’EFA est sur une trajectoire convergeant vers sa cible 2030. Or, une fois les consommations ajustées aux données climatiques, l’allure de la courbe est bien moins rassurante.
+
+25
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+26
+
+Ce qu’il faut retenir
+
+Les consommations d’énergie saisies sur la plateforme OPERAT sont ajustées en fonction des données climatiques de la période concernée. Cet ajustement peut s’avérer non négligeable et doit être pris en compte dans le choix de l’année de référence.
+
+1.2.4.3 - Déclaration des consommations lorsque l’EFA est alimentée uniquement par ses propres compteurs
+
+Les données de consommations énergétiques (consommation de référence et consommations annuelles) sont renseignées sur la plateforme OPERAT par type d’énergie sur la base des factures.
+
+Vigilance sur le cas de locaux non assujettis au sein de l’EFA (voir FAQ OPERAT DC4)
+
+Si l’EFA comprend des parties non assujetties dont les consommations sont comptabilisées de manière commune (pas de sous-comptage), alors il est possible de reconstituer la consommation de l’année de référence par différents moyens évoqués dans l’article 3 de l’arrêté du 10 avril 2020. La simulation thermique dynamique est, entre autres, évoquée pour répartir des consommations entre des locaux assujettis et des locaux non assujettis. Ce n’est toutefois pas un moyen approprié pour répartir les consommations annuelles entre des EFA qui ne disposeraient pas de compteurs individualisés.
+
+Pour aller plus loin, il peut être intéressant d’installer des sous-comptages au sein d’une même EFA afin d’identifier les zones les plus consommatrices et de prévoir des plans d’action adaptés.
+
+1.2.4.4 - Déclaration des consommations lorsque plusieurs EFA partagent les mêmes compteurs : la réglementation cadre certaines modalités de répartition des consommations
+
+Les données de consommation sont renseignées sur la plateforme OPERAT par type d’énergie au niveau de chaque EFA. Ces dernières ne disposant pas systématiquement d’un compteur énergétique qui leur est propre, un travail de reconstitution de ces données à cette échelle est nécessaire.
+
+Lorsque plusieurs EFA coexistent au sein d’un même bâtiment ou ensemble de bâtiments, quatre familles de • consommations énergétiques sont à distinguer : une consommation individuelle par type de fluide, établie à partir d’un compteur qui lui est propre ou
+
+sur la base d’un sous-comptage. Exemple : la consommation d’électricité du local, destinée à son éclairage et / ou ses équipements spécifiques (postes informatiques…) ; • une consommation répartie (consommation établie au tantième en l’absence de sous-comptage) pour
+
+un équipement géré par le propriétaire et commun à plusieurs EFA.
+
+• Exemple : la consommation des équipements CVC collectifs ; une consommation des espaces communs, là encore répartie au tantième ou sous-comptée. D’une manière générale, il est nécessaire que les exploitants se mettent d’accord, afin que la surface et les consommations associées à ces espaces soient comptabilisées une seule et unique fois. Exemple : le chauffage et l’éclairage des circulations, le fonctionnement des ascenseurs…
+
+Cadrage méthodologique
+
+L’exploitant de l’EFA a la maîtrise totale de sa consommation individuelle, en revanche, les autres consommations relèvent de la maîtrise du propriétaire.
+
+Parmi les exemples développés dans la Partie 2, celui de la préfecture permet d’aborder le cas de deux EFA partageant un bâtiment, sans espaces annexes. Celui du bâtiment administratif illustre le cas de figure d’un bâtiment de bureaux « multi-occupé » avec ces quatre types de consommations.
+
+Vigilance sur le choix de l’année de référence : un dialogue nécessaire entre co-assujettis
+
+Lorsque l’EFA correspond à un bâtiment en mono-occupation, il n’y a aucune contrainte dans le choix de la consommation énergétique de référence, mais ce n’est pas aussi simple en multi-occupation, car les EFA peuvent potentiellement avoir une date de début d’exploitation et une période de reporting de douze mois consécutifs différentes. Il peut être toutefois préférable de choisir une année de référence commune à toutes les EFA du ou des bâtiments concernés. Cela requiert d’engager un dialogue avec les co-assujettis (propriétaires, exploitants de chaque EFA) et de faire preuve de pragmatisme quant à la période de reporting qui peut être différente selon l’EFA.
+
+Ce qu’il faut retenir
+
+La répartition des consommations entre les EFA dépendra de la présence ou non de dispositifs de sous-comptage ; en leur absence, une répartition au tantième ou selon les conditions des baux ou conventions de gestion est à réaliser.
+
+Si le propriétaire est différent de l’exploitant, il est nécessaire de formaliser les modalités d’échange d’informations et les responsabilités de chacune des parties prenantes, que ce soit pour les déclarations, l’élaboration ou la mise en œuvre du plan d’action de réduction des consommations.
+
+1.3 - MÉTHODOLOGIE GÉNÉRALE - CE QU’IL FAUT RETENIR
+
+Cette partie permet de faciliter la compréhension du processus déclaratif et la réalisation des déclarations pour les assujettis, en s’appuyant sur des cas concrets typiques de situations couramment rencontrées dans les collectivités.
+
+Le choix des sous-catégories d’activités est essentiel dans la description des EFA, tout comme le choix des valeurs des indicateurs d’intensité d’usage.
+
+Si certaines situations peuvent se prêter à des déclarations plus grossières, faisant appel aux sous- catégories par défaut, l’esprit du dispositif incite à déclarer plus finement ses EFA afin d’adapter ses objectifs à son contexte particulier.
+
+C’est singulièrement le cas dans les situations suivantes : • activité présentant un profil énergétique atypique au sein de sa catégorie d’activités (ex. : centre aquatique) ; • entité pour laquelle les caractéristiques d’usage (temporelles ou spatiales) ne correspondent pas aux valeurs étalons fournies dans les arrêtés (ex. : un bâtiment scolaire mutualisé, un gymnase, une salle polyvalente…) ; • entité ayant fait l’objet d’une rénovation énergétique depuis 2010, et pour laquelle le maître d’ouvrage
+
+souhaite valoriser les économies déjà réalisées.
+
+Enfin, la détermination des consommations à l’échelle de chaque EFA sera plus précise et le suivi facilité avec un comptage énergétique au niveau de chaque EFA, plutôt qu’à l’échelle du bâtiment. Le dispositif incite à se questionner sur la juste répartition des consommations entre EFA au regard de leurs usages énergétiques.
+
+27
+
+28
+
+PARTIE 2 Cas pratiques
+
+29
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+2\. CAS PRATIQUES
+
+2.1 - PRÉSENTATION DES CAS PRATIQUES
+
+Les cas pratiques présentés dans cette partie constituent, en termes de patrimoine immobilier, un échantillon représentatif de la diversité des bâtiments tertiaires communaux. De plus, ils permettent d’évoquer les situations les plus fréquemment rencontrées dans les collectivités. Ainsi, sept types de bâtiments • • • • • • • ont été étudiés : groupe scolaire ; établissement sportif : gymnase établissement sportif : centre salle polyvalente ; centre technique communal bâtiment administratif : bureaux bâtiment administratif : hôtel ; aquatique ; (ateliers) ; en multi-occupation ; préfectoral (avec résidence).
+
+Les deux derniers exemples permettent de considérer des cas de déclarations complexes au sein d’un bâtiment administratif, que ce soit en raison d’un grand nombre d’entités fonctionnelles assujetties (EFA) dans un même bâtiment ou en raison de la présence de locaux dans lesquels une activité accessoire à l’activité tertiaire est exercée.
+
+Pour • chaque cas, sont abordés : la manière de déterminer l’assujettissement au dispositif Éco Énergie Tertiaire à travers la prise en compte
+
+• • • des surfaces tertiaires ; l’identification des EFA ; la répartition des consommations les indicateurs d’intensité propres à chaque EFA ; d’usage qui caractérisent l’activité exercée. Différents scénarios d’usages sont étudiés pour visualiser l’impact d’une déclaration des indicateurs d’intensité d’usage sur la modulation des objectifs de consommation.
+
+Précision : pour la détermination des objectifs de consommation en valeurs absolues indiquées dans les tableaux propres à chaque cas, tous les bâtiments sont localisés en zone climatique H1b et à une altitude inférieure à 400 mètres.
+
+Catégories et sous-catégories d’activité identifiées
+
+La déclaration doit permettre de caractériser la nature de l’activité des bâtiments concernés pour adapter les objectifs aux contraintes propres aux usages tertiaires : un bâtiment de bureaux sera plus énergivore qu’un entrepôt à température ambiante par exemple.
+
+Il est nécessaire de définir une ou plusieurs sous-catégories d’activités selon la segmentation définie par la réglementation et mise à disposition sur la plateforme OPERAT7.
+
+Dans la suite, afin de faciliter la lecture de chaque cas d’étude, un tableau synthétise les sous-catégories et les surfaces de consommations associées au sein des EFA identifiées (voir section C - Déclaration des consommations énergétiques et des sous-catégories d’activité de chaque cas d’étude). Ce tableau attribue une couleur à chacune des sous-catégories déclarées, servant ainsi de légende pour les plans.
+
+Cette segmentation est susceptible d’être modifiée en fonction des évolutions réglementaires comme cela est signalé dans la plateforme OPERAT à l’étape du choix des catégories d’activités.
+
+Indicateurs d’intensité d’usage
+
+Le tableau figurant en annexe (Tableau 3-1) reprend la segmentation des sous-catégories d’activité. Il détaille également les indicateurs d’intensité d’usage ainsi que les valeurs étalons utilisées dans la section D - Indicateurs d’intensité d’usage de chaque cas d’étude.
+
+7 La liste des activités assujetties (segmentation) est disponible parmi les ressources, en suivant ce lien : https://operat.
+
+ademe.fr/public/resources
+
+30
+
+2.2 - GROUPE SCOLAIRE
+
+A - VÉRIFICATION DE L’ASSUJETTISSEMENT
+
+Cas pratiques
+
+ÉCOLE ÉLÉMENTAIRE
+
+PÉRISCOLAIREPréau
+
+ÉCOLE MATERNELLE
+
+LÉGENDE
+
+Surface considérée pour l'assujettissement
+
+Surface non prise en compte pour l'assujettissement
+
+Le groupe scolaire, composé de l’école maternelle et de l’école élémentaire, est situé sur une même unité foncière (parcelles contiguës appartenant à la commune). Il faut donc vérifier que le cumul des surfaces de plancher où s’exerce une activité tertiaire sur cette unité foncière est supérieur à 1 000 m². Notons que l’ensemble des bâtiments constitue aussi un site, étant donné les liens fonctionnels entre les écoles et la restauration scolaire. Dans cet exemple, la surface de plancher prise en compte pour vérifier l’assujettissement est de 1 359 m². Les surfaces des locaux techniques (chaufferie, TGBT) sont exclues de l’appréciation du seuil d’assujettissement. Les trémies des escaliers sont exclues de la surface de plancher (article R111-22 du Code de l’urbanisme).
+
+L’ensemble des bâtiments est donc soumis au DEET.
+
+31
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+B - IDENTIFICATION DES EFA
+
+Le site se compose de deux unités d’exploitation : le périscolaire est géré par la communauté de communes (dont c’est la compétence) et les écoles maternelle et primaire sont exploitées par la commune.
+
+Une première EFA correspond au périscolaire dont le propriétaire est la commune et dont l’exploitant est la communauté de communes.
+
+Concernant la partie scolaire du site, la commune, propriétaire et exploitante du bâti, a deux possibilités (voir figure 1-4 en page 13) :
+
+• déclarer une seule EFA commune aux deux bâtiments scolaires, ce qui facilite la déclaration en cas d’équipements énergétiques partagés mais présente l’inconvénient de ne pas mettre en valeur les empreintes énergétiques et résultats propres à chaque établissement (une seule attestation commune et un objectif de consommation commun). Nota : La plateforme OPERAT permettra de scinder une EFA en deux, une fois un sous-comptage mis en place (voir FAQ OPERAT AN4) ;
+
+• déclarer deux EFA distinctes pour l’école maternelle et l’école élémentaire, pour obtenir des objectifs distincts entre les deux établissements, faire valoir les actions d’amélioration énergétique qui auraient eu lieu sur l’un ou l’autre des bâtiments (travaux, gestion optimisée, etc.) ou pouvoir viser des objectifs différents pour l’un (valeur relative) et l’autre (valeur absolue). Séparer les écoles n’est pertinent que si elles disposent de systèmes de comptage énergétique séparés, sinon il est plus facile de déclarer de manière commune et réduire le nombre d’EFA.
+
+Dans la suite de cet exemple, deux EFA sont déclarées : EFA 1 « écoles » et EFA 2 « périscolaire » en regroupant les écoles, puisque le site ne dispose pas de sous-comptage.
+
+École maternelle « Les Petits Renards » de Chalampé (Haut-Rhin).
+
+32
+
+C - DÉCLARATION DES CONSOMMATIONS ÉNERGÉTIQUES
+
+ET DES SOUS-CATÉGORIES D’ACTIVITÉ
+
+Cas pratiques
+
+ÉCOLE ÉLÉMENTAIRE EFA1
+
+PÉRISCOLAIRE EFA2Préau
+
+ÉCOLE MATERNELLE EFA1 LÉGENDE Identification des locaux et des sous catégories
+
+Administration et bureaux (enseignement primaire)
+
+Cuisine pédagogique / Salle de TP (enseignement secondaire)
+
+Salles d’enseignement maternelle
+
+Salles d’enseignement élémentaire
+
+Restauration collective scolaire et universitaire / enseignement primaire - salle multi-activités et périscolaire
+
+Espaces communs répartis entre les différentes sous-catégories d'activités
+
+Pour l’EFA 1 « écoles », 92 % des surfaces de consommation (voir 3e colonne du Tableau 2-1) appartiennent à la catégorie « enseignement primaire ». Comme présenté au paragraphe 1.2.3.4 « la sous-catégorie « catégorie X - valeur par défaut » : un choix défavorable », il est possible de recourir à la sous-catégorie par défaut, avec une consommation Cabs pour cette sous-catégorie de 79 kWh/m².an (en référence à l’article 8-IV de l’arrêté du 28 novembre 2023). Le recours à la sous-catégorie par défaut abaissera le seuil à atteindre en valeur absolue, cette déclaration est adaptée dans certains cas (par exemple : patrimoine non pérenne ou voué à une rénovation énergétique globale, valeur relative visée…).
+
+Pour l’EFA 2 « périscolaire », compte tenu de sa double occupation, il n’est pas possible de recourir à une sous-catégorie par défaut (aucune catégorie d’usage ne représente plus de 80 % de l’EFA).
+
+33
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Le tableau suivant présente la description retenue de ce groupe scolaire à l’aide des sous-catégories d’activités associées aux usages des locaux.
+
+Tableau 2-1 : Synthèse des sous-catégories et surfaces déclarées pour les EFA identifiées Les couleurs des sous catégories correspondent à celles des locaux du plan ci-dessus (légende)
+
+Catégorie Sous-catégorie
+
+Part de la sous-catégorie dans le Cabs étalon de l’EFA(3)
+
+EFA 1 - Écoles 1 240 102
+
+Enseignement primaire
+
+Surface de consommation énergétique(1) (m²)
+
+Cabs étalon(2) (kWh/m².an)
+
+Administration et bureaux 98 116 9 %
+
+Salles d’enseignement maternelle 459 94 34 %
+
+Salles d’enseignement élémentaire 626 99 49 %
+
+Enseignement secondaire Salle de TP 57 169 8 %
+
+EFA 2 - Périscolaire 151 111
+
+Restauration - débit de boissons
+
+Restauration collective scolaire et universitaire
+
+91 122 66 %
+
+Enseignement primaire
+
+Enseignement primaire - Salles multi-activités & périscolaire
+
+60 94 34 %
+
+(1) Cette surface diffère de la surface de plancher prise en compte pour établir l’assujettissement (voir paragraphe 1.2.3 de la Partie 1). (2) Objectif de consommation en valeur absolue calculé à partir des indicateurs d’intensité d’usage étalons. (3) Ce ratio dépend des surfaces spécifiques de l’EFA présentée ici.
+
+Répartition des consommations propres à chaque EFA
+
+Les données de consommations doivent être déclarées à l’échelle de chacune des EFA.
+
+En l’absence de sous-comptage entre le périscolaire et l’école élémentaire, la solution est de répartir les consommations énergétiques et les surfaces selon la clé de répartition des charges en principe déjà existante dans la convention d’occupation du site.
+
+Pour le suivi des consommations ultérieur, la mise en place d’un sous-comptage est recommandée pour établir les consommations propres à chacune des EFA dont les besoins énergétiques sont très éloignés.
+
+Exemple : la consommation énergétique du site est de 146 650 kWh/an, dont 124 000 kWh/an sont réellement consommés par l’EFA « écoles » (100 kWh/m².an) et 22 650 kWh/an réellement consommés par l’EFA « périscolaire » (150 kWh/m².an).
+
+34
+
+Cas pratiques
+
+Tableau 2-2 : Comparaison des efforts à produire pour deux EFA avec et sans sous-comptage énergétique
+
+Sans sous-comptage, consommations estimées au prorata des surfaces
+
+Avec sous-comptage, consommations réelles de chacune des EFA
+
+Écoles Périscolaire Écoles Périscolaire
+
+Cabs(1) (kWh/m².an) 102 111 102 111
+
+Consommation de référence 105 105 100 150
+
+Effort à produire pour atteindre Cabs 3 % Objectif dépassé
+
+de 6 %
+
+Objectif dépassé de 2 % 35 %
+
+(1) Dans ce tableau, les données d’occupation ne donnent pas lieu à une modulation via les indicateurs d’intensité d’usage.
+
+L’absence de sous-comptage et l’usage d’une clé de répartition au prorata des surfaces fausse la comparaison à Cabs, puisque cette dernière est établie en fonction de profils énergétiques propres à l’usage des locaux.
+
+Dès lors, le recours au sous-comptage est le meilleur moyen de mesurer l’effort à produire pour chacune des EFA.
+
+Spécificité de la circulation qui est un espace commun aux deux EFA « écoles » et « périscolaire »
+
+En principe, les surfaces des espaces partagés sont réparties au tantième entre les occupants.
+
+Ici, la convention d’occupation indique que l’école élémentaire supporte l’ensemble des charges de l’espace de circulation, toute la surface de circulation est donc affectée à l’EFA « écoles ». Au sein de cette EFA, cette circulation dessert les salles de classe et la cuisine pédagogique de l’école, sa surface est à répartir entre les deux sous-catégories associées, comme expliqué au paragraphe 1.2.3 de la Partie 1.
+
+Cas particulier de la cuisine pédagogique
+
+Le choix de la sous-catégorie dépend de l’usage qui est fait de cette salle. Ici, la vocation d’enseignement l’emporte sur la vocation de production alimentaire (ce qui conduit à écarter les sous-catégories de la catégorie « restauration » ou « hébergement de courte durée ») : • pour un usage occasionnel, la sous-catégorie « Enseignement primaire - Salle d’enseignement élémentaire »
+
+• peut convenir ; pour un usage courant avec cuisson régulière, « Enseignement secondaire - Salles de TP » est plus adapté.
+
+Dans l’exemple présenté, la cuisine pédagogique est considérée comme une « Salle de TP », car il s’agit d’un local régulièrement utilisé pour une activité de cuisson.
+
+Cas particulier des usages multiples du périscolaire
+
+Dans l’exemple développé ici, les locaux du périscolaire sont utilisés à la fois pour la restauration scolaire 3 heures le midi et pour l’accueil périscolaire (salle multi-activités) 2 heures en fin de journée, ce qui justifie la déclaration proposée dans le Tableau 2-1.
+
+Sur la plage d’ouverture du périscolaire, 60 % du temps est consacré à l’usage restauration scolaire et 40 % à l’usage multi-activités périscolaire. Il y a coexistence de deux sous-catégories sans que l’une soit prépondérante.
+
+Dans ce cas très spécifique, il est recommandé de déclarer deux sous-catégories d’activité pour l’EFA périscolaire, en répartissant les surfaces du local considéré au prorata de leur temps d’occupation : « Enseignement primaire - Salles multi-activités et périscolaire » associé à 2 / 5 (40 %) de la surface des locaux et « Restauration collective scolaire et universitaire » associé à 3 / 5 (60 %) de la surface des locaux.
+
+35
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+La déclaration aurait été différente si l’EFA périscolaire n’était destinée qu’à la restauration scolaire. Le Tableau 2-3 présente la déclaration adaptée à ce cas de figure.
+
+Tableau 2-3 : Synthèse des sous-catégories et surfaces déclarées pour l’EFA périscolaire uniquement consacrée à la restauration scolaire
+
+Catégorie Sous-catégorie
+
+Part de la sous-catégorie dans le Cabs étalon de l’EFA
+
+EFA 2 - Périscolaire 151 122
+
+Restauration - débit de boissons
+
+Surface de consommation énergétique (m²)
+
+Cabs étalon (kWh/m².an)
+
+Restauration collective scolaire et universitaire
+
+151 122 100 %
+
+Afin d’obtenir des objectifs de consommation personnalisés et adaptés à la situation, comme précisé au paragraphe 1.2.3.5 de la Partie 1, il est recommandé de compléter la déclaration en renseignant les indicateurs d’intensité d’usage réels, s’ils s’écartent des valeurs étalons (ici la durée d’occupation du restaurant scolaire sera moindre qu’une salle multi-activités).
+
+D - INDICATEURS D’INTENSITÉ D’USAGE
+
+EFA 1 - ÉCOLES
+
+En appliquant les valeurs étalons des indicateurs d’intensité d’usage du Tableau 3-1 (en annexe), l’objectif de consommation de cette EFA, en valeur absolue à horizon 2030 est 102 kWh/m².an.
+
+Exemples d’impact de la modulation des indicateurs d’intensité d’usage
+
+Une variation de la valeur de chacun des indicateurs d’intensité d’usage entraîne une modulation de la valeur absolue de la sous-catégorie considérée, et a fortiori une modulation du Cabs de l’EFA. Le tableau suivant précise l’impact d’une évolution de ± 30 % de la valeur de chaque indicateur considéré séparément, pour représenter une activité plus ou moins intensive que celle définie par défaut (à travers les valeurs étalons) :
+
+Tableau 2-4 : Impact d’un écart de plus ou moins 30 % par rapport aux valeurs étalons de chaque indicateur des sous-catégories déclarées dans l’EFA
+
+Sous-catégorie Indicateur considéré Évolution Cabs
+
+sous-catégorie Évolution Cabs EFA(1)
+
+Enseignement Primaire - Salles d’enseignement Maternelle Amplitude horaire ± 12 % ± 4 %
+
+Enseignement Primaire - Salles d’enseignement Élémentaire Amplitude horaire ± 13 % ± 7 %
+
+Enseignement Primaire - Administration et bureaux (bureaux standards)
+
+Amplitude horaire ± 16 % ± 2 %
+
+Surface de plancher / poste de travail ± 9 % ± 1 %
+
+Taux d’occupation ± 12 % ± 1 %
+
+Enseignement Secondaire - Salles de TP
+
+Amplitude horaire ± 6 % ± 1 %
+
+Densité énergétique ± 14 % ± 1 %
+
+(1) Valable uniquement pour ce cas d’étude, l’impact est évalué au regard des surfaces spécifiques de cette EFA.
+
+36
+
+Cas pratiques
+
+Pour l’EFA 1 - écoles, la modulation des indicateurs propres aux sous-catégories « Administration et bureaux » et « Salles de TP » a un impact faible sur le calcul de l’objectif global car l’usage est minoritaire (petites surfaces : variations inférieures à 2 % sur l’objectif Cabs de l’EFA). À l’inverse, la variation de l’amplitude horaire des salles d’enseignement primaire a plus d’impact sur Cabs de l’EFA, sachant que pour les salles d’enseignement primaire, une diminution de l’amplitude horaire annuelle de 30 % par rapport à la valeur étalon correspond par exemple à : 10 heures x 4 jours x 34 semaines ouvrées par an ; une augmentation de l’amplitude horaire de 30 % correspond à 570 heures ouvrées supplémentaires, soit par exemple : 11 heures x 5 jours x 45 semaines.
+
+De manière générale, les amplitudes horaires des salles d’enseignement varient peu d’une école à l’autre (excepté lorsque les salles sont utilisées hors contexte scolaire).
+
+Modulation selon l’usage pour ce cas d’étude
+
+Différents scénarios d’usage ont été étudiés pour visualiser l’impact de l’occupation des locaux sur la modulation du Cabs. • Scénario 1 : le groupe scolaire est ouvert 36 semaines par an (fermeture les semaines de vacances scolaires), sur un rythme de 5 jours par semaine. L’activité enseignement a lieu 10 heures par jour. L’amplitude horaire annuelle est de 1 800 heures (-5 % par rapport à la valeur étalon). Quant aux bureaux, ils sont ouverts 12 heures par jour : l’amplitude horaire annuelle est alors de 2 160 heures (-30 % par rapport à la valeur
+
+• étalon). Scénario 2 : le groupe scolaire est ouvert 36 semaines par an mais est fermé le mercredi. Le rythme est donc de 4 jours ouvrés par semaine, avec le même nombre d’heures d’activité par jour que dans le cas du scénario 1. L’amplitude horaire annuelle est de 1 440 heures (-24 % par rapport à la valeur étalon) pour les salles d’enseignement et de 1 728 heures pour les bureaux.
+
+Figure 2-1 : Impact de différents scénarios d’intensité d’usage sur la valeur Cabs de l’EFA 1 - Écoles
+
+) na.105 100 m/h95 Wk(s baC102
+
+9098 8591
+
+80Cabs étalons Cabs modulé
+
+Cabs modulé (scénario 1)
+
+(scénario 2)
+
+EFA 2 - PÉRISCOLAIRE
+
+En appliquant les valeurs étalons des indicateurs d’intensité d’usage du Tableau 3-1 (en annexe) et en considérant les usages multiples du périscolaire avec la répartition : 60 % restauration et 40 % salle de multi-activités l’objectif de consommation de cette EFA, en valeur absolue à horizon 2030 est 111 kWh/m².an.
+
+Exemples d’impact de la modulation des indicateurs d’intensité d’usage
+
+Dans cet exemple, le périscolaire est uniquement utilisé comme restaurant scolaire.
+
+Tableau 2-5 : Impact d’un écart de plus ou moins 30 % par rapport aux valeurs étalons de chaque indicateur des sous-catégories déclarées dans l’EFA 2 - périscolaire (restauration collective)
+
+Sous-catégorie Indicateur considéré Évolution Cabs sous-catégorie
+
+Évolution Cabs EFA(1)
+
+Restauration - débit de boissons - Restauration collective scolaire et universitaire
+
+Amplitude horaire ± 19 % ± 19 %
+
+Ratio surfacique cuisine ± 12 % ± 12 %
+
+(1) Valable uniquement pour ce cas d’étude, l’impact est évalué au regard des surfaces spécifiques de cette EFA.
+
+37
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Dans cet exemple, le périscolaire est utilisé comme restaurant scolaire 60 % du temps et comme salle de multi-activités 40 % du temps.
+
+Tableau 2-6 : Impact d’un écart de plus ou moins 30 % par rapport aux valeurs étalons de chaque indicateur des sous-catégories déclarées dans l’EFA 2 - périscolaire (restauration collective et salle de multi-activités)
+
+Sous-catégorie Indicateur considéré Évolution Cabs sous-catégorie
+
+Évolution Cabs EFA
+
+Restauration - débit de boissons - Restauration collective scolaire et universitaire
+
+Amplitude horaire ± 18 % ± 12 %
+
+Ratio surfacique cuisine ± 13 % ± 8 %
+
+Enseignement primaire - Salles multi-activités et Périscolaire Amplitude horaire ± 12 % ± 5 %
+
+La modulation de l’objectif de l’EFA 2 - périscolaire dépend majoritairement du volume d’activité renseigné pour la sous-catégorie « Restauration collective scolaire et universitaire ». Outre l’amplitude horaire, le ratio surfacique de la cuisine du restaurant scolaire a un impact significatif sur les objectifs de consommation. Le tableau montre qu’un changement de ± 30 % par rapport au ratio étalon module Cabs de l’EFA de ± 8 %. Ce ratio exprimé en pourcentage correspond à la surface de cuisine (hors réserve et local poubelle réfrigéré) rapportée à la surface de la cuisine et de la salle de restauration (y compris zone d’accueil et bar).
+
+Modulation selon l’usage pour ce cas d’étude
+
+• Scénario 1 : le périscolaire est ouvert 5 heures par jour (le restaurant scolaire est ouvert 3 heures par jour et l’accueil périscolaire 2 heures par jour), 5 jours par semaine, 36 semaines par an. Le ratio surfacique de la cuisine est de 32 %. Les indicateurs d’intensité d’usage à renseigner sont bien les temps d’utilisation de l’équipement, soit 900 heures par an. Cabs scénario 1 = 161 kWh/m².an
+
+• Scénario 2 : le périscolaire est ouvert 36 semaines par an mais est fermé le mercredi. Le rythme est donc de 4 jours ouvrés par semaine, 2 heures pour l’accueil périscolaire et 3 heures pour la restauration scolaire. L’amplitude horaire annuelle du périscolaire est de 720 heures.Le ratio surfacique de la cuisine est de 32 %. Cabs scénario 2 = 142 kWh/m².an
+
+Tableau 2-7 : Synthèse des Cabs possibles pour le groupe scolaire
+
+Cabs sous-catégorie par défaut (kWh/m².an)
+
+Cabs étalon (kWh/m².an)
+
+Cabs modulé usage 4 jours par semaine (kWh/m².an)
+
+EFA « Écoles » 79 102 91
+
+EFA « Périscolaire » Non concerné 111 142
+
+38
+
+Cas pratiques
+
+Ce qu’il faut retenir
+
+Concernant l’identification des EFA, la présence d’un exploitant pour le périscolaire (communauté de communes) différent de celui du reste du site (commune) rend la déclaration d’une EFA spécifique obligatoire (malgré l’absence de sous-comptage).
+
+Le sous-comptage des énergies consommées par chacune des EFA est nécessaire afin de pouvoir évaluer rigoureusement l’atteinte ou non de leur objectif de consommation énergétique.
+
+Concernant la modulation des objectifs par la déclaration d’indicateurs d’intensité d’usage, pour avoir conscience de l’écart avec la valeur étalon d’un indicateur temporel d’activité, il est primordial de calculer l’amplitude horaire annuelle en considérant les données des plages horaires et hebdomadaires. En effet, un établissement peut être ouvert sur une plage journalière plus importante que la valeur étalon, tout en étant ouvert moins de semaines dans l’année, mais in fine le nombre d’heures ouvrées par an est proche de la valeur étalon.
+
+ÉCOLE PRIMAIRE :
+
+• le choix de déclarer une ou deux EFA dépendra de deux principaux facteurs : la possibilité ou non de compter les consommations propres à chaque école et la performance intrinsèque des deux bâtiments considérés. Pour un ensemble bâti homogène et en l’absence de sous-comptage, déclarer une EFA est la solution la plus adaptée. Dans les autres situations, une réflexion est à mener en amont sur la pertinence de distinguer les déclarations des deux établissements en recourant à des EFA distinctes (par exemple pour valoriser les bons résultats d’un établissement par rapport à l’autre). Cette façon de déclarer sera à prioriser en cas de bâtiments de performances très différentes ;
+
+• dans cette situation, la modulation des indicateurs d’intensité d’usage présente un faible impact sur l’objectif global.
+
+PÉRISCOLAIRE :
+
+• le choix des sous-catégories d’usage est important pour bien décrire les activités, distinguer les temps d’accueil avec restauration et sans restauration paraît indispensable ;
+
+• la modulation des indicateurs d’intensité d’usage est ici indispensable pour adapter l’objectif à l’activité réelle de l’établissement. Pour rappel, la modulation s’applique aussi à l’objectif en valeur relative (voir paragraphe 1.2.3.5 de la Partie 1) et permet d’expliquer une variation de consommation liée à une variation d’activité.
+
+À travers cet exemple ressort bien l’intérêt de bâtir une stratégie de déclaration, à la fois en fonction des activités tertiaires exercées au sein des EFA et de l’écart entre l’intensité d’usage réel et les valeurs étalons.
+
+On retiendra que pour un établissement scolaire, l’usage étant assez normé l’utilisation des IIU étalons peut être satisfaisante. En revanche, pour une structure d’accueil périscolaire, dont l’activité varie selon des modalités propres à chaque commune et en présence d’usages plus énergivores (restauration scolaire), le passage par la déclaration des indicateurs d’intensité d’usage paraît incontournable pour aboutir à une description fidèle de l’EFA.
+
+39
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Exclusion de la surface du local électrique (TGBT) et de la chaufferie
+
+LÉGENDE
+
+Surface considérée pour l'assujettissement
+
+Surface non prise en compte pour l'assujettissement
+
+Les surfaces suivantes sont exclues de l’appréciation du seuil d’assujettissement : surfaces de stationnement, locaux techniques nécessaires au fonctionnement du bâtiment tels que chaufferie, centrale de traitement d’air, local de machinerie ascenseur, locaux déchets, surfaces des bassins des piscines, préaux, etc.
+
+Les trémies des escaliers sont exclues de la surface de plancher (article R111-22 du Code de l’urbanisme).
+
+B - IDENTIFICATION DES EFA
+
+Cet établissement sportif est exploité par la collectivité qui en est propriétaire, donc une seule entité fonctionnelle assujettie (EFA) peut être déclarée dans OPERAT. Cette EFA, qui relève de la catégorie d’activité principale « Sports », se décompose en plusieurs sous-catégories d’activités.
+
+À noter que la grande majorité des salles de sport ne dispose pas de SIRET, auquel cas, il faut déclarer l’EFA comme n’ayant pas de SIRET en cochant la case « L’entité fonctionnelle ne dispose pas de numéro de SIRET » à l’étape 2 « établissement » de la déclaration de l’EFA. Il est alors possible de renseigner une adresse pour cette EFA.
+
+40
+
+2.3 - ÉTABLISSEMENT SPORTIF : CAS DU GYMNASE
+
+A - VÉRIFICATION DE L’ASSUJETTISSEMENT
+
+C - DÉCLARATION DES CONSOMMATIONS ÉNERGÉTIQUES
+
+ET DES SOUS-CATÉGORIES D’ACTIVITÉ
+
+DÉCLARATION DES CONSOMMATIONS ÉNERGÉTIQUE ET DE SOUS-CATÉGORIES D'ACTIVITÉS
+
+Cas pratiques
+
+LÉGENDE Identification des locaux et des sous catégories
+
+Sports - Administration et bureaux (bureaux standards)
+
+Sports - Vestiaires, douches et sanitaires (sauf vestiaires de piscines et patinoires)
+
+Récupération sportive (Massage - cryothérapie en bassin ou cabine), sauna, hammam
+
+Gymnase (applicable à : cesta punta, salle d’escalade, squash ou tennis couvert…)
+
+Salle de sport de combat (dojo)
+
+Salle de sport de pratique individuelle (machines cardio et musculation)
+
+Espaces communs répartis entre les différentes sous-catégories d'activités
+
+La totalité des surfaces de cet équipement sportif appartiennent à la catégorie « Sports », il est possible de recourir à la sous-catégorie par défaut, avec une consommation Cabs de 57 kWh/m².an.
+
+Déclaration de la zone « gymnase » : Dans cet exemple, nous avons fait le choix de déclarer cette zone dans la sous-catégorie « gymnase ».
+
+Il est possible de déclarer cet espace dans la sous-catégorie « Salle de sport collectif (basket-ball, handball, volley-ball, futsal…) » si celui-ci est davantage utilisé pour des sports collectifs.
+
+Nota : À la publication de ce guide, les valeurs absolues sont identiques, mais elles peuvent être amenées à évoluer les prochaines années avec l’amélioration de la connaissance des consommations du secteur tertiaire grâce aux remontées annuelles de données de consommations.
+
+41
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Déclaration des zones de stockage : les surfaces des locaux de stockage sont à comptabiliser dans les surfaces des activités qui les utilisent. Si le local est mutualisé, alors sa surface est à partager entre les différentes sous-catégories d’activité qui l’utilisent.
+
+Déclaration des zones de dégagement / locaux techniques : les circulations, tout comme les locaux techniques sont en principe à affecter aux locaux qu’ils desservent. Dans ce cas précis, les surfaces de circulations et de locaux techniques étant très faibles par rapport à la surface totale de l’EFA, la répartition des surfaces n’a pas nécessairement besoin d’être fine (un partage à parts égales peut convenir).
+
+Tableau 2-8 : Synthèse des sous-catégories et surfaces déclarées pour les EFA identifiées Les couleurs des sous catégories correspondent à celles des locaux du plan ci-dessus (légende)
+
+Catégorie Sous-catégorie
+
+Part de la sous-catégorie dans le Cabs étalon de l’EFA(3)
+
+EFA - Gymnase 1 988 68
+
+Sports
+
+Surface de consommation énergétique(1) (m²)
+
+Cabs étalon(2) (kWh/m².an)
+
+Sports - Administration et bureaux (bureaux standards) 20 116 2 %
+
+Sports - Vestiaires, douches et sanitaires (sauf vestiaires de piscines et patinoires)
+
+218 114 18 %
+
+Récupération sportive (Massage - cryothérapie en bassin ou cabine), sauna, hammam
+
+8 293 2 %
+
+Gymnase (applicable à : cesta punta, salle d’escalade, squash ou tennis couvert…)
+
+1 149 59 50 %
+
+Salle de sport de combat (dojo) 305 59 13 %
+
+Salle de sport de pratique individuelle (machines cardio et musculation)
+
+288 69 15 %
+
+(1) Cette surface diffère de la surface de plancher prise en compte pour établir l’assujettissement (voir paragraphe 1.2.3 de la Partie 1). (2) Objectif de consommation en valeur absolue calculé à partir des indicateurs d’intensité d’usage étalons. (3) Ce ratio dépend des surfaces spécifiques de l’EFA présentée ici.
+
+Ici, l’enjeu principal pour l’assujetti porte sur les indicateurs d’intensité d’usage du gymnase (en raison de l’importance de sa surface), dans une moindre mesure sur les vestiaires, la salle de musculation et le dojo. En revanche, le sauna (sa consommation surfacique élevée étant contrebalancée par sa surface réduite au regard de la surface totale de l’EFA) et la partie administration ont un impact mineur.
+
+42
+
+Cas pratiques
+
+D - INDICATEURS D’INTENSITÉ D’USAGE
+
+Valeurs étalons
+
+En appliquant les valeurs étalons des indicateurs d’intensité d’usage du Tableau 3-1 (en annexe), l’objectif de consommation de cette EFA, en valeur absolue à horizon 2030 est 68 kWh/m².an.
+
+Exemples d’impact de la modulation des indicateurs d’usage
+
+Une variation de la valeur de chacun des indicateurs d’intensité d’usage entraîne une modulation de la valeur absolue de la sous-catégorie considérée, et a fortiori une modulation du Cabs de l’EFA. Le tableau suivant précise l’impact d’une évolution de ± 30 % de la valeur de chaque indicateur considéré séparément, pour représenter une activité plus ou moins intensive que celle définie par défaut (à travers les valeurs étalons) :
+
+Tableau 2-9 : Impact d’un écart de plus ou moins 30 % par rapport aux valeurs étalons de chaque indicateur des sous-catégories déclarées dans l’EFA
+
+Sous-catégorie Indicateur considéré Évolution Cabs sous-catégorie
+
+Évolution Cabs EFA(1)
+
+Sports - Administration et bureaux (bureaux standards)
+
+Amplitude horaire ± 12 % \< 1 %
+
+Surface de plancher / poste de travail + 17 % à -9 % \< 1 %
+
+Taux d’occupation ± 12 % \< 1 %
+
+Sports - Vestiaires, douches et sanitaires (sauf vestiaires de piscines et patinoires)
+
+Amplitude horaire ± 21 % ± 4 %
+
+Récupération sportive (massage - cryothérapie en bassin ou cabine), sauna, hammam
+
+Amplitude horaire ± 26 % \< 1 %
+
+Gymnase (applicable à : cesta punta, salle d’escalade, squash ou tennis couvert…)
+
+Amplitude horaire ± 12 % ± 6 %
+
+Indicateur de retransmission TV(2) -2 % \< 1 %
+
+Salle de sport de combat (dojo)
+
+Amplitude horaire ± 12 % ± 2 %
+
+Indicateur de retransmission TV(2) -2 % \< 1 %
+
+Salle de sport de pratique individuelle (machines cardio et musculation)
+
+Amplitude horaire ± 14 % ± 2 %
+
+(1) Valable uniquement pour ce cas d’étude, l’impact est évalué au regard des surfaces spécifiques de cette EFA. (2) Cet indicateur est égal à 0 (pas de retransmission, valeur par défaut) ou 1 (retransmission, valeur étudiée ici).
+
+Pour cet établissement sportif, c’est l’intensité d’usage du gymnase qui a le plus d’impact sur la consommation, bien que cet impact reste très modeste puisqu’une évolution de ± 30 % de l’amplitude horaire d’ouverture ne fera évoluer le Cabs que de ± 6 %.
+
+43
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Modulation selon l’usage pour ce cas d’étude :
+
+Différents scénarios d’usage ont été étudiés pour visualiser l’impact de l’intensité d’usage sur la modulation des objectifs :
+
+• Scénario 1 (usage intensif) : le gymnase-dojo est ouvert aux clubs le soir jusqu’à 22 h, soit 3 360 heures par an.
+
+• Scénario 2 (usage très intensif) : en plus du scénario 1, le gymnase est ouvert le samedi matin, soit 74 heures par semaine, i.e. 3 552 heures par an.
+
+Tableau 2-10 : Synthèse des Cabs possibles pour le gymnase-dojo
+
+Cabs sous-catégorie par défaut (kWh/m².an)
+
+Cabs modulé (scénario 2) (kWh/m².an)
+
+EFA « Gymnase / dojo » 57 68 77 80
+
+Ce qu’il faut retenir
+
+La totalité des surfaces de cet établissement sportif appartient à la catégorie « Sports ». Il est possible de recourir à la sous-catégorie par défaut, avec une consommation Cabs de 57 kWh/m².an.
+
+Pour affiner l’objectif, il est possible de recourir aux sous-catégories d’activité et déclarer les valeurs des indicateurs d’intensité d’usage.
+
+En particulier, pour un gymnase affecté à un usage scolaire et ouvert en soirée aux clubs, les 2 600 heures/ an peuvent être dépassées. La valeur réelle de l’amplitude horaire annuelle étant significativement différente de l’étalon, il est d’autant plus pertinent de déclarer cet indicateur.
+
+Gymnase de Château-Salins (Moselle).
+
+Cabs étalon
+
+Cabs modulé (kWh/m².an)
+
+(scénario 1) (kWh/m².an)
+
+44
+
+2.4 - ÉTABLISSEMENT SPORTIF : CAS DU CENTRE AQUATIQUE
+
+A - VÉRIFICATION DE L’ASSUJETTISSEMENT
+
+Cas pratiques
+
+LÉGENDE
+
+Surface considérée pour l'assujettissement
+
+Surface non prise en compte pour l'assujettissement
+
+Dans l’exemple du centre aquatique, la surface de plancher permettant d’établir l’assujettissement est de 1 029 m².
+
+Elle exclut la surface du bassin extérieur (voir FAQ OPERAT A23 Q2), la surface du bassin intérieur qui n’est pas constitutive de la surface de plancher, et les surfaces des locaux techniques de la piscine (chloration, chaufferie, TGBT…) qui sont déduites des surfaces pour vérification de l’assujettissement (FAQ OPERAT A11 ou article R 111-22 du Code de l’urbanisme).
+
+B - IDENTIFICATION DES EFA
+
+Ce centre aquatique est exploité par la collectivité qui en est propriétaire, donc une seule EFA peut être déclarée dans OPERAT. Cette EFA, qui relève de la catégorie d’activité principale « Sports », se décompose en plusieurs sous-catégories d’activité.
+
+À noter que la grande majorité des salles de sport ne disposent pas de SIRET, auquel cas, il faut déclarer l’EFA comme n’ayant pas de SIRET en cochant la case « L’entité fonctionnelle ne dispose pas de numéro de SIRET » à l’étape 2 « établissement » de la déclaration de l’EFA. Il est alors possible de renseigner une adresse pour cette EFA.
+
+45
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+46
+
+C - DÉCLARATION DES CONSOMMATIONS ÉNERGÉTIQUES
+
+ET DES SOUS-CATÉGORIES D’ACTIVITÉ
+
+Bassin extérieur chauffé 200 m²
+
+Cet établissement appartient à la catégorie principale « Sports ». Un centre aquatique étant un équipement énergivore en raison de son process, il n’est pas recommandé de déclarer cet équipement dans la catégorie « sports - valeur par défaut » : la valeur de consommation objectif (57 kWh/m².an) n’est pas adaptée pour décrire ses besoins énergétiques spécifiques.
+
+Piscine de Pompey (CC du Bassin de Pompey).
+
+LÉGENDE Identification des locaux et des sous catégories
+
+Piscine, dont vestiaires, douches et sanitaires
+
+Récupération sportive (massage - cryothérapie en bassin ou cabine), sauna, hammam
+
+Sports - Administration et bureaux (bureaux standards)
+
+Espaces communs répartis entre les différentes sous-catégories d'activités
+
+Cas pratiques
+
+Le centre aquatique présenté ici est concerné par trois sous-catégories : « piscine (dont vestiaires, douches et sanitaires) », « récupération sportive » et « administration et bureaux ».
+
+Cas particulier des vestiaires des piscines : contrairement aux vestiaires, sanitaires et douches des autres équipements sportifs, les vestiaires, sanitaires et douches des piscines sont à déclarer dans la sous- catégorie « sports - piscine (dont vestiaires, douches et sanitaires) ».
+
+Calcul des surfaces de consommations énergétiques pour la sous-catégorie « piscine » : la surface de consommation énergétique est égale à la surface de plancher + la surface d’eau des bassins non incluse dans la surface de plancher (cf. p. 54 de l’annexe de l’arrêté du 20 février 2024).
+
+Tableau 2-11 : Définition des surfaces de consommations énergétiques pour la sous-catégorie « Piscine »
+
+Dénomination Définition Cas pratique
+
+Surface de plancher (sous-catégorie « Piscine »)
+
+Surface hors surface d’eau des bassins, associée à la sous-catégorie « Piscine », y compris les locaux techniques (local de chloration, etc.)
+
+1 099 m²
+
+Surface de consommation énergétique
+
+1 099 m² + 250 m² = 1 349 m²
+
+Cas des piscines « tournesol » : ces piscines sont considérées comme des piscines intérieures par définition (cf. note sous le tableau des valeurs USE de la sous-catégorie « sports - piscine (dont vestiaires, douches et sanitaires) ») :
+
+« Un bassin est considéré comme extérieur lorsqu’il ne dispose pas d’une structure permettant d’assurer le clos et le couvert du bassin et d’un espace de circulation autour de celui-ci. »
+
+Cas des bassins extérieurs : tous les bassins extérieurs chauffés auront comme objectif la valeur d’un bassin qui est chauffé de mi-avril à mi-octobre uniquement. Cela s’applique à tout bassin, qu’il soit chauffé toute l’année ou une partie de l’année, été comme hiver. Le principe de la réglementation est d’inciter à des usages raisonnés de l’énergie et développer des solutions plus sobres pour le chauffage de ces bassins.
+
+Tableau 2-12 : Synthèse des sous-catégories et surfaces déclarées pour les EFA identifiées Les couleurs des sous catégories correspondent à celles des locaux du plan ci-dessus (légende)
+
+Catégorie Sous-catégorie
+
+Surface de plancher « Piscine » + surface d’eau des bassins intérieurs
+
+Part de la sous-catégorie dans le Cabs étalon de l’EFA(3)
+
+EFA - Centre aquatique 1 434 423
+
+Sports
+
+Surface de consommation énergétique(1) (m²)
+
+Cabs étalon(2) (kWh/m².an)
+
+Piscine, dont vestiaires, douches et sanitaires 1 349 438 98 %
+
+Récupération sportive (massage - cryothérapie en bassin ou cabine), sauna, hammam
+
+19 293 1 %
+
+Sports - Administration et bureaux (bureaux standards) 66 116 1 %
+
+(1) Cette surface diffère de la surface de plancher prise en compte pour établir l’assujettissement (voir paragraphe 1.2.3 de la Partie 1). (2) Objectif de consommation en valeur absolue calculé à partir des indicateurs d’intensité d’usage étalons. (3) Ce ratio dépend des surfaces spécifiques de l’EFA présentée ici.
+
+47
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+D - INDICATEURS D’INTENSITÉ D’USAGE
+
+Valeurs étalons En appliquant les valeurs étalons des indicateurs d’intensité d’usage du Tableau 3-1 (en annexe), l’objectif de consommation de cette EFA, en valeur absolue à horizon 2030 est 423 kWh/m².an.
+
+Exemples d’impact de la modulation des indicateurs d’intensité d’usage Une variation de la valeur de chacun des indicateurs d’intensité d’usage entraîne une modulation de la valeur absolue de la sous-catégorie considérée, et a fortiori une modulation du Cabs de l’EFA. Le tableau suivant précise l’impact d’une évolution de ± 30 % de la valeur de chaque indicateur considéré séparément, pour représenter une activité plus ou moins intensive que celle définie par défaut (à travers les valeurs étalons).
+
+Tableau 2-13 : Impact d’un écart de plus ou moins 30 % par rapport aux valeurs étalons de chaque indicateur des sous-catégories déclarées dans l’EFA
+
+Sous-catégorie Indicateur considéré Évolution Cabs sous-catégorie
+
+Évolution Cabs EFA(1)
+
+Piscine, dont vestiaires, douches et sanitaires
+
+Amplitude horaire annuelle des bassins intérieurs ± 21 % ± 21 %
+
+% surface bassins intérieurs ± 17 % ± 17 %
+
+% surface bassins extérieurs non chauffés (hypothèse prise : 33 %) +20 % +20 %
+
+% surface bassins extérieurs chauffés (hypothèse prise : 33 %) +45 % +45 %
+
+Indicateur de retransmission TV(2) \< 1 % \< 1 %
+
+Récupération sportive (massage - cryothérapie en bassin ou cabine), sauna, hammam
+
+Amplitude horaire ± 26 % \< 1 %
+
+Sports - Administration et bureaux (bureaux standards)
+
+Amplitude horaire ± 12 % \< 1 %
+
+Surface de plancher / poste de travail +17 % à -9 % \< 1 %
+
+Taux d’occupation ± 12 % \< 1 %
+
+(1) Valable uniquement pour ce cas d’étude, l’impact est évalué au regard des surfaces spécifiques de cette EFA. (2) Cet indicateur est égal à 0 (pas de retransmission, valeur par défaut) ou 1 (retransmission, valeur étudiée ici).
+
+L’amplitude horaire d’ouverture du centre aquatique ainsi que le pourcentage de surface des bassins ont un impact majeur sur l’objectif de consommation du centre aquatique.
+
+Plage de variation des indicateurs qui concernent les bassins : de par sa définition l’indicateur « % de bassins intérieurs » restera toujours strictement inférieur à 100 % (une piscine ne pouvant pas être constituée uniquement de surface de bassins intérieurs, sans circulation), en revanche, l’indicateur « % de bassins extérieurs » peut dépasser les 100 % (notamment en l’absence de bassin intérieur).
+
+48
+
+Cas pratiques
+
+Modulation selon l’usage pour ce cas d’étude
+
+Tableau 2-14 : Évaluation des divers indicateurs relatifs à la sous-catégorie « Sports - piscine, dont vestiaires, douches et sanitaires »
+
+Dénomination Définition Cas pratique
+
+%S bassin\_int Surface d’eau des bassins intérieurs / surface
+
+de consommation énergétique de la sous-catégorie « piscine » 250 / 1 34 = 19 %
+
+%S bassin\_ext chauffé Surface d’eau des bassins extérieurs chauffés / surface
+
+de consommation énergétique de la sous-catégorie « piscine » 200 / 1 34 = 15 %
+
+%S bassin\_ext non chauffé Surface d’eau des bassins extérieurs non chauffés /
+
+surface de consommation énergétique
+
+0 % (absent dans ce cas pratique)
+
+Différents scénarios d’usage ont été étudiés pour visualiser l’impact de l’intensité d’usage sur la modulation des objectifs :
+
+• Scénario 1 (usage intensif) : la piscine est ouverte 12 heures par jour, 7 jours par semaine, 52 semaines dans l’année.
+
+• Scénario 2 (usage peu intensif) : la piscine est ouverte seulement 50 % du temps étalon (par exemple une ouverture 26 semaines dans l’année à raison de 8 heures / jour 7 jours par semaine).
+
+Les pourcentages réels de bassins intérieurs et extérieurs ont également été modifiés pour s’adapter aux surfaces observées dans le cas d’étude : 19 % de surface de bassin intérieur (contre 33 % pour la valeur étalon) et 15 % de surface de bassin extérieur chauffé (contre 0 % pour la valeur étalon).
+
+Tableau 2-15 : Synthèse des Cabs possibles pour le centre aquatique
+
+Cabs sous-catégorie par défaut (kWh/m².an)
+
+Cabs étalon (kWh/m².an)
+
+Cabs scénario 1 - usage intensif (kWh/m².an)
+
+Cabs scénario 2 - usage peu intensif (kWh/m².an)
+
+Centre aquatique 57 423 548 265
+
+Ce qu’il faut retenir
+
+Les surfaces prises en compte pour déterminer l’assujettissement (sans surface des bassins) diffèrent des surfaces considérées par la suite pour la déclaration de l’EFA. La sous-catégorie « Piscine, dont vestiaires, douches et sanitaires » présente plusieurs spécificités majeures : La déclaration de la sous-catégorie « Piscine, dont vestiaires, douches et sanitaires » met en jeu plusieurs surfaces qui sont précisément définies par la réglementation :
+
+• surface de plancher : surface qui exclut les surfaces d’eau des bassins ;
+
+• surface de consommation énergétique : addition de la surface de plancher et des surfaces de bassins intérieurs ;
+
+• part de surface de bassins : rapport entre la surface des bassins et la surface de consommation énergétique. Comme pour les patinoires, elle englobe les surfaces de vestiaires, douches et sanitaires, contrairement aux autres activités sportives, pour lesquels l’assujetti doit recourir à deux sous-catégories distinctes. Compte tenu du profil énergétique de ce type d’équipement, la déclaration des indicateurs d’intensité d’usage présente un fort impact sur la valeur de consommation objectif.
+
+49
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+2.5 - SALLE POLYVALENTE
+
+A - VÉRIFICATION DE L’ASSUJETTISSEMENT
+
+La salle de spectacle est comparable à une salle des fêtes communales. Il s'agit d'un local à activité intermittente
+
+MJC 1er étage
+
+MJC Rez de chaussée
+
+MJC 2e étage
+
+Le site est constitué de deux bâtiments mitoyens reliés par une communication intérieure. Un bâtiment historique accueille les locaux associatifs : la Maison des jeunes et de la culture (MJC), sur trois niveaux, et héberge également au rez-de-chaussée une petite salle de réunion. La salle polyvalente attenante avec cuisine (dénommée « salle de spectacle » sur le plan), construite dans les années 1970, est utilisée pour des spectacles, des activités sportives et des événements (fêtes privées, repas d’associations, etc.).
+
+Les surfaces des locaux techniques (chaufferie, local TGBT, etc.) ne sont pas prises en compte pour apprécier l’assujettissement. Les trémies des escaliers sont exclues de la surface de plancher (article R111-22 du Code de l’urbanisme). L’ensemble des surfaces prises en compte pour établir l’assujettissement représente une surface de 1 095 m².
+
+B - IDENTIFICATION DES EFA
+
+La commune est propriétaire et exploitante du site. Ce site est constitué de deux bâtiments aux performances énergétiques intrinsèques et aux usages énergétiques très différents. La collectivité dispose d’un sous- comptage énergétique, elle souhaite mettre en avant les trajectoires énergétiques spécifiques de chacun des bâtiments : elle crée donc deux EFA (voir figure 1-4 en page 13).
+
+Par la suite, deux EFA seront distinguées : « salle polyvalente » et « MJC ».
+
+50
+
+LÉGENDE
+
+Surface considérée pour l'assujettissement
+
+Surface non prise en compte pour l'assujettissement
+
+C - DÉCLARATION DES CONSOMMATIONS ÉNERGÉTIQUES
+
+ET DES SOUS-CATÉGORIES D’ACTIVITÉ
+
+Cas pratiques
+
+LÉGENDE Identification des locaux et des sous catégories
+
+Bureaux - Bureaux standards
+
+Bureaux - Zone accueil public
+
+Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places)
+
+Salle de danse
+
+Hébergement touristique de courte durée - Cuisine
+
+Salle de spectacles vivants sans protection patrimoniale - Salle de spectacle et de répétition
+
+Espaces communs répartis entre les différentes sous-catégories d'activités
+
+EFA 2 - « SALLE POLYVALENTE »
+
+Dans quelle sous-catégorie d’usage déclarer une salle polyvalente communale ?
+
+La salle polyvalente d’une commune pourrait être déclarée dans de nombreuses sous-catégories, en fonction de son (ses) usage(s) réel(s) : • « Salle de spectacles vivants sans protection patrimoniale - Salle de spectacle et de répétition » ; • « Salle de sport collectif (basket-ball, handball, volley-ball, futsal…) » ; • « Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places) » ; • « Restauration collective avec services - Restauration inter-entreprises ».
+
+51
+
+MJC Rez de chaussée
+
+MJC 2e étage MJC 1er étage
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+• Ce choix n’est pas du tout neutre dans la détermination de l’objectif en valeur absolue qui est alors déterminé par une moyenne pondérée des objectifs en valeur absolue de chaque sous-catégorie sélectionnée8. Le tableau suivant compare quatre scénarios de déclaration, pour une occupation moyenne de 1 000 heures annuelles, toutes activités confondues.
+
+Tableau 2-16 : Comparatif des Cabs obtenus selon divers scénarios d'activités
+
+Scénario 0 50 % sport collectif 50 % spectacle
+
+8 L’exemple du périscolaire (cas d’étude n° 1) illustre la méthode à suivre pour déclarer un local hébergeant une activité
+
+intermittente. Voir p. 35 du présent guide.
+
+Scénario 1 50 % réunion 50 % sport collectif
+
+Scénario 2 50 % spectacle vivant 50 % restaurant
+
+Scénario 3 25 % spectacle vivant 25 % sport collectif 25 % restauration collective 25 % réunion
+
+Cabs salle polyvalente (kWh/m².an)
+
+42 59 135 97
+
+Dans le cas présent, le choix a été fait de recourir uniquement à la sous-catégorie « Salle de spectacles vivants sans protection patrimoniale - Salle de spectacle et de répétition », car cette catégorie a été jugée suffisamment représentative de l’activité de la salle polyvalente. La cuisine étant utilisée ponctuellement pour des repas est déclarée dans la sous-catégorie « Hébergement touristique de courte durée - Cuisine ».
+
+Dans ce cas, il serait possible d’utiliser une sous-catégorie par défaut puisque plus de 80 % des surfaces correspondent à la catégorie d’activité principale (Cabs 74 kWh/m².an).
+
+Particularité concernant les chaufferies du complexe :
+
+Un local chaufferie de 200 m² est aménagé à l’étage au-dessus de la cuisine de la salle polyvalente (non représenté sur le plan). Il abrite une centrale de traitement d’air dédiée exclusivement à la salle polyvalente. L’ensemble de la surface de cette chaufferie est donc déclaré dans la sous-catégorie d’usage « Salle de spectacles vivants sans protection patrimoniale - Zone d’accueil du public » (722 m² de salle de spectacle visible sur le plan et 200 m² de chaufferie).
+
+Le chauffage du reste des locaux est assuré par une chaufferie collective présente dans un bâtiment voisin, dont la surface n’est pas considérée dans les surfaces de consommation énergétique de cette EFA.
+
+EFA « MJC »
+
+Il n’est pas possible de recourir à une déclaration avec une sous-catégorie par défaut : cette EFA mixe plusieurs catégories d’activités. Il n’est pas possible d’utiliser une sous-catégorie par défaut puisque moins de 80 % des surfaces correspond à la catégorie d’activité principale. La déclaration fera donc obligatoirement appel à plusieurs sous-catégories.
+
+Quelle sous-catégorie utiliser pour les locaux associatifs ?
+
+Pour la Maison des Jeunes et de la Culture (MJC), qui accueille des activités variées (club de danse, salle de réunion, bureaux associatifs, point d’accueil du public, locaux de stockage associatifs), le découpage peut se faire selon plusieurs sous-catégories selon l’usage réel des locaux.
+
+Dans l’exemple proposé ici, le local doté d’un poste informatique a été déclaré dans la sous-catégorie « Bureaux - bureaux standards ». Le local de la mission jeunes s’apparente davantage à un guichet, il a été déclaré en « Bureaux - zone accueil public ». Les locaux de stockage associatifs pourraient être déclarés dans la sous-catégorie « bureaux - zone archives sans contrainte hygrothermique ».
+
+Les vestiaires liés à la salle de danse peuvent être déclarés dans la sous-catégorie « sports - vestiaires, douches et sanitaires (sauf vestiaires de piscines et patinoires) ».
+
+52
+
+Cas pratiques
+
+Tableau 2-17 : Synthèse des sous-catégories et surfaces déclarées pour les EFA identifiées Les couleurs des sous catégories correspondent à celles des locaux du plan ci-dessus (légende)
+
+Catégorie Sous-catégorie
+
+Part de la sous-catégorie dans le Cabs étalon de l’EFA(3)
+
+EFA - « MJC » 301 92
+
+Bureaux - Services publics - Banque
+
+Surface de consommation énergétique(1) (m²)
+
+Cabs étalon(2) (kWh/m².an)
+
+Bureaux - Bureaux standards 144 116 60 %
+
+Bureaux - Zone accueil public 21 101 8 %
+
+Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places)
+
+75 71 19 %
+
+Sports Salle de danse 61 59 13 %
+
+EFA - « salle polyvalente » 992 94
+
+Hébergement touristique de courte durée (auberge de jeunesse, centre sportif, colonies de vacances, gîte d’étape et refuge de montagne)
+
+Hébergement touristique de courte durée - Cuisine
+
+70 128 10 %
+
+Culture et spectacles - Salle de spectacles vivants sans protection patrimoniale
+
+Salle de spectacles vivants sans protection patrimoniale - Salle de spectacle et de répétition
+
+922 91 90 %
+
+(1) Cette surface diffère de la surface de plancher prise en compte pour établir l’assujettissement (voir paragraphe 1.2.3 de la Partie 1). (2) Objectif de consommation en valeur absolue calculé à partir des indicateurs d’intensité d’usage étalons. (3) Ce ratio dépend des surfaces spécifiques de l’EFA présentée ici.
+
+D - INDICATEURS D’INTENSITÉ D’USAGE
+
+Valeurs étalons
+
+En appliquant les valeurs étalons des indicateurs d’intensité d’usage du Tableau 3-1 (en annexe), l’objectif de • • consommation de chacune des EFA, en valeur absolue à horizon 2030 est respectivement de : pour la MJC : 92 kWh/m².an ; pour la salle polyvalente : 94 kWh/m².an.
+
+53
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Exemples d’impact de la modulation des indicateurs d’intensité d’usage
+
+Une variation de la valeur de chacun des indicateurs d’intensité d’usage entraîne une modulation de la valeur absolue de la sous-catégorie considérée et a fortiori une modulation du Cabs de l’EFA. Le tableau suivant précise l’impact d’une évolution de ± 30 % de la valeur de chaque indicateur considéré séparément, pour représenter une activité plus ou moins intensive que celle définie par défaut (à travers les valeurs étalons) :
+
+Tableau 2-18 : Impact d’un écart de plus ou moins 30 % par rapport aux valeurs étalons de chaque indicateur des sous-catégories déclarées dans l’EFA
+
+Sous-catégorie Indicateur considéré Évolution Cabs sous-catégorie
+
+Évolution Cabs EFA(1)
+
+EFA - « MJC »
+
+Bureaux - Bureaux standards
+
+Amplitude horaire ± 12 % ± 7 %
+
+Surface de plancher / poste de travail +17 % à -9 % +10 % à -5 %
+
+Taux d’occupation ± 12 % ± 7 %
+
+Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places)
+
+Amplitude horaire ± 2 % \< 1 %
+
+Surface de plancher / place ± 2 % \< 1 %
+
+Taux d’occupation ± 2 % \< 1 %
+
+Bureaux - Zone accueil public
+
+Amplitude horaire ± 10 % \< 1 %
+
+Surface de plancher / poste de travail + 15 % à -8 % \< 1 %
+
+Taux d’occupation ±10 % \< 1 %
+
+Salle de danse Amplitude horaire ± 12 % ± 1 %
+
+EFA - « salle polyvalente »
+
+Hébergement touristique de courte durée - Cuisine Indice d’occupation du mois(2) -30 % -3 %
+
+Salle de spectacles vivants sans protection patrimoniale - Zone d’accueil du public
+
+Amplitude horaire ± 14 % ± 13 %
+
+(1) Valable uniquement pour ce cas d’étude, l’impact est évalué au regard des surfaces spécifiques de cette EFA. (2) l’indice d’occupation du mois étant par défaut pris égal à la totalité des jours du mois, il n’est pas possible de calculer un résultat
+
+pour une augmentation de 30 % de cet indicateur.
+
+Pour la MJC, c’est l’intensité d’usage des bureaux qui a le plus d’impact sur la consommation. Dans le cas de la salle polyvalente, ce sont les horaires d’utilisation de la salle de spectacle qui ont un impact élevé sur les objectifs.
+
+Dans les deux cas, il s’agit de la sous-catégorie présentant la part de surface la plus importante.
+
+Modulation selon l’usage pour ce cas d’étude
+
+L’hypothèse étudiée est celle d’une salle polyvalente peu utilisée : 10 heures / semaine (520 heures / an). La cuisine est utilisée un jour par semaine (soit 52 jours par an). Les locaux de la MJC sont utilisés 20 heures / semaine en moyenne (1 040 heures / an).
+
+54
+
+Tableau 2-19 : Synthèse des Cabs possibles pour la MJC et la salle polyvalente
+
+Cabs sous-catégorie par défaut (kWh/m².an)
+
+Cabs étalon (kWh/m².an)
+
+Cabs modulé usage réel (kWh/m².an)
+
+MJC Non concerné 92 45
+
+Salle polyvalente 74 94 46
+
+Ce qu’il faut retenir
+
+L'assujetti peut déclarer une seule EFA ; toutefois, s’il dispose d’un sous-comptage, il aura le choix de déclarer une ou deux EFA, en fonction des caractéristiques du site (performances intrinsèques, schéma d’alimentation en énergie) et de sa stratégie d’affichage (volonté ou non de distinguer les deux parties du site).
+
+Que ce soit pour une salle polyvalente ou une maison des associations, selon l’usage réel des locaux, une multitude de possibilités de déclaration de catégories et sous-catégories d’usage s’offre à l’assujetti afin d’être aussi représentatif que possible, ce qui induit une grande variabilité de la valeur de l’objectif de consommation Cabs résultante.
+
+L’assujetti doit déclarer la ou les sous-catégories d’usages les plus en rapport avec l’activité hébergée et pouvoir justifier ces choix. Il importe donc de garder une trace du processus décisionnel et des justificatifs d’activité qui ont conduit à telle ou telle déclaration.
+
+Le choix de la sous-catégorie peut également évoluer d’une année à l’autre avec l’évolution de l’usage réel des locaux.
+
+Le renseignement des indicateurs d’intensité d’usage permet de définir un objectif adapté à l’usage réel des locaux. Ce renseignement est donc nécessaire même lorsque le volume d’activité est inférieur au volume d’activité étalon : l’adaptation de l’objectif donne une base de comparaison permettant d’identifier et de corriger des dérives dans les consommations énergétiques ; elle permet également de rendre compte d’efforts de réduction des consommations énergétiques réalisés d’une année à l’autre, même lorsque le volume d’activité est en hausse.
+
+Salle polyvalente de Château-Salins (Moselle).
+
+Cas pratiques
+
+55
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+LÉGENDE
+
+Surface considérée pour l'assujettissement
+
+Surface non prise en compte pour l'assujettissement
+
+Les hangars uniquement dédiés au remisage des véhicules sont des surfaces de stationnement qui ne sont pas prises en compte pour apprécier l’assujettissement, mais dès lors que le bâtiment ou l’ensemble des bâtiments est assujetti, les surfaces de stationnement sont prises en considération comme des surfaces de consommation énergétique (FAQ OPERAT A20).
+
+Les ateliers « électricité » et « menuiserie » que l’on retrouve fréquemment dans les ateliers municipaux sont des surfaces assujetties (l’activité du centre technique municipal est associée à un usage d’entretien, de réparation et de stockage, qui relève du secteur tertiaire).
+
+Dans l’exemple présent, la surface prise en compte pour apprécier l’assujettissement de ce bâtiment est de 840 m². Si le bâtiment était sur une unité foncière indépendante de toute autre activité tertiaire, il ne serait donc pas concerné par le dispositif. Il se trouve que ce bâtiment est situé sur la même unité foncière qu’une salle polyvalente communale. L’ensemble représente plus de 1 000 m² de surface tertiaire, il est ainsi assujetti au titre de l’appartenance à une même unité foncière. Pour des raisons de simplification du cas d’étude nous ne développerons ici que la partie relative au centre technique communal.
+
+B - IDENTIFICATION DES EFA
+
+Ce centre technique communal comprenant principalement des locaux d’atelier et de stockage est exploité par la collectivité qui en est propriétaire. Une seule entité fonctionnelle assujettie (EFA) est donc déclarée dans OPERAT. Cette EFA se décompose en plusieurs sous-catégories d’activités.
+
+La surface de consommation de l’EFA prend en compte la surface du garage (bien qu’elle ne soit pas considérée pour apprécier l’assujettissement).
+
+56
+
+2.6 - CENTRE TECHNIQUE COMMUNAL (ATELIERS)
+
+A - VÉRIFICATION DE L’ASSUJETTISSEMENT
+
+C - DÉCLARATION DES CONSOMMATIONS ÉNERGÉTIQUES
+
+ET DES SOUS-CATÉGORIES D’ACTIVITÉ
+
+Cas pratiques
+
+LÉGENDE Identification des locaux et des sous catégories
+
+Bureaux - Services publics - Banque Sports - Vestiaires, douches et sanitaires (sauf vestiaires de piscines et patinoires) Stationnement en superstructure (silo en ventilation naturelle, parc de stationnement largement ventilé) Ventes et services véhicules utilitaires et véhicules industriels - magasin de stockage de pièces Ventes et services véhicules utilitaires et véhicules industriels - zones atelier Espaces communs répartis entre les différentes sous-catégories d'activités
+
+Quelles consommations énergétiques prendre en compte pour la déclaration ? L’ensemble des consommations énergétiques du site (y compris celles alimentant la zone de stationnement) sont à prendre en compte.
+
+Il n’est pas possible ici de recourir à une déclaration avec une sous-catégorie par défaut : cette EFA mixe plusieurs catégories d’activités. La catégorie prépondérante est « Vente et services véhicules utilitaires et véhicules industriels », elle représente 67 % des surfaces de l’EFA, il n’est pas possible d’utiliser une sous-catégorie par défaut puisque moins de 80 % des surfaces correspondent à la catégorie d’activité principale. La déclaration fera donc obligatoirement appel à plusieurs sous-catégories.
+
+Choix de la sous-catégorie pour les vestiaires : les vestiaires des agents sont déclarés dans la sous- catégorie « Sports - Vestiaires, douches et sanitaires (sauf vestiaires de piscines et patinoires) », catégorie qui correspond le mieux à l’usage des locaux.
+
+Choix de la sous-catégorie pour les locaux de stockage : ces locaux peuvent être déclarés dans les catégories « Logistique » ou « Ventes et services véhicules utilitaires et véhicules industriels ». Cette dernière catégorie comporte la sous-catégorie « Ventes et services véhicules utilitaires et véhicules industriels - magasin de stockage de pièces » qui répond bien aux activités d’un centre technique municipal.
+
+Choix de la sous-catégorie pour les zones ateliers : selon les activités, la sous-catégorie « GSB - zone découpe matériaux » pourrait être la plus adaptée pour l’atelier menuiserie, « Ventes et services véhicules utilitaires et véhicules industriels - zones atelier » pourrait être plus appropriée à l’atelier mécanique, par exemple.
+
+Il n’y a pas de règle générale : c’est à l’assujetti de choisir la sous-catégorie la plus proche de son activité.
+
+57
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Tableau 2-20 : Synthèse des sous-catégories et surfaces déclarées pour les EFA identifiées Les couleurs des sous catégories correspondent à celles des locaux du plan ci-dessus (légende)
+
+Catégorie Sous-catégorie
+
+Part de la sous-catégorie dans le Cabs étalon de l’EFA(3)
+
+EFA - Atelier municipal 1 140 45
+
+Bureaux - Services publics - Banque
+
+Surface
+
+Cabs de consommation
+
+étalon(2) énergétique(1) (m²)
+
+(kWh/m².an)
+
+Bureaux - Bureaux standards 21 116 5 %
+
+Sports
+
+Sports - Vestiaires, douches et sanitaires (sauf vestiaires de piscines et patinoires)
+
+58 114 13 %
+
+Stationnement
+
+Stationnement en superstructure (silo en ventilation naturelle, parc de stationnement largement ventilé)
+
+300 10 6 %
+
+Ventes et services véhicules utilitaires et véhicules industriels
+
+Ventes et services véhicules utilitaires et véhicules industriels - magasin de stockage de pièces
+
+390 38 29 %
+
+Ventes et services véhicules utilitaires et véhicules industriels
+
+Ventes et services véhicules utilitaires et véhicules industriels - zones atelier
+
+371 66 47 %
+
+(1) Cette surface diffère de la surface de plancher prise en compte pour établir l’assujettissement (voir paragraphe 1.2.3 de la Partie 1). (2) Objectif de consommation en valeur absolue calculé à partir des indicateurs d’intensité d’usage étalons. (3) Ce ratio dépend des surfaces spécifiques de l’EFA présentée ici.
+
+La consommation en valeur absolue de ce centre technique communal dépend, dans la configuration présente, principalement de la sous-catégorie « Ventes et services véhicules utilitaires et véhicules industriels - zones atelier ».
+
+D - INDICATEURS D’INTENSITÉ D’USAGE
+
+Valeurs étalons
+
+En appliquant les valeurs étalons des indicateurs d’intensité d’usage du Tableau 3-1 (en annexe), l’objectif de consommation de cette EFA, en valeur absolue à horizon 2030 est 45 kWh/m².an.
+
+Centre technique communal de Balan (Ardennes).
+
+58
+
+Cas pratiques
+
+Exemples d’impact de la modulation des indicateurs d’usage
+
+Une variation de la valeur de chacun des indicateurs d’intensité d’usage entraîne une modulation de la valeur absolue de la sous-catégorie considérée, et a fortiori une modulation du Cabs de l’EFA. Le tableau suivant précise l’impact d’une évolution de ± 30 % de la valeur de chaque indicateur considéré séparément, pour représenter une activité plus ou moins intensive que celle définie par défaut (à travers les valeurs étalons) :
+
+Tableau 2-21 : Impact d’un écart de plus ou moins 30 % par rapport aux valeurs étalons de chaque indicateur des sous-catégories déclarées dans l’EFA
+
+Sous-catégorie Indicateur considéré Évolution Cabs sous-catégorie
+
+Évolution Cabs EFA(1)
+
+Bureaux - Bureaux standards
+
+Amplitude horaire ± 12 % ± 1 %
+
+Surface de plancher/ poste de travail +18 % / -10 % ± 1 %
+
+Taux d’occupation ±12 % ± 1 %
+
+Sports - Vestiaires, douches et sanitaires (sauf vestiaires de piscines et patinoires)
+
+Amplitude horaire ± 20 % ± 3 %
+
+Stationnement en superstructure (silo en ventilation naturelle, parc de stationnement largement ventilé)
+
+\-30 % (l’amplitude étalon Amplitude horaire
+
+correspond à une ouverture
+
+\-2 % 24h/24)
+
+Ventes et services véhicules utilitaires et véhicules industriels - magasin de stockage de pièces
+
+Amplitude horaire ± 11 % ± 3 %
+
+Ratio de surface de réserve / surface de vente(2) -7 % / +13 % -2 % / +4 %
+
+Ventes et services véhicules utilitaires et véhicules industriels - zones atelier
+
+Amplitude horaire ± 15 % ± 7 %
+
+Densité énergétique ± 4 % ± 2 %
+
+(1) Valable uniquement pour ce cas d’étude, l’impact est évalué au regard des surfaces spécifiques de cette EFA. (2) Il s’agit ici de la surface d’atelier.
+
+La modulation de l’amplitude horaire pour l’usage « Vente et services aux véhicules utilitaires et industriels - atelier de mécanique » représente un paramètre sensible pour le cas de ce centre technique communal. Faire varier de 30 % l’amplitude horaire pour cette sous-catégorie conduit à une variation de 15 % du Cabs de la sous-catégorie, et à une variation de 7 % de la valeur Cabs associée à l’EFA de ce cas d’étude.
+
+59
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Modulation selon l’usage pour ce cas d’étude
+
+Les zones atelier et stockage sont potentiellement occupées par les agents pendant leurs horaires de travail, de 7 h à 17 h. La présence d’agent n’est effective que 2 heures/jour, la majorité de leur temps de travail étant consacré à des activités extérieures.
+
+• Horaires annuels : 2 600 heures (10 heures/jour 52 semaines par an).
+
+• Densité énergétique réelle : elle est déterminée en fonction des consommations des équipements en place dans le local, si elles sont connues ou de la combinaison de leur puissance et de leur durée d’utilisation et d’un coefficient de foisonnement. Pour l’exemple de ce centre communal, au vu de la consommation des différents équipements, une valeur de 1,8 kWh/m².an est prise.
+
+• Surface de réserve/surface d’atelier : 390 m² / (390 + 371) m² - 51 %.
+
+Cabs modulé zone atelier = 56 kWh/m².an
+
+Cabs modulé magasin de stockage = 29 kWh/m².an
+
+Le bureau de chef d’équipe est occupé 3 heures par jour, 5 jours par semaine, 42 semaines par an, soit 630 heures/an.
+
+• Horaires annuels : 630 heures/an.
+
+• Taux d’occupation : 100 %.
+
+• Surface/poste de travail : 15 m².
+
+Cabs modulé bureau = 74 kWh/m².an
+
+Les vestiaires et douches sont mis à disposition des agents sur l’ensemble de leur plage de travail, ils peuvent s’y rendre à tout moment de la journée, selon leurs besoins sur leurs horaires de travail.
+
+• Horaires annuels : 2 600 heures/an.
+
+Stationnement : Le garage est occupé 24h/24 toute l’année.
+
+• Horaires annuels : 8 760 heures/an.
+
+Tableau 2-22 : Synthèse des Cabs possibles pour le centre technique communal
+
+Cabs sous-catégorie par défaut (kWh/m².an)
+
+Cabs étalon (kWh/m².an)
+
+Cabs modulé usage réel (kWh/m².an)
+
+Centre technique communal Non concerné 45 38
+
+Ce qu’il faut retenir
+
+Les surfaces de garages, dédiées au stationnement des véhicules, n’entrent pas en ligne de compte pour apprécier l’assujettissement, en revanche, elles sont à intégrer aux consommations et aux surfaces de consommation énergétique de l’EFA.
+
+En l’absence d’une catégorie majoritaire à plus de 80 % pour cette EFA, la déclaration ne peut pas s’effectuer sur la base d’une sous-catégorie « valeur par défaut ». L’EFA doit être décrite par ses sous- catégories d’usage.
+
+Au regard des surfaces en jeu et de la valeur des consommations énergétiques issues des valeurs d’indicateurs d’intensité d’usage étalons, l’amplitude horaire de la sous-catégorie « Vente et services aux véhicules utilitaires et industriels - atelier de mécanique » représente un paramètre sensible pour le cas de cet atelier municipal.
+
+La modulation des indicateurs d’intensité d’usage selon le scénario d’occupation réelle du bâtiment permet de moduler l’objectif de consommation de cette EFA de 15 % (Cabs passe de 45 à 39 kWh/m².an).
+
+60
+
+2.7 - BÂTIMENT ADMINISTRATIF : CAS DES BUREAUX EN MULTI-OCCUPATION
+
+A - VÉRIFICATION DE L’ASSUJETTISSEMENT
+
+Cas pratiques
+
+LÉGENDE
+
+Surface considérée pour l'assujettissement Surface non prise en compte pour l'assujettissement
+
+Cet immeuble est multi-occupé. Il est composé de cellules de bureaux et d’espaces communs. L’assujettissement s’apprécie au regard de la surface de plancher du bâtiment dans son ensemble (hors locaux techniques et chaufferies), ici 1 600 m².
+
+Cas particulier d’une cellule vacante : elle ne donne pas lieu à une déclaration, cette dernière interviendra dès qu'elle sera à nouveau occupée par une activité tertiaire. Si les cellules vacantes conduisent à diminuer les surfaces assujetties restantes sous le seuil des 1 000 m², ces surfaces restent assujetties, de même que celles de toute nouvelle activité tertiaire exercée dans le bâtiment.
+
+B - IDENTIFICATION DES EFA
+
+Une collectivité est propriétaire de cet immeuble. Elle loue des cellules à différentes entités (autres services publics, entreprises privées) et occupe une partie du bâtiment.
+
+La salle de réunion mutualisée sera : • soit distribuée au tantième entre les différentes EFA et apparaîtra dans la sous-catégorie « Salle de réunion » si elle est seulement utilisée par les locataires ; • soit déclarée au sein d’une EFA associée à la collectivité (propriétaire : la commune, exploitant :
+
+la commune) si elle est mise à disposition d’extérieurs.
+
+Les EFA partagent des locaux communs (circulations, sanitaires et locaux techniques par exemple). Ces espaces communs seront distribués entre les différentes EFA au tantième.
+
+Nota : Dans le cadre de baux classiques, et même en cas de turnover important, les preneurs à bail sont soumis au dispositif. L’arrivée d’un nouveau locataire donne lieu à la création d’une EFA. Cette nouvelle EFA peut être liée à l’ancienne EFA associée au locataire précédent pour bénéficier de sa consommation de référence. À défaut de liaison, l’année de référence est la première année de consommation déclarée sur OPERAT pour les EFA créées à partir de 2023.
+
+Cependant, si les cellules étaient mises ponctuellement à disposition auprès d’occupants temporaires (mode de fonctionnement tel qu’une pépinière d’entreprises), alors la collectivité serait la seule assujettie.
+
+61
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Locaux vacants Espaces communs répartis entre les différentes sous-catégories d'activités
+
+Chaque EFA déclare la surface de son local individuel ainsi que son tantième d’espaces communs (en se référant à la répartition des charges).
+
+Dans cet exemple, l’usage de l’ensemble des lots individuels relève de la sous-catégorie d’activité « Bureaux - Bureaux standards ».
+
+L’EFA relative à la salle de réunion est associée à la sous-catégorie d’usage « bureaux - grande salle de réunion » (salle de réunion mise à disposition des locataires et d’extérieurs par la commune) et « bureaux - bureaux standards » (pour les bureaux occupés par la commune).
+
+Si la salle de réunion était uniquement dédiée aux occupants du bâtiment, elle aurait été traitée en espace commun (cf. cas pratique de la préfecture).
+
+Les surfaces d’espaces communs attribués à chacune de ces EFA doivent être associées aux sous-catégories d’activités de l’EFA.
+
+Tableau 2-23 : Synthèse des sous-catégories et surfaces déclarées pour les EFA identifiées Les couleurs des sous catégories correspondent à celles des locaux du plan ci-dessus (légende)
+
+EFA Catégorie Sous-catégorie
+
+Surface de consommation énergétique(1) (m²)
+
+Cabs étalon(2) (kWh/m².an)
+
+EFA 1 Bureaux - Services
+
+publics - Banque
+
+Individuelle 37,5
+
+Tantième commun 9 116 EFA 4 Bureaux - Services
+
+publics - Banque
+
+Bureaux - Bureaux standards
+
+Individuelle 100
+
+Tantième commun 24 116 EFA 14 - commune
+
+Bureaux - Bureaux standards
+
+Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places)
+
+Individuelle 100 Bureaux - Services publics - Banque
+
+Tantième commun 24 71 Bureaux - Services publics - Banque
+
+Individuelle 200
+
+Tantième commun 48 116 (1) Cette surface diffère de la surface de plancher prise en compte pour établir l’assujettissement (voir paragraphe 1.2.3 de la Partie 1). (2) Objectif de consommation en valeur absolue calculé à partir des indicateurs d’intensité d’usage étalons.
+
+62
+
+Bureaux - Bureaux standards
+
+C - DÉCLARATION DES CONSOMMATIONS ÉNERGÉTIQUES
+
+ET DES SOUS-CATÉGORIES D’ACTIVITÉ
+
+LÉGENDE Identification des locaux et des sous catégories
+
+Bureaux - Services publics - Banque Salle de réunion mutualisée
+
+Déclarer les consommations
+
+Les propriétaires et les preneurs à bail se communiquent mutuellement les consommations annuelles énergétiques réelles de l’ensemble des équipements et des systèmes dont ils assurent respectivement l’exploitation.
+
+Notions de consommations dans un bâtiment en multi-occupation
+
+• Consommations individuelles du local tertiaire : ici chaque EFA est équipée de son propre compteur d’électricité.
+
+• Consommations réparties dont le local tertiaire est bénéficiaire : ici l’immeuble est alimenté par une seule sous-station de chauffage urbain gérée par la collectivité. Il n’y a pas de sous-comptage, la consommation de chauffage est déterminée au tantième.
+
+• Consommation des espaces communs : ici la circulation centrale dessert l’ensemble des EFA. La consommation énergétique de cet espace est répartie au tantième entre les EFA.
+
+Manières de remonter les consommations dans OPERAT
+
+Chaque locataire connaît et déclare ses consommations individuelles (ici sa propre consommation d’électricité relative à son local).
+
+En l’absence de sous-comptage, le propriétaire établit les consommations réparties et celles des espaces communs dont chaque lot tertiaire est bénéficiaire (au tantième) et communique au locataire cette information.
+
+Chaque locataire déclare alors ses consommations individuelles, réparties et relatives aux espaces communs.
+
+D - INDICATEURS D’INTENSITÉ D’USAGE
+
+Valeurs étalons
+
+En appliquant les valeurs étalons des indicateurs d’intensité d’usage du Tableau 3-1 (en annexe), l’objectif de consommation de chaque EFA, en valeur absolue à horizon 2030, est donné au Tableau 2-23.
+
+Bâtiment administratif de Château-Salins (Moselle).
+
+Cas pratiques
+
+63
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Exemples d’impact de la modulation des indicateurs d’usage
+
+Une variation de la valeur de chacun des indicateurs d’intensité d’usage entraîne une modulation de la valeur absolue de la sous-catégorie considérée, et a fortiori une modulation du Cabs de chaque EFA. Le tableau suivant précise l’impact d’une évolution de ± 30 % de la valeur de chaque indicateur considéré séparément, pour représenter une activité plus ou moins intensive que celle définie par défaut (à travers les valeurs étalons) :
+
+Tableau 2-24 : Impact d’un écart de plus ou moins 30 % par rapport aux valeurs étalons de chaque indicateur des sous-catégories déclarées dans l’EFA
+
+Sous-catégorie Indicateur considéré Évolution Cabs sous-catégorie
+
+Évolution Cabs EFA(1)
+
+Bureaux - Bureaux standards
+
+Amplitude horaire ± 12 % ± 12 %
+
+Surface de plancher/ poste de travail +18 % / -10 % +18 % / -10 %
+
+Taux d’occupation ±12 % ± 12 %
+
+Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places)
+
+Amplitude horaire ± 2 % ± 2 %
+
+Surface de plancher/ poste de travail ± 2 % ± 2 %
+
+Taux d’occupation ± 2 % ± 2 %
+
+(1) Valable uniquement pour ce cas d’étude, l’impact est évalué au regard des surfaces spécifiques de cette EFA.
+
+Pour la sous-catégorie « Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places) », la part de consommation liée à l’usage est marginale au regard de la part liée aux équipements de chauffage, ventilation, climatisation. L’impact de la modulation par les indicateurs d’intensité d’usage est donc faible.
+
+En revanche, la modulation des indicateurs d’intensité d’usage sur les bureaux présentera un impact prépondérant sur l’objectif à atteindre pour les EFA de la sous-catégorie « bureaux - bureaux standards ».
+
+Point de vigilance concernant la cohérence des déclarations
+
+En l’absence de sous-comptage, si les consommations des locaux loués sont estimées au tantième des surfaces, il ne sera pas cohérent que les exploitants des EFA déclarent des indicateurs d’intensité d’usage spécifiques à leur occupation (cette déclaration crée une distorsion entre la déclaration de l’usage réel et les consommations qui sont estimées).
+
+64
+
+Cas pratiques
+
+Exemple avec deux EFA en bureaux standards dont l’une occupe 200 m² avec 10 postes de travail (20 m²/poste) et l’autre 300 m² avec 30 postes de travail (10 m²/poste) : supposons que la consommation d’énergie de référence de l’EFA 1 soit de 30 000 kWh/m².an (consommation de 150 kWh/m².an) et celle de l’EFA 2 soit de 36 000 kWh/m².an (120 kWh/m².an).
+
+Tableau 2-25 : Comparaison de différentes sortes de déclarations
+
+Sous-catégorie
+
+Déclaration « SIMPLISTE » : pas de sous-comptage, valeurs étalon
+
+Déclaration « BIAISÉE » : pas de sous-comptage, modulation des indicateurs par chaque EFA
+
+Déclaration « RIGOUREUSE » : sous-comptage et modulation par chaque EFA
+
+EFA 1 EFA 2 EFA 1 EFA 2 EFA 1
+
+(20 m²/poste)
+
+EFA 2 (10 m²/poste)
+
+Cabs (kWh/ m².an) 116 116 111 154 111 154
+
+Consommation de référence (kWh/m².an)
+
+132 132 132 132 150 120
+
+Effort à produire 14 % 14 % 19 %
+
+Objectif dépassé de 14 %
+
+Objectif 35 %
+
+dépassé de 22 %
+
+À utiliser en l’absence de sous-comptage À ne pas utiliser À utiliser uniquement
+
+si sous-comptage
+
+L’option « simpliste » présente l’avantage d’une facilité de mise en œuvre (déclarations minimales, pas de sous-compteur à installer) mais majore l’effort à produire pour les EFA et ne permet pas de valoriser les pratiques individuelles des EFA.
+
+L’option « biaisée » ne constitue pas une modélisation rigoureuse des consommations des EFA puisqu’elle compare une valeur absolue modulée par des indicateurs d’intensité d’usage réels à une consommation estimée au prorata des surfaces. Elle est à proscrire.
+
+L’option « rigoureuse » permet à chaque EFA de réaliser des déclarations individuelles conformes à une réalité physique et de valoriser ses actions individuelles (exemple ici : densification de l’occupation des locaux). Cette modélisation permet d’assurer le suivi le plus fin et d’inciter les EFA à réaliser le maximum d’économies d’énergie par des comportements sobres. Elle est à privilégier pour impliquer les locataires dans la démarche éco-énergie tertiaire.
+
+Ce qu’il faut retenir
+
+Le cas de la multi-occupation nécessite de bien décrire les EFA (nature des surfaces et consommations). Si les moyens disponibles ne le permettent pas (absence de sous-comptage), il est possible de recourir à une ventilation des consommations au prorata des surfaces, pour obtenir une modélisation grossière des EFA. Toute modulation au regard de l’activité réelle est alors à proscrire afin de ne pas biaiser la déclaration.
+
+Pour être plus fidèle à la réalité, il faut doter l’ensemble des locaux loués de sous-comptage énergétique, afin que chaque EFA puisse mesurer ses consommations réelles. Les seules consommations réparties au tantième sont alors celles des espaces communs. Dans ce cas, les assujettis pourront alors renseigner des indicateurs d’intensité d’usage pour obtenir un objectif de consommation adapté à leur situation.
+
+65
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+EFA PRÉFECTURE
+
+Les locaux techniques (chaufferie, TGBT) et les espaces de stationnement ne sont pas pris en compte pour apprécier l’assujettissement. Les trémies des escaliers sont exclues de la surface de plancher (article R111-22 du Code de l’urbanisme).
+
+En revanche, le logement de fonction (la résidence préfectorale) est une activité non tertiaire accessoire à une activité tertiaire, et doit être prise en compte pour vérifier l’assujettissement (voir FAQ OPERAT A1Q1 et A19).
+
+L’ensemble des surfaces prises en compte pour établir l’assujettissement représente 8 400 m².
+
+B - IDENTIFICATION DES EFA
+
+Cet hôtel préfectoral est propriété d’une collectivité, il est occupé en partie par les services du conseil départemental, les services de la préfecture, la résidence préfectorale et des espaces communs (circulations, salles de réunion).
+
+Dans ce contexte, le bâtiment abrite bien deux EFA distinctes : une pour les espaces occupés par la préfecture et l’autre pour les espaces occupés par le conseil départemental.
+
+La résidence préfectorale ne serait pas prise en compte dans l’EFA si ses consommations d’énergies faisaient l’objet d’un sous-comptage. Dans l’exemple pris ici, le bâtiment ne dispose pas de sous-comptage énergétique, la résidence est donc incluse dans l’EFA. Cette situation pourra évoluer si un sous-comptage est mis en place par la suite.
+
+66
+
+2.8 - BÂTIMENT ADMINISTRATIF : CAS DE L’HÔTEL PRÉFECTORAL (AVEC RÉSIDENCE)
+
+A - VÉRIFICATION DE L’ASSUJETTISSEMENT
+
+EFA DÉPARTEMENT
+
+LÉGENDE
+
+Surfaces considérées pour l'assujettissement
+
+Surface non prise en compte pour l'assujettissement
+
+C - DÉCLARATION DES CONSOMMATIONS ÉNERGÉTIQUES
+
+ET DES SOUS-CATÉGORIES D’ACTIVITÉ
+
+EFA PRÉFECTURE
+
+Cas pratiques
+
+EFA DÉPARTEMENT
+
+Local serveurs (surface de salle IT inférieure à 20 m²) Stationnement en infrastructure (sous-sol en ventilation mécanique) Commerce et service de détail - Équipement de la personne et loisirs - Service Pressing Salle de spectacles vivants sans protection patrimoniale - Foyer et zone de convivialité Espaces communs répartis entre les différentes sous-catégories d'activités
+
+Cas des locaux mutualisés ou communs :
+
+69 % du bâtiment est occupé par la préfecture, 31 % par le conseil départemental.
+
+En l’absence d’autre convention de gestion des espaces mutualisés, 69 % des surfaces des espaces communs seront attribués à l’EFA « préfecture », 31 % à l’EFA « conseil départemental ».
+
+Ces • espaces sont ensuite déclarés selon leur sous-catégorie d’activité : pour les locaux à usage spécifique (salles de réunion, restauration collective par exemple), ils sont déclarés
+
+• dans leur sous-catégorie d’usage spécifique ; pour les espaces communs (circulations, dégagements, sanitaires, tisanerie, etc.) en hachuré sur le plan, il s’agit de répartir la surface des communs entre les différentes sous-catégories qui ont été déclarées par l’assujetti.
+
+Dans le cas présenté ici, les circulations et autres dégagements communs représentent 400 m², 124 m² sont attribués à l’EFA « conseil départemental » et 276 m² à l’EFA « préfecture ».
+
+La salle de réunion commune, d’une surface totale de 125 m², apparaîtra dans la sous-catégorie « Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places) », 39 m² au niveau de l’EFA « conseil départemental » et 86 m² au niveau de l’EFA « préfecture ».
+
+67
+
+LÉGENDE Identification des locaux et des sous catégories
+
+Bureaux - Bureaux standards Bureaux - Open space Bureaux - zone accueil du public Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places) Bureaux - Salle haute intensité - Centre d’appels
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Malgré le fait que les salles de réception de la résidence préfectorale (600 m²) sont ici formellement incluses dans la résidence préfectorale, leur usage relève en réalité d’une activité tertiaire ; elles peuvent être déclarées, selon l’usage effectif, dans plusieurs sous-catégories : • « Salle de spectacles vivants sans protection patrimoniale - Foyer et zone de convivialité » ; • « Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places) ».
+
+Un usage de « Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places) » est retenu ici.
+
+Le reste de la résidence préfectorale, comportant des locaux de vie et de sommeil, est une activité non tertiaire accessoire à une activité tertiaire ; si ses consommations sont sous-comptées ou réparties au tantième, ses consommations et ses surfaces sont à exclure des déclarations. En supposant ici que les consommations de la résidence ne sont ni sous-comptées, ni réparties au tantième, elles sont à déclarer dans les sous-catégories auxquelles elles sont liées.
+
+Dans cet exemple, les surfaces de la résidence préfectorale (350 m²), des circulations intérieures (250 m²) et le tantième des espaces de circulation communs aux deux EFA (276 m²) seront ventilées dans chacune des sous-catégories d’activité tertiaire comme le détaille le tableau 2-26 dans la partie dédiée à l’EFA préfecture.
+
+Cas particulier de la buanderie
+
+Elle relève de l’usage de la sous-catégorie « Commerces et service de détail - Service Pressing ».
+
+Préfecture du Rhône à Lyon.
+
+68
+
+Cas pratiques
+
+Tableau 2-26 : Synthèse des sous-catégories et surfaces déclarées pour les EFA identifiées
+
+Catégorie Sous-catégorie
+
+Part de la sous-catégorie dans le Cabs étalon de l’EFA(3)
+
+EFA - Conseil départemental 2 638 123
+
+Bureaux - Services publics - Banque
+
+Surface de consommation énergétique(1) (m²)
+
+Cabs étalon(2) (kWh/m².an)
+
+Individuelle 700 Bureaux - Bureaux standards
+
+Tantième commun 35 116 26 % Bureaux - Open space
+
+Individuelle 1 250
+
+Tantième commun 63 126 51 % Bureaux - zone accueil du public
+
+Individuelle 100
+
+Tantième commun 5 101 3 % Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places)
+
+Individuelle 400
+
+Tantième salle partagée 39 71 10 % Tantième commun 20
+
+Salles serveurs et centres d’exploitation informatique
+
+Individuelle 25
+
+Tantième commun 1 1 156 9 % EFA - Préfecture 5 912 124
+
+Bureaux - Services publics - Banque
+
+Local serveurs (surface de salle IT inférieure à 20 m²)
+
+Bureaux - Bureaux Individuelle standards
+
+3 910
+
+Tantième commun 116 692 75 % Bureaux - salle haute intensité - centre d’appels
+
+Individuelle 40
+
+Tantième commun 7 166 1 % Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places)
+
+Individuelle 275
+
+Tantième salle partagée 86 71 4 % Tantième commun 49
+
+Stationnement
+
+Stationnement en infrastructure (sous-sol en ventilation mécanique)
+
+Stationnement 75
+
+Tantième commun 13 15,5 0 % Commerce et service de détail
+
+Buanderie 50
+
+Tantième commun 9 605 5 % Culture et spectacles - Salle de spectacles vivants sans protection patrimoniale
+
+Équipement de la personne et loisirs - Service Pressing
+
+Salle de spectacles Salles vivants sans
+
+de réception 600
+
+protection
+
+145 15 % patrimoniale - Foyer
+
+Tantième et zone de convivialité
+
+commun 106
+
+(1) Cette surface diffère de la surface de plancher prise en compte pour établir l’assujettissement (voir paragraphe 1.2.3 de la Partie 1). (2) Objectif de consommation en valeur absolue calculé à partir des indicateurs d’intensité d’usage étalons. (3) Ce ratio dépend des surfaces spécifiques de l’EFA présentée ici.
+
+69
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+D - INDICATEURS D’INTENSITÉ D’USAGE
+
+Valeurs étalons
+
+En appliquant les valeurs étalons des indicateurs d’intensité d’usage du Tableau 3-1 (en annexe), l’objectif de consommation de l’EFA « préfecture », en valeur absolue à horizon 2030 est 120 kWh/m².an. Celle de l’EFA « conseil départemental » est 123 kWh/m².an.
+
+Exemples d’impact de la modulation des indicateurs d’intensité d’usage
+
+Seul le cas de l’EFA « préfecture » est développé ici, le cas de l’EFA « conseil départemental » étant analogue.
+
+Une variation de la valeur de chacun des indicateurs d’intensité d’usage entraîne une modulation de la valeur absolue de la sous-catégorie considérée, et a fortiori une modulation du Cabs de l’EFA. Le tableau suivant précise l’impact d’une évolution de ± 30 % de la valeur de chaque indicateur considéré séparément, pour représenter une activité plus ou moins intensive que celle définie par défaut (à travers les valeurs étalons) :
+
+Tableau 2-27 : Impact d’un écart de plus ou moins 30 % par rapport aux valeurs étalons de chaque indicateur des sous-catégories déclarées dans l’EFA
+
+Sous-catégorie Indicateur considéré Évolution Cabs sous-catégorie
+
+Évolution Cabs EFA(1)
+
+Bureaux - Bureaux standards
+
+Amplitude horaire ± 12 % ± 9 %
+
+Surface de plancher/ poste de travail +17 % à -9 % +13 à -7 %
+
+Taux d’occupation ± 12 % ± 9 %
+
+Bureaux - Salle haute intensité - Centre d’appels
+
+Amplitude horaire ± 17 % \< 1 %
+
+Surface de plancher/ poste de travail +25 % à -13 % \< 1 %
+
+Taux d’occupation ± 19 % \< 1 %
+
+Bureaux - Grande salle de réunion - Auditorium - Amphithéâtre (à partir de 30 places)
+
+Amplitude horaire ± 2 % \< 1 %
+
+Surface de plancher/ poste de travail ± 2 % \< 1 %
+
+Taux d’occupation ± 2 % \< 1 %
+
+Stationnement en infrastructure (Sous-sol en ventilation mécanique)
+
+Amplitude horaire Le parc de stationnement est par définition
+
+un équipement qui fonctionne 24h/24.
+
+Équipement de la personne et loisirs - Service Pressing
+
+Amplitude horaire +4 % à -1 % \< 1 %
+
+Densité énergétique +27 % à -25 % ± 1 %
+
+Salle de spectacles vivants sans protection patrimoniale - Foyer et zone de convivialité
+
+Amplitude horaire ± 12 % ± 2 %
+
+(1) Valable uniquement pour ce cas d’étude, l’impact est évalué au regard des surfaces spécifiques de cette EFA.
+
+70
+
+Cas pratiques
+
+Modulation selon l’usage pour ce cas d’étude
+
+Il est estimé que les parties bureaux sont occupées selon les valeurs étalons.
+
+Le standard téléphonique est actif 24 h/24, soit 8 760 heures/an (contre 3 120 heures/an) ; en revanche sa faible contribution (1 %) au calcul de Cabs permet de se dispenser de la modulation de ses autres indicateurs d’usage qui sont proches des valeurs étalon.
+
+La buanderie est équipée d'une machine à laver (14 kW), d'un séchoir (30 kW) et d'une machine à repasser (14 kW) utilisés 2h par jour chacun, la densité énergétique est de 438 kWh/m².an. Sa plage de fonctionnement est de 730 h/an.
+
+Cabs modulé buanderie = 521 kWh/m².an (contre 605).
+
+Les valeurs d’indicateurs d’intensité d’usage associées aux surfaces de la résidence préfectorale ventilées dans les différentes sous-catégories n’ont pas lieu de faire l’objet d’une modulation en fonction de l’usage de cette résidence : seule l’activité des locaux auxquels elle est rattachée est prise en compte pour ces indicateurs.
+
+Ainsi la valeur de Cabs modulé pour l’EFA préfecture évolue de 1 % (elle passe de 120 à 119 kWh/m².an).
+
+Tableau 2-28 : Synthèse des Cabs possibles pour la préfecture
+
+Cabs sous-catégorie par défaut (kWh/m².an)
+
+Cabs étalon (kWh/m².an)
+
+Cabs modulé usage réel (kWh/m².an)
+
+EFA préfecture Non définie 120 119
+
+Déclarer les consommations
+
+Le bâtiment est alimenté en chauffage urbain et en électricité, sans sous-comptage permettant de distinguer les consommations des EFA et des espaces communs.
+
+La consommation est répartie au tantième entre les deux services, 69 % pour l’EFA « préfecture » et 31 % pour l’EFA « conseil départemental ».
+
+L’absence de sous-comptage aura tendance à défavoriser l’EFA qui présente les activités a priori les moins énergivores.
+
+L’absence de sous-comptage et de répartition au tantième des locaux à usage non tertiaire de la résidence préfectorale conduit à intégrer ces consommations à la déclaration, de même que les surfaces associées.
+
+Ce qu’il faut retenir
+
+Une résidence préfectorale constitue l’une des rares exceptions pour lesquelles des surfaces de logement sont à considérer pour la détermination de l’assujettissement.
+
+Si les consommations du logement sont sous-comptées ou réparties au tantième ses consommations et ses surfaces sont toutefois à exclure des déclarations. Dans le cas contraire, elles sont à inclure aux déclarations, en répartissant les surfaces du logement dans les autres sous-catégories du bâtiment (au prorata des surfaces).
+
+En présence de plusieurs EFA dans un même bâtiment disposant d’espaces de service communs (circulations, sanitaires, locaux techniques, etc.), une répartition de leurs surfaces et de leurs consommations est faite au tantième.
+
+Les locaux à usage tertiaire spécifiques (exemple : salle de réunion) partagés entre les EFA seront à déclarer dans la sous-catégorie qui correspond à leur activité, selon les tantièmes associés à ces locaux.
+
+L’impact de la déclaration des indicateurs d’intensité d’usage reste ici modeste sur l’objectif global.
+
+71
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+2.9. CONCLUSION DES CAS D’ÉTUDES
+
+Les exemples proposés dans ce guide ont pour objectif de faciliter la réalisation des déclarations pour les assujettis, en s’appuyant sur des cas concrets typiques de situations couramment rencontrées dans les collectivités.
+
+On retiendra les éléments suivants :
+
+• pour l’appréciation de l’assujettissement : non prise en compte des locaux techniques (chaufferies, TGBT, stationnements) ;
+
+• pour le choix des EFA : il y a obligatoirement au moins autant d’EFA que de couples propriétaire-exploitant. Pour affiner son suivi, un assujetti peut librement décider de déclarer plusieurs EFA pour des activités présentes sur un même site, ce choix dépend de la possibilité de sous-compter ou non les consommations d’énergie, de la performance intrinsèque du ou des bâti(s) considéré(s) et de la stratégie du déclarant (mettre en avant ou non des écarts de performance entre ces entités) ;
+
+• pour le choix des catégories et sous-catégories d’activité : la réglementation laisse à l’assujetti le choix de l’association de ses activités tertiaires à des sous-catégories d’activité (c’est notamment le cas pour les salles polyvalentes), mais les assujettis doivent pouvoir justifier leurs choix en cas de contrôle au regard de l’usage réel des locaux ;
+
+• pour les indicateurs d’intensité d’usage : l'assujetti a intérêt à déclarer ses indicateurs d’intensité d’usage pour que son objectif s’adapte à son usage réel. En fonction de la configuration de l’EFA et des indicateurs, la déclaration d’un indicateur d’intensité d’usage aura un impact plus ou moins important. La déclaration des indicateurs d’intensité d’usage permet de mieux décrire l’activité de l’EFA, de mieux suivre l’évolution des consommations énergétiques, et de justifier de potentielles augmentations de consommation liées à une augmentation du volume d’activité. Cette démarche n’est possible qu’en connaissant la consommation énergétique de l’EFA.
+
+Pour améliorer les déclarations
+
+La modélisation fidèle de l’EFA passe par la connaissance de ses consommations énergétiques par un système de comptage précis des énergies réellement consommées.
+
+Le choix des catégories et sous-catégories d’activité est essentiel dans la description des EFA, tout comme les valeurs des indicateurs d’intensité d’usage.
+
+Pour faciliter ses déclarations, un assujetti pourra, si ses locaux relèvent presque totalement d’une unique catégorie d’activité et s’il le juge opportun, réaliser des déclarations en faisant appel à une description minimaliste de l’EFA, par le recours aux valeurs par défaut. L’objectif de réduction de ses consommations sera alors plus contraignant et n’intégrera pas la prise en compte des variations du volume d’activité.
+
+A contrario, un assujetti peut déclarer plus finement son EFA, par la description des sous-catégories d’activité et la déclaration de ses indicateurs d’intensité d’usage, afin d’adapter son objectif à sa situation réelle. Il peut également faire évoluer la description de son EFA lors de ses déclarations annuelles de consommations (modifications de surfaces, de nature et volume d'activité).
+
+72
+
+Glossaire Annexes
+
+73
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+GLOSSAIRE
+
+Usages spécifiques énergétiques
+
+USE Composante de la consommation énergétique relative aux usages
+
+spécifiques énergétiques propres à l’activité ainsi qu’aux autres usages immobiliers tels que la production d’eau chaude sanitaire et d’éclairage.
+
+Chauffage ventilation climatisation
+
+CVC Composante de la consommation énergétique relative
+
+à l’ambiance thermique générale et à la ventilation des locaux.
+
+Cas d’assujettissement • Cas 1a - Bâtiment hébergeant exclusivement des activités tertiaires (avec ou sans activités non tertiaires accessoires) sur une seule entité fonctionnelle (propriétaire occupant unique ou mono locataire)
+
+• Cas 1b - Bâtiment hébergeant exclusivement des activités tertiaires (avec ou sans activités non tertiaires) en multi-occupation/lot(s)
+
+• Cas 2 - Partie(s) de bâtiment hébergeant des activités tertiaires/lot(s)
+
+• Cas 3 - Ensemble de bâtiments situés sur une même unité foncière ou sur un même site hébergeant des activités tertiaires
+
+Catégorie d’activités (et sous-catégories d’activités)
+
+Catégorie d’activités tertiaires au sens de la codification française NAF (nomenclature d’activités française).
+
+Chacune des catégories d’activités tertiaires recensées dans l’arrêté du 13 avril 2022 est déclinée dans le cadre d’une segmentation en sous-catégories qui permet d’affiner l’objectif de consommation d’énergie finale exprimé en valeur absolue et de refléter la configuration particulière des locaux assujettis. Une entité fonctionnelle assujettie peut être concernée par plusieurs catégories et sous-catégories.
+
+Pour aller plus loin : tableur de synthèse des catégories et sous-catégories d’activités (Ressources OPERAT)
+
+Entité fonctionnelle assujettie
+
+EFA Une entité fonctionnelle est une entité correspondant
+
+à un établissement au sens de la définition de l’Insee, à savoir : une unité de production ou d’activité individualisée géographiquement et exploitée par une entité juridique.
+
+Sur OPERAT, les obligations de déclarations de consommations sont abordées à la maille de l’EFA.
+
+Infrastructure de recharge de véhicules électriques
+
+IRVE « La consommation d’énergie liée à la recharge de tout véhicule
+
+électrique et hybride rechargeable est déduite de la consommation énergétique du bâtiment et ne rentre pas dans la consommation de référence » (dernier alinéa du I de l’article L. 174-1 du Code de la construction et de l’habitation). Sont concernées :
+
+• les IRVE de transport : véhicules légers, véhicules utilitaires ou véhicules industriels qui relèvent d’une autre politique publique visant la décarbonation du secteur « transport » ;
+
+• l’alimentation des véhicules utilitaires et industriels aux quais de chargement des bâtiments de « logistique de froid » et celles des avions aux passerelles d’embarquement qui évitent de faire tourner leurs moteurs auxiliaires.
+
+74
+
+IUB Identifiant unique
+
+Identifiant à saisie semi-libre, permettant d’identifier de manière bâtimentaire
+
+unique le ou les bâtiments qui constituent l’EFA, composé des coordonnées cadastrales du bâtiment imposées par le cadastre (voir Géoportail) (préfixe/3 chiffres, section/2 lettres, numéro de parcelle/4 chiffres), suivies d’un intitulé laissé au choix du déclarant (appelé « dénomination bâtiment »), puis du numéro de lot affecté par le déclarant à cette entité fonctionnelle. Le numéro de lot peut être 1, 2, 3, etc. selon le nombre d’entités fonctionnelles déclarées dans le même bâtiment.
+
+Indicateurs d’intensité d’usage
+
+IIU Indicateurs de nature temporelle ou surfacique sur lesquels se base
+
+la modulation des objectifs par OPERAT, selon les dispositions de l’article 10 de l’arrêté du 10 avril 2020 qui prévoient que les assujettis ont la possibilité de moduler (à la hausse ou à la baisse) leur objectif en fonction du volume d’activité.
+
+Par défaut, des valeurs étalons sont utilisées dans le calcul des objectifs. Si les valeurs étalons sont éloignées du contexte réel, renseigner ces informations dans OPERAT permet d’adapter les objectifs pour qu’ils reflètent mieux la réalité des consommations.
+
+Observatoire de la performance énergétique, de la rénovation et des actions du tertiaire
+
+OPERAT Plateforme de recueil et de suivi des consommations d’énergie
+
+du secteur tertiaire.
+
+Site Ensemble de bâtiments localisés dans un périmètre géographique
+
+restreint et ayant un lien fonctionnel.
+
+Sous-comptage La déclaration des consommations énergétiques se fait par
+
+relevé au compteur, au niveau de l’entité fonctionnelle (les consommations individuelles de l’entité fonctionnelle et, le cas échéant, les consommations réparties bénéficiant à l’entité fonctionnelle ainsi que les consommations des espaces communs affectées à l’entité fonctionnelle).
+
+La pose de sous-compteurs permet de mesurer concrètement et précisément les propres consommations de l’entité fonctionnelle déclarante et peut également permettre d’écarter les consommations de certaines surfaces non assujetties. Le recours au sous-comptage n’est pas obligatoire mais fortement recommandé. Il peut être réalisé par type de fluide et par poste de consommation (chauffage, eau chaude sanitaire, etc.).
+
+Surface de consommation énergétique
+
+La notion de surface de consommation intervient au moment de la description des EFA, dès lors que le bâtiment ou l’ensemble de bâtiments est assujetti au DEET.
+
+Il s’agit de la surface de plancher du bâtiment par sous-catégorie à déclarer et qui va servir à définir la consommation énergétique de l’EFA (les surfaces de stationnement et de bassins sont à intégrer).
+
+Les surfaces des espaces de service liés à l’activité sont à ventiler au niveau de chaque sous-catégorie d’activités dans lesquelles elles sont intégrées.
+
+75
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+Surface de plancher Le Code de l’urbanisme définit la surface de plancher dans
+
+son article R.111.22 comme étant la somme des surfaces de plancher de chaque niveau clos et couvert, calculée à partir du nu intérieur des façades après déduction des :
+
+• surfaces correspondant à l’épaisseur des murs entourant les embrasures des portes et fenêtres donnant sur l’extérieur ;
+
+• vides et trémies afférentes aux escaliers et ascenseurs ;
+
+• surfaces de plancher d’une hauteur sous plafond inférieure ou égale à 1,80 mètre ;
+
+• surfaces de plancher aménagées en vue du stationnement des véhicules motorisés ou non, y compris les rampes d’accès et les aires de manœuvres ;
+
+• surfaces de plancher des combles non aménageables pour des activités à caractère professionnel, artisanal, industriel ou commercial ;
+
+• surfaces de plancher des locaux techniques nécessaires au fonctionnement d’un groupe de bâtiments ou d’un immeuble y compris les locaux de stockage des déchets.
+
+Unité foncière Ensemble de parcelles contiguës appartenant au même
+
+propriétaire.
+
+Valeur étalon Valeur définie à partir de valeurs moyennes d’indicateurs d’intensité
+
+d’usage pour chaque sous-catégorie d’activités. Selon les usages spécifiques de l’entité assujettie, le fait d’utiliser les valeurs étalons d’intensité d’usage peut, le cas échéant, défavoriser le déclarant dans le calcul de son objectif en valeur absolue.
+
+76
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+ANNEXES
+
+77
+
+Réaliser ses déclarations Éco Énergie Tertiaire. Mode d'emploi
+
+78
+
+[\#5](#5)   
+[\#5](#5)   
+[\#7](#7)   
+[\#9](#9)   
+[\#10](#10)   
+[\#12](#12)   
+[\#29](#29)   
+[\#31](#31)   
+[\#32](#32)   
+[\#33](#33)   
+[\#42](#42)   
+[\#47](#47)   
+[\#52](#52)   
+[\#58](#58)   
+[\#63](#63)   
+[\#68](#68)   
+[\#74](#74)   
+[\#76](#76)   
+[\#79](#79)   
+<https://operat.ademe.fr/public/faq#question_3>   
+<https://operat.ademe.fr/public/faq#question_57>   
+<https://operat.ademe.fr/public/faq#question_121>   
+<https://operat.ademe.fr/public/faq#question_91>   
+[\#16](#16)   
+<https://operat.ademe.fr/public/faq#question_21>   
+[\#40](#40)   
+[\#40](#40)   
+[\#46](#46)   
+[\#51](#51)   
+[\#26](#26)   
+<https://operat.ademe.fr/public/faq#question_169>   
+<https://operat.ademe.fr/public/faq#question_96>   
+<https://operat.ademe.fr/public/resources>   
+<https://operat.ademe.fr/public/resources>   
+[\#79](#79)   
+[\#15](#15)   
+<https://operat.ademe.fr/public/faq#question_121>   
+[\#36](#36)   
+[\#20](#20)   
+[\#14](#14)   
+[\#14](#14)   
+[\#36](#36)   
+[\#22](#22)   
+[\#79](#79)   
+[\#79](#79)   
+[\#22](#22)   
+[\#14](#14)   
+[\#79](#79)   
+<https://operat.ademe.fr/public/faq#question_127>   
+<https://operat.ademe.fr/public/faq#question_13>   
+[\#14](#14)   
+[\#79](#79)   
+[\#15](#15)   
+[\#37](#37)   
+[\#14](#14)   
+[\#79](#79)   
+<https://operat.ademe.fr/public/faq#question_66>   
+[\#14](#14)   
+[\#79](#79)   
+[\#14](#14)   
+[\#79](#79)   
+  
+<https://operat.ademe.fr/public/faq#question_3>   
+<https://operat.ademe.fr/public/faq#question_65>   
+[\#71](#71)   
+[\#14](#14)   
+[\#79](#79)   
+<https://operat.ademe.fr/public/home>   

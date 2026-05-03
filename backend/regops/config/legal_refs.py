@@ -35,6 +35,13 @@ LEGAL_REFS = {
         "label": "Repartition obligations proprietaire/locataire",
         "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251",
     },
+    "OPERAT_ATTESTATION_2026": {
+        "ref": "Arrete du 1er aout 2025 (NOR ATDL2430864A), Art. 2 et 5",
+        "label": "OPERAT — attestation numerique obligatoire au 01/07/2026",
+        "url": "https://www.bulletin-officiel.developpement-durable.gouv.fr/recherche",
+        "kb_item_id": "reg-arrete-2025-08-01",
+        "note": "Modifie arrete 10/04/2020 — remplace annexe II (tables Cabs/CVCi/USEi)",
+    },
     # BACS
     "BACS_ABOVE_290KW": {
         "ref": "Decret n2020-887 du 20/07/2020, Art. R175-2",

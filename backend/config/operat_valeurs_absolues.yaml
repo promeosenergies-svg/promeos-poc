@@ -1,0 +1,437 @@
+# ============================================================
+# OPERAT — Valeurs Absolues (Cabs) par sous-catégorie d'activité
+# Décret tertiaire (Décret n° 2019-771 du 23/07/2019, NOR LOGL1909871D)
+# Arrêté méthode du 10/04/2020 modifié (consolidé jusqu'au 01/08/2025)
+# ============================================================
+# AVERTISSEMENT FIABILITÉ — voir docs/audits/AUDIT_OPERAT_VA_EXTRACTION_2026_05_03.md
+#
+# Schema v0.5 — extraction partielle 2026-05-03 :
+# - 🟢 Chronologie arrêtés + méthodologie formules + sanctions = source primaire
+# - 🟡 19 valeurs Cabs 2030 = guide Cerema 2025 (cas pratiques pédagogiques)
+# - 🔴 Tableaux CVCi/USEi par sous-catégorie × zone climatique × altitude :
+#       restent à compléter via OCR p.77 Cerema (Tableau 3-1 raster) OU annexes
+#       arrêté 01/08/2025 publiées séparément sur bulletin-officiel.developpement-
+#       durable.gouv.fr (article 6 de l'arrêté).
+# ============================================================
+
+operat_valeurs_absolues:
+
+  metadata:
+    schema_version: "0.5"
+    extraction_date: "2026-05-03"
+    extracted_by: "regulatory-expert (SENTINEL-REG) + parent extraction Drive ADEME/Cerema"
+    extraction_status: "PARTIAL"
+    coverage_summary:
+      arretes_chronology: "🟢 6 arrêtés identifiés source primaire JO + Cerema"
+      methodologie: "🟢 formules Cabs/Crelat/CVC/USE confirmées doc ADEME 09/2025"
+      cabs_par_cas_pratique: "🟡 19 sous-catégories chiffrées (guide Cerema 2025)"
+      cvci_usei_par_zone: "🔴 0% — annexes raster non extractibles via Drive natural-language"
+      zones_climatiques: "🔴 mapping département à compléter"
+      sanctions: "🟢 confirmées art. R.131-44 CCH"
+    next_actions:
+      - priority: "P0"
+        action: "OCR Tableau 3-1 p.77 du Cerema DEET ModeEmploi (PDF 21 MB Drive) via Read PDF natif pages=77-80"
+      - priority: "P1"
+        action: "Tentative WebFetch ciblée bulletin-officiel.developpement-durable.gouv.fr avec NOR ATDL2430864A pour récupérer annexes I et II de l'arrêté 01/08/2025"
+      - priority: "P2"
+        action: "Lecture Guide utilisateur OPERAT V1.1 (14 MB Drive) pour confirmation indépendante des tables"
+
+  # ----------------------------------------------------------
+  # CHRONOLOGIE DES ARRÊTÉS OPERAT (corrigée vs hypothèses initiales)
+  # ----------------------------------------------------------
+  arretes_chronology:
+
+    decret_cadre_2019:
+      type: "decret"
+      ref: "Décret n° 2019-771 du 23 juillet 2019"
+      nor: "LOGL1909871D"
+      date_signature: "2019-07-23"
+      date_publication_jo: "2019-07-25"
+      jo_reference: "JO n° 171 du 25 juillet 2019, texte 53/202"
+      url_legifrance: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251"
+      objet: "Modalités de mise en œuvre obligation réduction conso énergie finale bâtiments tertiaires"
+      confidence: "🟢"
+      source_locale: "docs/sources/regulatory/operat/joe_20190725_0171_0053.txt (à archiver)"
+
+    arrete_methode_2020:
+      type: "arrete"
+      ref: "Arrêté du 10 avril 2020"
+      nor: "LOGL2007109A"
+      date_signature: "2020-04-10"
+      url_legifrance: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000041842389"
+      objet: "Arrêté méthode initial — modalités application obligation, structure annexes I-VII"
+      confidence: "🟢"
+      source: "Cité dans tertiaire_operat.py + legal_refs.py + arrêté 01/08/2025"
+
+    arrete_sous_categories_2022:
+      type: "arrete"
+      ref: "Arrêté du 13 avril 2022"
+      nor: null
+      date_signature: "2022-04-13"
+      objet: "Extension catégories d'activités tertiaires recensées (segmentation sous-catégories)"
+      confidence: "🟡"
+      source: "Cerema 2025 ligne 2743 — référence textuelle"
+
+    arrete_cabs_defaut_2023:
+      type: "arrete"
+      ref: "Arrêté du 28 novembre 2023"
+      nor: null
+      date_signature: "2023-11-28"
+      objet: "Article 8-IV — valeurs Cabs sous-catégories 'valeur par défaut' (ex: enseignement primaire = 79 kWh/m²/an)"
+      confidence: "🟡"
+      source: "Cerema 2025 ligne 1025 — citation explicite"
+
+    arrete_modificatif_fevrier_2024:
+      type: "arrete"
+      ref: "Arrêté du 20 février 2024"
+      nor: null
+      date_signature: "2024-02-20"
+      objet: "Modifications : surface piscine (p.54 annexe), délai déclaration Période 2010-2019 prolongé jusqu'au 30/09/2027"
+      confidence: "🟡"
+      source: "Cerema 2025 lignes 715, 1565 + doc ADEME 20250905"
+
+    arrete_dju_juillet_2024:
+      type: "arrete"
+      ref: "Arrêté du 5 juillet 2024"
+      nor: null
+      date_signature: "2024-07-05"
+      objet: "Formules d'ajustement DJU (chauffage/refroidissement) — intégrées plateforme OPERAT"
+      confidence: "🟡"
+      source: "Cerema 2025 ligne 783"
+
+    arrete_modificatif_aout_2025:  # ★ CIBLE INITIALE DE L'EXTRACTION
+      type: "arrete"
+      ref: "Arrêté du 1er août 2025 modifiant l'arrêté du 10 avril 2020"
+      nor: "ATDL2430864A"
+      date_signature: "2025-08-01"
+      date_publication_jo: "2025-09-06"
+      jo_reference: "JO n° 207 du 6 septembre 2025, texte 61/168"
+      ministry: "Ministère de l'aménagement du territoire et de la décentralisation"
+      objet_consolide:
+        - "Art. 2 — annexe VII art.13 III : suppression renvoi annexe VII, transfert sur plateforme OPERAT. Période transitoire jusqu'au 01/07/2026 où évaluation respect via attestation numérique reste facultative."
+        - "Art. 3 — REMPLACE l'annexe II de l'arrêté du 10/04/2020 (tables Cabs/CVCi/USEi par sous-catégorie) par l'annexe I du présent arrêté"
+        - "Art. 4 — REMPLACE le dernier tableau de l'annexe III par le tableau en annexe II du présent arrêté"
+        - "Art. 5 — annexe VII : suppression modèle VII-1 (attestation), ajout GNL coefficient GES 0,238 kgCO2eq/kWh, ajout GNL coefficients conversion énergie primaire"
+        - "Art. 6 (CRITIQUE) — annexes I et II du présent arrêté NON publiées dans JO mais consultables sur bulletin-officiel.developpement-durable.gouv.fr"
+      entree_en_vigueur: "Lendemain de la publication JO (2025-09-07)"
+      confidence: "🟢"
+      source_locale: "docs/sources/regulatory/operat/joe_20250906_0207_0061.txt (à archiver)"
+      gap_critique: "Annexes I et II (tables CVCi/USEi) NON dans le PDF JO — publiées séparément sur bulletin-officiel.developpement-durable.gouv.fr (bloqué WebFetch 403)"
+
+  # ----------------------------------------------------------
+  # MÉTHODOLOGIE OFFICIELLE OPERAT (formules ADEME confirmées)
+  # ----------------------------------------------------------
+  methodologie:
+
+    formule_cabs_2030:
+      formule_principale: "Cabs 2030 = CVC(n) + USE(n)"
+      sous_formules:
+        cvc_n: "CVC(n) = Σ(CVCi × Si) / ΣSi"
+        use_n: "USE(n) = Σ(USEi × Si) / ΣSi"
+        si: "Si = Surface moyenne annuelle de la sous-catégorie i = Surface déclarée × (Nb jour n / Nb jour i)"
+      legende:
+        n: "dernière année de déclaration de consommation validée de l'EFA"
+        i: "sous-catégorie d'activité déclarée dans la déclaration de consommation de l'année n"
+        CVCi: "composante CVC (chauffage-ventilation-climatisation) relative à la sous-catégorie i"
+        USEi: "composante USE (usages spécifiques) relative à la sous-catégorie i"
+      confidence: "🟢"
+      source: "Doc ADEME — OPERAT Documentation utilisateurs Mise à jour Septembre 2025 (Drive 1V3ROcNkcA9j4K3X48BXEWQ8BFehm2iqu)"
+
+    formule_crelat_2030:
+      cas_primo_assujetti:
+        formule: "Crelat 2030 = Cref × (Cabs2030(n) / Cabs2030(ref)) × (1 - 0.4)"
+        legende:
+          Cref: "Consommation année de référence ajustée variations climatiques"
+          Cabs2030_n: "Objectif valeur absolue 2030 issu année n"
+          Cabs2030_ref: "Objectif valeur absolue 2030 théorique issu année de référence"
+      cas_changement_occupant:
+        formule: "Crelat 2030 = Cref_liée × (Cabs2030(n) / Cabs2030_liée(ref)) × (1 - 0.4)"
+        legende:
+          Cref_liée: "Moyenne pondérée surfaces liées des consommations de référence de chaque EFA liée"
+      confidence: "🟢"
+      source: "Doc ADEME 09/2025"
+
+    annee_de_reference:
+      regle_attribution: "Pour EFA ayant déclarations avant 2022, année de référence déterminée automatiquement par OPERAT parmi : Période 2010-2019, Conso 2020, Conso 2021, Conso 2022 — sélection optimisant Crelat (objectif valeur relative le plus élevé)"
+      regle_post_2022: "Pour EFA dont première année pleine d'exploitation > 2022, année référence = première année pleine d'exploitation déclarée"
+      delai_declaration_2010_2019: "Prolongé jusqu'au 30/09/2027 (art. 4 arrêté 20/02/2024) — passé ce délai, attribution automatique"
+      confidence: "🟢"
+      source: "Doc ADEME 09/2025"
+
+    methode_choix_cabs_vs_crelat:
+      regle: "L'assujetti choisit la méthode la plus favorable — Cabs OU Crelat, par EFA. Suffit d'atteindre l'un des deux objectifs pour conformité DEET."
+      confidence: "🟢"
+      source: "Cerema 2025 ligne 105"
+
+    declaration_sous_categorie_par_defaut:
+      regle: "Sous-catégorie 'catégorie X - valeur par défaut' utilisable UNIQUEMENT si plus de 80% surfaces EFA relèvent d'une seule catégorie. Si sélectionnée, aucune autre sous-catégorie ne peut être déclarée pour l'EFA."
+      consequence: "Généralement défavorable — objectif Cabs plus contraignant. Indicateur d'intensité d'usage limité à amplitude horaire."
+      confidence: "🟢"
+      source: "Cerema 2025 lignes 515-587"
+
+    indicateurs_intensite_usage:
+      principe: "Chaque sous-catégorie a des valeurs étalons par défaut pour ses indicateurs d'intensité d'usage (IIU). L'assujetti peut soit conserver les valeurs étalons, soit les ajuster pour modulation de l'objectif."
+      exemples:
+        bureaux: "Nombre postes de travail au m²"
+        piscine: "Surface de bassin"
+        equipement_sportif_ou_culturel: "Horaires d'ouverture"
+        atelier_technique: "Densité énergétique réelle (kWh/m²/an)"
+      confidence: "🟢"
+      source: "Cerema 2025 lignes 433, 601-607"
+
+  # ----------------------------------------------------------
+  # 19 VALEURS CABS 2030 EXTRAITES DU GUIDE CEREMA 2025
+  # ----------------------------------------------------------
+  # Toutes confidence = 🟡 (cas pratiques pédagogiques officiels)
+  # Source : Cerema 2025, ISBN 978-2-37180-723-5, Collection "Les références"
+  # ----------------------------------------------------------
+  cas_pratiques_cerema_cabs:
+
+    bureaux_standards_mairie_passoire:
+      categorie_principale: "BUREAUX"
+      sous_categorie_libelle: "Bureaux standards (cas mairie passoire thermique)"
+      cabs_2030_kwh_m2_an: 116
+      contexte: "Estimation Cerema sur base 'bureaux standards' majoritaires en surface, conso 2024 = 250 kWh/m²/an"
+      cerema_ligne: 727
+
+    enseignement_primaire_valeur_defaut:
+      categorie_principale: "ENSEIGNEMENT"
+      sous_categorie_libelle: "Enseignement primaire — valeur par défaut"
+      cabs_2030_kwh_m2_an: 79
+      contexte: "Référence article 8-IV de l'arrêté du 28 novembre 2023"
+      cerema_ligne: 1025
+      arrete_origine: "arrete_cabs_defaut_2023"
+      legal_anchor: "Art. 8-IV arrêté 28/11/2023"
+
+    enseignement_primaire_detaille_ecole:
+      categorie_principale: "ENSEIGNEMENT"
+      sous_categorie_libelle: "Enseignement primaire — détaillé (cas EFA école)"
+      cabs_2030_kwh_m2_an: 102
+      contexte: "Application valeurs étalons indicateurs d'intensité d'usage du Tableau 3-1 Cerema"
+      cerema_ligne: 1163
+
+    periscolaire_mixte:
+      categorie_principale: "ENSEIGNEMENT"
+      sous_categorie_libelle: "Périscolaire mixte (60% restauration + 40% multi-activités)"
+      cabs_2030_kwh_m2_an: 111
+      contexte: "Application valeurs étalons + considération usages multiples périscolaire"
+      cerema_ligne: 1223
+
+    periscolaire_scenario_5h_jour:
+      categorie_principale: "ENSEIGNEMENT"
+      sous_categorie_libelle: "Périscolaire — scénario 5h/j × 5j/sem × 36 sem"
+      cabs_2030_kwh_m2_an: 161
+      contexte: "Modulation horaire — restaurant scolaire 3h/j + accueil 2h/j, ratio cuisine 32%, IIU=900h/an"
+      cerema_ligne: 1267
+
+    periscolaire_scenario_4j_sem:
+      categorie_principale: "ENSEIGNEMENT"
+      sous_categorie_libelle: "Périscolaire — scénario 4j/sem (fermé mercredi)"
+      cabs_2030_kwh_m2_an: 142
+      contexte: "Modulation horaire — accueil 2h + restauration 3h, IIU=720h/an"
+      cerema_ligne: 1269
+
+    sports_valeur_defaut:
+      categorie_principale: "SPORTS"
+      sous_categorie_libelle: "Sports — valeur par défaut"
+      cabs_2030_kwh_m2_an: 57
+      contexte: "Couvre gymnase + centre aquatique sous valeur défaut (mais inadaptée aux centres aquatiques)"
+      cerema_lignes: [579, 1363, 1495, 1545]
+
+    sports_gymnase_detaille:
+      categorie_principale: "SPORTS"
+      sous_categorie_libelle: "Sports — gymnase détaillé"
+      cabs_2030_kwh_m2_an: 68
+      contexte: "Application valeurs étalons IIU"
+      cerema_ligne: 1425
+
+    sports_centre_aquatique_detaille:
+      categorie_principale: "SPORTS"
+      sous_categorie_libelle: "Sports — centre aquatique détaillé"
+      cabs_2030_kwh_m2_an: 423
+      contexte: "Application valeurs étalons IIU — équipement énergivore en raison du process aquatique"
+      cerema_ligne: 1619
+      note: "Décomposable en 3 sous-cat : Piscine (vestiaires/douches) + Récupération sportive (sauna/hammam) + Administration/bureaux"
+
+    culture_mjc:
+      categorie_principale: "CULTURE"
+      sous_categorie_libelle: "Culture — MJC (Maison des Jeunes et de la Culture)"
+      cabs_2030_kwh_m2_an: 92
+      contexte: "Application valeurs étalons IIU"
+      cerema_ligne: 1873
+
+    culture_salle_polyvalente:
+      categorie_principale: "CULTURE"
+      sous_categorie_libelle: "Culture — salle polyvalente"
+      cabs_2030_kwh_m2_an: 94
+      contexte: "Application valeurs étalons IIU"
+      cerema_ligne: 1873
+
+    atelier_technique_valeur_defaut:
+      categorie_principale: "ATELIER"
+      sous_categorie_libelle: "Atelier technique communal — valeur par défaut"
+      cabs_2030_kwh_m2_an: 74
+      contexte: "Plus de 80% surfaces correspondent à catégorie principale"
+      cerema_ligne: 1805
+
+    atelier_technique_zone_atelier_modulee:
+      categorie_principale: "ATELIER"
+      sous_categorie_libelle: "Atelier technique — zone atelier modulée"
+      cabs_2030_kwh_m2_an: 56
+      contexte: "Modulation par densité énergétique réelle (1.8 kWh/m²/an utilisé)"
+      cerema_ligne: 2141
+
+    atelier_technique_magasin_stockage_modulee:
+      categorie_principale: "ATELIER"
+      sous_categorie_libelle: "Atelier technique — magasin de stockage modulé"
+      cabs_2030_kwh_m2_an: 29
+      cerema_ligne: 2143
+
+    atelier_technique_bureau_modulee:
+      categorie_principale: "ATELIER"
+      sous_categorie_libelle: "Atelier technique — bureau modulé"
+      cabs_2030_kwh_m2_an: 74
+      cerema_ligne: 2153
+
+    bureaux_multi_occupation_etalons:
+      categorie_principale: "BUREAUX"
+      sous_categorie_libelle: "Bureaux multi-occupation — valeurs étalons"
+      cabs_2030_kwh_m2_an: 45
+      cerema_ligne: 2073
+
+    bureaux_multi_occupation_modulee:
+      categorie_principale: "BUREAUX"
+      sous_categorie_libelle: "Bureaux multi-occupation — modulé"
+      cabs_2030_kwh_m2_an: 39
+      contexte: "Modulation IIU selon scénario d'occupation réelle — gain 15% (45 → 39)"
+      cerema_ligne: 2181
+
+    administration_prefecture:
+      categorie_principale: "ADMINISTRATION"
+      sous_categorie_libelle: "Bureaux — administration publique préfecture"
+      cabs_2030_kwh_m2_an: 120
+      cerema_ligne: 2575
+
+    administration_conseil_departemental:
+      categorie_principale: "ADMINISTRATION"
+      sous_categorie_libelle: "Bureaux — administration publique conseil départemental"
+      cabs_2030_kwh_m2_an: 123
+      cerema_ligne: 2575
+
+  # ----------------------------------------------------------
+  # ZONES CLIMATIQUES OPERAT (squelette à compléter)
+  # ----------------------------------------------------------
+  # 8 zones standard + 3 paliers altitude. Mapping département officiel à compléter
+  # via lecture annexe arrêté méthode 10/04/2020 (non extrait à ce jour).
+  # ----------------------------------------------------------
+  zones_climatiques:
+    paliers_altitude:
+      - palier: "altitude_lt_400m"
+        description: "Altitude inférieure à 400 m"
+      - palier: "altitude_400_800m"
+        description: "Altitude entre 400 et 800 m"
+      - palier: "altitude_gt_800m"
+        description: "Altitude supérieure à 800 m"
+    methode_application_altitude: "Palier strict (pas d'interpolation linéaire) — convention OPERAT"
+    confidence_methode: "🟡"
+
+    zones:
+      H1a:
+        description: "Nord et Est continental"
+        departements: []  # 🔴 à compléter
+        confidence: "🔴"
+      H1b:
+        description: "Bassin parisien et nord-ouest"
+        departements: []
+        confidence: "🔴"
+      H1c:
+        description: "Centre-Est et Bourgogne-Franche-Comté"
+        departements: []
+        confidence: "🔴"
+      H2a:
+        description: "Bretagne et littoral atlantique nord"
+        departements: []
+        confidence: "🔴"
+      H2b:
+        description: "Centre-Ouest et Pays de la Loire"
+        departements: []
+        confidence: "🔴"
+      H2c:
+        description: "Sud-Ouest atlantique"
+        departements: []
+        confidence: "🔴"
+      H2d:
+        description: "Vallée du Rhône (Lyon → Valence)"
+        departements: []
+        confidence: "🔴"
+      H3:
+        description: "Méditerranée"
+        departements: []  # 06, 13, 30, 34, 66, 83, 2A, 2B (à confirmer)
+        confidence: "🔴"
+
+  # ----------------------------------------------------------
+  # SOUS-CATÉGORIES — TABLES CVCi/USEi PAR ZONE × ALTITUDE
+  # ----------------------------------------------------------
+  # 🔴 STATUT : NON EXTRAIT — annexes raster (PDF Cerema p.77 + bulletin-officiel)
+  # Ce squelette est PRÉ-STRUCTURÉ pour faciliter l'ingestion ultérieure.
+  # NE PAS UTILISER en production tant que valeurs null.
+  # ----------------------------------------------------------
+  sous_categories_cvci_usei:
+    _placeholder_template:
+      code: "CODE_SOUS_CATEGORIE"
+      libelle: "Libellé officiel"
+      categorie_principale: "CATEGORIE"
+      arrete_origine: "ref_arrete_chronology"
+      cvci_kwh_m2_an:
+        H1a: { altitude_lt_400m: null, altitude_400_800m: null, altitude_gt_800m: null }
+        H1b: { altitude_lt_400m: null, altitude_400_800m: null, altitude_gt_800m: null }
+        H1c: { altitude_lt_400m: null, altitude_400_800m: null, altitude_gt_800m: null }
+        H2a: { altitude_lt_400m: null, altitude_400_800m: null, altitude_gt_800m: null }
+        H2b: { altitude_lt_400m: null, altitude_400_800m: null, altitude_gt_800m: null }
+        H2c: { altitude_lt_400m: null, altitude_400_800m: null, altitude_gt_800m: null }
+        H2d: { altitude_lt_400m: null, altitude_400_800m: null, altitude_gt_800m: null }
+        H3:  { altitude_lt_400m: null, altitude_400_800m: null, altitude_gt_800m: null }
+      usei_kwh_m2_an: { valeur: null, note: null }
+      indicateur_intensite_usage:
+        nom: null
+        unite: null
+        valeur_etalon: null
+        formule_modulation: null
+      confidence: "🔴"
+
+    sous_categories: []  # à peupler par OCR Tableau 3-1 Cerema (P0)
+
+  # ----------------------------------------------------------
+  # SANCTIONS
+  # ----------------------------------------------------------
+  sanctions:
+    non_declaration_operat:
+      base_legale: "Art. R.131-44 CCH (devenu R.174-32) — décret 2019-771"
+      procedure: "Mise en demeure préfet 3 mois → publication 'name and shame' site Etat → mise en demeure 6 mois → amende"
+      montant_max_personne_morale_eur: 7500
+      montant_max_personne_physique_eur: 1500
+      unite: "EUR par site/EFA en infraction"
+      confidence: "🟢"
+      source: "joe_20190725_0171_0053.txt (décret 2019-771 art. R.131-44.III + IV)"
+
+    non_atteinte_objectif:
+      base_legale: "Art. R.131-44 CCH"
+      procedure: "Mise en demeure programme d'actions → constat de carence (arrêté motivé préfet) → publication site Etat → amende"
+      montant_max_personne_morale_eur: 7500
+      montant_max_personne_physique_eur: 1500
+      confidence: "🟢"
+      source: "joe_20190725_0171_0053.txt (décret 2019-771 art. R.131-44.III)"
+
+  # ----------------------------------------------------------
+  # ÉCHÉANCES CLÉS
+  # ----------------------------------------------------------
+  echeances_cles:
+    declaration_annuelle: "30 septembre N+1 pour conso année N (à partir 2021)"
+    declaration_periode_2010_2019_extension: "30 septembre 2027 (arrêté 20/02/2024 art. 4)"
+    attestation_numerique_obligatoire: "1er juillet 2026 (article 2 arrêté 01/08/2025)"
+    objectif_decennal_1: "31 décembre 2030 — réduction -40% Crelat OU Cabs"
+    objectif_decennal_2: "31 décembre 2040 — réduction -50%"
+    objectif_decennal_3: "31 décembre 2050 — réduction -60%"
+    premier_controle_administratif: "31 décembre 2031 (au plus tard) — bilan 2030"
+    confidence: "🟢"
+    source: "Décret 2019-771 art. R.131-39 et R.131-42 + arrêtés modificatifs"
