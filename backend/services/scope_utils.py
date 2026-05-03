@@ -15,10 +15,14 @@ Usage :
         org_id = DemoState.get_demo_org_id()
 """
 
+import logging
+
 from fastapi import HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from middleware.auth import AuthContext, DEMO_MODE
+
+_security_logger = logging.getLogger("promeos.security")
 
 
 def get_scope_org_id(request: Request, auth: Optional[AuthContext]) -> Optional[int]:
@@ -31,12 +35,31 @@ def get_scope_org_id(request: Request, auth: Optional[AuthContext]) -> Optional[
 
     Returns:
         int org_id si résolu, None sinon.
+
+    Security: si auth présent, le header X-Org-Id DOIT correspondre à
+    auth.org_id sinon il est ignoré (cross-tenant guard). En DEMO_MODE
+    sans auth, X-Org-Id reste accepté tel quel pour le scope interceptor.
     """
     # 1. JWT token (le plus sûr)
     if auth is not None:
+        # Cross-check optionnel : si X-Org-Id présent ET ≠ auth.org_id → ignorer le header
+        raw = request.headers.get("X-Org-Id")
+        if raw:
+            try:
+                if int(raw) != auth.org_id:
+                    _security_logger.warning(
+                        "x_org_id_mismatch_jwt_wins",
+                        extra={
+                            "header_org_id": int(raw),
+                            "jwt_org_id": auth.org_id,
+                            "user_id": auth.user.id if auth.user else None,
+                        },
+                    )
+            except ValueError:
+                pass
         return auth.org_id
 
-    # 2. X-Org-Id header (injecté par le scope interceptor frontend)
+    # 2. X-Org-Id header (injecté par le scope interceptor frontend en démo)
     raw = request.headers.get("X-Org-Id")
     if raw:
         try:

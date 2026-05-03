@@ -23,7 +23,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -39,15 +39,20 @@ from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api/v1/events", tags=["events"])
 
+# Bornes anti-DoS : empêche horizon_days=36500 + limit=100000 qui scannerait
+# 100 ans × 100k events. 90 jours / 100 events = enveloppe usage Tier3 réaliste.
+MAX_HORIZON_DAYS = 90
+MAX_LIMIT = 100
+
 
 @router.get("/upcoming", response_model=EventUpcomingResponse)
 def get_upcoming_events_endpoint(
     request: Request,
     persona: Optional[str] = None,
     page_key: Optional[str] = None,
-    horizon_days: int = DEFAULT_HORIZON_DAYS,
+    horizon_days: int = Query(DEFAULT_HORIZON_DAYS, ge=1, le=MAX_HORIZON_DAYS),
     cursor: Optional[str] = None,
-    limit: int = DEFAULT_LIMIT,
+    limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
     db: Session = Depends(get_db),
 ) -> EventUpcomingResponse:

@@ -7,6 +7,7 @@ Provides FastAPI dependencies for authentication:
 - get_optional_auth: lenient (returns None in demo mode)
 """
 
+import logging
 import os
 from dataclasses import dataclass
 from typing import Optional
@@ -24,6 +25,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=Fals
 
 AUTH_ENABLED = os.environ.get("PROMEOS_AUTH_ENABLED", "false").lower() == "true"
 DEMO_MODE = os.environ.get("PROMEOS_DEMO_MODE", "false").lower() == "true"
+
+_security_logger = logging.getLogger("promeos.security")
 
 
 @dataclass
@@ -108,11 +111,17 @@ def get_optional_auth(
             detail="Authentication required (DEMO_MODE is off)",
         )
 
+    # Token présent ET invalide = TOUJOURS 401, même en DEMO_MODE.
+    # Why: distinguer "pas de token" (toléré DEMO_MODE) d'un token forgé
+    # ou expiré qui doit échouer fort. Sinon un attaquant peut bypasser
+    # auth en envoyant n'importe quel token quand DEMO_MODE est resté on.
     try:
         payload = decode_token(token)
     except Exception:
-        if DEMO_MODE:
-            return None
+        _security_logger.warning(
+            "auth_invalid_token",
+            extra={"demo_mode": DEMO_MODE, "token_prefix": token[:8] if token else None},
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
@@ -123,6 +132,10 @@ def get_optional_auth(
 
     user = db.query(User).filter(User.id == user_id, User.actif == True).first()
     if not user:
+        _security_logger.warning(
+            "auth_user_missing_or_inactive",
+            extra={"user_id": user_id, "org_id": org_id, "demo_mode": DEMO_MODE},
+        )
         return None
 
     uor = (
@@ -134,6 +147,10 @@ def get_optional_auth(
         .first()
     )
     if not uor:
+        _security_logger.warning(
+            "auth_user_org_role_missing",
+            extra={"user_id": user_id, "org_id": org_id},
+        )
         return None
 
     site_ids = get_scoped_site_ids(db, uor)

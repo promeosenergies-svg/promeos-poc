@@ -381,7 +381,7 @@ def get_cockpit(
             "action_center": action_center_data,
             "echeance_prochaine": "30 septembre 2026 (Déclaration OPERAT — consommations 2025)",
         },
-        headers={"Cache-Control": "public, max-age=30"},
+        headers={"Cache-Control": "private, max-age=30"},
     )
 
 
