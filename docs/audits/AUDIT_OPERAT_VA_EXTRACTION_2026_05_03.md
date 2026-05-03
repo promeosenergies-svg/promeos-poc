@@ -3,8 +3,10 @@
 **Date** : 2026-05-03
 **Auteur** : Claude Code (regulatory-expert + extraction parent Drive ADEME/Cerema)
 **Branche** : `claude/operat-va-extraction`
-**Livrable** : `backend/config/operat_valeurs_absolues.yaml` (schéma v0.5)
-**Statut** : PARTIAL — chronologie + méthodologie validées source primaire ; tables CVCi/USEi par zone × altitude restent à OCR
+**Livrable** : `backend/config/operat_valeurs_absolues.yaml` (schéma v0.6 — enrichi FAQ ADEME)
+**Statut** : PARTIAL_PRIMARY_CONFIRMED — chronologie 8 textes + méthodologie + sanctions validées source primaire (FAQ ADEME) ; tables CVCi/USEi par zone × altitude restent à OCR
+
+> **MAJ 2026-05-03 post-rédaction** : la FAQ OPERAT ADEME complète (98 pages) a été partagée par l'utilisateur en PDF. Sa **section G2** "Textes régissant le dispositif" (mise à jour 09/2025) confirme la chronologie **exacte des 6 arrêtés VA + 2 textes complémentaires du 29/09/2021** (décret modif R.174-27/28 + arrêté "Report de délais"). Voir `docs/sources/regulatory/operat/faq_ademe_g2_extrait_2026_05_03.md` pour citations textuelles. Toutes les confidences chronologie passent de 🟡 à 🟢.
 
 ---
 

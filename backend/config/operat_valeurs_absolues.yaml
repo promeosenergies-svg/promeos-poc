@@ -5,8 +5,11 @@
 # ============================================================
 # AVERTISSEMENT FIABILITÉ — voir docs/audits/AUDIT_OPERAT_VA_EXTRACTION_2026_05_03.md
 #
-# Schema v0.5 — extraction partielle 2026-05-03 :
-# - 🟢 Chronologie arrêtés + méthodologie formules + sanctions = source primaire
+# Schema v0.6 — extraction enrichie FAQ ADEME 2026-05-03 :
+# - 🟢 Chronologie arrêtés (8 textes : décret cadre + arrêté méthode + 2 textes 09/2021
+#       + VA I-VI) confirmée FAQ OPERAT ADEME section G2 (DHUP, MAJ 09/2025)
+# - 🟢 Méthodologie formules Cabs/Crelat/CVC/USE = source primaire ADEME
+# - 🟢 Sanctions 1500 € PP / 7500 € PM cumulables = source primaire FAQ CS4-Q1
 # - 🟡 19 valeurs Cabs 2030 = guide Cerema 2025 (cas pratiques pédagogiques)
 # - 🔴 Tableaux CVCi/USEi par sous-catégorie × zone climatique × altitude :
 #       restent à compléter via OCR p.77 Cerema (Tableau 3-1 raster) OU annexes
@@ -17,20 +20,36 @@
 operat_valeurs_absolues:
 
   metadata:
-    schema_version: "0.5"
+    schema_version: "0.6"
     extraction_date: "2026-05-03"
-    extracted_by: "regulatory-expert (SENTINEL-REG) + parent extraction Drive ADEME/Cerema"
-    extraction_status: "PARTIAL"
+    extracted_by: "regulatory-expert (SENTINEL-REG) + extraction Drive ADEME/Cerema + FAQ OPERAT ADEME complète"
+    extraction_status: "PARTIAL_PRIMARY_CONFIRMED"
     coverage_summary:
-      arretes_chronology: "🟢 6 arrêtés identifiés source primaire JO + Cerema"
-      methodologie: "🟢 formules Cabs/Crelat/CVC/USE confirmées doc ADEME 09/2025"
+      arretes_chronology: "🟢 8 textes identifiés (décret cadre + arrêté méthode + décret+arrêté 09/2021 + VA I-VI) source primaire FAQ ADEME section G2"
+      methodologie: "🟢 formules Cabs/Crelat/CVC/USE confirmées doc ADEME 09/2025 + FAQ ADEME"
       cabs_par_cas_pratique: "🟡 19 sous-catégories chiffrées (guide Cerema 2025)"
       cvci_usei_par_zone: "🔴 0% — annexes raster non extractibles via Drive natural-language"
       zones_climatiques: "🔴 mapping département à compléter"
-      sanctions: "🟢 confirmées art. R.131-44 CCH"
+      sanctions: "🟢 confirmées 1500 € PP / 7500 € PM cumulables (FAQ CS4-Q1 + art. R.131-44 CCH originel R.185-2 actuel)"
+      perimetre_couverture_va: "🟢 sectorisation FAQ G2 confirmée par arrêté : VA I=fondation, II=DJU+modulation, III=hôtellerie/restaur/data-center, IV=hôpital/pénitentiaire/sport/logistique, V=transport/culture/santé/CVC DOM, VI=commerces/cinémas/bureaux/DOM consolidant"
+    sources_primaires:
+      - document: "FAQ OPERAT ADEME"
+        url: "https://operat.ademe.fr/public/faq#question_5"
+        editeur: "Direction de l'habitat, de l'urbanisme et des paysages (DHUP) - Ministère écologie"
+        derniere_mise_a_jour_section_g2: "09/2025"
+        statut_juridique: "valeur informative juridique de l'administration (FAQ p.1) — non opposable mais doctrine officielle"
+        archive_locale: "docs/sources/regulatory/operat/faq_ademe_g2_extrait_2026_05_03.md"
+      - document: "Cerema 2025 — Réaliser ses déclarations EET (Mode d'emploi)"
+        isbn: "978-2-37180-723-5"
+        archive_locale: "docs/sources/regulatory/operat/cerema_deet_2025_raw.txt"
+      - document: "JO arrêté 01/08/2025 NOR ATDL2430864A"
+        url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052113xxx"  # ID exact à confirmer
+        archive_locale: "(texte intégral lu via Drive — Drive ID 1yfUCVQe_8qdw2sAbR_qtF1P-774Bw0Os)"
     next_actions:
       - priority: "P0"
         action: "OCR Tableau 3-1 p.77 du Cerema DEET ModeEmploi (PDF 21 MB Drive) via Read PDF natif pages=77-80"
+      - priority: "P0"
+        action: "Récupérer NOR exacts des 6 VA via consultation Légifrance manuelle (FAQ G2 ne donne pas les NOR mais confirme dates+objets)"
       - priority: "P1"
         action: "Tentative WebFetch ciblée bulletin-officiel.developpement-durable.gouv.fr avec NOR ATDL2430864A pour récupérer annexes I et II de l'arrêté 01/08/2025"
       - priority: "P2"
@@ -63,50 +82,88 @@ operat_valeurs_absolues:
       confidence: "🟢"
       source: "Cité dans tertiaire_operat.py + legal_refs.py + arrêté 01/08/2025"
 
-    arrete_sous_categories_2022:
+    arrete_va_I_2020:
       type: "arrete"
-      ref: "Arrêté du 13 avril 2022"
+      ref: "Arrêté du 24 novembre 2020 modifiant l'arrêté du 10 avril 2020 — dit « Valeurs absolues I »"
+      nor: null  # à confirmer (LOGL2030749A supposé en hypothèse initiale, à vérifier Légifrance)
+      date_signature: "2020-11-24"
+      date_publication_jo: "2021-01-17"
+      objet: "Fixe les valeurs absolues pour les principales catégories d'activité concernées par EET + cadre des tables de données collectées sur la plateforme OPERAT"
+      perimetre_couverture: "Bureaux, enseignement, logistique non chauffée, services postaux (fondation)"
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2 (DHUP - mise à jour 09/2025) — 'Arrêté valeurs absolues I'"
+
+    decret_modificatif_2021:
+      type: "decret"
+      ref: "Décret du 29 septembre 2021"
+      nor: null
+      date_signature: "2021-09-29"
+      objet: "Modifie articles R.174-27 et R.174-28 CCH : reporte dispositions transmission données annuelles + complète obligations transmission cas transaction immobilière et cessation d'activité"
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2"
+
+    arrete_report_delais_2021:
+      type: "arrete"
+      ref: "Arrêté du 29 septembre 2021 modifiant l'arrêté du 10 avril 2020 — dit « Report de délais »"
+      nor: null
+      date_signature: "2021-09-29"
+      objet: "Intègre les modalités de transmission annuelle des données prévues à l'article R.174-27 CCH (renvoi à arrêté ministres énergie/construction)"
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2"
+
+    arrete_va_II_2022:
+      type: "arrete"
+      ref: "Arrêté du 13 avril 2022 modifiant l'arrêté du 10 avril 2020 — dit « Valeurs absolues II »"
       nor: null
       date_signature: "2022-04-13"
-      objet: "Extension catégories d'activités tertiaires recensées (segmentation sous-catégories)"
-      confidence: "🟡"
-      source: "Cerema 2025 ligne 2743 — référence textuelle"
+      objet: "Modifications dispositions ajustement consommations en fonction des variations climatiques (article 5) + modulation objectif valeur relative cas contraintes techniques/architecturales/patrimoniales/disproportion économique (article 7)"
+      perimetre_couverture: "Compléments commerces (hypermarché, supermarché, hard discount, magasins spécialisés) + activités sportives selon synthèse Cerema"
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2 + Cerema 2025 ligne 2743"
 
-    arrete_cabs_defaut_2023:
+    arrete_va_III_2023:
       type: "arrete"
-      ref: "Arrêté du 28 novembre 2023"
+      ref: "Arrêté du 28 novembre 2023 modifiant l'arrêté du 10 avril 2020 — dit « Valeurs absolues III »"
       nor: null
       date_signature: "2023-11-28"
-      objet: "Article 8-IV — valeurs Cabs sous-catégories 'valeur par défaut' (ex: enseignement primaire = 79 kWh/m²/an)"
-      confidence: "🟡"
-      source: "Cerema 2025 ligne 1025 — citation explicite"
+      objet: "Corrige formule article 7 arrêté 13/04/2022 + précise objectifs valeurs absolues : hôtellerie et résidences de tourisme, restauration, serveurs et data-center"
+      perimetre_couverture: "Hôtellerie, résidences tourisme, restauration, serveurs/data-center"
+      cabs_defaut_enseignement_primaire: 79  # kWh/m²/an — cité dans Cerema 2025 ligne 1025 (art. 8-IV)
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2 + Cerema 2025 ligne 1025 (art. 8-IV)"
 
-    arrete_modificatif_fevrier_2024:
+    arrete_va_IV_2024:
       type: "arrete"
-      ref: "Arrêté du 20 février 2024"
+      ref: "Arrêté du 20 février 2024 modifiant l'arrêté du 10 avril 2020 — dit « Valeurs absolues IV »"
       nor: null
       date_signature: "2024-02-20"
-      objet: "Modifications : surface piscine (p.54 annexe), délai déclaration Période 2010-2019 prolongé jusqu'au 30/09/2027"
-      confidence: "🟡"
-      source: "Cerema 2025 lignes 715, 1565 + doc ADEME 20250905"
+      objet: "Précise objectifs valeurs absolues : logistique à température ambiante, blanchisseries dites « industrielles », centres hospitaliers, établissements pénitentiaires, médico-sociaux, protection judiciaire de la jeunesse (PJJ), sports"
+      perimetre_couverture: "Logistique T° ambiante, blanchisseries industrielles, hôpitaux, pénitentiaire, médico-social, PJJ, sports"
+      delai_declaration_periode_2010_2019: "Article 4 : délai prolongé jusqu'au 30/09/2027 pour déclaration Période 2010-2019"
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2 + Cerema 2025 lignes 715, 1565"
 
-    arrete_dju_juillet_2024:
+    arrete_va_V_2024:
       type: "arrete"
-      ref: "Arrêté du 5 juillet 2024"
+      ref: "Arrêté du 5 juillet 2024 modifiant l'arrêté du 10 avril 2020 — dit « Valeurs absolues V »"
       nor: null
       date_signature: "2024-07-05"
-      objet: "Formules d'ajustement DJU (chauffage/refroidissement) — intégrées plateforme OPERAT"
-      confidence: "🟡"
-      source: "Cerema 2025 ligne 783"
+      objet: "Précise objectifs valeurs absolues : transports, culture et spectacles, loisirs, parcs d'exposition et palais des congrès, vente et services de véhicules, laboratoires, imprimerie, audiovisuel, enseignement, justice, santé (compléments), valeurs CVC pour départements d'outre-mer"
+      perimetre_couverture: "Transports, culture/spectacles, loisirs, parcs expo, vente véhicules, labos, imprimerie, audiovisuel, enseignement, justice, santé compléments, CVC DOM"
+      formules_ajustement_dju: "Intégrées plateforme OPERAT (cité Cerema 2025 ligne 783 — possiblement reprises ici depuis la version v2 de l'art. 5)"
+      confidence: "🟢"
+      source: "FAQ OPERAT ADEME section G2 + Cerema 2025 ligne 783"
 
-    arrete_modificatif_aout_2025:  # ★ CIBLE INITIALE DE L'EXTRACTION
+    arrete_va_VI_2025:  # ★ CIBLE INITIALE DE L'EXTRACTION
       type: "arrete"
-      ref: "Arrêté du 1er août 2025 modifiant l'arrêté du 10 avril 2020"
+      ref: "Arrêté du 1er août 2025 modifiant l'arrêté du 10 avril 2020 — dit « Valeurs absolues VI »"
       nor: "ATDL2430864A"
       date_signature: "2025-08-01"
       date_publication_jo: "2025-09-06"
       jo_reference: "JO n° 207 du 6 septembre 2025, texte 61/168"
       ministry: "Ministère de l'aménagement du territoire et de la décentralisation"
+      perimetre_couverture: "Complète dernières valeurs absolues non encore publiées : commerces, cinémas, bureaux, départements d'outre-mer (DOM). REPREND L'INTÉGRALITÉ des valeurs absolues déjà publiées dans VA I à V pour faciliter la lecture globale."
+      cle_consolidante: true  # Cet arrêté consolide tous les VA précédents
       objet_consolide:
         - "Art. 2 — annexe VII art.13 III : suppression renvoi annexe VII, transfert sur plateforme OPERAT. Période transitoire jusqu'au 01/07/2026 où évaluation respect via attestation numérique reste facultative."
         - "Art. 3 — REMPLACE l'annexe II de l'arrêté du 10/04/2020 (tables Cabs/CVCi/USEi par sous-catégorie) par l'annexe I du présent arrêté"
