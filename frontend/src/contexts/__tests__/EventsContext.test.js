@@ -189,8 +189,16 @@ describe('H. API wrapper events.js', () => {
     expect(apiSrc).toMatch(/export const getUpcomingEvents/);
   });
 
-  it('appelle /api/v1/events/upcoming', () => {
-    expect(apiSrc).toMatch(/\/api\/v1\/events\/upcoming/);
+  it('appelle /v1/events/upcoming (axios baseURL=/api ajoute le prefix)', () => {
+    // Note : core.js axios baseURL='/api' → events.js doit utiliser
+    // `/v1/events/upcoming` (pas `/api/v1/...` qui causerait double prefix
+    // /api/api/v1/...). Bug surfaced par smoke Playwright post-merge ccfb6420.
+    // Strip docstrings + line comments pour éviter faux positifs sur le
+    // commentaire explicatif du fix qui mentionne le bug pattern.
+    const apiCode = apiSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    expect(apiCode).toMatch(/\/v1\/events\/upcoming/);
+    // Anti-régression : pas de double prefix /api/v1/ dans le code (hors comments)
+    expect(apiCode).not.toMatch(/\/api\/v1\/events\/upcoming/);
   });
 
   it('encode tous les query params optionnels', () => {

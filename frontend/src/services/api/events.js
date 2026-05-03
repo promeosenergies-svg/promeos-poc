@@ -46,7 +46,10 @@ export const getUpcomingEvents = ({
   qs.set('horizon_days', String(horizonDays));
   if (cursor) qs.set('cursor', cursor);
   qs.set('limit', String(limit));
+  // Note : `core.js` configure axios `baseURL='/api'` → ne pas répéter le prefix
+  // dans l'URL ici. Bug surfaced par smoke Playwright post-merge ccfb6420
+  // (double prefix `/api/api/v1/...` → 404). Aligné convention autres wrappers.
   return api
-    .get(`/api/v1/events/upcoming?${qs.toString()}`, signal ? { signal } : undefined)
+    .get(`/v1/events/upcoming?${qs.toString()}`, signal ? { signal } : undefined)
     .then((r) => r.data);
 };

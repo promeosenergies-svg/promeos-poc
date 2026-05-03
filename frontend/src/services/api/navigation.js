@@ -32,4 +32,6 @@ import api from './core';
  *   cache_ttl_seconds: number,
  * }>}
  */
-export const getNavigationBadges = () => api.get('/api/v1/navigation/badges').then((r) => r.data);
+// Note : core.js axios baseURL='/api' → ne pas répéter le prefix dans l'URL.
+// Bug double-prefix /api/api/v1/... fixé Phase 2 post-merge ccfb6420.
+export const getNavigationBadges = () => api.get('/v1/navigation/badges').then((r) => r.data);

@@ -216,9 +216,11 @@ describe('H. NavPanel — progress conformité recâblées (post-P0.4)', () => {
 describe('I. services/api/navigation.js — endpoint wrapper', () => {
   const api = readFileSync(NAV_API_PATH, 'utf-8');
 
-  it('exporte getNavigationBadges qui appelle /api/v1/navigation/badges', () => {
+  it('exporte getNavigationBadges qui appelle /v1/navigation/badges (axios baseURL=/api)', () => {
+    // Note : core.js axios baseURL='/api' → URL réelle dans le code = `/v1/navigation/badges`.
+    // Bug double-prefix /api/api/v1/... fixé post-merge ccfb6420 (cf. events.js Phase 1.A).
     expect(api).toMatch(/export const getNavigationBadges/);
-    expect(api).toMatch(/'\/api\/v1\/navigation\/badges'/);
+    expect(api).toMatch(/'\/v1\/navigation\/badges'/);
   });
 
   it("n'utilise PAS cachedGet (TTL piloté par le Context, pas par le cache GET)", () => {

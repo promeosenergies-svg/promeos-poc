@@ -59,10 +59,13 @@ function stripComments(src) {
   return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 }
 
-describe('SG_EVENTS_FE_01 — fetch /api/v1/events/upcoming uniquement via Context', () => {
-  it('aucun fetch direct vers /api/v1/events hors EventsContext + api/events', () => {
+describe('SG_EVENTS_FE_01 — fetch /v1/events/upcoming uniquement via Context', () => {
+  it('aucun fetch direct vers /v1/events/upcoming hors EventsContext + api/events', () => {
+    // Note : core.js axios baseURL='/api' → URL réelle dans le code = `/v1/events/upcoming`.
+    // Anti-régression : on flag aussi `/api/v1/events/upcoming` (bug double prefix
+    // surfaced par smoke Playwright post-merge ccfb6420 — fixé dans events.js).
     const violations = [];
-    const FORBIDDEN = /\/api\/v1\/events\/upcoming/;
+    const FORBIDDEN = /\/(?:api\/)?v1\/events\/upcoming/;
     for (const file of allFiles) {
       if (GET_UPCOMING_DIRECT_WHITELIST.has(file)) continue;
       const cleaned = stripComments(readFileSync(file, 'utf-8'));
