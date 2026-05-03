@@ -23,6 +23,7 @@ import {
   getComplianceTimeline,
   getAuditSmeAssessment,
   getFlexPrixSignal,
+  getCompliancePortfolioScore,
 } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
 import { fmtKwh, fmtEur, scopeKicker } from '../utils/format';
@@ -164,40 +165,50 @@ const Cockpit = () => {
   const { data: execV2 } = useExecutiveV2();
 
   // Fetch real alert count from notifications summary (same source as CommandCenter)
+  // P0-6: cancelled guard évite setState après unmount
   useEffect(() => {
+    let cancelled = false;
     setError(null);
     getNotificationsSummary(org?.id, scopedSites.length === 1 ? scopedSites[0]?.id : null)
       .then((data) => {
+        if (cancelled) return;
         const count = (data?.by_severity?.critical || 0) + (data?.by_severity?.warn || 0);
         setAlertsCount(count);
       })
       .catch((err) => {
+        if (cancelled) return;
         setAlertsCount(0);
         setError(err?.message || 'Erreur chargement des données');
       });
+    return () => {
+      cancelled = true;
+    };
   }, [org, scopedSites]);
 
   // Batch fetch: compliance score, timeline (incluant total_penalty_exposure_eur
   // utilisé pour le contract P0 step14 + futurs widgets exposition portfolio),
   // audit SME, prix signal.
+  // P0-6: cancelled guard évite setState après unmount
+  // P0-7: fetch() natif remplacé par getCompliancePortfolioScore() (axios, X-Org-Id auto)
   useEffect(() => {
     if (!org?.id) return;
+    let cancelled = false;
     Promise.all([
-      fetch(`/api/compliance/portfolio/score`, {
-        headers: { 'X-Org-Id': String(org.id) },
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
+      getCompliancePortfolioScore().catch(() => null),
       getComplianceTimeline().catch(() => null),
       getAuditSmeAssessment(org.id).catch(() => null),
       getFlexPrixSignal(45).catch(() => null),
     ]).then(([compScore, timeline, sme, prix]) => {
+      if (cancelled) return;
       setComplianceApi(compScore);
       setNextDeadline(timeline?.next_deadline || null);
       setTotalPenaltyExposure(timeline?.total_penalty_exposure_eur || null);
       setAuditSme(sme);
       setPrixSignal(prix);
     });
+    return () => {
+      cancelled = true;
+    };
   }, [org?.id]);
 
   const kpis = useMemo(() => {
@@ -218,16 +229,10 @@ const Cockpit = () => {
     // Source unique backend — pas de fallback conformes/total (règle no-calc-in-front)
     const pctConf = complianceScoreUnified != null ? Math.round(complianceScoreUnified) : 0;
 
-    const actionsActives =
-      total > 0 ? Math.round((conformes / total) * 60 + ((total - nonConformes) / total) * 40) : 80;
-    const readinessScore =
-      total > 0
-        ? Math.round(
-            couvertureDonnees * READINESS_WEIGHTS.data +
-              pctConf * READINESS_WEIGHTS.conformity +
-              actionsActives * READINESS_WEIGHTS.actions
-          )
-        : 0;
+    // P0-3 : calculs portés par le BE (doctrine §8.1 — zero business logic FE).
+    // Fallback côté FE uniquement si cockpitKpis absent (1er render avant réponse API).
+    const actionsActives = cockpitKpis?.actionsActives ?? '—';
+    const readinessScore = cockpitKpis?.readinessScore ?? '—';
     const compStatus =
       nonConformes > 0 ? 'crit' : aRisque > 0 ? 'warn' : total > 0 ? 'ok' : 'neutral';
     const risqueStatus = getRiskStatus(risqueTotal);
@@ -715,11 +720,16 @@ const Cockpit = () => {
 
       {/* ── DEADLINES BAND : retard trajectoire + OPERAT regroupés (space-y-2). ── */}
       {(() => {
-        const deadline = new Date('2026-09-30');
+        // P0-4 : deadline OPERAT depuis backend (SoT doctrine/constants.py).
+        // cockpitKpis?.deadlineOperat = ISO string "2026-09-30" exposé par /api/cockpit.
+        const deadlineIso = cockpitKpis?.deadlineOperat ?? null;
+        const deadline = deadlineIso ? new Date(deadlineIso) : null;
         const today = new Date();
-        const joursRestants = Math.round((deadline - today) / (1000 * 60 * 60 * 24));
-        const isUrgentOperat = joursRestants < 90;
-        const showOperat = joursRestants >= 0;
+        const joursRestants = deadline
+          ? Math.round((deadline - today) / (1000 * 60 * 60 * 24))
+          : null;
+        const isUrgentOperat = joursRestants !== null && joursRestants < 90;
+        const showOperat = joursRestants !== null && joursRestants >= 0;
         const isRetardTraj =
           trajectoire?.reductionPctActuelle != null &&
           trajectoire?.objectifPremierJalonPct != null &&

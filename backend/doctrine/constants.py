@@ -29,6 +29,15 @@ BACS_PENALTY_EUR = 1500  # amende par site non conforme BACS
 
 # ─── OPERAT / Décret Tertiaire déclaration ─────────────────────────────────
 OPERAT_PENALTY_EUR = 1500  # amende par déclaration OPERAT manquante (Circulaire DGEC 2024)
+# Deadline déclaration consommations 2025 (Arrêté Tertiaire 2024-DGEC)
+OPERAT_DECLARATION_DEADLINE = "2026-09-30"
+
+# ─── Readiness score — pondérations backend ────────────────────────────────
+# Source unique : frontends doivent consommer ces pondérations via /api/cockpit.
+# Doctrine §8.1 : zero business logic in frontend.
+READINESS_WEIGHT_DATA = 0.30
+READINESS_WEIGHT_CONFORMITY = 0.40
+READINESS_WEIGHT_ACTIONS = 0.30
 
 # ─── APER (Loi 2023-175 art. 40 + Décret 2022-1726) ────────────────────────
 # Phase 19.A : remontée de la constante côté backend (audit Phase 17 cumulée

@@ -289,6 +289,11 @@ const _CONSO_7D_DAYS = [
 ];
 const _CONSO_7D_Y_BASELINE = 103;
 const _CONSO_7D_Y_TOP = 20;
+// PLACEHOLDER — plancher minimum axe Y SVG (MWh) uniquement si weeklyBreakdown absent
+// ou si toutes les valeurs réelles sont inférieures à ce seuil d'affichage.
+// Le path data-driven (_projectBreakdownToBars) est prioritaire : il calcule
+// Math.max(_CONSO_7D_MWH_TOP, ...valeurs_backend) pour une échelle dynamique.
+// Ne pas interpréter comme seuil métier — pur paramètre de lisibilité SVG.
 const _CONSO_7D_MWH_TOP = 12;
 const _CONSO_7D_X_START = 42;
 const _CONSO_7D_X_PITCH = 42;

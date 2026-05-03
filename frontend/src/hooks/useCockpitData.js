@@ -44,6 +44,12 @@ function normalizeCockpitKpis(raw) {
     orgNom: raw.organisation?.nom ?? null,
     // I3 FIX: exposer consoSource pour éviter un double fetch /api/cockpit
     consoSource: s.conso_source && s.conso_source !== 'none' ? s.conso_source : null,
+    // P0-3: calculs readiness/actions portés par le BE (doctrine §8.1)
+    actionsActives: s.actions_actives ?? null,
+    readinessScore: s.readiness_score ?? null,
+    couvertureDonnees: s.couverture_donnees ?? null,
+    // P0-4: deadline OPERAT ISO (SoT doctrine/constants.py côté BE)
+    deadlineOperat: raw.deadline_operat ?? null,
   };
 }
 

@@ -57,6 +57,14 @@ export const getSiteComplianceSummary = (siteId) =>
   api.get(`/compliance/sites/${siteId}/summary`).then((r) => r.data);
 export const getPortfolioComplianceSummary = (params = {}) =>
   api.get('/compliance/portfolio/summary', { params }).then((r) => r.data);
+
+/**
+ * Score conformité portefeuille (org-scoped via intercepteur axios X-Org-Id).
+ * Remplace le fetch() natif dans Cockpit.jsx — X-Org-Id injecté automatiquement.
+ * Shape : { avg_score, high_confidence_count, total_sites, ... }
+ */
+export const getCompliancePortfolioScore = () =>
+  api.get('/compliance/portfolio/score').then((r) => r.data);
 export const getComplianceTimeline = () => api.get('/compliance/timeline').then((r) => r.data);
 export const getComplianceScoreTrend = (params = {}) =>
   cachedGet('/compliance/score-trend', { params }).then((r) => r.data);

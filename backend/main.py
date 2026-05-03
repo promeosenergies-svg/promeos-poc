@@ -255,6 +255,12 @@ from routes.config_price_references import router as config_price_references_rou
 
 app.include_router(config_price_references_router)
 
+# Config regulatory constants (VNU/APER/TURPE/OPERAT)
+# P0-5 Vague2 doctrine §8.1 — zero business logic FE, seuils via RegulatoryConstantsContext
+from routes.config_regulatory_constants import router as config_regulatory_constants_router
+
+app.include_router(config_regulatory_constants_router)
+
 # CX Dashboard (admin — usage interne)
 from routes.cx_dashboard import router as cx_dashboard_router
 

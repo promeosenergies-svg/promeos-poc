@@ -37,6 +37,10 @@ from doctrine.constants import (
     TRAJECTORY_LEARNING_MONTHS_RAMP_UP,
     TRAJECTORY_LEARNING_RATIO_ENGAGEMENT,
     TRAJECTORY_LEARNING_RATIO_RAMP_UP,
+    OPERAT_DECLARATION_DEADLINE,
+    READINESS_WEIGHT_DATA,
+    READINESS_WEIGHT_CONFORMITY,
+    READINESS_WEIGHT_ACTIONS,
 )
 from services.kpi_service import KpiService, KpiScope
 from services.consumption_unified_service import get_portfolio_consumption, ConsumptionSource
@@ -348,6 +352,31 @@ def get_cockpit(
     except Exception:
         action_center_data = {"total_issues": 0, "critical": 0, "high": 0, "domains": {}}
 
+    # P0-3 / P0-4 : calculs readiness + actions_actives + deadline OPERAT (doctrine §8.1)
+    # actions_actives : proxy d'engagement actions (0-100, conforme=60pts + non-critique=40pts)
+    # Utilise statut_decret_tertiaire (SoT conformité sur Site) — pas de champ statut_conformite
+    _non_conformes = (
+        _sites_for_org(db, effective_org_id)
+        .filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME)
+        .count()
+    )
+    _conformes = (
+        _sites_for_org(db, effective_org_id).filter(Site.statut_decret_tertiaire == StatutConformite.CONFORME).count()
+    )
+    if total_sites > 0:
+        _actions_actives = round((_conformes / total_sites) * 60 + ((total_sites - _non_conformes) / total_sites) * 40)
+        _couverture_donnees = round(sum(1 for s in sites_objs if (s.conso_kwh_an or 0) > 0) / total_sites * 100)
+        _pct_conf = round(compliance_score_unified) if compliance_score_unified is not None else 0
+        _readiness_score = round(
+            _couverture_donnees * READINESS_WEIGHT_DATA
+            + _pct_conf * READINESS_WEIGHT_CONFORMITY
+            + _actions_actives * READINESS_WEIGHT_ACTIONS
+        )
+    else:
+        _actions_actives = 80
+        _couverture_donnees = 0
+        _readiness_score = 0
+
     return JSONResponse(
         content={
             "organisation": {"nom": org.nom, "type_client": org.type_client},
@@ -376,10 +405,16 @@ def get_cockpit(
                 "conso_sites_with_data": conso_sites_with_data,
                 "conso_source": _conso_dominant_source,
                 "contrats_expirant_90j": _contrats_expirant_90j,
+                # P0-3 : calculs côté BE — zero business logic in frontend
+                "actions_actives": _actions_actives,
+                "readiness_score": _readiness_score,
+                "couverture_donnees": _couverture_donnees,
             },
             "kpi_details": kpi_details,
             "action_center": action_center_data,
             "echeance_prochaine": "30 septembre 2026 (Déclaration OPERAT — consommations 2025)",
+            # P0-4 : deadline ISO pour calcul FE via useMemo (SoT doctrine/constants.py)
+            "deadline_operat": OPERAT_DECLARATION_DEADLINE,
         },
         headers={"Cache-Control": "private, max-age=30"},
     )

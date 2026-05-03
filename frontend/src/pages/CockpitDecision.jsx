@@ -29,6 +29,7 @@ import { ArrowRight, FileText, Sparkles } from 'lucide-react';
 
 import useCockpitFacts from '../hooks/useCockpitFacts';
 import { usePageBriefing } from '../hooks/usePageBriefing';
+import { useRegulatoryConstants } from '../contexts/RegulatoryConstantsContext';
 import SolKickerWithSwitch from '../ui/sol/SolKickerWithSwitch';
 import SolNarrative from '../ui/sol/SolNarrative';
 import AcronymTooltip from '../ui/sol/AcronymTooltip';
@@ -1008,6 +1009,8 @@ export default function CockpitDecision() {
     error: briefingError,
     refetch: briefingRefetch,
   } = usePageBriefing('cockpit_comex', { persona: 'comex' });
+  // P0-5 : seuils réglementaires depuis le backend (doctrine §8.1 — zero business logic FE)
+  const { constants: regConstants } = useRegulatoryConstants();
   const { org } = useScope();
   const [decisions, setDecisions] = useState(null);
   const [decisionsLoading, setDecisionsLoading] = useState(true);
@@ -1296,6 +1299,7 @@ export default function CockpitDecision() {
         >
           Suivi exclusif post-ARENH
         </div>
+        {/* P0-5 : seuils depuis RegulatoryConstantsContext (doctrine §8.1) */}
         <span
           className="inline-flex items-center px-2 py-0.5 rounded-md font-mono uppercase tracking-[0.05em]"
           style={{
@@ -1304,10 +1308,12 @@ export default function CockpitDecision() {
             color: 'var(--sol-ink-700)',
             background: 'var(--sol-bg-paper)',
           }}
-          title="Versement Nucléaire Universel — Décret 2026-55 + CRE 2026-52. Seuils 78 / 110 €/MWh. Activation 2027 si EPEX dépasse seuil."
+          title={`${regConstants.vnu.label} — ${regConstants.vnu.source}. Seuils ${regConstants.vnu.seuil_bas_eur_mwh} / ${regConstants.vnu.seuil_haut_eur_mwh} €/MWh. ${regConstants.vnu.activation}.`}
         >
           <AcronymTooltip acronym="VNU">VNU</AcronymTooltip>{' '}
-          <span style={{ marginLeft: 4, color: 'var(--sol-ink-500)' }}>seuil 78 €/MWh</span>
+          <span style={{ marginLeft: 4, color: 'var(--sol-ink-500)' }}>
+            seuil {regConstants.vnu.seuil_bas_eur_mwh} €/MWh
+          </span>
         </span>
         <span
           className="inline-flex items-center px-2 py-0.5 rounded-md font-mono uppercase tracking-[0.05em]"
@@ -1317,10 +1323,12 @@ export default function CockpitDecision() {
             color: 'var(--sol-ink-700)',
             background: 'var(--sol-bg-paper)',
           }}
-          title="TURPE 7 reprogrammation HC — méridiennes 11h-17h obligatoires (CRE 2025-78, brochure Enedis p.13-14). Cycle 5 ans."
+          title={`${regConstants.turpe7_hc.label} — obligatoires ${regConstants.turpe7_hc.plage_meridienne} (${regConstants.turpe7_hc.source}). Cycle 5 ans.`}
         >
           <AcronymTooltip acronym="TURPE">TURPE 7</AcronymTooltip>{' '}
-          <span style={{ marginLeft: 4, color: 'var(--sol-ink-500)' }}>HC méridiennes</span>
+          <span style={{ marginLeft: 4, color: 'var(--sol-ink-500)' }}>
+            HC {regConstants.turpe7_hc.plage_meridienne}
+          </span>
         </span>
         <span
           className="inline-flex items-center px-2 py-0.5 rounded-md font-mono uppercase tracking-[0.05em]"
@@ -1330,10 +1338,12 @@ export default function CockpitDecision() {
             color: 'var(--sol-ink-700)',
             background: 'var(--sol-bg-paper)',
           }}
-          title="Loi APER 2023-175 — solarisation parkings >1500 m². Échéance 1/07/2026 ou 1/07/2028 selon surface. Sanction 20 €/m²/an."
+          title={`${regConstants.aper.source} — solarisation parkings >{regConstants.aper.surface_min_m2} m². Sanction ${regConstants.aper.penalite_eur_m2_an} €/m²/an.`}
         >
           <AcronymTooltip acronym="APER">APER</AcronymTooltip>{' '}
-          <span style={{ marginLeft: 4, color: 'var(--sol-ink-500)' }}>parkings &gt; 1 500 m²</span>
+          <span style={{ marginLeft: 4, color: 'var(--sol-ink-500)' }}>
+            parkings &gt; {regConstants.aper.surface_min_m2.toLocaleString('fr-FR')} m²
+          </span>
         </span>
       </div>
 
