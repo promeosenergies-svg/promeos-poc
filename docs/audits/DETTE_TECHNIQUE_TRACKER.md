@@ -331,12 +331,39 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
+## D-Sprint-C2-Conftest-Reseed-Reset-001 — `conftest._ensure_seeded` reset alembic_version pendant tests
+
+**Détecté** : Sprint C-2 Phase 1.2 anomalie mid-flight (2026-05-03)
+
+**Symptôme** : DB locale revenue à un revision Alembic antérieur (`2f83c6bebc57`) après run de tests, alors que HEAD migration attendu était `c8f1246522f9` (Phase 3 Sprint C-1). Probablement `conftest.py::_ensure_seeded` autouse module-scoped qui reset la DB pendant les tests Phase 4-6 Sprint C-1.
+
+**Impact** : avant chaque `alembic revision --autogenerate`, il faut `alembic stamp head` pour aligner DB sur HEAD migration. Sinon autogenerate produit du diff erroné (re-création colonnes déjà présentes, dépendances cassées, ou drops non-désirés sur tables Enedis legacy).
+
+**Workaround actuel** : `alembic stamp head` avant chaque autogenerate (côté dev manuel).
+
+**Action durable** :
+- Investiguer `conftest._ensure_seeded` scope et logique reset
+- Restreindre scope (function-level uniquement, pas module-level autouse)
+- OU isolation DB de test vs DB dev (fixture pytest dédiée tmp_path)
+- OU stamper automatiquement post-reset dans `_ensure_seeded`
+
+**Effort estimé** : 1-2 h
+**Priorité** : 🟡 P2 (workaround connu, pas bloquant mais friction récurrente)
+**Sprint cible** : Sprint C-4 (Tests + observabilité, contexte qualité tests)
+
+**Traces** :
+- Sprint C-1 Phase 3 (test_site_migration_alembic.py) : approche statique AST adoptée à cause de ce comportement
+- Sprint C-2 Phase 1.2 : `alembic stamp head` exécuté manuellement avant `alembic revision --autogenerate`
+
+---
+
 ## Métriques tracker
 
 | Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
 |---|---|---|---|---|
 | 2026-05-03 | 11 | 0 | 4 | 7 |
 | 2026-05-03 | 12 | 0 | 4 | 8 |
+| 2026-05-03 | 13 | 0 | 4 | 9 |
 
 ---
 
