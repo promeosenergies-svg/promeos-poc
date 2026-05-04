@@ -770,6 +770,156 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-04 (Sprint C-3 Phase 3.4d audit follow-up — +5 dettes) | 21 | 2 | 6 | 13 |
 | 2026-05-04 (Sprint C-3 Phase 3.6 — 1 clôture pivotée + 1 nouvelle PowerContract) | 21 | 2 | 6 | 13 |
 | 2026-05-04 (Sprint C-3 Phase 3.7 — 1 clôture reportée + 2 nouvelles dettes Modele/Activation) | 22 | 2 | 8 | 12 |
+| 2026-05-04 (Sprint C-3 Phase 3.7d audit follow-up — +6 dettes audit cumul) | 28 | 2 | 11 | 15 |
+
+---
+
+## D-Sprint-C4-ELD-5-Entrees-Verification-001 — 5 entrées ELD à vérifier/corriger
+
+**Détecté** : Sprint C-3 Phase 3.7d audit regulatory-expert (2026-05-04)
+
+**Périmètre** : Audit a relevé 5 entrées de `eld_gaz_referentiel.yaml` à vérifier/corriger. Phase 3.7d a appliqué fix temporaires (renommages + notes warning) mais validation finale source CRE officielle requise :
+
+| Code | Fix Phase 3.7d | À valider Sprint C-4 |
+|---|---|---|
+| `R_GDS` | Label corrigé "Réseau Gaz de Strasbourg" | Vérifier scope CRE |
+| `REGIE_NAGYS` | Note warning + label "à vérifier" | Confirmer existence (Carmaux Gaz pas trouvé liste CRE) |
+| `SOREGIES_VIENNE` (ex-REGIE_RIDUEZE) | Renommé code | Confirmer scope gaz Vienne (86) |
+| `GAZ_DE_BORDEAUX` | Note warning fournisseur ≠ distributeur | Décision : retirer du référentiel (pas un distributeur) |
+| `ENERGIE_LOON_PLAGE` (ex-GAZ_DUNKERQUE) | Renommé + périmètre clarifié | Confirmer Loon-Plage (pas CU Dunkerque) |
+
+**Action Sprint C-4** :
+1. Consulter `https://www.cre.fr/distributeurs-de-gaz-naturel` (liste officielle CRE)
+2. Croiser avec les 5 entrées + retirer les fantômes
+3. Compléter `legal_reference` du header YAML : `Loi n°46-628 du 8 avril 1946 art. 23 (nationalisation, exception ELD pré-1946)`
+
+**Effort estimé** : ~30-60 min (vérification + correction)
+**Priorité** : 🟡 P1 (fiabilité référentiel = base TraceTooltip + cascade DP.grd_code)
+**Sprint cible** : Sprint C-4
+
+---
+
+## D-Phase3-4-EnergieFinale-Strict-Type-Conversion-PCI-PCS-001 — Source-guard ingestion GRDF kWh PCS → PCI
+
+**Détecté** : Sprint C-3 Phase 3.7d audit regulatory-expert (2026-05-04)
+
+**Périmètre** : SG_KWHEF_01+02 actuels couvrent allowlist écritures `Site.annual_kwh_total` + commentaire "kWhEF PCI" — suffisants pour Enedis R6X (kWhEF natif) mais **insuffisants pour GRDF R171/R141** qui livrent en **kWh PCS** (Pouvoir Calorifique Supérieur).
+
+**Risque** : ingestion brute GRDF sans conversion PCS→PCI (coefficient officiel = **0.901**) → conso surévaluée ~10% → Cabs OPERAT décalé → faux positifs alerte DT.
+
+**Action Sprint C-4** :
+1. Source-guard ingestion GRDF : `assert source.unit == "kWh_PCS"` AVANT conversion
+2. Conversion explicite via `config/units_conversion.yaml::PCS_TO_PCI = 0.901`
+3. Logging `conversion_applied: true` dans audit trail outbox
+4. Imports Excel : checkbox metadata utilisateur "Unité source : kWhEF PCI / kWh PCS / kWhEP" (UI)
+
+**Effort estimé** : ~1.5-2 h (source-guard + conversion + UI checkbox)
+**Priorité** : 🟠 **P1** (risque non-conformité OPERAT critique)
+**Sprint cible** : Sprint C-4
+
+**Sources** : GRDF Catalogue prestations 2025 §conversion PCS→PCI ; Arrêté 10/04/2020 art. 2-g.
+
+---
+
+## D-Sprint-C4-Cascade-SoT-Reuse-Audit-001 — Auditer toutes constantes locales dupliquant SoT YAML
+
+**Détecté** : Sprint C-3 Phase 3.7d audit code-reviewer (2026-05-04)
+
+**Périmètre** : Phase 3.7d a corrigé 2 duplications dans `cascade_recompute_service.py` :
+- `_AUDIT_SME_SEUIL_*` (constantes locales) → `get_audit_sme_threshold()` SoT YAML
+- `date(2026, 7, 1)` / `date(2028, 7, 1)` (dates APER hardcodées) → `get_term_value("APER_DEADLINE_*")` SoT YAML
+
+**Risque résiduel** : d'autres modules backend peuvent contenir des duplications similaires :
+- `regops/rules/*.py` (rules engine)
+- `services/compliance_score_service.py` (V2 scoring)
+- `services/compliance_coordinator.py` (coordinator)
+- `data_ingestion/*.py` (parsers)
+
+**Action Sprint C-4** :
+1. Audit balayage : `grep -rn "0.052\|0.227\|7500\|3750\|2.75\|23.6\|26.58\|0.0569" backend/services backend/regops backend/data_ingestion`
+2. Pour chaque match runtime : remplacer par `get_term_value()` ou `get_<helper>()` du `regulatory_sources_loader`
+3. Étendre source-guards SG_REG_CONST_* pour couvrir 68/68 termes (vs 10/68 actuel)
+
+**Effort estimé** : ~2-3 h (audit + refacto + extension source-guards)
+**Priorité** : 🟡 P1 (anti-drift réglementaire systémique)
+**Sprint cible** : Sprint C-4
+
+---
+
+## D-Sprint-C4-ADR-3-Documents-001 — 3 ADR à produire avant Sprint C-4
+
+**Détecté** : Sprint C-3 Phase 3.7d audit architect-helios (2026-05-04)
+
+**Périmètre** : 3 ADR architecturaux à formaliser avant exécution Sprint C-4 :
+
+1. **ADR consentement_modele_rgpd** (P0) — design des 4 champs `Org.consentement_*` + `DP.consentement_*` + audit trail (qui/quand/version CGU). Bloquant pour `D-Sprint-C3-Cascade-Consentement-Activation-001`. Délégation `regulatory-expert` + `security-auditor` (PII/RGPD).
+
+2. **ADR cohabitation_endpoint_intensity** (P1) — figer le contrat entre :
+   - `/api/energy/intensity` (existant, série temporelle Meter readings, Phase indéterminée)
+   - `/api/portfolio/intensity` (nouveau Sprint C-3 Phase 3.4, agrégat org-scopé Site.annual_kwh_total)
+   Risque : divergence formule sans ADR (anti-pattern doctrine §6.4).
+
+3. **ADR namespace_api_config_vs_regulatory** (P2 mineur) — figer la séparation sémantique entre :
+   - `/api/config/*` (constantes Python runtime — emission_factors, regulatory_constants)
+   - `/api/regulatory/*` (sources légales avec traçabilité — rates, domains, citations Légifrance)
+
+**Action Sprint C-4** :
+- 3 ADR rédigés dans `docs/adr/` (créer dossier si absent)
+- Délégation : `architect-helios` (rédaction) + experts métier (revue)
+
+**Effort estimé** : ~1-1.5 j-h (3 ADR × 30 min chacun + revues)
+**Priorité** : 🟠 P1 (ADR 1 RGPD bloquant Sprint C-4)
+**Sprint cible** : Sprint C-4 amont
+
+---
+
+## D-Sprint-C4-Reg-TVA-Reduite-Abonnement-Gaz-001 — TVA 5,5% abonnement gaz/élec résidentiel
+
+**Détecté** : Sprint C-3 Phase 3.7d audit regulatory-expert (2026-05-04)
+
+**Périmètre** : Manquant YAML SoT `sources_reglementaires.yaml`. Doctrine fiscale française :
+- TVA **5,5%** sur abonnement gaz/élec résidentiel (≤ 36 kVA pour élec, abonnement seul gaz)
+- Source : CGI art. 278-0 bis A
+- Distinct du `TVA_REDUITE_CTA_PCT` actuel (5,5% sur CTA spécifiquement)
+
+**Action Sprint C-4** : ajouter terme `TVA_REDUITE_ABONNEMENT_PCT = 5.5%` au YAML.
+
+**Effort estimé** : 5 min
+**Priorité** : 🟡 P1 (impact Bill Intelligence résidentiel)
+**Sprint cible** : Sprint C-4
+
+---
+
+## D-Sprint-C4-Reg-Legal-Reference-Completion-001 — JORFTEXT/legal_reference manquants 18+ termes
+
+**Détecté** : Sprint C-3 Phase 3.7d audit regulatory-expert (2026-05-04)
+
+**Périmètre** : 18+ termes du YAML ont `legal_reference: null` ou URL deep-link non vérifiée :
+- TURPE 6/7 (URLs CRE deep-link à confirmer)
+- CTA_ELEC_DISTRIBUTION/TRANSPORT_PCT (URLs Phase 3.4d à vérifier post-publication officielle)
+- CO2_FACTOR_GNL_KGCO2_PER_KWH (JORFTEXT collision corrigée Phase 3.4d → null avec note)
+- REGOPS_WEIGHT_* / READINESS_WEIGHT_* (doctrine PROMEOS, pas de JORFTEXT applicable, OK)
+- PRICE_FALLBACK / PRICE_FLEX_NEBCO (heuristiques marché, pas de JORFTEXT, OK)
+
+**Action Sprint C-4** : audit systématique `legal_reference: null` + complétion URLs Légifrance/CRE deep-links validés.
+
+**Effort estimé** : ~1 j-h (vérification 18 termes + complétion + tests source-guards renforcés)
+**Priorité** : 🟡 P1 (audit trail légal R10 différenciateur)
+**Sprint cible** : Sprint C-4
+
+---
+
+## D-Sprint-C4-FE-i18n-TraceTooltip-Effective-001 — "effective" anglais dans TraceTooltip
+
+**Détecté** : Sprint C-3 Phase 3.7d audit code-reviewer (2026-05-04)
+
+**Périmètre** : `frontend/src/ui/TraceTooltip.jsx:54` affiche `{trace.source.version} · effective {trace.source.effective_date}` — "effective" en anglais alors que l'UI PROMEOS est en français.
+
+**Action Sprint C-4** : remplacer par `{trace.source.version} · applicable depuis {trace.source.effective_date}`.
+
+**Effort estimé** : 2 min (1 ligne)
+**Priorité** : 🟡 P2 (cosmétique — cohérence localization FR doctrine PROMEOS)
+**Sprint cible** : Sprint C-4 ou opportunistique
 
 ---
 

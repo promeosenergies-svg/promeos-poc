@@ -95,8 +95,11 @@ def compute_portfolio_intensity(
         "sum_annual_kwh": sum_annual_kwh if sum_annual_kwh > 0 else None,
         "sum_surface_m2": sum_surface_m2 if sum_surface_m2 > 0 else None,
         "sum_tertiaire_area_m2": (sum_tertiaire_area_m2 if sum_tertiaire_area_m2 > 0 else None),
+        # Sprint C-3 Phase 3.7d audit follow-up — PROMEOS-SEC-2026-042 (CWE-200) :
+        # `organisation_id` numérique auto-incrémenté retiré de la réponse publique.
+        # Le scope inclut uniquement `portefeuille_id` (déjà fourni par le client).
+        # L'org est implicite via le token / DEMO_MODE — pas d'amplification IDOR.
         "scope": {
-            "organisation_id": organisation_id,
             "portefeuille_id": portefeuille_id,
         },
     }

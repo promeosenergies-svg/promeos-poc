@@ -21,8 +21,8 @@
 version: "1.0"
 last_updated: "2026-05-04"
 sprint_origin: "Sprint C-3 Phase 3.6"
-source_label: "data.gouv.fr — ELD gaz + CRE liste opérateurs distribution"
-source_url: "https://www.data.gouv.fr/fr/datasets/?q=ELD+gaz"
+source_label: "CRE — Liste officielle distributeurs de gaz naturel France"
+source_url: "https://www.cre.fr/distributeurs-de-gaz-naturel"
 
 eld:
   # ═════════════════════════════════════════════════════════════════════
@@ -62,12 +62,12 @@ eld:
 
   R_GDS:
     code: "R_GDS"
-    label: "R-GDS — Strasbourg Électricité Réseaux"
+    label: "R-GDS — Réseau Gaz de Strasbourg"
     type: "ELD_LOCALE"
     perimetre: "Strasbourg + Eurométropole + ~15 communes Bas-Rhin"
     site_web: "https://www.r-gds.fr"
     contact_consentement: null
-    notes: "ELD Alsace, distribution gaz + élec sur périmètre"
+    notes: "ELD Alsace gaz (R-GDS = filiale gaz d'Électricité de Strasbourg ÉS)"
 
   GAZ_DE_BARR:
     code: "GAZ_DE_BARR"
@@ -161,12 +161,12 @@ eld:
 
   GAZ_DE_BORDEAUX:
     code: "GAZ_DE_BORDEAUX"
-    label: "Gaz de Bordeaux"
+    label: "Gaz de Bordeaux (FOURNISSEUR — pas distributeur)"
     type: "ELD_LOCALE"
-    perimetre: "Bordeaux ville (centre historique, en sus de Régaz)"
+    perimetre: "Bordeaux — entité fournisseur historique, NON distributeur"
     site_web: "https://www.gazdebordeaux.fr"
     contact_consentement: null
-    notes: "Fournisseur historique, distinct de Régaz infrastructure"
+    notes: "⚠️ Phase 3.7d audit regulatory-expert : Gaz de Bordeaux est un FOURNISSEUR (filiale Engie) et non un distributeur — le distributeur Bordeaux Métropole est REGAZ uniquement. À reclasser ou retirer du référentiel ELD distribution (D-Sprint-C4-ELD-5-Entrees-Verification-001)."
 
   GAZ_DE_DOLE:
     code: "GAZ_DE_DOLE"
@@ -179,12 +179,12 @@ eld:
 
   REGIE_NAGYS:
     code: "REGIE_NAGYS"
-    label: "Régie de Carmaux Gaz"
+    label: "Carmaux Gaz — entrée à vérifier"
     type: "ELD_LOCALE"
-    perimetre: "Carmaux (Tarn)"
+    perimetre: "Carmaux (Tarn) — scope gaz à confirmer"
     site_web: null
     contact_consentement: null
-    notes: "Petite ELD locale historique"
+    notes: "⚠️ Phase 3.7d audit regulatory-expert : entrée incertaine — la régie historique de Carmaux relève surtout de l'électricité. Vérifier liste CRE distributeurs gaz officielle (D-Sprint-C4-ELD-5-Entrees-Verification-001)."
 
   GAZ_PASSY:
     code: "GAZ_PASSY"
@@ -195,23 +195,23 @@ eld:
     contact_consentement: null
     notes: null
 
-  REGIE_RIDUEZE:
-    code: "REGIE_RIDUEZE"
-    label: "SOREGIES — Vienne (Riduèze)"
+  SOREGIES_VIENNE:
+    code: "SOREGIES_VIENNE"
+    label: "SOREGIES — Vienne (86)"
     type: "ELD_LOCALE"
-    perimetre: "Vienne département + 53 communes"
+    perimetre: "Département de la Vienne (notamment Loudun) + 53 communes"
     site_web: "https://www.soregies.fr"
     contact_consentement: null
-    notes: "ELD multi-énergie distribuée syndicat Vienne"
+    notes: "ELD multi-énergie syndicat Vienne (Sergies/Sorégies). Renommé Phase 3.7d — ancien code REGIE_RIDUEZE (terme non officiel) corrigé sur audit regulatory-expert."
 
-  GAZ_DUNKERQUE:
-    code: "GAZ_DUNKERQUE"
-    label: "Énergie Loon-Plage / Communauté Urbaine Dunkerque"
+  ENERGIE_LOON_PLAGE:
+    code: "ENERGIE_LOON_PLAGE"
+    label: "Énergie Loon-Plage"
     type: "ELD_LOCALE"
-    perimetre: "Dunkerque communauté urbaine partielle"
+    perimetre: "Loon-Plage (Nord) — commune uniquement, pas la CU Dunkerque"
     site_web: null
     contact_consentement: null
-    notes: "ELD industrielle historique Nord"
+    notes: "ELD historique commune Loon-Plage (Nord). Renommé Phase 3.7d audit regulatory-expert : ancien code GAZ_DUNKERQUE (label trompeur sur le périmètre CU)."
 
   GAZ_DE_ALFORTVILLE:
     code: "GAZ_DE_ALFORTVILLE"

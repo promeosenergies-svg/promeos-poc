@@ -153,8 +153,10 @@ def test_endpoint_no_filter_returns_org_aggregate():
     ]:
         assert key in data, f"Key manquante: {key}"
 
-    # scope contient les 2 IDs
-    assert "organisation_id" in data["scope"]
+    # Sprint C-3 Phase 3.7d audit follow-up — PROMEOS-SEC-2026-042 (CWE-200) :
+    # `organisation_id` retiré de la réponse publique (anti-amplification IDOR).
+    # Seul `portefeuille_id` reste dans scope (déjà fourni par le client).
+    assert "organisation_id" not in data["scope"]
     assert "portefeuille_id" in data["scope"]
     assert data["scope"]["portefeuille_id"] is None  # pas de filtre
 

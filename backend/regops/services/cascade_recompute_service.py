@@ -201,12 +201,25 @@ def _resolve_aper_taille(site) -> Optional[str]:
 
 
 def _resolve_aper_deadline(site) -> Optional[date]:
-    """Échéance APER : 01/07/2026 (LARGE) ou 01/07/2028 (SMALL)."""
+    """Échéance APER (lue depuis SoT YAML `sources_reglementaires.yaml`).
+
+    Sprint C-3 Phase 3.7d audit follow-up — élimination duplication locale
+    `date(2026, 7, 1)` / `date(2028, 7, 1)`. SoT canonique :
+      - APER_DEADLINE_LARGE = "2026-07-01" (parkings > 10000 m²)
+      - APER_DEADLINE_SMALL = "2028-07-01" (parkings 1500-10000 m²)
+
+    Anti-régression : si la loi APER 2023-175 est mise à jour, modifier
+    uniquement le YAML — la cascade et le wrapping FE TraceTooltip
+    bénéficient automatiquement.
+    """
+    from config.regulatory_sources_loader import get_term_value
+
     if not site.parking_area_m2 or site.parking_area_m2 < 1500:
         return None
-    if site.parking_area_m2 > 10000:
-        return date(2026, 7, 1)
-    return date(2028, 7, 1)
+
+    deadline_key = "APER_DEADLINE_LARGE" if site.parking_area_m2 > 10000 else "APER_DEADLINE_SMALL"
+    iso_str = get_term_value(deadline_key)
+    return date.fromisoformat(iso_str) if isinstance(iso_str, str) else iso_str
 
 
 def _recompute_intensity_total(site) -> Optional[float]:
@@ -256,29 +269,34 @@ def _recompute_intensity_tertiaire(site) -> Optional[float]:
 # défini au niveau Organisation, pas EntiteJuridique. La dette originale
 # D-Phase6-Cascade-EJ-Sites-001 a été clôturée sous D-Phase6-Cascade-AuditSme-Org-Sites-001.
 
-# Seuils doctrinaux loi 30/04/2025
-_AUDIT_SME_SEUIL_ISO50001_GWH = 23.6
-_AUDIT_SME_SEUIL_AUDIT_4ANS_GWH = 2.75
-
 
 def _recompute_audit_sme_obligation(audit_sme) -> Optional[str]:
     """Recalcule AuditEnergetique.obligation depuis conso_annuelle_moy_gwh.
 
-    Seuils loi 30/04/2025 :
-      ≥ 23.6 GWh → "SME_ISO50001"
-      ≥  2.75 GWh → "AUDIT_4ANS"
-      <  2.75 GWh → "AUCUNE"
+    Seuils loi 30/04/2025 lus depuis SoT YAML `sources_reglementaires.yaml`
+    (Sprint C-3 Phase 3.7d audit follow-up — élimination de la duplication
+    locale qui violait la doctrine "1 SoT par concept" :
+      - AUDIT_SME_THRESHOLD_GWH_ISO50001 = 23.6 → "SME_ISO50001"
+      - AUDIT_SME_THRESHOLD_GWH_PERIODIC = 2.75 → "AUDIT_4ANS"
+      - <  2.75 GWh                              → "AUCUNE"
 
     Si conso_annuelle_moy_gwh est None → None retourné, obligation NON modifiée
     (pas de transition forcée vers une valeur arbitraire).
+
+    Anti-régression : SG_REG_CONST_03 vérifie cohérence YAML ↔ runtime Python.
     """
+    from config.regulatory_sources_loader import get_audit_sme_threshold
+
     conso_gwh = getattr(audit_sme, "conso_annuelle_moy_gwh", None)
     if conso_gwh is None:
         return None
 
-    if conso_gwh >= _AUDIT_SME_SEUIL_ISO50001_GWH:
+    seuil_iso50001 = get_audit_sme_threshold("iso50001")
+    seuil_audit_4ans = get_audit_sme_threshold("audit_4ans")
+
+    if conso_gwh >= seuil_iso50001:
         new_obligation = "SME_ISO50001"
-    elif conso_gwh >= _AUDIT_SME_SEUIL_AUDIT_4ANS_GWH:
+    elif conso_gwh >= seuil_audit_4ans:
         new_obligation = "AUDIT_4ANS"
     else:
         new_obligation = "AUCUNE"
