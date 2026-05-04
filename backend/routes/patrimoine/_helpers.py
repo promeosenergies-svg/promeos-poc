@@ -266,6 +266,9 @@ def _serialize_site(site: Site) -> dict:
         "compliance_score": site.compliance_score_composite,
         "compliance_needs_review": review_status["needs_review"],
         "compliance_review_reasons": review_status["reasons"],
+        # Sprint C-2 Phase 4.2 — intensité énergétique persistée (matrice §4.4.F #56)
+        "intensity_kwh_m2_total": site.intensity_kwh_m2_total,
+        "intensity_kwh_m2_tertiaire": site.intensity_kwh_m2_tertiaire,
     }
 
 

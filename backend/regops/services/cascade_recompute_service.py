@@ -11,9 +11,11 @@ amont (Site / Batiment) et les applique en chaîne :
 
 Architecture mince : délègue aux services existants, ne duplique aucune logique.
 
-Scope MVP Sprint C-1 = 7 champs essentiels (Site x6 + Batiment x1) :
+Scope MVP Sprint C-1 = 7 champs initiaux (Site x6 + Batiment x1) ; étendu en
+Sprint C-2 Phase 4.2 à 10 champs (Site.surface_m2, Site.annual_kwh_total) :
   - Site.code_postal, Site.altitude_m, Site.tertiaire_area_m2,
-    Site.parking_area_m2, Site.roof_area_m2, Site.operat_sous_categorie_id
+    Site.parking_area_m2, Site.roof_area_m2, Site.operat_sous_categorie_id,
+    Site.surface_m2 (Phase 4.2), Site.annual_kwh_total (Phase 4.2)
   - Batiment.cvc_power_kw
 
 5 cascades reportées (cf. tracker dette technique D-Phase6-Cascade-*) :
@@ -23,7 +25,9 @@ Scope MVP Sprint C-1 = 7 champs essentiels (Site x6 + Batiment x1) :
   - Contract.date_fin_validite → alerte 90j (Sprint C-2/C-5)
 
 Endpoint preview : GET /api/v1/sites/{id}/cascade-impact (dry-run, org-scopé).
-Wiring PATCH /api/sites/{id} → cascade_recompute_on_change(persist=True) = Sprint C-2.
+Wiring PATCH /api/sites/{id} → cascade_recompute_on_change(persist=True) = Sprint C-2 Phase 3.
+Sprint C-2 Phase 4.2 — intensity_kwh_m2_total + intensity_kwh_m2_tertiaire
+persistées via cascade (anti-cycle : intensity n'est PAS source de cascade compliance).
 """
 
 from __future__ import annotations
@@ -200,6 +204,42 @@ def _resolve_aper_deadline(site) -> Optional[date]:
     return date(2028, 7, 1)
 
 
+def _recompute_intensity_total(site) -> Optional[float]:
+    """Recalcule intensity_kwh_m2_total (Sprint C-2 Phase 4.2 — matrice §4.4.F #56).
+
+    annual_kwh_total / surface_m2 si données complètes, sinon None.
+    Anti-cycle : ne déclenche PAS de cascade vers compliance_score.
+    """
+    try:
+        from services.site_intensity_service import _safe_intensity
+
+        return _safe_intensity(
+            getattr(site, "annual_kwh_total", None),
+            getattr(site, "surface_m2", None),
+        )
+    except Exception as e:
+        _logger.warning("recompute_intensity_total failed for site %s: %s", getattr(site, "id", None), e)
+        return None
+
+
+def _recompute_intensity_tertiaire(site) -> Optional[float]:
+    """Recalcule intensity_kwh_m2_tertiaire (Sprint C-2 Phase 4.2 — doctrine OPERAT/DT).
+
+    annual_kwh_total / tertiaire_area_m2 si données complètes, sinon None.
+    Anti-cycle : ne déclenche PAS de cascade vers compliance_score.
+    """
+    try:
+        from services.site_intensity_service import _safe_intensity
+
+        return _safe_intensity(
+            getattr(site, "annual_kwh_total", None),
+            getattr(site, "tertiaire_area_m2", None),
+        )
+    except Exception as e:
+        _logger.warning("recompute_intensity_tertiaire failed for site %s: %s", getattr(site, "id", None), e)
+        return None
+
+
 # ─── CASCADE_MAP MVP Sprint C-1 (7 champs) ──────────────────────────────────
 #
 # Chaque entrée est une liste de fonctions cascade qui retournent (output_field, value).
@@ -220,7 +260,18 @@ CASCADE_MAP_MVP_SPRINT_C1: dict[str, list[Callable]] = {
         lambda s, db: ("compliance_score", _recompute_compliance(s, db)),
     ],
     "Site.tertiaire_area_m2": [
+        # Phase 4.2 — intensity_tertiaire dépend de tertiaire_area_m2
+        lambda s, db: ("intensity_kwh_m2_tertiaire", _recompute_intensity_tertiaire(s)),
         lambda s, db: ("compliance_score", _recompute_compliance(s, db)),
+    ],
+    "Site.surface_m2": [
+        # Phase 4.2 — intensity_total dépend de surface_m2 (UI legacy)
+        lambda s, db: ("intensity_kwh_m2_total", _recompute_intensity_total(s)),
+    ],
+    "Site.annual_kwh_total": [
+        # Phase 4.2 — annual_kwh impacte les 2 intensités
+        lambda s, db: ("intensity_kwh_m2_total", _recompute_intensity_total(s)),
+        lambda s, db: ("intensity_kwh_m2_tertiaire", _recompute_intensity_tertiaire(s)),
     ],
     "Site.parking_area_m2": [
         lambda s, db: ("aper_assujetti", _resolve_aper_assujetti(s)),
@@ -251,6 +302,9 @@ _PERSISTABLE_OUTPUT_FIELDS = {
     "aper_assujetti",
     "aper_categorie_taille",
     "aper_deadline",
+    # Phase 4.2 Sprint C-2 — intensités persistées sur Site
+    "intensity_kwh_m2_total",
+    "intensity_kwh_m2_tertiaire",
 }
 
 

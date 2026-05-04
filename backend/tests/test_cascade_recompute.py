@@ -82,11 +82,12 @@ def test_resolve_aper_deadline_below_seuil():
 # ─── CASCADE_MAP composition ─────────────────────────────────────────────────
 
 
-def test_cascade_map_contains_7_mvp_fields():
-    """Les 7 champs MVP Sprint C-1 doivent être présents dans CASCADE_MAP."""
+def test_cascade_map_contains_10_mvp_fields():
+    """7 champs Sprint C-1 + 3 champs Phase 4.2 (surface_m2, annual_kwh_total + extension tertiaire_area_m2)."""
     from regops.services.cascade_recompute_service import CASCADE_MAP_MVP_SPRINT_C1
 
     expected = {
+        # Sprint C-1
         "Site.code_postal",
         "Site.altitude_m",
         "Site.tertiaire_area_m2",
@@ -94,6 +95,9 @@ def test_cascade_map_contains_7_mvp_fields():
         "Site.roof_area_m2",
         "Site.operat_sous_categorie_id",
         "Batiment.cvc_power_kw",
+        # Sprint C-2 Phase 4.2
+        "Site.surface_m2",
+        "Site.annual_kwh_total",
     }
     assert set(CASCADE_MAP_MVP_SPRINT_C1.keys()) == expected
 

@@ -86,6 +86,21 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
     annual_kwh_total = Column(Float, nullable=True, comment="Consommation annuelle totale (kWh)")
     last_energy_update_at = Column(DateTime, nullable=True, comment="Derniere MAJ donnees energie")
 
+    # Sprint C-2 Phase 4.2 — intensité énergétique persistée (matrice v1 §4.4.F #56)
+    # Persistées par site_intensity_service.persist_site_intensities() ;
+    # recalculées via cascade_recompute_service sur changement de
+    # annual_kwh_total / surface_m2 / tertiaire_area_m2.
+    intensity_kwh_m2_total = Column(
+        Float,
+        nullable=True,
+        comment="Intensité énergétique = annual_kwh_total / surface_m2 (UI legacy, compat L825/L1528 Patrimoine.jsx)",
+    )
+    intensity_kwh_m2_tertiaire = Column(
+        Float,
+        nullable=True,
+        comment="Intensité énergétique = annual_kwh_total / tertiaire_area_m2 (doctrine OPERAT/DT)",
+    )
+
     # Pilotage des usages (Flex Ready® NF EN IEC 62746-4, Baromètre Flex 2026)
     archetype_code = Column(
         String(50),
