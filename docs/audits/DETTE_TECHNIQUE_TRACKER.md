@@ -305,22 +305,39 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
-## D-Phase6-Cascade-Contract-Renewal-001 — Cascade Contract.date_fin_validite → alerte 90j
+## ~~D-Phase6-Cascade-Contract-Renewal-001~~ — ✅ CLÔTURÉ MVP 2026-05-04 — Cascade Contract.date_fin_validite → alerte 90j
 
 **Détecté** : Sprint C-1 Phase 6.1 audit pré-build (2026-05-03)
+**Clôturé MVP** : Sprint C-2 Phase 5.3 (2026-05-04, commit Phase 5.3)
 
-**Périmètre** : Modification `Contract.date_fin_validite` doit cascade vers création alerte 90j dans Centre d'action.
+**Périmètre original** : Modification `Contract.date_fin_validite` doit cascade vers création alerte 90j dans Centre d'action.
 
-**Pourquoi reporté** : Centre d'action backend pas encore complètement implémenté pour alertes proactives. Modèle alert/notification à clarifier.
+**Pivot Phase 5.1** : `Contract.date_fin_validite` n'existe pas (champ canonique = `EnergyContract.end_date`). Cascade pivotée sans changement sémantique.
 
-**Action** :
-- Définir modèle Alert (type, deadline, priorité, action_url)
-- Endpoint `/api/alerts` CRUD + cascade trigger
-- Wiring Centre d'action UI
+**Solution MVP livrée Phase 5.3 (Cas B — modèle Alert absent)** :
+- Migration Alembic mineure 2e78ecc6040c (6e épisode discipline anti-DROP) :
+  `EnergyContract.alerte_renouvellement_logged_at: DateTime nullable`
+- 2 helpers cascade_recompute_service.py :
+  - `_trigger_renewal_alert(contract, db)` — log structuré "RENEWAL_ALERT_90D" + flag set
+  - `_reset_renewal_alert_flag(contract, db)` — reset flag à None
+- 1 entrée `CASCADE_MAP_MVP_SPRINT_C1["EnergyContract.end_date"]` (2 actions ordonnées : reset PUIS trigger)
+- Idempotence anti-spam : log skipped si dernier log <30j (`_RENEWAL_ALERT_REPLAY_COOLDOWN_DAYS`)
+- Fenêtre 90j stricte : `_RENEWAL_ALERT_WINDOW_DAYS = 90`
+- 10 tests verts (fenêtre + idempotence + reset flag + extension/raccourcissement contrat)
 
-**Effort estimé** : 4-6 h
-**Priorité** : 🟡 P2 (Centre d'action Sprint C-2 ou C-5)
-**Sprint cible** : Sprint C-2 (temporalité) ou Sprint C-5 (Onboarding 3 parcours, contexte UI alertes)
+**Reste à faire — version Premium Sprint C-5** :
+- Modèle `Alert` générique (type, deadline, priorité, action_url, recipient)
+- Endpoint `/api/alerts` CRUD + dispatch UI Centre d'action
+- Notif email via outbox (cf. ADR Postgres+TimescaleDB+outbox HMAC)
+- Migration logs MVP → records Alert dédiés
+
+**Effort réel MVP** : ~1.5 h (vs 4-6 h estimé Premium)
+**Priorité** : 🟡 P2 (MVP couvre besoin opérationnel ; Premium polish UI Sprint C-5)
+**Sprint cible MVP** : Sprint C-2 ✅ — **Sprint C-5 pour version Premium**
+
+**Traces** :
+- Phase 5.1 audit (2026-05-04) : décision Cas B
+- Phase 5.3 commit : implémentation MVP + tests + migration
 
 ---
 

@@ -127,6 +127,16 @@ class EnergyContract(Base, TimestampMixin):
         comment="Statut lifecycle (active/expiring/expired)",
     )
 
+    # Sprint C-2 Phase 5.3 — flag idempotence cascade alerte renouvellement 90j
+    # Reset à None quand end_date modifié (cascade trigger Phase 5.3).
+    # Re-log autorisé après cooldown 30j (anti-spam).
+    # Note : remplace temporairement un modèle Alert dédié (Sprint C-5).
+    alerte_renouvellement_logged_at = Column(
+        DateTime,
+        nullable=True,
+        comment="Timestamp dernière log alerte renouvellement 90j (MVP Sprint C-2 Phase 5.3, modèle Alert dédié reporté Sprint C-5)",
+    )
+
     # V-registre: champs registre patrimonial & contractuel
     reference_fournisseur = Column(
         String(100),

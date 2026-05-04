@@ -12,17 +12,18 @@ amont (Site / Batiment) et les applique en chaîne :
 Architecture mince : délègue aux services existants, ne duplique aucune logique.
 
 Scope MVP Sprint C-1 = 7 champs initiaux (Site x6 + Batiment x1) ; étendu en
-Sprint C-2 Phase 4.2 (+2 Site) puis Phase 5.2 (+1 AuditEnergetique) à 11 champs :
+Sprint C-2 Phase 4.2 (+2 Site) puis Phase 5.2 (+1 AuditEnergetique) puis Phase 5.3
+(+1 EnergyContract) à 12 champs :
   - Site.code_postal, Site.altitude_m, Site.tertiaire_area_m2,
     Site.parking_area_m2, Site.roof_area_m2, Site.operat_sous_categorie_id,
     Site.surface_m2 (Phase 4.2), Site.annual_kwh_total (Phase 4.2)
   - Batiment.cvc_power_kw
   - AuditEnergetique.conso_annuelle_moy_gwh (Phase 5.2 — pivot org-scoped)
+  - EnergyContract.end_date (Phase 5.3 — alerte renouvellement 90j MVP)
 
-3 cascades restantes reportées (cf. tracker dette D-Phase6-Cascade-*) :
+2 cascades restantes reportées (cf. tracker dette D-Phase6-Cascade-*) :
   - Org.consentement_dataconnect/grdf → DPs (Sprint C-3)
   - DP.code_fta → profil + Bill Intelligence (Sprint C-3)
-  - Contract.date_fin_validite → alerte 90j (Sprint C-2 Phase 5.3)
 
 Endpoint preview : GET /api/v1/sites/{id}/cascade-impact (dry-run, org-scopé).
 Wiring PATCH /api/sites/{id} → cascade_recompute_on_change(persist=True) = Sprint C-2 Phase 3.
@@ -30,6 +31,8 @@ Sprint C-2 Phase 4.2 — intensity_kwh_m2_total + intensity_kwh_m2_tertiaire
 persistées via cascade (anti-cycle : intensity n'est PAS source de cascade compliance).
 Sprint C-2 Phase 5.2 — cascade AuditEnergetique.conso_annuelle_moy_gwh →
 obligation (loi 30/04/2025 : 2.75 / 23.6 GWh) + recompute_organisation tous sites.
+Sprint C-2 Phase 5.3 — cascade EnergyContract.end_date → alerte 90j MVP
+(log + flag idempotence, modèle Alert dédié reporté Sprint C-5).
 """
 
 from __future__ import annotations
@@ -313,6 +316,71 @@ def _recompute_organisation_via_coordinator(audit_sme, db: Session) -> Optional[
         return None
 
 
+# ─── Helpers Phase 5.3 Sprint C-2 — cascade EnergyContract.end_date → alerte 90j ────
+#
+# Cas B MVP : modèle Alert générique absent (cf. Phase 5.1 audit). Implémentation
+# par log structuré stdout + flag idempotence sur le contrat. Report version
+# Premium (Alert UI + email notif) Sprint C-5 (Onboarding 3 parcours).
+# Source dette : D-Phase6-Cascade-Contract-Renewal-001.
+
+_RENEWAL_ALERT_WINDOW_DAYS = 90
+_RENEWAL_ALERT_REPLAY_COOLDOWN_DAYS = 30
+
+
+def _trigger_renewal_alert(contract, db: Session) -> Optional[str]:
+    """Cascade EnergyContract.end_date → log alerte 90j (MVP Sprint C-2 Phase 5.3).
+
+    Skip cases :
+    - end_date is None
+    - days_to_expiry > 90 (hors fenêtre)
+    - days_to_expiry < 0 (déjà expiré)
+    - alerte_renouvellement_logged_at < 30j (idempotence anti-spam)
+
+    Sinon : set `contract.alerte_renouvellement_logged_at = now` + log structuré
+    `RENEWAL_ALERT_90D` avec contract_id + days_to_expiry + supplier.
+    """
+    end_date = getattr(contract, "end_date", None)
+    if end_date is None:
+        return None
+
+    today = date.today()
+    days_to_expiry = (end_date - today).days
+
+    if days_to_expiry > _RENEWAL_ALERT_WINDOW_DAYS or days_to_expiry < 0:
+        return None
+
+    last_logged = getattr(contract, "alerte_renouvellement_logged_at", None)
+    if last_logged:
+        last_log_age = (datetime.utcnow() - last_logged).days
+        if last_log_age < _RENEWAL_ALERT_REPLAY_COOLDOWN_DAYS:
+            return f"alert_already_logged ({last_log_age}d ago)"
+
+    contract.alerte_renouvellement_logged_at = datetime.utcnow()
+
+    _logger.info(
+        "RENEWAL_ALERT_90D",
+        extra={
+            "contract_id": getattr(contract, "id", None),
+            "site_id": getattr(contract, "site_id", None),
+            "days_to_expiry": days_to_expiry,
+            "end_date": end_date.isoformat(),
+            "supplier": getattr(contract, "supplier_name", None),
+        },
+    )
+    return f"renewal_alert_logged ({days_to_expiry}d to expiry)"
+
+
+def _reset_renewal_alert_flag(contract, db: Session) -> str:
+    """Reset alerte_renouvellement_logged_at à None — sub-cascade quand end_date modifié.
+
+    Permet la ré-évaluation de la fenêtre 90j à la nouvelle date sans rester
+    bloqué par un log précédent. Doit s'exécuter AVANT _trigger_renewal_alert
+    dans la chaîne de cascade (sinon l'idempotence skip le re-log immédiat).
+    """
+    contract.alerte_renouvellement_logged_at = None
+    return "flag_reset"
+
+
 # ─── CASCADE_MAP MVP Sprint C-1 (7 champs) ──────────────────────────────────
 #
 # Chaque entrée est une liste de fonctions cascade qui retournent (output_field, value).
@@ -373,6 +441,17 @@ CASCADE_MAP_MVP_SPRINT_C1: dict[str, list[Callable]] = {
             "compliance_score_all_sites",
             _recompute_organisation_via_coordinator(audit_sme, db),
         ),
+    ],
+    # Phase 5.3 Sprint C-2 — cascade contract renewal alerte 90j MVP
+    # (clôture D-Phase6-Cascade-Contract-Renewal-001).
+    # ⚠️ Ordre critique : reset flag AVANT trigger (sinon idempotence skip le re-log
+    # immédiat à la nouvelle date end_date).
+    "EnergyContract.end_date": [
+        lambda contract, db: (
+            "alerte_renouvellement_logged_at_reset",
+            _reset_renewal_alert_flag(contract, db),
+        ),
+        lambda contract, db: ("renewal_alert", _trigger_renewal_alert(contract, db)),
     ],
 }
 
