@@ -477,7 +477,21 @@ def update_site(
     """Update a site (partial update). V110: audit trail before/after.
 
     Sprint C-2 Phase 1.2 — migration vers audit_log_service.log_patrimoine_change.
+    Sprint C-2 Phase 3 — wiring cascade_recompute pour champs ∈ CASCADE_MAP_MVP_SPRINT_C1.
+
+    Comportement :
+    - Champ modifié ∈ CASCADE_MAP (code_postal, altitude_m, operat_sous_categorie_id, etc.)
+      → cascade_recompute_on_change(persist=True) déclenchée (recalcule zone+palier+
+        Cabs+compliance) + audit log automatique via log_cascade (Phase 1.3 wiring)
+    - Champ modifié hors CASCADE_MAP (nom, adresse, ville, etc.)
+      → setattr + log_patrimoine_change basique (action="site.update")
+    - Réponse étendue avec `cascade_results` (liste des CascadeResult.to_dict()
+      pour les champs cascade modifiés). Vide si aucun champ cascade modifié.
     """
+    from regops.services.cascade_recompute_service import (
+        CASCADE_MAP_MVP_SPRINT_C1,
+        cascade_recompute_on_change,
+    )
     from services.audit_log_service import log_patrimoine_change
 
     org_id = _get_org_id(request, auth, db)
@@ -505,25 +519,66 @@ def update_site(
         after[field] = val.value if hasattr(val, "value") else val
 
     diff = {k: {"before": before.get(k), "after": after[k]} for k in after if before.get(k) != after[k]}
-    if diff:
+
+    # ─── Sprint C-2 Phase 3 — wiring cascade_recompute ───
+    # Headers pour audit trail (correlation_id, ip, user_agent)
+    correlation_id = request.headers.get("X-Correlation-ID")
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    user_id_for_audit = auth.user_id if auth else None
+
+    cascade_results: list[dict] = []
+    cascade_fields_modified: set[str] = set()
+
+    for field_name, diff_entry in diff.items():
+        field_full = f"Site.{field_name}"
+        if field_full in CASCADE_MAP_MVP_SPRINT_C1:
+            # Cascade : appel cascade_recompute_on_change qui :
+            # - exécute les recalculs aval (zone, palier, cabs, compliance)
+            # - persiste les outputs (cabs_kwh_m2_an, etc.)
+            # - log_cascade audit trail (Phase 1.3 wiring)
+            # - commit interne après log_cascade
+            cascade_result = cascade_recompute_on_change(
+                db,
+                entity=site,
+                field_modified=field_full,
+                old_value=diff_entry["before"],
+                new_value=diff_entry["after"],
+                persist=True,
+                user_id=user_id_for_audit,
+                org_id=org_id,
+                correlation_id=correlation_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+            cascade_results.append(cascade_result.to_dict())
+            cascade_fields_modified.add(field_name)
+
+    # ─── Audit log basique pour les champs hors cascade_map ───
+    # (les champs cascade ont déjà leur audit via log_cascade dans cascade_recompute_on_change)
+    non_cascade_diff = {k: v for k, v in diff.items() if k not in cascade_fields_modified}
+    if non_cascade_diff:
         log_patrimoine_change(
             db,
-            user_id=auth.user_id if auth else None,
+            user_id=user_id_for_audit,
             org_id=org_id,
             entity_type="site",
             entity_id=site_id,
             action="site.update",
-            field_modified=",".join(diff.keys()) if len(diff) > 1 else next(iter(diff.keys())),
-            old_value={k: v["before"] for k, v in diff.items()},
-            new_value={k: v["after"] for k, v in diff.items()},
-            ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent"),
-            detail=diff,
+            field_modified=",".join(non_cascade_diff.keys())
+            if len(non_cascade_diff) > 1
+            else next(iter(non_cascade_diff.keys())),
+            old_value={k: v["before"] for k, v in non_cascade_diff.items()},
+            new_value={k: v["after"] for k, v in non_cascade_diff.items()},
+            correlation_id=correlation_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            detail=non_cascade_diff,
         )
 
     db.commit()
 
-    # Propagation conformite si champs critiques modifies
+    # Propagation conformite si champs critiques modifies (legacy V110)
     from services.patrimoine_conformite_sync import flag_efa_desync_on_surface_change, reevaluate_on_usage_change
 
     if "surface_m2" in updated_fields:
@@ -533,7 +588,11 @@ def update_site(
     if any(f in updated_fields for f in ("surface_m2", "type", "naf_code")):
         db.commit()
 
-    return {"updated": updated_fields, **_serialize_site(site)}
+    return {
+        "updated": updated_fields,
+        "cascade_results": cascade_results,  # Sprint C-2 Phase 3 — bonus FE
+        **_serialize_site(site),
+    }
 
 
 @router.post("/sites/{site_id}/archive")
