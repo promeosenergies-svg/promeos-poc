@@ -1,0 +1,945 @@
+# PROMEOS — Sources réglementaires SoT (Sprint C-3 Phase 3.2)
+#
+# YAML statique versionné git → audit trail légal naturel.
+# Pattern reproduit identique à tarifs_reglementaires.yaml (Phase 22 deprecated
+# par cette livraison Sprint C-3 — cf. note compatibilité regulatory_rates.js).
+#
+# 9 domaines : co2 / tarifs / accises / tva / dt / bacs / aper / audit_sme / operat
+# Schema strict par term :
+#   value (number|string), unit (string), domain (string allowlist),
+#   source: { label, url, version, effective_date (YYYY-MM-DD), legal_reference|null },
+#   formula (string|null), notes (string|null)
+#
+# Mirroir backend/doctrine/constants.py + config/emission_factors.py +
+# config/tarifs_reglementaires.yaml. Si modifié ici, propager partout.
+#
+# Service de lecture : backend/config/regulatory_sources_loader.py
+# Endpoint API : GET /api/regulatory/rates (Sprint C-3 Phase 3.3)
+
+version: "1.0"
+last_updated: "2026-05-04"
+sprint_origin: "Sprint C-3 Phase 3.2"
+
+terms:
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine CO2 — ADEME Base Empreinte V23.6
+  # ═════════════════════════════════════════════════════════════════════
+  CO2_FACTOR_ELEC_KGCO2_PER_KWH:
+    value: 0.052
+    unit: "kgCO2e/kWh"
+    domain: "co2"
+    source:
+      label: "ADEME Base Empreinte V23.6 — France electricity mix ACV"
+      url: "https://base-empreinte.ademe.fr/"
+      version: "V23.6"
+      effective_date: "2025-01-01"
+      legal_reference: null
+    formula: null
+    notes: "Mirroir backend/config/emission_factors.py + endpoint /api/config/emission-factors"
+
+  CO2_FACTOR_GAZ_NATUREL_KGCO2_PER_KWH:
+    value: 0.227
+    unit: "kgCO2e/kWh"
+    domain: "co2"
+    source:
+      label: "ADEME Base Empreinte V23.6 — gaz naturel combustion + amont (PCI)"
+      url: "https://base-empreinte.ademe.fr/"
+      version: "V23.6"
+      effective_date: "2025-01-01"
+      legal_reference: null
+    formula: null
+    notes: "Combustion + amont (well-to-tank), PCI"
+
+  CO2_FACTOR_GNL_KGCO2_PER_KWH:
+    value: 0.238
+    unit: "kgCO2e/kWh"
+    domain: "co2"
+    source:
+      label: "Arrêté du 1er août 2025 — facteur GNL pour reporting OPERAT"
+      url: "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000051956481"
+      version: "Arrêté 01/08/2025"
+      effective_date: "2025-08-01"
+      legal_reference: "JORFTEXT000051956481"
+    formula: null
+    notes: "Mirroir doctrine/constants.py CO2_FACTOR_GNL_KGCO2_PER_KWH"
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine ACCISES — LFI 2026 + Code des impositions
+  # ═════════════════════════════════════════════════════════════════════
+  ACCISE_ELEC_T1_EUR_PER_MWH:
+    value: 30.85
+    unit: "EUR/MWh"
+    domain: "accises"
+    source:
+      label: "Code des impositions sur les biens et services — accise élec T1 (sans réduction)"
+      url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000044472108"
+      version: "LFI 2026"
+      effective_date: "2026-02-01"
+      legal_reference: "JORFTEXT000053407616"
+    formula: null
+    notes: "Tarif normal sans réduction"
+
+  ACCISE_ELEC_T2_EUR_PER_MWH:
+    value: 26.58
+    unit: "EUR/MWh"
+    domain: "accises"
+    source:
+      label: "Code des impositions sur les biens et services — accise élec T2 (PME C4 pro)"
+      url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000044472108"
+      version: "LFI 2026"
+      effective_date: "2026-02-01"
+      legal_reference: "JORFTEXT000053407616"
+    formula: null
+    notes: "PME C4 industriels mid-market"
+
+  ACCISE_ELEC_T2_C5_MENAGE_EUR_PER_MWH:
+    value: 25.09
+    unit: "EUR/MWh"
+    domain: "accises"
+    source:
+      label: "Code des impositions sur les biens et services — accise élec C5 ménages"
+      url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000044472108"
+      version: "LFI 2026"
+      effective_date: "2026-02-01"
+      legal_reference: "JORFTEXT000053407616"
+    formula: null
+    notes: null
+
+  ACCISE_GAZ_EUR_PER_MWH:
+    value: 10.73
+    unit: "EUR/MWh"
+    domain: "accises"
+    source:
+      label: "Code des impositions sur les biens et services — accise gaz naturel (TICGN)"
+      url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000044472108"
+      version: "LFI 2026"
+      effective_date: "2026-02-01"
+      legal_reference: "JORFTEXT000053407616"
+    formula: null
+    notes: "Mirroir doctrine/constants.py ACCISE_GAS_EUR_PER_MWH"
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine TVA — CGI art. 278
+  # ═════════════════════════════════════════════════════════════════════
+  TVA_NORMALE_PCT:
+    value: 20.0
+    unit: "%"
+    domain: "tva"
+    source:
+      label: "Code général des impôts art. 278-0 bis"
+      url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000048833462"
+      version: "LFI 2025"
+      effective_date: "2025-08-01"
+      legal_reference: null
+    formula: null
+    notes: "Taux normal applicable composants HT facture énergie"
+
+  TVA_REDUITE_CTA_PCT:
+    value: 5.5
+    unit: "%"
+    domain: "tva"
+    source:
+      label: "Code général des impôts art. 278-0 bis (taux réduit CTA)"
+      url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000048833462"
+      version: "LFI 2025"
+      effective_date: "2025-08-01"
+      legal_reference: null
+    formula: null
+    notes: "Taux réduit applicable uniquement sur la CTA"
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine TARIFS — TURPE / CTA / CMDPS — Délibérations CRE
+  # ═════════════════════════════════════════════════════════════════════
+  TURPE_C5_BT_ENERGIE_EUR_PER_KWH:
+    value: 0.0282
+    unit: "EUR/kWh"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération n°2021-13 — TURPE 6 HTA-BT segment C5 (≤36 kVA)"
+      url: "https://www.cre.fr/documents/Deliberations/Decision/deliberation-de-la-cre-du-21-janvier-2021"
+      version: "TURPE 6"
+      effective_date: "2021-08-01"
+      legal_reference: null
+    formula: null
+    notes: "Mirroir tarifs_reglementaires.yaml::turpe_6.segments.C5_BT.energie_eur_kwh"
+
+  TURPE_C4_BT_ENERGIE_EUR_PER_KWH:
+    value: 0.0313
+    unit: "EUR/kWh"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération n°2021-13 — TURPE 6 HTA-BT segment C4 (>36 kVA tertiaire)"
+      url: "https://www.cre.fr/documents/Deliberations/Decision/deliberation-de-la-cre-du-21-janvier-2021"
+      version: "TURPE 6"
+      effective_date: "2021-08-01"
+      legal_reference: null
+    formula: null
+    notes: "Mirroir tarifs_reglementaires.yaml::turpe_6.segments.C4_BT.energie_eur_kwh"
+
+  TURPE_C3_HTA_ENERGIE_EUR_PER_KWH:
+    value: 0.0204
+    unit: "EUR/kWh"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération n°2021-13 — TURPE 6 segment C3 HTA (industriel/gros tertiaire)"
+      url: "https://www.cre.fr/documents/Deliberations/Decision/deliberation-de-la-cre-du-21-janvier-2021"
+      version: "TURPE 6"
+      effective_date: "2021-08-01"
+      legal_reference: null
+    formula: null
+    notes: null
+
+  TURPE_C5_BT_GESTION_EUR_PER_MOIS:
+    value: 2.14
+    unit: "EUR/mois"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération n°2021-13 — composante gestion C5 BT"
+      url: "https://www.cre.fr/documents/Deliberations/Decision/deliberation-de-la-cre-du-21-janvier-2021"
+      version: "TURPE 6"
+      effective_date: "2021-08-01"
+      legal_reference: null
+    formula: "(CG hors Rf + CC) / 12 mois"
+    notes: null
+
+  TURPE_C4_BT_GESTION_EUR_PER_MOIS:
+    value: 28.46
+    unit: "EUR/mois"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération n°2021-13 — composante gestion C4 BT"
+      url: "https://www.cre.fr/documents/Deliberations/Decision/deliberation-de-la-cre-du-21-janvier-2021"
+      version: "TURPE 6"
+      effective_date: "2021-08-01"
+      legal_reference: null
+    formula: "(CG hors Rf + CC) / 12 mois"
+    notes: null
+
+  TURPE_C3_HTA_GESTION_EUR_PER_MOIS:
+    value: 43.78
+    unit: "EUR/mois"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération n°2021-13 — composante gestion C3 HTA"
+      url: "https://www.cre.fr/documents/Deliberations/Decision/deliberation-de-la-cre-du-21-janvier-2021"
+      version: "TURPE 6"
+      effective_date: "2021-08-01"
+      legal_reference: null
+    formula: null
+    notes: null
+
+  CMDPS_COEFF_HTA:
+    value: 0.04
+    unit: "ratio"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération n°2021-13 — Composante Mensuelle des Dépassements de Puissance Souscrite"
+      url: "https://www.cre.fr/documents/Deliberations/Decision/deliberation-de-la-cre-du-21-janvier-2021"
+      version: "TURPE 6"
+      effective_date: "2021-08-01"
+      legal_reference: null
+    formula: "CMDPS = coeff × (kW dépassement)² × heures dépassement"
+    notes: "Applicable HTA segment C3"
+
+  CTA_ELEC_DISTRIBUTION_PCT:
+    value: 15.0
+    unit: "%"
+    domain: "tarifs"
+    source:
+      label: "Arrêté CTA 27/01/2026 — CRE délibération 2026-14"
+      url: "https://www.cre.fr/"
+      version: "CRE 2026-14"
+      effective_date: "2026-02-01"
+      legal_reference: null
+    formula: "CTA = pct × TURPE fixe distribution"
+    notes: "Remplace 21,93% historique (arrêté 26/07/2021) expiré 31/01/2026"
+
+  CTA_ELEC_TRANSPORT_PCT:
+    value: 5.0
+    unit: "%"
+    domain: "tarifs"
+    source:
+      label: "Arrêté CTA 27/01/2026 — CRE délibération 2026-14 (transport ≥50 kV)"
+      url: "https://www.cre.fr/"
+      version: "CRE 2026-14"
+      effective_date: "2026-02-01"
+      legal_reference: null
+    formula: "CTA = pct × TURPE fixe transport"
+    notes: "Applicable HTB"
+
+  CTA_GAZ_DISTRIBUTION_PCT:
+    value: 20.8
+    unit: "%"
+    domain: "tarifs"
+    source:
+      label: "Arrêté CTA 20/07/2021 — coef stable distribution gaz"
+      url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000043831001"
+      version: "Arrêté 20/07/2021"
+      effective_date: "2021-08-01"
+      legal_reference: null
+    formula: "CTA = pct × abonnement ATRD annuel"
+    notes: null
+
+  PRICE_ELEC_ETI_2026_EUR_PER_MWH:
+    value: 130.0
+    unit: "EUR/MWh"
+    domain: "tarifs"
+    source:
+      label: "Observatoire CRE T4 2025 § ETI tertiaire post-ARENH"
+      url: "https://www.cre.fr/observatoire-des-marches-de-detail"
+      version: "Observatoire T4 2025"
+      effective_date: "2026-01-01"
+      legal_reference: null
+    formula: null
+    notes: "Heuristique marché ; actualiser à T+2 chaque année quand observatoire publié"
+
+  PRICE_FALLBACK_EUR_PER_KWH:
+    value: 0.068
+    unit: "EUR/kWh"
+    domain: "tarifs"
+    source:
+      label: "Observatoire CRE — fallback prix élec moyen ETI"
+      url: "https://www.cre.fr/observatoire-des-marches-de-detail"
+      version: "Observatoire T4 2025"
+      effective_date: "2026-01-01"
+      legal_reference: null
+    formula: null
+    notes: "Mirroir doctrine/constants.py PRICE_FALLBACK_EUR_PER_KWH"
+
+  PRICE_FLEX_NEBCO_EUR_PER_MWH:
+    value: 80.0
+    unit: "EUR/MWh"
+    domain: "tarifs"
+    source:
+      label: "RTE NEBCO — prix marginal effacement industriel"
+      url: "https://www.services-rte.com/fr/visualisez-les-donnees-publiees-par-rte/effacement.html"
+      version: "NEBCO 2025"
+      effective_date: "2025-01-01"
+      legal_reference: null
+    formula: null
+    notes: "Mirroir doctrine/constants.py PRICE_FLEX_NEBCO_EUR_PER_MWH"
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine DT (Décret Tertiaire) — Décret n°2019-771
+  # ═════════════════════════════════════════════════════════════════════
+  COMPLIANCE_DT_PENALTY_EUR:
+    value: 7500
+    unit: "EUR/an/site"
+    domain: "dt"
+    source:
+      label: "Décret n°2019-771 art. 9 — pénalité site non conforme DT"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000038812251"
+      version: "Décret 2019-771"
+      effective_date: "2030-01-01"
+      legal_reference: "JORFTEXT000038812251"
+    formula: null
+    notes: "Mirroir doctrine/constants.py DT_PENALTY_EUR"
+
+  COMPLIANCE_DT_PENALTY_AT_RISK_EUR:
+    value: 3750
+    unit: "EUR/an/site"
+    domain: "dt"
+    source:
+      label: "Décret n°2019-771 art. 9 — pénalité site à risque DT"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000038812251"
+      version: "Décret 2019-771"
+      effective_date: "2030-01-01"
+      legal_reference: "JORFTEXT000038812251"
+    formula: null
+    notes: "50% pénalité standard"
+
+  DT_THRESHOLD_M2_ASSUJETTI:
+    value: 1000
+    unit: "m²"
+    domain: "dt"
+    source:
+      label: "Décret n°2019-771 art. R174-22 CCH — seuil assujettissement DT"
+      url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000041809651"
+      version: "Décret 2019-771"
+      effective_date: "2020-10-01"
+      legal_reference: "JORFTEXT000038812251"
+    formula: null
+    notes: "Surface tertiaire cumulée EFA — 1 000 m² obligation OPERAT"
+
+  DT_MILESTONE_2030_PCT:
+    value: -40.0
+    unit: "%"
+    domain: "dt"
+    source:
+      label: "Décret n°2019-771 art. R174-22 — objectif 2030 (-40% vs Cref)"
+      url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000041809651"
+      version: "Décret 2019-771"
+      effective_date: "2030-01-01"
+      legal_reference: "JORFTEXT000038812251"
+    formula: "Conso 2030 ≤ Cref × (1 - 0.40) OU ≤ Cabs"
+    notes: null
+
+  DT_MILESTONE_2040_PCT:
+    value: -50.0
+    unit: "%"
+    domain: "dt"
+    source:
+      label: "Décret n°2019-771 art. R174-22 — objectif 2040 (-50% vs Cref)"
+      url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000041809651"
+      version: "Décret 2019-771"
+      effective_date: "2040-01-01"
+      legal_reference: "JORFTEXT000038812251"
+    formula: null
+    notes: null
+
+  DT_MILESTONE_2050_PCT:
+    value: -60.0
+    unit: "%"
+    domain: "dt"
+    source:
+      label: "Décret n°2019-771 art. R174-22 — objectif 2050 (-60% vs Cref)"
+      url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000041809651"
+      version: "Décret 2019-771"
+      effective_date: "2050-01-01"
+      legal_reference: "JORFTEXT000038812251"
+    formula: null
+    notes: null
+
+  DT_REF_YEAR_DEFAULT:
+    value: 2020
+    unit: "année"
+    domain: "dt"
+    source:
+      label: "Décret n°2019-771 — année référence par défaut Cref"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000038812251"
+      version: "Décret 2019-771"
+      effective_date: "2020-10-01"
+      legal_reference: "JORFTEXT000038812251"
+    formula: null
+    notes: "Possibilité année alternative entre 2010 et 2019 sur déclaration"
+
+  PRIMARY_ENERGY_COEF_ELEC:
+    value: 1.9
+    unit: "ratio"
+    domain: "dt"
+    source:
+      label: "Arrêté 10/04/2020 — coefficient énergie primaire électricité"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
+      version: "Arrêté 10/04/2020"
+      effective_date: "2020-10-01"
+      legal_reference: "NOR LOGL2005904A"
+    formula: "kWhEP = kWhEF × 1.9 (élec)"
+    notes: "Réduit de 2.3 à 1.9 par arrêté 13/04/2023"
+
+  PRIMARY_ENERGY_COEF_GAS:
+    value: 1.0
+    unit: "ratio"
+    domain: "dt"
+    source:
+      label: "Arrêté 10/04/2020 — coefficient énergie primaire combustibles fossiles"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
+      version: "Arrêté 10/04/2020"
+      effective_date: "2020-10-01"
+      legal_reference: "NOR LOGL2005904A"
+    formula: "kWhEP = kWhEF × 1.0 (gaz/fioul)"
+    notes: null
+
+  COMPLIANCE_OPERAT_PENALTY_EUR:
+    value: 1500
+    unit: "EUR/site"
+    domain: "dt"
+    source:
+      label: "Circulaire DGEC 2024 + Décret 2019-771 art. 6 — pénalité OPERAT manquante"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000038812251"
+      version: "Circulaire DGEC 2024"
+      effective_date: "2024-09-30"
+      legal_reference: null
+    formula: null
+    notes: "Pénalité forfaitaire par déclaration OPERAT manquante"
+
+  OPERAT_DECLARATION_DEADLINE:
+    value: "2026-09-30"
+    unit: "date"
+    domain: "dt"
+    source:
+      label: "ADEME OPERAT — date limite déclaration annuelle"
+      url: "https://operat.ademe.fr/"
+      version: "OPERAT 2026"
+      effective_date: "2026-01-01"
+      legal_reference: null
+    formula: null
+    notes: "Mirroir doctrine/constants.py OPERAT_DECLARATION_DEADLINE"
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine BACS — Décret n°2020-887 + n°2025-1343
+  # ═════════════════════════════════════════════════════════════════════
+  BACS_THRESHOLD_KW_2025:
+    value: 290
+    unit: "kW"
+    domain: "bacs"
+    source:
+      label: "Décret n°2020-887 art. R175-3 — seuil BACS 2025"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000042167708"
+      version: "Décret 2020-887"
+      effective_date: "2025-01-01"
+      legal_reference: "JORFTEXT000042167708"
+    formula: "Σ puissance HVAC bâtiment > 290 kW"
+    notes: "Seuil initial avant abaissement 2030"
+
+  BACS_THRESHOLD_KW_2030:
+    value: 70
+    unit: "kW"
+    domain: "bacs"
+    source:
+      label: "Décret n°2025-1343 art. 1 — seuil BACS abaissé 2030"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000054278951"
+      version: "Décret 2025-1343"
+      effective_date: "2030-01-01"
+      legal_reference: null
+    formula: "Σ puissance HVAC bâtiment > 70 kW"
+    notes: "Abaissement majeur élargissant scope"
+
+  BACS_DEADLINE_DATE:
+    value: "2027-01-01"
+    unit: "date"
+    domain: "bacs"
+    source:
+      label: "Décret n°2020-887 art. R175-4 — deadline équipement BACS"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000042167708"
+      version: "Décret 2020-887"
+      effective_date: "2027-01-01"
+      legal_reference: "JORFTEXT000042167708"
+    formula: null
+    notes: null
+
+  COMPLIANCE_BACS_PENALTY_EUR:
+    value: 1500
+    unit: "EUR/an/site"
+    domain: "bacs"
+    source:
+      label: "Décret n°2020-887 art. R175-7 — pénalité BACS site non conforme"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000042167708"
+      version: "Décret 2020-887"
+      effective_date: "2027-01-01"
+      legal_reference: "JORFTEXT000042167708"
+    formula: null
+    notes: "Mirroir doctrine/constants.py BACS_PENALTY_EUR"
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine APER — Loi 2023-175 art. 40 + arrêtés
+  # ═════════════════════════════════════════════════════════════════════
+  APER_THRESHOLD_M2_SMALL:
+    value: 1500
+    unit: "m²"
+    domain: "aper"
+    source:
+      label: "Loi APER n°2023-175 art. 40 — seuil parking SMALL [1500-10000 m²]"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000047276789"
+      version: "Loi APER 2023-175"
+      effective_date: "2023-03-10"
+      legal_reference: "JORFTEXT000047276789"
+    formula: null
+    notes: null
+
+  APER_THRESHOLD_M2_LARGE:
+    value: 10000
+    unit: "m²"
+    domain: "aper"
+    source:
+      label: "Loi APER n°2023-175 art. 40 — seuil parking LARGE [>10000 m²]"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000047276789"
+      version: "Loi APER 2023-175"
+      effective_date: "2023-03-10"
+      legal_reference: "JORFTEXT000047276789"
+    formula: null
+    notes: null
+
+  APER_DEADLINE_LARGE:
+    value: "2026-07-01"
+    unit: "date"
+    domain: "aper"
+    source:
+      label: "Loi APER + Décret 2022-1726 — deadline parking LARGE >10000 m²"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000047276789"
+      version: "Décret 2022-1726"
+      effective_date: "2026-07-01"
+      legal_reference: null
+    formula: null
+    notes: "Solarisation 50% surface obligatoire"
+
+  APER_DEADLINE_SMALL:
+    value: "2028-07-01"
+    unit: "date"
+    domain: "aper"
+    source:
+      label: "Loi APER + Décret 2022-1726 — deadline parking SMALL [1500-10000 m²]"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000047276789"
+      version: "Décret 2022-1726"
+      effective_date: "2028-07-01"
+      legal_reference: null
+    formula: null
+    notes: "Mirroir doctrine/constants.py APER_DEADLINE_DATE"
+
+  APER_PENALTY_EUR_PER_M2_PER_YEAR:
+    value: 20
+    unit: "EUR/m²/an"
+    domain: "aper"
+    source:
+      label: "Loi APER n°2023-175 art. 40 + Décret 2022-1726 — sanction non engagement"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000047276789"
+      version: "Loi APER 2023-175"
+      effective_date: "2028-01-01"
+      legal_reference: "JORFTEXT000047276789"
+    formula: "pénalité = 20 € × surface_parking_m2"
+    notes: "Si non engagement solarisation à la deadline"
+
+  APER_SOLAR_RATIO_PCT:
+    value: 50.0
+    unit: "%"
+    domain: "aper"
+    source:
+      label: "Loi APER art. 40 — taux minimum solarisation parking"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000047276789"
+      version: "Loi APER 2023-175"
+      effective_date: "2026-07-01"
+      legal_reference: null
+    formula: "surface ombrière ≥ 50% × surface parking"
+    notes: null
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine AUDIT_SME — Loi n°2025-391 (transposition UE 2023/1791)
+  # ═════════════════════════════════════════════════════════════════════
+  AUDIT_SME_THRESHOLD_GWH_PERIODIC:
+    value: 2.75
+    unit: "GWh/an"
+    domain: "audit_sme"
+    source:
+      label: "Loi n°2025-391 du 30/04/2025 — seuil audit énergétique 4 ans"
+      url: "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000051956481"
+      version: "Loi 2025-391"
+      effective_date: "2025-04-30"
+      legal_reference: "JORFTEXT000051956481"
+    formula: "conso_annuelle_moy_3y ≥ 2.75 GWh → AUDIT_4ANS"
+    notes: "Mirroir doctrine/constants.py AUDIT_SME_THRESHOLD_GWH_PERIODIC"
+
+  AUDIT_SME_THRESHOLD_GWH_ISO50001:
+    value: 23.6
+    unit: "GWh/an"
+    domain: "audit_sme"
+    source:
+      label: "Loi n°2025-391 du 30/04/2025 — seuil SME ISO 50001"
+      url: "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000051956481"
+      version: "Loi 2025-391"
+      effective_date: "2025-04-30"
+      legal_reference: "JORFTEXT000051956481"
+    formula: "conso_annuelle_moy_3y ≥ 23.6 GWh → SME_ISO50001"
+    notes: null
+
+  AUDIT_SME_DEADLINE_FIRST_AUDIT:
+    value: "2026-10-11"
+    unit: "date"
+    domain: "audit_sme"
+    source:
+      label: "Loi n°2025-391 — deadline premier audit entreprises existantes"
+      url: "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000051956481"
+      version: "Loi 2025-391"
+      effective_date: "2026-10-11"
+      legal_reference: "JORFTEXT000051956481"
+    formula: null
+    notes: "Mirroir doctrine/constants.py AUDIT_SME_DEADLINE_DATE"
+
+  COMPLIANCE_AUDIT_SME_PENALTY_EUR:
+    value: 50000
+    unit: "EUR"
+    domain: "audit_sme"
+    source:
+      label: "Code de l'énergie art. L.233-4 — sanction administrative audit non réalisé"
+      url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000051956482"
+      version: "Code de l'énergie 2025"
+      effective_date: "2026-10-12"
+      legal_reference: null
+    formula: null
+    notes: "Pénalité majorée si récidive"
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine OPERAT — Arrêté 10/04/2020 (méthode déclarative)
+  # ═════════════════════════════════════════════════════════════════════
+  OPERAT_CABS_BUREAUX_BAS:
+    value: 110
+    unit: "kWhEF/m²/an"
+    domain: "operat"
+    source:
+      label: "Arrêté 10/04/2020 Annexe I — Cabs Bureaux standards (zone H1, palier alt 0-400m)"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
+      version: "Arrêté 10/04/2020"
+      effective_date: "2020-10-01"
+      legal_reference: "NOR LOGL2005904A"
+    formula: null
+    notes: "Cellule clé Annexe I — exemple — voir operat_valeurs_absolues.yaml SoT complet"
+
+  OPERAT_COEFF_DJU_BUREAUX:
+    value: 1.0
+    unit: "ratio"
+    domain: "operat"
+    source:
+      label: "Arrêté 10/04/2020 Annexe II — Coeff DJU groupe Bureaux"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
+      version: "Arrêté 10/04/2020"
+      effective_date: "2020-10-01"
+      legal_reference: "NOR LOGL2005904A"
+    formula: "Cabs_ajusté = Cabs × (DJU_année / DJU_référence) × Coeff_groupe"
+    notes: "Détail complet operat_valeurs_absolues.yaml"
+
+  OPERAT_PALIER_ALTITUDE_BAS:
+    value: 400
+    unit: "m"
+    domain: "operat"
+    source:
+      label: "Arrêté 10/04/2020 Annexe I — palier altitude bas [0-400m]"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
+      version: "Arrêté 10/04/2020"
+      effective_date: "2020-10-01"
+      legal_reference: "NOR LOGL2005904A"
+    formula: null
+    notes: null
+
+  OPERAT_PALIER_ALTITUDE_MOYEN:
+    value: 800
+    unit: "m"
+    domain: "operat"
+    source:
+      label: "Arrêté 10/04/2020 Annexe I — palier altitude moyen [400-800m]"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
+      version: "Arrêté 10/04/2020"
+      effective_date: "2020-10-01"
+      legal_reference: "NOR LOGL2005904A"
+    formula: null
+    notes: null
+
+  OPERAT_PALIER_ALTITUDE_HAUT:
+    value: 1200
+    unit: "m"
+    domain: "operat"
+    source:
+      label: "Arrêté 10/04/2020 Annexe I — palier altitude haut [800-1200m]"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
+      version: "Arrêté 10/04/2020"
+      effective_date: "2020-10-01"
+      legal_reference: "NOR LOGL2005904A"
+    formula: null
+    notes: null
+
+  OPERAT_PALIER_ALTITUDE_TRES_HAUT:
+    value: 1200
+    unit: "m"
+    domain: "operat"
+    source:
+      label: "Arrêté 10/04/2020 Annexe I — palier altitude très haut [>1200m]"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
+      version: "Arrêté 10/04/2020"
+      effective_date: "2020-10-01"
+      legal_reference: "NOR LOGL2005904A"
+    formula: null
+    notes: "Borne inférieure (>1200m sans plafond)"
+
+  OPERAT_ZONES_CLIMATIQUES_COUNT:
+    value: 8
+    unit: "count"
+    domain: "operat"
+    source:
+      label: "Arrêté 10/04/2020 Annexe III — 8 zones climatiques (H1a/H1b/H1c/H2a/H2b/H2c/H2d/H3)"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
+      version: "Arrêté 10/04/2020"
+      effective_date: "2020-10-01"
+      legal_reference: "NOR LOGL2005904A"
+    formula: null
+    notes: "+ 5 zones DOM (Guadeloupe, Martinique, Guyane, Reunion, Mayotte) = 13 zones totales"
+
+  OPERAT_SURFACE_CONSO_DEFINITION:
+    value: "S_CE inclut parking intérieur + locaux techniques"
+    unit: "doctrine"
+    domain: "operat"
+    source:
+      label: "Arrêté 10/04/2020 art. 2-j — définition Surface de Consommations Énergétiques"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
+      version: "Arrêté 10/04/2020"
+      effective_date: "2020-10-01"
+      legal_reference: "NOR LOGL2005904A"
+    formula: null
+    notes: "S_CE ≠ SDP (Surface De Plancher) ≠ tertiaire_area_m2 — cf D-Phase4-2-Operat-Surfaces-3-Distinct-001"
+
+  OPERAT_ENERGIE_FINALE_REPORTING:
+    value: "kWhEF PCI uniquement"
+    unit: "doctrine"
+    domain: "operat"
+    source:
+      label: "Arrêté 10/04/2020 art. 2-g — reporting OPERAT en énergie finale"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
+      version: "Arrêté 10/04/2020"
+      effective_date: "2020-10-01"
+      legal_reference: "NOR LOGL2005904A"
+    formula: null
+    notes: "Mirroir D-Phase4-2-EnergieFinale-Source-Guard-001 (à enforcer Sprint C-3 Phase 3.4)"
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine TARIFS additionnels — TURPE 7 + ATRD7 (futur 2025-08)
+  # ═════════════════════════════════════════════════════════════════════
+  TURPE_7_C5_BT_ENERGIE_HPH_EUR_PER_KWH:
+    value: 0.0569
+    unit: "EUR/kWh"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération TURPE 7 — segment C5 BT Heures Pleines Hiver (HPH)"
+      url: "https://www.cre.fr/"
+      version: "TURPE 7"
+      effective_date: "2025-08-01"
+      legal_reference: null
+    formula: null
+    notes: "Tarif horosaisonnier — ne pas confondre avec accise élec"
+
+  TURPE_7_C5_BT_ENERGIE_HCH_EUR_PER_KWH:
+    value: 0.0399
+    unit: "EUR/kWh"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération TURPE 7 — segment C5 BT Heures Creuses Hiver (HCH)"
+      url: "https://www.cre.fr/"
+      version: "TURPE 7"
+      effective_date: "2025-08-01"
+      legal_reference: null
+    formula: null
+    notes: null
+
+  TURPE_7_C5_BT_ENERGIE_HPE_EUR_PER_KWH:
+    value: 0.0131
+    unit: "EUR/kWh"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération TURPE 7 — segment C5 BT Heures Pleines Été (HPE)"
+      url: "https://www.cre.fr/"
+      version: "TURPE 7"
+      effective_date: "2025-08-01"
+      legal_reference: null
+    formula: null
+    notes: null
+
+  TURPE_7_C5_BT_ENERGIE_HCE_EUR_PER_KWH:
+    value: 0.0082
+    unit: "EUR/kWh"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération TURPE 7 — segment C5 BT Heures Creuses Été (HCE)"
+      url: "https://www.cre.fr/"
+      version: "TURPE 7"
+      effective_date: "2025-08-01"
+      legal_reference: null
+    formula: null
+    notes: null
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine DT additionnel — Pondérations RegOps
+  # ═════════════════════════════════════════════════════════════════════
+  REGOPS_WEIGHT_DT_DEFAULT:
+    value: 0.45
+    unit: "ratio"
+    domain: "dt"
+    source:
+      label: "PROMEOS doctrine — pondération RegOps par défaut (DT/BACS/APER)"
+      url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
+      version: "Sprint C-1 Phase 5"
+      effective_date: "2026-05-03"
+      legal_reference: null
+    formula: "score_global = 0.45 × DT + 0.30 × BACS + 0.25 × APER"
+    notes: "Sans audit_sme applicable. Mirroir doctrine/constants.py REGOPS_WEIGHTS_DEFAULT"
+
+  REGOPS_WEIGHT_BACS_DEFAULT:
+    value: 0.30
+    unit: "ratio"
+    domain: "dt"
+    source:
+      label: "PROMEOS doctrine — pondération RegOps BACS par défaut"
+      url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
+      version: "Sprint C-1 Phase 5"
+      effective_date: "2026-05-03"
+      legal_reference: null
+    formula: null
+    notes: null
+
+  REGOPS_WEIGHT_APER_DEFAULT:
+    value: 0.25
+    unit: "ratio"
+    domain: "dt"
+    source:
+      label: "PROMEOS doctrine — pondération RegOps APER par défaut"
+      url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
+      version: "Sprint C-1 Phase 5"
+      effective_date: "2026-05-03"
+      legal_reference: null
+    formula: null
+    notes: null
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine TARIFS — flexibilité / NEBCO
+  # ═════════════════════════════════════════════════════════════════════
+  NEBCO_THRESHOLD_KW_PER_STEP:
+    value: 100
+    unit: "kW"
+    domain: "tarifs"
+    source:
+      label: "RTE NEBCO — pas de puissance minimum par effacement"
+      url: "https://www.services-rte.com/fr/visualisez-les-donnees-publiees-par-rte/effacement.html"
+      version: "NEBCO 2025"
+      effective_date: "2025-01-01"
+      legal_reference: null
+    formula: null
+    notes: "Mirroir doctrine/constants.py NEBCO_THRESHOLD_KW_PER_STEP"
+
+  FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR:
+    value: 4200
+    unit: "EUR/site/an"
+    domain: "tarifs"
+    source:
+      label: "PROMEOS heuristique flex — gain moyen ETI tertiaire (NEBCO + tarification)"
+      url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
+      version: "Sprint C-1"
+      effective_date: "2026-05-03"
+      legal_reference: null
+    formula: null
+    notes: "Heuristique non réglementaire — actualiser sur observatoire CRE NEBCO"
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Domaine BACS additionnel — readiness
+  # ═════════════════════════════════════════════════════════════════════
+  READINESS_WEIGHT_DATA_PCT:
+    value: 30.0
+    unit: "%"
+    domain: "bacs"
+    source:
+      label: "PROMEOS doctrine — pondération readiness Données"
+      url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
+      version: "Sprint C-1"
+      effective_date: "2026-05-03"
+      legal_reference: null
+    formula: "readiness_score = 0.30 × data + 0.40 × conformity + 0.30 × actions"
+    notes: null
+
+  READINESS_WEIGHT_CONFORMITY_PCT:
+    value: 40.0
+    unit: "%"
+    domain: "bacs"
+    source:
+      label: "PROMEOS doctrine — pondération readiness Conformité"
+      url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
+      version: "Sprint C-1"
+      effective_date: "2026-05-03"
+      legal_reference: null
+    formula: null
+    notes: null
+
+  READINESS_WEIGHT_ACTIONS_PCT:
+    value: 30.0
+    unit: "%"
+    domain: "bacs"
+    source:
+      label: "PROMEOS doctrine — pondération readiness Actions"
+      url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
+      version: "Sprint C-1"
+      effective_date: "2026-05-03"
+      legal_reference: null
+    formula: null
+    notes: null
