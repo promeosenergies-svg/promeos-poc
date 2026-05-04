@@ -46,6 +46,7 @@ import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import PatrimoineWizard from '../components/PatrimoineWizard';
 import SiteCreationWizard from '../components/SiteCreationWizard';
 import QuickCreateSite from '../components/QuickCreateSite';
+import NonApplicableLabel from '../components/NonApplicableLabel';
 import DrawerEditSite from '../components/DrawerEditSite';
 import DrawerAddCompteur from '../components/DrawerAddCompteur';
 import DrawerAddContrat from '../components/DrawerAddContrat';
@@ -1488,6 +1489,12 @@ export default function Patrimoine() {
                             <Td>
                               {(() => {
                                 const score = site.compliance_score ?? null;
+                                // Phase 4.5c — distinguer non_applicable du fallback "—"
+                                const isNonApplicable =
+                                  site.compliance_score_confidence === 'non_applicable';
+                                if (isNonApplicable) {
+                                  return <NonApplicableLabel variant="compact" />;
+                                }
                                 const scoreColor =
                                   score === null
                                     ? 'text-gray-400'

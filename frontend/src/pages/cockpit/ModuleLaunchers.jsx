@@ -26,12 +26,15 @@ function getModuleConfig(moduleKey, kpis) {
     case 'operations':
       return {
         route: '/conformite',
+        // Phase 4.5c — distinguer non_applicable du fallback générique
         metric:
-          kpis.compliance_score != null
-            ? `Score conformité : ${Math.round(kpis.compliance_score)} / 100`
-            : kpis.total > 0
-              ? `${kpis.conformes} / ${kpis.total} sites conformes`
-              : 'Conformité',
+          kpis.compliance_confidence === 'non_applicable'
+            ? 'Conformité : non applicable (aucune obligation active)'
+            : kpis.compliance_score != null
+              ? `Score conformité : ${Math.round(kpis.compliance_score)} / 100`
+              : kpis.total > 0
+                ? `${kpis.conformes} / ${kpis.total} sites conformes`
+                : 'Conformité',
         cta: 'Conformité',
       };
     case 'analyse':

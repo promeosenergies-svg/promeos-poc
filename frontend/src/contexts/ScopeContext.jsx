@@ -133,6 +133,10 @@ export function ScopeProvider({ children }) {
                   ? 'conforme'
                   : dt; // fallback to DT if both null
           const complianceScore = s.compliance_score ?? s.compliance_score_composite ?? null;
+          // Phase 4.5c — propager confidence (Phase 5 wrapper Sprint C-1) pour
+          // que Patrimoine.jsx puisse afficher NonApplicableLabel quand
+          // confidence='non_applicable' (cas légitime 0 obligation active).
+          const complianceConfidence = s.compliance_score_confidence ?? null;
           return {
             ...s,
             statut_conformite: worstStatut,
@@ -141,6 +145,7 @@ export function ScopeProvider({ children }) {
             risque_eur: s.risque_eur ?? s.risque_financier_euro ?? 0,
             usage: s.usage ?? (typeof s.type === 'string' ? s.type : null),
             compliance_score: complianceScore,
+            compliance_score_confidence: complianceConfidence,
             compliance_needs_review:
               s.compliance_needs_review ??
               (worstStatut === 'non_conforme' ||

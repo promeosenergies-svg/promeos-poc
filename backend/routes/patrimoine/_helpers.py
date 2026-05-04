@@ -264,6 +264,9 @@ def _serialize_site(site: Site) -> dict:
         "anomalie_facture": site.anomalie_facture,
         "conso_kwh_an": site.annual_kwh_total,
         "compliance_score": site.compliance_score_composite,
+        # Sprint C-2 Phase 4.5c — propager confidence pour que FE distingue
+        # le cas légitime "non_applicable" (Phase 5 wrapper Sprint C-1) du fallback.
+        "compliance_score_confidence": site.compliance_score_confidence,
         "compliance_needs_review": review_status["needs_review"],
         "compliance_review_reasons": review_status["reasons"],
         # Sprint C-2 Phase 4.2 — intensité énergétique persistée (matrice §4.4.F #56)
