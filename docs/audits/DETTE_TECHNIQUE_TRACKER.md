@@ -382,6 +382,39 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
+## D-Phase4-3-Portfolio-Intensity-Backend-001 — Agrégat portfolio kWh/m² calculé côté FE
+
+**Détecté** : Sprint C-2 Phase 4.3 (2026-05-04)
+
+**Périmètre** : `frontend/src/pages/Patrimoine.jsx:822-831` (KpiStripItem global "Consommation"). Le sub-label `"X kWh/m² moy."` est calculé côté FE par `Σ(annual_kwh) / Σ(surface)` (moyenne pondérée). Reste un calcul FE sur des données pré-agrégées car la moyenne arithmétique des `site.intensity_kwh_m2_total` (moyenne des ratios) ≠ ratio des sommes (intensité globale réelle du portfolio).
+
+**Justification scope-out Phase 4.3** :
+- L1525-1531 (ligne par site) reste l'anti-pattern principal cible R7 audit Phase B → corrigé Phase 4.3 par lecture directe `site.intensity_kwh_m2_total`.
+- L825-830 (agrégat portfolio) est une agrégation de données déjà côté FE (somme conso, somme surface). Pas un calcul métier sur 1 entité.
+- Décision Option D pragmatique : préserver le scope Phase 4.3 sans recréer endpoint backend agrégé.
+
+**Risque résiduel** :
+- Doctrine PROMEOS "zero business logic frontend" légèrement violée pour 1 sub-label.
+- Si `surface` ou `annual_kwh` filtrage scope inconsistant entre BE/FE → divergence d'affichage possible.
+- Sentinelle facile à grep : `Math.round(.*conso_kwh.*\/.*surface)` dans Patrimoine.jsx.
+
+**Action Sprint C-3** :
+1. Créer endpoint `GET /api/portfolio/intensity?scope=...` agrégé côté backend (somme conso / somme surface, avec filtres scope EJ/Portefeuille/Site cohérents avec `_get_org_id`).
+2. Exposer 2 valeurs : `intensity_kwh_m2_total_portfolio`, `intensity_kwh_m2_tertiaire_portfolio`.
+3. FE consomme via hook (cohérent avec `useElecCo2Factor` Phase 4.4 pattern).
+4. Retirer la moyenne pondérée FE Patrimoine.jsx L827-828.
+5. Ajouter source-guard FE (no `Math.round.*conso.*\/.*surface`).
+
+**Effort estimé** : ~1 j-h (endpoint backend + hook FE + remplacement Patrimoine.jsx + tests)
+**Priorité** : 🟡 P2 (workaround fonctionnel, divergence affichage faible probabilité, pas bloquant)
+**Sprint cible** : Sprint C-3 (TraceTooltip + sources canoniques agrégés)
+
+**Traces** :
+- Patrimoine.jsx:822-831 commentaire inline référence cette dette
+- Phase 4.3 commit (atomic) trace la décision Option D
+
+---
+
 ## Métriques tracker
 
 | Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
@@ -390,6 +423,7 @@ non couverts par les tests existants (notamment dashboards aggregations).
 | 2026-05-03 | 12 | 0 | 4 | 8 |
 | 2026-05-03 | 13 | 0 | 4 | 9 |
 | 2026-05-03 | 14 | 0 | 4 | 10 |
+| 2026-05-04 | 15 | 0 | 4 | 11 |
 
 ---
 

@@ -824,6 +824,11 @@ export default function Patrimoine() {
               value={fmtKwh(enrichedSites.reduce((a, s) => a + (s.conso_kwh_an || 0), 0))}
               color="blue"
               sub={
+                // Phase 4.3 Option D : agrégation portfolio Σ(annual_kwh) / Σ(surface)
+                // = moyenne pondérée, ne peut pas être calculée par moyenne arithmétique
+                // des site.intensity_kwh_m2_total. Reste calcul FE pour MVP.
+                // Tracker dette : D-Phase4-3-Portfolio-Intensity-Backend-001 (Sprint C-3)
+                // → endpoint /api/portfolio/intensity agrégé pour SoT FE/BE unifiée.
                 stats.surface > 0
                   ? `${Math.round(enrichedSites.reduce((a, s) => a + (s.conso_kwh_an || 0), 0) / stats.surface)} kWh/m² moy.`
                   : '—'
@@ -1523,10 +1528,12 @@ export default function Patrimoine() {
                             </Td>
                             <Td className="text-right text-sm text-gray-600 tabular-nums">
                               <div>{fmtKwh(site.conso_kwh_an)}</div>
-                              {site.surface_m2 > 0 && (
+                              {site.intensity_kwh_m2_total != null ? (
                                 <div className="text-[10px] text-gray-400">
-                                  {Math.round((site.conso_kwh_an || 0) / site.surface_m2)} kWh/m²
+                                  {Math.round(site.intensity_kwh_m2_total)} kWh/m²
                                 </div>
+                              ) : (
+                                <div className="text-[10px] text-gray-400">—</div>
                               )}
                             </Td>
                             <Td className="text-right">
