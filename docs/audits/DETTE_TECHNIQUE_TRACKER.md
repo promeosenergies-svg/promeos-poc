@@ -771,37 +771,36 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-04 (Sprint C-3 Phase 3.6 — 1 clôture pivotée + 1 nouvelle PowerContract) | 21 | 2 | 6 | 13 |
 | 2026-05-04 (Sprint C-3 Phase 3.7 — 1 clôture reportée + 2 nouvelles dettes Modele/Activation) | 22 | 2 | 8 | 12 |
 | 2026-05-04 (Sprint C-3 Phase 3.7d audit follow-up — +6 dettes audit cumul) | 28 | 2 | 11 | 15 |
+| 2026-05-04 (post Sprint C-3 — clôture finale + renommage Phase 3.7d + ADR split en 3) | 28 | 2 | 12 | 14 |
 
 ---
 
-## D-Sprint-C4-ELD-5-Entrees-Verification-001 — 5 entrées ELD à vérifier/corriger
+## D-Sprint-C3-7d-ELD-5-Entries-Disparities-Resolved-001 — 5 entrées ELD discordantes [CLÔTURÉE Fix #4]
 
 **Détecté** : Sprint C-3 Phase 3.7d audit regulatory-expert (2026-05-04)
+**Statut** : ✅ **CLÔTURÉE** — Fix #4 même phase (commit `477e3cea`)
+**Alias historique** : `D-Sprint-C4-ELD-5-Entrees-Verification-001` (référencé `eld_gaz_referentiel.yaml`)
 
-**Périmètre** : Audit a relevé 5 entrées de `eld_gaz_referentiel.yaml` à vérifier/corriger. Phase 3.7d a appliqué fix temporaires (renommages + notes warning) mais validation finale source CRE officielle requise :
+**Fixes appliqués Phase 3.7d** :
 
-| Code | Fix Phase 3.7d | À valider Sprint C-4 |
-|---|---|---|
-| `R_GDS` | Label corrigé "Réseau Gaz de Strasbourg" | Vérifier scope CRE |
-| `REGIE_NAGYS` | Note warning + label "à vérifier" | Confirmer existence (Carmaux Gaz pas trouvé liste CRE) |
-| `SOREGIES_VIENNE` (ex-REGIE_RIDUEZE) | Renommé code | Confirmer scope gaz Vienne (86) |
-| `GAZ_DE_BORDEAUX` | Note warning fournisseur ≠ distributeur | Décision : retirer du référentiel (pas un distributeur) |
-| `ENERGIE_LOON_PLAGE` (ex-GAZ_DUNKERQUE) | Renommé + périmètre clarifié | Confirmer Loon-Plage (pas CU Dunkerque) |
+| Code | Correction |
+|---|---|
+| `R_GDS` | Label corrigé "Réseau Gaz de Strasbourg" |
+| `REGIE_NAGYS` | Note warning + label "à vérifier" (Carmaux Gaz absent liste CRE) |
+| `SOREGIES_VIENNE` (ex-REGIE_RIDUEZE) | Renommé code (terme officiel SOREGIES) |
+| `GAZ_DE_BORDEAUX` | Note warning fournisseur ≠ distributeur |
+| `ENERGIE_LOON_PLAGE` (ex-GAZ_DUNKERQUE) | Renommé + périmètre clarifié (Loon-Plage, pas CU Dunkerque) |
 
-**Action Sprint C-4** :
-1. Consulter `https://www.cre.fr/distributeurs-de-gaz-naturel` (liste officielle CRE)
-2. Croiser avec les 5 entrées + retirer les fantômes
-3. Compléter `legal_reference` du header YAML : `Loi n°46-628 du 8 avril 1946 art. 23 (nationalisation, exception ELD pré-1946)`
+`source_url` aligné CRE : `https://www.cre.fr/distributeurs-de-gaz-naturel`.
 
-**Effort estimé** : ~30-60 min (vérification + correction)
-**Priorité** : 🟡 P1 (fiabilité référentiel = base TraceTooltip + cascade DP.grd_code)
-**Sprint cible** : Sprint C-4
+**Successeur Sprint C-4** : `D-Sprint-C4-ELD-Quality-YAML-CrossSource-Audit-001` (audit qualité automatisé YAML cross-source + complétion `legal_reference` Loi 46-628 art. 23 + suivi statut Gaz de Bordeaux/REGIE_NAGYS).
 
 ---
 
-## D-Phase3-4-EnergieFinale-Strict-Type-Conversion-PCI-PCS-001 — Source-guard ingestion GRDF kWh PCS → PCI
+## D-Sprint-C3-7d-EnergieFinale-Type-Strict-001 — Source-guard ingestion GRDF kWh PCS → PCI
 
 **Détecté** : Sprint C-3 Phase 3.7d audit regulatory-expert (2026-05-04)
+**Alias historique** : `D-Phase3-4-EnergieFinale-Strict-Type-Conversion-PCI-PCS-001`
 
 **Périmètre** : SG_KWHEF_01+02 actuels couvrent allowlist écritures `Site.annual_kwh_total` + commentaire "kWhEF PCI" — suffisants pour Enedis R6X (kWhEF natif) mais **insuffisants pour GRDF R171/R141** qui livrent en **kWh PCS** (Pouvoir Calorifique Supérieur).
 
@@ -821,7 +820,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 
 ---
 
-## D-Sprint-C4-Cascade-SoT-Reuse-Audit-001 — Auditer toutes constantes locales dupliquant SoT YAML
+## D-Sprint-C3-7d-Cascade-SoT-Reuse-Audit-001 — Auditer toutes constantes locales dupliquant SoT YAML
 
 **Détecté** : Sprint C-3 Phase 3.7d audit code-reviewer (2026-05-04)
 
@@ -846,34 +845,60 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 
 ---
 
-## D-Sprint-C4-ADR-3-Documents-001 — 3 ADR à produire avant Sprint C-4
+## D-Sprint-C3-7d-ADR-RGPD-Consent-Detail-001 — ADR design modèle consentement RGPD
 
 **Détecté** : Sprint C-3 Phase 3.7d audit architect-helios (2026-05-04)
 
-**Périmètre** : 3 ADR architecturaux à formaliser avant exécution Sprint C-4 :
+**Périmètre** : Design des 4 champs `Org.consentement_dataconnect_global` / `Org.consentement_grdf_global` / `DP.consentement_dataconnect_local` / `DP.consentement_grdf_local` + audit trail (qui/quand/version CGU/IP).
 
-1. **ADR consentement_modele_rgpd** (P0) — design des 4 champs `Org.consentement_*` + `DP.consentement_*` + audit trail (qui/quand/version CGU). Bloquant pour `D-Sprint-C3-Cascade-Consentement-Activation-001`. Délégation `regulatory-expert` + `security-auditor` (PII/RGPD).
+**Bloquant** pour `D-Sprint-C3-Cascade-Consentement-Activation-001` (cascade activée seulement après ADR + migration Alembic).
 
-2. **ADR cohabitation_endpoint_intensity** (P1) — figer le contrat entre :
-   - `/api/energy/intensity` (existant, série temporelle Meter readings, Phase indéterminée)
-   - `/api/portfolio/intensity` (nouveau Sprint C-3 Phase 3.4, agrégat org-scopé Site.annual_kwh_total)
-   Risque : divergence formule sans ADR (anti-pattern doctrine §6.4).
+**Action Sprint C-4 amont** : ADR rédigé dans `docs/adr/2026-XX-consentement-rgpd-dataconnect-grdf.md`. Délégation `regulatory-expert` (RGPD/CNIL) + `security-auditor` (PII/audit trail).
 
-3. **ADR namespace_api_config_vs_regulatory** (P2 mineur) — figer la séparation sémantique entre :
-   - `/api/config/*` (constantes Python runtime — emission_factors, regulatory_constants)
-   - `/api/regulatory/*` (sources légales avec traçabilité — rates, domains, citations Légifrance)
-
-**Action Sprint C-4** :
-- 3 ADR rédigés dans `docs/adr/` (créer dossier si absent)
-- Délégation : `architect-helios` (rédaction) + experts métier (revue)
-
-**Effort estimé** : ~1-1.5 j-h (3 ADR × 30 min chacun + revues)
-**Priorité** : 🟠 P1 (ADR 1 RGPD bloquant Sprint C-4)
+**Effort estimé** : ~30-45 min (ADR + revues)
+**Priorité** : 🟠 **P1** (bloquant cascade activation Sprint C-4)
 **Sprint cible** : Sprint C-4 amont
 
 ---
 
-## D-Sprint-C4-Reg-TVA-Reduite-Abonnement-Gaz-001 — TVA 5,5% abonnement gaz/élec résidentiel
+## D-Sprint-C3-7d-ADR-Intensity-OPERAT-Naming-001 — ADR cohabitation `/api/energy/intensity` vs `/api/portfolio/intensity`
+
+**Détecté** : Sprint C-3 Phase 3.7d audit architect-helios (2026-05-04)
+
+**Périmètre** : Figer le contrat entre 2 endpoints intensity coexistants :
+- `/api/energy/intensity` (existant, série temporelle Meter readings, semantic = précision réelle mesurée)
+- `/api/portfolio/intensity` (nouveau Sprint C-3 Phase 3.4, agrégat org-scopé `Site.annual_kwh_total`, semantic = snapshot patrimoine rapide)
+
+**Risque** : divergence formule entre 2 endpoints sans ADR explicit (anti-pattern doctrine §6.4 "1 SoT par concept").
+
+**Action Sprint C-4 amont** : ADR `docs/adr/2026-XX-cohabitation-intensity-endpoints.md` figeant :
+- Cas d'usage canoniques (Cockpit/RegOps précision réelle vs Patrimoine.jsx KpiStripItem global)
+- Différentiel sémantique (Meter readings ≠ Site.annual_kwh_total)
+- Stratégie convergence ou séparation pérenne
+
+**Effort estimé** : ~30 min
+**Priorité** : 🟡 P1 (cohérence doctrine 1-SoT)
+**Sprint cible** : Sprint C-4 amont
+
+---
+
+## D-Sprint-C3-7d-ADR-Routes-Namespace-001 — ADR namespace `/api/config/*` vs `/api/regulatory/*`
+
+**Détecté** : Sprint C-3 Phase 3.7d audit architect-helios (2026-05-04)
+
+**Périmètre** : Figer la séparation sémantique entre 2 namespaces API actuels :
+- `/api/config/*` — constantes Python runtime (`emission_factors`, `regulatory_constants` Phase 3.3)
+- `/api/regulatory/*` — sources légales avec traçabilité (`rates`, `domains`, citations Légifrance/CRE)
+
+**Action Sprint C-4 amont** : ADR `docs/adr/2026-XX-namespace-config-vs-regulatory.md` figeant règles de routage par type (constante vs source légale traçable).
+
+**Effort estimé** : ~20 min
+**Priorité** : 🟡 P2 (cosmétique architectural, mineur)
+**Sprint cible** : Sprint C-4 ou opportunistique
+
+---
+
+## D-Sprint-C3-7d-TVA-Reduite-Abo-Gaz-001 — TVA 5,5% abonnement gaz/élec résidentiel
 
 **Détecté** : Sprint C-3 Phase 3.7d audit regulatory-expert (2026-05-04)
 
@@ -890,7 +915,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 
 ---
 
-## D-Sprint-C4-Reg-Legal-Reference-Completion-001 — JORFTEXT/legal_reference manquants 18+ termes
+## D-Sprint-C3-7d-Legal-Reference-Completion-001 — JORFTEXT/legal_reference manquants 18+ termes
 
 **Détecté** : Sprint C-3 Phase 3.7d audit regulatory-expert (2026-05-04)
 
@@ -909,7 +934,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 
 ---
 
-## D-Sprint-C4-FE-i18n-TraceTooltip-Effective-001 — "effective" anglais dans TraceTooltip
+## D-Sprint-C3-7d-FE-i18n-TraceTooltip-001 — "effective" anglais dans TraceTooltip
 
 **Détecté** : Sprint C-3 Phase 3.7d audit code-reviewer (2026-05-04)
 
