@@ -5,18 +5,20 @@ V2: patrimoine-first — all sites shown, data_status badge, coverage_pct per si
     without_data filter, coverage sort.
 """
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case, and_
 from datetime import datetime, date as date_cls, timedelta
 from typing import Optional, List
 
 from database import get_db
-from models import Site
+from middleware.auth import AuthContext, get_optional_auth
+from models import EntiteJuridique, Portefeuille, Site
 from models.energy_models import Meter, MeterReading, EnergyVector
 from models.consumption_insight import ConsumptionInsight
 from models.action_item import ActionItem
 from models.enums import ActionStatus
+from routes.patrimoine._helpers import _check_portfolio_belongs_to_org, _get_org_id
 from services.billing_service import get_reference_price
 from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 from config.emission_factors import get_emission_factor
@@ -232,23 +234,39 @@ def _build_site_row(db, site, dt_from, dt_to, days):
 # -------------------------------------------------------------------
 @router.get("/summary")
 def get_portfolio_summary(
+    request: Request,
     date_from: Optional[str] = Query(None, alias="from"),
     date_to: Optional[str] = Query(None, alias="to"),
     portefeuille_id: Optional[int] = Query(None),
     site_ids: Optional[str] = Query(None, description="Comma-separated site IDs"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     Aggregated portfolio KPIs + top-lists for multi-site consumption view.
+
+    Mini-sprint sécurité IDOR Portfolio (CWE-284 PROMEOS-SEC-2026-001) — fix 2026-05-04 :
+    org-scoping strict via JOIN Site → Portefeuille → EJ → organisation_id.
+    Symétrique au mini-sprint IDOR meters Sprint C-2 (CWE-639).
     """
+    org_id = _get_org_id(request, auth, db)
+
+    if portefeuille_id is not None:
+        _check_portfolio_belongs_to_org(db, portefeuille_id, org_id)
+
     d_from = _parse_date_or_default(date_from, 90)
     d_to = _parse_date_or_default(date_to, 0) if date_to else date_cls.today()
     dt_from = datetime.combine(d_from, datetime.min.time())
     dt_to = datetime.combine(d_to + timedelta(days=1), datetime.min.time())
     days = (d_to - d_from).days or 1
 
-    # Resolve sites
-    q = db.query(Site).filter(Site.actif == True)
+    q = (
+        db.query(Site)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(Site.actif == True)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
     if portefeuille_id is not None:
         q = q.filter(Site.portefeuille_id == portefeuille_id)
     if site_ids:
@@ -337,6 +355,7 @@ def get_portfolio_summary(
 # -------------------------------------------------------------------
 @router.get("/sites")
 def get_portfolio_sites(
+    request: Request,
     date_from: Optional[str] = Query(None, alias="from"),
     date_to: Optional[str] = Query(None, alias="to"),
     portefeuille_id: Optional[int] = Query(None),
@@ -352,18 +371,33 @@ def get_portfolio_sites(
     offset: int = Query(0, ge=0),
     site_ids: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     Paginated site-level consumption table for portfolio view.
     V1.1: impact_eur_estimated, open_actions_count, with_actions filter, impact sort.
+
+    Mini-sprint sécurité IDOR Portfolio (CWE-284 PROMEOS-SEC-2026-002) — fix 2026-05-04 :
+    org-scoping strict via JOIN Site → Portefeuille → EJ → organisation_id.
     """
+    org_id = _get_org_id(request, auth, db)
+
+    if portefeuille_id is not None:
+        _check_portfolio_belongs_to_org(db, portefeuille_id, org_id)
+
     d_from = _parse_date_or_default(date_from, 90)
     d_to = _parse_date_or_default(date_to, 0) if date_to else date_cls.today()
     dt_from = datetime.combine(d_from, datetime.min.time())
     dt_to = datetime.combine(d_to + timedelta(days=1), datetime.min.time())
     days = (d_to - d_from).days or 1
 
-    q = db.query(Site).filter(Site.actif == True)
+    q = (
+        db.query(Site)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(Site.actif == True)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
     if portefeuille_id is not None:
         q = q.filter(Site.portefeuille_id == portefeuille_id)
     if site_ids:

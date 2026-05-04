@@ -16,7 +16,7 @@ from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
 from main import app
-from models import Base, Site, TypeSite, Meter, MeterReading
+from models import Base, EntiteJuridique, Organisation, Portefeuille, Site, TypeSite, Meter, MeterReading
 from models.energy_models import EnergyVector, FrequencyType
 from models.consumption_insight import ConsumptionInsight
 from database import get_db
@@ -38,10 +38,23 @@ def env():
     app.dependency_overrides[get_db] = _override
     client = TestClient(app)
 
-    # Seed 3 sites with varying data
+    # Mini-sprint sécurité IDOR Portfolio (PROMEOS-SEC-2026-001/002 CWE-284, 2026-05-04) :
+    # Hierarchy Organisation → EntiteJuridique → Portefeuille obligatoire post-fix
+    # (sites bare sans portefeuille_id étaient invisibles au JOIN org-scoped).
+    org = Organisation(nom="Test Portfolio Org", siren="123456789", actif=True)
+    session.add(org)
+    session.flush()
+    ej = EntiteJuridique(nom="Test Portfolio EJ", siren="123456789", organisation_id=org.id)
+    session.add(ej)
+    session.flush()
+    pf = Portefeuille(nom="Test Portfolio PF", entite_juridique_id=ej.id)
+    session.add(pf)
+    session.flush()
+
+    # Seed 3 sites attached to the portefeuille (org-scoping JOIN-compatible)
     sites = []
     for i, name in enumerate(["Site Alpha", "Site Beta", "Site Gamma"]):
-        s = Site(nom=name, type=TypeSite.BUREAU, actif=True)
+        s = Site(nom=name, type=TypeSite.BUREAU, actif=True, portefeuille_id=pf.id)
         session.add(s)
         session.flush()
         sites.append(s)
