@@ -56,12 +56,12 @@ terms:
     domain: "co2"
     source:
       label: "Arrêté du 1er août 2025 — facteur GNL pour reporting OPERAT"
-      url: "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000051956481"
+      url: "https://www.legifrance.gouv.fr/search/lawb?init=true&query=arr%C3%AAt%C3%A9+1er+ao%C3%BBt+2025+GNL+OPERAT"
       version: "Arrêté 01/08/2025"
       effective_date: "2025-08-01"
-      legal_reference: "JORFTEXT000051956481"
+      legal_reference: null
     formula: null
-    notes: "Mirroir doctrine/constants.py CO2_FACTOR_GNL_KGCO2_PER_KWH"
+    notes: "Mirroir doctrine/constants.py CO2_FACTOR_GNL_KGCO2_PER_KWH. legal_reference null car JORFTEXT à vérifier sur Légifrance (collision détectée audit Phase 3.4d : ancien JORFTEXT000051956481 entrait en conflit avec Loi 2025-391 audit SMÉ)."
 
   # ═════════════════════════════════════════════════════════════════════
   # Domaine ACCISES — LFI 2026 + Code des impositions
@@ -247,12 +247,12 @@ terms:
     domain: "tarifs"
     source:
       label: "Arrêté CTA 27/01/2026 — CRE délibération 2026-14"
-      url: "https://www.cre.fr/"
+      url: "https://www.cre.fr/documents/Deliberations/Decision/deliberation-2026-14-cta-distribution"
       version: "CRE 2026-14"
       effective_date: "2026-02-01"
       legal_reference: null
     formula: "CTA = pct × TURPE fixe distribution"
-    notes: "Remplace 21,93% historique (arrêté 26/07/2021) expiré 31/01/2026"
+    notes: "Remplace 21,93% historique (arrêté 26/07/2021) expiré 31/01/2026. URL deep-link CRE délibération à confirmer post-publication officielle."
 
   CTA_ELEC_TRANSPORT_PCT:
     value: 5.0
@@ -260,12 +260,12 @@ terms:
     domain: "tarifs"
     source:
       label: "Arrêté CTA 27/01/2026 — CRE délibération 2026-14 (transport ≥50 kV)"
-      url: "https://www.cre.fr/"
+      url: "https://www.cre.fr/documents/Deliberations/Decision/deliberation-2026-14-cta-transport"
       version: "CRE 2026-14"
       effective_date: "2026-02-01"
       legal_reference: null
     formula: "CTA = pct × TURPE fixe transport"
-    notes: "Applicable HTB"
+    notes: "Applicable HTB. URL deep-link CRE délibération à confirmer post-publication officielle."
 
   CTA_GAZ_DISTRIBUTION_PCT:
     value: 20.8
@@ -418,13 +418,13 @@ terms:
     unit: "ratio"
     domain: "dt"
     source:
-      label: "Arrêté 10/04/2020 — coefficient énergie primaire électricité"
-      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
-      version: "Arrêté 10/04/2020"
-      effective_date: "2020-10-01"
-      legal_reference: "NOR LOGL2005904A"
+      label: "Arrêté du 13 avril 2023 — coefficient énergie primaire élec abaissé de 2.3 à 1.9"
+      url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047445751"
+      version: "Arrêté 13/04/2023"
+      effective_date: "2023-05-01"
+      legal_reference: "JORFTEXT000047445751"
     formula: "kWhEP = kWhEF × 1.9 (élec)"
-    notes: "Réduit de 2.3 à 1.9 par arrêté 13/04/2023"
+    notes: "Arrêté 13/04/2023 modifie l'arrêté 10/04/2020 (NOR LOGL2005904A initial). URL corrigée audit Phase 3.4d (auparavant pointait vers texte 2020 qui contenait l'ancienne valeur 2.3)."
 
   PRIMARY_ENERGY_COEF_GAS:
     value: 1.0
@@ -837,7 +837,7 @@ terms:
   REGOPS_WEIGHT_DT_DEFAULT:
     value: 0.45
     unit: "ratio"
-    domain: "dt"
+    domain: "regops"
     source:
       label: "PROMEOS doctrine — pondération RegOps par défaut (DT/BACS/APER)"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
@@ -850,7 +850,7 @@ terms:
   REGOPS_WEIGHT_BACS_DEFAULT:
     value: 0.30
     unit: "ratio"
-    domain: "dt"
+    domain: "regops"
     source:
       label: "PROMEOS doctrine — pondération RegOps BACS par défaut"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
@@ -863,7 +863,7 @@ terms:
   REGOPS_WEIGHT_APER_DEFAULT:
     value: 0.25
     unit: "ratio"
-    domain: "dt"
+    domain: "regops"
     source:
       label: "PROMEOS doctrine — pondération RegOps APER par défaut"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
@@ -908,7 +908,7 @@ terms:
   READINESS_WEIGHT_DATA_PCT:
     value: 30.0
     unit: "%"
-    domain: "bacs"
+    domain: "readiness"
     source:
       label: "PROMEOS doctrine — pondération readiness Données"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
@@ -921,7 +921,7 @@ terms:
   READINESS_WEIGHT_CONFORMITY_PCT:
     value: 40.0
     unit: "%"
-    domain: "bacs"
+    domain: "readiness"
     source:
       label: "PROMEOS doctrine — pondération readiness Conformité"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
@@ -934,7 +934,7 @@ terms:
   READINESS_WEIGHT_ACTIONS_PCT:
     value: 30.0
     unit: "%"
-    domain: "bacs"
+    domain: "readiness"
     source:
       label: "PROMEOS doctrine — pondération readiness Actions"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"

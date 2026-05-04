@@ -21,7 +21,22 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
-_DOMAIN_ALLOWLIST = frozenset({"co2", "tarifs", "accises", "tva", "dt", "bacs", "aper", "audit_sme", "operat"})
+_DOMAIN_ALLOWLIST = frozenset(
+    {
+        "co2",
+        "tarifs",
+        "accises",
+        "tva",
+        "dt",
+        "bacs",
+        "aper",
+        "audit_sme",
+        "operat",
+        # Phase 3.4d audit follow-up — domaines doctrine PROMEOS distincts
+        "regops",  # pondérations RegOps DT/BACS/APER (mirroir doctrine.constants)
+        "readiness",  # pondérations readiness Data/Conformity/Actions
+    }
+)
 _DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _HTTPS_PREFIX = "https://"
 

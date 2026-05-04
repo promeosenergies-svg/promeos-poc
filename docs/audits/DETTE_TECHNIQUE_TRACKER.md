@@ -424,7 +424,14 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
-## D-Phase4-3-Portfolio-Intensity-Backend-001 — Agrégat portfolio kWh/m² calculé côté FE
+## ~~D-Phase4-3-Portfolio-Intensity-Backend-001~~ — ✅ CLÔTURÉ 2026-05-04 — Agrégat portfolio kWh/m² calculé côté FE
+
+**Clôture** : Sprint C-3 Phase 3.4 (commit 85b6502c)
+- backend/services/portfolio_intensity_service.py — formule canonique Σ kWh / Σ surface
+- backend/routes/portfolio_intensity.py — GET /api/portfolio/intensity org-scopé
+- 9 tests (4 unit MagicMock + 5 integration TestClient) verts
+
+**Original** :
 
 **Détecté** : Sprint C-2 Phase 4.3 (2026-05-04)
 
@@ -511,7 +518,15 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
-## D-Phase4-2-EnergieFinale-Source-Guard-001 — annual_kwh_total doit être kWhEF PCI
+## ~~D-Phase4-2-EnergieFinale-Source-Guard-001~~ — ✅ CLÔTURÉ 2026-05-04 — annual_kwh_total doit être kWhEF PCI
+
+**Clôture** : Sprint C-3 Phase 3.4 (commit 85b6502c) + audit follow-up Phase 3.4d
+- backend/tests/source_guards/test_annual_kwh_total_kwhef_pci_source_guards.py
+- SG_KWHEF_01 : allowlist writers Site.annual_kwh_total
+- SG_KWHEF_02 : commentaire "kWhEF PCI" requis dans chaque writer
+- Phase 3.4d : regex étendue couvre `setattr()` (false negative corrigé)
+
+**Original** :
 
 **Détecté** : Sprint C-2 Phase 4 audit regulatory-expert (2026-05-04)
 
@@ -636,6 +651,113 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-04 | 19 | 1 | 7 | 11 |
 | 2026-05-04 (Phase 5 clôtures Sprint C-2) | 16 | 1 | 5 | 10 |
 | 2026-05-04 (post mini-sprint IDOR + 2 dettes) | 18 | 1 | 5 | 12 |
+| 2026-05-04 (Sprint C-3 Phase 3.4 — 2 clôtures) | 16 | 1 | 4 | 11 |
+| 2026-05-04 (Sprint C-3 Phase 3.4d audit follow-up — +5 dettes) | 21 | 2 | 6 | 13 |
+
+---
+
+## D-Sprint-C3-Portfolio-Consumption-OrgScope-001 — `/api/portfolio/consumption/*` sans org-scoping (PRÉ-EXISTANT)
+
+**Détecté** : Sprint C-3 Phase 3.4d audit security-auditor (2026-05-04)
+
+**Périmètre** : `backend/routes/portfolio.py:251` (GET /api/portfolio/consumption/summary) et L366 (GET /api/portfolio/consumption/sites). Filtre `Site.actif == True` SANS join `EntiteJuridique.organisation_id == org_id`. Tout utilisateur authentifié (même cross-org) peut voir les KPIs agrégés et top-sites de TOUTES les organisations.
+
+**Code pré-existant** (hors range Sprint C-3 commits cd87bf36^..85b6502c). Détection bonus audit follow-up.
+
+**Action Sprint C-4** :
+1. Ajouter `_get_org_id` + join `EntiteJuridique.organisation_id == org_id` dans la query principale L251 et L366
+2. Pattern à reproduire : `_build_sites_query` dans `routes/patrimoine/_helpers.py`
+3. Tests cross-org → 403/404 (un par endpoint)
+
+**Effort estimé** : 1-2 j-h
+**Priorité** : 🔴 **P0** (CWE-284, sécurité, équivalent IDOR meters CWE-639 fixé mini-sprint 2026-05-04)
+**Sprint cible** : Sprint C-4 (priorité absolue avant pilote)
+
+**Traces** :
+- Audit security-auditor Phase 3.4d (PROMEOS-SEC-2026-001 + 002)
+- Symétrique au pattern fixé sur endpoints meters (commit 0ec2743a)
+
+---
+
+## D-Sprint-C3-YAML-Constants-SG-Coverage-001 — Source-guard cohérence YAML↔constants couvre 10/68 termes
+
+**Détecté** : Sprint C-3 Phase 3.4d audit code-reviewer (2026-05-04)
+
+**Périmètre** : `backend/tests/source_guards/test_regulatory_sources_yaml_consistency_with_constants_source_guards.py` couvre actuellement 10 termes (CO2 ×2, DT penalty ×3, audit_sme ×1, DT milestones ×3, EP coef ×2). Sur les 68 termes du YAML, **58 ne sont pas croisés** avec les constantes Python runtime.
+
+**Risque** : drift silencieux si LFI 2027 (ou autre) modifie un taux côté YAML mais oublie côté Python (ou inversement).
+
+**Termes prioritaires à ajouter** :
+- ACCISE_ELEC_T1/T2/GAZ (3 termes — accises ↔ doctrine.constants.py)
+- PRICE_FALLBACK / PRICE_FLEX_NEBCO / PRICE_ELEC_ETI_2026 (3 termes prix marché)
+- NEBCO_THRESHOLD_KW_PER_STEP (1 terme RTE)
+- FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR (1 terme heuristique)
+- APER_PENALTY_EUR_PER_M2_PER_YEAR (1 terme APER)
+- REGOPS_WEIGHT_* / READINESS_WEIGHT_* (6 termes pondérations doctrine)
+
+**Effort estimé** : ~30 min (étendre les patterns SG_REG_CONST_* avec ~12 nouvelles assertions)
+**Priorité** : 🟡 P1 (anti-drift réglementaire, traçabilité audit légal)
+**Sprint cible** : Sprint C-4 (consolidation source-guards)
+
+---
+
+## D-Sprint-C3-Reg-Manquants-Capacite-CBAM-VNU-001 — 9 termes réglementaires manquants YAML
+
+**Détecté** : Sprint C-3 Phase 3.4d audit regulatory-expert (2026-05-04)
+
+**Périmètre** : Le YAML 68 termes (Phase 3.2) couvre les domaines coeur (DT, BACS, APER, audit SMÉ, OPERAT, CO2, accises, TVA, TURPE 6/7 partiel). **9 mécanismes réglementaires importants ABSENTS** :
+
+| ID | Mécanisme | Échéance critique | Priorité |
+|---|---|---|---|
+| 1 | **Capacité RTE 1/11/2026** | Échéance critique 6 mois | 🔴 P0 |
+| 2 | ATRD7 gaz (T1/T2/T3/T4/TP) + ATRT8 | Avant pilote gaz | 🟠 P1 |
+| 3 | TURPE 7 C4/C3 horosaisonnier (couverture C5 BT seule actuellement) | Pilote 2026 | 🟠 P1 |
+| 4 | CBAM règlement UE 2023/956 (déclaration trimestrielle) | 2026 trimestriel | 🟠 P1 |
+| 5 | VNU post-ARENH (loi 2025) | 2026 | 🟠 P1 |
+| 6 | TRVE résidentiel + TRV gaz repère | Continu | 🟡 P2 |
+| 7 | CEE période P6 (2026-2030) — coefficients fiches BAT | 2026-2030 | 🟡 P2 |
+| 8 | ETS2 (UE 2023/959) — bâtiments tertiaires 2027 | 2027 | 🟡 P2 |
+| 9 | TDN + CPB | Continu | 🟡 P2 |
+
+**Action Sprint C-4** : ajouter les 9 mécanismes au YAML + helpers typés + 9 tests loader.
+
+**Effort estimé** : ~2-3 j-h (structuration YAML + helpers + tests)
+**Priorité** : 🔴 **P0 pour Capacité RTE** (échéance 1/11/2026, fenêtre 6 mois) + 🟠 P1 pour ATRD/CBAM/VNU
+**Sprint cible** : Sprint C-4 (priorité Capacité RTE) + Sprint C-5 (CBAM/VNU/CEE)
+
+**Traces** :
+- Audit regulatory-expert Phase 3.4d findings
+- agent_veille_reglementaire.md (17 mécanismes canoniques — base liste complète)
+
+---
+
+## D-Sprint-C3-CRE-CTA-URLs-Verifier-001 — URLs CTA 2026 deep-link à vérifier
+
+**Détecté** : Sprint C-3 Phase 3.4d audit regulatory-expert (2026-05-04)
+
+**Périmètre** : `sources_reglementaires.yaml` lignes 245-268 (CTA_ELEC_DISTRIBUTION_PCT + CTA_ELEC_TRANSPORT_PCT). URL deep-link CRE délibération 2026-14 a été reconstruite Phase 3.4d (`https://www.cre.fr/documents/Deliberations/Decision/deliberation-2026-14-cta-distribution`) mais **non vérifiée** sur cre.fr en live (URL plausible mais pas confirmée disponible).
+
+**Action Sprint C-4** : vérifier les 2 URLs CRE 2026-14 sont bien accessibles + corriger si différentes du pattern reconstruit.
+
+**Effort estimé** : 15 min (vérification live + maj YAML)
+**Priorité** : 🟡 P2 (URLs plausibles fonctionnent encore via redirection cre.fr/, mais audit légal préfère deep-link confirmé)
+**Sprint cible** : Sprint C-4 ou opportunistique
+
+---
+
+## D-Sprint-C3-CO2-GNL-JORFTEXT-Verifier-001 — JORFTEXT GNL à reconfirmer
+
+**Détecté** : Sprint C-3 Phase 3.4d audit regulatory-expert (2026-05-04)
+
+**Périmètre** : `sources_reglementaires.yaml` ligne 53-64 (CO2_FACTOR_GNL_KGCO2_PER_KWH). Le JORFTEXT initialement utilisé (`JORFTEXT000051956481`) entrait en collision avec le JORFTEXT de la Loi 2025-391 audit SMÉ (lignes 613-642). **Phase 3.4d a corrigé** : `legal_reference: null` + URL fallback recherche Légifrance + note explicite.
+
+**Action Sprint C-4** : retrouver le JORFTEXT correct de l'arrêté 01/08/2025 GNL sur Légifrance + restaurer `legal_reference` + URL deep-link.
+
+**Effort estimé** : 10 min (recherche Légifrance + maj YAML)
+**Priorité** : 🟡 P2 (la valeur 0.238 reste correcte ADEME ; seul le JORFTEXT de référence est temporairement incomplet)
+**Sprint cible** : Sprint C-4
+
+---
 
 ---
 

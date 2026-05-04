@@ -156,11 +156,25 @@ def test_get_regulatory_rates_each_term_has_required_keys():
 # ─── Endpoint /api/regulatory/domains ────────────────────────────────────────
 
 
-def test_get_regulatory_domains_returns_9_domains():
+def test_get_regulatory_domains_returns_distinct_set():
+    """Phase 3.4d : 11 domaines distincts post audit follow-up (regops + readiness ajoutés)."""
     resp = client.get("/api/regulatory/domains")
     assert resp.status_code == 200
     data = resp.json()
 
     assert "domains" in data
-    expected = {"co2", "tarifs", "accises", "tva", "dt", "bacs", "aper", "audit_sme", "operat"}
+    expected = {
+        "co2",
+        "tarifs",
+        "accises",
+        "tva",
+        "dt",
+        "bacs",
+        "aper",
+        "audit_sme",
+        "operat",
+        # Phase 3.4d audit follow-up
+        "regops",
+        "readiness",
+    }
     assert set(data["domains"]) == expected

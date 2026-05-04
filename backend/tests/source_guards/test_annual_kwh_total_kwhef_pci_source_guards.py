@@ -43,11 +43,15 @@ _ALLOWED_WRITER_PATHS = {
     # Pas inclus car ne fait que des sums, pas d'écriture
 }
 
-# Pattern d'écriture : `<var>.annual_kwh_total = <expr>` OU
-# `annual_kwh_total=<expr>` (kwarg dans constructeur Site(...))
+# Pattern d'écriture : couvre 4 styles distincts (audit Phase 3.4d follow-up) :
+# 1. `site.annual_kwh_total = ...` (attribut direct, avec ou sans espaces)
+# 2. `annual_kwh_total=...` (kwarg dans constructeur Site(...))
+# 3. `setattr(site, "annual_kwh_total", ...)` (réflexion — ajouté Phase 3.4d)
+# 4. `setattr(site, 'annual_kwh_total', ...)` (idem avec quotes simples)
 _WRITE_PATTERN = re.compile(
     r"(?:[\w]+\s*\.\s*annual_kwh_total\s*=|"  # site.annual_kwh_total =
-    r"^\s*annual_kwh_total\s*=)"  # annual_kwh_total= (kwarg constructeur)
+    r"^\s*annual_kwh_total\s*=|"  # annual_kwh_total= (kwarg constructeur)
+    r"setattr\s*\(\s*\w+\s*,\s*[\"']annual_kwh_total[\"'])"  # setattr(site, "annual_kwh_total", ...)
 )
 
 # Pattern commentaire kWhEF PCI requis dans les writers

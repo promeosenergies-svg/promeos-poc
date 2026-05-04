@@ -86,11 +86,25 @@ def test_get_terms_by_domain_co2_returns_3_terms():
     assert "CO2_FACTOR_GNL_KGCO2_PER_KWH" in co2_terms
 
 
-def test_list_all_domains_returns_9_distinct():
+def test_list_all_domains_returns_distinct_set():
+    """11 domaines distincts post-Phase 3.4d (ajout regops + readiness)."""
     from config.regulatory_sources_loader import list_all_domains
 
     domains = list_all_domains()
-    expected = {"co2", "tarifs", "accises", "tva", "dt", "bacs", "aper", "audit_sme", "operat"}
+    expected = {
+        "co2",
+        "tarifs",
+        "accises",
+        "tva",
+        "dt",
+        "bacs",
+        "aper",
+        "audit_sme",
+        "operat",
+        # Phase 3.4d audit follow-up
+        "regops",
+        "readiness",
+    }
     assert set(domains) == expected, f"Domaines incohérents: {set(domains) ^ expected}"
 
 
