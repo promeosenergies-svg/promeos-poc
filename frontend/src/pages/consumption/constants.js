@@ -9,22 +9,10 @@ export const CONFIDENCE_BADGE = {
   low: { label: 'Basse', variant: 'crit' },
 };
 
-/**
- * kgCO₂e per kWh — ADEME Base Empreinte V23.6, France electricity mix ACV.
- * Source unique backend : backend/config/emission_factors.py (ELEC = 0.052).
- *
- * ⚠️ AFFICHAGE UNIQUEMENT (presentation-layer).
- * - JAMAIS utiliser pour alimenter un payload POST/PATCH qui sera persisté.
- *   Si tu fais `co2e_savings_est_kg: savingsKwh * CO2E_FACTOR_KG_PER_KWH` dans
- *   un payload, tu pourris la DB (bug P0 QA Guardian 2026-04-15, fix dans
- *   `kbRecoActionModel.js` + backend `_resolve_co2e_kg`).
- * - Pour une valeur persistée : envoie `estimated_savings_kwh_year` au backend,
- *   qui calcule via `config.emission_factors.get_emission_factor("ELEC")`.
- * - Roadmap (P0 findings #1-5, non fixés dans ce sprint) : migrer vers un
- *   endpoint `GET /api/config/emission-factors` + Context Provider React pour
- *   supprimer ce hardcode. Voir docs/architecture/AGENT_ORCHESTRATION.md.
- */
-export const CO2E_FACTOR_KG_PER_KWH = 0.052;
+// CO2E_FACTOR_KG_PER_KWH retiré Sprint C-2 Phase 4.4 (2026-05-04).
+// SoT canonique = endpoint /api/config/emission-factors consommé par
+// EmissionFactorsContext.jsx (hook useElecCo2Factor). Fallback inline 0.052
+// (ADEME Base Empreinte V23.6) directement dans le Context.
 
 export const ALERT_COLOR = {
   on_track: {

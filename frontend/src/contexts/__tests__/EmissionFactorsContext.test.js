@@ -3,14 +3,16 @@
  *
  * Vitest config = `environment: 'node'` (pas de DOM). Pour tester le provider
  * avec rendering React, il faudrait jsdom + update vite.config.js (hors scope).
- * Ici on teste : imports, fallback, doctrine, parité constants.js <> context.
+ * Ici on teste : imports, fallback, doctrine.
+ *
+ * Sprint C-2 Phase 4.4 (2026-05-04) — la constante CO2E_FACTOR_KG_PER_KWH a été
+ * retirée de pages/consumption/constants.js. Le fallback 0.052 est désormais
+ * inline dans EmissionFactorsContext.jsx. SoT runtime = /api/config/emission-factors.
  */
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { describe, it, expect } from 'vitest';
-
-import { CO2E_FACTOR_KG_PER_KWH } from '../../pages/consumption/constants';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const contextSrc = readFileSync(resolve(__dirname, '../EmissionFactorsContext.jsx'), 'utf8');
@@ -32,10 +34,11 @@ describe('EmissionFactorsContext — structure', () => {
     expect(contextSrc).toContain('gaz:');
   });
 
-  it('importe le constant depuis constants.js pour alignement', () => {
-    expect(contextSrc).toContain(
-      "import { CO2E_FACTOR_KG_PER_KWH } from '../pages/consumption/constants'"
-    );
+  it("Phase 4.4 — n'importe plus CO2E_FACTOR_KG_PER_KWH depuis consumption/constants", () => {
+    // Anti-régression Phase 4.4 : la chain de dépendance constants.js → Context
+    // a été retirée. Fallback désormais inline dans le Context (1 SoT).
+    expect(contextSrc).not.toMatch(/from\s+['"]\.\.?\/pages\/consumption\/constants['"]/);
+    expect(contextSrc).not.toContain('CO2E_FACTOR_KG_PER_KWH');
   });
 
   it('gère les erreurs fetch silencieusement avec fallback (pas de throw)', () => {
@@ -45,13 +48,13 @@ describe('EmissionFactorsContext — structure', () => {
 });
 
 describe('EmissionFactorsContext — doctrine CO₂', () => {
-  it('fallback ELEC aligné sur constants.js (ADEME V23.6 = 0.052)', () => {
-    expect(CO2E_FACTOR_KG_PER_KWH).toBe(0.052);
+  it('fallback ELEC inline = 0.052 (ADEME Base Empreinte V23.6)', () => {
+    // Phase 4.4 : la valeur est lue inline dans le Context (plus d'import constant).
+    expect(contextSrc).toContain('0.052');
   });
 
   it('garde-fou : 0.0569 est un tarif TURPE HPH, pas un facteur CO₂', () => {
     // Le fallback ne doit JAMAIS contenir cette valeur.
-    expect(CO2E_FACTOR_KG_PER_KWH).not.toBe(0.0569);
     expect(contextSrc).not.toContain('0.0569');
   });
 

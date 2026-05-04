@@ -13,13 +13,14 @@
  */
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-import { CO2E_FACTOR_KG_PER_KWH } from '../pages/consumption/constants';
-
 // Fallback utilisé avant que l'API réponde (premier render, offline, erreur).
-// Valeurs alignées sur backend/config/emission_factors.py.
+// Valeurs alignées sur backend/config/emission_factors.py (ADEME Base Empreinte V23.6).
+// Sprint C-2 Phase 4.4 — inline 0.052 (anciennement importé depuis une
+// constante isolée pages/consumption/constants.js, retirée Phase 4.4).
+// SoT runtime = /api/config/emission-factors (fetch L44 ci-dessous).
 const FALLBACK_FACTORS = {
   elec: {
-    kgco2e_per_kwh: CO2E_FACTOR_KG_PER_KWH, // 0.052 ADEME V23.6
+    kgco2e_per_kwh: 0.052, // ADEME Base Empreinte V23.6, France electricity mix ACV
     source: 'Fallback ADEME V23.6 (API non chargée)',
     year: 2024,
   },
