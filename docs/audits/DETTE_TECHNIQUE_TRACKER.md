@@ -415,6 +415,109 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
+## D-Phase4-2-Operat-Surfaces-3-Distinct-001 — Distinguer SDP / tertiaire_area_m2 / S_CE OPERAT
+
+**Détecté** : Sprint C-2 Phase 4 audit regulatory-expert (2026-05-04)
+
+**Source légale** : Arrêté 10/04/2020 art. 2-j (NOR LOGL2005904A, version 15/03/2024) — « *La surface de consommations énergétiques [S_CE], la surface sur laquelle l'ensemble des consommations énergétiques sont prises en compte, **intégrant notamment les surfaces de stationnement intérieur et de locaux techniques** de l'entité fonctionnelle, **au contraire de la surface de plancher** [SDP]* ».
+
+**Périmètre** : Phase 4.2 a ajouté `Site.intensity_kwh_m2_tertiaire = annual_kwh_total / tertiaire_area_m2`. Or `tertiaire_area_m2` est commenté "Surface tertiaire assujettie (m2)" — sémantique floue. Réglementairement il faut distinguer 3 surfaces :
+- **SDP** (Surface De Plancher) — code construction, exclut parking + locaux techniques
+- **tertiaire_area_m2** — part assujettie OPERAT (≥ 1 000 m² cumulés EFA, R.174-22 CCH)
+- **S_CE** — surface OPERAT pour reporting kWh/m², INCLUT parking intérieur + locaux techniques (typiquement > SDP)
+
+**Risque** : `intensity_kwh_m2_tertiaire` actuellement calculé sur surface assujettie peut **diverger** de l'intensité officielle OPERAT calculée sur S_CE → risque de non-conformité reporting si exposé comme métrique réglementaire (ex: Cockpit RegOps, exports DT).
+
+**Action Sprint C-3 / C-6** :
+1. Ajouter colonne `Site.surface_consommations_energetiques_m2` (S_CE) distincte
+2. Ajouter colonne `Site.surface_de_plancher_sdp_m2` (cf. dette D-Phase1-4-Batiment-SDP-Proxy-001)
+3. Renommer ou documenter `intensity_kwh_m2_tertiaire` comme intensité **assujettie** (pas OPERAT officielle)
+4. Source-guard : interdire l'export OPERAT depuis `intensity_kwh_m2_tertiaire` tant que `surface_consommations_energetiques_m2` n'est pas peuplé
+
+**Effort estimé** : ~2-3 j-h (3 colonnes + migration + source-guard + tests + documentation)
+**Priorité** : 🟠 **P0** (risque non-conformité reporting OPERAT si exposé en l'état)
+**Sprint cible** : Sprint C-6 (Modèles enrichis matrice §4.5) — corrélé à D-Phase1-4-Batiment-SDP-Proxy-001
+
+**Traces** :
+- Audit regulatory-expert Phase 4 (2026-05-04) finding D1
+- Légifrance arrêté 10/04/2020 art. 2-j
+
+---
+
+## D-Phase4-2-Operat-Intensity-DJU-Adjustment-001 — intensity_kwh_m2_tertiaire non ajusté DJU
+
+**Détecté** : Sprint C-2 Phase 4 audit regulatory-expert (2026-05-04)
+
+**Source légale** : Arrêté 10/04/2020 art. 5 + Annexe II ATDL2430864A (Coeff DJU par groupe).
+
+**Périmètre** : `intensity_kwh_m2_tertiaire` est exposé brut (annual_kwh_total / tertiaire_area_m2) sans ajustement DJU. Pour comparaison à `Cabs` ou `Crelat` (cibles OPERAT 2030), l'arrêté 10/04/2020 art. 5 impose un ajustement par Coeff DJU annuel (rapport DJU année / DJU référence).
+
+**Risque** : si le ratio `intensity_kwh_m2_tertiaire / cabs_kwh_m2_an` est utilisé comme "% progression DT" affiché à l'utilisateur sans ajustement, l'écart peut être faussé de ±15 % selon climatologie annuelle.
+
+**Action Sprint C-3 / C-4** :
+1. Ajouter `Site.intensity_kwh_m2_tertiaire_dju_adjusted` (intensité après normalisation Coeff DJU)
+2. Calculer via `regops/services/operat_dju_service.py` (réutiliser annexe II Coeff DJU)
+3. Documenter inline tooltip "Intensité brute non ajustée DJU" sur Cockpit / RegOps display
+
+**Effort estimé** : ~1-2 j-h (service + colonne + cascade trigger sur DJU update)
+**Priorité** : 🟡 P1 (proxy fonctionnel, écart ±15% acceptable MVP)
+**Sprint cible** : Sprint C-4 (Compliance V3 ajustements climatiques)
+
+**Traces** :
+- Audit regulatory-expert Phase 4 (2026-05-04) finding D2
+- Légifrance arrêté 10/04/2020 art. 5
+
+---
+
+## D-Phase4-2-EnergieFinale-Source-Guard-001 — annual_kwh_total doit être kWhEF PCI
+
+**Détecté** : Sprint C-2 Phase 4 audit regulatory-expert (2026-05-04)
+
+**Source légale** : Arrêté 10/04/2020 art. 2-g — « *L'énergie finale, l'énergie délivrée au consommateur final.* » Reporting OPERAT exclusivement en kWhEF PCI.
+
+**Périmètre** : Aucun source-guard backend ne vérifie que `Site.annual_kwh_total` agrège uniquement des kWh **énergie finale PCI**. Si à terme un service ingère du kWhEP (énergie primaire, conversion x2.3 réseau de chaleur) ou du kWh PCS (PCI×1.11 gaz), le calcul `intensity_kwh_m2_*` devient non-conforme OPERAT.
+
+**Action Sprint C-3** :
+1. Source-guard `backend/tests/source_guards/annual_kwh_energie_finale_source_guards.py` qui scanne les services écrivant `Site.annual_kwh_total` et exige un commentaire "EF PCI" ou usage d'un helper canonique `to_kwh_ef_pci()`.
+2. Documenter dans `consumption_unified_service.py` (SoT consommation) que la valeur retournée est kWhEF PCI.
+
+**Effort estimé** : ~30 min (1 source-guard + 1 docstring)
+**Priorité** : 🟡 P1 (préventif, pas de fuite EF/EP/PCS détectée actuellement)
+**Sprint cible** : Sprint C-3 (TraceTooltip + sources canoniques)
+
+**Traces** :
+- Audit regulatory-expert Phase 4 (2026-05-04) finding D3
+- Légifrance arrêté 10/04/2020 art. 2-g
+
+---
+
+## D-ObligationsTab-Heuristics-Inline-001 — estHvacKw / estParkingM2 hardcodés FE (pré-existant)
+
+**Détecté** : Sprint C-2 Phase 4 audit code-reviewer (2026-05-04, code pré-existant 03/2026)
+
+**Périmètre** : `frontend/src/pages/conformite-tabs/ObligationsTab.jsx:159-163` :
+```js
+const estHvacKw = Math.round(maxSurface * 0.1);     // HVAC = 10% surface
+const estParkingM2 = largeSites[0].surface_m2 * 0.6; // parking = 60% du plus grand site
+```
+
+Constantes heuristiques métier (10%, 60%) hardcodées dans un composant FE — violation doctrine PROMEOS "zero business logic frontend". Transmis ensuite à `/api/kb/apply` comme contexte site.
+
+**Action Sprint C-4 / C-5** :
+1. Endpoint backend `GET /api/kb/site-context-defaults?site_id=X` retournant `{ hvac_kw_estimate, parking_m2_estimate }` calculés via heuristiques BE (config YAML).
+2. Retirer les 2 calculs inline ObligationsTab.jsx.
+3. Source-guard FE : pas de `Math.round.*surface_m2 \* 0\.\d` dans `pages/`.
+
+**Effort estimé** : ~2-3 h (endpoint + config YAML + retrait inline + source-guard)
+**Priorité** : 🟡 P1 (impact = précision moindre KB context si scope FE diverge backend)
+**Sprint cible** : Sprint C-4 (consolidation contexte KB)
+
+**Traces** :
+- Audit code-reviewer Phase 4 (2026-05-04) finding P1 (1)
+- Code introduit en mars 2026 par le précédent contributeur (hors scope Phase 4 audit pour fix immédiat)
+
+---
+
 ## Métriques tracker
 
 | Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
@@ -424,6 +527,7 @@ non couverts par les tests existants (notamment dashboards aggregations).
 | 2026-05-03 | 13 | 0 | 4 | 9 |
 | 2026-05-03 | 14 | 0 | 4 | 10 |
 | 2026-05-04 | 15 | 0 | 4 | 11 |
+| 2026-05-04 | 19 | 1 | 7 | 11 |
 
 ---
 

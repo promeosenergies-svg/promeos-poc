@@ -122,7 +122,9 @@ describe('C - ConformitePage has compliance score header', () => {
 
   it('shows dynamic weight labels from API and Non applicable state', () => {
     expect(headerCode).toContain('fw.weight');
-    expect(headerCode).toContain('Non applicable');
+    // Sprint C-2 Phase 4.5d : la chaîne inline "Non applicable" a été remplacée par
+    // <NonApplicableLabel variant="compact" /> (composant canonique Phase 4.5a).
+    expect(headerCode).toContain('NonApplicableLabel');
   });
 
   it('displays /100 format', () => {

@@ -120,7 +120,7 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
                     </span>
                   </>
                 ) : (
-                  <span className="text-xs text-gray-400 italic">Non applicable</span>
+                  <NonApplicableLabel variant="compact" />
                 )}
               </div>
             );

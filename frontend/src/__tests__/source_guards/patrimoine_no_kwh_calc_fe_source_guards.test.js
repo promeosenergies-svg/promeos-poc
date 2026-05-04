@@ -27,6 +27,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC_ROOT = join(__dirname, '..', '..');
 const PATRIMOINE_PATH = join(SRC_ROOT, 'pages', 'Patrimoine.jsx');
+const PERFORMANCE_SITES_PATH = join(SRC_ROOT, 'pages', 'cockpit', 'PerformanceSitesCard.jsx');
 
 function stripComments(src) {
   return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
@@ -65,5 +66,18 @@ describe('SG_PATRIM_FE — Patrimoine.jsx kWh/m² doctrine guards', () => {
       `L'agrégat portfolio kWh/m² doit référencer D-Phase4-3-Portfolio-Intensity-Backend-001 ` +
         `(commentaire inline) pour traçabilité dette.`
     ).toMatch(/D-Phase4-3-Portfolio-Intensity-Backend-001/);
+  });
+
+  it('SG_PATRIM_FE_04 — PerformanceSitesCard.jsx no inline conso/surface division (Phase 4.5d)', () => {
+    // Phase 4.5d audit follow-up : étend la couverture Patrimoine.jsx au card
+    // performance Cockpit qui dupliquait l'anti-pattern R7.
+    const perfSrc = stripComments(readFileSync(PERFORMANCE_SITES_PATH, 'utf-8'));
+    const FORBIDDEN = /Math\.round\([^)]*conso_kwh_an[^)]*\/[^)]*surface_m2[^)]*\)/g;
+    const matches = perfSrc.match(FORBIDDEN) || [];
+    expect(
+      matches,
+      `Anti-pattern doctrine R7 détecté dans PerformanceSitesCard.jsx : ` +
+        `Math.round(conso_kwh_an / surface_m2). Utiliser site.intensity_kwh_m2_total.`
+    ).toEqual([]);
   });
 });

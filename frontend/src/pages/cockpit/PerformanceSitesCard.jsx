@@ -92,12 +92,14 @@ export default function PerformanceSitesCard({ fallbackSites }) {
       }));
     }
     if (!fallbackSites?.length) return [];
+    // Phase 4.5d audit follow-up — consomme site.intensity_kwh_m2_total exposé
+    // par backend (Phase 4.2) au lieu du calcul inline anti-pattern doctrine R7.
     return fallbackSites
-      .filter((s) => s.surface_m2 > 0 && s.conso_kwh_an > 0)
+      .filter((s) => s.intensity_kwh_m2_total != null)
       .map((s) => ({
         site_id: s.id,
         site_nom: s.nom || s.name || `Site #${s.id}`,
-        ipe_kwh_m2_an: Math.round(s.conso_kwh_an / s.surface_m2),
+        ipe_kwh_m2_an: Math.round(s.intensity_kwh_m2_total),
         objectif: getBenchmarkForUsage(s.usage_type ?? s.activite),
       }))
       .sort((a, b) => b.ipe_kwh_m2_an - a.ipe_kwh_m2_an);
