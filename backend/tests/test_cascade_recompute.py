@@ -82,8 +82,8 @@ def test_resolve_aper_deadline_below_seuil():
 # ─── CASCADE_MAP composition ─────────────────────────────────────────────────
 
 
-def test_cascade_map_contains_10_mvp_fields():
-    """7 champs Sprint C-1 + 3 champs Phase 4.2 (surface_m2, annual_kwh_total + extension tertiaire_area_m2)."""
+def test_cascade_map_contains_mvp_fields():
+    """7 champs Sprint C-1 + 2 Phase 4.2 + 1 Phase 5.2 = 10 entrées CASCADE_MAP."""
     from regops.services.cascade_recompute_service import CASCADE_MAP_MVP_SPRINT_C1
 
     expected = {
@@ -98,6 +98,8 @@ def test_cascade_map_contains_10_mvp_fields():
         # Sprint C-2 Phase 4.2
         "Site.surface_m2",
         "Site.annual_kwh_total",
+        # Sprint C-2 Phase 5.2 — pivot org-scoped (clôture D-Phase6-Cascade-EJ-Sites-001)
+        "AuditEnergetique.conso_annuelle_moy_gwh",
     }
     assert set(CASCADE_MAP_MVP_SPRINT_C1.keys()) == expected
 

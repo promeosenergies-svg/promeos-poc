@@ -227,24 +227,41 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
-## D-Phase6-Cascade-EJ-Sites-001 — Cascade EJ.consommation_3y → audit_sme + compliance multi-sites
+## D-Phase6-Cascade-EJ-Sites-001 — Cascade EJ.consommation_3y → audit_sme + compliance multi-sites [PIVOT Phase 5.1]
 
 **Détecté** : Sprint C-1 Phase 6.1 audit pré-build (2026-05-03)
+**Pivot** : Sprint C-2 Phase 5.1 audit pré-build (2026-05-04) — découverte modèle
 
-**Périmètre** : Modification `EntiteJuridique.consommation_annuelle_moyenne_3y_gwh` doit cascade vers :
+**Découverte critique Phase 5.1** : `EntiteJuridique.consommation_annuelle_moyenne_3y_gwh` **n'existe pas** dans le modèle ORM. Le champ canonique est `AuditEnergetique.conso_annuelle_moy_gwh` qui est **org-scoped** (FK `organisation_id`), pas EJ-scoped. La cascade originale ciblait un champ inexistant.
+
+**Pivot Option A acté** (2026-05-04) : cascade depuis `AuditEnergetique.conso_annuelle_moy_gwh` (SoT canonique) vers `recompute_organisation(db, organisation_id)`. Voir nouvelle entrée `D-Phase6-Cascade-AuditSme-Org-Sites-001` qui clôture le périmètre.
+
+**Périmètre original (pour mémoire)** : Modification `EntiteJuridique.consommation_annuelle_moyenne_3y_gwh` devait cascade vers :
 - `audit_energetique.obligation` (recalcul AUCUNE / AUDIT_4ANS / SME_ISO50001 selon seuils 2.75 / 23.6 GWh)
 - Compliance score TOUS sites de l'EJ (impact dimensions AUDIT_SME / ISO_50001)
 
-**Pourquoi reporté** : Cascade EJ → tous sites = potentiel N+1 sur grande EJ (ex: 50 sites). Bulk recompute via `compliance_coordinator.recompute_organisation()` existe mais nécessite intégration cascade_recompute_service propre + tests perf.
+**Statut** : ✅ **CLÔTURÉ 2026-05-04 sous nouveau nom** `D-Phase6-Cascade-AuditSme-Org-Sites-001` (Phase 5.2 commit). Le pivot vers org-scoped est plus cohérent avec l'architecture existante (audit_sme.organisation_id). Si à terme une EJ unique est nécessaire (cas multi-EJ par org), une dette plus fine pourra être créée Sprint C-7 polish.
 
-**Action** :
-- Ajouter entrée CASCADE_MAP[EntiteJuridique.consommation_annuelle_moyenne_3y_gwh]
-- Réutiliser `compliance_coordinator.recompute_organisation` pour bulk
-- Tests perf bulk recompute (50, 200, 500 sites)
+**Note matrice v1 §6** : si `EntiteJuridique.consommation_annuelle_moyenne_3y_gwh` y figure encore comme champ attendu, à corriger Sprint C-7 polish (champ dérivé via AuditEnergetique org-scoped, pas champ direct EJ).
 
-**Effort estimé** : 3-4 h
+---
+
+## D-Phase6-Cascade-AuditSme-Org-Sites-001 — Cascade AuditEnergetique.conso → obligation + recompute_organisation
+
+**Détecté** : Sprint C-1 Phase 6.1 (originellement EJ-Sites-001), pivoté Sprint C-2 Phase 5.1 (2026-05-04)
+
+**Périmètre** : Modification `AuditEnergetique.conso_annuelle_moy_gwh` cascade vers :
+- `AuditEnergetique.obligation` recalculée selon seuils loi 30/04/2025 (≥23.6 GWh → SME_ISO50001 ; ≥2.75 GWh → AUDIT_4ANS ; <2.75 → AUCUNE)
+- `compliance_coordinator.recompute_organisation(db, audit_sme.organisation_id)` → bulk recompute compliance score TOUS sites de l'organisation
+
+**Action Phase 5.2** :
+- Ajouter entrée `CASCADE_MAP_MVP_SPRINT_C1["AuditEnergetique.conso_annuelle_moy_gwh"]`
+- 2 helpers `_recompute_audit_sme_obligation` + `_recompute_organisation_via_coordinator`
+- Tests : 3 obligations × seuils + 2 limites + résilience + perf 50 sites
+
+**Effort estimé** : ~2 h (vs 3-4 h estimé avant pivot, simplifié grâce à existence `recompute_organisation`)
 **Priorité** : 🟠 P1 (déclencheur Audit SMÉ deadline 11/10/2026 critique)
-**Sprint cible** : Sprint C-2 (FE cleanup + temporalité, contexte multi-sites)
+**Sprint cible** : Sprint C-2 Phase 5.2 — **clôturée par commit Phase 5.2**
 
 ---
 

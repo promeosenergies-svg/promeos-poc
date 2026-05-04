@@ -12,22 +12,24 @@ amont (Site / Batiment) et les applique en chaîne :
 Architecture mince : délègue aux services existants, ne duplique aucune logique.
 
 Scope MVP Sprint C-1 = 7 champs initiaux (Site x6 + Batiment x1) ; étendu en
-Sprint C-2 Phase 4.2 à 10 champs (Site.surface_m2, Site.annual_kwh_total) :
+Sprint C-2 Phase 4.2 (+2 Site) puis Phase 5.2 (+1 AuditEnergetique) à 11 champs :
   - Site.code_postal, Site.altitude_m, Site.tertiaire_area_m2,
     Site.parking_area_m2, Site.roof_area_m2, Site.operat_sous_categorie_id,
     Site.surface_m2 (Phase 4.2), Site.annual_kwh_total (Phase 4.2)
   - Batiment.cvc_power_kw
+  - AuditEnergetique.conso_annuelle_moy_gwh (Phase 5.2 — pivot org-scoped)
 
-5 cascades reportées (cf. tracker dette technique D-Phase6-Cascade-*) :
-  - EJ.consommation_3y → audit_sme + multi-sites compliance (Sprint C-2)
+3 cascades restantes reportées (cf. tracker dette D-Phase6-Cascade-*) :
   - Org.consentement_dataconnect/grdf → DPs (Sprint C-3)
   - DP.code_fta → profil + Bill Intelligence (Sprint C-3)
-  - Contract.date_fin_validite → alerte 90j (Sprint C-2/C-5)
+  - Contract.date_fin_validite → alerte 90j (Sprint C-2 Phase 5.3)
 
 Endpoint preview : GET /api/v1/sites/{id}/cascade-impact (dry-run, org-scopé).
 Wiring PATCH /api/sites/{id} → cascade_recompute_on_change(persist=True) = Sprint C-2 Phase 3.
 Sprint C-2 Phase 4.2 — intensity_kwh_m2_total + intensity_kwh_m2_tertiaire
 persistées via cascade (anti-cycle : intensity n'est PAS source de cascade compliance).
+Sprint C-2 Phase 5.2 — cascade AuditEnergetique.conso_annuelle_moy_gwh →
+obligation (loi 30/04/2025 : 2.75 / 23.6 GWh) + recompute_organisation tous sites.
 """
 
 from __future__ import annotations
@@ -240,6 +242,77 @@ def _recompute_intensity_tertiaire(site) -> Optional[float]:
         return None
 
 
+# ─── Helpers Phase 5.2 Sprint C-2 — cascade AuditEnergetique → obligation + multi-sites ─────
+#
+# Source légale : loi n°2025-391 du 30/04/2025 (transposition directive UE 2023/1791),
+# Code de l'énergie art. L.233-1 et suivants. Seuils (cf. AuditEnergetique docstring) :
+#   ≥ 23.6 GWh/an → SME ISO 50001
+#   ≥ 2.75 GWh/an → Audit énergétique 4 ans
+#   <  2.75 GWh   → AUCUNE obligation
+# Pivot Phase 5.1 (2026-05-04) : org-scoped (FK organisation_id) car audit_sme est
+# défini au niveau Organisation, pas EntiteJuridique. La dette originale
+# D-Phase6-Cascade-EJ-Sites-001 a été clôturée sous D-Phase6-Cascade-AuditSme-Org-Sites-001.
+
+# Seuils doctrinaux loi 30/04/2025
+_AUDIT_SME_SEUIL_ISO50001_GWH = 23.6
+_AUDIT_SME_SEUIL_AUDIT_4ANS_GWH = 2.75
+
+
+def _recompute_audit_sme_obligation(audit_sme) -> Optional[str]:
+    """Recalcule AuditEnergetique.obligation depuis conso_annuelle_moy_gwh.
+
+    Seuils loi 30/04/2025 :
+      ≥ 23.6 GWh → "SME_ISO50001"
+      ≥  2.75 GWh → "AUDIT_4ANS"
+      <  2.75 GWh → "AUCUNE"
+
+    Si conso_annuelle_moy_gwh est None → None retourné, obligation NON modifiée
+    (pas de transition forcée vers une valeur arbitraire).
+    """
+    conso_gwh = getattr(audit_sme, "conso_annuelle_moy_gwh", None)
+    if conso_gwh is None:
+        return None
+
+    if conso_gwh >= _AUDIT_SME_SEUIL_ISO50001_GWH:
+        new_obligation = "SME_ISO50001"
+    elif conso_gwh >= _AUDIT_SME_SEUIL_AUDIT_4ANS_GWH:
+        new_obligation = "AUDIT_4ANS"
+    else:
+        new_obligation = "AUCUNE"
+
+    audit_sme.obligation = new_obligation
+    return new_obligation
+
+
+def _recompute_organisation_via_coordinator(audit_sme, db: Session) -> Optional[str]:
+    """Délègue à compliance_coordinator.recompute_organisation pour bulk recompute.
+
+    audit_sme.organisation_id → tous sites de l'organisation parente.
+    Anti-cycle : recompute_organisation calcule compliance_score (lecture intensity / DT /
+    BACS / APER) et ne modifie JAMAIS audit_sme.conso_annuelle_moy_gwh.
+
+    Résilience : exception isolée (org_id absent, sites manquants, evaluate_site KO)
+    n'arrête pas la cascade — None retourné, action loguée.
+    """
+    organisation_id = getattr(audit_sme, "organisation_id", None)
+    if organisation_id is None:
+        return None
+
+    try:
+        from services.compliance_coordinator import recompute_organisation
+
+        result = recompute_organisation(db, organisation_id)
+        sites_count = result.get("sites_recomputed", 0) if isinstance(result, dict) else 0
+        return f"recompute_organisation done (org_id={organisation_id}, sites={sites_count})"
+    except Exception as e:
+        _logger.warning(
+            "recompute_organisation failed for organisation %s: %s",
+            organisation_id,
+            e,
+        )
+        return None
+
+
 # ─── CASCADE_MAP MVP Sprint C-1 (7 champs) ──────────────────────────────────
 #
 # Chaque entrée est une liste de fonctions cascade qui retournent (output_field, value).
@@ -290,6 +363,16 @@ CASCADE_MAP_MVP_SPRINT_C1: dict[str, list[Callable]] = {
     "Batiment.cvc_power_kw": [
         # Bâtiment → recalcule compliance du SITE parent (BACS = Σ cvc bâtiments)
         lambda b, db: ("compliance_score", _recompute_compliance(b.site, db)),
+    ],
+    # Phase 5.2 Sprint C-2 — cascade org-scoped (clôture D-Phase6-Cascade-EJ-Sites-001
+    # pivoté sous D-Phase6-Cascade-AuditSme-Org-Sites-001 — cf. tracker dette).
+    # Anti-cycle vérifié : recompute_organisation lit compliance et ne modifie pas conso.
+    "AuditEnergetique.conso_annuelle_moy_gwh": [
+        lambda audit_sme, db: ("audit_sme_obligation", _recompute_audit_sme_obligation(audit_sme)),
+        lambda audit_sme, db: (
+            "compliance_score_all_sites",
+            _recompute_organisation_via_coordinator(audit_sme, db),
+        ),
     ],
 }
 
