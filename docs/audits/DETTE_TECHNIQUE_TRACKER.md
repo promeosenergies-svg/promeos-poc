@@ -560,6 +560,70 @@ Constantes heuristiques métier (10%, 60%) hardcodées dans un composant FE — 
 
 ---
 
+## D-V92-Split-Stale-Imports-Audit-001 — Tests post-split V92 avec imports stale
+
+**Détecté** : Mini-sprint sécurité IDOR (2026-05-04, commits 40ebb348 + 0ec2743a)
+
+**Périmètre** : Le split V92 (`routes/patrimoine.py` éclaté en `routes/patrimoine/sites.py + autres`) avait laissé 2 tests pointant sur `routes/patrimoine.py` (fichier vide depuis le split). Détectés et corrigés mid-flight mini-sprint IDOR :
+- `test_step25_meter_unified.py::TestSourceGuard` (2 assertions)
+- `test_step26_sub_meters.py::TestSourceGuards` (2 assertions)
+
+Tous lisaient le fichier vide → `'<pattern>' in ''` retournait False → tests verts par accident OU rouges silencieusement.
+
+**Risque résiduel** : possibilité d'autres tests scope V92 avec imports stale (silencieusement cassés ou trompeurs). Audit complémentaire nécessaire.
+
+**Action Sprint C-4** :
+1. `grep -rn "routes/patrimoine\.py\b" backend/tests/` — trouver toutes les références au fichier post-split
+2. Vérifier chaque référence : si fichier vide, patcher vers le sous-fichier correct (`routes/patrimoine/sites.py`, `routes/patrimoine/_helpers.py`, `routes/patrimoine/staging.py`, etc.)
+3. Source-guard préventif : interdire `_read("routes/patrimoine.py")` (fichier vide) dans tests
+
+**Effort estimé** : 30-60 min (audit balayage + patches + source-guard préventif)
+**Priorité** : 🟡 P2 (pas bloquant, polish qualité tests)
+**Sprint cible** : Sprint C-4 (Tests + observabilité)
+
+**Traces** :
+- Mini-sprint IDOR commit `40ebb348` (Closes #275)
+- 2 tests adaptés directement Sprint C-2.5 (extension scope acceptable)
+
+---
+
+## D-Compteur-Vs-Meter-Coexistence-001 — 2 modèles meter coexistent (Compteur legacy + Meter moderne)
+
+**Détecté** : Mini-sprint sécurité IDOR (2026-05-04, audit pré-build helper)
+
+**Périmètre** : Le repo a 2 modèles parallèles pour représenter un compteur :
+
+| Modèle | Fichier | Usage actuel | Helper org-scoping |
+|---|---|---|---|
+| **Compteur** (legacy) | `models/compteur.py` | Routes legacy (older endpoints) | `_load_compteur_with_org_check` |
+| **Meter** (moderne) | `models/energy_models.py` | Routes modernes + `meter_unified_service` | `_load_meter_with_org_check` (Mini-sprint IDOR) |
+
+Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (existant) est censé abstraire les 2 modèles (`Meter` source primaire, `Compteur` fallback legacy).
+
+**Question architecturale** :
+- **Option A — Unification vers Meter** : migrer toutes les routes/services Compteur → Meter, drop modèle legacy. Gain : 1 SoT, 1 helper. Coût : 4-6 j-h migration data + tests + impacts éventuels (`patrimoine_service.py`, anciens tests).
+- **Option B — Maintien parallèle avec doctrine claire** : documenter qui utilise Meter (Cockpit, breakdown, sub-meters) vs Compteur (legacy patrimoine_crud, anciens flux import). Gain : zéro migration. Coût : 2 helpers + ambiguïté future.
+
+**Action Sprint C-6/C-7** :
+1. Audit usage : `grep -rn "from models.compteur import\|Compteur\b" backend/services backend/routes` — inventaire callsites
+2. ADR archi pour arbitrer A vs B (délégation `architect-helios`)
+3. Si Option A : roadmap migration progressive (Compteur deprecated → Meter unique)
+4. Si Option B : ADR + section dans `helios_architecture` skill documentant la frontière
+
+**Effort estimé** :
+- Décision archi (Option A vs B) : ~1 j-h (audit + ADR)
+- Si Option A retenue : +4-6 j-h migration + tests
+- Si Option B retenue : +0.5 j-h documentation
+
+**Priorité** : 🟡 P2 (pas bloquant, décision architecturale différée)
+**Sprint cible** : Sprint C-6 (Modèles enrichis) ou Sprint C-7 (polish + ADR)
+
+**Traces** :
+- Mini-sprint IDOR audit pré-build (2026-05-04) : helper distinct créé pour `Meter` (le modèle legacy `Compteur` n'était pas concerné par l'IDOR meters endpoints)
+- `meter_unified_service.py:21` documente la cohabitation : *"Source primaire : Meter. Fallback : Compteur legacy"*
+
+---
+
 ## Métriques tracker
 
 | Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
@@ -571,6 +635,7 @@ Constantes heuristiques métier (10%, 60%) hardcodées dans un composant FE — 
 | 2026-05-04 | 15 | 0 | 4 | 11 |
 | 2026-05-04 | 19 | 1 | 7 | 11 |
 | 2026-05-04 (Phase 5 clôtures Sprint C-2) | 16 | 1 | 5 | 10 |
+| 2026-05-04 (post mini-sprint IDOR + 2 dettes) | 18 | 1 | 5 | 12 |
 
 ---
 
