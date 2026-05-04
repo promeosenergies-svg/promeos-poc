@@ -273,7 +273,23 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
-## D-Phase6-Cascade-Org-Consentements-001 — Cascade Org.consentement_dataconnect / grdf → tous DPs
+## ~~D-Phase6-Cascade-Org-Consentements-001~~ — ✅ REPORTÉE 2026-05-04 (modèle préalable manquant) — Cascade Org.consentement_dataconnect / grdf → tous DPs
+
+**Pivot Phase 3.7 audit** : audit pré-build a confirmé que les 4 champs cibles **n'existent pas** dans le modèle ORM :
+- `Organisation.consentement_dataconnect_global` — absent (modèle Organisation minimal : id/nom/type_client/logo_url/siren/actif/is_demo)
+- `Organisation.consentement_grdf_global` — absent
+- `DeliveryPoint.consentement_dataconnect_local` — absent
+- `DeliveryPoint.consentement_grdf_local` — absent
+
+**Pourquoi pivoter au lieu de livrer** : créer des helpers cascade sur des champs ORM fantômes serait une régression doctrine "constants vérifiables" (pattern identique à Phase 5.2 Sprint C-2 où la cascade `EJ.consommation_3y` sur champ inexistant a été pivotée vers `AuditEnergetique.conso_annuelle_moy_gwh`, et Phase 3.6 où `DP.code_fta` inexistant a été pivoté vers `DP.grd_code`).
+
+**Décomposition** : la dette originale (1 dette P1) est **scindée en 2 dettes Sprint C-4** :
+1. `D-Sprint-C3-Org-Consentement-Modele-001` (P1) — créer modèle (migration Alembic + 4 champs)
+2. `D-Sprint-C3-Cascade-Consentement-Activation-001` (P1) — activer cascade après modèle prêt
+
+**Statut** : ✅ REPORTÉE Sprint C-3 (audit pré-build 2026-05-04). Sera réactivable Sprint C-4 après livraison de la dette `D-Sprint-C3-Org-Consentement-Modele-001`.
+
+**Original** :
 
 **Détecté** : Sprint C-1 Phase 6.1 audit pré-build (2026-05-03)
 
@@ -650,6 +666,72 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 
 ---
 
+## D-Sprint-C3-Org-Consentement-Modele-001 — Créer modèle Organisation + DeliveryPoint pour consentements RGPD
+
+**Détecté** : Sprint C-3 Phase 3.7 audit pré-build (2026-05-04, audit pivot)
+
+**Périmètre** : Le modèle ORM actuel ne contient AUCUN champ de consentement RGPD. Pour activer la cascade `D-Phase6-Cascade-Org-Consentements-001`, il faut d'abord créer 4 champs via migration Alembic :
+
+- `Organisation.consentement_dataconnect_global` (Boolean, nullable, default=null) — état consentement Enedis DataConnect au niveau organisation (effet bulk)
+- `Organisation.consentement_grdf_global` (Boolean, nullable, default=null) — état consentement GRDF ADICT au niveau organisation
+- `DeliveryPoint.consentement_dataconnect_local` (Boolean, nullable, default=null) — état effectif au niveau DP élec (peut diverger de l'org en cas d'override)
+- `DeliveryPoint.consentement_grdf_local` (Boolean, nullable, default=null) — état effectif au niveau DP gaz GRDF (court-circuit ELD locales)
+
+**Cohérence RGPD** : ces 4 champs sont nécessaires pour traçabilité audit RGPD (date consentement / révocation / source) — à terme ajout champs `consentement_*_at` (DateTime) + `consentement_*_source` (String, ex: "user_admin", "import_csv").
+
+**Action Sprint C-4** :
+1. Migration Alembic mineure (4 colonnes nullable, pattern anti-DROP destructif maintenu)
+2. Mise à jour Pydantic schemas Organisation + DeliveryPoint
+3. Tests source-guards : aucune écriture directe hors service consent_lifecycle
+4. Documenter dans `docs/produit/patrimoine_parametrage_requis_v1.md` matrice §4
+
+**Effort estimé** : ~1.5-2 j-h (migration + schemas + tests)
+**Priorité** : 🟠 P1 (préalable cascade D-Sprint-C3-Cascade-Consentement-Activation-001)
+**Sprint cible** : Sprint C-4 (consolidation modèles)
+
+**Traces** :
+- Audit pré-build Phase 3.7 (2026-05-04) : 4 champs absents confirmés
+- Modèle Organisation actuel (`models/organisation.py`) : 7 colonnes seulement
+- Modèle DeliveryPoint (`models/patrimoine.py:225+`) : pas de champ consentement
+
+---
+
+## D-Sprint-C3-Cascade-Consentement-Activation-001 — Activer cascade Org consentements après modèle livré
+
+**Détecté** : Sprint C-3 Phase 3.7 audit pré-build (2026-05-04, audit pivot)
+
+**Périmètre** : Une fois la dette `D-Sprint-C3-Org-Consentement-Modele-001` livrée (modèle prêt), activer la cascade :
+
+- `Organisation.consentement_dataconnect_global` → propagation tous DPs élec
+- `Organisation.consentement_grdf_global` → propagation tous DPs gaz GRDF (court-circuit ELD locales via `is_grdf()` Phase 3.6)
+
+**Helpers à livrer** (drafts Phase 3.7 archivés) :
+- `_propagate_consentement_dataconnect(org, db)` — bulk update DPs élec
+- `_propagate_consentement_grdf(org, db)` — bulk update DPs GRDF avec court-circuit ELD via `eld_gaz_loader.is_grdf()`
+- 2 entrées `CASCADE_MAP_MVP_SPRINT_C1` : `Organisation.consentement_*_global`
+
+**Cas particuliers** :
+- ADICT GRDF s'applique UNIQUEMENT aux DPs GRDF (Régaz, GreenAlp, etc. ont leur propre process consentement)
+- Anti-cycle : DP.consentement_*_local n'est pas source de cascade Org
+- Audit log auto via Phase 1.3 wiring (RGPD compliance)
+
+**Tests à livrer** :
+- Propagation élec / gaz isolée
+- Court-circuit ELD (Régaz, GreenAlp) skippées
+- Idempotence si valeur inchangée
+- Perf 50 DPs <5 sec
+- Audit log Phase 1.3 wiring
+
+**Effort estimé** : ~2-3 h (helpers + cascade + 8-10 tests + 1 SG)
+**Priorité** : 🟠 P1 (RGPD compliance opérationnelle)
+**Sprint cible** : Sprint C-4 (immédiatement après dette modèle)
+
+**Traces** :
+- Phase 3.7 audit pré-build (2026-05-04) : pivot + scission
+- Drafts helpers archivés ce commit pour réutilisation Sprint C-4
+
+---
+
 ## D-Phase3-6-Cascade-PowerContract-FTA-001 — Cascade PowerContract.fta_code → profil tarifaire
 
 **Détecté** : Sprint C-3 Phase 3.6 audit pré-build (2026-05-04, audit pivot)
@@ -687,6 +769,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-04 (Sprint C-3 Phase 3.4 — 2 clôtures) | 16 | 1 | 4 | 11 |
 | 2026-05-04 (Sprint C-3 Phase 3.4d audit follow-up — +5 dettes) | 21 | 2 | 6 | 13 |
 | 2026-05-04 (Sprint C-3 Phase 3.6 — 1 clôture pivotée + 1 nouvelle PowerContract) | 21 | 2 | 6 | 13 |
+| 2026-05-04 (Sprint C-3 Phase 3.7 — 1 clôture reportée + 2 nouvelles dettes Modele/Activation) | 22 | 2 | 8 | 12 |
 
 ---
 
