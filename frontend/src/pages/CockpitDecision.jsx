@@ -33,6 +33,7 @@ import { useRegulatoryConstants } from '../contexts/RegulatoryConstantsContext';
 import SolKickerWithSwitch from '../ui/sol/SolKickerWithSwitch';
 import SolNarrative from '../ui/sol/SolNarrative';
 import AcronymTooltip from '../ui/sol/AcronymTooltip';
+import TraceTooltip from '../ui/TraceTooltip';
 import KpiCard from '../components/cockpit/KpiCard';
 import KpiSkeleton from '../components/cockpit/KpiSkeleton';
 import {
@@ -342,7 +343,8 @@ function DecisionCardImpl({ decision, index }) {
                 className="block font-mono uppercase tracking-[0.05em]"
                 style={{ fontSize: 10, color: 'var(--sol-ink-500)' }}
               >
-                Pénalité légale
+                {/* Sprint C-3 Phase 3.5 — TraceTooltip R10 différenciateur */}
+                <TraceTooltip termId="COMPLIANCE_DT_PENALTY_EUR">Pénalité légale</TraceTooltip>
               </span>
               <span style={{ fontWeight: 500, color: tone.fg }}>{fmtEurShort(penaltyEur)}/an</span>
             </div>

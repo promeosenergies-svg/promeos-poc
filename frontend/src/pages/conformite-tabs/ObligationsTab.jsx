@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, Explain } from '../../ui';
 import NonApplicableLabel from '../../components/NonApplicableLabel';
+import TraceTooltip from '../../ui/TraceTooltip';
 import { fmtEur } from '../../utils/format';
 import { useExpertMode } from '../../contexts/ExpertModeContext';
 import { track } from '../../services/tracker';
@@ -139,7 +140,13 @@ function ScoreGauge({ pct, isEmpty }) {
           <Explain term="compliance_score">Score de conformité global</Explain>
         </p>
         <p className="text-xs text-gray-400 mt-0.5">
-          Score = sites conformes / sites évalués (pondéré par criticité)
+          Score = sites conformes / sites évalués (pondéré par criticité —{' '}
+          {/* Sprint C-3 Phase 3.5 — TraceTooltip R10 doctrine pondération */}
+          <TraceTooltip termId="REGOPS_WEIGHT_DT_DEFAULT">DT 45%</TraceTooltip>
+          {' / '}
+          <TraceTooltip termId="REGOPS_WEIGHT_BACS_DEFAULT">BACS 30%</TraceTooltip>
+          {' / '}
+          <TraceTooltip termId="REGOPS_WEIGHT_APER_DEFAULT">APER 25%</TraceTooltip>)
         </p>
       </div>
     </div>

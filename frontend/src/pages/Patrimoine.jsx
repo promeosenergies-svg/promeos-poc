@@ -47,6 +47,7 @@ import PatrimoineWizard from '../components/PatrimoineWizard';
 import SiteCreationWizard from '../components/SiteCreationWizard';
 import QuickCreateSite from '../components/QuickCreateSite';
 import NonApplicableLabel from '../components/NonApplicableLabel';
+import TraceTooltip from '../ui/TraceTooltip';
 import DrawerEditSite from '../components/DrawerEditSite';
 import DrawerAddCompteur from '../components/DrawerAddCompteur';
 import DrawerAddContrat from '../components/DrawerAddContrat';
@@ -1537,7 +1538,11 @@ export default function Patrimoine() {
                               <div>{fmtKwh(site.conso_kwh_an)}</div>
                               {site.intensity_kwh_m2_total != null ? (
                                 <div className="text-[10px] text-gray-400">
-                                  {Math.round(site.intensity_kwh_m2_total)} kWh/m²
+                                  {Math.round(site.intensity_kwh_m2_total)}{' '}
+                                  {/* Sprint C-3 Phase 3.5 — TraceTooltip R10 doctrine OPERAT */}
+                                  <TraceTooltip termId="OPERAT_SURFACE_CONSO_DEFINITION">
+                                    kWh/m²
+                                  </TraceTooltip>
                                 </div>
                               ) : (
                                 <div className="text-[10px] text-gray-400">—</div>

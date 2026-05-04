@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import CrossModuleCTA from '../components/CrossModuleCTA';
 import { resolvePortfolioConfidence } from '../domain/compliance/confidence';
+import TraceTooltip from '../ui/TraceTooltip';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
@@ -1256,7 +1257,11 @@ const Cockpit = () => {
               <div className="flex items-center justify-between text-sm text-gray-700 mb-1">
                 <span>Suivi conformité</span>
                 <span className="text-xs text-gray-400">
-                  poids : {Math.round(READINESS_WEIGHTS.conformity * 100)}%
+                  {/* Sprint C-3 Phase 3.5 — TraceTooltip R10 (poids readiness) */}
+                  poids :{' '}
+                  <TraceTooltip termId="READINESS_WEIGHT_CONFORMITY_PCT">
+                    {Math.round(READINESS_WEIGHTS.conformity * 100)}%
+                  </TraceTooltip>
                 </span>
               </div>
               <Progress value={kpis.suiviConformite} color="blue" size="sm" />

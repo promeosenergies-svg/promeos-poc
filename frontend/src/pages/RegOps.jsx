@@ -14,6 +14,7 @@ import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { fmtNum, fmtEur } from '../utils/format';
 import NonApplicableLabel from '../components/NonApplicableLabel';
+import TraceTooltip from '../ui/TraceTooltip';
 import {
   REGOPS_STATUS_LABELS,
   REGOPS_SEVERITY_LABELS,
@@ -132,7 +133,10 @@ export default function RegOps() {
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">Score de Conformité</h2>
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">
+              {/* Sprint C-3 Phase 3.5 — TraceTooltip R10 différenciateur */}
+              <TraceTooltip termId="REGOPS_WEIGHT_DT_DEFAULT">Score de Conformité</TraceTooltip>
+            </h2>
             {/* Phase 4.5b — distinguer non_applicable du fallback null/0 */}
             {assessment.compliance_score_confidence === 'non_applicable' ? (
               <div className="py-2">
