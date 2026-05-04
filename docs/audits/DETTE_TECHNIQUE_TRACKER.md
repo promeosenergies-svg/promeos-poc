@@ -178,7 +178,15 @@ les formats UI ("Réunion", "La Réunion") avec mapping vers la forme JSON.
 
 ---
 
-## D-Phase5-Frontend-NonApplicable-001 — Frontend doit gérer score=null + confidence="non_applicable"
+## ~~D-Phase5-Frontend-NonApplicable-001~~ — ✅ CLÔTURÉ 2026-05-04 — Frontend doit gérer score=null + confidence="non_applicable"
+
+**Clôture** : Sprint C-2 Phase 4.5a-c (commits b2e4cf25 + 325c64c9 + 75c09204 + 8553ac99 follow-up)
+- Composant `frontend/src/components/NonApplicableLabel.jsx` créé (3 variants + a11y) — Phase 4.5a
+- 3 fixes ciblés ConformitePage / ComplianceScoreHeader / RegOps — Phase 4.5b
+- Revue 18 fichiers consommateurs + propagation `compliance_score_confidence` BE→FE — Phase 4.5c
+- 2 fixes audit follow-up (PerformanceSitesCard + duplication intra-Phase header) — Phase 4.5d
+
+**Original** :
 
 **Détecté** : Sprint C-1 Phase 5 livraison (2026-05-03)
 
@@ -227,7 +235,7 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
-## D-Phase6-Cascade-EJ-Sites-001 — Cascade EJ.consommation_3y → audit_sme + compliance multi-sites [PIVOT Phase 5.1]
+## ~~D-Phase6-Cascade-EJ-Sites-001~~ — ✅ CLÔTURÉ 2026-05-04 (pivoté + renommé) — Cascade EJ.consommation_3y → audit_sme + compliance multi-sites
 
 **Détecté** : Sprint C-1 Phase 6.1 audit pré-build (2026-05-03)
 **Pivot** : Sprint C-2 Phase 5.1 audit pré-build (2026-05-04) — découverte modèle
@@ -246,7 +254,7 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
-## D-Phase6-Cascade-AuditSme-Org-Sites-001 — Cascade AuditEnergetique.conso → obligation + recompute_organisation
+## ~~D-Phase6-Cascade-AuditSme-Org-Sites-001~~ — ✅ CLÔTURÉ 2026-05-04 — Cascade AuditEnergetique.conso → obligation + recompute_organisation
 
 **Détecté** : Sprint C-1 Phase 6.1 (originellement EJ-Sites-001), pivoté Sprint C-2 Phase 5.1 (2026-05-04)
 
@@ -562,6 +570,7 @@ Constantes heuristiques métier (10%, 60%) hardcodées dans un composant FE — 
 | 2026-05-03 | 14 | 0 | 4 | 10 |
 | 2026-05-04 | 15 | 0 | 4 | 11 |
 | 2026-05-04 | 19 | 1 | 7 | 11 |
+| 2026-05-04 (Phase 5 clôtures Sprint C-2) | 16 | 1 | 5 | 10 |
 
 ---
 
