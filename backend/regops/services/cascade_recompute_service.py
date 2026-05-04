@@ -381,6 +381,76 @@ def _reset_renewal_alert_flag(contract, db: Session) -> str:
     return "flag_reset"
 
 
+# ─── Helpers Phase 3.6 Sprint C-3 — cascade DeliveryPoint.grd_code → ELD ref + bill_recheck ─
+#
+# Pivot Phase 3.6 audit (2026-05-04) : la dette originale `D-Phase6-Cascade-DeliveryPoint-Fta-001`
+# ciblait `DeliveryPoint.code_fta` qui n'existe pas (le FTA est sur `PowerContract.fta_code`).
+# Pivot vers `DeliveryPoint.grd_code` (champ existant, ENEDIS/GRDF/ELD_*/RTE) qui est plus
+# pertinent pour la cascade ELD ref (lookup eld_gaz_referentiel.yaml). La cascade
+# `PowerContract.fta_code` est tracée comme nouvelle dette `D-Phase3-6-Cascade-PowerContract-FTA-001`
+# (Sprint C-4).
+
+
+def _recompute_eld_metadata_from_grd_code(delivery_point, db: Session) -> Optional[dict]:
+    """Cascade DeliveryPoint.grd_code → lookup ELD ref (Phase 3.6 Sprint C-3).
+
+    Retourne dict avec metadata ELD (label, type, perimetre) si grd_code connu
+    dans `eld_gaz_referentiel.yaml`. None sinon (ENEDIS/RTE = élec, hors scope ELD gaz).
+
+    Anti-cycle : lecture seule, ne modifie pas le DP.
+    """
+    grd_code = getattr(delivery_point, "grd_code", None)
+    if not grd_code:
+        return None
+
+    try:
+        from config.eld_gaz_loader import get_eld_by_code, is_known_eld
+
+        if not is_known_eld(grd_code):
+            # ENEDIS / RTE / autres GRD élec ne sont pas dans le ref ELD gaz
+            # Pas une erreur — comportement attendu.
+            return None
+
+        eld = get_eld_by_code(grd_code)
+        return {
+            "code": eld["code"],
+            "label": eld["label"],
+            "type": eld["type"],
+            "perimetre": eld["perimetre"],
+        }
+    except Exception as e:
+        _logger.warning(
+            "eld_metadata lookup failed for DP %s grd_code=%s: %s",
+            getattr(delivery_point, "id", None),
+            grd_code,
+            e,
+        )
+        return None
+
+
+def _trigger_bill_recheck(delivery_point, db: Session) -> str:
+    """Cascade DeliveryPoint.grd_code → trigger Bill Intelligence recheck cohérence.
+
+    MVP Phase 3.6 : log structuré uniquement (Bill Intelligence module pas
+    complet Sprint C-3). Sprint C-4+ : appel service `bill_intelligence.recheck_coherence()`
+    pour vérifier Σ conso compteurs ↔ Σ conso contrats post-changement GRD.
+
+    Anti-cycle : log only, pas d'écriture DB.
+    """
+    grd_code = getattr(delivery_point, "grd_code", None)
+    _logger.info(
+        "BILL_RECHECK_TRIGGERED",
+        extra={
+            "delivery_point_id": getattr(delivery_point, "id", None),
+            "grd_code": grd_code,
+            "site_id": getattr(delivery_point, "site_id", None),
+            "phase": "C3.3.6_pivot_grd_code",
+            "reason": "DeliveryPoint.grd_code modifié — Bill Intelligence à revérifier",
+        },
+    )
+    return f"bill_recheck_logged for DP {getattr(delivery_point, 'id', None)}"
+
+
 # ─── CASCADE_MAP MVP Sprint C-1 (7 champs) ──────────────────────────────────
 #
 # Chaque entrée est une liste de fonctions cascade qui retournent (output_field, value).
@@ -452,6 +522,13 @@ CASCADE_MAP_MVP_SPRINT_C1: dict[str, list[Callable]] = {
             _reset_renewal_alert_flag(contract, db),
         ),
         lambda contract, db: ("renewal_alert", _trigger_renewal_alert(contract, db)),
+    ],
+    # Phase 3.6 Sprint C-3 — cascade ELD ref + bill recheck (clôture
+    # D-Phase6-Cascade-DeliveryPoint-Fta-001 pivoté sur DP.grd_code, cf. tracker dette).
+    # Pivot pré-build audit : code_fta n'existait pas, grd_code est le champ pertinent ELD.
+    "DeliveryPoint.grd_code": [
+        lambda dp, db: ("eld_metadata", _recompute_eld_metadata_from_grd_code(dp, db)),
+        lambda dp, db: ("bill_recheck", _trigger_bill_recheck(dp, db)),
     ],
 }
 

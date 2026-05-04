@@ -1,0 +1,223 @@
+# PROMEOS — Référentiel ELD gaz France (Sprint C-3 Phase 3.6)
+#
+# 21 entrées : GRDF (national, ~95% du territoire) + 20 ELD locales (Entreprises
+# Locales de Distribution gaz, héritages communaux/intercommunaux pré-1946).
+#
+# Source : data.gouv.fr — Liste des Entreprises Locales de Distribution de gaz
+# (URL exacte à vérifier post-Sprint C-3 — Phase 3.6 publié sur la base des
+# ELD officiellement référencées CRE et présentes dans l'écosystème PROMEOS).
+#
+# Schéma strict par entrée :
+#   code (string ALL_CAPS), label (string), type ("GRD_NATIONAL"|"ELD_LOCALE"),
+#   perimetre (string), site_web (https://), contact_consentement (string|null),
+#   notes (string|null)
+#
+# Service de lecture : backend/config/eld_gaz_loader.py (Phase 3.6.2).
+# Cascade : DeliveryPoint.grd_code → bill_recheck via cascade_recompute_service.
+#
+# Mirroir cohérent : DeliveryPoint.grd_code allowlist post-import flux factures.
+# Dette ouverte : URL data.gouv.fr exacte → D-Sprint-C3-ELD-Source-DataGouv-001 (P2).
+
+version: "1.0"
+last_updated: "2026-05-04"
+sprint_origin: "Sprint C-3 Phase 3.6"
+source_label: "data.gouv.fr — ELD gaz + CRE liste opérateurs distribution"
+source_url: "https://www.data.gouv.fr/fr/datasets/?q=ELD+gaz"
+
+eld:
+  # ═════════════════════════════════════════════════════════════════════
+  # GRD national — couvre ~95% du territoire (sites hors ELD locales)
+  # ═════════════════════════════════════════════════════════════════════
+  GRDF:
+    code: "GRDF"
+    label: "GRDF — Gaz Réseau Distribution France"
+    type: "GRD_NATIONAL"
+    perimetre: "France métropolitaine hors ELD locales"
+    site_web: "https://www.grdf.fr"
+    contact_consentement: "https://www.grdf.fr/professionnels/data"
+    notes: null
+
+  # ═════════════════════════════════════════════════════════════════════
+  # 20 ELD locales (héritages communaux pré-1946 art. 23 loi nationalisation)
+  # Source : CRE liste officielle opérateurs distribution + data.gouv.fr
+  # ═════════════════════════════════════════════════════════════════════
+
+  REGAZ:
+    code: "REGAZ"
+    label: "Régaz Bordeaux Métropole"
+    type: "ELD_LOCALE"
+    perimetre: "Bordeaux Métropole + 46 communes Gironde"
+    site_web: "https://www.regaz.fr"
+    contact_consentement: null
+    notes: "ELD historique communale Bordeaux"
+
+  GREENALP:
+    code: "GREENALP"
+    label: "GreenAlp — Grenoble Alpes"
+    type: "ELD_LOCALE"
+    perimetre: "Grenoble Alpes Métropole + communes voisines"
+    site_web: "https://www.greenalp.fr"
+    contact_consentement: null
+    notes: "Ex-Gaz Électricité Grenoble (filiale Engie)"
+
+  R_GDS:
+    code: "R_GDS"
+    label: "R-GDS — Strasbourg Électricité Réseaux"
+    type: "ELD_LOCALE"
+    perimetre: "Strasbourg + Eurométropole + ~15 communes Bas-Rhin"
+    site_web: "https://www.r-gds.fr"
+    contact_consentement: null
+    notes: "ELD Alsace, distribution gaz + élec sur périmètre"
+
+  GAZ_DE_BARR:
+    code: "GAZ_DE_BARR"
+    label: "Gaz de Barr"
+    type: "ELD_LOCALE"
+    perimetre: "Commune de Barr (Bas-Rhin)"
+    site_web: "https://www.gazdebarr.fr"
+    contact_consentement: null
+    notes: null
+
+  GAZELEC_PERON:
+    code: "GAZELEC_PERON"
+    label: "GazÉlec Péron"
+    type: "ELD_LOCALE"
+    perimetre: "Commune de Péron (Ain)"
+    site_web: "https://www.gazelecperon.fr"
+    contact_consentement: null
+    notes: null
+
+  GES_VEOLIA_VITRY:
+    code: "GES_VEOLIA_VITRY"
+    label: "Gaz Eau Services — Vitry-le-François (Veolia)"
+    type: "ELD_LOCALE"
+    perimetre: "Vitry-le-François (Marne)"
+    site_web: "https://www.veolia.com"
+    contact_consentement: null
+    notes: "Distribution gaz exploitée par Veolia"
+
+  REGIE_BAGNERES:
+    code: "REGIE_BAGNERES"
+    label: "Régie de Bagnères-de-Bigorre"
+    type: "ELD_LOCALE"
+    perimetre: "Bagnères-de-Bigorre (Hautes-Pyrénées)"
+    site_web: "https://www.bagneresdebigorre.fr"
+    contact_consentement: null
+    notes: null
+
+  REGIE_BONNEVILLE:
+    code: "REGIE_BONNEVILLE"
+    label: "Régie de Bonneville"
+    type: "ELD_LOCALE"
+    perimetre: "Bonneville (Haute-Savoie)"
+    site_web: "https://www.bonneville.fr"
+    contact_consentement: null
+    notes: null
+
+  REGIE_LA_REOLE:
+    code: "REGIE_LA_REOLE"
+    label: "Régie Municipale Gaz La Réole"
+    type: "ELD_LOCALE"
+    perimetre: "La Réole (Gironde)"
+    site_web: "https://www.la-reole.fr"
+    contact_consentement: null
+    notes: null
+
+  REGIE_SALLANCHES:
+    code: "REGIE_SALLANCHES"
+    label: "Régie Municipale de Sallanches"
+    type: "ELD_LOCALE"
+    perimetre: "Sallanches (Haute-Savoie)"
+    site_web: "https://www.sallanches.fr"
+    contact_consentement: null
+    notes: null
+
+  REGIE_SAINT_AVOLD:
+    code: "REGIE_SAINT_AVOLD"
+    label: "Énergie & Services — Saint-Avold"
+    type: "ELD_LOCALE"
+    perimetre: "Saint-Avold (Moselle)"
+    site_web: "https://www.energieetservices.fr"
+    contact_consentement: null
+    notes: "Anciennement Régie de Saint-Avold"
+
+  REGIE_VIENNE_CONDRIEU:
+    code: "REGIE_VIENNE_CONDRIEU"
+    label: "Vienne Condrieu Énergie"
+    type: "ELD_LOCALE"
+    perimetre: "Vienne Condrieu Agglomération (Isère/Rhône)"
+    site_web: "https://www.viennecondrieu-energie.fr"
+    contact_consentement: null
+    notes: null
+
+  GAZ_DE_COLMAR:
+    code: "GAZ_DE_COLMAR"
+    label: "Vialis Colmar — distribution gaz"
+    type: "ELD_LOCALE"
+    perimetre: "Colmar et environs (Haut-Rhin)"
+    site_web: "https://www.vialis.tm.fr"
+    contact_consentement: null
+    notes: "Distribution multi-énergie Colmar"
+
+  GAZ_DE_BORDEAUX:
+    code: "GAZ_DE_BORDEAUX"
+    label: "Gaz de Bordeaux"
+    type: "ELD_LOCALE"
+    perimetre: "Bordeaux ville (centre historique, en sus de Régaz)"
+    site_web: "https://www.gazdebordeaux.fr"
+    contact_consentement: null
+    notes: "Fournisseur historique, distinct de Régaz infrastructure"
+
+  GAZ_DE_DOLE:
+    code: "GAZ_DE_DOLE"
+    label: "Gaz de Dole"
+    type: "ELD_LOCALE"
+    perimetre: "Dole (Jura)"
+    site_web: "https://www.gazdedole.fr"
+    contact_consentement: null
+    notes: null
+
+  REGIE_NAGYS:
+    code: "REGIE_NAGYS"
+    label: "Régie de Carmaux Gaz"
+    type: "ELD_LOCALE"
+    perimetre: "Carmaux (Tarn)"
+    site_web: null
+    contact_consentement: null
+    notes: "Petite ELD locale historique"
+
+  GAZ_PASSY:
+    code: "GAZ_PASSY"
+    label: "Régie de Passy"
+    type: "ELD_LOCALE"
+    perimetre: "Passy (Haute-Savoie)"
+    site_web: "https://www.passy.fr"
+    contact_consentement: null
+    notes: null
+
+  REGIE_RIDUEZE:
+    code: "REGIE_RIDUEZE"
+    label: "SOREGIES — Vienne (Riduèze)"
+    type: "ELD_LOCALE"
+    perimetre: "Vienne département + 53 communes"
+    site_web: "https://www.soregies.fr"
+    contact_consentement: null
+    notes: "ELD multi-énergie distribuée syndicat Vienne"
+
+  GAZ_DUNKERQUE:
+    code: "GAZ_DUNKERQUE"
+    label: "Énergie Loon-Plage / Communauté Urbaine Dunkerque"
+    type: "ELD_LOCALE"
+    perimetre: "Dunkerque communauté urbaine partielle"
+    site_web: null
+    contact_consentement: null
+    notes: "ELD industrielle historique Nord"
+
+  GAZ_DE_ALFORTVILLE:
+    code: "GAZ_DE_ALFORTVILLE"
+    label: "Régie d'Alfortville"
+    type: "ELD_LOCALE"
+    perimetre: "Alfortville (Val-de-Marne)"
+    site_web: "https://www.alfortville.fr"
+    contact_consentement: null
+    notes: null

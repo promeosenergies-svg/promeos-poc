@@ -292,7 +292,18 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
-## D-Phase6-Cascade-DeliveryPoint-Fta-001 — Cascade DeliveryPoint.code_fta → profil + Bill Intelligence
+## ~~D-Phase6-Cascade-DeliveryPoint-Fta-001~~ — ✅ CLÔTURÉ 2026-05-04 (pivoté DP.grd_code) — Cascade DeliveryPoint.code_fta → profil + Bill Intelligence
+
+**Pivot Phase 3.6 audit** : `DeliveryPoint.code_fta` n'existe pas (audit pré-build a confirmé que le FTA est sur `PowerContract.fta_code`, modèle distinct). Pivot vers `DeliveryPoint.grd_code` (champ existant, ENEDIS/GRDF/ELD_*/RTE) qui est plus pertinent pour la cascade ELD ref.
+
+**Clôture** : Sprint C-3 Phase 3.6 (commit à venir)
+- Cascade `DeliveryPoint.grd_code` → `_recompute_eld_metadata_from_grd_code` + `_trigger_bill_recheck`
+- Référentiel YAML 21 ELD (GRDF + 20 ELD locales) + `eld_gaz_loader.py`
+- 24 tests : 12 loader + 7 cascade + 5 source-guards structure
+
+**Cascade `PowerContract.fta_code`** : reportée Sprint C-4 sous nouvelle dette `D-Phase3-6-Cascade-PowerContract-FTA-001`.
+
+**Original** :
 
 **Détecté** : Sprint C-1 Phase 6.1 audit pré-build (2026-05-03)
 
@@ -639,6 +650,28 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 
 ---
 
+## D-Phase3-6-Cascade-PowerContract-FTA-001 — Cascade PowerContract.fta_code → profil tarifaire
+
+**Détecté** : Sprint C-3 Phase 3.6 audit pré-build (2026-05-04, audit pivot)
+
+**Périmètre** : La dette originale `D-Phase6-Cascade-DeliveryPoint-Fta-001` ciblait `DeliveryPoint.code_fta`. Audit pré-build Phase 3.6 a confirmé que le champ FTA n'existe pas sur `DeliveryPoint` mais sur `PowerContract.fta_code` (modèle distinct, FTA TURPE 7 — 18 valeurs définies dans `models/power.py::FTA_SEGMENTS`).
+
+**Action Sprint C-4** :
+- Ajouter cascade `PowerContract.fta_code` dans `CASCADE_MAP_MVP_SPRINT_C1`
+- Helper : `_derive_profile_from_fta(power_contract, db)` mapping 18 FTA → profil tarifaire (BTSUPCU4 → "BT_PRO_SUP_36KVA_CU", HTACU5 → "HTA_INDUSTRIEL_CU", etc.)
+- Trigger Bill Intelligence recheck (cohérent avec Phase 3.6)
+- Tests : 6-8 cascade FTA + résilience
+
+**Effort estimé** : ~1.5-2 j-h (mapping 18 FTA + helper + tests)
+**Priorité** : 🟡 P2 (extension utile mais Phase 3.6 a déjà couvert le cas dominant via DP.grd_code)
+**Sprint cible** : Sprint C-4 (consolidation cascade + Bill Intelligence)
+
+**Traces** :
+- Audit pré-build Phase 3.6 (2026-05-04) : pivot DP.code_fta → DP.grd_code
+- `models/power.py::FTA_SEGMENTS` (18 valeurs TURPE 7 + historiques)
+
+---
+
 ## Métriques tracker
 
 | Date | Nb dettes ouvertes | Nb dettes P0 | Nb dettes P1 | Nb dettes P2 |
@@ -653,6 +686,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-04 (post mini-sprint IDOR + 2 dettes) | 18 | 1 | 5 | 12 |
 | 2026-05-04 (Sprint C-3 Phase 3.4 — 2 clôtures) | 16 | 1 | 4 | 11 |
 | 2026-05-04 (Sprint C-3 Phase 3.4d audit follow-up — +5 dettes) | 21 | 2 | 6 | 13 |
+| 2026-05-04 (Sprint C-3 Phase 3.6 — 1 clôture pivotée + 1 nouvelle PowerContract) | 21 | 2 | 6 | 13 |
 
 ---
 

@@ -83,7 +83,7 @@ def test_resolve_aper_deadline_below_seuil():
 
 
 def test_cascade_map_contains_mvp_fields():
-    """7 C-1 + 2 Phase 4.2 + 1 Phase 5.2 + 1 Phase 5.3 = 11 entrées CASCADE_MAP."""
+    """7 C-1 + 2 Phase 4.2 + 1 Phase 5.2 + 1 Phase 5.3 + 1 Phase 3.6 = 12 entrées CASCADE_MAP."""
     from regops.services.cascade_recompute_service import CASCADE_MAP_MVP_SPRINT_C1
 
     expected = {
@@ -102,6 +102,8 @@ def test_cascade_map_contains_mvp_fields():
         "AuditEnergetique.conso_annuelle_moy_gwh",
         # Sprint C-2 Phase 5.3 — alerte renouvellement 90j MVP
         "EnergyContract.end_date",
+        # Sprint C-3 Phase 3.6 — pivot DP.grd_code (clôture D-Phase6-Cascade-DeliveryPoint-Fta-001)
+        "DeliveryPoint.grd_code",
     }
     assert set(CASCADE_MAP_MVP_SPRINT_C1.keys()) == expected
 
