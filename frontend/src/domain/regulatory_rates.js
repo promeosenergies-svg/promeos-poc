@@ -1,20 +1,28 @@
 /**
  * regulatory_rates.js — Taux réglementaires SoT côté frontend.
  *
- * Phase 21.B.1 (audit Phase 17 cumulée P0-NEW-1) : avant cette phase,
- * les taux d'accise/CTA/CSPE/TVA étaient hardcodés inline dans les
- * tooltips de `frontend/src/ui/glossary.js` (ex "26,58 EUR/MWh" en
- * texte). Risque : si la LFI change le taux, le tooltip affiche un
- * faux taux silencieusement.
+ * @deprecated Sprint C-3 Phase 3.3 (2026-05-04) — utiliser le hook
+ *   `useRegulatoryRates()` ou `useRegulatorySource(termId)` depuis
+ *   `frontend/src/contexts/RegulatoryRatesContext.jsx` qui fetch
+ *   `/api/regulatory/rates` (SoT git versionné `backend/config/sources_reglementaires.yaml`).
  *
- * Désormais : valeurs centralisées ici, avec date d'effet et source
- * réglementaire visible. À chaque revalorisation, mettre à jour ce
- * fichier + ajouter une entrée historique (commentaire valid_until).
+ * Ce fichier reste comme **fallback offline** si l'endpoint est non joignable
+ * (premier render avant fetch, mode déconnecté, erreur backend). Synchronisation
+ * manuelle avec le YAML SoT — vérifié par source-guard FE
+ * (regulatory_rates_no_new_consumers_source_guards.test.js : interdit
+ * tout NOUVEAU import depuis ce fichier).
  *
- * Cohérence backend : ces valeurs MIRROIR `backend/doctrine/constants.py`.
- * Si tu modifies ici, modifie aussi le backend (ou inversement). À terme,
- * les valeurs devraient être servies par un endpoint API
- * `/api/regulatory/rates` qui lit ParameterStore versionné — Phase 22.
+ * Retrait définitif planifié Sprint C-7 (polish) si stabilité endpoint confirmée.
+ *
+ * ─── Historique ───
+ * Phase 21.B.1 (audit Phase 17 cumulée P0-NEW-1) : avant cette phase, les taux
+ * d'accise/CTA/CSPE/TVA étaient hardcodés inline dans les tooltips de
+ * `frontend/src/ui/glossary.js` (ex "26,58 EUR/MWh" en texte). Risque : si la
+ * LFI change le taux, le tooltip affiche un faux taux silencieusement.
+ *
+ * Sprint C-3 Phase 3.3 : la migration vers endpoint API SoT est livrée. Le
+ * source-guard backend `test_regulatory_sources_yaml_consistency_with_constants`
+ * vérifie la cohérence YAML ↔ doctrine/constants.py runtime.
  *
  * Convention :
  *   - Chaque entrée fournit `value` (numeric), `unit`, `valid_from` (ISO),

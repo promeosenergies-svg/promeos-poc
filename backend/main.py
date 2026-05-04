@@ -273,6 +273,12 @@ from routes.config_regulatory_constants import router as config_regulatory_const
 
 app.include_router(config_regulatory_constants_router)
 
+# Sprint C-3 Phase 3.3 — Regulatory rates endpoint (SoT sources_reglementaires.yaml)
+# Migre regulatory_rates.js (FE hardcoded 184L) vers API backend SoT
+from routes.regulatory_rates import router as regulatory_rates_router
+
+app.include_router(regulatory_rates_router)
+
 # CX Dashboard (admin — usage interne)
 from routes.cx_dashboard import router as cx_dashboard_router
 
