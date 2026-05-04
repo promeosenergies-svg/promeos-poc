@@ -13,6 +13,7 @@ import {
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { fmtNum, fmtEur } from '../utils/format';
+import NonApplicableLabel from '../components/NonApplicableLabel';
 import {
   REGOPS_STATUS_LABELS,
   REGOPS_SEVERITY_LABELS,
@@ -132,14 +133,21 @@ export default function RegOps() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-700 mb-2">Score de Conformité</h2>
-            <div className="flex items-baseline gap-2">
-              <span
-                className={`text-5xl font-bold ${getComplianceScoreColor(assessment.compliance_score)}`}
-              >
-                {fmtNum(assessment.compliance_score, 1)}
-              </span>
-              <span className="text-2xl text-gray-400">/100</span>
-            </div>
+            {/* Phase 4.5b — distinguer non_applicable du fallback null/0 */}
+            {assessment.compliance_score_confidence === 'non_applicable' ? (
+              <div className="py-2">
+                <NonApplicableLabel variant="large" />
+              </div>
+            ) : (
+              <div className="flex items-baseline gap-2">
+                <span
+                  className={`text-5xl font-bold ${getComplianceScoreColor(assessment.compliance_score)}`}
+                >
+                  {fmtNum(assessment.compliance_score, 1)}
+                </span>
+                <span className="text-2xl text-gray-400">/100</span>
+              </div>
+            )}
           </div>
           <div className="text-right">
             <span

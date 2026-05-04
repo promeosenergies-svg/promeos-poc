@@ -317,13 +317,28 @@ export default function ConformitePage() {
 
   const score = useMemo(() => {
     if (!summary)
-      return { pct: 0, total: 0, non_conformes: 0, a_risque: 0, conformes: 0, total_impact_eur: 0 };
+      return {
+        pct: 0,
+        pct_confidence: null,
+        total: 0,
+        non_conformes: 0,
+        a_risque: 0,
+        conformes: 0,
+        total_impact_eur: 0,
+      };
     // Use unified compliance score (59/100) instead of pct_ok (0%) to avoid contradiction
-    const unifiedPct = complianceScore
-      ? Math.round(complianceScore.score ?? complianceScore.avg_score ?? 0)
-      : summary.pct_ok || 0;
+    // Sprint C-2 Phase 4.5b — quand confidence='non_applicable' (Phase 5 wrapper Sprint C-1),
+    // pct=null distinct du fallback 0. Consumers branchent sur pct_confidence pour
+    // afficher NonApplicableLabel.
+    const isNonApplicable = complianceScore?.confidence === 'non_applicable';
+    const unifiedPct = isNonApplicable
+      ? null
+      : complianceScore
+        ? Math.round(complianceScore.score ?? complianceScore.avg_score ?? 0)
+        : summary.pct_ok || 0;
     return {
       pct: unifiedPct,
+      pct_confidence: complianceScore?.confidence ?? null,
       total: summary.total_sites || scopedSites?.length || 0,
       non_conformes: summary.sites_nok || 0,
       a_risque: summary.sites_unknown || 0,

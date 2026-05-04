@@ -31,6 +31,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, Explain } from '../../ui';
+import NonApplicableLabel from '../../components/NonApplicableLabel';
 import { fmtEur } from '../../utils/format';
 import { useExpertMode } from '../../contexts/ExpertModeContext';
 import { track } from '../../services/tracker';
@@ -987,10 +988,20 @@ export default function ObligationsTab({
       <div className="grid grid-cols-4 gap-4">
         <Card className="col-span-2">
           <CardBody>
-            <ScoreGauge
-              pct={score.pct}
-              isEmpty={!!emptyReason && emptyReason !== 'ALL_COMPLIANT'}
-            />
+            {/* Phase 4.5b — distinguer non_applicable du score=0 ou erreur */}
+            {score.pct_confidence === 'non_applicable' ? (
+              <div className="flex flex-col items-center justify-center py-6">
+                <NonApplicableLabel variant="large" />
+                <p className="mt-2 text-xs text-gray-500">
+                  Aucune obligation réglementaire active pour ce périmètre
+                </p>
+              </div>
+            ) : (
+              <ScoreGauge
+                pct={score.pct}
+                isEmpty={!!emptyReason && emptyReason !== 'ALL_COMPLIANT'}
+              />
+            )}
             <TrustBadge
               source="RegOps"
               period={`périmètre : ${scopedSites.length} sites`}

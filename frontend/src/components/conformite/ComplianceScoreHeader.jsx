@@ -7,11 +7,16 @@ import {
   DEFAULT_FRAMEWORKS_TOTAL,
   resolvePortfolioConfidence,
 } from '../../domain/compliance/confidence';
+import NonApplicableLabel from '../NonApplicableLabel';
 import { Explain } from '../../ui';
 import SolAcronym from '../../ui/sol/SolAcronym';
 
 export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
   if (!complianceScore) return null;
+
+  // Phase 4.5b — distinguer le cas légitime non_applicable (Phase 5 wrapper Sprint C-1)
+  // du fallback 0 ou erreur. Quand confidence='non_applicable', le score n'a pas de sens.
+  const isNonApplicable = complianceScore.confidence === 'non_applicable';
 
   return (
     <div
@@ -24,12 +29,20 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
           <p className="text-xs text-gray-500 mb-1">
             <Explain term="compliance_score">Score conformité</Explain>
           </p>
-          <span
-            className={`text-3xl font-bold ${getComplianceScoreColor(complianceScore.score ?? complianceScore.avg_score)}`}
-          >
-            {Math.round(complianceScore.score ?? complianceScore.avg_score ?? 0)}
-          </span>
-          <span className="text-lg text-gray-400">/100</span>
+          {isNonApplicable ? (
+            <div className="py-2">
+              <NonApplicableLabel variant="large" />
+            </div>
+          ) : (
+            <>
+              <span
+                className={`text-3xl font-bold ${getComplianceScoreColor(complianceScore.score ?? complianceScore.avg_score)}`}
+              >
+                {Math.round(complianceScore.score ?? complianceScore.avg_score ?? 0)}
+              </span>
+              <span className="text-lg text-gray-400">/100</span>
+            </>
+          )}
           <div className="relative group inline-block ml-1">
             <button className="text-gray-400 hover:text-gray-600" title="Comment c'est calculé">
               <svg
