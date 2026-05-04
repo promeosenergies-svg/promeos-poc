@@ -33,6 +33,7 @@ from routes.patrimoine._helpers import (
     _get_org_id,
     _check_portfolio_belongs_to_org,
     _load_site_with_org_check,
+    _load_meter_with_org_check,
     _serialize_site,
     _build_sites_query,
     _worst_compliance_status,
@@ -420,8 +421,15 @@ def create_sub_meter_endpoint(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Crée un sous-compteur rattaché à un compteur principal."""
+    """Crée un sous-compteur rattaché à un compteur principal.
+
+    Mini-sprint sécurité IDOR (CWE-639) : org-scoping enforced via
+    `_load_meter_with_org_check`. Retourne 404 si meter_id ∉ org courante.
+    """
     from services.meter_unified_service import create_sub_meter
+
+    org_id = _get_org_id(request, auth, db)
+    _load_meter_with_org_check(db, meter_id, org_id)
 
     try:
         result = create_sub_meter(db, meter_id, body.model_dump(exclude_unset=True))
@@ -439,8 +447,17 @@ def delete_sub_meter_endpoint(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Supprime un sous-compteur."""
+    """Supprime un sous-compteur.
+
+    Mini-sprint sécurité IDOR (CWE-639) : org-scoping enforced via
+    `_load_meter_with_org_check` sur le meter parent. Retourne 404 si parent
+    meter_id ∉ org courante. Le sub_id est validé downstream par delete_sub_meter
+    (vérifie le rattachement parent).
+    """
     from services.meter_unified_service import delete_sub_meter
+
+    org_id = _get_org_id(request, auth, db)
+    _load_meter_with_org_check(db, meter_id, org_id)
 
     if not delete_sub_meter(db, meter_id, sub_id):
         raise HTTPException(status_code=404, detail="Sous-compteur non trouvé ou mauvais parent")
@@ -457,9 +474,17 @@ def meter_breakdown_endpoint(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Breakdown principal vs sous-compteurs."""
+    """Breakdown principal vs sous-compteurs.
+
+    Mini-sprint sécurité IDOR (CWE-639) : org-scoping enforced via
+    `_load_meter_with_org_check`. Retourne 404 si meter_id ∉ org courante
+    (évite la fuite de données de comptage cross-org).
+    """
     from services.meter_unified_service import get_meter_breakdown
     from datetime import datetime as dt
+
+    org_id = _get_org_id(request, auth, db)
+    _load_meter_with_org_check(db, meter_id, org_id)
 
     df = dt.fromisoformat(date_from) if date_from else None
     dto = dt.fromisoformat(date_to) if date_to else None

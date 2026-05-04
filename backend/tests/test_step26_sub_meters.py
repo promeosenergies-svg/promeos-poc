@@ -217,11 +217,14 @@ class TestSourceGuards:
         assert "get_meter_breakdown" in src
 
     def test_routes_has_sub_meters_endpoint(self):
-        src = self._read("routes/patrimoine.py")
+        # Post-split V92 : `routes/patrimoine.py` éclaté en `routes/patrimoine/*.py`.
+        # Endpoints sub-meters désormais dans sites.py.
+        src = self._read("routes/patrimoine/sites.py")
         assert "sub-meters" in src
 
     def test_routes_has_breakdown_endpoint(self):
-        src = self._read("routes/patrimoine.py")
+        # Post-split V92 : routes/patrimoine.py → routes/patrimoine/sites.py
+        src = self._read("routes/patrimoine/sites.py")
         assert "breakdown" in src
 
     def test_packs_has_sub_meters(self):
