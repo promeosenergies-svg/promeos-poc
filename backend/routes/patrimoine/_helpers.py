@@ -115,6 +115,34 @@ def _load_compteur_with_org_check(db: Session, compteur_id: int, org_id: int) ->
     return c
 
 
+def _load_meter_with_org_check(db: Session, meter_id: int, org_id: int):
+    """Load a Meter (modèle moderne energy_models) with upfront org verification.
+
+    Mini-sprint sécurité IDOR (CWE-639) — fix endpoints :
+      - POST /meters/{meter_id}/sub-meters
+      - DELETE /meters/{meter_id}/sub-meters/{sub_id}
+      - GET /meters/{meter_id}/breakdown
+    Distinct de _load_compteur_with_org_check qui cible le modèle legacy `Compteur`.
+
+    Pattern JOIN identique : Meter → Site → Portefeuille → EJ → Organisation.
+    Returns 404 on miss (fail-closed, pas d'enumeration des meter_id valides).
+    """
+    from models.energy_models import Meter
+
+    m = (
+        db.query(Meter)
+        .join(Site, Meter.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .filter(Meter.id == meter_id)
+        .first()
+    )
+    if not m:
+        raise HTTPException(status_code=404, detail=f"Meter {meter_id} non trouvé")
+    return m
+
+
 def _load_contract_with_org_check(db: Session, contract_id: int, org_id: int) -> "EnergyContract":
     """Load a contract with upfront org verification via JOIN chain. Returns 404 on miss."""
     ct = (
