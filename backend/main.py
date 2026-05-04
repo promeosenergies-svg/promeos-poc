@@ -279,6 +279,12 @@ from routes.regulatory_rates import router as regulatory_rates_router
 
 app.include_router(regulatory_rates_router)
 
+# Sprint C-3 Phase 3.4 — Portfolio intensity endpoint (agrégat patrimoine)
+# Clôture D-Phase4-3-Portfolio-Intensity-Backend-001 (dette Phase 4.3 Sprint C-2)
+from routes.portfolio_intensity import router as portfolio_intensity_router
+
+app.include_router(portfolio_intensity_router)
+
 # CX Dashboard (admin — usage interne)
 from routes.cx_dashboard import router as cx_dashboard_router
 

@@ -206,6 +206,8 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                 parking_type=_PARKING_MAP.get(spec.get("parking_type"), ParkingType.UNKNOWN),
                 roof_area_m2=spec.get("roof_m2"),
                 naf_code=spec.get("naf"),
+                # kWhEF PCI : énergie finale PCI uniquement (Sprint C-3 Phase 3.4
+                # source-guard test_annual_kwh_total_kwhef_pci_source_guards.py).
                 annual_kwh_total=spec.get("annual_kwh"),
                 data_source="demo",
                 siret=f"{pack['entites'][0]['siren']}{10000 + site_counter:05d}",
@@ -456,6 +458,7 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                     parking_type=_PARKING_MAP.get(group.get("parking_type"), ParkingType.UNKNOWN),
                     roof_area_m2=roof,
                     naf_code=group.get("naf") if site_counter < (count * 0.8) else None,
+                    # kWhEF PCI uniquement (cf. source-guard Sprint C-3 Phase 3.4)
                     annual_kwh_total=annual_kwh,
                     data_source="demo",
                     siret=f"{pack['entites'][0]['siren']}{rng.randint(10000, 99999)}",
