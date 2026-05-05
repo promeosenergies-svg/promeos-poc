@@ -943,3 +943,140 @@ terms:
       legal_reference: null
     formula: null
     notes: null
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Mécanisme Capacité RTE — réforme acheteur unique 1/11/2026
+  # Sprint C-4 Phase 4.2 (clôture D-Sprint-C3-Reg-Manquants-Capacite-CBAM-VNU-001 P0)
+  # Sources légales identifiées dans le code repo : Décret 2025-1441 + Arrêté
+  # 18/03/2026 (mécanisme centralisé Y-4 / Y-1, démarrage 01/11/2026).
+  # URLs Légifrance/CRE non vérifiées en ligne — dette
+  # D-Phase4-2-Sources-URLs-Verifier-001 (P2 Sprint C-7).
+  # ═════════════════════════════════════════════════════════════════════
+
+  CAPACITE_RTE_OBLIGATION_DEADLINE:
+    value: "2026-11-01"
+    unit: "date"
+    domain: "tarifs"
+    source:
+      label: "Code de l'énergie art. L335-1 — Mécanisme de capacité RTE (réforme acheteur unique)"
+      url: null
+      version: "Décret 2025-1441 + Arrêté 18/03/2026"
+      effective_date: "2026-11-01"
+      legal_reference: "Décret n°2025-1441"
+    formula: null
+    notes: "Démarrage mécanisme centralisé Y-4/Y-1 le 01/11/2026. URL Légifrance à vérifier Sprint C-7 (D-Phase4-2-Sources-URLs-Verifier-001)."
+
+  CAPACITE_RTE_TARIF_2026_EUR_PER_MW:
+    value: 3.15
+    unit: "EUR/MW"
+    domain: "tarifs"
+    source:
+      label: "Enchères capacité RTE 06/03/2025 (livraison 2026)"
+      url: null
+      version: "Enchères 2025 livraison 2026"
+      effective_date: "2026-01-01"
+      legal_reference: null
+    formula: null
+    notes: "Mirroir billing_engine/catalog.py::CAPACITE_ELEC.source. URL résultats RTE à vérifier Sprint C-7."
+
+  CAPACITE_RTE_COEFF_2026:
+    value: 1.2
+    unit: "ratio"
+    domain: "tarifs"
+    source:
+      label: "RTE — Coefficient capacité 2026 (services-rte.com)"
+      url: null
+      version: "2026"
+      effective_date: "2026-01-01"
+      legal_reference: null
+    formula: "tarif_eur_per_mwh = (price_eur_per_mw × coeff) / 8760"
+    notes: "Mirroir runtime price_decomposition_service._compute_capacity(). URL RTE à vérifier Sprint C-7."
+
+  CAPACITE_RTE_TARIF_2025_EUR_PER_MW:
+    value: 0.0
+    unit: "EUR/MW"
+    domain: "tarifs"
+    source:
+      label: "Enchères capacité RTE 2024 (livraison 2025) — prix nul"
+      url: null
+      version: "Enchères 2024 livraison 2025"
+      effective_date: "2025-01-01"
+      legal_reference: null
+    formula: null
+    notes: "Année livraison 2025 = prix nul. Mirroir billing_engine/catalog.py::CAPACITE_ELEC_2025."
+
+  # ═════════════════════════════════════════════════════════════════════
+  # VNU — Versement pour Non-Usage (post-ARENH 01/01/2026)
+  # Sources : Décret 2026-55 + CRE 2026-52 (référencés cost_simulator_2026.py)
+  # ═════════════════════════════════════════════════════════════════════
+
+  VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH:
+    value: 0.0
+    unit: "EUR/MWh"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération 2026-52 — Tarif unitaire VNU 2026"
+      url: null
+      version: "CRE 2026-52"
+      effective_date: "2026-01-01"
+      legal_reference: "Décret n°2026-55"
+    formula: null
+    notes: "Tarif unitaire 2026 = 0 EUR/MWh (statut dormant). Active si seuil dépassé. URL Légifrance/CRE à vérifier Sprint C-7."
+
+  VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH:
+    value: 78.0
+    unit: "EUR/MWh"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération 2026-52 — Seuil 1 activation VNU"
+      url: null
+      version: "CRE 2026-52"
+      effective_date: "2026-01-01"
+      legal_reference: "Décret n°2026-55"
+    formula: null
+    notes: "Seuil bas (78 EUR/MWh) — activation VNU si prix marché < seuil. Mirroir cost_simulator_2026.VNU_SEUIL_DEFAUT_EUR_MWH."
+
+  VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH:
+    value: 110.0
+    unit: "EUR/MWh"
+    domain: "tarifs"
+    source:
+      label: "CRE délibération 2026-52 — Seuil 2 activation VNU"
+      url: null
+      version: "CRE 2026-52"
+      effective_date: "2026-01-01"
+      legal_reference: "Décret n°2026-55"
+    formula: null
+    notes: "Seuil haut (110 EUR/MWh) — activation VNU côté upside fournisseur."
+
+  # ═════════════════════════════════════════════════════════════════════
+  # CBAM — Carbon Border Adjustment Mechanism (UE 2023/956)
+  # Sprint C-4 Phase 4.2 (clôture D-Sprint-C3-Reg-Manquants-Capacite-CBAM-VNU-001 P0)
+  # Brique runtime existante : services/billing_engine/bricks/cbam.py
+  # ═════════════════════════════════════════════════════════════════════
+
+  CBAM_OBLIGATION_DEADLINE_PHASE_PLEINE:
+    value: "2026-01-01"
+    unit: "date"
+    domain: "co2"
+    source:
+      label: "Règlement (UE) 2023/956 — Carbon Border Adjustment Mechanism"
+      url: null
+      version: "Règlement initial UE 2023/956"
+      effective_date: "2026-01-01"
+      legal_reference: "Règlement (UE) 2023/956"
+    formula: null
+    notes: "Phase transitoire jusqu'au 31/12/2025. Application pleine 01/01/2026 — déclarations trimestrielles. URL EUR-Lex à vérifier Sprint C-7."
+
+  CBAM_REGLEMENT_REFERENCE:
+    value: "Règlement (UE) 2023/956"
+    unit: "reference"
+    domain: "co2"
+    source:
+      label: "Journal officiel UE — CBAM scope acier/aluminium/ciment/engrais/électricité/hydrogène"
+      url: null
+      version: "2023/956"
+      effective_date: "2023-10-01"
+      legal_reference: "Règlement (UE) 2023/956"
+    formula: null
+    notes: "Application phase pleine 01/01/2026. Conso élec directe française PROMEOS = HORS scope CBAM (importations transfrontalières uniquement). Documenté pour traçabilité."

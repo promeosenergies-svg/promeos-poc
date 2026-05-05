@@ -773,6 +773,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-04 (Sprint C-3 Phase 3.7d audit follow-up — +6 dettes audit cumul) | 28 | 2 | 11 | 15 |
 | 2026-05-04 (post Sprint C-3 — clôture finale + renommage Phase 3.7d + ADR split en 3) | 28 | 2 | 12 | 14 |
 | 2026-05-05 (Sprint C-4 Phase 4.1 coherence_globale.yaml v1.0 + dette TraceTooltip-TermId-SG) | 29 | 2 | 13 | 14 |
+| 2026-05-05 (Sprint C-4 Phase 4.2 CAPACITE+CBAM+VNU YAML — clôture P0 partielle + 2 nouvelles dettes URLs+Unit) | 30 | 1 | 13 | 16 |
 
 ---
 
@@ -1022,33 +1023,89 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 
 ---
 
-## D-Sprint-C3-Reg-Manquants-Capacite-CBAM-VNU-001 — 9 termes réglementaires manquants YAML
+## D-Sprint-C3-Reg-Manquants-Capacite-CBAM-VNU-001 — 9 termes réglementaires manquants YAML [PARTIELLEMENT CLÔTURÉE]
 
 **Détecté** : Sprint C-3 Phase 3.4d audit regulatory-expert (2026-05-04)
+**Statut** : 🟡 **PARTIELLEMENT CLÔTURÉE** — Phase 4.2 Sprint C-4 (commit `014df01a`+) livre 3/9 mécanismes (Capacité RTE P0 cardinal + CBAM + VNU). Reste 6 mécanismes pour Sprint C-5+.
 
-**Périmètre** : Le YAML 68 termes (Phase 3.2) couvre les domaines coeur (DT, BACS, APER, audit SMÉ, OPERAT, CO2, accises, TVA, TURPE 6/7 partiel). **9 mécanismes réglementaires importants ABSENTS** :
+### ✅ Livrés Phase 4.2 (3/9 mécanismes — 9 termes YAML)
 
-| ID | Mécanisme | Échéance critique | Priorité |
-|---|---|---|---|
-| 1 | **Capacité RTE 1/11/2026** | Échéance critique 6 mois | 🔴 P0 |
-| 2 | ATRD7 gaz (T1/T2/T3/T4/TP) + ATRT8 | Avant pilote gaz | 🟠 P1 |
-| 3 | TURPE 7 C4/C3 horosaisonnier (couverture C5 BT seule actuellement) | Pilote 2026 | 🟠 P1 |
-| 4 | CBAM règlement UE 2023/956 (déclaration trimestrielle) | 2026 trimestriel | 🟠 P1 |
-| 5 | VNU post-ARENH (loi 2025) | 2026 | 🟠 P1 |
-| 6 | TRVE résidentiel + TRV gaz repère | Continu | 🟡 P2 |
-| 7 | CEE période P6 (2026-2030) — coefficients fiches BAT | 2026-2030 | 🟡 P2 |
-| 8 | ETS2 (UE 2023/959) — bâtiments tertiaires 2027 | 2027 | 🟡 P2 |
-| 9 | TDN + CPB | Continu | 🟡 P2 |
+| Mécanisme | Termes ajoutés | Sources |
+|---|---|---|
+| **Capacité RTE 1/11/2026** ✅ | `CAPACITE_RTE_OBLIGATION_DEADLINE` + `_TARIF_2026_EUR_PER_MW` (3.15) + `_COEFF_2026` (1.2) + `_TARIF_2025_EUR_PER_MW` (0.0) | Décret 2025-1441 + Arrêté 18/03/2026 (référencés `purchase/cost_simulator_2026.py`) |
+| **CBAM** ✅ | `CBAM_OBLIGATION_DEADLINE_PHASE_PLEINE` (2026-01-01) + `CBAM_REGLEMENT_REFERENCE` | Règlement (UE) 2023/956 (référencé `billing_engine/bricks/cbam.py`) |
+| **VNU** ✅ | `VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH` (0.0) + seuils `_PRIX_BAS` (78) + `_PRIX_HAUT` (110) | Décret 2026-55 + CRE 2026-52 (référencés `purchase/cost_simulator_2026.py`) |
 
-**Action Sprint C-4** : ajouter les 9 mécanismes au YAML + helpers typés + 9 tests loader.
+→ 9 termes YAML ajoutés + 13 tests YAML + 3 source-guards cohérence YAML↔runtime catalog (Option B archi décision Phase 4.2).
 
-**Effort estimé** : ~2-3 j-h (structuration YAML + helpers + tests)
-**Priorité** : 🔴 **P0 pour Capacité RTE** (échéance 1/11/2026, fenêtre 6 mois) + 🟠 P1 pour ATRD/CBAM/VNU
-**Sprint cible** : Sprint C-4 (priorité Capacité RTE) + Sprint C-5 (CBAM/VNU/CEE)
+### ⏳ Restants Sprint C-5+ (6/9 mécanismes)
+
+| ID | Mécanisme | Échéance | Priorité | Sprint cible |
+|---|---|---|---|---|
+| 2 | ATRD7 gaz (T1/T2/T3/T4/TP) + ATRT8 | Avant pilote gaz | 🟠 P1 | C-5 |
+| 3 | TURPE 7 C4/C3 horosaisonnier (couverture C5 BT seule actuellement) | Pilote 2026 | 🟠 P1 | C-5 |
+| 6 | TRVE résidentiel + TRV gaz repère | Continu | 🟡 P2 | C-7 |
+| 7 | CEE période P6 (2026-2030) — coefficients fiches BAT | 2026-2030 | 🟡 P2 | C-5 |
+| 8 | ETS2 (UE 2023/959) — bâtiments tertiaires 2027 | 2027 | 🟡 P2 | C-7 |
+| 9 | TDN + CPB | Continu | 🟡 P2 | C-7 (CPB déjà partiel `catalog.py`) |
+
+**Action Sprint C-5** : ajouter ATRD7 + ATRT8 + TURPE C4/C3 + CEE P6 (4 mécanismes prioritaires).
+**Action Sprint C-7** : compléter TRVE + ETS2 + TDN polish.
+
+**Effort restant estimé** : ~1.5-2 j-h Sprint C-5 + ~1 j-h Sprint C-7
+**Priorité résiduelle** : 🟠 P1 (Capacité RTE P0 critique livré)
 
 **Traces** :
-- Audit regulatory-expert Phase 3.4d findings
+- Phase 4.2 Sprint C-4 commit `014df01a`+ (clôture P0)
 - agent_veille_reglementaire.md (17 mécanismes canoniques — base liste complète)
+
+---
+
+## D-Phase4-2-Sources-URLs-Verifier-001 — URLs Légifrance/CRE/EUR-Lex à vérifier (CAPACITE/VNU/CBAM)
+
+**Détecté** : Sprint C-4 Phase 4.2 (création 9 termes YAML CAPACITE/VNU/CBAM, 2026-05-05)
+
+**Périmètre** : Les 9 termes ajoutés Phase 4.2 ont `url: null` car Claude Code ne peut pas vérifier URLs Légifrance/CRE/EUR-Lex en ligne sans accès web. Les `legal_reference` (Décret 2025-1441, Décret 2026-55, Règlement UE 2023/956) sont fiables (sourcés depuis le code repo : `cost_simulator_2026.py`, `billing_engine/bricks/cbam.py`, `billing_engine/catalog.py`).
+
+**Risque** : URLs deep-link absentes côté FE TraceTooltip → différenciateur R10 affaibli sur ces 9 termes (pas de lien cliquable Légifrance/CRE/EUR-Lex).
+
+**Action Sprint C-7** :
+1. Vérifier sur Légifrance : Décret n°2025-1441 (Capacité RTE) + Arrêté 18/03/2026
+2. Vérifier sur Légifrance : Décret n°2026-55 (VNU) + CRE délibération 2026-52
+3. Vérifier sur EUR-Lex : Règlement (UE) 2023/956 (CBAM)
+4. Vérifier sur services-rte.com : résultats enchères capacité 06/03/2025 (3.15 EUR/MW)
+5. Compléter `url:` champ pour les 9 termes
+6. Test source-guard renforcé : `url != null` pour tout terme legal_reference != null
+
+**Effort estimé** : ~30-45 min (vérification web + édition YAML)
+**Priorité** : 🟡 P2 (cosmétique TraceTooltip, valeurs numériques déjà fiables)
+**Sprint cible** : Sprint C-7 polish
+
+---
+
+## D-Phase4-2-Catalog-CAPACITE-Unit-Mismatch-001 — Catalog `CAPACITE_ELEC.unit` probablement incorrect (EUR/kWh vs EUR/MWh)
+
+**Détecté** : Sprint C-4 Phase 4.2 source-guard cohérence YAML↔runtime (2026-05-05)
+
+**Périmètre** : `services/billing_engine/catalog.py::CAPACITE_ELEC` stocke :
+- `rate: 0.00043`
+- `unit: "EUR/kWh"`
+
+Or la formule canonique `_compute_capacity()` produit EUR/MWh : `(price_eur_per_mw × coeff) / 8760 = EUR/MWh`. Numériquement `(3.15 × 1.2) / 8760 ≈ 0.000432` qui correspond à 0.00043 EUR/MWh, **PAS 0.00043 EUR/kWh** (qui serait ~1000× trop élevé). Le commentaire catalog `→ 3.15 × 1.2 / 8760 ≈ 0.00043 EUR/kWh` (ligne 878) est incohérent avec la formule.
+
+**Risque** : si un consumer applique `rate × kwh` pour calculer le montant capacité, le résultat peut être 1000× trop élevé selon l'interprétation. À vérifier que les consumers actuels (`compute_xxx` du billing_engine) interprètent le rate cohéremment.
+
+**Action Sprint C-7 polish** :
+1. Audit consumers `CAPACITE_ELEC.rate` dans `billing_engine/`
+2. Décider : corriger `unit: "EUR/MWh"` (probable) OU garder unit + corriger rate à 0.00000043
+3. Tests anti-régression sur les calculs de facturation capacité existants
+4. SG renforcé `test_capacite_yaml_runtime_consistency_source_guards` : valider unit catalog
+
+**Effort estimé** : ~1 h (audit consumers + correction + tests)
+**Priorité** : 🟡 P2 (cosmétique unit, valeur numérique cohérente avec formule canonique)
+**Sprint cible** : Sprint C-7 polish
+
+**Note** : Phase 4.2 SG `test_sg_capacite_runtime_01_tarif_2026_numeric_consistency_with_catalog` valide la **valeur numérique** uniquement (pas l'unit string) avec note doctrinale dans la docstring.
 
 ---
 
