@@ -33,6 +33,13 @@ export default function TraceTooltip({ termId, children, position = 'top', class
     return <span className={className}>{children}</span>;
   }
 
+  // Sprint C-4 Phase 4.2d (ADR-010) — termes en attente de vérification source officielle :
+  // certaines sources réglementaires (Légifrance/CRE/RTE) n'ont pas pu être vérifiées via
+  // WebFetch (allow-list). Pour ces termes, on AFFICHE valeur + bannière warning au lieu
+  // du lien externe (évite redirection 404 + transparence sur l'incertitude). Différenciateur
+  // R10 préservé : PROMEOS ne ment jamais sur ses sources.
+  const isPendingVerification = trace.status === 'pending_source_verification';
+
   const tooltipContent = (
     <div className="space-y-1.5 text-xs">
       <div>
@@ -44,15 +51,21 @@ export default function TraceTooltip({ termId, children, position = 'top', class
       <div className="text-gray-700">
         <strong className="text-gray-900">Source :</strong> {trace.source.label}
       </div>
-      {trace.source.url && (
-        <a
-          href={trace.source.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:underline block break-all"
-        >
-          {trace.source.version} · effective {trace.source.effective_date} →
-        </a>
+      {isPendingVerification ? (
+        <div className="text-amber-700 text-[11px] italic bg-amber-50 px-1.5 py-0.5 rounded">
+          ⚠️ Source en cours de vérification (Sprint C-7+)
+        </div>
+      ) : (
+        trace.source.url && (
+          <a
+            href={trace.source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline block break-all"
+          >
+            {trace.source.version} · applicable depuis {trace.source.effective_date} →
+          </a>
+        )
       )}
       {trace.formula && (
         <div className="text-gray-600 italic">

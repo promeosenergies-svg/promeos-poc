@@ -83,3 +83,28 @@ describe('TraceTooltip — contenu tooltip', () => {
     expect(componentSrc).toMatch(/trace\.notes\s*&&/);
   });
 });
+
+describe('TraceTooltip — rendu pending_source_verification (Sprint C-4 Phase 4.2d, ADR-010)', () => {
+  it('détecte trace.status === "pending_source_verification"', () => {
+    expect(componentSrc).toMatch(/trace\.status\s*===\s*['"]pending_source_verification['"]/);
+  });
+
+  it('affiche bannière warning ambre au lieu du lien externe quand pending', () => {
+    expect(componentSrc).toMatch(/text-amber-700/);
+    expect(componentSrc).toMatch(/Source en cours de v[ée]rification/i);
+  });
+
+  it('masque le lien externe URL quand pending (différenciateur R10 préservé)', () => {
+    // Pattern : isPendingVerification ? <bannière> : (trace.source.url && <a>)
+    expect(componentSrc).toMatch(/isPendingVerification\s*\?/);
+  });
+
+  it('utilise "applicable depuis" en français (clôture i18n D-Sprint-C3-7d-FE-i18n-TraceTooltip-001)', () => {
+    expect(componentSrc).toMatch(/applicable depuis/);
+    // "effective" en anglais ne doit plus apparaître hors commentaires JSX
+    const noEnglishEffective = !/\beffective\s+\{trace\.source\.effective_date\}/.test(
+      componentSrc
+    );
+    expect(noEnglishEffective).toBe(true);
+  });
+});

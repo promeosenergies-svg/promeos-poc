@@ -957,6 +957,8 @@ terms:
     value: "2026-11-01"
     unit: "date"
     domain: "tarifs"
+    status: "pending_source_verification"
+    confidence: "medium"
     source:
       label: "Code de l'énergie art. L335-1 — Mécanisme de capacité RTE (réforme acheteur unique)"
       url: null
@@ -964,25 +966,29 @@ terms:
       effective_date: "2026-11-01"
       legal_reference: "Décret n°2025-1441"
     formula: null
-    notes: "Démarrage mécanisme centralisé Y-4/Y-1 le 01/11/2026. URL Légifrance à vérifier Sprint C-7 (D-Phase4-2-Sources-URLs-Verifier-001)."
+    notes: "Démarrage mécanisme centralisé Y-4/Y-1 le 01/11/2026. WebFetch Légifrance bloqué allow-list — vérification experte Sprint C-7 (D-Phase4-2d-Pending-Source-Verification-001)."
 
   CAPACITE_RTE_TARIF_2026_EUR_PER_MW:
     value: 3.15
     unit: "EUR/MW"
     domain: "tarifs"
+    status: "pending_source_verification"
+    confidence: "low"
     source:
-      label: "Enchères capacité RTE 06/03/2025 (livraison 2026)"
+      label: "Enchères capacité RTE 06/03/2025 (livraison 2026) — valeur à confirmer"
       url: null
       version: "Enchères 2025 livraison 2026"
       effective_date: "2026-01-01"
       legal_reference: null
     formula: null
-    notes: "Mirroir billing_engine/catalog.py::CAPACITE_ELEC.source. URL résultats RTE à vérifier Sprint C-7."
+    notes: "Mirroir billing_engine/catalog.py::CAPACITE_ELEC.source. ⚠️ Disambiguation requise : 3.15 EUR/MW vs 3150 EUR/MW (référence revenue.py PRIX_MOYEN_MW_AN PL1 20-50k EUR/MW). Audit Sprint C-5 D-Phase4-2d-Capacite-EUR-MW-Disambiguation-001."
 
   CAPACITE_RTE_COEFF_2026:
     value: 1.2
     unit: "ratio"
     domain: "tarifs"
+    status: "pending_source_verification"
+    confidence: "low"
     source:
       label: "RTE — Coefficient capacité 2026 (services-rte.com)"
       url: null
@@ -990,7 +996,7 @@ terms:
       effective_date: "2026-01-01"
       legal_reference: null
     formula: "tarif_eur_per_mwh = (price_eur_per_mw × coeff) / 8760"
-    notes: "Mirroir runtime price_decomposition_service._compute_capacity(). URL RTE à vérifier Sprint C-7."
+    notes: "Mirroir runtime price_decomposition_service._compute_capacity(). WebFetch services-rte.com bloqué allow-list — vérification Sprint C-7."
 
   CAPACITE_RTE_TARIF_2025_EUR_PER_MW:
     value: 0.0
@@ -1014,40 +1020,46 @@ terms:
     value: 0.0
     unit: "EUR/MWh"
     domain: "tarifs"
+    status: "pending_source_verification"
+    confidence: "low"
     source:
-      label: "CRE délibération 2026-52 — Tarif unitaire VNU 2026"
+      label: "CRE délibération 2026-52 — Tarif unitaire VNU 2026 (référence à confirmer)"
       url: null
       version: "CRE 2026-52"
       effective_date: "2026-01-01"
       legal_reference: "Décret n°2026-55"
     formula: null
-    notes: "Tarif unitaire 2026 = 0 EUR/MWh (statut dormant). Active si seuil dépassé. URL Légifrance/CRE à vérifier Sprint C-7."
+    notes: "Tarif unitaire 2026 = 0 EUR/MWh (statut dormant). ⚠️ Audit regulatory-expert Phase 4.2d : CRE délibération 2026-52 non retrouvée portail CRE public (confusion possible avec délib 2026-70 minoration nucléaire). Vérification experte Sprint C-7."
 
   VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH:
     value: 78.0
     unit: "EUR/MWh"
     domain: "tarifs"
+    status: "pending_source_verification"
+    confidence: "low"
     source:
-      label: "CRE délibération 2026-52 — Seuil 1 activation VNU"
+      label: "CRE délibération 2026-52 — Seuil 1 activation VNU (référence à confirmer)"
       url: null
       version: "CRE 2026-52"
       effective_date: "2026-01-01"
       legal_reference: "Décret n°2026-55"
     formula: null
-    notes: "Seuil bas (78 EUR/MWh) — activation VNU si prix marché < seuil. Mirroir cost_simulator_2026.VNU_SEUIL_DEFAUT_EUR_MWH."
+    notes: "Seuil bas 78 EUR/MWh — activation VNU si prix marché < seuil. Mirroir cost_simulator_2026.VNU_SEUIL_DEFAUT_EUR_MWH (SG cohérence Sprint C-4 Phase 4.2d)."
 
   VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH:
     value: 110.0
     unit: "EUR/MWh"
     domain: "tarifs"
+    status: "pending_source_verification"
+    confidence: "low"
     source:
-      label: "CRE délibération 2026-52 — Seuil 2 activation VNU"
+      label: "CRE délibération 2026-52 — Seuil 2 activation VNU (référence à confirmer)"
       url: null
       version: "CRE 2026-52"
       effective_date: "2026-01-01"
       legal_reference: "Décret n°2026-55"
     formula: null
-    notes: "Seuil haut (110 EUR/MWh) — activation VNU côté upside fournisseur."
+    notes: "Seuil haut 110 EUR/MWh — activation VNU côté upside fournisseur."
 
   # ═════════════════════════════════════════════════════════════════════
   # CBAM — Carbon Border Adjustment Mechanism (UE 2023/956)

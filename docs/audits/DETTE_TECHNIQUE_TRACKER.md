@@ -774,6 +774,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-04 (post Sprint C-3 — clôture finale + renommage Phase 3.7d + ADR split en 3) | 28 | 2 | 12 | 14 |
 | 2026-05-05 (Sprint C-4 Phase 4.1 coherence_globale.yaml v1.0 + dette TraceTooltip-TermId-SG) | 29 | 2 | 13 | 14 |
 | 2026-05-05 (Sprint C-4 Phase 4.2 CAPACITE+CBAM+VNU YAML — clôture P0 partielle + 2 nouvelles dettes URLs+Unit) | 30 | 1 | 13 | 16 |
+| 2026-05-05 (Sprint C-4 Phase 4.2d audit follow-up — ADR-010 + 4 nouvelles dettes + 1 reclassif P2→P1 + clôture i18n TraceTooltip) | 33 | 3 | 15 | 15 |
 
 ---
 
@@ -936,17 +937,10 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 
 ---
 
-## D-Sprint-C3-7d-FE-i18n-TraceTooltip-001 — "effective" anglais dans TraceTooltip
+## D-Sprint-C3-7d-FE-i18n-TraceTooltip-001 — "effective" anglais dans TraceTooltip [CLÔTURÉE]
 
 **Détecté** : Sprint C-3 Phase 3.7d audit code-reviewer (2026-05-04)
-
-**Périmètre** : `frontend/src/ui/TraceTooltip.jsx:54` affiche `{trace.source.version} · effective {trace.source.effective_date}` — "effective" en anglais alors que l'UI PROMEOS est en français.
-
-**Action Sprint C-4** : remplacer par `{trace.source.version} · applicable depuis {trace.source.effective_date}`.
-
-**Effort estimé** : 2 min (1 ligne)
-**Priorité** : 🟡 P2 (cosmétique — cohérence localization FR doctrine PROMEOS)
-**Sprint cible** : Sprint C-4 ou opportunistique
+**Statut** : ✅ **CLÔTURÉE** Phase 4.2d (commit follow-up) — `frontend/src/ui/TraceTooltip.jsx` ligne ~62 corrigée opportunistiquement : "effective" → "applicable depuis" en même temps que ajout rendu pending_source_verification (ADR-010).
 
 ---
 
@@ -1101,11 +1095,115 @@ Or la formule canonique `_compute_capacity()` produit EUR/MWh : `(price_eur_per_
 3. Tests anti-régression sur les calculs de facturation capacité existants
 4. SG renforcé `test_capacite_yaml_runtime_consistency_source_guards` : valider unit catalog
 
-**Effort estimé** : ~1 h (audit consumers + correction + tests)
-**Priorité** : 🟡 P2 (cosmétique unit, valeur numérique cohérente avec formule canonique)
+**Effort estimé** : ~1.5 h (audit consumers + correction + tests anti-régression billing)
+**Priorité** : 🟠 **P1** (RECLASSIFIÉE Phase 4.2d audit follow-up — blast radius rapport CFO confirmé par bill-intelligence : `unit` exposée dans tooltip / rapport JSON utilisateur)
+**Sprint cible** : Sprint C-5 (reclassif depuis C-7 polish, urgence rapport CFO)
+
+**Note Phase 4.2d** : reclassifiée P1 sur audit bill-intelligence (commit `714d3ad4` follow-up). Le bill-intelligence a confirmé : si un consumer expose `.unit` dans un rapport CFO, l'utilisateur verrait "EUR/kWh" alors que la valeur est en EUR/MWh — embarras commercial. Phase 4.2 SG `test_sg_capacite_runtime_01_tarif_2026_numeric_consistency_with_catalog` valide la **valeur numérique** uniquement (pas l'unit string) avec note doctrinale dans la docstring. Lié dette `D-Phase4-2d-Capacite-EUR-MW-Disambiguation-001` (audit valeur enchère 3.15 vs 3150 EUR/MW).
+
+---
+
+## D-Phase4-2d-Pending-Source-Verification-001 — 5 termes YAML status pending_source_verification
+
+**Détecté** : Sprint C-4 Phase 4.2d audit regulatory-expert (2026-05-05)
+
+**Périmètre** : Audit regulatory-expert Phase 4.2 follow-up a relevé 5 termes YAML CAPACITE_RTE_* + VNU_* avec confidence LOW car WebFetch bloqué par allow-list (Légifrance/CRE/services-rte.com inaccessibles, seul EUR-Lex CBAM validé). Le tag `status: pending_source_verification` ajouté Phase 4.2d (ADR-010) signale ces incertitudes.
+
+| Terme | Confidence | Source revendiquée | Risque |
+|---|---|---|---|
+| `CAPACITE_RTE_OBLIGATION_DEADLINE` | medium | Décret 2025-1441 | Plausible mais non vérifié |
+| `CAPACITE_RTE_TARIF_2026_EUR_PER_MW` (3.15) | low | Enchères RTE 06/03/2025 | **Disambiguation requise** (3.15 vs 3150 EUR/MW, cf. dette ci-dessous) |
+| `CAPACITE_RTE_COEFF_2026` (1.2) | low | RTE | Coefficient non confirmé |
+| `VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH` (0.0) | low | Décret 2026-55 + CRE 2026-52 | **Délibération CRE 2026-52 NON RETROUVÉE portail public** (confusion possible avec délib 2026-70 minoration nucléaire) |
+| `VNU_SEUIL_*` (78/110) | low | CRE 2026-52 | Idem (référence CRE non confirmée) |
+
+**Action Sprint C-7 polish** :
+1. Vérification experte (juriste / consultant énergie) des 5 références légales
+2. Si délibérations CRE confirmées → renseigner URLs deep-link YAML
+3. Si délibérations introuvables → corriger `legal_reference` + `source.label` au plus juste
+4. Retirer tag `status: pending_source_verification` au cas par cas après vérification
+5. Cohérent avec `D-Phase4-2d-WebFetch-Allowlist-Review-001` (élargissement allow-list)
+
+**Effort estimé** : ~1.5-2 j-h (vérification 5 termes + ajustements YAML + tests)
+**Priorité** : 🟡 P1 (cohérence R10 différenciateur — bannière warning visible utilisateur)
 **Sprint cible** : Sprint C-7 polish
 
-**Note** : Phase 4.2 SG `test_sg_capacite_runtime_01_tarif_2026_numeric_consistency_with_catalog` valide la **valeur numérique** uniquement (pas l'unit string) avec note doctrinale dans la docstring.
+---
+
+## D-Phase4-2d-WebFetch-Allowlist-Review-001 — Allow-list WebFetch trop restrictive
+
+**Détecté** : Sprint C-4 Phase 4.2d audit regulatory-expert (2026-05-05)
+
+**Périmètre** : L'allow-list actuelle bloque `legifrance.gouv.fr` / `cre.fr` / `services-rte.com`. Seul `eur-lex.europa.eu` accessible. Frein cardinal pour vérification des sources réglementaires françaises (Légifrance JO + CRE délibérations + RTE résultats enchères) — tout l'écosystème PROMEOS repose pourtant sur ces sources.
+
+**Risque** : impossibilité de vérifier ~80% des termes YAML avant Sprint C-7 vérification experte. Différenciateur R10 affaibli à chaque ajout YAML futur (devra démarrer en `pending_source_verification`).
+
+**Action Sprint C-7** :
+1. Audit pertinence allow-list `.claude/` ou settings Claude Code
+2. Décision archi : élargir vers Légifrance + CRE + services-rte.com avec validation security-auditor
+3. Si élargissement OK → re-run regulatory-expert audit pour valider les 5 termes pending Phase 4.2d
+4. Si refusé → process alternatif : consultation manuelle juriste + import sources via fichier statique
+
+**Effort estimé** : 30-45 min (audit + décision archi)
+**Priorité** : 🟡 P2 (infrastructure dev — gain ROI vérifications futures)
+**Sprint cible** : Sprint C-7
+
+---
+
+## D-Phase4-2d-Capacite-EUR-MW-Disambiguation-001 — Valeur enchère capacité 3.15 vs 3150 EUR/MW à clarifier
+
+**Détecté** : Sprint C-4 Phase 4.2d mini-audit pré-build (2026-05-05)
+
+**Périmètre** : Le YAML `CAPACITE_RTE_TARIF_2026_EUR_PER_MW = 3.15` (mirroir `cost_simulator_2026.py:64 CAPACITE_UNITAIRE_EUR_MWH = 0.43`) présente une **incohérence mathématique apparente** :
+
+- Formule canonique `(price × coeff) / 8760 = EUR/MWh`
+- Avec YAML 3.15 EUR/MW × 1.2 = 3.78, ÷ 8760 = **0.000432 EUR/MWh**
+- Catalog runtime stocke pourtant **0.43 EUR/MWh** (= 0.00043 EUR/kWh)
+- **Différence x1000** entre la formule et la valeur stockée
+
+Hypothèses :
+- **A** : tarif réel = **3150 EUR/MW** (typo "3.15" propagée Phase 4.2). Cohérent avec `services/capacity/revenue.py PRIX_MOYEN_MW_AN PL1 (20-50k EUR/MW)` qui suggère ordre de grandeur kEUR/MW pour enchères capacité.
+- **B** : tarif réel = 3.15 EUR/MW (référence catalog ligne 882) mais le commentaire formule du catalog est incorrect.
+
+**Risque** : si hypothèse A confirmée → YAML + cost_simulator_2026 + catalog billing_engine doivent être mis à jour CONJOINTEMENT (3.15 → 3150 + recalcul rate). Dérive non détectée silencieuse possible.
+
+**Action Sprint C-5** :
+1. Audit source officielle RTE résultats enchères 06/03/2025 livraison 2026 (consultation experte ou WebFetch après allow-list élargie)
+2. Disambiguer valeur réelle (3.15 vs 3150 EUR/MW)
+3. Si disambiguation = 3150 → MAJ coordonnée 3 fichiers (YAML + cost_simulator_2026 + catalog) + ajustement SG
+4. Tests anti-régression billing engine post-correction
+
+**Effort estimé** : ~2-3 h (audit source + correction coordonnée + tests)
+**Priorité** : 🔴 **P0** (calcul facture client erroné si hypothèse A confirmée — embarras commercial pré-pilote)
+**Sprint cible** : Sprint C-5
+
+**Note Phase 4.2d** : SG `test_sg_cost_sim_02_capacite_unitaire_consistent_with_yaml_formula` documente l'incohérence avec ratio toléré x1000 jusqu'à clôture de cette dette. Anti-dérive : empêche modification d'une seule des 3 valeurs sans MAJ coordonnée.
+
+---
+
+## D-Phase4-2d-BillIntelligence-Anomaly-Detector-001 — Module `services/bill_intelligence/anomalies/` absent
+
+**Détecté** : Sprint C-4 Phase 4.2d audit bill-intelligence (2026-05-05)
+
+**Périmètre** : Le rôle agent `bill-intelligence` (cf. `.claude/agents/bill-intelligence.md`) référence un périmètre R01-R20 anomalies shadow billing, mais le module `backend/services/bill_intelligence/anomalies/` **N'EXISTE PAS** dans le repo. Les briques upstream (`services/billing_engine/`, `services/price_decomposition_service.py`, `services/purchase/cost_simulator_2026.py`) sont en place mais aucun orchestrateur de détection d'anomalies ne les relie.
+
+**Anomalies cardinales manquantes** (différenciateur Bill Intelligence vs Deepki/Spacewell/Energisme) :
+- **R20** : Capacité non répercutée correctement (variance ligne facture vs catalog `CAPACITE_ELEC.rate` > 5%)
+- **R19** : VNU facturé alors que statut dormant (YAML `VNU_TARIF_UNITAIRE_2026 = 0.0` + `dormant: true` mais ligne facture > 0)
+- R01-R18 : autres anomalies déjà spécifiées dans rôle agent (TURPE/CTA/accise/CSPE/etc.)
+
+**Action Sprint C-5** :
+1. Créer `backend/services/bill_intelligence/__init__.py` + `anomaly_detector.py`
+2. Implémentation MVP R19 (VNU dormant) + R20 (capacité variance > 5%)
+3. Format JSON sortie selon spec rôle agent (line_item / computed_value / reference_value / variance_pct / confidence / anomaly_type / recommandation)
+4. Tests : 1 anomalie R19 détectée + 1 R20 détectée + 1 baseline 0 anomalie
+5. Source-guards anti-régression sur format JSON
+
+**Effort estimé** : ~2-3 j-h (module + R19 + R20 + tests + source-guards)
+**Priorité** : 🔴 **P0** (pré-pilote bloquant — différenciateur Bill Intelligence inexistant runtime)
+**Sprint cible** : Sprint C-5
+
+**Note** : ce trou architectural est cardinal pour le positionnement commercial PROMEOS face aux concurrents généralistes. Sans détecteur anomalies runtime, le shadow billing reste théorique.
 
 ---
 
