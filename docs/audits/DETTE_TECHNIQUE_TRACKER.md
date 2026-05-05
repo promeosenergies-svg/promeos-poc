@@ -772,6 +772,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-04 (Sprint C-3 Phase 3.7 — 1 clôture reportée + 2 nouvelles dettes Modele/Activation) | 22 | 2 | 8 | 12 |
 | 2026-05-04 (Sprint C-3 Phase 3.7d audit follow-up — +6 dettes audit cumul) | 28 | 2 | 11 | 15 |
 | 2026-05-04 (post Sprint C-3 — clôture finale + renommage Phase 3.7d + ADR split en 3) | 28 | 2 | 12 | 14 |
+| 2026-05-05 (Sprint C-4 Phase 4.1 coherence_globale.yaml v1.0 + dette TraceTooltip-TermId-SG) | 29 | 2 | 13 | 14 |
 
 ---
 
@@ -945,6 +946,34 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 **Effort estimé** : 2 min (1 ligne)
 **Priorité** : 🟡 P2 (cosmétique — cohérence localization FR doctrine PROMEOS)
 **Sprint cible** : Sprint C-4 ou opportunistique
+
+---
+
+## D-Phase4-1-TraceTooltip-TermId-SG-Cross-Stack-001 — Source-guard cross-stack FE↔YAML invariant 5
+
+**Détecté** : Sprint C-4 Phase 4.1 (création `coherence_globale.yaml` v1.0, 2026-05-05)
+
+**Périmètre** : Invariant 5 `TRACETOOLTIP_TERMID_VALIDITY` du registre `coherence_globale.yaml` est **doctrinal MVP** Sprint C-4. L'implémentation runtime (source-guard cross-stack FE↔YAML) est reportée Sprint C-5 :
+
+- Scanner tous les usages `<TraceTooltip termId="X" />` dans `frontend/src/**/*.jsx`
+- Lire `backend/config/sources_reglementaires.yaml` (subprocess Node ou fixture conftest pytest)
+- Test croisé : 100% match `termId` FE ↔ `terms.keys()` YAML SoT
+
+**Risque sans fix** : typo `termId` silencieuse côté FE → tooltip ne s'affiche pas (fallback enfants seuls), différenciateur R10 perdu sans alerte. UX cassée non détectée.
+
+**Action Sprint C-5** :
+
+1. Décision implémentation :
+   - **Option A** — source-guard côté FE (Vitest) : grep regex `<TraceTooltip\s+termId="([^"]+)"` + lecture YAML via fixture
+   - **Option B** — source-guard côté BE (pytest) : scan `frontend/src/` depuis Python (path traversal cross-stack)
+2. Test cardinal : 100% match termId
+3. Fail-fast : 1 typo = PR-bloquante
+
+**Effort estimé** : ~30 min (cf. user msg Phase 4.1)
+**Priorité** : 🟡 P1 (UX silencieuse cassée — différenciateur R10 perdu)
+**Sprint cible** : Sprint C-5
+
+**Référence** : `backend/config/coherence_globale.yaml` invariant 5 (`detection: tests/source_guards/test_tracetooltip_termid_yaml_coherence_source_guards`).
 
 ---
 

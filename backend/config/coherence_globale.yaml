@@ -1,0 +1,153 @@
+# PROMEOS — Registre invariants cross-pillar (Sprint C-4 Phase 4.1)
+#
+# SoT YAML versionné git consolidant les cohérences métier transverses qui doivent
+# rester valides entre Patrimoine + Conformité + Bill Intelligence + Achat + Conso + RGPD.
+#
+# Doctrine PROMEOS Sol §6.4 "1 SoT par concept" — ce registre figure les
+# invariants cross-pillar (vs sources_reglementaires.yaml qui figure les sources
+# légales tracées).
+#
+# Phase 3.8 reportée Sprint C-3 LIVRÉE Sprint C-4 Phase 4.1.
+#
+# Schéma strict par invariant :
+#   description (string multiligne), pillars (list[string]), formula (string),
+#   detection (string — service:method référence), severity (string — allowlist),
+#   action_on_violation (string), notes (string|null)
+#
+# Service de lecture : backend/config/coherence_globale_loader.py (Phase 4.1.2).
+# Pattern reproduit identique à `regulatory_sources_loader.py` (Sprint C-3 Phase 3.2).
+#
+# Implémentations runtime des `detection` : Phase 4.5 Sprint C-4 + sprints suivants.
+# Source-guard cross-stack invariant 5 : reportée Sprint C-5
+# (D-Phase4-1-TraceTooltip-TermId-SG-Cross-Stack-001).
+
+version: "1.0"
+last_updated: "2026-05-05"
+sprint_origin: "Sprint C-4 Phase 4.1 (Phase 3.8 reportée Sprint C-3)"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Allowlists (cohérence vs source-guards Phase 4.1.4)
+# ─────────────────────────────────────────────────────────────────────────────
+
+severity_allowlist:
+  - "P0"                              # Bloquant production / sécurité
+  - "P1"                              # Crédibilité B2B / différenciateur perdu
+  - "P2"                              # Polish
+  - "P0_dt_applicable_else_P1"        # Conditional severity (DT applicable → P0)
+
+pillars_allowlist:
+  - "patrimoine"
+  - "conso"
+  - "bill_intelligence"
+  - "conformite_dt"
+  - "conformite_score"
+  - "regops"
+  - "operat"
+  - "rgpd"
+  - "data_ingestion_enedis"
+  - "data_ingestion_grdf"
+  - "frontend_tracabilite"
+  - "backend_yaml_sot"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Invariants v1.0 — 5 cohérences cross-pillar cardinales
+# ─────────────────────────────────────────────────────────────────────────────
+
+invariants:
+
+  # ─── INVARIANT 1 : kWh cohérence Σ compteurs ≈ Σ factures ───────────────────
+  KWH_SUM_COHERENCE:
+    description: |
+      Σ(annual_kwh par compteur) ≈ Σ(consommation_facturee_annuelle).
+      Tolérance : ±5% (bruit normal mesure vs facture, pertes réseau, T+1
+      régularisation index).
+    pillars:
+      - "patrimoine"
+      - "conso"
+      - "bill_intelligence"
+    formula: "abs(sum_meters_kwh - sum_invoices_kwh) / max(sum_meters_kwh, sum_invoices_kwh) <= 0.05"
+    detection: "services.bill_intelligence.coherence_check.check_kwh_sum_coherence(site_id)"
+    severity: "P1"
+    action_on_violation: "Anomalie shadow billing R0X + investigation flux ingestion (Enedis R6X / GRDF R171)"
+    notes: |
+      Tolérance 5% volontairement large pour MVP. Affinement Sprint C-5+ par
+      type de meter (intelligent CDC vs index legacy ±2% vs ±10%).
+
+  # ─── INVARIANT 2 : Surface tertiaire contenant ≥ contenu ────────────────────
+  TERTIAIRE_AREA_COHERENCE:
+    description: |
+      Site.surface_tertiaire_totale_m2 (somme SDP tertiaire) ≤ Site.surface_m2
+      (contenant ≥ contenu). Si DT applicable (site tertiaire ≥ 1000 m²),
+      Site.tertiaire_area_m2 > 0 obligatoire (sinon Cabs OPERAT incalculable).
+    pillars:
+      - "patrimoine"
+      - "conformite_dt"
+      - "operat"
+    formula: "site.tertiaire_area_m2 <= site.surface_m2 AND (NOT dt_applicable OR site.tertiaire_area_m2 > 0)"
+    detection: "services.site_intensity_service.validate_tertiaire_area(site)"
+    severity: "P0_dt_applicable_else_P1"
+    action_on_violation: "Blocage save Patrimoine si DT applicable + alerte regops UI"
+    notes: |
+      Lié à `D-Phase4-2-Operat-Surfaces-3-Distinct-001` (P0 Sprint C-6) — distinguer
+      SDP / tertiaire_area_m2 / S_CE OPERAT. Cet invariant couvre tertiaire_area_m2
+      uniquement (proxy MVP avant 3 surfaces distinctes).
+
+  # ─── INVARIANT 3 : Consentement RGPD avant ingestion ────────────────────────
+  CONSENTEMENT_INGESTION_COHERENCE:
+    description: |
+      Si Organisation.consentement_dataconnect_global = false →
+      Aucun flux Enedis DataConnect ne doit être ingéré pour les DPs élec de l'org.
+      Idem GRDF : si Organisation.consentement_grdf_global = false → aucun flux
+      GRDF ADICT pour les DPs gaz `grd_code = "GRDF"` (court-circuit ELD locales
+      préservé — différenciateur Sprint C-3 Phase 3.6).
+    pillars:
+      - "rgpd"
+      - "data_ingestion_enedis"
+      - "data_ingestion_grdf"
+    formula: "NOT (consentement_global = false AND ingestion_active = true)"
+    detection: "services.data_ingestion.consent_gate.check_consent_before_fetch(org_id, source)"
+    severity: "P0"
+    action_on_violation: "Stop ingestion + AuditLog RGPD_CONSENT_VIOLATION + alerte conformité"
+    notes: |
+      Cf. ADR-007 (modèle Org/DP consentement, Sprint C-4 Phase 4.4 préalable).
+      Cascade activation Phase 4.5 Sprint C-4. Court-circuit ELD préservé.
+
+  # ─── INVARIANT 4 : Σ weights conformité = 1.0 ───────────────────────────────
+  CONFORMITE_SCORE_WEIGHTS_COHERENCE:
+    description: |
+      Σ(weights DT + BACS + APER + AUDIT) = 1.0 (±0.001 tolérance flottant).
+      Default (3 obligations) : DT 45% / BACS 30% / APER 25%.
+      Si SMÉ applicable (4 obligations) : DT 39% / BACS 28% / APER 17% / AUDIT 16%.
+      Pondérations = doctrine PROMEOS, sources YAML termes REGOPS_WEIGHT_*.
+    pillars:
+      - "conformite_score"
+      - "regops"
+    formula: "abs(sum(active_weights) - 1.0) < 0.001"
+    detection: "services.compliance_score_service.validate_weights(weights)"
+    severity: "P0"
+    action_on_violation: "Erreur calcul score + AuditLog + fallback default weights (3 obligations)"
+    notes: |
+      Pondérations sourcées YAML sources_reglementaires.yaml (REGOPS_WEIGHT_DT_PCT,
+      REGOPS_WEIGHT_BACS_PCT, REGOPS_WEIGHT_APER_PCT, REGOPS_WEIGHT_AUDIT_SME_PCT).
+      Source-guard cohérence YAML ↔ code étendu Sprint C-4 P4.5
+      (D-Sprint-C3-7d-Cascade-SoT-Reuse-Audit-001).
+
+  # ─── INVARIANT 5 : TraceTooltip term_id ↔ YAML SoT (DOCTRINAL MVP) ──────────
+  TRACETOOLTIP_TERMID_VALIDITY:
+    description: |
+      Tout `<TraceTooltip termId="X" />` dans le frontend DOIT correspondre à un
+      term existant dans backend/config/sources_reglementaires.yaml.
+      Garantit que le différenciateur R10 (TraceTooltip Sprint C-3 Phase 3.5)
+      ne soit jamais cassé silencieusement par une typo termId côté FE.
+    pillars:
+      - "frontend_tracabilite"
+      - "backend_yaml_sot"
+    formula: "for each FE termId in <TraceTooltip>: termId IN sources_reglementaires.yaml.terms.keys"
+    detection: "tests/source_guards/test_tracetooltip_termid_yaml_coherence_source_guards (Sprint C-5)"
+    severity: "P1"
+    action_on_violation: "Test FE source-guard fail → PR-bloquante (correction termId ou ajout YAML SoT)"
+    notes: |
+      DOCTRINAL MVP Sprint C-4 — implémentation source-guard cross-stack (FE↔YAML)
+      reportée Sprint C-5. Dette `D-Phase4-1-TraceTooltip-TermId-SG-Cross-Stack-001`
+      P1 ouverte. UX silencieuse cassée si typo non détectée (tooltip fallback
+      enfants seuls = différenciateur R10 perdu sans alerte).
