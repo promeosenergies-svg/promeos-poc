@@ -696,39 +696,30 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 
 ---
 
-## D-Sprint-C3-Cascade-Consentement-Activation-001 — Activer cascade Org consentements après modèle livré
+## D-Sprint-C3-Cascade-Consentement-Activation-001 — Activer cascade Org consentements après modèle livré [CLÔTURÉE Phase 4.5]
 
 **Détecté** : Sprint C-3 Phase 3.7 audit pré-build (2026-05-04, audit pivot)
+**Statut** : ✅ **CLÔTURÉE** Sprint C-4 Phase 4.5 (commit follow-up).
 
-**Périmètre** : Une fois la dette `D-Sprint-C3-Org-Consentement-Modele-001` livrée (modèle prêt), activer la cascade :
+### Livraison Phase 4.5
 
-- `Organisation.consentement_dataconnect_global` → propagation tous DPs élec
-- `Organisation.consentement_grdf_global` → propagation tous DPs gaz GRDF (court-circuit ELD locales via `is_grdf()` Phase 3.6)
+- ✅ 2 helpers cascade activés `cascade_recompute_service.py` :
+  - `_propagate_consentement_dataconnect(org, db)` (Phase 4.5)
+  - `_propagate_consentement_grdf(org, db)` avec court-circuit ELD locales via `is_grdf()` Phase 3.6
+- ✅ 2 entrées `CASCADE_MAP_MVP_SPRINT_C1` ajoutées (Org.consentement_dataconnect_global + grdf_global)
+- ✅ Service nouveau `services/consent_service.py` (Option B archi-helios — effective consent runtime)
+  - `get_effective_consent(dp, type_)` : hiérarchie `_local IF NOT NULL ELSE _global`
+  - `is_consent_active(dp, type_)` : helper booléen explicite RGPD-respectful
+- ✅ 14 tests cascade vivante + 3 SG no-direct-propagation (override RGPD préservé)
+- ✅ Court-circuit ELD locales testé (Régaz, GreenAlp skippés cardinal RGPD)
 
-**Helpers à livrer** (drafts Phase 3.7 archivés) :
-- `_propagate_consentement_dataconnect(org, db)` — bulk update DPs élec
-- `_propagate_consentement_grdf(org, db)` — bulk update DPs GRDF avec court-circuit ELD via `eld_gaz_loader.is_grdf()`
-- 2 entrées `CASCADE_MAP_MVP_SPRINT_C1` : `Organisation.consentement_*_global`
+**Décision archi cardinale Phase 4.5** : Option B (effective consent runtime, pas d'écrasement physique des `_local`). Préserve override RGPD-protégé. Différenciateur PROMEOS RGPD-compliant cf. ADR-007.
 
-**Cas particuliers** :
-- ADICT GRDF s'applique UNIQUEMENT aux DPs GRDF (Régaz, GreenAlp, etc. ont leur propre process consentement)
-- Anti-cycle : DP.consentement_*_local n'est pas source de cascade Org
-- Audit log auto via Phase 1.3 wiring (RGPD compliance)
-
-**Tests à livrer** :
-- Propagation élec / gaz isolée
-- Court-circuit ELD (Régaz, GreenAlp) skippées
-- Idempotence si valeur inchangée
-- Perf 50 DPs <5 sec
-- Audit log Phase 1.3 wiring
-
-**Effort estimé** : ~2-3 h (helpers + cascade + 8-10 tests + 1 SG)
-**Priorité** : 🟠 P1 (RGPD compliance opérationnelle)
-**Sprint cible** : Sprint C-4 (immédiatement après dette modèle)
-
-**Traces** :
-- Phase 3.7 audit pré-build (2026-05-04) : pivot + scission
-- Drafts helpers archivés ce commit pour réutilisation Sprint C-4
+**Cascade vivante 14 champs Phase C** (post-Phase 4.5, +2 vs Phase 4.4) :
+- Sprint C-1 : 7 champs (Site OPERAT/APER/EFA + Batiment.cvc_power_kw)
+- Sprint C-2 : 4 champs (Site.surface_m2 + annual_kwh + AuditEnergetique.conso + EnergyContract.end_date)
+- Sprint C-3 : 1 champ (DeliveryPoint.grd_code → ELD ref + bill_recheck)
+- **Sprint C-4 Phase 4.5 : 2 champs cardinaux Org.consentement_dataconnect_global + grdf_global**
 
 ---
 
@@ -777,6 +768,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-05 (Sprint C-4 Phase 4.2d audit follow-up — ADR-010 + 4 nouvelles dettes + 1 reclassif P2→P1 + clôture i18n TraceTooltip) | 33 | 3 | 15 | 15 |
 | 2026-05-05 (Sprint C-4 Phase 4.3 — Type strict EnergieFinale ADR-011 — clôture EnergieFinale-Type-Strict + 1 successeur typage progressif) | 33 | 3 | 15 | 15 |
 | 2026-05-05 (Sprint C-4 Phase 4.4 — Modèle Org/DP consentement ADR-007 — clôture RGPD-Consent-Detail) | 32 | 3 | 14 | 15 |
+| 2026-05-05 (Sprint C-4 Phase 4.5 — Cascade Org consentement vivante + audit SoT reuse — 2 clôtures + 1 nouvelle dette ADR-007 reportée) | 31 | 3 | 12 | 16 |
 
 ---
 
@@ -852,28 +844,60 @@ Schemas pydantic Site/AuditEnergetique avec `Annotated[KwhEFPCI, Field(...)]` + 
 
 ---
 
-## D-Sprint-C3-7d-Cascade-SoT-Reuse-Audit-001 — Auditer toutes constantes locales dupliquant SoT YAML
+## D-Sprint-C3-7d-Cascade-SoT-Reuse-Audit-001 — Auditer toutes constantes locales dupliquant SoT YAML [CLÔTURÉE Phase 4.5]
 
 **Détecté** : Sprint C-3 Phase 3.7d audit code-reviewer (2026-05-04)
+**Statut** : ✅ **CLÔTURÉE** Sprint C-4 Phase 4.5 audit rapide 4.5.4 (commit follow-up).
 
-**Périmètre** : Phase 3.7d a corrigé 2 duplications dans `cascade_recompute_service.py` :
-- `_AUDIT_SME_SEUIL_*` (constantes locales) → `get_audit_sme_threshold()` SoT YAML
-- `date(2026, 7, 1)` / `date(2028, 7, 1)` (dates APER hardcodées) → `get_term_value("APER_DEADLINE_*")` SoT YAML
+### Livraison Phase 4.5.4 (audit rapide cascade SoT reuse)
 
-**Risque résiduel** : d'autres modules backend peuvent contenir des duplications similaires :
-- `regops/rules/*.py` (rules engine)
-- `services/compliance_score_service.py` (V2 scoring)
-- `services/compliance_coordinator.py` (coordinator)
-- `data_ingestion/*.py` (parsers)
+Audit ciblé `cascade_recompute_service.py` vs services métier :
 
-**Action Sprint C-4** :
-1. Audit balayage : `grep -rn "0.052\|0.227\|7500\|3750\|2.75\|23.6\|26.58\|0.0569" backend/services backend/regops backend/data_ingestion`
-2. Pour chaque match runtime : remplacer par `get_term_value()` ou `get_<helper>()` du `regulatory_sources_loader`
-3. Étendre source-guards SG_REG_CONST_* pour couvrir 68/68 termes (vs 10/68 actuel)
+- `_recompute_compliance(site, db)` — helper canonique propre, pas de duplication
+- `_recompute_organisation_via_coordinator(audit_sme, db)` (Sprint C-2 P5.2) — délègue à `compliance_coordinator.recompute_organisation` (1 callsite L308) — pattern propre
+- `_recompute_cabs`, `_recompute_intensity_total/tertiaire` — thin wrappers locaux cardinaux, pas de logique métier dupliquée
+- Phase 4.5 helpers `_propagate_consentement_*` réutilisent `is_grdf()` du `eld_gaz_loader` (1 SoT court-circuit ELD)
 
-**Effort estimé** : ~2-3 h (audit + refacto + extension source-guards)
-**Priorité** : 🟡 P1 (anti-drift réglementaire systémique)
-**Sprint cible** : Sprint C-4
+**Verdict cardinal** : pas de duplication critique détectée. Pattern compliance_coordinator déjà adopté pour les cas org-scopés. Doctrine "1 SoT par concept" respectée.
+
+### Audits déjà appliqués Phase 3.7d (2 fixes confirmés)
+
+- `_AUDIT_SME_SEUIL_*` → `get_audit_sme_threshold()` SoT YAML (commit Phase 3.7d)
+- Dates APER hardcodées → `get_term_value("APER_DEADLINE_*")` (commit Phase 3.7d)
+
+### Audit profond reporté Sprint C-7 polish
+
+Si Sprint C-7 souhaite étendre l'audit balayage cross-modules (`regops/rules/*.py`, `compliance_score_service.py`, `data_ingestion/`), créer dette dédiée `D-Sprint-C7-SoT-Reuse-Cross-Modules-Audit-001` avec scope :
+
+1. `grep -rn "0.052|0.227|7500|3750|2.75|23.6|26.58|0.0569"` cross-modules
+2. Étendre source-guards SG_REG_CONST_* couverture 68/68 termes (vs 10/68 actuel — `D-Sprint-C3-YAML-Constants-SG-Coverage-001`)
+
+---
+
+## D-Phase4-4-ADR-007-Consent-By-CGU-Version-001 — Audit trail RGPD avancé Org/DP consentement (champs ADR-007 reportés)
+
+**Détecté** : Sprint C-4 Phase 4.4 (modèle Org/DP consentement, 2026-05-05)
+
+**Périmètre** : ADR-007 spécifie un schéma RGPD enrichi avec audit trail complet (qui/quand/version CGU/IP hashée). Phase 4.4 a livré le MVP cardinal (8 cols : Boolean + DateTime timezone=True) mais REPORTE 2 catégories de champs RGPD avancés :
+
+| Champ ADR-007 | Description | Sprint cible |
+|---|---|---|
+| `consentement_*_by` (FK users) | Quel utilisateur a accordé/retiré le consentement | C-5+ |
+| `consentement_*_cgu_version` (String 20) | Version CGU au moment du consentement | C-5+ |
+| `consentement_*_ip_hash` (String SHA-256) | IP hashée RGPD-safe (audit forensique) | C-7+ optionnel |
+
+**Action Sprint C-5** :
+
+1. Migration Alembic 8e Phase C — ajouter `_by` + `_cgu_version` (4 cols par entité × 2 entités = 8 cols additionnelles)
+2. AuditLog event_type `RGPD_CONSENT_CHANGE` enrichi avec `cgu_version` JSON metadata
+3. Tests cardinal : changement consentement crée 1 entrée AuditLog conforme CNIL
+4. Délégation `regulatory-expert` (CNIL audit trail) + `security-auditor` (FK + IP hash)
+
+**Effort estimé** : ~1-1.5 j-h (migration + tests + AuditLog wiring)
+**Priorité** : 🟡 P2 (RGPD audit trail avancé — différenciateur CNIL strict, non bloquant pré-pilote MVP)
+**Sprint cible** : Sprint C-5
+
+**Référence** : `docs/adr/ADR-007-rgpd-consentement-dataconnect-grdf-modele.md` section "Audit trail" — schéma complet revendiqué.
 
 ---
 

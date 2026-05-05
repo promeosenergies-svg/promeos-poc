@@ -469,6 +469,140 @@ def _trigger_bill_recheck(delivery_point, db: Session) -> str:
     return f"bill_recheck_logged for DP {getattr(delivery_point, 'id', None)}"
 
 
+# ─── Helpers Phase 4.5 Sprint C-4 — cascade Org.consentement_* → DPs (vivante) ──
+#
+# Phase 4.4 a livré le modèle ORM (8 cols Org+DP). Phase 4.5 ACTIVE la cascade
+# que Phase 3.7 Sprint C-3 avait reportée (champs alors inexistants). ADR-007
+# implémentation runtime, Option B retenue (effective consent runtime via
+# `services/consent_service.get_effective_consent`, pas d'écrasement physique
+# du `_local` — RGPD-respectful).
+#
+# Périmètre cascade :
+# - DataConnect (Enedis) : tous DPs élec de l'org (energy_type='elec')
+# - GRDF (ADICT) : court-circuit ELD locales — UNIQUEMENT DPs `grd_code='GRDF'`
+#   (les 20 ELD locales ont leur propre process consentement, différenciateur
+#   PROMEOS RGPD-compliant Sprint C-3 Phase 3.6)
+
+
+def _propagate_consentement_dataconnect(org, db: Session) -> str:
+    """Cascade Org.consentement_dataconnect_global → DPs élec de l'org.
+
+    Option B (Phase 4.5 ADR-007) : pas d'écrasement physique de `dp._local`.
+    Retourne un compteur structuré pour audit log + tooltip UI.
+
+    - eligible : DPs sans override local (consultent le global via consent_service)
+    - overridden : DPs avec override local (préservé, pas affecté par cascade)
+    - skipped : DPs gaz (hors scope DataConnect Enedis)
+    """
+    new_value = getattr(org, "consentement_dataconnect_global", None)
+    if new_value is None:
+        return "no_change_global_is_null"
+
+    from models import DeliveryPoint, EntiteJuridique, Portefeuille, Site
+
+    dps = (
+        db.query(DeliveryPoint)
+        .join(Site, DeliveryPoint.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org.id)
+        .all()
+    )
+
+    eligible = 0
+    overridden = 0
+    skipped_gas = 0
+    for dp in dps:
+        energy_type = getattr(dp, "energy_type", None)
+        # energy_type peut être Enum ou str selon contexte
+        et_str = energy_type.value if hasattr(energy_type, "value") else energy_type
+        if et_str and "gaz" in str(et_str).lower():
+            skipped_gas += 1
+            continue
+        if dp.consentement_dataconnect_local is not None:
+            overridden += 1  # Override local préservé (ADR-007)
+            continue
+        eligible += 1
+
+    _logger.info(
+        "CASCADE_CONSENTEMENT_DATACONNECT",
+        extra={
+            "organisation_id": org.id,
+            "new_value": new_value,
+            "eligible_dps": eligible,
+            "overridden_local": overridden,
+            "skipped_gas": skipped_gas,
+            "phase": "C4.4.5_consentement_dataconnect_active",
+        },
+    )
+    return f"dataconnect_global={new_value}_eligible={eligible}_overridden={overridden}_skipped_gas={skipped_gas}"
+
+
+def _propagate_consentement_grdf(org, db: Session) -> str:
+    """Cascade Org.consentement_grdf_global → DPs gaz `grd_code='GRDF'` UNIQUEMENT.
+
+    COURT-CIRCUIT ELD LOCALES préservé (différenciateur PROMEOS Sprint C-3 Phase 3.6) :
+    les 20 ELD locales (Régaz Bordeaux, GreenAlp Grenoble, R-GDS Strasbourg, etc.) ont
+    leur propre process consentement local — la cascade Org.consentement_grdf_global
+    NE LES TOUCHE PAS.
+
+    Retourne compteur structuré : eligible / overridden / skipped_eld / skipped_elec.
+    """
+    new_value = getattr(org, "consentement_grdf_global", None)
+    if new_value is None:
+        return "no_change_global_is_null"
+
+    from config.eld_gaz_loader import is_grdf
+    from models import DeliveryPoint, EntiteJuridique, Portefeuille, Site
+
+    dps = (
+        db.query(DeliveryPoint)
+        .join(Site, DeliveryPoint.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org.id)
+        .all()
+    )
+
+    eligible = 0
+    overridden = 0
+    skipped_eld = 0
+    skipped_elec = 0
+    for dp in dps:
+        energy_type = getattr(dp, "energy_type", None)
+        et_str = energy_type.value if hasattr(energy_type, "value") else energy_type
+        if not et_str or "gaz" not in str(et_str).lower():
+            skipped_elec += 1
+            continue
+        # Cardinal court-circuit RGPD : seuls les DPs grd_code='GRDF' sont éligibles
+        grd_code = getattr(dp, "grd_code", None)
+        if not is_grdf(grd_code or ""):
+            skipped_eld += 1  # ELD locale (Régaz/GreenAlp/etc.) — process séparé
+            continue
+        if dp.consentement_grdf_local is not None:
+            overridden += 1  # Override local préservé (ADR-007)
+            continue
+        eligible += 1
+
+    _logger.info(
+        "CASCADE_CONSENTEMENT_GRDF",
+        extra={
+            "organisation_id": org.id,
+            "new_value": new_value,
+            "eligible_dps": eligible,
+            "overridden_local": overridden,
+            "skipped_eld_locales": skipped_eld,
+            "skipped_elec": skipped_elec,
+            "court_circuit_eld_active": True,
+            "phase": "C4.4.5_consentement_grdf_active_court_circuit_eld",
+        },
+    )
+    return (
+        f"grdf_global={new_value}_eligible={eligible}_overridden={overridden}_"
+        f"skipped_eld={skipped_eld}_skipped_elec={skipped_elec}"
+    )
+
+
 # ─── CASCADE_MAP MVP Sprint C-1 (7 champs) ──────────────────────────────────
 #
 # Chaque entrée est une liste de fonctions cascade qui retournent (output_field, value).
@@ -547,6 +681,17 @@ CASCADE_MAP_MVP_SPRINT_C1: dict[str, list[Callable]] = {
     "DeliveryPoint.grd_code": [
         lambda dp, db: ("eld_metadata", _recompute_eld_metadata_from_grd_code(dp, db)),
         lambda dp, db: ("bill_recheck", _trigger_bill_recheck(dp, db)),
+    ],
+    # Phase 4.5 Sprint C-4 — cascade Org consentement vivante (ADR-007 implémentation).
+    # Phase 4.4 a livré le modèle ORM (8 cols Org+DP), Phase 4.5 active la cascade
+    # que Phase 3.7 Sprint C-3 avait reportée. Option B (effective consent runtime,
+    # pas d'écrasement physique des `_local` — RGPD-respectful, override préservé).
+    # Court-circuit ELD locales préservé pour cascade GRDF (différenciateur cardinal).
+    "Organisation.consentement_dataconnect_global": [
+        lambda org, db: ("consentement_dataconnect_propagation", _propagate_consentement_dataconnect(org, db)),
+    ],
+    "Organisation.consentement_grdf_global": [
+        lambda org, db: ("consentement_grdf_propagation", _propagate_consentement_grdf(org, db)),
     ],
 }
 
