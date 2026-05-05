@@ -776,6 +776,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-05 (Sprint C-4 Phase 4.2 CAPACITE+CBAM+VNU YAML — clôture P0 partielle + 2 nouvelles dettes URLs+Unit) | 30 | 1 | 13 | 16 |
 | 2026-05-05 (Sprint C-4 Phase 4.2d audit follow-up — ADR-010 + 4 nouvelles dettes + 1 reclassif P2→P1 + clôture i18n TraceTooltip) | 33 | 3 | 15 | 15 |
 | 2026-05-05 (Sprint C-4 Phase 4.3 — Type strict EnergieFinale ADR-011 — clôture EnergieFinale-Type-Strict + 1 successeur typage progressif) | 33 | 3 | 15 | 15 |
+| 2026-05-05 (Sprint C-4 Phase 4.4 — Modèle Org/DP consentement ADR-007 — clôture RGPD-Consent-Detail) | 32 | 3 | 14 | 15 |
 
 ---
 
@@ -876,19 +877,25 @@ Schemas pydantic Site/AuditEnergetique avec `Annotated[KwhEFPCI, Field(...)]` + 
 
 ---
 
-## D-Sprint-C3-7d-ADR-RGPD-Consent-Detail-001 — ADR design modèle consentement RGPD
+## D-Sprint-C3-7d-ADR-RGPD-Consent-Detail-001 — ADR design modèle consentement RGPD [CLÔTURÉE Phase 4.4]
 
 **Détecté** : Sprint C-3 Phase 3.7d audit architect-helios (2026-05-04)
+**Statut** : ✅ **CLÔTURÉE** Sprint C-4 Phase 4.4 (commit follow-up).
 
-**Périmètre** : Design des 4 champs `Org.consentement_dataconnect_global` / `Org.consentement_grdf_global` / `DP.consentement_dataconnect_local` / `DP.consentement_grdf_local` + audit trail (qui/quand/version CGU/IP).
+### Livraison Phase 4.4 (ADR-007 implémentation)
 
-**Bloquant** pour `D-Sprint-C3-Cascade-Consentement-Activation-001` (cascade activée seulement après ADR + migration Alembic).
+- ✅ ADR-007 livré Sprint C-4 Phase 0 (`docs/adr/ADR-007-rgpd-consentement-dataconnect-grdf-modele.md`) — design 4 champs Org + 4 champs DP avec court-circuit ELD préservé
+- ✅ Migration Alembic 7e Phase C `d4a59f7c8e21_org_dp_consentement_cols.py` (0 destructive cumulée)
+- ✅ Modèles ORM mis à jour : `models/organisation.py` +4 cols + `models/patrimoine.py:DeliveryPoint` +4 cols (8 cols total RGPD timezone-aware)
+- ✅ Index `ix_delivery_points_consentement_dataconnect_local` (filtres cascade Phase 4.5)
+- ✅ 11 tests CRUD + 3 SG structure consentement (timezone=True RGPD-compliant)
 
-**Action Sprint C-4 amont** : ADR rédigé dans `docs/adr/2026-XX-consentement-rgpd-dataconnect-grdf.md`. Délégation `regulatory-expert` (RGPD/CNIL) + `security-auditor` (PII/audit trail).
+### Successeurs
 
-**Effort estimé** : ~30-45 min (ADR + revues)
-**Priorité** : 🟠 **P1** (bloquant cascade activation Sprint C-4)
-**Sprint cible** : Sprint C-4 amont
+- `D-Sprint-C3-Cascade-Consentement-Activation-001` (P1) — Phase 4.5 Sprint C-4 (cascade vivante org → DPs activée)
+- Champs ADR-007 reportés Sprint C-5+ (audit trail RGPD avancé) :
+  - `consentement_*_by` (FK users) — délégation security-auditor
+  - `consentement_*_cgu_version` (String) — versioning CGU explicite
 
 ---
 

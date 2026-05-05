@@ -323,6 +323,32 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
     imported_at = Column(DateTime, nullable=True)
     imported_by = Column(Integer, nullable=True)
 
+    # ─── Sprint C-4 Phase 4.4 — Consentement RGPD local override (ADR-007) ───
+    # Override possible vs Org.consentement_*_global (cascade Phase 4.5).
+    # Court-circuit ELD locales : consentement_grdf_local s'applique uniquement
+    # quand grd_code='GRDF' (Régaz/GreenAlp/R-GDS/etc. ont leur propre process).
+    consentement_dataconnect_local = Column(
+        Boolean,
+        nullable=True,
+        index=True,
+        comment="Override local DataConnect par PRM (Phase 4.5 cascade ADR-007)",
+    )
+    consentement_dataconnect_local_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp override local DataConnect (RGPD audit)",
+    )
+    consentement_grdf_local = Column(
+        Boolean,
+        nullable=True,
+        comment="Override local GRDF par PCE (cascade Phase 4.5 — uniquement grd_code=GRDF)",
+    )
+    consentement_grdf_local_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp override local GRDF (RGPD audit)",
+    )
+
     # Relations
     site = relationship("Site", back_populates="delivery_points")
     compteurs = relationship("Compteur", back_populates="delivery_point")
