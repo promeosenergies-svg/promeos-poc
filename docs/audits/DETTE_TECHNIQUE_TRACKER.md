@@ -769,6 +769,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-05 (Sprint C-4 Phase 4.3 — Type strict EnergieFinale ADR-011 — clôture EnergieFinale-Type-Strict + 1 successeur typage progressif) | 33 | 3 | 15 | 15 |
 | 2026-05-05 (Sprint C-4 Phase 4.4 — Modèle Org/DP consentement ADR-007 — clôture RGPD-Consent-Detail) | 32 | 3 | 14 | 15 |
 | 2026-05-05 (Sprint C-4 Phase 4.5 — Cascade Org consentement vivante + audit SoT reuse — 2 clôtures + 1 nouvelle dette ADR-007 reportée) | 31 | 3 | 12 | 16 |
+| 2026-05-05 (Sprint C-4 Phase 4.6 — Tests perf bulk recompute 50/200/500 sites — toutes cibles tenues, pas de nouvelle dette) | 31 | 3 | 12 | 16 |
 
 ---
 

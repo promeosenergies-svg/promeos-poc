@@ -72,7 +72,10 @@ exclude = ["venv/", "alembic/", "app/", "scripts/"]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-x -q --tb=short"
-markers = ["fast: tests rapides pour le cycle dev (< 2 min)"]
+markers = [
+    "fast: tests rapides pour le cycle dev (< 2 min)",
+    "perf: tests de performance bulk (Sprint C-4 Phase 4.6, exécution manuelle 'pytest -m perf')",
+]
 filterwarnings = [
     # SQLAlchemy utilise datetime.utcnow() en interne (schema.py:3624) —
     # déprécié Python 3.12+ mais pas encore migré dans SQLAlchemy stable.
