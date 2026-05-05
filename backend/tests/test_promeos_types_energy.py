@@ -1,17 +1,24 @@
 """
-PROMEOS — Tests types stricts énergie (Sprint C-4 Phase 4.3, ADR-011).
+PROMEOS — Tests types stricts énergie (Sprint C-4 Phase 4.3 + 4.3d, ADR-011).
 
 Vérifie le module `backend/promeos_types/energy.py` :
-- Présence des 5 NewType (KwhEFPCI, KwhEP, MWhEFPCI, GWhEFPCI, KwhPCS)
+- Présence des 3 NewType cardinaux MVP (KwhEFPCI, GWhEFPCI, KwhPCS)
 - Coefficients réglementaires constants (1 SoT)
-- Helpers conversion typés (sortie bonne unité)
-- Formule mathématique correcte
+- 2 helpers conversion typés (gwh_to_kwh_ef_pci, kwh_pcs_to_kwh_ef_pci_gaz)
+- Edge case guards : finite + non-negative
+
+Phase 4.3d audit follow-up (regulatory-expert P0 critique) :
+- Suppression `COEFF_KWH_EF_TO_KWH_EP_ELEC = 1.9` (valeur fantôme — pas source officielle FR)
+- Suppression `kwh_ef_to_kwh_ep_elec` (aucun consumer + OPERAT raisonne en EF)
+- Suppression `KwhEP, MWhEFPCI, kwh_ef_to_mwh, kwh_ef_to_gwh, mwh_to_kwh_ef_pci` (YAGNI)
+- Ajout 6 tests edge cases (NaN, Inf, négatif) sur 2 helpers conservés
 
 Clôture dette `D-Sprint-C3-7d-EnergieFinale-Type-Strict-001` (P1 Sprint C-3 7d).
 """
 
 from __future__ import annotations
 
+import math
 import os
 import sys
 
@@ -20,21 +27,13 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from promeos_types.energy import (
-    COEFF_KWH_EF_TO_KWH_EP_ELEC,
     COEFF_KWH_PCS_TO_KWH_PCI_GAZ,
     FACTOR_GWH_TO_KWH,
-    FACTOR_MWH_TO_KWH,
     GWhEFPCI,
     KwhEFPCI,
-    KwhEP,
     KwhPCS,
-    MWhEFPCI,
     gwh_to_kwh_ef_pci,
-    kwh_ef_to_gwh,
-    kwh_ef_to_kwh_ep_elec,
-    kwh_ef_to_mwh,
     kwh_pcs_to_kwh_ef_pci_gaz,
-    mwh_to_kwh_ef_pci,
 )
 
 
@@ -48,20 +47,15 @@ def test_kwh_ef_pci_is_callable_alias_for_float():
     assert val == 100_000.0
 
 
-def test_kwh_ep_distinct_from_kwh_ef_pci_alias():
-    """KwhEP et KwhEFPCI sont 2 NewType distincts (différenciation cardinale)."""
-    ef = KwhEFPCI(100_000.0)
-    ep = KwhEP(190_000.0)
-    assert isinstance(ef, float) and isinstance(ep, float)
-    assert ef != ep
-    # NewType est mypy-only, pas runtime — mais __name__ distinct
+def test_3_cardinal_newtypes_have_distinct_names():
+    """Les 3 NewType cardinaux MVP ont des noms distincts (différenciation type-safe)."""
     assert KwhEFPCI.__name__ == "KwhEFPCI"
-    assert KwhEP.__name__ == "KwhEP"
+    assert GWhEFPCI.__name__ == "GWhEFPCI"
+    assert KwhPCS.__name__ == "KwhPCS"
 
 
-def test_mwh_gwh_kwh_pcs_newtypes_exist():
-    """Les 5 NewType sont exportés (cardinaux pour catch confusion ingestion)."""
-    assert MWhEFPCI(1.5) == 1.5
+def test_gwh_kwh_pcs_newtypes_accept_float():
+    """GWhEFPCI et KwhPCS sont des NewType-callables pour catch confusion ingestion."""
     assert GWhEFPCI(2.75) == 2.75
     assert KwhPCS(1000.0) == 1000.0
 
@@ -69,19 +63,13 @@ def test_mwh_gwh_kwh_pcs_newtypes_exist():
 # ─── 2. Coefficients réglementaires (1 SoT) ──────────────────────────────────
 
 
-def test_coeff_ef_to_ep_elec_is_1_9_arrete_10_04_2020():
-    """Coefficient EF→EP élec = 1.9 (arrêté 10/04/2020 art. 2-g NOR LOGL2005904A)."""
-    assert COEFF_KWH_EF_TO_KWH_EP_ELEC == 1.9
-
-
 def test_coeff_pcs_to_pci_gaz_is_0_901_grdf():
     """Coefficient PCS→PCI gaz = 0.901 (GRDF Catalogue prestations 2025)."""
     assert COEFF_KWH_PCS_TO_KWH_PCI_GAZ == 0.901
 
 
-def test_factor_mwh_gwh_to_kwh():
-    """Facteurs multiplicatifs MWh/GWh → kWh (1000, 1_000_000)."""
-    assert FACTOR_MWH_TO_KWH == 1000
+def test_factor_gwh_to_kwh():
+    """Facteur multiplicatif GWh → kWh = 1_000_000."""
     assert FACTOR_GWH_TO_KWH == 1_000_000
 
 
@@ -91,15 +79,7 @@ def test_factor_mwh_gwh_to_kwh():
 def test_gwh_to_kwh_ef_pci_audit_sme_threshold():
     """`gwh_to_kwh_ef_pci(2.75)` = 2 750 000 kWh (seuil audit 4 ans)."""
     assert gwh_to_kwh_ef_pci(2.75) == 2_750_000.0
-    # Test signature : doit retourner KwhEFPCI (vérification NewType-aware via name)
-    result = gwh_to_kwh_ef_pci(GWhEFPCI(23.6))
-    assert result == 23_600_000.0
-
-
-def test_mwh_to_kwh_ef_pci_factor_1000():
-    """`mwh_to_kwh_ef_pci(1.5)` = 1500 kWh."""
-    assert mwh_to_kwh_ef_pci(1.5) == 1500.0
-    assert mwh_to_kwh_ef_pci(MWhEFPCI(100.0)) == 100_000.0
+    assert gwh_to_kwh_ef_pci(GWhEFPCI(23.6)) == 23_600_000.0
 
 
 def test_kwh_pcs_to_kwh_ef_pci_gaz_grdf_conversion():
@@ -110,38 +90,53 @@ def test_kwh_pcs_to_kwh_ef_pci_gaz_grdf_conversion():
     assert kwh_pcs_to_kwh_ef_pci_gaz(KwhPCS(1_000_000.0)) == pytest.approx(901_000.0, abs=0.01)
 
 
-def test_kwh_ef_to_kwh_ep_elec_coefficient_1_9():
-    """`kwh_ef_to_kwh_ep_elec(100_000)` = 190 000 kWhEP (coeff 1.9 arrêté 10/04/2020)."""
-    assert kwh_ef_to_kwh_ep_elec(100_000.0) == 190_000.0
-    assert kwh_ef_to_kwh_ep_elec(KwhEFPCI(50_000.0)) == 95_000.0
+# ─── 4. Edge case guards (Phase 4.3d) ─────────────────────────────────────────
 
 
-def test_kwh_ef_to_mwh_inversion():
-    """`kwh_ef_to_mwh(1500.0)` = 1.5 MWh (inversion mwh_to_kwh)."""
-    assert kwh_ef_to_mwh(1500.0) == 1.5
-    assert kwh_ef_to_mwh(KwhEFPCI(100_000.0)) == 100.0
+def test_gwh_to_kwh_ef_pci_rejects_negative():
+    """Phase 4.3d : helper rejette valeur négative (énergie ≥ 0 doctrinal)."""
+    with pytest.raises(ValueError, match="non-négatif"):
+        gwh_to_kwh_ef_pci(-1.0)
 
 
-def test_kwh_ef_to_gwh_audit_sme_threshold_iso50001():
-    """`kwh_ef_to_gwh(23_600_000)` = 23.6 GWh (seuil ISO 50001)."""
-    assert kwh_ef_to_gwh(23_600_000.0) == 23.6
-    assert kwh_ef_to_gwh(KwhEFPCI(2_750_000.0)) == 2.75
+def test_gwh_to_kwh_ef_pci_rejects_nan():
+    """Phase 4.3d : helper rejette NaN."""
+    with pytest.raises(ValueError, match="fini"):
+        gwh_to_kwh_ef_pci(float("nan"))
 
 
-# ─── 4. Cohérence inversibilité ──────────────────────────────────────────────
+def test_gwh_to_kwh_ef_pci_rejects_inf():
+    """Phase 4.3d : helper rejette Inf."""
+    with pytest.raises(ValueError, match="fini"):
+        gwh_to_kwh_ef_pci(math.inf)
 
 
-def test_round_trip_kwh_to_mwh_to_kwh():
-    """Conversion bijective kWh → MWh → kWh (pas de perte précision)."""
-    initial = KwhEFPCI(123_456.0)
-    mwh_round = kwh_ef_to_mwh(initial)
-    kwh_back = mwh_to_kwh_ef_pci(mwh_round)
-    assert kwh_back == initial
+def test_kwh_pcs_to_kwh_ef_pci_gaz_rejects_negative():
+    """Phase 4.3d : helper rejette valeur négative (gaz ≥ 0)."""
+    with pytest.raises(ValueError, match="non-négatif"):
+        kwh_pcs_to_kwh_ef_pci_gaz(-500.0)
 
 
-def test_round_trip_kwh_to_gwh_to_kwh():
-    """Conversion bijective kWh → GWh → kWh."""
-    initial = KwhEFPCI(2_750_000.0)
-    gwh_round = kwh_ef_to_gwh(initial)
-    kwh_back = gwh_to_kwh_ef_pci(gwh_round)
-    assert kwh_back == initial
+def test_kwh_pcs_to_kwh_ef_pci_gaz_rejects_nan():
+    """Phase 4.3d : helper rejette NaN."""
+    with pytest.raises(ValueError, match="fini"):
+        kwh_pcs_to_kwh_ef_pci_gaz(float("nan"))
+
+
+def test_kwh_pcs_to_kwh_ef_pci_gaz_rejects_inf():
+    """Phase 4.3d : helper rejette Inf."""
+    with pytest.raises(ValueError, match="fini"):
+        kwh_pcs_to_kwh_ef_pci_gaz(-math.inf)
+
+
+# ─── 5. Edge case zéro (cas valide doctrinalement) ───────────────────────────
+
+
+def test_gwh_to_kwh_ef_pci_accepts_zero():
+    """Zéro est valide (site sans consommation = 0 kWh)."""
+    assert gwh_to_kwh_ef_pci(0.0) == 0.0
+
+
+def test_kwh_pcs_to_kwh_ef_pci_gaz_accepts_zero():
+    """Zéro est valide pour gaz aussi."""
+    assert kwh_pcs_to_kwh_ef_pci_gaz(0.0) == 0.0

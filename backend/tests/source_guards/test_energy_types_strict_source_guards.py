@@ -34,17 +34,19 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-_REQUIRED_NEWTYPES = ["KwhEFPCI", "KwhEP", "MWhEFPCI", "GWhEFPCI", "KwhPCS"]
+# Sprint C-4 Phase 4.3d audit follow-up : alignement cardinal MVP.
+# - 3 NewType cardinaux (vs 5 pré-cleanup) — KwhEP/MWhEFPCI supprimés YAGNI
+# - 2 helpers conversion (vs 4) — kwh_ef_to_kwh_ep_elec supprimé P0 doctrinal +
+#   mwh_to_kwh_ef_pci/kwh_ef_to_mwh/kwh_ef_to_gwh supprimés YAGNI
+# - 2 coefficients (vs 4) — COEFF_KWH_EF_TO_KWH_EP_ELEC supprimé fantôme +
+#   FACTOR_MWH_TO_KWH supprimé YAGNI
+_REQUIRED_NEWTYPES = ["KwhEFPCI", "GWhEFPCI", "KwhPCS"]
 _REQUIRED_HELPERS = [
     "gwh_to_kwh_ef_pci",
-    "mwh_to_kwh_ef_pci",
     "kwh_pcs_to_kwh_ef_pci_gaz",
-    "kwh_ef_to_kwh_ep_elec",
 ]
 _REQUIRED_COEFFS = [
-    "COEFF_KWH_EF_TO_KWH_EP_ELEC",
     "COEFF_KWH_PCS_TO_KWH_PCI_GAZ",
-    "FACTOR_MWH_TO_KWH",
     "FACTOR_GWH_TO_KWH",
 ]
 
@@ -101,16 +103,14 @@ def test_sg_energy_types_03_helpers_use_canonical_coefficients():
         end = min(candidates) if candidates else len(rest)
         return rest[:end]
 
-    # kwh_ef_to_kwh_ep_elec doit utiliser COEFF_KWH_EF_TO_KWH_EP_ELEC (pas 1.9 hardcodé inline)
-    helper_block = _extract_function_block(content, "kwh_ef_to_kwh_ep_elec")
-    assert helper_block, "Helper kwh_ef_to_kwh_ep_elec absent"
-    assert "COEFF_KWH_EF_TO_KWH_EP_ELEC" in helper_block, (
-        "Helper kwh_ef_to_kwh_ep_elec doit référencer COEFF_KWH_EF_TO_KWH_EP_ELEC (1 SoT)"
-    )
-
-    # kwh_pcs_to_kwh_ef_pci_gaz doit utiliser COEFF_KWH_PCS_TO_KWH_PCI_GAZ
+    # kwh_pcs_to_kwh_ef_pci_gaz doit utiliser COEFF_KWH_PCS_TO_KWH_PCI_GAZ (1 SoT)
     helper_block = _extract_function_block(content, "kwh_pcs_to_kwh_ef_pci_gaz")
     assert helper_block, "Helper kwh_pcs_to_kwh_ef_pci_gaz absent"
     assert "COEFF_KWH_PCS_TO_KWH_PCI_GAZ" in helper_block, (
         "Helper kwh_pcs_to_kwh_ef_pci_gaz doit référencer COEFF_KWH_PCS_TO_KWH_PCI_GAZ (1 SoT)"
     )
+
+    # gwh_to_kwh_ef_pci doit utiliser FACTOR_GWH_TO_KWH (1 SoT, pas magic 1_000_000 inline)
+    helper_block = _extract_function_block(content, "gwh_to_kwh_ef_pci")
+    assert helper_block, "Helper gwh_to_kwh_ef_pci absent"
+    assert "FACTOR_GWH_TO_KWH" in helper_block, "Helper gwh_to_kwh_ef_pci doit référencer FACTOR_GWH_TO_KWH (1 SoT)"
