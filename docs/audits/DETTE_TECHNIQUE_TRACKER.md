@@ -775,6 +775,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-05 (Sprint C-4 Phase 4.1 coherence_globale.yaml v1.0 + dette TraceTooltip-TermId-SG) | 29 | 2 | 13 | 14 |
 | 2026-05-05 (Sprint C-4 Phase 4.2 CAPACITE+CBAM+VNU YAML — clôture P0 partielle + 2 nouvelles dettes URLs+Unit) | 30 | 1 | 13 | 16 |
 | 2026-05-05 (Sprint C-4 Phase 4.2d audit follow-up — ADR-010 + 4 nouvelles dettes + 1 reclassif P2→P1 + clôture i18n TraceTooltip) | 33 | 3 | 15 | 15 |
+| 2026-05-05 (Sprint C-4 Phase 4.3 — Type strict EnergieFinale ADR-011 — clôture EnergieFinale-Type-Strict + 1 successeur typage progressif) | 33 | 3 | 15 | 15 |
 
 ---
 
@@ -800,26 +801,53 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 
 ---
 
-## D-Sprint-C3-7d-EnergieFinale-Type-Strict-001 — Source-guard ingestion GRDF kWh PCS → PCI
+## D-Sprint-C3-7d-EnergieFinale-Type-Strict-001 — Source-guard ingestion GRDF kWh PCS → PCI [CLÔTURÉE Phase 4.3]
 
 **Détecté** : Sprint C-3 Phase 3.7d audit regulatory-expert (2026-05-04)
 **Alias historique** : `D-Phase3-4-EnergieFinale-Strict-Type-Conversion-PCI-PCS-001`
+**Statut** : ✅ **CLÔTURÉE** Sprint C-4 Phase 4.3 (ADR-011, commit follow-up).
 
-**Périmètre** : SG_KWHEF_01+02 actuels couvrent allowlist écritures `Site.annual_kwh_total` + commentaire "kWhEF PCI" — suffisants pour Enedis R6X (kWhEF natif) mais **insuffisants pour GRDF R171/R141** qui livrent en **kWh PCS** (Pouvoir Calorifique Supérieur).
+### Livraison Phase 4.3
 
-**Risque** : ingestion brute GRDF sans conversion PCS→PCI (coefficient officiel = **0.901**) → conso surévaluée ~10% → Cabs OPERAT décalé → faux positifs alerte DT.
+- ✅ Module `backend/promeos_types/energy.py` (NOUVEAU) — 5 NewType (`KwhEFPCI`, `KwhEP`, `MWhEFPCI`, `GWhEFPCI`, `KwhPCS`) + 6 helpers conversion typés + 4 coefficients réglementaires (1 SoT)
+- ✅ Helper cardinal `kwh_pcs_to_kwh_ef_pci_gaz()` — conversion GRDF avec coefficient officiel 0.901 centralisé
+- ✅ Typage signature `services/portfolio_intensity_service.compute_portfolio_intensity()` — `sum_annual_kwh: KwhEFPCI` (consumer cardinal MVP)
+- ✅ ADR-011 livré (`docs/adr/ADR-011-type-strict-energie-finale-kwhef-pci.md`)
+- ✅ 14 tests `test_promeos_types_energy.py` + 3 SG `test_energy_types_strict_source_guards.py`
+- ✅ SG MVP Phase 3.4 conservés (defense in depth — allowlist setattr + commentaire `kWhEF PCI`)
 
-**Action Sprint C-4** :
-1. Source-guard ingestion GRDF : `assert source.unit == "kWh_PCS"` AVANT conversion
-2. Conversion explicite via `config/units_conversion.yaml::PCS_TO_PCI = 0.901`
-3. Logging `conversion_applied: true` dans audit trail outbox
-4. Imports Excel : checkbox metadata utilisateur "Unité source : kWhEF PCI / kWh PCS / kWhEP" (UI)
+### Successeur Sprint C-5 (typage progressif)
 
-**Effort estimé** : ~1.5-2 h (source-guard + conversion + UI checkbox)
-**Priorité** : 🟠 **P1** (risque non-conformité OPERAT critique)
-**Sprint cible** : Sprint C-4
+`D-Phase4-3-Energy-Types-Migration-Progressive-001` (P1) — étendre le typage `KwhEFPCI` aux autres services consumers (`compliance_rules`, `cee_service`, `intake_service`, `compliance_readiness_service`, `operat_export_service`).
 
-**Sources** : GRDF Catalogue prestations 2025 §conversion PCS→PCI ; Arrêté 10/04/2020 art. 2-g.
+### Successeur Sprint C-7 polish
+
+Schemas pydantic Site/AuditEnergetique avec `Annotated[KwhEFPCI, Field(...)]` + validation FastAPI request strict (Option B reportée).
+
+**Sources** : GRDF Catalogue prestations 2025 §conversion PCS→PCI ; Arrêté 10/04/2020 art. 2-g (NOR LOGL2005904A).
+
+---
+
+## D-Phase4-3-Energy-Types-Migration-Progressive-001 — Typage progressif autres services consumers
+
+**Détecté** : Sprint C-4 Phase 4.3 (ADR-011, 2026-05-05)
+
+**Périmètre** : Phase 4.3 a typé UNIQUEMENT `services/portfolio_intensity_service.compute_portfolio_intensity()` (consumer cardinal MVP). Les autres services consumers de `Site.annual_kwh_total` restent non-typés `float` :
+
+- `services/compliance_rules.py:130, 206` — `ctx["annual_kwh_total"]`
+- `services/compliance_readiness_service.py:42, 62` — blocking field + label
+- `services/operat_export_service.py:206-207` — export OPERAT conso élec
+- `services/cee_service.py:252, 261` — baseline CEE
+- `services/intake_service.py:52` — mapping intake
+
+**Action Sprint C-5** :
+1. Annoter signatures de chaque service consumer (`from promeos_types.energy import KwhEFPCI`)
+2. Étendre SG `SG_ENERGY_TYPES_02` pattern à chaque consumer (vérifier import + usage cohérent)
+3. Tests anti-régression sur dataset HELIOS demo
+
+**Effort estimé** : ~1.5-2 h (5 services × ~15-20 min each)
+**Priorité** : 🟡 P1 (cohérence cross-stack, non bloquant pré-pilote car SG MVP couvre allowlist setattr)
+**Sprint cible** : Sprint C-5
 
 ---
 

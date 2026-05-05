@@ -32,6 +32,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from models import EntiteJuridique, Portefeuille, Site, not_deleted
+from promeos_types.energy import KwhEFPCI  # Sprint C-4 Phase 4.3 — type strict EnergieFinale (ADR-011)
 
 
 def compute_portfolio_intensity(
@@ -40,6 +41,10 @@ def compute_portfolio_intensity(
     portefeuille_id: Optional[int] = None,
 ) -> dict:
     """Calcule l'intensité agrégée d'un portefeuille (ou de toute une organisation).
+
+    Sprint C-4 Phase 4.3 (ADR-011) : type strict `KwhEFPCI` appliqué à `sum_annual_kwh`
+    pour signaler explicitement que la valeur agrégée est en kWh énergie finale PCI
+    (cf. promeos_types/energy.py). Différenciateur Bill Intelligence runtime cross-module.
 
     Args:
         db: session SQLAlchemy
@@ -52,10 +57,10 @@ def compute_portfolio_intensity(
         - intensity_kwh_m2_tertiaire: float | None (Σ kWh / Σ tertiaire_area_m2)
         - sites_count: int (total sites du périmètre)
         - sites_with_data_count: int (sites ayant ≥ kWh > 0 ET surface > 0)
-        - sum_annual_kwh: float | None (kWh EF PCI)
+        - sum_annual_kwh: KwhEFPCI | None (kWh EF PCI — type strict ADR-011)
         - sum_surface_m2: float | None
         - sum_tertiaire_area_m2: float | None
-        - scope: dict (organisation_id, portefeuille_id pour traçabilité)
+        - scope: dict (portefeuille_id pour traçabilité)
     """
     q = (
         db.query(Site)
@@ -70,7 +75,11 @@ def compute_portfolio_intensity(
     sites = q.all()
     sites_count = len(sites)
 
-    sum_annual_kwh = sum((s.annual_kwh_total or 0) for s in sites if s.annual_kwh_total and s.annual_kwh_total > 0)
+    # Sprint C-4 Phase 4.3 (ADR-011) : valeur agrégée typée `KwhEFPCI` (NewType float).
+    # Mirroir Site.annual_kwh_total = kWh EF PCI strict (cf. SG MVP Phase 3.4 + types/energy.py).
+    sum_annual_kwh: KwhEFPCI = KwhEFPCI(
+        sum((s.annual_kwh_total or 0) for s in sites if s.annual_kwh_total and s.annual_kwh_total > 0)
+    )
     sum_surface_m2 = sum((s.surface_m2 or 0) for s in sites if s.surface_m2 and s.surface_m2 > 0)
     sum_tertiaire_area_m2 = sum(
         (getattr(s, "tertiaire_area_m2", None) or 0)
