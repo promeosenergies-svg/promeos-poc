@@ -796,6 +796,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-7 Phase 7.3 — PATCH endpoints consentement Org/DP ADR-019 — clôture P0 RGPD D-Sprint-C7-PATCH-Consentement-Endpoint-001) | 40 | 0 | 18 | 22 |
 | 2026-05-06 (Sprint C-7 Phase 7.4 — log_consent_change helper RGPD CNIL — clôture P0 D-Sprint-C7-AuditLog-Wiring-RGPD-Consent-Change-001 + CLÔTURE PATTERN DOCTRINAL 5/5 "Déclaration sans enforcement runtime") | 39 | 0 | 18 | 21 |
 | 2026-05-06 (Sprint C-7 Phase 7.5 — `audit_external_api_call` décorateur ADR-018 + wiring 4 connecteurs cardinaux DataConnect/GRDF/Sirene — clôture P0 D-Sprint-C7-External-Connectors-Audit-Trail-001 → **0 P0 résiduel Sprint C-7 → PRÉ-PILOTE-READY tactique**) | 38 | 0 | 18 | 20 |
+| 2026-05-06 (Sprint C-7 Phase 7.6 — ADR-016 Math+Runtime+Cross-Module Enforcement Doctrine implémenté + 3 pre-commit hooks systémiques (anti-DROP + anti-PRAGMA + anti-arithmétique) + CI workflow — POLISH DOCTRINAL CARDINAL Phase D+ filet de sécurité automatisé) | 38 | 0 | 18 | 20 |
 
 ---
 

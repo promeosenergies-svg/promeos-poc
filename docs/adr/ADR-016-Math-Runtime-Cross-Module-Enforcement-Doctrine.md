@@ -1,8 +1,8 @@
 # ADR-016 — Math + Runtime + Cross-Module Enforcement Audit Doctrine
 
-**Statut** : Accepté (cardinal Phase D)
-**Date** : 2026-05-06
-**Sprint** : C-7 Phase 0
+**Statut** : Accepté + ✅ **IMPLÉMENTÉ Phase 7.6** (post 5/5 pattern fixé)
+**Date** : 2026-05-06 (acté Phase 0) → 2026-05-06 (livré Phase 7.6)
+**Sprint** : C-7 Phase 0 → Phase 7.6
 **Personnes impliquées** : Amine (founder), Claude architect-helios + bill-intelligence + regulatory-expert + security-auditor + qa-guardian + test-engineer + general-purpose
 **Tracking dette** : pattern doctrinal acquis Sprint C-5 Phase 5.5 + Phase 5.7 audit transversal
 
@@ -147,6 +147,50 @@ Pattern formalisé Sprint C-7 + à reproduire Phase D :
 
 ---
 
+## Implémentation livrée Sprint C-7 Phase 7.6 (2026-05-06)
+
+### Composants livrés (post 5/5 pattern fixé)
+
+- `.pre-commit-config.yaml` (greenfield racine repo) — 3 hooks systémiques
+- `scripts/pre_commit_hooks/__init__.py` (package)
+- `scripts/pre_commit_hooks/check_alembic_no_drop.py` (~115 LOC) — Hook 1 anti-DROP
+  - Détection `op.drop_table` / `op.drop_index` / `op.drop_constraint`
+  - **Skip légitime cardinal** : drops dans `def downgrade()` autorisés (reverse upgrade — pattern Alembic standard)
+  - Override autorisé via commentaire `# ALEMBIC_DROP_AUTHORIZED: <justification>` (3 lignes amont)
+  - Skip backups `*.original-autogenerate` (audit trail préservé)
+- `scripts/pre_commit_hooks/check_sqlite_pragma_fk.py` (~80 LOC) — Hook 2 anti-PRAGMA-OFF
+  - Vérifie `@event.listens_for("connect")` + `PRAGMA foreign_keys=ON` dans `connection.py`
+  - Cardinal Phase 5.6 F1 : RGPD `ondelete=SET NULL × 4` FK runtime
+- `scripts/pre_commit_hooks/check_math_consistency.py` (~110 LOC) — Hook 3 anti-erreur-arithmétique
+  - Pattern `X * A / B = R` (ASCII *) ET `X × A / B = R` (Unicode ×)
+  - Support virgule décimale FR (`3,15`)
+  - Tolérance 5% (arrondis acceptables)
+- `.github/workflows/precommit.yml` — CI intégration GitHub Actions
+- `backend/requirements-dev.txt` — `pre-commit>=3.6.0`
+
+### Tests cardinaux Phase 7.6 (15 tests verts)
+
+- `backend/tests/test_precommit_hooks_phase76.py` (15 tests)
+  - **Hook 1** : block drop_table sans override + allow override comment + block drop_index/drop_constraint + **allow drops inside def downgrade()** + skip `.original-autogenerate` backups
+  - **Hook 2** : block connection.py sans PRAGMA + allow event listener + skip autres fichiers
+  - **Hook 3** : block Phase 5.6 F3 erreur cardinale (3.15 × 1.2 / 8760 = 0.43) + allow correction (3150 × 1.2 / 8760 ≈ 0.4315) + tolerance 5% + Unicode × + virgule décimale FR
+  - **Infrastructure** : `.pre-commit-config.yaml` racine + 3 hooks executables
+
+### Validation runtime end-to-end
+
+- `pre-commit run --all-files` → 3/3 hooks Passed sur état actuel repo
+  - Hook 1 : vérifié sur 11 migrations Alembic Phase C (toutes downgrade() exemptes)
+  - Hook 2 : vérifié sur `backend/database/connection.py:59` (PRAGMA Phase 5.6 F1 actif)
+  - Hook 3 : vérifié sur YAML + 5 ADR Sprint C-7 (formules cohérentes post Phase 5.6 F3)
+
+### Évolution doctrine post 5/5 pattern fixé
+
+- Phase 0 (acté) → Phase 7.6 (livré) : ADR-016 transitionne de **doctrine théorique** à **patrimoine méthodologique exécutable**
+- 3 hooks = filet de sécurité automatisé Phase D+ contre récidives 5 angles morts Phase C
+- Métriques cumulées Phase C+ acquises : **24 livraisons consécutives sans régression**, **11 audits multi-agents**, **5/5 occurrences pattern doctrinal fixées**, **4 IDOR** + **9 ADR** (007 → 015 + 016/017/018/019)
+
+---
+
 ## Références
 
 - Pattern audit deep Phase 5.5 : `docs/audits/BILAN_SPRINT_C5_2026_05_06.md` Découverte cardinale §2
@@ -154,3 +198,4 @@ Pattern formalisé Sprint C-7 + à reproduire Phase D :
 - 5 occurrences "déclaration sans enforcement" : `BILAN_PHASE_C_7_7_LIVRES_2026_05_06.md` découverte doctrinale §4
 - Phase 5.6 fix F1/F2/F3/F4 : commit `579b81a1`
 - Phase 5.8 fix G1/G2/G3/G4/G5/G6 : commit `a1671aca`
+- Implémentation Phase 7.6 : commit `<hash-phase-7-6>` + tests `backend/tests/test_precommit_hooks_phase76.py`

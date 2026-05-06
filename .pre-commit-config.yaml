@@ -1,0 +1,47 @@
+# Phase 7.6 Sprint C-7 — Pre-commit hooks systémiques (ADR-016 Pilier 5)
+# Empêche récidive angles morts Phase C identifiés audit transversal Phase 5.7.
+#
+# Activation locale :
+#   pip install pre-commit
+#   pre-commit install
+#
+# Bypass urgence (audit trail commit message obligatoire) :
+#   git commit --no-verify -m "fix(urgence): <justification audit trail>"
+
+repos:
+  - repo: local
+    hooks:
+      - id: anti-drop-alembic
+        name: Anti-DROP Alembic migrations (ADR-016 Pilier 5)
+        entry: python3 scripts/pre_commit_hooks/check_alembic_no_drop.py
+        language: system
+        files: ^backend/alembic/versions/[^/]+\.py$
+        exclude: \.original-autogenerate$
+        pass_filenames: true
+        description: |
+          Bloque op.drop_table / op.drop_index / op.drop_constraint dans migrations Alembic.
+          Override autorisé via commentaire `# ALEMBIC_DROP_AUTHORIZED: <justification>`.
+          Anti-régression ~270+ drop_table autogenerate retirés cumul Phase C
+          (11 migrations propres / 0 destructive).
+
+      - id: anti-pragma-foreign-keys-off
+        name: Anti-PRAGMA foreign_keys=OFF SQLite (ADR-016 Pilier 2)
+        entry: python3 scripts/pre_commit_hooks/check_sqlite_pragma_fk.py
+        language: system
+        files: ^backend/database/connection\.py$
+        pass_filenames: true
+        description: |
+          Vérifie PRAGMA foreign_keys=ON actif au connect SQLite event listener.
+          Anti-régression Phase 5.6 F1 — RGPD ondelete=SET NULL × 4 FK
+          enforcement runtime.
+
+      - id: anti-erreur-arithmetique
+        name: Anti-erreur arithmétique formules documentées (ADR-016 Pilier 1)
+        entry: python3 scripts/pre_commit_hooks/check_math_consistency.py
+        language: system
+        files: ^(backend/config/sources_reglementaires\.yaml|docs/adr/.*\.md)$
+        pass_filenames: true
+        description: |
+          Vérifie formules arithmétiques documentées YAML/ADR (X * A / B = R)
+          avec tolérance 5%. Anti-régression Phase 5.6 F3 — erreur ×1000
+          Capacité 3.15 vs 3150 EUR/MW.an.
