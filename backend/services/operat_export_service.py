@@ -250,11 +250,13 @@ def generate_operat_csv(
     for efa in efas:
         buildings = db.query(TertiaireEfaBuilding).filter(TertiaireEfaBuilding.efa_id == efa.id).all()
 
-        total_surface = sum(b.surface_m2 or 0 for b in buildings)
-        usages = list(set(b.usage_label for b in buildings if b.usage_label))
-        usage_label = usages[0] if usages else "Bureau"
+        # Sprint C-8 Phase 8.4 fix D-Audit-C8-Helper-OPERAT-Orphan-003 P0 CR :
+        # Wiring helper ADR-020 Option C `resolve_surface_for_operat_export(site)`.
+        # Priorité : site.s_ce_m2 (Surface CE art. 2-j) → site.tertiaire_area_m2 fallback
+        # → fallback ultime : sum(buildings.surface_m2). Garantit cohérence ADR-020 Pilier 2.
+        from regops.operat_export_helpers import resolve_surface_for_operat_export
 
-        # Site info
+        site = None
         site_nom = ""
         ville = ""
         if efa.site_id:
@@ -262,6 +264,15 @@ def generate_operat_csv(
             if site:
                 site_nom = site.nom or ""
                 ville = site.ville or ""
+
+        # Surface OPERAT v2 prioritaire si site renseigné (s_ce_m2), sinon fallback agrégat buildings.
+        if site:
+            surface_value, _surface_label = resolve_surface_for_operat_export(site)
+            total_surface = surface_value if surface_value > 0 else sum(b.surface_m2 or 0 for b in buildings)
+        else:
+            total_surface = sum(b.surface_m2 or 0 for b in buildings)
+        usages = list(set(b.usage_label for b in buildings if b.usage_label))
+        usage_label = usages[0] if usages else "Bureau"
 
         # Consumption — source prioritaire : TertiaireEfaConsumption
         from models import TertiaireEfaConsumption

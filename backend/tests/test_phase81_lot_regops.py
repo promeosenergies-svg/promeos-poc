@@ -94,12 +94,26 @@ def test_phase81_get_current_cgu_version_returns_actuel():
     assert isinstance(current, str)
 
 
-def test_phase81_is_valid_cgu_version_accepts_known_versions():
-    """Phase 8.1 : is_valid_cgu_version True pour 1.0 / 2.0 / 2.1.0 (rétro-compat tests)."""
-    from services.cgu_service import is_valid_cgu_version
+def test_phase81_is_valid_cgu_version_accepts_actuel_only_runtime():
+    """Phase 8.1 + 8.4 : is_valid_cgu_version True pour version `actuel` uniquement runtime PATCH.
 
+    Sprint C-8 Phase 8.4 fix D-Audit-C8-CGU-Archives-Accepted-002 : versions archive
+    REJETÉES par défaut (CNIL article 7 — preuve d'origine forte exige version courante).
+    Helper `is_valid_cgu_version(v, allow_archive=True)` ou `is_known_cgu_version()` pour
+    lookup audit historique.
+    """
+    from services.cgu_service import is_known_cgu_version, is_valid_cgu_version
+
+    # Version actuel acceptée runtime
+    assert is_valid_cgu_version("1.0"), "Version actuel '1.0' doit être acceptée runtime"
+
+    # Versions archive REJETÉES runtime (Phase 8.4 cardinal)
+    for v in ("2.0", "2.1.0", "0.9"):
+        assert not is_valid_cgu_version(v), f"Version archive '{v}' doit être rejetée runtime (CNIL)"
+
+    # Helper audit historique accepte archives
     for v in ("1.0", "2.0", "2.1.0", "0.9"):
-        assert is_valid_cgu_version(v), f"Version {v} doit être acceptée (référentiel central)"
+        assert is_known_cgu_version(v), f"Version '{v}' doit être connue (audit historique)"
 
 
 def test_phase81_is_valid_cgu_version_rejects_unknown():

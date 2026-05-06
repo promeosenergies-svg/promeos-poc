@@ -557,7 +557,9 @@ vnu:
   seuil_1_eur_mwh: 78.0
   seuil_2_eur_mwh: 110.0
   statut: "EN VIGUEUR — DORMANT (prix marché ~60 €/MWh < seuil 78)"
-  source: "Loi de souveraineté énergétique (art. L. 336-1 Code énergie) — VNU au 01/01/2026 (Décret 2026-55, CRE 2026-52)"
+  # Phase 8.4 fix D-Audit-C8-VNU-L336-Source-Field-001 P0 REG :
+  # L.336-1 → L.336-2 (cohérence header + commentaire ligne 553 Phase 8.3)
+  source: "Loi de souveraineté énergétique 2024-707 (art. L.336-2 Code énergie) — VNU au 01/01/2026 (Décret 2026-55, CRE 2026-52)"
   valid_from: "2026-01-01"
   valid_to: null
   revision_triennale: "~2028 (CRE)"

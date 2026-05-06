@@ -298,7 +298,8 @@ def test_phase74_patch_dp_local_endpoint_creates_audit_log_event(app_client):
 
     resp = client.patch(
         f"/api/delivery_points/{dp_id}/consentement-local",
-        json={"consentement_grdf_local": True, "cgu_version": "2.0"},
+        # Phase 8.4 fix : cgu_version='1.0' actuel (2.0 désormais archive rejetée CNIL)
+        json={"consentement_grdf_local": True, "cgu_version": "1.0"},
         headers={"X-Org-Id": str(org_id)},
     )
     assert resp.status_code == 200
@@ -317,9 +318,9 @@ def test_phase74_patch_dp_local_endpoint_creates_audit_log_event(app_client):
         assert len(events) == 1
         assert events[0].field_modified == "consentement_grdf_local"
         assert events[0].org_id == org_id
-        # CGU version dans payload
+        # CGU version dans payload (Phase 8.4 fix : '1.0' actuel)
         payload = json.loads(events[0].detail_json)
-        assert payload["cgu_version"] == "2.0"
+        assert payload["cgu_version"] == "1.0"
     finally:
         db.close()
 

@@ -47,18 +47,42 @@ def get_current_cgu_version() -> str:
     raise RuntimeError("Aucune version CGU avec statut='actuel' trouvée dans cgu_referentiel.yaml")
 
 
-def is_valid_cgu_version(version: Optional[str]) -> bool:
-    """True si `version` correspond à une version connue (actuel ou archive).
+def is_valid_cgu_version(version: Optional[str], *, allow_archive: bool = False) -> bool:
+    """True si `version` correspond à une version CGU acceptable pour PATCH consentement runtime.
 
     Cardinal validation Phase 7.3 PATCH endpoints RGPD : empêche stockage AuditLog
     avec version arbitraire (CNIL article 7 preuve d'origine forte = version vérifiable).
+
+    Sprint C-8 Phase 8.4 fix D-Audit-C8-CGU-Archives-Accepted-002 P0 SEC :
+    par défaut, n'accepte QUE les versions `statut='actuel'` (cardinal CNIL —
+    consentement courant uniquement). `allow_archive=True` réservé aux endpoints
+    admin/audit historique séparés (lookup AuditLog passé).
+
+    Avant fix : versions `statut='archive'` étaient acceptées (notamment 2.0/2.1.0
+    chronologiquement POSTÉRIEURES à 1.0 actuel) → preuve CNIL formellement invalide.
 
     None ou empty string → False (rejet — cgu_version doit être explicite).
     """
     if not version:
         return False
     config = _load_cgu_referentiel()
-    return any(v.get("version") == version for v in config.get("versions", []))
+    for v in config.get("versions", []):
+        if v.get("version") != version:
+            continue
+        # Phase 8.4 cardinal : runtime PATCH n'accepte que statut='actuel'
+        if allow_archive:
+            return True
+        return v.get("statut") == "actuel"
+    return False
+
+
+def is_known_cgu_version(version: Optional[str]) -> bool:
+    """True si `version` est connue (actuel OU archive) — pour audit historique.
+
+    Sprint C-8 Phase 8.4 : helper séparé pour lookup AuditLog passé (vs validation
+    runtime PATCH `is_valid_cgu_version`).
+    """
+    return is_valid_cgu_version(version, allow_archive=True)
 
 
 def list_active_cgu_versions() -> list[dict]:
