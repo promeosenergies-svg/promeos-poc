@@ -27,6 +27,7 @@ ne se cassent pas mutuellement.
 from __future__ import annotations
 
 import logging
+import re
 from decimal import Decimal
 from typing import Optional
 
@@ -47,7 +48,43 @@ _logger = logging.getLogger(__name__)
 
 # ─── Helpers ────────────────────────────────────────────────────────────────
 
-_PERIOD_CODES_KNOWN = ["HPH", "HCH", "HPB", "HCB", "POINTE", "BASE", "HP", "HC"]
+# Sprint C-7 Phase 7.7 Lot A — D-Sprint-C7-BillAnomaly-Multi-Postes-HTA-001 :
+# HPE/HCE/PM ajoutés pour TURPE 7 HTA (Heures de Pointe d'Eté/Hiver, Heures Creuses d'Eté,
+# Pointe Mobile). Ordre cardinal : codes longs d'abord (anti-overlap label parsing).
+_PERIOD_CODES_KNOWN = [
+    "HPH",
+    "HCH",
+    "HPB",
+    "HCB",
+    "HPE",
+    "HCE",
+    "POINTE",
+    "BASE",
+    "PM",
+    "HP",
+    "HC",
+]
+
+# Sprint C-7 Phase 7.7 Lot A — D-Sprint-C7-BillAnomaly-PII-Vnu-Labels-Sanitization-001 :
+# regex sanitization SIREN (9 chiffres) / SIRET (14 chiffres) / PRM/PCE (14 chiffres) /
+# PDL (14 chiffres). Évite leak PII dans details_json.vnu_labels (security-auditor SEC-002).
+_PII_PATTERNS = (
+    re.compile(r"\b\d{14}\b"),  # SIRET / PRM / PCE / PDL
+    re.compile(r"\b\d{9}\b"),  # SIREN
+)
+
+
+def _sanitize_pii_label(label: str) -> str:
+    """Masque les identifiants PII (SIREN/SIRET/PRM/PCE) dans un label.
+
+    Retourne label avec chaque match remplacé par `<PII_REDACTED>`.
+    """
+    if not label:
+        return label
+    sanitized = label
+    for pattern in _PII_PATTERNS:
+        sanitized = pattern.sub("<PII_REDACTED>", sanitized)
+    return sanitized
 
 
 def _resolve_period_code(line: EnergyInvoiceLine) -> Optional[str]:
@@ -82,10 +119,12 @@ def _resolve_period_code(line: EnergyInvoiceLine) -> Optional[str]:
                 pass
 
     # Priorité 3 : label parsing
+    # Sprint C-7 Phase 7.7 Lot A — D-Sprint-C7-BillAnomaly-Word-Boundary-Regex-001 :
+    # word-boundary `\b<code>\b` (vs substring) anti-faux-positifs (ex : "CHC" ne match plus "HC").
     if line.label:
         label_upper = line.label.upper()
         for code in _PERIOD_CODES_KNOWN:
-            if code in label_upper:
+            if re.search(rf"\b{re.escape(code)}\b", label_upper):
                 return code
 
     return None
@@ -145,7 +184,7 @@ def detect_r19_vnu_dormant(invoice: EnergyInvoice, db: Session) -> Optional[Bill
             "vnu_total_eur": float(vnu_total),
             "vnu_lines_count": len(vnu_lines),
             "consumption_kwh": consumption,
-            "vnu_labels": [line.label for line in vnu_lines[:5]],
+            "vnu_labels": [_sanitize_pii_label(line.label or "") for line in vnu_lines[:5]],
             "explanation": "VNU facturé > seuil sans usage attendu détecté (consumption < 100 kWh).",
         },
     )
@@ -280,7 +319,12 @@ def detect_anomalies_for_invoice(invoice: EnergyInvoice, db: Session) -> list[Bi
     Trigger : cascade ingestion facture (Sprint C-5 Phase 5.1) ou batch nightly fallback.
     Résilience par-action : try/except chaque détecteur — un échec n'interrompt pas les autres.
 
-    Retour : liste anomalies persistées (db.commit() effectué).
+    Sprint C-7 Phase 7.7 Lot A — D-Sprint-C7-BillAnomaly-Decoupling-Commit-001 :
+    db.commit() retiré (couplage caller). Pattern aligné `log_consent_change` Phase 7.4 :
+    le caller décide quand commit (transactional batch / unit-of-work). Anomalies sont
+    flushées via `db.add()` mais persistées par caller.
+
+    Retour : liste anomalies ajoutées à la session (caller responsable du commit).
     """
     anomalies: list[BillAnomaly] = []
 
@@ -301,8 +345,5 @@ def detect_anomalies_for_invoice(invoice: EnergyInvoice, db: Session) -> list[Bi
             anomalies.append(r20)
     except Exception as e:
         _logger.error(f"R20 detector failed for invoice {invoice.id}: {e}")
-
-    if anomalies:
-        db.commit()
 
     return anomalies

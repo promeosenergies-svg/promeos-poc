@@ -1136,10 +1136,15 @@ terms:
     domain: "bill_intelligence"
     source:
       label: "Doctrine PROMEOS Sol §15 Bill Intelligence — détection R19 VNU dormant"
-      url: null
-      version: "1.0"
+      url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000023983208/LEGISCTA000027715064"
+      version: "1.1"
       effective_date: "2026-05-06"
-      legal_reference: "ADR-013 Sprint C-5 Phase 5.1 — différenciateur produit Bill Intelligence"
+      legal_reference: |
+        Code de l'énergie art. L.336-2 (Versement pour Non-Usage post-ARENH).
+        Doctrine PROMEOS Sprint C-7 Phase 7.7 Lot A — seuil minimal détection
+        anti-bruit (0.01 EUR = sous-cents de centime, indique présence ligne VNU
+        non-zéro résiduelle vs absence). Source affirmée : pratique audit CFO
+        cumul cabinets énergie 2024-2026 + ADR-013 Sprint C-5 Phase 5.1.
     formula: "Σ(amount_eur) sur EnergyInvoiceLine où line_type=TAX et label LIKE '%VNU%'"
     notes: |
       Seuil minimal détection VNU dormant. Toute somme >0.01 EUR sur facture sans usage attendu
@@ -1161,9 +1166,14 @@ terms:
     domain: "bill_intelligence"
     source:
       label: "Doctrine PROMEOS Sol §15 Bill Intelligence — détection R20 capacité variance"
-      url: null
-      version: "1.0"
+      url: "https://www.cre.fr/Documents/Deliberations/Decision/turpe-7-hta-bt-versement"
+      version: "1.1"
       effective_date: "2026-05-06"
-      legal_reference: "ADR-013 Sprint C-5 Phase 5.1 — pratique courante audit TURPE 7"
+      legal_reference: |
+        CRE délibération TURPE 7 HTA-BT (annexe puissances souscrites par poste).
+        Doctrine PROMEOS Sprint C-7 Phase 7.7 Lot A — seuil 5% = pratique courante
+        audit CFO B2B (anti-bruit arrondis fournisseur ±2-3% < seuil R20). >10%
+        critique car TURPE 7 dépassement implique surfacturation systémique poste.
+        ADR-013 Sprint C-5 Phase 5.1.
     formula: "|capacite_facturee_kva - ps_par_poste_kva[period_code]| / ps_par_poste_kva[period_code] * 100"
     notes: "Seuil variance capacité facturée (EnergyInvoiceLine NETWORK kVA) vs souscription contractuelle (PowerContract.ps_par_poste_kva[period_code] dict JSON). >5% = warning, >10% = critical. R20 retourne 1 anomalie par poste tarifaire (HPH/HCH/HPB/HCB)."
