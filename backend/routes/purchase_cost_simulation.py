@@ -47,7 +47,7 @@ class CostComposantes(BaseModel):
     turpe_eur: float = Field(..., description="TURPE 7 (part fixe + variable)")
     vnu_eur: float = Field(
         ...,
-        description="Versement Nucléaire Universel — 0 si dormant (prix marché < 78 EUR/MWh CRE)",
+        description="Versement pour Non-Usage (art. L.336-2) — 0 si dormant (prix marché < 78 EUR/MWh CRE)",
     )
     capacite_eur: float = Field(..., description="Mécanisme capacité RTE centralisé (PL-4/PL-1 à partir du 01/11/2026)")
     cbam_scope: float = Field(..., description="Impact CBAM — 0 pour la conso élec directe (non applicable)")

@@ -1265,7 +1265,7 @@ class SeedOrchestrator:
                 "type": "knowledge",
                 "domain": "acc",
                 "title": "Post-ARENH / VNU — Nouveau cadre de marché depuis 2026",
-                "summary": "L'ARENH (42 €/MWh) a pris fin le 31/12/2025. Remplacé par le VNU (Versement Nucléaire Universel) au 01/01/2026. EDF vend 100% du nucléaire au marché. Le VNU est une taxe redistributive activée uniquement si prix > 78 €/MWh (seuil 1) ou > 110 €/MWh (seuil 2). Prix marché actuel ~60 €/MWh → VNU dormant.",
+                "summary": "L'ARENH (42 €/MWh) a pris fin le 31/12/2025. Remplacé par le VNU (Versement pour Non-Usage, art. L.336-2 Code énergie) au 01/01/2026. EDF vend 100% du nucléaire au marché. Le VNU est une taxe redistributive activée uniquement si prix > 78 €/MWh (seuil 1) ou > 110 €/MWh (seuil 2). Prix marché actuel ~60 €/MWh → VNU dormant.",
                 "content_md": "## Post-ARENH / VNU — Cadre 2026+\n\n**Contexte** : L'ARENH (42 €/MWh, 100 TWh/an) a pris fin le 31/12/2025.\n\n**VNU (depuis 01/01/2026)** :\n- EDF vend 100% du nucléaire au prix de marché\n- VNU = taxe sur EDF redistribuée universellement si prix > seuils\n- Seuil 1 : 78 €/MWh — Seuil 2 : ~110 €/MWh\n- Prix marché actuel ~60 €/MWh → VNU dormant (au moins jusqu'en 2028)\n- Révision triennale des seuils par la CRE\n\n**Impact entreprises** :\n- Exposition directe au marché (fin du prix garanti 42 €/MWh)\n- Couverture à long terme recommandée (PPA, contrats forward)\n- VNU protège uniquement en cas de flambée > 78 €/MWh\n\n**Recommandation PROMEOS** : Diversifier les stratégies d'achat (PPA, autoconsommation, flexibilité).",
                 "tags": {"arenh": True, "vnu": True, "prix": True, "marche": True},
                 "confidence": "medium",

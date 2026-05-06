@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     String,
     Float,
+    Numeric,
     Text,
     Boolean,
     ForeignKey,
@@ -403,6 +404,15 @@ class EnergyInvoice(Base, TimestampMixin):
         Float,
         nullable=True,
         comment="Index compteur fin de période (kWh)",
+    )
+
+    # Sprint C-7 Phase 7.7 Lot C — D-Sprint-C7-EnergyInvoice-TVA-Rate-Field-001 P1
+    # Taux TVA applicable à la facture (5.5%, 10%, 20%) — bloque R0X TVA futurs.
+    # Numeric(5,4) : précision 0.0550 / 0.1000 / 0.2000 (4 décimales pour cohérence pivot).
+    tva_rate = Column(
+        Numeric(5, 4),
+        nullable=True,
+        comment="Taux TVA applicable (0.0550=5.5%, 0.1000=10%, 0.2000=20%) — Phase 7.7 Lot C",
     )
 
     # Relations

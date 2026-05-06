@@ -204,7 +204,7 @@ REG_EVENTS_DATA = [
     },
     {
         "source_name": "cre",
-        "title": "Post-ARENH — VNU (Versement Nucléaire Universel) en vigueur",
+        "title": "Post-ARENH — VNU (Versement pour Non-Usage, art. L.336-2 Code énergie) en vigueur",
         "snippet": "Fin ARENH 31/12/2025. Loi n°2023-491 : VNU = 1/3 volume nucléaire à prix CRE. Obligation fournisseurs alternatifs.",
         "tags": "vnu,arenh,nucleaire,fournisseur",
         "published_at": datetime(2026, 1, 1),

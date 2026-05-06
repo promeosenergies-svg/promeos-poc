@@ -12,7 +12,7 @@ Source réglementaire ancrée :
 - Capacité 1/11/2026 : RTE — fin ARENH 31/12/2025, mécanisme capacité
   physique obligatoire entrée en vigueur 1/11/2026 (CRE délib 2025-269,
   délib 2026-49 coef A).
-- VNU post-ARENH : Versement Nucléaire Universel, taxe/réduction selon
+- VNU post-ARENH : Versement pour Non-Usage (art. L.336-2 Code énergie), taxe/réduction selon
   prix marché EPEX. Activé si Brent > seuils définis art. L.336-2.
 
 MVP ét13b : 1 event capacity_2026 visible jusqu'au 1/11/2026, severity

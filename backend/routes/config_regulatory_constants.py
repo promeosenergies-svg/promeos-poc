@@ -55,7 +55,7 @@ def get_regulatory_constants() -> dict:
             "seuil_bas_eur_mwh": _VNU_SEUIL_BAS_EUR_MWH,
             "seuil_haut_eur_mwh": _VNU_SEUIL_HAUT_EUR_MWH,
             "source": _VNU_SOURCE,
-            "label": "Versement Nucléaire Universel",
+            "label": "Versement pour Non-Usage",
             "activation": "2027 si EPEX dépasse seuil",
         },
         "aper": {

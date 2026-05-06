@@ -120,7 +120,7 @@ class TestAcronymsTransformedVueExecutive:
         canonical_clean_titles = [
             "Trajectoire 2030 — risque Décret Tertiaire",
             "Exposition réglementaire — pilotage CVC obligatoire et obligation solaire parking",
-            "Versement Nucléaire Universel — impact contractuel",
+            "Versement pour Non-Usage — impact contractuel",
             "Tarif d'acheminement réseau — composantes",
         ]
         for title in canonical_clean_titles:

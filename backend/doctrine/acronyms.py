@@ -33,7 +33,7 @@ ACRONYM_TO_NARRATIVE: dict[str, str] = {
     # Tarifs réseau & marché
     "TURPE": "tarif d'acheminement réseau",
     "ARENH": "ancien tarif réglementé (fin du dispositif)",
-    "VNU": "Versement Nucléaire Universel",
+    "VNU": "Versement pour Non-Usage",
     "CBAM": "taxe carbone aux frontières",
     "CEE": "Certificat d'économie d'énergie",
     "EPEX": "bourse électricité spot",
