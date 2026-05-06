@@ -161,4 +161,48 @@ __all__ = [
     "TRAJECTORY_LEARNING_MONTHS_RAMP_UP",
     "BACS_PENALTY_EUR",
     "OPERAT_PENALTY_EUR",
+    "TURPE_7_DATE_APPLICATION",
+    "TURPE_6_DATE_FIN",
+    "CANONICAL_FTA_CODES_TURPE_7",
 ]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Phase D-2 hotfix Tier 1 — TURPE 7 dates + codes FTA canoniques CRE
+# ═══════════════════════════════════════════════════════════════════════════
+# Audit cardinal :
+#   docs/audits/AUDIT_TURPE7_DATES_2026_05_07.md (P0.1)
+#   docs/audits/AUDIT_CODES_FTA_TURPE7_2026_05_07.md (P0.2)
+# Source : CRE délibération n°2025-78 du 13/03/2025 (publiée CRE 20/03/2025).
+# Mouvement tarifaire EXCEPTIONNEL au 1er février 2025 (communiqué CRE 12/12/2024)
+# au lieu du calendrier annuel habituel du 1er août.
+
+TURPE_7_DATE_APPLICATION = "2025-02-01"
+"""Date d'application TURPE 7 HTA-BT (mouvement exceptionnel CRE).
+
+⚠️ Phase D-2 cardinal : ne pas confondre avec date publication JO (mars 2025)
+ni avec calendrier annuel CRE habituel (1/08).
+"""
+
+TURPE_6_DATE_FIN = "2025-01-31"
+"""Dernier jour TURPE 6 — la transition est close par le mouvement tarifaire
+exceptionnel TURPE 7 du 1er février 2025."""
+
+CANONICAL_FTA_CODES_TURPE_7 = (
+    "BTINFCU4",  # C5 BT≤36kVA — courte util. 4 postes (HPH/HCH/HPE/HCE)
+    "BTINFMU4",  # C5 BT≤36kVA — moyenne util. 4 postes
+    "BTSUPCU",  # C4 BT>36kVA — courte util.
+    "BTSUPLU",  # C4 BT>36kVA — longue util.
+    "HTACU5",  # C3/C2 HTA — courte util. 5 postes (PTE/HPH/HCH/HPE/HCE)
+    "HTALU5",  # C3/C2 HTA — longue util. 5 postes
+)
+"""Codes FTA canoniques CRE TURPE 7 (medium-confidence — Enum exhaustif sera figé
+Phase D-3 post parsing PDF délibération 2025-78).
+
+Préfixe segment : BTINF (C5) / BTSUP (C4) / HTA (C3-C2) / HTB (C1).
+Suffixe durée : CU (courte) / MU (moyenne BT only) / LU (longue).
+Suffixe nb postes : 4 (BT) ou 5 (HTA + PTE).
+
+⚠️ Codes Phase D-1 (`BT_HCH_PRO`, `BT_BASE_PRO`, `BT_PRO_LU`, `HTA_LU_BASE_4P`)
+inventés non canoniques — corrigés Phase D-2.2.
+"""

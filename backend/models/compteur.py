@@ -39,14 +39,26 @@ class Compteur(Base, TimestampMixin, SoftDeleteMixin):
 
     # Phase D-0 hotfix — D-Audit-PARAM-D6-SousCompteur-Self-FK-002 P0 :
     # D6 décision matrice v1 §3 honorée — SousCompteur via self-FK (vs table dédiée).
-    # Différenciateur PROMEOS Mid-market premium : pilotage CVC/IT/éclairage par sous-compteur
-    # rattaché à compteur principal. ondelete=SET NULL (compteur enfant survit suppression parent).
+    #
+    # ⚠️ Phase D-2 hotfix Tier 1 (P0.3) — DUALITÉ Compteur ↔ Meter :
+    # Cette self-FK porte la **hiérarchie patrimoine wizard/onboarding** (pré-readings,
+    # pré-ingestion CSV/manual). Le **SoT runtime** consommation/breakdown/cost-by-period
+    # est `Meter.parent_meter_id` (cf. `services/consumption_unified_service.py`,
+    # `services/meter_unified_service.py`, `services/cost_by_period_service.py`).
+    #
+    # Pour le pilotage runtime CVC/IT/éclairage (différenciateur Phase D-0), le wiring
+    # passe par `Meter.parent_meter_id`. Compteur sert au stade onboarding et est
+    # bridgé vers Meter via `services/compteur_meter_bridge.py:ensure_meter_pair`.
+    #
+    # Audit cardinal : `docs/audits/AUDIT_D6_DUALITE_RUNTIME_2026_05_07.md` (Option C).
+    # ADR : `docs/adr/ADR-D-01-meter-compteur-duality.md`.
+    # ondelete=SET NULL (compteur enfant survit suppression parent).
     sub_meter_of_id = Column(
         Integer,
         ForeignKey("compteurs.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
-        comment="Compteur parent self-FK (D6) — sous-compteur pilotage CVC/IT/éclairage",
+        comment="Compteur parent self-FK (D6) — hiérarchie patrimoine onboarding (runtime via Meter.parent_meter_id)",
     )
     sub_meter_usage = Column(
         String(50),

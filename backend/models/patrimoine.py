@@ -313,7 +313,7 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
     code_fta = Column(
         String(50),
         nullable=True,
-        comment="Formule Tarifaire d'Acheminement (ex: BT_HCH_PRO, HTA_LU_BASE_4P) — matrice v1 §4.6",
+        comment="FTA canonique CRE TURPE 7 (BTINFCU4/BTINFMU4/BTSUPCU/BTSUPLU/HTACU5/HTALU5) — matrice v1 §4.6 / Délib. 2025-78",
     )
     version_turpe = Column(
         String(10),

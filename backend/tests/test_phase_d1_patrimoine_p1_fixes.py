@@ -59,7 +59,7 @@ def test_phase_d1_delivery_point_turpe7_persist(app_client):
             site_id=site.id,
             categorie_turpe="C5",
             domaine_tension="BT≤36kVA",
-            code_fta="BT_HCH_PRO",
+            code_fta="BTINFCU4",  # Phase D-2 hotfix Tier 1 P0.2 : code canonique CRE (était BT_HCH_PRO inventé)
             version_turpe="TURPE_7",
             mode_traitement="smart",
         )
@@ -69,7 +69,7 @@ def test_phase_d1_delivery_point_turpe7_persist(app_client):
 
         assert dp.categorie_turpe == "C5"
         assert dp.domaine_tension == "BT≤36kVA"
-        assert dp.code_fta == "BT_HCH_PRO"
+        assert dp.code_fta == "BTINFCU4"
         assert dp.version_turpe == "TURPE_7"
         assert dp.mode_traitement == "smart"
     finally:

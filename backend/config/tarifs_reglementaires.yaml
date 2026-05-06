@@ -12,9 +12,9 @@ description: "Tarifs réglementaires énergie France B2B — TURPE 6/7, ATRD6/7,
 # Taux énergie = moyenne pondérée des coefficients horosaisonniers (grille 1er août 2021)
 # Gestion = (CG hors Rf + CC) / 12 mois
 turpe_6:
-  source: "CRE délibération n°2021-13 — TURPE 6 HTA-BT"
+  source: "CRE délibération n°2021-13 — TURPE 6 HTA-BT (transition close 31/01/2025 par mouvement tarifaire exceptionnel TURPE 7)"
   valid_from: "2021-08-01"
-  valid_to: "2025-07-31"
+  valid_to: "2025-01-31"  # Phase D-2 hotfix Tier 1 P0.1 : corrigé (était 2025-07-31). Audit AUDIT_TURPE7_DATES_2026_05_07.md.
   segments:
     C5_BT:
       label: "C5 BT ≤36 kVA (résidentiel & petit pro)"
@@ -70,8 +70,13 @@ turpe_6:
 # On garde la clé stable et on documente la version via le champ `version`.
 turpe:
   version: 7
-  source: "CRE délibération n°2025-78 (13/03/2025, JO 14/05/2025) — TURPE 7 HTA-BT, en vigueur 1/08/2025"
-  valid_from: "2025-08-01"
+  # Phase D-2 hotfix Tier 1 P0.1 : date application corrigée 1/02/2025 (mouvement tarifaire
+  # exceptionnel CRE annoncé 12/12/2024 — communiqué CRE), pas le calendrier annuel habituel
+  # 1/08. Délibération CRE 2025-78 du 13/03/2025, publiée site CRE 20/03/2025. NOR Légifrance
+  # à figer Phase D-3 (Légifrance.gouv.fr inaccessible WebFetch — escalade humaine requise).
+  # Audit cardinal : docs/audits/AUDIT_TURPE7_DATES_2026_05_07.md (confidence: high).
+  source: "CRE délibération n°2025-78 du 13/03/2025 (publiée CRE 20/03/2025) — TURPE 7 HTA-BT, mouvement tarifaire exceptionnel 1er février 2025 (communiqué CRE 12/12/2024)"
+  valid_from: "2025-02-01"  # Phase D-2 hotfix Tier 1 (était 2025-08-01 — erreur Phase D-1)
   valid_to: null
   segments:
     C5_BT:
