@@ -3,6 +3,8 @@ PROMEOS — Patrimoine models (DIAMANT)
 N-N link tables + Staging pipeline + Quality findings + DeliveryPoint.
 """
 
+import re
+
 from sqlalchemy import (
     Column,
     Integer,
@@ -16,7 +18,7 @@ from sqlalchemy import (
     Enum,
     UniqueConstraint,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 
 from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import (
@@ -232,7 +234,14 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "delivery_points"
 
     id = Column(Integer, primary_key=True)
-    code = Column(String(14), nullable=False, index=True, comment="PRM ou PCE (14 digits)")
+    # Sprint D1-B contraintes cardinales matrice v1 §8.3 — C60 PRM unique global +
+    # C85 PCE unique global. L'unicité runtime est gérée par un **partial unique index**
+    # (`uq_delivery_point_code_active` créé par `database/migrations.py:_add_unique_delivery_point_code_index`)
+    # avec `WHERE deleted_at IS NULL`, ce qui autorise la réutilisation d'un PRM/PCE
+    # après soft-delete (cas légitime décommissionnement + ré-attribution Enedis/GRDF).
+    code = Column(
+        String(14), nullable=False, index=True, comment="PRM ou PCE (14 digits) — unique partial active C60/C85"
+    )
     energy_type = Column(
         Enum(DeliveryPointEnergyType),
         nullable=True,
@@ -404,6 +413,145 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
         nullable=True,
         comment="Version CGU au moment de l'override local GRDF",
     )
+
+    # ─── Sprint D1-B validators cross-FK Top 20 contraintes matrice v1 §8.3 ───
+    # Pattern Pilier 8 candidat ADR-016 (validators runtime) — cardinal pré-pilote.
+    # Source: CRE délibération 2025-78 du 13/03/2025 (TURPE 7) + ATRD 7 GRDF.
+
+    # Matrice TURPE 7 §4.6 : categorie ↔ domaine_tension
+    _TURPE_CAT_TO_DOMAINE: dict[str, set[str]] = {
+        "C5": {"BT≤36kVA", "BT_INF_36"},  # BT < 36 kVA
+        "C4": {"BT>36kVA", "BT_SUP_36"},  # BT > 36 kVA ≤ 250 kVA
+        "C3": {"HTA"},
+        "C2": {"HTA"},
+        "C1": {"HTB"},
+    }
+
+    # Phase D-1bis : regex permissive pour code_fta (cohérent recommandation audit
+    # P0-002 Phase D — la nomenclature canonique CRE finale sera figée Phase D-2
+    # via Enum exhaustif `code_fta IN (BTINFCU4, BTINFMU4, BTSUP, HTACU5, HTALU5, ...)`.
+    # En attendant, on rejette les valeurs ne respectant PAS le préfixe segmentaire.
+    _CODE_FTA_PREFIX_PATTERN = re.compile(r"^(C[1-5]|BTINF|BTSUP|BT|HTA|HTB)", re.IGNORECASE)
+
+    # Mapping grd_code → energy_type attendu (C89-90 partiel — `type_reseau` absent du modèle)
+    _GRD_ENERGY_TYPE_MAP: dict[str, str] = {
+        "ENEDIS": "elec",
+        "RTE": "elec",
+        "GRDF": "gaz",
+        "TERAGA": "gaz",
+        "TEREGA": "gaz",
+        "GRTGAZ": "gaz",
+    }
+
+    @validates("categorie_turpe", "domaine_tension")
+    def _validate_categorie_domaine_coherence(self, key: str, value: str | None):
+        """C61-63 matrice v1 §8.3 : `categorie_turpe` ⟺ `domaine_tension`.
+
+        C5 → BT≤36kVA / C4 → BT>36kVA / C3-C2 → HTA / C1 → HTB.
+        """
+        if value is None:
+            return value
+        cat = value if key == "categorie_turpe" else self.categorie_turpe
+        dom = value if key == "domaine_tension" else self.domaine_tension
+        if cat is None or dom is None:
+            return value
+        allowed = self._TURPE_CAT_TO_DOMAINE.get(cat.upper())
+        if allowed is None:
+            raise ValueError(f"C61-63 violation: categorie_turpe={cat!r} non reconnue (attendu C1-C5)")
+        if dom.replace(" ", "") not in {a.replace(" ", "") for a in allowed}:
+            raise ValueError(
+                f"C61-63 violation: categorie_turpe={cat!r} incompatible avec domaine_tension={dom!r} "
+                f"(attendu {sorted(allowed)})"
+            )
+        return value
+
+    @validates("code_fta")
+    def _validate_code_fta_format(self, key: str, value: str | None):
+        """C64 matrice v1 §8.3 : `code_fta` cohérent segmentation tarifaire.
+
+        Phase D-1bis : regex permissive `^(C[1-5]|BT|HTA|HTB)` cohérent avec
+        recommandation audit P0-002 Phase D (la nomenclature CRE canonique finale
+        sera figée Phase D-2 via Enum exhaustif). Rejette uniquement les valeurs
+        sans préfixe segmentaire reconnu.
+        """
+        if value is None or value == "":
+            return value
+        if not self._CODE_FTA_PREFIX_PATTERN.match(value):
+            raise ValueError(
+                f"C64 violation: code_fta={value!r} ne respecte pas le préfixe "
+                f"segmentaire CRE (attendu commence par C1-C5, BT, HTA ou HTB)"
+            )
+        # Cohérence cardinale code_fta vs categorie_turpe : si categorie_turpe
+        # défini, code_fta doit en partager la racine BT/HTA/HTB.
+        if self.categorie_turpe:
+            cat = self.categorie_turpe.upper()
+            expected_segments = {
+                "C5": ("BT", "C5"),
+                "C4": ("BT", "C4"),
+                "C3": ("HTA", "C3"),
+                "C2": ("HTA", "C2"),
+                "C1": ("HTB", "C1"),
+            }.get(cat)
+            if expected_segments and not value.upper().startswith(expected_segments):
+                raise ValueError(
+                    f"C64 violation: code_fta={value!r} incohérent avec "
+                    f"categorie_turpe={cat!r} (attendu préfixe {expected_segments})"
+                )
+        return value
+
+    @validates("gas_profile", "cja_mwh_per_day", "atrd_option")
+    def _validate_gas_profile_consistency(self, key: str, value):
+        """C95 + C97 matrice v1 §8.3 : cohérence options ATRD ↔ profil ↔ CJA.
+
+        - C95 : si `atrd_option=T4` → CJA OBLIGATOIRE (capacité journalière contractuelle T4).
+        - C97 : si `atrd_option ∈ (T1, T2, T3)` profilé → `gas_profile` REQUIS (BASE/B0/B1/B2I).
+        - DP gaz uniquement (energy_type=GAZ) — skipped sur DP élec.
+        """
+        if self.energy_type != DeliveryPointEnergyType.GAZ:
+            return value
+
+        atrd = value if key == "atrd_option" else self.atrd_option
+        cja = value if key == "cja_mwh_per_day" else self.cja_mwh_per_day
+        profile = value if key == "gas_profile" else self.gas_profile
+
+        if atrd is None:
+            return value
+
+        atrd_str = atrd.value if hasattr(atrd, "value") else str(atrd)
+
+        # C95 : T4 nécessite CJA contractuelle
+        if atrd_str == "T4" and cja is None:
+            raise ValueError(
+                "C95 violation: atrd_option=T4 nécessite cja_mwh_per_day "
+                "(Capacité Journalière Acheminement contractuelle obligatoire)"
+            )
+
+        # C97 : T1-T3 profilés nécessitent gas_profile
+        if atrd_str in {"T1", "T2", "T3"} and profile is None:
+            raise ValueError(
+                f"C97 violation: atrd_option={atrd_str} (profilé) nécessite gas_profile (BASE/B0/B1/B2I/MODULANT)"
+            )
+
+        return value
+
+    @validates("grd_code")
+    def _validate_grd_energy_type_coherence(self, key: str, value: str | None):
+        """C89-90 partiel matrice v1 §8.3 : `grd_code` ⟺ `energy_type`.
+
+        Validation cross-FK heuristique : ENEDIS/RTE → elec, GRDF/Teréga/GRTgaz → gaz.
+        ELD locales (Strasbourg/Régaz/etc.) tolérées (any energy_type).
+        """
+        if value is None or self.energy_type is None:
+            return value
+        expected = self._GRD_ENERGY_TYPE_MAP.get(value.upper())
+        if expected is None:
+            return value  # ELD locale ou code inconnu — pas de contrainte
+        actual = self.energy_type.value if hasattr(self.energy_type, "value") else str(self.energy_type)
+        if actual != expected:
+            raise ValueError(
+                f"C89-90 violation: grd_code={value!r} incompatible avec energy_type={actual!r} (attendu {expected!r})"
+            )
+        return value
 
     # Relations
     site = relationship("Site", back_populates="delivery_points")

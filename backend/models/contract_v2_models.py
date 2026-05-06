@@ -323,6 +323,11 @@ class ContractPricing(Base, TimestampMixin):
             "(contract_id IS NOT NULL AND annexe_id IS NULL) OR (contract_id IS NULL AND annexe_id IS NOT NULL)",
             name="ck_pricing_one_parent",
         ),
+        # Sprint D1-B C108 matrice v1 §8.3 : date_fin > date_debut (anti-saisie inversée).
+        CheckConstraint(
+            "(effective_from IS NULL OR effective_to IS NULL OR effective_to > effective_from)",
+            name="ck_pricing_dates_order",
+        ),
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)

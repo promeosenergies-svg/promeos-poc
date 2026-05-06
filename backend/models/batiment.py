@@ -3,7 +3,7 @@ PROMEOS - Modèle Bâtiment
 Unité réglementaire (décret tertiaire, BACS)
 """
 
-from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .base import Base, SoftDeleteMixin, TimestampMixin
@@ -11,6 +11,9 @@ from .base import Base, SoftDeleteMixin, TimestampMixin
 
 class Batiment(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "batiments"
+    # Sprint D1-B C50 matrice v1 §8.3 : nom bâtiment unique par site (anti-doublon
+    # de saisie manuelle parc multi-bâtiments).
+    __table_args__ = (UniqueConstraint("site_id", "nom", name="uq_batiment_nom_per_site"),)
 
     id = Column(Integer, primary_key=True, index=True)
     site_id = Column(Integer, ForeignKey("sites.id"), nullable=False, index=True)
