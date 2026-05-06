@@ -135,7 +135,13 @@ def list_bill_anomalies(
         "total_count": total_count,
         "limit": limit,
         "offset": offset,
-        "kpi_total_economie_potentielle_eur": float(kpi_total_economie_eur or 0.0),
+        # Sprint C-8 Phase 8.4 Lot 3 — D-Audit-C8-KPI-Semantic-Renaming-013 P1 BI fix :
+        # KPI renommé `kpi_vnu_dormant_reclaim_eur` (sémantique CFO claire — montant VNU dormant
+        # actionnable, à reclaim sous prescription L.224-11 Code consommation 2 ans).
+        # Ancien nom `kpi_total_economie_potentielle_eur` conservé en alias rétro-compat
+        # (Phase D : retirer après wiring frontend complet).
+        "kpi_vnu_dormant_reclaim_eur": float(kpi_total_economie_eur or 0.0),
+        "kpi_total_economie_potentielle_eur": float(kpi_total_economie_eur or 0.0),  # alias deprecated Phase D
         "anomalies": [
             {
                 "id": a.id,

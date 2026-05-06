@@ -386,11 +386,16 @@ def _is_hash_key(key: str) -> bool:
     """True si la clé contient un identifiant à hasher (PRM/PCE/SIREN/...).
 
     Sprint C-8 Phase 8.3 — D-Audit-Phase7-Hash-Key-Code-Overmatch-001 P1 SEC fix :
-    `code` matchait précédemment `period_code`/`error_code`/`region_code` via substring
-    `p in lk` → sur-redaction non-justifiée audit logs. Correction : exact match
-    UNIQUEMENT pour `code` (la key OAuth2 est nommée `code` seule, pas `X_code`).
-    Substring conservé pour autres patterns (prm/pce/siren/siret/usage_point_id)
-    qui sont eux suffisamment spécifiques pour ne pas avoir de faux-positifs.
+    `code` exact match strict (anti period_code/error_code overmatch).
+
+    Sprint C-8 Phase 8.4 Lot 3 — D-Audit-C8-Hash-Key-Siret-Redundant-009 P1 CR fix :
+    déduplication logique `pattern == lk OR pattern in lk` (redondant, `pattern in lk`
+    suffit). Code review finding : ligne 379 audit deep Phase C-8.
+
+    `code` reste exact match (key OAuth2 cardinale, pas `X_code`).
+    Autres patterns (prm/pce/siren/siret/usage_point_id) restent substring (suffisamment
+    spécifiques, pas de faux-positifs réels — `siret_etablissement` est légitimement
+    sensible donc redaction acceptée).
     """
     lk = (key or "").lower()
     for pattern in _HASH_KEY_PATTERNS:
@@ -398,7 +403,7 @@ def _is_hash_key(key: str) -> bool:
             # Exact match strict pour "code" (key OAuth2 cardinale)
             if lk == "code":
                 return True
-        elif pattern == lk or pattern in lk:
+        elif pattern in lk:
             return True
     return False
 

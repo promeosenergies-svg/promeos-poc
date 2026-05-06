@@ -56,7 +56,11 @@ operat_valeurs_absolues:
         isbn: "978-2-37180-723-5"
         archive_locale: "docs/sources/regulatory/operat/cerema_deet_2025_raw.txt"
       - document: "JO arrêté 01/08/2025 NOR ATDL2430864A"
-        url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052113xxx"  # ID exact à confirmer
+        # Sprint C-8 Phase 8.4 Lot 3 — D-Audit-C8-OPERAT-VA-URL-Placeholder-010 P1 CR :
+        # placeholder JORFTEXT000052113xxx remplacé par null + url_todo explicite.
+        # ID exact JORFTEXT à confirmer via recherche Légifrance "ATDL2430864A" pre-pilote.
+        url: null
+        url_todo: "JORFTEXT recherche Légifrance NOR ATDL2430864A (arrêté 01/08/2025) — à confirmer pre-pilote"
         archive_locale: "(texte intégral lu via Drive — Drive ID 1yfUCVQe_8qdw2sAbR_qtF1P-774Bw0Os)"
       - document: "Annexe I — Arrêté 01/08/2025 NOR ATDL2430864A (217 pages)"
         url: "https://www.bulletin-officiel.developpement-durable.gouv.fr/documents/Bulletinofficiel-0034142/ATDL2430864A_Annexe%20I.pdf"

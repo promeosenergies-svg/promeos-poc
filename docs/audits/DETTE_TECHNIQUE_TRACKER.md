@@ -807,6 +807,9 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-07 (Sprint C-8 Phase 8.2 Lot SEC+CI — 3 P1 fixes : PII étendue email/téléphone FR/IBAN FR + CI bloquant quality-gate.yml + import lazy fix top-level guard) | 34 | 0 | 14 | 20 |
 | 2026-05-07 (Sprint C-8 Phase 8.3 Lot CR+REG polish — 4 P1 fixes : dead-code comments rgpd_consent + Organisation.actif.is_(True) idiomatique + VNU tarifs YAML L.336-2 + _is_hash_key('code') exact match strict) | 30 | 0 | 10 | 20 |
 | 2026-05-07 (Sprint C-8 AUDIT COMPLET multi-agents SDK 6 parallèles — Pilier 6 ADR-016 reproduit — 26 findings nouveaux (3 P0 + 13 P1 + 10 P2) → **PILOTE EXTERNE READY ASSERTION RÉVISÉE**) | 56 | 3 | 23 | 30 |
+| 2026-05-07 (Sprint C-8 Phase 8.4 Lot 1 — 3 P0 hotfix audit deep : VNU L.336-2 ligne 560 + CGU archives rejected runtime CNIL Article 7 + Helper ADR-020 wiré generate_operat_csv) | 53 | 0 | 23 | 30 |
+| 2026-05-07 (Sprint C-8 Phase 8.4 Lot 2 — 4 P1 SEC+REG : address allowlist ip_address + CGU reload doc admin-only + contenu_sha256 field + dates archive_test_only clarif) | 49 | 0 | 19 | 30 |
+| 2026-05-07 (Sprint C-8 Phase 8.4 Lot 3 — 5 P1 CR+QA+BI : hash_key dedup + URL placeholder JORFTEXT fix + BILAN drift lendemain + BILAN comptage SG + KPI renommage `kpi_vnu_dormant_reclaim_eur`) | 44 | 0 | 14 | 30 |
 
 ---
 

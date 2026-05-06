@@ -13,6 +13,8 @@
 
 **29e livraison consécutive Phase C+ sans régression** (record méthodologique préservé).
 
+> **Note Phase 8.4 audit deep correction** : la chronologie initiale revendiquait "Phase 8.3 reportée lendemain matin" (discipline > completion bias). Audit deep multi-agents Sprint C-8 (qa-guardian) a vérifié les timestamps git : Phase 8.2 → 8.3 = ~11 min même journée (2026-05-06). La discipline "STOP gate report" a été énoncée mais NON appliquée factuellement. Documentation corrigée : 4 phases livrées **2026-05-06 même journée** + Phase 8.4 audit + hotfix `2026-05-07`.
+
 | Phase | Hash | Livrable cardinal |
 |---|---|---|
 | 0 | `b4e83251` | Diagnostic 8 axes + ADR-020 Scoring OPERAT Option C + ADR-016 Pilier 6 audit deep |
@@ -125,8 +127,8 @@
 | **Audits multi-agents cumulés** | 12 (11 Phase C + 1 audit deep Phase 7) |
 | **ADR formalisés cumul** | 10 (007 → 015 + 016/017/018/019/020) |
 | **Migrations Alembic propres / 0 destructive** | 12 (anti-DROP discipline 12e épisode) |
-| **Source-guards cumulés** | ~57 (50 baseline + 4 SG Phase 8.1 + 3 SG Phase 8.2 + 4 SG Phase 8.3) |
-| **Tests Phase 7+8 cardinaux** | 139 cumulés |
+| **Source-guards cumulés Sprint C-8** | 10 SG (3 Phase 8.1 + 3 Phase 8.2 + 4 Phase 8.3) — fix audit Phase 8.4 |
+| **Tests Sprint C-8 cardinaux** | 27 fonctionnels (11+10+6) + 10 SG = **37 tests Sprint C-8** (corrigé Phase 8.4 vs claim "139 Phase 7+8" non réconciliable) |
 | **Tracker dette ouvertes** | **30** (vs 43 entrée Sprint C-7 = -13 net cumul Sprint C-7+C-8) |
 | **P0 résiduels** | **0** (préservé depuis Sprint C-7) |
 | **Pattern doctrinal "Déclaration sans enforcement"** | 6/6 fixées (5 Sprint C-5/C-7 + 6e Sprint C-7 audit deep) |
