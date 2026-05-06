@@ -494,32 +494,26 @@ except Exception:
 
 ---
 
-## D-Phase4-2-Operat-Surfaces-3-Distinct-001 — Distinguer SDP / tertiaire_area_m2 / S_CE OPERAT
+## ~~D-Phase4-2-Operat-Surfaces-3-Distinct-001~~ — ✅ CLÔTURÉE Sprint C-7 Phase 7.1
 
 **Détecté** : Sprint C-2 Phase 4 audit regulatory-expert (2026-05-04)
+**Clôturée** : Sprint C-7 Phase 7.1 (2026-05-06, commit `<hash-phase-7-1>`, migration Alembic 11e `f5df8bc45f8b`)
 
 **Source légale** : Arrêté 10/04/2020 art. 2-j (NOR LOGL2005904A, version 15/03/2024) — « *La surface de consommations énergétiques [S_CE], la surface sur laquelle l'ensemble des consommations énergétiques sont prises en compte, **intégrant notamment les surfaces de stationnement intérieur et de locaux techniques** de l'entité fonctionnelle, **au contraire de la surface de plancher** [SDP]* ».
 
-**Périmètre** : Phase 4.2 a ajouté `Site.intensity_kwh_m2_tertiaire = annual_kwh_total / tertiaire_area_m2`. Or `tertiaire_area_m2` est commenté "Surface tertiaire assujettie (m2)" — sémantique floue. Réglementairement il faut distinguer 3 surfaces :
-- **SDP** (Surface De Plancher) — code construction, exclut parking + locaux techniques
-- **tertiaire_area_m2** — part assujettie OPERAT (≥ 1 000 m² cumulés EFA, R.174-22 CCH)
-- **S_CE** — surface OPERAT pour reporting kWh/m², INCLUT parking intérieur + locaux techniques (typiquement > SDP)
+**Livrables Phase 7.1** (~1 h vs 2-3 j-h estimé = gain -85%) :
 
-**Risque** : `intensity_kwh_m2_tertiaire` actuellement calculé sur surface assujettie peut **diverger** de l'intensité officielle OPERAT calculée sur S_CE → risque de non-conformité reporting si exposé comme métrique réglementaire (ex: Cockpit RegOps, exports DT).
+- **Migration Alembic 11e propre** (`f5df8bc45f8b_phase_7_1_*.py`) — `Site.s_ce_m2 Float nullable` ajouté, anti-DROP discipline 11e épisode (63 drop_table autogenerate retirés)
+- **`backend/models/site.py`** — col `s_ce_m2` ajoutée avec docstring cardinal référençant les 3 surfaces distinctes (SDP / tertiaire_area_m2 / S_CE)
+- **Tests** : `tests/test_site_s_ce_m2_phase71.py` — 7 tests CRUD (default NULL + set + 3 surfaces distinct cardinal + précision décimale + optionnel + post-creation)
+- **Source-guards** : `tests/source_guards/test_site_3_surfaces_structure_source_guards.py` — 3 SG (3 cols présentes + Float type + nullable)
 
-**Action Sprint C-3 / C-6** :
-1. Ajouter colonne `Site.surface_consommations_energetiques_m2` (S_CE) distincte
-2. Ajouter colonne `Site.surface_de_plancher_sdp_m2` (cf. dette D-Phase1-4-Batiment-SDP-Proxy-001)
-3. Renommer ou documenter `intensity_kwh_m2_tertiaire` comme intensité **assujettie** (pas OPERAT officielle)
-4. Source-guard : interdire l'export OPERAT depuis `intensity_kwh_m2_tertiaire` tant que `surface_consommations_energetiques_m2` n'est pas peuplé
+**Scope MVP retenu** : 1 col ajoutée (`s_ce_m2`) — `surface_de_plancher_sdp_m2` reportée Sprint C-7+ (`D-Phase1-4-Batiment-SDP-Proxy-001`). `intensity_kwh_m2_tertiaire` reste calculé sur `tertiaire_area_m2` (assujettie) — pas de migration logique métier MVP, dette `D-Phase4-2-Operat-Intensity-DJU-Adjustment-001` couvre l'ajustement DJU pour métrique réglementaire OPERAT officielle.
 
-**Effort estimé** : ~2-3 j-h (3 colonnes + migration + source-guard + tests + documentation)
-**Priorité** : 🟠 **P0** (risque non-conformité reporting OPERAT si exposé en l'état)
-**Sprint cible** : Sprint C-6 (Modèles enrichis matrice §4.5) — corrélé à D-Phase1-4-Batiment-SDP-Proxy-001
+**Cumul Phase C+ : 11 migrations propres / 0 destructive** (Phase 7.1 = 11e épisode anti-DROP).
 
-**Traces** :
-- Audit regulatory-expert Phase 4 (2026-05-04) finding D1
-- Légifrance arrêté 10/04/2020 art. 2-j
+**Priorité** : ✅ CLÔTURÉE
+**Sprint cible** : Sprint C-7 ✅
 
 ---
 
@@ -797,6 +791,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-5 Phase 5.5 — Fix audit 4 bloquants : VNU terminologie + multi-meter filter + 4 tests intégration endpoint + 1 P0 nouvelle DEMO_MODE) | 26 | 2 | 9 | 15 |
 | 2026-05-06 (Sprint C-5 Phase 5.6 — Fix 4 P0 audit deep multi-agents : F1 PRAGMA FK + F2 R19 NULL + F3 Capacité 3.15→3150 + F4 SG tolerance 1500→1.5 + 23 dettes C-7 tracées) | 49 | 4 | 18 | 27 |
 | 2026-05-06 (Sprint C-5 Phase 5.8 — Fix 6 P0 audit transversal : G1 cascade Org PATCH wiring + G2 R20 NULL + G3 BillAnomaly UNIQUE + G4 ADR-015 warning + G5 IDOR stepper + G6 operat_export NULL DT compliance) | 43 | 1 | 18 | 24 |
+| 2026-05-06 (Sprint C-7 Phase 7.1 — Site +1 col s_ce_m2 Surface CE Décret Tertiaire — clôture P0 historique D-Phase4-2-Operat-Surfaces-3-Distinct + migration Alembic 11e propre) | 42 | 0 | 18 | 24 |
 
 ---
 

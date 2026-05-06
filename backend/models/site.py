@@ -77,6 +77,19 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
     insee_code = Column(String(5), nullable=True, comment="Code INSEE commune")
     naf_code = Column(String(10), nullable=True, comment="Code NAF override (ex: 47.11F)")
     tertiaire_area_m2 = Column(Float, nullable=True, comment="Surface tertiaire assujettie (m2)")
+    # Sprint C-7 Phase 7.1 (clôture D-Phase4-2-Operat-Surfaces-3-Distinct-001 P0 historique)
+    # Surface CE (Surface des Consommations Énergétiques) — Arrêté 10/04/2020 art. 2-j
+    # (NOR LOGL2005904A v15/03/2024) : "surface sur laquelle l'ensemble des consommations
+    # énergétiques sont prises en compte, intégrant notamment les surfaces de stationnement
+    # intérieur et de locaux techniques de l'entité fonctionnelle, au contraire de la
+    # surface de plancher [SDP]".
+    # 3 surfaces distinctes Site cardinal :
+    # - surface_m2 = SDP (Surface De Plancher) — Code construction art. R111-22
+    # - tertiaire_area_m2 = surface tertiaire assujettie OPERAT (sous-périmètre SDP)
+    # - s_ce_m2 = Surface CE OPERAT (typiquement > SDP, inclut parking intérieur + locaux techniques)
+    s_ce_m2 = Column(
+        Float, nullable=True, comment="Surface CE OPERAT (Arrêté 10/04/2020 art. 2-j) — distincte SDP/tertiaire"
+    )
     roof_area_m2 = Column(Float, nullable=True, comment="Surface toiture (m2)")
     parking_area_m2 = Column(Float, nullable=True, comment="Surface parking (m2)")
     parking_type = Column(Enum(ParkingType), nullable=True, comment="Type de parking")
