@@ -1097,3 +1097,35 @@ class AperExemptionMotifEnum(str, enum.Enum):
     CONTRAINTES_PATRIMONIALES = "CONTRAINTES_PATRIMONIALES"
     CONTRAINTES_ECONOMIQUES = "CONTRAINTES_ECONOMIQUES"
     CONTRAINTES_OPERATIONNELLES = "CONTRAINTES_OPERATIONNELLES"
+
+
+# ============================================================
+# Phase D-2.2 ajustée — Enum FtaCode CRE TURPE 7 canonique
+# ============================================================
+# Source : CRE délibération n°2025-78 du 13/03/2025 (TURPE 7 HTA-BT).
+# Audit cardinal : docs/audits/AUDIT_CODES_FTA_TURPE7_2026_05_07.md.
+# Pattern Pilier 9 ADR-016 : "Validator permissif transitoire (regex Phase D-1bis)
+# → Enum strict canonique post-audit officiel" (cf. docs/adr/ADR-016-anti-patterns-piliers-7-8-9.md).
+#
+# La liste canonique reste sous medium-confidence (suffixes 4/5 postes à
+# confirmer parsing PDF délibération 2025-78 Phase D-3). En attendant, l'Enum
+# strict ci-dessous est le SoT exécutable (importé depuis doctrine/constants.py
+# via CANONICAL_FTA_CODES_TURPE_7).
+
+
+class FtaCode(str, enum.Enum):
+    """Codes FTA canoniques CRE TURPE 7 (Formule Tarifaire d'Acheminement).
+
+    Préfixe segment : BTINF (C5) / BTSUP (C4) / HTA (C3-C2) / HTB (C1).
+    Suffixe durée : CU (courte) / MU (moyenne BT only) / LU (longue).
+    Suffixe nb postes : 4 (BT) ou 5 (HTA + PTE).
+
+    À élargir Phase D-3 post parsing PDF délibération 2025-78.
+    """
+
+    BTINFCU4 = "BTINFCU4"  # C5 BT≤36kVA — courte util. 4 postes (HPH/HCH/HPE/HCE)
+    BTINFMU4 = "BTINFMU4"  # C5 BT≤36kVA — moyenne util. 4 postes
+    BTSUPCU = "BTSUPCU"  # C4 BT>36kVA — courte util.
+    BTSUPLU = "BTSUPLU"  # C4 BT>36kVA — longue util.
+    HTACU5 = "HTACU5"  # C3/C2 HTA — courte util. 5 postes (PTE/HPH/HCH/HPE/HCE)
+    HTALU5 = "HTALU5"  # C3/C2 HTA — longue util. 5 postes

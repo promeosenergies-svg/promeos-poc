@@ -115,6 +115,32 @@ def test_phase_d2_legacy_invented_codes_no_longer_in_models():
             )
 
 
+def test_phase_d2_invented_legacy_codes_rejected_by_validator():
+    """P1-4 fix code-reviewer : validator strict rejette les codes inventés Phase D-1.
+
+    Pattern Pilier 9 ADR-016 : Phase D-1bis regex permissive → Phase D-2.2 Enum strict.
+    """
+    from models.patrimoine import DeliveryPoint
+
+    invented_codes = ["BT_HCH_PRO", "BT_BASE_PRO", "BT_PRO_LU", "HTA_LU_BASE_4P"]
+    for invented in invented_codes:
+        dp = DeliveryPoint(code=f"77999099900{abs(hash(invented)) % 1000:03d}", site_id=1)
+        with pytest.raises(ValueError, match="C64.*Phase D-2.2"):
+            dp.code_fta = invented
+
+
+def test_phase_d2_fta_code_enum_canonique_aligned():
+    """P0.2 / P1-4 : Enum FtaCode aligné avec CANONICAL_FTA_CODES_TURPE_7."""
+    from doctrine.constants import CANONICAL_FTA_CODES_TURPE_7
+    from models.enums import FtaCode
+
+    enum_values = {fc.value for fc in FtaCode}
+    canonical_set = set(CANONICAL_FTA_CODES_TURPE_7)
+    assert enum_values == canonical_set, (
+        f"Mismatch FtaCode Enum {enum_values} vs CANONICAL_FTA_CODES_TURPE_7 {canonical_set}"
+    )
+
+
 def test_phase_d2_canonical_fta_compteur_persist(app_client):
     """P0.2 : DeliveryPoint persisté avec `BTINFCU4` canonique (test d'intégration)."""
     from models import EntiteJuridique, Organisation, Portefeuille, Site, TypeSite
@@ -209,6 +235,104 @@ def test_phase_d2_bridge_creates_meter_for_orphan_compteur(app_client):
         # Vérifier que ré-appeler retourne le même Meter (idempotent)
         meter2 = ensure_meter_pair(db, compteur)
         assert meter2.id == meter.id
+    finally:
+        db.close()
+
+
+def test_phase_d2_bridge_anti_cycle_self_reference(app_client):
+    """P1-1 fix code-reviewer : `ensure_meter_pair` détecte cycle auto-référence."""
+    from models import EntiteJuridique, Organisation, Portefeuille, Site, TypeSite
+    from models.compteur import Compteur
+    from models.enums import TypeCompteur
+    from services.compteur_meter_bridge import ensure_meter_pair
+
+    _, SessionLocal = app_client
+    db = SessionLocal()
+    try:
+        org = Organisation(nom="OrgD2Cycle", siren="999500004")
+        db.add(org)
+        db.flush()
+        ej = EntiteJuridique(nom="EJD2Cycle", siren="999500004", organisation_id=org.id)
+        db.add(ej)
+        db.flush()
+        pf = Portefeuille(nom="PFD2Cycle", entite_juridique_id=ej.id)
+        db.add(pf)
+        db.flush()
+        site = Site(nom="SD2Cycle", type=TypeSite.BUREAU, actif=True, portefeuille_id=pf.id)
+        db.add(site)
+        db.flush()
+
+        # Compteur auto-référencé (pathological — devrait être empêché en DB mais pas par contrainte FK)
+        c = Compteur(
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="D2-CYCLE-001",
+            actif=True,
+        )
+        db.add(c)
+        db.flush()
+        c.sub_meter_of_id = c.id  # auto-référence
+        db.flush()
+
+        with pytest.raises(ValueError, match="cycle détecté"):
+            ensure_meter_pair(db, c)
+    finally:
+        db.rollback()
+        db.close()
+
+
+def test_phase_d2_bridge_org_scoping_site_id(app_client):
+    """P1-3 fix code-reviewer : `find_meter_by_compteur` scope par site_id (anti cross-tenant)."""
+    from models import EntiteJuridique, Organisation, Portefeuille, Site, TypeSite
+    from models.compteur import Compteur
+    from models.energy_models import EnergyVector, Meter
+    from models.enums import TypeCompteur
+    from services.compteur_meter_bridge import find_meter_by_compteur
+
+    _, SessionLocal = app_client
+    db = SessionLocal()
+    try:
+        org = Organisation(nom="OrgD2Scope", siren="999500005")
+        db.add(org)
+        db.flush()
+        ej = EntiteJuridique(nom="EJD2Scope", siren="999500005", organisation_id=org.id)
+        db.add(ej)
+        db.flush()
+        pf = Portefeuille(nom="PFD2Scope", entite_juridique_id=ej.id)
+        db.add(pf)
+        db.flush()
+        # 2 sites distincts (simulent 2 tenants)
+        site_a = Site(nom="SiteA", type=TypeSite.BUREAU, actif=True, portefeuille_id=pf.id)
+        site_b = Site(nom="SiteB", type=TypeSite.BUREAU, actif=True, portefeuille_id=pf.id)
+        db.add_all([site_a, site_b])
+        db.flush()
+
+        # Meter sur Site A avec un meter_id donné
+        meter_a = Meter(
+            meter_id="14999000099001",
+            name="MeterSiteA",
+            energy_vector=EnergyVector.ELECTRICITY,
+            site_id=site_a.id,
+            is_active=True,
+        )
+        db.add(meter_a)
+        db.flush()
+
+        # Compteur sur Site B avec MÊME meter_id (collision cross-tenant théorique)
+        compteur_b = Compteur(
+            site_id=site_b.id,
+            type=TypeCompteur.ELECTRICITE,
+            meter_id="14999000099001",  # collision !
+            actif=True,
+        )
+        db.add(compteur_b)
+        db.flush()
+
+        # find_meter_by_compteur sur Site B ne doit PAS retourner Meter Site A
+        found = find_meter_by_compteur(db, compteur_b)
+        assert found is None, (
+            "P1-3 BLOQUANT : find_meter_by_compteur n'est pas scope par site_id → risque cross-tenant cardinal"
+        )
     finally:
         db.close()
 

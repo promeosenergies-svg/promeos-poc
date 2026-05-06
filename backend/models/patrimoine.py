@@ -469,18 +469,29 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
     def _validate_code_fta_format(self, key: str, value: str | None):
         """C64 matrice v1 §8.3 : `code_fta` cohérent segmentation tarifaire.
 
-        Phase D-1bis : regex permissive `^(C[1-5]|BT|HTA|HTB)` cohérent avec
-        recommandation audit P0-002 Phase D (la nomenclature CRE canonique finale
-        sera figée Phase D-2 via Enum exhaustif). Rejette uniquement les valeurs
-        sans préfixe segmentaire reconnu.
+        Phase D-1bis (regex permissive) → **Phase D-2.2 strict canonique** : le
+        validator exige désormais que `code_fta` appartienne à `FtaCode` Enum
+        canonique (CANONICAL_FTA_CODES_TURPE_7). Pattern Pilier 9 ADR-016 :
+        "Validator permissif transitoire → Enum strict canonique post-audit".
+
+        Source : CRE délibération 2025-78 du 13/03/2025 — codes BTINFCU4 /
+        BTINFMU4 / BTSUPCU / BTSUPLU / HTACU5 / HTALU5 (medium-confidence —
+        Enum exhaustif sera figé Phase D-3 post parsing PDF).
         """
         if value is None or value == "":
             return value
-        if not self._CODE_FTA_PREFIX_PATTERN.match(value):
+
+        # Phase D-2.2 cardinal : strict canonique CRE (rejette codes inventés non listés FtaCode).
+        from .enums import FtaCode
+
+        canonical_values = {fc.value for fc in FtaCode}
+        if value not in canonical_values:
             raise ValueError(
-                f"C64 violation: code_fta={value!r} ne respecte pas le préfixe "
-                f"segmentaire CRE (attendu commence par C1-C5, BT, HTA ou HTB)"
+                f"C64 violation Phase D-2.2 strict canonique: code_fta={value!r} non canonique CRE TURPE 7. "
+                f"Attendu un de {sorted(canonical_values)} (Délib. CRE 2025-78). "
+                f"Pattern Pilier 9 ADR-016 — voir docs/audits/AUDIT_CODES_FTA_TURPE7_2026_05_07.md."
             )
+
         # Cohérence cardinale code_fta vs categorie_turpe : si categorie_turpe
         # défini, code_fta doit en partager la racine BT/HTA/HTB.
         if self.categorie_turpe:

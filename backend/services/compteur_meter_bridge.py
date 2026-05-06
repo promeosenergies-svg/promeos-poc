@@ -40,18 +40,23 @@ def _energy_vector_from_type(type_compteur: str | None) -> EnergyVector:
 def find_meter_by_compteur(db: Session, compteur: Compteur) -> Optional[Meter]:
     """Recherche le Meter sœur d'un Compteur.
 
-    Match (priorité décroissante) :
-    1. `meter.numero_serie == compteur.numero_serie`
-    2. `meter.meter_id == compteur.meter_id` (PRM/PCE)
-    3. `meter.delivery_point_id == compteur.delivery_point_id`
+    Match (priorité décroissante) — toutes les recherches sont **scopées site_id**
+    pour éviter les collisions cross-tenant (P1-3 code-reviewer Phase D-2 audit) :
+    1. `meter.numero_serie == compteur.numero_serie` AND `meter.site_id == compteur.site_id`
+    2. `meter.meter_id == compteur.meter_id` (PRM/PCE) AND `meter.site_id == compteur.site_id`
+    3. `meter.delivery_point_id == compteur.delivery_point_id` AND `meter.site_id == compteur.site_id`
     """
     if compteur.numero_serie:
-        m = db.query(Meter).filter(Meter.numero_serie == compteur.numero_serie).first()
+        m = (
+            db.query(Meter)
+            .filter(Meter.numero_serie == compteur.numero_serie, Meter.site_id == compteur.site_id)
+            .first()
+        )
         if m is not None:
             return m
 
     if compteur.meter_id:
-        m = db.query(Meter).filter(Meter.meter_id == compteur.meter_id).first()
+        m = db.query(Meter).filter(Meter.meter_id == compteur.meter_id, Meter.site_id == compteur.site_id).first()
         if m is not None:
             return m
 
@@ -70,7 +75,13 @@ def find_meter_by_compteur(db: Session, compteur: Compteur) -> Optional[Meter]:
     return None
 
 
-def ensure_meter_pair(db: Session, compteur: Compteur, *, commit: bool = False) -> Meter:
+def ensure_meter_pair(
+    db: Session,
+    compteur: Compteur,
+    *,
+    commit: bool = False,
+    _visited: Optional[set[int]] = None,
+) -> Meter:
     """Garantit qu'un Meter sœur existe pour un Compteur (cardinal Phase D-2 P0.3).
 
     Si absent, le crée en propageant `numero_serie`, `meter_id`, `site_id`,
@@ -79,20 +90,40 @@ def ensure_meter_pair(db: Session, compteur: Compteur, *, commit: bool = False) 
     À appeler post-create par tout wizard onboarding qui matérialise un Compteur
     avec `sub_meter_of_id` pour garantir le drill-down runtime.
 
+    Phase D-2.2 fix P1-1 code-reviewer : garde anti-cycle `_visited` empêche la
+    récursion infinie en cas d'auto-référence (`sub_meter_of_id == self.id`) ou
+    de chaîne circulaire A→B→A non interceptée par contrainte DB.
+
     Args:
         db: SQLAlchemy session.
         compteur: Compteur source (déjà flushé en DB — id requis pour bridge parent).
         commit: si True, commit la transaction. Sinon, flush only.
+        _visited: set d'ids de Compteur déjà traversés (param interne récursion).
 
     Returns:
         Meter sœur (existant ou nouvellement créé).
 
     Raises:
-        ValueError si compteur.id est None (non flushé) ou compteur.numero_serie absent
-        (impossibilité de créer un Meter unique sans clé d'identification).
+        ValueError si compteur.id est None (non flushé), si numero_serie + meter_id
+        absents, ou si cycle détecté dans la hiérarchie sub_meter_of_id.
     """
     if compteur.id is None:
         raise ValueError("ensure_meter_pair: compteur doit être flushé en DB (compteur.id requis)")
+
+    if _visited is None:
+        _visited = set()
+    if compteur.id in _visited:
+        raise ValueError(
+            f"ensure_meter_pair: cycle détecté dans la hiérarchie Compteur "
+            f"(id={compteur.id} déjà visité, chaîne {sorted(_visited)})"
+        )
+    # Auto-référence directe = cycle trivial à intercepter immédiatement.
+    if compteur.sub_meter_of_id == compteur.id:
+        raise ValueError(
+            f"ensure_meter_pair: cycle détecté — auto-référence Compteur id={compteur.id} "
+            f"(sub_meter_of_id == id) — état pathologique non autorisé."
+        )
+    _visited.add(compteur.id)
 
     existing = find_meter_by_compteur(db, compteur)
     if existing is not None:
@@ -130,14 +161,13 @@ def ensure_meter_pair(db: Session, compteur: Compteur, *, commit: bool = False) 
     db.add(meter)
     db.flush()
 
-    # Bridge hiérarchie
+    # Bridge hiérarchie (récursion safe via _visited)
     if compteur.sub_meter_of_id is not None:
         parent_compteur = db.query(Compteur).filter(Compteur.id == compteur.sub_meter_of_id).first()
         if parent_compteur is not None:
             parent_meter = find_meter_by_compteur(db, parent_compteur)
             if parent_meter is None:
-                # Récursif : ensure parent meter pair d'abord
-                parent_meter = ensure_meter_pair(db, parent_compteur, commit=False)
+                parent_meter = ensure_meter_pair(db, parent_compteur, commit=False, _visited=_visited)
             meter.parent_meter_id = parent_meter.id
             db.flush()
 
