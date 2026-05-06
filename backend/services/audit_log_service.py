@@ -173,6 +173,112 @@ def log_cascade(
     return log
 
 
+# ─── Sprint C-7 Phase 7.4 — RGPD consent_change helper (clôture pattern doctrinal 5/5) ───
+
+
+def log_consent_change(
+    db: Session,
+    *,
+    user_id: Optional[int],
+    org_id: int,
+    target_type: str,
+    target_id: int,
+    field: str,
+    old_value: Any,
+    new_value: Any,
+    cgu_version: Optional[str],
+    correlation_id: Optional[str] = None,
+    ip_address: Optional[str] = None,
+) -> AuditLog:
+    """Sprint C-7 Phase 7.4 — Helper RGPD `rgpd.consent_change` event AuditLog.
+
+    Clôture pattern doctrinal "Déclaration sans enforcement runtime" 5/5 cardinal Phase C+ :
+
+    - ADR-007 RGPD a déclaré audit trail (Sprint C-3)
+    - Phase 5.3 a livré champs audit trail (`_by` + `_cgu_version`)
+    - Phase 5.6 F1 a fixé enforcement FK runtime (PRAGMA foreign_keys=ON)
+    - Phase 5.8 G1 a wiré cascade Org consent CASCADE_MAP runtime
+    - Phase 5.8 G3 a fixé BillAnomaly UNIQUE constraint
+    - Phase 7.2 a fixé DEMO_MODE bypass scope_utils
+    - **Phase 7.4 (cette phase)** wire l'event AuditLog runtime → CLÔTURE pattern doctrinal
+
+    Args:
+        target_type: "organisation" | "delivery_point" (cf. ADR-007 Option B archi-helios)
+        target_id: ID Organisation ou DeliveryPoint
+        field: ex "consentement_dataconnect_global", "consentement_grdf_local"
+        old_value, new_value: valeurs avant/après (None autorisé pour première mise à jour)
+        cgu_version: version CGU acceptée (CNIL article 7 — preuve d'origine forte)
+
+    CNIL article 7 : preuve d'origine forte = qui (user_id) + quand (created_at) +
+    valeur (old/new_value) + CGU (cgu_version) + scope (target_type=organisation|delivery_point).
+
+    Note : ne fait pas de commit. Le caller est responsable du commit (cohérent
+    pattern `log_patrimoine_change` Sprint C-2 P1.3).
+    """
+    detail = {
+        "type": "rgpd.consent_change",
+        "field": field,
+        "cgu_version": cgu_version,
+        "rgpd_article": "Article 7 RGPD - preuve d'origine du consentement",
+    }
+    log = AuditLog(
+        user_id=user_id,
+        action="rgpd.consent_change",
+        resource_type=target_type,
+        resource_id=str(target_id),
+        detail_json=json.dumps(detail, default=str, ensure_ascii=False),
+        ip_address=ip_address,
+        correlation_id=correlation_id,
+        org_id=org_id,
+        field_modified=field,
+        old_value=_serialize_value(old_value),
+        new_value=_serialize_value(new_value),
+    )
+    db.add(log)
+    db.flush()
+    return log
+
+
+def log_consent_changes_batch(
+    db: Session,
+    *,
+    user_id: Optional[int],
+    org_id: int,
+    target_type: str,
+    target_id: int,
+    changes: list[dict],
+    cgu_version: Optional[str],
+    correlation_id: Optional[str] = None,
+    ip_address: Optional[str] = None,
+) -> list[AuditLog]:
+    """Sprint C-7 Phase 7.4 — Variant batch pour PATCH multi-champs (1 event par champ muté).
+
+    Args:
+        changes: [{"field": "consentement_dataconnect_global", "old": True, "new": False}, ...]
+
+    Returns:
+        Liste des AuditLog créés (1 par change). Caller commit responsable.
+    """
+    events = []
+    for change in changes:
+        events.append(
+            log_consent_change(
+                db=db,
+                user_id=user_id,
+                org_id=org_id,
+                target_type=target_type,
+                target_id=target_id,
+                field=change["field"],
+                old_value=change.get("old"),
+                new_value=change.get("new"),
+                cgu_version=cgu_version,
+                correlation_id=correlation_id,
+                ip_address=ip_address,
+            )
+        )
+    return events
+
+
 def query_audit_trail(
     db: Session,
     *,

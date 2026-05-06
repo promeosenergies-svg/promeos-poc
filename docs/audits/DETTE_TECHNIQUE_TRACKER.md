@@ -794,6 +794,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-7 Phase 7.1 — Site +1 col s_ce_m2 Surface CE Décret Tertiaire — clôture P0 historique D-Phase4-2-Operat-Surfaces-3-Distinct + migration Alembic 11e propre) | 42 | 0 | 18 | 24 |
 | 2026-05-06 (Sprint C-7 Phase 7.2 — DEMO_MODE bypass scope_utils fix ADR-017 Option B — clôture P0 SEC-2026-012, surface attaque ~25 endpoints éliminée) | 41 | 0 | 18 | 23 |
 | 2026-05-06 (Sprint C-7 Phase 7.3 — PATCH endpoints consentement Org/DP ADR-019 — clôture P0 RGPD D-Sprint-C7-PATCH-Consentement-Endpoint-001) | 40 | 0 | 18 | 22 |
+| 2026-05-06 (Sprint C-7 Phase 7.4 — log_consent_change helper RGPD CNIL — clôture P0 D-Sprint-C7-AuditLog-Wiring-RGPD-Consent-Change-001 + CLÔTURE PATTERN DOCTRINAL 5/5 "Déclaration sans enforcement runtime") | 39 | 0 | 18 | 21 |
 
 ---
 
@@ -1464,7 +1465,7 @@ Hypothèses :
 - **D-Sprint-C7-CGU-Referentiel-Central-001** P1 — table `cgu_versions` (id, version, effective_from/to, hash_sha256) vs String(20) libre (general-purpose Phase 5.3 A1). Migration + endpoint admin. 1.5 h.
 - ~~**D-Sprint-C7-PATCH-Consentement-Endpoint-001**~~ ✅ **CLÔTURÉE Sprint C-7 Phase 7.3** (2026-05-06, commit `<hash-phase-7-3>`). 2 endpoints PATCH dédiés livrés (`PATCH /api/organisations/{id}/consentement` + `PATCH /api/delivery_points/{id}/consentement-local`) avec validation pydantic stricte cgu_version (CNIL article 7), org-scoping ADR-017, cascade trigger préservé Phase 5.8 G1. Cockpit RGPD UI Sprint C-6+ débloqué. Effort réel ~2 h vs 1 h estimé.
 - **D-Sprint-C7-Consent-Helper-Deduplication-001** P2 — factoriser `_resolve_consent_scope(dp, type_)` partagé `get_effective_consent` + `_with_audit` (general-purpose Phase 5.3 A2 + code-reviewer). 30 min.
-- **D-Sprint-C7-AuditLog-Wiring-RGPD-Consent-Change-001** P0 — event `RGPD_CONSENT_CHANGE` AuditLog wiring sur mutations consentement (general-purpose Phase 5.3 C1, cardinal CNIL "preuve d'origine"). 1 h.
+- ~~**D-Sprint-C7-AuditLog-Wiring-RGPD-Consent-Change-001**~~ ✅ **CLÔTURÉE Sprint C-7 Phase 7.4** (2026-05-06, commit `<hash-phase-7-4>`). Helper `log_consent_change` + `log_consent_changes_batch` ajoutés à `audit_log_service.py` (action `rgpd.consent_change` cohérent dot-snake). Wiring 2 endpoints PATCH Phase 7.3 (org + dp local) automatique. CNIL article 7 "preuve d'origine forte" complète : qui + quand + valeur + CGU + scope. **CLÔTURE PATTERN DOCTRINAL "Déclaration sans enforcement runtime" 5/5 cardinal Phase C+** (PRAGMA + cascade Org + UNIQUE BillAnomaly + DEMO_MODE + RGPD audit_log). Effort réel ~1.5 h vs 1 h estimé.
 - **D-Sprint-C7-Consent-TypedDict-001** P2 — `ConsentAuditResult(TypedDict)` retour helper. 15 min.
 
 ### Polish + invariants (Phase 5.4 audit)

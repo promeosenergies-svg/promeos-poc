@@ -35,6 +35,7 @@ from schemas.rgpd_consent import (
     DeliveryPointConsentementLocalPatch,
     OrganisationConsentementPatch,
 )
+from services.audit_log_service import log_consent_changes_batch
 from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api", tags=["RGPD Consent"])
@@ -89,6 +90,36 @@ def patch_organisation_consentement(
         org.consentement_grdf_at = now
         org.consentement_grdf_by = user_id
         org.consentement_grdf_cgu_version = cgu_version
+
+    # Phase 7.4 cardinal — wiring AuditLog `rgpd.consent_change` (1 event par champ muté).
+    # Clôture pattern doctrinal "Déclaration sans enforcement runtime" 5/5 Phase C+.
+    consent_changes = []
+    if payload.consentement_dataconnect_global is not None:
+        consent_changes.append(
+            {
+                "field": "consentement_dataconnect_global",
+                "old": old_values["consentement_dataconnect_global"],
+                "new": payload.consentement_dataconnect_global,
+            }
+        )
+    if payload.consentement_grdf_global is not None:
+        consent_changes.append(
+            {
+                "field": "consentement_grdf_global",
+                "old": old_values["consentement_grdf_global"],
+                "new": payload.consentement_grdf_global,
+            }
+        )
+    if consent_changes:
+        log_consent_changes_batch(
+            db=db,
+            user_id=user_id,
+            org_id=org_id,
+            target_type="organisation",
+            target_id=org_id,
+            changes=consent_changes,
+            cgu_version=cgu_version,
+        )
 
     db.commit()
     db.refresh(org)
@@ -166,6 +197,12 @@ def patch_delivery_point_consentement_local(
     user_id = auth.user_id if auth and getattr(auth, "user_id", None) else None
     cgu_version = payload.cgu_version
 
+    # Capture old values pour audit trail RGPD (Phase 7.4)
+    old_dp_values = {
+        "consentement_dataconnect_local": dp.consentement_dataconnect_local,
+        "consentement_grdf_local": dp.consentement_grdf_local,
+    }
+
     if payload.consentement_dataconnect_local is not None:
         dp.consentement_dataconnect_local = payload.consentement_dataconnect_local
         dp.consentement_dataconnect_local_at = now
@@ -177,6 +214,35 @@ def patch_delivery_point_consentement_local(
         dp.consentement_grdf_local_at = now
         dp.consentement_grdf_local_by = user_id
         dp.consentement_grdf_local_cgu_version = cgu_version
+
+    # Phase 7.4 cardinal — wiring AuditLog `rgpd.consent_change` scope=delivery_point.
+    consent_changes = []
+    if payload.consentement_dataconnect_local is not None:
+        consent_changes.append(
+            {
+                "field": "consentement_dataconnect_local",
+                "old": old_dp_values["consentement_dataconnect_local"],
+                "new": payload.consentement_dataconnect_local,
+            }
+        )
+    if payload.consentement_grdf_local is not None:
+        consent_changes.append(
+            {
+                "field": "consentement_grdf_local",
+                "old": old_dp_values["consentement_grdf_local"],
+                "new": payload.consentement_grdf_local,
+            }
+        )
+    if consent_changes:
+        log_consent_changes_batch(
+            db=db,
+            user_id=user_id,
+            org_id=resolved_org_id,
+            target_type="delivery_point",
+            target_id=dp_id,
+            changes=consent_changes,
+            cgu_version=cgu_version,
+        )
 
     db.commit()
     db.refresh(dp)
