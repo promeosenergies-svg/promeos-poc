@@ -123,7 +123,93 @@ grep -rn "regex permissive\|Phase D-2.*Enum strict\|Pilier 9 ADR-016" backend/mo
 - `backend/doctrine/constants.py:CANONICAL_FTA_CODES_TURPE_7` (SoT canonique)
 - `docs/audits/AUDIT_CODES_FTA_TURPE7_2026_05_07.md` (audit officiel CRE)
 
-## Récapitulatif Piliers ADR-016 cumulés
+## Pilier 10 — Calendrier réglementaire ≠ annuel par défaut
+
+**Détecté** : Phase D-2 hotfix Tier 1 (mouvement tarifaire EXCEPTIONNEL CRE 1/02/2025
+au lieu du calendrier annuel habituel 1/08).
+
+**Règle** :
+> Lorsqu'un tarif/règle est annoncé par CRE/Légifrance/ADEME, **ne JAMAIS supposer le
+> calendrier annuel par défaut** sans vérifier la délibération source. Les **mouvements
+> exceptionnels** (cas TURPE 7 1/02/2025) ou **rétro-activités** (cas LFI rétroactive)
+> sont des invariants à traquer.
+>
+> Détection : audit factuel `valid_from` + `valid_to` cross-check délibération CRE
+> + `effective_date` annoncée vs `publication_date`.
+
+**Anti-pattern proscrit** :
+- Hard-coder `valid_from: "<année>-08-01"` ou `<année>-01-01` par habitude.
+- Confondre date publication JO et date application réglementaire.
+
+**Sources** :
+- `backend/config/tarifs_reglementaires.yaml` (TURPE 7 valid_from = 2025-02-01)
+- `backend/doctrine/constants.py:TURPE_7_DATE_APPLICATION`
+- `docs/audits/AUDIT_TURPE7_DATES_2026_05_07.md`
+
+## Pilier 11 — Audit réglementaire systémique pré-livraison majeure
+
+**Détecté** : Sprint Audit Réglementaire Cardinal pré Phase D-3 (4e cycle Pilier 6
+ADR-016 — 17 catégories réglementaires datées auditées via 3 agents `regulatory-expert`
+SDK parallèles + cross-check KB).
+
+**Règle** :
+> Avant toute livraison majeure (Phase D-2 hotfix Tier 1, Phase D-3 Tier 2, etc.),
+> un **audit réglementaire systémique** sur 100% catégories datées du SoT
+> (`backend/config/*.yaml` + `backend/doctrine/constants.py` constantes datées) est
+> **obligatoire** et produit `docs/audits/AUDIT_REGLEMENTAIRE_<STAGE>_<DATE>.md`.
+>
+> Le sprint READ-ONLY mobilise plusieurs agents `regulatory-expert` SDK en parallèle
+> (Pilier 6 ADR-016) avec :
+> - Tableau récapitulatif catégories ↔ NOR/JORFTEXT/URL/dates
+> - Findings P0 + P1 + À VÉRIFIER
+> - Sources officielles consolidées
+> - Décision tactique cardinale pour livraison suivante
+
+**Anti-pattern proscrit** :
+- Livrer hotfix réglementaire sans audit cumul (cas ironique Phase D-1 BT_HCH_PRO
+  inventé corrigé Phase D-2 P0.2).
+- Inventer une date/NOR pour combler une absence de source (Pilier 9 ADR-016 connexe).
+
+## Pilier 12 — Échéances <12 mois flaggées explicitement
+
+**Détecté** : Phase D-3 Tier 0 (APER échéance 01/07/2026 parkings >10000 m² —
+fenêtre 2 mois imminente non encodée).
+
+**Règle** :
+> Toute échéance réglementaire à <12 mois doit être **explicitement encodée**
+> (constante Python + YAML SoT + commentaire flag urgence). Pas d'implicite
+> "tout le monde sait que" — le scoring conformité doit pouvoir détecter
+> automatiquement la fenêtre d'application.
+
+**Sources** :
+- `backend/doctrine/constants.py:APER_DEADLINE_LARGE_PARKING_DATE = "2026-07-01"`
+- `backend/config/sources_reglementaires.yaml:APER_DEADLINE_LARGE`
+
+## Pilier 13 — Mirroring YAML ↔ constants.py source-guards cardinal
+
+**Détecté** : Phase D-3 Tier 0 (découverte cardinale — `sources_reglementaires.yaml`
+était déjà bien documenté APER 2026/BACS 70 kW/VNU pending mais constantes Python
+manquantes en exposition runtime).
+
+**Règle** :
+> Toute constante doctrine `backend/doctrine/constants.py` correspondant à une
+> donnée YAML/JSON/PDF source officielle DOIT avoir :
+> 1. Source-guard test mirroring (YAML ↔ constants.py cohérents)
+> 2. Commentaire constants.py pointe explicitement YAML source (clé YAML)
+> 3. Documentation cardinale source officielle (NOR + URL)
+> 4. Audit pré-fix systématique cherche d'abord wiring runtime manquant AVANT
+>    modifier YAML/sources
+
+**Tests acceptance** :
+- Source-guard mirroring constants.py ↔ YAML ✅ (cf `test_phase_d3_mirror_*`)
+- Commentaire pointe YAML source ✅
+- Documentation source officielle ✅
+
+**Sources** :
+- `backend/tests/test_phase_d3_tier0_reglementaire.py` (tests `test_phase_d3_mirror_aper_constants_yaml` + `test_phase_d3_mirror_bacs_constants_yaml`)
+- `backend/config/sources_reglementaires.yaml` (1179 lignes — SoT cardinal facts réglementaires)
+
+## Récapitulatif Piliers ADR-016 cumulés (v5 post-Phase D-3 Tier 2)
 
 | Pilier | Domaine | Phase d'origine | Doc cardinal |
 | --- | --- | --- | --- |
@@ -136,6 +222,10 @@ grep -rn "regex permissive\|Phase D-2.*Enum strict\|Pilier 9 ADR-016" backend/mo
 | **7** | **Self-FK hiérarchies internes (ondelete=SET NULL + backref)** | **D-0** | **ADR-016 v3** |
 | **8** | **Self-FK orphelin sans wiring runtime (anti-pattern + bridge)** | **D-2** | **ADR-D-01 + ADR-016 v3** |
 | **9** | **Validator permissif transitoire → Enum strict canonique post-audit** | **D-1bis → D-2.2** | **ADR-016 v3** |
+| **10** | **Calendrier réglementaire ≠ annuel par défaut** | **D-2** | **ADR-016 v5** |
+| **11** | **Audit réglementaire systémique pré-livraison majeure** | **D-3 Sprint Audit** | **ADR-016 v5** |
+| **12** | **Échéances <12 mois flaggées explicitement** | **D-3 Tier 0** | **ADR-016 v5** |
+| **13** | **Mirroring YAML ↔ constants.py source-guards cardinal** | **D-3 Tier 0** | **ADR-016 v5** |
 
 ## Tests de transition Pilier 9 — checklist
 

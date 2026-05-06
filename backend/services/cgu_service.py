@@ -10,6 +10,7 @@ Cohérent ADR-019 PATCH endpoints RGPD + CNIL article 7 (preuve d'origine forte)
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional
@@ -100,12 +101,25 @@ def list_active_cgu_versions() -> list[dict]:
     return list(config.get("versions", []))
 
 
+_CGU_PDF_ALLOWED_ROOT = Path(__file__).resolve().parent.parent.parent / "docs" / "cgu"
+"""Phase D-3 Tier 2 SEC-1 — root unique autorisé pour les PDFs CGU (anti path-traversal).
+
+Discipline cardinale : aucun PDF hors `<repo>/docs/cgu/*.pdf` ne peut être hashé via
+ce helper, indépendamment du chemin fourni en argument. Empêche l'oracle de hash sur
+fichiers système (cas Phase D-1 P1-AUDIT-D-006 audit deep multi-agents).
+"""
+
+
 def compute_cgu_pdf_sha256(pdf_path: str) -> str:
     """Phase D-1 — D-Audit-C8-CGU-Pdf-Hash-007 P1 REG : helper SHA256 PDF CGU.
 
     Calcule le hash SHA-256 du fichier PDF CGU pour preuve d'origine forte CNIL Article 7
     (vs nominal version étiquette). À appeler lors publication nouvelle version CGU pour
     renseigner `contenu_sha256` dans `cgu_referentiel.yaml`.
+
+    Phase D-3 Tier 2 SEC-1 (fix P1-AUDIT-D-006) : allowlist `<repo>/docs/cgu/*.pdf`
+    cardinale anti path-traversal. Le `pdf_path` peut être absolu ou relatif, mais
+    après résolution doit être strictement à l'intérieur de `_CGU_PDF_ALLOWED_ROOT`.
 
     Usage admin :
         sha = compute_cgu_pdf_sha256("docs/cgu/CGU_v1.0_2026-01-15.pdf")
@@ -116,11 +130,33 @@ def compute_cgu_pdf_sha256(pdf_path: str) -> str:
 
     Raises:
         FileNotFoundError si PDF introuvable.
+        ValueError si `pdf_path` hors allowlist `<repo>/docs/cgu/`.
     """
     import hashlib
-    from pathlib import Path
 
     pdf_p = Path(pdf_path)
+
+    # Résolution sécurisée : si chemin relatif, l'ancrer sur _CGU_PDF_ALLOWED_ROOT.
+    if not pdf_p.is_absolute():
+        # Cas : "CGU_v1.0.pdf" ou "docs/cgu/CGU_v1.0.pdf" → résoudre depuis repo root.
+        repo_root = _CGU_PDF_ALLOWED_ROOT.parent.parent
+        candidate = (repo_root / pdf_p).resolve()
+        if str(candidate).startswith(str(_CGU_PDF_ALLOWED_ROOT.resolve()) + os.sep):
+            pdf_p = candidate
+        else:
+            # Fallback : tenter direct depuis allowlist root
+            pdf_p = (_CGU_PDF_ALLOWED_ROOT / pdf_p.name).resolve()
+
+    pdf_p = pdf_p.resolve()
+    allowed_root = _CGU_PDF_ALLOWED_ROOT.resolve()
+    try:
+        pdf_p.relative_to(allowed_root)
+    except ValueError as exc:
+        raise ValueError(
+            f"Phase D-3 SEC-1 violation : chemin {pdf_path!r} hors allowlist "
+            f"{allowed_root}/ — anti path-traversal cardinal."
+        ) from exc
+
     if not pdf_p.exists():
         raise FileNotFoundError(f"CGU PDF introuvable : {pdf_path}")
 

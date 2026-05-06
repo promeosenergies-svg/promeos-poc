@@ -72,8 +72,15 @@ def test_sg_ext_audit_02_connectors_wired():
 
 
 def test_sg_ext_audit_03_sanitization_keys_present():
-    """SG_EXT_AUDIT_03 sécu : sentinelles redaction présentes (anti-régression leak secrets)."""
-    content = _AUDIT_SERVICE_PATH.read_text(encoding="utf-8")
+    """SG_EXT_AUDIT_03 sécu : sentinelles redaction présentes (anti-régression leak secrets).
+
+    Phase D-3 Tier 2 SEC-2 : SoT centralisé `services/security/pii_sanitizer.py`.
+    Audit_log_service.py ré-exporte via alias — vérifier les deux fichiers cumulés.
+    """
+    pii_sanitizer_path = _BACKEND_ROOT / "services" / "security" / "pii_sanitizer.py"
+    content_audit = _AUDIT_SERVICE_PATH.read_text(encoding="utf-8")
+    content_pii_sot = pii_sanitizer_path.read_text(encoding="utf-8") if pii_sanitizer_path.exists() else ""
+    content = (content_audit + "\n" + content_pii_sot).lower()
 
     required_redact_patterns = [
         "authorization",
@@ -83,7 +90,7 @@ def test_sg_ext_audit_03_sanitization_keys_present():
         "token",
         "code_verifier",
     ]
-    missing = [p for p in required_redact_patterns if p not in content.lower()]
+    missing = [p for p in required_redact_patterns if p not in content]
     assert not missing, (
         f"SG_EXT_AUDIT_03 BLOQUANT : sentinelles redaction manquantes : {missing}.\n"
         "Sans sanitisation, secrets fuites dans detail_json AuditLog → RGPD/CNIL violation."

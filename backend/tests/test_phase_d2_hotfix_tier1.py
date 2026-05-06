@@ -271,9 +271,14 @@ def test_phase_d2_bridge_anti_cycle_self_reference(app_client):
         )
         db.add(c)
         db.flush()
-        c.sub_meter_of_id = c.id  # auto-référence
-        db.flush()
-
+        # Phase D-3 Tier 2 DOC-2 ajoute validator @validates au niveau model qui
+        # intercepte l'auto-référence AVANT le bridge. Le validator lève "auto-référence
+        # cardinal interdite — anti-cycle D6 self-FK". Defense in depth :
+        # le bridge `ensure_meter_pair` reste capable de détecter cycles plus profonds (A→B→A).
+        with pytest.raises(ValueError, match="anti-cycle D6"):
+            c.sub_meter_of_id = c.id
+        # Si on bypass le validator (set direct via __dict__), le bridge intercepte aussi :
+        c.__dict__["sub_meter_of_id"] = c.id
         with pytest.raises(ValueError, match="cycle détecté"):
             ensure_meter_pair(db, c)
     finally:

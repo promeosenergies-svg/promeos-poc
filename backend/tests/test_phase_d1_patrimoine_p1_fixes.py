@@ -104,7 +104,7 @@ def test_phase_d1_org_enriched_persist(app_client):
             tva_intra="FR12345678901",
             code_naf_principal="6201Z",
             pays="FR",
-            secteur="tertiaire_bureaux",
+            secteur="tertiaire_prive",
             effectif_total=120,
             chiffre_affaires_eur=15_000_000.0,
         )
@@ -115,7 +115,7 @@ def test_phase_d1_org_enriched_persist(app_client):
         assert org.tva_intra == "FR12345678901"
         assert org.code_naf_principal == "6201Z"
         assert org.pays == "FR"
-        assert org.secteur == "tertiaire_bureaux"
+        assert org.secteur == "tertiaire_prive"
         assert org.effectif_total == 120
         assert org.chiffre_affaires_eur == 15_000_000.0
     finally:
@@ -172,30 +172,37 @@ def test_phase_d1_pii_patterns_real_pii_still_redacted():
 
 
 def test_phase_d1_compute_cgu_pdf_sha256_returns_64_hex():
-    """Phase D-1 : `compute_cgu_pdf_sha256` calcule SHA-256 hexadécimal (64 chars)."""
-    from services.cgu_service import compute_cgu_pdf_sha256
+    """Phase D-1 : `compute_cgu_pdf_sha256` calcule SHA-256 hexadécimal (64 chars).
 
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-        f.write(b"FAKE PDF CGU CONTENT v1.0 2026-01-15")
-        f.flush()
-        sha = compute_cgu_pdf_sha256(f.name)
-    Path(f.name).unlink()
+    Phase D-3 Tier 2 SEC-1 : test adapté à l'allowlist `<repo>/docs/cgu/` cardinale.
+    """
+    from services.cgu_service import compute_cgu_pdf_sha256, _CGU_PDF_ALLOWED_ROOT
 
-    assert len(sha) == 64
-    assert all(c in "0123456789abcdef" for c in sha)
-    # Match expected hash (deterministic)
-    expected = hashlib.sha256(b"FAKE PDF CGU CONTENT v1.0 2026-01-15").hexdigest()
-    assert sha == expected
+    _CGU_PDF_ALLOWED_ROOT.mkdir(parents=True, exist_ok=True)
+    test_pdf = _CGU_PDF_ALLOWED_ROOT / "CGU_test_phase_d1.pdf"
+    try:
+        test_pdf.write_bytes(b"FAKE PDF CGU CONTENT v1.0 2026-01-15")
+        sha = compute_cgu_pdf_sha256(str(test_pdf))
+
+        assert len(sha) == 64
+        assert all(c in "0123456789abcdef" for c in sha)
+        expected = hashlib.sha256(b"FAKE PDF CGU CONTENT v1.0 2026-01-15").hexdigest()
+        assert sha == expected
+    finally:
+        if test_pdf.exists():
+            test_pdf.unlink()
 
 
 def test_phase_d1_compute_cgu_pdf_sha256_raises_on_missing():
-    """Phase D-1 : raises FileNotFoundError si PDF absent."""
+    """Phase D-1 : raises FileNotFoundError si PDF absent (dans allowlist)."""
     import pytest
 
-    from services.cgu_service import compute_cgu_pdf_sha256
+    from services.cgu_service import compute_cgu_pdf_sha256, _CGU_PDF_ALLOWED_ROOT
 
+    _CGU_PDF_ALLOWED_ROOT.mkdir(parents=True, exist_ok=True)
+    missing_path = str(_CGU_PDF_ALLOWED_ROOT / "CGU_inexistant.pdf")
     with pytest.raises(FileNotFoundError):
-        compute_cgu_pdf_sha256("/path/inexistant/CGU_forge.pdf")
+        compute_cgu_pdf_sha256(missing_path)
 
 
 def test_phase_d1_verify_cgu_version_integrity_status_no_hash_yet():

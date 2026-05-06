@@ -308,78 +308,22 @@ def log_consent_changes_batch(
 
 
 # ─── Sprint C-7 Phase 7.5 — External Connectors audit trail (ADR-018, CNIL preuve d'extraction) ───
-
-# Sentinelles de redaction — case-insensitive
-# Sprint C-8 Phase 8.2 — D-Audit-Phase7-PII-Sanitization-Extended-001 P1 SEC :
-# extension keys email/phone/IBAN/adresse pour couverture cross-fournisseur cumul Phase 7.5.
-_SENSITIVE_KEY_PATTERNS = (
-    # Phase 7.5 baseline (auth/secret)
-    "authorization",
-    "bearer",
-    "client_secret",
-    "secret",
-    "api_key",
-    "apikey",
-    "token",
-    "access_token",
-    "refresh_token",
-    "code_verifier",
-    "code_challenge",
-    "password",
-    "passwd",
-    # Phase 8.2 EXTENSION (PII personnels)
-    "email",
-    "telephone",
-    "phone",
-    "iban",
-    "rib",
-    "bic",
-    "adresse",
-    "address",
-    "birth_date",
-    "birthdate",
-    "date_naissance",
+# Phase D-3 Tier 2 SEC-2 fix P1-AUDIT-D-014 : SoT centralisé `services/security/pii_sanitizer.py`.
+# Les patterns/helpers ci-dessous sont des aliases rétro-compatibles vers le SoT unique.
+from services.security.pii_sanitizer import (
+    HASH_KEY_PATTERNS as _HASH_KEY_PATTERNS,
 )
-
-# Champs identifiants à hasher (PRM/PCE/SIREN/SIRET) plutôt que redact
-_HASH_KEY_PATTERNS = (
-    "prm",
-    "pce",
-    "siren",
-    "siret",
-    "usage_point_id",
-    "code",  # code OAuth2 d'autorisation
+from services.security.pii_sanitizer import (
+    SENSITIVE_KEY_NON_PII_ALLOWLIST as _SENSITIVE_KEY_NON_SENSITIVE_ALLOWLIST,
+)
+from services.security.pii_sanitizer import (
+    SENSITIVE_KEY_PATTERNS as _SENSITIVE_KEY_PATTERNS,
+)
+from services.security.pii_sanitizer import (
+    is_sensitive_key as _is_sensitive_key,
 )
 
 _REDACTED = "<redacted>"
-
-
-# Sprint C-8 Phase 8.4 — D-Audit-C8-Address-Substring-Match-005 P1 SEC :
-# Allowlist explicite des keys techniques NON-PII contenant un pattern sensible
-# (anti sur-redaction CNIL audit trail). Pattern réutilisé Phase 8.3 (`code` exact)
-# mais inversé : ici on accepte le pattern partout SAUF allowlist explicite.
-_SENSITIVE_KEY_NON_SENSITIVE_ALLOWLIST = frozenset(
-    {
-        "ip_address",  # IP HTTP audit trail (CNIL article 5(2) accountability)
-        "mac_address",  # MAC réseau hardware (non-PII direct)
-        "url_address",  # URL endpoint
-        "user_agent",  # HTTP User-Agent (déjà tracé via cx_logger)
-    }
-)
-
-
-def _is_sensitive_key(key: str) -> bool:
-    """True si la clé contient un pattern sensible (case-insensitive).
-
-    Sprint C-8 Phase 8.4 fix : allowlist `_SENSITIVE_KEY_NON_SENSITIVE_ALLOWLIST`
-    pour exclure `ip_address`/`mac_address`/`url_address`/`user_agent` (keys techniques
-    non-PII préservées audit trail CNIL article 5(2) accountability).
-    Cohérent doctrine `_is_hash_key('code')` Phase 8.3 exact match strict.
-    """
-    lk = (key or "").lower()
-    if lk in _SENSITIVE_KEY_NON_SENSITIVE_ALLOWLIST:
-        return False
-    return any(p in lk for p in _SENSITIVE_KEY_PATTERNS)
 
 
 def _is_hash_key(key: str) -> bool:

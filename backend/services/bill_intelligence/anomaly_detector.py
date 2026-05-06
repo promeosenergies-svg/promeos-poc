@@ -79,34 +79,14 @@ _PERIOD_CODES_KNOWN = [
 # (EDF/Engie/TotalEnergies labels VNU peuvent contenir email contact, IBAN domiciliation, etc.).
 # Anti-CWE-532 (Insertion of Sensitive Information into Log File) + CWE-359 (Privacy).
 # Phase D-1 hotfix — D-Audit-C8-PII-Patterns-Order-006 P1 SEC :
-# Ordre cardinal du plus spécifique (long+structuré) au plus générique (court).
-# Anti faux-positifs labels EDF/Engie codes internes numériques.
-# - Pattern `\b\d{10}\b` PCE legacy GRDF retiré (2026+ rare + faux-positifs montants TURPE).
-#   Restaurable opt-in via env var si pilote rétro-compat 2024-2025 nécessaire.
-_PII_PATTERNS = (
-    # Patterns structurés (préfixe alphabétique → plus spécifiques)
-    re.compile(r"\bFR\d{2}[\s]?(?:[A-Z0-9]{4}[\s]?){5}[A-Z0-9]{3}\b"),  # IBAN FR (27 chars)
-    re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b"),  # Email RFC 5322
-    re.compile(r"(?<!\w)\+33[\s.-]?[1-9](?:[\s.-]?\d{2}){4}(?!\d)"),  # Téléphone FR international
-    # Patterns numériques (longs → courts)
-    re.compile(r"\b\d{14}\b"),  # SIRET / PRM / PCE / PDL (14 chiffres)
-    re.compile(r"\b0[1-9](?:[\s.-]?\d{2}){4}\b"),  # Téléphone FR fixe/mobile (0X XX XX XX XX)
-    re.compile(r"\b\d{9}\b"),  # SIREN (9 chiffres) — last (le plus court/risqué montants)
-    # `\b\d{10}\b` PCE court legacy GRDF — RETIRÉ Phase D-1 (faux-positifs montants TURPE).
+# Phase D-3 Tier 2 SEC-2 fix P1-AUDIT-D-014 : SoT centralisé `services/security/pii_sanitizer.py`.
+# Les patterns/helpers ci-dessous sont des aliases rétro-compatibles vers le SoT unique.
+from services.security.pii_sanitizer import (
+    PII_VALUE_PATTERNS as _PII_PATTERNS,
 )
-
-
-def _sanitize_pii_label(label: str) -> str:
-    """Masque les identifiants PII (SIREN/SIRET/PRM/PCE) dans un label.
-
-    Retourne label avec chaque match remplacé par `<PII_REDACTED>`.
-    """
-    if not label:
-        return label
-    sanitized = label
-    for pattern in _PII_PATTERNS:
-        sanitized = pattern.sub("<PII_REDACTED>", sanitized)
-    return sanitized
+from services.security.pii_sanitizer import (
+    sanitize_pii_value as _sanitize_pii_label,
+)
 
 
 def _resolve_period_code(line: EnergyInvoiceLine) -> Optional[str]:

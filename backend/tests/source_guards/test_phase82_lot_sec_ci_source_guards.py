@@ -19,28 +19,34 @@ _QUALITY_GATE_PATH = _REPO_ROOT / ".github" / "workflows" / "quality-gate.yml"
 
 
 def test_sg_phase82_01_pii_patterns_extended_email_phone_iban():
-    """SG_PHASE82_01 : _PII_PATTERNS étendu (email/phone FR/IBAN FR)."""
-    content = _ANOMALY_DETECTOR_PATH.read_text(encoding="utf-8")
+    """SG_PHASE82_01 : _PII_PATTERNS étendu (email/phone FR/IBAN FR).
 
-    # Marqueur dette Phase 8.2
-    assert "D-Audit-Phase7-PII-Sanitization-Extended-001" in content, (
-        "SG_PHASE82_01 BLOQUANT : référence dette Phase 8.2 PII étendue absente."
+    Phase D-3 Tier 2 SEC-2 : SoT centralisé `services/security/pii_sanitizer.py`.
+    Vérifier les sources cumulées (anomaly_detector + audit_log_service + pii_sanitizer.py).
+    """
+    pii_sot_path = _BACKEND_ROOT / "services" / "security" / "pii_sanitizer.py"
+    content_anomaly = _ANOMALY_DETECTOR_PATH.read_text(encoding="utf-8")
+    content_audit = _AUDIT_SERVICE_PATH.read_text(encoding="utf-8")
+    content_pii_sot = pii_sot_path.read_text(encoding="utf-8") if pii_sot_path.exists() else ""
+    cumul = content_anomaly + "\n" + content_audit + "\n" + content_pii_sot
+
+    # Marqueur dette Phase 8.2 conservé dans cumul (ré-exporté via alias OU citation history)
+    assert "Phase 8.2" in cumul or "D-Audit-Phase7-PII-Sanitization-Extended-001" in cumul, (
+        "SG_PHASE82_01 BLOQUANT : référence dette Phase 8.2 PII étendue absente (cumul SoT Phase D-3)."
     )
 
-    # Patterns étendus présents (regex)
-    cardinal_patterns = [
-        "@",  # Email
-        r"\+33",  # Téléphone FR international
-        "FR",  # IBAN FR
-    ]
+    # Patterns étendus présents (regex) — cumul SoT centralisé
+    cardinal_patterns = ["@", r"\+33", "FR"]
     for p in cardinal_patterns:
-        assert p in content, f"SG_PHASE82_01 : pattern '{p}' manquant dans _PII_PATTERNS"
+        assert p in cumul, f"SG_PHASE82_01 : pattern '{p}' manquant dans _PII_PATTERNS (cumul SoT Phase D-3)"
 
-    # Audit_log_service _SENSITIVE_KEY_PATTERNS étendu
-    audit_content = _AUDIT_SERVICE_PATH.read_text(encoding="utf-8")
+    # Keys cumul (audit_log_service.py historique OU pii_sanitizer.py SoT centralisé)
     cardinal_keys = ["email", "telephone", "phone", "iban", "rib", "adresse"]
+    keys_cumul = content_audit + "\n" + content_pii_sot
     for k in cardinal_keys:
-        assert f'"{k}"' in audit_content, f"SG_PHASE82_01 : key '{k}' manquant _SENSITIVE_KEY_PATTERNS"
+        assert f'"{k}"' in keys_cumul, (
+            f"SG_PHASE82_01 : key '{k}' manquant SENSITIVE_KEY_PATTERNS (cumul SoT Phase D-3)"
+        )
 
 
 def test_sg_phase82_02_ci_quality_gate_pytest_bloquant():

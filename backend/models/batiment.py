@@ -4,7 +4,7 @@ Unité réglementaire (décret tertiaire, BACS)
 """
 
 from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String, UniqueConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 
 from .base import Base, SoftDeleteMixin, TimestampMixin
 
@@ -52,6 +52,27 @@ class Batiment(Base, TimestampMixin, SoftDeleteMixin):
         nullable=True,
         comment="Année rénovation lourde (matrice v1 §4.5) — base ajustée OPERAT post-rénovation",
     )
+
+    # ─── Phase D-3 Tier 2 DOC-1 — String→Enum validator (P1-AUDIT-D-011) ───
+
+    @validates("dpe_class")
+    def _validate_dpe_class_strict(self, key: str, value: str | None):
+        """DOC-1 Phase D-3 Tier 2 : `dpe_class` réutilise `DpeClasseEnergie` Enum existant.
+
+        Valeurs canoniques : A/B/C/D/E/F/G + VIERGE.
+        Pattern Pilier 9 ADR-016.
+        """
+        if value is None or value == "":
+            return value
+        from .enums import DpeClasseEnergie
+
+        valid = {v.value for v in DpeClasseEnergie}
+        if value not in valid:
+            raise ValueError(
+                f"DOC-1 Phase D-3 Tier 2 violation : dpe_class={value!r} non canonique "
+                f"(attendu {sorted(valid)} — DpeClasseEnergie)"
+            )
+        return value
 
     # Relations
     site = relationship("Site", back_populates="batiments")

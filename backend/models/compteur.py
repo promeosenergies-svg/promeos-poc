@@ -4,7 +4,7 @@ Equipements de mesure énergétique (électricité, gaz, eau)
 """
 
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Boolean
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import TypeCompteur, EnergyVector
 
@@ -78,6 +78,45 @@ class Compteur(Base, TimestampMixin, SoftDeleteMixin):
     consommations = relationship(
         "Consommation", back_populates="compteur", cascade="all, delete-orphan", lazy="dynamic"
     )
+
+    # ─── Phase D-3 Tier 2 DOC-1 + DOC-2 validators (audit P1-AUDIT-D-010 + -012) ───
+
+    @validates("sub_meter_usage")
+    def _validate_sub_meter_usage_strict(self, key: str, value: str | None):
+        """DOC-1 Phase D-3 Tier 2 : `sub_meter_usage` strict Enum `SubMeterUsageEnum`.
+
+        Valeurs canoniques : CVC / IT / ECLAIRAGE / PROCESS / IRVE / AUTRES.
+        Pattern Pilier 9 ADR-016 — String reste, validator runtime exige Enum value.
+        """
+        if value is None or value == "":
+            return value
+        from .enums import SubMeterUsageEnum
+
+        valid = {v.value for v in SubMeterUsageEnum}
+        if value not in valid:
+            raise ValueError(
+                f"DOC-1 Phase D-3 Tier 2 violation : sub_meter_usage={value!r} non canonique "
+                f"(attendu {sorted(valid)} — SubMeterUsageEnum)"
+            )
+        return value
+
+    @validates("sub_meter_of_id")
+    def _validate_sub_meter_anti_cycle(self, key: str, value: int | None):
+        """DOC-2 Phase D-3 Tier 2 : anti-cycle D6 self-FK (P1-AUDIT-D-012).
+
+        Empêche l'auto-référence directe `compteur.sub_meter_of_id == compteur.id`
+        au moment de l'écriture (avant flush). La détection de cycle hiérarchique
+        plus profond (A→B→A) est gérée à un niveau supérieur par le bridge
+        `services/compteur_meter_bridge.py:ensure_meter_pair`.
+        """
+        if value is None:
+            return value
+        if self.id is not None and value == self.id:
+            raise ValueError(
+                f"DOC-2 Phase D-3 Tier 2 violation : sub_meter_of_id={value} == id={self.id} "
+                f"(auto-référence cardinal interdite — anti-cycle D6 self-FK)"
+            )
+        return value
 
     @property
     def delivery_code(self):

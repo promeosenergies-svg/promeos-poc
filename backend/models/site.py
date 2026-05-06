@@ -4,7 +4,7 @@ Coeur du domaine : site de consommation énergétique
 """
 
 from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Enum, Float, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import (
     AperCategorieTailleEnum,
@@ -307,6 +307,27 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
 
     # Energy analytics
     meters = relationship("Meter", back_populates="site", cascade="all, delete-orphan")
+
+    # ─── Phase D-3 Tier 2 DOC-1 — String→Enum validators (Pilier 9 ADR-016) ───
+
+    @validates("mode_propriete")
+    def _validate_mode_propriete_strict(self, key: str, value: str | None):
+        """DOC-1 Phase D-3 Tier 2 : `mode_propriete` réutilise `EfaRole` Enum existant.
+
+        Valeurs canoniques : PROPRIETAIRE / LOCATAIRE / MANDATAIRE.
+        Pattern Pilier 9 ADR-016 — String reste, validator runtime exige Enum value.
+        """
+        if value is None or value == "":
+            return value
+        from .enums import EfaRole
+
+        valid = {v.value for v in EfaRole}
+        if value not in valid:
+            raise ValueError(
+                f"DOC-1 Phase D-3 Tier 2 violation : mode_propriete={value!r} non canonique "
+                f"(attendu {sorted(valid)} — EfaRole)"
+            )
+        return value
 
     def __repr__(self):
         return f"<Site {self.id}: {self.nom} ({self.type.value})>"

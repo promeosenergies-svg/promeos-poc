@@ -1129,3 +1129,50 @@ class FtaCode(str, enum.Enum):
     BTSUPLU = "BTSUPLU"  # C4 BT>36kVA — longue util.
     HTACU5 = "HTACU5"  # C3/C2 HTA — courte util. 5 postes (PTE/HPH/HCH/HPE/HCE)
     HTALU5 = "HTALU5"  # C3/C2 HTA — longue util. 5 postes
+
+
+# ============================================================
+# Phase D-3 Tier 2 DOC-1 — 5 String→Enum Pilier 9 ADR-016 régularisation
+# ============================================================
+# Sources : audit Phase D commit 147d872b (P1-AUDIT-D-007 à -011).
+# Pattern Pilier 9 ADR-016 (Phase D-1bis → Phase D-2.2 FtaCode) reproduit pour
+# 5 nouveaux champs String hérités Phase D-0/D-1 où des Enum existaient ou
+# devaient être créés.
+
+
+class VersionTurpeEnum(str, enum.Enum):
+    """Version TURPE active sur un point de livraison (CRE 2025-78 cardinal).
+
+    Phase D-3 Tier 2 : Enum strict pour `DeliveryPoint.version_turpe` (était String(10)).
+    """
+
+    TURPE_6 = "TURPE_6"
+    TURPE_7 = "TURPE_7"
+
+
+class ModeTraitementEnum(str, enum.Enum):
+    """Mode traitement compteur Enedis (matrice v1 §4.6).
+
+    Phase D-3 Tier 2 : Enum strict pour `DeliveryPoint.mode_traitement` (était String(20)).
+    """
+
+    SMART = "smart"
+    TRADITIONNEL = "traditionnel"
+    TELERELEVE = "telereleve"
+    MANUEL = "manuel"
+
+
+class SubMeterUsageEnum(str, enum.Enum):
+    """Usage sous-compteur D6 (différenciateur PROMEOS Mid-market premium).
+
+    Phase D-3 Tier 2 : Enum strict pour `Compteur.sub_meter_usage` (était String(50)).
+    Aligné UsageFamily (THERMIQUE/ELECTRICITE_SPECIFIQUE/ECLAIRAGE/PROCESS/AUXILIAIRES)
+    en granularité usage atomique pour pilotage runtime CVC/IT/éclairage.
+    """
+
+    CVC = "CVC"  # Chauffage / Ventilation / Climatisation
+    IT = "IT"  # Informatique / Datacenter
+    ECLAIRAGE = "ECLAIRAGE"  # Éclairage interieur/exterieur
+    PROCESS = "PROCESS"  # Production / process metier
+    IRVE = "IRVE"  # Bornes de recharge VE
+    AUTRES = "AUTRES"  # Auxiliaires / parties communes / divers

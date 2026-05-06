@@ -3,9 +3,14 @@ PROMEOS - Modèle Organisation
 Niveau groupe/client COMEX (ex: "Groupe HELIOS", "Ville de Lyon")
 """
 
+import re
+
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 from .base import Base, TimestampMixin, SoftDeleteMixin
+
+# Phase D-3 Tier 2 VAL-2 — tva_intra format ^FR\d{11}$ (audit P1-AUDIT-D-018).
+_TVA_INTRA_FR_PATTERN = re.compile(r"^FR\d{2}\d{9}$")
 
 
 class Organisation(Base, TimestampMixin, SoftDeleteMixin):
@@ -105,6 +110,42 @@ class Organisation(Base, TimestampMixin, SoftDeleteMixin):
         nullable=True,
         comment="Version CGU au moment du consentement GRDF",
     )
+
+    # ─── Phase D-3 Tier 2 DOC-1 + VAL-2 validators (audit P1-AUDIT-D-009 + -018) ───
+
+    @validates("secteur")
+    def _validate_secteur_strict(self, key: str, value: str | None):
+        """DOC-1 : `secteur` réutilise `Typologie` Enum existant.
+
+        Pattern Pilier 9 ADR-016 — String reste, validator runtime exige Enum value
+        (TERTIAIRE_PRIVE/TERTIAIRE_PUBLIC/INDUSTRIE/COMMERCE_RETAIL/etc.).
+        """
+        if value is None or value == "":
+            return value
+        from .enums import Typologie
+
+        valid = {v.value for v in Typologie}
+        if value not in valid:
+            raise ValueError(
+                f"DOC-1 Phase D-3 Tier 2 violation : secteur={value!r} non canonique "
+                f"(attendu un de {sorted(valid)} — Typologie)"
+            )
+        return value
+
+    @validates("tva_intra")
+    def _validate_tva_intra_format(self, key: str, value: str | None):
+        """VAL-2 Phase D-3 Tier 2 : `tva_intra` format `^FR\\d{11}$` strict (P1-AUDIT-D-018).
+
+        N° TVA intracommunautaire FR = `FR` + clé 2 chiffres + SIREN 9 chiffres = 13 chars total.
+        """
+        if value is None or value == "":
+            return value
+        if not _TVA_INTRA_FR_PATTERN.match(value):
+            raise ValueError(
+                f"VAL-2 Phase D-3 Tier 2 violation : tva_intra={value!r} format invalide "
+                f"(attendu `^FR\\d{{11}}$` — 'FR' + clé 2 chiffres + SIREN 9 chiffres)"
+            )
+        return value
 
     # Relations (1-to-many)
     entites_juridiques = relationship(

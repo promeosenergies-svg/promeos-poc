@@ -465,6 +465,59 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
             )
         return value
 
+    # Phase D-3 Tier 2 VAL-1 — PCE format 14 chiffres (P1-AUDIT-D-016).
+    _PCE_PRM_PATTERN = re.compile(r"^\d{14}$")
+
+    @validates("code")
+    def _validate_code_pce_prm_format(self, key: str, value: str | None):
+        """VAL-1 Phase D-3 Tier 2 : PRM (élec) ou PCE (gaz) = 14 chiffres exactement.
+
+        Format Enedis PRM = 14 chiffres / Format GRDF PCE = 14 chiffres.
+        Validation runtime cardinale anti-saisie utilisateur incorrecte.
+        """
+        if value is None or value == "":
+            return value
+        if not self._PCE_PRM_PATTERN.match(value):
+            raise ValueError(
+                f"VAL-1 Phase D-3 Tier 2 violation : code={value!r} format PRM/PCE invalide "
+                f"(attendu 14 chiffres exactement — Enedis PRM ou GRDF PCE)"
+            )
+        return value
+
+    @validates("version_turpe")
+    def _validate_version_turpe_strict(self, key: str, value: str | None):
+        """DOC-1 Phase D-3 Tier 2 : `version_turpe` strict Enum `VersionTurpeEnum`.
+
+        Pattern Pilier 9 ADR-016 : String reste, validator runtime exige valeur Enum
+        (pas de migration colonne — préserve baseline DB).
+        """
+        if value is None or value == "":
+            return value
+        from .enums import VersionTurpeEnum
+
+        valid = {v.value for v in VersionTurpeEnum}
+        if value not in valid:
+            raise ValueError(
+                f"DOC-1 Phase D-3 Tier 2 violation : version_turpe={value!r} non canonique "
+                f"(attendu {sorted(valid)} — VersionTurpeEnum)"
+            )
+        return value
+
+    @validates("mode_traitement")
+    def _validate_mode_traitement_strict(self, key: str, value: str | None):
+        """DOC-1 Phase D-3 Tier 2 : `mode_traitement` strict Enum `ModeTraitementEnum`."""
+        if value is None or value == "":
+            return value
+        from .enums import ModeTraitementEnum
+
+        valid = {v.value for v in ModeTraitementEnum}
+        if value not in valid:
+            raise ValueError(
+                f"DOC-1 Phase D-3 Tier 2 violation : mode_traitement={value!r} non canonique "
+                f"(attendu {sorted(valid)} — ModeTraitementEnum)"
+            )
+        return value
+
     @validates("code_fta")
     def _validate_code_fta_format(self, key: str, value: str | None):
         """C64 matrice v1 §8.3 : `code_fta` cohérent segmentation tarifaire.
