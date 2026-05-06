@@ -12,7 +12,7 @@
 
 **Déclencheur** : la Phase 5.5 audit deep Sprint C-5 a révélé **4 P0 invisibles** aux 7 agents SDK pré-commit cumulés (PRAGMA foreign_keys absent, erreur arithmétique x1000, R19 NULL faux positif, SG tolerance défaillant). Cet audit transversal généralise la rigueur Phase 5.5 deep à TOUTES les phases Phase C livrées (29 phases + 2 mini-sprints sécurité).
 
-**Découvertes cardinales** : **10 P0 nouveaux + 15 P1 + 10 P2** non détectés par les audits sprint-end précédents. Pattern récurrent : **déclaration sans enforcement runtime** (cascade Org consentement câblée CASCADE_MAP mais pas wirée PATCH endpoint, BillAnomaly UNIQUE constraint absent, etc.).
+**Découvertes cardinales** : **10 P0 + 12 P1 + 7 P2 = 29 findings** dont **18 nouveaux** non détectés par les audits sprint-end précédents (les 11 autres confirment des dettes déjà tracées). Pattern récurrent : **déclaration sans enforcement runtime** (cascade Org consentement câblée CASCADE_MAP mais pas wirée PATCH endpoint, BillAnomaly UNIQUE constraint absent, etc.).
 
 **Verdict global** : Phase C **arithmétiquement saine** (1 seul bug ×1000 cardinal déjà corrigé Phase 5.6) mais **lacunes cardinales runtime + RGPD + sécurité DEMO_MODE** qui invalidaient partiellement la promesse fonctionnelle des Sprints C-3 → C-5.
 
