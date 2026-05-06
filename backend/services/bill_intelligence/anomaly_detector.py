@@ -235,7 +235,12 @@ def detect_r20_capacity_variance(invoice: EnergyInvoice, db: Session) -> list[Bi
         if not capacite_souscrite or capacite_souscrite <= 0:
             continue
 
-        capacite_facturee = float(line.qty or 0)
+        # Sprint C-5 Phase 5.8 fix G2 (audit transversal AXE 3 P0-1) : line.qty IS NULL
+        # = donnée manquante (estimation acompte sans relève kVA), pas d'anomalie inférable.
+        # Réplique pattern F2 R19 Phase 5.6 sur ligne capacité.
+        if line.qty is None:
+            continue
+        capacite_facturee = float(line.qty)
         if capacite_facturee == 0:
             continue
 

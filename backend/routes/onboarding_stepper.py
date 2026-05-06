@@ -85,7 +85,11 @@ def get_onboarding_progress(
     auth: AuthContext = Depends(get_optional_auth),
 ):
     """Get onboarding progress for org, with data quality gating."""
-    oid = resolve_org_id(request, auth, db, org_id_override=org_id)
+    # Sprint C-5 Phase 5.8 fix G5 (audit transversal SEC-2026-011) : `org_id_override`
+    # retiré pour empêcher cross-tenant énumération en DEMO_MODE. Le query param
+    # `org_id` est conservé pour compat backward-FE mais IGNORÉ — résolution stricte
+    # via auth context (JWT ou DemoState pré-seedée DEMO_MODE).
+    oid = resolve_org_id(request, auth, db)
     if not oid:
         raise HTTPException(400, "org_id requis")
 
@@ -122,7 +126,11 @@ def update_step(
     auth: AuthContext = Depends(get_optional_auth),
 ):
     """Mark a single step as complete/incomplete."""
-    oid = resolve_org_id(request, auth, db, org_id_override=org_id)
+    # Sprint C-5 Phase 5.8 fix G5 (audit transversal SEC-2026-011) : `org_id_override`
+    # retiré pour empêcher cross-tenant énumération en DEMO_MODE. Le query param
+    # `org_id` est conservé pour compat backward-FE mais IGNORÉ — résolution stricte
+    # via auth context (JWT ou DemoState pré-seedée DEMO_MODE).
+    oid = resolve_org_id(request, auth, db)
     if not oid:
         raise HTTPException(400, "org_id requis")
 
@@ -169,7 +177,11 @@ def dismiss_stepper(
     auth: AuthContext = Depends(get_optional_auth),
 ):
     """Dismiss (hide) the onboarding stepper."""
-    oid = resolve_org_id(request, auth, db, org_id_override=org_id)
+    # Sprint C-5 Phase 5.8 fix G5 (audit transversal SEC-2026-011) : `org_id_override`
+    # retiré pour empêcher cross-tenant énumération en DEMO_MODE. Le query param
+    # `org_id` est conservé pour compat backward-FE mais IGNORÉ — résolution stricte
+    # via auth context (JWT ou DemoState pré-seedée DEMO_MODE).
+    oid = resolve_org_id(request, auth, db)
     if not oid:
         raise HTTPException(400, "org_id requis")
 
@@ -193,7 +205,11 @@ def auto_detect_steps(
     auth: AuthContext = Depends(get_optional_auth),
 ):
     """Auto-detect completed steps from actual data."""
-    oid = resolve_org_id(request, auth, db, org_id_override=org_id)
+    # Sprint C-5 Phase 5.8 fix G5 (audit transversal SEC-2026-011) : `org_id_override`
+    # retiré pour empêcher cross-tenant énumération en DEMO_MODE. Le query param
+    # `org_id` est conservé pour compat backward-FE mais IGNORÉ — résolution stricte
+    # via auth context (JWT ou DemoState pré-seedée DEMO_MODE).
+    oid = resolve_org_id(request, auth, db)
     if not oid:
         raise HTTPException(400, "org_id requis")
 

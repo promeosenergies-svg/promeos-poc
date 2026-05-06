@@ -19,7 +19,7 @@ Adaptations Phase 5.1.0 (post-diagnostic) :
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, JSON, Numeric, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, JSON, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .base import Base, SoftDeleteMixin, TimestampMixin
@@ -32,6 +32,11 @@ class BillAnomaly(Base, TimestampMixin, SoftDeleteMixin):
     __table_args__ = (
         Index("ix_bill_anomaly_code_severity", "code", "severity"),
         Index("ix_bill_anomaly_detected_at", "detected_at"),
+        # Sprint C-5 Phase 5.8 fix G3 (audit transversal AXE 2 F4) : anti-doublons R19/R20
+        # sur même invoice (replays ingestion concurrente). Note : avec SoftDeleteMixin,
+        # un soft-delete ne libère pas la contrainte (PostgreSQL nécessitera index partiel
+        # WHERE deleted_at IS NULL Sprint C-7 polish — MVP SQLite simple suffit).
+        UniqueConstraint("invoice_id", "code", name="uq_bill_anomaly_invoice_code"),
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)

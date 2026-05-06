@@ -5,7 +5,7 @@ Endpoints manuels pour ajouter/modifier/archiver des entités patrimoniales.
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -145,19 +145,60 @@ def get_organisation(
 def update_organisation(
     org_id: int,
     body: OrganisationUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Met à jour une organisation."""
+    """Met à jour une organisation.
+
+    Sprint C-5 Phase 5.8 fix G1 (audit transversal AXE 2 F2) : wiring cascade
+    runtime sur mutations `consentement_dataconnect_global` / `consentement_grdf_global`.
+    Sans ce wiring, la cascade Phase 4.5 déclarée `CASCADE_MAP_MVP_SPRINT_C1`
+    était silencieusement non-déclenchée (réplique pattern F1 PRAGMA Phase 5.6).
+    """
+    from regops.services.cascade_recompute_service import cascade_recompute_on_change
+
     _require_write_access(auth)
     org = db.query(Organisation).filter(Organisation.id == org_id, not_deleted(Organisation)).first()
     if not org:
         raise HTTPException(404, "Organisation introuvable")
-    for field, value in body.model_dump(exclude_unset=True).items():
+
+    # Capture old values pour audit cascade (champs consent uniquement — autres = setattr direct)
+    cascade_fields = {
+        "consentement_dataconnect_global": getattr(org, "consentement_dataconnect_global", None),
+        "consentement_grdf_global": getattr(org, "consentement_grdf_global", None),
+    }
+    payload = body.model_dump(exclude_unset=True)
+    for field, value in payload.items():
         setattr(org, field, value)
     db.commit()
     db.refresh(org)
-    return _org_to_dict(org)
+
+    # G1 Phase 5.8 — Cascade wiring runtime (Phase 4.5 effectivement déclenchée)
+    cascade_results = []
+    for cascade_field in ("consentement_dataconnect_global", "consentement_grdf_global"):
+        if cascade_field in payload:
+            try:
+                result = cascade_recompute_on_change(
+                    db=db,
+                    entity=org,
+                    field_modified=f"Organisation.{cascade_field}",
+                    old_value=cascade_fields[cascade_field],
+                    new_value=payload[cascade_field],
+                    persist=True,
+                    user_id=getattr(auth, "user_id", None),
+                    org_id=org_id,
+                )
+                cascade_results.append({"field": cascade_field, "actions": len(result.actions)})
+            except Exception as exc:  # noqa: BLE001 — résilience cascade (audit transversal pattern)
+                import logging
+
+                logging.getLogger("promeos.cascade").error("Cascade Org consent failed: %s", type(exc).__name__)
+
+    response = _org_to_dict(org)
+    if cascade_results:
+        response["cascade"] = cascade_results
+    return response
 
 
 @router.delete("/organisations/{org_id}")

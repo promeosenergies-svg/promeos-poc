@@ -796,6 +796,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-5 Phase 5.4 — Polish 4 dettes (P1 SG TraceTooltip + P1 SG YAML constants reclassif P2 + 2 P1 ADR-008/009 audit qualité)) | 25 | 1 | 9 | 15 |
 | 2026-05-06 (Sprint C-5 Phase 5.5 — Fix audit 4 bloquants : VNU terminologie + multi-meter filter + 4 tests intégration endpoint + 1 P0 nouvelle DEMO_MODE) | 26 | 2 | 9 | 15 |
 | 2026-05-06 (Sprint C-5 Phase 5.6 — Fix 4 P0 audit deep multi-agents : F1 PRAGMA FK + F2 R19 NULL + F3 Capacité 3.15→3150 + F4 SG tolerance 1500→1.5 + 23 dettes C-7 tracées) | 49 | 4 | 18 | 27 |
+| 2026-05-06 (Sprint C-5 Phase 5.8 — Fix 6 P0 audit transversal : G1 cascade Org PATCH wiring + G2 R20 NULL + G3 BillAnomaly UNIQUE + G4 ADR-015 warning + G5 IDOR stepper + G6 operat_export NULL DT compliance) | 43 | 1 | 18 | 24 |
 
 ---
 

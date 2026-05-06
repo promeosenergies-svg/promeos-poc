@@ -86,6 +86,61 @@ def _get_site_conso(db: Session, site_id: int, year: int) -> dict:
     return {"elec": round(elec_kwh), "gaz": round(gaz_kwh), "reseau": 0}
 
 
+def _get_site_conso_with_completeness(
+    db: Session,
+    site_id: int,
+    year: int,
+) -> tuple[dict, str]:
+    """Sprint C-5 Phase 5.8 fix G6 (audit transversal AXE 3 P0-3) — distinguer NULL ≠ 0.
+
+    Variant `_get_site_conso` qui retourne aussi le statut de complétude :
+    - `complete` : tous les invoices ont `energy_kwh` non-NULL
+    - `incomplete_null` : ≥1 invoice avec `energy_kwh IS NULL` (donnée manquante,
+      déclaration OPERAT incomplète — sanctions DT potentielles)
+    - `no_data` : aucune facture trouvée pour l'année
+
+    CARDINAL réglementaire : pour OPERAT déclaration, NULL ≠ 0 (donnée non mesurée
+    vs mesurée à 0). Décret Tertiaire art. R175-12 exige données complètes.
+    """
+    invoices = db.query(EnergyInvoice).filter(EnergyInvoice.site_id == site_id, not_deleted(EnergyInvoice)).all()
+
+    elec_kwh = 0.0
+    gaz_kwh = 0.0
+    has_null = False
+    matched_count = 0
+
+    for inv in invoices:
+        # Détection énergie via contrat
+        energy_type = None
+        if inv.contract_id:
+            contract = db.query(EnergyContract).filter(EnergyContract.id == inv.contract_id).first()
+            if contract:
+                energy_type = contract.energy_type
+        inv_year = None
+        if inv.period_start:
+            inv_year = inv.period_start.year
+        elif inv.issue_date:
+            inv_year = inv.issue_date.year
+        if inv_year != year:
+            continue
+        matched_count += 1
+        if inv.energy_kwh is None:
+            has_null = True
+            continue
+        kwh = inv.energy_kwh
+        if energy_type == BillingEnergyType.GAZ:
+            gaz_kwh += kwh
+        else:
+            elec_kwh += kwh
+
+    conso = {"elec": round(elec_kwh), "gaz": round(gaz_kwh), "reseau": 0}
+    if matched_count == 0:
+        return conso, "no_data"
+    if has_null:
+        return conso, "incomplete_null"
+    return conso, "complete"
+
+
 def validate_operat_export(
     db: Session,
     org_id: int,
@@ -118,15 +173,43 @@ def validate_operat_export(
 
         # Surface check
         buildings = db.query(TertiaireEfaBuilding).filter(TertiaireEfaBuilding.efa_id == efa.id).all()
-        total_surface = sum(b.surface_m2 or 0 for b in buildings)
+        # Sprint C-5 Phase 5.8 fix G6 (audit transversal AXE 3 P0-3) : distinguer NULL
+        # surfaces (donnée manquante, déclaration incomplète) de 0 (surface mesurée nulle).
+        buildings_null_surface = [b for b in buildings if b.surface_m2 is None]
+        total_surface = sum(b.surface_m2 for b in buildings if b.surface_m2 is not None)
         if total_surface == 0:
             errors.append({"code": "NO_SURFACE", "efa_id": efa.id, "message": f"{prefix}: surface = 0 m2"})
+        if buildings_null_surface:
+            # CARDINAL réglementaire : déclaration OPERAT avec surfaces NULL = sanctions DT
+            # potentielles (Décret Tertiaire art. R175-12 — données complètes obligatoires).
+            errors.append(
+                {
+                    "code": "SURFACE_NULL_INCOMPLETE",
+                    "efa_id": efa.id,
+                    "message": f"{prefix}: {len(buildings_null_surface)} bâtiment(s) sans surface_m2 (NULL ≠ 0). "
+                    f"Compléter données avant déclaration OPERAT (Décret Tertiaire art. R175-12 — sanctions 1500€/bât).",
+                    "buildings_with_null_surface": [b.id for b in buildings_null_surface],
+                }
+            )
 
-        # Consumption check
-        conso = _get_site_conso(db, efa.site_id, year) if efa.site_id else {"elec": 0, "gaz": 0, "reseau": 0}
+        # Consumption check (G6 cardinal : NULL ≠ 0)
+        if efa.site_id:
+            conso, conso_completeness = _get_site_conso_with_completeness(db, efa.site_id, year)
+        else:
+            conso = {"elec": 0, "gaz": 0, "reseau": 0}
+            conso_completeness = "no_site"
         total_kwh = conso["elec"] + conso["gaz"] + conso["reseau"]
         if total_kwh == 0:
             warnings.append({"code": "NO_CONSO", "efa_id": efa.id, "message": f"{prefix}: aucune consommation {year}"})
+        if conso_completeness == "incomplete_null":
+            errors.append(
+                {
+                    "code": "CONSO_NULL_INCOMPLETE",
+                    "efa_id": efa.id,
+                    "message": f"{prefix}: factures avec energy_kwh NULL détectées (déclaration incomplète). "
+                    f"OPERAT exige données mesurées (Décret Tertiaire — sanctions 7500€/bât + 150€/m² >2000m²).",
+                }
+            )
 
         # Responsable check
         resp = db.query(TertiaireResponsibility).filter(TertiaireResponsibility.efa_id == efa.id).first()

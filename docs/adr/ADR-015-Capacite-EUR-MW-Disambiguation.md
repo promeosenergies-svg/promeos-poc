@@ -1,14 +1,26 @@
 # ADR-015 — Capacité EUR/MW disambiguation (clarification documentaire)
 
-**Statut** : Accepté
-**Date** : 2026-05-05
-**Sprint** : C-5 Phase 0 (build Phase 5.2)
+**Statut** : Accepté avec correction Phase 5.6 fix F3
+**Date** : 2026-05-05 (initial) + 2026-05-06 (correction Phase 5.6)
+**Sprint** : C-5 Phase 0 (build Phase 5.2 + correction Phase 5.6 fix F3)
 **Personnes impliquées** : Amine (founder), Claude architect-helios + bill-intelligence
-**Tracking dette** : `D-Phase4-2-Capacite-EUR-MW-Disambiguation-001` (P0 reclassif Phase 4.2d) → CLÔTURÉE Phase 5.2
+**Tracking dette** : `D-Phase4-2-Capacite-EUR-MW-Disambiguation-001` (P0 reclassif Phase 4.2d) → CLÔTURÉE Phase 5.2 + corrigée Phase 5.6 F3
 
 ---
 
-## Contexte
+> ⚠️ **AVERTISSEMENT LECTEUR** (Phase 5.8 fix G4) :
+>
+> Les sections "Contexte" + "Audit Phase 0 Sprint C-5" + "Clarification mathématique" + "Diagnostic catalog actuel" + "Diagnostic cost_simulator_2026" + "Décision" + "Conséquences" + "Implémentation Phase 5.2 actée" ci-dessous sont **HISTORIQUES** et reflètent l'état pré-Phase 5.6.
+>
+> **Valeur runtime correcte actuelle** : `CAPACITE_RTE_TARIF_2026_EUR_PER_MW = 3150 EUR/MW.an` (corrigé Phase 5.6 fix F3 — typo factor 1000 manquant Sprint C-4 P4.2).
+>
+> Pour la **vérité courante**, consulter directement la section **"Correction Phase 5.6 fix F3"** plus bas dans ce document.
+>
+> Les références "3.15 EUR/MW" dans les sections amont sont la valeur **erronée historique** que Phase 5.6 a corrigée. Conservées pour traçabilité audit + comprehension décision.
+
+---
+
+## Contexte (HISTORIQUE pré-Phase 5.6)
 
 L'audit multi-agents Sprint C-4 Phase 4.2d (commit `d131205d`) a flaggé une **disambiguation EUR/MW** entre 2 valeurs apparemment incohérentes utilisées dans le code billing/revenue PROMEOS :
 
