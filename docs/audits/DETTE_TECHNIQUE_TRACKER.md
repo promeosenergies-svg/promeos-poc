@@ -801,6 +801,55 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-7 Phase 7.7 Lot B — REGOPS Weights AUDIT_APPLICABLE SG + Accise SG coverage + invariants 100% (3 P1 + 1 P2) — commit 2713ab4b) | 27 | 0 | 11 | 16 |
 | 2026-05-06 (Sprint C-7 Phase 7.7 Lot C — EnergyInvoice +1 col tva_rate Numeric(5,4) + 12e migration Alembic propre + VNU terminologie cardinale 6 callsites (1 P1 + 1 P2) — commit c5ace813) | 25 | 0 | 10 | 15 |
 | 2026-05-06 (Sprint C-7 Phase 7.7 Lot D — Bill Intelligence endpoint Literal validation + pagination + KPI total_economie_potentielle_eur (3 P2) → **Phase 7.7 totale : 8 P1 + 9 P2 = 17 dettes clôturées**) | 22 | 0 | 10 | 12 |
+| 2026-05-06 (Sprint C-7 AUDIT COMPLET PHASE 7 multi-agents SDK 6 parallèles — 24 findings nouveaux détectés (6 P0 + 10 P1 + 8 P2) → **PRÉ-PILOTE-READY ASSERTION RÉVISÉE**) | 46 | 6 | 20 | 20 |
+
+---
+
+## 📊 AUDIT COMPLET PHASE 7 — 24 NOUVELLES DETTES (2026-05-06)
+
+**Méthode** : 6 agents SDK parallèles (code-reviewer + security-auditor + qa-guardian + regulatory-expert + bill-intelligence + architect-helios) sur 10 commits Phase 7.1 à 7.7.
+
+**Référence** : [`AUDIT_PHASE_7_COMPLET_2026_05_06.md`](AUDIT_PHASE_7_COMPLET_2026_05_06.md)
+
+### 🔴 P0 BLOQUANTS PRÉ-PILOTE (6 dettes — Tier 1+2 corrections cumulées ~5-6h)
+
+- **D-Sprint-C7-IDOR-DataConnect-Connectors-001** P0 — 5 endpoints `/api/dataconnect/*` (authorize/callback/consent/sync/tokens) sans `resolve_org_id`. CWE-639 + CWE-862. Lecture/écriture cross-tenant PRM. Fix : ajouter resolve_org_id + JOIN chain Meter→Site→Portefeuille→EJ. ~2h.
+- **D-Sprint-C7-IDOR-GRDF-Endpoints-001** P0 — 2 endpoints `/api/grdf/pce/{pce}/*` sans org-scoping. Identique DataConnect. ~1h.
+- **D-Sprint-C7-IDOR-OrgIdOverride-Bypass-001** P0 — `scope_utils.py:170` `if org_id_override: return org_id_override` sans validation DB ni JWT cross-check. Bypass DEMO_MODE via query param. ~30 min.
+- **D-Sprint-C7-Audit-RGPD-Transaction-Decoupling-001** P0 CNIL — `rgpd_consent.py:113` log_consent_changes_batch dans transaction principale → rollback efface AuditLog → CWE-778 perte preuve CNIL article 7. Fix : session DB dédiée pattern Phase 7.5. ~30 min.
+- **D-Sprint-C7-RGPD-Article-6-vs-5-2-Mislabel-001** P0 REG — `audit_log_service.py:414` `rgpd_article: "Article 6 RGPD"` juridiquement inadéquat (Article 6 = bases légales, traçabilité = Article 5(2) accountability + Article 30 registre). Fix : remplacer texte. ~15 min.
+- **D-Sprint-C7-TURPE-7-Codes-HTA-Mismatch-001** P0 REG — `anomaly_detector.py:54-66` ajout HPE/HCE/PM annoncé "TURPE 7" mais codes TURPE 6 obsolètes (TURPE 7 utilise P/HPH/HCH/HPB/HCB). Fix : commenter rétro-compat OU retirer. ~30 min.
+
+### 🟠 P1 AVANT PRODUCTION SCALING (10 dettes — ~6-8h)
+
+- **D-Sprint-C7-PII-Sanitization-Email-IBAN-001** P1 SEC — `_sanitize_pii_label` manque email/téléphone/IBAN/RIB. Étendre `_PII_PATTERNS`. ~30 min.
+- **D-Sprint-C7-Hash-Key-Code-Overmatch-001** P1 SEC — `_is_hash_key('code')` matche `period_code`/`error_code`. Fix word-boundary `lk == 'code'`. ~15 min.
+- **D-Sprint-C7-PKCE-Pending-Auth-InMemory-001** P1 SEC — `_pending_auth: dict[str, str]` non borné, multi-worker incompatible. Fix : DB/Redis TTL. ~1h.
+- **D-Sprint-C7-Audit-External-Positional-Args-001** P1 SEC — `audit_external_api_call` extrait org_id via `kwargs.get()` only. Fix : inspecter args[1:]. ~30 min.
+- **D-Sprint-C7-RGPD-Consent-Dead-Comments-001** P1 CR — `rgpd_consent.py:147` + `:250` commentaires résidus "Phase 7.4 préparation" obsolètes. ~5 min.
+- **D-Sprint-C7-Audit-Service-Import-Lazy-001** P1 CR — `audit_log_service.py:418` `from database import SessionLocal` dans fonction → silencieusement swallowed BLE001. Fix : import top-level. ~15 min.
+- **D-Sprint-C7-Bill-KPI-Filter-Mutation-001** P1 CR — `bill_intelligence.py:113` KPI muté par filtres user (`code=R20` → KPI R19=0). Fix : query indépendante OR documenter `kpi_scope: 'filtered'`. ~30 min.
+- **D-Sprint-C7-Org-Actif-Idiomatic-001** P1 CR — `scope_utils.py:187` `Organisation.actif == True` non-idiomatique vs `.is_(True)` ligne 90 du même fichier. ~5 min.
+- **D-Sprint-C7-VNU-L336-Article-Inconsistency-001** P1 REG — VNU YAML ligne 550 `L.336-1` vs brief Lot C `L.336-2` incohérence. Trancher manuellement Légifrance. ~30 min.
+- **D-Sprint-C7-TURPE-7-BT-Gestion-Unit-Mismatch-001** P1 REG — YAML `gestion_eur_mois: 18.48` (= 221.76 €/an) vs `catalog.py:194 TURPE_GESTION_C5: 16.80 EUR/an` facteur ~13×. Audit unité YAML. ~30 min.
+- **D-Sprint-C7-Accise-T1-T2-Inverted-Brief-001** P1 REG — Brief Lot B `ACCISE_ELEC_T2_C5_MENAGE = 25.09` incohérent (T1=30.85 ménage, T2=26.58 PME). Terminologie inversée. ~15 min.
+- **D-Sprint-C7-Scoring-OPERAT-S-CE-M2-Migration-001** P1 ARCH — `backend/regops/scoring.py` pas migré sur `s_ce_m2` Phase 7.1. Risque divergence SoT silencieuse. ~1h.
+- **D-Sprint-C7-CI-Pytest-Continue-On-Error-001** P1 QA — `quality-gate.yml:106` `continue-on-error: true` rend claim "0 régression" non-vérifiable CI. Fix : retirer continue-on-error principal. ~15 min.
+- **D-Sprint-C7-Alembic-Drift-Initial-001** P1 QA — Migration `2f83c6bebc57` "massively out of sync" — `alembic upgrade head` produit état divergent. Fix : migration catch-up Sprint C-8. ~2h.
+
+### 🟡 P2 SPRINT C-8 BACKLOG (8 dettes — ~3-5h)
+
+- **D-Sprint-C7-Logger-Lazy-Format-001** P2 — f-string logger `anomaly_detector.py:338` au lieu `%s`.
+- **D-Sprint-C7-Hook-Math-X-Token-001** P2 — Regex hook math `[*×x]` token `x` minuscule risque faux positifs.
+- **D-Sprint-C7-TVA-Rate-CheckConstraint-001** P2 — `Numeric(5,4)` sans CheckConstraint valeurs admises {0.055, 0.10, 0.20}.
+- **D-Sprint-C7-Audit-Response-Hash-Canonical-001** P2 — `response_hash` non-canonique pour objets ORM.
+- **D-Sprint-C7-Hook-Math-Yaml-Coverage-001** P2 — `.pre-commit-config.yaml:42` exclut `operat_valeurs_absolues.yaml`.
+- **D-Sprint-C7-DataConnect-PRM-Error-Leak-001** P2 SEC — PRM/PCE bruts dans messages d'erreur 404.
+- **D-Sprint-C7-Hooks-Project-Dir-001** P2 QA — Hooks pré-commit sans `$CLAUDE_PROJECT_DIR` (CLAUDE.md règle 10).
+- **D-Sprint-C7-External-Audit-Flex-Generalization-001** P2 ARCH — Décorateur `audit_external_api_call` non généralisé Flex (NEBCO/AOFD).
+- **D-Sprint-C7-ADR-Index-Canonical-001** P2 ARCH — Pas d'ADR-000 index canonique.
+- **D-Sprint-C7-CRE-URL-Deep-Link-Stable-001** P2 BI — URL CRE TURPE 7 deep-link instable.
+- **D-Sprint-C7-Bill-Codes-HPS-HCS-PTE-001** P2 BI — Codes TURPE 7 manquants HPS/HCS, PTE alias.
 
 ---
 
