@@ -6,6 +6,24 @@ capacité RTE 2026+, basé sur enchères PL-4 / PL-1.
 
 Source prix : KB CAPACITE-ELIGIBILITE-ACTIFS. 2025 ~30 k€/MW/an, fourchette
 attendue 2026+ : 20-50 k€/MW/an.
+
+⚠️ DISAMBIGUATION CARDINAL — Sprint C-5 Phase 5.2 (ADR-015) :
+
+Les valeurs `PRIX_MOYEN_MW_AN` ci-dessous (20 000 - 50 000 EUR/MW.an) sont une
+fourchette REVENU GROSS côté PRODUCTEUR certifié (enchères PP1).
+
+À NE PAS CONFONDRE avec :
+
+- `CAPACITE_RTE_TARIF_2026_EUR_PER_MW = 3.15` (sources_reglementaires.yaml) =
+  prix unitaire CERTIFICAT capacité côté CLIENT (composante TURPE facture).
+  Convertit à `0.43 EUR/MWh` consommée via `3.15 × 1.2 / 8760`.
+
+Les 2 dimensions sont économiquement distinctes : prix d'équilibre marché
+(côté client) vs revenu producteur certifié (fourchette KB).
+
+Refactor cardinal pour consommer le YAML loader (cohérence Sprint C-3 pattern
+`regulatory_sources_loader.py`) reporté Sprint C-7 polish :
+`D-Sprint-C7-Capacite-Revenue-Refactor-Yaml-001` P2.
 """
 
 from __future__ import annotations

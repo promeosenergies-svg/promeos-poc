@@ -188,6 +188,59 @@ Aucun test ajouté. Modifications = pure documentation (commentaires + YAML note
 
 ---
 
+## Implémentation Phase 5.2 actée (2026-05-06)
+
+### Découverte cardinale Étape 5.2.1 (diagnostic)
+
+La note YAML Sprint C-4 Phase 4.2 (ligne 984) référençait par erreur **"3150 EUR/MW placeholder revenue.py PRIX_MOYEN_MW_AN PL1 20-50k EUR/MW"**. Diagnostic Phase 5.2 confirme :
+
+- **AUCUN `3150` littéral** dans `services/capacity/revenue.py` (vérifié via grep)
+- `PRIX_MOYEN_MW_AN` réel : `PL4 = (25_000, 35_000, 45_000)` et `PL1 = (20_000, 30_000, 50_000)` EUR/MW.an
+- Source : KB `CAPACITE-ELIGIBILITE-ACTIFS` (~30 k€/MW/an observé 2025, fourchette 2026+ 20-50 k€)
+
+→ Le "3150" était une **mention erronée** dans la note YAML. Pas de bug runtime, juste une erreur de documentation à corriger.
+
+### Disambiguation correcte cardinale (3 dimensions)
+
+| Dimension | Valeur | Sens |
+|---|---|---|
+| Prix CERTIFICAT capacité enchère 2026 | **3.15 EUR/MW** | YAML SoT — prix unitaire RTE 06/03/2025 |
+| Tarif facture CLIENT B2B (composante TURPE) | **0.43 EUR/MWh** | Calculé `3.15 × 1.2 / 8760` (catalog.py + cost_simulator_2026.py) |
+| Fourchette REVENU PRODUCTEUR certifié | **20-50 k€/MW.an** | KB `CAPACITE-ELIGIBILITE-ACTIFS`, revenue.py (PL1/PL4) |
+
+Les 2 dimensions économiques (côté client tarif vs côté producteur revenu) sont **distinctes** — pas de rapport mathématique direct.
+
+### Modifications effectives
+
+1. **`config/sources_reglementaires.yaml`** lignes 971-984 :
+   - Note YAML réécrite (multiline `notes:`) avec disambiguation 3 dimensions explicites
+   - `formula:` ajoutée : `tarif_eur_per_mwh = 3.15 × CAPACITE_RTE_COEFF_2026 (1.2) / 8760 ≈ 0.43 EUR/MWh`
+   - Mention erreur historique "3150" corrigée
+
+2. **`services/capacity/revenue.py`** docstring module :
+   - Section ⚠️ DISAMBIGUATION CARDINAL ajoutée
+   - Clarification PRIX_MOYEN_MW_AN = revenu gross producteur (≠ 3.15 prix client)
+   - Référence Sprint C-7 refactor loader YAML
+
+3. **`services/purchase/cost_simulator_2026.py`** lignes 60-64 :
+   - Commentaire enrichi avec référence YAML SoT explicite
+   - Mention dette refactor Sprint C-7
+
+4. **`services/billing_engine/catalog.py`** lignes 871-885 :
+   - Bloc commentaire enrichi
+   - `yaml_ref: "CAPACITE_RTE_TARIF_2026_EUR_PER_MW"` ajouté à la ligne `CAPACITE_ELEC` (traçabilité TraceTooltip R10)
+
+### Effort réel Phase 5.2
+
+~30 min (cible tenue). Pure documentation, 0 logique métier touchée. 0 nouveau test.
+
+### Dettes Sprint C-7 reportées (P2)
+
+- `D-Sprint-C7-Capacite-Loader-Refactor-001` P2 — refactor `cost_simulator_2026.py` + `catalog.py` vers `capacite_loader.py` pattern Sprint C-3
+- `D-Sprint-C7-Capacite-Revenue-Refactor-Yaml-001` P2 — refactor `services/capacity/revenue.py` pour consommer `get_term_value` (loader YAML cohérent Sprint C-3)
+
+---
+
 ## Références
 
 - Tracking dette : `docs/audits/DETTE_TECHNIQUE_TRACKER.md` (`D-Phase4-2-Capacite-EUR-MW-Disambiguation-001`)

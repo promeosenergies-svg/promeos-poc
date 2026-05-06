@@ -876,10 +876,18 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
     # Conversion en EUR/kWh : prix_MW × coefficient_obligation / 8760h
     # Coefficient obligation moyen B2B ≈ 1.2 (pro-rata consommation pointe)
     # → 3.15 × 1.2 / 8760 ≈ 0.00043 EUR/kWh
+    #
+    # ⚠️ DISAMBIGUATION Sprint C-5 Phase 5.2 (ADR-015) :
+    # YAML SoT : CAPACITE_RTE_TARIF_2026_EUR_PER_MW = 3.15
+    # (config/sources_reglementaires.yaml). Valeur ci-dessous calculée depuis
+    # ce YAML. À NE PAS confondre avec PRIX_MOYEN_MW_AN dans
+    # services/capacity/revenue.py (20-50 k€/MW.an, fourchette REVENU producteur
+    # côté offre — dimension économique distincte du prix unitaire client ici).
     "CAPACITE_ELEC": {
         "rate": 0.00043,
         "unit": "EUR/kWh",
         "source": "Enchères capacité RTE 06/03/2025 — 3.15 EUR/MW × coeff 1.2 / 8760h ≈ 0.43 EUR/MWh",
+        "yaml_ref": "CAPACITE_RTE_TARIF_2026_EUR_PER_MW",
         "valid_from": "2026-01-01",
         "tva_rate": 0.20,
     },

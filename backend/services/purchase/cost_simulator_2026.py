@@ -61,6 +61,15 @@ DEFAULT_ARCHETYPE = "BUREAU_STANDARD"
 # Le mécanisme centralisé acheteur unique nov. 2026 conserve la même valeur
 # placeholder (CAPACITE_ELEC_NOV2026) — pas de discontinuité tarifaire modélisée.
 # Source unique de vérité : `billing_engine/catalog.py` ligne 879.
+#
+# ⚠️ DISAMBIGUATION Sprint C-5 Phase 5.2 (ADR-015) :
+# YAML SoT : `CAPACITE_RTE_TARIF_2026_EUR_PER_MW = 3.15`
+# (config/sources_reglementaires.yaml). Valeur 0.43 ci-dessous calculée depuis
+# le YAML (3.15 × 1.2 / 8760). À NE PAS confondre avec
+# `services/capacity/revenue.py:PRIX_MOYEN_MW_AN` (20-50 k€/MW.an, fourchette
+# REVENU producteur certifié, dimension économique distincte).
+# Refactor vers loader YAML reporté Sprint C-7
+# (D-Sprint-C7-Capacite-Loader-Refactor-001 P2).
 CAPACITE_UNITAIRE_EUR_MWH = 0.43
 
 # Seuil VNU par défaut (fallback hardcodé si YAML indisponible).

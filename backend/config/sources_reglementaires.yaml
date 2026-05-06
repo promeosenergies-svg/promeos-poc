@@ -980,8 +980,38 @@ terms:
       version: "Enchères 2025 livraison 2026"
       effective_date: "2026-01-01"
       legal_reference: null
-    formula: null
-    notes: "Mirroir billing_engine/catalog.py::CAPACITE_ELEC.source. ⚠️ Disambiguation requise : 3.15 EUR/MW vs 3150 EUR/MW (référence revenue.py PRIX_MOYEN_MW_AN PL1 20-50k EUR/MW). Audit Sprint C-5 D-Phase4-2d-Capacite-EUR-MW-Disambiguation-001."
+    formula: "tarif_eur_per_mwh = 3.15 × CAPACITE_RTE_COEFF_2026 (1.2) / 8760 ≈ 0.43 EUR/MWh"
+    notes: |
+      DISAMBIGUATION CARDINAL — Sprint C-5 Phase 5.2 (ADR-015) :
+
+      3 dimensions DISTINCTES à ne pas confondre dans le mécanisme capacité RTE :
+
+      1. **3.15 EUR/MW** (cette valeur YAML) = prix unitaire CERTIFICAT capacité enchère
+         RTE 06/03/2025 livraison 2026. Convertit à **0.43 EUR/MWh consommée** via
+         `3.15 × 1.2 (coeff obligation) / 8760 h`. C'est ce qui apparaît sur la facture
+         CLIENT (composante TURPE).
+
+      2. **20 000 - 50 000 EUR/MW.an** = fourchette REVENU GROSS pour PRODUCTEUR certifié
+         (PL1/PL4 enchères PP1). Source : KB `CAPACITE-ELIGIBILITE-ACTIFS` (~30 k€/MW/an
+         observé 2025). Utilisé dans `services/capacity/revenue.py:PRIX_MOYEN_MW_AN`.
+         **Sans rapport mathématique direct avec 3.15 EUR/MW** — dimensions économiques
+         différentes (prix d'équilibre marché vs revenu côté offre).
+
+      3. **0.43 EUR/MWh** = `CAPACITE_UNITAIRE_EUR_MWH` dans `cost_simulator_2026.py`,
+         calculé exactement depuis cette valeur YAML (cf. formula).
+
+      Note historique : la précédente note YAML (Sprint C-4 P4.2) mentionnait par erreur
+      "3150 EUR/MW placeholder revenue.py" — ce nombre n'existe PAS littéralement dans
+      revenue.py (seules les fourchettes 20-50 k€). Erreur corrigée Phase 5.2.
+
+      Consommateurs runtime de cette valeur :
+      - `services/billing_engine/catalog.py:878-882` (catalog tarifs facture)
+      - `services/purchase/cost_simulator_2026.py:60-64` (simulation coût)
+
+      Refactor `services/capacity/revenue.py` pour consommer ce YAML loader =
+      reporté Sprint C-7 polish (`D-Sprint-C7-Capacite-Revenue-Refactor-Yaml-001` P2).
+
+      Tracker : `D-Phase4-2d-Capacite-EUR-MW-Disambiguation-001` ✅ CLÔTURÉE Phase 5.2.
 
   CAPACITE_RTE_COEFF_2026:
     value: 1.2
