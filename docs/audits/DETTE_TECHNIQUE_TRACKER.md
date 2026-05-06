@@ -806,6 +806,61 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-07 (Sprint C-8 Phase 8.1 Lot REGOPS — 3 P1 fixes : Scoring OPERAT migration s_ce_m2 ADR-020 Option C + CGU référentiel central + KPI mutation cardinal canonique cross-vues) | 37 | 0 | 17 | 20 |
 | 2026-05-07 (Sprint C-8 Phase 8.2 Lot SEC+CI — 3 P1 fixes : PII étendue email/téléphone FR/IBAN FR + CI bloquant quality-gate.yml + import lazy fix top-level guard) | 34 | 0 | 14 | 20 |
 | 2026-05-07 (Sprint C-8 Phase 8.3 Lot CR+REG polish — 4 P1 fixes : dead-code comments rgpd_consent + Organisation.actif.is_(True) idiomatique + VNU tarifs YAML L.336-2 + _is_hash_key('code') exact match strict) | 30 | 0 | 10 | 20 |
+| 2026-05-07 (Sprint C-8 AUDIT COMPLET multi-agents SDK 6 parallèles — Pilier 6 ADR-016 reproduit — 26 findings nouveaux (3 P0 + 13 P1 + 10 P2) → **PILOTE EXTERNE READY ASSERTION RÉVISÉE**) | 56 | 3 | 23 | 30 |
+
+---
+
+## 📊 AUDIT COMPLET SPRINT C-8 — 26 NOUVELLES DETTES (2026-05-07)
+
+**Méthode** : 6 agents SDK parallèles (code-reviewer + security-auditor + qa-guardian + regulatory-expert + bill-intelligence + architect-helios) — Pilier 6 ADR-016 reproduit avec succès post Sprint C-7 audit deep.
+
+**Référence** : [`AUDIT_SPRINT_C8_COMPLET_2026_05_07.md`](AUDIT_SPRINT_C8_COMPLET_2026_05_07.md)
+
+### 🔴 3 P0 BLOQUANTS PILOTE EXTERNE (Tier 1 ~1h)
+
+- **D-Audit-C8-VNU-L336-Source-Field-001** P0 REG — `tarifs_reglementaires.yaml:560` cite `L.336-1` (vs L.336-2 corrigé header Phase 8.3) — fix 1-ligne (5 min). Phase 8.3 fix incomplet.
+- **D-Audit-C8-CGU-Archives-Accepted-002** P0 SEC (High) — `is_valid_cgu_version()` accepte versions `statut: archive` postérieures à `actuel` → CNIL Article 7 violé (preuve d'origine forte invalidée). Fix : filtrer `statut='actuel'` PATCH runtime + chronologie YAML (~30 min).
+- **D-Audit-C8-Helper-OPERAT-Orphan-003** P0 CR — `resolve_surface_for_operat_export()` Phase 8.1 livré mais NON wiré dans `operat_export_service.py:324 generate_operat_csv`. ADR-020 Pilier 2 partiel — helper orphelin = dead-code fonctionnel. Fix : wiring (~30 min).
+
+### 🟠 13 P1 AVANT PRODUCTION SCALING (~5-6h)
+
+Sécurité (3) :
+- **D-Audit-C8-CGU-Cache-Reload-Auth-004** P1 SEC — LRU cache + `reload_cgu_referentiel()` sans guard auth (path traversal risk).
+- **D-Audit-C8-Address-Substring-Match-005** P1 SEC — `address` substring → `ip_address` sur-redacted (perte traçabilité CNIL article 5(2)).
+- **D-Audit-C8-PII-Patterns-Order-006** P1 SEC — chevauchement `\b\d{14}\b` + `\b\d{10}\b` + `\b\d{9}\b` ordre causal labels EDF/Engie.
+
+Réglementaire (2) :
+- **D-Audit-C8-CGU-Pdf-Hash-007** P1 REG — `cgu_referentiel.yaml` 4 versions `contenu_pdf: null` → preuve CNIL article 7 non opposable.
+- **D-Audit-C8-CGU-Dates-Versionning-008** P1 REG — dates publication CGU rétro-actives suspectes + saut 1.0→2.0 inexpliqué.
+
+Code review / QA (4) :
+- **D-Audit-C8-Hash-Key-Siret-Redundant-009** P1 CR — `_is_hash_key('siret')` redondance `pattern == lk OR pattern in lk` + risque sur `siret_etablissement`.
+- **D-Audit-C8-OPERAT-VA-URL-Placeholder-010** P1 CR — `operat_valeurs_absolues.yaml:59` URL placeholder `JORFTEXT000052113xxx` commité.
+- **D-Audit-C8-Bilan-Lendemain-Drift-011** P1 QA — Bilan claim "Phase 8.3 reportée lendemain" mais timestamps git = 11 min même journée.
+- **D-Audit-C8-Bilan-Comptage-SG-012** P1 QA — Bilan revendique "4 SG Phase 8.1" → réel 3 + "139 tests" non réconciliable (réel ~134).
+
+Bill Intelligence (2) :
+- **D-Audit-C8-KPI-Semantic-Renaming-013** P1 BI — `kpi_total_economie_potentielle_eur` ambigu CFO → renommer `kpi_vnu_dormant_reclaim_eur`.
+- **D-Audit-C8-KPI-Cockpit-Wiring-014** P1 BI — KPI Phase 8.1 endpoint orphelin (PAS consommé CockpitDecision/useCockpitFacts/BillIntelPage).
+
+Architecture (1) :
+- **D-Audit-C8-KPI-Canonical-Pilier-015** P1 ARCH — KPI canonique cross-vues non documenté Pilier ADR-016 (cardinal `feedback_kpi_tracabilite_obligatoire.md`).
+
+### 🟡 10 P2 SPRINT D BACKLOG
+
+- **D-Audit-C8-CI-Suites-Continue-On-Error-016** P2 — 3 suites Contracts V2/Power/Flex masquent 148 tests (consensus CR + QA + SEC).
+- **D-Audit-C8-E2E-Smoke-Bug-017** P2 — Playwright bug `__dirname` ESM continue-on-error.
+- **D-Audit-C8-KPI-Window-Disclosure-018** P2 — KPI sans `kpi_window` réponse JSON.
+- **D-Audit-C8-ADR020-Version-URL-019** P2 — ADR-020 cite "v15/03/2024" sans URL versionnée.
+- **D-Audit-C8-Helper-Reference-Version-020** P2 — `operat_export_helpers.py:21` perd mention version.
+- **D-Audit-C8-Decret-2026-55-URL-021** P2 — décret 2026-55 cité sans URL Légifrance.
+- **D-Audit-C8-VNU-Patterns-TotalEnergies-022** P2 BI — patterns "VERS. NUC."/"CONTRIB. NUCL." absents détecteur R19.
+- **D-Audit-C8-VNU-Patterns-Eni-023** P2 BI — patterns "VNU 2026"/"VNU HIST" millésimés.
+- **D-Audit-C8-S-CE-M2-Consistency-024** P2 ARCH — schisme silencieux scoring/export `s_ce_m2` vs `tertiaire_area_m2` (>10% écart sans warning).
+- **D-Audit-C8-Cross-Pillar-EMS-Flex-Achat-025** P2 ARCH — Sprint C-8 = 0 impact EMS/Flex/Achat (décrochage roadmap stratégique Q2-Q3).
+- **D-Audit-C8-Wrappers-CachedGet-Backlog-026** P2 — 20 wrappers `cachedGet` sans `.then((r) => r.data)` (memory `reference_api_wrapper_unwrap_pattern.md`).
+
+---
 
 ---
 
