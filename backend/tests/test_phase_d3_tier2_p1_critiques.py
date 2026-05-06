@@ -201,18 +201,36 @@ def test_phase_d3_doc2_anti_cycle_different_id_ok():
 # ─── VAL-1 PCE/PRM format 14 chiffres ──────────────────────────────────────
 
 
-def test_phase_d3_val1_pce_prm_format_14_digits():
-    """VAL-1 : DeliveryPoint.code accepte uniquement 14 chiffres."""
+def test_phase_d3_val1_pce_prm_format_2_canonical():
+    """VAL-1 matrice v1 §4.6.C : 2 formats canoniques PRM/PCE acceptés.
+
+    - DISTRIBUTION_14 : 14 chiffres (Enedis PRM élec / GRDF PCE distribution)
+    - TRANSPORT_GI6   : `GI` + 6 chiffres (PCE transport GRTgaz/Teréga)
+
+    Source : docs/produit/patrimoine_parametrage_requis_v1.md §4.6.C ligne 417.
+    """
     from models.patrimoine import DeliveryPoint
 
-    DeliveryPoint(code="14999000000001", site_id=1)  # OK
-    DeliveryPoint(code="22555444333222", site_id=1)  # OK
+    # DISTRIBUTION_14 (Enedis PRM ou GRDF PCE distribution)
+    DeliveryPoint(code="14999000000001", site_id=1)
+    DeliveryPoint(code="22555444333222", site_id=1)
 
+    # TRANSPORT_GI6 (PCE transport GRTgaz/Teréga — matrice v1 §4.6.C)
+    DeliveryPoint(code="GI123456", site_id=1)
+    DeliveryPoint(code="GI000001", site_id=1)
+
+    # Rejets : format invalide
     with pytest.raises(ValueError, match="VAL-1.*PRM/PCE"):
         DeliveryPoint(code="ABC123", site_id=1)
 
     with pytest.raises(ValueError, match="VAL-1.*PRM/PCE"):
         DeliveryPoint(code="12345", site_id=1)  # trop court
+
+    with pytest.raises(ValueError, match="VAL-1.*PRM/PCE"):
+        DeliveryPoint(code="GI12345", site_id=1)  # GI + 5 chiffres (incomplet)
+
+    with pytest.raises(ValueError, match="VAL-1.*PRM/PCE"):
+        DeliveryPoint(code="GI1234567", site_id=1)  # GI + 7 chiffres (excédent)
 
 
 # ─── VAL-2 tva_intra format ^FR\d{11}$ ─────────────────────────────────────

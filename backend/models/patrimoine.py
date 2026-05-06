@@ -465,14 +465,21 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
             )
         return value
 
-    # Phase D-3 Tier 2 VAL-1 — PCE format 14 chiffres (P1-AUDIT-D-016).
-    _PCE_PRM_PATTERN = re.compile(r"^\d{14}$")
+    # Phase D-3 Tier 2 VAL-1 — PCE/PRM format matrice v1 §4.6.C :
+    # 2 formats PCE distincts (cf docs/produit/patrimoine_parametrage_requis_v1.md ligne 417) :
+    #   - DISTRIBUTION_14 : 14 chiffres (GRDF distribution + Enedis PRM élec)
+    #   - TRANSPORT_GI6   : 'GI' + 6 chiffres (GRTgaz/Teréga transport)
+    _PCE_PRM_PATTERN = re.compile(r"^(\d{14}|GI\d{6})$")
 
     @validates("code")
     def _validate_code_pce_prm_format(self, key: str, value: str | None):
-        """VAL-1 Phase D-3 Tier 2 : PRM (élec) ou PCE (gaz) = 14 chiffres exactement.
+        """VAL-1 Phase D-3 Tier 2 : PRM élec ou PCE gaz format matrice v1 §4.6.C.
 
-        Format Enedis PRM = 14 chiffres / Format GRDF PCE = 14 chiffres.
+        2 formats PCE supportés :
+        - DISTRIBUTION_14 : 14 chiffres (Enedis PRM élec OU GRDF PCE distribution)
+        - TRANSPORT_GI6   : `GI` + 6 chiffres (PCE transport GRTgaz/Teréga)
+
+        Source : docs/produit/patrimoine_parametrage_requis_v1.md §4.6.C ligne 417.
         Validation runtime cardinale anti-saisie utilisateur incorrecte.
         """
         if value is None or value == "":
@@ -480,7 +487,7 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
         if not self._PCE_PRM_PATTERN.match(value):
             raise ValueError(
                 f"VAL-1 Phase D-3 Tier 2 violation : code={value!r} format PRM/PCE invalide "
-                f"(attendu 14 chiffres exactement — Enedis PRM ou GRDF PCE)"
+                f"(attendu 14 chiffres OU 'GI' + 6 chiffres — matrice v1 §4.6.C)"
             )
         return value
 
