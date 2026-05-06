@@ -465,21 +465,31 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
             )
         return value
 
-    # Phase D-3 Tier 2 VAL-1 — PCE/PRM format matrice v1 §4.6.C :
-    # 2 formats PCE distincts (cf docs/produit/patrimoine_parametrage_requis_v1.md ligne 417) :
-    #   - DISTRIBUTION_14 : 14 chiffres (GRDF distribution + Enedis PRM élec)
-    #   - TRANSPORT_GI6   : 'GI' + 6 chiffres (GRTgaz/Teréga transport)
-    _PCE_PRM_PATTERN = re.compile(r"^(\d{14}|GI\d{6})$")
+    # Phase D-3 Tier 2 VAL-1 — PCE/PRM 3 formats canoniques (audit web search regulatory-expert) :
+    #   - DISTRIBUTION_14 : 14 chiffres (Enedis PRM élec + PCE GRDF résidentiel/petit pro)
+    #     Source : CRE Délib. 2025-161 du 19/06/2025 (JORFTEXT000051807406) :
+    #       "PCE 14 chiffres (utilisateurs résidentiels et petits professionnels)"
+    #   - DISTRIBUTION_GI : `GI` + 6 chiffres (PCE GRDF **gros industriel** distribution)
+    #     Source : CRE 2025-161 : "PCE GI (gros utilisateurs, notamment industriels)"
+    #     ⚠️ Longueur exacte 6 chiffres : info contractuelle ADICT (non vérifiable
+    #     publiquement). Confidence longueur: low — escalade humaine Phase D-4 si besoin.
+    #   - TRANSPORT_PIR  : `IR` + 4 chiffres (Point Interconnexion Réseau GRTgaz/NaTran/Teréga)
+    #     Source : URLs publiques smart.grtgaz.com (typePoint=PIR) — exemples IR0011, IR0015, IR0053.
+    #
+    # ⚠️ Matrice v1 §4.6.C label 'TRANSPORT_GI6' = imprécision corrigée Phase D-3 Tier 2 :
+    # `GI\d{6}` est en réalité un PCE distribution gros industriel GRDF, PAS du transport.
+    # Le format transport canonique est `IR\d{4}`.
+    _PCE_PRM_PATTERN = re.compile(r"^(\d{14}|GI\d{6}|IR\d{4})$")
 
     @validates("code")
     def _validate_code_pce_prm_format(self, key: str, value: str | None):
-        """VAL-1 Phase D-3 Tier 2 : PRM élec ou PCE gaz format matrice v1 §4.6.C.
+        """VAL-1 Phase D-3 Tier 2 : PRM élec ou PCE gaz — 3 formats canoniques.
 
-        2 formats PCE supportés :
-        - DISTRIBUTION_14 : 14 chiffres (Enedis PRM élec OU GRDF PCE distribution)
-        - TRANSPORT_GI6   : `GI` + 6 chiffres (PCE transport GRTgaz/Teréga)
+        Sources officielles cross-checkées audit regulatory-expert agent SDK :
+        - DISTRIBUTION_14 : `\\d{14}` (Enedis PRM élec OU GRDF PCE résidentiel/petit pro) — CRE 2025-161
+        - DISTRIBUTION_GI : `GI\\d{6}` (GRDF gros industriel distribution) — CRE 2025-161 (longueur 6 à valider Phase D-4)
+        - TRANSPORT_PIR   : `IR\\d{4}` (Point Interconnexion Réseau transport GRTgaz/NaTran) — smart.grtgaz.com
 
-        Source : docs/produit/patrimoine_parametrage_requis_v1.md §4.6.C ligne 417.
         Validation runtime cardinale anti-saisie utilisateur incorrecte.
         """
         if value is None or value == "":
@@ -487,7 +497,8 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
         if not self._PCE_PRM_PATTERN.match(value):
             raise ValueError(
                 f"VAL-1 Phase D-3 Tier 2 violation : code={value!r} format PRM/PCE invalide "
-                f"(attendu 14 chiffres OU 'GI' + 6 chiffres — matrice v1 §4.6.C)"
+                f"(attendu un de : 14 chiffres / 'GI' + 6 chiffres / 'IR' + 4 chiffres — "
+                f"sources CRE 2025-161 + smart.grtgaz.com)"
             )
         return value
 

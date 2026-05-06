@@ -201,25 +201,34 @@ def test_phase_d3_doc2_anti_cycle_different_id_ok():
 # ─── VAL-1 PCE/PRM format 14 chiffres ──────────────────────────────────────
 
 
-def test_phase_d3_val1_pce_prm_format_2_canonical():
-    """VAL-1 matrice v1 §4.6.C : 2 formats canoniques PRM/PCE acceptés.
+def test_phase_d3_val1_pce_prm_3_formats_canoniques():
+    """VAL-1 cardinal : 3 formats canoniques PRM/PCE (cross-check sources officielles).
 
-    - DISTRIBUTION_14 : 14 chiffres (Enedis PRM élec / GRDF PCE distribution)
-    - TRANSPORT_GI6   : `GI` + 6 chiffres (PCE transport GRTgaz/Teréga)
+    Sources officielles vérifiées audit regulatory-expert agent SDK :
+    - DISTRIBUTION_14 : `\\d{14}` — CRE Délib. 2025-161 du 19/06/2025 (JORFTEXT000051807406)
+    - DISTRIBUTION_GI : `GI\\d{6}` — CRE 2025-161 (gros industriel GRDF, longueur low-confidence)
+    - TRANSPORT_PIR   : `IR\\d{4}` — smart.grtgaz.com URLs publiques (PIR GRTgaz/NaTran)
 
-    Source : docs/produit/patrimoine_parametrage_requis_v1.md §4.6.C ligne 417.
+    ⚠️ Matrice v1 §4.6.C label 'TRANSPORT_GI6' corrigé Phase D-3 Tier 2 : `GI\\d{6}`
+    est PCE distribution gros indus GRDF, PAS transport. Format transport = `IR\\d{4}`.
     """
     from models.patrimoine import DeliveryPoint
 
-    # DISTRIBUTION_14 (Enedis PRM ou GRDF PCE distribution)
+    # DISTRIBUTION_14 — Enedis PRM élec OU GRDF PCE résidentiel/petit pro (CRE 2025-161)
     DeliveryPoint(code="14999000000001", site_id=1)
     DeliveryPoint(code="22555444333222", site_id=1)
 
-    # TRANSPORT_GI6 (PCE transport GRTgaz/Teréga — matrice v1 §4.6.C)
+    # DISTRIBUTION_GI — GRDF gros industriel distribution (CRE 2025-161)
     DeliveryPoint(code="GI123456", site_id=1)
     DeliveryPoint(code="GI000001", site_id=1)
 
-    # Rejets : format invalide
+    # TRANSPORT_PIR — Point Interconnexion Réseau GRTgaz/NaTran (smart.grtgaz.com)
+    DeliveryPoint(code="IR0011", site_id=1)
+    DeliveryPoint(code="IR0015", site_id=1)
+    DeliveryPoint(code="IR0053", site_id=1)
+    DeliveryPoint(code="IR9999", site_id=1)
+
+    # Rejets : formats invalides
     with pytest.raises(ValueError, match="VAL-1.*PRM/PCE"):
         DeliveryPoint(code="ABC123", site_id=1)
 
@@ -231,6 +240,15 @@ def test_phase_d3_val1_pce_prm_format_2_canonical():
 
     with pytest.raises(ValueError, match="VAL-1.*PRM/PCE"):
         DeliveryPoint(code="GI1234567", site_id=1)  # GI + 7 chiffres (excédent)
+
+    with pytest.raises(ValueError, match="VAL-1.*PRM/PCE"):
+        DeliveryPoint(code="IR123", site_id=1)  # IR + 3 chiffres (incomplet)
+
+    with pytest.raises(ValueError, match="VAL-1.*PRM/PCE"):
+        DeliveryPoint(code="IR12345", site_id=1)  # IR + 5 chiffres (excédent)
+
+    with pytest.raises(ValueError, match="VAL-1.*PRM/PCE"):
+        DeliveryPoint(code="LI0011", site_id=1)  # `LI` non canonique (verdict agent SDK)
 
 
 # ─── VAL-2 tva_intra format ^FR\d{11}$ ─────────────────────────────────────

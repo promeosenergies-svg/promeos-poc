@@ -414,8 +414,8 @@ Contrat V2 (cadre)
 
 | # | Champ | Type | Crit. | Source | Statut |
 |---|---|---|---|---|---|
-| 1 | `code` (PCE) | str regex `^(\d{14}|GI\d{6})$` | 🔴 P0 | user_manual + api_grdf | ✅ — **AJOUT INDEX UNIQUE GLOBAL P0** |
-| 2 | `pce_format` | enum [DISTRIBUTION_14, TRANSPORT_GI6] | 🔴 P0 | inferred (regex) | À vérifier |
+| 1 | `code` (PCE) | str regex `^(\d{14}\|GI\d{6}\|IR\d{4})$` | 🔴 P0 | user_manual + api_grdf/api_grtgaz | ✅ — **AJOUT INDEX UNIQUE GLOBAL P0** + **3 formats Phase D-3 Tier 2** |
+| 2 | `pce_format` | enum [DISTRIBUTION_14, DISTRIBUTION_GI, TRANSPORT_PIR] | 🔴 P0 | inferred (regex) | ✅ Phase D-3 Tier 2 — matrice v1 corrigée (label `TRANSPORT_GI6` imprécis remplacé). Sources : CRE Délib. 2025-161 du 19/06/2025 (JORFTEXT000051807406) + smart.grtgaz.com (URLs publiques PIR `IR0011`, `IR0015`, `IR0053`). PCE GI = distribution gros industriel GRDF (PAS transport). PCE transport = PIR `IR\d{4}` (PAS `LI\d{4}` ni `GI\d{6}`). |
 | 3 | `type_reseau` | enum [DISTRIBUTION, TRANSPORT] | 🔴 P0 | inferred | À vérifier |
 | 4 | `gestionnaire_reseau` | enum [GRDF + 21 ELD + NaTran + Teréga] | 🔴 P0 | user_manual | À vérifier (eld_gaz_referentiel.yaml manquant) |
 | 5 | `referentiel_tarifaire` | enum [ATRD, ATRT] | 🔴 P0 | inferred (type_reseau) | À vérifier |
