@@ -158,5 +158,57 @@ Pattern réflexe Phase C : cleanup manuel des `op.drop_table()` Enedis legacy fa
 - **Draft** : 2026-05-04 (Sprint C-4 amont)
 - **Validation requise** : architect-helios + regulatory-expert (RGPD/CNIL) + security-auditor (PII/audit trail)
 - **Implémentation** : Sprint C-4 Phase 4.5 (cascade) après migration modèle Phase 4.4
+- **Extension audit trail** : Sprint C-5 Phase 5.3 (consentement_*_by + cgu_version)
 
-Closes (post-implémentation) : `D-Sprint-C3-7d-ADR-RGPD-Consent-Detail-001` + `D-Sprint-C3-Org-Consentement-Modele-001` + `D-Sprint-C3-Cascade-Consentement-Activation-001`.
+Closes (post-implémentation) : `D-Sprint-C3-7d-ADR-RGPD-Consent-Detail-001` + `D-Sprint-C3-Org-Consentement-Modele-001` + `D-Sprint-C3-Cascade-Consentement-Activation-001` + `D-Phase4-4-ADR-007-Consent-By-CGU-Version-001` (Phase 5.3).
+
+---
+
+## Implémentation Phase 5.3 actée (Sprint C-5, 2026-05-06)
+
+ADR-007 ext (`consentement_*_by` + `cgu_version`) implémenté en **migration Alembic 9e propre** (`b86d01f19001`). Cumul Phase C : 9 migrations propres / 0 destructive.
+
+### Audit trail RGPD complet livré
+
+**Org +4 cols** : `consentement_{dataconnect|grdf}_{by|cgu_version}`
+**DP +4 cols** : `consentement_{dataconnect|grdf}_local_{by|cgu_version}`
+
+**FK `users.id` ondelete=SET NULL** cardinal — suppression user (RGPD droit oubli art. 17 RGPD) préserve l'historique de consentement (la trace persiste, la référence personnelle disparaît). Les 4 contraintes FK nommées :
+
+- `fk_organisations_consent_dataconnect_by_users`
+- `fk_organisations_consent_grdf_by_users`
+- `fk_delivery_points_consent_dataconnect_local_by_users`
+- `fk_delivery_points_consent_grdf_local_by_users`
+
+### Helper enrichi `get_effective_consent_with_audit`
+
+Signature stable : `(dp, type_: ConsentType) -> dict`
+
+Retour dict 5 clés cardinales (contrat sérialisation API stable) :
+
+- `active` : bool | None
+- `by_user_id` : int | None
+- `cgu_version` : str | None
+- `at` : datetime | None
+- `scope` : `"local"` | `"global"` | `"none"`
+
+Hiérarchie ADR-007 préservée : DP._local prioritaire si non-null, sinon Org._global, sinon `scope="none"`. Lecture seule (Option B archi-helios Phase 4.5 maintenue).
+
+### Cas d'usage cardinaux
+
+- **Audit RGPD officiel CNIL** ("prouver que tel utilisateur a accepté tel jour la version X")
+- **Cockpit RGPD UI Sprint C-5+** — affichage trace complète par PRM/PCE
+- **Export RGPD droit d'accès personnel** (article 15 RGPD) — sérialisation API directement consommable
+
+### Tests + source-guards
+
+- `tests/test_org_dp_consentement_by_cgu_version.py` — 13 tests verts (CRUD Org/DP + ondelete SET NULL × 2 + helper 3 scopes + sérialisation contrat)
+- `tests/source_guards/test_consent_audit_trail_structure_source_guards.py` — 4 SG verts (Org 4 cols + DP 4 cols + ondelete=SET NULL × 4 + helper signature stable)
+
+### Cohérence doctrine "preuve d'origine + valeur"
+
+Un consentement est désormais **traçable jusqu'au dernier détail** : qui (FK users.id), quand (DateTime tz=True existant Phase 4.4), sur quelle CGU (String 20), pour quel scope (local override vs global Org).
+
+### Champs reportés Sprint C-7+ (non bloquants)
+
+- `consentement_*_ip_hash` (String SHA-256) — IP hashée RGPD-safe pour audit forensique. Optionnel, à activer si CNIL/audit le requiert pré-pilote.

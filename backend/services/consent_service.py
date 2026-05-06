@@ -93,3 +93,76 @@ def _get_org_from_dp(dp):
     if ej is None:
         return None
     return getattr(ej, "organisation", None)
+
+
+def get_effective_consent_with_audit(dp, type_: ConsentType) -> dict:
+    """Sprint C-5 Phase 5.3 (ADR-007 ext) — Helper RGPD avec audit trail complet.
+
+    Retourne un dict avec :
+
+    - `active` : bool | None — consentement effectif (cf. `get_effective_consent`)
+    - `by_user_id` : int | None — qui a donné le consentement (FK users.id, NULL si user supprimé)
+    - `cgu_version` : str | None — version CGU au moment du consentement
+    - `at` : datetime | None — timestamp dernier changement
+    - `scope` : "local" | "global" | "none" — d'où vient la valeur effective
+
+    Hiérarchie identique à `get_effective_consent` :
+    1. DP._local prioritaire si non-null → scope="local"
+    2. Org._global fallback → scope="global"
+    3. Aucun défini → scope="none" + tous les champs null
+
+    Cas d'usage cardinaux :
+    - Audit RGPD officiel ("prouver que tel utilisateur a accepté tel jour la version X")
+    - Cockpit RGPD UI Sprint C-5+ — affichage trace complète par PRM/PCE
+    - Export RGPD droit d'accès personnel (article 15 RGPD)
+    """
+    if type_ not in ("dataconnect", "grdf"):
+        raise ValueError(f"type_ inconnu: {type_!r} (attendu 'dataconnect' ou 'grdf')")
+
+    local_active_attr = f"consentement_{type_}_local"
+    local_by_attr = f"consentement_{type_}_local_by"
+    local_cgu_attr = f"consentement_{type_}_local_cgu_version"
+    local_at_attr = f"consentement_{type_}_local_at"
+
+    local = getattr(dp, local_active_attr, None)
+    if local is not None:
+        return {
+            "active": local,
+            "by_user_id": getattr(dp, local_by_attr, None),
+            "cgu_version": getattr(dp, local_cgu_attr, None),
+            "at": getattr(dp, local_at_attr, None),
+            "scope": "local",
+        }
+
+    org = _get_org_from_dp(dp)
+    if org is None:
+        return {
+            "active": None,
+            "by_user_id": None,
+            "cgu_version": None,
+            "at": None,
+            "scope": "none",
+        }
+
+    global_active_attr = f"consentement_{type_}_global"
+    global_by_attr = f"consentement_{type_}_by"
+    global_cgu_attr = f"consentement_{type_}_cgu_version"
+    global_at_attr = f"consentement_{type_}_at"
+
+    global_val = getattr(org, global_active_attr, None)
+    if global_val is None:
+        return {
+            "active": None,
+            "by_user_id": None,
+            "cgu_version": None,
+            "at": None,
+            "scope": "none",
+        }
+
+    return {
+        "active": global_val,
+        "by_user_id": getattr(org, global_by_attr, None),
+        "cgu_version": getattr(org, global_cgu_attr, None),
+        "at": getattr(org, global_at_attr, None),
+        "scope": "global",
+    }

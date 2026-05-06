@@ -3,7 +3,7 @@ PROMEOS - Modèle Organisation
 Niveau groupe/client COMEX (ex: "Groupe HELIOS", "Ville de Lyon")
 """
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin, SoftDeleteMixin
 
@@ -42,6 +42,32 @@ class Organisation(Base, TimestampMixin, SoftDeleteMixin):
         DateTime(timezone=True),
         nullable=True,
         comment="Timestamp dernier changement consentement GRDF (RGPD audit trail)",
+    )
+
+    # ─── Sprint C-5 Phase 5.3 — Audit RGPD étendu (ADR-007 ext) ──────────────
+    # ondelete=SET NULL : suppression user RGPD-droit oubli préserve l'historique
+    # de consentement (la trace persiste, la référence personnelle disparaît).
+    consentement_dataconnect_by = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="User ayant donné le consentement DataConnect (RGPD audit, NULL si user supprimé)",
+    )
+    consentement_dataconnect_cgu_version = Column(
+        String(20),
+        nullable=True,
+        comment="Version CGU au moment du consentement DataConnect (ex: '1.0', '2.1.0')",
+    )
+    consentement_grdf_by = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="User ayant donné le consentement GRDF (RGPD audit, NULL si user supprimé)",
+    )
+    consentement_grdf_cgu_version = Column(
+        String(20),
+        nullable=True,
+        comment="Version CGU au moment du consentement GRDF",
     )
 
     # Relations (1-to-many)

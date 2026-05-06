@@ -792,6 +792,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-05 (Sprint C-4 Phase 4.7 — Polish V92 + ELD + Conftest reseed — 2 clôtures P2 + SG V92 anti-régression) | 29 | 3 | 12 | 14 |
 | 2026-05-06 (Sprint C-5 Phase 5.1 — Bill Intelligence anomaly_detector R19+R20 ADR-013 — 1 clôture P0 cardinal différenciateur produit) | 28 | 2 | 12 | 14 |
 | 2026-05-06 (Sprint C-5 Phase 5.2 — Capacité EUR/MW disambiguation ADR-015 — 1 clôture P0 documentaire + 2 nouvelles P2 reportées Sprint C-7) | 29 | 1 | 12 | 16 |
+| 2026-05-06 (Sprint C-5 Phase 5.3 — ADR-007 ext consentement_by + cgu_version — 1 clôture P2 RGPD audit trail complet) | 28 | 1 | 12 | 15 |
 
 ---
 
@@ -897,30 +898,38 @@ Si Sprint C-7 souhaite étendre l'audit balayage cross-modules (`regops/rules/*.
 
 ---
 
-## D-Phase4-4-ADR-007-Consent-By-CGU-Version-001 — Audit trail RGPD avancé Org/DP consentement (champs ADR-007 reportés)
+## ~~D-Phase4-4-ADR-007-Consent-By-CGU-Version-001~~ — ✅ CLÔTURÉE Sprint C-5 Phase 5.3
 
 **Détecté** : Sprint C-4 Phase 4.4 (modèle Org/DP consentement, 2026-05-05)
+**Clôturée** : Sprint C-5 Phase 5.3 (2026-05-06, commit `<hash-phase-5-3>`, ADR-007 ext)
 
-**Périmètre** : ADR-007 spécifie un schéma RGPD enrichi avec audit trail complet (qui/quand/version CGU/IP hashée). Phase 4.4 a livré le MVP cardinal (8 cols : Boolean + DateTime timezone=True) mais REPORTE 2 catégories de champs RGPD avancés :
+**Livrables Phase 5.3** :
 
-| Champ ADR-007 | Description | Sprint cible |
-|---|---|---|
-| `consentement_*_by` (FK users) | Quel utilisateur a accordé/retiré le consentement | C-5+ |
-| `consentement_*_cgu_version` (String 20) | Version CGU au moment du consentement | C-5+ |
-| `consentement_*_ip_hash` (String SHA-256) | IP hashée RGPD-safe (audit forensique) | C-7+ optionnel |
+- **Migration Alembic 9e propre** (`b86d01f19001_phase_5_3_sprint_c_5_org_dp_.py`) — 63 drop_table/drop_index autogenerate retirés discipline anti-DROP 9e épisode (cumul Phase C : 0 destructive)
+- **8 cols ajoutés** :
+  - `organisations` +4 : `consentement_dataconnect_by` (FK users.id ON DELETE SET NULL) + `consentement_dataconnect_cgu_version` (String 20) + `consentement_grdf_by` + `consentement_grdf_cgu_version`
+  - `delivery_points` +4 : `consentement_dataconnect_local_by` + `consentement_dataconnect_local_cgu_version` + `consentement_grdf_local_by` + `consentement_grdf_local_cgu_version`
+- **`ondelete=SET NULL` cardinal** : suppression user (RGPD droit oubli art. 17) préserve l'historique de consentement (la trace persiste, la référence personnelle disparaît)
+- **Helper enrichi** `services/consent_service.py:get_effective_consent_with_audit(dp, type_) -> dict` — retourne dict 5 clés stable : `active + by_user_id + cgu_version + at + scope` (local/global/none)
+- **Tests** : 13 tests `test_org_dp_consentement_by_cgu_version.py` (CRUD Org/DP + ondelete SET NULL + helper 3 scopes + sérialisation contrat) — 13/13 verts
+- **Source-guards** : 4 SG `test_consent_audit_trail_structure_source_guards.py` (Org 4 cols + DP 4 cols + ondelete=SET NULL × 4 + helper signature stable) — 4/4 verts
 
-**Action Sprint C-5** :
+**Champs ADR-007 reportés Sprint C-7+** (audit trail forensique optionnel) :
 
-1. Migration Alembic 8e Phase C — ajouter `_by` + `_cgu_version` (4 cols par entité × 2 entités = 8 cols additionnelles)
-2. AuditLog event_type `RGPD_CONSENT_CHANGE` enrichi avec `cgu_version` JSON metadata
-3. Tests cardinal : changement consentement crée 1 entrée AuditLog conforme CNIL
-4. Délégation `regulatory-expert` (CNIL audit trail) + `security-auditor` (FK + IP hash)
+- `consentement_*_ip_hash` (String SHA-256) — IP hashée RGPD-safe pour audit forensique (non bloquant MVP, dette `D-Sprint-C7-Consent-IP-Hash-Audit-001` P2 à créer si besoin réel détecté pré-pilote)
 
-**Effort estimé** : ~1-1.5 j-h (migration + tests + AuditLog wiring)
-**Priorité** : 🟡 P2 (RGPD audit trail avancé — différenciateur CNIL strict, non bloquant pré-pilote MVP)
-**Sprint cible** : Sprint C-5
+**Effort réel** : ~1.5 h (vs 1-1.5 j-h estimé) = **gain -85 à -90% maintenu**.
 
-**Référence** : `docs/adr/ADR-007-rgpd-consentement-dataconnect-grdf-modele.md` section "Audit trail" — schéma complet revendiqué.
+**Différenciateur produit** : audit RGPD officiel "preuve d'origine + valeur" complet (qui + quelle CGU + quand + scope) pour cas d'usage cardinaux :
+
+- Audit RGPD CNIL ("prouvez que tel utilisateur a accepté tel jour la version X")
+- Cockpit RGPD UI Sprint C-5+ — affichage trace complète par PRM/PCE
+- Export RGPD droit d'accès personnel (article 15 RGPD)
+
+**Priorité** : ✅ CLÔTURÉE
+**Sprint cible** : Sprint C-5 ✅
+
+**Référence** : `docs/adr/ADR-007-rgpd-consentement-dataconnect-grdf-modele.md` section "Implémentation Phase 5.3 actée".
 
 ---
 

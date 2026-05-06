@@ -349,6 +349,32 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
         comment="Timestamp override local GRDF (RGPD audit)",
     )
 
+    # ─── Sprint C-5 Phase 5.3 — Audit RGPD étendu local (ADR-007 ext) ────────
+    # ondelete=SET NULL : suppression user RGPD-droit oubli préserve l'historique
+    # de consentement local (la trace persiste, la référence personnelle disparaît).
+    consentement_dataconnect_local_by = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="User ayant donné l'override local DataConnect (RGPD audit, NULL si user supprimé)",
+    )
+    consentement_dataconnect_local_cgu_version = Column(
+        String(20),
+        nullable=True,
+        comment="Version CGU au moment de l'override local DataConnect",
+    )
+    consentement_grdf_local_by = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="User ayant donné l'override local GRDF (RGPD audit, NULL si user supprimé)",
+    )
+    consentement_grdf_local_cgu_version = Column(
+        String(20),
+        nullable=True,
+        comment="Version CGU au moment de l'override local GRDF",
+    )
+
     # Relations
     site = relationship("Site", back_populates="delivery_points")
     compteurs = relationship("Compteur", back_populates="delivery_point")
