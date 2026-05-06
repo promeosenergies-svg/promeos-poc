@@ -1,4 +1,4 @@
-# PROMEOS — Référentiel CGU central (Sprint C-8 Phase 8.1)
+# PROMEOS — Référentiel CGU central (Sprint C-8 Phase 8.1 + 8.4)
 #
 # Fix dette D-Sprint-C7-CGU-Referentiel-Central-001 P1 reportée Phase 7.7 → Sprint C-8.
 # Source unique vérité versions CGU acceptables — utilisé par schemas/rgpd_consent.py
@@ -6,6 +6,15 @@
 #
 # CNIL article 7 (preuve d'origine forte du consentement) : la version CGU stockée
 # AuditLog doit correspondre à une version EFFECTIVEMENT publiée + datée.
+#
+# Sprint C-8 Phase 8.4 fix D-Audit-C8-CGU-Pdf-Hash-007 P1 REG :
+# `contenu_sha256` field ajouté pour preuve d'origine forte (hash SHA256 du PDF
+# effectivement publié — vérifiable post-incident vs version étiquette nominale).
+# `contenu_pdf` field optionnel (URL S3/Wayback archivé) — null acceptable jusqu'à
+# pre-pilote, MAIS `contenu_sha256` REQUIS pour version `statut='actuel'` runtime.
+#
+# Ordre chronologique cardinal Phase 8.4 (audit deep finding sec) :
+# versions triées par `date_publication` DÉCROISSANTE pour cohérence visuelle.
 
 versions:
   - version: "1.0"
@@ -13,25 +22,29 @@ versions:
     statut: actuel
     description: "CGU initiales pré-pilote — référentiel cardinal Sprint C-7+"
     diff_previous: null
-    contenu_pdf: null
-
-  - version: "0.9"
-    date_publication: "2025-09-01"
-    statut: archive
-    description: "CGU pré-MVP (rétro-compat tests existants Phase C+)"
-    diff_previous: "Initial draft"
-    contenu_pdf: null
-
-  - version: "2.0"
-    date_publication: "2026-04-01"
-    statut: archive
-    description: "CGU enrichies post-RGPD audit (rétro-compat Phase 7.4 tests)"
-    diff_previous: "RGPD article 7 + cgu_version explicite"
-    contenu_pdf: null
+    contenu_pdf: null  # Phase D : URL CGU archivée (S3 ou Wayback) avant pilote externe
+    contenu_sha256: null  # Phase D : SHA256 du PDF publié — REQUIS pre-pilote externe
 
   - version: "2.1.0"
     date_publication: "2026-04-15"
-    statut: archive
-    description: "CGU patch post-Phase 7.4 (rétro-compat Phase 7.4 tests)"
-    diff_previous: "Sémantique versioning explicite"
+    statut: archive_test_only
+    description: "CGU patch post-Phase 7.4 (FIXTURE tests Phase 7.4 uniquement, jamais publiée prod)"
+    diff_previous: "Test fixture — sémantique versioning explicite"
     contenu_pdf: null
+    contenu_sha256: null
+
+  - version: "2.0"
+    date_publication: "2026-04-01"
+    statut: archive_test_only
+    description: "CGU fixture tests Phase 7.4 (jamais publiée prod, statut explicite)"
+    diff_previous: "Test fixture — RGPD article 7 + cgu_version explicite"
+    contenu_pdf: null
+    contenu_sha256: null
+
+  - version: "0.9"
+    date_publication: "2025-09-01"
+    statut: archive_test_only
+    description: "CGU pré-MVP fixture (jamais publiée prod, draft non opposable)"
+    diff_previous: "Test fixture — initial draft"
+    contenu_pdf: null
+    contenu_sha256: null

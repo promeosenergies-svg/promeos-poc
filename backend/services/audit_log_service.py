@@ -354,9 +354,31 @@ _HASH_KEY_PATTERNS = (
 _REDACTED = "<redacted>"
 
 
+# Sprint C-8 Phase 8.4 — D-Audit-C8-Address-Substring-Match-005 P1 SEC :
+# Allowlist explicite des keys techniques NON-PII contenant un pattern sensible
+# (anti sur-redaction CNIL audit trail). Pattern réutilisé Phase 8.3 (`code` exact)
+# mais inversé : ici on accepte le pattern partout SAUF allowlist explicite.
+_SENSITIVE_KEY_NON_SENSITIVE_ALLOWLIST = frozenset(
+    {
+        "ip_address",  # IP HTTP audit trail (CNIL article 5(2) accountability)
+        "mac_address",  # MAC réseau hardware (non-PII direct)
+        "url_address",  # URL endpoint
+        "user_agent",  # HTTP User-Agent (déjà tracé via cx_logger)
+    }
+)
+
+
 def _is_sensitive_key(key: str) -> bool:
-    """True si la clé contient un pattern sensible (case-insensitive)."""
+    """True si la clé contient un pattern sensible (case-insensitive).
+
+    Sprint C-8 Phase 8.4 fix : allowlist `_SENSITIVE_KEY_NON_SENSITIVE_ALLOWLIST`
+    pour exclure `ip_address`/`mac_address`/`url_address`/`user_agent` (keys techniques
+    non-PII préservées audit trail CNIL article 5(2) accountability).
+    Cohérent doctrine `_is_hash_key('code')` Phase 8.3 exact match strict.
+    """
     lk = (key or "").lower()
+    if lk in _SENSITIVE_KEY_NON_SENSITIVE_ALLOWLIST:
+        return False
     return any(p in lk for p in _SENSITIVE_KEY_PATTERNS)
 
 

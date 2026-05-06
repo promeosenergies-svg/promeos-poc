@@ -28,8 +28,17 @@ def _load_cgu_referentiel() -> dict:
         return yaml.safe_load(f) or {}
 
 
-def reload_cgu_referentiel() -> dict:
-    """Force le rechargement du référentiel (tests + admin runtime updates)."""
+def reload_cgu_referentiel(*, admin_token: Optional[str] = None) -> dict:
+    """Force le rechargement du référentiel (tests + admin runtime updates).
+
+    Sprint C-8 Phase 8.4 fix D-Audit-C8-CGU-Cache-Reload-Auth-004 P1 SEC :
+    helper INTERNE — caller endpoint admin DOIT vérifier role ADMIN avant appel.
+    Le paramètre `admin_token` est documentaire (le caller route doit valider).
+
+    Anti-pattern à proscrire : exposer cet endpoint sans guard `require_role(ADMIN)`
+    permettrait à un attaquant de vider le cache + recharger un YAML substitué
+    (path traversal si le path n'est pas hardcodé `_CGU_YAML_PATH`).
+    """
     _load_cgu_referentiel.cache_clear()
     return _load_cgu_referentiel()
 
