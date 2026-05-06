@@ -792,6 +792,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-5 Phase 5.6 — Fix 4 P0 audit deep multi-agents : F1 PRAGMA FK + F2 R19 NULL + F3 Capacité 3.15→3150 + F4 SG tolerance 1500→1.5 + 23 dettes C-7 tracées) | 49 | 4 | 18 | 27 |
 | 2026-05-06 (Sprint C-5 Phase 5.8 — Fix 6 P0 audit transversal : G1 cascade Org PATCH wiring + G2 R20 NULL + G3 BillAnomaly UNIQUE + G4 ADR-015 warning + G5 IDOR stepper + G6 operat_export NULL DT compliance) | 43 | 1 | 18 | 24 |
 | 2026-05-06 (Sprint C-7 Phase 7.1 — Site +1 col s_ce_m2 Surface CE Décret Tertiaire — clôture P0 historique D-Phase4-2-Operat-Surfaces-3-Distinct + migration Alembic 11e propre) | 42 | 0 | 18 | 24 |
+| 2026-05-06 (Sprint C-7 Phase 7.2 — DEMO_MODE bypass scope_utils fix ADR-017 Option B — clôture P0 SEC-2026-012, surface attaque ~25 endpoints éliminée) | 41 | 0 | 18 | 23 |
 
 ---
 
@@ -1379,9 +1380,27 @@ Hypothèses :
 
 > **Alias tracker post Phase C clôture** : ce ticket est aussi référencé `D-Sprint-C7-DEMO-MODE-Bypass-Scope-Utils-001` dans la liste des 5 P0 résiduels pré-pilote (cf. `BILAN_PHASE_C_7_7_LIVRES_2026_05_06.md`).
 
----
-
-## D-Sprint-C7-External-Connectors-Audit-Trail-001 — Connecteurs externes sans audit trail (DataConnect/GRDF/Sirene)
+> ✅ **CLÔTURÉE Sprint C-7 Phase 7.2** (2026-05-06, commit `<hash-phase-7-2>`, ADR-017 Option B).
+>
+> **Livrables** :
+>
+> - `backend/services/scope_utils.py` : `get_scope_org_id` étend signature `db: Optional[Session] = None`, ajoute validation DB stricte X-Org-Id (Organisation existence + actif + soft-delete check)
+> - `backend/services/scope_utils.py:resolve_org_id` propage `db` à `get_scope_org_id` (fix runtime cardinal)
+> - 10 tests cardinaux SEC-2026-012 : `tests/test_demo_mode_org_validation_phase72.py`
+>   * Existant + actif → accepté ✓
+>   * Inexistant DB → REJETÉ (anti-IDOR énumération)
+>   * `actif=False` → REJETÉ
+>   * Soft-deleted → REJETÉ
+>   * Format invalide ('abc', injection-like) → REJETÉ
+>   * JWT priorité préservée (anti-régression)
+>   * Backward-compat `db=None` legacy callers
+>   * Audit log security warning sur tentatives IDOR
+> - 4 SG anti-régression : `tests/source_guards/test_demo_mode_no_bypass_scope_utils_source_guards.py`
+> - Surface attaque ~25 endpoints éliminée (1 fix scope_utils protège tous endpoints `resolve_org_id`)
+> - Démo investisseur préservée (DEMO_MODE actif, fallback DemoState après rejet X-Org-Id invalide)
+> - 29/29 tests anti-régression Phase 5.5/5.6/5.8 endpoint Bill Intelligence + RGPD ext non régressés
+>
+> **Effort réel** : ~1.5 h (vs 3-4 h estimé Sprint C-7 = gain -50%).
 
 **Détecté** : Sprint C-5 Phase 5.7 audit transversal AXE 5 (2026-05-06)
 

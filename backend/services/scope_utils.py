@@ -25,20 +25,30 @@ from middleware.auth import AuthContext, DEMO_MODE
 _security_logger = logging.getLogger("promeos.security")
 
 
-def get_scope_org_id(request: Request, auth: Optional[AuthContext]) -> Optional[int]:
+def get_scope_org_id(
+    request: Request,
+    auth: Optional[AuthContext],
+    db: Optional[Session] = None,
+) -> Optional[int]:
     """
     Résout l'org_id de la requête avec la chaîne de priorité canonique.
 
     Args:
         request:  FastAPI Request (pour lire les headers)
         auth:     AuthContext injecté par get_optional_auth (None en mode démo)
+        db:       Session SQLAlchemy pour validation DB X-Org-Id (Sprint C-7 Phase 7.2 ADR-017
+                  Option B). Si None (callers legacy), validation DB skippée — backward-compat
+                  transitoire (à migrer Sprint C-8+).
 
     Returns:
         int org_id si résolu, None sinon.
 
-    Security: si auth présent, le header X-Org-Id DOIT correspondre à
-    auth.org_id sinon il est ignoré (cross-tenant guard). En DEMO_MODE
-    sans auth, X-Org-Id reste accepté tel quel pour le scope interceptor.
+    Security : si auth présent, le header X-Org-Id DOIT correspondre à `auth.org_id` sinon
+    il est ignoré (cross-tenant guard JWT). En DEMO_MODE sans auth, **X-Org-Id est validé
+    contre la DB** (Organisation existante + actif + non soft-deleted) pour empêcher IDOR
+    cross-tenant énumération via header forgé (Sprint C-7 Phase 7.2 fix SEC-2026-012).
+
+    Pattern Sprint C-5 Phase 5.5 audit + 5.7 audit transversal AXE 4 → Phase 7.2 fix runtime.
     """
     # 1. JWT token (le plus sûr)
     if auth is not None:
@@ -63,9 +73,37 @@ def get_scope_org_id(request: Request, auth: Optional[AuthContext]) -> Optional[
     raw = request.headers.get("X-Org-Id")
     if raw:
         try:
-            return int(raw)
+            org_id = int(raw)
         except ValueError:
-            pass
+            _security_logger.warning("x_org_id_invalid_format", extra={"raw": raw[:50]})
+            return None
+
+        # Sprint C-7 Phase 7.2 fix ADR-017 Option B (SEC-2026-012) : validation DB stricte.
+        # Sans ce check, X-Org-Id forgé permettait IDOR cross-tenant énumération (~25 endpoints).
+        if db is not None:
+            from models import Organisation, not_deleted
+
+            org_exists = (
+                db.query(Organisation.id)
+                .filter(
+                    Organisation.id == org_id,
+                    Organisation.actif.is_(True),
+                    not_deleted(Organisation),
+                )
+                .first()
+            )
+            if org_exists is None:
+                _security_logger.warning(
+                    "x_org_id_rejected_db_check",
+                    extra={"requested_org_id": org_id, "reason": "not_found_or_inactive"},
+                )
+                return None  # Fail securely — pas 403, laisse fallback DEMO_MODE/DemoState
+            return org_id
+
+        # Backward-compat transitoire : db=None → callers legacy. Validation skippée
+        # pour ne pas casser les callsites Sprint C-1 → C-6. À migrer Sprint C-8+ pour
+        # généralisation enforcement (cf. dette Sprint C-8 si applicable).
+        return org_id
 
     return None
 
@@ -124,7 +162,8 @@ def resolve_org_id(
     """
     from models import Organisation
 
-    org_id = get_scope_org_id(request, auth)
+    # Sprint C-7 Phase 7.2 fix ADR-017 Option B : passer `db` pour validation X-Org-Id stricte.
+    org_id = get_scope_org_id(request, auth, db=db)
     if org_id is not None:
         return org_id
 
