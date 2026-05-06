@@ -165,8 +165,23 @@ def detect_r20_capacity_variance(invoice: EnergyInvoice, db: Session) -> list[Bi
     if not invoice.site_id:
         return []
 
-    # Heuristique MVP : 1er meter actif du site (raffinement Sprint C-7+)
-    meter = db.query(Meter).filter(Meter.site_id == invoice.site_id).first()
+    # Sprint C-5 Phase 5.5 fix B2 (audit bill-intelligence) : filtrer ELECTRICITY +
+    # tri par puissance souscrite descendante pour cibler le meter principal
+    # (PMA HTA 500 kVA prioritaire vs sous-compteur BT 36 kVA). Sans ce filtre,
+    # `.first()` retournait potentiellement le sous-compteur sans PowerContract,
+    # produisant un `[]` silencieux sur sites multi-meter (faux négatifs R20).
+    from models import EnergyVector
+
+    meter = (
+        db.query(Meter)
+        .filter(
+            Meter.site_id == invoice.site_id,
+            Meter.energy_vector == EnergyVector.ELECTRICITY,
+            Meter.is_active.is_(True),
+        )
+        .order_by(Meter.subscribed_power_kva.desc().nullslast())
+        .first()
+    )
     if not meter:
         return []
 

@@ -1135,7 +1135,19 @@ terms:
       effective_date: "2026-05-06"
       legal_reference: "ADR-013 Sprint C-5 Phase 5.1 — différenciateur produit Bill Intelligence"
     formula: "Σ(amount_eur) sur EnergyInvoiceLine où line_type=TAX et label LIKE '%VNU%'"
-    notes: "Seuil minimal détection VNU dormant. Toute somme >0.01 EUR sur facture sans usage attendu (consumption_kwh < 100) = anomalie potentielle. VNU = Versement Nucléaire Universel post-ARENH (CRE délibération 2024-XX, marché < seuil 78 EUR/MWh = dormant attendu)."
+    notes: |
+      Seuil minimal détection VNU dormant. Toute somme >0.01 EUR sur facture sans usage attendu
+      (heuristique PROMEOS : consumption_kwh < 100) = anomalie potentielle.
+
+      Terminologie cardinale (correction Sprint C-5 Phase 5.5 audit regulatory-expert) :
+      VNU = "Versement pour Non-Usage" (terme légal exact, art. L.336-2 Code de l'énergie post-ARENH).
+      Pas "Versement Nucléaire Universel" (terme erroné Phase 5.1 corrigé).
+
+      Cadre légal : loi n°2023-175 du 10 mars 2023 (art. 21, accélération ENR) + décret 2026-55
+      + délibération CRE série 2026-XX (référence à confirmer Sprint C-7 — vérification experte
+      requise, cf. D-Phase4-2d-Pending-Source-Verification-001 P1).
+
+      VNU dormant attendu si prix marché < seuil 1 (78 EUR/MWh — confidence low, à vérifier).
 
   BILL_ANOMALY_CAPACITY_VARIANCE_THRESHOLD_PCT:
     value: 5.0

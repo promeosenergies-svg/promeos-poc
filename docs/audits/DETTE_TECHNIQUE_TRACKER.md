@@ -794,6 +794,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-5 Phase 5.2 — Capacité EUR/MW disambiguation ADR-015 — 1 clôture P0 documentaire + 2 nouvelles P2 reportées Sprint C-7) | 29 | 1 | 12 | 16 |
 | 2026-05-06 (Sprint C-5 Phase 5.3 — ADR-007 ext consentement_by + cgu_version — 1 clôture P2 RGPD audit trail complet) | 28 | 1 | 12 | 15 |
 | 2026-05-06 (Sprint C-5 Phase 5.4 — Polish 4 dettes (P1 SG TraceTooltip + P1 SG YAML constants reclassif P2 + 2 P1 ADR-008/009 audit qualité)) | 25 | 1 | 9 | 15 |
+| 2026-05-06 (Sprint C-5 Phase 5.5 — Fix audit 4 bloquants : VNU terminologie + multi-meter filter + 4 tests intégration endpoint + 1 P0 nouvelle DEMO_MODE) | 26 | 2 | 9 | 15 |
 
 ---
 
@@ -902,7 +903,7 @@ Si Sprint C-7 souhaite étendre l'audit balayage cross-modules (`regops/rules/*.
 ## ~~D-Phase4-4-ADR-007-Consent-By-CGU-Version-001~~ — ✅ CLÔTURÉE Sprint C-5 Phase 5.3
 
 **Détecté** : Sprint C-4 Phase 4.4 (modèle Org/DP consentement, 2026-05-05)
-**Clôturée** : Sprint C-5 Phase 5.3 (2026-05-06, commit `<hash-phase-5-3>`, ADR-007 ext)
+**Clôturée** : Sprint C-5 Phase 5.3 (2026-05-06, commit `f3849751`, ADR-007 ext)
 
 **Livrables Phase 5.3** :
 
@@ -1036,7 +1037,7 @@ Dette `D-Phase4-1-TraceTooltip-TermId-SG-Cross-Stack-001` adresse l'invariant 5 
 ## ~~D-Phase4-1-TraceTooltip-TermId-SG-Cross-Stack-001~~ — ✅ CLÔTURÉE Sprint C-5 Phase 5.4
 
 **Détecté** : Sprint C-4 Phase 4.1 (création `coherence_globale.yaml` v1.0, 2026-05-05)
-**Clôturée** : Sprint C-5 Phase 5.4 (2026-05-06, commit `<hash-phase-5-4>`)
+**Clôturée** : Sprint C-5 Phase 5.4 (2026-05-06, commit `041c0faa`)
 
 **Livrables Phase 5.4** :
 
@@ -1084,7 +1085,7 @@ Effort réel : ~30 min (cible tenue exactement). 2 SG verts.
 ## D-Sprint-C3-YAML-Constants-SG-Coverage-001 — Source-guard cohérence YAML↔constants couvre 10/68 termes
 
 **Détecté** : Sprint C-3 Phase 3.4d audit code-reviewer (2026-05-04)
-**Statut** : 🟡 **PARTIELLEMENT CLÔTURÉE** Sprint C-5 Phase 5.4 (2026-05-06, commit `<hash-phase-5-4>`).
+**Statut** : 🟡 **PARTIELLEMENT CLÔTURÉE** Sprint C-5 Phase 5.4 (2026-05-06, commit `041c0faa`).
 
 **Livrables Phase 5.4** (extension de 10 → 18 termes couverts SG cohérence YAML↔constants) :
 
@@ -1246,9 +1247,12 @@ Or la formule canonique `_compute_capacity()` produit EUR/MWh : `(price_eur_per_
 
 ---
 
-## D-Phase4-2d-Capacite-EUR-MW-Disambiguation-001 — Valeur enchère capacité 3.15 vs 3150 EUR/MW à clarifier
+## ~~D-Phase4-2d-Capacite-EUR-MW-Disambiguation-001~~ — ✅ CLÔTURÉE Sprint C-5 Phase 5.2
 
 **Détecté** : Sprint C-4 Phase 4.2d mini-audit pré-build (2026-05-05)
+**Clôturée** : Sprint C-5 Phase 5.2 (2026-05-06, commit `cdbb9e21`, ADR-015)
+
+**Note Phase 5.5 audit qualité** : barré ajouté rétroactivement (cohérence formelle avec autres dettes barrées Sprint C-5). Hypothèse B confirmée Phase 5.2 (3.15 EUR/MW unitaire enchère, calcul 0.43 EUR/MWh correct). 3 dimensions distinctes documentées ADR-015 (3.15 EUR/MW certificat / 0.43 EUR/MWh client TURPE / 20-50 k€/MW.an revenu producteur).
 
 **Périmètre** : Le YAML `CAPACITE_RTE_TARIF_2026_EUR_PER_MW = 3.15` (mirroir `cost_simulator_2026.py:64 CAPACITE_UNITAIRE_EUR_MWH = 0.43`) présente une **incohérence mathématique apparente** :
 
@@ -1280,7 +1284,7 @@ Hypothèses :
 ## ~~D-Phase4-2d-BillIntelligence-Anomaly-Detector-001~~ — ✅ CLÔTURÉE Sprint C-5 Phase 5.1
 
 **Détecté** : Sprint C-4 Phase 4.2d audit bill-intelligence (2026-05-05)
-**Clôturée** : Sprint C-5 Phase 5.1 (2026-05-06, commit `<hash-phase-5-1>`, ADR-013)
+**Clôturée** : Sprint C-5 Phase 5.1 (2026-05-06, commit `be7fd8f0`, ADR-013)
 
 **Livrables Phase 5.1** :
 
@@ -1339,6 +1343,42 @@ Hypothèses :
 **Effort estimé** : 10 min (recherche Légifrance + maj YAML)
 **Priorité** : 🟡 P2 (la valeur 0.238 reste correcte ADEME ; seul le JORFTEXT de référence est temporairement incomplet)
 **Sprint cible** : Sprint C-4
+
+---
+
+## D-Sprint-C7-Demo-Mode-Org-Validation-001 — DEMO_MODE X-Org-Id sans validation DB (IDOR pré-existant)
+
+**Détecté** : Sprint C-5 Phase 5.5 audit security-auditor (2026-05-06) — finding `PROMEOS-SEC-2026-001` HIGH
+
+**Périmètre** : `backend/services/scope_utils.py:get_scope_org_id` accepte le header `X-Org-Id` brut en mode `DEMO_MODE=true` sans vérifier que l'organisation existe en DB ni qu'elle appartient à l'utilisateur. Un attaquant peut envoyer un entier arbitraire (`1`, `2`, `999`...) et obtenir les données de toute organisation cross-tenant.
+
+**Code pré-existant** : ce risque IDOR est antérieur à Sprint C-5 (la fonction `get_scope_org_id` existe depuis Sprint C-2/C-3). Détecté en bonus par audit Sprint C-5 Phase 5.5 sur l'endpoint `/api/bill-intelligence/anomalies` (Phase 5.1) qui consomme `resolve_org_id`.
+
+**Risque** :
+
+- En production avec auth activée : protégé par chaîne JWT → `auth.org_id`
+- En DEMO_MODE (POC, démo investisseur, pilote pré-prod si DEMO_MODE oublié) : tout utilisateur peut accéder à toute organisation
+- Cardinal pré-pilote prod : doit être bloqué avant tout déploiement non-DEMO
+
+**Action Sprint C-7** :
+
+1. Modifier `services/scope_utils.py:get_scope_org_id` pour ajouter check DB :
+   ```python
+   if raw_org_id := request.headers.get("X-Org-Id"):
+       org = db.query(Organisation).filter_by(id=int(raw_org_id), actif=True).first()
+       if org is None:
+           raise HTTPException(403, "Organisation introuvable ou inactive")
+   ```
+
+2. Tests intégration : org_id inexistant (`X-Org-Id: 99999`) → 403, pas 200
+
+3. Cohérent avec mini-sprint IDOR meters (commit `40ebb348`) + IDOR Portfolio (commit `32d88c85`) — pattern PROMEOS-SEC-XXX
+
+**Effort estimé** : ~15-20 min (modif scope_utils + 2 tests intégration)
+**Priorité** : 🔴 **P0** (sécurité, bloquant pré-prod, pré-existant détecté audit Sprint C-5 Phase 5.5)
+**Sprint cible** : Sprint C-7 polish (ou ticket dédié hors-sprint)
+
+**Référence interne** : `PROMEOS-SEC-2026-001` (audit security-auditor Sprint C-5 Phase 5.5).
 
 ---
 
