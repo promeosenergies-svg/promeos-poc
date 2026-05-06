@@ -83,7 +83,11 @@ def list_bill_anomalies(
     """
     org_id = resolve_org_id(request, auth, db)
 
-    base_q = (
+    # Sprint C-8 Phase 8.1 — D-Audit-Phase7-KPI-Mutation-Coherence-003 fix (P1-CR-003) :
+    # base org-scopée SANS filtres user (pour KPI canonique stable cross-vues).
+    # Avant fix : KPI était calculé sur base_q déjà filtrée par code/severity/resolved/period →
+    # si filtre `code=R20`, KPI R19 = 0 trompeur. Maintenant : KPI canonical (org-scope only).
+    org_scope_q = (
         db.query(BillAnomaly)
         .join(EnergyInvoice, BillAnomaly.invoice_id == EnergyInvoice.id)
         .join(Site, EnergyInvoice.site_id == Site.id)
@@ -94,6 +98,8 @@ def list_bill_anomalies(
             BillAnomaly.deleted_at.is_(None),
         )
     )
+
+    base_q = org_scope_q
 
     if code:
         base_q = base_q.filter(BillAnomaly.code == code)
@@ -108,10 +114,15 @@ def list_bill_anomalies(
     if period_end:
         base_q = base_q.filter(EnergyInvoice.period_end <= period_end)
 
-    # KPI cardinal Phase 7.7 Lot D : total économie potentielle EUR (SUM actual_value
-    # filtré sur R19 où actual_value = montant VNU; R20 actual_value = variance% pas EUR).
+    # KPI cardinal canonique Phase 8.1 : SUM(actual_value) R19 NON RÉSOLUES sur org_scope_q
+    # (vs base_q user-filtered avant Phase 8.1). Différenciateur CFO :
+    # montant VNU dormant cumulé ACTIONNABLE (resolved_at IS NULL).
+    # bill-intelligence audit deep recommandation : exclusion résolues = montant à reclaim restant.
     kpi_total_economie_eur = (
-        base_q.filter(BillAnomaly.code == "R19")
+        org_scope_q.filter(
+            BillAnomaly.code == "R19",
+            BillAnomaly.resolved_at.is_(None),
+        )
         .with_entities(func.coalesce(func.sum(BillAnomaly.actual_value), 0.0))
         .scalar()
     )

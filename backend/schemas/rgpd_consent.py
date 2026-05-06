@@ -29,11 +29,23 @@ class OrganisationConsentementPatch(BaseModel):
 
     @model_validator(mode="after")
     def validate_cgu_required_if_consent_set(self) -> "OrganisationConsentementPatch":
-        """ADR-019 : si consentement_*_global set, cgu_version obligatoire (CNIL article 7)."""
+        """ADR-019 : si consentement_*_global set, cgu_version obligatoire (CNIL article 7).
+
+        Sprint C-8 Phase 8.1 — D-Sprint-C7-CGU-Referentiel-Central-001 fix :
+        validation contre référentiel central `services.cgu_service.is_valid_cgu_version()`
+        (cardinal CNIL — version arbitraire rejetée).
+        """
+        from services.cgu_service import is_valid_cgu_version
+
         consent_set = self.consentement_dataconnect_global is not None or self.consentement_grdf_global is not None
         if consent_set and not self.cgu_version:
             raise ValueError(
                 "cgu_version requis si consentement_*_global modifié (RGPD CNIL article 7 — preuve d'origine forte)"
+            )
+        if self.cgu_version and not is_valid_cgu_version(self.cgu_version):
+            raise ValueError(
+                f"cgu_version='{self.cgu_version}' inconnue du référentiel central "
+                "(backend/config/cgu_referentiel.yaml). CNIL preuve d'origine forte exige version vérifiable."
             )
         return self
 
@@ -65,9 +77,17 @@ class DeliveryPointConsentementLocalPatch(BaseModel):
 
     @model_validator(mode="after")
     def validate_cgu_required_if_consent_set(self) -> "DeliveryPointConsentementLocalPatch":
+        """Sprint C-8 Phase 8.1 — validation référentiel central CGU (cohérent OrganisationConsentementPatch)."""
+        from services.cgu_service import is_valid_cgu_version
+
         consent_set = self.consentement_dataconnect_local is not None or self.consentement_grdf_local is not None
         if consent_set and not self.cgu_version:
             raise ValueError("cgu_version requis si consentement_*_local modifié (CNIL article 7)")
+        if self.cgu_version and not is_valid_cgu_version(self.cgu_version):
+            raise ValueError(
+                f"cgu_version='{self.cgu_version}' inconnue du référentiel central "
+                "(backend/config/cgu_referentiel.yaml)."
+            )
         return self
 
     @model_validator(mode="after")

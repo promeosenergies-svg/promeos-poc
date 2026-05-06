@@ -803,6 +803,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-7 Phase 7.7 Lot D — Bill Intelligence endpoint Literal validation + pagination + KPI total_economie_potentielle_eur (3 P2) → **Phase 7.7 totale : 8 P1 + 9 P2 = 17 dettes clôturées**) | 22 | 0 | 10 | 12 |
 | 2026-05-06 (Sprint C-7 AUDIT COMPLET PHASE 7 multi-agents SDK 6 parallèles — 24 findings nouveaux détectés (6 P0 + 10 P1 + 8 P2) → **PRÉ-PILOTE-READY ASSERTION RÉVISÉE**) | 46 | 6 | 20 | 20 |
 | 2026-05-06 (Sprint C-7 Phase 7.8 — 6 P0 fixes critiques audit deep clôturés : IDOR DataConnect 5 endpoints + IDOR GRDF 2 endpoints + IDOR org_id_override + audit RGPD commit immédiat + Article 5(2)+30 RGPD + TURPE 7 vs TURPE 6 codes — **PRÉ-PILOTE-READY RÉEL atteint**) | 40 | 0 | 20 | 20 |
+| 2026-05-07 (Sprint C-8 Phase 8.1 Lot REGOPS — 3 P1 fixes : Scoring OPERAT migration s_ce_m2 ADR-020 Option C + CGU référentiel central + KPI mutation cardinal canonique cross-vues) | 37 | 0 | 17 | 20 |
 
 ---
 

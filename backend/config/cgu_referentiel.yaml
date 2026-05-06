@@ -1,0 +1,37 @@
+# PROMEOS — Référentiel CGU central (Sprint C-8 Phase 8.1)
+#
+# Fix dette D-Sprint-C7-CGU-Referentiel-Central-001 P1 reportée Phase 7.7 → Sprint C-8.
+# Source unique vérité versions CGU acceptables — utilisé par schemas/rgpd_consent.py
+# pour validation `cgu_version` (ADR-019 PATCH endpoints RGPD).
+#
+# CNIL article 7 (preuve d'origine forte du consentement) : la version CGU stockée
+# AuditLog doit correspondre à une version EFFECTIVEMENT publiée + datée.
+
+versions:
+  - version: "1.0"
+    date_publication: "2026-01-15"
+    statut: actuel
+    description: "CGU initiales pré-pilote — référentiel cardinal Sprint C-7+"
+    diff_previous: null
+    contenu_pdf: null
+
+  - version: "0.9"
+    date_publication: "2025-09-01"
+    statut: archive
+    description: "CGU pré-MVP (rétro-compat tests existants Phase C+)"
+    diff_previous: "Initial draft"
+    contenu_pdf: null
+
+  - version: "2.0"
+    date_publication: "2026-04-01"
+    statut: archive
+    description: "CGU enrichies post-RGPD audit (rétro-compat Phase 7.4 tests)"
+    diff_previous: "RGPD article 7 + cgu_version explicite"
+    contenu_pdf: null
+
+  - version: "2.1.0"
+    date_publication: "2026-04-15"
+    statut: archive
+    description: "CGU patch post-Phase 7.4 (rétro-compat Phase 7.4 tests)"
+    diff_previous: "Sémantique versioning explicite"
+    contenu_pdf: null

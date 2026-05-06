@@ -133,7 +133,34 @@ sur `tertiaire_area_m2`). Quand renseigné, l'export OPERAT v2 prend le précéd
 
 ---
 
-## Implémentation Sprint C-8 Phase 8.1
+## Implémentation Phase 8.1 actée (2026-05-07)
+
+✅ **LIVRÉ Sprint C-8 Phase 8.1** — composants en production sur branche `claude/refonte-sol2`.
+
+**Composants** :
+
+- `backend/regops/operat_export_helpers.py` (NOUVEAU ~52 LOC) :
+  - `resolve_surface_for_operat_export(site)` priorité s_ce_m2 → tertiaire fallback → 0.0 ultime
+  - `is_operat_v2_ready(site)` True si s_ce_m2 explicite > 0
+- `backend/regops/data_quality_specs.py` : `s_ce_m2` ajouté `optional` DT (cardinal ADR-020 Option C)
+
+**Tests cardinaux 4/4 ✅** :
+
+- `test_phase81_resolve_surface_for_operat_export_uses_s_ce_m2_when_present`
+- `test_phase81_resolve_surface_falls_back_to_tertiaire_when_s_ce_null`
+- `test_phase81_is_operat_v2_ready_returns_true_only_with_s_ce_m2`
+- `test_phase81_data_quality_specs_includes_s_ce_m2_optional`
+
+**SG anti-régression** : `test_sg_phase81_01_operat_export_helper_present`
+
+**Effort réel** : ~30 min (vs 1.5h estimé = -67% gain efficacité grâce à scope cardinal Option C
+hybride sans data migration).
+
+**Pas de régression** : 95/95 tests Phase 7+8 passent (statu quo scoring `tertiaire_area_m2`).
+
+---
+
+## Implémentation Sprint C-8 Phase 8.1 (planning initial)
 
 1. Helper `regops/operat_export_helpers.py:resolve_surface_for_operat_export()` (~15 LOC)
 2. `regops/data_quality_specs.py:9` étendre `optional` avec `s_ce_m2`
