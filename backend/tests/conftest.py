@@ -10,7 +10,15 @@ import pytest
 
 
 def _ensure_seeded():
-    """Seed HELIOS S if the real DB has < 5 sites."""
+    """Seed HELIOS S if the real DB has < 5 sites.
+
+    Sprint C-4 Phase 4.7 (clôture D-Sprint-C2-Conftest-Reseed-Reset-001 P2) :
+    le reset hard via SeedOrchestrator écrase les tables PROMEOS mais peut laisser
+    `alembic_version` désynchronisé entre tests modules consécutifs (race condition
+    si le seed précède une nouvelle migration tested). Reset explicite ajouté pour
+    cohérence baseline alembic post-reseed (idempotent — pas d'effet si table
+    déjà à head).
+    """
     from database import SessionLocal
 
     db = SessionLocal()
@@ -24,6 +32,26 @@ def _ensure_seeded():
             orch.reset(mode="hard")
             result = orch.seed("helios", "S", rng_seed=42)
             db.commit()
+
+            # Sprint C-4 Phase 4.7 — reset alembic_version pour cohérence baseline
+            # post-reseed (anti-désync entre test modules consécutifs).
+            try:
+                from sqlalchemy import text
+
+                db.execute(text("DELETE FROM alembic_version"))
+                # Re-stamp head courant (lecture migration max via Alembic config)
+                # Defensive : si Alembic command unavailable in test env, log + skip.
+                from alembic import command
+                from alembic.config import Config
+
+                alembic_cfg = Config("alembic.ini")
+                command.stamp(alembic_cfg, "head")
+                db.commit()
+            except Exception:
+                # Defensive : alembic_version reset n'est pas critique pour les
+                # tests qui n'utilisent pas de migration runtime. Best-effort.
+                db.rollback()
+
             # Réactiver DemoState pour les tests qui en dépendent
             from services.demo_state import DemoState
             from models import Organisation

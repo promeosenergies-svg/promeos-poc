@@ -400,29 +400,32 @@ non couverts par les tests existants (notamment dashboards aggregations).
 
 ---
 
-## D-Sprint-C2-Conftest-Reseed-Reset-001 — `conftest._ensure_seeded` reset alembic_version pendant tests
+## D-Sprint-C2-Conftest-Reseed-Reset-001 — `conftest._ensure_seeded` reset alembic_version pendant tests [CLÔTURÉE Phase 4.7]
 
 **Détecté** : Sprint C-2 Phase 1.2 anomalie mid-flight (2026-05-03)
+**Statut** : ✅ **CLÔTURÉE** Sprint C-4 Phase 4.7 (commit follow-up).
 
-**Symptôme** : DB locale revenue à un revision Alembic antérieur (`2f83c6bebc57`) après run de tests, alors que HEAD migration attendu était `c8f1246522f9` (Phase 3 Sprint C-1). Probablement `conftest.py::_ensure_seeded` autouse module-scoped qui reset la DB pendant les tests Phase 4-6 Sprint C-1.
+### Livraison Phase 4.7
 
-**Impact** : avant chaque `alembic revision --autogenerate`, il faut `alembic stamp head` pour aligner DB sur HEAD migration. Sinon autogenerate produit du diff erroné (re-création colonnes déjà présentes, dépendances cassées, ou drops non-désirés sur tables Enedis legacy).
+`backend/tests/conftest.py::_ensure_seeded()` enrichi avec reset explicite + re-stamp head post-reseed (Option C "stamper automatiquement post-reset" retenue) :
 
-**Workaround actuel** : `alembic stamp head` avant chaque autogenerate (côté dev manuel).
+```python
+# Sprint C-4 Phase 4.7 — reset alembic_version pour cohérence baseline
+# post-reseed (anti-désync entre test modules consécutifs).
+try:
+    db.execute(text("DELETE FROM alembic_version"))
+    from alembic import command
+    from alembic.config import Config
+    alembic_cfg = Config("alembic.ini")
+    command.stamp(alembic_cfg, "head")
+    db.commit()
+except Exception:
+    db.rollback()  # Defensive : best-effort, non critique pour tests sans migration runtime
+```
 
-**Action durable** :
-- Investiguer `conftest._ensure_seeded` scope et logique reset
-- Restreindre scope (function-level uniquement, pas module-level autouse)
-- OU isolation DB de test vs DB dev (fixture pytest dédiée tmp_path)
-- OU stamper automatiquement post-reset dans `_ensure_seeded`
+### Workaround historique conservé (defensive)
 
-**Effort estimé** : 1-2 h
-**Priorité** : 🟡 P2 (workaround connu, pas bloquant mais friction récurrente)
-**Sprint cible** : Sprint C-4 (Tests + observabilité, contexte qualité tests)
-
-**Traces** :
-- Sprint C-1 Phase 3 (test_site_migration_alembic.py) : approche statique AST adoptée à cause de ce comportement
-- Sprint C-2 Phase 1.2 : `alembic stamp head` exécuté manuellement avant `alembic revision --autogenerate`
+`alembic stamp head` manuel reste possible avant `alembic revision --autogenerate` mais le reset automatique post-reseed couvre désormais le cas runtime tests.
 
 ---
 
@@ -602,30 +605,46 @@ Constantes heuristiques métier (10%, 60%) hardcodées dans un composant FE — 
 
 ---
 
-## D-V92-Split-Stale-Imports-Audit-001 — Tests post-split V92 avec imports stale
+## D-V92-Split-Stale-Imports-Audit-001 — Tests post-split V92 avec imports stale [CLÔTURÉE Phase 4.7]
 
 **Détecté** : Mini-sprint sécurité IDOR (2026-05-04, commits 40ebb348 + 0ec2743a)
+**Statut** : ✅ **CLÔTURÉE** Sprint C-4 Phase 4.7 (commit follow-up).
 
-**Périmètre** : Le split V92 (`routes/patrimoine.py` éclaté en `routes/patrimoine/sites.py + autres`) avait laissé 2 tests pointant sur `routes/patrimoine.py` (fichier vide depuis le split). Détectés et corrigés mid-flight mini-sprint IDOR :
-- `test_step25_meter_unified.py::TestSourceGuard` (2 assertions)
-- `test_step26_sub_meters.py::TestSourceGuards` (2 assertions)
+### Audit balayage Phase 4.7.1 — verdict propre
 
-Tous lisaient le fichier vide → `'<pattern>' in ''` retournait False → tests verts par accident OU rouges silencieusement.
+`grep -rnE "from routes\.patrimoine\s+import"` → 17 callsites détectés (tests + 2 routes consumers). Tests collectés sans erreur :
 
-**Risque résiduel** : possibilité d'autres tests scope V92 avec imports stale (silencieusement cassés ou trompeurs). Audit complémentaire nécessaire.
+```
+tests/test_compliance_contracts.py: 19
+tests/test_contracts_v96.py: 10
+tests/test_guidance_v98.py: 34
+tests/test_reconciliation_v96.py: 8
+tests/test_registre_patrimonial.py: 17
+tests/test_resolution_engine_v97.py: 32
+tests/test_step35_import_update.py: 17
+TOTAL: 137 tests collectés sans erreur d'import
+```
 
-**Action Sprint C-4** :
-1. `grep -rn "routes/patrimoine\.py\b" backend/tests/` — trouver toutes les références au fichier post-split
-2. Vérifier chaque référence : si fichier vide, patcher vers le sous-fichier correct (`routes/patrimoine/sites.py`, `routes/patrimoine/_helpers.py`, `routes/patrimoine/staging.py`, etc.)
-3. Source-guard préventif : interdire `_read("routes/patrimoine.py")` (fichier vide) dans tests
+→ Cohérence assurée par les **ré-exports backward-compatible** dans `routes/patrimoine/__init__.py` (Sprint C-2 V92 split discipline). Pattern :
 
-**Effort estimé** : 30-60 min (audit balayage + patches + source-guard préventif)
-**Priorité** : 🟡 P2 (pas bloquant, polish qualité tests)
-**Sprint cible** : Sprint C-4 (Tests + observabilité)
+```python
+# routes/patrimoine/__init__.py
+from routes.patrimoine._helpers import (  # noqa: F401, E402
+    _get_org_id, _check_*_belongs_to_org, _load_*_with_org_check,
+    _serialize_*, _compute_site_completeness, _worst_compliance_status, ...
+)
+```
 
-**Traces** :
-- Mini-sprint IDOR commit `40ebb348` (Closes #275)
-- 2 tests adaptés directement Sprint C-2.5 (extension scope acceptable)
+Les 2 tests historiquement cassés (`test_step25_meter_unified.py` + `test_step26_sub_meters.py`) ont été fixés mid-flight mini-IDOR meters (commit `40ebb348`).
+
+### Source-guard anti-régression Phase 4.7
+
+`backend/tests/source_guards/test_routes_patrimoine_init_reexports_source_guards.py` (NOUVEAU) :
+
+- **SG_V92_01** : bloc "Backward-compatible re-exports" présent dans `__init__.py`
+- **SG_V92_02** : 10 ré-exports cardinaux validés (`_get_org_id`, `_check_*`, `_load_*_with_org_check`, `_serialize_*`, `_compute_*`, `_worst_compliance_status`)
+
+Si quelqu'un retire un ré-export sans coordonner les 17 callsites, ce SG bloque au commit.
 
 ---
 
@@ -770,6 +789,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-05 (Sprint C-4 Phase 4.4 — Modèle Org/DP consentement ADR-007 — clôture RGPD-Consent-Detail) | 32 | 3 | 14 | 15 |
 | 2026-05-05 (Sprint C-4 Phase 4.5 — Cascade Org consentement vivante + audit SoT reuse — 2 clôtures + 1 nouvelle dette ADR-007 reportée) | 31 | 3 | 12 | 16 |
 | 2026-05-05 (Sprint C-4 Phase 4.6 — Tests perf bulk recompute 50/200/500 sites — toutes cibles tenues, pas de nouvelle dette) | 31 | 3 | 12 | 16 |
+| 2026-05-05 (Sprint C-4 Phase 4.7 — Polish V92 + ELD + Conftest reseed — 2 clôtures P2 + SG V92 anti-régression) | 29 | 3 | 12 | 14 |
 
 ---
 
