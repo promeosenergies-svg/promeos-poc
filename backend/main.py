@@ -45,6 +45,7 @@ from routes import (
     site_config_router,
     billing_router,
     bill_intelligence_router,
+    rgpd_consent_router,
     purchase_router,
     actions_router,
     reports_router,
@@ -202,6 +203,7 @@ app.include_router(consumption_diag_router)  # Diagnostic consommation V1
 app.include_router(site_config_router)  # Site config (schedule, tariff)
 app.include_router(billing_router)  # Bill Intelligence V2 (CSV import, shadow billing, anomaly engine)
 app.include_router(bill_intelligence_router)  # Sprint C-5 P5.1 — anomaly detection R19+R20 (ADR-013)
+app.include_router(rgpd_consent_router)  # Sprint C-7 P7.3 — PATCH endpoints RGPD consentement (ADR-019)
 app.include_router(purchase_router)  # Achat Energie V1 (scenarios fixe/indexe/spot)
 app.include_router(actions_router)  # Action Hub V1 (unified actions from all briques)
 app.include_router(reports_router)  # Reports (audit PDF, audit JSON)
