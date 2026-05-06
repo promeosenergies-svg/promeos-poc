@@ -65,34 +65,34 @@ def test_sg_cost_sim_01_vnu_seuil_consistent_with_yaml():
 def test_sg_cost_sim_02_capacite_unitaire_consistent_with_yaml_formula():
     """SG_COST_SIM_02 : CAPACITE_UNITAIRE_EUR_MWH ≈ (YAML tarif × coeff) / 8760.
 
-    Note : le YAML stocke `CAPACITE_RTE_TARIF_2026_EUR_PER_MW = 3.15` (status pending,
-    valeur à disambiguer Sprint C-5 cf. D-Phase4-2d-Capacite-EUR-MW-Disambiguation-001).
-    Le SG valide la cohérence numérique brute des 2 sources hardcodées (cost_simulator
-    et catalog) entre elles. Si la disambiguation Sprint C-5 conclut que la valeur réelle
-    est 3150, il faudra mettre à jour CONJOINTEMENT YAML + catalog + cost_simulator.
+    Sprint C-5 Phase 5.6 fix F4 (audit deep multi-agents) :
+    Tolerance resserrée 1500 → 1.5 après correction F3 (YAML 3.15 → 3150 EUR/MW.an).
+    L'écart x1000 historique (Sprint C-4 P4.2 typo) est désormais éliminé.
 
-    Formule canonique : (price_eur_per_mw × coeff) / 8760 = EUR/MWh
+    Calcul attendu post-F3 :
+    - YAML tarif = 3150 EUR/MW.an
+    - YAML coeff = 1.2
+    - Formule : 3150 × 1.2 / 8760 = 0.4315... EUR/MWh
+    - Runtime : 0.43 EUR/MWh
+    - Ratio : 0.4315 / 0.43 ≈ 1.004 (largement sous 1.5)
+
+    Anti-régression : si quelqu'un revient à 3.15 ou modifie une valeur unilatéralement,
+    le ratio explose au-delà de 1.5 → SG fail-fast.
+
+    Formule canonique : (price_eur_per_mw_year × coeff) / 8760 = EUR/MWh
     """
-    yaml_price = get_term_value("CAPACITE_RTE_TARIF_2026_EUR_PER_MW")  # 3.15
+    yaml_price = get_term_value("CAPACITE_RTE_TARIF_2026_EUR_PER_MW")  # 3150 post-F3
     yaml_coeff = get_term_value("CAPACITE_RTE_COEFF_2026")  # 1.2
 
-    expected_formula_value = (yaml_price * yaml_coeff) / 8760  # ≈ 0.000432 EUR/MWh
-    # Le runtime cost_simulator stocke 0.43 EUR/MWh → ces 2 valeurs ne sont PAS cohérentes
-    # mathématiquement (différence x1000) mais le catalog les déclare cohérentes par convention.
-    # Ce SG documente l'incohérence comme tracée par D-Phase4-2d-Capacite-EUR-MW-Disambiguation-001
-    # et garantit qu'aucune dérive future n'est introduite SANS résolution de la dette.
+    expected_formula_value = (yaml_price * yaml_coeff) / 8760  # ≈ 0.4315 EUR/MWh
 
-    # Tant que la disambiguation Sprint C-5 n'a pas tranché, on tolère l'écart documenté
-    # (max 1.0 EUR/MWh), le SG anti-dérive vérifie juste que les 3 valeurs (YAML ×3, formule,
-    # constante Python) restent dans une fenêtre stable.
     yaml_via_formula_or_runtime = max(expected_formula_value, CAPACITE_UNITAIRE_EUR_MWH)
     yaml_via_formula_or_runtime_min = min(expected_formula_value, CAPACITE_UNITAIRE_EUR_MWH)
     ratio_observed = yaml_via_formula_or_runtime / max(yaml_via_formula_or_runtime_min, 1e-9)
 
-    # Tolérance large (x1000 toléré tant que dette non clôturée Sprint C-5).
-    # Anti-dérive : si quelqu'un modifie une seule des 3 valeurs sans aligner les autres
-    # (par exemple change cost_simulator de 0.43 à 4.30), le ratio change et le SG cassera.
-    _RATIO_TOLERANCE_MAX = 1500  # tolère 1000x (situation actuelle) + marge
+    # Sprint C-5 Phase 5.6 fix F4 : tolerance 1.5 (vs 1500 pré-F3).
+    # Anti-régression cardinal : YAML/runtime/catalog doivent rester cohérents x1.5 max.
+    _RATIO_TOLERANCE_MAX = 1.5
     assert ratio_observed <= _RATIO_TOLERANCE_MAX, (
         f"Dérive importante YAML↔cost_simulator capacité (ratio {ratio_observed:.1f}x) :\n"
         f"  YAML formule : ({yaml_price} × {yaml_coeff}) / 8760 = {expected_formula_value:.6f}\n"

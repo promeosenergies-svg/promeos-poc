@@ -57,17 +57,21 @@ DEFAULT_ANNUAL_KWH = 100_000.0  # Fallback si site sans conso
 DEFAULT_ARCHETYPE = "BUREAU_STANDARD"
 
 # Mécanisme capacité RTE — aligné sur `billing_engine/catalog.py::CAPACITE_ELEC`
-# (enchère 06/03/2025 : 3.15 EUR/MW × coeff obligation 1.2 / 8760h ≈ 0.43 EUR/MWh).
+# (enchère 06/03/2025 : 3 150 EUR/MW.an × coeff obligation 1.2 / 8760h ≈ 0.432 EUR/MWh).
 # Le mécanisme centralisé acheteur unique nov. 2026 conserve la même valeur
 # placeholder (CAPACITE_ELEC_NOV2026) — pas de discontinuité tarifaire modélisée.
 # Source unique de vérité : `billing_engine/catalog.py` ligne 879.
 #
-# ⚠️ DISAMBIGUATION Sprint C-5 Phase 5.2 (ADR-015) :
-# YAML SoT : `CAPACITE_RTE_TARIF_2026_EUR_PER_MW = 3.15`
-# (config/sources_reglementaires.yaml). Valeur 0.43 ci-dessous calculée depuis
-# le YAML (3.15 × 1.2 / 8760). À NE PAS confondre avec
-# `services/capacity/revenue.py:PRIX_MOYEN_MW_AN` (20-50 k€/MW.an, fourchette
-# REVENU producteur certifié, dimension économique distincte).
+# ⚠️ CORRECTION Sprint C-5 Phase 5.6 fix F3 (audit deep multi-agents) :
+# YAML SoT : `CAPACITE_RTE_TARIF_2026_EUR_PER_MW = 3150` (corrigé 3.15 → 3150,
+# typo factor 1000 manquant Sprint C-4 Phase 4.2). Valeur 0.43 ci-dessous
+# calculée depuis YAML corrigé (3150 × 1.2 / 8760 = 0.432). Le runtime 0.43
+# était CORRECT depuis l'origine, seule la valeur YAML était erronée.
+#
+# À NE PAS confondre avec `services/capacity/revenue.py:PRIX_MOYEN_MW_AN`
+# (20-50 k€/MW.an, fourchette REVENU producteur certifié, dimension économique
+# distincte côté offre vs prix unitaire client ici).
+#
 # Refactor vers loader YAML reporté Sprint C-7
 # (D-Sprint-C7-Capacite-Loader-Refactor-001 P2).
 CAPACITE_UNITAIRE_EUR_MWH = 0.43

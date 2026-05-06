@@ -872,21 +872,25 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
     # Obligation fournisseur répercutée au client B2B. Prix = résultat
     # des enchères de garanties de capacité. Réforme acheteur unique
     # RTE prévue nov. 2026 (loi de finances 2025).
-    # Prix enchères 2026 : 3,15 €/MW (enchère 06/03/2025 pour livraison 2026).
+    # Prix enchères 2026 : 3 150 €/MW.an (enchère 06/03/2025 pour livraison 2026).
     # Conversion en EUR/kWh : prix_MW × coefficient_obligation / 8760h
     # Coefficient obligation moyen B2B ≈ 1.2 (pro-rata consommation pointe)
-    # → 3.15 × 1.2 / 8760 ≈ 0.00043 EUR/kWh
+    # → 3150 × 1.2 / 8760 ≈ 0.432 EUR/MWh ≈ 0.00043 EUR/kWh
     #
-    # ⚠️ DISAMBIGUATION Sprint C-5 Phase 5.2 (ADR-015) :
-    # YAML SoT : CAPACITE_RTE_TARIF_2026_EUR_PER_MW = 3.15
-    # (config/sources_reglementaires.yaml). Valeur ci-dessous calculée depuis
-    # ce YAML. À NE PAS confondre avec PRIX_MOYEN_MW_AN dans
-    # services/capacity/revenue.py (20-50 k€/MW.an, fourchette REVENU producteur
-    # côté offre — dimension économique distincte du prix unitaire client ici).
+    # ⚠️ CORRECTION Sprint C-5 Phase 5.6 fix F3 (audit deep multi-agents) :
+    # Valeur YAML corrigée 3.15 → 3150 EUR/MW.an (typo factor 1000 manquant
+    # introduit Sprint C-4 Phase 4.2). Le runtime 0.43 EUR/MWh ci-dessous
+    # était CORRECT depuis l'origine — c'est la valeur YAML qui était erronée.
+    #
+    # YAML SoT : CAPACITE_RTE_TARIF_2026_EUR_PER_MW = 3150
+    # (config/sources_reglementaires.yaml).
+    # À NE PAS confondre avec PRIX_MOYEN_MW_AN dans services/capacity/revenue.py
+    # (20-50 k€/MW.an, fourchette REVENU producteur côté offre — dimension
+    # économique distincte du prix unitaire client ici).
     "CAPACITE_ELEC": {
         "rate": 0.00043,
         "unit": "EUR/kWh",
-        "source": "Enchères capacité RTE 06/03/2025 — 3.15 EUR/MW × coeff 1.2 / 8760h ≈ 0.43 EUR/MWh",
+        "source": "Enchères capacité RTE 06/03/2025 — 3 150 EUR/MW.an × coeff 1.2 / 8760h ≈ 0.432 EUR/MWh",
         "yaml_ref": "CAPACITE_RTE_TARIF_2026_EUR_PER_MW",
         "valid_from": "2026-01-01",
         "tva_rate": 0.20,
@@ -903,7 +907,7 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
     "CAPACITE_ELEC_NOV2026": {
         "rate": 0.00043,
         "unit": "EUR/kWh",
-        "source": "Réforme capacité RTE acheteur unique (nov 2026) — placeholder = enchères 2026 (3.15 EUR/MW)",
+        "source": "Réforme capacité RTE acheteur unique (nov 2026) — placeholder = enchères 2026 (3 150 EUR/MW.an)",
         "valid_from": "2026-11-01",
         "tva_rate": 0.20,
     },

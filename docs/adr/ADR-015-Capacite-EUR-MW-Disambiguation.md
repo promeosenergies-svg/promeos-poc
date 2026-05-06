@@ -188,6 +188,57 @@ Aucun test ajouté. Modifications = pure documentation (commentaires + YAML note
 
 ---
 
+## Correction Phase 5.6 fix F3 (2026-05-06) — audit deep multi-agents
+
+### Découverte cardinal audit Phase 5.5
+
+L'audit deep multi-agents Phase 5.5 (`bill-intelligence` + `general-purpose` deep audit Phase 5.2) a révélé une **erreur mathématique x1000** :
+
+- Formule documentée Phase 5.2 : `3.15 EUR/MW × 1.2 / 8760 = 0.43 EUR/MWh` ❌ **FAUX**
+- Calcul exact : `3.15 × 1.2 / 8760 = 0.000432 EUR/MWh` (×1000 trop bas)
+- Runtime `CAPACITE_UNITAIRE_EUR_MWH = 0.43` dans `cost_simulator_2026.py` était **CORRECT** depuis l'origine
+- C'est la **valeur YAML qui était erronée** (typo factor 1000 manquant introduit Sprint C-4 Phase 4.2)
+
+### Vérification cohérence marché
+
+- Fourchette KB enchère capacité 2025-2026 : 20-50 k€/MW.an (revenue.py)
+- Si valeur unitaire = 3.15 EUR/MW.an → invraisemblable (×10000 trop bas vs marché)
+- Si valeur unitaire = 3150 EUR/MW.an → cohérent (~3 k€ vs fourchette 20-50k revenu producteur, ×7-16 selon palier)
+
+→ **Hypothèse A retenue** : valeur YAML corrigée `3.15` → `3150` EUR/MW.an. Unité reste `EUR/MW`.
+
+### Modifications Phase 5.6 fix F3
+
+1. **`config/sources_reglementaires.yaml`** :
+   - `value: 3.15` → `value: 3150`
+   - `formula:` réécrit avec valeurs correctes (3150 × 1.2 / 8760 ≈ 0.432)
+   - `notes:` réécrit avec section "CORRECTION Phase 5.6" + 3 dimensions actées
+
+2. **`services/billing_engine/catalog.py`** :
+   - Bloc commentaire CAPACITE_ELEC corrigé (3.15 → 3 150 EUR/MW.an)
+   - Source string mise à jour
+   - CAPACITE_ELEC_NOV2026 source string idem
+
+3. **`services/purchase/cost_simulator_2026.py`** :
+   - Commentaire CAPACITE_UNITAIRE_EUR_MWH corrigé
+   - Section "CORRECTION Phase 5.6 fix F3" ajoutée (typo originale tracée)
+
+4. **`tests/source_guards/test_cost_simulator_2026_yaml_consistency_source_guards.py`** :
+   - `_RATIO_TOLERANCE_MAX = 1500` → `_RATIO_TOLERANCE_MAX = 1.5` (anti-régression renforcé)
+   - Le SG aurait dû échouer Phase 4.2 avec tolerance 1.5 — masquage levé Phase 5.6
+
+### Impact crédibilité B2B
+
+Sans cette correction, tout audit consultant énergie aurait détecté :
+
+- "Votre YAML dit 3.15 EUR/MW × 1.2 / 8760 = 0.000432 EUR/MWh"
+- "Votre code utilise 0.43 EUR/MWh"
+- "C'est un facteur 1000 d'écart — votre saisie est-elle correcte ?"
+
+Pré-pilote pré-prod : crédibilité préservée par audit deep Phase 5.5 + correction Phase 5.6.
+
+---
+
 ## Implémentation Phase 5.2 actée (2026-05-06)
 
 ### Découverte cardinale Étape 5.2.1 (diagnostic)

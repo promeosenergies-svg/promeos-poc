@@ -124,8 +124,14 @@ def detect_r19_vnu_dormant(invoice: EnergyInvoice, db: Session) -> Optional[Bill
     if vnu_total <= threshold:
         return None
 
+    # Sprint C-5 Phase 5.6 F2 fix : energy_kwh IS NULL = facture acompte sans relève
+    # (cas légitime EDF/Engie B2B). Distinguer NULL de 0 (consommation inconnue ≠ 0)
+    # évite faux positif systématique sur factures acompte avec VNU.
+    if invoice.energy_kwh is None:
+        return None
+
     # Heuristique MVP : usage attendu si conso > 100 kWh — pas d'anomalie si conso normale
-    consumption = float(invoice.energy_kwh or 0)
+    consumption = float(invoice.energy_kwh)
     if consumption > 100:
         return None
 

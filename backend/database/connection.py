@@ -52,6 +52,11 @@ if _is_sqlite:
         cursor = dbapi_conn.cursor()
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA busy_timeout=30000")
+        # Sprint C-5 Phase 5.6 F1 fix : enforce foreign keys (RGPD ondelete=SET NULL).
+        # SQLite default = OFF par connexion. Sans ce PRAGMA, tout l'effort
+        # ondelete=SET NULL × 4 FK Phase 5.3 (consentement_*_by → users.id) est
+        # silencieusement non-enforced runtime. Cardinal pour audit RGPD CNIL.
+        cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 
 

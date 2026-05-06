@@ -795,6 +795,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-5 Phase 5.3 — ADR-007 ext consentement_by + cgu_version — 1 clôture P2 RGPD audit trail complet) | 28 | 1 | 12 | 15 |
 | 2026-05-06 (Sprint C-5 Phase 5.4 — Polish 4 dettes (P1 SG TraceTooltip + P1 SG YAML constants reclassif P2 + 2 P1 ADR-008/009 audit qualité)) | 25 | 1 | 9 | 15 |
 | 2026-05-06 (Sprint C-5 Phase 5.5 — Fix audit 4 bloquants : VNU terminologie + multi-meter filter + 4 tests intégration endpoint + 1 P0 nouvelle DEMO_MODE) | 26 | 2 | 9 | 15 |
+| 2026-05-06 (Sprint C-5 Phase 5.6 — Fix 4 P0 audit deep multi-agents : F1 PRAGMA FK + F2 R19 NULL + F3 Capacité 3.15→3150 + F4 SG tolerance 1500→1.5 + 23 dettes C-7 tracées) | 49 | 4 | 18 | 27 |
 
 ---
 
@@ -1379,6 +1380,59 @@ Hypothèses :
 **Sprint cible** : Sprint C-7 polish (ou ticket dédié hors-sprint)
 
 **Référence interne** : `PROMEOS-SEC-2026-001` (audit security-auditor Sprint C-5 Phase 5.5).
+
+---
+
+## Dettes Sprint C-7 polish — issues audit deep multi-agents Phase 5.5/5.6 (15 nouvelles)
+
+**Détecté** : Sprint C-5 Phase 5.5 + 5.6 audit deep multi-agents (2026-05-06)
+**Contexte** : 4 P0 cardinaux fix Phase 5.6 (F1+F2+F3+F4). Findings P1/P2 résiduels reportés Sprint C-7 polish.
+
+### Bill Intelligence (Phase 5.1 audit)
+
+- **D-Sprint-C7-BillAnomaly-Unique-Constraint-001** P1 — `UNIQUE(invoice_id, code)` pour anti-doublons concurrents (bill-intelligence finding B2). Migration Alembic 10e ~15 min.
+- **D-Sprint-C7-BillAnomaly-Decoupling-Commit-001** P2 — retirer `db.commit()` interne `detect_anomalies_for_invoice` (couplage caller, code-reviewer A5). 5 min.
+- **D-Sprint-C7-BillAnomaly-Thresholds-Source-001** P1 — sources affirmées seuils 0.01 EUR + 5% (regulatory-expert A2 + bill-intelligence A1). YAML `legal_reference` à enrichir, ~30 min.
+- **D-Sprint-C7-BillIntelligence-KPI-Aggregate-001** P2 — KPI `total_economie_potentielle_eur` agrégé endpoint `/api/bill-intelligence/anomalies` (general-purpose D2). 1 h.
+- **D-Sprint-C7-BillAnomaly-PII-Vnu-Labels-Sanitization-001** P1 — sanitizer regex SIREN/PRM dans `details_json.vnu_labels` (security-auditor SEC-002). 30 min.
+- **D-Sprint-C7-BillAnomaly-Endpoint-Enum-Validation-001** P2 — `Literal["R19", "R20"]` query params (security-auditor SEC-003). 15 min.
+- **D-Sprint-C7-BillAnomaly-Endpoint-Pagination-001** P2 — pagination + filtre date period_start/end. 30 min.
+- **D-Sprint-C7-BillAnomaly-Multi-Postes-HTA-001** P1 — ajouter HPE/HCE/PM dans `_PERIOD_CODES_KNOWN` (TURPE 7 HTA). 10 min.
+- **D-Sprint-C7-BillAnomaly-Word-Boundary-Regex-001** P2 — `_resolve_period_code` regex `\b<code>\b` (vs substring) anti-faux-positifs. 15 min.
+- **D-Sprint-C7-BillAnomaly-VNU-Patterns-Fournisseurs-001** P2 — patterns "VERS. NUC.", "VNU 2026" (TotalEnergies/Eni/Vattenfall). 30 min.
+- **D-Sprint-C7-BillAnomaly-Aggregate-By-Contract-001** P2 — agrégation R20 par contract_id pour éviter saturation cockpit (general-purpose A3). 1 h.
+
+### Capacité (Phase 5.2 audit)
+
+- **D-Sprint-C7-Capacite-FE-TraceTooltip-001** P1 — usage `<TraceTooltip termId="CAPACITE_RTE_TARIF_2026_EUR_PER_MW">` Cockpit Decision/CFO (différenciateur R10 inactif). 30 min.
+- **D-Sprint-C7-Capacite-Coefficient-1.2-Source-001** P1 — source CRE/RTE coefficient obligation 1.2 (general-purpose Phase 5.2 #4). Web search RTE. 30 min.
+- **D-Sprint-C7-Capacite-Revenue-Refactor-Yaml-001** P2 — refactor `services/capacity/revenue.py` PRIX_MOYEN_MW_AN consomme YAML loader. 1 h.
+- **D-Sprint-C7-Capacite-Loader-Refactor-001** P2 — refactor `cost_simulator_2026.py` + `catalog.py` vers `capacite_loader.py` pattern Sprint C-3. 1.5 h.
+
+### RGPD ext (Phase 5.3 audit)
+
+- **D-Sprint-C7-CGU-Referentiel-Central-001** P1 — table `cgu_versions` (id, version, effective_from/to, hash_sha256) vs String(20) libre (general-purpose Phase 5.3 A1). Migration + endpoint admin. 1.5 h.
+- **D-Sprint-C7-PATCH-Consentement-Endpoint-001** P0 (bloque Cockpit RGPD UI) — `PATCH /api/organisations/{id}/consentement` + `PATCH /api/delivery-points/{id}/consentement-local`. 1 h.
+- **D-Sprint-C7-Consent-Helper-Deduplication-001** P2 — factoriser `_resolve_consent_scope(dp, type_)` partagé `get_effective_consent` + `_with_audit` (general-purpose Phase 5.3 A2 + code-reviewer). 30 min.
+- **D-Sprint-C7-AuditLog-Wiring-RGPD-Consent-Change-001** P0 — event `RGPD_CONSENT_CHANGE` AuditLog wiring sur mutations consentement (general-purpose Phase 5.3 C1, cardinal CNIL "preuve d'origine"). 1 h.
+- **D-Sprint-C7-Consent-TypedDict-001** P2 — `ConsentAuditResult(TypedDict)` retour helper. 15 min.
+
+### Polish + invariants (Phase 5.4 audit)
+
+- **D-Sprint-C7-REGOPS-Weights-Audit-Applicable-SG-001** P1 — SG `REGOPS_WEIGHTS_AUDIT_APPLICABLE` (0.39/0.28/0.17/0.16) protégé YAML (general-purpose Phase 5.4 B2). 20 min.
+- **D-Sprint-C7-Accise-SG-Coverage-001** P1 — SG `ACCISE_GAZ_EUR_PER_MWH` + `ACCISE_ELEC_T2_C5_MENAGE_EUR_PER_MWH` (general-purpose Phase 5.4 B1). 15 min.
+- **D-Sprint-C7-Weights-Sum-100pct-Invariant-001** P2 — `assert sum(REGOPS_WEIGHTS_DEFAULT.values()) == 1.0` + READINESS sum=100%. 15 min.
+- **D-Sprint-C7-FE-TraceTooltip-Coverage-Expansion-001** P1 — couverture FE 6/68 (8.8%) → ≥30 termes exposés (CO2 factors, TURPE, CTA, OPERAT seuils). 2-3 h.
+- **D-Sprint-C7-Tracker-Quality-Audit-Script-001** P2 — script `verify_dette_resolved.py` détecte automatiquement dettes déjà résolues mais pas barrées. 1 h.
+
+### Pré-existants Phase C détectés bonus
+
+- **D-Sprint-C7-EnergyInvoice-TVA-Rate-Field-001** P1 — colonne `tva_rate Numeric(5,4)` (bloque R0X TVA futurs). Migration Alembic + tests. 30 min.
+- **D-Sprint-C7-Anomaly-SoT-Consumption-Unified-001** P2 — option `use_measured_consumption` cross-check via `consumption_unified_service` (anomaly_detector). 1 h.
+- **D-Sprint-C7-VNU-Terminologie-Cleanup-001** P2 — corriger 3 callsites pré-existants "Versement Nucléaire Universel" → "Versement pour Non-Usage" (`demo_seed/orchestrator.py`, `gen_seed_completion.py`, `market_window_detector.py`). 10 min.
+
+**Effort estimé total Sprint C-7 polish** : ~18-22 h (~3 j-h dense).
+**Priorités cumul** : 2 P0 + 9 P1 + 12 P2 = 23 nouvelles dettes Sprint C-7.
 
 ---
 
