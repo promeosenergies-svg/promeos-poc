@@ -793,6 +793,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-5 Phase 5.1 — Bill Intelligence anomaly_detector R19+R20 ADR-013 — 1 clôture P0 cardinal différenciateur produit) | 28 | 2 | 12 | 14 |
 | 2026-05-06 (Sprint C-5 Phase 5.2 — Capacité EUR/MW disambiguation ADR-015 — 1 clôture P0 documentaire + 2 nouvelles P2 reportées Sprint C-7) | 29 | 1 | 12 | 16 |
 | 2026-05-06 (Sprint C-5 Phase 5.3 — ADR-007 ext consentement_by + cgu_version — 1 clôture P2 RGPD audit trail complet) | 28 | 1 | 12 | 15 |
+| 2026-05-06 (Sprint C-5 Phase 5.4 — Polish 4 dettes (P1 SG TraceTooltip + P1 SG YAML constants reclassif P2 + 2 P1 ADR-008/009 audit qualité)) | 25 | 1 | 9 | 15 |
 
 ---
 
@@ -955,40 +956,37 @@ Si Sprint C-7 souhaite étendre l'audit balayage cross-modules (`regops/rules/*.
 
 ---
 
-## D-Sprint-C3-7d-ADR-Intensity-OPERAT-Naming-001 — ADR cohabitation `/api/energy/intensity` vs `/api/portfolio/intensity`
+## ~~D-Sprint-C3-7d-ADR-Intensity-OPERAT-Naming-001~~ — ✅ CLÔTURÉE Sprint C-4 Phase 0
 
 **Détecté** : Sprint C-3 Phase 3.7d audit architect-helios (2026-05-04)
+**Clôturée** : Sprint C-4 Phase 0 (commit `76a57f7a`, ADR-008)
 
-**Périmètre** : Figer le contrat entre 2 endpoints intensity coexistants :
-- `/api/energy/intensity` (existant, série temporelle Meter readings, semantic = précision réelle mesurée)
-- `/api/portfolio/intensity` (nouveau Sprint C-3 Phase 3.4, agrégat org-scopé `Site.annual_kwh_total`, semantic = snapshot patrimoine rapide)
+**Audit qualité tracker Phase 5.4** (2026-05-06) : la dette ciblait l'absence d'ADR figeant la cohabitation 2 endpoints intensity. **ADR-008 a effectivement été livré** Sprint C-4 Phase 0 (`docs/adr/ADR-008-cohabitation-endpoints-intensity-energy-vs-portfolio.md`) couvrant intégralement le périmètre :
 
-**Risque** : divergence formule entre 2 endpoints sans ADR explicit (anti-pattern doctrine §6.4 "1 SoT par concept").
-
-**Action Sprint C-4 amont** : ADR `docs/adr/2026-XX-cohabitation-intensity-endpoints.md` figeant :
 - Cas d'usage canoniques (Cockpit/RegOps précision réelle vs Patrimoine.jsx KpiStripItem global)
 - Différentiel sémantique (Meter readings ≠ Site.annual_kwh_total)
-- Stratégie convergence ou séparation pérenne
+- Stratégie séparation pérenne (pas de convergence MVP)
 
-**Effort estimé** : ~30 min
-**Priorité** : 🟡 P1 (cohérence doctrine 1-SoT)
-**Sprint cible** : Sprint C-4 amont
+Dette `D-Phase4-1-TraceTooltip-TermId-SG-Cross-Stack-001` adresse l'invariant 5 doctrinal lié (TraceTooltip termId validity), désormais livré Sprint C-5 Phase 5.4.
+
+**Priorité** : ✅ CLÔTURÉE
+**Sprint cible** : Sprint C-4 amont ✅ (livré ADR-008)
 
 ---
 
-## D-Sprint-C3-7d-ADR-Routes-Namespace-001 — ADR namespace `/api/config/*` vs `/api/regulatory/*`
+## ~~D-Sprint-C3-7d-ADR-Routes-Namespace-001~~ — ✅ CLÔTURÉE Sprint C-4 Phase 0
 
 **Détecté** : Sprint C-3 Phase 3.7d audit architect-helios (2026-05-04)
+**Clôturée** : Sprint C-4 Phase 0 (commit `76a57f7a`, ADR-009)
 
-**Périmètre** : Figer la séparation sémantique entre 2 namespaces API actuels :
-- `/api/config/*` — constantes Python runtime (`emission_factors`, `regulatory_constants` Phase 3.3)
-- `/api/regulatory/*` — sources légales avec traçabilité (`rates`, `domains`, citations Légifrance/CRE)
+**Audit qualité tracker Phase 5.4** (2026-05-06) : la dette ciblait l'absence d'ADR figeant la séparation sémantique 2 namespaces. **ADR-009 a effectivement été livré** Sprint C-4 Phase 0 (`docs/adr/ADR-009-namespace-api-config-vs-regulatory.md`) couvrant intégralement le périmètre :
 
-**Action Sprint C-4 amont** : ADR `docs/adr/2026-XX-namespace-config-vs-regulatory.md` figeant règles de routage par type (constante vs source légale traçable).
+- Règles routage par type (constante Python vs source légale traçable)
+- Cohérence pattern Sprint C-3 Phase 3.3 `/api/regulatory/rates`
+- Migration `regulatory_constants` reportée Sprint C-7 (pas urgent MVP)
 
-**Effort estimé** : ~20 min
-**Priorité** : 🟡 P2 (cosmétique architectural, mineur)
-**Sprint cible** : Sprint C-4 ou opportunistique
+**Priorité** : ✅ CLÔTURÉE
+**Sprint cible** : Sprint C-4 amont ✅ (livré ADR-009)
 
 ---
 
@@ -1035,31 +1033,28 @@ Si Sprint C-7 souhaite étendre l'audit balayage cross-modules (`regops/rules/*.
 
 ---
 
-## D-Phase4-1-TraceTooltip-TermId-SG-Cross-Stack-001 — Source-guard cross-stack FE↔YAML invariant 5
+## ~~D-Phase4-1-TraceTooltip-TermId-SG-Cross-Stack-001~~ — ✅ CLÔTURÉE Sprint C-5 Phase 5.4
 
 **Détecté** : Sprint C-4 Phase 4.1 (création `coherence_globale.yaml` v1.0, 2026-05-05)
+**Clôturée** : Sprint C-5 Phase 5.4 (2026-05-06, commit `<hash-phase-5-4>`)
 
-**Périmètre** : Invariant 5 `TRACETOOLTIP_TERMID_VALIDITY` du registre `coherence_globale.yaml` est **doctrinal MVP** Sprint C-4. L'implémentation runtime (source-guard cross-stack FE↔YAML) est reportée Sprint C-5 :
+**Livrables Phase 5.4** :
 
-- Scanner tous les usages `<TraceTooltip termId="X" />` dans `frontend/src/**/*.jsx`
-- Lire `backend/config/sources_reglementaires.yaml` (subprocess Node ou fixture conftest pytest)
-- Test croisé : 100% match `termId` FE ↔ `terms.keys()` YAML SoT
+- **SG cross-stack** `tests/source_guards/test_tracetooltip_termid_yaml_coherence_source_guards.py` (Option B BE pytest retenue) :
+  - SG_TRACETOOLTIP_01 : scan `frontend/src/**/*.{jsx,js}` (regex `<TraceTooltip\b[^>]*\btermId="([^"]+)"`), validation 100% termId FE ⊆ `terms.keys()` YAML SoT
+  - SG_TRACETOOLTIP_02 : au moins 1 usage statique TraceTooltip déployé (anti-régression suppression silencieuse R10)
+  - Diagnostic riche en cas de fail (liste fichiers FE concernés par termId manquant)
+- **Skip __tests__** : fixtures avec termIds factices ignorés (allowlist explicite tests dossier)
+- **Test exec actuel** : 6 termIds FE validés (`COMPLIANCE_DT_PENALTY_EUR`, `OPERAT_SURFACE_CONSO_DEFINITION`, `REGOPS_WEIGHT_DT_DEFAULT`, `READINESS_WEIGHT_CONFORMITY_PCT`, `REGOPS_WEIGHT_BACS_DEFAULT`, `REGOPS_WEIGHT_APER_DEFAULT`) — 100% présents YAML
 
-**Risque sans fix** : typo `termId` silencieuse côté FE → tooltip ne s'affiche pas (fallback enfants seuls), différenciateur R10 perdu sans alerte. UX cassée non détectée.
+Effort réel : ~30 min (cible tenue exactement). 2 SG verts.
 
-**Action Sprint C-5** :
+**Différenciateur R10 protégé** : typo `termId` silencieuse FE détectée fail-fast à la collection pytest (vs UX cassée silencieusement non détectée).
 
-1. Décision implémentation :
-   - **Option A** — source-guard côté FE (Vitest) : grep regex `<TraceTooltip\s+termId="([^"]+)"` + lecture YAML via fixture
-   - **Option B** — source-guard côté BE (pytest) : scan `frontend/src/` depuis Python (path traversal cross-stack)
-2. Test cardinal : 100% match termId
-3. Fail-fast : 1 typo = PR-bloquante
+**Priorité** : ✅ CLÔTURÉE
+**Sprint cible** : Sprint C-5 ✅
 
-**Effort estimé** : ~30 min (cf. user msg Phase 4.1)
-**Priorité** : 🟡 P1 (UX silencieuse cassée — différenciateur R10 perdu)
-**Sprint cible** : Sprint C-5
-
-**Référence** : `backend/config/coherence_globale.yaml` invariant 5 (`detection: tests/source_guards/test_tracetooltip_termid_yaml_coherence_source_guards`).
+**Référence** : `backend/config/coherence_globale.yaml` invariant 5 `TRACETOOLTIP_TERMID_VALIDITY` désormais runtime-enforced.
 
 ---
 
@@ -1089,22 +1084,32 @@ Si Sprint C-7 souhaite étendre l'audit balayage cross-modules (`regops/rules/*.
 ## D-Sprint-C3-YAML-Constants-SG-Coverage-001 — Source-guard cohérence YAML↔constants couvre 10/68 termes
 
 **Détecté** : Sprint C-3 Phase 3.4d audit code-reviewer (2026-05-04)
+**Statut** : 🟡 **PARTIELLEMENT CLÔTURÉE** Sprint C-5 Phase 5.4 (2026-05-06, commit `<hash-phase-5-4>`).
 
-**Périmètre** : `backend/tests/source_guards/test_regulatory_sources_yaml_consistency_with_constants_source_guards.py` couvre actuellement 10 termes (CO2 ×2, DT penalty ×3, audit_sme ×1, DT milestones ×3, EP coef ×2). Sur les 68 termes du YAML, **58 ne sont pas croisés** avec les constantes Python runtime.
+**Livrables Phase 5.4** (extension de 10 → 18 termes couverts SG cohérence YAML↔constants) :
 
-**Risque** : drift silencieux si LFI 2027 (ou autre) modifie un taux côté YAML mais oublie côté Python (ou inversement).
+- ✅ ACCISE_ELEC_T1_EUR_PER_MWH (SG_REG_CONST_06)
+- ✅ ACCISE_ELEC_T2_EUR_PER_MWH (SG_REG_CONST_06)
+- ✅ REGOPS_WEIGHT_DT_DEFAULT (SG_REG_CONST_07)
+- ✅ REGOPS_WEIGHT_BACS_DEFAULT (SG_REG_CONST_07)
+- ✅ REGOPS_WEIGHT_APER_DEFAULT (SG_REG_CONST_07)
+- ✅ READINESS_WEIGHT_DATA_PCT (SG_REG_CONST_08, conversion décimal × 100 = pct)
+- ✅ READINESS_WEIGHT_CONFORMITY_PCT (SG_REG_CONST_08)
+- ✅ READINESS_WEIGHT_ACTIONS_PCT (SG_REG_CONST_08)
 
-**Termes prioritaires à ajouter** :
-- ACCISE_ELEC_T1/T2/GAZ (3 termes — accises ↔ doctrine.constants.py)
+**Effort réel** : ~20 min (vs 30 min estimé). 8 nouvelles assertions (SG_REG_CONST_06/07/08), 18/18 verts.
+
+**Termes restants reportés Sprint C-7 polish** (50/68, hors scope Phase 5.4) :
+
+- ACCISE_GAZ (1 terme)
 - PRICE_FALLBACK / PRICE_FLEX_NEBCO / PRICE_ELEC_ETI_2026 (3 termes prix marché)
 - NEBCO_THRESHOLD_KW_PER_STEP (1 terme RTE)
 - FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR (1 terme heuristique)
 - APER_PENALTY_EUR_PER_M2_PER_YEAR (1 terme APER)
-- REGOPS_WEIGHT_* / READINESS_WEIGHT_* (6 termes pondérations doctrine)
+- BILL_ANOMALY_* / CAPACITE_RTE_* / VNU_* / CBAM_* / etc. (~43 termes pas tous nécessaires SG)
 
-**Effort estimé** : ~30 min (étendre les patterns SG_REG_CONST_* avec ~12 nouvelles assertions)
-**Priorité** : 🟡 P1 (anti-drift réglementaire, traçabilité audit légal)
-**Sprint cible** : Sprint C-4 (consolidation source-guards)
+**Priorité résiduelle** : 🟡 P2 (extension cardinaux livrée — pondérations doctrine + accises + readiness)
+**Sprint cible** : Sprint C-7 polish (extension complète 50 termes restants)
 
 ---
 

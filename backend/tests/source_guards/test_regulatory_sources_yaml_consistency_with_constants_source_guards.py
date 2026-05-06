@@ -141,6 +141,104 @@ def test_sg_reg_const_05_primary_energy_coef_elec_matches_doctrine():
     assert yaml_val == PRIMARY_ENERGY_COEF_ELEC
 
 
+def test_sg_reg_const_06_accise_elec_t1_matches_doctrine():
+    """Sprint C-5 Phase 5.4 — Extension SG : ACCISE_ELEC_T1 cohérent YAML ↔ doctrine.constants."""
+    from doctrine import constants as DC
+
+    yaml_val = _yaml_value("ACCISE_ELEC_T1_EUR_PER_MWH")
+    py_val = DC.ACCISE_ELEC_T1_EUR_PER_MWH
+    assert yaml_val == py_val, (
+        f"Divergence ACCISE_ELEC_T1 : YAML={yaml_val} vs doctrine.constants.py={py_val}. "
+        f"Source LFI 2025 — synchroniser les 2 sources."
+    )
+
+
+def test_sg_reg_const_06_accise_elec_t2_matches_doctrine():
+    """Sprint C-5 Phase 5.4 — Extension SG : ACCISE_ELEC_T2 cohérent YAML ↔ doctrine.constants."""
+    from doctrine import constants as DC
+
+    yaml_val = _yaml_value("ACCISE_ELEC_T2_EUR_PER_MWH")
+    py_val = DC.ACCISE_ELEC_T2_EUR_PER_MWH
+    assert yaml_val == py_val, (
+        f"Divergence ACCISE_ELEC_T2 : YAML={yaml_val} vs doctrine.constants.py={py_val}. "
+        f"Source LFI 2025 — synchroniser les 2 sources."
+    )
+
+
+def test_sg_reg_const_07_regops_weight_dt_default_matches_doctrine():
+    """Sprint C-5 Phase 5.4 — Extension SG : REGOPS_WEIGHT_DT_DEFAULT cohérent YAML ↔ doctrine."""
+    from doctrine import constants as DC
+
+    yaml_val = _yaml_value("REGOPS_WEIGHT_DT_DEFAULT")
+    py_val = DC.REGOPS_WEIGHTS_DEFAULT["DT"]
+    assert yaml_val == py_val, (
+        f"Divergence REGOPS_WEIGHT_DT_DEFAULT : YAML={yaml_val} vs "
+        f"doctrine.constants.REGOPS_WEIGHTS_DEFAULT['DT']={py_val}."
+    )
+
+
+def test_sg_reg_const_07_regops_weight_bacs_default_matches_doctrine():
+    """Sprint C-5 Phase 5.4 — Extension SG : REGOPS_WEIGHT_BACS_DEFAULT cohérent YAML ↔ doctrine."""
+    from doctrine import constants as DC
+
+    yaml_val = _yaml_value("REGOPS_WEIGHT_BACS_DEFAULT")
+    py_val = DC.REGOPS_WEIGHTS_DEFAULT["BACS"]
+    assert yaml_val == py_val, (
+        f"Divergence REGOPS_WEIGHT_BACS_DEFAULT : YAML={yaml_val} vs "
+        f"doctrine.constants.REGOPS_WEIGHTS_DEFAULT['BACS']={py_val}."
+    )
+
+
+def test_sg_reg_const_07_regops_weight_aper_default_matches_doctrine():
+    """Sprint C-5 Phase 5.4 — Extension SG : REGOPS_WEIGHT_APER_DEFAULT cohérent YAML ↔ doctrine."""
+    from doctrine import constants as DC
+
+    yaml_val = _yaml_value("REGOPS_WEIGHT_APER_DEFAULT")
+    py_val = DC.REGOPS_WEIGHTS_DEFAULT["APER"]
+    assert yaml_val == py_val, (
+        f"Divergence REGOPS_WEIGHT_APER_DEFAULT : YAML={yaml_val} vs "
+        f"doctrine.constants.REGOPS_WEIGHTS_DEFAULT['APER']={py_val}."
+    )
+
+
+def test_sg_reg_const_08_readiness_weight_data_pct_matches_doctrine():
+    """Sprint C-5 Phase 5.4 — Extension SG : READINESS_WEIGHT_DATA cohérent YAML (en %) ↔ doctrine (en décimal).
+
+    Conversion cardinal : YAML PCT (30.0) = doctrine décimal (0.30) × 100.
+    """
+    from doctrine import constants as DC
+
+    yaml_pct = _yaml_value("READINESS_WEIGHT_DATA_PCT")
+    py_decimal = DC.READINESS_WEIGHT_DATA
+    expected_pct = py_decimal * 100
+    assert yaml_pct == expected_pct, (
+        f"Divergence READINESS_WEIGHT_DATA : YAML={yaml_pct}% vs "
+        f"doctrine.constants.READINESS_WEIGHT_DATA × 100 = {expected_pct}%."
+    )
+
+
+def test_sg_reg_const_08_readiness_weight_conformity_pct_matches_doctrine():
+    """Sprint C-5 Phase 5.4 — Extension SG : READINESS_WEIGHT_CONFORMITY cohérent."""
+    from doctrine import constants as DC
+
+    yaml_pct = _yaml_value("READINESS_WEIGHT_CONFORMITY_PCT")
+    expected_pct = DC.READINESS_WEIGHT_CONFORMITY * 100
+    assert yaml_pct == expected_pct, (
+        f"Divergence READINESS_WEIGHT_CONFORMITY : YAML={yaml_pct}% vs doctrine.constants × 100 = {expected_pct}%."
+    )
+
+
+def test_sg_reg_const_08_readiness_weight_actions_pct_matches_doctrine():
+    """Sprint C-5 Phase 5.4 — Extension SG : READINESS_WEIGHT_ACTIONS cohérent."""
+    from doctrine import constants as DC
+
+    yaml_pct = _yaml_value("READINESS_WEIGHT_ACTIONS_PCT")
+    expected_pct = DC.READINESS_WEIGHT_ACTIONS * 100
+    assert yaml_pct == expected_pct, (
+        f"Divergence READINESS_WEIGHT_ACTIONS : YAML={yaml_pct}% vs doctrine.constants × 100 = {expected_pct}%."
+    )
+
+
 def test_sg_reg_const_05_primary_energy_coef_gas_matches_doctrine():
     from doctrine.constants import PRIMARY_ENERGY_COEF_GAS
 
