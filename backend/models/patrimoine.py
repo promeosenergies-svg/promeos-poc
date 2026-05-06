@@ -287,6 +287,36 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
     )
     puissance_souscrite_kva = Column(Float, nullable=True, comment="Puissance souscrite (kVA)")
 
+    # Phase D-1 hotfix — D-Audit-PARAM-DP-TURPE7-Explicite-006 P1 :
+    # Champs TURPE 7 explicites Section 4.6 matrice v1 (vs `tariff_segment` enum partiel).
+    # Cohérent CRE délibération 2025-78 du 13/03/2025 (JO 14/05/2025) TURPE 7 HTA-BT
+    # + cohérent Phase 7.8 fix codes period_code TURPE 7 vs TURPE 6 legacy.
+    categorie_turpe = Column(
+        String(20),
+        nullable=True,
+        comment="Catégorie TURPE explicite (C5, C4, C3, C2, C1) — matrice v1 §4.6",
+    )
+    domaine_tension = Column(
+        String(20),
+        nullable=True,
+        comment="Domaine tension (BT≤36kVA, BT>36kVA, HTA, HTB) — matrice v1 §4.6",
+    )
+    code_fta = Column(
+        String(50),
+        nullable=True,
+        comment="Formule Tarifaire d'Acheminement (ex: BT_HCH_PRO, HTA_LU_BASE_4P) — matrice v1 §4.6",
+    )
+    version_turpe = Column(
+        String(10),
+        nullable=True,
+        comment="Version TURPE active (TURPE_6, TURPE_7) — déterminant tarif applicable",
+    )
+    mode_traitement = Column(
+        String(20),
+        nullable=True,
+        comment="Mode traitement compteur (smart, traditionnel, telereleve, manuel) — matrice v1 §4.6",
+    )
+
     # ── Reprogrammation Heures Creuses (chantier Enedis TURPE 7) ──
     hc_reprog_phase = Column(
         Enum(HcReprogPhase),

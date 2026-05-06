@@ -78,15 +78,21 @@ _PERIOD_CODES_KNOWN = [
 # extension cumulée patterns email/téléphone FR/IBAN FR/RIB pour couverture cross-fournisseur
 # (EDF/Engie/TotalEnergies labels VNU peuvent contenir email contact, IBAN domiciliation, etc.).
 # Anti-CWE-532 (Insertion of Sensitive Information into Log File) + CWE-359 (Privacy).
+# Phase D-1 hotfix — D-Audit-C8-PII-Patterns-Order-006 P1 SEC :
+# Ordre cardinal du plus spécifique (long+structuré) au plus générique (court).
+# Anti faux-positifs labels EDF/Engie codes internes numériques.
+# - Pattern `\b\d{10}\b` PCE legacy GRDF retiré (2026+ rare + faux-positifs montants TURPE).
+#   Restaurable opt-in via env var si pilote rétro-compat 2024-2025 nécessaire.
 _PII_PATTERNS = (
-    re.compile(r"\b\d{14}\b"),  # SIRET / PRM / PCE / PDL (14 chiffres)
-    re.compile(r"\b\d{9}\b"),  # SIREN (9 chiffres)
-    # Phase 8.2 EXTENSION
-    re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b"),  # Email RFC 5322 simplified
-    re.compile(r"\b0[1-9](?:[\s.-]?\d{2}){4}\b"),  # Téléphone FR fixe/mobile (0X XX XX XX XX)
-    re.compile(r"(?<!\w)\+33[\s.-]?[1-9](?:[\s.-]?\d{2}){4}(?!\d)"),  # Téléphone FR international (+33)
+    # Patterns structurés (préfixe alphabétique → plus spécifiques)
     re.compile(r"\bFR\d{2}[\s]?(?:[A-Z0-9]{4}[\s]?){5}[A-Z0-9]{3}\b"),  # IBAN FR (27 chars)
-    re.compile(r"\b\d{10}\b"),  # PCE court legacy GRDF / ancien PRM 10 chiffres
+    re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b"),  # Email RFC 5322
+    re.compile(r"(?<!\w)\+33[\s.-]?[1-9](?:[\s.-]?\d{2}){4}(?!\d)"),  # Téléphone FR international
+    # Patterns numériques (longs → courts)
+    re.compile(r"\b\d{14}\b"),  # SIRET / PRM / PCE / PDL (14 chiffres)
+    re.compile(r"\b0[1-9](?:[\s.-]?\d{2}){4}\b"),  # Téléphone FR fixe/mobile (0X XX XX XX XX)
+    re.compile(r"\b\d{9}\b"),  # SIREN (9 chiffres) — last (le plus court/risqué montants)
+    # `\b\d{10}\b` PCE court legacy GRDF — RETIRÉ Phase D-1 (faux-positifs montants TURPE).
 )
 
 

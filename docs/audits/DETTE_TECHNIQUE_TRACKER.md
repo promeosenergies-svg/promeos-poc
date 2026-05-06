@@ -811,6 +811,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-07 (Sprint C-8 Phase 8.4 Lot 2 — 4 P1 SEC+REG : address allowlist ip_address + CGU reload doc admin-only + contenu_sha256 field + dates archive_test_only clarif) | 49 | 0 | 19 | 30 |
 | 2026-05-07 (Sprint C-8 Phase 8.4 Lot 3 — 5 P1 CR+QA+BI : hash_key dedup + URL placeholder JORFTEXT fix + BILAN drift lendemain + BILAN comptage SG + KPI renommage `kpi_vnu_dormant_reclaim_eur`) | 44 | 0 | 14 | 30 |
 | 2026-05-07 (Phase D-0 hotfix Patrimoine — 3 P0 audit Sprint Patrimoine v1 : D6 SousCompteur self-FK + Bâtiment 5 champs RNB/DPE/rénovation + Site categorie_operat + mode_propriete — 13e migration Alembic propre) | 41 | 0 | 14 | 27 |
+| 2026-05-07 (Phase D-1 hotfix Patrimoine — 4 P1 audits cumulés : DP TURPE 7 explicite (5 champs) + Org enrichi entreprise (6 champs) + PII patterns ordre + retrait `\d{10}` + CGU sha256 helper integrity — 14e migration Alembic propre) | 37 | 0 | 10 | 27 |
 
 ---
 

@@ -3,7 +3,7 @@ PROMEOS - Modèle Organisation
 Niveau groupe/client COMEX (ex: "Groupe HELIOS", "Ville de Lyon")
 """
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin, SoftDeleteMixin
 
@@ -18,6 +18,42 @@ class Organisation(Base, TimestampMixin, SoftDeleteMixin):
     siren = Column(String(9), nullable=True, comment="Numero SIREN")
     actif = Column(Boolean, default=True)
     is_demo = Column(Boolean, default=False, comment="Donnees de demonstration")
+
+    # Phase D-1 hotfix — D-Audit-PARAM-Org-Champs-004 P1 :
+    # 6 champs entreprise enrichie matrice v1 §4.1 (cible 16 champs, gap 6 manquants).
+    # Anti-pattern : `type_client` partiel ≠ `secteur` cardinal entreprise.
+    tva_intra = Column(
+        String(20),
+        nullable=True,
+        comment="N° TVA intracommunautaire (FR + 11 chars) — matrice v1 §4.1",
+    )
+    code_naf_principal = Column(
+        String(10),
+        nullable=True,
+        index=True,
+        comment="Code NAF principal entreprise (ex: 6201Z) — matrice v1 §4.1",
+    )
+    pays = Column(
+        String(2),
+        nullable=True,
+        default="FR",
+        comment="Pays (ISO 3166-1 alpha-2, défaut FR) — matrice v1 §4.1",
+    )
+    secteur = Column(
+        String(50),
+        nullable=True,
+        comment="Secteur d'activité (industrie/tertiaire_bureaux/tertiaire_commerce/etc.) — matrice v1 §4.1",
+    )
+    effectif_total = Column(
+        Integer,
+        nullable=True,
+        comment="Effectif total entreprise (TPE<10/PME<50/PME<250/ETI<5000/GE) — matrice v1 §4.1",
+    )
+    chiffre_affaires_eur = Column(
+        Float,
+        nullable=True,
+        comment="Chiffre d'affaires annuel EUR — matrice v1 §4.1 (segmentation Audit SMÉ)",
+    )
 
     # ─── Sprint C-4 Phase 4.4 — Consentement RGPD (ADR-007) ──────────────────
     # Pré-requis cardinal Phase 4.5 cascade vivante org → DPs.
