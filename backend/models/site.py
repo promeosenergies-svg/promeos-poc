@@ -209,6 +209,21 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
         nullable=True,
         comment="Matrice v1 §4.4.C #33 — Année de référence OPERAT (entre 2010 et 2022)",
     )
+
+    # Phase D-0 hotfix — D-Audit-PARAM-Site-Cat-Operat-Mode-Propriete-005 P0 :
+    # 2 champs Section 9.1 P0 MVP cardinaux ajoutés (matrice v1 §4.4 cible).
+    # `categorie_operat_principale` = catégorie macro OPERAT (vs `operat_sous_categorie_id`
+    # 426 sous-catégories Annexe I). `mode_propriete` = trace cardinale assujettissement DT.
+    categorie_operat_principale = Column(
+        String(50),
+        nullable=True,
+        comment="Matrice v1 §4.4 — Catégorie OPERAT macro (Bureaux/Commerce/Enseignement/Santé/etc.)",
+    )
+    mode_propriete = Column(
+        String(20),
+        nullable=True,
+        comment="Matrice v1 §4.4 — Mode propriété (proprietaire/locataire/syndic) — trace assujettissement DT",
+    )
     methode_modulation_dt = Column(
         Enum(OperatModulationMotifEnum, native_enum=False),
         nullable=True,

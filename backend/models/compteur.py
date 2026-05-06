@@ -37,6 +37,23 @@ class Compteur(Base, TimestampMixin, SoftDeleteMixin):
         comment="Point de livraison associe (PRM/PCE)",
     )
 
+    # Phase D-0 hotfix — D-Audit-PARAM-D6-SousCompteur-Self-FK-002 P0 :
+    # D6 décision matrice v1 §3 honorée — SousCompteur via self-FK (vs table dédiée).
+    # Différenciateur PROMEOS Mid-market premium : pilotage CVC/IT/éclairage par sous-compteur
+    # rattaché à compteur principal. ondelete=SET NULL (compteur enfant survit suppression parent).
+    sub_meter_of_id = Column(
+        Integer,
+        ForeignKey("compteurs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="Compteur parent self-FK (D6) — sous-compteur pilotage CVC/IT/éclairage",
+    )
+    sub_meter_usage = Column(
+        String(50),
+        nullable=True,
+        comment="Usage sous-compteur si sub_meter_of_id non NULL (CVC, IT, ECLAIRAGE, AUTRES)",
+    )
+
     # Data lineage
     data_source = Column(String(20), nullable=True, comment="csv, manual, demo, api")
     data_source_ref = Column(String(200), nullable=True, comment="Batch ID or filename")
@@ -44,6 +61,8 @@ class Compteur(Base, TimestampMixin, SoftDeleteMixin):
     # Relations
     site = relationship("Site", back_populates="compteurs")
     delivery_point = relationship("DeliveryPoint", back_populates="compteurs")
+    # D6 self-FK relations — pattern hierarchical (parent ↔ enfants sous-compteurs)
+    parent_meter = relationship("Compteur", remote_side=[id], foreign_keys=[sub_meter_of_id], backref="sub_meters")
     consommations = relationship(
         "Consommation", back_populates="compteur", cascade="all, delete-orphan", lazy="dynamic"
     )
