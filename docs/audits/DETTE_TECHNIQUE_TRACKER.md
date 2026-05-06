@@ -790,6 +790,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-05 (Sprint C-4 Phase 4.5 — Cascade Org consentement vivante + audit SoT reuse — 2 clôtures + 1 nouvelle dette ADR-007 reportée) | 31 | 3 | 12 | 16 |
 | 2026-05-05 (Sprint C-4 Phase 4.6 — Tests perf bulk recompute 50/200/500 sites — toutes cibles tenues, pas de nouvelle dette) | 31 | 3 | 12 | 16 |
 | 2026-05-05 (Sprint C-4 Phase 4.7 — Polish V92 + ELD + Conftest reseed — 2 clôtures P2 + SG V92 anti-régression) | 29 | 3 | 12 | 14 |
+| 2026-05-06 (Sprint C-5 Phase 5.1 — Bill Intelligence anomaly_detector R19+R20 ADR-013 — 1 clôture P0 cardinal différenciateur produit) | 28 | 2 | 12 | 14 |
 
 ---
 
@@ -1261,29 +1262,40 @@ Hypothèses :
 
 ---
 
-## D-Phase4-2d-BillIntelligence-Anomaly-Detector-001 — Module `services/bill_intelligence/anomalies/` absent
+## ~~D-Phase4-2d-BillIntelligence-Anomaly-Detector-001~~ — ✅ CLÔTURÉE Sprint C-5 Phase 5.1
 
 **Détecté** : Sprint C-4 Phase 4.2d audit bill-intelligence (2026-05-05)
+**Clôturée** : Sprint C-5 Phase 5.1 (2026-05-06, commit `<hash-phase-5-1>`, ADR-013)
 
-**Périmètre** : Le rôle agent `bill-intelligence` (cf. `.claude/agents/bill-intelligence.md`) référence un périmètre R01-R20 anomalies shadow billing, mais le module `backend/services/bill_intelligence/anomalies/` **N'EXISTE PAS** dans le repo. Les briques upstream (`services/billing_engine/`, `services/price_decomposition_service.py`, `services/purchase/cost_simulator_2026.py`) sont en place mais aucun orchestrateur de détection d'anomalies ne les relie.
+**Livrables Phase 5.1** :
 
-**Anomalies cardinales manquantes** (différenciateur Bill Intelligence vs Deepki/Spacewell/Energisme) :
-- **R20** : Capacité non répercutée correctement (variance ligne facture vs catalog `CAPACITE_ELEC.rate` > 5%)
-- **R19** : VNU facturé alors que statut dormant (YAML `VNU_TARIF_UNITAIRE_2026 = 0.0` + `dormant: true` mais ligne facture > 0)
-- R01-R18 : autres anomalies déjà spécifiées dans rôle agent (TURPE/CTA/accise/CSPE/etc.)
+- `backend/models/bill_anomaly.py` — modèle `BillAnomaly` (héritage `TimestampMixin + SoftDeleteMixin`, FK `invoice_id` → `energy_invoices.id`)
+- `backend/alembic/versions/478ee4a61ebb_phase_5_1_sprint_c_5_bill_anomaly_table_.py` — 8e migration Alembic Phase C (cumul 0 destructive, 14 drop_table autogenerate retirés discipline anti-DROP 8e épisode)
+- `backend/services/bill_intelligence/__init__.py` + `anomaly_detector.py` (~280 LOC) :
+  - `detect_r19_vnu_dormant` : scan `EnergyInvoiceLine` `line_type=tax` + label LIKE `%VNU%`/`%VERSEMENT NUCLEAIRE%`, agrégation, anomaly si Σ > seuil et `consumption_kwh < 100`
+  - `detect_r20_capacity_variance` : scan `line_type=network` + `unit LIKE %kVA%`, JOIN `EnergyInvoice → Site → Meter → PowerContract`, navigation JSON dict `ps_par_poste_kva[period_code]`, retourne LISTE (1 anomaly par poste tarifaire)
+  - `_resolve_period_code` helper 3 priorités (champ direct / meta_json / label parsing HPH/HCH/HPB/HCB/POINTE)
+  - `detect_anomalies_for_invoice` pipeline résilience par-action (try/except chaque détecteur)
+- `backend/config/sources_reglementaires.yaml` (+2 termes domain `bill_intelligence`) :
+  - `BILL_ANOMALY_VNU_DORMANT_THRESHOLD_EUR = 0.01 EUR`
+  - `BILL_ANOMALY_CAPACITY_VARIANCE_THRESHOLD_PCT = 5.0 %`
+- `backend/routes/bill_intelligence.py` — endpoint `GET /api/bill-intelligence/anomalies` org-scopé strict (JOIN chain `BillAnomaly → EnergyInvoice → Site → Portefeuille → EntiteJuridique.organisation_id`), filtres `code/severity/resolved`
+- `backend/tests/test_bill_anomaly_detector.py` — 19 tests verts (R19 + R20 + multi-postes + matching period_code + résilience pipeline + YAML SoT cohérence)
+- `backend/tests/source_guards/test_bill_anomaly_yaml_runtime_consistency_source_guards.py` — 3 SG anti-régression (YAML termes présents + pas de hard-code seuils + helper signature stable)
 
-**Action Sprint C-5** :
-1. Créer `backend/services/bill_intelligence/__init__.py` + `anomaly_detector.py`
-2. Implémentation MVP R19 (VNU dormant) + R20 (capacité variance > 5%)
-3. Format JSON sortie selon spec rôle agent (line_item / computed_value / reference_value / variance_pct / confidence / anomaly_type / recommandation)
-4. Tests : 1 anomalie R19 détectée + 1 R20 détectée + 1 baseline 0 anomalie
-5. Source-guards anti-régression sur format JSON
+**Adaptations Phase 5.1.0** (post-diagnostic mini-audit, vs ADR-013 initial) :
 
-**Effort estimé** : ~2-3 j-h (module + R19 + R20 + tests + source-guards)
-**Priorité** : 🔴 **P0** (pré-pilote bloquant — différenciateur Bill Intelligence inexistant runtime)
-**Sprint cible** : Sprint C-5
+- Modèle `EnergyInvoice` (pas `Facture`) → FK `invoice_id` → `energy_invoices.id`
+- Scan `EnergyInvoiceLine` (line_type `TAX`/`NETWORK` + label/unit) car pas de champ direct `vnu_montant` ou `capacite_facturee_kw`
+- JOIN chain `EnergyInvoice → Site → Meter → PowerContract` (pas DeliveryPoint direct)
+- `PowerContract.ps_par_poste_kva` JSON dict (pas scalaire) → R20 retourne LISTE multi-postes
 
-**Note** : ce trou architectural est cardinal pour le positionnement commercial PROMEOS face aux concurrents généralistes. Sans détecteur anomalies runtime, le shadow billing reste théorique.
+**Effort réel** : ~2 h (vs 2-3 j-h estimé) = **gain -85 à -90%** maintenu.
+
+**Différenciateur produit cardinal** : runtime R19+R20 traçable, seuils YAML SoT versionnés, 1 SoT par concept (cohérence Sprint C-3 + C-4).
+
+**Priorité** : ✅ CLÔTURÉE
+**Sprint cible** : Sprint C-5 ✅
 
 ---
 

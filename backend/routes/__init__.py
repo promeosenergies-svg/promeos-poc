@@ -24,6 +24,7 @@ from .segmentation import router as segmentation_router
 from .consumption_diagnostic import router as consumption_diag_router
 from .site_config import router as site_config_router
 from .billing import router as billing_router
+from .bill_intelligence import router as bill_intelligence_router
 from .purchase import router as purchase_router
 from .actions import router as actions_router
 from .reports import router as reports_router
@@ -91,6 +92,7 @@ __all__ = [
     "consumption_diag_router",
     "site_config_router",
     "billing_router",
+    "bill_intelligence_router",
     "purchase_router",
     "actions_router",
     "reports_router",

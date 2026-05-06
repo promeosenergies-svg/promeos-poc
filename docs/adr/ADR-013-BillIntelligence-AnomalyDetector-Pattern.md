@@ -224,6 +224,28 @@ def list_anomalies(
 
 ---
 
+## Adaptations Phase 5.1.0 (post-diagnostic mini-audit)
+
+3 adaptations cardinales détectées Étape 5.1.0 lors du diagnostic terrain :
+
+1. **`BillAnomaly.invoice_id` FK `energy_invoices.id`** (pas `facture_id` FK `facture`) — modèle existant est `EnergyInvoice` (`backend/models/billing_models.py:319`), pas `Facture`.
+2. **R19 scan `EnergyInvoiceLine`** : pas de champ direct `invoice.vnu_montant`. Détection via `line_type=tax` + label LIKE `%VNU%` (ou variantes "VERSEMENT NUCLEAIRE"/"VERSEMENT NUCLÉAIRE") + agrégation Σ `amount_eur`.
+3. **R20 JSON dict navigation** : `PowerContract.ps_par_poste_kva` est dict JSON `{HPH: 36, HCH: 36, ...}` indexé par poste tarifaire (pas scalaire). R20 retourne LISTE d'anomalies (1 par poste). Matching `period_code` cardinal via helper `_resolve_period_code` (3 priorités : champ direct → `meta_json` → label parsing). JOIN chain : `EnergyInvoice → Site → Meter → PowerContract` (pas DeliveryPoint direct).
+
+Sémantique ADR-013 préservée : rules-based pure + YAML SoT + `BillAnomaly` nouveau + trigger ingestion. Effort réel ~2 h vs ~2-3 h initial (adaptations bénignes).
+
+### Livrables effectifs Phase 5.1 (commit Sprint C-5)
+
+- **Migration Alembic 8e propre** (`478ee4a61ebb_phase_5_1_sprint_c_5_bill_anomaly_table_.py`) — 14 `drop_table` autogenerate retirés discipline anti-DROP 8e épisode (cumul Phase C : 0 destructive)
+- **Modèle** `backend/models/bill_anomaly.py` (~80 LOC) avec 4 index (invoice_id, code+severity, detected_at, deleted_at)
+- **Service** `backend/services/bill_intelligence/anomaly_detector.py` (~280 LOC, vs 150 LOC initial — +adaptations)
+- **YAML SoT** : 2 termes ajoutés domain `bill_intelligence`
+- **Endpoint** `routes/bill_intelligence.py` (~95 LOC) — `GET /api/bill-intelligence/anomalies` org-scopé strict
+- **Tests** 19/19 verts (R19 5 + R20 7 + helper 3 + pipeline 2 + YAML 2)
+- **Source-guards** 3/3 verts (YAML termes + no-hardcode + helper signature)
+
+---
+
 ## Références
 
 - Tracking dette : `docs/audits/DETTE_TECHNIQUE_TRACKER.md` (`D-Phase4-2d-BillIntelligence-Anomaly-Detector-001`)

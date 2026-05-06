@@ -1092,3 +1092,30 @@ terms:
       legal_reference: "Règlement (UE) 2023/956"
     formula: null
     notes: "Application phase pleine 01/01/2026. Conso élec directe française PROMEOS = HORS scope CBAM (importations transfrontalières uniquement). Documenté pour traçabilité."
+
+  # ── Bill Intelligence anomaly detection (Sprint C-5 Phase 5.1, ADR-013) ─────
+  BILL_ANOMALY_VNU_DORMANT_THRESHOLD_EUR:
+    value: 0.01
+    unit: "EUR"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Sol §15 Bill Intelligence — détection R19 VNU dormant"
+      url: null
+      version: "1.0"
+      effective_date: "2026-05-06"
+      legal_reference: "ADR-013 Sprint C-5 Phase 5.1 — différenciateur produit Bill Intelligence"
+    formula: "Σ(amount_eur) sur EnergyInvoiceLine où line_type=TAX et label LIKE '%VNU%'"
+    notes: "Seuil minimal détection VNU dormant. Toute somme >0.01 EUR sur facture sans usage attendu (consumption_kwh < 100) = anomalie potentielle. VNU = Versement Nucléaire Universel post-ARENH (CRE délibération 2024-XX, marché < seuil 78 EUR/MWh = dormant attendu)."
+
+  BILL_ANOMALY_CAPACITY_VARIANCE_THRESHOLD_PCT:
+    value: 5.0
+    unit: "percent"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Sol §15 Bill Intelligence — détection R20 capacité variance"
+      url: null
+      version: "1.0"
+      effective_date: "2026-05-06"
+      legal_reference: "ADR-013 Sprint C-5 Phase 5.1 — pratique courante audit TURPE 7"
+    formula: "|capacite_facturee_kva - ps_par_poste_kva[period_code]| / ps_par_poste_kva[period_code] * 100"
+    notes: "Seuil variance capacité facturée (EnergyInvoiceLine NETWORK kVA) vs souscription contractuelle (PowerContract.ps_par_poste_kva[period_code] dict JSON). >5% = warning, >10% = critical. R20 retourne 1 anomalie par poste tarifaire (HPH/HCH/HPB/HCB)."
