@@ -73,9 +73,20 @@ _PERIOD_CODES_KNOWN = [
 # Sprint C-7 Phase 7.7 Lot A — D-Sprint-C7-BillAnomaly-PII-Vnu-Labels-Sanitization-001 :
 # regex sanitization SIREN (9 chiffres) / SIRET (14 chiffres) / PRM/PCE (14 chiffres) /
 # PDL (14 chiffres). Évite leak PII dans details_json.vnu_labels (security-auditor SEC-002).
+#
+# Sprint C-8 Phase 8.2 — D-Audit-Phase7-PII-Sanitization-Extended-001 P1 SEC :
+# extension cumulée patterns email/téléphone FR/IBAN FR/RIB pour couverture cross-fournisseur
+# (EDF/Engie/TotalEnergies labels VNU peuvent contenir email contact, IBAN domiciliation, etc.).
+# Anti-CWE-532 (Insertion of Sensitive Information into Log File) + CWE-359 (Privacy).
 _PII_PATTERNS = (
-    re.compile(r"\b\d{14}\b"),  # SIRET / PRM / PCE / PDL
-    re.compile(r"\b\d{9}\b"),  # SIREN
+    re.compile(r"\b\d{14}\b"),  # SIRET / PRM / PCE / PDL (14 chiffres)
+    re.compile(r"\b\d{9}\b"),  # SIREN (9 chiffres)
+    # Phase 8.2 EXTENSION
+    re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b"),  # Email RFC 5322 simplified
+    re.compile(r"\b0[1-9](?:[\s.-]?\d{2}){4}\b"),  # Téléphone FR fixe/mobile (0X XX XX XX XX)
+    re.compile(r"(?<!\w)\+33[\s.-]?[1-9](?:[\s.-]?\d{2}){4}(?!\d)"),  # Téléphone FR international (+33)
+    re.compile(r"\bFR\d{2}[\s]?(?:[A-Z0-9]{4}[\s]?){5}[A-Z0-9]{3}\b"),  # IBAN FR (27 chars)
+    re.compile(r"\b\d{10}\b"),  # PCE court legacy GRDF / ancien PRM 10 chiffres
 )
 
 

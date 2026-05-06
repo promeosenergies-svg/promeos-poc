@@ -40,6 +40,19 @@ from models.iam import AuditLog
 _logger = logging.getLogger(__name__)
 
 
+# Sprint C-8 Phase 8.2 — D-Audit-Phase7-Import-Lazy-Fix-003 P1 CR :
+# Phase 7.5 + 7.8 utilisaient `from database import SessionLocal` à l'intérieur des fonctions
+# pour éviter import circulaire au module load. Ce pattern silently swallowed BLE001 si
+# database.SessionLocal pas initialisé (tests/scripts batch). Maintenant : import top-level
+# avec guard explicite + log clair en cas d'absence (vs silently None).
+# Nom `SessionLocal` conservé pour permettre monkey-patch tests Phase 7.5 (pattern existant).
+try:
+    from database import SessionLocal
+except ImportError as _imp_err:
+    _logger.warning("database.SessionLocal import failed at module load — audit isolation degraded: %s", _imp_err)
+    SessionLocal = None  # type: ignore[assignment]
+
+
 def _serialize_value(value: Any) -> Optional[str]:
     """Sérialise une valeur en JSON pour stockage dans old_value/new_value.
 
@@ -297,7 +310,10 @@ def log_consent_changes_batch(
 # ─── Sprint C-7 Phase 7.5 — External Connectors audit trail (ADR-018, CNIL preuve d'extraction) ───
 
 # Sentinelles de redaction — case-insensitive
+# Sprint C-8 Phase 8.2 — D-Audit-Phase7-PII-Sanitization-Extended-001 P1 SEC :
+# extension keys email/phone/IBAN/adresse pour couverture cross-fournisseur cumul Phase 7.5.
 _SENSITIVE_KEY_PATTERNS = (
+    # Phase 7.5 baseline (auth/secret)
     "authorization",
     "bearer",
     "client_secret",
@@ -311,6 +327,18 @@ _SENSITIVE_KEY_PATTERNS = (
     "code_challenge",
     "password",
     "passwd",
+    # Phase 8.2 EXTENSION (PII personnels)
+    "email",
+    "telephone",
+    "phone",
+    "iban",
+    "rib",
+    "bic",
+    "adresse",
+    "address",
+    "birth_date",
+    "birthdate",
+    "date_naissance",
 )
 
 # Champs identifiants à hasher (PRM/PCE/SIREN/SIRET) plutôt que redact
@@ -428,11 +456,16 @@ def _record_external_api_event(
         ),
     }
 
-    # Session dédiée (découplée transaction caller)
-    from database import SessionLocal
+    # Sprint C-8 Phase 8.2 — Session dédiée (découplée transaction caller).
+    # Import top-level via `SessionLocal` module attribute (vs lazy import qui swallowed BLE001).
+    # Permet monkey-patch tests `services.audit_log_service.SessionLocal` Phase 7.5.
+    if SessionLocal is None:
+        _logger.error("external_api_audit_log_skipped reason=session_local_unavailable provider=%s", provider)
+        return None
 
-    audit_db = SessionLocal()
+    audit_db = None
     try:
+        audit_db = SessionLocal()
         log = AuditLog(
             user_id=user_id,
             action="connector.api_call",
@@ -453,10 +486,12 @@ def _record_external_api_event(
             endpoint,
             type(exc).__name__,
         )
-        audit_db.rollback()
+        if audit_db is not None:
+            audit_db.rollback()
         return None
     finally:
-        audit_db.close()
+        if audit_db is not None:
+            audit_db.close()
 
 
 def audit_external_api_call(
