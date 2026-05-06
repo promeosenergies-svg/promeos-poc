@@ -28,13 +28,36 @@ DT_PENALTY_EUR = 7500
 DT_PENALTY_AT_RISK_EUR = 3750
 DT_REF_YEAR_DEFAULT = 2020  # année de référence par défaut pour la baseline
 
-# ─── BACS (Décret n°2020-887) ──────────────────────────────────────────────
-BACS_PENALTY_EUR = 1500  # amende par site non conforme BACS
+# ─── BACS (Décret n°2020-887 + n°2025-1343) ────────────────────────────────
+# Phase D-3 Tier 0 : sources documentées dans `backend/config/sources_reglementaires.yaml` :
+#   - BACS_THRESHOLD_KW_2025 (290 kW initial — Décret 2020-887 art. R175-3)
+#   - BACS_THRESHOLD_KW_2030 (70 kW abaissé — Décret 2025-1343 art. 1)
+#   - BACS_DEADLINE_DATE (2027-01-01 équipement BACS)
+#   - COMPLIANCE_BACS_PENALTY_EUR (1500 EUR/an/site — Décret 2020-887 art. R175-7)
+# Doublon valeur 1500€ avec OPERAT_PENALTY_EUR : sources distinctes confirmées
+# (BACS = art. R175-7 vs OPERAT = Circulaire DGEC 2024 + Décret 2019-771 art. 6).
+BACS_PENALTY_EUR = (
+    1500  # amende par site non conforme BACS — voir sources_reglementaires.yaml:COMPLIANCE_BACS_PENALTY_EUR
+)
+BACS_THRESHOLD_KW_INITIAL = 290  # seuil BACS bâtiments neufs Décret 2020-887 (en vigueur depuis 01/01/2025)
+BACS_THRESHOLD_KW_EXISTING = 70  # seuil BACS bâtiments existants Décret 2025-1343 (à respecter au 01/01/2030)
+BACS_DEADLINE_EXISTING = "2030-01-01"  # deadline équipement BACS bâtiments existants >70 kW
 
 # ─── OPERAT / Décret Tertiaire déclaration ─────────────────────────────────
-OPERAT_PENALTY_EUR = 1500  # amende par déclaration OPERAT manquante (Circulaire DGEC 2024)
-# Deadline déclaration consommations 2025 (Arrêté Tertiaire 2024-DGEC)
+# Phase D-3 Tier 0 : sources documentées dans `backend/config/sources_reglementaires.yaml` :
+#   - COMPLIANCE_OPERAT_PENALTY_EUR (Circulaire DGEC 2024 + Décret 2019-771 art. 6)
+#   - OPERAT_DECLARATION_DEADLINE (date butoir 30/09 annuelle, source ADEME OPERAT)
+# Annexe I OPERAT (Arrêté 10/04/2020 NOR LOGL2005904A) = **426 sous-catégories**
+# organisées en ~9 grandes familles (PAS "9 typologies" comme parfois cité par
+# raccourci). Granularité réelle = 426 lignes — voir backend/config/operat_valeurs_absolues.yaml.
+OPERAT_PENALTY_EUR = (
+    1500  # amende par déclaration OPERAT manquante — voir sources_reglementaires.yaml:COMPLIANCE_OPERAT_PENALTY_EUR
+)
+# Deadline déclaration consommations N-1 = 30 septembre N (ADEME OPERAT)
 OPERAT_DECLARATION_DEADLINE = "2026-09-30"
+OPERAT_ANNEXE_I_SOUS_CATEGORIES_COUNT = (
+    426  # Arrêté 10/04/2020 NOR LOGL2005904A — granularité réelle (9 grandes familles)
+)
 
 # ─── Readiness score — pondérations backend ────────────────────────────────
 # Source unique : frontends doivent consommer ces pondérations via /api/cockpit.
@@ -48,9 +71,24 @@ READINESS_WEIGHT_ACTIONS = 0.30
 # P0-NEW-2 — pénalité hardcodée frontend AperPage.jsx ligne 195 violait
 # "zero business logic in frontend"). Sanction 20 €/m²/an applicable à partir
 # du 01/01/2028 si non engagement de solarisation des parkings >1 500 m².
+#
+# Phase D-3 Tier 0 (audit réglementaire 2026-05-07) : sources documentées dans
+# `backend/config/sources_reglementaires.yaml` clés APER_THRESHOLD_M2_SMALL/LARGE,
+# APER_DEADLINE_SMALL/LARGE, APER_SOLAR_RATIO_PCT, APER_PENALTY_EUR_PER_M2_PER_YEAR.
+# ⚠️ Cohérence chronologique Décret 2022-1726 vs Loi 2023-175 à VÉRIFIER Phase D-4
+# (escalade humaine — voir RAPPORT_ESCALADE_HUMAINE_SOURCES_2026_05_07.md SOURCE 11).
+# 2 échéances distinctes (cardinal P0-REG-002 audit) :
+#   - parkings >10 000 m² (LARGE) : 01/07/2026 (échéance imminente)
+#   - parkings 1500-10 000 m² (SMALL) : 01/07/2028 (cible PROMEOS mid-market)
 APER_PENALTY_EUR_PER_M2_PER_YEAR = 20
-APER_DEADLINE_DATE = "2028-01-01"
-APER_PARKING_MIN_SURFACE_M2 = 1500
+APER_DEADLINE_DATE = "2028-01-01"  # legacy alias — préfère APER_DEADLINE_SMALL_PARKING_DATE
+APER_DEADLINE_SMALL_PARKING_DATE = (
+    "2028-07-01"  # parkings 1500-10000 m² — sources_reglementaires.yaml:APER_DEADLINE_SMALL
+)
+APER_DEADLINE_LARGE_PARKING_DATE = "2026-07-01"  # parkings >10000 m² — sources_reglementaires.yaml:APER_DEADLINE_LARGE
+APER_PARKING_MIN_SURFACE_M2 = 1500  # seuil SMALL (Loi APER art. 40)
+APER_PARKING_LARGE_SURFACE_M2 = 10000  # seuil LARGE (Loi APER art. 40 II)
+APER_SOLAR_RATIO_PCT = 50.0  # taux minimum solarisation parking (Loi APER art. 40)
 
 # ─── NEBCO (depuis 01/09/2025) ─────────────────────────────────────────────
 NEBCO_THRESHOLD_KW_PER_STEP = 100
@@ -164,6 +202,18 @@ __all__ = [
     "TURPE_7_DATE_APPLICATION",
     "TURPE_6_DATE_FIN",
     "CANONICAL_FTA_CODES_TURPE_7",
+    "BACS_THRESHOLD_KW_INITIAL",
+    "BACS_THRESHOLD_KW_EXISTING",
+    "BACS_DEADLINE_EXISTING",
+    "OPERAT_ANNEXE_I_SOUS_CATEGORIES_COUNT",
+    "APER_DEADLINE_SMALL_PARKING_DATE",
+    "APER_DEADLINE_LARGE_PARKING_DATE",
+    "APER_PARKING_LARGE_SURFACE_M2",
+    "APER_SOLAR_RATIO_PCT",
+    "VNU_DATE_APPLICATION",
+    "VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH",
+    "VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH",
+    "VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH",
 ]
 
 
@@ -206,3 +256,29 @@ Suffixe nb postes : 4 (BT) ou 5 (HTA + PTE).
 ⚠️ Codes Phase D-1 (`BT_HCH_PRO`, `BT_BASE_PRO`, `BT_PRO_LU`, `HTA_LU_BASE_4P`)
 inventés non canoniques — corrigés Phase D-2.2.
 """
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Phase D-3 Tier 0 RÉGLEMENTAIRE — VNU post-ARENH (audit cardinal 2026-05-07)
+# ═══════════════════════════════════════════════════════════════════════════
+# Source : `backend/config/sources_reglementaires.yaml` clés VNU_TARIF_UNITAIRE_2026_*,
+# VNU_SEUIL_ACTIVATION_PRIX_BAS/HAUT_*. status="pending_source_verification" + confidence="low".
+# Cross-check KB `reference_regulatory_landscape_2026_2050.md` confirme :
+#   "VNU (Versement Nucléaire Universel) : tarif unitaire de minoration = 0 pour 2026"
+#
+# Le mécanisme VNU est ACTIF au 01/01/2026 (post-ARENH) mais NON-FACTURANT en 2026
+# (tarif unitaire = 0). Les seuils 78/110 EUR/MWh proviennent de cost_simulator_2026.py
+# (cohérent accord EDF-État 14/11/2023). Référence Décret 2026-55 + CRE délib 2026-52
+# à VÉRIFIER Phase D-4 (escalade humaine — RAPPORT_ESCALADE_HUMAINE_SOURCES_2026_05_07.md).
+
+VNU_DATE_APPLICATION = "2026-01-01"
+"""Date d'application VNU post-ARENH (Décret 2026-55 + CRE délib 2026-52 — à confirmer Phase D-4)."""
+
+VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH = 0.0
+"""Tarif unitaire VNU 2026 = 0 EUR/MWh (status dormant — KB confirmé `reference_regulatory_landscape_2026_2050.md`)."""
+
+VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH = 78.0
+"""Seuil bas activation VNU si prix marché < seuil (CRE 2026-52 — pending verification)."""
+
+VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH = 110.0
+"""Seuil haut activation VNU côté upside fournisseur (CRE 2026-52 — pending verification)."""

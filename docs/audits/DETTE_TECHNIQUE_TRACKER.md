@@ -813,6 +813,11 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-07 (Phase D-0 hotfix Patrimoine — 3 P0 audit Sprint Patrimoine v1 : D6 SousCompteur self-FK + Bâtiment 5 champs RNB/DPE/rénovation + Site categorie_operat + mode_propriete — 13e migration Alembic propre) | 41 | 0 | 14 | 27 |
 | 2026-05-07 (Phase D-1 hotfix Patrimoine — 4 P1 audits cumulés : DP TURPE 7 explicite (5 champs) + Org enrichi entreprise (6 champs) + PII patterns ordre + retrait `\d{10}` + CGU sha256 helper integrity — 14e migration Alembic propre) | 37 | 0 | 10 | 27 |
 | 2026-05-07 (AUDIT COMPLET PHASE D-0+D-1 multi-agents SDK 6 parallèles — Pilier 6 ADR-016 reproduit Sprint C-7→C-8→D — 25 findings nouveaux (3 P0 + 12 P1 + 10 P2) → **PILOTE EXTERNE READY ASSERTION RÉVISÉE** (Tier 1 ~3-4h obligatoire avant démo investisseur)) | 62 | 3 | 22 | 37 |
+| 2026-05-07 (Sprint D1-B Validators cross-FK Top 20 contraintes matrice v1 §8.3 — 5 validators DP TURPE 7+gaz + 3 contraintes DB (C50+C60+C85+C108) + 15e migration Alembic propre + script audit pré-migration) | 62 | 3 | 22 | 37 |
+| 2026-05-07 (Phase D-2 hotfix Tier 1 — 3 P0 cardinaux audit Phase D : TURPE 7 dates 1/02/2025 + codes FTA canoniques CRE + ADR-D-01 Compteur/Meter dualité bridge léger Option C — 3 docs audits livrés via 6 agents SDK Pilier 6 ADR-016 4e cycle) | 59 | 0 | 22 | 37 |
+| 2026-05-07 (Phase D-2.2 ajustée — Enum FtaCode strict canonique + ADR-016 v3 Pilier 9 (validator permissif transitoire → Enum strict) + 3 P1 code-reviewer fixés (anti-cycle + org-scoping + tests négatifs)) | 56 | 0 | 19 | 37 |
+| 2026-05-07 (Sprint Audit Réglementaire Cardinal pré Phase D-3 — 17 catégories réglementaires auditées via 3 agents SDK + cross-check KB — 10 P0 + 10 P1 + 25 à vérifier identifiés. Toutes sources externes WebFetch bloquées 403/503 → rapport escalade humaine livré (17 sources à figer Phase D-4 ~3h navigateur direct)) | 76 | 10 | 29 | 37 |
+| 2026-05-07 (Phase D-3 Tier 0 RÉGLEMENTAIRE — 5 P0 actionnables fixés : APER échéance 01/07/2026 LARGE parkings + APER LARGE surface 10000m² + APER solar ratio 50% + OPERAT 426 sous-cat constante + BACS 70 kW 2030 exposé + VNU 4 constantes mécanisme — mirroring constants.py↔sources_reglementaires.yaml) | 71 | 5 | 29 | 37 |
 
 ---
 
