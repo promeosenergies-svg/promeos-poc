@@ -1382,6 +1382,40 @@ Hypothèses :
 
 **Référence interne** : `PROMEOS-SEC-2026-001` (audit security-auditor Sprint C-5 Phase 5.5).
 
+> **Alias tracker post Phase C clôture** : ce ticket est aussi référencé `D-Sprint-C7-DEMO-MODE-Bypass-Scope-Utils-001` dans la liste des 5 P0 résiduels pré-pilote (cf. `BILAN_PHASE_C_7_7_LIVRES_2026_05_06.md`).
+
+---
+
+## D-Sprint-C7-External-Connectors-Audit-Trail-001 — Connecteurs externes sans audit trail (DataConnect/GRDF/Sirene)
+
+**Détecté** : Sprint C-5 Phase 5.7 audit transversal AXE 5 (2026-05-06)
+
+**Périmètre** : 3 connecteurs externes Phase C n'écrivent **aucun event AuditLog** lors des appels API tiers consommant des données à caractère personnel (PRM/PCE/SIREN — art. 4 RGPD) :
+
+- `backend/connectors/enedis_dataconnect.py` — appels DataConnect Enedis (PRM élec, consentement client requis)
+- `backend/connectors/grdf_adict.py` — appels ADICT GRDF (PCE gaz, consentement client requis)
+- `backend/services/sirene_hydrate.py` — appels Sirene `recherche-entreprises.api.gouv.fr` (SIREN/SIRET, donnée publique mais traçabilité prospect/lead requise)
+
+`sirene_hydrate.py:153` ne fait que `logger.info` stdout (volatile, non requêtable, non scopé org).
+
+**Risque CNIL** : "preuve d'extraction" PRM/PCE/SIREN impossible à reconstituer post-incident. Audit RGPD CNIL ne peut pas trace "qui a consulté quoi quand pour quel client".
+
+**Action Sprint C-7** :
+
+1. Créer wrapper décorateur `@audit_external_api_call(provider, endpoint)` dans `backend/services/audit_log_service.py` :
+   - Capture `correlation_id` (header `X-Correlation-ID` déjà supporté ligne 550 `routes/patrimoine/sites.py`)
+   - Log : `provider`, `endpoint`, `status_code`, `payload_hash` (SHA256 sans secrets), `duration_ms`, `org_id`, `user_id`
+   - 3 nouveaux event types `AuditLog.action` : `API_CALL_DATACONNECT`, `API_CALL_GRDF`, `API_CALL_SIRENE`
+2. Wrapper `httpx.get/post` Sirene/DataConnect/GRDF dans 3 connecteurs
+3. Tests cardinaux : 1 appel DataConnect réussi → 1 entrée AuditLog avec correlation_id
+4. Source-guard : grep `httpx.get|httpx.post` dans `backend/connectors/` + `backend/services/sirene_*` doit être ≤ 0 hors wrapper
+
+**Effort estimé** : ~2-3 h (wrapper + 3 wirings + 3 tests cardinaux + 1 source-guard)
+**Priorité** : 🔴 **P0** (CNIL preuve d'extraction PRM/PCE/SIREN)
+**Sprint cible** : Sprint C-7
+
+**Référence** : audit transversal Phase 5.7 AXE 5 P0 finding C2 (`AUDIT_TRANSVERSAL_PHASE_C_2026_05_06.md`).
+
 ---
 
 ## Dettes Sprint C-7 polish — issues audit deep multi-agents Phase 5.5/5.6 (15 nouvelles)
