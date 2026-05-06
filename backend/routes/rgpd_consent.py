@@ -144,7 +144,9 @@ def patch_organisation_consentement(
             except Exception as exc:  # noqa: BLE001 — résilience cascade (pattern Phase 5.8 G1)
                 _logger.error("Cascade Org consent failed: %s", type(exc).__name__)
 
-    # Phase 7.4 préparation : wiring AuditLog log_consent_change automatique (event RGPD_CONSENT_CHANGE)
+    # Sprint C-8 Phase 8.3 — D-Audit-Phase7-RGPD-Consent-Dead-Comments-001 P1 CR :
+    # commentaire Phase 7.4 préparation supprimé (wiring déjà effectué ligne 113-122 via
+    # log_consent_changes_batch). Dead-code éliminé pour cohérence doctrinale.
 
     return {
         "org_id": org_id,
@@ -247,7 +249,8 @@ def patch_delivery_point_consentement_local(
     db.commit()
     db.refresh(dp)
 
-    # Phase 7.4 préparation : wiring AuditLog log_consent_change scope="local"
+    # Sprint C-8 Phase 8.3 — wiring AuditLog déjà effectué via log_consent_changes_batch
+    # ligne 233-243 (target_type="delivery_point"). Dead-code Phase 7.4 préparation supprimé.
 
     return {
         "dp_id": dp_id,

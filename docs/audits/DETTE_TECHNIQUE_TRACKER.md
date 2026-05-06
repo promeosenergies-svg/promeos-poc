@@ -805,6 +805,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-7 Phase 7.8 — 6 P0 fixes critiques audit deep clôturés : IDOR DataConnect 5 endpoints + IDOR GRDF 2 endpoints + IDOR org_id_override + audit RGPD commit immédiat + Article 5(2)+30 RGPD + TURPE 7 vs TURPE 6 codes — **PRÉ-PILOTE-READY RÉEL atteint**) | 40 | 0 | 20 | 20 |
 | 2026-05-07 (Sprint C-8 Phase 8.1 Lot REGOPS — 3 P1 fixes : Scoring OPERAT migration s_ce_m2 ADR-020 Option C + CGU référentiel central + KPI mutation cardinal canonique cross-vues) | 37 | 0 | 17 | 20 |
 | 2026-05-07 (Sprint C-8 Phase 8.2 Lot SEC+CI — 3 P1 fixes : PII étendue email/téléphone FR/IBAN FR + CI bloquant quality-gate.yml + import lazy fix top-level guard) | 34 | 0 | 14 | 20 |
+| 2026-05-07 (Sprint C-8 Phase 8.3 Lot CR+REG polish — 4 P1 fixes : dead-code comments rgpd_consent + Organisation.actif.is_(True) idiomatique + VNU tarifs YAML L.336-2 + _is_hash_key('code') exact match strict) | 30 | 0 | 10 | 20 |
 
 ---
 

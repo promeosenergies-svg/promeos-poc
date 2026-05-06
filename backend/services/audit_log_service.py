@@ -361,9 +361,24 @@ def _is_sensitive_key(key: str) -> bool:
 
 
 def _is_hash_key(key: str) -> bool:
-    """True si la clé contient un identifiant à hasher (PRM/PCE/SIREN/...)."""
+    """True si la clé contient un identifiant à hasher (PRM/PCE/SIREN/...).
+
+    Sprint C-8 Phase 8.3 — D-Audit-Phase7-Hash-Key-Code-Overmatch-001 P1 SEC fix :
+    `code` matchait précédemment `period_code`/`error_code`/`region_code` via substring
+    `p in lk` → sur-redaction non-justifiée audit logs. Correction : exact match
+    UNIQUEMENT pour `code` (la key OAuth2 est nommée `code` seule, pas `X_code`).
+    Substring conservé pour autres patterns (prm/pce/siren/siret/usage_point_id)
+    qui sont eux suffisamment spécifiques pour ne pas avoir de faux-positifs.
+    """
     lk = (key or "").lower()
-    return any(p == lk or p in lk for p in _HASH_KEY_PATTERNS)
+    for pattern in _HASH_KEY_PATTERNS:
+        if pattern == "code":
+            # Exact match strict pour "code" (key OAuth2 cardinale)
+            if lk == "code":
+                return True
+        elif pattern == lk or pattern in lk:
+            return True
+    return False
 
 
 def _short_hash(value: Any) -> str:

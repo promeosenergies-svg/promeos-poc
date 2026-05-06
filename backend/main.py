@@ -407,7 +407,8 @@ def _sync_restore_or_seed_helios():
 
         demo_org = (
             db.query(Organisation)
-            .filter(Organisation.actif == True, Organisation.is_demo == True)
+            # Sprint C-8 Phase 8.3 — D-Audit-Phase7-Org-Actif-Idiomatic-001 P1 CR : .is_(True) idiomatique
+            .filter(Organisation.actif.is_(True), Organisation.is_demo.is_(True))
             .order_by(Organisation.id.desc())
             .first()
         )

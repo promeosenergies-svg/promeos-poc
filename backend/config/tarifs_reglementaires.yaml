@@ -543,11 +543,14 @@ tva:
     # Source : bofip ACTU-2025-00057, service-public.fr, energie-info.fr
     supprime_au: "2025-08-01"
 
-# ── VNU (Versement Nucléaire Universel) — post-ARENH ───────────────────────
+# ── VNU (Versement pour Non-Usage, art. L.336-2 Code énergie) — post-ARENH ───
+# Sprint C-8 Phase 8.3 — terminologie cardinale uniformisée (cf. Phase 7.7 Lot C
+# + audit deep Phase 7 P0-REG-002). "Versement pour Non-Usage" est le terme légal
+# exact (art. L.336-2 Code énergie post-ARENH), "Nucléaire Universel" est obsolète.
 # L'ARENH (42 €/MWh, 100 TWh/an) a pris fin le 31/12/2025.
 # Le VNU est une taxe redistributive sur EDF, activée uniquement si
 # le prix de marché dépasse les seuils fixés par la CRE.
-# Source : Loi de souveraineté énergétique, art. L. 336-1 Code énergie
+# Source : Code de l'énergie art. L.336-2 + Loi 2024-707 souveraineté énergétique
 vnu:
   dormant: true
   taux_eur_mwh: 0.0  # explicite : aucun prélèvement tant que marché < seuil_1

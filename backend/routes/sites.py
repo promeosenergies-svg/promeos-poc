@@ -95,7 +95,8 @@ def quick_create_site(
         # Chercher une org existante (cas : quick-create précédent sans scope)
         existing_org = (
             db.query(Organisation)
-            .filter(Organisation.actif == True, not_deleted(Organisation))  # noqa: E712
+            # Sprint C-8 Phase 8.3 — D-Audit-Phase7-Org-Actif-Idiomatic-001 P1 CR : .is_(True) idiomatique
+            .filter(Organisation.actif.is_(True), not_deleted(Organisation))
             .first()
         )
         if existing_org:
