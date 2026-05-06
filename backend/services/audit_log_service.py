@@ -254,13 +254,23 @@ def log_consent_changes_batch(
     correlation_id: Optional[str] = None,
     ip_address: Optional[str] = None,
 ) -> list[AuditLog]:
-    """Sprint C-7 Phase 7.4 — Variant batch pour PATCH multi-champs (1 event par champ muté).
+    """Sprint C-7 Phase 7.4 + 7.8 — Variant batch PATCH multi-champs avec commit immédiat.
+
+    Sprint C-7 Phase 7.8 fix critique D-Audit-Phase7-Audit-Rollback-Loss-004 :
+    `db.commit()` IMMÉDIAT après ajout des events — termine la transaction caller →
+    audit persisté avant tout rollback ultérieur (cascade error / commit final échoué).
+
+    Anti-CWE-778 (perte audit CNIL sur rollback). Le caller continue avec une nouvelle
+    transaction implicite ouverte au prochain query/mutation.
 
     Args:
         changes: [{"field": "consentement_dataconnect_global", "old": True, "new": False}, ...]
 
     Returns:
-        Liste des AuditLog créés (1 par change). Caller commit responsable.
+        Liste des AuditLog créés (1 par change). Persistés DB avant retour.
+
+    CNIL article 5(2) accountability : preuve d'origine forte garantie même en cas de
+    rollback métier (rgpd_consent.py:cascade_recompute_on_change échec, etc.).
     """
     events = []
     for change in changes:
@@ -279,6 +289,8 @@ def log_consent_changes_batch(
                 ip_address=ip_address,
             )
         )
+    # Sprint C-7 Phase 7.8 — commit immédiat anti-rollback caller ultérieur (CNIL preuve d'origine)
+    db.commit()
     return events
 
 
@@ -411,7 +423,9 @@ def _record_external_api_event(
         "request_hash": request_hash,
         "response_hash": response_hash,
         "args_summary": args_summary or {},
-        "rgpd_article": "Article 6 RGPD - traçabilité extraction données externes",
+        "rgpd_article": (
+            "Article 5(2) RGPD - principe accountability + Article 30 - registre des activités de traitement"
+        ),
     }
 
     # Session dédiée (découplée transaction caller)
@@ -468,8 +482,13 @@ def audit_external_api_call(
         - Sur exception : log success=False, error_class, error_message[:200], puis raise
         - L'audit utilise une session DÉDIÉE — n'affecte pas la transaction caller
 
-    CNIL article 6 : preuve d'extraction = qui (user_id si dispo) + quand (created_at) +
-    où (provider + endpoint) + quoi (request_hash + response_hash) + résultat (success/error).
+    CNIL article 5(2) RGPD (principe accountability) + article 30 (registre des activités) :
+    preuve d'extraction = qui (user_id si dispo) + quand (created_at) + où (provider + endpoint) +
+    quoi (request_hash + response_hash) + résultat (success/error).
+
+    Sprint C-7 Phase 7.8 fix D-Audit-Phase7-RGPD-Article-Inadequate-005 : Article 6 RGPD
+    (bases légales du traitement) substitué par Article 5(2) (accountability) + Article 30
+    (registre des traitements). Article 6 = licéité du traitement, NON traçabilité technique.
 
     Note CNIL Phase 7.5 : ce wiring clôt le dernier P0 résiduel Sprint C-7
     (D-Sprint-C7-External-Connectors-Audit-Trail-001) — pré-pilote-ready.

@@ -3,22 +3,51 @@ PROMEOS — GRDF ADICT API routes (Sprint F Connectors)
 
 Prefix: /api/grdf
 Consommation gaz (PCE), conversion PCS.
+
+Sprint C-7 Phase 7.8 — Fix IDOR critique (audit deep multi-agents Phase 7) :
+ajout `resolve_org_id` + validation PCE ↔ org via JOIN Meter→Site→Portefeuille→EJ.
+Anti-CWE-639 (IDOR) + CWE-862 (Missing Authorization).
 """
 
 import logging
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import AuthContext, get_optional_auth
 
 logger = logging.getLogger("promeos.routes.grdf")
 
 router = APIRouter(prefix="/api/grdf", tags=["GRDF ADICT"])
+
+
+def _assert_pce_belongs_to_org(db: Session, pce: str, org_id: int) -> None:
+    """Sprint C-7 Phase 7.8 — Fix IDOR : valide PCE ↔ org via JOIN chain.
+
+    JOIN Meter → Site → Portefeuille → EntiteJuridique.organisation_id.
+    Anti-CWE-639 (IDOR) + énumération PCE cross-tenant.
+    """
+    from models import EntiteJuridique, Portefeuille, Site
+    from models.energy_models import Meter
+
+    meter = (
+        db.query(Meter)
+        .join(Site, Meter.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(
+            Meter.meter_id == pce,
+            EntiteJuridique.organisation_id == org_id,
+        )
+        .first()
+    )
+    if not meter:
+        raise HTTPException(status_code=403, detail="PCE hors scope organisation")
 
 
 # --- Schemas ---
@@ -49,11 +78,20 @@ class PcsResponse(BaseModel):
 @router.get("/pce/{pce}/consumption", response_model=list[ConsumptionItem])
 def get_pce_consumption(
     pce: str,
+    request: Request,
     date_debut: date = Query(..., description="Date début"),
     date_fin: date = Query(..., description="Date fin"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Récupère la consommation informative pour un PCE via GRDF ADICT."""
+    """Récupère la consommation informative pour un PCE via GRDF ADICT.
+
+    Sprint C-7 Phase 7.8 — Fix IDOR : validation PCE ↔ org stricte.
+    """
+    from services.scope_utils import resolve_org_id
+
+    org_id = resolve_org_id(request, auth, db)
+    _assert_pce_belongs_to_org(db, pce, org_id)
     from connectors.grdf_adict import GrdfAdictConnector
     from connectors.grdf_errors import GrdfAdictError, PceNotFoundError, PceNotAuthorizedError
 
@@ -72,12 +110,21 @@ def get_pce_consumption(
 @router.post("/sync/{pce}", response_model=SyncResponse)
 def sync_pce(
     pce: str,
+    request: Request,
     date_debut: Optional[date] = Query(None, description="Date début (défaut: J-365)"),
     date_fin: Optional[date] = Query(None, description="Date fin (défaut: aujourd'hui)"),
     region_code: Optional[str] = Query(None, description="Code région pour PCS (ex: IDF)"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Récupère la conso gaz et l'écrit en MeterReading (kWh via PCS)."""
+    """Récupère la conso gaz et l'écrit en MeterReading (kWh via PCS).
+
+    Sprint C-7 Phase 7.8 — Fix IDOR : validation PCE ↔ org stricte avant sync écriture.
+    """
+    from services.scope_utils import resolve_org_id
+
+    org_id = resolve_org_id(request, auth, db)
+    _assert_pce_belongs_to_org(db, pce, org_id)
     from connectors.grdf_adict import GrdfAdictConnector
     from connectors.grdf_errors import GrdfAdictError
     from models.energy_models import Meter, MeterReading, DataImportJob, FrequencyType, ImportStatus

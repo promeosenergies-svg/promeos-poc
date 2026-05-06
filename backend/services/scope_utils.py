@@ -168,6 +168,28 @@ def resolve_org_id(
         return org_id
 
     if org_id_override is not None:
+        # Sprint C-7 Phase 7.8 — Fix IDOR critique D-Audit-Phase7-IDOR-Org-Id-Override-Bypass-003 :
+        # avant ce fix, `org_id_override` était retourné brut sans validation DB. Bypass DEMO_MODE
+        # via query param possible (attaquant en DEMO_MODE sans JWT/X-Org-Id pouvait fournir
+        # org_id_override=<id_tierce> via params billing.py). Maintenant : validation DB stricte
+        # (Organisation existe + actif + not_deleted) cohérente avec X-Org-Id Phase 7.2 Option B.
+        from models import not_deleted
+
+        org = (
+            db.query(Organisation)
+            .filter(
+                Organisation.id == org_id_override,
+                Organisation.actif.is_(True),
+                not_deleted(Organisation),
+            )
+            .first()
+        )
+        if org is None:
+            _security_logger.warning("org_id_override_rejected_db_check override=%s", org_id_override)
+            raise HTTPException(
+                status_code=403,
+                detail="Forbidden — org_id_override invalid (org not found / inactive / deleted)",
+            )
         return org_id_override
 
     # No org resolved — check DEMO_MODE
@@ -179,12 +201,13 @@ def resolve_org_id(
 
     # DEMO_MODE=true: fallback chain
     from services.demo_state import DemoState
+    from models import not_deleted
 
     demo_org_id = DemoState.get_demo_org_id()
     if demo_org_id:
         return demo_org_id
 
-    org = db.query(Organisation).filter(Organisation.actif == True).first()
+    org = db.query(Organisation).filter(Organisation.actif.is_(True), not_deleted(Organisation)).first()
     if org:
         return org.id
 

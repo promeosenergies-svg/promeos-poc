@@ -802,6 +802,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-7 Phase 7.7 Lot C — EnergyInvoice +1 col tva_rate Numeric(5,4) + 12e migration Alembic propre + VNU terminologie cardinale 6 callsites (1 P1 + 1 P2) — commit c5ace813) | 25 | 0 | 10 | 15 |
 | 2026-05-06 (Sprint C-7 Phase 7.7 Lot D — Bill Intelligence endpoint Literal validation + pagination + KPI total_economie_potentielle_eur (3 P2) → **Phase 7.7 totale : 8 P1 + 9 P2 = 17 dettes clôturées**) | 22 | 0 | 10 | 12 |
 | 2026-05-06 (Sprint C-7 AUDIT COMPLET PHASE 7 multi-agents SDK 6 parallèles — 24 findings nouveaux détectés (6 P0 + 10 P1 + 8 P2) → **PRÉ-PILOTE-READY ASSERTION RÉVISÉE**) | 46 | 6 | 20 | 20 |
+| 2026-05-06 (Sprint C-7 Phase 7.8 — 6 P0 fixes critiques audit deep clôturés : IDOR DataConnect 5 endpoints + IDOR GRDF 2 endpoints + IDOR org_id_override + audit RGPD commit immédiat + Article 5(2)+30 RGPD + TURPE 7 vs TURPE 6 codes — **PRÉ-PILOTE-READY RÉEL atteint**) | 40 | 0 | 20 | 20 |
 
 ---
 

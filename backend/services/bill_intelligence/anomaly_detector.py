@@ -48,21 +48,26 @@ _logger = logging.getLogger(__name__)
 
 # ─── Helpers ────────────────────────────────────────────────────────────────
 
-# Sprint C-7 Phase 7.7 Lot A — D-Sprint-C7-BillAnomaly-Multi-Postes-HTA-001 :
-# HPE/HCE/PM ajoutés pour TURPE 7 HTA (Heures de Pointe d'Eté/Hiver, Heures Creuses d'Eté,
-# Pointe Mobile). Ordre cardinal : codes longs d'abord (anti-overlap label parsing).
+# Sprint C-7 Phase 7.8 — D-Audit-Phase7-TURPE-7-Codes-Obsolete-006 (fix audit deep) :
+# Codes TURPE 7 OFFICIEL (CRE délibération 2025-78 du 13/03/2025, JO 14/05/2025) :
+#   - "P" (Pointe), "HPH" (Heures Pleines Hautes), "HCH" (Heures Creuses Hautes),
+#     "HPB" (Heures Pleines Basses), "HCB" (Heures Creuses Basses)
+#   - "HP", "HC" : tarification standard BT (TURPE 7 BT≤36 kVA)
+#   - "BASE" : tarif unique BT
+#
+# Codes LEGACY TURPE 6 (obsolètes 1/08/2025) conservés pour rétro-compat parsing
+# factures historiques pré-TURPE 7 (data fixtures HELIOS/MERIDIAN + clients ayant
+# encore des factures 2024-2025 à analyser) :
+#   - "HPE" (Heures Pleines Été), "HCE" (Heures Creuses Été)
+#   - "PM" (Pointe Mobile, TURPE 5/6 obsolète)
+#   - "POINTE" (terme générique pré-TURPE 7)
+#
+# Ordre cardinal : codes longs d'abord (anti-overlap label parsing word-boundary).
+_PERIOD_CODES_KNOWN_TURPE_7 = ["HPH", "HCH", "HPB", "HCB", "P", "HP", "HC", "BASE"]
+_PERIOD_CODES_LEGACY_TURPE_6 = ["HPE", "HCE", "PM", "POINTE"]
 _PERIOD_CODES_KNOWN = [
-    "HPH",
-    "HCH",
-    "HPB",
-    "HCB",
-    "HPE",
-    "HCE",
-    "POINTE",
-    "BASE",
-    "PM",
-    "HP",
-    "HC",
+    *_PERIOD_CODES_KNOWN_TURPE_7,
+    *_PERIOD_CODES_LEGACY_TURPE_6,
 ]
 
 # Sprint C-7 Phase 7.7 Lot A — D-Sprint-C7-BillAnomaly-PII-Vnu-Labels-Sanitization-001 :
