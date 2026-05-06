@@ -81,6 +81,47 @@ Tout calcul métier DOIT distinguer explicitement :
 
 **Cas légitimes** (allowlist explicite SG) : `count or 0` pour stat agrégats UI, `description or ""` pour chaînes optionnelles, etc.
 
+#### Pilier 6 — Audit deep multi-agents non-négociable Phase D+ (NOUVEAU Sprint C-8)
+
+**Acquis Sprint C-7 audit deep multi-agents (commit `abdf449f`)** : 6 agents SDK parallèles
+ont détecté **24 findings nouveaux invisibles aux 11 audits cumulés Phase 5.5+5.7+Phase 7** dont
+**6 P0 critiques bloquants pré-pilote** (4 SEC IDOR + 2 REG terminologie/codes).
+
+**Pattern doctrinal "Audit logging ≠ Authorization enforcement"** — 6e occurrence émergente du
+pattern "Déclaration sans enforcement runtime" :
+
+> Phase 7.5 décorateur `audit_external_api_call` (ADR-018) loggue les appels externes mais
+> ne valide PAS l'authz cross-tenant. Les 5 endpoints DataConnect + 2 endpoints GRDF ont
+> donc été audit-trackés mais IDOR-vulnérables. La présence d'un audit trail crée une
+> illusion de sécurité.
+
+→ **Cardinal** : audit logging et authz enforcement sont **2 préoccupations distinctes**.
+Toujours wirer `resolve_org_id` + JOIN chain anti-IDOR, **indépendamment** du décorateur audit.
+
+**Mandat doctrinal Sprint D+** :
+
+- **Audit deep multi-agents avant clôture phase dense (>15 commits cumul)** : NON-NÉGOCIABLE
+- **Méthode** : 6 agents SDK parallèles (1 / axe : code-reviewer + security-auditor + qa-guardian
+  + regulatory-expert + bill-intelligence + architect-helios) avec read-only strict
+- **ROI cardinal** : ~40 min vs séquentiel ~4-5 h = gain ×7 efficacité
+- **Format livraison** : document `AUDIT_<scope>_<date>.md` avec tableau exhaustif findings
+  (P0/P1/P2) + verdict consolidé + plan correction Tier 1+2+3
+- **Trigger** : avant chaque tag `sprint-X-end` ou avant pilote/release externe
+
+**Critères déclenchement audit deep multi-agents** :
+
+| Trigger | Action |
+|---|---|
+| Sprint > 15 commits | Audit deep obligatoire |
+| Pré-pilote externe | Audit deep + PII/RGPD focus |
+| Pré-démo investisseur | Audit deep + sécurité cross-tenant + cohérence réglementaire |
+| ADR cardinal nouveau | Audit deep ciblé + cross-pillar coherence |
+| Migration Alembic destructive | Audit deep + data integrity focus |
+
+**Anti-pattern à proscrire** : "1 commit = 1 audit unique" (audit séquentiel léger). Sans audit
+deep multi-agents, les angles morts cross-fichiers/cross-modules restent invisibles (cf. les
+5 sprints C-3/C-4/C-5/C-6/C-7 audits cumulatifs ayant manqué les 6 P0 audit deep).
+
 #### Pilier 5 — Pre-commit hooks systémiques
 
 3 hooks cardinaux Sprint C-7 (greenfield `.pre-commit-config.yaml`) :
