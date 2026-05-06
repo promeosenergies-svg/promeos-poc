@@ -15,6 +15,7 @@ import httpx
 from sqlalchemy.orm import Session
 
 from models.sirene import SireneUniteLegale, SireneEtablissement
+from services.audit_log_service import audit_external_api_call
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,11 @@ _API_BASE = "https://recherche-entreprises.api.gouv.fr/search"
 _TIMEOUT = 10.0
 
 
+@audit_external_api_call(
+    provider="sirene",
+    endpoint="/search",
+    method="GET",
+)
 def hydrate_siren_from_api(db: Session, siren: str) -> dict:
     """Charge une entreprise + tous ses etablissements depuis l'API gouv.
 

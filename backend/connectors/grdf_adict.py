@@ -14,6 +14,8 @@ from typing import List
 import httpx
 from sqlalchemy.orm import Session
 
+from services.audit_log_service import audit_external_api_call
+
 from .base import Connector
 from .grdf_errors import GrdfAdictError, PceNotFoundError, PceNotAuthorizedError, GrdfApiError
 
@@ -114,8 +116,16 @@ class GrdfAdictConnector(Connector):
 
     # --- API calls ---
 
+    @audit_external_api_call(
+        provider="grdf_adict",
+        endpoint=lambda *args, **kwargs: kwargs.get("path") or (args[1] if len(args) > 1 else "?"),
+        method="GET",
+    )
     def _api_get(self, path: str, token: str, params: dict | None = None) -> dict:
-        """GET sur l'API GRDF avec gestion des erreurs."""
+        """GET sur l'API GRDF avec gestion des erreurs.
+
+        Sprint C-7 Phase 7.5 : audit trail ADR-018 (CNIL preuve d'extraction).
+        """
         _rate_limit()
         headers = {
             "Authorization": f"Bearer {token}",

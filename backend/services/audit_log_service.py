@@ -24,10 +24,13 @@ Allowlist legacy 7 callsites (cf. D-Phase1-Audit-Log-Legacy-Callsites-001) :
 
 from __future__ import annotations
 
+import functools
+import hashlib
 import json
 import logging
+import time
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Callable, Optional, Union
 
 from sqlalchemy.orm import Session
 
@@ -277,6 +280,268 @@ def log_consent_changes_batch(
             )
         )
     return events
+
+
+# ─── Sprint C-7 Phase 7.5 — External Connectors audit trail (ADR-018, CNIL preuve d'extraction) ───
+
+# Sentinelles de redaction — case-insensitive
+_SENSITIVE_KEY_PATTERNS = (
+    "authorization",
+    "bearer",
+    "client_secret",
+    "secret",
+    "api_key",
+    "apikey",
+    "token",
+    "access_token",
+    "refresh_token",
+    "code_verifier",
+    "code_challenge",
+    "password",
+    "passwd",
+)
+
+# Champs identifiants à hasher (PRM/PCE/SIREN/SIRET) plutôt que redact
+_HASH_KEY_PATTERNS = (
+    "prm",
+    "pce",
+    "siren",
+    "siret",
+    "usage_point_id",
+    "code",  # code OAuth2 d'autorisation
+)
+
+_REDACTED = "<redacted>"
+
+
+def _is_sensitive_key(key: str) -> bool:
+    """True si la clé contient un pattern sensible (case-insensitive)."""
+    lk = (key or "").lower()
+    return any(p in lk for p in _SENSITIVE_KEY_PATTERNS)
+
+
+def _is_hash_key(key: str) -> bool:
+    """True si la clé contient un identifiant à hasher (PRM/PCE/SIREN/...)."""
+    lk = (key or "").lower()
+    return any(p == lk or p in lk for p in _HASH_KEY_PATTERNS)
+
+
+def _short_hash(value: Any) -> str:
+    """Hash sha256[:16] d'une valeur arbitraire — preuve de présence sans exposition."""
+    if value is None:
+        return ""
+    try:
+        s = value if isinstance(value, str) else json.dumps(value, default=str, sort_keys=True, ensure_ascii=False)
+    except (TypeError, ValueError):
+        s = str(value)
+    return hashlib.sha256(s.encode("utf-8", errors="replace")).hexdigest()[:16]
+
+
+def _sanitize_kwargs(kwargs: dict) -> dict:
+    """Sérialise kwargs en dict sanitisé (secrets redacted, identifiants hashés).
+
+    - Authorization/Bearer/client_secret/token → "<redacted>"
+    - PRM/PCE/SIREN/SIRET/usage_point_id/code → sha256[:16]
+    - Session SQLAlchemy → omis (non sérialisable, pas pertinent audit)
+    - dict imbriqué → sanitisé récursivement
+    """
+    out: dict = {}
+    for k, v in kwargs.items():
+        if v is None:
+            out[k] = None
+            continue
+        # Skip Session SQLAlchemy
+        if isinstance(v, Session):
+            continue
+        if _is_sensitive_key(k):
+            out[k] = _REDACTED
+        elif _is_hash_key(k):
+            out[k] = f"sha256:{_short_hash(v)}"
+        elif isinstance(v, dict):
+            out[k] = _sanitize_kwargs(v)
+        elif isinstance(v, (list, tuple)):
+            out[k] = [_sanitize_kwargs({"_": item})["_"] if isinstance(item, dict) else _safe_repr(item) for item in v]
+        else:
+            out[k] = _safe_repr(v)
+    return out
+
+
+def _safe_repr(v: Any) -> Any:
+    """Représentation safe d'une valeur scalaire pour audit detail_json."""
+    if isinstance(v, (str, int, float, bool)):
+        # Tronque strings longues (anti-leak réponses verbeuses)
+        if isinstance(v, str) and len(v) > 200:
+            return v[:200] + "...[truncated]"
+        return v
+    return str(v)[:200]
+
+
+def _record_external_api_event(
+    *,
+    provider: str,
+    endpoint: str,
+    method: str,
+    success: bool,
+    duration_ms: int,
+    status_code: Optional[int] = None,
+    error_class: Optional[str] = None,
+    error_message: Optional[str] = None,
+    request_hash: Optional[str] = None,
+    response_hash: Optional[str] = None,
+    args_summary: Optional[dict] = None,
+    org_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    correlation_id: Optional[str] = None,
+) -> Optional[AuditLog]:
+    """Persiste un AuditLog `connector.api_call` dans une session dédiée.
+
+    Découple la transaction d'audit de celle du caller (cohérent ADR-018) :
+    une exception lors du logging ne doit pas casser le caller.
+    """
+    payload = {
+        "type": "connector.api_call",
+        "provider": provider,
+        "endpoint": endpoint,
+        "method": method.upper(),
+        "success": success,
+        "duration_ms": duration_ms,
+        "status_code": status_code,
+        "error_class": error_class,
+        "error_message": error_message,
+        "request_hash": request_hash,
+        "response_hash": response_hash,
+        "args_summary": args_summary or {},
+        "rgpd_article": "Article 6 RGPD - traçabilité extraction données externes",
+    }
+
+    # Session dédiée (découplée transaction caller)
+    from database import SessionLocal
+
+    audit_db = SessionLocal()
+    try:
+        log = AuditLog(
+            user_id=user_id,
+            action="connector.api_call",
+            resource_type=provider,
+            resource_id=endpoint,
+            detail_json=json.dumps(payload, default=str, ensure_ascii=False),
+            correlation_id=correlation_id,
+            org_id=org_id,
+        )
+        audit_db.add(log)
+        audit_db.commit()
+        audit_db.refresh(log)
+        return log
+    except Exception as exc:  # noqa: BLE001 — résilience audit
+        _logger.warning(
+            "external_api_audit_log_failed provider=%s endpoint=%s err=%s",
+            provider,
+            endpoint,
+            type(exc).__name__,
+        )
+        audit_db.rollback()
+        return None
+    finally:
+        audit_db.close()
+
+
+def audit_external_api_call(
+    provider: str,
+    endpoint: Union[str, Callable[..., str]],
+    method: str = "GET",
+):
+    """Décorateur ADR-018 — audit trail external API calls (CNIL preuve d'extraction).
+
+    Wrap une méthode connecteur (sync, instance ou module) pour produire un AuditLog
+    `connector.api_call` à chaque invocation. Sanitisation automatique :
+    - Authorization/Bearer/client_secret/token/code_verifier → `<redacted>`
+    - PRM/PCE/SIREN/SIRET/usage_point_id/code → `sha256:<short_hash>`
+
+    Args:
+        provider: identifiant connecteur, ex "enedis_dataconnect", "grdf_adict", "sirene"
+        endpoint: chemin endpoint statique OU callable(*args, **kwargs) → str
+        method: HTTP verb par défaut "GET" (utilisé en payload, pas runtime)
+
+    Behavior:
+        - Mesure duration_ms (perf_counter)
+        - Sur succès : log success=True, response_hash si dict
+        - Sur exception : log success=False, error_class, error_message[:200], puis raise
+        - L'audit utilise une session DÉDIÉE — n'affecte pas la transaction caller
+
+    CNIL article 6 : preuve d'extraction = qui (user_id si dispo) + quand (created_at) +
+    où (provider + endpoint) + quoi (request_hash + response_hash) + résultat (success/error).
+
+    Note CNIL Phase 7.5 : ce wiring clôt le dernier P0 résiduel Sprint C-7
+    (D-Sprint-C7-External-Connectors-Audit-Trail-001) — pré-pilote-ready.
+    """
+
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # Résolution endpoint (statique ou dynamique)
+            try:
+                ep = endpoint(*args, **kwargs) if callable(endpoint) else endpoint
+            except Exception:  # noqa: BLE001
+                ep = str(endpoint)
+
+            # Sanitize args/kwargs (skip self pour méthodes d'instance)
+            sanitized_kwargs = _sanitize_kwargs(kwargs)
+            sanitized_positional = [
+                _safe_repr(a) if not isinstance(a, (Session,)) else None
+                for a in args[1:]  # skip self / first arg
+            ]
+            args_summary = {
+                "kwargs": sanitized_kwargs,
+                "positional_count": len(args[1:]),
+            }
+            request_hash = _short_hash({"args": sanitized_positional, "kwargs": sanitized_kwargs})
+
+            # Extraction org_id/user_id/correlation_id si présents en kwargs
+            org_id = kwargs.get("org_id") if isinstance(kwargs.get("org_id"), int) else None
+            user_id = kwargs.get("user_id") if isinstance(kwargs.get("user_id"), int) else None
+            correlation_id = kwargs.get("correlation_id") if isinstance(kwargs.get("correlation_id"), str) else None
+
+            t0 = time.perf_counter()
+            try:
+                result = func(*args, **kwargs)
+                duration_ms = int((time.perf_counter() - t0) * 1000)
+                response_hash = _short_hash(result) if result is not None else None
+                _record_external_api_event(
+                    provider=provider,
+                    endpoint=ep,
+                    method=method,
+                    success=True,
+                    duration_ms=duration_ms,
+                    status_code=None,
+                    request_hash=request_hash,
+                    response_hash=response_hash,
+                    args_summary=args_summary,
+                    org_id=org_id,
+                    user_id=user_id,
+                    correlation_id=correlation_id,
+                )
+                return result
+            except Exception as exc:
+                duration_ms = int((time.perf_counter() - t0) * 1000)
+                _record_external_api_event(
+                    provider=provider,
+                    endpoint=ep,
+                    method=method,
+                    success=False,
+                    duration_ms=duration_ms,
+                    error_class=type(exc).__name__,
+                    error_message=str(exc)[:200],
+                    request_hash=request_hash,
+                    args_summary=args_summary,
+                    org_id=org_id,
+                    user_id=user_id,
+                    correlation_id=correlation_id,
+                )
+                raise
+
+        return wrapper
+
+    return decorator
 
 
 def query_audit_trail(

@@ -18,6 +18,8 @@ from typing import List, Optional
 import httpx
 from sqlalchemy.orm import Session
 
+from services.audit_log_service import audit_external_api_call
+
 from .base import Connector
 from .enedis_dataconnect_errors import (
     EnedisDataConnectError,
@@ -113,10 +115,17 @@ class EnedisDataConnectConnector(Connector):
             "code_verifier": code_verifier,
         }
 
+    @audit_external_api_call(
+        provider="enedis_dataconnect",
+        endpoint="/oauth2/v3/token",
+        method="POST",
+    )
     def exchange_code(self, code: str, code_verifier: str, redirect_uri: str, db: Session) -> dict:
         """Échange le code d'autorisation contre un token. Stocke en DB.
 
         Retourne: {access_token, prm, expires_at}
+
+        Sprint C-7 Phase 7.5 : audit trail ADR-018 (CNIL preuve d'extraction OAuth2).
         """
         _rate_limit()
         data = {
@@ -266,8 +275,16 @@ class EnedisDataConnectConnector(Connector):
 
     # --- API calls ---
 
+    @audit_external_api_call(
+        provider="enedis_dataconnect",
+        endpoint=lambda *args, **kwargs: kwargs.get("path") or (args[1] if len(args) > 1 else "?"),
+        method="GET",
+    )
     def _api_get(self, path: str, params: dict, token: str, retries: int = 2) -> dict:
-        """GET sur l'API Enedis avec gestion des erreurs et retry 429."""
+        """GET sur l'API Enedis avec gestion des erreurs et retry 429.
+
+        Sprint C-7 Phase 7.5 : audit trail ADR-018 (CNIL preuve d'extraction).
+        """
         _rate_limit()
         headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
 

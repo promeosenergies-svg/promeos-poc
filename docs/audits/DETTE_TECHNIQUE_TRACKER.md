@@ -795,6 +795,7 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-7 Phase 7.2 — DEMO_MODE bypass scope_utils fix ADR-017 Option B — clôture P0 SEC-2026-012, surface attaque ~25 endpoints éliminée) | 41 | 0 | 18 | 23 |
 | 2026-05-06 (Sprint C-7 Phase 7.3 — PATCH endpoints consentement Org/DP ADR-019 — clôture P0 RGPD D-Sprint-C7-PATCH-Consentement-Endpoint-001) | 40 | 0 | 18 | 22 |
 | 2026-05-06 (Sprint C-7 Phase 7.4 — log_consent_change helper RGPD CNIL — clôture P0 D-Sprint-C7-AuditLog-Wiring-RGPD-Consent-Change-001 + CLÔTURE PATTERN DOCTRINAL 5/5 "Déclaration sans enforcement runtime") | 39 | 0 | 18 | 21 |
+| 2026-05-06 (Sprint C-7 Phase 7.5 — `audit_external_api_call` décorateur ADR-018 + wiring 4 connecteurs cardinaux DataConnect/GRDF/Sirene — clôture P0 D-Sprint-C7-External-Connectors-Audit-Trail-001 → **0 P0 résiduel Sprint C-7 → PRÉ-PILOTE-READY tactique**) | 38 | 0 | 18 | 20 |
 
 ---
 
@@ -1403,6 +1404,34 @@ Hypothèses :
 > - 29/29 tests anti-régression Phase 5.5/5.6/5.8 endpoint Bill Intelligence + RGPD ext non régressés
 >
 > **Effort réel** : ~1.5 h (vs 3-4 h estimé Sprint C-7 = gain -50%).
+
+## D-Sprint-C7-External-Connectors-Audit-Trail-001 — Connecteurs externes sans AuditLog (CNIL preuve d'extraction)
+
+> ✅ **CLÔTURÉE Sprint C-7 Phase 7.5** (2026-05-06, ADR-018).
+>
+> **Livrables** :
+>
+> - `backend/services/audit_log_service.py` : décorateur `audit_external_api_call(provider, endpoint, method)` ajouté avec `_record_external_api_event` (session DB dédiée découplée caller, résilience exception logging) + `_sanitize_kwargs` (redact Authorization/Bearer/client_secret/token/code_verifier ; hash sha256[:16] PRM/PCE/SIREN/SIRET/usage_point_id/code)
+> - `backend/connectors/enedis_dataconnect.py` : 2 wirings (`exchange_code` POST /oauth2/v3/token + `_api_get` lambda dynamic endpoint) — couvre fetch_daily/load_curve/check_consent transitivement
+> - `backend/connectors/grdf_adict.py` : 1 wiring (`_api_get` lambda dynamic endpoint) — couvre fetch_informative/published transitivement
+> - `backend/services/sirene_hydrate.py` : 1 wiring (`hydrate_siren_from_api` GET /search)
+> - 13 tests cardinaux : `tests/test_audit_external_api_call_phase75.py`
+>   * Décorateur succès → AuditLog `connector.api_call` créé
+>   * Décorateur exception → AuditLog success=False + reraise + error_class
+>   * Sanitisation Authorization/Bearer/client_secret/token redacted
+>   * Hashing PRM/PCE/SIREN sha256:[16chars] (raw absent du detail_json)
+>   * Session SQLAlchemy non sérialisée (pas dans args_summary)
+>   * `functools.wraps` préserve `__name__`/`__doc__`
+>   * Endpoint dynamique callable(*args, **kwargs)
+>   * request_hash deterministic same-input
+>   * Découplage transactionnel (audit DB down → caller continue)
+> - 4 SG anti-régression : `tests/source_guards/test_external_connector_audit_trail_source_guards.py` (décorateur présent + 4 wirings + sentinelles redaction + action="connector.api_call" dot-snake)
+>
+> **CNIL article 6** : preuve d'extraction = qui (user_id si dispo) + quand (created_at) + où (provider+endpoint) + quoi (request_hash + response_hash) + résultat (success/error).
+>
+> **Effort réel** : ~2 h (vs 2-3 h estimé Sprint C-7 = dans la fourchette).
+>
+> **CARDINAL** : clôture **dernier P0 résiduel Sprint C-7** → 0 P0 résiduel → **PRÉ-PILOTE-READY tactique**.
 
 **Détecté** : Sprint C-5 Phase 5.7 audit transversal AXE 5 (2026-05-06)
 
