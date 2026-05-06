@@ -797,6 +797,10 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-06 (Sprint C-7 Phase 7.4 — log_consent_change helper RGPD CNIL — clôture P0 D-Sprint-C7-AuditLog-Wiring-RGPD-Consent-Change-001 + CLÔTURE PATTERN DOCTRINAL 5/5 "Déclaration sans enforcement runtime") | 39 | 0 | 18 | 21 |
 | 2026-05-06 (Sprint C-7 Phase 7.5 — `audit_external_api_call` décorateur ADR-018 + wiring 4 connecteurs cardinaux DataConnect/GRDF/Sirene — clôture P0 D-Sprint-C7-External-Connectors-Audit-Trail-001 → **0 P0 résiduel Sprint C-7 → PRÉ-PILOTE-READY tactique**) | 38 | 0 | 18 | 20 |
 | 2026-05-06 (Sprint C-7 Phase 7.6 — ADR-016 Math+Runtime+Cross-Module Enforcement Doctrine implémenté + 3 pre-commit hooks systémiques (anti-DROP + anti-PRAGMA + anti-arithmétique) + CI workflow — POLISH DOCTRINAL CARDINAL Phase D+ filet de sécurité automatisé) | 38 | 0 | 18 | 20 |
+| 2026-05-06 (Sprint C-7 Phase 7.7 Lot A — Bill Anomaly enrichissements 4 P1 + 3 P2 (HPE/HCE/PM HTA + PII sanitization SIREN/PRM + word-boundary regex + decoupling commit + UNIQUE Phase 5.8 G3 anti-régression + YAML legal_reference enrichi) — commit 6408a25b) | 31 | 0 | 14 | 17 |
+| 2026-05-06 (Sprint C-7 Phase 7.7 Lot B — REGOPS Weights AUDIT_APPLICABLE SG + Accise SG coverage + invariants 100% (3 P1 + 1 P2) — commit 2713ab4b) | 27 | 0 | 11 | 16 |
+| 2026-05-06 (Sprint C-7 Phase 7.7 Lot C — EnergyInvoice +1 col tva_rate Numeric(5,4) + 12e migration Alembic propre + VNU terminologie cardinale 6 callsites (1 P1 + 1 P2) — commit c5ace813) | 25 | 0 | 10 | 15 |
+| 2026-05-06 (Sprint C-7 Phase 7.7 Lot D — Bill Intelligence endpoint Literal validation + pagination + KPI total_economie_potentielle_eur (3 P2) → **Phase 7.7 totale : 8 P1 + 9 P2 = 17 dettes clôturées**) | 22 | 0 | 10 | 12 |
 
 ---
 
