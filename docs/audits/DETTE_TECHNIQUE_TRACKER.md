@@ -812,6 +812,84 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-07 (Sprint C-8 Phase 8.4 Lot 3 — 5 P1 CR+QA+BI : hash_key dedup + URL placeholder JORFTEXT fix + BILAN drift lendemain + BILAN comptage SG + KPI renommage `kpi_vnu_dormant_reclaim_eur`) | 44 | 0 | 14 | 30 |
 | 2026-05-07 (Phase D-0 hotfix Patrimoine — 3 P0 audit Sprint Patrimoine v1 : D6 SousCompteur self-FK + Bâtiment 5 champs RNB/DPE/rénovation + Site categorie_operat + mode_propriete — 13e migration Alembic propre) | 41 | 0 | 14 | 27 |
 | 2026-05-07 (Phase D-1 hotfix Patrimoine — 4 P1 audits cumulés : DP TURPE 7 explicite (5 champs) + Org enrichi entreprise (6 champs) + PII patterns ordre + retrait `\d{10}` + CGU sha256 helper integrity — 14e migration Alembic propre) | 37 | 0 | 10 | 27 |
+| 2026-05-07 (AUDIT COMPLET PHASE D-0+D-1 multi-agents SDK 6 parallèles — Pilier 6 ADR-016 reproduit Sprint C-7→C-8→D — 25 findings nouveaux (3 P0 + 12 P1 + 10 P2) → **PILOTE EXTERNE READY ASSERTION RÉVISÉE** (Tier 1 ~3-4h obligatoire avant démo investisseur)) | 62 | 3 | 22 | 37 |
+
+---
+
+## 📊 AUDIT COMPLET PHASE D-0 + D-1 — 25 NOUVELLES DETTES (2026-05-07)
+
+**Méthode** : 6 agents SDK parallèles (code-reviewer + security-auditor + qa-guardian + regulatory-expert + bill-intelligence + architect-helios) — Pilier 6 ADR-016 reproduit Sprint C-7 → C-8 → **D** (3e cycle stable, ROI ×7 méthodologique vs séquentiel).
+
+**Périmètre** : 4 commits Phase D (`50ef8766` audit Onboarding + `f738f1d0` audit Sprint Patrimoine v1 + `55f8afa2` Phase D-0 hotfix D6+Bâtiment+Site + `2726c77b` Phase D-1 hotfix DP TURPE 7+Org+PII+CGU sha256).
+
+**Référence** : [`AUDIT_PHASE_D_COMPLET_2026_05_07.md`](AUDIT_PHASE_D_COMPLET_2026_05_07.md)
+
+### 🔴 3 P0 BLOQUANTS PILOTE EXTERNE (Tier 1 ~3-4h)
+
+- **D-Audit-D-TURPE7-Date-Application-001** P0 REG — `models/patrimoine.py:294-305` commentaire cite "JO 14/05/2025" comme date application TURPE 7, MAIS date application réelle = **01/08/2025** (CRE délibération 2025-78 — JO ≠ application). Fix commentaire 5 min. confidence: high.
+- **D-Audit-D-CodeFta-Nomenclature-Inventee-002** P0 REG+BI — `code_fta` exemple `"BT_HCH_PRO"` (tests Phase D-1) **non canonique**. Nomenclature officielle Enedis TURPE 7 = `BTINFCU4` / `BTINFMU4` / `BTSUP` / `HTACU5` / `HTALU5` (5 segments × 4 options). Risque KeyError silencieux R13 mismatch + faux positif/négatif systématique sites C4. Fix : Enum exhaustif ~12 combinaisons OU regex `r'^(C[1-5]|BT|HTA|HTB)_'` + cross-FK avec `TariffSegmentEnum`/`TariffOptionEnum`. ~30 min.
+- **D-Audit-D-Compteur-Meter-Dualite-003** P0 ARCH — D6 SousCompteur self-FK ajouté Phase D-0 sur `Compteur` MAIS `consumption_unified_service.py` SoT consommation utilise **exclusivement `Meter`** (cf. `timeseries_service.py:60-75` `get_site_meter_ids` dédoublonne via `parent_meter_id`). Sub-meters CVC/IT déclarés sur `Compteur.sub_meter_of_id` resteront **orphelins runtime** → différenciateur "pilotage CVC/IT" annoncé sans chaîne d'exploitation. Fix : ADR-D-01 trancher dualité (deprecate Compteur OU wirer consumption_unified_service les deux). ~2-3h.
+
+### 🟠 12 P1 AVANT PILOTE EXTERNE (~8-10h)
+
+Sécurité (3, préexistants pré-D — surface étendue par nouveaux champs) :
+
+- **D-Audit-D-IDOR-Patrimoine-Crud-004** P1 SEC (Critical pré-D) — 6 endpoints `patrimoine_crud.py:101-616` sans `resolve_org_id`. ~1h fix.
+- **D-Audit-D-IDOR-GET-Compteurs-005** P1 SEC (High pré-D) — `GET /api/compteurs/{id}` sans auth ni org-scoping. ~30 min fix.
+- **D-Audit-D-Path-Traversal-CGU-Sha256-006** P1 SEC — `compute_cgu_pdf_sha256(pdf_path)` Phase D-1 sans restriction → oracle hash fichiers système. Allowlist `docs/cgu/*` requise. ~15 min fix.
+
+String vs Enum systémique (5 — régression doctrinale post-Sprint C-7 ADR-016) :
+
+- **D-Audit-D-Version-Turpe-String-007** P1 CR — `version_turpe` String(10) → Enum strict (couvre P0-001 cardinal billing).
+- **D-Audit-D-Mode-Propriete-String-008** P1 CR — `mode_propriete` String(20) → réutiliser `EfaRole` existant (PROPRIETAIRE/LOCATAIRE/MANDATAIRE).
+- **D-Audit-D-Secteur-String-009** P1 CR — `secteur` Org String(50) → réutiliser `Typologie` existant (TERTIAIRE_PRIVE/INDUSTRIE/COMMERCE_RETAIL).
+- **D-Audit-D-Sub-Meter-Usage-String-010** P1 CR — `sub_meter_usage` String(50) → Enum (CVC/IT/ECLAIRAGE/AUTRES) ou réutiliser `UsageFamily`.
+- **D-Audit-D-Dpe-Class-String-011** P1 CR — `dpe_class` String(1) → réutiliser `DpeClasseEnergie` existant (A-G + VIERGE).
+
+Architecture / cross-pillar (3) :
+
+- **D-Audit-D-Anti-Cycle-D6-012** P1 ARCH+QA — `Compteur.sub_meter_of_id` self-FK sans garde anti-cycle A→B→A. Aucun validator. Fix : SQLAlchemy event listener + test cycle 3 niveaux. ~1h.
+- **D-Audit-D-NAF-Org-Site-Duplication-013** P1 ARCH — `code_naf_principal` Org + `Site.naf_code` sans arbitrage doctrinal. Étendre `resolve_naf_code()` chain fallback Site→Org. ~30 min.
+- **D-Audit-D-PII-Sanitizer-2-SoT-014** P1 ARCH — `_SENSITIVE_KEY_PATTERNS` (`audit_log_service`) vs `_PII_PATTERNS` (`anomaly_detector`) 2 SoT distinctes. Extraire `services/security/pii_sanitizer.py` SoT unique. ~1.5h.
+
+Bill Intelligence (2) :
+
+- **D-Audit-D-R13-Reseau-Mismatch-Code-Fta-015** P1 BI — R13 fallback C5 BT ne consomme pas `code_fta` Phase D-1. Faux positif/négatif systématique sites C4 (~35% écart variable). Fix : intégrer `code_fta` chain résolution. ~1h.
+- **D-Audit-D-PCE-Legacy-10-Chiffres-016** P1 BI — labels VNU 2024-2025 exposent PCE 10 chiffres post retrait `\b\d{10}\b` runtime. Pattern contextualisé `PCE\s*[:\-]?\s*\d{10}` requis. ~30 min.
+
+CGU + Org (2) :
+
+- **D-Audit-D-CGU-Helper-Non-Cable-017** P1 QA — `compute_cgu_pdf_sha256` livré Phase D-1 mais NON câblé endpoint admin → `contenu_sha256` reste `null` indéfiniment pré-pilote. Récidive anti-pattern "Helper orphelin" Phase 8.1. Fix : endpoint admin POST `/admin/cgu/{version}/compute-sha256`. ~45 min.
+- **D-Audit-D-Tva-Intra-Format-018** P1 QA+REG — `tva_intra` String sans validation regex `^FR\d{11}$`. Fix : Pydantic field validator. ~15 min.
+
+### 🟡 10 P2 SPRINT E BACKLOG (~5-7h)
+
+- **D-Audit-D-Categorie-Operat-Doublon-019** P2 CR — `categorie_operat_principale` doublon `usage_principal` Enum existant.
+- **D-Audit-D-Imports-Lazy-CGU-Sha256-020** P2 CR — `compute_cgu_pdf_sha256` imports lazy `hashlib` + `pathlib` → top-level.
+- **D-Audit-D-Chiffre-Affaires-Cleartext-021** P2 SEC — `chiffre_affaires_eur` cleartext + audit log mutations financières manquant.
+- **D-Audit-D-Code-Fta-XSS-022** P2 SEC — `code_fta` String non-Enum permet `<script>` injection si reflété frontend sans escape (XSS storage low risk).
+- **D-Audit-D-Db-None-Bypass-023** P2 SEC — backward-compat `db=None` bypass `scope_utils` legacy callers (déjà contraint Phase 7.2 mais résidu signal).
+- **D-Audit-D-RNB-V9-Mention-024** P2 REG — RNB V9.0 mentionné Phase D-0 non vérifiable (retirer ou citer source officielle IGN/CSTB).
+- **D-Audit-D-NAF-Rev3-Migration-025** P2 REG — `code_naf` NAF Rev. 2 → Rev. 3 transition janvier 2027 (migration roadmap Phase E+).
+- **D-Audit-D-Audit-SME-Logique-026** P2 REG — Audit SMÉ Décret 2024-1304 logique service-level absent (champs Org `effectif_total`/`chiffre_affaires_eur` présents seulement, pas de scoring assujettissement).
+- **D-Audit-D-Mode-Traitement-Allowlist-027** P2 REG — `mode_traitement` allowlist `{smart, traditionnel, telereleve, manuel}` non normative CRE — vocabulaire interne PROMEOS à documenter.
+- **D-Audit-D-Bill-Anomaly-R21-R23-028** P2 BI — 3 candidats détecteurs Bill Anomaly identifiés (R21 FTA mismatch + R22 Audit SMÉ assujettissement + R23 sub-meter consistency portfolio).
+
+### Patterns émergents Phase D candidats Pilier ADR-016
+
+- **Pilier 8 candidat** — Hiérarchies internes via self-FK (`sub_meter_of_id` + backref + ondelete=SET NULL). Transposable EntiteJuridique parent/filiale, Action workflow parent/sub.
+- **Pilier 9 candidat** — Preuve d'origine forte SHA-256 (`compute_<doc>_sha256` + `verify_<doc>_integrity`). Réutilisable CGV/charte RGPD/OPERAT export PDF/facture PDF.
+- **Anti-pattern détecté** — String prematuré là où Enum existant (5 occurrences Phase D-0/D-1). Codifier dans ADR-016 : "consulter `enums.py` AVANT créer `String` pour domaine fini".
+
+### Verdict révisé pilote
+
+| Pilote | Pré audit Phase D | Post audit Phase D |
+| --- | --- | --- |
+| Interne | ✅ READY | ✅ READY |
+| Investisseur démo | ✅ READY | 🟠 **CORRECTIONS Tier 1** (3 P0 ~3-4h) |
+| Externe complet | 🟠 P1 résiduels | 🔴 **BLOCK Tier 1+2** (3 P0 + 8 P1 critiques ~10-15h) |
+
+**Confidence verdict** : `high` (consensus 6 agents indépendants sur 3 P0 cardinaux REG + ARCH).
 
 ---
 
