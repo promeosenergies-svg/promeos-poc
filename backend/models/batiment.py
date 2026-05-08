@@ -62,6 +62,20 @@ class Batiment(Base, TimestampMixin, SoftDeleteMixin):
         comment="Catégorie OPERAT bâtiment (héritée Site avec override possible) — matrice v1 §4.5#17 / contrainte A9",
     )
 
+    # Phase D-4 Tier 2 — P1-MATV1-023 + 024 : DPE complet (énergie + climat) + usage bâtiment
+    # Source : matrice v1 §4.5#9 + #14 — Décret 2020-1610 modifié 2024 (DPE double étiquette).
+    # Audit : AUDIT_ECARTS_MATRICE_V1_2026_05_07.md §4 P1-MATV1-023/024.
+    usage_batiment = Column(
+        String(50),
+        nullable=True,
+        comment="Usage principal bâtiment (UsageBatimentEnum) — matrice v1 §4.5#9 / cardinal BACS classification",
+    )
+    dpe_emissions_kgco2_m2 = Column(
+        Float,
+        nullable=True,
+        comment="Émissions DPE bâtiment (kgCO2e/m²/an) — double étiquette DPE Décret 2020-1610 — matrice v1 §4.5#14",
+    )
+
     # ─── Phase D-3 Tier 2 DOC-1 — String→Enum validator (P1-AUDIT-D-011) ───
 
     @validates("dpe_class")
@@ -89,6 +103,9 @@ class Batiment(Base, TimestampMixin, SoftDeleteMixin):
         `OperatUsagePrincipalEnum` (9 catégories OPERAT macro).
 
         Pattern Pilier 9 ADR-016 — contrainte A9 cardinale (Cabs faux Site MIXTE).
+
+        Phase D-4 Tier 2 P1-E : cross-FK contrat usage_batiment ↔ categorie_operat_batiment.
+        Si usage_batiment ∈ {PARKING, TECHNIQUE} (hors OPERAT), categorie_operat_batiment NULL.
         """
         if value is None or value == "":
             return value
@@ -99,6 +116,40 @@ class Batiment(Base, TimestampMixin, SoftDeleteMixin):
             raise ValueError(
                 f"Phase D-4 Tier 1 P0-2 violation : categorie_operat_batiment={value!r} non canonique "
                 f"(attendu {sorted(valid)} — OperatUsagePrincipalEnum 9 catégories macro)"
+            )
+        # P1-E cross-FK : si usage_batiment hors OPERAT, refuser categorie non-NULL
+        if self.usage_batiment in {"PARKING", "TECHNIQUE"}:
+            raise ValueError(
+                f"Phase D-4 Tier 2 P1-E violation : categorie_operat_batiment={value!r} interdit "
+                f"si usage_batiment={self.usage_batiment!r} (hors périmètre OPERAT)"
+            )
+        return value
+
+    @validates("usage_batiment")
+    def _validate_usage_batiment_strict(self, key: str, value: str | None):
+        """P1-MATV1-023 Phase D-4 Tier 2 : `usage_batiment` strict `UsageBatimentEnum`.
+
+        ⚠️ Contrat cardinal P1-E audit code-reviewer (consigne user 2026-05-08) :
+        `UsageBatimentEnum` (11 valeurs) est plus large qu'`OperatUsagePrincipalEnum`
+        (9 valeurs OPERAT). Si `usage_batiment` ∈ {PARKING, TECHNIQUE} (hors périmètre OPERAT),
+        `categorie_operat_batiment` DOIT être NULL (validator cross-FK ci-dessous).
+        """
+        if value is None or value == "":
+            return value
+        from .enums import UsageBatimentEnum
+
+        valid = {v.value for v in UsageBatimentEnum}
+        if value not in valid:
+            raise ValueError(
+                f"Phase D-4 Tier 2 violation : usage_batiment={value!r} non canonique "
+                f"(attendu {sorted(valid)} — UsageBatimentEnum)"
+            )
+        # P1-E cross-FK : PARKING/TECHNIQUE hors périmètre OPERAT → categorie_operat_batiment NULL
+        if value in {"PARKING", "TECHNIQUE"} and self.categorie_operat_batiment is not None:
+            raise ValueError(
+                f"Phase D-4 Tier 2 P1-E violation : usage_batiment={value!r} (hors OPERAT) "
+                f"incohérent avec categorie_operat_batiment={self.categorie_operat_batiment!r} "
+                f"(attendu NULL pour PARKING/TECHNIQUE)"
             )
         return value
 

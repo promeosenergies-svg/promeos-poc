@@ -22,7 +22,7 @@ from sqlalchemy import (
     UniqueConstraint,
     CheckConstraint,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 
 from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import ContractIndexation, ContractStatus, TariffOptionEnum, BillingEnergyType
@@ -357,6 +357,16 @@ class ContractPricing(Base, TimestampMixin):
     effective_from = Column(Date, nullable=True, comment="Date debut validite")
     effective_to = Column(Date, nullable=True, comment="Date fin validite")
 
+    # Phase D-4 Tier 2 — P1-MATV1-038 : indice_reference Enum strict (matrice v1 §4.8.C#5)
+    # Indices marché énergie standards FR/UE — Pilier 9 ADR-016 String→Enum.
+    indice_reference = Column(
+        String(
+            30
+        ),  # P1-A audit code-reviewer : String(30) marge sécurité valeurs futures (FORWARD_TRIM=12, EEX_BASE_QUARTER=16+ possibles)
+        nullable=True,
+        comment="Indice référence formule indexation (IndiceReferenceEnum EEX_BASE/PEG/TTF/SPOT_FR/...) — matrice v1 §4.8.C#5",
+    )
+
     # Relations
     contract = relationship(
         "EnergyContract",
@@ -368,6 +378,21 @@ class ContractPricing(Base, TimestampMixin):
         back_populates="pricing_overrides",
         foreign_keys=[annexe_id],
     )
+
+    @validates("indice_reference")
+    def _validate_indice_reference_strict(self, key: str, value: str | None):
+        """P1-MATV1-038 Phase D-4 Tier 2 : `indice_reference` strict `IndiceReferenceEnum`."""
+        if value is None or value == "":
+            return value
+        from .enums import IndiceReferenceEnum
+
+        valid = {v.value for v in IndiceReferenceEnum}
+        if value not in valid:
+            raise ValueError(
+                f"Phase D-4 Tier 2 violation : indice_reference={value!r} non canonique "
+                f"(attendu {sorted(valid)} — IndiceReferenceEnum)"
+            )
+        return value
 
 
 # ---------------------------------------------------------------------------

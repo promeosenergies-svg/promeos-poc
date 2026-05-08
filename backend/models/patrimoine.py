@@ -364,6 +364,19 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
         comment="Catégorie accise CIBS gaz (NATUREL/GPL/GNL) — matrice v1 §4.6.C#18 ADR-D-05",
     )
 
+    # Phase D-4 Tier 2 — 2 P1 doctrine champs DP élec + gaz
+    # Audit : AUDIT_ECARTS_MATRICE_V1_2026_05_07.md §4 P1-MATV1-028 + 033.
+    cdc_pas_temporel_minutes = Column(
+        Integer,
+        nullable=True,
+        comment="Pas temporel CDC Enedis (minutes — typiquement 30 ou 10) — matrice v1 §4.6.B#8 / cardinal CUSUM/forecasting",
+    )
+    pcs_kwh_par_nm3 = Column(
+        Float,
+        nullable=True,
+        comment="PCS gaz (Pouvoir Calorifique Supérieur kWh/Nm³) — matrice v1 §4.6.C#13 / api_grdf",
+    )
+
     # ── Reprogrammation Heures Creuses (chantier Enedis TURPE 7) ──
     hc_reprog_phase = Column(
         Enum(HcReprogPhase),
@@ -734,6 +747,41 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
             raise ValueError(
                 f"Phase D-4 Tier 1 violation : accise_categorie_elec={value!r} non canonique "
                 f"(attendu {sorted(valid)} — AcciseCategorieElec)"
+            )
+        return value
+
+    @validates("cdc_pas_temporel_minutes")
+    def _validate_cdc_pas_temporel(self, key: str, value: int | None):
+        """P1-MATV1-028 Phase D-4 Tier 2 : pas CDC Enedis range CDC_PAS_MIN/MAX_MINUTES (doctrine).
+
+        Valeurs courantes : 10 (CDC fine), 30 (CDC standard), 60 (relevé horaire).
+        Bornes via doctrine.constants (P1-C audit code-reviewer Pilier 13 ADR-016).
+        """
+        if value is None:
+            return value
+        from doctrine.constants import CDC_PAS_MAX_MINUTES, CDC_PAS_MIN_MINUTES
+
+        if not isinstance(value, int) or value < CDC_PAS_MIN_MINUTES or value > CDC_PAS_MAX_MINUTES:
+            raise ValueError(
+                f"Phase D-4 Tier 2 violation : cdc_pas_temporel_minutes={value!r} hors range "
+                f"({CDC_PAS_MIN_MINUTES}-{CDC_PAS_MAX_MINUTES} min — doctrine.constants)"
+            )
+        return value
+
+    @validates("pcs_kwh_par_nm3")
+    def _validate_pcs_kwh_par_nm3(self, key: str, value: float | None):
+        """P1-MATV1-033 Phase D-4 Tier 2 : PCS gaz plausibilité PCS_GAZ_MIN/MAX_KWH_NM3 (doctrine).
+
+        Bornes via doctrine.constants (P1-C audit code-reviewer Pilier 13 ADR-016).
+        """
+        if value is None:
+            return value
+        from doctrine.constants import PCS_GAZ_MAX_KWH_NM3, PCS_GAZ_MIN_KWH_NM3
+
+        if not isinstance(value, (int, float)) or value < PCS_GAZ_MIN_KWH_NM3 or value > PCS_GAZ_MAX_KWH_NM3:
+            raise ValueError(
+                f"Phase D-4 Tier 2 violation : pcs_kwh_par_nm3={value!r} hors range "
+                f"({PCS_GAZ_MIN_KWH_NM3}-{PCS_GAZ_MAX_KWH_NM3} kWh/Nm³ — doctrine.constants)"
             )
         return value
 

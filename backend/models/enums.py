@@ -1256,3 +1256,44 @@ class AcciseCategorieGaz(str, enum.Enum):
     NATUREL = "NATUREL"  # Gaz naturel (taux principal)
     GPL = "GPL"  # Gaz de Pétrole Liquéfié
     GNL = "GNL"  # Gaz Naturel Liquéfié
+
+
+# ============================================================
+# Phase D-4 Tier 2 — Enums P1 doctrine cardinaux matrice v1
+# ============================================================
+
+
+class UsageBatimentEnum(str, enum.Enum):
+    """Usage principal bâtiment (matrice v1 §4.5#9).
+
+    Différencié de Site.usage_principal pour cas multi-bâtiments multi-usages
+    (ex. site mixte commerce+bureaux avec bâtiment principal commerce).
+    """
+
+    BUREAUX = "BUREAUX"
+    COMMERCES = "COMMERCES"
+    ENSEIGNEMENT = "ENSEIGNEMENT"
+    HOTELLERIE = "HOTELLERIE"
+    RESTAURATION = "RESTAURATION"
+    SANTE = "SANTE"
+    SPORT_LOISIRS = "SPORT_LOISIRS"
+    LOGISTIQUE = "LOGISTIQUE"
+    PARKING = "PARKING"  # Parking couvert/silo (différent surface tertiaire)
+    TECHNIQUE = "TECHNIQUE"  # Local technique CVC/IT/transformateur
+    MIXTE = "MIXTE"
+
+
+class IndiceReferenceEnum(str, enum.Enum):
+    """Indice de référence pour formule indexation contrat (matrice v1 §4.8.C#5).
+
+    Source : indices marché énergie standards FR/UE.
+    """
+
+    EEX_BASE = "EEX_BASE"  # Indice EEX base (ruban élec)
+    EEX_PEAK = "EEX_PEAK"  # Indice EEX peak (heures pleines)
+    PEG = "PEG"  # Point d'Échange Gaz (FR)
+    TTF = "TTF"  # Title Transfer Facility (NL — référence UE)
+    SPOT_FR = "SPOT_FR"  # Spot day-ahead France
+    FORWARD_CAL = "FORWARD_CAL"  # Forward calendrier annuel
+    FORWARD_TRIM = "FORWARD_TRIM"  # Forward trimestriel
+    FIXE = "FIXE"  # Prix fixe (pas d'indexation)

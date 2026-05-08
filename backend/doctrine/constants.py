@@ -214,6 +214,10 @@ __all__ = [
     "VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH",
     "VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH",
     "VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH",
+    "CDC_PAS_MIN_MINUTES",
+    "CDC_PAS_MAX_MINUTES",
+    "PCS_GAZ_MIN_KWH_NM3",
+    "PCS_GAZ_MAX_KWH_NM3",
 ]
 
 
@@ -282,3 +286,23 @@ VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH = 78.0
 
 VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH = 110.0
 """Seuil haut activation VNU côté upside fournisseur (CRE 2026-52 — pending verification)."""
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Phase D-4 Tier 2 — Bornes range techniques DP gaz/élec (audit P1-C code-reviewer)
+# ═══════════════════════════════════════════════════════════════════════════
+# Source : Enedis ERDF SGED CDC 30/10 min (matrice v1 §4.6.B#8) +
+#          GRTgaz/GRDF référentiel gaz naturel FR (matrice v1 §4.6.C#13).
+
+CDC_PAS_MIN_MINUTES = 1
+"""Pas temporel CDC Enedis minimum (1 min — granularité fine non standard)."""
+
+CDC_PAS_MAX_MINUTES = 60
+"""Pas temporel CDC Enedis maximum (60 min — relevé horaire standard).
+Valeurs courantes : 10 (CDC fine), 30 (CDC standard 1/2h), 60 (horaire)."""
+
+PCS_GAZ_MIN_KWH_NM3 = 9.0
+"""PCS gaz minimum plausible (kWh/Nm³). Borne basse pour DOM/qualité dégradée."""
+
+PCS_GAZ_MAX_KWH_NM3 = 13.0
+"""PCS gaz maximum plausible (kWh/Nm³). Gaz naturel FR métropole typique 10.0-12.5."""
