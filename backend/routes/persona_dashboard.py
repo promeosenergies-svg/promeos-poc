@@ -14,16 +14,19 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import AuthContext, get_optional_auth
+from models import Organisation, not_deleted
 from services.persona_dashboard_service import (
     build_billing_anomalies_summary_cfo,
     build_compliance_dashboard_marie_daf,
     get_contract_price_benchmark,
     list_expiring_contracts,
 )
+from services.persona_pdf_export import render_compliance_dashboard_pdf
 from services.scope_utils import resolve_org_id
 
 
@@ -75,6 +78,35 @@ def get_cfo_expiring_contracts(
     """
     scope_org_id = resolve_org_id(request, auth, db)
     return list_expiring_contracts(db, scope_org_id, horizon_days=horizon_days)
+
+
+@router.get("/marie-daf/compliance-dashboard.pdf")
+def get_marie_daf_compliance_dashboard_pdf(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Phase I3 — Export PDF dashboard conformité Marie DAF (présentation comité).
+
+    Génère un PDF A4 (page de garde + headlines + tableau 5 frameworks par site
+    + Audit SMÉ par EJ + footer réglementaire) à partir du dashboard JSON.
+    Pattern Phase E IDOR cardinal.
+    """
+    scope_org_id = resolve_org_id(request, auth, db)
+    dashboard = build_compliance_dashboard_marie_daf(db, scope_org_id)
+    org = db.query(Organisation).filter(Organisation.id == scope_org_id, not_deleted(Organisation)).first()
+    org_nom = org.nom if org else "PROMEOS"
+    pdf_bytes = render_compliance_dashboard_pdf(dashboard, org_nom=org_nom)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="conformite_{scope_org_id}_'
+                f'{__import__("datetime").datetime.now().strftime("%Y%m%d")}.pdf"'
+            )
+        },
+    )
 
 
 @router.get("/cfo/contract-price-benchmark")

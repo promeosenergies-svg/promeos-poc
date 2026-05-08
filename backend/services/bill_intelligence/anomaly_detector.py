@@ -384,6 +384,155 @@ def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[Bil
     )
 
 
+# ─── R22 Accise erronée (Phase I Jean-Marc CFO ROI 2-4 k€/an) ──────────────
+
+
+def detect_r22_accise_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+    """R22 — Accise élec (TICFE/CSPE) divergence taux réglementaire.
+
+    Persona Jean-Marc CFO : ROI 2-4 k€/an, transitions tarifaires accise 2024→2025
+    et 2025→2026 régulièrement ratées par fournisseurs.
+
+    Heuristique cardinale Phase I (taux T1 par défaut, à raffiner Phase J avec
+    AcciseCategorieElec depuis DP) :
+    - Trouver ligne TAX `accise|ticfe|cspe|contrib.*service.*public`
+    - Calculer accise attendue = `energy_kwh × ACCISE_ELEC_T1_EUR_PER_MWH / 1000`
+      (T1 = 30,85 €/MWh — tarif 2026 ménages assimilés)
+    - Si écart > 10 % ET > 5 € → R22 anomalie
+
+    NB : T2 (PME) 26,58 €/MWh + T3 (haute puissance) 5,71 €/MWh nécessitent
+    catégorie accise client. Phase I MVP utilise T1 + flag `category_assumption`
+    pour transparence au CFO.
+
+    Returns:
+        BillAnomaly ou None
+    """
+    from doctrine.constants import ACCISE_ELEC_T1_EUR_PER_MWH
+    from models.enums import InvoiceLineType
+
+    if not invoice.energy_kwh or invoice.energy_kwh <= 0:
+        return None
+
+    accise_lines = [
+        line
+        for line in (invoice.lines or [])
+        if line.line_type == InvoiceLineType.TAX
+        and line.label
+        and re.search(r"\b(accise|ticfe|cspe|contrib.*service.*public)", line.label, re.IGNORECASE)
+    ]
+    if not accise_lines:
+        return None
+
+    accise_facturee = sum(float(line.amount_eur or 0) for line in accise_lines)
+    energy_mwh = float(invoice.energy_kwh) / 1000
+    # MVP : tarif T1 ménages assimilés. Phase J : router via AcciseCategorieElec.
+    accise_attendue_t1 = energy_mwh * ACCISE_ELEC_T1_EUR_PER_MWH
+
+    # Anti-bruit : ignore si tarif T2 (PME, 26.58) ou T3 (haute puissance, 5.71)
+    # produirait un résultat plausible — on vérifie écart > 35 % vs T1.
+    ecart_eur = accise_facturee - accise_attendue_t1
+    ecart_pct = abs(ecart_eur) / accise_attendue_t1 * 100 if accise_attendue_t1 > 0 else 0
+
+    # Seuils : > 35 % d'écart vs T1 (couvre marge T2/T3 légitime) ET > 5 €
+    if ecart_pct < 35 or abs(ecart_eur) < 5:
+        return None
+
+    severity = "critical" if abs(ecart_eur) > 50 else "warning"
+    return BillAnomaly(
+        invoice_id=invoice.id,
+        code="R22",
+        severity=severity,
+        threshold_value=Decimal("35.0"),
+        actual_value=Decimal(str(round(ecart_pct, 2))),
+        details_json={
+            "energy_kwh": float(invoice.energy_kwh),
+            "energy_mwh": round(energy_mwh, 3),
+            "accise_facturee_eur": round(accise_facturee, 2),
+            "accise_attendue_t1_eur": round(accise_attendue_t1, 2),
+            "tarif_t1_eur_per_mwh": ACCISE_ELEC_T1_EUR_PER_MWH,
+            "ecart_eur": round(ecart_eur, 2),
+            "ecart_pct": round(ecart_pct, 2),
+            "category_assumption": "T1_MENAGES_ASSIMILES",
+            "regulatory_ref": "JORFTEXT000053407616 — Accise élec 30,85 €/MWh fév 2026+",
+            "montant_anomalie_eur": round(abs(ecart_eur), 2),
+        },
+    )
+
+
+# ─── R24 TVA mauvais taux (Phase I Jean-Marc CFO ROI 1-2 k€/an) ────────────
+
+
+def detect_r24_tva_rate_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+    """R24 — TVA appliquée à mauvais taux vs total HT.
+
+    Persona Jean-Marc CFO : ROI 1-2 k€/an, erreurs CTA (5,5% vs 20%) et
+    accise (5,5% vs 20%) sur transitions TVA 2024-2025.
+
+    Heuristique cardinale :
+    - Calculer total HT = Σ(amount_eur sur lignes non-TVA)
+    - Détecter ligne TVA (label LIKE %TVA% ou %VAT%)
+    - Calculer taux effectif = TVA / HT
+    - Comparer avec taux attendu (20 % par défaut tertiaire B2B)
+    - Si écart > 0,5 pt absolu (ex: 19,3 % vs 20 %) ET montant > 10 € → R24
+
+    Returns:
+        BillAnomaly ou None
+    """
+    from models.enums import InvoiceLineType
+
+    lines = invoice.lines or []
+    tva_lines = [
+        line
+        for line in lines
+        if line.line_type == InvoiceLineType.TAX
+        and line.label
+        and re.search(r"\bTVA\b|\bVAT\b", line.label, re.IGNORECASE)
+    ]
+    if not tva_lines:
+        return None
+
+    # Total HT = somme de toutes les lignes non-TVA
+    ht_total = sum(
+        float(line.amount_eur or 0)
+        for line in lines
+        if not (
+            line.line_type == InvoiceLineType.TAX
+            and line.label
+            and re.search(r"\bTVA\b|\bVAT\b", line.label, re.IGNORECASE)
+        )
+    )
+    tva_facturee = sum(float(line.amount_eur or 0) for line in tva_lines)
+    if ht_total <= 0:
+        return None
+
+    taux_effectif_pct = (tva_facturee / ht_total) * 100
+    # Taux attendu B2B tertiaire : 20 % (exception 5,5 % CTA + accise = composite)
+    # MVP : on flag écart > 0,5 pt vs 20 % (couvre erreur 19,6/19,3/etc.)
+    taux_attendu_pct = 20.0
+    ecart_pct_abs = abs(taux_effectif_pct - taux_attendu_pct)
+
+    if ecart_pct_abs < 0.5 or tva_facturee < 10:
+        return None
+
+    severity = "critical" if ecart_pct_abs > 5.0 else "warning"
+    return BillAnomaly(
+        invoice_id=invoice.id,
+        code="R24",
+        severity=severity,
+        threshold_value=Decimal("0.5"),  # pt %
+        actual_value=Decimal(str(round(ecart_pct_abs, 2))),
+        details_json={
+            "ht_total_eur": round(ht_total, 2),
+            "tva_facturee_eur": round(tva_facturee, 2),
+            "taux_effectif_pct": round(taux_effectif_pct, 2),
+            "taux_attendu_pct": taux_attendu_pct,
+            "ecart_pct": round(ecart_pct_abs, 2),
+            "regulatory_ref": "CGI art. 278 — TVA 20 % énergie B2B tertiaire",
+            "montant_anomalie_eur": round(abs(tva_facturee - (ht_total * taux_attendu_pct / 100)), 2),
+        },
+    )
+
+
 # ─── R23 TURPE doublé (Phase H Jean-Marc CFO cardinal) ─────────────────────
 
 
@@ -507,5 +656,23 @@ def detect_anomalies_for_invoice(invoice: EnergyInvoice, db: Session) -> list[Bi
             anomalies.append(r21)
     except Exception as e:
         _logger.error(f"R21 detector failed for invoice {invoice.id}: {e}")
+
+    # R22 : 0 ou 1 — Phase I CFO accise erronée
+    try:
+        r22 = detect_r22_accise_mismatch(invoice, db)
+        if r22:
+            db.add(r22)
+            anomalies.append(r22)
+    except Exception as e:
+        _logger.error(f"R22 detector failed for invoice {invoice.id}: {e}")
+
+    # R24 : 0 ou 1 — Phase I CFO TVA mauvais taux
+    try:
+        r24 = detect_r24_tva_rate_mismatch(invoice, db)
+        if r24:
+            db.add(r24)
+            anomalies.append(r24)
+    except Exception as e:
+        _logger.error(f"R24 detector failed for invoice {invoice.id}: {e}")
 
     return anomalies

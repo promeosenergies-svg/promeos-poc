@@ -712,6 +712,194 @@ class TestPhaseH6ContractPriceBenchmark:
         assert contract["impact_economies_eur_an"] == 8000.0  # 80 €/MWh × 100 MWh
 
 
+# ─── Phase I1 — R22 Accise erronée (Jean-Marc CFO) ─────────────────────────
+
+
+class TestPhaseI1R22Accise:
+    def test_i1_r22_detects_accise_overcharge(self, db):
+        """I1 — Accise facturée trop élevée vs tarif T1 (30,85 €/MWh) → R22."""
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import detect_r22_accise_mismatch
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-R22",
+            energy_kwh=10000,  # 10 MWh
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        # T1 attendu = 10 MWh × 30,85 = 308,50 € ; facturée 600 € (~94 % d'écart)
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.TAX,
+                label="Accise sur l'électricité",
+                amount_eur=600.0,
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        anomaly = detect_r22_accise_mismatch(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R22"
+        assert anomaly.severity == "critical"  # écart > 50 €
+        assert anomaly.details_json["category_assumption"] == "T1_MENAGES_ASSIMILES"
+
+    def test_i1_r22_no_anomaly_within_t1_range(self, db):
+        """I1 — Accise dans la fourchette T1 (±35 %) → pas d'anomalie."""
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import detect_r22_accise_mismatch
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-R22-OK",
+            energy_kwh=10000,
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        # 10 MWh × 30,85 = 308,5 € ± 35% → 200-417 € OK
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.TAX,
+                label="CSPE",
+                amount_eur=300.0,  # ~3 % d'écart
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        assert detect_r22_accise_mismatch(invoice, db) is None
+
+
+# ─── Phase I2 — R24 TVA mauvais taux (Jean-Marc CFO) ───────────────────────
+
+
+class TestPhaseI2R24TVA:
+    def test_i2_r24_detects_wrong_tva_rate(self, db):
+        """I2 — TVA appliquée à 25 % au lieu de 20 % → R24."""
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import detect_r24_tva_rate_mismatch
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-R24",
+            energy_kwh=10000,
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        # HT 1000 € → TVA 20 % attendue = 200 € ; facturée 270 € (taux 27 %, écart +7 pts)
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.NETWORK,
+                label="TURPE",
+                amount_eur=1000.0,
+            )
+        )
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.TAX,
+                label="TVA 27%",
+                amount_eur=270.0,
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        anomaly = detect_r24_tva_rate_mismatch(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R24"
+        assert anomaly.severity == "critical"  # écart 7 pts > 5 = critical
+        assert anomaly.details_json["taux_effectif_pct"] == 27.0
+
+    def test_i2_r24_no_anomaly_correct_20pct(self, db):
+        """I2 — TVA correcte 20 % → pas d'anomalie."""
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import detect_r24_tva_rate_mismatch
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-R24-OK",
+            energy_kwh=10000,
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.NETWORK,
+                label="TURPE",
+                amount_eur=1000.0,
+            )
+        )
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.TAX,
+                label="TVA 20%",
+                amount_eur=200.0,  # exactement 20 %
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        assert detect_r24_tva_rate_mismatch(invoice, db) is None
+
+
+# ─── Phase I3 — Export PDF compliance dashboard (Marie DAF) ─────────────────
+
+
+class TestPhaseI3PDFExport:
+    def test_i3_pdf_endpoint_returns_pdf_bytes(self, client, db):
+        """I3 — endpoint PDF retourne content-type application/pdf + bytes valides."""
+        org, _, _, _ = _seed_org_with_sites(db, n_sites=2)
+        r = client.get(
+            "/api/persona/marie-daf/compliance-dashboard.pdf",
+            headers=_h(org.id),
+        )
+        assert r.status_code == 200
+        assert r.headers["content-type"] == "application/pdf"
+        # PDF magic bytes : "%PDF"
+        assert r.content[:4] == b"%PDF"
+        # Content-Disposition attachment avec filename
+        assert "attachment" in r.headers["content-disposition"]
+
+    def test_i3_pdf_idor_cross_tenant(self, client, db):
+        """I3 — Phase E IDOR : Org B ne voit pas sites Org A dans le PDF généré."""
+        org_a, _, _, _ = _seed_org_with_sites(db, "Org Alpha", "111111111", 2)
+        org_b, _, _, _ = _seed_org_with_sites(db, "Org Bravo", "222222222", 0)
+        r = client.get(
+            "/api/persona/marie-daf/compliance-dashboard.pdf",
+            headers=_h(org_b.id),
+        )
+        assert r.status_code == 200
+        # PDF généré pour Org B → 0 sites
+        assert r.content[:4] == b"%PDF"
+
+
 # ─── Source-guards P1 fixes (post-audit code-reviewer Phase G) ─────────────
 
 
