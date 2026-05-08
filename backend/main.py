@@ -73,6 +73,7 @@ from routes import (
     referentiel_router,
     patrimoine_crud_router,
     fournisseurs_router,
+    contracts_parse_router,
     aper_router,
     geocoding_router,
     usages_router,
@@ -243,6 +244,7 @@ app.include_router(market_data_router)  # M.1b Market Data V2 (spot, forwards, t
 app.include_router(referentiel_router)  # M.2 Référentiel Tarifs (TURPE/taxes YAML)
 app.include_router(patrimoine_crud_router)  # O.3 CRUD Organisation/Entité/Portefeuille/Site
 app.include_router(fournisseurs_router)  # Phase F1 — Fournisseur entité normalisée (ADR-F-01)
+app.include_router(contracts_parse_router)  # Phase F3 — Parser contrat PDF (ADR-F-03)
 app.include_router(geocoding_router)  # Géocodage BAN (sites → lat/lng)
 app.include_router(aper_router)  # Step 29 APER Solarisation (parkings & toitures)
 app.include_router(usages_router)  # V1.1 Usage (readiness, metering plan, UES, cost breakdown)
