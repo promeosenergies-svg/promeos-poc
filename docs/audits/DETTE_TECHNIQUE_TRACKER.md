@@ -818,6 +818,8 @@ Pattern actuel : parallèle propre, pas de conflit. Le `meter_unified_service` (
 | 2026-05-07 (Phase D-2.2 ajustée — Enum FtaCode strict canonique + ADR-016 v3 Pilier 9 (validator permissif transitoire → Enum strict) + 3 P1 code-reviewer fixés (anti-cycle + org-scoping + tests négatifs)) | 56 | 0 | 19 | 37 |
 | 2026-05-07 (Sprint Audit Réglementaire Cardinal pré Phase D-3 — 17 catégories réglementaires auditées via 3 agents SDK + cross-check KB — 10 P0 + 10 P1 + 25 à vérifier identifiés. Toutes sources externes WebFetch bloquées 403/503 → rapport escalade humaine livré (17 sources à figer Phase D-4 ~3h navigateur direct)) | 76 | 10 | 29 | 37 |
 | 2026-05-07 (Phase D-3 Tier 0 RÉGLEMENTAIRE — 5 P0 actionnables fixés : APER échéance 01/07/2026 LARGE parkings + APER LARGE surface 10000m² + APER solar ratio 50% + OPERAT 426 sous-cat constante + BACS 70 kW 2030 exposé + VNU 4 constantes mécanisme — mirroring constants.py↔sources_reglementaires.yaml) | 71 | 5 | 29 | 37 |
+| 2026-05-07 (Phase D-3 Tier 2 SÉCURITÉ+DOCTRINE+VALIDATION — 8 P1 critiques fixés : SEC-1 Path traversal CGU allowlist + SEC-2 PII sanitizer SoT centralisé + DOC-1 6 String→Enum (version_turpe/mode_traitement/mode_propriete/secteur/dpe_class/sub_meter_usage) + DOC-2 Anti-cycle D6 + VAL-1 PCE 3 formats + VAL-2 tva_intra + ADR-016 v5 Piliers 10-13) | 63 | 5 | 21 | 37 |
+| 2026-05-08 (AUDIT ÉCARTS MATRICE v1 patrimoine paramétrage post Phase D-3 Tier 2 — architect-helios SDK 6e cycle Pilier 6 ADR-016 — 80% couverture (171/212 champs) — 10 P0 + 29 P1 résiduels documentés (Hot spots §4.2 EJ 32% + §4.6.C DP gaz 50%) — 7/7 D1-D7 honorées + 6 imprécisions matrice + 4 bonus repo) | 102 | 15 | 50 | 37 |
 
 ---
 
