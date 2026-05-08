@@ -53,7 +53,10 @@ router = APIRouter(prefix="/api/patrimoine/crud", tags=["Patrimoine CRUD"])
 
 
 # V119 J3 : helper centralise dans services/auth_guards.py
-from services.auth_guards import require_write_access as _require_write_access  # noqa: E402
+from services.auth_guards import (  # noqa: E402
+    require_admin_access as _require_admin_access,
+    require_write_access as _require_write_access,
+)
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -141,9 +144,12 @@ def create_organisation(
 
     Phase E IDOR : pas de scope_org_id check ici — création d'une nouvelle org est
     explicitement hors scope existant (provisioning admin / onboarding initial).
-    Protection : `_require_write_access` rôle DG_OWNER/DSI_ADMIN.
+
+    Phase F audit P0-3 fix code-reviewer : `_require_admin_access` strict
+    DG_OWNER/DSI_ADMIN uniquement (avant ce fix, `_require_write_access` autorisait
+    8 rôles à créer des organisations orphelines en DEMO_MODE).
     """
-    _require_write_access(auth)
+    _require_admin_access(auth)
     org = Organisation(
         nom=body.nom,
         type_client=body.type_client,

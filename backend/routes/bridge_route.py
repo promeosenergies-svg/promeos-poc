@@ -130,11 +130,30 @@ def get_bridge_status(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Retourne le statut d'un job de bridge."""
-    resolve_org_id(request, auth, db)  # Ensure authenticated
+    """Retourne le statut d'un job de bridge.
+
+    Phase F audit P0-1 fix : org-scoping cardinal via JOIN
+    DataImportJob → Site → Portefeuille → EntiteJuridique.organisation_id.
+    Avant ce fix, énumération cross-tenant possible des statuts de jobs.
+    """
+    scope_org_id = resolve_org_id(request, auth, db)
+    from models import EntiteJuridique, Portefeuille, Site
     from models.energy_models import DataImportJob
 
-    job = db.query(DataImportJob).filter_by(id=job_id).first()
+    # Phase F P0-1 IDOR : JOIN chain Job→Site→Pf→EJ vers org_id scope.
+    # 404 anti-énumération si job pas accessible au scope.
+    job = (
+        db.query(DataImportJob)
+        .outerjoin(Site, Site.id == DataImportJob.site_id)
+        .outerjoin(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .outerjoin(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(
+            DataImportJob.id == job_id,
+            # Job sans site_id (legacy) ou job du scope
+            (DataImportJob.site_id.is_(None)) | (EntiteJuridique.organisation_id == scope_org_id),
+        )
+        .first()
+    )
     if not job:
         raise HTTPException(status_code=404, detail=f"Job {job_id} non trouvé")
 

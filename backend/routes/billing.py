@@ -1393,8 +1393,18 @@ async def import_invoice_pdf(
     if not fname.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Le fichier doit etre un PDF")
 
+    # Phase F audit P0-2 fix : check Content-Length AVANT read() (anti-OOM cardinal)
+    MAX_PDF_BYTES = 20 * 1024 * 1024
+    content_length_header = request.headers.get("content-length")
+    if content_length_header:
+        try:
+            if int(content_length_header) > MAX_PDF_BYTES:
+                raise HTTPException(status_code=413, detail="PDF trop volumineux (max 20 Mo)")
+        except ValueError:
+            pass
+
     content = await file.read()
-    if len(content) > 20 * 1024 * 1024:
+    if len(content) > MAX_PDF_BYTES:
         raise HTTPException(status_code=413, detail="PDF trop volumineux (max 20 Mo)")
 
     # Phase F2 : extract texte brut une seule fois, puis réutilisé pour parse + SIREN

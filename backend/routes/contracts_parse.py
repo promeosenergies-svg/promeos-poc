@@ -52,8 +52,19 @@ async def parse_contract_pdf(
     if not fname.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Le fichier doit être un PDF")
 
+    # Phase F audit P0-2 fix : check Content-Length AVANT read() (anti-OOM cardinal)
+    # Sans ce check, un attaquant uploadait 1 Go → file.read() OOM avant le contrôle taille.
+    MAX_PDF_BYTES = 20 * 1024 * 1024  # 20 Mo
+    content_length_header = request.headers.get("content-length")
+    if content_length_header:
+        try:
+            if int(content_length_header) > MAX_PDF_BYTES:
+                raise HTTPException(status_code=413, detail="PDF trop volumineux (max 20 Mo)")
+        except ValueError:
+            pass  # Header malformé, passe au check post-read
+
     content = await file.read()
-    if len(content) > 20 * 1024 * 1024:
+    if len(content) > MAX_PDF_BYTES:
         raise HTTPException(status_code=413, detail="PDF trop volumineux (max 20 Mo)")
 
     result = parse_contract_pdf_bytes(content, db, scope_org_id=scope_org_id)
