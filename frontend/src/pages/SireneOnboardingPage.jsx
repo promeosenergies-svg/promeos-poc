@@ -23,8 +23,8 @@ import {
 } from '../services/api/sirene';
 import { crudUpdateSite } from '../services/api/patrimoine';
 import { useToast } from '../ui/ToastProvider';
-import { PageShell } from '../ui';
 import Badge from '../ui/Badge';
+import Modal from '../ui/Modal';
 
 const STEPS = [
   { id: 'search', label: 'Rechercher', icon: Search },
@@ -732,6 +732,7 @@ function ConfirmStep({ uniteLegale, selectedSirets, onBack }) {
 // Page principale
 // ══════════════════════════════════════════════════════════════════════
 export default function SireneOnboardingPage() {
+  const navigate = useNavigate();
   const [step, setStep] = useState('search');
   const [uniteLegale, setUniteLegale] = useState(null);
   const [selectedSirets, setSelectedSirets] = useState([]);
@@ -746,34 +747,36 @@ export default function SireneOnboardingPage() {
     setStep('confirm');
   };
 
+  const handleClose = () => {
+    // Phase G UX fix : retour à la page précédente (mode modal overlay)
+    navigate(-1);
+  };
+
   return (
-    <PageShell>
-      <div className="max-w-2xl mx-auto py-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Nouveau client depuis Sirene</h1>
-        <p className="text-sm text-gray-500 mb-6">
-          Creez un client PROMEOS a partir de la base Sirene officielle (INSEE)
-        </p>
+    <Modal open onClose={handleClose} title="Nouveau client depuis Sirene" wide>
+      <p className="text-sm text-gray-500 mb-4">
+        Creez un client PROMEOS a partir de la base Sirene officielle (INSEE)
+      </p>
 
-        <StepIndicator steps={STEPS} current={step} />
+      <StepIndicator steps={STEPS} current={step} />
 
-        {step === 'search' && <SearchStep onSelect={handleSelectUL} />}
+      {step === 'search' && <SearchStep onSelect={handleSelectUL} />}
 
-        {step === 'select' && uniteLegale && (
-          <SelectStep
-            uniteLegale={uniteLegale}
-            onConfirm={handleConfirmSelection}
-            onBack={() => setStep('search')}
-          />
-        )}
+      {step === 'select' && uniteLegale && (
+        <SelectStep
+          uniteLegale={uniteLegale}
+          onConfirm={handleConfirmSelection}
+          onBack={() => setStep('search')}
+        />
+      )}
 
-        {step === 'confirm' && uniteLegale && (
-          <ConfirmStep
-            uniteLegale={uniteLegale}
-            selectedSirets={selectedSirets}
-            onBack={() => setStep('select')}
-          />
-        )}
-      </div>
-    </PageShell>
+      {step === 'confirm' && uniteLegale && (
+        <ConfirmStep
+          uniteLegale={uniteLegale}
+          selectedSirets={selectedSirets}
+          onBack={() => setStep('select')}
+        />
+      )}
+    </Modal>
   );
 }

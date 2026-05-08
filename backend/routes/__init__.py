@@ -54,6 +54,7 @@ from .referentiel import router as referentiel_router
 from .patrimoine_crud import router as patrimoine_crud_router
 from .fournisseurs import router as fournisseurs_router
 from .contracts_parse import router as contracts_parse_router
+from .persona_dashboard import router as persona_dashboard_router
 from .aper import router as aper_router
 from .geocoding import router as geocoding_router
 from .usages import router as usages_router
@@ -125,6 +126,7 @@ __all__ = [
     "patrimoine_crud_router",
     "fournisseurs_router",
     "contracts_parse_router",
+    "persona_dashboard_router",
     "aper_router",
     "geocoding_router",
     "usages_router",
