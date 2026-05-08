@@ -1,6 +1,6 @@
 # ADR-D-05 — Accise CIBS Enum strict DP élec + gaz
 
-**Statut** : DRAFT (post-audit Phase 0 matrice v1)
+**Statut** : ✅ ACCEPTED — implémenté Phase D-4 Tier 1 (commit `2268e90d`) + dedup Tier 4 (`6bbadcfb`)
 **Date** : 2026-05-08
 **Sprint** : Phase D-4 Tier 1 candidat
 **Décideurs** : à figer post-revue (architect-helios + bill-intelligence + regulatory-expert)

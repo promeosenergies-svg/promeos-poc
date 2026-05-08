@@ -1,6 +1,6 @@
 # ADR-D-03 — `Compteur.batiment_id` FK ajout cascade analytics
 
-**Statut** : DRAFT (post-audit Phase 0 matrice v1)
+**Statut** : ✅ ACCEPTED — implémenté Phase D-4 Tier 1 (commit `2268e90d`)
 **Date** : 2026-05-08
 **Sprint** : Phase D-4 Tier 1 candidat
 **Décideurs** : à figer post-revue (architect-helios + ems-expert)

@@ -1,6 +1,6 @@
 # ADR-D-04 — `Site.bacs_puissance_cvc_totale_kw` cascade Σ(Batiment.cvc_power_kw)
 
-**Statut** : DRAFT (post-audit Phase 0 matrice v1)
+**Statut** : ✅ ACCEPTED — implémenté Phase D-4 Tier 2 (commit `310ef950`) + activé Tier 4 (`6bbadcfb`)
 **Date** : 2026-05-08
 **Sprint** : Phase D-4 Tier 1 candidat
 **Décideurs** : à figer post-revue (architect-helios + regulatory-expert)

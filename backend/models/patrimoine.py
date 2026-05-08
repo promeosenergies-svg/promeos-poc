@@ -51,11 +51,26 @@ class OrgEntiteLink(Base, TimestampMixin):
     id = Column(Integer, primary_key=True)
     organisation_id = Column(Integer, ForeignKey("organisations.id"), nullable=False, index=True)
     entite_juridique_id = Column(Integer, ForeignKey("entites_juridiques.id"), nullable=False, index=True)
-    role = Column(String(50), nullable=True, comment="proprietaire, gestionnaire, locataire")
+    role = Column(String(50), nullable=True, comment="proprietaire, gestionnaire, locataire (OrgEntiteRole)")
     start_date = Column(Date, nullable=True)
     end_date = Column(Date, nullable=True)
     confidence = Column(Float, default=1.0, comment="Confiance du lien 0-1")
     source_ref = Column(String(200), nullable=True, comment="Reference source (facture, contrat)")
+
+    @validates("role")
+    def _validate_role_strict(self, key: str, value: str | None):
+        """Phase D-4 Tier 4+ : OrgEntiteLink.role strict OrgEntiteRole Enum."""
+        if value is None or value == "":
+            return value
+        from .enums import OrgEntiteRole
+
+        valid = {v.value for v in OrgEntiteRole}
+        if value not in valid:
+            raise ValueError(
+                f"Phase D-4 Tier 4+ violation : OrgEntiteLink.role={value!r} non canonique "
+                f"(attendu {sorted(valid)} — OrgEntiteRole)"
+            )
+        return value
 
 
 class PortfolioEntiteLink(Base, TimestampMixin):
@@ -87,9 +102,24 @@ class StagingBatch(Base, TimestampMixin):
     source_type = Column(Enum(ImportSourceType), nullable=False)
     filename = Column(String(500), nullable=True)
     content_hash = Column(String(64), nullable=True, index=True)
-    mode = Column(String(20), nullable=True, comment="express, import, assiste, demo")
+    mode = Column(String(20), nullable=True, comment="StagingMode Enum (express/import/assiste/demo)")
     stats_json = Column(Text, nullable=True)
     error_json = Column(Text, nullable=True)
+
+    @validates("mode")
+    def _validate_mode_strict(self, key: str, value: str | None):
+        """Phase D-4 Tier 4+ : StagingBatch.mode strict StagingMode Enum."""
+        if value is None or value == "":
+            return value
+        from .enums import StagingMode
+
+        valid = {v.value for v in StagingMode}
+        if value not in valid:
+            raise ValueError(
+                f"Phase D-4 Tier 4+ violation : StagingBatch.mode={value!r} non canonique "
+                f"(attendu {sorted(valid)} — StagingMode)"
+            )
+        return value
 
     # Relations
     sites = relationship("StagingSite", back_populates="batch", cascade="all, delete-orphan")

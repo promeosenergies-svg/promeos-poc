@@ -53,8 +53,24 @@ BACS_DEADLINE_EXISTING = "2030-01-01"  # deadline équipement BACS bâtiments ex
 OPERAT_PENALTY_EUR = (
     1500  # amende par déclaration OPERAT manquante — voir sources_reglementaires.yaml:COMPLIANCE_OPERAT_PENALTY_EUR
 )
-# Deadline déclaration consommations N-1 = 30 septembre N (ADEME OPERAT)
-OPERAT_DECLARATION_DEADLINE = "2026-09-30"
+# Deadline déclaration consommations N-1 = 30 septembre N (ADEME OPERAT — annuelle).
+# Phase D-4 Tier 4+ P2 fix audit code-reviewer : helper dynamique évite hardcode 2026-only.
+OPERAT_DECLARATION_DEADLINE = "2026-09-30"  # legacy alias (cohérent runtime à figer Phase E)
+OPERAT_DECLARATION_DEADLINE_MONTH_DAY = "09-30"  # SoT cardinal — récurrence annuelle
+
+
+def compute_operat_deadline(year: int) -> str:
+    """Phase D-4 Tier 4+ : retourne la deadline OPERAT annuelle pour année N (déclaration N-1).
+
+    Source : ADEME OPERAT — deadline 30 septembre N pour consommations N-1.
+    Pattern Pilier 13 ADR-016 (constante réglementaire récurrente vs hardcode unique).
+
+    Returns:
+        Date ISO format YYYY-09-30.
+    """
+    return f"{year}-{OPERAT_DECLARATION_DEADLINE_MONTH_DAY}"
+
+
 OPERAT_ANNEXE_I_SOUS_CATEGORIES_COUNT = (
     426  # Arrêté 10/04/2020 NOR LOGL2005904A — granularité réelle (9 grandes familles)
 )
@@ -218,6 +234,8 @@ __all__ = [
     "CDC_PAS_MAX_MINUTES",
     "PCS_GAZ_MIN_KWH_NM3",
     "PCS_GAZ_MAX_KWH_NM3",
+    "OPERAT_DECLARATION_DEADLINE_MONTH_DAY",
+    "compute_operat_deadline",
 ]
 
 

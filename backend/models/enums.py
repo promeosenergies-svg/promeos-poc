@@ -1334,3 +1334,25 @@ class IndiceReferenceEnum(str, enum.Enum):
     FORWARD_CAL = "FORWARD_CAL"  # Forward calendrier annuel
     FORWARD_TRIM = "FORWARD_TRIM"  # Forward trimestriel
     FIXE = "FIXE"  # Prix fixe (pas d'indexation)
+
+
+# ============================================================
+# Phase D-4 Tier 4+ — Enums backlog non-cardinal (audit code-reviewer P1)
+# ============================================================
+
+
+class StagingMode(str, enum.Enum):
+    """Mode StagingBatch onboarding (matrice v1 §4 — wizard parcours)."""
+
+    EXPRESS = "express"  # Onboarding rapide minimal
+    IMPORT = "import"  # Import CSV/Excel/API batch
+    ASSISTE = "assiste"  # Wizard guidé non-sachants
+    DEMO = "demo"  # Données de démonstration
+
+
+class OrgEntiteRole(str, enum.Enum):
+    """Rôle dans la liaison Org ↔ EntiteJuridique (matrice v1 §4.1)."""
+
+    PROPRIETAIRE = "proprietaire"
+    GESTIONNAIRE = "gestionnaire"
+    LOCATAIRE = "locataire"

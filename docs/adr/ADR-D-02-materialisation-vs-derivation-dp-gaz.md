@@ -1,6 +1,6 @@
 # ADR-D-02 — Matérialisation vs dérivation runtime DP gaz (5 P0 §4.6.C)
 
-**Statut** : DRAFT (post-audit Phase 0 matrice v1, à trancher Phase D-4 Tier 1)
+**Statut** : ✅ ACCEPTED — implémenté Phase D-4 Tier 1 (commit `2268e90d`)
 **Date** : 2026-05-08
 **Sprint** : Phase D-4 Tier 1 candidat
 **Décideurs** : à figer post-revue (architect-helios + bill-intelligence + regulatory-expert)
