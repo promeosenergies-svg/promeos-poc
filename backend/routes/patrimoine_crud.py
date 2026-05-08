@@ -1,11 +1,27 @@
 """
 PROMEOS — CRUD Organisation / EntiteJuridique / Portefeuille / Site (Step 19)
 Endpoints manuels pour ajouter/modifier/archiver des entités patrimoniales.
+
+⚠️ DETTE IDOR CARDINALE — Phase D-4 Tier 4 audit code-reviewer P0-3 (commit a2e6050a) :
+~30 endpoints CRUD ci-dessous **n'appliquent PAS resolve_org_id** sur les requêtes DB.
+En multi-tenant production, un utilisateur authentifié org_A peut lire/modifier
+les entités de org_B par énumération d'IDs.
+
+Risque mitigé en environnement actuel par DEMO_MODE (auth lenient sans cross-org)
+mais BLOQUANT pilote externe multi-tenant réel.
+
+→ Sprint dédié 'IDOR Patrimoine CRUD' réservé Phase E (~3h effort) :
+  - resolve_org_id sur tous endpoints GET/PATCH/DELETE
+  - JOIN chain Org → EJ → Portefeuille → Site → Bâtiment → DP cardinal
+  - Tests source-guard anti-régression IDOR
+
+Ref : docs/audits/AUDIT_PHASE_D_COMPLET_2026_05_07.md SEC-001 + audit Phase D-4 cumul.
 """
 
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -598,7 +614,11 @@ def create_batiment(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Cree un batiment rattache a un site."""
+    """Cree un batiment rattache a un site.
+
+    Phase D-4 Tier 4 P0-2 fix audit code-reviewer : déclenche cascade BACS active
+    (ADR-D-04) après commit pour recalculer Site.bacs_assujetti + bacs_puissance_cvc_totale_kw.
+    """
     _require_write_access(auth)
     site = db.query(Site).filter(Site.id == body.site_id, not_deleted(Site)).first()
     if not site:
@@ -613,4 +633,72 @@ def create_batiment(
     db.add(bat)
     db.commit()
     db.refresh(bat)
+
+    # Phase D-4 Tier 4 P0-2 : cascade BACS active si cvc_power_kw défini
+    if bat.cvc_power_kw is not None:
+        from services.cascade_bacs_service import recompute_site_bacs_aggregate
+
+        recompute_site_bacs_aggregate(db, body.site_id, commit=True)
+
     return _bat_to_dict(bat)
+
+
+class BatimentUpdate(BaseModel):
+    """Phase D-4 Tier 4 P1 : endpoint PATCH Batiment manquant — cycle de vie complet."""
+
+    nom: Optional[str] = None
+    surface_m2: Optional[float] = None
+    annee_construction: Optional[int] = None
+    cvc_power_kw: Optional[float] = None
+
+
+@router.patch("/batiments/{batiment_id}")
+def update_batiment(
+    batiment_id: int,
+    body: BatimentUpdate,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Phase D-4 Tier 4 P1 : modifier un bâtiment + déclenche cascade BACS si cvc_power_kw modifié."""
+    _require_write_access(auth)
+    bat = db.query(Batiment).filter(Batiment.id == batiment_id, not_deleted(Batiment)).first()
+    if not bat:
+        raise HTTPException(404, "Bâtiment introuvable")
+
+    cvc_changed = body.cvc_power_kw is not None and body.cvc_power_kw != bat.cvc_power_kw
+    for field in ("nom", "surface_m2", "annee_construction", "cvc_power_kw"):
+        new_val = getattr(body, field)
+        if new_val is not None:
+            setattr(bat, field, new_val)
+    db.commit()
+    db.refresh(bat)
+
+    # Cascade BACS si cvc_power_kw modifié (ADR-D-04)
+    if cvc_changed:
+        from services.cascade_bacs_service import recompute_site_bacs_aggregate
+
+        recompute_site_bacs_aggregate(db, bat.site_id, commit=True)
+
+    return _bat_to_dict(bat)
+
+
+@router.delete("/batiments/{batiment_id}")
+def delete_batiment(
+    batiment_id: int,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Phase D-4 Tier 4 P1 : soft-delete bâtiment + cascade BACS rebuild."""
+    _require_write_access(auth)
+    bat = db.query(Batiment).filter(Batiment.id == batiment_id, not_deleted(Batiment)).first()
+    if not bat:
+        raise HTTPException(404, "Bâtiment introuvable")
+    site_id = bat.site_id
+    bat.soft_delete(by="api", reason="user_delete_batiment")
+    db.commit()
+
+    # Cascade BACS rebuild post soft-delete (ADR-D-04)
+    from services.cascade_bacs_service import recompute_site_bacs_aggregate
+
+    recompute_site_bacs_aggregate(db, site_id, commit=True)
+    return {"status": "deleted", "id": batiment_id}

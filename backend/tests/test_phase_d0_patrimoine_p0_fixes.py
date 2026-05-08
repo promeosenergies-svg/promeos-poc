@@ -197,14 +197,14 @@ def test_phase_d0_site_categorie_operat_mode_propriete_persist(app_client):
             type=TypeSite.BUREAU,
             actif=True,
             portefeuille_id=pf.id,
-            categorie_operat_principale="Bureaux",
+            categorie_operat_principale="BUREAUX",  # Phase D-4 Tier 4 : strict OperatUsagePrincipalEnum
             mode_propriete="proprietaire",
         )
         db.add(site)
         db.commit()
         db.refresh(site)
 
-        assert site.categorie_operat_principale == "Bureaux"
+        assert site.categorie_operat_principale == "BUREAUX"
         assert site.mode_propriete == "proprietaire"
     finally:
         db.close()

@@ -93,21 +93,19 @@ class EntiteJuridique(Base, TimestampMixin, SoftDeleteMixin):
 
     @validates("email_contact")
     def _validate_email_contact(self, key: str, value: str | None):
-        """P1-3 fix code-reviewer Phase D-4 Tier 3 : email_contact via PII SoT centralisé.
+        """P1-3 fix Phase D-4 Tier 3 + Tier 4 audit P1 : email_contact via PII SoT named export.
 
-        Délégué à `services/security/pii_sanitizer.py` (PII_VALUE_PATTERNS[1] = email RFC 5322).
+        Délégué à `services.security.pii_sanitizer.EMAIL_RFC5322_PATTERN` (named export
+        anti-couplage index positionnel — Phase D-4 Tier 4 fix code-reviewer).
         Pattern Pilier 13 ADR-016 (SoT cross-services centralisé — pas de duplication).
         """
         if value is None or value == "":
             return value
-        from services.security.pii_sanitizer import PII_VALUE_PATTERNS
+        from services.security.pii_sanitizer import EMAIL_RFC5322_PATTERN
 
-        # PII_VALUE_PATTERNS[1] = email RFC 5322 (cf. pii_sanitizer.py ligne 43)
         # Le pattern PII utilise \b...\b (matchage substring) — pour validator strict,
-        # on vérifie que le pattern matche **et** couvre toute la string (start/end).
-        email_pattern = PII_VALUE_PATTERNS[1]
-        match = email_pattern.fullmatch(value)
-        if match is None:
+        # on vérifie que le pattern couvre toute la string (start/end) via fullmatch.
+        if EMAIL_RFC5322_PATTERN.fullmatch(value) is None:
             raise ValueError(
                 f"Phase D-4 Tier 3 violation : email_contact={value!r} format invalide "
                 f"(attendu RFC 5322 simplifié — voir pii_sanitizer.py SoT)"

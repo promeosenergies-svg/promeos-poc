@@ -929,7 +929,18 @@ class ArticleSource(str, enum.Enum):
 
 
 class AcciseCategoryElec(str, enum.Enum):
-    """Catégorie d'accise électricité par point de livraison (CIBS)."""
+    """⚠️ Vague 1 LEGACY — TaxProfile contexte fournisseur (anglais 5 valeurs).
+
+    Phase D-4 Tier 4 P0-2 audit code-reviewer : COEXISTE avec `AcciseCategorieElec`
+    (Phase D-4, français 3 valeurs, contexte DP CIBS L.312-36/37).
+
+    SoT distincts (NE PAS confondre) :
+    - `AcciseCategoryElec` (CETTE classe) : TaxProfile fournisseur — facturation interne
+    - `AcciseCategorieElec` (D-4) : DP runtime CIBS — calcul accise réglementaire
+
+    Helper mapping : `acciser_category_elec_to_categorie(legacy)` ci-dessous.
+    Phase E unification recommandée (Sprint dédié — déprécier Vague 1).
+    """
 
     HOUSEHOLD = "HOUSEHOLD"  # ménages & assimilés
     SME = "SME"  # PME / petites entreprises
@@ -939,11 +950,37 @@ class AcciseCategoryElec(str, enum.Enum):
 
 
 class AcciseCategoryGaz(str, enum.Enum):
-    """Catégorie d'accise gaz naturel par point de livraison (CIBS)."""
+    """⚠️ Vague 1 LEGACY — TaxProfile contexte fournisseur.
+
+    COEXISTE avec `AcciseCategorieGaz` (Phase D-4, NATUREL/GPL/GNL — DP CIBS L.312-24).
+    Cf docstring `AcciseCategoryElec` pour distinction SoT.
+    """
 
     NORMAL = "NORMAL"  # régime normal (tarif plein)
     REDUCED = "REDUCED"  # régime réduit
     EXEMPT = "EXEMPT"  # exonération (procédés industriels, double usage)
+
+
+def accise_category_elec_to_categorie(legacy: AcciseCategoryElec) -> "AcciseCategorieElec":
+    """Phase D-4 Tier 4 P0-2 fix : mapping Vague 1 (anglais 5 valeurs) → D-4 (français 3 valeurs).
+
+    Mapping cardinal :
+    - HOUSEHOLD → MENAGES_ASSIMILES
+    - SME → PME
+    - HIGH_POWER → HAUTE_PUISSANCE
+    - REDUCED → PME (régime PME inclut réductions usuelles)
+    - EXEMPT → MENAGES_ASSIMILES (exonération = catégorie de base administrative)
+
+    Note : Phase E sprint unification dédié pour ajout cas REDUIT/EXONERE explicite à D-4.
+    """
+    mapping = {
+        AcciseCategoryElec.HOUSEHOLD: AcciseCategorieElec.MENAGES_ASSIMILES,
+        AcciseCategoryElec.SME: AcciseCategorieElec.PME,
+        AcciseCategoryElec.HIGH_POWER: AcciseCategorieElec.HAUTE_PUISSANCE,
+        AcciseCategoryElec.REDUCED: AcciseCategorieElec.PME,
+        AcciseCategoryElec.EXEMPT: AcciseCategorieElec.MENAGES_ASSIMILES,
+    }
+    return mapping[legacy]
 
 
 class NetworkCostModel(str, enum.Enum):

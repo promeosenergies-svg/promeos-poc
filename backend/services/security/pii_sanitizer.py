@@ -37,15 +37,34 @@ from typing import Pattern
 # Anti faux-positifs labels EDF/Engie codes internes numériques.
 # ═══════════════════════════════════════════════════════════════════════════
 
+# Patterns nommés exportés (Phase D-4 Tier 4 P1 fix audit code-reviewer — anti-couplage index positionnel)
+EMAIL_RFC5322_PATTERN: Pattern[str] = re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b")
+"""Email RFC 5322 simplifié (matchage substring). Pour validator strict, utiliser fullmatch()."""
+
+IBAN_FR_PATTERN: Pattern[str] = re.compile(r"\bFR\d{2}[\s]?(?:[A-Z0-9]{4}[\s]?){5}[A-Z0-9]{3}\b")
+"""IBAN FR 27 chars."""
+
+PHONE_FR_INTL_PATTERN: Pattern[str] = re.compile(r"(?<!\w)\+33[\s.-]?[1-9](?:[\s.-]?\d{2}){4}(?!\d)")
+"""Téléphone FR international +33."""
+
+SIRET_PRM_PCE_PATTERN: Pattern[str] = re.compile(r"\b\d{14}\b")
+"""SIRET / PRM / PCE / PDL — 14 chiffres."""
+
+PHONE_FR_NATIONAL_PATTERN: Pattern[str] = re.compile(r"\b0[1-9](?:[\s.-]?\d{2}){4}\b")
+"""Téléphone FR fixe/mobile 0X XX XX XX XX."""
+
+SIREN_PATTERN: Pattern[str] = re.compile(r"\b\d{9}\b")
+"""SIREN 9 chiffres (le plus court/risqué montants — last)."""
+
 PII_VALUE_PATTERNS: tuple[Pattern[str], ...] = (
     # Patterns structurés (préfixe alphabétique → plus spécifiques)
-    re.compile(r"\bFR\d{2}[\s]?(?:[A-Z0-9]{4}[\s]?){5}[A-Z0-9]{3}\b"),  # IBAN FR (27 chars)
-    re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b"),  # Email RFC 5322
-    re.compile(r"(?<!\w)\+33[\s.-]?[1-9](?:[\s.-]?\d{2}){4}(?!\d)"),  # Téléphone FR international
+    IBAN_FR_PATTERN,  # IBAN FR (27 chars)
+    EMAIL_RFC5322_PATTERN,  # Email RFC 5322
+    PHONE_FR_INTL_PATTERN,  # Téléphone FR international
     # Patterns numériques (longs → courts)
-    re.compile(r"\b\d{14}\b"),  # SIRET / PRM / PCE / PDL (14 chiffres)
-    re.compile(r"\b0[1-9](?:[\s.-]?\d{2}){4}\b"),  # Téléphone FR fixe/mobile (0X XX XX XX XX)
-    re.compile(r"\b\d{9}\b"),  # SIREN (9 chiffres) — last (le plus court/risqué montants)
+    SIRET_PRM_PCE_PATTERN,  # SIRET / PRM / PCE / PDL (14 chiffres)
+    PHONE_FR_NATIONAL_PATTERN,  # Téléphone FR fixe/mobile
+    SIREN_PATTERN,  # SIREN (9 chiffres) — last
     # `\b\d{10}\b` PCE court legacy GRDF — RETIRÉ Phase D-1 (faux-positifs montants TURPE).
 )
 

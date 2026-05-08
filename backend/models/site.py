@@ -334,6 +334,25 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
 
     # ─── Phase D-3 Tier 2 DOC-1 — String→Enum validators (Pilier 9 ADR-016) ───
 
+    @validates("categorie_operat_principale")
+    def _validate_categorie_operat_principale_strict(self, key: str, value: str | None):
+        """P1 fix Phase D-4 Tier 4 audit code-reviewer : Site.categorie_operat_principale strict.
+
+        Réutilise `OperatUsagePrincipalEnum` (9 catégories OPERAT macro). Pattern Pilier 9 ADR-016.
+        Cohérent Batiment.categorie_operat_batiment validator (anti-divergence Site/Bâtiment).
+        """
+        if value is None or value == "":
+            return value
+        from .enums import OperatUsagePrincipalEnum
+
+        valid = {v.value for v in OperatUsagePrincipalEnum}
+        if value not in valid:
+            raise ValueError(
+                f"Phase D-4 Tier 4 violation : categorie_operat_principale={value!r} non canonique "
+                f"(attendu {sorted(valid)} — OperatUsagePrincipalEnum 9 catégories macro)"
+            )
+        return value
+
     @validates("mode_propriete")
     def _validate_mode_propriete_strict(self, key: str, value: str | None):
         """DOC-1 Phase D-3 Tier 2 : `mode_propriete` réutilise `EfaRole` Enum existant.
