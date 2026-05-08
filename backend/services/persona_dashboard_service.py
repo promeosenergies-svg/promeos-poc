@@ -77,21 +77,36 @@ def _operat_status(site, today: date) -> dict:
 def _bacs_status(site) -> dict:
     """Statut BACS par site : deadline 1/1/2030 existants + sanction 1 500 €.
 
-    Phase G P1 fix code-reviewer : `bool(getattr(...)) in ("A", "B")` était un bug
-    logique (bool→True/False jamais dans tuple strings) → toujours `compliant=False`
-    → sur-exposition systématique. Comparaison directe sur la valeur brute.
+    Phase H P1 fix audit : avant utilisait `bacs_classe` qui N'EXISTE PAS
+    sur le modèle Site → 100 % sites assujettis sur-exposés. Le vrai champ
+    est `Site.statut_bacs` (Enum StatutConformite : CONFORME / A_RISQUE /
+    NON_CONFORME).
     """
+    from models import StatutConformite
+
     days = _days_until(BACS_DEADLINE_EXISTING)
     bacs_assujetti = bool(getattr(site, "bacs_assujetti", False))
-    bacs_classe = getattr(site, "bacs_classe", None)
-    bacs_compliant = bacs_classe in ("A", "B")
+    statut = getattr(site, "statut_bacs", None)
+    # Compliant si statut explicitement CONFORME ; pending si A_RISQUE ; NC si NON_CONFORME
+    if statut == StatutConformite.CONFORME:
+        bacs_compliant = True
+    elif statut == StatutConformite.NON_CONFORME:
+        bacs_compliant = False
+    else:
+        # A_RISQUE ou None → pending (pas de chiffrage faux)
+        bacs_compliant = None
     return {
         "framework": "BACS",
         "deadline": BACS_DEADLINE_EXISTING,
         "days_remaining": days,
         "assujetti": bacs_assujetti,
         "compliant": bacs_compliant,
-        "exposure_eur": 0 if (not bacs_assujetti or bacs_compliant) else BACS_PENALTY_EUR,
+        # Exposition chiffrée uniquement si NC explicite + assujetti.
+        # A_RISQUE → exposure_eur=null (pending) + exposure_max_eur exposé.
+        "exposure_eur": (
+            0 if not bacs_assujetti or bacs_compliant is True else BACS_PENALTY_EUR if bacs_compliant is False else None
+        ),
+        "exposure_max_eur": BACS_PENALTY_EUR if bacs_assujetti else 0,
         "regulatory_ref": "Décret 2020-887 art. R175-7",
     }
 
@@ -144,6 +159,73 @@ def _audit_sme_status(ej) -> dict:
         "triggered": triggered,
         "exposure_eur": 0,  # blocage marché public, pas pénalité monétaire directe
         "regulatory_ref": "Loi DDADUE 2025-391 art. 8",
+    }
+
+
+def _dpe_status(site, db: Session) -> dict:
+    """Statut DPE par site : étiquette obligatoire annonce loyer L. 134-3-1 CCH.
+
+    Phase H1 (Marie DAF cardinal Control 19,9k€) : framework #5 DPE.
+    - Sanction DDPP jusqu'à 15 000 € (art. L. 271-4 CCH) + nullité bail
+    - Classes F/G interdits location tertiaire >250 m² (Décret 2020-1610 modifié 2024)
+    - Validité 10 ans (`Batiment.dpe_date_validite`)
+
+    Compliance évaluée par site = pire classe parmi tous Batiment.dpe_class du site :
+    - Tous DPE classés A-E + non expirés → compliant=True
+    - Au moins 1 classé F/G OU date_validite expirée → compliant=False
+    - Aucun DPE renseigné → compliant=None (pending data)
+    """
+    from models.batiment import Batiment
+
+    # Sanction DDPP forfaitaire (art. L. 271-4 CCH — pratique commerciale trompeuse)
+    DPE_PENALTY_EUR = 15000
+
+    surface_tertiaire = getattr(site, "tertiaire_area_m2", 0) or 0
+    # Assujetti si tertiaire >= 250 m² (seuil annonce loyer L. 134-3-1 CCH)
+    dpe_assujetti = surface_tertiaire >= 250
+
+    deadline_iso = "2026-12-31"  # F/G interdits 2025+, échéance vérification annuelle bailleur
+    days = _days_until(deadline_iso)
+
+    if not dpe_assujetti:
+        return {
+            "framework": "DPE",
+            "deadline": deadline_iso,
+            "days_remaining": days,
+            "assujetti": False,
+            "compliant": True,
+            "exposure_eur": 0,
+            "exposure_max_eur": 0,
+            "regulatory_ref": "Art. L. 134-3-1 CCH · Décret 2020-1610",
+        }
+
+    batiments = not_deleted(db.query(Batiment), Batiment).filter(Batiment.site_id == site.id).all()
+    classes = [b.dpe_class for b in batiments if b.dpe_class]
+    today = date.today()
+    has_expired = any(b.dpe_date_validite and b.dpe_date_validite < today for b in batiments if b.dpe_date_validite)
+
+    if not classes and not has_expired:
+        # Aucune donnée DPE renseignée → pending
+        compliant = None
+        exposure = None
+    elif has_expired or any(c in ("F", "G") for c in classes):
+        compliant = False
+        exposure = DPE_PENALTY_EUR
+    else:
+        compliant = True
+        exposure = 0
+
+    return {
+        "framework": "DPE",
+        "deadline": deadline_iso,
+        "days_remaining": days,
+        "assujetti": True,
+        "compliant": compliant,
+        "exposure_eur": exposure,
+        "exposure_max_eur": DPE_PENALTY_EUR,
+        "worst_class": max(classes) if classes else None,  # G > A
+        "has_expired_dpe": has_expired,
+        "regulatory_ref": "Art. L. 134-3-1 CCH · Décret 2020-1610",
     }
 
 
@@ -200,7 +282,9 @@ def build_compliance_dashboard_marie_daf(db: Session, org_id: int) -> dict:
     )
 
     sites_data: list[dict] = []
-    total_exposure = 0
+    total_exposure_certain = 0  # NC explicite chiffré
+    total_exposure_pending_max = 0  # plafond légal frameworks pending (DT/BACS A_RISQUE)
+    pending_frameworks_count = 0
     next_deadline_days: Optional[int] = None
     non_compliant_count = 0
 
@@ -210,14 +294,25 @@ def build_compliance_dashboard_marie_daf(db: Session, org_id: int) -> dict:
             _bacs_status(site),
             _aper_status(site),
             _dt_status(site, today),
+            _dpe_status(site, db),  # Phase H1 — Marie DAF cardinal framework #5
         ]
-        # Phase G P1 fix : `exposure_eur` peut être None (DT trajectoire pas calculée) —
-        # on agrège uniquement les expositions chiffrées non-null.
-        site_exposure = sum(fw["exposure_eur"] or 0 for fw in frameworks)
-        total_exposure += site_exposure
+        # Phase H P1.2 fix : séparer exposition certaine (NC explicite chiffré) vs
+        # pending (DT trajectoire / BACS A_RISQUE) — anti-violation "chiffres fiables"
+        # qui sous-estimait silencieusement le total. Permet UI Marie DAF :
+        # "X € confirmés · jusqu'à Y € en attente d'évaluation".
+        site_exposure_certain = sum(fw["exposure_eur"] for fw in frameworks if fw["exposure_eur"] is not None)
+        site_exposure_pending = sum(
+            fw.get("exposure_max_eur", 0) or 0
+            for fw in frameworks
+            if fw["exposure_eur"] is None and (fw.get("exposure_max_eur") or 0) > 0
+        )
+        total_exposure_certain += site_exposure_certain
+        total_exposure_pending_max += site_exposure_pending
+        if site_exposure_pending > 0:
+            pending_frameworks_count += 1
 
-        # Site NC si au moins 1 framework explicitement non compliant + exposure > 0.
-        # `compliant=None` (DT pending) n'est PAS comptabilisé NC ici.
+        # Site NC si au moins 1 framework explicitement non compliant + exposure chiffré > 0.
+        # `compliant=None` (pending) n'est PAS comptabilisé NC.
         is_nc = any(fw.get("compliant") is False and (fw["exposure_eur"] or 0) > 0 for fw in frameworks)
         if is_nc:
             non_compliant_count += 1
@@ -232,7 +327,8 @@ def build_compliance_dashboard_marie_daf(db: Session, org_id: int) -> dict:
             {
                 "site_id": site.id,
                 "nom": site.nom,
-                "exposure_eur": site_exposure,
+                "exposure_certain_eur": site_exposure_certain,
+                "exposure_pending_max_eur": site_exposure_pending,
                 "is_non_compliant": is_nc,
                 "frameworks": frameworks,
             }
@@ -251,7 +347,12 @@ def build_compliance_dashboard_marie_daf(db: Session, org_id: int) -> dict:
         "headlines": {
             "total_sites": len(sites),
             "non_compliant_count": non_compliant_count,
-            "total_exposure_eur": total_exposure,
+            # Phase H P1.2 fix : split certain vs pending pour traçabilité comité
+            "total_exposure_certain_eur": total_exposure_certain,
+            "total_exposure_pending_max_eur": total_exposure_pending_max,
+            "pending_frameworks_count": pending_frameworks_count,
+            # Backward-compat pour callsites Phase G existants (sera deprécié Phase I)
+            "total_exposure_eur": total_exposure_certain + total_exposure_pending_max,
             "next_deadline_days": next_deadline_days,
         },
         "sites": sites_data,

@@ -114,22 +114,28 @@ class TestMarieDaFComplianceDashboard:
         assert "audit_sme" in data
         assert data["headlines"]["total_sites"] == 3
 
-    def test_t_persona_02_frameworks_4_per_site(self, client, db):
-        """T-PERSONA-02 : 4 frameworks DT/BACS/APER/OPERAT par site."""
+    def test_t_persona_02_frameworks_5_per_site(self, client, db):
+        """T-PERSONA-02 : 5 frameworks DT/BACS/APER/OPERAT/DPE par site (Phase H1 +DPE)."""
         org, _, _, _ = _seed_org_with_sites(db, n_sites=2)
         r = client.get("/api/persona/marie-daf/compliance-dashboard", headers=_h(org.id))
         for site in r.json()["sites"]:
             frameworks = {fw["framework"] for fw in site["frameworks"]}
-            assert frameworks == {"DT", "BACS", "APER", "OPERAT"}
+            assert frameworks == {"DT", "BACS", "APER", "OPERAT", "DPE"}
 
     def test_t_persona_03_total_exposure_includes_aper_surface(self, client, db):
-        """T-PERSONA-03 : exposition cumulée non nulle (APER 1500 m² × 20 €/m² × 2 sites)."""
+        """T-PERSONA-03 : exposition cumulée non nulle (APER 1500 m² × 20 €/m² × 2 sites).
+
+        Phase H : split certain (APER+OPERAT) vs pending (DT+BACS A_RISQUE) — total = somme.
+        """
         org, _, _, _ = _seed_org_with_sites(db, n_sites=2)
         r = client.get("/api/persona/marie-daf/compliance-dashboard", headers=_h(org.id))
-        # 2 sites × parking 1500 m² × 90% non couvert × 20 €/m² = 54 000 €
-        # + DT 7 500 × 2 = 15 000 € + BACS 1 500 × 2 = 3 000 € + OPERAT 1 500 × 2 = 3 000 €
-        # Total min ≥ 50 000 €
-        assert r.json()["headlines"]["total_exposure_eur"] > 50000
+        headlines = r.json()["headlines"]
+        # Split certain + pending
+        assert "total_exposure_certain_eur" in headlines
+        assert "total_exposure_pending_max_eur" in headlines
+        assert "pending_frameworks_count" in headlines
+        # Total cumul (backward-compat) > 50k
+        assert headlines["total_exposure_eur"] > 50000
 
     def test_t_persona_04_audit_sme_triggered_by_consumption_3y(self, client, db):
         """T-PERSONA-04 : Audit SMÉ déclenché par EJ.consommation_annuelle_moyenne_3y_gwh ≥ 2.75."""
@@ -286,21 +292,193 @@ class TestCFOExpiringContracts:
         assert r.json()["total_expiring"] == 0
 
 
+# ─── Phase H1 — DPE framework #5 (Marie DAF cardinal Control 19,9k€) ───────
+
+
+class TestPhaseH1DPEFramework:
+    def _seed_with_dpe(self, db, dpe_class="C", expired=False):
+        from datetime import timedelta
+
+        from models import Batiment
+
+        org, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        site = sites[0]
+        validity = date.today() - timedelta(days=10) if expired else date.today() + timedelta(days=365)
+        bati = Batiment(
+            site_id=site.id,
+            nom="Bati 1",
+            surface_m2=1000.0,
+            dpe_class=dpe_class,
+            dpe_date_validite=validity,
+        )
+        db.add(bati)
+        db.commit()
+        return org, site
+
+    def test_h1_dpe_compliant_class_a_to_e(self, client, db):
+        """H1 — DPE classe A-E + non expiré → compliant=True, exposure=0."""
+        org, site = self._seed_with_dpe(db, dpe_class="C")
+        r = client.get("/api/persona/marie-daf/compliance-dashboard", headers=_h(org.id))
+        dpe = next(fw for fw in r.json()["sites"][0]["frameworks"] if fw["framework"] == "DPE")
+        assert dpe["assujetti"] is True
+        assert dpe["compliant"] is True
+        assert dpe["exposure_eur"] == 0
+
+    def test_h1_dpe_non_compliant_class_f(self, client, db):
+        """H1 — DPE classe F → compliant=False, exposure=15 000 € (sanction DDPP)."""
+        org, _ = self._seed_with_dpe(db, dpe_class="F")
+        r = client.get("/api/persona/marie-daf/compliance-dashboard", headers=_h(org.id))
+        dpe = next(fw for fw in r.json()["sites"][0]["frameworks"] if fw["framework"] == "DPE")
+        assert dpe["compliant"] is False
+        assert dpe["exposure_eur"] == 15000
+
+    def test_h1_dpe_non_compliant_expired(self, client, db):
+        """H1 — DPE expiré (validité < today) → compliant=False même si classe A."""
+        org, _ = self._seed_with_dpe(db, dpe_class="A", expired=True)
+        r = client.get("/api/persona/marie-daf/compliance-dashboard", headers=_h(org.id))
+        dpe = next(fw for fw in r.json()["sites"][0]["frameworks"] if fw["framework"] == "DPE")
+        assert dpe["compliant"] is False
+        assert dpe["has_expired_dpe"] is True
+
+    def test_h1_dpe_pending_no_data(self, client, db):
+        """H1 — Site assujetti tertiaire >250 m² sans Batiment.dpe_class → compliant=None."""
+        org, _, _, _ = _seed_org_with_sites(db, n_sites=1)
+        r = client.get("/api/persona/marie-daf/compliance-dashboard", headers=_h(org.id))
+        dpe = next(fw for fw in r.json()["sites"][0]["frameworks"] if fw["framework"] == "DPE")
+        assert dpe["assujetti"] is True
+        assert dpe["compliant"] is None
+        assert dpe["exposure_eur"] is None
+        assert dpe["exposure_max_eur"] == 15000
+
+
+# ─── Phase H2 — R23 TURPE doublé (Jean-Marc CFO cardinal ROI) ───────────────
+
+
+class TestPhaseH2R23TurpeDouble:
+    def test_h2_r23_detects_double_turpe_period(self, db):
+        """H2 — 2 lignes NETWORK même période HPH → R23 détecté."""
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import detect_r23_turpe_double
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-R23",
+            energy_kwh=10000,
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        # 2 lignes TURPE NETWORK HPH (doublon)
+        for amount in (250.0, 250.0):
+            db.add(
+                EnergyInvoiceLine(
+                    invoice_id=invoice.id,
+                    line_type=InvoiceLineType.NETWORK,
+                    label="TURPE 7 HPH soutirage",
+                    amount_eur=amount,
+                )
+            )
+        db.commit()
+        db.refresh(invoice)
+
+        anomalies = detect_r23_turpe_double(invoice, db)
+        assert len(anomalies) == 1
+        a = anomalies[0]
+        assert a.code == "R23"
+        assert a.severity == "critical"  # 250 € > 100 €
+        assert a.details_json["period_code"] == "HPH"
+        assert a.details_json["duplicate_count"] == 2
+
+    def test_h2_r23_no_double_no_anomaly(self, db):
+        """H2 — 1 seule ligne par période → pas de doublon détecté."""
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import detect_r23_turpe_double
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-R23-OK",
+            energy_kwh=10000,
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        # 1 ligne par période différente — pas de doublon
+        for label in ("TURPE 7 HPH", "TURPE 7 HCH", "TURPE 7 HPB"):
+            db.add(
+                EnergyInvoiceLine(
+                    invoice_id=invoice.id,
+                    line_type=InvoiceLineType.NETWORK,
+                    label=label,
+                    amount_eur=100.0,
+                )
+            )
+        db.commit()
+        db.refresh(invoice)
+
+        anomalies = detect_r23_turpe_double(invoice, db)
+        assert anomalies == []
+
+    def test_h2_r23_severity_warning_below_100eur(self, db):
+        """H2 — doublon < 100 € → severity warning (pas critical)."""
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import detect_r23_turpe_double
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-R23-W",
+            energy_kwh=10000,
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        for amount in (50.0, 50.0):
+            db.add(
+                EnergyInvoiceLine(
+                    invoice_id=invoice.id,
+                    line_type=InvoiceLineType.NETWORK,
+                    label="TURPE 7 HC",
+                    amount_eur=amount,
+                )
+            )
+        db.commit()
+        db.refresh(invoice)
+
+        anomalies = detect_r23_turpe_double(invoice, db)
+        assert len(anomalies) == 1
+        assert anomalies[0].severity == "warning"
+
+
 # ─── Source-guards P1 fixes (post-audit code-reviewer Phase G) ─────────────
 
 
 class TestPhaseGP1FixesSourceGuards:
-    def test_p1_fix_bacs_compliant_uses_direct_comparison(self):
-        """P1 fix : BACS compliant via comparaison directe (pas bug `bool() in tuple`)."""
+    def test_p1_fix_bacs_uses_real_statut_bacs_field(self):
+        """P1 fix Phase H : BACS utilise Site.statut_bacs (champ réel) au lieu
+        de bacs_classe (inexistant sur Site). Tri-state compliant : True/False/None.
+        """
         from pathlib import Path
 
         src = (Path(__file__).resolve().parent.parent / "services" / "persona_dashboard_service.py").read_text(
             encoding="utf-8"
         )
-        # Bug original supprimé
+        # Bug original supprimé (bool() in tuple)
         assert 'bool(getattr(site, "bacs_classe"' not in src
-        # Fix appliqué : direct comparison
-        assert 'bacs_classe in ("A", "B")' in src
+        # Fix Phase H final : utilise statut_bacs (vrai champ Site)
+        assert 'getattr(site, "statut_bacs"' in src
+        assert "StatutConformite.CONFORME" in src
+        assert "StatutConformite.NON_CONFORME" in src
 
     def test_p1_fix_dt_compliant_null_not_false(self, client, db):
         """P1 fix : DT.compliant = None (pending trajectory) au lieu de False hardcoded."""

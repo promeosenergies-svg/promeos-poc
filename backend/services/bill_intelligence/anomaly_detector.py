@@ -312,6 +312,76 @@ def detect_r20_capacity_variance(invoice: EnergyInvoice, db: Session) -> list[Bi
     return anomalies
 
 
+# ─── R23 TURPE doublé (Phase H Jean-Marc CFO cardinal) ─────────────────────
+
+
+def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAnomaly]:
+    """R23 — TURPE doublé : 2+ lignes TURPE pour même période sur invoice unique.
+
+    Persona Jean-Marc CFO cardinal Phase H : impact ROI 6-15 k€/an récupérables
+    sur portefeuille tertiaire IDF (5 % des factures observées en doublon
+    bascule HTA/BT ou changement fournisseur).
+
+    Heuristique :
+    - Regrouper EnergyInvoiceLine `line_type=NETWORK` par période détectée
+      (HPH / HCH / HPB / HCB / P / HP / HC / BASE)
+    - Si ≥ 2 lignes pour même période sur même invoice → R23 anomalie
+    - Sévérité `critical` si total doublé > 100 € ; `warning` sinon
+
+    Returns:
+        list[BillAnomaly] : 0..N anomalies (1 par groupe période doublé)
+    """
+    from collections import defaultdict
+
+    from models.enums import InvoiceLineType
+
+    network_lines = [
+        line
+        for line in (invoice.lines or [])
+        if line.line_type == InvoiceLineType.NETWORK and line.amount_eur is not None
+    ]
+    if len(network_lines) < 2:
+        return []
+
+    # Regroupement par période détectée dans label
+    by_period: dict[str, list] = defaultdict(list)
+    for line in network_lines:
+        label = (line.label or "").upper()
+        period = None
+        for code in _PERIOD_CODES_KNOWN:
+            if re.search(rf"\b{code}\b", label):
+                period = code
+                break
+        if period:
+            by_period[period].append(line)
+
+    anomalies: list[BillAnomaly] = []
+    for period, lines in by_period.items():
+        if len(lines) < 2:
+            continue
+        # Doublon détecté : même période sur 2+ lignes NETWORK
+        total_doublon_eur = sum(float(line.amount_eur or 0) for line in lines[1:])
+        # On considère que la 1ère ligne est légitime, les suivantes sont doublons
+        severity = "critical" if total_doublon_eur > 100 else "warning"
+        anomalies.append(
+            BillAnomaly(
+                invoice_id=invoice.id,
+                code="R23",
+                severity=severity,
+                threshold_value=Decimal("100.0"),
+                actual_value=Decimal(str(round(total_doublon_eur, 2))),
+                details_json={
+                    "period_code": period,
+                    "duplicate_count": len(lines),
+                    "duplicate_lines_ids": [line.id for line in lines],
+                    "montant_anomalie_eur": round(total_doublon_eur, 2),
+                    "regulatory_ref": "CRE Délib. 2025-78 art. 8 — TURPE 7 facturation unique période",
+                },
+            )
+        )
+    return anomalies
+
+
 # ─── Pipeline ───────────────────────────────────────────────────────────────
 
 
@@ -347,5 +417,14 @@ def detect_anomalies_for_invoice(invoice: EnergyInvoice, db: Session) -> list[Bi
             anomalies.append(r20)
     except Exception as e:
         _logger.error(f"R20 detector failed for invoice {invoice.id}: {e}")
+
+    # R23 : 0..N anomalies (1 par période doublée) — Phase H cardinal CFO
+    try:
+        r23_list = detect_r23_turpe_double(invoice, db)
+        for r23 in r23_list:
+            db.add(r23)
+            anomalies.append(r23)
+    except Exception as e:
+        _logger.error(f"R23 detector failed for invoice {invoice.id}: {e}")
 
     return anomalies
