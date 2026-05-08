@@ -18,10 +18,26 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import ColumnElement
 
 from models import Organisation, not_deleted
 from models.enums import TypeFournitureEnum
 from models.fournisseur import Fournisseur
+
+
+def canonical_or_scoped_filter(scope_org_id: int | None) -> ColumnElement:
+    """Filtre SQL UNION canoniques (org_id NULL) + privés (org_id == scope).
+
+    Phase F2 /simplify fix : dédoublonnage du pattern OR utilisé 4× dans
+    les services Fournisseur. Si `scope_org_id is None`, retourne uniquement
+    les canoniques.
+    """
+    if scope_org_id is None:
+        return Fournisseur.organisation_id.is_(None)
+    return or_(
+        Fournisseur.organisation_id.is_(None),
+        Fournisseur.organisation_id == scope_org_id,
+    )
 
 
 def get_fournisseurs_for_org(
@@ -41,12 +57,7 @@ def get_fournisseurs_for_org(
     Returns:
         list[Fournisseur] triée par nom.
     """
-    q = db.query(Fournisseur).filter(
-        or_(
-            Fournisseur.organisation_id.is_(None),  # canoniques
-            Fournisseur.organisation_id == org_id,  # privés scope
-        )
-    )
+    q = db.query(Fournisseur).filter(canonical_or_scoped_filter(org_id))
     if actif_only:
         q = q.filter(Fournisseur.actif.is_(True))
     if type_fourniture is not None:
@@ -68,10 +79,7 @@ def get_fournisseur_by_id(
         db.query(Fournisseur)
         .filter(
             Fournisseur.id == fournisseur_id,
-            or_(
-                Fournisseur.organisation_id.is_(None),
-                Fournisseur.organisation_id == scope_org_id,
-            ),
+            canonical_or_scoped_filter(scope_org_id),
         )
         .first()
     )

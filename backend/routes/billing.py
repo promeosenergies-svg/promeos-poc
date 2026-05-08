@@ -1375,9 +1375,16 @@ async def import_invoice_pdf(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Upload PDF facture → parse EDF/Engie templates → normalise → stocke → audit."""
+    """Upload PDF facture → parse EDF/Engie templates → normalise → stocke → audit.
+
+    Phase F2 (ADR-F-02) : résolution Fournisseur Phase F1 via SIREN extract + mapping.
+    """
     check_rate_limit(request, key_prefix="billing_import", max_requests=20, window_seconds=60)
-    from app.bill_intelligence.parsers.pdf_parser import parse_pdf_bytes
+    from app.bill_intelligence.parsers.pdf_parser import (
+        extract_text_with_fitz,
+        parse_pdf_bytes,
+    )
+    from services.fournisseur_resolver_service import resolve_fournisseur_from_invoice
 
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     _check_site_belongs_to_org(db, site_id, effective_org_id)
@@ -1389,7 +1396,15 @@ async def import_invoice_pdf(
     content = await file.read()
     if len(content) > 20 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="PDF trop volumineux (max 20 Mo)")
-    invoice_domain = parse_pdf_bytes(content, file.filename or "upload.pdf")
+
+    # Phase F2 : extract texte brut une seule fois, puis réutilisé pour parse + SIREN
+    # (évite double extraction fitz P1 fix code-reviewer)
+    pdf_text = extract_text_with_fitz(content)
+    invoice_domain = parse_pdf_bytes(
+        content,
+        file.filename or "upload.pdf",
+        preextracted_text=pdf_text,
+    )
 
     confidence = getattr(invoice_domain, "parsing_confidence", 0) or 0
     if not invoice_domain or confidence < 0.5:
@@ -1398,6 +1413,15 @@ async def import_invoice_pdf(
             detail="PDF non reconnu ou confiance insuffisante (< 0.5). "
             "Vérifiez le format EDF/Engie ou saisissez manuellement.",
         )
+
+    # Phase F2 (ADR-F-02) : résolution Fournisseur via SIREN extract + mapping name
+    fournisseur = resolve_fournisseur_from_invoice(
+        db,
+        invoice_domain,
+        scope_org_id=effective_org_id,
+        pdf_text=pdf_text,
+    )
+    fournisseur_id = fournisseur.id if fournisseur else None
 
     db_invoice = EnergyInvoice(
         site_id=site_id,
@@ -1415,6 +1439,8 @@ async def import_invoice_pdf(
                 "confidence": getattr(invoice_domain, "parsing_confidence", 0) or 0,
                 "filename": file.filename or "",
                 "pdl_prm": getattr(invoice_domain, "pdl_pce", None) or "",  # P0-3: store PDL
+                # Phase F2 (ADR-F-02) : bridge Fournisseur Phase F1 — id seul (nom dérivable runtime)
+                "fournisseur_id": fournisseur_id,
             }
         ),
     )
@@ -1463,6 +1489,8 @@ async def import_invoice_pdf(
         "invoice_id": db_invoice.id,
         "confidence": round(float(confidence), 2),
         "supplier": getattr(invoice_domain, "supplier", "") or "",
+        # Phase F2 (ADR-F-02) : bridge Fournisseur Phase F1 (id seul, nom dérivable runtime)
+        "fournisseur_id": fournisseur_id,
         "anomalies_count": len(anomalies_list),
         "kb_updated": run_audit,  # P0-5
         "kb_rules_applied": [a.get("rule_id") for a in anomalies_list],  # P0-5

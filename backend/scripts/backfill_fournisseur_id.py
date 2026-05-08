@@ -21,50 +21,17 @@ from collections import Counter
 
 from sqlalchemy.orm import Session
 
+# Phase F2 P1 fix code-reviewer : SoT canonique partagée (anti-couplage script→service)
+from config.fournisseur_mappings import (
+    SUPPLIER_NAME_TO_CANONICAL,
+    normalize_supplier_name,
+)
 from database import SessionLocal
 from models.billing_models import EnergyContract
 from models.fournisseur import Fournisseur
 
 
-# Mapping supplier_name (libre) → nom canonique Fournisseur.
-# Toutes les clés sont normalisées en upper-strip avant lookup.
-SUPPLIER_NAME_TO_CANONICAL: dict[str, str] = {
-    # EDF variantes
-    "EDF": "EDF",
-    "E.D.F.": "EDF",
-    "E D F": "EDF",
-    "EDF ENTREPRISES": "EDF",
-    "EDF SA": "EDF",
-    # ENGIE variantes
-    "ENGIE": "ENGIE",
-    "GDF SUEZ": "ENGIE",
-    "GDF-SUEZ": "ENGIE",
-    "GDF": "ENGIE",
-    "ENGIE SA": "ENGIE",
-    # TOTALENERGIES variantes
-    "TOTALENERGIES": "TOTALENERGIES",
-    "TOTAL ENERGIES": "TOTALENERGIES",
-    "TOTAL DIRECT ENERGIE": "TOTALENERGIES",
-    "TOTAL ENERGIES ELECTRICITE ET GAZ": "TOTALENERGIES",
-    # Autres canoniques
-    "EKWATEUR": "EKWATEUR",
-    "ALPIQ": "ALPIQ",
-    "ENERCOOP": "ENERCOOP",
-    "PLUM ENERGIE": "PLUM_ENERGIE",
-    "PLÜM ENERGIE": "PLUM_ENERGIE",
-    "MINT ENERGIE": "MINT_ENERGIE",
-    "OHM ENERGIE": "OHM_ENERGIE",
-    "GAZ DE BORDEAUX": "GAZ_DE_BORDEAUX",
-}
-
 logger = logging.getLogger(__name__)
-
-
-def normalize_supplier_name(raw: str) -> str:
-    """Normalise un supplier_name libre pour matching mapping canonique."""
-    if raw is None:
-        return ""
-    return raw.strip().upper().replace("  ", " ")
 
 
 def backfill_fournisseur_id(db: Session) -> dict:

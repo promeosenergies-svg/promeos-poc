@@ -56,9 +56,20 @@ def extract_text_with_fitz(content: bytes) -> str:
     return text
 
 
-def parse_pdf_bytes(content: bytes, source_filename: str = "upload.pdf"):
-    """Entry point: PDF bytes → Invoice domain object or None."""
-    text = extract_text_with_fitz(content)
+def parse_pdf_bytes(
+    content: bytes,
+    source_filename: str = "upload.pdf",
+    *,
+    preextracted_text: Optional[str] = None,
+):
+    """Entry point: PDF bytes → Invoice domain object or None.
+
+    Phase F2 P1 fix code-reviewer : accepte `preextracted_text` pour éviter
+    double extraction fitz quand l'appelant a déjà extrait le texte (ex: bridge
+    Fournisseur dans `routes/billing.py:import_invoice_pdf`). Sur PDFs ~20 Mo,
+    élimine le pic mémoire x2 et la latence redondante.
+    """
+    text = preextracted_text if preextracted_text is not None else extract_text_with_fitz(content)
     return parse_pdf_text(text, source_filename)
 
 
@@ -108,6 +119,46 @@ def _find_str(text: str, pattern: str) -> Optional[str]:
     m = re.search(pattern, text, re.IGNORECASE)
     if m:
         return m.group(1).strip()
+    return None
+
+
+# ========================================
+# Phase F2 (ADR-F-02) — Extraction SIREN/SIRET pour bridge Fournisseur
+# ========================================
+
+
+def extract_siren_from_pdf_text(text: str) -> Optional[str]:
+    """Extrait SIREN 9 chiffres ou dérive du SIRET 14 chiffres trouvé dans le PDF.
+
+    Heuristique cardinale Phase F2 — patterns LABELED uniquement (haute confiance) :
+    1. Chercher "SIRET <14 chiffres>" → préfixe 9 chiffres = SIREN
+    2. Chercher "SIREN <9 chiffres>"
+    3. Chercher "RCS <ville> [B] <9 chiffres>"
+
+    P1 fix code-reviewer Phase F2 : pattern SIRET 14d isolé (sans label) RETIRÉ —
+    collision certaine avec le PDL Enedis (14 chiffres) présent sur factures élec.
+    Faux positif silencieux propage `fournisseur_id` erroné.
+
+    Returns:
+        SIREN 9 chiffres si trouvé via pattern labellé, None sinon.
+    """
+    # 1. SIRET avec label (priorité — plus spécifique que SIREN)
+    siret_match = re.search(r"\bSIRET\s*[:\s]*(\d{14})\b", text, re.IGNORECASE)
+    if siret_match:
+        return siret_match.group(1)[:9]
+
+    # 2. SIREN avec label
+    siren_match = re.search(r"\bSIREN\s*[:\s]*(\d{9})\b", text, re.IGNORECASE)
+    if siren_match:
+        return siren_match.group(1)
+
+    # 3. RCS Ville [B] <SIREN>
+    rcs_match = re.search(r"\bRCS\s+\S+\s+(?:[A-Z]\s+)?(\d{9})\b", text, re.IGNORECASE)
+    if rcs_match:
+        return rcs_match.group(1)
+
+    # Pas de pattern labellé → None (pas de fallback heuristique pour éviter
+    # collision avec PDL Enedis 14 chiffres ou autres identifiants numériques)
     return None
 
 
