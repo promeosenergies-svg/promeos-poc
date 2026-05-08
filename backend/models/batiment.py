@@ -3,10 +3,15 @@ PROMEOS - Modèle Bâtiment
 Unité réglementaire (décret tertiaire, BACS)
 """
 
+import re
+
 from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship, validates
 
 from .base import Base, SoftDeleteMixin, TimestampMixin
+
+# Phase D-4 Tier 3 — SIRET 14 chiffres
+_SIRET_PATTERN = re.compile(r"^\d{14}$")
 
 
 class Batiment(Base, TimestampMixin, SoftDeleteMixin):
@@ -76,6 +81,20 @@ class Batiment(Base, TimestampMixin, SoftDeleteMixin):
         comment="Émissions DPE bâtiment (kgCO2e/m²/an) — double étiquette DPE Décret 2020-1610 — matrice v1 §4.5#14",
     )
 
+    # Phase D-4 Tier 3 — 4 P1 polish matrice v1 §4.5#8/10/15/16
+    siret_batiment = Column(String(14), nullable=True, comment="SIRET bâtiment — matrice v1 §4.5#8")
+    etage_count = Column(Integer, nullable=True, comment="Nombre d'étages — matrice v1 §4.5#10")
+    efa_operat_id = Column(
+        String(50),
+        nullable=True,
+        comment="Identifiant EFA OPERAT bâtiment (cas multi-bâtiments multi-EFA) — matrice v1 §4.5#15",
+    )
+    parties_communes_pct = Column(
+        Float,
+        nullable=True,
+        comment="Pourcentage parties communes (0-100) — matrice v1 §4.5#16",
+    )
+
     # ─── Phase D-3 Tier 2 DOC-1 — String→Enum validator (P1-AUDIT-D-011) ───
 
     @validates("dpe_class")
@@ -122,6 +141,41 @@ class Batiment(Base, TimestampMixin, SoftDeleteMixin):
             raise ValueError(
                 f"Phase D-4 Tier 2 P1-E violation : categorie_operat_batiment={value!r} interdit "
                 f"si usage_batiment={self.usage_batiment!r} (hors périmètre OPERAT)"
+            )
+        return value
+
+    @validates("siret_batiment")
+    def _validate_siret_batiment(self, key: str, value: str | None):
+        """Phase D-4 Tier 3 : SIRET strict 14 chiffres (matrice v1 §4.5#8)."""
+        if value is None or value == "":
+            return value
+        if not _SIRET_PATTERN.match(value):
+            raise ValueError(
+                f"Phase D-4 Tier 3 violation : siret_batiment={value!r} format invalide "
+                f"(attendu 14 chiffres exactement)"
+            )
+        return value
+
+    @validates("parties_communes_pct")
+    def _validate_parties_communes_pct(self, key: str, value: float | None):
+        """Phase D-4 Tier 3 : parties_communes_pct range [0.0, 100.0]."""
+        if value is None:
+            return value
+        if not isinstance(value, (int, float)) or value < 0.0 or value > 100.0:
+            raise ValueError(
+                f"Phase D-4 Tier 3 violation : parties_communes_pct={value!r} hors range (attendu float 0.0-100.0)"
+            )
+        return value
+
+    @validates("etage_count")
+    def _validate_etage_count(self, key: str, value: int | None):
+        """Phase D-4 Tier 3 : etage_count range plausible (-5 à 200)."""
+        if value is None:
+            return value
+        if not isinstance(value, int) or value < -5 or value > 200:
+            raise ValueError(
+                f"Phase D-4 Tier 3 violation : etage_count={value!r} hors range "
+                f"(attendu int -5 à 200 — sous-sols + tour)"
             )
         return value
 

@@ -6,16 +6,17 @@ N-N link tables + Staging pipeline + Quality findings + DeliveryPoint.
 import re
 
 from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Float,
-    Text,
+    JSON,
     Boolean,
+    Column,
     Date,
     DateTime,
-    ForeignKey,
     Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import relationship, validates
@@ -375,6 +376,45 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
         Float,
         nullable=True,
         comment="PCS gaz (Pouvoir Calorifique Supérieur kWh/Nm³) — matrice v1 §4.6.C#13 / api_grdf",
+    )
+
+    # Phase D-4 Tier 3 — 7 P1 polish DP élec + DP gaz (matrice v1 §4.6.B#9-13 + §4.6.C#14-17)
+    # DP élec polish
+    puissances_souscrites_par_plage = Column(
+        JSON,
+        nullable=True,
+        comment="Puissances souscrites par plage (JSON LU) — matrice v1 §4.6.B#9",
+    )
+    tan_phi_mesure = Column(
+        Float,
+        nullable=True,
+        comment="Tan(phi) mesure HTA — matrice v1 §4.6.B#10",
+    )
+    dataconnect_token_expires_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Expiration token DataConnect (OAuth2) — matrice v1 §4.6.B#12",
+    )
+    dataconnect_scopes = Column(
+        JSON,
+        nullable=True,
+        comment="Scopes DataConnect actifs (JSON 4 scopes possibles) — matrice v1 §4.6.B#13",
+    )
+    # DP gaz polish
+    zone_implantation = Column(
+        String(50),
+        nullable=True,
+        comment="Zone implantation gaz (api_grdf — pour CJN profil) — matrice v1 §4.6.C#14",
+    )
+    pitd_code = Column(
+        String(20),
+        nullable=True,
+        comment="Point Interface Transport Distribution code — matrice v1 §4.6.C#15",
+    )
+    adict_token_expires_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Expiration token ADICT GRDF (OAuth2) — matrice v1 §4.6.C#17",
     )
 
     # ── Reprogrammation Heures Creuses (chantier Enedis TURPE 7) ──

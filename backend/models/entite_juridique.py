@@ -3,9 +3,16 @@ PROMEOS - Modèle Entité Juridique
 SIREN/SIRET - qui signe les contrats / qui paye
 """
 
-from sqlalchemy import Column, Float, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship
+import re
+
+from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship, validates
 from .base import Base, TimestampMixin, SoftDeleteMixin
+
+# Phase D-4 Tier 3 — SIRET strict 14 chiffres (cohérent batiment.py + patrimoine.py).
+_SIRET_PATTERN = re.compile(r"^\d{14}$")
+# URL HTTP/HTTPS — normalisation silencieuse "https://" si schema absent.
+_URL_PATTERN = re.compile(r"^https?://[^\s]+$")
 
 
 class EntiteJuridique(Base, TimestampMixin, SoftDeleteMixin):
@@ -54,6 +61,76 @@ class EntiteJuridique(Base, TimestampMixin, SoftDeleteMixin):
         nullable=True,
         comment="CA annuel EUR — co-déclencheur Audit SMÉ matrice v1 §4.2#17 (Sirène)",
     )
+
+    # Phase D-4 Tier 3 — 7 P1 polish matrice v1 §4.2#13-15 + 19-22
+    telephone = Column(String(30), nullable=True, comment="Téléphone — matrice v1 §4.2#13")
+    email_contact = Column(String(255), nullable=True, comment="Email contact — matrice v1 §4.2#14")
+    site_web = Column(String(500), nullable=True, comment="Site web (HTTPS) — matrice v1 §4.2#15")
+    type_societe = Column(String(50), nullable=True, comment="Type société (SA/SAS/SARL/...) — matrice v1 §4.2#19")
+    date_creation_societe = Column(Date, nullable=True, comment="Date création société — matrice v1 §4.2#20")
+    capital_social_eur = Column(Float, nullable=True, comment="Capital social EUR — matrice v1 §4.2#21")
+    representant_legal_nom = Column(String(255), nullable=True, comment="Représentant légal — matrice v1 §4.2#22")
+
+    @validates("siret")
+    def _validate_siret_strict(self, key: str, value: str | None):
+        """P1-2 fix code-reviewer Phase D-4 Tier 3 : EJ.siret strict 14 chiffres.
+
+        Cohérent Batiment.siret_batiment validator (asymétrie corrigée).
+        """
+        if value is None or value == "":
+            return value
+        if not _SIRET_PATTERN.match(value):
+            raise ValueError(
+                f"Phase D-4 Tier 3 violation : EJ.siret={value!r} format invalide (attendu 14 chiffres exactement)"
+            )
+        # Cohérence cardinale : SIREN(siret[0:9]) doit matcher EJ.siren si défini
+        if self.siren and value[:9] != self.siren:
+            raise ValueError(
+                f"Phase D-4 Tier 3 violation : EJ.siret={value!r} préfixe 9 chiffres "
+                f"incohérent avec siren={self.siren!r}"
+            )
+        return value
+
+    @validates("email_contact")
+    def _validate_email_contact(self, key: str, value: str | None):
+        """P1-3 fix code-reviewer Phase D-4 Tier 3 : email_contact via PII SoT centralisé.
+
+        Délégué à `services/security/pii_sanitizer.py` (PII_VALUE_PATTERNS[1] = email RFC 5322).
+        Pattern Pilier 13 ADR-016 (SoT cross-services centralisé — pas de duplication).
+        """
+        if value is None or value == "":
+            return value
+        from services.security.pii_sanitizer import PII_VALUE_PATTERNS
+
+        # PII_VALUE_PATTERNS[1] = email RFC 5322 (cf. pii_sanitizer.py ligne 43)
+        # Le pattern PII utilise \b...\b (matchage substring) — pour validator strict,
+        # on vérifie que le pattern matche **et** couvre toute la string (start/end).
+        email_pattern = PII_VALUE_PATTERNS[1]
+        match = email_pattern.fullmatch(value)
+        if match is None:
+            raise ValueError(
+                f"Phase D-4 Tier 3 violation : email_contact={value!r} format invalide "
+                f"(attendu RFC 5322 simplifié — voir pii_sanitizer.py SoT)"
+            )
+        return value
+
+    @validates("site_web")
+    def _validate_site_web(self, key: str, value: str | None):
+        """P1-4 fix code-reviewer Phase D-4 Tier 3 : site_web normalisation silencieuse HTTPS.
+
+        Si l'utilisateur saisit "www.exemple.fr" (UX courante), normalise en "https://www.exemple.fr".
+        """
+        if value is None or value == "":
+            return value
+        # Normalisation silencieuse : préfixer https:// si schema absent
+        if not value.startswith(("http://", "https://")):
+            value = f"https://{value}"
+        if not _URL_PATTERN.match(value):
+            raise ValueError(
+                f"Phase D-4 Tier 3 violation : site_web={value!r} format invalide "
+                f"(attendu URL valide avec ou sans http(s)://)"
+            )
+        return value
 
     # Relations
     organisation = relationship("Organisation", back_populates="entites_juridiques")
