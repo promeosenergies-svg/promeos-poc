@@ -135,18 +135,33 @@ def test_phase_d4_t4_p02_accise_docstring_documente_dualite():
     assert "Phase E unification" in docstring
 
 
-# ─── P0-3 IDOR flag explicite ─────────────────────────────────────────────
+# ─── P0-3 IDOR Phase E résolu (org-scoping cardinal) ─────────────────────
 
 
-def test_phase_d4_t4_p03_idor_dette_flag_documente():
-    """P0-3 : commentaire tête patrimoine_crud.py documente DETTE IDOR cardinale."""
+def test_phase_d4_t4_p03_idor_resolved_phase_e():
+    """P0-3 : Phase E IDOR Sprint a résolu la dette — vérification cardinal :
+    1. patrimoine_crud.py importe `resolve_org_id` + helpers `assert_org_owns_*`
+    2. Le commentaire de tête référence Phase E IDOR (pas la dette résiduelle)
+    3. Les 5 helpers d'org-scoping existent dans `services/patrimoine_scope_guard.py`
+    """
     from pathlib import Path
 
-    crud_path = Path(__file__).resolve().parent.parent / "routes" / "patrimoine_crud.py"
-    src = crud_path.read_text(encoding="utf-8")
-    assert "DETTE IDOR CARDINALE" in src
-    assert "Sprint dédié 'IDOR Patrimoine CRUD'" in src
-    assert "DEMO_MODE" in src  # mitigation explicite
+    backend_root = Path(__file__).resolve().parent.parent
+
+    crud_src = (backend_root / "routes" / "patrimoine_crud.py").read_text(encoding="utf-8")
+    assert "from services.scope_utils import resolve_org_id" in crud_src
+    assert "from services.patrimoine_scope_guard import" in crud_src
+    assert "Phase E IDOR Sprint" in crud_src
+
+    guard_src = (backend_root / "services" / "patrimoine_scope_guard.py").read_text(encoding="utf-8")
+    for fn in (
+        "assert_org_owns_organisation",
+        "assert_org_owns_entite",
+        "assert_org_owns_portefeuille",
+        "assert_org_owns_site",
+        "assert_org_owns_batiment",
+    ):
+        assert f"def {fn}" in guard_src
 
 
 # ─── P1 Site.categorie_operat_principale validator strict ─────────────────

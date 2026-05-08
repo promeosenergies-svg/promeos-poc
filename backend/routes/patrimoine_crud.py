@@ -2,20 +2,14 @@
 PROMEOS — CRUD Organisation / EntiteJuridique / Portefeuille / Site (Step 19)
 Endpoints manuels pour ajouter/modifier/archiver des entités patrimoniales.
 
-⚠️ DETTE IDOR CARDINALE — Phase D-4 Tier 4 audit code-reviewer P0-3 (commit a2e6050a) :
-~30 endpoints CRUD ci-dessous **n'appliquent PAS resolve_org_id** sur les requêtes DB.
-En multi-tenant production, un utilisateur authentifié org_A peut lire/modifier
-les entités de org_B par énumération d'IDs.
+✅ Phase E IDOR Sprint (commit `<HEAD>`) : org-scoping cardinal appliqué sur 22 endpoints.
+- `resolve_org_id` (services/scope_utils.py) résout scope canonique JWT/X-Org-Id/DEMO_MODE.
+- `assert_org_owns_*` (services/patrimoine_scope_guard.py) impose JOIN chain Org→EJ→Pf→Site→Bati.
+- 404 (pas 403) délibéré pour anti-énumération cross-tenant.
+- Filtres LIST côté serveur (query param `org_id` ignoré, scope_org_id forcé).
 
-Risque mitigé en environnement actuel par DEMO_MODE (auth lenient sans cross-org)
-mais BLOQUANT pilote externe multi-tenant réel.
-
-→ Sprint dédié 'IDOR Patrimoine CRUD' réservé Phase E (~3h effort) :
-  - resolve_org_id sur tous endpoints GET/PATCH/DELETE
-  - JOIN chain Org → EJ → Portefeuille → Site → Bâtiment → DP cardinal
-  - Tests source-guard anti-régression IDOR
-
-Ref : docs/audits/AUDIT_PHASE_D_COMPLET_2026_05_07.md SEC-001 + audit Phase D-4 cumul.
+Pattern Pilier 12 ADR-016 cardinal multi-tenant. Rétro-compat DEMO_MODE préservée
+(scope fallback DemoState ou première Organisation active).
 """
 
 from typing import Optional
@@ -45,6 +39,14 @@ from schemas.patrimoine_crud import (
     SiteCreate,
     SiteUpdate,
     BatimentCreate,
+)
+from services.scope_utils import resolve_org_id  # noqa: E402
+from services.patrimoine_scope_guard import (  # noqa: E402
+    assert_org_owns_batiment,
+    assert_org_owns_entite,
+    assert_org_owns_organisation,
+    assert_org_owns_portefeuille,
+    assert_org_owns_site,
 )
 
 router = APIRouter(prefix="/api/patrimoine/crud", tags=["Patrimoine CRUD"])
@@ -116,11 +118,16 @@ def _site_to_dict(s: Site) -> dict:
 
 @router.get("/organisations")
 def list_organisations(
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Liste toutes les organisations actives."""
-    orgs = db.query(Organisation).filter(not_deleted(Organisation)).all()
+    """Liste l'organisation du scope courant (multi-tenant strict).
+
+    Phase E IDOR : un tenant ne voit que sa propre organisation, pas l'inventaire global.
+    """
+    scope_org_id = resolve_org_id(request, auth, db)
+    orgs = db.query(Organisation).filter(Organisation.id == scope_org_id, not_deleted(Organisation)).all()
     return {"count": len(orgs), "organisations": [_org_to_dict(o) for o in orgs]}
 
 
@@ -130,7 +137,12 @@ def create_organisation(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Crée une nouvelle organisation."""
+    """Crée une nouvelle organisation.
+
+    Phase E IDOR : pas de scope_org_id check ici — création d'une nouvelle org est
+    explicitement hors scope existant (provisioning admin / onboarding initial).
+    Protection : `_require_write_access` rôle DG_OWNER/DSI_ADMIN.
+    """
     _require_write_access(auth)
     org = Organisation(
         nom=body.nom,
@@ -147,13 +159,13 @@ def create_organisation(
 @router.get("/organisations/{org_id}")
 def get_organisation(
     org_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Détail d'une organisation."""
-    org = db.query(Organisation).filter(Organisation.id == org_id, not_deleted(Organisation)).first()
-    if not org:
-        raise HTTPException(404, "Organisation introuvable")
+    """Détail d'une organisation (org-scoping cardinal Phase E)."""
+    scope_org_id = resolve_org_id(request, auth, db)
+    org = assert_org_owns_organisation(db, org_id, scope_org_id)
     return _org_to_dict(org)
 
 
@@ -169,15 +181,13 @@ def update_organisation(
 
     Sprint C-5 Phase 5.8 fix G1 (audit transversal AXE 2 F2) : wiring cascade
     runtime sur mutations `consentement_dataconnect_global` / `consentement_grdf_global`.
-    Sans ce wiring, la cascade Phase 4.5 déclarée `CASCADE_MAP_MVP_SPRINT_C1`
-    était silencieusement non-déclenchée (réplique pattern F1 PRAGMA Phase 5.6).
+    Phase E IDOR : org-scoping cardinal via `assert_org_owns_organisation`.
     """
     from regops.services.cascade_recompute_service import cascade_recompute_on_change
 
     _require_write_access(auth)
-    org = db.query(Organisation).filter(Organisation.id == org_id, not_deleted(Organisation)).first()
-    if not org:
-        raise HTTPException(404, "Organisation introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    org = assert_org_owns_organisation(db, org_id, scope_org_id)
 
     # Capture old values pour audit cascade (champs consent uniquement — autres = setattr direct)
     cascade_fields = {
@@ -220,14 +230,14 @@ def update_organisation(
 @router.delete("/organisations/{org_id}")
 def archive_organisation(
     org_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Archive (soft-delete) une organisation."""
+    """Archive (soft-delete) une organisation (org-scoping cardinal Phase E)."""
     _require_write_access(auth)
-    org = db.query(Organisation).filter(Organisation.id == org_id, not_deleted(Organisation)).first()
-    if not org:
-        raise HTTPException(404, "Organisation introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    org = assert_org_owns_organisation(db, org_id, scope_org_id)
     org.soft_delete()
     db.commit()
     return {"status": "archived", "id": org_id}
@@ -240,30 +250,42 @@ def archive_organisation(
 
 @router.get("/entites")
 def list_entites(
-    org_id: Optional[int] = Query(None),
+    request: Request,
+    org_id: Optional[int] = Query(None, description="Ignoré : forcé == scope_org_id (Phase E IDOR)"),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Liste les entités juridiques, optionnellement filtrées par organisation."""
-    q = db.query(EntiteJuridique).filter(not_deleted(EntiteJuridique))
-    if org_id:
-        q = q.filter(EntiteJuridique.organisation_id == org_id)
-    entites = q.all()
+    """Liste les entités juridiques du scope_org_id (Phase E IDOR cardinal).
+
+    Le query param `org_id` est ignoré : l'org-scoping est forcé côté serveur via JWT/X-Org-Id.
+    """
+    scope_org_id = resolve_org_id(request, auth, db)
+    entites = (
+        db.query(EntiteJuridique)
+        .filter(
+            EntiteJuridique.organisation_id == scope_org_id,
+            not_deleted(EntiteJuridique),
+        )
+        .all()
+    )
     return {"count": len(entites), "entites": [_entite_to_dict(e) for e in entites]}
 
 
 @router.post("/entites", status_code=201)
 def create_entite(
     body: EntiteJuridiqueCreate,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Crée une entité juridique."""
+    """Crée une entité juridique (org-scoping cardinal Phase E).
+
+    `assert_org_owns_organisation` couvre cardinal-ment :
+    organisation_id == scope_org_id ET organisation existe non-soft-deleted.
+    """
     _require_write_access(auth)
-    # Vérifier que l'organisation existe
-    org = db.query(Organisation).filter(Organisation.id == body.organisation_id, not_deleted(Organisation)).first()
-    if not org:
-        raise HTTPException(404, "Organisation introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    assert_org_owns_organisation(db, body.organisation_id, scope_org_id)
     # Vérifier unicité SIREN
     existing = (
         db.query(EntiteJuridique)
@@ -292,13 +314,13 @@ def create_entite(
 @router.get("/entites/{entite_id}")
 def get_entite(
     entite_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Détail d'une entité juridique."""
-    e = db.query(EntiteJuridique).filter(EntiteJuridique.id == entite_id, not_deleted(EntiteJuridique)).first()
-    if not e:
-        raise HTTPException(404, "Entité juridique introuvable")
+    """Détail d'une entité juridique (org-scoping cardinal Phase E)."""
+    scope_org_id = resolve_org_id(request, auth, db)
+    e = assert_org_owns_entite(db, entite_id, scope_org_id)
     return _entite_to_dict(e)
 
 
@@ -306,14 +328,14 @@ def get_entite(
 def update_entite(
     entite_id: int,
     body: EntiteJuridiqueUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Met à jour une entité juridique."""
+    """Met à jour une entité juridique (org-scoping cardinal Phase E)."""
     _require_write_access(auth)
-    e = db.query(EntiteJuridique).filter(EntiteJuridique.id == entite_id, not_deleted(EntiteJuridique)).first()
-    if not e:
-        raise HTTPException(404, "Entité juridique introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    e = assert_org_owns_entite(db, entite_id, scope_org_id)
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(e, field, value)
     db.commit()
@@ -324,14 +346,14 @@ def update_entite(
 @router.delete("/entites/{entite_id}")
 def archive_entite(
     entite_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Archive (soft-delete) une entité juridique."""
+    """Archive (soft-delete) une entité juridique (org-scoping cardinal Phase E)."""
     _require_write_access(auth)
-    e = db.query(EntiteJuridique).filter(EntiteJuridique.id == entite_id, not_deleted(EntiteJuridique)).first()
-    if not e:
-        raise HTTPException(404, "Entité juridique introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    e = assert_org_owns_entite(db, entite_id, scope_org_id)
     e.soft_delete()
     db.commit()
     return {"status": "archived", "id": entite_id}
@@ -344,19 +366,28 @@ def archive_entite(
 
 @router.get("/portefeuilles")
 def list_portefeuilles(
+    request: Request,
     entite_id: Optional[int] = Query(None),
-    org_id: Optional[int] = Query(None),
+    org_id: Optional[int] = Query(None, description="Ignoré : forcé == scope_org_id (Phase E IDOR)"),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Liste les portefeuilles, optionnellement filtrés."""
-    q = db.query(Portefeuille).filter(not_deleted(Portefeuille))
+    """Liste les portefeuilles du scope_org_id (Phase E IDOR cardinal).
+
+    Le query param `org_id` est ignoré : org-scoping forcé côté serveur.
+    `entite_id` est validé : doit appartenir au scope_org_id sinon résultat vide.
+    """
+    scope_org_id = resolve_org_id(request, auth, db)
+    q = (
+        db.query(Portefeuille)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(
+            EntiteJuridique.organisation_id == scope_org_id,
+            not_deleted(Portefeuille),
+        )
+    )
     if entite_id:
         q = q.filter(Portefeuille.entite_juridique_id == entite_id)
-    if org_id:
-        q = q.join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id).filter(
-            EntiteJuridique.organisation_id == org_id
-        )
     pfs = q.all()
     return {"count": len(pfs), "portefeuilles": [_pf_to_dict(pf) for pf in pfs]}
 
@@ -364,21 +395,17 @@ def list_portefeuilles(
 @router.post("/portefeuilles", status_code=201)
 def create_portefeuille(
     body: PortefeuilleCreate,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Crée un portefeuille."""
+    """Crée un portefeuille (org-scoping cardinal Phase E).
+
+    L'EntiteJuridique parente DOIT appartenir au scope_org_id.
+    """
     _require_write_access(auth)
-    entite = (
-        db.query(EntiteJuridique)
-        .filter(
-            EntiteJuridique.id == body.entite_juridique_id,
-            not_deleted(EntiteJuridique),
-        )
-        .first()
-    )
-    if not entite:
-        raise HTTPException(404, "Entité juridique introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    assert_org_owns_entite(db, body.entite_juridique_id, scope_org_id)
     pf = Portefeuille(
         entite_juridique_id=body.entite_juridique_id,
         nom=body.nom,
@@ -393,13 +420,13 @@ def create_portefeuille(
 @router.get("/portefeuilles/{pf_id}")
 def get_portefeuille(
     pf_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Détail d'un portefeuille."""
-    pf = db.query(Portefeuille).filter(Portefeuille.id == pf_id, not_deleted(Portefeuille)).first()
-    if not pf:
-        raise HTTPException(404, "Portefeuille introuvable")
+    """Détail d'un portefeuille (org-scoping cardinal Phase E)."""
+    scope_org_id = resolve_org_id(request, auth, db)
+    pf = assert_org_owns_portefeuille(db, pf_id, scope_org_id)
     return _pf_to_dict(pf)
 
 
@@ -407,14 +434,14 @@ def get_portefeuille(
 def update_portefeuille(
     pf_id: int,
     body: PortefeuilleUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Met à jour un portefeuille."""
+    """Met à jour un portefeuille (org-scoping cardinal Phase E)."""
     _require_write_access(auth)
-    pf = db.query(Portefeuille).filter(Portefeuille.id == pf_id, not_deleted(Portefeuille)).first()
-    if not pf:
-        raise HTTPException(404, "Portefeuille introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    pf = assert_org_owns_portefeuille(db, pf_id, scope_org_id)
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(pf, field, value)
     db.commit()
@@ -425,14 +452,14 @@ def update_portefeuille(
 @router.delete("/portefeuilles/{pf_id}")
 def archive_portefeuille(
     pf_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Archive (soft-delete) un portefeuille."""
+    """Archive (soft-delete) un portefeuille (org-scoping cardinal Phase E)."""
     _require_write_access(auth)
-    pf = db.query(Portefeuille).filter(Portefeuille.id == pf_id, not_deleted(Portefeuille)).first()
-    if not pf:
-        raise HTTPException(404, "Portefeuille introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    pf = assert_org_owns_portefeuille(db, pf_id, scope_org_id)
     pf.soft_delete()
     db.commit()
     return {"status": "archived", "id": pf_id}
@@ -445,21 +472,28 @@ def archive_portefeuille(
 
 @router.get("/sites")
 def list_sites_crud(
+    request: Request,
     pf_id: Optional[int] = Query(None),
-    org_id: Optional[int] = Query(None),
+    org_id: Optional[int] = Query(None, description="Ignoré : forcé == scope_org_id (Phase E IDOR)"),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Liste les sites, filtrables par portefeuille ou organisation."""
-    q = db.query(Site).filter(not_deleted(Site))
+    """Liste les sites du scope_org_id (Phase E IDOR cardinal).
+
+    Le query param `org_id` est ignoré : org-scoping forcé côté serveur.
+    """
+    scope_org_id = resolve_org_id(request, auth, db)
+    q = (
+        db.query(Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(
+            EntiteJuridique.organisation_id == scope_org_id,
+            not_deleted(Site),
+        )
+    )
     if pf_id:
         q = q.filter(Site.portefeuille_id == pf_id)
-    if org_id:
-        q = (
-            q.join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-            .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-            .filter(EntiteJuridique.organisation_id == org_id)
-        )
     sites = q.all()
     return {"count": len(sites), "sites": [_site_to_dict(s) for s in sites]}
 
@@ -467,14 +501,17 @@ def list_sites_crud(
 @router.post("/sites", status_code=201)
 def create_site_crud(
     body: SiteCreate,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Crée un site dans un portefeuille."""
+    """Crée un site dans un portefeuille (org-scoping cardinal Phase E).
+
+    Le portefeuille parent DOIT appartenir au scope_org_id.
+    """
     _require_write_access(auth)
-    pf = db.query(Portefeuille).filter(Portefeuille.id == body.portefeuille_id, not_deleted(Portefeuille)).first()
-    if not pf:
-        raise HTTPException(404, "Portefeuille introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    pf = assert_org_owns_portefeuille(db, body.portefeuille_id, scope_org_id)
 
     # Résoudre le TypeSite enum
     try:
@@ -509,13 +546,13 @@ def create_site_crud(
 @router.get("/sites/{site_id}")
 def get_site_crud(
     site_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Détail d'un site."""
-    site = db.query(Site).filter(Site.id == site_id, not_deleted(Site)).first()
-    if not site:
-        raise HTTPException(404, "Site introuvable")
+    """Détail d'un site (org-scoping cardinal Phase E)."""
+    scope_org_id = resolve_org_id(request, auth, db)
+    site = assert_org_owns_site(db, site_id, scope_org_id)
     return _site_to_dict(site)
 
 
@@ -523,19 +560,19 @@ def get_site_crud(
 def update_site_crud(
     site_id: int,
     body: SiteUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Met à jour un site.
+    """Met à jour un site (org-scoping cardinal Phase E).
 
     F3 V117 : si surface_m2/type/tertiaire_area_m2 changent, re-declenche
     le scoring compliance (DT/BACS/APER) pour que le NextStepsHub post-Sirene
     affiche des scores reels au lieu d'un ecran vide.
     """
     _require_write_access(auth)
-    site = db.query(Site).filter(Site.id == site_id, not_deleted(Site)).first()
-    if not site:
-        raise HTTPException(404, "Site introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    site = assert_org_owns_site(db, site_id, scope_org_id)
     updates = body.model_dump(exclude_unset=True)
     if "type" in updates and updates["type"] is not None:
         try:
@@ -576,14 +613,14 @@ def update_site_crud(
 @router.delete("/sites/{site_id}")
 def archive_site_crud(
     site_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Archive (soft-delete) un site."""
+    """Archive (soft-delete) un site (org-scoping cardinal Phase E)."""
     _require_write_access(auth)
-    site = db.query(Site).filter(Site.id == site_id, not_deleted(Site)).first()
-    if not site:
-        raise HTTPException(404, "Site introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    site = assert_org_owns_site(db, site_id, scope_org_id)
     site.soft_delete()
     from services.patrimoine_conformite_sync import cascade_site_archive
 
@@ -611,18 +648,18 @@ def _bat_to_dict(b: Batiment) -> dict:
 @router.post("/batiments", status_code=201)
 def create_batiment(
     body: BatimentCreate,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Cree un batiment rattache a un site.
+    """Cree un batiment rattache a un site (org-scoping cardinal Phase E).
 
     Phase D-4 Tier 4 P0-2 fix audit code-reviewer : déclenche cascade BACS active
     (ADR-D-04) après commit pour recalculer Site.bacs_assujetti + bacs_puissance_cvc_totale_kw.
     """
     _require_write_access(auth)
-    site = db.query(Site).filter(Site.id == body.site_id, not_deleted(Site)).first()
-    if not site:
-        raise HTTPException(404, "Site introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    site = assert_org_owns_site(db, body.site_id, scope_org_id)
     bat = Batiment(
         site_id=body.site_id,
         nom=body.nom,
@@ -656,20 +693,23 @@ class BatimentUpdate(BaseModel):
 def update_batiment(
     batiment_id: int,
     body: BatimentUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Phase D-4 Tier 4 P1 : modifier un bâtiment + déclenche cascade BACS si cvc_power_kw modifié."""
-    _require_write_access(auth)
-    bat = db.query(Batiment).filter(Batiment.id == batiment_id, not_deleted(Batiment)).first()
-    if not bat:
-        raise HTTPException(404, "Bâtiment introuvable")
+    """Phase D-4 Tier 4 P1 : modifier un bâtiment + cascade BACS (Phase E IDOR cardinal).
 
-    cvc_changed = body.cvc_power_kw is not None and body.cvc_power_kw != bat.cvc_power_kw
-    for field in ("nom", "surface_m2", "annee_construction", "cvc_power_kw"):
-        new_val = getattr(body, field)
-        if new_val is not None:
-            setattr(bat, field, new_val)
+    Phase E review : aligné sur le pattern PATCH canonique `model_dump(exclude_unset=True)`
+    cohérent avec les autres endpoints (Org, EJ, Pf, Site).
+    """
+    _require_write_access(auth)
+    scope_org_id = resolve_org_id(request, auth, db)
+    bat = assert_org_owns_batiment(db, batiment_id, scope_org_id)
+
+    updates = body.model_dump(exclude_unset=True)
+    cvc_changed = "cvc_power_kw" in updates and updates["cvc_power_kw"] != bat.cvc_power_kw
+    for field, value in updates.items():
+        setattr(bat, field, value)
     db.commit()
     db.refresh(bat)
 
@@ -685,14 +725,14 @@ def update_batiment(
 @router.delete("/batiments/{batiment_id}")
 def delete_batiment(
     batiment_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Phase D-4 Tier 4 P1 : soft-delete bâtiment + cascade BACS rebuild."""
+    """Phase D-4 Tier 4 P1 : soft-delete bâtiment + cascade BACS rebuild (Phase E IDOR cardinal)."""
     _require_write_access(auth)
-    bat = db.query(Batiment).filter(Batiment.id == batiment_id, not_deleted(Batiment)).first()
-    if not bat:
-        raise HTTPException(404, "Bâtiment introuvable")
+    scope_org_id = resolve_org_id(request, auth, db)
+    bat = assert_org_owns_batiment(db, batiment_id, scope_org_id)
     site_id = bat.site_id
     bat.soft_delete(by="api", reason="user_delete_batiment")
     db.commit()
