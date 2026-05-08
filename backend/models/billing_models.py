@@ -61,7 +61,18 @@ class EnergyContract(Base, TimestampMixin):
     supplier_name = Column(
         String(200),
         nullable=False,
-        comment="Nom du fournisseur (EDF, Engie, TotalEnergies...)",
+        comment="Nom du fournisseur (EDF, Engie, TotalEnergies...) — DÉPRÉCIÉ Phase F2 au profit de fournisseur_id",
+    )
+    # Phase F1 — Fournisseur entité normalisée (ADR-F-01 D2 miroir transitoire).
+    # FK nullable durant la phase de migration : `supplier_name` String coexiste
+    # le temps du backfill. Hard-cut Phase F2 (ADR-F-04 séparé) après vérification
+    # 100 % FK peuplées.
+    fournisseur_id = Column(
+        Integer,
+        ForeignKey("fournisseurs.id"),
+        nullable=True,
+        index=True,
+        comment="FK vers Fournisseur normalisé (ADR-F-01 — miroir transitoire avec supplier_name)",
     )
     start_date = Column(Date, nullable=True, comment="Debut du contrat")
     end_date = Column(Date, nullable=True, comment="Fin du contrat")
@@ -296,6 +307,12 @@ class EnergyContract(Base, TimestampMixin):
         "DeliveryPoint",
         secondary="contract_delivery_points",
         backref="contracts",
+    )
+    # Phase F1 — Fournisseur normalisé (ADR-F-01)
+    fournisseur = relationship(
+        "Fournisseur",
+        back_populates="energy_contracts",
+        foreign_keys=[fournisseur_id],
     )
     # V2 Cadre+Annexe — relations
     entite_juridique = relationship("EntiteJuridique")

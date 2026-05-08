@@ -1356,3 +1356,21 @@ class OrgEntiteRole(str, enum.Enum):
     PROPRIETAIRE = "proprietaire"
     GESTIONNAIRE = "gestionnaire"
     LOCATAIRE = "locataire"
+
+
+# ============================================================
+# Phase F1 — Fournisseur entité normalisée (ADR-F-01)
+# ============================================================
+
+
+class TypeFournitureEnum(str, enum.Enum):
+    """Type d'énergie fournie par un fournisseur (ADR-F-01 D3 strict canonical).
+
+    - ELEC : fournisseur d'électricité uniquement
+    - GAZ : fournisseur de gaz uniquement
+    - MULTI : fournisseur multi-énergie (élec + gaz)
+    """
+
+    ELEC = "ELEC"
+    GAZ = "GAZ"
+    MULTI = "MULTI"

@@ -52,6 +52,7 @@ from .consumption_unified import router as consumption_unified_router
 from .market import router as market_router
 from .referentiel import router as referentiel_router
 from .patrimoine_crud import router as patrimoine_crud_router
+from .fournisseurs import router as fournisseurs_router
 from .aper import router as aper_router
 from .geocoding import router as geocoding_router
 from .usages import router as usages_router
@@ -121,6 +122,7 @@ __all__ = [
     "market_router",
     "referentiel_router",
     "patrimoine_crud_router",
+    "fournisseurs_router",
     "aper_router",
     "geocoding_router",
     "usages_router",

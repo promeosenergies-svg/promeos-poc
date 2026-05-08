@@ -83,6 +83,8 @@ from .enums import (
     # Market Intelligence
     ArticleCategory,
     ArticleSource,
+    # Phase F1 — Fournisseur entité (ADR-F-01)
+    TypeFournitureEnum,
 )
 
 # Hierarchie organisation
@@ -133,6 +135,9 @@ from .kb_models import (
     KBConfidence,
     KBStatus,
 )
+
+# Phase F1 — Fournisseur entité normalisée (ADR-F-01)
+from .fournisseur import Fournisseur
 
 # Bill Intelligence (persisted)
 from .billing_models import (
