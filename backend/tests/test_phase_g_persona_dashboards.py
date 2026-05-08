@@ -460,6 +460,258 @@ class TestPhaseH2R23TurpeDouble:
         assert anomalies[0].severity == "warning"
 
 
+# ─── Phase H3 — ISO 50001 exemption Audit SMÉ (Marie DAF) ──────────────────
+
+
+class TestPhaseH3IsoExemption:
+    def test_h3_iso_50001_exempts_audit_sme_obligation(self, client, db):
+        """H3 — EJ ISO 50001 actif + valide → obligation_active=False même si triggered."""
+        from datetime import timedelta
+
+        org, ej, _, _ = _seed_org_with_sites(db, n_sites=1)
+        # ej a déjà conso 5.0 GWh (triggered=True)
+        ej.iso_50001_actif = True
+        ej.iso_50001_date_validite = date.today() + timedelta(days=365)
+        db.commit()
+
+        r = client.get("/api/persona/marie-daf/compliance-dashboard", headers=_h(org.id))
+        audit_sme = r.json()["audit_sme"][0]
+        assert audit_sme["triggered"] is True  # conso ≥ 2.75 GWh
+        assert audit_sme["iso_50001_actif"] is True
+        assert audit_sme["iso_50001_valide"] is True
+        assert audit_sme["exemption_iso_50001"] is True
+        assert audit_sme["obligation_active"] is False  # exempté !
+
+    def test_h3_iso_expired_does_not_exempt(self, client, db):
+        """H3 — ISO 50001 actif mais expiré → pas d'exemption (obligation_active=True)."""
+        from datetime import timedelta
+
+        org, ej, _, _ = _seed_org_with_sites(db, n_sites=1)
+        ej.iso_50001_actif = True
+        ej.iso_50001_date_validite = date.today() - timedelta(days=10)  # expiré
+        db.commit()
+
+        r = client.get("/api/persona/marie-daf/compliance-dashboard", headers=_h(org.id))
+        audit_sme = r.json()["audit_sme"][0]
+        assert audit_sme["iso_50001_actif"] is True
+        assert audit_sme["iso_50001_valide"] is False  # expiré
+        assert audit_sme["obligation_active"] is True  # obligé d'auditer
+
+
+# ─── Phase H4 — Countdown urgency enum (Marie DAF UX) ───────────────────────
+
+
+class TestPhaseH4UrgencyEnum:
+    def test_h4_urgency_levels_present_on_all_frameworks(self, client, db):
+        """H4 — urgency_level présent sur DT/BACS/APER/OPERAT/DPE."""
+        org, _, _, _ = _seed_org_with_sites(db, n_sites=1)
+        r = client.get("/api/persona/marie-daf/compliance-dashboard", headers=_h(org.id))
+        for site in r.json()["sites"]:
+            for fw in site["frameworks"]:
+                assert "urgency_level" in fw
+                assert fw["urgency_level"] in {"CRITICAL", "HIGH", "MEDIUM", "LOW", "OVERDUE"}
+
+    def test_h4_urgency_levels_thresholds(self):
+        """H4 — _compute_urgency_level renvoie les bons niveaux selon days."""
+        from services.persona_dashboard_service import _compute_urgency_level
+
+        assert _compute_urgency_level(-5) == "OVERDUE"
+        assert _compute_urgency_level(0) == "CRITICAL"
+        assert _compute_urgency_level(15) == "CRITICAL"
+        assert _compute_urgency_level(45) == "HIGH"
+        assert _compute_urgency_level(120) == "MEDIUM"
+        assert _compute_urgency_level(365) == "LOW"
+
+
+# ─── Phase H5 — R21 CTA mauvais calcul (Jean-Marc CFO) ─────────────────────
+
+
+class TestPhaseH5R21CTA:
+    def test_h5_r21_detects_cta_mismatch_post_2026(self, db):
+        """H5 — CTA facturée diverge >10 % du taux 15 % post-2026 → R21 critical."""
+        from datetime import date as _date
+
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import detect_r21_cta_mismatch
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-R21-2026",
+            energy_kwh=10000,
+            total_eur=2500,
+            issue_date=_date(2026, 3, 15),
+            period_start=_date(2026, 3, 1),
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        # TURPE 1000 € → CTA attendue = 150 € (15 %), mais facturée 250 € (mauvais 25 %)
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.NETWORK,
+                label="TURPE soutirage",
+                amount_eur=1000.0,
+            )
+        )
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.TAX,
+                label="CTA",
+                amount_eur=300.0,  # 150 € de trop (>100 → critical)
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        anomaly = detect_r21_cta_mismatch(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R21"
+        assert anomaly.severity == "critical"
+        assert anomaly.details_json["cta_attendue_eur"] == 150.0
+        assert anomaly.details_json["cta_facturee_eur"] == 300.0
+        assert anomaly.details_json["cta_rate_applied"] == 0.15
+
+    def test_h5_r21_no_anomaly_within_tolerance(self, db):
+        """H5 — CTA facturée à ±5 % du taux attendu → pas d'anomalie."""
+        from datetime import date as _date
+
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import detect_r21_cta_mismatch
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-R21-OK",
+            energy_kwh=10000,
+            total_eur=2500,
+            issue_date=_date(2026, 3, 15),
+            period_start=_date(2026, 3, 1),
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        # TURPE 1000 € → CTA attendue 150 € ; facturée 152 € (~1.3 % écart, < 10 %)
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.NETWORK,
+                label="TURPE",
+                amount_eur=1000.0,
+            )
+        )
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.TAX,
+                label="CTA",
+                amount_eur=152.0,
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        anomaly = detect_r21_cta_mismatch(invoice, db)
+        assert anomaly is None
+
+
+# ─── Phase H6 — Comparateur prix EPEX MVP (Jean-Marc CFO) ──────────────────
+
+
+class TestPhaseH6ContractPriceBenchmark:
+    def test_h6_benchmark_no_market_data(self, client, db):
+        """H6 — Sans MktPrice forward → benchmark_status='no_market_data'."""
+        from datetime import timedelta
+
+        org, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        c = EnergyContract(
+            site_id=sites[0].id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            end_date=date.today() + timedelta(days=60),
+            price_ref_eur_per_kwh=0.15,
+        )
+        db.add(c)
+        db.commit()
+
+        r = client.get("/api/persona/cfo/contract-price-benchmark", headers=_h(org.id))
+        data = r.json()
+        assert data["benchmark_status"] == "no_market_data"
+        assert data["market_forward_eur_mwh"] is None
+        assert data["total_contracts"] == 1
+        # Prix contractuel exposé même sans benchmark
+        assert data["contracts"][0]["prix_contractuel_eur_mwh"] == 150.0  # 0.15 * 1000
+
+    def test_h6_benchmark_computes_delta_with_market(self, client, db):
+        """H6 — Avec MktPrice forward Y+1, delta + impact économies calculés."""
+        from datetime import datetime, timedelta, timezone
+
+        from models.market_models import (
+            MarketDataSource,
+            MarketType,
+            MktPrice,
+            PriceZone,
+            ProductType,
+            Resolution,
+        )
+        # Phase H6 : MktPrice utilise MarketType.FORWARD_YEAR + ProductType.BASELOAD
+
+        org, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        # Contrat à 180 €/MWh (très cher)
+        c = EnergyContract(
+            site_id=sites[0].id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            end_date=date.today() + timedelta(days=60),
+            price_ref_eur_per_kwh=0.18,
+        )
+        db.add(c)
+        db.flush()
+        # Facture historique pour conso 100 MWh
+        inv = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-CONSO",
+            contract_id=c.id,
+            energy_kwh=100000,
+            total_eur=18000,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(inv)
+        # Forward Y+1 à 100 €/MWh
+        next_year = date.today().year + 1
+        mkt = MktPrice(
+            source=MarketDataSource.EPEX_SPOT,
+            market_type=MarketType.FORWARD_YEAR,
+            product_type=ProductType.BASELOAD,
+            zone=PriceZone.FR,
+            delivery_start=datetime(next_year, 1, 1, tzinfo=timezone.utc),
+            delivery_end=datetime(next_year, 12, 31, tzinfo=timezone.utc),
+            price_eur_mwh=100.0,
+            resolution=Resolution.PT60M,
+            fetched_at=datetime.now(timezone.utc),
+        )
+        db.add(mkt)
+        db.commit()
+
+        r = client.get("/api/persona/cfo/contract-price-benchmark", headers=_h(org.id))
+        data = r.json()
+        assert data["benchmark_status"] == "available"
+        assert data["market_forward_eur_mwh"] == 100.0
+        contract = data["contracts"][0]
+        assert contract["prix_contractuel_eur_mwh"] == 180.0
+        assert contract["delta_eur_mwh"] == 80.0  # surcoût client
+        assert contract["delta_pct"] == 80.0
+        assert contract["conso_annuelle_mwh"] == 100.0
+        assert contract["impact_economies_eur_an"] == 8000.0  # 80 €/MWh × 100 MWh
+
+
 # ─── Source-guards P1 fixes (post-audit code-reviewer Phase G) ─────────────
 
 

@@ -312,6 +312,78 @@ def detect_r20_capacity_variance(invoice: EnergyInvoice, db: Session) -> list[Bi
     return anomalies
 
 
+# ─── R21 CTA mauvais calcul (Phase H Jean-Marc CFO) ────────────────────────
+
+
+def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+    """R21 — CTA calculée incorrectement vs taux réglementaire (CRE 2026-14).
+
+    Persona Jean-Marc CFO : ROI 3-5 k€/an, formule complexe (15 % distribution
+    élec depuis 02/2026 + 5 % transport ≥50 kV) avec ~30 % d'erreurs constatées.
+
+    Heuristique :
+    - Identifier les lignes TURPE NETWORK (assiette CTA distribution) → Σ TURPE
+    - Identifier la ligne CTA TAX (label LIKE %CTA%) → CTA facturée
+    - CTA attendue = Σ TURPE × 0.15 (post 2026-02-01) ou × 0.2193 (pré 2026-02-01)
+    - Si écart > 10 % de l'attendu (et > 5 €) → R21 anomalie
+
+    Returns:
+        BillAnomaly ou None
+    """
+    from datetime import date as _date
+
+    from models.enums import InvoiceLineType
+
+    lines = invoice.lines or []
+    network_lines = [
+        line for line in lines if line.line_type == InvoiceLineType.NETWORK and line.amount_eur is not None
+    ]
+    cta_lines = [
+        line for line in lines if line.line_type == InvoiceLineType.TAX and line.label and "CTA" in line.label.upper()
+    ]
+    if not network_lines or not cta_lines:
+        return None
+
+    turpe_total = sum(float(line.amount_eur or 0) for line in network_lines)
+    cta_facturee = sum(float(line.amount_eur or 0) for line in cta_lines)
+    if turpe_total <= 0:
+        return None
+
+    # Date de référence : period_start ou issue_date
+    ref_date = invoice.period_start or invoice.issue_date or _date.today()
+    cutover = _date(2026, 2, 1)
+    cta_rate = 0.15 if ref_date >= cutover else 0.2193  # distribution élec
+    cta_attendue = turpe_total * cta_rate
+    if cta_attendue <= 0:
+        return None
+
+    ecart_eur = cta_facturee - cta_attendue
+    ecart_pct = abs(ecart_eur) / cta_attendue * 100
+
+    # Seuils : > 10 % d'écart ET > 5 € absolu (anti-bruit arrondis)
+    if ecart_pct < 10 or abs(ecart_eur) < 5:
+        return None
+
+    severity = "critical" if abs(ecart_eur) > 100 else "warning"
+    return BillAnomaly(
+        invoice_id=invoice.id,
+        code="R21",
+        severity=severity,
+        threshold_value=Decimal("10.0"),  # %
+        actual_value=Decimal(str(round(ecart_pct, 2))),
+        details_json={
+            "turpe_total_eur": round(turpe_total, 2),
+            "cta_facturee_eur": round(cta_facturee, 2),
+            "cta_attendue_eur": round(cta_attendue, 2),
+            "ecart_eur": round(ecart_eur, 2),
+            "ecart_pct": round(ecart_pct, 2),
+            "cta_rate_applied": cta_rate,
+            "regulatory_ref": "Arrêté CTA 27/01/2026 (CRE 2026-14, JORF) — 15 % distribution élec",
+            "montant_anomalie_eur": round(abs(ecart_eur), 2),
+        },
+    )
+
+
 # ─── R23 TURPE doublé (Phase H Jean-Marc CFO cardinal) ─────────────────────
 
 
@@ -426,5 +498,14 @@ def detect_anomalies_for_invoice(invoice: EnergyInvoice, db: Session) -> list[Bi
             anomalies.append(r23)
     except Exception as e:
         _logger.error(f"R23 detector failed for invoice {invoice.id}: {e}")
+
+    # R21 : 0 ou 1 — Phase H CFO CTA mauvais calcul
+    try:
+        r21 = detect_r21_cta_mismatch(invoice, db)
+        if r21:
+            db.add(r21)
+            anomalies.append(r21)
+    except Exception as e:
+        _logger.error(f"R21 detector failed for invoice {invoice.id}: {e}")
 
     return anomalies

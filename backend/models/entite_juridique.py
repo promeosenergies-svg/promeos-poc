@@ -5,7 +5,7 @@ SIREN/SIRET - qui signe les contrats / qui paye
 
 import re
 
-from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Date, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, validates
 from .base import Base, TimestampMixin, SoftDeleteMixin
 
@@ -70,6 +70,20 @@ class EntiteJuridique(Base, TimestampMixin, SoftDeleteMixin):
     date_creation_societe = Column(Date, nullable=True, comment="Date création société — matrice v1 §4.2#20")
     capital_social_eur = Column(Float, nullable=True, comment="Capital social EUR — matrice v1 §4.2#21")
     representant_legal_nom = Column(String(255), nullable=True, comment="Représentant légal — matrice v1 §4.2#22")
+
+    # Phase H3 — Marie DAF différenciant ROI (Loi DDADUE 2025-391 art. 8) :
+    # ISO 50001 actif → exemption obligation Audit SMÉ pour EJ entre 2,75 et 23,6 GWh.
+    iso_50001_actif = Column(
+        Boolean,
+        nullable=True,
+        default=False,
+        comment="ISO 50001 (SMÉ) certifié actif — exemption Audit SMÉ DDADUE 2025-391 art. 8",
+    )
+    iso_50001_date_validite = Column(
+        Date,
+        nullable=True,
+        comment="Date validité certificat ISO 50001 (typiquement 3 ans) — alerte renouvellement Phase H3",
+    )
 
     @validates("siret")
     def _validate_siret_strict(self, key: str, value: str | None):

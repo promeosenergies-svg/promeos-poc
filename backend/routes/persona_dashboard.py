@@ -21,6 +21,7 @@ from middleware.auth import AuthContext, get_optional_auth
 from services.persona_dashboard_service import (
     build_billing_anomalies_summary_cfo,
     build_compliance_dashboard_marie_daf,
+    get_contract_price_benchmark,
     list_expiring_contracts,
 )
 from services.scope_utils import resolve_org_id
@@ -74,3 +75,23 @@ def get_cfo_expiring_contracts(
     """
     scope_org_id = resolve_org_id(request, auth, db)
     return list_expiring_contracts(db, scope_org_id, horizon_days=horizon_days)
+
+
+@router.get("/cfo/contract-price-benchmark")
+def get_cfo_contract_price_benchmark(
+    request: Request,
+    horizon_days: int = Query(180, ge=30, le=365),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Phase H6 — Comparateur prix marché vs prix contractuel (Jean-Marc CFO MVP).
+
+    Pour chaque contrat expirant dans `horizon_days`, compare prix contractuel
+    €/MWh vs forward EPEX/EEX baseload calendar Y+1 (zone FR) + chiffre delta
+    annuel basé sur consommation historique.
+
+    Sans données marché disponibles → `benchmark_status='no_market_data'`.
+    Pattern Phase E IDOR cardinal.
+    """
+    scope_org_id = resolve_org_id(request, auth, db)
+    return get_contract_price_benchmark(db, scope_org_id, horizon_days=horizon_days)

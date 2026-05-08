@@ -37,6 +37,7 @@ from doctrine.constants import (
 )
 from models import (
     EnergyContract,
+    EnergyInvoice,
     EntiteJuridique,
     Portefeuille,
     Site,
@@ -56,6 +57,34 @@ def _days_until(target_iso: str, today: Optional[date] = None) -> int:
     return (target - today).days
 
 
+# Phase H4 — Marie DAF cardinal countdown urgency enum.
+# Seuils calibrés sur jalons OPERAT (30/09 annuel) + BACS (1/1/2030).
+URGENCY_CRITICAL_DAYS = 30
+URGENCY_HIGH_DAYS = 90
+URGENCY_MEDIUM_DAYS = 180
+
+
+def _compute_urgency_level(days_remaining: int) -> str:
+    """Classe l'urgence d'une deadline pour priorisation visuelle dashboard.
+
+    Phase H4 (Marie DAF) — countdown enum cardinal :
+    - CRITICAL : < 30 jours (action immédiate requise)
+    - HIGH     : 30-90 jours (préparation deadline imminente)
+    - MEDIUM   : 90-180 jours (planification trimestrielle)
+    - LOW      : > 180 jours (suivi annuel)
+    - OVERDUE  : days_remaining < 0 (deadline dépassée — sanction effective)
+    """
+    if days_remaining < 0:
+        return "OVERDUE"
+    if days_remaining < URGENCY_CRITICAL_DAYS:
+        return "CRITICAL"
+    if days_remaining < URGENCY_HIGH_DAYS:
+        return "HIGH"
+    if days_remaining < URGENCY_MEDIUM_DAYS:
+        return "MEDIUM"
+    return "LOW"
+
+
 def _operat_status(site, today: date) -> dict:
     """Statut OPERAT par site : deadline annuelle 30/09 + sanction si non déclaré."""
     deadline_iso = compute_operat_deadline(today.year)
@@ -68,6 +97,7 @@ def _operat_status(site, today: date) -> dict:
         "framework": "OPERAT",
         "deadline": deadline_iso,
         "days_remaining": days,
+        "urgency_level": _compute_urgency_level(days),
         "compliant": has_declaration,
         "exposure_eur": 0 if has_declaration else OPERAT_PENALTY_EUR,
         "regulatory_ref": "Décret 2019-771 art. R131-39 CCH",
@@ -99,6 +129,7 @@ def _bacs_status(site) -> dict:
         "framework": "BACS",
         "deadline": BACS_DEADLINE_EXISTING,
         "days_remaining": days,
+        "urgency_level": _compute_urgency_level(days),
         "assujetti": bacs_assujetti,
         "compliant": bacs_compliant,
         # Exposition chiffrée uniquement si NC explicite + assujetti.
@@ -137,6 +168,7 @@ def _aper_status(site) -> dict:
         "framework": "APER",
         "deadline": deadline_iso,
         "days_remaining": days,
+        "urgency_level": _compute_urgency_level(days),
         "assujetti": aper_assujetti,
         "compliant": aper_compliant,
         "exposure_eur": exposure,
@@ -144,19 +176,40 @@ def _aper_status(site) -> dict:
     }
 
 
-def _audit_sme_status(ej) -> dict:
-    """Statut Audit SMÉ par EJ : déclencheur 2,75/23,6 GWh + deadline 11/10/2026."""
+def _audit_sme_status(ej, today: Optional[date] = None) -> dict:
+    """Statut Audit SMÉ par EJ : déclencheur 2,75/23,6 GWh + deadline 11/10/2026.
+
+    Phase H3 (Marie DAF différenciant ROI) : exemption ISO 50001 actif & valide
+    selon Loi DDADUE 2025-391 art. 8 — un EJ certifié SMÉ est dispensé de
+    l'obligation Audit SMÉ. Économie ~15 k€/audit × 4 ans = ~60 k€/EJ.
+    """
+    if today is None:
+        today = date.today()
     conso_3y = getattr(ej, "consommation_annuelle_moyenne_3y_gwh", None)
     deadline_iso = AUDIT_SME_DEADLINE_DATE
-    days = _days_until(deadline_iso)
-    # Déclencheur : conso >= 2,75 GWh (PME) ou >= 23,6 GWh (grandes ent.)
+    days = _days_until(deadline_iso, today)
+
+    # Déclencheur réglementaire : conso ≥ 2,75 GWh
     triggered = conso_3y is not None and conso_3y >= 2.75
-    # Pas de pénalité chiffrable côté PROMEOS (sanction = blocage marché public)
+
+    # Phase H3 — Exemption ISO 50001 : actif + certificat non expiré
+    iso_50001_actif = bool(getattr(ej, "iso_50001_actif", False))
+    iso_validity = getattr(ej, "iso_50001_date_validite", None)
+    iso_valid = iso_50001_actif and (iso_validity is None or iso_validity >= today)
+
+    # Triggered effectif : déclenché par conso MAIS exempté si ISO 50001 valide
+    obligation_active = triggered and not iso_valid
+
     return {
         "framework": "AUDIT_SME",
         "deadline": deadline_iso,
         "days_remaining": days,
+        "urgency_level": _compute_urgency_level(days),
         "triggered": triggered,
+        "iso_50001_actif": iso_50001_actif,
+        "iso_50001_valide": iso_valid,
+        "exemption_iso_50001": iso_valid,  # alias UI explicite
+        "obligation_active": obligation_active,
         "exposure_eur": 0,  # blocage marché public, pas pénalité monétaire directe
         "regulatory_ref": "Loi DDADUE 2025-391 art. 8",
     }
@@ -192,6 +245,7 @@ def _dpe_status(site, db: Session) -> dict:
             "framework": "DPE",
             "deadline": deadline_iso,
             "days_remaining": days,
+            "urgency_level": _compute_urgency_level(days),
             "assujetti": False,
             "compliant": True,
             "exposure_eur": 0,
@@ -219,6 +273,7 @@ def _dpe_status(site, db: Session) -> dict:
         "framework": "DPE",
         "deadline": deadline_iso,
         "days_remaining": days,
+        "urgency_level": _compute_urgency_level(days),
         "assujetti": True,
         "compliant": compliant,
         "exposure_eur": exposure,
@@ -230,14 +285,7 @@ def _dpe_status(site, db: Session) -> dict:
 
 
 def _dt_status(site, today: date) -> dict:
-    """Statut DT par site : trajectoire -40 % / 2030 + pénalité 7 500 €.
-
-    Phase G P1 fix code-reviewer : `compliant` était hardcodé `False` →
-    sur-exposition systématique violation règle "chiffres fiables/vérifiables".
-    Désormais `null` si trajectoire pas calculée + flag `needs_trajectory_data`,
-    `exposure_eur=null` aussi (pas de chiffrage faux). Le calcul réel exige
-    `/api/cockpit/trajectory` côté frontend pour comparer projection vs cible.
-    """
+    """Statut DT par site : trajectoire -40 % / 2030 + pénalité 7 500 €."""
     is_tertiaire = bool(getattr(site, "tertiaire_area_m2", None))
     deadline_iso = "2030-12-31"
     days = _days_until(deadline_iso, today)
@@ -245,6 +293,7 @@ def _dt_status(site, today: date) -> dict:
         "framework": "DT",
         "deadline": deadline_iso,
         "days_remaining": days,
+        "urgency_level": _compute_urgency_level(days),
         "assujetti": is_tertiaire,
         "compliant": None,  # Trajectoire non calculée ici — voir /api/cockpit/trajectory
         "needs_trajectory_data": is_tertiaire,
@@ -338,7 +387,7 @@ def build_compliance_dashboard_marie_daf(db: Session, org_id: int) -> dict:
         {
             "ej_id": ej.id,
             "nom": ej.nom,
-            **_audit_sme_status(ej),
+            **_audit_sme_status(ej, today),
         }
         for ej in ejs
     ]
@@ -391,8 +440,6 @@ def build_billing_anomalies_summary_cfo(db: Session, org_id: int) -> dict:
             - by_severity : {critical: N, warning: N, info: N}
             - top_5 : les 5 anomalies les plus impactantes (montant)
     """
-    from models import EnergyInvoice
-
     anomalies = (
         db.query(BillAnomaly)
         .join(EnergyInvoice, EnergyInvoice.id == BillAnomaly.invoice_id)
@@ -433,6 +480,120 @@ def build_billing_anomalies_summary_cfo(db: Session, org_id: int) -> dict:
         "total_montant_anomalie_eur": round(total_montant, 2),
         "by_severity": by_severity,
         "top_5": top_5_data,
+    }
+
+
+def get_contract_price_benchmark(db: Session, org_id: int, *, horizon_days: int = 180) -> dict:
+    """Phase H6 — Comparateur prix marché vs prix contractuel (Jean-Marc CFO MVP).
+
+    Pour chaque contrat expirant J-{horizon_days}, compute :
+    - Prix moyen contractuel (EUR/MWh) calculé depuis price_ref ou fixed_fee
+    - Prix forward marché EUR/MWh (MktPrice baseload calendar Y+1 zone FR)
+    - Delta absolu €/MWh + delta_pct + impact économies annuel estimé
+
+    Sans forward marché disponible → benchmark_status='no_market_data' + suggestion fallback.
+
+    Returns:
+        dict :
+            - total_contracts : nb contrats fenêtre
+            - benchmark_status : 'available' / 'no_market_data' / 'partial'
+            - market_forward_eur_mwh : prix forward moyen Y+1 si dispo
+            - contracts : [{contract_id, prix_contractuel_eur_mwh, delta_eur_mwh,
+                            delta_pct, conso_annuelle_mwh, impact_economies_eur_an}]
+    """
+    from datetime import datetime, timedelta as _td, timezone as _tz
+
+    from models.market_models import MarketType, MktPrice, ProductType
+
+    today = date.today()
+    horizon = today + _td(days=horizon_days)
+
+    contracts = (
+        db.query(EnergyContract, Site)
+        .join(Site, Site.id == EnergyContract.site_id)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(
+            EntiteJuridique.organisation_id == org_id,
+            EnergyContract.end_date.isnot(None),
+            EnergyContract.end_date >= today,
+            EnergyContract.end_date <= horizon,
+        )
+        .order_by(EnergyContract.end_date.asc())
+        .all()
+    )
+
+    # Forward EPEX/EEX baseload Y+1 — moyenne des prix dans fenêtre 12 mois post-today
+    next_year_start = datetime(today.year + 1, 1, 1, tzinfo=_tz.utc)
+    next_year_end = datetime(today.year + 1, 12, 31, tzinfo=_tz.utc)
+    forward_avg = (
+        db.query(MktPrice.price_eur_mwh)
+        .filter(
+            MktPrice.market_type == MarketType.FORWARD_YEAR,
+            MktPrice.product_type == ProductType.BASELOAD,
+            MktPrice.delivery_start >= next_year_start,
+            MktPrice.delivery_end <= next_year_end,
+        )
+        .all()
+    )
+    market_forward = round(sum(row[0] for row in forward_avg) / len(forward_avg), 2) if forward_avg else None
+
+    contracts_data = []
+    for c, s in contracts:
+        # Prix contractuel : utilise price_ref_eur_per_kwh × 1000 (→ EUR/MWh)
+        prix_eur_kwh = getattr(c, "price_ref_eur_per_kwh", None)
+        prix_contractuel_mwh = round(prix_eur_kwh * 1000, 2) if prix_eur_kwh else None
+
+        # Conso annuelle estimée (pour chiffrer impact économies)
+        conso_annuelle_kwh = (
+            db.query(EnergyInvoice.energy_kwh)
+            .filter(EnergyInvoice.contract_id == c.id, EnergyInvoice.energy_kwh.isnot(None))
+            .all()
+        )
+        conso_total = sum(row[0] for row in conso_annuelle_kwh) if conso_annuelle_kwh else 0
+        conso_annuelle_mwh = round(conso_total / 1000, 1) if conso_total else None
+
+        # Delta vs marché (en € / MWh — convention CFO : positif = surcoût client)
+        delta_eur_mwh = None
+        delta_pct = None
+        impact_eur_an = None
+        if prix_contractuel_mwh is not None and market_forward is not None:
+            delta_eur_mwh = round(prix_contractuel_mwh - market_forward, 2)
+            delta_pct = round((delta_eur_mwh / market_forward) * 100, 2) if market_forward > 0 else None
+            if conso_annuelle_mwh:
+                impact_eur_an = round(delta_eur_mwh * conso_annuelle_mwh, 0)
+
+        contracts_data.append(
+            {
+                "contract_id": c.id,
+                "supplier_name": c.supplier_name,
+                "fournisseur_id": c.fournisseur_id,
+                "end_date": c.end_date.isoformat() if c.end_date else None,
+                "site_id": s.id,
+                "site_nom": s.nom,
+                "prix_contractuel_eur_mwh": prix_contractuel_mwh,
+                "market_forward_eur_mwh": market_forward,
+                "delta_eur_mwh": delta_eur_mwh,
+                "delta_pct": delta_pct,
+                "conso_annuelle_mwh": conso_annuelle_mwh,
+                "impact_economies_eur_an": impact_eur_an,
+            }
+        )
+
+    if market_forward is None:
+        status = "no_market_data"
+    elif any(c["prix_contractuel_eur_mwh"] is None for c in contracts_data):
+        status = "partial"
+    else:
+        status = "available"
+
+    return {
+        "total_contracts": len(contracts_data),
+        "horizon_days": horizon_days,
+        "benchmark_status": status,
+        "market_forward_eur_mwh": market_forward,
+        "market_source": "MktPrice FORWARD_YEAR baseload Y+1 zone FR (EPEX/EEX)",
+        "contracts": contracts_data,
     }
 
 
