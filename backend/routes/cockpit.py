@@ -708,8 +708,19 @@ def get_cockpit_trajectory(
         # Phase 30 /simplify P1 : hoist `today` hors du helper pour éviter
         # 5 syscalls `date.today()` par requête (1 par année projetée).
         _today = date.today()
+        # Phase G fix défaut graphe trajectoire DT (cardinal) : continuité visuelle
+        # RÉEL→PROJECTION. Avant ce fix, projection_mwh était None pour `y < _cy`,
+        # créant une discontinuité visible entre dernier point RÉEL (year _cy - 1)
+        # et premier point PROJECTION (year _cy). On ancre désormais la projection
+        # sur la dernière année RÉEL complète pour le pont visuel.
+        anchor_year = _cy - 1 if _lr is not None else None
         for y in annees:
-            if y < _cy or _lr is None:
+            if _lr is None:
+                projection_mwh.append(None)
+            elif y == anchor_year:
+                # Point d'ancrage : dernier RÉEL (continuité visuelle cardinale)
+                projection_mwh.append(round(_lr / 1000, 1))
+            elif y < _cy:
                 projection_mwh.append(None)
             else:
                 projected_mwh = _project_with_action_echeances(

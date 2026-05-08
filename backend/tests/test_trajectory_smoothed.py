@@ -173,3 +173,33 @@ class TestTrajectoryEndpointSmoothed:
             assert max(abs(d) for d in stable_drops) < 0.30, (
                 f"Drops post-saut initial doivent être stables (<30 %) : {stable_drops}"
             )
+
+    def test_trajectory_continuity_anchor_last_real_year(self, client):
+        """Phase G fix défaut graphe trajectoire DT : continuité RÉEL→PROJECTION.
+
+        Avant ce fix : projection_mwh[i] = None pour year < current_year, créant
+        une discontinuité visible entre dernier RÉEL (year _cy - 1) et premier
+        PROJECTION (year _cy). Après : projection_mwh[year == _cy - 1] est ancré
+        sur la valeur RÉEL pour le pont visuel cardinal.
+        """
+        response = client.get("/api/cockpit/trajectory", headers=HEADERS)
+        assert response.status_code == 200, response.text
+        body = response.json()
+        annees = body.get("annees") or []
+        proj = body.get("projection_mwh") or []
+        reel = body.get("reel_mwh") or []
+        if not annees or not proj:
+            pytest.skip("Pas de série trajectoire (seed minimal)")
+
+        current_year = datetime.now(tz=None).year
+        anchor_year = current_year - 1
+        if anchor_year not in annees:
+            pytest.skip("Année d'ancrage hors plage")
+
+        idx = annees.index(anchor_year)
+        # Si reel_mwh disponible à l'année d'ancrage, projection doit être ancrée dessus
+        if reel[idx] is not None and proj[idx] is not None:
+            assert proj[idx] == reel[idx], (
+                f"Phase G fix continuité : projection[{anchor_year}]={proj[idx]} doit "
+                f"matcher reel[{anchor_year}]={reel[idx]} pour le pont visuel cardinal"
+            )

@@ -566,6 +566,21 @@ function TrajectoryDTSmoothed({ trajectory }) {
   const minVal = Math.min(...allValues);
   const range = maxVal - minVal || 1;
 
+  // Phase G fix défaut graphe : narratif dynamique aligné sur le visuel.
+  // Avant : narratif statique "objectif -40 % reste atteignable" même si la
+  // projection sur-performe (visuel < cible 2030). Après : 3 états explicites
+  // selon comparaison projection_2030 vs cible_2030.
+  const lastProj = projection_mwh[projection_mwh.length - 1];
+  const lastCible = objectif_mwh[objectif_mwh.length - 1];
+  let trajectoryStatus = 'pending';
+  let trajectoryGapPct = null;
+  if (lastProj != null && lastCible != null && lastCible > 0) {
+    trajectoryGapPct = ((lastProj - lastCible) / lastCible) * 100;
+    if (trajectoryGapPct <= -2) trajectoryStatus = 'over_achieve';
+    else if (trajectoryGapPct >= 5) trajectoryStatus = 'under_achieve';
+    else trajectoryStatus = 'on_track';
+  }
+
   // Étape 12 user feedback : SVG H=240 + label année à y=H−4 → texte 2030/2050
   // coupé visuellement en bas. Augmentation H + padding.bottom pour laisser
   // respirer les labels année (cf. screenshot user 29/04 "courbe trajectoire
@@ -607,9 +622,37 @@ function TrajectoryDTSmoothed({ trajectory }) {
             Trajectoire 2030 · réel vs cible Décret Tertiaire
           </div>
           <div className="text-xs" style={{ color: 'var(--sol-ink-700)', lineHeight: 1.5 }}>
-            Avec les actions planifiées et leurs échéances réelles, l'objectif{' '}
-            <strong style={{ fontWeight: 500 }}>−40 % / 2030</strong> reste atteignable. Lissage
-            temporel par échéance d'action.
+            {trajectoryStatus === 'over_achieve' && (
+              <>
+                Avec les actions planifiées,{' '}
+                <strong style={{ fontWeight: 500 }}>l'objectif −40 % / 2030 est dépassé</strong> (
+                {Math.abs(trajectoryGapPct).toFixed(0)} % au-delà de la cible). Lissage temporel par
+                échéance d'action.
+              </>
+            )}
+            {trajectoryStatus === 'on_track' && (
+              <>
+                Avec les actions planifiées et leurs échéances réelles, l'objectif{' '}
+                <strong style={{ fontWeight: 500 }}>−40 % / 2030</strong> reste atteignable. Lissage
+                temporel par échéance d'action.
+              </>
+            )}
+            {trajectoryStatus === 'under_achieve' && (
+              <>
+                Avec les actions planifiées,{' '}
+                <strong style={{ fontWeight: 500 }}>
+                  écart de +{trajectoryGapPct.toFixed(0)} %
+                </strong>{' '}
+                vs cible −40 % / 2030 — actions complémentaires requises. Lissage temporel par
+                échéance d'action.
+              </>
+            )}
+            {trajectoryStatus === 'pending' && (
+              <>
+                Trajectoire en cours de calcul (données projection insuffisantes). Lissage temporel
+                par échéance d'action.
+              </>
+            )}
           </div>
         </div>
         <div className="flex gap-2 shrink-0 flex-wrap">
