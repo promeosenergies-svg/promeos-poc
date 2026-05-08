@@ -144,6 +144,19 @@ class BatimentCreate(BaseModel):
     cvc_power_kw: Optional[float] = Field(None, ge=0)
 
 
+class BatimentUpdate(BaseModel):
+    """Phase D-4 Tier 4 P1 : endpoint PATCH Batiment — cycle de vie complet.
+
+    Phase F P2 : extrait depuis routes/patrimoine_crud.py vers schemas/ (SoT canonique
+    schémas Pydantic, anti-duplication code-reviewer Phase E P2).
+    """
+
+    nom: Optional[str] = Field(None, min_length=1, max_length=200)
+    surface_m2: Optional[float] = Field(None, ge=0)
+    annee_construction: Optional[int] = Field(None, ge=1800, le=2100)
+    cvc_power_kw: Optional[float] = Field(None, ge=0)
+
+
 class SiteUpdate(BaseModel):
     nom: Optional[str] = None
     type: Optional[str] = None

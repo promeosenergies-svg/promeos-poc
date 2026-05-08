@@ -15,7 +15,6 @@ Pattern Pilier 12 ADR-016 cardinal multi-tenant. Rétro-compat DEMO_MODE préser
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -39,6 +38,7 @@ from schemas.patrimoine_crud import (
     SiteCreate,
     SiteUpdate,
     BatimentCreate,
+    BatimentUpdate,
 )
 from services.scope_utils import resolve_org_id  # noqa: E402
 from services.patrimoine_scope_guard import (  # noqa: E402
@@ -678,15 +678,6 @@ def create_batiment(
         recompute_site_bacs_aggregate(db, body.site_id, commit=True)
 
     return _bat_to_dict(bat)
-
-
-class BatimentUpdate(BaseModel):
-    """Phase D-4 Tier 4 P1 : endpoint PATCH Batiment manquant — cycle de vie complet."""
-
-    nom: Optional[str] = None
-    surface_m2: Optional[float] = None
-    annee_construction: Optional[int] = None
-    cvc_power_kw: Optional[float] = None
 
 
 @router.patch("/batiments/{batiment_id}")

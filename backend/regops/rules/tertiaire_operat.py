@@ -8,6 +8,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from doctrine.constants import compute_operat_deadline
 from ..schemas import Finding
 
 _logger = logging.getLogger(__name__)
@@ -59,7 +60,10 @@ def evaluate(site, batiments: list, evidences: list, config: dict, *, db: Option
     # Site is in scope - check deadlines
     deadlines = config.get("deadlines", {})
     attestation_deadline = date.fromisoformat(deadlines.get("attestation_display", "2026-07-01"))
-    declaration_deadline = date.fromisoformat(deadlines.get("declaration_2025", "2026-09-30"))
+    # Fallback dynamique via doctrine.constants.compute_operat_deadline (Phase D-4 P2 → Phase F1)
+    # SoT cardinal "09-30" — récurrence annuelle, source ADEME OPERAT
+    today_year = datetime.now().year
+    declaration_deadline = date.fromisoformat(deadlines.get("declaration_2025", compute_operat_deadline(today_year)))
 
     # Penalties from config
     penalties = config.get("penalties", {})
