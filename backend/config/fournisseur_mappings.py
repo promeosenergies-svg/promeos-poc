@@ -15,6 +15,10 @@ fournisseurs FR majeurs (cf. demo_seed/fournisseurs_canoniques.py).
 
 from __future__ import annotations
 
+import re
+
+_WHITESPACE_PATTERN = re.compile(r"\s+")
+
 
 # Mapping supplier_name normalisé → nom canonique Fournisseur Phase F1.
 # Toutes les clés sont normalisées en upper-strip-deduplicate-spaces avant lookup.
@@ -55,8 +59,10 @@ def normalize_supplier_name(raw: str | None) -> str:
     1. None → "" (safe)
     2. strip espaces avant/après
     3. upper case
-    4. deduplicate doubles espaces ("  " → " ")
+    4. deduplicate tout whitespace consécutif (`\\s+` → " ") — Phase F dette fix :
+       avant utilisait .replace("  ", " ") qui ne gérait que les doubles espaces,
+       laissant passer triple/quadruple/tab/newline en faux-négatif silencieux.
     """
     if raw is None:
         return ""
-    return raw.strip().upper().replace("  ", " ")
+    return _WHITESPACE_PATTERN.sub(" ", raw.strip().upper())

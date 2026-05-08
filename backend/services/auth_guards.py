@@ -11,18 +11,23 @@ from fastapi import HTTPException
 
 from middleware.auth import AuthContext
 
-# Roles autorises a creer/modifier des entites patrimoine
+# Roles autorises a creer/modifier des entites patrimoine.
+# Phase F audit dette : valeurs lowercase cohérentes avec UserRole enum
+# (models/enums.py:436-446) — bug critique dormant : avant ce fix, le set
+# uppercase ne matchait JAMAIS auth.role.value lowercase, ce qui aurait
+# rejeté tout utilisateur authentifié non-DEMO_MODE. Tous les tests passaient
+# car ils tournent en DEMO_MODE (auth=None court-circuite le check).
 WRITE_ROLES = frozenset(
     {
-        "DG_OWNER",
-        "DSI_ADMIN",
-        "ENERGY_MANAGER",
-        "RESP_CONFORMITE",
-        "RESP_IMMOBILIER",
-        "RESP_SITE",
-        "DAF",
-        "ACHETEUR",
-        "PMO_ACC",
+        "dg_owner",
+        "dsi_admin",
+        "energy_manager",
+        "resp_conformite",
+        "resp_immobilier",
+        "resp_site",
+        "daf",
+        "acheteur",
+        "pmo_acc",
     }
 )
 

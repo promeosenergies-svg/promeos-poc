@@ -91,34 +91,42 @@ def extract_text_from_pdf(file_path: str) -> str:
 # ========================================
 
 
-def _find_float(text: str, pattern: str) -> Optional[float]:
-    """Extract a float value from text using regex pattern."""
-    m = re.search(pattern, text, re.IGNORECASE)
-    if m:
-        val = m.group(1).replace(",", ".").replace(" ", "")
-        try:
-            return float(val)
-        except ValueError:
-            return None
+def _find_float(text: str, *patterns: str) -> Optional[float]:
+    """Extrait un float depuis text via 1+ patterns regex ordonnés par confiance.
+
+    Phase F dette fix : signature variadic — accepte `_find_float(text, p1)`
+    (single pattern legacy F2 facture) et `_find_float(text, p1, p2, ...)`
+    (multi-patterns Phase F3 contrat). Anti-duplication SoT cross-parsers.
+    """
+    for pattern in patterns:
+        m = re.search(pattern, text, re.IGNORECASE)
+        if m:
+            val = m.group(1).replace(",", ".").replace(" ", "")
+            try:
+                return float(val)
+            except ValueError:
+                continue
     return None
 
 
-def _find_date(text: str, pattern: str) -> Optional[date]:
-    """Extract a date from text using regex pattern."""
-    m = re.search(pattern, text, re.IGNORECASE)
-    if m:
-        try:
-            return datetime.strptime(m.group(1).strip(), "%d/%m/%Y").date()
-        except (ValueError, IndexError):
-            pass
+def _find_date(text: str, *patterns: str) -> Optional[date]:
+    """Extrait une date DD/MM/YYYY depuis text via 1+ patterns regex ordonnés."""
+    for pattern in patterns:
+        m = re.search(pattern, text, re.IGNORECASE)
+        if m:
+            try:
+                return datetime.strptime(m.group(1).strip(), "%d/%m/%Y").date()
+            except (ValueError, IndexError):
+                continue
     return None
 
 
-def _find_str(text: str, pattern: str) -> Optional[str]:
-    """Extract a string from text using regex pattern."""
-    m = re.search(pattern, text, re.IGNORECASE)
-    if m:
-        return m.group(1).strip()
+def _find_str(text: str, *patterns: str) -> Optional[str]:
+    """Extrait une chaîne (group 1) depuis text via 1+ patterns regex ordonnés."""
+    for pattern in patterns:
+        m = re.search(pattern, text, re.IGNORECASE)
+        if m:
+            return m.group(1).strip()
     return None
 
 

@@ -68,40 +68,8 @@ class ContractParseResult:
         }
 
 
-# ─── Helpers regex (cohérents pdf_parser.py facture) ─────────────────────────
-
-
-def _find_first_float(text: str, *patterns: str) -> Optional[float]:
-    """Cherche le 1er match float parmi plusieurs patterns ordonnés."""
-    for pattern in patterns:
-        m = re.search(pattern, text, re.IGNORECASE)
-        if m:
-            try:
-                return float(m.group(1).replace(",", ".").replace(" ", ""))
-            except ValueError:
-                continue
-    return None
-
-
-def _find_first_date(text: str, *patterns: str) -> Optional[date]:
-    """Cherche le 1er match date DD/MM/YYYY parmi plusieurs patterns ordonnés."""
-    for pattern in patterns:
-        m = re.search(pattern, text, re.IGNORECASE)
-        if m:
-            try:
-                return datetime.strptime(m.group(1).strip(), "%d/%m/%Y").date()
-            except (ValueError, IndexError):
-                continue
-    return None
-
-
-def _find_first_str(text: str, *patterns: str) -> Optional[str]:
-    """Cherche le 1er match str (group 1) parmi plusieurs patterns."""
-    for pattern in patterns:
-        m = re.search(pattern, text, re.IGNORECASE)
-        if m:
-            return m.group(1).strip()
-    return None
+# Phase F dette fix : helpers regex consolidés dans pdf_parser.py SoT (variadic).
+# Import lazy pour éviter cycle import (pdf_parser dans `app/`, ce module dans `services/`).
 
 
 # ─── Parser principal ─────────────────────────────────────────────────────────
@@ -123,7 +91,12 @@ def parse_contract_pdf_text(
     Returns:
         ContractParseResult avec champs extraits + confidence + fields_extracted.
     """
-    from app.bill_intelligence.parsers.pdf_parser import extract_siren_from_pdf_text
+    from app.bill_intelligence.parsers.pdf_parser import (
+        _find_date,
+        _find_float,
+        _find_str,
+        extract_siren_from_pdf_text,
+    )
 
     result = ContractParseResult()
 
@@ -131,7 +104,7 @@ def parse_contract_pdf_text(
     siren = extract_siren_from_pdf_text(text)
     result.siren_extracted = siren
 
-    supplier_name = _find_first_str(
+    supplier_name = _find_str(
         text,
         r"(?:Fournisseur|Founisseur|Vendeur)\s*[:\s]*([A-Z][\w\s&\-\.]{2,50})",
     )
@@ -165,58 +138,58 @@ def parse_contract_pdf_text(
                 break
     result.supplier_name = supplier_name
 
-    # 2. Bridge Fournisseur F1 via composite resolver F2 (P1 fix /simplify : réutilisation
-    # SoT au lieu de dupliquer la logique 2 passes ici)
+    # 2. Bridge Fournisseur F1 — appels directs aux 2 resolvers F2 (Phase F dette fix :
+    # élimine le proxy intermédiaire fragile, plus explicite + même cardinal SoT).
     if db is not None:
-        from services.fournisseur_resolver_service import resolve_fournisseur_from_invoice
-        from types import SimpleNamespace
-
-        # Mock invoice domain pour réutiliser le composite resolver (signature partagée
-        # supplier attr + pdf_text kw)
-        invoice_proxy = SimpleNamespace(supplier=supplier_name)
-        fournisseur = resolve_fournisseur_from_invoice(
-            db,
-            invoice_proxy,
-            scope_org_id=scope_org_id,
-            pdf_text=text,
+        from services.fournisseur_resolver_service import (
+            resolve_fournisseur_from_siren,
+            resolve_fournisseur_from_supplier_name,
         )
+
+        # Pass 1 : SIREN extrait (priorité — déterministe haute confiance)
+        fournisseur = None
+        if siren:
+            fournisseur = resolve_fournisseur_from_siren(db, siren, scope_org_id=scope_org_id)
+        # Pass 2 : fallback supplier_name mapping
+        if fournisseur is None and supplier_name:
+            fournisseur = resolve_fournisseur_from_supplier_name(db, supplier_name, scope_org_id=scope_org_id)
         if fournisseur:
             result.fournisseur_id = fournisseur.id
             result.fournisseur_nom_canonique = fournisseur.nom
 
     # 3. Reference fournisseur (numéro contrat)
-    result.reference_fournisseur = _find_first_str(
+    result.reference_fournisseur = _find_str(
         text,
         r"(?:N[°o]\s*(?:de\s*)?contrat|R[ée]f\.?\s*contrat|Contrat\s+n[°o])\s*[:\s]*(\S{4,40})",
     )
 
     # 4. Date signature
-    result.date_signature = _find_first_date(
+    result.date_signature = _find_date(
         text,
         r"(?:Date\s+de\s+signature|Sign[ée]\s+le|Fait\s+le)\s*[:\s]*(\d{2}/\d{2}/\d{4})",
     )
 
     # 5. Start date / 6. End date
-    result.start_date = _find_first_date(
+    result.start_date = _find_date(
         text,
         r"(?:Date\s+de\s+d[ée]but|Effet\s+au|Du)\s*[:\s]*(\d{2}/\d{2}/\d{4})",
         r"(?:P[ée]riode\s+contractuelle|Validit[ée])\s*[:\s]*(?:du\s+)?(\d{2}/\d{2}/\d{4})",
     )
-    result.end_date = _find_first_date(
+    result.end_date = _find_date(
         text,
         r"(?:Date\s+de\s+fin|[ÉE]ch[ée]ance|Fin\s+(?:du\s+contrat|d'effet))\s*[:\s]*(\d{2}/\d{2}/\d{4})",
         r"(?:au|jusqu['’]au)\s*(\d{2}/\d{2}/\d{4})",
     )
 
     # 7. Price ref EUR/kWh
-    result.price_ref_eur_per_kwh = _find_first_float(
+    result.price_ref_eur_per_kwh = _find_float(
         text,
         r"(?:Prix\s+(?:de\s+r[ée]f[ée]rence|fix(?:e|é))|Prix\s+(?:HT|du)\s*kWh)[^€\n]*?([\d,.]+)\s*(?:EUR|€)?\s*/\s*kWh",
         r"([\d,.]+)\s*(?:EUR|€)\s*/\s*kWh",
     )
 
     # 8. Fixed fee EUR/mois (abonnement)
-    result.fixed_fee_eur_per_month = _find_first_float(
+    result.fixed_fee_eur_per_month = _find_float(
         text,
         r"(?:Abonnement|Redevance\s+fixe)[^€\n]*?([\d,.]+)\s*(?:EUR|€)\s*/\s*mois",
         r"(?:Abonnement\s+mensuel)\s*[:\s]*([\d,.]+)\s*(?:EUR|€)",

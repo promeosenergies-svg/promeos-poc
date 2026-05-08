@@ -167,6 +167,83 @@ def test_p0_3_create_organisation_demo_mode_passes(client, db):
     assert r.status_code == 201
 
 
+# ─── Phase F dette technique fixes (P1) ────────────────────────────────────
+
+
+def test_dette_p1_write_roles_lowercase_match_userrole_enum():
+    """Dette fix : WRITE_ROLES doit utiliser lowercase pour matcher UserRole.value.
+
+    Bug critique dormant pré-Phase F : WRITE_ROLES était uppercase ({"DG_OWNER",...})
+    alors que UserRole.value est lowercase ({"dg_owner",...}). Le check
+    `role_value not in WRITE_ROLES` aurait rejeté tout utilisateur authentifié
+    en production (DEMO_MODE court-circuitait, masquant le bug).
+    """
+    from models import UserRole
+    from services.auth_guards import ADMIN_ROLES, WRITE_ROLES
+
+    # Tous les rôles WRITE_ROLES doivent être présents en lowercase dans UserRole
+    enum_values = {r.value for r in UserRole}
+    assert WRITE_ROLES.issubset(enum_values), (
+        f"WRITE_ROLES contient des valeurs absentes de UserRole : {WRITE_ROLES - enum_values}"
+    )
+    assert ADMIN_ROLES.issubset(enum_values), (
+        f"ADMIN_ROLES contient des valeurs absentes de UserRole : {ADMIN_ROLES - enum_values}"
+    )
+
+
+def test_dette_p1_normalize_supplier_name_handles_multiple_spaces():
+    """Dette fix : normalize_supplier_name gère triple+ espaces (était limité aux doubles)."""
+    from config.fournisseur_mappings import normalize_supplier_name
+
+    assert normalize_supplier_name("EDF   Entreprises") == "EDF ENTREPRISES"  # triple
+    assert normalize_supplier_name("EDF\tEntreprises") == "EDF ENTREPRISES"  # tab
+    assert normalize_supplier_name("EDF\nEntreprises") == "EDF ENTREPRISES"  # newline
+    assert normalize_supplier_name("  EDF    Entreprises  ") == "EDF ENTREPRISES"
+
+
+def test_dette_p1_find_helpers_variadic_consolidation():
+    """Dette fix : helpers _find_* dans pdf_parser.py acceptent multi-patterns variadic.
+
+    Phase F2 facture utilisait `_find_float(text, p1)` (single).
+    Phase F3 contrat utilise `_find_float(text, p1, p2, ...)` (multi-patterns ordonnés).
+    Backward-compat préservée via `*patterns`.
+    """
+    from app.bill_intelligence.parsers.pdf_parser import _find_date, _find_float, _find_str
+
+    # Single pattern (legacy F2)
+    assert _find_float("Total: 42.5 EUR", r"Total\s*:\s*([\d.]+)") == 42.5
+    # Multi-patterns (F3 — premier pattern qui matche)
+    assert (
+        _find_float(
+            "Prix: 0,15 EUR/kWh",
+            r"NoMatch\s+(\d+)",
+            r"Prix\s*:\s*([\d,]+)",
+        )
+        == 0.15
+    )
+    # _find_date variadic
+    from datetime import date
+
+    assert _find_date(
+        "Du 15/03/2026 au 31/12/2027",
+        r"jusqu'au\s+(\d{2}/\d{2}/\d{4})",
+        r"Du\s+(\d{2}/\d{2}/\d{4})",
+    ) == date(2026, 3, 15)
+    # _find_str variadic
+    assert _find_str("Ref XYZ-123", r"NotHere\s+(\S+)", r"Ref\s+(\S+)") == "XYZ-123"
+
+
+def test_dette_p1_contract_parser_no_simplenamespace_proxy():
+    """Dette fix : contract_pdf_parser n'utilise plus SimpleNamespace proxy."""
+    from pathlib import Path
+
+    src = (Path(__file__).resolve().parent.parent / "services" / "contract_pdf_parser.py").read_text(encoding="utf-8")
+    assert "SimpleNamespace" not in src, "Proxy SimpleNamespace doit être éliminé Phase F dette fix"
+    # Vérifier qu'on appelle bien les 2 resolvers directs
+    assert "resolve_fournisseur_from_siren" in src
+    assert "resolve_fournisseur_from_supplier_name" in src
+
+
 def test_p0_3_require_admin_access_helper_strict():
     """P0-3 : helper require_admin_access rejette VIEWER/ENERGY_MANAGER."""
     from dataclasses import dataclass
