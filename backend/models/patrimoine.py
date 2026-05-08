@@ -326,6 +326,44 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
         comment="Mode traitement compteur (smart, traditionnel, telereleve, manuel) — matrice v1 §4.6",
     )
 
+    # Phase D-4 Tier 1 — DP gaz 5 P0 matérialisés (ADR-D-02) + 2 P0 Accise CIBS (ADR-D-05) :
+    # Audit cardinal : docs/audits/AUDIT_ECARTS_MATRICE_V1_2026_05_07.md §3 P0-MATV1-002/003/006/007/008.
+    pce_format = Column(
+        String(20),
+        nullable=True,
+        comment="Format PCE/PRM gaz (DISTRIBUTION_14/DISTRIBUTION_GI/TRANSPORT_PIR) — matrice v1 §4.6.C#2 ADR-D-02",
+    )
+    type_reseau = Column(
+        String(20),
+        nullable=True,
+        comment="Type réseau gaz (DISTRIBUTION/TRANSPORT) — matrice v1 §4.6.C#3 ADR-D-02",
+    )
+    referentiel_tarifaire = Column(
+        String(10),
+        nullable=True,
+        comment="Référentiel tarifaire gaz (ATRD/ATRT) — matrice v1 §4.6.C#5 ADR-D-02",
+    )
+    est_profile = Column(
+        Boolean,
+        nullable=True,
+        comment="True si DP gaz profilé (T1/T2/T3) — matrice v1 §4.6.C#6 ADR-D-02",
+    )
+    mode_releve_gaz = Column(
+        String(10),
+        nullable=True,
+        comment="Mode relevé gaz (MM/MJ/JJ/MH) — matrice v1 §4.6.C#8 ADR-D-02",
+    )
+    accise_categorie_elec = Column(
+        String(30),
+        nullable=True,
+        comment="Catégorie accise CIBS élec (MENAGES_ASSIMILES/PME/HAUTE_PUISSANCE) — matrice v1 §4.6.B#16 ADR-D-05",
+    )
+    accise_categorie_gaz = Column(
+        String(20),
+        nullable=True,
+        comment="Catégorie accise CIBS gaz (NATUREL/GPL/GNL) — matrice v1 §4.6.C#18 ADR-D-05",
+    )
+
     # ── Reprogrammation Heures Creuses (chantier Enedis TURPE 7) ──
     hc_reprog_phase = Column(
         Enum(HcReprogPhase),
@@ -581,12 +619,147 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
                 )
         return value
 
-    @validates("gas_profile", "cja_mwh_per_day", "atrd_option")
+    @validates("pce_format")
+    def _validate_pce_format_strict(self, key: str, value: str | None):
+        """Phase D-4 Tier 1 ADR-D-02 : `pce_format` strict Enum + cohérence cross-FK avec `code`.
+
+        P0-1 fix code-reviewer audit milieu-étape : enforce que `pce_format` correspond
+        au regex de `code` (DISTRIBUTION_14 ↔ \\d{14}, DISTRIBUTION_GI ↔ GI\\d{6},
+        TRANSPORT_PIR ↔ IR\\d{4}). Empêche divergence silencieuse entre colonnes.
+        """
+        if value is None or value == "":
+            return value
+        from .enums import PceFormatEnum
+
+        valid = {v.value for v in PceFormatEnum}
+        if value not in valid:
+            raise ValueError(
+                f"Phase D-4 Tier 1 violation : pce_format={value!r} non canonique "
+                f"(attendu {sorted(valid)} — PceFormatEnum)"
+            )
+
+        # P0-1 cross-FK : cohérence pce_format ↔ code regex
+        if self.code:
+            expected_pattern_for_format = {
+                "DISTRIBUTION_14": re.compile(r"^\d{14}$"),
+                "DISTRIBUTION_GI": re.compile(r"^GI\d{6}$"),
+                "TRANSPORT_PIR": re.compile(r"^IR\d{4}$"),
+            }
+            pattern = expected_pattern_for_format.get(value)
+            if pattern is not None and not pattern.match(self.code):
+                raise ValueError(
+                    f"Phase D-4 Tier 1 P0-1 violation : pce_format={value!r} incohérent avec "
+                    f"code={self.code!r} (attendu pattern {pattern.pattern})"
+                )
+        return value
+
+    # P1-1 fix code-reviewer : cross-validator type_reseau ↔ referentiel_tarifaire
+    # Bijection cardinale : DISTRIBUTION → ATRD (GRDF + ELD), TRANSPORT → ATRT (GRTgaz/NaTran/Teréga)
+    _TYPE_RESEAU_REFERENTIEL_BIJECTION: dict[str, str] = {
+        "DISTRIBUTION": "ATRD",
+        "TRANSPORT": "ATRT",
+    }
+
+    @validates("type_reseau")
+    def _validate_type_reseau_strict(self, key: str, value: str | None):
+        """Phase D-4 Tier 1 ADR-D-02 : `type_reseau` strict + cross-FK référentiel."""
+        if value is None or value == "":
+            return value
+        from .enums import TypeReseauEnum
+
+        valid = {v.value for v in TypeReseauEnum}
+        if value not in valid:
+            raise ValueError(
+                f"Phase D-4 Tier 1 violation : type_reseau={value!r} non canonique "
+                f"(attendu {sorted(valid)} — TypeReseauEnum)"
+            )
+
+        # P1-1 cross-FK : DISTRIBUTION → ATRD, TRANSPORT → ATRT
+        expected_referentiel = self._TYPE_RESEAU_REFERENTIEL_BIJECTION.get(value)
+        if expected_referentiel and self.referentiel_tarifaire and self.referentiel_tarifaire != expected_referentiel:
+            raise ValueError(
+                f"Phase D-4 Tier 1 P1-1 violation : type_reseau={value!r} incohérent avec "
+                f"referentiel_tarifaire={self.referentiel_tarifaire!r} (attendu {expected_referentiel})"
+            )
+        return value
+
+    @validates("referentiel_tarifaire")
+    def _validate_referentiel_tarifaire_strict(self, key: str, value: str | None):
+        """Phase D-4 Tier 1 ADR-D-02 : `referentiel_tarifaire` strict + cross-FK type_reseau."""
+        if value is None or value == "":
+            return value
+        from .enums import ReferentielTarifaireEnum
+
+        valid = {v.value for v in ReferentielTarifaireEnum}
+        if value not in valid:
+            raise ValueError(
+                f"Phase D-4 Tier 1 violation : referentiel_tarifaire={value!r} non canonique "
+                f"(attendu {sorted(valid)} — ReferentielTarifaireEnum)"
+            )
+
+        # P1-1 cross-FK bijection inverse : ATRD ← DISTRIBUTION, ATRT ← TRANSPORT
+        inverse_bijection = {v: k for k, v in self._TYPE_RESEAU_REFERENTIEL_BIJECTION.items()}
+        expected_type_reseau = inverse_bijection.get(value)
+        if expected_type_reseau and self.type_reseau and self.type_reseau != expected_type_reseau:
+            raise ValueError(
+                f"Phase D-4 Tier 1 P1-1 violation : referentiel_tarifaire={value!r} incohérent avec "
+                f"type_reseau={self.type_reseau!r} (attendu {expected_type_reseau})"
+            )
+        return value
+
+    @validates("mode_releve_gaz")
+    def _validate_mode_releve_gaz_strict(self, key: str, value: str | None):
+        """Phase D-4 Tier 1 ADR-D-02 : `mode_releve_gaz` strict MM/MJ/JJ/MH."""
+        if value is None or value == "":
+            return value
+        from .enums import ModeReleveGazEnum
+
+        valid = {v.value for v in ModeReleveGazEnum}
+        if value not in valid:
+            raise ValueError(
+                f"Phase D-4 Tier 1 violation : mode_releve_gaz={value!r} non canonique "
+                f"(attendu {sorted(valid)} — ModeReleveGazEnum)"
+            )
+        return value
+
+    @validates("accise_categorie_elec")
+    def _validate_accise_categorie_elec_strict(self, key: str, value: str | None):
+        """Phase D-4 Tier 1 ADR-D-05 : `accise_categorie_elec` strict CIBS L.312-36/37."""
+        if value is None or value == "":
+            return value
+        from .enums import AcciseCategorieElec
+
+        valid = {v.value for v in AcciseCategorieElec}
+        if value not in valid:
+            raise ValueError(
+                f"Phase D-4 Tier 1 violation : accise_categorie_elec={value!r} non canonique "
+                f"(attendu {sorted(valid)} — AcciseCategorieElec)"
+            )
+        return value
+
+    @validates("accise_categorie_gaz")
+    def _validate_accise_categorie_gaz_strict(self, key: str, value: str | None):
+        """Phase D-4 Tier 1 ADR-D-05 : `accise_categorie_gaz` strict CIBS L.312-24."""
+        if value is None or value == "":
+            return value
+        from .enums import AcciseCategorieGaz
+
+        valid = {v.value for v in AcciseCategorieGaz}
+        if value not in valid:
+            raise ValueError(
+                f"Phase D-4 Tier 1 violation : accise_categorie_gaz={value!r} non canonique "
+                f"(attendu {sorted(valid)} — AcciseCategorieGaz)"
+            )
+        return value
+
+    @validates("gas_profile", "cja_mwh_per_day", "atrd_option", "est_profile")
     def _validate_gas_profile_consistency(self, key: str, value):
         """C95 + C97 matrice v1 §8.3 : cohérence options ATRD ↔ profil ↔ CJA.
 
         - C95 : si `atrd_option=T4` → CJA OBLIGATOIRE (capacité journalière contractuelle T4).
         - C97 : si `atrd_option ∈ (T1, T2, T3)` profilé → `gas_profile` REQUIS (BASE/B0/B1/B2I).
+        - P1-2 fix code-reviewer Phase D-4 Tier 1 : cross-FK `est_profile` ↔ `atrd_option`
+          (T1/T2/T3 → est_profile=True ou None, T4/TP → est_profile=False ou None).
         - DP gaz uniquement (energy_type=GAZ) — skipped sur DP élec.
         """
         if self.energy_type != DeliveryPointEnergyType.GAZ:
@@ -595,11 +768,21 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
         atrd = value if key == "atrd_option" else self.atrd_option
         cja = value if key == "cja_mwh_per_day" else self.cja_mwh_per_day
         profile = value if key == "gas_profile" else self.gas_profile
+        est_profile = value if key == "est_profile" else self.est_profile
 
         if atrd is None:
             return value
 
         atrd_str = atrd.value if hasattr(atrd, "value") else str(atrd)
+
+        # P1-2 cross-FK : est_profile ↔ atrd_option (cohérence cardinale)
+        if est_profile is not None:
+            expected_profile = atrd_str in {"T1", "T2", "T3"}
+            if est_profile != expected_profile:
+                raise ValueError(
+                    f"Phase D-4 Tier 1 P1-2 violation : est_profile={est_profile} incohérent avec "
+                    f"atrd_option={atrd_str!r} (T1/T2/T3 → True / T4/TP → False)"
+                )
 
         # C95 : T4 nécessite CJA contractuelle
         if atrd_str == "T4" and cja is None:

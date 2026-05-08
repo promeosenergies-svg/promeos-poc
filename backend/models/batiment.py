@@ -53,6 +53,15 @@ class Batiment(Base, TimestampMixin, SoftDeleteMixin):
         comment="Année rénovation lourde (matrice v1 §4.5) — base ajustée OPERAT post-rénovation",
     )
 
+    # Phase D-4 Tier 1 — P0-MATV1-009 : categorie_operat_batiment cardinal A9
+    # Source : matrice v1 §4.5#17 — contrainte agrégat A9 (Cabs faux pour Site MIXTE multi-bâtiments)
+    # Audit : docs/audits/AUDIT_ECARTS_MATRICE_V1_2026_05_07.md §3 P0-MATV1-009.
+    categorie_operat_batiment = Column(
+        String(50),
+        nullable=True,
+        comment="Catégorie OPERAT bâtiment (héritée Site avec override possible) — matrice v1 §4.5#17 / contrainte A9",
+    )
+
     # ─── Phase D-3 Tier 2 DOC-1 — String→Enum validator (P1-AUDIT-D-011) ───
 
     @validates("dpe_class")
@@ -71,6 +80,25 @@ class Batiment(Base, TimestampMixin, SoftDeleteMixin):
             raise ValueError(
                 f"DOC-1 Phase D-3 Tier 2 violation : dpe_class={value!r} non canonique "
                 f"(attendu {sorted(valid)} — DpeClasseEnergie)"
+            )
+        return value
+
+    @validates("categorie_operat_batiment")
+    def _validate_categorie_operat_batiment_strict(self, key: str, value: str | None):
+        """P0-2 fix code-reviewer Phase D-4 Tier 1 : `categorie_operat_batiment` strict
+        `OperatUsagePrincipalEnum` (9 catégories OPERAT macro).
+
+        Pattern Pilier 9 ADR-016 — contrainte A9 cardinale (Cabs faux Site MIXTE).
+        """
+        if value is None or value == "":
+            return value
+        from .enums import OperatUsagePrincipalEnum
+
+        valid = {v.value for v in OperatUsagePrincipalEnum}
+        if value not in valid:
+            raise ValueError(
+                f"Phase D-4 Tier 1 P0-2 violation : categorie_operat_batiment={value!r} non canonique "
+                f"(attendu {sorted(valid)} — OperatUsagePrincipalEnum 9 catégories macro)"
             )
         return value
 

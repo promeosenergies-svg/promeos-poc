@@ -1176,3 +1176,83 @@ class SubMeterUsageEnum(str, enum.Enum):
     PROCESS = "PROCESS"  # Production / process metier
     IRVE = "IRVE"  # Bornes de recharge VE
     AUTRES = "AUTRES"  # Auxiliaires / parties communes / divers
+
+
+# ============================================================
+# Phase D-4 Tier 1 — 6 Enums cardinaux matrice v1 §4.6 + ADR-D-02 + ADR-D-05
+# ============================================================
+# Sources :
+#   - PCE format : CRE Délib. 2025-161 + smart.grtgaz.com (ADR-D-02 + Phase D-3 Tier 2)
+#   - Accise CIBS : L.312-24 (gaz) + L.312-36/37 (élec) + arrêté 27/01/2026 (ADR-D-05)
+#   - Mode releve : ATRD 7 GRDF référentiel (matrice v1 §4.6.C#8)
+
+
+class PceFormatEnum(str, enum.Enum):
+    """Format PCE/PRM gaz (matrice v1 §4.6.C#2 — ADR-D-02).
+
+    Phase D-4 Tier 1 : matérialisation Enum pour audit traçabilité + perf query.
+    Validator regex `code` Phase D-3 Tier 2 garantit la cohérence cross-FK.
+    """
+
+    DISTRIBUTION_14 = "DISTRIBUTION_14"  # 14 chiffres — Enedis PRM élec OU GRDF résidentiel/petit pro
+    DISTRIBUTION_GI = "DISTRIBUTION_GI"  # GI + 6 chiffres — GRDF gros industriel distribution
+    TRANSPORT_PIR = "TRANSPORT_PIR"  # IR + 4 chiffres — Point Interconnexion Réseau GRTgaz/NaTran/Teréga
+
+
+class TypeReseauEnum(str, enum.Enum):
+    """Type de réseau gaz (matrice v1 §4.6.C#3 — ADR-D-02).
+
+    Détermine routage référentiel tarifaire (ATRD distribution / ATRT transport).
+    """
+
+    DISTRIBUTION = "DISTRIBUTION"  # GRDF + 21 ELD locales
+    TRANSPORT = "TRANSPORT"  # GRTgaz + NaTran + Teréga
+
+
+class ReferentielTarifaireEnum(str, enum.Enum):
+    """Référentiel tarifaire gaz (matrice v1 §4.6.C#5 — ADR-D-02).
+
+    Déductible de type_reseau mais matérialisé pour traçabilité audit + perf billing.
+    """
+
+    ATRD = "ATRD"  # Accès Tarifs Réseau Distribution (GRDF + ELD)
+    ATRT = "ATRT"  # Accès Tarifs Réseau Transport (GRTgaz + NaTran + Teréga)
+
+
+class ModeReleveGazEnum(str, enum.Enum):
+    """Mode relevé compteur gaz (matrice v1 §4.6.C#8).
+
+    Détermine granularité ingestion CDC + facturation.
+    """
+
+    MM = "MM"  # Mensuel Mensuel (relevé mensuel facturation mensuelle)
+    MJ = "MJ"  # Mensuel Journalier (relevé mensuel CDC journalière)
+    JJ = "JJ"  # Journalier Journalier (relevé + facturation quotidiens)
+    MH = "MH"  # Mensuel Horaire (relevé mensuel CDC horaire)
+
+
+class AcciseCategorieElec(str, enum.Enum):
+    """Catégorie accise électricité CIBS (matrice v1 §4.6.B#16 — ADR-D-05).
+
+    Source : CIBS L.312-36/37 + arrêté 27/01/2026 (JORFTEXT000053407616).
+    Détermine taux d'accise applicable :
+    - MENAGES_ASSIMILES : T1 = 30.85 EUR/MWh
+    - PME : T2 = 26.58 EUR/MWh
+    - HAUTE_PUISSANCE : HP = 5.71 EUR/MWh (>10 GWh/an industriel)
+    """
+
+    MENAGES_ASSIMILES = "MENAGES_ASSIMILES"
+    PME = "PME"
+    HAUTE_PUISSANCE = "HAUTE_PUISSANCE"
+
+
+class AcciseCategorieGaz(str, enum.Enum):
+    """Catégorie accise gaz CIBS (matrice v1 §4.6.C#18 — ADR-D-05).
+
+    Source : CIBS L.312-24 + arrêté 27/01/2026 (JORFTEXT000053407616).
+    Taux 2026 = 10.73 EUR/MWh pour gaz naturel — taux différenciés GPL/GNL.
+    """
+
+    NATUREL = "NATUREL"  # Gaz naturel (taux principal)
+    GPL = "GPL"  # Gaz de Pétrole Liquéfié
+    GNL = "GNL"  # Gaz Naturel Liquéfié

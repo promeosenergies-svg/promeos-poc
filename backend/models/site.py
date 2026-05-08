@@ -277,6 +277,30 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
 
     is_demo = Column(Boolean, default=False, comment="Donnees de demonstration")
 
+    # Phase D-4 Tier 1 — P0-MATV1-004 + P0-MATV1-005 cardinaux RGPD + BACS cascade
+    # Audit : docs/audits/AUDIT_ECARTS_MATRICE_V1_2026_05_07.md §3 P0-MATV1-004/005.
+
+    # P0-004 — Cascade RGPD §6.1 surcharge locale Org → Site (3 valeurs)
+    # ADR-007 ext : herite_entite / accepte_local / refuse_local
+    consentement_site_overrides = Column(
+        JSON,
+        nullable=True,
+        comment="JSON cascade RGPD Org→Site override (matrice v1 §4.4.H#67 — herite_entite/accepte_local/refuse_local)",
+    )
+
+    # P0-005 — BACS Site agrégé (ADR-D-04 cascade Σ Batiment.cvc_power_kw)
+    # Source : Décret BACS 2020-887 + 2025-1343 (seuils 70/290 kW).
+    bacs_assujetti = Column(
+        Boolean,
+        nullable=True,
+        comment="Site assujetti BACS (puissance_cvc_totale_kw ≥ 70 kW) — matrice v1 §4.4.E#42 ADR-D-04",
+    )
+    bacs_puissance_cvc_totale_kw = Column(
+        Float,
+        nullable=True,
+        comment="Puissance CVC totale Site (Σ Batiment.cvc_power_kw — cascade ADR-D-04) — matrice v1 §4.4.E#43",
+    )
+
     # Data lineage
     data_source = Column(String(20), nullable=True, comment="csv, manual, demo, api")
     data_source_ref = Column(String(200), nullable=True, comment="Batch ID or filename")

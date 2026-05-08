@@ -63,7 +63,19 @@ class Compteur(Base, TimestampMixin, SoftDeleteMixin):
     sub_meter_usage = Column(
         String(50),
         nullable=True,
-        comment="Usage sous-compteur si sub_meter_of_id non NULL (CVC, IT, ECLAIRAGE, AUTRES)",
+        comment="Usage sous-compteur si sub_meter_of_id non NULL — SubMeterUsageEnum (CVC/IT/ECLAIRAGE/PROCESS/IRVE/AUTRES)",
+    )
+
+    # Phase D-4 Tier 1 — P0-MATV1-010 : Compteur.batiment_id FK ADR-D-03
+    # Différenciateur PROMEOS : agrégation conso par bâtiment (BACS classe + APER zoning).
+    # ondelete=SET NULL (Bâtiment supprimé n'efface pas Compteur — préserve historique).
+    # Audit : docs/audits/AUDIT_ECARTS_MATRICE_V1_2026_05_07.md §3 P0-MATV1-010 + ADR-D-03.
+    batiment_id = Column(
+        Integer,
+        ForeignKey("batiments.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="Bâtiment de rattachement (matrice v1 §4.6.A#12 — agrégation conso par bâtiment)",
     )
 
     # Data lineage
