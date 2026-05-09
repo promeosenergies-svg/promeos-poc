@@ -1624,6 +1624,68 @@ def build_contract_cache(db: Session, contract_ids: list[int]) -> dict[int, Ener
     return {c.id: c for c in rows}
 
 
+def build_dp_category_cache(db: Session, site_ids: list[int]) -> dict[int, tuple]:
+    """Phase L23.1 P1 — Préchargement batch DP categorie pour R22.
+
+    Pattern aligné `build_prev_invoice_cache` (Phase L7.3) + `build_contract_cache`
+    (Phase L12.1). Audit P1 efficiency cumul L19+L22 : avant L23, audit_invoices_batch
+    passait `dp_category_cache=None` → R22 refait N queries DeliveryPoint pour batch
+    (cf. commentaire "Phase L20 si besoin" billing_service.py:1159).
+
+    Après L23 : 1 SELECT GROUP BY site_id sur tous les site_ids distincts du batch
+    → résolution batch O(1) par site (vs N).
+
+    Args:
+        db: session SQLAlchemy
+        site_ids: liste site_id distincts à pré-charger
+
+    Returns:
+        dict {site_id: (rate_eur_per_mwh, category_value, source_label)}.
+        Sites sans DP catégorie absents → fallback T1 lazy via _resolve_accise_rate_from_dp.
+    """
+    if not site_ids:
+        return {}
+    # Phase L23.1 — filter None défensif (cohérent build_contract_cache L12.5)
+    site_ids = [sid for sid in site_ids if sid is not None]
+    if not site_ids:
+        return {}
+
+    from doctrine.constants import (
+        ACCISE_ELEC_HP_EUR_PER_MWH,
+        ACCISE_ELEC_T1_EUR_PER_MWH,
+        ACCISE_ELEC_T2_EUR_PER_MWH,
+    )
+    from models import DeliveryPoint
+    from models.enums import AcciseCategorieElec
+
+    # 1 SELECT batch : (site_id, accise_categorie_elec) DISTINCT pour tous sites
+    rows = (
+        db.query(DeliveryPoint.site_id, DeliveryPoint.accise_categorie_elec)
+        .filter(DeliveryPoint.site_id.in_(site_ids))
+        .distinct()
+        .all()
+    )
+    # Group categories par site_id (pré-pass Python O(N) sur résultat batch)
+    by_site: dict[int, set] = {}
+    for site_id, cat in rows:
+        by_site.setdefault(site_id, set()).add(_normalize_enum_value(cat))
+
+    cache: dict[int, tuple] = {}
+    for site_id, categories in by_site.items():
+        categories.discard(None)
+        if len(categories) == 1:
+            cat_value = next(iter(categories))
+            if cat_value == AcciseCategorieElec.HAUTE_PUISSANCE.value:
+                cache[site_id] = (ACCISE_ELEC_HP_EUR_PER_MWH, cat_value, "DP_CATEGORY")
+            elif cat_value == AcciseCategorieElec.PME.value:
+                cache[site_id] = (ACCISE_ELEC_T2_EUR_PER_MWH, cat_value, "DP_CATEGORY")
+            else:
+                cache[site_id] = (ACCISE_ELEC_T1_EUR_PER_MWH, cat_value, "DP_CATEGORY")
+        # Sites avec multi-catégories ou aucune → absents du cache
+        # → lazy fallback T1 via _resolve_accise_rate_from_dp
+    return cache
+
+
 def detect_anomalies_for_invoice(
     invoice: EnergyInvoice,
     db: Session,

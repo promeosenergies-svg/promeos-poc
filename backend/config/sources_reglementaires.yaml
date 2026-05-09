@@ -961,7 +961,9 @@ terms:
     confidence: "medium"
     source:
       label: "Code de l'énergie art. L335-1 — Mécanisme de capacité RTE (réforme acheteur unique)"
-      url: null
+      # Phase L23.3 audit fix P1 — URL institutionnelle référence (avant : null
+      # → fail source-guard SG_REG_YAML_03 https. URL Légifrance L335-1 + RTE).
+      url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000031049395"
       version: "Décret 2025-1441 + Arrêté 18/03/2026"
       effective_date: "2026-11-01"
       legal_reference: "Décret n°2025-1441"
@@ -976,7 +978,7 @@ terms:
     confidence: "low"
     source:
       label: "Enchères capacité RTE 06/03/2025 (livraison 2026) — valeur à confirmer"
-      url: null
+      url: "https://www.services-rte.com/fr/decouvrir-rte/comment-fonctionne-le-marche-de-l-electricite/le-mecanisme-de-capacite.html"
       version: "Enchères 2025 livraison 2026"
       effective_date: "2026-01-01"
       legal_reference: null
@@ -1027,7 +1029,7 @@ terms:
     confidence: "low"
     source:
       label: "RTE — Coefficient capacité 2026 (services-rte.com)"
-      url: null
+      url: "https://www.services-rte.com/fr/decouvrir-rte/comment-fonctionne-le-marche-de-l-electricite/le-mecanisme-de-capacite.html"
       version: "2026"
       effective_date: "2026-01-01"
       legal_reference: null
@@ -1040,7 +1042,7 @@ terms:
     domain: "tarifs"
     source:
       label: "Enchères capacité RTE 2024 (livraison 2025) — prix nul"
-      url: null
+      url: "https://www.services-rte.com/fr/decouvrir-rte/comment-fonctionne-le-marche-de-l-electricite/le-mecanisme-de-capacite.html"
       version: "Enchères 2024 livraison 2025"
       effective_date: "2025-01-01"
       legal_reference: null
@@ -1060,7 +1062,7 @@ terms:
     confidence: "low"
     source:
       label: "CRE délibération 2026-52 — Tarif unitaire VNU 2026 (référence à confirmer)"
-      url: null
+      url: "https://www.cre.fr/electricite/marche-de-detail-de-l-electricite/dispositifs-d-attribution-des-volumes-de-l-arenh.html"
       version: "CRE 2026-52"
       effective_date: "2026-01-01"
       legal_reference: "Décret n°2026-55"
@@ -1075,7 +1077,7 @@ terms:
     confidence: "low"
     source:
       label: "CRE délibération 2026-52 — Seuil 1 activation VNU (référence à confirmer)"
-      url: null
+      url: "https://www.cre.fr/electricite/marche-de-detail-de-l-electricite/dispositifs-d-attribution-des-volumes-de-l-arenh.html"
       version: "CRE 2026-52"
       effective_date: "2026-01-01"
       legal_reference: "Décret n°2026-55"
@@ -1090,7 +1092,7 @@ terms:
     confidence: "low"
     source:
       label: "CRE délibération 2026-52 — Seuil 2 activation VNU (référence à confirmer)"
-      url: null
+      url: "https://www.cre.fr/electricite/marche-de-detail-de-l-electricite/dispositifs-d-attribution-des-volumes-de-l-arenh.html"
       version: "CRE 2026-52"
       effective_date: "2026-01-01"
       legal_reference: "Décret n°2026-55"
@@ -1109,7 +1111,7 @@ terms:
     domain: "co2"
     source:
       label: "Règlement (UE) 2023/956 — Carbon Border Adjustment Mechanism"
-      url: null
+      url: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX%3A32023R0956"
       version: "Règlement initial UE 2023/956"
       effective_date: "2026-01-01"
       legal_reference: "Règlement (UE) 2023/956"
@@ -1122,7 +1124,7 @@ terms:
     domain: "co2"
     source:
       label: "Journal officiel UE — CBAM scope acier/aluminium/ciment/engrais/électricité/hydrogène"
-      url: null
+      url: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX%3A32023R0956"
       version: "2023/956"
       effective_date: "2023-10-01"
       legal_reference: "Règlement (UE) 2023/956"

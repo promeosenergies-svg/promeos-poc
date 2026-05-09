@@ -1126,6 +1126,7 @@ def audit_invoices_batch(db: Session, invoice_ids: list[int]) -> Dict[str, Any]:
     """
     from services.bill_intelligence import (
         build_contract_cache,
+        build_dp_category_cache,
         build_prev_invoice_cache,
     )
 
@@ -1143,6 +1144,9 @@ def audit_invoices_batch(db: Session, invoice_ids: list[int]) -> Dict[str, Any]:
     site_ids = list({inv.site_id for inv in invoices if inv.site_id})
     contract_cache = build_contract_cache(db, contract_ids)
     prev_invoice_cache = build_prev_invoice_cache(db, site_ids)
+    # Phase L23.1 audit fix P1 — dp_category_cache batch (avant L23 :
+    # `None` → R22 N+1 sur DeliveryPoint queries en mode batch).
+    dp_category_cache = build_dp_category_cache(db, site_ids)
 
     audited: list[int] = []
     errors: list[int] = []
@@ -1156,7 +1160,7 @@ def audit_invoices_batch(db: Session, invoice_ids: list[int]) -> Dict[str, Any]:
                 db,
                 contract_cache=contract_cache,
                 prev_invoice_cache=prev_invoice_cache,
-                # dp_category_cache batch nightly — laissé None (Phase L20 si besoin)
+                dp_category_cache=dp_category_cache,
             )
             audited.append(invoice.id)
             anomalies_total += len(anomalies)

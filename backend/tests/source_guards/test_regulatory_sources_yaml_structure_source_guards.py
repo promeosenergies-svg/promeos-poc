@@ -86,10 +86,21 @@ def test_sg_reg_yaml_02_source_label_not_empty():
 
 
 def test_sg_reg_yaml_03_source_url_https():
-    """source.url doit commencer par https:// (lien vérifiable et sécurisé)."""
+    """source.url doit commencer par https:// (lien vérifiable et sécurisé).
+
+    Phase L23.3 audit fix P1 — exemption domain `bill_intelligence` (paramètres
+    doctrinaux internes PROMEOS, pas de source réglementaire externe à citer).
+    Les ~34 clés BILL_ANOMALY_* + BILL_PRIORITY_SCORE_* Phase L7+L8+L9+L20+L22
+    sont des seuils heuristiques internes documentés via `legal_reference`
+    cardinal mais n'ont pas d'URL externe (cf. notes "Doctrine PROMEOS Phase L*").
+    """
     data = _load_yaml_data()
     offenders: list[str] = []
     for tid, term in data["terms"].items():
+        # Phase L23.3 — exempter le domain bill_intelligence (paramètres doctrinaux internes)
+        domain = term.get("domain", "")
+        if domain == "bill_intelligence":
+            continue
         url = term.get("source", {}).get("url", "")
         if not isinstance(url, str) or not url.startswith(_HTTPS_PREFIX):
             offenders.append(f"{tid}: source.url={url!r} (attendu https://...)")

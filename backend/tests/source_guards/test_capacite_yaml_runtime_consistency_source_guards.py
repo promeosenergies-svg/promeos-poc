@@ -39,12 +39,21 @@ _TOLERANCE_NUMERIC = 0.00002  # 2e-5 tolerance (catalog rate stocké ~0.00043 vs
 
 
 def _expected_value_from_yaml(price_eur_per_mw: float, coeff: float) -> float:
-    """Formule canonique runtime `_compute_capacity()` : (price × coeff) / 8760.
-    Résultat = EUR/MWh. NB : unit catalog `CAPACITE_ELEC.unit = "EUR/kWh"` est
-    suspecte (probable erreur d'unité — dette `D-Phase4-2-Catalog-CAPACITE-Unit-Mismatch-001`
-    P2 Sprint C-7 polish). Ce SG valide la cohérence NUMÉRIQUE uniquement.
+    """Formule canonique runtime `_compute_capacity()` : (price × coeff) / 8760 / 1000.
+
+    Résultat = EUR/kWh (cohérent avec `CATALOG_RATES['CAPACITE_ELEC'].unit = "EUR/kWh"`).
+
+    Phase L23.2 audit fix P1 — conversion MW→kW (facteur /1000) cardinale :
+    avant L23.2 : formule retournait EUR/MWh sans /1000 → delta 0.4315 vs catalog
+    0.00043 → faux échec test source-guard (réelle cohérence : 3150 EUR/MW × 1.2 /
+    8760 h / 1000 conversion MW→kW = 0.000431 EUR/kWh ≈ 0.00043 catalog ✓).
+
+    Note doctrinale : `CAPACITE_RTE_TARIF_2026_EUR_PER_MW` est EUR/MW/an
+    (puissance souscrite annuelle), divisé par 8760 h/an = EUR/MWh, divisé
+    par 1000 (MW → kW) = EUR/kWh. La formule complète est dans
+    `services/price_decomposition_service.py::_compute_capacity()`.
     """
-    return (price_eur_per_mw * coeff) / 8760
+    return (price_eur_per_mw * coeff) / 8760 / 1000
 
 
 def test_sg_capacite_runtime_01_tarif_2026_numeric_consistency_with_catalog():
