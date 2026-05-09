@@ -21,24 +21,46 @@
 import SolTooltip from '../../ui/sol/SolTooltip';
 import { acronymTooltip, isKnownAcronym } from '../../utils/acronyms';
 import { GLOSSARY } from '../../domain/glossary';
+import { useAcronymes } from '../../hooks/useAcronymes';
+
+/**
+ * Resout depuis le SoT YAML backend (Phase 1.1) charge via useAcronymes.
+ * Le payload backend a la structure {short, long, narrative, source, ...}.
+ */
+function resolveFromBackend(dict, code) {
+  if (!dict || !code) return null;
+  const key = code.toUpperCase();
+  const entry = dict[key];
+  if (!entry) return null;
+  return {
+    short: entry.short || key,
+    long: entry.long || key,
+    narrative: entry.narrative || entry.long || '',
+    source: entry.source || null,
+  };
+}
 
 /**
  * Resout un acronyme vers ses champs (long, short, narrative, source).
- * Priorite : utils/acronyms.js (structure riche) puis domain/glossary.js
- * (chaine plate). Retourne null si inconnu.
+ * Cascade : backend YAML SoT -> utils/acronyms.js -> domain/glossary.js.
+ * Retourne null si inconnu.
  */
-function resolveAcronyme(code) {
+function resolveAcronyme(code, backendDict) {
   if (!code) return null;
   const key = code.toUpperCase();
 
-  // Priorite 1 : acronyms.js (ACRONYM_GLOSSARY avec long/meaning/source)
+  // Priorite 1 : YAML SoT backend (Phase 1.1) — autorite reglementaire avec
+  // sources legales tracees (CRE, JORFTEXT, decret, NOR).
+  const backendHit = resolveFromBackend(backendDict, key);
+  if (backendHit) return backendHit;
+
+  // Priorite 2 : utils/acronyms.js (ACRONYM_GLOSSARY avec long/meaning/source)
   if (isKnownAcronym(key)) {
     const tooltip = acronymTooltip(key);
-    // acronymTooltip retourne une string formatee "long — meaning (source)"
     return { short: key, long: key, narrative: tooltip, source: null };
   }
 
-  // Priorite 2 : domain/glossary.js (chaine plate ou objet {term, short})
+  // Priorite 3 : domain/glossary.js (fallback final)
   const glossEntry = GLOSSARY[key] || GLOSSARY[code];
   if (glossEntry) {
     const narrative =
@@ -52,21 +74,12 @@ function resolveAcronyme(code) {
   return null;
 }
 
-/**
- * Tente d'importer useAcronymes si disponible (Phase 1.1).
- * Si absent, retourne un hook mock stand-alone.
- */
-let _useAcronymes = null;
-try {
-  // Import dynamique synchrone non possible en ESM — on utilise le fallback statique.
-  // Le hook useAcronymes sera cable via le context si fourni par Phase 1.1.
-  _useAcronymes = null;
-} catch {
-  _useAcronymes = null;
-}
-
 export default function Term({ acronyme, variant = 'inline-tooltip', className = '' }) {
-  const resolved = resolveAcronyme(acronyme);
+  // Hook useAcronymes (Phase 1.1) — cache module-scope, 1 fetch / session.
+  // Si la SoT backend n'est pas encore chargee (loading) ou indisponible
+  // (erreur reseau), Term tombe sur le fallback statique sans bloquer.
+  const { data: backendDict } = useAcronymes();
+  const resolved = resolveAcronyme(acronyme, backendDict);
 
   // Acronyme inconnu : rendu brut + warn en dev
   if (!resolved) {

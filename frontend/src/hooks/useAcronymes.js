@@ -45,7 +45,10 @@ export function useAcronymes() {
       return;
     }
 
-    // Déduplique les fetch parallèles (promise partagée)
+    // Déduplique les fetch parallèles (promise partagée).
+    // Audit code-reviewer Phase 1.6 : pending remis à null après .finally pour
+    // permettre re-tentative si le 1er fetch a échoué (réseau transitoire).
+    let fetchError = null;
     if (!_pending) {
       _pending = axios
         .get('/api/v1/doctrine/acronymes')
@@ -57,15 +60,23 @@ export function useAcronymes() {
         })
         .catch((err) => {
           console.warn('[useAcronymes] fetch /api/v1/doctrine/acronymes failed', err);
+          fetchError = err;
           // Fallback silencieux : dict vide — ne bloque pas le rendu
           _cache = {};
           return _cache;
+        })
+        .finally(() => {
+          // Permet une nouvelle tentative future si reset cache
+          _pending = null;
         });
     }
 
-    _pending.then((resolved) => {
+    _pending?.then((resolved) => {
       setData(resolved);
       setLoading(false);
+      // Audit code-reviewer Phase 1.6 : propage l'erreur au consommateur
+      // (Term peut afficher un état dégradé si data est vide pour cause réseau)
+      if (fetchError) setError(fetchError);
     });
   }, []); // pas de dépendance : données statiques, 1 seul fetch
 

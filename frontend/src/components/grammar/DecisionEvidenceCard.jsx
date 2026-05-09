@@ -84,8 +84,12 @@ export default function DecisionEvidenceCard({
   validateEvidence(evidence);
 
   const styles = SEVERITY_STYLES[severity] ?? SEVERITY_STYLES.neutral;
+  // Audit code-reviewer Phase 1.6 : ternaire désormais effective —
+  // 5-8 cellules basculent en grille 3-4 colonnes pour préserver la lisibilité
   const gridCols =
-    evidence.length <= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-4';
+    evidence.length <= 4
+      ? 'grid-cols-2 sm:grid-cols-4'
+      : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4';
 
   return (
     <article

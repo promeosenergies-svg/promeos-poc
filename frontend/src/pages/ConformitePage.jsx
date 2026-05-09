@@ -34,6 +34,7 @@ import Tabs from '../ui/Tabs';
 import { useToast } from '../ui/ToastProvider';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { useScope } from '../contexts/ScopeContext';
+import { useDemo } from '../contexts/DemoContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import { RiskBadge } from '../lib/risk/normalizeRisk';
@@ -103,6 +104,9 @@ export { DevScopeBadge };
 
 export default function ConformitePage() {
   const { org, scope, scopedSites, portefeuilles, sitesCount, sitesLoading } = useScope();
+  // Sprint Grammaire v1 Phase 1.3 : démo DecisionEvidenceCard guardée par DEMO_MODE.
+  // Audit code-reviewer Phase 1.6 P2 — éviter d'exposer des chiffres en dur en prod.
+  const { demoEnabled } = useDemo();
   // Sprint α-fin Phase 1.C/1.D — useEvents source canonique des signaux
   // de conformité (compliance_deadline + data_quality_issue détecteurs
   // event_bus, exposés par /api/v1/events/upcoming). Remplace l'ancienne
@@ -779,31 +783,34 @@ export default function ConformitePage() {
         <NextBestActionCard action={nextBestAction} onAction={handleNbaAction} />
       )}
 
-      {/* Phase 1.3 — DecisionEvidenceCard démo : primitif Sol v1.1 §5.6
-          Valeurs en dur (démo) — branchement backend prévu Phase 2.
-          Positionné avant ComplianceScoreHeader pour visibilité maximale. */}
-      <div className="my-4" data-testid="conformite-decision-evidence-demo">
-        <DecisionEvidenceCard
-          rang={1}
-          category="CONFORMITE"
-          scope="SIÈGE HELIOS PARIS"
-          severity="warning"
-          titre={
-            <>
-              Mise en conformité <Term acronyme="BACS" /> avant 2027
-            </>
-          }
-          lead="Le système GTB classe A/B doit être installé avant le 1er janvier 2027 sur ce site (puissance CVC > 290 kW). Provision pénalité 7 500 €/an si non-conforme."
-          evidence={[
-            { label: 'PUISSANCE CVC', value: '320', unit: 'kW', helper: 'seuil 290 kW' },
-            { label: 'INVESTISSEMENT', value: '85 000', unit: '€', helper: 'CAPEX GTB' },
-            { label: 'PÉNALITÉ ÉVITÉE', value: '7 500', unit: '€/an', helper: 'décret 2020-887' },
-            { label: 'ÉCHÉANCE', value: '01/01/2027', unit: '', helper: 'à 18 mois' },
-          ]}
-          primaryCta={{ label: 'Lancer plan BACS', href: '/actions/new?type=BACS&site=1' }}
-          methodologyRef="/methodologie/bacs"
-        />
-      </div>
+      {/* Phase 1.3 — DecisionEvidenceCard démo : primitif Sol v1.1 §5.6.
+          Audit Phase 1.6 P2 : valeurs en dur GUARDÉES par DEMO_MODE — en prod,
+          ce slot sera nourri par un endpoint backend "top decision evidence"
+          (Phase 2 du sprint grammaire). */}
+      {demoEnabled && (
+        <div className="my-4" data-testid="conformite-decision-evidence-demo">
+          <DecisionEvidenceCard
+            rang={1}
+            category="CONFORMITE"
+            scope="SIÈGE HELIOS PARIS"
+            severity="warning"
+            titre={
+              <>
+                Mise en conformité <Term acronyme="BACS" /> avant 2027
+              </>
+            }
+            lead="Le système GTB classe A/B doit être installé avant le 1er janvier 2027 sur ce site (puissance CVC > 290 kW). Provision pénalité 7 500 €/an si non-conforme."
+            evidence={[
+              { label: 'PUISSANCE CVC', value: '320', unit: 'kW', helper: 'seuil 290 kW' },
+              { label: 'INVESTISSEMENT', value: '85 000', unit: '€', helper: 'CAPEX GTB' },
+              { label: 'PÉNALITÉ ÉVITÉE', value: '7 500', unit: '€/an', helper: 'décret 2020-887' },
+              { label: 'ÉCHÉANCE', value: '01/01/2027', unit: '', helper: 'à 18 mois' },
+            ]}
+            primaryCta={{ label: 'Lancer plan BACS', href: '/actions/new?type=BACS&site=1' }}
+            methodologyRef="/methodologie/bacs"
+          />
+        </div>
+      )}
 
       {/* A.2: Unified compliance score header */}
       <ComplianceScoreHeader complianceScore={complianceScore} segProfile={segProfile} />
