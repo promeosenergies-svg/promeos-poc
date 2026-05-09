@@ -31,7 +31,26 @@ router = APIRouter(prefix="/api/bill-intelligence", tags=["Bill Intelligence"])
 # Sprint C-7 Phase 7.7 Lot D — D-Sprint-C7-BillAnomaly-Endpoint-Enum-Validation-001 P2 :
 # Literal types contraignent FastAPI à valider les query params côté entrée
 # (422 sur valeur hors enum vs 200 silencieux avec liste vide auparavant).
-BillAnomalyCode = Literal["R19", "R20"]
+#
+# Phase L10.3 audit fix F2 (production bug) — Literal stalé R19/R20 alors que
+# R21→R31 sont actifs en pipeline (Phase H/I/J/L). Avant L10.3 : GET
+# /anomalies?code=R23 retournait 422 alors que les anomalies R23 existaient
+# en base. Synchronisation cardinale avec anomaly_detector.py pipeline 13 règles.
+BillAnomalyCode = Literal[
+    "R19",  # VNU dormant post-ARENH (base)
+    "R20",  # Capacité variance vs PS (base)
+    "R21",  # CTA mauvais calcul (Phase H5)
+    "R22",  # Accise erronée T1/T2/HP (Phase I1+J1)
+    "R23",  # TURPE doublé (Phase H2)
+    "R24",  # TVA mauvais taux (Phase I2)
+    "R25",  # Abonnement divergent contrat (Phase L1)
+    "R26",  # Sanity check total vs Σ lignes (Phase L2)
+    "R27",  # Cross-validation conso vs MeterReading (Phase L3)
+    "R28",  # Prix unitaire énergie ligne vs contrat (Phase L4)
+    "R29",  # Chevauchement / trou période facturation (Phase L5)
+    "R30",  # Période facturée hors fenêtre contractuelle (Phase L6)
+    "R31",  # Doublons accise/CSPE/TICFE (Phase L9)
+]
 BillAnomalySeverity = Literal["critical", "warning", "info"]
 
 
@@ -40,7 +59,7 @@ def list_bill_anomalies(
     request: Request,
     code: Optional[BillAnomalyCode] = Query(
         None,
-        description="Filtre par code (R19=VNU dormant, R20=capacité variance)",
+        description="Filtre par code (R19→R31, cf. anomaly_detector.py pipeline)",
     ),
     severity: Optional[BillAnomalySeverity] = Query(
         None,

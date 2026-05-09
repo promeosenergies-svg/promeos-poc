@@ -2122,6 +2122,47 @@ class TestPhaseJ2HardCutFournisseurId:
 
 
 class TestPhaseGP1FixesSourceGuards:
+    def test_l10_3_bill_anomaly_code_literal_extended_to_r31(self):
+        """L10.3 audit fix F2 — BillAnomalyCode Literal couvre R19→R31 cardinal.
+
+        Avant L10.3 : Literal stalé à `["R19", "R20"]` → GET /anomalies?code=R23
+        retournait 422 alors que les anomalies R23 existaient en base
+        (production bug). Source-guard verrouille la cohérence pipeline ↔ API.
+        """
+        from pathlib import Path
+
+        src = (Path(__file__).resolve().parent.parent / "routes" / "bill_intelligence.py").read_text(encoding="utf-8")
+        for code in [
+            "R19",
+            "R20",
+            "R21",
+            "R22",
+            "R23",
+            "R24",
+            "R25",
+            "R26",
+            "R27",
+            "R28",
+            "R29",
+            "R30",
+            "R31",
+        ]:
+            assert f'"{code}"' in src, f"BillAnomalyCode Literal manquant: {code}"
+        # Plus de Literal stalé R19/R20 only
+        assert 'Literal["R19", "R20"]' not in src
+
+    def test_l10_3_doublon_cap_constant_module_level(self):
+        """L10.3 audit fix F5 — _DOUBLON_DETAIL_CAP_LINES constante module-level
+        au lieu du magic number `[:5]` dispersé dans le helper (audit P1 finding 5).
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        assert "_DOUBLON_DETAIL_CAP_LINES" in src
+        assert "if idx < _DOUBLON_DETAIL_CAP_LINES:" in src
+
     def test_l10_1_doublon_helper_centralized(self):
         """L10.1 source-guard — _build_doublon_anomaly() helper centralisé R23+R31.
 

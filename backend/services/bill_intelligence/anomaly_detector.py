@@ -29,7 +29,7 @@ from __future__ import annotations
 import logging
 import re
 from decimal import Decimal
-from typing import Optional
+from typing import Literal, Optional
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -66,32 +66,38 @@ def _resolve_contract(invoice: EnergyInvoice) -> Optional[EnergyContract]:
     return invoice.contract  # SQLAlchemy lazy-load 1er accès, identity map ensuite
 
 
+_AnomalyCode = Literal["R19", "R20", "R21", "R22", "R23", "R24", "R25", "R26", "R27", "R28", "R29", "R30", "R31"]
+
+
 def _build_doublon_anomaly(
     *,
     invoice: EnergyInvoice,
-    code: str,
-    candidate_lines: list,
+    code: _AnomalyCode,
+    candidate_lines: list[EnergyInvoiceLine],
     critical_eur: float,
     regulatory_ref: str,
     extra_details: Optional[dict] = None,
 ) -> Optional[BillAnomaly]:
-    """Phase L10.1 — Helper anti-doublon partagé R23 + R31 (audit P1 reuse #4 + L9.5 robustness pour R23).
+    """Phase L10.1 + L10.3 — Helper anti-doublon partagé R23 + R31.
 
-    Pattern cardinal cumulé Phase L9.5 + L10.1 :
+    Pattern cardinal cumulé L9.5 + L10.1 + L10.3 :
     - len(candidate_lines) < 2 → None (pas de doublon possible)
-    - total_doublon = sum_total - max() (robuste à l'ordre arbitraire des lignes)
-      → R23 hérite automatiquement du fix L9.5 R31 (avant : lines[1:] heuristique fragile)
-    - PII sanitization systématique sur duplicate_labels (CWE-532/359)
-    - Cap [:5] sur duplicate_lines_ids + duplicate_labels (cohérent R19 vnu_labels[:5])
+    - total_doublon = sum_total - max() (robuste ordre arbitraire — L9.5 sum-max)
+    - PII sanitization systématique duplicate_labels (CWE-532/359)
+    - Cap _DOUBLON_DETAIL_CAP_LINES (constante L10.3 — anti-magic number)
     - severity bascule sur critical_eur (YAML SoT)
+    - L10.3 audit fix F4 : extra_details mergé EN PREMIER (clés helper canoniques
+      écrasent toujours, anti-collision silencieuse sur "duplicate_count" etc.)
+    - L10.3 audit fix F1+F3 : code Literal + candidate_lines typed
+    - L10.3 audit fix F7 : pré-pass unique sur candidate_lines (4 passes → 1)
 
     Args:
         invoice : EnergyInvoice cible
-        code : "R23" / "R31" (anomaly code)
-        candidate_lines : lignes pré-filtrées par le détecteur (TAX accise, NETWORK même période…)
-        critical_eur : seuil bascule warning→critical
-        regulatory_ref : citation source juridique cardinale (Légifrance / CRE)
-        extra_details : dict additionnel mergé dans details_json (ex: period_code pour R23)
+        code : Literal R19→R31 (anti-typo)
+        candidate_lines : lignes pré-filtrées (TAX accise, NETWORK même période…)
+        critical_eur : seuil bascule warning→critical (YAML SoT)
+        regulatory_ref : citation source juridique cardinale
+        extra_details : dict optionnel mergé EN PREMIER (clés helper prévalent)
 
     Returns:
         BillAnomaly ou None si pas de doublon
@@ -99,22 +105,31 @@ def _build_doublon_anomaly(
     if len(candidate_lines) < 2:
         return None
 
-    amounts = [float(line.amount_eur or 0) for line in candidate_lines]
-    sum_total = sum(amounts)
-    max_legit = max(amounts)
-    total_doublon_eur = sum_total - max_legit
+    # Phase L10.3 F7 — pré-pass unique : extraction simultanée amounts + ids + labels
+    amounts: list[float] = []
+    capped_ids: list[int] = []
+    capped_labels: list[str] = []
+    for idx, line in enumerate(candidate_lines):
+        amounts.append(float(line.amount_eur or 0))
+        if idx < _DOUBLON_DETAIL_CAP_LINES:
+            capped_ids.append(line.id)
+            capped_labels.append(_sanitize_pii_label(line.label or ""))
 
+    total_doublon_eur = sum(amounts) - max(amounts)
     severity = _SEV_CRITICAL if total_doublon_eur > critical_eur else _SEV_WARNING
 
-    details: dict = {
-        "duplicate_count": len(candidate_lines),
-        "duplicate_lines_ids": [line.id for line in candidate_lines][:5],
-        "duplicate_labels": [_sanitize_pii_label(line.label or "") for line in candidate_lines][:5],
-        "montant_anomalie_eur": round(total_doublon_eur, 2),
-        "regulatory_ref": regulatory_ref,
-    }
-    if extra_details:
-        details.update(extra_details)
+    # Phase L10.3 F4 — extra_details mergé EN PREMIER : clés helper canoniques
+    # écrasent toujours (anti-collision silencieuse).
+    details: dict = dict(extra_details) if extra_details else {}
+    details.update(
+        {
+            "duplicate_count": len(candidate_lines),
+            "duplicate_lines_ids": capped_ids,
+            "duplicate_labels": capped_labels,
+            "montant_anomalie_eur": round(total_doublon_eur, 2),
+            "regulatory_ref": regulatory_ref,
+        }
+    )
 
     return BillAnomaly(
         invoice_id=invoice.id,
@@ -154,6 +169,10 @@ _PERIOD_CODES_KNOWN = [
 # Audit code-reviewer Phase L9 P1 finding 2 : avant L9.5 dupliquée verbatim
 # entre détecteurs → risque divergence si R22 patché et R31 oublié (ou vice-versa).
 _ACCISE_PATTERN = re.compile(r"\b(accise|ticfe|cspe|contrib.*service.*public)", re.IGNORECASE)
+
+# Phase L10.3 audit fix F5 — cap labels/ids dans details_json (mémoire + PII).
+# Cohérent R19 vnu_labels (Sprint C-7 Phase 7.7), R23 + R31 doublons (helper L10.1).
+_DOUBLON_DETAIL_CAP_LINES = 5
 
 # Sprint C-7 Phase 7.7 Lot A — D-Sprint-C7-BillAnomaly-PII-Vnu-Labels-Sanitization-001 :
 # regex sanitization SIREN (9 chiffres) / SIRET (14 chiffres) / PRM/PCE (14 chiffres) /
@@ -1077,7 +1096,11 @@ def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAno
     - Regrouper EnergyInvoiceLine `line_type=NETWORK` par période détectée
       (HPH / HCH / HPB / HCB / P / HP / HC / BASE)
     - Si ≥ 2 lignes pour même période sur même invoice → R23 anomalie
-    - Sévérité `critical` si total doublé > 100 € ; `warning` sinon
+    - Sévérité `critical` si total doublé > seuil YAML SoT ; `warning` sinon
+
+    Implémentation : délègue à `_build_doublon_anomaly()` (Phase L10.1) qui
+    consolide le pattern doublon avec R31 (sum-max robustness + PII sanitize +
+    cap module-level).
 
     Returns:
         list[BillAnomaly] : 0..N anomalies (1 par groupe période doublé)
@@ -1141,6 +1164,10 @@ def detect_r31_accise_double(invoice: EnergyInvoice, db: Session) -> Optional[Bi
     Différencié de R22 (mauvais taux accise) : R22 vérifie le tarif appliqué,
     R31 vérifie la duplication de lignes (multi-comptage). Détecté indépendamment
     de la catégorie DP (T1/T2/HP).
+
+    Implémentation : délègue à `_build_doublon_anomaly()` (Phase L10.1) qui
+    consolide le pattern doublon avec R23 (sum-max robustness + PII sanitize +
+    cap module-level + extra_details merge ordre prudent).
 
     Returns:
         BillAnomaly ou None
