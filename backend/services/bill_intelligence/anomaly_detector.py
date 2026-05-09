@@ -460,7 +460,9 @@ def _resolve_accise_rate_from_dp(
     return result
 
 
-def detect_r22_accise_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+def detect_r22_accise_mismatch(
+    invoice: EnergyInvoice, db: Session, *, dp_category_cache: Optional[dict] = None
+) -> Optional[BillAnomaly]:
     """R22 — Accise élec (TICFE/CSPE) divergence taux réglementaire.
 
     Persona Jean-Marc CFO : ROI 2-4 k€/an, transitions tarifaires accise 2024→2025
@@ -498,7 +500,9 @@ def detect_r22_accise_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[
     energy_mwh = float(invoice.energy_kwh) / 1000
 
     # Phase J : résoudre catégorie depuis DP (T1/T2/HP) au lieu de T1 fixe
-    rate_eur_per_mwh, category_value, category_source = _resolve_accise_rate_from_dp(invoice, db)
+    rate_eur_per_mwh, category_value, category_source = _resolve_accise_rate_from_dp(
+        invoice, db, cache=dp_category_cache
+    )
     accise_attendue = energy_mwh * rate_eur_per_mwh
 
     if accise_attendue <= 0:
@@ -684,7 +688,12 @@ def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAno
 # ─── Pipeline ───────────────────────────────────────────────────────────────
 
 
-def detect_anomalies_for_invoice(invoice: EnergyInvoice, db: Session) -> list[BillAnomaly]:
+def detect_anomalies_for_invoice(
+    invoice: EnergyInvoice,
+    db: Session,
+    *,
+    dp_category_cache: Optional[dict] = None,
+) -> list[BillAnomaly]:
     """Pipeline détection complète sur 1 invoice.
 
     Trigger : cascade ingestion facture (Sprint C-5 Phase 5.1) ou batch nightly fallback.
@@ -694,6 +703,9 @@ def detect_anomalies_for_invoice(invoice: EnergyInvoice, db: Session) -> list[Bi
     db.commit() retiré (couplage caller). Pattern aligné `log_consent_change` Phase 7.4 :
     le caller décide quand commit (transactional batch / unit-of-work). Anomalies sont
     flushées via `db.add()` mais persistées par caller.
+
+    Phase K audit P1 fix : `dp_category_cache` propagé à R22 — caller peut
+    instancier dict {} pour batch ingestion (évite N queries DP redondantes).
 
     Retour : liste anomalies ajoutées à la session (caller responsable du commit).
     """
@@ -735,9 +747,9 @@ def detect_anomalies_for_invoice(invoice: EnergyInvoice, db: Session) -> list[Bi
     except Exception as e:
         _logger.error(f"R21 detector failed for invoice {invoice.id}: {e}")
 
-    # R22 : 0 ou 1 — Phase I CFO accise erronée
+    # R22 : 0 ou 1 — Phase I CFO accise erronée (cache K2 propagé Phase K audit fix)
     try:
-        r22 = detect_r22_accise_mismatch(invoice, db)
+        r22 = detect_r22_accise_mismatch(invoice, db, dp_category_cache=dp_category_cache)
         if r22:
             db.add(r22)
             anomalies.append(r22)

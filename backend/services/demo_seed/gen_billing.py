@@ -89,7 +89,8 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
                 notice_period_days=90,
                 auto_renew=c_spec.get("auto_renew", False),
                 offer_indexation=_INDEXATION_MAP.get(strategy),
-                metadata_json=json.dumps({"strategy": strategy}),
+                # Phase K audit P0 fix : seed legacy ADR-F-04 (bypass event listener Phase J2)
+                metadata_json=json.dumps({"strategy": strategy, "phase_j2_legacy": True}),
                 # V-registre: champs registre patrimonial & contractuel
                 reference_fournisseur=ref_fournisseur,
                 date_signature=sig_date,
@@ -146,6 +147,8 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
                 fixed_fee_eur_per_month=round(rng.uniform(20, 200), 2),
                 notice_period_days=90,
                 auto_renew=rng.choice([True, False]),
+                # Phase K audit P0 fix : seed legacy ADR-F-04
+                metadata_json=json.dumps({"phase_j2_legacy": True}),
             )
             db.add(contract)
             db.flush()

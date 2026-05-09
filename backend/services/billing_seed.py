@@ -8,8 +8,14 @@ Idempotent via source tag "seed_36m".
 """
 
 import calendar
+import json
 from datetime import date, timedelta
 from sqlalchemy.orm import Session
+
+# Phase K audit P0 fix : seed contracts historiques marqués legacy ADR-F-04
+# (8 PDLs HELIOS pré-Phase F1) — évite warnings event listener Phase J2 +
+# crash en mode strict `PROMEOS_J2_HARDCUT=1`.
+_SEED_LEGACY_META = json.dumps({"phase_j2_legacy": True})
 
 from models import (
     Site,
@@ -515,6 +521,7 @@ def seed_billing_demo(db: Session) -> dict:
         end_date=date(2026, 12, 31),
         price_ref_eur_per_kwh=PRICE_REF_ELEC,
         fixed_fee_eur_per_month=45.0,
+        metadata_json=_SEED_LEGACY_META,
     )
     db.add(contract_elec)
     contracts_created += 1
@@ -528,6 +535,7 @@ def seed_billing_demo(db: Session) -> dict:
         end_date=date(2025, 12, 31),
         price_ref_eur_per_kwh=PRICE_REF_GAZ,
         fixed_fee_eur_per_month=30.0,
+        metadata_json=_SEED_LEGACY_META,
     )
     db.add(contract_gaz)
     contracts_created += 1
@@ -543,6 +551,7 @@ def seed_billing_demo(db: Session) -> dict:
             end_date=date(2026, 5, 31),
             price_ref_eur_per_kwh=PRICE_REF_MARSEILLE,
             fixed_fee_eur_per_month=40.0,
+            metadata_json=_SEED_LEGACY_META,
         )
         db.add(contract_marseille)
         contracts_created += 1
@@ -559,6 +568,7 @@ def seed_billing_demo(db: Session) -> dict:
             end_date=date.today() + timedelta(days=30),  # expire dans 30j → R12
             price_ref_eur_per_kwh=PRICE_REF_NICE_ELEC,
             fixed_fee_eur_per_month=75.0,
+            metadata_json=_SEED_LEGACY_META,
         )
         db.add(contract_nice_elec)
         contracts_created += 1
@@ -571,6 +581,7 @@ def seed_billing_demo(db: Session) -> dict:
             end_date=date(2027, 12, 31),
             price_ref_eur_per_kwh=PRICE_REF_NICE_GAZ,
             fixed_fee_eur_per_month=35.0,
+            metadata_json=_SEED_LEGACY_META,
         )
         db.add(contract_nice_gaz)
         contracts_created += 1
@@ -586,6 +597,7 @@ def seed_billing_demo(db: Session) -> dict:
             end_date=date(2027, 12, 31),
             price_ref_eur_per_kwh=PRICE_REF_TOULOUSE,
             fixed_fee_eur_per_month=85.0,
+            metadata_json=_SEED_LEGACY_META,
         )
         db.add(contract_toulouse)
         contracts_created += 1

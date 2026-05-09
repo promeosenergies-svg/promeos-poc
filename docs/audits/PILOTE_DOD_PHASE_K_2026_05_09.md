@@ -53,7 +53,7 @@
 
 ### Tests cumul
 
-- **Backend** : 275/275 verts (Phase D-4 + E + F + G + H + I + J + K)
+- **Backend** : 279/279 verts cumul Phase D-4 + E + F + G + H + I + J + K (sub-suite ciblée)
 - **Frontend** : 3746/3746 verts (178 fichiers)
 - **0 régression** introduite sur 60 livraisons consécutives
 - **6 règles anomalies** actives (R19 VNU + R20 capacité + R21 CTA + R22 accise +
