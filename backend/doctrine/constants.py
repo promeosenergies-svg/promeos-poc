@@ -133,8 +133,13 @@ PRICE_FALLBACK_EUR_PER_KWH = 0.068
 
 # Prix marginal énergie ETI tertiaire 2026 post-ARENH (médiane CRE T4 2025).
 # Utilisé pour conversion gain MWh→€/an dans les heuristiques décisions/CEE.
-# Source : Observatoire CRE T4 2025 § ETI tertiaire post-ARENH.
-PRICE_ELEC_ETI_2026_EUR_PER_MWH = 130.0
+# Phase L15.1 audit fix P1 — lazy-load YAML SoT (avant : valeur hardcoded 130.0
+# DUPLIQUÉE entre doctrine/constants.py:137 et sources_reglementaires.yaml:283
+# → drift risk si l'un est mis à jour et pas l'autre).
+# Source : Observatoire CRE T4 2025 § ETI tertiaire post-ARENH (canonique YAML).
+from config.regulatory_sources_loader import get_term_value as _get_term_value
+
+PRICE_ELEC_ETI_2026_EUR_PER_MWH: float = float(_get_term_value("PRICE_ELEC_ETI_2026_EUR_PER_MWH"))
 
 # Ratio facture 2026 vs 2024 post-ARENH (médiane CRE T4 2025 sur ETI tertiaire).
 # Référence sectorielle indicative pour communication CFO.

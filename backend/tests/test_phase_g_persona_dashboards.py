@@ -2151,6 +2151,23 @@ class TestPhaseGP1FixesSourceGuards:
         # Plus de Literal stalé R19/R20 only
         assert 'Literal["R19", "R20"]' not in src
 
+    def test_l15_1_doctrine_constants_loads_yaml_sot_no_hardcode(self):
+        """L15.1 audit fix P1 — doctrine/constants.py PRICE_ELEC_ETI_2026_EUR_PER_MWH
+        lazy-load depuis YAML SoT (avant : valeur 130.0 dupliquée hardcoded entre
+        constants.py:137 et sources_reglementaires.yaml:283 → drift risk).
+        """
+        from pathlib import Path
+
+        src = (Path(__file__).resolve().parent.parent / "doctrine" / "constants.py").read_text(encoding="utf-8")
+        # Lazy-load YAML présent
+        assert "from config.regulatory_sources_loader import get_term_value as _get_term_value" in src
+        assert '_get_term_value("PRICE_ELEC_ETI_2026_EUR_PER_MWH")' in src
+        # Vérifie chargement runtime correct
+        from doctrine.constants import PRICE_ELEC_ETI_2026_EUR_PER_MWH
+
+        assert isinstance(PRICE_ELEC_ETI_2026_EUR_PER_MWH, float)
+        assert PRICE_ELEC_ETI_2026_EUR_PER_MWH == 130.0
+
     def test_l14_1_ems_routes_use_exclusive_next_day_helper(self):
         """L14.1 audit fix CRITICAL — routes/ems.py utilise _to_exclusive_next_day_dt
         au lieu de datetime.combine(dt_to, datetime.min.time()) (3 callsites).
