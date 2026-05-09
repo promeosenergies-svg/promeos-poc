@@ -422,6 +422,11 @@ def detect_r28_energy_unit_price_drift(invoice: EnergyInvoice, db: Session) -> O
     if prix_attendu_eur_kwh <= 0:
         return None
 
+    # Phase L7.2 — seuils YAML SoT (no fake code)
+    threshold_pct = float(get_term_value("BILL_ANOMALY_UNIT_PRICE_DRIFT_THRESHOLD_PCT"))
+    threshold_abs = float(get_term_value("BILL_ANOMALY_UNIT_PRICE_DRIFT_ABSOLUTE_EUR_KWH"))
+    critical_abs = float(get_term_value("BILL_ANOMALY_UNIT_PRICE_CRITICAL_EUR_KWH"))
+
     energy_lines = [
         line
         for line in (invoice.lines or [])
@@ -436,8 +441,7 @@ def detect_r28_energy_unit_price_drift(invoice: EnergyInvoice, db: Session) -> O
         unit_price = float(line.unit_price)
         ecart = unit_price - prix_attendu_eur_kwh
         ecart_pct = abs(ecart) / prix_attendu_eur_kwh * 100
-        # Seuils : > 5 % ET > 0.005 €/kWh
-        if ecart_pct < 5 or abs(ecart) < 0.005:
+        if ecart_pct < threshold_pct or abs(ecart) < threshold_abs:
             continue
         if worst_drift is None or abs(ecart) > abs(worst_drift["ecart_eur_kwh"]):
             worst_drift = {
@@ -454,13 +458,13 @@ def detect_r28_energy_unit_price_drift(invoice: EnergyInvoice, db: Session) -> O
 
     # Estimation impact € : delta unit_price × qty (kWh) sur la ligne
     montant_impact = round(abs(worst_drift["ecart_eur_kwh"]) * worst_drift["qty_kwh"], 2)
-    severity = "critical" if abs(worst_drift["ecart_eur_kwh"]) > 0.02 else "warning"
+    severity = "critical" if abs(worst_drift["ecart_eur_kwh"]) > critical_abs else "warning"
 
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R28",
         severity=severity,
-        threshold_value=Decimal("5.0"),
+        threshold_value=Decimal(str(threshold_pct)),
         actual_value=Decimal(str(round(worst_drift["ecart_pct"], 2))),
         details_json={
             "prix_attendu_eur_kwh": round(prix_attendu_eur_kwh, 4),
@@ -1067,20 +1071,24 @@ def detect_r29_period_overlap_or_gap(invoice: EnergyInvoice, db: Session) -> Opt
     if prev is None:
         return None  # 1ʳᵉ facture du site, pas de référence
 
+    # Phase L7.2 — seuils YAML SoT (no fake code)
+    gap_tolerance = int(get_term_value("BILL_ANOMALY_PERIOD_GAP_TOLERANCE_DAYS"))
+    gap_critical = int(get_term_value("BILL_ANOMALY_PERIOD_GAP_CRITICAL_DAYS"))
+    overlap_critical = int(get_term_value("BILL_ANOMALY_PERIOD_OVERLAP_CRITICAL_DAYS"))
+
     # gap_days : jours pleins entre prev.period_end et invoice.period_start
     # Convention : si prev.period_end=30/04 et invoice.period_start=01/05 → gap=0 (continu)
     gap_days = (invoice.period_start - prev.period_end).days - 1
 
-    if gap_days >= 0 and gap_days <= 7:
-        return None  # Continuité acceptable (0-7 jours de gap toléré)
+    if 0 <= gap_days <= gap_tolerance:
+        return None  # Continuité acceptable
 
     if gap_days < 0:
         # Chevauchement
         overlap_days = -gap_days
-        severity = "critical" if overlap_days > 1 else "warning"
-        kind = "chevauchement"
+        severity = "critical" if overlap_days > overlap_critical else "warning"
         details = {
-            "kind": kind,
+            "kind": "chevauchement",
             "overlap_days": overlap_days,
             "gap_days": gap_days,
             "prev_invoice_id": prev.id,
@@ -1096,25 +1104,24 @@ def detect_r29_period_overlap_or_gap(invoice: EnergyInvoice, db: Session) -> Opt
             ),
         }
     else:
-        # Trou (gap_days > 7)
-        severity = "critical" if gap_days > 14 else "warning"
-        kind = "trou"
+        # Trou (gap_days > gap_tolerance)
+        severity = "critical" if gap_days > gap_critical else "warning"
         details = {
-            "kind": kind,
+            "kind": "trou",
             "gap_days": gap_days,
             "prev_invoice_id": prev.id,
             "prev_invoice_number": prev.invoice_number,
             "prev_period_end": prev.period_end.isoformat(),
             "invoice_period_start": invoice.period_start.isoformat(),
             "regulatory_ref": "Suivi conso continu — gap suspect ingestion",
-            "montant_anomalie_eur": 0.0,  # pas d'impact € direct, alerte opérationnelle
+            "montant_anomalie_eur": 0.0,
         }
 
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R29",
         severity=severity,
-        threshold_value=Decimal("7"),  # gap_days seuil tolérance
+        threshold_value=Decimal(str(gap_tolerance)),
         actual_value=Decimal(str(gap_days)),
         details_json=details,
     )
@@ -1163,6 +1170,9 @@ def detect_r30_invoice_period_outside_contract_window(invoice: EnergyInvoice, db
         return None
     if contract.start_date is None and contract.end_date is None:
         return None  # Contrat ouvert sans fenêtre — pas de référence
+
+    # Phase L7.2 — seuil YAML SoT (no fake code)
+    partial_warn_days = int(get_term_value("BILL_ANOMALY_PERIOD_OUTSIDE_CONTRACT_WARN_DAYS"))
 
     period_start = invoice.period_start
     period_end = invoice.period_end
@@ -1223,13 +1233,13 @@ def detect_r30_invoice_period_outside_contract_window(invoice: EnergyInvoice, db
         days_outside += (period_end - ce).days
         overlap_kind = "partiel_apres_fin" if overlap_kind is None else "partiel_double"
 
-    if days_outside >= 7:
+    if days_outside >= partial_warn_days:
         period_days = max((period_end - period_start).days + 1, 1)
         return BillAnomaly(
             invoice_id=invoice.id,
             code="R30",
             severity="warning",
-            threshold_value=Decimal("7"),
+            threshold_value=Decimal(str(partial_warn_days)),
             actual_value=Decimal(str(days_outside)),
             details_json={
                 "kind": overlap_kind,

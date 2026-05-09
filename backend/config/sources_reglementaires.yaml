@@ -1177,3 +1177,90 @@ terms:
         ADR-013 Sprint C-5 Phase 5.1.
     formula: "|capacite_facturee_kva - ps_par_poste_kva[period_code]| / ps_par_poste_kva[period_code] * 100"
     notes: "Seuil variance capacité facturée (EnergyInvoiceLine NETWORK kVA) vs souscription contractuelle (PowerContract.ps_par_poste_kva[period_code] dict JSON). >5% = warning, >10% = critical. R20 retourne 1 anomalie par poste tarifaire (HPH/HCH/HPB/HCB)."
+
+  # ── R28 Prix unitaire énergie ligne vs contrat (Phase L4) ────────────────
+  BILL_ANOMALY_UNIT_PRICE_DRIFT_THRESHOLD_PCT:
+    value: 5.0
+    unit: "percent"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L4 — détection R28 dérive prix unitaire vs contrat"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Code civil art. 1103 (effet contractuel) — pratique audit CFO B2B"
+    formula: "|line.unit_price - contract.price_ref_eur_per_kwh| / contract.price_ref_eur_per_kwh * 100"
+    notes: "Seuil tolérance écart prix unitaire ENERGY ligne vs contrat. >5% ET > BILL_ANOMALY_UNIT_PRICE_DRIFT_ABSOLUTE_EUR_KWH = anomalie. Anti-bruit arrondis fournisseur."
+
+  BILL_ANOMALY_UNIT_PRICE_DRIFT_ABSOLUTE_EUR_KWH:
+    value: 0.005
+    unit: "EUR_per_kWh"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L4 — seuil absolu R28 (anti-arrondi sub-cent)"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO B2B — sous-seuil 0,005 €/kWh = bruit arrondi billing fournisseur"
+    formula: "|line.unit_price - contract.price_ref_eur_per_kwh|"
+    notes: "Seuil absolu compagnon de THRESHOLD_PCT. Ensemble (5% ET >0.005 €/kWh) évitent faux positifs sur prix très bas (HC nuit) où 5% = écart négligeable absolu."
+
+  BILL_ANOMALY_UNIT_PRICE_CRITICAL_EUR_KWH:
+    value: 0.02
+    unit: "EUR_per_kWh"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L4 — seuil critique R28 sévérité"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO B2B — écart > 2 c€/kWh = surfacturation matérielle"
+    formula: "|line.unit_price - contract.price_ref_eur_per_kwh|"
+    notes: "Seuil de bascule sévérité warning→critical. Écart > 0,02 €/kWh = critical (impact ~16 €/MWh, matériel sur portefeuille industriel 800 MWh/an)."
+
+  # ── R29 Chevauchement / trou période facturation (Phase L5) ──────────────
+  BILL_ANOMALY_PERIOD_GAP_TOLERANCE_DAYS:
+    value: 7
+    unit: "days"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L5 — tolérance gap période facturation"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique B2B — décalage calendaire fournisseur M+1 vs M+2 facturation"
+    formula: "(invoice.period_start - prev.period_end).days - 1"
+    notes: "Gap toléré 0-7 jours entre 2 factures consécutives même site (absorbe décalages calendaires factures M+1 vs M+2). >7j = trou suspect, R29 fire."
+
+  BILL_ANOMALY_PERIOD_GAP_CRITICAL_DAYS:
+    value: 14
+    unit: "days"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L5 — seuil critique trou période"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique B2B — gap > 14j = mois entier non-facturé / lacune ingestion grave"
+    formula: "gap_days = (invoice.period_start - prev.period_end).days - 1"
+    notes: "Bascule sévérité warning→critical pour cas trou (gap > 7j). 8-14j warning ; > 14j critical (mois entier manquant ou bug pipeline ingestion)."
+
+  BILL_ANOMALY_PERIOD_OVERLAP_CRITICAL_DAYS:
+    value: 1
+    unit: "days"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L5 — seuil critique chevauchement"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "CRE TURPE 7 art. 8 — facturation unique période ; pratique audit anti-double-billing"
+    formula: "overlap_days = -gap_days"
+    notes: "Bascule sévérité warning→critical pour cas chevauchement. 1j warning (probable arrondi calendaire) ; > 1j critical (double-billing matériel)."
+
+  # ── R30 Période facturée hors fenêtre contractuelle (Phase L6) ───────────
+  BILL_ANOMALY_PERIOD_OUTSIDE_CONTRACT_WARN_DAYS:
+    value: 7
+    unit: "days"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L6 — seuil partiel hors fenêtre contrat"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Code civil art. 1103 — fenêtre contractuelle stricte ; pratique B2B prise d'effet"
+    formula: "days_outside = max(0, contract.start_date - period_start) + max(0, period_end - contract.end_date)"
+    notes: "Seuil chevauchement partiel hors fenêtre contractuelle. < 7j toléré (décalages calendaires facturation) ; ≥ 7j fire R30 warning (entièrement hors fenêtre = critical 100%)."
