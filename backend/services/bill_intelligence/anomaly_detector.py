@@ -1073,6 +1073,70 @@ def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAno
     return anomalies
 
 
+# ─── R31 Doublons accise/CSPE/TICFE (Phase L9 CFO post-renommage 2022) ────
+
+
+def detect_r31_accise_double(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+    """R31 — Multi-lignes accise sur même facture (doublons post-renommage CSPE→TICFE→Accise).
+
+    Persona Jean-Marc CFO : ROI 0,5-3 k€/an. Cas typique post-décret 2022-130
+    (renommage CSPE→TICFE→Accise) : certains fournisseurs persistent à facturer
+    simultanément sous 2 ou 3 noms (ex: ligne "CSPE" + ligne "Accise sur
+    l'électricité" sur la même facture). C'est un doublon historique systémique
+    sur ~5-10 % du parc fournisseur historique.
+
+    Différencié de R22 (mauvais taux accise) : R22 vérifie le tarif appliqué,
+    R31 vérifie la duplication de lignes (multi-comptage). Détecté indépendamment
+    de la catégorie DP (T1/T2/HP).
+
+    Heuristique cardinale :
+    - Filter EnergyInvoiceLine TAX label LIKE \\b(accise|ticfe|cspe|contrib.*service.*public)
+      (mêmes patterns que R22)
+    - Si ≥ 2 lignes matchent → doublon
+    - Total_doublon = Σ amount_eur sur lines[1:] (1ʳᵉ ligne légitime)
+
+    Sévérité : critical si total_doublon > BILL_ANOMALY_ACCISE_DOUBLE_CRITICAL_EUR
+    (YAML SoT — défaut 50 €), warning sinon.
+
+    Returns:
+        BillAnomaly ou None
+    """
+    from models.enums import InvoiceLineType
+
+    accise_lines = [
+        line
+        for line in (invoice.lines or [])
+        if line.line_type == InvoiceLineType.TAX
+        and line.amount_eur is not None
+        and line.label
+        and re.search(r"\b(accise|ticfe|cspe|contrib.*service.*public)", line.label, re.IGNORECASE)
+    ]
+    if len(accise_lines) < 2:
+        return None
+
+    # Phase L9 — seuil YAML SoT (no fake code)
+    critical_eur = float(get_term_value("BILL_ANOMALY_ACCISE_DOUBLE_CRITICAL_EUR"))
+
+    # 1ʳᵉ ligne légitime, suivantes = doublons
+    total_doublon_eur = sum(float(line.amount_eur or 0) for line in accise_lines[1:])
+    severity = _SEV_CRITICAL if total_doublon_eur > critical_eur else _SEV_WARNING
+
+    return BillAnomaly(
+        invoice_id=invoice.id,
+        code="R31",
+        severity=severity,
+        threshold_value=Decimal(str(critical_eur)),
+        actual_value=Decimal(str(round(total_doublon_eur, 2))),
+        details_json={
+            "duplicate_count": len(accise_lines),
+            "duplicate_lines_ids": [line.id for line in accise_lines],
+            "duplicate_labels": [line.label for line in accise_lines],
+            "montant_anomalie_eur": round(total_doublon_eur, 2),
+            "regulatory_ref": "Code énergie L.336 + décret 2022-130 — renommage CSPE→TICFE→Accise (anti-doublon historique)",
+        },
+    )
+
+
 # ─── R29 Période chevauchement / trou facturation (Phase L5 CFO anti-double-billing) ──
 
 
@@ -1490,5 +1554,14 @@ def detect_anomalies_for_invoice(
             anomalies.append(r30)
     except Exception as e:
         _logger.error(f"R30 detector failed for invoice {invoice.id}: {e}")
+
+    # R31 : 0 ou 1 — Phase L9 CFO doublons accise/CSPE/TICFE post-renommage 2022
+    try:
+        r31 = detect_r31_accise_double(invoice, db)
+        if r31:
+            db.add(r31)
+            anomalies.append(r31)
+    except Exception as e:
+        _logger.error(f"R31 detector failed for invoice {invoice.id}: {e}")
 
     return anomalies

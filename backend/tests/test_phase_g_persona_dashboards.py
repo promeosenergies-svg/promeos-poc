@@ -1878,6 +1878,104 @@ class TestPhaseL6R30PeriodOutsideContractWindow:
         assert anomaly.details_json["montant_anomalie_eur"] == 1600.0
 
 
+# ─── Phase L9 — R31 Doublons accise/CSPE/TICFE intra-facture (Jean-Marc CFO) ──
+
+
+class TestPhaseL9R31AcciseDouble:
+    def _seed_invoice_with_accise_lines(self, db, accise_labels_amounts):
+        """Helper : crée Org→Site→Invoice + N lignes TAX accise paramétrables."""
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number=f"INV-R31-{len(accise_labels_amounts)}",
+            period_start=date(2026, 4, 1),
+            period_end=date(2026, 4, 30),
+            energy_kwh=10000,
+            total_eur=2500.0,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        for label, amount in accise_labels_amounts:
+            db.add(
+                EnergyInvoiceLine(
+                    invoice_id=invoice.id,
+                    line_type=InvoiceLineType.TAX,
+                    label=label,
+                    amount_eur=amount,
+                )
+            )
+        db.commit()
+        db.refresh(invoice)
+        return invoice
+
+    def test_l9_r31_detects_cspe_plus_accise_legacy_naming(self, db):
+        """L9 — Facture avec ligne CSPE + ligne Accise (renommage non-finalisé) → critical."""
+        from services.bill_intelligence.anomaly_detector import detect_r31_accise_double
+
+        invoice = self._seed_invoice_with_accise_lines(
+            db,
+            [
+                ("CSPE - Contribution Service Public Électricité", 80.0),
+                ("Accise sur l'électricité", 75.0),  # Doublon post-renommage
+            ],
+        )
+        anomaly = detect_r31_accise_double(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R31"
+        assert anomaly.severity == "critical"  # 75€ > 50€ seuil
+        assert anomaly.details_json["duplicate_count"] == 2
+        assert anomaly.details_json["montant_anomalie_eur"] == 75.0
+
+    def test_l9_r31_detects_triple_naming_ticfe_cspe_accise(self, db):
+        """L9 — Facture avec 3 lignes (TICFE + CSPE + Accise) → critical 130€."""
+        from services.bill_intelligence.anomaly_detector import detect_r31_accise_double
+
+        invoice = self._seed_invoice_with_accise_lines(
+            db,
+            [
+                ("TICFE", 80.0),
+                ("CSPE", 50.0),
+                ("Accise électricité", 80.0),
+            ],
+        )
+        anomaly = detect_r31_accise_double(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R31"
+        assert anomaly.severity == "critical"
+        assert anomaly.details_json["duplicate_count"] == 3
+        # 1ère légitime (TICFE 80) ; doublons = 50 + 80 = 130 €
+        assert anomaly.details_json["montant_anomalie_eur"] == 130.0
+
+    def test_l9_r31_no_anomaly_single_accise_line(self, db):
+        """L9 — Facture avec 1 seule ligne accise (cas standard) → None."""
+        from services.bill_intelligence.anomaly_detector import detect_r31_accise_double
+
+        invoice = self._seed_invoice_with_accise_lines(db, [("Accise sur l'électricité", 80.0)])
+        assert detect_r31_accise_double(invoice, db) is None
+
+    def test_l9_r31_warning_severity_small_doublon(self, db):
+        """L9 — Doublon sub-seuil 50 € → warning (pas critical)."""
+        from services.bill_intelligence.anomaly_detector import detect_r31_accise_double
+
+        invoice = self._seed_invoice_with_accise_lines(
+            db,
+            [
+                ("CSPE", 80.0),
+                ("Accise", 30.0),  # Doublon 30€ < 50€ seuil critical
+            ],
+        )
+        anomaly = detect_r31_accise_double(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R31"
+        assert anomaly.severity == "warning"
+        assert anomaly.details_json["montant_anomalie_eur"] == 30.0
+
+
 # ─── Phase J2 — ADR-F-04 hard-cut supplier_name → fournisseur_id ────────────
 
 

@@ -1525,3 +1525,20 @@ terms:
       legal_reference: "CRE TURPE 7 — > 10% variance = surfacturation systémique"
     formula: "variance_pct"
     notes: "Bascule sévérité warning→critical R20 explicite (avant L8.1 : threshold_pct × 2 implicite)."
+
+  # ── R31 Doublons accise/CSPE/TICFE intra-facture (Phase L9 CFO post-renommage 2022) ──
+  BILL_ANOMALY_ACCISE_DOUBLE_CRITICAL_EUR:
+    value: 50.0
+    unit: "EUR"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L9 — seuil critique R31 doublons accise"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: |
+        Code énergie L.336 (accise post-2022 ex-TICFE/CSPE) — décret 2022-130
+        renommage CSPE→TICFE→Accise. Pratique audit CFO : fournisseurs persistent
+        parfois à facturer sous 2 noms simultanément (CSPE + Accise sur même
+        facture) = doublon historique post-transition.
+    formula: "total_doublon_eur = Σ amount_eur sur lignes accise[1:] (1ère légitime)"
+    notes: "Bascule sévérité warning→critical. > 50 €/facture en double = surfacturation matérielle accise (analogue seuil R23 TURPE doublé / R26 sanity)."
