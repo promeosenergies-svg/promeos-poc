@@ -2151,6 +2151,50 @@ class TestPhaseGP1FixesSourceGuards:
         # Plus de Literal stalé R19/R20 only
         assert 'Literal["R19", "R20"]' not in src
 
+    def test_l13_4_r27_date_to_datetime_cast_period_end(self):
+        """L13.4 audit fix F1 (P1 CRITIQUE pré-existant) — period_start/end (Date)
+        cast en datetime avec time.min et time(23,59,59) pour inclure les
+        MeterReadings intra-journalières du dernier jour.
+
+        Avant L13.4 : `MeterReading.timestamp <= invoice.period_end` coerce Date
+        à 00:00:00 → exclut ~23h sur 24 du dernier jour → faux positif R27
+        systématique sur tout site avec télémesure active.
+        Après L13.4 : period_end_dt = datetime.combine(period_end, time(23,59,59))
+        capture la totalité des CDC horaires.
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        # Cast Date → DateTime explicite
+        assert "datetime.combine(invoice.period_start, time.min)" in src
+        assert "datetime.combine(invoice.period_end, time(23, 59, 59))" in src
+        # Filter utilise les datetime, pas les Date directs
+        assert "MeterReading.timestamp >= period_start_dt" in src
+        assert "MeterReading.timestamp <= period_end_dt" in src
+
+    def test_l13_4_r27_one_or_none_defensive(self):
+        """L13.4 audit fix F2 — .one_or_none() défensif (vs .one() qui levait
+        NoResultFound sur edge case JOIN strict + table vide).
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        assert ".one_or_none()" in src
+        # Plus d'usage actif `.one()` (peut rester en commentaire de doc)
+        # Search code (lignes hors commentaires) : `.one()` doit être absent.
+        import re as _re
+
+        match = _re.search(r"def detect_r27_consumption_meter_drift.*?(?=\ndef detect_)", src, _re.DOTALL)
+        assert match is not None
+        r27_block = match.group(0)
+        # Filter commentaires Python pour test sur code uniquement
+        code_only = "\n".join(line for line in r27_block.split("\n") if not line.strip().startswith("#"))
+        assert ".one()" not in code_only
+
     def test_l13_r27_merged_sum_count_query(self):
         """L13 audit P2 efficiency cumul L8+L9+L10 — R27 fusion sum + count en 1 SQL.
 
@@ -2164,8 +2208,8 @@ class TestPhaseGP1FixesSourceGuards:
         src = (
             Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
         ).read_text(encoding="utf-8")
-        # 1 seul query merge : func.sum + func.count dans une seule query
-        assert "db.query(func.sum(MeterReading.value_kwh), func.count(MeterReading.id))" in src
+        # Phase L13 + L13.4 : 1 seul query merge (count() sans argument après F3)
+        assert "db.query(func.sum(MeterReading.value_kwh), func.count())" in src
         # Plus de double query distinct (anti-régression)
         assert src.count("db.query(func.sum(MeterReading.value_kwh))") == 0
         assert src.count("db.query(func.count(MeterReading.id))") == 0

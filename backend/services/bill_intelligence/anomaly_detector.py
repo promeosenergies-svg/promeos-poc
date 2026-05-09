@@ -703,21 +703,38 @@ def detect_r27_consumption_meter_drift(invoice: EnergyInvoice, db: Session) -> O
     if not invoice.period_start or not invoice.period_end:
         return None
 
-    # Phase L13 audit P2 efficiency — fusion sum + count en 1 SQL au lieu de 2
-    # (avant : 2 SELECT distincts avec JOIN+WHERE identique = double scan
-    # MeterReading sur fenêtre période ; gain × 2 sur 1000 invoices batch).
+    # Phase L13 + L13.4 — 1 seul SELECT agrégé (sum + count) sur partition
+    # (meter_id, timestamp). Évite double scan MeterReading vs avant L13.
+    from datetime import datetime, time
+
     from sqlalchemy import func
 
+    # Phase L13.4 audit fix F1 (P1 CRITIQUE correctness pré-existant depuis L3) —
+    # invoice.period_start et period_end sont Date, MeterReading.timestamp est
+    # DateTime. SQLAlchemy coerce implicitement Date → 00:00:00 → si l'on filtre
+    # `timestamp <= period_end` (Date), on exclut TOUTES les lectures du dernier
+    # jour après 00:00:00 (soit ~23h sur 24 d'une CDC horaire). Faux positif R27
+    # systématique sur tout site avec télémesure active.
+    period_start_dt = datetime.combine(invoice.period_start, time.min)  # 00:00:00
+    period_end_dt = datetime.combine(invoice.period_end, time(23, 59, 59))
+
+    # Phase L13.4 audit fix F2 — .one_or_none() défensif (vs .one() qui lève
+    # NoResultFound si JOIN strict + table vide). func.sum + func.count
+    # retourne toujours 1 row agrégée en SQL standard, mais defense-in-depth.
+    # Phase L13.4 audit fix F3 — count() sans argument plus efficace que
+    # count(id) (NULL check redondant sur PK NOT NULL).
     agg_row = (
-        db.query(func.sum(MeterReading.value_kwh), func.count(MeterReading.id))
+        db.query(func.sum(MeterReading.value_kwh), func.count())
         .join(Meter, Meter.id == MeterReading.meter_id)
         .filter(
             Meter.site_id == invoice.site_id,
-            MeterReading.timestamp >= invoice.period_start,
-            MeterReading.timestamp <= invoice.period_end,
+            MeterReading.timestamp >= period_start_dt,
+            MeterReading.timestamp <= period_end_dt,
         )
-        .one()
+        .one_or_none()
     )
+    if agg_row is None:
+        return None
     sum_readings, count_readings = agg_row[0], agg_row[1] or 0
 
     if sum_readings is None or sum_readings <= 0:
