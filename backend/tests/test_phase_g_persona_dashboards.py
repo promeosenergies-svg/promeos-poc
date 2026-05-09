@@ -2151,6 +2151,47 @@ class TestPhaseGP1FixesSourceGuards:
         # Plus de Literal stalé R19/R20 only
         assert 'Literal["R19", "R20"]' not in src
 
+    def test_l11_6_tva_pattern_module_level(self):
+        """L11.6 audit fix F1 — _TVA_PATTERN module-level (avant : recompilée
+        par appel à detect_r24_tva_rate_mismatch ; cohérence _ACCISE_PATTERN).
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        assert "_TVA_PATTERN = re.compile(" in src
+        assert "_TVA_PATTERN.search(line.label)" in src
+        assert "_tva_regex = re.compile(" not in src
+
+    def test_l11_6_resolve_lines_helper_dry(self):
+        """L11.6 audit fix F2 — _resolve_lines() helper extrait le ternaire
+        fallback dupliqué 6× (R21+R22+R23+R24+R28+R31).
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        assert "def _resolve_lines(" in src
+        # Ternaire fallback uniquement DANS le helper (1 occurrence) — pas dupliqué dans détecteurs
+        ternary = "lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)"
+        assert src.count(ternary) == 1, "Ternaire fallback doit n'exister que dans _resolve_lines()"
+        # Détecteurs utilisent le helper
+        assert src.count("_resolve_lines(invoice, lines_by_type)") == 6
+
+    def test_l11_6_r24_tva_uses_object_identity_not_db_id(self):
+        """L11.6 audit fix F3 — R24 utilise id() Python (object identity)
+        au lieu de line.id DB (None en session non-flushée → bug exclusion).
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        assert "tva_obj_ids = {id(line) for line in tva_lines}" in src
+        assert "if id(line) not in tva_obj_ids" in src
+
     def test_l11_partition_invoice_lines_helper_pipeline(self):
         """L11 audit fix F8 — _partition_invoice_lines() pré-partition unique
         + lines_by_type propagé aux 6 détecteurs filtrant par line_type.

@@ -82,6 +82,23 @@ def _partition_invoice_lines(invoice: EnergyInvoice) -> LinesByType:
     return partitioned
 
 
+def _resolve_lines(invoice: EnergyInvoice, lines_by_type: Optional[LinesByType]) -> LinesByType:
+    """Phase L11.6 audit fix F2 — Helper DRY pour pattern fallback partition.
+
+    Avant L11.6 : ternaire `lines_by_type if lines_by_type is not None else
+    _partition_invoice_lines(invoice)` répété verbatim 6× (R21/R22/R23/R24/R28/R31).
+    Audit code-reviewer P1 reuse : 1 modification = 6 callsites cohérents.
+
+    Args:
+        invoice : EnergyInvoice cible (utilisé en mode unitaire)
+        lines_by_type : pré-partition pipeline ou None
+
+    Returns:
+        LinesByType (dict 4 line_types canoniques)
+    """
+    return lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
+
+
 def _resolve_contract(invoice: EnergyInvoice) -> Optional[EnergyContract]:
     """Phase L8.2 — Helper guard partagé R25/R28/R30 (audit code-reviewer reuse #5).
 
@@ -199,6 +216,10 @@ _PERIOD_CODES_KNOWN = [
 # Audit code-reviewer Phase L9 P1 finding 2 : avant L9.5 dupliquée verbatim
 # entre détecteurs → risque divergence si R22 patché et R31 oublié (ou vice-versa).
 _ACCISE_PATTERN = re.compile(r"\b(accise|ticfe|cspe|contrib.*service.*public)", re.IGNORECASE)
+
+# Phase L11.6 audit fix F1 — regex TVA module-level (avant : recompilée à chaque
+# appel de detect_r24_tva_rate_mismatch ; pattern cohérent _ACCISE_PATTERN).
+_TVA_PATTERN = re.compile(r"\bTVA\b|\bVAT\b", re.IGNORECASE)
 
 # Phase L10.3 audit fix F5 — cap labels/ids dans details_json (mémoire + PII).
 # Cohérent R19 vnu_labels (Sprint C-7 Phase 7.7), R23 + R31 doublons (helper L10.1).
@@ -474,7 +495,7 @@ def detect_r21_cta_mismatch(
     """
     from datetime import date as _date
 
-    parts = lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
+    parts = _resolve_lines(invoice, lines_by_type)
     network_lines = [line for line in parts[InvoiceLineType.NETWORK] if line.amount_eur is not None]
     cta_lines = [line for line in parts[InvoiceLineType.TAX] if line.label and "CTA" in line.label.upper()]
     if not network_lines or not cta_lines:
@@ -571,7 +592,7 @@ def detect_r28_energy_unit_price_drift(
     critical_abs = float(get_term_value("BILL_ANOMALY_UNIT_PRICE_CRITICAL_EUR_KWH"))
 
     # Phase L11.2 — pré-partition `lines_by_type` (fallback si mode unitaire)
-    parts = lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
+    parts = _resolve_lines(invoice, lines_by_type)
     energy_lines = [
         line for line in parts[InvoiceLineType.ENERGY] if line.unit_price is not None and line.unit_price > 0
     ]
@@ -978,7 +999,7 @@ def detect_r22_accise_mismatch(
         return None
 
     # Phase L11.2 — pré-partition `lines_by_type` (fallback si mode unitaire)
-    parts = lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
+    parts = _resolve_lines(invoice, lines_by_type)
     accise_lines = [line for line in parts[InvoiceLineType.TAX] if line.label and _ACCISE_PATTERN.search(line.label)]
     if not accise_lines:
         return None
@@ -1060,22 +1081,30 @@ def detect_r24_tva_rate_mismatch(
         BillAnomaly ou None
     """
     # Phase L11.2 — pré-partition `lines_by_type` (fallback si mode unitaire)
-    parts = lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
+    parts = _resolve_lines(invoice, lines_by_type)
 
-    # Phase L11.2 — regex compilée une seule fois (audit reuse latent)
-    _tva_regex = re.compile(r"\bTVA\b|\bVAT\b", re.IGNORECASE)
+    # Phase L11.6 audit fix F1 — _TVA_PATTERN module-level (avant : compilée par appel)
     tax_lines = parts[InvoiceLineType.TAX]
-    tva_lines = [line for line in tax_lines if line.label and _tva_regex.search(line.label)]
+    tva_lines = [line for line in tax_lines if line.label and _TVA_PATTERN.search(line.label)]
     if not tva_lines:
         return None
 
-    # Phase L11.2 — total HT = Σ amount_eur sur les lignes non-TVA via set d'IDs (O(1))
-    tva_ids = {line.id for line in tva_lines}
+    # Phase L11.6 audit fix F3 — total HT = Σ amount_eur sur lignes non-TVA via
+    # `id()` Python builtin (object identity), pas line.id DB.
+    # Avant L11.6 : `{line.id for ...}` collisionnait en session non-flushée
+    # (line.id=None × N → set {None} → exclusion silencieusement incorrecte).
+    # Après : `id(line)` toujours unique par instance Python (immune au DB state).
+    tva_obj_ids = {id(line) for line in tva_lines}
     ht_total = sum(
         float(line.amount_eur or 0)
-        for ltype in (InvoiceLineType.ENERGY, InvoiceLineType.NETWORK, InvoiceLineType.TAX, InvoiceLineType.OTHER)
+        for ltype in (
+            InvoiceLineType.ENERGY,
+            InvoiceLineType.NETWORK,
+            InvoiceLineType.TAX,
+            InvoiceLineType.OTHER,
+        )
         for line in parts[ltype]
-        if line.id not in tva_ids
+        if id(line) not in tva_obj_ids
     )
     tva_facturee = sum(float(line.amount_eur or 0) for line in tva_lines)
     if ht_total <= 0:
@@ -1143,7 +1172,7 @@ def detect_r23_turpe_double(
     from collections import defaultdict
 
     # Phase L11.2 — pré-partition `lines_by_type` (fallback si mode unitaire)
-    parts = lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
+    parts = _resolve_lines(invoice, lines_by_type)
     network_lines = [line for line in parts[InvoiceLineType.NETWORK] if line.amount_eur is not None]
     if len(network_lines) < 2:
         return []
@@ -1209,7 +1238,7 @@ def detect_r31_accise_double(
         BillAnomaly ou None
     """
     # Phase L11.2 — pré-partition `lines_by_type` (fallback si mode unitaire)
-    parts = lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
+    parts = _resolve_lines(invoice, lines_by_type)
     # Phase L9.5 — filtre amount_eur > 0 (exclut avoirs/régularisations négatives)
     accise_lines = [
         line
