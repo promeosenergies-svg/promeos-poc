@@ -2151,6 +2151,65 @@ class TestPhaseGP1FixesSourceGuards:
         # Plus de Literal stalé R19/R20 only
         assert 'Literal["R19", "R20"]' not in src
 
+    def test_l11_partition_invoice_lines_helper_pipeline(self):
+        """L11 audit fix F8 — _partition_invoice_lines() pré-partition unique
+        + lines_by_type propagé aux 6 détecteurs filtrant par line_type.
+
+        Audit P1 efficiency cumul L8+L9+L10 : avant L11, 6 détecteurs itéraient
+        invoice.lines indépendamment. Après L11, pipeline pré-partition une fois
+        et les détecteurs reçoivent lines_by_type via kwarg.
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        # Helper module-level présent
+        assert "def _partition_invoice_lines(" in src
+        assert "LinesByType = dict[InvoiceLineType, list[EnergyInvoiceLine]]" in src
+        # Pipeline pré-calcule
+        assert "lines_by_type = _partition_invoice_lines(invoice)" in src
+        # 6 détecteurs propagent (R21 R22 R23 R24 R28 R31)
+        for call in [
+            "detect_r21_cta_mismatch(invoice, db, lines_by_type=lines_by_type)",
+            "detect_r23_turpe_double(invoice, db, lines_by_type=lines_by_type)",
+            "detect_r24_tva_rate_mismatch(invoice, db, lines_by_type=lines_by_type)",
+            "detect_r28_energy_unit_price_drift(invoice, db, lines_by_type=lines_by_type)",
+            "detect_r31_accise_double(invoice, db, lines_by_type=lines_by_type)",
+        ]:
+            assert call in src, f"Pipeline ne propage pas lines_by_type : {call}"
+
+    def test_l11_partition_helper_returns_4_canonical_keys(self, db):
+        """L11 — _partition_invoice_lines() initialise toujours les 4 line_types
+        canoniques avec listes vides (anti-KeyError sur lookup détecteur).
+        """
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import _partition_invoice_lines
+
+        _, _, _, sites = _seed_org_with_sites(db, org_name="OrgL11Helper", siren="300000001", n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-L11-EMPTY",
+            energy_kwh=10000,
+            total_eur=1000.0,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.commit()
+        db.refresh(invoice)
+
+        parts = _partition_invoice_lines(invoice)
+        # Toutes les clés canoniques présentes (anti-KeyError)
+        for ltype in (
+            InvoiceLineType.ENERGY,
+            InvoiceLineType.NETWORK,
+            InvoiceLineType.TAX,
+            InvoiceLineType.OTHER,
+        ):
+            assert ltype in parts
+            assert parts[ltype] == []  # invoice sans lignes → 4 listes vides
+
     def test_l10_3_doublon_cap_constant_module_level(self):
         """L10.3 audit fix F5 — _DOUBLON_DETAIL_CAP_LINES constante module-level
         au lieu du magic number `[:5]` dispersé dans le helper (audit P1 finding 5).

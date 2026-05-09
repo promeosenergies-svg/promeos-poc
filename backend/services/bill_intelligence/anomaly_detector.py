@@ -43,13 +43,43 @@ from models import (
     Meter,
     PowerContract,
 )
-from models.enums import BillAnomalySeverity
+from models.enums import BillAnomalySeverity, InvoiceLineType
 
 _logger = logging.getLogger(__name__)
 
 # Phase L8.2 — alias pour éviter répétition `BillAnomalySeverity.X.value`
 _SEV_CRITICAL = BillAnomalySeverity.CRITICAL.value
 _SEV_WARNING = BillAnomalySeverity.WARNING.value
+
+# Phase L11.1 — type alias pour pré-partition invoice.lines
+LinesByType = dict[InvoiceLineType, list[EnergyInvoiceLine]]
+
+
+def _partition_invoice_lines(invoice: EnergyInvoice) -> LinesByType:
+    """Phase L11.1 — Pré-partition unique invoice.lines par line_type (audit P1 cumul L8+L9+L10).
+
+    Avant L11 : 6 détecteurs (R21+R22+R23+R24+R28+R31) itéraient invoice.lines
+    indépendamment avec un filter `line.line_type == X` Python-side. Sur 30 lignes
+    × 6 détecteurs × 1000 factures batch = 180 000 itérations Python.
+
+    Après L11 : 1 traversal unique au pipeline + 6 lookups O(1) sur dict =
+    30 000 itérations + 6 dict accesses.
+
+    Returns:
+        dict {InvoiceLineType.X: [lines]} initialisé pour 4 line_types canoniques
+        (ENERGY/NETWORK/TAX/OTHER) — toujours initialisé avec listes vides
+        pour éviter KeyError sur lookup détecteur.
+    """
+    partitioned: LinesByType = {
+        InvoiceLineType.ENERGY: [],
+        InvoiceLineType.NETWORK: [],
+        InvoiceLineType.TAX: [],
+        InvoiceLineType.OTHER: [],
+    }
+    for line in invoice.lines or []:
+        if line.line_type in partitioned:
+            partitioned[line.line_type].append(line)
+    return partitioned
 
 
 def _resolve_contract(invoice: EnergyInvoice) -> Optional[EnergyContract]:
@@ -424,32 +454,29 @@ def detect_r20_capacity_variance(invoice: EnergyInvoice, db: Session) -> list[Bi
 # ─── R21 CTA mauvais calcul (Phase H Jean-Marc CFO) ────────────────────────
 
 
-def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+def detect_r21_cta_mismatch(
+    invoice: EnergyInvoice,
+    db: Session,
+    *,
+    lines_by_type: Optional[LinesByType] = None,
+) -> Optional[BillAnomaly]:
     """R21 — CTA calculée incorrectement vs taux réglementaire (CRE 2026-14).
 
     Persona Jean-Marc CFO : ROI 3-5 k€/an, formule complexe (15 % distribution
     élec depuis 02/2026 + 5 % transport ≥50 kV) avec ~30 % d'erreurs constatées.
 
-    Heuristique :
-    - Identifier les lignes TURPE NETWORK (assiette CTA distribution) → Σ TURPE
-    - Identifier la ligne CTA TAX (label LIKE %CTA%) → CTA facturée
-    - CTA attendue = Σ TURPE × 0.15 (post 2026-02-01) ou × 0.2193 (pré 2026-02-01)
-    - Si écart > 10 % de l'attendu (et > 5 €) → R21 anomalie
+    Phase L11.2 — `lines_by_type` kwarg optionnel pour mode batch (pré-partition
+    unique au pipeline). Fallback à `invoice.lines or []` si non fourni
+    (mode unitaire ad-hoc).
 
     Returns:
         BillAnomaly ou None
     """
     from datetime import date as _date
 
-    from models.enums import InvoiceLineType
-
-    lines = invoice.lines or []
-    network_lines = [
-        line for line in lines if line.line_type == InvoiceLineType.NETWORK and line.amount_eur is not None
-    ]
-    cta_lines = [
-        line for line in lines if line.line_type == InvoiceLineType.TAX and line.label and "CTA" in line.label.upper()
-    ]
+    parts = lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
+    network_lines = [line for line in parts[InvoiceLineType.NETWORK] if line.amount_eur is not None]
+    cta_lines = [line for line in parts[InvoiceLineType.TAX] if line.label and "CTA" in line.label.upper()]
     if not network_lines or not cta_lines:
         return None
 
@@ -502,7 +529,12 @@ def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[Bil
 # ─── R28 Prix unitaire énergie ligne vs contrat (Phase L4 CFO ROI 3-8 k€/an) ──
 
 
-def detect_r28_energy_unit_price_drift(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+def detect_r28_energy_unit_price_drift(
+    invoice: EnergyInvoice,
+    db: Session,
+    *,
+    lines_by_type: Optional[LinesByType] = None,
+) -> Optional[BillAnomaly]:
     """R28 — Prix unitaire énergie facturé divergent vs `EnergyContract.price_ref_eur_per_kwh`.
 
     Persona Jean-Marc CFO : ROI 3-8 k€/an. Complément à R25 (abonnement) — vérifie
@@ -526,8 +558,6 @@ def detect_r28_energy_unit_price_drift(invoice: EnergyInvoice, db: Session) -> O
     Returns:
         BillAnomaly ou None
     """
-    from models.enums import InvoiceLineType
-
     contract = _resolve_contract(invoice)
     if contract is None or contract.price_ref_eur_per_kwh is None:
         return None
@@ -540,10 +570,10 @@ def detect_r28_energy_unit_price_drift(invoice: EnergyInvoice, db: Session) -> O
     threshold_abs = float(get_term_value("BILL_ANOMALY_UNIT_PRICE_DRIFT_ABSOLUTE_EUR_KWH"))
     critical_abs = float(get_term_value("BILL_ANOMALY_UNIT_PRICE_CRITICAL_EUR_KWH"))
 
+    # Phase L11.2 — pré-partition `lines_by_type` (fallback si mode unitaire)
+    parts = lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
     energy_lines = [
-        line
-        for line in (invoice.lines or [])
-        if line.line_type == InvoiceLineType.ENERGY and line.unit_price is not None and line.unit_price > 0
+        line for line in parts[InvoiceLineType.ENERGY] if line.unit_price is not None and line.unit_price > 0
     ]
     if not energy_lines:
         return None
@@ -920,7 +950,11 @@ def _resolve_accise_rate_from_dp(
 
 
 def detect_r22_accise_mismatch(
-    invoice: EnergyInvoice, db: Session, *, dp_category_cache: Optional[dict] = None
+    invoice: EnergyInvoice,
+    db: Session,
+    *,
+    dp_category_cache: Optional[dict] = None,
+    lines_by_type: Optional[LinesByType] = None,
 ) -> Optional[BillAnomaly]:
     """R22 — Accise élec (TICFE/CSPE) divergence taux réglementaire.
 
@@ -940,16 +974,12 @@ def detect_r22_accise_mismatch(
     Returns:
         BillAnomaly ou None
     """
-    from models.enums import InvoiceLineType
-
     if not invoice.energy_kwh or invoice.energy_kwh <= 0:
         return None
 
-    accise_lines = [
-        line
-        for line in (invoice.lines or [])
-        if line.line_type == InvoiceLineType.TAX and line.label and _ACCISE_PATTERN.search(line.label)
-    ]
+    # Phase L11.2 — pré-partition `lines_by_type` (fallback si mode unitaire)
+    parts = lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
+    accise_lines = [line for line in parts[InvoiceLineType.TAX] if line.label and _ACCISE_PATTERN.search(line.label)]
     if not accise_lines:
         return None
 
@@ -1008,7 +1038,12 @@ def detect_r22_accise_mismatch(
 # ─── R24 TVA mauvais taux (Phase I Jean-Marc CFO ROI 1-2 k€/an) ────────────
 
 
-def detect_r24_tva_rate_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+def detect_r24_tva_rate_mismatch(
+    invoice: EnergyInvoice,
+    db: Session,
+    *,
+    lines_by_type: Optional[LinesByType] = None,
+) -> Optional[BillAnomaly]:
     """R24 — TVA appliquée à mauvais taux vs total HT.
 
     Persona Jean-Marc CFO : ROI 1-2 k€/an, erreurs CTA (5,5% vs 20%) et
@@ -1024,28 +1059,23 @@ def detect_r24_tva_rate_mismatch(invoice: EnergyInvoice, db: Session) -> Optiona
     Returns:
         BillAnomaly ou None
     """
-    from models.enums import InvoiceLineType
+    # Phase L11.2 — pré-partition `lines_by_type` (fallback si mode unitaire)
+    parts = lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
 
-    lines = invoice.lines or []
-    tva_lines = [
-        line
-        for line in lines
-        if line.line_type == InvoiceLineType.TAX
-        and line.label
-        and re.search(r"\bTVA\b|\bVAT\b", line.label, re.IGNORECASE)
-    ]
+    # Phase L11.2 — regex compilée une seule fois (audit reuse latent)
+    _tva_regex = re.compile(r"\bTVA\b|\bVAT\b", re.IGNORECASE)
+    tax_lines = parts[InvoiceLineType.TAX]
+    tva_lines = [line for line in tax_lines if line.label and _tva_regex.search(line.label)]
     if not tva_lines:
         return None
 
-    # Total HT = somme de toutes les lignes non-TVA
+    # Phase L11.2 — total HT = Σ amount_eur sur les lignes non-TVA via set d'IDs (O(1))
+    tva_ids = {line.id for line in tva_lines}
     ht_total = sum(
         float(line.amount_eur or 0)
-        for line in lines
-        if not (
-            line.line_type == InvoiceLineType.TAX
-            and line.label
-            and re.search(r"\bTVA\b|\bVAT\b", line.label, re.IGNORECASE)
-        )
+        for ltype in (InvoiceLineType.ENERGY, InvoiceLineType.NETWORK, InvoiceLineType.TAX, InvoiceLineType.OTHER)
+        for line in parts[ltype]
+        if line.id not in tva_ids
     )
     tva_facturee = sum(float(line.amount_eur or 0) for line in tva_lines)
     if ht_total <= 0:
@@ -1085,7 +1115,12 @@ def detect_r24_tva_rate_mismatch(invoice: EnergyInvoice, db: Session) -> Optiona
 # ─── R23 TURPE doublé (Phase H Jean-Marc CFO cardinal) ─────────────────────
 
 
-def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAnomaly]:
+def detect_r23_turpe_double(
+    invoice: EnergyInvoice,
+    db: Session,
+    *,
+    lines_by_type: Optional[LinesByType] = None,
+) -> list[BillAnomaly]:
     """R23 — TURPE doublé : 2+ lignes TURPE pour même période sur invoice unique.
 
     Persona Jean-Marc CFO cardinal Phase H : impact ROI 6-15 k€/an récupérables
@@ -1107,13 +1142,9 @@ def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAno
     """
     from collections import defaultdict
 
-    from models.enums import InvoiceLineType
-
-    network_lines = [
-        line
-        for line in (invoice.lines or [])
-        if line.line_type == InvoiceLineType.NETWORK and line.amount_eur is not None
-    ]
+    # Phase L11.2 — pré-partition `lines_by_type` (fallback si mode unitaire)
+    parts = lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
+    network_lines = [line for line in parts[InvoiceLineType.NETWORK] if line.amount_eur is not None]
     if len(network_lines) < 2:
         return []
 
@@ -1152,7 +1183,12 @@ def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAno
 # ─── R31 Doublons accise/CSPE/TICFE (Phase L9 CFO post-renommage 2022) ────
 
 
-def detect_r31_accise_double(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+def detect_r31_accise_double(
+    invoice: EnergyInvoice,
+    db: Session,
+    *,
+    lines_by_type: Optional[LinesByType] = None,
+) -> Optional[BillAnomaly]:
     """R31 — Multi-lignes accise sur même facture (doublons post-renommage CSPE→TICFE→Accise).
 
     Persona Jean-Marc CFO : ROI 0,5-3 k€/an. Cas typique post-décret 2022-130
@@ -1172,17 +1208,13 @@ def detect_r31_accise_double(invoice: EnergyInvoice, db: Session) -> Optional[Bi
     Returns:
         BillAnomaly ou None
     """
-    from models.enums import InvoiceLineType
-
+    # Phase L11.2 — pré-partition `lines_by_type` (fallback si mode unitaire)
+    parts = lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
     # Phase L9.5 — filtre amount_eur > 0 (exclut avoirs/régularisations négatives)
     accise_lines = [
         line
-        for line in (invoice.lines or [])
-        if line.line_type == InvoiceLineType.TAX
-        and line.amount_eur is not None
-        and line.amount_eur > 0
-        and line.label
-        and _ACCISE_PATTERN.search(line.label)
+        for line in parts[InvoiceLineType.TAX]
+        if line.amount_eur is not None and line.amount_eur > 0 and line.label and _ACCISE_PATTERN.search(line.label)
     ]
     critical_eur = float(get_term_value("BILL_ANOMALY_ACCISE_DOUBLE_CRITICAL_EUR"))
 
@@ -1504,9 +1536,18 @@ def detect_anomalies_for_invoice(
     Phase K audit P1 fix : `dp_category_cache` propagé à R22 — caller peut
     instancier dict {} pour batch ingestion (évite N queries DP redondantes).
 
+    Phase L11 — `_partition_invoice_lines()` exécuté UNE seule fois en tête
+    de pipeline ; le dict `lines_by_type` est propagé en kwarg aux 6 détecteurs
+    qui filtrent par `line_type` (R21+R22+R23+R24+R28+R31). Réduit 6 traversals
+    Python-side O(N) à 1 traversal + 6 dict lookups O(1).
+
     Retour : liste anomalies ajoutées à la session (caller responsable du commit).
     """
     anomalies: list[BillAnomaly] = []
+
+    # Phase L11.3 — pré-partition unique propagée à 6 détecteurs (audit P1
+    # cumul L8/L9/L10 finding 8 efficiency).
+    lines_by_type = _partition_invoice_lines(invoice)
 
     # R19 : 0 ou 1 anomaly
     try:
@@ -1528,7 +1569,7 @@ def detect_anomalies_for_invoice(
 
     # R23 : 0..N anomalies (1 par période doublée) — Phase H cardinal CFO
     try:
-        r23_list = detect_r23_turpe_double(invoice, db)
+        r23_list = detect_r23_turpe_double(invoice, db, lines_by_type=lines_by_type)
         for r23 in r23_list:
             db.add(r23)
             anomalies.append(r23)
@@ -1537,7 +1578,7 @@ def detect_anomalies_for_invoice(
 
     # R21 : 0 ou 1 — Phase H CFO CTA mauvais calcul
     try:
-        r21 = detect_r21_cta_mismatch(invoice, db)
+        r21 = detect_r21_cta_mismatch(invoice, db, lines_by_type=lines_by_type)
         if r21:
             db.add(r21)
             anomalies.append(r21)
@@ -1546,7 +1587,7 @@ def detect_anomalies_for_invoice(
 
     # R22 : 0 ou 1 — Phase I CFO accise erronée (cache K2 propagé Phase K audit fix)
     try:
-        r22 = detect_r22_accise_mismatch(invoice, db, dp_category_cache=dp_category_cache)
+        r22 = detect_r22_accise_mismatch(invoice, db, dp_category_cache=dp_category_cache, lines_by_type=lines_by_type)
         if r22:
             db.add(r22)
             anomalies.append(r22)
@@ -1555,7 +1596,7 @@ def detect_anomalies_for_invoice(
 
     # R24 : 0 ou 1 — Phase I CFO TVA mauvais taux
     try:
-        r24 = detect_r24_tva_rate_mismatch(invoice, db)
+        r24 = detect_r24_tva_rate_mismatch(invoice, db, lines_by_type=lines_by_type)
         if r24:
             db.add(r24)
             anomalies.append(r24)
@@ -1591,7 +1632,7 @@ def detect_anomalies_for_invoice(
 
     # R28 : 0 ou 1 — Phase L4 CFO prix unitaire énergie facturé divergent contrat
     try:
-        r28 = detect_r28_energy_unit_price_drift(invoice, db)
+        r28 = detect_r28_energy_unit_price_drift(invoice, db, lines_by_type=lines_by_type)
         if r28:
             db.add(r28)
             anomalies.append(r28)
@@ -1619,7 +1660,7 @@ def detect_anomalies_for_invoice(
 
     # R31 : 0 ou 1 — Phase L9 CFO doublons accise/CSPE/TICFE post-renommage 2022
     try:
-        r31 = detect_r31_accise_double(invoice, db)
+        r31 = detect_r31_accise_double(invoice, db, lines_by_type=lines_by_type)
         if r31:
             db.add(r31)
             anomalies.append(r31)
