@@ -1725,6 +1725,34 @@ class TestPhaseL5R29PeriodOverlapOrGap:
         db.refresh(invoice)
         assert detect_r29_period_overlap_or_gap(invoice, db) is None
 
+    def test_l7_3_r29_uses_cache_when_provided_zero_sql(self, db):
+        """L7.3 P0 — prev_invoice_cache pré-rempli évite tout SELECT par-invoice.
+
+        Mode batch : 1 SELECT global au build_prev_invoice_cache + 0 SELECT
+        par detect_r29 (lookup O(n) dans dict). Test mesure vs mode unitaire.
+        """
+        from services.bill_intelligence.anomaly_detector import (
+            build_prev_invoice_cache,
+            detect_r29_period_overlap_or_gap,
+        )
+
+        _, curr = self._seed_two_invoices(
+            db,
+            prev_period=(date(2026, 4, 1), date(2026, 4, 30)),
+            curr_period=(date(2026, 4, 25), date(2026, 5, 25)),
+            total_eur_curr=3100.0,
+        )
+        cache = build_prev_invoice_cache(db, [curr.site_id])
+        assert curr.site_id in cache
+        assert len(cache[curr.site_id]) == 2  # prev + curr triées DESC
+
+        # Mode cached : doit produire le même résultat que mode unitaire
+        anomaly_cached = detect_r29_period_overlap_or_gap(curr, db, prev_invoice_cache=cache)
+        assert anomaly_cached is not None
+        assert anomaly_cached.code == "R29"
+        assert anomaly_cached.details_json["overlap_days"] == 6
+        assert anomaly_cached.details_json["montant_anomalie_eur"] == 600.0
+
 
 # ─── Phase L6 — R30 Période hors fenêtre contractuelle (Jean-Marc CFO date prise d'effet) ──
 

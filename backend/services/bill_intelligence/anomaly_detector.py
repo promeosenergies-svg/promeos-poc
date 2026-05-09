@@ -1022,29 +1022,27 @@ def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAno
 # ─── R29 Période chevauchement / trou facturation (Phase L5 CFO anti-double-billing) ──
 
 
-def detect_r29_period_overlap_or_gap(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+def detect_r29_period_overlap_or_gap(
+    invoice: EnergyInvoice,
+    db: Session,
+    *,
+    prev_invoice_cache: Optional[dict[int, list[EnergyInvoice]]] = None,
+) -> Optional[BillAnomaly]:
     """R29 — Période facturée chevauche ou crée un trou avec facture précédente même site.
 
     Persona Jean-Marc CFO : ROI 2-5 k€/an. Anti-fraude double-billing (chevauchement)
-    + détection rupture suivi conso (trou). Cas typiques :
-    - Fournisseur émet facture Mai 1-31 alors que Avril 25 → Mai 25 déjà facturé (chevauchement 7j)
-    - Changement de fournisseur mal coordonné (gap > 7j sans facture)
-    - Régularisation retroactive non identifiée
+    + détection rupture suivi conso (trou).
 
-    Heuristique cardinale :
-    - Cherche LA facture précédente sur même site (period_end le plus récent < invoice.period_start)
-    - Calcul gap_days = invoice.period_start - prev.period_end - 1 (jours pleins entre périodes)
-    - gap_days < 0 → chevauchement (overlap_days = -gap_days)
-    - gap_days > 7 → trou suspect
+    Phase L7.3 P0 efficiency : `prev_invoice_cache` optionnel pour mode batch.
+    Pré-rempli par caller avec `build_prev_invoice_cache(db, site_ids)` qui charge
+    en 1 SELECT toutes les factures triées par period_end DESC pour les sites cibles.
+    Fallback DB query si cache None (mode unitaire).
 
-    Sévérité :
-    - critical : chevauchement > 1 jour OU trou > 14 jours
-    - warning : chevauchement = 1 jour OU trou 8-14 jours
-
-    Garde-fous (anti-faux-positifs) :
-    - Skip si invoice.site_id ou period_start/period_end manquants
-    - Skip si pas de facture précédente sur le site (1ʳᵉ facture)
-    - Skip si invoice == prev (même invoice_number)
+    Args:
+        invoice: facture à analyser
+        db: session SQLAlchemy
+        prev_invoice_cache: dict {site_id: [EnergyInvoice ordonnées period_end DESC]}
+                           si fourni, lookup O(n) sur liste triée (vs SELECT par invoice)
 
     Returns:
         BillAnomaly ou None
@@ -1052,22 +1050,34 @@ def detect_r29_period_overlap_or_gap(invoice: EnergyInvoice, db: Session) -> Opt
     if invoice.site_id is None or invoice.period_start is None or invoice.period_end is None:
         return None
 
-    # Cherche la facture la plus récente STRICTEMENT antérieure sur même site
-    # Filtre `period_end < invoice.period_start` (pas `< period_end`) pour :
-    #   1. exclure self ET tout post-dated overlap dont period_end >= period_start de l'invoice
-    #   2. permettre la détection correcte du chevauchement via gap_days < 0
-    prev = (
-        db.query(EnergyInvoice)
-        .filter(
-            EnergyInvoice.site_id == invoice.site_id,
-            EnergyInvoice.id != invoice.id,
-            EnergyInvoice.period_end.isnot(None),
-            EnergyInvoice.period_start.isnot(None),
-            EnergyInvoice.period_start < invoice.period_start,  # antériorité stricte sur period_start
+    # Phase L7.3 P0 — cache lookup O(n) sur liste pré-triée période_end DESC
+    if prev_invoice_cache is not None:
+        candidates = prev_invoice_cache.get(invoice.site_id, [])
+        prev = next(
+            (
+                inv
+                for inv in candidates
+                if inv.id != invoice.id
+                and inv.period_start is not None
+                and inv.period_end is not None
+                and inv.period_start < invoice.period_start
+            ),
+            None,
         )
-        .order_by(EnergyInvoice.period_end.desc())
-        .first()
-    )
+    else:
+        # Mode unitaire : fallback SELECT (ex: pipeline ad-hoc 1 facture)
+        prev = (
+            db.query(EnergyInvoice)
+            .filter(
+                EnergyInvoice.site_id == invoice.site_id,
+                EnergyInvoice.id != invoice.id,
+                EnergyInvoice.period_end.isnot(None),
+                EnergyInvoice.period_start.isnot(None),
+                EnergyInvoice.period_start < invoice.period_start,
+            )
+            .order_by(EnergyInvoice.period_end.desc())
+            .first()
+        )
     if prev is None:
         return None  # 1ʳᵉ facture du site, pas de référence
 
@@ -1261,11 +1271,45 @@ def detect_r30_invoice_period_outside_contract_window(invoice: EnergyInvoice, db
 # ─── Pipeline ───────────────────────────────────────────────────────────────
 
 
+def build_prev_invoice_cache(db: Session, site_ids: list[int]) -> dict[int, list[EnergyInvoice]]:
+    """Phase L7.3 P0 — Préchargement batch des EnergyInvoice par site, triés period_end DESC.
+
+    Permet au pipeline R29 batch (1000 invoices) de remplacer 1000 SELECT
+    individuels par 1 unique SELECT WHERE site_id IN (...). Caller responsable
+    de fournir la liste de site_ids pertinents (typiquement les sites des
+    invoices à analyser dans le batch).
+
+    Args:
+        db: session SQLAlchemy
+        site_ids: liste IDs sites à pré-charger (cardinal du batch)
+
+    Returns:
+        dict {site_id: [EnergyInvoice triées period_end DESC]}
+    """
+    if not site_ids:
+        return {}
+    rows = (
+        db.query(EnergyInvoice)
+        .filter(
+            EnergyInvoice.site_id.in_(site_ids),
+            EnergyInvoice.period_end.isnot(None),
+            EnergyInvoice.period_start.isnot(None),
+        )
+        .order_by(EnergyInvoice.site_id, EnergyInvoice.period_end.desc())
+        .all()
+    )
+    cache: dict[int, list[EnergyInvoice]] = {}
+    for inv in rows:
+        cache.setdefault(inv.site_id, []).append(inv)
+    return cache
+
+
 def detect_anomalies_for_invoice(
     invoice: EnergyInvoice,
     db: Session,
     *,
     dp_category_cache: Optional[dict] = None,
+    prev_invoice_cache: Optional[dict[int, list[EnergyInvoice]]] = None,
 ) -> list[BillAnomaly]:
     """Pipeline détection complète sur 1 invoice.
 
@@ -1375,8 +1419,9 @@ def detect_anomalies_for_invoice(
         _logger.error(f"R28 detector failed for invoice {invoice.id}: {e}")
 
     # R29 : 0 ou 1 — Phase L5 CFO chevauchement/trou période facturation (anti-double-billing)
+    # Phase L7.3 P0 — propage prev_invoice_cache pour éviter SELECT par-invoice en mode batch
     try:
-        r29 = detect_r29_period_overlap_or_gap(invoice, db)
+        r29 = detect_r29_period_overlap_or_gap(invoice, db, prev_invoice_cache=prev_invoice_cache)
         if r29:
             db.add(r29)
             anomalies.append(r29)
