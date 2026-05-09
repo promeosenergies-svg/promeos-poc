@@ -511,18 +511,41 @@ terms:
     formula: "Σ puissance HVAC bâtiment > 70 kW"
     notes: "Abaissement majeur élargissant scope"
 
-  BACS_DEADLINE_DATE:
-    value: "2027-01-01"
+  # Phase L28.2 audit fix P0 — Refactor BACS_DEADLINE en 2 clés distinctes
+  # (Décret 2025-1343 du 26/12/2025 art. 1 a reporté la deadline 70-290 kW
+  # de 2027 → 2030, alignement EPBD recast). Ancienne clé BACS_DEADLINE_DATE
+  # ("2027-01-01") supprimée — valeur OBSOLÈTE non lue par Python.
+  # Confidence high : 4 sources internes convergentes (regs.yaml, legal_refs.py,
+  # KB reference_regulatory_landscape, KB reference_patrimoine_parametrage).
+  # Cf. ADR-027.
+
+  BACS_DEADLINE_EXISTING_70_290:
+    value: "2030-01-01"
     unit: "date"
     domain: "bacs"
+    confidence: "high"
     source:
-      label: "Décret n°2020-887 art. R175-4 — deadline équipement BACS"
+      label: "Décret n°2025-1343 art. 1 — report deadline BACS tranche 70-290 kW"
+      url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000054278951"
+      version: "Décret 2025-1343"
+      effective_date: "2030-01-01"
+      legal_reference: "Code de la construction et de l'habitation art. R175-4"
+    formula: null
+    notes: "Tranche puissance HVAC > 70 kW et ≤ 290 kW (existants). Mirror doctrine/constants.py BACS_DEADLINE_EXISTING."
+
+  BACS_DEADLINE_ABOVE_290:
+    value: "2025-01-01"
+    unit: "date"
+    domain: "bacs"
+    confidence: "high"
+    source:
+      label: "Décret n°2020-887 art. R175-3 — deadline BACS Tier 1 > 290 kW"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000042167708"
       version: "Décret 2020-887"
-      effective_date: "2027-01-01"
+      effective_date: "2025-01-01"
       legal_reference: "JORFTEXT000042167708"
     formula: null
-    notes: null
+    notes: "Tier 1 — déjà entré en vigueur (date passée). Sites > 290 kW devaient être équipés au 01/01/2025. Mirror doctrine/constants.py BACS_DEADLINE_INITIAL."
 
   COMPLIANCE_BACS_PENALTY_EUR:
     value: 1500

@@ -120,7 +120,8 @@ DT_REF_YEAR_DEFAULT = 2020  # année de référence par défaut pour la baseline
 # Phase D-3 Tier 0 : sources documentées dans `backend/config/sources_reglementaires.yaml` :
 #   - BACS_THRESHOLD_KW_2025 (290 kW initial — Décret 2020-887 art. R175-3)
 #   - BACS_THRESHOLD_KW_2030 (70 kW abaissé — Décret 2025-1343 art. 1)
-#   - BACS_DEADLINE_DATE (2027-01-01 équipement BACS)
+#   - BACS_DEADLINE_ABOVE_290 (2025-01-01 — Tier 1 déjà passée, Décret 2020-887 art. R175-3)
+#   - BACS_DEADLINE_EXISTING_70_290 (2030-01-01 — Décret 2025-1343 art. 1, report)
 #   - COMPLIANCE_BACS_PENALTY_EUR (1500 EUR/an/site — Décret 2020-887 art. R175-7)
 # Doublon valeur 1500€ avec OPERAT_PENALTY_EUR : sources distinctes confirmées
 # (BACS = art. R175-7 vs OPERAT = Circulaire DGEC 2024 + Décret 2019-771 art. 6).
@@ -142,7 +143,16 @@ BACS_THRESHOLD_KW_INITIAL: int = _load_yaml_int_or_fallback(
 BACS_THRESHOLD_KW_EXISTING: int = _load_yaml_int_or_fallback(
     "BACS_THRESHOLD_KW_2030", fallback=70
 )  # seuil BACS bâtiments existants Décret 2025-1343 (01/01/2030)
-BACS_DEADLINE_EXISTING = "2030-01-01"  # deadline équipement BACS bâtiments existants >70 kW
+# Phase L28.2 audit fix P0 — Refactor BACS_DEADLINE en 2 lazy-loads YAML SoT
+# (Décret 2025-1343 du 26/12/2025 a reporté la deadline 70-290 kW de 2027 → 2030,
+# alignement EPBD recast). Avant : hardcoded "2030-01-01" cohérent valeur mais
+# YAML BACS_DEADLINE_DATE="2027-01-01" obsolète non lue. ADR-027.
+BACS_DEADLINE_EXISTING: str = _load_yaml_str_or_fallback(
+    "BACS_DEADLINE_EXISTING_70_290", fallback="2030-01-01"
+)  # deadline équipement BACS bâtiments existants 70-290 kW
+BACS_DEADLINE_INITIAL: str = _load_yaml_str_or_fallback(
+    "BACS_DEADLINE_ABOVE_290", fallback="2025-01-01"
+)  # deadline équipement BACS bâtiments existants > 290 kW (Tier 1 — déjà passée)
 
 # ─── OPERAT / Décret Tertiaire déclaration ─────────────────────────────────
 # Phase D-3 Tier 0 : sources documentées dans `backend/config/sources_reglementaires.yaml` :
@@ -380,6 +390,7 @@ __all__ = [
     "BACS_THRESHOLD_KW_INITIAL",
     "BACS_THRESHOLD_KW_EXISTING",
     "BACS_DEADLINE_EXISTING",
+    "BACS_DEADLINE_INITIAL",
     "OPERAT_ANNEXE_I_SOUS_CATEGORIES_COUNT",
     "APER_DEADLINE_SMALL_PARKING_DATE",
     "APER_DEADLINE_LARGE_PARKING_DATE",

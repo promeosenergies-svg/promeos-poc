@@ -349,3 +349,65 @@ def test_sg_reg_const_09_aper_penalty_matches_doctrine():
     assert yaml_val == APER_PENALTY_EUR_PER_M2_PER_YEAR, (
         f"Divergence APER_PENALTY : YAML={yaml_val} vs doctrine={APER_PENALTY_EUR_PER_M2_PER_YEAR}"
     )
+
+
+# ─── SG_REG_CONST_10 : Phase L28.2 — BACS_DEADLINE refactor ADR-027 ─────────
+
+
+def test_sg_reg_const_10_bacs_deadline_existing_70_290_matches_doctrine():
+    """Phase L28.2 audit fix P0 — Mirror YAML BACS_DEADLINE_EXISTING_70_290 (Décret 2025-1343).
+
+    Anti-régression cardinale : la deadline BACS pour bâtiments existants
+    70-290 kW DOIT être 2030-01-01 (Décret 2025-1343 du 26/12/2025 a reporté
+    de 2027 → 2030, alignement EPBD recast). Ne JAMAIS revenir à 2027-01-01.
+    """
+    from doctrine.constants import BACS_DEADLINE_EXISTING
+
+    yaml_val = _yaml_value("BACS_DEADLINE_EXISTING_70_290")
+    assert yaml_val == BACS_DEADLINE_EXISTING == "2030-01-01", (
+        f"Divergence BACS_DEADLINE_EXISTING : YAML={yaml_val} vs "
+        f"doctrine={BACS_DEADLINE_EXISTING}. Décret 2025-1343 art. 1 = 2030-01-01."
+    )
+
+
+def test_sg_reg_const_10_bacs_deadline_above_290_matches_doctrine():
+    """Phase L28.2 audit fix P0 — Mirror YAML BACS_DEADLINE_ABOVE_290 (Décret 2020-887)."""
+    from doctrine.constants import BACS_DEADLINE_INITIAL
+
+    yaml_val = _yaml_value("BACS_DEADLINE_ABOVE_290")
+    assert yaml_val == BACS_DEADLINE_INITIAL == "2025-01-01", (
+        f"Divergence BACS_DEADLINE_INITIAL : YAML={yaml_val} vs "
+        f"doctrine={BACS_DEADLINE_INITIAL}. Décret 2020-887 art. R175-3 = 2025-01-01."
+    )
+
+
+def test_sg_reg_const_10_bacs_deadline_2027_obsolete_absent():
+    """Phase L28.2 audit fix P0 — Anti-régression : la deadline 2027-01-01 ne
+    doit JAMAIS revenir comme valeur BACS_DEADLINE_*. Reportée à 2030 par
+    Décret 2025-1343 du 26/12/2025."""
+    from config.regulatory_sources_loader import reload_regulatory_sources
+
+    data = reload_regulatory_sources()
+    bacs_deadline_keys = [k for k in data["terms"].keys() if k.startswith("BACS_DEADLINE")]
+    obsolete_values = []
+    for key in bacs_deadline_keys:
+        val = data["terms"][key].get("value")
+        if str(val) == "2027-01-01":
+            obsolete_values.append(f"{key}={val}")
+    assert not obsolete_values, (
+        f"Deadline BACS 2027-01-01 OBSOLÈTE détectée (Décret 2025-1343 a reporté à 2030) : "
+        f"{obsolete_values}. Cf. ADR-027 + sources_reglementaires.yaml refactor."
+    )
+
+
+def test_sg_reg_const_10_bacs_deadline_date_orphan_key_absent():
+    """Phase L28.2 audit fix P0 — Anti-régression : la clé BACS_DEADLINE_DATE
+    (orpheline pré-L28.2) ne doit pas être réintroduite. Refactorée en 2 clés
+    distinctes BACS_DEADLINE_EXISTING_70_290 + BACS_DEADLINE_ABOVE_290."""
+    from config.regulatory_sources_loader import reload_regulatory_sources
+
+    data = reload_regulatory_sources()
+    assert "BACS_DEADLINE_DATE" not in data["terms"], (
+        "Clé orpheline BACS_DEADLINE_DATE détectée — supprimée Phase L28.2 (ADR-027). "
+        "Utiliser BACS_DEADLINE_EXISTING_70_290 ou BACS_DEADLINE_ABOVE_290 selon tranche puissance."
+    )

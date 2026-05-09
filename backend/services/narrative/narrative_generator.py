@@ -34,6 +34,7 @@ from sqlalchemy.orm import Session
 # dans les builders cockpit_comex/patrimoine/conformite (cf doctrine §0.D
 # décision A — toute valeur € doit être traçable réglementaire).
 from doctrine.constants import (
+    BACS_DEADLINE_EXISTING,
     BACS_PENALTY_EUR,  # noqa: F401 — utilisé dans cockpit_comex via import local
     DT_PENALTY_AT_RISK_EUR,
     DT_PENALTY_EUR,
@@ -1246,8 +1247,8 @@ def _build_conformite(
     operat_deadline = date(operat_year, 9, 30)
     days_until_operat = (operat_deadline - today).days
 
-    # BACS classe C 2030 (Décret 2020-887)
-    BACS_DEADLINE = date(2030, 1, 1)
+    # BACS deadline existants 70-290 kW (Décret 2025-1343 — Phase L28.2 SoT YAML)
+    BACS_DEADLINE = date.fromisoformat(BACS_DEADLINE_EXISTING)
     days_until_bacs = (BACS_DEADLINE - today).days
 
     # Pénalité provisionnable (provision comptable CFO)
