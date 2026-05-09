@@ -76,9 +76,14 @@ CONFORMITY_WARN = 50  # % — score >= 50 → warn, < 50 → negative
 MATURITY_CRIT = 40  # % — score < 40 → crit
 MATURITY_WARN = 70  # % — score < 70 → warn, >= 70 → ok
 
-READINESS_WEIGHT_DATA = 0.3
-READINESS_WEIGHT_CONFORMITY = 0.4
-READINESS_WEIGHT_ACTIONS = 0.3
+# Phase L28.1a audit fix P1 — import depuis doctrine.constants (lazy-load YAML
+# SoT) au lieu de redéclaration locale. Avant : drift silencieux si YAML modifié
+# (cockpit.py consommait valeur fresh, dashboard_essentials_service restait figé).
+from doctrine.constants import (  # noqa: E402 — module-level constants block
+    READINESS_WEIGHT_ACTIONS,
+    READINESS_WEIGHT_CONFORMITY,
+    READINESS_WEIGHT_DATA,
+)
 
 COMPLIANCE_SCORE_OK = 80  # % — >= 80 → ok (vert)
 COMPLIANCE_SCORE_WARN = 50  # % — >= 50 → warn (ambre), < 50 → crit (rouge)

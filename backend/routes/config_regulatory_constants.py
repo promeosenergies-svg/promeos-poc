@@ -19,18 +19,29 @@ from fastapi import APIRouter
 
 from doctrine.constants import (
     APER_DEADLINE_DATE,
+    APER_PARKING_LARGE_SURFACE_M2,
     APER_PARKING_MIN_SURFACE_M2,
     APER_PENALTY_EUR_PER_M2_PER_YEAR,
+    APER_SOLAR_RATIO_PCT,
+    DT_PENALTY_AT_RISK_EUR,
+    DT_PENALTY_EUR,
     OPERAT_DECLARATION_DEADLINE,
     OPERAT_PENALTY_EUR,
+    PRIMARY_ENERGY_COEF_ELEC,
+    PRIMARY_ENERGY_COEF_GAS,
+    READINESS_WEIGHT_ACTIONS,
+    READINESS_WEIGHT_CONFORMITY,
+    READINESS_WEIGHT_DATA,
+    VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH,
+    VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH,
+    VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH,
 )
 
 router = APIRouter(prefix="/api/config", tags=["Config"])
 
-# Seuils VNU issus de referentials/market_tariffs_2026.yaml
-# (SoT marché — même valeurs exposées par /api/market/tariffs via TariffType.VNU)
-_VNU_SEUIL_BAS_EUR_MWH = 78.0
-_VNU_SEUIL_HAUT_EUR_MWH = 110.0
+# Phase L28.1a audit fix P0 — VNU seuils consommés depuis doctrine.constants
+# (lazy-load YAML SoT). Avant : hardcode `_VNU_SEUIL_BAS_EUR_MWH = 78.0` qui
+# créait un triangle de drift (YAML → doctrine.constants → ROUTE bypass → frontend).
 _VNU_SOURCE = "LF 2025 art. 17, décrets 2025-909/910, CRE 2025-268"
 
 # TURPE 7 — reprogrammation HC méridiennes (note documentaire, pas de seuil numérique)
@@ -52,8 +63,9 @@ def get_regulatory_constants() -> dict:
     """
     return {
         "vnu": {
-            "seuil_bas_eur_mwh": _VNU_SEUIL_BAS_EUR_MWH,
-            "seuil_haut_eur_mwh": _VNU_SEUIL_HAUT_EUR_MWH,
+            "seuil_bas_eur_mwh": VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH,
+            "seuil_haut_eur_mwh": VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH,
+            "tarif_unitaire_2026_eur_mwh": VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH,
             "source": _VNU_SOURCE,
             "label": "Versement pour Non-Usage",
             "activation": "2027 si EPEX dépasse seuil",
@@ -61,6 +73,8 @@ def get_regulatory_constants() -> dict:
         "aper": {
             "penalite_eur_m2_an": APER_PENALTY_EUR_PER_M2_PER_YEAR,
             "surface_min_m2": APER_PARKING_MIN_SURFACE_M2,
+            "surface_large_m2": APER_PARKING_LARGE_SURFACE_M2,
+            "solar_ratio_pct": APER_SOLAR_RATIO_PCT,
             "deadline_iso": APER_DEADLINE_DATE,
             "source": "Loi 2023-175 art. 40 + Décret 2022-1726",
             "label": "APER — solarisation parkings",
@@ -75,6 +89,25 @@ def get_regulatory_constants() -> dict:
             "deadline_declaration_iso": OPERAT_DECLARATION_DEADLINE,
             "source": "Arrêté Tertiaire 2024-DGEC",
             "label": "OPERAT — déclaration consommations 2025",
+        },
+        "dt": {
+            "penalty_eur": DT_PENALTY_EUR,
+            "penalty_at_risk_eur": DT_PENALTY_AT_RISK_EUR,
+            "source": "Décret 2019-771 art. 9 + L.173-2 CCH",
+            "label": "Décret Tertiaire — sanctions",
+        },
+        "primary_energy": {
+            "coef_elec": PRIMARY_ENERGY_COEF_ELEC,
+            "coef_gas": PRIMARY_ENERGY_COEF_GAS,
+            "source": "Arrêté ministériel 13/04/2023 (NOR LOGL2005904A)",
+            "label": "Coefficient énergie primaire RE2020",
+        },
+        "readiness_weights": {
+            "data": READINESS_WEIGHT_DATA,
+            "conformity": READINESS_WEIGHT_CONFORMITY,
+            "actions": READINESS_WEIGHT_ACTIONS,
+            "source": "Doctrine PROMEOS Sol §15 (heuristique interne stable)",
+            "label": "Pondérations Readiness score backend",
         },
         "doctrine": (
             "Seuils réglementaires SoT backend. Jamais hardcoder côté frontend : "

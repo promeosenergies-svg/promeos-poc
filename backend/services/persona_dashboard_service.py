@@ -29,6 +29,7 @@ from doctrine.constants import (
     APER_PENALTY_EUR_PER_M2_PER_YEAR,
     APER_SOLAR_RATIO_PCT,
     AUDIT_SME_DEADLINE_DATE,
+    AUDIT_SME_THRESHOLD_GWH_PERIODIC,
     BACS_DEADLINE_EXISTING,
     BACS_PENALTY_EUR,
     DT_PENALTY_EUR,
@@ -189,8 +190,10 @@ def _audit_sme_status(ej, today: Optional[date] = None) -> dict:
     deadline_iso = AUDIT_SME_DEADLINE_DATE
     days = _days_until(deadline_iso, today)
 
-    # Déclencheur réglementaire : conso ≥ 2,75 GWh
-    triggered = conso_3y is not None and conso_3y >= 2.75
+    # Déclencheur réglementaire : conso ≥ 2,75 GWh (Loi 2025-391 art. 4)
+    # Phase L28.1a audit fix P1 — utilise AUDIT_SME_THRESHOLD_GWH_PERIODIC
+    # depuis doctrine.constants (lazy-load YAML SoT) au lieu de 2.75 hardcoded.
+    triggered = conso_3y is not None and conso_3y >= AUDIT_SME_THRESHOLD_GWH_PERIODIC
 
     # Phase H3 — Exemption ISO 50001 : actif + certificat non expiré
     iso_50001_actif = bool(getattr(ej, "iso_50001_actif", False))

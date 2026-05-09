@@ -49,15 +49,22 @@ EMISSION_FACTORS = {
 # une seule constante doit évoluer. Le commentaire historique "Non-declaration
 # OPERAT" était trompeur — c'est bien la pénalité DT non-conforme (OPERAT a sa
 # propre constante OPERAT_PENALTY_EUR=1500 dans doctrine).
-from doctrine.constants import DT_PENALTY_EUR, DT_PENALTY_AT_RISK_EUR
+from doctrine.constants import (
+    BACS_THRESHOLD_KW_EXISTING,
+    BACS_THRESHOLD_KW_INITIAL,
+    DT_PENALTY_AT_RISK_EUR,
+    DT_PENALTY_EUR,
+)
 
 BASE_PENALTY_EURO = DT_PENALTY_EUR  # 7 500 € — DT site non conforme (alias)
 A_RISQUE_PENALTY_RATIO = 0.5  # 50% pour sites a risque
 A_RISQUE_PENALTY_EURO = DT_PENALTY_AT_RISK_EUR  # 3 750 € — alias canonique
 
 # ── Seuils BACS (Decret n2020-887, Art. R175-2) ────────────────────────
-BACS_SEUIL_HAUT = 290.0  # kW CVC, deadline 2025-01-01
-BACS_SEUIL_BAS = 70.0  # kW CVC, deadline 2030-01-01
+# Phase L28.1a audit fix P1 — alias vers doctrine.constants SoT YAML lazy-load
+# (avant : 290.0 / 70.0 hardcoded en parallèle de doctrine — drift silencieux).
+BACS_SEUIL_HAUT = float(BACS_THRESHOLD_KW_INITIAL)  # 290.0 kW CVC, deadline 2025-01-01
+BACS_SEUIL_BAS = float(BACS_THRESHOLD_KW_EXISTING)  # 70.0 kW CVC, deadline 2030-01-01
 
 
 def get_emission_factor(energy_vector: str) -> float:

@@ -127,3 +127,72 @@ export function priorityLabel(level) {
   if (level === 'low') return 'Basse';
   return '—';
 }
+
+/**
+ * Phase 3.3.fix P2 #4 — SoT mapping bill-intel insight → DecisionEvidenceCard payload.
+ *
+ * Élimine la duplication 3-mappings concurrents (audit Phase 3.X tris) :
+ *   - aggregatePrioritiesForBriefing (CockpitPilotage cockpit/jour)
+ *   - buildDecisionFromAction (ActionCenterSlideOver centre-action peek)
+ *   - mapping inline (BillIntelPage bill-intel — Phase 3.3 originale)
+ *
+ * Convention : signature stricte {rang, category, scope, severity, titre, lead,
+ * evidence[4], primaryCta, methodologyRef}. La signature `category` accepte
+ * UNIQUEMENT une string (pas de ReactNode JSX) — l'appelant doit déjà avoir
+ * résolu son type vers un libellé plain text (anti-pattern audit Phase 3.X tris
+ * P1 #2 : `String(reactNodeJSX)` → `[object Object]`).
+ *
+ * @param {Object} insight - payload backend GET /api/billing/anomalies-scoped
+ * @param {number} rang - 1, 2, 3 (slot LEDGER ranked)
+ * @param {string} categoryLabel - libellé catégorie DÉJÀ résolu en string FR
+ *   (ex: BILLING_INSIGHT_TYPE_LABELS[insight.type], pas le wrapper JSX)
+ * @param {React.ReactNode} titreNode - le titre rendu (peut contenir JSX
+ *   <SolNarrativeText> pour auto-tooltipage acronymes Phase 20.A)
+ * @returns {Object} payload DecisionEvidenceCard (sans primaryCta — l'appelant
+ *   décide drill-down drawer vs href selon contexte ; cf audit P1 #3 double action)
+ */
+export function buildDecFromBillingInsight(insight, rang, categoryLabel, titreNode) {
+  const impactEur = insight?.estimated_loss_eur || 0;
+  return {
+    rang,
+    category: String(categoryLabel || 'ANOMALIE').toUpperCase(),
+    scope: (insight?.site_label || 'PORTEFEUILLE').toUpperCase(),
+    severity: toDecSeverityBriefing(insight?.severity),
+    titre: titreNode,
+    lead: `Détectée par le moteur shadow billing PROMEOS sur ${insight?.site_label || 'le périmètre'}. Estimation à contester auprès du fournisseur ${insight?.supplier || 'concerné'}.`,
+    evidence: [
+      {
+        label: 'ÉCART ESTIMÉ',
+        value: impactEur.toLocaleString('fr-FR'),
+        unit: '€',
+        helper: 'à contester',
+      },
+      {
+        label: 'TYPE',
+        value: String(categoryLabel || '—'),
+        unit: '',
+        helper: 'détection',
+      },
+      {
+        label: 'SITE',
+        value: insight?.site_label || 'Portefeuille',
+        unit: '',
+        helper: '',
+      },
+      {
+        label: 'STATUT',
+        value:
+          insight?.insight_status === 'ack'
+            ? 'Pris en charge'
+            : insight?.insight_status === 'resolved'
+              ? 'Résolu'
+              : insight?.insight_status === 'false_positive'
+                ? 'Faux positif'
+                : 'À traiter',
+        unit: '',
+        helper: insight?.supplier || '',
+      },
+    ],
+    methodologyRef: '/methodologie/bill-intel',
+  };
+}

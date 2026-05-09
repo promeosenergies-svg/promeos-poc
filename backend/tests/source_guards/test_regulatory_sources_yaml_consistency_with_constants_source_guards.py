@@ -284,3 +284,68 @@ def test_sg_reg_const_05_primary_energy_coef_gas_matches_doctrine():
 
     yaml_val = _yaml_value("PRIMARY_ENERGY_COEF_GAS")
     assert yaml_val == PRIMARY_ENERGY_COEF_GAS
+
+
+# ─── SG_REG_CONST_09 : Phase L28.1a — VNU + APER + miroirs L26 manquants ────
+
+
+def test_sg_reg_const_09_vnu_seuil_haut_matches_doctrine():
+    """Phase L28.1a audit fix P1 — Ferme la chaîne mirror VNU_SEUIL_HAUT."""
+    from doctrine.constants import VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH
+
+    yaml_val = _yaml_value("VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH")
+    assert yaml_val == VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH, (
+        f"Divergence VNU_SEUIL_HAUT : YAML={yaml_val} vs doctrine={VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH}"
+    )
+
+
+def test_sg_reg_const_09_vnu_tarif_unitaire_matches_doctrine():
+    """Phase L28.1a audit fix P1 — Ferme la chaîne mirror VNU_TARIF_UNITAIRE."""
+    from doctrine.constants import VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH
+
+    yaml_val = _yaml_value("VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH")
+    assert yaml_val == VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH, (
+        f"Divergence VNU_TARIF : YAML={yaml_val} vs doctrine={VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH}"
+    )
+
+
+def test_sg_reg_const_09_aper_parking_min_matches_doctrine():
+    """Phase L28.1a audit fix P1 — Ferme la chaîne mirror APER_PARKING_MIN (mapping THRESHOLD_M2_SMALL → MIN_SURFACE_M2)."""
+    from doctrine.constants import APER_PARKING_MIN_SURFACE_M2
+
+    yaml_val = _yaml_value("APER_THRESHOLD_M2_SMALL")
+    assert yaml_val == APER_PARKING_MIN_SURFACE_M2, (
+        f"Divergence APER_PARKING_MIN : YAML APER_THRESHOLD_M2_SMALL={yaml_val} vs "
+        f"doctrine.APER_PARKING_MIN_SURFACE_M2={APER_PARKING_MIN_SURFACE_M2}"
+    )
+
+
+def test_sg_reg_const_09_aper_parking_large_matches_doctrine():
+    """Phase L28.1a audit fix P1 — Ferme la chaîne mirror APER_PARKING_LARGE."""
+    from doctrine.constants import APER_PARKING_LARGE_SURFACE_M2
+
+    yaml_val = _yaml_value("APER_THRESHOLD_M2_LARGE")
+    assert yaml_val == APER_PARKING_LARGE_SURFACE_M2, (
+        f"Divergence APER_PARKING_LARGE : YAML APER_THRESHOLD_M2_LARGE={yaml_val} vs "
+        f"doctrine.APER_PARKING_LARGE_SURFACE_M2={APER_PARKING_LARGE_SURFACE_M2}"
+    )
+
+
+def test_sg_reg_const_09_aper_solar_ratio_matches_doctrine():
+    """Phase L28.1a audit fix P1 — Ferme la chaîne mirror APER_SOLAR_RATIO_PCT."""
+    from doctrine.constants import APER_SOLAR_RATIO_PCT
+
+    yaml_val = _yaml_value("APER_SOLAR_RATIO_PCT")
+    assert yaml_val == APER_SOLAR_RATIO_PCT, (
+        f"Divergence APER_SOLAR_RATIO : YAML={yaml_val} vs doctrine={APER_SOLAR_RATIO_PCT}"
+    )
+
+
+def test_sg_reg_const_09_aper_penalty_matches_doctrine():
+    """Phase L28.1a audit fix P1 — Ferme la chaîne mirror APER_PENALTY."""
+    from doctrine.constants import APER_PENALTY_EUR_PER_M2_PER_YEAR
+
+    yaml_val = _yaml_value("APER_PENALTY_EUR_PER_M2_PER_YEAR")
+    assert yaml_val == APER_PENALTY_EUR_PER_M2_PER_YEAR, (
+        f"Divergence APER_PENALTY : YAML={yaml_val} vs doctrine={APER_PENALTY_EUR_PER_M2_PER_YEAR}"
+    )

@@ -33,7 +33,8 @@ import SolBriefingHead from '../ui/sol/SolBriefingHead';
 import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 // Sprint Grammaire v1 Phase 3.3 LEDGER — primitifs Sol v1.1 doctrine §5.6
 import { DecisionEvidenceCard, Term } from '../components/grammar';
-import { toDecSeverityBriefing } from '../components/grammar/decisionAdapters';
+// Phase 3.3.fix P2 #4 — SoT mapping insight→DEC dans decisionAdapters
+import { buildDecFromBillingInsight } from '../components/grammar/decisionAdapters';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 import { scopeKicker } from '../utils/format';
 import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
@@ -328,19 +329,10 @@ export default function BillIntelPage() {
     [allInsights]
   );
 
-  // Top insight by estimated loss — for hero card
-  const topInsight = useMemo(() => {
-    const active = allInsights.filter(isActiveInsight).filter((i) => i.estimated_loss_eur > 0);
-    if (!active.length) return null;
-    return active.reduce(
-      (max, i) => (i.estimated_loss_eur > max.estimated_loss_eur ? i : max),
-      active[0]
-    );
-  }, [allInsights]);
-
   // Sprint Grammaire v1 Phase 3.3 LEDGER — top 3 anomalies par impact € pour
-  // remplacer le bloc topInsight hero (1 seule anomalie) par 3 DecisionEvidenceCard
-  // ranked. Vision LEDGER : "priorité → impact → action → suivi".
+  // rendu DecisionEvidenceCard ranked. Vision LEDGER : "priorité → impact →
+  // action → suivi". Phase 3.3.fix P1 #1 : ancien `topInsight = useMemo`
+  // supprimé (dead code après remplacement hero rouge sang par bloc Top 3).
   const top3Insights = useMemo(() => {
     const active = allInsights
       .filter(isActiveInsight)
@@ -936,10 +928,10 @@ export default function BillIntelPage() {
       {/* Sprint Grammaire v1 Phase 3.3 LEDGER — Top 3 anomalies à arbitrer.
           Doctrine §5.6 Loi L9 : DecisionEvidenceCard par anomalie (rang/scope/
           severity/evidence[4]). Remplace l'ancien topInsight hero (1 seule
-          card rouge) par 3 DEC ambré calme reconstruites en Lego.
-          Mapping insight → DEC via helper local _decFromInsight (extrait
-          metrics_json + traduit type → catégorie FR).
-          Tonalité calme via toDecSeverityBriefing (critical → warning ambré). */}
+          card rouge sang) par 3 DEC ambré calme reconstruites en Lego.
+          Phase 3.3.fix : mapping consommé via SoT decisionAdapters
+          buildDecFromBillingInsight (P2 #4) ; primaryCta retiré pour éviter
+          le double-action ancre + wrapper onClick (P1 #3 audit Phase 3.X tris). */}
       {top3Insights.length > 0 && (
         <section className="mb-4" data-testid="bill-intel-top-decisions">
           <h2
@@ -952,9 +944,21 @@ export default function BillIntelPage() {
           <div className="grid grid-cols-1 gap-3">
             {top3Insights.map((insight, idx) => {
               const rang = idx + 1;
-              const impactEur = insight.estimated_loss_eur || 0;
-              const typeLabel = TYPE_LABELS[insight.type] || insight.type || 'Anomalie';
-              const sevBriefing = toDecSeverityBriefing(insight.severity);
+              // Phase 3.3.fix P1 #2 (audit code-reviewer 09/05) : ne PAS passer
+              // un ReactNode JSX dans `category` (DEC.value attend string ;
+              // String(<JSX/>) renvoie '[object Object]'). Résoudre ici en
+              // libellé plain text via BILLING_INSIGHT_TYPE_LABELS (registry
+              // canonique). Le titreNode JSX peut continuer à porter
+              // <SolNarrativeText> pour auto-tooltipage acronymes Phase 20.A.
+              const categoryLabel =
+                BILLING_INSIGHT_TYPE_LABELS[insight.type] || insight.type || 'Anomalie';
+              const titreNode = <SolNarrativeText text={insight.message} />;
+              const decPayload = buildDecFromBillingInsight(
+                insight,
+                rang,
+                categoryLabel,
+                titreNode
+              );
               return (
                 <div
                   key={insight.id}
@@ -970,52 +974,12 @@ export default function BillIntelPage() {
                   aria-label={`Anomalie facture rang ${rang} — ouvrir le détail`}
                   className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-attention-fg)] rounded-xl"
                 >
-                  <DecisionEvidenceCard
-                    rang={rang}
-                    category={String(typeLabel).toUpperCase()}
-                    scope={(insight.site_label || 'PORTEFEUILLE').toUpperCase()}
-                    severity={sevBriefing}
-                    titre={<SolNarrativeText text={insight.message} />}
-                    lead={`Détectée par le moteur shadow billing PROMEOS sur ${insight.site_label || 'le périmètre'}. Estimation à contester auprès du fournisseur ${insight.supplier || 'concerné'}.`}
-                    evidence={[
-                      {
-                        label: 'ÉCART ESTIMÉ',
-                        value: impactEur.toLocaleString('fr-FR'),
-                        unit: '€',
-                        helper: 'à contester',
-                      },
-                      {
-                        label: 'TYPE',
-                        value: typeLabel,
-                        unit: '',
-                        helper: 'détection',
-                      },
-                      {
-                        label: 'SITE',
-                        value: insight.site_label || 'Portefeuille',
-                        unit: '',
-                        helper: '',
-                      },
-                      {
-                        label: 'STATUT',
-                        value:
-                          insight.insight_status === 'ack'
-                            ? 'Pris en charge'
-                            : insight.insight_status === 'resolved'
-                              ? 'Résolu'
-                              : insight.insight_status === 'false_positive'
-                                ? 'Faux positif'
-                                : 'À traiter',
-                        unit: '',
-                        helper: insight.supplier || '',
-                      },
-                    ]}
-                    primaryCta={{
-                      label: 'Voir le dossier →',
-                      href: `#insight-${insight.id}`,
-                    }}
-                    methodologyRef="/methodologie/bill-intel"
-                  />
+                  {/* primaryCta omis intentionnellement (audit Phase 3.X tris
+                      P1 #3) : le wrapper <div role=button> capture déjà le
+                      click pour ouvrir le drawer. Ajouter un `<a href>` à
+                      l'intérieur déclencherait double-action + ancre #insight-X
+                      qui n'existait pas dans le DOM. */}
+                  <DecisionEvidenceCard {...decPayload} />
                 </div>
               );
             })}
