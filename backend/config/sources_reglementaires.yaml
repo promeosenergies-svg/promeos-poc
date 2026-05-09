@@ -1264,3 +1264,264 @@ terms:
       legal_reference: "Code civil art. 1103 — fenêtre contractuelle stricte ; pratique B2B prise d'effet"
     formula: "days_outside = max(0, contract.start_date - period_start) + max(0, period_end - contract.end_date)"
     notes: "Seuil chevauchement partiel hors fenêtre contractuelle. < 7j toléré (décalages calendaires facturation) ; ≥ 7j fire R30 warning (entièrement hors fenêtre = critical 100%)."
+
+  # ── Phase L8.1 — Audit no-fake-code R21→R27 (audit code-reviewer Phase L8) ──
+  # ── R21 CTA mauvais calcul (Phase H5) ────────────────────────────────────
+  BILL_ANOMALY_CTA_THRESHOLD_PCT:
+    value: 10.0
+    unit: "percent"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase H5 — détection R21 CTA divergence"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Arrêté CTA 27/01/2026 (CRE 2026-14) — pratique audit CFO"
+    formula: "ecart_pct = |cta_facturee - cta_attendue| / cta_attendue * 100"
+    notes: "Tolérance écart CTA facturée vs attendue (15% × TURPE distribution). 10% absorbe arrondis fournisseur ; > 10% = anomalie."
+
+  BILL_ANOMALY_CTA_MIN_EUR:
+    value: 5.0
+    unit: "EUR"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase H5 — seuil minimum R21"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO B2B — sub-5 EUR = bruit arrondi"
+    formula: "|cta_facturee - cta_attendue|"
+    notes: "Seuil absolu compagnon de THRESHOLD_PCT pour anti-faux-positifs sur petites factures (<50 €)."
+
+  BILL_ANOMALY_CTA_CRITICAL_EUR:
+    value: 100.0
+    unit: "EUR"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase H5 — seuil critique R21 sévérité"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO B2B — > 100€ = matériel"
+    formula: "|cta_facturee - cta_attendue|"
+    notes: "Bascule sévérité warning→critical. > 100 €/facture = surfacturation matérielle annualisée."
+
+  # ── R22 Accise erronée (Phase I1 + J1) ───────────────────────────────────
+  BILL_ANOMALY_ACCISE_THRESHOLD_DP_PCT:
+    value: 10.0
+    unit: "percent"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase J1 — seuil accise route DP_CATEGORY"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Code énergie L.336 — pratique audit CFO ETI"
+    formula: "ecart_pct = |accise_facturee - accise_attendue| / accise_attendue * 100"
+    notes: "Tolérance stricte 10% quand DeliveryPoint.accise_categorie_elec connu (T1/T2/HP routing certain). Phase J1 raffinement."
+
+  BILL_ANOMALY_ACCISE_THRESHOLD_FALLBACK_PCT:
+    value: 35.0
+    unit: "percent"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase I1 — seuil accise route FALLBACK"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Code énergie L.336 — pratique audit CFO ETI (incertitude catégorie)"
+    formula: "ecart_pct = |accise_facturee - accise_attendue| / accise_attendue * 100"
+    notes: "Tolérance lâche 35% quand catégorie incertaine (FALLBACK heuristique kWh). Évite faux positifs sur DP non-classifiés."
+
+  BILL_ANOMALY_ACCISE_MIN_EUR:
+    value: 5.0
+    unit: "EUR"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase I1 — seuil minimum R22"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO — sub-5 EUR = bruit arrondi"
+    formula: "|accise_facturee - accise_attendue|"
+    notes: "Seuil absolu anti-faux-positifs."
+
+  # ── R23 TURPE doublé (Phase H2) ──────────────────────────────────────────
+  BILL_ANOMALY_TURPE_DOUBLE_CRITICAL_EUR:
+    value: 100.0
+    unit: "EUR"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase H2 — seuil critique R23 TURPE doublé"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "CRE TURPE 7 art. 8 — facturation unique période ; pratique anti-double-billing"
+    formula: "total_doublon_eur"
+    notes: "Bascule sévérité warning→critical. > 100 €/facture en double = surfacturation matérielle TURPE."
+
+  # ── R24 TVA mauvais taux (Phase I2) ──────────────────────────────────────
+  BILL_ANOMALY_TVA_TOLERANCE_PT:
+    value: 0.5
+    unit: "percent_points"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase I2 — seuil tolérance R24 taux TVA"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Code général impôts art. 278 — pratique audit CFO"
+    formula: "ecart_pt = |taux_facture_pct - TVA_NORMALE_PCT|"
+    notes: "Tolérance écart taux TVA en points de pourcentage. < 0.5 pt = arrondi, > 0.5 pt = mauvais taux appliqué."
+
+  BILL_ANOMALY_TVA_MIN_EUR:
+    value: 10.0
+    unit: "EUR"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase I2 — seuil minimum R24"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO — sub-10 EUR = bruit arrondi"
+    formula: "tva_facturee"
+    notes: "Seuil absolu anti-faux-positifs (acompte sans TVA ou facture < 50 € hors champ)."
+
+  BILL_ANOMALY_TVA_CRITICAL_PT:
+    value: 5.0
+    unit: "percent_points"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase I2 — seuil critique R24 sévérité"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO — > 5 pt = mauvais taux 5,5% appliqué au lieu de 20%"
+    formula: "|taux_facture_pct - TVA_NORMALE_PCT|"
+    notes: "Bascule sévérité warning→critical. > 5 pts (ex: 14,5% facturé au lieu de 20%) = mauvais taux appliqué."
+
+  # ── R25 Abonnement divergent contrat (Phase L1) ──────────────────────────
+  BILL_ANOMALY_SUBSCRIPTION_THRESHOLD_PCT:
+    value: 5.0
+    unit: "percent"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L1 — seuil R25 abonnement"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Code civil art. 1103 — pratique audit CFO"
+    formula: "ecart_pct = |abo_facture - abo_attendu| / abo_attendu * 100"
+    notes: "Tolérance écart abonnement mensuel facturé vs contrat. 5% absorbe proration calendaire."
+
+  BILL_ANOMALY_SUBSCRIPTION_MIN_EUR:
+    value: 2.0
+    unit: "EUR"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L1 — seuil minimum R25"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO — sub-2 EUR = arrondi proration jours"
+    formula: "|abo_facture - abo_attendu|"
+    notes: "Seuil absolu anti-faux-positifs."
+
+  BILL_ANOMALY_SUBSCRIPTION_CRITICAL_EUR:
+    value: 20.0
+    unit: "EUR"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L1 — seuil critique R25 sévérité"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO — > 20€ écart abo mensuel = surfacturation"
+    formula: "|abo_facture - abo_attendu|"
+    notes: "Bascule sévérité warning→critical. > 20 €/mois × 12 = 240 €/an minimum impact."
+
+  # ── R26 Sanity check total vs Σ lignes (Phase L2) ────────────────────────
+  BILL_ANOMALY_TOTAL_LINES_THRESHOLD_PCT:
+    value: 5.0
+    unit: "percent"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L2 — seuil R26 sanity check"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO — cohérence interne facture"
+    formula: "ecart_pct = |total_facture - total_lignes_TTC| / total_facture * 100"
+    notes: "Tolérance incohérence interne. 5% absorbe arrondis Σ lignes vs total."
+
+  BILL_ANOMALY_TOTAL_LINES_MIN_EUR:
+    value: 5.0
+    unit: "EUR"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L2 — seuil minimum R26"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO — sub-5 EUR = bruit"
+    formula: "|total_facture - total_lignes_TTC|"
+    notes: "Seuil absolu anti-faux-positifs."
+
+  BILL_ANOMALY_TOTAL_LINES_CRITICAL_EUR:
+    value: 50.0
+    unit: "EUR"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L2 — seuil critique R26 sévérité"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO — > 50€ écart total = bug billing matériel"
+    formula: "|total_facture - total_lignes_TTC|"
+    notes: "Bascule sévérité warning→critical. > 50 €/facture = bug billing fournisseur."
+
+  # ── R27 Cross-validation conso facturée vs MeterReading (Phase L3) ───────
+  BILL_ANOMALY_METER_DRIFT_MIN_READINGS:
+    value: 7
+    unit: "count"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L3 — seuil minimum lectures R27"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO — couverture 7j minimum semaine type"
+    formula: "count(MeterReading WHERE timestamp ∈ [period_start, period_end])"
+    notes: "Couverture insuffisante < 7 lectures sur la période = pas de comparaison fiable, R27 skip silencieux."
+
+  BILL_ANOMALY_METER_DRIFT_THRESHOLD_PCT:
+    value: 10.0
+    unit: "percent"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L3 — seuil R27 dérive conso"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO anti-fraude — > 10% écart suspect"
+    formula: "ecart_pct = |kwh_facture - kwh_compteur| / kwh_compteur * 100"
+    notes: "Tolérance dérive conso facturée vs compteur. 10% absorbe estimations facturation provisoire."
+
+  BILL_ANOMALY_METER_DRIFT_MIN_KWH:
+    value: 100.0
+    unit: "kWh"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L3 — seuil minimum R27"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO — sub-100 kWh = arrondi mensuel"
+    formula: "|kwh_facture - kwh_compteur|"
+    notes: "Seuil absolu anti-faux-positifs."
+
+  BILL_ANOMALY_METER_DRIFT_CRITICAL_KWH:
+    value: 1000.0
+    unit: "kWh"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L3 — seuil critique R27 sévérité"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO — > 1 MWh écart = facturation gonflée matérielle"
+    formula: "|kwh_facture - kwh_compteur|"
+    notes: "Bascule sévérité warning→critical. > 1000 kWh = anomalie matérielle (≥ 200 €/facture sur tarif moyen)."
+
+  # ── R20 critical threshold explicit (audit Phase L8 finding 15) ──────────
+  BILL_ANOMALY_CAPACITY_VARIANCE_CRITICAL_PCT:
+    value: 10.0
+    unit: "percent"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L8.1 — seuil critique R20 explicite"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "CRE TURPE 7 — > 10% variance = surfacturation systémique"
+    formula: "variance_pct"
+    notes: "Bascule sévérité warning→critical R20 explicite (avant L8.1 : threshold_pct × 2 implicite)."

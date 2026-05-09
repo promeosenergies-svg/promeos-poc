@@ -289,7 +289,9 @@ def detect_r20_capacity_variance(invoice: EnergyInvoice, db: Session) -> list[Bi
         if variance_pct <= threshold_pct:
             continue
 
-        severity = "critical" if variance_pct > threshold_pct * 2 else "warning"
+        # Phase L8.1 — seuil critical YAML SoT (avant : threshold_pct × 2 implicite)
+        critical_pct = float(get_term_value("BILL_ANOMALY_CAPACITY_VARIANCE_CRITICAL_PCT"))
+        severity = "critical" if variance_pct > critical_pct else "warning"
 
         anomalies.append(
             BillAnomaly(
@@ -349,10 +351,17 @@ def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[Bil
     if turpe_total <= 0:
         return None
 
+    # Phase L8.1 — seuils YAML SoT (no fake code)
+    cta_rate_post_2026 = float(get_term_value("CTA_ELEC_DISTRIBUTION_PCT")) / 100  # SoT existant 15%
+    cta_rate_pre_2026 = 0.2193  # historique arrêté 26/07/2021 (pré-cutover, gel doctrinal)
+    threshold_pct = float(get_term_value("BILL_ANOMALY_CTA_THRESHOLD_PCT"))
+    threshold_min_eur = float(get_term_value("BILL_ANOMALY_CTA_MIN_EUR"))
+    critical_eur = float(get_term_value("BILL_ANOMALY_CTA_CRITICAL_EUR"))
+
     # Date de référence : period_start ou issue_date
     ref_date = invoice.period_start or invoice.issue_date or _date.today()
     cutover = _date(2026, 2, 1)
-    cta_rate = 0.15 if ref_date >= cutover else 0.2193  # distribution élec
+    cta_rate = cta_rate_post_2026 if ref_date >= cutover else cta_rate_pre_2026
     cta_attendue = turpe_total * cta_rate
     if cta_attendue <= 0:
         return None
@@ -360,16 +369,15 @@ def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[Bil
     ecart_eur = cta_facturee - cta_attendue
     ecart_pct = abs(ecart_eur) / cta_attendue * 100
 
-    # Seuils : > 10 % d'écart ET > 5 € absolu (anti-bruit arrondis)
-    if ecart_pct < 10 or abs(ecart_eur) < 5:
+    if ecart_pct < threshold_pct or abs(ecart_eur) < threshold_min_eur:
         return None
 
-    severity = "critical" if abs(ecart_eur) > 100 else "warning"
+    severity = "critical" if abs(ecart_eur) > critical_eur else "warning"
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R21",
         severity=severity,
-        threshold_value=Decimal("10.0"),  # %
+        threshold_value=Decimal(str(threshold_pct)),
         actual_value=Decimal(str(round(ecart_pct, 2))),
         details_json={
             "turpe_total_eur": round(turpe_total, 2),
@@ -541,7 +549,14 @@ def detect_r27_consumption_meter_drift(invoice: EnergyInvoice, db: Session) -> O
 
     if sum_readings is None or sum_readings <= 0:
         return None
-    if count_readings < 7:  # Couverture insuffisante (cas import partiel)
+
+    # Phase L8.1 — seuils YAML SoT (no fake code)
+    min_readings = int(get_term_value("BILL_ANOMALY_METER_DRIFT_MIN_READINGS"))
+    threshold_pct = float(get_term_value("BILL_ANOMALY_METER_DRIFT_THRESHOLD_PCT"))
+    threshold_min_kwh = float(get_term_value("BILL_ANOMALY_METER_DRIFT_MIN_KWH"))
+    critical_kwh = float(get_term_value("BILL_ANOMALY_METER_DRIFT_CRITICAL_KWH"))
+
+    if count_readings < min_readings:
         return None
 
     conso_facturee = float(invoice.energy_kwh)
@@ -549,11 +564,10 @@ def detect_r27_consumption_meter_drift(invoice: EnergyInvoice, db: Session) -> O
     ecart_kwh = conso_facturee - conso_mesuree
     ecart_pct = abs(ecart_kwh) / conso_mesuree * 100 if conso_mesuree > 0 else 0
 
-    # Seuils anti-bruit : > 10 % ET > 100 kWh
-    if ecart_pct < 10 or abs(ecart_kwh) < 100:
+    if ecart_pct < threshold_pct or abs(ecart_kwh) < threshold_min_kwh:
         return None
 
-    severity = "critical" if abs(ecart_kwh) > 1000 else "warning"
+    severity = "critical" if abs(ecart_kwh) > critical_kwh else "warning"
     # Estimation impact € via prix marginal CRE T4 2025 ETI tertiaire (130 €/MWh)
     from doctrine.constants import PRICE_ELEC_ETI_2026_EUR_PER_MWH
 
@@ -563,7 +577,7 @@ def detect_r27_consumption_meter_drift(invoice: EnergyInvoice, db: Session) -> O
         invoice_id=invoice.id,
         code="R27",
         severity=severity,
-        threshold_value=Decimal("10.0"),
+        threshold_value=Decimal(str(threshold_pct)),
         actual_value=Decimal(str(round(ecart_pct, 2))),
         details_json={
             "conso_facturee_kwh": round(conso_facturee, 1),
@@ -609,30 +623,36 @@ def detect_r26_total_vs_lines_inconsistency(invoice: EnergyInvoice, db: Session)
     if total_lignes_ht <= 0:
         return None
 
+    # Phase L8.1 — seuils YAML SoT (no fake code) ; tva_normale_pct depuis SoT existant
+    threshold_pct = float(get_term_value("BILL_ANOMALY_TOTAL_LINES_THRESHOLD_PCT"))
+    threshold_min_eur = float(get_term_value("BILL_ANOMALY_TOTAL_LINES_MIN_EUR"))
+    critical_eur = float(get_term_value("BILL_ANOMALY_TOTAL_LINES_CRITICAL_EUR"))
+    tva_multiplier = 1 + float(get_term_value("TVA_NORMALE_PCT")) / 100  # SoT existant 20%
+
     total_facture = float(invoice.total_eur)
     # 2 hypothèses : lignes en TTC (=total_eur) ou en HT (×1.20 ≈ total_eur)
     ecart_ttc = total_lignes_ht - total_facture
-    ecart_ht_x_tva = (total_lignes_ht * 1.20) - total_facture
+    ecart_ht_x_tva = (total_lignes_ht * tva_multiplier) - total_facture
 
     # Le scénario qui colle le mieux gagne
     ecart_eur = min((ecart_ttc, ecart_ht_x_tva), key=abs)
     pct_base = total_facture
     ecart_pct = abs(ecart_eur) / pct_base * 100 if pct_base > 0 else 0
 
-    if ecart_pct < 5 or abs(ecart_eur) < 5:
+    if ecart_pct < threshold_pct or abs(ecart_eur) < threshold_min_eur:
         return None
 
-    severity = "critical" if abs(ecart_eur) > 50 else "warning"
+    severity = "critical" if abs(ecart_eur) > critical_eur else "warning"
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R26",
         severity=severity,
-        threshold_value=Decimal("5.0"),
+        threshold_value=Decimal(str(threshold_pct)),
         actual_value=Decimal(str(round(ecart_pct, 2))),
         details_json={
             "total_eur_facture": round(total_facture, 2),
             "total_lignes_ht": round(total_lignes_ht, 2),
-            "total_lignes_x_tva20": round(total_lignes_ht * 1.20, 2),
+            "total_lignes_x_tva20": round(total_lignes_ht * tva_multiplier, 2),
             "ecart_eur": round(ecart_eur, 2),
             "ecart_pct": round(ecart_pct, 2),
             "lines_count": len(lines),
@@ -677,6 +697,11 @@ def detect_r25_subscription_mismatch(invoice: EnergyInvoice, db: Session) -> Opt
     if fixed_fee_attendu <= 0:
         return None
 
+    # Phase L8.1 — seuils YAML SoT (no fake code)
+    threshold_pct = float(get_term_value("BILL_ANOMALY_SUBSCRIPTION_THRESHOLD_PCT"))
+    threshold_min_eur = float(get_term_value("BILL_ANOMALY_SUBSCRIPTION_MIN_EUR"))
+    critical_eur = float(get_term_value("BILL_ANOMALY_SUBSCRIPTION_CRITICAL_EUR"))
+
     # Détection par label : InvoiceLineType n'a pas ABONNEMENT — on identifie via
     # label `abonnement|redevance.*fixe|fee.*month`. Phase M : enum dédié envisageable.
     abo_lines = [
@@ -690,10 +715,9 @@ def detect_r25_subscription_mismatch(invoice: EnergyInvoice, db: Session) -> Opt
         return None
 
     abo_facture = sum(float(line.amount_eur or 0) for line in abo_lines)
-    # Calcul mensuel : si invoice couvre N mois, on prorate
     if invoice.period_start and invoice.period_end:
         days = (invoice.period_end - invoice.period_start).days + 1
-        months_covered = max(1.0, days / 30.4375)  # Avg jours/mois
+        months_covered = max(1.0, days / 30.4375)  # Avg jours/mois Grégorien
         abo_mensuel_facture = abo_facture / months_covered
     else:
         abo_mensuel_facture = abo_facture  # Hypothèse 1 mois si période inconnue
@@ -701,16 +725,15 @@ def detect_r25_subscription_mismatch(invoice: EnergyInvoice, db: Session) -> Opt
     ecart_eur = abo_mensuel_facture - fixed_fee_attendu
     ecart_pct = abs(ecart_eur) / fixed_fee_attendu * 100
 
-    # Seuils anti-bruit : > 5 % d'écart ET > 2 € absolu
-    if ecart_pct < 5 or abs(ecart_eur) < 2:
+    if ecart_pct < threshold_pct or abs(ecart_eur) < threshold_min_eur:
         return None
 
-    severity = "critical" if abs(ecart_eur) > 20 else "warning"
+    severity = "critical" if abs(ecart_eur) > critical_eur else "warning"
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R25",
         severity=severity,
-        threshold_value=Decimal("5.0"),
+        threshold_value=Decimal(str(threshold_pct)),
         actual_value=Decimal(str(round(ecart_pct, 2))),
         details_json={
             "abonnement_attendu_eur_par_mois": round(fixed_fee_attendu, 2),
@@ -845,14 +868,21 @@ def detect_r22_accise_mismatch(
     ecart_eur = accise_facturee - accise_attendue
     ecart_pct = abs(ecart_eur) / accise_attendue * 100
 
+    # Phase L8.1 — seuils YAML SoT (no fake code)
+    threshold_dp = float(get_term_value("BILL_ANOMALY_ACCISE_THRESHOLD_DP_PCT"))
+    threshold_fallback = float(get_term_value("BILL_ANOMALY_ACCISE_THRESHOLD_FALLBACK_PCT"))
+    threshold_min_eur = float(get_term_value("BILL_ANOMALY_ACCISE_MIN_EUR"))
+    # Critical seuil R22 partagé avec R26 (cohérence audit CFO > 50 €)
+    critical_eur = float(get_term_value("BILL_ANOMALY_TOTAL_LINES_CRITICAL_EUR"))
+
     # Seuils selon source catégorie :
-    # - DP_CATEGORY (catégorie connue) : 10 % d'écart suffit (haute confiance)
-    # - FALLBACK T1 : 35 % d'écart (couvre marge T2/HP légitime)
-    threshold_pct = 10.0 if category_source == "DP_CATEGORY" else 35.0
-    if ecart_pct < threshold_pct or abs(ecart_eur) < 5:
+    # - DP_CATEGORY (catégorie connue) : haute confiance → seuil strict
+    # - FALLBACK T1 : couvre marge T2/HP légitime → seuil lâche
+    threshold_pct = threshold_dp if category_source == "DP_CATEGORY" else threshold_fallback
+    if ecart_pct < threshold_pct or abs(ecart_eur) < threshold_min_eur:
         return None
 
-    severity = "critical" if abs(ecart_eur) > 50 else "warning"
+    severity = "critical" if abs(ecart_eur) > critical_eur else "warning"
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R22",
@@ -922,20 +952,23 @@ def detect_r24_tva_rate_mismatch(invoice: EnergyInvoice, db: Session) -> Optiona
         return None
 
     taux_effectif_pct = (tva_facturee / ht_total) * 100
-    # Taux attendu B2B tertiaire : 20 % (exception 5,5 % CTA + accise = composite)
-    # MVP : on flag écart > 0,5 pt vs 20 % (couvre erreur 19,6/19,3/etc.)
-    taux_attendu_pct = 20.0
+    # Phase L8.1 — seuils YAML SoT (no fake code) ; taux_attendu = TVA_NORMALE_PCT SoT existant
+    taux_attendu_pct = float(get_term_value("TVA_NORMALE_PCT"))
+    tolerance_pt = float(get_term_value("BILL_ANOMALY_TVA_TOLERANCE_PT"))
+    min_eur = float(get_term_value("BILL_ANOMALY_TVA_MIN_EUR"))
+    critical_pt = float(get_term_value("BILL_ANOMALY_TVA_CRITICAL_PT"))
+
     ecart_pct_abs = abs(taux_effectif_pct - taux_attendu_pct)
 
-    if ecart_pct_abs < 0.5 or tva_facturee < 10:
+    if ecart_pct_abs < tolerance_pt or tva_facturee < min_eur:
         return None
 
-    severity = "critical" if ecart_pct_abs > 5.0 else "warning"
+    severity = "critical" if ecart_pct_abs > critical_pt else "warning"
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R24",
         severity=severity,
-        threshold_value=Decimal("0.5"),  # pt %
+        threshold_value=Decimal(str(tolerance_pt)),
         actual_value=Decimal(str(round(ecart_pct_abs, 2))),
         details_json={
             "ht_total_eur": round(ht_total, 2),
@@ -992,6 +1025,9 @@ def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAno
         if period:
             by_period[period].append(line)
 
+    # Phase L8.1 — seuil YAML SoT (no fake code)
+    critical_eur = float(get_term_value("BILL_ANOMALY_TURPE_DOUBLE_CRITICAL_EUR"))
+
     anomalies: list[BillAnomaly] = []
     for period, lines in by_period.items():
         if len(lines) < 2:
@@ -999,13 +1035,13 @@ def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAno
         # Doublon détecté : même période sur 2+ lignes NETWORK
         total_doublon_eur = sum(float(line.amount_eur or 0) for line in lines[1:])
         # On considère que la 1ère ligne est légitime, les suivantes sont doublons
-        severity = "critical" if total_doublon_eur > 100 else "warning"
+        severity = "critical" if total_doublon_eur > critical_eur else "warning"
         anomalies.append(
             BillAnomaly(
                 invoice_id=invoice.id,
                 code="R23",
                 severity=severity,
-                threshold_value=Decimal("100.0"),
+                threshold_value=Decimal(str(critical_eur)),
                 actual_value=Decimal(str(round(total_doublon_eur, 2))),
                 details_json={
                     "period_code": period,
