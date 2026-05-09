@@ -492,6 +492,8 @@ _idx_period_start = Index("ix_energy_invoices_period_start", EnergyInvoice.perio
 _idx_period_end = Index("ix_energy_invoices_period_end", EnergyInvoice.period_end)
 _idx_issue_date = Index("ix_energy_invoices_issue_date", EnergyInvoice.issue_date)
 _idx_site_period = Index("ix_energy_invoices_site_period", EnergyInvoice.site_id, EnergyInvoice.period_start)
+# Phase L7.4 — index R29 batch query (site_id + period_end DESC)
+_idx_site_period_end = Index("ix_energy_invoices_site_period_end", EnergyInvoice.site_id, EnergyInvoice.period_end)
 
 
 class EnergyInvoiceLine(Base, TimestampMixin):
