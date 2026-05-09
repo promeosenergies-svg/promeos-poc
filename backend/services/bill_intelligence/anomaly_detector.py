@@ -99,18 +99,32 @@ def _resolve_lines(invoice: EnergyInvoice, lines_by_type: Optional[LinesByType])
     return lines_by_type if lines_by_type is not None else _partition_invoice_lines(invoice)
 
 
-def _resolve_contract(invoice: EnergyInvoice) -> Optional[EnergyContract]:
-    """Phase L8.2 — Helper guard partagé R25/R28/R30 (audit code-reviewer reuse #5).
+def _resolve_contract(
+    invoice: EnergyInvoice,
+    *,
+    contract_cache: Optional[dict[int, EnergyContract]] = None,
+) -> Optional[EnergyContract]:
+    """Phase L8.2 + L12.1 — Helper guard partagé R25/R28/R30.
 
-    Pattern dupliqué 3x avant L8.2 : check `contract_id` puis `invoice.contract`.
-    Centralisation = 1 modification si lazy→joined load future.
+    Phase L8.2 : centralise check `contract_id` + accès `invoice.contract`.
+    Phase L12.1 : kwarg `contract_cache` optionnel pour mode batch (P1 efficiency
+    cumul L8+L9+L10+L11). Pré-rempli par caller via `build_contract_cache()`
+    qui charge en 1 SELECT IN tous les contrats du batch (vs N lazy-loads séparés).
+
+    Args:
+        invoice : EnergyInvoice cible
+        contract_cache : dict {contract_id: EnergyContract} optionnel (mode batch)
 
     Returns:
-        EnergyContract si invoice.contract_id non null ET relation chargée, sinon None.
+        EnergyContract si invoice.contract_id non null, sinon None.
+        Mode cached : lookup O(1) sur dict.
+        Mode unitaire : invoice.contract (lazy-load 1er accès, identity map ensuite).
     """
     if invoice.contract_id is None:
         return None
-    return invoice.contract  # SQLAlchemy lazy-load 1er accès, identity map ensuite
+    if contract_cache is not None:
+        return contract_cache.get(invoice.contract_id)
+    return invoice.contract  # fallback lazy-load mode unitaire
 
 
 _AnomalyCode = Literal["R19", "R20", "R21", "R22", "R23", "R24", "R25", "R26", "R27", "R28", "R29", "R30", "R31"]
@@ -555,6 +569,7 @@ def detect_r28_energy_unit_price_drift(
     db: Session,
     *,
     lines_by_type: Optional[LinesByType] = None,
+    contract_cache: Optional[dict[int, EnergyContract]] = None,
 ) -> Optional[BillAnomaly]:
     """R28 — Prix unitaire énergie facturé divergent vs `EnergyContract.price_ref_eur_per_kwh`.
 
@@ -579,7 +594,7 @@ def detect_r28_energy_unit_price_drift(
     Returns:
         BillAnomaly ou None
     """
-    contract = _resolve_contract(invoice)
+    contract = _resolve_contract(invoice, contract_cache=contract_cache)
     if contract is None or contract.price_ref_eur_per_kwh is None:
         return None
     prix_attendu_eur_kwh = float(contract.price_ref_eur_per_kwh)
@@ -821,7 +836,12 @@ def detect_r26_total_vs_lines_inconsistency(invoice: EnergyInvoice, db: Session)
 # ─── R25 Abonnement divergent contrat (Phase L Jean-Marc CFO ROI 1-3 k€/an) ─
 
 
-def detect_r25_subscription_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+def detect_r25_subscription_mismatch(
+    invoice: EnergyInvoice,
+    db: Session,
+    *,
+    contract_cache: Optional[dict[int, EnergyContract]] = None,
+) -> Optional[BillAnomaly]:
     """R25 — Abonnement (fixed fee) facturé divergent vs `EnergyContract.fixed_fee_eur_per_month`.
 
     Persona Jean-Marc CFO : ROI 1-3 k€/an. Cas typique : le fournisseur ne met
@@ -843,7 +863,7 @@ def detect_r25_subscription_mismatch(invoice: EnergyInvoice, db: Session) -> Opt
     """
     from models.enums import InvoiceLineType
 
-    contract = _resolve_contract(invoice)
+    contract = _resolve_contract(invoice, contract_cache=contract_cache)
     if contract is None or contract.fixed_fee_eur_per_month is None:
         return None
     fixed_fee_attendu = float(contract.fixed_fee_eur_per_month)
@@ -1381,7 +1401,12 @@ def detect_r29_period_overlap_or_gap(
 # ─── R30 Période facturée hors fenêtre contractuelle (Phase L6 CFO date prise d'effet) ──
 
 
-def detect_r30_invoice_period_outside_contract_window(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+def detect_r30_invoice_period_outside_contract_window(
+    invoice: EnergyInvoice,
+    db: Session,
+    *,
+    contract_cache: Optional[dict[int, EnergyContract]] = None,
+) -> Optional[BillAnomaly]:
     """R30 — Période facture hors fenêtre [`contract.start_date`, `contract.end_date`].
 
     Persona Jean-Marc CFO : ROI 1-4 k€/an. Détecte mauvais binding facture↔contrat
@@ -1416,7 +1441,7 @@ def detect_r30_invoice_period_outside_contract_window(invoice: EnergyInvoice, db
     """
     if invoice.period_start is None or invoice.period_end is None:
         return None
-    contract = _resolve_contract(invoice)
+    contract = _resolve_contract(invoice, contract_cache=contract_cache)
     if contract is None:
         return None
     if contract.start_date is None and contract.end_date is None:
@@ -1545,12 +1570,38 @@ def build_prev_invoice_cache(db: Session, site_ids: list[int]) -> dict[int, list
     return cache
 
 
+def build_contract_cache(db: Session, contract_ids: list[int]) -> dict[int, EnergyContract]:
+    """Phase L12.1 P1 — Préchargement batch EnergyContract pour R25/R28/R30.
+
+    Pattern aligné `build_prev_invoice_cache` (Phase L7.3) + `dp_category_cache`
+    (Phase K2). Audit P1 efficiency cumul L8+L9+L10+L11 : avant L12, R25/R28/R30
+    accédaient `invoice.contract` (lazy-load) → 3 SQL/invoice × 1000 invoices
+    batch = 3000 SELECT séparés.
+
+    Après L12 : 1 SELECT IN sur tous les contract_ids distincts du batch =
+    3 SQL × 1000 → 1 SQL total (gain × 3000).
+
+    Args:
+        db: session SQLAlchemy
+        contract_ids: liste contract_id distincts à pré-charger
+
+    Returns:
+        dict {contract_id: EnergyContract}. Contracts inactifs/inexistants
+        absents du dict (R25/R28/R30 traitent comme None via .get()).
+    """
+    if not contract_ids:
+        return {}
+    rows = db.query(EnergyContract).filter(EnergyContract.id.in_(contract_ids)).all()
+    return {c.id: c for c in rows}
+
+
 def detect_anomalies_for_invoice(
     invoice: EnergyInvoice,
     db: Session,
     *,
     dp_category_cache: Optional[dict] = None,
     prev_invoice_cache: Optional[dict[int, list[EnergyInvoice]]] = None,
+    contract_cache: Optional[dict[int, EnergyContract]] = None,
 ) -> list[BillAnomaly]:
     """Pipeline détection complète sur 1 invoice.
 
@@ -1634,7 +1685,7 @@ def detect_anomalies_for_invoice(
 
     # R25 : 0 ou 1 — Phase L CFO abonnement divergent contrat
     try:
-        r25 = detect_r25_subscription_mismatch(invoice, db)
+        r25 = detect_r25_subscription_mismatch(invoice, db, contract_cache=contract_cache)
         if r25:
             db.add(r25)
             anomalies.append(r25)
@@ -1661,7 +1712,9 @@ def detect_anomalies_for_invoice(
 
     # R28 : 0 ou 1 — Phase L4 CFO prix unitaire énergie facturé divergent contrat
     try:
-        r28 = detect_r28_energy_unit_price_drift(invoice, db, lines_by_type=lines_by_type)
+        r28 = detect_r28_energy_unit_price_drift(
+            invoice, db, lines_by_type=lines_by_type, contract_cache=contract_cache
+        )
         if r28:
             db.add(r28)
             anomalies.append(r28)
@@ -1680,7 +1733,7 @@ def detect_anomalies_for_invoice(
 
     # R30 : 0 ou 1 — Phase L6 CFO période facturée hors fenêtre contractuelle
     try:
-        r30 = detect_r30_invoice_period_outside_contract_window(invoice, db)
+        r30 = detect_r30_invoice_period_outside_contract_window(invoice, db, contract_cache=contract_cache)
         if r30:
             db.add(r30)
             anomalies.append(r30)

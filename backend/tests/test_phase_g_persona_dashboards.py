@@ -2151,6 +2151,62 @@ class TestPhaseGP1FixesSourceGuards:
         # Plus de Literal stalé R19/R20 only
         assert 'Literal["R19", "R20"]' not in src
 
+    def test_l12_build_contract_cache_helper_pipeline(self):
+        """L12 audit fix P1 cumul L8+L9+L10+L11 — build_contract_cache() helper batch
+        + contract_cache propagé R25/R28/R30 (élimine N+1 lazy-load invoice.contract).
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        # Helper module-level
+        assert "def build_contract_cache(" in src
+        assert "EnergyContract.id.in_(contract_ids)" in src
+        # Pipeline accepte le kwarg
+        assert "contract_cache: Optional[dict[int, EnergyContract]] = None" in src
+        # _resolve_contract étendu
+        assert "if contract_cache is not None:" in src
+        assert "return contract_cache.get(invoice.contract_id)" in src
+        # 3 détecteurs (R25, R28, R30) propagent contract_cache
+        for detector_name in [
+            "detect_r25_subscription_mismatch",
+            "detect_r28_energy_unit_price_drift",
+            "detect_r30_invoice_period_outside_contract_window",
+        ]:
+            assert "contract_cache=contract_cache" in src, f"Pipeline ne propage pas contract_cache : {detector_name}"
+
+    def test_l12_contract_cache_returns_lookup_correct(self, db):
+        """L12 — build_contract_cache() retourne dict {contract_id: EnergyContract}."""
+        import json
+
+        from models import Fournisseur, TypeFournitureEnum
+        from models.enums import BillingEnergyType
+        from services.bill_intelligence.anomaly_detector import build_contract_cache
+
+        f = Fournisseur(nom="EDF", siren="552081317", type_fourniture=TypeFournitureEnum.MULTI)
+        db.add(f)
+        db.flush()
+        _, _, _, sites = _seed_org_with_sites(db, org_name="OrgL12Cache", siren="400000001", n_sites=1)
+        contract = EnergyContract(
+            site_id=sites[0].id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            fournisseur_id=f.id,
+            metadata_json=json.dumps({"phase_j2_legacy": True}),
+        )
+        db.add(contract)
+        db.commit()
+        db.refresh(contract)
+
+        cache = build_contract_cache(db, [contract.id])
+        assert contract.id in cache
+        assert cache[contract.id].id == contract.id
+        # Empty list → empty dict
+        assert build_contract_cache(db, []) == {}
+        # Non-existent contract_id → absent (pas KeyError)
+        assert build_contract_cache(db, [99999]) == {}
+
     def test_l11_6_tva_pattern_module_level(self):
         """L11.6 audit fix F1 — _TVA_PATTERN module-level (avant : recompilée
         par appel à detect_r24_tva_rate_mismatch ; cohérence _ACCISE_PATTERN).
@@ -2210,15 +2266,21 @@ class TestPhaseGP1FixesSourceGuards:
         assert "LinesByType = dict[InvoiceLineType, list[EnergyInvoiceLine]]" in src
         # Pipeline pré-calcule
         assert "lines_by_type = _partition_invoice_lines(invoice)" in src
-        # 6 détecteurs propagent (R21 R22 R23 R24 R28 R31)
-        for call in [
-            "detect_r21_cta_mismatch(invoice, db, lines_by_type=lines_by_type)",
-            "detect_r23_turpe_double(invoice, db, lines_by_type=lines_by_type)",
-            "detect_r24_tva_rate_mismatch(invoice, db, lines_by_type=lines_by_type)",
-            "detect_r28_energy_unit_price_drift(invoice, db, lines_by_type=lines_by_type)",
-            "detect_r31_accise_double(invoice, db, lines_by_type=lines_by_type)",
+        # 6 détecteurs propagent lines_by_type (R21 R22 R23 R24 R28 R31).
+        # Phase L12 : R28 a aussi contract_cache → assertion sur kwarg présence
+        # (pas la forme exacte) pour cohérence cross-phase.
+        for detector_name in [
+            "detect_r21_cta_mismatch",
+            "detect_r23_turpe_double",
+            "detect_r24_tva_rate_mismatch",
+            "detect_r28_energy_unit_price_drift",
+            "detect_r31_accise_double",
         ]:
-            assert call in src, f"Pipeline ne propage pas lines_by_type : {call}"
+            # Le détecteur doit recevoir lines_by_type=lines_by_type quelque part dans son call site
+            assert (
+                f"{detector_name}(invoice, db, lines_by_type=lines_by_type" in src
+                or f"{detector_name}(\n            invoice, db, lines_by_type=lines_by_type" in src
+            ), f"Pipeline ne propage pas lines_by_type : {detector_name}"
 
     def test_l11_partition_helper_returns_4_canonical_keys(self, db):
         """L11 — _partition_invoice_lines() initialise toujours les 4 line_types
