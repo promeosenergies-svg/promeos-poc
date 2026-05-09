@@ -2151,6 +2151,31 @@ class TestPhaseGP1FixesSourceGuards:
         # Plus de Literal stalé R19/R20 only
         assert 'Literal["R19", "R20"]' not in src
 
+    def test_l12_5_contract_cache_miss_warning_logged(self):
+        """L12.5 audit fix F1 — _resolve_contract logue un warning sur cache miss
+        (avant : None silencieux → faux négatifs R25/R28/R30 non observables).
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        assert "_logger.warning(" in src
+        assert "contract_cache miss invoice_id=" in src
+
+    def test_l12_5_build_contract_cache_filters_none_ids(self, db):
+        """L12.5 audit fix F2 — build_contract_cache filtre les contract_id None
+        (avant : SQL IN(NULL) silencieusement ignoré).
+        """
+        from services.bill_intelligence.anomaly_detector import build_contract_cache
+
+        # Liste avec None mélangé → doit retourner dict vide (pas crash, pas SQL)
+        result = build_contract_cache(db, [None, None])
+        assert result == {}
+        # None mélangé avec valid id absent → dict vide
+        result = build_contract_cache(db, [None, 99999])
+        assert result == {}
+
     def test_l12_build_contract_cache_helper_pipeline(self):
         """L12 audit fix P1 cumul L8+L9+L10+L11 — build_contract_cache() helper batch
         + contract_cache propagé R25/R28/R30 (élimine N+1 lazy-load invoice.contract).
@@ -2167,14 +2192,23 @@ class TestPhaseGP1FixesSourceGuards:
         assert "contract_cache: Optional[dict[int, EnergyContract]] = None" in src
         # _resolve_contract étendu
         assert "if contract_cache is not None:" in src
-        assert "return contract_cache.get(invoice.contract_id)" in src
-        # 3 détecteurs (R25, R28, R30) propagent contract_cache
+        # Phase L12.5 fix F1 : `result = contract_cache.get(...)` puis return result
+        assert "contract_cache.get(invoice.contract_id)" in src
+        # Phase L12.5 audit fix F4 — assert per-detector via regex extraction
+        # (avant : assert global trop large → faux positif si 1 seul détecteur
+        # avait `contract_cache=contract_cache`).
+        import re as _re
+
         for detector_name in [
             "detect_r25_subscription_mismatch",
             "detect_r28_energy_unit_price_drift",
             "detect_r30_invoice_period_outside_contract_window",
         ]:
-            assert "contract_cache=contract_cache" in src, f"Pipeline ne propage pas contract_cache : {detector_name}"
+            pattern = _re.compile(
+                rf"{_re.escape(detector_name)}\([^)]*?contract_cache=contract_cache[^)]*?\)",
+                _re.DOTALL,
+            )
+            assert pattern.search(src), f"Pipeline ne propage pas contract_cache au détecteur : {detector_name}"
 
     def test_l12_contract_cache_returns_lookup_correct(self, db):
         """L12 — build_contract_cache() retourne dict {contract_id: EnergyContract}."""

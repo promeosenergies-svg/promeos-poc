@@ -123,7 +123,17 @@ def _resolve_contract(
     if invoice.contract_id is None:
         return None
     if contract_cache is not None:
-        return contract_cache.get(invoice.contract_id)
+        # Phase L12.5 audit fix F1 — cache miss warning explicite (avant : None
+        # silencieux → faux négatifs R25/R28/R30 non observables si caller a
+        # oublié contract_id du cache).
+        result = contract_cache.get(invoice.contract_id)
+        if result is None:
+            _logger.warning(
+                "contract_cache miss invoice_id=%s contract_id=%s — fallback skip",
+                invoice.id,
+                invoice.contract_id,
+            )
+        return result
     return invoice.contract  # fallback lazy-load mode unitaire
 
 
@@ -1589,6 +1599,12 @@ def build_contract_cache(db: Session, contract_ids: list[int]) -> dict[int, Ener
         dict {contract_id: EnergyContract}. Contracts inactifs/inexistants
         absents du dict (R25/R28/R30 traitent comme None via .get()).
     """
+    if not contract_ids:
+        return {}
+    # Phase L12.5 audit fix F2 — filter None (cas caller buggy avec contract_id NULL
+    # dans la liste) ; sans guard, IN(NULL) silencieusement ignoré par SQL → résultat
+    # cohérent mais bug upstream non détecté.
+    contract_ids = [cid for cid in contract_ids if cid is not None]
     if not contract_ids:
         return {}
     rows = db.query(EnergyContract).filter(EnergyContract.id.in_(contract_ids)).all()
