@@ -1,13 +1,38 @@
 /**
- * PROMEOS — ActionCenterSlideOver V7
+ * PROMEOS — ActionCenterSlideOver V8 (Sprint Grammaire v1 Phase 2bis LEDGER)
  *
- * Slide-over header avec 3 onglets (Actions humaines / Alertes système / Historique 7j).
- * Réutilise le composant Drawer du design system (a11y, focus trap, escape, body-lock).
- * Polling 60s tant que le panneau est ouvert.
+ * Inbox LEDGER quotidien. Vision Atlas/Briefing/Ledger : narration cardinale
+ * "priorité → impact → action → suivi".
+ *
+ * Reconstruction LEGO (doctrine 2026-05-09) :
+ *
+ *   Briques CONSERVÉES (utiles, intactes) :
+ *     - Drawer (a11y, focus trap, escape, body-lock)
+ *     - useActionCenterData (polling 60s, multi-source issues+actions+notif+history)
+ *     - EmptyState (états vides)
+ *     - computeActionCenterBadge (export utilisé par AppShell cloche)
+ *     - TabButton (structure 3 onglets, navigation claviers)
+ *     - NotificationRow (onglet Alerts inchangé)
+ *
+ *   Briques TRANSFORMÉES :
+ *     - Onglet Actions : ancienne liste ActionRow plate (anti-pattern §6.1) →
+ *       Top 5 DecisionEvidenceCard rang/scope/severity/evidence[4]/cta
+ *     - Onglet History : ActionRow compact préservé (vue rétrospective)
+ *
+ *   Briques NOUVELLES (primitifs Sol v1.1 grammar/) :
+ *     - Mini-hero LEDGER (kicker mono "LEDGER · INBOX · TOP N PAR IMPACT")
+ *     - SolPageFooter en bas du slide-over (Loi L6)
+ *     - Term wrapping sur acronymes
+ *
+ *   Briques SUPPRIMÉES (anti-patterns §6.1 retirés) :
+ *     - SlideOverRow / ActionRow utilisés pour Actions (remplacés par DEC)
+ *     - PRIORITY_STYLES inline (priority encodé désormais dans severity DEC)
+ *
+ * Polling 60s tant que ouvert (inchangé).
  */
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Bell, History, ChevronRight } from 'lucide-react';
+import { Bell, History, AlertTriangle, ChevronRight } from 'lucide-react';
 import Drawer from '../ui/Drawer';
 import EmptyState from '../ui/EmptyState';
 import {
@@ -16,27 +41,32 @@ import {
   getActionCenterIssues,
   getActionCenterNotifications,
 } from '../services/api/actions';
+import { DecisionEvidenceCard, SolPageFooter, Term } from './grammar';
+import { fmtEurShort } from '../utils/format';
+
+// ── Configuration onglets ───────────────────────────────────────────────
 
 const TABS = {
-  actions: { label: 'Actions', icon: AlertTriangle, empty: 'Rien à signaler, profitez du calme' },
+  actions: {
+    label: 'Actions',
+    icon: AlertTriangle,
+    empty: 'Rien à signaler, profitez du calme',
+  },
   alerts: { label: 'Alertes', icon: Bell, empty: 'Aucune alerte active' },
   history: { label: 'Historique', icon: History, empty: 'Aucun élément récent' },
 };
 const TAB_KEYS = Object.keys(TABS);
-
-const PRIORITY_STYLES = {
-  critical: { text: 'text-red-600', bg: 'bg-red-500' },
-  high: { text: 'text-red-600', bg: 'bg-red-500' },
-  medium: { text: 'text-amber-600', bg: 'bg-amber-500' },
-  low: { text: 'text-slate-500', bg: 'bg-slate-400' },
-  default: { text: 'text-slate-500', bg: 'bg-slate-400' },
-};
 
 const SEVERITY_STYLES = {
   critical: 'text-red-600 bg-red-50',
   warning: 'text-amber-600 bg-amber-50',
   info: 'text-blue-600 bg-blue-50',
 };
+
+// Top N actions affichées en LEDGER inbox (cf. doctrine §5 limite cognitive)
+const LEDGER_TOP_N = 5;
+
+// ── Helpers data ────────────────────────────────────────────────────────
 
 function arraysShallowEqual(a, b) {
   if (a === b) return true;
@@ -65,10 +95,9 @@ function useActionCenterData(open, pollingMs = 60_000) {
         getActionCenterActions({ status: 'open,in_progress', limit: 20 }).catch(() => ({
           actions: [],
         })),
-        // 2026-05-02 — Fetch issues live (anomalies auto-détectées) en plus des
-        // actions persistées. Sans ça, la cloche reste muette tant qu'aucune
-        // action n'a été créée manuellement, alors que /anomalies affiche déjà
-        // les issues. Doctrine §6.2 : cohérence inter-surfaces.
+        // Doctrine §6.2 cohérence inter-surfaces : on fetch issues live
+        // (anomalies auto-détectées) en plus des actions persistées. Sans ça
+        // la cloche reste muette tant qu'aucune action n'est créée manuellement.
         getActionCenterIssues({ limit: 20 }).catch(() => ({ issues: [] })),
         getActionCenterNotifications({ unread_only: true }).catch(() => ({ notifications: [] })),
         getActionCenterActions({ status: 'resolved,dismissed', limit: 20 }).catch(() => ({
@@ -84,9 +113,15 @@ function useActionCenterData(open, pollingMs = 60_000) {
         estimated_impact_eur: i.estimated_impact_eur,
         __type: 'issue',
       }));
+      // Tri par impact € décroissant — vision LEDGER "ordering par impact"
+      const merged = [...normalizedIssues, ...(actionsRaw?.actions || [])].sort((a, b) => {
+        const ia = a.estimated_impact_eur || a.estimated_loss_eur || 0;
+        const ib = b.estimated_impact_eur || b.estimated_loss_eur || 0;
+        return ib - ia;
+      });
       const next = {
         actionsSummary: summary,
-        actionsList: [...normalizedIssues, ...(actionsRaw?.actions || [])],
+        actionsList: merged,
         notifications: notifRaw?.notifications || [],
         history: historyRaw?.actions || [],
         loading: false,
@@ -135,6 +170,95 @@ export function computeActionCenterBadge(summary, notifications) {
   return { count, color: 'gray' };
 }
 
+// ── Helpers LEDGER (mapping action → DecisionEvidenceCard) ──────────────
+
+/**
+ * Convertit une action/issue en payload DecisionEvidenceCard (doctrine §5.6).
+ * 4 cellules garanties (contrat L9). Tonalité severity calme par défaut.
+ */
+function buildDecisionFromAction(action, rang) {
+  const isIssue = action.__type === 'issue';
+  const impactEur = action.estimated_impact_eur || action.estimated_loss_eur || 0;
+  const sev =
+    action.priority === 'critical'
+      ? 'critical'
+      : action.priority === 'high'
+        ? 'warning'
+        : action.priority === 'medium'
+          ? 'warning'
+          : 'neutral';
+  const category = (action.domain || (isIssue ? 'ANOMALIE' : 'ACTION')).toUpperCase();
+  const scope = (action.site_name || 'PORTEFEUILLE').toUpperCase();
+
+  const evidence = [];
+  evidence.push({
+    label: 'IMPACT',
+    value: impactEur > 0 ? fmtEurShort(impactEur) : '—',
+    unit: '',
+    helper: impactEur > 0 ? 'estimation' : 'non chiffré',
+  });
+  evidence.push({
+    label: 'TYPE',
+    value: isIssue ? 'Anomalie auto' : 'Action manuelle',
+    unit: '',
+    helper: '',
+  });
+  evidence.push({
+    label: 'PRIORITÉ',
+    value:
+      action.priority === 'critical'
+        ? 'Critique'
+        : action.priority === 'high'
+          ? 'Haute'
+          : action.priority === 'medium'
+            ? 'Moyenne'
+            : 'Basse',
+    unit: '',
+    helper: `P${rang}`,
+  });
+  if (action.due_date) {
+    evidence.push({
+      label: 'ÉCHÉANCE',
+      value: new Date(action.due_date).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+      }),
+      unit: '',
+      helper: '',
+    });
+  } else {
+    evidence.push({
+      label: 'STATUT',
+      value: action.status || (isIssue ? 'À traiter' : 'Ouverte'),
+      unit: '',
+      helper: 'à arbitrer',
+    });
+  }
+
+  const lead = isIssue
+    ? `Anomalie auto-détectée sur ${action.site_name || 'le périmètre'}.${
+        impactEur > 0 ? ` Impact estimé ${fmtEurShort(impactEur)}.` : ''
+      } À arbitrer dans la file de pilotage.`
+    : `Action en cours d'exécution.${impactEur > 0 ? ` Gain attendu ${fmtEurShort(impactEur)}.` : ''}`;
+
+  const ctaHref = action.__type === 'issue' || !action.id ? '/anomalies' : `/actions/${action.id}`;
+
+  return {
+    rang,
+    category,
+    scope,
+    severity: sev,
+    titre: action.title || action.summary || 'Sans titre',
+    lead,
+    evidence: evidence.slice(0, 4),
+    primaryCta: { label: "Voir l'action", href: ctaHref },
+    methodologyRef: '/methodologie/anomalies',
+  };
+}
+
+// ── UI primitifs locaux (conservés pour Alerts + History) ───────────────
+
 function TabButton({ active, onClick, count, icon: Icon, label }) {
   return (
     <button
@@ -179,25 +303,6 @@ function SlideOverRow({ accent, title, meta, subtitle, onClick }) {
   );
 }
 
-function ActionRow({ action, onClick }) {
-  const style = PRIORITY_STYLES[action.priority] || PRIORITY_STYLES.default;
-  return (
-    <SlideOverRow
-      accent={<div className={`mt-1 w-1.5 h-1.5 rounded-full ${style.bg}`} />}
-      title={action.title || action.summary}
-      meta={
-        action.due_date ? (
-          <span className={style.text}>
-            Échéance : {new Date(action.due_date).toLocaleDateString('fr-FR')}
-          </span>
-        ) : null
-      }
-      subtitle={action.site_name}
-      onClick={onClick}
-    />
-  );
-}
-
 function NotificationRow({ notification, onClick }) {
   const sev = notification.severity || 'info';
   const sevClass = SEVERITY_STYLES[sev] || SEVERITY_STYLES.info;
@@ -223,6 +328,33 @@ function NotificationRow({ notification, onClick }) {
     />
   );
 }
+
+/** Vue compacte conservée pour onglet History (rétrospective non-LEDGER). */
+function HistoryRow({ action, onClick }) {
+  const tone =
+    action.priority === 'critical' || action.priority === 'high'
+      ? 'text-red-600'
+      : action.priority === 'medium'
+        ? 'text-amber-600'
+        : 'text-slate-500';
+  return (
+    <SlideOverRow
+      accent={<div className="mt-1 w-1.5 h-1.5 rounded-full bg-slate-400" />}
+      title={action.title || action.summary}
+      meta={
+        action.due_date ? (
+          <span className={tone}>
+            Échéance : {new Date(action.due_date).toLocaleDateString('fr-FR')}
+          </span>
+        ) : null
+      }
+      subtitle={action.site_name}
+      onClick={onClick}
+    />
+  );
+}
+
+// ── Composant racine ────────────────────────────────────────────────────
 
 export default function ActionCenterSlideOver({ open, onClose, defaultTab = 'actions' }) {
   const safeDefault = useMemo(
@@ -255,8 +387,12 @@ export default function ActionCenterSlideOver({ open, onClose, defaultTab = 'act
     [navigate, onClose]
   );
 
-  const handleActionClick = useCallback(
-    // Issues (auto-détectées) → hub /anomalies. Actions persistées → page dédiée.
+  const handleNotificationClick = useCallback(
+    (notification) => navigateAndClose(notification.link || '/anomalies'),
+    [navigateAndClose]
+  );
+
+  const handleHistoryClick = useCallback(
     (action) =>
       navigateAndClose(
         action.__type === 'issue' || !action.id ? '/anomalies' : `/actions/${action.id}`
@@ -264,17 +400,68 @@ export default function ActionCenterSlideOver({ open, onClose, defaultTab = 'act
     [navigateAndClose]
   );
 
-  const handleNotificationClick = useCallback(
-    (notification) => navigateAndClose(notification.link || '/anomalies'),
-    [navigateAndClose]
-  );
+  const renderActions = () => {
+    if (actionsList.length === 0) {
+      return <EmptyState variant="empty" title="Tout est en ordre" text={TABS.actions.empty} />;
+    }
+    const top = actionsList.slice(0, LEDGER_TOP_N);
+    const remaining = actionsList.length - top.length;
+    return (
+      <div className="flex flex-col gap-3" data-testid="ledger-top-decisions">
+        {top.map((a, i) => (
+          <DecisionEvidenceCard key={a.id || i} {...buildDecisionFromAction(a, i + 1)} />
+        ))}
+        {remaining > 0 && (
+          <p className="text-xs text-center text-slate-500 pt-1">
+            + {remaining} autre{remaining > 1 ? 's' : ''} dans le centre d'action
+          </p>
+        )}
+        {actionsSummary?.overdue_count > 0 && (
+          <p className="text-xs text-red-600 px-1 pt-2 font-medium">
+            {actionsSummary.overdue_count} action
+            {actionsSummary.overdue_count > 1 ? 's' : ''} en retard
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  const renderAlerts = () => {
+    if (notifications.length === 0) {
+      return <EmptyState variant="empty" title="Aucune alerte" text={TABS.alerts.empty} />;
+    }
+    return (
+      <div className="flex flex-col gap-1">
+        {notifications.map((n, i) => (
+          <NotificationRow
+            key={n.id || i}
+            notification={n}
+            onClick={() => handleNotificationClick(n)}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  const renderHistory = () => {
+    if (history.length === 0) {
+      return <EmptyState variant="empty" title="Historique vide" text={TABS.history.empty} />;
+    }
+    return (
+      <div className="flex flex-col gap-1">
+        {history.slice(0, 20).map((a, i) => (
+          <HistoryRow key={a.id || i} action={a} onClick={() => handleHistoryClick(a)} />
+        ))}
+      </div>
+    );
+  };
 
   const renderList = () => {
     if (loading) {
       return (
-        <div className="flex flex-col gap-2 p-2">
+        <div className="flex flex-col gap-2 p-1">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />
+            <div key={i} className="h-20 bg-slate-100 rounded-lg animate-pulse" />
           ))}
         </div>
       );
@@ -292,62 +479,49 @@ export default function ActionCenterSlideOver({ open, onClose, defaultTab = 'act
         </div>
       );
     }
-
-    const tabConfig = TABS[tab];
-    if (tab === 'actions') {
-      return actionsList.length === 0 ? (
-        <EmptyState variant="empty" title="Tout est en ordre" text={tabConfig.empty} />
-      ) : (
-        <>
-          <div className="flex flex-col gap-1">
-            {actionsList.map((a, i) => (
-              <ActionRow key={a.id || i} action={a} onClick={() => handleActionClick(a)} />
-            ))}
-          </div>
-          {actionsSummary?.overdue_count > 0 && (
-            <p className="text-xs text-red-600 px-3 pt-3 font-medium">
-              {actionsSummary.overdue_count} action
-              {actionsSummary.overdue_count > 1 ? 's' : ''} en retard
-            </p>
-          )}
-        </>
-      );
-    }
-    if (tab === 'alerts') {
-      return notifications.length === 0 ? (
-        <EmptyState variant="empty" title="Aucune alerte" text={tabConfig.empty} />
-      ) : (
-        <div className="flex flex-col gap-1">
-          {notifications.map((n, i) => (
-            <NotificationRow
-              key={n.id || i}
-              notification={n}
-              onClick={() => handleNotificationClick(n)}
-            />
-          ))}
-        </div>
-      );
-    }
-    return history.length === 0 ? (
-      <EmptyState variant="empty" title="Historique vide" text={tabConfig.empty} />
-    ) : (
-      <div className="flex flex-col gap-1">
-        {history.slice(0, 20).map((a, i) => (
-          <ActionRow key={a.id || i} action={a} onClick={() => handleActionClick(a)} />
-        ))}
-      </div>
-    );
+    if (tab === 'actions') return renderActions();
+    if (tab === 'alerts') return renderAlerts();
+    return renderHistory();
   };
+
+  // Mini-hero LEDGER : kicker mono + intent (doctrine §5)
+  const ledgerKicker = useMemo(() => {
+    if (tab === 'actions') {
+      const total = actionsList.length;
+      const top = Math.min(LEDGER_TOP_N, total);
+      if (total === 0) return 'LEDGER · INBOX · AUCUNE ACTION OUVERTE';
+      return `LEDGER · INBOX · TOP ${top} PAR IMPACT`;
+    }
+    if (tab === 'alerts') return 'LEDGER · ALERTES SYSTÈME';
+    return 'LEDGER · HISTORIQUE 7 JOURS';
+  }, [tab, actionsList.length]);
 
   return (
     <Drawer
       open={open}
       onClose={onClose}
       title="Centre d'actions"
-      className="max-w-[400px]"
+      className="max-w-[440px]"
       noPadding
     >
       <div className="flex flex-col h-full">
+        {/* Mini-hero LEDGER (kicker + intent) */}
+        <div
+          className="px-3 py-2 border-b border-slate-200 bg-white"
+          data-testid="ledger-mini-hero"
+        >
+          <p className="font-mono uppercase tracking-[0.07em] text-[10.5px] text-slate-500">
+            {ledgerKicker}
+          </p>
+          {tab === 'actions' && actionsList.length > 0 && (
+            <p className="text-[12.5px] mt-1 text-slate-700 leading-snug">
+              Priorité → Impact → Action → Suivi. Données <Term acronyme="EMS" /> +{' '}
+              <Term acronyme="CRE" />.
+            </p>
+          )}
+        </div>
+
+        {/* Tabs nav */}
         <nav className="flex border-b border-slate-200 bg-white" role="tablist">
           {TAB_KEYS.map((key) => {
             const cfg = TABS[key];
@@ -363,13 +537,27 @@ export default function ActionCenterSlideOver({ open, onClose, defaultTab = 'act
             );
           })}
         </nav>
-        <div className="flex-1 overflow-y-auto p-2">{renderList()}</div>
-        <footer className="border-t border-slate-200 p-2 bg-slate-50/50">
+
+        {/* Liste */}
+        <div className="flex-1 overflow-y-auto p-3">{renderList()}</div>
+
+        {/* Footer Sol — SolPageFooter compact + lien CTA route complète */}
+        <footer
+          className="border-t border-slate-200 px-3 py-2 bg-slate-50/50"
+          data-testid="ledger-footer"
+        >
+          <SolPageFooter
+            source="ActionCenter + Anomalies + Bill-Intel"
+            confidence="medium"
+            updatedAt={new Date().toISOString()}
+            methodologyUrl="/methodologie/anomalies"
+            className="mt-0 pt-0 border-t-0"
+          />
           <button
             onClick={() => navigateAndClose('/anomalies')}
-            className="w-full text-center text-xs text-blue-600 hover:text-blue-700 hover:underline py-1.5"
+            className="w-full text-center text-xs text-blue-600 hover:text-blue-700 hover:underline py-1.5 mt-1"
           >
-            Voir tout l'historique →
+            Ouvrir le centre d'action complet →
           </button>
         </footer>
       </div>
