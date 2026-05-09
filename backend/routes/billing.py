@@ -1513,6 +1513,33 @@ async def import_invoice_pdf(
 # ========================================
 
 
+# Phase L18.2 — Mapping cardinal R19→R31 codes → titres FR pour UI AnomaliesPage
+# (avant L18.2 : R19→R31 invisibles UI, P0 BLOCKER #2 audit Phase L17 reviewer #2).
+_R_CODES_TITLE_FR: dict[str, str] = {
+    "R19": "VNU dormant facturé sans usage",
+    "R20": "Variance capacité TURPE > seuil",
+    "R21": "CTA divergente vs taux réglementaire",
+    "R22": "Accise élec erronée (catégorie T1/T2/HP)",
+    "R23": "TURPE facturé en double même période",
+    "R24": "TVA appliquée à mauvais taux",
+    "R25": "Abonnement divergent vs contrat",
+    "R26": "Total facture ≠ Σ lignes (cohérence)",
+    "R27": "Conso facturée vs MeterReading divergente",
+    "R28": "Prix unitaire énergie divergent contrat",
+    "R29": "Chevauchement ou trou période facturation",
+    "R30": "Période facturée hors fenêtre contractuelle",
+    "R31": "Doublons accise/CSPE/TICFE intra-facture",
+}
+
+# Mapping severity bill_anomaly → AnomaliesPage UI (lowercase → UPPERCASE).
+# critical/warning/info BillAnomaly Enum → CRITICAL/HIGH/MEDIUM AnomaliesPage SEV_LABEL.
+_BA_SEVERITY_UI_MAP: dict[str, str] = {
+    "critical": "CRITICAL",
+    "warning": "HIGH",
+    "info": "MEDIUM",
+}
+
+
 @router.get("/anomalies-scoped")
 def get_billing_anomalies_scoped(
     request: Request,
@@ -1520,7 +1547,25 @@ def get_billing_anomalies_scoped(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """BillingInsights OPEN de l'org → format Patrimoine anomalies pour AnomaliesPage."""
+    """BillingInsights OPEN + BillAnomaly R19→R31 de l'org → format AnomaliesPage.
+
+    Phase L18.2 audit fix P0 CARDINAL — union des 2 sources d'anomalies billing :
+    - BillingInsight legacy (R1/R10/R13/R14 V66 + insights libres)
+    - BillAnomaly R19→R31 Phase L1→L17 (13 règles cardinales, peuplées Phase L17.1)
+
+    Avant L18.2 : seul BillingInsight remonté → R19→R31 invisibles UI (P0 BLOCKER #2
+    audit Phase L17 reviewer #2). Marie DAF / Jean-Marc CFO ne voyaient pas les
+    nouvelles anomalies cardinales (ROI 18-55 k€/an cumulé).
+
+    Après L18.2 : union backend, pas de changement frontend nécessaire (Option B
+    backward compat). Schema cible AnomaliesPage : title_fr, severity (UPPERCASE),
+    business_impact, priority_score, framework, site_id, site_nom.
+
+    Dedup éventuel : insight_id préfixé `BI:` pour BillingInsight, `BA:` pour
+    BillAnomaly → distingue les 2 sources même si même invoice.
+    """
+    from models import BillAnomaly
+
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     insights = (
         _org_sites_query(db, BillingInsight, effective_org_id)
@@ -1529,11 +1574,29 @@ def get_billing_anomalies_scoped(
         .all()
     )
 
-    # Fix N+1 : charger tous les sites en une seule requête
-    site_ids = list({i.site_id for i in insights})
-    sites_map = {s.id: s for s in db.query(Site).filter(Site.id.in_(site_ids)).all()} if site_ids else {}
+    # Phase L18.2 — fetch BillAnomaly R19→R31 via JOIN EnergyInvoice → Site → Org
+    bill_anomalies = (
+        db.query(BillAnomaly, EnergyInvoice.site_id)
+        .join(EnergyInvoice, BillAnomaly.invoice_id == EnergyInvoice.id)
+        .join(Site, EnergyInvoice.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(
+            EntiteJuridique.organisation_id == effective_org_id,
+            BillAnomaly.deleted_at.is_(None),
+            BillAnomaly.resolved_at.is_(None),  # OPEN seulement
+        )
+        .all()
+    )
+
+    # Fix N+1 cumul : 1 SELECT pour TOUS les sites concernés (BillingInsight + BillAnomaly)
+    insight_site_ids = {i.site_id for i in insights}
+    ba_site_ids = {row[1] for row in bill_anomalies}
+    all_site_ids = list(insight_site_ids | ba_site_ids)
+    sites_map = {s.id: s for s in db.query(Site).filter(Site.id.in_(all_site_ids)).all()} if all_site_ids else {}
 
     anomalies = []
+    # BillingInsight legacy (V66)
     for i in insights:
         site = sites_map.get(i.site_id)
         anomalies.append(
@@ -1548,9 +1611,35 @@ def get_billing_anomalies_scoped(
                 "framework": "FACTURATION",
                 "site_id": i.site_id,
                 "site_nom": site.nom if site else f"Site {i.site_id}",
-                "insight_id": i.id,
+                "insight_id": f"BI:{i.id}",  # Phase L18.2 préfixé pour distinction source
             }
         )
+
+    # Phase L18.2 — BillAnomaly R19→R31 cardinal
+    for ba, site_id in bill_anomalies:
+        site = sites_map.get(site_id)
+        sev_ui = _BA_SEVERITY_UI_MAP.get(ba.severity, "MEDIUM")
+        details = ba.details_json or {}
+        montant = details.get("montant_anomalie_eur", 0) or 0
+        regulatory_ref = details.get("regulatory_ref", "")
+        anomalies.append(
+            {
+                "code": ba.code,
+                "severity": sev_ui,
+                "title_fr": _R_CODES_TITLE_FR.get(ba.code, f"Anomalie {ba.code}"),
+                "detail_fr": regulatory_ref or _R_CODES_TITLE_FR.get(ba.code, ""),
+                "fix_hint_fr": f"Vérifier la facture #{ba.invoice_id} dans le module Facturation.",
+                "business_impact": {"estimated_risk_eur": float(montant)},
+                "priority_score": 90 if sev_ui == "CRITICAL" else 70 if sev_ui == "HIGH" else 50,
+                "framework": "FACTURATION",
+                "site_id": site_id,
+                "site_nom": site.nom if site else f"Site {site_id}",
+                "insight_id": f"BA:{ba.id}",  # Phase L18.2 préfixé pour distinction source
+            }
+        )
+
+    # Sort cardinal : priority_score DESC puis estimated_risk_eur DESC
+    anomalies.sort(key=lambda a: (-a["priority_score"], -a["business_impact"]["estimated_risk_eur"]))
 
     return {"anomalies": anomalies, "count": len(anomalies)}
 

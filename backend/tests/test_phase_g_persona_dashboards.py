@@ -2232,9 +2232,13 @@ class TestPhaseGP1FixesSourceGuards:
 
         from doctrine.constants import _load_yaml_or_fallback
 
-        # Cas 1 nominal — YAML key valide → retourne valeur YAML
+        # Cas 1 nominal — YAML key valide → retourne valeur YAML (lue dynamiquement).
+        # Phase L18.1 audit fix : ne hardcode plus 130.0 (cohérent test_l15_1).
+        from config.regulatory_sources_loader import get_term_value as _gtv
+
+        yaml_value = float(_gtv("PRICE_ELEC_ETI_2026_EUR_PER_MWH"))
         result_ok = _load_yaml_or_fallback("PRICE_ELEC_ETI_2026_EUR_PER_MWH", fallback=999.0)
-        assert result_ok == 130.0  # YAML SoT actuel — pas le fallback 999
+        assert result_ok == yaml_value  # YAML SoT actuel — pas le fallback 999
 
         # Cas 2 branche except — YAML key inexistante → fallback + warning log
         with caplog.at_level(logging.WARNING, logger="doctrine.constants"):
@@ -2268,6 +2272,40 @@ class TestPhaseGP1FixesSourceGuards:
         # Réponse audit expose le compte R19→R31
         assert '"bill_anomalies_r19_r31_count":' in src
 
+    def test_l18_2_billing_anomalies_scoped_unions_bill_anomaly(self):
+        """L18.2 audit fix P0 CARDINAL — /billing/anomalies-scoped UNIONS BillingInsight
+        legacy + BillAnomaly R19→R31 (pilot-ready frontend wiring).
+
+        Avant L18.2 : R19→R31 invisibles UI même après Phase L17.1 câblage backend
+        (P0 BLOCKER #2 audit Phase L17 reviewer #2). Marie DAF / Jean-Marc CFO ne
+        voyaient pas ROI 18-55 k€/an cumulé.
+
+        Après L18.2 : 13 codes mappés vers schema AnomaliesPage avec :
+        - title_fr canonique (dict _R_CODES_TITLE_FR)
+        - severity UPPERCASE remap (lowercase → CRITICAL/HIGH/MEDIUM)
+        - business_impact.estimated_risk_eur depuis details_json
+        - site_id / site_nom via JOIN cardinal
+        - priority_score heuristique
+        - insight_id préfixé `BI:`/`BA:` pour distinction source
+        """
+        from pathlib import Path
+
+        src = (Path(__file__).resolve().parent.parent / "routes" / "billing.py").read_text(encoding="utf-8")
+        # Mapping cardinal R19→R31 → titres FR
+        assert "_R_CODES_TITLE_FR" in src
+        for code in ["R19", "R20", "R21", "R22", "R23", "R24", "R25", "R26", "R27", "R28", "R29", "R30", "R31"]:
+            assert f'"{code}":' in src, f"Mapping R-code manquant : {code}"
+        # Severity remap
+        assert "_BA_SEVERITY_UI_MAP" in src
+        assert '"critical": "CRITICAL"' in src
+        assert '"warning": "HIGH"' in src
+        # Union BillAnomaly fetched
+        assert "from models import BillAnomaly" in src
+        assert "db.query(BillAnomaly, EnergyInvoice.site_id)" in src
+        # Distinction source via préfixe
+        assert '"insight_id": f"BI:' in src
+        assert '"insight_id": f"BA:' in src
+
     def test_l17_2_anomalies_endpoint_has_rate_limit(self):
         """L17.2 audit fix P1 BLOCKER #3 — endpoint /anomalies protégé par rate-limit
         (avant : aucun throttling, scraping cross-tenant possible en pilote).
@@ -2277,6 +2315,9 @@ class TestPhaseGP1FixesSourceGuards:
         src = (Path(__file__).resolve().parent.parent / "routes" / "bill_intelligence.py").read_text(encoding="utf-8")
         assert "from middleware.rate_limit import check_rate_limit" in src
         assert 'check_rate_limit(request, key_prefix="bill_anomalies"' in src
+        # Phase L18.1 audit fix : assert valeurs numériques (avant : seulement présence)
+        assert "max_requests=60" in src
+        assert "window_seconds=60" in src
 
     def test_l15_1_doctrine_constants_loads_yaml_sot_no_hardcode(self):
         """L15.1 audit fix P1 — doctrine/constants.py PRICE_ELEC_ETI_2026_EUR_PER_MWH

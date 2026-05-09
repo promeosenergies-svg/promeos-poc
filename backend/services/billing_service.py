@@ -41,6 +41,7 @@ from config.default_prices import (
     get_default_price,
 )
 from services.contrat_coherence import DEFAULT_POIDS_HP, DEFAULT_POIDS_HC
+from services.bill_intelligence import detect_anomalies_for_invoice  # Phase L18.1 — module-level (no circular)
 
 
 # ========================================
@@ -1070,16 +1071,15 @@ def audit_invoice_full(db: Session, invoice_id: int) -> Dict[str, Any]:
     anomalies = run_anomaly_engine(invoice, lines, contract, db)
     insights = persist_insights(db, invoice, anomalies)
 
-    # Phase L17.1 — pipeline R19→R31 cardinal (résilience par-règle interne)
+    # Phase L17.1 — pipeline R19→R31 cardinal (résilience par-règle interne).
+    # Phase L18.1 audit fix : utilise `logger` module-level (ligne 18) au lieu
+    # de `logging.getLogger(__name__)` inline ; import `detect_anomalies_for_invoice`
+    # déplacé en module-level (ligne ~30, vérification grep absence circular).
     bill_anomalies_r19_r31 = []
     try:
-        from services.bill_intelligence import detect_anomalies_for_invoice
-
         bill_anomalies_r19_r31 = detect_anomalies_for_invoice(invoice, db)
     except Exception as e:
-        import logging
-
-        logging.getLogger(__name__).error(
+        logger.error(
             "Pipeline R19→R31 failed for invoice %s: %s — legacy pipeline unaffected",
             invoice_id,
             e,
