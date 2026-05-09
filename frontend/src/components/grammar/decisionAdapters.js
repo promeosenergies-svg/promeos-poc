@@ -37,6 +37,28 @@ export function toDecSeverity(level) {
 }
 
 /**
+ * Variante BRIEFING — tonalité calme premium (vision Amine 09/05 :
+ * "moins rouge, moins bruyant, plus premium ; le produit murmure").
+ *
+ * Utilisée sur Cockpit Briefing où l'audience est l'energy manager / DAF
+ * en revue quotidienne — TROP de cards critiques en rouge cassent le
+ * principe "voici la décision juste, pas l'alerte".
+ *
+ * Convention BRIEFING :
+ *   critical → warning  (ambré ; le rouge est réservé aux exceptions vraies)
+ *   high     → warning  (ambré)
+ *   medium   → warning  (ambré)
+ *   low      → neutral
+ *
+ * @param {string} level
+ * @returns {'warning' | 'neutral'}
+ */
+export function toDecSeverityBriefing(level) {
+  if (level === 'critical' || level === 'high' || level === 'medium') return 'warning';
+  return 'neutral';
+}
+
+/**
  * Construit 4 cellules evidence par défaut quand le backend ne fournit pas
  * un payload `evidence_cells` enrichi. Garantit le contrat L9 (4 minimum).
  *

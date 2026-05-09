@@ -44,10 +44,11 @@ import KpiSkeleton from '../components/cockpit/KpiSkeleton';
 // Sprint Grammaire v1 Phase 2 BRIEFING — primitifs Sol v1.1 doctrine §5
 import { DecisionEvidenceCard, SolPageFooter, Term } from '../components/grammar';
 // Phase 3.0 P2 — adaptateurs canoniques action→DEC (SoT cross-vues)
+// Phase 3.1 — toDecSeverityBriefing pour tonalité calme BRIEFING (audit UI 09/05)
 import {
   buildEvidenceFallback,
   priorityLabel as decPriorityLabel,
-  toDecSeverity,
+  toDecSeverityBriefing,
 } from '../components/grammar/decisionAdapters';
 import { getCockpitPriorities } from '../services/api/cockpit';
 import { useScope } from '../contexts/ScopeContext';
@@ -1268,25 +1269,31 @@ export default function CockpitPilotage() {
   const scopeLabel = `${orgName}${sitesCount ? ` — ${sitesCount} sites` : ''}`;
 
   /**
-   * Architecture BRIEFING (Sprint Grammaire v1 Phase 2.X reconstruction LEGO 09/05) :
+   * Architecture BRIEFING (Sprint Grammaire v1 Phase 3.1 visual refonte 09/05) :
    *
-   *   1. SITUATION  → SolKickerWithSwitch + H1 Fraunces + sous-ligne mono Term EMS
-   *   2. SITUATION  → narrative briefing 60 mots (chiffres clés)
-   *   3. CONTEXTE   → boutons alertes + Centre d'action (raccourcis)
-   *   4. RISQUE     → 3 KPI hero (KpiTriptyqueEnergetique : J−1 / mois DJU / pic kW)
-   *   5. DÉCISION   → Top 3 DecisionEvidenceCard ranked par impact € (cardinal)
-   *   6. PREUVE     → 2 visuels glanceables (ConsoSevenDaysBars + CourbeChargeJMinus1)
-   *   7. DRILL-DOWN → File P1-P5 détaillée (vue exhaustive)
-   *   8. PROVENANCE → SolPageFooter SCM (Source · Confiance · Mis à jour)
+   *   1. SITUATION       → SolKickerWithSwitch + H1 Fraunces + sous-ligne mono Term EMS
+   *   2. NARRATIVE       → 60 mots chiffrés (priorités + exposition + sources)
+   *   3. CONTEXTE        → boutons alertes + Centre d'action (raccourcis)
+   *   4. DÉCISION        → Top 3 DecisionEvidenceCard ranked par impact € (CARDINAL)
+   *                        Tonalité calme via toDecSeverityBriefing (critical → warning)
+   *   5. PREUVE TECHNIQUE → KpiTriptyqueEnergetique + 2 visuels glanceables
+   *   6. DRILL-DOWN      → File P1-P5 détaillée (vue exhaustive)
+   *   7. PROVENANCE      → SolPageFooter SCM (Source · Confiance · Mis à jour)
+   *
+   * Phase 3.1 changement narratif : DÉCISIONS remontées AVANT la preuve
+   * technique (KPI/visuels) — réponse à audit UI Phase 3d "page commence par
+   * grille KPI" (anti-pattern §6.1) + vision "le produit murmure la décision
+   * juste, pas l'alerte".
    *
    * Briques conservées (Lego intactes) : SolKickerWithSwitch, useCockpitFacts,
    * getCockpitPriorities, KpiTriptyqueEnergetique, ConsoSevenDaysBars,
    * CourbeChargeJMinus1, FileTraitement.
    *
    * Briques nouvelles (primitifs Sol grammar/) : DecisionEvidenceCard, Term,
-   * SolPageFooter — primitifs Phase 1 industrialisés.
+   * SolPageFooter — primitifs Phase 1 industrialisés. decisionAdapters SoT
+   * (toDecSeverityBriefing + buildEvidenceFallback + priorityLabel).
    *
-   * Tonalité : calme par défaut (rouge réservé aux décisions vraiment critiques).
+   * Tonalité : calme par défaut (rouge réservé aux exceptions vraies).
    */
   return (
     <div
@@ -1418,26 +1425,15 @@ export default function CockpitPilotage() {
       </header>
 
       {/* ──────────────────────────────────────────────────────────────────
-          4. RISQUE — Triptyque KPI temporel (état énergétique actuel)
-          ────────────────────────────────────────────────────────────────── */}
-      {factsLoading && !facts ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 my-4">
-          <KpiSkeleton variant="temporal" scaleLabel={SCALE_LABEL.medium} />
-          <KpiSkeleton variant="temporal" scaleLabel={SCALE_LABEL.short} />
-          <KpiSkeleton variant="temporal" scaleLabel={SCALE_LABEL.contract} />
-        </div>
-      ) : (
-        <KpiTriptyqueEnergetique facts={facts} />
-      )}
-
-      {/* ──────────────────────────────────────────────────────────────────
-          5. DÉCISION — Top 3 DecisionEvidenceCard cardinal BRIEFING
-          (Doctrine §5.6 Loi L9 : 4-8 cellules evidence par card,
-          enrichies backend `evidence_cells` + `lead` + `methodology_ref`.)
-          Remontée AVANT les visuels Phase 2.X — la décision prime sur la
-          preuve technique dans la narration BRIEFING.
-          Audit Phase 3.0 P0 : ErrorState anti-silent-fail si l'API priorities
-          échoue. Ne jamais afficher "0 décision" comme si tout allait bien.
+          4. DÉCISION — Top 3 DecisionEvidenceCard CARDINAL BRIEFING
+          Phase 3.1 (audit UI 09/05) : DEC remontées EN PREMIER après le
+          header narratif. Réponse à l'anti-pattern §6.1 "page commence par
+          grille KPI sans préambule" — désormais la page commence par les
+          DÉCISIONS à arbitrer (cardinal pour energy manager 30s).
+          Tonalité calme : `toDecSeverityBriefing()` mappe critical → warning
+          (ambré) — le rouge est réservé aux exceptions vraies.
+          (Doctrine §5.6 Loi L9 : 4-8 cellules evidence enrichies backend.)
+          Audit Phase 3.0 P0 : ErrorState anti-silent-fail si l'API échoue.
           ────────────────────────────────────────────────────────────────── */}
       {prioritiesError && !prioritiesLoading && (
         <section className="mb-4" data-testid="cockpit-jour-top-decisions-error">
@@ -1478,7 +1474,7 @@ export default function CockpitPilotage() {
                 rang={p.rank}
                 category={(p.category_label || p.domain || 'ACTION').toUpperCase()}
                 scope={p.scope_label || 'PORTEFEUILLE'}
-                severity={toDecSeverity(p.urgency)}
+                severity={toDecSeverityBriefing(p.urgency)}
                 titre={<>{p.title}</>}
                 lead={p.lead || ''}
                 evidence={
@@ -1500,8 +1496,22 @@ export default function CockpitPilotage() {
       )}
 
       {/* ──────────────────────────────────────────────────────────────────
-          6. PREUVE — 2 visuels glanceables (preuve technique)
+          5. PREUVE TECHNIQUE — Triptyque KPI temporel + 2 visuels glanceables
+          Phase 3.1 (audit UI 09/05) : descendus APRÈS les DÉCISIONS car ils
+          sont la PREUVE technique de la situation, pas le pitch initial.
+          Le triptyque KPI (Conso J-1 / mois DJU / pic kW) reste cardinal
+          pour l'energy manager qui veut le détail technique.
           ────────────────────────────────────────────────────────────────── */}
+      {factsLoading && !facts ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 my-4">
+          <KpiSkeleton variant="temporal" scaleLabel={SCALE_LABEL.medium} />
+          <KpiSkeleton variant="temporal" scaleLabel={SCALE_LABEL.short} />
+          <KpiSkeleton variant="temporal" scaleLabel={SCALE_LABEL.contract} />
+        </div>
+      ) : (
+        <KpiTriptyqueEnergetique facts={facts} />
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
         <ConsoSevenDaysBars
           lastUpdate={lastUpdateRel}
