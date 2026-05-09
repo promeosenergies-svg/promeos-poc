@@ -56,6 +56,13 @@ def _load_yaml_int_or_fallback(key: str, fallback: int) -> int:
     éviter la troncation silencieuse de valeurs YAML décimales (ex. `1499.9`
     → `1500` au lieu de `1499`). Triangle complet float/int/str du pattern
     SoT mirror PROMEOS.
+
+    Phase L27.1 audit fix P2 — Attention : Python 3 utilise le banker's
+    rounding (round half to even) — `round(0.5)=0` et non 1. Acceptable pour
+    les constantes réglementaires entières strictes (toutes valeurs YAML
+    actuelles sont int). Si une valeur YAML demi-entière apparaît (ex.
+    `2500.5`), introduire une assertion ou `math.ceil()` explicite côté
+    appelant — ne pas modifier ce helper sans audit P0.
     """
     return int(round(_load_yaml_or_fallback(key, float(fallback))))
 
@@ -376,7 +383,9 @@ __all__ = [
     "OPERAT_ANNEXE_I_SOUS_CATEGORIES_COUNT",
     "APER_DEADLINE_SMALL_PARKING_DATE",
     "APER_DEADLINE_LARGE_PARKING_DATE",
+    "APER_PARKING_MIN_SURFACE_M2",
     "APER_PARKING_LARGE_SURFACE_M2",
+    "APER_PENALTY_EUR_PER_M2_PER_YEAR",
     "APER_SOLAR_RATIO_PCT",
     "VNU_DATE_APPLICATION",
     "VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH",

@@ -59,6 +59,46 @@ def test_sg_reg_const_01_co2_factor_gaz_matches_emission_factors():
     assert yaml_val == py_val, f"Divergence CO2 gaz : YAML={yaml_val} vs Python={py_val}"
 
 
+def test_sg_reg_const_01_co2_factor_gaz_matches_doctrine_constants():
+    """Phase L27.1 audit fix P1 — Ferme la chaîne mirror FR/EN.
+
+    Le mapping `CO2_FACTOR_GAZ_NATUREL_KGCO2_PER_KWH` (YAML, convention FR) →
+    `CO2_FACTOR_GAS_KGCO2_PER_KWH` (Python, convention EN) est implicite via
+    le lazy-load Phase L26.1. Ce test rend la traçabilité explicite et
+    empêche tout drift de mapping silencieux (renommage YAML ou Python).
+    """
+    from doctrine.constants import CO2_FACTOR_GAS_KGCO2_PER_KWH
+
+    yaml_val = _yaml_value("CO2_FACTOR_GAZ_NATUREL_KGCO2_PER_KWH")
+    assert yaml_val == CO2_FACTOR_GAS_KGCO2_PER_KWH, (
+        f"Divergence mapping FR/EN CO2_GAZ : YAML CO2_FACTOR_GAZ_NATUREL_KGCO2_PER_KWH={yaml_val} "
+        f"vs doctrine.constants.CO2_FACTOR_GAS_KGCO2_PER_KWH={CO2_FACTOR_GAS_KGCO2_PER_KWH}. "
+        f"Mapping FR(YAML)→EN(Python) cardinal — synchroniser les 2 sources."
+    )
+
+
+def test_sg_reg_const_01_co2_factor_elec_matches_doctrine_constants():
+    """Phase L27.1 audit fix P1 — Ferme la chaîne mirror CO2 elec doctrine."""
+    from doctrine.constants import CO2_FACTOR_ELEC_KGCO2_PER_KWH
+
+    yaml_val = _yaml_value("CO2_FACTOR_ELEC_KGCO2_PER_KWH")
+    assert yaml_val == CO2_FACTOR_ELEC_KGCO2_PER_KWH, (
+        f"Divergence CO2 elec doctrine : YAML={yaml_val} vs "
+        f"doctrine.constants.CO2_FACTOR_ELEC_KGCO2_PER_KWH={CO2_FACTOR_ELEC_KGCO2_PER_KWH}."
+    )
+
+
+def test_sg_reg_const_01_co2_factor_gnl_matches_doctrine_constants():
+    """Phase L27.1 audit fix P1 — Ferme la chaîne mirror CO2 GNL doctrine."""
+    from doctrine.constants import CO2_FACTOR_GNL_KGCO2_PER_KWH
+
+    yaml_val = _yaml_value("CO2_FACTOR_GNL_KGCO2_PER_KWH")
+    assert yaml_val == CO2_FACTOR_GNL_KGCO2_PER_KWH, (
+        f"Divergence CO2 GNL doctrine : YAML={yaml_val} vs "
+        f"doctrine.constants.CO2_FACTOR_GNL_KGCO2_PER_KWH={CO2_FACTOR_GNL_KGCO2_PER_KWH}."
+    )
+
+
 # ─── SG_REG_CONST_02 : pénalités compliance ─────────────────────────────────
 
 

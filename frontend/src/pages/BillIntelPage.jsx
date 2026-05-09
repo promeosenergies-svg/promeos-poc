@@ -31,6 +31,9 @@ import SolNarrativeText from '../ui/sol/SolNarrativeText';
 // Sprint 2 Vague B ét8' — HOC SolBriefingHead/Footer factorise grammaire §5.
 import SolBriefingHead from '../ui/sol/SolBriefingHead';
 import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
+// Sprint Grammaire v1 Phase 3.3 LEDGER — primitifs Sol v1.1 doctrine §5.6
+import { DecisionEvidenceCard, Term } from '../components/grammar';
+import { toDecSeverityBriefing } from '../components/grammar/decisionAdapters';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 import { scopeKicker } from '../utils/format';
 import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
@@ -333,6 +336,18 @@ export default function BillIntelPage() {
       (max, i) => (i.estimated_loss_eur > max.estimated_loss_eur ? i : max),
       active[0]
     );
+  }, [allInsights]);
+
+  // Sprint Grammaire v1 Phase 3.3 LEDGER — top 3 anomalies par impact € pour
+  // remplacer le bloc topInsight hero (1 seule anomalie) par 3 DecisionEvidenceCard
+  // ranked. Vision LEDGER : "priorité → impact → action → suivi".
+  const top3Insights = useMemo(() => {
+    const active = allInsights
+      .filter(isActiveInsight)
+      .filter((i) => (i.estimated_loss_eur || 0) > 0);
+    return [...active]
+      .sort((a, b) => (b.estimated_loss_eur || 0) - (a.estimated_loss_eur || 0))
+      .slice(0, 3);
   }, [allInsights]);
 
   const [billingTrend, setBillingTrend] = useState(null);
@@ -918,70 +933,94 @@ export default function BillIntelPage() {
         />
       )}
 
-      {/* Top anomalie — hero card.
-          Sprint 1.5bis P1 (audit a11y) : <div onClick> → role="button" tabIndex
-          + keyboard handler Enter/Space + tokens warm Sol refuse (palette §6.2). */}
-      {topInsight && (
-        <div
-          className="flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-refuse-fg)]"
-          style={{
-            background: 'var(--sol-refuse-bg)',
-            borderColor: 'var(--sol-refuse-line)',
-          }}
-          onClick={() => setDrawerInsightId(topInsight.id)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              setDrawerInsightId(topInsight.id);
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          aria-label={`Anomalie prioritaire : ${topInsight.message}, écart estimé ${topInsight.estimated_loss_eur.toLocaleString('fr-FR')} euros`}
-          data-testid="top-anomaly-hero"
-        >
-          <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-            style={{
-              background: 'var(--sol-refuse-bg)',
-              border: '1px solid var(--sol-refuse-line)',
-            }}
+      {/* Sprint Grammaire v1 Phase 3.3 LEDGER — Top 3 anomalies à arbitrer.
+          Doctrine §5.6 Loi L9 : DecisionEvidenceCard par anomalie (rang/scope/
+          severity/evidence[4]). Remplace l'ancien topInsight hero (1 seule
+          card rouge) par 3 DEC ambré calme reconstruites en Lego.
+          Mapping insight → DEC via helper local _decFromInsight (extrait
+          metrics_json + traduit type → catégorie FR).
+          Tonalité calme via toDecSeverityBriefing (critical → warning ambré). */}
+      {top3Insights.length > 0 && (
+        <section className="mb-4" data-testid="bill-intel-top-decisions">
+          <h2
+            className="font-mono uppercase tracking-[0.07em] mb-2"
+            style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
           >
-            <AlertTriangle size={20} style={{ color: 'var(--sol-refuse-fg)' }} />
+            Top {top3Insights.length} anomalie{top3Insights.length > 1 ? 's' : ''} factures à
+            arbitrer
+          </h2>
+          <div className="grid grid-cols-1 gap-3">
+            {top3Insights.map((insight, idx) => {
+              const rang = idx + 1;
+              const impactEur = insight.estimated_loss_eur || 0;
+              const typeLabel = TYPE_LABELS[insight.type] || insight.type || 'Anomalie';
+              const sevBriefing = toDecSeverityBriefing(insight.severity);
+              return (
+                <div
+                  key={insight.id}
+                  onClick={() => setDrawerInsightId(insight.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setDrawerInsightId(insight.id);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Anomalie facture rang ${rang} — ouvrir le détail`}
+                  className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sol-attention-fg)] rounded-xl"
+                >
+                  <DecisionEvidenceCard
+                    rang={rang}
+                    category={String(typeLabel).toUpperCase()}
+                    scope={(insight.site_label || 'PORTEFEUILLE').toUpperCase()}
+                    severity={sevBriefing}
+                    titre={<SolNarrativeText text={insight.message} />}
+                    lead={`Détectée par le moteur shadow billing PROMEOS sur ${insight.site_label || 'le périmètre'}. Estimation à contester auprès du fournisseur ${insight.supplier || 'concerné'}.`}
+                    evidence={[
+                      {
+                        label: 'ÉCART ESTIMÉ',
+                        value: impactEur.toLocaleString('fr-FR'),
+                        unit: '€',
+                        helper: 'à contester',
+                      },
+                      {
+                        label: 'TYPE',
+                        value: typeLabel,
+                        unit: '',
+                        helper: 'détection',
+                      },
+                      {
+                        label: 'SITE',
+                        value: insight.site_label || 'Portefeuille',
+                        unit: '',
+                        helper: '',
+                      },
+                      {
+                        label: 'STATUT',
+                        value:
+                          insight.insight_status === 'ack'
+                            ? 'Pris en charge'
+                            : insight.insight_status === 'resolved'
+                              ? 'Résolu'
+                              : insight.insight_status === 'false_positive'
+                                ? 'Faux positif'
+                                : 'À traiter',
+                        unit: '',
+                        helper: insight.supplier || '',
+                      },
+                    ]}
+                    primaryCta={{
+                      label: 'Voir le dossier →',
+                      href: `#insight-${insight.id}`,
+                    }}
+                    methodologyRef="/methodologie/bill-intel"
+                  />
+                </div>
+              );
+            })}
           </div>
-          <div className="flex-1 min-w-0">
-            <p
-              className="text-xs font-medium uppercase tracking-wide"
-              style={{ color: 'var(--sol-refuse-fg)' }}
-            >
-              Anomalie prioritaire
-            </p>
-            <p
-              className="text-sm font-semibold mt-0.5 truncate"
-              style={{ color: 'var(--sol-ink-900)' }}
-            >
-              {/* Phase 20.A : auto-tooltipage TURPE/CTA/ATRD/TVA/GRDF dans
-                  les messages d'anomalie (audit Phase 17 jargon P0). */}
-              <SolNarrativeText text={topInsight.message} />
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--sol-ink-500)' }}>
-              {TYPE_LABELS[topInsight.type] || topInsight.type}
-              {topInsight.site_label && ` · ${topInsight.site_label}`}
-            </p>
-          </div>
-          <div className="text-right shrink-0">
-            <p
-              className="font-mono font-semibold tabular-nums"
-              style={{ fontSize: '1.25rem', color: 'var(--sol-refuse-fg)' }}
-            >
-              {topInsight.estimated_loss_eur.toLocaleString('fr-FR')} €
-            </p>
-            <p className="text-xs" style={{ color: 'var(--sol-ink-500)' }}>
-              écart estimé
-            </p>
-          </div>
-          <ArrowRight size={16} className="shrink-0" style={{ color: 'var(--sol-refuse-fg)' }} />
-        </div>
+        </section>
       )}
 
       {/* Insights with workflow filter */}
