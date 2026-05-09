@@ -71,7 +71,10 @@ PRIMARY_ENERGY_COEF_GAS = 1.0
 # ─── Décret Tertiaire (Décret n°2019-771) ──────────────────────────────────
 # IMPORTANT : aucun jalon 2026. Les jalons réglementaires sont 2030/2040/2050.
 DT_MILESTONES = {2030: -0.40, 2040: -0.50, 2050: -0.60}
-DT_PENALTY_EUR = 7500
+# Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded sans
+# mirror YAML → drift silencieux si décret modifie sanction). Mapping nom
+# Python DT_PENALTY_EUR → YAML COMPLIANCE_DT_PENALTY_EUR.
+DT_PENALTY_EUR: int = int(_load_yaml_or_fallback("COMPLIANCE_DT_PENALTY_EUR", fallback=7500))
 DT_PENALTY_AT_RISK_EUR = 3750
 DT_REF_YEAR_DEFAULT = 2020  # année de référence par défaut pour la baseline
 
@@ -83,10 +86,18 @@ DT_REF_YEAR_DEFAULT = 2020  # année de référence par défaut pour la baseline
 #   - COMPLIANCE_BACS_PENALTY_EUR (1500 EUR/an/site — Décret 2020-887 art. R175-7)
 # Doublon valeur 1500€ avec OPERAT_PENALTY_EUR : sources distinctes confirmées
 # (BACS = art. R175-7 vs OPERAT = Circulaire DGEC 2024 + Décret 2019-771 art. 6).
-BACS_PENALTY_EUR = (
-    1500  # amende par site non conforme BACS — voir sources_reglementaires.yaml:COMPLIANCE_BACS_PENALTY_EUR
-)
-BACS_THRESHOLD_KW_INITIAL = 290  # seuil BACS bâtiments neufs Décret 2020-887 (en vigueur depuis 01/01/2025)
+# Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded sans
+# mirror YAML → drift silencieux si décret modifie sanction). Mapping nom
+# Python BACS_PENALTY_EUR → YAML COMPLIANCE_BACS_PENALTY_EUR.
+BACS_PENALTY_EUR: int = int(
+    _load_yaml_or_fallback("COMPLIANCE_BACS_PENALTY_EUR", fallback=1500)
+)  # amende par site non conforme BACS — voir sources_reglementaires.yaml:COMPLIANCE_BACS_PENALTY_EUR
+# Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded sans
+# mirror YAML → drift silencieux si décret modifie seuil 2025). Mapping nom
+# Python BACS_THRESHOLD_KW_INITIAL → YAML BACS_THRESHOLD_KW_2025.
+BACS_THRESHOLD_KW_INITIAL: int = int(
+    _load_yaml_or_fallback("BACS_THRESHOLD_KW_2025", fallback=290)
+)  # seuil BACS bâtiments neufs Décret 2020-887 (en vigueur depuis 01/01/2025)
 # Phase L24.2 audit fix P1 — lazy-load YAML SoT (avant : hardcoded production-path
 # consommé par cascade_bacs_service.py:60 — drift silencieux scoring BACS si décret
 # futur modifie le seuil). Mapping nom Python EXISTING → YAML 2030.
@@ -102,9 +113,12 @@ BACS_DEADLINE_EXISTING = "2030-01-01"  # deadline équipement BACS bâtiments ex
 # Annexe I OPERAT (Arrêté 10/04/2020 NOR LOGL2005904A) = **426 sous-catégories**
 # organisées en ~9 grandes familles (PAS "9 typologies" comme parfois cité par
 # raccourci). Granularité réelle = 426 lignes — voir backend/config/operat_valeurs_absolues.yaml.
-OPERAT_PENALTY_EUR = (
-    1500  # amende par déclaration OPERAT manquante — voir sources_reglementaires.yaml:COMPLIANCE_OPERAT_PENALTY_EUR
-)
+# Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded sans
+# mirror YAML → drift silencieux si circulaire DGEC modifie sanction).
+# Mapping nom Python OPERAT_PENALTY_EUR → YAML COMPLIANCE_OPERAT_PENALTY_EUR.
+OPERAT_PENALTY_EUR: int = int(
+    _load_yaml_or_fallback("COMPLIANCE_OPERAT_PENALTY_EUR", fallback=1500)
+)  # amende par déclaration OPERAT manquante — voir sources_reglementaires.yaml:COMPLIANCE_OPERAT_PENALTY_EUR
 # Deadline déclaration consommations N-1 = 30 septembre N (ADEME OPERAT — annuelle).
 # Phase D-4 Tier 4+ P2 fix audit code-reviewer : helper dynamique évite hardcode 2026-only.
 OPERAT_DECLARATION_DEADLINE = "2026-09-30"  # legacy alias (cohérent runtime à figer Phase E)
@@ -165,19 +179,34 @@ NEBCO_ACTIVATION_END_HOUR = "22:00"  # J
 
 # ─── Accises (février 2026+, JORFTEXT000053407616) ─────────────────────────
 # Taux selon catégorie AcciseCategorieElec (matrice v1 §4.6.B#16 ADR-D-05)
-ACCISE_ELEC_T1_EUR_PER_MWH = 30.85  # MENAGES_ASSIMILES
-ACCISE_ELEC_T2_EUR_PER_MWH = 26.58  # PME
+# Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded SANS mirror
+# alors que clé YAML existe — asymétrie SoT vs HP migré L24.2). Drift risk
+# silencieux si LFI 2027 modifie taux T1/T2.
+ACCISE_ELEC_T1_EUR_PER_MWH: float = _load_yaml_or_fallback(
+    "ACCISE_ELEC_T1_EUR_PER_MWH", fallback=30.85
+)  # MENAGES_ASSIMILES
+ACCISE_ELEC_T2_EUR_PER_MWH: float = _load_yaml_or_fallback("ACCISE_ELEC_T2_EUR_PER_MWH", fallback=26.58)  # PME
 # Phase L24.2 audit fix P1 — lazy-load YAML SoT (avant : hardcoded SANS clé YAML →
 # drift silencieux garanti si LFI modifie taux HP). Phase L24.2 a créé la clé YAML
 # `ACCISE_ELEC_HP_EUR_PER_MWH = 5.71` dans sources_reglementaires.yaml.
 ACCISE_ELEC_HP_EUR_PER_MWH: float = _load_yaml_or_fallback(
     "ACCISE_ELEC_HP_EUR_PER_MWH", fallback=5.71
 )  # HAUTE_PUISSANCE (>10 GWh/an industriel)
-ACCISE_GAS_EUR_PER_MWH = 10.73
+# Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded sans mirror
+# YAML → drift silencieux si LFI gaz modifie taux). Mapping nom Python
+# ACCISE_GAS → YAML ACCISE_GAZ (FR vs EN convention).
+ACCISE_GAS_EUR_PER_MWH: float = _load_yaml_or_fallback("ACCISE_GAZ_EUR_PER_MWH", fallback=10.73)
 
 # ─── Audit SMÉ ─────────────────────────────────────────────────────────────
-AUDIT_SME_THRESHOLD_GWH_PERIODIC = 2.75  # audit obligatoire tous les 4 ans
-AUDIT_SME_THRESHOLD_GWH_ISO50001 = 23.6  # ISO 50001 obligatoire
+# Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded sans
+# mirror YAML alors que les clés existent — drift silencieux si décret modifie
+# seuils). Clés YAML identiques.
+AUDIT_SME_THRESHOLD_GWH_PERIODIC: float = _load_yaml_or_fallback(
+    "AUDIT_SME_THRESHOLD_GWH_PERIODIC", fallback=2.75
+)  # audit obligatoire tous les 4 ans
+AUDIT_SME_THRESHOLD_GWH_ISO50001: float = _load_yaml_or_fallback(
+    "AUDIT_SME_THRESHOLD_GWH_ISO50001", fallback=23.6
+)  # ISO 50001 obligatoire
 # Phase L24.2 audit fix P1 — lazy-load YAML SoT (avant : hardcoded production-path
 # consommé par persona_dashboard_service.py:189 — drift silencieux dashboard si
 # YAML corrigé). Mapping nom Python AUDIT_SME_DEADLINE_DATE → YAML AUDIT_SME_DEADLINE_FIRST_AUDIT.
@@ -378,7 +407,12 @@ VNU_DATE_APPLICATION = "2026-01-01"
 VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH = 0.0
 """Tarif unitaire VNU 2026 = 0 EUR/MWh (status dormant — KB confirmé `reference_regulatory_landscape_2026_2050.md`)."""
 
-VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH = 78.0
+# Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded sans
+# mirror YAML alors que la clé existe — drift silencieux si CRE délibération
+# 2026-52 confirmée modifie seuil). Clé YAML identique.
+VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH: float = _load_yaml_or_fallback(
+    "VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH", fallback=78.0
+)
 """Seuil bas activation VNU si prix marché < seuil (CRE 2026-52 — pending verification)."""
 
 VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH = 110.0

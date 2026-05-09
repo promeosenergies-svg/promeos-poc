@@ -43,6 +43,13 @@ _DOMAIN_ALLOWLIST = frozenset(
 _DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _HTTPS_PREFIX = "https://"
 
+# Phase L25.1 audit fix P2 — allowlist positive (vs exemption inline ad-hoc).
+# Domaines exemptés de la contrainte source.url=https://... (paramètres
+# doctrinaux internes PROMEOS sans source réglementaire externe à citer).
+# Toute extension de cette frozenset doit être justifiée explicitement (audit
+# trail légal — cf. SG_REG_YAML_02 source.label requis pour ces clés).
+_URL_EXEMPT_DOMAINS = frozenset({"bill_intelligence"})
+
 
 def _load_yaml_data() -> dict:
     """Helper : charge le YAML via le loader canonical (assure cohérence test/runtime)."""
@@ -88,18 +95,17 @@ def test_sg_reg_yaml_02_source_label_not_empty():
 def test_sg_reg_yaml_03_source_url_https():
     """source.url doit commencer par https:// (lien vérifiable et sécurisé).
 
-    Phase L23.3 audit fix P1 — exemption domain `bill_intelligence` (paramètres
-    doctrinaux internes PROMEOS, pas de source réglementaire externe à citer).
-    Les ~34 clés BILL_ANOMALY_* + BILL_PRIORITY_SCORE_* Phase L7+L8+L9+L20+L22
-    sont des seuils heuristiques internes documentés via `legal_reference`
-    cardinal mais n'ont pas d'URL externe (cf. notes "Doctrine PROMEOS Phase L*").
+    Phase L25.1 audit fix P2 — exemption via allowlist positive
+    `_URL_EXEMPT_DOMAINS` (vs exemption inline). Les domaines listés
+    correspondent à des paramètres doctrinaux internes PROMEOS, pas de
+    source réglementaire externe à citer (cf. notes "Doctrine PROMEOS").
+    Toute extension future doit être justifiée via audit trail.
     """
     data = _load_yaml_data()
     offenders: list[str] = []
     for tid, term in data["terms"].items():
-        # Phase L23.3 — exempter le domain bill_intelligence (paramètres doctrinaux internes)
         domain = term.get("domain", "")
-        if domain == "bill_intelligence":
+        if domain in _URL_EXEMPT_DOMAINS:
             continue
         url = term.get("source", {}).get("url", "")
         if not isinstance(url, str) or not url.startswith(_HTTPS_PREFIX):
