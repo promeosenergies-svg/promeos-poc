@@ -37,13 +37,33 @@ from sqlalchemy.orm import Session
 from config.regulatory_sources_loader import get_term_value
 from models import (
     BillAnomaly,
+    EnergyContract,
     EnergyInvoice,
     EnergyInvoiceLine,
     Meter,
     PowerContract,
 )
+from models.enums import BillAnomalySeverity
 
 _logger = logging.getLogger(__name__)
+
+# Phase L8.2 — alias pour éviter répétition `BillAnomalySeverity.X.value`
+_SEV_CRITICAL = BillAnomalySeverity.CRITICAL.value
+_SEV_WARNING = BillAnomalySeverity.WARNING.value
+
+
+def _resolve_contract(invoice: EnergyInvoice) -> Optional[EnergyContract]:
+    """Phase L8.2 — Helper guard partagé R25/R28/R30 (audit code-reviewer reuse #5).
+
+    Pattern dupliqué 3x avant L8.2 : check `contract_id` puis `invoice.contract`.
+    Centralisation = 1 modification si lazy→joined load future.
+
+    Returns:
+        EnergyContract si invoice.contract_id non null ET relation chargée, sinon None.
+    """
+    if invoice.contract_id is None:
+        return None
+    return invoice.contract  # SQLAlchemy lazy-load 1er accès, identity map ensuite
 
 
 # ─── Helpers ────────────────────────────────────────────────────────────────
@@ -145,13 +165,15 @@ def detect_r19_vnu_dormant(invoice: EnergyInvoice, db: Session) -> Optional[Bill
 
     Retour : 0 ou 1 BillAnomaly (NON ajoutée à la session — caller responsable).
     """
+    from models.enums import InvoiceLineType
+
     threshold = Decimal(str(get_term_value("BILL_ANOMALY_VNU_DORMANT_THRESHOLD_EUR")))
 
     vnu_lines = (
         db.query(EnergyInvoiceLine)
         .filter(
             EnergyInvoiceLine.invoice_id == invoice.id,
-            EnergyInvoiceLine.line_type == "tax",
+            EnergyInvoiceLine.line_type == InvoiceLineType.TAX.value,
             or_(
                 EnergyInvoiceLine.label.ilike("%VNU%"),
                 EnergyInvoiceLine.label.ilike("%VERSEMENT NUCLEAIRE%"),
@@ -179,7 +201,7 @@ def detect_r19_vnu_dormant(invoice: EnergyInvoice, db: Session) -> Optional[Bill
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R19",
-        severity="warning",
+        severity=_SEV_WARNING,
         threshold_value=float(threshold),
         actual_value=float(vnu_total),
         details_json={
@@ -218,6 +240,7 @@ def detect_r20_capacity_variance(invoice: EnergyInvoice, db: Session) -> list[Bi
     # `.first()` retournait potentiellement le sous-compteur sans PowerContract,
     # produisant un `[]` silencieux sur sites multi-meter (faux négatifs R20).
     from models import EnergyVector
+    from models.enums import InvoiceLineType
 
     meter = (
         db.query(Meter)
@@ -258,7 +281,7 @@ def detect_r20_capacity_variance(invoice: EnergyInvoice, db: Session) -> list[Bi
         db.query(EnergyInvoiceLine)
         .filter(
             EnergyInvoiceLine.invoice_id == invoice.id,
-            EnergyInvoiceLine.line_type == "network",
+            EnergyInvoiceLine.line_type == InvoiceLineType.NETWORK.value,
             EnergyInvoiceLine.unit.ilike("%kVA%"),
         )
         .all()
@@ -291,7 +314,7 @@ def detect_r20_capacity_variance(invoice: EnergyInvoice, db: Session) -> list[Bi
 
         # Phase L8.1 — seuil critical YAML SoT (avant : threshold_pct × 2 implicite)
         critical_pct = float(get_term_value("BILL_ANOMALY_CAPACITY_VARIANCE_CRITICAL_PCT"))
-        severity = "critical" if variance_pct > critical_pct else "warning"
+        severity = _SEV_CRITICAL if variance_pct > critical_pct else _SEV_WARNING
 
         anomalies.append(
             BillAnomaly(
@@ -372,7 +395,7 @@ def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[Bil
     if ecart_pct < threshold_pct or abs(ecart_eur) < threshold_min_eur:
         return None
 
-    severity = "critical" if abs(ecart_eur) > critical_eur else "warning"
+    severity = _SEV_CRITICAL if abs(ecart_eur) > critical_eur else _SEV_WARNING
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R21",
@@ -421,9 +444,7 @@ def detect_r28_energy_unit_price_drift(invoice: EnergyInvoice, db: Session) -> O
     """
     from models.enums import InvoiceLineType
 
-    if not invoice.contract_id:
-        return None
-    contract = invoice.contract
+    contract = _resolve_contract(invoice)
     if contract is None or contract.price_ref_eur_per_kwh is None:
         return None
     prix_attendu_eur_kwh = float(contract.price_ref_eur_per_kwh)
@@ -466,7 +487,7 @@ def detect_r28_energy_unit_price_drift(invoice: EnergyInvoice, db: Session) -> O
 
     # Estimation impact € : delta unit_price × qty (kWh) sur la ligne
     montant_impact = round(abs(worst_drift["ecart_eur_kwh"]) * worst_drift["qty_kwh"], 2)
-    severity = "critical" if abs(worst_drift["ecart_eur_kwh"]) > critical_abs else "warning"
+    severity = _SEV_CRITICAL if abs(worst_drift["ecart_eur_kwh"]) > critical_abs else _SEV_WARNING
 
     return BillAnomaly(
         invoice_id=invoice.id,
@@ -567,7 +588,7 @@ def detect_r27_consumption_meter_drift(invoice: EnergyInvoice, db: Session) -> O
     if ecart_pct < threshold_pct or abs(ecart_kwh) < threshold_min_kwh:
         return None
 
-    severity = "critical" if abs(ecart_kwh) > critical_kwh else "warning"
+    severity = _SEV_CRITICAL if abs(ecart_kwh) > critical_kwh else _SEV_WARNING
     # Estimation impact € via prix marginal CRE T4 2025 ETI tertiaire (130 €/MWh)
     from doctrine.constants import PRICE_ELEC_ETI_2026_EUR_PER_MWH
 
@@ -642,7 +663,7 @@ def detect_r26_total_vs_lines_inconsistency(invoice: EnergyInvoice, db: Session)
     if ecart_pct < threshold_pct or abs(ecart_eur) < threshold_min_eur:
         return None
 
-    severity = "critical" if abs(ecart_eur) > critical_eur else "warning"
+    severity = _SEV_CRITICAL if abs(ecart_eur) > critical_eur else _SEV_WARNING
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R26",
@@ -687,10 +708,7 @@ def detect_r25_subscription_mismatch(invoice: EnergyInvoice, db: Session) -> Opt
     """
     from models.enums import InvoiceLineType
 
-    if not invoice.contract_id:
-        return None
-
-    contract = invoice.contract  # SQLAlchemy back_populates relation
+    contract = _resolve_contract(invoice)
     if contract is None or contract.fixed_fee_eur_per_month is None:
         return None
     fixed_fee_attendu = float(contract.fixed_fee_eur_per_month)
@@ -728,7 +746,7 @@ def detect_r25_subscription_mismatch(invoice: EnergyInvoice, db: Session) -> Opt
     if ecart_pct < threshold_pct or abs(ecart_eur) < threshold_min_eur:
         return None
 
-    severity = "critical" if abs(ecart_eur) > critical_eur else "warning"
+    severity = _SEV_CRITICAL if abs(ecart_eur) > critical_eur else _SEV_WARNING
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R25",
@@ -882,7 +900,7 @@ def detect_r22_accise_mismatch(
     if ecart_pct < threshold_pct or abs(ecart_eur) < threshold_min_eur:
         return None
 
-    severity = "critical" if abs(ecart_eur) > critical_eur else "warning"
+    severity = _SEV_CRITICAL if abs(ecart_eur) > critical_eur else _SEV_WARNING
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R22",
@@ -963,7 +981,7 @@ def detect_r24_tva_rate_mismatch(invoice: EnergyInvoice, db: Session) -> Optiona
     if ecart_pct_abs < tolerance_pt or tva_facturee < min_eur:
         return None
 
-    severity = "critical" if ecart_pct_abs > critical_pt else "warning"
+    severity = _SEV_CRITICAL if ecart_pct_abs > critical_pt else _SEV_WARNING
     return BillAnomaly(
         invoice_id=invoice.id,
         code="R24",
@@ -1035,7 +1053,7 @@ def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAno
         # Doublon détecté : même période sur 2+ lignes NETWORK
         total_doublon_eur = sum(float(line.amount_eur or 0) for line in lines[1:])
         # On considère que la 1ère ligne est légitime, les suivantes sont doublons
-        severity = "critical" if total_doublon_eur > critical_eur else "warning"
+        severity = _SEV_CRITICAL if total_doublon_eur > critical_eur else _SEV_WARNING
         anomalies.append(
             BillAnomaly(
                 invoice_id=invoice.id,
@@ -1132,7 +1150,7 @@ def detect_r29_period_overlap_or_gap(
     if gap_days < 0:
         # Chevauchement
         overlap_days = -gap_days
-        severity = "critical" if overlap_days > overlap_critical else "warning"
+        severity = _SEV_CRITICAL if overlap_days > overlap_critical else _SEV_WARNING
         details = {
             "kind": "chevauchement",
             "overlap_days": overlap_days,
@@ -1151,7 +1169,7 @@ def detect_r29_period_overlap_or_gap(
         }
     else:
         # Trou (gap_days > gap_tolerance)
-        severity = "critical" if gap_days > gap_critical else "warning"
+        severity = _SEV_CRITICAL if gap_days > gap_critical else _SEV_WARNING
         details = {
             "kind": "trou",
             "gap_days": gap_days,
@@ -1209,9 +1227,9 @@ def detect_r30_invoice_period_outside_contract_window(invoice: EnergyInvoice, db
     Returns:
         BillAnomaly ou None
     """
-    if invoice.contract_id is None or invoice.period_start is None or invoice.period_end is None:
+    if invoice.period_start is None or invoice.period_end is None:
         return None
-    contract = invoice.contract
+    contract = _resolve_contract(invoice)
     if contract is None:
         return None
     if contract.start_date is None and contract.end_date is None:
@@ -1231,7 +1249,7 @@ def detect_r30_invoice_period_outside_contract_window(invoice: EnergyInvoice, db
         return BillAnomaly(
             invoice_id=invoice.id,
             code="R30",
-            severity="critical",
+            severity=_SEV_CRITICAL,
             threshold_value=Decimal("0"),  # 0 j tolérance entièrement hors fenêtre
             actual_value=Decimal(str(days_before)),
             details_json={
@@ -1253,7 +1271,7 @@ def detect_r30_invoice_period_outside_contract_window(invoice: EnergyInvoice, db
         return BillAnomaly(
             invoice_id=invoice.id,
             code="R30",
-            severity="critical",
+            severity=_SEV_CRITICAL,
             threshold_value=Decimal("0"),
             actual_value=Decimal(str(days_after)),
             details_json={
@@ -1284,7 +1302,7 @@ def detect_r30_invoice_period_outside_contract_window(invoice: EnergyInvoice, db
         return BillAnomaly(
             invoice_id=invoice.id,
             code="R30",
-            severity="warning",
+            severity=_SEV_WARNING,
             threshold_value=Decimal(str(partial_warn_days)),
             actual_value=Decimal(str(days_outside)),
             details_json={

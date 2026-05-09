@@ -45,6 +45,19 @@ class SeveriteAlerte(str, enum.Enum):
     CRITICAL = "critical"
 
 
+class BillAnomalySeverity(str, enum.Enum):
+    """Phase L8.2 — Sévérité dédiée Bill Intelligence (ADR-016 Pilier 9 Enum strict).
+
+    Audit code-reviewer Phase L8 finding P1 : 15 occurrences stringly-typed
+    `"critical"` / `"warning"` dans 12 détecteurs R19→R30 = risque typo silencieux.
+    Enum dédié évite drift cross-règles + permet check-constraint DB futur.
+    """
+
+    INFO = "info"
+    WARNING = "warning"
+    CRITICAL = "critical"
+
+
 class UsageFamily(str, enum.Enum):
     """Familles d'usages energetiques (niveau 1 de la taxonomie)."""
 

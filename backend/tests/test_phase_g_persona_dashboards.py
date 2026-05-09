@@ -1951,6 +1951,44 @@ class TestPhaseJ2HardCutFournisseurId:
 
 
 class TestPhaseGP1FixesSourceGuards:
+    def test_l8_2_severity_uses_enum_aliases_not_strings(self):
+        """L8.2 source-guard — anomaly_detector utilise _SEV_CRITICAL/_SEV_WARNING
+        (aliases BillAnomalySeverity Enum) au lieu de literals "critical"/"warning".
+
+        Audit Phase L8 P1 : 15 occurrences stringly-typed identifiées → migrées
+        vers Enum. Source-guard verrouille la non-régression.
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        # Aucun severity= avec string literal (Enum-only)
+        assert 'severity="critical"' not in src
+        assert 'severity="warning"' not in src
+        assert 'severity = "critical"' not in src
+        assert 'severity = "warning"' not in src
+        # Enum import + alias présents
+        assert "from models.enums import BillAnomalySeverity" in src
+        assert "_SEV_CRITICAL = BillAnomalySeverity.CRITICAL.value" in src
+        assert "_SEV_WARNING = BillAnomalySeverity.WARNING.value" in src
+
+    def test_l8_3_line_type_uses_enum_value_not_raw_strings(self):
+        """L8.3 source-guard — R19/R20 SQL filters utilisent InvoiceLineType.X.value
+        au lieu de raw strings "tax"/"network" (cohérence cross-règles + anti-typo).
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        # SQL filters: pas de raw string
+        assert 'EnergyInvoiceLine.line_type == "tax"' not in src
+        assert 'EnergyInvoiceLine.line_type == "network"' not in src
+        # Enum.value attendu
+        assert "InvoiceLineType.TAX.value" in src
+        assert "InvoiceLineType.NETWORK.value" in src
+
     def test_p1_fix_bacs_uses_real_statut_bacs_field(self):
         """P1 fix Phase H : BACS utilise Site.statut_bacs (champ réel) au lieu
         de bacs_classe (inexistant sur Site). Tri-state compliant : True/False/None.
