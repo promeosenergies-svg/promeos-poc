@@ -1149,6 +1149,112 @@ class TestPhaseK2NormalizeAndCache:
         assert r1 == r2  # même résultat depuis cache
 
 
+# ─── Phase L1 — R25 Abonnement divergent contrat (Jean-Marc CFO) ───────────
+
+
+class TestPhaseL1R25SubscriptionMismatch:
+    def _seed_contract_with_invoice(self, db, fixed_fee_attendu, abo_facture, period_months=1):
+        """Helper : crée Fournisseur + EnergyContract + EnergyInvoice + ligne ABONNEMENT."""
+        import json
+
+        from models import EnergyInvoiceLine, Fournisseur, TypeFournitureEnum
+        from models.enums import InvoiceLineType
+
+        f = Fournisseur(nom="EDF", siren="552081317", type_fourniture=TypeFournitureEnum.MULTI)
+        db.add(f)
+        db.flush()
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        contract = EnergyContract(
+            site_id=sites[0].id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            fournisseur_id=f.id,
+            end_date=date.today() + timedelta(days=180),
+            fixed_fee_eur_per_month=fixed_fee_attendu,
+            metadata_json=json.dumps({"phase_j2_legacy": True}),
+        )
+        db.add(contract)
+        db.flush()
+
+        period_start = date.today() - timedelta(days=30 * period_months)
+        period_end = date.today()
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            contract_id=contract.id,
+            invoice_number=f"INV-R25-{fixed_fee_attendu}",
+            period_start=period_start,
+            period_end=period_end,
+            energy_kwh=10000,
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.OTHER,
+                label="Abonnement mensuel",
+                amount_eur=abo_facture,
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+        return invoice
+
+    def test_l1_r25_detects_overcharged_subscription(self, db):
+        """L1 — Abonnement contrat 50 €/mois mais facturé 75 €/mois → R25 critical."""
+        from services.bill_intelligence.anomaly_detector import detect_r25_subscription_mismatch
+
+        invoice = self._seed_contract_with_invoice(db, fixed_fee_attendu=50.0, abo_facture=75.0, period_months=1)
+        anomaly = detect_r25_subscription_mismatch(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R25"
+        assert anomaly.severity == "critical"  # écart > 20 €
+        assert anomaly.details_json["abonnement_attendu_eur_par_mois"] == 50.0
+        # Proration mensuelle (jours/30,4375) tolère ±2 € (31j vs 30,4375)
+        assert abs(anomaly.details_json["abonnement_facture_eur_par_mois"] - 75.0) < 2.0
+
+    def test_l1_r25_no_anomaly_within_5pct_tolerance(self, db):
+        """L1 — Abonnement 50 € facturé 51,50 € (3 % d'écart) → pas d'anomalie."""
+        from services.bill_intelligence.anomaly_detector import detect_r25_subscription_mismatch
+
+        invoice = self._seed_contract_with_invoice(db, 50.0, 51.50)
+        assert detect_r25_subscription_mismatch(invoice, db) is None
+
+    def test_l1_r25_skipped_without_contract(self, db):
+        """L1 — Invoice sans contract_id → R25 silencieuse (pas d'anomalie possible)."""
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import detect_r25_subscription_mismatch
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-R25-NOC",
+            energy_kwh=10000,
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.OTHER,
+                label="Abonnement",
+                amount_eur=999.0,  # peu importe — pas de contract → skip
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        assert detect_r25_subscription_mismatch(invoice, db) is None
+
+
 # ─── Phase J2 — ADR-F-04 hard-cut supplier_name → fournisseur_id ────────────
 
 

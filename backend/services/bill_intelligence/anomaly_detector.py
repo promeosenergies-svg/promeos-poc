@@ -384,6 +384,89 @@ def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[Bil
     )
 
 
+# ─── R25 Abonnement divergent contrat (Phase L Jean-Marc CFO ROI 1-3 k€/an) ─
+
+
+def detect_r25_subscription_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+    """R25 — Abonnement (fixed fee) facturé divergent vs `EnergyContract.fixed_fee_eur_per_month`.
+
+    Persona Jean-Marc CFO : ROI 1-3 k€/an. Cas typique : le fournisseur ne met
+    pas à jour la facturation après changement de contrat (renouvellement,
+    avenant tarifaire) → abonnement reste à l'ancien prix pendant des mois.
+
+    Heuristique cardinale Phase L :
+    - Identifier ligne SUBSCRIPTION (line_type=ABONNEMENT) sur l'invoice
+    - Comparer total mensuel facturé vs `contract.fixed_fee_eur_per_month`
+    - Si écart > 5 % ET > 2 € absolu → R25 anomalie
+
+    Ne fire que si :
+    - Invoice.contract_id rattaché (sinon impossible de comparer)
+    - Contrat a `fixed_fee_eur_per_month` défini
+    - Invoice a au moins 1 ligne ABONNEMENT
+
+    Returns:
+        BillAnomaly ou None
+    """
+    from models.enums import InvoiceLineType
+
+    if not invoice.contract_id:
+        return None
+
+    contract = invoice.contract  # SQLAlchemy back_populates relation
+    if contract is None or contract.fixed_fee_eur_per_month is None:
+        return None
+    fixed_fee_attendu = float(contract.fixed_fee_eur_per_month)
+    if fixed_fee_attendu <= 0:
+        return None
+
+    # Détection par label : InvoiceLineType n'a pas ABONNEMENT — on identifie via
+    # label `abonnement|redevance.*fixe|fee.*month`. Phase M : enum dédié envisageable.
+    abo_lines = [
+        line
+        for line in (invoice.lines or [])
+        if line.amount_eur is not None
+        and line.label
+        and re.search(r"\b(abonnement|redevance\s+fixe)\b", line.label, re.IGNORECASE)
+    ]
+    if not abo_lines:
+        return None
+
+    abo_facture = sum(float(line.amount_eur or 0) for line in abo_lines)
+    # Calcul mensuel : si invoice couvre N mois, on prorate
+    if invoice.period_start and invoice.period_end:
+        days = (invoice.period_end - invoice.period_start).days + 1
+        months_covered = max(1.0, days / 30.4375)  # Avg jours/mois
+        abo_mensuel_facture = abo_facture / months_covered
+    else:
+        abo_mensuel_facture = abo_facture  # Hypothèse 1 mois si période inconnue
+
+    ecart_eur = abo_mensuel_facture - fixed_fee_attendu
+    ecart_pct = abs(ecart_eur) / fixed_fee_attendu * 100
+
+    # Seuils anti-bruit : > 5 % d'écart ET > 2 € absolu
+    if ecart_pct < 5 or abs(ecart_eur) < 2:
+        return None
+
+    severity = "critical" if abs(ecart_eur) > 20 else "warning"
+    return BillAnomaly(
+        invoice_id=invoice.id,
+        code="R25",
+        severity=severity,
+        threshold_value=Decimal("5.0"),
+        actual_value=Decimal(str(round(ecart_pct, 2))),
+        details_json={
+            "abonnement_attendu_eur_par_mois": round(fixed_fee_attendu, 2),
+            "abonnement_facture_eur_par_mois": round(abo_mensuel_facture, 2),
+            "abonnement_total_facture_eur": round(abo_facture, 2),
+            "ecart_eur": round(ecart_eur, 2),
+            "ecart_pct": round(ecart_pct, 2),
+            "contract_id": contract.id,
+            "regulatory_ref": "EnergyContract.fixed_fee_eur_per_month (clause contractuelle)",
+            "montant_anomalie_eur": round(abs(ecart_eur), 2),
+        },
+    )
+
+
 # ─── R22 Accise erronée (Phase I Jean-Marc CFO ROI 2-4 k€/an) ──────────────
 
 
@@ -764,5 +847,14 @@ def detect_anomalies_for_invoice(
             anomalies.append(r24)
     except Exception as e:
         _logger.error(f"R24 detector failed for invoice {invoice.id}: {e}")
+
+    # R25 : 0 ou 1 — Phase L CFO abonnement divergent contrat
+    try:
+        r25 = detect_r25_subscription_mismatch(invoice, db)
+        if r25:
+            db.add(r25)
+            anomalies.append(r25)
+    except Exception as e:
+        _logger.error(f"R25 detector failed for invoice {invoice.id}: {e}")
 
     return anomalies
