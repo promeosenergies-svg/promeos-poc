@@ -8,7 +8,18 @@
 # Schema strict par term :
 #   value (number|string), unit (string), domain (string allowlist),
 #   source: { label, url, version, effective_date (YYYY-MM-DD), legal_reference|null },
-#   formula (string|null), notes (string|null)
+#   formula (string|null), notes (string|null),
+#   confidence (string, optionnel) : "high" | "medium" | "low" — Phase L29.2
+#   status (string, optionnel) — Phase L29.2 :
+#     "verified"                     : valeur opposable (défaut implicite si absent)
+#     "pending_source_verification"  : référence non confirmée (escalade humaine requise)
+#     "internal_doctrine"            : constante doctrine PROMEOS Sol §15 (non réglementaire externe)
+#     "internal_heuristic"           : estimation business non sourcée externe
+#     "market_observatory"           : observatoire CRE/T4, non opposable légal
+#     "internal_fallback"            : valeur de repli applicative
+#
+# Règle SENTINEL-REG : status absent = équivalent "verified" (défaut implicite).
+# Règle pilot-readiness : confidence: low ⇒ status: pending_source_verification (cohérence).
 #
 # Mirroir backend/doctrine/constants.py + config/emission_factors.py +
 # config/tarifs_reglementaires.yaml. Si modifié ici, propager partout.
@@ -17,8 +28,8 @@
 # Endpoint API : GET /api/regulatory/rates (Sprint C-3 Phase 3.3)
 
 version: "1.0"
-last_updated: "2026-05-04"
-sprint_origin: "Sprint C-3 Phase 3.2"
+last_updated: "2026-05-09"
+sprint_origin: "Sprint C-3 Phase 3.2 (extended Phase L28-L29 metadata)"
 
 terms:
   # ═════════════════════════════════════════════════════════════════════
@@ -70,6 +81,7 @@ terms:
     value: 30.85
     unit: "EUR/MWh"
     domain: "accises"
+    confidence: "high"
     source:
       label: "Code des impositions sur les biens et services — accise élec T1 (sans réduction)"
       url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000044472108"
@@ -83,6 +95,7 @@ terms:
     value: 26.58
     unit: "EUR/MWh"
     domain: "accises"
+    confidence: "high"
     source:
       label: "Code des impositions sur les biens et services — accise élec T2 (PME C4 pro)"
       url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000044472108"
@@ -126,6 +139,7 @@ terms:
     value: 10.73
     unit: "EUR/MWh"
     domain: "accises"
+    confidence: "high"
     source:
       label: "Code des impositions sur les biens et services — accise gaz naturel (TICGN)"
       url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000044472108"
@@ -343,14 +357,15 @@ terms:
     value: 7500
     unit: "EUR/an/site"
     domain: "dt"
+    confidence: "high"
     source:
-      label: "Décret n°2019-771 art. 9 — pénalité site non conforme DT"
+      label: "Décret n°2019-771 art. 9 — pénalité site non conforme DT (PM)"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000038812251"
       version: "Décret 2019-771"
       effective_date: "2030-01-01"
-      legal_reference: "JORFTEXT000038812251"
+      legal_reference: "JORFTEXT000038812251 + Code de la construction et de l'habitation art. L173-2 (fondement légal sanction) + R185-2 (modalités)"
     formula: null
-    notes: "Mirroir doctrine/constants.py DT_PENALTY_EUR"
+    notes: "Mirroir doctrine/constants.py DT_PENALTY_EUR. Sanction PM 7500€ (cible PROMEOS B2B mid-market). Pendant PP 1500€ porté par COMPLIANCE_OPERAT_PENALTY_EUR / COMPLIANCE_BACS_PENALTY_EUR (cumulables — cf. R.131-44 CCH originel = R.185-2 actuel + FAQ ADEME OPERAT CS4-Q1)."
 
   COMPLIANCE_DT_PENALTY_AT_RISK_EUR:
     value: 3750
@@ -460,14 +475,15 @@ terms:
     value: 1500
     unit: "EUR/site"
     domain: "dt"
+    confidence: "high"
     source:
-      label: "Circulaire DGEC 2024 + Décret 2019-771 art. 6 — pénalité OPERAT manquante"
+      label: "Code de la construction et de l'habitation art. R185-2 (sanction DT/OPERAT) — fondement L173-2"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000038812251"
-      version: "Circulaire DGEC 2024"
+      version: "CCH R185-2 + Décret 2019-771 art. 6"
       effective_date: "2024-09-30"
-      legal_reference: null
+      legal_reference: "Code de la construction et de l'habitation art. R185-2 (modalités) + L173-2 (fondement légal)"
     formula: null
-    notes: "Pénalité forfaitaire par déclaration OPERAT manquante"
+    notes: "Sanction 1500€ PP / 7500€ PM cumulables — défaut PROMEOS = 1500€ (PP) car valeur exposée historique. PM = 7500€ pour cible mid-market (cf. dichotomie tracée DT_PENALTY_EUR notes). Source primaire : FAQ ADEME OPERAT CS4-Q1 + R.131-44 CCH originel = R.185-2 actuel (cf. operat_valeurs_absolues.yaml:46). Phase L29.2 — Circulaire DGEC 2024 supprimée du label (non opposable juridiquement)."
 
   OPERAT_DECLARATION_DEADLINE:
     value: "2026-09-30"
@@ -489,6 +505,7 @@ terms:
     value: 290
     unit: "kW"
     domain: "bacs"
+    confidence: "high"
     source:
       label: "Décret n°2020-887 art. R175-3 — seuil BACS 2025"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000042167708"
@@ -551,6 +568,7 @@ terms:
     value: 1500
     unit: "EUR/an/site"
     domain: "bacs"
+    confidence: "high"
     source:
       label: "Décret n°2020-887 art. R175-7 — pénalité BACS site non conforme"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000042167708"
@@ -648,6 +666,7 @@ terms:
     value: 2.75
     unit: "GWh/an"
     domain: "audit_sme"
+    confidence: "high"
     source:
       label: "Loi n°2025-391 du 30/04/2025 — seuil audit énergétique 4 ans"
       url: "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000051956481"
@@ -661,6 +680,7 @@ terms:
     value: 23.6
     unit: "GWh/an"
     domain: "audit_sme"
+    confidence: "high"
     source:
       label: "Loi n°2025-391 du 30/04/2025 — seuil SME ISO 50001"
       url: "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000051956481"
