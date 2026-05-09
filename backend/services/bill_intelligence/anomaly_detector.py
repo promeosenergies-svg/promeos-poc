@@ -384,6 +384,99 @@ def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[Bil
     )
 
 
+# ─── R28 Prix unitaire énergie ligne vs contrat (Phase L4 CFO ROI 3-8 k€/an) ──
+
+
+def detect_r28_energy_unit_price_drift(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+    """R28 — Prix unitaire énergie facturé divergent vs `EnergyContract.price_ref_eur_per_kwh`.
+
+    Persona Jean-Marc CFO : ROI 3-8 k€/an. Complément à R25 (abonnement) — vérifie
+    cette fois le prix au kWh sur les lignes énergie. Cas typique : fournisseur
+    applique le tarif "ouvert" au lieu du tarif contrat négocié, ou applique le
+    nouveau tarif post-renouvellement plus tôt que l'échéance.
+
+    Heuristique cardinale :
+    - Identifier lignes ENERGY (line_type=ENERGY) avec `unit_price` non null
+    - Récupérer prix contrat : `EnergyContract.price_ref_eur_per_kwh` (ou prix HP/HC si tariff_option défini)
+    - Comparer chaque ligne unit_price vs prix contrat attendu
+    - Écart > 5 % ET > 0,005 €/kWh absolu → R28 anomalie
+
+    Sévérité : `critical` si écart > 0,02 €/kWh ; `warning` sinon
+
+    Garde-fous (anti-faux positifs) :
+    - Skip si invoice.contract_id manquant (pas de référence)
+    - Skip si contract.price_ref_eur_per_kwh non défini
+    - Skip si aucune ligne ENERGY avec unit_price (ex: facture forfaitaire)
+
+    Returns:
+        BillAnomaly ou None
+    """
+    from models.enums import InvoiceLineType
+
+    if not invoice.contract_id:
+        return None
+    contract = invoice.contract
+    if contract is None or contract.price_ref_eur_per_kwh is None:
+        return None
+    prix_attendu_eur_kwh = float(contract.price_ref_eur_per_kwh)
+    if prix_attendu_eur_kwh <= 0:
+        return None
+
+    energy_lines = [
+        line
+        for line in (invoice.lines or [])
+        if line.line_type == InvoiceLineType.ENERGY and line.unit_price is not None and line.unit_price > 0
+    ]
+    if not energy_lines:
+        return None
+
+    # Détection : la ligne avec le plus gros écart (worst case)
+    worst_drift = None
+    for line in energy_lines:
+        unit_price = float(line.unit_price)
+        ecart = unit_price - prix_attendu_eur_kwh
+        ecart_pct = abs(ecart) / prix_attendu_eur_kwh * 100
+        # Seuils : > 5 % ET > 0.005 €/kWh
+        if ecart_pct < 5 or abs(ecart) < 0.005:
+            continue
+        if worst_drift is None or abs(ecart) > abs(worst_drift["ecart_eur_kwh"]):
+            worst_drift = {
+                "line_id": line.id,
+                "line_label": line.label,
+                "qty_kwh": float(line.qty or 0),
+                "unit_price_facture_eur_kwh": unit_price,
+                "ecart_eur_kwh": ecart,
+                "ecart_pct": ecart_pct,
+            }
+
+    if worst_drift is None:
+        return None
+
+    # Estimation impact € : delta unit_price × qty (kWh) sur la ligne
+    montant_impact = round(abs(worst_drift["ecart_eur_kwh"]) * worst_drift["qty_kwh"], 2)
+    severity = "critical" if abs(worst_drift["ecart_eur_kwh"]) > 0.02 else "warning"
+
+    return BillAnomaly(
+        invoice_id=invoice.id,
+        code="R28",
+        severity=severity,
+        threshold_value=Decimal("5.0"),
+        actual_value=Decimal(str(round(worst_drift["ecart_pct"], 2))),
+        details_json={
+            "prix_attendu_eur_kwh": round(prix_attendu_eur_kwh, 4),
+            "prix_facture_eur_kwh": round(worst_drift["unit_price_facture_eur_kwh"], 4),
+            "ecart_eur_kwh": round(worst_drift["ecart_eur_kwh"], 4),
+            "ecart_pct": round(worst_drift["ecart_pct"], 2),
+            "qty_kwh": round(worst_drift["qty_kwh"], 1),
+            "line_id": worst_drift["line_id"],
+            "line_label": worst_drift["line_label"],
+            "contract_id": contract.id,
+            "regulatory_ref": "EnergyContract.price_ref_eur_per_kwh (clause contractuelle)",
+            "montant_anomalie_eur": montant_impact,
+        },
+    )
+
+
 # ─── R27 Cross-validation conso facturée vs MeterReading (Phase L3 CFO ROI 5-10 k€) ──
 
 
@@ -1028,5 +1121,14 @@ def detect_anomalies_for_invoice(
             anomalies.append(r27)
     except Exception as e:
         _logger.error(f"R27 detector failed for invoice {invoice.id}: {e}")
+
+    # R28 : 0 ou 1 — Phase L4 CFO prix unitaire énergie facturé divergent contrat
+    try:
+        r28 = detect_r28_energy_unit_price_drift(invoice, db)
+        if r28:
+            db.add(r28)
+            anomalies.append(r28)
+    except Exception as e:
+        _logger.error(f"R28 detector failed for invoice {invoice.id}: {e}")
 
     return anomalies

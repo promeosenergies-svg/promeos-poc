@@ -1459,6 +1459,126 @@ class TestPhaseL1R25SubscriptionMismatch:
         assert detect_r25_subscription_mismatch(invoice, db) is None
 
 
+# ─── Phase L4 — R28 Prix unitaire énergie ligne vs contrat (Jean-Marc CFO) ──
+
+
+class TestPhaseL4R28EnergyUnitPriceDrift:
+    def _seed_contract_with_energy_line(self, db, prix_contrat_eur_kwh, prix_facture_eur_kwh, qty_kwh=10000):
+        """Helper : crée Fournisseur + EnergyContract (price_ref) + EnergyInvoice + ligne ENERGY."""
+        import json
+
+        from models import EnergyInvoiceLine, Fournisseur, TypeFournitureEnum
+        from models.enums import InvoiceLineType
+
+        f = Fournisseur(nom="EDF", siren="552081317", type_fourniture=TypeFournitureEnum.MULTI)
+        db.add(f)
+        db.flush()
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        contract = EnergyContract(
+            site_id=sites[0].id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            fournisseur_id=f.id,
+            end_date=date.today() + timedelta(days=180),
+            price_ref_eur_per_kwh=prix_contrat_eur_kwh,
+            metadata_json=json.dumps({"phase_j2_legacy": True}),
+        )
+        db.add(contract)
+        db.flush()
+
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            contract_id=contract.id,
+            invoice_number=f"INV-R28-{prix_contrat_eur_kwh}-{prix_facture_eur_kwh}",
+            period_start=date.today() - timedelta(days=30),
+            period_end=date.today(),
+            energy_kwh=qty_kwh,
+            total_eur=qty_kwh * prix_facture_eur_kwh,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.ENERGY,
+                label="Consommation énergie",
+                qty=qty_kwh,
+                unit_price=prix_facture_eur_kwh,
+                amount_eur=qty_kwh * prix_facture_eur_kwh,
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+        return invoice
+
+    def test_l4_r28_detects_overpriced_energy(self, db):
+        """L4 — Contrat 0,15 €/kWh vs facturé 0,18 €/kWh sur 10 000 kWh → R28 critical 300 €."""
+        from services.bill_intelligence.anomaly_detector import detect_r28_energy_unit_price_drift
+
+        invoice = self._seed_contract_with_energy_line(
+            db, prix_contrat_eur_kwh=0.15, prix_facture_eur_kwh=0.18, qty_kwh=10000
+        )
+        anomaly = detect_r28_energy_unit_price_drift(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R28"
+        assert anomaly.severity == "critical"  # écart 0,03 €/kWh > 0,02
+        assert anomaly.details_json["prix_attendu_eur_kwh"] == 0.15
+        assert anomaly.details_json["prix_facture_eur_kwh"] == 0.18
+        assert anomaly.details_json["montant_anomalie_eur"] == 300.0
+
+    def test_l4_r28_no_anomaly_within_5pct_tolerance(self, db):
+        """L4 — Contrat 0,15 vs facturé 0,153 (2 % d'écart) → pas d'anomalie."""
+        from services.bill_intelligence.anomaly_detector import detect_r28_energy_unit_price_drift
+
+        invoice = self._seed_contract_with_energy_line(db, 0.15, 0.153)
+        assert detect_r28_energy_unit_price_drift(invoice, db) is None
+
+    def test_l4_r28_skipped_without_contract(self, db):
+        """L4 — Invoice sans contract_id → R28 silencieuse (pas de référence)."""
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import detect_r28_energy_unit_price_drift
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-R28-NOC",
+            energy_kwh=10000,
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.ENERGY,
+                label="Énergie",
+                qty=10000,
+                unit_price=0.20,
+                amount_eur=2000,
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        assert detect_r28_energy_unit_price_drift(invoice, db) is None
+
+    def test_l4_r28_warning_severity_small_drift(self, db):
+        """L4 — Contrat 0,15 vs facturé 0,158 (écart 0,008 €/kWh) → warning (< 0,02 critical seuil)."""
+        from services.bill_intelligence.anomaly_detector import detect_r28_energy_unit_price_drift
+
+        invoice = self._seed_contract_with_energy_line(db, 0.15, 0.158, qty_kwh=10000)
+        anomaly = detect_r28_energy_unit_price_drift(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R28"
+        assert anomaly.severity == "warning"
+
+
 # ─── Phase J2 — ADR-F-04 hard-cut supplier_name → fournisseur_id ────────────
 
 
