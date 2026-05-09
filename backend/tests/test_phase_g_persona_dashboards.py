@@ -1882,15 +1882,32 @@ class TestPhaseL6R30PeriodOutsideContractWindow:
 
 
 class TestPhaseL9R31AcciseDouble:
+    _siren_counter = 0  # Class-level pour générer SIREN unique par test
+    _invoice_counter = 0
+
+    @classmethod
+    def _next_siren(cls):
+        cls._siren_counter += 1
+        return f"{100000000 + cls._siren_counter:09d}"
+
+    @classmethod
+    def _next_invoice_number(cls):
+        cls._invoice_counter += 1
+        return f"INV-R31-{cls._invoice_counter}"
+
     def _seed_invoice_with_accise_lines(self, db, accise_labels_amounts):
-        """Helper : crée Org→Site→Invoice + N lignes TAX accise paramétrables."""
+        """Helper : crée Org→Site→Invoice + N lignes TAX accise paramétrables.
+
+        Phase L9.5 — SIREN unique par appel (anti UNIQUE constraint sur orgs).
+        """
         from models import EnergyInvoiceLine
         from models.enums import InvoiceLineType
 
-        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        siren = self._next_siren()
+        _, _, _, sites = _seed_org_with_sites(db, org_name=f"OrgR31-{siren}", siren=siren, n_sites=1)
         invoice = EnergyInvoice(
             site_id=sites[0].id,
-            invoice_number=f"INV-R31-{len(accise_labels_amounts)}",
+            invoice_number=self._next_invoice_number(),
             period_start=date(2026, 4, 1),
             period_end=date(2026, 4, 30),
             energy_kwh=10000,
@@ -1974,6 +1991,62 @@ class TestPhaseL9R31AcciseDouble:
         assert anomaly.code == "R31"
         assert anomaly.severity == "warning"
         assert anomaly.details_json["montant_anomalie_eur"] == 30.0
+
+    def test_l9_5_r31_robust_to_line_order(self, db):
+        """L9.5 audit fix P1 — robustesse ordre lignes : sum-max indépendant de l'index.
+
+        Avant L9.5 : `lines[1:]` sommait les doublons en assumant lines[0] = légitime.
+        Si EDF facture {CSPE: 30€, Accise: 80€} en cet ordre → doublon = 80€ (faux !
+        80€ est la légitime, doublon réel = 30€).
+        Après L9.5 : sum_total - max() → légitime = max(amounts) = 80€,
+        doublon = sum - max = 110 - 80 = 30€ (correct).
+        """
+        from services.bill_intelligence.anomaly_detector import detect_r31_accise_double
+
+        # Cas A : CSPE petit en 1ʳᵉ position, Accise gros en 2nde
+        invoice_a = self._seed_invoice_with_accise_lines(db, [("CSPE", 30.0), ("Accise", 80.0)])
+        anomaly_a = detect_r31_accise_double(invoice_a, db)
+        # Cas B : ordre inverse (Accise gros 1er, CSPE petit 2nd)
+        invoice_b = self._seed_invoice_with_accise_lines(db, [("Accise", 80.0), ("CSPE", 30.0)])
+        anomaly_b = detect_r31_accise_double(invoice_b, db)
+        # Les deux doivent retourner doublon = 30 € (la plus petite)
+        assert anomaly_a is not None and anomaly_b is not None
+        assert anomaly_a.details_json["montant_anomalie_eur"] == 30.0
+        assert anomaly_b.details_json["montant_anomalie_eur"] == 30.0
+
+    def test_l9_5_r31_excludes_negative_avoir_lines(self, db):
+        """L9.5 audit fix P2 — ligne accise avec amount négatif (avoir/régul) → ignorée.
+
+        Cas réel : facture avec ligne Accise positive 80€ + ligne Accise négative -30€
+        (avoir régularisation). Pas un doublon, juste une régul correcte.
+        """
+        from services.bill_intelligence.anomaly_detector import detect_r31_accise_double
+
+        invoice = self._seed_invoice_with_accise_lines(
+            db, [("Accise sur l'électricité", 80.0), ("Avoir Accise régul", -30.0)]
+        )
+        # Une seule ligne positive après filter → < 2 lignes → None
+        assert detect_r31_accise_double(invoice, db) is None
+
+    def test_l9_5_r31_pii_sanitization_in_duplicate_labels(self, db):
+        """L9.5 audit fix P1 — labels avec SIRET/IBAN sanitizés via _sanitize_pii_label.
+
+        Cas : fournisseur inclut SIRET dans le label de la ligne accise. PII
+        sanitization cohérente avec R19 vnu_labels (CWE-532 / CWE-359).
+        """
+        from services.bill_intelligence.anomaly_detector import detect_r31_accise_double
+
+        invoice = self._seed_invoice_with_accise_lines(
+            db,
+            [
+                ("Accise SIRET 55208131700234", 80.0),  # SIRET 14 chiffres
+                ("CSPE", 75.0),
+            ],
+        )
+        anomaly = detect_r31_accise_double(invoice, db)
+        assert anomaly is not None
+        labels_str = " ".join(anomaly.details_json["duplicate_labels"])
+        assert "55208131700234" not in labels_str  # SIRET masqué
 
 
 # ─── Phase J2 — ADR-F-04 hard-cut supplier_name → fournisseur_id ────────────

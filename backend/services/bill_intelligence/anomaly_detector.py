@@ -90,6 +90,11 @@ _PERIOD_CODES_KNOWN = [
     *_PERIOD_CODES_LEGACY_TURPE_6,
 ]
 
+# Phase L9.5 — regex accise/CSPE/TICFE/contrib service public partagée R22 + R31.
+# Audit code-reviewer Phase L9 P1 finding 2 : avant L9.5 dupliquée verbatim
+# entre détecteurs → risque divergence si R22 patché et R31 oublié (ou vice-versa).
+_ACCISE_PATTERN = re.compile(r"\b(accise|ticfe|cspe|contrib.*service.*public)", re.IGNORECASE)
+
 # Sprint C-7 Phase 7.7 Lot A — D-Sprint-C7-BillAnomaly-PII-Vnu-Labels-Sanitization-001 :
 # regex sanitization SIREN (9 chiffres) / SIRET (14 chiffres) / PRM/PCE (14 chiffres) /
 # PDL (14 chiffres). Évite leak PII dans details_json.vnu_labels (security-auditor SEC-002).
@@ -864,9 +869,7 @@ def detect_r22_accise_mismatch(
     accise_lines = [
         line
         for line in (invoice.lines or [])
-        if line.line_type == InvoiceLineType.TAX
-        and line.label
-        and re.search(r"\b(accise|ticfe|cspe|contrib.*service.*public)", line.label, re.IGNORECASE)
+        if line.line_type == InvoiceLineType.TAX and line.label and _ACCISE_PATTERN.search(line.label)
     ]
     if not accise_lines:
         return None
@@ -1089,36 +1092,34 @@ def detect_r31_accise_double(invoice: EnergyInvoice, db: Session) -> Optional[Bi
     R31 vérifie la duplication de lignes (multi-comptage). Détecté indépendamment
     de la catégorie DP (T1/T2/HP).
 
-    Heuristique cardinale :
-    - Filter EnergyInvoiceLine TAX label LIKE \\b(accise|ticfe|cspe|contrib.*service.*public)
-      (mêmes patterns que R22)
-    - Si ≥ 2 lignes matchent → doublon
-    - Total_doublon = Σ amount_eur sur lines[1:] (1ʳᵉ ligne légitime)
-
-    Sévérité : critical si total_doublon > BILL_ANOMALY_ACCISE_DOUBLE_CRITICAL_EUR
-    (YAML SoT — défaut 50 €), warning sinon.
-
     Returns:
         BillAnomaly ou None
     """
     from models.enums import InvoiceLineType
 
+    # Phase L9.5 — filtre amount_eur > 0 (exclut avoirs/régularisations négatives)
     accise_lines = [
         line
         for line in (invoice.lines or [])
         if line.line_type == InvoiceLineType.TAX
         and line.amount_eur is not None
+        and line.amount_eur > 0
         and line.label
-        and re.search(r"\b(accise|ticfe|cspe|contrib.*service.*public)", line.label, re.IGNORECASE)
+        and _ACCISE_PATTERN.search(line.label)
     ]
     if len(accise_lines) < 2:
         return None
 
-    # Phase L9 — seuil YAML SoT (no fake code)
     critical_eur = float(get_term_value("BILL_ANOMALY_ACCISE_DOUBLE_CRITICAL_EUR"))
 
-    # 1ʳᵉ ligne légitime, suivantes = doublons
-    total_doublon_eur = sum(float(line.amount_eur or 0) for line in accise_lines[1:])
+    # Phase L9.5 audit fix P1 — sum_total - max() au lieu de lines[1:] :
+    # robuste à l'ordre arbitraire de invoice.lines (cross-fournisseur EDF/Engie).
+    # La ligne légitime = max amount_eur (la plus élevée) ; doublons = reste.
+    amounts = [float(line.amount_eur or 0) for line in accise_lines]
+    sum_total = sum(amounts)
+    max_legit = max(amounts)
+    total_doublon_eur = sum_total - max_legit
+
     severity = _SEV_CRITICAL if total_doublon_eur > critical_eur else _SEV_WARNING
 
     return BillAnomaly(
@@ -1129,10 +1130,14 @@ def detect_r31_accise_double(invoice: EnergyInvoice, db: Session) -> Optional[Bi
         actual_value=Decimal(str(round(total_doublon_eur, 2))),
         details_json={
             "duplicate_count": len(accise_lines),
-            "duplicate_lines_ids": [line.id for line in accise_lines],
-            "duplicate_labels": [line.label for line in accise_lines],
+            "duplicate_lines_ids": [line.id for line in accise_lines][:5],
+            # Phase L9.5 audit fix P1 — PII sanitization + cap [:5] (cohérent R19 vnu_labels)
+            "duplicate_labels": [_sanitize_pii_label(line.label or "") for line in accise_lines][:5],
             "montant_anomalie_eur": round(total_doublon_eur, 2),
-            "regulatory_ref": "Code énergie L.336 + décret 2022-130 — renommage CSPE→TICFE→Accise (anti-doublon historique)",
+            # Phase L9.5 audit fix P2 — référence régulatoire correcte :
+            # CIBS art. L.312-1 (taxe sur élec post-2022) + LFR 2021 art. 54
+            # (renommage CSPE/TICFE→Accise effective 01/01/2022). L.336 = VNU post-ARENH (R19).
+            "regulatory_ref": "CIBS art. L.312-1 + LFR 2021 art. 54 — renommage CSPE/TICFE→Accise élec (01/01/2022, anti-doublon historique)",
         },
     )
 
