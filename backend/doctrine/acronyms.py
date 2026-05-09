@@ -33,7 +33,11 @@ ACRONYM_TO_NARRATIVE: dict[str, str] = {
     # Tarifs réseau & marché
     "TURPE": "tarif d'acheminement réseau",
     "ARENH": "ancien tarif réglementé (fin du dispositif)",
-    "VNU": "Versement pour Non-Usage",
+    # Audit Phase 1.7 P1 : VNU = Versement Nucléaire Universel (Loi 2023-491,
+    # Décret 2026-55, CRE 2026-52). L'ancienne définition « Versement pour
+    # Non-Usage » était une fausse équivalence. Source : YAML SoT
+    # backend/config/acronymes_doctrine.yaml entrée VNU.
+    "VNU": "Versement Nucléaire Universel — taxe redistributive sur EDF post-ARENH",
     "CBAM": "taxe carbone aux frontières",
     "CEE": "Certificat d'économie d'énergie",
     "EPEX": "bourse électricité spot",

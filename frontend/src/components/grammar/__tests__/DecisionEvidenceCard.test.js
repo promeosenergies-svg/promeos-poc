@@ -24,9 +24,12 @@ describe('grammar/DecisionEvidenceCard', () => {
     expect(src).toContain('decision-evidence-grid');
   });
 
-  it('validation runtime : throw si evidence.length < 4 ou > 8 (doctrine §5.6)', () => {
+  it('validation runtime : evidence.length doit être dans [4, 8] (doctrine §5.6)', () => {
     expect(src).toContain('4-8 cellules evidence');
-    expect(src).toContain('throw new Error');
+    // Audit Phase 1.7 P1 : ancien `throw new Error` remplacé par
+    // validation safe qui retourne null + console.error (évite crash page).
+    expect(src).toContain('validateEvidence');
+    expect(src).toContain('return null');
   });
 
   it('severity → tokens CSS (sol-refuse, sol-attention, sol-succes)', () => {

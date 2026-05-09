@@ -3,17 +3,26 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 const DemoContext = createContext();
 
 export function DemoProvider({ children }) {
-  const [demoEnabled, setDemoEnabled] = useState(true);
+  // Audit Phase 1.7 P2 : useState(null) au lieu de (true) pour éviter
+  // le flash visible 1 frame de la card démo en prod avant que le backend
+  // ne réponde demoEnabled=false. Les consommateurs (cf ConformitePage)
+  // doivent guarder leur rendu sur `demoEnabled === true` strict + loading.
+  const [demoEnabled, setDemoEnabled] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/demo/status')
       .then((r) => r.json())
       .then((data) => {
-        setDemoEnabled(data.demo_enabled);
+        setDemoEnabled(Boolean(data.demo_enabled));
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        // Fallback : si le backend n'a pas répondu, on assume PROD strict
+        // (pas de démo affichée) pour éviter toute fuite de chiffres en dur.
+        setDemoEnabled(false);
+        setLoading(false);
+      });
   }, []);
 
   const [toggling, setToggling] = useState(false);

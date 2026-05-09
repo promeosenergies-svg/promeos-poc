@@ -16,9 +16,12 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
-// Cache module-scope : partagé entre toutes les instances du hook
+// Cache module-scope : partagé entre toutes les instances du hook.
+// Audit Phase 1.7 P1 : `_lastError` partagé entre instances Term montées en
+// parallèle (closure locale `fetchError` ne se propageait qu'au 1er .then).
 let _cache = null;
 let _pending = null;
+let _lastError = null;
 
 /**
  * Réinitialise le cache (utile dans les tests unitaires).
@@ -27,6 +30,7 @@ let _pending = null;
 export function _resetAcronymesCache() {
   _cache = null;
   _pending = null;
+  _lastError = null;
 }
 
 /**
@@ -46,9 +50,9 @@ export function useAcronymes() {
     }
 
     // Déduplique les fetch parallèles (promise partagée).
-    // Audit code-reviewer Phase 1.6 : pending remis à null après .finally pour
-    // permettre re-tentative si le 1er fetch a échoué (réseau transitoire).
-    let fetchError = null;
+    // Audit Phase 1.7 P1 : l'erreur est désormais stockée dans `_lastError`
+    // module-scope (la closure locale `fetchError` ne propageait qu'au 1er
+    // composant ayant souscrit au .then() partagé).
     if (!_pending) {
       _pending = axios
         .get('/api/v1/doctrine/acronymes')
@@ -56,11 +60,12 @@ export function useAcronymes() {
           // Le payload est soit { acronymes: {...}, version: ..., ... }
           // soit directement un dict acronymes selon la version de l'API
           _cache = response.data?.acronymes ?? response.data ?? {};
+          _lastError = null;
           return _cache;
         })
         .catch((err) => {
           console.warn('[useAcronymes] fetch /api/v1/doctrine/acronymes failed', err);
-          fetchError = err;
+          _lastError = err;
           // Fallback silencieux : dict vide — ne bloque pas le rendu
           _cache = {};
           return _cache;
@@ -74,9 +79,8 @@ export function useAcronymes() {
     _pending?.then((resolved) => {
       setData(resolved);
       setLoading(false);
-      // Audit code-reviewer Phase 1.6 : propage l'erreur au consommateur
-      // (Term peut afficher un état dégradé si data est vide pour cause réseau)
-      if (fetchError) setError(fetchError);
+      // Propage l'erreur module-scope (partagée entre toutes les instances).
+      if (_lastError) setError(_lastError);
     });
   }, []); // pas de dépendance : données statiques, 1 seul fetch
 

@@ -773,20 +773,13 @@ export default function ConformitePage() {
         </div>
       )}
 
-      {/* Guided Mode Bandeau (non-expert only) */}
-      {!isExpert && guidedSteps.length > 0 && (
-        <GuidedModeBandeau steps={guidedSteps} onStepClick={handleStepClick} />
-      )}
-
-      {/* Next Best Action hero card */}
-      {nextBestAction && nextBestAction.id !== 'nba-all-good' && (
-        <NextBestActionCard action={nextBestAction} onAction={handleNbaAction} />
-      )}
-
       {/* Phase 1.3 — DecisionEvidenceCard démo : primitif Sol v1.1 §5.6.
-          Audit Phase 1.6 P2 : valeurs en dur GUARDÉES par DEMO_MODE — en prod,
-          ce slot sera nourri par un endpoint backend "top decision evidence"
-          (Phase 2 du sprint grammaire). */}
+          Audit Phase 1.7 P1 : remontée above-fold (avant GuidedModeBandeau /
+          NextBestActionCard / ComplianceScoreHeader) pour que Marie DAF la
+          voie en CODIR 3 min sans scroll.
+          Valeurs en dur GUARDÉES par DEMO_MODE — Phase 2 branchera l'endpoint
+          backend `/api/v1/conformite/top-decision-evidence` qui servira des
+          DecisionEvidence réels par site. */}
       {demoEnabled && (
         <div className="my-4" data-testid="conformite-decision-evidence-demo">
           <DecisionEvidenceCard
@@ -806,10 +799,25 @@ export default function ConformitePage() {
               { label: 'PÉNALITÉ ÉVITÉE', value: '7 500', unit: '€/an', helper: 'décret 2020-887' },
               { label: 'ÉCHÉANCE', value: '01/01/2027', unit: '', helper: 'à 18 mois' },
             ]}
-            primaryCta={{ label: 'Lancer plan BACS', href: '/actions/new?type=BACS&site=1' }}
+            primaryCta={{
+              label: 'Lancer plan BACS',
+              // Audit Phase 1.7 P0 : ActionsPage lit `site_id` (pas `site`).
+              // Le CTA était silencieusement cassé en Phase 1.3.
+              href: '/actions/new?type=BACS&site_id=1&titre=Mise%20en%20conformit%C3%A9%20BACS',
+            }}
             methodologyRef="/methodologie/bacs"
           />
         </div>
+      )}
+
+      {/* Guided Mode Bandeau (non-expert only) */}
+      {!isExpert && guidedSteps.length > 0 && (
+        <GuidedModeBandeau steps={guidedSteps} onStepClick={handleStepClick} />
+      )}
+
+      {/* Next Best Action hero card */}
+      {nextBestAction && nextBestAction.id !== 'nba-all-good' && (
+        <NextBestActionCard action={nextBestAction} onAction={handleNbaAction} />
       )}
 
       {/* A.2: Unified compliance score header */}

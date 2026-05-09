@@ -7,6 +7,34 @@ Référence doctrinale : §10 (Transformer la complexité), §13 (info fiable).
 Référence engineering : SKILL.md PROMEOS — Constantes canoniques.
 """
 
+# Phase L20.3 — helper defensive lazy-load déplacé en tête de fichier (avant
+# Phase L20 : défini ligne ~145, posait problème pour migrer PRICE_FALLBACK
+# ligne 132 qui en avait besoin avant sa définition).
+import logging as _logging
+
+from config.regulatory_sources_loader import get_term_value as _get_term_value
+
+_logger = _logging.getLogger(__name__)
+
+
+def _load_yaml_or_fallback(key: str, fallback: float) -> float:
+    """Phase L16.4 — Defensive lazy-load avec fallback hardcoded.
+
+    Évite crash module-load si YAML key manquante (CI fresh checkout, test
+    isolation, etc.). Logue warning explicite pour détection drift YAML/code.
+    """
+    try:
+        return float(_get_term_value(key))
+    except (KeyError, ValueError, FileNotFoundError, TypeError) as e:
+        _logger.warning(
+            "doctrine.constants YAML lookup failed for %s (%s) — fallback to hardcoded %s",
+            key,
+            type(e).__name__,
+            fallback,
+        )
+        return fallback
+
+
 # ─── Facteurs CO₂ (kgCO2e/kWh) ─────────────────────────────────────────────
 # Sources :
 #   - ELEC + GAZ NATUREL : ADEME Base Empreinte V23.6
@@ -128,40 +156,20 @@ REGOPS_WEIGHTS_AUDIT_APPLICABLE = {"DT": 0.39, "BACS": 0.28, "APER": 0.17, "AUDI
 REGOPS_WEIGHTS_DEFAULT = {"DT": 0.45, "BACS": 0.30, "APER": 0.25}
 
 # ─── Prix énergie ──────────────────────────────────────────────────────────
-# Fallback pour calculs en absence de contrat — JAMAIS 0.18
-PRICE_FALLBACK_EUR_PER_KWH = 0.068
+# Fallback pour calculs en absence de contrat — JAMAIS 0.18.
+# Phase L20.3 audit fix P1 — lazy-load YAML SoT (avant : hardcoded dupliqué
+# avec sources_reglementaires.yaml:296 = 0.068 → drift risk identique
+# PRICE_ELEC_ETI Phase L15.1).
+PRICE_FALLBACK_EUR_PER_KWH: float = _load_yaml_or_fallback("PRICE_FALLBACK_EUR_PER_KWH", fallback=0.068)
 
 # Prix marginal énergie ETI tertiaire 2026 post-ARENH (médiane CRE T4 2025).
 # Utilisé pour conversion gain MWh→€/an dans les heuristiques décisions/CEE.
 # Phase L15.1 audit fix P1 — lazy-load YAML SoT (avant : valeur hardcoded 130.0
 # DUPLIQUÉE entre doctrine/constants.py et sources_reglementaires.yaml).
-# Phase L16.4 audit fix P1 — defensive fallback (avant : raise au module-load
-# si YAML manquant → crash silencieux import doctrine.constants).
+# Phase L16.4 audit fix P1 — defensive fallback via _load_yaml_or_fallback
+# (helper déplacé en tête fichier Phase L20.3).
 # NOTE : valeur figée au process start. ParameterStore live-reload n'affecte
 # pas cette constante. Utiliser get_term_value() directement pour valeur fresh.
-import logging as _logging
-
-from config.regulatory_sources_loader import get_term_value as _get_term_value
-
-_logger = _logging.getLogger(__name__)
-
-
-def _load_yaml_or_fallback(key: str, fallback: float) -> float:
-    """Phase L16.4 — Defensive lazy-load avec fallback hardcoded.
-
-    Évite crash module-load si YAML key manquante (CI fresh checkout, test
-    isolation, etc.). Logue warning explicite pour détection drift YAML/code.
-    """
-    try:
-        return float(_get_term_value(key))
-    except (KeyError, ValueError, FileNotFoundError, TypeError) as e:
-        _logger.warning(
-            "doctrine.constants YAML lookup failed for %s (%s) — fallback to hardcoded %s",
-            key,
-            type(e).__name__,
-            fallback,
-        )
-        return fallback
 
 
 PRICE_ELEC_ETI_2026_EUR_PER_MWH: float = _load_yaml_or_fallback("PRICE_ELEC_ETI_2026_EUR_PER_MWH", fallback=130.0)
@@ -177,11 +185,17 @@ POST_ARENH_RATIO_2026_VS_2024 = 1.225  # +22.5% médiane CRE T4 2025 (référenc
 
 # Prix marché effacement industriel/tertiaire 2026 (NEBCO + AOFD blend CRE T4 2025).
 # Utilisé pour estimation Flex potential eur_year sur _facts.
-PRICE_FLEX_NEBCO_EUR_PER_MWH = 80.0
+# Phase L20.3 audit fix P1 — lazy-load YAML SoT (avant : hardcoded dupliqué
+# avec sources_reglementaires.yaml:309 → drift risk identique L15.1).
+PRICE_FLEX_NEBCO_EUR_PER_MWH: float = _load_yaml_or_fallback("PRICE_FLEX_NEBCO_EUR_PER_MWH", fallback=80.0)
 
 # Heuristique fallback Flex eur/site/an pour estimation indicative quand
 # FlexAssessment absent (médiane sites tertiaires NEBCO 100 kW pilotable).
-FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR = 4_200
+# Phase L20.3 audit fix P1 — lazy-load YAML SoT (avant : hardcoded dupliqué
+# avec sources_reglementaires.yaml:892 → drift risk identique L15.1).
+FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR: float = _load_yaml_or_fallback(
+    "FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR", fallback=4200.0
+)
 
 # ─── Benchmarks ────────────────────────────────────────────────────────────
 OID_OFFICE_BENCHMARK_KWHEF_PER_M2_YEAR = 146  # OID 2022, ~25 300 bâtiments

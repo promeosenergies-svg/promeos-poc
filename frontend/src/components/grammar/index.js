@@ -3,7 +3,9 @@
  *
  * Exports canoniques (doctrine §5 grammaire editoriale) :
  *
- *   SolPageFooter  — alias re-export ui/sol/SolPageFooter (SOURCE · CONFIANCE · MIS A JOUR)
+ *   SolPageFooter  — re-export DIRECT de ui/sol/SolPageFooter (la canonique)
+ *                    Audit Phase 1.7 P2 : ancien alias grammar/SolPageFooter.jsx
+ *                    retiré (zéro consommateur intermédiaire, bruit architectural).
  *   SolHero        — wrapper SolNarrative (kicker + titre + narrative + cta optionnel)
  *   KPISol         — wrapper KpiCard variant confidence + contrat KpiResult backend
  *   Term           — NOUVEAU acronyme + tooltip narratif (doctrine §6.4)
@@ -13,7 +15,7 @@
  * Usage :
  *   import { SolPageFooter, SolHero, KPISol, Term, WeekCard, DecisionEvidenceCard } from 'components/grammar';
  */
-export { default as SolPageFooter } from './SolPageFooter';
+export { default as SolPageFooter } from '../../ui/sol/SolPageFooter';
 export { default as SolHero } from './SolHero';
 export { default as KPISol } from './KPISol';
 export { default as Term } from './Term';

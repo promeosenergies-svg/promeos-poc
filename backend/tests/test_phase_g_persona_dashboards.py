@@ -2272,6 +2272,44 @@ class TestPhaseGP1FixesSourceGuards:
         # Réponse audit expose le compte R19→R31
         assert '"bill_anomalies_r19_r31_count":' in src
 
+    def test_l20_1_priority_score_helper_centralized(self):
+        """L20.1 audit fix P0 BUG — helper `_severity_to_priority_score` centralisé
+        + `_PRIORITY_SCORE_MAP` SoT module-level (avant L20.1 : 90/70/50 hardcoded
+        2× inline avec BUG silencieux comparaison case-mismatch BillingInsight).
+        """
+        from pathlib import Path
+
+        src = (Path(__file__).resolve().parent.parent / "routes" / "billing.py").read_text(encoding="utf-8")
+        assert "_PRIORITY_SCORE_MAP" in src
+        assert "def _severity_to_priority_score(" in src
+        assert '"CRITICAL": 90' in src and '"HIGH": 70' in src and '"MEDIUM": 50' in src
+        # Vérifie que le helper est invoqué dans les 2 callsites (BillingInsight + BillAnomaly)
+        assert src.count("_severity_to_priority_score(") >= 3  # 1 def + 2 invocations
+
+    def test_l20_2_sort_defensive_get(self):
+        """L20.2 audit fix P1 — sort defensive `.get()`."""
+        from pathlib import Path
+
+        src = (Path(__file__).resolve().parent.parent / "routes" / "billing.py").read_text(encoding="utf-8")
+        assert 'a.get("priority_score", 0)' in src
+        assert 'a.get("business_impact", {}).get("estimated_risk_eur", 0)' in src
+
+    def test_l20_3_sot_mirrors_lazy_load_yaml(self):
+        """L20.3 audit fix P1 — 3 SoT MIRRORS lazy-load YAML (cumul L11.5+L14+L17
+        reviewer #2 reportés). Pattern aligné PRICE_ELEC_ETI_2026 Phase L15.1.
+        """
+        from config.regulatory_sources_loader import get_term_value
+        from doctrine.constants import (
+            FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR,
+            PRICE_FALLBACK_EUR_PER_KWH,
+            PRICE_FLEX_NEBCO_EUR_PER_MWH,
+        )
+
+        # Verify runtime values match YAML SoT
+        assert PRICE_FALLBACK_EUR_PER_KWH == float(get_term_value("PRICE_FALLBACK_EUR_PER_KWH"))
+        assert PRICE_FLEX_NEBCO_EUR_PER_MWH == float(get_term_value("PRICE_FLEX_NEBCO_EUR_PER_MWH"))
+        assert FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR == float(get_term_value("FLEX_HEURISTIC_EUR_PER_SITE_PER_YEAR"))
+
     def test_l19_audit_invoices_batch_uses_caches(self):
         """L19 audit fix P1 — audit_invoices_batch() évite N+1 via caches batch
         pré-construits (build_contract_cache + build_prev_invoice_cache).

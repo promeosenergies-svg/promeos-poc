@@ -35,6 +35,9 @@ _DOMAIN_ALLOWLIST = frozenset(
         # Phase 3.4d audit follow-up — domaines doctrine PROMEOS distincts
         "regops",  # pondérations RegOps DT/BACS/APER (mirroir doctrine.constants)
         "readiness",  # pondérations readiness Data/Conformity/Actions
+        # Phase L20.4 audit fix P1 (pré-existant L7+) — domaine bill_intelligence
+        # ajouté Phase L7.2+L8.1+L9 pour 30+ clés BILL_ANOMALY_* (R19→R31 thresholds).
+        "bill_intelligence",
     }
 )
 _DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")

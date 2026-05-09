@@ -59,14 +59,18 @@ const SEVERITY_STYLES = Object.freeze({
 
 /**
  * Valide les evidence (doctrine §5.6 loi L9).
- * @throws {Error} si evidence.length hors [4, 8]
+ * Retourne { valid, reason } — ne throw plus (audit Phase 1.7 P1).
+ * Le throw au render-time crashait toute la page parente si evidence
+ * etait undefined ou en cours de chargement (loading state async).
  */
 function validateEvidence(evidence) {
-  if (!Array.isArray(evidence) || evidence.length < 4 || evidence.length > 8) {
-    throw new Error(
-      `DecisionEvidenceCard: 4-8 cellules evidence (Loi L9 doctrine §5.6) — recu ${Array.isArray(evidence) ? evidence.length : typeof evidence}`
-    );
+  if (!Array.isArray(evidence)) {
+    return { valid: false, reason: `attendu Array, recu ${typeof evidence}` };
   }
+  if (evidence.length < 4 || evidence.length > 8) {
+    return { valid: false, reason: `attendu 4-8 cellules evidence, recu ${evidence.length}` };
+  }
+  return { valid: true, reason: null };
 }
 
 export default function DecisionEvidenceCard({
@@ -81,7 +85,18 @@ export default function DecisionEvidenceCard({
   methodologyRef,
   className = '',
 }) {
-  validateEvidence(evidence);
+  const validation = validateEvidence(evidence);
+  if (!validation.valid) {
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.error(
+        `[DecisionEvidenceCard] evidence invalide (Loi L9 doctrine §5.6) : ${validation.reason}`
+      );
+    }
+    // Audit Phase 1.7 P1 : silent fallback — ne crash pas la page parente.
+    // Le composant n'est rendu en prod que si evidence est valide.
+    return null;
+  }
 
   const styles = SEVERITY_STYLES[severity] ?? SEVERITY_STYLES.neutral;
   // Audit code-reviewer Phase 1.6 : ternaire désormais effective —

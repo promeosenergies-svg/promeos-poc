@@ -1539,6 +1539,28 @@ _BA_SEVERITY_UI_MAP: dict[str, str] = {
     "info": "MEDIUM",
 }
 
+# Phase L20.1 audit fix P0 BUG — priority_score depuis severity UPPERCASE.
+# Avant L20.1 : `90 if i.severity == "CRITICAL" else ...` comparait raw lowercase
+# DB (BillingInsight.severity stockée lowercase) après que la ligne précédente
+# avait fait `.upper()` → tous les BillingInsight scorés 50 par défaut (BUG silencieux).
+# Phase L20.2 — extraction helper centralisé (avant L20.2 : 90/70/50 dupliqué 2×
+# inline endpoint billing.py:1610+1633 + audit Phase L20 reviewer #1 finding 2).
+_PRIORITY_SCORE_MAP: dict[str, int] = {
+    "CRITICAL": 90,
+    "HIGH": 70,
+    "MEDIUM": 50,
+    "LOW": 30,
+}
+
+
+def _severity_to_priority_score(severity_uppercase: str) -> int:
+    """Phase L20.2 — Helper SoT priority_score depuis severity UPPERCASE.
+
+    Évite duplication du mapping 90/70/50 dans /billing/anomalies-scoped + futurs
+    callsites. Default LOW (30) si severity inconnue (anti-faux-positif heuristique).
+    """
+    return _PRIORITY_SCORE_MAP.get(severity_uppercase, 30)
+
 
 @router.get("/anomalies-scoped")
 def get_billing_anomalies_scoped(
@@ -1596,18 +1618,21 @@ def get_billing_anomalies_scoped(
     sites_map = {s.id: s for s in db.query(Site).filter(Site.id.in_(all_site_ids)).all()} if all_site_ids else {}
 
     anomalies = []
-    # BillingInsight legacy (V66)
+    # BillingInsight legacy (V66) — Phase L20.1 P0 BUG fix : severity UPPERCASE
+    # normalisée AVANT comparaison priority_score (avant : tous BillingInsight
+    # scorés 50 car comparaison raw lowercase DB après .upper() inline).
     for i in insights:
         site = sites_map.get(i.site_id)
+        sev_uppercase = (i.severity or "MEDIUM").upper()
         anomalies.append(
             {
                 "code": i.type or "billing_anomaly",
-                "severity": (i.severity or "MEDIUM").upper(),
+                "severity": sev_uppercase,
                 "title_fr": i.message or "Anomalie facturation",
                 "detail_fr": i.notes or i.message or "",
                 "fix_hint_fr": "Vérifier la facture dans le module Facturation.",
                 "business_impact": {"estimated_risk_eur": i.estimated_loss_eur or 0},
-                "priority_score": 90 if i.severity == "CRITICAL" else 70 if i.severity == "HIGH" else 50,
+                "priority_score": _severity_to_priority_score(sev_uppercase),
                 "framework": "FACTURATION",
                 "site_id": i.site_id,
                 "site_nom": site.nom if site else f"Site {i.site_id}",
@@ -1622,15 +1647,26 @@ def get_billing_anomalies_scoped(
         details = ba.details_json or {}
         montant = details.get("montant_anomalie_eur", 0) or 0
         regulatory_ref = details.get("regulatory_ref", "")
+        # Phase L20.2 audit fix P2 — logger warning si code R-non-mappé (anti-drift
+        # silencieux quand R32+ ajoutés au pipeline sans update _R_CODES_TITLE_FR).
+        title_fr = _R_CODES_TITLE_FR.get(ba.code)
+        if title_fr is None:
+            import logging as _logging
+
+            _logging.getLogger(__name__).warning(
+                "Code anomaly %s manquant dans _R_CODES_TITLE_FR — fallback générique",
+                ba.code,
+            )
+            title_fr = f"Anomalie {ba.code}"
         anomalies.append(
             {
                 "code": ba.code,
                 "severity": sev_ui,
-                "title_fr": _R_CODES_TITLE_FR.get(ba.code, f"Anomalie {ba.code}"),
-                "detail_fr": regulatory_ref or _R_CODES_TITLE_FR.get(ba.code, ""),
+                "title_fr": title_fr,
+                "detail_fr": regulatory_ref or title_fr,
                 "fix_hint_fr": f"Vérifier la facture #{ba.invoice_id} dans le module Facturation.",
                 "business_impact": {"estimated_risk_eur": float(montant)},
-                "priority_score": 90 if sev_ui == "CRITICAL" else 70 if sev_ui == "HIGH" else 50,
+                "priority_score": _severity_to_priority_score(sev_ui),
                 "framework": "FACTURATION",
                 "site_id": site_id,
                 "site_nom": site.nom if site else f"Site {site_id}",
@@ -1638,8 +1674,14 @@ def get_billing_anomalies_scoped(
             }
         )
 
-    # Sort cardinal : priority_score DESC puis estimated_risk_eur DESC
-    anomalies.sort(key=lambda a: (-a["priority_score"], -a["business_impact"]["estimated_risk_eur"]))
+    # Phase L20.2 audit fix P1 — sort defensive `.get()` (avant : KeyError potentiel
+    # si business_impact ou estimated_risk_eur absent suite refacto futur).
+    anomalies.sort(
+        key=lambda a: (
+            -a.get("priority_score", 0),
+            -a.get("business_impact", {}).get("estimated_risk_eur", 0),
+        )
+    )
 
     return {"anomalies": anomalies, "count": len(anomalies)}
 

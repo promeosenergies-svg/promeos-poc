@@ -76,7 +76,11 @@ const PortfolioReconciliationPage = lazy(() => import('./pages/PortfolioReconcil
 const ContractRadarPage = lazy(() => import('./pages/ContractRadarPage'));
 const MethodologiePage = lazy(() => import('./pages/MethodologiePage'));
 const Contrats = lazy(() => import('./pages/Contrats'));
-const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+// Audit Phase 1.7 P2 : OnboardingPage lazy import retiré — la route /onboarding
+// redirige vers /cockpit/jour depuis Phase 0.1, ce chunk n'était jamais rendu
+// et alourdissait le bundle. Le fichier `pages/OnboardingPage.jsx` reste sur
+// disque pour réutilisation Phase 4 (vrai wizard premier-pas) — il faudra
+// alors restaurer l'import lazy ici.
 const SireneOnboardingPage = lazy(() => import('./pages/SireneOnboardingPage'));
 const AperPage = lazy(() => import('./pages/AperPage'));
 const UsagesDashboardPage = lazy(() => import('./pages/UsagesDashboardPage'));
