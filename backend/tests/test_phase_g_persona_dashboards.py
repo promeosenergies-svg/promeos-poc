@@ -2151,6 +2151,25 @@ class TestPhaseGP1FixesSourceGuards:
         # Plus de Literal stalé R19/R20 only
         assert 'Literal["R19", "R20"]' not in src
 
+    def test_l13_r27_merged_sum_count_query(self):
+        """L13 audit P2 efficiency cumul L8+L9+L10 — R27 fusion sum + count en 1 SQL.
+
+        Avant L13 : 2 SQL distincts avec JOIN+WHERE identique sur MeterReading
+        (double scan partition site sur fenêtre période).
+        Après L13 : 1 SQL retournant tuple (sum, count) → gain × 2 sur 1000
+        invoices batch nightly.
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        # 1 seul query merge : func.sum + func.count dans une seule query
+        assert "db.query(func.sum(MeterReading.value_kwh), func.count(MeterReading.id))" in src
+        # Plus de double query distinct (anti-régression)
+        assert src.count("db.query(func.sum(MeterReading.value_kwh))") == 0
+        assert src.count("db.query(func.count(MeterReading.id))") == 0
+
     def test_l12_5_contract_cache_miss_warning_logged(self):
         """L12.5 audit fix F1 — _resolve_contract logue un warning sur cache miss
         (avant : None silencieux → faux négatifs R25/R28/R30 non observables).

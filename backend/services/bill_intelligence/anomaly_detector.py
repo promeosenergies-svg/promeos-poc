@@ -703,30 +703,22 @@ def detect_r27_consumption_meter_drift(invoice: EnergyInvoice, db: Session) -> O
     if not invoice.period_start or not invoice.period_end:
         return None
 
-    # Récupère Σ MeterReading.value_kwh sur fenêtre période invoice
+    # Phase L13 audit P2 efficiency — fusion sum + count en 1 SQL au lieu de 2
+    # (avant : 2 SELECT distincts avec JOIN+WHERE identique = double scan
+    # MeterReading sur fenêtre période ; gain × 2 sur 1000 invoices batch).
     from sqlalchemy import func
 
-    sum_readings = (
-        db.query(func.sum(MeterReading.value_kwh))
+    agg_row = (
+        db.query(func.sum(MeterReading.value_kwh), func.count(MeterReading.id))
         .join(Meter, Meter.id == MeterReading.meter_id)
         .filter(
             Meter.site_id == invoice.site_id,
             MeterReading.timestamp >= invoice.period_start,
             MeterReading.timestamp <= invoice.period_end,
         )
-        .scalar()
+        .one()
     )
-    count_readings = (
-        db.query(func.count(MeterReading.id))
-        .join(Meter, Meter.id == MeterReading.meter_id)
-        .filter(
-            Meter.site_id == invoice.site_id,
-            MeterReading.timestamp >= invoice.period_start,
-            MeterReading.timestamp <= invoice.period_end,
-        )
-        .scalar()
-        or 0
-    )
+    sum_readings, count_readings = agg_row[0], agg_row[1] or 0
 
     if sum_readings is None or sum_readings <= 0:
         return None
