@@ -1149,6 +1149,112 @@ class TestPhaseK2NormalizeAndCache:
         assert r1 == r2  # même résultat depuis cache
 
 
+# ─── Phase L3 — R27 Cross-validation conso facturée vs MeterReading ────────
+
+
+class TestPhaseL3R27ConsumptionMeterDrift:
+    def _seed_invoice_with_readings(
+        self,
+        db,
+        invoice_kwh,
+        readings_total_kwh,
+        readings_count=30,
+    ):
+        """Helper : crée site + Meter + MeterReadings + invoice période."""
+        from datetime import datetime as _dt
+
+        from models import Meter, MeterReading
+        from models.energy_models import EnergyVector, FrequencyType
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        meter = Meter(
+            meter_id=f"PRM-R27-{readings_total_kwh}",
+            name="Meter R27 test",
+            site_id=sites[0].id,
+            energy_vector=EnergyVector.ELECTRICITY,
+        )
+        db.add(meter)
+        db.flush()
+
+        period_start = date.today() - timedelta(days=30)
+        period_end = date.today()
+
+        # Distribution simple : amount par reading
+        per_reading = readings_total_kwh / readings_count
+        for i in range(readings_count):
+            ts = _dt.combine(period_start + timedelta(days=i), _dt.min.time())
+            db.add(
+                MeterReading(
+                    meter_id=meter.id,
+                    timestamp=ts,
+                    frequency=FrequencyType.HOURLY,
+                    value_kwh=per_reading,
+                )
+            )
+
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number=f"INV-R27-{invoice_kwh}",
+            period_start=period_start,
+            period_end=period_end,
+            energy_kwh=invoice_kwh,
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.commit()
+        db.refresh(invoice)
+        return invoice
+
+    def test_l3_r27_detects_overbilling_vs_meter(self, db):
+        """L3 — Facture 15 000 kWh mais compteur mesure 10 000 kWh → R27 critical."""
+        from services.bill_intelligence.anomaly_detector import detect_r27_consumption_meter_drift
+
+        # 50% surfacturation = 5000 kWh ≈ 650 € impact
+        invoice = self._seed_invoice_with_readings(db, invoice_kwh=15000, readings_total_kwh=10000)
+        anomaly = detect_r27_consumption_meter_drift(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R27"
+        assert anomaly.severity == "critical"  # écart > 1000 kWh
+        assert anomaly.details_json["ecart_kwh"] == 5000
+        assert anomaly.details_json["ecart_pct"] == 50.0
+        # Impact € via prix CRE 130 €/MWh : 5 MWh × 130 = 650 €
+        assert anomaly.details_json["montant_anomalie_eur"] == 650.0
+
+    def test_l3_r27_no_anomaly_within_10pct_tolerance(self, db):
+        """L3 — Facture 10 500 kWh vs compteur 10 000 kWh (5 % d'écart) → pas anomalie."""
+        from services.bill_intelligence.anomaly_detector import detect_r27_consumption_meter_drift
+
+        invoice = self._seed_invoice_with_readings(db, invoice_kwh=10500, readings_total_kwh=10000)
+        assert detect_r27_consumption_meter_drift(invoice, db) is None
+
+    def test_l3_r27_skipped_insufficient_readings(self, db):
+        """L3 — Moins de 7 readings sur la période → skip silencieux (couverture insuffisante)."""
+        from services.bill_intelligence.anomaly_detector import detect_r27_consumption_meter_drift
+
+        # Seulement 5 readings (< 7 seuil garde-fou)
+        invoice = self._seed_invoice_with_readings(db, invoice_kwh=15000, readings_total_kwh=10000, readings_count=5)
+        assert detect_r27_consumption_meter_drift(invoice, db) is None
+
+    def test_l3_r27_skipped_without_period(self, db):
+        """L3 — Invoice sans period_start/end → skip (impossible de querier MeterReading)."""
+        from services.bill_intelligence.anomaly_detector import detect_r27_consumption_meter_drift
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-R27-NOPERIOD",
+            energy_kwh=15000,
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.commit()
+        assert detect_r27_consumption_meter_drift(invoice, db) is None
+
+
 # ─── Phase L2.1 — Helper normalize_enum_value SoT cardinal ──────────────────
 
 

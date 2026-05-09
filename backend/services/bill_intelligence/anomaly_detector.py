@@ -384,6 +384,104 @@ def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[Bil
     )
 
 
+# ─── R27 Cross-validation conso facturée vs MeterReading (Phase L3 CFO ROI 5-10 k€) ──
+
+
+def detect_r27_consumption_meter_drift(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+    """R27 — Cross-validation `invoice.energy_kwh` vs `Σ MeterReading.value_kwh` période.
+
+    Persona Jean-Marc CFO : ROI 5-10 k€/an cardinal. Cas typique : fournisseur
+    facture une conso "estimée" significativement supérieure à la conso réelle
+    mesurée par compteur (PRM/PCE) — détection anti-fraude majeure.
+
+    Heuristique cardinale :
+    - JOIN Site → Meter (energy_vector compatible)
+    - Σ MeterReading.value_kwh sur période [period_start, period_end]
+    - Compare avec invoice.energy_kwh (TTC)
+    - Écart > 10 % ET > 100 kWh absolu → R27 anomalie
+    - Sévérité : `critical` si écart > 1000 kWh ; `warning` sinon
+
+    Garde-fous (anti-faux positifs) :
+    - Skip si invoice.period_start/period_end manquants (pas de fenêtre temporelle)
+    - Skip si pas de Meter sur le site (cas legacy sans télérelevé)
+    - Skip si Σ readings = 0 (compteur silencieux : autre anomalie hors scope R27)
+    - Skip si moins de 7 readings sur la période (couverture insuffisante)
+
+    Returns:
+        BillAnomaly ou None
+    """
+    from models.energy_models import Meter, MeterReading
+
+    if not invoice.energy_kwh or invoice.energy_kwh <= 0:
+        return None
+    if not invoice.period_start or not invoice.period_end:
+        return None
+
+    # Récupère Σ MeterReading.value_kwh sur fenêtre période invoice
+    from sqlalchemy import func
+
+    sum_readings = (
+        db.query(func.sum(MeterReading.value_kwh))
+        .join(Meter, Meter.id == MeterReading.meter_id)
+        .filter(
+            Meter.site_id == invoice.site_id,
+            MeterReading.timestamp >= invoice.period_start,
+            MeterReading.timestamp <= invoice.period_end,
+        )
+        .scalar()
+    )
+    count_readings = (
+        db.query(func.count(MeterReading.id))
+        .join(Meter, Meter.id == MeterReading.meter_id)
+        .filter(
+            Meter.site_id == invoice.site_id,
+            MeterReading.timestamp >= invoice.period_start,
+            MeterReading.timestamp <= invoice.period_end,
+        )
+        .scalar()
+        or 0
+    )
+
+    if sum_readings is None or sum_readings <= 0:
+        return None
+    if count_readings < 7:  # Couverture insuffisante (cas import partiel)
+        return None
+
+    conso_facturee = float(invoice.energy_kwh)
+    conso_mesuree = float(sum_readings)
+    ecart_kwh = conso_facturee - conso_mesuree
+    ecart_pct = abs(ecart_kwh) / conso_mesuree * 100 if conso_mesuree > 0 else 0
+
+    # Seuils anti-bruit : > 10 % ET > 100 kWh
+    if ecart_pct < 10 or abs(ecart_kwh) < 100:
+        return None
+
+    severity = "critical" if abs(ecart_kwh) > 1000 else "warning"
+    # Estimation impact € via prix marginal CRE T4 2025 ETI tertiaire (130 €/MWh)
+    from doctrine.constants import PRICE_ELEC_ETI_2026_EUR_PER_MWH
+
+    montant_impact_eur = round(abs(ecart_kwh) / 1000 * PRICE_ELEC_ETI_2026_EUR_PER_MWH, 2)
+
+    return BillAnomaly(
+        invoice_id=invoice.id,
+        code="R27",
+        severity=severity,
+        threshold_value=Decimal("10.0"),
+        actual_value=Decimal(str(round(ecart_pct, 2))),
+        details_json={
+            "conso_facturee_kwh": round(conso_facturee, 1),
+            "conso_mesuree_kwh": round(conso_mesuree, 1),
+            "ecart_kwh": round(ecart_kwh, 1),
+            "ecart_pct": round(ecart_pct, 2),
+            "readings_count": count_readings,
+            "period_start": invoice.period_start.isoformat(),
+            "period_end": invoice.period_end.isoformat(),
+            "regulatory_ref": "Cross-validation MeterReading vs invoice (Bill Intelligence cardinal)",
+            "montant_anomalie_eur": montant_impact_eur,
+        },
+    )
+
+
 # ─── R26 Sanity check total_eur vs Σ lignes (Phase L2 Jean-Marc CFO) ───────
 
 
@@ -921,5 +1019,14 @@ def detect_anomalies_for_invoice(
             anomalies.append(r26)
     except Exception as e:
         _logger.error(f"R26 detector failed for invoice {invoice.id}: {e}")
+
+    # R27 : 0 ou 1 — Phase L3 CFO cross-validation conso facturée vs compteur (anti-fraude)
+    try:
+        r27 = detect_r27_consumption_meter_drift(invoice, db)
+        if r27:
+            db.add(r27)
+            anomalies.append(r27)
+    except Exception as e:
+        _logger.error(f"R27 detector failed for invoice {invoice.id}: {e}")
 
     return anomalies
