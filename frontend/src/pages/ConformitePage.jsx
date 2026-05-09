@@ -10,6 +10,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck, Plus, RotateCcw, RefreshCw, Coins, ShoppingCart } from 'lucide-react';
 import { toUsages } from '../services/routes';
 import { Button, PageShell, ActiveFiltersBar, Explain } from '../ui';
+// Phase 1.3 — primitifs grammaire Sol v1.1 (Term + DecisionEvidenceCard) démo sur /conformite
+import { Term, DecisionEvidenceCard } from '../components/grammar';
 // Sprint 1.4 — grammaire Sol industrialisée (ADR-001) sur /conformite
 import SolPageHeader from '../ui/sol/SolPageHeader';
 // Sprint 2 Vague B ét8'-bis — HOC SolBriefingHead/Footer factorise grammaire §5.
@@ -646,7 +648,14 @@ export default function ConformitePage() {
         <SolPageHeader
           kicker={solBriefing?.kicker || scopeKicker('CONFORMITÉ', org?.nom, scopedSites?.length)}
           title={solBriefing?.title || 'Conformité réglementaire'}
-          italicHook={solBriefing?.italicHook || 'trajectoire 2030'}
+          italicHook={
+            solBriefing?.italicHook || (
+              <>
+                trajectoire 2030 — <Term acronyme="DT" />, <Term acronyme="BACS" />,{' '}
+                <Term acronyme="APER" />
+              </>
+            )
+          }
           subtitle={scopeLabel}
         />
       }
@@ -769,6 +778,32 @@ export default function ConformitePage() {
       {nextBestAction && nextBestAction.id !== 'nba-all-good' && (
         <NextBestActionCard action={nextBestAction} onAction={handleNbaAction} />
       )}
+
+      {/* Phase 1.3 — DecisionEvidenceCard démo : primitif Sol v1.1 §5.6
+          Valeurs en dur (démo) — branchement backend prévu Phase 2.
+          Positionné avant ComplianceScoreHeader pour visibilité maximale. */}
+      <div className="my-4" data-testid="conformite-decision-evidence-demo">
+        <DecisionEvidenceCard
+          rang={1}
+          category="CONFORMITE"
+          scope="SIÈGE HELIOS PARIS"
+          severity="warning"
+          titre={
+            <>
+              Mise en conformité <Term acronyme="BACS" /> avant 2027
+            </>
+          }
+          lead="Le système GTB classe A/B doit être installé avant le 1er janvier 2027 sur ce site (puissance CVC > 290 kW). Provision pénalité 7 500 €/an si non-conforme."
+          evidence={[
+            { label: 'PUISSANCE CVC', value: '320', unit: 'kW', helper: 'seuil 290 kW' },
+            { label: 'INVESTISSEMENT', value: '85 000', unit: '€', helper: 'CAPEX GTB' },
+            { label: 'PÉNALITÉ ÉVITÉE', value: '7 500', unit: '€/an', helper: 'décret 2020-887' },
+            { label: 'ÉCHÉANCE', value: '01/01/2027', unit: '', helper: 'à 18 mois' },
+          ]}
+          primaryCta={{ label: 'Lancer plan BACS', href: '/actions/new?type=BACS&site=1' }}
+          methodologyRef="/methodologie/bacs"
+        />
+      </div>
 
       {/* A.2: Unified compliance score header */}
       <ComplianceScoreHeader complianceScore={complianceScore} segProfile={segProfile} />
