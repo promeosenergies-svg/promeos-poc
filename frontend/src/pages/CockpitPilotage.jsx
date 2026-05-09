@@ -41,6 +41,8 @@ import SolKickerWithSwitch from '../ui/sol/SolKickerWithSwitch';
 import AcronymTooltip from '../ui/sol/AcronymTooltip';
 import KpiCard from '../components/cockpit/KpiCard';
 import KpiSkeleton from '../components/cockpit/KpiSkeleton';
+// Sprint Grammaire v1 Phase 2 BRIEFING — primitifs Sol v1.1 doctrine §5
+import { DecisionEvidenceCard, SolPageFooter, Term } from '../components/grammar';
 import { getCockpitPriorities } from '../services/api/cockpit';
 import { useScope } from '../contexts/ScopeContext';
 import { splitMwh, splitKw, fmtPct, fmtEurShort, deltaSeverity } from '../utils/format';
@@ -1291,11 +1293,50 @@ export default function CockpitPilotage() {
             style={{ fontSize: 11, color: 'var(--sol-ink-500)' }}
           >
             <Clock size={11} className="inline mr-1 -mt-0.5" aria-hidden="true" />
-            Données EMS {lastUpdateRel}
+            Données <Term acronyme="EMS" /> {lastUpdateRel}
             {dataQualityPct != null ? ` · qualité ${dataQualityPct} %` : ''}
             {' · semaine '}
             {weekIso}
           </div>
+          {/* Sprint Grammaire v1 Phase 2 BRIEFING — narrative resserrée
+              (doctrine §5 : 2-3 lignes max chiffrées). Si pas encore chargé,
+              fallback minimal. */}
+          {(priorities?.length > 0 || alertsTotal > 0) && (
+            <p
+              className="mt-2.5 max-w-[760px]"
+              style={{
+                fontSize: 13.5,
+                lineHeight: 1.5,
+                color: 'var(--sol-ink-700)',
+                fontFamily: 'var(--sol-font-system)',
+              }}
+              data-testid="cockpit-jour-briefing-narrative"
+            >
+              {priorities?.length > 0 && (
+                <>
+                  {priorities.length} décision{priorities.length > 1 ? 's' : ''} prioritaire
+                  {priorities.length > 1 ? 's' : ''}
+                  {criticalCount > 0
+                    ? ` dont ${criticalCount} critique${criticalCount > 1 ? 's' : ''}`
+                    : ''}{' '}
+                  à arbitrer cette semaine.{' '}
+                </>
+              )}
+              {facts?.exposure?.total?.value_eur > 0 && (
+                <>
+                  Exposition financière consolidée :{' '}
+                  <strong style={{ color: 'var(--sol-ink-900)' }}>
+                    {fmtEurShort(facts.exposure.total.value_eur)}
+                  </strong>
+                  .{' '}
+                </>
+              )}
+              <span className="font-mono" style={{ fontSize: 11.5 }}>
+                Sources : <Term acronyme="EMS" /> · <Term acronyme="CRE" /> ·{' '}
+                <Term acronyme="ADEME" />.
+              </span>
+            </p>
+          )}
         </div>
         <div className="flex gap-1.5 flex-wrap items-center">
           {alertsTotal > 0 && (
@@ -1369,7 +1410,63 @@ export default function CockpitPilotage() {
         />
       </div>
 
-      {/* File de traitement */}
+      {/* Sprint Grammaire v1 Phase 2 BRIEFING — Top 3 décisions à arbitrer.
+          Doctrine §5.6 : DecisionEvidenceCard primitif rang/category/scope/
+          severity/titre/lead/evidence[4]/primaryCta/methodologyRef.
+          Données enrichies backend (cf cockpit.py:_build_evidence_cells…).
+          La file P1-P5 complète est conservée intacte juste en dessous. */}
+      {priorities && priorities.length > 0 && (
+        <section className="mb-4" data-testid="cockpit-jour-top-decisions">
+          <h2
+            className="font-mono uppercase tracking-[0.07em] mb-2"
+            style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
+          >
+            Top {Math.min(3, priorities.length)} décision
+            {Math.min(3, priorities.length) > 1 ? 's' : ''} à arbitrer
+          </h2>
+          <div className="grid grid-cols-1 gap-3">
+            {priorities.slice(0, 3).map((p) => (
+              <DecisionEvidenceCard
+                key={p.rank}
+                rang={p.rank}
+                category={(p.category_label || p.domain || 'ACTION').toUpperCase()}
+                scope={p.scope_label || 'PORTEFEUILLE'}
+                severity={
+                  p.urgency === 'critical'
+                    ? 'critical'
+                    : p.urgency === 'high'
+                      ? 'warning'
+                      : 'neutral'
+                }
+                titre={<>{p.title}</>}
+                lead={p.lead || ''}
+                evidence={
+                  p.evidence_cells || [
+                    {
+                      label: 'IMPACT',
+                      value: p.impact_value_eur ? fmtEurShort(p.impact_value_eur) : '—',
+                      unit: '',
+                      helper: 'estimation',
+                    },
+                    {
+                      label: 'CATÉGORIE',
+                      value: p.category_label || '—',
+                      unit: '',
+                      helper: '',
+                    },
+                    { label: 'URGENCE', value: p.urgency || '—', unit: '', helper: '' },
+                    { label: 'PRIORITÉ', value: `P${p.rank}`, unit: '', helper: '' },
+                  ]
+                }
+                primaryCta={{ label: "Voir l'action", href: p.action_url }}
+                methodologyRef={p.methodology_ref || '/methodologie/cockpit'}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* File de traitement (préservée — vue détaillée P1-P5) */}
       <div className="mb-4">
         <FileTraitement
           priorities={priorities}
@@ -1378,31 +1475,15 @@ export default function CockpitPilotage() {
         />
       </div>
 
-      {/* Footer Sol */}
-      <div
-        className="flex justify-between flex-wrap gap-2.5 pt-3"
-        style={{ borderTop: '0.5px solid var(--sol-rule)' }}
-      >
-        <div
-          className="font-mono uppercase tracking-[0.07em]"
-          style={{ fontSize: 11, color: 'var(--sol-ink-500)' }}
-        >
-          Source {sources.join(' + ') || 'PROMEOS'}
-          {confidence ? ` · confiance ${confidence}` : ''}
-          {' · mis à jour '}
-          {lastUpdateRel} ·{' '}
-          <Link
-            to="/methodologie/cockpit"
-            className="no-underline hover:underline"
-            style={{
-              color: 'var(--sol-ink-500)',
-              borderBottom: '0.5px dotted var(--sol-ink-400)',
-            }}
-          >
-            méthodologie
-          </Link>
-        </div>
-      </div>
+      {/* Sprint Grammaire v1 Phase 2 BRIEFING — SolPageFooter primitif §5
+          (Source · Confiance · Mis à jour · Méthodologie). Remplace l'ancien
+          footer DIV inline custom (audit Phase 1.5 → loi L6 violation). */}
+      <SolPageFooter
+        source={sources.join(' + ') || 'PROMEOS'}
+        confidence={confidence || 'medium'}
+        updatedAt={lastUpdate}
+        methodologyUrl="/methodologie/cockpit"
+      />
     </div>
   );
 }

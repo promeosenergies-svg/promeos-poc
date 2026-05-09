@@ -1222,6 +1222,17 @@ def get_cockpit_priorities(
             else:
                 total_filtered += 1
 
+    # Sprint Grammaire v1 Phase 2 BRIEFING (2026-05-09) : enrichir les 3 premières
+    # priorités avec evidence_cells + lead + methodology_ref + scope pour rendu
+    # DecisionEvidenceCard (primitif Sol v1.1 §5.6) au-dessus de la file P1-P5
+    # existante. La file conservée intacte pour rétro-compat. Les enrichissements
+    # restent calculés BACKEND (zéro logique métier frontend, doctrine §8.1).
+    for p in top5[:3]:
+        p["evidence_cells"] = _build_evidence_cells_for_priority(p)
+        p["lead"] = _build_lead_for_priority(p)
+        p["methodology_ref"] = _build_methodology_ref_for_priority(p)
+        p["scope_label"] = _extract_scope_from_priority(p)
+
     return {
         "priorities": top5,
         "total": len(top5),
@@ -1229,6 +1240,126 @@ def get_cockpit_priorities(
         # que le frontend affiche "+ N autres priorités" sur gros portfolio.
         "remaining_count": total_filtered,
     }
+
+
+# ── Helpers Phase 2 BRIEFING — enrichissement DecisionEvidenceCard ───────
+
+
+def _build_evidence_cells_for_priority(p: dict) -> list[dict]:
+    """Construit 4 cellules evidence (doctrine §5.6 Loi L9) pour la card.
+
+    Format DecisionEvidenceCard.evidence : {label, value, unit, helper}.
+    Labels en MAJUSCULES font-mono, valeurs en font-numeric tabular-nums.
+    """
+    cells = []
+    impact_eur = p.get("impact_value_eur")
+    impact_mwh = p.get("impact_value_mwh_year")
+    category = p.get("category_label") or p.get("domain") or "—"
+    urgency = p.get("urgency") or "medium"
+    rank = p.get("rank", "?")
+
+    if impact_eur is not None and impact_eur > 0:
+        cells.append(
+            {
+                "label": "IMPACT FINANCIER",
+                "value": f"{int(round(impact_eur)):,}".replace(",", " "),
+                "unit": "€/an",
+                "helper": "exposition évitée si traitée",
+            }
+        )
+    if impact_mwh is not None and impact_mwh > 0:
+        cells.append(
+            {
+                "label": "ÉCONOMIE POTENTIELLE",
+                "value": f"{int(round(impact_mwh))}",
+                "unit": "MWh/an",
+                "helper": "à récupérer",
+            }
+        )
+
+    cells.append(
+        {
+            "label": "CATÉGORIE",
+            "value": category.capitalize() if isinstance(category, str) else "—",
+            "unit": "",
+            "helper": "type d'action",
+        }
+    )
+    urgency_label = {"critical": "Critique", "high": "Haute", "medium": "Moyenne"}.get(urgency, "—")
+    cells.append(
+        {
+            "label": "URGENCE",
+            "value": urgency_label,
+            "unit": "",
+            "helper": f"rang P{rank}",
+        }
+    )
+    # Garantir minimum 4 cellules (contrat DecisionEvidenceCard 4-8 doctrine §5.6).
+    # Si une partie des champs métier est absente, on complète par une cellule
+    # neutre "DOMAINE" pour atteindre 4 — évite que la card ne se rende pas.
+    if len(cells) < 4:
+        cells.append(
+            {
+                "label": "DOMAINE",
+                "value": (p.get("domain") or "—").capitalize(),
+                "unit": "",
+                "helper": "pilier PROMEOS",
+            }
+        )
+    return cells[:4]
+
+
+def _build_lead_for_priority(p: dict) -> str:
+    """Phrase synthétique 1-2 lignes (doctrine §5 narrative resserrée).
+
+    Évite les acronymes bruts (transformés via Term côté frontend).
+    """
+    impact_eur = p.get("impact_value_eur")
+    category = (p.get("category_label") or "Action").lower()
+    if impact_eur is not None and impact_eur > 0:
+        impact_str = f"{int(round(impact_eur)):,}".replace(",", " ")
+        return (
+            f"Action prioritaire de type {category} — exposition financière estimée à "
+            f"{impact_str} €/an. À traiter pour limiter le risque réglementaire."
+        )
+    return (
+        f"Action prioritaire identifiée par le moteur de priorisation cross-pilier. "
+        f"Catégorie : {category}. À arbitrer dans la file de pilotage."
+    )
+
+
+def _build_methodology_ref_for_priority(p: dict) -> str:
+    """URL méthodologie selon le domaine de la priorité."""
+    domain = (p.get("domain") or "").lower()
+    category = (p.get("category_label") or "").lower()
+    if "compliance" in domain or "conform" in domain or "conform" in category:
+        return "/methodologie/conformite"
+    if "bacs" in domain:
+        return "/methodologie/bacs"
+    if "anomal" in domain:
+        return "/methodologie/anomalies"
+    return "/methodologie/cockpit"
+
+
+def _extract_scope_from_priority(p: dict) -> str:
+    """Extrait le label scope (site/portefeuille) depuis le title.
+
+    Patterns courants seed HELIOS :
+      "Site Bureau Régional Lyon nécessite..."  → "BUREAU RÉGIONAL LYON"
+      "Site Siège HELIOS Paris nécessite..."     → "SIÈGE HELIOS PARIS"
+    Fallback : "PORTEFEUILLE" si aucun pattern reconnu.
+    """
+    import re
+
+    title = p.get("title") or ""
+    m = re.match(r"^Site\s+(.+?)\s+(?:nécessite|requiert|doit|à\s)", title)
+    if m:
+        return m.group(1).upper().strip()
+    if "risque financier" in title.lower():
+        return "PORTEFEUILLE"
+    # Fallback : 3 premiers mots du title
+    words = title.split()[:4]
+    return " ".join(words).upper() if words else "PORTEFEUILLE"
 
 
 @router.get("/cockpit/levers")
