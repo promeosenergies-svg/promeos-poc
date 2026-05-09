@@ -377,7 +377,11 @@ def test_resolve_period_code_returns_none_when_nothing_matches(db_session):
 
 
 def test_pipeline_detect_anomalies_for_invoice_aggregates_R19_and_R20(db_session):
-    """Pipeline : R19 + R20 simultanés sur même invoice = 2+ anomalies persistées."""
+    """Pipeline : R19 + R20 simultanés sur même invoice = R19 + R20 présents (subset).
+
+    Phase L4.1 audit fix : assertion subset, pas exact-count, pour éviter
+    régression à chaque nouvelle règle ajoutée au pipeline (R25/R26/R27/R28 etc.).
+    """
     from models import BillAnomaly
     from services.bill_intelligence import detect_anomalies_for_invoice
 
@@ -388,17 +392,21 @@ def test_pipeline_detect_anomalies_for_invoice_aggregates_R19_and_R20(db_session
 
     results = detect_anomalies_for_invoice(invoice, db_session)
 
-    assert len(results) == 2
-    codes = sorted(a.code for a in results)
-    assert codes == ["R19", "R20"]
+    codes = {a.code for a in results}
+    assert "R19" in codes
+    assert "R20" in codes
 
-    # Vérifier persistence
-    persisted = db_session.query(BillAnomaly).filter(BillAnomaly.invoice_id == invoice.id).all()
-    assert len(persisted) == 2
+    # Vérifier persistence : R19 + R20 au minimum présents
+    persisted_codes = {a.code for a in db_session.query(BillAnomaly).filter(BillAnomaly.invoice_id == invoice.id).all()}
+    assert {"R19", "R20"}.issubset(persisted_codes)
 
 
 def test_pipeline_resilience_one_detector_fails_others_continue(db_session, monkeypatch):
-    """Pipeline résilience : si R19 lève exception, R20 continue."""
+    """Pipeline résilience : si R19 lève exception, R20 continue (R19 absent, R20 présent).
+
+    Phase L4.1 audit fix : assertion subset/exclusion, pas exact-count, pour éviter
+    régression à chaque nouvelle règle ajoutée au pipeline (R25/R26/R27/R28 etc.).
+    """
     from services.bill_intelligence import anomaly_detector, detect_anomalies_for_invoice
 
     _, site, _, _ = _seed_org_site_meter_contract(db_session, ps_dict={"HPH": 36})
@@ -413,9 +421,10 @@ def test_pipeline_resilience_one_detector_fails_others_continue(db_session, monk
 
     results = detect_anomalies_for_invoice(invoice, db_session)
 
-    # R19 a planté mais R20 doit avoir détecté
-    assert len(results) == 1
-    assert results[0].code == "R20"
+    codes = {a.code for a in results}
+    # R19 a planté → absent ; R20 doit avoir détecté
+    assert "R19" not in codes
+    assert "R20" in codes
 
 
 # ─── YAML SoT cohérence ─────────────────────────────────────────────────────
