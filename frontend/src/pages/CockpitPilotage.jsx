@@ -1259,6 +1259,27 @@ export default function CockpitPilotage() {
 
   const scopeLabel = `${orgName}${sitesCount ? ` — ${sitesCount} sites` : ''}`;
 
+  /**
+   * Architecture BRIEFING (Sprint Grammaire v1 Phase 2.X reconstruction LEGO 09/05) :
+   *
+   *   1. SITUATION  → SolKickerWithSwitch + H1 Fraunces + sous-ligne mono Term EMS
+   *   2. SITUATION  → narrative briefing 60 mots (chiffres clés)
+   *   3. CONTEXTE   → boutons alertes + Centre d'action (raccourcis)
+   *   4. RISQUE     → 3 KPI hero (KpiTriptyqueEnergetique : J−1 / mois DJU / pic kW)
+   *   5. DÉCISION   → Top 3 DecisionEvidenceCard ranked par impact € (cardinal)
+   *   6. PREUVE     → 2 visuels glanceables (ConsoSevenDaysBars + CourbeChargeJMinus1)
+   *   7. DRILL-DOWN → File P1-P5 détaillée (vue exhaustive)
+   *   8. PROVENANCE → SolPageFooter SCM (Source · Confiance · Mis à jour)
+   *
+   * Briques conservées (Lego intactes) : SolKickerWithSwitch, useCockpitFacts,
+   * getCockpitPriorities, KpiTriptyqueEnergetique, ConsoSevenDaysBars,
+   * CourbeChargeJMinus1, FileTraitement.
+   *
+   * Briques nouvelles (primitifs Sol grammar/) : DecisionEvidenceCard, Term,
+   * SolPageFooter — primitifs Phase 1 industrialisés.
+   *
+   * Tonalité : calme par défaut (rouge réservé aux décisions vraiment critiques).
+   */
   return (
     <div
       className="max-w-[1280px] mx-auto"
@@ -1269,8 +1290,10 @@ export default function CockpitPilotage() {
         padding: '1.4rem 1.6rem 1.2rem',
       }}
     >
-      {/* Header */}
-      <div className="flex justify-between items-start gap-3.5 flex-wrap">
+      {/* ──────────────────────────────────────────────────────────────────
+          1. SITUATION + 2. NARRATIVE — header narratif BRIEFING
+          ────────────────────────────────────────────────────────────────── */}
+      <header className="flex justify-between items-start gap-3.5 flex-wrap">
         <div className="flex-1 min-w-[260px]">
           <SolKickerWithSwitch scope={`Cockpit · ${scopeLabel}`} currentRoute="jour" />
           <h1
@@ -1282,6 +1305,7 @@ export default function CockpitPilotage() {
               lineHeight: 1.2,
               color: 'var(--sol-ink-900)',
             }}
+            data-hero
           >
             Bonjour — voici ce qui mérite votre attention{' '}
             <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-700)', fontWeight: 400 }}>
@@ -1298,9 +1322,7 @@ export default function CockpitPilotage() {
             {' · semaine '}
             {weekIso}
           </div>
-          {/* Sprint Grammaire v1 Phase 2 BRIEFING — narrative resserrée
-              (doctrine §5 : 2-3 lignes max chiffrées). Si pas encore chargé,
-              fallback minimal. */}
+          {/* Narrative briefing 2-3 lignes 60 mots max — doctrine §5. */}
           {(priorities?.length > 0 || alertsTotal > 0) && (
             <p
               className="mt-2.5 max-w-[760px]"
@@ -1314,10 +1336,13 @@ export default function CockpitPilotage() {
             >
               {priorities?.length > 0 && (
                 <>
-                  {priorities.length} décision{priorities.length > 1 ? 's' : ''} prioritaire
-                  {priorities.length > 1 ? 's' : ''}
+                  {priorities.length === 1
+                    ? '1 décision prioritaire'
+                    : `${priorities.length} décisions prioritaires`}
                   {criticalCount > 0
-                    ? ` dont ${criticalCount} critique${criticalCount > 1 ? 's' : ''}`
+                    ? criticalCount === 1
+                      ? ' dont 1 critique'
+                      : ` dont ${criticalCount} critiques`
                     : ''}{' '}
                   à arbitrer cette semaine.{' '}
                 </>
@@ -1338,6 +1363,7 @@ export default function CockpitPilotage() {
             </p>
           )}
         </div>
+        {/* 3. CONTEXTE — raccourcis alertes + Centre d'action */}
         <div className="flex gap-1.5 flex-wrap items-center">
           {alertsTotal > 0 && (
             <Link
@@ -1381,9 +1407,11 @@ export default function CockpitPilotage() {
             <ArrowRight size={12} aria-hidden="true" style={{ opacity: 0.6 }} />
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Triptyque KPI temporel multi-échelle */}
+      {/* ──────────────────────────────────────────────────────────────────
+          4. RISQUE — Triptyque KPI temporel (état énergétique actuel)
+          ────────────────────────────────────────────────────────────────── */}
       {factsLoading && !facts ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 my-4">
           <KpiSkeleton variant="temporal" scaleLabel={SCALE_LABEL.medium} />
@@ -1394,27 +1422,13 @@ export default function CockpitPilotage() {
         <KpiTriptyqueEnergetique facts={facts} />
       )}
 
-      {/* 2 visuels glanceables */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
-        <ConsoSevenDaysBars
-          lastUpdate={lastUpdateRel}
-          confidence={confidence}
-          weeklyAnomaly={facts?.consumption?.weekly_anomaly}
-          weeklyBreakdown={facts?.consumption?.weekly_breakdown}
-        />
-        <CourbeChargeJMinus1
-          subscribedKw={facts?.power?.subscribed_kw}
-          lastUpdate={lastUpdateRel}
-          confidence={confidence}
-          hourlyBreakdown={facts?.power?.hourly_breakdown}
-        />
-      </div>
-
-      {/* Sprint Grammaire v1 Phase 2 BRIEFING — Top 3 décisions à arbitrer.
-          Doctrine §5.6 : DecisionEvidenceCard primitif rang/category/scope/
-          severity/titre/lead/evidence[4]/primaryCta/methodologyRef.
-          Données enrichies backend (cf cockpit.py:_build_evidence_cells…).
-          La file P1-P5 complète est conservée intacte juste en dessous. */}
+      {/* ──────────────────────────────────────────────────────────────────
+          5. DÉCISION — Top 3 DecisionEvidenceCard cardinal BRIEFING
+          (Doctrine §5.6 Loi L9 : 4-8 cellules evidence par card,
+          enrichies backend `evidence_cells` + `lead` + `methodology_ref`.)
+          Remontée AVANT les visuels Phase 2.X — la décision prime sur la
+          preuve technique dans la narration BRIEFING.
+          ────────────────────────────────────────────────────────────────── */}
       {priorities && priorities.length > 0 && (
         <section className="mb-4" data-testid="cockpit-jour-top-decisions">
           <h2
@@ -1466,7 +1480,27 @@ export default function CockpitPilotage() {
         </section>
       )}
 
-      {/* File de traitement (préservée — vue détaillée P1-P5) */}
+      {/* ──────────────────────────────────────────────────────────────────
+          6. PREUVE — 2 visuels glanceables (preuve technique)
+          ────────────────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
+        <ConsoSevenDaysBars
+          lastUpdate={lastUpdateRel}
+          confidence={confidence}
+          weeklyAnomaly={facts?.consumption?.weekly_anomaly}
+          weeklyBreakdown={facts?.consumption?.weekly_breakdown}
+        />
+        <CourbeChargeJMinus1
+          subscribedKw={facts?.power?.subscribed_kw}
+          lastUpdate={lastUpdateRel}
+          confidence={confidence}
+          hourlyBreakdown={facts?.power?.hourly_breakdown}
+        />
+      </div>
+
+      {/* ──────────────────────────────────────────────────────────────────
+          7. DRILL-DOWN — File de traitement P1-P5 détaillée (preuve actionnable)
+          ────────────────────────────────────────────────────────────────── */}
       <div className="mb-4">
         <FileTraitement
           priorities={priorities}
@@ -1475,9 +1509,9 @@ export default function CockpitPilotage() {
         />
       </div>
 
-      {/* Sprint Grammaire v1 Phase 2 BRIEFING — SolPageFooter primitif §5
-          (Source · Confiance · Mis à jour · Méthodologie). Remplace l'ancien
-          footer DIV inline custom (audit Phase 1.5 → loi L6 violation). */}
+      {/* ──────────────────────────────────────────────────────────────────
+          8. PROVENANCE — SolPageFooter SCM (Loi L6 doctrine §5)
+          ────────────────────────────────────────────────────────────────── */}
       <SolPageFooter
         source={sources.join(' + ') || 'PROMEOS'}
         confidence={confidence || 'medium'}
