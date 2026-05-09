@@ -42,6 +42,7 @@ from typing import Any, Optional
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from doctrine.constants import VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH
 from services.billing_engine.bricks.cbam import compute_cbam
 from services.billing_engine.parameter_store import ParameterStore
 from utils.parameter_store_base import load_yaml_section, paris_today
@@ -76,9 +77,10 @@ DEFAULT_ARCHETYPE = "BUREAU_STANDARD"
 # (D-Sprint-C7-Capacite-Loader-Refactor-001 P2).
 CAPACITE_UNITAIRE_EUR_MWH = 0.43
 
-# Seuil VNU par défaut (fallback hardcodé si YAML indisponible).
-# Valeur canonique dans `tarifs_reglementaires.yaml::vnu.seuil_1_eur_mwh`.
-VNU_SEUIL_DEFAUT_EUR_MWH = 78.0
+# Seuil VNU par défaut — alias depuis doctrine.constants SoT YAML lazy-load
+# (Phase L28.1b — avant : 78.0 hardcoded en parallèle de doctrine, drift silencieux).
+# Valeur canonique dans `sources_reglementaires.yaml::VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH`.
+VNU_SEUIL_DEFAUT_EUR_MWH = VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH
 
 # Fallbacks hardcodés — constantes YAML canoniques dans `cost_simulator_2026`
 # section de `tarifs_reglementaires.yaml`. Valeurs ici uniquement pour tenir

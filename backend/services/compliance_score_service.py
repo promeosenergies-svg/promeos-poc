@@ -38,6 +38,8 @@ from typing import Optional
 import yaml
 from sqlalchemy.orm import Session
 
+from doctrine.constants import BACS_THRESHOLD_KW_EXISTING
+
 _logger = logging.getLogger(__name__)
 
 # ── Chargement config scoring depuis regs.yaml (A7 — source de vérité unique) ─
@@ -631,12 +633,16 @@ def _is_dt_assujetti(site) -> bool:
 
 
 def _is_bacs_assujetti(site) -> bool:
-    """Site BACS-assujetti si Σ(cvc_power_kw bâtiments) ≥ 70 kW (Décret 2020-887)."""
+    """Site BACS-assujetti si Σ(cvc_power_kw bâtiments) ≥ 70 kW (Décret 2020-887).
+
+    Phase L28.1b — utilise BACS_THRESHOLD_KW_EXISTING depuis doctrine.constants
+    (lazy-load YAML SoT) au lieu de 70 hardcoded.
+    """
     try:
         total_cvc_kw = sum((b.cvc_power_kw or 0) for b in site.batiments)
     except Exception:
         total_cvc_kw = 0
-    return total_cvc_kw >= 70
+    return total_cvc_kw >= BACS_THRESHOLD_KW_EXISTING
 
 
 def _get_audit_energetique(site):

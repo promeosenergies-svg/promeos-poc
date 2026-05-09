@@ -9,6 +9,17 @@ Loi n 2023-175 du 10 mars 2023 (Acceleration Production Energies Renouvelables).
 import logging
 from sqlalchemy.orm import Session
 
+# Phase L28.1b audit fix P1 — import doctrine.constants module-level (avant :
+# import différé in-function ligne 92, callsites comparaisons hardcoded 1500/10000).
+from doctrine.constants import (
+    APER_DEADLINE_DATE,
+    APER_DEADLINE_LARGE_PARKING_DATE,
+    APER_DEADLINE_SMALL_PARKING_DATE,
+    APER_PARKING_LARGE_SURFACE_M2,
+    APER_PARKING_MIN_SURFACE_M2,
+    APER_PENALTY_EUR_PER_M2_PER_YEAR,
+    PRICE_FALLBACK_EUR_PER_KWH,
+)
 from models import Site, Portefeuille, EntiteJuridique
 
 logger = logging.getLogger("promeos.aper")
@@ -54,15 +65,16 @@ def get_aper_dashboard(db: Session, org_id: int) -> dict:
         if parking_type:
             parking_type = parking_type.value if hasattr(parking_type, "value") else str(parking_type)
 
-        if parking_area >= 1500 and parking_type == "outdoor":
-            deadline = "2026-07-01" if parking_area > 10000 else "2028-07-01"
+        if parking_area >= APER_PARKING_MIN_SURFACE_M2 and parking_type == "outdoor":
+            is_large = parking_area > APER_PARKING_LARGE_SURFACE_M2
+            deadline = APER_DEADLINE_LARGE_PARKING_DATE if is_large else APER_DEADLINE_SMALL_PARKING_DATE
             parking_eligible.append(
                 {
                     "site_id": site.id,
                     "site_nom": site.nom,
                     "surface_m2": parking_area,
                     "deadline": deadline,
-                    "category": "large" if parking_area > 10000 else "medium",
+                    "category": "large" if is_large else "medium",
                     "latitude": site.latitude,
                     "longitude": site.longitude,
                 }
@@ -89,12 +101,7 @@ def get_aper_dashboard(db: Session, org_id: int) -> dict:
     # APER calculé côté backend (zero business logic frontend). Pénalité
     # 20 €/m²/an applicable à compter du 01/01/2028 si non engagement
     # solarisation parkings >1 500 m² (Loi 2023-175 art. 40 + Décret 2022-1726).
-    from doctrine.constants import (
-        APER_DEADLINE_DATE,
-        APER_PARKING_MIN_SURFACE_M2,
-        APER_PENALTY_EUR_PER_M2_PER_YEAR,
-    )
-
+    # Phase L28.1b — imports remontés au module-level (cf. tête de fichier).
     surface_assujettie_m2 = total_parking_m2 + total_roof_m2
     penalty_eur_year = surface_assujettie_m2 * APER_PENALTY_EUR_PER_M2_PER_YEAR
 
@@ -242,7 +249,7 @@ def estimate_pv_production(
 
         price_kwh = get_prix_reference("elec")
     except Exception:
-        price_kwh = 0.068  # fallback prix marche moyen
+        price_kwh = PRICE_FALLBACK_EUR_PER_KWH  # fallback prix marche moyen (doctrine SoT)
     savings_eur = annual_kwh * autoconso_ratio * price_kwh
 
     # CO2 evite

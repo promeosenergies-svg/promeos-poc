@@ -22,12 +22,21 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from doctrine.constants import (
+    AUDIT_SME_DEADLINE_DATE,
+    AUDIT_SME_THRESHOLD_GWH_ISO50001,
+    AUDIT_SME_THRESHOLD_GWH_PERIODIC,
+)
+
 logger = logging.getLogger(__name__)
 
 # Seuils reglementaires (loi 2025-391)
-SEUIL_SME_KWH = 23_600_000  # 23.6 GWh
-SEUIL_AUDIT_KWH = 2_750_000  # 2.75 GWh
-DATE_DEADLINE_P1 = date(2026, 10, 11)
+# Phase L28.1b audit fix P1 — alias depuis doctrine.constants SoT YAML lazy-load
+# (avant : 23_600_000 / 2_750_000 hardcoded en parallèle de doctrine — drift
+# silencieux). Conversion GWh → kWh via × 1_000_000.
+SEUIL_SME_KWH = int(AUDIT_SME_THRESHOLD_GWH_ISO50001 * 1_000_000)  # 23.6 GWh
+SEUIL_AUDIT_KWH = int(AUDIT_SME_THRESHOLD_GWH_PERIODIC * 1_000_000)  # 2.75 GWh
+DATE_DEADLINE_P1 = date.fromisoformat(AUDIT_SME_DEADLINE_DATE)  # 2026-10-11
 PERIODICITE_ANS = 4
 DELAI_TRANSMISSION = 2  # mois apres audit
 

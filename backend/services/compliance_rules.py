@@ -50,6 +50,12 @@ import yaml
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
+from doctrine.constants import (
+    APER_PARKING_MIN_SURFACE_M2,
+    BACS_THRESHOLD_KW_EXISTING,
+    BACS_THRESHOLD_KW_INITIAL,
+)
+
 logger = logging.getLogger(__name__)
 
 from models import (
@@ -235,12 +241,15 @@ def _eval_bacs(ctx: dict) -> List[dict]:
         if rid == "BACS_POWER":
             if cvc is None or cvc == 0:
                 finding.update(status="UNKNOWN", severity=rule["severity"], evidence=rule.get("when_unknown", ""))
-            elif cvc <= 70:
+            elif cvc <= BACS_THRESHOLD_KW_EXISTING:
                 finding.update(status="OUT_OF_SCOPE", evidence=rule.get("when_out_of_scope", ""))
                 findings.append(finding)
                 return findings  # Out of scope
             else:
-                finding.update(status="OK", evidence=f"CVC {cvc} kW > 70 kW — assujetti BACS")
+                finding.update(
+                    status="OK",
+                    evidence=f"CVC {cvc} kW > {BACS_THRESHOLD_KW_EXISTING} kW — assujetti BACS",
+                )
 
         elif rid == "BACS_DEROGATION":
             if has_derog:
@@ -249,8 +258,11 @@ def _eval_bacs(ctx: dict) -> List[dict]:
                 finding.update(status="OK", evidence="Pas de derogation — evaluation standard")
 
         elif rid == "BACS_HIGH_DEADLINE":
-            if cvc <= 290:
-                finding.update(status="OK", evidence="CVC <= 290 kW — non concerne seuil haut")
+            if cvc <= BACS_THRESHOLD_KW_INITIAL:
+                finding.update(
+                    status="OK",
+                    evidence=f"CVC <= {BACS_THRESHOLD_KW_INITIAL} kW — non concerne seuil haut",
+                )
             elif has_att or has_derog:
                 finding.update(status="OK", evidence="Attestation ou derogation BACS presente")
             else:
@@ -263,8 +275,11 @@ def _eval_bacs(ctx: dict) -> List[dict]:
                 )
 
         elif rid == "BACS_LOW_DEADLINE":
-            if cvc > 290 or cvc <= 70:
-                finding.update(status="OK", evidence="Non concerne seuil 70-290 kW")
+            if cvc > BACS_THRESHOLD_KW_INITIAL or cvc <= BACS_THRESHOLD_KW_EXISTING:
+                finding.update(
+                    status="OK",
+                    evidence=f"Non concerne seuil {BACS_THRESHOLD_KW_EXISTING}-{BACS_THRESHOLD_KW_INITIAL} kW",
+                )
             elif has_att or has_derog:
                 finding.update(status="OK", evidence="Attestation ou derogation BACS presente")
             else:
@@ -307,10 +322,10 @@ def _eval_aper(ctx: dict) -> List[dict]:
             area = ctx.get("parking_area_m2")
             if area is None:
                 finding.update(status="UNKNOWN", severity=rule["severity"], evidence=rule.get("when_unknown", ""))
-            elif area < 1500:
+            elif area < APER_PARKING_MIN_SURFACE_M2:
                 finding.update(status="OUT_OF_SCOPE", evidence=rule.get("when_out_of_scope", ""))
             else:
-                # Parking >= 1500 without ENR = NOK
+                # Parking >= APER_PARKING_MIN_SURFACE_M2 without ENR = NOK
                 finding.update(
                     status="NOK",
                     severity=rule["severity"],
