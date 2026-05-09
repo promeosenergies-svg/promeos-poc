@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<title>Audit Grammaire Produit v1 — Phase 0</title>
+<style>
+  body { font: 14px/1.5 -apple-system, system-ui, sans-serif; max-width: 1600px; margin: 0 auto; padding: 24px; color: #111; background: #fafafa; }
+  h1 { margin: 0 0 8px; }
+  h2 { margin-top: 48px; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+  .dim { color: #888; font-weight: normal; font-size: 0.85em; }
+  .intent { color: #444; }
+  .note { color: #b04; background: #fff4f4; padding: 8px 12px; border-left: 3px solid #d22; }
+  .cards { display: grid; grid-template-columns: 1fr; gap: 24px; }
+  .card { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .vp { font-weight: 600; }
+  .status { font-family: ui-monospace, monospace; font-size: 12px; padding: 4px 8px; display: inline-block; border-radius: 4px; margin: 8px 0; }
+  .status.ok { background: #e7f7e7; color: #1a5e1a; }
+  .status.ko { background: #fde7e7; color: #8a1a1a; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+  .shot { border: 1px solid #eee; border-radius: 4px; overflow: hidden; }
+  .lab { background: #f3f3f3; padding: 4px 8px; font-size: 12px; color: #555; }
+  .shot img { display: block; width: 100%; height: auto; }
+  .toc { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+  .toc ul { list-style: none; padding: 0; margin: 0; columns: 3; }
+  .toc li { margin: 4px 0; }
+  a { color: #0a5; }
+</style>
+</head>
+<body>
+  <h1>Audit Grammaire Produit v1 — Phase 0 (read-only)</h1>
+  <p>Capturé le 2026-05-09T07:18:19.646Z · branche <code>claude/refonte-sol2</code> · FE <code>http://localhost:5175</code></p>
+  <div class="toc"><strong>Vues auditées</strong><ul><li><a href="#cockpit-jour">cockpit-jour</a></li><li><a href="#cockpit-strategique">cockpit-strategique</a></li><li><a href="#centre-action">centre-action</a></li><li><a href="#anomalies">anomalies</a></li><li><a href="#site-paris-bureaux">site-paris-bureaux</a></li><li><a href="#conformite">conformite</a></li><li><a href="#factures">factures</a></li><li><a href="#onboarding">onboarding</a></li></ul></div>
+  
+      <section id="cockpit-jour">
+        <h2>Cockpit Décision (jour) <span class="dim">/cockpit/jour</span></h2>
+        <p class="intent">Intention : <em>Décider la journée — rythme HMM</em></p>
+        
+        <div class="cards">
+        <div class="card">
+          <div class="vp">Desktop large <span class="dim">(1440x900)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/cockpit-jour/1440x900-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/cockpit-jour/1440x900-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">Desktop standard <span class="dim">(1280x800)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/cockpit-jour/1280x800-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/cockpit-jour/1280x800-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">iPad portrait <span class="dim">(1024x1366)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/cockpit-jour/1024x1366-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/cockpit-jour/1024x1366-full.png" loading="lazy"/></div>
+          </div>
+        </div></div>
+        <p><a href="findings/cockpit-jour.md">→ findings/cockpit-jour.md</a></p>
+      </section>
+
+      <section id="cockpit-strategique">
+        <h2>Cockpit Stratégique <span class="dim">/cockpit/strategique</span></h2>
+        <p class="intent">Intention : <em>Lecture exécutive comité direction</em></p>
+        
+        <div class="cards">
+        <div class="card">
+          <div class="vp">Desktop large <span class="dim">(1440x900)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/cockpit-strategique/1440x900-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/cockpit-strategique/1440x900-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">Desktop standard <span class="dim">(1280x800)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/cockpit-strategique/1280x800-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/cockpit-strategique/1280x800-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">iPad portrait <span class="dim">(1024x1366)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/cockpit-strategique/1024x1366-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/cockpit-strategique/1024x1366-full.png" loading="lazy"/></div>
+          </div>
+        </div></div>
+        <p><a href="findings/cockpit-strategique.md">→ findings/cockpit-strategique.md</a></p>
+      </section>
+
+      <section id="centre-action">
+        <h2>Centre d'action (peek) <span class="dim">/?actionCenter=open&tab=actions</span></h2>
+        <p class="intent">Intention : <em>Inbox transverse alertes + actions</em></p>
+        <p class="note">⚠️ Mapping prompt /centre-action → home + slide-over (NavRegistry.js:1183).</p>
+        <div class="cards">
+        <div class="card">
+          <div class="vp">Desktop large <span class="dim">(1440x900)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/centre-action/1440x900-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/centre-action/1440x900-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">Desktop standard <span class="dim">(1280x800)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/centre-action/1280x800-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/centre-action/1280x800-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">iPad portrait <span class="dim">(1024x1366)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/centre-action/1024x1366-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/centre-action/1024x1366-full.png" loading="lazy"/></div>
+          </div>
+        </div></div>
+        <p><a href="findings/centre-action.md">→ findings/centre-action.md</a></p>
+      </section>
+
+      <section id="anomalies">
+        <h2>Anomalies hub <span class="dim">/anomalies</span></h2>
+        <p class="intent">Intention : <em>Audit + reclaim factures/contrats</em></p>
+        
+        <div class="cards">
+        <div class="card">
+          <div class="vp">Desktop large <span class="dim">(1440x900)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/anomalies/1440x900-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/anomalies/1440x900-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">Desktop standard <span class="dim">(1280x800)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/anomalies/1280x800-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/anomalies/1280x800-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">iPad portrait <span class="dim">(1024x1366)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/anomalies/1024x1366-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/anomalies/1024x1366-full.png" loading="lazy"/></div>
+          </div>
+        </div></div>
+        <p><a href="findings/anomalies.md">→ findings/anomalies.md</a></p>
+      </section>
+
+      <section id="site-paris-bureaux">
+        <h2>Site360 — Siège HELIOS Paris (id=1) <span class="dim">/sites/1</span></h2>
+        <p class="intent">Intention : <em>Drill-down site unique multi-pillar</em></p>
+        <p class="note">⚠️ Mapping prompt /sites/site_paris_bureaux → /sites/1 — IDs sont integers (1=Siège HELIOS Paris, 3 500 m2). Slug string ne match jamais (422).</p>
+        <div class="cards">
+        <div class="card">
+          <div class="vp">Desktop large <span class="dim">(1440x900)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/site-paris-bureaux/1440x900-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/site-paris-bureaux/1440x900-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">Desktop standard <span class="dim">(1280x800)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/site-paris-bureaux/1280x800-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/site-paris-bureaux/1280x800-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">iPad portrait <span class="dim">(1024x1366)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/site-paris-bureaux/1024x1366-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/site-paris-bureaux/1024x1366-full.png" loading="lazy"/></div>
+          </div>
+        </div></div>
+        <p><a href="findings/site-paris-bureaux.md">→ findings/site-paris-bureaux.md</a></p>
+      </section>
+
+      <section id="conformite">
+        <h2>Conformité <span class="dim">/conformite</span></h2>
+        <p class="intent">Intention : <em>Scoring DT/BACS/APER/AUDIT + plan</em></p>
+        
+        <div class="cards">
+        <div class="card">
+          <div class="vp">Desktop large <span class="dim">(1440x900)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/conformite/1440x900-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/conformite/1440x900-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">Desktop standard <span class="dim">(1280x800)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/conformite/1280x800-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/conformite/1280x800-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">iPad portrait <span class="dim">(1024x1366)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/conformite/1024x1366-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/conformite/1024x1366-full.png" loading="lazy"/></div>
+          </div>
+        </div></div>
+        <p><a href="findings/conformite.md">→ findings/conformite.md</a></p>
+      </section>
+
+      <section id="factures">
+        <h2>Factures (Bill-Intel) <span class="dim">/bill-intel</span></h2>
+        <p class="intent">Intention : <em>Shadow billing + anomalies R01-R31</em></p>
+        <p class="note">⚠️ Mapping prompt /factures → /bill-intel (NavRegistry.js:1223).</p>
+        <div class="cards">
+        <div class="card">
+          <div class="vp">Desktop large <span class="dim">(1440x900)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/factures/1440x900-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/factures/1440x900-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">Desktop standard <span class="dim">(1280x800)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/factures/1280x800-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/factures/1280x800-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">iPad portrait <span class="dim">(1024x1366)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/factures/1024x1366-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/factures/1024x1366-full.png" loading="lazy"/></div>
+          </div>
+        </div></div>
+        <p><a href="findings/factures.md">→ findings/factures.md</a></p>
+      </section>
+
+      <section id="onboarding">
+        <h2>Onboarding <span class="dim">/onboarding</span></h2>
+        <p class="intent">Intention : <em>Premier parcours utilisateur</em></p>
+        
+        <div class="cards">
+        <div class="card">
+          <div class="vp">Desktop large <span class="dim">(1440x900)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/onboarding/1440x900-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/onboarding/1440x900-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">Desktop standard <span class="dim">(1280x800)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/onboarding/1280x800-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/onboarding/1280x800-full.png" loading="lazy"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="vp">iPad portrait <span class="dim">(1024x1366)</span></div>
+          <div class="status ok">
+            OK
+            · console=0
+            · pageErr=0
+            · 4xx=0
+          </div>
+          <div class="grid">
+            <div class="shot"><div class="lab">above-the-fold</div><img src="screenshots/onboarding/1024x1366-above.png" loading="lazy"/></div>
+            <div class="shot"><div class="lab">full page</div><img src="screenshots/onboarding/1024x1366-full.png" loading="lazy"/></div>
+          </div>
+        </div></div>
+        <p><a href="findings/onboarding.md">→ findings/onboarding.md</a></p>
+      </section>
+</body>
+</html>

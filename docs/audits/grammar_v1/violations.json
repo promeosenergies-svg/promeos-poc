@@ -1,0 +1,137 @@
+{
+  "views_order": [
+    "cockpit-jour",
+    "cockpit-strategique",
+    "centre-action",
+    "anomalies",
+    "site-paris-bureaux",
+    "conformite",
+    "factures",
+    "onboarding"
+  ],
+  "laws": [
+    [
+      "L1",
+      "L1_hero_preambule"
+    ],
+    [
+      "L2",
+      "L2_triptyque_typo"
+    ],
+    [
+      "L3",
+      "L3_kpi_3_max_tooltip_source"
+    ],
+    [
+      "L4",
+      "L4_acronymes_transformes"
+    ],
+    [
+      "L5",
+      "L5_empty_state_contextualise"
+    ],
+    [
+      "L6",
+      "L6_footer_source_timestamp"
+    ],
+    [
+      "L7",
+      "L7_densite_editoriale"
+    ],
+    [
+      "L8",
+      "L8_kicker_breadcrumb"
+    ],
+    [
+      "L9",
+      "L9_action_pousse_pas_tire"
+    ],
+    [
+      "L10",
+      "L10_coherence_chiffres"
+    ]
+  ],
+  "data": {
+    "cockpit-jour": {
+      "violations": {
+        "L1_hero_preambule": "P1",
+        "L4_acronymes_transformes": "P2",
+        "L6_footer_source_timestamp": "P0",
+        "L7_densite_editoriale": "P1",
+        "L9_action_pousse_pas_tire": "P1"
+      },
+      "score": 5.0
+    },
+    "cockpit-strategique": {
+      "violations": {
+        "L1_hero_preambule": "P2",
+        "L4_acronymes_transformes": "P0",
+        "L6_footer_source_timestamp": "P0",
+        "L8_kicker_breadcrumb": "P2",
+        "L9_action_pousse_pas_tire": "P2"
+      },
+      "score": 5.5
+    },
+    "centre-action": {
+      "violations": {
+        "L1_hero_preambule": "P0",
+        "L4_acronymes_transformes": "P1",
+        "L5_empty_state_contextualise": "P2",
+        "L6_footer_source_timestamp": "P0",
+        "L7_densite_editoriale": "P0",
+        "L8_kicker_breadcrumb": "P1",
+        "L9_action_pousse_pas_tire": "P0",
+        "L10_coherence_chiffres": "P2"
+      },
+      "score": 3.0
+    },
+    "anomalies": {
+      "violations": {
+        "L6_footer_source_timestamp": "P1",
+        "L9_action_pousse_pas_tire": "P2",
+        "L10_coherence_chiffres": "P2"
+      },
+      "score": 7.5
+    },
+    "site-paris-bureaux": {
+      "violations": {
+        "L1_hero_preambule": "P0",
+        "L6_footer_source_timestamp": "P1",
+        "L7_densite_editoriale": "P1",
+        "L8_kicker_breadcrumb": "P2",
+        "L9_action_pousse_pas_tire": "P1",
+        "L10_coherence_chiffres": "P2"
+      },
+      "score": 5.0
+    },
+    "conformite": {
+      "violations": {
+        "L4_acronymes_transformes": "P0",
+        "L6_footer_source_timestamp": "P1",
+        "L7_densite_editoriale": "P2"
+      },
+      "score": 7.0
+    },
+    "factures": {
+      "violations": {
+        "L4_acronymes_transformes": "P0",
+        "L6_footer_source_timestamp": "P0",
+        "L7_densite_editoriale": "P1",
+        "L9_action_pousse_pas_tire": "P2"
+      },
+      "score": 6.0
+    },
+    "onboarding": {
+      "violations": {
+        "L1_hero_preambule": "P0",
+        "L4_acronymes_transformes": "P0",
+        "L8_kicker_breadcrumb": "P0",
+        "L9_action_pousse_pas_tire": "P0",
+        "L5_empty_state_contextualise": "P1",
+        "L6_footer_source_timestamp": "P1",
+        "L11_emplacement_brique": "P0"
+      },
+      "score": 1.5
+    }
+  }
+}

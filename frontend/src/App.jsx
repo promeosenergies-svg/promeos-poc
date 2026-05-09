@@ -497,13 +497,17 @@ function App() {
                                     </PageSuspense>
                                   }
                                 />
+                                {/* 2026-05-09 — Sprint Grammaire v1 Phase 0.
+                                Audit Sol v1.1 : /onboarding rendait OnboardingPage
+                                avec une grammaire calquée sur Cockpit Stratégique
+                                (test 2 doctrinal "dirigeant non-sachant" en échec,
+                                score 1,5/10). Redirect vers /cockpit/jour le temps
+                                que Phase 4 livre un vrai wizard premier pas
+                                (kicker Atlas/Briefing, 3-5 étapes). Import
+                                OnboardingPage conservé pour réutilisation Phase 4. */}
                                 <Route
                                   path="/onboarding"
-                                  element={
-                                    <PageSuspense>
-                                      <OnboardingPage />
-                                    </PageSuspense>
-                                  }
+                                  element={<Navigate to="/cockpit/jour" replace />}
                                 />
                                 <Route
                                   path="/onboarding/sirene"
