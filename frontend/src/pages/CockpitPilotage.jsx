@@ -32,7 +32,7 @@
  *   ✓ P0-8 footer mono source/MAJ/confiance sous chaque visuel
  *   ⏳ P0-4 4ᵉ colonne Impact Fraunces différée Étape 4 (backend gap-filler)
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Bell, ArrowRight, Clock } from 'lucide-react';
 
@@ -43,11 +43,17 @@ import KpiCard from '../components/cockpit/KpiCard';
 import KpiSkeleton from '../components/cockpit/KpiSkeleton';
 // Sprint Grammaire v1 Phase 2 BRIEFING — primitifs Sol v1.1 doctrine §5
 import { DecisionEvidenceCard, SolPageFooter, Term } from '../components/grammar';
+// Phase 3.0 P2 — adaptateurs canoniques action→DEC (SoT cross-vues)
+import {
+  buildEvidenceFallback,
+  priorityLabel as decPriorityLabel,
+  toDecSeverity,
+} from '../components/grammar/decisionAdapters';
 import { getCockpitPriorities } from '../services/api/cockpit';
 import { useScope } from '../contexts/ScopeContext';
 import { splitMwh, splitKw, fmtPct, fmtEurShort, deltaSeverity } from '../utils/format';
 import { getIsoWeek, relativeTime, fmtDateLong } from '../utils/date';
-import { severityTone } from '../ui/sol/solTones';
+import { confidenceTone, severityTone } from '../ui/sol/solTones';
 
 /** Format delta percent for KPI tone — adds explicit sign + spacing pour
  *  lisibilité Marc 30s. fmtPct SoT n'ajoute pas le signe + et accepte un
@@ -929,25 +935,14 @@ function FileTraitementRow({ rank, item }) {
   const impactMwh = item.impact_value_mwh_year;
   const categoryLabel = item.category_label;
   const hasImpact = (impactEur != null && impactEur > 0) || (impactMwh != null && impactMwh > 0);
-  // Étape 10 P1-2 : badge confidence (Calculé / Modélisé / Indicatif) pour
-  // cohérence visuelle avec les KPI hybride Décision (audit /frontend-design).
+  // Audit Phase 3.0 P2 (simplify 09/05) : ancien mapping inline shadow le
+  // helper canonique `confidenceTone()` de solTones.js (consommé par KpiCard
+  // et SOL_CONFIDENCE_TONES SoT). Refacto pour utiliser la SoT — élimine
+  // la duplication 3-niveaux + rapproche d'un futur source-guard CI.
   const confidenceBadge = item.confidence_badge;
-  const confidenceLabel =
-    confidenceBadge === 'calculated_regulatory' || confidenceBadge === 'calculated_contractual'
-      ? 'Calculé'
-      : confidenceBadge === 'modeled_cee' || confidenceBadge === 'modeled'
-        ? 'Modélisé'
-        : confidenceBadge === 'indicative'
-          ? 'Indicatif'
-          : null;
-  const confidenceTone =
-    confidenceLabel === 'Calculé'
-      ? { bg: 'var(--sol-succes-bg)', fg: 'var(--sol-succes-fg)' }
-      : confidenceLabel === 'Modélisé'
-        ? { bg: 'var(--sol-attention-bg)', fg: 'var(--sol-attention-fg)' }
-        : confidenceLabel === 'Indicatif'
-          ? { bg: 'var(--sol-hce-bg)', fg: 'var(--sol-hce-fg)' }
-          : null;
+  const confTone = confidenceBadge ? confidenceTone(confidenceBadge) : null;
+  const confidenceLabel = confTone?.label || null;
+  const confTonePill = confTone ? { bg: confTone.bg, fg: confTone.fg } : null;
   // Étape 7 P0-B anchor : la page Décision link "Voir preuve opérationnelle →"
   // utilise `/cockpit/jour#decision-{id}`. On expose un `id` HTML sur chaque
   // ligne pour que le scroll vers l'ancre fonctionne (audit Phase 5 : ancre
@@ -1057,13 +1052,13 @@ function FileTraitementRow({ rank, item }) {
               className="flex items-center justify-end gap-1 mt-0.5"
               style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
             >
-              {confidenceLabel && confidenceTone && (
+              {confidenceLabel && confTonePill && (
                 <span
                   className="inline-flex items-center px-1 py-0 rounded font-mono uppercase tracking-[0.06em]"
                   style={{
                     fontSize: 9,
-                    background: confidenceTone.bg,
-                    color: confidenceTone.fg,
+                    background: confTonePill.bg,
+                    color: confTonePill.fg,
                     fontWeight: 500,
                   }}
                   title={item.confidence_source || 'Source canonique'}
@@ -1183,21 +1178,29 @@ export default function CockpitPilotage() {
   const [priorities, setPriorities] = useState(null);
   const [prioritiesRemaining, setPrioritiesRemaining] = useState(0);
   const [prioritiesLoading, setPrioritiesLoading] = useState(true);
+  // Audit Phase 3.0 P0 (CX 09/05) : ancien catch silencieux `setPriorities([])`
+  // affichait "0 décision" comme si l'utilisateur était en règle alors que
+  // l'API était en erreur — anti-pattern §6.5 doctrine ("backend réactif
+  // qui mensonge"). On expose désormais l'erreur pour rendu ErrorState.
+  const [prioritiesError, setPrioritiesError] = useState(null);
   const [searchParams] = useSearchParams();
 
-  useEffect(() => {
+  const fetchPriorities = useCallback(() => {
     let cancelled = false;
     setPrioritiesLoading(true);
+    setPrioritiesError(null);
     getCockpitPriorities()
       .then((data) => {
-        if (!cancelled) {
-          setPriorities(data?.priorities || []);
-          // Phase 13.C P1 : affordance "+ N autres priorités" pour gros pf.
-          setPrioritiesRemaining(data?.remaining_count || 0);
-        }
+        if (cancelled) return;
+        setPriorities(data?.priorities || []);
+        setPrioritiesRemaining(data?.remaining_count || 0);
       })
-      .catch(() => {
-        if (!cancelled) setPriorities([]);
+      .catch((err) => {
+        if (cancelled) return;
+        // P0 anti-silent : on garde priorities=null pour distinguer "pas encore
+        // chargé" (skeleton) de "erreur" (ErrorState avec retry).
+        setPrioritiesError(err?.message || 'Impossible de charger les priorités');
+        setPriorities(null);
       })
       .finally(() => {
         if (!cancelled) setPrioritiesLoading(false);
@@ -1205,7 +1208,12 @@ export default function CockpitPilotage() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    return fetchPriorities();
     // P1 audit /simplify : recharge sur scope change (org switch).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [org?.id]);
 
   // Phase 17.bis.D — drill-down depuis Vue exécutive (`?focus=action-{id}`
@@ -1428,7 +1436,32 @@ export default function CockpitPilotage() {
           enrichies backend `evidence_cells` + `lead` + `methodology_ref`.)
           Remontée AVANT les visuels Phase 2.X — la décision prime sur la
           preuve technique dans la narration BRIEFING.
+          Audit Phase 3.0 P0 : ErrorState anti-silent-fail si l'API priorities
+          échoue. Ne jamais afficher "0 décision" comme si tout allait bien.
           ────────────────────────────────────────────────────────────────── */}
+      {prioritiesError && !prioritiesLoading && (
+        <section className="mb-4" data-testid="cockpit-jour-top-decisions-error">
+          <div
+            className="rounded-md p-4 text-sm"
+            style={{
+              background: 'var(--sol-attention-bg)',
+              border: '0.5px solid var(--sol-attention-line)',
+              color: 'var(--sol-attention-fg)',
+            }}
+            role="alert"
+          >
+            <strong>Priorités indisponibles.</strong> {prioritiesError}.{' '}
+            <button
+              type="button"
+              onClick={fetchPriorities}
+              className="underline ml-1"
+              style={{ color: 'var(--sol-attention-fg)' }}
+            >
+              Réessayer
+            </button>
+          </div>
+        </section>
+      )}
       {priorities && priorities.length > 0 && (
         <section className="mb-4" data-testid="cockpit-jour-top-decisions">
           <h2
@@ -1445,32 +1478,18 @@ export default function CockpitPilotage() {
                 rang={p.rank}
                 category={(p.category_label || p.domain || 'ACTION').toUpperCase()}
                 scope={p.scope_label || 'PORTEFEUILLE'}
-                severity={
-                  p.urgency === 'critical'
-                    ? 'critical'
-                    : p.urgency === 'high'
-                      ? 'warning'
-                      : 'neutral'
-                }
+                severity={toDecSeverity(p.urgency)}
                 titre={<>{p.title}</>}
                 lead={p.lead || ''}
                 evidence={
-                  p.evidence_cells || [
-                    {
-                      label: 'IMPACT',
-                      value: p.impact_value_eur ? fmtEurShort(p.impact_value_eur) : '—',
-                      unit: '',
-                      helper: 'estimation',
-                    },
-                    {
-                      label: 'CATÉGORIE',
-                      value: p.category_label || '—',
-                      unit: '',
-                      helper: '',
-                    },
-                    { label: 'URGENCE', value: p.urgency || '—', unit: '', helper: '' },
-                    { label: 'PRIORITÉ', value: `P${p.rank}`, unit: '', helper: '' },
-                  ]
+                  p.evidence_cells ||
+                  buildEvidenceFallback({
+                    impactDisplay: p.impact_value_eur ? fmtEurShort(p.impact_value_eur) : null,
+                    category: p.category_label,
+                    priorityLabel: decPriorityLabel(p.urgency),
+                    rang: p.rank,
+                    domain: p.domain,
+                  })
                 }
                 primaryCta={{ label: "Voir l'action", href: p.action_url }}
                 methodologyRef={p.methodology_ref || '/methodologie/cockpit'}

@@ -42,6 +42,12 @@ import {
   getActionCenterNotifications,
 } from '../services/api/actions';
 import { DecisionEvidenceCard, SolPageFooter, Term } from './grammar';
+// Phase 3.0 P2 — adaptateurs canoniques action→DEC (SoT cross-vues)
+import {
+  buildEvidenceFallback,
+  priorityLabel as decPriorityLabel,
+  toDecSeverity,
+} from './grammar/decisionAdapters';
 import { fmtEurShort } from '../utils/format';
 
 // ── Configuration onglets ───────────────────────────────────────────────
@@ -179,62 +185,43 @@ export function computeActionCenterBadge(summary, notifications) {
 function buildDecisionFromAction(action, rang) {
   const isIssue = action.__type === 'issue';
   const impactEur = action.estimated_impact_eur || action.estimated_loss_eur || 0;
-  const sev =
-    action.priority === 'critical'
-      ? 'critical'
-      : action.priority === 'high'
-        ? 'warning'
-        : action.priority === 'medium'
-          ? 'warning'
-          : 'neutral';
   const category = (action.domain || (isIssue ? 'ANOMALIE' : 'ACTION')).toUpperCase();
   const scope = (action.site_name || 'PORTEFEUILLE').toUpperCase();
 
-  const evidence = [];
-  evidence.push({
-    label: 'IMPACT',
-    value: impactEur > 0 ? fmtEurShort(impactEur) : '—',
-    unit: '',
-    helper: impactEur > 0 ? 'estimation' : 'non chiffré',
-  });
-  evidence.push({
-    label: 'TYPE',
-    value: isIssue ? 'Anomalie auto' : 'Action manuelle',
-    unit: '',
-    helper: '',
-  });
-  evidence.push({
-    label: 'PRIORITÉ',
-    value:
-      action.priority === 'critical'
-        ? 'Critique'
-        : action.priority === 'high'
-          ? 'Haute'
-          : action.priority === 'medium'
-            ? 'Moyenne'
-            : 'Basse',
-    unit: '',
-    helper: `P${rang}`,
-  });
-  if (action.due_date) {
-    evidence.push({
-      label: 'ÉCHÉANCE',
-      value: new Date(action.due_date).toLocaleDateString('fr-FR', {
+  // Phase 3.0 P2 (audit simplify) : utilisation des adaptateurs canoniques
+  // grammar/decisionAdapters.js. Avant Phase 3.0, ce fichier réimplémentait
+  // toDecSeverity localement avec une divergence : `medium → 'warning'` ici
+  // mais `medium → 'neutral'` dans CockpitPilotage. SoT unique élimine ce bug.
+  const dueDate = action.due_date
+    ? new Date(action.due_date).toLocaleDateString('fr-FR', {
         day: '2-digit',
         month: '2-digit',
         year: '2-digit',
-      }),
+      })
+    : null;
+
+  // Surcharge minimale du fallback : on remplace la cellule CATÉGORIE par
+  // une cellule TYPE plus spécifique au LEDGER (issue vs action manuelle).
+  const fallback = buildEvidenceFallback({
+    impactDisplay: impactEur > 0 ? fmtEurShort(impactEur) : null,
+    category,
+    priorityLabel: decPriorityLabel(action.priority),
+    rang,
+    dueDate,
+    status: action.status || (isIssue ? 'À traiter' : 'Ouverte'),
+  });
+  // [IMPACT, CATÉGORIE→TYPE override, PRIORITÉ, ÉCHÉANCE/STATUT] pour LEDGER
+  const evidence = [
+    fallback[0],
+    {
+      label: 'TYPE',
+      value: isIssue ? 'Anomalie auto' : 'Action manuelle',
       unit: '',
       helper: '',
-    });
-  } else {
-    evidence.push({
-      label: 'STATUT',
-      value: action.status || (isIssue ? 'À traiter' : 'Ouverte'),
-      unit: '',
-      helper: 'à arbitrer',
-    });
-  }
+    },
+    fallback[2],
+    fallback[3],
+  ];
 
   const lead = isIssue
     ? `Anomalie auto-détectée sur ${action.site_name || 'le périmètre'}.${
@@ -248,10 +235,10 @@ function buildDecisionFromAction(action, rang) {
     rang,
     category,
     scope,
-    severity: sev,
+    severity: toDecSeverity(action.priority),
     titre: action.title || action.summary || 'Sans titre',
     lead,
-    evidence: evidence.slice(0, 4),
+    evidence,
     primaryCta: { label: "Voir l'action", href: ctaHref },
     methodologyRef: '/methodologie/anomalies',
   };

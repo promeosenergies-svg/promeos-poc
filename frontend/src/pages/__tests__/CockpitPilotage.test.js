@@ -63,26 +63,27 @@ describe('CP_02 — _CONSO_7D_* PLACEHOLDER vs _projectBreakdownToBars data-driv
   });
 });
 
-// ── CP_03 — confidenceLabel mapping ──────────────────────────────────────
+// ── CP_03 — confidenceLabel mapping (Phase 3.0 simplify : SoT solTones) ──
 
-describe('CP_03 — confidenceLabel mapping Calculé/Modélisé/Indicatif', () => {
-  it("badge 'calculated_regulatory' ou 'calculated_contractual' → 'Calculé'", () => {
+describe('CP_03 — confidenceLabel via SoT canonique solTones.confidenceTone', () => {
+  it('importe confidenceTone depuis solTones (élimine shadow Phase 3.0)', () => {
     const src = read();
-    expect(src).toMatch(/calculated_regulatory/);
-    expect(src).toMatch(/calculated_contractual/);
-    expect(src).toMatch(/'Calculé'/);
+    // Audit Phase 3.0 P2 : ancien mapping inline `'Calculé'/'Modélisé'/...`
+    // dans CockpitPilotage shadow l'helper canonique. Refacto vers SoT
+    // confidenceTone() de ui/sol/solTones.js consommé par KpiCard également.
+    expect(src).toMatch(/confidenceTone[^a-zA-Z]*severityTone|confidenceTone,\s*severityTone/);
+    expect(src).toMatch(/from\s+['"]\.\.\/ui\/sol\/solTones['"]/);
   });
 
-  it("badge 'modeled_cee' ou 'modeled' → 'Modélisé'", () => {
+  it('consomme le helper sur confidence_badge', () => {
     const src = read();
-    expect(src).toMatch(/modeled_cee/);
-    expect(src).toMatch(/'Modélisé'/);
+    expect(src).toMatch(/confidenceTone\(confidenceBadge\)/);
   });
 
-  it("badge 'indicative' → 'Indicatif'", () => {
+  it('rend confTonePill (label + bg + fg) extrait du helper', () => {
     const src = read();
-    expect(src).toMatch(/'indicative'/);
-    expect(src).toMatch(/'Indicatif'/);
+    expect(src).toMatch(/confTone\?\.label/);
+    expect(src).toMatch(/confTonePill/);
   });
 });
 

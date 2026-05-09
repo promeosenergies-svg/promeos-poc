@@ -1157,7 +1157,13 @@ def get_cockpit_priorities(
                     "title": item.issue_label,
                     "urgency": item.priority or "high",
                     "domain": item.domain,
-                    "action_url": f"/action-center?action={item.id}",
+                    # Audit Phase 3.0 P0 (CX 09/05) : ancien `/action-center?action={id}`
+                    # était un cul-de-sac car /action-center → Navigate replace vers
+                    # /anomalies (App.jsx) sans préserver le query string. L'utilisateur
+                    # cliquait "Voir l'action" sur une DecisionEvidenceCard et atterrissait
+                    # sur /anomalies brut sans contexte. La route /actions/:actionId
+                    # existe (App.jsx:191) et accepte un id direct.
+                    "action_url": f"/actions/{item.id}",
                     "category_label": category_label,
                     "impact_value_eur": getattr(item, "estimated_loss_eur", None),
                     "impact_value_mwh_year": getattr(item, "estimated_savings_mwh", None),

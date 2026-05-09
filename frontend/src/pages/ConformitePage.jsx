@@ -773,42 +773,14 @@ export default function ConformitePage() {
         </div>
       )}
 
-      {/* Phase 1.3 — DecisionEvidenceCard démo : primitif Sol v1.1 §5.6.
-          Audit Phase 1.7 P1 : remontée above-fold (avant GuidedModeBandeau /
-          NextBestActionCard / ComplianceScoreHeader) pour que Marie DAF la
-          voie en CODIR 3 min sans scroll.
-          Valeurs en dur GUARDÉES par DEMO_MODE — Phase 2 branchera l'endpoint
-          backend `/api/v1/conformite/top-decision-evidence` qui servira des
-          DecisionEvidence réels par site. */}
-      {demoEnabled && (
-        <div className="my-4" data-testid="conformite-decision-evidence-demo">
-          <DecisionEvidenceCard
-            rang={1}
-            category="CONFORMITE"
-            scope="SIÈGE HELIOS PARIS"
-            severity="warning"
-            titre={
-              <>
-                Mise en conformité <Term acronyme="BACS" /> avant 2027
-              </>
-            }
-            lead="Le système GTB classe A/B doit être installé avant le 1er janvier 2027 sur ce site (puissance CVC > 290 kW). Provision pénalité 7 500 €/an si non-conforme."
-            evidence={[
-              { label: 'PUISSANCE CVC', value: '320', unit: 'kW', helper: 'seuil 290 kW' },
-              { label: 'INVESTISSEMENT', value: '85 000', unit: '€', helper: 'CAPEX GTB' },
-              { label: 'PÉNALITÉ ÉVITÉE', value: '7 500', unit: '€/an', helper: 'décret 2020-887' },
-              { label: 'ÉCHÉANCE', value: '01/01/2027', unit: '', helper: 'à 18 mois' },
-            ]}
-            primaryCta={{
-              label: 'Lancer plan BACS',
-              // Audit Phase 1.7 P0 : ActionsPage lit `site_id` (pas `site`).
-              // Le CTA était silencieusement cassé en Phase 1.3.
-              href: '/actions/new?type=BACS&site_id=1&titre=Mise%20en%20conformit%C3%A9%20BACS',
-            }}
-            methodologyRef="/methodologie/bacs"
-          />
-        </div>
-      )}
+      {/* Phase 3.0 P1 (audit CX 09/05) : DEC démo retirée de ConformitePage.
+          Anti-pattern §6.4 : la card guardée DEMO_MODE disparaissait en
+          prod, créant une incohérence avec /cockpit/jour et /centre-action
+          peek (branchés backend). Phase 4 livrera l'endpoint backend
+          `/api/v1/conformite/top-decision-evidence` qui servira des
+          DecisionEvidence réelles par site (via service compliance_score).
+          Imports DecisionEvidenceCard + Term + useDemo restent — Term est
+          utilisé dans le hero (italicHook) et useDemo reste disponible. */}
 
       {/* Guided Mode Bandeau (non-expert only) */}
       {!isExpert && guidedSteps.length > 0 && (
