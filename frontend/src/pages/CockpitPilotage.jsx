@@ -52,6 +52,25 @@ import {
 } from '../components/grammar/decisionAdapters';
 
 /**
+ * Phase 3.X.fix P1 #5 (simplify 09/05) — mapping FR domaine SoT frontend.
+ * Évite la duplication dans `aggregatePrioritiesForBriefing` + autres
+ * consommateurs futurs (Phase 3.3+ scaling vers d'autres vues).
+ */
+const DOMAIN_LABEL_FR = Object.freeze({
+  compliance: 'Conformité réglementaire',
+  conformite: 'Conformité réglementaire',
+  billing: 'Facturation',
+  energy: 'Énergie',
+  anomaly: 'Anomalies',
+  monitoring: 'Suivi',
+});
+
+function domainLabelFr(domain, fallback) {
+  const key = (domain || '').toLowerCase();
+  return DOMAIN_LABEL_FR[key] || fallback || (domain ? domain : 'Périmètre');
+}
+
+/**
  * Phase 3.2 P0 (audit UX 09/05) — anti carbone-copy Top 3.
  *
  * HELIOS demo seed retourne souvent 3-5 priorités IDENTIQUES (même catégorie,
@@ -62,6 +81,10 @@ import {
  * Solution : agréger les priorités qui partagent (category, urgency,
  * impact, title pattern) en 1 DEC unique avec scope = "N sites" + impact
  * cumulé + lead expliquant l'agrégation.
+ *
+ * Phase 3.X.fix P1 #2 : scope_label utilise items.length (et non
+ * sites.filter(Boolean).length) car le backend n'enrichit scope_label
+ * que pour top5[:3] — sous-comptage silencieux corrigé.
  *
  * @param {Array} priorities
  * @returns {Array} agrégé + re-ranké
@@ -89,26 +112,22 @@ function aggregatePrioritiesForBriefing(priorities) {
       continue;
     }
     const first = items[0];
-    const sites = items.map((i) => i.scope_label || '').filter(Boolean);
+    // Phase 3.X.fix P1 #2 : utiliser items.length pour le count car le backend
+    // enrichit scope_label uniquement sur top5[:3] — sous-comptage silencieux
+    // résolu (avant : "+1" pour 5 items, désormais "+3" exact).
+    const knownSites = items.map((i) => i.scope_label).filter(Boolean);
     const totalImpact = items.reduce((s, i) => s + (i.impact_value_eur || 0), 0);
     const verbMatch = (first.title || '').match(/(nécessite|requiert|doit)\s+(.+)$/);
     const action = verbMatch ? verbMatch[2] : first.category_label || 'action';
+    const overflow = items.length - knownSites.length;
     const sitesLabel =
-      sites.length <= 2
-        ? sites.join(' + ')
-        : `${sites.slice(0, 2).join(', ')} +${sites.length - 2}`;
-    // Domaine traduit FR (anti-pattern §6.3 : "Compliance" anglais retiré).
-    const domainRaw = (first.domain || '').toLowerCase();
-    const domainFr =
-      {
-        compliance: 'Conformité réglementaire',
-        conformite: 'Conformité réglementaire',
-        billing: 'Facturation',
-        energy: 'Énergie',
-        anomaly: 'Anomalies',
-      }[domainRaw] ||
-      first.category_label ||
-      'Périmètre';
+      knownSites.length === 0
+        ? `${items.length} SITES`
+        : knownSites.length <= 2
+          ? knownSites.join(' + ') + (overflow > 0 ? ` +${overflow}` : '')
+          : `${knownSites.slice(0, 2).join(', ')} +${items.length - 2}`;
+    // Phase 3.X.fix P1 #5 : SoT domainLabelFr (élimine duplication BE+FE).
+    const domainFr = domainLabelFr(first.domain, first.category_label);
 
     aggregated.push({
       ...first,
@@ -1322,6 +1341,15 @@ export default function CockpitPilotage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [org?.id]);
 
+  // Phase 3.X.fix P1 #1 (audit 09/05) : agrégation calculée UNE SEULE FOIS
+  // au niveau composant, partagée entre Top 3 (DEC) et FileTraitement (file).
+  // Avant : Top 3 utilisait `aggregated` mais FileTraitement recevait
+  // `priorities` brutes → P4-P5 réapparaissaient en file alors qu'agrégés.
+  const aggregatedPriorities = useMemo(
+    () => aggregatePrioritiesForBriefing(priorities || []),
+    [priorities]
+  );
+
   // Phase 17.bis.D — drill-down depuis Vue exécutive (`?focus=action-{id}`
   // ou `?focus=decision-{rank}`). Audit Phase 17 nav P0 : la cible était
   // câblée côté Décision mais Pilotage ignorait le query param. Désormais :
@@ -1479,13 +1507,14 @@ export default function CockpitPilotage() {
                   </strong>
                   .{' '}
                   <Link
-                    to="/cockpit/strategique?focus=exposure"
+                    to="/cockpit/strategique"
                     className="underline-offset-2 hover:underline"
                     style={{
                       color: 'var(--sol-attention-fg)',
                       fontWeight: 500,
                     }}
                     data-testid="cockpit-jour-cta-arbitrage-portefeuille"
+                    title="Vue stratégique COMEX 3 min"
                   >
                     Arbitrer le portefeuille →
                   </Link>{' '}
@@ -1578,52 +1607,54 @@ export default function CockpitPilotage() {
           </div>
         </section>
       )}
-      {priorities && priorities.length > 0 && (
+      {aggregatedPriorities.length > 0 && (
         <section className="mb-4" data-testid="cockpit-jour-top-decisions">
-          {(() => {
-            // Phase 3.2 P0 : agrégation anti-carbone-copy avant slice(0,3).
-            // Si le backend retourne 5 priorités identiques sur 5 sites,
-            // l'agrégation les regroupe en 1 DEC unique → Top 3 reste utile.
-            const aggregated = aggregatePrioritiesForBriefing(priorities);
-            const topN = aggregated.slice(0, 3);
-            return (
-              <>
-                <h2
-                  className="font-mono uppercase tracking-[0.07em] mb-2"
-                  style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
-                >
-                  Top {topN.length} décision{topN.length > 1 ? 's' : ''} à arbitrer
-                </h2>
-                <div className="grid grid-cols-1 gap-3">
-                  {topN.map((p) => (
-                    <DecisionEvidenceCard
-                      key={p.rank}
-                      rang={p.rank}
-                      category={(p.category_label || p.domain || 'ACTION').toUpperCase()}
-                      scope={p.scope_label || 'PORTEFEUILLE'}
-                      severity={toDecSeverityBriefing(p.urgency)}
-                      titre={<>{p.title}</>}
-                      lead={p.lead || ''}
-                      evidence={
-                        p.evidence_cells ||
-                        buildEvidenceFallback({
-                          impactDisplay: p.impact_value_eur
-                            ? fmtEurShort(p.impact_value_eur)
-                            : null,
-                          category: p.category_label,
-                          priorityLabel: decPriorityLabel(p.urgency),
-                          rang: p.rank,
-                          domain: p.domain,
-                        })
-                      }
-                      primaryCta={{ label: "Voir l'action", href: p.action_url }}
-                      methodologyRef={p.methodology_ref || '/methodologie/cockpit'}
-                    />
-                  ))}
-                </div>
-              </>
-            );
-          })()}
+          <h2
+            className="font-mono uppercase tracking-[0.07em] mb-2"
+            style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
+          >
+            Top {Math.min(3, aggregatedPriorities.length)} décision
+            {Math.min(3, aggregatedPriorities.length) > 1 ? 's' : ''} à arbitrer
+          </h2>
+          <div className="grid grid-cols-1 gap-3">
+            {aggregatedPriorities.slice(0, 3).map((p) => {
+              // Phase 3.X.fix P1 #3 (audit CX 09/05) : drill-down adapté au
+              // contexte agrégé. Si la DEC représente N>1 sites cumulés,
+              // le CTA pointe vers la liste complète (label "Voir les N
+              // actions") au lieu d'envoyer vers UNE seule action — anciennement
+              // on perdait silencieusement N-1 sites.
+              const isAggregated = (p._aggregated_count || 1) > 1;
+              const ctaLabel = isAggregated
+                ? `Voir les ${p._aggregated_count} actions`
+                : "Voir l'action";
+              const ctaHref = isAggregated
+                ? `/anomalies?domain=${encodeURIComponent(p.domain || '')}&urgency=${encodeURIComponent(p.urgency || '')}&status=open`
+                : p.action_url;
+              return (
+                <DecisionEvidenceCard
+                  key={p.rank}
+                  rang={p.rank}
+                  category={(p.category_label || p.domain || 'ACTION').toUpperCase()}
+                  scope={p.scope_label || 'PORTEFEUILLE'}
+                  severity={toDecSeverityBriefing(p.urgency)}
+                  titre={<>{p.title}</>}
+                  lead={p.lead || ''}
+                  evidence={
+                    p.evidence_cells ||
+                    buildEvidenceFallback({
+                      impactDisplay: p.impact_value_eur ? fmtEurShort(p.impact_value_eur) : null,
+                      category: p.category_label,
+                      priorityLabel: decPriorityLabel(p.urgency),
+                      rang: p.rank,
+                      domain: p.domain,
+                    })
+                  }
+                  primaryCta={{ label: ctaLabel, href: ctaHref }}
+                  methodologyRef={p.methodology_ref || '/methodologie/cockpit'}
+                />
+              );
+            })}
+          </div>
         </section>
       )}
 
@@ -1660,11 +1691,15 @@ export default function CockpitPilotage() {
       </div>
 
       {/* ──────────────────────────────────────────────────────────────────
-          7. DRILL-DOWN — File de traitement P1-P5 détaillée (preuve actionnable)
+          7. DRILL-DOWN — File de traitement P4+ (preuve actionnable
+          complémentaire ; le Top 3 couvre déjà les rangs 1-3).
+          Phase 3.X.fix P1 #1 : reçoit `aggregatedPriorities` (et non
+          `priorities` brutes) pour éviter de réafficher les rangs déjà
+          consommés par l'agrégation Top 3.
           ────────────────────────────────────────────────────────────────── */}
       <div className="mb-4">
         <FileTraitement
-          priorities={priorities}
+          priorities={aggregatedPriorities}
           loading={prioritiesLoading}
           remainingCount={prioritiesRemaining}
         />
