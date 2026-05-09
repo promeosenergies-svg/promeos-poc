@@ -12,6 +12,8 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
+from doctrine.constants import APER_PARKING_MIN_SURFACE_M2
+
 from models import (
     Obligation,
     Site,
@@ -206,8 +208,11 @@ def compute_applicability(
         }
 
     # APER
+    # Phase L29.1 audit fix P1 — APER_PARKING_MIN_SURFACE_M2 depuis doctrine.constants SoT
+    # (lazy-load YAML APER_THRESHOLD_M2_SMALL). Seuil toiture 500 m² conservé hardcoded
+    # (pas de SoT YAML actuelle — backlog L30+).
     if parking > 0 or roof > 0:
-        if parking >= 1500 or roof >= 500:
+        if parking >= APER_PARKING_MIN_SURFACE_M2 or roof >= 500:
             result["aper"] = {
                 "applicable": True,
                 "reason": f"Parking {parking:.0f} m² / Toiture {roof:.0f} m²",
@@ -216,7 +221,7 @@ def compute_applicability(
         else:
             result["aper"] = {
                 "applicable": False,
-                "reason": f"Parking {parking:.0f} m² < 1500 et toiture {roof:.0f} m² < 500",
+                "reason": f"Parking {parking:.0f} m² < {APER_PARKING_MIN_SURFACE_M2} et toiture {roof:.0f} m² < 500",
                 "missing_fields": [],
             }
     else:

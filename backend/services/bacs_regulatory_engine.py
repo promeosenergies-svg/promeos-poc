@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from doctrine.constants import (
     BACS_DEADLINE_EXISTING,
+    BACS_DEADLINE_INITIAL,
     BACS_THRESHOLD_KW_EXISTING,
     BACS_THRESHOLD_KW_INITIAL,
 )
@@ -29,13 +30,13 @@ from models.bacs_regulatory import BacsFunctionalRequirement, BacsExploitationSt
 
 logger = logging.getLogger("promeos.bacs.regulatory")
 
-# Phase L28.1b audit fix P1 — alias depuis doctrine.constants SoT YAML lazy-load
-# (avant : SEUIL_HAUT=290 / SEUIL_BAS=70 / DEADLINE_70=date(2030,1,1) hardcoded
-# en parallèle de doctrine — drift silencieux). DEADLINE_290 reste hardcoded
-# (date 2025-01-01 Tier 1 déjà passée — pas de SoT YAML correspondante au L28.1).
+# Phase L28.1b + L29.1 audit fix P1 — alias depuis doctrine.constants SoT YAML
+# lazy-load. Phase L28.2 a créé `BACS_DEADLINE_ABOVE_290 = 2025-01-01` (Décret
+# 2020-887 art. R175-3 — Tier 1) → asymétrie L28.1b corrigée Phase L29.1
+# (DEADLINE_290 = date(2025,1,1) hardcoded → date.fromisoformat(BACS_DEADLINE_INITIAL)).
 SEUIL_HAUT = BACS_THRESHOLD_KW_INITIAL  # 290
 SEUIL_BAS = BACS_THRESHOLD_KW_EXISTING  # 70
-DEADLINE_290 = date(2025, 1, 1)  # Décret 2020-887 art. R175-3 — Tier 1 (déjà passée)
+DEADLINE_290 = date.fromisoformat(BACS_DEADLINE_INITIAL)  # 2025-01-01 Décret 2020-887 R175-3
 DEADLINE_70 = date.fromisoformat(BACS_DEADLINE_EXISTING)  # 2030-01-01 Décret 2025-1343
 
 FUNCTIONAL_REQ_FIELDS = [

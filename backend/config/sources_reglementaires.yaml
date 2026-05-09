@@ -555,10 +555,10 @@ terms:
       label: "Décret n°2020-887 art. R175-7 — pénalité BACS site non conforme"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000042167708"
       version: "Décret 2020-887"
-      effective_date: "2027-01-01"
+      effective_date: "2025-01-01"
       legal_reference: "JORFTEXT000042167708"
     formula: null
-    notes: "Mirroir doctrine/constants.py BACS_PENALTY_EUR"
+    notes: "Mirroir doctrine/constants.py BACS_PENALTY_EUR. Phase L29.1 — effective_date corrigée 2027→2025 (entrée en vigueur Tier 1 BACS). Pénalité applicable dès non-conformité constatée post-deadline (2025-01-01 pour >290 kW, 2030-01-01 pour 70-290 kW)."
 
   # ═════════════════════════════════════════════════════════════════════
   # Domaine APER — Loi 2023-175 art. 40 + arrêtés

@@ -114,7 +114,8 @@ DT_PENALTY_EUR: int = _load_yaml_int_or_fallback("COMPLIANCE_DT_PENALTY_EUR", fa
 # Phase L26.1 audit fix P1 — mirror YAML COMPLIANCE_DT_PENALTY_AT_RISK_EUR
 # (asymétrie L25 corrigée — pair de DT_PENALTY_EUR migré L25.1).
 DT_PENALTY_AT_RISK_EUR: int = _load_yaml_int_or_fallback("COMPLIANCE_DT_PENALTY_AT_RISK_EUR", fallback=3750)
-DT_REF_YEAR_DEFAULT = 2020  # année de référence par défaut pour la baseline
+# Phase L29.1 audit fix P1 — mirror YAML DT_REF_YEAR_DEFAULT (Décret 2019-771).
+DT_REF_YEAR_DEFAULT: int = _load_yaml_int_or_fallback("DT_REF_YEAR_DEFAULT", fallback=2020)
 
 # ─── BACS (Décret n°2020-887 + n°2025-1343) ────────────────────────────────
 # Phase D-3 Tier 0 : sources documentées dans `backend/config/sources_reglementaires.yaml` :
@@ -217,10 +218,15 @@ READINESS_WEIGHT_ACTIONS: float = _load_yaml_or_fallback("READINESS_WEIGHT_ACTIO
 # (drift silencieux si décret modificatif post-2028 révise sanction).
 APER_PENALTY_EUR_PER_M2_PER_YEAR: int = _load_yaml_int_or_fallback("APER_PENALTY_EUR_PER_M2_PER_YEAR", fallback=20)
 APER_DEADLINE_DATE = "2028-01-01"  # legacy alias — préfère APER_DEADLINE_SMALL_PARKING_DATE
-APER_DEADLINE_SMALL_PARKING_DATE = (
-    "2028-07-01"  # parkings 1500-10000 m² — sources_reglementaires.yaml:APER_DEADLINE_SMALL
-)
-APER_DEADLINE_LARGE_PARKING_DATE = "2026-07-01"  # parkings >10000 m² — sources_reglementaires.yaml:APER_DEADLINE_LARGE
+# Phase L29.1 audit fix P1 — mirror YAML APER_DEADLINE_SMALL/LARGE (Loi 2023-175 art. 40).
+# Mapping Python suffixe `_PARKING_DATE` → YAML clé courte `_SMALL`/`_LARGE`.
+# CARDINAL : APER_DEADLINE_LARGE = 2026-07-01 imminente (< 2 mois) — pilot-readiness.
+APER_DEADLINE_SMALL_PARKING_DATE: str = _load_yaml_str_or_fallback(
+    "APER_DEADLINE_SMALL", fallback="2028-07-01"
+)  # parkings 1500-10000 m²
+APER_DEADLINE_LARGE_PARKING_DATE: str = _load_yaml_str_or_fallback(
+    "APER_DEADLINE_LARGE", fallback="2026-07-01"
+)  # parkings >10000 m²
 # Phase L26.1 audit fix P1 — mirror YAML APER_THRESHOLD_M2_SMALL/LARGE
 # + APER_SOLAR_RATIO_PCT (mapping Python/YAML : PARKING_MIN/LARGE_SURFACE → THRESHOLD_M2).
 APER_PARKING_MIN_SURFACE_M2: int = _load_yaml_int_or_fallback(

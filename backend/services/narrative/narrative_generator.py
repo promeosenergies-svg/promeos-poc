@@ -34,6 +34,7 @@ from sqlalchemy.orm import Session
 # dans les builders cockpit_comex/patrimoine/conformite (cf doctrine §0.D
 # décision A — toute valeur € doit être traçable réglementaire).
 from doctrine.constants import (
+    AUDIT_SME_DEADLINE_DATE,
     BACS_DEADLINE_EXISTING,
     BACS_PENALTY_EUR,  # noqa: F401 — utilisé dans cockpit_comex via import local
     DT_PENALTY_AT_RISK_EUR,
@@ -1239,7 +1240,9 @@ def _build_conformite(
     today = date.today()
 
     # Audit SMÉ deadline — constante doctrine inviolable §8.3
-    AUDIT_SME_DEADLINE = date(2026, 10, 11)
+    # Phase L29.1 audit fix P1 — utilise AUDIT_SME_DEADLINE_DATE depuis doctrine.constants
+    # (lazy-load YAML SoT) au lieu de date(2026, 10, 11) hardcoded.
+    AUDIT_SME_DEADLINE = date.fromisoformat(AUDIT_SME_DEADLINE_DATE)
     days_until_audit_sme = (AUDIT_SME_DEADLINE - today).days
 
     # OPERAT déclaration annuelle — 30 septembre N pour conso N-1.

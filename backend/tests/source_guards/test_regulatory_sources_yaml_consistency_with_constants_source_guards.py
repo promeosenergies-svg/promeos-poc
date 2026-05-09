@@ -411,3 +411,71 @@ def test_sg_reg_const_10_bacs_deadline_date_orphan_key_absent():
         "Clé orpheline BACS_DEADLINE_DATE détectée — supprimée Phase L28.2 (ADR-027). "
         "Utiliser BACS_DEADLINE_EXISTING_70_290 ou BACS_DEADLINE_ABOVE_290 selon tranche puissance."
     )
+
+
+# ─── SG_REG_CONST_11 : Phase L29.1 — DT_REF_YEAR + APER_DEADLINE_SMALL/LARGE mirrors ───
+
+
+def test_sg_reg_const_11_dt_ref_year_default_matches_doctrine():
+    """Phase L29.1 audit fix P1 — Mirror YAML DT_REF_YEAR_DEFAULT (Décret 2019-771).
+
+    Année de référence baseline DT — figée à 2020 par décret. Mirror doctrine
+    via lazy-load _load_yaml_int_or_fallback Phase L29.1.
+    """
+    from doctrine.constants import DT_REF_YEAR_DEFAULT
+
+    yaml_val = _yaml_value("DT_REF_YEAR_DEFAULT")
+    assert yaml_val == DT_REF_YEAR_DEFAULT == 2020, (
+        f"Divergence DT_REF_YEAR_DEFAULT : YAML={yaml_val} vs "
+        f"doctrine.constants={DT_REF_YEAR_DEFAULT}. Décret 2019-771 = 2020."
+    )
+
+
+def test_sg_reg_const_11_aper_deadline_small_matches_doctrine():
+    """Phase L29.1 audit fix P1 — Mirror YAML APER_DEADLINE_SMALL (Loi 2023-175).
+
+    Mapping Python `APER_DEADLINE_SMALL_PARKING_DATE` → YAML clé courte
+    `APER_DEADLINE_SMALL`. Parkings 1500-10000 m² → deadline 2028-07-01.
+    """
+    from doctrine.constants import APER_DEADLINE_SMALL_PARKING_DATE
+
+    yaml_val = _yaml_value("APER_DEADLINE_SMALL")
+    assert yaml_val == APER_DEADLINE_SMALL_PARKING_DATE == "2028-07-01", (
+        f"Divergence APER_DEADLINE_SMALL : YAML={yaml_val} vs "
+        f"doctrine={APER_DEADLINE_SMALL_PARKING_DATE}. Loi APER art. 40 II."
+    )
+
+
+def test_sg_reg_const_11_aper_deadline_large_matches_doctrine():
+    """Phase L29.1 audit fix P1 — Mirror YAML APER_DEADLINE_LARGE (Loi 2023-175).
+
+    Parkings >10000 m² → deadline 2026-07-01 (IMMINENTE — pilot-readiness cardinal).
+    """
+    from doctrine.constants import APER_DEADLINE_LARGE_PARKING_DATE
+
+    yaml_val = _yaml_value("APER_DEADLINE_LARGE")
+    assert yaml_val == APER_DEADLINE_LARGE_PARKING_DATE == "2026-07-01", (
+        f"Divergence APER_DEADLINE_LARGE : YAML={yaml_val} vs "
+        f"doctrine={APER_DEADLINE_LARGE_PARKING_DATE}. Loi APER art. 40 II."
+    )
+
+
+def test_sg_reg_const_11_dt_trajectory_objectifs_match_milestones():
+    """Phase L29.1 audit fix P1 — Cross-service mirror : dt_trajectory_service
+    OBJECTIF_*_PCT cohérent avec doctrine.constants DT_MILESTONES.
+
+    Conversion : DT_MILESTONES[year] est un ratio négatif (-0.40 = -40%).
+    OBJECTIF_*_PCT est la valeur absolue en %.
+    """
+    from doctrine.constants import DT_MILESTONES
+    from services.dt_trajectory_service import (
+        OBJECTIF_2030_PCT,
+        OBJECTIF_2040_PCT,
+        OBJECTIF_2050_PCT,
+    )
+
+    assert OBJECTIF_2030_PCT == abs(DT_MILESTONES[2030]) * 100, (
+        f"Drift OBJECTIF_2030_PCT={OBJECTIF_2030_PCT} vs abs(DT_MILESTONES[2030])*100={abs(DT_MILESTONES[2030]) * 100}"
+    )
+    assert OBJECTIF_2040_PCT == abs(DT_MILESTONES[2040]) * 100
+    assert OBJECTIF_2050_PCT == abs(DT_MILESTONES[2050]) * 100
