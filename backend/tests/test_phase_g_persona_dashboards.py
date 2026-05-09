@@ -1632,8 +1632,8 @@ class TestPhaseL5R29PeriodOverlapOrGap:
         assert anomaly.severity == "critical"
         assert anomaly.details_json["kind"] == "chevauchement"
         assert anomaly.details_json["overlap_days"] == 6
-        # impact ~ 100 €/j × 6 = 600 €
-        assert 590 <= anomaly.details_json["montant_anomalie_eur"] <= 610
+        # impact = 3100 € × 6j / 31j = 600.00 € (math exact)
+        assert anomaly.details_json["montant_anomalie_eur"] == 600.0
 
     def test_l5_r29_no_anomaly_continuous_periods(self, db):
         """L5 — Avril 1-30 puis Mai 1-31 (continu, gap=0) → pas d'anomalie."""
@@ -1661,6 +1661,49 @@ class TestPhaseL5R29PeriodOverlapOrGap:
         assert anomaly.severity == "warning"
         assert anomaly.details_json["kind"] == "trou"
         assert anomaly.details_json["gap_days"] == 11
+
+    def test_l5_r29_excludes_concurrent_invoice_same_period_end(self, db):
+        """L5 — Bug L7.1 : 2 factures partageant period_end mais period_start différents.
+
+        Avant fix : query `period_end < invoice.period_end` excluait improprement
+        l'invoice antérieure si elle partageait le même period_end (faux négatif).
+        Après fix L7.1 : query `period_start < invoice.period_start` capture
+        correctement l'antériorité stricte.
+        """
+        from services.bill_intelligence.anomaly_detector import detect_r29_period_overlap_or_gap
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        # Facture 1 : 01/04 → 30/04 ; Facture 2 : 15/04 → 30/04 (chevauchement 16j)
+        prev = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-PREV-CONCURRENT",
+            period_start=date(2026, 4, 1),
+            period_end=date(2026, 4, 30),
+            energy_kwh=10000,
+            total_eur=1000.0,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(prev)
+        db.flush()
+        curr = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-CURR-CONCURRENT",
+            period_start=date(2026, 4, 15),
+            period_end=date(2026, 4, 30),
+            energy_kwh=5000,
+            total_eur=500.0,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(curr)
+        db.commit()
+        db.refresh(curr)
+
+        anomaly = detect_r29_period_overlap_or_gap(curr, db)
+        assert anomaly is not None
+        assert anomaly.code == "R29"
+        assert anomaly.details_json["kind"] == "chevauchement"
 
     def test_l5_r29_skipped_first_invoice(self, db):
         """L5 — 1ʳᵉ facture du site (pas de précédente) → R29 skip silencieux."""
@@ -1803,8 +1846,8 @@ class TestPhaseL6R30PeriodOutsideContractWindow:
         assert anomaly.severity == "warning"
         assert anomaly.details_json["kind"] == "partiel_apres_fin"
         assert anomaly.details_json["days_outside"] == 16  # 31/05 - 15/05 = 16j
-        # impact = 3100 × 16/31 ≈ 1600 €
-        assert 1590 <= anomaly.details_json["montant_anomalie_eur"] <= 1610
+        # impact = 3100 € × 16j / 31j = 1600.00 € (math exact)
+        assert anomaly.details_json["montant_anomalie_eur"] == 1600.0
 
 
 # ─── Phase J2 — ADR-F-04 hard-cut supplier_name → fournisseur_id ────────────

@@ -1048,8 +1048,10 @@ def detect_r29_period_overlap_or_gap(invoice: EnergyInvoice, db: Session) -> Opt
     if invoice.site_id is None or invoice.period_start is None or invoice.period_end is None:
         return None
 
-    # Cherche la facture précédente strictement antérieure sur même site
-    # (period_end < invoice.period_start), tri descendant pour avoir la plus récente
+    # Cherche la facture la plus récente STRICTEMENT antérieure sur même site
+    # Filtre `period_end < invoice.period_start` (pas `< period_end`) pour :
+    #   1. exclure self ET tout post-dated overlap dont period_end >= period_start de l'invoice
+    #   2. permettre la détection correcte du chevauchement via gap_days < 0
     prev = (
         db.query(EnergyInvoice)
         .filter(
@@ -1057,7 +1059,7 @@ def detect_r29_period_overlap_or_gap(invoice: EnergyInvoice, db: Session) -> Opt
             EnergyInvoice.id != invoice.id,
             EnergyInvoice.period_end.isnot(None),
             EnergyInvoice.period_start.isnot(None),
-            EnergyInvoice.period_end < invoice.period_end,  # exclut self + post-facture
+            EnergyInvoice.period_start < invoice.period_start,  # antériorité stricte sur period_start
         )
         .order_by(EnergyInvoice.period_end.desc())
         .first()
