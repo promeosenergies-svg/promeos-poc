@@ -66,6 +66,66 @@ def _resolve_contract(invoice: EnergyInvoice) -> Optional[EnergyContract]:
     return invoice.contract  # SQLAlchemy lazy-load 1er accès, identity map ensuite
 
 
+def _build_doublon_anomaly(
+    *,
+    invoice: EnergyInvoice,
+    code: str,
+    candidate_lines: list,
+    critical_eur: float,
+    regulatory_ref: str,
+    extra_details: Optional[dict] = None,
+) -> Optional[BillAnomaly]:
+    """Phase L10.1 — Helper anti-doublon partagé R23 + R31 (audit P1 reuse #4 + L9.5 robustness pour R23).
+
+    Pattern cardinal cumulé Phase L9.5 + L10.1 :
+    - len(candidate_lines) < 2 → None (pas de doublon possible)
+    - total_doublon = sum_total - max() (robuste à l'ordre arbitraire des lignes)
+      → R23 hérite automatiquement du fix L9.5 R31 (avant : lines[1:] heuristique fragile)
+    - PII sanitization systématique sur duplicate_labels (CWE-532/359)
+    - Cap [:5] sur duplicate_lines_ids + duplicate_labels (cohérent R19 vnu_labels[:5])
+    - severity bascule sur critical_eur (YAML SoT)
+
+    Args:
+        invoice : EnergyInvoice cible
+        code : "R23" / "R31" (anomaly code)
+        candidate_lines : lignes pré-filtrées par le détecteur (TAX accise, NETWORK même période…)
+        critical_eur : seuil bascule warning→critical
+        regulatory_ref : citation source juridique cardinale (Légifrance / CRE)
+        extra_details : dict additionnel mergé dans details_json (ex: period_code pour R23)
+
+    Returns:
+        BillAnomaly ou None si pas de doublon
+    """
+    if len(candidate_lines) < 2:
+        return None
+
+    amounts = [float(line.amount_eur or 0) for line in candidate_lines]
+    sum_total = sum(amounts)
+    max_legit = max(amounts)
+    total_doublon_eur = sum_total - max_legit
+
+    severity = _SEV_CRITICAL if total_doublon_eur > critical_eur else _SEV_WARNING
+
+    details: dict = {
+        "duplicate_count": len(candidate_lines),
+        "duplicate_lines_ids": [line.id for line in candidate_lines][:5],
+        "duplicate_labels": [_sanitize_pii_label(line.label or "") for line in candidate_lines][:5],
+        "montant_anomalie_eur": round(total_doublon_eur, 2),
+        "regulatory_ref": regulatory_ref,
+    }
+    if extra_details:
+        details.update(extra_details)
+
+    return BillAnomaly(
+        invoice_id=invoice.id,
+        code=code,
+        severity=severity,
+        threshold_value=Decimal(str(critical_eur)),
+        actual_value=Decimal(str(round(total_doublon_eur, 2))),
+        details_json=details,
+    )
+
+
 # ─── Helpers ────────────────────────────────────────────────────────────────
 
 # Sprint C-7 Phase 7.8 — D-Audit-Phase7-TURPE-7-Codes-Obsolete-006 (fix audit deep) :
@@ -1049,30 +1109,20 @@ def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAno
     # Phase L8.1 — seuil YAML SoT (no fake code)
     critical_eur = float(get_term_value("BILL_ANOMALY_TURPE_DOUBLE_CRITICAL_EUR"))
 
+    # Phase L10.1 — _build_doublon_anomaly() helper (audit P1 reuse #4 + hérite
+    # automatiquement du fix L9.5 sum-max + PII sanitize sur duplicate_labels).
     anomalies: list[BillAnomaly] = []
     for period, lines in by_period.items():
-        if len(lines) < 2:
-            continue
-        # Doublon détecté : même période sur 2+ lignes NETWORK
-        total_doublon_eur = sum(float(line.amount_eur or 0) for line in lines[1:])
-        # On considère que la 1ère ligne est légitime, les suivantes sont doublons
-        severity = _SEV_CRITICAL if total_doublon_eur > critical_eur else _SEV_WARNING
-        anomalies.append(
-            BillAnomaly(
-                invoice_id=invoice.id,
-                code="R23",
-                severity=severity,
-                threshold_value=Decimal(str(critical_eur)),
-                actual_value=Decimal(str(round(total_doublon_eur, 2))),
-                details_json={
-                    "period_code": period,
-                    "duplicate_count": len(lines),
-                    "duplicate_lines_ids": [line.id for line in lines],
-                    "montant_anomalie_eur": round(total_doublon_eur, 2),
-                    "regulatory_ref": "CRE Délib. 2025-78 art. 8 — TURPE 7 facturation unique période",
-                },
-            )
+        anomaly = _build_doublon_anomaly(
+            invoice=invoice,
+            code="R23",
+            candidate_lines=lines,
+            critical_eur=critical_eur,
+            regulatory_ref="CRE Délib. 2025-78 art. 8 — TURPE 7 facturation unique période",
+            extra_details={"period_code": period},
         )
+        if anomaly is not None:
+            anomalies.append(anomaly)
     return anomalies
 
 
@@ -1107,38 +1157,18 @@ def detect_r31_accise_double(invoice: EnergyInvoice, db: Session) -> Optional[Bi
         and line.label
         and _ACCISE_PATTERN.search(line.label)
     ]
-    if len(accise_lines) < 2:
-        return None
-
     critical_eur = float(get_term_value("BILL_ANOMALY_ACCISE_DOUBLE_CRITICAL_EUR"))
 
-    # Phase L9.5 audit fix P1 — sum_total - max() au lieu de lines[1:] :
-    # robuste à l'ordre arbitraire de invoice.lines (cross-fournisseur EDF/Engie).
-    # La ligne légitime = max amount_eur (la plus élevée) ; doublons = reste.
-    amounts = [float(line.amount_eur or 0) for line in accise_lines]
-    sum_total = sum(amounts)
-    max_legit = max(amounts)
-    total_doublon_eur = sum_total - max_legit
-
-    severity = _SEV_CRITICAL if total_doublon_eur > critical_eur else _SEV_WARNING
-
-    return BillAnomaly(
-        invoice_id=invoice.id,
+    # Phase L10.1 — _build_doublon_anomaly() helper (audit P1 reuse #4) consolide
+    # le pattern doublon avec R23. Hérite : sum-max robustness + PII sanitize + cap[:5].
+    return _build_doublon_anomaly(
+        invoice=invoice,
         code="R31",
-        severity=severity,
-        threshold_value=Decimal(str(critical_eur)),
-        actual_value=Decimal(str(round(total_doublon_eur, 2))),
-        details_json={
-            "duplicate_count": len(accise_lines),
-            "duplicate_lines_ids": [line.id for line in accise_lines][:5],
-            # Phase L9.5 audit fix P1 — PII sanitization + cap [:5] (cohérent R19 vnu_labels)
-            "duplicate_labels": [_sanitize_pii_label(line.label or "") for line in accise_lines][:5],
-            "montant_anomalie_eur": round(total_doublon_eur, 2),
-            # Phase L9.5 audit fix P2 — référence régulatoire correcte :
-            # CIBS art. L.312-1 (taxe sur élec post-2022) + LFR 2021 art. 54
-            # (renommage CSPE/TICFE→Accise effective 01/01/2022). L.336 = VNU post-ARENH (R19).
-            "regulatory_ref": "CIBS art. L.312-1 + LFR 2021 art. 54 — renommage CSPE/TICFE→Accise élec (01/01/2022, anti-doublon historique)",
-        },
+        candidate_lines=accise_lines,
+        critical_eur=critical_eur,
+        # CIBS art. L.312-1 (taxe élec post-2022) + LFR 2021 art. 54
+        # (renommage CSPE/TICFE→Accise effective 01/01/2022).
+        regulatory_ref="CIBS art. L.312-1 + LFR 2021 art. 54 — renommage CSPE/TICFE→Accise élec (01/01/2022, anti-doublon historique)",
     )
 
 

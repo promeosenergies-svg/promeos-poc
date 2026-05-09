@@ -2122,6 +2122,82 @@ class TestPhaseJ2HardCutFournisseurId:
 
 
 class TestPhaseGP1FixesSourceGuards:
+    def test_l10_1_doublon_helper_centralized(self):
+        """L10.1 source-guard — _build_doublon_anomaly() helper centralisé R23+R31.
+
+        Audit Phase L9.4 P1 reuse #4 : avant L10.1, R23 dupliquait le pattern
+        doublon (lines[1:] heuristique fragile + pas de PII sanitize) tandis que
+        R31 avait le fix L9.5. Après extraction helper, R23 hérite automatiquement
+        des fix L9.5 (sum-max + PII sanitize). Source-guard verrouille la non-régression.
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        # Helper module-level présent
+        assert "def _build_doublon_anomaly(" in src
+        # R23 + R31 utilisent le helper (no inline duplicate logic)
+        assert 'code="R23"' in src and 'code="R31"' in src
+        # R23 ne doit plus contenir l'ancien lines[1:] fragile
+        assert "for line in lines[1:]" not in src
+
+    def test_l10_1_r23_inherits_sum_max_robustness_from_helper(self, db):
+        """L10.1 — R23 hérite du fix L9.5 sum-max via _build_doublon_anomaly() helper.
+
+        Avant L10.1 : R23 utilisait lines[1:] (fragile à l'ordre).
+        Après L10.1 : R23 utilise sum-max via helper (robuste).
+
+        Test : 2 lignes NETWORK HPH, ordre (300€, 800€) → doublon = 300€ (la plus
+        petite, math correcte). Avant L10.1 : doublon = lines[1].amount = 800€ (FAUX).
+        """
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence.anomaly_detector import detect_r23_turpe_double
+
+        _, _, _, sites = _seed_org_with_sites(db, org_name="OrgL10R23", siren="200000001", n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-L10-R23",
+            period_start=date(2026, 4, 1),
+            period_end=date(2026, 4, 30),
+            energy_kwh=10000,
+            total_eur=1500.0,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        # 2 lignes NETWORK HPH (doublon TURPE) — ordre petit → grand
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.NETWORK,
+                label="Acheminement HPH",
+                amount_eur=300.0,
+            )
+        )
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.NETWORK,
+                label="TURPE HPH",
+                amount_eur=800.0,
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        anomalies = detect_r23_turpe_double(invoice, db)
+        assert len(anomalies) == 1
+        anomaly = anomalies[0]
+        assert anomaly.code == "R23"
+        # Math : sum=1100, max=800, doublon=300 (la plus petite, correcte)
+        assert anomaly.details_json["montant_anomalie_eur"] == 300.0
+        # PII sanitize hérité : duplicate_labels présent (label sanitizé list)
+        assert "duplicate_labels" in anomaly.details_json
+        assert len(anomaly.details_json["duplicate_labels"]) <= 5
+
     def test_l8_2_severity_uses_enum_aliases_not_strings(self):
         """L8.2 source-guard — anomaly_detector utilise _SEV_CRITICAL/_SEV_WARNING
         (aliases BillAnomalySeverity Enum) au lieu de literals "critical"/"warning".
