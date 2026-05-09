@@ -22,9 +22,22 @@ def _load_yaml_or_fallback(key: str, fallback: float) -> float:
 
     Évite crash module-load si YAML key manquante (CI fresh checkout, test
     isolation, etc.). Logue warning explicite pour détection drift YAML/code.
+
+    Phase L26.1 audit fix P2 — None-guard explicite ajouté pour symétrie avec
+    `_load_yaml_str_or_fallback`. Distingue en logs : (a) clé absente
+    (KeyError), (b) clé présente mais value=null (NullGuard), (c) cast échoué
+    (ValueError/TypeError). Critique pour debugging pilote externe.
     """
     try:
-        return float(_get_term_value(key))
+        value = _get_term_value(key)
+        if value is None:
+            _logger.warning(
+                "doctrine.constants YAML key %s has value=null — fallback to hardcoded %s",
+                key,
+                fallback,
+            )
+            return fallback
+        return float(value)
     except (KeyError, ValueError, FileNotFoundError, TypeError) as e:
         _logger.warning(
             "doctrine.constants YAML lookup failed for %s (%s) — fallback to hardcoded %s",
@@ -33,6 +46,18 @@ def _load_yaml_or_fallback(key: str, fallback: float) -> float:
             fallback,
         )
         return fallback
+
+
+def _load_yaml_int_or_fallback(key: str, fallback: int) -> int:
+    """Phase L26.1 audit fix P1 — Variante int du helper defensive lazy-load.
+
+    Évite la duplication du pattern `int(_load_yaml_or_fallback(...))` répété
+    5+ fois pour pénalités/seuils kW/EUR. Utilise `round()` avant cast pour
+    éviter la troncation silencieuse de valeurs YAML décimales (ex. `1499.9`
+    → `1500` au lieu de `1499`). Triangle complet float/int/str du pattern
+    SoT mirror PROMEOS.
+    """
+    return int(round(_load_yaml_or_fallback(key, float(fallback))))
 
 
 def _load_yaml_str_or_fallback(key: str, fallback: str) -> str:
@@ -59,14 +84,18 @@ def _load_yaml_str_or_fallback(key: str, fallback: str) -> str:
 #   - ELEC + GAZ NATUREL : ADEME Base Empreinte V23.6
 #   - GNL (gaz naturel liquéfié) : Arrêté 01/08/2025 NOR ATDL2430864A
 #     (annexe VII — ajout après 5e ligne tableau facteurs CO₂ vecteurs énergie)
-CO2_FACTOR_ELEC_KGCO2_PER_KWH = 0.052
-CO2_FACTOR_GAS_KGCO2_PER_KWH = 0.227
-CO2_FACTOR_GNL_KGCO2_PER_KWH = 0.238
+# Phase L26.1 audit fix P1 — mirror YAML CO2_FACTOR_* (drift silencieux si
+# ADEME V24 modifie facteur). Mapping nom Python GAS → YAML GAZ_NATUREL (FR).
+CO2_FACTOR_ELEC_KGCO2_PER_KWH: float = _load_yaml_or_fallback("CO2_FACTOR_ELEC_KGCO2_PER_KWH", fallback=0.052)
+CO2_FACTOR_GAS_KGCO2_PER_KWH: float = _load_yaml_or_fallback("CO2_FACTOR_GAZ_NATUREL_KGCO2_PER_KWH", fallback=0.227)
+CO2_FACTOR_GNL_KGCO2_PER_KWH: float = _load_yaml_or_fallback("CO2_FACTOR_GNL_KGCO2_PER_KWH", fallback=0.238)
 
 # ─── Énergie primaire ──────────────────────────────────────────────────────
-# Coefficient en vigueur depuis janvier 2026
-PRIMARY_ENERGY_COEF_ELEC = 1.9
-PRIMARY_ENERGY_COEF_GAS = 1.0
+# Coefficient en vigueur depuis janvier 2026.
+# Phase L26.1 audit fix P1 — mirror YAML PRIMARY_ENERGY_COEF_* (drift
+# silencieux si arrêté ministériel modifie le coef — déjà passé 2.3→1.9 en 2023).
+PRIMARY_ENERGY_COEF_ELEC: float = _load_yaml_or_fallback("PRIMARY_ENERGY_COEF_ELEC", fallback=1.9)
+PRIMARY_ENERGY_COEF_GAS: float = _load_yaml_or_fallback("PRIMARY_ENERGY_COEF_GAS", fallback=1.0)
 
 # ─── Décret Tertiaire (Décret n°2019-771) ──────────────────────────────────
 # IMPORTANT : aucun jalon 2026. Les jalons réglementaires sont 2030/2040/2050.
@@ -74,8 +103,10 @@ DT_MILESTONES = {2030: -0.40, 2040: -0.50, 2050: -0.60}
 # Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded sans
 # mirror YAML → drift silencieux si décret modifie sanction). Mapping nom
 # Python DT_PENALTY_EUR → YAML COMPLIANCE_DT_PENALTY_EUR.
-DT_PENALTY_EUR: int = int(_load_yaml_or_fallback("COMPLIANCE_DT_PENALTY_EUR", fallback=7500))
-DT_PENALTY_AT_RISK_EUR = 3750
+DT_PENALTY_EUR: int = _load_yaml_int_or_fallback("COMPLIANCE_DT_PENALTY_EUR", fallback=7500)
+# Phase L26.1 audit fix P1 — mirror YAML COMPLIANCE_DT_PENALTY_AT_RISK_EUR
+# (asymétrie L25 corrigée — pair de DT_PENALTY_EUR migré L25.1).
+DT_PENALTY_AT_RISK_EUR: int = _load_yaml_int_or_fallback("COMPLIANCE_DT_PENALTY_AT_RISK_EUR", fallback=3750)
 DT_REF_YEAR_DEFAULT = 2020  # année de référence par défaut pour la baseline
 
 # ─── BACS (Décret n°2020-887 + n°2025-1343) ────────────────────────────────
@@ -89,20 +120,20 @@ DT_REF_YEAR_DEFAULT = 2020  # année de référence par défaut pour la baseline
 # Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded sans
 # mirror YAML → drift silencieux si décret modifie sanction). Mapping nom
 # Python BACS_PENALTY_EUR → YAML COMPLIANCE_BACS_PENALTY_EUR.
-BACS_PENALTY_EUR: int = int(
-    _load_yaml_or_fallback("COMPLIANCE_BACS_PENALTY_EUR", fallback=1500)
+BACS_PENALTY_EUR: int = _load_yaml_int_or_fallback(
+    "COMPLIANCE_BACS_PENALTY_EUR", fallback=1500
 )  # amende par site non conforme BACS — voir sources_reglementaires.yaml:COMPLIANCE_BACS_PENALTY_EUR
 # Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded sans
 # mirror YAML → drift silencieux si décret modifie seuil 2025). Mapping nom
 # Python BACS_THRESHOLD_KW_INITIAL → YAML BACS_THRESHOLD_KW_2025.
-BACS_THRESHOLD_KW_INITIAL: int = int(
-    _load_yaml_or_fallback("BACS_THRESHOLD_KW_2025", fallback=290)
+BACS_THRESHOLD_KW_INITIAL: int = _load_yaml_int_or_fallback(
+    "BACS_THRESHOLD_KW_2025", fallback=290
 )  # seuil BACS bâtiments neufs Décret 2020-887 (en vigueur depuis 01/01/2025)
 # Phase L24.2 audit fix P1 — lazy-load YAML SoT (avant : hardcoded production-path
 # consommé par cascade_bacs_service.py:60 — drift silencieux scoring BACS si décret
 # futur modifie le seuil). Mapping nom Python EXISTING → YAML 2030.
-BACS_THRESHOLD_KW_EXISTING: int = int(
-    _load_yaml_or_fallback("BACS_THRESHOLD_KW_2030", fallback=70)
+BACS_THRESHOLD_KW_EXISTING: int = _load_yaml_int_or_fallback(
+    "BACS_THRESHOLD_KW_2030", fallback=70
 )  # seuil BACS bâtiments existants Décret 2025-1343 (01/01/2030)
 BACS_DEADLINE_EXISTING = "2030-01-01"  # deadline équipement BACS bâtiments existants >70 kW
 
@@ -116,8 +147,8 @@ BACS_DEADLINE_EXISTING = "2030-01-01"  # deadline équipement BACS bâtiments ex
 # Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded sans
 # mirror YAML → drift silencieux si circulaire DGEC modifie sanction).
 # Mapping nom Python OPERAT_PENALTY_EUR → YAML COMPLIANCE_OPERAT_PENALTY_EUR.
-OPERAT_PENALTY_EUR: int = int(
-    _load_yaml_or_fallback("COMPLIANCE_OPERAT_PENALTY_EUR", fallback=1500)
+OPERAT_PENALTY_EUR: int = _load_yaml_int_or_fallback(
+    "COMPLIANCE_OPERAT_PENALTY_EUR", fallback=1500
 )  # amende par déclaration OPERAT manquante — voir sources_reglementaires.yaml:COMPLIANCE_OPERAT_PENALTY_EUR
 # Deadline déclaration consommations N-1 = 30 septembre N (ADEME OPERAT — annuelle).
 # Phase D-4 Tier 4+ P2 fix audit code-reviewer : helper dynamique évite hardcode 2026-only.
@@ -144,9 +175,12 @@ OPERAT_ANNEXE_I_SOUS_CATEGORIES_COUNT = (
 # ─── Readiness score — pondérations backend ────────────────────────────────
 # Source unique : frontends doivent consommer ces pondérations via /api/cockpit.
 # Doctrine §8.1 : zero business logic in frontend.
-READINESS_WEIGHT_DATA = 0.30
-READINESS_WEIGHT_CONFORMITY = 0.40
-READINESS_WEIGHT_ACTIONS = 0.30
+# Phase L26.1 audit fix P1 — mirror YAML READINESS_WEIGHT_*_PCT (drift silencieux
+# si pondérations ajustées via YAML sans toucher Python). YAML stocke en %
+# (30.0/40.0/30.0), Python attend ratios → division par 100 explicite.
+READINESS_WEIGHT_DATA: float = _load_yaml_or_fallback("READINESS_WEIGHT_DATA_PCT", fallback=30.0) / 100
+READINESS_WEIGHT_CONFORMITY: float = _load_yaml_or_fallback("READINESS_WEIGHT_CONFORMITY_PCT", fallback=40.0) / 100
+READINESS_WEIGHT_ACTIONS: float = _load_yaml_or_fallback("READINESS_WEIGHT_ACTIONS_PCT", fallback=30.0) / 100
 
 # ─── APER (Loi 2023-175 art. 40 + Décret 2022-1726) ────────────────────────
 # Phase 19.A : remontée de la constante côté backend (audit Phase 17 cumulée
@@ -162,15 +196,25 @@ READINESS_WEIGHT_ACTIONS = 0.30
 # 2 échéances distinctes (cardinal P0-REG-002 audit) :
 #   - parkings >10 000 m² (LARGE) : 01/07/2026 (échéance imminente)
 #   - parkings 1500-10 000 m² (SMALL) : 01/07/2028 (cible PROMEOS mid-market)
-APER_PENALTY_EUR_PER_M2_PER_YEAR = 20
+# Phase L26.1 audit fix P1 — mirror YAML APER_PENALTY_EUR_PER_M2_PER_YEAR
+# (drift silencieux si décret modificatif post-2028 révise sanction).
+APER_PENALTY_EUR_PER_M2_PER_YEAR: int = _load_yaml_int_or_fallback("APER_PENALTY_EUR_PER_M2_PER_YEAR", fallback=20)
 APER_DEADLINE_DATE = "2028-01-01"  # legacy alias — préfère APER_DEADLINE_SMALL_PARKING_DATE
 APER_DEADLINE_SMALL_PARKING_DATE = (
     "2028-07-01"  # parkings 1500-10000 m² — sources_reglementaires.yaml:APER_DEADLINE_SMALL
 )
 APER_DEADLINE_LARGE_PARKING_DATE = "2026-07-01"  # parkings >10000 m² — sources_reglementaires.yaml:APER_DEADLINE_LARGE
-APER_PARKING_MIN_SURFACE_M2 = 1500  # seuil SMALL (Loi APER art. 40)
-APER_PARKING_LARGE_SURFACE_M2 = 10000  # seuil LARGE (Loi APER art. 40 II)
-APER_SOLAR_RATIO_PCT = 50.0  # taux minimum solarisation parking (Loi APER art. 40)
+# Phase L26.1 audit fix P1 — mirror YAML APER_THRESHOLD_M2_SMALL/LARGE
+# + APER_SOLAR_RATIO_PCT (mapping Python/YAML : PARKING_MIN/LARGE_SURFACE → THRESHOLD_M2).
+APER_PARKING_MIN_SURFACE_M2: int = _load_yaml_int_or_fallback(
+    "APER_THRESHOLD_M2_SMALL", fallback=1500
+)  # seuil SMALL (Loi APER art. 40)
+APER_PARKING_LARGE_SURFACE_M2: int = _load_yaml_int_or_fallback(
+    "APER_THRESHOLD_M2_LARGE", fallback=10000
+)  # seuil LARGE (Loi APER art. 40 II)
+APER_SOLAR_RATIO_PCT: float = _load_yaml_or_fallback(
+    "APER_SOLAR_RATIO_PCT", fallback=50.0
+)  # taux minimum solarisation parking (Loi APER art. 40)
 
 # ─── NEBCO (depuis 01/09/2025) ─────────────────────────────────────────────
 NEBCO_THRESHOLD_KW_PER_STEP = 100
@@ -404,7 +448,9 @@ inventés non canoniques — corrigés Phase D-2.2.
 VNU_DATE_APPLICATION = "2026-01-01"
 """Date d'application VNU post-ARENH (Décret 2026-55 + CRE délib 2026-52 — à confirmer Phase D-4)."""
 
-VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH = 0.0
+# Phase L26.1 audit fix P1 — mirror YAML VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH
+# (drift silencieux si CRE active le mécanisme en 2027 via mise à jour YAML).
+VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH: float = _load_yaml_or_fallback("VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH", fallback=0.0)
 """Tarif unitaire VNU 2026 = 0 EUR/MWh (status dormant — KB confirmé `reference_regulatory_landscape_2026_2050.md`)."""
 
 # Phase L25.1 audit fix P1 — lazy-load YAML SoT (avant : hardcoded sans
@@ -415,7 +461,11 @@ VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH: float = _load_yaml_or_fallback(
 )
 """Seuil bas activation VNU si prix marché < seuil (CRE 2026-52 — pending verification)."""
 
-VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH = 110.0
+# Phase L26.1 audit fix P1 — mirror YAML VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH
+# (asymétrie L25 corrigée — pair de _BAS migré L25.1 dans la même bande activation VNU).
+VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH: float = _load_yaml_or_fallback(
+    "VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH", fallback=110.0
+)
 """Seuil haut activation VNU côté upside fournisseur (CRE 2026-52 — pending verification)."""
 
 
