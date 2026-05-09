@@ -148,7 +148,49 @@ Vision Amine "le produit murmure 'voici la décision juste'" : **PASS** sur les 
 ## Refs
 
 - Sprint complet : 15 commits documentés dans cette table
-- Doctrine : `docs/vision/promeos_sol_doctrine.md` v1.1
+- Doctrine : `docs/vision/promeos_sol_doctrine.md` v1.1 (10 lois Sol existantes)
 - Memory : `feedback_lego_reconstruction_pages.md` (consigne LEGO 09/05)
 - Audits : `docs/audits/grammar_v1/findings/` (8 fichiers Phase 0) + `PHASE_1_7_AUDIT_FIXES.md` + `PHASE_3_3_FIX_AUDIT_FIXES.md`
 - Captures : `docs/audits/grammar_v1/screenshots/` (~10 vues × 3 viewports + before/after par phase)
+
+---
+
+## Addendum L11 Hub Page — ingéré 2026-05-09 fin de session
+
+Le user a livré 2 artefacts cardinaux post Sprint Grammaire v1.1 :
+
+1. **Capture mockup** « Proposition A · Briefing journal calme » sur cockpit/jour avec **5 lignes file diversifiées 1 par pilier** (anti carbone-copy au niveau backend, pas FE) + score auto-évalué 9,2/10
+2. **Addendum doctrinal** `sol_v1_1_addendum_hub_page.md` — Loi L11 Hub Page (5 sous-lois L11.1-L11.5 + 10 anti-patterns + composant `<HubPage />` + source-guards CI + tests Playwright)
+
+### Audit Proposition A vs L11 + 4 personas
+
+- Conformité L11 : **5/5 ✅** (référence canonique)
+- Score personas consolidé : **9,1/10** (Marie 8,8 · Jean-Marc 9,3 · Sophie VC 9,5 · Energy Manager 8,9)
+- 0 anti-pattern détecté
+- Frictions résiduelles minimes : 4 acronymes bruts (BACS / ARENH / EMS / post-ARENH) à wrapper `<Term>`
+
+### Ingestion doctrinale
+
+- L11 ingéré dans `docs/vision/promeos_sol_doctrine.md` §12.1-12.9 (5 lois + KPIs canoniques par pilier + vocabulaire d'invitation + anti-patterns + composant + source-guards + identité PROMEOS)
+- Mémoire mise à jour : `feedback_promeos_marque_correcte.md` (orthographe marque PROMEOS toujours majuscules sans accent)
+- Doctrine versionnée v1.0 → **v1.1 (addendum L11 Hub Page)**
+
+### Phase 3.4 candidate documentée
+
+- Fichier : `docs/audits/grammar_v1/PHASE_3_4_HUBPAGE_PROPOSITION_L11.md`
+- 6 priorités : backend diversification + `<HubPage>` primitif + refonte cockpit/jour + 4 hubs restants + source-guards CI + tests Playwright L11
+- Effort estimé : **17-22 j-h**
+- ROI attendu : **score 9,2+/10 sur 5 vues piliers** (vs 8,5+/10 sur 2 vues actuellement)
+
+### État final post-ingestion
+
+| Élément | Statut |
+|---|---|
+| Doctrine Sol v1.1 + L11 ingéré | ✅ |
+| Bilan Sprint Grammaire v1 | ✅ |
+| Phase 3.4 candidate documentée | ✅ |
+| Memory mise à jour (Lego + PROMEOS marque) | ✅ |
+| Code livré 4 vues alignées Lego (cockpit/jour 8,5 · bill-intel 8,5 · centre-action 8,0 · conformite 7,0) | ✅ |
+| Code Phase 3.4 (HubPage + 5 hubs) | ⏸️ candidate non livrée |
+
+**Sprint Grammaire v1 (Lego strict) clôturé. Sprint v1.2 (L11 application) candidate documentée.**

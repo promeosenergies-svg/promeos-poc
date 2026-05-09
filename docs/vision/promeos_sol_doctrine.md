@@ -608,7 +608,114 @@ La doctrine est revue tous les trimestres minimum. Objectifs :
 
 ---
 
-## 12. Conclusion — la doctrine en une phrase
+## 12. Loi L11 — Hub Page (addendum doctrinal v1.1, 2026-05-09)
+
+> **Chaque menu top-level (Énergie, Conformité, Facturation, Achat, Patrimoine) est une page « hub » qui résume l'état du pilier en un coup d'œil, et donne envie d'aller plus loin dans les sous-menus.**
+
+Une page hub n'est ni un dashboard exhaustif (anti-pattern : « tout sur la même page »), ni une page vide qui force la navigation par essai-erreur (anti-pattern : « cliquez pour voir »). C'est une **page d'accueil pédagogique** qui synthétise et oriente.
+
+### 12.1 Anatomie canonique (gabarit obligatoire)
+
+```text
+1. KICKER contextuel (mono, uppercase)
+   « ÉNERGIE · GROUPE HELIOS · SEMAINE 19 · 6 SITES »
+
+2. HERO TITRE (Fraunces, 28-33px)
+   Phrase complète avec ponctuation finale : « Votre patrimoine consomme bien ce mois-ci. »
+
+3. SOUS-LIGNE META (mono uppercase)
+   « DONNÉES À L'INSTANT · QUALITÉ 80 % · SEMAINE 19 »
+
+4. TRIPTYQUE KPI (3 cards, jamais 4 ou 2)
+5. DEUX GRAPHES DOMAINE (jamais 1 seul, jamais 3+)
+6. HIGHLIGHTS (3 à 5 maximum, jamais 6+)
+7. FOOTER SCM (Source · Confiance · Mis à jour) — Loi L6 existante
+```
+
+### 12.2 Les 5 lois propres au Hub Page
+
+| Loi | Règle | Exemple anti-pattern |
+|---|---|---|
+| **L11.1** | 3 KPIs maximum, **strictement spécifiques au pilier**, jamais redondants | Conso 7j + Conso 30j + Conso YTD = 1 KPI sous 3 angles |
+| **L11.2** | **2 graphes exactement above-fold** (jamais 1, jamais 3+), chacun avec question/réponse explicite | 1 seul graphe pleine largeur 800px = dashboard analytique |
+| **L11.3** | **3 à 5 highlights** avec verbe d'invitation OBLIGATOIRE (« voir l'anomalie → », « lancer le scénario → ») | Vocabulaire interdit : « cliquer ici », « en savoir plus », « détails » |
+| **L11.4** | Aucune section above-fold ne dépasse **400 px sans respiration**. Tableaux > 5×6 INTERDITS sur hub | « Tableau filtrable inline » sur page hub = signe que le hub se substitue au sous-menu |
+| **L11.5** | **Les 5 pages hub partagent la même grammaire visuelle** | Variation du nombre de KPIs ou ordre des sections selon le pilier |
+
+### 12.3 KPIs canoniques par pilier
+
+| Pilier | 3 KPIs |
+|---|---|
+| **Briefing du jour** | Conso 7j · Pic puissance · Exposition cumulée |
+| **Énergie** | Conso annuelle · Intensité kWh/m² · Dérive vs baseline |
+| **Conformité** | Score consolidé /100 · Provision pénalités · Prochaine échéance |
+| **Facturation** | Pertes à récupérer · Anomalies à traiter · Récupérations YTD |
+| **Achat** | Prix moyen €/MWh · Couverture % · Fenêtre marché J-x |
+| **Patrimoine** | Surface totale m² · Nombre de sites · Complétude données % |
+
+### 12.4 Vocabulaire d'invitation autorisé
+
+| Catégorie highlight | Verbes autorisés |
+|---|---|
+| Anomalie | voir l'anomalie · auditer · investiguer |
+| Décision | lancer le scénario · comparer · arbitrer |
+| Action | voir le détail · vérifier · programmer |
+| Recommandation | voir les leviers · activer · simuler |
+| Échéance | voir le calendrier · préparer · lancer |
+| Site | ouvrir le site · voir le détail patrimoine |
+| Anomalie facture | auditer la facture · contester |
+
+**Vocabulaire interdit** : « cliquer ici », « en savoir plus », « détails », « voir », « consulter ». Trop génériques.
+
+### 12.5 Anti-patterns L11 (ajout au §6)
+
+| # | Anti-pattern | Effet |
+|---|---|---|
+| AP1 | Hub vide | Force navigation à l'aveugle |
+| AP2 | Hub-dashboard | Surcharge cognitive |
+| AP3 | Hub passif (highlights sans verbe) | Pas d'engagement |
+| AP4 | Tableau inline > 5×6 sur hub | Concurrence avec le sous-menu détail |
+| AP5 | KPIs redondants (3× même mesure) | Lisibilité dégradée |
+| AP6 | Graphe orphelin (sans question métier) | Information sans intention |
+| AP7 | Highlight sans verbe d'invitation | Hub redevient dashboard contemplatif |
+| AP8 | Composition divergente cross-piliers | Charge cognitive accrue |
+| AP9 | Sidebar pilier hétérogène | Identité produit dispersée |
+| AP10 | Mention de la marque incorrecte | « Promeus », « Proméos » → toujours **PROMEOS** majuscules sans accent |
+
+### 12.6 Composant `<HubPage />` — contrat React
+
+```jsx
+<HubPage
+  pillar="briefing|energie|conformite|factures|achat|patrimoine"
+  context={{ kicker, titre, meta }}
+  kpis={[k1, k2, k3]}             // strictement 3 (validation runtime)
+  charts={[chart1, chart2]}       // strictement 2 (validation runtime)
+  highlights={[h1, h2, h3, h4, h5]} // 3-5 (validation runtime + verbe invitation)
+  footer={{ sources, confidence, updatedAt }}
+/>
+```
+
+Validation runtime stricte (dev mode) : throw si `kpis.length !== 3`, `charts.length !== 2`, `highlights.length < 3 || > 5`, `highlight.invitation` non conforme à la liste blanche de verbes.
+
+### 12.7 Source guards CI (à ajouter)
+
+- **Guard E** `hub-page-uses-canonical-grammar` : tout `pages/{Energie,BillIntel,Conformite,Achat,Patrimoine,CockpitJour}.jsx` DOIT utiliser `<HubPage />`
+- **Guard F** `promeos-marque-correcte` : aucun « Promeus », « Proméus », « ProMeos » dans `frontend/src/`
+
+### 12.8 Identité PROMEOS
+
+La marque s'écrit toujours **PROMEOS** (5 lettres, majuscules, sans accent). Jamais « Proméus », « Proméos », « ProMeos ». Tolérance : le logo peut rendre `PROMEOS` ou `Promeos` typographiquement, mais le nom littéral reste `PROMEOS`.
+
+### 12.9 Source de l'addendum
+
+- Origine : décision produit Amine — 9 mai 2026
+- Capture de référence : « Proposition A · Briefing journal calme » (score doctrinal 9,2/10)
+- Audit personas validation : Marie 8,8 · Jean-Marc 9,3 · Sophie VC 9,5 · Energy Manager 8,9
+- Document source : `sol_v1_1_addendum_hub_page.md` (ingéré dans cette doctrine 2026-05-09)
+
+---
+
+## 13. Conclusion — la doctrine en une phrase
 
 > PROMEOS Sol est un OS énergétique vivant qui transforme la complexité en simplicité, qui pousse les bons signaux au bon moment, et qui rend l'énergie B2B compréhensible par tous — non-sachants d'abord, sachants servis également.
 
@@ -616,5 +723,6 @@ Toute décision produit qui ne sert pas cette phrase n'a pas sa place dans PROME
 
 ---
 
+**Doctrine v1.1 — 2026-05-09 (addendum L11 Hub Page)**
 **Doctrine v1.0 — 2026-04-26**
 **Statut** : socle. À documenter dans `docs/vision/promeos_sol_doctrine.md` et à référencer dans toute décision produit future.
