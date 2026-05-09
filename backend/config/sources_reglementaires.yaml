@@ -1569,3 +1569,56 @@ terms:
         facture) = doublon historique post-transition.
     formula: "total_doublon_eur = Σ amount_eur sur lignes accise[1:] (1ère légitime)"
     notes: "Bascule sévérité warning→critical. > 50 €/facture en double = surfacturation matérielle accise (analogue seuil R23 TURPE doublé / R26 sanity)."
+
+
+  # ── Phase L22.1 — Priority score UI cardinal pour AnomaliesPage tri ──────
+  # Pattern lazy-load YAML SoT (no fake code) — avant L22.1 hardcoded dans
+  # routes/billing.py:1548. Score UI flat 30/50/70/90 pour /billing/anomalies-scoped.
+  # Indépendant de patrimoine_impact._SEV_BASE (composite multi-facteurs 0-100).
+  BILL_PRIORITY_SCORE_CRITICAL:
+    value: 90
+    unit: "score_points"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L22.1 — score UI priorité anomalie CRITICAL"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO B2B — score haut prioritaire UI"
+    formula: "priority_score = BILL_PRIORITY_SCORE_MAP[severity]"
+    notes: "Score UI flat 0-100. Composante billing uniquement. Plage 30-90."
+
+  BILL_PRIORITY_SCORE_HIGH:
+    value: 70
+    unit: "score_points"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L22.1 — score UI priorité HIGH"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO B2B"
+    formula: "priority_score = BILL_PRIORITY_SCORE_MAP[severity]"
+    notes: "Score UI HIGH — entre MEDIUM (50) et CRITICAL (90)."
+
+  BILL_PRIORITY_SCORE_MEDIUM:
+    value: 50
+    unit: "score_points"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L22.1 — score UI priorité MEDIUM"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO B2B"
+    formula: "priority_score = BILL_PRIORITY_SCORE_MAP[severity]"
+    notes: "Score UI médian — défaut anomalies sans severity claire."
+
+  BILL_PRIORITY_SCORE_LOW:
+    value: 30
+    unit: "score_points"
+    domain: "bill_intelligence"
+    source:
+      label: "Doctrine PROMEOS Phase L22.1 — score UI priorité LOW"
+      version: "1.0"
+      effective_date: "2026-05-09"
+      legal_reference: "Pratique audit CFO B2B"
+    formula: "priority_score = BILL_PRIORITY_SCORE_MAP[severity]"
+    notes: "Score UI bas — fallback severity inconnue (anti-faux-positif)."

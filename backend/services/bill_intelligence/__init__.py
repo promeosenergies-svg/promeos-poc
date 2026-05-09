@@ -11,13 +11,25 @@ ADR-013 : `docs/adr/ADR-013-BillIntelligence-AnomalyDetector-Pattern.md`
 """
 
 from .anomaly_detector import (
+    build_contract_cache,
+    build_prev_invoice_cache,
+    detect_anomalies_for_invoice,
     detect_r19_vnu_dormant,
     detect_r20_capacity_variance,
-    detect_anomalies_for_invoice,
 )
+from .priority import severity_to_priority_score
+from .r_codes_registry import BA_SEVERITY_UI_MAP, R_CODES_TITLE_FR
 
 __all__ = [
+    # Détecteurs cardinaux
     "detect_r19_vnu_dormant",
     "detect_r20_capacity_variance",
     "detect_anomalies_for_invoice",
+    # Phase L7.3 + L12 — caches batch pré-construits
+    "build_prev_invoice_cache",
+    "build_contract_cache",
+    # Phase L22.1 + L22.2 — helpers UI cardinal cross-callsites
+    "severity_to_priority_score",
+    "R_CODES_TITLE_FR",
+    "BA_SEVERITY_UI_MAP",
 ]

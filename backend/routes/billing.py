@@ -1513,56 +1513,14 @@ async def import_invoice_pdf(
 # ========================================
 
 
-# Phase L18.2 — Mapping cardinal R19→R31 codes → titres FR pour UI AnomaliesPage
-# (avant L18.2 : R19→R31 invisibles UI, P0 BLOCKER #2 audit Phase L17 reviewer #2).
-_R_CODES_TITLE_FR: dict[str, str] = {
-    "R19": "VNU dormant facturé sans usage",
-    "R20": "Variance capacité TURPE > seuil",
-    "R21": "CTA divergente vs taux réglementaire",
-    "R22": "Accise élec erronée (catégorie T1/T2/HP)",
-    "R23": "TURPE facturé en double même période",
-    "R24": "TVA appliquée à mauvais taux",
-    "R25": "Abonnement divergent vs contrat",
-    "R26": "Total facture ≠ Σ lignes (cohérence)",
-    "R27": "Conso facturée vs MeterReading divergente",
-    "R28": "Prix unitaire énergie divergent contrat",
-    "R29": "Chevauchement ou trou période facturation",
-    "R30": "Période facturée hors fenêtre contractuelle",
-    "R31": "Doublons accise/CSPE/TICFE intra-facture",
-}
-
-# Mapping severity bill_anomaly → AnomaliesPage UI (lowercase → UPPERCASE).
-# critical/warning/info BillAnomaly Enum → CRITICAL/HIGH/MEDIUM AnomaliesPage SEV_LABEL.
-_BA_SEVERITY_UI_MAP: dict[str, str] = {
-    "critical": "CRITICAL",
-    "warning": "HIGH",
-    "info": "MEDIUM",
-}
-
-# Phase L20.1 audit fix P0 BUG — priority_score depuis severity UPPERCASE.
-# Avant L20.1 : `90 if i.severity == "CRITICAL" else ...` comparait raw lowercase
-# DB (BillingInsight.severity stockée lowercase) après que la ligne précédente
-# avait fait `.upper()` → tous les BillingInsight scorés 50 par défaut (BUG silencieux).
-# Phase L20.2 — extraction helper centralisé (avant L20.2 : 90/70/50 dupliqué 2×
-# inline endpoint billing.py:1610+1633 + audit Phase L20 reviewer #1 finding 2).
-_PRIORITY_SCORE_MAP: dict[str, int] = {
-    "CRITICAL": 90,
-    "HIGH": 70,
-    "MEDIUM": 50,
-    "LOW": 30,
-}
-
-
-def _severity_to_priority_score(severity: str) -> int:
-    """Phase L20.2 + L21.1 — Helper SoT priority_score depuis severity.
-
-    Phase L21.1 audit fix P2 — normalise UPPERCASE en interne (avant : silencieux
-    fallback LOW si lowercase passé) → robuste cross-callsite.
-
-    Évite duplication du mapping 90/70/50/30 dans /billing/anomalies-scoped + futurs
-    callsites. Default LOW (30) si severity inconnue (anti-faux-positif heuristique).
-    """
-    return _PRIORITY_SCORE_MAP.get((severity or "").upper(), 30)
+# Phase L22.2 audit fix P1 — Mapping codes + severity migré vers services/bill_intelligence/
+# (avant L22.2 : 25+ lignes hardcoded violation règle d'or "zero business logic in routes").
+# Backward compat alias pour préserver les callsites existants.
+from services.bill_intelligence.priority import severity_to_priority_score as _severity_to_priority_score
+from services.bill_intelligence.r_codes_registry import (
+    BA_SEVERITY_UI_MAP as _BA_SEVERITY_UI_MAP,
+    R_CODES_TITLE_FR as _R_CODES_TITLE_FR,
+)
 
 
 @router.get("/anomalies-scoped")

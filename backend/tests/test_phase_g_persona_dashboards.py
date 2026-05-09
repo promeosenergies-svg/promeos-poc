@@ -2475,18 +2475,46 @@ class TestPhaseGP1FixesSourceGuards:
         assert r23["priority_score"] > r31["priority_score"]
 
     def test_l20_1_priority_score_helper_centralized(self):
-        """L20.1 audit fix P0 BUG — helper `_severity_to_priority_score` centralisé
-        + `_PRIORITY_SCORE_MAP` SoT module-level (avant L20.1 : 90/70/50 hardcoded
-        2× inline avec BUG silencieux comparaison case-mismatch BillingInsight).
+        """L20.1 + L22 audit — helper `severity_to_priority_score` migré vers
+        `services/bill_intelligence/priority.py` (Phase L22.1) avec lazy-load YAML.
+
+        Phase L22.1 cumul : `_PRIORITY_SCORE_MAP` + `_severity_to_priority_score`
+        ne sont PLUS dans `routes/` (zero business logic in routes), mais importés
+        depuis `services.bill_intelligence.priority`.
         """
         from pathlib import Path
 
-        src = (Path(__file__).resolve().parent.parent / "routes" / "billing.py").read_text(encoding="utf-8")
-        assert "_PRIORITY_SCORE_MAP" in src
-        assert "def _severity_to_priority_score(" in src
-        assert '"CRITICAL": 90' in src and '"HIGH": 70' in src and '"MEDIUM": 50' in src
-        # Vérifie que le helper est invoqué dans les 2 callsites (BillingInsight + BillAnomaly)
-        assert src.count("_severity_to_priority_score(") >= 3  # 1 def + 2 invocations
+        backend_root = Path(__file__).resolve().parent.parent
+        # Module services présent (Phase L22.1)
+        priority_py = backend_root / "services" / "bill_intelligence" / "priority.py"
+        assert priority_py.exists(), "services/bill_intelligence/priority.py doit exister"
+        priority_src = priority_py.read_text(encoding="utf-8")
+        assert "def severity_to_priority_score(" in priority_src
+        # YAML SoT lazy-load
+        for key in [
+            "BILL_PRIORITY_SCORE_CRITICAL",
+            "BILL_PRIORITY_SCORE_HIGH",
+            "BILL_PRIORITY_SCORE_MEDIUM",
+            "BILL_PRIORITY_SCORE_LOW",
+        ]:
+            assert key in priority_src, f"YAML SoT key manquante : {key}"
+
+        # routes/billing.py importe le helper services (alias backward compat)
+        billing_src = (backend_root / "routes" / "billing.py").read_text(encoding="utf-8")
+        assert "from services.bill_intelligence.priority import severity_to_priority_score" in billing_src
+        # Plus de _PRIORITY_SCORE_MAP local hardcoded
+        assert "_PRIORITY_SCORE_MAP: dict[str, int] = {" not in billing_src
+
+        # Runtime check : valeurs YAML SoT
+        from config.regulatory_sources_loader import get_term_value
+        from services.bill_intelligence.priority import severity_to_priority_score
+
+        assert severity_to_priority_score("CRITICAL") == int(get_term_value("BILL_PRIORITY_SCORE_CRITICAL"))
+        assert severity_to_priority_score("HIGH") == int(get_term_value("BILL_PRIORITY_SCORE_HIGH"))
+        assert severity_to_priority_score("medium") == int(  # case-insensitive
+            get_term_value("BILL_PRIORITY_SCORE_MEDIUM")
+        )
+        assert severity_to_priority_score(None) == 30  # default LOW
 
     def test_l20_2_sort_defensive_get(self):
         """L20.2 audit fix P1 — sort defensive `.get()`."""
@@ -2579,21 +2607,29 @@ class TestPhaseGP1FixesSourceGuards:
         """
         from pathlib import Path
 
-        src = (Path(__file__).resolve().parent.parent / "routes" / "billing.py").read_text(encoding="utf-8")
-        # Mapping cardinal R19→R31 → titres FR
-        assert "_R_CODES_TITLE_FR" in src
+        backend_root = Path(__file__).resolve().parent.parent
+        billing_src = (backend_root / "routes" / "billing.py").read_text(encoding="utf-8")
+
+        # Phase L22.2 — mappings migrés vers services/bill_intelligence/r_codes_registry.py
+        registry_py = backend_root / "services" / "bill_intelligence" / "r_codes_registry.py"
+        assert registry_py.exists(), "r_codes_registry.py doit exister Phase L22.2"
+        registry_src = registry_py.read_text(encoding="utf-8")
+        # 13 codes R19→R31 dans le registry
         for code in ["R19", "R20", "R21", "R22", "R23", "R24", "R25", "R26", "R27", "R28", "R29", "R30", "R31"]:
-            assert f'"{code}":' in src, f"Mapping R-code manquant : {code}"
-        # Severity remap
-        assert "_BA_SEVERITY_UI_MAP" in src
-        assert '"critical": "CRITICAL"' in src
-        assert '"warning": "HIGH"' in src
-        # Union BillAnomaly fetched
-        assert "from models import BillAnomaly" in src
-        assert "db.query(BillAnomaly, EnergyInvoice.site_id)" in src
+            assert f'"{code}":' in registry_src, f"Mapping R-code manquant : {code}"
+        # Severity remap dans registry
+        assert "BA_SEVERITY_UI_MAP" in registry_src
+        assert '"critical": "CRITICAL"' in registry_src
+        assert '"warning": "HIGH"' in registry_src
+
+        # routes/billing.py importe les mappings via alias backward compat
+        assert "from services.bill_intelligence.r_codes_registry import" in billing_src
+        # Union BillAnomaly fetched (L18.2 logique métier préservée)
+        assert "from models import BillAnomaly" in billing_src
+        assert "db.query(BillAnomaly, EnergyInvoice.site_id)" in billing_src
         # Distinction source via préfixe
-        assert '"insight_id": f"BI:' in src
-        assert '"insight_id": f"BA:' in src
+        assert '"insight_id": f"BI:' in billing_src
+        assert '"insight_id": f"BA:' in billing_src
 
     def test_l17_2_anomalies_endpoint_has_rate_limit(self):
         """L17.2 audit fix P1 BLOCKER #3 — endpoint /anomalies protégé par rate-limit
