@@ -2272,6 +2272,55 @@ class TestPhaseGP1FixesSourceGuards:
         # Réponse audit expose le compte R19→R31
         assert '"bill_anomalies_r19_r31_count":' in src
 
+    def test_l19_audit_invoices_batch_uses_caches(self):
+        """L19 audit fix P1 — audit_invoices_batch() évite N+1 via caches batch
+        pré-construits (build_contract_cache + build_prev_invoice_cache).
+        """
+        from pathlib import Path
+
+        src = (Path(__file__).resolve().parent.parent / "services" / "billing_service.py").read_text(encoding="utf-8")
+        assert "def audit_invoices_batch(" in src
+        assert "build_contract_cache" in src
+        assert "build_prev_invoice_cache" in src
+        assert "contract_cache=contract_cache" in src
+        assert "prev_invoice_cache=prev_invoice_cache" in src
+
+    def test_l19_days_per_month_constant_named(self):
+        """L19 audit fix P2 — _DAYS_PER_MONTH_GREGORIAN constante nommée
+        au lieu de magic 30.4375 inline (cohérent _DOUBLON_DETAIL_CAP_LINES).
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        assert "_DAYS_PER_MONTH_GREGORIAN" in src
+        # Magic 30.4375 retiré du code (peut rester en commentaire)
+        import re as _re
+
+        match = _re.search(r"def detect_r25_subscription_mismatch.*?(?=\ndef detect_)", src, _re.DOTALL)
+        assert match is not None
+        r25_block = match.group(0)
+        code_only = "\n".join(line for line in r25_block.split("\n") if not line.strip().startswith("#"))
+        assert "/ 30.4375" not in code_only
+
+    def test_l19_imports_module_level_no_inline(self):
+        """L19 audit fix P2 — imports utils.datetime_utils en module-level
+        (avant L19 : inline dans 2 fonctions portfolio.py + 1 power_profile_service.py).
+        """
+        from pathlib import Path
+
+        backend_root = Path(__file__).resolve().parent.parent
+
+        # portfolio.py — import module-level
+        portfolio_src = (backend_root / "routes" / "portfolio.py").read_text(encoding="utf-8")
+        # 1 occurrence module-level uniquement (pas d'inline functions)
+        assert portfolio_src.count("from utils.datetime_utils import") == 1
+
+        # power_profile_service.py — import module-level
+        pps_src = (backend_root / "services" / "power" / "power_profile_service.py").read_text(encoding="utf-8")
+        assert pps_src.count("from utils.datetime_utils import") == 1
+
     def test_l18_2_billing_anomalies_scoped_unions_bill_anomaly(self):
         """L18.2 audit fix P0 CARDINAL — /billing/anomalies-scoped UNIONS BillingInsight
         legacy + BillAnomaly R19→R31 (pilot-ready frontend wiring).
@@ -2362,10 +2411,10 @@ class TestPhaseGP1FixesSourceGuards:
         from pathlib import Path
 
         src = (Path(__file__).resolve().parent.parent / "routes" / "ems.py").read_text(encoding="utf-8")
-        # Phase L16.3 : helper déplacé vers utils/datetime_utils.py — ems.py
-        # l'importe sous l'alias `_to_exclusive_next_day_dt` pour cohérence callsites.
-        assert "from utils.datetime_utils import to_exclusive_next_day_dt as _to_exclusive_next_day_dt" in src
-        assert src.count("_to_exclusive_next_day_dt(dt_to)") >= 3
+        # Phase L19 — alias obsolete supprimé : import direct du nom public
+        assert "from utils.datetime_utils import to_exclusive_next_day_dt" in src
+        # 3 callsites consomment le nom public sans alias
+        assert src.count("to_exclusive_next_day_dt(dt_to)") >= 3
         # Plus de pattern bug `combine(dt_to, ... min.time())` dans le code (post-L14.1).
         assert "datetime.combine(dt_to, datetime.min.time())" not in src
 

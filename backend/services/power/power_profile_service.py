@@ -15,6 +15,9 @@ from datetime import datetime, date, timedelta, timezone
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+# Phase L19 audit fix P2 — import module-level (avant : inline dans get_active_contract)
+from utils.datetime_utils import to_exclusive_next_day_dt, to_start_of_day_dt
+
 from models.power import PowerReading, PowerContract
 
 
@@ -113,8 +116,6 @@ def get_power_profile(
     sens: str = "CONS",
 ) -> dict:
     """KPIs puissance d'un compteur sur une période."""
-    # Phase L16.3 — helpers centralisés utils/datetime_utils.py (anti-drift L13.4)
-    from utils.datetime_utils import to_exclusive_next_day_dt, to_start_of_day_dt
 
     dt_debut = to_start_of_day_dt(date_debut)
     dt_fin = to_exclusive_next_day_dt(date_fin)

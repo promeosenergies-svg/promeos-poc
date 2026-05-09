@@ -19,7 +19,11 @@ from services.scope_utils import resolve_org_id
 # Phase L16.3 — helper centralisé `utils/datetime_utils.py` (avant L16.3 : défini
 # localement dans ce fichier Phase L14.1 ; déplacé en module partagé pour anti-drift
 # cross-services + cohérence avec les 6 callsites identifiés services/power/*).
-from utils.datetime_utils import to_exclusive_next_day_dt as _to_exclusive_next_day_dt
+# Phase L19 — alias _to_exclusive_next_day_dt obsolète (audit Phase L17 reviewer #1).
+# Suppression de l'alias `_` privé hérité Phase L14.1 ; les 3 callsites consomment
+# directement le nom public `to_exclusive_next_day_dt` (cohérent avec services/power/*
+# et routes/portfolio.py).
+from utils.datetime_utils import to_exclusive_next_day_dt
 
 router = APIRouter(prefix="/api/ems", tags=["EMS Explorer"])
 
@@ -508,7 +512,7 @@ def run_energy_signature(
         [site_id],
         parsed_meter_ids,
         datetime.combine(df, datetime.min.time()),
-        _to_exclusive_next_day_dt(dt_to),
+        to_exclusive_next_day_dt(dt_to),
         "daily",
         "aggregate",
         "kwh",
@@ -570,7 +574,7 @@ def run_portfolio_signature(
         parsed_site_ids,
         parsed_meter_ids,
         datetime.combine(df, datetime.min.time()),
-        _to_exclusive_next_day_dt(dt_to),
+        to_exclusive_next_day_dt(dt_to),
         "daily",
         "aggregate",
         "kwh",
@@ -1244,7 +1248,7 @@ def get_reference_profile(
             [site_id],
             None,
             datetime.combine(df, datetime.min.time()),
-            _to_exclusive_next_day_dt(dt_to),
+            to_exclusive_next_day_dt(dt_to),
             granularity if granularity != "hourly" else "daily",
             "aggregate",
             "kwh",

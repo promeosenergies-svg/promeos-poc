@@ -13,6 +13,9 @@ from typing import Optional, List
 
 from database import get_db
 from middleware.auth import AuthContext, get_optional_auth
+
+# Phase L19 audit fix P2 — imports module-level (avant : inline dans 2 fonctions L16.3)
+from utils.datetime_utils import to_exclusive_next_day_dt, to_start_of_day_dt
 from models import EntiteJuridique, Portefeuille, Site
 from models.energy_models import Meter, MeterReading, EnergyVector
 from models.consumption_insight import ConsumptionInsight
@@ -256,8 +259,6 @@ def get_portfolio_summary(
 
     d_from = _parse_date_or_default(date_from, 90)
     d_to = _parse_date_or_default(date_to, 0) if date_to else date_cls.today()
-    # Phase L16.3 — helpers centralisés utils/datetime_utils.py (anti-drift L13.4)
-    from utils.datetime_utils import to_exclusive_next_day_dt, to_start_of_day_dt
 
     dt_from = to_start_of_day_dt(d_from)
     dt_to = to_exclusive_next_day_dt(d_to)
@@ -390,8 +391,6 @@ def get_portfolio_sites(
 
     d_from = _parse_date_or_default(date_from, 90)
     d_to = _parse_date_or_default(date_to, 0) if date_to else date_cls.today()
-    # Phase L16.3 — helpers centralisés utils/datetime_utils.py (anti-drift L13.4)
-    from utils.datetime_utils import to_exclusive_next_day_dt, to_start_of_day_dt
 
     dt_from = to_start_of_day_dt(d_from)
     dt_to = to_exclusive_next_day_dt(d_to)

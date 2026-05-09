@@ -249,6 +249,11 @@ _TVA_PATTERN = re.compile(r"\bTVA\b|\bVAT\b", re.IGNORECASE)
 # Cohérent R19 vnu_labels (Sprint C-7 Phase 7.7), R23 + R31 doublons (helper L10.1).
 _DOUBLON_DETAIL_CAP_LINES = 5
 
+# Phase L19 audit fix P2 — constante astronomique nommée (avant : 30.4375 magic
+# inline dans R25 detect_r25_subscription_mismatch). 365.25/12 = 30.4375 jours/mois
+# moyen Grégorien. Pas réglementaire donc pas de YAML SoT requis (audit Reviewer L14).
+_DAYS_PER_MONTH_GREGORIAN: float = 365.25 / 12  # = 30.4375
+
 # Sprint C-7 Phase 7.7 Lot A — D-Sprint-C7-BillAnomaly-PII-Vnu-Labels-Sanitization-001 :
 # regex sanitization SIREN (9 chiffres) / SIRET (14 chiffres) / PRM/PCE (14 chiffres) /
 # PDL (14 chiffres). Évite leak PII dans details_json.vnu_labels (security-auditor SEC-002).
@@ -908,7 +913,7 @@ def detect_r25_subscription_mismatch(
     abo_facture = sum(float(line.amount_eur or 0) for line in abo_lines)
     if invoice.period_start and invoice.period_end:
         days = (invoice.period_end - invoice.period_start).days + 1
-        months_covered = max(1.0, days / 30.4375)  # Avg jours/mois Grégorien
+        months_covered = max(1.0, days / _DAYS_PER_MONTH_GREGORIAN)  # Phase L19 — constante nommée
         abo_mensuel_facture = abo_facture / months_covered
     else:
         abo_mensuel_facture = abo_facture  # Hypothèse 1 mois si période inconnue
