@@ -50,6 +50,112 @@ import {
   priorityLabel as decPriorityLabel,
   toDecSeverityBriefing,
 } from '../components/grammar/decisionAdapters';
+
+/**
+ * Phase 3.2 P0 (audit UX 09/05) — anti carbone-copy Top 3.
+ *
+ * HELIOS demo seed retourne souvent 3-5 priorités IDENTIQUES (même catégorie,
+ * même impact €, même titre pattern, sites différents). Le Top 3 affiche
+ * alors 3 cards quasi-identiques = effet "carbone-copy" qui dilue la
+ * promesse "voici la décision juste".
+ *
+ * Solution : agréger les priorités qui partagent (category, urgency,
+ * impact, title pattern) en 1 DEC unique avec scope = "N sites" + impact
+ * cumulé + lead expliquant l'agrégation.
+ *
+ * @param {Array} priorities
+ * @returns {Array} agrégé + re-ranké
+ */
+function aggregatePrioritiesForBriefing(priorities) {
+  if (!priorities?.length) return [];
+  const groups = new Map();
+  for (const p of priorities) {
+    // Pattern title : "Site X nécessite Y" → on garde Y comme groupKey
+    const verbMatch = (p.title || '').match(/(nécessite|requiert|doit)\s+(.+)$/);
+    const titleSuffix = verbMatch ? verbMatch[2] : p.title || '';
+    const key = [
+      (p.category_label || p.domain || '').toLowerCase(),
+      p.urgency,
+      Math.round(p.impact_value_eur || 0),
+      titleSuffix.toLowerCase().slice(0, 40),
+    ].join('|');
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(p);
+  }
+  const aggregated = [];
+  for (const items of groups.values()) {
+    if (items.length === 1) {
+      aggregated.push(items[0]);
+      continue;
+    }
+    const first = items[0];
+    const sites = items.map((i) => i.scope_label || '').filter(Boolean);
+    const totalImpact = items.reduce((s, i) => s + (i.impact_value_eur || 0), 0);
+    const verbMatch = (first.title || '').match(/(nécessite|requiert|doit)\s+(.+)$/);
+    const action = verbMatch ? verbMatch[2] : first.category_label || 'action';
+    const sitesLabel =
+      sites.length <= 2
+        ? sites.join(' + ')
+        : `${sites.slice(0, 2).join(', ')} +${sites.length - 2}`;
+    // Domaine traduit FR (anti-pattern §6.3 : "Compliance" anglais retiré).
+    const domainRaw = (first.domain || '').toLowerCase();
+    const domainFr =
+      {
+        compliance: 'Conformité réglementaire',
+        conformite: 'Conformité réglementaire',
+        billing: 'Facturation',
+        energy: 'Énergie',
+        anomaly: 'Anomalies',
+      }[domainRaw] ||
+      first.category_label ||
+      'Périmètre';
+
+    aggregated.push({
+      ...first,
+      title: `${items.length} sites — ${action}`,
+      scope_label: sitesLabel.toUpperCase() || `${items.length} SITES`,
+      impact_value_eur: totalImpact,
+      lead: `Action prioritaire ${(first.category_label || 'à arbitrer').toLowerCase()} sur ${items.length} sites du portefeuille. Exposition financière cumulée : ${totalImpact.toLocaleString('fr-FR')} €/an. À arbitrer en lot pour mutualiser le coût.`,
+      // Forge evidence_cells avec impact cumulé + traduction FR (anti-jargon
+      // §6.3) au lieu de retomber sur buildEvidenceFallback qui re-injecterait
+      // "compliance" raw du domain backend.
+      evidence_cells: [
+        {
+          label: 'IMPACT FINANCIER',
+          value: totalImpact.toLocaleString('fr-FR'),
+          unit: '€/an',
+          helper: `${items.length} sites cumulés`,
+        },
+        {
+          label: 'CATÉGORIE',
+          value: first.category_label || '—',
+          unit: '',
+          helper: "type d'action",
+        },
+        {
+          label: 'PRIORITÉ',
+          value:
+            { critical: "À traiter d'abord", high: 'À traiter rapidement', medium: 'À planifier' }[
+              first.urgency
+            ] || 'À surveiller',
+          unit: '',
+          helper: `${items.length} sites`,
+        },
+        {
+          label: 'DOMAINE',
+          value: domainFr,
+          unit: '',
+          helper: 'périmètre concerné',
+        },
+      ],
+      _aggregated_count: items.length,
+    });
+  }
+  // Re-rank par impact total décroissant pour préserver ordre Pareto
+  return aggregated
+    .sort((a, b) => (b.impact_value_eur || 0) - (a.impact_value_eur || 0))
+    .map((p, i) => ({ ...p, rank: i + 1 }));
+}
 import { getCockpitPriorities } from '../services/api/cockpit';
 import { useScope } from '../contexts/ScopeContext';
 import { splitMwh, splitKw, fmtPct, fmtEurShort, deltaSeverity } from '../utils/format';
@@ -927,7 +1033,16 @@ function CourbeChargeJMinus1({ subscribedKw, lastUpdate, confidence, hourlyBreak
 const STRATEGIC_HREF = '/cockpit/strategique';
 
 function FileTraitementRow({ rank, item }) {
-  const tone = severityTone(item.urgency);
+  // Audit Phase 3.2 P1 (UX 09/05) : palette File alignée sur Top 3 BRIEFING
+  // ambré calme. Avant : severityTone(critical) → rouge sang dissonant vs
+  // DEC ambrées au-dessus. Maintenant : tonalité ambré uniforme pour la
+  // file (rangs ≥ 4 par construction Phase 3.2.D, donc moins critiques
+  // qu'arbitrer en priorité).
+  const tone = {
+    bg: 'var(--sol-bg-canvas)',
+    line: 'var(--sol-rule)',
+    fg: 'var(--sol-ink-700)',
+  };
   const showStrategicLink = rank <= 3;
   // Étape 4.bis FE : 4ᵉ colonne Impact maquette §11.3 (signal métier #1).
   // Backend P0-D : impact_value_eur ou impact_value_mwh_year + category_label
@@ -1118,21 +1233,12 @@ function FileTraitement({ priorities, loading, remainingCount = 0 }) {
       </div>
     );
   }
-  if (!priorities?.length) {
-    return (
-      <div
-        className="rounded-md p-4 text-center"
-        style={{
-          background: 'var(--sol-succes-bg)',
-          border: '0.5px solid var(--sol-succes-line)',
-          color: 'var(--sol-succes-fg)',
-        }}
-      >
-        <strong style={{ fontWeight: 500 }}>Tout est sous contrôle aujourd'hui.</strong> Aucune
-        priorité critique sur le portefeuille.
-      </div>
-    );
-  }
+  // Audit Phase 3.2 P0 (UX 09/05) : éliminer doublon Top 3 vs File. Le Top 3
+  // au-dessus rend déjà les rangs 1-3 en DecisionEvidenceCard. La file ne doit
+  // afficher QUE les rangs >= 4 (drill-down complémentaire). Si moins de 4
+  // priorités au total → file ne se rend pas (pas de redondance).
+  const tail = (priorities || []).filter((p) => p.rank >= 4);
+  if (!tail.length) return null;
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
@@ -1140,20 +1246,19 @@ function FileTraitement({ priorities, loading, remainingCount = 0 }) {
           className="font-mono uppercase tracking-[0.07em]"
           style={{ fontSize: 11, color: 'var(--sol-ink-500)' }}
         >
-          File de traitement · {priorities.length} ligne{priorities.length > 1 ? 's' : ''} priorisée
-          {priorities.length > 1 ? 's' : ''}
+          Autres priorités · {tail.length} ligne{tail.length > 1 ? 's' : ''} suivante
+          {tail.length > 1 ? 's' : ''}
         </div>
         <div
           className="font-mono uppercase tracking-[0.07em]"
           style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
         >
-          Tri urgence · domaine ↓
+          Tri impact € ↓
         </div>
       </div>
-      {priorities.map((p) => (
+      {tail.map((p) => (
         <FileTraitementRow key={`${p.rank}-${p.title}`} rank={p.rank} item={p} />
       ))}
-      {/* Phase 13.C P1 (Antoine 80 sites) : affordance Pareto si gros portfolio. */}
       {remainingCount > 0 && (
         <div className="mt-2 flex justify-end">
           <Link
@@ -1333,11 +1438,15 @@ export default function CockpitPilotage() {
           >
             <Clock size={11} className="inline mr-1 -mt-0.5" aria-hidden="true" />
             Données <Term acronyme="EMS" /> {lastUpdateRel}
-            {dataQualityPct != null ? ` · qualité ${dataQualityPct} %` : ''}
+            {/* Audit Phase 3.2 P1 (UX 09/05) : "QUALITÉ X %" sans contexte
+                 = jargon non-sachant. Décodé en "X % compteurs synchros". */}
+            {dataQualityPct != null ? ` · ${dataQualityPct} % compteurs synchros` : ''}
             {' · semaine '}
             {weekIso}
           </div>
-          {/* Narrative briefing 2-3 lignes 60 mots max — doctrine §5. */}
+          {/* Narrative briefing 2-3 lignes 60 mots max — doctrine §5.
+              Phase 3.2 P2 (UX 09/05) : ajout CTA arbitrage portefeuille
+              "Arbitrer XX k€ →" si exposition consolidée non nulle. */}
           {(priorities?.length > 0 || alertsTotal > 0) && (
             <p
               className="mt-2.5 max-w-[760px]"
@@ -1369,6 +1478,17 @@ export default function CockpitPilotage() {
                     {fmtEurShort(facts.exposure.total.value_eur)}
                   </strong>
                   .{' '}
+                  <Link
+                    to="/cockpit/strategique?focus=exposure"
+                    className="underline-offset-2 hover:underline"
+                    style={{
+                      color: 'var(--sol-attention-fg)',
+                      fontWeight: 500,
+                    }}
+                    data-testid="cockpit-jour-cta-arbitrage-portefeuille"
+                  >
+                    Arbitrer le portefeuille →
+                  </Link>{' '}
                 </>
               )}
               <span className="font-mono" style={{ fontSize: 11.5 }}>
@@ -1460,38 +1580,50 @@ export default function CockpitPilotage() {
       )}
       {priorities && priorities.length > 0 && (
         <section className="mb-4" data-testid="cockpit-jour-top-decisions">
-          <h2
-            className="font-mono uppercase tracking-[0.07em] mb-2"
-            style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
-          >
-            Top {Math.min(3, priorities.length)} décision
-            {Math.min(3, priorities.length) > 1 ? 's' : ''} à arbitrer
-          </h2>
-          <div className="grid grid-cols-1 gap-3">
-            {priorities.slice(0, 3).map((p) => (
-              <DecisionEvidenceCard
-                key={p.rank}
-                rang={p.rank}
-                category={(p.category_label || p.domain || 'ACTION').toUpperCase()}
-                scope={p.scope_label || 'PORTEFEUILLE'}
-                severity={toDecSeverityBriefing(p.urgency)}
-                titre={<>{p.title}</>}
-                lead={p.lead || ''}
-                evidence={
-                  p.evidence_cells ||
-                  buildEvidenceFallback({
-                    impactDisplay: p.impact_value_eur ? fmtEurShort(p.impact_value_eur) : null,
-                    category: p.category_label,
-                    priorityLabel: decPriorityLabel(p.urgency),
-                    rang: p.rank,
-                    domain: p.domain,
-                  })
-                }
-                primaryCta={{ label: "Voir l'action", href: p.action_url }}
-                methodologyRef={p.methodology_ref || '/methodologie/cockpit'}
-              />
-            ))}
-          </div>
+          {(() => {
+            // Phase 3.2 P0 : agrégation anti-carbone-copy avant slice(0,3).
+            // Si le backend retourne 5 priorités identiques sur 5 sites,
+            // l'agrégation les regroupe en 1 DEC unique → Top 3 reste utile.
+            const aggregated = aggregatePrioritiesForBriefing(priorities);
+            const topN = aggregated.slice(0, 3);
+            return (
+              <>
+                <h2
+                  className="font-mono uppercase tracking-[0.07em] mb-2"
+                  style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
+                >
+                  Top {topN.length} décision{topN.length > 1 ? 's' : ''} à arbitrer
+                </h2>
+                <div className="grid grid-cols-1 gap-3">
+                  {topN.map((p) => (
+                    <DecisionEvidenceCard
+                      key={p.rank}
+                      rang={p.rank}
+                      category={(p.category_label || p.domain || 'ACTION').toUpperCase()}
+                      scope={p.scope_label || 'PORTEFEUILLE'}
+                      severity={toDecSeverityBriefing(p.urgency)}
+                      titre={<>{p.title}</>}
+                      lead={p.lead || ''}
+                      evidence={
+                        p.evidence_cells ||
+                        buildEvidenceFallback({
+                          impactDisplay: p.impact_value_eur
+                            ? fmtEurShort(p.impact_value_eur)
+                            : null,
+                          category: p.category_label,
+                          priorityLabel: decPriorityLabel(p.urgency),
+                          rang: p.rank,
+                          domain: p.domain,
+                        })
+                      }
+                      primaryCta={{ label: "Voir l'action", href: p.action_url }}
+                      methodologyRef={p.methodology_ref || '/methodologie/cockpit'}
+                    />
+                  ))}
+                </div>
+              </>
+            );
+          })()}
         </section>
       )}
 

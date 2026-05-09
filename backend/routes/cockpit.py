@@ -1291,25 +1291,41 @@ def _build_evidence_cells_for_priority(p: dict) -> list[dict]:
             "helper": "type d'action",
         }
     )
-    urgency_label = {"critical": "Critique", "high": "Haute", "medium": "Moyenne"}.get(urgency, "—")
+    # Audit Phase 3.2 (UX 09/05) : libellés priorité adoucis pour BRIEFING calme.
+    # "Critique" sur fond ambré dissonant — vision Amine "produit murmure".
+    urgency_label = {
+        "critical": "À traiter d'abord",
+        "high": "À traiter rapidement",
+        "medium": "À planifier",
+        "low": "À surveiller",
+    }.get(urgency, "—")
     cells.append(
         {
-            "label": "URGENCE",
+            "label": "PRIORITÉ",
             "value": urgency_label,
             "unit": "",
-            "helper": f"rang P{rank}",
+            "helper": f"P{rank}",
         }
     )
     # Garantir minimum 4 cellules (contrat DecisionEvidenceCard 4-8 doctrine §5.6).
-    # Si une partie des champs métier est absente, on complète par une cellule
-    # neutre "DOMAINE" pour atteindre 4 — évite que la card ne se rende pas.
+    # Audit Phase 3.2 P1 : ancien "Compliance" anglais + helper "pilier PROMEOS"
+    # contredisaient doctrine §5 grammaire FR. Traduction explicite + helper FR.
     if len(cells) < 4:
+        domain_raw = (p.get("domain") or "").lower()
+        domain_fr = {
+            "compliance": "Conformité réglementaire",
+            "conformite": "Conformité réglementaire",
+            "billing": "Facturation",
+            "energy": "Énergie",
+            "anomaly": "Anomalies",
+            "monitoring": "Suivi",
+        }.get(domain_raw, domain_raw.capitalize() or "—")
         cells.append(
             {
                 "label": "DOMAINE",
-                "value": (p.get("domain") or "—").capitalize(),
+                "value": domain_fr,
                 "unit": "",
-                "helper": "pilier PROMEOS",
+                "helper": "périmètre concerné",
             }
         )
     return cells[:4]
