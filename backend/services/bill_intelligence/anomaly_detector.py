@@ -352,9 +352,10 @@ def detect_r19_vnu_dormant(invoice: EnergyInvoice, db: Session) -> Optional[Bill
     if invoice.energy_kwh is None:
         return None
 
-    # Heuristique MVP : usage attendu si conso > 100 kWh — pas d'anomalie si conso normale
+    # Phase L14.2 — seuil YAML SoT (no fake code) : avant L14.2 hardcoded 100
+    consumption_threshold_kwh = float(get_term_value("BILL_ANOMALY_VNU_DORMANT_CONSUMPTION_KWH"))
     consumption = float(invoice.energy_kwh)
-    if consumption > 100:
+    if consumption > consumption_threshold_kwh:
         return None
 
     return BillAnomaly(
@@ -531,8 +532,9 @@ def detect_r21_cta_mismatch(
         return None
 
     # Phase L8.1 — seuils YAML SoT (no fake code)
-    cta_rate_post_2026 = float(get_term_value("CTA_ELEC_DISTRIBUTION_PCT")) / 100  # SoT existant 15%
-    cta_rate_pre_2026 = 0.2193  # historique arrêté 26/07/2021 (pré-cutover, gel doctrinal)
+    cta_rate_post_2026 = float(get_term_value("CTA_ELEC_DISTRIBUTION_PCT")) / 100  # SoT 15%
+    # Phase L14.2 — taux historique YAML SoT (avant : hardcoded 0.2193)
+    cta_rate_pre_2026 = float(get_term_value("CTA_ELEC_DISTRIBUTION_PRE_2026_PCT")) / 100  # SoT 21.93%
     threshold_pct = float(get_term_value("BILL_ANOMALY_CTA_THRESHOLD_PCT"))
     threshold_min_eur = float(get_term_value("BILL_ANOMALY_CTA_MIN_EUR"))
     critical_eur = float(get_term_value("BILL_ANOMALY_CTA_CRITICAL_EUR"))

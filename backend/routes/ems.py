@@ -3,17 +3,37 @@ PROMEOS - EMS Consumption Explorer Routes
 Timeseries, weather, energy signature, saved views, collections, demo data.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from typing import Optional, List
-from datetime import datetime, timezone
 import json
+from datetime import date as _date_cls
+from datetime import datetime, timedelta, timezone
+from typing import List, Optional
 
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+
+def _to_exclusive_next_day_dt(d: _date_cls) -> datetime:
+    """Phase L14.1 audit fix CRITICAL — Date upper-bound → DateTime next-day midnight.
+
+    Pattern bug systémique découvert Phase L13.4 (R27 anomaly_detector) propagé
+    dans `routes/ems.py` 3 callsites avant L14.1 :
+
+    Avant : `datetime.combine(dt_to, datetime.min.time())` produisait
+    `dt_to 00:00:00`. Avec strict `<` côté `query_timeseries`, les lectures du
+    dernier jour (00:00:01–23:59:59) sont silencieusement exclues → sous-comptage
+    CDC sur signature énergétique, DJU portefeuille, profil consommation référence.
+
+    Après : retourne `combine(d + 1 day, min.time())` = midnight du jour suivant.
+    Avec strict `<`, capture la totalité des lectures de `d`.
+    """
+    return datetime.combine(d + timedelta(days=1), datetime.min.time())
+
+
 from database import get_db
-from middleware.auth import get_optional_auth, AuthContext
-from services.scope_utils import resolve_org_id
+from middleware.auth import AuthContext, get_optional_auth
 from services.error_catalog import business_error
+from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api/ems", tags=["EMS Explorer"])
 
@@ -502,7 +522,7 @@ def run_energy_signature(
         [site_id],
         parsed_meter_ids,
         datetime.combine(df, datetime.min.time()),
-        datetime.combine(dt_to, datetime.min.time()),
+        _to_exclusive_next_day_dt(dt_to),
         "daily",
         "aggregate",
         "kwh",
@@ -564,7 +584,7 @@ def run_portfolio_signature(
         parsed_site_ids,
         parsed_meter_ids,
         datetime.combine(df, datetime.min.time()),
-        datetime.combine(dt_to, datetime.min.time()),
+        _to_exclusive_next_day_dt(dt_to),
         "daily",
         "aggregate",
         "kwh",
@@ -1238,7 +1258,7 @@ def get_reference_profile(
             [site_id],
             None,
             datetime.combine(df, datetime.min.time()),
-            datetime.combine(dt_to, datetime.min.time()),
+            _to_exclusive_next_day_dt(dt_to),
             granularity if granularity != "hourly" else "daily",
             "aggregate",
             "kwh",

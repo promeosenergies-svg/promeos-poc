@@ -2151,6 +2151,63 @@ class TestPhaseGP1FixesSourceGuards:
         # Plus de Literal stalé R19/R20 only
         assert 'Literal["R19", "R20"]' not in src
 
+    def test_l14_1_ems_routes_use_exclusive_next_day_helper(self):
+        """L14.1 audit fix CRITICAL — routes/ems.py utilise _to_exclusive_next_day_dt
+        au lieu de datetime.combine(dt_to, datetime.min.time()) (3 callsites).
+
+        Bug pattern systémique L13.4 propagé dans ems.py : signature endpoint,
+        portfolio DJU, reference profile excluaient silencieusement les CDC
+        intra-journalières du dernier jour.
+        """
+        from pathlib import Path
+
+        src = (Path(__file__).resolve().parent.parent / "routes" / "ems.py").read_text(encoding="utf-8")
+        assert "def _to_exclusive_next_day_dt(" in src
+        assert src.count("_to_exclusive_next_day_dt(dt_to)") >= 3
+        # Hors helper docstring, pas de pattern bug `combine(dt_to, ... min.time())`
+        import re as _re
+
+        match = _re.search(
+            r"def _to_exclusive_next_day_dt.*?(?=\n\ndef |\nrouter = APIRouter)",
+            src,
+            _re.DOTALL,
+        )
+        assert match is not None
+        helper_block = match.group(0)
+        rest = src.replace(helper_block, "")
+        assert "datetime.combine(dt_to, datetime.min.time())" not in rest
+
+    def test_l14_2_r19_consumption_threshold_yaml_sot(self):
+        """L14.2 audit fix P1 — R19 utilise YAML SoT pour seuil consumption_kwh
+        (avant : hardcoded `consumption > 100`).
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        assert 'get_term_value("BILL_ANOMALY_VNU_DORMANT_CONSUMPTION_KWH")' in src
+        assert "if consumption > consumption_threshold_kwh:" in src
+        import re as _re
+
+        match = _re.search(r"def detect_r19_vnu_dormant.*?(?=\ndef detect_)", src, _re.DOTALL)
+        assert match is not None
+        r19_block = match.group(0)
+        code_only = "\n".join(line for line in r19_block.split("\n") if not line.strip().startswith("#"))
+        assert "consumption > 100:" not in code_only
+
+    def test_l14_2_r21_cta_pre_2026_yaml_sot(self):
+        """L14.2 audit fix P1 — R21 utilise YAML SoT pour cta_rate_pre_2026
+        (avant : hardcoded `0.2193` doctrinal).
+        """
+        from pathlib import Path
+
+        src = (
+            Path(__file__).resolve().parent.parent / "services" / "bill_intelligence" / "anomaly_detector.py"
+        ).read_text(encoding="utf-8")
+        assert 'get_term_value("CTA_ELEC_DISTRIBUTION_PRE_2026_PCT")' in src
+        assert "= 0.2193" not in src
+
     def test_l13_4_r27_date_to_datetime_cast_period_end(self):
         """L13.4 audit fix F1 (P1 CRITIQUE pré-existant) — period_start/end (Date)
         cast en datetime avec time.min et time(23,59,59) pour inclure les
