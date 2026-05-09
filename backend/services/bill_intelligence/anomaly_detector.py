@@ -1118,6 +1118,134 @@ def detect_r29_period_overlap_or_gap(invoice: EnergyInvoice, db: Session) -> Opt
     )
 
 
+# ─── R30 Période facturée hors fenêtre contractuelle (Phase L6 CFO date prise d'effet) ──
+
+
+def detect_r30_invoice_period_outside_contract_window(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+    """R30 — Période facture hors fenêtre [`contract.start_date`, `contract.end_date`].
+
+    Persona Jean-Marc CFO : ROI 1-4 k€/an. Détecte mauvais binding facture↔contrat
+    OU tarif appliqué hors période contractuelle (anti-fraude prise d'effet).
+
+    Cas typiques :
+    - Fournisseur applique tarif négocié AVANT prise d'effet contractuelle
+      (ex: contract.start_date=01/05 mais facture Mars-Avril utilise déjà le tarif)
+    - Fournisseur prolonge tarif APRÈS fin contractuelle alors qu'un nouveau contrat
+      ou tarif "ouvert" devrait s'appliquer (ex: contract.end_date=30/09 mais facture
+      Octobre-Novembre encore liée au contrat expiré)
+    - Erreur de mapping invoice.contract_id (lien vers mauvais contrat)
+
+    Heuristique cardinale :
+    - invoice.period_end < contract.start_date → période entièrement avant début contrat
+    - invoice.period_start > contract.end_date → période entièrement après fin contrat
+    - Chevauchement partiel (period_start < contract.start_date <= period_end OU
+      period_start <= contract.end_date < period_end) → flag warning si ≥ 7j hors fenêtre
+
+    Sévérité :
+    - critical : période entièrement hors fenêtre (0 % couverture contractuelle)
+    - warning : chevauchement partiel ≥ 7 jours hors fenêtre
+
+    Garde-fous (anti-faux-positifs) :
+    - Skip si invoice.contract_id manquant (pas de référence)
+    - Skip si invoice.period_start / period_end manquants
+    - Skip si contract.start_date ET contract.end_date tous deux NULL
+    - Tolère start_date OR end_date NULL (contrat ouvert d'un côté)
+
+    Returns:
+        BillAnomaly ou None
+    """
+    if invoice.contract_id is None or invoice.period_start is None or invoice.period_end is None:
+        return None
+    contract = invoice.contract
+    if contract is None:
+        return None
+    if contract.start_date is None and contract.end_date is None:
+        return None  # Contrat ouvert sans fenêtre — pas de référence
+
+    period_start = invoice.period_start
+    period_end = invoice.period_end
+    cs = contract.start_date  # peut être None
+    ce = contract.end_date  # peut être None
+
+    # Cas 1 : période entièrement avant start_date
+    if cs is not None and period_end < cs:
+        days_before = (cs - period_end).days
+        return BillAnomaly(
+            invoice_id=invoice.id,
+            code="R30",
+            severity="critical",
+            threshold_value=Decimal("0"),  # 0 j tolérance entièrement hors fenêtre
+            actual_value=Decimal(str(days_before)),
+            details_json={
+                "kind": "avant_debut_contrat",
+                "days_outside": days_before,
+                "contract_id": contract.id,
+                "contract_start_date": cs.isoformat(),
+                "contract_end_date": ce.isoformat() if ce else None,
+                "invoice_period_start": period_start.isoformat(),
+                "invoice_period_end": period_end.isoformat(),
+                "regulatory_ref": "Code civil art. 1103 — effet contractuel à compter date prise d'effet",
+                "montant_anomalie_eur": float(invoice.total_eur or 0),
+            },
+        )
+
+    # Cas 2 : période entièrement après end_date
+    if ce is not None and period_start > ce:
+        days_after = (period_start - ce).days
+        return BillAnomaly(
+            invoice_id=invoice.id,
+            code="R30",
+            severity="critical",
+            threshold_value=Decimal("0"),
+            actual_value=Decimal(str(days_after)),
+            details_json={
+                "kind": "apres_fin_contrat",
+                "days_outside": days_after,
+                "contract_id": contract.id,
+                "contract_start_date": cs.isoformat() if cs else None,
+                "contract_end_date": ce.isoformat(),
+                "invoice_period_start": period_start.isoformat(),
+                "invoice_period_end": period_end.isoformat(),
+                "regulatory_ref": "Code civil art. 1103 — fin contractuelle = fin effet tarif",
+                "montant_anomalie_eur": float(invoice.total_eur or 0),
+            },
+        )
+
+    # Cas 3 : chevauchement partiel — calcule jours hors fenêtre
+    days_outside = 0
+    overlap_kind = None
+    if cs is not None and period_start < cs:
+        days_outside += (cs - period_start).days
+        overlap_kind = "partiel_avant_debut"
+    if ce is not None and period_end > ce:
+        days_outside += (period_end - ce).days
+        overlap_kind = "partiel_apres_fin" if overlap_kind is None else "partiel_double"
+
+    if days_outside >= 7:
+        period_days = max((period_end - period_start).days + 1, 1)
+        return BillAnomaly(
+            invoice_id=invoice.id,
+            code="R30",
+            severity="warning",
+            threshold_value=Decimal("7"),
+            actual_value=Decimal(str(days_outside)),
+            details_json={
+                "kind": overlap_kind,
+                "days_outside": days_outside,
+                "period_days": period_days,
+                "contract_id": contract.id,
+                "contract_start_date": cs.isoformat() if cs else None,
+                "contract_end_date": ce.isoformat() if ce else None,
+                "invoice_period_start": period_start.isoformat(),
+                "invoice_period_end": period_end.isoformat(),
+                "regulatory_ref": "Code civil art. 1103 — fenêtre contractuelle stricte",
+                "montant_anomalie_eur": round(float(invoice.total_eur or 0) * days_outside / period_days, 2),
+            },
+        )
+
+    return None
+
+
 # ─── Pipeline ───────────────────────────────────────────────────────────────
 
 
@@ -1242,5 +1370,14 @@ def detect_anomalies_for_invoice(
             anomalies.append(r29)
     except Exception as e:
         _logger.error(f"R29 detector failed for invoice {invoice.id}: {e}")
+
+    # R30 : 0 ou 1 — Phase L6 CFO période facturée hors fenêtre contractuelle
+    try:
+        r30 = detect_r30_invoice_period_outside_contract_window(invoice, db)
+        if r30:
+            db.add(r30)
+            anomalies.append(r30)
+    except Exception as e:
+        _logger.error(f"R30 detector failed for invoice {invoice.id}: {e}")
 
     return anomalies

@@ -1683,6 +1683,130 @@ class TestPhaseL5R29PeriodOverlapOrGap:
         assert detect_r29_period_overlap_or_gap(invoice, db) is None
 
 
+# ─── Phase L6 — R30 Période hors fenêtre contractuelle (Jean-Marc CFO date prise d'effet) ──
+
+
+class TestPhaseL6R30PeriodOutsideContractWindow:
+    def _seed_contract_invoice(self, db, contract_start, contract_end, invoice_start, invoice_end, total_eur=1000.0):
+        """Helper : crée Fournisseur + EnergyContract (start/end) + EnergyInvoice avec période."""
+        import json
+
+        from models import Fournisseur, TypeFournitureEnum
+
+        f = Fournisseur(nom="EDF", siren="552081317", type_fourniture=TypeFournitureEnum.MULTI)
+        db.add(f)
+        db.flush()
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        contract = EnergyContract(
+            site_id=sites[0].id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            fournisseur_id=f.id,
+            start_date=contract_start,
+            end_date=contract_end,
+            metadata_json=json.dumps({"phase_j2_legacy": True}),
+        )
+        db.add(contract)
+        db.flush()
+
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            contract_id=contract.id,
+            invoice_number=f"INV-R30-{invoice_start}",
+            period_start=invoice_start,
+            period_end=invoice_end,
+            energy_kwh=10000,
+            total_eur=total_eur,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.commit()
+        db.refresh(invoice)
+        return invoice
+
+    def test_l6_r30_detects_period_entirely_before_contract_start(self, db):
+        """L6 — Contrat 01/05→31/12 mais facture Mars (entièrement avant) → R30 critical."""
+        from services.bill_intelligence.anomaly_detector import (
+            detect_r30_invoice_period_outside_contract_window,
+        )
+
+        invoice = self._seed_contract_invoice(
+            db,
+            contract_start=date(2026, 5, 1),
+            contract_end=date(2026, 12, 31),
+            invoice_start=date(2026, 3, 1),
+            invoice_end=date(2026, 3, 31),
+            total_eur=1500.0,
+        )
+        anomaly = detect_r30_invoice_period_outside_contract_window(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R30"
+        assert anomaly.severity == "critical"
+        assert anomaly.details_json["kind"] == "avant_debut_contrat"
+        assert anomaly.details_json["days_outside"] == 31  # 31/03 → 01/05 = 31 jours
+        assert anomaly.details_json["montant_anomalie_eur"] == 1500.0
+
+    def test_l6_r30_detects_period_entirely_after_contract_end(self, db):
+        """L6 — Contrat 01/01→30/09 mais facture Novembre (entièrement après) → R30 critical."""
+        from services.bill_intelligence.anomaly_detector import (
+            detect_r30_invoice_period_outside_contract_window,
+        )
+
+        invoice = self._seed_contract_invoice(
+            db,
+            contract_start=date(2026, 1, 1),
+            contract_end=date(2026, 9, 30),
+            invoice_start=date(2026, 11, 1),
+            invoice_end=date(2026, 11, 30),
+            total_eur=2000.0,
+        )
+        anomaly = detect_r30_invoice_period_outside_contract_window(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R30"
+        assert anomaly.severity == "critical"
+        assert anomaly.details_json["kind"] == "apres_fin_contrat"
+
+    def test_l6_r30_no_anomaly_period_within_contract_window(self, db):
+        """L6 — Contrat 01/01→31/12 facture Mai (dans fenêtre) → pas d'anomalie."""
+        from services.bill_intelligence.anomaly_detector import (
+            detect_r30_invoice_period_outside_contract_window,
+        )
+
+        invoice = self._seed_contract_invoice(
+            db,
+            contract_start=date(2026, 1, 1),
+            contract_end=date(2026, 12, 31),
+            invoice_start=date(2026, 5, 1),
+            invoice_end=date(2026, 5, 31),
+        )
+        assert detect_r30_invoice_period_outside_contract_window(invoice, db) is None
+
+    def test_l6_r30_warning_partial_overlap_after_end(self, db):
+        """L6 — Contrat 01/01→15/05 + facture 01/05→31/05 (16j hors fenêtre après end) → R30 warning."""
+        from services.bill_intelligence.anomaly_detector import (
+            detect_r30_invoice_period_outside_contract_window,
+        )
+
+        invoice = self._seed_contract_invoice(
+            db,
+            contract_start=date(2026, 1, 1),
+            contract_end=date(2026, 5, 15),
+            invoice_start=date(2026, 5, 1),
+            invoice_end=date(2026, 5, 31),
+            total_eur=3100.0,
+        )
+        anomaly = detect_r30_invoice_period_outside_contract_window(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R30"
+        assert anomaly.severity == "warning"
+        assert anomaly.details_json["kind"] == "partiel_apres_fin"
+        assert anomaly.details_json["days_outside"] == 16  # 31/05 - 15/05 = 16j
+        # impact = 3100 × 16/31 ≈ 1600 €
+        assert 1590 <= anomaly.details_json["montant_anomalie_eur"] <= 1610
+
+
 # ─── Phase J2 — ADR-F-04 hard-cut supplier_name → fournisseur_id ────────────
 
 
