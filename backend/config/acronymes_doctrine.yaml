@@ -1,0 +1,446 @@
+version: "2026.05.1"
+description: >
+  PROMEOS — Dictionnaire acronymes énergie/réglementaire France.
+  SoT unique consommée par backend (doctrine/acronyms.py → transform_acronym)
+  et frontend (hook useAcronymes + composant <Term acronyme="..."/>).
+  Convergence des 3 sources historiques :
+    - backend/doctrine/acronyms.py (12 entrées, narrative)
+    - frontend/src/utils/acronyms.js (ACRONYM_GLOSSARY, ~38 entrées)
+    - frontend/src/ui/glossary.js (GLOSSARY, ~65 entrées, billing-oriented)
+  Sprint Grammaire v1 Phase 1.1 (2026-05-09).
+  Doctrine Sol v1.1 §6.3 anti-pattern "acronymes bruts en titres".
+sha256_frozen: ""  # à calculer après stabilisation — Phase 1 tolère null
+
+acronymes:
+
+  # ── Tarifs réseau & acheminement ────────────────────────────────────────────
+
+  TURPE:
+    short: "TURPE 7"
+    long: "Tarif d'Utilisation des Réseaux Publics d'Électricité"
+    narrative: "tarif d'acheminement réseau"
+    source: "CRE délibération n°2025-78 du 23 janvier 2025 (TURPE 7 en vigueur depuis 1er août 2025)"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  ATRD:
+    short: "ATRD 7"
+    long: "Accès des Tiers au Réseau de Distribution"
+    narrative: "tarif d'acheminement gaz (distribution)"
+    source: "CRE délibération n°2026-83 (ATRD7 GRDF, en vigueur 01/07/2026)"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  ATRT:
+    short: "ATRT"
+    long: "Accès des Tiers au Réseau de Transport"
+    narrative: "tarif d'acheminement gaz haute pression"
+    source: "CRE délibérations ATRT (GRTgaz / Teréga)"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  CTA:
+    short: "CTA"
+    long: "Contribution Tarifaire d'Acheminement"
+    narrative: "contribution finançant les retraites des industries électriques et gazières"
+    source: "Code de la sécurité sociale + CRE délibération 2026-14 (Arrêté 27/01/2026)"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  # ── Taxes & contributions ────────────────────────────────────────────────────
+
+  CSPE:
+    short: "CSPE"
+    long: "Contribution au Service Public de l'Électricité"
+    narrative: "ancienne accise électricité finançant le service public (fusionnée dans TICFE/TIEE depuis 2022)"
+    source: "Code des impositions sur les biens et services (CIBS)"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  TICFE:
+    short: "TICFE / TIEE"
+    long: "Taxe Intérieure sur la Consommation Finale d'Électricité"
+    narrative: "accise électricité (rebaptisée TIEE depuis 2022)"
+    source: "Code des impositions sur les biens et services — LFI 2026 / JORFTEXT000053407616"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  TICGN:
+    short: "TICGN"
+    long: "Taxe Intérieure sur la Consommation de Gaz Naturel"
+    narrative: "accise sur le gaz naturel"
+    source: "Code des impositions sur les biens et services (CIBS)"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  CEE:
+    short: "CEE P6"
+    long: "Certificats d'Économie d'Énergie"
+    narrative: "certificats d'économie d'énergie (dispositif P6 depuis 2026)"
+    source: "Code de l'Énergie L221-1 + Arrêté CEE P6 + DGEC Circulaire 2025"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  TVA:
+    short: "TVA"
+    long: "Taxe sur la Valeur Ajoutée"
+    narrative: "taxe sur la valeur ajoutée"
+    source: "CGI art. 278 + LFI 2025"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  # ── Marché électricité & nucléaire ──────────────────────────────────────────
+
+  ARENH:
+    short: "ARENH"
+    long: "Accès Régulé à l'Électricité Nucléaire Historique"
+    narrative: "ancien tarif réglementé d'achat d'électricité nucléaire EDF (fin du dispositif)"
+    source: "Loi NOME 2010 — fin du dispositif confirmée au 31/12/2025 (LFI 2023)"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  VNU:
+    short: "VNU"
+    long: "Versement Nucléaire Universel"
+    narrative: "versement redistributif sur la rente nucléaire EDF (successeur ARENH)"
+    source: "Loi n°2023-491 souveraineté énergétique + Décret 2026-55 + CRE 2026-52"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  EPEX:
+    short: "EPEX SPOT"
+    long: "European Power Exchange"
+    narrative: "bourse électricité spot européenne"
+    source: "EPEX SPOT SE — prix day-ahead publié J-1 à 12h45"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  # ── Réglementation tertiaire ─────────────────────────────────────────────────
+
+  DT:
+    short: "Décret tertiaire"
+    long: "Décret n°2019-771 — Décret tertiaire"
+    narrative: "obligation de réduction de consommation des bâtiments tertiaires"
+    source: "Décret n°2019-771 du 23 juillet 2019 / JORFTEXT000038812251"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+    jalons:
+      - "-40 % en 2030"
+      - "-50 % en 2040"
+      - "-60 % en 2050"
+
+  BACS:
+    short: "Décret BACS"
+    long: "Building Automation and Control Systems"
+    narrative: "décret obligation pilotage CVC automatisé (classe A/B)"
+    source: "Décret n°2020-887 + Décret n°2025-1343 art. R175-3"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  GTB:
+    short: "GTB"
+    long: "Gestion Technique du Bâtiment"
+    narrative: "système de pilotage CVC"
+    source: "Norme NF EN 15232"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  APER:
+    short: "Loi APER"
+    long: "Accélération de la production d'Énergies Renouvelables"
+    narrative: "obligation solaire sur parkings et toitures"
+    source: "Loi n°2023-175 art. 40 + Décret 2022-1726 / JORFTEXT000047174280"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+    jalons:
+      - "parkings > 10 000 m² : 01/07/2026"
+      - "parkings 1 500–10 000 m² : 01/07/2028"
+      - "toitures > 500 m² : 01/01/2028"
+
+  OPERAT:
+    short: "OPERAT"
+    long: "OPérateur de la Réduction d'Énergie sur les bâtiments du Tertiaire"
+    narrative: "plateforme ADEME déclaration énergie tertiaire annuelle"
+    source: "Arrêté 10/04/2020 + Décret n°2019-771 art. 6 / LOGL2005904A"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  EFA:
+    short: "EFA"
+    long: "Entité Fonctionnelle Assujettie"
+    narrative: "unité de déclaration OPERAT (bâtiment ou groupe > 1 000 m² tertiaire)"
+    source: "Décret Tertiaire 2019-771 art. R131-39 + Arrêté 10/04/2020 art. 2"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  # ── Taxe carbone & marché carbone ────────────────────────────────────────────
+
+  CBAM:
+    short: "CBAM"
+    long: "Carbon Border Adjustment Mechanism"
+    narrative: "taxe carbone aux frontières de l'Union Européenne"
+    source: "Règlement UE 2023/956"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  ETS2:
+    short: "ETS 2"
+    long: "Emissions Trading System 2"
+    narrative: "marché carbone UE étendu au bâtiment et au transport (2027)"
+    source: "Directive UE 2023/959"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  # ── Flexibilité & effacement ─────────────────────────────────────────────────
+
+  NEBCO:
+    short: "NEBCO"
+    long: "Nouveau cadre Effacement Bilatéral Compensé"
+    narrative: "mécanisme RTE rémunérant l'effacement de consommation industrielle"
+    source: "RTE règles SI 2024"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "flex"
+
+  AOFD:
+    short: "AOFD"
+    long: "Appels d'Offres Effacement Diffus"
+    narrative: "concours RTE pour l'effacement résidentiel et tertiaire diffus"
+    source: "RTE / Ministère de la Transition Énergétique"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "flex"
+
+  # ── Régulateurs & organismes ─────────────────────────────────────────────────
+
+  CRE:
+    short: "CRE"
+    long: "Commission de Régulation de l'Énergie"
+    narrative: "régulateur indépendant de l'énergie (tarifs, marchés)"
+    source: "cre.fr — autorité administrative indépendante (Loi n°2000-108)"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  RTE:
+    short: "RTE"
+    long: "Réseau de Transport d'Électricité"
+    narrative: "gestionnaire du réseau haute tension français"
+    source: "rte-france.com — mécanisme capacité, NEBCO, AOFD, équilibrage"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  ADEME:
+    short: "ADEME"
+    long: "Agence de la transition écologique"
+    narrative: "agence publique référence transition énergétique et CO₂"
+    source: "ademe.fr + Base Empreinte V23.6"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  GRDF:
+    short: "GRDF"
+    long: "Gaz Réseau Distribution France"
+    narrative: "gestionnaire du réseau de distribution gaz français"
+    source: "grdf.fr — portail ADICT pour relevés PCE"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  COSTIC:
+    short: "COSTIC"
+    long: "Comité Scientifique et Technique des Industries Climatiques"
+    narrative: "référence française pour le calcul des degrés-jours (DJU)"
+    source: "costic.fr / NF EN 16247-2"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  # ── Identifiants techniques ──────────────────────────────────────────────────
+
+  PRM:
+    short: "PRM"
+    long: "Point de Référence Mesure"
+    narrative: "identifiant unique 14 chiffres d'un point de livraison électrique Enedis"
+    source: "Enedis SGE — accès aux relevés CDC 30 minutes"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "data"
+
+  PCE:
+    short: "PCE"
+    long: "Point de Comptage et d'Estimation"
+    narrative: "identifiant unique 14 chiffres d'un point de livraison gaz GRDF"
+    source: "GRDF ADICT — accès aux relevés MMR"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "data"
+
+  SIRET:
+    short: "SIRET"
+    long: "Système d'Identification du Répertoire des Établissements"
+    narrative: "identifiant unique 14 chiffres d'un établissement en France"
+    source: "INSEE — système Sirene"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "data"
+
+  NAF:
+    short: "Code NAF"
+    long: "Nomenclature des Activités Françaises"
+    narrative: "code activité économique d'un établissement (INSEE)"
+    source: "INSEE — nomenclature NAF rév. 2 (2008)"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "data"
+
+  CDC:
+    short: "CDC"
+    long: "Courbe De Charge"
+    narrative: "courbe de charge 30 min (mesure de puissance pas par pas)"
+    source: "Enedis SF1-SF4 (R6X) — base du shadow billing et de l'analyse pic"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "data"
+
+  # ── Diagnostic & performance bâtiment ───────────────────────────────────────
+
+  DPE:
+    short: "DPE"
+    long: "Diagnostic de Performance Énergétique"
+    narrative: "étiquette énergie/climat A→G d'un bâtiment"
+    source: "CCH art. L126-26 + Décret 2021-872"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  DJU:
+    short: "DJU"
+    long: "Degré Jour Unifié"
+    narrative: "indicateur climatique de normalisation des besoins de chauffage/climatisation"
+    source: "Méthode COSTIC / NF EN 16247-2 — base 18 °C"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "ems"
+
+  EMS:
+    short: "EMS"
+    long: "Energy Management System"
+    narrative: "système de monitoring temps réel des consommations énergétiques"
+    source: "ISO 50001:2018"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "ems"
+
+  SME:
+    short: "SMÉ"
+    long: "Système de Management de l'Énergie"
+    narrative: "démarche ISO 50001 — plan d'action énergétique pluriannuel"
+    source: "ISO 50001 + Code Énergie L233-1"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  # ── Unités d'énergie ─────────────────────────────────────────────────────────
+
+  KWH:
+    short: "kWh"
+    long: "Kilowattheure"
+    narrative: "kilowattheure (unité de mesure d'énergie consommée)"
+    source: "SI — Système International d'unités"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "ems"
+
+  MWH:
+    short: "MWh"
+    long: "Mégawattheure"
+    narrative: "mégawattheure = 1 000 kWh (unité courante gros consommateurs)"
+    source: "SI — Système International d'unités"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "ems"
+
+  GWH:
+    short: "GWh"
+    long: "Gigawattheure"
+    narrative: "gigawattheure = 1 000 MWh (unité bilan national et grand industriel)"
+    source: "SI — Système International d'unités"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "ems"
+
+  # ── CO₂ & empreinte carbone ──────────────────────────────────────────────────
+
+  CO2:
+    short: "CO₂e"
+    long: "Dioxyde de carbone équivalent"
+    narrative: "émissions de gaz à effet de serre en équivalent CO₂"
+    source: "ADEME Base Empreinte V23.6 (2024) — électricité mix FR ACV : 0,052 kgCO₂e/kWh"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "ems"
+
+  # ── Reporting & gouvernance ──────────────────────────────────────────────────
+
+  CSRD:
+    short: "CSRD"
+    long: "Corporate Sustainability Reporting Directive"
+    narrative: "directive UE de reporting durabilité obligatoire grands groupes"
+    source: "Directive UE 2022/2464 + Omnibus 2025 — premier exercice 2024"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  EDI:
+    short: "EDI"
+    long: "Échange de Données Informatisé"
+    narrative: "échange de données standardisé (flux Enedis, GRDF, fournisseurs)"
+    source: "EDIGAS / EDIEL — normes sectorielles énergie"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "data"
+
+  # ── Mécanisme de capacité ────────────────────────────────────────────────────
+
+  CAPACITE:
+    short: "Mécanisme capacité"
+    long: "Mécanisme de capacité RTE"
+    narrative: "obligation RTE de détention de garanties de capacité proportionnelles à la pointe"
+    source: "RTE Règles Mécanisme Capacité / CRE 2026-52 — réforme novembre 2026"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+    jalons:
+      - "enchères centralisées PL-4/PL-1 : novembre 2026"
+
+  # ── Segments de réseau ───────────────────────────────────────────────────────
+
+  HTA:
+    short: "HTA"
+    long: "Haute Tension A"
+    narrative: "niveau de tension entre 1 kV et 50 kV (poste livraison > 250 kVA)"
+    source: "CRE TURPE 7 §4"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  HTB:
+    short: "HTB"
+    long: "Haute Tension B"
+    narrative: "niveau de tension > 50 kV (réseau transport RTE)"
+    source: "RTE / CRE TURPE 7"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "billing"
+
+  CVC:
+    short: "CVC"
+    long: "Chauffage Ventilation Climatisation"
+    narrative: "système thermique d'un bâtiment (premier poste de consommation tertiaire)"
+    source: "Doctrine bâtiment tertiaire ADEME"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  ENR:
+    short: "ENR"
+    long: "Énergies Renouvelables"
+    narrative: "sources d'énergie renouvelables (solaire, éolien, hydraulique, géothermie, biomasse)"
+    source: "Loi APER n°2023-175 + Code de l'Énergie"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  # ── Accréditation & qualification ────────────────────────────────────────────
+
+  COFRAC:
+    short: "COFRAC"
+    long: "Comité Français d'Accréditation"
+    narrative: "organisme officiel d'accréditation des auditeurs énergétiques"
+    source: "cofrac.fr — qualification auditeurs ETI réglementaires"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"
+
+  OPQIBI:
+    short: "OPQIBI"
+    long: "Office Professionnel de Qualification dans l'Ingénierie Bâtiment et Infrastructure"
+    narrative: "qualification bureaux d'études énergétiques (1905 = audit ETI)"
+    source: "opqibi.com"
+    doctrine_ref: "doctrine_sol_v1_1#6.3"
+    pillar: "regops"

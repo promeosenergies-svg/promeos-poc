@@ -72,6 +72,7 @@ from .analytics import router as analytics_router
 from .dataconnect_route import router as dataconnect_router
 from .grdf_route import router as grdf_router
 from .bridge_route import router as bridge_router
+from .doctrine import router as doctrine_router
 
 __all__ = [
     "sites_router",
@@ -144,4 +145,5 @@ __all__ = [
     "dataconnect_router",
     "grdf_router",
     "bridge_router",
+    "doctrine_router",
 ]

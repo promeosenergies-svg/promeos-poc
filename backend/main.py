@@ -346,6 +346,13 @@ from routes.navigation import router as navigation_router
 
 app.include_router(navigation_router)
 
+# Doctrine acronymes SoT — Sprint Grammaire v1 Phase 1.1 (2026-05-09)
+# GET /api/v1/doctrine/acronymes — dictionnaire complet (cache mémoire)
+# GET /api/v1/doctrine/acronymes/{key} — entrée spécifique
+from routes.doctrine import router as doctrine_router
+
+app.include_router(doctrine_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 
