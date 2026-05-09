@@ -4,36 +4,22 @@ Timeseries, weather, energy signature, saved views, collections, demo data.
 """
 
 import json
-from datetime import date as _date_cls
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-
-def _to_exclusive_next_day_dt(d: _date_cls) -> datetime:
-    """Phase L14.1 audit fix CRITICAL — Date upper-bound → DateTime next-day midnight.
-
-    Pattern bug systémique découvert Phase L13.4 (R27 anomaly_detector) propagé
-    dans `routes/ems.py` 3 callsites avant L14.1 :
-
-    Avant : `datetime.combine(dt_to, datetime.min.time())` produisait
-    `dt_to 00:00:00`. Avec strict `<` côté `query_timeseries`, les lectures du
-    dernier jour (00:00:01–23:59:59) sont silencieusement exclues → sous-comptage
-    CDC sur signature énergétique, DJU portefeuille, profil consommation référence.
-
-    Après : retourne `combine(d + 1 day, min.time())` = midnight du jour suivant.
-    Avec strict `<`, capture la totalité des lectures de `d`.
-    """
-    return datetime.combine(d + timedelta(days=1), datetime.min.time())
-
-
 from database import get_db
 from middleware.auth import AuthContext, get_optional_auth
 from services.error_catalog import business_error
 from services.scope_utils import resolve_org_id
+
+# Phase L16.3 — helper centralisé `utils/datetime_utils.py` (avant L16.3 : défini
+# localement dans ce fichier Phase L14.1 ; déplacé en module partagé pour anti-drift
+# cross-services + cohérence avec les 6 callsites identifiés services/power/*).
+from utils.datetime_utils import to_exclusive_next_day_dt as _to_exclusive_next_day_dt
 
 router = APIRouter(prefix="/api/ems", tags=["EMS Explorer"])
 

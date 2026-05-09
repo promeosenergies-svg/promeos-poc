@@ -7,12 +7,13 @@ Disponible uniquement sur compteurs > 36 kVA (PRI dans R63).
 """
 
 import math
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from sqlalchemy.orm import Session
 
 from models.power import PowerReading
 from services.power.power_profile_service import get_active_contract
+from utils.datetime_utils import to_exclusive_next_day_dt, to_start_of_day_dt
 
 TAN_PHI_SEUIL = 0.4  # immuable TURPE 7
 TARIF_KVARH_EUR = 0.016
@@ -40,8 +41,9 @@ def analyze_power_factor(
     date_fin: date,
 ) -> dict:
     """Calcule le tan φ moyen et la pénalité énergie réactive."""
-    dt_debut = datetime.combine(date_debut, datetime.min.time())
-    dt_fin = datetime.combine(date_fin + timedelta(days=1), datetime.min.time())
+    # Phase L16.3 — helpers centralisés utils/datetime_utils.py (anti-drift L13.4)
+    dt_debut = to_start_of_day_dt(date_debut)
+    dt_fin = to_exclusive_next_day_dt(date_fin)
 
     contract = get_active_contract(db, meter_id, date_debut)
     type_compteur = contract.type_compteur if contract else None

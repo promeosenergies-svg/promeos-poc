@@ -2151,6 +2151,73 @@ class TestPhaseGP1FixesSourceGuards:
         # Plus de Literal stalé R19/R20 only
         assert 'Literal["R19", "R20"]' not in src
 
+    def test_l16_3_datetime_utils_helper_consolidated(self):
+        """L16.3 audit fix P1 — helpers datetime centralisés `utils/datetime_utils.py`
+        + 7 callsites consommateurs (ems.py × 3 + power × 4 + portfolio × 2).
+
+        Avant L16.3 : `_to_exclusive_next_day_dt` défini localement dans ems.py
+        (Phase L14.1) ; 6 autres callsites duplicaient le pattern verbatim.
+        Anti-drift L13.4 : centralisation dans module partagé.
+        """
+        from pathlib import Path
+
+        backend_root = Path(__file__).resolve().parent.parent
+        # Helper module créé
+        utils_mod = backend_root / "utils" / "datetime_utils.py"
+        assert utils_mod.exists(), "utils/datetime_utils.py doit exister"
+        utils_src = utils_mod.read_text(encoding="utf-8")
+        assert "def to_exclusive_next_day_dt(d: date)" in utils_src
+        assert "def to_inclusive_end_of_day_dt(d: date)" in utils_src
+        assert "def to_start_of_day_dt(d: date)" in utils_src
+        # Test fonctionnel runtime du helper (cardinal — anti-régression Phase L14)
+        from datetime import date, datetime
+
+        from utils.datetime_utils import (
+            to_exclusive_next_day_dt,
+            to_inclusive_end_of_day_dt,
+            to_start_of_day_dt,
+        )
+
+        # Cas standard
+        assert to_exclusive_next_day_dt(date(2026, 4, 30)) == datetime(2026, 5, 1, 0, 0)
+        # Cas fin de mois (rollover)
+        assert to_exclusive_next_day_dt(date(2026, 12, 31)) == datetime(2027, 1, 1, 0, 0)
+        # Helpers symétriques
+        assert to_inclusive_end_of_day_dt(date(2026, 4, 30)) == datetime(2026, 4, 30, 23, 59, 59)
+        assert to_start_of_day_dt(date(2026, 4, 1)) == datetime(2026, 4, 1, 0, 0)
+
+    def test_l16_3_callsites_consume_helper(self):
+        """L16.3 — les 4 services/power/* + routes/portfolio.py + routes/ems.py
+        consomment le helper centralisé (anti-drift propagation L13.4).
+        """
+        from pathlib import Path
+
+        backend_root = Path(__file__).resolve().parent.parent
+        callsites = [
+            backend_root / "services" / "power" / "peak_detection_engine.py",
+            backend_root / "services" / "power" / "power_factor_analyzer.py",
+            backend_root / "services" / "power" / "subscribed_power_optimizer.py",
+            backend_root / "services" / "power" / "power_profile_service.py",
+            backend_root / "routes" / "portfolio.py",
+            backend_root / "routes" / "ems.py",
+        ]
+        for path in callsites:
+            assert path.exists(), f"{path} introuvable"
+            src = path.read_text(encoding="utf-8")
+            assert "from utils.datetime_utils import" in src, f"{path.name} doit importer utils.datetime_utils"
+
+    def test_l16_4_constants_yaml_defensive_fallback(self):
+        """L16.4 audit fix P1 — defensive fallback constants.py évite crash
+        module-load si YAML key manquante (CI fresh checkout, test isolation).
+        """
+        from pathlib import Path
+
+        src = (Path(__file__).resolve().parent.parent / "doctrine" / "constants.py").read_text(encoding="utf-8")
+        assert "def _load_yaml_or_fallback(" in src
+        assert "fallback to hardcoded" in src
+        assert "_load_yaml_or_fallback(" in src
+        assert "fallback=130.0" in src
+
     def test_l15_1_doctrine_constants_loads_yaml_sot_no_hardcode(self):
         """L15.1 audit fix P1 — doctrine/constants.py PRICE_ELEC_ETI_2026_EUR_PER_MWH
         lazy-load depuis YAML SoT (avant : valeur 130.0 dupliquée hardcoded entre
@@ -2159,14 +2226,29 @@ class TestPhaseGP1FixesSourceGuards:
         from pathlib import Path
 
         src = (Path(__file__).resolve().parent.parent / "doctrine" / "constants.py").read_text(encoding="utf-8")
-        # Lazy-load YAML présent
+        # Lazy-load YAML présent (post Phase L16.4 : via helper _load_yaml_or_fallback)
         assert "from config.regulatory_sources_loader import get_term_value as _get_term_value" in src
-        assert '_get_term_value("PRICE_ELEC_ETI_2026_EUR_PER_MWH")' in src
-        # Vérifie chargement runtime correct
+        # Le helper est utilisé pour PRICE_ELEC_ETI_2026 (multi-line acceptable)
+        import re as _re
+
+        match = _re.search(
+            r"PRICE_ELEC_ETI_2026_EUR_PER_MWH.*?_load_yaml_or_fallback.*?PRICE_ELEC_ETI_2026_EUR_PER_MWH",
+            src,
+            _re.DOTALL,
+        )
+        assert match is not None, "PRICE_ELEC_ETI_2026 doit utiliser _load_yaml_or_fallback"
+        # Phase L16.4 audit fix — comparaison cross-config :
+        # le test ne hardcode plus 130.0 mais lit la valeur YAML pour vérifier
+        # que la lazy-load mirror constants.py reste en phase avec le SoT YAML.
+        # Si YAML change 130 → 145, le test détecte automatiquement le drift.
+        from config.regulatory_sources_loader import get_term_value
         from doctrine.constants import PRICE_ELEC_ETI_2026_EUR_PER_MWH
 
+        yaml_value = float(get_term_value("PRICE_ELEC_ETI_2026_EUR_PER_MWH"))
         assert isinstance(PRICE_ELEC_ETI_2026_EUR_PER_MWH, float)
-        assert PRICE_ELEC_ETI_2026_EUR_PER_MWH == 130.0
+        assert PRICE_ELEC_ETI_2026_EUR_PER_MWH == yaml_value, (
+            f"doctrine.constants ({PRICE_ELEC_ETI_2026_EUR_PER_MWH}) drift vs YAML SoT ({yaml_value})"
+        )
 
     def test_l14_1_ems_routes_use_exclusive_next_day_helper(self):
         """L14.1 audit fix CRITICAL — routes/ems.py utilise _to_exclusive_next_day_dt
@@ -2179,20 +2261,12 @@ class TestPhaseGP1FixesSourceGuards:
         from pathlib import Path
 
         src = (Path(__file__).resolve().parent.parent / "routes" / "ems.py").read_text(encoding="utf-8")
-        assert "def _to_exclusive_next_day_dt(" in src
+        # Phase L16.3 : helper déplacé vers utils/datetime_utils.py — ems.py
+        # l'importe sous l'alias `_to_exclusive_next_day_dt` pour cohérence callsites.
+        assert "from utils.datetime_utils import to_exclusive_next_day_dt as _to_exclusive_next_day_dt" in src
         assert src.count("_to_exclusive_next_day_dt(dt_to)") >= 3
-        # Hors helper docstring, pas de pattern bug `combine(dt_to, ... min.time())`
-        import re as _re
-
-        match = _re.search(
-            r"def _to_exclusive_next_day_dt.*?(?=\n\ndef |\nrouter = APIRouter)",
-            src,
-            _re.DOTALL,
-        )
-        assert match is not None
-        helper_block = match.group(0)
-        rest = src.replace(helper_block, "")
-        assert "datetime.combine(dt_to, datetime.min.time())" not in rest
+        # Plus de pattern bug `combine(dt_to, ... min.time())` dans le code (post-L14.1).
+        assert "datetime.combine(dt_to, datetime.min.time())" not in src
 
     def test_l14_2_r19_consumption_threshold_yaml_sot(self):
         """L14.2 audit fix P1 — R19 utilise YAML SoT pour seuil consumption_kwh

@@ -134,12 +134,37 @@ PRICE_FALLBACK_EUR_PER_KWH = 0.068
 # Prix marginal énergie ETI tertiaire 2026 post-ARENH (médiane CRE T4 2025).
 # Utilisé pour conversion gain MWh→€/an dans les heuristiques décisions/CEE.
 # Phase L15.1 audit fix P1 — lazy-load YAML SoT (avant : valeur hardcoded 130.0
-# DUPLIQUÉE entre doctrine/constants.py:137 et sources_reglementaires.yaml:283
-# → drift risk si l'un est mis à jour et pas l'autre).
-# Source : Observatoire CRE T4 2025 § ETI tertiaire post-ARENH (canonique YAML).
+# DUPLIQUÉE entre doctrine/constants.py et sources_reglementaires.yaml).
+# Phase L16.4 audit fix P1 — defensive fallback (avant : raise au module-load
+# si YAML manquant → crash silencieux import doctrine.constants).
+# NOTE : valeur figée au process start. ParameterStore live-reload n'affecte
+# pas cette constante. Utiliser get_term_value() directement pour valeur fresh.
+import logging as _logging
+
 from config.regulatory_sources_loader import get_term_value as _get_term_value
 
-PRICE_ELEC_ETI_2026_EUR_PER_MWH: float = float(_get_term_value("PRICE_ELEC_ETI_2026_EUR_PER_MWH"))
+_logger = _logging.getLogger(__name__)
+
+
+def _load_yaml_or_fallback(key: str, fallback: float) -> float:
+    """Phase L16.4 — Defensive lazy-load avec fallback hardcoded.
+
+    Évite crash module-load si YAML key manquante (CI fresh checkout, test
+    isolation, etc.). Logue warning explicite pour détection drift YAML/code.
+    """
+    try:
+        return float(_get_term_value(key))
+    except (KeyError, ValueError, FileNotFoundError, TypeError) as e:
+        _logger.warning(
+            "doctrine.constants YAML lookup failed for %s (%s) — fallback to hardcoded %s",
+            key,
+            type(e).__name__,
+            fallback,
+        )
+        return fallback
+
+
+PRICE_ELEC_ETI_2026_EUR_PER_MWH: float = _load_yaml_or_fallback("PRICE_ELEC_ETI_2026_EUR_PER_MWH", fallback=130.0)
 
 # Ratio facture 2026 vs 2024 post-ARENH (médiane CRE T4 2025 sur ETI tertiaire).
 # Référence sectorielle indicative pour communication CFO.

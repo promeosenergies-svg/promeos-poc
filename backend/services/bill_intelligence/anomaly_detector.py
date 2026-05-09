@@ -324,7 +324,6 @@ def detect_r19_vnu_dormant(invoice: EnergyInvoice, db: Session) -> Optional[Bill
 
     Retour : 0 ou 1 BillAnomaly (NON ajoutée à la session — caller responsable).
     """
-    from models.enums import InvoiceLineType
 
     threshold = Decimal(str(get_term_value("BILL_ANOMALY_VNU_DORMANT_THRESHOLD_EUR")))
 
@@ -400,7 +399,6 @@ def detect_r20_capacity_variance(invoice: EnergyInvoice, db: Session) -> list[Bi
     # `.first()` retournait potentiellement le sous-compteur sans PowerContract,
     # produisant un `[]` silencieux sur sites multi-meter (faux négatifs R20).
     from models import EnergyVector
-    from models.enums import InvoiceLineType
 
     meter = (
         db.query(Meter)
@@ -882,7 +880,6 @@ def detect_r25_subscription_mismatch(
     Returns:
         BillAnomaly ou None
     """
-    from models.enums import InvoiceLineType
 
     contract = _resolve_contract(invoice, contract_cache=contract_cache)
     if contract is None or contract.fixed_fee_eur_per_month is None:

@@ -256,8 +256,11 @@ def get_portfolio_summary(
 
     d_from = _parse_date_or_default(date_from, 90)
     d_to = _parse_date_or_default(date_to, 0) if date_to else date_cls.today()
-    dt_from = datetime.combine(d_from, datetime.min.time())
-    dt_to = datetime.combine(d_to + timedelta(days=1), datetime.min.time())
+    # Phase L16.3 — helpers centralisés utils/datetime_utils.py (anti-drift L13.4)
+    from utils.datetime_utils import to_exclusive_next_day_dt, to_start_of_day_dt
+
+    dt_from = to_start_of_day_dt(d_from)
+    dt_to = to_exclusive_next_day_dt(d_to)
     days = (d_to - d_from).days or 1
 
     q = (
@@ -387,8 +390,11 @@ def get_portfolio_sites(
 
     d_from = _parse_date_or_default(date_from, 90)
     d_to = _parse_date_or_default(date_to, 0) if date_to else date_cls.today()
-    dt_from = datetime.combine(d_from, datetime.min.time())
-    dt_to = datetime.combine(d_to + timedelta(days=1), datetime.min.time())
+    # Phase L16.3 — helpers centralisés utils/datetime_utils.py (anti-drift L13.4)
+    from utils.datetime_utils import to_exclusive_next_day_dt, to_start_of_day_dt
+
+    dt_from = to_start_of_day_dt(d_from)
+    dt_to = to_exclusive_next_day_dt(d_to)
     days = (d_to - d_from).days or 1
 
     q = (

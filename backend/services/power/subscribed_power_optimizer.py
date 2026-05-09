@@ -6,13 +6,14 @@ PS recommandée = ceil(P_max_réel × 1.15), integer kVA (XSD C12).
 """
 
 import math
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from models.power import PowerReading
 from services.power.power_profile_service import get_active_contract
+from utils.datetime_utils import to_exclusive_next_day_dt, to_start_of_day_dt
 
 TARIF_ABONNEMENT_KVA_AN = {
     "Pointe": 280,
@@ -38,8 +39,9 @@ def optimize_subscribed_power(
     date_fin: date,
 ) -> dict:
     """Analyse PS actuelle vs puissance réelle, recommande par poste."""
-    dt_debut = datetime.combine(date_debut, datetime.min.time())
-    dt_fin = datetime.combine(date_fin + timedelta(days=1), datetime.min.time())
+    # Phase L16.3 — helpers centralisés utils/datetime_utils.py (anti-drift L13.4)
+    dt_debut = to_start_of_day_dt(date_debut)
+    dt_fin = to_exclusive_next_day_dt(date_fin)
 
     contract = get_active_contract(db, meter_id, date_debut)
     base = {

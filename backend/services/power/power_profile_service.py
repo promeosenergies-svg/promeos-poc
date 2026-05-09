@@ -113,8 +113,11 @@ def get_power_profile(
     sens: str = "CONS",
 ) -> dict:
     """KPIs puissance d'un compteur sur une période."""
-    dt_debut = datetime.combine(date_debut, datetime.min.time())
-    dt_fin = datetime.combine(date_fin + timedelta(days=1), datetime.min.time())
+    # Phase L16.3 — helpers centralisés utils/datetime_utils.py (anti-drift L13.4)
+    from utils.datetime_utils import to_exclusive_next_day_dt, to_start_of_day_dt
+
+    dt_debut = to_start_of_day_dt(date_debut)
+    dt_fin = to_exclusive_next_day_dt(date_fin)
 
     readings = (
         db.query(PowerReading)

@@ -7,12 +7,13 @@ CMDPS = dépassement quadratique par poste (source Enedis F12 v1.14.2 §7.6.7).
 """
 
 import math
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from sqlalchemy.orm import Session
 
-from models.power import PowerReading, PowerContract
+from models.power import PowerContract, PowerReading
 from services.power.power_profile_service import get_active_contract
+from utils.datetime_utils import to_exclusive_next_day_dt, to_start_of_day_dt
 
 TARIF_DEPASSEMENT_EUR_KW = 12.65  # TURPE 7 canonique
 
@@ -25,8 +26,9 @@ def detect_peaks(
     seuil_pct: float = 85.0,
 ) -> dict:
     """Détecte les pics >= seuil_pct% de la PS par poste et calcule la CMDPS."""
-    dt_debut = datetime.combine(date_debut, datetime.min.time())
-    dt_fin = datetime.combine(date_fin + timedelta(days=1), datetime.min.time())
+    # Phase L16.3 — helpers centralisés utils/datetime_utils.py (anti-drift L13.4)
+    dt_debut = to_start_of_day_dt(date_debut)
+    dt_fin = to_exclusive_next_day_dt(date_fin)
 
     readings = (
         db.query(PowerReading)
