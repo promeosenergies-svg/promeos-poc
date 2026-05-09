@@ -1015,6 +1015,109 @@ def detect_r23_turpe_double(invoice: EnergyInvoice, db: Session) -> list[BillAno
     return anomalies
 
 
+# ─── R29 Période chevauchement / trou facturation (Phase L5 CFO anti-double-billing) ──
+
+
+def detect_r29_period_overlap_or_gap(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+    """R29 — Période facturée chevauche ou crée un trou avec facture précédente même site.
+
+    Persona Jean-Marc CFO : ROI 2-5 k€/an. Anti-fraude double-billing (chevauchement)
+    + détection rupture suivi conso (trou). Cas typiques :
+    - Fournisseur émet facture Mai 1-31 alors que Avril 25 → Mai 25 déjà facturé (chevauchement 7j)
+    - Changement de fournisseur mal coordonné (gap > 7j sans facture)
+    - Régularisation retroactive non identifiée
+
+    Heuristique cardinale :
+    - Cherche LA facture précédente sur même site (period_end le plus récent < invoice.period_start)
+    - Calcul gap_days = invoice.period_start - prev.period_end - 1 (jours pleins entre périodes)
+    - gap_days < 0 → chevauchement (overlap_days = -gap_days)
+    - gap_days > 7 → trou suspect
+
+    Sévérité :
+    - critical : chevauchement > 1 jour OU trou > 14 jours
+    - warning : chevauchement = 1 jour OU trou 8-14 jours
+
+    Garde-fous (anti-faux-positifs) :
+    - Skip si invoice.site_id ou period_start/period_end manquants
+    - Skip si pas de facture précédente sur le site (1ʳᵉ facture)
+    - Skip si invoice == prev (même invoice_number)
+
+    Returns:
+        BillAnomaly ou None
+    """
+    if invoice.site_id is None or invoice.period_start is None or invoice.period_end is None:
+        return None
+
+    # Cherche la facture précédente strictement antérieure sur même site
+    # (period_end < invoice.period_start), tri descendant pour avoir la plus récente
+    prev = (
+        db.query(EnergyInvoice)
+        .filter(
+            EnergyInvoice.site_id == invoice.site_id,
+            EnergyInvoice.id != invoice.id,
+            EnergyInvoice.period_end.isnot(None),
+            EnergyInvoice.period_start.isnot(None),
+            EnergyInvoice.period_end < invoice.period_end,  # exclut self + post-facture
+        )
+        .order_by(EnergyInvoice.period_end.desc())
+        .first()
+    )
+    if prev is None:
+        return None  # 1ʳᵉ facture du site, pas de référence
+
+    # gap_days : jours pleins entre prev.period_end et invoice.period_start
+    # Convention : si prev.period_end=30/04 et invoice.period_start=01/05 → gap=0 (continu)
+    gap_days = (invoice.period_start - prev.period_end).days - 1
+
+    if gap_days >= 0 and gap_days <= 7:
+        return None  # Continuité acceptable (0-7 jours de gap toléré)
+
+    if gap_days < 0:
+        # Chevauchement
+        overlap_days = -gap_days
+        severity = "critical" if overlap_days > 1 else "warning"
+        kind = "chevauchement"
+        details = {
+            "kind": kind,
+            "overlap_days": overlap_days,
+            "gap_days": gap_days,
+            "prev_invoice_id": prev.id,
+            "prev_invoice_number": prev.invoice_number,
+            "prev_period_end": prev.period_end.isoformat(),
+            "invoice_period_start": invoice.period_start.isoformat(),
+            "regulatory_ref": "CRE TURPE 7 art. 8 — facturation unique par période",
+            "montant_anomalie_eur": round(
+                float(invoice.total_eur or 0)
+                * overlap_days
+                / max((invoice.period_end - invoice.period_start).days + 1, 1),
+                2,
+            ),
+        }
+    else:
+        # Trou (gap_days > 7)
+        severity = "critical" if gap_days > 14 else "warning"
+        kind = "trou"
+        details = {
+            "kind": kind,
+            "gap_days": gap_days,
+            "prev_invoice_id": prev.id,
+            "prev_invoice_number": prev.invoice_number,
+            "prev_period_end": prev.period_end.isoformat(),
+            "invoice_period_start": invoice.period_start.isoformat(),
+            "regulatory_ref": "Suivi conso continu — gap suspect ingestion",
+            "montant_anomalie_eur": 0.0,  # pas d'impact € direct, alerte opérationnelle
+        }
+
+    return BillAnomaly(
+        invoice_id=invoice.id,
+        code="R29",
+        severity=severity,
+        threshold_value=Decimal("7"),  # gap_days seuil tolérance
+        actual_value=Decimal(str(gap_days)),
+        details_json=details,
+    )
+
+
 # ─── Pipeline ───────────────────────────────────────────────────────────────
 
 
@@ -1130,5 +1233,14 @@ def detect_anomalies_for_invoice(
             anomalies.append(r28)
     except Exception as e:
         _logger.error(f"R28 detector failed for invoice {invoice.id}: {e}")
+
+    # R29 : 0 ou 1 — Phase L5 CFO chevauchement/trou période facturation (anti-double-billing)
+    try:
+        r29 = detect_r29_period_overlap_or_gap(invoice, db)
+        if r29:
+            db.add(r29)
+            anomalies.append(r29)
+    except Exception as e:
+        _logger.error(f"R29 detector failed for invoice {invoice.id}: {e}")
 
     return anomalies

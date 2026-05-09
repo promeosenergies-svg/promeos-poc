@@ -1579,6 +1579,110 @@ class TestPhaseL4R28EnergyUnitPriceDrift:
         assert anomaly.severity == "warning"
 
 
+# ─── Phase L5 — R29 Période chevauchement / trou facturation (Jean-Marc CFO) ──
+
+
+class TestPhaseL5R29PeriodOverlapOrGap:
+    def _seed_two_invoices(self, db, prev_period, curr_period, total_eur_curr=1000.0):
+        """Helper : crée site + 2 factures consécutives avec périodes paramétrables."""
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        site_id = sites[0].id
+
+        prev = EnergyInvoice(
+            site_id=site_id,
+            invoice_number=f"INV-PREV-{prev_period[0]}",
+            period_start=prev_period[0],
+            period_end=prev_period[1],
+            energy_kwh=10000,
+            total_eur=1000.0,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(prev)
+        db.flush()
+
+        curr = EnergyInvoice(
+            site_id=site_id,
+            invoice_number=f"INV-CURR-{curr_period[0]}",
+            period_start=curr_period[0],
+            period_end=curr_period[1],
+            energy_kwh=10000,
+            total_eur=total_eur_curr,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(curr)
+        db.commit()
+        db.refresh(curr)
+        return prev, curr
+
+    def test_l5_r29_detects_overlap_critical(self, db):
+        """L5 — Avril 1-30 puis Avril 25→Mai 25 (chevauchement 6j) → R29 critical."""
+        from services.bill_intelligence.anomaly_detector import detect_r29_period_overlap_or_gap
+
+        _, curr = self._seed_two_invoices(
+            db,
+            prev_period=(date(2026, 4, 1), date(2026, 4, 30)),
+            curr_period=(date(2026, 4, 25), date(2026, 5, 25)),
+            total_eur_curr=3100.0,  # 31 jours, ~100 €/j
+        )
+        anomaly = detect_r29_period_overlap_or_gap(curr, db)
+        assert anomaly is not None
+        assert anomaly.code == "R29"
+        assert anomaly.severity == "critical"
+        assert anomaly.details_json["kind"] == "chevauchement"
+        assert anomaly.details_json["overlap_days"] == 6
+        # impact ~ 100 €/j × 6 = 600 €
+        assert 590 <= anomaly.details_json["montant_anomalie_eur"] <= 610
+
+    def test_l5_r29_no_anomaly_continuous_periods(self, db):
+        """L5 — Avril 1-30 puis Mai 1-31 (continu, gap=0) → pas d'anomalie."""
+        from services.bill_intelligence.anomaly_detector import detect_r29_period_overlap_or_gap
+
+        _, curr = self._seed_two_invoices(
+            db,
+            prev_period=(date(2026, 4, 1), date(2026, 4, 30)),
+            curr_period=(date(2026, 5, 1), date(2026, 5, 31)),
+        )
+        assert detect_r29_period_overlap_or_gap(curr, db) is None
+
+    def test_l5_r29_detects_gap_warning(self, db):
+        """L5 — Avril 1-30 puis Mai 12-31 (gap=11 jours) → R29 warning trou."""
+        from services.bill_intelligence.anomaly_detector import detect_r29_period_overlap_or_gap
+
+        _, curr = self._seed_two_invoices(
+            db,
+            prev_period=(date(2026, 4, 1), date(2026, 4, 30)),
+            curr_period=(date(2026, 5, 12), date(2026, 5, 31)),
+        )
+        anomaly = detect_r29_period_overlap_or_gap(curr, db)
+        assert anomaly is not None
+        assert anomaly.code == "R29"
+        assert anomaly.severity == "warning"
+        assert anomaly.details_json["kind"] == "trou"
+        assert anomaly.details_json["gap_days"] == 11
+
+    def test_l5_r29_skipped_first_invoice(self, db):
+        """L5 — 1ʳᵉ facture du site (pas de précédente) → R29 skip silencieux."""
+        from services.bill_intelligence.anomaly_detector import detect_r29_period_overlap_or_gap
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-SOLO-2026-04",
+            period_start=date(2026, 4, 1),
+            period_end=date(2026, 4, 30),
+            energy_kwh=10000,
+            total_eur=1000.0,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.commit()
+        db.refresh(invoice)
+        assert detect_r29_period_overlap_or_gap(invoice, db) is None
+
+
 # ─── Phase J2 — ADR-F-04 hard-cut supplier_name → fournisseur_id ────────────
 
 
