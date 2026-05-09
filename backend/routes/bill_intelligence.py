@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import AuthContext, get_optional_auth
+from middleware.rate_limit import check_rate_limit
 from models import BillAnomaly, EnergyInvoice, EntiteJuridique, Portefeuille, Site
 from services.scope_utils import resolve_org_id
 
@@ -99,7 +100,13 @@ def list_bill_anomalies(
     Sécurité : strict org-scoping via JOIN chain
     BillAnomaly → EnergyInvoice → Site → Portefeuille → EntiteJuridique.organisation_id.
     Soft-deleted exclues automatiquement (`BillAnomaly.deleted_at IS NULL`).
+
+    Phase L17.2 — rate-limit production : 60 requêtes/minute par IP/org pour
+    prévenir scraping cross-tenant des anomalies en mode pilote pré-prod externe.
+    Aligné pattern `routes/billing.py` (billing_import 20/min, billing_reconcile
+    5/min). 60/min plus généreux car endpoint de lecture cockpit standard.
     """
+    check_rate_limit(request, key_prefix="bill_anomalies", max_requests=60, window_seconds=60)
     org_id = resolve_org_id(request, auth, db)
 
     # Sprint C-8 Phase 8.1 — D-Audit-Phase7-KPI-Mutation-Coherence-003 fix (P1-CR-003) :

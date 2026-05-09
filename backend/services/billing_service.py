@@ -1036,7 +1036,27 @@ def persist_insights(
 
 
 def audit_invoice_full(db: Session, invoice_id: int) -> Dict[str, Any]:
-    """Full audit pipeline for a persisted invoice: shadow + anomaly engine + persist."""
+    """Full audit pipeline for a persisted invoice: shadow + legacy + R19→R31 + persist.
+
+    Phase L17.1 audit fix CARDINAL P1 BLOCKER #1 — câblage Phase L1→L16
+    pipeline R19→R31 (anomaly_detector.detect_anomalies_for_invoice).
+
+    Avant L17.1 : `detect_anomalies_for_invoice` exporté depuis bill_intelligence
+    mais AUCUN callsite dans routes/services. Les 13 règles R19→R31 développées
+    sur 16 phases (~50 commits) étaient DEAD CODE en production. BillAnomaly
+    table (R19→R31 codes) jamais peuplée → cockpit/persona dashboards montraient
+    0 anomalie pour les nouveaux codes même si les invoices contenaient des
+    cas types (CSPE doublé, abonnement divergent, accise erronée, etc.).
+
+    Après L17.1 : pipeline R19→R31 invoqué après legacy run_anomaly_engine.
+    Les deux pipelines coexistent transitoirement (résilience) :
+    - Legacy R1/R10/R13/R14 → BillingInsight (UI ancienne)
+    - Nouveau R19→R31 → BillAnomaly persistées via db.add() interne au pipeline
+
+    Caches batch pas activés ici (mode unitaire facture par facture). Pour
+    batch nightly, appeler directement detect_anomalies_for_invoice avec les
+    4 caches pré-construits (build_prev_invoice_cache, build_contract_cache, etc.).
+    """
     invoice = db.query(EnergyInvoice).filter(EnergyInvoice.id == invoice_id).first()
     if not invoice:
         return {"error": "Invoice not found"}
@@ -1050,6 +1070,21 @@ def audit_invoice_full(db: Session, invoice_id: int) -> Dict[str, Any]:
     anomalies = run_anomaly_engine(invoice, lines, contract, db)
     insights = persist_insights(db, invoice, anomalies)
 
+    # Phase L17.1 — pipeline R19→R31 cardinal (résilience par-règle interne)
+    bill_anomalies_r19_r31 = []
+    try:
+        from services.bill_intelligence import detect_anomalies_for_invoice
+
+        bill_anomalies_r19_r31 = detect_anomalies_for_invoice(invoice, db)
+    except Exception as e:
+        import logging
+
+        logging.getLogger(__name__).error(
+            "Pipeline R19→R31 failed for invoice %s: %s — legacy pipeline unaffected",
+            invoice_id,
+            e,
+        )
+
     return {
         "invoice_id": invoice.id,
         "invoice_number": invoice.invoice_number,
@@ -1057,6 +1092,9 @@ def audit_invoice_full(db: Session, invoice_id: int) -> Dict[str, Any]:
         "anomalies_count": len(anomalies),
         "anomalies": anomalies,
         "insights_persisted": len(insights),
+        # Phase L17.1 — exposition R19→R31 dans la réponse audit
+        "bill_anomalies_r19_r31_count": len(bill_anomalies_r19_r31),
+        "bill_anomalies_r19_r31_codes": [a.code for a in bill_anomalies_r19_r31],
     }
 
 

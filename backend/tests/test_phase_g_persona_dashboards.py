@@ -2218,6 +2218,66 @@ class TestPhaseGP1FixesSourceGuards:
         assert "_load_yaml_or_fallback(" in src
         assert "fallback=130.0" in src
 
+    def test_l17_3_load_yaml_or_fallback_branch_except_runtime(self, caplog):
+        """L17.3 audit fix P1 (Phase L17 audit reviewer #1 finding 4) — test
+        runtime de la branche `except` de `_load_yaml_or_fallback`
+        (avant L17.3 : couverture structurelle uniquement).
+
+        Doctrine "no fake code" exige couverture comportement, pas seulement
+        présence du symbole. Test 3 cas : YAML valide, key inexistante (warning),
+        TypeError mock (defensive over-engineered audit Phase L17 reviewer #1).
+        """
+        import logging
+        from unittest.mock import patch
+
+        from doctrine.constants import _load_yaml_or_fallback
+
+        # Cas 1 nominal — YAML key valide → retourne valeur YAML
+        result_ok = _load_yaml_or_fallback("PRICE_ELEC_ETI_2026_EUR_PER_MWH", fallback=999.0)
+        assert result_ok == 130.0  # YAML SoT actuel — pas le fallback 999
+
+        # Cas 2 branche except — YAML key inexistante → fallback + warning log
+        with caplog.at_level(logging.WARNING, logger="doctrine.constants"):
+            result_fallback = _load_yaml_or_fallback("INEXISTENT_KEY_xxx", fallback=42.0)
+        assert result_fallback == 42.0
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert any("INEXISTENT_KEY_xxx" in r.message for r in warnings), "Warning log doit mentionner la clé manquante"
+
+        # Cas 3 branche except — TypeError mock (over-engineered defensive)
+        with patch("doctrine.constants._get_term_value", side_effect=TypeError("simulated")):
+            result_typeerror = _load_yaml_or_fallback("ANY_KEY", fallback=77.0)
+        assert result_typeerror == 77.0
+
+    def test_l17_1_audit_invoice_full_invokes_r19_r31_pipeline(self):
+        """L17.1 audit fix P1 BLOCKER #1 — billing_service.audit_invoice_full
+        invoque detect_anomalies_for_invoice (Phase L1→L16 R19→R31).
+
+        Avant L17.1 : detect_anomalies_for_invoice était DEAD CODE en production
+        — défini, exporté, mais jamais appelé depuis routes/services. Les
+        BillAnomaly (R19→R31 codes) n'étaient jamais peuplées en prod.
+
+        Source-guard verrouille la non-régression du câblage.
+        """
+        from pathlib import Path
+
+        src = (Path(__file__).resolve().parent.parent / "services" / "billing_service.py").read_text(encoding="utf-8")
+        # Import du pipeline R19→R31
+        assert "from services.bill_intelligence import detect_anomalies_for_invoice" in src
+        # Invocation effective dans audit_invoice_full
+        assert "detect_anomalies_for_invoice(invoice, db)" in src
+        # Réponse audit expose le compte R19→R31
+        assert '"bill_anomalies_r19_r31_count":' in src
+
+    def test_l17_2_anomalies_endpoint_has_rate_limit(self):
+        """L17.2 audit fix P1 BLOCKER #3 — endpoint /anomalies protégé par rate-limit
+        (avant : aucun throttling, scraping cross-tenant possible en pilote).
+        """
+        from pathlib import Path
+
+        src = (Path(__file__).resolve().parent.parent / "routes" / "bill_intelligence.py").read_text(encoding="utf-8")
+        assert "from middleware.rate_limit import check_rate_limit" in src
+        assert 'check_rate_limit(request, key_prefix="bill_anomalies"' in src
+
     def test_l15_1_doctrine_constants_loads_yaml_sot_no_hardcode(self):
         """L15.1 audit fix P1 — doctrine/constants.py PRICE_ELEC_ETI_2026_EUR_PER_MWH
         lazy-load depuis YAML SoT (avant : valeur 130.0 dupliquée hardcoded entre
