@@ -2272,6 +2272,208 @@ class TestPhaseGP1FixesSourceGuards:
         # Réponse audit expose le compte R19→R31
         assert '"bill_anomalies_r19_r31_count":' in src
 
+    def test_l21_2_audit_invoice_full_runtime_wiring_r19_r31(self, db):
+        """L21.2 audit fix P1 BLOCKER pré-pilote (audit Phase L21 reviewer #2 #4) —
+        test RUNTIME du câblage Phase L17.1 (avant : seul source-guard textuel).
+        """
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+        from services.billing_service import audit_invoice_full
+
+        _, _, _, sites = _seed_org_with_sites(db, org_name="OrgL21RT", siren="500000001", n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="L21RT-001",
+            total_eur=1500.0,
+            energy_kwh=50,
+            period_start=date(2026, 4, 1),
+            period_end=date(2026, 4, 30),
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.TAX,
+                label="VNU Versement Nucléaire Universel",
+                amount_eur=12.5,
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        result = audit_invoice_full(db, invoice.id)
+        assert "error" not in result
+        assert "bill_anomalies_r19_r31_count" in result
+        assert isinstance(result["bill_anomalies_r19_r31_count"], int)
+        assert "bill_anomalies_r19_r31_codes" in result
+        assert "R19" in result["bill_anomalies_r19_r31_codes"]
+
+    def test_l21_3_pipeline_5_plus_anomalies_simultaneous(self, db):
+        """L21.3 audit fix P1 BLOCKER pré-pilote — test cumul 5+ anomalies simultanées
+        sur même invoice (R19+R20+R23+R26+R31). Vérifie non-collision UNIQUE constraint.
+        """
+        from models import (
+            EnergyInvoiceLine,
+            EnergyVector,
+            Meter,
+            PowerContract,
+        )
+        from models.enums import InvoiceLineType
+        from services.bill_intelligence import detect_anomalies_for_invoice
+
+        _, _, _, sites = _seed_org_with_sites(db, org_name="OrgL21Cumul", siren="500000002", n_sites=1)
+        site = sites[0]
+        meter = Meter(
+            meter_id="PRM-L21-001",
+            name="L21 Test Meter",
+            site_id=site.id,
+            energy_vector=EnergyVector.ELECTRICITY,
+            subscribed_power_kva=36,
+        )
+        db.add(meter)
+        db.flush()
+        db.add(
+            PowerContract(
+                meter_id=meter.id,
+                date_debut=date(2026, 1, 1),
+                date_fin=None,
+                domaine_tension="BT",
+                fta_code="BTSUPCU4",
+                ps_par_poste_kva={"HPH": 36},
+            )
+        )
+        invoice = EnergyInvoice(
+            site_id=site.id,
+            invoice_number="L21CUMUL-001",
+            total_eur=500.0,
+            energy_kwh=50,
+            period_start=date(2026, 4, 1),
+            period_end=date(2026, 4, 30),
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        # R19 + R31 (2 lignes accise) + R20 + R23 (2 lignes NETWORK HPH)
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.TAX,
+                label="VNU Versement Nucléaire",
+                amount_eur=15.0,
+            )
+        )
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.TAX,
+                label="CSPE Contribution Service Public Électricité",
+                amount_eur=8.0,
+            )
+        )
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.TAX,
+                label="Accise sur l'électricité",
+                amount_eur=7.5,
+            )
+        )
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.NETWORK,
+                label="Capacité HPH",
+                qty=50,
+                unit="kVA",
+                period_code="HPH",
+                amount_eur=25.0,
+            )
+        )
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.NETWORK,
+                label="TURPE HPH accès réseau",
+                qty=36,
+                unit="kVA",
+                period_code="HPH",
+                amount_eur=24.0,
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        results = detect_anomalies_for_invoice(invoice, db)
+        codes = {a.code for a in results}
+        expected_codes = {"R19", "R20", "R23", "R26", "R31"}
+        assert expected_codes.issubset(codes), f"5+ attendus : {expected_codes} ; trouvés : {codes}"
+        db.commit()  # UNIQUE(invoice_id, code) doit passer sans IntegrityError
+
+    def test_l21_4_billing_anomalies_scoped_http_real(self, client, db):
+        """L21.4 audit fix P1 BLOCKER pré-pilote — test HTTP RÉEL endpoint UNION L18.2.
+
+        Vérifie GET /api/billing/anomalies-scoped retourne BillAnomaly R23+R31 avec
+        préfixe `BA:`, severity UPPERCASE, title_fr mappé, sort priority_score DESC.
+        """
+        from models import BillAnomaly
+
+        org, _, _, sites = _seed_org_with_sites(db, org_name="OrgL21HTTP", siren="500000003", n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="L21HTTP-001",
+            total_eur=2500.0,
+            energy_kwh=10000,
+            period_start=date(2026, 4, 1),
+            period_end=date(2026, 4, 30),
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        db.add(
+            BillAnomaly(
+                invoice_id=invoice.id,
+                code="R23",
+                severity="critical",
+                details_json={"montant_anomalie_eur": 150.0, "regulatory_ref": "CRE Délib. 2025-78"},
+            )
+        )
+        db.add(
+            BillAnomaly(
+                invoice_id=invoice.id,
+                code="R31",
+                severity="warning",
+                details_json={"montant_anomalie_eur": 30.0, "regulatory_ref": "CIBS art. L.312-1"},
+            )
+        )
+        db.commit()
+
+        resp = client.get(
+            "/api/billing/anomalies-scoped",
+            headers={"X-Org-Id": str(org.id)},
+        )
+        assert resp.status_code == 200, f"Endpoint failed : {resp.text[:500]}"
+        data = resp.json()
+
+        ba_items = [a for a in data["anomalies"] if a["insight_id"].startswith("BA:")]
+        assert len(ba_items) >= 2
+
+        codes = {a["code"] for a in ba_items}
+        assert {"R23", "R31"}.issubset(codes)
+
+        for a in ba_items:
+            assert a["severity"] in {"CRITICAL", "HIGH", "MEDIUM", "LOW"}
+            assert not a["title_fr"].startswith("Anomalie R")
+
+        r23 = next(a for a in ba_items if a["code"] == "R23")
+        r31 = next(a for a in ba_items if a["code"] == "R31")
+        # R23 critical (90) > R31 warning (70) dans le sort priority_score DESC
+        assert r23["priority_score"] > r31["priority_score"]
+
     def test_l20_1_priority_score_helper_centralized(self):
         """L20.1 audit fix P0 BUG — helper `_severity_to_priority_score` centralisé
         + `_PRIORITY_SCORE_MAP` SoT module-level (avant L20.1 : 90/70/50 hardcoded

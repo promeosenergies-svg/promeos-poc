@@ -1553,13 +1553,16 @@ _PRIORITY_SCORE_MAP: dict[str, int] = {
 }
 
 
-def _severity_to_priority_score(severity_uppercase: str) -> int:
-    """Phase L20.2 — Helper SoT priority_score depuis severity UPPERCASE.
+def _severity_to_priority_score(severity: str) -> int:
+    """Phase L20.2 + L21.1 — Helper SoT priority_score depuis severity.
 
-    Évite duplication du mapping 90/70/50 dans /billing/anomalies-scoped + futurs
+    Phase L21.1 audit fix P2 — normalise UPPERCASE en interne (avant : silencieux
+    fallback LOW si lowercase passé) → robuste cross-callsite.
+
+    Évite duplication du mapping 90/70/50/30 dans /billing/anomalies-scoped + futurs
     callsites. Default LOW (30) si severity inconnue (anti-faux-positif heuristique).
     """
-    return _PRIORITY_SCORE_MAP.get(severity_uppercase, 30)
+    return _PRIORITY_SCORE_MAP.get((severity or "").upper(), 30)
 
 
 @router.get("/anomalies-scoped")
@@ -1651,9 +1654,9 @@ def get_billing_anomalies_scoped(
         # silencieux quand R32+ ajoutés au pipeline sans update _R_CODES_TITLE_FR).
         title_fr = _R_CODES_TITLE_FR.get(ba.code)
         if title_fr is None:
-            import logging as _logging
-
-            _logging.getLogger(__name__).warning(
+            # Phase L21.1 audit fix P1 — utilise logger module-level (avant L21.1 :
+            # import inline hot-path → spam si 100+ anomalies avec codes non-mappés).
+            logger.warning(
                 "Code anomaly %s manquant dans _R_CODES_TITLE_FR — fallback générique",
                 ba.code,
             )
