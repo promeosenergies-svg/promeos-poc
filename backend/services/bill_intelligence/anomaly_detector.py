@@ -387,27 +387,69 @@ def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[Bil
 # ─── R22 Accise erronée (Phase I Jean-Marc CFO ROI 2-4 k€/an) ──────────────
 
 
+def _resolve_accise_rate_from_dp(invoice: EnergyInvoice, db: Session) -> tuple[float, str, str]:
+    """Phase J — Résout le taux accise applicable selon `AcciseCategorieElec` du DP.
+
+    Pattern Pilier 13 ADR-016 (SoT cardinal) : utilise les catégories CIBS
+    déclarées sur les DeliveryPoints liés à l'invoice via Site → Meter → DP.
+    Fallback T1 (MENAGES_ASSIMILES) si catégorie indéterminée.
+
+    Returns:
+        tuple (rate_eur_per_mwh, category_value, source_label)
+        Ex: (30.85, "MENAGES_ASSIMILES", "DP_CATEGORY") ou (30.85, "T1_FALLBACK", "FALLBACK")
+    """
+    from doctrine.constants import (
+        ACCISE_ELEC_HP_EUR_PER_MWH,
+        ACCISE_ELEC_T1_EUR_PER_MWH,
+        ACCISE_ELEC_T2_EUR_PER_MWH,
+    )
+    from models import DeliveryPoint
+    from models.enums import AcciseCategorieElec
+
+    # Récupère toutes les DP du site de l'invoice (DP.site_id direct)
+    site_id = getattr(invoice, "site_id", None)
+    if site_id:
+        dps = db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site_id).all()
+
+        # Catégorie peut être stockée en Enum ou string — normaliser en string value
+        def _cat_value(raw):
+            if raw is None:
+                return None
+            return raw.value if hasattr(raw, "value") else str(raw)
+
+        categories = {_cat_value(dp.accise_categorie_elec) for dp in dps}
+        categories.discard(None)
+        if len(categories) == 1:
+            cat_value = categories.pop()
+            if cat_value == AcciseCategorieElec.HAUTE_PUISSANCE.value:
+                return ACCISE_ELEC_HP_EUR_PER_MWH, cat_value, "DP_CATEGORY"
+            if cat_value == AcciseCategorieElec.PME.value:
+                return ACCISE_ELEC_T2_EUR_PER_MWH, cat_value, "DP_CATEGORY"
+            return ACCISE_ELEC_T1_EUR_PER_MWH, cat_value, "DP_CATEGORY"
+
+    # Fallback T1 (MENAGES_ASSIMILES par défaut administratif)
+    return ACCISE_ELEC_T1_EUR_PER_MWH, "T1_FALLBACK", "FALLBACK"
+
+
 def detect_r22_accise_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
     """R22 — Accise élec (TICFE/CSPE) divergence taux réglementaire.
 
     Persona Jean-Marc CFO : ROI 2-4 k€/an, transitions tarifaires accise 2024→2025
     et 2025→2026 régulièrement ratées par fournisseurs.
 
-    Heuristique cardinale Phase I (taux T1 par défaut, à raffiner Phase J avec
-    AcciseCategorieElec depuis DP) :
-    - Trouver ligne TAX `accise|ticfe|cspe|contrib.*service.*public`
-    - Calculer accise attendue = `energy_kwh × ACCISE_ELEC_T1_EUR_PER_MWH / 1000`
-      (T1 = 30,85 €/MWh — tarif 2026 ménages assimilés)
-    - Si écart > 10 % ET > 5 € → R22 anomalie
+    Phase J raffinement : route via `AcciseCategorieElec` depuis DP du site
+    (T1 MENAGES_ASSIMILES / T2 PME / HP HAUTE_PUISSANCE) au lieu de T1 fixe.
+    Réduit faux positifs pour PME et industriels haute puissance.
 
-    NB : T2 (PME) 26,58 €/MWh + T3 (haute puissance) 5,71 €/MWh nécessitent
-    catégorie accise client. Phase I MVP utilise T1 + flag `category_assumption`
-    pour transparence au CFO.
+    Heuristique cardinale :
+    - Trouver ligne TAX `accise|ticfe|cspe|contrib.*service.*public`
+    - Résoudre catégorie via DP.accise_categorie_elec → taux réglementaire
+    - Calculer accise attendue = energy_mwh × tarif_categorie
+    - Si écart > 10 % ET > 5 € → R22 anomalie (seuil resserré vs T1 fallback 35 %)
 
     Returns:
         BillAnomaly ou None
     """
-    from doctrine.constants import ACCISE_ELEC_T1_EUR_PER_MWH
     from models.enums import InvoiceLineType
 
     if not invoice.energy_kwh or invoice.energy_kwh <= 0:
@@ -425,16 +467,22 @@ def detect_r22_accise_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[
 
     accise_facturee = sum(float(line.amount_eur or 0) for line in accise_lines)
     energy_mwh = float(invoice.energy_kwh) / 1000
-    # MVP : tarif T1 ménages assimilés. Phase J : router via AcciseCategorieElec.
-    accise_attendue_t1 = energy_mwh * ACCISE_ELEC_T1_EUR_PER_MWH
 
-    # Anti-bruit : ignore si tarif T2 (PME, 26.58) ou T3 (haute puissance, 5.71)
-    # produirait un résultat plausible — on vérifie écart > 35 % vs T1.
-    ecart_eur = accise_facturee - accise_attendue_t1
-    ecart_pct = abs(ecart_eur) / accise_attendue_t1 * 100 if accise_attendue_t1 > 0 else 0
+    # Phase J : résoudre catégorie depuis DP (T1/T2/HP) au lieu de T1 fixe
+    rate_eur_per_mwh, category_value, category_source = _resolve_accise_rate_from_dp(invoice, db)
+    accise_attendue = energy_mwh * rate_eur_per_mwh
 
-    # Seuils : > 35 % d'écart vs T1 (couvre marge T2/T3 légitime) ET > 5 €
-    if ecart_pct < 35 or abs(ecart_eur) < 5:
+    if accise_attendue <= 0:
+        return None
+
+    ecart_eur = accise_facturee - accise_attendue
+    ecart_pct = abs(ecart_eur) / accise_attendue * 100
+
+    # Seuils selon source catégorie :
+    # - DP_CATEGORY (catégorie connue) : 10 % d'écart suffit (haute confiance)
+    # - FALLBACK T1 : 35 % d'écart (couvre marge T2/HP légitime)
+    threshold_pct = 10.0 if category_source == "DP_CATEGORY" else 35.0
+    if ecart_pct < threshold_pct or abs(ecart_eur) < 5:
         return None
 
     severity = "critical" if abs(ecart_eur) > 50 else "warning"
@@ -442,18 +490,19 @@ def detect_r22_accise_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[
         invoice_id=invoice.id,
         code="R22",
         severity=severity,
-        threshold_value=Decimal("35.0"),
+        threshold_value=Decimal(str(threshold_pct)),
         actual_value=Decimal(str(round(ecart_pct, 2))),
         details_json={
             "energy_kwh": float(invoice.energy_kwh),
             "energy_mwh": round(energy_mwh, 3),
             "accise_facturee_eur": round(accise_facturee, 2),
-            "accise_attendue_t1_eur": round(accise_attendue_t1, 2),
-            "tarif_t1_eur_per_mwh": ACCISE_ELEC_T1_EUR_PER_MWH,
+            "accise_attendue_eur": round(accise_attendue, 2),
+            "tarif_eur_per_mwh": rate_eur_per_mwh,
+            "category_value": category_value,
+            "category_source": category_source,  # DP_CATEGORY ou FALLBACK
             "ecart_eur": round(ecart_eur, 2),
             "ecart_pct": round(ecart_pct, 2),
-            "category_assumption": "T1_MENAGES_ASSIMILES",
-            "regulatory_ref": "JORFTEXT000053407616 — Accise élec 30,85 €/MWh fév 2026+",
+            "regulatory_ref": "JORFTEXT000053407616 — Accise élec fév 2026+ (T1=30,85 / T2=26,58 / HP=5,71 €/MWh)",
             "montant_anomalie_eur": round(abs(ecart_eur), 2),
         },
     )

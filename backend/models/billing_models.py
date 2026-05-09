@@ -4,6 +4,9 @@ Persisted: EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight.
 Complement the dataclass-based domain model in app/bill_intelligence/domain.py.
 """
 
+import json
+import logging
+import os
 from datetime import datetime
 
 from sqlalchemy import (
@@ -21,7 +24,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Index,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 
 from .base import Base, TimestampMixin
 from .enums import (
@@ -332,6 +335,37 @@ class EnergyContract(Base, TimestampMixin):
         back_populates="contract",
         cascade="all, delete-orphan",
     )
+
+    def __init__(self, **kwargs):
+        """Phase J2 ADR-F-04 : nouveau EnergyContract DEVRAIT avoir fournisseur_id résolu.
+
+        Mode strict (env `PROMEOS_J2_HARDCUT=1`) : raise ValueError si fournisseur_id
+        manquant et pas d'override legacy. Mode soft (défaut) : log warning seulement.
+
+        Override autorisé : `metadata_json={"phase_j2_legacy": true}` pour imports
+        historiques (8 PDLs seedés Phase V113 + 2 unmapped Eni/Vattenfall).
+        Pattern miroir transitoire : `supplier_name` String reste pour rétro-compat
+        — DROP différé Phase K. Activation strict prévue Phase K (post-pilote).
+        """
+        super().__init__(**kwargs)
+        if self.fournisseur_id is None:
+            meta_raw = self.metadata_json
+            if meta_raw:
+                try:
+                    meta = json.loads(meta_raw) if isinstance(meta_raw, str) else meta_raw
+                    if isinstance(meta, dict) and meta.get("phase_j2_legacy") is True:
+                        return
+                except (ValueError, TypeError):
+                    pass
+            msg = (
+                "Phase J2 ADR-F-04 violation : EnergyContract sans fournisseur_id "
+                "(résolu via Phase F1/F2). Override autorisé : metadata_json["
+                "'phase_j2_legacy']=true pour imports historiques."
+            )
+            if os.getenv("PROMEOS_J2_HARDCUT") == "1":
+                raise ValueError(msg)
+            # Mode soft : log warning seulement
+            logging.getLogger("promeos.billing").warning(msg)
 
 
 class EnergyInvoice(Base, TimestampMixin):

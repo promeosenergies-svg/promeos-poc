@@ -244,11 +244,14 @@ class TestCFOBillingAnomaliesSummary:
 
 class TestCFOExpiringContracts:
     def _seed_contract(self, db, site, end_date, supplier="EDF"):
+        import json
+
         c = EnergyContract(
             site_id=site.id,
             energy_type=BillingEnergyType.ELEC,
             supplier_name=supplier,
             end_date=end_date,
+            metadata_json=json.dumps({"phase_j2_legacy": True}),
         )
         db.add(c)
         db.flush()
@@ -627,6 +630,7 @@ class TestPhaseH5R21CTA:
 class TestPhaseH6ContractPriceBenchmark:
     def test_h6_benchmark_no_market_data(self, client, db):
         """H6 — Sans MktPrice forward → benchmark_status='no_market_data'."""
+        import json
         from datetime import timedelta
 
         org, _, _, sites = _seed_org_with_sites(db, n_sites=1)
@@ -636,6 +640,7 @@ class TestPhaseH6ContractPriceBenchmark:
             supplier_name="EDF",
             end_date=date.today() + timedelta(days=60),
             price_ref_eur_per_kwh=0.15,
+            metadata_json=json.dumps({"phase_j2_legacy": True}),
         )
         db.add(c)
         db.commit()
@@ -662,6 +667,8 @@ class TestPhaseH6ContractPriceBenchmark:
         )
         # Phase H6 : MktPrice utilise MarketType.FORWARD_YEAR + ProductType.BASELOAD
 
+        import json
+
         org, _, _, sites = _seed_org_with_sites(db, n_sites=1)
         # Contrat à 180 €/MWh (très cher)
         c = EnergyContract(
@@ -670,6 +677,7 @@ class TestPhaseH6ContractPriceBenchmark:
             supplier_name="EDF",
             end_date=date.today() + timedelta(days=60),
             price_ref_eur_per_kwh=0.18,
+            metadata_json=json.dumps({"phase_j2_legacy": True}),
         )
         db.add(c)
         db.flush()
@@ -749,10 +757,12 @@ class TestPhaseI1R22Accise:
         assert anomaly is not None
         assert anomaly.code == "R22"
         assert anomaly.severity == "critical"  # écart > 50 €
-        assert anomaly.details_json["category_assumption"] == "T1_MENAGES_ASSIMILES"
+        # Phase J : sans DP catégorie → FALLBACK T1
+        assert anomaly.details_json["category_source"] == "FALLBACK"
+        assert anomaly.details_json["category_value"] == "T1_FALLBACK"
 
     def test_i1_r22_no_anomaly_within_t1_range(self, db):
-        """I1 — Accise dans la fourchette T1 (±35 %) → pas d'anomalie."""
+        """I1 — Accise dans la fourchette T1 (±35 % fallback) → pas d'anomalie."""
         from models import EnergyInvoiceLine
         from models.enums import InvoiceLineType
         from services.bill_intelligence.anomaly_detector import detect_r22_accise_mismatch
@@ -781,6 +791,151 @@ class TestPhaseI1R22Accise:
         db.refresh(invoice)
 
         assert detect_r22_accise_mismatch(invoice, db) is None
+
+
+# ─── Phase J1 — R22 raffinement AcciseCategorieElec routing ─────────────────
+
+
+class TestPhaseJ1R22DPCategoryRouting:
+    def test_j1_r22_uses_dp_category_pme_tighter_threshold(self, db):
+        """J1 — DP catégorie PME → taux T2 26,58 €/MWh + seuil 10 % (vs 35 % fallback).
+
+        Le raffinement Phase J réduit faux positifs : avec PME catégorie connue,
+        on détecte un écart de 12 % (sub-T1 fallback 35 %) sur taux T2 attendu.
+        """
+        from models import (
+            DeliveryPoint,
+            EnergyInvoiceLine,
+            Meter,
+        )
+        from models.enums import (
+            AcciseCategorieElec,
+            DeliveryPointEnergyType,
+            InvoiceLineType,
+        )
+        from models.energy_models import EnergyVector
+        from services.bill_intelligence.anomaly_detector import detect_r22_accise_mismatch
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        # DP avec catégorie PME (T2)
+        dp = DeliveryPoint(
+            code="14999100000001",
+            energy_type=DeliveryPointEnergyType.ELEC,
+            site_id=sites[0].id,
+            accise_categorie_elec=AcciseCategorieElec.PME,
+        )
+        db.add(dp)
+        db.flush()
+        # Meter lié au site et au DP
+        meter = Meter(
+            meter_id="PRM-J1-PME",
+            name="Meter J1",
+            site_id=sites[0].id,
+            energy_vector=EnergyVector.ELECTRICITY,
+            delivery_point_id=dp.id,
+        )
+        db.add(meter)
+        db.flush()
+
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-J1-PME",
+            energy_kwh=10000,  # 10 MWh
+            total_eur=2500,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        # T2 attendue = 10 × 26,58 = 265,80 € ; facturée 320 € (écart +20 %)
+        # Sous le seuil T1 fallback 35 % MAIS au-dessus du seuil DP 10 % → détecté
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.TAX,
+                label="CSPE",
+                amount_eur=320.0,
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        from doctrine.constants import ACCISE_ELEC_T2_EUR_PER_MWH
+
+        anomaly = detect_r22_accise_mismatch(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R22"
+        assert anomaly.details_json["category_source"] == "DP_CATEGORY"
+        assert anomaly.details_json["category_value"] == "PME"
+        assert anomaly.details_json["tarif_eur_per_mwh"] == ACCISE_ELEC_T2_EUR_PER_MWH
+
+    def test_j1_r22_haute_puissance_uses_hp_rate(self, db):
+        """J1 — DP catégorie HAUTE_PUISSANCE → taux HP 5,71 €/MWh."""
+        from models import (
+            DeliveryPoint,
+            EnergyInvoiceLine,
+            Meter,
+        )
+        from models.enums import (
+            AcciseCategorieElec,
+            DeliveryPointEnergyType,
+            InvoiceLineType,
+        )
+        from models.energy_models import EnergyVector
+        from services.bill_intelligence.anomaly_detector import detect_r22_accise_mismatch
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        dp = DeliveryPoint(
+            code="14999100000002",
+            energy_type=DeliveryPointEnergyType.ELEC,
+            site_id=sites[0].id,
+            accise_categorie_elec=AcciseCategorieElec.HAUTE_PUISSANCE,
+        )
+        db.add(dp)
+        db.flush()
+        meter = Meter(
+            meter_id="PRM-J1-HP",
+            name="Meter HP",
+            site_id=sites[0].id,
+            energy_vector=EnergyVector.ELECTRICITY,
+            delivery_point_id=dp.id,
+        )
+        db.add(meter)
+        db.flush()
+
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-J1-HP",
+            energy_kwh=1000000,  # 1000 MWh = 1 GWh (industriel)
+            total_eur=85000,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        # HP attendue = 1000 × 5,71 = 5710 € ; facturée 30 850 € (taux T1 appliqué à tort)
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.TAX,
+                label="Accise sur l'électricité",
+                amount_eur=30850.0,  # facturé au taux T1 alors que HP attendu
+            )
+        )
+        db.commit()
+        db.refresh(invoice)
+
+        from doctrine.constants import ACCISE_ELEC_HP_EUR_PER_MWH
+
+        anomaly = detect_r22_accise_mismatch(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R22"
+        assert anomaly.severity == "critical"
+        assert anomaly.details_json["category_source"] == "DP_CATEGORY"
+        assert anomaly.details_json["category_value"] == "HAUTE_PUISSANCE"
+        assert anomaly.details_json["tarif_eur_per_mwh"] == ACCISE_ELEC_HP_EUR_PER_MWH
+        # Détection énorme surfacturation : ~25 k€ de récupération potentielle
+        assert anomaly.details_json["montant_anomalie_eur"] > 20000
 
 
 # ─── Phase I2 — R24 TVA mauvais taux (Jean-Marc CFO) ───────────────────────
@@ -898,6 +1053,75 @@ class TestPhaseI3PDFExport:
         assert r.status_code == 200
         # PDF généré pour Org B → 0 sites
         assert r.content[:4] == b"%PDF"
+
+
+# ─── Phase J2 — ADR-F-04 hard-cut supplier_name → fournisseur_id ────────────
+
+
+class TestPhaseJ2HardCutFournisseurId:
+    def test_j2_new_energy_contract_without_fournisseur_id_raises_strict_mode(self, db, monkeypatch):
+        """J2 — Mode strict (env PROMEOS_J2_HARDCUT=1) : sans fournisseur_id → ValueError."""
+        monkeypatch.setenv("PROMEOS_J2_HARDCUT", "1")
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        with pytest.raises(ValueError, match="Phase J2 ADR-F-04"):
+            EnergyContract(
+                site_id=sites[0].id,
+                energy_type=BillingEnergyType.ELEC,
+                supplier_name="UnknownSupplier",
+                end_date=date.today() + timedelta(days=180),
+                # fournisseur_id manquant → doit raise en mode strict
+            )
+
+    def test_j2_soft_mode_warns_only_no_raise(self, db, caplog):
+        """J2 — Mode soft (défaut) : log warning sans raise (compat fixtures legacy)."""
+        import logging
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        with caplog.at_level(logging.WARNING, logger="promeos.billing"):
+            c = EnergyContract(
+                site_id=sites[0].id,
+                energy_type=BillingEnergyType.ELEC,
+                supplier_name="UnknownSupplier",
+                end_date=date.today() + timedelta(days=180),
+            )
+        assert c is not None  # pas de raise
+        assert any("Phase J2 ADR-F-04" in r.message for r in caplog.records)
+
+    def test_j2_energy_contract_with_fournisseur_id_ok(self, db):
+        """J2 — EnergyContract avec fournisseur_id valide → OK."""
+        from models import Fournisseur, TypeFournitureEnum
+
+        f = Fournisseur(nom="EDF", siren="552081317", type_fourniture=TypeFournitureEnum.MULTI)
+        db.add(f)
+        db.flush()
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        c = EnergyContract(
+            site_id=sites[0].id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            fournisseur_id=f.id,
+            end_date=date.today() + timedelta(days=180),
+        )
+        db.add(c)
+        db.commit()
+        assert c.id is not None
+
+    def test_j2_legacy_import_override_ok(self, db):
+        """J2 — Override `metadata_json={"phase_j2_legacy": true}` autorise sans fournisseur_id."""
+        import json
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        c = EnergyContract(
+            site_id=sites[0].id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="Eni",  # unmapped historique
+            metadata_json=json.dumps({"phase_j2_legacy": True}),
+        )
+        db.add(c)
+        db.commit()
+        assert c.id is not None
+        assert c.fournisseur_id is None  # legacy override accepté
 
 
 # ─── Source-guards P1 fixes (post-audit code-reviewer Phase G) ─────────────
