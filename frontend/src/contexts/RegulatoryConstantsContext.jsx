@@ -12,11 +12,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 // Fallback utilisé avant que l'API réponde (premier render, offline, erreur).
-// Valeurs alignées sur backend/doctrine/constants.py + referentials/market_tariffs_2026.yaml.
+// Valeurs alignées sur backend/doctrine/constants.py + sources_reglementaires.yaml.
+// Phase L29.3 audit fix P1 — enrichi avec dt, primary_energy, readiness_weights
+// (exposés par /api/config/regulatory-constants depuis Phase L28.1a) + champs
+// vnu.tarif_unitaire_2026_eur_mwh, aper.surface_large_m2/solar_ratio_pct.
 const FALLBACK_CONSTANTS = {
   vnu: {
     seuil_bas_eur_mwh: 78.0,
     seuil_haut_eur_mwh: 110.0,
+    tarif_unitaire_2026_eur_mwh: 0.0,
     source: 'Fallback LF 2025 art. 17 (API non chargée)',
     label: 'Versement Nucléaire Universel',
     activation: '2027 si EPEX dépasse seuil',
@@ -24,6 +28,8 @@ const FALLBACK_CONSTANTS = {
   aper: {
     penalite_eur_m2_an: 20,
     surface_min_m2: 1500,
+    surface_large_m2: 10000,
+    solar_ratio_pct: 50.0,
     deadline_iso: '2028-01-01',
     source: 'Fallback Loi 2023-175 (API non chargée)',
     label: 'APER — solarisation parkings',
@@ -38,6 +44,25 @@ const FALLBACK_CONSTANTS = {
     deadline_declaration_iso: '2026-09-30',
     source: 'Fallback Arrêté Tertiaire 2024-DGEC (API non chargée)',
     label: 'OPERAT — déclaration consommations 2025',
+  },
+  dt: {
+    penalty_eur: 7500,
+    penalty_at_risk_eur: 3750,
+    source: 'Fallback Décret 2019-771 art. 9 + L.173-2 CCH (API non chargée)',
+    label: 'Décret Tertiaire — sanctions',
+  },
+  primary_energy: {
+    coef_elec: 1.9,
+    coef_gas: 1.0,
+    source: 'Fallback Arrêté ministériel 13/04/2023 (API non chargée)',
+    label: 'Coefficient énergie primaire RE2020',
+  },
+  readiness_weights: {
+    data: 0.3,
+    conformity: 0.4,
+    actions: 0.3,
+    source: 'Fallback doctrine PROMEOS Sol §15 (API non chargée)',
+    label: 'Pondérations Readiness score backend',
   },
 };
 
@@ -65,6 +90,18 @@ export function RegulatoryConstantsProvider({ children }) {
         if (data?.turpe7_hc)
           merged.turpe7_hc = { ...FALLBACK_CONSTANTS.turpe7_hc, ...data.turpe7_hc };
         if (data?.operat) merged.operat = { ...FALLBACK_CONSTANTS.operat, ...data.operat };
+        // Phase L29.3 audit fix P1 — merge des 3 nouveaux dicts L28.1a
+        if (data?.dt) merged.dt = { ...FALLBACK_CONSTANTS.dt, ...data.dt };
+        if (data?.primary_energy)
+          merged.primary_energy = {
+            ...FALLBACK_CONSTANTS.primary_energy,
+            ...data.primary_energy,
+          };
+        if (data?.readiness_weights)
+          merged.readiness_weights = {
+            ...FALLBACK_CONSTANTS.readiness_weights,
+            ...data.readiness_weights,
+          };
         setConstants(merged);
         setLoading(false);
       })
