@@ -384,6 +384,69 @@ def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[Bil
     )
 
 
+# ─── R26 Sanity check total_eur vs Σ lignes (Phase L2 Jean-Marc CFO) ───────
+
+
+def detect_r26_total_vs_lines_inconsistency(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:
+    """R26 — Cohérence totale facture : `EnergyInvoice.total_eur` vs Σ amount_eur lignes.
+
+    Persona Jean-Marc CFO : ROI 0,5-2 k€/an. Cas typique : facture papier mal
+    imprimée OU saisie/import partiel — total ≠ somme des lignes détaillées.
+    Sanity check cardinal qui complète les autres règles (anti-bruit aval).
+
+    Heuristique :
+    - Calculer `total_lignes = Σ amount_eur` sur toutes lignes invoice
+    - Comparer avec `invoice.total_eur` (TTC)
+    - Si écart > 5 % ET > 5 € absolu → R26 anomalie
+    - Tolère TVA implicite : si `total_lignes ~ total_eur / 1.20`, considère OK
+
+    Returns:
+        BillAnomaly ou None
+    """
+    if not invoice.total_eur or invoice.total_eur <= 0:
+        return None
+
+    lines = invoice.lines or []
+    if len(lines) < 2:  # Sanity check pas pertinent sur facture quasi-vide
+        return None
+
+    total_lignes_ht = sum(float(line.amount_eur or 0) for line in lines)
+    if total_lignes_ht <= 0:
+        return None
+
+    total_facture = float(invoice.total_eur)
+    # 2 hypothèses : lignes en TTC (=total_eur) ou en HT (×1.20 ≈ total_eur)
+    ecart_ttc = total_lignes_ht - total_facture
+    ecart_ht_x_tva = (total_lignes_ht * 1.20) - total_facture
+
+    # Le scénario qui colle le mieux gagne
+    ecart_eur = min((ecart_ttc, ecart_ht_x_tva), key=abs)
+    pct_base = total_facture
+    ecart_pct = abs(ecart_eur) / pct_base * 100 if pct_base > 0 else 0
+
+    if ecart_pct < 5 or abs(ecart_eur) < 5:
+        return None
+
+    severity = "critical" if abs(ecart_eur) > 50 else "warning"
+    return BillAnomaly(
+        invoice_id=invoice.id,
+        code="R26",
+        severity=severity,
+        threshold_value=Decimal("5.0"),
+        actual_value=Decimal(str(round(ecart_pct, 2))),
+        details_json={
+            "total_eur_facture": round(total_facture, 2),
+            "total_lignes_ht": round(total_lignes_ht, 2),
+            "total_lignes_x_tva20": round(total_lignes_ht * 1.20, 2),
+            "ecart_eur": round(ecart_eur, 2),
+            "ecart_pct": round(ecart_pct, 2),
+            "lines_count": len(lines),
+            "regulatory_ref": "Cohérence comptable interne (sanity check)",
+            "montant_anomalie_eur": round(abs(ecart_eur), 2),
+        },
+    )
+
+
 # ─── R25 Abonnement divergent contrat (Phase L Jean-Marc CFO ROI 1-3 k€/an) ─
 
 
@@ -470,16 +533,9 @@ def detect_r25_subscription_mismatch(invoice: EnergyInvoice, db: Session) -> Opt
 # ─── R22 Accise erronée (Phase I Jean-Marc CFO ROI 2-4 k€/an) ──────────────
 
 
-def _normalize_enum_value(raw) -> Optional[str]:
-    """Phase K cardinal : normalise un Enum SQLAlchemy ou String column en valeur string.
-
-    Helper module-level (P2 audit reporté Phase K — testable isolément + perf).
-    Gère 3 cas : Enum.value, raw string, None. Pattern réutilisable cross-services
-    (cohérent Pilier 13 ADR-016 SoT cross-services).
-    """
-    if raw is None:
-        return None
-    return raw.value if hasattr(raw, "value") else str(raw)
+# Phase L2.1 (P1 /simplify reporté) : helper extrait vers `utils/enum_normalize.py`
+# (Pilier 13 ADR-016 SoT cross-services). Alias rétro-compat conservé.
+from utils.enum_normalize import normalize_enum_value as _normalize_enum_value  # noqa: E402
 
 
 def _resolve_accise_rate_from_dp(
@@ -856,5 +912,14 @@ def detect_anomalies_for_invoice(
             anomalies.append(r25)
     except Exception as e:
         _logger.error(f"R25 detector failed for invoice {invoice.id}: {e}")
+
+    # R26 : 0 ou 1 — Phase L2 CFO sanity check total vs lignes
+    try:
+        r26 = detect_r26_total_vs_lines_inconsistency(invoice, db)
+        if r26:
+            db.add(r26)
+            anomalies.append(r26)
+    except Exception as e:
+        _logger.error(f"R26 detector failed for invoice {invoice.id}: {e}")
 
     return anomalies

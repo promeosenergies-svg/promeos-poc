@@ -1149,6 +1149,104 @@ class TestPhaseK2NormalizeAndCache:
         assert r1 == r2  # même résultat depuis cache
 
 
+# ─── Phase L2.1 — Helper normalize_enum_value SoT cardinal ──────────────────
+
+
+class TestPhaseL21NormalizeEnumValueExtracted:
+    def test_l21_helper_extracted_to_utils(self):
+        """L2.1 — `normalize_enum_value` est dans `utils/enum_normalize.py` (SoT)."""
+        from utils.enum_normalize import normalize_enum_value
+
+        assert callable(normalize_enum_value)
+
+    def test_l21_handles_all_3_cases(self):
+        """L2.1 — gère Enum / String / None (3 cas cardinal)."""
+        from models.enums import AcciseCategorieElec, StatutConformite
+        from utils.enum_normalize import normalize_enum_value
+
+        # Cas 1 : Enum SQLAlchemy
+        assert normalize_enum_value(AcciseCategorieElec.PME) == "PME"
+        assert normalize_enum_value(StatutConformite.CONFORME) == "conforme"
+        # Cas 2 : String raw (column String avec validator Enum)
+        assert normalize_enum_value("PME") == "PME"
+        assert normalize_enum_value("custom_value") == "custom_value"
+        # Cas 3 : None
+        assert normalize_enum_value(None) is None
+
+    def test_l21_alias_retro_compat_anomaly_detector(self):
+        """L2.1 — alias rétro-compat dans anomaly_detector pointe le SoT."""
+        from services.bill_intelligence.anomaly_detector import _normalize_enum_value
+        from utils.enum_normalize import normalize_enum_value
+
+        # Même fonction (alias)
+        assert _normalize_enum_value is normalize_enum_value
+
+
+# ─── Phase L2.2 — R26 Sanity check total_eur vs Σ lignes ───────────────────
+
+
+class TestPhaseL22R26SanityCheck:
+    def _seed_invoice_with_lines(self, db, total_eur, line_amounts):
+        """Helper : crée invoice + lignes pour test sanity check."""
+        from models import EnergyInvoiceLine
+        from models.enums import InvoiceLineType
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number=f"INV-R26-{total_eur}",
+            energy_kwh=10000,
+            total_eur=total_eur,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+        for i, amount in enumerate(line_amounts):
+            db.add(
+                EnergyInvoiceLine(
+                    invoice_id=invoice.id,
+                    line_type=InvoiceLineType.OTHER,
+                    label=f"Ligne {i + 1}",
+                    amount_eur=amount,
+                )
+            )
+        db.commit()
+        db.refresh(invoice)
+        return invoice
+
+    def test_l22_r26_detects_total_inconsistency(self, db):
+        """L2.2 — total_eur 1500 mais Σ lignes 1000 (ni TTC ni HT) → R26 critical."""
+        from services.bill_intelligence.anomaly_detector import (
+            detect_r26_total_vs_lines_inconsistency,
+        )
+
+        # 1000 HT × 1.20 = 1200 (toujours loin de 1500) → écart 300 €
+        invoice = self._seed_invoice_with_lines(db, total_eur=1500, line_amounts=[400.0, 600.0])
+        anomaly = detect_r26_total_vs_lines_inconsistency(invoice, db)
+        assert anomaly is not None
+        assert anomaly.code == "R26"
+        assert anomaly.severity == "critical"
+
+    def test_l22_r26_no_anomaly_when_lines_ttc_match(self, db):
+        """L2.2 — total 1200 et Σ lignes 1200 (lignes en TTC) → pas d'anomalie."""
+        from services.bill_intelligence.anomaly_detector import (
+            detect_r26_total_vs_lines_inconsistency,
+        )
+
+        invoice = self._seed_invoice_with_lines(db, total_eur=1200, line_amounts=[700.0, 500.0])
+        assert detect_r26_total_vs_lines_inconsistency(invoice, db) is None
+
+    def test_l22_r26_no_anomaly_when_lines_ht_x_tva_match(self, db):
+        """L2.2 — total 1200 TTC et Σ lignes 1000 HT (×1.20=1200) → pas d'anomalie."""
+        from services.bill_intelligence.anomaly_detector import (
+            detect_r26_total_vs_lines_inconsistency,
+        )
+
+        invoice = self._seed_invoice_with_lines(db, total_eur=1200, line_amounts=[600.0, 400.0])
+        assert detect_r26_total_vs_lines_inconsistency(invoice, db) is None
+
+
 # ─── Phase L1 — R25 Abonnement divergent contrat (Jean-Marc CFO) ───────────
 
 

@@ -68,10 +68,10 @@ def _statut_dt_value(site) -> str | None:
     Returns the canonical lowercase value ("conforme"/"non_conforme"/"a_risque"/...)
     or None if the site has no status set.
     """
-    raw = getattr(site, "statut_decret_tertiaire", None)
-    if raw is None:
-        return None
-    return raw.value if hasattr(raw, "value") else str(raw)
+    # Phase L2.1 — délégation au SoT cardinal `utils/enum_normalize.py`
+    from utils.enum_normalize import normalize_enum_value
+
+    return normalize_enum_value(getattr(site, "statut_decret_tertiaire", None))
 
 
 def _trajectory_learning_ratio(months_to_due: int, months_since_due: int) -> float:
@@ -1458,12 +1458,12 @@ def get_cockpit_essentials(
     )
 
     # Construire la liste de dicts sites (payload pour build_dashboard_essentials)
+    # Phase L2.1 — utilise SoT cardinal `utils/enum_normalize.py`
+    from utils.enum_normalize import normalize_enum_value as _norm_enum
+
     sites_payload = []
     for s in sites_objs:
-        statut = None
-        if s.statut_decret_tertiaire is not None:
-            raw = s.statut_decret_tertiaire
-            statut = raw.value if hasattr(raw, "value") else str(raw)
+        statut = _norm_enum(s.statut_decret_tertiaire)
         sites_payload.append(
             {
                 "id": s.id,
