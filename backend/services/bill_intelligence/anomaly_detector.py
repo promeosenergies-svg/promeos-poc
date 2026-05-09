@@ -35,17 +35,49 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from config.regulatory_sources_loader import get_term_value
+
+# Phase L24.1 — imports doctrine + DeliveryPoint + AcciseCategorieElec module-level
+# (avant L24.1 : dupliqués inside-function lignes 977-983 + 1653-1659 dans
+# _resolve_accise_rate_from_dp + build_dp_category_cache).
+from doctrine.constants import (
+    ACCISE_ELEC_HP_EUR_PER_MWH,
+    ACCISE_ELEC_T1_EUR_PER_MWH,
+    ACCISE_ELEC_T2_EUR_PER_MWH,
+)
 from models import (
     BillAnomaly,
+    DeliveryPoint,
     EnergyContract,
     EnergyInvoice,
     EnergyInvoiceLine,
     Meter,
     PowerContract,
 )
-from models.enums import BillAnomalySeverity, InvoiceLineType
+from models.enums import AcciseCategorieElec, BillAnomalySeverity, InvoiceLineType
 
 _logger = logging.getLogger(__name__)
+
+
+def _category_value_to_rate(cat_value: str) -> tuple[float, str, str]:
+    """Phase L24.1 — Helper SoT mapping `AcciseCategorieElec` → tarif accise.
+
+    Avant L24.1 : logique if/elif/else dupliquée VERBATIM dans
+    `_resolve_accise_rate_from_dp` (lignes 1004-1009) + `build_dp_category_cache`
+    (lignes 1678-1683). Ajout d'une catégorie CIBS (ex: TRES_HAUTE_PUISSANCE)
+    nécessitait patcher 2 endroits → drift silencieux risque.
+
+    Args:
+        cat_value : valeur enum AcciseCategorieElec normalisée
+
+    Returns:
+        tuple (rate_eur_per_mwh, cat_value, "DP_CATEGORY")
+    """
+    if cat_value == AcciseCategorieElec.HAUTE_PUISSANCE.value:
+        return (ACCISE_ELEC_HP_EUR_PER_MWH, cat_value, "DP_CATEGORY")
+    if cat_value == AcciseCategorieElec.PME.value:
+        return (ACCISE_ELEC_T2_EUR_PER_MWH, cat_value, "DP_CATEGORY")
+    return (ACCISE_ELEC_T1_EUR_PER_MWH, cat_value, "DP_CATEGORY")
+
 
 # Phase L8.2 — alias pour éviter répétition `BillAnomalySeverity.X.value`
 _SEV_CRITICAL = BillAnomalySeverity.CRITICAL.value
@@ -974,14 +1006,6 @@ def _resolve_accise_rate_from_dp(
     Returns:
         tuple (rate_eur_per_mwh, category_value, source_label)
     """
-    from doctrine.constants import (
-        ACCISE_ELEC_HP_EUR_PER_MWH,
-        ACCISE_ELEC_T1_EUR_PER_MWH,
-        ACCISE_ELEC_T2_EUR_PER_MWH,
-    )
-    from models import DeliveryPoint
-    from models.enums import AcciseCategorieElec
-
     site_id = getattr(invoice, "site_id", None)
 
     # Cache hit batch ingestion (Phase K perf)
@@ -1000,13 +1024,8 @@ def _resolve_accise_rate_from_dp(
         }
         categories.discard(None)
         if len(categories) == 1:
-            cat_value = categories.pop()
-            if cat_value == AcciseCategorieElec.HAUTE_PUISSANCE.value:
-                result = (ACCISE_ELEC_HP_EUR_PER_MWH, cat_value, "DP_CATEGORY")
-            elif cat_value == AcciseCategorieElec.PME.value:
-                result = (ACCISE_ELEC_T2_EUR_PER_MWH, cat_value, "DP_CATEGORY")
-            else:
-                result = (ACCISE_ELEC_T1_EUR_PER_MWH, cat_value, "DP_CATEGORY")
+            # Phase L24.1 — helper SoT _category_value_to_rate (avant : if/elif/else inline)
+            result = _category_value_to_rate(categories.pop())
 
     if cache is not None and site_id is not None:
         cache[site_id] = result
@@ -1650,14 +1669,6 @@ def build_dp_category_cache(db: Session, site_ids: list[int]) -> dict[int, tuple
     if not site_ids:
         return {}
 
-    from doctrine.constants import (
-        ACCISE_ELEC_HP_EUR_PER_MWH,
-        ACCISE_ELEC_T1_EUR_PER_MWH,
-        ACCISE_ELEC_T2_EUR_PER_MWH,
-    )
-    from models import DeliveryPoint
-    from models.enums import AcciseCategorieElec
-
     # 1 SELECT batch : (site_id, accise_categorie_elec) DISTINCT pour tous sites
     rows = (
         db.query(DeliveryPoint.site_id, DeliveryPoint.accise_categorie_elec)
@@ -1670,19 +1681,24 @@ def build_dp_category_cache(db: Session, site_ids: list[int]) -> dict[int, tuple
     for site_id, cat in rows:
         by_site.setdefault(site_id, set()).add(_normalize_enum_value(cat))
 
+    # Phase L24.1 audit fix P1 — pre-populate T1_FALLBACK pour sites multi-catégories
+    # ou aucune (avant L24.1 : absents du cache → N lazy queries en mode batch).
+    # Garantit cache hit systématique = élimination N+1 silencieux.
     cache: dict[int, tuple] = {}
+    fallback_tuple: tuple[float, str, str] = (
+        ACCISE_ELEC_T1_EUR_PER_MWH,
+        "T1_FALLBACK",
+        "FALLBACK",
+    )
+    # Pre-populate tous les site_ids requested avec fallback (overwrite si cat unique)
+    for site_id in site_ids:
+        cache[site_id] = fallback_tuple
+    # Phase L24.1 — helper SoT _category_value_to_rate (avant : if/elif/else inline)
     for site_id, categories in by_site.items():
         categories.discard(None)
         if len(categories) == 1:
-            cat_value = next(iter(categories))
-            if cat_value == AcciseCategorieElec.HAUTE_PUISSANCE.value:
-                cache[site_id] = (ACCISE_ELEC_HP_EUR_PER_MWH, cat_value, "DP_CATEGORY")
-            elif cat_value == AcciseCategorieElec.PME.value:
-                cache[site_id] = (ACCISE_ELEC_T2_EUR_PER_MWH, cat_value, "DP_CATEGORY")
-            else:
-                cache[site_id] = (ACCISE_ELEC_T1_EUR_PER_MWH, cat_value, "DP_CATEGORY")
-        # Sites avec multi-catégories ou aucune → absents du cache
-        # → lazy fallback T1 via _resolve_accise_rate_from_dp
+            cache[site_id] = _category_value_to_rate(next(iter(categories)))
+        # Sites multi-catégories : conservent fallback T1 (cache hit garanti)
     return cache
 
 

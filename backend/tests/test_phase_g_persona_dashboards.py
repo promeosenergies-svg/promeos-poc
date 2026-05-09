@@ -3089,8 +3089,8 @@ class TestPhaseGP1FixesSourceGuards:
         assert 'severity="warning"' not in src
         assert 'severity = "critical"' not in src
         assert 'severity = "warning"' not in src
-        # Enum import + alias présents
-        assert "from models.enums import BillAnomalySeverity" in src
+        # Enum import + alias présents (Phase L24.1 — import groupé multi-enums OK)
+        assert "BillAnomalySeverity" in src and "from models.enums import" in src
         assert "_SEV_CRITICAL = BillAnomalySeverity.CRITICAL.value" in src
         assert "_SEV_WARNING = BillAnomalySeverity.WARNING.value" in src
 

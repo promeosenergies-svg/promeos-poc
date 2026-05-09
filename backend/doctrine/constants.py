@@ -18,7 +18,7 @@ _logger = _logging.getLogger(__name__)
 
 
 def _load_yaml_or_fallback(key: str, fallback: float) -> float:
-    """Phase L16.4 — Defensive lazy-load avec fallback hardcoded.
+    """Phase L16.4 — Defensive lazy-load avec fallback hardcoded (numeric).
 
     Évite crash module-load si YAML key manquante (CI fresh checkout, test
     isolation, etc.). Logue warning explicite pour détection drift YAML/code.
@@ -28,6 +28,25 @@ def _load_yaml_or_fallback(key: str, fallback: float) -> float:
     except (KeyError, ValueError, FileNotFoundError, TypeError) as e:
         _logger.warning(
             "doctrine.constants YAML lookup failed for %s (%s) — fallback to hardcoded %s",
+            key,
+            type(e).__name__,
+            fallback,
+        )
+        return fallback
+
+
+def _load_yaml_str_or_fallback(key: str, fallback: str) -> str:
+    """Phase L24.2 — Variante string du helper defensive lazy-load.
+
+    Pour les valeurs YAML non-numériques (dates ISO, references, labels).
+    Pattern aligné `_load_yaml_or_fallback` (logging warning sur drift/missing).
+    """
+    try:
+        value = _get_term_value(key)
+        return str(value) if value is not None else fallback
+    except (KeyError, ValueError, FileNotFoundError, TypeError) as e:
+        _logger.warning(
+            "doctrine.constants YAML str lookup failed for %s (%s) — fallback to hardcoded %s",
             key,
             type(e).__name__,
             fallback,
@@ -68,7 +87,12 @@ BACS_PENALTY_EUR = (
     1500  # amende par site non conforme BACS — voir sources_reglementaires.yaml:COMPLIANCE_BACS_PENALTY_EUR
 )
 BACS_THRESHOLD_KW_INITIAL = 290  # seuil BACS bâtiments neufs Décret 2020-887 (en vigueur depuis 01/01/2025)
-BACS_THRESHOLD_KW_EXISTING = 70  # seuil BACS bâtiments existants Décret 2025-1343 (à respecter au 01/01/2030)
+# Phase L24.2 audit fix P1 — lazy-load YAML SoT (avant : hardcoded production-path
+# consommé par cascade_bacs_service.py:60 — drift silencieux scoring BACS si décret
+# futur modifie le seuil). Mapping nom Python EXISTING → YAML 2030.
+BACS_THRESHOLD_KW_EXISTING: int = int(
+    _load_yaml_or_fallback("BACS_THRESHOLD_KW_2030", fallback=70)
+)  # seuil BACS bâtiments existants Décret 2025-1343 (01/01/2030)
 BACS_DEADLINE_EXISTING = "2030-01-01"  # deadline équipement BACS bâtiments existants >70 kW
 
 # ─── OPERAT / Décret Tertiaire déclaration ─────────────────────────────────
@@ -143,13 +167,21 @@ NEBCO_ACTIVATION_END_HOUR = "22:00"  # J
 # Taux selon catégorie AcciseCategorieElec (matrice v1 §4.6.B#16 ADR-D-05)
 ACCISE_ELEC_T1_EUR_PER_MWH = 30.85  # MENAGES_ASSIMILES
 ACCISE_ELEC_T2_EUR_PER_MWH = 26.58  # PME
-ACCISE_ELEC_HP_EUR_PER_MWH = 5.71  # HAUTE_PUISSANCE (>10 GWh/an industriel)
+# Phase L24.2 audit fix P1 — lazy-load YAML SoT (avant : hardcoded SANS clé YAML →
+# drift silencieux garanti si LFI modifie taux HP). Phase L24.2 a créé la clé YAML
+# `ACCISE_ELEC_HP_EUR_PER_MWH = 5.71` dans sources_reglementaires.yaml.
+ACCISE_ELEC_HP_EUR_PER_MWH: float = _load_yaml_or_fallback(
+    "ACCISE_ELEC_HP_EUR_PER_MWH", fallback=5.71
+)  # HAUTE_PUISSANCE (>10 GWh/an industriel)
 ACCISE_GAS_EUR_PER_MWH = 10.73
 
 # ─── Audit SMÉ ─────────────────────────────────────────────────────────────
 AUDIT_SME_THRESHOLD_GWH_PERIODIC = 2.75  # audit obligatoire tous les 4 ans
 AUDIT_SME_THRESHOLD_GWH_ISO50001 = 23.6  # ISO 50001 obligatoire
-AUDIT_SME_DEADLINE_DATE = "2026-10-11"
+# Phase L24.2 audit fix P1 — lazy-load YAML SoT (avant : hardcoded production-path
+# consommé par persona_dashboard_service.py:189 — drift silencieux dashboard si
+# YAML corrigé). Mapping nom Python AUDIT_SME_DEADLINE_DATE → YAML AUDIT_SME_DEADLINE_FIRST_AUDIT.
+AUDIT_SME_DEADLINE_DATE: str = _load_yaml_str_or_fallback("AUDIT_SME_DEADLINE_FIRST_AUDIT", fallback="2026-10-11")
 
 # ─── Pondérations RegOps ───────────────────────────────────────────────────
 REGOPS_WEIGHTS_AUDIT_APPLICABLE = {"DT": 0.39, "BACS": 0.28, "APER": 0.17, "AUDIT": 0.16}
