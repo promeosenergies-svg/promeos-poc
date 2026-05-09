@@ -387,16 +387,39 @@ def detect_r21_cta_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[Bil
 # ─── R22 Accise erronée (Phase I Jean-Marc CFO ROI 2-4 k€/an) ──────────────
 
 
-def _resolve_accise_rate_from_dp(invoice: EnergyInvoice, db: Session) -> tuple[float, str, str]:
+def _normalize_enum_value(raw) -> Optional[str]:
+    """Phase K cardinal : normalise un Enum SQLAlchemy ou String column en valeur string.
+
+    Helper module-level (P2 audit reporté Phase K — testable isolément + perf).
+    Gère 3 cas : Enum.value, raw string, None. Pattern réutilisable cross-services
+    (cohérent Pilier 13 ADR-016 SoT cross-services).
+    """
+    if raw is None:
+        return None
+    return raw.value if hasattr(raw, "value") else str(raw)
+
+
+def _resolve_accise_rate_from_dp(
+    invoice: EnergyInvoice,
+    db: Session,
+    *,
+    cache: Optional[dict] = None,
+) -> tuple[float, str, str]:
     """Phase J — Résout le taux accise applicable selon `AcciseCategorieElec` du DP.
 
     Pattern Pilier 13 ADR-016 (SoT cardinal) : utilise les catégories CIBS
     déclarées sur les DeliveryPoints liés à l'invoice via Site → Meter → DP.
     Fallback T1 (MENAGES_ASSIMILES) si catégorie indéterminée.
 
+    Phase K cardinal cache : `cache` dict optionnel `{site_id: result}` pour batch
+    ingestion N invoices/site (évite N queries DP redondantes). P2 audit reporté
+    Phase K (perf hot-path).
+
+    Phase K perf : query `with_entities(...).distinct()` sur colonne scalaire
+    (vs charger tous DP objects).
+
     Returns:
         tuple (rate_eur_per_mwh, category_value, source_label)
-        Ex: (30.85, "MENAGES_ASSIMILES", "DP_CATEGORY") ou (30.85, "T1_FALLBACK", "FALLBACK")
     """
     from doctrine.constants import (
         ACCISE_ELEC_HP_EUR_PER_MWH,
@@ -406,29 +429,35 @@ def _resolve_accise_rate_from_dp(invoice: EnergyInvoice, db: Session) -> tuple[f
     from models import DeliveryPoint
     from models.enums import AcciseCategorieElec
 
-    # Récupère toutes les DP du site de l'invoice (DP.site_id direct)
     site_id = getattr(invoice, "site_id", None)
+
+    # Cache hit batch ingestion (Phase K perf)
+    if cache is not None and site_id is not None and site_id in cache:
+        return cache[site_id]
+
+    result: tuple[float, str, str] = (ACCISE_ELEC_T1_EUR_PER_MWH, "T1_FALLBACK", "FALLBACK")
     if site_id:
-        dps = db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site_id).all()
-
-        # Catégorie peut être stockée en Enum ou string — normaliser en string value
-        def _cat_value(raw):
-            if raw is None:
-                return None
-            return raw.value if hasattr(raw, "value") else str(raw)
-
-        categories = {_cat_value(dp.accise_categorie_elec) for dp in dps}
+        # Phase K perf : DISTINCT scalaire (vs charger objets DP complets)
+        categories = {
+            _normalize_enum_value(row[0])
+            for row in db.query(DeliveryPoint.accise_categorie_elec)
+            .filter(DeliveryPoint.site_id == site_id)
+            .distinct()
+            .all()
+        }
         categories.discard(None)
         if len(categories) == 1:
             cat_value = categories.pop()
             if cat_value == AcciseCategorieElec.HAUTE_PUISSANCE.value:
-                return ACCISE_ELEC_HP_EUR_PER_MWH, cat_value, "DP_CATEGORY"
-            if cat_value == AcciseCategorieElec.PME.value:
-                return ACCISE_ELEC_T2_EUR_PER_MWH, cat_value, "DP_CATEGORY"
-            return ACCISE_ELEC_T1_EUR_PER_MWH, cat_value, "DP_CATEGORY"
+                result = (ACCISE_ELEC_HP_EUR_PER_MWH, cat_value, "DP_CATEGORY")
+            elif cat_value == AcciseCategorieElec.PME.value:
+                result = (ACCISE_ELEC_T2_EUR_PER_MWH, cat_value, "DP_CATEGORY")
+            else:
+                result = (ACCISE_ELEC_T1_EUR_PER_MWH, cat_value, "DP_CATEGORY")
 
-    # Fallback T1 (MENAGES_ASSIMILES par défaut administratif)
-    return ACCISE_ELEC_T1_EUR_PER_MWH, "T1_FALLBACK", "FALLBACK"
+    if cache is not None and site_id is not None:
+        cache[site_id] = result
+    return result
 
 
 def detect_r22_accise_mismatch(invoice: EnergyInvoice, db: Session) -> Optional[BillAnomaly]:

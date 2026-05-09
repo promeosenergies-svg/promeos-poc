@@ -1055,6 +1055,100 @@ class TestPhaseI3PDFExport:
         assert r.content[:4] == b"%PDF"
 
 
+# ─── Phase K1 — Refacto __init__ → @event.listens_for(init) orthodoxe SQLAlchemy ──
+
+
+class TestPhaseK1EventListenerRefactor:
+    def test_k1_event_listener_fires_on_construction(self, db, caplog):
+        """K1 — `@event.listens_for(EnergyContract, 'init')` fire sur création Python."""
+        import logging
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        with caplog.at_level(logging.WARNING, logger="promeos.billing"):
+            EnergyContract(
+                site_id=sites[0].id,
+                energy_type=BillingEnergyType.ELEC,
+                supplier_name="UnknownSupplier",
+                end_date=date.today() + timedelta(days=180),
+            )
+        # Listener fire le warning (mode soft défaut)
+        assert any("Phase J2 ADR-F-04" in r.message for r in caplog.records)
+
+    def test_k1_event_listener_does_not_fire_on_load(self, db):
+        """K1 — Listener ne fire PAS sur load DB (pattern orthodoxe SQLAlchemy)."""
+        import json
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        # Création initiale avec legacy override
+        c = EnergyContract(
+            site_id=sites[0].id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            end_date=date.today() + timedelta(days=180),
+            metadata_json=json.dumps({"phase_j2_legacy": True}),
+        )
+        db.add(c)
+        db.commit()
+        cid = c.id
+        db.expire_all()
+
+        # Reload depuis DB ne doit PAS déclencher de warning (pattern correct)
+        loaded = db.query(EnergyContract).filter_by(id=cid).first()
+        assert loaded is not None
+        assert loaded.fournisseur_id is None  # legacy preserved
+
+
+# ─── Phase K2 — _normalize_enum_value module-level + cache batch ──────────
+
+
+class TestPhaseK2NormalizeAndCache:
+    def test_k2_normalize_handles_enum_string_none(self):
+        """K2 — _normalize_enum_value gère 3 cas : Enum.value / string raw / None."""
+        from models.enums import AcciseCategorieElec
+        from services.bill_intelligence.anomaly_detector import _normalize_enum_value
+
+        assert _normalize_enum_value(None) is None
+        assert _normalize_enum_value(AcciseCategorieElec.PME) == "PME"
+        assert _normalize_enum_value("PME") == "PME"
+        assert _normalize_enum_value(AcciseCategorieElec.HAUTE_PUISSANCE) == "HAUTE_PUISSANCE"
+
+    def test_k2_resolver_cache_batch_avoids_redundant_queries(self, db):
+        """K2 — `cache` dict évite N queries DP pour N invoices/site (perf batch)."""
+        from models import DeliveryPoint
+        from models.enums import AcciseCategorieElec, DeliveryPointEnergyType
+        from services.bill_intelligence.anomaly_detector import _resolve_accise_rate_from_dp
+
+        _, _, _, sites = _seed_org_with_sites(db, n_sites=1)
+        dp = DeliveryPoint(
+            code="14999100000099",
+            energy_type=DeliveryPointEnergyType.ELEC,
+            site_id=sites[0].id,
+            accise_categorie_elec=AcciseCategorieElec.PME,
+        )
+        db.add(dp)
+        db.commit()
+
+        invoice = EnergyInvoice(
+            site_id=sites[0].id,
+            invoice_number="INV-K2",
+            energy_kwh=1000,
+            total_eur=100,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(invoice)
+        db.flush()
+
+        cache: dict = {}
+        # 1er appel : query DB + populate cache
+        r1 = _resolve_accise_rate_from_dp(invoice, db, cache=cache)
+        assert r1[2] == "DP_CATEGORY"
+        assert sites[0].id in cache
+        # 2nd appel : cache hit (pas de query)
+        r2 = _resolve_accise_rate_from_dp(invoice, db, cache=cache)
+        assert r1 == r2  # même résultat depuis cache
+
+
 # ─── Phase J2 — ADR-F-04 hard-cut supplier_name → fournisseur_id ────────────
 
 
