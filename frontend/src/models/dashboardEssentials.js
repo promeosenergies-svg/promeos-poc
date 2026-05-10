@@ -403,11 +403,14 @@ export function buildExecutiveSummary(kpis, _topSites = {}) {
  *
  * @param {object}   kpis
  * @param {object[]} sites — scopedSites (for couverture count)
+ * @param {object}   weights — { data, conformity, actions } pondérations.
+ *   Phase L31.2 — injection paramètre depuis useRegulatoryConstants() côté React.
+ *   Default = READINESS_WEIGHTS (rétro-compat tests + module pur sans hooks).
  * @returns {ExecKpi[]}
  *
  * ExecKpi: { id, accentKey, label, value, sub, status, path? }
  */
-export function buildExecutiveKpis(kpis, sites = []) {
+export function buildExecutiveKpis(kpis, sites = [], weights = READINESS_WEIGHTS) {
   const { total, conformes, nonConformes, aRisque, risqueTotal, couvertureDonnees } = kpis;
   // A.2: Score unifié (0-100) — source unique backend (règle no-calc-in-front)
   const complianceScore = kpis.compliance_score != null ? Math.round(kpis.compliance_score) : null;
@@ -418,9 +421,9 @@ export function buildExecutiveKpis(kpis, sites = []) {
   const readinessScore =
     total > 0
       ? Math.round(
-          couvertureDonnees * READINESS_WEIGHTS.data +
-            pctConf * READINESS_WEIGHTS.conformity +
-            actionsActives * READINESS_WEIGHTS.actions
+          couvertureDonnees * weights.data +
+            pctConf * weights.conformity +
+            actionsActives * weights.actions
         )
       : 0;
   const sitesWithData = sites.filter((s) => s.conso_kwh_an > 0).length;

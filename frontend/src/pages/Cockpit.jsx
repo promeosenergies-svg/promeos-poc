@@ -59,7 +59,10 @@ import BoutonRapportCOMEX from './cockpit/BoutonRapportCOMEX';
 import ModuleLaunchers from './cockpit/ModuleLaunchers';
 import DataQualityWidget from './cockpit/DataQualityWidget';
 import DemoSpotlight from '../components/onboarding/DemoSpotlight';
-import { READINESS_WEIGHTS, getRiskStatus, getStatusBadgeProps } from '../lib/constants';
+import { getRiskStatus, getStatusBadgeProps } from '../lib/constants';
+// Phase L31.2 audit fix P1 — READINESS_WEIGHTS consommé via Context API
+// (lazy-load YAML SoT) au lieu de import statique lib/constants.
+import { useRegulatoryConstants } from '../contexts/RegulatoryConstantsContext';
 import { RiskBadge } from '../lib/risk/normalizeRisk';
 import {
   evidenceConformite,
@@ -111,6 +114,11 @@ function ConsistencyBanner({ issues }) {
 const Cockpit = () => {
   useRenderTiming('Cockpit');
   const navigate = useNavigate();
+  // Phase L31.2 audit fix P1 — READINESS_WEIGHTS lus depuis Context API (SoT YAML
+  // backend). Fallback identique au défaut si l'API n'a pas encore répondu (cf.
+  // FALLBACK_CONSTANTS.readiness_weights dans RegulatoryConstantsContext.jsx).
+  const { constants: regConstants } = useRegulatoryConstants();
+  const readinessWeights = regConstants.readiness_weights;
   // Sprint 1.4bis P0 (audit Nav fin S1) : si /cockpit sans ?angle=, on
   // matérialise dans l'URL pour que la nav et le partage de lien
   // reflètent l'angle réellement consommé. Default = comex (Jean-Marc CFO).
@@ -1244,7 +1252,7 @@ const Cockpit = () => {
               <div className="flex items-center justify-between text-sm text-gray-700 mb-1">
                 <span>Couverture données</span>
                 <span className="text-xs text-gray-400">
-                  poids : {Math.round(READINESS_WEIGHTS.data * 100)}%
+                  poids : {Math.round(readinessWeights.data * 100)}%
                 </span>
               </div>
               <Progress value={kpis.couvertureDonnees} color="blue" size="sm" />
@@ -1260,7 +1268,7 @@ const Cockpit = () => {
                   {/* Sprint C-3 Phase 3.5 — TraceTooltip R10 (poids readiness) */}
                   poids :{' '}
                   <TraceTooltip termId="READINESS_WEIGHT_CONFORMITY_PCT">
-                    {Math.round(READINESS_WEIGHTS.conformity * 100)}%
+                    {Math.round(readinessWeights.conformity * 100)}%
                   </TraceTooltip>
                 </span>
               </div>
@@ -1274,7 +1282,7 @@ const Cockpit = () => {
               <div className="flex items-center justify-between text-sm text-gray-700 mb-1">
                 <span>Actions actives</span>
                 <span className="text-xs text-gray-400">
-                  poids : {Math.round(READINESS_WEIGHTS.actions * 100)}%
+                  poids : {Math.round(readinessWeights.actions * 100)}%
                 </span>
               </div>
               <Progress value={kpis.actionsActives} color="blue" size="sm" />

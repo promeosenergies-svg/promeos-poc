@@ -110,12 +110,16 @@ describe('Cockpit — centralized constants', () => {
     }
   });
 
-  it('weight display uses READINESS_WEIGHTS (no hardcoded "poids : 30%")', () => {
+  it('weight display uses readinessWeights from RegulatoryConstantsContext (no hardcoded "poids : 30%")', () => {
+    // Phase L31.2 audit fix P1 — Cockpit.jsx consomme désormais
+    // useRegulatoryConstants().constants.readiness_weights via la variable
+    // locale `readinessWeights` au lieu de l'import statique READINESS_WEIGHTS.
     expect(src).not.toMatch(/poids : 30%/);
     expect(src).not.toMatch(/poids : 40%/);
-    expect(src).toContain('READINESS_WEIGHTS.data');
-    expect(src).toContain('READINESS_WEIGHTS.conformity');
-    expect(src).toContain('READINESS_WEIGHTS.actions');
+    expect(src).toContain('useRegulatoryConstants');
+    expect(src).toContain('readinessWeights.data');
+    expect(src).toContain('readinessWeights.conformity');
+    expect(src).toContain('readinessWeights.actions');
   });
 });
 
