@@ -5,12 +5,15 @@ Synchronise les actions des 4 briques vers ActionItem (persiste, idempotent).
 
 import hashlib
 import json
+import logging
 from datetime import date, datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
 from services.action_status_service import mark_action_done
+
+_logger = logging.getLogger(__name__)
 
 from models import (
     Site,
@@ -225,7 +228,15 @@ def build_actions_from_purchase(db: Session, org_id: int) -> List[dict]:
 
     try:
         result = compute_purchase_actions(db, org_id=org_id)
-    except Exception:
+    except Exception as exc:
+        # Phase L33.1 audit fix P1 — silent except remplacé par logger.error explicite
+        # (interdiction silent fails — Reviewer #1 META-AUDIT L33).
+        _logger.error(
+            "compute_purchase_actions failed for org=%d: %s",
+            org_id,
+            exc,
+            exc_info=True,
+        )
         return []
 
     actions = []

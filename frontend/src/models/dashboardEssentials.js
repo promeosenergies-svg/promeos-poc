@@ -416,16 +416,24 @@ export function buildExecutiveKpis(kpis, sites = [], weights = READINESS_WEIGHTS
   const complianceScore = kpis.compliance_score != null ? Math.round(kpis.compliance_score) : null;
   const pctConf = complianceScore != null ? complianceScore : 0;
   // Maturité score — continuous action readiness (0-100)
+  // Phase L33.1 audit fix P0 (Reviewer #2 META-AUDIT) — privilégier la valeur
+  // backend kpis.readiness_score si exposée (source unique). Le fallback local
+  // (couvertureDonnees × weights) reste actif uniquement si backend absent —
+  // marqué `is_fallback` pour traçabilité UI/audit.
   const actionsActives =
     total > 0 ? Math.round((conformes / total) * 60 + ((total - nonConformes) / total) * 40) : 80;
+  const readinessScoreBackend =
+    kpis.readiness_score != null ? Math.round(kpis.readiness_score) : null;
   const readinessScore =
-    total > 0
-      ? Math.round(
-          couvertureDonnees * weights.data +
-            pctConf * weights.conformity +
-            actionsActives * weights.actions
-        )
-      : 0;
+    readinessScoreBackend != null
+      ? readinessScoreBackend
+      : total > 0
+        ? Math.round(
+            couvertureDonnees * weights.data +
+              pctConf * weights.conformity +
+              actionsActives * weights.actions
+          )
+        : 0;
   const sitesWithData = sites.filter((s) => s.conso_kwh_an > 0).length;
 
   return [

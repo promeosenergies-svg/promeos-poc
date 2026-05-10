@@ -26,6 +26,7 @@ ne se cassent pas mutuellement.
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 from decimal import Decimal
@@ -326,10 +327,9 @@ def _resolve_period_code(line: EnergyInvoiceLine) -> Optional[str]:
             if code:
                 return code
         elif isinstance(meta, str):
+            # Phase L33.1 audit fix P0 — `import json` remonté en tête de module.
             # meta_json stocké en TEXT JSON — best-effort parse
             try:
-                import json
-
                 parsed = json.loads(meta)
                 if isinstance(parsed, dict) and parsed.get("period_code"):
                     return parsed["period_code"]

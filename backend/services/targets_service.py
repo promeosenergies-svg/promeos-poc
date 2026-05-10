@@ -3,10 +3,13 @@ PROMEOS - Targets Service (Objectifs & Budgets)
 CRUD + progression tracking + forecast for consumption targets.
 """
 
+import logging
 from datetime import datetime, date, timezone
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+
+_logger = logging.getLogger(__name__)
 
 from models.consumption_target import ConsumptionTarget
 from models import Meter, MeterReading, Site
@@ -336,8 +339,10 @@ def get_progression_v2(
                 # Sort by impact, take top 3
                 causes.sort(key=lambda c: c["estimated_loss_kwh"], reverse=True)
                 variance_decomposition = causes[:3]
-    except Exception:
-        pass  # Graceful degradation if detectors fail
+    except Exception as exc:
+        # Phase L33.1 audit fix P1 — bare pass remplacé par logger.warning explicite
+        # (interdiction des silent fails en code pilote — Reviewer #1 META-AUDIT L33).
+        _logger.warning("variance_decomposition failed (graceful degradation): %s", exc)
 
     base["run_rate_kwh"] = run_rate_kwh
     base["variance_decomposition"] = variance_decomposition

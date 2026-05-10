@@ -83,8 +83,11 @@ function normalizeTrajectory(raw) {
     refKwh: raw.ref_kwh,
     reductionPctActuelle: raw.reduction_pct_actuelle,
     // C3 FIX: toujours extraire objectifPremierJalonPct (sinon bannière retard jamais affichée)
+    // Fallback -40.0 = DT_MILESTONE_2030_PCT (Décret 2019-771 art. R174-22, jalon officiel)
     objectifPremierJalonPct: raw.objectif_2030_pct ?? raw.jalons?.[0]?.pct ?? -40.0,
-    objectif2026Pct: raw.objectif_2026_pct ?? -25.0,
+    // Phase L33.1 audit fix P0 (Reviewer #2) — `objectif2026Pct` retiré : magic
+    // number -25.0 non sourcé (Décret 2019-771 ne définit AUCUN jalon 2026).
+    // Aucun JSX ne consommait ce champ — dead code éliminé.
     annees: raw.annees ?? [],
     reelMwh: raw.reel_mwh ?? [],
     objectifMwh: raw.objectif_mwh ?? [],

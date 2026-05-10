@@ -18,7 +18,8 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from doctrine.constants import (
-    APER_DEADLINE_DATE,
+    APER_DEADLINE_LARGE_PARKING_DATE,
+    APER_DEADLINE_SMALL_PARKING_DATE,
     APER_PARKING_LARGE_SURFACE_M2,
     APER_PARKING_MIN_SURFACE_M2,
     APER_PENALTY_EUR_PER_M2_PER_YEAR,
@@ -76,7 +77,12 @@ def get_regulatory_constants() -> dict:
             "surface_min_m2": APER_PARKING_MIN_SURFACE_M2,
             "surface_large_m2": APER_PARKING_LARGE_SURFACE_M2,
             "solar_ratio_pct": APER_SOLAR_RATIO_PCT,
-            "deadline_iso": APER_DEADLINE_DATE,
+            # Phase L33.1 audit fix P0 — deadline_iso (legacy alias APER_DEADLINE_DATE)
+            # divergeait de 6 mois vs SoT YAML (2028-01-01 vs 2028-07-01). Désormais
+            # consomme APER_DEADLINE_SMALL_PARKING_DATE (lazy-load YAML SoT) +
+            # exposition deadline_large_iso (parkings >10000 m² IMMINENT 2026-07-01).
+            "deadline_iso": APER_DEADLINE_SMALL_PARKING_DATE,
+            "deadline_large_iso": APER_DEADLINE_LARGE_PARKING_DATE,
             "source": "Loi 2023-175 art. 40 + Décret 2022-1726",
             "label": "APER — solarisation parkings",
         },
