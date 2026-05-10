@@ -474,8 +474,9 @@ def test_sg_reg_const_11_dt_trajectory_objectifs_match_milestones():
         OBJECTIF_2050_PCT,
     )
 
-    assert OBJECTIF_2030_PCT == abs(DT_MILESTONES[2030]) * 100, (
-        f"Drift OBJECTIF_2030_PCT={OBJECTIF_2030_PCT} vs abs(DT_MILESTONES[2030])*100={abs(DT_MILESTONES[2030]) * 100}"
-    )
-    assert OBJECTIF_2040_PCT == abs(DT_MILESTONES[2040]) * 100
-    assert OBJECTIF_2050_PCT == abs(DT_MILESTONES[2050]) * 100
+    # Phase L30.1 audit fix P1 — le service round(..., 2) pour éliminer float drift IEEE 754.
+    # Le SG vérifie l'invariant strict 40.0/50.0/60.0 (anti-drift silencieux côté consumer
+    # qui ferait `== 40.0` strict).
+    assert OBJECTIF_2030_PCT == 40.0, f"Drift OBJECTIF_2030_PCT={OBJECTIF_2030_PCT} (attendu 40.0)"
+    assert OBJECTIF_2040_PCT == 50.0, f"Drift OBJECTIF_2040_PCT={OBJECTIF_2040_PCT} (attendu 50.0)"
+    assert OBJECTIF_2050_PCT == 60.0, f"Drift OBJECTIF_2050_PCT={OBJECTIF_2050_PCT} (attendu 60.0)"

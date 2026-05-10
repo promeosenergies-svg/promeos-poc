@@ -26,12 +26,13 @@ from doctrine.constants import DT_MILESTONES
 logger = logging.getLogger("promeos.dt_trajectory")
 
 # Objectifs réglementaires — Décret n°2019-771, art. R131-39 CCH
-# Phase L29.1 audit fix P1 — alias depuis doctrine.constants SoT YAML lazy-load
-# (avant : 40.0 / 50.0 / 60.0 hardcoded en parallèle de DT_MILESTONES — drift
-# silencieux si décret modifie objectifs). Conversion ratio→pourcentage absolu.
-OBJECTIF_2030_PCT = abs(DT_MILESTONES[2030]) * 100  # 40.0
-OBJECTIF_2040_PCT = abs(DT_MILESTONES[2040]) * 100  # 50.0
-OBJECTIF_2050_PCT = abs(DT_MILESTONES[2050]) * 100  # 60.0
+# Phase L29.1 + L30.1 audit fix P1 — alias depuis doctrine.constants SoT YAML
+# lazy-load. Phase L30.1 : `round(..., 2)` pour éliminer float drift IEEE 754
+# (`abs(-0.40) * 100 = 40.00000000000001` en Python natif). Toute comparaison
+# stricte `== 40.0` côté consumer aurait échoué silencieusement avant fix.
+OBJECTIF_2030_PCT = round(abs(DT_MILESTONES[2030]) * 100, 2)  # 40.0
+OBJECTIF_2040_PCT = round(abs(DT_MILESTONES[2040]) * 100, 2)  # 50.0
+OBJECTIF_2050_PCT = round(abs(DT_MILESTONES[2050]) * 100, 2)  # 60.0
 
 
 @dataclass

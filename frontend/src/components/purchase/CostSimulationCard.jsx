@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, AlertTriangle } from 'lucide-react';
 import { getCostSimulation2026 } from '../../services/api/purchase';
 import { useScope } from '../../contexts/ScopeContext';
+import { useRegulatoryConstants } from '../../contexts/RegulatoryConstantsContext';
 import { toPurchase } from '../../services/routes';
 import { fmtEur } from '../../utils/format';
 import { Skeleton, InfoTip, Explain } from '../../ui';
@@ -136,6 +137,9 @@ function ComposanteBar({
 export default function CostSimulationCard({ siteId: siteIdProp, year: yearProp = 2026 }) {
   const navigate = useNavigate();
   const { scope } = useScope();
+  // Phase L30.1 audit fix P1 — VNU seuil bas via RegulatoryConstantsContext
+  // (lazy-load YAML SoT) au lieu de fallback hardcoded `?? 78`.
+  const { constants: regConstants } = useRegulatoryConstants();
 
   const resolvedSiteId = siteIdProp || scope?.siteId || null;
 
@@ -241,7 +245,7 @@ export default function CostSimulationCard({ siteId: siteIdProp, year: yearProp 
 
   const vnuStatut = hypotheses?.vnu_statut || 'dormant';
   const vnuActif = vnuStatut === 'actif';
-  const vnuSeuil = hypotheses?.vnu_seuil_active_eur_mwh ?? 78;
+  const vnuSeuil = hypotheses?.vnu_seuil_active_eur_mwh ?? regConstants.vnu.seuil_bas_eur_mwh;
 
   const deltaIsNegative = deltaPct != null && deltaPct < 0;
   const deltaIsPositive = deltaPct != null && deltaPct > 0;

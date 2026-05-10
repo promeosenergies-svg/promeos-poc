@@ -30,7 +30,11 @@ const FALLBACK_CONSTANTS = {
     surface_min_m2: 1500,
     surface_large_m2: 10000,
     solar_ratio_pct: 50.0,
-    deadline_iso: '2028-01-01',
+    // Phase L30.1 audit fix P1 — deadline_iso drift corrigé (2028-01-01 → 2028-07-01,
+    // aligné sur APER_DEADLINE_SMALL_PARKING_DATE doctrine Phase L29.1).
+    // deadline_iso = pour parkings 1500-10000 m² (legacy alias = SMALL).
+    deadline_iso: '2028-07-01',
+    deadline_large_iso: '2026-07-01', // parkings >10000 m² (IMMINENT) — APER_DEADLINE_LARGE_PARKING_DATE
     source: 'Fallback Loi 2023-175 (API non chargée)',
     label: 'APER — solarisation parkings',
   },

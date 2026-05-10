@@ -61,6 +61,14 @@ describe('RegulatoryConstantsContext — FALLBACK_CONSTANTS complet (Phase L29.3
     expect(contextSrc).toMatch(/solar_ratio_pct:\s*50\.0/);
   });
 
+  it('FALLBACK_CONSTANTS.aper deadline_iso aligné SoT doctrine APER_DEADLINE_SMALL=2028-07-01 (Phase L30.1 fix drift)', () => {
+    // Phase L30.1 audit fix P1 — anti-régression : la deadline FE ne doit jamais
+    // diverger de doctrine.constants.APER_DEADLINE_SMALL_PARKING_DATE (2028-07-01).
+    expect(contextSrc).toContain("deadline_iso: '2028-07-01'");
+    // deadline_large_iso pour parkings >10000 m² (IMMINENT — APER_DEADLINE_LARGE)
+    expect(contextSrc).toContain("deadline_large_iso: '2026-07-01'");
+  });
+
   it('FALLBACK_CONSTANTS.dt aligne sur SoT doctrine.constants (DT_PENALTY_EUR=7500, DT_PENALTY_AT_RISK=3750)', () => {
     expect(contextSrc).toMatch(/penalty_eur:\s*7500/);
     expect(contextSrc).toMatch(/penalty_at_risk_eur:\s*3750/);

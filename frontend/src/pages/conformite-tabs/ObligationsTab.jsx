@@ -540,7 +540,10 @@ function ObligationCard({
             </span>
             {bacsV2Summary.threshold_kw && (
               <span className="text-gray-600">
-                Seuil: {bacsV2Summary.threshold_kw >= 290 ? '\u2265290 kW' : '\u226570 kW'}
+                {/* Phase L30.1 audit fix P1 \u2014 affiche directement la valeur backend
+                    au lieu de comparer >= 290 hardcoded (violation \u00a78.1 doctrine).
+                    Le backend bacsV2Data fournit d\u00e9j\u00e0 threshold_kw calcul\u00e9. */}
+                Seuil: {`\u2265${bacsV2Summary.threshold_kw} kW`}
                 {bacsV2Summary.putile_kw ? ` (Putile: ${bacsV2Summary.putile_kw} kW)` : ''}
               </span>
             )}

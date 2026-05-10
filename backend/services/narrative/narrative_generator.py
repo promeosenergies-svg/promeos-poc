@@ -53,6 +53,10 @@ from services.data_provenance import (
     build_provenance,
 )
 
+# Phase L30.1 audit fix P2 — module-level pour éviter ré-parse ISO à chaque
+# render (pattern aligné bacs_regulatory_engine.py:39).
+_AUDIT_SME_DEADLINE_PARSED = date.fromisoformat(AUDIT_SME_DEADLINE_DATE)
+
 # ── Types canoniques ────────────────────────────────────────────────
 
 
@@ -1240,9 +1244,9 @@ def _build_conformite(
     today = date.today()
 
     # Audit SMÉ deadline — constante doctrine inviolable §8.3
-    # Phase L29.1 audit fix P1 — utilise AUDIT_SME_DEADLINE_DATE depuis doctrine.constants
-    # (lazy-load YAML SoT) au lieu de date(2026, 10, 11) hardcoded.
-    AUDIT_SME_DEADLINE = date.fromisoformat(AUDIT_SME_DEADLINE_DATE)
+    # Phase L29.1 + L30.1 — utilise _AUDIT_SME_DEADLINE_PARSED (module-level)
+    # depuis doctrine.constants. Évite re-parse ISO à chaque render.
+    AUDIT_SME_DEADLINE = _AUDIT_SME_DEADLINE_PARSED
     days_until_audit_sme = (AUDIT_SME_DEADLINE - today).days
 
     # OPERAT déclaration annuelle — 30 septembre N pour conso N-1.

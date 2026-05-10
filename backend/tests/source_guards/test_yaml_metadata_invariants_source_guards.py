@@ -34,9 +34,12 @@ _STABLE_KEYS_REQUIRE_CONFIDENCE_HIGH = frozenset(
         "COMPLIANCE_BACS_PENALTY_EUR",
         "AUDIT_SME_THRESHOLD_GWH_PERIODIC",
         "AUDIT_SME_THRESHOLD_GWH_ISO50001",
-        # Ajoutés Phase L28.2 (BACS_DEADLINE refactor cardinal)
+        # Ajoutés Phase L28.2 (BACS_DEADLINE refactor cardinal — Décret 2025-1343
+        # art. 1 + Décret 2020-887 art. R175-3, 4 sources internes convergentes ADR-027)
         "BACS_DEADLINE_EXISTING_70_290",
         "BACS_DEADLINE_ABOVE_290",
+        # Ajouté Phase L30.1 (Décret 2025-1343 publié JO 26/12/2025 — opposable)
+        "BACS_THRESHOLD_KW_2030",
     }
 )
 

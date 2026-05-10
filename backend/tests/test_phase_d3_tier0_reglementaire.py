@@ -55,7 +55,12 @@ def test_phase_d3_operat_annexe_i_426_sous_categories():
 
 def test_phase_d3_bacs_operat_penalty_distinct_sources_yaml():
     """P0-REG-007 : sources distinctes BACS_PENALTY (Décret 2020-887 art. R175-7)
-    vs OPERAT_PENALTY (Circulaire DGEC 2024 + Décret 2019-771 art. 6) — documentées YAML."""
+    vs OPERAT_PENALTY (CCH art. R185-2 + L173-2 fondement) — documentées YAML.
+
+    Phase L29.2 a réécrit le label OPERAT (Circulaire DGEC 2024 retirée — non
+    opposable juridiquement). Sources juridiques distinctes confirmées :
+    BACS = R175-7 CCH (Décret 2020-887) ; OPERAT = R185-2 CCH (DT/OPERAT modalités).
+    """
     import yaml
     from pathlib import Path
 
@@ -69,11 +74,11 @@ def test_phase_d3_bacs_operat_penalty_distinct_sources_yaml():
 
     assert bacs.get("value") == 1500
     assert operat.get("value") == 1500
-    # Sources distinctes (Décret 2020-887 vs Circulaire DGEC 2024)
+    # Sources distinctes : BACS = R175-7 CCH ; OPERAT = R185-2 CCH (post-L29.2)
     bacs_label = (bacs.get("source") or {}).get("label", "")
     operat_label = (operat.get("source") or {}).get("label", "")
-    assert "2020-887" in bacs_label
-    assert ("DGEC" in operat_label) or ("2019-771" in operat_label)
+    assert "2020-887" in bacs_label or "R175" in bacs_label
+    assert "R185-2" in operat_label or "L173-2" in operat_label
 
 
 def test_phase_d3_bacs_threshold_70kw_2030_exposed():
