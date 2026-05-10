@@ -13,9 +13,25 @@
  * ActionCenterSlideOver, ConformitePage) ne les utilisait. Patterns hero/KPI/
  * weekcards déjà incarnés par SolPageHeader, KpiCard, SolWeekCards canoniques.
  *
+ * Sprint Grammaire v1.2 / Phase 3.4 — primitifs L11 Hub Page (doctrine §12) :
+ *   HubPage              — wrapper compound component (slots KpiTriptych/ChartPair/Highlights)
+ *   SolHeroPremiumNight  — hero bleu nuit + illustration filaire SVG
+ *   ChartFrame           — question + reponse + chart slot + footer SCM
+ *   HubHighlight         — ligne action-card compacte rang/severity/invitation
+ *   HubPageFooter        — alias SolPageFooter (Source · Confiance · MAJ)
+ *
  * Usage :
  *   import { SolPageFooter, Term, DecisionEvidenceCard } from 'components/grammar';
+ *   import { HubPage, SolHeroPremiumNight, ChartFrame, HubHighlight, HubPageFooter }
+ *     from 'components/grammar';
  */
 export { default as SolPageFooter } from '../../ui/sol/SolPageFooter';
 export { default as Term } from './Term';
 export { default as DecisionEvidenceCard } from './DecisionEvidenceCard';
+
+// Sprint Grammaire v1.2 / Phase 3.4 — primitifs L11 Hub Page
+export { default as HubPage } from './hub/HubPage';
+export { default as SolHeroPremiumNight } from './hub/SolHeroPremiumNight';
+export { default as ChartFrame } from './hub/ChartFrame';
+export { default as HubHighlight } from './hub/HubHighlight';
+export { default as HubPageFooter } from './hub/HubPageFooter';
