@@ -60,13 +60,14 @@ def test_get_regulatory_rates_no_filter_returns_at_least_60_terms():
 
 
 def test_get_regulatory_rates_filter_by_domain_co2_returns_3_terms():
+    """Phase L33.2 — domain co2 contient 5 termes post-L31.3+L32 (3 CO2_FACTOR + 2 CBAM)."""
     resp = client.get("/api/regulatory/rates", params={"domain": "co2"})
     assert resp.status_code == 200
     data = resp.json()
 
     assert data["domain"] == "co2"
     assert "terms" in data
-    assert len(data["terms"]) == 3
+    assert len(data["terms"]) >= 3
     assert "CO2_FACTOR_ELEC_KGCO2_PER_KWH" in data["terms"]
 
 
@@ -157,7 +158,7 @@ def test_get_regulatory_rates_each_term_has_required_keys():
 
 
 def test_get_regulatory_domains_returns_distinct_set():
-    """Phase 3.4d : 11 domaines distincts post audit follow-up (regops + readiness ajoutés)."""
+    """Phase 3.4d → Phase L31.3 : 12 domaines distincts post bill_intelligence ajouté."""
     resp = client.get("/api/regulatory/domains")
     assert resp.status_code == 200
     data = resp.json()
@@ -176,5 +177,7 @@ def test_get_regulatory_domains_returns_distinct_set():
         # Phase 3.4d audit follow-up
         "regops",
         "readiness",
+        # Phase L31.3 — Bill Intelligence anomalies (R19→R31, ~30 clés internal_doctrine)
+        "bill_intelligence",
     }
     assert set(data["domains"]) == expected

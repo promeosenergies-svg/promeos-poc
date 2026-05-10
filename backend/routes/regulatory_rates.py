@@ -27,6 +27,27 @@ from config.regulatory_sources_loader import (
 
 router = APIRouter(prefix="/api/regulatory", tags=["Regulatory"])
 
+# Phase L33.2 audit fix P0 SECURITY (Reviewer #3 META-AUDIT L33.0) — Statuts
+# correspondant à de la doctrine PROMEOS interne NON OPPOSABLE LÉGALEMENT.
+# Ces termes (BILL_ANOMALY_*, READINESS_WEIGHT_*, FLEX_HEURISTIC, etc.) ne
+# doivent JAMAIS être exposés via l'endpoint public — ce sont les heuristiques
+# qui constituent le différenciateur compétitif PROMEOS Sol §15.
+# Un concurrent (Deepki/Metron) pourrait reverse-engineer la doctrine.
+_INTERNAL_PROMEOS_STATUSES = frozenset({"internal_doctrine", "internal_heuristic", "internal_fallback"})
+
+
+def _filter_public_terms(terms: dict) -> dict:
+    """Phase L33.2 — Filtre les termes publics (status verified/pending/observatory).
+
+    Exclut les termes status: internal_* qui exposeraient la doctrine PROMEOS
+    interne (heuristiques détecteur factures R19→R31, pondérations scoring).
+
+    Convention : status absent = équivalent verified implicite (cf. header YAML
+    sources_reglementaires.yaml). Ces termes sont donc inclus dans le filtrage
+    public (cohérent avec SG_REG_YAML_07-12).
+    """
+    return {term_id: term for term_id, term in terms.items() if term.get("status") not in _INTERNAL_PROMEOS_STATUSES}
+
 
 @router.get("/rates")
 def get_regulatory_rates(
@@ -60,11 +81,17 @@ def get_regulatory_rates(
     if term_id:
         try:
             term = get_term(term_id)
+            # Phase L33.2 — refus 404 si term internal_doctrine (fuite doctrine PROMEOS)
+            if term.get("status") in _INTERNAL_PROMEOS_STATUSES:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Term {term_id!r} introuvable ou non public.",
+                )
             return {"term_id": term_id, "term": term}
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    # Mode 2 : filtre par domaine → tous les termes du domaine
+    # Mode 2 : filtre par domaine → tous les termes du domaine (filtrés public)
     if domain:
         terms = get_terms_by_domain(domain)
         if not terms:
@@ -73,10 +100,16 @@ def get_regulatory_rates(
                 status_code=404,
                 detail=(f"Domaine inconnu ou vide : {domain!r}. Domaines disponibles : {valid_domains}"),
             )
-        return {"domain": domain, "terms": terms}
+        # Phase L33.2 audit fix P0 SECURITY — filtre internal_doctrine
+        public_terms = _filter_public_terms(terms)
+        return {"domain": domain, "terms": public_terms}
 
-    # Mode 3 : sans filtre → tout le YAML
-    return load_regulatory_sources()
+    # Mode 3 : sans filtre → tout le YAML (filtré public)
+    # Phase L33.2 audit fix P0 SECURITY — exclusion termes internal_doctrine/heuristic/fallback.
+    # CRITICAL : copie superficielle obligatoire pour éviter de muter le cache lru_cache
+    # partagé par list_all_domains() / get_terms_by_domain() / get_term().
+    cached_yaml = load_regulatory_sources()
+    return {**cached_yaml, "terms": _filter_public_terms(cached_yaml.get("terms", {}))}
 
 
 @router.get("/domains")

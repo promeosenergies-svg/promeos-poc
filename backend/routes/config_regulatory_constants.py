@@ -109,18 +109,21 @@ def get_regulatory_constants() -> dict:
             "source": "Arrêté ministériel 13/04/2023 (NOR LOGL2005904A)",
             "label": "Coefficient énergie primaire RE2020",
         },
+        # Phase L33.2 audit fix P0 SECURITY — labels génériques (Reviewer #3 META-AUDIT) :
+        # ne pas révéler "Doctrine PROMEOS Sol §15" / "internal_fallback" qui
+        # exposeraient la nature heuristique interne aux concurrents (Deepki/Metron).
         "readiness_weights": {
             "data": READINESS_WEIGHT_DATA,
             "conformity": READINESS_WEIGHT_CONFORMITY,
             "actions": READINESS_WEIGHT_ACTIONS,
-            "source": "Doctrine PROMEOS Sol §15 (heuristique interne stable)",
-            "label": "Pondérations Readiness score backend",
+            "source": "Pondérations applicatives PROMEOS",
+            "label": "Pondérations Readiness score",
         },
         "price_fallback": {
             "eur_per_kwh": PRICE_FALLBACK_EUR_PER_KWH,
             "eur_per_mwh": round(PRICE_FALLBACK_EUR_PER_KWH * 1000, 2),
-            "source": "Observatoire CRE T4 2025 — fallback prix élec moyen ETI",
-            "label": "Prix fallback PROMEOS (status: internal_fallback)",
+            "source": "Prix indicatif marché ETI (référence interne)",
+            "label": "Prix fallback indicatif",
         },
         "doctrine": (
             "Seuils réglementaires SoT backend. Jamais hardcoder côté frontend : "
