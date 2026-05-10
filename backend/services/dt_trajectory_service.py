@@ -26,10 +26,17 @@ from doctrine.constants import DT_MILESTONES
 logger = logging.getLogger("promeos.dt_trajectory")
 
 # Objectifs réglementaires — Décret n°2019-771, art. R131-39 CCH
-# Phase L29.1 + L30.1 audit fix P1 — alias depuis doctrine.constants SoT YAML
-# lazy-load. Phase L30.1 : `round(..., 2)` pour éliminer float drift IEEE 754
-# (`abs(-0.40) * 100 = 40.00000000000001` en Python natif). Toute comparaison
-# stricte `== 40.0` côté consumer aurait échoué silencieusement avant fix.
+# Phase L29.1 + L30.1 + L31.1 audit fix P1 — alias depuis doctrine.constants SoT YAML
+# lazy-load. round(..., 2) élimine float drift IEEE 754. Phase L31.1 : garde-null
+# explicite pour éviter TypeError silencieux au module-load si DT_MILESTONES corrompu.
+_REQUIRED_MILESTONES = (2030, 2040, 2050)
+for _yr in _REQUIRED_MILESTONES:
+    if DT_MILESTONES.get(_yr) is None:
+        raise RuntimeError(
+            f"DT_MILESTONES[{_yr}] manquant — doctrine/constants.py corrompu. "
+            f"Vérifier sources_reglementaires.yaml DT_MILESTONE_{_yr}_PCT."
+        )
+
 OBJECTIF_2030_PCT = round(abs(DT_MILESTONES[2030]) * 100, 2)  # 40.0
 OBJECTIF_2040_PCT = round(abs(DT_MILESTONES[2040]) * 100, 2)  # 50.0
 OBJECTIF_2050_PCT = round(abs(DT_MILESTONES[2050]) * 100, 2)  # 60.0

@@ -146,3 +146,67 @@ def test_sg_reg_yaml_09_pending_status_requires_low_or_medium_confidence():
                     f"{key}: status=pending_source_verification avec confidence={confidence!r} (attendu 'low' ou 'medium')"
                 )
     assert not offenders, "Status pending sans confidence faible :\n  - " + "\n  - ".join(offenders)
+
+
+# ─── SG_REG_YAML_12 : matrice domain × status (cohérence sémantique) ────────
+
+
+# Domaines réglementaires externes (sources Légifrance/ADEME/CRE/JOUE) :
+# valeurs opposables → ne peuvent PAS être doctrine/heuristique/fallback interne
+_EXTERNAL_REGULATORY_DOMAINS = frozenset({"co2", "accises", "tva", "dt", "bacs", "aper", "audit_sme", "operat"})
+_INVALID_FOR_EXTERNAL = frozenset({"internal_doctrine", "internal_heuristic", "internal_fallback"})
+
+# Domaines internes PROMEOS (doctrine produit non opposable légal) :
+# ne peuvent PAS être verified (pas de source externe opposable)
+_INTERNAL_DOCTRINE_DOMAINS = frozenset({"regops", "readiness", "bill_intelligence"})
+_INVALID_FOR_INTERNAL = frozenset({"verified"})
+
+# Allowlist hybrides : clés DOMAIN externe avec status doctrine/heuristique/fallback
+# justifié par dérivation cardinal (ex: 50% pénalité = scoring convention PROMEOS
+# dérivée du plafond légal). Toute extension doit être justifiée explicitement
+# dans les notes YAML (Phase L31.1 audit fix P1 SENTINEL-REG).
+_HYBRID_DOMAIN_STATUS_ALLOWED = frozenset(
+    {
+        # Phase L31.1 — DT_PENALTY_AT_RISK_EUR (3750 = 50% × DT_PENALTY 7500€) :
+        # convention scoring PROMEOS, base réglementaire (Décret 2019-771 art. 9)
+        # mais valeur dérivée par doctrine, label explicite "PROMEOS scoring convention".
+        ("COMPLIANCE_DT_PENALTY_AT_RISK_EUR", "internal_doctrine"),
+    }
+)
+
+
+def test_sg_reg_yaml_12_domain_status_matrix_coherence():
+    """Phase L31.1 audit fix P1 — Matrice domain × status cohérente.
+
+    Reviewer #1 META-AUDIT L31.0 : un domain externe (co2, accises, dt, bacs,
+    aper, audit_sme, operat, tva) ne peut JAMAIS avoir
+    status=internal_doctrine|internal_heuristic|internal_fallback (= valeur
+    interne non opposable légalement). Inversement, domain interne (regops,
+    readiness, bill_intelligence) ne peut JAMAIS avoir status=verified.
+
+    Exception domaine 'tarifs' : autorise toutes valeurs (peut contenir tarifs
+    réglementaires CRE = verified ET fallbacks heuristiques marché).
+    """
+    data = _load_yaml_data()
+    offenders: list[str] = []
+    for key, term in data["terms"].items():
+        domain = term.get("domain", "")
+        status = term.get("status")
+        if status is None:
+            continue  # status absent = verified implicite (cf. header YAML)
+        # Hybrides explicitement allowlisted (cf. _HYBRID_DOMAIN_STATUS_ALLOWED)
+        if (key, status) in _HYBRID_DOMAIN_STATUS_ALLOWED:
+            continue
+        # Règle 1 : domaines externes ne peuvent pas avoir status interne
+        if domain in _EXTERNAL_REGULATORY_DOMAINS and status in _INVALID_FOR_EXTERNAL:
+            offenders.append(
+                f"{key}: domain={domain!r} (externe) avec status={status!r} INTERDIT — "
+                f"valeur opposable doit avoir status='verified' ou 'pending_source_verification'"
+            )
+        # Règle 2 : domaines internes ne peuvent pas avoir status verified
+        if domain in _INTERNAL_DOCTRINE_DOMAINS and status in _INVALID_FOR_INTERNAL:
+            offenders.append(
+                f"{key}: domain={domain!r} (interne PROMEOS) avec status={status!r} INTERDIT — "
+                f"doctrine produit ne peut être 'verified' (pas de source légale externe)"
+            )
+    assert not offenders, "Matrice domain × status incohérente :\n  - " + "\n  - ".join(offenders)

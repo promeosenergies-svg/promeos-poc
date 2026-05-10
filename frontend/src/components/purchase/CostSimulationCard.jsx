@@ -351,8 +351,10 @@ export default function CostSimulationCard({ siteId: siteIdProp, year: yearProp 
             >
               <AlertTriangle size={10} aria-hidden="true" />
               Projection extrapolée
+              {/* Phase L31.1 audit fix P1 — fallback price via Context (était hardcoded 68 €/MWh).
+                  Conversion EUR/kWh → EUR/MWh (×1000) appliquée pour cohérence affichage UX. */}
               <InfoTip
-                content={`Aucun forward ${selectedYear} n'est disponible dans mkt_prices. Le simulateur utilise le prix de référence PROMEOS (${68} €/MWh) — utile pour cadrer un budget, pas pour un engagement commercial.`}
+                content={`Aucun forward ${selectedYear} n'est disponible dans mkt_prices. Le simulateur utilise le prix de référence PROMEOS (${Math.round((regConstants?.price_fallback?.eur_per_kwh ?? 0.068) * 1000)} €/MWh) — utile pour cadrer un budget, pas pour un engagement commercial.`}
               />
             </span>
           )}

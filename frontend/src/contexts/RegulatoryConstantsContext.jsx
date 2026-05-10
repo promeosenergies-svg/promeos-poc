@@ -68,6 +68,14 @@ const FALLBACK_CONSTANTS = {
     source: 'Fallback doctrine PROMEOS Sol §15 (API non chargée)',
     label: 'Pondérations Readiness score backend',
   },
+  // Phase L31.1 audit fix P1 — exposition price_fallback (était hardcoded 68 €/MWh
+  // dans CostSimulationCard.jsx:355 InfoTip). status: internal_fallback (YAML).
+  price_fallback: {
+    eur_per_kwh: 0.068,
+    eur_per_mwh: 68.0,
+    source: 'Fallback Observatoire CRE T4 2025 (API non chargée)',
+    label: 'Prix fallback PROMEOS',
+  },
 };
 
 const RegulatoryConstantsContext = createContext(null);
@@ -105,6 +113,12 @@ export function RegulatoryConstantsProvider({ children }) {
           merged.readiness_weights = {
             ...FALLBACK_CONSTANTS.readiness_weights,
             ...data.readiness_weights,
+          };
+        // Phase L31.1 audit fix P1 — merge price_fallback (consommé par CostSimulationCard)
+        if (data?.price_fallback)
+          merged.price_fallback = {
+            ...FALLBACK_CONSTANTS.price_fallback,
+            ...data.price_fallback,
           };
         setConstants(merged);
         setLoading(false);

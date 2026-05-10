@@ -4,7 +4,7 @@
 # Pattern reproduit identique à tarifs_reglementaires.yaml (Phase 22 deprecated
 # par cette livraison Sprint C-3 — cf. note compatibilité regulatory_rates.js).
 #
-# 9 domaines : co2 / tarifs / accises / tva / dt / bacs / aper / audit_sme / operat
+# 12 domaines : co2 / tarifs / accises / tva / dt / bacs / aper / audit_sme / operat / regops / readiness / bill_intelligence
 # Schema strict par term :
 #   value (number|string), unit (string), domain (string allowlist),
 #   source: { label, url, version, effective_date (YYYY-MM-DD), legal_reference|null },
@@ -387,10 +387,10 @@ terms:
     value: 3750
     unit: "EUR/an/site"
     domain: "dt"
-    status: "verified"
+    status: "internal_doctrine"
     confidence: "high"
     source:
-      label: "Décret n°2019-771 art. 9 — pénalité site à risque DT"
+      label: "PROMEOS scoring convention — 50% pénalité DT PM (Décret 2019-771 art. 9 plafond 7500€)"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000038812251"
       version: "Décret 2019-771"
       effective_date: "2030-01-01"

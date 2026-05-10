@@ -27,6 +27,7 @@ from doctrine.constants import (
     DT_PENALTY_EUR,
     OPERAT_DECLARATION_DEADLINE,
     OPERAT_PENALTY_EUR,
+    PRICE_FALLBACK_EUR_PER_KWH,
     PRIMARY_ENERGY_COEF_ELEC,
     PRIMARY_ENERGY_COEF_GAS,
     READINESS_WEIGHT_ACTIONS,
@@ -108,6 +109,12 @@ def get_regulatory_constants() -> dict:
             "actions": READINESS_WEIGHT_ACTIONS,
             "source": "Doctrine PROMEOS Sol §15 (heuristique interne stable)",
             "label": "Pondérations Readiness score backend",
+        },
+        "price_fallback": {
+            "eur_per_kwh": PRICE_FALLBACK_EUR_PER_KWH,
+            "eur_per_mwh": round(PRICE_FALLBACK_EUR_PER_KWH * 1000, 2),
+            "source": "Observatoire CRE T4 2025 — fallback prix élec moyen ETI",
+            "label": "Prix fallback PROMEOS (status: internal_fallback)",
         },
         "doctrine": (
             "Seuils réglementaires SoT backend. Jamais hardcoder côté frontend : "
