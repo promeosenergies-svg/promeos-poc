@@ -2,6 +2,7 @@ import { useState, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { DemoProvider } from './contexts/DemoContext';
 import { ScopeProvider } from './contexts/ScopeContext';
+import { FilterProvider } from './contexts/FilterContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ExpertModeProvider } from './contexts/ExpertModeContext';
 import { EmissionFactorsProvider } from './contexts/EmissionFactorsContext';
@@ -19,6 +20,10 @@ import { SkeletonCard } from './ui/Skeleton';
 
 // Lazy-loaded pages — code-split per route
 const CommandCenter = lazy(() => import('./pages/CommandCenter'));
+// Sprint Grammaire v1.2 / Phase 3.4 — Hub Page L11 « Briefing du jour ».
+// CockpitPilotage est conservé pour les routes legacy d'accès direct mais la
+// route canonique /cockpit/jour pointe désormais vers la composition pure L11.
+const CockpitJour = lazy(() => import('./pages/CockpitJour'));
 const CockpitPilotage = lazy(() => import('./pages/CockpitPilotage'));
 const CockpitDecision = lazy(() => import('./pages/CockpitDecision'));
 const Patrimoine = lazy(() => import('./pages/Patrimoine'));
@@ -111,35 +116,39 @@ function App() {
     <AuthProvider>
       <DemoProvider>
         <ScopeProvider>
-          <ExpertModeProvider>
-            <EmissionFactorsProvider>
-              <PriceReferenceProvider>
-                <RegulatoryConstantsProvider>
-                  <RegulatoryRatesProvider>
-                    <ErrorBoundary>
-                      <NavigationBadgesProvider>
-                        <EventsProvider>
-                          <Router>
-                            <Routes>
-                              {/* Public: Login page */}
-                              <Route
-                                path="/login"
-                                element={
-                                  <PageSuspense>
-                                    <LoginPage />
-                                  </PageSuspense>
-                                }
-                              />
+          {/* Sprint Grammaire v1.2 — FilterProvider distinct de ScopeContext :
+              gère uniquement période/vue/sort, pas la hiérarchie patrimoine.
+              Cf docs/vision/promeos_sol_doctrine.md §12 (L11 Hub Page). */}
+          <FilterProvider>
+            <ExpertModeProvider>
+              <EmissionFactorsProvider>
+                <PriceReferenceProvider>
+                  <RegulatoryConstantsProvider>
+                    <RegulatoryRatesProvider>
+                      <ErrorBoundary>
+                        <NavigationBadgesProvider>
+                          <EventsProvider>
+                            <Router>
+                              <Routes>
+                                {/* Public: Login page */}
+                                <Route
+                                  path="/login"
+                                  element={
+                                    <PageSuspense>
+                                      <LoginPage />
+                                    </PageSuspense>
+                                  }
+                                />
 
-                              {/* Protected: AppShell layout wraps all routes */}
-                              <Route
-                                element={
-                                  <RequireAuth>
-                                    <AppShell />
-                                  </RequireAuth>
-                                }
-                              >
-                                {/* Phase 15.bis (régression user 30/04) : à la connexion,
+                                {/* Protected: AppShell layout wraps all routes */}
+                                <Route
+                                  element={
+                                    <RequireAuth>
+                                      <AppShell />
+                                    </RequireAuth>
+                                  }
+                                >
+                                  {/* Phase 15.bis (régression user 30/04) : à la connexion,
                             React Router redirigeait sur "/" qui rendait `<CommandCenter />`
                             (page legacy V1) au lieu du Cockpit dual sol2 refonte.
                             L'utilisateur devait refresh manuellement pour atteindre la
@@ -147,361 +156,372 @@ function App() {
                             Désormais : "/" redirige vers /cockpit/strategique (cohérent
                             Phase 13.D nav démo CFO). CommandCenter reste accessible via
                             /command-center pour rétro-compat audits/tests. */}
-                                <Route
-                                  path="/"
-                                  element={<Navigate to="/cockpit/strategique" replace />}
-                                />
-                                <Route
-                                  path="/command-center"
-                                  element={
-                                    <PageSuspense>
-                                      <CommandCenter />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/patrimoine"
-                                  element={
-                                    <PageSuspense>
-                                      <Patrimoine />
-                                    </PageSuspense>
-                                  }
-                                />{' '}
-                                <Route
-                                  path="/sites/:id"
-                                  element={
-                                    <PageSuspense>
-                                      <Site360 />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/actions"
-                                  element={
-                                    <PageSuspense>
-                                      <ActionsPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/actions/new"
-                                  element={
-                                    <PageSuspense>
-                                      <ActionsPage autoCreate />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/actions/:actionId"
-                                  element={
-                                    <PageSuspense>
-                                      <ActionsPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/conformite"
-                                  element={
-                                    <PageSuspense>
-                                      <ConformitePage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/conformite/tertiaire"
-                                  element={
-                                    <PageSuspense>
-                                      <TertiaireDashboardPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/conformite/tertiaire/wizard"
-                                  element={
-                                    <PageSuspense>
-                                      <TertiaireWizardPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/conformite/tertiaire/efa/:id"
-                                  element={
-                                    <PageSuspense>
-                                      <TertiaireEfaDetailPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/conformite/tertiaire/anomalies"
-                                  element={
-                                    <PageSuspense>
-                                      <TertiaireAnomaliesPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/conformite/aper"
-                                  element={
-                                    <PageSuspense>
-                                      <AperPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                {/* Energy Copilot — route supprimée (Sprint B P0-7 + Sprint C cleanup) */}
-                                {/* Legacy redirects */}{' '}
-                                {/* Phase Refonte WOW (29/04/2026) — Cockpit dual sol2 :
-                            /cockpit/jour       → Pilotage (CockpitPilotage, energy manager 30s)
+                                  <Route
+                                    path="/"
+                                    element={<Navigate to="/cockpit/strategique" replace />}
+                                  />
+                                  <Route
+                                    path="/command-center"
+                                    element={
+                                      <PageSuspense>
+                                        <CommandCenter />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/patrimoine"
+                                    element={
+                                      <PageSuspense>
+                                        <Patrimoine />
+                                      </PageSuspense>
+                                    }
+                                  />{' '}
+                                  <Route
+                                    path="/sites/:id"
+                                    element={
+                                      <PageSuspense>
+                                        <Site360 />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/actions"
+                                    element={
+                                      <PageSuspense>
+                                        <ActionsPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/actions/new"
+                                    element={
+                                      <PageSuspense>
+                                        <ActionsPage autoCreate />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/actions/:actionId"
+                                    element={
+                                      <PageSuspense>
+                                        <ActionsPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/conformite"
+                                    element={
+                                      <PageSuspense>
+                                        <ConformitePage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/conformite/tertiaire"
+                                    element={
+                                      <PageSuspense>
+                                        <TertiaireDashboardPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/conformite/tertiaire/wizard"
+                                    element={
+                                      <PageSuspense>
+                                        <TertiaireWizardPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/conformite/tertiaire/efa/:id"
+                                    element={
+                                      <PageSuspense>
+                                        <TertiaireEfaDetailPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/conformite/tertiaire/anomalies"
+                                    element={
+                                      <PageSuspense>
+                                        <TertiaireAnomaliesPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/conformite/aper"
+                                    element={
+                                      <PageSuspense>
+                                        <AperPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  {/* Energy Copilot — route supprimée (Sprint B P0-7 + Sprint C cleanup) */}
+                                  {/* Legacy redirects */}{' '}
+                                  {/* Phase Refonte WOW (29/04/2026) — Cockpit dual sol2 :
+                            /cockpit/jour       → Briefing L11 Hub Page (CockpitJour, grammaire v1.2)
+                            /cockpit/pilotage   → CockpitPilotage (legacy retro-compat)
                             /cockpit/strategique → Décision (Cockpit, dirigeant 3min)
                             /cockpit            → redirect /cockpit/jour (default mode)
                             CommandCenter est conservé temporairement pour rétro-compat
-                            d'autres routes legacy ; sera décommissionné Étape 3 du sprint. */}
-                                <Route
-                                  path="/cockpit/jour"
-                                  element={
-                                    <PageSuspense>
-                                      <CockpitPilotage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/cockpit/strategique"
-                                  element={
-                                    <PageSuspense>
-                                      <CockpitDecision />
-                                    </PageSuspense>
-                                  }
-                                />{' '}
-                                {/* 2026-05-02 — Repoint /action-center → /anomalies.
+                            d'autres routes legacy ; sera décommissionné Étape 3 du sprint.
+                            Sprint Grammaire v1.2 / Phase 3.4 : /cockpit/jour pointe désormais
+                            sur CockpitJour (composition pure primitifs grammar/hub L11). */}
+                                  <Route
+                                    path="/cockpit/jour"
+                                    element={
+                                      <PageSuspense>
+                                        <CockpitJour />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/cockpit/pilotage"
+                                    element={
+                                      <PageSuspense>
+                                        <CockpitPilotage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/cockpit/strategique"
+                                    element={
+                                      <PageSuspense>
+                                        <CockpitDecision />
+                                      </PageSuspense>
+                                    }
+                                  />{' '}
+                                  {/* 2026-05-02 — Repoint /action-center → /anomalies.
                                 AnomaliesPage est le hub canonique 4 piliers (cf
                                 NavRegistry §Sol nav + Quick Action 'centre').
                                 Redirect préservé pour rétro-compat bookmarks. */}
-                                <Route
-                                  path="/action-center"
-                                  element={<Navigate to="/anomalies" replace />}
-                                />{' '}
-                                <Route
-                                  path="/regops/:id"
-                                  element={
-                                    <PageSuspense>
-                                      <RegOps />
-                                    </PageSuspense>
-                                  }
-                                />
-                                {/* Consommations: 4-tab layout (Explorer | Portfolio | Import & Analyse | KB) */}
-                                <Route
-                                  path="/consommations"
-                                  element={
-                                    <PageSuspense>
-                                      <ConsommationsPage />
-                                    </PageSuspense>
-                                  }
-                                >
                                   <Route
-                                    index
-                                    element={<Navigate to="/consommations/portfolio" replace />}
-                                  />
+                                    path="/action-center"
+                                    element={<Navigate to="/anomalies" replace />}
+                                  />{' '}
                                   <Route
-                                    path="explorer"
+                                    path="/regops/:id"
                                     element={
                                       <PageSuspense>
-                                        <ConsumptionExplorerPage bare />
+                                        <RegOps />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  {/* Consommations: 4-tab layout (Explorer | Portfolio | Import & Analyse | KB) */}
+                                  <Route
+                                    path="/consommations"
+                                    element={
+                                      <PageSuspense>
+                                        <ConsommationsPage />
+                                      </PageSuspense>
+                                    }
+                                  >
+                                    <Route
+                                      index
+                                      element={<Navigate to="/consommations/portfolio" replace />}
+                                    />
+                                    <Route
+                                      path="explorer"
+                                      element={
+                                        <PageSuspense>
+                                          <ConsumptionExplorerPage bare />
+                                        </PageSuspense>
+                                      }
+                                    />
+                                    <Route
+                                      path="portfolio"
+                                      element={
+                                        <PageSuspense>
+                                          <ConsumptionPortfolioPage />
+                                        </PageSuspense>
+                                      }
+                                    />
+                                    <Route
+                                      path="import"
+                                      element={
+                                        <PageSuspense>
+                                          <ConsommationsImportTab />
+                                        </PageSuspense>
+                                      }
+                                    />
+                                    <Route
+                                      path="kb"
+                                      element={
+                                        <PageSuspense>
+                                          <ConsommationsKBTab />
+                                        </PageSuspense>
+                                      }
+                                    />
+                                  </Route>
+                                  <Route
+                                    path="/connectors"
+                                    element={
+                                      <PageSuspense>
+                                        <ConnectorsPage />
                                       </PageSuspense>
                                     }
                                   />
                                   <Route
-                                    path="portfolio"
+                                    path="/watchers"
                                     element={
                                       <PageSuspense>
-                                        <ConsumptionPortfolioPage />
+                                        <WatchersPage />
                                       </PageSuspense>
                                     }
                                   />
                                   <Route
-                                    path="import"
+                                    path="/monitoring"
                                     element={
                                       <PageSuspense>
-                                        <ConsommationsImportTab />
+                                        <MonitoringPage />
+                                      </PageSuspense>
+                                    }
+                                  />{' '}
+                                  <Route
+                                    path="/compliance/pipeline"
+                                    element={
+                                      <PageSuspense>
+                                        <CompliancePipelinePage />
                                       </PageSuspense>
                                     }
                                   />
                                   <Route
-                                    path="kb"
+                                    path="/compliance/sites/:siteId"
                                     element={
                                       <PageSuspense>
-                                        <ConsommationsKBTab />
+                                        <SiteCompliancePage />
+                                      </PageSuspense>
+                                    }
+                                  />{' '}
+                                  <Route
+                                    path="/diagnostic-conso"
+                                    element={
+                                      <PageSuspense>
+                                        <ConsumptionDiagPage />
                                       </PageSuspense>
                                     }
                                   />
-                                </Route>
-                                <Route
-                                  path="/connectors"
-                                  element={
-                                    <PageSuspense>
-                                      <ConnectorsPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/watchers"
-                                  element={
-                                    <PageSuspense>
-                                      <WatchersPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/monitoring"
-                                  element={
-                                    <PageSuspense>
-                                      <MonitoringPage />
-                                    </PageSuspense>
-                                  }
-                                />{' '}
-                                <Route
-                                  path="/compliance/pipeline"
-                                  element={
-                                    <PageSuspense>
-                                      <CompliancePipelinePage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/compliance/sites/:siteId"
-                                  element={
-                                    <PageSuspense>
-                                      <SiteCompliancePage />
-                                    </PageSuspense>
-                                  }
-                                />{' '}
-                                <Route
-                                  path="/diagnostic-conso"
-                                  element={
-                                    <PageSuspense>
-                                      <ConsumptionDiagPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/usages"
-                                  element={
-                                    <PageSuspense>
-                                      <UsagesDashboardPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/usages-horaires"
-                                  element={
-                                    <PageSuspense>
-                                      <ConsumptionContextPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/bill-intel"
-                                  element={
-                                    <PageSuspense>
-                                      <BillIntelPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/billing"
-                                  element={
-                                    <PageSuspense>
-                                      <BillingPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/achat-energie"
-                                  element={
-                                    <PageSuspense>
-                                      <PurchasePage />
-                                    </PageSuspense>
-                                  }
-                                />{' '}
-                                <Route
-                                  path="/kb"
-                                  element={
-                                    <PageSuspense>
-                                      <KBExplorerPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/segmentation"
-                                  element={
-                                    <PageSuspense>
-                                      <SegmentationPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/import"
-                                  element={
-                                    <PageSuspense>
-                                      <ImportPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/notifications"
-                                  element={
-                                    <PageSuspense>
-                                      <NotificationsPage />
-                                    </PageSuspense>
-                                  }
-                                />{' '}
-                                <Route
-                                  path="/activation"
-                                  element={
-                                    <PageSuspense>
-                                      <ActivationPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/status"
-                                  element={
-                                    <PageSuspense>
-                                      <StatusPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/payment-rules"
-                                  element={
-                                    <PageSuspense>
-                                      <PaymentRulesPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/portfolio-reconciliation"
-                                  element={
-                                    <PageSuspense>
-                                      <PortfolioReconciliationPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/contrats"
-                                  element={
-                                    <PageSuspense>
-                                      <Contrats />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/renouvellements"
-                                  element={
-                                    <PageSuspense>
-                                      <ContractRadarPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                {/* 2026-05-09 — Sprint Grammaire v1 Phase 0.
+                                  <Route
+                                    path="/usages"
+                                    element={
+                                      <PageSuspense>
+                                        <UsagesDashboardPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/usages-horaires"
+                                    element={
+                                      <PageSuspense>
+                                        <ConsumptionContextPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/bill-intel"
+                                    element={
+                                      <PageSuspense>
+                                        <BillIntelPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/billing"
+                                    element={
+                                      <PageSuspense>
+                                        <BillingPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/achat-energie"
+                                    element={
+                                      <PageSuspense>
+                                        <PurchasePage />
+                                      </PageSuspense>
+                                    }
+                                  />{' '}
+                                  <Route
+                                    path="/kb"
+                                    element={
+                                      <PageSuspense>
+                                        <KBExplorerPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/segmentation"
+                                    element={
+                                      <PageSuspense>
+                                        <SegmentationPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/import"
+                                    element={
+                                      <PageSuspense>
+                                        <ImportPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/notifications"
+                                    element={
+                                      <PageSuspense>
+                                        <NotificationsPage />
+                                      </PageSuspense>
+                                    }
+                                  />{' '}
+                                  <Route
+                                    path="/activation"
+                                    element={
+                                      <PageSuspense>
+                                        <ActivationPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/status"
+                                    element={
+                                      <PageSuspense>
+                                        <StatusPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/payment-rules"
+                                    element={
+                                      <PageSuspense>
+                                        <PaymentRulesPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/portfolio-reconciliation"
+                                    element={
+                                      <PageSuspense>
+                                        <PortfolioReconciliationPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/contrats"
+                                    element={
+                                      <PageSuspense>
+                                        <Contrats />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/renouvellements"
+                                    element={
+                                      <PageSuspense>
+                                        <ContractRadarPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  {/* 2026-05-09 — Sprint Grammaire v1 Phase 0.
                                 Audit Sol v1.1 : /onboarding rendait OnboardingPage
                                 avec une grammaire calquée sur Cockpit Stratégique
                                 (test 2 doctrinal "dirigeant non-sachant" en échec,
@@ -509,136 +529,137 @@ function App() {
                                 que Phase 4 livre un vrai wizard premier pas
                                 (kicker Atlas/Briefing, 3-5 étapes). Import
                                 OnboardingPage conservé pour réutilisation Phase 4. */}
-                                <Route
-                                  path="/onboarding"
-                                  element={<Navigate to="/cockpit/jour" replace />}
-                                />
-                                <Route
-                                  path="/onboarding/sirene"
-                                  element={
-                                    <PageSuspense>
-                                      <SireneOnboardingPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                {/* IAM pages */}
-                                <Route
-                                  path="/admin/users"
-                                  element={
-                                    <PageSuspense>
-                                      <AdminUsersPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/admin/roles"
-                                  element={
-                                    <PageSuspense>
-                                      <AdminRolesPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/admin/assignments"
-                                  element={
-                                    <PageSuspense>
-                                      <AdminAssignmentsPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/admin/audit"
-                                  element={
-                                    <PageSuspense>
-                                      <AdminAuditLogPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/admin/enedis-health"
-                                  element={
-                                    <PageSuspense>
-                                      <EnedisPromotionHealthPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                <Route
-                                  path="/admin/cx-dashboard"
-                                  element={
-                                    <PageSuspense>
-                                      <CxDashboardPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                {/* URL aliases (redirect to canonical routes) */}{' '}
-                                <Route
-                                  path="/anomalies"
-                                  element={
-                                    <PageSuspense>
-                                      <AnomaliesPage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                {/* Sprint 1.10 — page 10/10 Flex Intelligence (couverture nav 100%). */}
-                                <Route
-                                  path="/flex"
-                                  element={
-                                    <PageSuspense>
-                                      <FlexPage />
-                                    </PageSuspense>
-                                  }
-                                />{' '}
-                                {/* Legacy redirects → routes Phase 3.1 (alias mode strategique pour CFO/DG) */}{' '}
-                                {/* Sprint 1.3bis P0-A — Méthodologie Sol §5 trust signals */}
-                                <Route
-                                  path="/methodologie/:docKey"
-                                  element={
-                                    <PageSuspense>
-                                      <MethodologiePage />
-                                    </PageSuspense>
-                                  }
-                                />
-                                {/* Phase 3.bis.a — 31 redirects legacy factorisés
+                                  <Route
+                                    path="/onboarding"
+                                    element={<Navigate to="/cockpit/jour" replace />}
+                                  />
+                                  <Route
+                                    path="/onboarding/sirene"
+                                    element={
+                                      <PageSuspense>
+                                        <SireneOnboardingPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  {/* IAM pages */}
+                                  <Route
+                                    path="/admin/users"
+                                    element={
+                                      <PageSuspense>
+                                        <AdminUsersPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/admin/roles"
+                                    element={
+                                      <PageSuspense>
+                                        <AdminRolesPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/admin/assignments"
+                                    element={
+                                      <PageSuspense>
+                                        <AdminAssignmentsPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/admin/audit"
+                                    element={
+                                      <PageSuspense>
+                                        <AdminAuditLogPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/admin/enedis-health"
+                                    element={
+                                      <PageSuspense>
+                                        <EnedisPromotionHealthPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  <Route
+                                    path="/admin/cx-dashboard"
+                                    element={
+                                      <PageSuspense>
+                                        <CxDashboardPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  {/* URL aliases (redirect to canonical routes) */}{' '}
+                                  <Route
+                                    path="/anomalies"
+                                    element={
+                                      <PageSuspense>
+                                        <AnomaliesPage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  {/* Sprint 1.10 — page 10/10 Flex Intelligence (couverture nav 100%). */}
+                                  <Route
+                                    path="/flex"
+                                    element={
+                                      <PageSuspense>
+                                        <FlexPage />
+                                      </PageSuspense>
+                                    }
+                                  />{' '}
+                                  {/* Legacy redirects → routes Phase 3.1 (alias mode strategique pour CFO/DG) */}{' '}
+                                  {/* Sprint 1.3bis P0-A — Méthodologie Sol §5 trust signals */}
+                                  <Route
+                                    path="/methodologie/:docKey"
+                                    element={
+                                      <PageSuspense>
+                                        <MethodologiePage />
+                                      </PageSuspense>
+                                    }
+                                  />
+                                  {/* Phase 3.bis.a — 31 redirects legacy factorisés
                             (cf routes/legacyRedirects.js).
                             React Router résoud les paths les plus spécifiques
                             d'abord, donc l'ordre n'a pas d'impact sur le matching. */}
-                                {LEGACY_REDIRECTS.map(([from, to]) => (
+                                  {LEGACY_REDIRECTS.map(([from, to]) => (
+                                    <Route
+                                      key={from}
+                                      path={from}
+                                      element={<Navigate to={to} replace />}
+                                    />
+                                  ))}
+                                  {/* Catch-all */}
                                   <Route
-                                    key={from}
-                                    path={from}
-                                    element={<Navigate to={to} replace />}
+                                    path="*"
+                                    element={
+                                      <PageSuspense>
+                                        <NotFound />
+                                      </PageSuspense>
+                                    }
                                   />
-                                ))}
-                                {/* Catch-all */}
-                                <Route
-                                  path="*"
-                                  element={
-                                    <PageSuspense>
-                                      <NotFound />
-                                    </PageSuspense>
-                                  }
-                                />
-                              </Route>
-                            </Routes>
+                                </Route>
+                              </Routes>
 
-                            {/* Upgrade Wizard Modal */}
-                            {showUpgradeWizard && (
-                              <UpgradeWizard
-                                onClose={(completed) => {
-                                  setShowUpgradeWizard(false);
-                                  if (completed) window.location.assign('/patrimoine');
-                                }}
-                              />
-                            )}
-                          </Router>
-                        </EventsProvider>
-                      </NavigationBadgesProvider>
-                    </ErrorBoundary>
-                  </RegulatoryRatesProvider>
-                </RegulatoryConstantsProvider>
-              </PriceReferenceProvider>
-            </EmissionFactorsProvider>
-          </ExpertModeProvider>
+                              {/* Upgrade Wizard Modal */}
+                              {showUpgradeWizard && (
+                                <UpgradeWizard
+                                  onClose={(completed) => {
+                                    setShowUpgradeWizard(false);
+                                    if (completed) window.location.assign('/patrimoine');
+                                  }}
+                                />
+                              )}
+                            </Router>
+                          </EventsProvider>
+                        </NavigationBadgesProvider>
+                      </ErrorBoundary>
+                    </RegulatoryRatesProvider>
+                  </RegulatoryConstantsProvider>
+                </PriceReferenceProvider>
+              </EmissionFactorsProvider>
+            </ExpertModeProvider>
+          </FilterProvider>
         </ScopeProvider>
       </DemoProvider>
     </AuthProvider>

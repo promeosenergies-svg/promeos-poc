@@ -130,6 +130,16 @@ export const getPurchasePortfolioCostSimulation = (orgId) =>
   cachedGet(`/purchase/cost-simulation/portfolio/${orgId}`).then((r) => r.data);
 // Phase Refonte WOW : priorités opérationnelles P1-P5 (page Pilotage file)
 export const getCockpitPriorities = () => cachedGet('/cockpit/priorities').then((r) => r.data);
+// Sprint Grammaire v1.2 / Phase 3.4 — Hub Page L11 Briefing du jour
+// Payload : { hero, kpis[3], charts[2], highlights[3], footer }
+// `filter` : { period: { type, start?, end? } }  → query params period_*.
+export const getCockpitJour = (filter = {}) => {
+  const period = filter.period || {};
+  const params = { period_type: period.type || 'week' };
+  if (period.start) params.period_start = period.start;
+  if (period.end) params.period_end = period.end;
+  return cachedGet('/cockpit/jour', { params }).then((r) => r.data);
+};
 export const getCockpitBenchmark = () => cachedGet('/cockpit/benchmark').then((r) => r.data);
 export const getCockpitCo2 = () => cachedGet('/cockpit/co2').then((r) => r.data);
 export const getCockpitConsoMonth = () => cachedGet('/cockpit/conso-month').then((r) => r.data);

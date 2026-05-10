@@ -69,6 +69,19 @@
   --sol-hpe-bg: #fbf1e3;
   --sol-hce-fg: #6b8cae;
   --sol-hce-bg: #e9eef4;
+
+  /* Sprint Grammaire v1.2 / Loi L11 Hub Page (addendum doctrine 09/05) ──
+     Variante "premium-night" pour Hero hub : signature visuelle B2B
+     conservée (bleu nuit profond) sur fond Sol clair. Cf doctrine §12.4
+     et HTML maquette cockpit_jour_v2_juste_milieu.html (référence). */
+  --sol-night-bg: #072a44;             /* hero base */
+  --sol-night-bg-alt: #0b3552;         /* gradient subtle */
+  --sol-night-fg: #ffffff;             /* texte sur night */
+  --sol-night-line: rgba(97, 183, 214, 0.22); /* illustration filaire */
+  --sol-night-dot: rgba(97, 183, 214, 0.55);  /* points connexions */
+  --sol-night-dot-hot: rgba(228, 173, 119, 0.85); /* anomaly indicator */
+  --sol-night-fg-soft: rgba(255, 255, 255, 0.86); /* sub-titre hero */
+  --sol-night-fg-meta: rgba(255, 255, 255, 0.62); /* meta footer hero */
 }
 
 /* ── Animations signature ── */
