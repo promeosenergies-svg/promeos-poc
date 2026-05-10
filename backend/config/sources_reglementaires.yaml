@@ -1257,6 +1257,8 @@ terms:
     value: 0.01
     unit: "EUR"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Sol §15 Bill Intelligence — détection R19 VNU dormant"
       url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000023983208/LEGISCTA000027715064"
@@ -1287,6 +1289,8 @@ terms:
     value: 5.0
     unit: "percent"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Sol §15 Bill Intelligence — détection R20 capacité variance"
       url: "https://www.cre.fr/Documents/Deliberations/Decision/turpe-7-hta-bt-versement"
@@ -1306,6 +1310,8 @@ terms:
     value: 5.0
     unit: "percent"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L4 — détection R28 dérive prix unitaire vs contrat"
       version: "1.0"
@@ -1318,6 +1324,8 @@ terms:
     value: 0.005
     unit: "EUR_per_kWh"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L4 — seuil absolu R28 (anti-arrondi sub-cent)"
       version: "1.0"
@@ -1330,6 +1338,8 @@ terms:
     value: 0.02
     unit: "EUR_per_kWh"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L4 — seuil critique R28 sévérité"
       version: "1.0"
@@ -1343,6 +1353,8 @@ terms:
     value: 7
     unit: "days"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L5 — tolérance gap période facturation"
       version: "1.0"
@@ -1355,6 +1367,8 @@ terms:
     value: 14
     unit: "days"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L5 — seuil critique trou période"
       version: "1.0"
@@ -1367,6 +1381,8 @@ terms:
     value: 1
     unit: "days"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L5 — seuil critique chevauchement"
       version: "1.0"
@@ -1380,6 +1396,8 @@ terms:
     value: 7
     unit: "days"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L6 — seuil partiel hors fenêtre contrat"
       version: "1.0"
@@ -1394,6 +1412,8 @@ terms:
     value: 10.0
     unit: "percent"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase H5 — détection R21 CTA divergence"
       version: "1.0"
@@ -1406,6 +1426,8 @@ terms:
     value: 5.0
     unit: "EUR"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase H5 — seuil minimum R21"
       version: "1.0"
@@ -1418,6 +1440,8 @@ terms:
     value: 100.0
     unit: "EUR"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase H5 — seuil critique R21 sévérité"
       version: "1.0"
@@ -1431,6 +1455,8 @@ terms:
     value: 10.0
     unit: "percent"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase J1 — seuil accise route DP_CATEGORY"
       version: "1.0"
@@ -1443,6 +1469,8 @@ terms:
     value: 35.0
     unit: "percent"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "medium"
     source:
       label: "Doctrine PROMEOS Phase I1 — seuil accise route FALLBACK"
       version: "1.0"
@@ -1455,6 +1483,8 @@ terms:
     value: 5.0
     unit: "EUR"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase I1 — seuil minimum R22"
       version: "1.0"
@@ -1468,6 +1498,8 @@ terms:
     value: 100.0
     unit: "EUR"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase H2 — seuil critique R23 TURPE doublé"
       version: "1.0"
@@ -1481,6 +1513,8 @@ terms:
     value: 0.5
     unit: "percent_points"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase I2 — seuil tolérance R24 taux TVA"
       version: "1.0"
@@ -1493,6 +1527,8 @@ terms:
     value: 10.0
     unit: "EUR"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase I2 — seuil minimum R24"
       version: "1.0"
@@ -1505,6 +1541,8 @@ terms:
     value: 5.0
     unit: "percent_points"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase I2 — seuil critique R24 sévérité"
       version: "1.0"
@@ -1518,6 +1556,8 @@ terms:
     value: 5.0
     unit: "percent"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L1 — seuil R25 abonnement"
       version: "1.0"
@@ -1530,6 +1570,8 @@ terms:
     value: 2.0
     unit: "EUR"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L1 — seuil minimum R25"
       version: "1.0"
@@ -1542,6 +1584,8 @@ terms:
     value: 20.0
     unit: "EUR"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L1 — seuil critique R25 sévérité"
       version: "1.0"
@@ -1555,6 +1599,8 @@ terms:
     value: 5.0
     unit: "percent"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L2 — seuil R26 sanity check"
       version: "1.0"
@@ -1567,6 +1613,8 @@ terms:
     value: 5.0
     unit: "EUR"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L2 — seuil minimum R26"
       version: "1.0"
@@ -1579,6 +1627,8 @@ terms:
     value: 50.0
     unit: "EUR"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L2 — seuil critique R26 sévérité"
       version: "1.0"
@@ -1592,6 +1642,8 @@ terms:
     value: 7
     unit: "count"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L3 — seuil minimum lectures R27"
       version: "1.0"
@@ -1604,6 +1656,8 @@ terms:
     value: 10.0
     unit: "percent"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L3 — seuil R27 dérive conso"
       version: "1.0"
@@ -1616,6 +1670,8 @@ terms:
     value: 100.0
     unit: "kWh"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L3 — seuil minimum R27"
       version: "1.0"
@@ -1628,6 +1684,8 @@ terms:
     value: 1000.0
     unit: "kWh"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L3 — seuil critique R27 sévérité"
       version: "1.0"
@@ -1641,6 +1699,8 @@ terms:
     value: 10.0
     unit: "percent"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L8.1 — seuil critique R20 explicite"
       version: "1.0"
@@ -1654,6 +1714,8 @@ terms:
     value: 100.0
     unit: "kWh"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L14.2 — seuil heuristique R19 VNU dormant"
       version: "1.0"
@@ -1667,6 +1729,8 @@ terms:
     value: 21.93
     unit: "%"
     domain: "tarifs"
+    status: "verified"
+    confidence: "high"
     source:
       label: "Arrêté 26/07/2021 (abrogé 31/01/2026) — CTA distribution élec historique"
       url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000043955869"
@@ -1681,6 +1745,8 @@ terms:
     value: 50.0
     unit: "EUR"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L9 — seuil critique R31 doublons accise"
       version: "1.0"
@@ -1702,6 +1768,8 @@ terms:
     value: 90
     unit: "score_points"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L22.1 — score UI priorité anomalie CRITICAL"
       version: "1.0"
@@ -1714,6 +1782,8 @@ terms:
     value: 70
     unit: "score_points"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L22.1 — score UI priorité HIGH"
       version: "1.0"
@@ -1726,6 +1796,8 @@ terms:
     value: 50
     unit: "score_points"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "Doctrine PROMEOS Phase L22.1 — score UI priorité MEDIUM"
       version: "1.0"
@@ -1738,6 +1810,8 @@ terms:
     value: 30
     unit: "score_points"
     domain: "bill_intelligence"
+    status: "internal_doctrine"
+    confidence: "medium"
     source:
       label: "Doctrine PROMEOS Phase L22.1 — score UI priorité LOW"
       version: "1.0"
