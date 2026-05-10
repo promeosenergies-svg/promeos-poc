@@ -7,6 +7,24 @@
 version: "2026-03-22"
 description: "Tarifs réglementaires énergie France B2B — TURPE 6/7, ATRD6/7, accises 2024+2025, TVA"
 
+# Phase L32.2 — métadonnées status_global SENTINEL-REG (sans modif loader,
+# documentation pour audit trail externe). Détail tagging inline par bloc :
+#   turpe_6        : status: verified (CRE 2021-13 + 4 ans recul opposable)
+#   turpe_7        : status: pending_source_verification (URL CRE non figée — Sprint C-7)
+#   atrd6_gaz      : status: verified (CRE 2023-123 du 10/05/2023 opposable)
+#   atrd6_gaz_2024 : status: verified (CRE 2024-40 + 2024-88 opposables)
+#   atrd_gaz       : status: pending_source_verification (n° délib non précisé)
+#   atrd7_gaz_tiers / atrd7_gaz_tiers_2025 : status: verified (JORFTEXT000049565712 + JORFTEXT000051670357)
+#   atrt_gaz / atrt_gaz_2026 : status: pending_source_verification (n° délib CRE non précisé)
+#   prix_repere_gaz : status: market_observatory (CRE indicateur mensuel, non opposable)
+#   accises (CIBS L312-1) : status: verified (LFI 2025/2026 JORFTEXT000053407616)
+#   tva (CGI 278) : status: verified
+# Reviewer #4 SENTINEL-REG L31 — extension loader runtime reportée Sprint C-7.
+_metadata:
+  status_global: "mixed"  # Voir tagging inline par bloc
+  audit_trail: "Phase L32.2 — Reviewer #4 SENTINEL-REG META-AUDIT L31.0"
+  loader_runtime: "config/tarif_loader.py (schéma orthogonal vs sources_reglementaires.yaml)"
+
 # ── TURPE 6 soutirage énergie (composante variable) ──────────────────────────
 # Période tarifaire 2021-2024, délibération CRE n°2021-13 du 21 janvier 2021
 # Taux énergie = moyenne pondérée des coefficients horosaisonniers (grille 1er août 2021)
