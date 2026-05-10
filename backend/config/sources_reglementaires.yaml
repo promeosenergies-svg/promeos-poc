@@ -184,16 +184,22 @@ terms:
     value: 5.5
     unit: "%"
     domain: "tva"
+    # Phase L34.6 audit fix P2 (audit Reviewer #4 SENTINEL-REG L34) —
+    # effective_date était `2025-08-01` mais ce taux 5,5% a été SUPPRIMÉ au
+    # 1/08/2025 (cf. tarifs_reglementaires.yaml:553 supprime_au:2025-08-01).
+    # Désormais : effective_date = dernier jour de validité réelle (31/07/2025).
+    # Status reste `verified` car le taux 5,5% est un fait réglementaire vérifié
+    # historiquement. Le `notes` documente la suppression cardinale.
     status: "verified"
     confidence: "high"
     source:
-      label: "Code général des impôts art. 278-0 bis (taux réduit CTA)"
+      label: "Code général des impôts art. 278-0 bis (taux réduit CTA — supprimé 1/08/2025 LFI 2025)"
       url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000048833462"
       version: "LFI 2025"
-      effective_date: "2025-08-01"
+      effective_date: "2025-07-31"
       legal_reference: null
     formula: null
-    notes: "Taux réduit applicable uniquement sur la CTA"
+    notes: "Taux réduit 5,5% applicable uniquement sur la CTA — SUPPRIMÉ au 1/08/2025 (LFI 2025). Voir tarifs_reglementaires.yaml supprime_au:2025-08-01 pour cohérence cardinale."
 
   # ═════════════════════════════════════════════════════════════════════
   # Domaine TARIFS — TURPE / CTA / CMDPS — Délibérations CRE

@@ -5,12 +5,14 @@ PROMEOS Routes - RegOps endpoints
 import logging
 from datetime import date, datetime, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
+from middleware.rate_limit import check_rate_limit
 from services.iam_scope import check_site_access, get_effective_org_id
+from services.scope_utils import resolve_org_id
 from regops.engine import evaluate_site, persist_assessment
 from regops.scoring import compute_regops_score, load_scoring_profile
 from regops.data_quality import compute_data_quality
@@ -104,12 +106,20 @@ def get_cached_assessment(
 
 @router.post("/recompute")
 def recompute_assessments(
+    request: Request,
     scope: str = Query("site", enum=["site", "all"]),
     site_id: int = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Trigger recompute (enqueue jobs ou execute directement)."""
+    """Trigger recompute (enqueue jobs ou execute directement).
+
+    Phase L34.3 audit fix P0 SECURITY (PROMEOS-SEC-2026-017) — `scope=all`
+    était auparavant SANS org-scoping → DoS cross-tenant possible (un user
+    org X recomputait l'intégralité du parc multi-tenant). Désormais :
+    - filtre `Site → Portefeuille → EntiteJuridique.organisation_id == org_id`
+    - rate-limit 5/min/IP (cohérent batch hot-path billing reconcile-all).
+    """
     if scope == "site" and site_id:
         check_site_access(auth, site_id)
         summary = evaluate_site(db, site_id)
@@ -117,14 +127,24 @@ def recompute_assessments(
         db.commit()
         return {"recomputed": 1, "site_id": site_id}
     elif scope == "all":
+        # Phase L34.3 — rate-limit batch + org-scoping cardinal pré-pilot externe.
+        check_rate_limit(request, key_prefix="regops_recompute_all", max_requests=5, window_seconds=60)
+        org_id = resolve_org_id(request, auth, db)
+
         from regops.engine import evaluate_batch
 
-        sites = not_deleted(db.query(Site), Site).all()
+        org_sites_q = (
+            not_deleted(db.query(Site), Site)
+            .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+            .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+            .filter(EntiteJuridique.organisation_id == org_id)
+        )
+        sites = org_sites_q.all()
         summaries = evaluate_batch(db, [s.id for s in sites])
         for summary in summaries:
             persist_assessment(db, summary)
         db.commit()
-        return {"recomputed": len(summaries)}
+        return {"recomputed": len(summaries), "org_id": org_id}
     else:
         raise HTTPException(status_code=400, detail="Invalid scope or missing site_id")
 

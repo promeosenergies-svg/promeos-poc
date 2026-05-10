@@ -185,10 +185,15 @@ export default function AperPage() {
       </div>
 
       {/* Phase 19.A (audit Phase 17 cumulée P0-NEW-2) — bandeau pénalité
-          APER désormais alimenté backend via `dashboard.penalty_risk`
-          (doctrine/constants.py APER_PENALTY_EUR_PER_M2_PER_YEAR=20,
-          APER_DEADLINE_DATE=2028-01-01). Avant Phase 17.bis.E : calcul
-          inline FE — violait "zero business logic in frontend". */}
+          APER désormais alimenté backend via `dashboard.penalty_risk`.
+          SoT doctrine.constants.py : APER_PENALTY_EUR_PER_M2_PER_YEAR=20,
+          APER_DEADLINE_LARGE_PARKING_DATE=2026-07-01 (>10000 m²) +
+          APER_DEADLINE_SMALL_PARKING_DATE=2028-07-01 (1500-10000 m²).
+          Phase L34.6 audit fix P2 — commentaire stale "APER_DEADLINE_DATE=
+          2028-01-01" supprimé (constante renommée Phase L29.1 + drift
+          6 mois corrigé Phase L30.1, cf RegulatoryConstantsContext.jsx).
+          Avant Phase 17.bis.E : calcul inline FE — violait "zero business
+          logic in frontend". */}
       {dashboard?.penalty_risk && dashboard.penalty_risk.penalty_eur_year > 0 && (
         <div
           className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm"

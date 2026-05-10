@@ -28,6 +28,7 @@ from data_staging.models import (
     UnmatchedPrm,
 )
 from data_staging.prm_matcher import resolve_prm
+from utils.pii_safe_log import hash_prm
 from data_staging.promoters import (
     promote_r4x_row,
     promote_r50_row,
@@ -107,7 +108,9 @@ def run_promotion(
                 counters["rows_power_peak"] += result.get("pp", 0)
                 counters["rows_skipped"] += result.get("skipped", 0)
             except Exception as e:
-                logger.error("Promotion failed for PRM %s: %s", prm_code, e)
+                # Phase L34.5 audit fix Medium SECURITY (PROMEOS-SEC-2026-018) —
+                # PRM hashé sha256 pour log PII-safe (RGPD HELIOS § 5).
+                logger.error("Promotion failed for PRM %s: %s", hash_prm(prm_code), e)
                 counters["failed"] += 1
 
         # Finalize

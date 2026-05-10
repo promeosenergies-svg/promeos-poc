@@ -19,6 +19,7 @@ import httpx
 from sqlalchemy.orm import Session
 
 from services.audit_log_service import audit_external_api_call
+from utils.pii_safe_log import hash_prm
 
 from .base import Connector
 from .enedis_dataconnect_errors import (
@@ -266,7 +267,10 @@ class EnedisDataConnectConnector(Connector):
         expires_in = token_data.get("expires_in", 12600)
         token_row.expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
         db.commit()
-        logger.info("Token refreshed pour PRM %s", token_row.prm)
+        # Phase L34.5 audit fix Medium SECURITY (PROMEOS-SEC-2026-018) — PRM
+        # auparavant logué en clair (PII RGPD HELIOS § 5 minimisation). Hash
+        # sha256 tronqué pour traçabilité grep cross-logs sans fuite.
+        logger.info("Token refreshed pour PRM %s", hash_prm(token_row.prm))
 
     @staticmethod
     def _extract_interval_readings(data: dict) -> list:

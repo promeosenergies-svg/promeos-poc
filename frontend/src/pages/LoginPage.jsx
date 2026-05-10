@@ -192,7 +192,10 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo hint */}
+          {/* Phase L34.4 audit fix Medium SECURITY (PROMEOS-SEC-2026-019) — le
+              mot de passe démo "promeos2024" était auparavant affiché en clair
+              sur l'écran de login public. Désormais : seul l'identifiant est
+              suggéré, le mot de passe doit être communiqué hors-ligne. */}
           <p
             style={{
               fontSize: 11,
@@ -201,7 +204,7 @@ export default function LoginPage() {
               marginTop: '1.25rem',
             }}
           >
-            Démo : promeos@promeos.io / promeos2024
+            Démo : promeos@promeos.io
           </p>
         </div>
       </div>

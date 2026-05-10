@@ -36,10 +36,10 @@ from sqlalchemy.orm import Session
 from doctrine.constants import (
     AUDIT_SME_DEADLINE_DATE,
     BACS_DEADLINE_EXISTING,
-    BACS_PENALTY_EUR,  # noqa: F401 — utilisé dans cockpit_comex via import local
+    BACS_PENALTY_EUR,
     DT_PENALTY_AT_RISK_EUR,
     DT_PENALTY_EUR,
-    OPERAT_PENALTY_EUR,  # noqa: F401 — utilisé dans cockpit_comex via import local
+    OPERAT_PENALTY_EUR,
 )
 
 from services.billing.losses_service import (
