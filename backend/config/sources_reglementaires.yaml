@@ -324,6 +324,8 @@ terms:
     value: 130.0
     unit: "EUR/MWh"
     domain: "tarifs"
+    status: "market_observatory"
+    confidence: "medium"
     source:
       label: "Observatoire CRE T4 2025 § ETI tertiaire post-ARENH"
       url: "https://www.cre.fr/observatoire-des-marches-de-detail"
@@ -337,6 +339,8 @@ terms:
     value: 0.068
     unit: "EUR/kWh"
     domain: "tarifs"
+    status: "internal_fallback"
+    confidence: "medium"
     source:
       label: "Observatoire CRE — fallback prix élec moyen ETI"
       url: "https://www.cre.fr/observatoire-des-marches-de-detail"
@@ -350,6 +354,8 @@ terms:
     value: 80.0
     unit: "EUR/MWh"
     domain: "tarifs"
+    status: "market_observatory"
+    confidence: "medium"
     source:
       label: "RTE NEBCO — prix marginal effacement industriel"
       url: "https://www.services-rte.com/fr/visualisez-les-donnees-publiees-par-rte/effacement.html"
@@ -939,6 +945,8 @@ terms:
     value: 0.45
     unit: "ratio"
     domain: "regops"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "PROMEOS doctrine — pondération RegOps par défaut (DT/BACS/APER)"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
@@ -952,6 +960,8 @@ terms:
     value: 0.30
     unit: "ratio"
     domain: "regops"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "PROMEOS doctrine — pondération RegOps BACS par défaut"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
@@ -965,6 +975,8 @@ terms:
     value: 0.25
     unit: "ratio"
     domain: "regops"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "PROMEOS doctrine — pondération RegOps APER par défaut"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
@@ -994,6 +1006,8 @@ terms:
     value: 4200
     unit: "EUR/site/an"
     domain: "tarifs"
+    status: "internal_heuristic"
+    confidence: "medium"
     source:
       label: "PROMEOS heuristique flex — gain moyen ETI tertiaire (NEBCO + tarification)"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
@@ -1010,6 +1024,8 @@ terms:
     value: 30.0
     unit: "%"
     domain: "readiness"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "PROMEOS doctrine — pondération readiness Données"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
@@ -1023,6 +1039,8 @@ terms:
     value: 40.0
     unit: "%"
     domain: "readiness"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "PROMEOS doctrine — pondération readiness Conformité"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
@@ -1036,6 +1054,8 @@ terms:
     value: 30.0
     unit: "%"
     domain: "readiness"
+    status: "internal_doctrine"
+    confidence: "high"
     source:
       label: "PROMEOS doctrine — pondération readiness Actions"
       url: "https://github.com/promeosenergies-svg/promeos-poc/blob/main/backend/doctrine/constants.py"
