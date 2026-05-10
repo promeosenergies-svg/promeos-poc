@@ -94,14 +94,25 @@ def get_regulatory_rates(
     # Mode 2 : filtre par domaine → tous les termes du domaine (filtrés public)
     if domain:
         terms = get_terms_by_domain(domain)
-        if not terms:
-            valid_domains = list_all_domains()
-            raise HTTPException(
-                status_code=404,
-                detail=(f"Domaine inconnu ou vide : {domain!r}. Domaines disponibles : {valid_domains}"),
-            )
         # Phase L33.2 audit fix P0 SECURITY — filtre internal_doctrine
         public_terms = _filter_public_terms(terms)
+        # Phase L33.3 audit fix P0 SECURITY (Reviewer #2 audit 2/3 PROMEOS-SEC-2026-015) :
+        # le check vide est appliqué APRÈS filtrage. Un domaine entièrement composé
+        # de termes internal_doctrine retourne 404 (vs 200 + terms vide qui révélait
+        # l'existence du domaine via oracle 200 vs 404).
+        if not public_terms:
+            cached_yaml = load_regulatory_sources()
+            public_domains_only = sorted(
+                {
+                    t["domain"]
+                    for t in cached_yaml.get("terms", {}).values()
+                    if t.get("status") not in _INTERNAL_PROMEOS_STATUSES and isinstance(t, dict) and "domain" in t
+                }
+            )
+            raise HTTPException(
+                status_code=404,
+                detail=(f"Domaine inconnu ou vide : {domain!r}. Domaines disponibles : {public_domains_only}"),
+            )
         return {"domain": domain, "terms": public_terms}
 
     # Mode 3 : sans filtre → tout le YAML (filtré public)
@@ -114,5 +125,20 @@ def get_regulatory_rates(
 
 @router.get("/domains")
 def get_regulatory_domains() -> dict:
-    """Liste tous les domaines disponibles dans le SoT (utile UI de filtre)."""
-    return {"domains": list_all_domains()}
+    """Phase L33.3 audit fix P0 SECURITY (Reviewer #2 audit 2/3) — Liste les
+    domaines PUBLICS uniquement (filtre des domaines entièrement internal_*).
+
+    Avant : `bill_intelligence`, `regops`, `readiness` étaient exposés et
+    révélaient l'existence des modules heuristiques internes. Désormais, un
+    domaine est inclus uniquement s'il contient au moins 1 terme public
+    (status verified|pending_source_verification|market_observatory).
+    """
+    cached_yaml = load_regulatory_sources()
+    public_domains = sorted(
+        {
+            term["domain"]
+            for term in cached_yaml.get("terms", {}).values()
+            if term.get("status") not in _INTERNAL_PROMEOS_STATUSES and isinstance(term, dict) and "domain" in term
+        }
+    )
+    return {"domains": public_domains}

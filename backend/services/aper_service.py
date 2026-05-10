@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 # Phase L28.1b audit fix P1 — import doctrine.constants module-level (avant :
 # import différé in-function ligne 92, callsites comparaisons hardcoded 1500/10000).
 from doctrine.constants import (
-    APER_DEADLINE_DATE,
     APER_DEADLINE_LARGE_PARKING_DATE,
     APER_DEADLINE_SMALL_PARKING_DATE,
     APER_PARKING_LARGE_SURFACE_M2,
@@ -126,7 +125,9 @@ def get_aper_dashboard(db: Session, org_id: int) -> dict:
             "surface_assujettie_m2": surface_assujettie_m2,
             "penalty_eur_per_m2_per_year": float(APER_PENALTY_EUR_PER_M2_PER_YEAR),
             "penalty_eur_year": float(penalty_eur_year),
-            "deadline": APER_DEADLINE_DATE,
+            # Phase L33.3 audit fix P1 — APER_DEADLINE_DATE legacy alias remplacé par
+            # APER_DEADLINE_SMALL_PARKING_DATE (lazy-load YAML SoT). Drift 6 mois éliminé.
+            "deadline": APER_DEADLINE_SMALL_PARKING_DATE,
             "min_surface_assujettie_m2": APER_PARKING_MIN_SURFACE_M2,
             "regulatory_article": "Loi 2023-175 art. 40 + Décret 2022-1726",
         },

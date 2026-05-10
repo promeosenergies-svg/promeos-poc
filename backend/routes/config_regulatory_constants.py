@@ -17,6 +17,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from datetime import date
+
 from doctrine.constants import (
     APER_DEADLINE_LARGE_PARKING_DATE,
     APER_DEADLINE_SMALL_PARKING_DATE,
@@ -26,8 +28,8 @@ from doctrine.constants import (
     APER_SOLAR_RATIO_PCT,
     DT_PENALTY_AT_RISK_EUR,
     DT_PENALTY_EUR,
-    OPERAT_DECLARATION_DEADLINE,
     OPERAT_PENALTY_EUR,
+    compute_operat_deadline,
     PRICE_FALLBACK_EUR_PER_KWH,
     PRIMARY_ENERGY_COEF_ELEC,
     PRIMARY_ENERGY_COEF_GAS,
@@ -93,15 +95,23 @@ def get_regulatory_constants() -> dict:
         },
         "operat": {
             "penalite_eur": OPERAT_PENALTY_EUR,
-            "deadline_declaration_iso": OPERAT_DECLARATION_DEADLINE,
+            # Phase L33.3 audit fix P1 — deadline_declaration_iso dynamique via
+            # compute_operat_deadline(year). Avant : OPERAT_DECLARATION_DEADLINE='2026-09-30'
+            # hardcodé legacy alias devenait obsolète au 1er janvier 2027.
+            "deadline_declaration_iso": compute_operat_deadline(date.today().year),
             "source": "Arrêté Tertiaire 2024-DGEC",
-            "label": "OPERAT — déclaration consommations 2025",
+            "label": "OPERAT — déclaration consommations annuelles",
         },
         "dt": {
             "penalty_eur": DT_PENALTY_EUR,
             "penalty_at_risk_eur": DT_PENALTY_AT_RISK_EUR,
-            "source": "Décret 2019-771 art. 9 + L.173-2 CCH",
-            "label": "Décret Tertiaire — sanctions",
+            # Phase L33.3 audit fix P0 (Reviewer #3 audit 2/3) — source label distingue
+            # explicitement la valeur opposable (penalty_eur 7500€ Décret 2019-771) de
+            # la convention scoring PROMEOS (penalty_at_risk 3750€ = 50% — pas de
+            # base réglementaire directe). Décharge la responsabilité civile PROMEOS
+            # face à un client qui interpréterait 3750€ comme sanction légale opposable.
+            "source": "Décret 2019-771 art. 9 + L.173-2 CCH (penalty_eur). Convention PROMEOS — 50% pénalité plafond pour sites à risque (penalty_at_risk_eur, non opposable légalement).",
+            "label": "Décret Tertiaire — sanctions (penalty_at_risk_eur = scoring PROMEOS)",
         },
         "primary_energy": {
             "coef_elec": PRIMARY_ENERGY_COEF_ELEC,

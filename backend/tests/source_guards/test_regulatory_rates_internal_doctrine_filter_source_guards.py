@@ -67,16 +67,18 @@ def test_sg_reg_rates_public_01_no_internal_doctrine_in_full_response(client):
 # ─── SG_REG_RATES_PUBLIC_02 : domain=bill_intelligence masqué ───────────────
 
 
-def test_sg_reg_rates_public_02_bill_intelligence_domain_empty_public(client):
-    """Phase L33.2 — domain=bill_intelligence retourne 0 terme (toutes internal_doctrine)."""
+def test_sg_reg_rates_public_02_bill_intelligence_domain_returns_404(client):
+    """Phase L33.2 + L33.3 — domain=bill_intelligence retourne 404 (toutes internal_doctrine).
+
+    Phase L33.3 audit 2/3 fix P0 SECURITY (Reviewer #2 PROMEOS-SEC-2026-015) :
+    avant L33.3 retournait 200 + terms vide (oracle révélant existence domaine).
+    Désormais 404 distingué d'un vrai domaine inconnu uniquement par le message
+    de la liste des domaines publics (qui exclut bill_intelligence).
+    """
     resp = client.get("/api/regulatory/rates", params={"domain": "bill_intelligence"})
-    # 200 OK avec terms vide (filtre laisse passer le domain mais filtre les termes)
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["domain"] == "bill_intelligence"
-    assert len(data["terms"]) == 0, (
-        f"Fuite doctrine — domain=bill_intelligence devrait être 0 termes publics, "
-        f"reçu {len(data['terms'])}: {list(data['terms'].keys())[:5]}"
+    assert resp.status_code == 404, (
+        f"Fuite doctrine — domain=bill_intelligence DEVRAIT retourner 404 "
+        f"(toutes internal_doctrine). Reçu {resp.status_code}."
     )
 
 
@@ -145,3 +147,40 @@ def test_sg_reg_rates_public_05_cache_not_mutated(client):
         f"Cache lru_cache muté par le filtre Phase L33.2 — domains attendus "
         f"{sorted(expected_domains)}, reçus {sorted(domains)}"
     )
+
+
+# ─── SG_REG_RATES_PUBLIC_06 : /domains exclut bill_intelligence/regops/readiness ──
+
+
+def test_sg_reg_rates_public_06_domains_endpoint_filters_internal(client):
+    """Phase L33.3 audit fix P0 SECURITY (Reviewer #2 audit 2/3 PROMEOS-SEC-2026-013) :
+    /api/regulatory/domains DOIT exclure les domaines entièrement composés de termes
+    internal_*. Les domaines bill_intelligence, regops, readiness révéleraient
+    l'existence des modules heuristiques internes PROMEOS aux concurrents.
+    """
+    resp = client.get("/api/regulatory/domains")
+    assert resp.status_code == 200
+    data = resp.json()
+    public_domains = set(data["domains"])
+
+    # Domaines internes ne DOIVENT PAS apparaître publiquement
+    internal_only_domains = {"bill_intelligence", "regops", "readiness"}
+    leaked = internal_only_domains & public_domains
+    assert not leaked, (
+        f"Fuite doctrine — domaines internes {sorted(leaked)} exposés publiquement via /api/regulatory/domains"
+    )
+
+    # Domaines réglementaires opposables DOIVENT apparaître
+    expected_public = {
+        "co2",
+        "tarifs",
+        "accises",
+        "tva",
+        "dt",
+        "bacs",
+        "aper",
+        "audit_sme",
+        "operat",
+    }
+    missing = expected_public - public_domains
+    assert not missing, f"Régression filtre — domaines publics opposables manquants : {sorted(missing)}"

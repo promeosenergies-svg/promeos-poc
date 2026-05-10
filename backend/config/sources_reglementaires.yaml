@@ -341,12 +341,16 @@ terms:
     confidence: "high"
     source:
       label: "Arrêté CTA 20/07/2021 — coef stable distribution gaz"
-      url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000043831001"
+      # Phase L33.3 audit fix P1 LEGAL (Reviewer #3 audit 2/3 SR-L33-P1-007) :
+      # JORFTEXT000043831001 → JORFTEXT000043847483 — alignement avec
+      # tarifs_reglementaires.yaml:301,307 (référencé 2× dans le repo). Vérification
+      # humaine sur Légifrance recommandée Sprint C-7 pour confirmation.
+      url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000043847483"
       version: "Arrêté 20/07/2021"
       effective_date: "2021-08-01"
-      legal_reference: null
+      legal_reference: "JORFTEXT000043847483"
     formula: "CTA = pct × abonnement ATRD annuel"
-    notes: null
+    notes: "Phase L33.3 — JORFTEXT aligné avec tarifs_reglementaires.yaml (cohérence cross-YAML)."
 
   PRICE_ELEC_ETI_2026_EUR_PER_MWH:
     value: 130.0
@@ -954,7 +958,7 @@ terms:
       label: "CRE délibération TURPE 7 — segment C5 BT Heures Pleines Hiver (HPH)"
       url: "https://www.cre.fr/"
       version: "TURPE 7"
-      effective_date: "2025-08-01"
+      effective_date: "2025-02-01"
       legal_reference: null
     formula: null
     notes: "Tarif horosaisonnier — ne pas confondre avec accise élec"
@@ -969,7 +973,7 @@ terms:
       label: "CRE délibération TURPE 7 — segment C5 BT Heures Creuses Hiver (HCH)"
       url: "https://www.cre.fr/"
       version: "TURPE 7"
-      effective_date: "2025-08-01"
+      effective_date: "2025-02-01"
       legal_reference: null
     formula: null
     notes: null
@@ -984,7 +988,7 @@ terms:
       label: "CRE délibération TURPE 7 — segment C5 BT Heures Pleines Été (HPE)"
       url: "https://www.cre.fr/"
       version: "TURPE 7"
-      effective_date: "2025-08-01"
+      effective_date: "2025-02-01"
       legal_reference: null
     formula: null
     notes: null
@@ -999,7 +1003,7 @@ terms:
       label: "CRE délibération TURPE 7 — segment C5 BT Heures Creuses Été (HCE)"
       url: "https://www.cre.fr/"
       version: "TURPE 7"
-      effective_date: "2025-08-01"
+      effective_date: "2025-02-01"
       legal_reference: null
     formula: null
     notes: null

@@ -415,25 +415,16 @@ export function buildExecutiveKpis(kpis, sites = [], weights = READINESS_WEIGHTS
   // A.2: Score unifié (0-100) — source unique backend (règle no-calc-in-front)
   const complianceScore = kpis.compliance_score != null ? Math.round(kpis.compliance_score) : null;
   const pctConf = complianceScore != null ? complianceScore : 0;
-  // Maturité score — continuous action readiness (0-100)
-  // Phase L33.1 audit fix P0 (Reviewer #2 META-AUDIT) — privilégier la valeur
-  // backend kpis.readiness_score si exposée (source unique). Le fallback local
-  // (couvertureDonnees × weights) reste actif uniquement si backend absent —
-  // marqué `is_fallback` pour traçabilité UI/audit.
-  const actionsActives =
-    total > 0 ? Math.round((conformes / total) * 60 + ((total - nonConformes) / total) * 40) : 80;
+  // Maturité score — backend authoritative (Phase L33.1 + L33.3 R1+R4 audit) :
+  // 1. Privilège kpis.readiness_score backend (SoT unique compliance_score_service.py)
+  // 2. Fallback local conditionnel — Phase L33.3 fix P1 R4 (Reviewer #4 audit 2/3) :
+  //    SUPPRESSION business logic 60+40+80 magic numbers en frontend (violation §8.1).
+  //    Si backend absent + total>0 : retourne null → UI affiche '—' (au lieu d'un calcul
+  //    heuristique trompeur masqué comme valeur réelle).
   const readinessScoreBackend =
     kpis.readiness_score != null ? Math.round(kpis.readiness_score) : null;
-  const readinessScore =
-    readinessScoreBackend != null
-      ? readinessScoreBackend
-      : total > 0
-        ? Math.round(
-            couvertureDonnees * weights.data +
-              pctConf * weights.conformity +
-              actionsActives * weights.actions
-          )
-        : 0;
+  const readinessScore = readinessScoreBackend != null ? readinessScoreBackend : null;
+  const readinessIsFallback = readinessScoreBackend == null;
   const sitesWithData = sites.filter((s) => s.conso_kwh_an > 0).length;
 
   return [
@@ -481,17 +472,22 @@ export function buildExecutiveKpis(kpis, sites = [], weights = READINESS_WEIGHTS
       id: 'maturite',
       accentKey: 'maturite',
       label: 'Couverture opérationnelle',
-      value: total > 0 ? formatPercentFR(readinessScore) : '—',
+      // Phase L33.3 fix P1 R4 — `null` si backend absent (au lieu d'un calcul heuristique
+      // trompeur masqué). UI affiche '—' explicitement → cohérence doctrine §8.1.
+      value: total > 0 && readinessScore != null ? formatPercentFR(readinessScore) : '—',
       rawValue: readinessScore,
+      is_fallback: readinessIsFallback,
       messageCtx: {},
       subShort: 'Données + conformité + actions',
       sub: 'Score combiné données, conformité et actions',
       status:
-        readinessScore < MATURITY_THRESHOLDS.crit
-          ? 'crit'
-          : readinessScore < MATURITY_THRESHOLDS.warn
-            ? 'warn'
-            : 'ok',
+        readinessScore == null
+          ? 'neutral'
+          : readinessScore < MATURITY_THRESHOLDS.crit
+            ? 'crit'
+            : readinessScore < MATURITY_THRESHOLDS.warn
+              ? 'warn'
+              : 'ok',
     },
     {
       id: 'couverture',
@@ -524,7 +520,14 @@ export function buildExecutiveKpis(kpis, sites = [], weights = READINESS_WEIGHTS
  * @param {{ isExpert: boolean }}  opts
  * @returns dashboard essentials object
  */
-export function buildDashboardEssentials(sites = [], { isExpert = false } = {}) {
+export function buildDashboardEssentials(
+  sites = [],
+  { isExpert = false, readinessScore = null, weights = READINESS_WEIGHTS } = {}
+) {
+  // Phase L33.3 audit fix P1 (Reviewer #4 audit 2/3) — propagation `readinessScore` +
+  // `weights` issus du Context React via injection paramètre. Le caller (Cockpit.jsx)
+  // doit passer { readinessScore: cockpitKpis.readinessScore, weights: regConstants.readiness_weights }.
+  // Sans injection, fallback null → tile maturité affiche '—'.
   const total = sites.length;
   const conformes = sites.filter((s) => s.statut_conformite === 'conforme').length;
   const nonConformes = sites.filter((s) => s.statut_conformite === 'non_conforme').length;
@@ -533,7 +536,16 @@ export function buildDashboardEssentials(sites = [], { isExpert = false } = {}) 
   const couvertureDonnees =
     total > 0 ? Math.round((sites.filter((s) => s.conso_kwh_an > 0).length / total) * 100) : 0;
 
-  const kpis = { total, conformes, nonConformes, aRisque, risqueTotal, couvertureDonnees };
+  // Phase L33.3 — readiness_score backend injecté via opts (kpis composite pour buildExecutiveKpis)
+  const kpis = {
+    total,
+    conformes,
+    nonConformes,
+    aRisque,
+    risqueTotal,
+    couvertureDonnees,
+    readiness_score: readinessScore,
+  };
   // Sprint α-fin Phase 1.D — `watchlist = []` (ex-`buildWatchlist(kpis, sites)`).
   // La détection des items watchlist (non_conformes / a_risque / no_conso_data /
   // low_coverage) est désormais côté backend via event_bus détecteurs +
@@ -555,7 +567,7 @@ export function buildDashboardEssentials(sites = [], { isExpert = false } = {}) 
     opportunities,
     todayActions: buildTodayActions(kpis, watchlist, opportunities),
     executiveSummary: buildExecutiveSummary(kpis, topSites),
-    executiveKpis: buildExecutiveKpis(kpis, sites),
+    executiveKpis: buildExecutiveKpis(kpis, sites, weights),
     consistency,
     healthState: computeHealthState({ kpis, watchlist, briefing, consistency, alertsCount: 0 }),
   };

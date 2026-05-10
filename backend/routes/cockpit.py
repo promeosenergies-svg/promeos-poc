@@ -37,10 +37,10 @@ from doctrine.constants import (
     TRAJECTORY_LEARNING_MONTHS_RAMP_UP,
     TRAJECTORY_LEARNING_RATIO_ENGAGEMENT,
     TRAJECTORY_LEARNING_RATIO_RAMP_UP,
-    OPERAT_DECLARATION_DEADLINE,
     READINESS_WEIGHT_DATA,
     READINESS_WEIGHT_CONFORMITY,
     READINESS_WEIGHT_ACTIONS,
+    compute_operat_deadline,
 )
 from services.kpi_service import KpiService, KpiScope
 from services.consumption_unified_service import get_portfolio_consumption, ConsumptionSource
@@ -413,8 +413,9 @@ def get_cockpit(
             "kpi_details": kpi_details,
             "action_center": action_center_data,
             "echeance_prochaine": "30 septembre 2026 (Déclaration OPERAT — consommations 2025)",
-            # P0-4 : deadline ISO pour calcul FE via useMemo (SoT doctrine/constants.py)
-            "deadline_operat": OPERAT_DECLARATION_DEADLINE,
+            # P0-4 + Phase L33.3 — deadline ISO dynamique compute_operat_deadline(year)
+            # (avant : OPERAT_DECLARATION_DEADLINE legacy alias hardcodé '2026-09-30').
+            "deadline_operat": compute_operat_deadline(date.today().year),
         },
         headers={"Cache-Control": "private, max-age=30"},
     )

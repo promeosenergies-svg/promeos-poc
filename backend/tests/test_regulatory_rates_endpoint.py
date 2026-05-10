@@ -158,13 +158,19 @@ def test_get_regulatory_rates_each_term_has_required_keys():
 
 
 def test_get_regulatory_domains_returns_distinct_set():
-    """Phase 3.4d → Phase L31.3 : 12 domaines distincts post bill_intelligence ajouté."""
+    """Phase 3.4d → Phase L31.3 → Phase L33.3 : 9 domaines PUBLICS uniquement.
+
+    Phase L33.3 audit fix P0 SECURITY (Reviewer #2 audit 2/3) — l'endpoint
+    /api/regulatory/domains exclut désormais les domaines entièrement composés
+    de termes internal_* (bill_intelligence, regops, readiness) pour éviter
+    la fuite de doctrine PROMEOS interne aux concurrents.
+    """
     resp = client.get("/api/regulatory/domains")
     assert resp.status_code == 200
     data = resp.json()
 
     assert "domains" in data
-    expected = {
+    expected_public = {
         "co2",
         "tarifs",
         "accises",
@@ -174,10 +180,11 @@ def test_get_regulatory_domains_returns_distinct_set():
         "aper",
         "audit_sme",
         "operat",
-        # Phase 3.4d audit follow-up
-        "regops",
-        "readiness",
-        # Phase L31.3 — Bill Intelligence anomalies (R19→R31, ~30 clés internal_doctrine)
-        "bill_intelligence",
     }
-    assert set(data["domains"]) == expected
+    # Phase L33.3 — domaines internes (bill_intelligence, regops, readiness) exclus
+    assert set(data["domains"]) == expected_public
+
+    # Anti-régression : domaines internes ne doivent JAMAIS apparaître
+    assert "bill_intelligence" not in data["domains"]
+    assert "regops" not in data["domains"]
+    assert "readiness" not in data["domains"]
