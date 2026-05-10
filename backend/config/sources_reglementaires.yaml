@@ -39,6 +39,8 @@ terms:
     value: 0.052
     unit: "kgCO2e/kWh"
     domain: "co2"
+    status: "verified"
+    confidence: "high"
     source:
       label: "ADEME Base Empreinte V23.6 — France electricity mix ACV"
       url: "https://base-empreinte.ademe.fr/"
@@ -52,6 +54,8 @@ terms:
     value: 0.227
     unit: "kgCO2e/kWh"
     domain: "co2"
+    status: "verified"
+    confidence: "high"
     source:
       label: "ADEME Base Empreinte V23.6 — gaz naturel combustion + amont (PCI)"
       url: "https://base-empreinte.ademe.fr/"
@@ -65,6 +69,8 @@ terms:
     value: 0.238
     unit: "kgCO2e/kWh"
     domain: "co2"
+    status: "pending_source_verification"
+    confidence: "medium"
     source:
       label: "Arrêté du 1er août 2025 — facteur GNL pour reporting OPERAT"
       url: "https://www.legifrance.gouv.fr/search/lawb?init=true&query=arr%C3%AAt%C3%A9+1er+ao%C3%BBt+2025+GNL+OPERAT"
@@ -81,6 +87,7 @@ terms:
     value: 30.85
     unit: "EUR/MWh"
     domain: "accises"
+    status: "verified"
     confidence: "high"
     source:
       label: "Code des impositions sur les biens et services — accise élec T1 (sans réduction)"
@@ -95,6 +102,7 @@ terms:
     value: 26.58
     unit: "EUR/MWh"
     domain: "accises"
+    status: "verified"
     confidence: "high"
     source:
       label: "Code des impositions sur les biens et services — accise élec T2 (PME C4 pro)"
@@ -139,6 +147,7 @@ terms:
     value: 10.73
     unit: "EUR/MWh"
     domain: "accises"
+    status: "verified"
     confidence: "high"
     source:
       label: "Code des impositions sur les biens et services — accise gaz naturel (TICGN)"
@@ -357,6 +366,7 @@ terms:
     value: 7500
     unit: "EUR/an/site"
     domain: "dt"
+    status: "verified"
     confidence: "high"
     source:
       label: "Décret n°2019-771 art. 9 — pénalité site non conforme DT (PM)"
@@ -371,6 +381,8 @@ terms:
     value: 3750
     unit: "EUR/an/site"
     domain: "dt"
+    status: "verified"
+    confidence: "high"
     source:
       label: "Décret n°2019-771 art. 9 — pénalité site à risque DT"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000038812251"
@@ -436,6 +448,8 @@ terms:
     value: 2020
     unit: "année"
     domain: "dt"
+    status: "verified"
+    confidence: "high"
     source:
       label: "Décret n°2019-771 — année référence par défaut Cref"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000038812251"
@@ -449,6 +463,8 @@ terms:
     value: 1.9
     unit: "ratio"
     domain: "dt"
+    status: "verified"
+    confidence: "high"
     source:
       label: "Arrêté du 13 avril 2023 — coefficient énergie primaire élec abaissé de 2.3 à 1.9"
       url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047445751"
@@ -462,6 +478,8 @@ terms:
     value: 1.0
     unit: "ratio"
     domain: "dt"
+    status: "verified"
+    confidence: "high"
     source:
       label: "Arrêté 10/04/2020 — coefficient énergie primaire combustibles fossiles"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000041814978"
@@ -475,6 +493,7 @@ terms:
     value: 1500
     unit: "EUR/site"
     domain: "dt"
+    status: "verified"
     confidence: "high"
     source:
       label: "Code de la construction et de l'habitation art. R185-2 (sanction DT/OPERAT) — fondement L173-2"
@@ -505,6 +524,7 @@ terms:
     value: 290
     unit: "kW"
     domain: "bacs"
+    status: "verified"
     confidence: "high"
     source:
       label: "Décret n°2020-887 art. R175-3 — seuil BACS 2025"
@@ -519,6 +539,7 @@ terms:
     value: 70
     unit: "kW"
     domain: "bacs"
+    status: "verified"
     confidence: "high"
     source:
       label: "Décret n°2025-1343 art. 1 — seuil BACS abaissé 2030"
@@ -541,6 +562,7 @@ terms:
     value: "2030-01-01"
     unit: "date"
     domain: "bacs"
+    status: "verified"
     confidence: "high"
     source:
       label: "Décret n°2025-1343 art. 1 — report deadline BACS tranche 70-290 kW"
@@ -555,6 +577,7 @@ terms:
     value: "2025-01-01"
     unit: "date"
     domain: "bacs"
+    status: "verified"
     confidence: "high"
     source:
       label: "Décret n°2020-887 art. R175-3 — deadline BACS Tier 1 > 290 kW"
@@ -569,6 +592,7 @@ terms:
     value: 1500
     unit: "EUR/an/site"
     domain: "bacs"
+    status: "verified"
     confidence: "high"
     source:
       label: "Décret n°2020-887 art. R175-7 — pénalité BACS site non conforme"
@@ -586,6 +610,8 @@ terms:
     value: 1500
     unit: "m²"
     domain: "aper"
+    status: "verified"
+    confidence: "high"
     source:
       label: "Loi APER n°2023-175 art. 40 — seuil parking SMALL [1500-10000 m²]"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000047276789"
@@ -599,6 +625,8 @@ terms:
     value: 10000
     unit: "m²"
     domain: "aper"
+    status: "verified"
+    confidence: "high"
     source:
       label: "Loi APER n°2023-175 art. 40 — seuil parking LARGE [>10000 m²]"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000047276789"
@@ -612,6 +640,8 @@ terms:
     value: "2026-07-01"
     unit: "date"
     domain: "aper"
+    status: "verified"
+    confidence: "high"
     source:
       label: "Loi APER + Décret 2022-1726 — deadline parking LARGE >10000 m²"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000047276789"
@@ -625,6 +655,8 @@ terms:
     value: "2028-07-01"
     unit: "date"
     domain: "aper"
+    status: "verified"
+    confidence: "high"
     source:
       label: "Loi APER + Décret 2022-1726 — deadline parking SMALL [1500-10000 m²]"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000047276789"
@@ -638,6 +670,8 @@ terms:
     value: 20
     unit: "EUR/m²/an"
     domain: "aper"
+    status: "verified"
+    confidence: "high"
     source:
       label: "Loi APER n°2023-175 art. 40 + Décret 2022-1726 — sanction non engagement"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000047276789"
@@ -651,6 +685,8 @@ terms:
     value: 50.0
     unit: "%"
     domain: "aper"
+    status: "verified"
+    confidence: "high"
     source:
       label: "Loi APER art. 40 — taux minimum solarisation parking"
       url: "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000047276789"
@@ -667,6 +703,7 @@ terms:
     value: 2.75
     unit: "GWh/an"
     domain: "audit_sme"
+    status: "verified"
     confidence: "high"
     source:
       label: "Loi n°2025-391 du 30/04/2025 — seuil audit énergétique 4 ans"
@@ -681,6 +718,7 @@ terms:
     value: 23.6
     unit: "GWh/an"
     domain: "audit_sme"
+    status: "verified"
     confidence: "high"
     source:
       label: "Loi n°2025-391 du 30/04/2025 — seuil SME ISO 50001"
@@ -695,6 +733,8 @@ terms:
     value: "2026-10-11"
     unit: "date"
     domain: "audit_sme"
+    status: "verified"
+    confidence: "high"
     source:
       label: "Loi n°2025-391 — deadline premier audit entreprises existantes"
       url: "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000051956481"
