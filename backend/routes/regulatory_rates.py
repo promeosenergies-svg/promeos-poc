@@ -20,7 +20,6 @@ from fastapi import APIRouter, HTTPException, Query
 from config.regulatory_sources_loader import (
     get_term,
     get_terms_by_domain,
-    list_all_domains,
     load_regulatory_sources,
 )
 

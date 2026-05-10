@@ -563,7 +563,7 @@ terms:
       effective_date: "2026-01-01"
       legal_reference: null
     formula: null
-    notes: "Mirroir doctrine/constants.py OPERAT_DECLARATION_DEADLINE"
+    notes: "Consommé par doctrine/constants.py via compute_operat_deadline(year) — récurrence annuelle (alias legacy supprimé Phase L33.4)"
 
   # ═════════════════════════════════════════════════════════════════════
   # Domaine BACS — Décret n°2020-887 + n°2025-1343
@@ -712,7 +712,7 @@ terms:
       effective_date: "2028-07-01"
       legal_reference: null
     formula: null
-    notes: "Mirroir doctrine/constants.py APER_DEADLINE_DATE"
+    notes: "Consommé par doctrine/constants.py via APER_DEADLINE_SMALL_PARKING_DATE (lazy-load YAML SoT — alias legacy supprimé Phase L33.4)"
 
   APER_PENALTY_EUR_PER_M2_PER_YEAR:
     value: 20

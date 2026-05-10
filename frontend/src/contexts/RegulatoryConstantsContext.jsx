@@ -95,31 +95,18 @@ export function RegulatoryConstantsProvider({ children }) {
       })
       .then((data) => {
         if (cancelled) return;
-        // Merge backend data sur les clés connues — ignore la clé "doctrine"
-        const merged = { ...FALLBACK_CONSTANTS };
-        if (data?.vnu) merged.vnu = { ...FALLBACK_CONSTANTS.vnu, ...data.vnu };
-        if (data?.aper) merged.aper = { ...FALLBACK_CONSTANTS.aper, ...data.aper };
-        if (data?.turpe7_hc)
-          merged.turpe7_hc = { ...FALLBACK_CONSTANTS.turpe7_hc, ...data.turpe7_hc };
-        if (data?.operat) merged.operat = { ...FALLBACK_CONSTANTS.operat, ...data.operat };
-        // Phase L29.3 audit fix P1 — merge des 3 nouveaux dicts L28.1a
-        if (data?.dt) merged.dt = { ...FALLBACK_CONSTANTS.dt, ...data.dt };
-        if (data?.primary_energy)
-          merged.primary_energy = {
-            ...FALLBACK_CONSTANTS.primary_energy,
-            ...data.primary_energy,
-          };
-        if (data?.readiness_weights)
-          merged.readiness_weights = {
-            ...FALLBACK_CONSTANTS.readiness_weights,
-            ...data.readiness_weights,
-          };
-        // Phase L31.1 audit fix P1 — merge price_fallback (consommé par CostSimulationCard)
-        if (data?.price_fallback)
-          merged.price_fallback = {
-            ...FALLBACK_CONSTANTS.price_fallback,
-            ...data.price_fallback,
-          };
+        // Phase L33.4 audit fix P1 simplify (Reviewer #2 audit 3/3) — merge générique
+        // qui itère sur les clés FALLBACK_CONSTANTS. Avant : 8 if/spread répétés
+        // (fragile à l'extension, copier-coller). Désormais zero maintenance pour
+        // une nouvelle clé exposée par /api/config/regulatory-constants — il suffit
+        // de l'ajouter dans FALLBACK_CONSTANTS. La clé "doctrine" du backend
+        // (string narrative) est ignorée car non dans FALLBACK_CONSTANTS.
+        const merged = Object.fromEntries(
+          Object.entries(FALLBACK_CONSTANTS).map(([key, fallback]) => [
+            key,
+            data?.[key] ? { ...fallback, ...data[key] } : fallback,
+          ])
+        );
         setConstants(merged);
         setLoading(false);
       })

@@ -170,7 +170,10 @@ OPERAT_PENALTY_EUR: int = _load_yaml_int_or_fallback(
 )  # amende par déclaration OPERAT manquante — voir sources_reglementaires.yaml:COMPLIANCE_OPERAT_PENALTY_EUR
 # Deadline déclaration consommations N-1 = 30 septembre N (ADEME OPERAT — annuelle).
 # Phase D-4 Tier 4+ P2 fix audit code-reviewer : helper dynamique évite hardcode 2026-only.
-OPERAT_DECLARATION_DEADLINE = "2026-09-30"  # legacy alias (cohérent runtime à figer Phase E)
+# Phase L33.4 audit fix P1 (Reviewer #2 simplify audit 3/3) — alias legacy
+# OPERAT_DECLARATION_DEADLINE (= "2026-09-30") supprimé. Aucun callsite Python
+# ne le consommait runtime (vérifié par grep). SoT canonique = compute_operat_deadline(year)
+# + OPERAT_DECLARATION_DEADLINE_MONTH_DAY pour récurrence annuelle.
 OPERAT_DECLARATION_DEADLINE_MONTH_DAY = "09-30"  # SoT cardinal — récurrence annuelle
 
 
@@ -217,7 +220,11 @@ READINESS_WEIGHT_ACTIONS: float = _load_yaml_or_fallback("READINESS_WEIGHT_ACTIO
 # Phase L26.1 audit fix P1 — mirror YAML APER_PENALTY_EUR_PER_M2_PER_YEAR
 # (drift silencieux si décret modificatif post-2028 révise sanction).
 APER_PENALTY_EUR_PER_M2_PER_YEAR: int = _load_yaml_int_or_fallback("APER_PENALTY_EUR_PER_M2_PER_YEAR", fallback=20)
-APER_DEADLINE_DATE = "2028-01-01"  # legacy alias — préfère APER_DEADLINE_SMALL_PARKING_DATE
+# Phase L33.4 audit fix P1 (Reviewer #2 simplify audit 3/3) — alias legacy
+# APER_DEADLINE_DATE (= "2028-01-01") supprimé. Aucun callsite Python ne le
+# consommait runtime (vérifié par grep). SoT = APER_DEADLINE_SMALL_PARKING_DATE
+# (lazy-load YAML) pour parkings 1500-10000 m² + APER_DEADLINE_LARGE_PARKING_DATE
+# pour parkings >10000 m².
 # Phase L29.1 audit fix P1 — mirror YAML APER_DEADLINE_SMALL/LARGE (Loi 2023-175 art. 40).
 # Mapping Python suffixe `_PARKING_DATE` → YAML clé courte `_SMALL`/`_LARGE`.
 # CARDINAL : APER_DEADLINE_LARGE = 2026-07-01 imminente (< 2 mois) — pilot-readiness.

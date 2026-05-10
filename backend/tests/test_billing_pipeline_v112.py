@@ -87,8 +87,16 @@ class TestPipelineInvariants:
 
 class TestTemporalVersioning:
     def test_elec_before_turpe7_uses_turpe6(self):
-        """Facture juin 2025 → TURPE 6 (0.0282 EUR/kWh) sur C5."""
-        inv = _make_invoice(1000, date(2025, 6, 1), date(2025, 6, 30))
+        """Facture janvier 2025 → TURPE 6 (0.0282 EUR/kWh) sur C5.
+
+        Phase L33.4 audit fix P1 (Reviewer #1 audit 3/3 + L33.3 SR-L33-P0-NEW-008) :
+        TURPE 7 effective_date corrigée 2025-02-01 (CRE délibération 2025-78 du
+        13/03/2025, mouvement tarifaire EXCEPTIONNEL au 1/02/2025). Avant, le test
+        assumait TURPE 7 à 2025-08-01 (date brochure Enedis commerciale, pas date
+        légale d'application). Test mis à jour pour facture janvier 2025
+        (TURPE 6 valid_to=2025-01-31).
+        """
+        inv = _make_invoice(1000, date(2025, 1, 5), date(2025, 1, 31))
         contract = _make_contract("elec", 0.18, kva=12)
         res = shadow_billing_v2(inv, [], contract)
         reseau = [c for c in res["components"] if c["code"] == "reseau"][0]

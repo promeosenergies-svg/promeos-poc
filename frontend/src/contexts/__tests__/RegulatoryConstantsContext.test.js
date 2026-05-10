@@ -81,31 +81,26 @@ describe('RegulatoryConstantsContext — FALLBACK_CONSTANTS complet (Phase L29.3
   });
 });
 
-describe('RegulatoryConstantsContext — merge backend (Phase L29.3)', () => {
-  it('merge data.vnu en utilisant FALLBACK_CONSTANTS.vnu comme defaults', () => {
-    // Pattern : merged.vnu = { ...FALLBACK_CONSTANTS.vnu, ...data.vnu }
-    expect(contextSrc).toMatch(/merged\.vnu\s*=\s*\{\s*\.\.\.FALLBACK_CONSTANTS\.vnu/);
+describe('RegulatoryConstantsContext — merge backend (Phase L29.3 → L33.4 generic)', () => {
+  it('merge générique Object.fromEntries itère sur FALLBACK_CONSTANTS (Phase L33.4)', () => {
+    // Phase L33.4 — refactor 8 if/merge → boucle générique. Anti-régression
+    // ouverture future : ajouter une nouvelle clé dans FALLBACK_CONSTANTS
+    // suffit, pas besoin d'ajouter un if dédié.
+    expect(contextSrc).toContain('Object.fromEntries');
+    expect(contextSrc).toContain('Object.entries(FALLBACK_CONSTANTS)');
   });
 
-  it('merge data.dt (Phase L29.3 nouveau merge)', () => {
-    expect(contextSrc).toMatch(/merged\.dt\s*=\s*\{\s*\.\.\.FALLBACK_CONSTANTS\.dt/);
+  it('merge utilise FALLBACK_CONSTANTS comme defaults pour chaque clé', () => {
+    // Pattern : data?.[key] ? { ...fallback, ...data[key] } : fallback
+    expect(contextSrc).toMatch(/data\?\.\[key\]/);
+    expect(contextSrc).toMatch(/\{\s*\.\.\.fallback,\s*\.\.\.data\[key\]\s*\}/);
   });
 
-  it('merge data.primary_energy (Phase L29.3 nouveau merge)', () => {
-    expect(contextSrc).toMatch(
-      /merged\.primary_energy\s*=\s*\{[\s\S]*FALLBACK_CONSTANTS\.primary_energy/
-    );
-  });
-
-  it('merge data.readiness_weights (Phase L29.3 nouveau merge)', () => {
-    expect(contextSrc).toMatch(
-      /merged\.readiness_weights\s*=\s*\{[\s\S]*FALLBACK_CONSTANTS\.readiness_weights/
-    );
-  });
-
-  it('ignore la clé doctrine du backend (présente uniquement comme métadata)', () => {
-    expect(contextSrc).toContain('// Merge backend data sur les clés connues');
-    // Pas de merge merged.doctrine = ...
+  it('ignore la clé doctrine du backend (non présente dans FALLBACK_CONSTANTS donc filtrée)', () => {
+    // Phase L33.4 — refactor merge générique Object.fromEntries itère sur
+    // FALLBACK_CONSTANTS donc la clé "doctrine" du backend (string narrative)
+    // est automatiquement ignorée car non listée dans FALLBACK_CONSTANTS.
     expect(contextSrc).not.toMatch(/merged\.doctrine\s*=/);
+    expect(contextSrc).not.toMatch(/FALLBACK_CONSTANTS\.doctrine/);
   });
 });
