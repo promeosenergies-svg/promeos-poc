@@ -105,6 +105,21 @@ async function capture({ page, vp, state }) {
     for (let i = 0; i < hCount; i++) {
       await highlights.nth(i).screenshot({ path: join(dir, `highlight-${i + 1}.png`) });
     }
+
+    // Phase F.2 — capture des variantes ChartFrame* (Bars + Line) pour
+    // valider que les selecteurs trouvent bien les SVG extraits.
+    const bars = page.locator('[data-component="ChartFrameBars"]');
+    const barsCount = await bars.count();
+    console.log(`    ChartFrameBars: ${barsCount}`);
+    for (let i = 0; i < barsCount; i++) {
+      await bars.nth(i).screenshot({ path: join(dir, `chart-bars-${i + 1}.png`) });
+    }
+    const lines = page.locator('[data-component="ChartFrameLine"]');
+    const linesCount = await lines.count();
+    console.log(`    ChartFrameLine: ${linesCount}`);
+    for (let i = 0; i < linesCount; i++) {
+      await lines.nth(i).screenshot({ path: join(dir, `chart-line-${i + 1}.png`) });
+    }
   }
 }
 

@@ -9,8 +9,9 @@
  *
  * Différences avec le prompt original :
  *   - Le `data-component` est `SolHeroPremiumNight` (pas `SolHero`).
- *   - Le `data-component` du KPI est `KpiTriptychCard` (pas `KPISol`)
- *     car la primitive n'est PAS encore extraite (voir Phase E/F).
+ *   - Phase F.1 : `data-component="HubKpiCard"` (extrait — était `KpiTriptychCard`).
+ *   - Phase F.2 : `data-component="ChartFrameBars"` + `"ChartFrameLine"` (extraits
+ *     des helpers locaux `BarsDaily7d` + `LineCharge24h`).
  *   - Le port frontend refonte-sol2 est 5175 (pas 5173, cf MEMORY.md
  *     ports POC vs refonte-sol).
  *   - `?demo_state=*` n'est PAS encore implémenté côté React → seuls les

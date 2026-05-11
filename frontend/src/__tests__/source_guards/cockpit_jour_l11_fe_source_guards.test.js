@@ -102,6 +102,33 @@ describe('SG_HUB_L11_01 — hub-page-uses-canonical-grammar', () => {
     const src = readFile(COCKPIT_JOUR);
     expect(src).toMatch(/getCockpitJour/);
   });
+
+  // Phase F.2 — guard flexible variant : chaque <ChartFrame> doit contenir
+  // au moins un enfant <ChartFrame[A-Z]…> (variante). On NE prescrit PAS
+  // ChartFrameBars+ChartFrameLine en strict — Phase 3.5 introduira Stack /
+  // Donut / Map selon le hub. Ce qu'on protège, c'est le pattern wrapper +
+  // variante (pas la nomenclature des variantes).
+  it('chaque <ChartFrame> contient au moins une variante ChartFrame* enfant (Phase F.2)', () => {
+    const src = readFile(COCKPIT_JOUR);
+    // Pattern : <ChartFrame ouvert (avec props ou non), contenu non-greedy,
+    //           puis un <ChartFrame[A-Z][a-zA-Z]+ (variante), puis ChartFrame
+    //           fermant ou nested. On valide ≥1 occurence.
+    const pattern = /<ChartFrame\b[\s\S]*?<ChartFrame[A-Z][a-zA-Z]+\b/;
+    expect(
+      pattern.test(src),
+      'Chaque <ChartFrame> doit wrapper une variante <ChartFrame*> (Bars/Line/Stack/Donut/Map)'
+    ).toBe(true);
+  });
+
+  it('aucune balise <svg> inline directe dans CockpitJour.jsx (chart inline interdit)', () => {
+    const src = readFile(COCKPIT_JOUR);
+    // Anti-pattern : Skeleton et Error utilisent <div> aria-hidden, pas <svg>.
+    // Si un <svg> apparait, c'est qu'un chart est inline (drift architectural).
+    // Note : on tolere les <svg> SOUS forme commentaire JSX dans le wireframe
+    // doctrinal (Hero), mais Hero est un import primitif → pas de match ici.
+    const svgMatches = src.match(/<svg\b/g) || [];
+    expect(svgMatches.length, '<svg> inline interdit : utiliser les variantes ChartFrame*').toBe(0);
+  });
 });
 
 // ── SG_HUB_L11_02 — promeos-marque-correcte ────────────────────────────────

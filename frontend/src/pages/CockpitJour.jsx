@@ -24,6 +24,8 @@ import {
   HubPage,
   SolHeroPremiumNight,
   ChartFrame,
+  ChartFrameBars,
+  ChartFrameLine,
   HubHighlight,
   HubPageFooter,
   HubKpiCard,
@@ -37,154 +39,8 @@ const TAG = 'CockpitJour';
 // Phase F.1 — KpiTriptychCard inline supprime, remplace par <HubKpiCard>
 // (primitif grammar/hub/HubKpiCard.jsx). Cf docs/audits/phase_3_4_phase_e_decision.md
 // et ADR-021 section "Extraction trail".
-
-/**
- * BarsDaily7d — Petit chart SVG 7 barres (S/D/L/M/M/J/V) tone-aware.
- * Pas de Recharts (overhead inutile pour 7 barres statiques HELIOS demo).
- */
-function BarsDaily7d({ series = [] }) {
-  if (!series.length) return null;
-  const max = Math.max(...series.map((d) => d.value || 0), 1);
-  const width = 100; // pct
-  const barW = 100 / series.length - 3;
-  const toneFill = {
-    crit: 'var(--sol-refuse-line)',
-    warn: 'var(--sol-attention-line)',
-    pos: 'var(--sol-succes-line)',
-    neutral: 'var(--sol-ink-300)',
-  };
-
-  return (
-    <svg
-      role="img"
-      aria-label="Consommation 7 jours en MWh"
-      viewBox="0 0 100 60"
-      preserveAspectRatio="none"
-      style={{ width: `${width}%`, height: '120px' }}
-    >
-      {series.map((d, i) => {
-        const h = (d.value / max) * 50;
-        const x = i * (barW + 3);
-        const fill = toneFill[d.tone] || toneFill.neutral;
-        return (
-          <g key={`bar-${i}`}>
-            <rect x={x} y={55 - h} width={barW} height={h} fill={fill} rx="0.5">
-              <title>
-                {d.day} : {d.value} MWh
-              </title>
-            </rect>
-            <text
-              x={x + barW / 2}
-              y={59}
-              textAnchor="middle"
-              fontSize="3.5"
-              fill="var(--sol-ink-500)"
-              fontFamily="var(--sol-font-mono)"
-            >
-              {d.day}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-/**
- * LineCharge24h — Petit chart SVG courbe 24h vs souscrite (HELIOS demo).
- * Profil HP/HC simule (creux 0h-6h, plateau jour, pic 18h-20h).
- * Pas de Recharts — courbe statique fait foi pour la demo.
- */
-function LineCharge24h({ subscribedKw = 1500 }) {
-  const hours = Array.from({ length: 25 }, (_, i) => i);
-  const fakePower = (h) => {
-    if (h < 6) return 60 + Math.sin(h * 0.6) * 10;
-    if (h < 9) return 80 + (h - 6) * 8;
-    if (h < 12) return 105 + Math.sin(h * 0.4) * 5;
-    if (h < 14) return 95 + Math.sin(h * 0.7) * 4;
-    if (h < 18) return 100 + Math.cos(h * 0.3) * 6;
-    if (h < 21) return 115 + Math.sin((h - 18) * 1.1) * 6;
-    return 75 + Math.sin(h * 0.5) * 8;
-  };
-  const points = hours.map(
-    (h) => `${(h / 24) * 100},${60 - (fakePower(h) / subscribedKw) * 60 * 4}`
-  );
-  // Limit y to plot range — clamp negative
-  const safePoints = points.map((p) => {
-    const [x, y] = p.split(',').map(Number);
-    return `${x},${Math.max(2, Math.min(58, y))}`;
-  });
-
-  return (
-    <svg
-      role="img"
-      aria-label="Courbe de charge 24h vs puissance souscrite"
-      viewBox="0 0 100 60"
-      preserveAspectRatio="none"
-      style={{ width: '100%', height: '120px' }}
-    >
-      {/* Grid lignes */}
-      <line x1="0" y1="15" x2="100" y2="15" stroke="var(--sol-ink-200)" strokeWidth="0.2" />
-      <line x1="0" y1="30" x2="100" y2="30" stroke="var(--sol-ink-200)" strokeWidth="0.2" />
-      <line x1="0" y1="45" x2="100" y2="45" stroke="var(--sol-ink-200)" strokeWidth="0.2" />
-
-      {/* Ligne souscrite (top, en haut hors champ — afficher repere) */}
-      <line
-        x1="0"
-        y1="3"
-        x2="100"
-        y2="3"
-        stroke="var(--sol-refuse-line)"
-        strokeWidth="0.4"
-        strokeDasharray="1.5,1.5"
-      />
-      <text
-        x="0"
-        y="2"
-        fontSize="2.5"
-        fill="var(--sol-refuse-fg)"
-        fontFamily="var(--sol-font-mono)"
-      >
-        Souscrite {subscribedKw} kW
-      </text>
-
-      {/* Courbe consommation */}
-      <polyline
-        points={safePoints.join(' ')}
-        fill="none"
-        stroke="var(--sol-hch-fg)"
-        strokeWidth="0.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Labels heures */}
-      <text x="0" y="59" fontSize="2.8" fill="var(--sol-ink-500)" fontFamily="var(--sol-font-mono)">
-        0h
-      </text>
-      <text
-        x="48"
-        y="59"
-        fontSize="2.8"
-        fill="var(--sol-ink-500)"
-        fontFamily="var(--sol-font-mono)"
-        textAnchor="middle"
-      >
-        12h
-      </text>
-      <text
-        x="100"
-        y="59"
-        fontSize="2.8"
-        fill="var(--sol-ink-500)"
-        fontFamily="var(--sol-font-mono)"
-        textAnchor="end"
-      >
-        24h
-      </text>
-    </svg>
-  );
-}
+// Phase F.2 — BarsDaily7d + LineCharge24h inline supprimes, remplaces par
+// <ChartFrameBars> et <ChartFrameLine> (composition over inheritance).
 
 /**
  * Skeleton de chargement — preserve la structure 1 hero + 3 KPI + 2 charts + 3 highlights
@@ -345,7 +201,10 @@ export default function CockpitJour() {
           answer={bar.answer}
           source={bar.footScm || {}}
         >
-          <BarsDaily7d series={bar.series || []} />
+          <ChartFrameBars
+            data={(bar.series || []).map((d) => ({ label: d.day, value: d.value, tone: d.tone }))}
+            ariaLabel="Consommation 7 jours en MWh"
+          />
         </ChartFrame>
       );
     }
@@ -357,7 +216,16 @@ export default function CockpitJour() {
           answer={cdc.answer}
           source={cdc.footScm || {}}
         >
-          <LineCharge24h subscribedKw={cdc.subscribed_kw} />
+          <ChartFrameLine
+            seriesHP={cdc.series_hp}
+            seriesHC={cdc.series_hc}
+            threshold={{
+              value: cdc.subscribed_kw ?? 1500,
+              unit: 'kW',
+              label: `Souscrite ${cdc.subscribed_kw ?? 1500} kW`,
+            }}
+            ariaLabel="Courbe de charge 24h vs puissance souscrite"
+          />
         </ChartFrame>
       );
     }

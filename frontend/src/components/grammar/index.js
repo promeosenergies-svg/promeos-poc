@@ -38,3 +38,8 @@ export { default as HubHighlight } from './hub/HubHighlight';
 export { default as HubPageFooter } from './hub/HubPageFooter';
 // Phase F.1 — extraction de KpiTriptychCard inline → HubKpiCard primitif
 export { default as HubKpiCard } from './hub/HubKpiCard';
+// Phase F.2 — variantes ChartFrame (composition over inheritance) :
+// ChartFrame wrappe la question/reponse/footScm ; les variantes encapsulent
+// le SVG (Bars, Line, et plus tard Stack/Donut/Map pour les hubs Phase 3.5).
+export { default as ChartFrameBars } from './hub/charts/ChartFrameBars';
+export { default as ChartFrameLine } from './hub/charts/ChartFrameLine';
