@@ -26,6 +26,7 @@ import {
   ChartFrame,
   HubHighlight,
   HubPageFooter,
+  HubKpiCard,
 } from '../components/grammar';
 import { useFilter } from '../contexts/FilterContext';
 import { getCockpitJour } from '../services/api';
@@ -33,139 +34,9 @@ import { logger } from '../services/logger';
 
 const TAG = 'CockpitJour';
 
-/**
- * KpiTriptychCard — Carte KPI premium V2 (eyebrow + valeur + delta + footScm).
- * Inline (pas dans grammar/hub/) tant que la 2nde Hub Page n'est pas livree :
- * extraction prevue Phase 3.5 quand un second consommateur existera.
- */
-function KpiTriptychCard({ kpi }) {
-  if (!kpi) return null;
-  const { eyebrow, label, value, unit, delta, footScm, helpTooltip } = kpi;
-  const sentiment = delta?.sentiment || 'neutral';
-  const deltaColor = {
-    positive: 'var(--sol-succes-fg)',
-    negative: 'var(--sol-refuse-fg)',
-    neutral: 'var(--sol-ink-500)',
-  }[sentiment];
-  const deltaBg = {
-    positive: 'var(--sol-succes-bg)',
-    negative: 'var(--sol-refuse-bg)',
-    neutral: 'var(--sol-bg-canvas)',
-  }[sentiment];
-
-  return (
-    <div
-      data-component="KpiTriptychCard"
-      className="rounded-xl border p-4 flex flex-col"
-      style={{
-        background: 'var(--sol-bg-paper)',
-        borderColor: 'var(--sol-rule)',
-        minHeight: '128px',
-      }}
-      title={helpTooltip || undefined}
-    >
-      {eyebrow && (
-        <div
-          className="font-mono uppercase"
-          style={{
-            fontSize: '10px',
-            letterSpacing: '0.14em',
-            color: 'var(--sol-ink-400)',
-            marginBottom: '6px',
-          }}
-        >
-          {eyebrow}
-        </div>
-      )}
-      {label && (
-        <div
-          style={{
-            fontSize: '12.5px',
-            color: 'var(--sol-ink-500)',
-            marginBottom: '4px',
-          }}
-        >
-          {label}
-        </div>
-      )}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          gap: '8px',
-          marginBottom: '8px',
-        }}
-      >
-        <span
-          className="tabular-nums"
-          style={{
-            fontFamily: 'var(--sol-font-display)',
-            fontSize: '28px',
-            fontWeight: 500,
-            lineHeight: 1.1,
-            color: 'var(--sol-ink-900)',
-          }}
-        >
-          {value ?? '—'}
-        </span>
-        {unit && (
-          <span
-            style={{
-              fontSize: '13px',
-              color: 'var(--sol-ink-500)',
-              fontWeight: 500,
-            }}
-          >
-            {unit}
-          </span>
-        )}
-        {delta && delta.value != null && (
-          <span
-            className="font-mono"
-            style={{
-              marginLeft: 'auto',
-              fontSize: '11px',
-              padding: '3px 8px',
-              borderRadius: '6px',
-              background: deltaBg,
-              color: deltaColor,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {delta.value > 0 ? '+' : ''}
-            {delta.value}
-            {delta.unit || ''}
-          </span>
-        )}
-      </div>
-      {delta?.label && (
-        <div
-          style={{
-            fontSize: '11px',
-            color: 'var(--sol-ink-500)',
-            marginBottom: '6px',
-          }}
-        >
-          {delta.label}
-        </div>
-      )}
-      {footScm && (
-        <div
-          className="font-mono"
-          style={{
-            marginTop: 'auto',
-            fontSize: '10px',
-            color: 'var(--sol-ink-400)',
-            paddingTop: '6px',
-            borderTop: '1px solid var(--sol-rule)',
-          }}
-        >
-          {footScm}
-        </div>
-      )}
-    </div>
-  );
-}
+// Phase F.1 — KpiTriptychCard inline supprime, remplace par <HubKpiCard>
+// (primitif grammar/hub/HubKpiCard.jsx). Cf docs/audits/phase_3_4_phase_e_decision.md
+// et ADR-021 section "Extraction trail".
 
 /**
  * BarsDaily7d — Petit chart SVG 7 barres (S/D/L/M/M/J/V) tone-aware.
@@ -458,7 +329,7 @@ export default function CockpitJour() {
   const highlights = payload?.highlights ?? [];
 
   const kpiChildren = useMemo(
-    () => kpis.slice(0, 3).map((kpi) => <KpiTriptychCard key={kpi.id} kpi={kpi} />),
+    () => kpis.slice(0, 3).map((kpi) => <HubKpiCard key={kpi.id} kpi={kpi} />),
     [kpis]
   );
 

@@ -42,6 +42,9 @@ const REQUIRED_HUB_PRIMITIVES = [
   'ChartFrame',
   'HubHighlight',
   'HubPageFooter',
+  // Phase F.1 — HubKpiCard extrait de KpiTriptychCard inline.
+  // L'import devient requis : sans lui, scaling 5 hubs = drift garanti.
+  'HubKpiCard',
 ];
 
 function readFile(filePath) {

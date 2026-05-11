@@ -19,6 +19,7 @@
  *   ChartFrame           — question + reponse + chart slot + footer SCM
  *   HubHighlight         — ligne action-card compacte rang/severity/invitation
  *   HubPageFooter        — alias SolPageFooter (Source · Confiance · MAJ)
+ *   HubKpiCard           — carte KPI premium (Phase F.1, ex KpiTriptychCard inline)
  *
  * Usage :
  *   import { SolPageFooter, Term, DecisionEvidenceCard } from 'components/grammar';
@@ -35,3 +36,5 @@ export { default as SolHeroPremiumNight } from './hub/SolHeroPremiumNight';
 export { default as ChartFrame } from './hub/ChartFrame';
 export { default as HubHighlight } from './hub/HubHighlight';
 export { default as HubPageFooter } from './hub/HubPageFooter';
+// Phase F.1 — extraction de KpiTriptychCard inline → HubKpiCard primitif
+export { default as HubKpiCard } from './hub/HubKpiCard';

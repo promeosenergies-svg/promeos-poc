@@ -92,7 +92,7 @@ async function capture({ page, vp, state }) {
       console.warn(`    ⚠ no SolHeroPremiumNight found`);
     }
 
-    const kpis = page.locator('[data-component="KpiTriptychCard"]');
+    const kpis = page.locator('[data-component="HubKpiCard"]');
     const kCount = await kpis.count();
     console.log(`    KPI cards: ${kCount}`);
     for (let i = 0; i < kCount; i++) {

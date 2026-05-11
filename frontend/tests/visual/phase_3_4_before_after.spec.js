@@ -74,7 +74,7 @@ test.describe(`Phase 3.4 capture · ${PHASE}`, () => {
               path: `frontend/tests/visual/snapshots/${PHASE}/${vp.name}/hero-zoom.png`,
             });
 
-            const kpis = page.locator('[data-component="KpiTriptychCard"]');
+            const kpis = page.locator('[data-component="HubKpiCard"]');
             const count = await kpis.count();
             for (let i = 0; i < count; i++) {
               await kpis.nth(i).screenshot({
