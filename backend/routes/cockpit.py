@@ -2110,9 +2110,15 @@ def _build_cockpit_jour_hero(
         if len(site_ids) > 1
         else f"{n_signals} signaux méritent votre attention."
     )
+    # Correctif #2 — Audit Sprint F UX (DAF Jean-Marc CFO) :
+    # le sub-titre empilait 4 acronymes (EMS / CVC / BACS / OPERAT implicite)
+    # = killer DAF en 30 s (cf audit UX 1.4 = 1/3). Reformulé en langage CFO
+    # orienté impact business. Les acronymes restent dans le détail (highlights
+    # evidence/title) où ils sont wrappés <AutoTerm> avec tooltip Sol.
     sub = (
-        "Lyon présente un écart de conformité chiffré · Toulouse a un connecteur EMS à vérifier"
-        " · Paris doit confirmer la puissance CVC pour le décret BACS."
+        "Lyon : risque facture conformité 3,8 k€."
+        " Toulouse : plus de données depuis 6 jours."
+        " Paris : chaudière à qualifier d'ici 2027."
         " Tout le reste est sous contrôle."
     )
 
@@ -2151,12 +2157,19 @@ def _build_cockpit_jour_kpis(
     month_start = today.replace(day=1).isoformat()
     month_end = today.isoformat()
 
+    # Correctif #2 — Audit Sprint F UX + CX (cohérence comptage sites) :
+    # site_count est calculé UNE FOIS depuis `_sites_for_org` (qui applique
+    # le filtre is_demo F.4) puis utilisé dans tous les `footScm` des 3 KPIs
+    # + helpTooltip. Résout l'incohérence "5 SITES" (hero) vs "6 sites"
+    # (footScm hardcodé) constatée en captures Phase F.
+    site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
+    site_count = len(site_ids)
+
     # --- KPI 1 : Conso mois courant (MWh) ---
     conso_mois_kwh: float | None = None
     try:
         from services.consumption_unified_service import get_portfolio_consumption as _gpc, ConsumptionSource as _CS
 
-        site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
         if site_ids:
             result = _gpc(
                 db,
@@ -2187,7 +2200,7 @@ def _build_cockpit_jour_kpis(
         },
         "helpTooltip": (
             "Consommation cumulée depuis le 1er du mois, ajustée des degrés-jours unifiés (DJU)."
-            " Source EMS agrégée 6 sites."
+            f" Source EMS agrégée {site_count} sites."
         ),
         "period": {"label": "Mois courant", "start": month_start, "end": month_end},
         "scope": {"groupId": str(org_id or "1"), "siteIds": []},
@@ -2203,7 +2216,7 @@ def _build_cockpit_jour_kpis(
             "computedAt": _dt.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
         },
         "confidence": "high",
-        "footScm": "Source EMS · 6 sites · Confiance haute",
+        "footScm": f"Source EMS · {site_count} sites · Confiance haute",
     }
 
     # --- KPI 2 : Conso court-terme J-1 0h-6h (MWh) ---
