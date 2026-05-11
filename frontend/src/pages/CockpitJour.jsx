@@ -30,7 +30,38 @@ import { logger } from '../services/logger';
 const TAG = 'CockpitJour';
 
 // Historique extractions Phase F (F.1 → F.7) : docs/adr/ADR-021-hub-page-grammar-l11.md
-// (section "Extraction trail") + commits 68dd1547 / 29666297 / [F.3].
+// (section "Extraction trail") + commits 68dd1547 / 29666297 / c466ebbf / ff2b3a4d /
+// a4ad525d / c7b51567 / 81db5384.
+
+/**
+ * renderChartInner — dispatcher polymorphique par chart.type.
+ * Fonction pure module-scope (audit code-reviewer P1 fix : sortir du composant
+ * pour respecter useMemo deps exhaustives + faciliter test unitaire isolé).
+ * Audit Phase F P1 fix : pas de magic 1500 ; si `subscribed_kw` absent,
+ * on omet le threshold (le backend doit toujours fournir cette valeur pour
+ * un site live).
+ */
+function renderChartInner(c) {
+  if (c.type === 'bar_daily_7d') {
+    const data = (c.series || []).map((d) => ({ label: d.day, value: d.value, tone: d.tone }));
+    return <ChartFrameBars data={data} ariaLabel="Consommation 7 jours en MWh" />;
+  }
+  if (c.type === 'line_24h_hp_hc') {
+    const threshold =
+      typeof c.subscribed_kw === 'number'
+        ? { value: c.subscribed_kw, unit: 'kW', label: `Souscrite ${c.subscribed_kw} kW` }
+        : undefined;
+    return (
+      <ChartFrameLine
+        seriesHP={c.series_hp}
+        seriesHC={c.series_hc}
+        threshold={threshold}
+        ariaLabel="Courbe de charge 24h vs puissance souscrite"
+      />
+    );
+  }
+  return null;
+}
 
 export default function CockpitJour() {
   const { period } = useFilter();
@@ -76,25 +107,6 @@ export default function CockpitJour() {
     () => kpis.slice(0, 3).map((kpi) => <HubKpiCard key={kpi.id} kpi={kpi} />),
     [kpis]
   );
-
-  const renderChartInner = (c) => {
-    if (c.type === 'bar_daily_7d') {
-      const data = (c.series || []).map((d) => ({ label: d.day, value: d.value, tone: d.tone }));
-      return <ChartFrameBars data={data} ariaLabel="Consommation 7 jours en MWh" />;
-    }
-    if (c.type === 'line_24h_hp_hc') {
-      const sub = c.subscribed_kw ?? 1500;
-      return (
-        <ChartFrameLine
-          seriesHP={c.series_hp}
-          seriesHC={c.series_hc}
-          threshold={{ value: sub, unit: 'kW', label: `Souscrite ${sub} kW` }}
-          ariaLabel="Courbe de charge 24h vs puissance souscrite"
-        />
-      );
-    }
-    return null;
-  };
 
   const chartChildren = useMemo(
     () =>

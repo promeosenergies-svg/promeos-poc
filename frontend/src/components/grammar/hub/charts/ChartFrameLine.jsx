@@ -43,38 +43,22 @@ const FG_THRESHOLD_LABEL = 'var(--sol-refuse-fg)';
 const FG_GRID = 'var(--sol-ink-200)';
 const FG_AXIS = 'var(--sol-ink-500)';
 
-/** Genere un profil synthetique 24h HELIOS demo (fallback si pas de data backend).
- *  Note : valeurs en kW homogenes avec threshold.value (defaut 1500 kW).
- *
- *  @deprecated when backend.cockpit_jour.charts.series_hp_hc available
- *              See docs/debt/p2_backlog.md#P2-debt-BE-cockpit-jour-charts-series-hp-hc
- */
-function generateSyntheticHC() {
-  const hours = Array.from({ length: 25 }, (_, i) => i);
-  return hours.map((h) => {
-    let kw;
-    if (h < 6) kw = 60 + Math.sin(h * 0.6) * 10;
-    else if (h < 9) kw = 80 + (h - 6) * 8;
-    else if (h < 12) kw = 105 + Math.sin(h * 0.4) * 5;
-    else if (h < 14) kw = 95 + Math.sin(h * 0.7) * 4;
-    else if (h < 18) kw = 100 + Math.cos(h * 0.3) * 6;
-    else if (h < 21) kw = 115 + Math.sin((h - 18) * 1.1) * 6;
-    else kw = 75 + Math.sin(h * 0.5) * 8;
-    return { hour: h, kw };
-  });
-}
-
 /** Convertit une serie en string points SVG (viewBox 0..100 x 0..60).
- *  thresholdMax : valeur max de l'axe Y (= threshold.value × 4 pour laisser de
- *  la marge visuelle entre la courbe et la ligne seuil au sommet).
+ *  Y_SCALE_FACTOR=4 laisse ~75 % de marge visuelle sous le threshold (le pic
+ *  attendu sur un site tertiaire est typiquement < threshold/4). Au-delà,
+ *  le clamp Y∈[2,58] s'applique pour empêcher la sortie de viewBox.
+ *
+ *  Audit /simplify P2 fix : constante nommée vs magic 4 inline.
  */
+const Y_SCALE_FACTOR = 4;
+
 function toSvgPoints(series, thresholdMax) {
-  if (!Array.isArray(series) || series.length === 0) return '';
+  if (!Array.isArray(series) || series.length === 0 || !thresholdMax) return '';
   const xMax = series.length - 1;
   return series
     .map((p, i) => {
       const x = (i / xMax) * 100;
-      const yRaw = 60 - (p.kw / thresholdMax) * 60 * 4;
+      const yRaw = 60 - (p.kw / thresholdMax) * 60 * Y_SCALE_FACTOR;
       const y = Math.max(2, Math.min(58, yRaw));
       return `${x},${y}`;
     })
@@ -90,13 +74,16 @@ export default function ChartFrameLine({
 }) {
   const hasHP = Array.isArray(seriesHP) && seriesHP.length > 0;
   const hasHC = Array.isArray(seriesHC) && seriesHC.length > 0;
-  // Fallback synthetique : si AUCUNE des deux series, on genere HC pour HELIOS demo.
-  const effectiveHC = hasHC ? seriesHC : !hasHP ? generateSyntheticHC() : null;
+  // Audit /simplify + CS P1 fix : SUPPRESSION du fallback synthétique
+  // (anciennement function helper). Le frontend ne fabrique plus de
+  // données « plausibles » qui pourraient être prises pour de vraies CDC
+  // en démo investisseur. Si le backend ne fournit ni seriesHP ni seriesHC,
+  // on render uniquement axes + threshold (lecture honnête : « pas de
+  // données disponibles » plutôt qu'une courbe trompeuse).
+  const effectiveHC = hasHC ? seriesHC : null;
   const effectiveHP = hasHP ? seriesHP : null;
 
-  // Aucune donnee + aucun fallback (threshold seul) -> render minimal (axes only).
-  // Si threshold absent on quitte (rien a afficher).
-  const thresholdValue = threshold?.value ?? 1500;
+  const thresholdValue = threshold?.value;
   const thresholdUnit = threshold?.unit ?? 'kW';
   const thresholdLabel = threshold?.label;
 

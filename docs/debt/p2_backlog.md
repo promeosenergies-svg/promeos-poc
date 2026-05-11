@@ -36,19 +36,21 @@
 
 ---
 
-## P2-debt-BE-cockpit-jour-charts-series-hp-hc
+## P2-debt-BE-cockpit-jour-charts-series-hp-hc — REQUALIFIÉ Correctif #1
 
 - **Description** : backend `_build_cockpit_jour_charts` retourne uniquement
-  `subscribed_kw`, `ChartFrameLine` génère `series_hp` / `series_hc` via
-  `generateSyntheticHC()` fallback côté frontend.
-- **Estimation** : 2-3 j-h
+  `subscribed_kw`. Le frontend `ChartFrameLine` n'a PLUS de fallback
+  synthétique (suppression `generateSyntheticHC()` Correctif #1 du audit
+  Sprint F 7-angles, recommandation /simplify + CS).
+- **Estimation** : 2-3 j-h (inchangée)
 - **Fenêtre** : Phase 4 (post Sprint Grammaire v1.2)
-- **Détecté en** : F.2 commit 29666297
-- **Mitigation** : fallback synthétique HELIOS demo en place, visuellement
-  correct (creux 0h-6h, plateau jour, pic 18h-20h). Pas de divergence
-  visuelle vs vraies données attendues.
+- **Détecté en** : F.2 commit 29666297 · Requalifié : Correctif #1 post audit Sprint F.
+- **Statut actuel** : si backend ne fournit pas `series_hp` / `series_hc`,
+  le chart `line_24h_hp_hc` rend uniquement axes + threshold (lecture
+  honnête « pas de courbe disponible » plutôt que courbe trompeuse).
+  L'audit CS avait identifié ce fallback comme « bombe métier déguisée »
+  (frontend générant des CDC plausibles risque démo investisseur).
 - **Action requise** : étendre `_build_cockpit_jour_charts` pour retourner
   `series_hp` + `series_hc` (CDC 30 min agrégée par heure). Source EMS
-  via `consumption_unified_service.get_load_curve()`. Supprimer
-  `generateSyntheticHC()` dans `ChartFrameLine.jsx` une fois données
-  réelles disponibles.
+  via `consumption_unified_service.get_load_curve()`. Une fois livré, le
+  rendu chart sera complet (HP + HC + threshold).

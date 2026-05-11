@@ -50,12 +50,15 @@ describe('grammar/hub/charts/ChartFrameLine', () => {
     expect(src).toContain('@param {Threshold}');
   });
 
-  it('fallback synthetique generateSyntheticHC si aucune serie fournie', () => {
+  it('PAS de fallback synthetique (Correctif #1 audit /simplify + CS)', () => {
     const src = read();
-    expect(src).toContain('function generateSyntheticHC');
-    // Profil HELIOS demo : creux 0h-6h, plateau jour, pic 18h-20h
-    expect(src).toMatch(/if\s*\(h\s*<\s*6\)/);
-    expect(src).toMatch(/if\s*\(h\s*<\s*21\)/);
+    // Audit Sprint F P1 fix : le frontend ne fabrique plus de courbes plausibles
+    // qui pourraient être prises pour des CDC réelles en démo investisseur.
+    // Si aucune serie fournie, render minimal (axes + threshold) suffit.
+    expect(src).not.toContain('function generateSyntheticHC');
+    expect(src).not.toContain('generateSyntheticHC()');
+    // Y_SCALE_FACTOR (constante nommée) remplace le magic 4 inline.
+    expect(src).toContain('Y_SCALE_FACTOR');
   });
 
   it('zero hex hardcoded (tokens-only doctrine §6.5)', () => {

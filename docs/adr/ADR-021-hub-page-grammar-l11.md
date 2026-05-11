@@ -1,12 +1,17 @@
 # ADR-021 — Hub Page Grammar L11 (Sprint Grammaire v1.2 / Phase 3.4)
 
-**Statut** : Proposé
-**Date** : 2026-05-10
-**Sprint** : Grammaire v1.2 / Phase 3.4 (V2 « juste milieu premium »)
+**Statut** : Accepté
+**Date** : 2026-05-10 (initial) · 2026-05-11 (validé Phase F clôturée)
+**Sprint** : Grammaire v1.2 / Phase 3.4 + HARD STOP Phase F (V2 « juste milieu premium »)
 **Personnes impliquées** : Amine (founder), Claude architect-helios + implementer
 **Branche** : `claude/refonte-sol2`
 **Doctrine** : `docs/vision/promeos_sol_doctrine.md` §12 (Loi L11) + addendum
 `sol_v1_1_addendum_hub_page.md`
+**Extraction trail Phase F** : commits `9c8851b3` (F.0 décision) → `68dd1547`
+(F.1 HubKpiCard) → `29666297` (F.2 ChartFrame variants) → `c466ebbf` (F.3
+HubSkeleton + HubError) → `ff2b3a4d` (F.4 backend is_demo) → `a4ad525d`
+(F.5 AutoTerm) → `c7b51567` (F.6 typo + F.5.1 doublon BACS) → `81db5384`
+(F.7 source-guards CI). Audit 7 angles validé 18.7/24 (78 %).
 
 ## Contexte
 
