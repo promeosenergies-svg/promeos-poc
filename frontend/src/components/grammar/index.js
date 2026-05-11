@@ -43,3 +43,9 @@ export { default as HubKpiCard } from './hub/HubKpiCard';
 // le SVG (Bars, Line, et plus tard Stack/Donut/Map pour les hubs Phase 3.5).
 export { default as ChartFrameBars } from './hub/charts/ChartFrameBars';
 export { default as ChartFrameLine } from './hub/charts/ChartFrameLine';
+// Phase F.3 — primitifs states (loading + error) generiques :
+// HubSkeleton variant=hero|kpi|chart|highlight, HubError avec correlationId
+// copyable. Pas dans REQUIRED_HUB_PRIMITIVES (conditionnels selon que la
+// page implemente loading/error states).
+export { default as HubSkeleton } from './hub/states/HubSkeleton';
+export { default as HubError } from './hub/states/HubError';

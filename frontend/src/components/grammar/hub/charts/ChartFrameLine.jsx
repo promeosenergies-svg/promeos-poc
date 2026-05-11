@@ -45,6 +45,9 @@ const FG_AXIS = 'var(--sol-ink-500)';
 
 /** Genere un profil synthetique 24h HELIOS demo (fallback si pas de data backend).
  *  Note : valeurs en kW homogenes avec threshold.value (defaut 1500 kW).
+ *
+ *  @deprecated when backend.cockpit_jour.charts.series_hp_hc available
+ *              See docs/debt/p2_backlog.md#P2-debt-BE-cockpit-jour-charts-series-hp-hc
  */
 function generateSyntheticHC() {
   const hours = Array.from({ length: 25 }, (_, i) => i);
