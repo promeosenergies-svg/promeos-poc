@@ -149,11 +149,38 @@ def recompute_assessments(
         raise HTTPException(status_code=400, detail="Invalid scope or missing site_id")
 
 
-_FRAMEWORK_LABELS = {
-    "tertiaire_operat": {"label": "Decret Tertiaire", "next_deadline": "2026-09-30"},
-    "bacs": {"label": "Decret BACS (GTB)", "next_deadline": "2030-01-01"},
-    "aper": {"label": "Loi APER (solaire)", "next_deadline": "2028-07-01"},
-}
+# Phase L36.2 P1 audit fix (Reviewer #1 CTO sévère L35) — les 3 deadlines
+# réglementaires étaient hardcodées en dur ici, dupliquant doctrine.constants
+# SoT. Désormais lazy-import depuis doctrine.constants pour éviter le drift
+# si le législateur modifie un décret (Phase L29.1 BACS report 2030 vécu).
+from datetime import date as _date
+from doctrine.constants import (
+    APER_DEADLINE_SMALL_PARKING_DATE,
+    BACS_DEADLINE_EXISTING,
+    compute_operat_deadline,
+)
+
+
+def _build_framework_labels() -> dict:
+    """Construit la map framework → label/deadline depuis doctrine.constants SoT.
+
+    Phase L36.2 — `next_deadline` OPERAT calculée pour l'année courante via
+    `compute_operat_deadline(year)` (récurrence annuelle 30/09). Aligné sur
+    pattern routes/cockpit.py + config_regulatory_constants.py.
+    """
+    return {
+        "tertiaire_operat": {
+            "label": "Decret Tertiaire",
+            "next_deadline": compute_operat_deadline(_date.today().year),
+        },
+        "bacs": {"label": "Decret BACS (GTB)", "next_deadline": BACS_DEADLINE_EXISTING},
+        "aper": {"label": "Loi APER (solaire)", "next_deadline": APER_DEADLINE_SMALL_PARKING_DATE},
+    }
+
+
+# Pré-calculé au load module (les valeurs ne bougent pas en runtime ; le YAML
+# est rechargé via reload_yaml_cache si nécessaire).
+_FRAMEWORK_LABELS = _build_framework_labels()
 
 
 @router.get("/score_explain")

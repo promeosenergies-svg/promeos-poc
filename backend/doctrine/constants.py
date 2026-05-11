@@ -11,6 +11,8 @@ Référence engineering : SKILL.md PROMEOS — Constantes canoniques.
 # Phase L20 : défini ligne ~145, posait problème pour migrer PRICE_FALLBACK
 # ligne 132 qui en avait besoin avant sa définition).
 import logging as _logging
+from datetime import date
+from functools import lru_cache
 
 from config.regulatory_sources_loader import get_term_value as _get_term_value
 
@@ -187,6 +189,30 @@ def compute_operat_deadline(year: int) -> str:
         Date ISO format YYYY-09-30.
     """
     return f"{year}-{OPERAT_DECLARATION_DEADLINE_MONTH_DAY}"
+
+
+@lru_cache(maxsize=64)
+def parse_doctrine_date(iso_date: str) -> date:
+    """Phase L36.3 P1 — Helper canonical pour parser une constante doctrine ISO.
+
+    Avant L36.3 : pattern `date.fromisoformat(BACS_DEADLINE_*)` dupliqué dans
+    9 callsites (bacs_engine.py, bacs_regulatory_engine.py, compliance_utils.py,
+    audit_sme_service.py, narrative_generator.py × 2). Risque drift si format
+    change ou si la constante devient `date` (au lieu de str) dans le YAML.
+
+    `@lru_cache` car les inputs sont quasi-statiques (lazy-load YAML strings),
+    évite re-parsing à chaque hot-path call.
+
+    Args:
+        iso_date: Date ISO `YYYY-MM-DD` (ex. `BACS_DEADLINE_EXISTING="2030-01-01"`).
+
+    Returns:
+        Objet `date` Python.
+
+    Raises:
+        ValueError: si `iso_date` n'est pas un format ISO valide.
+    """
+    return date.fromisoformat(iso_date)
 
 
 OPERAT_ANNEXE_I_SOUS_CATEGORIES_COUNT = (

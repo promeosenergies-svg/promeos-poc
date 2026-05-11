@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from middleware.request_context import RequestContextMiddleware
+from middleware.security_headers import SecurityHeadersMiddleware
 
 # Register Market Data V2 models (tables created via Base.metadata.create_all)
 from models.market_models import *  # noqa: F401, F403
@@ -154,6 +155,10 @@ register_error_handlers(app)
 
 # Request context middleware (request_id + timing) — must be added before CORS
 app.add_middleware(RequestContextMiddleware)
+
+# Phase L36.5 audit fix PROMEOS-SEC-2026-025 — Security headers OWASP
+# (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, HSTS+CSP en prod).
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Configuration CORS — configurable whitelist, never wildcard
 _CORS_ORIGINS = [

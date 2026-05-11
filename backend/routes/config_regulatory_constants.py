@@ -33,9 +33,7 @@ from doctrine.constants import (
     PRICE_FALLBACK_EUR_PER_KWH,
     PRIMARY_ENERGY_COEF_ELEC,
     PRIMARY_ENERGY_COEF_GAS,
-    READINESS_WEIGHT_ACTIONS,
-    READINESS_WEIGHT_CONFORMITY,
-    READINESS_WEIGHT_DATA,
+    # Phase L36.6 — READINESS_WEIGHT_* retirés (SEC-2026-014B, cf. corps endpoint).
     VNU_SEUIL_ACTIVATION_PRIX_BAS_EUR_PER_MWH,
     VNU_SEUIL_ACTIVATION_PRIX_HAUT_EUR_PER_MWH,
     VNU_TARIF_UNITAIRE_2026_EUR_PER_MWH,
@@ -119,16 +117,16 @@ def get_regulatory_constants() -> dict:
             "source": "Arrêté ministériel 13/04/2023 (NOR LOGL2005904A)",
             "label": "Coefficient énergie primaire RE2020",
         },
-        # Phase L33.2 audit fix P0 SECURITY — labels génériques (Reviewer #3 META-AUDIT) :
-        # ne pas révéler "Doctrine PROMEOS Sol §15" / "internal_fallback" qui
-        # exposeraient la nature heuristique interne aux concurrents (Deepki/Metron).
-        "readiness_weights": {
-            "data": READINESS_WEIGHT_DATA,
-            "conformity": READINESS_WEIGHT_CONFORMITY,
-            "actions": READINESS_WEIGHT_ACTIONS,
-            "source": "Pondérations applicatives PROMEOS",
-            "label": "Pondérations Readiness score",
-        },
+        # Phase L36.6 audit fix Medium SECURITY (PROMEOS-SEC-2026-014B Reviewer #3
+        # security-auditor L35) — `readiness_weights` (0.30/0.40/0.30) NE DOIT PLUS
+        # être exposé sur l'endpoint public. Ces pondérations constituent
+        # le différenciateur compétitif PROMEOS Sol §15 (concurrents Deepki/Metron
+        # auraient pu reverse-engineer la pondération Readiness).
+        # Phase L33.2 avait masqué le label/source ; L36.6 masque aussi les valeurs.
+        # Le frontend consomme le `FALLBACK_CONSTANTS.readiness_weights` du Context
+        # (RegulatoryConstantsContext.jsx) qui hardcode les mêmes valeurs côté
+        # client — acceptable car bundle JS minifié rend le reverse-engineering
+        # plus coûteux qu'une simple requête HTTP anonyme.
         "price_fallback": {
             "eur_per_kwh": PRICE_FALLBACK_EUR_PER_KWH,
             "eur_per_mwh": round(PRICE_FALLBACK_EUR_PER_KWH * 1000, 2),

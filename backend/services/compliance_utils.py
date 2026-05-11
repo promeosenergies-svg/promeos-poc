@@ -15,7 +15,7 @@ from config.emission_factors import (
     BACS_SEUIL_HAUT,
     BACS_SEUIL_BAS,
 )
-from doctrine.constants import BACS_DEADLINE_EXISTING, BACS_DEADLINE_INITIAL
+from doctrine.constants import BACS_DEADLINE_EXISTING, BACS_DEADLINE_INITIAL, parse_doctrine_date
 
 # Status severity ranking for "worst status" logic
 _STATUS_SEVERITY = {
@@ -27,8 +27,8 @@ _STATUS_SEVERITY = {
 
 # Phase L28.2 audit fix P0 — alias depuis doctrine.constants SoT YAML lazy-load
 # (avant : date(2025,1,1)/date(2030,1,1) hardcoded — drift si Décret modifie).
-BACS_DEADLINE_290 = date.fromisoformat(BACS_DEADLINE_INITIAL)  # 2025-01-01 Tier 1 (Décret 2020-887)
-BACS_DEADLINE_70 = date.fromisoformat(BACS_DEADLINE_EXISTING)  # 2030-01-01 Tier 2 (Décret 2025-1343)
+BACS_DEADLINE_290 = parse_doctrine_date(BACS_DEADLINE_INITIAL)  # 2025-01-01 Tier 1 (Décret 2020-887)
+BACS_DEADLINE_70 = parse_doctrine_date(BACS_DEADLINE_EXISTING)  # 2030-01-01 Tier 2 (Décret 2025-1343)
 
 # Action text templates ordered by priority (highest first)
 _ACTION_TEMPLATES = [

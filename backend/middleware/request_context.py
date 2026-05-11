@@ -44,11 +44,9 @@ class RequestContextMiddleware:
                 headers.append((b"x-request-id", request_id.encode()))
                 duration_ms = round((time.perf_counter() - start) * 1000, 1)
                 headers.append((b"x-response-time", f"{duration_ms}ms".encode()))
-                # Security headers
-                headers.append((b"x-frame-options", b"DENY"))
-                headers.append((b"x-content-type-options", b"nosniff"))
-                if os.environ.get("PROMEOS_ENV") == "production":
-                    headers.append((b"strict-transport-security", b"max-age=31536000; includeSubDomains"))
+                # Phase L36.5 — Security headers déplacés vers
+                # `middleware/security_headers.py` (SRP : ce middleware ne fait
+                # que request_id + timing + logging JSON). Cf. SEC-2026-025.
                 message = {**message, "headers": headers}
             await send(message)
 

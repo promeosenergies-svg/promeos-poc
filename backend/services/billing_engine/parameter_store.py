@@ -134,13 +134,22 @@ def _load_yaml() -> dict:
 
 
 def reload_yaml_cache() -> None:
-    """Force un rechargement du YAML (tests, hot-patch)."""
+    """Force un rechargement du YAML (tests, hot-patch).
+
+    Phase L36.8 audit fix P1 (Reviewer #1 CTO L35) — vide aussi le cache
+    anti-spam `_unknown_codes_seen` pour éviter pollution inter-tests. Avant
+    L36.8 : test_unknown_code_returns_missing pouvait échouer si un test
+    précédent avait déjà vu FOO_BAR_UNKNOWN → warn_unknown_once ne loguait
+    plus rien et `caplog.text` était vide.
+    """
     try:
         from config.tarif_loader import reload_tarifs
 
         reload_tarifs()
     except Exception as exc:
         logger.debug("ParameterStore.reload_yaml_cache: %s", exc)
+    # Reset cache anti-spam (pattern aligné avec reload_tarifs côté loader).
+    _unknown_codes_seen.clear()
 
 
 def _period_contains(valid_from: Optional[date], valid_to: Optional[date], at: date) -> bool:

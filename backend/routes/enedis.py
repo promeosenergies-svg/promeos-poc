@@ -190,8 +190,13 @@ class StatsResponse(BaseModel):
 
 
 @router.post("/ingest", response_model=IngestResponse)
-def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db)):
-    """Trigger the Enedis SGE ingestion pipeline (synchronous)."""
+def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db), _auth=Depends(_require_auth)):
+    """Trigger the Enedis SGE ingestion pipeline (synchronous).
+
+    Phase L36.7 audit fix (Reviewer #3 security-auditor L35) — auparavant sans
+    auth (commentaire fichier "No auth for POC"). `_require_auth` désormais
+    cablé (cohérent /promotion/promote ligne 442 et /opendata/refresh 632).
+    """
     # --- Pre-flight validation ---
     try:
         flux_dir = get_flux_dir()

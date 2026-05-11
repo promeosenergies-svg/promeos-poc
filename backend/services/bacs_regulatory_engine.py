@@ -24,6 +24,7 @@ from doctrine.constants import (
     BACS_DEADLINE_INITIAL,
     BACS_THRESHOLD_KW_EXISTING,
     BACS_THRESHOLD_KW_INITIAL,
+    parse_doctrine_date,
 )
 from models.bacs_models import BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection
 from models.bacs_regulatory import BacsFunctionalRequirement, BacsExploitationStatus, BacsProofDocument, BacsExemption
@@ -36,8 +37,8 @@ logger = logging.getLogger("promeos.bacs.regulatory")
 # (DEADLINE_290 = date(2025,1,1) hardcoded → date.fromisoformat(BACS_DEADLINE_INITIAL)).
 SEUIL_HAUT = BACS_THRESHOLD_KW_INITIAL  # 290
 SEUIL_BAS = BACS_THRESHOLD_KW_EXISTING  # 70
-DEADLINE_290 = date.fromisoformat(BACS_DEADLINE_INITIAL)  # 2025-01-01 Décret 2020-887 R175-3
-DEADLINE_70 = date.fromisoformat(BACS_DEADLINE_EXISTING)  # 2030-01-01 Décret 2025-1343
+DEADLINE_290 = parse_doctrine_date(BACS_DEADLINE_INITIAL)  # 2025-01-01 Décret 2020-887 R175-3
+DEADLINE_70 = parse_doctrine_date(BACS_DEADLINE_EXISTING)  # 2030-01-01 Décret 2025-1343
 
 FUNCTIONAL_REQ_FIELDS = [
     "continuous_monitoring",

@@ -189,10 +189,18 @@ class TestCta:
 
 class TestMissingAndUnknown:
     def test_unknown_code_returns_missing(self, store, caplog):
-        r = store.get("FOO_BAR_UNKNOWN", at_date=date(2026, 1, 1))
+        # Phase L36.8 — caplog.at_level explicite garantit la capture du
+        # `logger.warning(...)` émis par warn_unknown_once. Avant L36.8,
+        # l'assertion fallback `or "aucune valeur"` masquait silencieusement
+        # une panne du warning anti-spam (l'autre branche est toujours émise).
+        import logging
+
+        with caplog.at_level(logging.WARNING, logger="services.billing_engine.parameter_store"):
+            r = store.get("FOO_BAR_UNKNOWN", at_date=date(2026, 1, 1))
         assert r.source == "missing"
         assert r.value == 0.0
-        assert "code inconnu" in caplog.text or "aucune valeur" in caplog.text
+        # Assertion plus stricte : doit contenir explicitement le warning anti-spam.
+        assert "code inconnu" in caplog.text
 
     def test_get_value_with_default_on_missing(self, store):
         v = store.get_value("FOO_BAR_UNKNOWN", at_date=date(2026, 1, 1), default=9.99)

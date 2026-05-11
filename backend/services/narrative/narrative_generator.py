@@ -40,6 +40,7 @@ from doctrine.constants import (
     DT_PENALTY_AT_RISK_EUR,
     DT_PENALTY_EUR,
     OPERAT_PENALTY_EUR,
+    parse_doctrine_date,
 )
 
 from services.billing.losses_service import (
@@ -55,7 +56,7 @@ from services.data_provenance import (
 
 # Phase L30.1 audit fix P2 — module-level pour éviter ré-parse ISO à chaque
 # render (pattern aligné bacs_regulatory_engine.py:39).
-_AUDIT_SME_DEADLINE_PARSED = date.fromisoformat(AUDIT_SME_DEADLINE_DATE)
+_AUDIT_SME_DEADLINE_PARSED = parse_doctrine_date(AUDIT_SME_DEADLINE_DATE)
 
 # ── Types canoniques ────────────────────────────────────────────────
 
@@ -1255,7 +1256,7 @@ def _build_conformite(
     days_until_operat = (operat_deadline - today).days
 
     # BACS deadline existants 70-290 kW (Décret 2025-1343 — Phase L28.2 SoT YAML)
-    BACS_DEADLINE = date.fromisoformat(BACS_DEADLINE_EXISTING)
+    BACS_DEADLINE = parse_doctrine_date(BACS_DEADLINE_EXISTING)
     days_until_bacs = (BACS_DEADLINE - today).days
 
     # Pénalité provisionnable (provision comptable CFO)

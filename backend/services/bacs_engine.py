@@ -11,7 +11,7 @@ from typing import Optional
 import yaml
 from sqlalchemy.orm import Session
 
-from doctrine.constants import BACS_DEADLINE_EXISTING, BACS_DEADLINE_INITIAL
+from doctrine.constants import BACS_DEADLINE_EXISTING, BACS_DEADLINE_INITIAL, parse_doctrine_date
 
 from models import (
     Site,
@@ -61,8 +61,8 @@ def _get_renewal_cutoff() -> date:
 # Phase L28.2 audit fix P0 — alias depuis doctrine.constants SoT YAML lazy-load
 # (avant : date(2025,1,1)/date(2030,1,1) hardcoded — drift silencieux si Décret futur).
 # Legacy constants (kept for backward-compat in tests)
-DEADLINE_290 = date.fromisoformat(BACS_DEADLINE_INITIAL)  # 2025-01-01 Décret 2020-887
-DEADLINE_70 = date.fromisoformat(BACS_DEADLINE_EXISTING)  # 2030-01-01 Décret 2025-1343
+DEADLINE_290 = parse_doctrine_date(BACS_DEADLINE_INITIAL)  # 2025-01-01 Décret 2020-887
+DEADLINE_70 = parse_doctrine_date(BACS_DEADLINE_EXISTING)  # 2030-01-01 Décret 2025-1343
 RENEWAL_CUTOFF = date(2023, 4, 9)
 
 

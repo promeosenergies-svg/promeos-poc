@@ -26,6 +26,7 @@ from doctrine.constants import (
     AUDIT_SME_DEADLINE_DATE,
     AUDIT_SME_THRESHOLD_GWH_ISO50001,
     AUDIT_SME_THRESHOLD_GWH_PERIODIC,
+    parse_doctrine_date,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ logger = logging.getLogger(__name__)
 # silencieux). Conversion GWh → kWh via × 1_000_000.
 SEUIL_SME_KWH = int(AUDIT_SME_THRESHOLD_GWH_ISO50001 * 1_000_000)  # 23.6 GWh
 SEUIL_AUDIT_KWH = int(AUDIT_SME_THRESHOLD_GWH_PERIODIC * 1_000_000)  # 2.75 GWh
-DATE_DEADLINE_P1 = date.fromisoformat(AUDIT_SME_DEADLINE_DATE)  # 2026-10-11
+DATE_DEADLINE_P1 = parse_doctrine_date(AUDIT_SME_DEADLINE_DATE)  # 2026-10-11
 PERIODICITE_ANS = 4
 DELAI_TRANSMISSION = 2  # mois apres audit
 

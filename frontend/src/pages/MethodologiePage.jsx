@@ -198,6 +198,30 @@ function renderMarkdown(md) {
   return out.join('\n');
 }
 
+/**
+ * Phase L36 audit fix Medium SECURITY (PROMEOS-SEC-2026-007) — defense-en-profondeur
+ * post-rendu. Le `renderMarkdown` ci-dessous applique déjà `escapeHtml()` sur tout
+ * input user, donc XSS direct théoriquement bloqué. Mais Reviewer #3 security-auditor
+ * L35 recommande sanitization additionnelle car `dangerouslySetInnerHTML` reste un
+ * vecteur si une regex de renderMarkdown était cassée par un input adversarial
+ * exotique (cas connu : `[text](javascript:alert)`, `<svg onload=...>` injecté).
+ *
+ * Implémentation minimaliste (sans DOMPurify pour ne pas ajouter de dépendance
+ * npm sur cette PR) : retire tout `<script>`, `<iframe>`, `<object>`, `<embed>`,
+ * tout attribut `on*=...`, et toute URL `javascript:`. Suffisant pour un contenu
+ * markdown interne controllé. Si on ouvre la page à des sources externes,
+ * migrer vers DOMPurify.sanitize() avec config strict.
+ */
+function sanitizeHtml(html) {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<(object|embed|applet|meta|link)\b[^>]*>/gi, '')
+    .replace(/\son\w+\s*=\s*(['"])[^'"]*\1/gi, '')
+    .replace(/\son\w+\s*=\s*[^\s>]+/gi, '')
+    .replace(/(href|src)\s*=\s*(['"])\s*javascript:[^'"]*\2/gi, '$1="#"');
+}
+
 function parseInline(text) {
   let s = escapeHtml(text);
   // Bold **x**
@@ -317,8 +341,10 @@ export default function MethodologiePage() {
               borderRadius: 12,
               padding: '1.6rem 1.8rem 1.4rem',
             }}
+            // Phase L36 audit fix SEC-2026-007 — `sanitizeHtml` post-rendu
+            // defense-en-profondeur (escapeHtml déjà appliqué côté renderMarkdown).
             // eslint-disable-next-line react/no-danger
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(content)) }}
           />
           {/* Footer Sol cohérent avec les pages Cockpit */}
           <div
