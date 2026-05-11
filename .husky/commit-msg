@@ -1,0 +1,63 @@
+#!/usr/bin/env sh
+# PROMEOS — commit-msg hook : anti-contamination commits docs(...).
+#
+# Phase F.7 (Sprint Grammaire v1.2 HARD STOP) — leçon retenue du commit
+# 3774d2c0 qui a embarqué 18 fichiers (16 WIP parallèle régulateur/sécurité)
+# sous un message `docs(p3.4): audit UX/UI/CX/CS rempli — score 73-79/96`.
+#
+# Règle : si le commit message commence par `docs(...)`, la staged area
+# ne doit contenir QUE des fichiers documentation (docs/, *.md, *.mdx,
+# *.yaml de spec). Tout fichier code (.jsx, .py, .js, .ts) est suspect
+# d'être une contamination (WIP staged d'un agent parallèle).
+#
+# Action en cas de violation : afficher la liste des fichiers suspects +
+# refuser le commit. Le développeur peut :
+#   (i)  unstage les fichiers non-docs (`git restore --staged <file>`)
+#   (ii) corriger le commit message en `feat(...)`, `fix(...)` etc.
+#   (iii) bypass conscient avec `git commit --no-verify` (à éviter)
+
+COMMIT_MSG_FILE="$1"
+[ -z "$COMMIT_MSG_FILE" ] && exit 0
+[ ! -f "$COMMIT_MSG_FILE" ] && exit 0
+
+MSG=$(head -n 1 "$COMMIT_MSG_FILE" 2>/dev/null || echo "")
+
+# Filtre : seulement les messages docs(scope): ...
+if echo "$MSG" | grep -qE '^docs\('; then
+  # Récupère la liste des fichiers staged.
+  STAGED=$(git diff --cached --name-only 2>/dev/null || echo "")
+  if [ -z "$STAGED" ]; then
+    # Pas de staged → laisser passer (git commit échouera de toute façon).
+    exit 0
+  fi
+
+  # Patterns "fichiers docs autorisés" :
+  #   - docs/**           : documentation projet
+  #   - *.md / *.mdx      : tout markdown
+  #   - *.yaml / *.yml    : spec, fixtures docs (acronymes_doctrine.yaml, etc.)
+  #   - ADR-*             : decisions records
+  #   - CLAUDE.md / README.md : meta docs racine
+  NON_DOCS=$(echo "$STAGED" | grep -vE '^(docs/|.*\.md$|.*\.mdx$|.*\.yaml$|.*\.yml$|CLAUDE\.md$|README\.md$)' || true)
+
+  if [ -n "$NON_DOCS" ]; then
+    echo ""
+    echo "❌ Hook B (commit-msg) : contamination détectée"
+    echo ""
+    echo "Le commit message commence par 'docs(...)' mais la staged area"
+    echo "contient des fichiers NON-docs :"
+    echo ""
+    echo "$NON_DOCS" | sed 's/^/  - /'
+    echo ""
+    echo "Action requise :"
+    echo "  (i)  unstage les fichiers non-docs :"
+    echo "         git restore --staged <fichier>"
+    echo "  (ii) ou corriger le commit message en feat(...)/fix(...) :"
+    echo "         git commit --amend -m 'feat(...): ...'"
+    echo ""
+    echo "Référence : Phase F.7 HARD STOP — anti-contamination (leçon 3774d2c0)."
+    echo ""
+    exit 1
+  fi
+fi
+
+exit 0

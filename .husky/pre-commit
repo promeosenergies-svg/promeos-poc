@@ -15,3 +15,10 @@ if [ -x "$REPO_ROOT/backend/venv/bin/ruff" ]; then
 fi
 
 npx lint-staged
+
+# Phase F.7 — Source guards Design System (Guard A : kpi-not-inline-in-hub-pages).
+# Echoue le commit si une page-hub L11 contient du JSX KPI inline ou un composant
+# KPI local non-extrait. Details : scripts/source_guards_design_system.sh.
+if [ -x "$REPO_ROOT/scripts/source_guards_design_system.sh" ]; then
+  bash "$REPO_ROOT/scripts/source_guards_design_system.sh" || exit 1
+fi
