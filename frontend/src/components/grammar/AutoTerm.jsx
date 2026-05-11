@@ -27,7 +27,11 @@
  *
  * @typedef {Object} AutoTermProps
  * @property {string} text       - Texte source à tokeniser
- * @property {string} [variant='inline-tooltip'] - Variant passé à <Term>
+ * @property {'preserve-text'|'inline-tooltip'|'short'|'narrative'} [variant='preserve-text']
+ *   Variant passé à <Term>. Default = 'preserve-text' (Phase F.5.1) : préserve
+ *   la clé brute pour éviter le doublon de mots (eg "le décret BACS" → "le
+ *   décret Décret BACS" si BACS.short = "Décret BACS"). Utiliser 'inline-tooltip'
+ *   uniquement si le rendu standalone est souhaité (sans contexte de phrase).
  * @property {string} [className='']
  *
  * @param {AutoTermProps} props
@@ -56,7 +60,7 @@ function buildAcronymRegex(dict) {
   return pattern;
 }
 
-export default function AutoTerm({ text, variant = 'inline-tooltip', className = '' }) {
+export default function AutoTerm({ text, variant = 'preserve-text', className = '' }) {
   const { data: dict } = useAcronymes();
 
   const segments = useMemo(() => {

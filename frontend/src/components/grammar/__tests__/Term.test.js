@@ -54,4 +54,12 @@ describe('grammar/Term', () => {
     expect(src).toContain('term-short');
     expect(src).toContain('term-unknown');
   });
+
+  it("variant 'preserve-text' (Phase F.5.1) — affiche acronyme brut, pas resolved.short", () => {
+    // Phase F.5.1 — fix doublon "le décret Décret BACS" : la variante preserve-text
+    // affiche la cle brute {acronyme} au lieu de {resolved.short} qui contenait
+    // deja le mot de contexte (eg BACS.short = "Décret BACS").
+    expect(src).toContain("'preserve-text'");
+    expect(src).toContain('term-preserve');
+  });
 });

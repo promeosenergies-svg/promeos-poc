@@ -45,6 +45,14 @@ describe('grammar/AutoTerm', () => {
     expect(src).toContain('variant={variant}');
   });
 
+  it("default variant='preserve-text' (Phase F.5.1 — eviter doublon mots)", () => {
+    const src = read();
+    // Phase F.5.1 — par defaut AutoTerm utilise Term variant='preserve-text'
+    // qui affiche la cle brute (eg "BACS") au lieu de resolved.short (eg
+    // "Décret BACS") pour eviter "le décret BACS" → "le décret Décret BACS".
+    expect(src).toMatch(/variant\s*=\s*['"]preserve-text['"]/);
+  });
+
   it('regex word-boundary strict + tri longueur decroissante (greedy correct)', () => {
     const src = read();
     // Word-boundary `\\b` autour de l'alternative — empeche les faux positifs

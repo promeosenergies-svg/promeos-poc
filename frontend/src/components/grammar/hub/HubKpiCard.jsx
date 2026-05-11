@@ -104,9 +104,11 @@ export default function HubKpiCard({ kpi, className = '' }) {
           className="tabular-nums"
           style={{
             fontFamily: 'var(--sol-font-display)',
-            fontSize: '28px',
+            fontSize: '38px',
             fontWeight: 500,
-            lineHeight: 1.1,
+            lineHeight: 1,
+            letterSpacing: '-0.018em',
+            fontVariantNumeric: 'tabular-nums',
             color: 'var(--sol-ink-900)',
           }}
         >

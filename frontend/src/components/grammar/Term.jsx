@@ -6,16 +6,23 @@
  * `utils/acronyms.js` + `domain/glossary.js` en fallback stand-alone.
  *
  * Comportement par variant :
- *   - 'inline-tooltip' (defaut) : acronyme avec tooltip accessible via SolTooltip
+ *   - 'inline-tooltip' (defaut) : acronyme avec tooltip accessible via SolTooltip,
+ *                                  affiche `resolved.short` (forme courte formatee)
  *   - 'narrative' : forme longue + "(short)" en texte simple
  *   - 'short' : forme courte seulement
+ *   - 'preserve-text' (Phase F.5.1) : tooltip Sol mais affiche `acronyme` BRUT
+ *                                      (la cle telle que passee). Cible : AutoTerm
+ *                                      qui wrappe une chaine pre-existante ou le
+ *                                      contexte impose la cle (eg "le décret BACS"
+ *                                      ne doit pas devenir "le décret Décret BACS"
+ *                                      si BACS.short = "Décret BACS").
  *
  * Si chargement : rend l'acronyme brut.
  * Si inconnu : rend l'acronyme brut + console.warn en dev.
  *
  * @param {Object} props
  * @param {string} props.acronyme - Code acronyme (ex. "BACS", "TURPE")
- * @param {'inline-tooltip'|'narrative'|'short'} [props.variant='inline-tooltip'] - Mode de rendu
+ * @param {'inline-tooltip'|'narrative'|'short'|'preserve-text'} [props.variant='inline-tooltip']
  * @param {string} [props.className=''] - Classes CSS supplementaires
  */
 import SolTooltip from '../../ui/sol/SolTooltip';
@@ -110,6 +117,19 @@ export default function Term({ acronyme, variant = 'inline-tooltip', className =
         {resolved.narrative}
         {resolved.short && resolved.short !== resolved.narrative && <> ({resolved.short})</>}
       </span>
+    );
+  }
+
+  if (variant === 'preserve-text') {
+    // Phase F.5.1 — affiche la cle BRUTE (eg "BACS") au lieu de resolved.short
+    // (eg "Décret BACS"). Cible : AutoTerm qui wrappe une chaine pre-existante
+    // ou le contexte impose la cle (eviter "le décret Décret BACS").
+    return (
+      <SolTooltip content={resolved.narrative} className={className}>
+        <span data-testid="term-preserve" aria-label={resolved.long}>
+          {acronyme}
+        </span>
+      </SolTooltip>
     );
   }
 

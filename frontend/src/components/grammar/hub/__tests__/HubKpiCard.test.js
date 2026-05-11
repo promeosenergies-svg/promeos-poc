@@ -56,11 +56,21 @@ describe('grammar/hub/HubKpiCard', () => {
     expect(src).toContain('sol-ink-400');
   });
 
-  it('value tabular-nums + sol-font-display + 28px', () => {
+  it('value typography Design System Spec §5.3 (Phase F.6) : 38px tabular tighter line-1', () => {
     const src = read();
+    // Phase F.6 — alignement Design System Spec §5.3 (intent structurel) :
+    // - fontSize 28px → 38px (display number prominent)
+    // - lineHeight 1.1 → 1 (tight numeric)
+    // - + letterSpacing -0.018em (tighter pour grands chiffres)
+    // - + fontVariantNumeric tabular-nums (alignement vertical chiffres)
+    // Font family Fraunces (var(--sol-font-display)) conserve — projet doctrine
+    // PROMEOS Sol diffère du Design System Spec qui mentionnait Newsreader.
     expect(src).toContain('tabular-nums');
     expect(src).toContain('var(--sol-font-display)');
-    expect(src).toMatch(/fontSize:\s*'28px'/);
+    expect(src).toMatch(/fontSize:\s*'38px'/);
+    expect(src).toMatch(/letterSpacing:\s*'-0\.018em'/);
+    expect(src).toMatch(/fontVariantNumeric:\s*'tabular-nums'/);
+    expect(src).toMatch(/lineHeight:\s*1\b/);
   });
 
   it("delta sign convention (positive: prepend '+', negative: as-is)", () => {
