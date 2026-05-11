@@ -309,10 +309,12 @@ class EnedisDataConnectConnector(Connector):
 
             # Erreurs Enedis spécifiques
             body = resp.text
+            # Phase L35.8 P1 SECURITY (Reviewer #1+#2 L35 résiduel L34.5) — PRM
+            # hashé dans les exceptions car str(exc) propage vers Sentry/Datadog.
             if "ADAM-ERR0025" in body:
-                raise ConsentExpiredError(params.get("usage_point_id", "?"))
+                raise ConsentExpiredError(hash_prm(params.get("usage_point_id")))
             if "ADAM-ERR0069" in body:
-                raise PrmNotFoundError(params.get("usage_point_id", "?"))
+                raise PrmNotFoundError(hash_prm(params.get("usage_point_id")))
             if "ADAM-ERR0031" in body:
                 raise TokenInvalidError()
 

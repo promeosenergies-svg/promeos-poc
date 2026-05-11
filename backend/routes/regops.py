@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from middleware.rate_limit import check_rate_limit
-from services.iam_scope import check_site_access, get_effective_org_id
+from services.iam_scope import check_site_access
 from services.scope_utils import resolve_org_id
 from regops.engine import evaluate_site, persist_assessment
 from regops.scoring import compute_regops_score, load_scoring_profile
@@ -296,12 +296,18 @@ def get_data_quality_specs():
 
 @router.get("/dashboard")
 def get_org_dashboard(
+    request: Request,
     org_id: int = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """KPIs org-level — score from unified A.2 service."""
-    effective_org_id = get_effective_org_id(auth, org_id)
+    """KPIs org-level — score from unified A.2 service.
+
+    Phase L35.4 P0 SECURITY (PROMEOS-SEC-2026-023 IDOR) — `get_effective_org_id`
+    retournait org_id_param brut en DEMO_MODE sans validation DB. Remplacé par
+    `resolve_org_id` qui valide DB strict (Phase 7.2 ADR-017 Option B).
+    """
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     # Resolve site_ids for the org (same join chain as cockpit)
     site_query = not_deleted(db.query(Site.id), Site)
     if effective_org_id:
@@ -345,12 +351,19 @@ def get_org_dashboard(
 
 @router.get("/audit-deadline-status")
 def get_audit_deadline_status(
+    request: Request,
     org_id: int = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Endpoint leger pour le DeadlineBanner cockpit."""
-    effective_org_id = get_effective_org_id(auth, org_id)
+    """Endpoint léger pour le DeadlineBanner cockpit.
+
+    Phase L35.4 P0 SECURITY (PROMEOS-SEC-2026-023 IDOR) — cf. /dashboard.
+    """
+    try:
+        effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    except HTTPException:
+        return {"show_banner": False}
     if not effective_org_id:
         return {"show_banner": False}
 
@@ -368,13 +381,22 @@ def get_audit_deadline_status(
         elif jours < 180:
             urgency = "high"
 
+    # Phase L35.3 P0 audit fix (Reviewer #1 CTO sévère L35) — `estimated_penalty_eur`
+    # auparavant hardcodé `15000` au lieu de lire la SoT YAML
+    # `COMPLIANCE_AUDIT_SME_PENALTY_EUR: 50000` (Code de l'énergie art. L.233-4).
+    # Divergence facteur x3,3 exposée pilot Marie DAF Lite 6,9k€/an → bug crédibilité
+    # immédiat (DAF vérifierait contre L.233-1 et constaterait l'écart).
+    from config.regulatory_sources_loader import get_term_value
+
+    audit_sme_penalty_eur = int(get_term_value("COMPLIANCE_AUDIT_SME_PENALTY_EUR"))
+
     return {
         "deadline": "2026-10-11",
         "days_remaining": jours,
         "obligation": obligation,
         "statut": assessment.get("statut"),
         "conso_gwh": assessment.get("conso", {}).get("annuelle_moy_gwh", 0),
-        "estimated_penalty_eur": 15000 if obligation != "AUCUNE" else 0,
+        "estimated_penalty_eur": audit_sme_penalty_eur if obligation != "AUCUNE" else 0,
         "show_banner": show,
         "urgency": urgency,
     }
@@ -386,6 +408,7 @@ def get_audit_deadline_status(
 @router.get("/organisations/{organisation_id}/audit-sme")
 def get_audit_sme(
     organisation_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
@@ -394,8 +417,10 @@ def get_audit_sme(
 
     Source : Loi n 2025-391 du 30 avril 2025 (art. L.233-1 code de l'energie)
     Deadline premier audit : 11 octobre 2026
+
+    Phase L35.4 P0 SECURITY (PROMEOS-SEC-2026-023 IDOR) — cf. /dashboard.
     """
-    effective_org_id = get_effective_org_id(auth, organisation_id)
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=organisation_id)
     from services.audit_sme_service import get_audit_sme_assessment
 
     return get_audit_sme_assessment(db, effective_org_id)
@@ -474,16 +499,19 @@ class AuditSmeUpdate(BaseModel):
 def update_audit_sme_record(
     organisation_id: int,
     payload: AuditSmeUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     Met a jour le statut Audit/SME d'une organisation (action manuelle).
+
+    Phase L35.4 P0 SECURITY (PROMEOS-SEC-2026-023 IDOR) — cf. /dashboard.
     """
     from models.audit_sme import AuditEnergetique
     from services.audit_sme_service import get_audit_sme_assessment
 
-    effective_org_id = get_effective_org_id(auth, organisation_id)
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=organisation_id)
     audit = db.query(AuditEnergetique).filter_by(organisation_id=effective_org_id).first()
 
     if not audit:

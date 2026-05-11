@@ -659,7 +659,14 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
         "rate": 0.02998,
         "unit": "EUR/kWh",
         "source": "Loi de finances 2025 — accise T1 août 2025+ (29.98 EUR/MWh) — vérifié facture ENGIE SUENO jan 2026",
-        "valid_from": "2025-02-01",
+        # Phase L35.1 P0 CARDINAL — Reviewer #4 SENTINEL-REG L35 a détecté
+        # régression L33.4 : le bulk replace `2025-08-01 → 2025-02-01` (qui
+        # corrigeait TURPE 7 effective_date) a ÉCRASÉ cette clé sans
+        # discrimination. Or le 1/08/2025 est la VRAIE bascule LFI 2025 pour
+        # les accises (3 périodes T1/T2/TICGN août → fév 2026). Restauration
+        # de la date correcte 2025-08-01. Shadow billing aurait appliqué le
+        # tarif août 5 mois trop tôt (impact CFO Marie DAF Lite 6,9k€/an).
+        "valid_from": "2025-08-01",
         "valid_to": "2026-01-31",
         "tva_rate": 0.20,
     },
@@ -683,7 +690,9 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
         "rate": 0.02579,
         "unit": "EUR/kWh",
         "source": "Loi de finances 2025 — accise T2 août 2025-jan 2026 (25.79 EUR/MWh) — vérifié facture EDF Cannes BL oct 2025",
-        "valid_from": "2025-02-01",
+        # Phase L35.1 P0 CARDINAL — Cf. ACCISE_ELEC_AOUT2025 ci-dessus pour
+        # contexte régression L33.4 bulk replace.
+        "valid_from": "2025-08-01",
         "valid_to": "2026-01-31",
         "tva_rate": 0.20,
     },
@@ -701,7 +710,10 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
         "rate": 0.01054,
         "unit": "EUR/kWh",
         "source": "Arrêté 24/07/2025 (Légifrance JORFTEXT000052009319) — accise gaz août 2025 (10.54 EUR/MWh)",
-        "valid_from": "2025-02-01",
+        # Phase L35.1 P0 CARDINAL — Cf. ACCISE_ELEC_AOUT2025 ci-dessus pour
+        # contexte régression L33.4 bulk replace. Source label arrêté 24/07/2025
+        # publication JORF août → césure VRAIMENT au 1/08/2025.
+        "valid_from": "2025-08-01",
         "valid_to": "2026-01-31",
         "tva_rate": 0.20,
     },

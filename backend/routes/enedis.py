@@ -369,6 +369,11 @@ def get_stats(db: Session = Depends(get_db)):
     r151 = measure_by_type.get("R151", 0)
 
     # --- PRMs: UNION DISTINCT across 4 measure tables (distinct point_id only) ---
+    # Phase L35.5 P0 SECURITY (PROMEOS-SEC-2026-021) — Avant L35.5, l'endpoint
+    # retournait la liste complète des PRMs Enedis 14 chiffres en clair sans
+    # auth ni org-scoping (PII massive ; un client anonyme aurait pu énumérer
+    # tout le parc). Désormais : seul `count` est exposé, `identifiers` retourne
+    # la liste vide. Pour debug/ops, utiliser endpoint admin authentifié dédié.
     prm_union = union(
         db.query(EnedisFluxMesureR4x.point_id.distinct()),
         db.query(EnedisFluxMesureR171.point_id.distinct()),
@@ -376,7 +381,7 @@ def get_stats(db: Session = Depends(get_db)):
         db.query(EnedisFluxMesureR151.point_id.distinct()),
     )
     prm_rows = db.execute(prm_union).fetchall()
-    prm_identifiers = sorted(row[0] for row in prm_rows)
+    prm_count = len(prm_rows)
 
     # --- Last completed ingestion (non-dry-run) ---
     last_run = (
@@ -416,8 +421,8 @@ def get_stats(db: Session = Depends(get_db)):
             r151=r151,
         ),
         prms=PrmStats(
-            count=len(prm_identifiers),
-            identifiers=prm_identifiers,
+            count=prm_count,
+            identifiers=[],  # Phase L35.5 P0 SEC-2026-021 — PII masquée
         ),
         last_ingestion=last_ingestion,
     )

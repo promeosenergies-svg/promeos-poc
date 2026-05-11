@@ -8,12 +8,14 @@ import random
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request as FastAPIRequest
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
+from middleware.rate_limit import check_rate_limit
+from services.iam_scope import check_site_access
 from models import (
     Site,
     Meter,
@@ -319,8 +321,23 @@ def get_monitoring_kpis_compare(
 
 
 @router.post("/run")
-def run_monitoring(request: MonitoringRunRequest, db: Session = Depends(get_db)):
-    """Run full monitoring pipeline for a site/meter."""
+def run_monitoring(
+    request: MonitoringRunRequest,
+    fastapi_request: FastAPIRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Run full monitoring pipeline for a site/meter.
+
+    Phase L35.6 P0 SECURITY (PROMEOS-SEC-2026-022) — Avant L35.6, cet endpoint
+    déclenchait un pipeline de calcul lourd sans auth, sans org-scoping et sans
+    rate-limit → DoS applicatif + cross-tenant data write possible. Désormais :
+    - auth optional Depends + check_site_access(auth, site_id) (cohérent regops)
+    - rate-limit 5/min/IP (pipeline batch coûteux)
+    """
+    check_rate_limit(fastapi_request, key_prefix="monitoring_run", max_requests=5, window_seconds=60)
+    check_site_access(auth, request.site_id)
+
     from services.electric_monitoring import MonitoringOrchestrator
 
     site = db.query(Site).filter_by(id=request.site_id).first()
@@ -585,8 +602,20 @@ MAX_IMPACT_EUR_PER_ALERT = 50_000
 
 
 @router.post("/demo/generate")
-def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depends(get_db)):
-    """Generate monitoring demo data (profiled pattern + weather correlation + anomalies)."""
+def generate_monitoring_demo(
+    request: MonitoringDemoRequest,
+    fastapi_request: FastAPIRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Generate monitoring demo data (profiled pattern + weather correlation + anomalies).
+
+    Phase L35.6 P0 SECURITY (PROMEOS-SEC-2026-022) — cf. /run ci-dessus.
+    Rate-limit 3/min (génération demo plus coûteuse que run standard).
+    """
+    check_rate_limit(fastapi_request, key_prefix="monitoring_demo_generate", max_requests=3, window_seconds=60)
+    check_site_access(auth, request.site_id)
+
     site = db.query(Site).filter_by(id=request.site_id).first()
     if not site:
         raise HTTPException(**business_error("SITE_NOT_FOUND", site_id=request.site_id))

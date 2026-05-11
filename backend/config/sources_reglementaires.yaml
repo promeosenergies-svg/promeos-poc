@@ -952,7 +952,10 @@ terms:
     notes: "Mirroir D-Phase4-2-EnergieFinale-Source-Guard-001 (à enforcer Sprint C-3 Phase 3.4)"
 
   # ═════════════════════════════════════════════════════════════════════
-  # Domaine TARIFS additionnels — TURPE 7 + ATRD7 (futur 2025-08)
+  # Domaine TARIFS additionnels — TURPE 7 (effectif 1/02/2025, CRE 2025-78
+  # mouvement EXCEPTIONNEL) + ATRD7 (révision annuelle 1/07/2025).
+  # Phase L35.7 P1 audit fix (Reviewer #1 CTO L35) — commentaire "futur 2025-08"
+  # supprimé : doctrine L33.4 acte la césure TURPE au 1/02/2025.
   # ═════════════════════════════════════════════════════════════════════
   TURPE_7_C5_BT_ENERGIE_HPH_EUR_PER_KWH:
     value: 0.0569
