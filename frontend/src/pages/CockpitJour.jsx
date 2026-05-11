@@ -21,6 +21,7 @@ import {
   HubKpiCard,
   HubSkeleton,
   HubError,
+  AutoTerm,
 } from '../components/grammar';
 import { useFilter } from '../contexts/FilterContext';
 import { getCockpitJour } from '../services/api';
@@ -76,46 +77,51 @@ export default function CockpitJour() {
     [kpis]
   );
 
+  const renderChartInner = (c) => {
+    if (c.type === 'bar_daily_7d') {
+      const data = (c.series || []).map((d) => ({ label: d.day, value: d.value, tone: d.tone }));
+      return <ChartFrameBars data={data} ariaLabel="Consommation 7 jours en MWh" />;
+    }
+    if (c.type === 'line_24h_hp_hc') {
+      const sub = c.subscribed_kw ?? 1500;
+      return (
+        <ChartFrameLine
+          seriesHP={c.series_hp}
+          seriesHC={c.series_hc}
+          threshold={{ value: sub, unit: 'kW', label: `Souscrite ${sub} kW` }}
+          ariaLabel="Courbe de charge 24h vs puissance souscrite"
+        />
+      );
+    }
+    return null;
+  };
+
   const chartChildren = useMemo(
     () =>
       charts
         .map((c) => {
-          let inner = null;
-          if (c.type === 'bar_daily_7d') {
-            inner = (
-              <ChartFrameBars
-                data={(c.series || []).map((d) => ({
-                  label: d.day,
-                  value: d.value,
-                  tone: d.tone,
-                }))}
-                ariaLabel="Consommation 7 jours en MWh"
-              />
-            );
-          } else if (c.type === 'line_24h_hp_hc') {
-            const sub = c.subscribed_kw ?? 1500;
-            inner = (
-              <ChartFrameLine
-                seriesHP={c.series_hp}
-                seriesHC={c.series_hc}
-                threshold={{ value: sub, unit: 'kW', label: `Souscrite ${sub} kW` }}
-                ariaLabel="Courbe de charge 24h vs puissance souscrite"
-              />
-            );
-          }
-          if (!inner) return null;
-          return (
+          const inner = renderChartInner(c);
+          return inner ? (
             <ChartFrame key={c.id} question={c.question} answer={c.answer} source={c.footScm || {}}>
               {inner}
             </ChartFrame>
-          );
+          ) : null;
         })
         .filter(Boolean),
     [charts]
   );
 
   const highlightChildren = useMemo(
-    () => highlights.slice(0, 5).map(({ id, ...rest }) => <HubHighlight key={id} {...rest} />),
+    () =>
+      highlights.slice(0, 5).map(({ id, title, evidence, ...rest }) => (
+        // F.5 — title/evidence wrappés AutoTerm pour acronymes BACS/EMS/OPERAT/CVC/DT.
+        <HubHighlight
+          key={id}
+          {...rest}
+          title={<AutoTerm text={title} />}
+          evidence={<AutoTerm text={evidence} />}
+        />
+      )),
     [highlights]
   );
 
@@ -142,7 +148,9 @@ export default function CockpitJour() {
         <HubPage pillar="briefing">
           <HubError
             title="Le briefing du jour est temporairement indisponible."
-            description="Source EMS · vérifier la connectivité backend ou réessayer dans quelques instants."
+            description={
+              <AutoTerm text="Source EMS · vérifier la connectivité backend ou réessayer dans quelques instants." />
+            }
             correlationId={error?.correlationId || error?.response?.headers?.['x-correlation-id']}
             onRetry={retry}
           />
@@ -160,8 +168,8 @@ export default function CockpitJour() {
         {/* L11.1 — Hero premium-night */}
         <SolHeroPremiumNight
           eyebrow={hero?.eyebrow}
-          title={hero?.title}
-          sub={hero?.sub}
+          title={<AutoTerm text={hero?.title} />}
+          sub={<AutoTerm text={hero?.sub} />}
           meta={hero?.meta}
           alerts={hero?.alerts}
           primaryCta={{ label: 'Voir le centre d’action', href: '/anomalies' }}

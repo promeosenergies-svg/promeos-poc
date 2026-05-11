@@ -161,6 +161,21 @@ describe('SG_HUB_L11_01 — hub-page-uses-canonical-grammar', () => {
     expect(existsSync(join(HUB_DIR, 'states', 'HubSkeleton.jsx'))).toBe(true);
     expect(existsSync(join(HUB_DIR, 'states', 'HubError.jsx'))).toBe(true);
   });
+
+  // Phase F.5 — Tooltip Sol acronymes (résout audit 1.4 + 3.8) :
+  // la page hub L11 doit utiliser <AutoTerm> ou <Term> pour wrapper les
+  // acronymes dans les chaînes rendues depuis le payload backend.
+  // Sans ce wrap, audit Phase D critère 1.4 (acronymes BACS/EMS/OPERAT/CVC/DT
+  // sans tooltip Sol) reste à 1/3.
+  it('CockpitJour.jsx importe et utilise AutoTerm (wrap acronymes payload backend)', () => {
+    const src = readFileSync(COCKPIT_JOUR, 'utf-8');
+    expect(src).toMatch(/import\s*\{[^}]*\bAutoTerm\b/);
+    expect(src).toMatch(/<AutoTerm\b/);
+  });
+
+  it('AutoTerm primitif existe sur disque', () => {
+    expect(existsSync(join(SRC_ROOT, 'components', 'grammar', 'AutoTerm.jsx'))).toBe(true);
+  });
 });
 
 // ── SG_HUB_L11_02 — promeos-marque-correcte ────────────────────────────────

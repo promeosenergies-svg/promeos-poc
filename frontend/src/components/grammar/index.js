@@ -49,3 +49,8 @@ export { default as ChartFrameLine } from './hub/charts/ChartFrameLine';
 // page implemente loading/error states).
 export { default as HubSkeleton } from './hub/states/HubSkeleton';
 export { default as HubError } from './hub/states/HubError';
+// Phase F.5 — AutoTerm : tokeniseur de chaîne avec auto-wrap des acronymes
+// connus (BACS, EMS, OPERAT, CVC, DT, GTB, TURPE, ATRD, …) via le composant
+// <Term> existant. Cible : wrap les acronymes dans les chaînes rendues depuis
+// le payload backend (hero.title, hero.sub, kpi.label, highlight.evidence).
+export { default as AutoTerm } from './AutoTerm';
