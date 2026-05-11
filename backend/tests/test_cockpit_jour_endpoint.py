@@ -242,3 +242,72 @@ def test_period_type_year_returns_200(client):
     """period_type=year doit fonctionner."""
     r = client.get("/api/cockpit/jour?period_type=year", headers={"X-Org-Id": "1"})
     assert r.status_code == 200
+
+
+# ── Phase F.4 : Filtre is_demo (cohérence demo/prod) ─────────────────────
+# Résout la fuite cosmétique P0.1 (audit Phase D) : la DB de test contient
+# 5 sites HELIOS (is_demo=True) + 2 "Site Test Phase 2" (is_demo=False)
+# parasites créés par des tests d'intégration. Le hero affichait "7 sites"
+# au lieu des 5 attendus.
+
+
+def test_sites_for_org_returns_only_demo_sites_for_demo_org():
+    """Une org demo (is_demo=True) retourne uniquement les sites is_demo=True."""
+    from database import SessionLocal
+    from routes.cockpit import _sites_for_org
+
+    db = SessionLocal()
+    sites = _sites_for_org(db, org_id=1).all()
+    assert len(sites) == 5, f"Attendu 5 sites HELIOS, obtenu {len(sites)}"
+    assert all(s.is_demo for s in sites), "Tous les sites doivent etre is_demo=True"
+    nom_sites = {s.nom for s in sites}
+    expected = {
+        "Siège HELIOS Paris",
+        "Bureau Régional Lyon",
+        "Entrepôt HELIOS Toulouse",
+        "Hôtel HELIOS Nice",
+        "École Jules Ferry Marseille",
+    }
+    assert nom_sites == expected, f"Sites HELIOS attendus {expected}, obtenu {nom_sites}"
+
+
+def test_sites_for_org_excludes_test_phase_parasites():
+    """Les 2 sites 'Site Test Phase 2' (is_demo=False) ne doivent PAS apparaitre."""
+    from database import SessionLocal
+    from routes.cockpit import _sites_for_org
+
+    db = SessionLocal()
+    sites = _sites_for_org(db, org_id=1).all()
+    nom_sites = {s.nom for s in sites}
+    assert "Site Test Phase 2" not in nom_sites, (
+        "Le filtre is_demo doit exclure les sites parasites de tests d'integration"
+    )
+
+
+def test_cockpit_jour_hero_scope_says_5_sites(client):
+    """Phase F.4 — hero.meta.scope doit dire '5 sites' (pas '7 sites')."""
+    r = client.get("/api/cockpit/jour", headers={"X-Org-Id": "1"})
+    scope = r.json()["hero"]["meta"]["scope"]
+    assert "5 sites" in scope, f"hero.meta.scope attendu '5 sites', obtenu '{scope}'"
+    assert "7 sites" not in scope, "Phase F.4 regression : la fuite is_demo n'est pas filtree (encore 7 sites affiches)"
+
+
+def test_sites_for_org_isdemo_coherence_with_org():
+    """Defensive : Site.is_demo doit toujours egaler Organisation.is_demo (filtre F.4).
+
+    Pour Phase 4+ quand une org client reelle (is_demo=False) sera ajoutee,
+    elle ne verra QUE ses sites prod (is_demo=False), jamais les sites demo
+    HELIOS. Test invariant cross-org.
+    """
+    from database import SessionLocal
+    from models import Organisation
+    from routes.cockpit import _sites_for_org
+
+    db = SessionLocal()
+    for org in db.query(Organisation).all():
+        sites = _sites_for_org(db, org_id=org.id).all()
+        for s in sites:
+            assert s.is_demo == org.is_demo, (
+                f"Fuite cross-tenant : site {s.id} (is_demo={s.is_demo}) "
+                f"renvoye pour org {org.id} (is_demo={org.is_demo})"
+            )
