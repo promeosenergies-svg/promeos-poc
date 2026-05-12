@@ -2233,17 +2233,19 @@ def _build_cockpit_jour_kpis(
     }
 
     # --- KPI 2 : Consommation J-1 (hier) en MWh ---
-    # Phase F.12 — audit user "conso et puissance j-1" : reframer le KPI en
-    # cohérence parallèle avec KPI 3 "Pic hier · Groupe". L'ancien label
-    # "Cette nuit (0h-6h)" induisait en erreur (la nuit en cours, pas J-1).
+    # Phase F.14 — audit user "vérifie cohérence KPI vs chart" : référence
+    # 8,6 MWh contredisait la baseline du chart bars (6,5 MWh/j). Les 2 sont
+    # le MÊME concept "moyenne journalière groupe", donc référence unifiée
+    # à 6,5 MWh/j. Value alignée sur la barre L (lundi/J-1) du chart bars
+    # (6,2 MWh) → delta -5 % cohérent.
     kpi_court_terme = {
         "id": "conso_court_terme_jm1",
         "eyebrow": "CONSOMMATION J-1",
         "label": "Conso hier · Groupe",
-        "value": 5.0,
+        "value": 6.2,
         "unit": "MWh",
         "delta": {
-            "value": -42,
+            "value": -5,
             "unit": "%",
             "direction": "down",
             "label": "vs moyenne habituelle",
@@ -2251,27 +2253,33 @@ def _build_cockpit_jour_kpis(
         },
         "helpTooltip": (
             "Consommation totale mesurée hier (J-1), agrégée sur l'ensemble"
-            " du groupe. Comparaison vs moyenne historique 8,6 MWh."
+            " du groupe. Comparaison vs baseline journalière 6,5 MWh/j."
         ),
-        "footScm": "Mesure J-1 EMS · Référence 8,6 MWh",
+        "footScm": "Mesure J-1 EMS · Référence 6,5 MWh/j",
     }
 
     # --- KPI 3 : Pic puissance hier (kW) ---
+    # Phase F.14 — audit user "vérifie chiffre KPI vs courbe" : la valeur 121
+    # affichée ne correspondait PAS au vrai pic du chart courbe (528 kW à 10h)
+    # mais au talon nuit (~122 kW). C'était UN MÊME concept "pic puissance
+    # hier" avec 2 valeurs incohérentes. Aligné sur peak.kw du chart courbe :
+    # 528 kW = 35 % de 1 500 kW souscrits (cf chart subtitle "Pic à 35 %").
     kpi_pic = {
         "id": "pic_puissance_jm1",
         "eyebrow": "PIC PUISSANCE",
         "label": "Pic hier · Groupe",
-        "value": 121,
+        "value": 528,
         "unit": "kW",
         "delta": {
-            "value": 8,
+            "value": 35,
             "unit": "%",
             "direction": "stable",
             "label": "de la souscrite utilisée",
             "sentiment": "neutral",
         },
         "helpTooltip": (
-            "Le pic atteint 121 kW sur 1 500 kW souscrits, soit 8 %. Marge confortable, pas d'écrêtement nécessaire."
+            "Pic 9 h-11 h hier à 528 kW sur 1 500 kW souscrits, soit 35 %."
+            " Marge confortable, pas d'écrêtement nécessaire."
         ),
         "footScm": "Souscrite 1,5 MW · Marge confortable",
     }
@@ -2372,6 +2380,14 @@ def _build_cockpit_jour_charts(
         {"hour": 23, "kw": 130},
     ]
 
+    # Phase F.13 — bridger HP avec les points de transition HC (hour=7 last
+    # HC matin + hour=22 first HC soir) pour éliminer les 2 gaps visuels
+    # 7h↔8h et 21h↔22h qui faisaient percevoir la courbe comme "tronquée".
+    # La courbe HP démarre désormais à hour=7 (kw=280, valeur HC matin) et
+    # finit à hour=22 (kw=160, valeur HC soir) — les 3 segments (HC matin /
+    # HP / HC soir) se touchent aux frontières tarifaires sans chevauchement.
+    series_hp_bridged = [series_hc_morning[-1]] + series_hp + [series_hc_evening[0]]
+
     chart_cdc = {
         "id": "courbe_charge_jm1",
         "question": "Sommes-nous proches de la puissance souscrite ?",
@@ -2382,7 +2398,7 @@ def _build_cockpit_jour_charts(
         "type": "line_24h_hp_hc",
         "subscribed_kw": 1500,
         "series_hc": series_hc_morning + series_hc_evening,  # heures creuses bleu
-        "series_hp": series_hp,  # heures pleines orange
+        "series_hp": series_hp_bridged,  # heures pleines orange (bridged 7h↔22h)
         "peak": {"hour": 10, "kw": 528, "label": "528 kW"},
         "hc_zones": [
             {"from_h": 0, "to_h": 7},

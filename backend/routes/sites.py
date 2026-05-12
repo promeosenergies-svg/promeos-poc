@@ -9,6 +9,7 @@ from models import (
     Site,
     Portefeuille,
     EntiteJuridique,
+    Organisation,
     Compteur,
     Alerte,
     Consommation,
@@ -74,7 +75,6 @@ def quick_create_site(
     si aucune n'existe. Auto-provisionne bâtiment + obligations + compliance.
     Détecte les doublons par nom + code postal.
     """
-    from models import Organisation
     from services.onboarding_service import (
         create_organisation_full,
         create_site_from_data,
@@ -320,10 +320,19 @@ def get_sites(
     # DEMO_MODE-aware scope resolution (auth > org_id param > header > demo fallback > 401)
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
 
+    # Phase F.14 — audit user "scope bar 7 vs cockpit 5" : ce endpoint déprécié
+    # est encore consommé par frontend ScopeContext via getSites('/sites'). Il
+    # devait appliquer le filtre canonique `Site.is_demo == Organisation.is_demo`
+    # (cf services/scope_utils.sites_for_org_query F.4 commit ff2b3a4d) sinon
+    # les 2 sites "Site Test Phase 2" parasites pollueint sitesCount frontend.
     query = (
         query.join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
         .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .filter(EntiteJuridique.organisation_id == effective_org_id)
+        .join(Organisation, Organisation.id == EntiteJuridique.organisation_id)
+        .filter(
+            EntiteJuridique.organisation_id == effective_org_id,
+            Site.is_demo == Organisation.is_demo,
+        )
     )
 
     # Site-level scope: restrict to accessible sites when auth has site_ids

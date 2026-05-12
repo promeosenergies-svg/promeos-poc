@@ -306,12 +306,27 @@ def _serialize_site(site: Site) -> dict:
 def _build_sites_query(
     db: Session, org_id: int, portefeuille_id=None, actif=None, ville=None, type_site=None, search=None
 ):
-    """Build a filtered site query scoped to org — shared by list_sites and export."""
+    """Build a filtered site query scoped to org — shared by list_sites and export.
+
+    Phase F.14 — audit user "scope bar 7 sites vs cockpit 5 sites" : applique
+    le filtre canonique `Site.is_demo == Organisation.is_demo` (cf
+    services/scope_utils.sites_for_org_query F.4 commit ff2b3a4d) pour que
+    le scope switcher ScopeContext.orgSites compte les mêmes sites que
+    cockpit/jour. Sans ce filtre, les 2 sites "Site Test Phase 2"
+    (is_demo=False) attachés à org HELIOS (is_demo=True) polluaient le
+    label "Groupe HELIOS — 7 sites" alors que toutes les API consommatrices
+    voyaient 5 sites filtrés. Option A arbitrage user (cohérence > visibilité).
+    """
     q = (
         db.query(Site)
         .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-        .filter(EntiteJuridique.organisation_id == org_id, not_deleted(Site))
+        .join(Organisation, Organisation.id == EntiteJuridique.organisation_id)
+        .filter(
+            EntiteJuridique.organisation_id == org_id,
+            Site.is_demo == Organisation.is_demo,
+            not_deleted(Site),
+        )
     )
     if portefeuille_id is not None:
         q = q.filter(Site.portefeuille_id == portefeuille_id)
