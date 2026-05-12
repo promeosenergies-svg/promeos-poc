@@ -30,6 +30,10 @@
  * @param {React.ReactNode} props.evidence - Texte evidence (peut contenir <b>)
  * @param {{ value: string, label: string }} [props.impact] - Impact chiffre
  * @param {{ verb: string, object: string, href: string }} props.invitation - CTA
+ * @param {{ score_total: number, score_breakdown: object, tier: string }} [props.priorityProof] -
+ *   Phase F.24 : badge transparent doctrinal ADR-022. Affiche la
+ *   décomposition du score de priorisation (5 dimensions) sous l'evidence.
+ *   Si omis, le badge n'est pas rendu (rétro-compat).
  * @param {string} [props.className='']
  */
 
@@ -67,6 +71,15 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+/** Libellés FR pour les dimensions du score doctrinal (ADR-022). */
+const PROOF_DIMENSION_LABELS = Object.freeze({
+  severity: 'Sévérité',
+  impact: 'Impact €',
+  urgency: 'Urgence',
+  scope: 'Scope',
+  domain: 'Domaine',
+});
+
 export default function HubHighlight({
   rang,
   severity = 'info',
@@ -76,6 +89,7 @@ export default function HubHighlight({
   evidence,
   impact,
   invitation,
+  priorityProof,
   className = '',
 }) {
   /* Validation runtime DEV */
@@ -182,6 +196,48 @@ export default function HubHighlight({
             }}
           >
             {evidence}
+          </div>
+        )}
+
+        {/* PriorityProof badge — Phase F.24 ADR-022 §Transparence.
+            Décomposition du score de priorisation 5 dimensions visible
+            sous l'evidence. Différentiant PROMEOS : "Vous savez toujours
+            pourquoi PROMEOS dit que c'est important." */}
+        {priorityProof && priorityProof.score_breakdown && (
+          <div
+            data-component="PriorityProof"
+            data-score={priorityProof.score_total}
+            className="font-mono"
+            style={{
+              marginTop: '8px',
+              paddingTop: '6px',
+              borderTop: '1px dashed var(--sol-rule)',
+              fontSize: '10px',
+              color: 'var(--sol-ink-400)',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '10px',
+              alignItems: 'center',
+            }}
+          >
+            <span
+              style={{
+                fontWeight: 600,
+                color: 'var(--sol-ink-700)',
+                background: 'var(--sol-bg-canvas)',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                border: '1px solid var(--sol-rule)',
+              }}
+            >
+              Score {priorityProof.score_total}/200
+            </span>
+            {Object.entries(priorityProof.score_breakdown).map(([dim, pts]) => (
+              <span key={dim} title={`${PROOF_DIMENSION_LABELS[dim] ?? dim} : ${pts} points`}>
+                {PROOF_DIMENSION_LABELS[dim] ?? dim}{' '}
+                <span style={{ color: 'var(--sol-ink-700)', fontWeight: 500 }}>{pts}</span>
+              </span>
+            ))}
           </div>
         )}
       </div>

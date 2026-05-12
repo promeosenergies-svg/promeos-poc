@@ -142,13 +142,24 @@ export default function CockpitJour() {
 
   const highlightChildren = useMemo(
     () =>
-      highlights.slice(0, 5).map(({ id, title, evidence, ...rest }) => (
+      highlights.slice(0, 5).map(({ id, title, evidence, _audit, tier, ...rest }) => (
         // F.5 — title/evidence wrappés AutoTerm pour acronymes BACS/EMS/OPERAT/CVC/DT.
+        // F.24 — `_audit` du backend (ADR-022) mappé vers `priorityProof` du
+        // composant HubHighlight pour afficher le badge transparent doctrinal.
         <HubHighlight
           key={id}
           {...rest}
           title={<AutoTerm text={title} />}
           evidence={<AutoTerm text={evidence} />}
+          priorityProof={
+            _audit
+              ? {
+                  score_total: _audit.score_total,
+                  score_breakdown: _audit.score_breakdown,
+                  tier,
+                }
+              : undefined
+          }
         />
       )),
     [highlights]
