@@ -3,7 +3,7 @@ PROMEOS - Routes API Cockpit & Portefeuilles
 Endpoints pour le cockpit exécutif et la gestion des portefeuilles
 """
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -2231,57 +2231,105 @@ def _build_cockpit_jour_kpis(
         "footScm": f"Source EMS · {site_count} sites · Confiance haute",
     }
 
-    # --- KPI 2 : Consommation J-1 (hier) en MWh ---
-    # Phase F.14 — audit user "vérifie cohérence KPI vs chart" : référence
-    # 8,6 MWh contredisait la baseline du chart bars (6,5 MWh/j). Les 2 sont
-    # le MÊME concept "moyenne journalière groupe", donc référence unifiée
-    # à 6,5 MWh/j. Value alignée sur la barre L (lundi/J-1) du chart bars
-    # (6,2 MWh) → delta -5 % cohérent.
-    kpi_court_terme = {
-        "id": "conso_court_terme_jm1",
-        "eyebrow": "CONSOMMATION J-1",
-        "label": "Conso hier · Groupe",
-        "value": 6.2,
-        "unit": "MWh",
-        "delta": {
-            "value": -5,
-            "unit": "%",
-            "direction": "down",
-            "label": "vs moyenne habituelle",
-            "sentiment": "positive",
-        },
-        "helpTooltip": (
-            "Consommation totale mesurée hier (J-1), agrégée sur l'ensemble"
-            " du groupe. Comparaison vs baseline journalière 6,5 MWh/j."
-        ),
-        "footScm": "Mesure J-1 EMS · Référence 6,5 MWh/j",
-    }
+    # --- KPI 2 + KPI 3 : data-driven depuis consumption_granularity_service (F.17) ---
+    # Phase F.17 — ADR-022 : remplace les hardcodes (value 6.2 / 528 / référence
+    # 6,5) par des calculs dérivés des MeterReading. J-1 = dernier jour avec
+    # lectures (cf _latest_data_day).
+    from services.consumption_granularity_service import (
+        get_org_baseline_daily_kwh,
+        get_org_daily_kwh,
+        get_org_hourly_curve_kw,
+        get_org_peak_kw,
+        get_org_subscribed_kw,
+    )
 
-    # --- KPI 3 : Pic puissance hier (kW) ---
-    # Phase F.14 — audit user "vérifie chiffre KPI vs courbe" : la valeur 121
-    # affichée ne correspondait PAS au vrai pic du chart courbe (528 kW à 10h)
-    # mais au talon nuit (~122 kW). C'était UN MÊME concept "pic puissance
-    # hier" avec 2 valeurs incohérentes. Aligné sur peak.kw du chart courbe :
-    # 528 kW = 35 % de 1 500 kW souscrits (cf chart subtitle "Pic à 35 %").
-    kpi_pic = {
-        "id": "pic_puissance_jm1",
-        "eyebrow": "PIC PUISSANCE",
-        "label": "Pic hier · Groupe",
-        "value": 528,
-        "unit": "kW",
-        "delta": {
-            "value": 35,
-            "unit": "%",
-            "direction": "stable",
-            "label": "de la souscrite utilisée",
-            "sentiment": "neutral",
-        },
-        "helpTooltip": (
-            "Pic 9 h-11 h hier à 528 kW sur 1 500 kW souscrits, soit 35 %."
-            " Marge confortable, pas d'écrêtement nécessaire."
-        ),
-        "footScm": "Souscrite 1,5 MW · Marge confortable",
-    }
+    jm1 = _latest_data_day(db)
+    conso_jm1_kwh = get_org_daily_kwh(db, org_id, jm1) if jm1 else None
+    baseline_daily_kwh = get_org_baseline_daily_kwh(db, org_id, today=today)
+    peak = get_org_peak_kw(db, org_id, jm1) if jm1 else None
+    souscrite_kw = get_org_subscribed_kw(db, org_id)
+
+    # --- KPI 2 : Conso J-1 ---
+    if conso_jm1_kwh is not None:
+        conso_jm1_mwh = round(conso_jm1_kwh / 1000, 1)
+        if baseline_daily_kwh and baseline_daily_kwh > 0:
+            delta_jm1 = round((conso_jm1_kwh - baseline_daily_kwh) / baseline_daily_kwh * 100, 1)
+        else:
+            delta_jm1 = None
+        baseline_mwh_label = f"{baseline_daily_kwh / 1000:.1f}".replace(".", ",") if baseline_daily_kwh else "—"
+        kpi_court_terme = {
+            "id": "conso_court_terme_jm1",
+            "eyebrow": "CONSOMMATION J-1",
+            "label": "Conso hier · Groupe",
+            "value": conso_jm1_mwh,
+            "unit": "MWh",
+            "delta": (
+                {
+                    "value": delta_jm1,
+                    "unit": "%",
+                    "direction": "down" if delta_jm1 < 0 else "up",
+                    "label": "vs moyenne habituelle",
+                    "sentiment": "positive" if delta_jm1 <= 0 else "negative",
+                }
+                if delta_jm1 is not None
+                else None
+            ),
+            "helpTooltip": (
+                f"Consommation mesurée le {jm1.isoformat()} (J-1), agrégée"
+                f" sur {site_count} sites du groupe. Comparaison vs baseline"
+                f" {baseline_mwh_label} MWh/j (moyenne 28 derniers jours)."
+            ),
+            "footScm": f"Mesure J-1 EMS · Référence {baseline_mwh_label} MWh/j",
+        }
+    else:
+        # Fallback "données partielles" ADR-022 anti-pattern : pas de hardcode.
+        kpi_court_terme = {
+            "id": "conso_court_terme_jm1",
+            "eyebrow": "CONSOMMATION J-1",
+            "label": "Conso hier · Groupe",
+            "value": None,
+            "unit": "MWh",
+            "delta": None,
+            "helpTooltip": "Aucune mesure EMS disponible pour J-1.",
+            "footScm": "Données partielles · Vérifier les connecteurs",
+        }
+
+    # --- KPI 3 : Pic puissance hier ---
+    if peak and souscrite_kw and souscrite_kw > 0:
+        peak_kw = peak["kw"]
+        peak_pct = round(peak_kw / souscrite_kw * 100, 1)
+        souscrite_mw_label = f"{souscrite_kw / 1000:.1f}".replace(".", ",")
+        kpi_pic = {
+            "id": "pic_puissance_jm1",
+            "eyebrow": "PIC PUISSANCE",
+            "label": "Pic hier · Groupe",
+            "value": int(round(peak_kw)),
+            "unit": "kW",
+            "delta": {
+                "value": peak_pct,
+                "unit": "%",
+                "direction": "stable",
+                "label": "de la souscrite utilisée",
+                "sentiment": "neutral" if peak_pct < 80 else "negative",
+            },
+            "helpTooltip": (
+                f"Pic atteint à {peak['hour']} h hier ({peak_kw:.0f} kW)"
+                f" sur {souscrite_kw:.0f} kW souscrits, soit {peak_pct:.1f} %."
+                f" {'Marge confortable' if peak_pct < 80 else 'Risque écrêtement'}."
+            ),
+            "footScm": f"Souscrite {souscrite_mw_label} MW · {'Marge confortable' if peak_pct < 80 else 'Surveillance'}",
+        }
+    else:
+        kpi_pic = {
+            "id": "pic_puissance_jm1",
+            "eyebrow": "PIC PUISSANCE",
+            "label": "Pic hier · Groupe",
+            "value": None,
+            "unit": "kW",
+            "delta": None,
+            "helpTooltip": "Aucune courbe de charge disponible pour J-1.",
+            "footScm": "Données partielles · Vérifier les connecteurs",
+        }
 
     return [kpi_conso_mois, kpi_court_terme, kpi_pic]
 
@@ -2303,116 +2351,183 @@ def _build_cockpit_jour_charts(
     from datetime import datetime as _dt
 
     updated_label = "à l'instant"
-    # Phase F.8 — site_count partagé entre footScm chart 1 + chart 2 (cohérence
-    # avec hero meta + KPI footScm calculé dans _build_cockpit_jour_kpis).
     site_count = _sites_for_org(db, org_id).with_entities(Site.id).count()
 
-    # Chart 1 — barres 7 jours (tones : crit = samedi anomalie, neutral = semaine ouvrée).
-    # Phase F.8 polish maquette V2 : valeurs réalistes 4-5 sites tertiaires
-    # (3-12 MWh/j) avec anomalie samedi visible vs baseline 6,5 MWh/j.
-    series_7j = [
-        {"day": "L", "value": 6.2, "tone": "neutral"},
-        {"day": "M", "value": 6.0, "tone": "neutral"},
-        {"day": "M", "value": 6.5, "tone": "neutral"},
-        {"day": "J", "value": 6.3, "tone": "neutral"},
-        {"day": "V", "value": 6.1, "tone": "neutral"},
-        {"day": "S", "value": 11.2, "tone": "crit"},
-        {"day": "D", "value": 7.8, "tone": "warn"},
-    ]
-    baseline_mwh = 6.5  # baseline MWh/j semaine ouvrée — pour ligne dashed maquette V2
+    # --- Phase F.17 — Charts data-driven depuis consumption_granularity_service.
+    from services.consumption_granularity_service import (
+        get_org_baseline_daily_kwh,
+        get_org_daily_range_kwh,
+        get_org_hourly_curve_kw,
+        get_org_peak_kw,
+        get_org_subscribed_kw,
+    )
+
+    jm1 = _latest_data_day(db)
+    today = datetime.utcnow().date()
+
+    # ── Chart 1 — barres 7 derniers jours ─────────────────────────────────
+    # Phase F.17 : les 7 valeurs proviennent du service granularity, baseline
+    # = moyenne 28 jours du même service (cohérence avec KPI 2). Annotation
+    # +72 % calculée si un jour dépasse > 1.5× baseline.
+    _DAY_LABELS = {0: "L", 1: "M", 2: "M", 3: "J", 4: "V", 5: "S", 6: "D"}
+    end_7d = jm1 or today
+    start_7d = end_7d - timedelta(days=6)
+    daily_range = get_org_daily_range_kwh(db, org_id, start_7d, end_7d)
+    baseline_daily_kwh = get_org_baseline_daily_kwh(db, org_id, today=today)
+    baseline_mwh = round(baseline_daily_kwh / 1000, 1) if baseline_daily_kwh else None
+
+    series_7j: list[dict] = []
+    worst_pct = 0.0
+    worst_day_label = None
+    for entry in daily_range:
+        d = date.fromisoformat(entry["date"])
+        value_mwh = round(entry["kwh"] / 1000, 1) if entry["kwh"] is not None else None
+        # Tone-aware (ADR-022 §Chart bars) : crit > +50 %, warn > +20 %, pos < -10 %
+        if value_mwh is not None and baseline_mwh:
+            pct = (value_mwh - baseline_mwh) / baseline_mwh * 100
+            if pct > 50:
+                tone = "crit"
+            elif pct > 20:
+                tone = "warn"
+            elif pct < -10:
+                tone = "pos"
+            else:
+                tone = "neutral"
+            if pct > worst_pct:
+                worst_pct = pct
+                worst_day_label = _DAY_LABELS[d.weekday()]
+        else:
+            tone = "neutral"
+        series_7j.append({"day": _DAY_LABELS[d.weekday()], "value": value_mwh, "tone": tone})
+
+    annotation = None
+    if worst_day_label and worst_pct > 20:
+        annotation = {
+            "day": worst_day_label,
+            "label": f"+ {int(round(worst_pct))} %",
+            "tone": "crit" if worst_pct > 50 else "warn",
+        }
+    answer_bars = (
+        f"Sur les 7 derniers jours, baseline {baseline_mwh} MWh/j."
+        f" Pic d'écart : {worst_day_label or '—'} à +{int(round(worst_pct))} %."
+        if baseline_mwh and worst_day_label
+        else "Données partielles sur la fenêtre 7 jours."
+    )
 
     chart_bars = {
         "id": "conso_7j_mwh",
         "question": "Où la consommation dérive-t-elle ?",
-        "answer": (
-            "Le week-end concentre l'écart : +72 % samedi, +20 % dimanche vs baseline 6,5 MWh/j."
-            " Survolez une barre pour identifier les sites contributeurs."
-        ),
+        "answer": answer_bars,
         "type": "bar_daily_7d",
         "series": series_7j,
         "baseline": baseline_mwh,
         "unit": "MWh/j",
-        "annotation": {
-            "day": "S",
-            "label": "+ 72 %",
-            "tone": "crit",
-        },
+        "annotation": annotation,
         "footScm": {
             "source": f"Source EMS · agrégé {site_count} sites",
-            "confidence": "haute",
+            "confidence": "haute" if baseline_mwh else "moyenne",
             "updatedAt": updated_label,
         },
     }
 
-    # Chart 2 — courbe de charge 24h vs souscrite.
-    # Phase F.8 polish maquette V2 : series_hp + series_hc générées côté backend
-    # (logique demo HELIOS, pas frontend). Talon nuit ~122 kW, pic 9-11h ~528 kW.
-    # 24 points horaires (0h → 23h), kW.
-    series_hc_morning = [  # 0h → 7h : heures creuses bleues
-        {"hour": 0, "kw": 122},
-        {"hour": 1, "kw": 118},
-        {"hour": 2, "kw": 115},
-        {"hour": 3, "kw": 114},
-        {"hour": 4, "kw": 118},
-        {"hour": 5, "kw": 135},
-        {"hour": 6, "kw": 175},
-        {"hour": 7, "kw": 280},
-    ]
-    series_hp = [  # 8h → 21h : heures pleines oranges, pic 9-11h
-        {"hour": 8, "kw": 420},
-        {"hour": 9, "kw": 510},
-        {"hour": 10, "kw": 528},
-        {"hour": 11, "kw": 515},
-        {"hour": 12, "kw": 440},
-        {"hour": 13, "kw": 405},
-        {"hour": 14, "kw": 430},
-        {"hour": 15, "kw": 445},
-        {"hour": 16, "kw": 460},
-        {"hour": 17, "kw": 450},
-        {"hour": 18, "kw": 420},
-        {"hour": 19, "kw": 380},
-        {"hour": 20, "kw": 320},
-        {"hour": 21, "kw": 240},
-    ]
-    series_hc_evening = [  # 22h → 23h : retour heures creuses
-        {"hour": 22, "kw": 160},
-        {"hour": 23, "kw": 130},
-    ]
+    # ── Chart 2 — courbe de charge 24 h vs souscrite ──────────────────────
+    # Phase F.17 : series horaire dérivée get_org_hourly_curve_kw, peak réel,
+    # puissance souscrite agrégée. Les plages HP/HC sont encore figées TURPE 6
+    # standard (HC = 0h-7h + 22h-23h) — F.18 les rendra dynamiques depuis
+    # ContractEnergy.tariff_periods.
+    series_kw = get_org_hourly_curve_kw(db, org_id, jm1) if jm1 else []
+    peak = get_org_peak_kw(db, org_id, jm1) if jm1 else None
+    souscrite_kw = get_org_subscribed_kw(db, org_id)
 
-    # Phase F.13 — bridger HP avec les points de transition HC (hour=7 last
-    # HC matin + hour=22 first HC soir) pour éliminer les 2 gaps visuels
-    # 7h↔8h et 21h↔22h qui faisaient percevoir la courbe comme "tronquée".
-    # La courbe HP démarre désormais à hour=7 (kw=280, valeur HC matin) et
-    # finit à hour=22 (kw=160, valeur HC soir) — les 3 segments (HC matin /
-    # HP / HC soir) se touchent aux frontières tarifaires sans chevauchement.
-    series_hp_bridged = [series_hc_morning[-1]] + series_hp + [series_hc_evening[0]]
+    # Convertit la courbe 24h en 2 séries HP/HC selon les plages tarifaires
+    # standard TURPE 6 (à remplacer F.18 par les plages du contrat actif).
+    HC_HOURS_MORNING = set(range(0, 8))  # 0h → 7h
+    HC_HOURS_EVENING = {22, 23}  # 22h → 23h
+    HP_HOURS = set(range(8, 22))  # 8h → 21h
+
+    series_hc: list[dict] = []
+    series_hp: list[dict] = []
+    for p in series_kw:
+        if p["kw"] is None:
+            continue
+        h = p["hour"]
+        if h in HC_HOURS_MORNING or h in HC_HOURS_EVENING:
+            series_hc.append({"hour": h, "kw": p["kw"]})
+        elif h in HP_HOURS:
+            series_hp.append({"hour": h, "kw": p["kw"]})
+
+    # F.13 bridge : HP avec points de transition HC pour éviter gap visuel.
+    if series_hc and series_hp:
+        last_hc_morning = next((p for p in reversed(series_hc) if p["hour"] < 8), None)
+        first_hc_evening = next((p for p in series_hc if p["hour"] >= 22), None)
+        series_hp_bridged = (
+            ([last_hc_morning] if last_hc_morning else [])
+            + series_hp
+            + ([first_hc_evening] if first_hc_evening else [])
+        )
+    else:
+        series_hp_bridged = series_hp
+
+    # Peak label
+    peak_payload = (
+        {"hour": peak["hour"], "kw": int(round(peak["kw"])), "label": f"{int(round(peak['kw']))} kW"} if peak else None
+    )
+    answer_cdc = (
+        f"Pic à {peak['hour']} h hier ({int(round(peak['kw']))} kW)"
+        f" sur {int(round(souscrite_kw))} kW souscrits — soit {peak['kw'] / souscrite_kw * 100:.0f} %."
+        if peak and souscrite_kw
+        else "Courbe de charge J-1 partielle."
+    )
 
     chart_cdc = {
         "id": "courbe_charge_jm1",
         "question": "Sommes-nous proches de la puissance souscrite ?",
-        "answer": (
-            "Pic 9 h-11 h à 528 kW · talon nuit 122 kW · puissance souscrite 1 500 kW."
-            " Pic à 35 % de la souscrite — marge confortable, pas d'écrêtement nécessaire."
-        ),
+        "answer": answer_cdc,
         "type": "line_24h_hp_hc",
-        "subscribed_kw": 1500,
-        "series_hc": series_hc_morning + series_hc_evening,  # heures creuses bleu
-        "series_hp": series_hp_bridged,  # heures pleines orange (bridged 7h↔22h)
-        "peak": {"hour": 10, "kw": 528, "label": "528 kW"},
+        "subscribed_kw": int(round(souscrite_kw)) if souscrite_kw else None,
+        "series_hc": series_hc,
+        "series_hp": series_hp_bridged,
+        "peak": peak_payload,
         "hc_zones": [
             {"from_h": 0, "to_h": 7},
             {"from_h": 22, "to_h": 23},
         ],
         "unit": "kW",
         "footScm": {
-            # Phase F.9 — anti-jargon "CDC 30 min" → "mesure 30 min".
             "source": f"Source EMS · mesure 30 min · agrégé {site_count} sites",
-            "confidence": "haute",
+            "confidence": "haute" if series_kw else "moyenne",
             "updatedAt": updated_label,
         },
     }
 
     return [chart_bars, chart_cdc]
+
+
+def _latest_data_day(db: Session) -> date | None:
+    """Date du dernier MeterReading disponible (J-1 réel pour la démo).
+
+    Phase F.17 — la démo HELIOS contient des CDC seedés jusqu'à mai 2026 mais
+    `today()` peut être après. On utilise le dernier jour ayant des lectures
+    comme "J-1" pour que les KPI/charts affichent des chiffres réels au lieu
+    de None partout.
+
+    Returns:
+        date du dernier jour avec lectures, ou None si DB vide.
+    """
+    from datetime import date as _date
+
+    from models import MeterReading
+
+    last_ts = db.query(func.max(MeterReading.timestamp)).scalar()
+    if last_ts is None:
+        return None
+    # On prend la date précédente si le timestamp est aujourd'hui — sinon la
+    # date du dernier réading (qui est déjà historique).
+    today_real = datetime.utcnow().date()
+    candidate: _date = last_ts.date()
+    if candidate >= today_real:
+        return today_real - timedelta(days=1)
+    return candidate
 
 
 def _build_cockpit_jour_highlights(
