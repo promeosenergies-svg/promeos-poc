@@ -2439,11 +2439,12 @@ def _build_cockpit_jour_charts(
     peak = get_org_peak_kw(db, org_id, jm1) if jm1 else None
     souscrite_kw = get_org_subscribed_kw(db, org_id)
 
-    # Convertit la courbe 24h en 2 séries HP/HC selon les plages tarifaires
-    # standard TURPE 6 (à remplacer F.18 par les plages du contrat actif).
-    HC_HOURS_MORNING = set(range(0, 8))  # 0h → 7h
-    HC_HOURS_EVENING = {22, 23}  # 22h → 23h
-    HP_HOURS = set(range(8, 22))  # 8h → 21h
+    # Phase F.18 — plages HP/HC dynamiques depuis EnergyContract.metadata_json
+    # ['tariff_periods'] si paramétré, sinon fallback TURPE 6 standard
+    # (HC 0h-7h + 22h-23h). Le service expose aussi hc_zones format renderer.
+    from services.tariff_periods_service import get_active_hp_hc_zones
+
+    tariff_zones = get_active_hp_hc_zones(db, org_id)
 
     series_hc: list[dict] = []
     series_hp: list[dict] = []
@@ -2451,9 +2452,9 @@ def _build_cockpit_jour_charts(
         if p["kw"] is None:
             continue
         h = p["hour"]
-        if h in HC_HOURS_MORNING or h in HC_HOURS_EVENING:
+        if h in tariff_zones["hc_hours"]:
             series_hc.append({"hour": h, "kw": p["kw"]})
-        elif h in HP_HOURS:
+        elif h in tariff_zones["hp_hours"]:
             series_hp.append({"hour": h, "kw": p["kw"]})
 
     # F.13 bridge : HP avec points de transition HC pour éviter gap visuel.
@@ -2488,10 +2489,7 @@ def _build_cockpit_jour_charts(
         "series_hc": series_hc,
         "series_hp": series_hp_bridged,
         "peak": peak_payload,
-        "hc_zones": [
-            {"from_h": 0, "to_h": 7},
-            {"from_h": 22, "to_h": 23},
-        ],
+        "hc_zones": tariff_zones["hc_zones"],
         "unit": "kW",
         "footScm": {
             "source": f"Source EMS · mesure 30 min · agrégé {site_count} sites",
