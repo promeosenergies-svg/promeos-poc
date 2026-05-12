@@ -547,3 +547,407 @@ body::before {
     transition: none;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* SOL DOCTRINE UNIVERSELLE — Phase doctrine alignment (toutes pages)         */
+/* « Applique la police et les couleurs et ergonomie de la page briefing      */
+/*   dans toute l'application » — propagation Sol via overrides CSS.          */
+/* Pure CSS, zéro touch JSX, hérité par toutes les pages via index.css.       */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Form elements : font-family DM Sans (héritage body parfois bypassed) ── */
+button,
+input,
+select,
+textarea {
+  font-family: var(--sol-font-body);
+  letter-spacing: -0.005em;
+  font-feature-settings: 'ss01', 'cv11';
+}
+input[type='number'],
+input[type='date'],
+input[type='time'],
+input.tabular,
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum', 'zero';
+}
+
+/* ── Headings exhaustifs h1-h6 + form labels + .text-* éditoriaux ── */
+h5,
+h6 {
+  font-family: var(--sol-font-display);
+  font-weight: 600;
+  color: var(--sol-ink-900);
+  letter-spacing: -0.015em;
+}
+h4 {
+  font-size: 15px;
+  line-height: 1.35;
+}
+h5 {
+  font-size: 14px;
+  line-height: 1.35;
+}
+h6 {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+label {
+  font-family: var(--sol-font-body);
+  color: var(--sol-ink-700);
+}
+
+/* ── Tailwind colors — exhaustif 50/100/200/300/400/500/600/700/800/900 ── */
+
+/* gray/slate 50 → bg-canvas */
+.bg-gray-50,
+.bg-slate-50,
+.bg-neutral-50,
+.bg-zinc-50,
+.bg-stone-50 {
+  background-color: var(--sol-bg-canvas) !important;
+}
+/* gray/slate 100 → bg-panel */
+.bg-gray-100,
+.bg-slate-100,
+.bg-neutral-100,
+.bg-zinc-100,
+.bg-stone-100 {
+  background-color: var(--sol-bg-panel) !important;
+}
+/* gray/slate 200/300 → ink-200/300 */
+.bg-gray-200,
+.bg-slate-200,
+.bg-neutral-200,
+.bg-zinc-200 {
+  background-color: var(--sol-ink-200) !important;
+}
+.bg-gray-300,
+.bg-slate-300,
+.bg-neutral-300,
+.bg-zinc-300 {
+  background-color: var(--sol-ink-300) !important;
+}
+.bg-gray-700,
+.bg-slate-700,
+.bg-neutral-700,
+.bg-zinc-700,
+.bg-gray-800,
+.bg-slate-800,
+.bg-neutral-800,
+.bg-zinc-800,
+.bg-gray-900,
+.bg-slate-900,
+.bg-neutral-900,
+.bg-zinc-900,
+.bg-black {
+  background-color: var(--sol-ink-900) !important;
+}
+
+/* text gray/slate exhaustif */
+.text-gray-300,
+.text-slate-300,
+.text-neutral-300,
+.text-zinc-300 {
+  color: var(--sol-ink-300) !important;
+}
+.text-gray-500,
+.text-slate-500,
+.text-neutral-500,
+.text-zinc-500,
+.text-gray-600,
+.text-slate-600,
+.text-neutral-600,
+.text-zinc-600 {
+  color: var(--sol-ink-500) !important;
+}
+.text-white {
+  color: var(--sol-bg-paper) !important;
+}
+
+/* border gray/slate exhaustif */
+.border-gray-400,
+.border-slate-400 {
+  border-color: var(--sol-ink-400) !important;
+}
+.border-gray-500,
+.border-slate-500,
+.border-gray-600,
+.border-slate-600,
+.border-gray-700,
+.border-slate-700 {
+  border-color: var(--sol-ink-500) !important;
+}
+
+/* Sky / Cyan (alt-blue Tailwind) → Sol calme */
+.bg-sky-50,
+.bg-cyan-50 {
+  background-color: var(--sol-calme-bg) !important;
+}
+.bg-sky-500,
+.bg-sky-600,
+.bg-sky-700,
+.bg-cyan-500,
+.bg-cyan-600 {
+  background-color: var(--sol-calme-fg) !important;
+}
+.text-sky-500,
+.text-sky-600,
+.text-sky-700,
+.text-cyan-600,
+.text-cyan-700 {
+  color: var(--sol-calme-fg) !important;
+}
+.border-sky-200,
+.border-sky-300,
+.border-cyan-200,
+.border-cyan-300 {
+  border-color: var(--sol-calme-fg) !important;
+}
+
+/* Purple / Fuchsia (palette alt) → Sol attention warm */
+.bg-purple-50,
+.bg-fuchsia-50,
+.bg-pink-50,
+.bg-rose-50 {
+  background-color: var(--sol-attention-bg) !important;
+}
+.text-purple-600,
+.text-purple-700,
+.text-fuchsia-600,
+.text-pink-600,
+.text-rose-600,
+.text-rose-700 {
+  color: var(--sol-attention-fg) !important;
+}
+.border-purple-200,
+.border-rose-200,
+.border-pink-200 {
+  border-color: var(--sol-attention-fg) !important;
+}
+
+/* Lime → Sol succes */
+.bg-lime-50 {
+  background-color: var(--sol-succes-bg) !important;
+}
+.text-lime-600,
+.text-lime-700 {
+  color: var(--sol-succes-fg) !important;
+}
+.border-lime-200 {
+  border-color: var(--sol-succes-fg) !important;
+}
+
+/* Hover/focus états — Tailwind classique → Sol */
+.hover\:bg-gray-50:hover,
+.hover\:bg-slate-50:hover {
+  background-color: var(--sol-ink-100) !important;
+}
+.hover\:bg-gray-100:hover,
+.hover\:bg-slate-100:hover {
+  background-color: var(--sol-ink-200) !important;
+}
+.hover\:bg-blue-50:hover,
+.hover\:bg-indigo-50:hover {
+  background-color: var(--sol-calme-bg) !important;
+}
+.focus\:ring-blue-500:focus,
+.focus\:ring-indigo-500:focus {
+  --tw-ring-color: var(--sol-calme-fg) !important;
+}
+.focus\:border-blue-500:focus,
+.focus\:border-indigo-500:focus {
+  border-color: var(--sol-calme-fg) !important;
+}
+
+/* Bordures input/select/textarea — épaisseur 1px Sol cohérent */
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+input[type='search'],
+input[type='date'],
+input[type='time'],
+select,
+textarea {
+  background: var(--sol-bg-paper);
+  color: var(--sol-ink-900);
+}
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--sol-calme-fg);
+  box-shadow: 0 0 0 3px rgba(47, 107, 94, 0.15);
+}
+
+/* Cards de pages : radius cohérent avec briefing (6-8px) — déjà partiellement
+   couvert mais on s'assure que rounded-full et rounded-sm restent corrects */
+.rounded-sm {
+  border-radius: 4px !important;
+}
+/* rounded-full reste circulaire (avatar/badges) — pas d'override */
+
+/* Body texte global — taille + line-height cohérents avec briefing (15px / 1.5) */
+.text-base {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+}
+.text-sm {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+.text-xs {
+  font-size: 11.5px !important;
+  line-height: 1.45 !important;
+}
+
+/* Boutons primaires Tailwind type "px-4 py-2 bg-blue-600 text-white" — déjà
+   couvert via bg-blue-600 mais on renforce le padding/font cohérent. */
+.btn-primary,
+button[type='submit'] {
+  font-family: var(--sol-font-body);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+/* Liens — couleur Sol calme par défaut (cohérent footer briefing) */
+a:not(.btn):not([class*='bg-']) {
+  color: inherit;
+  text-decoration: none;
+}
+a:not(.btn):not([class*='bg-']):hover {
+  color: var(--sol-calme-fg);
+}
+
+/* Scrollbar — slate moderne cohérent avec briefing */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sol-ink-300) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--sol-ink-300);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--sol-ink-400);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Tables — typographie + bordures Sol cohérent (héritées par Patrimoine,
+   Conformite, Factures qui font des grids HTML <table>) */
+table {
+  font-family: var(--sol-font-body);
+  font-size: 13px;
+  border-collapse: collapse;
+}
+table th {
+  font-family: var(--sol-font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sol-ink-500);
+  font-weight: 500;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--sol-rule);
+  text-align: left;
+}
+table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--sol-ink-100);
+  color: var(--sol-ink-900);
+}
+table tr:hover td {
+  background: var(--sol-ink-50, var(--sol-bg-canvas));
+}
+
+/* Code/pre inline (utilisé dans docs/help/methodology pages) */
+pre,
+code {
+  background: var(--sol-bg-panel);
+  color: var(--sol-ink-900);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+pre {
+  padding: 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  border: 1px solid var(--sol-rule);
+}
+
+/* Selection — couleur Sol calme subtle */
+::selection {
+  background: var(--sol-calme-bg);
+  color: var(--sol-calme-fg);
+}
+
+/* ── Variantes Tailwind 200/300/400 + 700/800 (complétude finale) ── */
+.bg-blue-200,
+.bg-blue-300,
+.bg-blue-400,
+.bg-indigo-200,
+.bg-indigo-300,
+.bg-sky-200,
+.bg-cyan-200 {
+  background-color: var(--sol-calme-bg) !important;
+}
+.text-blue-200,
+.text-blue-300,
+.text-blue-400 {
+  color: var(--sol-calme-fg) !important;
+}
+.bg-emerald-200,
+.bg-emerald-300,
+.bg-green-200,
+.bg-green-300,
+.bg-lime-200 {
+  background-color: var(--sol-succes-bg) !important;
+}
+.bg-amber-200,
+.bg-amber-300,
+.bg-yellow-200,
+.bg-yellow-300 {
+  background-color: var(--sol-attention-bg) !important;
+}
+.bg-orange-200,
+.bg-orange-300 {
+  background-color: var(--sol-afaire-bg) !important;
+}
+.bg-red-200,
+.bg-red-300 {
+  background-color: var(--sol-refuse-bg) !important;
+}
+/* text-* 700/800 — couvert plus haut mais on assure les variants moins fréquents */
+.text-indigo-800,
+.text-indigo-900,
+.text-sky-800,
+.text-sky-900 {
+  color: var(--sol-calme-fg) !important;
+}
+.text-emerald-800,
+.text-green-800,
+.text-green-900,
+.text-lime-800 {
+  color: var(--sol-succes-fg) !important;
+}
+.text-amber-800,
+.text-amber-900,
+.text-yellow-800 {
+  color: var(--sol-attention-fg) !important;
+}
+.text-orange-800,
+.text-orange-900 {
+  color: var(--sol-afaire-fg) !important;
+}
+.text-red-800 {
+  color: var(--sol-refuse-fg) !important;
+}
