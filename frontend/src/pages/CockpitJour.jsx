@@ -156,6 +156,8 @@ export default function CockpitJour() {
               ? {
                   score_total: _audit.score_total,
                   score_breakdown: _audit.score_breakdown,
+                  persona: _audit.persona,
+                  overrides_applied: _audit.overrides_applied,
                   tier,
                 }
               : undefined

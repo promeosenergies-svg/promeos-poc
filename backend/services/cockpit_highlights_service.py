@@ -27,8 +27,11 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from regops.priority_scoring import (
+    DOCTRINE_VERSION,
     Domain,
     Finding,
+    HubId,
+    Persona,
     PriorityScore,
     Scope,
     Severity,
@@ -51,16 +54,16 @@ _SEVERITY_DISPLAY: dict[Severity, str] = {
 def finding_to_highlight_dict(finding: Finding, score: PriorityScore, rang: int) -> dict:
     """Sérialise une finding scorée vers le contrat highlight Sol L11.3.
 
-    Format aligné sur `_build_cockpit_jour_highlights` historique pour
-    rétro-compat avec `HubHighlight.jsx` (frontend).
+    Phase F.22 — payload audit trail enrichi avec persona + overrides_applied
+    + doctrine_version pour traçabilité complète.
     """
     return {
         "id": finding.finding_id or f"hl-{rang}",
         "rang": rang,
-        "tier": score.tier.value,  # P1 / P2 / P3
+        "tier": score.tier.value,  # P1 / P2 / P3 / NONE
         "severity": _SEVERITY_DISPLAY.get(finding.severity, "info"),
         "category": finding.category_label,
-        "scope": finding.site_name,  # Texte affiché ex "Bureau Régional Lyon"
+        "scope": finding.site_name,
         "title": finding.title,
         "evidence": finding.evidence,
         "impact": {
@@ -72,11 +75,15 @@ def finding_to_highlight_dict(finding: Finding, score: PriorityScore, rang: int)
             "object": finding.invitation_object,
             "href": finding.invitation_href,
         },
-        # Audit trail (ADR-022 anti-pattern "P1 sans evidence")
+        # Audit trail v1 doctrine (ADR-022 + sprint priorisation v1.0).
         "_audit": {
             "score_total": score.total,
             "score_breakdown": score.breakdown,
+            "persona": score.persona.value,
+            "overrides_applied": score.overrides_applied,
+            "doctrine_version": DOCTRINE_VERSION,
             "domain": finding.domain.value,
+            "category": finding.resolve_category().value,
             "scope_level": finding.scope_level.value,
         },
     }
@@ -143,6 +150,8 @@ def build_top_n_highlights(
     org_id: Optional[int],
     n: int = 3,
     today: Optional[date] = None,
+    persona: Persona = Persona.RESPONSABLE_ENERGIE,
+    hub: HubId = HubId.COCKPIT_JOUR,
 ) -> list[dict]:
     """Construit le Top N highlights cockpit jour, scoré + trié + sérialisé.
 
@@ -166,11 +175,9 @@ def build_top_n_highlights(
     findings.extend(_collect_billing_findings(db, org_id))
     findings.extend(_collect_platform_health_findings(db, org_id))
 
-    # Phase F.20a — double dédup catégorie + site (anti-pattern Sol §L11.3
-    # AP3 "4× même catégorie interdit" + diversité géographique). Chaque
-    # catégorie ET chaque site n'apparaît qu'une fois dans le Top N. Le
-    # ranking par score reste la priorité ; la dédup filtre ensuite.
-    ranked = rank_findings(findings, today=today)
+    # Phase F.20a + F.22 — ranking avec persona + hub (départage HUB_CAT_ORDER)
+    # puis double dédup catégorie + site (anti-pattern Sol §L11.3 AP3).
+    ranked = rank_findings(findings, persona=persona, hub=hub, today=today)
     seen_categories: set[str] = set()
     seen_sites: set[Optional[int]] = set()
     deduplicated: list = []
@@ -191,7 +198,12 @@ def build_top_n_highlights(
     return [finding_to_highlight_dict(finding, score, rang=i + 1) for i, (finding, score) in enumerate(deduplicated)]
 
 
-def count_total_signals(db: Session, org_id: Optional[int], today: Optional[date] = None) -> dict:
+def count_total_signals(
+    db: Session,
+    org_id: Optional[int],
+    today: Optional[date] = None,
+    persona: Persona = Persona.RESPONSABLE_ENERGIE,
+) -> dict:
     """Retourne le compte des findings actifs ventilés par tier.
 
     Utilisé par le générateur de hero narratif pour afficher
@@ -209,7 +221,7 @@ def count_total_signals(db: Session, org_id: Optional[int], today: Optional[date
 
     counts = {"p1": 0, "p2": 0, "p3": 0, "total": 0}
     for f in findings:
-        score = compute_finding_priority(f, today=today)
+        score = compute_finding_priority(f, persona=persona, today=today)
         if score.tier == Tier.P1:
             counts["p1"] += 1
         elif score.tier == Tier.P2:

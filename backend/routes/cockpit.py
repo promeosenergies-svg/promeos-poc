@@ -2531,25 +2531,34 @@ def _latest_data_day(db: Session) -> date | None:
 def _build_cockpit_jour_highlights(
     db: Session,
     org_id: int | None,
+    persona_str: str = "responsable_energie",
 ) -> list[dict]:
-    """Top 3 highlights cockpit jour, dérivés du scoring canonique ADR-022 F.19.
+    """Top 3 highlights cockpit jour, dérivés du scoring v1 doctrine F.22.
 
     Délègue à `services.cockpit_highlights_service.build_top_n_highlights`
     qui agrège findings (compliance + billing + EMS staleness) et applique
-    `regops.priority_scoring.compute_finding_priority` (5 dimensions :
-    sévérité × impact € × urgence × scope × domaine).
+    `regops.priority_scoring.compute_finding_priority` (formule v1.0 :
+    G·wG + I·wI + D·wD + 3 overrides + tiering persona-dependent).
 
-    Le résultat inclut un champ `_audit` avec score_breakdown pour
-    traçabilité (anti-pattern doctrinal "P1 sans evidence").
-
-    Phase F.19c — remplace les 3 highlights hardcodés (Lyon/Toulouse/Paris)
-    par le résultat du scoring. Demo HELIOS : findings mock dans le service
-    via collectors `_collect_compliance_findings` etc. F.17 branchera les
-    vrais détecteurs (compliance_score_service, bill_intelligence).
+    Args:
+        persona_str : "responsable_energie" (défaut) | "daf" | "dg_comex"
+                      pour la pondération du scoring.
     """
+    from regops.priority_scoring import HubId, Persona
     from services.cockpit_highlights_service import build_top_n_highlights
 
-    highlights = build_top_n_highlights(db, org_id, n=3)
+    try:
+        persona = Persona(persona_str)
+    except ValueError:
+        persona = Persona.RESPONSABLE_ENERGIE
+
+    highlights = build_top_n_highlights(
+        db,
+        org_id,
+        n=3,
+        persona=persona,
+        hub=HubId.COCKPIT_JOUR,
+    )
 
     # Validation interne : verbes autorisés (guard runtime hérité doctrine).
     for h in highlights:
@@ -2634,19 +2643,21 @@ def get_cockpit_jour(
     period_type: str = "week",
     period_start: Optional[str] = None,
     period_end: Optional[str] = None,
+    persona: str = "responsable_energie",
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """GET /api/cockpit/jour — Hub Page L11 Briefing du jour.
 
-    Retourne le payload structuré CockpitJourPayload (hero + 3 KPIs +
-    2 charts + 3 highlights différenciés + footer SCM) pour la page V2
-    grammaire L11. Cf docs/vision/promeos_sol_doctrine.md §12.
-
     Query params :
       period_type  : 'day' | 'week' | 'month' | 'year'  (défaut 'week')
       period_start : ISO 8601 (custom uniquement)
       period_end   : ISO 8601 (custom uniquement)
+      persona      : 'responsable_energie' (défaut) | 'daf' | 'dg_comex'
+                     Pondération scoring v1 doctrine (ADR-022 F.22).
+                     - responsable_energie : G·3 + I·2 + D·2 (max 35)
+                     - daf                 : G·2 + I·3 + D·2 (max 35)
+                     - dg_comex            : G·2 + I·3 + D·3 (max 40)
 
     Org-scoping via resolve_org_id (multi-tenant strict).
     """
@@ -2655,10 +2666,10 @@ def get_cockpit_jour(
     sites = _sites_for_org(db, org_id).all()
     scope_label = f"{len(sites)} sites"
 
-    # Phase F.19c — highlights computed UNE FOIS, threadés vers le hero
-    # pour garantir cohérence narration ↔ Top 3 affiché (anti-pattern
-    # "hero dit 3 signaux" mais highlights montre 0 / autres sites).
-    highlights = _build_cockpit_jour_highlights(db, org_id)
+    # Phase F.22 — highlights computed avec persona param. Default
+    # `responsable_energie` (le plus restrictif sur la gravité, pertinent
+    # pour le briefing quotidien).
+    highlights = _build_cockpit_jour_highlights(db, org_id, persona_str=persona)
 
     return {
         "hero": _build_cockpit_jour_hero(db, org_id, period, scope_label, highlights),

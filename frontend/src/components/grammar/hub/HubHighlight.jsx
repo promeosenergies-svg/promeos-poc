@@ -71,8 +71,19 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-/** Libellés FR pour les dimensions du score doctrinal (ADR-022). */
+/** Libellés FR pour les dimensions du score doctrinal v1 (ADR-022 F.22).
+ *  v1 doctrine : 3 axes G/I/D (× pondération persona) + 3 dimensions pondérées
+ *  exposées (g_weighted, i_weighted, d_weighted) pour transparence. */
 const PROOF_DIMENSION_LABELS = Object.freeze({
+  // Axes bruts 0-5 (v1)
+  g: 'Gravité',
+  i: 'Impact',
+  d: 'Délai',
+  // Axes pondérés (v1)
+  g_weighted: 'G pondéré',
+  i_weighted: 'I pondéré',
+  d_weighted: 'D pondéré',
+  // F.19a legacy (rétro-compat éventuelle)
   severity: 'Sévérité',
   impact: 'Impact €',
   urgency: 'Urgence',
@@ -134,9 +145,13 @@ export default function HubHighlight({
         }}
       />
 
-      {/* Rang — badge mono P{n} */}
+      {/* Badge tier — Phase F.22 : affiche le TIER doctrinal (P1/P2/P3)
+          plutôt que le rang (position 1/2/3 dans le top 3). Le tier est
+          la vraie classification de priorité v1 doctrine (≠ rang).
+          Fallback `P{rang}` si priorityProof non fourni (rétro-compat). */}
       <div
         className="font-mono text-center"
+        data-tier={priorityProof?.tier || `P${rang}`}
         style={{
           fontSize: '10.5px',
           fontWeight: 500,
@@ -148,7 +163,7 @@ export default function HubHighlight({
           color: 'var(--sol-ink-500)',
         }}
       >
-        P{rang}
+        {priorityProof?.tier && priorityProof.tier !== 'NONE' ? priorityProof.tier : `P${rang}`}
       </div>
 
       {/* Corps : meta + titre + evidence */}
@@ -199,47 +214,71 @@ export default function HubHighlight({
           </div>
         )}
 
-        {/* PriorityProof badge — Phase F.24 ADR-022 §Transparence.
-            Décomposition du score de priorisation 5 dimensions visible
-            sous l'evidence. Différentiant PROMEOS : "Vous savez toujours
-            pourquoi PROMEOS dit que c'est important." */}
-        {priorityProof && priorityProof.score_breakdown && (
-          <div
-            data-component="PriorityProof"
-            data-score={priorityProof.score_total}
-            className="font-mono"
-            style={{
-              marginTop: '8px',
-              paddingTop: '6px',
-              borderTop: '1px dashed var(--sol-rule)',
-              fontSize: '10px',
-              color: 'var(--sol-ink-400)',
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '10px',
-              alignItems: 'center',
-            }}
-          >
-            <span
-              style={{
-                fontWeight: 600,
-                color: 'var(--sol-ink-700)',
-                background: 'var(--sol-bg-canvas)',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                border: '1px solid var(--sol-rule)',
-              }}
-            >
-              Score {priorityProof.score_total}/200
-            </span>
-            {Object.entries(priorityProof.score_breakdown).map(([dim, pts]) => (
-              <span key={dim} title={`${PROOF_DIMENSION_LABELS[dim] ?? dim} : ${pts} points`}>
-                {PROOF_DIMENSION_LABELS[dim] ?? dim}{' '}
-                <span style={{ color: 'var(--sol-ink-700)', fontWeight: 500 }}>{pts}</span>
-              </span>
-            ))}
-          </div>
-        )}
+        {/* PriorityProof badge — Phase F.22 v1 doctrine ADR-022 §Transparence.
+            Décomposition du score 3 axes G/I/D (0-5) + score total + persona
+            visibles sous l'evidence. Différentiant PROMEOS : "Vous savez
+            toujours pourquoi PROMEOS dit que c'est important." */}
+        {priorityProof &&
+          priorityProof.score_breakdown &&
+          (() => {
+            const bd = priorityProof.score_breakdown;
+            // v1 : prioriser les axes bruts g/i/d (échelle 0-5) sur les pondérés
+            // car plus parlants ("Gravité 5/5" est plus clair que "G pondéré 15").
+            const axes = ['g', 'i', 'd'].filter((k) => bd[k] !== undefined);
+            // Score max selon persona (v1 §14.3.1).
+            const personaMax = priorityProof.persona === 'dg_comex' ? 40 : 35;
+            return (
+              <div
+                data-component="PriorityProof"
+                data-score={priorityProof.score_total}
+                data-tier={priorityProof.tier}
+                className="font-mono"
+                style={{
+                  marginTop: '8px',
+                  paddingTop: '6px',
+                  borderTop: '1px dashed var(--sol-rule)',
+                  fontSize: '10px',
+                  color: 'var(--sol-ink-400)',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  alignItems: 'center',
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 600,
+                    color: 'var(--sol-ink-700)',
+                    background: 'var(--sol-bg-canvas)',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    border: '1px solid var(--sol-rule)',
+                  }}
+                >
+                  Score {priorityProof.score_total}/{personaMax}
+                </span>
+                {axes.map((dim) => (
+                  <span key={dim} title={`${PROOF_DIMENSION_LABELS[dim] ?? dim} : ${bd[dim]}/5`}>
+                    {PROOF_DIMENSION_LABELS[dim] ?? dim}{' '}
+                    <span style={{ color: 'var(--sol-ink-700)', fontWeight: 500 }}>
+                      {bd[dim]}/5
+                    </span>
+                  </span>
+                ))}
+                {priorityProof.overrides_applied?.length > 0 && (
+                  <span
+                    title={priorityProof.overrides_applied.join(', ')}
+                    style={{
+                      color: 'var(--sol-attention-fg)',
+                      fontWeight: 500,
+                    }}
+                  >
+                    ⚡ Override
+                  </span>
+                )}
+              </div>
+            );
+          })()}
       </div>
 
       {/* Impact chiffre */}
