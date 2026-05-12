@@ -3,6 +3,7 @@ PROMEOS - Modèle Site
 Coeur du domaine : site de consommation énergétique
 """
 
+import sqlalchemy as sa
 from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, validates
 from .base import Base, TimestampMixin, SoftDeleteMixin
@@ -275,7 +276,17 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
         """Nom du portefeuille parent — used by breadcrumbs and Site360."""
         return self.portefeuille.nom if self.portefeuille else None
 
-    is_demo = Column(Boolean, default=False, comment="Donnees de demonstration")
+    # Phase 3.4-bis Correctif #4 (audit Sprint F CS P0) : nullable=False + server_default
+    # pour eviter la fuite `Site.is_demo IS NULL` qui rendrait le site invisible
+    # via le filtre F.4 `Site.is_demo == Organisation.is_demo` (NULL == False = NULL,
+    # filtre out silencieux). Migration Alembic `p34bisisd` backfill + ALTER NOT NULL.
+    is_demo = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=sa.text("0"),
+        comment="Donnees de demonstration",
+    )
 
     # Phase D-4 Tier 1 — P0-MATV1-004 + P0-MATV1-005 cardinaux RGPD + BACS cascade
     # Audit : docs/audits/AUDIT_ECARTS_MATRICE_V1_2026_05_07.md §3 P0-MATV1-004/005.
