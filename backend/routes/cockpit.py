@@ -2231,12 +2231,15 @@ def _build_cockpit_jour_kpis(
         "footScm": f"Source EMS · {site_count} sites · Confiance haute",
     }
 
-    # --- KPI 2 + KPI 3 : data-driven depuis consumption_granularity_service (F.17) ---
+    # --- KPI 2 + KPI 3 : data-driven depuis consumption_granularity_service (F.17 + F.29) ---
     # Phase F.17 — ADR-022 : remplace les hardcodes (value 6.2 / 528 / référence
     # 6,5) par des calculs dérivés des MeterReading. J-1 = dernier jour avec
     # lectures (cf _latest_data_day).
+    # Phase F.29 — baseline DJU-adjusted v2 (normalisation saisonnière) pour
+    # comparer J-1 à une référence ajustée au mois cible (élimine le biais
+    # hiver vs été dans la comparaison).
     from services.consumption_granularity_service import (
-        get_org_baseline_daily_kwh,
+        get_org_baseline_daily_kwh_dju_adjusted,
         get_org_daily_kwh,
         get_org_hourly_curve_kw,
         get_org_peak_kw,
@@ -2245,11 +2248,12 @@ def _build_cockpit_jour_kpis(
 
     jm1 = _latest_data_day(db)
     conso_jm1_kwh = get_org_daily_kwh(db, org_id, jm1) if jm1 else None
-    baseline_daily_kwh = get_org_baseline_daily_kwh(db, org_id, today=today)
+    baseline_dju = get_org_baseline_daily_kwh_dju_adjusted(db, org_id, target_day=jm1, today=today) if jm1 else None
+    baseline_daily_kwh = baseline_dju["baseline_adjusted_kwh"] if baseline_dju else None
     peak = get_org_peak_kw(db, org_id, jm1) if jm1 else None
     souscrite_kw = get_org_subscribed_kw(db, org_id)
 
-    # --- KPI 2 : Conso J-1 ---
+    # --- KPI 2 : Conso J-1 (référence ajustée DJU F.29) ---
     if conso_jm1_kwh is not None:
         conso_jm1_mwh = round(conso_jm1_kwh / 1000, 1)
         if baseline_daily_kwh and baseline_daily_kwh > 0:
@@ -2257,6 +2261,10 @@ def _build_cockpit_jour_kpis(
         else:
             delta_jm1 = None
         baseline_mwh_label = f"{baseline_daily_kwh / 1000:.1f}".replace(".", ",") if baseline_daily_kwh else "—"
+        # F.29 — annotate la méthode dans helpTooltip pour transparence.
+        baseline_method_label = (
+            "ajustée DJU" if (baseline_dju and baseline_dju.get("method") == "dju_v2_simplified") else "moyenne brute"
+        )
         kpi_court_terme = {
             "id": "conso_court_terme_jm1",
             "eyebrow": "CONSOMMATION J-1",
@@ -2268,7 +2276,9 @@ def _build_cockpit_jour_kpis(
                     "value": delta_jm1,
                     "unit": "%",
                     "direction": "down" if delta_jm1 < 0 else "up",
-                    "label": "vs moyenne habituelle",
+                    "label": "vs référence saisonnière"
+                    if baseline_dju and baseline_dju.get("method") == "dju_v2_simplified"
+                    else "vs moyenne habituelle",
                     "sentiment": "positive" if delta_jm1 <= 0 else "negative",
                 }
                 if delta_jm1 is not None
@@ -2277,9 +2287,10 @@ def _build_cockpit_jour_kpis(
             "helpTooltip": (
                 f"Consommation mesurée le {jm1.isoformat()} (J-1), agrégée"
                 f" sur {site_count} sites du groupe. Comparaison vs baseline"
-                f" {baseline_mwh_label} MWh/j (moyenne 28 derniers jours)."
+                f" {baseline_mwh_label} MWh/j ({baseline_method_label} 28 derniers jours)."
+                f" DJU mois cible : {baseline_dju.get('dju_target') if baseline_dju else '—'}."
             ),
-            "footScm": f"Mesure J-1 EMS · Référence {baseline_mwh_label} MWh/j",
+            "footScm": f"Mesure J-1 EMS · Référence {baseline_mwh_label} MWh/j ({baseline_method_label})",
         }
     else:
         # Fallback "données partielles" ADR-022 anti-pattern : pas de hardcode.
@@ -2353,9 +2364,9 @@ def _build_cockpit_jour_charts(
     updated_label = "à l'instant"
     site_count = _sites_for_org(db, org_id).with_entities(Site.id).count()
 
-    # --- Phase F.17 — Charts data-driven depuis consumption_granularity_service.
+    # --- Phase F.17 + F.29 — Charts data-driven + baseline DJU-adjusted.
     from services.consumption_granularity_service import (
-        get_org_baseline_daily_kwh,
+        get_org_baseline_daily_kwh_dju_adjusted,
         get_org_daily_range_kwh,
         get_org_hourly_curve_kw,
         get_org_peak_kw,
@@ -2369,11 +2380,17 @@ def _build_cockpit_jour_charts(
     # Phase F.17 : les 7 valeurs proviennent du service granularity, baseline
     # = moyenne 28 jours du même service (cohérence avec KPI 2). Annotation
     # +72 % calculée si un jour dépasse > 1.5× baseline.
+    # Phase F.29 — baseline DJU-adjusted (référence saisonnière du jour cible
+    # = jm1) pour cohérence avec KPI 2. Si le mois cible diffère du mois
+    # baseline (transition saisonnière), la référence est ajustée DJU.
     _DAY_LABELS = {0: "L", 1: "M", 2: "M", 3: "J", 4: "V", 5: "S", 6: "D"}
     end_7d = jm1 or today
     start_7d = end_7d - timedelta(days=6)
     daily_range = get_org_daily_range_kwh(db, org_id, start_7d, end_7d)
-    baseline_daily_kwh = get_org_baseline_daily_kwh(db, org_id, today=today)
+    baseline_dju = (
+        get_org_baseline_daily_kwh_dju_adjusted(db, org_id, target_day=end_7d, today=today) if end_7d else None
+    )
+    baseline_daily_kwh = baseline_dju["baseline_adjusted_kwh"] if baseline_dju else None
     baseline_mwh = round(baseline_daily_kwh / 1000, 1) if baseline_daily_kwh else None
 
     series_7j: list[dict] = []
