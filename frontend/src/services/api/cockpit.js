@@ -138,6 +138,8 @@ export const getCockpitJour = (filter = {}) => {
   const params = { period_type: period.type || 'week' };
   if (period.start) params.period_start = period.start;
   if (period.end) params.period_end = period.end;
+  // F.25 — persona pondère le scoring de priorisation backend (cf ADR-022).
+  if (filter.persona) params.persona = filter.persona;
   return cachedGet('/cockpit/jour', { params }).then((r) => r.data);
 };
 export const getCockpitBenchmark = () => cachedGet('/cockpit/benchmark').then((r) => r.data);

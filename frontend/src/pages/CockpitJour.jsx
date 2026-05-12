@@ -24,6 +24,7 @@ import {
   AutoTerm,
 } from '../components/grammar';
 import { useFilter } from '../contexts/FilterContext';
+import { usePersona } from '../contexts/PersonaContext';
 import { getCockpitJour } from '../services/api';
 import { logger } from '../services/logger';
 
@@ -82,15 +83,18 @@ function renderChartInner(c) {
 
 export default function CockpitJour() {
   const { period } = useFilter();
+  const { persona } = usePersona();
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Fetch unifie (initial + retry). cancelled passe-through pour race-safety.
+  // F.25 — `persona` est passé en query param pour repondérer le scoring
+  // de priorisation des highlights (cf ADR-022 F.22).
   const fetchJour = (cancelled = { current: false }) => {
     setLoading(true);
     setError(null);
-    return getCockpitJour({ period })
+    return getCockpitJour({ period, persona })
       .then((data) => !cancelled.current && setPayload(data))
       .catch((err) => {
         if (cancelled.current) return;
@@ -107,9 +111,8 @@ export default function CockpitJour() {
     return () => {
       cancelled.current = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- period only; fetchJour
-    // close sur setters stables, pas besoin de le declarer dans deps.
-  }, [period]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- period + persona only
+  }, [period, persona]);
 
   const retry = () => fetchJour();
 

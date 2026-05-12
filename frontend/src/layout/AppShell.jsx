@@ -21,6 +21,7 @@ import useMediaQuery from '../hooks/useMediaQuery';
 import Breadcrumb from './Breadcrumb';
 import ScopeSwitcher from './ScopeSwitcher';
 import DataReadinessBadge from '../components/DataReadinessBadge';
+import PersonaToggle from '../components/PersonaToggle';
 import DevPanel from './DevPanel';
 import OnboardingOverlay from '../components/OnboardingOverlay';
 import CommandPalette from '../ui/CommandPalette';
@@ -358,6 +359,10 @@ export default function AppShell() {
                 </span>
               )}
             </button>
+
+            {/* F.25 — Persona toggle (Responsable Énergie / DAF / DG-COMEX).
+                Repondère le scoring de priorisation backend cf ADR-022. */}
+            <PersonaToggle />
 
             {/* Expert Mode toggle + onboarding */}
             <div className="relative" title="Affiche source, confiance et détails techniques">
