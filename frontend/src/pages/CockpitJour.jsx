@@ -23,6 +23,7 @@ import {
   HubError,
   AutoTerm,
 } from '../components/grammar';
+import PriorityProofModal from '../components/grammar/hub/PriorityProofModal';
 import { useFilter } from '../contexts/FilterContext';
 import { usePersona } from '../contexts/PersonaContext';
 import { getCockpitJour } from '../services/api';
@@ -83,10 +84,21 @@ function renderChartInner(c) {
 
 export default function CockpitJour() {
   const { period } = useFilter();
-  const { persona } = usePersona();
+  const { persona, setDataQualityPct } = usePersona();
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // F.27 — modal méthodologie complète (drill priority breakdown).
+  const [proofModalHighlight, setProofModalHighlight] = useState(null);
+
+  // F.28 — publie la qualité données vers PersonaContext pour gating
+  // du toggle DAF/DG-COMEX (doctrine v1 §14.4.3).
+  useEffect(() => {
+    const q = payload?.hero?.meta?.quality;
+    if (typeof q === 'number') {
+      setDataQualityPct(q);
+    }
+  }, [payload, setDataQualityPct]);
 
   // Fetch unifie (initial + retry). cancelled passe-through pour race-safety.
   // F.25 — `persona` est passé en query param pour repondérer le scoring
@@ -145,28 +157,30 @@ export default function CockpitJour() {
 
   const highlightChildren = useMemo(
     () =>
-      highlights.slice(0, 5).map(({ id, title, evidence, _audit, tier, ...rest }) => (
-        // F.5 — title/evidence wrappés AutoTerm pour acronymes BACS/EMS/OPERAT/CVC/DT.
-        // F.24 — `_audit` du backend (ADR-022) mappé vers `priorityProof` du
-        // composant HubHighlight pour afficher le badge transparent doctrinal.
-        <HubHighlight
-          key={id}
-          {...rest}
-          title={<AutoTerm text={title} />}
-          evidence={<AutoTerm text={evidence} />}
-          priorityProof={
-            _audit
-              ? {
-                  score_total: _audit.score_total,
-                  score_breakdown: _audit.score_breakdown,
-                  persona: _audit.persona,
-                  overrides_applied: _audit.overrides_applied,
-                  tier,
-                }
-              : undefined
-          }
-        />
-      )),
+      highlights.slice(0, 5).map((h) => {
+        const { id, title, evidence, _audit, tier, ...rest } = h;
+        return (
+          <HubHighlight
+            key={id}
+            {...rest}
+            title={<AutoTerm text={title} />}
+            evidence={<AutoTerm text={evidence} />}
+            priorityProof={
+              _audit
+                ? {
+                    score_total: _audit.score_total,
+                    score_breakdown: _audit.score_breakdown,
+                    persona: _audit.persona,
+                    overrides_applied: _audit.overrides_applied,
+                    tier,
+                  }
+                : undefined
+            }
+            // F.27 — ouvre le modal méthodologie au clic "Voir méthodologie →".
+            onPriorityProofClick={_audit ? () => setProofModalHighlight(h) : undefined}
+          />
+        );
+      }),
     [highlights]
   );
 
@@ -239,6 +253,14 @@ export default function CockpitJour() {
           methodologyUrl={footer.methodologyHref}
         />
       </HubPage>
+
+      {/* F.27 — modal drill méthodologie priorisation (ADR-022) */}
+      {proofModalHighlight && (
+        <PriorityProofModal
+          highlight={proofModalHighlight}
+          onClose={() => setProofModalHighlight(null)}
+        />
+      )}
     </div>
   );
 }

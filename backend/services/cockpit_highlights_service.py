@@ -85,6 +85,14 @@ def finding_to_highlight_dict(finding: Finding, score: PriorityScore, rang: int)
             "domain": finding.domain.value,
             "category": finding.resolve_category().value,
             "scope_level": finding.scope_level.value,
+            # F.27 — sources doctrinales pour modal méthodologie.
+            "sources": {
+                "gravity": finding.gravity_source or _default_gravity_source(finding),
+                "impact": finding.impact_source or _default_impact_source(finding),
+                "delay": finding.delay_source or _default_delay_source(finding),
+            },
+            # F.27 — interprétation textuelle de chaque axe (FR).
+            "axis_labels": _axis_labels_for(finding, score),
         },
     }
 
@@ -96,6 +104,71 @@ def _impact_label_for(finding: Finding) -> str:
     if finding.deadline_date:
         return "échéance"
     return "impact à confirmer"
+
+
+# F.27 — Helpers default sources (utilisés si le détecteur n'a pas fourni
+# de source explicite). Ne devraient s'activer que pour les findings legacy.
+
+
+def _default_gravity_source(finding: Finding) -> str:
+    if finding.domain == Domain.COMPLIANCE:
+        return "Compliance score V2 adaptatif (services/compliance_score_service.py)"
+    if finding.domain == Domain.PLATFORM_HEALTH:
+        return "Détection automatique âge dernière mesure (services/highlights_detectors.py)"
+    if finding.domain == Domain.FINANCIAL:
+        return "Bill Intelligence anomaly_detector R01-R31"
+    return "Détection automatique PROMEOS"
+
+
+def _default_impact_source(finding: Finding) -> str:
+    if finding.impact_eur_year:
+        return f"Estimation interne PROMEOS · {finding.impact_eur_year:.0f} €/an"
+    return "Impact non monétisé"
+
+
+def _default_delay_source(finding: Finding) -> str:
+    if finding.deadline_date:
+        return f"Calendrier réglementaire · échéance {finding.deadline_date.isoformat()}"
+    return "Pas d'échéance contraignante"
+
+
+# F.27 — interprétation textuelle des axes G/I/D pour modal méthodologie.
+_GRAVITY_TEXTS = {
+    5: "Bloquant légal · sanction immédiate",
+    4: "Bloquant opérationnel · service dégradé",
+    3: "Pénalité légale différée",
+    2: "Perte économique récurrente",
+    1: "Inefficacité optimisable",
+    0: "Information sans action requise",
+}
+
+_IMPACT_TEXTS = {
+    5: "≥ 100 k€/an · action structurante",
+    4: "50-100 k€/an · action site mid-cap",
+    3: "10-50 k€/an · action ciblée",
+    2: "1-10 k€/an · quick-win",
+    1: "< 1 k€/an · maintenance",
+    0: "non monétisable",
+}
+
+_DELAY_TEXTS = {
+    5: "≤ 30 jours · imminence",
+    4: "30-90 jours · court terme",
+    3: "90-365 jours · moyen terme",
+    2: "1-3 ans · long terme",
+    1: "> 3 ans · très long terme",
+    0: "pas d'échéance contraignante",
+}
+
+
+def _axis_labels_for(finding: Finding, score: PriorityScore) -> dict:
+    """Texte FR par axe pour modal méthodologie F.27."""
+    bd = score.breakdown
+    return {
+        "gravity": _GRAVITY_TEXTS.get(bd.get("g", 0), "—"),
+        "impact": _IMPACT_TEXTS.get(bd.get("i", 0), "—"),
+        "delay": _DELAY_TEXTS.get(bd.get("d", 0), "—"),
+    }
 
 
 # ── Collecteurs par source (3 détecteurs) ───────────────────────────────────

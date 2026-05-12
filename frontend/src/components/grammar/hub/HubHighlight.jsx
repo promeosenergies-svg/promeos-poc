@@ -101,6 +101,7 @@ export default function HubHighlight({
   impact,
   invitation,
   priorityProof,
+  onPriorityProofClick,
   className = '',
 }) {
   /* Validation runtime DEV */
@@ -275,6 +276,26 @@ export default function HubHighlight({
                   >
                     ⚡ Override
                   </span>
+                )}
+                {/* F.27 — drill méthodologie (modal complet sources + breakdown) */}
+                {onPriorityProofClick && (
+                  <button
+                    type="button"
+                    onClick={onPriorityProofClick}
+                    className="font-mono"
+                    style={{
+                      marginLeft: 'auto',
+                      fontSize: '10px',
+                      color: 'var(--sol-ink-500)',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '2px 4px',
+                      textDecoration: 'underline dotted',
+                    }}
+                  >
+                    Voir méthodologie →
+                  </button>
                 )}
               </div>
             );

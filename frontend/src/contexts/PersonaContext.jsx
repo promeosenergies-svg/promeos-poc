@@ -48,6 +48,10 @@ const PersonaContext = createContext(null);
 
 export function PersonaProvider({ children }) {
   const [persona, setPersonaState] = useState(loadPersona);
+  // F.28 — data quality (0-100) publiée par la page courante. Détermine
+  // si DAF/DG-COMEX sont activés (doctrine v1 §14.4.3 V8 : ≥ 80 %).
+  // Défaut 100 % = toggle libre tant qu'aucune page n'a publié.
+  const [dataQualityPct, setDataQualityPct] = useState(100);
 
   const setPersona = useCallback((next) => {
     if (!Object.values(PERSONAS).includes(next)) return;
@@ -60,7 +64,9 @@ export function PersonaProvider({ children }) {
   }, []);
 
   return (
-    <PersonaContext.Provider value={{ persona, setPersona }}>{children}</PersonaContext.Provider>
+    <PersonaContext.Provider value={{ persona, setPersona, dataQualityPct, setDataQualityPct }}>
+      {children}
+    </PersonaContext.Provider>
   );
 }
 

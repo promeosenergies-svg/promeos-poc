@@ -225,9 +225,7 @@ def get_org_baseline_daily_kwh(
 ) -> Optional[float]:
     """Baseline journalière du groupe (moyenne sur lookback_days jours).
 
-    V1 implementation : moyenne arithmétique simple. V2 (futur) appliquera
-    la normalisation DJU (degrés-jours unifiés COSTIC) pour comparer
-    saisons hiver vs été. Cf doctrine `promeos-energy-fundamentals`.
+    V1 implementation : moyenne arithmétique simple.
 
     Args:
         today          : date de référence (défaut UTC today).
@@ -245,6 +243,123 @@ def get_org_baseline_daily_kwh(
     if len(valid) < 7:
         return None  # Pas assez d'historique pour une baseline fiable
     return round(sum(valid) / len(valid), 2)
+
+
+# ── F.26 — Baseline DJU-adjusted V2 (normalisation saisonnière) ────────────
+
+
+# Profil DJU mensuel typique France métropolitaine (Paris Île-de-France) —
+# moyennes COSTIC sur 30 ans, base 18°C. Source : skill
+# `promeos-energy-fundamentals` + ADEME Base Empreinte.
+# Plus le DJU est haut, plus le mois est froid (besoin de chauffage).
+_DJU_MONTHLY_FRANCE: dict[int, int] = {
+    1: 380,  # janvier  — pic chauffage
+    2: 330,  # février
+    3: 270,  # mars
+    4: 180,  # avril
+    5: 100,  # mai
+    6: 40,  # juin
+    7: 10,  # juillet  — quasi nul
+    8: 15,  # août
+    9: 60,  # septembre
+    10: 150,  # octobre
+    11: 260,  # novembre
+    12: 360,  # décembre
+}
+
+# Fraction de la conso qui dépend du chauffage (variable selon NAF).
+# Bureaux/tertiaire mixte (HELIOS) ≈ 45 % chauffage électrique.
+# Pour V2 simplifié, on prend 0.4 comme paramètre canonique.
+_HEATING_LOAD_RATIO = 0.40
+
+
+def get_org_baseline_daily_kwh_dju_adjusted(
+    db: Session,
+    org_id: Optional[int],
+    target_day: date,
+    today: Optional[date] = None,
+    lookback_days: int = 28,
+    energy_vector: EnergyVector = EnergyVector.ELECTRICITY,
+) -> Optional[dict]:
+    """Baseline ajustée DJU (V2 doctrine ADR-022 §KPI 2 / Chart bars).
+
+    Applique une normalisation saisonnière : la baseline brute (moyenne
+    sur lookback_days) est ajustée par le ratio DJU(target_day_month) /
+    DJU_moyen(lookback_period). Cela corrige l'écart "hiver vs été" qui
+    fausse la comparaison J-1 vs baseline 28 jours quand on est en
+    transition saisonnière.
+
+    Formule simplifiée (sans météo réelle, V2.0) :
+        baseline_adj = baseline_brute × (1 + heating_load_ratio × (DJU_ratio − 1))
+        DJU_ratio = DJU_target_month / DJU_baseline_avg_month
+
+    V3 (futur) intégrera la météo réelle Météo France + signature thermique
+    par site (β coefficient régression).
+
+    Returns:
+        dict {
+            baseline_raw_kwh    : moyenne brute lookback_days
+            baseline_adjusted_kwh : baseline ajustée DJU
+            dju_target           : DJU du mois cible
+            dju_baseline_avg     : DJU moyen période baseline
+            heating_load_ratio   : fraction chauffage utilisée
+            method               : 'dju_v2_simplified' | 'flat' (si pas de DJU data)
+        }
+        ou None si pas assez de données pour baseline.
+    """
+    today = today or datetime.utcnow().date()
+    baseline_raw = get_org_baseline_daily_kwh(
+        db, org_id, today=today, lookback_days=lookback_days, energy_vector=energy_vector
+    )
+    if baseline_raw is None:
+        return None
+
+    # DJU du mois cible (target_day).
+    dju_target = _DJU_MONTHLY_FRANCE.get(target_day.month)
+    if dju_target is None:
+        return {
+            "baseline_raw_kwh": baseline_raw,
+            "baseline_adjusted_kwh": baseline_raw,
+            "dju_target": None,
+            "dju_baseline_avg": None,
+            "heating_load_ratio": _HEATING_LOAD_RATIO,
+            "method": "flat",
+        }
+
+    # DJU moyen sur les mois couverts par la baseline (pondéré par jours).
+    baseline_start = today - timedelta(days=lookback_days)
+    baseline_end = today - timedelta(days=1)
+    months_covered: dict[int, int] = {}
+    cursor = baseline_start
+    while cursor <= baseline_end:
+        months_covered[cursor.month] = months_covered.get(cursor.month, 0) + 1
+        cursor += timedelta(days=1)
+    total_days = sum(months_covered.values())
+    dju_baseline_avg = (
+        (sum(_DJU_MONTHLY_FRANCE.get(m, 0) * d for m, d in months_covered.items()) / total_days)
+        if total_days > 0
+        else dju_target
+    )
+
+    if dju_baseline_avg <= 0:
+        dju_ratio = 1.0
+    else:
+        dju_ratio = dju_target / dju_baseline_avg
+
+    # Ajustement multiplicatif borné [0.6, 1.4] pour éviter les explosions.
+    adjustment = 1 + _HEATING_LOAD_RATIO * (dju_ratio - 1)
+    adjustment = max(0.6, min(1.4, adjustment))
+
+    baseline_adjusted = round(baseline_raw * adjustment, 2)
+
+    return {
+        "baseline_raw_kwh": baseline_raw,
+        "baseline_adjusted_kwh": baseline_adjusted,
+        "dju_target": dju_target,
+        "dju_baseline_avg": round(dju_baseline_avg, 1),
+        "heating_load_ratio": _HEATING_LOAD_RATIO,
+        "method": "dju_v2_simplified",
+    }
 
 
 def get_org_subscribed_kw(
