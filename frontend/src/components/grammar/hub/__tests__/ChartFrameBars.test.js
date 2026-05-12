@@ -38,7 +38,7 @@ describe('grammar/hub/charts/ChartFrameBars', () => {
     const src = read();
     // Phase F.10 — viewBox élargi (340×150) vs F.8 (320×130) pour
     // cohérence avec ChartFrameLine et marges latérales sûres.
-    expect(src).toContain('viewBox="0 0 340 150"');
+    expect(src).toContain('viewBox="0 0 340 160"');
     // Axe Y avec graduations (yTicks helper)
     expect(src).toContain('function yTicks');
     expect(src).toContain('y-tick');

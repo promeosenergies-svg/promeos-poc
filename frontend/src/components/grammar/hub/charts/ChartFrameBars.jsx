@@ -54,14 +54,15 @@ const TONE_FG = Object.freeze({
   neutral: 'var(--sol-ink-500)',
 });
 
-// Geometrie maquette V2 (viewBox 0 0 340 150) — Phase F.10 :
-// élargi pour cohérence avec ChartFrameLine + marges latérales sûres.
+// Geometrie maquette V2 (viewBox 0 0 340 160) — Phase F.11 :
+// alignée sur ChartFrameLine (hauteur 160) pour cohérence d'aspect ratio
+// entre les 2 charts du briefing.
 const PLOT_LEFT = 38;
 const PLOT_RIGHT = 308;
-const PLOT_TOP = 30;
-const PLOT_BOTTOM = 122;
+const PLOT_TOP = 40;
+const PLOT_BOTTOM = 132;
 const Y_LABEL_X = 34;
-const X_LABEL_Y = 138;
+const X_LABEL_Y = 148;
 
 function resolveTone(datum, toneRules) {
   if (datum?.tone && TONE_FILL[datum.tone]) return datum.tone;
@@ -139,7 +140,7 @@ export default function ChartFrameBars({
       data-component="ChartFrameBars"
       role="img"
       aria-label={ariaLabel}
-      viewBox="0 0 340 150"
+      viewBox="0 0 340 160"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={{ width: '100%', height: 'auto', display: 'block' }}
@@ -196,7 +197,7 @@ export default function ChartFrameBars({
             fill="var(--sol-ink-500)"
             fillOpacity="0.85"
           >
-            {`référence ${formatFr(baseline)}`}
+            {`référence ${formatFr(baseline)}${unit ? ' ' + unit : ''}`}
           </text>
         </g>
       )}

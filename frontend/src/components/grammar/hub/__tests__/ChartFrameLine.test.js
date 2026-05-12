@@ -39,7 +39,7 @@ describe('grammar/hub/charts/ChartFrameLine', () => {
     // Phase F.10 — viewBox élargi (340×150) vs F.8 (320×130) pour donner
     // de l'air aux labels (1 000 axe Y / kW seuil) et accueillir la légende
     // HP/HC en haut. Audit user F.9 "courbe tronquée, légende absente".
-    expect(src).toContain('viewBox="0 0 340 150"');
+    expect(src).toContain('viewBox="0 0 340 160"');
     // Axe Y (yTicks)
     expect(src).toContain('function yTicks');
     expect(src).toContain('y-tick');

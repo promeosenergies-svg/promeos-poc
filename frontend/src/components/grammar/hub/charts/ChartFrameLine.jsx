@@ -58,16 +58,18 @@ const FG_PEAK_LABEL = 'var(--sol-attention-fg)';
 const FILL_HC_ZONE = 'var(--sol-hch-bg)';
 const FILL_HP_GRADIENT_ID = 'chartFrameLine-hp-gradient';
 
-// Geometrie maquette V2 (viewBox 0 0 340 150) — Phase F.10 :
-// élargi pour intégrer (a) légende HP/HC en haut, (b) marge droite pour
-// label seuil "P. souscrite … kW", (c) marge gauche pour "1 000" Y-axis.
+// Geometrie maquette V2 (viewBox 0 0 340 160) — Phase F.11 :
+// hauteur 150→160 et PLOT_TOP 30→40 pour décoller VISUELLEMENT la légende
+// HP/HC (y=14) du label seuil "P. souscrite … kW" (y=36) qui se
+// superposaient sur des seuils >> yMax (le seuil clamp à PLOT_TOP).
+// Audit user F.10 "tronqué, superposé".
 const PLOT_LEFT = 38;
 const PLOT_RIGHT = 308;
-const PLOT_TOP = 30;
-const PLOT_BOTTOM = 122;
+const PLOT_TOP = 40;
+const PLOT_BOTTOM = 132;
 const Y_LABEL_X = 34;
-const X_LABEL_Y = 138;
-const LEGEND_Y = 16;
+const X_LABEL_Y = 148;
+const LEGEND_Y = 14;
 const HOURS_RANGE = 24; // 0h → 23h (24 points horaires)
 
 function hourToX(hour) {
@@ -159,7 +161,7 @@ export default function ChartFrameLine({
       data-has-peak={peak != null || undefined}
       role="img"
       aria-label={ariaLabel}
-      viewBox="0 0 340 150"
+      viewBox="0 0 340 160"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={{ width: '100%', height: 'auto', display: 'block' }}
