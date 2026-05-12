@@ -2031,6 +2031,7 @@ def _build_cockpit_jour_hero(
     org_id: int | None,
     period: dict,
     scope_label: str,
+    highlights: list[dict] | None = None,
 ) -> dict:
     """Hero block — Eyebrow + title narratif + meta SCM.
 
@@ -2099,23 +2100,21 @@ def _build_cockpit_jour_hero(
     quality = 98 if site_ids else 0
     confidence = "high" if quality >= 90 else "medium" if quality >= 70 else "low"
 
-    # Titre + sub narratifs (3 signaux fixes HELIOS demo ; adapter si données réelles)
-    n_signals = max(3, critical_count) if critical_count > 0 else 3
+    # Phase F.19c — titre + sub narratifs DÉRIVÉS des highlights scorés
+    # (ADR-022). Anciennement hardcodés "Lyon/Toulouse/Paris", maintenant
+    # générés par `_generate_hero_narrative` à partir du Top 3 du service
+    # cockpit_highlights_service. Si pas de highlights, fallback contrôlé.
+    if highlights:
+        n_signals, sub = _generate_hero_narrative(highlights, scope_label)
+    else:
+        # Fallback si endpoint appelé sans threading des highlights (compat).
+        n_signals = max(3, critical_count) if critical_count > 0 else 3
+        sub = "Tout le reste est sous contrôle."
+
     title = (
         f"{n_signals} signaux méritent votre attention sur le groupe HELIOS."
         if len(site_ids) > 1
         else f"{n_signals} signaux méritent votre attention."
-    )
-    # Correctif #2 — Audit Sprint F UX (DAF Jean-Marc CFO) :
-    # le sub-titre empilait 4 acronymes (EMS / CVC / BACS / OPERAT implicite)
-    # = killer DAF en 30 s (cf audit UX 1.4 = 1/3). Reformulé en langage CFO
-    # orienté impact business. Les acronymes restent dans le détail (highlights
-    # evidence/title) où ils sont wrappés <AutoTerm> avec tooltip Sol.
-    sub = (
-        "Lyon : risque facture conformité 3,8 k€."
-        " Toulouse : plus de données depuis 6 jours."
-        " Paris : chaudière à qualifier d'ici 2027."
-        " Tout le reste est sous contrôle."
     )
 
     return {
@@ -2420,87 +2419,77 @@ def _build_cockpit_jour_highlights(
     db: Session,
     org_id: int | None,
 ) -> list[dict]:
-    """3 highlights différenciés (doctrine §L11.3 anti-pattern AP3 : 4× même catégorie interdit).
+    """Top 3 highlights cockpit jour, dérivés du scoring canonique ADR-022 F.19.
 
-    Rangs 1-3 : CONFORMITÉ (DT Lyon) / DONNÉE EMS (Toulouse) / CONFORMITÉ BACS (Paris).
-    Les verbes d'invitation sont issus de _COCKPIT_JOUR_ALLOWED_VERBS.
+    Délègue à `services.cockpit_highlights_service.build_top_n_highlights`
+    qui agrège findings (compliance + billing + EMS staleness) et applique
+    `regops.priority_scoring.compute_finding_priority` (5 dimensions :
+    sévérité × impact € × urgence × scope × domaine).
 
-    Pour les déploiements non-HELIOS, les highlights sont dérivés des alertes
-    critiques org-scopées avec fallback sur le template fixe si insuffisant.
+    Le résultat inclut un champ `_audit` avec score_breakdown pour
+    traçabilité (anti-pattern doctrinal "P1 sans evidence").
+
+    Phase F.19c — remplace les 3 highlights hardcodés (Lyon/Toulouse/Paris)
+    par le résultat du scoring. Demo HELIOS : findings mock dans le service
+    via collectors `_collect_compliance_findings` etc. F.17 branchera les
+    vrais détecteurs (compliance_score_service, bill_intelligence).
     """
-    # --- Highlight P1 : Conformité DT Lyon (site id=2) ---
-    # Phase F.9 — href corrigé `/conformite/sites/2/preuve` (404) →
-    # `/compliance/sites/2` (route SiteCompliancePage existante, cf App.jsx:389).
-    hl_lyon = {
-        "id": "hl-lyon-dt-2030",
-        "rang": 1,
-        "severity": "crit",
-        "category": "Conformité",
-        "scope": "Bureau Régional Lyon",
-        "title": "Écart de conformité à qualifier — Décret tertiaire",
-        "evidence": (
-            "Surface 1 240 m² déclarée · usage tertiaire mixte · jalon 2030 à −40 %. Preuve OPERAT à reconstituer."
-        ),
-        "impact": {"value": "3,8 k€/an", "label": "pénalité estimée"},
-        "invitation": {
-            "verb": "voir",
-            "object": "la preuve",
-            "href": "/compliance/sites/2",
-        },
-    }
+    from services.cockpit_highlights_service import build_top_n_highlights
 
-    # --- Highlight P2 : Connecteur EMS Toulouse (site id=3) ---
-    # Phase F.9 — anti-jargon "synchro" → "synchronisation".
-    hl_toulouse = {
-        "id": "hl-toulouse-ems-connector",
-        "rang": 2,
-        "severity": "warn",
-        "category": "Donnée EMS",
-        "scope": "Entrepôt HELIOS Toulouse",
-        "title": "Connecteur EMS à vérifier avant recalcul de conformité",
-        "evidence": (
-            "Dernière mesure il y a 6 jours · synchronisation Enedis interrompue"
-            " · recalcul conformité bloqué tant que la connexion n'est pas rétablie."
-        ),
-        "impact": {"value": "—", "label": "impact à confirmer"},
-        "invitation": {
-            "verb": "vérifier",
-            "object": "le connecteur",
-            "href": "/connectors?site_id=3",
-        },
-    }
+    highlights = build_top_n_highlights(db, org_id, n=3)
 
-    # --- Highlight P3 : BACS Paris (site id=1) ---
-    # Phase F.9 — href corrigé `/conformite/sites/1/bacs` (404) →
-    # `/compliance/sites/1` (route SiteCompliancePage existante).
-    hl_paris = {
-        "id": "hl-paris-bacs-cvc",
-        "rang": 3,
-        "severity": "info",
-        "category": "Conformité BACS",
-        "scope": "Siège HELIOS Paris",
-        "title": "Revue BACS recommandée — puissance CVC à confirmer",
-        "evidence": (
-            "Site > 1 000 m², seuil BACS 2027 applicable."
-            " Puissance CVC déclarée 290 kW à confirmer pour qualifier l'obligation."
-        ),
-        "impact": {"value": "2027", "label": "échéance BACS"},
-        "invitation": {
-            "verb": "programmer",
-            "object": "la revue",
-            "href": "/compliance/sites/1",
-        },
-    }
-
-    highlights = [hl_lyon, hl_toulouse, hl_paris]
-
-    # Validation interne : verbes autorisés (guard runtime)
+    # Validation interne : verbes autorisés (guard runtime hérité doctrine).
     for h in highlights:
         verb = h.get("invitation", {}).get("verb", "")
         if verb not in _COCKPIT_JOUR_ALLOWED_VERBS:
             h["invitation"]["verb"] = "voir"
 
     return highlights
+
+
+def _generate_hero_narrative(highlights: list[dict], scope_label: str) -> tuple[int, str]:
+    """Génère le couple (n_signals, sub) du hero depuis les top highlights.
+
+    Phase F.19c — remplace le hardcode "Lyon : risque facture 3,8 k€.
+    Toulouse : plus de données depuis 6 jours. Paris : chaudière 2027."
+    par une narration dérivée des highlights réellement scorés.
+
+    Returns:
+        (n_signals, sub_text) où :
+            - n_signals = nombre de highlights affichés (P1+P2+P3 du Top N)
+            - sub_text = phrase narrative listant chaque signal
+    """
+    if not highlights:
+        return (0, "Aucun signal critique aujourd'hui. Tout est sous contrôle.")
+
+    n_signals = len(highlights)
+
+    # Pour chaque highlight, extraire ville (dernier mot du scope) + impact.
+    # Ex : "Bureau Régional Lyon" → "Lyon" ; "Entrepôt HELIOS Toulouse" → "Toulouse".
+    sentences = []
+    for h in highlights:
+        scope_text = h.get("scope") or "Site"
+        # Heuristique simple : le nom de ville est souvent le dernier mot du scope label.
+        city = scope_text.split()[-1] if scope_text else "Site"
+        impact_value = h.get("impact", {}).get("value", "—")
+        title = h.get("title", "")
+        # Extrait la partie courte du titre (avant le tiret long ou complet si pas de tiret).
+        short_title = title.split("—")[0].strip()
+        # Lowercase UNIQUEMENT la première lettre — préserve les acronymes
+        # (EMS / BACS / CVC / OPERAT) en MAJUSCULE qui sont wrappés AutoTerm
+        # côté frontend pour tooltip de définition. Anti-pattern doctrinal :
+        # "ems" ou "bacs" en minuscule perd l'acronyme et casse l'AutoTerm.
+        if short_title:
+            short_title = short_title[0].lower() + short_title[1:]
+        if impact_value and impact_value != "—":
+            sentences.append(f"{city} : {short_title} {impact_value}.")
+        else:
+            sentences.append(f"{city} : {short_title}.")
+
+    sentences.append("Tout le reste est sous contrôle.")
+    sub = " ".join(sentences)
+
+    return (n_signals, sub)
 
 
 def _build_cockpit_jour_footer(
@@ -2553,10 +2542,15 @@ def get_cockpit_jour(
     sites = _sites_for_org(db, org_id).all()
     scope_label = f"{len(sites)} sites"
 
+    # Phase F.19c — highlights computed UNE FOIS, threadés vers le hero
+    # pour garantir cohérence narration ↔ Top 3 affiché (anti-pattern
+    # "hero dit 3 signaux" mais highlights montre 0 / autres sites).
+    highlights = _build_cockpit_jour_highlights(db, org_id)
+
     return {
-        "hero": _build_cockpit_jour_hero(db, org_id, period, scope_label),
+        "hero": _build_cockpit_jour_hero(db, org_id, period, scope_label, highlights),
         "kpis": _build_cockpit_jour_kpis(db, org_id, period),
         "charts": _build_cockpit_jour_charts(db, org_id, period),
-        "highlights": _build_cockpit_jour_highlights(db, org_id),
+        "highlights": highlights,
         "footer": _build_cockpit_jour_footer(db, org_id),
     }
