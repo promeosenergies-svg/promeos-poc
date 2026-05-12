@@ -2232,12 +2232,14 @@ def _build_cockpit_jour_kpis(
         "footScm": f"Source EMS · {site_count} sites · Confiance haute",
     }
 
-    # --- KPI 2 : Consommation court-terme nuit (MWh) ---
-    # Phase F.9 — anti-jargon "J-1" / "baseline" (audit user "pas de jargon").
+    # --- KPI 2 : Consommation J-1 (hier) en MWh ---
+    # Phase F.12 — audit user "conso et puissance j-1" : reframer le KPI en
+    # cohérence parallèle avec KPI 3 "Pic hier · Groupe". L'ancien label
+    # "Cette nuit (0h-6h)" induisait en erreur (la nuit en cours, pas J-1).
     kpi_court_terme = {
         "id": "conso_court_terme_jm1",
-        "eyebrow": "CONSOMMATION COURT TERME",
-        "label": "Cette nuit (0h-6h)",
+        "eyebrow": "CONSOMMATION J-1",
+        "label": "Conso hier · Groupe",
         "value": 5.0,
         "unit": "MWh",
         "delta": {
@@ -2248,10 +2250,10 @@ def _build_cockpit_jour_kpis(
             "sentiment": "positive",
         },
         "helpTooltip": (
-            "Consommation effective entre 0h et 6h hier (créneau heures creuses)."
-            " Comparaison vs moyenne historique 8,6 MWh."
+            "Consommation totale mesurée hier (J-1), agrégée sur l'ensemble"
+            " du groupe. Comparaison vs moyenne historique 8,6 MWh."
         ),
-        "footScm": "Mesurée cette nuit · Référence 8,6 MWh",
+        "footScm": "Mesure J-1 EMS · Référence 8,6 MWh",
     }
 
     # --- KPI 3 : Pic puissance hier (kW) ---

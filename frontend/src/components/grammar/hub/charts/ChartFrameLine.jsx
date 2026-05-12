@@ -88,6 +88,27 @@ function seriesToPoints(series, yMax) {
   return series.map((p) => `${hourToX(p.hour)},${kwToY(p.kw, yMax)}`).join(' ');
 }
 
+/** Découpe une série en segments contigus (gap > 1h crée un nouveau segment).
+ *  Phase F.12 fix audit user "problème courbe HP/HC" : la série HC enchaîne
+ *  les points 0h-7h puis 22h-23h ; sans split, SVG trace une ligne droite
+ *  de 7h à 22h qui traverse toute la zone HP visuellement. Le split rend
+ *  2 polylines distinctes (matin + soir) qui ne se chevauchent plus. */
+function splitIntoSegments(series) {
+  if (!Array.isArray(series) || series.length === 0) return [];
+  const segments = [];
+  let current = [series[0]];
+  for (let i = 1; i < series.length; i++) {
+    if (series[i].hour - series[i - 1].hour > 1) {
+      segments.push(current);
+      current = [series[i]];
+    } else {
+      current.push(series[i]);
+    }
+  }
+  segments.push(current);
+  return segments;
+}
+
 /** Calcule 3 graduations Y arrondies à pas régulier (Phase F.9 fix). */
 function yTicks(yMax) {
   if (yMax <= 0) return [];
@@ -282,31 +303,41 @@ export default function ChartFrameLine({
         />
       )}
 
-      {/* Courbe HC (heures creuses, bleue) */}
-      {hasHC && yMax > 0 && (
-        <polyline
-          data-series="hc"
-          points={seriesToPoints(seriesHC, yMax)}
-          fill="none"
-          stroke={STROKE_HC}
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
+      {/* Courbe HC (heures creuses, bleue) — F.12 : split en segments
+          contigus pour éviter la ligne traversante 7h→22h. */}
+      {hasHC &&
+        yMax > 0 &&
+        splitIntoSegments(seriesHC).map((seg, i) => (
+          <polyline
+            key={`hc-${i}`}
+            data-series="hc"
+            data-segment={i}
+            points={seriesToPoints(seg, yMax)}
+            fill="none"
+            stroke={STROKE_HC}
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ))}
 
-      {/* Courbe HP (heures pleines, orange) */}
-      {hasHP && yMax > 0 && (
-        <polyline
-          data-series="hp"
-          points={seriesToPoints(seriesHP, yMax)}
-          fill="none"
-          stroke={STROKE_HP}
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
+      {/* Courbe HP (heures pleines, orange) — F.12 : split par cohérence
+          (HP est généralement contiguë, mais sécurise les futures données). */}
+      {hasHP &&
+        yMax > 0 &&
+        splitIntoSegments(seriesHP).map((seg, i) => (
+          <polyline
+            key={`hp-${i}`}
+            data-series="hp"
+            data-segment={i}
+            points={seriesToPoints(seg, yMax)}
+            fill="none"
+            stroke={STROKE_HP}
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ))}
 
       {/* Pic annoté (circle + label texte) */}
       {peak && yMax > 0 && (
