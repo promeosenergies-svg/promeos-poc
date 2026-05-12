@@ -34,10 +34,11 @@ describe('grammar/hub/charts/ChartFrameBars', () => {
     expect(src).toContain("neutral: 'var(--sol-ink-300)'");
   });
 
-  it('Phase F.8 polish maquette V2 : viewBox 320×130 + axe Y + baseline + annotation', () => {
+  it('Phase F.10 polish maquette V2 : viewBox 340×150 + axe Y + baseline + annotation', () => {
     const src = read();
-    // viewBox plus haut (vs 100×60 F.2) pour respirer
-    expect(src).toContain('viewBox="0 0 320 130"');
+    // Phase F.10 — viewBox élargi (340×150) vs F.8 (320×130) pour
+    // cohérence avec ChartFrameLine et marges latérales sûres.
+    expect(src).toContain('viewBox="0 0 340 150"');
     // Axe Y avec graduations (yTicks helper)
     expect(src).toContain('function yTicks');
     expect(src).toContain('y-tick');

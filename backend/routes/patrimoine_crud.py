@@ -487,17 +487,20 @@ def list_sites_crud(
     """Liste les sites du scope_org_id (Phase E IDOR cardinal).
 
     Le query param `org_id` est ignoré : org-scoping forcé côté serveur.
+
+    Phase F.9 — Audit page cockpit/jour : ce endpoint sert le scope switcher
+    de l'AppShell (ScopeContext.orgSites). Sans filtre `is_demo`, les 2 sites
+    "Site Test Phase 2" parasites apparaissaient dans le label "Groupe HELIOS
+    — 7 sites" du switcher, désynchronisé du hero meta cockpit/jour "5 SITES"
+    (qui passe par `_sites_for_org` factorisé Correctif #3).
+
+    Délégation à `services.scope_utils.sites_for_org_query` pour appliquer
+    le même filtre `Site.is_demo == Organisation.is_demo` cross-tenant.
     """
+    from services.scope_utils import sites_for_org_query
+
     scope_org_id = resolve_org_id(request, auth, db)
-    q = (
-        db.query(Site)
-        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .filter(
-            EntiteJuridique.organisation_id == scope_org_id,
-            not_deleted(Site),
-        )
-    )
+    q = sites_for_org_query(db, scope_org_id)
     if pf_id:
         q = q.filter(Site.portefeuille_id == pf_id)
     sites = q.all()

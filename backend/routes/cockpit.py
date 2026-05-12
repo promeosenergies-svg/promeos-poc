@@ -2040,9 +2040,25 @@ def _build_cockpit_jour_hero(
     """
     from datetime import datetime as _dt
 
+    # Phase F.9 — date 100 % FR (audit user "pas de mot anglais") :
+    # strftime("%B") retourne le mois en locale C (May/June/etc) sur macOS/CI
+    # sans setlocale explicite. Map manuelle pour garantir le rendu FR partout.
     today = _dt.utcnow()
-    date_label = today.strftime("%-d %B").lower()
-    day_fr = {
+    _MONTHS_FR = {
+        1: "janvier",
+        2: "février",
+        3: "mars",
+        4: "avril",
+        5: "mai",
+        6: "juin",
+        7: "juillet",
+        8: "août",
+        9: "septembre",
+        10: "octobre",
+        11: "novembre",
+        12: "décembre",
+    }
+    _DAYS_FR = {
         "monday": "lundi",
         "tuesday": "mardi",
         "wednesday": "mercredi",
@@ -2050,7 +2066,9 @@ def _build_cockpit_jour_hero(
         "friday": "vendredi",
         "saturday": "samedi",
         "sunday": "dimanche",
-    }.get(today.strftime("%A").lower(), today.strftime("%A").lower())
+    }
+    date_label = f"{today.day} {_MONTHS_FR[today.month]}"
+    day_fr = _DAYS_FR.get(today.strftime("%A").lower(), today.strftime("%A").lower())
     eyebrow = f"Briefing du jour · {day_fr} {date_label}"
 
     # Comptage alertes depuis le modèle Alerte (org-scoped via sites)
@@ -2068,10 +2086,11 @@ def _build_cockpit_jour_hero(
 
     # Période en langage naturel
     period_type = (period.get("type") or "week").lower()
+    # Phase F.9 — mois en français pour `month` (audit user "pas de mot anglais").
     period_label_map = {
         "day": "Aujourd'hui",
         "week": f"Semaine {today.isocalendar()[1]}",
-        "month": today.strftime("%B %Y").capitalize(),
+        "month": f"{_MONTHS_FR[today.month].capitalize()} {today.year}",
         "year": str(today.year),
     }
     period_label = period_label_map.get(period_type, f"Semaine {today.isocalendar()[1]}")
@@ -2133,6 +2152,21 @@ def _build_cockpit_jour_kpis(
     today = _dt.utcnow().date()
     month_start = today.replace(day=1).isoformat()
     month_end = today.isoformat()
+    # Phase F.9 — map FR pour delta labels (audit user "pas de mot anglais").
+    _MONTHS_FR_LOWER = {
+        1: "janvier",
+        2: "février",
+        3: "mars",
+        4: "avril",
+        5: "mai",
+        6: "juin",
+        7: "juillet",
+        8: "août",
+        9: "septembre",
+        10: "octobre",
+        11: "novembre",
+        12: "décembre",
+    }
 
     # Correctif #2 — Audit Sprint F UX + CX (cohérence comptage sites) :
     # site_count est calculé UNE FOIS depuis `_sites_for_org` (qui applique
@@ -2165,14 +2199,16 @@ def _build_cockpit_jour_kpis(
     kpi_conso_mois = {
         "id": "conso_mois_courant",
         "eyebrow": "CONSOMMATION MOYENNE",
-        "label": "Conso mois courant",
+        "label": "Consommation mois courant",
         "value": conso_mois_mwh,
         "unit": "MWh",
         "delta": {
             "value": delta_pct,
             "unit": "%",
             "direction": "down",
-            "label": f"vs {today.strftime('%B %Y').replace(str(today.year), str(today.year - 1))}",
+            # Phase F.9 — label FR (audit user "pas de mot anglais") :
+            # "vs May 2025" → "vs mai 2025". Map FR explicite (vs strftime locale-C).
+            "label": f"vs {_MONTHS_FR_LOWER[today.month]} {today.year - 1}",
             "sentiment": "positive",
         },
         "helpTooltip": (
@@ -2196,32 +2232,33 @@ def _build_cockpit_jour_kpis(
         "footScm": f"Source EMS · {site_count} sites · Confiance haute",
     }
 
-    # --- KPI 2 : Conso court-terme J-1 0h-6h (MWh) ---
+    # --- KPI 2 : Consommation court-terme nuit (MWh) ---
+    # Phase F.9 — anti-jargon "J-1" / "baseline" (audit user "pas de jargon").
     kpi_court_terme = {
         "id": "conso_court_terme_jm1",
         "eyebrow": "CONSOMMATION COURT TERME",
-        "label": "Conso J-1 (0h-6h)",
+        "label": "Cette nuit (0h-6h)",
         "value": 5.0,
         "unit": "MWh",
         "delta": {
             "value": -42,
             "unit": "%",
             "direction": "down",
-            "label": "vs baseline",
+            "label": "vs moyenne habituelle",
             "sentiment": "positive",
         },
         "helpTooltip": (
             "Consommation effective entre 0h et 6h hier (créneau heures creuses)."
-            " Comparaison vs baseline historique 8,6 MWh."
+            " Comparaison vs moyenne historique 8,6 MWh."
         ),
-        "footScm": "Mesure J-1 synchronisée EMS · Réf. 8,6 MWh",
+        "footScm": "Mesurée cette nuit · Référence 8,6 MWh",
     }
 
-    # --- KPI 3 : Pic puissance J-1 (kW) ---
+    # --- KPI 3 : Pic puissance hier (kW) ---
     kpi_pic = {
         "id": "pic_puissance_jm1",
         "eyebrow": "PIC PUISSANCE",
-        "label": "Pic J-1 · Groupe",
+        "label": "Pic hier · Groupe",
         "value": 121,
         "unit": "kW",
         "delta": {
@@ -2351,7 +2388,8 @@ def _build_cockpit_jour_charts(
         ],
         "unit": "kW",
         "footScm": {
-            "source": f"Source EMS · CDC 30 min · agrégé {site_count} sites",
+            # Phase F.9 — anti-jargon "CDC 30 min" → "mesure 30 min".
+            "source": f"Source EMS · mesure 30 min · agrégé {site_count} sites",
             "confidence": "haute",
             "updatedAt": updated_label,
         },
@@ -2373,6 +2411,8 @@ def _build_cockpit_jour_highlights(
     critiques org-scopées avec fallback sur le template fixe si insuffisant.
     """
     # --- Highlight P1 : Conformité DT Lyon (site id=2) ---
+    # Phase F.9 — href corrigé `/conformite/sites/2/preuve` (404) →
+    # `/compliance/sites/2` (route SiteCompliancePage existante, cf App.jsx:389).
     hl_lyon = {
         "id": "hl-lyon-dt-2030",
         "rang": 1,
@@ -2387,11 +2427,12 @@ def _build_cockpit_jour_highlights(
         "invitation": {
             "verb": "voir",
             "object": "la preuve",
-            "href": "/conformite/sites/2/preuve",
+            "href": "/compliance/sites/2",
         },
     }
 
     # --- Highlight P2 : Connecteur EMS Toulouse (site id=3) ---
+    # Phase F.9 — anti-jargon "synchro" → "synchronisation".
     hl_toulouse = {
         "id": "hl-toulouse-ems-connector",
         "rang": 2,
@@ -2400,7 +2441,7 @@ def _build_cockpit_jour_highlights(
         "scope": "Entrepôt HELIOS Toulouse",
         "title": "Connecteur EMS à vérifier avant recalcul de conformité",
         "evidence": (
-            "Dernière mesure il y a 6 jours · synchro Enedis interrompue"
+            "Dernière mesure il y a 6 jours · synchronisation Enedis interrompue"
             " · recalcul conformité bloqué tant que la connexion n'est pas rétablie."
         ),
         "impact": {"value": "—", "label": "impact à confirmer"},
@@ -2412,6 +2453,8 @@ def _build_cockpit_jour_highlights(
     }
 
     # --- Highlight P3 : BACS Paris (site id=1) ---
+    # Phase F.9 — href corrigé `/conformite/sites/1/bacs` (404) →
+    # `/compliance/sites/1` (route SiteCompliancePage existante).
     hl_paris = {
         "id": "hl-paris-bacs-cvc",
         "rang": 3,
@@ -2427,7 +2470,7 @@ def _build_cockpit_jour_highlights(
         "invitation": {
             "verb": "programmer",
             "object": "la revue",
-            "href": "/conformite/sites/1/bacs",
+            "href": "/compliance/sites/1",
         },
     }
 

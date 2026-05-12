@@ -693,7 +693,12 @@ export default function SolHeroPremiumNight({
               {quality != null && confidence && (
                 <span style={{ color: 'rgba(255,255,255,0.32)' }}>·</span>
               )}
-              {confidence && <span>Confiance {confidence}</span>}
+              {confidence && (
+                <span>
+                  Confiance{' '}
+                  {{ high: 'haute', medium: 'moyenne', low: 'basse' }[confidence] ?? confidence}
+                </span>
+              )}
               {(quality != null || confidence) && period && (
                 <span style={{ color: 'rgba(255,255,255,0.32)' }}>·</span>
               )}

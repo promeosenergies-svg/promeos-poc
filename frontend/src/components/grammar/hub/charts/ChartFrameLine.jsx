@@ -1,8 +1,12 @@
 /**
  * grammar/hub/charts/ChartFrameLine — Variante chart courbe 24h HP/HC + seuil (L11.4).
  *
- * Sprint Grammaire v1.2 / Phase 3.4 / Phase F.8 polish maquette V2 :
- *   - viewBox 320×130 (vs 100×60 F.2) — respire correctement sur 1440px
+ * Sprint Grammaire v1.2 / Phase 3.4 / Phase F.10 (audit user F.9) :
+ *   - viewBox 340×150 (élargi vs 320×130 F.8) — donne de l'air aux labels :
+ *     fini "1 000" rogné à gauche, fini "kW" rogné à droite, fini la
+ *     courbe HC coupée nette au bord. Phase F.10 fix.
+ *   - Légende HP/HC en haut à gauche (segments + texte "Heures pleines (HP)"
+ *     / "Heures creuses (HC)") — F.10 fix audit "légende absente".
  *   - Axe Y avec 3 graduations en kW (rendu mono gris)
  *   - Zones HC (heures creuses) en fond bleu très clair
  *   - Courbe HP (jour) en orange avec gradient fill subtil
@@ -54,13 +58,16 @@ const FG_PEAK_LABEL = 'var(--sol-attention-fg)';
 const FILL_HC_ZONE = 'var(--sol-hch-bg)';
 const FILL_HP_GRADIENT_ID = 'chartFrameLine-hp-gradient';
 
-// Geometrie maquette V2 (viewBox 0 0 320 130).
-const PLOT_LEFT = 32;
-const PLOT_RIGHT = 320;
-const PLOT_TOP = 18;
-const PLOT_BOTTOM = 105;
-const Y_LABEL_X = 28;
-const X_LABEL_Y = 120;
+// Geometrie maquette V2 (viewBox 0 0 340 150) — Phase F.10 :
+// élargi pour intégrer (a) légende HP/HC en haut, (b) marge droite pour
+// label seuil "P. souscrite … kW", (c) marge gauche pour "1 000" Y-axis.
+const PLOT_LEFT = 38;
+const PLOT_RIGHT = 308;
+const PLOT_TOP = 30;
+const PLOT_BOTTOM = 122;
+const Y_LABEL_X = 34;
+const X_LABEL_Y = 138;
+const LEGEND_Y = 16;
 const HOURS_RANGE = 24; // 0h → 23h (24 points horaires)
 
 function hourToX(hour) {
@@ -79,11 +86,26 @@ function seriesToPoints(series, yMax) {
   return series.map((p) => `${hourToX(p.hour)},${kwToY(p.kw, yMax)}`).join(' ');
 }
 
-/** Calcule 3 graduations Y arrondies pour un yMax donné (eg yMax=600 → [200, 400, 600]). */
+/** Calcule 3 graduations Y arrondies à pas régulier (Phase F.9 fix). */
 function yTicks(yMax) {
   if (yMax <= 0) return [];
-  const rounded = Math.ceil(yMax / 100) * 100;
-  return [rounded / 3, (2 * rounded) / 3, rounded].map((v) => Math.round(v / 50) * 50);
+  let step;
+  if (yMax <= 150) step = 50;
+  else if (yMax <= 600) step = 200;
+  else if (yMax <= 1500) step = 500;
+  else step = Math.ceil(yMax / 3000) * 1000;
+  return [step, step * 2, step * 3];
+}
+
+/** Formate un nombre en français : virgule décimale, espace milliers (NBSP).
+ *  Phase F.9 — convention FR (audit user "métriques et nombres convention fr").
+ */
+const _FR_NUMBER = new Intl.NumberFormat('fr-FR', {
+  maximumFractionDigits: 0,
+  useGrouping: true,
+});
+function formatFr(n) {
+  return _FR_NUMBER.format(n);
 }
 
 export default function ChartFrameLine({
@@ -137,7 +159,7 @@ export default function ChartFrameLine({
       data-has-peak={peak != null || undefined}
       role="img"
       aria-label={ariaLabel}
-      viewBox="0 0 320 130"
+      viewBox="0 0 340 150"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={{ width: '100%', height: 'auto', display: 'block' }}
@@ -148,6 +170,47 @@ export default function ChartFrameLine({
           <stop offset="100%" stopColor="var(--sol-attention-fg)" stopOpacity="0" />
         </linearGradient>
       </defs>
+
+      {/* Légende HP / HC (Phase F.10 — fix audit "légende absente").
+          Segments courts + texte mono, alignés en haut à gauche du plot. */}
+      <g data-legend>
+        <line
+          x1={PLOT_LEFT}
+          y1={LEGEND_Y}
+          x2={PLOT_LEFT + 14}
+          y2={LEGEND_Y}
+          stroke={STROKE_HP}
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        <text
+          x={PLOT_LEFT + 18}
+          y={LEGEND_Y + 3}
+          fontFamily="var(--sol-font-mono)"
+          fontSize="9"
+          fill="var(--sol-ink-500)"
+        >
+          Heures pleines (HP)
+        </text>
+        <line
+          x1={PLOT_LEFT + 130}
+          y1={LEGEND_Y}
+          x2={PLOT_LEFT + 144}
+          y2={LEGEND_Y}
+          stroke={STROKE_HC}
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        <text
+          x={PLOT_LEFT + 148}
+          y={LEGEND_Y + 3}
+          fontFamily="var(--sol-font-mono)"
+          fontSize="9"
+          fill="var(--sol-ink-500)"
+        >
+          Heures creuses (HC)
+        </text>
+      </g>
 
       {/* Zones HC en fond */}
       {renderHcZones}
@@ -174,7 +237,7 @@ export default function ChartFrameLine({
               fontSize="9"
               fill={FG_AXIS}
             >
-              {t}
+              {formatFr(t)}
             </text>
           </g>
         );
@@ -203,7 +266,7 @@ export default function ChartFrameLine({
             fill={FG_THRESHOLD_LABEL}
             fillOpacity="0.85"
           >
-            {thresholdLabel ?? `P. souscrite ${thresholdValue} ${thresholdUnit}`}
+            {thresholdLabel ?? `P. souscrite ${formatFr(thresholdValue)} ${thresholdUnit}`}
           </text>
         </g>
       )}
@@ -256,7 +319,7 @@ export default function ChartFrameLine({
             fontWeight="500"
             fill={FG_PEAK_LABEL}
           >
-            {peak.label ?? `${peak.kw} kW`}
+            {peak.label ?? `${formatFr(peak.kw)} kW`}
           </text>
         </g>
       )}
@@ -276,7 +339,7 @@ export default function ChartFrameLine({
           18 h
         </text>
         <text x={hourToX(23)} y={X_LABEL_Y} textAnchor="end">
-          22 h
+          23 h
         </text>
       </g>
     </svg>

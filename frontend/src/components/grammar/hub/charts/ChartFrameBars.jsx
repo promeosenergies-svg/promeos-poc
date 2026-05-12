@@ -1,12 +1,13 @@
 /**
  * grammar/hub/charts/ChartFrameBars — Variante chart barres SVG tone-aware (L11.4).
  *
- * Sprint Grammaire v1.2 / Phase 3.4 / Phase F.8 polish maquette V2 :
- *   - viewBox 320×130 (vs 100×60 F.2) — respire correctement sur 1440px
+ * Sprint Grammaire v1.2 / Phase 3.4 / Phase F.10 (audit user F.9) :
+ *   - viewBox 340×150 (élargi vs 320×130 F.8) pour cohérence avec
+ *     ChartFrameLine et marges latérales sûres pour annotations / Y-axis.
  *   - Axe Y avec 3 graduations + label baseline dashed (référence visuelle)
  *   - Labels jours en bas mono, samedi/dimanche distingués
  *   - Annotation textuelle au-dessus de la barre anomalie (« + 72 % »)
- *   - Padding interne : axe Y en x=32, plot area en x=32→320
+ *   - Padding interne : axe Y en x=38, plot area en x=38→308
  *
  * Tone-aware fill :
  *   1. `data[i].tone` explicite ('crit'|'warn'|'pos'|'neutral')
@@ -53,13 +54,14 @@ const TONE_FG = Object.freeze({
   neutral: 'var(--sol-ink-500)',
 });
 
-// Geometrie maquette V2 (viewBox 0 0 320 130).
-const PLOT_LEFT = 32;
-const PLOT_RIGHT = 320;
-const PLOT_TOP = 18;
-const PLOT_BOTTOM = 105;
-const Y_LABEL_X = 28;
-const X_LABEL_Y = 120;
+// Geometrie maquette V2 (viewBox 0 0 340 150) — Phase F.10 :
+// élargi pour cohérence avec ChartFrameLine + marges latérales sûres.
+const PLOT_LEFT = 38;
+const PLOT_RIGHT = 308;
+const PLOT_TOP = 30;
+const PLOT_BOTTOM = 122;
+const Y_LABEL_X = 34;
+const X_LABEL_Y = 138;
 
 function resolveTone(datum, toneRules) {
   if (datum?.tone && TONE_FILL[datum.tone]) return datum.tone;
@@ -82,12 +84,34 @@ function valueToY(value, yMax) {
   return PLOT_BOTTOM - ratio * (PLOT_BOTTOM - PLOT_TOP);
 }
 
-/** Calcule 3 graduations Y arrondies pour un yMax donné (eg yMax=12 → [4, 8, 12]). */
+/** Calcule 3 graduations Y arrondies à des nombres ronds (Phase F.9 fix).
+ *  Stratégie : choisir un pas qui donne des valeurs entières (5/10/15
+ *  pour yMax≈15, 50/100/150 pour yMax≈150, etc.). Aucune décimale.
+ */
 function yTicks(yMax) {
   if (yMax <= 0) return [];
-  // Arrondi au multiple de 4 supérieur pour 3 ticks ronds.
-  const rounded = Math.ceil(yMax / 4) * 4;
-  return [rounded / 3, (2 * rounded) / 3, rounded].map((v) => Math.round(v * 10) / 10);
+  // Choix du pas selon l'ordre de grandeur de yMax.
+  let step;
+  if (yMax <= 6) step = 2;
+  else if (yMax <= 15) step = 5;
+  else if (yMax <= 30) step = 10;
+  else if (yMax <= 60) step = 20;
+  else if (yMax <= 150) step = 50;
+  else step = Math.ceil(yMax / 300) * 100;
+  return [step, step * 2, step * 3];
+}
+
+/** Formate un nombre en français : virgule décimale, espace milliers (non-breaking). */
+const _FR_NUMBER = new Intl.NumberFormat('fr-FR', {
+  maximumFractionDigits: 1,
+  useGrouping: true,
+});
+function formatFr(n) {
+  // Phase F.9 — Intl.NumberFormat fr-FR émet U+202F (narrow nbsp) comme
+  // séparateur de milliers ; on remplace par U+00A0 (nbsp standard) pour
+  // un rendu SVG cohérent. Échappements unicode pour passer ESLint
+  // no-irregular-whitespace (incident F.10 pre-commit).
+  return _FR_NUMBER.format(n).replace(/\u202F/g, '\u00A0');
 }
 
 export default function ChartFrameBars({
@@ -101,10 +125,11 @@ export default function ChartFrameBars({
 }) {
   if (!Array.isArray(data) || data.length === 0) return null;
   const rawMax = Math.max(...data.map((d) => d.value || 0), 1);
-  // Y-axis ceiling : 20 % plus haut que rawMax pour respirer (et accueillir
-  // l'annotation textuelle au-dessus de la barre la plus haute).
-  const yMax = Math.ceil((rawMax * 1.2) / 2) * 2;
-  const ticks = yTicks(yMax);
+  // Y-axis ceiling Phase F.9 — basé directement sur yTicks rounder pour
+  // que le tick supérieur soit toujours ≥ rawMax + padding visuel 15 %.
+  const padded = rawMax * 1.15;
+  const ticks = yTicks(padded);
+  const yMax = ticks.length > 0 ? ticks[ticks.length - 1] : padded;
   const plotWidth = PLOT_RIGHT - PLOT_LEFT;
   const barW = (plotWidth / data.length) * 0.7; // 70 % de chaque slot → gap 30 %
   const slotW = plotWidth / data.length;
@@ -114,12 +139,12 @@ export default function ChartFrameBars({
       data-component="ChartFrameBars"
       role="img"
       aria-label={ariaLabel}
-      viewBox="0 0 320 130"
+      viewBox="0 0 340 150"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={{ width: '100%', height: 'auto', display: 'block' }}
     >
-      {/* Axe Y — 3 graduations + label baseline dashed (si baseline fourni) */}
+      {/* Axe Y — 3 graduations (Phase F.9 : valeurs formatées FR virgule décimale) */}
       {ticks.map((t, i) => {
         const y = valueToY(t, yMax);
         return (
@@ -141,13 +166,15 @@ export default function ChartFrameBars({
               fontSize="9"
               fill="var(--sol-ink-400)"
             >
-              {t}
+              {formatFr(t)}
             </text>
           </g>
         );
       })}
 
-      {/* Baseline (référence métier, eg 6,5 MWh/j) — dashed plus marqué */}
+      {/* Baseline (référence métier, eg 6,5 MWh/j) — dashed + label au-dessus
+          de la ligne (Phase F.9 fix label tronqué : "seline" au lieu de
+          "baseline" car Y_LABEL_X=28 trop à droite avec viewBox 320). */}
       {typeof baseline === 'number' && baseline > 0 && (
         <g data-baseline={baseline}>
           <line
@@ -161,15 +188,15 @@ export default function ChartFrameBars({
             strokeWidth="1"
           />
           <text
-            x={Y_LABEL_X}
+            x={PLOT_LEFT + 4}
             y={valueToY(baseline, yMax) - 3}
-            textAnchor="end"
+            textAnchor="start"
             fontFamily="var(--sol-font-mono)"
             fontSize="8.5"
             fill="var(--sol-ink-500)"
-            fillOpacity="0.7"
+            fillOpacity="0.85"
           >
-            baseline
+            {`référence ${formatFr(baseline)}`}
           </text>
         </g>
       )}

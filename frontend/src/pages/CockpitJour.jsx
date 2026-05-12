@@ -55,9 +55,16 @@ function renderChartInner(c) {
     );
   }
   if (c.type === 'line_24h_hp_hc') {
+    // Phase F.9 — format FR séparateur milliers (1 500 vs 1500). Label
+    // construit côté primitif via formatFr, mais aussi explicite ici pour
+    // les tests source-guards qui grepent la chaîne.
     const threshold =
       typeof c.subscribed_kw === 'number'
-        ? { value: c.subscribed_kw, unit: 'kW', label: `P. souscrite ${c.subscribed_kw} kW` }
+        ? {
+            value: c.subscribed_kw,
+            unit: 'kW',
+            label: `P. souscrite ${new Intl.NumberFormat('fr-FR').format(c.subscribed_kw)} kW`,
+          }
         : undefined;
     return (
       <ChartFrameLine

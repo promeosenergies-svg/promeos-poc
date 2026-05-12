@@ -34,9 +34,12 @@ describe('grammar/hub/charts/ChartFrameLine', () => {
     expect(src).toContain("'var(--sol-hch-fg)'");
   });
 
-  it('Phase F.8 polish maquette V2 : viewBox 320×130 + axe Y + HC zones + peak + HP gradient', () => {
+  it('Phase F.10 polish maquette V2 : viewBox 340×150 + axe Y + HC zones + peak + HP gradient + légende', () => {
     const src = read();
-    expect(src).toContain('viewBox="0 0 320 130"');
+    // Phase F.10 — viewBox élargi (340×150) vs F.8 (320×130) pour donner
+    // de l'air aux labels (1 000 axe Y / kW seuil) et accueillir la légende
+    // HP/HC en haut. Audit user F.9 "courbe tronquée, légende absente".
+    expect(src).toContain('viewBox="0 0 340 150"');
     // Axe Y (yTicks)
     expect(src).toContain('function yTicks');
     expect(src).toContain('y-tick');
@@ -49,6 +52,10 @@ describe('grammar/hub/charts/ChartFrameLine', () => {
     // Peak annotation (circle + label)
     expect(src).toContain('data-peak');
     expect(src).toContain('data-has-peak');
+    // Phase F.10 — Légende HP/HC visible (audit user "légende absente")
+    expect(src).toContain('data-legend');
+    expect(src).toContain('Heures pleines (HP)');
+    expect(src).toContain('Heures creuses (HC)');
   });
 
   it('threshold optionnel (dashed line + label)', () => {
