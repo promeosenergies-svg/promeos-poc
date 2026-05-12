@@ -37,16 +37,9 @@ _logger = logging.getLogger("promeos.cockpit_v2")
 router = APIRouter(prefix="/api/cockpit", tags=["cockpit-v2"])
 
 
-def _sites_for_org(db: Session, org_id: int | None):
-    """Sites non-supprimés filtrés par org_id."""
-    q = (
-        not_deleted(db.query(Site), Site)
-        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-    )
-    if org_id is not None:
-        q = q.filter(EntiteJuridique.organisation_id == org_id)
-    return q
+# Phase 3.4-bis Correctif #3 — factorisé dans services/scope_utils.
+# Applique désormais le filtre is_demo (F.4) cohérent cross-tenant.
+from services.scope_utils import sites_for_org_query as _sites_for_org  # noqa: F401
 
 
 def _get_site_ids(db: Session, org_id: int | None) -> list[int]:

@@ -217,6 +217,51 @@ def resolve_org_id(
 # ── Scope resolver multi-niveaux ─────────────────────────────────────────
 
 
+def sites_for_org_query(db: Session, org_id: int | None):
+    """Canonical query for non-deleted sites filtered by org_id + is_demo coherence.
+
+    Phase 3.4-bis Correctif #3 — factorisation des 4 clones `_sites_for_org`
+    historiques (cockpit.py, cockpit_v2.py, services/cockpit_facts_service.py,
+    services/narrative/typology_resolver.py) et `_sites_for_org_query`
+    (dashboard_2min.py) en un seul helper canonique partagé.
+
+    Applique le filtre `Site.is_demo == Organisation.is_demo` introduit en
+    F.4 (commit ff2b3a4d) qui ferme la fuite cosmétique cross-tenant
+    identifiée audit Phase D P0.1. Règle de sécurité symétrique :
+      - org demo (is_demo=True)  → voit uniquement les sites demo
+      - org prod (is_demo=False) → voit uniquement les sites prod
+
+    Retourne une query SQLAlchemy (pas une liste) pour permettre le chaînage
+    `.filter()` / `.count()` / `.with_entities()` / `.all()` selon le besoin
+    du caller.
+
+    Params :
+      db      : session SQLAlchemy
+      org_id  : organization_id (int) ou None (pas de filtre org)
+
+    Cf :
+      - Audit Sprint F (synthèse CS 20/24 + dette `P2-debt-BE-sites-isdemo-
+        filter-other-endpoints`).
+      - F.4 commit ff2b3a4d (introduction du filtre is_demo).
+    """
+    from models.site import Site
+    from models.portefeuille import Portefeuille
+    from models.entite_juridique import EntiteJuridique
+    from models.organisation import Organisation
+    from models import not_deleted
+
+    q = (
+        not_deleted(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .join(Organisation, Organisation.id == EntiteJuridique.organisation_id)
+        .filter(Site.is_demo == Organisation.is_demo)
+    )
+    if org_id is not None:
+        q = q.filter(EntiteJuridique.organisation_id == org_id)
+    return q
+
+
 def resolve_site_ids(
     db: Session,
     org_id: int,

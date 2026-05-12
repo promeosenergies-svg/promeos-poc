@@ -50,33 +50,10 @@ from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 router = APIRouter(prefix="/api", tags=["Cockpit"])
 
 
-def _sites_for_org(db: Session, org_id: int | None):
-    """Base query for non-deleted sites filtered by org_id via the join chain.
-
-    Phase F.4 (HARD STOP Phase 3.4) — coherence demo/prod :
-      `Site.is_demo == Organisation.is_demo` ferme la fuite cosmetique
-      identifiee P0.1 (5 sites HELIOS seed + 2 sites "Site Test Phase 2"
-      is_demo=False parasites → hero affichait "7 sites").
-
-      Regle de securite par defaut : une org demo ne voit QUE des sites demo,
-      une org prod ne voit QUE des sites prod. Pas de fuite cross-tenant.
-
-      Impact : affecte 13 callsites de cockpit.py (cockpit, cockpit/_facts,
-      cockpit/jour, cockpit/decisions/top3, cockpit/trajectory, cockpit/
-      priorities, cockpit/levers, etc.). Autres routes du repo conservent
-      leur scoping actuel (P2 backlog : voir
-      docs/debt/p2_backlog.md#P2-debt-BE-sites-isdemo-filter-other-endpoints).
-    """
-    q = (
-        not_deleted(db.query(Site), Site)
-        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .join(Organisation, Organisation.id == EntiteJuridique.organisation_id)
-        .filter(Site.is_demo == Organisation.is_demo)
-    )
-    if org_id is not None:
-        q = q.filter(EntiteJuridique.organisation_id == org_id)
-    return q
+# Phase 3.4-bis Correctif #3 — `_sites_for_org` factorisé dans
+# `services/scope_utils.sites_for_org_query` (couvre les 5 clones historiques).
+# Alias local conservé pour compatibilité des 13 callsites internes.
+from services.scope_utils import sites_for_org_query as _sites_for_org  # noqa: F401
 
 
 def _statut_dt_value(site) -> str | None:

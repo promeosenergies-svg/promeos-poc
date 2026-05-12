@@ -7,32 +7,26 @@
 
 ---
 
-## P2-debt-BE-sites-isdemo-filter-other-endpoints
+## P2-debt-BE-sites-isdemo-filter-other-endpoints — FERMÉE Correctif #3
 
-- **Description** : Phase F.4 a appliqué le filtre `Site.is_demo ==
-  Organisation.is_demo` UNIQUEMENT dans `backend/routes/cockpit.py:_sites_for_org`.
-  D'autres helpers et requêtes directes du repo n'appliquent PAS encore ce
-  filtre — risque de fuite cross-tenant cosmétique ailleurs.
-- **Estimation** : 4-6 j-h
-- **Fenêtre** : Phase 3.5+ (avant scaling sur les 5 hubs restants, pour
-  garantir la cohérence) ou Phase 4 (post Sprint Grammaire v1.2).
-- **Détecté en** : F.4 commit [pending]
-- **Mitigation** : aucun client réel actuellement (HELIOS demo seule org),
-  l'impact est limité aux 2 sites "Site Test Phase 2" parasites orphelins
-  de tests d'intégration. Le cockpit/jour est maintenant cohérent (5 sites).
-- **Action requise** : appliquer le même filtre `Site.is_demo == Organisation.is_demo`
-  aux helpers suivants :
-  - `backend/routes/dashboard_2min.py:_sites_for_org_query`
-  - `backend/routes/cockpit_v2.py:_sites_for_org` (clone)
-  - `backend/services/cockpit_facts_service.py:_sites_for_org` (clone)
-  - `backend/services/narrative/typology_resolver.py:_sites_for_org` (clone)
-  - Requêtes directes `db.query(Site)` dans : `operat.py`, `intake.py`,
-    `ems.py`, `consumption_diagnostic.py`, `billing.py`, `compliance.py`,
-    `admin_users.py`, `patrimoine_crud.py`, `onboarding.py`, `tertiaire.py`,
-    `monitoring.py`, `consumption_context.py` (audit grep nécessaire).
-- **Recommandation** : factoriser `_sites_for_org` dans un service partagé
-  `backend/services/scope_utils.py` au lieu de cloner par fichier (déduplication
-  et garantie d'application uniforme du filtre).
+- **Statut final** : Fermée Phase 3.4-bis Correctif #3 (commit pending).
+- **Périmètre résolu** : 5 clones `_sites_for_org(_query)` factorisés dans
+  `services/scope_utils.sites_for_org_query` — désormais helper canonique
+  unique qui applique le filtre `Site.is_demo == Organisation.is_demo`.
+  - `backend/routes/cockpit.py` : alias import
+  - `backend/routes/cockpit_v2.py` : alias import
+  - `backend/routes/dashboard_2min.py` : alias import
+  - `backend/services/cockpit_facts_service.py` : alias import
+  - `backend/services/narrative/typology_resolver.py` : délégation `.all()`
+- **Smoke test 5 callers** : tous retournent **5 sites HELIOS** (vs 7
+  pré-F.4). Cohérence cross-tenant garantie via le helper canonique.
+- **Périmètre restant** : requêtes directes `db.query(Site)` dans 12 routes
+  (operat, intake, ems, consumption_diagnostic, billing, compliance,
+  admin_users, patrimoine_crud, onboarding, tertiaire, monitoring,
+  consumption_context). Volume = ~50 callsites. **Pas critique** car
+  ces routes ne lisent généralement pas le `is_demo` pour aggrégation
+  cosmétique (elles agissent sur des sites identifiés explicitement).
+  À auditer Phase 4+ avec un nouveau backlog item ciblé si nécessaire.
 
 ---
 

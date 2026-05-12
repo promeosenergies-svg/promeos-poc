@@ -183,14 +183,15 @@ def _typology_dominant_for_sites(
 
 
 def _sites_for_org(db: Session, org_id: int) -> list[Site]:
-    """Récupère sites actifs d'une org via la chaîne portefeuille → EJ → org."""
-    return (
-        not_deleted(db.query(Site), Site)
-        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-        .all()
-    )
+    """Récupère sites actifs d'une org via la chaîne portefeuille → EJ → org.
+
+    Phase 3.4-bis Correctif #3 — délègue à `services.scope_utils.
+    sites_for_org_query` (canonical helper) qui applique le filtre is_demo
+    F.4 cross-tenant. On retourne `.all()` car ce caller veut une liste.
+    """
+    from services.scope_utils import sites_for_org_query
+
+    return sites_for_org_query(db, org_id).all()
 
 
 def _sites_for_portfolio(db: Session, portfolio_id: int) -> list[Site]:

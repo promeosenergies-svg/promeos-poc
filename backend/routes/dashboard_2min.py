@@ -40,14 +40,9 @@ from models import (
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard 2min"])
 
 
-def _sites_for_org_query(db: Session, org_id: int):
-    """Base query: non-deleted sites scoped to org_id via join chain."""
-    return (
-        not_deleted(db.query(Site), Site)
-        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-    )
+# Phase 3.4-bis Correctif #3 — factorisé dans services/scope_utils.
+# Applique désormais le filtre is_demo (F.4) cohérent cross-tenant.
+from services.scope_utils import sites_for_org_query as _sites_for_org_query  # noqa: F401
 
 
 @router.get("/2min")
