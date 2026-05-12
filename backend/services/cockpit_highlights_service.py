@@ -101,93 +101,38 @@ def _impact_label_for(finding: Finding) -> str:
 
 
 def _collect_compliance_findings(db: Session, org_id: Optional[int]) -> list[Finding]:
-    """Collecte les findings de conformité (DT / BACS / APER / Audit SMÉ).
+    """Collecte les findings de conformité depuis compliance_score_service.
 
-    F.19b : retourne des findings démo HELIOS calibrées. F.17 branchera
-    `compliance_score_service.detect_anomalies(site)` pour chaque site.
+    Phase F.20a : remplace les mocks F.19b par les vrais scores compliance
+    V2 adaptatif (5 frameworks tertiaire_operat / bacs / aper / audit_sme
+    / solar_toiture) par site. Cf `services.highlights_detectors`.
     """
-    return [
-        Finding(
-            severity=Severity.HIGH,
-            domain=Domain.COMPLIANCE,
-            scope_level=Scope.SITE,
-            impact_eur_year=3_800.0,
-            deadline_date=date(2030, 12, 31),  # DT jalon -40 %
-            finding_id="hl-lyon-dt-2030",
-            title="Écart de conformité à qualifier — Décret tertiaire",
-            site_id=2,
-            site_name="Bureau Régional Lyon",
-            evidence=(
-                "Surface 1 240 m² déclarée · usage tertiaire mixte · jalon 2030 à −40 %. Preuve OPERAT à reconstituer."
-            ),
-            category_label="Conformité",
-            impact_label="3,8 k€/an",
-            invitation_verb="voir",
-            invitation_object="la preuve",
-            invitation_href="/compliance/sites/2",
-        ),
-        Finding(
-            severity=Severity.MEDIUM,
-            domain=Domain.COMPLIANCE,
-            scope_level=Scope.SITE,
-            impact_eur_year=None,
-            deadline_date=date(2027, 1, 1),  # BACS jalon 2027
-            finding_id="hl-paris-bacs-cvc",
-            title="Revue BACS recommandée — puissance CVC à confirmer",
-            site_id=1,
-            site_name="Siège HELIOS Paris",
-            evidence=(
-                "Site > 1 000 m², seuil BACS 2027 applicable. Puissance CVC"
-                " déclarée 290 kW à confirmer pour qualifier l'obligation."
-            ),
-            category_label="Conformité BACS",
-            impact_label="2027",
-            invitation_verb="programmer",
-            invitation_object="la revue",
-            invitation_href="/compliance/sites/1",
-        ),
-    ]
+    from services.highlights_detectors import detect_compliance_findings
+
+    return detect_compliance_findings(db, org_id)
 
 
 def _collect_billing_findings(db: Session, org_id: Optional[int]) -> list[Finding]:
     """Collecte les anomalies billing (factures R01-R31).
 
-    F.19b : aucune anomalie billing demo HELIOS pour l'instant. F.17
-    branchera `bill_intelligence.detect_anomalies_for_invoice(invoice)`
-    sur les factures récentes scope.
+    Phase F.20a : appelle `highlights_detectors.detect_billing_findings`
+    qui retourne [] pour l'instant (intégration bill_intelligence en F.21).
     """
-    return []
+    from services.highlights_detectors import detect_billing_findings
+
+    return detect_billing_findings(db, org_id)
 
 
 def _collect_platform_health_findings(db: Session, org_id: Optional[int]) -> list[Finding]:
     """Collecte les findings de santé plateforme (EMS staleness, connecteurs).
 
-    F.19b : retourne 1 finding démo (Toulouse EMS connector). F.17 branchera
-    un détecteur réel sur l'âge de la dernière mesure par site.
+    Phase F.20a : remplace le mock F.19b par le détecteur réel basé sur
+    max(MeterReading.timestamp) par site. Sévérité dépend de l'âge :
+    > 72h = CRITICAL, > 24h = HIGH.
     """
-    return [
-        Finding(
-            severity=Severity.HIGH,
-            domain=Domain.PLATFORM_HEALTH,
-            scope_level=Scope.SITE,
-            impact_eur_year=None,
-            deadline_date=None,
-            finding_id="hl-toulouse-ems-connector",
-            title="Connecteur EMS à vérifier avant recalcul de conformité",
-            site_id=3,
-            site_name="Entrepôt HELIOS Toulouse",
-            evidence=(
-                "Dernière mesure il y a 6 jours · synchronisation Enedis"
-                " interrompue · recalcul conformité bloqué tant que la"
-                " connexion n'est pas rétablie."
-            ),
-            category_label="Donnée EMS",
-            impact_label="—",
-            invitation_verb="vérifier",
-            invitation_object="le connecteur",
-            invitation_href="/connectors?site_id=3",
-        ),
-    ]
+    from services.highlights_detectors import detect_ems_staleness_findings
+
+    return detect_ems_staleness_findings(db, org_id)
 
 
 # ── API publique ─────────────────────────────────────────────────────────────
@@ -214,14 +159,36 @@ def build_top_n_highlights(
 
     Doctrine ADR-022 §Highlights Top 3.
     """
+    from regops.priority_scoring import rank_findings
+
     findings: list[Finding] = []
     findings.extend(_collect_compliance_findings(db, org_id))
     findings.extend(_collect_billing_findings(db, org_id))
     findings.extend(_collect_platform_health_findings(db, org_id))
 
-    ranked = top_n(findings, n=n, today=today)
+    # Phase F.20a — double dédup catégorie + site (anti-pattern Sol §L11.3
+    # AP3 "4× même catégorie interdit" + diversité géographique). Chaque
+    # catégorie ET chaque site n'apparaît qu'une fois dans le Top N. Le
+    # ranking par score reste la priorité ; la dédup filtre ensuite.
+    ranked = rank_findings(findings, today=today)
+    seen_categories: set[str] = set()
+    seen_sites: set[Optional[int]] = set()
+    deduplicated: list = []
+    for finding, score in ranked:
+        if score.tier.value == "NONE":
+            continue
+        if finding.category_label in seen_categories:
+            continue
+        if finding.site_id is not None and finding.site_id in seen_sites:
+            continue
+        seen_categories.add(finding.category_label)
+        if finding.site_id is not None:
+            seen_sites.add(finding.site_id)
+        deduplicated.append((finding, score))
+        if len(deduplicated) >= n:
+            break
 
-    return [finding_to_highlight_dict(finding, score, rang=i + 1) for i, (finding, score) in enumerate(ranked)]
+    return [finding_to_highlight_dict(finding, score, rang=i + 1) for i, (finding, score) in enumerate(deduplicated)]
 
 
 def count_total_signals(db: Session, org_id: Optional[int], today: Optional[date] = None) -> dict:

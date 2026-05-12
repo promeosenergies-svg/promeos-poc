@@ -173,35 +173,6 @@ export default function ChartFrameBars({
         );
       })}
 
-      {/* Baseline (référence métier, eg 6,5 MWh/j) — dashed + label au-dessus
-          de la ligne (Phase F.9 fix label tronqué : "seline" au lieu de
-          "baseline" car Y_LABEL_X=28 trop à droite avec viewBox 320). */}
-      {typeof baseline === 'number' && baseline > 0 && (
-        <g data-baseline={baseline}>
-          <line
-            x1={PLOT_LEFT}
-            y1={valueToY(baseline, yMax)}
-            x2={PLOT_RIGHT}
-            y2={valueToY(baseline, yMax)}
-            stroke="var(--sol-ink-500)"
-            strokeOpacity="0.55"
-            strokeDasharray="3,3"
-            strokeWidth="1"
-          />
-          <text
-            x={PLOT_LEFT + 4}
-            y={valueToY(baseline, yMax) - 3}
-            textAnchor="start"
-            fontFamily="var(--sol-font-mono)"
-            fontSize="8.5"
-            fill="var(--sol-ink-500)"
-            fillOpacity="0.85"
-          >
-            {`référence ${formatFr(baseline)}${unit ? ' ' + unit : ''}`}
-          </text>
-        </g>
-      )}
-
       {/* Barres + labels jours */}
       {data.map((d, i) => {
         const tone = resolveTone(d, toneRules);
@@ -248,6 +219,37 @@ export default function ChartFrameBars({
           </g>
         );
       })}
+
+      {/* Baseline (référence métier, eg 6,5 MWh/j) — Phase F.20c-1 :
+          rendu APRÈS les bars pour z-order SVG (la ligne dashed et le label
+          doivent être visibles devant les barres, sinon "référence" est
+          rogné par la barre L). Label déplacé à droite du chart pour
+          ne pas chevaucher les premières barres. */}
+      {typeof baseline === 'number' && baseline > 0 && (
+        <g data-baseline={baseline}>
+          <line
+            x1={PLOT_LEFT}
+            y1={valueToY(baseline, yMax)}
+            x2={PLOT_RIGHT}
+            y2={valueToY(baseline, yMax)}
+            stroke="var(--sol-ink-700)"
+            strokeOpacity="0.7"
+            strokeDasharray="4,3"
+            strokeWidth="1.2"
+          />
+          <text
+            x={PLOT_RIGHT - 2}
+            y={valueToY(baseline, yMax) - 3}
+            textAnchor="end"
+            fontFamily="var(--sol-font-mono)"
+            fontSize="9"
+            fill="var(--sol-ink-700)"
+            fillOpacity="0.95"
+          >
+            {`réf. ${formatFr(baseline)}${unit ? ' ' + unit : ''}`}
+          </text>
+        </g>
+      )}
     </svg>
   );
 }

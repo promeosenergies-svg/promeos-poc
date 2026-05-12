@@ -109,15 +109,18 @@ function splitIntoSegments(series) {
   return segments;
 }
 
-/** Calcule 3 graduations Y arrondies à pas régulier (Phase F.9 fix). */
+/** Calcule 3 graduations Y arrondies à pas régulier (Phase F.20c-2 fix
+ *  dynamique : ne retourne que les ticks qui rentrent dans yMax, pour
+ *  éviter d'afficher "1 000" alors que yMax=300). */
 function yTicks(yMax) {
   if (yMax <= 0) return [];
   let step;
-  if (yMax <= 150) step = 50;
+  if (yMax <= 100) step = 25;
+  else if (yMax <= 300) step = 100;
   else if (yMax <= 600) step = 200;
   else if (yMax <= 1500) step = 500;
   else step = Math.ceil(yMax / 3000) * 1000;
-  return [step, step * 2, step * 3];
+  return [step, step * 2, step * 3].filter((t) => t <= yMax + step * 0.1);
 }
 
 /** Formate un nombre en français : virgule décimale, espace milliers (NBSP).
@@ -146,14 +149,25 @@ export default function ChartFrameLine({
   const thresholdUnit = threshold?.unit ?? 'kW';
   const thresholdLabel = threshold?.label;
 
-  // yMax = max entre peak.kw, threshold/3 (pour donner de l'air vs souscrite si
-  // très haute), et la max des séries. Multiplié par 1.25 pour padding visuel.
+  // Phase F.20c-2 — yMax DYNAMIQUE basé sur les données réelles (peak +
+  // série) avec 15 % de headroom, snappé sur des nombres ronds. La
+  // puissance souscrite (souvent 1 480-1 500 kW) est volontairement
+  // ignorée du calcul d'échelle car elle écrasait toute la courbe à
+  // 245 kW (peak réel) dans le bas du graphique. Elle reste affichée
+  // comme ligne dashed clampée en haut quand au-delà de yMax.
   const seriesMaxHP = hasHP ? Math.max(...seriesHP.map((p) => p.kw)) : 0;
   const seriesMaxHC = hasHC ? Math.max(...seriesHC.map((p) => p.kw)) : 0;
   const peakKw = peak?.kw ?? 0;
-  const rawMax = Math.max(seriesMaxHP, seriesMaxHC, peakKw, (thresholdValue ?? 0) / 3);
-  const yMax = rawMax > 0 ? Math.ceil((rawMax * 1.25) / 100) * 100 : 0;
+  const rawMax = Math.max(seriesMaxHP, seriesMaxHC, peakKw);
+  // Padding 15 % + snap nice number (50 kW ≤500, 100 kW >500).
+  const padded = rawMax * 1.15;
+  const roundTo = padded > 500 ? 100 : 50;
+  const yMax = padded > 0 ? Math.ceil(padded / roundTo) * roundTo : 0;
   const ticks = yTicks(yMax);
+  // Indicateur "threshold above scale" : le seuil dépasse yMax → on l'affiche
+  // au top avec un libellé qui explicite la valeur réelle (sinon l'utilisateur
+  // peut croire que la ligne dashed est à yMax kW).
+  const thresholdAboveScale = thresholdValue && thresholdValue > yMax;
 
   // HC zones : rendre les bandes verticales en fond avant tout le reste.
   const renderHcZones = (hcZones || []).map((z, i) => {
@@ -375,6 +389,39 @@ export default function ChartFrameLine({
           23 h
         </text>
       </g>
+
+      {/* Phase F.20c-3 — Tooltips invisibles par point (hover natif SVG).
+          Cercles transparents de rayon 8px sur chaque data point ; le
+          <title> est lu par le browser comme tooltip natif au survol.
+          tariff label "HP"/"HC" + heure + valeur kW. */}
+      {hasHC &&
+        yMax > 0 &&
+        seriesHC.map((p, i) => (
+          <circle
+            key={`hover-hc-${i}`}
+            cx={hourToX(p.hour)}
+            cy={kwToY(p.kw, yMax)}
+            r="8"
+            fill="transparent"
+            style={{ pointerEvents: 'all', cursor: 'crosshair' }}
+          >
+            <title>{`HC · ${p.hour} h · ${formatFr(p.kw)} kW`}</title>
+          </circle>
+        ))}
+      {hasHP &&
+        yMax > 0 &&
+        seriesHP.map((p, i) => (
+          <circle
+            key={`hover-hp-${i}`}
+            cx={hourToX(p.hour)}
+            cy={kwToY(p.kw, yMax)}
+            r="8"
+            fill="transparent"
+            style={{ pointerEvents: 'all', cursor: 'crosshair' }}
+          >
+            <title>{`HP · ${p.hour} h · ${formatFr(p.kw)} kW`}</title>
+          </circle>
+        ))}
     </svg>
   );
 }
