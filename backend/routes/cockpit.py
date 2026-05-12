@@ -2257,46 +2257,101 @@ def _build_cockpit_jour_charts(
     from datetime import datetime as _dt
 
     updated_label = "à l'instant"
+    # Phase F.8 — site_count partagé entre footScm chart 1 + chart 2 (cohérence
+    # avec hero meta + KPI footScm calculé dans _build_cockpit_jour_kpis).
+    site_count = _sites_for_org(db, org_id).with_entities(Site.id).count()
 
-    # Chart 1 — barres 7 jours (tones : crit = week-end, neutral = semaine)
+    # Chart 1 — barres 7 jours (tones : crit = samedi anomalie, neutral = semaine ouvrée).
+    # Phase F.8 polish maquette V2 : valeurs réalistes 4-5 sites tertiaires
+    # (3-12 MWh/j) avec anomalie samedi visible vs baseline 6,5 MWh/j.
     series_7j = [
-        {"day": "S", "value": 16.0, "tone": "crit"},
-        {"day": "D", "value": 12.5, "tone": "crit"},
-        {"day": "L", "value": 3.2, "tone": "neutral"},
-        {"day": "M", "value": 3.2, "tone": "neutral"},
-        {"day": "M", "value": 3.2, "tone": "neutral"},
-        {"day": "J", "value": 3.2, "tone": "neutral"},
-        {"day": "V", "value": 3.2, "tone": "neutral"},
+        {"day": "L", "value": 6.2, "tone": "neutral"},
+        {"day": "M", "value": 6.0, "tone": "neutral"},
+        {"day": "M", "value": 6.5, "tone": "neutral"},
+        {"day": "J", "value": 6.3, "tone": "neutral"},
+        {"day": "V", "value": 6.1, "tone": "neutral"},
+        {"day": "S", "value": 11.2, "tone": "crit"},
+        {"day": "D", "value": 7.8, "tone": "warn"},
     ]
+    baseline_mwh = 6.5  # baseline MWh/j semaine ouvrée — pour ligne dashed maquette V2
 
     chart_bars = {
         "id": "conso_7j_mwh",
         "question": "Où la consommation dérive-t-elle ?",
         "answer": (
-            "Le week-end concentre l'écart : +70 % samedi, +42 % dimanche."
+            "Le week-end concentre l'écart : +72 % samedi, +20 % dimanche vs baseline 6,5 MWh/j."
             " Survolez une barre pour identifier les sites contributeurs."
         ),
         "type": "bar_daily_7d",
         "series": series_7j,
+        "baseline": baseline_mwh,
+        "unit": "MWh/j",
+        "annotation": {
+            "day": "S",
+            "label": "+ 72 %",
+            "tone": "crit",
+        },
         "footScm": {
-            "source": "Source EMS · agrégé 6 sites",
+            "source": f"Source EMS · agrégé {site_count} sites",
             "confidence": "haute",
             "updatedAt": updated_label,
         },
     }
 
-    # Chart 2 — courbe de charge 24h vs souscrite
+    # Chart 2 — courbe de charge 24h vs souscrite.
+    # Phase F.8 polish maquette V2 : series_hp + series_hc générées côté backend
+    # (logique demo HELIOS, pas frontend). Talon nuit ~122 kW, pic 9-11h ~528 kW.
+    # 24 points horaires (0h → 23h), kW.
+    series_hc_morning = [  # 0h → 7h : heures creuses bleues
+        {"hour": 0, "kw": 122},
+        {"hour": 1, "kw": 118},
+        {"hour": 2, "kw": 115},
+        {"hour": 3, "kw": 114},
+        {"hour": 4, "kw": 118},
+        {"hour": 5, "kw": 135},
+        {"hour": 6, "kw": 175},
+        {"hour": 7, "kw": 280},
+    ]
+    series_hp = [  # 8h → 21h : heures pleines oranges, pic 9-11h
+        {"hour": 8, "kw": 420},
+        {"hour": 9, "kw": 510},
+        {"hour": 10, "kw": 528},
+        {"hour": 11, "kw": 515},
+        {"hour": 12, "kw": 440},
+        {"hour": 13, "kw": 405},
+        {"hour": 14, "kw": 430},
+        {"hour": 15, "kw": 445},
+        {"hour": 16, "kw": 460},
+        {"hour": 17, "kw": 450},
+        {"hour": 18, "kw": 420},
+        {"hour": 19, "kw": 380},
+        {"hour": 20, "kw": 320},
+        {"hour": 21, "kw": 240},
+    ]
+    series_hc_evening = [  # 22h → 23h : retour heures creuses
+        {"hour": 22, "kw": 160},
+        {"hour": 23, "kw": 130},
+    ]
+
     chart_cdc = {
         "id": "courbe_charge_jm1",
         "question": "Sommes-nous proches de la puissance souscrite ?",
         "answer": (
-            "Le groupe reste très éloigné de la limite contractuelle 1,5 MW."
-            " Pic J-1 à 121 kW (8 % de la souscrite). Pas d'écrêtement nécessaire."
+            "Pic 9 h-11 h à 528 kW · talon nuit 122 kW · puissance souscrite 1 500 kW."
+            " Pic à 35 % de la souscrite — marge confortable, pas d'écrêtement nécessaire."
         ),
         "type": "line_24h_hp_hc",
         "subscribed_kw": 1500,
+        "series_hc": series_hc_morning + series_hc_evening,  # heures creuses bleu
+        "series_hp": series_hp,  # heures pleines orange
+        "peak": {"hour": 10, "kw": 528, "label": "528 kW"},
+        "hc_zones": [
+            {"from_h": 0, "to_h": 7},
+            {"from_h": 22, "to_h": 23},
+        ],
+        "unit": "kW",
         "footScm": {
-            "source": "Source EMS · CDC 30 min · agrégé sites",
+            "source": f"Source EMS · CDC 30 min · agrégé {site_count} sites",
             "confidence": "haute",
             "updatedAt": updated_label,
         },

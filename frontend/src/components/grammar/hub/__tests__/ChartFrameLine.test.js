@@ -29,15 +29,34 @@ describe('grammar/hub/charts/ChartFrameLine', () => {
     expect(src).toContain('data-series="hc"');
     expect(src).toContain('STROKE_HP');
     expect(src).toContain('STROKE_HC');
-    expect(src).toContain("'var(--sol-hph-fg)'");
+    // Phase F.8 — HP = attention-fg (orange), HC = hch-fg (bleu). Tokens canoniques.
+    expect(src).toContain("'var(--sol-attention-fg)'");
     expect(src).toContain("'var(--sol-hch-fg)'");
+  });
+
+  it('Phase F.8 polish maquette V2 : viewBox 320×130 + axe Y + HC zones + peak + HP gradient', () => {
+    const src = read();
+    expect(src).toContain('viewBox="0 0 320 130"');
+    // Axe Y (yTicks)
+    expect(src).toContain('function yTicks');
+    expect(src).toContain('y-tick');
+    // HC zones (rect en fond bleu clair)
+    expect(src).toContain('data-hc-zone-index');
+    expect(src).toContain('FILL_HC_ZONE');
+    // HP gradient defs + polygon fill
+    expect(src).toContain('linearGradient');
+    expect(src).toContain('data-series="hp-fill"');
+    // Peak annotation (circle + label)
+    expect(src).toContain('data-peak');
+    expect(src).toContain('data-has-peak');
   });
 
   it('threshold optionnel (dashed line + label)', () => {
     const src = read();
     expect(src).toContain('STROKE_THRESHOLD');
     expect(src).toContain("'var(--sol-refuse-line)'");
-    expect(src).toContain('strokeDasharray="1.5,1.5"');
+    // Phase F.8 dasharray "3,3" (vs "1.5,1.5" F.2) — visibilité accrue
+    expect(src).toContain('strokeDasharray="3,3"');
     expect(src).toContain('data-threshold-line');
     expect(src).toContain('data-has-threshold');
   });
@@ -50,15 +69,26 @@ describe('grammar/hub/charts/ChartFrameLine', () => {
     expect(src).toContain('@param {Threshold}');
   });
 
-  it('PAS de fallback synthetique (Correctif #1 audit /simplify + CS)', () => {
+  it('PAS de fallback synthetique frontend (Correctif #1 audit /simplify + CS)', () => {
     const src = read();
     // Audit Sprint F P1 fix : le frontend ne fabrique plus de courbes plausibles
     // qui pourraient être prises pour des CDC réelles en démo investisseur.
-    // Si aucune serie fournie, render minimal (axes + threshold) suffit.
+    // Phase F.8 : les données series_hc/series_hp/peak/hc_zones sont fournies
+    // par le backend HELIOS demo (cf _build_cockpit_jour_charts).
     expect(src).not.toContain('function generateSyntheticHC');
     expect(src).not.toContain('generateSyntheticHC()');
-    // Y_SCALE_FACTOR (constante nommée) remplace le magic 4 inline.
-    expect(src).toContain('Y_SCALE_FACTOR');
+  });
+
+  it('Phase F.8 coordinate helpers : hourToX + kwToY pour viewBox 320×130', () => {
+    const src = read();
+    // Helpers de mapping coordonnées source-of-truth (vs magic factor F.2).
+    expect(src).toContain('function hourToX');
+    expect(src).toContain('function kwToY');
+    // Bornes plot area
+    expect(src).toContain('PLOT_LEFT');
+    expect(src).toContain('PLOT_RIGHT');
+    expect(src).toContain('PLOT_TOP');
+    expect(src).toContain('PLOT_BOTTOM');
   });
 
   it('zero hex hardcoded (tokens-only doctrine §6.5)', () => {

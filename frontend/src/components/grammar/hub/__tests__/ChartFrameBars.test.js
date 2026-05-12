@@ -34,6 +34,21 @@ describe('grammar/hub/charts/ChartFrameBars', () => {
     expect(src).toContain("neutral: 'var(--sol-ink-300)'");
   });
 
+  it('Phase F.8 polish maquette V2 : viewBox 320×130 + axe Y + baseline + annotation', () => {
+    const src = read();
+    // viewBox plus haut (vs 100×60 F.2) pour respirer
+    expect(src).toContain('viewBox="0 0 320 130"');
+    // Axe Y avec graduations (yTicks helper)
+    expect(src).toContain('function yTicks');
+    expect(src).toContain('y-tick');
+    // Baseline rendering conditionnel
+    expect(src).toContain('data-baseline');
+    expect(src).toContain('baseline');
+    // Annotation pour anomalies (eg "+72 %")
+    expect(src).toContain('annotation');
+    expect(src).toContain('isAnnotated');
+  });
+
   it('resolveTone priorite (datum.tone > toneRules > neutral)', () => {
     const src = read();
     expect(src).toContain('function resolveTone');

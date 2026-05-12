@@ -1,91 +1,132 @@
 /**
- * grammar/hub/charts/ChartFrameLine — Variante chart courbe SVG 2 series + seuil (L11.4).
+ * grammar/hub/charts/ChartFrameLine — Variante chart courbe 24h HP/HC + seuil (L11.4).
  *
- * Sprint Grammaire v1.2 / Phase 3.4 / Phase F.2 — extraction de LineCharge24h
- * inline depuis pages/CockpitJour.jsx vers le namespace canonique charts/.
+ * Sprint Grammaire v1.2 / Phase 3.4 / Phase F.8 polish maquette V2 :
+ *   - viewBox 320×130 (vs 100×60 F.2) — respire correctement sur 1440px
+ *   - Axe Y avec 3 graduations en kW (rendu mono gris)
+ *   - Zones HC (heures creuses) en fond bleu très clair
+ *   - Courbe HP (jour) en orange avec gradient fill subtil
+ *   - Courbe HC (nuit + soir) en bleu (lignes seules, pas de fill)
+ *   - Threshold (puissance souscrite) en rouge dashed avec label
+ *   - Pic annoté avec circle + label texte ("528 kW")
  *
- * Pattern composition : enfant d'un wrapper <ChartFrame>. Ce primitif n'expose
- * QUE le SVG (2 polylines HP/HC + ligne seuil optionnelle + labels axe).
+ * Coordonnées source-of-truth :
+ *   - hour ∈ [0, 23] (entier ou semi-horaire) → x ∈ [PLOT_LEFT, PLOT_RIGHT]
+ *   - kw → y inversé : 0 = PLOT_BOTTOM, yMax = PLOT_TOP
+ *   - yMax calculé automatiquement comme `max(peak.kw, threshold.value) × 1.25`
  *
- * 2 series :
- *   - seriesHP : couleur var(--sol-hph-fg) (HP = signal fort)
- *   - seriesHC : couleur var(--sol-hch-fg) (HC = calme)
- *   - threshold : ligne dashed couleur var(--sol-refuse-line) avec label
- *
- * Fallback synthetique : si seriesHP ET seriesHC sont absents, genere un
- * profil 24h HELIOS demo (creux 0h-6h, plateau jour, pic 18h-20h) sur
- * seriesHC seul. Permet de migrer sans dependance backend immediate.
- * Backend pourra fournir les vraies CDC HP/HC dans une evolution future.
- *
- * Source-guards : `data-component="ChartFrameLine"`.
+ * Display-only — zero calcul metier (PROMEOS §8.1).
  *
  * @typedef {Object} TimePoint
- * @property {number} hour  - Heure 0-23 (ou index 0-N)
- * @property {number} kw    - Puissance en kW (ou unite homogene threshold)
+ * @property {number} hour  - Heure 0-23
+ * @property {number} kw    - Puissance en kW
  *
  * @typedef {Object} Threshold
  * @property {number} value
  * @property {string} [unit='kW']
- * @property {string} [label]   - Libelle affiche au-dessus de la ligne
+ * @property {string} [label]
+ *
+ * @typedef {Object} Peak
+ * @property {number} hour    - Heure du pic
+ * @property {number} kw      - Valeur kW au pic
+ * @property {string} [label] - Texte annotation (eg "528 kW")
+ *
+ * @typedef {Object} HcZone
+ * @property {number} from_h
+ * @property {number} to_h
  *
  * @param {Object} props
- * @param {TimePoint[]} [props.seriesHP]    - Optionnel : courbe HP
- * @param {TimePoint[]} [props.seriesHC]    - Optionnel : courbe HC
- * @param {Threshold} [props.threshold]     - Optionnel : ligne seuil dashed
+ * @param {TimePoint[]} [props.seriesHP]
+ * @param {TimePoint[]} [props.seriesHC]
+ * @param {Threshold} [props.threshold]
+ * @param {Peak} [props.peak]
+ * @param {HcZone[]} [props.hcZones]
  * @param {string} [props.ariaLabel='Courbe de charge']
  * @param {string} [props.className='']
  */
 
-const STROKE_HP = 'var(--sol-hph-fg)';
-const STROKE_HC = 'var(--sol-hch-fg)';
+const STROKE_HP = 'var(--sol-attention-fg)'; // orange HP
+const STROKE_HC = 'var(--sol-hch-fg)'; // bleu HC
 const STROKE_THRESHOLD = 'var(--sol-refuse-line)';
 const FG_THRESHOLD_LABEL = 'var(--sol-refuse-fg)';
-const FG_GRID = 'var(--sol-ink-200)';
-const FG_AXIS = 'var(--sol-ink-500)';
+const FG_AXIS = 'var(--sol-ink-400)';
+const FG_PEAK_LABEL = 'var(--sol-attention-fg)';
+const FILL_HC_ZONE = 'var(--sol-hch-bg)';
+const FILL_HP_GRADIENT_ID = 'chartFrameLine-hp-gradient';
 
-/** Convertit une serie en string points SVG (viewBox 0..100 x 0..60).
- *  Y_SCALE_FACTOR=4 laisse ~75 % de marge visuelle sous le threshold (le pic
- *  attendu sur un site tertiaire est typiquement < threshold/4). Au-delà,
- *  le clamp Y∈[2,58] s'applique pour empêcher la sortie de viewBox.
- *
- *  Audit /simplify P2 fix : constante nommée vs magic 4 inline.
- */
-const Y_SCALE_FACTOR = 4;
+// Geometrie maquette V2 (viewBox 0 0 320 130).
+const PLOT_LEFT = 32;
+const PLOT_RIGHT = 320;
+const PLOT_TOP = 18;
+const PLOT_BOTTOM = 105;
+const Y_LABEL_X = 28;
+const X_LABEL_Y = 120;
+const HOURS_RANGE = 24; // 0h → 23h (24 points horaires)
 
-function toSvgPoints(series, thresholdMax) {
-  if (!Array.isArray(series) || series.length === 0 || !thresholdMax) return '';
-  const xMax = series.length - 1;
-  return series
-    .map((p, i) => {
-      const x = (i / xMax) * 100;
-      const yRaw = 60 - (p.kw / thresholdMax) * 60 * Y_SCALE_FACTOR;
-      const y = Math.max(2, Math.min(58, yRaw));
-      return `${x},${y}`;
-    })
-    .join(' ');
+function hourToX(hour) {
+  return PLOT_LEFT + (hour / (HOURS_RANGE - 1)) * (PLOT_RIGHT - PLOT_LEFT);
+}
+
+function kwToY(kw, yMax) {
+  if (yMax <= 0) return PLOT_BOTTOM;
+  const clamped = Math.max(0, Math.min(yMax, kw));
+  return PLOT_BOTTOM - (clamped / yMax) * (PLOT_BOTTOM - PLOT_TOP);
+}
+
+/** Convertit une série en string `points` SVG polyline. */
+function seriesToPoints(series, yMax) {
+  if (!Array.isArray(series) || series.length === 0) return '';
+  return series.map((p) => `${hourToX(p.hour)},${kwToY(p.kw, yMax)}`).join(' ');
+}
+
+/** Calcule 3 graduations Y arrondies pour un yMax donné (eg yMax=600 → [200, 400, 600]). */
+function yTicks(yMax) {
+  if (yMax <= 0) return [];
+  const rounded = Math.ceil(yMax / 100) * 100;
+  return [rounded / 3, (2 * rounded) / 3, rounded].map((v) => Math.round(v / 50) * 50);
 }
 
 export default function ChartFrameLine({
   seriesHP,
   seriesHC,
   threshold,
+  peak,
+  hcZones,
   ariaLabel = 'Courbe de charge',
   className = '',
 }) {
   const hasHP = Array.isArray(seriesHP) && seriesHP.length > 0;
   const hasHC = Array.isArray(seriesHC) && seriesHC.length > 0;
-  // Audit /simplify + CS P1 fix : SUPPRESSION du fallback synthétique
-  // (anciennement function helper). Le frontend ne fabrique plus de
-  // données « plausibles » qui pourraient être prises pour de vraies CDC
-  // en démo investisseur. Si le backend ne fournit ni seriesHP ni seriesHC,
-  // on render uniquement axes + threshold (lecture honnête : « pas de
-  // données disponibles » plutôt qu'une courbe trompeuse).
-  const effectiveHC = hasHC ? seriesHC : null;
-  const effectiveHP = hasHP ? seriesHP : null;
-
   const thresholdValue = threshold?.value;
   const thresholdUnit = threshold?.unit ?? 'kW';
   const thresholdLabel = threshold?.label;
+
+  // yMax = max entre peak.kw, threshold/3 (pour donner de l'air vs souscrite si
+  // très haute), et la max des séries. Multiplié par 1.25 pour padding visuel.
+  const seriesMaxHP = hasHP ? Math.max(...seriesHP.map((p) => p.kw)) : 0;
+  const seriesMaxHC = hasHC ? Math.max(...seriesHC.map((p) => p.kw)) : 0;
+  const peakKw = peak?.kw ?? 0;
+  const rawMax = Math.max(seriesMaxHP, seriesMaxHC, peakKw, (thresholdValue ?? 0) / 3);
+  const yMax = rawMax > 0 ? Math.ceil((rawMax * 1.25) / 100) * 100 : 0;
+  const ticks = yTicks(yMax);
+
+  // HC zones : rendre les bandes verticales en fond avant tout le reste.
+  const renderHcZones = (hcZones || []).map((z, i) => {
+    const x1 = hourToX(z.from_h);
+    const x2 = hourToX(Math.min(z.to_h + 1, HOURS_RANGE - 1));
+    return (
+      <rect
+        key={`hc-zone-${i}`}
+        x={x1}
+        y={PLOT_TOP}
+        width={x2 - x1}
+        height={PLOT_BOTTOM - PLOT_TOP}
+        fill={FILL_HC_ZONE}
+        fillOpacity="0.4"
+        data-hc-zone-index={i}
+      />
+    );
+  });
 
   return (
     <svg
@@ -93,93 +134,151 @@ export default function ChartFrameLine({
       data-has-hp={hasHP || undefined}
       data-has-hc={hasHC || undefined}
       data-has-threshold={threshold != null || undefined}
+      data-has-peak={peak != null || undefined}
       role="img"
       aria-label={ariaLabel}
-      viewBox="0 0 100 60"
-      preserveAspectRatio="none"
+      viewBox="0 0 320 130"
+      xmlns="http://www.w3.org/2000/svg"
       className={className}
-      style={{ width: '100%', height: '120px' }}
+      style={{ width: '100%', height: 'auto', display: 'block' }}
     >
-      {/* Grille horizontale (3 lignes) */}
-      <line x1="0" y1="15" x2="100" y2="15" stroke={FG_GRID} strokeWidth="0.2" />
-      <line x1="0" y1="30" x2="100" y2="30" stroke={FG_GRID} strokeWidth="0.2" />
-      <line x1="0" y1="45" x2="100" y2="45" stroke={FG_GRID} strokeWidth="0.2" />
+      <defs>
+        <linearGradient id={FILL_HP_GRADIENT_ID} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="var(--sol-attention-fg)" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="var(--sol-attention-fg)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
 
-      {/* Threshold dashed + label */}
-      {threshold && (
-        <>
+      {/* Zones HC en fond */}
+      {renderHcZones}
+
+      {/* Axe Y — 3 graduations + grid lines dashed */}
+      {ticks.map((t, i) => {
+        const y = kwToY(t, yMax);
+        return (
+          <g key={`y-tick-${i}`} data-y-tick={t}>
+            <line
+              x1={PLOT_LEFT}
+              y1={y}
+              x2={PLOT_RIGHT}
+              y2={y}
+              stroke="var(--sol-ink-300)"
+              strokeOpacity="0.4"
+              strokeDasharray="2,3"
+            />
+            <text
+              x={Y_LABEL_X}
+              y={y + 3}
+              textAnchor="end"
+              fontFamily="var(--sol-font-mono)"
+              fontSize="9"
+              fill={FG_AXIS}
+            >
+              {t}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Threshold (puissance souscrite) — ligne dashed rouge + label */}
+      {threshold && yMax > 0 && (
+        <g data-threshold-value={thresholdValue}>
           <line
-            x1="0"
-            y1="3"
-            x2="100"
-            y2="3"
+            x1={PLOT_LEFT}
+            y1={kwToY(thresholdValue, yMax)}
+            x2={PLOT_RIGHT}
+            y2={kwToY(thresholdValue, yMax)}
             stroke={STROKE_THRESHOLD}
-            strokeWidth="0.4"
-            strokeDasharray="1.5,1.5"
+            strokeOpacity="0.65"
+            strokeDasharray="3,3"
+            strokeWidth="1"
             data-threshold-line
           />
           <text
-            x="0"
-            y="2"
-            fontSize="2.5"
-            fill={FG_THRESHOLD_LABEL}
+            x={PLOT_RIGHT - 2}
+            y={kwToY(thresholdValue, yMax) - 4}
+            textAnchor="end"
             fontFamily="var(--sol-font-mono)"
+            fontSize="9"
+            fill={FG_THRESHOLD_LABEL}
+            fillOpacity="0.85"
           >
-            {thresholdLabel ?? `Seuil ${thresholdValue} ${thresholdUnit}`}
+            {thresholdLabel ?? `P. souscrite ${thresholdValue} ${thresholdUnit}`}
           </text>
-        </>
+        </g>
       )}
 
-      {/* Series HC (courbe principale ou fallback synthetique) */}
-      {effectiveHC && (
+      {/* HP fill gradient (uniquement sous la courbe HP) */}
+      {hasHP && yMax > 0 && (
+        <polygon
+          data-series="hp-fill"
+          points={`${seriesToPoints(seriesHP, yMax)} ${hourToX(seriesHP[seriesHP.length - 1].hour)},${PLOT_BOTTOM} ${hourToX(seriesHP[0].hour)},${PLOT_BOTTOM}`}
+          fill={`url(#${FILL_HP_GRADIENT_ID})`}
+        />
+      )}
+
+      {/* Courbe HC (heures creuses, bleue) */}
+      {hasHC && yMax > 0 && (
         <polyline
           data-series="hc"
-          points={toSvgPoints(effectiveHC, thresholdValue)}
+          points={seriesToPoints(seriesHC, yMax)}
           fill="none"
           stroke={STROKE_HC}
-          strokeWidth="0.8"
+          strokeWidth="1.6"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
       )}
 
-      {/* Series HP (overlay si fourni) */}
-      {effectiveHP && (
+      {/* Courbe HP (heures pleines, orange) */}
+      {hasHP && yMax > 0 && (
         <polyline
           data-series="hp"
-          points={toSvgPoints(effectiveHP, thresholdValue)}
+          points={seriesToPoints(seriesHP, yMax)}
           fill="none"
           stroke={STROKE_HP}
-          strokeWidth="0.8"
+          strokeWidth="1.6"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
       )}
 
-      {/* Labels axe X (3 reperes) */}
-      <text x="0" y="59" fontSize="2.8" fill={FG_AXIS} fontFamily="var(--sol-font-mono)">
-        0h
-      </text>
-      <text
-        x="48"
-        y="59"
-        fontSize="2.8"
-        fill={FG_AXIS}
-        fontFamily="var(--sol-font-mono)"
-        textAnchor="middle"
-      >
-        12h
-      </text>
-      <text
-        x="100"
-        y="59"
-        fontSize="2.8"
-        fill={FG_AXIS}
-        fontFamily="var(--sol-font-mono)"
-        textAnchor="end"
-      >
-        24h
-      </text>
+      {/* Pic annoté (circle + label texte) */}
+      {peak && yMax > 0 && (
+        <g data-peak={`${peak.hour}h-${peak.kw}kw`}>
+          <circle cx={hourToX(peak.hour)} cy={kwToY(peak.kw, yMax)} r="2.8" fill={STROKE_HP} />
+          <text
+            x={hourToX(peak.hour)}
+            y={kwToY(peak.kw, yMax) - 8}
+            textAnchor="middle"
+            fontFamily="var(--sol-font-body)"
+            fontSize="10"
+            fontWeight="500"
+            fill={FG_PEAK_LABEL}
+          >
+            {peak.label ?? `${peak.kw} kW`}
+          </text>
+        </g>
+      )}
+
+      {/* Labels axe X — 5 repères horaires */}
+      <g fontFamily="var(--sol-font-mono)" fontSize="9" fill={FG_AXIS}>
+        <text x={hourToX(0)} y={X_LABEL_Y} textAnchor="start">
+          0 h
+        </text>
+        <text x={hourToX(8)} y={X_LABEL_Y} textAnchor="middle">
+          8 h
+        </text>
+        <text x={hourToX(12)} y={X_LABEL_Y} textAnchor="middle">
+          12 h
+        </text>
+        <text x={hourToX(18)} y={X_LABEL_Y} textAnchor="middle">
+          18 h
+        </text>
+        <text x={hourToX(23)} y={X_LABEL_Y} textAnchor="end">
+          22 h
+        </text>
+      </g>
     </svg>
   );
 }

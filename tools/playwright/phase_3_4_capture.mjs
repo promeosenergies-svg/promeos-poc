@@ -128,7 +128,11 @@ async function capture({ page, vp, state }) {
   console.log(`Output dir: ${SNAP_ROOT}\n`);
 
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ deviceScaleFactor: 1, reducedMotion: 'reduce' });
+  // F.8.1 : deviceScaleFactor 2 (Retina) — captures 4× plus nettes (anti-
+  // aliasing texte propre, comparable aux écrans Retina réels qu'utilisent
+  // les DAF/CFO en pilote). Coût : PNGs ~2× plus lourds, accepté pour
+  // démos investisseur + audits visual-grammar Phase 3.5.
+  const context = await browser.newContext({ deviceScaleFactor: 2, reducedMotion: 'reduce' });
   const page = await context.newPage();
 
   // Auth flow (aligné audit-agent.mjs) : POST /api/auth/login → token →

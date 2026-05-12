@@ -44,18 +44,28 @@ const TAG = 'CockpitJour';
 function renderChartInner(c) {
   if (c.type === 'bar_daily_7d') {
     const data = (c.series || []).map((d) => ({ label: d.day, value: d.value, tone: d.tone }));
-    return <ChartFrameBars data={data} ariaLabel="Consommation 7 jours en MWh" />;
+    return (
+      <ChartFrameBars
+        data={data}
+        baseline={c.baseline}
+        unit={c.unit || 'MWh/j'}
+        annotation={c.annotation}
+        ariaLabel="Consommation 7 jours en MWh"
+      />
+    );
   }
   if (c.type === 'line_24h_hp_hc') {
     const threshold =
       typeof c.subscribed_kw === 'number'
-        ? { value: c.subscribed_kw, unit: 'kW', label: `Souscrite ${c.subscribed_kw} kW` }
+        ? { value: c.subscribed_kw, unit: 'kW', label: `P. souscrite ${c.subscribed_kw} kW` }
         : undefined;
     return (
       <ChartFrameLine
         seriesHP={c.series_hp}
         seriesHC={c.series_hc}
         threshold={threshold}
+        peak={c.peak}
+        hcZones={c.hc_zones}
         ariaLabel="Courbe de charge 24h vs puissance souscrite"
       />
     );
