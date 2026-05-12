@@ -256,16 +256,118 @@ def detect_compliance_findings(
 def detect_billing_findings(
     db: Session,
     org_id: Optional[int],
-    lookback_days: int = 90,
+    lookback_days: int = 180,
 ) -> list[Finding]:
     """Détecte les anomalies de facture récentes via bill_intelligence.
 
-    F.20a v1 : retourne [] pour le moment (le service
-    `bill_intelligence.anomaly_detector.detect_anomalies_for_invoice`
-    requiert un invoice_id, donc à wirer après identification des factures
-    récentes du scope). Phase F.21 ajoutera la collecte multi-invoice.
+    Phase F.21 — wire complet : itère sur les factures récentes du scope
+    (≤ lookback_days) et lance `detect_anomalies_for_invoice` pour chacune.
+    Aggrège les anomalies critical/high par site et génère 1 Finding par
+    site avec l'anomalie la plus grave (dédup naturelle).
+
+    Codes anomalies billing les plus fréquents HELIOS :
+      - R27 : écart conso facturée vs mesurée > 10 %
+      - R29 : facture sans certificat de mesure
+      - R31 : régularisation TURPE oubliée
 
     Returns:
-        Liste vide pour l'instant — sera populée F.21.
+        Liste de Finding (1 max par site avec anomalie billing).
     """
-    return []
+    from models import EnergyInvoice
+    from services.bill_intelligence.anomaly_detector import (
+        detect_anomalies_for_invoice,
+    )
+
+    site_ids = [s.id for s in sites_for_org_query(db, org_id).all()]
+    if not site_ids:
+        return []
+
+    # Mapping severity bill_intelligence → Severity priority_scoring
+    bill_severity_map = {
+        "critical": Severity.CRITICAL,
+        "high": Severity.HIGH,
+        "medium": Severity.MEDIUM,
+        "low": Severity.LOW,
+    }
+
+    # Description anomaly code → texte lisible
+    bill_code_messages = {
+        "R27": "écart consommation facturée vs mesurée > 10 %",
+        "R29": "facture sans certificat de mesure",
+        "R31": "régularisation TURPE oubliée",
+    }
+
+    today = datetime.utcnow().date()
+    cutoff = today - timedelta(days=lookback_days)
+
+    # 1 Finding max par site (l'anomalie la plus grave).
+    by_site: dict[int, dict] = {}
+
+    invoices = (
+        db.query(EnergyInvoice)
+        .filter(
+            EnergyInvoice.site_id.in_(site_ids),
+            EnergyInvoice.period_end >= cutoff,
+        )
+        .all()
+    )
+
+    for invoice in invoices:
+        try:
+            anomalies = detect_anomalies_for_invoice(invoice, db)
+        except Exception as exc:
+            logger.debug("bill_intel failed for invoice %s: %s", invoice.id, exc)
+            continue
+        for a in anomalies:
+            severity = bill_severity_map.get(str(a.severity).lower(), Severity.MEDIUM)
+            # On garde la plus grave par site.
+            prev = by_site.get(invoice.site_id)
+            if prev is None or _severity_rank(severity) > _severity_rank(prev["severity"]):
+                by_site[invoice.site_id] = {
+                    "severity": severity,
+                    "code": a.code,
+                    "invoice_id": invoice.id,
+                    "estimated_loss_eur": getattr(a, "estimated_loss_eur", None) or 0,
+                }
+
+    findings: list[Finding] = []
+    sites = {s.id: s for s in sites_for_org_query(db, org_id).all()}
+    for site_id, anomaly in by_site.items():
+        site = sites.get(site_id)
+        if site is None:
+            continue
+        code = anomaly["code"]
+        msg = bill_code_messages.get(code, f"anomalie facture {code}")
+        impact_eur = anomaly["estimated_loss_eur"]
+        impact_label = f"{int(round(impact_eur))} €/an" if impact_eur and impact_eur > 0 else "à vérifier"
+
+        findings.append(
+            Finding(
+                severity=anomaly["severity"],
+                domain=Domain.FINANCIAL,
+                scope_level=Scope.SITE,
+                impact_eur_year=float(impact_eur) if impact_eur else None,
+                deadline_date=None,
+                finding_id=f"hl-billing-{code.lower()}-{site_id}",
+                title=f"Anomalie facture {code} — {msg}",
+                site_id=site_id,
+                site_name=site.nom,
+                evidence=(
+                    f"Détection automatique sur facture #{anomaly['invoice_id']}"
+                    f" : {msg}. Action : vérifier le certificat de mesure"
+                    f" et lancer un reclaim si nécessaire."
+                ),
+                category_label="Facture · Anomalie",
+                impact_label=impact_label,
+                invitation_verb="vérifier",
+                invitation_object="la facture",
+                invitation_href=f"/billing/anomalies?site_id={site_id}",
+            )
+        )
+
+    return findings
+
+
+def _severity_rank(sev: Severity) -> int:
+    """Ordre numérique pour comparer 2 sévérités."""
+    return {Severity.CRITICAL: 4, Severity.HIGH: 3, Severity.MEDIUM: 2, Severity.LOW: 1}.get(sev, 0)
