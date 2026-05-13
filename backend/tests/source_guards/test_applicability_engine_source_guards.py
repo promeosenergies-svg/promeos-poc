@@ -39,15 +39,19 @@ REGULATORY_DIR = REPO_ROOT / "regulatory"
 # ── Fixtures ───────────────────────────────────────────────────────────────
 
 
-@pytest.fixture(scope="module")
-def all_evaluator_outputs():
-    """Cas combinatoires couvrant les 4 statuts × 5 règles via SimpleNamespace."""
+@pytest.fixture
+def all_evaluator_outputs(monkeypatch):
+    """Cas combinatoires couvrant les 4 statuts × 5 règles via SimpleNamespace.
+
+    IMPORTANT : utilise pytest `monkeypatch` (function-scoped) pour restaurer
+    les loaders du service après le test, sinon les tests suivants (ex.
+    test_endpoint_applicability) héritent du mock et cassent leur fixture DB.
+    """
     from types import SimpleNamespace
 
     from regulatory.applicability_service import compute_applicability
 
     sites_data = [
-        # APPLICABLE (DT, BACS, APER)
         dict(
             id=1,
             nom="big",
@@ -57,7 +61,6 @@ def all_evaluator_outputs():
             roof_area_m2=600,
             batiments=[SimpleNamespace(id=100, cvc_power_kw=120)],
         ),
-        # NOT_APPLICABLE DT (SDP<1000), NOT_APPLICABLE BACS, NOT_APPLICABLE APER
         dict(
             id=2,
             nom="small",
@@ -67,7 +70,6 @@ def all_evaluator_outputs():
             roof_area_m2=200,
             batiments=[SimpleNamespace(id=200, cvc_power_kw=30)],
         ),
-        # UNKNOWN DT (MIXTE), DATA_MISSING BACS (cvc None), DATA_MISSING APER
         dict(
             id=3,
             nom="mixte",
@@ -77,7 +79,6 @@ def all_evaluator_outputs():
             roof_area_m2=None,
             batiments=[SimpleNamespace(id=300, cvc_power_kw=None)],
         ),
-        # DATA_MISSING DT (surface None)
         dict(
             id=4, nom="incomplet", tertiaire_area_m2=None, usage_principal="BUREAUX", parking_area_m2=2000, batiments=[]
         ),
@@ -86,15 +87,23 @@ def all_evaluator_outputs():
     org = SimpleNamespace(id=1, nom="OrgTest", effectif_total=380, chiffre_affaires_eur=80_000_000.0, pays="FR")
     audit_sme = SimpleNamespace(conso_annuelle_moy_gwh=5.0)
 
-    import regulatory.applicability_service as svc
-
-    svc._load_sites = lambda db, oid, sids: sites if sids is None else [s for s in sites if s.id in sids]
-    svc._load_organisation = lambda db, oid: org
-    svc._load_audit_sme = lambda db, oid: audit_sme
-    svc._load_batiments_for_site = lambda db, site: list(getattr(site, "batiments", []))
-
-    result = compute_applicability(db=None, org_id=1)
-    return result
+    monkeypatch.setattr(
+        "regulatory.applicability_service._load_sites",
+        lambda db, oid, sids: sites if sids is None else [s for s in sites if s.id in sids],
+    )
+    monkeypatch.setattr(
+        "regulatory.applicability_service._load_organisation",
+        lambda db, oid: org,
+    )
+    monkeypatch.setattr(
+        "regulatory.applicability_service._load_audit_sme",
+        lambda db, oid: audit_sme,
+    )
+    monkeypatch.setattr(
+        "regulatory.applicability_service._load_batiments_for_site",
+        lambda db, site: list(getattr(site, "batiments", [])),
+    )
+    return compute_applicability(db=None, org_id=1)
 
 
 # ── G1 : reason_code whitelist ────────────────────────────────────────────
