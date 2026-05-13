@@ -34,16 +34,18 @@ from regulatory.rules.base import RuleEvaluator
 BEGES_EFFECTIF_THRESHOLD_METROPOLE: int = 500
 BEGES_EFFECTIF_THRESHOLD_DOM: int = 250
 
-# Périodicité réglementaire : 4 ans pour entreprises privées
-# (Décret 2022-982 — réduit de 4 à 3 ans pour BEGES réglementaire post-2023).
-BEGES_PERIODICITY_YEARS: int = 4
+# Périodicité réglementaire : 3 ans pour BEGES réglementaire post-2023
+# (Décret 2022-982 art. 1 — réduit de 4 ans à 3 ans pour entreprises privées
+# soumises à l'art. L229-25 du Code de l'environnement, effet 01/01/2023).
+# Fix audit regulatory-expert 13/05/2026 (était 4, valeur obsolète).
+BEGES_PERIODICITY_YEARS: int = 3
 
 
 class BEGESEvaluator(RuleEvaluator):
     """Évaluateur Bilan GES réglementaire (Grenelle 2 art. 75)."""
 
     code = RuleCode.BEGES
-    version = "BEGES-Grenelle2-art-75-v2022-07-01"
+    version = "BEGES-Grenelle2-art-75+Decret-2022-982-v2023-01-01"
     scope = "organisation"
 
     def evaluate(self, organisation: Any) -> RuleApplicability:

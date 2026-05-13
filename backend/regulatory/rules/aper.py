@@ -115,6 +115,9 @@ class APEREvaluator(RuleEvaluator):
 
         # ── APPLICABLE.TOITURE ──────────────────────────────────────────
         if roof_area is not None and roof_area >= APER_ROOF_THRESHOLD_M2:
+            # Fix audit regulatory-expert 13/05/2026 (était deadline=None → FE
+            # incapable d'afficher échéance). Deadline alignée parking LARGE
+            # par défaut (01/07/2026) — calibrage fin via décret applicable.
             return RuleApplicability(
                 rule_code=self.code,
                 rule_version=self.version,
@@ -125,11 +128,13 @@ class APEREvaluator(RuleEvaluator):
                 reason_code="APER.APPLICABLE.TOITURE",
                 reason_human=(
                     f"{scope_label} : toiture {roof_area:.0f} m² ≥ "
-                    f"{APER_ROOF_THRESHOLD_M2:.0f} m². Obligation EnR toiture activée."
+                    f"{APER_ROOF_THRESHOLD_M2:.0f} m². Obligation EnR toiture "
+                    f"activée (deadline {APER_DEADLINE_LARGE.strftime('%d/%m/%Y')})."
                 ),
                 inputs_used=inputs,
                 confidence=1.0,
                 evidence_refs=["Loi 2023-175 art. 40"],
+                deadline=APER_DEADLINE_LARGE,
                 _audit=audit,
             )
 
