@@ -34,6 +34,12 @@ from regulatory.applicability_types import (
     RuleApplicability,
     RuleCode,
 )
+from services.strategique.builders.base import (
+    PERSONA_DG_COMEX,
+    StrategicModeBuilder,
+)
+from services.strategique.mode_thresholds import StrategicMode
+
 
 # Phase 3.8 P1 (audit qa-guardian P3.7) — jalons DT lus depuis doctrine.constants
 # (SoT unique). DT_MILESTONES = {2030: -0.40, 2040: -0.50, 2050: -0.60} ; on
@@ -41,11 +47,6 @@ from regulatory.applicability_types import (
 _DT_CIBLE_2030_PCT = int(abs(DT_MILESTONES.get(2030, -0.40)) * 100)
 _DT_CIBLE_2040_PCT = int(abs(DT_MILESTONES.get(2040, -0.50)) * 100)
 _DT_CIBLE_2050_PCT = int(abs(DT_MILESTONES.get(2050, -0.60)) * 100)
-from services.strategique.builders.base import (
-    PERSONA_DG_COMEX,
-    StrategicModeBuilder,
-)
-from services.strategique.mode_thresholds import StrategicMode
 
 
 class RegulatoryDrivenBuilder(StrategicModeBuilder):
@@ -140,7 +141,7 @@ class RegulatoryDrivenBuilder(StrategicModeBuilder):
             },
             "ctas": [
                 {"label": "Arbitrer la trajectoire DT", "verb": "arbitrer", "primary": True},
-                {"label": "Brief COMEX (PDF)", "verb": "exporter"},
+                {"label": "Note COMEX (PDF)", "verb": "exporter"},
                 {"label": "Simuler un scénario", "verb": "simuler"},
             ],
             "score": {"value": 62, "max": 100, "label": "décision"},
@@ -189,11 +190,11 @@ class RegulatoryDrivenBuilder(StrategicModeBuilder):
                     "scope": "élec + gaz",
                     "freshness": "J-3",
                 },
-                "link": {"label": "Voir l'achat →", "route": "/achat"},
+                "link": {"label": "Voir l'achat →", "route": "/achat-energie"},
             },
             {
                 "id": "reclaim_potentiel",
-                "eyebrow": "Reclaim potentiel",
+                "eyebrow": "Récupération potentielle",
                 "value": reclaim_k_eur,
                 "unit": "k€",
                 "delta": {"label": "anomalies actées", "tier": "pos"},
@@ -307,8 +308,8 @@ class RegulatoryDrivenBuilder(StrategicModeBuilder):
                 {"step": "roi", "name": "Mesure ROI", "date": "Q4 2027", "status": "future"},
             ],
             "proof_sidebar": [
-                {"label": "CAPEX audit + plan", "value": "290 k€", "detail": "stub v1.0"},
-                {"label": "Gain attendu", "value": "1,1 GWh/an", "detail": "stub v1.0"},
+                {"label": "CAPEX audit + plan", "value": "290 k€", "detail": "valeur indicative v1.0"},
+                {"label": "Gain attendu", "value": "1,1 GWh/an", "detail": "valeur indicative v1.0"},
                 {"label": "Payback", "value": "2,3 ans"},
                 {"label": "CEE éligibles", "value": "48 k€", "detail": "fiches BAT-TH"},
             ],
@@ -317,7 +318,7 @@ class RegulatoryDrivenBuilder(StrategicModeBuilder):
                 "le décret tertiaire impose la trajectoire, et le coût moyen €/MWh "
                 "est au-dessus de la médiane sectorielle.</p>"
             ),
-            "links": ["/conformite", "/centre-arbitrage", "/anomalies"],
+            "links": ["/conformite", "/anomalies"],
         }
 
     def _queue_p2_p3(self) -> list[dict]:
@@ -336,7 +337,7 @@ class RegulatoryDrivenBuilder(StrategicModeBuilder):
             },
             {
                 "tier": "P3",
-                "title": "Reclaim CTA gaz 2022-2024",
+                "title": "Récupération CTA gaz 2022-2024",
                 "context": "prescription 31/12/2026",
                 "value_label": "≈38 k€",
             },

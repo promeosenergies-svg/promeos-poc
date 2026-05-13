@@ -118,7 +118,7 @@ class ProcurementDrivenBuilder(StrategicModeBuilder):
             },
             "ctas": [
                 {"label": "Arbitrer le scénario", "verb": "arbitrer", "primary": True},
-                {"label": "Brief COMEX (PDF)", "verb": "exporter"},
+                {"label": "Note COMEX (PDF)", "verb": "exporter"},
                 {"label": "Comparer fournisseurs", "verb": "comparer"},
             ],
             "score": {"value": 72, "max": 100, "label": "décision"},
@@ -141,7 +141,7 @@ class ProcurementDrivenBuilder(StrategicModeBuilder):
                     "scope": "élec base",
                     "freshness": "J-1",
                 },
-                "link": {"label": "Voir l'achat →", "route": "/achat"},
+                "link": {"label": "Voir l'achat →", "route": "/achat-energie"},
             },
             {
                 "id": "exposition_spot",
@@ -175,7 +175,7 @@ class ProcurementDrivenBuilder(StrategicModeBuilder):
                     "scope": "12 mois glissants",
                     "freshness": "J-2",
                 },
-                "link": {"label": "Simuler →", "route": "/achat/simuler"},
+                "link": {"label": "Simuler →", "route": "/achat-energie"},
             },
         ]
 
@@ -218,7 +218,7 @@ class ProcurementDrivenBuilder(StrategicModeBuilder):
         return {
             "priority": "P1",
             "urgency_label": f"J-{days}",
-            "category": "FINANCIER · ARBITRAGE PROCUREMENT",
+            "category": "FINANCIER · ARBITRAGE ACHAT",
             "question": ("Quel scénario de renouvellement contrat élec activer avant échéance ?"),
             "recommendation": (
                 f"Bascule 60 % volume sur forward Y+1 + 30 % cliquet trimestriel. "
@@ -264,7 +264,7 @@ class ProcurementDrivenBuilder(StrategicModeBuilder):
             ],
             "proof_sidebar": [
                 {"label": "Économie projetée", "value": f"{economie} k€/an"},
-                {"label": "Volume à renouveler", "value": "12 GWh", "detail": "stub v1.0"},
+                {"label": "Volume à renouveler", "value": "12 GWh", "detail": "valeur indicative v1.0"},
                 {"label": "Fenêtre arbitrage", "value": f"{max(days - 30, 7)} j"},
                 {"label": "Risque marché", "value": "Élevé", "detail": "spot volatil"},
             ],
@@ -273,7 +273,7 @@ class ProcurementDrivenBuilder(StrategicModeBuilder):
                 "levier de négociation matériel. Le coût d'attente excède "
                 "l'économie potentielle dès J+15.</p>"
             ),
-            "links": ["/achat", "/contrats"],
+            "links": ["/achat-energie", "/contrats"],
         }
 
     def _queue_p2_p3(self) -> list[dict]:

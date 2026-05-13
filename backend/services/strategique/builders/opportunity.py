@@ -158,7 +158,7 @@ class OpportunityDrivenBuilder(StrategicModeBuilder):
                     "scope": "CEEEligibility",
                     "freshness": "temps réel",
                 },
-                "link": {"label": "Voir les CEE →", "route": "/cee"},
+                "link": {"label": "Voir les CEE →", "route": "/conformite"},
             },
             {
                 "id": "potentiel_flex",
@@ -272,7 +272,7 @@ class OpportunityDrivenBuilder(StrategicModeBuilder):
                 "et seulement si la décision est prise avant T-12 mois "
                 "(délai permis + raccordement).</p>"
             ),
-            "links": ["/conformite", "/flex", "/cee"],
+            "links": ["/conformite", "/flex"],
         }
 
     def _queue_p2_p3(self) -> list[dict]:

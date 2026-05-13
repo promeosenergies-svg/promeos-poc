@@ -131,7 +131,7 @@ class PerformanceDrivenBuilder(StrategicModeBuilder):
             },
             "ctas": [
                 {"label": "Arbitrer les leviers", "verb": "arbitrer", "primary": True},
-                {"label": "Brief COMEX (PDF)", "verb": "exporter"},
+                {"label": "Note COMEX (PDF)", "verb": "exporter"},
                 {"label": "Comparer 3 scénarios", "verb": "comparer"},
             ],
             "score": {"value": 76, "max": 100, "label": "décision"},
@@ -162,7 +162,7 @@ class PerformanceDrivenBuilder(StrategicModeBuilder):
                     "scope": "sites assujettis OPERAT",
                     "freshness": "J-1",
                 },
-                "link": {"label": "Voir la conso →", "route": "/conso"},
+                "link": {"label": "Voir la conso →", "route": "/consommations"},
             },
             {
                 "id": "cout_eur_mwh",
@@ -179,7 +179,7 @@ class PerformanceDrivenBuilder(StrategicModeBuilder):
                     "scope": "élec",
                     "freshness": "J-3",
                 },
-                "link": {"label": "Voir l'achat →", "route": "/achat"},
+                "link": {"label": "Voir l'achat →", "route": "/achat-energie"},
             },
             {
                 "id": "economies_activables",
@@ -196,7 +196,7 @@ class PerformanceDrivenBuilder(StrategicModeBuilder):
                     "scope": "sites assujettis",
                     "freshness": "J-2",
                 },
-                "link": {"label": "Voir les leviers →", "route": "/centre-arbitrage"},
+                "link": {"label": "Voir les leviers →", "route": "/anomalies"},
             },
         ]
 
@@ -300,8 +300,8 @@ class PerformanceDrivenBuilder(StrategicModeBuilder):
                 {"step": "roi", "name": "Mesure ROI", "date": "Q2 2027", "status": "future"},
             ],
             "proof_sidebar": [
-                {"label": "CAPEX scénario B", "value": "68 k€", "detail": "stub v1.0"},
-                {"label": "Gain attendu", "value": "49 k€/an", "detail": "stub v1.0"},
+                {"label": "CAPEX scénario B", "value": "68 k€", "detail": "valeur indicative v1.0"},
+                {"label": "Gain attendu", "value": "49 k€/an", "detail": "valeur indicative v1.0"},
                 {"label": "Payback", "value": "1,4 an"},
                 {"label": "CEE éligibles", "value": "18 k€"},
             ],
@@ -309,7 +309,7 @@ class PerformanceDrivenBuilder(StrategicModeBuilder):
                 "<p>L'audit SMÉ étant déjà obligatoire, son couplage avec "
                 "un plan d'action sécurise 49 k€/an et active 18 k€ de CEE.</p>"
             ),
-            "links": ["/conso", "/achat", "/centre-arbitrage"],
+            "links": ["/consommations", "/achat-energie", "/anomalies"],
         }
 
     def _queue_p2_p3(self) -> list[dict]:

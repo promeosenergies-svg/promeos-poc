@@ -1,3 +1,5 @@
+import { sanitizeHtml } from '../../../utils/sanitizeHtml';
+
 /**
  * grammar/hub/DossierP1 — Bloc dossier P1 cardinal de la Synthèse Stratégique.
  *
@@ -107,7 +109,7 @@ export default function DossierP1(props) {
         <div
           className="mb-4 sol-prose"
           style={{ fontSize: '14px', color: 'var(--sol-ink-700, #3D362C)', lineHeight: 1.55 }}
-          dangerouslySetInnerHTML={{ __html: body_html }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(body_html) }}
         />
       )}
 
@@ -183,7 +185,7 @@ export default function DossierP1(props) {
             lineHeight: 1.6,
             fontStyle: 'italic',
           }}
-          dangerouslySetInnerHTML={{ __html: why_promeos }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(why_promeos) }}
         />
       )}
 
