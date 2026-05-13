@@ -25,7 +25,7 @@ import {
 import { useFilter } from '../contexts/FilterContext';
 import { usePersona } from '../contexts/PersonaContext';
 import { getCockpitStrategique } from '../services/api';
-import logger from '../utils/logger';
+import { logger } from '../services/logger';
 
 const TAG = '[CockpitStrategique]';
 
