@@ -28,7 +28,7 @@ def _batiment(id: int = 1, cvc_power_kw=None):
 
 
 def test_bacs_applicable_one_building_above_threshold():
-    """Un bâtiment > seuil → APPLICABLE avec deadline 2030-01-01."""
+    """Un bâtiment > seuil Tier 2 (70 kW) → APPLICABLE Tier 2 deadline 2030."""
     site = _site(nom="Toulouse")
     batiments = [_batiment(id=1, cvc_power_kw=120.0), _batiment(id=2, cvc_power_kw=40.0)]
     app = BACSEvaluator().evaluate(site, batiments)
@@ -37,6 +37,19 @@ def test_bacs_applicable_one_building_above_threshold():
     assert app.deadline == date(2030, 1, 1)
     assert app.inputs_used["cvc_power_max_kw"] == 120.0
     assert app.inputs_used["threshold_kw"] == BACS_THRESHOLD_KW_EXISTING
+    assert app.inputs_used["tier"] == "existing"
+
+
+def test_bacs_applicable_tier1_above_290():
+    """Phase 3.6 EE : bâtiment > 290 kW (Tier 1) → deadline expirée 01/01/2025."""
+    site = _site(nom="GrosSite")
+    batiments = [_batiment(id=1, cvc_power_kw=350.0)]
+    app = BACSEvaluator().evaluate(site, batiments)
+    assert app.status == ApplicabilityStatus.APPLICABLE
+    assert app.inputs_used["tier"] == "initial"
+    # Tier 1 deadline = 01/01/2025 (expirée)
+    assert app.deadline == date(2025, 1, 1)
+    assert "Tier 1" in app.reason_human or "expirée" in app.reason_human
 
 
 def test_bacs_applicable_uses_max_power():

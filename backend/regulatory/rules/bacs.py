@@ -19,7 +19,14 @@ from __future__ import annotations
 from datetime import date
 from typing import Any, Iterable
 
-from doctrine.constants import BACS_THRESHOLD_KW_EXISTING
+from datetime import datetime
+
+from doctrine.constants import (
+    BACS_DEADLINE_EXISTING,
+    BACS_DEADLINE_INITIAL,
+    BACS_THRESHOLD_KW_EXISTING,
+    BACS_THRESHOLD_KW_INITIAL,
+)
 
 from regulatory.applicability_types import (
     ApplicabilityStatus,
@@ -27,6 +34,11 @@ from regulatory.applicability_types import (
     RuleCode,
 )
 from regulatory.rules.base import RuleEvaluator
+
+
+def _parse_iso_date(s: str) -> date:
+    """Parse YYYY-MM-DD."""
+    return datetime.strptime(s, "%Y-%m-%d").date()
 
 
 class BACSEvaluator(RuleEvaluator):
@@ -101,7 +113,40 @@ class BACSEvaluator(RuleEvaluator):
         powers_clean: list[float] = [float(p) for p in powers if p is not None]
         max_power: float = max(powers_clean) if powers_clean else 0.0
 
-        # ── APPLICABLE si au moins un bâtiment > seuil ──────────────────
+        # ── APPLICABLE Tier 1 (initial 290 kW) — deadline 01/01/2025 ──
+        # Fix audit regulatory-expert 13/05/2026 : distinction Tier 1 vs Tier 2.
+        # Sites > 290 kW étaient assujettis dès 2020-887 art. R175-3 avec
+        # deadline 01/01/2025 (expirée). On l'expose pour faire remonter
+        # le risque infraction au CFO.
+        if max_power > BACS_THRESHOLD_KW_INITIAL:
+            return RuleApplicability(
+                rule_code=self.code,
+                rule_version=self.version,
+                scope_level=self.scope,
+                scope_id=scope_id,
+                scope_label=scope_label,
+                status=ApplicabilityStatus.APPLICABLE,
+                reason_code="BACS.APPLICABLE",
+                reason_human=(
+                    f"{scope_label} : puissance CVC max {max_power:.0f} kW > "
+                    f"{BACS_THRESHOLD_KW_INITIAL} kW (Tier 1). BACS exigé "
+                    f"deadline {BACS_DEADLINE_INITIAL} (expirée — risque sanction)."
+                ),
+                inputs_used={
+                    "batiments_count": len(batiments_list),
+                    "cvc_power_max_kw": max_power,
+                    "threshold_kw": BACS_THRESHOLD_KW_INITIAL,
+                    "tier": "initial",
+                },
+                confidence=1.0,
+                evidence_refs=[
+                    "Décret 2020-887 art. R175-3",
+                ],
+                deadline=_parse_iso_date(BACS_DEADLINE_INITIAL),
+                _audit=audit,
+            )
+
+        # ── APPLICABLE Tier 2 (existing 70 kW) — deadline 01/01/2030 ──
         if max_power > BACS_THRESHOLD_KW_EXISTING:
             return RuleApplicability(
                 rule_code=self.code,
@@ -113,19 +158,20 @@ class BACSEvaluator(RuleEvaluator):
                 reason_code="BACS.APPLICABLE",
                 reason_human=(
                     f"{scope_label} : puissance CVC max {max_power:.0f} kW > "
-                    f"{BACS_THRESHOLD_KW_EXISTING} kW. Système de régulation BACS exigé."
+                    f"{BACS_THRESHOLD_KW_EXISTING} kW (Tier 2). Système de régulation BACS exigé."
                 ),
                 inputs_used={
                     "batiments_count": len(batiments_list),
                     "cvc_power_max_kw": max_power,
                     "threshold_kw": BACS_THRESHOLD_KW_EXISTING,
+                    "tier": "existing",
                 },
                 confidence=1.0,
                 evidence_refs=[
                     "Décret 2020-887 art. R175-3",
                     "Décret 2025-1343 art. 1",
                 ],
-                deadline=date(2030, 1, 1),
+                deadline=_parse_iso_date(BACS_DEADLINE_EXISTING),
                 _audit=audit,
             )
 
