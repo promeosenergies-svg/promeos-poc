@@ -169,21 +169,19 @@ def count_unknown_or_missing(
 
 
 def _load_sites(db: Session, org_id: int, site_ids: list[int] | None) -> list[Any]:
-    """Charge les sites de l'org (filtre is_demo aligné si applicable).
+    """Charge les sites de l'org via `sites_for_org_query` (helper canonique).
 
-    En l'état v1.0, on ne filtre PAS sur is_demo ici (le filtre est de la
-    responsabilité du builder/endpoint amont). Le moteur ne décide pas du
-    périmètre.
+    Le helper applique le filtre cardinal `Site.is_demo == Organisation.is_demo`
+    (Correctif F.4 ff2b3a4d) et joint Portefeuille → EntiteJuridique → Organisation.
     """
     try:
         from models.site import Site
+        from services.scope_utils import sites_for_org_query
     except Exception as exc:  # pragma: no cover — defensive
-        _logger.warning("Impossible d'importer models.Site: %s", exc)
+        _logger.warning("Impossible d'importer sites_for_org_query: %s", exc)
         return []
 
-    query = (
-        db.query(Site).filter(Site.organisation_id == org_id) if hasattr(Site, "organisation_id") else db.query(Site)
-    )
+    query = sites_for_org_query(db, org_id)
     if site_ids is not None:
         query = query.filter(Site.id.in_(site_ids))
     return list(query.all())

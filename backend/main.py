@@ -358,6 +358,11 @@ from routes.doctrine import router as doctrine_router
 
 app.include_router(doctrine_router)
 
+# Phase 3.5 Vague A.6 — moteur d'assujettissement réglementaire (ADR-024)
+from routes.regulatory_applicability import router as regulatory_applicability_router
+
+app.include_router(regulatory_applicability_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 

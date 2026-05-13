@@ -73,6 +73,7 @@ from .dataconnect_route import router as dataconnect_router
 from .grdf_route import router as grdf_router
 from .bridge_route import router as bridge_router
 from .doctrine import router as doctrine_router
+from .regulatory_applicability import router as regulatory_applicability_router
 
 __all__ = [
     "sites_router",
@@ -146,4 +147,5 @@ __all__ = [
     "grdf_router",
     "bridge_router",
     "doctrine_router",
+    "regulatory_applicability_router",
 ]
