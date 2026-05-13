@@ -306,27 +306,48 @@ def test_builder_queue_p2p3_3_to_5(builder_cls, applicability, maturity):
     assert 3 <= len(payload["queue_p2_p3"]) <= 5, f"queue_p2_p3 hors range 3-5 pour {builder_cls.__name__}"
 
 
-# ── Stubs raise ─────────────────────────────────────────────────────────
+# ── Phase 3.6 Vague BB : Procurement + Opportunity implémentés ─────────
 
 
-def test_procurement_stub_raises():
-    with pytest.raises(NotImplementedError, match="non implémenté"):
-        ProcurementDrivenBuilder().build(
-            db=MagicMock(),
-            org_id=1,
-            applicability=_applicability_meridian(),
-            patrimoine_maturity=0.85,
-        )
+def test_procurement_builder_implemented(monkeypatch):
+    """Phase 3.6 : ProcurementDrivenBuilder retourne un payload complet."""
+    monkeypatch.setattr(
+        "services.strategique.builders.procurement.compute_next_contract_end",
+        lambda db, oid: {"days": 60, "contract_id": 1, "fournisseur": "EDF", "source": "computed"},
+    )
+    monkeypatch.setattr(
+        "services.strategique.builders.procurement.compute_spot_exposure",
+        lambda db, oid: {"pct": 45.0, "contrats_count": 2, "source": "computed"},
+    )
+    payload = ProcurementDrivenBuilder().build(
+        db=MagicMock(),
+        org_id=1,
+        applicability=_applicability_meridian(),
+        patrimoine_maturity=0.85,
+    )
+    assert payload["strategic_mode"] == "procurement_driven"
+    assert len(payload["kpis"]) == 3
+    assert len(payload["charts"]) == 2
+    assert "verdict" in payload and payload["verdict"]["constraint"]["statement"]
 
 
-def test_opportunity_stub_raises():
-    with pytest.raises(NotImplementedError, match="non implémenté"):
-        OpportunityDrivenBuilder().build(
-            db=MagicMock(),
-            org_id=1,
-            applicability=_applicability_meridian(),
-            patrimoine_maturity=0.85,
-        )
+def test_opportunity_builder_implemented(monkeypatch):
+    """Phase 3.6 : OpportunityDrivenBuilder retourne un payload complet."""
+    monkeypatch.setattr(
+        "services.strategique.builders.opportunity.compute_unvalued_cee_keur",
+        lambda db, oid: {"k_eur": 25.0, "actions_count": 3, "source": "computed"},
+    )
+    applicability = _applicability_meridian()
+    applicability[RuleCode.APER] = [_entry(RuleCode.APER, ApplicabilityStatus.APPLICABLE)]
+    payload = OpportunityDrivenBuilder().build(
+        db=MagicMock(),
+        org_id=1,
+        applicability=applicability,
+        patrimoine_maturity=0.85,
+    )
+    assert payload["strategic_mode"] == "opportunity_driven"
+    assert len(payload["kpis"]) == 3
+    assert len(payload["charts"]) == 2
 
 
 # ── MODE_BUILDERS dispatcher ─────────────────────────────────────────────
@@ -336,11 +357,6 @@ def test_mode_builders_dispatcher_complete():
     assert set(MODE_BUILDERS.keys()) == set(StrategicMode)
 
 
-def test_implemented_modes_subset():
-    assert IMPLEMENTED_MODES == frozenset(
-        {
-            StrategicMode.REGULATORY_DRIVEN,
-            StrategicMode.PERFORMANCE_DRIVEN,
-            StrategicMode.DATA_INSUFFICIENT,
-        }
-    )
+def test_implemented_modes_all_5_phase_3_6():
+    """Phase 3.6 Vague BB : 5 modes implémentés (plus de fallback runtime)."""
+    assert IMPLEMENTED_MODES == frozenset(StrategicMode)

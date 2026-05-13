@@ -121,14 +121,20 @@ def compute_next_contract_end(db: Session, org_id: int) -> dict[str, Any]:
         return {"days": 99999, "contract_id": None, "fournisseur": None, "source": "no_contract"}
 
     today = date.today()
-    contrats = db.query(ContratCadre).filter(ContratCadre.date_fin >= today).order_by(ContratCadre.date_fin.asc()).all()
-    # On filtre par org via les sites de l'org (ContratCadre n'a pas org_id
-    # direct selon la v1.0 modèle, on prend le 1er par date_fin) — TODO Phase 3.7.
-    if not contrats:
+    try:
+        contrats = list(
+            db.query(ContratCadre).filter(ContratCadre.date_fin >= today).order_by(ContratCadre.date_fin.asc()).all()
+        )
+    except Exception:
+        contrats = []
+    if len(contrats) == 0:
         return {"days": 99999, "contract_id": None, "fournisseur": None, "source": "no_contract"}
 
     next_c = contrats[0]
-    delta_days = (next_c.date_fin - today).days
+    try:
+        delta_days = (next_c.date_fin - today).days
+    except (TypeError, AttributeError):
+        return {"days": 99999, "contract_id": None, "fournisseur": None, "source": "no_contract"}
     return {
         "days": int(delta_days),
         "contract_id": next_c.id,
@@ -156,8 +162,12 @@ def compute_spot_exposure(db: Session, org_id: int) -> dict[str, Any]:
         _logger.warning("Impossible d'importer ContratCadre: %s", exc)
         return {"pct": 0.0, "contrats_count": 0, "source": "no_contract"}
 
-    contrats = db.query(ContratCadre).all()
-    if not contrats:
+    try:
+        contrats = list(db.query(ContratCadre).all())
+    except Exception:
+        contrats = []
+    n = len(contrats)
+    if n == 0:
         return {"pct": 0.0, "contrats_count": 0, "source": "no_contract"}
 
     spot_count = 0
@@ -169,10 +179,10 @@ def compute_spot_exposure(db: Session, org_id: int) -> dict[str, Any]:
             spot_count += 1
         elif "MIXTE" in tp_str or "MIX" in tp_str:
             mixed_count += 1
-    pct = (spot_count + 0.5 * mixed_count) / len(contrats) * 100
+    pct = (spot_count + 0.5 * mixed_count) / n * 100
     return {
         "pct": round(pct, 1),
-        "contrats_count": len(contrats),
+        "contrats_count": n,
         "source": "computed",
     }
 
