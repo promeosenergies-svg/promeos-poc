@@ -36,8 +36,9 @@ _DT_REASON_CODES: Final[frozenset[str]] = frozenset(
 
 _BACS_REASON_CODES: Final[frozenset[str]] = frozenset(
     {
-        "BACS.APPLICABLE",  # legacy (Phase 3.5) — gardé pour rétro-compat
-        # Phase 3.8 P1-B (audit code-reviewer P3.7) — distinction Tier 1/Tier 2
+        # Phase 3.8 P1-B (audit code-reviewer P3.7) — distinction Tier 1/Tier 2.
+        # L'ancien code générique "BACS.APPLICABLE" a été retiré au profit de
+        # ces deux codes plus précis (garde-fou bijection Vague QQ).
         "BACS.APPLICABLE.TIER1_EXPIRED",  # > 290 kW, deadline 2025 expirée
         "BACS.APPLICABLE.TIER2_UPCOMING",  # > 70 kW, deadline 2030
         "BACS.NOT_APPLICABLE.NO_SYSTEM_GT_THRESHOLD",

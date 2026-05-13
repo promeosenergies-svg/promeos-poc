@@ -220,6 +220,40 @@ def test_g5_data_missing_always_has_inputs(all_evaluator_outputs):
                 )
 
 
+# ── G7 (Phase 3.8 QQ) : bijection reason_codes ────────────────────────────
+
+
+def test_g7_reason_codes_whitelist_subset_of_source():
+    """Phase 3.8 — bijection : tout code de la whitelist REASON_CODES doit
+    être détecté comme littéral dans au moins un fichier regulatory/rules/*.
+
+    Garde-fou contre les codes whitelistés mais jamais émis (zombies),
+    identifiés par audit regulatory-expert Phase 3.5 sur :
+      - SME.DATA_MISSING.CA, SME.DATA_MISSING.CONSO
+      - APER.DATA_MISSING.ROOF_AREA
+    Bijection résolue Phase 3.7 KK (codes émis) + Phase 3.8 QQ (verrou).
+    """
+    import re as _re
+
+    from regulatory.reason_codes import REASON_CODES
+
+    rules_dir = REGULATORY_DIR / "rules"
+    all_sources = ""
+    for py in rules_dir.rglob("*.py"):
+        all_sources += py.read_text(encoding="utf-8", errors="ignore")
+    orphan_codes: list[str] = []
+    for code in sorted(REASON_CODES):
+        # Le code doit apparaître comme chaîne entre guillemets dans au moins un
+        # fichier d'évaluateur.
+        if not _re.search(rf'["\']({_re.escape(code)})["\']', all_sources):
+            orphan_codes.append(code)
+    assert not orphan_codes, (
+        f"Codes whitelistés jamais émis (orphelins) : {orphan_codes}. "
+        "La whitelist doit être en bijection avec les codes effectivement "
+        "produits par les évaluateurs."
+    )
+
+
 # ── G6 : RuleEvaluator.scope cohérent ────────────────────────────────────
 
 

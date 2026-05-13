@@ -24,8 +24,50 @@ const PLOT_TOP = 30;
 const PLOT_BOTTOM = 180;
 
 export default function ChartFrameTrajectoryLine({ question, answer, data = {}, footScm }) {
+  // Phase 3.8 OO — garde-fou audit qa-guardian P3.7 :
+  // si le constructeur backend n'envoie pas atteint_pct ni cible_2030_pct
+  // (cas Décret Tertiaire non applicable), on rend une indication explicite
+  // plutôt qu'un graphique trompeur avec valeur par défaut.
+  const hasData = data && data.cible_2030_pct !== undefined && data.cible_2030_pct !== null;
+  if (!hasData) {
+    return (
+      <article
+        data-component="ChartFrameTrajectoryLine"
+        data-state="not-applicable"
+        className="sol-chart-frame rounded-md border p-5"
+        style={{
+          background: 'var(--sol-bg-card, #FFFFFF)',
+          borderColor: 'var(--sol-ink-200, #E5DDD0)',
+        }}
+      >
+        {question && (
+          <h3
+            style={{
+              fontFamily: 'var(--sol-font-display, serif)',
+              fontSize: '16px',
+              color: 'var(--sol-ink-900, #1A1612)',
+              margin: '0 0 8px',
+            }}
+          >
+            {question}
+          </h3>
+        )}
+        <p
+          style={{
+            fontSize: '13px',
+            color: 'var(--sol-ink-500, #7A6E5C)',
+            fontStyle: 'italic',
+            margin: 0,
+          }}
+        >
+          Décret tertiaire non applicable sur le périmètre — aucune trajectoire à représenter.
+        </p>
+      </article>
+    );
+  }
+
   const atteint = data.atteint_pct ?? 0;
-  const cible2030 = data.cible_2030_pct ?? 40;
+  const cible2030 = data.cible_2030_pct;
   const cible2040 = data.cible_2040_pct ?? 50;
   const cible2050 = data.cible_2050_pct ?? 60;
   const drift = cible2030 - atteint;
