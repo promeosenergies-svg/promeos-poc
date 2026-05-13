@@ -26,5 +26,6 @@ export { default as StrategicModeBanner } from './StrategicModeBanner';
 export { default as CadreApplicable } from './CadreApplicable';
 export { default as VerdictFinal } from './VerdictFinal';
 export { default as DossierP1 } from './DossierP1';
+export { default as QueueP2P3 } from './QueueP2P3';
 export { default as ChartFrameTrajectoryLine } from './charts/ChartFrameTrajectoryLine';
 export { default as ChartFrameBenchSites } from './charts/ChartFrameBenchSites';

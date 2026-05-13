@@ -29,11 +29,7 @@ from regulatory.applicability_types import (
     RuleApplicability,
     RuleCode,
 )
-from regulatory.rules.aper import APEREvaluator
-from regulatory.rules.bacs import BACSEvaluator
-from regulatory.rules.beges import BEGESEvaluator
-from regulatory.rules.dt import DTEvaluator
-from regulatory.rules.sme import SMEEvaluator
+from regulatory.rules_catalog import RULE_EVALUATORS
 
 
 _logger = logging.getLogger(__name__)
@@ -79,21 +75,21 @@ def compute_applicability(
 
     result: dict[RuleCode, list[RuleApplicability]] = {r: [] for r in RuleCode}
 
-    # ── Règles site-scoped ──────────────────────────────────────────────
-    dt_evaluator = DTEvaluator()
-    bacs_evaluator = BACSEvaluator()
-    aper_evaluator = APEREvaluator()
+    # Fix code-reviewer P1-B 13/05/2026 : utilisation des singletons
+    # RULE_EVALUATORS (SoT unique) au lieu d'instances locales (était 3
+    # instanciations parasites par appel + double source de vérité).
 
+    # ── Règles site-scoped ──────────────────────────────────────────────
     for site in sites:
         batiments = _load_batiments_for_site(db, site)
-        result[RuleCode.DT].append(dt_evaluator.evaluate(site))
-        result[RuleCode.BACS].append(bacs_evaluator.evaluate(site, batiments))
-        result[RuleCode.APER].append(aper_evaluator.evaluate(site))
+        result[RuleCode.DT].append(RULE_EVALUATORS[RuleCode.DT].evaluate(site))
+        result[RuleCode.BACS].append(RULE_EVALUATORS[RuleCode.BACS].evaluate(site, batiments))
+        result[RuleCode.APER].append(RULE_EVALUATORS[RuleCode.APER].evaluate(site))
 
     # ── Règles org-scoped ──────────────────────────────────────────────
     if organisation is not None:
-        result[RuleCode.SME].append(SMEEvaluator().evaluate(organisation, audit_sme))
-        result[RuleCode.BEGES].append(BEGESEvaluator().evaluate(organisation))
+        result[RuleCode.SME].append(RULE_EVALUATORS[RuleCode.SME].evaluate(organisation, audit_sme))
+        result[RuleCode.BEGES].append(RULE_EVALUATORS[RuleCode.BEGES].evaluate(organisation))
 
     return result
 

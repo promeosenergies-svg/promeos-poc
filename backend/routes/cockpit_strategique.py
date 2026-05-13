@@ -32,6 +32,7 @@ from regulatory.applicability_service import (
     compute_applicability,
     compute_patrimoine_maturity,
 )
+from regulatory.applicability_types import ApplicabilityStatus, RuleCode
 from services.scope_utils import resolve_org_id
 from services.strategique.builders import (
     IMPLEMENTED_MODES,
@@ -45,6 +46,14 @@ _logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/api/cockpit", tags=["Cockpit Strategique"])
+
+
+# Fix code-reviewer P1-C 13/05/2026 : extraction du magic number.
+# La valeur 8.0 simule une dérive trajectoire DT plausible (cible -40 %,
+# atteint -32 %) qui déclenche le gate REGULATORY_DRIVEN. Sera remplacé
+# Phase 3.6 par `compute_trajectory_drift(db, org_id)` qui lit
+# RegAssessment.findings_json (cf. runbook punchlist #7+#10).
+_DEMO_TRAJECTORY_DRIFT_STUB_PCT: float = 8.0
 
 
 @router.get("/strategique")
@@ -70,12 +79,10 @@ def get_cockpit_strategique(
     # statuera donc DATA_INSUFFICIENT (si maturité basse), REGULATORY (si DT
     # APPLICABLE + drift sera wiré Phase 3.6), ou PERFORMANCE (défaut).
     # Pour HELIOS demo, on simule un drift > 5 si DT APPLICABLE détecté
-    # → bascule sur REGULATORY_DRIVEN narratif. Ceci sera remplacé par
-    # un compute_trajectory_drift() en Phase 3.6.
-    from regulatory.applicability_types import ApplicabilityStatus, RuleCode
-
+    # → bascule sur REGULATORY_DRIVEN narratif (cf. _DEMO_TRAJECTORY_DRIFT_STUB_PCT).
     has_dt_applicable = any(e.status == ApplicabilityStatus.APPLICABLE for e in applicability.get(RuleCode.DT, []))
-    trajectory_drift_pct = 8.0 if has_dt_applicable else 0.0
+    trajectory_drift_pct = _DEMO_TRAJECTORY_DRIFT_STUB_PCT if has_dt_applicable else 0.0
+    trajectory_drift_source = "stub_demo_v1.0" if has_dt_applicable else "not_applicable"
 
     target_mode = compute_strategic_mode(
         applicability=applicability,
@@ -110,6 +117,8 @@ def get_cockpit_strategique(
     # 5. Audit trail : trace mode demandé vs effectif si fallback
     payload["_audit"]["target_mode"] = target_mode.value
     payload["_audit"]["effective_mode"] = effective_mode.value
+    payload["_audit"]["trajectory_drift_source"] = trajectory_drift_source
+    payload["_audit"]["trajectory_drift_pct"] = trajectory_drift_pct
     if fallback_reason:
         payload["_audit"]["_fallback_reason"] = fallback_reason
 

@@ -17,6 +17,7 @@ import {
   HubKpiCard,
   HubPage,
   HubPageFooter,
+  QueueP2P3,
   SolHeroPremiumNight,
   StrategicModeBanner,
   VerdictFinal,
@@ -113,6 +114,8 @@ export default function CockpitStrategique() {
         {payload.dossier_p1 && <DossierP1 {...payload.dossier_p1} />}
 
         <VerdictFinal {...(payload.verdict || {})} />
+
+        <QueueP2P3 items={payload.queue_p2_p3} />
 
         <HubPageFooter {...(payload.footer || {})} />
       </HubPage>

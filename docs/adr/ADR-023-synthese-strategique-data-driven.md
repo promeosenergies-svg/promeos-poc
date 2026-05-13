@@ -1,6 +1,6 @@
 # ADR-023 — Synthèse stratégique data-driven
 
-**Status** : `Proposed`
+**Status** : `Accepted` (acté Phase 3.5 livraison 13/05/2026 — implémentation conforme aux 9 sections, audit architect-helios 8.5/9, qa-guardian 11/13 DoD, code-reviewer APPROUVÉ AVEC RÉSERVES)
 **Date** : 2026-05-13
 **Author** : Amine + Claude (session refonte Synthèse v6→v8)
 **Supersedes** : —

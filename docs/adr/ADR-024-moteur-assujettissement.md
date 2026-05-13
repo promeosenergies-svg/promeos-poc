@@ -1,6 +1,6 @@
 # ADR-024 — Moteur d'assujettissement réglementaire
 
-**Status** : `Proposed`
+**Status** : `Accepted` (acté Phase 3.5 livraison 13/05/2026 — 5 évaluateurs implémentés et catalogués, audit regulatory-expert verdict RÉSERVES avec 2 fixes immédiats appliqués : BEGES périodicité 4→3 + APER.TOITURE deadline)
 **Date** : 2026-05-13
 **Author** : Amine + Claude (session refonte Synthèse v6→v8)
 **Supersedes** : —
