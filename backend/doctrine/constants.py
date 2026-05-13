@@ -312,6 +312,29 @@ AUDIT_SME_THRESHOLD_GWH_ISO50001: float = _load_yaml_or_fallback(
 # YAML corrigé). Mapping nom Python AUDIT_SME_DEADLINE_DATE → YAML AUDIT_SME_DEADLINE_FIRST_AUDIT.
 AUDIT_SME_DEADLINE_DATE: str = _load_yaml_str_or_fallback("AUDIT_SME_DEADLINE_FIRST_AUDIT", fallback="2026-10-11")
 
+# Phase 3.7 P1 audit code-reviewer — consolidation seuils SMÉ/BEGES dans
+# doctrine.constants (SoT unique vs hardcoded dans regulatory/rules/{sme,beges}.py).
+# Évite drift silencieux si décret modifie un seuil.
+SME_EFFECTIF_THRESHOLD: int = _load_yaml_int_or_fallback(
+    "SME_EFFECTIF_THRESHOLD", fallback=250
+)  # Code énergie L233-1 critère (a)
+SME_CA_THRESHOLD_EUR: float = _load_yaml_or_fallback(
+    "SME_CA_THRESHOLD_EUR", fallback=50_000_000.0
+)  # Code énergie L233-1 critère (b) — CA ≥ 50 M€
+SME_BILAN_THRESHOLD_EUR: float = _load_yaml_or_fallback(
+    "SME_BILAN_THRESHOLD_EUR", fallback=43_000_000.0
+)  # Code énergie L233-1 critère (b) — bilan ≥ 43 M€
+
+BEGES_EFFECTIF_THRESHOLD_METROPOLE: int = _load_yaml_int_or_fallback(
+    "BEGES_EFFECTIF_THRESHOLD_METROPOLE", fallback=500
+)  # Loi Grenelle 2 art. 75
+BEGES_EFFECTIF_THRESHOLD_DOM: int = _load_yaml_int_or_fallback(
+    "BEGES_EFFECTIF_THRESHOLD_DOM", fallback=250
+)  # Loi Grenelle 2 art. 75 DOM
+BEGES_PERIODICITY_YEARS: int = _load_yaml_int_or_fallback(
+    "BEGES_PERIODICITY_YEARS", fallback=3
+)  # Décret 2022-982 art. 1 (effet 01/01/2023, réduit 4 → 3 ans)
+
 # ─── Pondérations RegOps ───────────────────────────────────────────────────
 REGOPS_WEIGHTS_AUDIT_APPLICABLE = {"DT": 0.39, "BACS": 0.28, "APER": 0.17, "AUDIT": 0.16}
 REGOPS_WEIGHTS_DEFAULT = {"DT": 0.45, "BACS": 0.30, "APER": 0.25}
@@ -408,6 +431,12 @@ __all__ = [
     "AUDIT_SME_THRESHOLD_GWH_PERIODIC",
     "AUDIT_SME_THRESHOLD_GWH_ISO50001",
     "AUDIT_SME_DEADLINE_DATE",
+    "SME_EFFECTIF_THRESHOLD",
+    "SME_CA_THRESHOLD_EUR",
+    "SME_BILAN_THRESHOLD_EUR",
+    "BEGES_EFFECTIF_THRESHOLD_METROPOLE",
+    "BEGES_EFFECTIF_THRESHOLD_DOM",
+    "BEGES_PERIODICITY_YEARS",
     "REGOPS_WEIGHTS_AUDIT_APPLICABLE",
     "REGOPS_WEIGHTS_DEFAULT",
     "PRICE_FALLBACK_EUR_PER_KWH",

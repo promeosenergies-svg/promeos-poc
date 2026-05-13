@@ -31,6 +31,7 @@ from services.strategique.builders.base import (
     PERSONA_DG_COMEX,
     StrategicModeBuilder,
 )
+from services.strategique.computes import compute_bench_sites
 from services.strategique.mode_thresholds import StrategicMode
 
 
@@ -49,10 +50,20 @@ class PerformanceDrivenBuilder(StrategicModeBuilder):
     ) -> dict:
         sme_deadline = self._next_deadline_for_rule(applicability, RuleCode.SME)
 
-        # v1.0 stubs typés
-        intensite_kwh_m2 = 198
-        intensite_mediane_naf = 162
+        # Phase 3.7 JJ : compute_bench_sites réel remplace les noms génériques
+        # (Site phare/médian/meilleur élève) — fix violation AP-stratX7
+        # signalée par architect-helios Phase 3.5.
+        bench_rows = compute_bench_sites(db, org_id, top_n=3)
+        if bench_rows:
+            intensite_kwh_m2 = int(bench_rows[0]["value"])
+            intensite_mediane_naf = int(bench_rows[0]["ref"])
+        else:
+            # Fallback v1.0 si aucun site exploitable
+            intensite_kwh_m2 = 198
+            intensite_mediane_naf = 162
         intensite_diff_pct = round((intensite_kwh_m2 - intensite_mediane_naf) / intensite_mediane_naf * 100)
+
+        # Stubs économiques v1.0 — wire dédiés Phase 3.8
         cout_eur_mwh = 156
         cout_p50_diff_pct = 18
         economies_k_eur = 128
@@ -79,6 +90,7 @@ class PerformanceDrivenBuilder(StrategicModeBuilder):
             "charts": self._charts(
                 intensite=intensite_kwh_m2,
                 mediane=intensite_mediane_naf,
+                bench_rows=bench_rows,
             ),
             "dossier_p1": self._dossier_p1(
                 intensite=intensite_kwh_m2,
@@ -188,24 +200,42 @@ class PerformanceDrivenBuilder(StrategicModeBuilder):
             },
         ]
 
-    def _charts(self, intensite: int, mediane: int) -> list[dict]:
+    def _charts(self, intensite: int, mediane: int, bench_rows: list[dict] | None = None) -> list[dict]:
+        # Phase 3.7 JJ : bench_rows réel via compute_bench_sites (worst+median+best
+        # avec vrais noms de sites). Fallback labels génériques si aucun site
+        # exploitable (test source-guard G3 reste vert pour ce cas dégradé).
+        if bench_rows:
+            chart_data = [
+                {
+                    "site": row["site"],
+                    "value": row["value"],
+                    "ref": row["ref"],
+                    "delta_pct": row["delta_pct"],
+                    "tier": row["tier"],
+                }
+                for row in bench_rows
+            ]
+            answer_text = (
+                f"{bench_rows[0]['site']} +{bench_rows[0]['delta_pct']} % au-dessus médiane · "
+                f"{bench_rows[-1]['site']} {bench_rows[-1]['delta_pct']:+} % meilleur élève."
+            )
+            foot_scm = "Source · compute_bench_sites v1.0 (intensity_kwh_m2_tertiaire SoT)"
+        else:
+            chart_data = [
+                {"site": "Site phare", "value": intensite, "ref": mediane, "delta_pct": 22, "tier": "warn"},
+                {"site": "Site médian", "value": 168, "ref": mediane, "delta_pct": 4, "tier": "neutral"},
+                {"site": "Site meilleur élève", "value": 133, "ref": mediane, "delta_pct": -18, "tier": "pos"},
+            ]
+            answer_text = "Aucune donnée bench disponible — labels génériques (compléter patrimoine)."
+            foot_scm = "Source · fallback labels v1.0 (aucun site avec intensity)"
         return [
             {
                 "id": "bench_sites_intensity",
                 "type": "bench_sites",
                 "question": "Quels sites tirent la performance vers le bas ?",
-                "answer": (
-                    "Site Toulouse +22 % au-dessus de la médiane. Site Nantes "
-                    "-18 % meilleur élève — réplicabilité à étudier."
-                ),
-                "data": [
-                    # Sites labellisés génériquement v1.0 — les vrais noms
-                    # viennent du builder Phase 3.6 (lecture DB compute_bench_sites).
-                    {"site": "Site phare", "value": intensite, "ref": mediane, "delta_pct": 22, "tier": "warn"},
-                    {"site": "Site médian", "value": 168, "ref": mediane, "delta_pct": 4, "tier": "neutral"},
-                    {"site": "Site meilleur élève", "value": 133, "ref": mediane, "delta_pct": -18, "tier": "pos"},
-                ],
-                "foot_scm": "Source · INSEE NAF benchmark (stub v1.0) · 12m glissants",
+                "answer": answer_text,
+                "data": chart_data,
+                "foot_scm": foot_scm,
             },
             {
                 "id": "pareto_leviers",

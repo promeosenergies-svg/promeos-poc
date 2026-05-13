@@ -66,6 +66,8 @@ class APEREvaluator(RuleEvaluator):
         audit = self._build_audit(data_source="models.Site.{parking_area_m2,roof_area_m2}")
 
         # ── DATA_MISSING si les 2 champs sont absents ───────────────────
+        # Phase 3.7 KK : bijection reason_codes — émet le code le plus
+        # spécifique selon le champ prioritairement manquant.
         if parking_area is None and roof_area is None:
             return RuleApplicability(
                 rule_code=self.code,
@@ -80,6 +82,26 @@ class APEREvaluator(RuleEvaluator):
                 ),
                 inputs_used=inputs,
                 missing_inputs=["site.parking_area_m2", "site.roof_area_m2"],
+                confidence=0.0,
+                evidence_refs=["Loi 2023-175 art. 40"],
+                _audit=audit,
+            )
+        if roof_area is None and parking_area is not None and parking_area < APER_PARKING_THRESHOLD_M2:
+            # Bijection KK : parking < seuil + toiture absente → APER.DATA_MISSING.ROOF_AREA
+            return RuleApplicability(
+                rule_code=self.code,
+                rule_version=self.version,
+                scope_level=self.scope,
+                scope_id=scope_id,
+                scope_label=scope_label,
+                status=ApplicabilityStatus.DATA_MISSING,
+                reason_code="APER.DATA_MISSING.ROOF_AREA",
+                reason_human=(
+                    f"{scope_label} : parking {parking_area:.0f} m² < seuil mais toiture non renseignée. "
+                    "Critère APER toiture non statuable."
+                ),
+                inputs_used=inputs,
+                missing_inputs=["site.roof_area_m2"],
                 confidence=0.0,
                 evidence_refs=["Loi 2023-175 art. 40"],
                 _audit=audit,

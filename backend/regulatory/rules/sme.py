@@ -24,6 +24,12 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
+from doctrine.constants import (
+    AUDIT_SME_THRESHOLD_GWH_PERIODIC,
+    SME_BILAN_THRESHOLD_EUR,
+    SME_CA_THRESHOLD_EUR,
+    SME_EFFECTIF_THRESHOLD,
+)
 from regulatory.applicability_types import (
     ApplicabilityStatus,
     RuleApplicability,
@@ -32,10 +38,9 @@ from regulatory.applicability_types import (
 from regulatory.rules.base import RuleEvaluator
 
 
-SME_EFFECTIF_THRESHOLD: int = 250
-SME_CA_THRESHOLD_EUR: float = 50_000_000.0  # 50 M€
-SME_BILAN_THRESHOLD_EUR: float = 43_000_000.0  # 43 M€
-SME_CONSO_THRESHOLD_GWH: float = 2.75  # cf. SKILL.md AUDIT
+# Phase 3.7 P1 — Seuils importes depuis doctrine.constants (SoT unique).
+# Garde l'alias local pour compatibilite tests existants.
+SME_CONSO_THRESHOLD_GWH: float = AUDIT_SME_THRESHOLD_GWH_PERIODIC  # 2.75 GWh canonical
 
 # Deadline cardinale Loi 2025-391 art. 4 : avant 11/10/2026
 SME_DEADLINE: date = date(2026, 10, 11)
@@ -150,7 +155,9 @@ class SMEEvaluator(RuleEvaluator):
                 _audit=audit,
             )
 
-        # ── Gate DATA_MISSING : effectif ET ca ET conso tous absents ───
+        # ── Gate DATA_MISSING : choisir le code le plus représentatif ───
+        # Phase 3.7 KK : bijection reason_codes — émet le code le plus précis
+        # selon le champ manquant prioritaire (effectif > CA > conso).
         if effectif is None and ca is None and conso_gwh is None:
             missing = [
                 "organisation.effectif_total",
@@ -170,6 +177,50 @@ class SMEEvaluator(RuleEvaluator):
                 missing_inputs=missing,
                 confidence=0.0,
                 evidence_refs=["Code énergie L233-1"],
+                _audit=audit,
+            )
+        if ca is None and effectif is not None and effectif < SME_EFFECTIF_THRESHOLD:
+            # Bijection KK : émet SME.DATA_MISSING.CA si effectif présent + sous seuil + CA absent
+            return RuleApplicability(
+                rule_code=self.code,
+                rule_version=self.version,
+                scope_level=self.scope,
+                scope_id=scope_id,
+                scope_label=scope_label,
+                status=ApplicabilityStatus.DATA_MISSING,
+                reason_code="SME.DATA_MISSING.CA",
+                reason_human=(
+                    f"{scope_label} : effectif {effectif} < seuil mais CA non renseigné. Critère SMÉ (b) non statuable."
+                ),
+                inputs_used=inputs,
+                missing_inputs=["organisation.chiffre_affaires_eur"],
+                confidence=0.0,
+                evidence_refs=["Code énergie L233-1"],
+                _audit=audit,
+            )
+        if (
+            conso_gwh is None
+            and effectif is not None
+            and effectif < SME_EFFECTIF_THRESHOLD
+            and ca is not None
+            and ca < SME_CA_THRESHOLD_EUR
+        ):
+            # Bijection KK : émet SME.DATA_MISSING.CONSO si autres critères statués + conso absente
+            return RuleApplicability(
+                rule_code=self.code,
+                rule_version=self.version,
+                scope_level=self.scope,
+                scope_id=scope_id,
+                scope_label=scope_label,
+                status=ApplicabilityStatus.DATA_MISSING,
+                reason_code="SME.DATA_MISSING.CONSO",
+                reason_human=(
+                    f"{scope_label} : effectif et CA sous seuils, conso non renseignée. Critère SMÉ (c) non statuable."
+                ),
+                inputs_used=inputs,
+                missing_inputs=["AuditSME.conso_annuelle_moy_gwh"],
+                confidence=0.0,
+                evidence_refs=["Code énergie L233-1", "SKILL.md AUDIT"],
                 _audit=audit,
             )
 

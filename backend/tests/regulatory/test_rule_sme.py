@@ -79,9 +79,14 @@ def test_sme_effectif_priority_over_conso():
 
 
 def test_sme_not_applicable_pme():
-    """Effectif 80 + pas de CA + pas de conso → NOT_APPLICABLE.PME."""
+    """Effectif 80 + CA 10M + conso 0.5 GWh tous renseignés → NOT_APPLICABLE.PME.
+
+    Phase 3.7 KK : avec bijection reason_codes, le statut PME requiert
+    explicitement les 3 critères présents (sinon DATA_MISSING.XXX précis).
+    """
     org = _org(effectif_total=80, chiffre_affaires_eur=10_000_000)
-    app = SMEEvaluator().evaluate(org)
+    audit = _audit_sme(conso_annuelle_moy_gwh=0.5)  # conso < seuil
+    app = SMEEvaluator().evaluate(org, audit)
     assert app.status == ApplicabilityStatus.NOT_APPLICABLE
     assert app.reason_code == "SME.NOT_APPLICABLE.PME"
 

@@ -23,6 +23,11 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
+from doctrine.constants import (
+    BEGES_EFFECTIF_THRESHOLD_DOM,
+    BEGES_EFFECTIF_THRESHOLD_METROPOLE,
+    BEGES_PERIODICITY_YEARS,
+)
 from regulatory.applicability_types import (
     ApplicabilityStatus,
     RuleApplicability,
@@ -30,15 +35,8 @@ from regulatory.applicability_types import (
 )
 from regulatory.rules.base import RuleEvaluator
 
-
-BEGES_EFFECTIF_THRESHOLD_METROPOLE: int = 500
-BEGES_EFFECTIF_THRESHOLD_DOM: int = 250
-
-# Périodicité réglementaire : 3 ans pour BEGES réglementaire post-2023
-# (Décret 2022-982 art. 1 — réduit de 4 ans à 3 ans pour entreprises privées
-# soumises à l'art. L229-25 du Code de l'environnement, effet 01/01/2023).
-# Fix audit regulatory-expert 13/05/2026 (était 4, valeur obsolète).
-BEGES_PERIODICITY_YEARS: int = 3
+# Phase 3.7 P1 — Seuils importes depuis doctrine.constants (SoT unique).
+# BEGES_PERIODICITY_YEARS = 3 (Décret 2022-982 art. 1, effet 01/01/2023).
 
 
 class BEGESEvaluator(RuleEvaluator):
