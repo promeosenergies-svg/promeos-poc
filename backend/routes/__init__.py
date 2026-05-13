@@ -74,6 +74,7 @@ from .grdf_route import router as grdf_router
 from .bridge_route import router as bridge_router
 from .doctrine import router as doctrine_router
 from .regulatory_applicability import router as regulatory_applicability_router
+from .cockpit_strategique import router as cockpit_strategique_router
 
 __all__ = [
     "sites_router",
@@ -148,4 +149,5 @@ __all__ = [
     "bridge_router",
     "doctrine_router",
     "regulatory_applicability_router",
+    "cockpit_strategique_router",
 ]

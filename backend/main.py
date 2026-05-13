@@ -363,6 +363,11 @@ from routes.regulatory_applicability import router as regulatory_applicability_r
 
 app.include_router(regulatory_applicability_router)
 
+# Phase 3.5 Vague C.5 — endpoint Synthèse Stratégique data-driven (ADR-023)
+from routes.cockpit_strategique import router as cockpit_strategique_router
+
+app.include_router(cockpit_strategique_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 
