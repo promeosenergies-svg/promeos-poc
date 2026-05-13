@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Synthèse stratégique — v7 · REGULATORY_DRIVEN (référence visuelle)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink-50:#FAF7F2; --ink-100:#F2EDE5; --ink-200:#E5DDD0; --ink-300:#CFC4B2;
+  --ink-400:#A99B86; --ink-500:#7A6E5C; --ink-700:#3D362C; --ink-900:#1A1612;
+  --warm-cream:#F8F4EC; --warm-paper:#FAF7F2;
+  --calme:#5A8B6E; --succes:#3F7C5A; --attention:#C68A3D; --afaire:#B8612E; --refuse:#9C3F3F;
+  --night-bg:#1A1612; --night-ink:#FAF7F2;
+  --shadow-card:0 1px 2px rgba(26,22,18,.04),0 4px 12px rgba(26,22,18,.06);
+  --r-sm:6px; --r-md:10px; --r-lg:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--warm-cream);color:var(--ink-900);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.55}
+.page{max-width:1280px;margin:0 auto;padding:24px 28px 80px}
+.kicker{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-500);margin-bottom:8px}
+h1,h2,h3{font-family:'Fraunces',serif;font-weight:500;color:var(--ink-900);letter-spacing:-0.01em;margin:0}
+
+/* Bandeau mode */
+.mode-banner{display:flex;align-items:center;gap:12px;padding:12px 18px;background:linear-gradient(90deg,#3D362C,#1A1612);color:var(--ink-50);border-radius:var(--r-md);margin-bottom:16px}
+.mode-pill{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;padding:4px 10px;background:rgba(255,255,255,.12);border-radius:4px}
+.mode-banner-text{flex:1;font-size:13.5px}
+.mode-banner-link{color:#E5DDD0;text-decoration:underline;text-underline-offset:3px;font-size:12.5px;cursor:pointer}
+
+/* Hero premium night */
+.hero{background:linear-gradient(135deg,#1A1612 0%,#2A1F18 60%,#3D362C 100%);color:var(--night-ink);padding:38px 42px 32px;border-radius:var(--r-lg);position:relative;overflow:hidden;margin-bottom:24px}
+.hero .kicker{color:#CFC4B2}
+.hero h1{font-size:38px;line-height:1.15;color:var(--night-ink);margin-top:6px;max-width:960px}
+.hero h1 em{font-style:italic;color:#F0B870}
+.hero .sub{font-size:15.5px;line-height:1.6;color:#E5DDD0;margin-top:14px;max-width:880px}
+.hero .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.hero .meta-pill{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 9px;background:rgba(255,255,255,.10);border-radius:4px;color:#E5DDD0}
+.hero .ctas{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+.btn{font-family:'DM Sans',sans-serif;font-weight:500;font-size:13.5px;padding:9px 16px;border-radius:8px;border:0;cursor:pointer;transition:.18s}
+.btn-primary{background:#F0B870;color:#1A1612}
+.btn-primary:hover{background:#F5C68A}
+.btn-ghost{background:transparent;color:var(--night-ink);border:1px solid rgba(255,255,255,.20)}
+.btn-ghost:hover{background:rgba(255,255,255,.08)}
+.score-orb{position:absolute;right:42px;top:42px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#F0B870,#B8612E);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1A1612;font-family:'Fraunces',serif}
+.score-orb .v{font-size:38px;font-weight:600;line-height:1}
+.score-orb .l{font-family:'DM Sans',sans-serif;font-size:10.5px;letter-spacing:.10em;text-transform:uppercase;margin-top:2px}
+
+/* Cadre applicable */
+.cadre{background:#fff;border:1px solid var(--ink-200);border-radius:var(--r-md);padding:18px 22px;margin-bottom:20px}
+.cadre-title{font-family:'Fraunces',serif;font-size:18px;color:var(--ink-900);margin-bottom:14px}
+.cadre-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.rule{padding:12px;border-radius:8px;border:1px solid var(--ink-200);background:var(--warm-paper)}
+.rule.applicable{border-color:#3F7C5A;background:#EAF2EB}
+.rule.not_applicable{opacity:.55}
+.rule.data_missing{border-color:#C68A3D;background:#FBF1E0}
+.rule-code{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.10em;color:var(--ink-500)}
+.rule-label{font-family:'Fraunces',serif;font-size:15px;color:var(--ink-900);margin:4px 0 6px}
+.rule-status{font-size:11.5px;color:var(--ink-700)}
+.rule.applicable .rule-status{color:#3F7C5A;font-weight:600}
+
+/* KPI triptych */
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+.kpi{background:#fff;border:1px solid var(--ink-200);border-radius:var(--r-md);padding:18px 20px;box-shadow:var(--shadow-card)}
+.kpi-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500)}
+.kpi-value{font-family:'Fraunces',serif;font-size:34px;font-weight:500;color:var(--ink-900);margin:6px 0 4px}
+.kpi-value sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-500);font-weight:400}
+.kpi-delta{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:500}
+.kpi-delta.warn{background:#FBF1E0;color:#7B5320}
+.kpi-delta.refuse{background:#F4E0E0;color:#7A2C2C}
+.kpi-delta.pos{background:#E5F0E8;color:#2F5C44}
+.kpi-context{font-size:13px;color:var(--ink-700);margin-top:10px;line-height:1.55}
+.kpi-trace{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-400);margin-top:10px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.kpi-link{font-size:12.5px;color:#3D362C;font-weight:500;margin-top:8px;display:inline-block;cursor:pointer}
+
+/* Charts pair */
+.chart-row{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:22px}
+.chart{background:#fff;border:1px solid var(--ink-200);border-radius:var(--r-md);padding:18px 20px}
+.chart-question{font-family:'Fraunces',serif;font-size:16px;color:var(--ink-900);margin-bottom:4px}
+.chart-answer{font-size:13px;color:var(--ink-700);margin-bottom:14px}
+.trajectory{height:240px;background:linear-gradient(to top,#FAF7F2 60%,transparent),repeating-linear-gradient(0deg,transparent 0,transparent 39px,#E5DDD0 40px);border-radius:6px;position:relative;padding:14px}
+.traj-line{position:absolute;left:14px;right:14px;top:30%;border-top:2px solid #B8612E;border-radius:1px}
+.traj-line::after{content:"Trajectoire actuelle (-32 %)";position:absolute;right:0;top:-22px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#B8612E}
+.traj-target{position:absolute;left:14px;right:14px;top:55%;border-top:2px dashed #3F7C5A}
+.traj-target::after{content:"Cible -40 % / 2030";position:absolute;right:0;top:-22px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#3F7C5A}
+.mix-bars{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.mix-bar{display:flex;align-items:center;gap:10px;font-size:12.5px}
+.mix-label{flex:0 0 130px;color:var(--ink-700)}
+.mix-fill{flex:1;height:18px;background:var(--ink-100);border-radius:9px;overflow:hidden;position:relative}
+.mix-fill > span{display:block;height:100%;background:linear-gradient(90deg,#7A6E5C,#3D362C);border-radius:9px}
+.mix-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-700);flex:0 0 80px;text-align:right}
+
+/* Dossier P1 */
+.dossier{background:#fff;border:1px solid var(--ink-200);border-radius:var(--r-lg);padding:24px 28px;margin-bottom:22px;box-shadow:var(--shadow-card)}
+.dossier-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}
+.dossier-tier{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;padding:4px 10px;background:#9C3F3F;color:#fff;border-radius:4px}
+.dossier-cat{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.16em;color:var(--ink-500)}
+.dossier h2{font-size:24px;line-height:1.25;color:var(--ink-900);margin:6px 0 8px}
+.dossier-reco{font-size:15px;color:var(--ink-700);line-height:1.55;margin-bottom:16px}
+.proof-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.proof-pill{font-size:11.5px;padding:5px 10px;border-radius:14px;border:1px solid var(--ink-200);background:var(--warm-paper)}
+.proof-pill.warn{background:#FBF1E0;color:#7B5320;border-color:#E8C896}
+.proof-pill.refuse{background:#F4E0E0;color:#7A2C2C;border-color:#D9A4A4}
+.proof-pill.ok{background:#E5F0E8;color:#2F5C44;border-color:#A4D9B5}
+
+.scenarios{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+.scen{padding:14px;border-radius:8px;border:1px solid var(--ink-200);background:var(--warm-paper)}
+.scen.recommended{border-color:#3F7C5A;background:#EAF2EB}
+.scen-label{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:var(--ink-500)}
+.scen-title{font-family:'Fraunces',serif;font-size:14.5px;color:var(--ink-900);margin:4px 0 8px}
+.scen-figs{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink-700);line-height:1.6}
+
+.timeline{display:flex;gap:0;margin:18px 0;align-items:center}
+.tl-step{flex:1;text-align:center;position:relative}
+.tl-step::after{content:"";position:absolute;top:9px;left:50%;right:-50%;height:2px;background:var(--ink-200)}
+.tl-step:last-child::after{display:none}
+.tl-step.current::after{background:#B8612E}
+.tl-dot{width:20px;height:20px;border-radius:50%;background:var(--ink-200);margin:0 auto;position:relative;z-index:1}
+.tl-step.current .tl-dot{background:#B8612E;box-shadow:0 0 0 4px #FBF1E0}
+.tl-step.future .tl-dot{background:#fff;border:2px solid var(--ink-300)}
+.tl-name{font-size:11.5px;font-weight:500;color:var(--ink-700);margin-top:6px}
+.tl-date{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-500);margin-top:2px}
+
+/* Verdict */
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.verdict-card{padding:20px 22px;border-radius:var(--r-md);background:#fff;border:1px solid var(--ink-200)}
+.verdict-card.constraint{border-left:4px solid #B8612E}
+.verdict-card.opportunity{border-left:4px solid #3F7C5A}
+.verdict-label{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500)}
+.verdict-statement{font-family:'Fraunces',serif;font-size:18px;color:var(--ink-900);margin:6px 0 8px;line-height:1.35}
+.verdict-detail{font-size:13.5px;color:var(--ink-700);line-height:1.55}
+
+/* File P2/P3 */
+.queue h3{font-family:'Fraunces',serif;font-size:18px;margin-bottom:10px}
+.queue-row{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border:1px solid var(--ink-200);border-radius:8px;margin-bottom:8px}
+.queue-tier{font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 8px;background:var(--ink-100);border-radius:4px;color:var(--ink-700)}
+
+/* Footer */
+.footer{margin-top:30px;padding-top:18px;border-top:1px solid var(--ink-200);font-size:11.5px;color:var(--ink-500);font-family:'JetBrains Mono',monospace;line-height:1.7}
+.footer .tags{margin-top:6px}
+.footer .tag{display:inline-block;padding:2px 8px;border:1px solid var(--ink-200);border-radius:3px;margin-right:6px;color:var(--ink-700)}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Bandeau mode stratégique -->
+  <div class="mode-banner">
+    <span class="mode-pill">RÉGIME · RÉGLEMENTAIRE</span>
+    <span class="mode-banner-text">Votre patrimoine est <strong>assujetti au décret tertiaire</strong>. Trajectoire 2030 prime sur tout autre arbitrage.</span>
+    <span class="mode-banner-link">Pourquoi ? →</span>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="kicker">RECOMMANDATION PROMEOS · Synthèse stratégique · mai 2026</div>
+    <h1>Trajectoire DT 2030 dérive de 8 points.<br/><em>Décision charpentière à arbitrer avant fin Q3 2026.</em></h1>
+    <p class="sub">Sur les 5 sites assujettis, la trajectoire actuelle atteindrait −32 % en 2030 vs cible décret −40 %. Sans plan d'action ce trimestre, le rattrapage 2027-2030 devient hors d'atteinte sans CAPEX lourd. Audit SMÉ obligatoire avant le 11/10/2026 — fenêtre pour coupler audit + plan pilotage.</p>
+    <div class="meta">
+      <span class="meta-pill">qualité données 92 %</span>
+      <span class="meta-pill">confiance haute</span>
+      <span class="meta-pill">Mai 2026</span>
+      <span class="meta-pill">5 sites · 18 200 m² SDP</span>
+      <span class="meta-pill">DT-2019-771-v2024-10-01</span>
+    </div>
+    <div class="ctas">
+      <button class="btn btn-primary">Arbitrer la trajectoire DT</button>
+      <button class="btn btn-ghost">Brief COMEX (PDF)</button>
+      <button class="btn btn-ghost">Simuler un scénario</button>
+    </div>
+    <div class="score-orb">
+      <span class="v">62</span><span class="l">décision</span>
+    </div>
+  </section>
+
+  <!-- Cadre applicable -->
+  <section class="cadre">
+    <div class="cadre-title">Mon cadre applicable au 13/05/2026</div>
+    <div class="cadre-grid">
+      <div class="rule applicable">
+        <div class="rule-code">DT</div>
+        <div class="rule-label">Décret tertiaire</div>
+        <div class="rule-status">Applicable · 5 sites</div>
+      </div>
+      <div class="rule applicable">
+        <div class="rule-code">SMÉ</div>
+        <div class="rule-label">Audit énergétique</div>
+        <div class="rule-status">Applicable · J-151</div>
+      </div>
+      <div class="rule data_missing">
+        <div class="rule-code">BACS</div>
+        <div class="rule-label">Régulation chauffage</div>
+        <div class="rule-status">Données manquantes (3 sites)</div>
+      </div>
+      <div class="rule not_applicable">
+        <div class="rule-code">APER</div>
+        <div class="rule-label">Énergies renouvelables parking</div>
+        <div class="rule-status">Non applicable</div>
+      </div>
+      <div class="rule not_applicable">
+        <div class="rule-code">BEGES</div>
+        <div class="rule-label">Bilan GES</div>
+        <div class="rule-status">Non applicable (effectif 180)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPIs -->
+  <section class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-eyebrow">Trajectoire DT 2030</div>
+      <div class="kpi-value">−32 <sub>% vs 2010</sub></div>
+      <span class="kpi-delta refuse">Cible −40 %</span>
+      <div class="kpi-context">Dérive de 8 points · 5 sites assujettis · l'année 2025 a réintroduit 1,2 GWh non absorbés.</div>
+      <div class="kpi-trace">source · OPERAT déclaration 2025 · formula ∑Σ_sites · scope 5 sites assujettis · freshness J-12</div>
+      <div class="kpi-link">Voir la trajectoire détaillée →</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-eyebrow">Coût €/MWh portefeuille</div>
+      <div class="kpi-value">142 <sub>€/MWh</sub></div>
+      <span class="kpi-delta warn">+12 % vs P50 sectoriel</span>
+      <div class="kpi-context">Contrats renouvelés en pic 2024 · fenêtre Q3 2027 pour rebascule.</div>
+      <div class="kpi-trace">source · facturation 12m glissants · formula coût_total/MWh · scope élec+gaz · freshness J-3</div>
+      <div class="kpi-link">Voir l'achat →</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-eyebrow">Reclaim potentiel</div>
+      <div class="kpi-value">38 <sub>k€</sub></div>
+      <span class="kpi-delta pos">12 anomalies actées</span>
+      <div class="kpi-context">CTA + accises mal calculées · prescription quadriennale active jusqu'au 31/12.</div>
+      <div class="kpi-trace">source · shadow billing 2022-2025 · formula Σ écarts · scope élec+gaz · freshness J-1</div>
+      <div class="kpi-link">Voir les anomalies →</div>
+    </div>
+  </section>
+
+  <!-- Charts -->
+  <section class="chart-row">
+    <div class="chart">
+      <div class="chart-question">Où en est la trajectoire DT vers 2030 ?</div>
+      <div class="chart-answer">Dérive de 8 points par rapport à la cible décret. Sans rattrapage avant fin Q3 2026, l'objectif glisse hors fenêtre raisonnable.</div>
+      <div class="trajectory">
+        <div class="traj-line"></div>
+        <div class="traj-target"></div>
+      </div>
+    </div>
+    <div class="chart">
+      <div class="chart-question">D'où vient la consommation à réduire ?</div>
+      <div class="chart-answer">Chauffage 47 %, ECS 18 %, IT 14 %. Levier majeur : retrofit BACS + pilotage chauffage.</div>
+      <div class="mix-bars">
+        <div class="mix-bar"><span class="mix-label">Chauffage</span><div class="mix-fill"><span style="width:47%"></span></div><span class="mix-val">47 % · 1,8 GWh</span></div>
+        <div class="mix-bar"><span class="mix-label">ECS</span><div class="mix-fill"><span style="width:18%"></span></div><span class="mix-val">18 % · 0,7 GWh</span></div>
+        <div class="mix-bar"><span class="mix-label">IT</span><div class="mix-fill"><span style="width:14%"></span></div><span class="mix-val">14 % · 0,5 GWh</span></div>
+        <div class="mix-bar"><span class="mix-label">Éclairage</span><div class="mix-fill"><span style="width:11%"></span></div><span class="mix-val">11 % · 0,4 GWh</span></div>
+        <div class="mix-bar"><span class="mix-label">Autres</span><div class="mix-fill"><span style="width:10%"></span></div><span class="mix-val">10 % · 0,4 GWh</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dossier P1 -->
+  <section class="dossier">
+    <div class="dossier-head">
+      <div>
+        <span class="dossier-cat">RÉGLEMENTAIRE · DT-2019-771</span>
+        <h2>Comment caler trajectoire DT et audit SMÉ pour ne pas refaire les diagnostics deux fois ?</h2>
+        <p class="dossier-reco">Coupler audit SMÉ (déjà obligatoire avant le 11/10/2026) avec un plan d'action pilotage chauffage + retrofit BACS sur 3 sites prioritaires. Économie attendue : 1,1 GWh/an, payback 2,3 ans, alignement DT 2030 retrouvé.</p>
+        <div class="proof-pills">
+          <span class="proof-pill refuse">Gravité · Trajectoire dérive 8 pts</span>
+          <span class="proof-pill warn">Impact · 1,1 GWh/an · 156 k€/an</span>
+          <span class="proof-pill warn">Délai · J-151 (audit SMÉ)</span>
+          <span class="proof-pill ok">Confiance · Haute (mesures J-3)</span>
+          <span class="proof-pill ok">Réversibilité · Élevée</span>
+        </div>
+      </div>
+      <span class="dossier-tier">P1</span>
+    </div>
+
+    <div class="scenarios">
+      <div class="scen">
+        <div class="scen-label">A · REPORTER</div>
+        <div class="scen-title">Audit SMÉ minimal seul</div>
+        <div class="scen-figs">CAPEX 12 k€ · gain 0 GWh<br/>trajectoire DT inchangée<br/>verdict : conforme audit, KO décret</div>
+      </div>
+      <div class="scen recommended">
+        <div class="scen-label">B · RECOMMANDÉ</div>
+        <div class="scen-title">Audit SMÉ + plan pilotage chauffage + retrofit BACS</div>
+        <div class="scen-figs">CAPEX 290 k€ · gain 1,1 GWh/an<br/>trajectoire DT alignée 2028<br/>payback 2,3 ans · CEE éligibles 48 k€</div>
+      </div>
+      <div class="scen">
+        <div class="scen-label">C · ALTERNATIVE</div>
+        <div class="scen-title">Rénovation lourde différée 2027</div>
+        <div class="scen-figs">CAPEX 1,2 M€ · gain 2,4 GWh/an<br/>trajectoire DT alignée 2030<br/>payback 5,1 ans · risque planning</div>
+      </div>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-step current"><div class="tl-dot"></div><div class="tl-name">Décision</div><div class="tl-date">Q3 2026</div></div>
+      <div class="tl-step future"><div class="tl-dot"></div><div class="tl-name">Cahier des charges</div><div class="tl-date">Q4 2026</div></div>
+      <div class="tl-step future"><div class="tl-dot"></div><div class="tl-name">Audit SMÉ</div><div class="tl-date">Avant 11/10/2026</div></div>
+      <div class="tl-step future"><div class="tl-dot"></div><div class="tl-name">Travaux</div><div class="tl-date">Q1-Q2 2027</div></div>
+      <div class="tl-step future"><div class="tl-dot"></div><div class="tl-name">Mesure ROI</div><div class="tl-date">Q4 2027</div></div>
+    </div>
+  </section>
+
+  <!-- Verdict -->
+  <section class="verdict">
+    <div class="verdict-card constraint">
+      <div class="verdict-label">VOTRE CONTRAINTE PRINCIPALE</div>
+      <div class="verdict-statement">est <strong>réglementaire</strong>, pas financière.</div>
+      <div class="verdict-detail">Le décret tertiaire fixe une trajectoire intangible. Tout arbitrage qui ne contribue pas au −40 %/2030 est une perte de temps et d'argent.</div>
+    </div>
+    <div class="verdict-card opportunity">
+      <div class="verdict-label">VOTRE OPPORTUNITÉ PRINCIPALE</div>
+      <div class="verdict-statement">est de <strong>coupler audit SMÉ et retrofit BACS</strong> en une seule mission Q3-Q4 2026.</div>
+      <div class="verdict-detail">L'audit étant obligatoire de toute façon, son couplage avec un plan d'action évite 80 k€ d'études redondantes et active 48 k€ de CEE.</div>
+    </div>
+  </section>
+
+  <!-- File P2/P3 -->
+  <section class="queue">
+    <h3>Arbitrages secondaires (P2-P3)</h3>
+    <div class="queue-row">
+      <div>
+        <span class="queue-tier">P2</span>
+        <strong style="margin-left:10px">Renégocier le contrat élec Lyon</strong> · échéance Q3 2027, fenêtre Q3 2026
+      </div>
+      <span style="color:var(--ink-500);font-size:12.5px">économie 22 k€/an</span>
+    </div>
+    <div class="queue-row">
+      <div>
+        <span class="queue-tier">P2</span>
+        <strong style="margin-left:10px">Compléter données BACS</strong> · 3 sites — bloque la trajectoire détaillée
+      </div>
+      <span style="color:var(--ink-500);font-size:12.5px">action 4 sem.</span>
+    </div>
+    <div class="queue-row">
+      <div>
+        <span class="queue-tier">P3</span>
+        <strong style="margin-left:10px">Reclaim CTA gaz 2022-2024</strong> · prescription 31/12/2026
+      </div>
+      <span style="color:var(--ink-500);font-size:12.5px">38 k€</span>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <div class="footer">
+    sources · OPERAT 2025 · facturation J-3 · shadow billing J-1 · catalogue règles v1.0
+    <div class="tags">
+      <span class="tag">Assujettissement v1.0</span>
+      <span class="tag">Doctrine priorisation v1.0</span>
+      <span class="tag">DT-2019-771-v2024-10-01</span>
+      <span class="tag">Sol v1.1</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

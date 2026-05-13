@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Synthèse stratégique — v8 · PERFORMANCE_DRIVEN (référence visuelle)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink-50:#FAF7F2; --ink-100:#F2EDE5; --ink-200:#E5DDD0; --ink-300:#CFC4B2;
+  --ink-400:#A99B86; --ink-500:#7A6E5C; --ink-700:#3D362C; --ink-900:#1A1612;
+  --warm-cream:#F8F4EC; --warm-paper:#FAF7F2;
+  --calme:#5A8B6E; --succes:#3F7C5A; --attention:#C68A3D; --afaire:#B8612E; --refuse:#9C3F3F;
+  --shadow-card:0 1px 2px rgba(26,22,18,.04),0 4px 12px rgba(26,22,18,.06);
+  --r-sm:6px; --r-md:10px; --r-lg:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--warm-cream);color:var(--ink-900);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.55}
+.page{max-width:1280px;margin:0 auto;padding:24px 28px 80px}
+h1,h2,h3{font-family:'Fraunces',serif;font-weight:500;color:var(--ink-900);letter-spacing:-0.01em;margin:0}
+.kicker{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-500);margin-bottom:8px}
+
+/* Bandeau mode */
+.mode-banner{display:flex;align-items:center;gap:12px;padding:12px 18px;background:linear-gradient(90deg,#3D362C,#1A1612);color:var(--ink-50);border-radius:var(--r-md);margin-bottom:16px}
+.mode-pill{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;padding:4px 10px;background:rgba(255,255,255,.12);border-radius:4px}
+.mode-banner-text{flex:1;font-size:13.5px}
+.mode-banner-link{color:#E5DDD0;text-decoration:underline;text-underline-offset:3px;font-size:12.5px;cursor:pointer}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,#1A1612 0%,#2A1F18 60%,#3D362C 100%);color:#FAF7F2;padding:38px 42px 32px;border-radius:var(--r-lg);position:relative;overflow:hidden;margin-bottom:24px}
+.hero .kicker{color:#CFC4B2}
+.hero h1{font-size:38px;line-height:1.15;margin-top:6px;color:#FAF7F2;max-width:960px}
+.hero h1 em{font-style:italic;color:#F0B870}
+.hero .sub{font-size:15.5px;line-height:1.6;color:#E5DDD0;margin-top:14px;max-width:880px}
+.hero .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.hero .meta-pill{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 9px;background:rgba(255,255,255,.10);border-radius:4px;color:#E5DDD0}
+.hero .ctas{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+.btn{font-family:'DM Sans',sans-serif;font-weight:500;font-size:13.5px;padding:9px 16px;border-radius:8px;border:0;cursor:pointer;transition:.18s}
+.btn-primary{background:#F0B870;color:#1A1612}
+.btn-ghost{background:transparent;color:#FAF7F2;border:1px solid rgba(255,255,255,.20)}
+.score-orb{position:absolute;right:42px;top:42px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#F0B870,#B8612E);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1A1612;font-family:'Fraunces',serif}
+.score-orb .v{font-size:38px;font-weight:600;line-height:1}
+.score-orb .l{font-family:'DM Sans',sans-serif;font-size:10.5px;letter-spacing:.10em;text-transform:uppercase;margin-top:2px}
+
+/* Cadre */
+.cadre{background:#fff;border:1px solid var(--ink-200);border-radius:var(--r-md);padding:18px 22px;margin-bottom:20px}
+.cadre-title{font-family:'Fraunces',serif;font-size:18px;color:var(--ink-900);margin-bottom:14px}
+.cadre-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.rule{padding:12px;border-radius:8px;border:1px solid var(--ink-200);background:var(--warm-paper)}
+.rule.applicable{border-color:#3F7C5A;background:#EAF2EB}
+.rule.not_applicable{opacity:.55}
+.rule.data_missing{border-color:#C68A3D;background:#FBF1E0}
+.rule-code{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.10em;color:var(--ink-500)}
+.rule-label{font-family:'Fraunces',serif;font-size:15px;color:var(--ink-900);margin:4px 0 6px}
+.rule-status{font-size:11.5px;color:var(--ink-700)}
+.rule.applicable .rule-status{color:#3F7C5A;font-weight:600}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+.kpi{background:#fff;border:1px solid var(--ink-200);border-radius:var(--r-md);padding:18px 20px;box-shadow:var(--shadow-card)}
+.kpi-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500)}
+.kpi-value{font-family:'Fraunces',serif;font-size:34px;font-weight:500;color:var(--ink-900);margin:6px 0 4px}
+.kpi-value sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-500);font-weight:400}
+.kpi-delta{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:500}
+.kpi-delta.warn{background:#FBF1E0;color:#7B5320}
+.kpi-delta.refuse{background:#F4E0E0;color:#7A2C2C}
+.kpi-delta.pos{background:#E5F0E8;color:#2F5C44}
+.kpi-context{font-size:13px;color:var(--ink-700);margin-top:10px;line-height:1.55}
+.kpi-trace{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-400);margin-top:10px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.kpi-link{font-size:12.5px;color:#3D362C;font-weight:500;margin-top:8px;display:inline-block;cursor:pointer}
+
+/* Charts pair */
+.chart-row{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:22px}
+.chart{background:#fff;border:1px solid var(--ink-200);border-radius:var(--r-md);padding:18px 20px}
+.chart-question{font-family:'Fraunces',serif;font-size:16px;color:var(--ink-900);margin-bottom:4px}
+.chart-answer{font-size:13px;color:var(--ink-700);margin-bottom:14px}
+
+/* Bench sites bars */
+.bench-list{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+.bench-row{display:grid;grid-template-columns:130px 1fr 90px;gap:12px;align-items:center}
+.bench-name{font-family:'Fraunces',serif;font-size:14px;color:var(--ink-900)}
+.bench-bar{height:22px;background:var(--ink-100);border-radius:11px;position:relative;overflow:visible}
+.bench-bar .median{position:absolute;left:60%;top:-4px;bottom:-4px;width:2px;background:var(--ink-500)}
+.bench-bar .median::after{content:"médiane NAF";position:absolute;left:6px;top:-18px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-500);white-space:nowrap}
+.bench-bar > span{display:block;height:100%;border-radius:11px;position:relative}
+.bench-bar.warn > span{background:#B8612E}
+.bench-bar.neutral > span{background:#7A6E5C}
+.bench-bar.pos > span{background:#3F7C5A}
+.bench-val{font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;color:var(--ink-700)}
+.bench-val .delta{display:block;font-size:10.5px;color:var(--ink-500)}
+
+/* Pareto leviers */
+.lever-list{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.lever{display:grid;grid-template-columns:1fr 70px 90px;gap:10px;align-items:center;font-size:13px;padding:8px 0;border-bottom:1px dashed var(--ink-200)}
+.lever:last-child{border-bottom:0}
+.lever-name{color:var(--ink-700)}
+.lever-impact{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#3F7C5A;text-align:right}
+.lever-pay{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink-500);text-align:right}
+
+/* Dossier P1 */
+.dossier{background:#fff;border:1px solid var(--ink-200);border-radius:var(--r-lg);padding:24px 28px;margin-bottom:22px;box-shadow:var(--shadow-card)}
+.dossier-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}
+.dossier-tier{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;padding:4px 10px;background:#B8612E;color:#fff;border-radius:4px}
+.dossier-cat{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.16em;color:var(--ink-500)}
+.dossier h2{font-size:24px;line-height:1.25;color:var(--ink-900);margin:6px 0 8px}
+.dossier-reco{font-size:15px;color:var(--ink-700);line-height:1.55;margin-bottom:16px}
+.proof-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.proof-pill{font-size:11.5px;padding:5px 10px;border-radius:14px;border:1px solid var(--ink-200);background:var(--warm-paper)}
+.proof-pill.warn{background:#FBF1E0;color:#7B5320;border-color:#E8C896}
+.proof-pill.refuse{background:#F4E0E0;color:#7A2C2C;border-color:#D9A4A4}
+.proof-pill.ok{background:#E5F0E8;color:#2F5C44;border-color:#A4D9B5}
+.proof-pill.neutral{background:var(--ink-100);color:var(--ink-700)}
+
+.scenarios{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+.scen{padding:14px;border-radius:8px;border:1px solid var(--ink-200);background:var(--warm-paper)}
+.scen.recommended{border-color:#3F7C5A;background:#EAF2EB}
+.scen-label{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:var(--ink-500)}
+.scen-title{font-family:'Fraunces',serif;font-size:14.5px;color:var(--ink-900);margin:4px 0 8px}
+.scen-figs{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink-700);line-height:1.6}
+
+/* Verdict */
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.verdict-card{padding:20px 22px;border-radius:var(--r-md);background:#fff;border:1px solid var(--ink-200)}
+.verdict-card.constraint{border-left:4px solid #B8612E}
+.verdict-card.opportunity{border-left:4px solid #3F7C5A}
+.verdict-label{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500)}
+.verdict-statement{font-family:'Fraunces',serif;font-size:18px;color:var(--ink-900);margin:6px 0 8px;line-height:1.35}
+.verdict-detail{font-size:13.5px;color:var(--ink-700);line-height:1.55}
+
+/* Queue */
+.queue h3{font-family:'Fraunces',serif;font-size:18px;margin-bottom:10px}
+.queue-row{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border:1px solid var(--ink-200);border-radius:8px;margin-bottom:8px}
+.queue-tier{font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 8px;background:var(--ink-100);border-radius:4px;color:var(--ink-700)}
+
+/* Footer */
+.footer{margin-top:30px;padding-top:18px;border-top:1px solid var(--ink-200);font-size:11.5px;color:var(--ink-500);font-family:'JetBrains Mono',monospace;line-height:1.7}
+.footer .tags{margin-top:6px}
+.footer .tag{display:inline-block;padding:2px 8px;border:1px solid var(--ink-200);border-radius:3px;margin-right:6px;color:var(--ink-700)}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="mode-banner">
+    <span class="mode-pill">RÉGIME · PERFORMANCE</span>
+    <span class="mode-banner-text">Aucune trajectoire DT à tenir. Votre contrainte principale est <strong>économique</strong> : intensité énergétique au-dessus du benchmark NAF.</span>
+    <span class="mode-banner-link">Pourquoi ? →</span>
+  </div>
+
+  <section class="hero">
+    <div class="kicker">RECOMMANDATION PROMEOS · Synthèse stratégique · mai 2026</div>
+    <h1>Performance énergétique sous la médiane sectorielle.<br/><em>3 leviers d'économie à activer cette année.</em></h1>
+    <p class="sub">Site Toulouse 22 % au-dessus du benchmark NAF C28.99 — perte annualisée 49 k€. Contrat élec 156 €/MWh, 18 % au-dessus de la médiane secteur, fenêtre de renégociation Q3 2026. Audit SMÉ obligatoire 11/10/2026 — convertir cette obligation en plan d'action chiffré.</p>
+    <div class="meta">
+      <span class="meta-pill">qualité données 88 %</span>
+      <span class="meta-pill">confiance haute</span>
+      <span class="meta-pill">Mai 2026</span>
+      <span class="meta-pill">3 sites · 8 400 m² SDP</span>
+      <span class="meta-pill">benchmark INSEE NAF</span>
+    </div>
+    <div class="ctas">
+      <button class="btn btn-primary">Arbitrer les leviers</button>
+      <button class="btn btn-ghost">Brief COMEX (PDF)</button>
+      <button class="btn btn-ghost">Comparer 3 scénarios</button>
+    </div>
+    <div class="score-orb"><span class="v">76</span><span class="l">décision</span></div>
+  </section>
+
+  <section class="cadre">
+    <div class="cadre-title">Mon cadre applicable au 13/05/2026</div>
+    <div class="cadre-grid">
+      <div class="rule not_applicable">
+        <div class="rule-code">DT</div>
+        <div class="rule-label">Décret tertiaire</div>
+        <div class="rule-status">Non applicable (SDP &lt; seuil)</div>
+      </div>
+      <div class="rule applicable">
+        <div class="rule-code">SMÉ</div>
+        <div class="rule-label">Audit énergétique</div>
+        <div class="rule-status">Applicable · J-151</div>
+      </div>
+      <div class="rule not_applicable">
+        <div class="rule-code">BACS</div>
+        <div class="rule-label">Régulation chauffage</div>
+        <div class="rule-status">Non applicable</div>
+      </div>
+      <div class="rule data_missing">
+        <div class="rule-code">APER</div>
+        <div class="rule-label">EnR parking</div>
+        <div class="rule-status">Données manquantes (1 site)</div>
+      </div>
+      <div class="rule not_applicable">
+        <div class="rule-code">BEGES</div>
+        <div class="rule-label">Bilan GES</div>
+        <div class="rule-status">Non applicable</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-eyebrow">Intensité énergétique</div>
+      <div class="kpi-value">198 <sub>kWh<sub>EF</sub>/m²</sub></div>
+      <span class="kpi-delta warn">+22 % vs médiane NAF C28.99</span>
+      <div class="kpi-context">Site Toulouse tire l'intensité groupe à la hausse · Nantes -18 % meilleur élève.</div>
+      <div class="kpi-trace">source · CDC 30min Enedis · formula MWh/SDP_m² · scope 3 sites · freshness J-1</div>
+      <div class="kpi-link">Voir la conso →</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-eyebrow">Coût élec</div>
+      <div class="kpi-value">156 <sub>€/MWh</sub></div>
+      <span class="kpi-delta warn">+18 % vs P50 secteur</span>
+      <div class="kpi-context">Contrat fixe 2024-2027 conclu en pic · fenêtre arbitrage Q3 2026.</div>
+      <div class="kpi-trace">source · facturation 12m glissants · formula coût_total/MWh · scope élec · freshness J-3</div>
+      <div class="kpi-link">Voir l'achat →</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-eyebrow">Économies activables</div>
+      <div class="kpi-value">128 <sub>k€/an</sub></div>
+      <span class="kpi-delta pos">3 leviers chiffrés</span>
+      <div class="kpi-context">Audit + pilotage + renégociation = payback moyen 1,7 an.</div>
+      <div class="kpi-trace">source · simulateur leviers · formula Σ ROI scénarios · scope 3 sites · freshness J-2</div>
+      <div class="kpi-link">Voir les leviers →</div>
+    </div>
+  </section>
+
+  <section class="chart-row">
+    <div class="chart">
+      <div class="chart-question">Quels sites tirent la performance vers le bas ?</div>
+      <div class="chart-answer">Toulouse +22 % au-dessus de la médiane. Nantes -18 % meilleur élève — réplicabilité à étudier.</div>
+      <div class="bench-list">
+        <div class="bench-row">
+          <div class="bench-name">Toulouse</div>
+          <div class="bench-bar warn"><div class="median"></div><span style="width:84%"></span></div>
+          <div class="bench-val">198 kWh/m²<span class="delta">+22 %</span></div>
+        </div>
+        <div class="bench-row">
+          <div class="bench-name">Bordeaux</div>
+          <div class="bench-bar neutral"><div class="median"></div><span style="width:64%"></span></div>
+          <div class="bench-val">168 kWh/m²<span class="delta">+4 %</span></div>
+        </div>
+        <div class="bench-row">
+          <div class="bench-name">Nantes</div>
+          <div class="bench-bar pos"><div class="median"></div><span style="width:48%"></span></div>
+          <div class="bench-val">133 kWh/m²<span class="delta">-18 %</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="chart">
+      <div class="chart-question">Quels leviers offrent le meilleur ROI ?</div>
+      <div class="chart-answer">Audit SMÉ (obligatoire) + pilotage CTA = 80 % du gain potentiel pour 25 % du CAPEX.</div>
+      <div class="lever-list">
+        <div class="lever"><span class="lever-name">Pilotage CTA Toulouse</span><span class="lever-impact">52 k€/an</span><span class="lever-pay">PB 1,2 a</span></div>
+        <div class="lever"><span class="lever-name">Renégociation contrat élec</span><span class="lever-impact">42 k€/an</span><span class="lever-pay">PB 0,3 a</span></div>
+        <div class="lever"><span class="lever-name">Audit SMÉ (obligatoire)</span><span class="lever-impact">22 k€/an</span><span class="lever-pay">PB 1,1 a</span></div>
+        <div class="lever"><span class="lever-name">LED + détection</span><span class="lever-impact">12 k€/an</span><span class="lever-pay">PB 2,4 a</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dossier">
+    <div class="dossier-head">
+      <div>
+        <span class="dossier-cat">FINANCIER · ARBITRAGE PERFORMANCE</span>
+        <h2>Comment ramener Toulouse au niveau de Nantes ?</h2>
+        <p class="dossier-reco">Lancer un audit énergétique SMÉ Toulouse + plan de pilotage CTA, finançable sur 12 mois. Économie attendue : 320 MWh/an, 49 k€/an, payback 1,4 an.</p>
+        <div class="proof-pills">
+          <span class="proof-pill warn">Gravité · Perte récurrente</span>
+          <span class="proof-pill warn">Impact · 320 MWh/an · 49 k€/an</span>
+          <span class="proof-pill warn">Délai · J-155 (SMÉ)</span>
+          <span class="proof-pill ok">Confiance · Haute</span>
+          <span class="proof-pill neutral">Réversibilité · Élevée</span>
+        </div>
+      </div>
+      <span class="dossier-tier">P1</span>
+    </div>
+
+    <div class="scenarios">
+      <div class="scen">
+        <div class="scen-label">A · REPORTER</div>
+        <div class="scen-title">Audit SMÉ minimal seul</div>
+        <div class="scen-figs">CAPEX 12 k€ · gain 22 k€/an<br/>perte 27 k€/an persistante<br/>payback 0,6 a</div>
+      </div>
+      <div class="scen recommended">
+        <div class="scen-label">B · RECOMMANDÉ</div>
+        <div class="scen-title">Audit SMÉ + plan pilotage CTA</div>
+        <div class="scen-figs">CAPEX 68 k€ · gain 49 k€/an<br/>intensité Toulouse -22 %<br/>payback 1,4 a · CEE 18 k€</div>
+      </div>
+      <div class="scen">
+        <div class="scen-label">C · ALTERNATIVE</div>
+        <div class="scen-title">Rénovation lourde différée</div>
+        <div class="scen-figs">CAPEX 480 k€ · gain 78 k€/an<br/>intensité alignée Nantes<br/>payback 6,2 a</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="verdict">
+    <div class="verdict-card constraint">
+      <div class="verdict-label">VOTRE CONTRAINTE PRINCIPALE</div>
+      <div class="verdict-statement">n'est pas <strong>réglementaire</strong>, elle est <strong>économique</strong>.</div>
+      <div class="verdict-detail">Aucune trajectoire DT ni BACS à tenir. Le levier majeur est l'écart de performance Toulouse vs benchmark NAF, soit ~49 k€/an récurrents.</div>
+    </div>
+    <div class="verdict-card opportunity">
+      <div class="verdict-label">VOTRE OPPORTUNITÉ PRINCIPALE</div>
+      <div class="verdict-statement">est l'<strong>audit SMÉ</strong> couplé au pilotage, payback <strong>1,4 an</strong>.</div>
+      <div class="verdict-detail">L'audit étant déjà obligatoire avant le 11/10/2026, son couplage avec un plan d'action sécurise 49 k€/an et active 18 k€ de CEE.</div>
+    </div>
+  </section>
+
+  <section class="queue">
+    <h3>Arbitrages secondaires (P2-P3)</h3>
+    <div class="queue-row">
+      <div><span class="queue-tier">P2</span><strong style="margin-left:10px">Renégociation contrat élec</strong> · fenêtre Q3 2026</div>
+      <span style="color:var(--ink-500);font-size:12.5px">42 k€/an</span>
+    </div>
+    <div class="queue-row">
+      <div><span class="queue-tier">P2</span><strong style="margin-left:10px">Compléter données APER</strong> · 1 site</div>
+      <span style="color:var(--ink-500);font-size:12.5px">action 2 sem.</span>
+    </div>
+    <div class="queue-row">
+      <div><span class="queue-tier">P3</span><strong style="margin-left:10px">LED + détection 3 sites</strong></div>
+      <span style="color:var(--ink-500);font-size:12.5px">12 k€/an</span>
+    </div>
+  </section>
+
+  <div class="footer">
+    sources · CDC Enedis J-1 · facturation J-3 · INSEE NAF C28.99 · simulateur leviers
+    <div class="tags">
+      <span class="tag">Assujettissement v1.0</span>
+      <span class="tag">Doctrine priorisation v1.0</span>
+      <span class="tag">Sol v1.1</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

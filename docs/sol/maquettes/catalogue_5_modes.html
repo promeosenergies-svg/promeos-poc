@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Catalogue des 5 modes — Synthèse stratégique (référence)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink-50:#FAF7F2; --ink-100:#F2EDE5; --ink-200:#E5DDD0; --ink-300:#CFC4B2;
+  --ink-500:#7A6E5C; --ink-700:#3D362C; --ink-900:#1A1612;
+  --warm-cream:#F8F4EC;
+  --calme:#5A8B6E; --succes:#3F7C5A; --attention:#C68A3D; --afaire:#B8612E; --refuse:#9C3F3F;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--warm-cream);color:var(--ink-900);font-family:'DM Sans',sans-serif;font-size:14.5px;line-height:1.55}
+.page{max-width:1480px;margin:0 auto;padding:24px 28px 80px}
+h1,h2,h3{font-family:'Fraunces',serif;font-weight:500;color:var(--ink-900);margin:0;letter-spacing:-0.01em}
+h1{font-size:32px;margin-bottom:8px}
+h2{font-size:18px;margin-bottom:8px}
+.lede{color:var(--ink-700);font-size:15.5px;margin-bottom:28px;max-width:920px}
+.kicker{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-500);margin-bottom:8px}
+
+.matrix{width:100%;border-collapse:separate;border-spacing:0 6px;margin-bottom:32px;font-size:13px}
+.matrix th{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-500);text-align:left;padding:8px 12px;background:transparent;border-bottom:1px solid var(--ink-200);font-weight:500;vertical-align:bottom}
+.matrix td{background:#fff;border-top:1px solid var(--ink-200);border-bottom:1px solid var(--ink-200);padding:14px 14px;vertical-align:top}
+.matrix td:first-child{border-left:1px solid var(--ink-200);border-radius:8px 0 0 8px}
+.matrix td:last-child{border-right:1px solid var(--ink-200);border-radius:0 8px 8px 0}
+.matrix td.mode{font-family:'Fraunces',serif;font-size:15px;color:var(--ink-900);font-weight:500;width:170px}
+.matrix td.mode .pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;padding:2px 7px;border-radius:3px;margin-bottom:6px;color:#fff}
+.regulatory .pill{background:#9C3F3F}
+.performance .pill{background:#B8612E}
+.procurement .pill{background:#3D362C}
+.opportunity .pill{background:#3F7C5A}
+.data_insufficient .pill{background:#7A6E5C}
+.matrix td.trigger{font-size:12.5px;color:var(--ink-700);width:280px}
+.matrix td.kpis{font-size:12.5px;color:var(--ink-700);width:280px}
+.matrix td.kpis .k{display:block;padding:1px 0}
+.matrix td.charts{font-size:12.5px;color:var(--ink-700);width:200px}
+.matrix td.verdict{font-size:12.5px;color:var(--ink-700);font-style:italic}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:32px}
+.card{background:#fff;border-radius:10px;padding:20px;border:1px solid var(--ink-200)}
+.card h3{font-size:16px;margin-bottom:8px}
+.card .pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;padding:2px 7px;border-radius:3px;color:#fff;margin-bottom:8px}
+.card.regulatory .pill{background:#9C3F3F}
+.card.regulatory{border-left:4px solid #9C3F3F}
+.card.performance .pill{background:#B8612E}
+.card.performance{border-left:4px solid #B8612E}
+.card.procurement .pill{background:#3D362C}
+.card.procurement{border-left:4px solid #3D362C}
+.card.opportunity .pill{background:#3F7C5A}
+.card.opportunity{border-left:4px solid #3F7C5A}
+.card.data_insufficient .pill{background:#7A6E5C}
+.card.data_insufficient{border-left:4px solid #7A6E5C;background:linear-gradient(135deg,#fff,#FAF7F2)}
+.card .narrative{color:var(--ink-700);font-size:13px;font-style:italic;margin-bottom:8px}
+.card .meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-500);margin-top:10px}
+
+.section-title{font-family:'Fraunces',serif;font-size:22px;margin:28px 0 12px}
+.gates{background:#fff;border:1px solid var(--ink-200);border-radius:10px;padding:22px 26px;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.85;color:var(--ink-700)}
+.gates .step{margin-bottom:6px}
+.gates .step b{color:var(--ink-900)}
+.gates .step.gate{color:#9C3F3F;font-weight:600}
+
+.legend{font-size:12.5px;color:var(--ink-500);margin-top:6px;font-family:'JetBrains Mono',monospace}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="kicker">PROMEOS · Doctrine Synthèse stratégique · catalogue v1.0</div>
+  <h1>5 modes stratégiques — référence visuelle</h1>
+  <p class="lede">La page Synthèse stratégique est <strong>polymorphique</strong>. Le moteur d'assujettissement (ADR-024) calcule un mode unique parmi cinq, et chaque mode produit une narration, un triptyque KPI et une paire de charts spécifiques. Le frontend ne fait jamais le tri : il consomme <code>payload.strategic_mode</code> et dispatche.</p>
+
+  <h2 class="section-title">Matrice des 5 modes</h2>
+  <table class="matrix">
+    <thead>
+      <tr>
+        <th>Mode</th>
+        <th>Trigger</th>
+        <th>3 KPIs</th>
+        <th>2 Charts</th>
+        <th>Verdict canonique</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="mode regulatory"><span class="pill">REGULATORY</span><br/>Réglementaire</td>
+        <td class="trigger">DT ou BACS <code>applicable</code> ET dérive trajectoire &gt; 5 %</td>
+        <td class="kpis"><span class="k">1 · Trajectoire DT (% vs 2010)</span><span class="k">2 · Coût €/MWh vs P50 sectoriel</span><span class="k">3 · Reclaim potentiel k€</span></td>
+        <td class="charts">TrajectoryLine + MixHorizontal</td>
+        <td class="verdict">"Votre contrainte est <strong>réglementaire</strong>, pas financière. Tout arbitrage qui ne contribue pas au -40 %/2030 est une perte de temps."</td>
+      </tr>
+      <tr>
+        <td class="mode performance"><span class="pill">PERFORMANCE</span><br/>Performance</td>
+        <td class="trigger">Aucune trajectoire applicable, intensité &gt; médiane NAF + 10 %</td>
+        <td class="kpis"><span class="k">1 · Intensité kWh/m²</span><span class="k">2 · Coût €/MWh</span><span class="k">3 · Économies activables k€</span></td>
+        <td class="charts">BenchSites + Pareto leviers</td>
+        <td class="verdict">"Votre contrainte n'est pas réglementaire, elle est <strong>économique</strong>. Site X tire la performance vers le bas."</td>
+      </tr>
+      <tr>
+        <td class="mode procurement"><span class="pill">PROCUREMENT</span><br/>Achat</td>
+        <td class="trigger">Contrat à échéance &lt; 90 j OU exposition spot &gt; 40 %</td>
+        <td class="kpis"><span class="k">1 · Coût forward €/MWh</span><span class="k">2 · Exposition spot %</span><span class="k">3 · Économie scénario k€</span></td>
+        <td class="charts">ForwardCurve + MixHorizontal cibles</td>
+        <td class="verdict">"Votre fenêtre <strong>achat</strong> se ferme dans X jours. Bascule de Y % du volume vers le forward Y+1 sécurise Z k€."</td>
+      </tr>
+      <tr>
+        <td class="mode opportunity"><span class="pill">OPPORTUNITY</span><br/>Opportunité</td>
+        <td class="trigger">APER applicable OU CEE non valorisés &gt; 50 k€/an</td>
+        <td class="kpis"><span class="k">1 · Potentiel PV k€/an</span><span class="k">2 · CEE valorisables k€</span><span class="k">3 · Flex k€/an</span></td>
+        <td class="charts">OpportunityMap + ROI bars</td>
+        <td class="verdict">"Vous avez <strong>N opportunités</strong> chiffrées totalisant X k€/an. Activer les 2 plus rapides fait Y k€ avant fin 2026."</td>
+      </tr>
+      <tr>
+        <td class="mode data_insufficient"><span class="pill">DATA_INSUFFICIENT</span><br/>Données insuffisantes</td>
+        <td class="trigger">Maturité patrimoine &lt; 60 % OU ratio règles UNKNOWN &gt; 30 % (gate prioritaire)</td>
+        <td class="kpis"><span class="k">1 · Maturité patrimoine %</span><span class="k">2 · Sites qualifiés</span><span class="k">3 · Données manquantes</span></td>
+        <td class="charts">MaturityRadar + MissingFields</td>
+        <td class="verdict">"Cadre <strong>indéterminé</strong>. Il manque X champs critiques pour produire une recommandation chiffrée."</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="legend">CTAs verbes par mode : REGULATORY {arbitrer, simuler, contester} · PERFORMANCE {arbitrer, simuler, comparer} · PROCUREMENT {arbitrer, simuler, comparer} · OPPORTUNITY {simuler, qualifier, comparer} · DATA_INSUFFICIENT {renseigner, importer, qualifier}</div>
+
+  <h2 class="section-title">Cascade de gates (compute_strategic_mode)</h2>
+  <div class="gates">
+    <div class="step gate"><b>Gate 1 · DATA_INSUFFICIENT</b> &nbsp; if maturity &lt; 0.60 OR unknown_ratio &gt; 0.30 → <code>DATA_INSUFFICIENT</code></div>
+    <div class="step gate"><b>Gate 2 · REGULATORY_DRIVEN</b> &nbsp; if (DT or BACS applicable) AND trajectory_drift &gt; 5 % → <code>REGULATORY_DRIVEN</code></div>
+    <div class="step gate"><b>Gate 3 · PROCUREMENT_DRIVEN</b> &nbsp; if next_contract_end &lt; 90j OR spot_exposure &gt; 40 % → <code>PROCUREMENT_DRIVEN</code></div>
+    <div class="step gate"><b>Gate 4 · OPPORTUNITY_DRIVEN</b> &nbsp; if APER applicable OR unvalued_cee &gt; 50 k€ → <code>OPPORTUNITY_DRIVEN</code></div>
+    <div class="step"><b>Default · PERFORMANCE_DRIVEN</b> &nbsp; sinon → <code>PERFORMANCE_DRIVEN</code></div>
+  </div>
+
+  <h2 class="section-title">Persona vs mode — séparation cardinale</h2>
+  <div class="cards">
+    <div class="card">
+      <h3>Le mode dépend du patrimoine</h3>
+      <p style="font-size:13px;color:var(--ink-700)">Calculé du moteur d'assujettissement + maturité + dérive. <strong>Stable</strong> entre personas.</p>
+      <p class="meta">⮕ Builder backend</p>
+    </div>
+    <div class="card">
+      <h3>Le persona pondère le scoring</h3>
+      <p style="font-size:13px;color:var(--ink-700)">Le persona modifie l'<strong>ordre</strong> des highlights et l'emphase narrative. Cf. ADR-022 priorisation v1.0.</p>
+      <p class="meta">⮕ rank_findings(persona)</p>
+    </div>
+    <div class="card">
+      <h3>Pas de double switch</h3>
+      <p style="font-size:13px;color:var(--ink-700)">Switch persona ⟶ <strong>mode inchangé</strong>, P1 peut changer. Switch portefeuille ⟶ recalcul mode et P1.</p>
+      <p class="meta">⮕ Garde-fou frontend</p>
+    </div>
+  </div>
+
+  <h2 class="section-title">Vignettes hero — narration cardinale par mode</h2>
+  <div class="cards">
+    <div class="card regulatory">
+      <span class="pill">REGULATORY</span>
+      <h3>Trajectoire DT 2030 dérive de 8 points.</h3>
+      <p class="narrative">"Décision charpentière à arbitrer avant fin Q3 2026."</p>
+      <p style="font-size:12.5px;color:var(--ink-500)">Site phare HELIOS. CTA #1 : Arbitrer la trajectoire DT.</p>
+    </div>
+    <div class="card performance">
+      <span class="pill">PERFORMANCE</span>
+      <h3>Performance énergétique sous la médiane sectorielle.</h3>
+      <p class="narrative">"3 leviers d'économie à activer cette année."</p>
+      <p style="font-size:12.5px;color:var(--ink-500)">Site phare MERIDIAN. CTA #1 : Arbitrer les leviers.</p>
+    </div>
+    <div class="card procurement">
+      <span class="pill">PROCUREMENT</span>
+      <h3>Contrat élec arrive à échéance dans 73 jours.</h3>
+      <p class="narrative">"Bascule 60 % vers forward 2027 sécurise 84 k€/an."</p>
+      <p style="font-size:12.5px;color:var(--ink-500)">Cas BORÉAL. CTA #1 : Simuler le scénario forward.</p>
+    </div>
+    <div class="card opportunity">
+      <span class="pill">OPPORTUNITY</span>
+      <h3>4 opportunités totalisant 178 k€/an non activées.</h3>
+      <p class="narrative">"Ombrière APER + CEE chauffage = 88 k€ avant fin 2026."</p>
+      <p style="font-size:12.5px;color:var(--ink-500)">Cas BORÉAL parking. CTA #1 : Qualifier l'ombrière.</p>
+    </div>
+    <div class="card data_insufficient">
+      <span class="pill">DATA_INSUFFICIENT</span>
+      <h3>Cadre indéterminé : 14 champs critiques manquants.</h3>
+      <p class="narrative">"Renseigner SDP + usage + puissance permet d'évaluer 4 règles."</p>
+      <p style="font-size:12.5px;color:var(--ink-500)">Cas onboarding. CTA #1 : Renseigner le patrimoine.</p>
+    </div>
+  </div>
+
+  <div class="legend" style="margin-top:32px">Référence : ADR-023 (architecture data-driven), ADR-024 (moteur d'assujettissement), ADR-022 (priorisation v1.0), ADR-021 (Loi L11). Doctrine Sol v1.1.</div>
+</div>
+</body>
+</html>
