@@ -142,6 +142,21 @@ export const getCockpitJour = (filter = {}) => {
   if (filter.persona) params.persona = filter.persona;
   return cachedGet('/cockpit/jour', { params }).then((r) => r.data);
 };
+// ── Synthèse Stratégique (Phase 3.5 Vague D.1 — ADR-023) ─────────────
+// Payload polymorphique : { strategic_mode, applicability, patrimoine_maturity,
+//   verdict, hero, kpis[3], charts[2], dossier_p1, queue_p2_p3,
+//   continuity, footer, _audit }
+// `filter` : { period, persona, horizonYear?, portfolioId? }
+export const getCockpitStrategique = (filter = {}) => {
+  const params = {
+    period_type: filter.period?.type || 'month',
+    persona: filter.persona || 'dg_comex',
+  };
+  if (filter.horizonYear) params.horizon_year = filter.horizonYear;
+  if (filter.portfolioId) params.portfolio_id = filter.portfolioId;
+  return cachedGet('/cockpit/strategique', { params }).then((r) => r.data);
+};
+
 export const getCockpitBenchmark = () => cachedGet('/cockpit/benchmark').then((r) => r.data);
 export const getCockpitCo2 = () => cachedGet('/cockpit/co2').then((r) => r.data);
 export const getCockpitConsoMonth = () => cachedGet('/cockpit/conso-month').then((r) => r.data);

@@ -19,3 +19,12 @@ export { default as SolHeroPremiumNight } from './SolHeroPremiumNight';
 export { default as ChartFrame } from './ChartFrame';
 export { default as HubHighlight } from './HubHighlight';
 export { default as HubPageFooter } from './HubPageFooter';
+export { default as HubKpiCard } from './HubKpiCard';
+
+// Synthèse Stratégique v1.0 (Phase 3.5 Vague D) — primitifs polymorphiques.
+export { default as StrategicModeBanner } from './StrategicModeBanner';
+export { default as CadreApplicable } from './CadreApplicable';
+export { default as VerdictFinal } from './VerdictFinal';
+export { default as DossierP1 } from './DossierP1';
+export { default as ChartFrameTrajectoryLine } from './charts/ChartFrameTrajectoryLine';
+export { default as ChartFrameBenchSites } from './charts/ChartFrameBenchSites';

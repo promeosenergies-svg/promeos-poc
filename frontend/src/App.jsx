@@ -33,6 +33,8 @@ const ActionsPage = lazy(() => import('./pages/ActionsPage'));
 const ConformitePage = lazy(() => import('./pages/ConformitePage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Cockpit = lazy(() => import('./pages/Cockpit'));
+// Phase 3.5 Vague D.5 — page Synthèse Stratégique data-driven from scratch (ADR-023)
+const CockpitStrategique = lazy(() => import('./pages/CockpitStrategique'));
 const RegOps = lazy(() => import('./pages/RegOps'));
 const ConnectorsPage = lazy(() => import('./pages/ConnectorsPage'));
 const WatchersPage = lazy(() => import('./pages/WatchersPage'));
@@ -285,11 +287,13 @@ function App() {
                                         </PageSuspense>
                                       }
                                     />
+                                    {/* Phase 3.5 Vague D.5 — Synthèse Stratégique data-driven from scratch
+                                        (ADR-023 + ADR-024). Legacy CockpitDecision accessible via ?legacy=1. */}
                                     <Route
                                       path="/cockpit/strategique"
                                       element={
                                         <PageSuspense>
-                                          <CockpitDecision />
+                                          <CockpitStrategique />
                                         </PageSuspense>
                                       }
                                     />{' '}
