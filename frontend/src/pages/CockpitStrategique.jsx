@@ -130,22 +130,16 @@ function renderHeroPrimaryCta(hero) {
 }
 
 function renderChart(c) {
-  const baseProps = {
-    key: c.id,
-    question: c.question,
-    answer: c.answer,
-    data: c.data,
-    footScm: c.foot_scm,
-  };
+  const props = { question: c.question, answer: c.answer, data: c.data, footScm: c.foot_scm };
   switch (c.type) {
     case 'trajectory_line':
-      return <ChartFrameTrajectoryLine {...baseProps} />;
+      return <ChartFrameTrajectoryLine key={c.id} {...props} />;
     case 'bench_sites':
-      return <ChartFrameBenchSites {...baseProps} />;
+      return <ChartFrameBenchSites key={c.id} {...props} />;
     case 'forward_curve':
-      return <ChartFrameForwardCurve {...baseProps} />;
+      return <ChartFrameForwardCurve key={c.id} {...props} />;
     case 'opportunity_map':
-      return <ChartFrameOpportunityMap {...baseProps} />;
+      return <ChartFrameOpportunityMap key={c.id} {...props} />;
     default:
       return (
         <ChartFrame key={c.id} question={c.question} answer={c.answer} footScm={c.foot_scm}>
