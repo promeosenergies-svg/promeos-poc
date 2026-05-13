@@ -12,6 +12,8 @@ import {
   CadreApplicable,
   ChartFrame,
   ChartFrameBenchSites,
+  ChartFrameForwardCurve,
+  ChartFrameOpportunityMap,
   ChartFrameTrajectoryLine,
   DossierP1,
   HubKpiCard,
@@ -128,27 +130,22 @@ function renderHeroPrimaryCta(hero) {
 }
 
 function renderChart(c) {
+  const baseProps = {
+    key: c.id,
+    question: c.question,
+    answer: c.answer,
+    data: c.data,
+    footScm: c.foot_scm,
+  };
   switch (c.type) {
     case 'trajectory_line':
-      return (
-        <ChartFrameTrajectoryLine
-          key={c.id}
-          question={c.question}
-          answer={c.answer}
-          data={c.data}
-          footScm={c.foot_scm}
-        />
-      );
+      return <ChartFrameTrajectoryLine {...baseProps} />;
     case 'bench_sites':
-      return (
-        <ChartFrameBenchSites
-          key={c.id}
-          question={c.question}
-          answer={c.answer}
-          data={c.data}
-          footScm={c.foot_scm}
-        />
-      );
+      return <ChartFrameBenchSites {...baseProps} />;
+    case 'forward_curve':
+      return <ChartFrameForwardCurve {...baseProps} />;
+    case 'opportunity_map':
+      return <ChartFrameOpportunityMap {...baseProps} />;
     default:
       return (
         <ChartFrame key={c.id} question={c.question} answer={c.answer} footScm={c.foot_scm}>

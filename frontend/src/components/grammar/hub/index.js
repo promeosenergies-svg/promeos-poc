@@ -29,3 +29,6 @@ export { default as DossierP1 } from './DossierP1';
 export { default as QueueP2P3 } from './QueueP2P3';
 export { default as ChartFrameTrajectoryLine } from './charts/ChartFrameTrajectoryLine';
 export { default as ChartFrameBenchSites } from './charts/ChartFrameBenchSites';
+// Phase 3.6 Vague CC — charts pour Procurement + Opportunity
+export { default as ChartFrameForwardCurve } from './charts/ChartFrameForwardCurve';
+export { default as ChartFrameOpportunityMap } from './charts/ChartFrameOpportunityMap';
