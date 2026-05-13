@@ -43,6 +43,8 @@ const SCENARIOS = [
 const PHASE_LABEL = process.env.PHASE_LABEL || 'after_p35';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5175';
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8001';
+const AUTH_EMAIL = process.env.PROMEOS_AUTH_EMAIL || 'promeos@promeos.io';
+const AUTH_PASSWORD = process.env.PROMEOS_AUTH_PASSWORD || 'promeos2024';
 
 const REPO_ROOT = resolve(new URL('.', import.meta.url).pathname, '..', '..');
 const SNAP_ROOT = join(REPO_ROOT, 'frontend', 'tests', 'visual', 'snapshots', PHASE_LABEL);
@@ -140,6 +142,20 @@ async function main() {
   page.on('console', (msg) => {
     if (msg.type() === 'error') console.warn(`  [browser-error] ${msg.text().slice(0, 200)}`);
   });
+
+  // Login DEMO (DEMO_MODE lenient backend, mais frontend route requiert auth)
+  console.log(`\nLogin DEMO ${AUTH_EMAIL}…`);
+  await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(300);
+  try {
+    await page.fill('input[type="email"]', AUTH_EMAIL);
+    await page.fill('input[type="password"]', AUTH_PASSWORD);
+    await page.click('button[type="submit"]');
+    await page.waitForURL((url) => !String(url).includes('/login'), { timeout: 8000 });
+    console.log(`  ✓ logged in → ${page.url()}`);
+  } catch (err) {
+    console.warn(`  ⚠ login failed (${err.message.slice(0, 100)}) — captures will likely show login page`);
+  }
 
   for (const vp of VIEWPORTS) {
     console.log(`\nViewport ${vp.name} (${vp.width}x${vp.height})`);

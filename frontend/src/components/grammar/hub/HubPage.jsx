@@ -12,18 +12,27 @@
  * Validation runtime DEV (NODE_ENV !== 'production') : console.error si
  * cardinalites violees. Ne throw pas — le rendu se fait avec avertissement.
  *
- * Piliers acceptes : briefing | energie | conformite | factures | achat | patrimoine
+ * Piliers acceptes : briefing | energie | conformite | factures | achat | patrimoine | strategique
+ *   (strategique ajoute Phase 3.5 Vague D pour Synthese Strategique data-driven, ADR-023)
  * Contenant : max-w-[1180px] mx-auto px-7 py-6
  *
  * Display-only — zero calcul metier (doctrine PROMEOS regle d'or).
  *
  * @param {Object} props
- * @param {'briefing'|'energie'|'conformite'|'factures'|'achat'|'patrimoine'} props.pillar
+ * @param {'briefing'|'energie'|'conformite'|'factures'|'achat'|'patrimoine'|'strategique'} props.pillar
  * @param {React.ReactNode} props.children
  * @param {string} [props.className='']
  */
 
-const VALID_PILLARS = ['briefing', 'energie', 'conformite', 'factures', 'achat', 'patrimoine'];
+const VALID_PILLARS = [
+  'briefing',
+  'energie',
+  'conformite',
+  'factures',
+  'achat',
+  'patrimoine',
+  'strategique',
+];
 
 /**
  * Slot KpiTriptych — grille 3 colonnes pour 3 KpiCard.

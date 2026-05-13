@@ -58,27 +58,13 @@ export default function CockpitStrategique() {
       .finally(() => setLoading(false));
   }, [period, persona, legacyMode, setDataQualityPct]);
 
-  if (legacyMode) {
-    return <LegacyRedirectStub />;
-  }
-
-  if (loading || !payload) {
+  if (legacyMode) return <LegacyRedirectStub />;
+  if (loading || !payload)
+    return <PageState state="loading" msg="Chargement de la Synthèse Stratégique…" />;
+  if (error)
     return (
-      <div data-page="cockpit-strategique" data-doctrine="L11" data-state="loading" className="p-6">
-        <p style={{ fontFamily: 'var(--sol-font-mono, monospace)', fontSize: '12px' }}>
-          Chargement de la Synthèse Stratégique…
-        </p>
-      </div>
+      <PageState state="error" msg="Impossible de charger la Synthèse Stratégique. Réessayer ?" />
     );
-  }
-
-  if (error) {
-    return (
-      <div data-page="cockpit-strategique" data-doctrine="L11" data-state="error" className="p-6">
-        <p>Impossible de charger la Synthèse Stratégique. Réessayer ?</p>
-      </div>
-    );
-  }
 
   const mode = payload.strategic_mode;
   return (
@@ -93,9 +79,10 @@ export default function CockpitStrategique() {
       <HubPage pillar="strategique">
         <SolHeroPremiumNight
           eyebrow={payload.hero?.kicker}
-          title={payload.hero?.title}
+          title={renderHeroTitle(payload.hero)}
           sub={payload.hero?.sub_constat}
           meta={payload.hero?.meta}
+          primaryCta={renderHeroPrimaryCta(payload.hero)}
         />
 
         <CadreApplicable
@@ -121,6 +108,23 @@ export default function CockpitStrategique() {
       </HubPage>
     </div>
   );
+}
+
+function renderHeroTitle(hero) {
+  if (!hero) return null;
+  if (!hero.title_em) return hero.title;
+  return (
+    <>
+      {hero.title}
+      <br />
+      <em>{hero.title_em}</em>
+    </>
+  );
+}
+
+function renderHeroPrimaryCta(hero) {
+  const first = hero?.ctas?.[0];
+  return first ? { label: first.label, href: '#arbitrer' } : undefined;
 }
 
 function renderChart(c) {
@@ -211,9 +215,10 @@ function SimpleBars({ data = [] }) {
 }
 
 function RadarStub({ data = [] }) {
+  const rows = Array.isArray(data) ? data : [];
   return (
     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-      {(Array.isArray(data) ? data : []).map((row, idx) => (
+      {rows.map((row, idx) => (
         <li key={idx} className="flex items-center gap-2 py-1" style={{ fontSize: '12.5px' }}>
           <span style={{ flex: 1 }}>{row.axis}</span>
           <span style={{ fontFamily: 'var(--sol-font-mono, monospace)' }}>{row.pct} %</span>
@@ -223,20 +228,24 @@ function RadarStub({ data = [] }) {
   );
 }
 
-function LegacyRedirectStub() {
+function PageState({ state, msg }) {
   return (
-    <div
-      data-page="cockpit-strategique"
-      data-state="legacy"
-      style={{
-        padding: '40px',
-        fontFamily: 'var(--sol-font-mono, monospace)',
-        fontSize: '13px',
-        color: 'var(--sol-ink-700, #3D362C)',
-      }}
-    >
+    <div data-page="cockpit-strategique" data-doctrine="L11" data-state={state} className="p-6">
+      <p style={{ fontFamily: 'var(--sol-font-mono, monospace)', fontSize: '12px' }}>{msg}</p>
+    </div>
+  );
+}
+
+function LegacyRedirectStub() {
+  const css = {
+    padding: '40px',
+    fontFamily: 'var(--sol-font-mono, monospace)',
+    fontSize: '13px',
+    color: 'var(--sol-ink-700, #3D362C)',
+  };
+  return (
+    <div data-page="cockpit-strategique" data-state="legacy" style={css}>
       Mode legacy demandé via <code>?legacy=1</code> — page Cockpit héritée accessible séparément.
-      Cf. doc/dev/cockpit_legacy_deprecation.md.
     </div>
   );
 }
