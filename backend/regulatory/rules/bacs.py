@@ -126,7 +126,7 @@ class BACSEvaluator(RuleEvaluator):
                 scope_id=scope_id,
                 scope_label=scope_label,
                 status=ApplicabilityStatus.APPLICABLE,
-                reason_code="BACS.APPLICABLE",
+                reason_code="BACS.APPLICABLE.TIER1_EXPIRED",
                 reason_human=(
                     f"{scope_label} : puissance CVC max {max_power:.0f} kW > "
                     f"{BACS_THRESHOLD_KW_INITIAL} kW (Tier 1). BACS exigé "
@@ -155,7 +155,7 @@ class BACSEvaluator(RuleEvaluator):
                 scope_id=scope_id,
                 scope_label=scope_label,
                 status=ApplicabilityStatus.APPLICABLE,
-                reason_code="BACS.APPLICABLE",
+                reason_code="BACS.APPLICABLE.TIER2_UPCOMING",
                 reason_human=(
                     f"{scope_label} : puissance CVC max {max_power:.0f} kW > "
                     f"{BACS_THRESHOLD_KW_EXISTING} kW (Tier 2). Système de régulation BACS exigé."

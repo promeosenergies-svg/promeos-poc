@@ -33,7 +33,8 @@ def test_bacs_applicable_one_building_above_threshold():
     batiments = [_batiment(id=1, cvc_power_kw=120.0), _batiment(id=2, cvc_power_kw=40.0)]
     app = BACSEvaluator().evaluate(site, batiments)
     assert app.status == ApplicabilityStatus.APPLICABLE
-    assert app.reason_code == "BACS.APPLICABLE"
+    # Phase 3.8 P1-B (audit code-reviewer P3.7) : Tier 2 distinct du Tier 1
+    assert app.reason_code == "BACS.APPLICABLE.TIER2_UPCOMING"
     assert app.deadline == date(2030, 1, 1)
     assert app.inputs_used["cvc_power_max_kw"] == 120.0
     assert app.inputs_used["threshold_kw"] == BACS_THRESHOLD_KW_EXISTING

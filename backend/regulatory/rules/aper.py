@@ -20,6 +20,11 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
+from doctrine.constants import (
+    APER_PARKING_LARGE_SURFACE_M2,
+    APER_PARKING_MIN_SURFACE_M2,
+    APER_ROOF_THRESHOLD_M2 as DOCTRINE_APER_ROOF_THRESHOLD_M2,
+)
 from regulatory.applicability_types import (
     ApplicabilityStatus,
     RuleApplicability,
@@ -28,9 +33,10 @@ from regulatory.applicability_types import (
 from regulatory.rules.base import RuleEvaluator
 
 
-APER_PARKING_THRESHOLD_M2: float = 1500.0
-APER_PARKING_LARGE_M2: float = 10000.0
-APER_ROOF_THRESHOLD_M2: float = 500.0
+# Phase 3.8 P1-A — seuils importes depuis doctrine.constants (SoT unique).
+APER_PARKING_THRESHOLD_M2: float = float(APER_PARKING_MIN_SURFACE_M2)
+APER_PARKING_LARGE_M2: float = float(APER_PARKING_LARGE_SURFACE_M2)
+APER_ROOF_THRESHOLD_M2: float = float(DOCTRINE_APER_ROOF_THRESHOLD_M2)
 
 APER_DEADLINE_LARGE: date = date(2026, 7, 1)
 APER_DEADLINE_SMALL: date = date(2028, 7, 1)

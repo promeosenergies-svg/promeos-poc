@@ -28,11 +28,19 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from doctrine.constants import DT_MILESTONES
 from regulatory.applicability_types import (
     ApplicabilityStatus,
     RuleApplicability,
     RuleCode,
 )
+
+# Phase 3.8 P1 (audit qa-guardian P3.7) — jalons DT lus depuis doctrine.constants
+# (SoT unique). DT_MILESTONES = {2030: -0.40, 2040: -0.50, 2050: -0.60} ; on
+# convertit en valeur absolue positive % attendu.
+_DT_CIBLE_2030_PCT = int(abs(DT_MILESTONES.get(2030, -0.40)) * 100)
+_DT_CIBLE_2040_PCT = int(abs(DT_MILESTONES.get(2040, -0.50)) * 100)
+_DT_CIBLE_2050_PCT = int(abs(DT_MILESTONES.get(2050, -0.60)) * 100)
 from services.strategique.builders.base import (
     PERSONA_DG_COMEX,
     StrategicModeBuilder,
@@ -59,7 +67,7 @@ class RegulatoryDrivenBuilder(StrategicModeBuilder):
 
         # v1.0 stubs typés — à wirer Phase 3.6
         trajectory_atteint_pct = 32  # data_source: stub builder v1.0
-        trajectory_cible_pct = 40
+        trajectory_cible_pct = _DT_CIBLE_2030_PCT  # cf. DT_MILESTONES doctrine.constants
         trajectory_drift = trajectory_cible_pct - trajectory_atteint_pct
         cout_eur_mwh = 142
         cout_p50_pct_diff = 12
@@ -220,8 +228,8 @@ class RegulatoryDrivenBuilder(StrategicModeBuilder):
                 "data": {
                     "atteint_pct": trajectory_atteint_pct,
                     "cible_2030_pct": trajectory_cible_pct,
-                    "cible_2040_pct": 50,
-                    "cible_2050_pct": 60,
+                    "cible_2040_pct": _DT_CIBLE_2040_PCT,  # doctrine.constants DT_MILESTONES
+                    "cible_2050_pct": _DT_CIBLE_2050_PCT,  # doctrine.constants DT_MILESTONES
                 },
                 "foot_scm": "Source · OPERAT 2025 · 3 sites assujettis",
             },

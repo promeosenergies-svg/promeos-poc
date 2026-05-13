@@ -23,24 +23,35 @@ from database import SessionLocal
 from models.batiment import Batiment
 from models.organisation import Organisation
 from models.site import Site
+from services.scope_utils import sites_for_org_query
+
+
+# Phase 3.8 P1-D (audit code-reviewer P3.7) — org-scoping cardinal.
+# Le script cible HELIOS (organisation_id=1, is_demo=False). Tout patch
+# cross-org est strictement interdit même en environnement de test.
+TARGET_ORG_ID: int = 1
 
 
 def run():
     db = SessionLocal()
     try:
         # 1. Organisation HELIOS — effectif + CA pour SMÉ APPLICABLE
-        org = db.query(Organisation).filter(Organisation.id == 1).first()
-        if org:
-            if org.effectif_total is None:
-                org.effectif_total = 380
-            if org.chiffre_affaires_eur is None:
-                org.chiffre_affaires_eur = 80_000_000.0
-            print(
-                f"✓ Organisation #{org.id} {org.nom} : effectif={org.effectif_total}, CA={org.chiffre_affaires_eur / 1e6:.0f} M€"
-            )
+        org = db.query(Organisation).filter(Organisation.id == TARGET_ORG_ID).first()
+        if org is None:
+            print(f"⚠ Organisation #{TARGET_ORG_ID} introuvable — abort.")
+            return
+        if org.effectif_total is None:
+            org.effectif_total = 380
+        if org.chiffre_affaires_eur is None:
+            org.chiffre_affaires_eur = 80_000_000.0
+        print(
+            f"✓ Organisation #{org.id} {org.nom} : effectif={org.effectif_total}, "
+            f"CA={org.chiffre_affaires_eur / 1e6:.0f} M€"
+        )
 
-        # 2. Sites HELIOS — intensity + annee_reference_operat + usage_principal
-        sites = db.query(Site).all()
+        # 2. Sites HELIOS — org-scoping via sites_for_org_query (filtre is_demo
+        # symétrique + JOIN Portefeuille → EntiteJuridique → Organisation).
+        sites = list(sites_for_org_query(db, TARGET_ORG_ID).all())
         patched_sites = 0
         for s in sites:
             if s.tertiaire_area_m2 is None:
@@ -63,8 +74,9 @@ def run():
                 f"annee_ref={s.annee_reference_operat}, usage={s.usage_principal}"
             )
 
-        # 3. Bâtiments HELIOS — cvc_power_kw
-        batiments = db.query(Batiment).all()
+        # 3. Bâtiments HELIOS — org-scoping via JOIN sur sites_ids ci-dessus.
+        site_ids = [s.id for s in sites]
+        batiments = db.query(Batiment).filter(Batiment.site_id.in_(site_ids)).all() if site_ids else []
         patched_bats = 0
         for b in batiments:
             if b.cvc_power_kw is None:

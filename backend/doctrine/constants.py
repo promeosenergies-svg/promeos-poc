@@ -268,6 +268,10 @@ APER_PARKING_MIN_SURFACE_M2: int = _load_yaml_int_or_fallback(
 APER_PARKING_LARGE_SURFACE_M2: int = _load_yaml_int_or_fallback(
     "APER_THRESHOLD_M2_LARGE", fallback=10000
 )  # seuil LARGE (Loi APER art. 40 II)
+# Phase 3.8 P1-A (audit code-reviewer P3.7) — seuil toiture APER (obligation EnR).
+APER_ROOF_THRESHOLD_M2: int = _load_yaml_int_or_fallback(
+    "APER_THRESHOLD_M2_ROOF", fallback=500
+)  # toiture ≥ 500 m² → obligation EnR (Loi APER art. 40)
 APER_SOLAR_RATIO_PCT: float = _load_yaml_or_fallback(
     "APER_SOLAR_RATIO_PCT", fallback=50.0
 )  # taux minimum solarisation parking (Loi APER art. 40)
@@ -464,6 +468,7 @@ __all__ = [
     "APER_DEADLINE_LARGE_PARKING_DATE",
     "APER_PARKING_MIN_SURFACE_M2",
     "APER_PARKING_LARGE_SURFACE_M2",
+    "APER_ROOF_THRESHOLD_M2",
     "APER_PENALTY_EUR_PER_M2_PER_YEAR",
     "APER_SOLAR_RATIO_PCT",
     "VNU_DATE_APPLICATION",

@@ -180,7 +180,12 @@ class SMEEvaluator(RuleEvaluator):
                 _audit=audit,
             )
         if ca is None and effectif is not None and effectif < SME_EFFECTIF_THRESHOLD:
-            # Bijection KK : émet SME.DATA_MISSING.CA si effectif présent + sous seuil + CA absent
+            # Bijection KK : émet SME.DATA_MISSING.CA si effectif présent + sous seuil + CA absent.
+            # Phase 3.8 P1-C (audit code-reviewer P3.7) : si bilan_eur aussi absent,
+            # le mentionner explicitement dans missing_inputs (CA ET bilan requis pour critère b).
+            missing_b = ["organisation.chiffre_affaires_eur"]
+            if bilan is None:
+                missing_b.append("organisation.bilan_eur")
             return RuleApplicability(
                 rule_code=self.code,
                 rule_version=self.version,
@@ -190,10 +195,11 @@ class SMEEvaluator(RuleEvaluator):
                 status=ApplicabilityStatus.DATA_MISSING,
                 reason_code="SME.DATA_MISSING.CA",
                 reason_human=(
-                    f"{scope_label} : effectif {effectif} < seuil mais CA non renseigné. Critère SMÉ (b) non statuable."
+                    f"{scope_label} : effectif {effectif} < seuil mais CA{' + bilan' if bilan is None else ''} "
+                    f"non renseigné(s). Critère SMÉ (b) non statuable."
                 ),
                 inputs_used=inputs,
-                missing_inputs=["organisation.chiffre_affaires_eur"],
+                missing_inputs=missing_b,
                 confidence=0.0,
                 evidence_refs=["Code énergie L233-1"],
                 _audit=audit,
