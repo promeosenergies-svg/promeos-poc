@@ -60,6 +60,15 @@ class Organisation(Base, TimestampMixin, SoftDeleteMixin):
         comment="Chiffre d'affaires annuel EUR — matrice v1 §4.1 (segmentation Audit SMÉ)",
     )
 
+    # Phase 3.7 P0 — Code énergie L233-1 critère SMÉ (b) : bilan total
+    # ≥ 43 M€ + CA ≥ 50 M€ → audit obligatoire. Audit regulatory-expert
+    # P3.5 a flagué le champ absent (SMEEvaluator faux NOT_APPLICABLE.PME).
+    bilan_eur = Column(
+        Float,
+        nullable=True,
+        comment="Bilan total EUR — Code énergie L233-1 critère SMÉ (b), Phase 3.7",
+    )
+
     # ─── Sprint C-4 Phase 4.4 — Consentement RGPD (ADR-007) ──────────────────
     # Pré-requis cardinal Phase 4.5 cascade vivante org → DPs.
     # Court-circuit ELD locales préservé : cascade GRDF cible UNIQUEMENT
