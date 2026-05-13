@@ -42,7 +42,9 @@ def _make_env(*, scenario: str):
     session.flush()
 
     if scenario == "helios":
-        # 2 sites, surfaces tertiaires renseignées, DT APPLICABLE
+        # 2 sites, surfaces tertiaires renseignées, DT APPLICABLE.
+        # Phase 3.6 Vague AA : intensity + annee_reference_operat requis pour
+        # que compute_trajectory_drift retourne source="computed".
         s1 = Site(
             id=10,
             nom="Site A",
@@ -53,6 +55,9 @@ def _make_env(*, scenario: str):
             usage_principal="BUREAUX",
             parking_area_m2=2000,
             roof_area_m2=500,
+            intensity_kwh_m2_tertiaire=180.0,
+            annee_reference_operat=2015,
+            annual_kwh_total=360_000,
             is_demo=False,
         )
         s2 = Site(
@@ -65,6 +70,9 @@ def _make_env(*, scenario: str):
             usage_principal="BUREAUX",
             parking_area_m2=1800,
             roof_area_m2=400,
+            intensity_kwh_m2_tertiaire=160.0,
+            annee_reference_operat=2015,
+            annual_kwh_total=240_000,
             is_demo=False,
         )
         b1 = Batiment(id=100, site_id=10, nom="Bât A1", surface_m2=2000, cvc_power_kw=150)

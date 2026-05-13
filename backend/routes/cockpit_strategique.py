@@ -38,6 +38,12 @@ from services.strategique.builders import (
     IMPLEMENTED_MODES,
     MODE_BUILDERS,
 )
+from services.strategique.computes import (
+    compute_next_contract_end,
+    compute_spot_exposure,
+    compute_trajectory_drift,
+    compute_unvalued_cee_keur,
+)
 from services.strategique.mode_router import compute_strategic_mode
 from services.strategique.mode_thresholds import StrategicMode
 
@@ -48,12 +54,11 @@ _logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/cockpit", tags=["Cockpit Strategique"])
 
 
-# Fix code-reviewer P1-C 13/05/2026 : extraction du magic number.
-# La valeur 8.0 simule une dérive trajectoire DT plausible (cible -40 %,
-# atteint -32 %) qui déclenche le gate REGULATORY_DRIVEN. Sera remplacé
-# Phase 3.6 par `compute_trajectory_drift(db, org_id)` qui lit
-# RegAssessment.findings_json (cf. runbook punchlist #7+#10).
-_DEMO_TRAJECTORY_DRIFT_STUB_PCT: float = 8.0
+# Phase 3.6 Vague AA : services compute_* livrés (computes.py). Le stub
+# _DEMO_TRAJECTORY_DRIFT_STUB_PCT n'est plus utilisé — fallback minimal
+# si le service retourne source=insufficient_data (cas DATA_INSUFFICIENT
+# ou onboarding).
+_DRIFT_FALLBACK_PCT: float = 0.0
 
 
 @router.get("/strategique")
@@ -73,21 +78,23 @@ def get_cockpit_strategique(
     applicability = compute_applicability(db, org_id)
     maturity = compute_patrimoine_maturity(db, org_id)
 
-    # 2. Calcul du mode (ADR-023 §9)
-    # Phase 3.5 v1.0 : trajectory_drift / contract_end / spot / cee non encore
-    # wirés à des services dédiés — passés à 0 par défaut. Le dispatcher
-    # statuera donc DATA_INSUFFICIENT (si maturité basse), REGULATORY (si DT
-    # APPLICABLE + drift sera wiré Phase 3.6), ou PERFORMANCE (défaut).
-    # Pour HELIOS demo, on simule un drift > 5 si DT APPLICABLE détecté
-    # → bascule sur REGULATORY_DRIVEN narratif (cf. _DEMO_TRAJECTORY_DRIFT_STUB_PCT).
+    # 2. Calcul du mode (ADR-023 §9) — Phase 3.6 Vague AA computes réels
     has_dt_applicable = any(e.status == ApplicabilityStatus.APPLICABLE for e in applicability.get(RuleCode.DT, []))
-    trajectory_drift_pct = _DEMO_TRAJECTORY_DRIFT_STUB_PCT if has_dt_applicable else 0.0
-    trajectory_drift_source = "stub_demo_v1.0" if has_dt_applicable else "not_applicable"
+    drift_info = compute_trajectory_drift(db, org_id) if has_dt_applicable else None
+    contract_info = compute_next_contract_end(db, org_id)
+    spot_info = compute_spot_exposure(db, org_id)
+    cee_info = compute_unvalued_cee_keur(db, org_id)
+
+    trajectory_drift_pct = drift_info["drift_pct"] if drift_info else _DRIFT_FALLBACK_PCT
+    trajectory_drift_source = drift_info["source"] if drift_info else "not_applicable"
 
     target_mode = compute_strategic_mode(
         applicability=applicability,
         patrimoine_maturity=maturity,
         trajectory_drift_pct=trajectory_drift_pct,
+        next_contract_end_days=contract_info["days"],
+        spot_exposure_pct=spot_info["pct"],
+        unvalued_cee_k_eur=cee_info["k_eur"],
     )
 
     # 3. Fallback Phase 3.5 — décision Q3 Amine
@@ -119,6 +126,9 @@ def get_cockpit_strategique(
     payload["_audit"]["effective_mode"] = effective_mode.value
     payload["_audit"]["trajectory_drift_source"] = trajectory_drift_source
     payload["_audit"]["trajectory_drift_pct"] = trajectory_drift_pct
+    payload["_audit"]["next_contract_end_days"] = contract_info["days"]
+    payload["_audit"]["spot_exposure_pct"] = spot_info["pct"]
+    payload["_audit"]["unvalued_cee_k_eur"] = cee_info["k_eur"]
     if fallback_reason:
         payload["_audit"]["_fallback_reason"] = fallback_reason
 
