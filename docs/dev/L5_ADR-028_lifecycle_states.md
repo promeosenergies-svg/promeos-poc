@@ -884,7 +884,7 @@ def test_IL11_reopen_event_has_justification():
 - **ADR-025 (architecture V4 · Accepted)** : schéma DB (`lifecycle_state` CHECK constraint, `closure_consistency` constraint)
 - **ADR-026 (migration data · Accepted)** : migration vocab. legacy → 5 V4 + 6 closure_reasons révisés
 - **ADR-027 (sécurité org-scoping · Accepted)** : IS5 admin + fresh token = IL3, HTTP 409 cohérent §7
-- **ADR-029 Evidence + audit trail** (à produire L6) : rétention `action_event_log` 5 ans (IL8)
+- **ADR-029 Evidence + audit trail** — **Accepted** (2026-05-14) — voir [`L6_ADR-029_evidence_audit_trail.md`](L6_ADR-029_evidence_audit_trail.md) — manuel des preuves et de la traçabilité · 9 invariants IE1-IE9 (dont IE9 cardinal magic bytes MIME) · 7 arbitrages Q40-Q46 · 16 event_types couvrent les 11 invariants IL1-IL11 (dont IL3 → `reopened` payload + IL5 → `closed_via_merged_duplicate` distinct de `closed_via_resolved_via_recurrence` (Q9-B) + IL8 → tous `state_changed` tracés + IL9 → `priority_recalculated` + IL11 → `ReopenedPayloadV1.justification` min 10 chars) · IE4 matrice rétention RGPD aligne strictement la doctrine v0.3 (avenant L5) : `merged_duplicate` business 3y ≠ `resolved_via_recurrence` compliance 5y · 16 schemas Pydantic v1 versionnés (`StateChangedPayloadV1` capture `closure_reason` + `justification` + `auto_closed_by_group_id`) · 8 articles CNIL référencés · 40+ tests planifiés · **dernier ADR Mois 1 — clôture trilogie data**
 
 ---
 

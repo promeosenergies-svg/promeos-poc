@@ -1086,7 +1086,7 @@ async def close_item(...): ...
 - **ADR-025 (architecture V4 · Accepted)** : §9 hybride middleware + SG + décorateur (squelette enrichi par cet ADR)
 - **ADR-026 (migration data · Accepted)** : invariant I9 backup hors Git → IS10 source-guard CI (renforcement)
 - **ADR-028 Lifecycle states** — **Accepted** (2026-05-14) — voir [`L5_ADR-028_lifecycle_states.md`](L5_ADR-028_lifecycle_states.md) — manuel comportement item · 11 invariants IL1-IL11 · 7 arbitrages Q33-Q39 · IL3 réouverture admin réutilise IS5 (admin + fresh token <5min) + ajoute justification obligatoire · IL1 transitions invalides → HTTP 409 cohérent format payload §7 · 56 tests planifiés · **avenant doctrinal v0.2 → v0.3 inclus dans commit L5**
-- **ADR-029 Evidence + audit trail** : rétention logs sécurité 90j vs métier 5 ans (deux tables distinctes)
+- **ADR-029 Evidence + audit trail** — **Accepted** (2026-05-14) — voir [`L6_ADR-029_evidence_audit_trail.md`](L6_ADR-029_evidence_audit_trail.md) — manuel des preuves et de la traçabilité · 9 invariants IE1-IE9 (dont IE9 cardinal magic bytes MIME anti-spoofing) · 7 arbitrages Q40-Q46 · IE8 acte la séparation stricte `security_audit_log` (90j IS7/IS8) ↔ `action_event_log` (1-5 ans métier, par catégorie rétention RGPD) · IE1 storage `fs://` gitignored = renforcement IS10 (3 niveaux empilés IE1 + IS10 + I9 ADR-026) · IS9 `correlation_id` propagé dans `action_event_log` + dans purge `monthly_retention_purge` · validation MIME `python-magic` cohérente IS6 (Bandit/Semgrep CI gate) · 16 schemas Pydantic v1 versionnés · 8 articles CNIL référencés · 40+ tests planifiés · **dernier ADR Mois 1**
 
 ---
 

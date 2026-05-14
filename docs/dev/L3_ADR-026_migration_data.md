@@ -829,7 +829,8 @@ pnpm test
 | Backups physiques | **12 mois** | Hors Git (I9) · serveur backup read-only | CNIL recommandation pour preuves conformité |
 | Receipts sanitizés in Git | Indéfini | `docs/migrations/L3_cutover_receipts/` | Historique projet · pas de PII (I9 garde-fou) |
 | Logs cutover | 12 mois | Avec backup (offline) | Traçabilité incident |
-| Action event log V4 | Politique configurable | DB V4 | Détaillé dans ADR-029 |
+| Action event log V4 | **3 catégories** (compliance 5y / business 3y / system 1y) | DB V4 | Détaillé dans ADR-029 §10 (Accepted 2026-05-14) — matrice 16 events × 3 catégories rétention RGPD alignée doctrine v0.3, IE5 purge mensuelle triple garde-fou |
+| Evidences (uploads users) | **expires_at = verified_at + 90j** (IE6) | DB V4 + filesystem `fs://` gitignored | Détaillé dans ADR-029 §5 + §7 (Accepted 2026-05-14) — IE9 magic bytes MIME anti-spoofing · IE2 validation manuelle obligatoire |
 
 **Politique RGPD** :
 - Backups offline = stockage froid · accès restreint admin only
@@ -892,7 +893,7 @@ echo "✓ Dry-run terminé"
 - **ADR-027 (sécurité org-scoping)** — **Accepted** (2026-05-14) — voir [`L4_ADR-027_securite_org_scoping.md`](L4_ADR-027_securite_org_scoping.md) — manuel défensif V4 · 11 invariants IS1-IS11 · IS10 backup non commitable = renforcement CI de I9 ADR-026 · 8 menaces M1-M8 · IDOR matrix 288 cellules · 50 source-guards CI · preuves d'absence d'IDOR post-V4 via smoke tests J+0 + audit pen-test J-7
 - **ADR-028 (lifecycle states)** — **Accepted** (2026-05-14) — voir [`L5_ADR-028_lifecycle_states.md`](L5_ADR-028_lifecycle_states.md) — manuel comportement item · 11 invariants IL1-IL11 · 7 arbitrages Q33-Q39 · state machine 5 états × 10 transitions · 6 closure_reasons révisés (`merged_duplicate` + `resolved_via_recurrence` Q9-B) · cohérent migration legacy → V4 §10 ce document · **avenant doctrinal v0.2 → v0.3 inclus dans commit L5**
 - **ADR-028 (lifecycle states)** : 5 états + 6 closure reasons préservés dans seeds
-- **ADR-029 (evidence + audit trail)** : politique rétention RGPD par event_type complétée
+- **ADR-029 (evidence + audit trail)** — **Accepted** (2026-05-14) — voir [`L6_ADR-029_evidence_audit_trail.md`](L6_ADR-029_evidence_audit_trail.md) — manuel des preuves et de la traçabilité · 9 invariants IE1-IE9 (dont IE9 cardinal magic bytes MIME · IE8 séparation `security_audit_log` 90j vs `action_event_log` 1-5 ans) · 7 arbitrages Q40-Q46 · 16 event_types × 3 catégories rétention RGPD (compliance 5y / business 3y / system 1y) · 16 schemas Pydantic v1 versionnés · 8 articles CNIL référencés · 40+ tests planifiés · IE1 storage `fs://` gitignored = renforcement IE1 + IS10 + I9 (3 niveaux empilés) · calendrier IE5 purge mensuelle aligné cutover Mois 4 (J-7 dry-run · J+1 purge réelle · J+14 STOP GATE) · **dernier ADR Mois 1**
 
 ---
 
