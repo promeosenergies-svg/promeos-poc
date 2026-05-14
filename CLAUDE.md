@@ -16,13 +16,16 @@ PROMEOS = **système de contrôle énergétique B2B des patrimoines multi-sites*
 - **North star UX** : [`docs/maquettes/centre_action_v4/`](docs/maquettes/centre_action_v4/) (5 HTML figées — voir README index)
 - **L1 audit décisionnel** : [`docs/dev/L1_audit_centre_action_v4_decisional.md`](docs/dev/L1_audit_centre_action_v4_decisional.md) (86 verdicts binaires)
 - **ADR-025 Architecture V4** : [`docs/dev/L2_ADR-025_architecture_v4.md`](docs/dev/L2_ADR-025_architecture_v4.md) (status: **Accepted** · 8 tables · 20 indexes · 100 tests)
+- **ADR-026 Migration data legacy → V4** : [`docs/dev/L3_ADR-026_migration_data.md`](docs/dev/L3_ADR-026_migration_data.md) (status: **Accepted** · manuel de bascule sécurisé · 9 invariants I1-I9 · 7 arbitrages Q19-Q25 · 6 scripts · cutover Mois 4 + STOP GATE J+14)
 - **Arbitrages doctrinaux Q1-Q9** : Q1-A · Q2-α · Q3-C · Q4-A · Q5-B · Q6-A · Q7-A · Q8-C · Q9-B
 - **Arbitrages techniques Q10-Q18 (ADR-025)** : Q10-A_refined · Q11-A · Q12-A · Q13-B · Q14-A · Q15-C · Q16-A · Q17-C_refined · Q18-C_refined
+- **Arbitrages techniques Q19-Q25 (ADR-026)** : Q19-C · Q20-A · Q21-A · Q22-A · Q23-A · Q24-A · Q25-A + garde-fou cardinal **I9 backup hors Git · receipt sanitizé**
 - **2 axes orthogonaux** : `kind` (7 valeurs intrinsèques) ≠ `priority` (calcul dérivé P0-P3 + 6 règles modulation R1-R6)
-- **Mois 1** : docs only (L1 → L10), zéro code. ADR-026/027/028/029 à produire (L3-L6)
+- **Cardinaux data à migrer** : **173 rows** (`action_items` 35 + `bill_anomaly` 52 + `anomaly` KB 86) · 15 autres tables vides Sprint 13 dette pure
+- **Mois 1** : docs only (L1 → L10), zéro code. ADR-027/028/029 à produire (L4-L6)
 - **Mois 2** : backend cible socle (8 tables V4 + services PriorityScoring/Lifecycle/Impact)
-- **Mois 4** : cutover sec V4 (Q13-B) — feature flag global · backup Q2-α obligatoire J-1
-- **Backup DB + export JSON/CSV des tables legacy `Action`/`Anomaly` OBLIGATOIRE** avant suppression (Q2-α non négociable · 173 rows à migrer)
+- **Mois 4** : cutover sec V4 (Q13-B) — feature flag global · backup triple artefact J-1 (binaire + SQL + JSON + checksums SHA256) · STOP GATE J+14 manuel
+- **Backup DB + export JSON/CSV obligatoire** hors Git avant suppression (Q2-α non négociable · receipt sanitizé in Git si commité)
 - Audit legacy de référence : [`docs/audits/AUDIT_CENTRE_ACTION_2026_05_13.md`](docs/audits/AUDIT_CENTRE_ACTION_2026_05_13.md)
 
 ## Workframe & boundaries
