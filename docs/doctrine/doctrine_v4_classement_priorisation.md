@@ -703,13 +703,13 @@ Pourquoi : meilleur ratio gain / délai / preuve.
 
 Cette doctrine est la **source unique** des choix V4. Les ADR la **référencent** sans la dupliquer :
 
-| ADR | Sections de la doctrine référencées |
-|---|---|
-| **ADR-025** Architecture | §2 (axes orthogonaux), §3 (kinds), §4 (score model), §8 (vues) |
-| **ADR-026** Migration data | §3.3 (immutabilité kind), §7.1 (mapping FR) |
-| **ADR-027** Sécurité org-scoping | §3.3 (endpoint admin correct-kind) |
-| **ADR-028** Lifecycle states | §7.1 (labels FR), §8 (doctrine par vue) |
-| **ADR-029** Evidence + audit trail | §3.3 (`kind_corrected`), §4.3 (events), §7.1 (event types FR) |
+| ADR | Statut | Sections de la doctrine référencées |
+|---|---|---|
+| **ADR-025** Architecture | **Accepted** (2026-05-14) — voir [`docs/dev/L2_ADR-025_architecture_v4.md`](../dev/L2_ADR-025_architecture_v4.md) — schéma DB 8 tables + 20 indexes + 100 tests | §2 (axes orthogonaux), §3 (kinds), §4 (score model), §8 (vues) |
+| **ADR-026** Migration data | À produire L3 | §3.3 (immutabilité kind), §7.1 (mapping FR) |
+| **ADR-027** Sécurité org-scoping | À produire L4 | §3.3 (endpoint admin correct-kind) |
+| **ADR-028** Lifecycle states | À produire L5 | §7.1 (labels FR), §8 (doctrine par vue) |
+| **ADR-029** Evidence + audit trail | À produire L6 | §3.3 (`kind_corrected`), §4.3 (events), §7.1 (event types FR) |
 
 ---
 

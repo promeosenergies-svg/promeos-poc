@@ -13,12 +13,16 @@ PROMEOS = **système de contrôle énergétique B2B des patrimoines multi-sites*
 ## Centre d'Action V4 — refonte Mois 1-6 (lancée 13/05/2026)
 
 - **Doctrine source** : [`docs/doctrine/doctrine_v4_classement_priorisation.md`](docs/doctrine/doctrine_v4_classement_priorisation.md) (v0.2 — référence figée 6 mois)
-- **North star UX** : [`docs/maquettes/centre_action_v4/`](docs/maquettes/centre_action_v4/) (M1-M5 figées — voir README index)
-- **Arbitrages actés** : Q1-A (ActionCenterItem polymorphique) · Q2-α (table rase + backup obligatoire) · Q3-C (ADR-022 + extensions V4) · Q4-A (regulatory_applicability_service SoT) · Q5-B (job pull idempotent compliance) · Q6-A (Mois 1 docs only) · Q7-A (rendu strict par kind) · Q8-C (score persisté + invalidation event-driven) · Q9-B (duplicate_groups vs recurrence_groups séparés)
+- **North star UX** : [`docs/maquettes/centre_action_v4/`](docs/maquettes/centre_action_v4/) (5 HTML figées — voir README index)
+- **L1 audit décisionnel** : [`docs/dev/L1_audit_centre_action_v4_decisional.md`](docs/dev/L1_audit_centre_action_v4_decisional.md) (86 verdicts binaires)
+- **ADR-025 Architecture V4** : [`docs/dev/L2_ADR-025_architecture_v4.md`](docs/dev/L2_ADR-025_architecture_v4.md) (status: **Accepted** · 8 tables · 20 indexes · 100 tests)
+- **Arbitrages doctrinaux Q1-Q9** : Q1-A · Q2-α · Q3-C · Q4-A · Q5-B · Q6-A · Q7-A · Q8-C · Q9-B
+- **Arbitrages techniques Q10-Q18 (ADR-025)** : Q10-A_refined · Q11-A · Q12-A · Q13-B · Q14-A · Q15-C · Q16-A · Q17-C_refined · Q18-C_refined
 - **2 axes orthogonaux** : `kind` (7 valeurs intrinsèques) ≠ `priority` (calcul dérivé P0-P3 + 6 règles modulation R1-R6)
-- **Mois 1** : docs only (L1 → L10), zéro code. STOP GATE Phase 0 → validation Amine → Phase 1 L1 décisionnel
-- **Mois 2** : backend cible via ADR-025 → ADR-029 (architecture / migration / sécurité / lifecycle / evidence+audit trail)
-- **Backup DB + export JSON/CSV des tables legacy `Action`/`Anomaly` OBLIGATOIRE** avant suppression (Q2-α non négociable)
+- **Mois 1** : docs only (L1 → L10), zéro code. ADR-026/027/028/029 à produire (L3-L6)
+- **Mois 2** : backend cible socle (8 tables V4 + services PriorityScoring/Lifecycle/Impact)
+- **Mois 4** : cutover sec V4 (Q13-B) — feature flag global · backup Q2-α obligatoire J-1
+- **Backup DB + export JSON/CSV des tables legacy `Action`/`Anomaly` OBLIGATOIRE** avant suppression (Q2-α non négociable · 173 rows à migrer)
 - Audit legacy de référence : [`docs/audits/AUDIT_CENTRE_ACTION_2026_05_13.md`](docs/audits/AUDIT_CENTRE_ACTION_2026_05_13.md)
 
 ## Workframe & boundaries
