@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1500, initial-scale=1">
+<title>PROMEOS — Centre d'action V4 · Pilotage Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ═══════ TOKENS SOL v1.1 ═══════ */
+  :root {
+    --sol-bg-canvas: #f8f9fa;
+    --sol-bg-paper: #ffffff;
+    --sol-bg-panel: #f3f4f6;
+    --sol-ink-100: #f1f5f9;
+    --sol-ink-200: #e2e8f0;
+    --sol-ink-300: #cbd5e1;
+    --sol-ink-400: #94a3b8;
+    --sol-ink-500: #64748b;
+    --sol-ink-700: #334155;
+    --sol-ink-900: #0f172a;
+    --sol-rule: #e2e8f0;
+    --sol-calme-fg: #2f6b5e; --sol-calme-bg: #e3f0ed;
+    --sol-succes-fg: #2e6b4a; --sol-succes-bg: #dfede3; --sol-succes-line: #5a8a72;
+    --sol-attention-fg: #8a5a14; --sol-attention-bg: #f6ead2; --sol-attention-line: #d4a85a;
+    --sol-afaire-fg: #a04525; --sol-afaire-bg: #f7e4d8; --sol-afaire-line: #d68a5e;
+    --sol-refuse-fg: #8b3a3a; --sol-refuse-bg: #f3dddb; --sol-refuse-line: #b85a5a;
+    --sol-hch-fg: #2e4a6b; --sol-hch-bg: #e6edf5;
+    --sol-night-bg: #072a44;
+    --sol-font-display: 'Fraunces', Georgia, serif;
+    --sol-font-body: 'DM Sans', system-ui, sans-serif;
+    --sol-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sol-radius-sm: 4px;
+    --sol-radius-md: 6px;
+    --sol-radius-lg: 8px;
+    --sol-radius-xl: 12px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--sol-ink-200);
+    font-family: var(--sol-font-body);
+    color: var(--sol-ink-900);
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-size: 14.5px;
+    line-height: 1.5;
+    letter-spacing: -0.005em;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 10000;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='100' height='100' filter='url(%23n)' opacity='0.5'/></svg>");
+  }
+
+  .app {
+    max-width: 1500px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 60px 220px 1fr;
+    background: var(--sol-bg-canvas);
+    border-radius: var(--sol-radius-xl);
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+  }
+
+  /* ─── RAIL / SIDE (identiques M1/M2/M3) ─── */
+  .nav-rail { background: var(--sol-bg-panel); padding: 14px 12px; border-right: 1px solid var(--sol-rule); display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .rail-logo { width: 34px; height: 34px; border-radius: var(--sol-radius-md); background: var(--sol-ink-900); color: var(--sol-bg-paper); font-family: var(--sol-font-display); font-weight: 500; font-size: 17px; display: flex; align-items: center; justify-content: center; margin-bottom: 7px; }
+  .rail-item { width: 38px; height: 42px; border-radius: var(--sol-radius-md); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--sol-ink-500); cursor: pointer; position: relative; }
+  .rail-item.active { color: var(--sol-ink-900); background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); }
+  .rail-item svg { width: 17px; height: 17px; }
+  .rail-item-label { font-size: 9px; font-family: var(--sol-font-mono); }
+  .rail-badge { position: absolute; top: -2px; right: 2px; background: var(--sol-refuse-fg); color: var(--sol-bg-paper); font-size: 9px; font-family: var(--sol-font-mono); padding: 1px 4px; border-radius: var(--sol-radius-md); line-height: 1; }
+  .rail-spacer { flex: 1; }
+  .rail-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); color: var(--sol-ink-900); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; }
+
+  .nav-side { background: var(--sol-bg-panel); padding: 16px 14px; border-right: 1px solid var(--sol-rule); }
+  .nav-brand { margin-bottom: 22px; padding: 0 4px; }
+  .nav-brand-title { font-family: var(--sol-font-display); font-size: 20px; font-weight: 500; line-height: 1.05; color: var(--sol-ink-900); letter-spacing: -0.01em; }
+  .nav-brand-sub { font-size: 11.5px; color: var(--sol-ink-500); margin-top: 2px; font-style: italic; font-family: var(--sol-font-display); }
+  .nav-link { display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-radius: var(--sol-radius-md); font-size: 13px; color: var(--sol-ink-700); margin-bottom: 1px; }
+  .nav-link.active { background: var(--sol-bg-paper); color: var(--sol-ink-900); font-weight: 500; border: 1px solid var(--sol-rule); }
+  .nav-link svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .nav-link-badge { margin-left: auto; background: var(--sol-bg-paper); color: var(--sol-ink-500); font-family: var(--sol-font-mono); font-size: 9.5px; padding: 1px 5px; border-radius: var(--sol-radius-lg); font-weight: 500; border: 1px solid var(--sol-rule); }
+  .nav-link-badge.alert { background: var(--sol-refuse-fg); color: var(--sol-bg-paper); border-color: var(--sol-refuse-fg); }
+  .nav-section-title { font-family: var(--sol-font-mono); font-size: 9px; letter-spacing: 0.14em; color: var(--sol-ink-400); text-transform: uppercase; margin: 16px 10px 5px; }
+
+  .main { background: var(--sol-bg-canvas); display: flex; flex-direction: column; }
+
+  /* ─── TOPBAR ─── */
+  .topbar { display: flex; align-items: center; gap: 10px; padding: 11px 28px; border-bottom: 1px solid var(--sol-rule); background: var(--sol-bg-canvas); flex-shrink: 0; flex-wrap: wrap; }
+  .breadcrumb { font-size: 13px; color: var(--sol-ink-500); }
+  .breadcrumb b { color: var(--sol-ink-900); font-weight: 500; }
+  .breadcrumb .sep { margin: 0 7px; color: var(--sol-ink-300); }
+  .topbar-spacer { flex: 1; }
+  .filter-group { display: flex; gap: 6px; align-items: center; }
+  .filter-label { font-family: var(--sol-font-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--sol-ink-500); text-transform: uppercase; margin-right: 3px; }
+  .filter-pill { display: flex; align-items: center; gap: 5px; padding: 3px 9px; background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--sol-ink-900); cursor: pointer; font-family: var(--sol-font-body); }
+  .filter-pill svg { width: 10px; height: 10px; color: var(--sol-ink-500); }
+  .filter-pill .filter-count { font-family: var(--sol-font-mono); font-weight: 400; color: var(--sol-ink-500); font-size: 10.5px; margin-left: 2px; }
+  .filter-pill.active { background: var(--sol-ink-900); color: var(--sol-bg-paper); border-color: var(--sol-ink-900); }
+  .filter-pill.active .filter-count { color: var(--sol-ink-200); }
+  .filter-pill.active svg { color: var(--sol-bg-paper); }
+  .status-pill { font-family: var(--sol-font-mono); font-size: 10px; padding: 3px 8px; border-radius: 999px; font-weight: 500; letter-spacing: 0.06em; }
+  .status-pill.ok { background: var(--sol-succes-bg); color: var(--sol-succes-fg); border: 1px solid var(--sol-succes-line); }
+  .status-pill.demo { background: var(--sol-attention-bg); color: var(--sol-attention-fg); border: 1px solid var(--sol-attention-line); }
+  .vue-toggle { display: flex; align-items: center; gap: 6px; font-family: var(--sol-font-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--sol-ink-500); text-transform: uppercase; }
+  .vue-select { background: var(--sol-bg-paper); color: var(--sol-ink-900); border: 1px solid var(--sol-ink-300); border-radius: var(--sol-radius-md); padding: 4px 10px; font-size: 12px; font-family: var(--sol-font-body); font-weight: 500; text-transform: none; letter-spacing: 0; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .vue-select svg { width: 10px; height: 10px; color: var(--sol-ink-500); }
+  .vue-select .persona-marker { background: var(--sol-calme-fg); width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
+  .user-pill { display: flex; align-items: center; gap: 7px; }
+  .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--sol-bg-panel); border: 1px solid var(--sol-rule); color: var(--sol-ink-900); display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 500; }
+
+  .canvas { padding: 22px 36px 28px; max-width: 1380px; margin: 0 auto; width: 100%; }
+  .masthead { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--sol-ink-900); margin-bottom: 16px; }
+  .masthead-left { font-family: var(--sol-font-display); font-size: 13px; color: var(--sol-ink-900); font-weight: 500; font-style: italic; letter-spacing: 0.02em; }
+  .masthead-left b { font-weight: 600; font-style: normal; }
+  .masthead-right { font-family: var(--sol-font-mono); font-size: 10.5px; letter-spacing: 0.16em; color: var(--sol-ink-500); text-transform: uppercase; }
+
+  /* ─── BARRE NARRATIVE COMPACTE (synchronisée M1/M3) ─── */
+  .narrative-bar {
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-lg);
+    padding: 16px 22px 14px;
+    margin-bottom: 18px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 22px;
+    align-items: center;
+  }
+  .narrative-kicker {
+    font-family: var(--sol-font-mono);
+    font-size: 10px; letter-spacing: 0.18em;
+    color: var(--sol-ink-500); text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .narrative-kicker .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--sol-succes-fg);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+  .narrative-headline {
+    font-family: var(--sol-font-display);
+    font-size: 17px; font-weight: 500;
+    color: var(--sol-ink-900); line-height: 1.3;
+    letter-spacing: -0.012em;
+    margin: 0 0 6px;
+  }
+  .narrative-headline em { font-style: italic; color: var(--sol-ink-500); font-weight: 400; }
+  .narrative-headline .num { font-family: var(--sol-font-mono); font-weight: 500; }
+  .narrative-stats { display: flex; gap: 18px; }
+  .narrative-stat { display: flex; flex-direction: column; gap: 1px; border-left: 1px solid var(--sol-rule); padding-left: 12px; }
+  .narrative-stat:first-child { border-left: none; padding-left: 0; }
+  .narrative-stat-label { font-family: var(--sol-font-mono); font-size: 8.5px; letter-spacing: 0.12em; color: var(--sol-ink-500); text-transform: uppercase; font-weight: 500; }
+  .narrative-stat-value { font-family: var(--sol-font-mono); font-size: 15px; font-weight: 500; color: var(--sol-ink-900); font-variant-numeric: tabular-nums; }
+  .narrative-stat-value.crit { color: var(--sol-refuse-fg); }
+  .narrative-stat-value.warn { color: var(--sol-attention-fg); }
+  .narrative-stat-value.pos { color: var(--sol-succes-fg); }
+  .narrative-stat-value .unit { font-size: 10px; color: var(--sol-ink-500); font-weight: 400; font-family: var(--sol-font-display); font-style: italic; }
+  .narrative-cta-secondary {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--sol-bg-paper); color: var(--sol-ink-900);
+    border: 1px solid var(--sol-ink-300);
+    border-radius: var(--sol-radius-md);
+    padding: 6px 11px;
+    font-size: 11.5px; font-weight: 500; cursor: pointer;
+  }
+  .narrative-cta-secondary svg { width: 11px; height: 11px; color: var(--sol-ink-500); }
+
+  /* ─── TABS (Pilotage actif) ─── */
+  .tabs-bar { display: flex; align-items: center; gap: 0; border-bottom: 1px solid var(--sol-ink-900); margin-bottom: 18px; }
+  .tab { padding: 10px 18px 11px; font-family: var(--sol-font-display); font-size: 15px; font-weight: 500; color: var(--sol-ink-500); cursor: pointer; border-bottom: 3px solid transparent; transform: translateY(2px); letter-spacing: -0.005em; display: flex; align-items: center; gap: 8px; }
+  .tab.active { color: var(--sol-ink-900); border-bottom-color: var(--sol-ink-900); font-weight: 600; }
+  .tab .tab-count { font-family: var(--sol-font-mono); font-size: 10px; font-weight: 500; background: var(--sol-bg-panel); color: var(--sol-ink-700); padding: 1px 7px; border-radius: 999px; }
+  .tab.active .tab-count { background: var(--sol-ink-900); color: var(--sol-bg-paper); }
+  .tabs-spacer { flex: 1; }
+
+  /* ─── TOGGLE Décisions / Journal (Journal actif cette fois) ─── */
+  .view-toggle {
+    display: inline-flex;
+    background: var(--sol-bg-panel);
+    border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-md);
+    padding: 2px;
+    margin-bottom: 16px;
+  }
+  .view-toggle-option {
+    padding: 5px 14px;
+    font-family: var(--sol-font-body);
+    font-size: 12.5px; font-weight: 500;
+    color: var(--sol-ink-500); cursor: pointer;
+    border-radius: var(--sol-radius-sm);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .view-toggle-option.active {
+    background: var(--sol-bg-paper);
+    color: var(--sol-ink-900);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  }
+  .view-toggle-option svg { width: 12px; height: 12px; }
+
+  /* ═══════════════════════════════════════════════════════════════
+     JOURNAL FILTRES — bandeau au-dessus de la timeline
+  ═══════════════════════════════════════════════════════════════ */
+  .journal-filters {
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-md);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    display: flex; gap: 10px; align-items: center;
+    flex-wrap: wrap;
+  }
+  .journal-filters-label {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.14em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 600;
+    margin-right: 4px;
+  }
+  .journal-filter-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px;
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-ink-300);
+    border-radius: 999px;
+    font-family: var(--sol-font-body); font-size: 11.5px;
+    color: var(--sol-ink-700); cursor: pointer; font-weight: 500;
+  }
+  .journal-filter-chip svg { width: 10px; height: 10px; color: var(--sol-ink-400); }
+  .journal-filter-chip .chip-count { font-family: var(--sol-font-mono); font-size: 9.5px; color: var(--sol-ink-500); font-weight: 400; margin-left: 2px; }
+  .journal-filter-chip.active { background: var(--sol-ink-900); color: var(--sol-bg-paper); border-color: var(--sol-ink-900); }
+  .journal-filter-chip.active .chip-count { color: var(--sol-ink-200); }
+  .journal-filter-chip.active svg { color: var(--sol-bg-paper); }
+  .journal-filters-spacer { flex: 1; }
+  .journal-count {
+    font-family: var(--sol-font-mono); font-size: 11px;
+    color: var(--sol-ink-500); letter-spacing: 0.04em;
+  }
+  .journal-count b { color: var(--sol-ink-900); font-weight: 600; font-size: 12.5px; }
+
+  /* ═══════════════════════════════════════════════════════════════
+     TIMELINE JOURNAL — cardinal Pilotage > Journal
+     Groupée par jour, événements verticaux
+  ═══════════════════════════════════════════════════════════════ */
+  .day-group { margin-bottom: 18px; }
+  .day-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 10px;
+    padding: 6px 0;
+  }
+  .day-label {
+    font-family: var(--sol-font-display);
+    font-size: 17px; font-weight: 600;
+    color: var(--sol-ink-900);
+    letter-spacing: -0.012em;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .day-label em {
+    font-style: italic; font-size: 13px;
+    color: var(--sol-ink-500); font-weight: 400;
+  }
+  .day-meta {
+    font-family: var(--sol-font-mono);
+    font-size: 10px; letter-spacing: 0.08em;
+    color: var(--sol-ink-500); text-transform: uppercase;
+    font-weight: 500;
+    background: var(--sol-bg-panel);
+    padding: 2px 8px; border-radius: 3px;
+  }
+  .day-rule {
+    flex: 1; height: 1px;
+    background: linear-gradient(to right, var(--sol-ink-300), transparent);
+  }
+
+  .events-list {
+    position: relative;
+    padding-left: 0;
+  }
+
+  /* Event card */
+  .event-row {
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-md);
+    padding: 12px 16px;
+    margin-bottom: 6px;
+    display: grid;
+    grid-template-columns: 60px 110px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    transition: border-color 0.15s;
+    cursor: pointer;
+  }
+  .event-row:hover { border-color: var(--sol-ink-300); }
+
+  /* Time column */
+  .event-time {
+    font-family: var(--sol-font-mono);
+    font-size: 12.5px; font-weight: 600;
+    color: var(--sol-ink-900);
+    text-align: right;
+    line-height: 1.1;
+    letter-spacing: -0.005em;
+  }
+  .event-time-sec {
+    font-size: 9.5px; color: var(--sol-ink-400);
+    font-weight: 400; margin-top: 2px;
+    letter-spacing: 0.02em;
+  }
+
+  /* Actor column */
+  .event-actor {
+    display: flex; flex-direction: column; gap: 3px;
+    align-items: flex-start;
+  }
+  .event-actor-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-family: var(--sol-font-mono);
+    font-size: 10px; letter-spacing: 0.04em;
+    font-weight: 500;
+  }
+  .event-actor-badge.system {
+    background: var(--sol-calme-bg);
+    color: var(--sol-calme-fg);
+    border: 1px solid var(--sol-calme-fg);
+  }
+  .event-actor-badge.user {
+    background: var(--sol-bg-panel);
+    color: var(--sol-ink-700);
+    border: 1px solid var(--sol-rule);
+  }
+  .event-actor-badge .actor-avatar {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--sol-bg-paper);
+    color: var(--sol-ink-900);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 600;
+    border: 1px solid var(--sol-rule);
+  }
+
+  /* Content column */
+  .event-content { line-height: 1.4; }
+  .event-headline {
+    font-family: var(--sol-font-body);
+    font-size: 13.5px;
+    color: var(--sol-ink-900);
+    margin-bottom: 3px;
+  }
+  .event-headline .event-verb {
+    font-weight: 600; color: var(--sol-ink-900);
+  }
+  .event-headline .arrow {
+    color: var(--sol-ink-400);
+    margin: 0 6px;
+    font-family: var(--sol-font-mono);
+  }
+  .event-headline .new-value {
+    background: var(--sol-succes-bg);
+    color: var(--sol-succes-fg);
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-family: var(--sol-font-mono);
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .event-headline .old-value {
+    color: var(--sol-ink-400);
+    text-decoration: line-through;
+    font-size: 12px;
+  }
+  .event-headline .kind-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-family: var(--sol-font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .kind-badge.anomaly { background: var(--sol-refuse-bg); color: var(--sol-refuse-fg); border: 1px solid var(--sol-refuse-line); }
+  .kind-badge.action { background: var(--sol-bg-panel); color: var(--sol-ink-700); border: 1px solid var(--sol-rule); }
+  .kind-badge.decision { background: var(--sol-hch-bg); color: var(--sol-hch-fg); border: 1px solid var(--sol-hch-fg); }
+  .kind-badge.signal { background: var(--sol-bg-panel); color: var(--sol-ink-500); border: 1px dashed var(--sol-ink-300); }
+  .kind-badge.evidence_request { background: var(--sol-attention-bg); color: var(--sol-attention-fg); border: 1px solid var(--sol-attention-line); }
+  .kind-badge.deadline { background: var(--sol-afaire-bg); color: var(--sol-afaire-fg); border: 1px solid var(--sol-afaire-line); }
+  .kind-badge.recommendation { background: var(--sol-calme-bg); color: var(--sol-calme-fg); border: 1px dotted var(--sol-calme-fg); }
+
+  .event-target {
+    font-family: var(--sol-font-display);
+    color: var(--sol-ink-900);
+    font-weight: 500;
+    font-style: italic;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--sol-ink-400);
+  }
+  .event-detail {
+    font-family: var(--sol-font-display);
+    font-style: italic; font-size: 12px;
+    color: var(--sol-ink-500);
+    line-height: 1.4;
+  }
+  .event-detail b { font-style: normal; color: var(--sol-ink-700); font-weight: 500; }
+  .event-detail code {
+    font-family: var(--sol-font-mono);
+    background: var(--sol-bg-panel);
+    color: var(--sol-ink-700);
+    padding: 1px 5px; border-radius: 2px;
+    font-size: 11px;
+  }
+
+  /* Right column — context badges */
+  .event-context {
+    display: flex; gap: 5px; align-items: center; flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .ctx-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.04em;
+    padding: 2px 7px; border-radius: 2px;
+    background: var(--sol-bg-panel);
+    color: var(--sol-ink-500);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .ctx-chip.prio-p0 { background: var(--sol-refuse-bg); color: var(--sol-refuse-fg); }
+  .ctx-chip.prio-p1 { background: var(--sol-attention-bg); color: var(--sol-attention-fg); }
+  .ctx-chip.prio-p2 { background: var(--sol-calme-bg); color: var(--sol-calme-fg); }
+  .ctx-chip.prio-p3 { background: var(--sol-ink-100); color: var(--sol-ink-500); }
+  .ctx-chip.escalated {
+    background: var(--sol-refuse-fg); color: var(--sol-bg-paper);
+    font-weight: 600;
+  }
+  .ctx-chip.recurrence {
+    background: var(--sol-attention-bg); color: var(--sol-attention-fg);
+    border: 1px solid var(--sol-attention-line);
+  }
+  .ctx-chip.qualify {
+    background: var(--sol-afaire-bg); color: var(--sol-afaire-fg);
+    border: 1px dashed var(--sol-afaire-line);
+  }
+
+  /* Event types — left visual marker by event_type */
+  .event-row.major {
+    border-left: 3px solid var(--sol-ink-900);
+    background: var(--sol-bg-paper);
+  }
+  .event-row.system-event {
+    background: var(--sol-bg-canvas);
+  }
+
+  /* Special : digest row (regroupé) */
+  .event-row.digest {
+    background: var(--sol-bg-panel);
+    border-style: dashed;
+  }
+  .event-row.digest .event-headline {
+    color: var(--sol-ink-500); font-style: italic;
+    font-family: var(--sol-font-display);
+  }
+
+  /* ─── Show more cta ─── */
+  .show-earlier {
+    display: flex; justify-content: center;
+    padding: 12px 0;
+  }
+  .show-earlier a {
+    font-family: var(--sol-font-mono);
+    font-size: 10.5px; letter-spacing: 0.1em;
+    color: var(--sol-ink-700); text-decoration: none;
+    text-transform: uppercase; font-weight: 500;
+    border-bottom: 1px dotted var(--sol-ink-400);
+    padding-bottom: 2px;
+  }
+
+  /* ─── COLOPHON ─── */
+  .colophon { border-top: 1px solid var(--sol-ink-900); padding-top: 16px; margin-top: 22px; display: flex; justify-content: space-between; align-items: baseline; font-family: var(--sol-font-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--sol-ink-500); text-transform: uppercase; flex-wrap: wrap; gap: 12px; }
+  .colophon a { color: var(--sol-ink-900); text-decoration: none; font-weight: 500; border-bottom: 1px solid var(--sol-ink-900); padding-bottom: 1px; }
+  .colophon .meta-list { display: flex; gap: 14px; flex-wrap: wrap; }
+  .colophon .sep { color: var(--sol-ink-300); }
+  .colophon .version-tag { font-family: var(--sol-font-mono); font-size: 9px; background: var(--sol-bg-panel); border: 1px solid var(--sol-rule); padding: 2px 7px; border-radius: 3px; color: var(--sol-ink-700); letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- RAIL -->
+  <div class="nav-rail">
+    <div class="rail-logo">P</div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-7h-6v7H5a2 2 0 0 1-2-2v-9z"/></svg><div class="rail-item-label">Accueil</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg><div class="rail-item-label">Énergie</div><div class="rail-badge">5</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg><div class="rail-item-label">Conform.</div><div class="rail-badge">9</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/></svg><div class="rail-item-label">Factur.</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h2l3 12h11l2-8H6"/></svg><div class="rail-item-label">Achat</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21V9l9-6 9 6v12"/></svg><div class="rail-item-label">Patrim.</div></div>
+    <div class="rail-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg><div class="rail-item-label">Action</div><div class="rail-badge">12</div></div>
+    <div class="rail-spacer"></div>
+    <div class="rail-avatar">SM</div>
+  </div>
+
+  <!-- SIDE -->
+  <div class="nav-side">
+    <div class="nav-brand">
+      <div class="nav-brand-title">PROMEOS</div>
+      <div class="nav-brand-sub">Centre d'action</div>
+    </div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M11 19a8 8 0 1 1 5.3-14"/></svg>Demander à PROMEOS… <span class="nav-link-badge">⌘K</span></div>
+    <div class="nav-section-title">Centre d'action</div>
+    <div class="nav-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>Pilotage <span class="nav-link-badge alert">8</span></div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19h16M4 12h16M4 5h16"/></svg>Référentiel <span class="nav-link-badge">147</span></div>
+    <div class="nav-section-title">Vues sauvegardées</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>Mes P0 cette semaine</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 5h14v14H5z"/></svg>Conformité DT 2030</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Factures à contester</div>
+    <div class="nav-section-title">Cockpit</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/></svg>Briefing du jour</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19h16M4 12h16M4 5h16"/></svg>Synthèse stratégique</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <div class="topbar">
+      <div class="breadcrumb"><b>PROMEOS</b><span class="sep">›</span>Accueil<span class="sep">›</span><b>Centre d'action</b><span class="sep">›</span>Pilotage<span class="sep">›</span>Journal</div>
+      <div class="filter-group" style="margin-left: 22px">
+        <span class="filter-label">Périmètre</span>
+        <span class="filter-pill active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V9l9-6 9 6v12"/></svg>
+          Groupe HELIOS <span class="filter-count">5 sites</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </div>
+      <div class="topbar-spacer"></div>
+      <span class="status-pill ok">OK</span>
+      <span class="status-pill demo">Démo</span>
+      <div class="vue-toggle">Persona
+        <div class="vue-select">
+          <span class="persona-marker"></span>
+          Resp. Énergie
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="user-pill"><div class="user-avatar">SM</div></div>
+    </div>
+
+    <div class="canvas">
+
+      <!-- MASTHEAD -->
+      <div class="masthead">
+        <div class="masthead-left"><b>Centre d'action</b> · Journal des 7 derniers jours · Sophie Marin</div>
+        <div class="masthead-right">Mardi 12 mai 2026 · 07:18 · Flux live</div>
+      </div>
+
+      <!-- BARRE NARRATIVE COMPACTE (synchronisée M1/M3) -->
+      <div class="narrative-bar">
+        <div>
+          <div class="narrative-kicker">
+            <span class="live-dot"></span>
+            Flux d'activité · Centre d'action · 7 derniers jours
+          </div>
+          <h1 class="narrative-headline">
+            <span class="num">38 événements</span> sur 7 jours · <em>5 transitions, 3 escalades, 2 preuves vérifiées.</em>
+          </h1>
+          <div class="narrative-stats">
+            <div class="narrative-stat"><span class="narrative-stat-label">Aujourd'hui</span><span class="narrative-stat-value">7</span></div>
+            <div class="narrative-stat"><span class="narrative-stat-label">Hier</span><span class="narrative-stat-value">9</span></div>
+            <div class="narrative-stat"><span class="narrative-stat-label">7 j cumul</span><span class="narrative-stat-value">38</span></div>
+            <div class="narrative-stat"><span class="narrative-stat-label">Escalades</span><span class="narrative-stat-value crit">3</span></div>
+            <div class="narrative-stat"><span class="narrative-stat-label">Clôturés</span><span class="narrative-stat-value pos">4</span></div>
+          </div>
+        </div>
+        <button class="narrative-cta-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exporter le journal
+        </button>
+      </div>
+
+      <!-- 2 ONGLETS — Pilotage actif -->
+      <div class="tabs-bar">
+        <div class="tab active">Pilotage <span class="tab-count">8</span></div>
+        <div class="tab">Référentiel <span class="tab-count">147</span></div>
+        <div class="tabs-spacer"></div>
+      </div>
+
+      <!-- TOGGLE Décisions / JOURNAL actif -->
+      <div class="view-toggle">
+        <div class="view-toggle-option">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Décisions
+        </div>
+        <div class="view-toggle-option active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          Journal
+        </div>
+      </div>
+
+      <!-- JOURNAL FILTRES -->
+      <div class="journal-filters">
+        <span class="journal-filters-label">Filtres</span>
+        <span class="journal-filter-chip active">Tous les événements <span class="chip-count">38</span></span>
+        <span class="journal-filter-chip">Transitions <span class="chip-count">9</span></span>
+        <span class="journal-filter-chip">Assignations <span class="chip-count">5</span></span>
+        <span class="journal-filter-chip">Blockers <span class="chip-count">6</span></span>
+        <span class="journal-filter-chip">Preuves <span class="chip-count">4</span></span>
+        <span class="journal-filter-chip">Escalades <span class="chip-count">3</span></span>
+        <span class="journal-filter-chip">Acteur · Tous
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+        <div class="journal-filters-spacer"></div>
+        <span class="journal-count"><b>38</b> événements · 7 derniers jours</span>
+      </div>
+
+      <!-- ════════ TIMELINE JOURNAL ════════ -->
+
+      <!-- ─── AUJOURD'HUI ─── -->
+      <div class="day-group">
+        <div class="day-header">
+          <span class="day-label">Aujourd'hui <em>· mardi 12 mai 2026</em></span>
+          <span class="day-meta">7 événements</span>
+          <div class="day-rule"></div>
+        </div>
+
+        <div class="events-list">
+
+          <!-- 07:18 — État modifié -->
+          <div class="event-row major">
+            <div class="event-time">07:18<div class="event-time-sec">il y a 1 min</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge system">PROMEOS</span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge action">ACTION</span>
+                <span class="event-verb">État modifié</span> sur
+                <a class="event-target" href="#">Audit SMÉ Toulouse · choisir prestataire ICPE</a>
+                <span class="arrow">→</span>
+                <span class="old-value">Nouveau</span>
+                <span class="arrow">›</span>
+                <span class="new-value">Qualifié</span>
+              </div>
+              <div class="event-detail">
+                Qualification automatique après analyse <b>conformité</b> · règle <code>R6</code> appliquée · plancher P1 garanti.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip prio-p0">P0 · 88</span>
+              <span class="ctx-chip">Conformité</span>
+            </div>
+          </div>
+
+          <!-- 07:15 — Score recalculé (digest) -->
+          <div class="event-row digest system-event">
+            <div class="event-time">07:15<div class="event-time-sec">il y a 4 min</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge system">PROMEOS</span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="event-verb">Scores recalculés</span> · <b>3 items</b> mis à jour suite à changement d'échéance réglementaire
+              </div>
+              <div class="event-detail">
+                Anomalie R20 Lyon · Audit SMÉ Toulouse · Déclaration OPERAT 2024 · cf. <a href="#" style="color:inherit;border-bottom:1px dotted">détails</a>
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip">3 items</span>
+            </div>
+          </div>
+
+          <!-- 07:12 — Récurrence détectée -->
+          <div class="event-row">
+            <div class="event-time">07:12<div class="event-time-sec">il y a 7 min</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge system">PROMEOS</span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge anomaly">ANOMALIE</span>
+                <span class="event-verb">3e occurrence détectée</span> ·
+                <a class="event-target" href="#">Anomalie R20 facture Lyon</a>
+                <span class="arrow">→</span>
+                rattachée au dossier de récurrence
+              </div>
+              <div class="event-detail">
+                Signature détectée sur <b>3 factures consécutives</b> · suggestion : <b>Créer dossier de traitement</b> pour ne pas traiter occurrence par occurrence.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip recurrence">↻ 3e occurrence</span>
+              <span class="ctx-chip prio-p0">P0 · 92</span>
+            </div>
+          </div>
+
+          <!-- 06:48 — Escalade -->
+          <div class="event-row major">
+            <div class="event-time">06:48<div class="event-time-sec">il y a 31 min</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge system">PROMEOS</span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge anomaly">ANOMALIE</span>
+                <span class="event-verb">Escalade SLA déclenchée</span> ·
+                <a class="event-target" href="#">Anomalie R20 facture Lyon</a>
+                <span class="arrow">→</span>
+                <b>Direction Énergie</b>
+              </div>
+              <div class="event-detail">
+                Sans responsable depuis <b>48h</b> · règle <code>R3</code> appliquée · notification envoyée à <b>P. Robert</b>.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip escalated">⚠ Escaladé</span>
+              <span class="ctx-chip prio-p0">P0 · 92</span>
+            </div>
+          </div>
+
+          <!-- 06:45 — Créé -->
+          <div class="event-row">
+            <div class="event-time">06:45<div class="event-time-sec">il y a 34 min</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge system">PROMEOS</span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge signal">SIGNAL</span>
+                <span class="event-verb">Créé</span> ·
+                <a class="event-target" href="#">Donnée patrimoine incomplète Marseille</a>
+              </div>
+              <div class="event-detail">
+                Détecté par moteur d'assujettissement APER · <b>surface parking non renseignée</b> · confiance dégradée à 0,38 · marqué <b>"À qualifier"</b>.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip qualify">À qualifier · 0,38</span>
+              <span class="ctx-chip prio-p3">P3 · 28</span>
+            </div>
+          </div>
+
+          <!-- 06:30 — Évaluation conformité -->
+          <div class="event-row">
+            <div class="event-time">06:30<div class="event-time-sec">il y a 49 min</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge system">PROMEOS</span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge recommendation">RECO</span>
+                <span class="event-verb">Évaluation réglementaire</span> ·
+                <a class="event-target" href="#">Opportunité APER Paris Bureaux</a>
+                <span class="arrow">→</span>
+                <span class="new-value">Applicable</span>
+              </div>
+              <div class="event-detail">
+                Toiture &gt; 500 m² confirmée · confiance moteur <b>0,95</b> · échéance <b>30/06/2028</b>.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip">Patrimoine</span>
+              <span class="ctx-chip prio-p1">P1 · 68</span>
+            </div>
+          </div>
+
+          <!-- 06:00 — Recalcul nightly (digest) -->
+          <div class="event-row digest system-event">
+            <div class="event-time">06:00<div class="event-time-sec">il y a 1h 19</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge system">PROMEOS</span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="event-verb">Recalcul automatique nightly</span> · <b>147 items</b> · 12 mises à jour de score
+              </div>
+              <div class="event-detail">
+                Job de fond exécuté · scores rafraîchis pour les items P0/P1 et les items marqués obsolètes.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip">Cron · 03:00 UTC</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ─── HIER ─── -->
+      <div class="day-group">
+        <div class="day-header">
+          <span class="day-label">Hier <em>· lundi 11 mai 2026</em></span>
+          <span class="day-meta">9 événements</span>
+          <div class="day-rule"></div>
+        </div>
+
+        <div class="events-list">
+
+          <!-- 16:48 — Blocker ajouté -->
+          <div class="event-row">
+            <div class="event-time">16:48<div class="event-time-sec">hier</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge user">
+                <span class="actor-avatar">JM</span>
+                J. Martin
+              </span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge action">ACTION</span>
+                <span class="event-verb">Blocker ajouté</span> sur
+                <a class="event-target" href="#">Audit SMÉ Toulouse</a>
+                <span class="arrow">→</span>
+                <span class="new-value">Budget attendu</span>
+              </div>
+              <div class="event-detail">
+                Justification · <b>CAPEX 68 k€ scenario B non encore arbitré en COMEX du 15/05</b>.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip prio-p0">P0 · 88</span>
+            </div>
+          </div>
+
+          <!-- 14:32 — Évaluation conformité OPERAT -->
+          <div class="event-row">
+            <div class="event-time">14:32<div class="event-time-sec">hier</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge system">PROMEOS</span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge deadline">ÉCHÉANCE</span>
+                <span class="event-verb">Échéance approche</span> ·
+                <a class="event-target" href="#">Déclaration OPERAT 2024</a>
+                <span class="arrow">→</span>
+                <b>J-5</b>
+              </div>
+              <div class="event-detail">
+                Notification automatique à <b>S. Marin</b> · attestation pré-remplie prête, validation finale requise.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip">Conformité</span>
+              <span class="ctx-chip prio-p2">P2 · 58</span>
+            </div>
+          </div>
+
+          <!-- 11:24 — Preuve uploadée -->
+          <div class="event-row major">
+            <div class="event-time">11:24<div class="event-time-sec">hier</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge user">
+                <span class="actor-avatar">SM</span>
+                S. Marin
+              </span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge action">ACTION</span>
+                <span class="event-verb">Preuve vérifiée</span> sur
+                <a class="event-target" href="#">Audit isolation Lyon Bureaux</a>
+                <span class="arrow">→</span>
+                rapport APAVE intégré
+              </div>
+              <div class="event-detail">
+                Fichier <b>rapport_APAVE_2024-12-LYB.pdf</b> uploadé · signature vérifiée · liée au <b>dossier OPERAT 2025</b>.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip" style="background:var(--sol-succes-bg);color:var(--sol-succes-fg)">✓ Vérifiée</span>
+              <span class="ctx-chip prio-p3">P3 · 42</span>
+            </div>
+          </div>
+
+          <!-- 10:18 — État modifié closed -->
+          <div class="event-row">
+            <div class="event-time">10:18<div class="event-time-sec">hier</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge user">
+                <span class="actor-avatar">SM</span>
+                S. Marin
+              </span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge action">ACTION</span>
+                <span class="event-verb">État modifié</span> sur
+                <a class="event-target" href="#">Audit isolation Lyon Bureaux</a>
+                <span class="arrow">→</span>
+                <span class="old-value">En cours</span>
+                <span class="arrow">›</span>
+                <span class="new-value">Clôturé</span>
+              </div>
+              <div class="event-detail">
+                Closure : <b>Résolu</b> · gain réalisé <b>12 k€</b> · alimente Dossier OPERAT 2025.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip" style="background:var(--sol-succes-bg);color:var(--sol-succes-fg)">Réalisé 12 k€</span>
+            </div>
+          </div>
+
+          <!-- 09:24 — Assigné -->
+          <div class="event-row">
+            <div class="event-time">09:24<div class="event-time-sec">hier</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge user">
+                <span class="actor-avatar">SM</span>
+                S. Marin
+              </span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge decision">DÉCISION</span>
+                <span class="event-verb">Assigné</span> ·
+                <a class="event-target" href="#">Stratégie achat post-ARENH</a>
+                <span class="arrow">→</span>
+                <b>Claire Lévy</b> <em>(Acheteuse énergie)</em>
+              </div>
+              <div class="event-detail">
+                Justification · <b>Expertise contrats fixed/indexé/spot</b> · délai arbitrage 12 jours.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip">Achat</span>
+              <span class="ctx-chip prio-p1">P1 · 74</span>
+            </div>
+          </div>
+
+          <!-- 08:55 — Détection auto Signal -->
+          <div class="event-row">
+            <div class="event-time">08:55<div class="event-time-sec">hier</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge system">PROMEOS</span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge signal">SIGNAL</span>
+                <span class="event-verb">Détection automatique</span> ·
+                <a class="event-target" href="#">Pic baseload nocturne Nice Hôtel</a>
+              </div>
+              <div class="event-detail">
+                Algorithme EMS · confiance <b>0,38</b> · marqué <b>"À qualifier"</b> · actions destructives désactivées.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip qualify">À qualifier · 0,38</span>
+              <span class="ctx-chip prio-p3">P3 · 38</span>
+            </div>
+          </div>
+
+          <div class="show-earlier">
+            <a href="#">3 événements de plus le 11/05 ↘</a>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ─── 10 MAI ─── -->
+      <div class="day-group">
+        <div class="day-header">
+          <span class="day-label">Vendredi <em>· 10 mai 2026</em></span>
+          <span class="day-meta">8 événements</span>
+          <div class="day-rule"></div>
+        </div>
+
+        <div class="events-list">
+
+          <!-- 16:08 — Assigné -->
+          <div class="event-row">
+            <div class="event-time">16:08<div class="event-time-sec">il y a 2 j</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge user">
+                <span class="actor-avatar">SM</span>
+                S. Marin
+              </span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge action">ACTION</span>
+                <span class="event-verb">Réassigné</span> ·
+                <a class="event-target" href="#">Audit SMÉ Toulouse</a>
+                <span class="arrow">→</span>
+                <b>J. Martin</b> <em>(DAF)</em>
+              </div>
+              <div class="event-detail">
+                Justification · <b>Budget CAPEX nécessite arbitrage DAF</b>.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip prio-p0">P0 · 88</span>
+            </div>
+          </div>
+
+          <!-- 11:42 — Escalade -->
+          <div class="event-row major">
+            <div class="event-time">11:42<div class="event-time-sec">il y a 2 j</div></div>
+            <div class="event-actor">
+              <span class="event-actor-badge system">PROMEOS</span>
+            </div>
+            <div class="event-content">
+              <div class="event-headline">
+                <span class="kind-badge action">ACTION</span>
+                <span class="event-verb">Escalade SLA</span> ·
+                <a class="event-target" href="#">Audit SMÉ Toulouse</a>
+                <span class="arrow">→</span>
+                <b>S. Marin</b>
+              </div>
+              <div class="event-detail">
+                Sans responsable depuis <b>24h</b> · règle <code>R3</code> · notification au manager du domaine Conformité.
+              </div>
+            </div>
+            <div class="event-context">
+              <span class="ctx-chip escalated">⚠ Escaladé</span>
+              <span class="ctx-chip prio-p0">P0 · 88</span>
+            </div>
+          </div>
+
+          <div class="show-earlier">
+            <a href="#">6 événements de plus le 10/05 ↘</a>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ─── PLUS ANCIEN ─── -->
+      <div class="show-earlier" style="padding-top: 24px">
+        <a href="#">Voir les événements antérieurs · du 05 au 09 mai (14 événements) ↘</a>
+      </div>
+
+      <!-- COLOPHON -->
+      <div class="colophon">
+        <div class="meta-list">
+          <span>Source · <a href="#">action_event_log</a></span>
+          <span class="sep">·</span>
+          <span>Doctrine · <a href="#">classer ≠ prioriser</a> v0.2</span>
+          <span class="sep">·</span>
+          <span>Vue · Pilotage › Journal · 7 derniers jours</span>
+          <span class="sep">·</span>
+          <span>Mode <b>standard</b> · libellés FR</span>
+        </div>
+        <div class="meta-list">
+          <span class="version-tag">ActionCenter v4.0</span>
+          <span class="sep">·</span>
+          <span class="version-tag">Doctrine v0.2</span>
+          <span class="sep">·</span>
+          <span class="version-tag">Sol v1.1</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

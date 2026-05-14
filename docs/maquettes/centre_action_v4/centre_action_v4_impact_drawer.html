@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1500, initial-scale=1">
+<title>PROMEOS — Centre d'action V4 · Impact Drawer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sol-bg-canvas: #f8f9fa;
+    --sol-bg-paper: #ffffff;
+    --sol-bg-panel: #f3f4f6;
+    --sol-ink-100: #f1f5f9;
+    --sol-ink-200: #e2e8f0;
+    --sol-ink-300: #cbd5e1;
+    --sol-ink-400: #94a3b8;
+    --sol-ink-500: #64748b;
+    --sol-ink-700: #334155;
+    --sol-ink-900: #0f172a;
+    --sol-rule: #e2e8f0;
+    --sol-calme-fg: #2f6b5e; --sol-calme-bg: #e3f0ed;
+    --sol-succes-fg: #2e6b4a; --sol-succes-bg: #dfede3; --sol-succes-line: #5a8a72;
+    --sol-attention-fg: #8a5a14; --sol-attention-bg: #f6ead2; --sol-attention-line: #d4a85a;
+    --sol-afaire-fg: #a04525; --sol-afaire-bg: #f7e4d8; --sol-afaire-line: #d68a5e;
+    --sol-refuse-fg: #8b3a3a; --sol-refuse-bg: #f3dddb; --sol-refuse-line: #b85a5a;
+    --sol-hch-fg: #2e4a6b; --sol-hch-bg: #e6edf5;
+    --sol-night-bg: #072a44;
+    --sol-font-display: 'Fraunces', Georgia, serif;
+    --sol-font-body: 'DM Sans', system-ui, sans-serif;
+    --sol-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sol-radius-sm: 4px;
+    --sol-radius-md: 6px;
+    --sol-radius-lg: 8px;
+    --sol-radius-xl: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--sol-ink-200);
+    font-family: var(--sol-font-body); color: var(--sol-ink-900);
+    padding: 24px; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    font-size: 14px; line-height: 1.45; letter-spacing: -0.005em;
+    min-height: 100vh;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 10000;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='100' height='100' filter='url(%23n)' opacity='0.5'/></svg>");
+  }
+  .app {
+    max-width: 1500px; margin: 0 auto;
+    background: var(--sol-bg-canvas);
+    border-radius: var(--sol-radius-xl);
+    overflow: hidden; position: relative;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+    min-height: 1500px;
+  }
+  .backdrop {
+    display: grid; grid-template-columns: 60px 220px 1fr;
+    filter: blur(2px); opacity: 0.42; pointer-events: none;
+  }
+  .bd-rail { background: var(--sol-bg-panel); padding: 14px 12px; border-right: 1px solid var(--sol-rule); height: 100%; }
+  .bd-rail-logo { width: 34px; height: 34px; border-radius: var(--sol-radius-md); background: var(--sol-ink-900); margin: 0 auto 12px; }
+  .bd-rail-item { width: 38px; height: 42px; border-radius: var(--sol-radius-md); background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); margin: 0 auto 4px; }
+  .bd-side { background: var(--sol-bg-panel); padding: 16px 14px; border-right: 1px solid var(--sol-rule); height: 100%; }
+  .bd-side-line { height: 28px; background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); border-radius: var(--sol-radius-md); margin-bottom: 6px; }
+  .bd-side-line.active { background: var(--sol-ink-900); border-color: var(--sol-ink-900); }
+  .bd-main { padding: 32px 36px; }
+  .bd-narrative-bar { background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); border-radius: var(--sol-radius-lg); padding: 22px; margin-bottom: 22px; height: 130px; }
+  .bd-tab-bar { border-bottom: 1px solid var(--sol-ink-900); margin-bottom: 22px; height: 36px; }
+  .bd-card { background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); border-radius: var(--sol-radius-lg); border-left: 6px solid var(--sol-refuse-fg); height: 110px; margin-bottom: 10px; }
+  .bd-card.p1 { border-left-color: var(--sol-attention-fg); }
+  .bd-card.p2 { border-left-color: var(--sol-calme-fg); }
+
+  .drawer-overlay { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: rgba(15, 23, 42, 0.45); z-index: 100; }
+  .drawer {
+    position: absolute; top: 0; right: 0; bottom: 0;
+    width: 720px; background: var(--sol-bg-paper);
+    box-shadow: -8px 0 24px rgba(15, 23, 42, 0.18);
+    z-index: 200; display: flex; flex-direction: column;
+    border-left: 1px solid var(--sol-rule);
+  }
+
+  /* ═══════ HEADER ═══════ */
+  .drawer-header {
+    background: var(--sol-bg-canvas);
+    border-bottom: 1px solid var(--sol-rule);
+    padding: 14px 26px 14px; flex-shrink: 0;
+  }
+  .drawer-bc-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .drawer-bc-text {
+    font-family: var(--sol-font-mono); font-size: 10px;
+    letter-spacing: 0.14em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 500;
+  }
+  .drawer-bc-text b { color: var(--sol-ink-900); font-weight: 600; }
+  .drawer-bc-text .sep { color: var(--sol-ink-300); margin: 0 6px; }
+  .drawer-bc-spacer { flex: 1; }
+  .drawer-close {
+    width: 28px; height: 28px; border-radius: var(--sol-radius-md);
+    background: var(--sol-bg-paper); border: 1px solid var(--sol-rule);
+    color: var(--sol-ink-500);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .drawer-close svg { width: 14px; height: 14px; }
+
+  .drawer-title-row {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 12px;
+  }
+  .drawer-title {
+    font-family: var(--sol-font-display); font-size: 22px;
+    font-weight: 500; color: var(--sol-ink-900);
+    letter-spacing: -0.018em; line-height: 1.2;
+  }
+  .drawer-title em { font-style: italic; color: var(--sol-ink-500); font-weight: 400; }
+
+  /* Filtres période + périmètre */
+  .filter-row {
+    display: flex; align-items: center; gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-label-inline {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.14em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 600;
+    margin-right: 2px;
+  }
+  .filter-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px;
+    background: var(--sol-bg-paper); border: 1px solid var(--sol-ink-300);
+    border-radius: 999px;
+    font-family: var(--sol-font-body); font-size: 11.5px;
+    color: var(--sol-ink-700); cursor: pointer; font-weight: 500;
+  }
+  .filter-chip.active { background: var(--sol-ink-900); color: var(--sol-bg-paper); border-color: var(--sol-ink-900); }
+  .filter-chip svg { width: 10px; height: 10px; color: var(--sol-ink-400); }
+  .filter-chip.active svg { color: var(--sol-bg-paper); }
+  .filter-chip .chip-count {
+    font-family: var(--sol-font-mono); font-size: 10px;
+    color: var(--sol-ink-500); font-weight: 400; margin-left: 2px;
+  }
+  .filter-chip.active .chip-count { color: var(--sol-ink-200); }
+
+  /* ═══════ BODY ═══════ */
+  .drawer-body { flex: 1; overflow-y: auto; padding: 18px 26px 24px; }
+
+  /* ═══════ NET RESULT — verdict en haut ═══════ */
+  .net-result {
+    background: var(--sol-night-bg);
+    color: var(--sol-bg-paper);
+    border-radius: var(--sol-radius-lg);
+    padding: 18px 22px;
+    margin-bottom: 18px;
+  }
+  .net-result-kicker {
+    font-family: var(--sol-font-mono); font-size: 10px;
+    letter-spacing: 0.18em; color: rgba(255,255,255,0.6);
+    text-transform: uppercase; font-weight: 500;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .net-result-kicker .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sol-succes-line);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+  .net-result-headline {
+    font-family: var(--sol-font-display); font-size: 28px;
+    font-weight: 500; line-height: 1.15; margin: 0 0 10px;
+    letter-spacing: -0.02em;
+  }
+  .net-result-headline em { font-style: italic; opacity: 0.75; font-weight: 400; }
+  .net-result-headline .accent-pos { color: var(--sol-succes-line); font-weight: 600; }
+  .net-result-headline .accent-warn { color: #e4ad77; font-weight: 600; }
+  .net-result-headline .num { font-family: var(--sol-font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  .net-result-stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    padding-top: 12px; margin-top: 8px;
+  }
+  .net-stat {
+    padding-left: 14px;
+    border-left: 1px solid rgba(255,255,255,0.12);
+  }
+  .net-stat:first-child { padding-left: 0; border-left: none; }
+  .net-stat-label {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.16em; color: rgba(255,255,255,0.6);
+    text-transform: uppercase; font-weight: 500;
+    margin-bottom: 4px;
+    cursor: help;
+  }
+  .net-stat-value {
+    font-family: var(--sol-font-mono); font-size: 18px;
+    font-weight: 500; color: var(--sol-bg-paper);
+    font-variant-numeric: tabular-nums; letter-spacing: -0.018em;
+    line-height: 1;
+  }
+  .net-stat-value .unit { font-size: 11px; opacity: 0.65; font-weight: 400; font-family: var(--sol-font-display); font-style: italic; }
+  .net-stat-detail {
+    font-family: var(--sol-font-display); font-style: italic; font-size: 11px;
+    color: rgba(255,255,255,0.65); margin-top: 3px;
+  }
+
+  /* ═══════ 6 DIMENSIONS — la doctrine cardinale ═══════ */
+  .d-section {
+    padding: 16px 0 14px;
+    border-bottom: 1px solid var(--sol-rule);
+  }
+  .d-section:last-child { border-bottom: none; }
+  .d-section-title {
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.16em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 600;
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .d-section-title svg { width: 12px; height: 12px; color: var(--sol-ink-400); }
+  .d-section-title .badge-inline {
+    margin-left: auto; font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.06em; background: var(--sol-bg-panel); color: var(--sol-ink-500);
+    padding: 1px 6px; border-radius: 999px; border: 1px solid var(--sol-rule);
+  }
+
+  .dims-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .dim-card {
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    border-top: 3px solid var(--sol-ink-400);
+    border-radius: var(--sol-radius-md);
+    padding: 11px 13px 10px;
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+  }
+  .dim-card:hover { box-shadow: 0 2px 8px rgba(15,23,42,0.06); }
+  .dim-card.estimated  { border-top-color: var(--sol-attention-fg); }
+  .dim-card.atRisk     { border-top-color: var(--sol-refuse-fg); }
+  .dim-card.secured    { border-top-color: var(--sol-calme-fg); }
+  .dim-card.realized   { border-top-color: var(--sol-succes-fg); }
+  .dim-card.lost       { border-top-color: var(--sol-ink-500); background: var(--sol-bg-panel); }
+  .dim-card.blocked    { border-top-color: var(--sol-afaire-fg); border-style: dashed; }
+
+  .dim-label {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.16em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 500;
+    cursor: help; border-bottom: 1px dotted var(--sol-ink-400);
+    padding-bottom: 1px; display: inline-block;
+    margin-bottom: 6px;
+  }
+  .dim-value {
+    font-family: var(--sol-font-mono); font-size: 22px;
+    font-weight: 500; color: var(--sol-ink-900); line-height: 1;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+  }
+  .dim-value.muted { color: var(--sol-ink-400); }
+  .dim-value .unit { font-size: 11px; color: var(--sol-ink-500); font-weight: 400; font-family: var(--sol-font-display); font-style: italic; }
+  .dim-detail {
+    font-family: var(--sol-font-display); font-style: italic;
+    font-size: 11px; color: var(--sol-ink-500);
+    margin-top: 4px; line-height: 1.35;
+  }
+  .dim-detail b { font-style: normal; color: var(--sol-ink-700); font-weight: 500; }
+  .dim-foot {
+    margin-top: 7px; padding-top: 6px;
+    border-top: 1px dashed var(--sol-rule);
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.02em; color: var(--sol-ink-500);
+  }
+  .dim-foot b { color: var(--sol-ink-700); font-weight: 500; }
+  .dim-link {
+    display: block; margin-top: 5px;
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.08em; color: var(--sol-ink-900);
+    text-decoration: none; text-transform: uppercase;
+    font-weight: 600; border-bottom: 1px solid var(--sol-ink-900);
+    width: max-content; padding-bottom: 1px;
+  }
+
+  /* ═══════ ROI BAR — défendable DAF ═══════ */
+  .roi-bar {
+    background: var(--sol-succes-bg);
+    border: 1px solid var(--sol-succes-line);
+    border-left: 4px solid var(--sol-succes-fg);
+    border-radius: var(--sol-radius-md);
+    padding: 12px 18px;
+    display: grid; grid-template-columns: auto 1fr auto; gap: 16px;
+    align-items: center;
+  }
+  .roi-icon {
+    width: 36px; height: 36px;
+    background: var(--sol-succes-fg);
+    color: var(--sol-bg-paper);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .roi-icon svg { width: 18px; height: 18px; }
+  .roi-text {
+    font-family: var(--sol-font-display);
+    font-size: 14.5px; line-height: 1.4; color: var(--sol-ink-900);
+  }
+  .roi-text b { font-weight: 600; color: var(--sol-succes-fg); }
+  .roi-text em { font-style: italic; color: var(--sol-ink-500); font-size: 12px; display: block; margin-top: 2px; }
+  .roi-figs {
+    font-family: var(--sol-font-mono); font-size: 11px;
+    color: var(--sol-ink-700); text-align: right;
+    letter-spacing: 0.02em;
+  }
+  .roi-figs .big { font-size: 22px; font-weight: 600; color: var(--sol-succes-fg); font-variant-numeric: tabular-nums; letter-spacing: -0.018em; display: block; }
+  .roi-figs .small { color: var(--sol-ink-500); }
+
+  /* ═══════ BREAKDOWN BY DOMAIN ═══════ */
+  .breakdown-list { display: flex; flex-direction: column; gap: 6px; }
+  .breakdown-row {
+    display: grid; grid-template-columns: 16px 130px 1fr 80px;
+    gap: 12px; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--sol-rule);
+  }
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-color {
+    width: 10px; height: 10px; border-radius: 2px;
+  }
+  .breakdown-color.conformite { background: var(--sol-calme-fg); }
+  .breakdown-color.facturation { background: var(--sol-attention-fg); }
+  .breakdown-color.achat { background: var(--sol-hch-fg); }
+  .breakdown-color.consommation { background: var(--sol-afaire-fg); }
+  .breakdown-color.patrimoine { background: var(--sol-ink-700); }
+  .breakdown-name {
+    font-family: var(--sol-font-body); font-size: 13px;
+    color: var(--sol-ink-900); font-weight: 500;
+  }
+  .breakdown-name .count {
+    font-family: var(--sol-font-mono); font-size: 10px;
+    color: var(--sol-ink-500); font-weight: 400; margin-left: 4px;
+  }
+  .breakdown-bar-track {
+    height: 8px; background: var(--sol-bg-panel);
+    border-radius: 2px; overflow: hidden;
+    position: relative;
+  }
+  .breakdown-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+  .breakdown-bar-fill.conformite { background: var(--sol-calme-fg); }
+  .breakdown-bar-fill.facturation { background: var(--sol-attention-fg); }
+  .breakdown-bar-fill.achat { background: var(--sol-hch-fg); }
+  .breakdown-bar-fill.consommation { background: var(--sol-afaire-fg); }
+  .breakdown-bar-fill.patrimoine { background: var(--sol-ink-700); }
+  .breakdown-value {
+    font-family: var(--sol-font-mono); font-size: 12.5px;
+    font-weight: 600; color: var(--sol-ink-900); text-align: right;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+  }
+  .breakdown-value .pct { color: var(--sol-ink-500); font-weight: 400; font-size: 10.5px; }
+
+  /* ═══════ TOP CONTRIBUTORS ═══════ */
+  .contrib-list { display: flex; flex-direction: column; gap: 4px; }
+  .contrib-row {
+    display: grid; grid-template-columns: 24px 1fr 80px 90px;
+    gap: 12px; align-items: center;
+    padding: 8px 10px; background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule); border-radius: var(--sol-radius-sm);
+    font-size: 12.5px;
+  }
+  .contrib-rank {
+    font-family: var(--sol-font-mono); font-size: 13px;
+    font-weight: 600; color: var(--sol-ink-400);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .contrib-info { line-height: 1.3; }
+  .contrib-name {
+    font-family: var(--sol-font-body); font-size: 13px;
+    font-weight: 500; color: var(--sol-ink-900);
+  }
+  .contrib-name em { font-style: italic; color: var(--sol-ink-500); font-weight: 400; }
+  .contrib-meta {
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    color: var(--sol-ink-500); letter-spacing: 0.02em;
+    margin-top: 1px;
+  }
+  .contrib-cat {
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    font-weight: 500; padding: 2px 7px; border-radius: 2px;
+    text-align: center;
+  }
+  .contrib-cat.estimated { background: var(--sol-attention-bg); color: var(--sol-attention-fg); }
+  .contrib-cat.atRisk { background: var(--sol-refuse-bg); color: var(--sol-refuse-fg); }
+  .contrib-cat.secured { background: var(--sol-calme-bg); color: var(--sol-calme-fg); }
+  .contrib-cat.realized { background: var(--sol-succes-bg); color: var(--sol-succes-fg); }
+  .contrib-cat.lost { background: var(--sol-bg-panel); color: var(--sol-ink-500); }
+  .contrib-cat.blocked { background: var(--sol-afaire-bg); color: var(--sol-afaire-fg); }
+  .contrib-value {
+    font-family: var(--sol-font-mono); font-size: 14px;
+    font-weight: 600; color: var(--sol-ink-900); text-align: right;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.012em;
+  }
+
+  /* ═══════ DOCTRINE CARTOUCHE — explication des 6 dimensions ═══════ */
+  .doctrine-callout {
+    background: var(--sol-bg-canvas);
+    border: 1px solid var(--sol-rule);
+    border-left: 3px solid var(--sol-ink-900);
+    border-radius: var(--sol-radius-md);
+    padding: 11px 16px;
+    font-family: var(--sol-font-display);
+    font-size: 12px; color: var(--sol-ink-700);
+    line-height: 1.55; font-style: italic;
+  }
+  .doctrine-callout b { font-style: normal; color: var(--sol-ink-900); font-weight: 600; }
+  .doctrine-callout .doctrine-head {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.14em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 600;
+    font-style: normal; display: block; margin-bottom: 5px;
+  }
+
+  /* ═══════ FOOTER ═══════ */
+  .drawer-footer {
+    background: var(--sol-bg-canvas);
+    border-top: 1px solid var(--sol-rule);
+    padding: 12px 26px; flex-shrink: 0;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .drawer-footer-meta {
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.06em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 500;
+  }
+  .drawer-footer-meta b { color: var(--sol-ink-700); }
+  .drawer-footer-spacer { flex: 1; }
+  .footer-cta {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 12px;
+    background: var(--sol-bg-paper); color: var(--sol-ink-900);
+    border: 1px solid var(--sol-ink-300);
+    border-radius: var(--sol-radius-md);
+    font-family: var(--sol-font-body); font-size: 12px;
+    font-weight: 500; cursor: pointer;
+  }
+  .footer-cta svg { width: 11px; height: 11px; color: var(--sol-ink-500); }
+  .footer-cta.primary {
+    background: var(--sol-ink-900); color: var(--sol-bg-paper);
+    border-color: var(--sol-ink-900); font-weight: 600;
+  }
+  .footer-cta.primary svg { color: var(--sol-bg-paper); }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- BACKDROP -->
+  <div class="backdrop">
+    <div class="bd-rail">
+      <div class="bd-rail-logo"></div>
+      <div class="bd-rail-item"></div><div class="bd-rail-item"></div><div class="bd-rail-item"></div><div class="bd-rail-item"></div><div class="bd-rail-item"></div><div class="bd-rail-item"></div><div class="bd-rail-item"></div>
+    </div>
+    <div class="bd-side">
+      <div style="height:46px;margin-bottom:18px"></div>
+      <div class="bd-side-line"></div><div class="bd-side-line"></div><div class="bd-side-line active"></div><div class="bd-side-line"></div><div class="bd-side-line"></div><div class="bd-side-line"></div><div class="bd-side-line"></div>
+    </div>
+    <div class="bd-main">
+      <div class="bd-narrative-bar"></div>
+      <div class="bd-tab-bar"></div>
+      <div class="bd-card"></div><div class="bd-card"></div><div class="bd-card p1"></div><div class="bd-card p1"></div><div class="bd-card p2"></div>
+    </div>
+  </div>
+
+  <div class="drawer-overlay"></div>
+
+  <!-- ════════ IMPACT DRAWER ════════ -->
+  <div class="drawer">
+
+    <!-- HEADER -->
+    <div class="drawer-header">
+      <div class="drawer-bc-row">
+        <span class="drawer-bc-text">
+          <b>Centre d'action</b><span class="sep">›</span>File prioritaire<span class="sep">›</span><b>Tableau de bord impact</b>
+        </span>
+        <div class="drawer-bc-spacer"></div>
+        <button class="drawer-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="drawer-title-row">
+        <h1 class="drawer-title">Impact financier · <em>tableau de bord défendable</em></h1>
+      </div>
+
+      <!-- Filtres période + périmètre -->
+      <div class="filter-row">
+        <span class="filter-label-inline">Période</span>
+        <span class="filter-chip">7 j <span class="chip-count"></span></span>
+        <span class="filter-chip">30 j</span>
+        <span class="filter-chip active">12 mois</span>
+        <span class="filter-chip">Année civile</span>
+        <span class="filter-chip">Cumul</span>
+        <span class="filter-label-inline" style="margin-left:8px">Périmètre</span>
+        <span class="filter-chip active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V9l9-6 9 6v12"/></svg>
+          Groupe HELIOS <span class="chip-count">5 sites</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="drawer-body">
+
+      <!-- ════════ NET RESULT — verdict cardinal ════════ -->
+      <div class="net-result">
+        <div class="net-result-kicker">
+          <span class="pulse"></span>
+          Bilan net · 12 derniers mois · Groupe HELIOS
+        </div>
+        <h1 class="net-result-headline">
+          <span class="num accent-pos">+128 k€ sécurisés</span> · <span class="num accent-warn">52 k€ à risque</span> · <em>146 actions traitées · ROI démontré.</em>
+        </h1>
+        <div class="net-result-stats">
+          <div class="net-stat">
+            <span class="net-stat-label" title="Items créés sur la période · tous kinds confondus">Items créés</span>
+            <div class="net-stat-value">214</div>
+            <span class="net-stat-detail">147 actifs · 67 clôturés</span>
+          </div>
+          <div class="net-stat">
+            <span class="net-stat-label" title="Taux de résolution = items clôturés / items créés sur la période">Taux résolution</span>
+            <div class="net-stat-value">68<span class="unit"> %</span></div>
+            <span class="net-stat-detail">vs 52 % les 12 mois précédents</span>
+          </div>
+          <div class="net-stat">
+            <span class="net-stat-label" title="Délai médian entre détection et clôture · tous P0/P1">Délai médian</span>
+            <div class="net-stat-value">4,2<span class="unit"> j</span></div>
+            <span class="net-stat-detail">P0 médian 1,8 j · P1 médian 6,4 j</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ DOCTRINE 6 DIMENSIONS ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+          Impact financier · 6 dimensions strictes
+          <span class="badge-inline">€ HT · 12 mois glissants</span>
+        </div>
+
+        <div class="doctrine-callout">
+          <span class="doctrine-head">Doctrine V4 v0.2 · impact défendable</span>
+          Chaque montant doit être qualifié dans une <b>seule des 6 dimensions</b>. Pas de double comptage. Pas de chiffre orphelin. Chaque dimension a une <b>source</b> et une <b>formule</b> publiques.
+        </div>
+
+        <div class="dims-grid" style="margin-top: 12px">
+          <!-- ESTIMÉ -->
+          <div class="dim-card estimated">
+            <span class="dim-label" title="Gain attendu si l'action est exécutée selon le scénario recommandé. Non sécurisé : action pas encore démarrée.">Estimé</span>
+            <div class="dim-value">82<span class="unit"> k€</span></div>
+            <p class="dim-detail">
+              <b>11 sujets</b> en attente d'arbitrage<br>scénario A/B/C recommandé
+            </p>
+            <p class="dim-foot">Source · <b>Modèle V4 · scenarios</b><br>Formule · <b>Σ best_case_gain</b></p>
+            <a class="dim-link" href="#">Voir détail ↗</a>
+          </div>
+
+          <!-- À RISQUE -->
+          <div class="dim-card atRisk">
+            <span class="dim-label" title="Montant non sécurisé : ni action démarrée, ni preuve validée. Exposé à perte si non traité.">À risque</span>
+            <div class="dim-value" style="color: var(--sol-refuse-fg)">52<span class="unit"> k€</span></div>
+            <p class="dim-detail">
+              <b>8 sujets</b> P0/P1 actifs<br>dont 2 SLA dépassés
+            </p>
+            <p class="dim-foot">Source · <b>RegOps + Bill Intel.</b><br>Formule · <b>Σ exposure_amount</b></p>
+            <a class="dim-link" href="#">Voir détail ↗</a>
+          </div>
+
+          <!-- SÉCURISÉ -->
+          <div class="dim-card secured">
+            <span class="dim-label" title="Activable immédiatement : action démarrée, preuves disponibles, scénario figé.">Sécurisé</span>
+            <div class="dim-value" style="color: var(--sol-calme-fg)">34<span class="unit"> k€</span></div>
+            <p class="dim-detail">
+              <b>14 sujets</b> en cours<br>preuves prêtes, en exécution
+            </p>
+            <p class="dim-foot">Source · <b>ActionCenter exec.</b><br>Formule · <b>Σ in_progress.expected</b></p>
+            <a class="dim-link" href="#">Voir détail ↗</a>
+          </div>
+
+          <!-- RÉALISÉ -->
+          <div class="dim-card realized">
+            <span class="dim-label" title="Gain constaté après clôture avec preuves vérifiées. Encaissé ou évité avec certitude.">Réalisé</span>
+            <div class="dim-value" style="color: var(--sol-succes-fg)">128<span class="unit"> k€</span></div>
+            <p class="dim-detail">
+              <b>67 sujets clôturés</b><br>preuves vérifiées
+            </p>
+            <p class="dim-foot">Source · <b>Closure log + preuves</b><br>Formule · <b>Σ realized_gain</b></p>
+            <a class="dim-link" href="#">Voir détail ↗</a>
+          </div>
+
+          <!-- PERDU -->
+          <div class="dim-card lost">
+            <span class="dim-label" title="Opportunité non saisie : item écarté, SLA dépassé sans action, échéance manquée. Trace conservée pour apprentissage.">Perdu</span>
+            <div class="dim-value muted">6,8<span class="unit"> k€</span></div>
+            <p class="dim-detail">
+              <b>5 sujets</b> dismissed/expired<br>1 OPERAT manqué 2024
+            </p>
+            <p class="dim-foot">Source · <b>Closure log</b><br>Formule · <b>Σ where closure ∈ {expired, dismissed}</b></p>
+            <a class="dim-link" href="#">Voir détail ↗</a>
+          </div>
+
+          <!-- BLOQUÉ -->
+          <div class="dim-card blocked">
+            <span class="dim-label" title="Gain potentiel temporairement bloqué : blocker actif (preuve, budget, tiers). Pas perdu, à débloquer.">Bloqué</span>
+            <div class="dim-value" style="color: var(--sol-afaire-fg)">23<span class="unit"> k€</span></div>
+            <p class="dim-detail">
+              <b>4 sujets</b> avec blocker actif<br>3 preuve · 1 budget
+            </p>
+            <p class="dim-foot">Source · <b>Blockers actifs</b><br>Formule · <b>Σ where blockers ≠ ∅</b></p>
+            <a class="dim-link" href="#">Voir détail ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ ROI BAR ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          ROI démontré · Centre d'action
+        </div>
+
+        <div class="roi-bar">
+          <span class="roi-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </span>
+          <span class="roi-text">
+            <b>ROI 12 mois : ×4,3</b> · 128 k€ réalisés pour ~30 k€ d'effort équivalent.
+            <em>Calcul : gains réalisés ÷ (temps équipe + coût SaaS PROMEOS estimé portefeuille HELIOS)</em>
+          </span>
+          <span class="roi-figs">
+            <span class="big">×4,3</span>
+            <span class="small">ROI 12 m</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- ════════ BREAKDOWN BY DOMAIN ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          Répartition par domaine · 12 mois
+          <span class="badge-inline">€ HT</span>
+        </div>
+
+        <div class="breakdown-list">
+          <div class="breakdown-row">
+            <span class="breakdown-color conformite"></span>
+            <span class="breakdown-name">Conformité<span class="count">· 38 sujets</span></span>
+            <div class="breakdown-bar-track"><div class="breakdown-bar-fill conformite" style="width: 100%"></div></div>
+            <span class="breakdown-value">58 k€ <span class="pct">45 %</span></span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-color facturation"></span>
+            <span class="breakdown-name">Facturation<span class="count">· 24 sujets</span></span>
+            <div class="breakdown-bar-track"><div class="breakdown-bar-fill facturation" style="width: 62%"></div></div>
+            <span class="breakdown-value">36 k€ <span class="pct">28 %</span></span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-color consommation"></span>
+            <span class="breakdown-name">Consommation<span class="count">· 14 sujets</span></span>
+            <div class="breakdown-bar-track"><div class="breakdown-bar-fill consommation" style="width: 36%"></div></div>
+            <span class="breakdown-value">21 k€ <span class="pct">16 %</span></span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-color achat"></span>
+            <span class="breakdown-name">Achat<span class="count">· 6 sujets</span></span>
+            <div class="breakdown-bar-track"><div class="breakdown-bar-fill achat" style="width: 17%"></div></div>
+            <span class="breakdown-value">10 k€ <span class="pct">8 %</span></span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-color patrimoine"></span>
+            <span class="breakdown-name">Patrimoine<span class="count">· 2 sujets</span></span>
+            <div class="breakdown-bar-track"><div class="breakdown-bar-fill patrimoine" style="width: 6%"></div></div>
+            <span class="breakdown-value">3 k€ <span class="pct">3 %</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ TOP CONTRIBUTORS ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6-6 6 6M6 15l6 6 6-6"/></svg>
+          Top contributeurs · sujets à plus fort impact
+          <span class="badge-inline">5 / 214</span>
+        </div>
+
+        <div class="contrib-list">
+          <div class="contrib-row">
+            <span class="contrib-rank">1</span>
+            <div class="contrib-info">
+              <div class="contrib-name">Audit énergétique <em>SMÉ Toulouse</em></div>
+              <div class="contrib-meta">Conformité · J. Martin · P0/88 · scénario B recommandé</div>
+            </div>
+            <span class="contrib-cat estimated">Estimé</span>
+            <span class="contrib-value">49 k€</span>
+          </div>
+          <div class="contrib-row">
+            <span class="contrib-rank">2</span>
+            <div class="contrib-info">
+              <div class="contrib-name">Renégociation contrat <em>EDF Lyon</em></div>
+              <div class="contrib-meta">Achat · Closure 14/03/2026 · preuve facture avoir vérifiée</div>
+            </div>
+            <span class="contrib-cat realized">Réalisé</span>
+            <span class="contrib-value">42 k€</span>
+          </div>
+          <div class="contrib-row">
+            <span class="contrib-rank">3</span>
+            <div class="contrib-info">
+              <div class="contrib-name">Audit isolation <em>Lyon Bureaux</em></div>
+              <div class="contrib-meta">Conformité · Closure 09/05/2026 · OPERAT 2025 alimenté</div>
+            </div>
+            <span class="contrib-cat realized">Réalisé</span>
+            <span class="contrib-value">12 k€</span>
+          </div>
+          <div class="contrib-row">
+            <span class="contrib-rank">4</span>
+            <div class="contrib-info">
+              <div class="contrib-name">Dérive consommation <em>Marseille École</em></div>
+              <div class="contrib-meta">Consommation · S. Marin · P1/71 · tiers attendu</div>
+            </div>
+            <span class="contrib-cat atRisk">À risque</span>
+            <span class="contrib-value">9,5 k€</span>
+          </div>
+          <div class="contrib-row">
+            <span class="contrib-rank">5</span>
+            <div class="contrib-info">
+              <div class="contrib-name">Valorisation CEE <em>BAT-TH-116 Paris</em></div>
+              <div class="contrib-meta">Conformité · à assigner · cumulable obligé</div>
+            </div>
+            <span class="contrib-cat secured">Sécurisable</span>
+            <span class="contrib-value">8,5 k€</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ TRAJECTOIRE TEMPORELLE simplifiée ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 17 9 11 13 15 21 7"/></svg>
+          Trajectoire 12 mois glissants
+          <span class="badge-inline">cumul réalisé · k€/mois</span>
+        </div>
+
+        <!-- Mini graph SVG -->
+        <svg width="100%" height="100" viewBox="0 0 640 100" style="display:block">
+          <!-- Grid lines -->
+          <line x1="0" y1="20" x2="640" y2="20" stroke="var(--sol-rule)" stroke-width="1" stroke-dasharray="2,4"/>
+          <line x1="0" y1="50" x2="640" y2="50" stroke="var(--sol-rule)" stroke-width="1" stroke-dasharray="2,4"/>
+          <line x1="0" y1="80" x2="640" y2="80" stroke="var(--sol-rule)" stroke-width="1"/>
+
+          <!-- Trajectoire réalisée -->
+          <polyline
+            points="0,82 53,79 107,74 160,72 213,65 266,58 320,50 373,44 426,38 480,30 533,24 587,17"
+            fill="none" stroke="#2e6b4a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Dots aux points -->
+          <g fill="#2e6b4a">
+            <circle cx="0" cy="82" r="2.5"/>
+            <circle cx="160" cy="72" r="2.5"/>
+            <circle cx="320" cy="50" r="2.5"/>
+            <circle cx="480" cy="30" r="2.5"/>
+            <circle cx="587" cy="17" r="3.5" stroke="#fff" stroke-width="1.5"/>
+          </g>
+
+          <!-- Labels x-axis (mois) -->
+          <g font-family="JetBrains Mono" font-size="8.5" fill="#94a3b8" letter-spacing="1">
+            <text x="0" y="95">JUN</text>
+            <text x="155" y="95">SEP</text>
+            <text x="310" y="95">DÉC</text>
+            <text x="470" y="95">MAR</text>
+            <text x="580" y="95">MAI</text>
+          </g>
+          <!-- Labels y-axis -->
+          <g font-family="JetBrains Mono" font-size="8.5" fill="#94a3b8" text-anchor="end" letter-spacing="0.5">
+            <text x="635" y="22">128 k€</text>
+            <text x="635" y="52">80 k€</text>
+            <text x="635" y="82">32 k€</text>
+          </g>
+
+          <!-- Annotation -->
+          <text x="587" y="13" font-family="JetBrains Mono" font-size="9" fill="#2e6b4a" text-anchor="end" font-weight="600">+128 k€ cumul</text>
+        </svg>
+
+        <p style="font-family: var(--sol-font-display); font-style: italic; font-size: 12px; color: var(--sol-ink-500); margin: 8px 0 0; line-height: 1.5;">
+          Accélération nette depuis <b style="font-style:normal;color:var(--sol-ink-700);font-weight:500">décembre 2025</b> (+18 k€/trimestre vs +8 k€/trimestre précédemment) · 67 clôtures avec preuves vérifiées.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="drawer-footer">
+      <span class="drawer-footer-meta">
+        Calculé · <b>12/05 · 07:18</b> · périmètre <b>HELIOS · 5 sites</b>
+      </span>
+      <div class="drawer-footer-spacer"></div>
+      <button class="footer-cta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exporter CSV
+      </button>
+      <button class="footer-cta primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Exporter COMEX
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

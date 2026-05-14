@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1500, initial-scale=1">
+<title>PROMEOS — Centre d'action V4 · Detail Drawer v0.2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sol-bg-canvas: #f8f9fa;
+    --sol-bg-paper: #ffffff;
+    --sol-bg-panel: #f3f4f6;
+    --sol-ink-100: #f1f5f9;
+    --sol-ink-200: #e2e8f0;
+    --sol-ink-300: #cbd5e1;
+    --sol-ink-400: #94a3b8;
+    --sol-ink-500: #64748b;
+    --sol-ink-700: #334155;
+    --sol-ink-900: #0f172a;
+    --sol-rule: #e2e8f0;
+    --sol-calme-fg: #2f6b5e; --sol-calme-bg: #e3f0ed;
+    --sol-succes-fg: #2e6b4a; --sol-succes-bg: #dfede3; --sol-succes-line: #5a8a72;
+    --sol-attention-fg: #8a5a14; --sol-attention-bg: #f6ead2; --sol-attention-line: #d4a85a;
+    --sol-afaire-fg: #a04525; --sol-afaire-bg: #f7e4d8; --sol-afaire-line: #d68a5e;
+    --sol-refuse-fg: #8b3a3a; --sol-refuse-bg: #f3dddb; --sol-refuse-line: #b85a5a;
+    --sol-hch-fg: #2e4a6b; --sol-hch-bg: #e6edf5;
+    --sol-font-display: 'Fraunces', Georgia, serif;
+    --sol-font-body: 'DM Sans', system-ui, sans-serif;
+    --sol-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sol-radius-sm: 4px;
+    --sol-radius-md: 6px;
+    --sol-radius-lg: 8px;
+    --sol-radius-xl: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--sol-ink-200);
+    font-family: var(--sol-font-body); color: var(--sol-ink-900);
+    padding: 24px;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    font-size: 14px; line-height: 1.45; letter-spacing: -0.005em;
+    min-height: 100vh;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 10000;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='100' height='100' filter='url(%23n)' opacity='0.5'/></svg>");
+  }
+  .app {
+    max-width: 1500px; margin: 0 auto;
+    background: var(--sol-bg-canvas);
+    border-radius: var(--sol-radius-xl);
+    overflow: hidden; position: relative;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+    min-height: 1500px;
+  }
+  /* BACKDROP atténué */
+  .backdrop {
+    display: grid; grid-template-columns: 60px 220px 1fr;
+    filter: blur(2px); opacity: 0.42; pointer-events: none;
+  }
+  .bd-rail { background: var(--sol-bg-panel); padding: 14px 12px; border-right: 1px solid var(--sol-rule); height: 100%; }
+  .bd-rail-logo { width: 34px; height: 34px; border-radius: var(--sol-radius-md); background: var(--sol-ink-900); margin: 0 auto 12px; }
+  .bd-rail-item { width: 38px; height: 42px; border-radius: var(--sol-radius-md); background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); margin: 0 auto 4px; }
+  .bd-side { background: var(--sol-bg-panel); padding: 16px 14px; border-right: 1px solid var(--sol-rule); height: 100%; }
+  .bd-side-line { height: 28px; background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); border-radius: var(--sol-radius-md); margin-bottom: 6px; }
+  .bd-side-line.active { background: var(--sol-ink-900); border-color: var(--sol-ink-900); }
+  .bd-main { padding: 32px 36px; }
+  .bd-narrative-bar { background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); border-radius: var(--sol-radius-lg); padding: 22px; margin-bottom: 22px; height: 130px; }
+  .bd-tab-bar { border-bottom: 1px solid var(--sol-ink-900); margin-bottom: 22px; height: 36px; }
+  .bd-card { background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); border-radius: var(--sol-radius-lg); border-left: 6px solid var(--sol-refuse-fg); height: 110px; margin-bottom: 10px; }
+  .bd-card.p1 { border-left-color: var(--sol-attention-fg); }
+  .bd-card.p2 { border-left-color: var(--sol-calme-fg); }
+
+  .drawer-overlay { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: rgba(15, 23, 42, 0.45); z-index: 100; }
+  .drawer {
+    position: absolute; top: 0; right: 0; bottom: 0;
+    width: 760px; background: var(--sol-bg-paper);
+    box-shadow: -8px 0 24px rgba(15, 23, 42, 0.18);
+    z-index: 200;
+    display: flex; flex-direction: column;
+    border-left: 1px solid var(--sol-rule);
+  }
+
+  /* ═══════ DRAWER HEADER STICKY — corrigé 3 boutons ═══════ */
+  .drawer-header {
+    background: var(--sol-bg-canvas);
+    border-bottom: 1px solid var(--sol-rule);
+    padding: 14px 26px 12px; flex-shrink: 0;
+  }
+  .drawer-bc-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .drawer-bc-text {
+    font-family: var(--sol-font-mono); font-size: 10px;
+    letter-spacing: 0.14em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 500;
+  }
+  .drawer-bc-text b { color: var(--sol-ink-900); font-weight: 600; }
+  .drawer-bc-text .sep { color: var(--sol-ink-300); margin: 0 6px; }
+  .drawer-bc-spacer { flex: 1; }
+  .audit-mode-toggle-mini {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.1em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 500;
+    cursor: pointer;
+  }
+  .audit-mode-toggle-mini::before {
+    content: ""; width: 22px; height: 12px;
+    border-radius: 999px; background: var(--sol-bg-panel);
+    border: 1px solid var(--sol-rule);
+  }
+  .audit-mode-toggle-mini::after {
+    content: ""; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--sol-ink-400);
+    margin-left: -19px;
+  }
+  .drawer-close {
+    width: 28px; height: 28px;
+    border-radius: var(--sol-radius-md);
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    color: var(--sol-ink-500);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .drawer-close svg { width: 14px; height: 14px; }
+
+  /* ═══════ HEADER ACTIONS — 3 boutons cardinal ═══════ */
+  .drawer-actions-3 {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .drawer-action-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    background: var(--sol-ink-900); color: var(--sol-bg-paper);
+    border: 1px solid var(--sol-ink-900);
+    border-radius: var(--sol-radius-md);
+    font-family: var(--sol-font-body); font-size: 12.5px;
+    font-weight: 600; cursor: pointer;
+  }
+  .drawer-action-primary svg { width: 12px; height: 12px; }
+  .drawer-action-primary .primary-hint {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    font-weight: 400; letter-spacing: 0.08em;
+    color: var(--sol-ink-300); margin-left: 6px;
+    padding-left: 8px; border-left: 1px solid rgba(255,255,255,0.18);
+    text-transform: uppercase;
+  }
+  .drawer-action-secondary {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 12px;
+    background: var(--sol-bg-paper); color: var(--sol-ink-900);
+    border: 1px solid var(--sol-ink-300);
+    border-radius: var(--sol-radius-md);
+    font-family: var(--sol-font-body); font-size: 12px;
+    font-weight: 500; cursor: pointer;
+  }
+  .drawer-action-secondary svg { width: 11px; height: 11px; color: var(--sol-ink-500); }
+  .drawer-action-more {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 12px;
+    background: var(--sol-bg-paper); color: var(--sol-ink-900);
+    border: 1px solid var(--sol-ink-300);
+    border-radius: var(--sol-radius-md);
+    font-family: var(--sol-font-body); font-size: 12px;
+    font-weight: 500; cursor: pointer;
+    position: relative;
+  }
+  .drawer-action-more svg { width: 11px; height: 11px; color: var(--sol-ink-500); }
+
+  /* Menu "Plus ▾" déployé en aperçu */
+  .more-menu {
+    position: absolute; top: 100%; right: 0; margin-top: 6px;
+    width: 240px;
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-md);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    z-index: 10;
+    padding: 4px;
+  }
+  .more-menu-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px;
+    font-family: var(--sol-font-body); font-size: 12.5px;
+    color: var(--sol-ink-900); cursor: pointer;
+    border-radius: var(--sol-radius-sm);
+    font-weight: 500;
+  }
+  .more-menu-item:hover { background: var(--sol-bg-panel); }
+  .more-menu-item svg { width: 12px; height: 12px; color: var(--sol-ink-500); }
+  .more-menu-item.disabled {
+    color: var(--sol-ink-400); cursor: not-allowed;
+  }
+  .more-menu-item.disabled .reason {
+    margin-left: auto; font-family: var(--sol-font-mono); font-size: 9px;
+    color: var(--sol-ink-400); font-style: italic;
+  }
+  .more-menu-sep { height: 1px; background: var(--sol-rule); margin: 4px 0; }
+  .more-menu-hidden {
+    padding: 7px 10px; font-family: var(--sol-font-mono); font-size: 9px;
+    color: var(--sol-ink-400); letter-spacing: 0.08em;
+    text-transform: uppercase; font-style: italic;
+  }
+  .more-menu-hidden-explain {
+    padding: 0 10px 7px; font-family: var(--sol-font-display); font-size: 10.5px;
+    color: var(--sol-ink-500); font-style: italic; line-height: 1.4;
+  }
+
+  .drawer-body { flex: 1; overflow-y: auto; padding: 0 26px 24px; }
+  .d-section { padding: 16px 0 14px; border-bottom: 1px solid var(--sol-rule); }
+  .d-section:last-child { border-bottom: none; }
+  .d-section-title {
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.16em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 600;
+    margin-bottom: 9px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .d-section-title svg { width: 12px; height: 12px; color: var(--sol-ink-400); }
+  .d-section-title .badge-inline {
+    margin-left: auto; font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.06em; background: var(--sol-bg-panel); color: var(--sol-ink-500);
+    padding: 1px 6px; border-radius: 999px; border: 1px solid var(--sol-rule);
+  }
+
+  /* TITLE BLOCK */
+  .d-title-block { padding: 18px 0 14px; border-bottom: 1px solid var(--sol-rule); }
+  .d-title {
+    font-family: var(--sol-font-display); font-size: 25px;
+    font-weight: 500; color: var(--sol-ink-900); line-height: 1.18;
+    letter-spacing: -0.018em; margin: 0 0 8px;
+  }
+  .d-title em { font-style: italic; color: var(--sol-ink-500); font-weight: 400; }
+  .d-summary {
+    font-family: var(--sol-font-body); font-size: 13.5px;
+    color: var(--sol-ink-700); line-height: 1.5;
+  }
+  .d-summary b { color: var(--sol-ink-900); font-weight: 500; }
+
+  /* STATUS ROW */
+  .d-status-row {
+    display: flex; flex-wrap: wrap; gap: 7px;
+    align-items: center; margin-top: 11px;
+  }
+  /* Kind badge cardinal — différenciation par type métier */
+  .d-kind-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 3px;
+    font-family: var(--sol-font-mono); font-size: 10.5px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    font-weight: 700; border: 1px solid;
+  }
+  .d-kind-badge svg { width: 11px; height: 11px; }
+  .d-kind-badge.action { background: var(--sol-bg-panel); color: var(--sol-ink-700); border-color: var(--sol-ink-300); }
+  .d-kind-badge.anomaly { background: var(--sol-refuse-bg); color: var(--sol-refuse-fg); border-color: var(--sol-refuse-line); }
+  .d-kind-badge.decision { background: var(--sol-hch-bg); color: var(--sol-hch-fg); border-color: var(--sol-hch-fg); }
+  .d-priority-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 3px;
+    font-family: var(--sol-font-mono); font-size: 11px;
+    font-weight: 700; letter-spacing: 0.08em;
+    color: var(--sol-bg-paper); background: var(--sol-refuse-fg);
+  }
+  .d-priority-tag .score { font-weight: 500; opacity: 0.9; letter-spacing: 0; }
+  .d-lifecycle-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 11px; border-radius: 999px;
+    font-family: var(--sol-font-mono); font-size: 10.5px;
+    letter-spacing: 0.05em; font-weight: 500; text-transform: uppercase;
+    background: var(--sol-hch-bg); border: 1px solid var(--sol-hch-fg); color: var(--sol-hch-fg);
+  }
+  .d-lifecycle-pill::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .d-domain-chip {
+    font-family: var(--sol-font-mono); font-size: 10px;
+    letter-spacing: 0.1em; color: var(--sol-calme-fg); background: var(--sol-calme-bg);
+    text-transform: uppercase; font-weight: 500;
+    padding: 3px 9px; border-radius: 3px;
+  }
+  /* SLA PAIR — séparation cardinale */
+  .d-sla-pair {
+    display: inline-flex; align-items: stretch;
+    border: 1px solid var(--sol-rule); border-radius: 3px;
+    overflow: hidden;
+    font-family: var(--sol-font-mono); font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+  .d-sla-cell {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px;
+    cursor: help;
+  }
+  .d-sla-cell + .d-sla-cell { border-left: 1px solid var(--sol-rule); }
+  .d-sla-cell .sla-label {
+    font-size: 8.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; font-weight: 600;
+  }
+  .d-sla-cell .sla-value { font-weight: 600; }
+  .d-sla-cell.sla-promeos.red { background: var(--sol-refuse-bg); }
+  .d-sla-cell.sla-promeos.red .sla-label { color: var(--sol-refuse-fg); }
+  .d-sla-cell.sla-promeos.red .sla-value { color: var(--sol-refuse-fg); }
+  .d-sla-cell.echeance-metier { background: var(--sol-bg-paper); }
+  .d-sla-cell.echeance-metier .sla-label { color: var(--sol-ink-500); }
+  .d-sla-cell.echeance-metier .sla-value { color: var(--sol-ink-900); }
+
+  .d-evidence-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: var(--sol-font-mono); font-size: 10px;
+    letter-spacing: 0.04em; font-weight: 500;
+    padding: 3px 9px; border-radius: 3px;
+    color: var(--sol-attention-fg); background: var(--sol-attention-bg);
+    border: 1px dashed var(--sol-attention-line);
+  }
+
+  /* ═══════ PROCHAINE ACTION + Pourquoi maintenant — synced M1 ═══════ */
+  .next-action-block {
+    background: var(--sol-ink-100);
+    border-left: 3px solid var(--sol-ink-900);
+    border-radius: var(--sol-radius-sm);
+    padding: 10px 14px;
+    margin-top: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .next-action-label {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.14em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 600;
+  }
+  .next-action-value {
+    font-family: var(--sol-font-body); font-size: 13px;
+    font-weight: 600; color: var(--sol-ink-900);
+  }
+  .next-action-why {
+    margin-left: auto;
+    font-family: var(--sol-font-display);
+    font-style: italic; font-size: 11.5px;
+    color: var(--sol-ink-500); cursor: help;
+    border-bottom: 1px dotted var(--sol-ink-400);
+    padding-bottom: 1px;
+  }
+  .next-action-why::before {
+    content: "Pourquoi maintenant ? ";
+    font-style: normal; font-family: var(--sol-font-mono);
+    font-size: 8.5px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--sol-ink-500);
+    margin-right: 4px;
+  }
+
+  /* ═══════ PRIORITY EXPLAIN — section "Règles de modulation appliquées" CARDINAL ═══════ */
+  .priority-explain {
+    background: var(--sol-bg-canvas);
+    border: 1px solid var(--sol-rule);
+    border-left: 3px solid var(--sol-refuse-fg);
+    border-radius: var(--sol-radius-md);
+    padding: 13px 16px;
+  }
+  .priority-explain-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 10px; padding-bottom: 7px;
+    border-bottom: 1px solid var(--sol-rule);
+  }
+  .priority-explain-title { font-family: var(--sol-font-display); font-size: 13px; font-weight: 500; color: var(--sol-ink-900); }
+  .priority-explain-final { font-family: var(--sol-font-mono); font-size: 11.5px; color: var(--sol-ink-500); letter-spacing: 0.04em; }
+  .priority-explain-final b { color: var(--sol-refuse-fg); font-weight: 600; font-size: 13px; }
+
+  .priority-subhead {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.14em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 600;
+    margin: 0 0 6px;
+  }
+  .priority-components { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .priority-row {
+    display: grid; grid-template-columns: 1fr 60px 100px;
+    align-items: center; gap: 12px;
+    font-family: var(--sol-font-mono); font-size: 10.5px;
+    color: var(--sol-ink-700); letter-spacing: 0.02em;
+  }
+  .priority-row-name { color: var(--sol-ink-900); }
+  .priority-row-name .hint { font-family: var(--sol-font-body); font-size: 10px; color: var(--sol-ink-500); font-style: italic; margin-left: 5px; }
+  .priority-row-points { font-weight: 600; text-align: right; color: var(--sol-ink-900); font-variant-numeric: tabular-nums; }
+  .priority-row-points .max { color: var(--sol-ink-400); font-weight: 400; }
+  .priority-row-bar { height: 5px; background: var(--sol-ink-200); border-radius: 1px; overflow: hidden; }
+  .priority-row-bar-fill { height: 100%; background: var(--sol-refuse-fg); border-radius: 1px; }
+  .priority-row.adr-base .priority-row-bar-fill { background: var(--sol-calme-fg); }
+  .priority-row.adr-base { color: var(--sol-calme-fg); }
+
+  /* Section "Règles de modulation appliquées" — cardinal */
+  .modulation-rules {
+    padding-top: 10px;
+    border-top: 1px dashed var(--sol-rule);
+  }
+  .rules-list { display: flex; flex-direction: column; gap: 5px; }
+  .rule-line {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 2px 0;
+    font-size: 12px; color: var(--sol-ink-700);
+    line-height: 1.4;
+  }
+  .rule-code {
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    font-weight: 700; letter-spacing: 0.04em;
+    background: var(--sol-ink-900); color: var(--sol-bg-paper);
+    padding: 1px 6px; border-radius: 2px;
+    min-width: 26px; text-align: center;
+    flex-shrink: 0;
+  }
+  .rule-text { font-family: var(--sol-font-body); }
+  .rule-text b { color: var(--sol-ink-900); font-weight: 600; }
+  .rule-text em { color: var(--sol-ink-500); font-style: italic; }
+
+  .priority-narrative {
+    margin-top: 11px; padding-top: 9px;
+    border-top: 1px solid var(--sol-rule);
+    font-family: var(--sol-font-display);
+    font-style: italic; font-size: 12px;
+    color: var(--sol-ink-500); line-height: 1.5;
+  }
+  .priority-narrative b { font-style: normal; color: var(--sol-ink-900); font-weight: 500; }
+
+  /* IMPACT — 4 quadrants avec tooltips micro-définitions */
+  .impact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .impact-card { padding: 11px 13px; border-radius: var(--sol-radius-md); border: 1px solid var(--sol-rule); background: var(--sol-bg-paper); }
+  .impact-card.estimated  { border-left: 3px solid var(--sol-attention-fg); }
+  .impact-card.atRisk     { border-left: 3px solid var(--sol-refuse-fg); }
+  .impact-card.secured    { border-left: 3px solid var(--sol-calme-fg); background: var(--sol-bg-panel); opacity: 0.65; }
+  .impact-card.realized   { border-left: 3px solid var(--sol-succes-fg); background: var(--sol-bg-panel); opacity: 0.65; }
+
+  .impact-label {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.16em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 500;
+    cursor: help; border-bottom: 1px dotted var(--sol-ink-400);
+    padding-bottom: 1px; display: inline-block;
+    margin-bottom: 4px;
+  }
+  .impact-value {
+    font-family: var(--sol-font-mono); font-size: 22px;
+    font-weight: 500; color: var(--sol-ink-900); line-height: 1;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.018em;
+  }
+  .impact-value.muted { color: var(--sol-ink-400); }
+  .impact-value .unit { font-size: 12px; color: var(--sol-ink-500); font-weight: 400; font-family: var(--sol-font-display); font-style: italic; }
+  .impact-detail {
+    font-family: var(--sol-font-display); font-style: italic;
+    font-size: 11.5px; color: var(--sol-ink-500);
+    margin-top: 3px; line-height: 1.4;
+  }
+  .impact-foot {
+    margin-top: 7px; padding-top: 6px;
+    border-top: 1px dashed var(--sol-rule);
+    font-family: var(--sol-font-mono); font-size: 10px;
+    letter-spacing: 0.02em; color: var(--sol-ink-500);
+  }
+  .impact-foot b { color: var(--sol-ink-700); font-weight: 500; }
+
+  /* BLOCKERS — libellés FR */
+  .blockers-list { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .d-blocker-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--sol-font-mono); font-size: 10.5px;
+    color: var(--sol-afaire-fg); padding: 4px 10px;
+    background: var(--sol-afaire-bg); border: 1px dashed var(--sol-afaire-line);
+    border-radius: 3px; font-weight: 500;
+  }
+  .d-blocker-chip::before { content: "⊘"; font-size: 10px; opacity: 0.85; }
+  .blockers-since {
+    font-family: var(--sol-font-display); font-style: italic;
+    font-size: 12px; color: var(--sol-ink-500);
+    margin-top: 8px; line-height: 1.4;
+  }
+  .blockers-since b { font-style: normal; color: var(--sol-ink-900); font-weight: 500; }
+
+  /* EVIDENCE PANEL */
+  .evidence-panel {
+    background: var(--sol-attention-bg);
+    border: 1px dashed var(--sol-attention-line);
+    border-radius: var(--sol-radius-md);
+    padding: 12px 16px;
+    display: grid; grid-template-columns: 1fr auto; gap: 14px;
+    align-items: center;
+  }
+  .evidence-info { font-family: var(--sol-font-body); font-size: 12.5px; color: var(--sol-ink-700); line-height: 1.5; }
+  .evidence-info b { color: var(--sol-ink-900); font-weight: 500; }
+  .evidence-status {
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.14em; color: var(--sol-attention-fg);
+    text-transform: uppercase; font-weight: 600;
+    display: block; margin-bottom: 2px;
+  }
+  .evidence-upload {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--sol-bg-paper); color: var(--sol-attention-fg);
+    border: 1px solid var(--sol-attention-line);
+    border-radius: var(--sol-radius-sm);
+    padding: 6px 11px;
+    font-family: var(--sol-font-body); font-size: 11.5px; font-weight: 600;
+    cursor: pointer;
+  }
+  .evidence-upload svg { width: 12px; height: 12px; }
+
+  /* COMPLIANCE LINK */
+  .compliance-card {
+    background: var(--sol-calme-bg);
+    border: 1px solid var(--sol-calme-fg);
+    border-left: 3px solid var(--sol-calme-fg);
+    border-radius: var(--sol-radius-md); padding: 11px 16px;
+  }
+  .compliance-row {
+    display: grid; grid-template-columns: 130px 1fr;
+    gap: 8px; padding: 4px 0;
+    font-size: 12.5px; align-items: baseline;
+  }
+  .compliance-row + .compliance-row { border-top: 1px solid rgba(47, 107, 94, 0.18); }
+  .compliance-label {
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.1em; color: var(--sol-calme-fg);
+    text-transform: uppercase; font-weight: 600;
+  }
+  .compliance-value { color: var(--sol-ink-900); font-weight: 500; font-family: var(--sol-font-body); }
+  .compliance-value b { font-weight: 600; }
+  .compliance-value .muted { color: var(--sol-ink-500); font-style: italic; }
+  .compliance-value a { color: var(--sol-calme-fg); text-decoration: none; border-bottom: 1px dotted var(--sol-calme-fg); }
+  .compliance-value .feed-status {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: var(--sol-font-mono); font-size: 10px;
+    color: var(--sol-attention-fg); background: var(--sol-attention-bg);
+    padding: 1px 6px; border-radius: 3px; margin-left: 6px;
+    font-weight: 500; letter-spacing: 0.04em;
+  }
+
+  /* META */
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .meta-cell { padding: 9px 12px; background: var(--sol-bg-panel); border-radius: var(--sol-radius-md); }
+  .meta-cell-label { font-family: var(--sol-font-mono); font-size: 9px; letter-spacing: 0.14em; color: var(--sol-ink-500); text-transform: uppercase; font-weight: 500; margin-bottom: 5px; }
+  .meta-cell-value { font-family: var(--sol-font-body); font-size: 13px; color: var(--sol-ink-900); font-weight: 500; line-height: 1.3; display: flex; align-items: center; gap: 6px; }
+  .meta-cell-value .mini-avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); color: var(--sol-ink-900); display: flex; align-items: center; justify-content: center; font-family: var(--sol-font-mono); font-size: 9px; font-weight: 600; }
+  .meta-cell-detail { font-family: var(--sol-font-display); font-style: italic; font-size: 11px; color: var(--sol-ink-500); margin-top: 2px; }
+  .meta-cell-detail.urgent { color: var(--sol-refuse-fg); font-style: normal; font-weight: 500; }
+
+  /* LINKS */
+  .links-list { display: flex; flex-direction: column; gap: 5px; }
+  .link-row {
+    display: grid; grid-template-columns: 140px 1fr auto;
+    gap: 10px; padding: 7px 12px;
+    background: var(--sol-bg-paper); border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-sm);
+    font-size: 12.5px; align-items: center;
+  }
+  .link-label { font-family: var(--sol-font-mono); font-size: 9.5px; letter-spacing: 0.08em; color: var(--sol-ink-500); text-transform: uppercase; font-weight: 500; }
+  .link-value { color: var(--sol-ink-900); font-weight: 500; }
+  .link-value.muted { color: var(--sol-ink-400); font-style: italic; font-weight: 400; }
+  .link-action { font-family: var(--sol-font-mono); font-size: 9.5px; letter-spacing: 0.06em; color: var(--sol-ink-900); text-decoration: none; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--sol-ink-900); padding-bottom: 1px; }
+
+  /* DÉCISION ATTENDUE — bloc cardinal avant playbooks */
+  .decision-pending-block {
+    background: var(--sol-night-bg, #072a44);
+    color: var(--sol-bg-paper);
+    border-radius: var(--sol-radius-md);
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    display: grid; grid-template-columns: auto 1fr; gap: 12px;
+    align-items: center;
+  }
+  .decision-pending-icon {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.95);
+  }
+  .decision-pending-icon svg { width: 16px; height: 16px; }
+  .decision-pending-text { font-family: var(--sol-font-display); font-size: 13.5px; line-height: 1.45; }
+  .decision-pending-text b { font-weight: 600; }
+  .decision-pending-text em { font-style: italic; opacity: 0.85; font-size: 12px; display: block; margin-top: 2px; }
+
+  /* SCENARIOS */
+  .scenarios { display: flex; flex-direction: column; gap: 7px; }
+  .scenario-row {
+    display: grid; grid-template-columns: 90px 1fr 100px 110px;
+    gap: 12px; padding: 10px 14px;
+    background: var(--sol-bg-paper); border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-md); align-items: center;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .scenario-row:hover { border-color: var(--sol-ink-300); }
+  .scenario-row.recommended {
+    border-color: var(--sol-succes-fg);
+    border-left: 4px solid var(--sol-succes-fg);
+    background: linear-gradient(to right, var(--sol-succes-bg), var(--sol-bg-paper));
+  }
+  .scenario-tag { font-family: var(--sol-font-mono); font-size: 9.5px; letter-spacing: 0.1em; color: var(--sol-ink-500); text-transform: uppercase; font-weight: 600; }
+  .scenario-row.recommended .scenario-tag { color: var(--sol-succes-fg); }
+  .scenario-title { font-family: var(--sol-font-display); font-size: 14px; font-weight: 500; color: var(--sol-ink-900); line-height: 1.3; letter-spacing: -0.005em; }
+  .scenario-figs { font-family: var(--sol-font-mono); font-size: 11px; color: var(--sol-ink-700); text-align: right; line-height: 1.4; }
+  .scenario-figs b { color: var(--sol-ink-900); font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .scenario-row.recommended .scenario-figs b { color: var(--sol-succes-fg); }
+  .scenario-cta {
+    background: var(--sol-bg-paper); color: var(--sol-ink-900);
+    border: 1px solid var(--sol-ink-300); border-radius: var(--sol-radius-sm);
+    padding: 6px 10px; font-family: var(--sol-font-body); font-size: 11px;
+    font-weight: 500; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .scenario-row.recommended .scenario-cta { background: var(--sol-succes-fg); color: var(--sol-bg-paper); border-color: var(--sol-succes-fg); font-weight: 600; }
+  .scenario-cta svg { width: 10px; height: 10px; }
+
+  /* AUDIT TRAIL — libellés FR mode standard */
+  .audit-list { display: flex; flex-direction: column; position: relative; padding-left: 14px; }
+  .audit-list::before { content: ""; position: absolute; left: 5px; top: 4px; bottom: 4px; width: 1px; background: var(--sol-rule); }
+  .audit-entry { display: grid; grid-template-columns: 70px 1fr; gap: 12px; padding: 6px 0; align-items: flex-start; position: relative; font-size: 12px; }
+  .audit-entry::before { content: ""; position: absolute; left: -14px; top: 10px; width: 11px; height: 11px; border-radius: 50%; background: var(--sol-bg-paper); border: 2px solid var(--sol-ink-400); box-sizing: border-box; }
+  .audit-entry.first::before { background: var(--sol-ink-900); border-color: var(--sol-ink-900); }
+  .audit-entry.system::before { border-color: var(--sol-calme-fg); }
+  .audit-time { font-family: var(--sol-font-mono); font-size: 10.5px; color: var(--sol-ink-500); letter-spacing: 0.02em; text-align: right; }
+  .audit-time b { color: var(--sol-ink-900); font-weight: 600; }
+  .audit-content { line-height: 1.45; }
+  .audit-content-row { color: var(--sol-ink-900); }
+  .audit-content-row b { font-weight: 600; }
+  .audit-actor {
+    font-family: var(--sol-font-mono); font-size: 10px;
+    letter-spacing: 0.04em; color: var(--sol-ink-700);
+    background: var(--sol-bg-panel); padding: 1px 5px;
+    border-radius: 2px; margin-right: 5px;
+  }
+  .audit-actor.system { color: var(--sol-calme-fg); background: var(--sol-calme-bg); }
+  .audit-event-fr {
+    font-family: var(--sol-font-body); font-size: 12px;
+    color: var(--sol-ink-900); font-weight: 500;
+  }
+  .audit-event-detail { font-family: var(--sol-font-display); font-style: italic; font-size: 11.5px; color: var(--sol-ink-500); margin-top: 2px; }
+
+  /* FOOTER */
+  .drawer-footer { background: var(--sol-bg-canvas); border-top: 1px solid var(--sol-rule); padding: 12px 26px; flex-shrink: 0; display: flex; gap: 8px; align-items: center; }
+  .drawer-footer-meta {
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.06em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 500;
+  }
+  .drawer-footer-meta b { color: var(--sol-ink-700); }
+  .drawer-footer-spacer { flex: 1; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- BACKDROP -->
+  <div class="backdrop">
+    <div class="bd-rail">
+      <div class="bd-rail-logo"></div>
+      <div class="bd-rail-item"></div><div class="bd-rail-item"></div><div class="bd-rail-item"></div><div class="bd-rail-item"></div><div class="bd-rail-item"></div><div class="bd-rail-item"></div><div class="bd-rail-item"></div>
+    </div>
+    <div class="bd-side">
+      <div style="height:46px;margin-bottom:18px"></div>
+      <div class="bd-side-line"></div><div class="bd-side-line"></div><div class="bd-side-line active"></div><div class="bd-side-line"></div><div class="bd-side-line"></div><div class="bd-side-line"></div><div class="bd-side-line"></div>
+    </div>
+    <div class="bd-main">
+      <div class="bd-narrative-bar"></div>
+      <div class="bd-tab-bar"></div>
+      <div class="bd-card"></div><div class="bd-card"></div><div class="bd-card p1"></div><div class="bd-card p1"></div><div class="bd-card p2"></div>
+    </div>
+  </div>
+
+  <div class="drawer-overlay"></div>
+
+  <!-- ════════ DRAWER v0.2 ════════ -->
+  <div class="drawer">
+
+    <!-- HEADER STICKY — 3 boutons cardinal -->
+    <div class="drawer-header">
+      <div class="drawer-bc-row">
+        <span class="drawer-bc-text">
+          <b>Centre d'action</b><span class="sep">›</span>File prioritaire<span class="sep">›</span><b>Détail du sujet</b>
+        </span>
+        <div class="drawer-bc-spacer"></div>
+        <span class="audit-mode-toggle-mini">Mode audit</span>
+        <button class="drawer-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- 3 BOUTONS cardinal -->
+      <div class="drawer-actions-3">
+        <button class="drawer-action-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/></svg>
+          Planifier
+          <span class="primary-hint">Action principale</span>
+        </button>
+        <button class="drawer-action-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          Réassigner
+        </button>
+        <button class="drawer-action-more">
+          Plus
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+
+          <!-- Menu déployé en aperçu -->
+          <div class="more-menu">
+            <div class="more-menu-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              Bloquer
+            </div>
+            <div class="more-menu-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Ajouter preuve
+            </div>
+            <div class="more-menu-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Clôturer
+            </div>
+            <div class="more-menu-sep"></div>
+            <div class="more-menu-item disabled">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 11v6M10 11v6M5 6h14l-1.5 14a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2L5 6z"/></svg>
+              Fusionner
+              <span class="reason">aucun doublon</span>
+            </div>
+            <div class="more-menu-hidden">Fusionner masqué</div>
+            <div class="more-menu-hidden-explain">Visible uniquement si l'item est rattaché à un dossier de doublons. Pour une récurrence, voir "Créer dossier" depuis l'item parent.</div>
+            <div class="more-menu-sep"></div>
+            <div class="more-menu-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              Historique complet
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="drawer-body">
+
+      <!-- TITLE BLOCK -->
+      <div class="d-title-block">
+        <h1 class="d-title">Audit énergétique <em>SMÉ Toulouse</em> · choisir un prestataire ICPE</h1>
+        <p class="d-summary">
+          Obligation <b>SMÉ</b> applicable au groupe HELIOS · consommation 3,2 GWh &gt; seuil <b>2,75 GWh</b>. Audit dû avant le <b>11/10/2026</b>. 3 prestataires qualifiés identifiés (APAVE, Bureau Veritas, Socotec) — décision à acter cette semaine pour respecter le délai cahier des charges.
+        </p>
+        <div class="d-status-row">
+          <span class="d-kind-badge action">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Type : Action
+          </span>
+          <span class="d-priority-tag" title="Score 88/100 · règles R1 R2 R5 R6 appliquées · cf. section ci-dessous">P0 · 88 <span class="score">/&nbsp;100</span></span>
+          <span class="d-lifecycle-pill">Qualifié</span>
+          <span class="d-domain-chip">Conformité</span>
+          <span class="d-sla-pair">
+            <span class="d-sla-cell sla-promeos red" title="SLA de traitement PROMEOS dépassé · escalade automatique manager">
+              <span class="sla-label">SLA</span><span class="sla-value">J+1 dépassé</span>
+            </span>
+            <span class="d-sla-cell echeance-metier" title="Échéance réglementaire SMÉ · Décret 2014-1393">
+              <span class="sla-label">Réglem.</span><span class="sla-value">11/10/26</span>
+            </span>
+          </span>
+          <span class="d-evidence-badge" title="Preuve attendue · devis prestataire ICPE · obligatoire à la clôture">📄 Preuve attendue</span>
+        </div>
+
+        <!-- PROCHAINE ACTION — sync M1 -->
+        <div class="next-action-block">
+          <span class="next-action-label">Prochaine action</span>
+          <span class="next-action-value">Arbitrer le scénario B (Audit + plan pilotage CTA)</span>
+          <span class="next-action-why" title="SLA traitement dépassé · blocker budget depuis 24h · COMEX 15/05 imminent · règle R6 plancher P1 conformité forcé">COMEX 15/05 décide CAPEX 68 k€</span>
+        </div>
+      </div>
+
+      <!-- ════════ POURQUOI P0 · 88 / 100 ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+          Pourquoi P0 · 88 / 100 ?
+          <span class="badge-inline">Doctrine v0.2</span>
+        </div>
+
+        <div class="priority-explain">
+          <div class="priority-explain-head">
+            <span class="priority-explain-title">Score décomposé · explicable composante par composante</span>
+            <span class="priority-explain-final">Bracket final → <b>P0</b></span>
+          </div>
+
+          <div class="priority-subhead">Composantes du score</div>
+          <div class="priority-components">
+            <div class="priority-row adr-base">
+              <span class="priority-row-name">Gravité <span class="hint">(héritée ADR-022)</span></span>
+              <div class="priority-row-bar"><div class="priority-row-bar-fill" style="width: 90%"></div></div>
+              <span class="priority-row-points">22,5<span class="max"> / 25</span></span>
+            </div>
+            <div class="priority-row adr-base">
+              <span class="priority-row-name">Impact <span class="hint">(héritée ADR-022)</span></span>
+              <div class="priority-row-bar"><div class="priority-row-bar-fill" style="width: 84%"></div></div>
+              <span class="priority-row-points">21<span class="max"> / 25</span></span>
+            </div>
+            <div class="priority-row adr-base">
+              <span class="priority-row-name">Délai <span class="hint">(héritée ADR-022)</span></span>
+              <div class="priority-row-bar"><div class="priority-row-bar-fill" style="width: 95%"></div></div>
+              <span class="priority-row-points">19<span class="max"> / 20</span></span>
+            </div>
+            <div class="priority-row">
+              <span class="priority-row-name">Risque conformité <span class="hint">(extension V4)</span></span>
+              <div class="priority-row-bar"><div class="priority-row-bar-fill" style="width: 80%"></div></div>
+              <span class="priority-row-points">12<span class="max"> / 15</span></span>
+            </div>
+            <div class="priority-row">
+              <span class="priority-row-name">Confiance détection <span class="hint">(extension V4)</span></span>
+              <div class="priority-row-bar"><div class="priority-row-bar-fill" style="width: 90%"></div></div>
+              <span class="priority-row-points">9<span class="max"> / 10</span></span>
+            </div>
+            <div class="priority-row">
+              <span class="priority-row-name">Sans responsable <span class="hint">(extension V4 · override)</span></span>
+              <div class="priority-row-bar"><div class="priority-row-bar-fill" style="width: 0%"></div></div>
+              <span class="priority-row-points">0<span class="max"> / 5</span></span>
+            </div>
+            <div class="priority-row">
+              <span class="priority-row-name">Preuve manquante <span class="hint">(extension V4)</span></span>
+              <div class="priority-row-bar"><div class="priority-row-bar-fill" style="width: 90%"></div></div>
+              <span class="priority-row-points">4,5<span class="max"> / 5</span></span>
+            </div>
+          </div>
+
+          <!-- SECTION CARDINALE — Règles de modulation appliquées -->
+          <div class="modulation-rules">
+            <div class="priority-subhead" style="margin-bottom: 7px">Règles de modulation appliquées</div>
+            <div class="rules-list">
+              <div class="rule-line">
+                <span class="rule-code">R1</span>
+                <span class="rule-text"><b>Risque réel &gt; sévérité brute.</b> <em>Score combine gravité, impact, délai, confiance, preuve.</em></span>
+              </div>
+              <div class="rule-line">
+                <span class="rule-code">R2</span>
+                <span class="rule-text"><b>Conformité proche &gt; opportunité lointaine.</b> <em>SLA traitement dépassé J+1 — bracket P0 maintenu.</em></span>
+              </div>
+              <div class="rule-line">
+                <span class="rule-code">R5</span>
+                <span class="rule-text"><b>Preuve manquante.</b> <em>+4,5 points · actions destructives désactivées tant que preuve absente.</em></span>
+              </div>
+              <div class="rule-line">
+                <span class="rule-code">R6</span>
+                <span class="rule-text"><b>Conformité applicable → plancher P1 minimum.</b> <em>SMÉ status APPLICABLE confirmé par moteur d'assujettissement v1.0.</em></span>
+              </div>
+            </div>
+          </div>
+
+          <p class="priority-narrative">
+            <b>88 / 100</b> ⇒ Bracket <b>P0</b> (seuil ≥ 80). Score dominé par l'<b>échéance de traitement</b> (J+1 dépassé) et le <b>risque conformité SMÉ</b>. Aucun override appliqué depuis 90 jours.
+          </p>
+        </div>
+      </div>
+
+      <!-- ════════ IMPACT — 4 dimensions avec tooltips ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+          Impact financier · 4 dimensions strictes
+          <span class="badge-inline">€ HT · 12 mois</span>
+        </div>
+
+        <div class="impact-grid">
+          <div class="impact-card estimated">
+            <span class="impact-label" title="Gain attendu si l'action est exécutée selon le scénario recommandé (B). Calcul backend basé sur modèle V4 économies SMÉ + plan pilotage CTA.">Estimé</span>
+            <div class="impact-value">49<span class="unit"> k€/an</span></div>
+            <p class="impact-detail">gain si audit + plan pilotage CTA mis en œuvre</p>
+            <p class="impact-foot">Source · <b>Modèle V4 · scénario B</b><br>Formule · <b>320 MWh × 153 €/MWh</b></p>
+          </div>
+          <div class="impact-card atRisk">
+            <span class="impact-label" title="Montant non sécurisé par une action démarrée ou une preuve validée. Ici : pénalité forfaitaire OPERAT si non-respect du cycle SMÉ 4 ans.">À risque</span>
+            <div class="impact-value">7,5<span class="unit"> k€</span></div>
+            <p class="impact-detail">pénalité OPERAT si non-respect cycle SMÉ 4 ans</p>
+            <p class="impact-foot">Source · <b>Décret 2014-1393 art. 5</b><br>Formule · <b>15 €/m² × 500 m²</b></p>
+          </div>
+          <div class="impact-card secured">
+            <span class="impact-label" title="Activable immédiatement, action ready-to-start avec preuves disponibles. Aucun montant sécurisé tant que le scénario n'est pas démarré.">Sécurisable</span>
+            <div class="impact-value muted">—</div>
+            <p class="impact-detail">à activer après triage et démarrage action</p>
+          </div>
+          <div class="impact-card realized">
+            <span class="impact-label" title="Gain constaté après clôture de l'action avec preuves vérifiées. Aucun montant tant que l'action n'est pas clôturée.">Réalisé</span>
+            <div class="impact-value muted">—</div>
+            <p class="impact-detail">à constater après clôture avec preuves</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ BLOCKERS — libellés FR ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M4.93 4.93l14.14 14.14"/></svg>
+          Blockers
+          <span class="badge-inline">2 actifs</span>
+        </div>
+
+        <div class="blockers-list">
+          <span class="d-blocker-chip">Preuve attendue</span>
+          <span class="d-blocker-chip">Budget attendu</span>
+        </div>
+        <p class="blockers-since">
+          <b>Preuve attendue</b> depuis le <b>09/05/2026</b> · <b>Budget attendu</b> depuis le <b>11/05/2026</b>. Sujet bloqué depuis <b>3 jours</b> — escalade automatique au manager si &gt; 7 jours.
+        </p>
+      </div>
+
+      <!-- ════════ PREUVE ATTENDUE ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          Preuve attendue
+          <span class="badge-inline">obligatoire à la clôture</span>
+        </div>
+
+        <div class="evidence-panel">
+          <div class="evidence-info">
+            <span class="evidence-status">⚠ Manquante</span>
+            <b>Devis prestataire ICPE</b> + RIB obligé · formats <b>PDF, JPG, PNG</b> &lt; 10 Mo · vérification automatique PROMEOS (signature, validité 90j) après upload.
+          </div>
+          <button class="evidence-upload">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Uploader
+          </button>
+        </div>
+      </div>
+
+      <!-- ════════ COMPLIANCE ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg>
+          Lien réglementaire · alimente dossier
+        </div>
+
+        <div class="compliance-card">
+          <div class="compliance-row">
+            <span class="compliance-label">Régulation</span>
+            <span class="compliance-value">Audit énergétique <b>SMÉ</b> · <a href="#">Décret 2014-1393</a></span>
+          </div>
+          <div class="compliance-row">
+            <span class="compliance-label">Échéance métier</span>
+            <span class="compliance-value"><b>11/10/2026</b> · cycle 4 ans · <span class="muted">prochaine éval. 11/10/2030</span></span>
+          </div>
+          <div class="compliance-row">
+            <span class="compliance-label">Verdict moteur</span>
+            <span class="compliance-value"><b>Applicable</b> · conso 3,2 GWh &gt; seuil 2,75 GWh · confiance 1.0 · <a href="#">voir évaluation</a></span>
+          </div>
+          <div class="compliance-row">
+            <span class="compliance-label">Alimente</span>
+            <span class="compliance-value">
+              <a href="#">Dossier audit SMÉ 2026</a>
+              <span class="feed-status">Bloqué · preuve manquante</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ META — Responsable / périmètre / échéances ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+          Responsable · périmètre · échéances
+        </div>
+
+        <div class="meta-grid">
+          <div class="meta-cell">
+            <span class="meta-cell-label">Responsable</span>
+            <span class="meta-cell-value">
+              <span class="mini-avatar">JM</span>
+              J. Martin
+            </span>
+            <span class="meta-cell-detail">DAF · assigné le 10/05</span>
+          </div>
+          <div class="meta-cell">
+            <span class="meta-cell-label">Détecté</span>
+            <span class="meta-cell-value">02/05/2026</span>
+            <span class="meta-cell-detail">par moteur d'assujettissement</span>
+          </div>
+          <div class="meta-cell">
+            <span class="meta-cell-label">SLA de traitement</span>
+            <span class="meta-cell-value">11/05/2026</span>
+            <span class="meta-cell-detail urgent">J+1 · dépassé</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ LINKS ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+          Liens
+          <span class="badge-inline">4 entités</span>
+        </div>
+
+        <div class="links-list">
+          <div class="link-row">
+            <span class="link-label">Anomalie source</span>
+            <span class="link-value muted">aucune · créé par triage compliance</span>
+            <span></span>
+          </div>
+          <div class="link-row">
+            <span class="link-label">Site</span>
+            <span class="link-value">Toulouse · bâtiment principal</span>
+            <a class="link-action" href="#">Ouvrir ↗</a>
+          </div>
+          <div class="link-row">
+            <span class="link-label">Réglementation</span>
+            <span class="link-value">Décret SMÉ 2014-1393</span>
+            <a class="link-action" href="#">Texte ↗</a>
+          </div>
+          <div class="link-row">
+            <span class="link-label">Source détection</span>
+            <span class="link-value">Moteur d'assujettissement</span>
+            <a class="link-action" href="#">Trace ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ DÉCISION ATTENDUE + PLAYBOOKS ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          Scénarios disponibles
+          <span class="badge-inline">3 options</span>
+        </div>
+
+        <!-- BLOC "DÉCISION ATTENDUE" cardinal -->
+        <div class="decision-pending-block">
+          <span class="decision-pending-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="12" r="3"/><path d="M9 6h6a3 3 0 0 1 3 3v3"/><path d="M9 18h6a3 3 0 0 0 3-3v-3"/></svg>
+          </span>
+          <span class="decision-pending-text">
+            <b>Décision attendue :</b> choisir un scénario d'audit avant le COMEX du 15/05.<br>
+            <em>Recommandation PROMEOS : scénario B — meilleur ratio gain / délai / preuve.</em>
+          </span>
+        </div>
+
+        <div class="scenarios">
+          <div class="scenario-row">
+            <span class="scenario-tag">A · Minimal</span>
+            <span class="scenario-title">Audit SMÉ seul</span>
+            <span class="scenario-figs">CAPEX <b>12 k€</b><br>Gain <b>8 k€/an</b></span>
+            <button class="scenario-cta">Comparer →</button>
+          </div>
+          <div class="scenario-row recommended">
+            <span class="scenario-tag">B · Recommandé</span>
+            <span class="scenario-title">Audit SMÉ + plan pilotage CTA</span>
+            <span class="scenario-figs">CAPEX <b>68 k€</b><br>Gain <b>49 k€/an</b></span>
+            <button class="scenario-cta">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Arbitrer
+            </button>
+          </div>
+          <div class="scenario-row">
+            <span class="scenario-tag">C · Étendu</span>
+            <span class="scenario-title">Rénovation lourde différée 2027</span>
+            <span class="scenario-figs">CAPEX <b>320 k€</b><br>Gain <b>78 k€/an</b></span>
+            <button class="scenario-cta">Comparer →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ AUDIT TRAIL — libellés FR mode standard ════════ -->
+      <div class="d-section">
+        <div class="d-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          Historique
+          <span class="badge-inline">12 entrées · 30 j</span>
+        </div>
+
+        <div class="audit-list">
+          <div class="audit-entry first">
+            <span class="audit-time"><b>12/05</b> 07:18</span>
+            <div class="audit-content">
+              <div class="audit-content-row">
+                <span class="audit-actor system">PROMEOS</span>
+                <span class="audit-event-fr">État modifié</span> · Nouveau <b>→ Qualifié</b>
+              </div>
+              <span class="audit-event-detail">Qualification automatique après évaluation conformité · règle R6 appliquée · plancher P1 garanti</span>
+            </div>
+          </div>
+          <div class="audit-entry">
+            <span class="audit-time"><b>11/05</b> 14:32</span>
+            <div class="audit-content">
+              <div class="audit-content-row">
+                <span class="audit-actor">JM · J. Martin</span>
+                <span class="audit-event-fr">Blocker ajouté</span> · <b>Budget attendu</b>
+              </div>
+              <span class="audit-event-detail">Justification · CAPEX 68 k€ scénario B non encore arbitré en COMEX du 15/05</span>
+            </div>
+          </div>
+          <div class="audit-entry">
+            <span class="audit-time"><b>10/05</b> 16:08</span>
+            <div class="audit-content">
+              <div class="audit-content-row">
+                <span class="audit-actor">SM · S. Marin</span>
+                <span class="audit-event-fr">Réassigné</span> · <b>→ J. Martin (DAF)</b>
+              </div>
+              <span class="audit-event-detail">Réassignation depuis Sophie Marin · justification budget CAPEX nécessite arbitrage DAF</span>
+            </div>
+          </div>
+          <div class="audit-entry">
+            <span class="audit-time"><b>09/05</b> 11:24</span>
+            <div class="audit-content">
+              <div class="audit-content-row">
+                <span class="audit-actor">SM · S. Marin</span>
+                <span class="audit-event-fr">Blocker ajouté</span> · <b>Preuve attendue</b>
+              </div>
+              <span class="audit-event-detail">Devis prestataires APAVE / Bureau Veritas / Socotec sollicités · réponse attendue sous 7 jours</span>
+            </div>
+          </div>
+          <div class="audit-entry system">
+            <span class="audit-time"><b>02/05</b> 03:12</span>
+            <div class="audit-content">
+              <div class="audit-content-row">
+                <span class="audit-actor system">PROMEOS</span>
+                <span class="audit-event-fr">Créé</span> · Type : Action · Source : Moteur d'assujettissement
+              </div>
+              <span class="audit-event-detail">Item créé automatiquement par job pull idempotent depuis findings compliance SMÉ · score initial 88/100</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="drawer-footer">
+      <span class="drawer-footer-meta">
+        Créé <b>02/05/2026</b> · Mise à jour <b>12/05 · 07:18</b>
+      </span>
+      <div class="drawer-footer-spacer"></div>
+      <button class="drawer-action-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/></svg>
+        Activité
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

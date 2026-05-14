@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1500, initial-scale=1">
+<title>PROMEOS — Centre d'action V4 · Référentiel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ═══════ TOKENS SOL v1.1 ═══════ */
+  :root {
+    --sol-bg-canvas: #f8f9fa;
+    --sol-bg-paper: #ffffff;
+    --sol-bg-panel: #f3f4f6;
+    --sol-ink-100: #f1f5f9;
+    --sol-ink-200: #e2e8f0;
+    --sol-ink-300: #cbd5e1;
+    --sol-ink-400: #94a3b8;
+    --sol-ink-500: #64748b;
+    --sol-ink-700: #334155;
+    --sol-ink-900: #0f172a;
+    --sol-rule: #e2e8f0;
+    --sol-calme-fg: #2f6b5e; --sol-calme-bg: #e3f0ed;
+    --sol-succes-fg: #2e6b4a; --sol-succes-bg: #dfede3; --sol-succes-line: #5a8a72;
+    --sol-attention-fg: #8a5a14; --sol-attention-bg: #f6ead2; --sol-attention-line: #d4a85a;
+    --sol-afaire-fg: #a04525; --sol-afaire-bg: #f7e4d8; --sol-afaire-line: #d68a5e;
+    --sol-refuse-fg: #8b3a3a; --sol-refuse-bg: #f3dddb; --sol-refuse-line: #b85a5a;
+    --sol-hch-fg: #2e4a6b; --sol-hch-bg: #e6edf5;
+    --sol-night-bg: #072a44;
+    --sol-font-display: 'Fraunces', Georgia, serif;
+    --sol-font-body: 'DM Sans', system-ui, sans-serif;
+    --sol-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sol-radius-sm: 4px;
+    --sol-radius-md: 6px;
+    --sol-radius-lg: 8px;
+    --sol-radius-xl: 12px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--sol-ink-200);
+    font-family: var(--sol-font-body);
+    color: var(--sol-ink-900);
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-size: 14.5px;
+    line-height: 1.5;
+    letter-spacing: -0.005em;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 10000;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='100' height='100' filter='url(%23n)' opacity='0.5'/></svg>");
+  }
+
+  .app {
+    max-width: 1500px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 60px 220px 1fr;
+    background: var(--sol-bg-canvas);
+    border-radius: var(--sol-radius-xl);
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+  }
+
+  /* ─── RAIL / SIDE (identiques M1/M2) ─── */
+  .nav-rail { background: var(--sol-bg-panel); padding: 14px 12px; border-right: 1px solid var(--sol-rule); display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .rail-logo { width: 34px; height: 34px; border-radius: var(--sol-radius-md); background: var(--sol-ink-900); color: var(--sol-bg-paper); font-family: var(--sol-font-display); font-weight: 500; font-size: 17px; display: flex; align-items: center; justify-content: center; margin-bottom: 7px; }
+  .rail-item { width: 38px; height: 42px; border-radius: var(--sol-radius-md); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--sol-ink-500); cursor: pointer; position: relative; }
+  .rail-item.active { color: var(--sol-ink-900); background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); }
+  .rail-item svg { width: 17px; height: 17px; }
+  .rail-item-label { font-size: 9px; font-family: var(--sol-font-mono); }
+  .rail-badge { position: absolute; top: -2px; right: 2px; background: var(--sol-refuse-fg); color: var(--sol-bg-paper); font-size: 9px; font-family: var(--sol-font-mono); padding: 1px 4px; border-radius: var(--sol-radius-md); line-height: 1; }
+  .rail-spacer { flex: 1; }
+  .rail-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); color: var(--sol-ink-900); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; }
+
+  .nav-side { background: var(--sol-bg-panel); padding: 16px 14px; border-right: 1px solid var(--sol-rule); }
+  .nav-brand { margin-bottom: 22px; padding: 0 4px; }
+  .nav-brand-title { font-family: var(--sol-font-display); font-size: 20px; font-weight: 500; line-height: 1.05; color: var(--sol-ink-900); letter-spacing: -0.01em; }
+  .nav-brand-sub { font-size: 11.5px; color: var(--sol-ink-500); margin-top: 2px; font-style: italic; font-family: var(--sol-font-display); }
+  .nav-link { display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-radius: var(--sol-radius-md); font-size: 13px; color: var(--sol-ink-700); margin-bottom: 1px; }
+  .nav-link.active { background: var(--sol-bg-paper); color: var(--sol-ink-900); font-weight: 500; border: 1px solid var(--sol-rule); }
+  .nav-link svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .nav-link-badge { margin-left: auto; background: var(--sol-bg-paper); color: var(--sol-ink-500); font-family: var(--sol-font-mono); font-size: 9.5px; padding: 1px 5px; border-radius: var(--sol-radius-lg); font-weight: 500; border: 1px solid var(--sol-rule); }
+  .nav-link-badge.alert { background: var(--sol-refuse-fg); color: var(--sol-bg-paper); border-color: var(--sol-refuse-fg); }
+  .nav-section-title { font-family: var(--sol-font-mono); font-size: 9px; letter-spacing: 0.14em; color: var(--sol-ink-400); text-transform: uppercase; margin: 16px 10px 5px; }
+
+  .main { background: var(--sol-bg-canvas); display: flex; flex-direction: column; }
+
+  /* ─── TOPBAR ─── */
+  .topbar { display: flex; align-items: center; gap: 10px; padding: 11px 28px; border-bottom: 1px solid var(--sol-rule); background: var(--sol-bg-canvas); flex-shrink: 0; flex-wrap: wrap; }
+  .breadcrumb { font-size: 13px; color: var(--sol-ink-500); }
+  .breadcrumb b { color: var(--sol-ink-900); font-weight: 500; }
+  .breadcrumb .sep { margin: 0 7px; color: var(--sol-ink-300); }
+  .topbar-spacer { flex: 1; }
+  .filter-group { display: flex; gap: 6px; align-items: center; }
+  .filter-label { font-family: var(--sol-font-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--sol-ink-500); text-transform: uppercase; margin-right: 3px; }
+  .filter-pill { display: flex; align-items: center; gap: 5px; padding: 3px 9px; background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--sol-ink-900); cursor: pointer; font-family: var(--sol-font-body); }
+  .filter-pill svg { width: 10px; height: 10px; color: var(--sol-ink-500); }
+  .filter-pill .filter-count { font-family: var(--sol-font-mono); font-weight: 400; color: var(--sol-ink-500); font-size: 10.5px; margin-left: 2px; }
+  .filter-pill.active { background: var(--sol-ink-900); color: var(--sol-bg-paper); border-color: var(--sol-ink-900); }
+  .filter-pill.active .filter-count { color: var(--sol-ink-200); }
+  .filter-pill.active svg { color: var(--sol-bg-paper); }
+  .status-pill { font-family: var(--sol-font-mono); font-size: 10px; padding: 3px 8px; border-radius: 999px; font-weight: 500; letter-spacing: 0.06em; }
+  .status-pill.ok { background: var(--sol-succes-bg); color: var(--sol-succes-fg); border: 1px solid var(--sol-succes-line); }
+  .status-pill.demo { background: var(--sol-attention-bg); color: var(--sol-attention-fg); border: 1px solid var(--sol-attention-line); }
+  .vue-toggle { display: flex; align-items: center; gap: 6px; font-family: var(--sol-font-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--sol-ink-500); text-transform: uppercase; }
+  .vue-select { background: var(--sol-bg-paper); color: var(--sol-ink-900); border: 1px solid var(--sol-ink-300); border-radius: var(--sol-radius-md); padding: 4px 10px; font-size: 12px; font-family: var(--sol-font-body); font-weight: 500; text-transform: none; letter-spacing: 0; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .vue-select svg { width: 10px; height: 10px; color: var(--sol-ink-500); }
+  .vue-select .persona-marker { background: var(--sol-calme-fg); width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
+  .user-pill { display: flex; align-items: center; gap: 7px; }
+  .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--sol-bg-panel); border: 1px solid var(--sol-rule); color: var(--sol-ink-900); display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 500; }
+
+  .canvas { padding: 22px 36px 28px; max-width: 1380px; margin: 0 auto; width: 100%; }
+  .masthead { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--sol-ink-900); margin-bottom: 16px; }
+  .masthead-left { font-family: var(--sol-font-display); font-size: 13px; color: var(--sol-ink-900); font-weight: 500; font-style: italic; letter-spacing: 0.02em; }
+  .masthead-left b { font-weight: 600; font-style: normal; }
+  .masthead-right { font-family: var(--sol-font-mono); font-size: 10.5px; letter-spacing: 0.16em; color: var(--sol-ink-500); text-transform: uppercase; }
+
+  /* ─── BARRE NARRATIVE COMPACTE (identique M1) ─── */
+  .narrative-bar {
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-lg);
+    padding: 16px 22px 14px;
+    margin-bottom: 18px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 22px;
+    align-items: center;
+  }
+  .narrative-kicker {
+    font-family: var(--sol-font-mono);
+    font-size: 10px; letter-spacing: 0.18em;
+    color: var(--sol-ink-500); text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .narrative-kicker .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--sol-succes-fg);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+  .narrative-headline {
+    font-family: var(--sol-font-display);
+    font-size: 17px; font-weight: 500;
+    color: var(--sol-ink-900); line-height: 1.3;
+    letter-spacing: -0.012em;
+    margin: 0 0 6px;
+  }
+  .narrative-headline em { font-style: italic; color: var(--sol-ink-500); font-weight: 400; }
+  .narrative-headline .num { font-family: var(--sol-font-mono); font-weight: 500; }
+  .narrative-stats { display: flex; gap: 18px; }
+  .narrative-stat { display: flex; flex-direction: column; gap: 1px; border-left: 1px solid var(--sol-rule); padding-left: 12px; }
+  .narrative-stat:first-child { border-left: none; padding-left: 0; }
+  .narrative-stat-label { font-family: var(--sol-font-mono); font-size: 8.5px; letter-spacing: 0.12em; color: var(--sol-ink-500); text-transform: uppercase; font-weight: 500; }
+  .narrative-stat-value { font-family: var(--sol-font-mono); font-size: 15px; font-weight: 500; color: var(--sol-ink-900); font-variant-numeric: tabular-nums; }
+  .narrative-stat-value.crit { color: var(--sol-refuse-fg); }
+  .narrative-stat-value.warn { color: var(--sol-attention-fg); }
+  .narrative-stat-value.pos { color: var(--sol-succes-fg); }
+  .narrative-stat-value .unit { font-size: 10px; color: var(--sol-ink-500); font-weight: 400; font-family: var(--sol-font-display); font-style: italic; }
+  .narrative-cta-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--sol-ink-900); color: var(--sol-bg-paper);
+    border: none; border-radius: var(--sol-radius-md);
+    padding: 7px 13px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .narrative-cta-primary svg { width: 11px; height: 11px; }
+
+  /* ─── TABS (identiques M1, mais Référentiel actif) ─── */
+  .tabs-bar { display: flex; align-items: center; gap: 0; border-bottom: 1px solid var(--sol-ink-900); margin-bottom: 18px; }
+  .tab { padding: 10px 18px 11px; font-family: var(--sol-font-display); font-size: 15px; font-weight: 500; color: var(--sol-ink-500); cursor: pointer; border-bottom: 3px solid transparent; transform: translateY(2px); letter-spacing: -0.005em; display: flex; align-items: center; gap: 8px; }
+  .tab.active { color: var(--sol-ink-900); border-bottom-color: var(--sol-ink-900); font-weight: 600; }
+  .tab .tab-count { font-family: var(--sol-font-mono); font-size: 10px; font-weight: 500; background: var(--sol-bg-panel); color: var(--sol-ink-700); padding: 1px 7px; border-radius: 999px; }
+  .tab.active .tab-count { background: var(--sol-ink-900); color: var(--sol-bg-paper); }
+  .tabs-spacer { flex: 1; }
+
+  /* ═══════════════════════════════════════════════════════════════
+     FILTRES AVANCÉS — cardinal Référentiel V4
+     Inclut le filtre KIND (classer) séparé des autres
+  ═══════════════════════════════════════════════════════════════ */
+  .filters-bar {
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-lg);
+    padding: 12px 16px;
+    margin-bottom: 14px;
+  }
+  .filters-row {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    align-items: center;
+  }
+  .filters-row + .filters-row {
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--sol-rule);
+  }
+  .filters-label-side {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.14em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 600;
+    min-width: 78px;
+  }
+  .filter-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 11px;
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-ink-300);
+    border-radius: 999px;
+    font-family: var(--sol-font-body);
+    font-size: 12px; font-weight: 500;
+    color: var(--sol-ink-700); cursor: pointer;
+  }
+  .filter-chip svg { width: 10px; height: 10px; color: var(--sol-ink-400); }
+  .filter-chip .chip-count { font-family: var(--sol-font-mono); font-size: 10px; color: var(--sol-ink-500); font-weight: 400; margin-left: 2px; }
+  .filter-chip.active {
+    background: var(--sol-ink-900);
+    color: var(--sol-bg-paper);
+    border-color: var(--sol-ink-900);
+  }
+  .filter-chip.active .chip-count { color: var(--sol-ink-200); }
+  .filter-chip.active svg { color: var(--sol-bg-paper); }
+  .filters-reset {
+    margin-left: auto;
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.08em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 500;
+    background: transparent; border: none; cursor: pointer;
+    border-bottom: 1px dotted var(--sol-ink-400); padding-bottom: 1px;
+  }
+
+  /* ─── TOOLBAR (recherche + tri + vue + count) ─── */
+  .toolbar {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .search-box {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--sol-bg-paper); border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-md); padding: 6px 12px;
+    width: 320px;
+  }
+  .search-box svg { width: 13px; height: 13px; color: var(--sol-ink-400); }
+  .search-box input {
+    border: none; outline: none; flex: 1;
+    font-family: var(--sol-font-body); font-size: 13px;
+    color: var(--sol-ink-900); background: transparent;
+  }
+  .search-box input::placeholder { color: var(--sol-ink-400); }
+  .search-box .search-shortcut { font-family: var(--sol-font-mono); font-size: 10px; color: var(--sol-ink-400); background: var(--sol-bg-panel); padding: 1px 5px; border-radius: 3px; }
+
+  .toolbar-spacer { flex: 1; }
+  .toolbar-count {
+    font-family: var(--sol-font-mono); font-size: 11px;
+    color: var(--sol-ink-500); letter-spacing: 0.04em;
+  }
+  .toolbar-count b { color: var(--sol-ink-900); font-weight: 600; font-size: 13px; }
+  .view-switch { display: flex; background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); border-radius: var(--sol-radius-md); padding: 2px; }
+  .view-switch-opt {
+    padding: 4px 9px; font-family: var(--sol-font-mono);
+    font-size: 10px; letter-spacing: 0.08em;
+    color: var(--sol-ink-500); cursor: pointer;
+    text-transform: uppercase; font-weight: 500;
+    border-radius: var(--sol-radius-sm);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .view-switch-opt.active { background: var(--sol-ink-900); color: var(--sol-bg-paper); }
+  .view-switch-opt svg { width: 10px; height: 10px; }
+  .sort-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 11px;
+    background: var(--sol-bg-paper); border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-md);
+    font-family: var(--sol-font-body); font-size: 12px; color: var(--sol-ink-900);
+    cursor: pointer; font-weight: 500;
+  }
+  .sort-pill svg { width: 10px; height: 10px; color: var(--sol-ink-500); }
+
+  /* ═══════════════════════════════════════════════════════════════
+     BULK TOOLBAR — visible quand items sélectionnés (cardinal V4)
+  ═══════════════════════════════════════════════════════════════ */
+  .bulk-toolbar {
+    background: var(--sol-ink-900);
+    color: var(--sol-bg-paper);
+    border-radius: var(--sol-radius-md);
+    padding: 9px 14px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 10px;
+    flex-wrap: wrap;
+  }
+  .bulk-selection {
+    font-family: var(--sol-font-mono); font-size: 11px;
+    letter-spacing: 0.06em;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .bulk-selection b {
+    font-weight: 600;
+    background: var(--sol-night-bg);
+    padding: 2px 8px; border-radius: 3px;
+    font-size: 12px;
+  }
+  .bulk-spacer { flex: 1; }
+  .bulk-action {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 11px;
+    background: transparent;
+    color: var(--sol-bg-paper);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: var(--sol-radius-sm);
+    font-family: var(--sol-font-body); font-size: 11.5px;
+    font-weight: 500; cursor: pointer;
+  }
+  .bulk-action:hover { background: rgba(255,255,255,0.08); }
+  .bulk-action svg { width: 11px; height: 11px; }
+  .bulk-action.danger { color: var(--sol-refuse-bg); border-color: rgba(184,90,90,0.4); }
+  .bulk-action.close {
+    background: transparent; border: none;
+    color: var(--sol-ink-300); opacity: 0.7;
+    margin-left: 4px;
+  }
+  .bulk-action.close svg { width: 13px; height: 13px; }
+
+  /* ═══════════════════════════════════════════════════════════════
+     TABLE DENSE — cardinal Référentiel
+     Différenciation visuelle par KIND obligatoire (doctrine classer)
+  ═══════════════════════════════════════════════════════════════ */
+  .table-wrap {
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-lg);
+    overflow: hidden;
+  }
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .table thead th {
+    background: var(--sol-bg-panel);
+    font-family: var(--sol-font-mono);
+    font-size: 9.5px; letter-spacing: 0.14em;
+    color: var(--sol-ink-500); text-transform: uppercase;
+    font-weight: 600;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--sol-rule);
+    white-space: nowrap;
+  }
+  .table thead th.center { text-align: center; }
+  .table thead th.right { text-align: right; }
+  .table thead th .sort-icon {
+    display: inline-block; vertical-align: middle;
+    color: var(--sol-ink-300); margin-left: 4px;
+  }
+  .table thead th .sort-icon.active { color: var(--sol-ink-900); }
+  .table thead th .sort-icon svg { width: 9px; height: 9px; }
+
+  .table tbody tr {
+    border-bottom: 1px solid var(--sol-rule);
+    transition: background 0.15s;
+    cursor: pointer;
+    position: relative;
+  }
+  .table tbody tr:hover { background: var(--sol-bg-panel); }
+  .table tbody tr.selected { background: var(--sol-hch-bg); }
+  .table tbody tr.selected:hover { background: var(--sol-hch-bg); }
+  .table tbody tr:last-child { border-bottom: none; }
+
+  /* Strip de priority à gauche (cellule kind) */
+  .table tbody tr td:first-child {
+    padding-left: 0;
+    position: relative;
+  }
+  .table tbody tr td:first-child::before {
+    content: ""; position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px; background: var(--sol-ink-300);
+  }
+  .table tbody tr[data-priority="P0"] td:first-child::before { background: var(--sol-refuse-fg); }
+  .table tbody tr[data-priority="P1"] td:first-child::before { background: var(--sol-attention-fg); }
+  .table tbody tr[data-priority="P2"] td:first-child::before { background: var(--sol-calme-fg); }
+  .table tbody tr[data-priority="P3"] td:first-child::before { background: var(--sol-ink-400); }
+
+  .table tbody td {
+    padding: 11px 12px;
+    vertical-align: middle;
+  }
+
+  /* Checkbox */
+  .row-checkbox {
+    width: 14px; height: 14px;
+    border: 1.5px solid var(--sol-ink-300);
+    border-radius: 3px;
+    background: var(--sol-bg-paper);
+    cursor: pointer;
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .row-checkbox.checked {
+    background: var(--sol-ink-900);
+    border-color: var(--sol-ink-900);
+  }
+  .row-checkbox.checked::after {
+    content: "✓"; color: var(--sol-bg-paper);
+    font-size: 10px; line-height: 1;
+    font-weight: 600;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     KIND CELL — différenciation visuelle cardinale
+     Chaque kind a son icône + son badge texte + sa couleur sémantique
+  ═══════════════════════════════════════════════════════════════ */
+  .kind-cell {
+    display: flex; align-items: center; gap: 9px;
+    padding-left: 8px;
+  }
+  .kind-icon {
+    width: 26px; height: 26px;
+    border-radius: var(--sol-radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid;
+  }
+  .kind-icon svg { width: 13px; height: 13px; }
+  /* 7 kinds × 7 styles distincts */
+  .kind-icon.anomaly   { background: var(--sol-refuse-bg);    border-color: var(--sol-refuse-line);    color: var(--sol-refuse-fg); }
+  .kind-icon.action    { background: var(--sol-bg-paper);     border-color: var(--sol-ink-300);        color: var(--sol-ink-700); }
+  .kind-icon.decision  { background: var(--sol-hch-bg);       border-color: var(--sol-hch-fg);         color: var(--sol-hch-fg); }
+  .kind-icon.signal    { background: var(--sol-bg-panel);     border-color: var(--sol-ink-300);        color: var(--sol-ink-500); border-style: dashed; }
+  .kind-icon.evidence_request { background: var(--sol-attention-bg); border-color: var(--sol-attention-line); color: var(--sol-attention-fg); }
+  .kind-icon.deadline  { background: var(--sol-afaire-bg);    border-color: var(--sol-afaire-line);    color: var(--sol-afaire-fg); }
+  .kind-icon.recommendation { background: var(--sol-calme-bg); border-color: var(--sol-calme-fg);     color: var(--sol-calme-fg); border-style: dotted; }
+
+  .kind-label {
+    font-family: var(--sol-font-mono);
+    font-size: 9px; letter-spacing: 0.14em;
+    text-transform: uppercase; font-weight: 600;
+    color: var(--sol-ink-700);
+  }
+  .kind-cell[data-kind="anomaly"]   .kind-label { color: var(--sol-refuse-fg); }
+  .kind-cell[data-kind="decision"]  .kind-label { color: var(--sol-hch-fg); }
+  .kind-cell[data-kind="signal"]    .kind-label { color: var(--sol-ink-500); }
+  .kind-cell[data-kind="evidence_request"] .kind-label { color: var(--sol-attention-fg); }
+  .kind-cell[data-kind="deadline"]  .kind-label { color: var(--sol-afaire-fg); }
+  .kind-cell[data-kind="recommendation"] .kind-label { color: var(--sol-calme-fg); }
+
+  /* Title cell */
+  .title-cell { min-width: 360px; max-width: 480px; }
+  .title-main {
+    font-family: var(--sol-font-display); font-size: 14px;
+    font-weight: 500; color: var(--sol-ink-900);
+    line-height: 1.3; letter-spacing: -0.005em;
+    margin-bottom: 2px;
+  }
+  .title-main em { font-style: italic; color: var(--sol-ink-500); font-weight: 400; }
+  .title-meta {
+    font-family: var(--sol-font-mono); font-size: 10px;
+    color: var(--sol-ink-500); letter-spacing: 0.02em;
+  }
+  .title-meta a {
+    color: var(--sol-ink-700); text-decoration: none;
+    border-bottom: 1px dotted var(--sol-ink-400);
+  }
+  .title-meta .meta-sep { color: var(--sol-ink-300); margin: 0 5px; }
+
+  /* Inline badges sous le titre — récurrence (R4) + confiance (R5) */
+  .title-flags {
+    display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap;
+  }
+  .flag-chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.04em; font-weight: 500;
+    padding: 1px 6px; border-radius: 2px;
+    border: 1px solid;
+  }
+  .flag-chip.recurrence { background: var(--sol-attention-bg); border-color: var(--sol-attention-line); color: var(--sol-attention-fg); }
+  .flag-chip.low_confidence { background: var(--sol-afaire-bg); border-color: var(--sol-afaire-line); color: var(--sol-afaire-fg); }
+  .flag-chip.blocker { background: var(--sol-afaire-bg); border-color: var(--sol-afaire-line); color: var(--sol-afaire-fg); border-style: dashed; }
+  .flag-chip.blocker::before { content: "⊘"; font-size: 8px; opacity: 0.85; }
+
+  /* Lifecycle pill */
+  .lc-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 999px;
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    font-weight: 500; border: 1px solid;
+    white-space: nowrap;
+  }
+  .lc-pill::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+  .lc-pill.new        { background: var(--sol-bg-paper); border-color: var(--sol-ink-700); color: var(--sol-ink-700); }
+  .lc-pill.triaged    { background: var(--sol-hch-bg); border-color: var(--sol-hch-fg); color: var(--sol-hch-fg); }
+  .lc-pill.planned    { background: var(--sol-calme-bg); border-color: var(--sol-calme-fg); color: var(--sol-calme-fg); }
+  .lc-pill.in_progress{ background: var(--sol-attention-bg); border-color: var(--sol-attention-fg); color: var(--sol-attention-fg); }
+  .lc-pill.closed     { background: var(--sol-succes-bg); border-color: var(--sol-succes-fg); color: var(--sol-succes-fg); }
+
+  /* Domain chip */
+  .domain-chip-small {
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    font-weight: 500;
+    padding: 1px 6px; border-radius: 2px;
+    background: var(--sol-bg-panel); color: var(--sol-ink-500);
+    white-space: nowrap;
+  }
+  .domain-chip-small.conformite { color: var(--sol-calme-fg); background: var(--sol-calme-bg); }
+  .domain-chip-small.facturation { color: var(--sol-attention-fg); background: var(--sol-attention-bg); }
+  .domain-chip-small.achat { color: var(--sol-hch-fg); background: var(--sol-hch-bg); }
+  .domain-chip-small.consommation { color: var(--sol-afaire-fg); background: var(--sol-afaire-bg); }
+  .domain-chip-small.patrimoine { color: var(--sol-ink-700); background: var(--sol-ink-100); }
+  .domain-chip-small.data { color: var(--sol-ink-500); background: var(--sol-bg-panel); border: 1px dashed var(--sol-ink-300); }
+
+  /* Priority cell — affiche P0 + score */
+  .prio-cell { text-align: center; white-space: nowrap; }
+  .prio-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 3px;
+    font-family: var(--sol-font-mono); font-size: 10px;
+    font-weight: 700; letter-spacing: 0.06em;
+    color: var(--sol-bg-paper);
+  }
+  .prio-tag .score { font-weight: 500; opacity: 0.9; letter-spacing: 0; }
+  .prio-tag.P0 { background: var(--sol-refuse-fg); }
+  .prio-tag.P1 { background: var(--sol-attention-fg); }
+  .prio-tag.P2 { background: var(--sol-calme-fg); }
+  .prio-tag.P3 { background: var(--sol-ink-400); }
+
+  /* Owner cell */
+  .owner-cell { display: flex; align-items: center; gap: 7px; min-width: 110px; }
+  .owner-avatar-sm {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--sol-bg-panel); border: 1px solid var(--sol-rule);
+    color: var(--sol-ink-900);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--sol-font-mono); font-size: 9px; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .owner-avatar-sm.unassigned {
+    background: var(--sol-refuse-bg); border-color: var(--sol-refuse-fg);
+    color: var(--sol-refuse-fg); border-style: dashed;
+  }
+  .owner-name { font-size: 12px; color: var(--sol-ink-900); font-weight: 500; }
+  .owner-name.unassigned { color: var(--sol-refuse-fg); font-style: italic; }
+
+  /* Deadline cell */
+  .deadline-cell { text-align: center; font-family: var(--sol-font-mono); white-space: nowrap; min-width: 75px; }
+  .deadline-value { font-size: 13px; font-weight: 600; color: var(--sol-ink-900); letter-spacing: -0.01em; }
+  .deadline-value.urgent { color: var(--sol-refuse-fg); }
+  .deadline-value.soon { color: var(--sol-attention-fg); }
+  .deadline-value.closed { color: var(--sol-succes-fg); }
+  .deadline-date { font-size: 10px; color: var(--sol-ink-500); letter-spacing: 0.02em; margin-top: 2px; }
+
+  /* Impact cell */
+  .impact-cell { text-align: right; font-family: var(--sol-font-mono); white-space: nowrap; min-width: 90px; }
+  .impact-val { font-size: 13px; font-weight: 600; color: var(--sol-ink-900); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .impact-val.muted { color: var(--sol-ink-400); }
+  .impact-qual { font-size: 9.5px; color: var(--sol-ink-500); letter-spacing: 0.02em; margin-top: 2px; }
+  .impact-qual.risk { color: var(--sol-refuse-fg); font-weight: 500; }
+  .impact-qual.secured { color: var(--sol-succes-fg); font-weight: 500; }
+
+  /* SLA inline */
+  .sla-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    display: inline-block; margin-right: 4px;
+    vertical-align: middle;
+  }
+  .sla-dot.red { background: var(--sol-refuse-fg); }
+  .sla-dot.amber { background: var(--sol-attention-fg); }
+  .sla-dot.green { background: var(--sol-succes-fg); }
+
+  /* Actions inline */
+  .actions-cell { text-align: right; white-space: nowrap; min-width: 50px; }
+  .action-btn {
+    width: 26px; height: 26px;
+    border-radius: var(--sol-radius-sm);
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    color: var(--sol-ink-500);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; margin-left: 3px;
+  }
+  .action-btn:hover { background: var(--sol-bg-panel); color: var(--sol-ink-900); }
+  .action-btn svg { width: 12px; height: 12px; }
+
+  /* ─── PAGINATION ─── */
+  .pagination {
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 4px 0;
+    margin-top: 4px;
+    font-family: var(--sol-font-mono);
+    font-size: 11px;
+  }
+  .page-info {
+    color: var(--sol-ink-500); letter-spacing: 0.04em;
+  }
+  .page-info b { color: var(--sol-ink-900); font-weight: 600; }
+  .page-spacer { flex: 1; }
+  .page-btn {
+    min-width: 26px; height: 26px;
+    border-radius: var(--sol-radius-sm);
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    color: var(--sol-ink-700);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-family: var(--sol-font-mono); font-size: 11px;
+    font-weight: 500;
+    padding: 0 7px;
+  }
+  .page-btn.active {
+    background: var(--sol-ink-900); color: var(--sol-bg-paper);
+    border-color: var(--sol-ink-900); font-weight: 600;
+  }
+  .page-btn svg { width: 11px; height: 11px; }
+  .page-ellipsis { color: var(--sol-ink-400); padding: 0 2px; }
+
+  /* ─── COLOPHON ─── */
+  .colophon { border-top: 1px solid var(--sol-ink-900); padding-top: 16px; margin-top: 22px; display: flex; justify-content: space-between; align-items: baseline; font-family: var(--sol-font-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--sol-ink-500); text-transform: uppercase; flex-wrap: wrap; gap: 12px; }
+  .colophon a { color: var(--sol-ink-900); text-decoration: none; font-weight: 500; border-bottom: 1px solid var(--sol-ink-900); padding-bottom: 1px; }
+  .colophon .meta-list { display: flex; gap: 14px; flex-wrap: wrap; }
+  .colophon .sep { color: var(--sol-ink-300); }
+  .colophon .version-tag { font-family: var(--sol-font-mono); font-size: 9px; background: var(--sol-bg-panel); border: 1px solid var(--sol-rule); padding: 2px 7px; border-radius: 3px; color: var(--sol-ink-700); letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- RAIL -->
+  <div class="nav-rail">
+    <div class="rail-logo">P</div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-7h-6v7H5a2 2 0 0 1-2-2v-9z"/></svg><div class="rail-item-label">Accueil</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg><div class="rail-item-label">Énergie</div><div class="rail-badge">5</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg><div class="rail-item-label">Conform.</div><div class="rail-badge">9</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/></svg><div class="rail-item-label">Factur.</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h2l3 12h11l2-8H6"/></svg><div class="rail-item-label">Achat</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21V9l9-6 9 6v12"/></svg><div class="rail-item-label">Patrim.</div></div>
+    <div class="rail-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg><div class="rail-item-label">Action</div><div class="rail-badge">12</div></div>
+    <div class="rail-spacer"></div>
+    <div class="rail-avatar">SM</div>
+  </div>
+
+  <!-- SIDE -->
+  <div class="nav-side">
+    <div class="nav-brand">
+      <div class="nav-brand-title">PROMEOS</div>
+      <div class="nav-brand-sub">Centre d'action</div>
+    </div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M11 19a8 8 0 1 1 5.3-14"/></svg>Demander à PROMEOS… <span class="nav-link-badge">⌘K</span></div>
+    <div class="nav-section-title">Centre d'action</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>Pilotage <span class="nav-link-badge alert">8</span></div>
+    <div class="nav-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19h16M4 12h16M4 5h16"/></svg>Référentiel <span class="nav-link-badge">147</span></div>
+    <div class="nav-section-title">Vues sauvegardées</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>Mes P0 cette semaine</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 5h14v14H5z"/></svg>Conformité DT 2030</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Factures à contester</div>
+    <div class="nav-section-title">Cockpit</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/></svg>Briefing du jour</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19h16M4 12h16M4 5h16"/></svg>Synthèse stratégique</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <div class="topbar">
+      <div class="breadcrumb"><b>PROMEOS</b><span class="sep">›</span>Accueil<span class="sep">›</span><b>Centre d'action</b><span class="sep">›</span>Référentiel</div>
+      <div class="filter-group" style="margin-left: 22px">
+        <span class="filter-label">Périmètre</span>
+        <span class="filter-pill active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V9l9-6 9 6v12"/></svg>
+          Groupe HELIOS <span class="filter-count">5 sites</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+        <span class="filter-pill">Période <span class="filter-count">30 jours</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </div>
+      <div class="topbar-spacer"></div>
+      <span class="status-pill ok">OK</span>
+      <span class="status-pill demo">Démo</span>
+      <div class="vue-toggle">Persona
+        <div class="vue-select">
+          <span class="persona-marker"></span>
+          Resp. Énergie
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="user-pill"><div class="user-avatar">SM</div></div>
+    </div>
+
+    <div class="canvas">
+
+      <!-- MASTHEAD -->
+      <div class="masthead">
+        <div class="masthead-left"><b>Centre d'action</b> · Référentiel complet · 147 items 30 derniers jours</div>
+        <div class="masthead-right">Mardi 12 mai 2026 · 07:18 · MAJ live</div>
+      </div>
+
+      <!-- BARRE NARRATIVE COMPACTE (identique M1) -->
+      <div class="narrative-bar">
+        <div>
+          <div class="narrative-kicker">
+            <span class="live-dot"></span>
+            Tour de contrôle · Référentiel exhaustif HELIOS
+          </div>
+          <h1 class="narrative-headline">
+            <span class="num" style="color:var(--sol-refuse-fg)">8 décisions</span> à traiter · <span class="num" style="color:var(--sol-attention-fg)">52 k€</span> à risque · <em>filtrage par classement (kind) + priorité.</em>
+          </h1>
+          <div class="narrative-stats">
+            <div class="narrative-stat"><span class="narrative-stat-label">P0/P1</span><span class="narrative-stat-value crit">8</span></div>
+            <div class="narrative-stat"><span class="narrative-stat-label">Sans owner</span><span class="narrative-stat-value warn">3</span></div>
+            <div class="narrative-stat"><span class="narrative-stat-label">À risque</span><span class="narrative-stat-value">52<span class="unit">k€</span></span></div>
+            <div class="narrative-stat"><span class="narrative-stat-label">Sécurisé 12m</span><span class="narrative-stat-value pos">128<span class="unit">k€</span></span></div>
+            <div class="narrative-stat"><span class="narrative-stat-label">SLA retard</span><span class="narrative-stat-value crit">2</span></div>
+          </div>
+        </div>
+        <button class="narrative-cta-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          Exporter COMEX
+        </button>
+      </div>
+
+      <!-- ════════ 2 ONGLETS — Référentiel actif ════════ -->
+      <div class="tabs-bar">
+        <div class="tab">Pilotage <span class="tab-count">8</span></div>
+        <div class="tab active">Référentiel <span class="tab-count">147</span></div>
+        <div class="tabs-spacer"></div>
+      </div>
+
+      <!-- ════════ FILTRES AVANCÉS — cardinal Référentiel ════════ -->
+      <div class="filters-bar">
+        <!-- Row 1 : Classement (kind) - séparé doctrinalement -->
+        <div class="filters-row">
+          <span class="filters-label-side">Classement</span>
+          <span class="filter-chip active">Tous les types <span class="chip-count">147</span></span>
+          <span class="filter-chip">⚠ Anomalies <span class="chip-count">42</span></span>
+          <span class="filter-chip">✓ Actions <span class="chip-count">58</span></span>
+          <span class="filter-chip">⬡ Décisions <span class="chip-count">12</span></span>
+          <span class="filter-chip">📡 Signaux <span class="chip-count">17</span></span>
+          <span class="filter-chip">📄 Demandes preuve <span class="chip-count">8</span></span>
+          <span class="filter-chip">⌛ Échéances <span class="chip-count">6</span></span>
+          <span class="filter-chip">★ Recommandations <span class="chip-count">4</span></span>
+        </div>
+        <!-- Row 2 : Priorisation + contexte -->
+        <div class="filters-row">
+          <span class="filters-label-side">Priorisation</span>
+          <span class="filter-chip active">Priorité <span class="chip-count">tous</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+          <span class="filter-chip">État <span class="chip-count">all</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+          <span class="filter-chip">Domaine <span class="chip-count">all</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+          <span class="filter-chip">Site <span class="chip-count">5</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+          <span class="filter-chip">Responsable <span class="chip-count">all</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+          <span class="filter-chip">Blocker <span class="chip-count">3</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+          <span class="filter-chip">Source <span class="chip-count">all</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+          <span class="filter-chip">Confiance <span class="chip-count">≥ 0.6</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+          <button class="filters-reset">Réinitialiser ↻</button>
+        </div>
+      </div>
+
+      <!-- ════════ TOOLBAR ════════ -->
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" placeholder="Chercher dans les items…">
+          <span class="search-shortcut">⌘F</span>
+        </div>
+        <div class="sort-pill">
+          Trier · Risque réel <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <span class="toolbar-count"><b>147</b> items · page 1/10</span>
+        <div class="view-switch">
+          <span class="view-switch-opt active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19h16M4 12h16M4 5h16"/></svg>
+            Table
+          </span>
+          <span class="view-switch-opt">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="18"/><rect x="11" y="3" width="6" height="12"/><rect x="19" y="3" width="2" height="6"/></svg>
+            Kanban
+          </span>
+        </div>
+      </div>
+
+      <!-- ════════ BULK TOOLBAR — visible car 3 items sélectionnés ════════ -->
+      <div class="bulk-toolbar">
+        <span class="bulk-selection">
+          <b>3</b> items sélectionnés · sur 147
+        </span>
+        <span style="color: rgba(255,255,255,0.5); font-family: var(--sol-font-mono); font-size: 11px; letter-spacing: 0.04em">Actions en lot &rarr;</span>
+        <button class="bulk-action">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+          Triager
+        </button>
+        <button class="bulk-action">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Assigner
+        </button>
+        <button class="bulk-action">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M4.93 4.93l14.14 14.14"/></svg>
+          Bloquer
+        </button>
+        <button class="bulk-action">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Clôturer
+        </button>
+        <button class="bulk-action">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 11v6M10 11v6M5 6h14l-1.5 14a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2L5 6z"/></svg>
+          Fusionner
+        </button>
+        <button class="bulk-action">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exporter
+        </button>
+        <div class="bulk-spacer"></div>
+        <button class="bulk-action close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- ════════ TABLE DENSE ════════ -->
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 28px"></th>
+              <th>Classement <span class="sort-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span></th>
+              <th>Item</th>
+              <th>État</th>
+              <th>Domaine</th>
+              <th class="center">Priorité <span class="sort-icon active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg></span></th>
+              <th>Responsable</th>
+              <th class="center">Échéance</th>
+              <th class="right">Impact</th>
+              <th style="width: 50px"></th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- ROW 1 : ANOMALIE P0 — sélectionnée, sans owner, SLA dépassé, RÉCURRENTE (R4) -->
+            <tr data-priority="P0" class="selected">
+              <td><span class="row-checkbox checked"></span></td>
+              <td>
+                <div class="kind-cell" data-kind="anomaly">
+                  <span class="kind-icon anomaly">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                  </span>
+                  <span class="kind-label">Anomalie</span>
+                </div>
+              </td>
+              <td class="title-cell">
+                <div class="title-main">Anomalie facture <em>R20 — variance capacité souscrite</em></div>
+                <div class="title-meta">
+                  <a href="#">Lyon Bureaux</a><span class="meta-sep">·</span>PRM 5000…7890<span class="meta-sep">·</span>Source <a href="#">Bill Intelligence v2</a>
+                </div>
+                <div class="title-flags">
+                  <span class="flag-chip recurrence">↻ 3e occurrence · merger ?</span>
+                </div>
+              </td>
+              <td><span class="lc-pill new">New</span></td>
+              <td><span class="domain-chip-small facturation">Facturation</span></td>
+              <td class="prio-cell"><span class="prio-tag P0">P0 <span class="score">·&nbsp;92</span></span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar-sm unassigned">?</div>
+                  <span class="owner-name unassigned">À assigner</span>
+                </div>
+              </td>
+              <td class="deadline-cell">
+                <span class="sla-dot red"></span>
+                <span class="deadline-value urgent">J+2</span>
+                <div class="deadline-date">10/05</div>
+              </td>
+              <td class="impact-cell">
+                <div class="impact-val">3,4 k€</div>
+                <div class="impact-qual risk">À risque</div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </td>
+            </tr>
+
+            <!-- ROW 2 : ACTION P0 — TRIAGED, blockers, preuve manquante -->
+            <tr data-priority="P0" class="selected">
+              <td><span class="row-checkbox checked"></span></td>
+              <td>
+                <div class="kind-cell" data-kind="action">
+                  <span class="kind-icon action">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  </span>
+                  <span class="kind-label">Action</span>
+                </div>
+              </td>
+              <td class="title-cell">
+                <div class="title-main">Audit énergétique <em>SMÉ Toulouse</em> · prestataire ICPE</div>
+                <div class="title-meta">
+                  <a href="#">Site Toulouse</a><span class="meta-sep">·</span>Réglement. <a href="#">SMÉ — Décret 2014-1393</a>
+                </div>
+                <div class="title-flags">
+                  <span class="flag-chip blocker">waiting_evidence</span>
+                  <span class="flag-chip blocker">waiting_budget</span>
+                </div>
+              </td>
+              <td><span class="lc-pill triaged">Triaged</span></td>
+              <td><span class="domain-chip-small conformite">Conformité</span></td>
+              <td class="prio-cell"><span class="prio-tag P0">P0 <span class="score">·&nbsp;88</span></span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar-sm">JM</div>
+                  <span class="owner-name">J. Martin</span>
+                </div>
+              </td>
+              <td class="deadline-cell">
+                <span class="sla-dot red"></span>
+                <span class="deadline-value urgent">J+1</span>
+                <div class="deadline-date">11/05</div>
+              </td>
+              <td class="impact-cell">
+                <div class="impact-val">49 k€</div>
+                <div class="impact-qual">Estimé</div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </td>
+            </tr>
+
+            <!-- ROW 3 : DÉCISION P1 — arbitrage achat post-ARENH -->
+            <tr data-priority="P1">
+              <td><span class="row-checkbox"></span></td>
+              <td>
+                <div class="kind-cell" data-kind="decision">
+                  <span class="kind-icon decision">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="12" r="3"/><path d="M9 6h6a3 3 0 0 1 3 3v3"/><path d="M9 18h6a3 3 0 0 0 3-3v-3"/></svg>
+                  </span>
+                  <span class="kind-label">Décision</span>
+                </div>
+              </td>
+              <td class="title-cell">
+                <div class="title-main">Stratégie achat <em>post-ARENH</em> · arbitrer mix forward Y+1</div>
+                <div class="title-meta">
+                  <a href="#">Groupe HELIOS</a><span class="meta-sep">·</span>Contrat #C-2024-EDF-CARM
+                </div>
+              </td>
+              <td><span class="lc-pill planned">Planned</span></td>
+              <td><span class="domain-chip-small achat">Achat</span></td>
+              <td class="prio-cell"><span class="prio-tag P1">P1 <span class="score">·&nbsp;74</span></span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar-sm">CL</div>
+                  <span class="owner-name">Claire Lévy</span>
+                </div>
+              </td>
+              <td class="deadline-cell">
+                <span class="sla-dot amber"></span>
+                <span class="deadline-value soon">J-12</span>
+                <div class="deadline-date">24/05</div>
+              </td>
+              <td class="impact-cell">
+                <div class="impact-val">18 k€</div>
+                <div class="impact-qual">Estimé</div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </td>
+            </tr>
+
+            <!-- ROW 4 : ANOMALIE P1 — dérive CUSUM, confiance dégradée (R5) -->
+            <tr data-priority="P1">
+              <td><span class="row-checkbox"></span></td>
+              <td>
+                <div class="kind-cell" data-kind="anomaly">
+                  <span class="kind-icon anomaly">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                  </span>
+                  <span class="kind-label">Anomalie</span>
+                </div>
+              </td>
+              <td class="title-cell">
+                <div class="title-main">Dérive consommation <em>Marseille École</em> · +18 % vs DJU</div>
+                <div class="title-meta">
+                  <a href="#">Marseille École</a><span class="meta-sep">·</span>PDL 1234567890<span class="meta-sep">·</span>EMS · CUSUM
+                </div>
+                <div class="title-flags">
+                  <span class="flag-chip blocker">waiting_third_party</span>
+                  <span class="flag-chip low_confidence">conf 0,52 · à qualifier</span>
+                </div>
+              </td>
+              <td><span class="lc-pill in_progress">In progress</span></td>
+              <td><span class="domain-chip-small consommation">Consommation</span></td>
+              <td class="prio-cell"><span class="prio-tag P1">P1 <span class="score">·&nbsp;71</span></span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar-sm">SM</div>
+                  <span class="owner-name">Sophie Marin</span>
+                </div>
+              </td>
+              <td class="deadline-cell">
+                <span class="sla-dot green"></span>
+                <span class="deadline-value">J-21</span>
+                <div class="deadline-date">02/06</div>
+              </td>
+              <td class="impact-cell">
+                <div class="impact-val">9,5 k€</div>
+                <div class="impact-qual">Estimé</div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </td>
+            </tr>
+
+            <!-- ROW 5 : RECOMMANDATION P1 — opportunité APER, sélectionnée -->
+            <tr data-priority="P1" class="selected">
+              <td><span class="row-checkbox checked"></span></td>
+              <td>
+                <div class="kind-cell" data-kind="recommendation">
+                  <span class="kind-icon recommendation">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  </span>
+                  <span class="kind-label">Reco</span>
+                </div>
+              </td>
+              <td class="title-cell">
+                <div class="title-main">Opportunité <em>APER</em> · qualifier PV toiture Paris 620 m²</div>
+                <div class="title-meta">
+                  <a href="#">Paris Bureaux</a><span class="meta-sep">·</span>Bât. principal<span class="meta-sep">·</span>Moteur assujettissement
+                </div>
+              </td>
+              <td><span class="lc-pill triaged">Triaged</span></td>
+              <td><span class="domain-chip-small patrimoine">Patrimoine</span></td>
+              <td class="prio-cell"><span class="prio-tag P1">P1 <span class="score">·&nbsp;68</span></span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar-sm">PR</div>
+                  <span class="owner-name">P. Robert</span>
+                </div>
+              </td>
+              <td class="deadline-cell">
+                <span class="sla-dot green"></span>
+                <span class="deadline-value">J-89</span>
+                <div class="deadline-date">09/08</div>
+              </td>
+              <td class="impact-cell">
+                <div class="impact-val">14 k€</div>
+                <div class="impact-qual">Estimé</div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </td>
+            </tr>
+
+            <!-- ROW 6 : ÉCHÉANCE P2 — OPERAT 2024, preuve prête -->
+            <tr data-priority="P2">
+              <td><span class="row-checkbox"></span></td>
+              <td>
+                <div class="kind-cell" data-kind="deadline">
+                  <span class="kind-icon deadline">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h12M6 22h12M6 2v6a6 6 0 0 0 12 0V2M6 22v-6a6 6 0 0 1 12 0v6"/></svg>
+                  </span>
+                  <span class="kind-label">Échéance</span>
+                </div>
+              </td>
+              <td class="title-cell">
+                <div class="title-main">Déclaration <em>OPERAT</em> 2024 · Lyon &amp; Paris</div>
+                <div class="title-meta">
+                  <a href="#">Lyon</a><span class="meta-sep">·</span><a href="#">Paris</a><span class="meta-sep">·</span>RegAssessment
+                </div>
+              </td>
+              <td><span class="lc-pill planned">Planned</span></td>
+              <td><span class="domain-chip-small conformite">Conformité</span></td>
+              <td class="prio-cell"><span class="prio-tag P2">P2 <span class="score">·&nbsp;58</span></span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar-sm">SM</div>
+                  <span class="owner-name">S. Marin</span>
+                </div>
+              </td>
+              <td class="deadline-cell">
+                <span class="sla-dot amber"></span>
+                <span class="deadline-value soon">J-5</span>
+                <div class="deadline-date">17/05</div>
+              </td>
+              <td class="impact-cell">
+                <div class="impact-val">7,5 k€</div>
+                <div class="impact-qual risk">À risque</div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </td>
+            </tr>
+
+            <!-- ROW 7 : DEMANDE PREUVE P2 — RIB obligé CEE -->
+            <tr data-priority="P2">
+              <td><span class="row-checkbox"></span></td>
+              <td>
+                <div class="kind-cell" data-kind="evidence_request">
+                  <span class="kind-icon evidence_request">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                  </span>
+                  <span class="kind-label">Preuve</span>
+                </div>
+              </td>
+              <td class="title-cell">
+                <div class="title-main">Uploader <em>RIB obligé CEE</em> · valorisation BAT-TH-116</div>
+                <div class="title-meta">
+                  <a href="#">Paris Bureaux</a><span class="meta-sep">·</span>Bill Intelligence
+                </div>
+              </td>
+              <td><span class="lc-pill new">New</span></td>
+              <td><span class="domain-chip-small conformite">Conformité</span></td>
+              <td class="prio-cell"><span class="prio-tag P2">P2 <span class="score">·&nbsp;52</span></span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar-sm unassigned">?</div>
+                  <span class="owner-name unassigned">À assigner</span>
+                </div>
+              </td>
+              <td class="deadline-cell">
+                <span class="sla-dot green"></span>
+                <span class="deadline-value">J-46</span>
+                <div class="deadline-date">27/06</div>
+              </td>
+              <td class="impact-cell">
+                <div class="impact-val">8,5 k€</div>
+                <div class="impact-qual secured">Sécurisable</div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </td>
+            </tr>
+
+            <!-- ROW 8 : SIGNAL P3 — détection automatique, à qualifier (R5 sévère) -->
+            <tr data-priority="P3">
+              <td><span class="row-checkbox"></span></td>
+              <td>
+                <div class="kind-cell" data-kind="signal">
+                  <span class="kind-icon signal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h.01M19 12h.01M12 5v.01M12 19v.01M7.05 7.05l.01.01M16.95 7.05l.01.01M7.05 16.95l.01.01M16.95 16.95l.01.01M12 12h.01"/><circle cx="12" cy="12" r="3"/></svg>
+                  </span>
+                  <span class="kind-label">Signal</span>
+                </div>
+              </td>
+              <td class="title-cell">
+                <div class="title-main">Détection auto · <em>pic baseload nocturne</em> Nice Hôtel</div>
+                <div class="title-meta">
+                  <a href="#">Nice Hôtel</a><span class="meta-sep">·</span>PDL 9876543210<span class="meta-sep">·</span>EMS auto-detect
+                </div>
+                <div class="title-flags">
+                  <span class="flag-chip low_confidence">conf 0,38 · à qualifier</span>
+                </div>
+              </td>
+              <td><span class="lc-pill new">New</span></td>
+              <td><span class="domain-chip-small data">Data</span></td>
+              <td class="prio-cell"><span class="prio-tag P3">P3 <span class="score">·&nbsp;38</span></span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar-sm unassigned">?</div>
+                  <span class="owner-name unassigned">Non assigné</span>
+                </div>
+              </td>
+              <td class="deadline-cell">
+                <span class="sla-dot green"></span>
+                <span class="deadline-value">—</span>
+                <div class="deadline-date">aucune</div>
+              </td>
+              <td class="impact-cell">
+                <div class="impact-val muted">~ 2 k€</div>
+                <div class="impact-qual">Estimé</div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </td>
+            </tr>
+
+            <!-- ROW 9 : ACTION P3 — Audit isolation clôturé avec preuve vérifiée -->
+            <tr data-priority="P3">
+              <td><span class="row-checkbox"></span></td>
+              <td>
+                <div class="kind-cell" data-kind="action">
+                  <span class="kind-icon action">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  </span>
+                  <span class="kind-label">Action</span>
+                </div>
+              </td>
+              <td class="title-cell">
+                <div class="title-main">Audit isolation <em>Lyon Bureaux</em> · rapport APAVE intégré</div>
+                <div class="title-meta">
+                  <a href="#">Lyon Bureaux</a><span class="meta-sep">·</span>Closure: <b>resolved</b><span class="meta-sep">·</span>Alimente <a href="#">OPERAT 2025</a>
+                </div>
+              </td>
+              <td><span class="lc-pill closed">Closed</span></td>
+              <td><span class="domain-chip-small conformite">Conformité</span></td>
+              <td class="prio-cell"><span class="prio-tag P3">P3 <span class="score">·&nbsp;42</span></span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar-sm">SM</div>
+                  <span class="owner-name">S. Marin</span>
+                </div>
+              </td>
+              <td class="deadline-cell">
+                <span class="sla-dot green"></span>
+                <span class="deadline-value closed">✓</span>
+                <div class="deadline-date">09/05</div>
+              </td>
+              <td class="impact-cell">
+                <div class="impact-val" style="color: var(--sol-succes-fg)">12 k€</div>
+                <div class="impact-qual secured">Réalisé</div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </td>
+            </tr>
+
+            <!-- ROW 10 : ANOMALIE P2 — récurrente 5 fois (R4) -->
+            <tr data-priority="P2">
+              <td><span class="row-checkbox"></span></td>
+              <td>
+                <div class="kind-cell" data-kind="anomaly">
+                  <span class="kind-icon anomaly">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                  </span>
+                  <span class="kind-label">Anomalie</span>
+                </div>
+              </td>
+              <td class="title-cell">
+                <div class="title-main">Anomalie <em>tan φ &gt; 0,4</em> Toulouse · pénalités réactif</div>
+                <div class="title-meta">
+                  <a href="#">Toulouse</a><span class="meta-sep">·</span>PRM 1111…2222<span class="meta-sep">·</span>Bill Intelligence R28
+                </div>
+                <div class="title-flags">
+                  <span class="flag-chip recurrence">↻ 5e occurrence · merger ?</span>
+                </div>
+              </td>
+              <td><span class="lc-pill new">New</span></td>
+              <td><span class="domain-chip-small facturation">Facturation</span></td>
+              <td class="prio-cell"><span class="prio-tag P2">P2 <span class="score">·&nbsp;55</span></span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar-sm">JM</div>
+                  <span class="owner-name">J. Martin</span>
+                </div>
+              </td>
+              <td class="deadline-cell">
+                <span class="sla-dot amber"></span>
+                <span class="deadline-value">J-8</span>
+                <div class="deadline-date">20/05</div>
+              </td>
+              <td class="impact-cell">
+                <div class="impact-val">1,8 k€</div>
+                <div class="impact-qual risk">À risque</div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </td>
+            </tr>
+
+            <!-- ROW 11 : DÉCISION P2 — choix prestataire ICPE -->
+            <tr data-priority="P2">
+              <td><span class="row-checkbox"></span></td>
+              <td>
+                <div class="kind-cell" data-kind="decision">
+                  <span class="kind-icon decision">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="12" r="3"/><path d="M9 6h6a3 3 0 0 1 3 3v3"/><path d="M9 18h6a3 3 0 0 0 3-3v-3"/></svg>
+                  </span>
+                  <span class="kind-label">Décision</span>
+                </div>
+              </td>
+              <td class="title-cell">
+                <div class="title-main">Choix prestataire ICPE · <em>APAVE vs Bureau Veritas vs Socotec</em></div>
+                <div class="title-meta">
+                  <a href="#">Toulouse</a><span class="meta-sep">·</span>Lié à action #ACI-2026-05-0234
+                </div>
+              </td>
+              <td><span class="lc-pill triaged">Triaged</span></td>
+              <td><span class="domain-chip-small conformite">Conformité</span></td>
+              <td class="prio-cell"><span class="prio-tag P2">P2 <span class="score">·&nbsp;54</span></span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar-sm">JM</div>
+                  <span class="owner-name">J. Martin</span>
+                </div>
+              </td>
+              <td class="deadline-cell">
+                <span class="sla-dot green"></span>
+                <span class="deadline-value">J-14</span>
+                <div class="deadline-date">26/05</div>
+              </td>
+              <td class="impact-cell">
+                <div class="impact-val">—</div>
+                <div class="impact-qual">N/A</div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </td>
+            </tr>
+
+            <!-- ROW 12 : SIGNAL P3 — donnée incomplète patrimoine -->
+            <tr data-priority="P3">
+              <td><span class="row-checkbox"></span></td>
+              <td>
+                <div class="kind-cell" data-kind="signal">
+                  <span class="kind-icon signal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h.01M19 12h.01M12 5v.01M12 19v.01M7.05 7.05l.01.01M16.95 7.05l.01.01M7.05 16.95l.01.01M16.95 16.95l.01.01M12 12h.01"/><circle cx="12" cy="12" r="3"/></svg>
+                  </span>
+                  <span class="kind-label">Signal</span>
+                </div>
+              </td>
+              <td class="title-cell">
+                <div class="title-main">Donnée patrimoine incomplète · <em>surface parking Marseille</em></div>
+                <div class="title-meta">
+                  <a href="#">Marseille École</a><span class="meta-sep">·</span>Moteur assujettissement APER<span class="meta-sep">·</span>data_quality_check
+                </div>
+              </td>
+              <td><span class="lc-pill new">New</span></td>
+              <td><span class="domain-chip-small data">Data</span></td>
+              <td class="prio-cell"><span class="prio-tag P3">P3 <span class="score">·&nbsp;28</span></span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar-sm">PR</div>
+                  <span class="owner-name">P. Robert</span>
+                </div>
+              </td>
+              <td class="deadline-cell">
+                <span class="sla-dot green"></span>
+                <span class="deadline-value">—</span>
+                <div class="deadline-date">aucune</div>
+              </td>
+              <td class="impact-cell">
+                <div class="impact-val muted">—</div>
+                <div class="impact-qual">N/A</div>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ════════ PAGINATION ════════ -->
+      <div class="pagination">
+        <span class="page-info">Affichage <b>1-12</b> sur <b>147</b> items · 12 / page</span>
+        <div class="page-spacer"></div>
+        <button class="page-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <button class="page-btn">4</button>
+        <span class="page-ellipsis">…</span>
+        <button class="page-btn">13</button>
+        <button class="page-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+
+      <!-- COLOPHON -->
+      <div class="colophon">
+        <div class="meta-list">
+          <span>Source · <a href="#">ActionCenter v4.0</a></span>
+          <span class="sep">·</span>
+          <span>Doctrine · <a href="#">classer ≠ prioriser</a></span>
+          <span class="sep">·</span>
+          <span>Tri · <a href="#">risque réel</a> (6 règles modulation)</span>
+          <span class="sep">·</span>
+          <span>Audit trail · 1 247 entrées 30j</span>
+        </div>
+        <div class="meta-list">
+          <span class="version-tag">ActionCenter v4.0</span>
+          <span class="sep">·</span>
+          <span class="version-tag">Doctrine priorisation v1.0 + ext V4</span>
+          <span class="sep">·</span>
+          <span class="version-tag">Sol v1.1</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

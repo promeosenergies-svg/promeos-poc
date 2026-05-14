@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1500, initial-scale=1">
+<title>PROMEOS — Centre d'action V4 · Pilotage / File prioritaire v0.3.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ═══════ TOKENS SOL v1.1 ═══════ */
+  :root {
+    --sol-bg-canvas: #f8f9fa;
+    --sol-bg-paper: #ffffff;
+    --sol-bg-panel: #f3f4f6;
+    --sol-ink-100: #f1f5f9;
+    --sol-ink-200: #e2e8f0;
+    --sol-ink-300: #cbd5e1;
+    --sol-ink-400: #94a3b8;
+    --sol-ink-500: #64748b;
+    --sol-ink-700: #334155;
+    --sol-ink-900: #0f172a;
+    --sol-rule: #e2e8f0;
+    --sol-calme-fg: #2f6b5e; --sol-calme-bg: #e3f0ed;
+    --sol-succes-fg: #2e6b4a; --sol-succes-bg: #dfede3; --sol-succes-line: #5a8a72;
+    --sol-attention-fg: #8a5a14; --sol-attention-bg: #f6ead2; --sol-attention-line: #d4a85a;
+    --sol-afaire-fg: #a04525; --sol-afaire-bg: #f7e4d8; --sol-afaire-line: #d68a5e;
+    --sol-refuse-fg: #8b3a3a; --sol-refuse-bg: #f3dddb; --sol-refuse-line: #b85a5a;
+    --sol-hch-fg: #2e4a6b; --sol-hch-bg: #e6edf5;
+    --sol-font-display: 'Fraunces', Georgia, serif;
+    --sol-font-body: 'DM Sans', system-ui, sans-serif;
+    --sol-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sol-radius-sm: 4px;
+    --sol-radius-md: 6px;
+    --sol-radius-lg: 8px;
+    --sol-radius-xl: 12px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--sol-ink-200);
+    font-family: var(--sol-font-body);
+    color: var(--sol-ink-900);
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-size: 14px;
+    line-height: 1.45;
+    letter-spacing: -0.005em;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 10000;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='100' height='100' filter='url(%23n)' opacity='0.5'/></svg>");
+  }
+
+  .app {
+    max-width: 1500px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 60px 220px 1fr;
+    background: var(--sol-bg-canvas);
+    border-radius: var(--sol-radius-xl);
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+  }
+
+  /* ─── RAIL / SIDE — identiques M1/M2/M3/M5 ─── */
+  .nav-rail { background: var(--sol-bg-panel); padding: 14px 12px; border-right: 1px solid var(--sol-rule); display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .rail-logo { width: 34px; height: 34px; border-radius: var(--sol-radius-md); background: var(--sol-ink-900); color: var(--sol-bg-paper); font-family: var(--sol-font-display); font-weight: 500; font-size: 17px; display: flex; align-items: center; justify-content: center; margin-bottom: 7px; }
+  .rail-item { width: 38px; height: 42px; border-radius: var(--sol-radius-md); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--sol-ink-500); cursor: pointer; position: relative; }
+  .rail-item.active { color: var(--sol-ink-900); background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); }
+  .rail-item svg { width: 17px; height: 17px; }
+  .rail-item-label { font-size: 9px; font-family: var(--sol-font-mono); }
+  .rail-badge { position: absolute; top: -2px; right: 2px; background: var(--sol-refuse-fg); color: var(--sol-bg-paper); font-size: 9px; font-family: var(--sol-font-mono); padding: 1px 4px; border-radius: var(--sol-radius-md); line-height: 1; }
+  .rail-spacer { flex: 1; }
+  .rail-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); color: var(--sol-ink-900); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; }
+  .nav-side { background: var(--sol-bg-panel); padding: 16px 14px; border-right: 1px solid var(--sol-rule); }
+  .nav-brand { margin-bottom: 22px; padding: 0 4px; }
+  .nav-brand-title { font-family: var(--sol-font-display); font-size: 20px; font-weight: 500; line-height: 1.05; color: var(--sol-ink-900); letter-spacing: -0.01em; }
+  .nav-brand-sub { font-size: 11.5px; color: var(--sol-ink-500); margin-top: 2px; font-style: italic; font-family: var(--sol-font-display); }
+  .nav-link { display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-radius: var(--sol-radius-md); font-size: 13px; color: var(--sol-ink-700); margin-bottom: 1px; }
+  .nav-link.active { background: var(--sol-bg-paper); color: var(--sol-ink-900); font-weight: 500; border: 1px solid var(--sol-rule); }
+  .nav-link svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .nav-link-badge { margin-left: auto; background: var(--sol-bg-paper); color: var(--sol-ink-500); font-family: var(--sol-font-mono); font-size: 9.5px; padding: 1px 5px; border-radius: var(--sol-radius-lg); font-weight: 500; border: 1px solid var(--sol-rule); }
+  .nav-link-badge.alert { background: var(--sol-refuse-fg); color: var(--sol-bg-paper); border-color: var(--sol-refuse-fg); }
+  .nav-section-title { font-family: var(--sol-font-mono); font-size: 9px; letter-spacing: 0.14em; color: var(--sol-ink-400); text-transform: uppercase; margin: 16px 10px 5px; }
+
+  .main { background: var(--sol-bg-canvas); display: flex; flex-direction: column; }
+  .topbar { display: flex; align-items: center; gap: 10px; padding: 11px 28px; border-bottom: 1px solid var(--sol-rule); background: var(--sol-bg-canvas); flex-shrink: 0; flex-wrap: wrap; }
+  .breadcrumb { font-size: 13px; color: var(--sol-ink-500); }
+  .breadcrumb b { color: var(--sol-ink-900); font-weight: 500; }
+  .breadcrumb .sep { margin: 0 7px; color: var(--sol-ink-300); }
+  .topbar-spacer { flex: 1; }
+  .filter-group { display: flex; gap: 6px; align-items: center; }
+  .filter-label { font-family: var(--sol-font-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--sol-ink-500); text-transform: uppercase; margin-right: 3px; }
+  .filter-pill { display: flex; align-items: center; gap: 5px; padding: 3px 9px; background: var(--sol-bg-paper); border: 1px solid var(--sol-rule); border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--sol-ink-900); cursor: pointer; font-family: var(--sol-font-body); }
+  .filter-pill svg { width: 10px; height: 10px; color: var(--sol-ink-500); }
+  .filter-pill .filter-count { font-family: var(--sol-font-mono); font-weight: 400; color: var(--sol-ink-500); font-size: 10.5px; margin-left: 2px; }
+  .filter-pill.active { background: var(--sol-ink-900); color: var(--sol-bg-paper); border-color: var(--sol-ink-900); }
+  .filter-pill.active .filter-count { color: var(--sol-ink-200); }
+  .filter-pill.active svg { color: var(--sol-bg-paper); }
+  .status-pill { font-family: var(--sol-font-mono); font-size: 10px; padding: 3px 8px; border-radius: 999px; font-weight: 500; letter-spacing: 0.06em; }
+  .status-pill.ok { background: var(--sol-succes-bg); color: var(--sol-succes-fg); border: 1px solid var(--sol-succes-line); }
+  .status-pill.demo { background: var(--sol-attention-bg); color: var(--sol-attention-fg); border: 1px solid var(--sol-attention-line); }
+  .vue-toggle { display: flex; align-items: center; gap: 6px; font-family: var(--sol-font-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--sol-ink-500); text-transform: uppercase; }
+  .vue-select { background: var(--sol-bg-paper); color: var(--sol-ink-900); border: 1px solid var(--sol-ink-300); border-radius: var(--sol-radius-md); padding: 4px 10px; font-size: 12px; font-family: var(--sol-font-body); font-weight: 500; text-transform: none; letter-spacing: 0; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .vue-select svg { width: 10px; height: 10px; color: var(--sol-ink-500); }
+  .vue-select .persona-marker { background: var(--sol-calme-fg); width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
+  .user-pill { display: flex; align-items: center; gap: 7px; }
+  .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--sol-bg-panel); border: 1px solid var(--sol-rule); color: var(--sol-ink-900); display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 500; }
+
+  .canvas { padding: 18px 36px 24px; max-width: 1380px; margin: 0 auto; width: 100%; }
+  .masthead { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 9px; border-bottom: 1px solid var(--sol-ink-900); margin-bottom: 14px; }
+  .masthead-left { font-family: var(--sol-font-display); font-size: 13px; color: var(--sol-ink-900); font-weight: 500; font-style: italic; letter-spacing: 0.02em; }
+  .masthead-left b { font-weight: 600; font-style: normal; }
+  .masthead-right { font-family: var(--sol-font-mono); font-size: 10.5px; letter-spacing: 0.16em; color: var(--sol-ink-500); text-transform: uppercase; }
+
+  /* ═══════════════════════════════════════════════════════════════
+     BARRE NARRATIVE COMPACTE — RÉDUITE 15% (correction P1)
+  ═══════════════════════════════════════════════════════════════ */
+  .narrative-bar {
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-lg);
+    padding: 13px 20px 12px;
+    margin-bottom: 14px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 22px;
+    align-items: center;
+  }
+  .narrative-kicker {
+    font-family: var(--sol-font-mono);
+    font-size: 9.5px; letter-spacing: 0.18em;
+    color: var(--sol-ink-500); text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .narrative-kicker .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--sol-succes-fg);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+  .narrative-headline {
+    font-family: var(--sol-font-display);
+    font-size: 17px; font-weight: 500;
+    color: var(--sol-ink-900); line-height: 1.25;
+    letter-spacing: -0.012em;
+    margin: 0 0 6px;
+  }
+  .narrative-headline em { font-style: italic; color: var(--sol-ink-500); font-weight: 400; }
+  .narrative-headline .num { font-family: var(--sol-font-mono); font-weight: 500; }
+  .narrative-headline .accent-crit { color: var(--sol-refuse-fg); font-weight: 600; }
+  .narrative-headline .accent-warn { color: var(--sol-attention-fg); font-weight: 600; }
+  .narrative-stats { display: flex; gap: 18px; }
+  .narrative-stat { display: flex; flex-direction: column; gap: 1px; border-left: 1px solid var(--sol-rule); padding-left: 12px; }
+  .narrative-stat:first-child { border-left: none; padding-left: 0; }
+  .narrative-stat-label { font-family: var(--sol-font-mono); font-size: 8.5px; letter-spacing: 0.12em; color: var(--sol-ink-500); text-transform: uppercase; font-weight: 500; cursor: help; border-bottom: 1px dotted var(--sol-ink-400); padding-bottom: 1px; }
+  .narrative-stat-value { font-family: var(--sol-font-mono); font-size: 15px; font-weight: 500; color: var(--sol-ink-900); font-variant-numeric: tabular-nums; }
+  .narrative-stat-value.crit { color: var(--sol-refuse-fg); }
+  .narrative-stat-value.warn { color: var(--sol-attention-fg); }
+  .narrative-stat-value.pos { color: var(--sol-succes-fg); }
+  .narrative-stat-value .unit { font-size: 10px; color: var(--sol-ink-500); font-weight: 400; font-family: var(--sol-font-display); font-style: italic; }
+
+  .narrative-right { display: flex; flex-direction: column; gap: 7px; align-items: flex-end; }
+  .narrative-cta-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--sol-ink-900); color: var(--sol-bg-paper);
+    border: none; border-radius: var(--sol-radius-md);
+    padding: 7px 13px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .narrative-cta-primary svg { width: 11px; height: 11px; }
+  .narrative-cta-row { display: flex; gap: 6px; }
+  .narrative-cta-secondary {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--sol-bg-paper); color: var(--sol-ink-900);
+    border: 1px solid var(--sol-ink-300);
+    border-radius: var(--sol-radius-md);
+    padding: 5px 10px;
+    font-size: 11px; font-weight: 500; cursor: pointer;
+  }
+  .narrative-cta-secondary svg { width: 10px; height: 10px; color: var(--sol-ink-500); }
+
+  /* ─── TABS ─── */
+  .tabs-bar { display: flex; align-items: center; gap: 0; border-bottom: 1px solid var(--sol-ink-900); margin-bottom: 14px; }
+  .tab { padding: 9px 18px 10px; font-family: var(--sol-font-display); font-size: 15px; font-weight: 500; color: var(--sol-ink-500); cursor: pointer; border-bottom: 3px solid transparent; transform: translateY(2px); letter-spacing: -0.005em; display: flex; align-items: center; gap: 8px; }
+  .tab.active { color: var(--sol-ink-900); border-bottom-color: var(--sol-ink-900); font-weight: 600; }
+  .tab .tab-count { font-family: var(--sol-font-mono); font-size: 10px; font-weight: 500; background: var(--sol-bg-panel); color: var(--sol-ink-700); padding: 1px 7px; border-radius: 999px; }
+  .tab.active .tab-count { background: var(--sol-ink-900); color: var(--sol-bg-paper); }
+  .tabs-spacer { flex: 1; }
+
+  /* ─── TOGGLE Décisions / Journal ─── */
+  .view-toggle {
+    display: inline-flex;
+    background: var(--sol-bg-panel);
+    border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-md);
+    padding: 2px;
+    margin-bottom: 4px;
+  }
+  .view-toggle-option {
+    padding: 5px 12px;
+    font-family: var(--sol-font-body); font-size: 12px; font-weight: 500;
+    color: var(--sol-ink-500); cursor: pointer;
+    border-radius: var(--sol-radius-sm);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .view-toggle-option.active {
+    background: var(--sol-bg-paper); color: var(--sol-ink-900);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  }
+  .view-toggle-option svg { width: 12px; height: 12px; }
+
+  /* ═══════════════════════════════════════════════════════════════
+     MINI-FILTRE rapide Pilotage — correction P2
+  ═══════════════════════════════════════════════════════════════ */
+  .quick-filters {
+    display: flex; gap: 6px; align-items: center;
+    margin: 10px 0 14px;
+    flex-wrap: wrap;
+  }
+  .quick-filters-label {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.14em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 600;
+    margin-right: 4px;
+  }
+  .qf-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px;
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    border-radius: 999px;
+    font-family: var(--sol-font-body); font-size: 11.5px;
+    color: var(--sol-ink-700); cursor: pointer; font-weight: 500;
+  }
+  .qf-chip.active {
+    background: var(--sol-ink-900); color: var(--sol-bg-paper);
+    border-color: var(--sol-ink-900);
+  }
+  .qf-chip .count { font-family: var(--sol-font-mono); font-size: 10px; color: var(--sol-ink-500); font-weight: 400; margin-left: 2px; }
+  .qf-chip.active .count { color: var(--sol-ink-200); }
+  .display-mode {
+    margin-left: auto;
+    display: inline-flex; background: var(--sol-bg-panel);
+    border: 1px solid var(--sol-rule); border-radius: var(--sol-radius-md);
+    padding: 2px;
+  }
+  .display-mode-opt {
+    padding: 3px 9px; font-family: var(--sol-font-mono);
+    font-size: 9.5px; letter-spacing: 0.06em;
+    color: var(--sol-ink-500); cursor: pointer;
+    border-radius: var(--sol-radius-sm); font-weight: 500;
+    text-transform: uppercase;
+  }
+  .display-mode-opt.active { background: var(--sol-bg-paper); color: var(--sol-ink-900); }
+
+  /* ═══════════════════════════════════════════════════════════════
+     ESCALATION BANNER — corrigé "non sécurisés" pas "non qualifiés"
+  ═══════════════════════════════════════════════════════════════ */
+  .escalation-banner {
+    background: var(--sol-refuse-bg);
+    border: 1px solid var(--sol-refuse-line);
+    border-left: 4px solid var(--sol-refuse-fg);
+    padding: 11px 16px;
+    border-radius: var(--sol-radius-md);
+    display: flex; align-items: center; gap: 13px;
+    margin-bottom: 10px;
+  }
+  .escalation-icon svg { width: 15px; height: 15px; color: var(--sol-refuse-fg); }
+  .escalation-text {
+    font-family: var(--sol-font-display);
+    font-size: 13px;
+    color: var(--sol-ink-900);
+    line-height: 1.4;
+    flex: 1;
+  }
+  .escalation-text b { font-weight: 600; color: var(--sol-refuse-fg); }
+  .escalation-text em { font-style: italic; color: var(--sol-ink-500); }
+  .escalation-cta {
+    font-family: var(--sol-font-mono);
+    font-size: 10px; letter-spacing: 0.08em;
+    color: var(--sol-refuse-fg); text-decoration: none;
+    text-transform: uppercase; font-weight: 600;
+    border: 1px solid var(--sol-refuse-fg);
+    padding: 5px 10px;
+    border-radius: var(--sol-radius-sm);
+  }
+
+  /* ─── SECTION TITLE ─── */
+  .section-title-row {
+    display: flex; align-items: baseline; gap: 12px;
+    padding-top: 12px;
+    margin-bottom: 9px;
+  }
+  .section-title-row.spaced { margin-top: 14px; }
+  .section-title {
+    font-family: var(--sol-font-display);
+    font-size: 18px; letter-spacing: -0.012em;
+    color: var(--sol-ink-900); font-weight: 600;
+  }
+  .section-sub {
+    font-family: var(--sol-font-display);
+    font-style: italic; font-size: 12.5px;
+    color: var(--sol-ink-500);
+  }
+  .section-link {
+    margin-left: auto;
+    font-family: var(--sol-font-mono);
+    font-size: 9.5px; letter-spacing: 0.1em;
+    color: var(--sol-ink-900); text-decoration: none;
+    text-transform: uppercase; font-weight: 600;
+    border-bottom: 1px solid var(--sol-ink-900);
+    padding-bottom: 1px;
+  }
+  .section-count {
+    font-family: var(--sol-font-mono);
+    font-size: 10px; font-weight: 600;
+    background: var(--sol-ink-900); color: var(--sol-bg-paper);
+    padding: 1px 7px; border-radius: 999px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     ITEM CARD v0.3 — réduite 15%, doctrine v0.2 strictement appliquée
+  ═══════════════════════════════════════════════════════════════ */
+  .items-grid { display: flex; flex-direction: column; gap: 8px; }
+
+  .item-card {
+    background: var(--sol-bg-paper);
+    border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-lg);
+    padding: 11px 16px 11px 0;
+    display: grid;
+    grid-template-columns: 6px 1fr 130px 130px 100px 92px;
+    gap: 14px;
+    align-items: stretch;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    position: relative;
+    cursor: pointer;
+  }
+  .item-card:hover {
+    border-color: var(--sol-ink-300);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  }
+  .item-card-strip { border-top-left-radius: var(--sol-radius-lg); border-bottom-left-radius: var(--sol-radius-lg); background: var(--sol-ink-300); }
+  .item-card[data-priority="P0"] .item-card-strip { background: var(--sol-refuse-fg); }
+  .item-card[data-priority="P1"] .item-card-strip { background: var(--sol-attention-fg); }
+  .item-card[data-priority="P2"] .item-card-strip { background: var(--sol-calme-fg); }
+  .item-card[data-priority="P3"] .item-card-strip { background: var(--sol-ink-400); }
+
+  .item-card-main { display: flex; flex-direction: column; gap: 4px; padding: 1px 0; min-width: 0; }
+  .item-card-row1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  /* ═══════════════════════════════════════════════════════════════
+     KIND BADGE — doctrine v0.2 §3 strict
+  ═══════════════════════════════════════════════════════════════ */
+  .kind-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-family: var(--sol-font-mono);
+    font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; font-weight: 700;
+    border: 1px solid;
+  }
+  .kind-badge svg { width: 10px; height: 10px; }
+  .kind-badge.anomaly { background: var(--sol-refuse-bg); color: var(--sol-refuse-fg); border-color: var(--sol-refuse-line); }
+  .kind-badge.action { background: var(--sol-bg-panel); color: var(--sol-ink-700); border-color: var(--sol-ink-300); }
+  .kind-badge.decision { background: var(--sol-hch-bg); color: var(--sol-hch-fg); border-color: var(--sol-hch-fg); }
+  .kind-badge.signal { background: var(--sol-bg-panel); color: var(--sol-ink-500); border-color: var(--sol-ink-300); border-style: dashed; }
+  .kind-badge.evidence_request { background: var(--sol-attention-bg); color: var(--sol-attention-fg); border-color: var(--sol-attention-line); }
+  .kind-badge.deadline { background: var(--sol-afaire-bg); color: var(--sol-afaire-fg); border-color: var(--sol-afaire-line); }
+  .kind-badge.recommendation { background: var(--sol-calme-bg); color: var(--sol-calme-fg); border-color: var(--sol-calme-fg); border-style: dotted; }
+
+  /* Priority tag */
+  .item-priority-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px; border-radius: 3px;
+    font-family: var(--sol-font-mono);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.06em; color: var(--sol-bg-paper);
+    cursor: help;
+  }
+  .item-priority-tag.P0 { background: var(--sol-refuse-fg); }
+  .item-priority-tag.P1 { background: var(--sol-attention-fg); }
+  .item-priority-tag.P2 { background: var(--sol-calme-fg); }
+  .item-priority-tag.P3 { background: var(--sol-ink-400); }
+  .item-priority-tag .score { font-weight: 500; opacity: 0.85; letter-spacing: 0; }
+
+  /* Lifecycle pill */
+  .lifecycle-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 1px 8px; border-radius: 999px;
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    font-weight: 500; border: 1px solid;
+  }
+  .lifecycle-pill::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+  .lifecycle-pill.new { background: var(--sol-bg-paper); border-color: var(--sol-ink-700); color: var(--sol-ink-700); }
+  .lifecycle-pill.triaged { background: var(--sol-hch-bg); border-color: var(--sol-hch-fg); color: var(--sol-hch-fg); }
+  .lifecycle-pill.planned { background: var(--sol-calme-bg); border-color: var(--sol-calme-fg); color: var(--sol-calme-fg); }
+  .lifecycle-pill.in_progress { background: var(--sol-attention-bg); border-color: var(--sol-attention-fg); color: var(--sol-attention-fg); }
+
+  /* Domain chip */
+  .domain-chip {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    font-weight: 500; padding: 1px 6px; border-radius: 3px;
+    background: var(--sol-bg-panel); color: var(--sol-ink-500);
+  }
+  .domain-chip.conformite { color: var(--sol-calme-fg); background: var(--sol-calme-bg); }
+  .domain-chip.facturation { color: var(--sol-attention-fg); background: var(--sol-attention-bg); }
+  .domain-chip.achat { color: var(--sol-hch-fg); background: var(--sol-hch-bg); }
+  .domain-chip.consommation { color: var(--sol-afaire-fg); background: var(--sol-afaire-bg); }
+  .domain-chip.patrimoine { color: var(--sol-ink-700); background: var(--sol-ink-100); }
+  .domain-chip.data { color: var(--sol-ink-500); background: var(--sol-bg-panel); border: 1px dashed var(--sol-ink-300); }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SLA DOUBLE — correction P0 cardinale
+     SLA traitement PROMEOS != Échéance métier
+  ═══════════════════════════════════════════════════════════════ */
+  .sla-pair {
+    display: inline-flex; align-items: center; gap: 0;
+    border: 1px solid var(--sol-rule);
+    border-radius: 3px;
+    overflow: hidden;
+    font-family: var(--sol-font-mono);
+    font-size: 9.5px; letter-spacing: 0.02em;
+  }
+  .sla-cell {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 7px;
+    cursor: help;
+  }
+  .sla-cell + .sla-cell { border-left: 1px solid var(--sol-rule); }
+  .sla-cell .sla-label {
+    font-size: 8.5px; letter-spacing: 0.1em;
+    color: var(--sol-ink-500); text-transform: uppercase;
+    font-weight: 600;
+  }
+  .sla-cell .sla-value { font-weight: 600; }
+  .sla-cell.sla-promeos.red { background: var(--sol-refuse-bg); }
+  .sla-cell.sla-promeos.red .sla-label { color: var(--sol-refuse-fg); }
+  .sla-cell.sla-promeos.red .sla-value { color: var(--sol-refuse-fg); }
+  .sla-cell.sla-promeos.amber { background: var(--sol-attention-bg); }
+  .sla-cell.sla-promeos.amber .sla-label { color: var(--sol-attention-fg); }
+  .sla-cell.sla-promeos.amber .sla-value { color: var(--sol-attention-fg); }
+  .sla-cell.sla-promeos.green { background: var(--sol-succes-bg); }
+  .sla-cell.sla-promeos.green .sla-label { color: var(--sol-succes-fg); }
+  .sla-cell.sla-promeos.green .sla-value { color: var(--sol-succes-fg); }
+  .sla-cell.echeance-metier { background: var(--sol-bg-paper); }
+  .sla-cell.echeance-metier .sla-value { color: var(--sol-ink-900); }
+
+  /* Title */
+  .item-card-title {
+    font-family: var(--sol-font-display);
+    font-size: 16px; font-weight: 500;
+    color: var(--sol-ink-900); line-height: 1.28;
+    letter-spacing: -0.008em;
+  }
+  .item-card-title em { font-style: italic; color: var(--sol-ink-500); font-weight: 400; }
+
+  /* Summary */
+  .item-card-summary {
+    font-family: var(--sol-font-body);
+    font-size: 12.5px; color: var(--sol-ink-700);
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+  .item-card-summary b { color: var(--sol-ink-900); font-weight: 500; }
+
+  /* ═══════════════════════════════════════════════════════════════
+     PROCHAINE ACTION + POURQUOI MAINTENANT — corrections P1
+  ═══════════════════════════════════════════════════════════════ */
+  .next-action-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 5px;
+    padding: 4px 9px;
+    background: var(--sol-ink-100);
+    border-radius: var(--sol-radius-sm);
+    font-family: var(--sol-font-body);
+    font-size: 11.5px;
+    color: var(--sol-ink-900);
+    line-height: 1.35;
+    border-left: 2px solid var(--sol-ink-900);
+  }
+  .next-action-label {
+    font-family: var(--sol-font-mono);
+    font-size: 8.5px; letter-spacing: 0.14em;
+    color: var(--sol-ink-500); text-transform: uppercase;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .next-action-value { font-weight: 600; color: var(--sol-ink-900); }
+  .next-action-row .why {
+    margin-left: auto;
+    font-family: var(--sol-font-display);
+    font-style: italic; font-size: 10.5px;
+    color: var(--sol-ink-500); cursor: help;
+    border-bottom: 1px dotted var(--sol-ink-400);
+    padding-bottom: 1px;
+  }
+  .next-action-row .why::before { content: "Pourquoi maintenant ? "; font-style: normal; font-family: var(--sol-font-mono); font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sol-ink-500); margin-right: 4px; }
+
+  /* Blockers row */
+  .blockers-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .blocker-chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.02em; color: var(--sol-afaire-fg);
+    padding: 1px 7px; background: var(--sol-afaire-bg);
+    border: 1px dashed var(--sol-afaire-line); border-radius: 3px;
+    font-weight: 500;
+  }
+  .blocker-chip::before { content: "⊘"; font-size: 9px; opacity: 0.85; }
+
+  /* Flag chips (récurrence, confiance) — tooltip enabled */
+  .flag-chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.02em; font-weight: 500;
+    padding: 1px 7px; border-radius: 2px;
+    border: 1px solid; cursor: help;
+  }
+  .flag-chip.recurrence { background: var(--sol-attention-bg); border-color: var(--sol-attention-line); color: var(--sol-attention-fg); }
+  .flag-chip.low_confidence { background: var(--sol-afaire-bg); border-color: var(--sol-afaire-line); color: var(--sol-afaire-fg); }
+  .flag-chip.evidence_ok { background: var(--sol-succes-bg); border-color: var(--sol-succes-line); color: var(--sol-succes-fg); }
+  .flag-chip.evidence_missing { background: var(--sol-attention-bg); border-color: var(--sol-attention-line); color: var(--sol-attention-fg); border-style: dashed; }
+
+  /* Meta line */
+  .item-card-meta {
+    font-family: var(--sol-font-mono); font-size: 10px;
+    color: var(--sol-ink-400); letter-spacing: 0.02em;
+    margin-top: 3px;
+  }
+  .item-card-meta a {
+    color: var(--sol-ink-700); text-decoration: none;
+    border-bottom: 1px dotted var(--sol-ink-400);
+  }
+  .item-card-meta .meta-sep { color: var(--sol-ink-300); margin: 0 5px; }
+
+  /* IMPACT COLUMN */
+  .item-card-impact {
+    border-left: 1px solid var(--sol-rule);
+    padding-left: 13px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .item-card-impact-label {
+    font-family: var(--sol-font-mono); font-size: 8.5px;
+    letter-spacing: 0.12em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 500;
+  }
+  .item-card-impact-value {
+    font-family: var(--sol-font-mono); font-size: 16px;
+    font-weight: 500; color: var(--sol-ink-900); line-height: 1;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.015em;
+    margin-top: 3px;
+    cursor: help;
+  }
+  .item-card-impact-detail {
+    font-family: var(--sol-font-mono); font-size: 9px;
+    color: var(--sol-ink-500); margin-top: 3px;
+    letter-spacing: 0.02em; line-height: 1.4;
+  }
+  .item-card-impact-detail .qual { color: var(--sol-attention-fg); font-weight: 500; }
+  .item-card-impact-detail .qual.secured { color: var(--sol-succes-fg); }
+  .item-card-impact-detail .cumul {
+    display: block;
+    font-family: var(--sol-font-display);
+    font-style: italic; font-size: 9.5px;
+    color: var(--sol-ink-500); margin-top: 1px;
+  }
+  .item-card-impact-detail .cumul b { font-style: normal; font-family: var(--sol-font-mono); color: var(--sol-ink-700); font-weight: 600; }
+
+  /* OWNER COLUMN */
+  .item-card-owner {
+    display: flex; align-items: center; gap: 8px;
+    border-left: 1px solid var(--sol-rule);
+    padding-left: 13px;
+  }
+  .item-card-owner-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--sol-bg-panel);
+    border: 1px solid var(--sol-rule); color: var(--sol-ink-900);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--sol-font-mono); font-size: 9.5px; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .item-card-owner-avatar.unassigned {
+    background: var(--sol-refuse-bg); border-color: var(--sol-refuse-fg);
+    color: var(--sol-refuse-fg); border-style: dashed;
+  }
+  .item-card-owner-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .item-card-owner-name { font-size: 11.5px; color: var(--sol-ink-900); font-weight: 500; }
+  .item-card-owner-name.unassigned { color: var(--sol-refuse-fg); font-style: italic; }
+  .item-card-owner-role { font-family: var(--sol-font-mono); font-size: 8.5px; letter-spacing: 0.04em; color: var(--sol-ink-500); }
+
+  /* CTA COLUMN — corrigée doctrine */
+  .item-card-cta {
+    display: flex; flex-direction: column; gap: 5px; align-items: stretch;
+    padding-right: 16px; justify-content: center;
+  }
+  .btn-item-primary {
+    background: var(--sol-ink-900); color: var(--sol-bg-paper);
+    border: none; border-radius: var(--sol-radius-sm);
+    padding: 5px 9px;
+    font-family: var(--sol-font-body); font-size: 10.5px;
+    font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .btn-item-primary svg { width: 10px; height: 10px; }
+  .btn-item-secondary {
+    background: var(--sol-bg-paper); color: var(--sol-ink-900);
+    border: 1px solid var(--sol-ink-300);
+    border-radius: var(--sol-radius-sm);
+    padding: 5px 9px;
+    font-family: var(--sol-font-body); font-size: 10px; font-weight: 500;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+  }
+  .btn-item-secondary svg { width: 9px; height: 9px; color: var(--sol-ink-500); }
+
+  /* ═══════════════════════════════════════════════════════════════
+     MINI-LIGNE CLÔTURÉ RÉCEMMENT — correction P0
+     Pas une grande card complète
+  ═══════════════════════════════════════════════════════════════ */
+  .closed-recent-section {
+    margin-top: 18px;
+    padding: 12px 16px;
+    background: var(--sol-bg-canvas);
+    border: 1px solid var(--sol-rule);
+    border-radius: var(--sol-radius-md);
+  }
+  .closed-recent-head {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 6px;
+  }
+  .closed-recent-title {
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.14em; color: var(--sol-ink-500);
+    text-transform: uppercase; font-weight: 600;
+  }
+  .closed-recent-sub {
+    font-family: var(--sol-font-display);
+    font-style: italic; font-size: 11.5px;
+    color: var(--sol-ink-500);
+  }
+  .closed-recent-list { display: flex; flex-direction: column; gap: 4px; }
+  .closed-line {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 4px;
+    font-size: 12.5px;
+    color: var(--sol-ink-700);
+    border-bottom: 1px dashed var(--sol-rule);
+  }
+  .closed-line:last-child { border-bottom: none; }
+  .closed-line .check { color: var(--sol-succes-fg); font-weight: 600; font-size: 13px; }
+  .closed-line .item-name {
+    font-family: var(--sol-font-display);
+    color: var(--sol-ink-900); font-weight: 500;
+  }
+  .closed-line .item-name em { font-style: italic; color: var(--sol-ink-500); font-weight: 400; }
+  .closed-line .closed-meta { font-family: var(--sol-font-mono); font-size: 10.5px; color: var(--sol-ink-500); letter-spacing: 0.02em; }
+  .closed-line .closed-meta b { color: var(--sol-succes-fg); font-weight: 600; }
+  .closed-line .closed-cta {
+    margin-left: auto;
+    display: flex; gap: 4px;
+  }
+  .closed-line .closed-cta a {
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.06em; color: var(--sol-ink-700);
+    text-transform: uppercase; font-weight: 500;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--sol-ink-400);
+    padding-bottom: 1px;
+  }
+
+  /* ─── COLOPHON mode standard — correction P0 ─── */
+  .colophon {
+    border-top: 1px solid var(--sol-ink-900);
+    padding-top: 12px; margin-top: 20px;
+    display: flex; justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--sol-font-mono); font-size: 9.5px;
+    letter-spacing: 0.1em; color: var(--sol-ink-500);
+    text-transform: uppercase;
+  }
+  .colophon b { color: var(--sol-ink-700); font-weight: 600; }
+  .colophon .audit-toggle {
+    display: inline-flex; align-items: center; gap: 5px;
+    color: var(--sol-ink-500); cursor: pointer;
+    font-family: var(--sol-font-mono); font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+  .colophon .audit-toggle::before {
+    content: ""; width: 22px; height: 12px;
+    border-radius: 999px; background: var(--sol-bg-panel);
+    border: 1px solid var(--sol-rule);
+    position: relative;
+  }
+  .colophon .audit-toggle::after {
+    content: ""; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--sol-ink-400);
+    margin-left: -19px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- RAIL -->
+  <div class="nav-rail">
+    <div class="rail-logo">P</div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-7h-6v7H5a2 2 0 0 1-2-2v-9z"/></svg><div class="rail-item-label">Accueil</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg><div class="rail-item-label">Énergie</div><div class="rail-badge">5</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/></svg><div class="rail-item-label">Conform.</div><div class="rail-badge">9</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/></svg><div class="rail-item-label">Factur.</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h2l3 12h11l2-8H6"/></svg><div class="rail-item-label">Achat</div></div>
+    <div class="rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21V9l9-6 9 6v12"/></svg><div class="rail-item-label">Patrim.</div></div>
+    <div class="rail-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg><div class="rail-item-label">Action</div><div class="rail-badge">12</div></div>
+    <div class="rail-spacer"></div>
+    <div class="rail-avatar">SM</div>
+  </div>
+
+  <!-- SIDE -->
+  <div class="nav-side">
+    <div class="nav-brand">
+      <div class="nav-brand-title">PROMEOS</div>
+      <div class="nav-brand-sub">Centre d'action</div>
+    </div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M11 19a8 8 0 1 1 5.3-14"/></svg>Demander à PROMEOS… <span class="nav-link-badge">⌘K</span></div>
+    <div class="nav-section-title">Centre d'action</div>
+    <div class="nav-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>Pilotage <span class="nav-link-badge alert">8</span></div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19h16M4 12h16M4 5h16"/></svg>Référentiel <span class="nav-link-badge">147</span></div>
+    <div class="nav-section-title">Vues sauvegardées</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>Mes P0 cette semaine</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 5h14v14H5z"/></svg>Conformité DT 2030</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Factures à contester</div>
+    <div class="nav-section-title">Cockpit</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/></svg>Briefing du jour</div>
+    <div class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19h16M4 12h16M4 5h16"/></svg>Synthèse stratégique</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <div class="topbar">
+      <div class="breadcrumb"><b>PROMEOS</b><span class="sep">›</span>Accueil<span class="sep">›</span><b>Centre d'action</b></div>
+      <div class="filter-group" style="margin-left: 22px">
+        <span class="filter-label">Périmètre</span>
+        <span class="filter-pill active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V9l9-6 9 6v12"/></svg>
+          Groupe HELIOS <span class="filter-count">5 sites</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+        <span class="filter-pill">Période <span class="filter-count">7 jours</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </div>
+      <div class="topbar-spacer"></div>
+      <span class="status-pill ok">OK</span>
+      <span class="status-pill demo">Démo</span>
+      <div class="vue-toggle">Persona
+        <div class="vue-select">
+          <span class="persona-marker"></span>
+          Resp. Énergie
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="user-pill"><div class="user-avatar">SM</div></div>
+    </div>
+
+    <div class="canvas">
+
+      <!-- MASTHEAD -->
+      <div class="masthead">
+        <div class="masthead-left"><b>Centre d'action</b> · Sophie Marin · Resp. Énergie HELIOS</div>
+        <div class="masthead-right">Mardi 12 mai 2026 · 07:18 · MAJ live</div>
+      </div>
+
+      <!-- BARRE NARRATIVE COMPACTE — réduite -->
+      <div class="narrative-bar">
+        <div>
+          <div class="narrative-kicker">
+            <span class="live-dot"></span>
+            Tour de contrôle énergétique · Groupe HELIOS · 5 sites
+          </div>
+          <h1 class="narrative-headline">
+            <span class="num accent-crit">8 sujets actifs</span> · <span class="num accent-crit">4 P0/P1</span> · <span class="num accent-warn">52 k€</span> à risque · <em>qualité données <b style="color:var(--sol-succes-fg);font-style:normal">OK</b>.</em>
+          </h1>
+          <div class="narrative-stats">
+            <div class="narrative-stat"><span class="narrative-stat-label" title="Items actifs (non clôturés) sur périmètre courant · summary.active_items_count">Sujets actifs</span><span class="narrative-stat-value">8</span></div>
+            <div class="narrative-stat"><span class="narrative-stat-label" title="Items priorité P0 (≥80) ou P1 (60-79) selon doctrine v0.2 §2.2 · summary.p0_p1_count">P0/P1</span><span class="narrative-stat-value crit">4</span></div>
+            <div class="narrative-stat"><span class="narrative-stat-label" title="Items sans owner assigné — règle R3 doctrine · escalade SLA >24h">Sans responsable</span><span class="narrative-stat-value warn">3</span></div>
+            <div class="narrative-stat"><span class="narrative-stat-label" title="Somme impacts à risque non sécurisés · 12 mois · périmètre courant">À risque 12m</span><span class="narrative-stat-value">52<span class="unit">k€</span></span></div>
+            <div class="narrative-stat"><span class="narrative-stat-label" title="Items dont SLA de traitement PROMEOS dépassé · distinct de l'échéance métier">SLA dépassé</span><span class="narrative-stat-value crit">2</span></div>
+          </div>
+        </div>
+        <div class="narrative-right">
+          <button class="narrative-cta-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>
+            Lancer le triage
+          </button>
+          <div class="narrative-cta-row">
+            <button class="narrative-cta-secondary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 5-4 9-9 9s-9-4-9-9 4-9 9-9c2 0 4 .8 5.5 2"/><path d="M21 3v6h-6"/></svg>
+              Voir l'impact
+            </button>
+            <button class="narrative-cta-secondary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              Exporter COMEX
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs-bar">
+        <div class="tab active">Pilotage <span class="tab-count">8</span></div>
+        <div class="tab">Référentiel <span class="tab-count">147</span></div>
+        <div class="tabs-spacer"></div>
+      </div>
+
+      <!-- TOGGLE -->
+      <div class="view-toggle">
+        <div class="view-toggle-option active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Décisions
+        </div>
+        <div class="view-toggle-option">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          Journal
+        </div>
+      </div>
+
+      <!-- MINI-FILTRES PILOTAGE — correction P2 -->
+      <div class="quick-filters">
+        <span class="quick-filters-label">Vue rapide</span>
+        <span class="qf-chip active">Tous <span class="count">8</span></span>
+        <span class="qf-chip">P0/P1 <span class="count">4</span></span>
+        <span class="qf-chip">Sans responsable <span class="count">3</span></span>
+        <span class="qf-chip">À qualifier <span class="count">2</span></span>
+        <span class="qf-chip">Preuve attendue <span class="count">2</span></span>
+        <span class="qf-chip">SLA dépassé <span class="count">2</span></span>
+        <div class="display-mode">
+          <span class="display-mode-opt">Dense</span>
+          <span class="display-mode-opt active">Standard</span>
+          <span class="display-mode-opt">Audit</span>
+        </div>
+      </div>
+
+      <!-- ESCALATION BANNER — CORRIGÉ : "SLA dépassé" pas "non qualifiés" -->
+      <div class="escalation-banner">
+        <span class="escalation-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        </span>
+        <span class="escalation-text">
+          <b>2 P0 en dépassement de SLA de traitement</b> · <em>Anomalie facture Lyon (sans responsable depuis 48h) · Audit SMÉ Toulouse (bloqué budget depuis 24h)</em> · escalade Direction Énergie déclenchée.
+        </span>
+        <a class="escalation-cta" href="#">Voir les escalades →</a>
+      </div>
+
+      <!-- ════════ SECTION 1 — FILE PRIORITAIRE (renommé) ════════ -->
+      <div class="section-title-row spaced">
+        <span class="section-title">File prioritaire</span>
+        <span class="section-count">5</span>
+        <span class="section-sub">risques, décisions et actions nécessitant une intervention humaine aujourd'hui</span>
+        <a class="section-link" href="#">Voir les 8 ↗</a>
+      </div>
+
+      <div class="items-grid">
+
+        <!-- ITEM 1 : ANOMALIE P0 — sans owner, SLA dépassé, RÉCURRENTE -->
+        <div class="item-card" data-priority="P0">
+          <div class="item-card-strip"></div>
+          <div class="item-card-main">
+            <div class="item-card-row1">
+              <span class="kind-badge anomaly">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                Anomalie
+              </span>
+              <span class="item-priority-tag P0" title="Score 92/100 · règles R1 R3 R4 appliquées">P0 <span class="score">·&nbsp;92</span></span>
+              <span class="lifecycle-pill new">Nouveau</span>
+              <span class="domain-chip facturation">Facturation</span>
+              <span class="sla-pair">
+                <span class="sla-cell sla-promeos red" title="SLA de traitement PROMEOS dépassé de 2 jours · escalade automatique">
+                  <span class="sla-label">SLA</span> <span class="sla-value">J+2</span>
+                </span>
+                <span class="sla-cell echeance-metier" title="Échéance métier · date butoir de la facture">
+                  <span class="sla-label">Métier</span> <span class="sla-value">10/05</span>
+                </span>
+              </span>
+              <span class="flag-chip recurrence" title="3 occurrences sur 90 jours · suggestion : créer dossier de traitement">↻ 3e occurrence · 90j</span>
+            </div>
+            <div class="item-card-title">Anomalie facture <em>R20 — variance capacité souscrite</em></div>
+            <div class="item-card-summary">
+              Facture EDF Mai 2026 · <b>écart 3 412 € HT</b> sur le poste pointe HP par rapport à la souscription PRM 50001234567890. Détection automatique <b>Bill Intelligence R20</b>.
+            </div>
+            <div class="next-action-row">
+              <span class="next-action-label">Prochaine action</span>
+              <span class="next-action-value">Assigner un responsable facturation</span>
+              <span class="why" title="Sans responsable depuis 48h · règle R3 · SLA dépassé · récurrence détectée">SLA J+2 · sans propriétaire · 3e mois consécutif</span>
+            </div>
+            <div class="item-card-meta">
+              <a href="#">Lyon Bureaux</a><span class="meta-sep">·</span>PRM 5000…7890<span class="meta-sep">·</span>Facture #2026-05-LYB-EDF<span class="meta-sep">·</span>Source <a href="#">Bill Intelligence</a>
+            </div>
+          </div>
+          <div class="item-card-impact">
+            <span class="item-card-impact-label">Impact actuel</span>
+            <span class="item-card-impact-value" title="Écart facture courante · cumul récurrence 90j affiché ci-dessous">3,4 k€</span>
+            <span class="item-card-impact-detail">
+              <span class="qual">À risque</span> · facture mai
+              <span class="cumul">Cumul 90j · <b>10,2 k€</b></span>
+            </span>
+          </div>
+          <div class="item-card-owner">
+            <div class="item-card-owner-avatar unassigned">?</div>
+            <div class="item-card-owner-info">
+              <span class="item-card-owner-name unassigned">À assigner</span>
+              <span class="item-card-owner-role">Resp. facturation</span>
+            </div>
+          </div>
+          <div class="item-card-cta">
+            <button class="btn-item-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Assigner
+            </button>
+            <button class="btn-item-secondary">Investiguer</button>
+            <button class="btn-item-secondary">Créer dossier</button>
+          </div>
+        </div>
+
+        <!-- ITEM 2 : ACTION P0 — TRIAGED Qualifié, blockers, SLA dépassé -->
+        <div class="item-card" data-priority="P0">
+          <div class="item-card-strip"></div>
+          <div class="item-card-main">
+            <div class="item-card-row1">
+              <span class="kind-badge action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                Action
+              </span>
+              <span class="item-priority-tag P0" title="Score 88/100 · règles R2 R6 appliquées · plancher P1 conformité forcé">P0 <span class="score">·&nbsp;88</span></span>
+              <span class="lifecycle-pill triaged">Qualifié</span>
+              <span class="domain-chip conformite">Conformité</span>
+              <span class="sla-pair">
+                <span class="sla-cell sla-promeos red" title="SLA traitement PROMEOS · bloqué depuis 24h">
+                  <span class="sla-label">SLA</span> <span class="sla-value">J+1</span>
+                </span>
+                <span class="sla-cell echeance-metier" title="Échéance réglementaire SMÉ · Décret 2014-1393">
+                  <span class="sla-label">Réglem.</span> <span class="sla-value">11/10/26</span>
+                </span>
+              </span>
+              <span class="flag-chip evidence_missing" title="Preuve attendue · devis prestataire ICPE">📄 Preuve attendue</span>
+            </div>
+            <div class="item-card-title">Audit énergétique <em>SMÉ Toulouse</em> · choisir un prestataire ICPE</div>
+            <div class="item-card-summary">
+              Obligation <b>SMÉ</b> applicable · consommation groupe 3,2 GWh &gt; seuil 2,75 GWh. <b>3 prestataires qualifiés</b> identifiés (APAVE, Bureau Veritas, Socotec).
+            </div>
+            <div class="blockers-row">
+              <span class="blocker-chip">Preuve attendue</span>
+              <span class="blocker-chip">Budget attendu</span>
+            </div>
+            <div class="next-action-row">
+              <span class="next-action-label">Prochaine action</span>
+              <span class="next-action-value">Arbitrer scenario B (Audit + plan pilotage CTA)</span>
+              <span class="why" title="SLA traitement dépassé · blocker budget depuis 24h · COMEX 15/05 imminent · règle R6 plancher P1 forcé">COMEX 15/05 décide CAPEX 68 k€</span>
+            </div>
+            <div class="item-card-meta">
+              <a href="#">Site Toulouse</a><span class="meta-sep">·</span><a href="#">SMÉ — Décret 2014-1393</a><span class="meta-sep">·</span>Source <a href="#">Moteur d'assujettissement</a>
+            </div>
+          </div>
+          <div class="item-card-impact">
+            <span class="item-card-impact-label">Impact</span>
+            <span class="item-card-impact-value" title="Gain estimé scenario B · 12 mois · source modèle V4">49 k€</span>
+            <span class="item-card-impact-detail">
+              <span class="qual">Estimé</span> · annuel
+              <span class="cumul">Pénalité évitée · <b>7,5 k€</b></span>
+            </span>
+          </div>
+          <div class="item-card-owner">
+            <div class="item-card-owner-avatar">JM</div>
+            <div class="item-card-owner-info">
+              <span class="item-card-owner-name">J. Martin</span>
+              <span class="item-card-owner-role">DAF</span>
+            </div>
+          </div>
+          <div class="item-card-cta">
+            <button class="btn-item-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/></svg>
+              Planifier
+            </button>
+            <button class="btn-item-secondary">Ajouter preuve</button>
+            <button class="btn-item-secondary">Détail</button>
+          </div>
+        </div>
+
+        <!-- ITEM 3 : DÉCISION P1 — Stratégie achat post-ARENH -->
+        <div class="item-card" data-priority="P1">
+          <div class="item-card-strip"></div>
+          <div class="item-card-main">
+            <div class="item-card-row1">
+              <span class="kind-badge decision">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="12" r="3"/><path d="M9 6h6a3 3 0 0 1 3 3v3"/><path d="M9 18h6a3 3 0 0 0 3-3v-3"/></svg>
+                Décision
+              </span>
+              <span class="item-priority-tag P1" title="Score 74/100 · échéance contrat domine">P1 <span class="score">·&nbsp;74</span></span>
+              <span class="lifecycle-pill planned">Planifié</span>
+              <span class="domain-chip achat">Achat</span>
+              <span class="sla-pair">
+                <span class="sla-cell sla-promeos amber" title="SLA traitement PROMEOS · 12 jours restants">
+                  <span class="sla-label">SLA</span> <span class="sla-value">J-12</span>
+                </span>
+                <span class="sla-cell echeance-metier" title="Échéance métier · fin du contrat actuel">
+                  <span class="sla-label">Contrat</span> <span class="sla-value">30/06/26</span>
+                </span>
+              </span>
+            </div>
+            <div class="item-card-title">Stratégie d'achat post-<em>ARENH</em> · arbitrer le mix forward Y+1</div>
+            <div class="item-card-summary">
+              Contrat élec Groupe HELIOS échéance 30/06. Exposition spot actuelle <b>100 %</b> sur 8 GWh/an. Mix optimal <b>60% fixe / 25% indexé / 15% spot</b>.
+            </div>
+            <div class="next-action-row">
+              <span class="next-action-label">Prochaine action</span>
+              <span class="next-action-value">Comparer 3 scénarios de mix</span>
+              <span class="why" title="Contrat échoit dans 48 jours · délai consultation fournisseurs 4 semaines">contrat échoit J-48 · consultation à lancer</span>
+            </div>
+            <div class="item-card-meta">
+              <a href="#">Groupe HELIOS</a><span class="meta-sep">·</span>Contrat #C-2024-EDF-CARM<span class="meta-sep">·</span>Source <a href="#">Synthèse stratégique</a>
+            </div>
+          </div>
+          <div class="item-card-impact">
+            <span class="item-card-impact-label">Impact</span>
+            <span class="item-card-impact-value" title="Économie attendue mix optimisé vs spot 100%">18 k€</span>
+            <span class="item-card-impact-detail">
+              <span class="qual">Estimé</span> · 12m
+              <span class="cumul">−6 €/MWh · 8 GWh</span>
+            </span>
+          </div>
+          <div class="item-card-owner">
+            <div class="item-card-owner-avatar">CL</div>
+            <div class="item-card-owner-info">
+              <span class="item-card-owner-name">Claire Lévy</span>
+              <span class="item-card-owner-role">Acheteuse énergie</span>
+            </div>
+          </div>
+          <div class="item-card-cta">
+            <button class="btn-item-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 6v6h6"/><circle cx="12" cy="12" r="9"/></svg>
+              Comparer
+            </button>
+            <button class="btn-item-secondary">Arbitrer</button>
+            <button class="btn-item-secondary">Détail</button>
+          </div>
+        </div>
+
+        <!-- ITEM 4 : ANOMALIE P1 — Dérive Marseille, confiance dégradée -->
+        <div class="item-card" data-priority="P1">
+          <div class="item-card-strip"></div>
+          <div class="item-card-main">
+            <div class="item-card-row1">
+              <span class="kind-badge anomaly">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                Anomalie
+              </span>
+              <span class="item-priority-tag P1" title="Score 71/100 · dérive forte + 3 semaines continues + impact 9k€ + tiers attendu">P1 <span class="score">·&nbsp;71</span></span>
+              <span class="lifecycle-pill in_progress">En cours</span>
+              <span class="domain-chip consommation">Consommation</span>
+              <span class="sla-pair">
+                <span class="sla-cell sla-promeos green" title="SLA traitement PROMEOS · OK">
+                  <span class="sla-label">SLA</span> <span class="sla-value">J-21</span>
+                </span>
+              </span>
+              <span class="flag-chip low_confidence" title="Confiance 0,55 · à qualifier · cf. règle R5 doctrine v0.2">conf 0,55 · à qualifier</span>
+            </div>
+            <div class="item-card-title">Dérive consommation <em>Marseille École</em> · +18% vs DJU corrigé</div>
+            <div class="item-card-summary">
+              Signature énergétique CUSUM sur 8 semaines · écart <b>+62 MWh/an</b> non explicable par les DJU. Hypothèse : <b>défaut régulation CVC</b>.
+            </div>
+            <div class="blockers-row">
+              <span class="blocker-chip">Tiers attendu</span>
+            </div>
+            <div class="next-action-row">
+              <span class="next-action-label">Prochaine action</span>
+              <span class="next-action-value">Confirmer hypothèse CVC avec technicien GTB</span>
+              <span class="why" title="Dérive potentielle forte · 3 semaines consécutives · impact estimé 9 k€ · justifie P1 malgré confiance 0,55">3 semaines consécutives + impact 9 k€ potentiel</span>
+            </div>
+            <div class="item-card-meta">
+              <a href="#">Marseille École</a><span class="meta-sep">·</span>PDL 1234567890<span class="meta-sep">·</span>Source <a href="#">EMS · CUSUM</a>
+            </div>
+          </div>
+          <div class="item-card-impact">
+            <span class="item-card-impact-label">Impact</span>
+            <span class="item-card-impact-value" title="Estimé sur 12 mois si dérive continue">9,5 k€</span>
+            <span class="item-card-impact-detail">
+              <span class="qual">Estimé</span> · 12m projeté
+              <span class="cumul">À ce jour · <b>1,8 k€</b></span>
+            </span>
+          </div>
+          <div class="item-card-owner">
+            <div class="item-card-owner-avatar">SM</div>
+            <div class="item-card-owner-info">
+              <span class="item-card-owner-name">Sophie Marin</span>
+              <span class="item-card-owner-role">Resp. énergie</span>
+            </div>
+          </div>
+          <div class="item-card-cta">
+            <button class="btn-item-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+              Qualifier
+            </button>
+            <button class="btn-item-secondary">Investiguer</button>
+            <button class="btn-item-secondary">Note</button>
+          </div>
+        </div>
+
+        <!-- ITEM 5 : ÉCHÉANCE P2 — OPERAT 2024 -->
+        <div class="item-card" data-priority="P2">
+          <div class="item-card-strip"></div>
+          <div class="item-card-main">
+            <div class="item-card-row1">
+              <span class="kind-badge deadline">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2h12M6 22h12M6 2v6a6 6 0 0 0 12 0V2M6 22v-6a6 6 0 0 1 12 0v6"/></svg>
+                Échéance
+              </span>
+              <span class="item-priority-tag P2" title="Score 58/100 · échéance < 7j conformité = P2 max sécurisé">P2 <span class="score">·&nbsp;58</span></span>
+              <span class="lifecycle-pill planned">Planifié</span>
+              <span class="domain-chip conformite">Conformité</span>
+              <span class="sla-pair">
+                <span class="sla-cell sla-promeos amber" title="SLA traitement PROMEOS · 5 jours">
+                  <span class="sla-label">SLA</span> <span class="sla-value">J-5</span>
+                </span>
+                <span class="sla-cell echeance-metier" title="Échéance ADEME OPERAT 2024">
+                  <span class="sla-label">OPERAT</span> <span class="sla-value">17/05</span>
+                </span>
+              </span>
+              <span class="flag-chip evidence_ok" title="Attestation pré-remplie par PROMEOS · vérification automatique passée">✓ Attestation prête</span>
+            </div>
+            <div class="item-card-title">Déclaration <em>OPERAT</em> 2024 · finaliser Lyon &amp; Paris</div>
+            <div class="item-card-summary">
+              Plateforme ADEME ouverte · 2 sites HELIOS soumis (Lyon 1 200 m², Paris 3 500 m²). Attestation pré-remplie · <b>validation finale requise</b>.
+            </div>
+            <div class="next-action-row">
+              <span class="next-action-label">Prochaine action</span>
+              <span class="next-action-value">Valider et soumettre l'attestation pré-remplie</span>
+              <span class="why" title="Fenêtre ADEME ouverte · attestation prête · 5 jours restants">attestation prête · échéance proche</span>
+            </div>
+            <div class="item-card-meta">
+              <a href="#">Lyon Bureaux</a><span class="meta-sep">·</span><a href="#">Paris Bureaux</a><span class="meta-sep">·</span>Source <a href="#">RegAssessment</a>
+            </div>
+          </div>
+          <div class="item-card-impact">
+            <span class="item-card-impact-label">Évite pénalité</span>
+            <span class="item-card-impact-value">7,5 k€</span>
+            <span class="item-card-impact-detail">
+              <span class="qual">À risque</span> · DT 2030
+              <span class="cumul">Pénalité forfait · 7 500 €</span>
+            </span>
+          </div>
+          <div class="item-card-owner">
+            <div class="item-card-owner-avatar">SM</div>
+            <div class="item-card-owner-info">
+              <span class="item-card-owner-name">Sophie Marin</span>
+              <span class="item-card-owner-role">Resp. énergie</span>
+            </div>
+          </div>
+          <div class="item-card-cta">
+            <button class="btn-item-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/></svg>
+              Préparer
+            </button>
+            <button class="btn-item-secondary">Voir dossier</button>
+            <button class="btn-item-secondary">Aperçu</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ════════ SECTION 2 — JALONS À PRÉPARER (renommé, contenus filtrés) ════════ -->
+      <div class="section-title-row spaced">
+        <span class="section-title">Jalons à préparer</span>
+        <span class="section-count">2</span>
+        <span class="section-sub">échéances &amp; preuves attendues · 7 prochains jours</span>
+        <a class="section-link" href="#">Calendrier complet ↗</a>
+      </div>
+
+      <div class="items-grid">
+
+        <!-- ITEM 6 : OPPORTUNITÉ APER reclassée P2 -->
+        <div class="item-card" data-priority="P2">
+          <div class="item-card-strip"></div>
+          <div class="item-card-main">
+            <div class="item-card-row1">
+              <span class="kind-badge recommendation">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Reco
+              </span>
+              <span class="item-priority-tag P2" title="Score 58/100 · opportunité lointaine · plafonnée P2 selon règle R2 doctrine">P2 <span class="score">·&nbsp;58</span></span>
+              <span class="lifecycle-pill triaged">Qualifié</span>
+              <span class="domain-chip patrimoine">Patrimoine</span>
+              <span class="sla-pair">
+                <span class="sla-cell sla-promeos green" title="SLA traitement · large fenêtre">
+                  <span class="sla-label">SLA</span> <span class="sla-value">J-60</span>
+                </span>
+                <span class="sla-cell echeance-metier" title="Obligation APER 2028 · échéance réglementaire lointaine">
+                  <span class="sla-label">APER</span> <span class="sla-value">30/06/28</span>
+                </span>
+              </span>
+              <span class="flag-chip evidence_ok" title="Étude technique APAVE jointe à la création">✓ Étude jointe</span>
+            </div>
+            <div class="item-card-title">Opportunité <em>APER</em> · qualifier PV toiture Paris Bureaux 620 m²</div>
+            <div class="item-card-summary">
+              Toiture &gt; 500 m² détectée · <b>obligation APER 2028</b>. Potentiel PV autoconso <b>14 k€/an</b>, payback &lt; 8 ans.
+            </div>
+            <div class="next-action-row">
+              <span class="next-action-label">Prochaine action</span>
+              <span class="next-action-value">Transformer en action — créer dossier travaux 2026</span>
+              <span class="why" title="Échéance APER lointaine (2028) · plafonnée P2 selon règle R2 · gain 14 k€/an récurrent">opportunité &gt; 90j · plafond P2</span>
+            </div>
+            <div class="item-card-meta">
+              <a href="#">Paris Bureaux</a><span class="meta-sep">·</span>Bât. principal<span class="meta-sep">·</span>Source <a href="#">Moteur d'assujettissement</a>
+            </div>
+          </div>
+          <div class="item-card-impact">
+            <span class="item-card-impact-label">Impact</span>
+            <span class="item-card-impact-value">14 k€</span>
+            <span class="item-card-impact-detail">
+              <span class="qual">Estimé</span> · annuel récurrent
+              <span class="cumul">Payback · <b>&lt; 8 ans</b></span>
+            </span>
+          </div>
+          <div class="item-card-owner">
+            <div class="item-card-owner-avatar">PR</div>
+            <div class="item-card-owner-info">
+              <span class="item-card-owner-name">P. Robert</span>
+              <span class="item-card-owner-role">Directeur immo.</span>
+            </div>
+          </div>
+          <div class="item-card-cta">
+            <button class="btn-item-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Transformer en action
+            </button>
+            <button class="btn-item-secondary">Simuler</button>
+            <button class="btn-item-secondary">Écarter</button>
+          </div>
+        </div>
+
+        <!-- ITEM 7 : DEMANDE PREUVE P2 — RIB obligé -->
+        <div class="item-card" data-priority="P2">
+          <div class="item-card-strip"></div>
+          <div class="item-card-main">
+            <div class="item-card-row1">
+              <span class="kind-badge evidence_request">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                Preuve
+              </span>
+              <span class="item-priority-tag P2" title="Score 52/100">P2 <span class="score">·&nbsp;52</span></span>
+              <span class="lifecycle-pill new">Nouveau</span>
+              <span class="domain-chip conformite">Conformité</span>
+              <span class="sla-pair">
+                <span class="sla-cell sla-promeos green" title="SLA traitement · 6 jours dans la fenêtre 7j">
+                  <span class="sla-label">SLA</span> <span class="sla-value">J-6</span>
+                </span>
+                <span class="sla-cell echeance-metier" title="Délai opérationnel pour valorisation avant clôture trimestre obligé">
+                  <span class="sla-label">Métier</span> <span class="sla-value">18/05</span>
+                </span>
+              </span>
+            </div>
+            <div class="item-card-title">Uploader <em>RIB obligé CEE</em> · valorisation BAT-TH-116</div>
+            <div class="item-card-summary">
+              Détection auto baseload nocturne Paris · <b>65 MWh/an</b> · cumulable avec opération <b>BAT-TH-116</b> · valeur estimée <b>8,5 k€</b>.
+            </div>
+            <div class="next-action-row">
+              <span class="next-action-label">Prochaine action</span>
+              <span class="next-action-value">Assigner un acheteur · solliciter RIB obligé partenaire</span>
+              <span class="why" title="Trimestre clôt 30/06 chez l'obligé · 6 semaines de marge confortable mais activable maintenant">trimestre obligé clôt 30/06</span>
+            </div>
+            <div class="item-card-meta">
+              <a href="#">Paris Bureaux</a><span class="meta-sep">·</span>Source <a href="#">Bill Intelligence</a>
+            </div>
+          </div>
+          <div class="item-card-impact">
+            <span class="item-card-impact-label">Impact</span>
+            <span class="item-card-impact-value">8,5 k€</span>
+            <span class="item-card-impact-detail">
+              <span class="qual secured">Sécurisable</span> · CEE
+              <span class="cumul">65 MWh × 130 €/MWh</span>
+            </span>
+          </div>
+          <div class="item-card-owner">
+            <div class="item-card-owner-avatar unassigned">?</div>
+            <div class="item-card-owner-info">
+              <span class="item-card-owner-name unassigned">À assigner</span>
+              <span class="item-card-owner-role">Acheteur</span>
+            </div>
+          </div>
+          <div class="item-card-cta">
+            <button class="btn-item-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Assigner
+            </button>
+            <button class="btn-item-secondary">Ajouter preuve</button>
+            <button class="btn-item-secondary">Écarter</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ════════ SECTION 3 — À SURVEILLER (item CEE J-46 sorti des "cette semaine") ════════ -->
+      <div class="section-title-row spaced">
+        <span class="section-title">À surveiller</span>
+        <span class="section-count">1</span>
+        <span class="section-sub">items hors fenêtre 7 jours mais nécessitant un suivi</span>
+        <a class="section-link" href="#">Référentiel filtré ↗</a>
+      </div>
+
+      <div class="items-grid">
+        <!-- (placeholder pour items J-30+ — exemple : valorisation CEE BAT-TH-116 plus tardive, etc.) -->
+        <div class="item-card" data-priority="P3">
+          <div class="item-card-strip"></div>
+          <div class="item-card-main">
+            <div class="item-card-row1">
+              <span class="kind-badge signal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h.01M19 12h.01M12 5v.01M12 19v.01M7.05 7.05l.01.01M16.95 7.05l.01.01M7.05 16.95l.01.01M16.95 16.95l.01.01"/><circle cx="12" cy="12" r="3"/></svg>
+                Signal
+              </span>
+              <span class="item-priority-tag P3">P3 <span class="score">·&nbsp;38</span></span>
+              <span class="lifecycle-pill new">Nouveau</span>
+              <span class="domain-chip data">Data</span>
+              <span class="sla-pair">
+                <span class="sla-cell sla-promeos green">
+                  <span class="sla-label">SLA</span> <span class="sla-value">—</span>
+                </span>
+              </span>
+              <span class="flag-chip low_confidence" title="Confiance 0,38 · marqué à qualifier · pas de P3 forcé selon R5 corrigée">conf 0,38 · à qualifier</span>
+            </div>
+            <div class="item-card-title">Détection auto · <em>pic baseload nocturne</em> Nice Hôtel</div>
+            <div class="item-card-summary">
+              Algorithme EMS · 3 nuits consécutives 02:00–04:00 · hypothèse <b>équipement non-stop</b> à vérifier sur site.
+            </div>
+            <div class="next-action-row">
+              <span class="next-action-label">Prochaine action</span>
+              <span class="next-action-value">Qualifier · vérifier sur site Nice Hôtel</span>
+              <span class="why" title="Confiance faible 0,38 · pas de P3 forcé (R5) · qualification humaine requise avant action">confiance dégradée · à qualifier</span>
+            </div>
+            <div class="item-card-meta">
+              <a href="#">Nice Hôtel</a><span class="meta-sep">·</span>PDL 9876543210<span class="meta-sep">·</span>Source <a href="#">EMS auto-detect</a>
+            </div>
+          </div>
+          <div class="item-card-impact">
+            <span class="item-card-impact-label">Impact</span>
+            <span class="item-card-impact-value" style="color: var(--sol-ink-400)">~ 2 k€</span>
+            <span class="item-card-impact-detail">
+              <span class="qual">Estimé</span> · sous réserve
+              <span class="cumul">À confirmer · qualification</span>
+            </span>
+          </div>
+          <div class="item-card-owner">
+            <div class="item-card-owner-avatar unassigned">?</div>
+            <div class="item-card-owner-info">
+              <span class="item-card-owner-name unassigned">Non assigné</span>
+              <span class="item-card-owner-role">EMS</span>
+            </div>
+          </div>
+          <div class="item-card-cta">
+            <button class="btn-item-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+              Qualifier
+            </button>
+            <button class="btn-item-secondary">Écarter</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ CLÔTURÉ RÉCEMMENT — mini-section compact (correction P0) ════════ -->
+      <div class="closed-recent-section">
+        <div class="closed-recent-head">
+          <span class="closed-recent-title">Clôturé récemment</span>
+          <span class="closed-recent-sub">7 derniers jours · pour traçabilité</span>
+        </div>
+        <div class="closed-recent-list">
+          <div class="closed-line">
+            <span class="check">✓</span>
+            <span class="item-name">Audit isolation <em>Lyon Bureaux</em> · rapport APAVE intégré</span>
+            <span class="closed-meta">09/05 · <b>12 k€ réalisés</b> · preuve vérifiée · OPERAT 2025 alimenté</span>
+            <span class="closed-cta">
+              <a href="#">Voir preuve</a>
+              <span style="color:var(--sol-ink-300)">·</span>
+              <a href="#">Historique</a>
+            </span>
+          </div>
+          <div class="closed-line">
+            <span class="check">✓</span>
+            <span class="item-name">Détection résolue · <em>pic réactif Toulouse</em></span>
+            <span class="closed-meta">07/05 · <b>1,2 k€ évités</b> · cause CVC identifiée · plan rectif. validé</span>
+            <span class="closed-cta">
+              <a href="#">Voir preuve</a>
+              <span style="color:var(--sol-ink-300)">·</span>
+              <a href="#">Historique</a>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLOPHON mode standard (codes techniques masqués) -->
+      <div class="colophon">
+        <span>Données mises à jour le <b>12/05 · 07:18</b> · <b>1 247 événements tracés</b> sur 30 jours</span>
+        <span class="audit-toggle">Mode audit</span>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

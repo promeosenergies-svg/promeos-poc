@@ -6,6 +6,21 @@ Ce fichier est chargé automatiquement à chaque session Claude Code.
 
 Lis `SKILL.md` à la racine AVANT toute action sur ce repo. Toutes les règles non-négociables y sont encodées. Skills détaillés dans `.claude/skills/`.
 
+## Positionnement cardinal — Vision Consolidée v1.3 (08/05/2026 nuit tardive)
+
+PROMEOS = **système de contrôle énergétique B2B des patrimoines multi-sites** / *"tour de contrôle énergétique du client B2B"*. 5 verbes cardinaux : **centraliser, fiabiliser, comparer, auditer, piloter**. Wedge : **facture + conformité + consommation**. **Pricing 3 tiers** : Control Lite 6,9 k€/an (1-10 sites, 1 module) / Control 19,9 k€/an (5-15 sites, full socle) / Control Plus 19,9 k€ + 850 €/site/an (16+ sites). 4 extensions modulaires (Purchase / Compliance+ avec eIDAS / ACC PMO client / Flex Advisory M&V only). **3 verticales prioritaires Y1-Y2** : tertiaire multi-sites + bailleurs + retail. Pas un hub Zapier, pas un fournisseur, pas un courtier, pas un agrégateur, pas une PMO ACC, pas un EMS vertical. Promesse finale : *"Comprendre. Décider. Agir. Prouver."* Doctrine complète : `project_promeos_vision_consolidee_v1_3_2026_05_08.md`. Tout choix produit/archi/GTM/pricing doit s'y conformer.
+
+## Centre d'Action V4 — refonte Mois 1-6 (lancée 13/05/2026)
+
+- **Doctrine source** : [`docs/doctrine/doctrine_v4_classement_priorisation.md`](docs/doctrine/doctrine_v4_classement_priorisation.md) (v0.2 — référence figée 6 mois)
+- **North star UX** : [`docs/maquettes/centre_action_v4/`](docs/maquettes/centre_action_v4/) (M1-M5 figées — voir README index)
+- **Arbitrages actés** : Q1-A (ActionCenterItem polymorphique) · Q2-α (table rase + backup obligatoire) · Q3-C (ADR-022 + extensions V4) · Q4-A (regulatory_applicability_service SoT) · Q5-B (job pull idempotent compliance) · Q6-A (Mois 1 docs only) · Q7-A (rendu strict par kind) · Q8-C (score persisté + invalidation event-driven) · Q9-B (duplicate_groups vs recurrence_groups séparés)
+- **2 axes orthogonaux** : `kind` (7 valeurs intrinsèques) ≠ `priority` (calcul dérivé P0-P3 + 6 règles modulation R1-R6)
+- **Mois 1** : docs only (L1 → L10), zéro code. STOP GATE Phase 0 → validation Amine → Phase 1 L1 décisionnel
+- **Mois 2** : backend cible via ADR-025 → ADR-029 (architecture / migration / sécurité / lifecycle / evidence+audit trail)
+- **Backup DB + export JSON/CSV des tables legacy `Action`/`Anomaly` OBLIGATOIRE** avant suppression (Q2-α non négociable)
+- Audit legacy de référence : [`docs/audits/AUDIT_CENTRE_ACTION_2026_05_13.md`](docs/audits/AUDIT_CENTRE_ACTION_2026_05_13.md)
+
 ## Workframe & boundaries
 
 Lire et appliquer `docs/dev/workframe-contract.md`. Matériel personnel jamais dans le repo — il vit dans `../workspace/personal/<person>/` hors boundary git. Pas de `docs/drafts/` ni `docs/notes/` — utiliser Draft PRs GitHub.
