@@ -6,7 +6,7 @@
 > **Branch** : claude/refonte-sol2
 > **Risk Level** : **P0 (security)**
 > **Related ADRs** : ADR-022 (priorisation héritée) · ADR-025 (architecture cible) · ADR-026 (migration data) · ADR-028 (lifecycle states) · ADR-029 (evidence + audit trail)
-> **Doctrine source** : `docs/doctrine/doctrine_v4_classement_priorisation.md` v0.2
+> **Doctrine source** : `docs/doctrine/doctrine_v4_classement_priorisation.md` **v0.3** (avenant 2026-05-14 actée commit L5 · cf. doctrine §11 historique)
 > **Brief source** : `docs/dev/BRIEF_ADR-027_securite_org_scoping.md` (v0.1 Proposed)
 > **Audit cohérence** : `docs/dev/L4_phase0_audit_coherence.md` (39/39 OK · 0 anomalie)
 
@@ -1085,7 +1085,7 @@ async def close_item(...): ...
 - **ADR-022 (priorisation héritée)** : composantes priorité préservées
 - **ADR-025 (architecture V4 · Accepted)** : §9 hybride middleware + SG + décorateur (squelette enrichi par cet ADR)
 - **ADR-026 (migration data · Accepted)** : invariant I9 backup hors Git → IS10 source-guard CI (renforcement)
-- **ADR-028 Lifecycle states** : transitions sensibles (close, reopen, correct-kind) — IS5 admin token freshness s'applique
+- **ADR-028 Lifecycle states** — **Accepted** (2026-05-14) — voir [`L5_ADR-028_lifecycle_states.md`](L5_ADR-028_lifecycle_states.md) — manuel comportement item · 11 invariants IL1-IL11 · 7 arbitrages Q33-Q39 · IL3 réouverture admin réutilise IS5 (admin + fresh token <5min) + ajoute justification obligatoire · IL1 transitions invalides → HTTP 409 cohérent format payload §7 · 56 tests planifiés · **avenant doctrinal v0.2 → v0.3 inclus dans commit L5**
 - **ADR-029 Evidence + audit trail** : rétention logs sécurité 90j vs métier 5 ans (deux tables distinctes)
 
 ---
@@ -1110,7 +1110,7 @@ async def close_item(...): ...
 
 - [x] Cohérence ADR-025 (architecture cible) — schéma org_scoping + middleware + décorateur (Phase 0 §A 5/5)
 - [x] Cohérence ADR-026 (I9 backup hors Git → IS10) — patterns identiques (Phase 0 §B 3/3)
-- [x] Cohérence doctrine v0.2 (mode standard / audit, libellés FR) — séparation backend logs / UI mode (Phase 0 §C 4/4)
+- [x] Cohérence doctrine v0.3 (mode standard / audit, libellés FR) — séparation backend logs / UI mode (Phase 0 §C 4/4 · doctrine v0.2 au moment audit, bumped v0.3 commit L5)
 - [x] Cohérence L1 (fuites `/api/action-center/*` P0 mitigées) — 12 endpoints V4 ré-implémentés sécurisés (Phase 0 §D 4/4)
 - [x] Cohérence maquettes M1-M5 — séparation security_audit_log (admin) vs action_event_log (M5 journal métier) (Phase 0 §E 4/4)
 
@@ -1294,7 +1294,7 @@ next_adr: ADR-028 Lifecycle states
 
 - [x] Cohérence ADR-025 — 5/5 vérifications (Phase 0 §A)
 - [x] Cohérence ADR-026 — 3/3 vérifications (Phase 0 §B)
-- [x] Cohérence doctrine v0.2 — 4/4 vérifications (Phase 0 §C)
+- [x] Cohérence doctrine v0.3 — 4/4 vérifications (Phase 0 §C · doctrine v0.2 au moment audit, bumped v0.3 commit L5)
 - [x] Cohérence L1 — 4/4 vérifications (Phase 0 §D)
 - [x] Cohérence maquettes M1-M5 — 4/4 vérifications (Phase 0 §E)
 

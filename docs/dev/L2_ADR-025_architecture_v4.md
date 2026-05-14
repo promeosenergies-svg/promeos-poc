@@ -5,7 +5,7 @@
 > **Deciders** : Amine + Claude (sessions Claude.ai 2026-05-13/14)
 > **Branch** : claude/refonte-sol2
 > **Related ADRs** : ADR-022 (priorisation héritée) · ADR-026 (Migration data) · ADR-027 (Sécurité org-scoping) · ADR-028 (Lifecycle states) · ADR-029 (Evidence + audit trail)
-> **Doctrine source** : `docs/doctrine/doctrine_v4_classement_priorisation.md` v0.2
+> **Doctrine source** : `docs/doctrine/doctrine_v4_classement_priorisation.md` **v0.3** (avenant 2026-05-14 actée commit L5 · cf. doctrine §11 historique)
 > **Brief source** : `docs/dev/BRIEF_ADR-025_architecture_v4.md` (v0.1 Proposed)
 > **Audit cohérence** : `docs/dev/L2_phase0_audit_coherence.md` (32/32 OK · 3 anomalies mineures intégrées ci-dessous)
 > **L1 audit ref** : `docs/dev/L1_audit_centre_action_v4_decisional.md` (commit `ee749a12`)
@@ -16,7 +16,7 @@
 
 ### 1.1 Pourquoi cette décision MAINTENANT
 
-PROMEOS V4 refonte le Centre d'Action sur 6 mois (Mois 1-6 lancés 2026-05-13). La doctrine v0.2 fige le **quoi** : 7 kinds (anomaly, action, decision, signal, evidence_request, deadline, recommendation) · 2 axes orthogonaux (`kind` immuable Q7-A vs `priority_score` dérivé Q8-C) · 6 règles modulation R1-R6 · 5 lifecycle states · 6 closure reasons · groupes Q9-B séparés (duplicate vs recurrence).
+PROMEOS V4 refonte le Centre d'Action sur 6 mois (Mois 1-6 lancés 2026-05-13). La doctrine **v0.3** (initialement v0.2 acceptée 2026-05-13 · avenant v0.3 actée 2026-05-14 commit L5 sur closure_reasons Q37-A+) fige le **quoi** : 7 kinds (anomaly, action, decision, signal, evidence_request, deadline, recommendation) · 2 axes orthogonaux (`kind` immuable Q7-A vs `priority_score` dérivé Q8-C) · 6 règles modulation R1-R6 · 5 lifecycle states · 6 closure reasons · groupes Q9-B séparés (duplicate vs recurrence).
 
 Le L1 décisionnel (commit `ee749a12`) a classé 86 éléments legacy avec verdicts binaires (GARDE 14 · SUPPRIME 28 · MIGRE 31 · REMPLACE 9 · RÉGÉNÈRE 4) et identifié 1 667 LoC mortes confirmées + 173 rows à migrer (35 `action_items` + 52 `bill_anomaly` + 86 `anomaly` KB) + dette structurelle massive (2 modèles parallèles `ActionItem`/`ActionPlanItem`, 6 vocabulaires statuts concurrents, 8+ enums sévérité, fuite org-scoping `/api/action-center/*`, bug Briefing 500).
 
@@ -37,7 +37,7 @@ Comment unifier 9 modèles Action/Anomaly + 18 tables DB legacy + 38 enums + 4 r
 | **RGPD-friendly audit trail** | Critique | Pilots HELIOS/MERIDIAN B2B exigent traçabilité défendable CNIL |
 | **Sécurité org-scoping native** | Critique (P0 sécu) | Audit L1 §6 confirme fuite massive `/api/action-center/*` legacy · bloque pilots multi-tenant |
 | **Testabilité bout en bout** | Élevé | Refonte 6 mois = ~100 tests V4 nécessaires sans couverture trouée |
-| **Alignement doctrine v0.2** | Non négociable | Doctrine = source unique 6 mois (Q1-A à Q9-B doctrinaux) |
+| **Alignement doctrine v0.3** | Non négociable | Doctrine = source unique 6 mois (Q1-A à Q9-B doctrinaux · avenant v0.3 closure_reasons Q37-A+) |
 | **Alignement L1 86 verdicts** | Non négociable | Aucune dérogation aux verdicts L1 sans audit Phase 2 |
 | **Préservation sprint Phase 3.5** | Non négociable | `regulatory_applicability_service` en cours de build · interface stub Mois 2-3 |
 | **Backup Q2-α non négociable** | Non négociable | 173 rows à migrer + 1 667 LoC à supprimer = aucune destruction sans backup |
@@ -622,7 +622,7 @@ Response 200:
     "a_surveiller": { "count": 1, "items": [...] },
     "clos_recemment": { "count": 2, "items": [...] }
   },
-  "doctrine_version": "v0.2",
+  "doctrine_version": "v0.3",
   "calculated_at": "2026-05-14T07:18:00Z"
 }
 ```
@@ -1241,7 +1241,7 @@ next_adr: ADR-026 Migration data legacy → V4
 
 ### 19.2 Cohérence cross-documents (Phase 0 confirmé)
 
-- [x] Cohérence doctrine v0.2 — 9/9 vérifications (Phase 0 §A)
+- [x] Cohérence doctrine v0.3 — 9/9 vérifications (Phase 0 §A · doctrine v0.2 au moment de l'audit, bumped v0.3 dans commit L5 cohérent)
 - [x] Cohérence L1 86 verdicts — 7/7 vérifications (Phase 0 §B)
 - [x] Cohérence maquettes M1-M5 — 5/5 vérifications (Phase 0 §C)
 - [x] Cohérence sprint Phase 3.5 préservée — 4/4 vérifications (Phase 0 §D)

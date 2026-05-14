@@ -5,7 +5,7 @@
 > **Deciders** : Amine + Claude (sessions Claude.ai 2026-05-13/14)
 > **Branch** : claude/refonte-sol2
 > **Related ADRs** : ADR-022 (priorisation héritée) · ADR-025 (architecture cible) · ADR-027 (sécurité org-scoping) · ADR-028 (lifecycle states) · ADR-029 (evidence + audit trail)
-> **Doctrine source** : `docs/doctrine/doctrine_v4_classement_priorisation.md` v0.2
+> **Doctrine source** : `docs/doctrine/doctrine_v4_classement_priorisation.md` **v0.3** (avenant 2026-05-14 actée commit L5 · cf. doctrine §11 historique)
 > **Brief source** : `docs/dev/BRIEF_ADR-026_migration_data.md` (v0.1 Proposed)
 > **Audit cohérence** : `docs/dev/L3_phase0_audit_coherence.md` (32/32 OK · 2 anomalies mineures intégrées)
 
@@ -890,6 +890,7 @@ echo "✓ Dry-run terminé"
 - **ADR-022 (priorisation héritée)** : composantes du score préservées dans seeds canonicals
 - **ADR-025 (architecture V4)** : 8 tables cibles (1 cardinale + **7 tables filles dédiées**) + 20 indexes + scenarios HELIOS/MERIDIAN
 - **ADR-027 (sécurité org-scoping)** — **Accepted** (2026-05-14) — voir [`L4_ADR-027_securite_org_scoping.md`](L4_ADR-027_securite_org_scoping.md) — manuel défensif V4 · 11 invariants IS1-IS11 · IS10 backup non commitable = renforcement CI de I9 ADR-026 · 8 menaces M1-M8 · IDOR matrix 288 cellules · 50 source-guards CI · preuves d'absence d'IDOR post-V4 via smoke tests J+0 + audit pen-test J-7
+- **ADR-028 (lifecycle states)** — **Accepted** (2026-05-14) — voir [`L5_ADR-028_lifecycle_states.md`](L5_ADR-028_lifecycle_states.md) — manuel comportement item · 11 invariants IL1-IL11 · 7 arbitrages Q33-Q39 · state machine 5 états × 10 transitions · 6 closure_reasons révisés (`merged_duplicate` + `resolved_via_recurrence` Q9-B) · cohérent migration legacy → V4 §10 ce document · **avenant doctrinal v0.2 → v0.3 inclus dans commit L5**
 - **ADR-028 (lifecycle states)** : 5 états + 6 closure reasons préservés dans seeds
 - **ADR-029 (evidence + audit trail)** : politique rétention RGPD par event_type complétée
 
@@ -913,7 +914,7 @@ echo "✓ Dry-run terminé"
 
 - [x] Cohérence avec ADR-025 (architecture cible) — schéma V4 + 7 tables filles + scenarios HELIOS/MERIDIAN référencés
 - [x] Cohérence avec L1 (28 SUPPRIME confirmé Mois 5 + 173 rows cardinaux MIGRE)
-- [x] Cohérence avec doctrine v0.2 (Q2-α table rase + Q6-A docs only + Q9-B duplicate vs recurrence)
+- [x] Cohérence avec doctrine v0.3 (Q2-α table rase + Q6-A docs only + Q9-B duplicate vs recurrence · doctrine v0.2 au moment de l'audit, bumped v0.3 dans commit L5 sans impact sur ces 3 arbitrages)
 - [x] Cohérence avec maquettes M1-M5 (smoke tests J+0 couvrent les 5 pages)
 
 ### 15.3 Conformité Q6-A
@@ -1033,7 +1034,7 @@ next_adr: ADR-027 Sécurité org-scoping
 ### 17.3 Cohérence cross-documents (Phase 0 confirmé · 5/5)
 
 - [x] Cohérence ADR-025 — 6/6 vérifications (Phase 0 §A · 7 tables filles aligné)
-- [x] Cohérence doctrine v0.2 — 4/4 vérifications (Phase 0 §B)
+- [x] Cohérence doctrine v0.3 — 4/4 vérifications (Phase 0 §B · doctrine v0.2 au moment audit, bumped v0.3 commit L5)
 - [x] Cohérence L1 — 3/3 vérifications (Phase 0 §C · 173 rows + 1 667 LoC explicités)
 - [x] Cohérence maquettes M1-M5 — 2/2 vérifications (Phase 0 §D · 5 smoke tests)
 - [x] Scripts documentés — 6/6 vérifications (Phase 0 §F)
@@ -1057,7 +1058,7 @@ next_adr: ADR-027 Sécurité org-scoping
 ### 17.6 Conformité Phase 2 cross-références (5/5 requis)
 
 - [x] CLAUDE.md mis à jour avec ADR-026 Accepted
-- [x] doctrine v0.2 §10 mis à jour avec ADR-026 Accepted
+- [x] doctrine v0.3 §10 mis à jour avec ADR-026 Accepted (bump v0.3 dans commit L5)
 - [x] L2_ADR-025 §15 mis à jour avec renvoi ADR-026 Accepted
 - [x] `.gitignore` patch documenté §6.1 (sans application Mois 1, conforme Q6-A)
 - [x] Aucun TODO/TBD restant dans l'ADR (toutes décisions explicites)

@@ -1,8 +1,8 @@
 # DOCTRINE V4 — Classement & Priorisation Centre d'Action
 
-**Version** : v0.2
-**Date** : 2026-05-13
-**Statut** : `Proposed` → à acter avant L1 audit technique + maquettes v0.2
+**Version** : **v0.3** (avenant 2026-05-14 · Q37-A+ closure_reasons révisés · cf. §11 Historique)
+**Date initiale** : 2026-05-13 · **Avenant v0.3** : 2026-05-14
+**Statut** : `Accepted` v0.3 — premier avenant doctrinal versionné du projet PROMEOS V4
 **Auteurs** : Amine + Claude (session refonte V4)
 **Référence** : Centre d'Action V4 PROMEOS · branche `claude/refonte-sol2`
 **ADR à produire ensuite** : ADR-025 (architecture) · ADR-026 (migration) · ADR-027 (sécurité) · ADR-028 (lifecycle) · ADR-029 (evidence + audit trail)
@@ -446,16 +446,16 @@ Toutes les valeurs visibles en mode standard doivent être **traduites en franç
 | `in_progress` | En cours |
 | `closed` | Clôturé |
 
-**Closure reasons** :
+**Closure reasons** (révisés v0.3 · Q37-A+ · cf. ADR-028 §4) :
 
-| Code | Label FR |
-|---|---|
-| `resolved` | Résolu |
-| `dismissed` | Écarté |
-| `not_applicable` | Non applicable |
-| `duplicate` | Doublon |
-| `merged` | Fusionné |
-| `expired` | Expiré |
+| Code | Label FR | Note |
+|---|---|---|
+| `resolved` | Résolu | Problème résolu + preuve vérifiée |
+| `dismissed` | Écarté | Faux positif, hors-scope |
+| `not_applicable` | Non applicable | Réglementation non-applicable (Q4-A) |
+| `merged_duplicate` | Fusionné (doublon) | **v0.3 unifié** : `duplicate` + `merged` (Q9-B doublon strict) |
+| `resolved_via_recurrence` | Résolu via récurrence | **v0.3 ajouté Q37-A+** : auto-close cascade `recurrence_group.resolved` (≠ doublon, Q9-B) |
+| `expired` | Expiré | SLA dépassé · **IL4 interdit P0/P1 conformite/facturation** (cf. ADR-028) |
 
 **Blockers** :
 
@@ -708,17 +708,35 @@ Cette doctrine est la **source unique** des choix V4. Les ADR la **référencent
 | **ADR-025** Architecture | **Accepted** (2026-05-14) — voir [`docs/dev/L2_ADR-025_architecture_v4.md`](../dev/L2_ADR-025_architecture_v4.md) — schéma DB 8 tables + 20 indexes + 100 tests | §2 (axes orthogonaux), §3 (kinds), §4 (score model), §8 (vues) |
 | **ADR-026** Migration data | **Accepted** (2026-05-14) — voir [`docs/dev/L3_ADR-026_migration_data.md`](../dev/L3_ADR-026_migration_data.md) — manuel de bascule sécurisé · 9 invariants I1-I9 · 7 arbitrages Q19-Q25 · cutover Mois 4 + STOP GATE J+14 | §3.3 (immutabilité kind), §7.1 (mapping FR) |
 | **ADR-027** Sécurité org-scoping | **Accepted** (2026-05-14) — voir [`docs/dev/L4_ADR-027_securite_org_scoping.md`](../dev/L4_ADR-027_securite_org_scoping.md) — manuel défensif · 11 invariants IS1-IS11 · 7 arbitrages Q26-Q32 · 8 menaces M1-M8 · IDOR matrix 288 cellules · 50 SG CI custom | §3.3 (endpoint admin correct-kind) |
-| **ADR-028** Lifecycle states | À produire L5 | §7.1 (labels FR), §8 (doctrine par vue) |
+| **ADR-028** Lifecycle states | **Accepted** (2026-05-14) — voir [`docs/dev/L5_ADR-028_lifecycle_states.md`](../dev/L5_ADR-028_lifecycle_states.md) — manuel comportement item · 11 invariants IL1-IL11 · 7 arbitrages Q33-Q39 · state machine 5 états × 10 transitions · 6 closure_reasons révisés (avenant v0.3 inclus ce commit) · 56 tests planifiés | §7.1 (labels FR · closure_reasons révisés v0.3), §8 (doctrine par vue) |
 | **ADR-029** Evidence + audit trail | À produire L6 | §3.3 (`kind_corrected`), §4.3 (events), §7.1 (event types FR) |
 
 ---
 
-## 11. Métadonnées doctrine
+## 11. Historique des versions doctrinales
+
+| Version | Date | Type | Changement | Cardinal | Référence |
+|---|---|---|---|---|---|
+| **v0.1** | 2026-05-12 | Initiale | Cadrage initial doctrine V4 (5 lifecycle states, 6 closure_reasons, 7 kinds, 6 règles modulation R1-R6) | Amine + Claude | (avant commit doctrine) |
+| **v0.2** | 2026-05-13 | Acceptation | Doctrine V4 actée avec 9 arbitrages doctrinaux Q1-Q9 + corrections post stress-tests (R4 récurrence corrigée, R5 confiance faible corrigée, drawer 3 actions, libellés FR mode standard) | Amine | commit `883ac4ae` |
+| **v0.3** | 2026-05-14 | **Avenant** | **Évolution Q37-A+ closure_reasons** (cardinal Amine 2026-05-14 · Option B sur anomalie mineure D4 audit Phase 0 L5) :<br>• Unification `duplicate` + `merged` → **`merged_duplicate`** (un item fusionné est nécessairement un doublon · Q9-B)<br>• Ajout **`resolved_via_recurrence`** distinct pour respecter Q9-B (récurrence ≠ doublon)<br>• Note IL4 sur `expired` (interdit P0/P1 conformité/facturation) | Amine | commit L5 (ce commit) · Ref ADR-028 §4 |
+
+**Politique d'évolution** :
+- Toute évolution doctrinale = **avenant versionné** (jamais de modification silencieuse)
+- Bump version dans header + entrée datée dans cette table
+- Référence ADR aval qui acte l'évolution
+- Mise à jour synchronisée des ADR aval qui réfèrent à la doctrine (CLAUDE.md + tous les ADR Accepted)
+- Premier avenant : v0.2 → v0.3 (2026-05-14 · Option B Q37-A+)
+
+---
+
+## 12. Métadonnées doctrine
 
 ```yaml
-doctrine_version: "v0.2"
-date: "2026-05-13"
-status: "Proposed"
+doctrine_version: "v0.3"
+date_initial: "2026-05-13"
+date_amendment_v03: "2026-05-14"
+status: "Accepted v0.3"
 authors:
   - Amine (PROMEOS founder)
   - Claude (architecture co-pilot)
