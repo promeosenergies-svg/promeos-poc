@@ -1121,7 +1121,7 @@ Les seeds V4 sont **vides** Mois 2-3 ; elles seront **régénérées** à partir
 ADR-025 **référence** mais ne détaille pas :
 
 - **ADR-026 Migration data** — **Accepted** (2026-05-14) — voir [`docs/dev/L3_ADR-026_migration_data.md`](L3_ADR-026_migration_data.md) — manuel de bascule sécurisé · 9 invariants I1-I9 (dont I9 cardinal backup hors Git · receipt sanitizé) · 7 arbitrages Q19-Q25 · 6 scripts (backup triple artefact + export JSON + manifest + regen seeds Python idempotent + dry-run + restore) · cardinaux 173 rows data réelle (action_items 35 + bill_anomaly 52 + anomaly KB 86) · cutover Mois 4 + STOP GATE J+14 manuel
-- **ADR-027 Sécurité org-scoping** : implémentation détaillée middleware (JWT extraction, payload) · décorateur `@org_scoped` complet avec roles · 50 source-guards détaillés · IDOR matrix exhaustive · audit penetration testing Mois 4
+- **ADR-027 Sécurité org-scoping** — **Accepted** (2026-05-14) — voir [`docs/dev/L4_ADR-027_securite_org_scoping.md`](L4_ADR-027_securite_org_scoping.md) — manuel défensif Centre d'Action V4 · 11 invariants IS1-IS11 (dont IS11 cardinal pattern repository) · 7 arbitrages Q26-Q32 · 8 menaces M1-M8 cartographiées · IDOR matrix 288 cellules · 50 source-guards CI custom (6 catégories) · CI gate Bandit + Semgrep + gitleaks + pip-audit · audit pen-test J-7 Mois 4
 - **ADR-028 Lifecycle states** : state machine complète (5 états + 12 transitions) · transitions interdites avec exception handling · hooks pré/post-transition · mapping doctrine §7.1 libellés FR
 - **ADR-029 Evidence + audit trail** : schéma evidence complet · validation 90j (algorithme) · formats acceptés + signatures · politique rétention RGPD par event_type · articles CNIL référencés (5(2), 30, 6)
 

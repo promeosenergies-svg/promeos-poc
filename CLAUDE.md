@@ -17,9 +17,11 @@ PROMEOS = **système de contrôle énergétique B2B des patrimoines multi-sites*
 - **L1 audit décisionnel** : [`docs/dev/L1_audit_centre_action_v4_decisional.md`](docs/dev/L1_audit_centre_action_v4_decisional.md) (86 verdicts binaires)
 - **ADR-025 Architecture V4** : [`docs/dev/L2_ADR-025_architecture_v4.md`](docs/dev/L2_ADR-025_architecture_v4.md) (status: **Accepted** · 8 tables · 20 indexes · 100 tests)
 - **ADR-026 Migration data legacy → V4** : [`docs/dev/L3_ADR-026_migration_data.md`](docs/dev/L3_ADR-026_migration_data.md) (status: **Accepted** · manuel de bascule sécurisé · 9 invariants I1-I9 · 7 arbitrages Q19-Q25 · 6 scripts · cutover Mois 4 + STOP GATE J+14)
+- **ADR-027 Sécurité org-scoping V4** : [`docs/dev/L4_ADR-027_securite_org_scoping.md`](docs/dev/L4_ADR-027_securite_org_scoping.md) (status: **Accepted** · manuel défensif · 11 invariants IS1-IS11 · 7 arbitrages Q26-Q32 · 8 menaces M1-M8 · IDOR matrix 288 cellules · 50 SG CI custom · CI gate Bandit+Semgrep+gitleaks+pip-audit · risque P0 sécu mitigé)
 - **Arbitrages doctrinaux Q1-Q9** : Q1-A · Q2-α · Q3-C · Q4-A · Q5-B · Q6-A · Q7-A · Q8-C · Q9-B
 - **Arbitrages techniques Q10-Q18 (ADR-025)** : Q10-A_refined · Q11-A · Q12-A · Q13-B · Q14-A · Q15-C · Q16-A · Q17-C_refined · Q18-C_refined
 - **Arbitrages techniques Q19-Q25 (ADR-026)** : Q19-C · Q20-A · Q21-A · Q22-A · Q23-A · Q24-A · Q25-A + garde-fou cardinal **I9 backup hors Git · receipt sanitizé**
+- **Arbitrages techniques Q26-Q32 (ADR-027)** : Q26-C · Q27-B+ · Q28-D · Q29-D · Q30-A+ · Q31-B+ · Q32-B + garde-fou cardinal **IS11 pattern repository org-scopé obligatoire** (4 lignes de défense empilées : middleware + décorateur + repository + source-guards CI)
 - **2 axes orthogonaux** : `kind` (7 valeurs intrinsèques) ≠ `priority` (calcul dérivé P0-P3 + 6 règles modulation R1-R6)
 - **Cardinaux data à migrer** : **173 rows** (`action_items` 35 + `bill_anomaly` 52 + `anomaly` KB 86) · 15 autres tables vides Sprint 13 dette pure
 - **Mois 1** : docs only (L1 → L10), zéro code. ADR-027/028/029 à produire (L4-L6)

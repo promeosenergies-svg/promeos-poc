@@ -889,7 +889,7 @@ echo "✓ Dry-run terminé"
 
 - **ADR-022 (priorisation héritée)** : composantes du score préservées dans seeds canonicals
 - **ADR-025 (architecture V4)** : 8 tables cibles (1 cardinale + **7 tables filles dédiées**) + 20 indexes + scenarios HELIOS/MERIDIAN
-- **ADR-027 (sécurité org-scoping)** : preuves d'absence d'IDOR post-V4 via smoke tests J+0
+- **ADR-027 (sécurité org-scoping)** — **Accepted** (2026-05-14) — voir [`L4_ADR-027_securite_org_scoping.md`](L4_ADR-027_securite_org_scoping.md) — manuel défensif V4 · 11 invariants IS1-IS11 · IS10 backup non commitable = renforcement CI de I9 ADR-026 · 8 menaces M1-M8 · IDOR matrix 288 cellules · 50 source-guards CI · preuves d'absence d'IDOR post-V4 via smoke tests J+0 + audit pen-test J-7
 - **ADR-028 (lifecycle states)** : 5 états + 6 closure reasons préservés dans seeds
 - **ADR-029 (evidence + audit trail)** : politique rétention RGPD par event_type complétée
 

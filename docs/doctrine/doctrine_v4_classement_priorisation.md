@@ -707,7 +707,7 @@ Cette doctrine est la **source unique** des choix V4. Les ADR la **référencent
 |---|---|---|
 | **ADR-025** Architecture | **Accepted** (2026-05-14) — voir [`docs/dev/L2_ADR-025_architecture_v4.md`](../dev/L2_ADR-025_architecture_v4.md) — schéma DB 8 tables + 20 indexes + 100 tests | §2 (axes orthogonaux), §3 (kinds), §4 (score model), §8 (vues) |
 | **ADR-026** Migration data | **Accepted** (2026-05-14) — voir [`docs/dev/L3_ADR-026_migration_data.md`](../dev/L3_ADR-026_migration_data.md) — manuel de bascule sécurisé · 9 invariants I1-I9 · 7 arbitrages Q19-Q25 · cutover Mois 4 + STOP GATE J+14 | §3.3 (immutabilité kind), §7.1 (mapping FR) |
-| **ADR-027** Sécurité org-scoping | À produire L4 | §3.3 (endpoint admin correct-kind) |
+| **ADR-027** Sécurité org-scoping | **Accepted** (2026-05-14) — voir [`docs/dev/L4_ADR-027_securite_org_scoping.md`](../dev/L4_ADR-027_securite_org_scoping.md) — manuel défensif · 11 invariants IS1-IS11 · 7 arbitrages Q26-Q32 · 8 menaces M1-M8 · IDOR matrix 288 cellules · 50 SG CI custom | §3.3 (endpoint admin correct-kind) |
 | **ADR-028** Lifecycle states | À produire L5 | §7.1 (labels FR), §8 (doctrine par vue) |
 | **ADR-029** Evidence + audit trail | À produire L6 | §3.3 (`kind_corrected`), §4.3 (events), §7.1 (event types FR) |
 
