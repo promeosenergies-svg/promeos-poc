@@ -41,7 +41,13 @@ from backend.models.base import Base
 class Evidence(Base):
     """Preuve uploadée (PDF/JPG/PNG · 10 MB max · expiration 90j post-vérification)."""
 
-    __tablename__ = "evidences"
+    # ⚠️ COLLISION RESOLUTION : table legacy `evidences` existe (CEE/Conformité,
+    # schéma site_id/coverage_pct — hors scope L8 SUPPRIME).
+    # V4 utilise `action_evidences` (préfixe `action_*` cohérent avec les autres
+    # tables filles : action_event_log, action_links, action_blockers, action_scenarios).
+    # Ajustement Q13-B documenté commit 3/5 — futur amendement doctrinal ADR-029
+    # possible si nécessaire post-Mois 5 L8.
+    __tablename__ = "action_evidences"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     organisation_id = Column(UUID(as_uuid=True), nullable=False)  # IS1
@@ -79,17 +85,16 @@ class Evidence(Base):
             "mime_type IN ('application/pdf', 'image/jpeg', 'image/png')",
             name="chk_evidence_mime_whitelist",
         ),
-        # IE2 : verified_at NULL ⇔ verified_by NULL ⇔ expires_at NULL
+        # IE2 : verified_at NULL ⇔ verified_by NULL ⇔ expires_at NULL (portable)
         CheckConstraint(
             "(verified_at IS NULL AND verified_by IS NULL AND expires_at IS NULL)"
             " OR (verified_at IS NOT NULL AND verified_by IS NOT NULL AND expires_at IS NOT NULL)",
             name="chk_evidence_verified_consistency",
         ),
-        # IE6 : 90 jours strict (PG-only ; SQLite ignore + service enforce)
-        CheckConstraint(
-            "expires_at IS NULL OR expires_at = verified_at + INTERVAL '90 days'",
-            name="chk_evidence_expires_90d",
-        ),
+        # IE6 90 jours : enforced côté service Python (Sprint M2-6).
+        # Pas de CHECK SQL portable — `INTERVAL '90 days'` est PostgreSQL-only.
+        # Le service backend.services.evidence.verify_evidence() garantit
+        # `expires_at = verified_at + timedelta(days=90)` strict (single source of truth).
         # ─── Indexes (cohérent ADR-025 §4.2 — 3 indexes pour cette table) ───
         Index("idx_evidences_org_item", "organisation_id", "action_item_id"),
         Index(
