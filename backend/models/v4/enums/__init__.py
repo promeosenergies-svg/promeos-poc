@@ -13,19 +13,19 @@ Décisions cardinales Phase 0 audit M2-2 :
 - D5 : Domain VARCHAR(30) sans CHECK DB (extensible Mois 6+) — enum Python documente 7 canoniques
 """
 
-from backend.models.v4.enums.blocker import BlockerType
-from backend.models.v4.enums.closure import ClosureReason
-from backend.models.v4.enums.domain import Domain
-from backend.models.v4.enums.event_type import EventType
-from backend.models.v4.enums.kind import Kind
-from backend.models.v4.enums.lifecycle import LifecycleState
-from backend.models.v4.enums.priority import PriorityBracket
-from backend.models.v4.enums.retention import (
+from models.v4.enums.blocker import BlockerType
+from models.v4.enums.closure import ClosureReason
+from models.v4.enums.domain import Domain
+from models.v4.enums.event_type import EventType
+from models.v4.enums.kind import Kind
+from models.v4.enums.lifecycle import LifecycleState
+from models.v4.enums.priority import PriorityBracket
+from models.v4.enums.retention import (
     CATEGORY_RETENTION_DAYS,
     EVENT_TYPE_CATEGORY,
     RetentionCategory,
 )
-from backend.models.v4.enums.role import Role
+from models.v4.enums.role import Role
 
 __all__ = [
     "CATEGORY_RETENTION_DAYS",

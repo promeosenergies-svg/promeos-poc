@@ -10,7 +10,7 @@ Mapping 16 event_types → catégorie : cf. ADR-029 §10.2 + EVENT_TYPE_CATEGORY
 
 from enum import Enum
 
-from backend.models.v4.enums.event_type import EventType
+from models.v4.enums.event_type import EventType
 
 
 class RetentionCategory(str, Enum):

@@ -13,7 +13,7 @@ from sqlalchemy import Text as SAText
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
-from backend.models.base import Base
+from models.base import Base
 
 
 class DuplicateGroup(Base):

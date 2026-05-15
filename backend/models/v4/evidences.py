@@ -35,7 +35,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func, text
 
-from backend.models.base import Base
+from models.base import Base
 
 
 class Evidence(Base):

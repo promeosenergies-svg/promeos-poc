@@ -13,7 +13,7 @@ from sqlalchemy import CheckConstraint, Column, DateTime, Index, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
-from backend.models.base import Base
+from models.base import Base
 
 
 class RecurrenceGroup(Base):

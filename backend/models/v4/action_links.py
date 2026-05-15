@@ -14,7 +14,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, Index, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
-from backend.models.base import Base
+from models.base import Base
 
 
 class ActionLink(Base):

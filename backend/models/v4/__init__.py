@@ -18,14 +18,14 @@ Cardinal Q13-B : aucun import legacy depuis ce sous-package.
 Cardinal IS1 : tous les models ont organisation_id NOT NULL.
 """
 
-from backend.models.v4.action_blockers import ActionBlocker
-from backend.models.v4.action_center_items import ActionCenterItem
-from backend.models.v4.action_event_log import ActionEventLog
-from backend.models.v4.action_links import ActionLink
-from backend.models.v4.action_scenarios import ActionScenario
-from backend.models.v4.duplicate_groups import DuplicateGroup
-from backend.models.v4.evidences import Evidence
-from backend.models.v4.recurrence_groups import RecurrenceGroup
+from models.v4.action_blockers import ActionBlocker
+from models.v4.action_center_items import ActionCenterItem
+from models.v4.action_event_log import ActionEventLog
+from models.v4.action_links import ActionLink
+from models.v4.action_scenarios import ActionScenario
+from models.v4.duplicate_groups import DuplicateGroup
+from models.v4.evidences import Evidence
+from models.v4.recurrence_groups import RecurrenceGroup
 
 # 8 V4 SQLAlchemy models — re-export pour migration Alembic + imports application
 __all__ = [
