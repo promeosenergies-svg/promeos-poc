@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import require_admin
 from models.action_template import ActionTemplate
 
 router = APIRouter(prefix="/api/action-templates", tags=["action-templates"])
@@ -337,8 +338,15 @@ def get_template(code: str, db: Session = Depends(get_db)):
 
 
 @router.post("/seed")
-def seed_templates(db: Session = Depends(get_db)):
-    """Seed default templates (idempotent)."""
+def seed_templates(
+    db: Session = Depends(get_db),
+    _admin: None = Depends(require_admin()),  # M2-3.A : close gap A1 (Sprint M2-3 audit Phase 1)
+):
+    """Seed default templates (idempotent).
+
+    🛡️ M2-3.A : protégé par `require_admin()` depuis Sprint M2-3 (audit Phase 1
+    gap A1). Avant : endpoint exposé sans authentification.
+    """
     created = 0
     skipped = 0
     for tpl in DEFAULT_TEMPLATES:
