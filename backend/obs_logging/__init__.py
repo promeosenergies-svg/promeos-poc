@@ -1,6 +1,11 @@
 """
 PROMEOS V4 · Structured logging config (ADR-027 IS7-IS9).
 
+⚠️ Package nommé `obs_logging` — PAS `logging`. Un package `logging` à la racine
+de `backend/` masque le module `logging` de la stdlib dès que `backend/` est en
+tête de `sys.path` : tout `python -m ...` lancé depuis `backend/` cassait alors
+sur un import circulaire structlog (M2-4.1.bis p0 — renommage depuis `logging/`).
+
 Sprint M2-1 Foundation infra : helpers `configure_logging()` + `anonymize_ip()`.
 Câblage middleware FastAPI : Sprint M2-3 (sécurité layer).
 
