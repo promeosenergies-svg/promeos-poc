@@ -1,4 +1,4 @@
-"""M2-3.C — Org context for V4 repositories (IS11 cardinal · fail-closed).
+"""Org context for V4 repositories (IS11 cardinal · fail-closed).
 
 Un `ContextVar` porte l'`org_id` courant à travers le cycle de vie de la requête.
 Peuplé par la dependency `populate_org_context` (consomme le JWT payload M2-3.B).
@@ -13,31 +13,23 @@ Sémantique FAIL-CLOSED :
   Ici, oublier le scoping = exception immédiate, pas une fuite silencieuse.
 
 ╔═══════════════════════════════════════════════════════════════════════════╗
-║ ⚠️  DETTE ARCHITECTURE — CÂBLAGE JWT → V4 UUID (à résoudre Sprint M2-4)     ║
+║ ✅  DETTE JWT/UUID RÉSOLUE — M2-4.1 (ADR-009 Option D)                      ║
 ╠═══════════════════════════════════════════════════════════════════════════╣
-║ Le JWT legacy porte `org_id` au format INTEGER (cf. iam_service.py          ║
-║ `create_access_token(org_id: int)` · `Organisation.id` Integer PK).         ║
-║ Les 8 models V4 (`backend/models/v4/`) utilisent `organisation_id` UUID.    ║
+║ Historique : M2-3.C avait un mismatch — le JWT legacy porte `org_id` INT    ║
+║ (`Organisation.id` Integer PK) tandis que les 8 models V4 utilisaient       ║
+║ `organisation_id` UUID. La chaîne JWT → BaseRepositoryV4 ne bouclait pas.   ║
 ║                                                                             ║
-║ → `populate_org_context` extrait `org_id` du JWT et le set tel quel (str).  ║
-║   Tant que le JWT porte un INT et que les V4 models filtrent sur UUID,      ║
-║   la chaîne réelle JWT → BaseRepositoryV4 N'EST PAS BOUCLÉE en production.   ║
+║ M2-4.1 (ADR-009 Option D · avenant ADR-025/029 A1) a migré les 8 models V4  ║
+║ vers `organisation_id` Integer FK `organisations(id)` — identifiant org     ║
+║ PARTAGÉ legacy↔V4. Le JWT `org_id: int` alimente désormais le ContextVar    ║
+║ directement, sans transformation ni mapping.                                ║
 ║                                                                             ║
-║ → M2-3.C livre le PATTERN testé en isolation (tests unit set le contexte    ║
-║   directement avec des org_id str/UUID, sans JWT).                          ║
-║ → M2-4 doit trancher : (a) JWT V4 porte un UUID organisation, OU            ║
-║   (b) table de mapping org INT ↔ UUID, OU (c) V4 models migrent vers        ║
-║   Integer FK organisations.id. Décision d'architecture hors M2-3.C.         ║
-║                                                                             ║
-║ Cette dette est mentionnée en 3 endroits (traçabilité) :                    ║
-║   1. ce docstring                                                           ║
-║   2. le message du commit M2-3.C                                            ║
-║   3. SECURITY.md (à produire M2-3.D)                                        ║
+║ Le `ContextVar` est typé `Optional[int]` (cohérent avec le type DB réel).   ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
 """
 
 from contextvars import ContextVar, Token
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import Depends, HTTPException, status
 
@@ -54,14 +46,15 @@ class NoOrgContextError(RuntimeError):
 
 # Type-agnostic : porte n'importe quel identifiant org sérialisé en str
 # (int legacy aujourd'hui, UUID V4 demain — cf. dette ci-dessus).
-_current_org_id: ContextVar[Optional[str]] = ContextVar("current_org_id", default=None)
+_current_org_id: ContextVar[Optional[int]] = ContextVar("current_org_id", default=None)
 
 
-def current_org_id() -> str:
+def current_org_id() -> int:
     """Retourne l'org_id courant. FAIL-CLOSED : lève si non défini.
 
     Returns:
-        str : identifiant org courant (type-agnostic — int-as-str ou UUID-as-str).
+        int : identifiant org courant (Integer FK `organisations.id`, partagé
+        legacy↔V4 depuis M2-4.1 — ADR-009 Option D).
 
     Raises:
         NoOrgContextError : si appelée hors d'un contexte peuplé.
@@ -77,18 +70,22 @@ def current_org_id() -> str:
     return org_id
 
 
-def set_org_context(org_id: str) -> Token:
+def set_org_context(org_id: Union[int, str]) -> Token:
     """Set le contexte org. Retourne un token pour reset.
 
     Usage : middleware/dependency en contexte HTTP, ET tests/scripts.
 
     Args:
-        org_id : identifiant org (sérialisé en str).
+        org_id : identifiant org. Accepte int OU str (cast `int()` interne pour
+        rétro-compat des tests ; le contexte stocke toujours un int).
 
     Returns:
         Token : à passer à `reset_org_context()` pour restaurer l'état précédent.
+
+    Raises:
+        ValueError : si `org_id` n'est pas convertible en int.
     """
-    return _current_org_id.set(str(org_id))
+    return _current_org_id.set(int(org_id))
 
 
 def reset_org_context(token: Token) -> None:
@@ -114,13 +111,12 @@ async def populate_org_context(
     - **DEMO_MODE (payload=None)** : NE peuple PAS le contexte. Un repo V4 appelé
       dans ce cas lèvera `NoOrgContextError`. C'est INTENTIONNEL et c'est la
       ligne de séparation V4 ↔ legacy : une démo V4 qui casse révèle un seed mal
-      calibré (le seed doit faire `set_org_context("demo-org-id")` explicite).
+      calibré (le seed doit faire `set_org_context(demo_org_id)` explicite).
       On ne masque pas le problème par un bypass org silencieux.
 
-    ⚠️ DETTE (cf. docstring module) : tant que le JWT porte `org_id` INT et que
-    les V4 models filtrent sur `organisation_id` UUID, la valeur peuplée ici
-    n'est PAS directement utilisable par `BaseRepositoryV4` en production.
-    Câblage réel = Sprint M2-4.
+    M2-4.1 (ADR-009 Option D) : le JWT `org_id: int` alimente directement le
+    ContextVar typé `int`. `BaseRepositoryV4` filtre sur `organisation_id`
+    Integer FK — le type matche de bout en bout, sans mapping.
     """
     if payload is None:
         # DEMO_MODE : pas de JWT, pas de contexte. Laissé tel quel (fail-visible
@@ -128,8 +124,8 @@ async def populate_org_context(
         yield
         return
 
-    org_id = payload.get("org_id")
-    if not org_id:
+    org_id_raw = payload.get("org_id")
+    if not org_id_raw:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={
@@ -139,7 +135,19 @@ async def populate_org_context(
             },
         )
 
-    token = set_org_context(str(org_id))
+    try:
+        org_id = int(org_id_raw)
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "ORG_ID_INVALID",
+                "message": f"org_id must be an integer, got {type(org_id_raw).__name__}",
+                "hint": "JWT org_id claim must be the legacy Organisation.id (Integer)",
+            },
+        )
+
+    token = set_org_context(org_id)
     try:
         yield
     finally:

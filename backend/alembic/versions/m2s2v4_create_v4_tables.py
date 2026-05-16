@@ -66,7 +66,13 @@ def upgrade():
     op.create_table(
         "duplicate_groups",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("organisation_id", UUID(as_uuid=True), nullable=False),  # IS1
+        sa.Column(  # IS1 · M2-4.1 Path B : Integer FK partagé legacy↔V4 (ADR-009 Option D)
+            "organisation_id",
+            sa.Integer(),
+            sa.ForeignKey("organisations.id", ondelete="RESTRICT"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("detection_method", sa.String(20), nullable=False),
         sa.Column("detection_signature", sa.Text, nullable=False),
         sa.Column("representative_item_id", UUID(as_uuid=True), nullable=False),
@@ -96,7 +102,13 @@ def upgrade():
     op.create_table(
         "recurrence_groups",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("organisation_id", UUID(as_uuid=True), nullable=False),  # IS1
+        sa.Column(  # IS1 · M2-4.1 Path B : Integer FK partagé legacy↔V4 (ADR-009 Option D)
+            "organisation_id",
+            sa.Integer(),
+            sa.ForeignKey("organisations.id", ondelete="RESTRICT"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("domain", sa.String(20), nullable=False),
         sa.Column("source_signature", sa.Text, nullable=False),
         sa.Column("scope_signature", sa.Text, nullable=False),
@@ -144,7 +156,13 @@ def upgrade():
     op.create_table(
         "action_center_items",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("organisation_id", UUID(as_uuid=True), nullable=False),  # IS1
+        sa.Column(  # IS1 · M2-4.1 Path B : Integer FK partagé legacy↔V4 (ADR-009 Option D)
+            "organisation_id",
+            sa.Integer(),
+            sa.ForeignKey("organisations.id", ondelete="RESTRICT"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("kind", sa.String(20), nullable=False),  # D1 : 7 valeurs
         sa.Column("title", sa.String(255), nullable=False),
         sa.Column("description", sa.Text),
@@ -321,7 +339,13 @@ def upgrade():
     op.create_table(
         "action_event_log",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("organisation_id", UUID(as_uuid=True), nullable=False),  # IS1
+        sa.Column(  # IS1 · M2-4.1 Path B : Integer FK partagé legacy↔V4 (ADR-009 Option D)
+            "organisation_id",
+            sa.Integer(),
+            sa.ForeignKey("organisations.id", ondelete="RESTRICT"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column(
             "action_item_id",
             UUID(as_uuid=True),
@@ -381,7 +405,13 @@ def upgrade():
     op.create_table(
         "action_evidences",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("organisation_id", UUID(as_uuid=True), nullable=False),  # IS1
+        sa.Column(  # IS1 · M2-4.1 Path B : Integer FK partagé legacy↔V4 (ADR-009 Option D)
+            "organisation_id",
+            sa.Integer(),
+            sa.ForeignKey("organisations.id", ondelete="RESTRICT"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column(
             "action_item_id",
             UUID(as_uuid=True),
@@ -448,7 +478,13 @@ def upgrade():
     op.create_table(
         "action_links",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("organisation_id", UUID(as_uuid=True), nullable=False),  # IS1
+        sa.Column(  # IS1 · M2-4.1 Path B : Integer FK partagé legacy↔V4 (ADR-009 Option D)
+            "organisation_id",
+            sa.Integer(),
+            sa.ForeignKey("organisations.id", ondelete="RESTRICT"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column(
             "item_id",
             UUID(as_uuid=True),
@@ -479,7 +515,13 @@ def upgrade():
     op.create_table(
         "action_blockers",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("organisation_id", UUID(as_uuid=True), nullable=False),  # IS1
+        sa.Column(  # IS1 · M2-4.1 Path B : Integer FK partagé legacy↔V4 (ADR-009 Option D)
+            "organisation_id",
+            sa.Integer(),
+            sa.ForeignKey("organisations.id", ondelete="RESTRICT"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column(
             "item_id",
             UUID(as_uuid=True),
@@ -521,7 +563,13 @@ def upgrade():
     op.create_table(
         "action_scenarios",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("organisation_id", UUID(as_uuid=True), nullable=False),  # IS1
+        sa.Column(  # IS1 · M2-4.1 Path B : Integer FK partagé legacy↔V4 (ADR-009 Option D)
+            "organisation_id",
+            sa.Integer(),
+            sa.ForeignKey("organisations.id", ondelete="RESTRICT"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column(
             "item_id",
             UUID(as_uuid=True),

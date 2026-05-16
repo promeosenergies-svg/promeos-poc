@@ -9,7 +9,7 @@ Status `active/watching/closed` (cohérent ADR-025 §4.3 + L7 §2.5).
 
 from uuid import uuid4
 
-from sqlalchemy import CheckConstraint, Column, DateTime, Index, Integer, String, Text
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
@@ -22,7 +22,12 @@ class RecurrenceGroup(Base):
     __tablename__ = "recurrence_groups"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    organisation_id = Column(UUID(as_uuid=True), nullable=False)  # IS1
+    organisation_id = Column(  # IS1 · M2-4.1 Path B : Integer FK partagé legacy↔V4 (ADR-009 Option D)
+        Integer,
+        ForeignKey("organisations.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
 
     # Signature de récurrence
     domain = Column(String(20), nullable=False)

@@ -26,7 +26,7 @@ def _minimal_item(**overrides) -> ActionCenterItem:
     """Helper : ActionCenterItem minimal valid pour tests."""
     defaults = {
         "id": uuid4(),
-        "organisation_id": uuid4(),
+        "organisation_id": 1,  # M2-4.1 : Integer FK → organisations.id (org seedée par v4_session)
         "kind": "anomaly",
         "title": "Test item",
         "lifecycle_state": "new",
@@ -276,7 +276,7 @@ def test_chk_evidence_verified_consistency_ie2(v4_session):
 # ─────────────────────────────────────────────────────────────────────
 def test_duplicate_groups_d4_vocabulary(v4_session):
     """🛡️ D4 : status 'merged' OK (cohérent UX), 'confirmed' rejeté (vs L7 §2.5 erroné)."""
-    org_id = uuid4()
+    org_id = 1  # M2-4.1 : Integer FK → organisations.id (org seedée par v4_session)
     item_id = uuid4()
 
     # Cas valide : status 'merged' (D4 vocabulaire)

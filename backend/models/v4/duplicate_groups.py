@@ -8,7 +8,7 @@ Cardinal Q9-B : `duplicate_groups` ≠ `recurrence_groups` (tables séparées).
 
 from uuid import uuid4
 
-from sqlalchemy import CheckConstraint, Column, DateTime, Index, String
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy import Text as SAText
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
@@ -22,7 +22,12 @@ class DuplicateGroup(Base):
     __tablename__ = "duplicate_groups"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    organisation_id = Column(UUID(as_uuid=True), nullable=False)  # IS1
+    organisation_id = Column(  # IS1 · M2-4.1 Path B : Integer FK partagé legacy↔V4 (ADR-009 Option D)
+        Integer,
+        ForeignKey("organisations.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
 
     # Détection
     detection_method = Column(String(20), nullable=False)

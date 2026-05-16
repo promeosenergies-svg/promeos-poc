@@ -98,11 +98,13 @@ class BaseRepositoryV4(Generic[ModelT]):
     def _assert_belongs_to_current_org(self, obj: ModelT) -> None:
         """Lève `OrgScopeViolation` si `obj` n'appartient pas à l'org courante.
 
-        Comparaison en str (type-agnostic — int legacy / UUID V4).
+        Comparaison Integer directe (M2-4.1 — `organisation_id` Integer FK
+        partagé legacy↔V4, ADR-009 Option D). `actual` None ⇒ violation
+        (fail-closed : un objet sans org ne passe jamais).
         """
         expected = current_org_id()
         actual = getattr(obj, self._scope_column, None)
-        if str(actual) != str(expected):
+        if actual != expected:
             raise OrgScopeViolation(
                 f"{self.model.__name__}(id={getattr(obj, 'id', '?')}) "
                 f"belongs to {self._scope_column}={actual!r}, "

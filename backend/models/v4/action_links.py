@@ -10,7 +10,7 @@ Invariants applicables :
 
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, ForeignKey, Index, String
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
@@ -23,7 +23,12 @@ class ActionLink(Base):
     __tablename__ = "action_links"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    organisation_id = Column(UUID(as_uuid=True), nullable=False)  # IS1
+    organisation_id = Column(  # IS1 · M2-4.1 Path B : Integer FK partagé legacy↔V4 (ADR-009 Option D)
+        Integer,
+        ForeignKey("organisations.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
     item_id = Column(
         UUID(as_uuid=True),
         ForeignKey("action_center_items.id", ondelete="CASCADE"),

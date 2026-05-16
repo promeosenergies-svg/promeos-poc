@@ -38,7 +38,12 @@ class ActionScenario(Base):
     __tablename__ = "action_scenarios"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    organisation_id = Column(UUID(as_uuid=True), nullable=False)  # IS1
+    organisation_id = Column(  # IS1 · M2-4.1 Path B : Integer FK partagé legacy↔V4 (ADR-009 Option D)
+        Integer,
+        ForeignKey("organisations.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
     item_id = Column(
         UUID(as_uuid=True),
         ForeignKey("action_center_items.id", ondelete="CASCADE"),
