@@ -117,3 +117,40 @@ def seed_v4_minimal(db: Session, *, org_id: int = SEED_ORG_ID, force: bool = Fal
     created, skipped = _seed_action_items(db, org_id)
     db.commit()
     return SeedReport(org_id=org_id, items_created=created, items_skipped=skipped)
+
+
+def main() -> None:
+    """Point d'entrée CLI : `python -m seeds.v4_seed [--org-id N]`.
+
+    Utilise `SessionLocal` de production (`PRAGMA foreign_keys=ON` garanti).
+    """
+    import argparse
+    import sys
+
+    from database.connection import SessionLocal
+
+    parser = argparse.ArgumentParser(
+        prog="python -m seeds.v4_seed",
+        description="Seed V4 minimal idempotent (action_center_items).",
+    )
+    parser.add_argument(
+        "--org-id",
+        type=int,
+        default=SEED_ORG_ID,
+        help=f"organisation cible (défaut {SEED_ORG_ID}, HELIOS). Doit exister.",
+    )
+    args = parser.parse_args()
+
+    db = SessionLocal()
+    try:
+        report = seed_v4_minimal(db, org_id=args.org_id)
+    except SeedError as exc:
+        print(f"ERREUR seed V4 : {exc}", file=sys.stderr)
+        sys.exit(1)
+    finally:
+        db.close()
+    print(report)
+
+
+if __name__ == "__main__":
+    main()
