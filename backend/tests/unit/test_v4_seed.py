@@ -80,11 +80,14 @@ def test_seeded_closed_item_satisfies_closure_consistency(v4_session):
 
 
 def test_fk_restrict_blocks_org_deletion_with_actions(v4_session):
-    """🛡️ FK organisation_id ON DELETE RESTRICT : supprimer l'org seedée → IntegrityError."""
+    """🛡️ FK organisation_id ON DELETE RESTRICT : supprimer l'org seedée → IntegrityError.
+
+    `match` épingle la violation FK (RESTRICT immédiat SQLite) — le DELETE lui-même
+    lève, pas un effet de bord plus loin.
+    """
     seed_v4_minimal(v4_session, org_id=SEED_ORG_ID)
-    with pytest.raises(IntegrityError):
+    with pytest.raises(IntegrityError, match="(?i)foreign key"):
         v4_session.execute(text("DELETE FROM organisations WHERE id = :id"), {"id": SEED_ORG_ID})
-        v4_session.commit()
     v4_session.rollback()
     # L'org et les items survivent au DELETE refusé.
     assert _count_items(v4_session) == 3

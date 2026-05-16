@@ -92,8 +92,8 @@ def _seed_action_items(db: Session, org_id: int) -> tuple[int, int]:
             item.closed_at = datetime.now(UTC)
             item.closure_reason = spec["closure_reason"]
         db.add(item)
+        db.flush()  # flush par item : isole une éventuelle violation CHECK
         created += 1
-    db.flush()
     return created, skipped
 
 
