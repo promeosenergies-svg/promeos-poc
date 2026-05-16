@@ -2,6 +2,17 @@
 
 ## [Unreleased] — 2026-03-01
 
+### M2-4.1.bis — Seed V4 minimal idempotent
+
+**Seed V4 (`backend/seeds/v4_seed.py`) :**
+- `seed_v4_minimal()` seede 3 `action_center_items` (états new / in_progress / closed) rattachés à une organisation existante — idempotent (PK UUID5 déterministes, équivalent `INSERT OR IGNORE` portable)
+- CLI `python -m seeds.v4_seed [--org-id N]` ; `SeedError` si l'organisation cible est absente
+- 8 tests `tests/unit/test_v4_seed.py` (idempotence, FK `organisation_id` ON DELETE RESTRICT vérifiée, PRAGMA foreign_keys, intégration repo) — suite V4+M2-3+seed à 86/86
+- Doc : `docs/seeds.md`
+
+**Fix `backend/logging/` → `obs_logging/` :**
+- Le package nommé `logging` masquait le module stdlib et cassait tout `python -m` lancé depuis `backend/` (dont `python -m services.demo_seed`) — renommé, 0 importeur
+
 ### V89 — Evidence Drawer V0 ("Pourquoi ce chiffre ?") + Tests 100% Green
 
 **Test Fixes (fix/tests-zero-fail):**
