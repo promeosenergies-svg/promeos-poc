@@ -310,3 +310,38 @@ Rapport produit : SECURITY_AUDIT_M2-3.md (à la racine repo)
 Confirmer : « GO Phase 2 » (ou indiquer ajustements au plan adapté)
 ═══════════════════════════════════════════════════════
 ```
+
+---
+
+## ÉTAT FINAL — Sprint M2-3 clôturé
+
+**Date de clôture** : 2026-05-16
+**Branche** : `feat/m2-3-security-layer`
+**Commits livrés** : 4 atomiques
+
+| Commit | Hash | Description | Tests |
+|---|---|---|---|
+| M2-3.A | `1c340572` | Close 2 seed endpoints (`action-templates/seed` + `consumption/seed-demo`) — admin + env guard | 22 (3 skipped débloqués en B) |
+| M2-3.B | `5a52e35f` | `require_v4_role` wrapper + mapping 11→4 rôles + 4 fixtures JWT + 2 endpoints fermés (`kb-usages` + `monitoring/emission-factors`) | 21 nouveaux + 3 débloqués |
+| M2-3.C | `13dad3ba` | `BaseRepositoryV4` fail-closed (IS11 cardinal) + `org_context` ContextVar + PoC `ActionCenterItemRepository` | 12 |
+| M2-3.D | (ce commit) | `SECURITY.md` posture finale + DoD M2-3 global | 0 (doc) |
+
+### Bilan global
+
+- **4 commits atomiques**, 0 régression sur la baseline (75 tests auth/iam legacy verts)
+- **55 tests nouveaux** sur la couche sécurité (22 M2-3.A + 21 M2-3.B + 12 M2-3.C)
+- **77/77 tests V4 + M2-3 PASSED** (~2.1s)
+- Lint clean (ruff check + format) · Guard A KPI passe sur les 4 commits
+
+### Posture finale
+
+- ✅ **4 gaps Phase 1 fermés** : A1 (`action-templates/seed`), A2 (`consumption/seed-demo`), A3 (V4 repository pattern), A4 (V4 RBAC wrapper)
+- ✅ **2 gaps découverts in-flight fermés** : `kb-usages/seed_demo`, `monitoring/emission-factors/seed`
+- ⚠️ **1 dette stratégique tracée** : JWT `org_id` int ↔ V4 `organisation_id` UUID (cf. `SECURITY.md` §5.1 — résolution M2-4)
+- ⏳ **3 blocs de chantiers planifiés** : M2-4 (routes V4 + IDOR matrix + résolution dette) · M2-6 (hierarchical scope + evidence) · long terme (refresh tokens, 2FA, SSO)
+
+### Insight cardinal du sprint
+
+Le prompt M2-3 original supposait un **greenfield** (rebuild auth from scratch). L'audit Phase 1 a révélé un repo **déjà mature à 70 %** (JWT, RBAC, CORS, headers, rate-limit, audit_logs pré-existants). Le sprint a été **réorienté** : audit + consolidation + comblement gaps V4-spécifiques, **0 réécriture de l'existant** (Q13-B coexistence respectée). Effort réel ~3-4h vs 2 jours du plan générique.
+
+**Référence pratique** : voir [`SECURITY.md`](SECURITY.md) à la racine.
