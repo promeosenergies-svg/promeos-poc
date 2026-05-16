@@ -1,14 +1,21 @@
 # ADR-009 — Résolution dette JWT int ↔ V4 UUID
 
-**Statut** : 🟡 DRAFT — en attente décision Amine (STOP gate M2-4.0)
+**Statut** : ✅ ACCEPTED — décision Amine 2026-05-16 (STOP gate M2-4.0)
 **Date** : 2026-05-16
+**Date décision** : 2026-05-16
 **Sprint** : M2-4
-**Auteur** : Claude Code (analyste) — décision finale Amine
+**Décision** : **Option D** — Migration `organisation_id` UUID → Integer FK partagé legacy↔V4
+**Amende** : ADR-025 §4.1 + ADR-029 §2 (voir avenant consolidé `docs/dev/ADR-025-029_A1_integer_fk.md`)
+**Auteur** : Claude Code (analyse) — décision finale Amine
 **Lié à** : `SECURITY.md` §5.1 · M2-3.C `backend/middleware/org_context.py` · `M2-4_AUDIT.md`
 
 ---
 
 ## 1. Contexte
+
+> **Décision finale : Option D** — `organisation_id` migre de UUID vers Integer FK.
+> **§2 et §3 ci-dessous sont la trace historique de l'analyse** (4 options, reco initiale A).
+> **Pour la décision et sa justification, aller directement à §5.**
 
 Sprint M2-3.C a livré `BaseRepositoryV4` fail-closed avec un `ContextVar` peuplé
 depuis le JWT par `populate_org_context`. **Mismatch découvert** :
@@ -35,7 +42,13 @@ mais les queries V4 filtrent sur `UUID`. Résultat : queries renvoient `[]`
 
 ## 2. Options évaluées
 
-### Option A — Mapping in `populate_org_context` (recommandée court-terme)
+> ⚠️ **Note historique** : cette section présente les 4 options analysées en
+> M2-4.0. La recommandation analyste initiale était l'Option A (mapping). Après
+> arbitrage Amine au STOP gate, c'est l'**Option D** qui a été retenue (cf. §5).
+> La trace de l'analyse complète est conservée — elle documente *pourquoi* D a
+> été préférée, pas seulement *que* D a été choisie.
+
+### Option A — Mapping in `populate_org_context` (recommandée initialement, NON retenue)
 
 **Concept** : `populate_org_context` lit `payload['org_id']: int`, résout l'UUID
 V4 via un dict de mapping en code, set le contexte en UUID.
@@ -112,7 +125,12 @@ alors le **même org_id int que le legacy** — le JWT marche directement, 0 map
 
 ---
 
-## 3. Recommandation analyste
+## 3. Recommandation analyste initiale (NON retenue — trace historique)
+
+> Cette section documente la recommandation faite par l'analyste au STOP gate.
+> Amine a tranché différemment (Option D). Conservée pour traçabilité du
+> raisonnement — un lecteur futur doit comprendre que D a été choisie *contre*
+> une recommandation A, et pourquoi.
 
 **Option A (mapping in `populate_org_context`)** — résolution court-terme.
 
@@ -149,25 +167,80 @@ Mapping Option A à mitiger :
 
 ---
 
-## 4. Plan d'implémentation
+## 4. Plan d'implémentation — Option D actée
 
-### Si Option A retenue
-- **M2-4.1** : mapping `_LEGACY_INT_TO_V4_UUID` + seed V4 conjoint + tests + invariant seed
-- **M2-4.2 → .4** : rollout 12 endpoints V4 (mapping câblé)
-- **M2-4.5** : IDOR matrix (utilise le mapping + seed réels)
-- **M2-4.7** : MAJ `SECURITY.md` §5.1 — dette résolue court-terme + ticket sortie M3-X
+Sprint M2-4 séquence (10 commits — cf. `M2-4_ROLLOUT_PLAN.md`) :
 
-### Si Option D retenue
-- **M2-4.1.bis** : avenant ADR-025/029 (`organisation_id` UUID → Integer FK) +
-  migration Alembic (alter column, tables vides) + maj 8 models V4 + maj `base_v4.py`
-- **M2-4.1** : seed V4 (org_id int aligné legacy)
-- **M2-4.2 → .7** : identique (mais `populate_org_context` câblé directement, 0 mapping)
+| # | Commit | Objectif |
+|---|---|---|
+| M2-4.0 ✅ | Audit + ADR-009 DRAFT + rollout plan | livré |
+| M2-4.0.bis ⏳ | ADR-009 FINAL Option D + avenant ADR-025/029 + plan révisé | ce commit |
+| M2-4.1 | Migration Alembic `organisation_id` UUID → Integer FK (8 tables V4 vides, 0 backfill) + maj 8 models V4 + maj `base_v4.py` + adaptation tests M2-3.C | |
+| M2-4.1.bis | Seed V4 minimal (prérequis IDOR — 2 orgs + items V4) | |
+| M2-4.2 | Endpoint V4 template (`GET /pilotage`) + `response_model` Pydantic + idempotence | |
+| M2-4.3 | Rollout 4 endpoints read | |
+| M2-4.4 | Rollout 8 endpoints write/admin | |
+| M2-4.5 | IDOR matrix (12 routes × rôles × 2 orgs) | |
+| M2-4.6 | `@limiter` rate limiting sur routes V4 | |
+| M2-4.7 | Doc closure — `SECURITY.md` §5.1 dette **supprimée** (plus différée) | |
+
+`populate_org_context` est câblé directement (0 mapping) : le JWT `org_id: int`
+alimente le `ContextVar`, `BaseRepositoryV4._apply_scope` filtre sur la colonne
+`organisation_id` Integer — le type matche de bout en bout.
 
 ---
 
-## 5. Décision
+## 5. Décision — Option D retenue
 
-🟡 **EN ATTENTE** — à acter par Amine au STOP gate M2-4.0.
+**Décision** (Amine, STOP gate M2-4.0, 2026-05-16) : migrer `organisation_id` de
+`UUID` vers `Integer FK organisations(id)` sur les 8 models V4. Le JWT existant
+(`org_id: int`) câble naturellement au contexte V4 via `populate_org_context`
+sans transformation. **Dette JWT/UUID supprimée à la racine.**
 
-Options : **A** (recommandée court-terme) · B · C · **D** (révélée par l'audit —
-résout la dette mais amende ADR-025/029) · autre · défer.
+### 5.1 — Pourquoi pas Option A (mapping)
+
+Option A préservait la dette via un dict `_LEGACY_INT_TO_V4_UUID` à maintenir et
+un ticket de sortie M3-X à 6 mois. Coût total cumulé (maintenance mapping +
+risque désync + résolution différée) supérieur au coût Option D, alors que la
+fenêtre d'exécution Option D (8 tables V4 vides → 0 backfill) **ne se
+représentera plus** une fois le seed V4 actif. Décision : **payer la dette
+maintenant plutôt que la financer**.
+
+### 5.2 — Justifications historiques UUID — réévaluation
+
+ADR-025 §4.1 et ADR-029 §2 retenaient UUID pour 3 raisons. Réévaluation au regard
+de l'état réel du projet (audit M2-4.0) :
+
+| Justification originale | Statut 2026-05 | Raison |
+|---|---|---|
+| Multi-shard PostgreSQL | ⏸️ Différée 12-18 mois min | Aucun signal de besoin avant cette échéance (suppose >10M lignes/table ou >1000 orgs). Si re-besoin, Integer FK reste shardable via clé composée `(shard_id, id)`. |
+| Anti-énumération URL | ✅ Mitigée autrement | Le fail-closed `BaseRepositoryV4` (M2-3.C) bloque l'exploitation cross-org : URL devinable mais inexploitable. Trade-off §5.3. |
+| PG-ready | ✅ Maintenue | Integer FK est aussi PG-ready, avec index B-tree plus compact (4-8 octets vs 16). Aucune dégradation. |
+
+### 5.3 — Trade-off accepté : URL énumérable côté pattern
+
+Integer PK séquentielle rend les URL `/api/v4/action-center/items/{id}`
+énumérables par incrément. Conséquences explicitement acceptées :
+
+- **Exploitation cross-org** : bloquée par fail-closed `BaseRepositoryV4`. Une
+  URL devinée par un user d'org A pour un item d'org B retourne `404` (cf.
+  `test_get_blocks_cross_org_access` — M2-3.C).
+- **Énumération intra-org** : un user peut deviner les IDs de ses propres items.
+  Acceptable — il y a déjà accès légitime par définition.
+- **Inférence de volume via fuite log** : un attaquant qui obtient un ID via une
+  fuite log peut inférer la taille de la table. Mitigation : nettoyage logs
+  (chantier M2-6+, déjà tracé).
+
+Trade-off documenté dans `SECURITY.md` §4 (table de garanties).
+
+### 5.4 — Conditions de re-bascule UUID
+
+Ré-ouvrir cet ADR si l'un de ces signaux se matérialise :
+
+- Besoin réel multi-shard PG (>10M lignes sur une table V4, ou >1000 orgs).
+- Exposition API publique **non-authentifiée** d'URL V4 (changement de modèle
+  de menace — l'énumération deviendrait exploitable).
+- Audit externe identifiant l'énumération séquentielle comme P0/P1.
+- Migration de stack DB hors PostgreSQL (contraintes Integer FK différentes).
+
+Tant qu'aucun signal n'apparaît, Integer FK reste la décision active.
