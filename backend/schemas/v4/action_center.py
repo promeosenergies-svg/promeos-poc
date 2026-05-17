@@ -72,3 +72,115 @@ class ActionCenterItemListResponse(BaseModel):
     total: int
     offset: int
     limit: int
+
+
+# ── Sous-ressources : responses (M2-4.3, lecture seule) ──────────────
+#
+# Discipline : on expose les métadonnées sémantiquement publiques, on masque
+# tout ce qui touche au stockage / à l'implémentation interne.
+# - Evidence : `storage_uri` + `validation_payload` JAMAIS exposés (anti-leak).
+#   Pas de `download_endpoint` : l'endpoint de download n'existe pas (M2-4.4+) —
+#   exposer un champ toujours None serait du bruit ; il sera ajouté avec lui.
+# - ActionEventLog : `event_payload` (JSON versionné IE7) non exposé — un read
+#   endpoint générique expose les métadonnées, pas la structure interne.
+
+
+class ActionEventLogResponse(BaseModel):
+    """Métadonnées d'un event (audit trail)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    action_item_id: UUID
+    event_type: str
+    occurred_at: datetime
+    actor_type: str
+    actor_id: Optional[UUID]
+    actor_name: Optional[str]
+    actor_role: Optional[str]
+    schema_version: str
+    correlation_id: UUID
+    source_route: Optional[str]
+
+
+class ActionEvidenceResponse(BaseModel):
+    """Métadonnées d'une evidence.
+
+    SÉCURITÉ : `storage_uri` et `validation_payload` ne sont JAMAIS exposés.
+    Le download passera par un endpoint dédié (M2-4.4+) revalidant auth + scope.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    action_item_id: UUID
+    mime_type: str
+    file_size_bytes: int
+    original_filename: Optional[str]
+    description: Optional[str]
+    uploaded_at: datetime
+    uploaded_by: UUID
+    verified_at: Optional[datetime]
+    verified_by: Optional[UUID]
+    expires_at: Optional[datetime]
+
+
+class ActionBlockerResponse(BaseModel):
+    """Métadonnées d'un blocker (pas de colonne `severity` sur ce modèle)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    item_id: UUID
+    blocker_type: str
+    justification: Optional[str]
+    added_at: datetime
+    added_by: Optional[UUID]
+    expected_resolution_at: Optional[datetime]
+    resolved_at: Optional[datetime]
+    resolved_by: Optional[UUID]
+
+
+class ActionLinkResponse(BaseModel):
+    """Métadonnées d'un lien — polymorphe : cible `target_module` + `target_id`."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    item_id: UUID
+    link_type: str
+    target_module: str
+    target_id: UUID
+    relation: str
+    created_at: datetime
+
+
+# ── Sous-ressources : wrappers de liste paginée ──────────────────────
+
+
+class ActionEventLogListResponse(BaseModel):
+    items: list[ActionEventLogResponse]
+    total: int
+    offset: int
+    limit: int
+
+
+class ActionEvidenceListResponse(BaseModel):
+    items: list[ActionEvidenceResponse]
+    total: int
+    offset: int
+    limit: int
+
+
+class ActionBlockerListResponse(BaseModel):
+    items: list[ActionBlockerResponse]
+    total: int
+    offset: int
+    limit: int
+
+
+class ActionLinkListResponse(BaseModel):
+    items: list[ActionLinkResponse]
+    total: int
+    offset: int
+    limit: int

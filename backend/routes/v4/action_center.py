@@ -27,12 +27,22 @@ from sqlalchemy.orm import Session
 from database import get_db
 from middleware.org_context import populate_org_context
 from middleware.rbac import require_v4_role
+from models.v4.action_center_items import ActionCenterItem
 from models.v4.enums import Role
+from repositories.action_blocker_repository import ActionBlockerRepository
 from repositories.action_center_item_v4_repository import ActionCenterItemRepository
+from repositories.action_event_log_repository import ActionEventLogRepository
+from repositories.action_evidence_repository import ActionEvidenceRepository
+from repositories.action_link_repository import ActionLinkRepository
+from routes.v4.dependencies import verify_parent_item_access
 from schemas.v4.action_center import (
+    ActionBlockerListResponse,
     ActionCenterItemCreate,
     ActionCenterItemListResponse,
     ActionCenterItemResponse,
+    ActionEventLogListResponse,
+    ActionEvidenceListResponse,
+    ActionLinkListResponse,
 )
 
 router = APIRouter(prefix="/api/v4/action-center", tags=["V4 Action Center"])
@@ -185,3 +195,98 @@ async def get_action_center_item(
             },
         )
     return item
+
+
+# ════════════════════════════════════════════════════════════════════
+# Sous-ressources en lecture (M2-4.3 — rollout du template)
+# ════════════════════════════════════════════════════════════════════
+#
+# Les 4 handlers ci-dessous ont une structure identique : c'est une
+# duplication contrôlée et VOLONTAIRE. Toute factorisation par
+# méta-programmation est refusée — 4 fonctions courtes et auditables valent
+# mieux qu'un générique imreviewable. Seules varient : la sous-ressource
+# (repository + response_model) et la docstring.
+#
+# `verify_parent_item_access` (dependency) résout l'item parent org-scopé →
+# 404 ITEM_NOT_FOUND si absent ou cross-org, avant toute requête sous-ressource.
+
+
+@router.get(
+    "/items/{item_id}/events",
+    response_model=ActionEventLogListResponse,
+    dependencies=[Depends(populate_org_context)],
+)
+async def list_item_events(
+    item_id: uuid.UUID,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    _parent: ActionCenterItem = Depends(verify_parent_item_access),
+    db: Session = Depends(get_db),
+    _rbac=Depends(require_v4_role(Role.VIEWER, Role.USER, Role.ADMIN)),
+):
+    """Liste paginée des events de l'item (audit trail), triée occurred_at DESC.
+
+    404 ITEM_NOT_FOUND si l'item n'existe pas ou est cross-org.
+    """
+    items, total = ActionEventLogRepository(db).list_by_item_id(item_id, offset=offset, limit=limit)
+    return {"items": items, "total": total, "offset": offset, "limit": limit}
+
+
+@router.get(
+    "/items/{item_id}/evidences",
+    response_model=ActionEvidenceListResponse,
+    dependencies=[Depends(populate_org_context)],
+)
+async def list_item_evidences(
+    item_id: uuid.UUID,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    _parent: ActionCenterItem = Depends(verify_parent_item_access),
+    db: Session = Depends(get_db),
+    _rbac=Depends(require_v4_role(Role.VIEWER, Role.USER, Role.ADMIN)),
+):
+    """Liste paginée des evidences de l'item, triée uploaded_at DESC.
+
+    SÉCURITÉ : `storage_uri` n'est jamais renvoyé (cf. ActionEvidenceResponse).
+    """
+    items, total = ActionEvidenceRepository(db).list_by_item_id(item_id, offset=offset, limit=limit)
+    return {"items": items, "total": total, "offset": offset, "limit": limit}
+
+
+@router.get(
+    "/items/{item_id}/blockers",
+    response_model=ActionBlockerListResponse,
+    dependencies=[Depends(populate_org_context)],
+)
+async def list_item_blockers(
+    item_id: uuid.UUID,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    _parent: ActionCenterItem = Depends(verify_parent_item_access),
+    db: Session = Depends(get_db),
+    _rbac=Depends(require_v4_role(Role.VIEWER, Role.USER, Role.ADMIN)),
+):
+    """Liste paginée des blockers de l'item, triée added_at DESC.
+
+    Le modèle ActionBlocker n'a pas de colonne `severity` — tri simple.
+    """
+    items, total = ActionBlockerRepository(db).list_by_item_id(item_id, offset=offset, limit=limit)
+    return {"items": items, "total": total, "offset": offset, "limit": limit}
+
+
+@router.get(
+    "/items/{item_id}/links",
+    response_model=ActionLinkListResponse,
+    dependencies=[Depends(populate_org_context)],
+)
+async def list_item_links(
+    item_id: uuid.UUID,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    _parent: ActionCenterItem = Depends(verify_parent_item_access),
+    db: Session = Depends(get_db),
+    _rbac=Depends(require_v4_role(Role.VIEWER, Role.USER, Role.ADMIN)),
+):
+    """Liste paginée des liens de l'item (vers d'autres modules), triée created_at DESC."""
+    items, total = ActionLinkRepository(db).list_by_item_id(item_id, offset=offset, limit=limit)
+    return {"items": items, "total": total, "offset": offset, "limit": limit}
