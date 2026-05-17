@@ -368,6 +368,11 @@ from routes.cockpit_strategique import router as cockpit_strategique_router
 
 app.include_router(cockpit_strategique_router)
 
+# M2-4.2 — endpoints V4 Action Center (template : POST + GET list + GET by id)
+from routes.v4.action_center import router as v4_action_center_router
+
+app.include_router(v4_action_center_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 

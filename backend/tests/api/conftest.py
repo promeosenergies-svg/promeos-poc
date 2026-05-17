@@ -63,3 +63,20 @@ def viewer_token() -> str:
 def unknown_role_token() -> str:
     """JWT avec role legacy non mappé → fallback V4 'viewer' + warning log."""
     return _make_token(role="unknown_role_xyz")
+
+
+# ─────────────────────────────────────────────────────────────────────
+# M2-4.2 — JWT scopés par org (tests d'isolation cross-org endpoints V4)
+# ─────────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def user_token_org_1() -> str:
+    """JWT energy_manager (→ V4 user) scopé org 1."""
+    return _make_token(role="energy_manager", org_id=1)
+
+
+@pytest.fixture
+def user_token_org_2() -> str:
+    """JWT energy_manager (→ V4 user) scopé org 2 — isolation cross-org."""
+    return _make_token(role="energy_manager", org_id=2)

@@ -112,6 +112,13 @@ class ActionCenterItem(Base):
     evidence_format_expected = Column(String(20))
     signal_confidence_level = Column(String(10))
 
+    # ─── Idempotency (M2-4.2 — POST /items replay-safe) ───
+    # idempotency_key : UUID v4 fourni par le client dans le header Idempotency-Key.
+    # idempotency_payload_hash : SHA256 du body — détecte un rejeu de clé avec un
+    # payload différent (→ 409). Index UNIQUE partiel par org (cf. __table_args__).
+    idempotency_key = Column(String(36))
+    idempotency_payload_hash = Column(String(64))
+
     # ─── Timestamps ───
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(
@@ -207,5 +214,16 @@ class ActionCenterItem(Base):
             "lifecycle_state",
             sqlite_where=text("owner_id IS NOT NULL"),
             postgresql_where=text("owner_id IS NOT NULL"),
+        ),
+        # M2-4.2 : unicité de l'idempotency_key PAR organisation (deux orgs
+        # peuvent réutiliser le même UUID sans conflit). Partiel : seules les
+        # lignes avec une clé sont indexées.
+        Index(
+            "idx_aci_idempotency_key",
+            "organisation_id",
+            "idempotency_key",
+            unique=True,
+            sqlite_where=text("idempotency_key IS NOT NULL"),
+            postgresql_where=text("idempotency_key IS NOT NULL"),
         ),
     )
