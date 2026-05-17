@@ -20,7 +20,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from models.v4.enums import Kind, LifecycleState, PriorityBracket
+from models.v4.enums import BlockerType, ClosureReason, Kind, LifecycleState, PriorityBracket
+from models.v4.enums.target_module import TargetModule
 
 
 # ── Request ──────────────────────────────────────────────────────────
@@ -184,3 +185,92 @@ class ActionLinkListResponse(BaseModel):
     total: int
     offset: int
     limit: int
+
+
+# ── Requests write (M2-4.4) ──────────────────────────────────────────
+#
+# Tous `extra="forbid"`. Les champs serveur-gérés / dérivés ne sont jamais
+# acceptés en body (organisation_id forcé par le repo ; priority_* dérivée M2-5 ;
+# lifecycle_state via PATCH /lifecycle ; kind via endpoint admin dédié — IS5).
+
+
+class ActionCenterItemUpdate(BaseModel):
+    """Body PATCH /items/{id} — update partiel des champs cosmétiques SEULEMENT.
+
+    Hors périmètre (endpoints dédiés) : `kind` (IS5 admin-sensible),
+    `lifecycle_state`/`closure_reason` (PATCH /lifecycle), `priority_*`/`score_*`
+    (axe dérivé M2-5), `organisation_id` (forcé par le repo).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: Optional[str] = Field(None, min_length=3, max_length=255)
+    description: Optional[str] = Field(None, max_length=4000)
+    domain: Optional[str] = Field(None, max_length=30)
+
+
+class LifecycleTransitionRequest(BaseModel):
+    """Body PATCH /items/{id}/lifecycle.
+
+    `closure_reason` : requise SSI `new_state == closed` ; refusée sinon ;
+    les valeurs system-only sont rejetées en 422 (cf. lifecycle_validator).
+    `comment` → metadata de l'event `state_changed` (pas de colonne dédiée).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    new_state: LifecycleState
+    closure_reason: Optional[ClosureReason] = None
+    comment: Optional[str] = Field(None, max_length=500)
+
+
+class EvidenceVerifyRequest(BaseModel):
+    """Body PATCH /evidences/{id}/verify.
+
+    ADR-029 : pas d'enum `status`. Sémantique portée par `verified_at` +
+    `verified_by` + `expires_at`. `expires_at` optionnel → défaut verified_at+90j.
+    `comment` → metadata de l'event (pas de colonne sur Evidence).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    expires_at: Optional[datetime] = None
+    comment: Optional[str] = Field(None, max_length=500)
+
+
+class BlockerCreate(BaseModel):
+    """Body POST /items/{id}/blockers. `justification` = motif (colonne modèle)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    blocker_type: BlockerType
+    justification: str = Field(..., min_length=3, max_length=2000)
+    expected_resolution_at: Optional[datetime] = None
+
+
+class BlockerResolveRequest(BaseModel):
+    """Body PATCH /blockers/{id}/resolve.
+
+    `resolution_comment` → metadata de l'event `blocker_removed` (le modèle
+    ActionBlocker n'a pas de colonne dédiée).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    resolution_comment: Optional[str] = Field(None, max_length=500)
+
+
+class ActionLinkCreate(BaseModel):
+    """Body POST /items/{id}/links — cible polymorphe.
+
+    `target_module` : enum strict (7 valeurs, 1 implémentée, 6 → 501).
+    `target_id` : vérifié côté serveur comme appartenant au scope org courant.
+    `link_type` et `relation` sont NOT NULL au niveau modèle → requis.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    target_module: TargetModule
+    target_id: UUID
+    link_type: str = Field(..., min_length=2, max_length=40)
+    relation: str = Field(..., min_length=2, max_length=40)

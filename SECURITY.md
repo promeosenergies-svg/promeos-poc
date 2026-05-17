@@ -133,6 +133,31 @@ async def get_thing(
 - OAuth2 SSO (Google, Azure AD).
 - Password rotation policy.
 
+### 5.5 — Différés introduits M2-4.4 (write endpoints)
+
+**ActionLink — cibles polymorphes (6 modules sur 7) :**
+
+- `site`, `building`, `meter`, `invoice`, `contract` → M2-5 ; `regulatory_obligation` → M2-6.
+- `link_target_validator.verify_link_target` lève `501 TARGET_MODULE_NOT_IMPLEMENTED` pour ces modules. Ajouter un handler quand le repository V4 correspondant existe.
+
+**Evidence upload :**
+
+- Formats DOCX/XLSX/ZIP/CSV → M2-6 (sprint storage). M2-4.4 = PDF/JPG/PNG seulement (magic bytes).
+- Scan antivirus (ClamAV), chiffrement at-rest, backend S3 → M2-6+. Stockage actuel = filesystem local par org (`PROMEOS_EVIDENCE_STORAGE_PATH`).
+
+**Acteur des audit events — dette JWT/UUID résiduelle :**
+
+- `ActionEventLog.actor_id` / `Evidence.uploaded_by` / `ActionBlocker.added_by` sont des UUID ; le JWT legacy porte un user_id INT. M2-4.1 n'a résolu la dette que pour `organisation_id`.
+- M2-4.4 dérive un `actor_id` UUID5 déterministe du user_id, et trace le user_id int réel dans `event_payload.actor_user_id`. Résolution propre (FK `users` ou migration) à planifier — cf. §5.1.
+
+**Doctrine event_types :**
+
+- `PATCH /items/{id}` (edit cosmétique) et `POST /items/{id}/links` n'émettent pas d'audit event : aucun des 16 `event_type` doctrine (SG-6) ne les couvre. `link_created` à arbitrer (amendement ADR-029) — backlog M3.
+
+**Reopened :**
+
+- `closed → reopened` non exposé via `PATCH /lifecycle` (closed = terminal). Endpoint admin dédié (fresh token + justification, IL3) à livrer si le besoin se confirme.
+
 ---
 
 ## 6. Référencement (pas de duplication)
