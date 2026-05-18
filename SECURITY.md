@@ -66,7 +66,7 @@ Acquis M2-4 (Centre d'Action V4) :
 ### 2.4 — Traçabilité (audit trail V4)
 
 - Table : `action_event_log` — chaque écriture V4 émet un event horodaté **org-scopé**.
-- 5 `event_type` émis par les endpoints write M2-4.4 : `item_created`, `lifecycle_changed`, `evidence_attached`, `evidence_verified`, `blocker_added` — tous dans la whitelist doctrine de 16 valeurs (SG-6 · ADR-029).
+- 5 `event_type` émis par les endpoints write M2-4.4 : `state_changed`, `evidence_added`, `evidence_verified`, `blocker_added`, `blocker_removed` — tous dans la whitelist doctrine de 16 valeurs (SG-6 · ADR-029).
 - Acteur : `actor_id` UUID dérivé **déterministe** (uuid5) du `user_id` JWT int ; le `user_id` int réel est tracé dans `event_payload.actor_user_id` (dette de typage résiduelle — §5.1, sans perte de traçabilité).
 - Code : émission via `ActionEventLogRepository` dans `backend/routes/v4/action_center.py`.
 

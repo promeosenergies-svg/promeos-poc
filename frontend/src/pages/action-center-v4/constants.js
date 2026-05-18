@@ -91,3 +91,79 @@ export const DRAWER_COPY = {
   tabPlaceholderTitle: 'Disponible prochainement',
   tabPlaceholderText: 'Cet onglet sera activé au sprint suivant.',
 };
+
+// ── M2-5.3.B — Onglets Preuves / Blocages / Liens ──────────────
+
+// Evidence : status dérivé de verified_at + expires_at (pas d'enum
+// verification_status backend — doctrine ADR-029).
+export const EVIDENCE_STATUS_LABELS = {
+  pending: 'En attente',
+  verified: 'Vérifiée',
+  expired: 'Expirée',
+};
+
+export const EVIDENCE_STATUS_BADGE_VARIANTS = {
+  pending: 'warn',
+  verified: 'ok',
+  expired: 'crit',
+};
+
+// Blocker : status dérivé de resolved_at.
+export const BLOCKER_STATUS_LABELS = {
+  active: 'Actif',
+  resolved: 'Résolu',
+};
+
+export const BLOCKER_STATUS_BADGE_VARIANTS = {
+  active: 'warn',
+  resolved: 'ok',
+};
+
+// blocker_type → label FR. Clés = enum BlockerType réel (7 valeurs `waiting_*`,
+// audit Phase 1.2) ; labels canoniques doctrine v0.3 §7.1.
+export const BLOCKER_TYPE_LABELS = {
+  waiting_evidence: 'Preuve attendue',
+  waiting_budget: 'Budget attendu',
+  waiting_third_party: 'Tiers attendu',
+  waiting_data: 'Donnée attendue',
+  waiting_supplier: 'Fournisseur attendu',
+  waiting_manager_validation: 'Validation manager attendue',
+  waiting_regulatory_confirmation: 'Confirmation réglementaire attendue',
+};
+
+// target_module → label FR (7 valeurs TargetModule, doctrine M2-4.4).
+export const TARGET_MODULE_LABELS = {
+  action_center_item: 'Action',
+  site: 'Site',
+  building: 'Bâtiment',
+  meter: 'Compteur',
+  invoice: 'Facture',
+  contract: 'Contrat',
+  regulatory_obligation: 'Obligation réglementaire',
+};
+
+// Seul action_center_item est traité côté UI ; les 6 autres = disabled + tooltip.
+export const TARGET_MODULE_UI_AVAILABLE = ['action_center_item'];
+
+export const TARGET_MODULE_DISABLED_TOOLTIP = 'Module pas encore intégré côté UI';
+
+// Copy des onglets M2-5.3.B.
+export const TAB_COPY = {
+  evidencesEmptyTitle: 'Aucune preuve',
+  evidencesEmptyText: "Les preuves d'exécution seront listées ici dès leur ajout.",
+  evidencesErrorTitle: 'Impossible de charger les preuves',
+
+  blockersEmptyTitle: 'Aucun blocage',
+  blockersEmptyText: 'Les blocages signalés apparaîtront ici.',
+  blockersErrorTitle: 'Impossible de charger les blocages',
+
+  linksEmptyTitle: 'Aucun lien',
+  linksEmptyText: "Les liens vers d'autres éléments apparaîtront ici.",
+  linksErrorTitle: 'Impossible de charger les liens',
+
+  expiresAtLabel: 'Expire le',
+  verifiedAtLabel: 'Vérifiée le',
+  resolvedAtLabel: 'Résolu le',
+  reportedAtLabel: 'Signalé le',
+  uploadedAtLabel: 'Ajoutée le',
+};

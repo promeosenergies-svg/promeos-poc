@@ -5,8 +5,10 @@ import Tabs from '../../../ui/Tabs';
 
 import { useActionCenterV4Item } from '../../../hooks/v4';
 import { DRAWER_COPY, TAB_IDS, TAB_LABELS } from '../constants';
+import { BlockersTab } from './BlockersTab';
+import { EvidencesTab } from './EvidencesTab';
 import { ItemHeader } from './ItemHeader';
-import { TabPlaceholder } from './TabPlaceholder';
+import { LinksTab } from './LinksTab';
 import { TimelineTab } from './TimelineTab';
 
 const TAB_LIST = [
@@ -17,12 +19,11 @@ const TAB_LIST = [
 ];
 
 /**
- * M2-5.3.A — Drawer détail d'un item V4 (lecture seule, aucune mutation).
+ * M2-5.3.A/B — Drawer détail d'un item V4 (lecture seule, aucune mutation).
  *
- * Fetch l'item via useActionCenterV4Item(itemId) — données fraîches, pas
- * l'objet de la liste. Lazy par onglet : Timeline charge à l'ouverture, les
- * autres onglets au premier clic (Set `loadedTabs`). En M2-5.3.A les 3 autres
- * onglets affichent un TabPlaceholder — M2-5.3.B les activera.
+ * Fetch l'item via useActionCenterV4Item(itemId). Lazy par onglet : un onglet
+ * ne monte son contenu qu'au premier clic (Set `loadedTabs`) ; les 4 onglets
+ * sont read-only (Historique / Preuves / Blocages / Liens).
  */
 export function ItemDetailDrawer({ itemId, open, onClose }) {
   const [activeTab, setActiveTab] = useState(TAB_IDS.timeline);
@@ -62,9 +63,15 @@ export function ItemDetailDrawer({ itemId, open, onClose }) {
         {activeTab === TAB_IDS.timeline && loadedTabs.has(TAB_IDS.timeline) && (
           <TimelineTab itemId={itemId} />
         )}
-        {activeTab === TAB_IDS.evidences && <TabPlaceholder />}
-        {activeTab === TAB_IDS.blockers && <TabPlaceholder />}
-        {activeTab === TAB_IDS.links && <TabPlaceholder />}
+        {activeTab === TAB_IDS.evidences && loadedTabs.has(TAB_IDS.evidences) && (
+          <EvidencesTab itemId={itemId} />
+        )}
+        {activeTab === TAB_IDS.blockers && loadedTabs.has(TAB_IDS.blockers) && (
+          <BlockersTab itemId={itemId} />
+        )}
+        {activeTab === TAB_IDS.links && loadedTabs.has(TAB_IDS.links) && (
+          <LinksTab itemId={itemId} />
+        )}
       </div>
     </Drawer>
   );
