@@ -81,7 +81,7 @@ Les 5 agents Python `backend/ai_layer/agents/` sont runtime API production, **di
 2. Org-scoping obligatoire sur chaque endpoint via `resolve_org_id`
 3. Atomic commits : `fix(module-pN): Phase X.Y — description`
 4. MCP obligatoires : Context7, code-review, simplify
-5. Baseline tests jamais régresser (FE ≥ 3 783, BE ≥ 843, cf. workflow pre-merge)
+5. Baseline tests jamais régresser (FE ≥ 4 751 baseline M2-5.0, BE ≥ 843, cf. workflow pre-merge)
 6. `consumption_unified_service.py` = SoT consommation
 7. `utils/naf_resolver.py:resolve_naf_code()` = canonical NAF
 8. Branche `claude/*` — jamais commit direct main
@@ -118,7 +118,7 @@ npm run dev:full                                             # full stack
 
 1. `/code-review:code-review` — bugs, sécu, qualité
 2. `/simplify` — refactoring, clarté
-3. Tests FE ≥ 3 783, BE ≥ 843, zéro régression
+3. Tests FE ≥ 4 751, BE ≥ 843, zéro régression
 4. Playwright audit screenshots si modification UI
 
 ## Architecture hiérarchique
