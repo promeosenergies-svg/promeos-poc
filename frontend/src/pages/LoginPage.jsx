@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 import LoginBackground from './LoginBackground';
 
 export default function LoginPage() {
@@ -24,6 +25,42 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // ── M2-5.8.A.bis — connexion démo (Option B : surfacée sur LoginPage) ──
+  const [demoAvailable, setDemoAvailable] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  // Probe au mount : le backend n'expose la connexion démo qu'en DEMO_MODE.
+  useEffect(() => {
+    let active = true;
+    api
+      .get('/auth/demo-login/available')
+      .then((res) => {
+        if (active) setDemoAvailable(res.data?.available === true);
+      })
+      .catch(() => {
+        if (active) setDemoAvailable(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleDemoLogin = useCallback(async () => {
+    setError('');
+    setDemoLoading(true);
+    try {
+      const res = await api.post('/auth/demo-login');
+      localStorage.setItem('promeos_token', res.data.access_token);
+      // Rechargement complet : AuthContext restaure la session via /auth/me
+      // au mount. `login()` legacy prend (email, password), pas un payload —
+      // le rechargement garde l'exception doctrine confinée à LoginPage.
+      window.location.assign('/action-center-v4');
+    } catch (err) {
+      setError(err.response?.data?.detail?.message || 'Connexion démo indisponible');
+      setDemoLoading(false);
+    }
+  }, []);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -191,6 +228,51 @@ export default function LoginPage() {
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
           </form>
+
+          {/* ── M2-5.8.A.bis — connexion démo conditionnelle (DEMO_MODE) ── */}
+          {demoAvailable && (
+            <>
+              <div
+                aria-hidden="true"
+                style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '1.25rem 0' }}
+              >
+                <div style={{ flex: 1, height: 1, background: 'rgba(56, 189, 248, 0.2)' }} />
+                <span style={{ fontSize: 12, color: '#94a3b8', letterSpacing: 0.5 }}>OU</span>
+                <div style={{ flex: 1, height: 1, background: 'rgba(56, 189, 248, 0.2)' }} />
+              </div>
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                disabled={demoLoading}
+                style={{
+                  width: '100%',
+                  background: 'transparent',
+                  border: '1.5px solid rgba(45, 212, 191, 0.55)',
+                  borderRadius: 8,
+                  padding: 12,
+                  color: '#5eead4',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  letterSpacing: 0.5,
+                  cursor: demoLoading ? 'not-allowed' : 'pointer',
+                  opacity: demoLoading ? 0.6 : 1,
+                  transition: 'background 0.2s',
+                }}
+              >
+                {demoLoading ? 'Connexion…' : 'Connexion démo HELIOS'}
+              </button>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: 'rgba(148, 163, 184, 0.7)',
+                  textAlign: 'center',
+                  marginTop: 8,
+                }}
+              >
+                Accès démo : Marie Dupont, Energy Manager HELIOS.
+              </p>
+            </>
+          )}
 
           {/* Phase L34.4 audit fix Medium SECURITY (PROMEOS-SEC-2026-019) — le
               mot de passe démo "promeos2024" était auparavant affiché en clair

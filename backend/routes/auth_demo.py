@@ -1,23 +1,24 @@
-"""M2-5.8.A — Endpoint de connexion démo PROMEOS.
+"""M2-5.8.A / .bis — Connexion démo PROMEOS.
 
-Débloque le P0-1 de l'audit M2-5 : `/action-center-v4` renvoyait `401
-NO_ORG_CONTEXT` en DEMO_MODE sans token, rendant le parcours pilote injouable.
+Débloque le P0-1 de l'audit M2-5 : sans session, `/action-center-v4` est
+inaccessible (route derrière `RequireAuth`).
 
-ACCESSIBLE UNIQUEMENT EN DEMO_MODE. En production (`PROMEOS_DEMO_MODE` absent
-ou `false`), l'endpoint répond **404** — invisible, pas 401/403.
+M2-5.8.A.bis (Option B) — le walkthrough navigateur a montré que `RequireAuth`
+redirige vers `/login` avant que la page V4 ne se monte. Le demo-login est donc
+surfacé sur `LoginPage` (point d'entrée auth canonique), pas en prompt inline.
 
-Le JWT est produit par `create_access_token` legacy (`services/iam_service.py`):
-claims `{sub, org_id, role, exp, iat}` — exactement ceux que `populate_org_context`
-(lit `org_id`) et `require_v4_role` (lit `role`) consomment. Aucun claim custom,
-aucun bricolage : un token demo-login est strictement équivalent à un token
-`/api/auth/login`.
+Deux endpoints, accessibles UNIQUEMENT en DEMO_MODE :
+- `GET  /api/auth/demo-login/available` — probe public, toujours 200, `{available}`.
+- `POST /api/auth/demo-login` — connexion 1-clic comme Marie Dupont
+  (energy_manager HELIOS). 404 en production (`PROMEOS_DEMO_MODE` off/absent).
 
-N'a PAS réutilisé `POST /api/auth/impersonate` (qui existe déjà) : sémantique
-distincte (impersonation admin ≠ connexion démo en 1 clic), et body requis
-(email) là où demo-login a un body vide et est idempotent.
+Le POST renvoie **exactement** le schéma de `POST /api/auth/login` legacy
+(Q3=A) : il réutilise `_build_login_response` — zéro divergence de format, la
+session est strictement équivalente à une connexion email + mot de passe.
+
+N'a PAS réutilisé `POST /api/auth/impersonate` : sémantique distincte
+(impersonation admin ≠ connexion démo en 1 clic), et body requis (email).
 """
-
-from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -25,38 +26,37 @@ from sqlalchemy.orm import Session
 import middleware.auth as auth_module
 from database import get_db
 from models.iam import User, UserOrgRole
+from routes.auth import _build_login_response
 from seeds.use_case_a_seed import HELIOS_DEMO_USER_EMAIL
-from services.iam_service import create_access_token
 
 router = APIRouter(prefix="/api/auth", tags=["Auth démo"])
 
-# TTL volontairement long (8 h) : une session de démo pilote tient une journée
-# sans réauthentification. `create_access_token` accepte un `expires_delta`
-# explicite (défaut legacy = 30 min, trop court ici).
-_TOKEN_TTL = timedelta(hours=8)
+
+@router.get("/demo-login/available")
+def demo_login_available():
+    """Probe public : indique si la connexion démo est disponible.
+
+    Toujours **200** (jamais 404) — le frontend lit le flag `available` sans
+    ambiguïté « endpoint absent vs mode désactivé ». Permet à `LoginPage`
+    d'afficher ou non le bouton démo.
+    """
+    return {"available": auth_module.DEMO_MODE}
 
 
 @router.post("/demo-login")
 def demo_login(db: Session = Depends(get_db)):
     """Connexion démo HELIOS — disponible uniquement en DEMO_MODE.
 
-    Body vide, idempotent : chaque appel renvoie un JWT frais pour le compte
-    démo Marie Dupont (energy_manager HELIOS, org id=1).
-
-    Returns:
-        access_token: JWT signé (claims sub/org_id/role — équivalent /login).
-        user_email: email du compte démo.
-        organisation_id: id HELIOS.
-        expires_in: durée de validité du token, en secondes.
+    Body vide, idempotent. Renvoie le schéma `POST /api/auth/login` legacy
+    (`access_token`, `token_type`, `user`, `org`, `role`, `orgs`, `scopes`,
+    `permissions`) pour le compte démo Marie Dupont.
 
     Raises:
         HTTPException 404: si DEMO_MODE est inactif (endpoint masqué en prod).
         HTTPException 500: si le compte démo n'a pas été seedé.
     """
-    # `DEMO_MODE` est une constante figée à l'import dans `middleware.auth`.
-    # On la lit via le module (`auth_module.DEMO_MODE`) et non par
-    # `from ... import DEMO_MODE` : l'accès indirect rend le monkeypatch des
-    # tests effectif (`setattr("middleware.auth.DEMO_MODE", ...)`).
+    # `DEMO_MODE` est figé à l'import dans `middleware.auth` ; lecture indirecte
+    # via le module pour que le monkeypatch des tests soit effectif.
     if not auth_module.DEMO_MODE:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
 
@@ -82,10 +82,5 @@ def demo_login(db: Session = Depends(get_db)):
             },
         )
 
-    token = create_access_token(user.id, uor.org_id, uor.role.value, expires_delta=_TOKEN_TTL)
-    return {
-        "access_token": token,
-        "user_email": user.email,
-        "organisation_id": uor.org_id,
-        "expires_in": int(_TOKEN_TTL.total_seconds()),
-    }
+    # Format strictement aligné sur /api/auth/login (Q3=A) — session identique.
+    return _build_login_response(db, user, uor)

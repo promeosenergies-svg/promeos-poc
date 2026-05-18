@@ -242,13 +242,3 @@ export const BLOCKER_RESOLVE_COPY = {
   cancelButton: 'Annuler',
   successToast: 'Blocage résolu',
 };
-
-// ── M2-5.8.A — Connexion démo ──────────────────────────────────
-export const DEMO_LOGIN_COPY = {
-  title: 'Mode démo HELIOS',
-  description:
-    'Connectez-vous en tant que Marie Dupont (Energy Manager HELIOS) pour ' +
-    'explorer le parcours pilote PROMEOS sur 6 actions réalistes.',
-  buttonLabel: 'Se connecter (démo)',
-  buttonLoading: 'Connexion…',
-};

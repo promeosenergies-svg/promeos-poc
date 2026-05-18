@@ -189,4 +189,22 @@ M3-SEED-MIGRATION → M3-LINK-EVENT-DOCTRINE → M3-METHOD-DOC.
   pour la 1ʳᵉ démo, B/C sont utiles ensuite.
 - **DoD** : seeds B/C livrés, idempotents, sur le pattern déclaratif M2-5.7.
 
-**Effort cumulé M2-5 → M3 : ~9-11 h** (7 items courts).
+### M3-LEGACY-TOUCHES — Registre des exceptions doctrine « no legacy »  🟢 P3 · ~0 h
+
+- **Origine** : M2-5.8.A.bis.
+- **Objet** : tenir un registre des composants legacy touchés par les sprints
+  M2-5+ — pour matérialiser les frontières doctrine et planifier d'éventuelles
+  refontes ciblées.
+- **Pourquoi** : la discipline « aucun composant legacy modifié » a tenu 10
+  sprints (M2-5.0 → .8.A). M2-5.8.A.bis l'a rompue une fois, de façon assumée
+  et justifiée — ce type d'exception doit être tracé, pas dilué.
+- **Exceptions enregistrées** :
+  - **M2-5.8.A.bis — `frontend/src/pages/LoginPage.jsx`** : ajout d'un state
+    probe DEMO_MODE + d'un bouton « Connexion démo HELIOS » conditionnel + d'un
+    handler. Périmètre strict : aucune modification du flux email/password
+    existant, aucun refactoring. Justifié par l'Option B (le walkthrough Phase 0
+    a prouvé que le prompt inline était inatteignable derrière `RequireAuth`).
+- **DoD** : registre tenu à jour ; section « Exceptions doctrine » ajoutée à
+  `docs/sprints/M2-5_FRONTEND_PLAN.md` §13 lors d'un prochain passage doc.
+
+**Effort cumulé M2-5 → M3 : ~9-11 h** (8 items courts).
