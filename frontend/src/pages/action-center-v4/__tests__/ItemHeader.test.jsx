@@ -1,0 +1,63 @@
+// @vitest-environment jsdom
+/**
+ * M2-5.3.A — Tests du composant ItemHeader (rendu jsdom).
+ */
+import '@testing-library/jest-dom/vitest';
+import { afterEach, describe, expect, test } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+
+import { ItemHeader } from '../components/ItemHeader';
+
+afterEach(cleanup);
+
+describe('ItemHeader', () => {
+  test('renders a skeleton while loading', () => {
+    const { container } = render(<ItemHeader loading />);
+    expect(container.querySelector('.animate-pulse')).toBeTruthy();
+  });
+
+  test('renders an error message on error', () => {
+    render(<ItemHeader error={{ message: 'fail' }} />);
+    expect(screen.getByText(/impossible de charger/i)).toBeInTheDocument();
+  });
+
+  test('renders the title and the state badge', () => {
+    render(
+      <ItemHeader
+        item={{
+          title: 'Vérifier conso Q3',
+          lifecycle_state: 'triaged',
+          domain: 'energy',
+        }}
+      />
+    );
+    expect(screen.getByText('Vérifier conso Q3')).toBeInTheDocument();
+    expect(screen.getByText('Trié')).toBeInTheDocument();
+  });
+
+  test('shows an em dash for each null metadata field', () => {
+    render(
+      <ItemHeader
+        item={{
+          title: 'X',
+          lifecycle_state: 'new',
+          domain: null,
+          kind: null,
+          created_at: null,
+          updated_at: null,
+        }}
+      />
+    );
+    expect(screen.getAllByText('—').length).toBe(4);
+  });
+
+  test('shows the description when present, hides it when null', () => {
+    const { rerender } = render(
+      <ItemHeader item={{ title: 'X', lifecycle_state: 'new', description: 'desc1' }} />
+    );
+    expect(screen.getByText('desc1')).toBeInTheDocument();
+
+    rerender(<ItemHeader item={{ title: 'X', lifecycle_state: 'new', description: null }} />);
+    expect(screen.queryByText('desc1')).not.toBeInTheDocument();
+  });
+});

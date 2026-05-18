@@ -50,3 +50,44 @@ export const COPY = {
   emptyFilteredText: 'Essayez une autre page ou choisissez « Tous les états ».',
   errorTitle: 'Impossible de charger les actions',
 };
+
+// ── M2-5.3.A — Drawer détail item ──────────────────────────────
+
+export const TAB_IDS = {
+  timeline: 'timeline',
+  evidences: 'evidences',
+  blockers: 'blockers',
+  links: 'links',
+};
+
+export const TAB_LABELS = {
+  [TAB_IDS.timeline]: 'Historique',
+  [TAB_IDS.evidences]: 'Preuves',
+  [TAB_IDS.blockers]: 'Blocages',
+  [TAB_IDS.links]: 'Liens',
+};
+
+// Mapping event_type backend → label FR. Clés alignées sur les valeurs
+// réellement émises par routes/v4/action_center.py (audit Phase 1).
+export const EVENT_TYPE_LABELS = {
+  state_changed: "Transition d'état",
+  evidence_added: 'Preuve ajoutée',
+  evidence_verified: 'Preuve vérifiée',
+  blocker_added: 'Blocage signalé',
+  blocker_removed: 'Blocage levé',
+};
+
+// Copy spécifique au drawer détail.
+export const DRAWER_COPY = {
+  drawerTitle: "Détail de l'action",
+  domainLabel: 'Domaine',
+  kindLabel: 'Type',
+  createdAtLabel: 'Créée',
+  updatedAtLabel: 'Mise à jour',
+  headerError: "Impossible de charger l'action.",
+  timelineEmptyTitle: 'Aucun événement',
+  timelineEmptyText: "L'historique sera alimenté au fil des actions.",
+  timelineErrorTitle: "Impossible de charger l'historique",
+  tabPlaceholderTitle: 'Disponible prochainement',
+  tabPlaceholderText: 'Cet onglet sera activé au sprint suivant.',
+};

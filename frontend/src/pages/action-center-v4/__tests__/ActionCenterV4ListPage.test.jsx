@@ -8,9 +8,15 @@ import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 
 vi.mock('../../../hooks/v4', () => ({
   useActionCenterV4Items: vi.fn(),
+  useActionCenterV4Item: vi.fn(),
+  useActionCenterV4Events: vi.fn(),
 }));
 
-import { useActionCenterV4Items } from '../../../hooks/v4';
+import {
+  useActionCenterV4Items,
+  useActionCenterV4Item,
+  useActionCenterV4Events,
+} from '../../../hooks/v4';
 import { ActionCenterV4ListPage } from '../ActionCenterV4ListPage';
 
 function mockHook(value) {
@@ -26,6 +32,20 @@ function mockHook(value) {
 describe('ActionCenterV4ListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Le drawer est rendu en permanence (fermé tant que selectedItemId est
+    // null) ; ItemDetailDrawer appelle useActionCenterV4Item dès le rendu.
+    useActionCenterV4Item.mockReturnValue({
+      data: null,
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    useActionCenterV4Events.mockReturnValue({
+      data: { items: [], total: 0 },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
   });
 
   // Pas de `globals: true` dans vite.config → cleanup RTL explicite.
@@ -156,5 +176,50 @@ describe('ActionCenterV4ListPage', () => {
     });
     render(<ActionCenterV4ListPage />);
     expect(screen.getByLabelText('Page suivante')).toBeDisabled();
+  });
+
+  test('clicking a row opens the detail drawer', () => {
+    mockHook({
+      data: {
+        items: [{ id: '1', title: 'Action A', lifecycle_state: 'new' }],
+        total: 1,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    useActionCenterV4Item.mockReturnValue({
+      data: { id: '1', title: 'Action A', lifecycle_state: 'new' },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<ActionCenterV4ListPage />);
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    fireEvent.click(screen.getByText('Action A').closest('tr'));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  test('closing the drawer removes it from the DOM', () => {
+    mockHook({
+      data: {
+        items: [{ id: '1', title: 'Action A', lifecycle_state: 'new' }],
+        total: 1,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    useActionCenterV4Item.mockReturnValue({
+      data: { id: '1', title: 'Action A', lifecycle_state: 'new' },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<ActionCenterV4ListPage />);
+    fireEvent.click(screen.getByText('Action A').closest('tr'));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Fermer'));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
