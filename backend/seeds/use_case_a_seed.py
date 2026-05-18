@@ -25,13 +25,17 @@ cible (HELIOS, id=1) existe, sinon `SeedError`.
 
 from __future__ import annotations
 
+import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import NAMESPACE_DNS, UUID, uuid5
 
+import bcrypt
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from models.enums import UserRole
+from models.iam import User, UserOrgRole
 from models.organisation import Organisation
 from models.v4.action_blockers import ActionBlocker
 from models.v4.action_center_items import ActionCenterItem
@@ -654,8 +658,63 @@ def _seed_one_action(db: Session, org_id: int, spec: dict) -> dict[str, int]:
     return counts
 
 
+# ─────────────────────────────────────────────────────────────────────
+# Utilisateur démo (M2-5.8.A — débloque le P0-1 : login réel pour le pilote)
+# ─────────────────────────────────────────────────────────────────────
+
+# Identité du compte pilote. Cohérente avec l'`actor_name` « Marie Dupont »
+# des 6 actions : le pilote connecté EST la personne visible dans les
+# timelines — pas de dissonance en démo.
+HELIOS_DEMO_USER_EMAIL = "marie.dupont@helios.demo"
+
+
+def seed_helios_demo_user(db: Session, *, org_id: int = SEED_ORG_ID) -> User:
+    """Seede l'utilisateur démo Marie Dupont (energy_manager HELIOS). Idempotent.
+
+    Crée 2 rows IAM — `User` + `UserOrgRole(org_id, ENERGY_MANAGER)`. Aucune
+    `UserScope` : les endpoints V4 ne dépendent que de `populate_org_context`
+    (org_id) + `require_v4_role` (rôle issu du claim JWT), pas du scoping site
+    hiérarchique (différé M2-6). `energy_manager` mappe vers le rôle V4 `user`
+    (`middleware/rbac.py`) — lecture + écriture sur le périmètre org.
+
+    Le mot de passe est un secret aléatoire (`secrets.token_urlsafe`) hashé
+    bcrypt, JAMAIS connu ni journalisé : le seul accès à ce compte est
+    `POST /api/auth/demo-login`. `POST /api/auth/login` (email + password) ne
+    pourra jamais l'authentifier — défense en profondeur contre un login deviné.
+    Le hash est produit directement via `bcrypt` (et non `iam_service`) pour ne
+    pas coupler le seed au check `PROMEOS_JWT_SECRET` du module auth.
+
+    Idempotent : ré-exécution → aucun doublon (email unique + UniqueConstraint
+    user/org). Tolère un état partiel (User présent sans UserOrgRole).
+
+    Returns:
+        l'instance `User` démo (créée ou déjà existante).
+    """
+    user = db.query(User).filter(User.email == HELIOS_DEMO_USER_EMAIL).first()
+    if user is None:
+        user = User(
+            email=HELIOS_DEMO_USER_EMAIL,
+            hashed_password=bcrypt.hashpw(secrets.token_urlsafe(32).encode(), bcrypt.gensalt()).decode(),
+            nom="Dupont",
+            prenom="Marie",
+            actif=True,
+        )
+        db.add(user)
+        db.flush()  # attribue user.id pour la FK UserOrgRole
+
+    has_role = db.query(UserOrgRole).filter(UserOrgRole.user_id == user.id, UserOrgRole.org_id == org_id).first()
+    if has_role is None:
+        db.add(UserOrgRole(user_id=user.id, org_id=org_id, role=UserRole.ENERGY_MANAGER))
+
+    db.commit()
+    return user
+
+
 def seed_use_case_a_actions(db: Session, *, org_id: int = SEED_ORG_ID) -> UseCaseASeedReport:
-    """Seede les 6 actions HELIOS du Use Case A. Idempotent (skip par PK).
+    """Seede les 6 actions HELIOS du Use Case A + l'utilisateur démo. Idempotent.
+
+    Seede aussi l'utilisateur démo Marie Dupont (`seed_helios_demo_user`) — le
+    compte que `POST /api/auth/demo-login` utilise pour le parcours pilote.
 
     Args:
         db: session SQLAlchemy. `PRAGMA foreign_keys=ON` doit être actif (garanti
@@ -669,6 +728,7 @@ def seed_use_case_a_actions(db: Session, *, org_id: int = SEED_ORG_ID) -> UseCas
         SeedError: si l'organisation cible n'existe pas.
     """
     _require_org(db, org_id)
+    seed_helios_demo_user(db, org_id=org_id)
 
     created = skipped = 0
     totals = {"events": 0, "evidences": 0, "blockers": 0, "links": 0}

@@ -32,6 +32,9 @@ function mockHook(value) {
 describe('ActionCenterV4ListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // M2-5.8.A — la page exige désormais un token (sinon DemoLoginPrompt).
+    // Les tests de la page authentifiée posent un token par défaut.
+    localStorage.setItem('promeos_token', 'demo-test-token');
     // Le drawer est rendu en permanence (fermé tant que selectedItemId est
     // null) ; ItemDetailDrawer appelle useActionCenterV4Item dès le rendu.
     useActionCenterV4Item.mockReturnValue({
@@ -49,7 +52,10 @@ describe('ActionCenterV4ListPage', () => {
   });
 
   // Pas de `globals: true` dans vite.config → cleanup RTL explicite.
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
 
   test('renders a loading skeleton while loading', () => {
     mockHook({ loading: true });
@@ -221,5 +227,31 @@ describe('ActionCenterV4ListPage', () => {
 
     fireEvent.click(screen.getByLabelText('Fermer'));
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  // ── M2-5.8.A — garde d'authentification ──────────────────────────
+  test('shows the demo login prompt when there is no token', () => {
+    localStorage.removeItem('promeos_token');
+    mockHook({ data: { items: [], total: 0, offset: 0, limit: 20 } });
+    render(<ActionCenterV4ListPage />);
+    expect(screen.getByText(/mode démo helios/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument();
+    // La liste n'est pas rendue tant que le pilote n'est pas connecté.
+    expect(screen.queryByText(/aucune action à afficher/i)).not.toBeInTheDocument();
+  });
+
+  test('shows the items table when a token is present', () => {
+    // Token posé par le beforeEach → page authentifiée.
+    mockHook({
+      data: {
+        items: [{ id: '1', title: 'Action A', lifecycle_state: 'new' }],
+        total: 1,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    render(<ActionCenterV4ListPage />);
+    expect(screen.queryByText(/mode démo helios/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Action A')).toBeInTheDocument();
   });
 });

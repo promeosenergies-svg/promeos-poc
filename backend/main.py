@@ -373,6 +373,11 @@ from routes.v4.action_center import router as v4_action_center_router
 
 app.include_router(v4_action_center_router)
 
+# M2-5.8.A — connexion démo (débloque le P0-1 audit M2-5 : login réel pilote)
+from routes.auth_demo import router as auth_demo_router
+
+app.include_router(auth_demo_router)
+
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 
