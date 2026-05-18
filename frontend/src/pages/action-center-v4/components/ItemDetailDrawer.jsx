@@ -19,15 +19,17 @@ const TAB_LIST = [
 ];
 
 /**
- * M2-5.3.A/B — Drawer détail d'un item V4 (lecture seule, aucune mutation).
+ * M2-5.3 / M2-5.4 — Drawer détail d'un item V4.
  *
- * Fetch l'item via useActionCenterV4Item(itemId). Lazy par onglet : un onglet
- * ne monte son contenu qu'au premier clic (Set `loadedTabs`) ; les 4 onglets
- * sont read-only (Historique / Preuves / Blocages / Liens).
+ * Lecture : item + 4 onglets read-only, lazy par onglet (Set `loadedTabs`).
+ * Écriture : une transition lifecycle réussie (depuis ItemHeader) déclenche un
+ * refetch ciblé — item (header), events (remount de TimelineTab via `refreshKey`,
+ * ce qui respecte le lazy) et liste parent (`onRefreshList`).
  */
-export function ItemDetailDrawer({ itemId, open, onClose }) {
+export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
   const [activeTab, setActiveTab] = useState(TAB_IDS.timeline);
   const [loadedTabs, setLoadedTabs] = useState(() => new Set([TAB_IDS.timeline]));
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Reset à la fermeture → la prochaine ouverture repart sur Timeline.
   useEffect(() => {
@@ -47,13 +49,31 @@ export function ItemDetailDrawer({ itemId, open, onClose }) {
     });
   }, []);
 
-  const { data: item, loading: itemLoading, error: itemError } = useActionCenterV4Item(itemId);
+  const {
+    data: item,
+    loading: itemLoading,
+    error: itemError,
+    refetch: refetchItem,
+  } = useActionCenterV4Item(itemId);
+
+  // Succès transition → refetch ciblé : item (header) + events (remount de
+  // TimelineTab via refreshKey) + liste parent.
+  const handleTransitionSuccess = useCallback(() => {
+    refetchItem();
+    setRefreshKey((k) => k + 1);
+    onRefreshList?.();
+  }, [refetchItem, onRefreshList]);
 
   if (!open || !itemId) return null;
 
   return (
     <Drawer open={open} onClose={onClose} title={DRAWER_COPY.drawerTitle} wide>
-      <ItemHeader item={item} loading={itemLoading} error={itemError} />
+      <ItemHeader
+        item={item}
+        loading={itemLoading}
+        error={itemError}
+        onTransitionSuccess={handleTransitionSuccess}
+      />
 
       <div className="mt-4">
         <Tabs tabs={TAB_LIST} active={activeTab} onChange={handleTabChange} />
@@ -61,7 +81,7 @@ export function ItemDetailDrawer({ itemId, open, onClose }) {
 
       <div className="mt-4">
         {activeTab === TAB_IDS.timeline && loadedTabs.has(TAB_IDS.timeline) && (
-          <TimelineTab itemId={itemId} />
+          <TimelineTab key={refreshKey} itemId={itemId} />
         )}
         {activeTab === TAB_IDS.evidences && loadedTabs.has(TAB_IDS.evidences) && (
           <EvidencesTab itemId={itemId} />

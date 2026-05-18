@@ -167,3 +167,28 @@ export const TAB_COPY = {
   reportedAtLabel: 'Signalé le',
   uploadedAtLabel: 'Ajoutée le',
 };
+
+// ── M2-5.4 — Modal transition lifecycle ────────────────────────
+
+// 3 closure_reasons user-facing (cf. lifecycleTransitions.USER_FACING_CLOSURE_REASONS).
+export const CLOSURE_REASON_LABELS = {
+  resolved: 'Résolu',
+  dismissed: 'Rejeté',
+  not_applicable: 'Non applicable',
+};
+
+export const TRANSITION_COPY = {
+  buttonTransition: 'Transitionner',
+  buttonTerminal: 'État terminal — aucune transition possible',
+  modalTitle: "Transitionner l'action",
+  fieldNewState: 'Nouvel état',
+  fieldClosureReason: 'Raison de clôture',
+  fieldComment: 'Commentaire (optionnel)',
+  selectPlaceholder: 'Sélectionner un état…',
+  closurePlaceholder: 'Sélectionner une raison…',
+  submitButton: 'Transitionner',
+  submitLoading: 'Transition en cours…',
+  cancelButton: 'Annuler',
+  successToast: 'Transition effectuée',
+  noTransitionsAvailable: 'Aucune transition possible depuis cet état.',
+};

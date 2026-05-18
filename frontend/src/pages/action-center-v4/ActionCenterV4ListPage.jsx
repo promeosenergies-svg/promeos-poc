@@ -77,6 +77,7 @@ export function ActionCenterV4ListPage() {
         itemId={selectedItemId}
         open={selectedItemId !== null}
         onClose={handleCloseDrawer}
+        onRefreshList={refetch}
       />
     </PageShell>
   );

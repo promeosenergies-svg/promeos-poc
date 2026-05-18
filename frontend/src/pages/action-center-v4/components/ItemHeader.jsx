@@ -1,14 +1,26 @@
-import { DRAWER_COPY } from '../constants';
+import { useCallback, useState } from 'react';
+
+import Button from '../../../ui/Button';
+
+import { DRAWER_COPY, TRANSITION_COPY } from '../constants';
 import { formatDateTimeFR } from '../utils/date';
+import { isTerminalState } from '../utils/lifecycleTransitions';
 import { LifecycleBadge } from './LifecycleBadge';
+import { LifecycleTransitionModal } from './LifecycleTransitionModal';
 
 /**
- * M2-5.3.A — En-tête du drawer : titre + badge d'état + métadonnées.
+ * M2-5.3.A / M2-5.4 — En-tête du drawer : titre + badge d'état + bouton
+ * « Transitionner » + métadonnées.
  *
- * Aucune action (la transition lifecycle arrive en M2-5.4). Gère les états
- * loading (skeleton) et error / item absent.
+ * Le bouton ouvre la modal de transition lifecycle (M2-5.4) ; il reste
+ * toujours visible mais est désactivé si l'item est dans un état terminal
+ * (`closed`). Gère les états loading (skeleton) et error / item absent.
  */
-export function ItemHeader({ item, loading, error }) {
+export function ItemHeader({ item, loading, error, onTransitionSuccess }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const handleOpenModal = useCallback(() => setModalOpen(true), []);
+  const handleCloseModal = useCallback(() => setModalOpen(false), []);
+
   if (loading) {
     return (
       <header>
@@ -26,11 +38,24 @@ export function ItemHeader({ item, loading, error }) {
     );
   }
 
+  const isTerminal = isTerminalState(item.lifecycle_state);
+
   return (
     <header>
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-xl font-semibold text-gray-900">{item.title}</h2>
-        <LifecycleBadge state={item.lifecycle_state} />
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <LifecycleBadge state={item.lifecycle_state} />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleOpenModal}
+            disabled={isTerminal}
+            title={isTerminal ? TRANSITION_COPY.buttonTerminal : undefined}
+          >
+            {TRANSITION_COPY.buttonTransition}
+          </Button>
+        </div>
       </div>
 
       {item.description && <p className="mt-2 text-sm text-gray-600">{item.description}</p>}
@@ -48,6 +73,16 @@ export function ItemHeader({ item, loading, error }) {
         <dt>{DRAWER_COPY.updatedAtLabel}</dt>
         <dd className="text-gray-700">{formatDateTimeFR(item.updated_at)}</dd>
       </dl>
+
+      {modalOpen && (
+        <LifecycleTransitionModal
+          open
+          onClose={handleCloseModal}
+          itemId={item.id}
+          currentState={item.lifecycle_state}
+          onSuccess={onTransitionSuccess}
+        />
+      )}
     </header>
   );
 }

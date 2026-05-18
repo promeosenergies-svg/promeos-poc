@@ -1,10 +1,16 @@
 // @vitest-environment jsdom
 /**
- * M2-5.3.A — Tests du composant ItemHeader (rendu jsdom).
+ * M2-5.3.A / M2-5.4 — Tests du composant ItemHeader (rendu jsdom).
  */
 import '@testing-library/jest-dom/vitest';
-import { afterEach, describe, expect, test } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import { cleanup, render, screen, fireEvent } from '@testing-library/react';
+
+// La modal de transition (montée au clic sur « Transitionner ») consomme
+// useToast → ToastProvider mocké pour ne pas exiger le Provider en test.
+vi.mock('../../../ui/ToastProvider', () => ({
+  useToast: () => ({ toast: vi.fn() }),
+}));
 
 import { ItemHeader } from '../components/ItemHeader';
 
@@ -59,5 +65,21 @@ describe('ItemHeader', () => {
 
     rerender(<ItemHeader item={{ title: 'X', lifecycle_state: 'new', description: null }} />);
     expect(screen.queryByText('desc1')).not.toBeInTheDocument();
+  });
+
+  test('shows the Transitionner button enabled for a non-terminal item', () => {
+    render(<ItemHeader item={{ id: 'x', title: 'A', lifecycle_state: 'new' }} />);
+    expect(screen.getByRole('button', { name: /transitionner/i })).toBeEnabled();
+  });
+
+  test('disables the Transitionner button for a closed item', () => {
+    render(<ItemHeader item={{ id: 'x', title: 'A', lifecycle_state: 'closed' }} />);
+    expect(screen.getByRole('button', { name: /transitionner/i })).toBeDisabled();
+  });
+
+  test('clicking Transitionner opens the transition modal', () => {
+    render(<ItemHeader item={{ id: 'x', title: 'A', lifecycle_state: 'new' }} />);
+    fireEvent.click(screen.getByRole('button', { name: /transitionner/i }));
+    expect(screen.getByText(/transitionner l'action/i)).toBeInTheDocument();
   });
 });
