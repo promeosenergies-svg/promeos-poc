@@ -1,0 +1,229 @@
+# Sprint M2-5 — Frontend Centre d'Action V4 (MV3)
+
+**Date** : 2026-05-18
+**Branche** : `feat/m2-5-frontend-v4` (forkée de `feat/m2-4-rollout` — M2-4.7 inclus)
+**Base merge** : `claude/refonte-sol2` (PR future — `main` gelé jusqu'au GO)
+
+> Document produit par le sprint **M2-5.0** — audit Phase 1 read-only + cadrage.
+> Aucun code applicatif, aucun composant créé. Les décisions §2/§3/§6 marquées
+> « ⏳ à confirmer » attendent le STOP gate Amine avant M2-5.1.
+
+---
+
+## 1. Cardinal
+
+Backend V4 (14 endpoints `/api/v4/action-center/*`, doctrine v0.3, isolation IDOR,
+rate limiting) opérationnel mais **invisible** : aucune UI ne le consomme. Pilote
+externe dans ~2 mois → un backend sans interface = risque produit #1.
+
+M2-5 livre un Frontend **MV3** : un Energy Manager doit pouvoir **ouvrir,
+comprendre, agir, prouver, clôturer** un sujet dans l'UI, sur un parcours complet
+(use case A — audit / facture / conformité OPERAT).
+
+---
+
+## 2. Stratégie de coexistence
+
+Le legacy n'est **jamais** remplacé ni modifié. Coexistence stricte derrière flag.
+
+| Surface legacy (audit Phase 1.3) | Route | Page | M2-5 |
+|---|---|---|---|
+| Plan d'actions | `/actions`, `/actions/new`, `/actions/:actionId` | `ActionsPage` | inchangé |
+| Hub anomalies 4 piliers | `/anomalies` | `AnomaliesPage` | inchangé |
+| Alias historique | `/action-center` → `Navigate /anomalies` | (redirect) | inchangé |
+
+- **Route V4** : `/action-center-v4` — ⏳ à confirmer. Libre, aucune collision
+  (`/action-center` est un simple redirect ≠ chemin distinct).
+- **Feature flag** : `VITE_FEATURE_ACTION_CENTER_V4` — ⏳ à confirmer. Aucun
+  système de flag n'existe (audit 1.5) → créé en M2-5.1.
+- Flag **OFF** (défaut) : route `/action-center-v4` inaccessible (redirect home /
+  404 propre), legacy 100 % intact.
+- Flag **ON** : Centre d'Action V4 démontrable au pilote.
+
+---
+
+## 3. Sous-sprints (7 commits atomiques)
+
+| # | Sprint | Effort | Livrable principal |
+|---|--------|--------|--------------------|
+| M2-5.0 | Audit + plan | 30-45 min | Ce document |
+| M2-5.1 | Client API V4 + hooks + feature flag | 2-3h | `apiClientV4`, `useActionCenterV4Items`, flag |
+| M2-5.2 | Page liste `/action-center-v4` | 3-4h | `ActionCenterV4ListPage`, FilterBar, Table |
+| M2-5.3 | Drawer détail item (4 onglets read-only) | 4-5h | `ItemDetailDrawer` + Timeline/Evidences/Blockers/Links |
+| M2-5.4 | Modal transition lifecycle | 2h | `LifecycleTransitionModal` (5 états + closure_reason) |
+| M2-5.5 | Modals upload + verify evidence | 2-3h | `EvidenceUploadModal`, `EvidenceVerifyModal` |
+| M2-5.6 | Modals blocker + display links | 2h | `BlockerAddModal`, `BlockerResolveModal`, `LinksDisplay` |
+| M2-5.7 | Seed use case A + doc closure | 1-2h | Seed enrichi, screenshots démo |
+
+**Total estimé** : ~17-22h sur 4-5 jours. Plan ⏳ à confirmer (fusion/split possibles).
+
+---
+
+## 4. Design system réutilisé (audit Phase 1.1 / 1.2)
+
+`src/ui/` contient **38 composants** `.jsx` (les 22 attendus + 16 ajouts). Aucun
+composant primitif nouveau ne sera créé. Réutilisation directe pour M2-5 :
+
+- **Critiques** : `Drawer`, `Modal`, `Table`, `Pagination`, `FilterBar`, `Button`,
+  `Badge`, `Skeleton`, `EmptyState`, `ErrorState`, `Tabs` — **tous présents**.
+- **Probables** : `Card`, `Input`, `Select`, `Tooltip`, `Toggle`, `ToastProvider`,
+  `PageShell` — **tous présents**.
+- **Optionnels** : `Progress` (barre upload), `TrustBadge` (statut preuves) — présents.
+- **Bonus pertinents** : `EvidenceDrawer`, `AsyncState` (wrapper loading/empty/error),
+  `Combobox`, `FindingCard`, `ActiveFiltersBar`.
+
+`src/components/` (~65 composants feature + 15 sous-dossiers). Patterns référence :
+- `CreateActionModal.jsx` / `CreateActionDrawer.jsx` — modale d'action legacy
+  (inspiration, pas réutilisation directe).
+- `RequireAuth.jsx` — protection de route (à réutiliser pour `/action-center-v4`).
+- `ErrorBoundary.jsx` — à englober la nouvelle route.
+
+Composants feature V4 créés dans `src/pages/action-center-v4/` (dossier à créer M2-5.2).
+
+---
+
+## 5. Doctrine UI respectée
+
+- Zéro anglais dans l'UI — copy FR avec accents.
+- Zéro couleur hardcodée — `KPI_ACCENTS`, `SEVERITY_TINT`, `tint`, `ACCENT_BAR`
+  depuis `src/ui/colorTokens.js` ; `src/ui/tokens.js` ; `src/ui/severity.js`.
+- `focus-visible:ring-2 focus-visible:ring-blue-500` sur tout interactif.
+- États gérés : loading skeleton, empty, error (avec retry), partial data —
+  composant `AsyncState` disponible.
+- React Router **v6**, lazy loading universel (`React.lazy`) — la route V4 suivra.
+- Aucun composant legacy modifié.
+
+---
+
+## 6. Use case A (calibrage métier — finalisé M2-5.7) — ⏳ à confirmer
+
+Energy Manager d'HELIOS reçoit une notification :
+
+1. Voit la liste, repère « Vérifier consommation HP/HC Q3 — Site Paris Bureaux ».
+2. Ouvre l'action en drawer.
+3. Lit la timeline (créée par Copilot, état `new`, 0 evidence, 0 blocker).
+4. Transitionne `new → triaged`, puis `triaged → planned`.
+5. Manque la facture Engie Q3 : ajoute un blocker « Attente facture Q3 fournisseur ».
+6. Reçoit la facture : upload (PDF, 2 MB), evidence créée en `pending`.
+7. Résout le blocker.
+8. Vérifie l'evidence (`verified_at` + `verified_by` + `expires_at` +90j).
+9. Transitionne `planned → in_progress`, puis `in_progress → closed/resolved`.
+10. **Conséquence conformité** : l'evidence vérifiée alimente le dossier OPERAT
+    (lien obligation Décret Tertiaire — affichage statut mis à jour ; la vraie
+    agrégation backend est différée M2-6).
+
+---
+
+## 7. Tests Vitest — ⚠️ surprise environnement (cf. §12)
+
+**Baseline figée M2-5.0** : `npx vitest run` → **4751 tests passés / 2 skipped /
+233 fichiers / 0 échec** (vitest 4, durée ~2,3 s).
+
+Règle de non-régression M2-5 : **≥ 4751 passés, 0 nouvel échec** à chaque commit.
+
+⚠️ La config (`vite.config.js`) est `environment: 'node'`, `include:
+['src/**/__tests__/**/*.test.js']`. **Pas de jsdom, pas de `@testing-library/react`.**
+La suite teste de la logique pure (transforms, source-guards, structure), pas du
+rendu de composant. Conséquence sur le plan de test ci-dessous → **STOP gate §12.3**.
+
+Couverture cible (~60 tests) :
+- Transformations data API → UI (formatters dates/statuts/%) : ~10 — *node OK*
+- Hooks data isolés (mock `apiClientV4`) : ~10 — *node OK*
+- Validation client-side (matrice lifecycle, magic check PDF/JPG/PNG) : ~10 — *node OK*
+- Tests d'erreur API (401/403/404/409/422/429 propagés) : ~10 — *node OK*
+- Composants critiques (`LifecycleTransitionModal`, `EvidenceUploadModal`) : ~15 — *DOM requis*
+- Parcours intégration mock use case A : ~5 — *DOM requis*
+
+---
+
+## 8. Garde-fous QA M2-5
+
+- Feature flag OFF par défaut : legacy fonctionne à 100 %.
+- Route `/action-center-v4` → 404 / redirect propre si flag OFF.
+- Aucun import depuis le legacy Centre d'actions (isolation stricte).
+- Client `apiClientV4` séparé de l'`apiClient` legacy — pas d'intercepteurs
+  partagés susceptibles de corrompre le legacy.
+- Aucun mock permanent dans le parcours pilote (seul le seed métier alimente).
+- ESLint `--max-warnings=0` maintenu, `npm run build` clean.
+
+---
+
+## 9. Hors scope M2-5 (différés M2-6+)
+
+- ActionLink polymorphique 6 modules (UI affiche `disabled` + message).
+- Storage avancé (upload DOCX/XLSX — refusé client-side en M2-5.5).
+- Scan antivirus, chiffrement at-rest.
+- Dashboards conformité OPERAT temps réel (M2-5.7 affiche un statut, pas une agrégation).
+- Tests E2E Playwright (Vitest suffit pour MV3).
+- i18n complète (FR uniquement pour M2-5).
+
+---
+
+## 10. STOP gates entre sous-sprints
+
+Comme M2-4 :
+- Chaque sous-sprint commence par lecture du commit précédent.
+- Audit Phase 1 court si découverte de l'existant requise.
+- Bilan en chat avant le suivant.
+- 0 régression vs baseline Vitest 4751.
+
+---
+
+## 11. Prérequis avant M2-5.1
+
+- [x] Branche `feat/m2-5-frontend-v4` créée (depuis `feat/m2-4-rollout`).
+- [x] Audit Phase 1 livré (ce document).
+- [ ] M2-4.7 mergé sur `claude/refonte-sol2` (M2-5 est empilé sur M2-4 en attendant).
+- [ ] Décisions §2/§3/§6 confirmées par Amine (route, flag, sous-sprints, use case A).
+- [ ] Arbitrage environnement de test (§12.3).
+
+---
+
+## 12. Audit Phase 1 — inventaire détaillé & surprises
+
+### 12.1 — Inventaire (faits)
+
+| Domaine | Constat |
+|---|---|
+| UI `src/ui/` | 38 composants `.jsx` — tous les critiques/probables/optionnels présents |
+| Feature `src/components/` | ~65 composants — `CreateActionModal`, `RequireAuth`, `ErrorBoundary` présents |
+| Routing | React Router v6, lazy universel, legacy à 3 surfaces (§2) |
+| Client API | **axios** — `src/services/api/core.js`, `baseURL = VITE_API_URL ‖ '/api'` |
+| Auth | interceptor requête : JWT `localStorage['promeos_token']` → `Bearer` ; 401 → purge token |
+| Scope | `setApiScope({orgId,siteId})` → headers `X-Org-Id` / `X-Site-Id` ; `cachedGet` TTL 60 s |
+| Hooks | pattern `usePageData` → `{ data, loading, error, refetch }` (signature standard) |
+| Feature flags | **aucun** — pas de `.env` ni `.env.example` ; `import.meta.env` : DEV/MODE/PROD/VITE_API_URL/VITE_SENTRY_DSN |
+| Tests | vitest 4 — 4751 passés / 2 skipped / 233 fichiers, **`environment: 'node'`** |
+| Tokens | `KPI_ACCENTS` / `SEVERITY_TINT` / `tint` dans `src/ui/colorTokens.js` |
+
+### 12.2 — Surprises
+
+1. **🔴 Cardinal — environnement de test `node`, pas de DOM.** La suite Vitest
+   tourne en `environment: 'node'` sans `jsdom` ni `@testing-library/react`. Les
+   tests de rendu de composant (≈20 du plan §7) ne peuvent pas tourner en l'état.
+2. **Legacy à 3 surfaces** (`/actions`, `/anomalies`, `/action-center`→redirect)
+   au lieu d'une seule route — `/action-center-v4` reste libre, nom à confirmer.
+3. **Aucun fichier `.env`** — le système de feature flag et les fichiers
+   `.env` / `.env.example` sont à créer ex nihilo en M2-5.1 (non bloquant).
+4. **Baseline réelle 4751** ≠ CLAUDE.md règle #5 (« FE ≥ 3 783 ») — doc obsolète.
+5. **Client API : pas de handling multipart explicite** (`Content-Type` JSON par
+   défaut) — pour l'upload evidence (M2-5.5), `FormData` natif + override
+   per-request. Géré nativement par axios, non bloquant.
+6. **`EvidenceDrawer.jsx` existe déjà** dans `src/ui/` — base possible pour le
+   drawer M2-5.3, à évaluer (composant primitif, adaptation probable).
+
+### 12.3 — Arbitrage requis avant M2-5.1
+
+L'environnement de test (surprise #1) impose un choix :
+
+- **Option A** — ajouter `jsdom` + `@testing-library/react` + pragma
+  `// @vitest-environment jsdom` par fichier de test composant. Permet le plan §7
+  complet (~60 tests, dont ~20 de rendu). Coût : changement d'infra de test,
+  3 deps ajoutées.
+- **Option B** — respecter la doctrine node-env existante : tester uniquement
+  logique / transforms / hooks / validation (~40 tests, pas de rendu). Plan §7
+  amputé des ~20 tests de rendu.
+
+Recommandation neutre : **Option A** si la qualité de rendu des modals critiques
+doit être garantie avant pilote ; **Option B** si la cohérence avec la doctrine
+de test du repo prime. Décision Amine.
