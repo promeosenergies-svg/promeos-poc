@@ -116,8 +116,8 @@ USE_CASE_A_SPECS: tuple[dict, ...] = (
             "Vérifier la facture Engie et les courbes de charge Enedis."
         ),
         "lifecycle_state": "new",
-        "priority_bracket": "P1",
-        "priority_score": 62.0,
+        "priority_bracket": "P0",
+        "priority_score": 85.0,
         "source_module": "copilot",
         "owner": False,
         "created_at": _dt(2026, 5, 17, 9, 30),
@@ -261,10 +261,17 @@ USE_CASE_A_SPECS: tuple[dict, ...] = (
         "slug": "audit-sme-nice",
         "kind": "deadline",
         "domain": "conformite",
-        "title": "Audit SMÉ obligatoire — Nice Hôtel",
+        "title": "Audit énergétique réglementaire — Nice Hôtel",
         "description": (
-            "Site dépassant le seuil de 2,75 GWh/an (estimé 3,1 GWh sur 2025). "
-            "Audit énergétique réglementaire à programmer avant le 11/10/2026."
+            "Site assujetti à l'audit énergétique réglementaire au titre des "
+            "articles L. 233-1 et suivants du Code de l'énergie (régime modifié "
+            "par la loi n° 2025-391 du 30/04/2025 transposant la directive (UE) "
+            "2023/1791, décret d'application n° 2025-1382 du 29/12/2025) : "
+            "consommation estimée à 3,1 GWh sur 2025, au-delà du seuil de "
+            "2,75 GWh/an. Audit obligatoire tous les 4 ans, première échéance "
+            "au 11/10/2026. Une certification ISO 50001 (système de management "
+            "de l'énergie) dispense de cet audit ; le site restant sous le "
+            "seuil de 23,6 GWh, aucune obligation de SMÉ ne s'applique."
         ),
         "lifecycle_state": "triaged",
         "priority_bracket": "P1",

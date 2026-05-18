@@ -1,9 +1,13 @@
 /**
  * M2-5.1 — Client API V4 (isolé du legacy core.js).
  *
- * Doctrine: instance axios séparée du legacy pour isolation stricte.
- * Aucun intercepteur partagé. Réutilise le pattern legacy (JWT + scope headers)
- * mais reste indépendant.
+ * Doctrine: instance axios séparée du legacy pour isolation stricte, aucun
+ * intercepteur partagé. Gère un unique interceptor JWT Bearer
+ * (localStorage['promeos_token']), la normalisation des erreurs en
+ * `err.promeos`, et la purge du token sur 401.
+ *
+ * AUCUN scope header (X-Org-Id / X-Site-Id) n'est envoyé : le backend V4
+ * dérive l'organisation du claim `org_id` du JWT (populate_org_context).
  */
 import axios from 'axios';
 

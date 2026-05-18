@@ -299,36 +299,42 @@ resolve). Squelette :
 `useV4Mutation` a été explicitement refusé (M2-5.1) — 14 hooks et 5 modals
 explicites, duplication contrôlée assumée.
 
-### 13.4 — Parcours Use Case A jouable de bout en bout
+### 13.4 — Parcours Use Case A : codé bout en bout
 
-Le seed M2-5.7 (`backend/seeds/use_case_a_seed.py`) crée **6 actions HELIOS**
-réalistes pour l'organisation démo (org 1, Groupe HELIOS) :
+**Activation démo** : la route `/action-center-v4` est protégée par
+`RequireAuth`. L'accès pilote passe par le bouton « Connexion démo HELIOS » sur
+`/login` (visible si `PROMEOS_DEMO_MODE=true` côté backend — surfacé par
+M2-5.8.A.bis). Précondition : seed Use Case A exécuté
+(`python -m seeds.use_case_a_seed`), compte `marie.dupont@helios.demo` seedé.
 
-| # | Action | État | Mécaniques V4 |
-|---|--------|------|---------------|
-| 1 | Vérifier consommation HP/HC Q3 — Paris Bureaux | `new` | vedette démo vierge |
-| 2 | Déclaration OPERAT 2025 — Échéance 30/09/2026 | `in_progress` | 8 events · 2 preuves (1 vérifiée + 1 en attente) · 1 blocage actif · 1 lien |
-| 3 | Audit SMÉ obligatoire — Nice Hôtel | `triaged` | 2 events |
-| 4 | Renouvellement contrat fourniture électricité — 5 sites | `planned` | 3 events |
-| 5 | Optimisation HP/HC — Marseille École | `closed` / `resolved` | 7 events · 1 preuve vérifiée · 1 lien |
-| 6 | Vérification décret BACS — Lyon Bureaux | `closed` / `not_applicable` | 2 events |
+Le seed `backend/seeds/use_case_a_seed.py` crée **6 actions HELIOS** réalistes
+pour l'organisation démo (org 1, Groupe HELIOS) :
 
-Total seed : 6 actions · 23 events · 3 evidences · 1 blocker · 2 links. Idempotent
-(PK UUID5 déterministes, namespace dédié — un 2ᵉ run ignore les 6 actions).
+| # | Action | État | Priorité | Mécaniques V4 |
+|---|--------|------|----------|---------------|
+| 1 | Vérifier consommation HP/HC Q3 — Paris Bureaux | `new` | P0 Critique | vedette démo vierge |
+| 2 | Déclaration OPERAT 2025 — Échéance 30/09/2026 | `in_progress` | P1 | 8 events · 2 preuves (1 vérifiée + 1 en attente) · 1 blocage · 1 lien |
+| 3 | Audit énergétique réglementaire — Nice Hôtel | `triaged` | P1 | 2 events |
+| 4 | Renouvellement contrat fourniture électricité — 5 sites | `planned` | P2 | 3 events |
+| 5 | Optimisation HP/HC — Marseille École | `closed` / `resolved` | P3 | 7 events · 1 preuve vérifiée · 1 lien |
+| 6 | Vérification décret BACS — Lyon Bureaux | `closed` / `not_applicable` | P3 | 2 events |
 
-Parcours pilote, avec ce seed :
+Total seed : 6 actions · 23 events · 3 evidences · 1 blocker · 2 links.
+Idempotent (PK UUID5 déterministes — un 2ᵉ run ignore les 6 actions).
 
-1. Le pilote ouvre `/action-center-v4` → 6 actions HELIOS visibles, triées par score.
-2. Filtre par lifecycle (`in_progress` → Déclaration OPERAT 2025).
-3. Clic sur la ligne → drawer, 4 onglets.
-4. Timeline : 8 events (créée, triée, planifiée, en cours, +preuves/blocage).
-5. Preuves : 1 vérifiée + 1 en attente (bouton « Vérifier » sur celle en attente).
-6. Blocages : 1 actif `waiting_data` (bouton « Résoudre »).
-7. Liens : 1 lien `regulatory_obligation` (affiché `disabled` + tooltip — module
-   cible non navigable en MV3).
-8. Action vedette « Vérifier consommation HP/HC Q3 » → vierge, traitée **live** :
-   `new → triaged → planned`, upload preuve, ajout puis résolution d'un blocage,
-   vérification de la preuve, `planned → in_progress → closed/resolved`.
+Parcours codé :
+
+1. `/login` → bouton « Connexion démo HELIOS » → session Marie Dupont.
+2. Redirect `/action-center-v4` → AppShell + rail de nav + 9 items (6 du Use
+   Case A, 3 du seed minimal M2-4.1.bis).
+3. Clic sur une ligne → drawer détail, 4 onglets (Timeline / Preuves / Blocages /
+   Liens).
+4. Timeline : events FR + acteur (« Créé », « Transition d'état »…).
+5. Preuves / Blocages : modals upload, verify, add, resolve (M2-5.5 / .6).
+6. Action vedette « Vérifier consommation HP/HC Q3 » (P0 Critique, état `new`),
+   traitée **live** : `new → triaged → planned`, upload preuve, ajout puis
+   résolution d'un blocage, vérification preuve, `planned → in_progress →
+   closed/resolved`.
 
 ### 13.5 — Doctrines respectées tout M2-5
 
@@ -351,5 +357,15 @@ PR `feat/m2-5-frontend-v4` → `claude/refonte-sol2` (**pas `main`** — `main` 
 gelé jusqu'au GO global). Ouverte en **draft** : self-review à froid 24 h avant
 le passage en « ready » et le merge. Tag `m2-sprint-5-done` sur le commit de merge.
 
-Dettes M2-5 reportées : 7 items dans `BACKLOG_M3.md` (section « issus du sprint
-M2-5 »).
+Dettes M2-5 reportées : 8 items dans `BACKLOG_M3.md` §5 (« issus du sprint M2-5 »).
+
+### 13.7 — Exceptions à la doctrine « no legacy »
+
+Sur l'ensemble des sous-sprints M2-5.0 → .8.C, **une seule exception** assumée à
+la discipline « aucun composant legacy modifié » :
+
+| Sprint | Fichier touché | Périmètre | Justification |
+|--------|----------------|-----------|---------------|
+| M2-5.8.A.bis | `frontend/src/pages/LoginPage.jsx` | state probe DEMO_MODE + bouton « Connexion démo HELIOS » + handler | Option B : seule voie d'accès pilote sans réplication de `LoginPage` ni refonte d'`AuthContext` — le walkthrough Phase 0 a prouvé que le prompt inline était inatteignable derrière `RequireAuth` |
+
+Registre vivant : `BACKLOG_M3.md` → **M3-LEGACY-TOUCHES**.

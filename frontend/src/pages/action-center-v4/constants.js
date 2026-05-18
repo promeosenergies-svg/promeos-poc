@@ -71,6 +71,7 @@ export const TAB_LABELS = {
 // Mapping event_type backend → label FR. Clés alignées sur les valeurs
 // réellement émises par routes/v4/action_center.py (audit Phase 1).
 export const EVENT_TYPE_LABELS = {
+  created: 'Créé',
   state_changed: "Transition d'état",
   evidence_added: 'Preuve ajoutée',
   evidence_verified: 'Preuve vérifiée',
