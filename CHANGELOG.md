@@ -2,6 +2,17 @@
 
 ## [Unreleased] — 2026-03-01
 
+### M2-5 — Frontend Centre d'Action V4 (MV3) — 2026-05-18
+
+**9 sous-sprints atomiques (M2-5.0 → M2-5.7)** sur `feat/m2-5-frontend-v4`, PR vers `claude/refonte-sol2` :
+
+- Infrastructure V4 : `apiClientV4` isolé du client legacy, 14 hooks read/write (`src/hooks/v4/`), feature flag `VITE_FEATURE_ACTION_CENTER_V4` (OFF par défaut)
+- Écran liste `/action-center-v4` (lazy) + drawer détail 4 onglets (Timeline / Preuves / Blocages / Liens), read-only puis 5 writes
+- 5 modals write : transition lifecycle, upload evidence (multipart), verify evidence, add blocker, resolve blocker — pattern UI write figé, 0 méta-programmation
+- 11/14 endpoints V4 consommés (78 %) ; ~219 tests Vitest cumulés (baseline FE 4751 → 4970)
+- **M2-5.7 (closure)** : seed Use Case A (`backend/seeds/use_case_a_seed.py`) — 6 actions HELIOS réalistes (23 events, 3 evidences, 1 blocker, 2 links), idempotent par PK UUID5 déterministe ; CLI `python -m seeds.use_case_a_seed` et flag `python -m seeds.v4_seed --use-case-a`
+- Doc : `docs/sprints/M2-5_FRONTEND_PLAN.md` §13 closure ; 7 dettes reportées dans `BACKLOG_M3.md` §5
+
 ### M2-4.1.bis — Seed V4 minimal idempotent
 
 **Seed V4 (`backend/seeds/v4_seed.py`) :**

@@ -227,3 +227,129 @@ L'environnement de test (surprise #1) impose un choix :
 Recommandation neutre : **Option A** si la qualité de rendu des modals critiques
 doit être garantie avant pilote ; **Option B** si la cohérence avec la doctrine
 de test du repo prime. Décision Amine.
+
+> **Décision actée (M2-5.1)** : Option A. `jsdom` + `@testing-library/react` +
+> `@testing-library/jest-dom` ajoutés ; pragma `// @vitest-environment jsdom`
+> par fichier de test composant ; `include` Vitest élargi à `.test.{js,jsx}`.
+
+---
+
+## 13. Closure M2-5 — Récap final
+
+**Date closure** : 2026-05-18
+**Hash final** : M2-5.7 (commit courant — `feat(seed): M2-5.7 …`)
+**Branche** : `feat/m2-5-frontend-v4` → PR vers `claude/refonte-sol2`
+
+### 13.1 — 9 sous-sprints livrés
+
+| # | Sprint | Hash | Tests | Livrable |
+|---|--------|------|-------|----------|
+| M2-5.0 | Audit + plan | `22856e06` | 0 | Ce document (12 sections) |
+| M2-5.1 | Infrastructure V4 | `eee85156` | 40 | `apiClientV4` + 14 hooks + feature flag |
+| M2-5.2 | Page liste | `8ed5a3d5` | 23 | `/action-center-v4` + filtre lifecycle |
+| M2-5.3.A | Drawer + Timeline | `3ca1a6d5` | 24 | `ItemDetailDrawer` + 4 onglets navigables |
+| M2-5.3.B | 3 onglets read-only | `f5069023` | 43 | Preuves / Blocages / Liens + rectif `SECURITY.md` §2.4 |
+| M2-5.4 | Write 1 — lifecycle | `3779fc6c` | 39 | Modal transition + pattern UI write figé |
+| M2-5.5 | Writes 2+3 — evidence | `61d4735a` | 30 | Upload (multipart) + verify (confirm dialog) |
+| M2-5.6 | Writes 4+5 — blocker | `c19ec87d` | 20 | Add (Select 7 types) + resolve (note optionnelle) |
+| M2-5.7 | Closure + seed | (commit courant) | — | 6 actions HELIOS Use Case A + doc + backlog M3 |
+
+**Total** : ~219 tests V4 cumulés. Baseline FE **4751** (M2-5.0) → **4970** (M2-5.7, inchangée par .7).
+
+### 13.2 — Endpoints V4 consommés
+
+| Hook | Endpoint | Consommé |
+|------|----------|----------|
+| `useActionCenterV4Items` | `GET /items` | ✅ M2-5.2 |
+| `useActionCenterV4Item` | `GET /items/{id}` | ✅ M2-5.3.A |
+| `useActionCenterV4Events` | `GET /items/{id}/events` | ✅ M2-5.3.A |
+| `useActionCenterV4Evidences` | `GET /items/{id}/evidences` | ✅ M2-5.3.B |
+| `useActionCenterV4Blockers` | `GET /items/{id}/blockers` | ✅ M2-5.3.B |
+| `useActionCenterV4Links` | `GET /items/{id}/links` | ✅ M2-5.3.B |
+| `useTransitionLifecycle` | `PATCH /items/{id}/lifecycle` | ✅ M2-5.4 |
+| `useUploadEvidence` | `POST /items/{id}/evidences` | ✅ M2-5.5 |
+| `useVerifyEvidence` | `PATCH /evidences/{id}/verify` | ✅ M2-5.5 |
+| `useAddBlocker` | `POST /items/{id}/blockers` | ✅ M2-5.6 |
+| `useResolveBlocker` | `PATCH /blockers/{id}/resolve` | ✅ M2-5.6 |
+| **`useCreateItem`** | `POST /items` | ⏳ M3+ |
+| **`useUpdateItem`** | `PATCH /items/{id}` | ⏳ M3+ |
+| **`useCreateLink`** | `POST /items/{id}/links` | ⏳ M3+ |
+
+**11/14 endpoints V4 consommés** (78 %). Les 3 restants (créer / éditer un item
+depuis l'UI, créer un lien manuel) sont différés M3+ : non requis par le parcours
+pilote Use Case A — les items naissent du seed (et, en prod, des détecteurs
+backend), pas d'une saisie manuelle.
+
+### 13.3 — Pattern UI write figé (M2-5.4 → répliqué 3×)
+
+Établi M2-5.4 (lifecycle), répliqué M2-5.5 (upload + verify) et M2-5.6 (add +
+resolve). Squelette :
+
+1. Hook write (M2-5.1) `useXxx` → `{ execute, loading, error, data, reset }`.
+2. Helper pur si validation (matrice lifecycle, validation MIME magic bytes…).
+3. Modal montée conditionnellement (`{open && <Modal />}`) → zéro pollution des
+   tests du composant parent.
+4. `handleSubmit` try/catch → `classifyError` → erreur 422 corrigeable affichée
+   inline / erreur infra (429, 5xx…) → toast + fermeture.
+5. Au succès : `refetch` de la sous-ressource via son hook + remontée parent
+   (`onSuccess` / bump de clé) ; refetch pessimiste, pas d'optimistic update.
+6. Toast discret de succès.
+
+**5 modals** respectent ce pattern. Aucune méta-programmation : le hook générique
+`useV4Mutation` a été explicitement refusé (M2-5.1) — 14 hooks et 5 modals
+explicites, duplication contrôlée assumée.
+
+### 13.4 — Parcours Use Case A jouable de bout en bout
+
+Le seed M2-5.7 (`backend/seeds/use_case_a_seed.py`) crée **6 actions HELIOS**
+réalistes pour l'organisation démo (org 1, Groupe HELIOS) :
+
+| # | Action | État | Mécaniques V4 |
+|---|--------|------|---------------|
+| 1 | Vérifier consommation HP/HC Q3 — Paris Bureaux | `new` | vedette démo vierge |
+| 2 | Déclaration OPERAT 2025 — Échéance 30/09/2026 | `in_progress` | 8 events · 2 preuves (1 vérifiée + 1 en attente) · 1 blocage actif · 1 lien |
+| 3 | Audit SMÉ obligatoire — Nice Hôtel | `triaged` | 2 events |
+| 4 | Renouvellement contrat fourniture électricité — 5 sites | `planned` | 3 events |
+| 5 | Optimisation HP/HC — Marseille École | `closed` / `resolved` | 7 events · 1 preuve vérifiée · 1 lien |
+| 6 | Vérification décret BACS — Lyon Bureaux | `closed` / `not_applicable` | 2 events |
+
+Total seed : 6 actions · 23 events · 3 evidences · 1 blocker · 2 links. Idempotent
+(PK UUID5 déterministes, namespace dédié — un 2ᵉ run ignore les 6 actions).
+
+Parcours pilote, avec ce seed :
+
+1. Le pilote ouvre `/action-center-v4` → 6 actions HELIOS visibles, triées par score.
+2. Filtre par lifecycle (`in_progress` → Déclaration OPERAT 2025).
+3. Clic sur la ligne → drawer, 4 onglets.
+4. Timeline : 8 events (créée, triée, planifiée, en cours, +preuves/blocage).
+5. Preuves : 1 vérifiée + 1 en attente (bouton « Vérifier » sur celle en attente).
+6. Blocages : 1 actif `waiting_data` (bouton « Résoudre »).
+7. Liens : 1 lien `regulatory_obligation` (affiché `disabled` + tooltip — module
+   cible non navigable en MV3).
+8. Action vedette « Vérifier consommation HP/HC Q3 » → vierge, traitée **live** :
+   `new → triaged → planned`, upload preuve, ajout puis résolution d'un blocage,
+   vérification de la preuve, `planned → in_progress → closed/resolved`.
+
+### 13.5 — Doctrines respectées tout M2-5
+
+- Aucun composant legacy modifié (vérifié `git diff` à chaque sprint).
+- Aucun import depuis `src/components/*` legacy dans le code V4.
+- Aucune dépendance externe ajoutée hors les 3 deps test M2-5.1 (`jsdom` +
+  `@testing-library/react` + `@testing-library/jest-dom`).
+- Aucune méta-programmation : 14 hooks explicites, 5 modals explicites.
+- Doctrine UI : 100 % FR, tokens partagés, composants `src/ui/` réutilisés tels quels.
+- Duplication contrôlée préférée à la factorisation tardive (matrice lifecycle
+  client = copie de `lifecycle_validator.py` — cf. dette M3-MATRIX-CONTRACT-TEST).
+- `storage_uri` jamais référencé dans le code source V4 (5 sprints vérifiés ;
+  garde-fou commentaires `feedback_source_guard_comment_regex_trap`).
+- Feature flag `VITE_FEATURE_ACTION_CENTER_V4=false` par défaut → legacy 100 %
+  intact si le flag est OFF.
+
+### 13.6 — Sortie
+
+PR `feat/m2-5-frontend-v4` → `claude/refonte-sol2` (**pas `main`** — `main` reste
+gelé jusqu'au GO global). Ouverte en **draft** : self-review à froid 24 h avant
+le passage en « ready » et le merge. Tag `m2-sprint-5-done` sur le commit de merge.
+
+Dettes M2-5 reportées : 7 items dans `BACKLOG_M3.md` (section « issus du sprint
+M2-5 »).

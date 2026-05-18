@@ -110,3 +110,83 @@ d'ensemble seulement (détail : `SECURITY.md` §5.2 et §5.3).
 
 Ordre recommandé : M3-DEBT (débloque une baseline saine) → M3-JWT-USER-UUID →
 M3-SEED-MIGRATION → M3-LINK-EVENT-DOCTRINE → M3-METHOD-DOC.
+
+---
+
+## 5. Items issus du sprint M2-5 (frontend Centre d'Action V4)
+
+> Dettes légères détectées pendant M2-5 (9 sous-sprints, frontend MV3). Distinctes
+> des 5 sprints M3 de la §1 : ce sont des chantiers courts (≤ 1 j/h), à insérer
+> opportunément. Cf. `docs/sprints/M2-5_FRONTEND_PLAN.md` §13.
+
+### M3-MATRIX-CONTRACT-TEST — Synchro matrice lifecycle BE/FE  🟢 P2 · ~1 h
+
+- **Origine** : M2-5.4.
+- **Objet** : test contractuel garantissant la synchro entre la matrice backend
+  `backend/services/v4/lifecycle_validator.py` (`_ALLOWED_TRANSITIONS`) et la
+  matrice frontend `frontend/src/pages/action-center-v4/utils/lifecycleTransitions.js`.
+- **Pourquoi** : la duplication contrôlée BE/FE est délibérée (pas de partage de
+  code en MV3) mais une dérive silencieuse est possible si une seule des deux
+  matrices est modifiée.
+- **DoD** : un test backend qui sérialise la matrice en JSON + un test frontend
+  qui assert l'égalité (ou un fixture partagé), verts.
+
+### M3-MODAL-STACK-MGMT — Escape ne ferme que la modal du dessus  🟢 P2 · ~2-3 h
+
+- **Origine** : M2-5.5.
+- **Objet** : gérer une pile de modals dans `src/ui/Modal.jsx` pour qu'`Escape`
+  ne ferme que la modal au sommet, pas la modal **et** le drawer parent.
+- **Pourquoi** : les 5 modals M2-5.4/.5/.6 sont montées dans le `Drawer` détail →
+  `Escape` double-ferme. Acceptable en MV3 mais UX dégradée pour le pilote.
+- **DoD** : `src/ui/Modal.jsx` gère le stack ; touche à un composant legacy →
+  mini-sprint dédié hors scope M2-5, tests de non-régression du legacy verts.
+
+### M3-LINT-CLEANUP — Résorber les warnings ESLint legacy  🟢 P3 · ~2 h
+
+- **Origine** : M2-5.1.
+- **Objet** : ramener `npm run lint` (`eslint src --max-warnings=15`) au vert —
+  ~33 warnings legacy pré-existants dépassent le seuil.
+- **Pourquoi** : `npm run lint` full-repo est rouge (pré-existant, hors scope
+  M2-5). Le `lint-staged` par fichier passe (seuil 174), mais le full-repo non.
+- **DoD** : warnings legacy résorbés (imports morts, deps de hooks), `npm run
+  lint` vert, seuil `--max-warnings` resserré.
+
+### M3-FRONTEND-POLISH-ACTOR-NAME — Enrichir l'acteur des events  🟢 P2 · ~1-2 h
+
+- **Origine** : M2-5.3.A.
+- **Objet** : `action_event_log` porte `actor_id` + `actor_role` + `actor_name`,
+  mais `actor_name` n'est pas toujours renseigné côté écriture runtime (le seed
+  M2-5.7, lui, le renseigne). `EventItem` retombe sur « Système » par défaut.
+- **Pourquoi** : enrichir l'écriture backend (M2-4.4) pour joindre `user.name`
+  côté serveur sur tout event utilisateur → timeline plus lisible.
+- **DoD** : `actor_name` systématiquement renseigné côté backend, 1-2 tests.
+
+### M3-PATTERN-DOC-UI-WRITE — Documenter le pattern UI write V4  🟢 P3 · ~30 min
+
+- **Origine** : M2-5.6 (fin de la réplication 3×).
+- **Objet** : documenter le pattern UI write V4 (cf. `M2-5_FRONTEND_PLAN.md`
+  §13.3) dans `docs/frontend/PATTERN_UI_WRITE_V4.md`.
+- **Pourquoi** : 5 modals respectent le pattern sans document explicite — un dev
+  ajoutant une 6ᵉ modal en M3 doit rétro-lire 3 modals pour le deviner.
+- **DoD** : `docs/frontend/PATTERN_UI_WRITE_V4.md` rédigé, référencé dans CLAUDE.md.
+
+### M3-FORBID-EXTRA-PATTERN — Capitaliser le piège Pydantic `extra="forbid"`  🟢 P3 · ~10 min
+
+- **Origine** : M2-5.6 (piège `resolution_comment` ≠ `resolution_note`).
+- **Objet** : capitaliser dans `MEMORY.md` le piège Pydantic `extra="forbid"` —
+  tout champ inconnu d'un payload PATCH/POST = 422 muet ; vérifier le schéma
+  exact avant tout write côté frontend.
+- **Pourquoi** : 3 sprints write consécutifs (M2-5.4/.5/.6) ont rencontré cette
+  surprise. La documenter pour ne pas la re-mordre.
+- **DoD** : 1 entrée `feedback` ajoutée dans la mémoire projet.
+
+### M3-USE-CASE-B-C — Étendre le seed à 2-3 scénarios métier  🟢 P3 · ~2 h
+
+- **Origine** : M2-5.7.
+- **Objet** : étendre `backend/seeds/use_case_a_seed.py` à 2-3 Use Cases (B =
+  audit BACS multi-sites ; C = renégociation contrat post-ARENH).
+- **Pourquoi** : le pilote voudra tester d'autres scénarios. Use Case A suffit
+  pour la 1ʳᵉ démo, B/C sont utiles ensuite.
+- **DoD** : seeds B/C livrés, idempotents, sur le pattern déclaratif M2-5.7.
+
+**Effort cumulé M2-5 → M3 : ~9-11 h** (7 items courts).

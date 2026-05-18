@@ -139,17 +139,27 @@ def main() -> None:
         default=SEED_ORG_ID,
         help=f"organisation cible (défaut {SEED_ORG_ID}, HELIOS). Doit exister.",
     )
+    parser.add_argument(
+        "--use-case-a",
+        action="store_true",
+        help="seede aussi les 6 actions HELIOS Use Case A (démo pilote, M2-5.7).",
+    )
     args = parser.parse_args()
 
     db = SessionLocal()
     try:
         report = seed_v4_minimal(db, org_id=args.org_id)
+        print(report)
+        if args.use_case_a:
+            # Import différé : use_case_a_seed importe SeedError depuis ce module.
+            from seeds.use_case_a_seed import seed_use_case_a_actions
+
+            print(seed_use_case_a_actions(db, org_id=args.org_id))
     except SeedError as exc:
         print(f"ERREUR seed V4 : {exc}", file=sys.stderr)
         sys.exit(1)
     finally:
         db.close()
-    print(report)
 
 
 if __name__ == "__main__":
