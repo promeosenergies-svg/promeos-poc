@@ -18,6 +18,7 @@ import { LEGACY_REDIRECTS } from './routes/legacyRedirects';
 import UpgradeWizard from './components/UpgradeWizard';
 import AppShell from './layout/AppShell';
 import { SkeletonCard } from './ui/Skeleton';
+import { isActionCenterV4Enabled } from './featureFlags';
 
 // Lazy-loaded pages — code-split per route
 const CommandCenter = lazy(() => import('./pages/CommandCenter'));
@@ -76,6 +77,12 @@ const TertiaireEfaDetailPage = lazy(() => import('./pages/tertiaire/TertiaireEfa
 const TertiaireAnomaliesPage = lazy(() => import('./pages/tertiaire/TertiaireAnomaliesPage'));
 const ConsumptionContextPage = lazy(() => import('./pages/ConsumptionContextPage'));
 const AnomaliesPage = lazy(() => import('./pages/AnomaliesPage'));
+// M2-5.2 — Centre d'Action V4 (derrière feature flag VITE_FEATURE_ACTION_CENTER_V4).
+const ActionCenterV4ListPage = lazy(() =>
+  import('./pages/action-center-v4/ActionCenterV4ListPage').then((m) => ({
+    default: m.ActionCenterV4ListPage,
+  }))
+);
 const FlexPage = lazy(() => import('./pages/FlexPage'));
 const CompliancePipelinePage = lazy(() => import('./pages/CompliancePipelinePage'));
 const SiteCompliancePage = lazy(() => import('./pages/SiteCompliancePage'));
@@ -305,6 +312,18 @@ function App() {
                                       path="/action-center"
                                       element={<Navigate to="/anomalies" replace />}
                                     />{' '}
+                                    {/* M2-5.2 — Centre d'Action V4. Flag OFF =
+                                        route absente (404 standard), legacy intact. */}
+                                    {isActionCenterV4Enabled() && (
+                                      <Route
+                                        path="/action-center-v4"
+                                        element={
+                                          <PageSuspense>
+                                            <ActionCenterV4ListPage />
+                                          </PageSuspense>
+                                        }
+                                      />
+                                    )}{' '}
                                     <Route
                                       path="/regops/:id"
                                       element={

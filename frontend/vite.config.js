@@ -39,6 +39,10 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/__tests__/**/*.test.js'],
+    // M2-5.2 — `.test.jsx` ajouté au glob : les tests de rendu de composants
+    // (JSX) portent l'extension .jsx pour être transformés correctement. Les
+    // tests de logique pure restent en `.test.js`. L'environnement jsdom est
+    // posé par pragma per-fichier (`// @vitest-environment jsdom`).
+    include: ['src/**/__tests__/**/*.test.{js,jsx}'],
   },
 });
