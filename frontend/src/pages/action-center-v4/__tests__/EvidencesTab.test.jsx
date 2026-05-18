@@ -1,21 +1,40 @@
 // @vitest-environment jsdom
 /**
- * M2-5.3.B — Tests du composant EvidencesTab (rendu jsdom, hook mocké).
+ * M2-5.3.B / M2-5.5 — Tests du composant EvidencesTab (rendu jsdom, hooks mockés).
  */
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 
 vi.mock('../../../hooks/v4', () => ({
   useActionCenterV4Evidences: vi.fn(),
+  useUploadEvidence: vi.fn(),
+  useVerifyEvidence: vi.fn(),
+}));
+vi.mock('../../../ui/ToastProvider', () => ({
+  useToast: () => ({ toast: vi.fn() }),
 }));
 
-import { useActionCenterV4Evidences } from '../../../hooks/v4';
+import {
+  useActionCenterV4Evidences,
+  useUploadEvidence,
+  useVerifyEvidence,
+} from '../../../hooks/v4';
 import { EvidencesTab } from '../components/EvidencesTab';
+
+const idleMutation = {
+  execute: vi.fn(),
+  loading: false,
+  error: null,
+  data: null,
+  reset: vi.fn(),
+};
 
 afterEach(cleanup);
 beforeEach(() => {
   vi.clearAllMocks();
+  useUploadEvidence.mockReturnValue(idleMutation);
+  useVerifyEvidence.mockReturnValue(idleMutation);
 });
 
 describe('EvidencesTab', () => {
@@ -93,5 +112,28 @@ describe('EvidencesTab', () => {
       offset: 0,
       limit: 20,
     });
+  });
+
+  test('shows the "Ajouter une preuve" button', () => {
+    useActionCenterV4Evidences.mockReturnValue({
+      data: { items: [], total: 0 },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<EvidencesTab itemId="x" />);
+    expect(screen.getByRole('button', { name: /ajouter une preuve/i })).toBeInTheDocument();
+  });
+
+  test('clicking "Ajouter une preuve" opens the upload modal', () => {
+    useActionCenterV4Evidences.mockReturnValue({
+      data: { items: [], total: 0 },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<EvidencesTab itemId="x" />);
+    fireEvent.click(screen.getByRole('button', { name: /ajouter une preuve/i }));
+    expect(screen.getByRole('button', { name: /ajouter la preuve/i })).toBeInTheDocument();
   });
 });

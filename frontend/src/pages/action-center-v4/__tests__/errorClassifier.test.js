@@ -24,6 +24,13 @@ describe('classifyError', () => {
   test.each([401, 403, 429, 500])('returns "toast" for HTTP status %i without a code', (status) => {
     expect(classifyError({ status })).toBe('toast');
   });
+
+  test.each(['FILE_TOO_LARGE', 'UNSUPPORTED_MEDIA_TYPE', 'MAGIC_BYTES_MISMATCH'])(
+    'returns "inline" for the corrigeable evidence code %s',
+    (code) => {
+      expect(classifyError({ code })).toBe('inline');
+    }
+  );
 });
 
 describe('toastMessageForError', () => {

@@ -192,3 +192,27 @@ export const TRANSITION_COPY = {
   successToast: 'Transition effectuée',
   noTransitionsAvailable: 'Aucune transition possible depuis cet état.',
 };
+
+// ── M2-5.5 — Upload + verify evidence ──────────────────────────
+
+export const UPLOAD_COPY = {
+  buttonAddEvidence: 'Ajouter une preuve',
+  modalTitle: 'Ajouter une preuve',
+  fieldFile: 'Fichier',
+  fieldFileHint: 'PDF, JPG ou PNG · 10 Mo maximum',
+  fieldDescription: 'Description (optionnel)',
+  submitButton: 'Ajouter la preuve',
+  submitLoading: 'Upload en cours…',
+  cancelButton: 'Annuler',
+  successToast: 'Preuve ajoutée',
+};
+
+export const VERIFY_COPY = {
+  buttonVerify: 'Vérifier',
+  dialogTitle: 'Vérifier cette preuve',
+  dialogMessage: "Confirmer la vérification de cette preuve ? L'expiration sera fixée à 90 jours.",
+  confirmButton: 'Vérifier',
+  confirmLoading: 'Vérification…',
+  cancelButton: 'Annuler',
+  successToast: 'Preuve vérifiée',
+};

@@ -1,28 +1,32 @@
-import Badge from '../../../ui/Badge';
-import { fmtNum } from '../../../utils/format';
+import { useCallback, useState } from 'react';
 
-import { EVIDENCE_STATUS_BADGE_VARIANTS, EVIDENCE_STATUS_LABELS, TAB_COPY } from '../constants';
+import Badge from '../../../ui/Badge';
+import Button from '../../../ui/Button';
+
+import {
+  EVIDENCE_STATUS_BADGE_VARIANTS,
+  EVIDENCE_STATUS_LABELS,
+  TAB_COPY,
+  VERIFY_COPY,
+} from '../constants';
 import { formatDateTimeFR } from '../utils/date';
 import { deriveEvidenceStatus } from '../utils/evidenceStatus';
+import { formatFileSize } from '../utils/fileSize';
+import { EvidenceVerifyDialog } from './EvidenceVerifyDialog';
 
 /**
- * Taille de fichier formatée en unités FR via le formateur central `fmtNum`
- * (doctrine « formatters centralisés » — aucun arrondi inline en composant).
- */
-function formatSize(bytes) {
-  if (bytes < 1024) return fmtNum(bytes, 0, 'o');
-  if (bytes < 1024 * 1024) return fmtNum(bytes / 1024, 0, 'Ko');
-  return fmtNum(bytes / (1024 * 1024), 1, 'Mo');
-}
-
-/**
- * M2-5.3.B — Affichage d'une evidence (read-only).
+ * M2-5.3.B / M2-5.5 — Affichage d'une evidence.
  *
  * Status dérivé de verified_at + expires_at (jamais d'enum backend).
- * `storage_uri` / `validation_payload` ne sont pas exposés par l'API V4 —
- * ce composant ne lit aucun champ sensible (cf. test dédié).
+ * Les champs sensibles (URI de stockage, payload de validation) ne sont pas
+ * exposés par l'API V4 — ce composant ne lit aucun champ sensible (test dédié).
+ * M2-5.5 : bouton « Vérifier » si le status est `pending` → confirm dialog.
  */
-export function EvidenceItem({ evidence }) {
+export function EvidenceItem({ evidence, onVerifySuccess }) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const handleOpenDialog = useCallback(() => setDialogOpen(true), []);
+  const handleCloseDialog = useCallback(() => setDialogOpen(false), []);
+
   const status = deriveEvidenceStatus(evidence);
   const label = EVIDENCE_STATUS_LABELS[status];
   const variant = EVIDENCE_STATUS_BADGE_VARIANTS[status];
@@ -38,14 +42,21 @@ export function EvidenceItem({ evidence }) {
             <div className="mt-0.5 text-xs text-gray-600">{evidence.description}</div>
           )}
         </div>
-        <Badge status={variant}>{label}</Badge>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <Badge status={variant}>{label}</Badge>
+          {status === 'pending' && (
+            <Button variant="ghost" size="sm" onClick={handleOpenDialog}>
+              {VERIFY_COPY.buttonVerify}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="mt-2 space-y-0.5 text-xs text-gray-500">
         <div>
           {TAB_COPY.uploadedAtLabel} {formatDateTimeFR(evidence.uploaded_at)}
           {evidence.file_size_bytes != null && (
-            <span> · {formatSize(evidence.file_size_bytes)}</span>
+            <span> · {formatFileSize(evidence.file_size_bytes)}</span>
           )}
         </div>
 
@@ -67,6 +78,15 @@ export function EvidenceItem({ evidence }) {
           </div>
         )}
       </div>
+
+      {dialogOpen && (
+        <EvidenceVerifyDialog
+          open
+          onClose={handleCloseDialog}
+          evidenceId={evidence.id}
+          onSuccess={onVerifySuccess}
+        />
+      )}
     </article>
   );
 }

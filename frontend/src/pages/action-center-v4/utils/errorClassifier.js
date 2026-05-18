@@ -7,9 +7,19 @@
  */
 
 const INLINE_ERROR_CODES = new Set([
+  // Lifecycle (M2-5.4)
   'CLOSURE_REASON_REQUIRED',
   'CLOSURE_REASON_UNEXPECTED',
   'CLOSURE_REASON_SYSTEM_ONLY',
+  // Evidence upload (M2-5.5) — corrigeable : l'utilisateur change de fichier.
+  // Codes réels backend file_validation.py (413 FILE_TOO_LARGE, 415 pour les
+  // deux suivants, 400 INVALID_FILENAME).
+  'FILE_TOO_LARGE',
+  'UNSUPPORTED_MEDIA_TYPE',
+  'MAGIC_BYTES_MISMATCH',
+  'INVALID_FILENAME',
+  // Evidence verify (M2-5.5) — 409, affiché en toast warning par le dialog.
+  'EVIDENCE_ALREADY_VERIFIED',
 ]);
 
 /**

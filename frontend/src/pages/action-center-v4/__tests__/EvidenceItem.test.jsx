@@ -1,10 +1,15 @@
 // @vitest-environment jsdom
 /**
- * M2-5.3.B — Tests du composant EvidenceItem (rendu jsdom).
+ * M2-5.3.B / M2-5.5 — Tests du composant EvidenceItem (rendu jsdom).
  */
 import '@testing-library/jest-dom/vitest';
-import { afterEach, describe, expect, test } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import { cleanup, render, screen, fireEvent } from '@testing-library/react';
+
+// Le confirm dialog (monté au clic sur « Vérifier ») consomme useToast.
+vi.mock('../../../ui/ToastProvider', () => ({
+  useToast: () => ({ toast: vi.fn() }),
+}));
 
 import { EvidenceItem } from '../components/EvidenceItem';
 
@@ -104,5 +109,49 @@ describe('EvidenceItem', () => {
     );
     // fmtNum formate en locale FR → séparateur décimal virgule.
     expect(screen.getByText(/2,0 Mo/)).toBeInTheDocument();
+  });
+
+  test('shows the "Vérifier" button when the status is pending', () => {
+    render(
+      <EvidenceItem
+        evidence={{
+          id: '1',
+          original_filename: 'x.pdf',
+          verified_at: null,
+          uploaded_at: '2026-05-01T00:00:00Z',
+        }}
+      />
+    );
+    expect(screen.getByRole('button', { name: /vérifier/i })).toBeInTheDocument();
+  });
+
+  test('does not show the "Vérifier" button when the evidence is verified', () => {
+    render(
+      <EvidenceItem
+        evidence={{
+          id: '1',
+          original_filename: 'x.pdf',
+          verified_at: '2026-05-10T00:00:00Z',
+          expires_at: new Date(Date.now() + 86400000).toISOString(),
+          uploaded_at: '2026-05-01T00:00:00Z',
+        }}
+      />
+    );
+    expect(screen.queryByRole('button', { name: /vérifier/i })).not.toBeInTheDocument();
+  });
+
+  test('clicking "Vérifier" opens the confirm dialog', () => {
+    render(
+      <EvidenceItem
+        evidence={{
+          id: '1',
+          original_filename: 'x.pdf',
+          verified_at: null,
+          uploaded_at: '2026-05-01T00:00:00Z',
+        }}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /vérifier/i }));
+    expect(screen.getByText(/confirmer la vérification/i)).toBeInTheDocument();
   });
 });

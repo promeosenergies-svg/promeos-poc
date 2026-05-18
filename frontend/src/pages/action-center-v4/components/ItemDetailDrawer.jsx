@@ -64,6 +64,12 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
     onRefreshList?.();
   }, [refetchItem, onRefreshList]);
 
+  // Mutation evidence (upload/verify) → un event apparaît : on remonte la
+  // Timeline. Pas de refetch item (lifecycle inchangé) ni liste parent.
+  const handleEvidenceMutated = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
+
   if (!open || !itemId) return null;
 
   return (
@@ -84,7 +90,7 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
           <TimelineTab key={refreshKey} itemId={itemId} />
         )}
         {activeTab === TAB_IDS.evidences && loadedTabs.has(TAB_IDS.evidences) && (
-          <EvidencesTab itemId={itemId} />
+          <EvidencesTab itemId={itemId} onEvidenceMutated={handleEvidenceMutated} />
         )}
         {activeTab === TAB_IDS.blockers && loadedTabs.has(TAB_IDS.blockers) && (
           <BlockersTab itemId={itemId} />
