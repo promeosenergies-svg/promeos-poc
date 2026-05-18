@@ -1,6 +1,6 @@
 # Security — PROMEOS
 
-> Dernière mise à jour : Sprint M2-3 (4 commits, branche `feat/m2-3-security-layer`).
+> Dernière mise à jour : Sprint M2-4 — closure documentaire M2-4.7 (branche `feat/m2-4-rollout`, PR #279).
 > Référence audit complet : [`SECURITY_AUDIT_M2-3.md`](SECURITY_AUDIT_M2-3.md).
 
 ---
@@ -13,20 +13,31 @@ Trois personas, trois questions :
 - **Auditeur pilote** — *"Quelles garanties d'isolation entre clients ?"* → §2 + §4.
 - **Toi dans 3 mois** — *"Qu'est-ce qui reste à faire ?"* → §5.
 
-**État M2-3** :
+**État M2-4** — Centre d'Action V4 routé (11 sous-sprints M2-4.0 → M2-4.7).
+
+Socle M2-3 :
 
 - ✅ JWT + auth middleware + 11 rôles legacy + scoping hiérarchique legacy (Sprint 11 IAM · `backend/middleware/auth.py` + `backend/services/iam_scope.py`)
-- ✅ RBAC V4 par dessus — `require_v4_role` + mapping 11→4 rôles (M2-3.B)
+- ✅ RBAC V4 — `require_v4_role` + mapping 11→4 rôles (M2-3.B)
 - ✅ Repository pattern V4 fail-closed — `BaseRepositoryV4` (M2-3.C)
 - ✅ 6 endpoints de seed fermés — admin + env guard (M2-3.A + M2-3.B)
-- ✅ Headers sécurité, CORS allowlist, rate limiting slowapi, `audit_logs` (pré-existant)
-- ⚠️ Dette JWT `org_id` int ↔ V4 `organisation_id` UUID — chantier M2-4 (§5.1)
-- ⏳ IDOR matrix bout-en-bout + `@limiter` routes V4 — M2-4
-- ⏳ Hierarchical scope V4 (ENTITÉ / PORTEFEUILLE / SITE) — M2-6+
+- ✅ Headers sécurité, CORS allowlist, `audit_logs` (pré-existant)
+
+Acquis M2-4 (Centre d'Action V4) :
+
+- ✅ Dette JWT `org_id` résolue **à la racine** — `organisation_id` migré UUID → Integer FK (ADR-009 Option D · M2-4.1). Le JWT legacy câble le contexte V4 sans transformation.
+- ✅ Seed V4 minimal idempotent — 2 orgs + items (`python -m seeds.v4_seed` · M2-4.1.bis).
+- ✅ 14 endpoints V4 `/api/v4/action-center/*` — 3 templates + 4 read + 7 write (M2-4.2 → M2-4.4).
+- ✅ Audit trail V4 — 5 `event_type` émis sur les écritures (`action_event_log` · M2-4.4) → §2.4.
+- ✅ Validation upload evidence par magic bytes — anti-spoofing MIME (IE9 · M2-4.4).
+- ✅ IDOR matrix systémique cross-org — 14 endpoints × rôles × 2 orgs, focus no-leak (M2-4.5).
+- ✅ Rate limiting V4 — slowapi, 5 catégories de quotas, clé `user:<sub>` / fallback IP (M2-4.6) → §2.5.
+- 🟡 Dette résiduelle JWT `user_id` int ↔ V4 `actor_id` UUID — P1 M3 (§5.1).
+- ⏳ Scope hiérarchique V4 (ENTITÉ / PORTEFEUILLE / SITE) — M2-6+ (§5.3).
 
 ---
 
-## 2. Architecture de sécurité V4 (3 couches)
+## 2. Architecture de sécurité V4
 
 ### 2.1 — Authentification (JWT)
 
@@ -52,26 +63,48 @@ Trois personas, trois questions :
 - Extension hiérarchique : hook `_apply_scope()` override-able + `_scope_column` class attr (cf. docstring `base_v4.py` — OCP, porte ouverte ENTITÉ/PORTEFEUILLE/SITE).
 - Tests preuve : 12 tests `backend/tests/repositories/test_base_v4.py` (fail-closed + isolation A/B + OCP).
 
+### 2.4 — Traçabilité (audit trail V4)
+
+- Table : `action_event_log` — chaque écriture V4 émet un event horodaté **org-scopé**.
+- 5 `event_type` émis par les endpoints write M2-4.4 : `item_created`, `lifecycle_changed`, `evidence_attached`, `evidence_verified`, `blocker_added` — tous dans la whitelist doctrine de 16 valeurs (SG-6 · ADR-029).
+- Acteur : `actor_id` UUID dérivé **déterministe** (uuid5) du `user_id` JWT int ; le `user_id` int réel est tracé dans `event_payload.actor_user_id` (dette de typage résiduelle — §5.1, sans perte de traçabilité).
+- Code : émission via `ActionEventLogRepository` dans `backend/routes/v4/action_center.py`.
+
+### 2.5 — Rate limiting (V4)
+
+- Stack : slowapi, storage in-memory (`backend/main_limiter.py`). Migration Redis multi-instance différée M3+.
+- Clé de quota : `user:<sub>` si le JWT est décodable, sinon `ip:<adresse>` — fail-soft, le rate limiting ne casse jamais une requête (token absent/expiré/forgé → fallback IP silencieux).
+- 5 catégories : READ 120/min · WRITE 60/min · UPLOAD 10/min · VERIFY 30/min · FALLBACK 100/min.
+- Réponse 429 au format PROMEOS (`{code, message, hint, retry_after}`) + header `Retry-After`.
+- Désactivé en environnement de test (`PROMEOS_RATE_LIMIT_ENABLED=false`, posé par `tests/conftest.py`) — sinon les suites V4 (mêmes user/IP, centaines d'appels rapides) déclencheraient des 429.
+- ⚠️ Reverse proxy : pour un rate limit effectif derrière nginx / Cloudflare / ALB, uvicorn doit tourner `--proxy-headers --forwarded-allow-ips=<proxy>` **et** le proxy doit strip le `X-Forwarded-For` entrant (sinon un client spoofe son IP). Détail : docstring `main_limiter.py`.
+
 ---
 
 ## 3. Pour le dev — Ajouter un endpoint sensible
 
-**Checklist (5 items)** :
+**Checklist (7 items)** :
 
 1. **Auth** : `Depends(require_v4_role(Role.ADMIN, Role.USER))` (rôles applicables).
 2. **Org context** : `dependencies=[Depends(populate_org_context)]` sur la route.
 3. **Repository** : utiliser un repo héritant de `BaseRepositoryV4` — ne **jamais** faire `db.query(Model).all()` direct sur un model V4.
 4. **Env guard** (si endpoint admin/seed/debug) : `Depends(require_non_prod_env)`.
 5. **Test** : au moins 1 cas `viewer → 403` + 1 cas `cross-org → 404`.
+6. **Audit** (si écriture) : émettre l'`event_type` V4 approprié (whitelist doctrine 16 valeurs — §2.4).
+7. **Rate limit** : décorer la route `@limiter.limit(...)` avec la catégorie adaptée (READ/WRITE/UPLOAD/VERIFY — §2.5).
 
 Exemple minimal :
 
 ```python
+from main_limiter import limiter, QUOTA_READ_V4
+
 @router.get(
-    "/api/v4/things/{thing_id}",
+    "/api/v4/action-center/things/{thing_id}",
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_READ_V4)
 async def get_thing(
+    request: Request,
     thing_id: str,
     db: Session = Depends(get_db),
     auth=Depends(require_v4_role(Role.VIEWER, Role.USER, Role.ADMIN)),
@@ -87,44 +120,52 @@ async def get_thing(
 ## 4. Garanties d'isolation entre clients (pour pilote)
 
 | Couche | Garantie | Preuve |
-|---|---|---|
+| --- | --- | --- |
 | JWT | Token signé HS256, claims `sub`/`org_id`/`role` | `get_jwt_payload`, `require_admin` |
 | Rôle | RBAC V4 4 niveaux, fallback `viewer` least-privilege | `test_require_v4_role.py` (12 cas) |
 | Org isolation | Repository fail-closed, force `organisation_id` au `create()` | `test_base_v4.py` (12 cas) |
 | Cross-org read | `404` (pas `403` — pas de leak d'existence) | `test_base_v4.py::test_get_blocks_cross_org_access` |
 | Cross-org write | `OrgScopeViolation` exception | `test_base_v4.py::test_update_blocks_cross_org_write` |
 | Endpoint seed/admin | `require_admin` + `require_non_prod_env` (defense in depth) | `test_seed_endpoints_require_admin.py` (22 cas) |
+| IDOR end-to-end | 14 endpoints V4 × rôles × 2 orgs, cross-org → `404` no-leak | `test_v4_idor_matrix.py` (M2-4.5) |
+| Audit trail | Chaque écriture V4 → event horodaté org-scopé | `action_event_log`, tests M2-4.4 |
+| Anti-spoofing upload | MIME validé par magic bytes (pas par extension) | `file_validation.py` (IE9 · M2-4.4) |
+| Rate limiting | 5 quotas par catégorie, clé `user:<sub>` / IP | `test_rate_limit.py` (M2-4.6) |
 
-**Limite connue (chantier M2-4)** : `populate_org_context` lit `org_id` du JWT au format `int` (legacy) mais les models V4 utilisent `organisation_id` UUID. En production routée, la chaîne JWT → repo V4 n'est pas bouclée — voir §5.1. Comportement actuel : *fail-visible* (queries vides ou `NoOrgContextError`), jamais *wrong data*.
+**Résolu (M2-4.1)** — la chaîne `JWT → populate_org_context → BaseRepositoryV4` est désormais bouclée : `organisation_id` est un Integer FK partagé legacy↔V4 (ADR-009 Option D), le contexte V4 est alimenté sans transformation de type. Dette résiduelle limitée à l'`actor_id` des audit events — typage seulement, traçabilité exacte (§5.1).
 
 ---
 
 ## 5. Dettes connues et chantiers
 
 > **§5 = source de vérité unique des différés.** Tous les autres docs y renvoient.
+> Backlog M3 détaillé (sprints + effort) : [`BACKLOG_M3.md`](BACKLOG_M3.md).
 
-### 5.1 — Dette JWT int ↔ V4 UUID  🔴 P0 M2-4
+### 5.1 — Dette JWT `user_id` int ↔ V4 `actor_id` UUID  🟡 P1 M3
 
-- **Symptôme** : le JWT porte `org_id: int` (legacy — `Organisation.id` est un Integer PK). Les 8 models V4 (`backend/models/v4/`) utilisent `organisation_id: UUID`.
-- **Impact** : la chaîne `JWT → populate_org_context → BaseRepositoryV4` ne match pas en type. Aucune route V4 réelle n'existe encore (les 12 endpoints `/api/action-center/*` = M2-4) — donc pas de bug en prod aujourd'hui, mais le câblage est bloqué.
-- **Mitigation actuelle** : les tests M2-3.C bypassent en appelant `set_org_context(org_id_str)` directement. Le pattern est validé en isolation, pas la chaîne JWT réelle.
-- **Résolution M2-4** : arbitrer en ADR entre (a) mapping `int → UUID` dans `populate_org_context`, (b) émettre des JWT avec `org_id: UUID`, (c) colonne `legacy_int_id` sur les V4 models.
-- **Traçabilité (3/3)** : docstring `backend/middleware/org_context.py` · commit `13dad3ba` (M2-3.C) · ce paragraphe.
+- **Symptôme** : le JWT porte `sub` / `user_id: int` (legacy). Les colonnes d'acteur des tables V4 — `action_event_log.actor_id`, `evidences.uploaded_by`, `action_blockers.added_by` — sont des `UUID`.
+- **Impact** : *aucun bug en prod*. M2-4.4 dérive un `actor_id` UUID5 **déterministe** du `user_id` int et trace le `user_id` int réel dans `event_payload.actor_user_id`. La traçabilité est exacte ; seul le typage est hétérogène.
+- **Pourquoi P1 et non P0** : la dette `org_id` (P0, résolue M2-4.1) bloquait le scoping — un défaut de sécurité. La dette `user_id` ne bloque rien : c'est une cohérence de schéma. Reclassée P1.
+- **Résolution M3** (sprint `M3-JWT-USER-UUID`, cf. `BACKLOG_M3.md`) — 3 options parallèles à ADR-009 :
+  - **A** — table de correspondance `users` int→UUID persistée (mapping auditable).
+  - **B** — JWT émet `user_id: UUID` (impacte les consommateurs legacy — risque régression).
+  - **D** — migrer `actor_id`/`uploaded_by`/`added_by` UUID→Integer FK `users.id` (parallèle exact de la résolution `org_id`). **Reco** : D, par symétrie avec ADR-009.
+- **Traçabilité** : §2.4 · `backend/routes/v4/action_center.py` (dérivation uuid5) · ADR-009 (résolution sœur `org_id`).
 
-### 5.2 — Différés M2-4
+### 5.2 — Différés M2-5
 
-- `@limiter` (rate limiting) sur les routes V4 (à créer en M2-4).
-- IDOR matrix end-to-end : 12 endpoints × rôles × 2 orgs (cf. ADR-027 §10 — 288 cellules).
-- Câblage `populate_org_context` réel → résolution dette §5.1.
-- Tests d'intégration cross-org bout-en-bout (différés faute de routes V4 existantes).
+- **ActionLink — cibles polymorphes** : `site` / `building` / `meter` / `invoice` / `contract` (`regulatory_obligation` → M2-6). `link_target_validator.verify_link_target` lève `501 TARGET_MODULE_NOT_IMPLEMENTED` en attendant le repository V4 correspondant.
+- **Evidence — formats** : DOCX / XLSX / ZIP / CSV (M2-4 = PDF / JPG / PNG seulement, validés par magic bytes).
 
 ### 5.3 — Différés M2-6
 
-- Hierarchical scope V4 (ENTITÉ / PORTEFEUILLE / SITE) — extension par sous-classes de `BaseRepositoryV4`, hook `_apply_scope()` prêt.
+- Scope hiérarchique V4 (ENTITÉ / PORTEFEUILLE / SITE) — extension par sous-classes de `BaseRepositoryV4`, hook `_apply_scope()` prêt.
 - `write_event()` Pydantic strict (16 schemas v1) pour `action_event_log` — IE7.
-- Magic bytes MIME validation upload evidence — IE9 cardinal Amine.
 - Rétention 90j evidence enforce Python — IE6 (actuellement documenté, pas en CHECK SQL portable).
+- Scan antivirus (ClamAV), chiffrement at-rest, backend S3 evidence. Stockage actuel = filesystem local par org (`PROMEOS_EVIDENCE_STORAGE_PATH`).
 - Création rôle V4 `auditor` distinct (actuellement `auditeur` legacy → `viewer`).
+- Endpoint admin `closed → reopened` (fresh token + justification, IL3) — si le besoin se confirme (`closed` est terminal aujourd'hui).
+- `link_created` event_type — amendement ADR-029 à arbitrer (cf. `BACKLOG_M3.md` sprint `M3-LINK-EVENT-DOCTRINE`).
 
 ### 5.4 — Hors scope Mois 2 (long terme)
 
@@ -133,30 +174,16 @@ async def get_thing(
 - OAuth2 SSO (Google, Azure AD).
 - Password rotation policy.
 
-### 5.5 — Différés introduits M2-4.4 (write endpoints)
+### 5.5 — Dettes résolues — historique
 
-**ActionLink — cibles polymorphes (6 modules sur 7) :**
-
-- `site`, `building`, `meter`, `invoice`, `contract` → M2-5 ; `regulatory_obligation` → M2-6.
-- `link_target_validator.verify_link_target` lève `501 TARGET_MODULE_NOT_IMPLEMENTED` pour ces modules. Ajouter un handler quand le repository V4 correspondant existe.
-
-**Evidence upload :**
-
-- Formats DOCX/XLSX/ZIP/CSV → M2-6 (sprint storage). M2-4.4 = PDF/JPG/PNG seulement (magic bytes).
-- Scan antivirus (ClamAV), chiffrement at-rest, backend S3 → M2-6+. Stockage actuel = filesystem local par org (`PROMEOS_EVIDENCE_STORAGE_PATH`).
-
-**Acteur des audit events — dette JWT/UUID résiduelle :**
-
-- `ActionEventLog.actor_id` / `Evidence.uploaded_by` / `ActionBlocker.added_by` sont des UUID ; le JWT legacy porte un user_id INT. M2-4.1 n'a résolu la dette que pour `organisation_id`.
-- M2-4.4 dérive un `actor_id` UUID5 déterministe du user_id, et trace le user_id int réel dans `event_payload.actor_user_id`. Résolution propre (FK `users` ou migration) à planifier — cf. §5.1.
-
-**Doctrine event_types :**
-
-- `PATCH /items/{id}` (edit cosmétique) et `POST /items/{id}/links` n'émettent pas d'audit event : aucun des 16 `event_type` doctrine (SG-6) ne les couvre. `link_created` à arbitrer (amendement ADR-029) — backlog M3.
-
-**Reopened :**
-
-- `closed → reopened` non exposé via `PATCH /lifecycle` (closed = terminal). Endpoint admin dédié (fresh token + justification, IL3) à livrer si le besoin se confirme.
+| Dette | Résolue | Comment |
+| --- | --- | --- |
+| JWT `org_id` int ↔ V4 `organisation_id` UUID 🔴 P0 | M2-4.1 | ADR-009 Option D — `organisation_id` migré UUID→Integer FK (8 tables V4 vides → 0 backfill). JWT câblé sans transformation. |
+| Câblage `populate_org_context` réel → `BaseRepositoryV4` | M2-4.1 | Type Integer cohérent de bout en bout (JWT → ContextVar → `_apply_scope`). |
+| `@limiter` rate limiting sur routes V4 | M2-4.6 | slowapi, 5 catégories de quotas — cf. §2.5. |
+| IDOR matrix end-to-end (14 endpoints × rôles × 2 orgs) | M2-4.5 | Focus no-leak : cross-org read → 404, jamais 403. |
+| Magic bytes MIME validation upload evidence (IE9) | M2-4.4 | `file_validation.py` — anti-spoofing par signatures binaires. |
+| Tests d'intégration cross-org bout-en-bout | M2-4.5 | Débloqués par l'existence des 14 routes V4 réelles. |
 
 ---
 
@@ -167,6 +194,8 @@ async def get_thing(
 - Notes sécurité legacy : [`docs/security_notes.md`](docs/security_notes.md)
 - Audit Sprint M2-3 (Phase 1 + état final) : [`SECURITY_AUDIT_M2-3.md`](SECURITY_AUDIT_M2-3.md)
 - ADR-027 Sécurité org-scoping V4 : [`docs/dev/L4_ADR-027_securite_org_scoping.md`](docs/dev/L4_ADR-027_securite_org_scoping.md)
+- ADR-009 Résolution dette JWT/UUID : [`docs/decisions/adr/009-jwt-uuid-resolution.md`](docs/decisions/adr/009-jwt-uuid-resolution.md)
+- Backlog M3 (dettes ouvertes, sprints planifiés + effort) : [`BACKLOG_M3.md`](BACKLOG_M3.md)
 
 ---
 

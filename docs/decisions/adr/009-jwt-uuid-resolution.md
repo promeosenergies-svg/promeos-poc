@@ -219,6 +219,19 @@ de l'état réel du projet (audit M2-4.0) :
 
 ### 5.3 — Trade-off accepté : URL énumérable côté pattern
 
+> ⚠️ **NOTE RECTIFICATIVE (M2-4.7 — 2026-05-18)** — ce §5.3 est **caduc**.
+> L'analyse ci-dessous supposait que la migration `organisation_id` UUID→Integer
+> rendait séquentielles les **clés primaires des entités V4**. C'est faux :
+> **seule** la colonne `organisation_id` (clé étrangère) est devenue `Integer`.
+> Les PK des 8 tables V4 — `action_center_items.id`, `evidences.id`, etc. —
+> sont **restées `UUID(as_uuid=True)` avec `default=uuid4`** (vérifié à
+> l'implémentation M2-4.1). Les URL `/api/v4/action-center/items/{id}` portent
+> donc un UUID v4 non séquentiel → **non énumérables**. Le trade-off décrit
+> ci-dessous n'existe pas.
+> Le texte original est conservé sans modification pour la traçabilité du
+> raisonnement tenu au STOP gate M2-4.0 — ce sont ses **conclusions** qui sont
+> caduques, pas la trace de l'analyse.
+
 Integer PK séquentielle rend les URL `/api/v4/action-center/items/{id}`
 énumérables par incrément. Conséquences explicitement acceptées :
 
