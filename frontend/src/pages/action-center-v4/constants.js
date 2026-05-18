@@ -41,8 +41,9 @@ export const COPY = {
   // (le backend M2-4.2 GET /items n'accepte pas de paramètre ?state=).
   filterScopeNote: 'Filtre appliqué à la page courante',
   columnTitle: 'Titre',
+  columnPriority: 'Priorité',
   columnState: 'État',
-  columnDomain: 'Domaine',
+  columnType: 'Type',
   columnUpdated: 'Mis à jour',
   emptyTitle: 'Aucune action à afficher',
   emptyText: 'Les actions de votre organisation apparaîtront ici dès leur création.',
@@ -241,4 +242,42 @@ export const BLOCKER_RESOLVE_COPY = {
   submitLoading: 'Résolution…',
   cancelButton: 'Annuler',
   successToast: 'Blocage résolu',
+};
+
+// ── M2-5.8.B — Priorité + libellés kind FR + accessibilité ─────
+
+// priority_bracket → label FR (4 brackets PriorityBracket, doctrine V4).
+export const PRIORITY_LABELS = {
+  P0: 'Critique',
+  P1: 'Élevée',
+  P2: 'Standard',
+  P3: 'Faible',
+};
+
+// priority_bracket → status Badge (palette severity src/ui/Badge.jsx).
+export const PRIORITY_BADGE_VARIANTS = {
+  P0: 'crit', // rouge — à traiter aujourd'hui
+  P1: 'warn', // orange — cette semaine
+  P2: 'info', // bleu — ce mois
+  P3: 'neutral', // gris — backlog
+};
+
+// Ordre canonique, du plus prioritaire au moins.
+export const PRIORITY_ORDER = ['P0', 'P1', 'P2', 'P3'];
+
+// kind backend → label FR (7 valeurs Kind, cf. enums/kind.py).
+export const KIND_LABELS = {
+  anomaly: 'Anomalie',
+  action: 'Action',
+  decision: 'Décision',
+  signal: 'Signal',
+  evidence_request: 'Demande de preuve',
+  deadline: 'Échéance',
+  recommendation: 'Recommandation',
+};
+
+// Copy accessibilité M2-5.8.B (P0-4 a11y clavier).
+export const A11Y_COPY = {
+  rowAriaLabel: (title) => `Ouvrir l'action : ${title}`,
+  unknownKindLabel: 'Type inconnu',
 };
