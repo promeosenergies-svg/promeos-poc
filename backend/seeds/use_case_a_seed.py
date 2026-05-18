@@ -436,10 +436,15 @@ USE_CASE_A_SPECS: tuple[dict, ...] = (
         "domain": "conformite",
         "title": "Vérification décret BACS — Lyon Bureaux",
         "description": (
-            "Vérification de l'applicabilité du décret BACS (décret n° 2020-887 "
-            "du 20 juillet 2020, modifié par le décret n° 2023-259) au bâtiment "
-            "de bureaux Lyon. Conclusion : puissance installée < 70 kW, site non "
-            "concerné par l'obligation d'automatisation."
+            "Vérification de l'applicabilité du décret BACS (systèmes "
+            "d'automatisation et de contrôle des bâtiments tertiaires) au "
+            "bâtiment de bureaux Lyon. Cadre : décret n° 2020-887 du 20 juillet "
+            "2020 (fondateur, seuil 290 kW), abaissé à 70 kW par le décret "
+            "n° 2023-259 du 7 avril 2023 ; calendrier des bâtiments existants "
+            "reporté au 01/01/2030 par le décret n° 2025-1343 du 26 décembre "
+            "2025. Conclusion : puissance nominale des systèmes CVC < 70 kW, "
+            "site non concerné par l'obligation — y compris après l'abaissement "
+            "de seuil du 01/01/2030."
         ),
         "lifecycle_state": "closed",
         "priority_bracket": "P3",
