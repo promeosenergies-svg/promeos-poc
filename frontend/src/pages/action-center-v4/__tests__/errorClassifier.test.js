@@ -31,6 +31,10 @@ describe('classifyError', () => {
       expect(classifyError({ code })).toBe('inline');
     }
   );
+
+  test('returns "inline" for BLOCKER_ALREADY_RESOLVED (warning-toast tone)', () => {
+    expect(classifyError({ code: 'BLOCKER_ALREADY_RESOLVED' })).toBe('inline');
+  });
 });
 
 describe('toastMessageForError', () => {

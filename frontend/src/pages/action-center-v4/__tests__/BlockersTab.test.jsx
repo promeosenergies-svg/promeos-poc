@@ -1,21 +1,36 @@
 // @vitest-environment jsdom
 /**
- * M2-5.3.B — Tests du composant BlockersTab (rendu jsdom, hook mocké).
+ * M2-5.3.B / M2-5.6 — Tests du composant BlockersTab (rendu jsdom, hooks mockés).
  */
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 
 vi.mock('../../../hooks/v4', () => ({
   useActionCenterV4Blockers: vi.fn(),
+  useAddBlocker: vi.fn(),
+  useResolveBlocker: vi.fn(),
+}));
+vi.mock('../../../ui/ToastProvider', () => ({
+  useToast: () => ({ toast: vi.fn() }),
 }));
 
-import { useActionCenterV4Blockers } from '../../../hooks/v4';
+import { useActionCenterV4Blockers, useAddBlocker, useResolveBlocker } from '../../../hooks/v4';
 import { BlockersTab } from '../components/BlockersTab';
+
+const idleMutation = {
+  execute: vi.fn(),
+  loading: false,
+  error: null,
+  data: null,
+  reset: vi.fn(),
+};
 
 afterEach(cleanup);
 beforeEach(() => {
   vi.clearAllMocks();
+  useAddBlocker.mockReturnValue(idleMutation);
+  useResolveBlocker.mockReturnValue(idleMutation);
 });
 
 describe('BlockersTab', () => {
@@ -83,5 +98,28 @@ describe('BlockersTab', () => {
       offset: 0,
       limit: 20,
     });
+  });
+
+  test('shows the "Ajouter un blocage" button', () => {
+    useActionCenterV4Blockers.mockReturnValue({
+      data: { items: [], total: 0 },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<BlockersTab itemId="x" />);
+    expect(screen.getByRole('button', { name: /ajouter un blocage/i })).toBeInTheDocument();
+  });
+
+  test('clicking "Ajouter un blocage" opens the add modal', () => {
+    useActionCenterV4Blockers.mockReturnValue({
+      data: { items: [], total: 0 },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<BlockersTab itemId="x" />);
+    fireEvent.click(screen.getByRole('button', { name: /ajouter un blocage/i }));
+    expect(screen.getByText(/signaler un blocage/i)).toBeInTheDocument();
   });
 });

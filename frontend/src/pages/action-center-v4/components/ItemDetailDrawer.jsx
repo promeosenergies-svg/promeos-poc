@@ -70,6 +70,11 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
     setRefreshKey((k) => k + 1);
   }, []);
 
+  // Mutation blocker (ajout/résolution) → idem evidence : on remonte la Timeline.
+  const handleBlockerMutated = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
+
   if (!open || !itemId) return null;
 
   return (
@@ -93,7 +98,7 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
           <EvidencesTab itemId={itemId} onEvidenceMutated={handleEvidenceMutated} />
         )}
         {activeTab === TAB_IDS.blockers && loadedTabs.has(TAB_IDS.blockers) && (
-          <BlockersTab itemId={itemId} />
+          <BlockersTab itemId={itemId} onBlockerMutated={handleBlockerMutated} />
         )}
         {activeTab === TAB_IDS.links && loadedTabs.has(TAB_IDS.links) && (
           <LinksTab itemId={itemId} />

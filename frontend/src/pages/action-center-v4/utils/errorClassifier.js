@@ -20,6 +20,10 @@ const INLINE_ERROR_CODES = new Set([
   'INVALID_FILENAME',
   // Evidence verify (M2-5.5) — 409, affiché en toast warning par le dialog.
   'EVIDENCE_ALREADY_VERIFIED',
+  // Blocker resolve (M2-5.6) — 409, idem : toast warning par le dialog
+  // (cohérent avec EVIDENCE_ALREADY_VERIFIED). Aucun code custom à l'ajout
+  // de blocker — la validation blocker_type / justification est Pydantic (422).
+  'BLOCKER_ALREADY_RESOLVED',
 ]);
 
 /**

@@ -216,3 +216,29 @@ export const VERIFY_COPY = {
   cancelButton: 'Annuler',
   successToast: 'Preuve vérifiée',
 };
+
+// ── M2-5.6 — Ajout + résolution de blocage ─────────────────────
+
+export const BLOCKER_ADD_COPY = {
+  buttonAddBlocker: 'Ajouter un blocage',
+  modalTitle: 'Signaler un blocage',
+  fieldType: 'Type de blocage',
+  fieldTypePlaceholder: 'Sélectionner un type…',
+  fieldJustification: 'Justification',
+  fieldJustificationHint: 'Motif du blocage — 3 caractères minimum.',
+  submitButton: 'Signaler',
+  submitLoading: 'Signalement…',
+  cancelButton: 'Annuler',
+  successToast: 'Blocage signalé',
+};
+
+export const BLOCKER_RESOLVE_COPY = {
+  buttonResolve: 'Résoudre',
+  modalTitle: 'Résoudre ce blocage',
+  fieldNote: 'Note de résolution (optionnel)',
+  fieldNoteHint: "Pour l'audit trail. Facultatif.",
+  submitButton: 'Résoudre',
+  submitLoading: 'Résolution…',
+  cancelButton: 'Annuler',
+  successToast: 'Blocage résolu',
+};
