@@ -31,9 +31,18 @@ from fastapi import (
     Header,
     HTTPException,
     Query,
+    Request,
     Response,
     UploadFile,
     status,
+)
+
+from main_limiter import (
+    QUOTA_READ_V4,
+    QUOTA_UPLOAD_V4,
+    QUOTA_VERIFY_V4,
+    QUOTA_WRITE_V4,
+    limiter,
 )
 from sqlalchemy.orm import Session
 
@@ -101,7 +110,9 @@ def _hash_payload(payload: ActionCenterItemCreate) -> str:
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_WRITE_V4)
 async def create_action_center_item(
+    request: Request,
     payload: ActionCenterItemCreate,
     response: Response,
     idempotency_key: Annotated[
@@ -175,7 +186,9 @@ async def create_action_center_item(
     response_model=ActionCenterItemListResponse,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_READ_V4)
 async def list_action_center_items(
+    request: Request,
     offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -197,7 +210,9 @@ async def list_action_center_items(
     response_model=ActionCenterItemResponse,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_READ_V4)
 async def get_action_center_item(
+    request: Request,
     item_id: uuid.UUID,
     db: Session = Depends(get_db),
     _rbac=Depends(require_v4_role(Role.VIEWER, Role.USER, Role.ADMIN)),
@@ -241,7 +256,9 @@ async def get_action_center_item(
     response_model=ActionEventLogListResponse,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_READ_V4)
 async def list_item_events(
+    request: Request,
     item_id: uuid.UUID,
     offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
@@ -262,7 +279,9 @@ async def list_item_events(
     response_model=ActionEvidenceListResponse,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_READ_V4)
 async def list_item_evidences(
+    request: Request,
     item_id: uuid.UUID,
     offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
@@ -283,7 +302,9 @@ async def list_item_evidences(
     response_model=ActionBlockerListResponse,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_READ_V4)
 async def list_item_blockers(
+    request: Request,
     item_id: uuid.UUID,
     offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
@@ -304,7 +325,9 @@ async def list_item_blockers(
     response_model=ActionLinkListResponse,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_READ_V4)
 async def list_item_links(
+    request: Request,
     item_id: uuid.UUID,
     offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
@@ -373,7 +396,9 @@ def _write_v4_event(
     response_model=ActionCenterItemResponse,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_WRITE_V4)
 async def update_action_center_item(
+    request: Request,
     item_id: uuid.UUID,
     payload: ActionCenterItemUpdate,
     parent: ActionCenterItem = Depends(verify_parent_item_access),
@@ -403,7 +428,9 @@ async def update_action_center_item(
     response_model=ActionCenterItemResponse,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_WRITE_V4)
 async def transition_item_lifecycle(
+    request: Request,
     item_id: uuid.UUID,
     payload: LifecycleTransitionRequest,
     parent: ActionCenterItem = Depends(verify_parent_item_access),
@@ -451,7 +478,9 @@ async def transition_item_lifecycle(
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_UPLOAD_V4)
 async def upload_item_evidence(
+    request: Request,
     item_id: uuid.UUID,
     file: UploadFile = File(...),
     description: Annotated[Optional[str], Form()] = None,
@@ -515,7 +544,9 @@ async def upload_item_evidence(
     response_model=ActionEvidenceResponse,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_VERIFY_V4)
 async def verify_item_evidence(
+    request: Request,
     evidence_id: uuid.UUID,
     payload: EvidenceVerifyRequest,
     db: Session = Depends(get_db),
@@ -585,7 +616,9 @@ async def verify_item_evidence(
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_WRITE_V4)
 async def add_item_blocker(
+    request: Request,
     item_id: uuid.UUID,
     payload: BlockerCreate,
     parent: ActionCenterItem = Depends(verify_parent_item_access),
@@ -620,7 +653,9 @@ async def add_item_blocker(
     response_model=ActionBlockerResponse,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_WRITE_V4)
 async def resolve_item_blocker(
+    request: Request,
     blocker_id: uuid.UUID,
     payload: BlockerResolveRequest,
     db: Session = Depends(get_db),
@@ -673,7 +708,9 @@ async def resolve_item_blocker(
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(populate_org_context)],
 )
+@limiter.limit(QUOTA_WRITE_V4)
 async def create_item_link(
+    request: Request,
     item_id: uuid.UUID,
     payload: ActionLinkCreate,
     parent: ActionCenterItem = Depends(verify_parent_item_access),

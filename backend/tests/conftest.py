@@ -6,7 +6,18 @@ Runs as an autouse module-scoped fixture so that destructive tests
 (reset_db, reset-pack hard) don't break subsequent test modules.
 """
 
+import os
+
 import pytest
+
+# M2-4.6 : rate limiting désactivé en test. Le limiter slowapi lit cette env à
+# l'import de `main_limiter` → `enabled=False`. Sans ça, les centaines d'appels
+# rapides des suites V4 (même user → même bucket) déclencheraient des 429.
+os.environ.setdefault("PROMEOS_RATE_LIMIT_ENABLED", "false")
+
+# JWT secret test-safe — requis par services.iam_service à l'import. Posé ici
+# (conftest racine) pour couvrir tous les dossiers de tests (api/middleware/...).
+os.environ.setdefault("PROMEOS_JWT_SECRET", "m2_3_b_test_secret_do_not_use_prod")
 
 
 def _ensure_seeded():

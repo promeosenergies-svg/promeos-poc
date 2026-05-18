@@ -142,13 +142,13 @@ app = FastAPI(
 # NB : derrière reverse proxy, uvicorn doit tourner avec `--proxy-headers
 # --forwarded-allow-ips=<trusted>` pour que le rate limit soit par vraie IP
 # client (cf. docstring `main_limiter.py`).
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from main_limiter import limiter
+from main_limiter import limiter, rate_limit_exceeded_handler
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Handler 429 au format PROMEOS APIError (M2-4.6 — remplace le défaut slowapi).
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 # Global error handlers (HTTPException, ValidationError, unhandled)
 register_error_handlers(app)
