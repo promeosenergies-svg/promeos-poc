@@ -6,6 +6,9 @@ Archetypes, anomaly rules, recommendations, provenance, reload
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
+from middleware.env_guard import require_non_prod_env
+from middleware.rbac import require_v4_role
+from models.v4.enums import Role
 from models import (
     KBVersion,
     KBArchetype,
@@ -509,8 +512,17 @@ class SeedDemoResponse(BaseModel):
 
 
 @router.post("/seed_demo", response_model=SeedDemoResponse)
-def seed_demo_kb(db: Session = Depends(get_db)):
-    """Seed KB with a minimal demo pack. Idempotent — skips items that already exist."""
+def seed_demo_kb(
+    db: Session = Depends(get_db),
+    _rbac=Depends(require_v4_role(Role.ADMIN)),  # M2-3.B : admin-only (was no auth)
+    _env_guard: None = Depends(require_non_prod_env),  # M2-3.B : defense in depth
+):
+    """Seed KB with a minimal demo pack. Idempotent — skips items that already exist.
+
+    🛡️ M2-3.B : double protection (audit Phase 1) :
+    1. require_v4_role(Role.ADMIN) — V4 RBAC wrapper (legacy dg_owner/dsi_admin → admin)
+    2. require_non_prod_env — bloque même un admin en production
+    """
 
     # ── KB Version (idempotent) ──
     kb_version = db.query(KBVersion).filter_by(doc_id="PROMEOS_DEMO_KB").first()

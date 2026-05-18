@@ -20,7 +20,8 @@ from sqlalchemy.orm import Session
 import logging
 
 from database import get_db
-from middleware.auth import get_optional_auth, AuthContext
+from middleware.auth import get_optional_auth, AuthContext, require_admin
+from middleware.env_guard import require_non_prod_env
 from services.iam_scope import check_site_access
 from services.iam_service import log_audit
 from models import Site, ConsumptionInsight, not_deleted
@@ -144,10 +145,19 @@ def seed_demo_consumption(
     site_id: Optional[int] = Query(None),
     days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    auth: Optional[AuthContext] = Depends(get_optional_auth),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),  # gardé pour check_site_access infra
+    _admin: Optional[dict] = Depends(require_admin()),  # M2-3.A : close gap A2 (exige admin)
+    _env_guard: None = Depends(require_non_prod_env),  # M2-3.A : defense in depth (env != prod)
 ):
     """Generate demo consumption data for a site (or all sites if site_id is None).
-    Also seeds TariffCalendar references and gas weather data."""
+    Also seeds TariffCalendar references and gas weather data.
+
+    🛡️ M2-3.A : triple protection depuis Sprint M2-3 (audit Phase 1 gap A2) :
+    1. require_admin() — auth admin obligatoire (was get_optional_auth — fuite)
+    2. require_non_prod_env — defense in depth, bloque même un admin en production
+       (PROMEOS_ENV doit être dans dev/development/demo/staging/test/testing)
+    3. get_optional_auth conservé pour check_site_access infra (resolve scope sites)
+    """
     import json, math
     from datetime import datetime, timedelta
     from models import Meter, MeterReading

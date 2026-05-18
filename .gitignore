@@ -115,3 +115,21 @@ tmp/
 # Audit WIP root-level — sessions parallèles, préservés sur branches dédiées
 # (claude/audit-v1-wip, claude/audit-v2-v3-wip) pas sur main ni agents-sdk
 /audit/
+
+# ─── PROMEOS V4 cardinal (ADR-026 I9 + ADR-027 IS10 + ADR-029 IE1) ───
+# Backups hors Git impératif (I9 cardinal Amine — receipt sanitizé seul autorisé in Git)
+/backups/
+/data/backups/
+*.backup
+*.sql
+**/legacy_json/
+backend/data/promeos.db.bak_*
+backend/alembic/versions/*.original-autogenerate
+
+# Evidences storage hors Git (IE1 cardinal — fs:// gitignored)
+/data/promeos/evidences/
+backend/data/promeos/evidences/
+
+# Receipts sanitizés autorisés (ADR-026 §3 + L8 §6.3 — I9 garde-fou)
+!docs/migrations/L3_cutover_receipts/RECEIPT_*.md
+!docs/migrations/L8_suppression_receipts/RECEIPT_*.md

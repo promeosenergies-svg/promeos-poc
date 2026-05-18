@@ -142,13 +142,13 @@ app = FastAPI(
 # NB : derrière reverse proxy, uvicorn doit tourner avec `--proxy-headers
 # --forwarded-allow-ips=<trusted>` pour que le rate limit soit par vraie IP
 # client (cf. docstring `main_limiter.py`).
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from main_limiter import limiter
+from main_limiter import limiter, rate_limit_exceeded_handler
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Handler 429 au format PROMEOS APIError (M2-4.6 — remplace le défaut slowapi).
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 # Global error handlers (HTTPException, ValidationError, unhandled)
 register_error_handlers(app)
@@ -367,6 +367,11 @@ app.include_router(regulatory_applicability_router)
 from routes.cockpit_strategique import router as cockpit_strategique_router
 
 app.include_router(cockpit_strategique_router)
+
+# M2-4.2 — endpoints V4 Action Center (template : POST + GET list + GET by id)
+from routes.v4.action_center import router as v4_action_center_router
+
+app.include_router(v4_action_center_router)
 
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations

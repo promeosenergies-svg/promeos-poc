@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from middleware.org_context import NoOrgContextError
 from schemas.error import APIError
 
 logger = logging.getLogger("promeos.errors")
@@ -93,6 +94,32 @@ def register_error_handlers(app: FastAPI):
             status_code=422,
             content=error.model_dump(),
         )
+
+    @app.exception_handler(NoOrgContextError)
+    async def no_org_context_handler(request: Request, exc: NoOrgContextError):
+        """Endpoint V4 ayant appelé un repository org-scopé sans contexte org peuplé.
+
+        Cas typique : requête sans JWT en DEMO_MODE — `populate_org_context` ne
+        peuple pas le contexte (cf. org_context.py). On répond 401 plutôt que 500 :
+        absence de contexte org = non authentifié pour le périmètre V4.
+        """
+        correlation_id = str(uuid.uuid4())[:8]
+
+        logger.warning(
+            "No org context [%s] %s %s — endpoint V4 sans contexte org",
+            correlation_id,
+            request.method,
+            request.url.path,
+        )
+
+        error = APIError(
+            code="NO_ORG_CONTEXT",
+            message="Aucun contexte organisation — authentification requise",
+            hint="Fournir un JWT valide portant un claim org_id",
+            correlation_id=correlation_id,
+        )
+
+        return JSONResponse(status_code=401, content=error.model_dump())
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
