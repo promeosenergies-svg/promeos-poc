@@ -89,6 +89,10 @@ class AuditLog(Base):
             "resource_type",
             "created_at",
         ),
+        # Couvre `has_recent_audit_event(user_id, action, cooldown)` utilisé par
+        # l'anti-flood NPS/CSAT. Sans cet index le planner tombe sur ix_audit_user_id
+        # + post-filtre O(user_events), coûteux pour les admins très actifs.
+        Index("ix_audit_user_action_created", "user_id", "action", "created_at"),
         Index("ix_audit_user_id", "user_id"),
         Index("ix_audit_resource_id", "resource_id"),
     )

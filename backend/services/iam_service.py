@@ -13,6 +13,7 @@ import bcrypt
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 
+from middleware.cx_logger import safe_invalidate_membership_cache
 from models import (
     User,
     UserOrgRole,
@@ -422,8 +423,6 @@ def create_user(db: Session, email: str, password: str, nom: str, prenom: str) -
 
 
 def assign_role(db: Session, user_id: int, org_id: int, role: UserRole) -> UserOrgRole:
-    from middleware.cx_logger import safe_invalidate_membership_cache
-
     uor = UserOrgRole(user_id=user_id, org_id=org_id, role=role)
     db.add(uor)
     db.flush()
@@ -474,8 +473,6 @@ def remove_role(db: Session, user_id: int, org_id: int) -> bool:
         )
         if count <= 1:
             return False  # Cannot remove last DG_OWNER
-
-    from middleware.cx_logger import safe_invalidate_membership_cache
 
     db.delete(uor)
     db.flush()

@@ -1,13 +1,10 @@
 /**
- * PROMEOS — NPS trigger helpers (Sprint CX P1 residual)
+ * PROMEOS — NPS trigger helpers : éligibilité + guards localStorage.
  *
- * shouldShowNps(userCreatedAt, now) :
- *   - Renvoie true si user > 30j ET pas de submission localStorage < 90j
- *   - Clé localStorage : promeos_nps_last_submit (ISO string)
- *   - Clé localStorage : promeos_nps_dismissed_until (ISO, optionnel)
- *
- * markNpsSubmitted()  : écrit la date courante dans localStorage
- * markNpsDismissed(days) : reporte la re-proposition de N jours
+ *   shouldShowNps(userCreatedAt, now) : true si user ≥ 30 j ET pas de
+ *     submission < 90 j ET pas de dismiss encore actif.
+ *   markNpsSubmitted()       : écrit la date courante dans localStorage.
+ *   markNpsDismissed(days)   : reporte la re-proposition de N jours.
  */
 
 export const NPS_LAST_SUBMIT_KEY = 'promeos_nps_last_submit';

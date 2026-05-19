@@ -1,18 +1,10 @@
 """
-PROMEOS — NPS micro-survey (Sprint CX P1 residual)
+PROMEOS — NPS micro-survey.
 
-POST /api/nps/submit — enregistre une note NPS (0-10) + verbatim optionnel.
-
-Classification industry-standard :
-  - Promoteurs : 9-10
-  - Passifs    : 7-8
-  - Détracteurs: 0-6
-
-Anti-flood : 1 seule soumission par user dans une fenêtre de 90 jours
-(check AuditLog.action == CX_NPS_SUBMITTED + user_id + created_at).
-
-Le stockage s'appuie sur AuditLog via log_cx_event (pas de nouvelle table)
-pour rester homogène avec les autres events CX (T2V, IAR, WAU/MAU...).
+POST /api/nps/submit : enregistre une note (0-10) + verbatim optionnel,
+classe en promoter (9-10) / passive (7-8) / detractor (0-6), et écrit un
+event CX_NPS_SUBMITTED dans AuditLog (pas de table dédiée — homogène avec
+T2V, IAR, WAU/MAU). Anti-flood 90 j par user via has_recent_audit_event.
 """
 
 from typing import Optional
