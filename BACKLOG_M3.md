@@ -57,14 +57,13 @@
   l'émission dans `backend/routes/v4/action_center.py`.
 - **DoD** : ADR-029 amendé, SG-6 mis à jour, tests d'émission verts.
 
-### M3-METHOD-DOC — Doc méthode « audit avant fix »  🟢 P3 · ~1 j/h
+### M3-METHOD-DOC — Doc méthode « audit avant fix »  ✅ LIVRÉ (M2-5.9)
 
-- **Objet** : formaliser la méthode appliquée tout le Sprint M2-4 (Phase 0/1
-  read-only → STOP gate → phases numérotées → DoD → commit atomique → source-guard).
-- **Pourquoi** : la méthode a évité plusieurs faux départs en M2-4 (renommage
-  `obs_logging/`, dette baseline classée environnementale). La capitaliser comme
-  doc réutilisable pour les sprints suivants.
-- **DoD** : `docs/dev/methode_audit_avant_fix.md` rédigé, référencé dans CLAUDE.md.
+- **Livré** : `docs/dev/methode_audit_avant_fix.md` rédigé (bonus M2-5.9),
+  référencé dans CLAUDE.md §Workflow méthodologique. Sibling de
+  `methode_walkthrough_navigateur.md`.
+- **Objet (rappel)** : formaliser la Phase 0/1 read-only → STOP gate → phases
+  → DoD → commit atomique → source-guard. ROI documenté (M2-5.9, M2-5.8.A).
 
 ---
 
@@ -104,12 +103,12 @@ d'ensemble seulement (détail : `SECURITY.md` §5.2 et §5.3).
 | M3-JWT-USER-UUID | 🟡 P1 | ~2,5 j/h | aucune |
 | M3-SEED-MIGRATION | 🟡 P1 | ~5 j/h | ADR-026 (backup + STOP GATE) |
 | M3-LINK-EVENT-DOCTRINE | 🟢 P2 | ~1,5 j/h | amendement ADR-029 |
-| M3-METHOD-DOC | 🟢 P3 | ~1 j/h | aucune |
+| ~~M3-METHOD-DOC~~ | ✅ | — | livré M2-5.9 |
 
-**Effort cumulé M3 estimé : ~16 j/h** (5 sprints).
+**Effort cumulé M3 restant : ~15 j/h** (4 sprints — M3-METHOD-DOC soldé M2-5.9).
 
 Ordre recommandé : M3-DEBT (débloque une baseline saine) → M3-JWT-USER-UUID →
-M3-SEED-MIGRATION → M3-LINK-EVENT-DOCTRINE → M3-METHOD-DOC.
+M3-SEED-MIGRATION → M3-LINK-EVENT-DOCTRINE.
 
 ---
 
