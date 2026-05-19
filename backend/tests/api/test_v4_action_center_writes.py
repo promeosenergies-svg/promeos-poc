@@ -256,7 +256,11 @@ class TestVerifyEvidence:
         client.patch(url, headers=_h(user_token), json={})
         r2 = client.patch(url, headers=_h(user_token), json={})
         assert r2.status_code == 409
-        assert r2.json()["detail"]["code"] == "EVIDENCE_ALREADY_VERIFIED"
+        detail = r2.json()["detail"]
+        assert detail["code"] == "EVIDENCE_ALREADY_VERIFIED"
+        # M2-5.9 — le 409 ne fuit aucun timestamp interne (CWE-209).
+        assert "hint" not in detail
+        assert "verified_at" not in str(detail)
 
     def test_nonexistent_evidence_404(self, client, user_token):
         r = client.patch(f"/api/v4/action-center/evidences/{uuid.uuid4()}/verify", headers=_h(user_token), json={})
@@ -322,7 +326,11 @@ class TestBlockers:
         client.patch(url, headers=_h(user_token), json={})
         r2 = client.patch(url, headers=_h(user_token), json={})
         assert r2.status_code == 409
-        assert r2.json()["detail"]["code"] == "BLOCKER_ALREADY_RESOLVED"
+        detail = r2.json()["detail"]
+        assert detail["code"] == "BLOCKER_ALREADY_RESOLVED"
+        # M2-5.9 — le 409 ne fuit aucun timestamp interne (CWE-209).
+        assert "hint" not in detail
+        assert "resolved_at" not in str(detail)
 
     def test_resolve_nonexistent_404(self, client, user_token):
         r = client.patch(f"/api/v4/action-center/blockers/{uuid.uuid4()}/resolve", headers=_h(user_token), json={})

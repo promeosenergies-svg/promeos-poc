@@ -56,7 +56,7 @@ from repositories.action_center_item_v4_repository import ActionCenterItemReposi
 from repositories.action_event_log_repository import ActionEventLogRepository
 from repositories.action_evidence_repository import ActionEvidenceRepository
 from repositories.action_link_repository import ActionLinkRepository
-from routes.v4.dependencies import verify_parent_item_access
+from routes.v4.dependencies import assert_parent_item_in_scope, verify_parent_item_access
 from schemas.v4.action_center import (
     ActionBlockerListResponse,
     ActionBlockerResponse,
@@ -568,13 +568,18 @@ async def verify_item_evidence(
                 "hint": "Check the id, or your access scope",
             },
         )
+    # M2-5.9 — défense en profondeur : l'item parent doit appartenir à l'org du
+    # caller. L'evidence l'est déjà (repo org-scopé) ; ce check uniformise
+    # verify/resolve avec les 5 autres sous-ressources et garde contre une
+    # incohérence evidence.organisation_id ≠ parent.organisation_id.
+    assert_parent_item_in_scope(db, evidence.action_item_id)
     if evidence.verified_at is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={
                 "code": "EVIDENCE_ALREADY_VERIFIED",
                 "message": "Evidence already verified",
-                "hint": f"Verified at {evidence.verified_at.isoformat()}",
+                # M2-5.9 — pas de timestamp dans le hint (CWE-209 info-disclosure).
             },
         )
 
@@ -673,13 +678,16 @@ async def resolve_item_blocker(
                 "hint": "Check the id, or your access scope",
             },
         )
+    # M2-5.9 — défense en profondeur : item parent dans l'org du caller
+    # (cf. verify_item_evidence — uniformisation des writes V4).
+    assert_parent_item_in_scope(db, blocker.item_id)
     if blocker.resolved_at is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={
                 "code": "BLOCKER_ALREADY_RESOLVED",
                 "message": "Blocker already resolved",
-                "hint": f"Resolved at {blocker.resolved_at.isoformat()}",
+                # M2-5.9 — pas de timestamp dans le hint (CWE-209).
             },
         )
     updated = repo.update(
