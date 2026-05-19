@@ -1,0 +1,52 @@
+id: VEILLE_S20_2026_6
+type: knowledge
+domain: flex
+title: "Marché électricité — prix négatifs record et modulation nucléaire"
+summary: "Signaux marché extrêmes : record de prix day-ahead -498 €/MWh début mai 2026 (90 % des jours d'avril à prix nul ou négatif en France) ; la modulation nucléaire française a bondi de 582 MW (2019) à 4 426 MW (2025) de différentiel midi-soir, 33 TWh modulés en 2025. La France a été exportatrice nette 98,5 % des heures de 2025."
+tags:
+  energy:
+    - elec
+  segment:
+    - industrie
+    - tertiaire_multisite
+  asset: []
+  reg: []
+  granularity:
+    - horaire
+scope: null
+content_md: |
+  ## Marché électricité — prix négatifs et modulation nucléaire
+
+  ### Faits — prix
+  - **Record de prix day-ahead négatif : -498 €/MWh** atteint début mai 2026
+    (dépasse le précédent record de -479 €/MWh du 26/04).
+  - En avril 2026, **90 % des jours** ont enregistré des prix day-ahead **nuls
+    ou négatifs** en France.
+  - Cause : essor du solaire (**+6 GW en 2025**) + faible flexibilité nucléaire.
+  - Offre élec dynamique (indexée spot, Selectra) le 13/05 : 0,0791 €/kWh TTC
+    (-34,4 % vs veille). Spot 18/05 : FR 79 €/MWh, Norvège 62, Roumanie 143.
+
+  ### Faits — modulation nucléaire
+  - Différentiel moyen production nucléaire midi vs pic du soir (avr-sept) :
+    **582 MW en 2019 → 4 426 MW en 2025** (×7,6).
+  - Modulation nucléaire annuelle : **33 TWh en 2025** (vs 15 TWh en 2019).
+  - T1 2026 : différentiel midi-soir déjà ~2 500 MW.
+  - France exportatrice nette **98,5 % des heures de 2025** (solde record 92,3 TWh).
+
+  ### Implication PROMEOS
+  La flexibilité devient un arbitrage économique permanent, plus une exception
+  de pointe. Conforte la priorité Flex/Pilotage : valeur du déplacement de
+  charge vers la mi-journée (prix bas/négatifs). Data points pour les
+  projections prix du module Market & Price Intelligence.
+logic: null
+sources:
+  - doc_id: VEILLE_S20_2026
+    label: "pv-magazine — record de prix négatifs en France ; From night to noon: France's reactors bending for solar (14/05/2026)"
+    section: "1.2 / 11 — Marchés & modulation nucléaire"
+    anchor: "#prix-negatifs-modulation"
+    excerpt_short: "Record -498 €/MWh début mai ; 90 % des jours d'avril à prix ≤ 0 ; modulation nucléaire 582 MW (2019) → 4 426 MW (2025), 33 TWh modulés 2025."
+updated_at: "2026-05-19"
+confidence: medium
+status: draft
+priority: 2
+notes: "Incohérence mineure de datation du record (-479 €/MWh 26/04 vs -478,8 €/MWh 03/05 cité dans la veille S18). Retenir -498 €/MWh début mai comme record actuel."

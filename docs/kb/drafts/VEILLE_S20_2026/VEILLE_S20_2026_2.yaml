@@ -1,0 +1,52 @@
+id: VEILLE_S20_2026_2
+type: knowledge
+domain: facturation
+title: "Expérimentation CRE des tarifs réglementés dynamiques (élec)"
+summary: "La CRE précise le 11/05/2026 les modalités d'une expérimentation de tarification dynamique sur les tarifs réglementés de vente d'électricité (TRV) : 6 600 clients 3-6 kVA, du 1/10/2026 au 1/10/2027, 3 groupes (base/pointe hiver ; base/pointe hiver + HC été ; témoin). Facture plafonnée au TRV base classique. Suite au décret du 30/04/2026."
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+  asset: []
+  reg: []
+  granularity:
+    - event
+scope: null
+content_md: |
+  ## Expérimentation tarification dynamique (TRV électricité)
+
+  ### Fait
+  Suite au décret du 30/04/2026, la CRE a précisé le 11/05/2026 les modalités
+  d'une expérimentation sur les tarifs réglementés de vente d'électricité (TRV) :
+  - **6 600 clients** de **3 à 6 kVA** (sélection aléatoire)
+  - période : **1er octobre 2026 → 1er octobre 2027**
+  - 3 profils tarifaires testés :
+    1. base / pointe hiver
+    2. base / pointe hiver + heures creuses été
+    3. groupe témoin
+  - **protection client** : facture plafonnée au montant qu'ils auraient payé
+    au tarif de base classique.
+
+  ### Analyse
+  Signal réglementaire fort en faveur de la flexibilité de la demande. Les
+  fournisseurs B2B pourront s'inspirer de ces structures (avec clauses plafond)
+  pour des offres dynamiques, mais devront investir dans l'accompagnement et le
+  pilotage. À rapprocher de la généralisation des prix spot négatifs.
+
+  ### Implication PROMEOS
+  Conforte la pertinence d'un simulateur d'offres (fixe / indexé / dynamique)
+  avec plafond de facturation, dans le wedge facture. Le pilotage de charge
+  associé relève de la priorité Flex/Pilotage.
+logic: null
+sources:
+  - doc_id: VEILLE_S20_2026
+    label: "CRE — Expérimentation sur les tarifs réglementés de vente de l'électricité (cre.fr, 11/05/2026)"
+    section: "1.1 Réglementation & décisions publiques"
+    anchor: "#trv-dynamique"
+    excerpt_short: "Expérimentation TRV pour 6 600 clients 3-6 kVA, du 1/10/2026 au 1/10/2027, 3 profils tarifaires, facture plafonnée."
+updated_at: "2026-05-19"
+confidence: high
+status: draft
+priority: 2
+notes: "Source CRE officielle. Déclencheur : décret du 30/04/2026."

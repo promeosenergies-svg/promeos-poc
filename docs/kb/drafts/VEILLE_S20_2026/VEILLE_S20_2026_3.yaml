@@ -1,0 +1,51 @@
+id: VEILLE_S20_2026_3
+type: knowledge
+domain: flex
+title: "Nouvelles règles du service système tension RTE (effet 1/01/2027)"
+summary: "La CRE valide le 11/05/2026 l'évolution du service de réglage de tension de RTE : rémunération basée sur l'énergie réactive réellement fournie, modulée selon la disponibilité, avec pénalités en cas de non-respect. Les producteurs ENR pourront participer. Entrée en vigueur le 1er janvier 2027."
+tags:
+  energy:
+    - elec
+  segment:
+    - industrie
+  asset:
+    - process
+  reg: []
+  granularity:
+    - event
+scope: null
+content_md: |
+  ## Service système tension RTE — nouvelles règles
+
+  ### Fait
+  La CRE a validé le 11/05/2026 l'évolution du service de réglage de tension
+  proposé par RTE :
+  - rémunération désormais liée à l'**énergie réactive réellement fournie**
+  - **modulée selon la disponibilité** de l'unité
+  - **pénalités** en cas de non-respect
+  - **ouverture aux producteurs ENR**
+  - **entrée en vigueur : 1er janvier 2027**
+
+  ### Analyse
+  Les unités flexibles (batteries, compensateurs statiques) y trouvent une
+  nouvelle source de revenus. Les producteurs ENR et les sites industriels
+  dotés d'équipements de compensation réactive pourront obtenir des revenus
+  complémentaires, sous réserve de tenir leurs engagements de disponibilité.
+
+  ### Implication PROMEOS
+  Composante de valorisation des actifs flexibles à connaître pour le module
+  Achat / Flex Advisory (M&V). Hors socle : PROMEOS n'opère pas les actifs ;
+  l'intérêt est informationnel (indicateur de revenus potentiels), pas opérationnel.
+  Ne pas sur-promettre vs doctrine v1.3.
+logic: null
+sources:
+  - doc_id: VEILLE_S20_2026
+    label: "CRE — La CRE approuve les nouvelles règles service système tension de RTE (cre.fr, 11/05/2026)"
+    section: "1.1 Réglementation & décisions publiques"
+    anchor: "#service-systeme-tension"
+    excerpt_short: "Rémunération liée à l'énergie réactive réellement fournie, modulée selon la disponibilité, pénalités. ENR éligibles. Entrée en vigueur 1/01/2027."
+updated_at: "2026-05-19"
+confidence: high
+status: draft
+priority: 3
+notes: "Source CRE officielle. Échéance à suivre : 1/01/2027."

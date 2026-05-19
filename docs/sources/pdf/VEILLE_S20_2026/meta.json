@@ -1,0 +1,24 @@
+{
+  "doc_id": "VEILLE_S20_2026",
+  "title": "Veille marché énergie PROMEOS — semaine 20 2026 (10-16 mai)",
+  "source_type": "pdf",
+  "source_org": "ChatGPT (synthèse) — sources CRE/RTE/Commission UE/Reuters/pv-magazine/AleaSoft/Selectra",
+  "doc_type": "veille",
+  "period": "2026-05-10/2026-05-16",
+  "raw_files": [
+    {
+      "file": "raw/hebdo_10-16mai2026_france_cre.pdf",
+      "focus": "France — réglementation CRE, marchés élec/gaz, concurrence B2B",
+      "sha256": "4c1f3db4a10b2984fcd2b87b1657fa1ab36c018fc1c44a243bdfa856654a62f6"
+    },
+    {
+      "file": "raw/hebdo_10-16mai2026_global.pdf",
+      "focus": "Global — géopolitique, GNL, pétrole, ENR, nucléaire, ETS",
+      "sha256": "3871d0a05a354c97260fd470ea104077e73fdccb81d139fa8a7cf050ea784529"
+    }
+  ],
+  "nb_drafts": 9,
+  "updated_at": "2026-05-19",
+  "ingested_at": "2026-05-19",
+  "notes": "Ingestion manuelle (pymupdf indisponible dans l'env local). Drafts KB rédigés à partir du triage feedback_ingest_triage.md. Trou d'ingestion semaine 04-10/05/2026."
+}

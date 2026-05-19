@@ -1,0 +1,51 @@
+id: VEILLE_S20_2026_1
+type: knowledge
+domain: facturation
+title: "Baisse du prix repère gaz (PRVG) -4,8 % au 1er juin 2026"
+summary: "La CRE annonce le 11/05/2026 une baisse de 4,8 % TTC du prix repère de vente de gaz naturel (PRVG) au 1er juin 2026 : de 160,54 à 152,86 €/MWh TTC, soit environ -1,26 € TTC sur la facture mensuelle des professionnels dont l'offre est indexée sur le PRVG. Détente liée au repli des marchés de gros."
+tags:
+  energy:
+    - gaz
+  segment:
+    - tertiaire_multisite
+    - industrie
+  asset: []
+  reg: []
+  granularity:
+    - mensuel
+scope: null
+content_md: |
+  ## Baisse du prix repère gaz (PRVG) — 1er juin 2026
+
+  ### Fait
+  Le 11/05/2026, la CRE a indiqué que le **prix repère de vente de gaz naturel
+  (PRVG)** baissera de **-4,8 % TTC au 1er juin 2026** :
+  - de **160,54 €/MWh TTC** (valeur de mai 2026)
+  - à **152,86 €/MWh TTC** (valeur de juin 2026)
+
+  Impact estimé : **≈ -1,26 € TTC** sur la facture mensuelle des consommateurs
+  professionnels dont l'offre est indexée sur le PRVG.
+
+  ### Contexte
+  Cette baisse s'explique par la détente des marchés de gros après un mois de
+  mars marqué par la crise au Moyen-Orient. Elle reste conjoncturelle : le PRVG
+  de mai 2026 affichait encore +15,4 % vs avril (0,16054 €/kWh TTC, 0,11314 HT).
+
+  ### Implication PROMEOS
+  Donnée à versionner pour le module d'analyse de contrat et l'audit des offres
+  gaz indexées sur le PRVG. Correspond à la clé `prix_repere_gaz` de
+  `backend/config/tarifs_reglementaires.yaml` : prévoir la bascule
+  `rate_eur_mwh: 152.86` / `valid_from: 2026-06-01` (previous 160,54 au 1/05).
+  Non directement consommé par le shadow billing (qui reconstitue ATRD+ATRT+fourniture).
+logic: null
+sources:
+  - doc_id: VEILLE_S20_2026
+    label: "CRE — Le prix repère de vente de gaz baisse de 4,8 % TTC au 1er juin 2026 (cre.fr, 11/05/2026)"
+    section: "1.1 Réglementation & décisions publiques"
+    anchor: "#prvg-juin-2026"
+    excerpt_short: "Le PRVG sera réduit de 4,8 % au 1er juin 2026, passant de 160,54 €/MWh TTC à 152,86 €/MWh TTC."
+updated_at: "2026-05-19"
+confidence: high
+status: draft
+priority: 1
+notes: "Source CRE officielle. Candidat promotion vers tarifs_reglementaires.yaml (prix_repere_gaz)."

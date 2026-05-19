@@ -1,0 +1,56 @@
+id: VEILLE_S20_2026_4
+type: knowledge
+domain: reglementaire
+title: "Extension du champ d'application de la RE2020 (effet 1/05/2026)"
+summary: "Un décret du 15/01/2026, entré en vigueur le 1/05/2026, élargit l'application de la RE2020 à de nouveaux types de bâtiments tertiaires : hôtels, commerces, restaurants, établissements scolaires et de santé. Il introduit un nouvel indicateur d'énergie primaire renouvelable. Obligations de performance énergétique renforcées pour les MOA/promoteurs B2B."
+tags:
+  energy:
+    - multi
+  segment:
+    - tertiaire_multisite
+  asset: []
+  reg:
+    - decret_tertiaire
+  granularity:
+    - event
+scope: null
+content_md: |
+  ## RE2020 — extension du champ d'application
+
+  ### Fait
+  Un décret du **15/01/2026**, entré en vigueur le **1er mai 2026**, élargit
+  l'application de la RE2020 à de nouveaux types de bâtiments :
+  - hôtels
+  - commerces
+  - restaurants
+  - établissements scolaires
+  - établissements de santé
+
+  Il introduit également un **nouvel indicateur d'énergie primaire renouvelable**.
+
+  ### Analyse
+  Les promoteurs et maîtres d'ouvrage B2B (hôtels, commerces, bureaux) doivent
+  intégrer ce nouvel indicateur et anticiper des obligations de performance
+  énergétique renforcées. Cela crée des opportunités pour les ESCO, les CPE
+  (contrats de performance énergétique), les CEE et les développeurs PV.
+
+  ### Implication PROMEOS
+  Nouveau périmètre de bâtiments tertiaires neufs à intégrer au scoring de
+  conformité RegOps. À cataloguer aux côtés du Décret Tertiaire / BACS / OPERAT.
+  S'inscrit dans le wedge conformité.
+
+  ### Note taxonomie
+  RE2020 n'a pas de valeur dédiée dans la taxonomie KB `reg` ; tag `decret_tertiaire`
+  retenu comme proxy "réglementation performance énergétique des bâtiments".
+logic: null
+sources:
+  - doc_id: VEILLE_S20_2026
+    label: "Adden le blog — RE2020 : extension du champ d'application au 1er mai 2026 (décret du 15/01/2026)"
+    section: "2.2 Efficacité énergétique / ESCO / CEE"
+    anchor: "#re2020-extension"
+    excerpt_short: "Le décret du 15/01/2026 (en vigueur 1/05/2026) élargit la RE2020 aux hôtels, commerces, restaurants, scolaire et santé, avec un nouvel indicateur d'énergie primaire renouvelable."
+updated_at: "2026-05-19"
+confidence: high
+status: draft
+priority: 2
+notes: "Vérifier la référence exacte du décret (NOR + numéro JORF) avant promotion en règle validée — cf feedback verifier_derniers_decrets_sources."

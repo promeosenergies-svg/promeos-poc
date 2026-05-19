@@ -1,0 +1,48 @@
+id: VEILLE_S20_2026_5
+type: knowledge
+domain: reglementaire
+title: "Appels d'offres ENR mai 2026 — éolien PPE2, offshore 10 GW, PV"
+summary: "Plusieurs appels d'offres ENR structurants : 11e période de l'AO éolien terrestre PPE2 (800 MW, candidatures 11→21/05/2026) ; fusion des 9e et 10e AO offshore en un AO unique de 10 GW (5 GW posé + 5 GW flottant, lauréats fin 2026/début 2027) ; AO photovoltaïques prévus en juillet 2026 (288 MW toiture + 925 MW sol)."
+tags:
+  energy:
+    - elec
+  segment: []
+  asset: []
+  reg: []
+  granularity:
+    - event
+scope: null
+content_md: |
+  ## Appels d'offres ENR — mai 2026
+
+  ### Faits
+  - **Éolien terrestre PPE2 — période 11 (P11)** : cahier des charges CRE,
+    volume **800 MW**, candidatures ouvertes du **11/05 au 21/05/2026 23h59**.
+    Notation sur le prix et le financement participatif.
+  - **Éolien en mer — AO unique** : le gouvernement fusionne les 9e et 10e AO
+    en un **appel d'offres unique de 10 GW** : **5 GW posé + 5 GW flottant**.
+    Sélection des premiers lauréats prévue **fin 2026 / début 2027**.
+  - **Photovoltaïque** : appels d'offres prévus en **juillet 2026** :
+    **288 MW en toiture + 925 MW au sol**.
+
+  ### Analyse
+  Le volume éolien terrestre limité (800 MW) et l'échéance courte (21/05)
+  imposent une sélection compétitive. L'éolien flottant, moins mature, exige
+  des partenariats industriels. Ces AO créent une fenêtre pour décrocher des PPA.
+
+  ### Implication PROMEOS
+  Hors socle PROMEOS (développement ENR / candidature AO ≠ tour de contrôle
+  énergétique du client B2B). Intérêt limité à la veille : signal de marché PPA
+  / autoconsommation pour les clients tertiaires multi-sites concernés.
+logic: null
+sources:
+  - doc_id: VEILLE_S20_2026
+    label: "CRE — CDC PPE2 Éolien P11 ; La Tribune — éolien offshore 10 GW (14/05/2026)"
+    section: "1.1 / 2.6 — Appels d'offres ENR"
+    anchor: "#ao-enr-mai-2026"
+    excerpt_short: "AO éolien terrestre PPE2 P11 (800 MW, 11-21/05) ; AO offshore unique 10 GW (5 posé + 5 flottant) ; AO PV juillet 2026 (288 MW toiture + 925 MW sol)."
+updated_at: "2026-05-19"
+confidence: medium
+status: draft
+priority: 3
+notes: "Veille marché. Calendrier : clôture PPE2 P11 le 21/05/2026."
