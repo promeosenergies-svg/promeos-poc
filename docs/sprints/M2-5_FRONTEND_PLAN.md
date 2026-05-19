@@ -236,11 +236,13 @@ de test du repo prime. Décision Amine.
 
 ## 13. Closure M2-5 — Récap final
 
-**Date closure** : 2026-05-18
-**Hash final** : M2-5.7 (commit courant — `feat(seed): M2-5.7 …`)
-**Branche** : `feat/m2-5-frontend-v4` → PR vers `claude/refonte-sol2`
+**Date closure socle** : 2026-05-18 · **Hotfixes M2-5.7-bis → M2-5.9.bis** : 2026-05-19
+**Hash final** : `d1596e05` (M2-5.9.bis — derniers blocants avant passage « ready »)
+**Branche** : `feat/m2-5-frontend-v4` → PR #280 vers `claude/refonte-sol2` (**pas `main`**)
 
-### 13.1 — 9 sous-sprints livrés
+### 13.1 — Sous-sprints livrés
+
+**Socle M2-5.0 → M2-5.7** (closure initiale 2026-05-18) :
 
 | # | Sprint | Hash | Tests | Livrable |
 |---|--------|------|-------|----------|
@@ -252,9 +254,21 @@ de test du repo prime. Décision Amine.
 | M2-5.4 | Write 1 — lifecycle | `3779fc6c` | 39 | Modal transition + pattern UI write figé |
 | M2-5.5 | Writes 2+3 — evidence | `61d4735a` | 30 | Upload (multipart) + verify (confirm dialog) |
 | M2-5.6 | Writes 4+5 — blocker | `c19ec87d` | 20 | Add (Select 7 types) + resolve (note optionnelle) |
-| M2-5.7 | Closure + seed | (commit courant) | — | 6 actions HELIOS Use Case A + doc + backlog M3 |
+| M2-5.7 | Closure + seed | `279430ec` | — | 6 actions HELIOS Use Case A + doc + backlog M3 |
 
-**Total** : ~219 tests V4 cumulés. Baseline FE **4751** (M2-5.0) → **4970** (M2-5.7, inchangée par .7).
+**Hotfixes M2-5.7-bis → M2-5.9.bis** (audit pilot-readiness, 2026-05-19) :
+
+| # | Sprint | Hash | Livrable |
+|---|--------|------|----------|
+| M2-5.7-bis | Fix seed | `65afe5fa` | Référence du décret BACS de l'action 6 corrigée |
+| M2-5.8.A | Connexion démo | `b8272ea0` | `POST /api/auth/demo-login` + probe `GET /available` — débloque le P0-1 |
+| M2-5.8.A.bis | Surface LoginPage | `ab19fd0d` | Bouton « Connexion démo HELIOS » (Option B — seule exception legacy, cf. §13.7) |
+| M2-5.8.B | 3 P0 UX | `e3a09065` | Badge priorité + `KIND_LABELS` FR + a11y clavier |
+| M2-5.8.C | Polish hotfix | `89e6c9f9` | Action vedette P0 + audit énergétique + label « Créé » |
+| M2-5.9 | Durcissement sécu | `b74d79ea` | Purge timestamps des hints 409 + `verify_parent_item_access` verify/resolve |
+| M2-5.9.bis | Blocants finaux | `d1596e05` | `kind`/`domain` FR drawer + rate-limit demo-login + probe jouabilité + writes masqués sur `closed` + reset pagination |
+
+**Baseline FE** : **4751** (M2-5.0) → **5005** (M2-5.9.bis).
 
 ### 13.2 — Endpoints V4 consommés
 
@@ -331,6 +345,9 @@ Parcours codé :
    Liens).
 4. Timeline : events FR + acteur (« Créé », « Transition d'état »…).
 5. Preuves / Blocages : modals upload, verify, add, resolve (M2-5.5 / .6).
+   Sur un item `closed` (actions 5 et 6), les boutons d'ajout sont masqués ;
+   `verify` / `resolve` restent pilotés par l'état propre de chaque objet
+   (M2-5.9.bis — pas de nouvelle preuve ni de nouveau blocage sur item clos).
 6. Action vedette « Vérifier consommation HP/HC Q3 » (P0 Critique, état `new`),
    traitée **live** : `new → triaged → planned`, upload preuve, ajout puis
    résolution d'un blocage, vérification preuve, `planned → in_progress →

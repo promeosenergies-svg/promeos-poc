@@ -2,16 +2,22 @@
 
 ## [Unreleased] — 2026-03-01
 
-### M2-5 — Frontend Centre d'Action V4 (MV3) — 2026-05-18
+### M2-5 — Frontend Centre d'Action V4 (MV3) — 2026-05-18 → 2026-05-19
 
-**9 sous-sprints atomiques (M2-5.0 → M2-5.7)** sur `feat/m2-5-frontend-v4`, PR vers `claude/refonte-sol2` :
+**Sous-sprints atomiques M2-5.0 → M2-5.9.bis** sur `feat/m2-5-frontend-v4`, PR #280 vers `claude/refonte-sol2` (jamais `main`) :
 
 - Infrastructure V4 : `apiClientV4` isolé du client legacy, 14 hooks read/write (`src/hooks/v4/`), feature flag `VITE_FEATURE_ACTION_CENTER_V4` (OFF par défaut)
 - Écran liste `/action-center-v4` (lazy) + drawer détail 4 onglets (Timeline / Preuves / Blocages / Liens), read-only puis 5 writes
 - 5 modals write : transition lifecycle, upload evidence (multipart), verify evidence, add blocker, resolve blocker — pattern UI write figé, 0 méta-programmation
-- 11/14 endpoints V4 consommés (78 %) ; ~219 tests Vitest cumulés (baseline FE 4751 → 4970)
-- **M2-5.7 (closure)** : seed Use Case A (`backend/seeds/use_case_a_seed.py`) — 6 actions HELIOS réalistes (23 events, 3 evidences, 1 blocker, 2 links), idempotent par PK UUID5 déterministe ; CLI `python -m seeds.use_case_a_seed` et flag `python -m seeds.v4_seed --use-case-a`
-- Doc : `docs/sprints/M2-5_FRONTEND_PLAN.md` §13 closure ; 7 dettes reportées dans `BACKLOG_M3.md` §5
+- 11/14 endpoints V4 consommés (78 %)
+- **M2-5.7 (closure socle)** : seed Use Case A (`backend/seeds/use_case_a_seed.py`) — 6 actions HELIOS réalistes (23 events, 3 evidences, 1 blocker, 2 links), idempotent par PK UUID5 déterministe ; CLI `python -m seeds.use_case_a_seed`
+- **M2-5.7-bis** : correction de la référence du décret BACS de l'action 6 du seed
+- **M2-5.8.A / .8.A.bis** : connexion démo réelle — `POST /api/auth/demo-login` + probe `GET /available`, bouton « Connexion démo HELIOS » surfacé sur `LoginPage` (Option B — débloque le P0-1 de l'audit M2-5 ; seule exception legacy assumée)
+- **M2-5.8.B / .8.C** : 3 P0 UX (badge de priorité, libellés `kind` en FR, accessibilité clavier) + polish hotfix (action vedette P0, audit énergétique, label « Créé »)
+- **M2-5.9** : durcissement sécurité — purge des timestamps des hints 409, `verify_parent_item_access` étendu à verify/resolve
+- **M2-5.9.bis** : blocants finaux avant « ready » — `kind`/`domain` en FR dans le drawer (`DOMAIN_LABELS`), rate-limit sur `POST /demo-login` (429 anti token-harvesting), probe `available` vérifiant la jouabilité réelle (DEMO_MODE + compte démo seedé), boutons d'écriture masqués sur item `closed`, reset de la pagination au changement de filtre
+- ~219 tests Vitest V4 cumulés ; baseline FE **4751** (M2-5.0) → **5005** (M2-5.9.bis)
+- Doc : `docs/sprints/M2-5_FRONTEND_PLAN.md` §13 closure ; méthodes capitalisées `docs/dev/methode_walkthrough_navigateur.md` + `docs/dev/methode_audit_avant_fix.md` ; dettes reportées dans `BACKLOG_M3.md` §5
 
 ### M2-4.1.bis — Seed V4 minimal idempotent
 
