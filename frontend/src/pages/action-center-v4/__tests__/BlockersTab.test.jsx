@@ -122,4 +122,15 @@ describe('BlockersTab', () => {
     fireEvent.click(screen.getByRole('button', { name: /ajouter un blocage/i }));
     expect(screen.getByText(/signaler un blocage/i)).toBeInTheDocument();
   });
+
+  test('hides "Ajouter un blocage" when the item is closed (M2-5.9.bis)', () => {
+    useActionCenterV4Blockers.mockReturnValue({
+      data: { items: [], total: 0 },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<BlockersTab itemId="x" itemClosed />);
+    expect(screen.queryByRole('button', { name: /ajouter un blocage/i })).not.toBeInTheDocument();
+  });
 });

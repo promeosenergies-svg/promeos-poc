@@ -95,10 +95,18 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
           <TimelineTab key={refreshKey} itemId={itemId} />
         )}
         {activeTab === TAB_IDS.evidences && loadedTabs.has(TAB_IDS.evidences) && (
-          <EvidencesTab itemId={itemId} onEvidenceMutated={handleEvidenceMutated} />
+          <EvidencesTab
+            itemId={itemId}
+            itemClosed={item?.lifecycle_state === 'closed'}
+            onEvidenceMutated={handleEvidenceMutated}
+          />
         )}
         {activeTab === TAB_IDS.blockers && loadedTabs.has(TAB_IDS.blockers) && (
-          <BlockersTab itemId={itemId} onBlockerMutated={handleBlockerMutated} />
+          <BlockersTab
+            itemId={itemId}
+            itemClosed={item?.lifecycle_state === 'closed'}
+            onBlockerMutated={handleBlockerMutated}
+          />
         )}
         {activeTab === TAB_IDS.links && loadedTabs.has(TAB_IDS.links) && (
           <LinksTab itemId={itemId} />

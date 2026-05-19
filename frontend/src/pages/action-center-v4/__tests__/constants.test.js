@@ -11,6 +11,7 @@ import {
   PRIORITY_LABELS,
   PRIORITY_BADGE_VARIANTS,
   PRIORITY_ORDER,
+  DOMAIN_LABELS,
 } from '../constants';
 
 describe('M2-5.2 constants', () => {
@@ -72,5 +73,26 @@ describe('M2-5.8.B constants', () => {
 
   test('P0 maps to the "crit" Badge status', () => {
     expect(PRIORITY_BADGE_VARIANTS.P0).toBe('crit');
+  });
+});
+
+describe('M2-5.9.bis constants', () => {
+  test('DOMAIN_LABELS covers the 7 backend Domain values', () => {
+    expect(Object.keys(DOMAIN_LABELS).sort()).toEqual([
+      'conformite',
+      'data_quality',
+      'facturation',
+      'flexibilite',
+      'maintenance',
+      'optimisation',
+      'purchase',
+    ]);
+  });
+
+  test('every DOMAIN_LABELS value is a non-empty FR string', () => {
+    Object.values(DOMAIN_LABELS).forEach((label) => {
+      expect(typeof label).toBe('string');
+      expect(label.length).toBeGreaterThan(0);
+    });
   });
 });

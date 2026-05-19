@@ -277,8 +277,20 @@ export const KIND_LABELS = {
   recommendation: 'Recommandation',
 };
 
-// Copy accessibilité M2-5.8.B (P0-4 a11y clavier).
+// domain backend → label FR (7 valeurs Domain, cf. enums/domain.py).
+export const DOMAIN_LABELS = {
+  conformite: 'Conformité',
+  facturation: 'Facturation',
+  maintenance: 'Maintenance',
+  optimisation: 'Optimisation énergétique',
+  purchase: "Achat d'énergie",
+  flexibilite: 'Flexibilité',
+  data_quality: 'Qualité des données',
+};
+
+// Copy accessibilité (P0-4 a11y clavier · M2-5.9.bis libellés inconnus).
 export const A11Y_COPY = {
   rowAriaLabel: (title) => `Ouvrir l'action : ${title}`,
   unknownKindLabel: 'Type inconnu',
+  unknownDomainLabel: 'Domaine inconnu',
 };

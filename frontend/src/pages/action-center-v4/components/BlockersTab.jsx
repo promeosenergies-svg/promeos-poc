@@ -18,8 +18,11 @@ const LIMIT = 20;
  * Lecture lazy + actions write M2-5.6 : « Ajouter un blocage » (modal) et
  * « Résoudre » par blocker (modal dans BlockerItem). Au succès d'une mutation :
  * refetch local + `onBlockerMutated` pour rafraîchir la Timeline.
+ *
+ * M2-5.9.bis — `itemClosed` masque « Ajouter un blocage » sur un item clôturé.
+ * La résolution d'un blocage déjà présent reste possible (état propre du blocker).
  */
-export function BlockersTab({ itemId, onBlockerMutated }) {
+export function BlockersTab({ itemId, itemClosed = false, onBlockerMutated }) {
   const [addModalOpen, setAddModalOpen] = useState(false);
 
   const { data, loading, error, refetch } = useActionCenterV4Blockers(itemId, {
@@ -36,9 +39,11 @@ export function BlockersTab({ itemId, onBlockerMutated }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
-        <Button onClick={() => setAddModalOpen(true)}>{BLOCKER_ADD_COPY.buttonAddBlocker}</Button>
-      </div>
+      {!itemClosed && (
+        <div className="flex justify-end">
+          <Button onClick={() => setAddModalOpen(true)}>{BLOCKER_ADD_COPY.buttonAddBlocker}</Button>
+        </div>
+      )}
 
       {loading && <Skeleton rows={3} />}
 

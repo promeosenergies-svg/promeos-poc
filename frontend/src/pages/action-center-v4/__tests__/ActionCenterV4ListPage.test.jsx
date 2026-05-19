@@ -222,4 +222,25 @@ describe('ActionCenterV4ListPage', () => {
     fireEvent.click(screen.getByLabelText('Fermer'));
     expect(screen.queryByRole('dialog')).toBeNull();
   });
+
+  // ── M2-5.9.bis — changement de filtre → retour page 1 ─────────────
+  test('changing the lifecycle filter resets pagination to page 1', () => {
+    mockHook({
+      data: {
+        items: [{ id: '1', title: 'Action A', lifecycle_state: 'new' }],
+        total: 50,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    render(<ActionCenterV4ListPage />);
+
+    // Aller en page 2 → le hook est appelé avec offset 20.
+    fireEvent.click(screen.getByLabelText('Page suivante'));
+    expect(useActionCenterV4Items).toHaveBeenLastCalledWith({ offset: 20, limit: 20 });
+
+    // Changer le filtre → la pagination repart en page 1 (offset 0).
+    fireEvent.change(screen.getByLabelText(/état/i), { target: { value: 'closed' } });
+    expect(useActionCenterV4Items).toHaveBeenLastCalledWith({ offset: 0, limit: 20 });
+  });
 });

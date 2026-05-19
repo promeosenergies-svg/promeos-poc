@@ -81,7 +81,7 @@ describe('ItemsTable — a11y clavier + priorité + kind FR (M2-5.8.B)', () => {
       kind: 'anomaly',
       priority_bracket: 'P0',
       lifecycle_state: 'new',
-      domain: 'energy',
+      domain: 'optimisation',
       updated_at: new Date().toISOString(),
     },
   ];
@@ -138,6 +138,12 @@ describe('ItemsTable — a11y clavier + priorité + kind FR (M2-5.8.B)', () => {
     render(<ItemsTable items={sample} onOpenItem={vi.fn()} />);
     expect(screen.getByText('Anomalie')).toBeInTheDocument();
     expect(screen.queryByText('anomaly')).not.toBeInTheDocument();
+  });
+
+  test('renders the domain in FR, not the raw backend value (M2-5.9.bis)', () => {
+    render(<ItemsTable items={sample} onOpenItem={vi.fn()} />);
+    expect(screen.getByText('Optimisation énergétique')).toBeInTheDocument();
+    expect(screen.queryByText('optimisation')).not.toBeInTheDocument();
   });
 
   test('renders the FR label for all 7 backend kinds', () => {

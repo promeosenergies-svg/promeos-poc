@@ -1,6 +1,6 @@
 import { Table, Thead, Tbody, Tr, Th, Td } from '../../../ui/Table';
 
-import { COPY, KIND_LABELS, A11Y_COPY } from '../constants';
+import { COPY, KIND_LABELS, DOMAIN_LABELS, A11Y_COPY } from '../constants';
 import { formatRelativeDate } from '../utils/date';
 import { LifecycleBadge } from './LifecycleBadge';
 import { PriorityBadge } from './PriorityBadge';
@@ -62,7 +62,11 @@ export function ItemsTable({ items, onOpenItem }) {
               </Td>
               <Td>
                 <div>{kindLabel}</div>
-                {item.domain && <div className="mt-0.5 text-xs text-gray-500">{item.domain}</div>}
+                {item.domain && (
+                  <div className="mt-0.5 text-xs text-gray-500">
+                    {DOMAIN_LABELS[item.domain] || A11Y_COPY.unknownDomainLabel}
+                  </div>
+                )}
               </Td>
               <Td>{formatRelativeDate(item.updated_at || item.created_at)}</Td>
             </tr>

@@ -54,8 +54,8 @@ def seeded_demo():
 # ── Probe GET /api/auth/demo-login/available ──────────────────────────
 
 
-def test_probe_available_true_when_demo_mode_on(client, demo_mode_on):
-    """Probe : 200 + {available: true} quand DEMO_MODE est actif."""
+def test_probe_available_true_when_demo_mode_on(client, demo_mode_on, seeded_demo):
+    """Probe : {available: true} si DEMO_MODE actif ET compte démo seedé."""
     response = client.get("/api/auth/demo-login/available")
     assert response.status_code == 200
     assert response.json() == {"available": True}
@@ -66,6 +66,27 @@ def test_probe_available_false_when_demo_mode_off(client, demo_mode_off):
     response = client.get("/api/auth/demo-login/available")
     assert response.status_code == 200
     assert response.json() == {"available": False}
+
+
+def test_probe_available_false_when_user_not_seeded(client, demo_mode_on):
+    """M2-5.9.bis — {available: false} si DEMO_MODE actif mais compte démo absent.
+
+    La probe garantit la jouabilité réelle : le bouton de login démo ne doit
+    s'afficher que si un clic aboutira (sinon il masquait un futur 500).
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == HELIOS_DEMO_USER_EMAIL).first()
+        if user is not None:
+            db.delete(user)
+            db.commit()
+
+        response = client.get("/api/auth/demo-login/available")
+        assert response.status_code == 200
+        assert response.json() == {"available": False}
+    finally:
+        seed_helios_demo_user(db)  # restaure le compte — leave-no-trace
+        db.close()
 
 
 # ── POST /api/auth/demo-login ─────────────────────────────────────────
@@ -145,3 +166,21 @@ def test_demo_user_cannot_login_with_password(client, seeded_demo):
         json={"email": HELIOS_DEMO_USER_EMAIL, "password": "demo"},
     )
     assert response.status_code == 401
+
+
+def test_demo_login_rate_limited_after_quota(client, demo_mode_on, seeded_demo, monkeypatch):
+    """🛡️ M2-5.9.bis — 6ᵉ appel en < 60 s → 429 (anti token-harvesting, CWE-307).
+
+    `check_rate_limit` est neutralisé sous pytest (variable d'env
+    `PYTEST_CURRENT_TEST`) ; on la retire le temps du test pour exercer la garde.
+    """
+    import middleware.rate_limit as rl
+
+    rl._buckets.clear()
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    try:
+        for _ in range(5):
+            assert client.post("/api/auth/demo-login").status_code == 200
+        assert client.post("/api/auth/demo-login").status_code == 429
+    finally:
+        rl._buckets.clear()

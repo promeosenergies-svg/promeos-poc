@@ -51,9 +51,17 @@ export function ActionCenterV4ListPage() {
     setSelectedItemId(null);
   }, []);
 
+  // M2-5.9.bis — changer le filtre lifecycle repart en page 1 : sinon, filtrer
+  // depuis une page profonde laisse une page vide trompeuse (EmptyState alors
+  // que d'autres pages contiennent des items du filtre).
+  const handleStateFilterChange = useCallback((value) => {
+    setStateFilter(value);
+    setPage(1);
+  }, []);
+
   return (
     <PageShell icon={ClipboardList} title={COPY.pageTitle} subtitle={COPY.pageSubtitle}>
-      <ListFilterBar stateFilter={stateFilter} onStateFilterChange={setStateFilter} />
+      <ListFilterBar stateFilter={stateFilter} onStateFilterChange={handleStateFilterChange} />
 
       {loading && <SkeletonTable rows={5} cols={4} />}
 

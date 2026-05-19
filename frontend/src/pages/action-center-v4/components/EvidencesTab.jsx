@@ -18,8 +18,12 @@ const LIMIT = 20;
  * Lecture lazy + actions write M2-5.5 : « Ajouter une preuve » (upload modal)
  * et « Vérifier » par evidence (dialog dans EvidenceItem). Au succès d'une
  * mutation : refetch local + `onEvidenceMutated` pour rafraîchir la Timeline.
+ *
+ * M2-5.9.bis — `itemClosed` masque « Ajouter une preuve » sur un item clôturé
+ * (un item terminal ne reçoit plus de nouvelle preuve). La vérification d'une
+ * preuve déjà présente reste possible (état propre de l'evidence).
  */
-export function EvidencesTab({ itemId, onEvidenceMutated }) {
+export function EvidencesTab({ itemId, itemClosed = false, onEvidenceMutated }) {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   const { data, loading, error, refetch } = useActionCenterV4Evidences(itemId, {
@@ -36,9 +40,11 @@ export function EvidencesTab({ itemId, onEvidenceMutated }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
-        <Button onClick={() => setUploadModalOpen(true)}>{UPLOAD_COPY.buttonAddEvidence}</Button>
-      </div>
+      {!itemClosed && (
+        <div className="flex justify-end">
+          <Button onClick={() => setUploadModalOpen(true)}>{UPLOAD_COPY.buttonAddEvidence}</Button>
+        </div>
+      )}
 
       {loading && <Skeleton rows={3} />}
 

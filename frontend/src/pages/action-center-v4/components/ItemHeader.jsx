@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 
 import Button from '../../../ui/Button';
 
-import { DRAWER_COPY, TRANSITION_COPY } from '../constants';
+import { A11Y_COPY, DOMAIN_LABELS, DRAWER_COPY, KIND_LABELS, TRANSITION_COPY } from '../constants';
 import { formatDateTimeFR } from '../utils/date';
 import { isTerminalState } from '../utils/lifecycleTransitions';
 import { LifecycleBadge } from './LifecycleBadge';
@@ -62,10 +62,14 @@ export function ItemHeader({ item, loading, error, onTransitionSuccess }) {
 
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500">
         <dt>{DRAWER_COPY.domainLabel}</dt>
-        <dd className="text-gray-700">{item.domain || '—'}</dd>
+        <dd className="text-gray-700">
+          {item.domain ? DOMAIN_LABELS[item.domain] || A11Y_COPY.unknownDomainLabel : '—'}
+        </dd>
 
         <dt>{DRAWER_COPY.kindLabel}</dt>
-        <dd className="text-gray-700">{item.kind || '—'}</dd>
+        <dd className="text-gray-700">
+          {item.kind ? KIND_LABELS[item.kind] || A11Y_COPY.unknownKindLabel : '—'}
+        </dd>
 
         <dt>{DRAWER_COPY.createdAtLabel}</dt>
         <dd className="text-gray-700">{formatDateTimeFR(item.created_at)}</dd>

@@ -82,4 +82,25 @@ describe('ItemHeader', () => {
     fireEvent.click(screen.getByRole('button', { name: /transitionner/i }));
     expect(screen.getByText(/transitionner l'action/i)).toBeInTheDocument();
   });
+
+  // ── M2-5.9.bis — kind / domain en FR (P0-3 résiduel) ──────────────
+  test('renders kind and domain in FR, not the raw backend values', () => {
+    render(
+      <ItemHeader
+        item={{ title: 'X', lifecycle_state: 'new', kind: 'anomaly', domain: 'conformite' }}
+      />
+    );
+    expect(screen.getByText('Anomalie')).toBeInTheDocument();
+    expect(screen.getByText('Conformité')).toBeInTheDocument();
+    expect(screen.queryByText('anomaly')).not.toBeInTheDocument();
+    expect(screen.queryByText('conformite')).not.toBeInTheDocument();
+  });
+
+  test('falls back to "inconnu" labels for unknown kind / domain', () => {
+    render(
+      <ItemHeader item={{ title: 'X', lifecycle_state: 'new', kind: 'zzz', domain: 'yyy' }} />
+    );
+    expect(screen.getByText('Type inconnu')).toBeInTheDocument();
+    expect(screen.getByText('Domaine inconnu')).toBeInTheDocument();
+  });
 });
