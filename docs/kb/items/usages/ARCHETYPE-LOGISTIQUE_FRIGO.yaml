@@ -1,0 +1,86 @@
+id: ARCHETYPE-LOGISTIQUE_FRIGO
+type: knowledge
+domain: usages
+title: Archétype Logistique Frigorifique
+summary: "Entrepôts frigorifiques et transformation alimentaire : froid inertie 24/7, gisement de décalage le plus élevé du tertiaire/industrie légère."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+  asset:
+    - froid_process
+    - eclairage
+  reg:
+    - dt
+    - bacs
+  granularity:
+    - mensuel
+    - horaire
+
+scope:
+  archetype: LOGISTIQUE_FRIGO
+  naf_codes:
+    - '10.13'
+    - '10.20'
+    - '10.52'
+    - '52.10'
+
+content_md: |
+  ## Archétype Logistique Frigorifique
+
+  ### Consommation typique
+  - **Fourchette**: 200-400 kWh/m²/an (source : Enedis Open Data 2024 + benchmarks ADEME logistique frigorifique)
+  - Froid positif (0-4°C) et négatif (-18 à -25°C) fonctionnant 24/7 ; forte inertie thermique.
+
+  ### Signature temporelle
+  - Horaires ouverture : 24/7 (exploitation continue).
+  - Continu 24/7 : oui (froid process).
+  - Talon nocturne : 80-90% de la conso jour (quasi-plat, légère modulation par les cycles de dégivrage et les arrivées/sorties de marchandises).
+
+  ### Répartition par usage
+  - Froid process (positif + négatif) : 60-75%
+  - Éclairage (quais + allées) : 8-12%
+  - Manutention électrique (chariots, convoyeurs) : 5-10%
+  - HVAC bureaux attenants : 5-8%
+  - Autres (IT, sécurité, portes rapides) : 3-5%
+
+  ### Calibrage Baromètre Flex 2026
+  - **Taux décalable moyen** : 0.55 (source : Baromètre Flex 2026 RTE/Enedis/GIMELEC — section Logistique frigorifique)
+  - **Plages de pointe** : [(0, 24)] (fonctionnement continu, pas de plage de pointe identifiable)
+  - **Conso concentrée pointe** : 1.0 (conso uniformément répartie sur 24h)
+  - **Pénétration BACS 2024** : 0.23 (supérieure à la moyenne tertiaire, logistique fortement pilotée)
+
+  ### Potentiel de pilotage
+  Gisement de décalage le plus élevé du portefeuille : l'inertie thermique des chambres froides permet des cycles de sur-refroidissement anticipé (descente en température) en heures creuses ou sur prix négatifs, puis un délestage sur les plages de pointe système 7h-10h et 17h-20h. Les usages pilotables prioritaires sont les groupes froids (consignes ajustables sur une bande de 1-2°C) et les cycles de dégivrage. Fenêtres favorables : nuit complète 0h-6h et méridienne 11h-17h (TURPE 7 saisonnalisé, surplus PV). Points d'attention : respect strict de la chaîne du froid (HACCP) et continuité d'exploitation.
+
+  ### Codes NAF typiques
+  - 10.13 — Préparation industrielle de produits à base de viande
+  - 10.20 — Transformation et conservation de poisson, crustacés et mollusques
+  - 10.52 — Fabrication de glaces et sorbets
+  - 52.10 — Entreposage et stockage (frigorifique si activité alimentaire associée)
+
+logic: null
+
+sources:
+  - doc_id: BAROMETRE_FLEX_2026
+    label: "Baromètre Flex 2026 — RTE/Enedis/GIMELEC (avril 2026)"
+    section: "archetype-logistique-frigorifique"
+    anchor: "#chiffres-sectoriels-enedis-2024"
+    excerpt_short: "Logistique frigorifique : gisement de flexibilité le plus élevé, BACS 23%, inertie thermique 24/7."
+  - doc_id: ENEDIS_OPEN_DATA_2024
+    label: "Enedis Open Data 2024 — Ratios entrepôts frigorifiques"
+    section: "tertiaire-logistique-frigo"
+    anchor: null
+    excerpt_short: "Ratios consommation 200-400 kWh/m²/an, froid process 60-75% de la facture."
+
+provenance:
+  source_path: docs/reglementaire/barometre_flex_2026.md
+  source_section: "archetype-logistique-frigorifique"
+  extracted_at: '2026-04-17'
+
+updated_at: '2026-04-17'
+confidence: high
+status: validated
+priority: 2

@@ -1,0 +1,90 @@
+id: ARCHETYPE-COMMERCE_SPECIALISE
+type: knowledge
+domain: usages
+title: Archétype Commerce Spécialisé
+summary: "Commerce de détail non alimentaire (textile, équipement, librairies) : éclairage et climatisation dominants, pas de froid process."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+  asset:
+    - eclairage
+    - hvac
+    - it
+  reg:
+    - dt
+    - bacs
+  granularity:
+    - mensuel
+    - horaire
+
+scope:
+  archetype: COMMERCE_SPECIALISE
+  naf_codes:
+    - '47.41'
+    - '47.51'
+    - '47.59'
+    - '47.61'
+    - '47.71'
+    - '47.72'
+
+content_md: |
+  ## Archétype Commerce Spécialisé
+
+  ### Consommation typique
+  - **Fourchette**: 150-300 kWh/m²/an (source : Enedis Open Data 2024 + benchmarks ADEME commerce non alimentaire)
+  - Pas de froid process, consommation tirée par éclairage et climatisation de confort.
+
+  ### Signature temporelle
+  - Horaires ouverture : 10h-20h (6j/7, fermé le dimanche pour la majorité).
+  - Continu 24/7 : non.
+  - Talon nocturne : 10-15% de la conso jour (veilles IT caisses, vitrines, sécurité).
+
+  ### Répartition par usage
+  - Éclairage (ambiance + vitrines) : 30-40%
+  - HVAC / climatisation : 30-40%
+  - IT (caisses, bornes, affichage) : 10-15%
+  - Autres (sécurité, ventilation) : 10-15%
+
+  ### Calibrage Baromètre Flex 2026
+  - **Taux décalable moyen** : 0.25 (source : Baromètre Flex 2026 RTE/Enedis/GIMELEC — section Commerces non alimentaires)
+  - **Plages de pointe** : [(10, 19)] (ouverture clientèle)
+  - **Conso concentrée pointe** : 0.45 (part de la conso journalière sur la plage 10h-19h)
+  - **Pénétration BACS 2024** : 0.17 (médiane Enedis 2024, tous commerces confondus)
+
+  ### Potentiel de pilotage
+  Gisement décalable modéré : l'éclairage et l'ambiance thermique sont contraints par l'expérience client pendant les heures d'ouverture. Fenêtres favorables de décalage : pré-ouverture (préchauffage/prérefroidissement anticipés sur 2h-6h nocturnes ou 11h en creux) et post-fermeture. Les usages pilotables prioritaires sont la climatisation (délestage thermique pendant les plages de pointe système 7h-10h et 17h-20h) et l'éclairage de réserve/back-office. IT et vitrines restent peu décalables.
+
+  ### Codes NAF typiques
+  - 47.41 — Commerce de détail d'ordinateurs, d'unités périphériques et de logiciels
+  - 47.51 — Commerce de détail de textiles en magasin spécialisé
+  - 47.59 — Commerce de détail de meubles, appareils d'éclairage et autres articles de ménage
+  - 47.61 — Commerce de détail de livres en magasin spécialisé
+  - 47.71 — Commerce de détail d'habillement en magasin spécialisé
+  - 47.72 — Commerce de détail de chaussures et d'articles en cuir
+
+logic: null
+
+sources:
+  - doc_id: BAROMETRE_FLEX_2026
+    label: "Baromètre Flex 2026 — RTE/Enedis/GIMELEC (avril 2026)"
+    section: "archetype-commerce-specialise"
+    anchor: "#chiffres-sectoriels-enedis-2024"
+    excerpt_short: "Commerces : 60 000 sites, 150 M m², 17% BACS équipés (Enedis 2024)."
+  - doc_id: ENEDIS_OPEN_DATA_2024
+    label: "Enedis Open Data 2024 — Ratios commerce non alimentaire"
+    section: "tertiaire-commerce-specialise"
+    anchor: null
+    excerpt_short: "Ratios consommation 150-300 kWh/m²/an, éclairage + climatisation dominants."
+
+provenance:
+  source_path: docs/reglementaire/barometre_flex_2026.md
+  source_section: "archetype-commerce-specialise"
+  extracted_at: '2026-04-17'
+
+updated_at: '2026-04-17'
+confidence: high
+status: validated
+priority: 2

@@ -25,40 +25,64 @@ scope:
   - '70.10'
   - '70.22'
   - '62.02'
-content_md: '## Archétype Bureau Standard
-
+content_md: |
+  ## Archétype Bureau Standard
 
   ### Consommation typique
+  - **Fourchette** : 150-250 kWh/m²/an (moyenne : 180 kWh/m²/an)
 
-  - **Fourchette**: 150-250 kWh/m²/an
+  ### Signature temporelle
+  - Horaires ouverture : 7h-20h, lundi-vendredi
+  - Continu 24/7 : non
+  - Talon nocturne : 10-15 % de la conso jour (veilles IT, sécurité)
+  - Pic matin : 9h-10h (démarrage postes + chauffage)
+  - Pic après-midi : 14h-16h (climatisation été)
 
+  ### Répartition par usage
+  - CVC (chauffage / clim / ventilation) : 45-55 %
+  - Éclairage : 20-25 %
+  - IT / bureautique : 15-20 %
+  - Autres (ascenseurs, cafétéria...) : 10-15 %
 
-  ### Caractéristiques
+  ### Calibrage Baromètre Flex 2026
+  Calibrage officiel issu du Baromètre Flex 2026 (RTE / Enedis / GIMELEC,
+  avril 2026) consommé par `services.pilotage.constants.ARCHETYPE_CALIBRATION_2024` :
 
-  (Extrait du document source - voir provenance)
+  - **Taux décalable moyen** : 0,30 (30 % de la conso décalable vers fenêtres favorables)
+  - **Plages de pointe** : 7h-10h + 17h-20h (démarrage + fin de journée)
+  - **Conso concentrée pointe** : 28 % de la conso journalière
+  - **Pénétration BACS 2024** : 17 % (Enedis Open Data 2024)
 
+  ### Potentiel de pilotage
+  Gisement modéré mais structurellement constant : CVC et éclairage
+  décalables sur les plages hors-pointe (11h-16h), ECS et process IT
+  peu flexibles. Fenêtres favorables typiques : heures creuses TURPE 7
+  (11h-17h été, 2h-6h + 21h-24h hiver) + surplus PV midi.
 
-  2.1 Bureaux Tertiaires Code: BUREAU_STANDARD Description : Bureaux tertiaires classiques,
-  8h-19h, 5j/7 Consommation typique : 150-250 kWh/m²/an (moyenne: 180 kWh/m²/an) Répartition
-  usages : HVAC: 45-55% Éclairage: 20-25% IT: 15-20% Autres: 10-15% Signature temporelle
-  : Lundi-vendredi: consommation élevée 8h-19h, base réduite nuit/WE Pic matin: 9h-10h
-  (démarrage postes + chauffage) Pic après-midi: 14h-16h (climatisation été) Base
-  nuit: 10-15% de la consommation jour (veilles IT, sécurité) Codes N...
-
-  '
+  ### Codes NAF typiques
+  - 62.02 : Conseil en systèmes et logiciels informatiques
+  - 64.19 : Autres intermédiations monétaires
+  - 68.20 : Location immobilière (bureaux)
+  - 69.10 : Activités juridiques
+  - 70.10 : Activités des sièges sociaux
+  - 70.22 : Conseil pour les affaires
 logic: null
 sources:
+- doc_id: BAROMETRE_FLEX_2026
+  label: "Baromètre Flex 2026 — RTE/Enedis/GIMELEC (avril 2026)"
+  section: archetype-bureau
+  anchor: '#archetype-bureau-standard'
+  excerpt_short: "Bureaux : taux décalable 30%, pointes 7-10h + 17-20h"
 - doc_id: USAGES_ENERGETIQUES_B2B_v1
   label: USAGES_ENERGETIQUES_B2B_v1 - Section Archétypes
   section: archetype-bureau
   anchor: '#archetype-bureau'
-  excerpt_short: '2.'
+  excerpt_short: "Consommation typique : 150-250 kWh/m²/an"
 provenance:
-  source_path: source/USAGES_ENERGETIQUES_B2B_v1.html
-  source_sha256: e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22
+  source_path: docs/reglementaire/barometre_flex_2026.md
   source_section: archetype-bureau
-  extracted_at: '2026-02-09'
-updated_at: '2026-02-09'
+  extracted_at: '2026-04-17'
+updated_at: '2026-04-17'
 confidence: high
 status: validated
 priority: 2

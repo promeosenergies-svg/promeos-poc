@@ -1,0 +1,82 @@
+id: ARCHETYPE-INDUSTRIE_LEGERE
+type: knowledge
+domain: usages
+title: Archétype Industrie légère
+summary: "Industrie légère (fabrication métallique, machines, instruments) : fonctionnement en 2x8 typique 6h-18h, taux décalable 35%, pénétration BACS estimée à 20% (estimation GIMELEC, non publiée par Enedis)."
+tags:
+  energy:
+  - elec
+  segment:
+  - industrie
+  asset:
+  - process
+  - air_comprime
+  - hvac
+  - eclairage
+  reg: []
+  granularity:
+  - mensuel
+  - horaire
+scope:
+  archetype: INDUSTRIE_LEGERE
+  naf_codes:
+  - '25.11'
+  - '25.94'
+  - '28.22'
+  - '29.10'
+  - '32.50'
+content_md: |
+  ## Archétype Industrie légère
+
+  ### Consommation typique
+  - **Fourchette**: 100-300 kWh/m²/an (fortes disparités selon sous-secteur)
+  - Drivers : process électrique (machines, compresseurs, fours basse température), air comprimé, ventilation process
+
+  ### Signature temporelle
+  - Fonctionnement typique **2x8** ou **3x8** en semaine (postés)
+  - Pointe franche sur plage [6h-18h) : activité process principale
+  - Arrêt partiel ou total week-end (variable selon sous-secteur)
+  - Talon de nuit modéré (éclairage sécurité, veilles process, froid process)
+
+  ### Répartition par usage
+  - Process (machines, fours, compresseurs) : 45-60%
+  - Air comprimé : 10-20%
+  - CVC process / ambiance : 10-15%
+  - Éclairage : 5-10%
+  - Autres (bureaux attenants, IT, IRVE) : 5-10%
+
+  ### Calibrage Baromètre Flex 2026
+  - **Taux décalable moyen** : 35% (compresseurs, fours basse température, production froid process, recharge batteries chariots)
+  - **Plages de pointe** : [6h-18h) — activité diurne postés
+  - **Part conso en pointe** : 60% (concentrée sur la journée de production)
+  - **Pénétration BACS 2024** : 20% — **estimation GIMELEC**, non publiée officiellement par Enedis
+    (segment industrie hors périmètre décret tertiaire strict, instrumentation interne variable)
+  - Gisement important sur pilotage compresseurs (démarrage différé, pression adaptative) et recharge intralogistique
+
+  ### Potentiel de pilotage
+  - Principal levier : effacement compresseurs en période de pointe réseau (stockage pression)
+  - Second levier : décalage cycles de production énergivores hors HP
+  - Contraintes : continuité production, qualité produit (tolérance température four, humidité process)
+  - Opportunité contrats flex explicites : cycles batch décalables, cogénération éventuelle
+
+  ### Codes NAF typiques
+  - 25.11 Fabrication de structures métalliques
+  - 25.94 Fabrication de vis et de boulons
+  - 28.22 Fabrication de machines de levage et de manutention
+  - 29.10 Construction de véhicules automobiles
+  - 32.50 Fabrication d'instruments et de fournitures à usage médical et dentaire
+logic: null
+sources:
+- doc_id: BAROMETRE_FLEX_2026
+  label: "Baromètre Flex 2026 — RTE/Enedis/GIMELEC (avril 2026)"
+  section: "archetype-industrie-legere"
+  anchor: "#archetype-industrie-legere"
+  excerpt_short: "Industrie légère : taux décalable 35%, pointe 6h-18h, BACS 20% (estimation GIMELEC, non publié Enedis)."
+provenance:
+  source_path: docs/reglementaire/barometre_flex_2026.md
+  source_section: "archetype-industrie-legere"
+  extracted_at: '2026-04-17'
+updated_at: '2026-04-17'
+confidence: medium
+status: validated
+priority: 2
