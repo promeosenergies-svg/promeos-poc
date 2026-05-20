@@ -1,48 +1,55 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import Drawer from '../../../ui/Drawer';
 import Tabs from '../../../ui/Tabs';
 
 import { useActionCenterV4Item } from '../../../hooks/v4';
 import { DRAWER_COPY, DRAWER_FOOTER_COPY, TAB_IDS, TAB_LABELS } from '../constants';
 import { formatDateTimeFR } from '../utils/date';
 import { BlockersTab } from './BlockersTab';
+import { Breadcrumb } from './Breadcrumb';
 import { DrawerActions } from './DrawerActions';
 import { EvidencesTab } from './EvidencesTab';
+import { ItemClosedBanner } from './ItemClosedBanner';
 import { ItemHeader } from './ItemHeader';
 import { LinksTab } from './LinksTab';
 import { TimelineTab } from './TimelineTab';
+import { V4Drawer } from './V4Drawer';
 
+/**
+ * M2-5.3 / M2-5.4 / M2-5.10.B / .bis — Drawer détail d'un item V4.
+ *
+ * Architecture (post-audit M2-5.10.B) :
+ * - `V4Drawer` custom Sol (largeur 760px, header sticky, footer sticky,
+ *   fond canvas) — contourne `src/ui/Drawer.jsx` legacy (audit UI Sol P0-1/2/3).
+ * - Header sticky : `Breadcrumb` MONO + `DrawerActions` (3 boutons).
+ * - Body : `ItemClosedBanner` (si terminal) + `ItemHeader` + `Tabs` + content.
+ * - Footer sticky : créé + MAJ.
+ *
+ * Ordre onglets restauré (audit UX/CS) : Preuves → Blocages → Liens →
+ * Historique (l'action prioritaire arrive en premier, l'audit a posteriori
+ * vient en dernier).
+ *
+ * Lecture lazy par onglet (Set `loadedTabs`). Succès mutation → refetch item
+ * + remount Timeline via `refreshKey` + liste parent.
+ */
 const TAB_LIST = [
-  { id: TAB_IDS.timeline, label: TAB_LABELS[TAB_IDS.timeline] },
   { id: TAB_IDS.evidences, label: TAB_LABELS[TAB_IDS.evidences] },
   { id: TAB_IDS.blockers, label: TAB_LABELS[TAB_IDS.blockers] },
   { id: TAB_IDS.links, label: TAB_LABELS[TAB_IDS.links] },
+  { id: TAB_IDS.timeline, label: TAB_LABELS[TAB_IDS.timeline] },
 ];
+const DEFAULT_TAB = TAB_IDS.evidences;
 
-/**
- * M2-5.3 / M2-5.4 / M2-5.10.B — Drawer détail d'un item V4.
- *
- * Lecture : item + 4 onglets read-only, lazy par onglet (Set `loadedTabs`).
- * Écriture : `DrawerActions` (3 boutons header maquette) déclenche les modals
- * Transitionner / Bloquer / Ajouter preuve. Le succès remonte un refetch
- * ciblé : item (header), events (remount TimelineTab via `refreshKey`,
- * cohérent avec le lazy), liste parent (`onRefreshList`).
- *
- * M2-5.10.B — restyle Sol pixel-perfect maquette §8.4 : DrawerActions en
- * haut, ItemHeader (title block + status row + métadonnées), Tabs, footer
- * MONO « créé X · MAJ Y ».
- */
 export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
-  const [activeTab, setActiveTab] = useState(TAB_IDS.timeline);
-  const [loadedTabs, setLoadedTabs] = useState(() => new Set([TAB_IDS.timeline]));
+  const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
+  const [loadedTabs, setLoadedTabs] = useState(() => new Set([DEFAULT_TAB]));
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Reset à la fermeture → la prochaine ouverture repart sur Timeline.
+  // Reset à la fermeture → la prochaine ouverture repart sur l'onglet par défaut.
   useEffect(() => {
     if (!open) {
-      setActiveTab(TAB_IDS.timeline);
-      setLoadedTabs(new Set([TAB_IDS.timeline]));
+      setActiveTab(DEFAULT_TAB);
+      setLoadedTabs(new Set([DEFAULT_TAB]));
     }
   }, [open]);
 
@@ -63,29 +70,57 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
     refetch: refetchItem,
   } = useActionCenterV4Item(itemId);
 
-  // Succès transition lifecycle → refetch item (header) + remount Timeline +
-  // liste parent. Toutes les mutations (transition/upload/add) → remount
-  // Timeline pour exposer le nouvel event.
+  // Succès transition lifecycle → refetch item + remount Timeline + liste parent.
   const handleTransitionSuccess = useCallback(() => {
     refetchItem();
     setRefreshKey((k) => k + 1);
     onRefreshList?.();
   }, [refetchItem, onRefreshList]);
 
+  // Mutation evidence/blocker → remount Timeline pour exposer le nouvel event.
   const handleMutated = useCallback(() => {
     setRefreshKey((k) => k + 1);
   }, []);
 
   if (!open || !itemId) return null;
 
-  return (
-    <Drawer open={open} onClose={onClose} title={DRAWER_COPY.drawerTitle} wide>
-      <DrawerActions
-        item={item}
-        onTransitionSuccess={handleTransitionSuccess}
-        onMutated={handleMutated}
-      />
+  const footer = item ? (
+    <div
+      className="flex flex-wrap items-baseline gap-x-3 font-mono text-[9.5px] uppercase tracking-[0.06em]"
+      style={{ color: 'var(--sol-ink-500)' }}
+    >
+      <span>
+        {DRAWER_FOOTER_COPY.createdPrefix}{' '}
+        <span className="font-medium" style={{ color: 'var(--sol-ink-700)' }}>
+          {formatDateTimeFR(item.created_at)}
+        </span>
+      </span>
+      <span aria-hidden="true">·</span>
+      <span>
+        {DRAWER_FOOTER_COPY.updatedPrefix}{' '}
+        <span className="font-medium" style={{ color: 'var(--sol-ink-700)' }}>
+          {formatDateTimeFR(item.updated_at)}
+        </span>
+      </span>
+    </div>
+  ) : null;
 
+  return (
+    <V4Drawer
+      open={open}
+      onClose={onClose}
+      ariaLabel={DRAWER_COPY.drawerTitle}
+      breadcrumb={<Breadcrumb />}
+      headerActions={
+        <DrawerActions
+          item={item}
+          onTransitionSuccess={handleTransitionSuccess}
+          onMutated={handleMutated}
+        />
+      }
+      footer={footer}
+    >
+      <ItemClosedBanner item={item} />
       <ItemHeader item={item} loading={itemLoading} error={itemError} />
 
       <div className="mt-4">
@@ -114,31 +149,6 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
           <LinksTab itemId={itemId} />
         )}
       </div>
-
-      {/* Footer drawer maquette ligne 1124-1133. */}
-      {item && (
-        <div
-          className="mt-6 flex flex-wrap items-baseline gap-x-3 pt-3 font-mono text-[9.5px] uppercase tracking-[0.06em]"
-          style={{
-            borderTop: '1px solid var(--sol-rule)',
-            color: 'var(--sol-ink-500)',
-          }}
-        >
-          <span>
-            {DRAWER_FOOTER_COPY.createdPrefix}{' '}
-            <span className="font-medium" style={{ color: 'var(--sol-ink-700)' }}>
-              {formatDateTimeFR(item.created_at)}
-            </span>
-          </span>
-          <span aria-hidden="true">·</span>
-          <span>
-            {DRAWER_FOOTER_COPY.updatedPrefix}{' '}
-            <span className="font-medium" style={{ color: 'var(--sol-ink-700)' }}>
-              {formatDateTimeFR(item.updated_at)}
-            </span>
-          </span>
-        </div>
-      )}
-    </Drawer>
+    </V4Drawer>
   );
 }

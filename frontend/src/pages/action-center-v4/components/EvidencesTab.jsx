@@ -6,7 +6,7 @@ import ErrorState from '../../../ui/ErrorState';
 import Skeleton from '../../../ui/Skeleton';
 
 import { useActionCenterV4Evidences } from '../../../hooks/v4';
-import { TAB_COPY, UPLOAD_COPY } from '../constants';
+import { EMPTY_STATE_CTA_COPY, TAB_COPY, UPLOAD_COPY } from '../constants';
 import { EvidenceItem } from './EvidenceItem';
 import { EvidenceUploadModal } from './EvidenceUploadModal';
 
@@ -69,11 +69,32 @@ export function EvidencesTab({ itemId, itemClosed = false, onEvidenceMutated }) 
       )}
 
       {!loading && !error && evidences.length === 0 && (
-        <EmptyState
-          variant="empty"
-          title={TAB_COPY.evidencesEmptyTitle}
-          text={TAB_COPY.evidencesEmptyText}
-        />
+        <div>
+          <EmptyState
+            variant="empty"
+            title={TAB_COPY.evidencesEmptyTitle}
+            text={TAB_COPY.evidencesEmptyText}
+          />
+          {/* CTA inline — audit CS P1-3 : sans ce bouton, l'action est enfouie
+              dans le menu Plus ▾ et l'utilisateur perd 30s+. */}
+          {!itemClosed && (
+            <div className="mt-3 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setUploadModalOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-[4px] border px-3 py-1.5 font-sans text-[11.5px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]"
+                style={{
+                  background: 'var(--sol-bg-paper)',
+                  color: 'var(--sol-attention-fg)',
+                  borderColor: 'var(--sol-attention-line)',
+                }}
+              >
+                <FileUp size={12} aria-hidden="true" />
+                {EMPTY_STATE_CTA_COPY.addEvidence}
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {!loading && !error && evidences.length > 0 && (

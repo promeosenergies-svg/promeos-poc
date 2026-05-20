@@ -81,16 +81,19 @@ describe('ItemHeader', () => {
     );
     // KindHeaderBadge unknown → coque neutre avec « TYPE INCONNU ».
     expect(screen.getByText('TYPE INCONNU')).toBeInTheDocument();
-    // DomainChip + dl footer rendent tous deux le fallback (2 occurrences).
-    expect(screen.getAllByText('Domaine inconnu').length).toBe(2);
+    // M2-5.10.B.bis — dl meta-grid dédupliquée (audit UI Sol P1-4) :
+    // « Domaine inconnu » n'apparaît plus que via DomainChip (1 occurrence).
+    expect(screen.getAllByText('Domaine inconnu').length).toBe(1);
   });
 
-  test('hides the domain block from the meta-grid when domain is null', () => {
+  test('meta-grid contains only Créé / MAJ (no kind/domain duplication)', () => {
     const { container } = render(
-      <ItemHeader item={{ title: 'X', lifecycle_state: 'new', kind: null, domain: null }} />
+      <ItemHeader
+        item={{ title: 'X', lifecycle_state: 'new', kind: 'anomaly', domain: 'conformite' }}
+      />
     );
-    // Avec kind+domain null, le KindHeaderBadge n'est pas rendu et la dl ne
-    // contient que Créé/MAJ (les 2 dt restant). Pas de placeholder « — ».
+    // M2-5.10.B.bis — kind et domain sont dans le status row, plus dans la dl
+    // (audit UI Sol P1-4 — duplication retirée).
     expect(container.querySelectorAll('dt').length).toBe(2);
   });
 });

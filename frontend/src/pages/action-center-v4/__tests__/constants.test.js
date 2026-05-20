@@ -4,10 +4,15 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+  BREADCRUMB_DRAWER_COPY,
+  CLOSED_BANNER_COPY,
   COPY,
+  DRAWER_ACTIONS_COPY,
+  EMPTY_STATE_CTA_COPY,
   LIFECYCLE_BADGE_VARIANTS,
   LIFECYCLE_LABELS,
   LIFECYCLE_ORDER,
+  LIFECYCLE_PRIMARY_ACTION_LABEL,
   LIFECYCLE_SOL_VARIANTS,
   KIND_LABELS,
   KIND_LABELS_UPPER,
@@ -158,6 +163,48 @@ describe('M2-5.10.A — Sol design tokens (fidélité doctrine v0.2)', () => {
     expect(SOL_COPY.filterAllKinds).toBeTruthy();
     expect(SOL_COPY.filterReset).toBeTruthy();
     expect(typeof SOL_COPY.kindChipAria).toBe('function');
+  });
+});
+
+describe('M2-5.10.B.bis — hotfix audit drawer findings', () => {
+  test('LIFECYCLE_PRIMARY_ACTION_LABEL exposes a dynamic verb per state', () => {
+    expect(LIFECYCLE_PRIMARY_ACTION_LABEL.new).toBe('Qualifier');
+    expect(LIFECYCLE_PRIMARY_ACTION_LABEL.triaged).toBe('Planifier');
+    expect(LIFECYCLE_PRIMARY_ACTION_LABEL.planned).toBe('Démarrer');
+    expect(LIFECYCLE_PRIMARY_ACTION_LABEL.in_progress).toBe('Marquer comme fait');
+    expect(LIFECYCLE_PRIMARY_ACTION_LABEL.closed).toBe('Rouvrir');
+  });
+
+  test('LIFECYCLE_PRIMARY_ACTION_LABEL covers exactly the 5 lifecycle states', () => {
+    expect(Object.keys(LIFECYCLE_PRIMARY_ACTION_LABEL).sort()).toEqual(
+      Object.keys(LIFECYCLE_LABELS).sort()
+    );
+  });
+
+  test('DRAWER_ACTIONS_COPY no longer exposes a static primaryLabel or menuItemHistory', () => {
+    expect(DRAWER_ACTIONS_COPY.primaryLabel).toBeUndefined();
+    expect(DRAWER_ACTIONS_COPY.menuItemHistory).toBeUndefined();
+    // « Assigner » et non « Réassigner » (cohérent doctrine v0.3 §7.3).
+    expect(DRAWER_ACTIONS_COPY.secondaryLabel).toBe('Assigner');
+  });
+
+  test('CLOSED_BANNER_COPY exposes title/textPrefix/textSuffix/iconAriaLabel', () => {
+    expect(CLOSED_BANNER_COPY.title).toBeTruthy();
+    expect(CLOSED_BANNER_COPY.textPrefix).toBeTruthy();
+    expect(CLOSED_BANNER_COPY.textSuffix).toBeTruthy();
+    expect(CLOSED_BANNER_COPY.iconAriaLabel).toBeTruthy();
+  });
+
+  test('BREADCRUMB_DRAWER_COPY exposes app/section/page/current', () => {
+    expect(BREADCRUMB_DRAWER_COPY.app).toBe('PROMEOS');
+    expect(BREADCRUMB_DRAWER_COPY.section).toBe("Centre d'action");
+    expect(BREADCRUMB_DRAWER_COPY.page).toBeTruthy();
+    expect(BREADCRUMB_DRAWER_COPY.current).toBeTruthy();
+  });
+
+  test('EMPTY_STATE_CTA_COPY exposes addEvidence/addBlocker', () => {
+    expect(EMPTY_STATE_CTA_COPY.addEvidence).toMatch(/preuve/i);
+    expect(EMPTY_STATE_CTA_COPY.addBlocker).toMatch(/blocage/i);
   });
 });
 

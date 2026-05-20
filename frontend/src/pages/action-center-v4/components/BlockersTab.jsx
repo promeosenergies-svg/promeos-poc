@@ -6,7 +6,7 @@ import ErrorState from '../../../ui/ErrorState';
 import Skeleton from '../../../ui/Skeleton';
 
 import { useActionCenterV4Blockers } from '../../../hooks/v4';
-import { BLOCKER_ADD_COPY, TAB_COPY } from '../constants';
+import { BLOCKER_ADD_COPY, EMPTY_STATE_CTA_COPY, TAB_COPY } from '../constants';
 import { BlockerAddModal } from './BlockerAddModal';
 import { BlockerItem } from './BlockerItem';
 
@@ -68,11 +68,31 @@ export function BlockersTab({ itemId, itemClosed = false, onBlockerMutated }) {
       )}
 
       {!loading && !error && blockers.length === 0 && (
-        <EmptyState
-          variant="empty"
-          title={TAB_COPY.blockersEmptyTitle}
-          text={TAB_COPY.blockersEmptyText}
-        />
+        <div>
+          <EmptyState
+            variant="empty"
+            title={TAB_COPY.blockersEmptyTitle}
+            text={TAB_COPY.blockersEmptyText}
+          />
+          {/* CTA inline — audit CS P1-3. */}
+          {!itemClosed && (
+            <div className="mt-3 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setAddModalOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-[4px] border px-3 py-1.5 font-sans text-[11.5px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]"
+                style={{
+                  background: 'var(--sol-bg-paper)',
+                  color: 'var(--sol-afaire-fg)',
+                  borderColor: 'var(--sol-afaire-line)',
+                }}
+              >
+                <Slash size={12} aria-hidden="true" />
+                {EMPTY_STATE_CTA_COPY.addBlocker}
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {!loading && !error && blockers.length > 0 && (

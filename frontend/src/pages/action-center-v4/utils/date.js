@@ -35,3 +35,18 @@ export function formatDateTimeFR(isoDate) {
     minute: '2-digit',
   });
 }
+
+/**
+ * M2-5.10.B.bis — Nombre de jours écoulés depuis `isoDate`. SoT unique pour
+ * « depuis X jours » (BlockerItem, etc.). `now` injectable pour les tests
+ * (audit code-reviewer P1-3 — dépendance Date.now() non testable corrigée).
+ *
+ * Retourne `null` si la date est absente ou invalide ; sinon un entier ≥ 0.
+ */
+export function daysSince(isoDate, now = new Date()) {
+  if (!isoDate) return null;
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return null;
+  const diffMs = now.getTime() - date.getTime();
+  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+}

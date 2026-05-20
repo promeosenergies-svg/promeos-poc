@@ -311,10 +311,15 @@ export const A11Y_COPY = {
 
 // 3 boutons header maquette lignes 689-732. Plus ▾ déploie un menu vers les
 // modals existants (Bloquer / Ajouter preuve / Clôturer).
+//
+// M2-5.10.B.bis — `primaryLabel` n'est plus statique : doctrine v0.3 §7.3
+// prescrit un verbe dynamique selon `lifecycle_state` (audit UX Marie P0-1 +
+// CS P0-1 — « Transitionner » est du jargon IT). Voir
+// `LIFECYCLE_PRIMARY_ACTION_LABEL` ci-dessous. `menuItemHistory` supprimé
+// (constante morte, audit code-reviewer P1-4).
 export const DRAWER_ACTIONS_COPY = {
-  primaryLabel: 'Transitionner',
   primaryHint: 'Action principale',
-  secondaryLabel: 'Réassigner',
+  secondaryLabel: 'Assigner',
   // Réassigner = dette M3+ (endpoint PATCH /items/{id}/assign manquant).
   secondaryDisabledHint: 'Disponible M3 — endpoint owner manquant',
   moreLabel: 'Plus',
@@ -322,10 +327,46 @@ export const DRAWER_ACTIONS_COPY = {
   menuItemBlock: 'Signaler un blocage',
   menuItemEvidence: 'Ajouter une preuve',
   menuItemClose: 'Clôturer',
-  menuItemHistory: 'Historique complet',
   // Élément disabled toujours visible (cardinal doctrine — pas de silence).
   menuItemMerge: 'Fusionner',
   menuItemMergeReason: 'aucun doublon',
+};
+
+// Verbes dynamiques par lifecycle_state (doctrine v0.3 §7.3) — portés par
+// `DrawerActions` sur le bouton primary. `closed` désactive le bouton (la
+// réouverture est réservée aux admins, dette M3+).
+export const LIFECYCLE_PRIMARY_ACTION_LABEL = {
+  new: 'Qualifier',
+  triaged: 'Planifier',
+  planned: 'Démarrer',
+  in_progress: 'Marquer comme fait',
+  closed: 'Rouvrir',
+};
+
+// Bandeau persistant en tête du body drawer quand l'item est terminal (audit
+// UX Marie P0-3 + CS P0-2 — item closed silencieux = appel support).
+export const CLOSED_BANNER_COPY = {
+  title: 'Action clôturée',
+  textPrefix: 'Clôturée le',
+  textSuffix: '· lecture seule. Pour rouvrir, contactez votre administrateur.',
+  iconAriaLabel: 'Action clôturée',
+};
+
+// Breadcrumb header drawer (maquette ligne 679-687) — statique MV3 (file
+// prioritaire = M2-5.10.D, pas encore livrée).
+export const BREADCRUMB_DRAWER_COPY = {
+  app: 'PROMEOS',
+  section: "Centre d'action",
+  page: 'Référentiel',
+  current: 'Détail',
+};
+
+// CTA inline dans les empty states des onglets (audit CS P1-3 — actions
+// d'ajout enfouies dans Plus ▾). Pour l'utilisateur lambda, mieux vaut un
+// bouton contextuel visible que de devoir chercher le menu Plus.
+export const EMPTY_STATE_CTA_COPY = {
+  addEvidence: 'Ajouter la première preuve',
+  addBlocker: 'Signaler le premier blocage',
 };
 
 // Layout audit-list maquette §8.4 lignes 614-637. Mapping acteur backend → UI :

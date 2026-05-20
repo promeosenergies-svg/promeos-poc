@@ -123,6 +123,33 @@ describe('BlockersTab', () => {
     expect(screen.getByText(/signaler un blocage/i)).toBeInTheDocument();
   });
 
+  // ── M2-5.10.B.bis — CTA inline dans l'empty state (audit CS P1-3) ──
+  test('the empty state exposes an inline « Signaler le premier blocage » CTA', () => {
+    useActionCenterV4Blockers.mockReturnValue({
+      data: { items: [], total: 0 },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<BlockersTab itemId="x" />);
+    expect(
+      screen.getByRole('button', { name: /signaler le premier blocage/i })
+    ).toBeInTheDocument();
+  });
+
+  test('the inline empty CTA is hidden when the item is closed', () => {
+    useActionCenterV4Blockers.mockReturnValue({
+      data: { items: [], total: 0 },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<BlockersTab itemId="x" itemClosed />);
+    expect(
+      screen.queryByRole('button', { name: /signaler le premier blocage/i })
+    ).not.toBeInTheDocument();
+  });
+
   test('hides "Ajouter un blocage" when the item is closed (M2-5.9.bis)', () => {
     useActionCenterV4Blockers.mockReturnValue({
       data: { items: [], total: 0 },

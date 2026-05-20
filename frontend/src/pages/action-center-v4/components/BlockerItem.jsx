@@ -7,7 +7,7 @@ import {
   BLOCKER_TYPE_LABELS,
   TAB_COPY,
 } from '../constants';
-import { formatDateTimeFR } from '../utils/date';
+import { daysSince, formatDateTimeFR } from '../utils/date';
 import { BlockerResolveModal } from './BlockerResolveModal';
 
 /**
@@ -19,14 +19,6 @@ import { BlockerResolveModal } from './BlockerResolveModal';
  *
  * Status dérivé de `resolved_at` (jamais d'enum backend).
  */
-
-function daysSince(iso) {
-  if (!iso) return null;
-  const dt = new Date(iso);
-  if (Number.isNaN(dt.getTime())) return null;
-  const diffMs = Date.now() - dt.getTime();
-  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-}
 
 export function BlockerItem({ blocker, onResolveSuccess }) {
   const [modalOpen, setModalOpen] = useState(false);

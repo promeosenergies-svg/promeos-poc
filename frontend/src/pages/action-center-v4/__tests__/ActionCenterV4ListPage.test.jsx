@@ -10,12 +10,21 @@ vi.mock('../../../hooks/v4', () => ({
   useActionCenterV4Items: vi.fn(),
   useActionCenterV4Item: vi.fn(),
   useActionCenterV4Events: vi.fn(),
+  // M2-5.10.B.bis — l'onglet par défaut du drawer est désormais « Preuves »
+  // (au lieu de « Historique »), donc tous les tests qui ouvrent le drawer
+  // doivent mocker aussi les hooks evidences/blockers/links.
+  useActionCenterV4Evidences: vi.fn(),
+  useActionCenterV4Blockers: vi.fn(),
+  useActionCenterV4Links: vi.fn(),
 }));
 
 import {
   useActionCenterV4Items,
   useActionCenterV4Item,
   useActionCenterV4Events,
+  useActionCenterV4Evidences,
+  useActionCenterV4Blockers,
+  useActionCenterV4Links,
 } from '../../../hooks/v4';
 import { ActionCenterV4ListPage } from '../ActionCenterV4ListPage';
 
@@ -40,12 +49,16 @@ describe('ActionCenterV4ListPage', () => {
       error: null,
       refetch: vi.fn(),
     });
-    useActionCenterV4Events.mockReturnValue({
+    const emptyList = {
       data: { items: [], total: 0 },
       loading: false,
       error: null,
       refetch: vi.fn(),
-    });
+    };
+    useActionCenterV4Events.mockReturnValue(emptyList);
+    useActionCenterV4Evidences.mockReturnValue(emptyList);
+    useActionCenterV4Blockers.mockReturnValue(emptyList);
+    useActionCenterV4Links.mockReturnValue(emptyList);
   });
 
   // Pas de `globals: true` dans vite.config → cleanup RTL explicite.

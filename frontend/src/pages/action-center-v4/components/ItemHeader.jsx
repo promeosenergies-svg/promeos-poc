@@ -1,6 +1,5 @@
 import {
   A11Y_COPY,
-  DOMAIN_LABELS,
   DRAWER_COPY,
   KIND_LABELS,
   KIND_LABELS_UPPER,
@@ -122,8 +121,10 @@ export function ItemHeader({ item, loading, error }) {
         {item.domain && <DomainChip domain={item.domain} />}
       </div>
 
-      {/* Métadonnées meta-grid simplifiée (Créé / MAJ uniquement — Responsable
-          + Détecté + SLA = dette M3+, cardinal owner BE manquant). */}
+      {/* Métadonnées meta-grid simplifiée (Créé / MAJ uniquement). M2-5.10.B.bis
+          — `kind`/`domain` retirés car déjà rendus dans le status row ci-dessus
+          (audit UI Sol P1-4 — duplication visuelle). Responsable + Détecté +
+          SLA = dette M3+, cardinal owner BE manquant. */}
       <dl
         className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-[10px] uppercase tracking-[0.14em]"
         style={{ color: 'var(--sol-ink-500)' }}
@@ -146,29 +147,6 @@ export function ItemHeader({ item, loading, error }) {
             {formatDateTimeFR(item.updated_at)}
           </dd>
         </div>
-
-        {item.domain && (
-          <div>
-            <dt className="mb-0.5">{DRAWER_COPY.domainLabel}</dt>
-            <dd
-              className="font-sans text-[12.5px] normal-case tracking-normal"
-              style={{ color: 'var(--sol-ink-900)' }}
-            >
-              {DOMAIN_LABELS[item.domain] || A11Y_COPY.unknownDomainLabel}
-            </dd>
-          </div>
-        )}
-        {item.kind && (
-          <div>
-            <dt className="mb-0.5">{DRAWER_COPY.kindLabel}</dt>
-            <dd
-              className="font-sans text-[12.5px] normal-case tracking-normal"
-              style={{ color: 'var(--sol-ink-900)' }}
-            >
-              {KIND_LABELS[item.kind] || A11Y_COPY.unknownKindLabel}
-            </dd>
-          </div>
-        )}
       </dl>
     </header>
   );

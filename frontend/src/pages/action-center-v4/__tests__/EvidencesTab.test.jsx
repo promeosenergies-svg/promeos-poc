@@ -137,6 +137,31 @@ describe('EvidencesTab', () => {
     expect(screen.getByRole('button', { name: /ajouter la preuve/i })).toBeInTheDocument();
   });
 
+  // ── M2-5.10.B.bis — CTA inline dans l'empty state (audit CS P1-3) ──
+  test('the empty state exposes an inline « Ajouter la première preuve » CTA', () => {
+    useActionCenterV4Evidences.mockReturnValue({
+      data: { items: [], total: 0 },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<EvidencesTab itemId="x" />);
+    expect(screen.getByRole('button', { name: /ajouter la première preuve/i })).toBeInTheDocument();
+  });
+
+  test('the inline empty CTA is hidden when the item is closed', () => {
+    useActionCenterV4Evidences.mockReturnValue({
+      data: { items: [], total: 0 },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<EvidencesTab itemId="x" itemClosed />);
+    expect(
+      screen.queryByRole('button', { name: /ajouter la première preuve/i })
+    ).not.toBeInTheDocument();
+  });
+
   test('hides "Ajouter une preuve" when the item is closed (M2-5.9.bis)', () => {
     useActionCenterV4Evidences.mockReturnValue({
       data: { items: [], total: 0 },

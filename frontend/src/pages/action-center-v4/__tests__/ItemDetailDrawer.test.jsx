@@ -64,9 +64,11 @@ describe('ItemDetailDrawer', () => {
     expect(screen.getByText('Action X')).toBeInTheDocument();
   });
 
-  test('Timeline tab is active by default and fetches events', () => {
+  test('Preuves tab is active by default and fetches evidences (M2-5.10.B.bis ordre onglets)', () => {
     render(<ItemDetailDrawer itemId="x" open onClose={() => {}} />);
-    expect(useActionCenterV4Events).toHaveBeenCalledWith('x', {
+    // M2-5.10.B.bis — l'onglet par défaut est désormais Preuves (action
+    // prioritaire utilisateur), pas Historique (audit a posteriori).
+    expect(useActionCenterV4Evidences).toHaveBeenCalledWith('x', {
       offset: 0,
       limit: 20,
     });
@@ -98,7 +100,7 @@ describe('ItemDetailDrawer', () => {
     expect(useActionCenterV4Events.mock.calls.length).toBe(initialCalls);
   });
 
-  test('resets to the Timeline tab after a close / reopen cycle', () => {
+  test('resets to the default tab (Preuves) after a close / reopen cycle (M2-5.10.B.bis)', () => {
     const { rerender } = render(<ItemDetailDrawer itemId="x" open onClose={() => {}} />);
     fireEvent.click(screen.getByText('Liens'));
     expect(screen.getByText(/aucun lien/i)).toBeInTheDocument();
@@ -106,8 +108,8 @@ describe('ItemDetailDrawer', () => {
     rerender(<ItemDetailDrawer itemId={null} open={false} onClose={() => {}} />);
     rerender(<ItemDetailDrawer itemId="x" open onClose={() => {}} />);
 
-    // Timeline réactif → son état vide s'affiche, plus celui de l'onglet Liens.
-    expect(screen.getByText(/aucun événement/i)).toBeInTheDocument();
+    // M2-5.10.B.bis — l'onglet par défaut est Preuves (pas Historique).
+    expect(screen.getByText(/aucune preuve/i)).toBeInTheDocument();
     expect(screen.queryByText(/aucun lien/i)).not.toBeInTheDocument();
   });
 });
