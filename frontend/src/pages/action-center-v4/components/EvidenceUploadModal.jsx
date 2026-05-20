@@ -1,8 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 
-import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
-import Modal from '../../../ui/Modal';
 import { useToast } from '../../../ui/ToastProvider';
 
 import { useUploadEvidence } from '../../../hooks/v4';
@@ -10,15 +8,20 @@ import { UPLOAD_COPY } from '../constants';
 import { classifyError, toastMessageForError } from '../utils/errorClassifier';
 import { ACCEPTED_MIME_TYPES, validateEvidenceFile } from '../utils/evidenceValidation';
 import { formatFileSize } from '../utils/fileSize';
+import { SolButton } from './SolButton';
+import { SolInlineError } from './SolInlineError';
+import { V4Modal } from './V4Modal';
 
 /**
- * M2-5.5 — Modal d'upload d'une preuve (multipart POST).
+ * M2-5.5 / M2-5.11.A — Modal d'upload d'une preuve (multipart POST).
  *
  * Réplique le pattern UI write figé M2-5.4 : pessimistic, erreur inline 422
  * corrigeable / toast infra + close, refetch au succès via `onSuccess`.
  *
  * Q1 : validation MIME côté client (defense in depth) — le backend reste
  * l'autorité (magic bytes + 10 Mo). Q2 : loading simple, pas de progress bar.
+ *
+ * M2-5.11.A — passage sur V4Modal + SolButton + SolInlineError.
  */
 export function EvidenceUploadModal({ open, onClose, itemId, onSuccess }) {
   const [file, setFile] = useState(null);
@@ -84,12 +87,27 @@ export function EvidenceUploadModal({ open, onClose, itemId, onSuccess }) {
   const canSubmit = Boolean(file) && !clientError && !loading;
 
   return (
-    <Modal open={open} onClose={handleClose} title={UPLOAD_COPY.modalTitle}>
+    <V4Modal
+      open={open}
+      onClose={handleClose}
+      title={UPLOAD_COPY.modalTitle}
+      footer={
+        <>
+          <SolButton variant="ghost" onClick={handleClose} disabled={loading}>
+            {UPLOAD_COPY.cancelButton}
+          </SolButton>
+          <SolButton onClick={handleSubmit} disabled={!canSubmit} loading={loading}>
+            {loading ? UPLOAD_COPY.submitLoading : UPLOAD_COPY.submitButton}
+          </SolButton>
+        </>
+      }
+    >
       <div className="space-y-4">
         <div>
           <label
             htmlFor="evidence-file-input"
-            className="mb-1 block text-sm font-medium text-gray-700"
+            className="mb-1 block text-[12px] font-medium"
+            style={{ color: 'var(--sol-ink-700)' }}
           >
             {UPLOAD_COPY.fieldFile}
           </label>
@@ -99,13 +117,26 @@ export function EvidenceUploadModal({ open, onClose, itemId, onSuccess }) {
             type="file"
             accept={ACCEPTED_MIME_TYPES.join(',')}
             onChange={handleFileChange}
-            className="block w-full text-sm text-gray-700 file:mr-3 file:cursor-pointer
-              file:rounded file:border-0 file:bg-blue-50 file:px-4 file:py-2
-              file:text-blue-700 hover:file:bg-blue-100"
+            // Styles natifs file input — tokens Sol via inline pour `file:*` :
+            className="block w-full text-[12.5px] file:mr-3 file:cursor-pointer file:rounded-[4px] file:border-0 file:px-4 file:py-2 file:font-medium"
+            style={{
+              color: 'var(--sol-ink-700)',
+              // file:* pseudo nécessite Tailwind ; tokens via background-attribute
+              // composite : on garde la classe Tailwind file:bg-* mais via vars Sol
+              // l'effet est plus pragmatique avec un wrapper.
+            }}
           />
-          <p className="mt-1 text-xs text-gray-500">{UPLOAD_COPY.fieldFileHint}</p>
+          <p
+            className="mt-1 text-[11px] italic"
+            style={{
+              fontFamily: 'var(--sol-font-display)',
+              color: 'var(--sol-ink-500)',
+            }}
+          >
+            {UPLOAD_COPY.fieldFileHint}
+          </p>
           {file && !clientError && (
-            <p className="mt-1 text-xs text-gray-600">
+            <p className="mt-1 font-mono text-[10.5px]" style={{ color: 'var(--sol-ink-700)' }}>
               {file.name} · {formatFileSize(file.size)}
             </p>
           )}
@@ -119,36 +150,23 @@ export function EvidenceUploadModal({ open, onClose, itemId, onSuccess }) {
           maxLength={500}
         />
 
+        {/* Validation client MIME — couleur attention (warning, pas erreur). */}
         {clientError && (
           <div
             role="alert"
-            className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+            className="rounded-[6px] border p-3 text-[12.5px]"
+            style={{
+              background: 'var(--sol-attention-bg)',
+              borderColor: 'var(--sol-attention-line)',
+              color: 'var(--sol-attention-fg)',
+            }}
           >
             {clientError}
           </div>
         )}
 
-        {inlineError && (
-          <div
-            role="alert"
-            className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-900"
-          >
-            <div className="font-medium">{inlineError.message}</div>
-            {inlineError.hint && (
-              <div className="mt-1 text-xs text-red-700">{inlineError.hint}</div>
-            )}
-          </div>
-        )}
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" onClick={handleClose} disabled={loading}>
-            {UPLOAD_COPY.cancelButton}
-          </Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit}>
-            {loading ? UPLOAD_COPY.submitLoading : UPLOAD_COPY.submitButton}
-          </Button>
-        </div>
+        <SolInlineError error={inlineError} />
       </div>
-    </Modal>
+    </V4Modal>
   );
 }

@@ -1,8 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
-import Modal from '../../../ui/Modal';
 import Select from '../../../ui/Select';
 import { useToast } from '../../../ui/ToastProvider';
 
@@ -14,9 +12,12 @@ import {
   getAvailableTransitions,
   transitionRequiresReason,
 } from '../utils/lifecycleTransitions';
+import { SolButton } from './SolButton';
+import { SolInlineError } from './SolInlineError';
+import { V4Modal } from './V4Modal';
 
 /**
- * M2-5.4 — Modal de transition lifecycle (premier write V4).
+ * M2-5.4 / M2-5.11.A — Modal de transition lifecycle (premier write V4).
  *
  * Validation client : options new_state filtrées selon la matrice de
  * transitions depuis currentState, closure_reason affiché si requis. Le
@@ -25,6 +26,9 @@ import {
  *
  * Erreurs : 422 corrigeable → inline (modal reste ouverte) ; sinon → toast
  * + fermeture (cf. utils/errorClassifier).
+ *
+ * M2-5.11.A — passage sur V4Modal + SolButton + SolInlineError (audit UI
+ * Sol cross-pages P1 : modal Tailwind dans drawer Sol = anti-pattern §6.1).
  */
 export function LifecycleTransitionModal({ open, onClose, itemId, currentState, onSuccess }) {
   const [newState, setNewState] = useState('');
@@ -89,19 +93,39 @@ export function LifecycleTransitionModal({ open, onClose, itemId, currentState, 
 
   if (availableTransitions.length === 0) {
     return (
-      <Modal open={open} onClose={handleClose} title={TRANSITION_COPY.modalTitle}>
-        <p className="text-sm text-gray-600">{TRANSITION_COPY.noTransitionsAvailable}</p>
-        <div className="mt-4 flex justify-end">
-          <Button variant="ghost" onClick={handleClose}>
+      <V4Modal
+        open={open}
+        onClose={handleClose}
+        title={TRANSITION_COPY.modalTitle}
+        footer={
+          <SolButton variant="ghost" onClick={handleClose}>
             {TRANSITION_COPY.cancelButton}
-          </Button>
-        </div>
-      </Modal>
+          </SolButton>
+        }
+      >
+        <p className="text-[13px]" style={{ color: 'var(--sol-ink-700)' }}>
+          {TRANSITION_COPY.noTransitionsAvailable}
+        </p>
+      </V4Modal>
     );
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title={TRANSITION_COPY.modalTitle}>
+    <V4Modal
+      open={open}
+      onClose={handleClose}
+      title={TRANSITION_COPY.modalTitle}
+      footer={
+        <>
+          <SolButton variant="ghost" onClick={handleClose} disabled={loading}>
+            {TRANSITION_COPY.cancelButton}
+          </SolButton>
+          <SolButton onClick={handleSubmit} disabled={!canSubmit} loading={loading}>
+            {loading ? TRANSITION_COPY.submitLoading : TRANSITION_COPY.submitButton}
+          </SolButton>
+        </>
+      }
+    >
       <div className="space-y-4">
         <Select
           label={TRANSITION_COPY.fieldNewState}
@@ -141,27 +165,8 @@ export function LifecycleTransitionModal({ open, onClose, itemId, currentState, 
           maxLength={500}
         />
 
-        {inlineError && (
-          <div
-            role="alert"
-            className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-900"
-          >
-            <div className="font-medium">{inlineError.message}</div>
-            {inlineError.hint && (
-              <div className="mt-1 text-xs text-red-700">{inlineError.hint}</div>
-            )}
-          </div>
-        )}
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" onClick={handleClose} disabled={loading}>
-            {TRANSITION_COPY.cancelButton}
-          </Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit}>
-            {loading ? TRANSITION_COPY.submitLoading : TRANSITION_COPY.submitButton}
-          </Button>
-        </div>
+        <SolInlineError error={inlineError} />
       </div>
-    </Modal>
+    </V4Modal>
   );
 }
