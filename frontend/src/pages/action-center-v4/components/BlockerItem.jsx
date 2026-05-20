@@ -1,11 +1,8 @@
 import { useCallback, useState } from 'react';
 
-import Badge from '../../../ui/Badge';
-import Button from '../../../ui/Button';
-
 import {
+  BLOCKERS_SINCE_COPY,
   BLOCKER_RESOLVE_COPY,
-  BLOCKER_STATUS_BADGE_VARIANTS,
   BLOCKER_STATUS_LABELS,
   BLOCKER_TYPE_LABELS,
   TAB_COPY,
@@ -14,52 +11,134 @@ import { formatDateTimeFR } from '../utils/date';
 import { BlockerResolveModal } from './BlockerResolveModal';
 
 /**
- * M2-5.3.B / M2-5.6 — Affichage d'un blocker.
+ * M2-5.3.B / M2-5.6 / M2-5.10.B — Card d'un blocker (restyle Sol).
  *
- * Status dérivé de resolved_at : actif tant qu'il n'est pas résolu.
- * M2-5.6 : bouton « Résoudre » affiché uniquement si le blocage est actif
- * (`resolved_at === null`) → modal de résolution.
+ * Chip blocker style maquette §8.4 lignes 463-478 : préfixe ⊘ + label MONO
+ * + bg/border afaire (dashed) + « depuis X jours » dérivé client-side de
+ * `added_at`. Le bouton « Résoudre » est rendu en chip Sol attention.
+ *
+ * Status dérivé de `resolved_at` (jamais d'enum backend).
  */
+
+function daysSince(iso) {
+  if (!iso) return null;
+  const dt = new Date(iso);
+  if (Number.isNaN(dt.getTime())) return null;
+  const diffMs = Date.now() - dt.getTime();
+  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+}
+
 export function BlockerItem({ blocker, onResolveSuccess }) {
   const [modalOpen, setModalOpen] = useState(false);
   const handleOpenModal = useCallback(() => setModalOpen(true), []);
   const handleCloseModal = useCallback(() => setModalOpen(false), []);
 
-  const status = blocker.resolved_at ? 'resolved' : 'active';
-  const label = BLOCKER_STATUS_LABELS[status];
-  const variant = BLOCKER_STATUS_BADGE_VARIANTS[status];
-  const typeLabel = BLOCKER_TYPE_LABELS[blocker.blocker_type] || blocker.blocker_type;
   const isActive = !blocker.resolved_at;
+  const statusLabel = BLOCKER_STATUS_LABELS[isActive ? 'active' : 'resolved'];
+  const typeLabel = BLOCKER_TYPE_LABELS[blocker.blocker_type] || blocker.blocker_type;
+  const days = daysSince(blocker.added_at);
+  const daysText =
+    days != null
+      ? days === 1
+        ? BLOCKERS_SINCE_COPY.sinceDaysSingular(days)
+        : BLOCKERS_SINCE_COPY.sinceDaysPlural(days)
+      : null;
+
+  const palette = isActive
+    ? {
+        bg: 'var(--sol-afaire-bg)',
+        color: 'var(--sol-afaire-fg)',
+        border: 'var(--sol-afaire-line)',
+      }
+    : {
+        bg: 'var(--sol-succes-bg)',
+        color: 'var(--sol-succes-fg)',
+        border: 'var(--sol-succes-line)',
+      };
 
   return (
-    <article className="rounded border border-gray-200 p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-sm font-medium text-gray-900">{typeLabel}</div>
-          {blocker.justification && (
-            <div className="mt-1 text-sm text-gray-700">{blocker.justification}</div>
-          )}
+    <article
+      className="rounded-[6px] border p-3"
+      style={{
+        background: 'var(--sol-bg-paper)',
+        borderColor: 'var(--sol-rule)',
+      }}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <span
+            className="inline-flex items-center gap-1.5 rounded-[3px] border px-2.5 py-1 font-mono text-[10.5px] font-medium"
+            style={{
+              background: palette.bg,
+              color: palette.color,
+              borderColor: palette.border,
+              borderStyle: 'dashed',
+            }}
+          >
+            <span aria-hidden="true" className="opacity-85">
+              ⊘
+            </span>
+            {typeLabel}
+          </span>
+          <span
+            className="rounded-[2px] px-1.5 py-px font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em]"
+            style={{
+              background: palette.bg,
+              color: palette.color,
+            }}
+          >
+            {statusLabel}
+          </span>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <Badge status={variant}>{label}</Badge>
-          {isActive && (
-            <Button variant="ghost" size="sm" onClick={handleOpenModal}>
-              {BLOCKER_RESOLVE_COPY.buttonResolve}
-            </Button>
-          )}
-        </div>
+        {isActive && (
+          <button
+            type="button"
+            onClick={handleOpenModal}
+            className="inline-flex items-center rounded-[4px] border px-2.5 py-1 font-sans text-[11.5px] font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]"
+            style={{
+              background: 'var(--sol-bg-paper)',
+              color: 'var(--sol-afaire-fg)',
+              borderColor: 'var(--sol-afaire-line)',
+            }}
+          >
+            {BLOCKER_RESOLVE_COPY.buttonResolve}
+          </button>
+        )}
       </div>
 
-      <div className="mt-2 space-y-0.5 text-xs text-gray-500">
+      {blocker.justification && (
+        <p
+          className="mt-2 text-[12.5px] leading-[1.5]"
+          style={{
+            fontFamily: 'var(--sol-font-body)',
+            color: 'var(--sol-ink-700)',
+          }}
+        >
+          {blocker.justification}
+        </p>
+      )}
+
+      <div
+        className="mt-2 flex flex-wrap items-baseline gap-x-2 font-mono text-[10px] tracking-[0.02em]"
+        style={{ color: 'var(--sol-ink-500)' }}
+      >
         {blocker.added_at && (
-          <div>
+          <span>
             {TAB_COPY.reportedAtLabel} {formatDateTimeFR(blocker.added_at)}
-          </div>
+          </span>
+        )}
+        {daysText && isActive && (
+          <span aria-hidden={false}>
+            ·{' '}
+            <span style={{ fontStyle: 'italic', fontFamily: 'var(--sol-font-display)' }}>
+              {BLOCKERS_SINCE_COPY.prefix} {daysText}
+            </span>
+          </span>
         )}
         {blocker.resolved_at && (
-          <div>
-            {TAB_COPY.resolvedAtLabel} {formatDateTimeFR(blocker.resolved_at)}
-          </div>
+          <span>
+            · {TAB_COPY.resolvedAtLabel} {formatDateTimeFR(blocker.resolved_at)}
+          </span>
         )}
       </div>
 

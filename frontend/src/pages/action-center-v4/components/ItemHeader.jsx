@@ -1,30 +1,79 @@
-import { useCallback, useState } from 'react';
-
-import Button from '../../../ui/Button';
-
-import { A11Y_COPY, DOMAIN_LABELS, DRAWER_COPY, KIND_LABELS, TRANSITION_COPY } from '../constants';
+import {
+  A11Y_COPY,
+  DOMAIN_LABELS,
+  DRAWER_COPY,
+  KIND_LABELS,
+  KIND_LABELS_UPPER,
+  KIND_SOL_VARIANTS,
+} from '../constants';
 import { formatDateTimeFR } from '../utils/date';
-import { isTerminalState } from '../utils/lifecycleTransitions';
+import { DomainChip } from './DomainChip';
+import { KIND_ICONS } from './kindIcons';
 import { LifecycleBadge } from './LifecycleBadge';
-import { LifecycleTransitionModal } from './LifecycleTransitionModal';
+import { PriorityBadge } from './PriorityBadge';
 
 /**
- * M2-5.3.A / M2-5.4 — En-tête du drawer : titre + badge d'état + bouton
- * « Transitionner » + métadonnées.
+ * M2-5.3.A / M2-5.4 / M2-5.10.B — Title block du drawer (maquette §8.4 lignes
+ * 234-310 « d-title-block »).
  *
- * Le bouton ouvre la modal de transition lifecycle (M2-5.4) ; il reste
- * toujours visible mais est désactivé si l'item est dans un état terminal
- * (`closed`). Gère les états loading (skeleton) et error / item absent.
+ * H1 Fraunces 25px italique + summary (description) + status row (kind +
+ * priority + lifecycle + domain) + métadonnées footer mono uppercase.
+ *
+ * Restyle pixel-perfect Sol : on s'aligne sur les éléments backend exposés
+ * (title, description, kind, priority_bracket, priority_score, lifecycle_state,
+ * domain, created_at, updated_at). Le bouton « Transitionner » est désormais
+ * porté par `DrawerActions` (les 3 boutons header maquette — Planifier
+ * primary / Réassigner secondary / Plus ▾ avec menu).
+ *
+ * Hors scope M3+ : SLA pair (sla_treatment_at), evidence badge (expected_
+ * evidence), owner avatar (owner_id).
  */
-export function ItemHeader({ item, loading, error, onTransitionSuccess }) {
-  const [modalOpen, setModalOpen] = useState(false);
-  const handleOpenModal = useCallback(() => setModalOpen(true), []);
-  const handleCloseModal = useCallback(() => setModalOpen(false), []);
 
+/**
+ * Kind badge spécifique au header (« Type : Anomalie » MONO uppercase 10.5px,
+ * maquette ligne 253-263) — variante plus dense que `KindCell` de la table.
+ * Colocated ici car usage unique.
+ */
+function KindHeaderBadge({ kind }) {
+  const variant = KIND_SOL_VARIANTS[kind];
+  const Icon = KIND_ICONS[kind];
+  const label = KIND_LABELS_UPPER[kind] || A11Y_COPY.unknownKindLabel.toUpperCase();
+  if (!variant || !Icon) {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 rounded-[3px] border px-2.5 py-1 font-mono text-[10.5px] font-bold uppercase tracking-[0.08em]"
+        style={{
+          background: 'var(--sol-bg-panel)',
+          borderColor: 'var(--sol-ink-300)',
+          color: 'var(--sol-ink-500)',
+        }}
+      >
+        {label}
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-[3px] border px-2.5 py-1 font-mono text-[10.5px] font-bold uppercase tracking-[0.08em]"
+      style={{
+        background: variant.bg,
+        borderColor: variant.border,
+        borderStyle: variant.borderStyle,
+        color: variant.color,
+      }}
+      title={KIND_LABELS[kind]}
+    >
+      <Icon width={11} height={11} aria-hidden="true" />
+      Type : {KIND_LABELS[kind]}
+    </span>
+  );
+}
+
+export function ItemHeader({ item, loading, error }) {
   if (loading) {
     return (
       <header>
-        <div className="mb-2 h-7 w-2/3 animate-pulse rounded bg-gray-200" />
+        <div className="mb-3 h-7 w-2/3 animate-pulse rounded bg-gray-200" />
         <div className="h-4 w-1/3 animate-pulse rounded bg-gray-200" />
       </header>
     );
@@ -33,60 +82,94 @@ export function ItemHeader({ item, loading, error, onTransitionSuccess }) {
   if (error || !item) {
     return (
       <header>
-        <p className="text-sm text-red-700">{DRAWER_COPY.headerError}</p>
+        <p className="text-sm" style={{ color: 'var(--sol-refuse-fg)' }}>
+          {DRAWER_COPY.headerError}
+        </p>
       </header>
     );
   }
 
-  const isTerminal = isTerminalState(item.lifecycle_state);
-
   return (
-    <header>
-      <div className="flex items-start justify-between gap-3">
-        <h2 className="text-xl font-semibold text-gray-900">{item.title}</h2>
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          <LifecycleBadge state={item.lifecycle_state} />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleOpenModal}
-            disabled={isTerminal}
-            title={isTerminal ? TRANSITION_COPY.buttonTerminal : undefined}
-          >
-            {TRANSITION_COPY.buttonTransition}
-          </Button>
-        </div>
+    <header className="pb-3.5" style={{ borderBottom: '1px solid var(--sol-rule)' }}>
+      <h1
+        className="mb-2 text-[25px] font-medium leading-[1.18] tracking-[-0.018em]"
+        style={{
+          fontFamily: 'var(--sol-font-display)',
+          color: 'var(--sol-ink-900)',
+        }}
+      >
+        {item.title}
+      </h1>
+
+      {item.description && (
+        <p
+          className="text-[13.5px] leading-[1.5]"
+          style={{
+            fontFamily: 'var(--sol-font-body)',
+            color: 'var(--sol-ink-700)',
+          }}
+        >
+          {item.description}
+        </p>
+      )}
+
+      {/* Status row maquette §8.4 ligne 248-310. SLA pair + evidence badge =
+          dette M3+ (champs BE manquants — cf. BACKLOG_M3). */}
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        {item.kind && <KindHeaderBadge kind={item.kind} />}
+        <PriorityBadge bracket={item.priority_bracket} score={item.priority_score} />
+        <LifecycleBadge state={item.lifecycle_state} />
+        {item.domain && <DomainChip domain={item.domain} />}
       </div>
 
-      {item.description && <p className="mt-2 text-sm text-gray-600">{item.description}</p>}
+      {/* Métadonnées meta-grid simplifiée (Créé / MAJ uniquement — Responsable
+          + Détecté + SLA = dette M3+, cardinal owner BE manquant). */}
+      <dl
+        className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-[10px] uppercase tracking-[0.14em]"
+        style={{ color: 'var(--sol-ink-500)' }}
+      >
+        <div>
+          <dt className="mb-0.5">{DRAWER_COPY.createdAtLabel}</dt>
+          <dd
+            className="font-sans text-[12.5px] normal-case tracking-normal"
+            style={{ color: 'var(--sol-ink-900)' }}
+          >
+            {formatDateTimeFR(item.created_at)}
+          </dd>
+        </div>
+        <div>
+          <dt className="mb-0.5">{DRAWER_COPY.updatedAtLabel}</dt>
+          <dd
+            className="font-sans text-[12.5px] normal-case tracking-normal"
+            style={{ color: 'var(--sol-ink-900)' }}
+          >
+            {formatDateTimeFR(item.updated_at)}
+          </dd>
+        </div>
 
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500">
-        <dt>{DRAWER_COPY.domainLabel}</dt>
-        <dd className="text-gray-700">
-          {item.domain ? DOMAIN_LABELS[item.domain] || A11Y_COPY.unknownDomainLabel : '—'}
-        </dd>
-
-        <dt>{DRAWER_COPY.kindLabel}</dt>
-        <dd className="text-gray-700">
-          {item.kind ? KIND_LABELS[item.kind] || A11Y_COPY.unknownKindLabel : '—'}
-        </dd>
-
-        <dt>{DRAWER_COPY.createdAtLabel}</dt>
-        <dd className="text-gray-700">{formatDateTimeFR(item.created_at)}</dd>
-
-        <dt>{DRAWER_COPY.updatedAtLabel}</dt>
-        <dd className="text-gray-700">{formatDateTimeFR(item.updated_at)}</dd>
+        {item.domain && (
+          <div>
+            <dt className="mb-0.5">{DRAWER_COPY.domainLabel}</dt>
+            <dd
+              className="font-sans text-[12.5px] normal-case tracking-normal"
+              style={{ color: 'var(--sol-ink-900)' }}
+            >
+              {DOMAIN_LABELS[item.domain] || A11Y_COPY.unknownDomainLabel}
+            </dd>
+          </div>
+        )}
+        {item.kind && (
+          <div>
+            <dt className="mb-0.5">{DRAWER_COPY.kindLabel}</dt>
+            <dd
+              className="font-sans text-[12.5px] normal-case tracking-normal"
+              style={{ color: 'var(--sol-ink-900)' }}
+            >
+              {KIND_LABELS[item.kind] || A11Y_COPY.unknownKindLabel}
+            </dd>
+          </div>
+        )}
       </dl>
-
-      {modalOpen && (
-        <LifecycleTransitionModal
-          open
-          onClose={handleCloseModal}
-          itemId={item.id}
-          currentState={item.lifecycle_state}
-          onSuccess={onTransitionSuccess}
-        />
-      )}
     </header>
   );
 }

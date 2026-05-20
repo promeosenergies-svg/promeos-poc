@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
+import { Slash } from 'lucide-react';
 
-import Button from '../../../ui/Button';
 import EmptyState from '../../../ui/EmptyState';
 import ErrorState from '../../../ui/ErrorState';
 import Skeleton from '../../../ui/Skeleton';
@@ -41,7 +41,19 @@ export function BlockersTab({ itemId, itemClosed = false, onBlockerMutated }) {
     <div className="space-y-3">
       {!itemClosed && (
         <div className="flex justify-end">
-          <Button onClick={() => setAddModalOpen(true)}>{BLOCKER_ADD_COPY.buttonAddBlocker}</Button>
+          <button
+            type="button"
+            onClick={() => setAddModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-[4px] border px-3 py-1.5 font-sans text-[11.5px] font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]"
+            style={{
+              background: 'var(--sol-bg-paper)',
+              color: 'var(--sol-afaire-fg)',
+              borderColor: 'var(--sol-afaire-line)',
+            }}
+          >
+            <Slash size={12} aria-hidden="true" />
+            {BLOCKER_ADD_COPY.buttonAddBlocker}
+          </button>
         </div>
       )}
 

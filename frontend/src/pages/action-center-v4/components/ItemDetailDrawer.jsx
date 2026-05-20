@@ -4,8 +4,10 @@ import Drawer from '../../../ui/Drawer';
 import Tabs from '../../../ui/Tabs';
 
 import { useActionCenterV4Item } from '../../../hooks/v4';
-import { DRAWER_COPY, TAB_IDS, TAB_LABELS } from '../constants';
+import { DRAWER_COPY, DRAWER_FOOTER_COPY, TAB_IDS, TAB_LABELS } from '../constants';
+import { formatDateTimeFR } from '../utils/date';
 import { BlockersTab } from './BlockersTab';
+import { DrawerActions } from './DrawerActions';
 import { EvidencesTab } from './EvidencesTab';
 import { ItemHeader } from './ItemHeader';
 import { LinksTab } from './LinksTab';
@@ -19,12 +21,17 @@ const TAB_LIST = [
 ];
 
 /**
- * M2-5.3 / M2-5.4 — Drawer détail d'un item V4.
+ * M2-5.3 / M2-5.4 / M2-5.10.B — Drawer détail d'un item V4.
  *
  * Lecture : item + 4 onglets read-only, lazy par onglet (Set `loadedTabs`).
- * Écriture : une transition lifecycle réussie (depuis ItemHeader) déclenche un
- * refetch ciblé — item (header), events (remount de TimelineTab via `refreshKey`,
- * ce qui respecte le lazy) et liste parent (`onRefreshList`).
+ * Écriture : `DrawerActions` (3 boutons header maquette) déclenche les modals
+ * Transitionner / Bloquer / Ajouter preuve. Le succès remonte un refetch
+ * ciblé : item (header), events (remount TimelineTab via `refreshKey`,
+ * cohérent avec le lazy), liste parent (`onRefreshList`).
+ *
+ * M2-5.10.B — restyle Sol pixel-perfect maquette §8.4 : DrawerActions en
+ * haut, ItemHeader (title block + status row + métadonnées), Tabs, footer
+ * MONO « créé X · MAJ Y ».
  */
 export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
   const [activeTab, setActiveTab] = useState(TAB_IDS.timeline);
@@ -56,22 +63,16 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
     refetch: refetchItem,
   } = useActionCenterV4Item(itemId);
 
-  // Succès transition → refetch ciblé : item (header) + events (remount de
-  // TimelineTab via refreshKey) + liste parent.
+  // Succès transition lifecycle → refetch item (header) + remount Timeline +
+  // liste parent. Toutes les mutations (transition/upload/add) → remount
+  // Timeline pour exposer le nouvel event.
   const handleTransitionSuccess = useCallback(() => {
     refetchItem();
     setRefreshKey((k) => k + 1);
     onRefreshList?.();
   }, [refetchItem, onRefreshList]);
 
-  // Mutation evidence (upload/verify) → un event apparaît : on remonte la
-  // Timeline. Pas de refetch item (lifecycle inchangé) ni liste parent.
-  const handleEvidenceMutated = useCallback(() => {
-    setRefreshKey((k) => k + 1);
-  }, []);
-
-  // Mutation blocker (ajout/résolution) → idem evidence : on remonte la Timeline.
-  const handleBlockerMutated = useCallback(() => {
+  const handleMutated = useCallback(() => {
     setRefreshKey((k) => k + 1);
   }, []);
 
@@ -79,12 +80,13 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
 
   return (
     <Drawer open={open} onClose={onClose} title={DRAWER_COPY.drawerTitle} wide>
-      <ItemHeader
+      <DrawerActions
         item={item}
-        loading={itemLoading}
-        error={itemError}
         onTransitionSuccess={handleTransitionSuccess}
+        onMutated={handleMutated}
       />
+
+      <ItemHeader item={item} loading={itemLoading} error={itemError} />
 
       <div className="mt-4">
         <Tabs tabs={TAB_LIST} active={activeTab} onChange={handleTabChange} />
@@ -98,20 +100,45 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
           <EvidencesTab
             itemId={itemId}
             itemClosed={item?.lifecycle_state === 'closed'}
-            onEvidenceMutated={handleEvidenceMutated}
+            onEvidenceMutated={handleMutated}
           />
         )}
         {activeTab === TAB_IDS.blockers && loadedTabs.has(TAB_IDS.blockers) && (
           <BlockersTab
             itemId={itemId}
             itemClosed={item?.lifecycle_state === 'closed'}
-            onBlockerMutated={handleBlockerMutated}
+            onBlockerMutated={handleMutated}
           />
         )}
         {activeTab === TAB_IDS.links && loadedTabs.has(TAB_IDS.links) && (
           <LinksTab itemId={itemId} />
         )}
       </div>
+
+      {/* Footer drawer maquette ligne 1124-1133. */}
+      {item && (
+        <div
+          className="mt-6 flex flex-wrap items-baseline gap-x-3 pt-3 font-mono text-[9.5px] uppercase tracking-[0.06em]"
+          style={{
+            borderTop: '1px solid var(--sol-rule)',
+            color: 'var(--sol-ink-500)',
+          }}
+        >
+          <span>
+            {DRAWER_FOOTER_COPY.createdPrefix}{' '}
+            <span className="font-medium" style={{ color: 'var(--sol-ink-700)' }}>
+              {formatDateTimeFR(item.created_at)}
+            </span>
+          </span>
+          <span aria-hidden="true">·</span>
+          <span>
+            {DRAWER_FOOTER_COPY.updatedPrefix}{' '}
+            <span className="font-medium" style={{ color: 'var(--sol-ink-700)' }}>
+              {formatDateTimeFR(item.updated_at)}
+            </span>
+          </span>
+        </div>
+      )}
     </Drawer>
   );
 }

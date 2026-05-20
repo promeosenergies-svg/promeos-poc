@@ -1,16 +1,15 @@
 // @vitest-environment jsdom
 /**
- * M2-5.3.A / M2-5.4 — Tests du composant ItemHeader (rendu jsdom).
+ * M2-5.3.A / M2-5.4 / M2-5.10.B — Tests du composant ItemHeader (rendu jsdom).
+ *
+ * Restyle Sol M2-5.10.B : ItemHeader est désormais le title block pur
+ * (H1 Fraunces 25px + summary + status row + métadonnées). Le bouton
+ * « Transitionner » est porté par DrawerActions (couvert par
+ * `DrawerActions.test.jsx`).
  */
 import '@testing-library/jest-dom/vitest';
-import { afterEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, render, screen, fireEvent } from '@testing-library/react';
-
-// La modal de transition (montée au clic sur « Transitionner ») consomme
-// useToast → ToastProvider mocké pour ne pas exiger le Provider en test.
-vi.mock('../../../ui/ToastProvider', () => ({
-  useToast: () => ({ toast: vi.fn() }),
-}));
+import { afterEach, describe, expect, test } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
 
 import { ItemHeader } from '../components/ItemHeader';
 
@@ -33,28 +32,12 @@ describe('ItemHeader', () => {
         item={{
           title: 'Vérifier conso Q3',
           lifecycle_state: 'triaged',
-          domain: 'energy',
+          domain: 'optimisation',
         }}
       />
     );
     expect(screen.getByText('Vérifier conso Q3')).toBeInTheDocument();
     expect(screen.getByText('Trié')).toBeInTheDocument();
-  });
-
-  test('shows an em dash for each null metadata field', () => {
-    render(
-      <ItemHeader
-        item={{
-          title: 'X',
-          lifecycle_state: 'new',
-          domain: null,
-          kind: null,
-          created_at: null,
-          updated_at: null,
-        }}
-      />
-    );
-    expect(screen.getAllByText('—').length).toBe(4);
   });
 
   test('shows the description when present, hides it when null', () => {
@@ -67,40 +50,47 @@ describe('ItemHeader', () => {
     expect(screen.queryByText('desc1')).not.toBeInTheDocument();
   });
 
-  test('shows the Transitionner button enabled for a non-terminal item', () => {
-    render(<ItemHeader item={{ id: 'x', title: 'A', lifecycle_state: 'new' }} />);
-    expect(screen.getByRole('button', { name: /transitionner/i })).toBeEnabled();
-  });
-
-  test('disables the Transitionner button for a closed item', () => {
-    render(<ItemHeader item={{ id: 'x', title: 'A', lifecycle_state: 'closed' }} />);
-    expect(screen.getByRole('button', { name: /transitionner/i })).toBeDisabled();
-  });
-
-  test('clicking Transitionner opens the transition modal', () => {
-    render(<ItemHeader item={{ id: 'x', title: 'A', lifecycle_state: 'new' }} />);
-    fireEvent.click(screen.getByRole('button', { name: /transitionner/i }));
-    expect(screen.getByText(/transitionner l'action/i)).toBeInTheDocument();
-  });
-
-  // ── M2-5.9.bis — kind / domain en FR (P0-3 résiduel) ──────────────
-  test('renders kind and domain in FR, not the raw backend values', () => {
+  // ── M2-5.10.B — Sol status row (kind + priority + lifecycle + domain) ──
+  test('renders the FR domain via DomainChip (M2-5.10.B Sol)', () => {
     render(
       <ItemHeader
         item={{ title: 'X', lifecycle_state: 'new', kind: 'anomaly', domain: 'conformite' }}
       />
     );
-    expect(screen.getByText('Anomalie')).toBeInTheDocument();
-    expect(screen.getByText('Conformité')).toBeInTheDocument();
+    // « Conformité » apparaît dans le DomainChip ET dans la dl métadonnées
+    // (double rendu cardinal — chip header + label dl footer).
+    expect(screen.getAllByText('Conformité').length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('renders the kind badge with the FR label (Type : ...)', () => {
+    render(
+      <ItemHeader
+        item={{ title: 'X', lifecycle_state: 'new', kind: 'anomaly', domain: 'conformite' }}
+      />
+    );
+    // KindHeaderBadge rend « Type : Anomalie ».
+    expect(screen.getByText(/type\s*:\s*anomalie/i)).toBeInTheDocument();
+    // Le label brut backend n'est jamais visible (doctrine FR strict).
     expect(screen.queryByText('anomaly')).not.toBeInTheDocument();
     expect(screen.queryByText('conformite')).not.toBeInTheDocument();
   });
 
-  test('falls back to "inconnu" labels for unknown kind / domain', () => {
+  test('falls back to "TYPE INCONNU" / "Domaine inconnu" for unknown values', () => {
     render(
       <ItemHeader item={{ title: 'X', lifecycle_state: 'new', kind: 'zzz', domain: 'yyy' }} />
     );
-    expect(screen.getByText('Type inconnu')).toBeInTheDocument();
-    expect(screen.getByText('Domaine inconnu')).toBeInTheDocument();
+    // KindHeaderBadge unknown → coque neutre avec « TYPE INCONNU ».
+    expect(screen.getByText('TYPE INCONNU')).toBeInTheDocument();
+    // DomainChip + dl footer rendent tous deux le fallback (2 occurrences).
+    expect(screen.getAllByText('Domaine inconnu').length).toBe(2);
+  });
+
+  test('hides the domain block from the meta-grid when domain is null', () => {
+    const { container } = render(
+      <ItemHeader item={{ title: 'X', lifecycle_state: 'new', kind: null, domain: null }} />
+    );
+    // Avec kind+domain null, le KindHeaderBadge n'est pas rendu et la dl ne
+    // contient que Créé/MAJ (les 2 dt restant). Pas de placeholder « — ».
+    expect(container.querySelectorAll('dt').length).toBe(2);
   });
 });

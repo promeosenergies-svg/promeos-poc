@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
+import { FileUp } from 'lucide-react';
 
-import Button from '../../../ui/Button';
 import EmptyState from '../../../ui/EmptyState';
 import ErrorState from '../../../ui/ErrorState';
 import Skeleton from '../../../ui/Skeleton';
@@ -42,7 +42,19 @@ export function EvidencesTab({ itemId, itemClosed = false, onEvidenceMutated }) 
     <div className="space-y-3">
       {!itemClosed && (
         <div className="flex justify-end">
-          <Button onClick={() => setUploadModalOpen(true)}>{UPLOAD_COPY.buttonAddEvidence}</Button>
+          <button
+            type="button"
+            onClick={() => setUploadModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-[4px] border px-3 py-1.5 font-sans text-[11.5px] font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]"
+            style={{
+              background: 'var(--sol-bg-paper)',
+              color: 'var(--sol-attention-fg)',
+              borderColor: 'var(--sol-attention-line)',
+            }}
+          >
+            <FileUp size={12} aria-hidden="true" />
+            {UPLOAD_COPY.buttonAddEvidence}
+          </button>
         </div>
       )}
 

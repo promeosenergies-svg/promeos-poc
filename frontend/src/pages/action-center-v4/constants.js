@@ -301,6 +301,76 @@ export const A11Y_COPY = {
   unknownDomainLabel: 'Domaine inconnu',
 };
 
+// ── M2-5.10.B — Sol drawer copy + métadonnées ────────────────────
+//
+// Restyle pixel-perfect du drawer détail (maquette `centre_action_v4_detail_
+// drawer_v02.html` §7.3 + §8.4). Périmètre : éléments backend déjà exposés.
+// Hors scope (BACKLOG_M3) : priority explain R1-R6, impact 4 quadrants,
+// compliance card, scenarios, next action narrative, SLA, owner, audit mode,
+// breadcrumb dynamique.
+
+// 3 boutons header maquette lignes 689-732. Plus ▾ déploie un menu vers les
+// modals existants (Bloquer / Ajouter preuve / Clôturer).
+export const DRAWER_ACTIONS_COPY = {
+  primaryLabel: 'Transitionner',
+  primaryHint: 'Action principale',
+  secondaryLabel: 'Réassigner',
+  // Réassigner = dette M3+ (endpoint PATCH /items/{id}/assign manquant).
+  secondaryDisabledHint: 'Disponible M3 — endpoint owner manquant',
+  moreLabel: 'Plus',
+  moreAriaLabel: "Plus d'actions",
+  menuItemBlock: 'Signaler un blocage',
+  menuItemEvidence: 'Ajouter une preuve',
+  menuItemClose: 'Clôturer',
+  menuItemHistory: 'Historique complet',
+  // Élément disabled toujours visible (cardinal doctrine — pas de silence).
+  menuItemMerge: 'Fusionner',
+  menuItemMergeReason: 'aucun doublon',
+};
+
+// Layout audit-list maquette §8.4 lignes 614-637. Mapping acteur backend → UI :
+// `actor_role` peut valoir `system` (auto), `user` (humain), `null` (legacy).
+export const TIMELINE_ACTOR_COPY = {
+  systemLabel: 'PROMEOS',
+  fallbackActor: 'Système',
+};
+
+// Maquette §8.4 lignes 992-1011 — link-row 3 colonnes (label / value / action).
+// Le `target_id` UUID est masqué côté UI (cohérent doctrine §13.5 anti-bruit).
+export const LINKS_COPY = {
+  linkActionOpen: 'Ouvrir ↗',
+  noneFallback: 'aucun · créé par triage',
+};
+
+// Maquette §8.4 lignes 472-478 — blockers depuis « X jours ». Le compteur est
+// dérivé client-side de `added_at`. Singulier/pluriel + escalade > 7j.
+export const BLOCKERS_SINCE_COPY = {
+  prefix: 'depuis le',
+  sinceDaysSingular: (n) => `${n} jour`,
+  sinceDaysPlural: (n) => `${n} jours`,
+  escalationWarning: 'escalade automatique au manager si > 7 jours',
+};
+
+// Footer drawer maquette ligne 1124-1133.
+export const DRAWER_FOOTER_COPY = {
+  createdPrefix: 'Créé',
+  updatedPrefix: 'Mise à jour',
+  activityLabel: 'Activité',
+};
+
+// Placeholders « Disponible M3 » — affichés à la place des sections backend
+// manquantes pour expliciter la dette doctrinale sans masquer la vision.
+export const SECTION_M3_COPY = {
+  priorityExplainLabel: 'Pourquoi cette priorité',
+  impactLabel: 'Impact financier',
+  complianceLabel: 'Lien réglementaire',
+  scenariosLabel: 'Scénarios disponibles',
+  m3HintShort: 'Disponible M3+',
+  m3HintLong:
+    'Endpoint backend en cours de spécification (cf. BACKLOG_M3). ' +
+    "La section apparaîtra ici dès qu'il sera exposé.",
+};
+
 // ── M2-5.10.A — Fidélité doctrine Sol v0.2 (maquette referentiel) ──
 //
 // Restyle pixel-perfect des éléments déjà supportés backend. Hors-scope
