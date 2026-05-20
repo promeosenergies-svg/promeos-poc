@@ -11,7 +11,7 @@ Couverture :
 - Schema strict : extra fields → 422, display_name > 120 → 422
 """
 
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from models.v4.action_center_items import ActionCenterItem
 from models.v4.action_event_log import ActionEventLog
@@ -45,9 +45,13 @@ def _create_item(session_local, *, org_id: int = 1, title: str = "À assigner") 
 
 
 def _count_events(session_local, *, item_id: str, event_type: str | None = None) -> int:
+    # `action_item_id` est UUID(as_uuid=True) côté model — SQLAlchemy 2.x
+    # exige un objet UUID natif pour le filtre (sinon AttributeError sur
+    # `.hex`). `_create_item` retourne str(uuid4()) → cast explicite ici.
+    item_uuid = UUID(item_id) if isinstance(item_id, str) else item_id
     db = session_local()
     try:
-        q = db.query(ActionEventLog).filter(ActionEventLog.action_item_id == item_id)
+        q = db.query(ActionEventLog).filter(ActionEventLog.action_item_id == item_uuid)
         if event_type:
             q = q.filter(ActionEventLog.event_type == event_type)
         return q.count()
@@ -174,12 +178,15 @@ class TestAssignEventPayload:
             headers=_h(user_token),
             json={"owner_id": owner_uuid, "owner_display_name": "Audité"},
         )
+        # action_item_id est UUID natif côté model — cast explicite (cf.
+        # commentaire `_count_events` ligne 47).
+        item_uuid = UUID(item_id)
         db = session_local()
         try:
             event = (
                 db.query(ActionEventLog)
                 .filter(
-                    ActionEventLog.action_item_id == item_id,
+                    ActionEventLog.action_item_id == item_uuid,
                     ActionEventLog.event_type == "owner_changed",
                 )
                 .one()

@@ -38,6 +38,15 @@ const TH_CLASS =
   'border-b px-3 py-2.5 text-left font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] ' +
   'whitespace-nowrap';
 
+// M2-5.11.G — style commun aux 7 `<th>` (audit code-reviewer P2 : 21 lignes
+// `style={{...}}` dupliquées remplacées par 1 spread). Le `text-right` /
+// `text-center` reste sur le `className` (alignement par colonne).
+const TH_STYLE = {
+  background: 'var(--sol-bg-panel)',
+  borderColor: 'var(--sol-rule)',
+  color: 'var(--sol-ink-500)',
+};
+
 const TD_CLASS = 'px-3 py-3 align-middle';
 
 export function ItemsTable({ items, onOpenItem }) {
@@ -52,78 +61,29 @@ export function ItemsTable({ items, onOpenItem }) {
       <table className="w-full border-collapse text-[13px]">
         <thead>
           <tr>
-            <th
-              className={TH_CLASS}
-              style={{
-                background: 'var(--sol-bg-panel)',
-                borderColor: 'var(--sol-rule)',
-                color: 'var(--sol-ink-500)',
-              }}
-            >
+            <th className={TH_CLASS} style={TH_STYLE}>
               {SOL_COPY.filterLabelClassement}
             </th>
-            <th
-              className={TH_CLASS}
-              style={{
-                background: 'var(--sol-bg-panel)',
-                borderColor: 'var(--sol-rule)',
-                color: 'var(--sol-ink-500)',
-              }}
-            >
+            <th className={TH_CLASS} style={TH_STYLE}>
               {COPY.columnTitle}
             </th>
-            <th
-              className={TH_CLASS}
-              style={{
-                background: 'var(--sol-bg-panel)',
-                borderColor: 'var(--sol-rule)',
-                color: 'var(--sol-ink-500)',
-              }}
-            >
+            <th className={TH_CLASS} style={TH_STYLE}>
               {COPY.columnState}
             </th>
-            <th
-              className={TH_CLASS}
-              style={{
-                background: 'var(--sol-bg-panel)',
-                borderColor: 'var(--sol-rule)',
-                color: 'var(--sol-ink-500)',
-              }}
-            >
+            <th className={TH_CLASS} style={TH_STYLE}>
               {COPY.columnDomain}
             </th>
             {/* M2-5.11.D — colonne € (à risque 12m) — alignée droite, MONO
                 pour scan colonne CFO. La doctrine v0.3 §6.6 prescrit un
                 alignement à droite des montants pour lecture vertical. */}
-            <th
-              className={`${TH_CLASS} text-right`}
-              style={{
-                background: 'var(--sol-bg-panel)',
-                borderColor: 'var(--sol-rule)',
-                color: 'var(--sol-ink-500)',
-              }}
-            >
+            <th className={`${TH_CLASS} text-right`} style={TH_STYLE}>
               {COPY.columnAmount}
             </th>
             {/* M2-5.11.E — colonne Pilote (owner_display_name) avant Priorité. */}
-            <th
-              className={TH_CLASS}
-              style={{
-                background: 'var(--sol-bg-panel)',
-                borderColor: 'var(--sol-rule)',
-                color: 'var(--sol-ink-500)',
-              }}
-            >
+            <th className={TH_CLASS} style={TH_STYLE}>
               {COPY.columnOwner}
             </th>
-            <th
-              className={`${TH_CLASS} text-center`}
-              style={{
-                background: 'var(--sol-bg-panel)',
-                borderColor: 'var(--sol-rule)',
-                color: 'var(--sol-ink-500)',
-              }}
-            >
+            <th className={`${TH_CLASS} text-center`} style={TH_STYLE}>
               {COPY.columnPriority}
             </th>
           </tr>
@@ -189,9 +149,14 @@ export function ItemsTable({ items, onOpenItem }) {
                     <span style={{ color: 'var(--sol-ink-400)' }}>—</span>
                   )}
                 </td>
-                {/* M2-5.11.D — montant à risque 12m. `fmtEurShort` rend
-                    « 7,5 k€ » / « 1,2 M€ » / « — » si null. Couleur refuse
-                    (dérive émotionnelle) car c'est ce qui peut être perdu. */}
+                {/* M2-5.11.D / .G — montant à risque 12m. `fmtEurShort` rend
+                    « 7,5 k€ » / « 1,2 M€ » / « — » si null. M2-5.11.G : passé
+                    sur `--sol-ink-700` (au lieu de `--sol-refuse-fg`) car la
+                    saturation rouge sur les rows P0 cumulait strip + kind +
+                    badge + € (audit visuel — 4 teintes rouge sur 10cm).
+                    Le strip vertical 3px porte déjà la signature « dérive » ;
+                    l'œil suit. Null reste tiret mais en `--sol-ink-500`
+                    (WCAG AA 5.2:1 vs ink-400 3.45:1). */}
                 <td
                   className={`${TD_CLASS} text-right whitespace-nowrap`}
                   title={
@@ -203,18 +168,18 @@ export function ItemsTable({ items, onOpenItem }) {
                     style={{
                       color:
                         item.impact_at_risk_eur != null
-                          ? 'var(--sol-refuse-fg)'
-                          : 'var(--sol-ink-400)',
+                          ? 'var(--sol-ink-700)'
+                          : 'var(--sol-ink-500)',
                     }}
                   >
                     {fmtEurShort(item.impact_at_risk_eur)}
                   </span>
                 </td>
-                {/* M2-5.11.E — Pilote (snapshot display_name). Si pas
-                    assigné : libellé « Non assigné » ink-400 italique. Le
-                    bouton Assigner vit dans le drawer (ouvrable via clic
-                    sur la ligne) — pas d'action inline pour ne pas
-                    encombrer la colonne. */}
+                {/* M2-5.11.E / .G — Pilote (snapshot display_name). Si pas
+                    assigné : libellé « Non assigné » italique. Le bouton
+                    Assigner vit dans le drawer (ouvrable via clic sur la
+                    ligne) — pas d'action inline pour ne pas encombrer.
+                    M2-5.11.G : ink-400 (3.45:1) → ink-500 (5.2:1) WCAG AA. */}
                 <td className={TD_CLASS}>
                   {item.owner_display_name ? (
                     <span className="text-[12.5px]" style={{ color: 'var(--sol-ink-900)' }}>
@@ -224,7 +189,7 @@ export function ItemsTable({ items, onOpenItem }) {
                     <span
                       className="text-[12px] italic"
                       style={{
-                        color: 'var(--sol-ink-400)',
+                        color: 'var(--sol-ink-500)',
                         fontFamily: 'var(--sol-font-display)',
                       }}
                       title={COPY.ownerUnassignedTooltip}

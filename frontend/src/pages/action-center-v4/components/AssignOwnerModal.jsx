@@ -77,8 +77,15 @@ export function AssignOwnerModal({ open, onClose, item, onSuccess }) {
           message: err.message,
           status: err.response?.status,
         };
-        const tone = classifyError(normalized) === 'inline' ? 'warning' : 'error';
-        toast(toastMessageForError(normalized), tone);
+        // M2-5.11.G : si l'erreur est classée « inline » (validation Pydantic
+        // 422, conflit récupérable…), on garde la modal ouverte et on rend
+        // l'erreur via SolInlineError — l'utilisateur peut corriger le champ.
+        // Sinon (5xx, auth, réseau) on ferme + toast — pas de récupération.
+        if (classifyError(normalized) === 'inline') {
+          setClientError({ message: toastMessageForError(normalized) });
+          return;
+        }
+        toast(toastMessageForError(normalized), 'error');
         handleClose();
       }
     },

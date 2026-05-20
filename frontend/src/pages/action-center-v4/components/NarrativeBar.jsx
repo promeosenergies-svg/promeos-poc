@@ -69,7 +69,7 @@ export function NarrativeBar() {
   return (
     <div
       className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-5"
-      role="group"
+      role="list"
       aria-label="Synthèse du Centre d'action"
       data-testid="narrative-bar"
     >
@@ -87,6 +87,7 @@ export function NarrativeBar() {
 function StatTile({ value, label, tooltip, variant }) {
   return (
     <div
+      role="listitem"
       title={tooltip}
       className="flex flex-col items-start gap-0.5 rounded-[8px] border px-3 py-2.5"
       style={{

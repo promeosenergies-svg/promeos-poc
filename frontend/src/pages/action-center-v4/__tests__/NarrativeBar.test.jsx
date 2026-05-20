@@ -72,9 +72,11 @@ describe('NarrativeBar', () => {
       refetch: vi.fn(),
     });
     render(<NarrativeBar />);
-    // Le groupe est annoncé via role="group" + aria-label.
-    const group = screen.getByRole('group', { name: /synthèse du centre d'action/i });
-    expect(group).toBeInTheDocument();
+    // M2-5.11.G — sémantique passée à role="list" (5 tuiles = liste de stats)
+    // pour les lecteurs d'écran ; group n'est valable que pour un groupe
+    // d'éléments interactifs (audit code-reviewer P2).
+    const list = screen.getByRole('list', { name: /synthèse du centre d'action/i });
+    expect(list).toBeInTheDocument();
 
     // Les 5 valeurs apparaissent dans l'ordre canonique du tableau ci-dessus.
     const values = screen.getAllByTestId('stat-tile-value').map((n) => n.textContent);
@@ -85,8 +87,12 @@ describe('NarrativeBar', () => {
     expect(screen.getByText(/p0 actifs/i)).toBeInTheDocument();
     expect(screen.getByText(/p1 actifs/i)).toBeInTheDocument();
     expect(screen.getByText(/sans pilote/i)).toBeInTheDocument();
-    expect(screen.getByText(/à risque/i)).toBeInTheDocument();
-    expect(screen.getByText(/sécurisés/i)).toBeInTheDocument();
+    // M2-5.11.G — libellé renommé « À risque » → « Bloqués » pour lever
+    // l'ambiguïté sémantique avec ImpactSection.at_risk (montant € perdable).
+    expect(screen.getByText(/bloqués/i)).toBeInTheDocument();
+    // M2-5.11.G — libellé renommé « Sécurisés » → « Preuvés » pour lever
+    // l'ambiguïté sémantique avec ImpactSection.secured (activable potentiel).
+    expect(screen.getByText(/preuvés/i)).toBeInTheDocument();
   });
 
   test('renders zero values without crashing (empty org)', () => {

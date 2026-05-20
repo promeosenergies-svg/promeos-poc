@@ -78,22 +78,27 @@ export function PriorityQueueCard({ item, onOpenItem }) {
             Affiché uniquement quand un montant existe — pas de tiret bruit
             quand l'impact n'est pas encore calculé (cohérent §6.6 doctrine
             « pas de chiffre menteur »). */}
+        {/* M2-5.11.G : passé sur `--sol-ink-700` (au lieu de refuse-fg) —
+            le strip vertical 3px porte déjà la signature « dérive » P0/P1,
+            cumuler refuse-fg sur le montant créait une saturation rouge
+            (audit visuel post-M2-5.11). */}
         {item.impact_at_risk_eur != null && (
           <div
             className="mt-1 font-mono text-[12.5px] font-medium"
-            style={{ color: 'var(--sol-refuse-fg)' }}
+            style={{ color: 'var(--sol-ink-700)' }}
             title={COPY.amountTooltip}
           >
             {fmtEurShort(item.impact_at_risk_eur)}
           </div>
         )}
-        {/* M2-5.11.E — pilote sous le titre (à côté du €). Si non assigné,
-            on rend explicitement « Non assigné » ink-400 italique — c'est
-            une dette opérationnelle, pas un silence. */}
+        {/* M2-5.11.E / .G — pilote sous le titre (à côté du €). Si non assigné,
+            on rend explicitement « Non assigné » italique — c'est une dette
+            opérationnelle, pas un silence. M2-5.11.G : ink-400 (3.45:1) →
+            ink-500 (5.2:1) WCAG AA. */}
         <div
           className="mt-1 text-[12px]"
           style={{
-            color: item.owner_display_name ? 'var(--sol-ink-700)' : 'var(--sol-ink-400)',
+            color: item.owner_display_name ? 'var(--sol-ink-700)' : 'var(--sol-ink-500)',
             fontStyle: item.owner_display_name ? 'normal' : 'italic',
             fontFamily: item.owner_display_name
               ? 'var(--sol-font-body)'

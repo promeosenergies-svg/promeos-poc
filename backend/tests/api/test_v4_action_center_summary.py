@@ -12,7 +12,7 @@ Couverture :
 - Org-scoping : items / blockers / evidences d'une autre org jamais comptés
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from models.v4.action_blockers import ActionBlocker
@@ -93,8 +93,14 @@ def _add_evidence(session_local, *, item_id, org_id: int = 1, verified: bool = F
             uploaded_by=uuid4(),
         )
         if verified:
-            e.verified_at = datetime.now(UTC)
+            # IE2 ADR-029 (chk_evidence_verified_consistency) : verified_at +
+            # verified_by + expires_at sont NOT NULL ensemble. Doctrine v0.3
+            # pose la rétention vérification à +90j (IE6) ; en test on choisit
+            # 365j arbitraire (pas asserté, juste non-NULL).
+            now = datetime.now(UTC)
+            e.verified_at = now
             e.verified_by = uuid4()
+            e.expires_at = now + timedelta(days=365)
         db.add(e)
         db.commit()
     finally:

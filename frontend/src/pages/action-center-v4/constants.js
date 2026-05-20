@@ -520,16 +520,25 @@ export const NARRATIVE_BAR_COPY = {
   p0Label: 'P0 actifs',
   p1Label: 'P1 actifs',
   withoutOwnerLabel: 'Sans pilote',
-  atRiskLabel: 'À risque',
-  securedLabel: 'Sécurisés',
+  // M2-5.11.G : libellé « Bloqués » pour lever l'ambiguïté avec
+  // `ImpactSection.at_risk` (qui mesure un montant € à perdre — différent
+  // d'un item bloqué par une dépendance non résolue).
+  atRiskLabel: 'Bloqués',
+  // M2-5.11.G : « Preuvés » plutôt que « Sécurisés » — `ImpactSection.secured`
+  // signifie « activable immédiatement » (potentiel), pas « gain figé ». Les
+  // deux sens cohabitent doctrine v0.3 ; le mot « Preuvés » dit factuellement
+  // ce que le compteur mesure : il y a une evidence vérifiée.
+  securedLabel: 'Preuvés',
   // Tooltips contextuels (title=) — explicitent la définition exacte du
   // compteur, accessibles à la souris et aux lecteurs d'écran.
   p0Tooltip: 'Items P0 actifs (lifecycle ≠ clos) sur le périmètre courant.',
   p1Tooltip: 'Items P1 actifs (lifecycle ≠ clos) sur le périmètre courant.',
   withoutOwnerTooltip:
-    'Items actifs sans pilote assigné. Affectation responsable arrive dans une prochaine version.',
-  atRiskTooltip: 'Items actifs avec au moins un blocage non résolu — intervention requise.',
-  securedTooltip: 'Items actifs avec au moins une preuve vérifiée — auditable à date.',
+    'Items actifs sans pilote assigné. Cliquer sur un item dans le tableau pour assigner via le drawer.',
+  atRiskTooltip:
+    "Items actifs avec ≥ 1 blocage non résolu — un dépendance externe (preuve, budget, tiers) attend résolution. Distinct du montant « à risque » de l'impact financier.",
+  securedTooltip:
+    "Items actifs avec ≥ 1 preuve vérifiée — auditable à date. Ne confond pas avec « Sécurisable » de l'impact financier (qui mesure le potentiel activable).",
   // États non-data (loading / error / no-data).
   loadingLabel: 'Synthèse en cours…',
   errorTitle: 'Impossible de charger la synthèse',
