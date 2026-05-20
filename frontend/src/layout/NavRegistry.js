@@ -79,6 +79,11 @@ export const ROUTE_MODULE_MAP = {
   '/actions/:actionId': 'cockpit',
   '/anomalies': 'cockpit',
   '/action-center': 'cockpit',
+  // M2-5.11 — refonte Centre d'Action V4 (NarrativeBar + colonne € + Pilote).
+  // Le module canonique reste `cockpit` (action-center bell + nav AppShell).
+  '/action-center-v4': 'cockpit',
+  '/action-center-v4/pilotage': 'cockpit',
+  '/action-center-v4/pilotage/journal': 'cockpit',
 
   // Conformité (module autonome)
   '/conformite': 'conformite',
@@ -459,18 +464,16 @@ export const QUICK_ACTIONS = [
   },
   { key: 'import', label: 'Importer', icon: Import, to: '/import', keywords: ['csv', 'upload'] },
   {
-    // 2026-05-02 — Repoint `/action-center` → `/anomalies`. La page dédiée
-    // ActionCenterPage avait un bug de rendu silencieux (.catch(()=>[]) qui
-    // masque les erreurs API), tandis que /anomalies (AnomaliesPage) sert
-    // déjà le hub unifié 4 piliers — adoptée par CockpitDecision "Voir
-    // actions" + briefing du jour. Doctrine §6.2 anti-pattern "chemins
-    // multiples" : on consolide sur la route qui marche. La route
-    // `/action-center` redirige vers `/anomalies` côté App.jsx pour
-    // rétro-compat bookmarks.
+    // 2026-05-02 — Repoint `/action-center` → `/anomalies`.
+    // 2026-05-20 — M2-5.11 audit routes : la refonte V4 (NarrativeBar + €
+    // + Pilote + drawer assign) remplace AnomaliesPage. Le hub canonique
+    // est désormais `/action-center-v4/pilotage` (file prioritaire). Quick
+    // action repointée pour cohérence rail nav + command palette. Doctrine
+    // §6.2 « chemins multiples vers même intention » : on consolide.
     key: 'centre',
     label: 'Détection automatique',
     icon: AlertTriangle,
-    to: '/anomalies',
+    to: '/action-center-v4/pilotage',
     keywords: ['anomalies', 'actions', 'inbox', 'centre', 'detection'],
   },
   {
@@ -491,7 +494,10 @@ export const QUICK_ACTIONS = [
     key: 'copilot',
     label: 'Actions Copilot',
     icon: Sparkles,
-    to: '/anomalies?tab=actions&source=copilot',
+    // M2-5.11 audit routes — query string conservée pour le filtre source
+    // copilot (la V4 lira le param `source` en M3+ ; en attendant, le hub
+    // V4 ignore les params inconnus et rend la file complète).
+    to: '/action-center-v4/pilotage?source=copilot',
     keywords: ['copilot', 'ia', 'intelligence', 'recommandations'],
   },
   {
@@ -645,17 +651,18 @@ export const NAV_SECTIONS = [
         ],
       },
       // Phase 1.C — P0.3 : exposition du Centre d'action en item Accueil.
-      // 2026-05-02 — Repoint `/action-center` → `/anomalies`. AnomaliesPage
-      // est le hub canonique 4 piliers (déjà adopté par CockpitDecision
-      // "Voir N actions"). Doctrine §6.2 anti-pattern "chemins multiples" :
-      // une seule page sœur pour la même intention. Cloche header
-      // (AppShell.jsx) + raccourci Ctrl+Shift+L restent surfaces
-      // complémentaires (peek transverse vs navigation explicite).
+      // 2026-05-02 — Repoint `/action-center` → `/anomalies` (legacy hub).
+      // 2026-05-20 — M2-5.11 livre la refonte V4 complète (NarrativeBar
+      // 5 stats CFO + colonne € + colonne Pilote + drawer + workflow
+      // assign). Le hub canonique bascule sur `/action-center-v4/pilotage`
+      // (file prioritaire = vue matin Resp. Énergie, cohérent LoginPage
+      // post-login redirect). La page `/anomalies` reste accessible via
+      // deep link mais n'est plus l'entrée nav par défaut.
       {
-        to: '/anomalies',
+        to: '/action-center-v4/pilotage',
         icon: Inbox,
         label: "Centre d'action",
-        desc: 'Anomalies, actions et notifications à traiter',
+        desc: 'File prioritaire, pilotes et impact financier (refonte V4)',
         badgeKey: 'actionCenter',
         keywords: [
           'action',
@@ -1141,7 +1148,7 @@ export const HIDDEN_PAGES = [
     section: 'Accueil',
     hidden: true,
     reason:
-      'deep-link-only : URL legacy maintenue pour rétro-compat bookmarks + search palette ⌘K. Repoint 2026-05-02 — le hub canonique est désormais /anomalies (AnomaliesPage). La route /action-center redirige côté App.jsx vers /anomalies pour préserver les liens externes.',
+      'deep-link-only : URL legacy maintenue pour rétro-compat bookmarks + search palette ⌘K. M2-5.11 audit routes : le hub canonique est désormais /action-center-v4/pilotage (refonte V4). La route /action-center redirige côté App.jsx vers V4 quand le feature flag est ON, sinon vers /anomalies (kill-switch). Suppression complète prévue L8 plan suppression legacy Mois 5.',
   },
 ];
 

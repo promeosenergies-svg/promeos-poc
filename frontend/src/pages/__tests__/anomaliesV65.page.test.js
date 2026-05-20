@@ -167,14 +167,19 @@ describe('E. App.jsx — routing', () => {
     expect(code).toMatch(/AnomaliesPage.*=.*lazy.*import.*AnomaliesPage/s);
   });
 
-  it('/anomalies route uses AnomaliesPage, not a Navigate redirect', () => {
-    // Find the route block (may span multiple lines after formatting)
+  it('/anomalies route renders AnomaliesPage in kill-switch (V4 flag OFF) + redirects to V4 when flag ON', () => {
+    // M2-5.11 audit routes — quand `isActionCenterV4Enabled()` est ON, la
+    // route /anomalies redirige vers /action-center-v4/pilotage (refonte V4
+    // = hub canonique). Quand OFF (kill-switch), AnomaliesPage rendue.
+    // Le test vérifie la coexistence des deux branches dans le code source.
     const lines = code.split('\n');
     const idx = lines.findIndex((l) => l.includes('path="/anomalies"'));
     expect(idx).toBeGreaterThanOrEqual(0);
-    const routeBlock = lines.slice(idx, idx + 6).join('\n');
-    expect(routeBlock).not.toMatch(/Navigate/);
+    const routeBlock = lines.slice(idx, idx + 15).join('\n');
+    // Les deux branches doivent être présentes (Navigate V4 + AnomaliesPage fallback).
     expect(routeBlock).toMatch(/AnomaliesPage/);
+    expect(routeBlock).toMatch(/action-center-v4\/pilotage/);
+    expect(routeBlock).toMatch(/isActionCenterV4Enabled/);
   });
 });
 

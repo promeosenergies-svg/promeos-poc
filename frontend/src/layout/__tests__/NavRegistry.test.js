@@ -360,17 +360,17 @@ describe('Vocabulary V7', () => {
 describe("Phase 1.C — P0.3 Centre d'action (panel Accueil)", () => {
   // Audit §4.4 + §7 Q2 : Centre d'action exposé en 3e position du panel
   // Accueil pour discoverability (icône Inbox, badge actionCenter).
-  // 2026-05-02 : route repointée /action-center → /anomalies. AnomaliesPage
-  // est le hub canonique 4 piliers (déjà adopté par CockpitDecision "Voir
-  // N actions"). Doctrine §6.2 anti-pattern "chemins multiples" : une
-  // seule page sœur. La route /action-center reste mappée module cockpit
-  // dans ROUTE_MODULE_MAP pour la rétro-compat des bookmarks (redirect
-  // App.jsx vers /anomalies).
+  // 2026-05-02 : route repointée /action-center → /anomalies (legacy hub).
+  // 2026-05-20 : M2-5.11 livre la refonte V4 (NarrativeBar 5 stats CFO +
+  // colonne € + colonne Pilote + workflow assign). Le hub canonique bascule
+  // sur /action-center-v4/pilotage (file prioritaire = vue matin Resp.
+  // Énergie, cohérent LoginPage post-login redirect). /anomalies reste
+  // accessible en deep-link mais n'est plus l'entrée nav par défaut.
 
   it("Centre d'action est en 3e position de la section Accueil", () => {
     const cockpit = NAV_SECTIONS.find((s) => s.module === 'cockpit');
     expect(cockpit.items).toHaveLength(3);
-    expect(cockpit.items[2].to).toBe('/anomalies');
+    expect(cockpit.items[2].to).toBe('/action-center-v4/pilotage');
     expect(cockpit.items[2].label).toBe("Centre d'action");
   });
 

@@ -1281,7 +1281,7 @@ function FileTraitement({ priorities, loading, remainingCount = 0 }) {
       {remainingCount > 0 && (
         <div className="mt-2 flex justify-end">
           <Link
-            to="/anomalies?status=open&sort=urgency_then_impact_desc"
+            to="/action-center-v4/pilotage"
             className="font-mono uppercase tracking-[0.06em] no-underline hover:underline inline-flex items-center gap-1"
             style={{ fontSize: 10.5, color: 'var(--sol-ink-500)' }}
           >
@@ -1531,7 +1531,7 @@ export default function CockpitPilotage() {
         <div className="flex gap-1.5 flex-wrap items-center">
           {alertsTotal > 0 && (
             <Link
-              to="/anomalies?status=open"
+              to="/action-center-v4/pilotage"
               className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono uppercase tracking-[0.04em] no-underline hover:bg-[var(--sol-bg-canvas)]"
               style={{
                 fontSize: 11,
@@ -1557,7 +1557,7 @@ export default function CockpitPilotage() {
           )}
           <button
             type="button"
-            onClick={() => navigate('/anomalies?status=open')}
+            onClick={() => navigate('/action-center-v4/pilotage')}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-colors hover:bg-[var(--sol-bg-canvas)]"
             style={{
               fontSize: 13,
@@ -1627,9 +1627,12 @@ export default function CockpitPilotage() {
               const ctaLabel = isAggregated
                 ? `Voir les ${p._aggregated_count} actions`
                 : "Voir l'action";
-              const ctaHref = isAggregated
-                ? `/anomalies?domain=${encodeURIComponent(p.domain || '')}&urgency=${encodeURIComponent(p.urgency || '')}&status=open`
-                : p.action_url;
+              // M2-5.11 audit routes — anomalies legacy bus repointé vers le
+              // hub V4. Les query params (domain, urgency, status) seront lus
+              // côté V4 en M3+ (filtres serveur). En attendant, on envoie sur
+              // la file prioritaire qui par défaut montre les P0/P1 actifs —
+              // équivalent fonctionnel du `?status=open` legacy.
+              const ctaHref = isAggregated ? '/action-center-v4/pilotage' : p.action_url;
               return (
                 <DecisionEvidenceCard
                   key={p.rank}

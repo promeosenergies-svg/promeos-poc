@@ -54,14 +54,21 @@ const SMART_QUERIES = [
     match: /^actions?\s*:\s*urgent/i,
     label: 'Actions urgentes',
     subtitle: 'Actions P0 en cours',
-    to: '/anomalies?tab=actions&priority=urgent',
+    // M2-5.11 audit routes — pointage direct sur la file prioritaire V4
+    // (qui par défaut affiche les P0/P1 actifs triés priority_score DESC,
+    // sémantiquement équivalent à `tab=actions&priority=urgent` legacy).
+    to: '/action-center-v4/pilotage',
     section: 'Query',
   },
   {
     match: /^actions?\s*:\s*(retard|en[-\s]?retard)/i,
     label: 'Actions en retard',
     subtitle: 'Actions dont la date limite est dépassée',
-    to: '/anomalies?tab=actions&filter=late',
+    // M2-5.11 audit routes — filtre `late` legacy pas encore reproduit
+    // côté V4 (dette M3+ filtres serveur). En attendant on envoie sur le
+    // référentiel V4 complet ; le filtre client kind/lifecycle restera
+    // dispo pour cibler les retards manuellement.
+    to: '/action-center-v4',
     section: 'Query',
   },
   {
