@@ -663,9 +663,12 @@ export function computeHealthState({
       ? { label: "Plan d'action", to: '/actions' }
       : { label: 'Explorer', to: '/consommations/explorer' };
 
+  // M2-5.11 audit routes — CTA dashboard repointé sur le hub V4 (refonte
+  // Centre d'Action). `/anomalies` redirige via App.jsx mais on évite le
+  // double-hop en pointant directement la cible canonique.
   const secondaryCta =
     reasons.length > 3
-      ? { label: `Voir les ${reasons.length} points`, to: '/anomalies' }
+      ? { label: `Voir les ${reasons.length} points`, to: '/action-center-v4/pilotage' }
       : undefined;
 
   return {

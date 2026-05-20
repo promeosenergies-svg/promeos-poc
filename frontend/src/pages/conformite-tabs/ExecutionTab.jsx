@@ -287,7 +287,10 @@ export default function ExecutionTab({
         variant="secondary"
         size="sm"
         onClick={() => {
-          navigate('/anomalies?tab=actions');
+          // M2-5.11 audit routes — bascule sur le hub V4 (la refonte
+          // remplace AnomaliesPage `tab=actions`, et le référentiel V4
+          // expose le filtre `kind=action` côté client).
+          navigate('/action-center-v4');
           track('conformite_goto_plan_actions');
         }}
       >

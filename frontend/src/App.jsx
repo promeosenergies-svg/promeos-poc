@@ -27,13 +27,15 @@ const CommandCenter = lazy(() => import('./pages/CommandCenter'));
 // route canonique /cockpit/jour pointe désormais vers la composition pure L11.
 const CockpitJour = lazy(() => import('./pages/CockpitJour'));
 const CockpitPilotage = lazy(() => import('./pages/CockpitPilotage'));
-const CockpitDecision = lazy(() => import('./pages/CockpitDecision'));
+// M2-5.11 audit routes — CockpitDecision et Cockpit imports lazy retirés
+// (orphelins : jamais routés, remplacés par CockpitStrategique et CockpitJour
+// depuis Phase 3.5 Vague D.5). Fichiers physiques conservés jusqu'au L8
+// plan suppression legacy Mois 5 ; on retire juste de l'arbre de modules.
 const Patrimoine = lazy(() => import('./pages/Patrimoine'));
 const Site360 = lazy(() => import('./pages/Site360'));
 const ActionsPage = lazy(() => import('./pages/ActionsPage'));
 const ConformitePage = lazy(() => import('./pages/ConformitePage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
-const Cockpit = lazy(() => import('./pages/Cockpit'));
 // Phase 3.5 Vague D.5 — page Synthèse Stratégique data-driven from scratch (ADR-023)
 const CockpitStrategique = lazy(() => import('./pages/CockpitStrategique'));
 const RegOps = lazy(() => import('./pages/RegOps'));
@@ -63,7 +65,9 @@ const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
 const AdminRolesPage = lazy(() => import('./pages/AdminRolesPage'));
 const AdminAssignmentsPage = lazy(() => import('./pages/AdminAssignmentsPage'));
 const AdminAuditLogPage = lazy(() => import('./pages/AdminAuditLogPage'));
-const AdminKBMetricsPage = lazy(() => import('./pages/AdminKBMetricsPage'));
+// AdminKBMetricsPage : orphelin (import jamais consommé par aucune route ni
+// composant). Fichier physique conservé jusqu'au L8 plan suppression legacy
+// Mois 5. Retrait de l'import lazy → moins de chunks dans le bundle.
 const CxDashboardPage = lazy(() => import('./pages/admin/CxDashboardPage'));
 const EnedisPromotionHealthPage = lazy(() => import('./pages/EnedisPromotionHealthPage'));
 const ConsumptionExplorerPage = lazy(() => import('./pages/ConsumptionExplorerPage'));
@@ -290,6 +294,15 @@ function App() {
                             d'autres routes legacy ; sera décommissionné Étape 3 du sprint.
                             Sprint Grammaire v1.2 / Phase 3.4 : /cockpit/jour pointe désormais
                             sur CockpitJour (composition pure primitifs grammar/hub L11). */}
+                                    {/* M2-5.11 audit routes — route /cockpit manquait (le
+                                        COMMAND_SHORTCUTS y pointait sans cible, l'URL retombait
+                                        sur la redirect root). Ajoutée : alias canonique du
+                                        briefing L11 Energy Manager (cohérent doctrine §6.2 +
+                                        commentaire ci-dessus « /cockpit → redirect /cockpit/jour »). */}
+                                    <Route
+                                      path="/cockpit"
+                                      element={<Navigate to="/cockpit/jour" replace />}
+                                    />
                                     <Route
                                       path="/cockpit/jour"
                                       element={
@@ -316,13 +329,25 @@ function App() {
                                         </PageSuspense>
                                       }
                                     />{' '}
-                                    {/* 2026-05-02 — Repoint /action-center → /anomalies.
-                                AnomaliesPage est le hub canonique 4 piliers (cf
-                                NavRegistry §Sol nav + Quick Action 'centre').
-                                Redirect préservé pour rétro-compat bookmarks. */}
+                                    {/* M2-5.11 — Centre d'Action V4 livré (merge PR #280).
+                                        Quand le flag V4 est ON, l'alias legacy /action-center
+                                        redirige directement vers la file prioritaire V4 (au
+                                        lieu de passer par /anomalies — anti-pattern doctrine
+                                        §6.2 chemins multiples vers même intention). Quand le
+                                        flag est OFF (kill-switch), retour à l'alias legacy
+                                        vers /anomalies pour rétro-compat bookmarks. */}
                                     <Route
                                       path="/action-center"
-                                      element={<Navigate to="/anomalies" replace />}
+                                      element={
+                                        <Navigate
+                                          to={
+                                            isActionCenterV4Enabled()
+                                              ? '/action-center-v4/pilotage'
+                                              : '/anomalies'
+                                          }
+                                          replace
+                                        />
+                                      }
                                     />{' '}
                                     {/* M2-5.2 — Centre d'Action V4. Flag OFF =
                                         route absente (404 standard), legacy intact. */}
@@ -650,13 +675,22 @@ function App() {
                                         </PageSuspense>
                                       }
                                     />
-                                    {/* URL aliases (redirect to canonical routes) */}{' '}
+                                    {/* M2-5.11 — quand le flag Action Center V4 est ON,
+                                        /anomalies redirige vers /action-center-v4/pilotage
+                                        (la refonte V4 est le hub canonique, AnomaliesPage
+                                        legacy n'est plus rendue — doctrine §6.2 : pas de
+                                        coexistence legacy/refonte). Le composant AnomaliesPage
+                                        reste importé pour le kill-switch flag=OFF. */}
                                     <Route
                                       path="/anomalies"
                                       element={
-                                        <PageSuspense>
-                                          <AnomaliesPage />
-                                        </PageSuspense>
+                                        isActionCenterV4Enabled() ? (
+                                          <Navigate to="/action-center-v4/pilotage" replace />
+                                        ) : (
+                                          <PageSuspense>
+                                            <AnomaliesPage />
+                                          </PageSuspense>
+                                        )
                                       }
                                     />
                                     {/* Sprint 1.10 — page 10/10 Flex Intelligence (couverture nav 100%). */}

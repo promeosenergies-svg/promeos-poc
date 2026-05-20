@@ -39,12 +39,15 @@ describe('V7 Nav Refactor guard-rails', () => {
     // de la cloche header AppShell + raccourci Ctrl+Shift+L. Les 3 surfaces
     // sont contextes d'usage distincts (cf. doctrine §6.2 anti-pattern
     // "chemins multiples" — exception justifiée).
+    // M2-5.11 audit routes — 3e item « Centre d'action » repointé sur la
+    // refonte V4 (NarrativeBar + colonne € + Pilote). L'ancien hub
+    // /anomalies est remplacé par /action-center-v4/pilotage.
     const cockpit = NAV_SECTIONS.find((s) => s.key === 'cockpit');
     expect(cockpit.items).toHaveLength(3);
     expect(cockpit.items.map((i) => i.to)).toEqual([
       '/cockpit/jour',
       '/cockpit/strategique',
-      '/anomalies',
+      '/action-center-v4/pilotage',
     ]);
   });
 
