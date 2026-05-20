@@ -29,6 +29,7 @@ import {
   useActionCenterV4Impact,
 } from '../../../hooks/v4';
 import { ActionCenterV4PilotagePage } from '../ActionCenterV4PilotagePage';
+import { setupV4HooksDefault } from './testUtils/v4Mocks';
 
 function render(ui) {
   return rtlRender(
@@ -36,31 +37,17 @@ function render(ui) {
   );
 }
 
-const emptyList = {
-  data: { items: [], total: 0 },
-  loading: false,
-  error: null,
-  refetch: vi.fn(),
-};
-
 beforeEach(() => {
   vi.clearAllMocks();
-  useActionCenterV4Items.mockReturnValue(emptyList);
-  useActionCenterV4Item.mockReturnValue({
-    data: null,
-    loading: false,
-    error: null,
-    refetch: vi.fn(),
-  });
-  useActionCenterV4Events.mockReturnValue(emptyList);
-  useActionCenterV4Evidences.mockReturnValue(emptyList);
-  useActionCenterV4Blockers.mockReturnValue(emptyList);
-  useActionCenterV4Links.mockReturnValue(emptyList);
-  useActionCenterV4Impact.mockReturnValue({
-    data: null,
-    loading: true,
-    error: null,
-    refetch: vi.fn(),
+  // M2-5.11.B — défauts partagés (cf. testUtils/v4Mocks.js).
+  setupV4HooksDefault({
+    useActionCenterV4Items,
+    useActionCenterV4Item,
+    useActionCenterV4Events,
+    useActionCenterV4Evidences,
+    useActionCenterV4Blockers,
+    useActionCenterV4Links,
+    useActionCenterV4Impact,
   });
 });
 

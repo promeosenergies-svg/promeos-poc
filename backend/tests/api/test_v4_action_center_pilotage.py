@@ -64,6 +64,25 @@ class TestPilotageAuth:
         r = client.get(URL, headers=_h(viewer_token))
         assert r.status_code == 200
 
+    def test_cross_org_user_never_sees_other_org_items(self, app_client, user_token_org_2):
+        """M2-5.11.B — IDOR cross-org sur la file prioritaire.
+
+        Items P0/P1 actifs de l'org 1 → user_token_org_2 voit `items=[]`
+        (org-scoping fail-closed via `_apply_scope`, IS3 anti-leak).
+        Pas de 403 — la file existe pour l'org 2, juste vide.
+        """
+        client, session_local = app_client
+        _add_item(
+            session_local,
+            org_id=1,
+            priority_bracket="P0",
+            priority_score=95.0,
+            title="Org-1 vedette",
+        )
+        r = client.get(URL, headers=_h(user_token_org_2))
+        assert r.status_code == 200
+        assert r.json()["items"] == []
+
 
 class TestPilotageFilters:
     def test_excludes_closed_items(self, app_client, user_token):

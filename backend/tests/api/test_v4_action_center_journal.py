@@ -77,6 +77,29 @@ class TestJournalAuth:
         r = client.get(URL, headers=_h(viewer_token))
         assert r.status_code == 200
 
+    def test_cross_org_user_never_sees_other_org_events(self, app_client, user_token_org_2):
+        """M2-5.11.B — IDOR cross-org sur le journal.
+
+        Events de l'org 1 (cross-items) → user_token_org_2 voit
+        `items=[], total=0` (fail-closed via `_apply_scope`, IS3 anti-leak).
+        """
+        client, session_local = app_client
+        now = datetime.now(UTC)
+        _add_item_with_events(
+            session_local,
+            org_id=1,
+            item_title="Org-1 audit",
+            events=[
+                {"event_type": "created", "occurred_at": now - timedelta(hours=1)},
+                {"event_type": "state_changed", "occurred_at": now - timedelta(minutes=30)},
+            ],
+        )
+        r = client.get(URL, headers=_h(user_token_org_2))
+        assert r.status_code == 200
+        body = r.json()
+        assert body["items"] == []
+        assert body["total"] == 0
+
 
 class TestJournalShape:
     def test_empty_returns_items_zero_total_zero(self, client, user_token):
