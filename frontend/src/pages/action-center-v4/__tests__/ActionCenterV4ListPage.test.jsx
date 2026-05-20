@@ -349,4 +349,55 @@ describe('ActionCenterV4ListPage', () => {
     fireEvent.change(screen.getByLabelText(/état/i), { target: { value: 'closed' } });
     expect(useActionCenterV4Items).toHaveBeenLastCalledWith({ offset: 0, limit: 20 });
   });
+
+  // ── M2-5.11.K — URL filter persistence (CX +0.3 backlog) ──────────
+  test('hydrates filters from URL query params on initial render', () => {
+    mockHook({
+      data: {
+        items: [{ id: '1', title: 'Filtré', lifecycle_state: 'triaged', kind: 'anomaly' }],
+        total: 1,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    render(<ActionCenterV4ListPage />, {
+      route: '/action-center-v4?state=triaged&kind=anomaly',
+    });
+    // Les chips sont initialisés depuis l'URL : on doit voir l'item après filtre.
+    expect(screen.getByText('Filtré')).toBeInTheDocument();
+    // Le hook a bien été appelé avec offset 0 (page 1 par défaut).
+    expect(useActionCenterV4Items).toHaveBeenCalledWith({ offset: 0, limit: 20 });
+  });
+
+  test('hydrates page from URL ?page=N (deep link partagé)', () => {
+    mockHook({
+      data: {
+        items: [{ id: '21', title: 'Item page 2', lifecycle_state: 'new' }],
+        total: 50,
+        offset: 20,
+        limit: 20,
+      },
+    });
+    render(<ActionCenterV4ListPage />, { route: '/action-center-v4?page=2' });
+    // Le hook est appelé avec offset 20 (page=2 → offset (2-1)*20).
+    expect(useActionCenterV4Items).toHaveBeenCalledWith({ offset: 20, limit: 20 });
+  });
+
+  test('ignores invalid URL params (sanity check anti-injection)', () => {
+    mockHook({
+      data: {
+        items: [{ id: '1', title: 'Tous', lifecycle_state: 'new' }],
+        total: 1,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    render(<ActionCenterV4ListPage />, {
+      route: '/action-center-v4?state=invalid_state&kind=evil_kind&page=-99',
+    });
+    // L'item est rendu (les filtres invalides sont ignorés, pas de crash).
+    expect(screen.getByText('Tous')).toBeInTheDocument();
+    // page=-99 invalide → fallback page=1 → offset=0.
+    expect(useActionCenterV4Items).toHaveBeenCalledWith({ offset: 0, limit: 20 });
+  });
 });
