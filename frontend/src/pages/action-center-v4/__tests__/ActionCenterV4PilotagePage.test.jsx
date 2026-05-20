@@ -16,6 +16,8 @@ vi.mock('../../../hooks/v4', () => ({
   useActionCenterV4Blockers: vi.fn(),
   useActionCenterV4Links: vi.fn(),
   useActionCenterV4Impact: vi.fn(),
+  // M2-5.11.C — NarrativeBar consomme useActionCenterV4Summary au montage.
+  useActionCenterV4Summary: vi.fn(),
 }));
 
 import {
@@ -27,6 +29,7 @@ import {
   useActionCenterV4Blockers,
   useActionCenterV4Links,
   useActionCenterV4Impact,
+  useActionCenterV4Summary,
 } from '../../../hooks/v4';
 import { ActionCenterV4PilotagePage } from '../ActionCenterV4PilotagePage';
 import { setupV4HooksDefault } from './testUtils/v4Mocks';
@@ -48,6 +51,7 @@ beforeEach(() => {
     useActionCenterV4Blockers,
     useActionCenterV4Links,
     useActionCenterV4Impact,
+    useActionCenterV4Summary,
   });
 });
 

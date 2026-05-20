@@ -19,6 +19,8 @@ export { useActionCenterV4Impact } from './useActionCenterV4Impact';
 export { usePilotageFilePrioritaire } from './usePilotageFilePrioritaire';
 // M2-5.10.E — Journal org-wide cross-items (fenêtre N jours).
 export { usePilotageJournal } from './usePilotageJournal';
+// M2-5.11.C — Summary org (5 compteurs CFO pour la NarrativeBar Sol).
+export { useActionCenterV4Summary } from './useActionCenterV4Summary';
 
 // Write hooks
 export { useCreateItem } from './useCreateItem';

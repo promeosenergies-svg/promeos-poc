@@ -460,6 +460,51 @@ export const PILOTAGE_COPY = {
   tabReferentiel: 'Référentiel',
 };
 
+// ── M2-5.11.C — NarrativeBar Sol (5 compteurs CFO) ────────────────
+//
+// Bandeau horizontal posé sous le Masthead sur Référentiel + Pilotage,
+// rendant lisible l'état du portefeuille en une coup d'œil (audit CFO
+// 3.5/10 → cible 5.5/10). Chaque tuile combine une valeur (chiffre
+// MONO) + un libellé court + une palette Sol émotionnelle.
+//
+// 5 dimensions canoniques cf. `ActionCenterSummaryResponse` (backend) :
+// P0 / P1 / Sans owner / À risque / Sécurisé. Les couleurs réutilisent
+// la palette dérive/attention/ink-500/refuse/succès (cohérence pillarsLifecycleBadge
+// et KIND_SOL_VARIANTS).
+
+export const NARRATIVE_BAR_COPY = {
+  // Labels affichés sous chaque chiffre (FR, ≤ 14 char chacun pour rester
+  // tenable en 5 colonnes desktop).
+  p0Label: 'P0 actifs',
+  p1Label: 'P1 actifs',
+  withoutOwnerLabel: 'Sans pilote',
+  atRiskLabel: 'À risque',
+  securedLabel: 'Sécurisés',
+  // Tooltips contextuels (title=) — explicitent la définition exacte du
+  // compteur, accessibles à la souris et aux lecteurs d'écran.
+  p0Tooltip: 'Items P0 actifs (lifecycle ≠ clos) sur le périmètre courant.',
+  p1Tooltip: 'Items P1 actifs (lifecycle ≠ clos) sur le périmètre courant.',
+  withoutOwnerTooltip:
+    'Items actifs sans pilote assigné. Affectation responsable arrive dans une prochaine version.',
+  atRiskTooltip: 'Items actifs avec au moins un blocage non résolu — intervention requise.',
+  securedTooltip: 'Items actifs avec au moins une preuve vérifiée — auditable à date.',
+  // États non-data (loading / error / no-data).
+  loadingLabel: 'Synthèse en cours…',
+  errorTitle: 'Impossible de charger la synthèse',
+  errorRetry: 'Réessayer',
+};
+
+// Palette Sol des 5 tuiles — `bg` mate, `accent` pour le chiffre.
+// Sans pilote reste neutre ink-500 : ce n'est pas une dérive émotionnelle,
+// juste une dette opérationnelle.
+export const NARRATIVE_BAR_VARIANTS = {
+  p0: { bg: 'var(--sol-refuse-bg)', accent: 'var(--sol-refuse-fg)' },
+  p1: { bg: 'var(--sol-attention-bg)', accent: 'var(--sol-attention-fg)' },
+  without_owner: { bg: 'var(--sol-bg-panel)', accent: 'var(--sol-ink-500)' },
+  at_risk: { bg: 'var(--sol-refuse-bg)', accent: 'var(--sol-refuse-fg)' },
+  secured: { bg: 'var(--sol-succes-bg)', accent: 'var(--sol-succes-fg)' },
+};
+
 // ── M2-5.10.E — Pilotage / Journal org-wide (doctrine §8.2) ───────
 //
 // Page `/action-center-v4/pilotage/journal` — flux d'activité cross-items

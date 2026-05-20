@@ -48,6 +48,11 @@ export function fetchItemImpact(itemId) {
   return apiClientV4.get(`${BASE}/items/${itemId}/impact`);
 }
 
+// M2-5.11.C — Summary org : 5 compteurs agrégés pour la NarrativeBar Sol.
+export function fetchActionCenterSummary() {
+  return apiClientV4.get(`${BASE}/summary`);
+}
+
 // M2-5.10.D — File prioritaire pilotage (top N items P0/P1 actifs).
 export function fetchPilotageFilePrioritaire({ limit = 5 } = {}) {
   return apiClientV4.get(`${BASE}/pilotage/file-prioritaire`, { params: { limit } });

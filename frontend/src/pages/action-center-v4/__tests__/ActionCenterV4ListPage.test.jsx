@@ -27,6 +27,8 @@ vi.mock('../../../hooks/v4', () => ({
   // M2-5.10.C — ImpactSection consomme useActionCenterV4Impact dès l'ouverture
   // du drawer (section affichée entre ItemHeader et Tabs).
   useActionCenterV4Impact: vi.fn(),
+  // M2-5.11.C — NarrativeBar consomme useActionCenterV4Summary au montage.
+  useActionCenterV4Summary: vi.fn(),
 }));
 
 import {
@@ -37,8 +39,10 @@ import {
   useActionCenterV4Blockers,
   useActionCenterV4Links,
   useActionCenterV4Impact,
+  useActionCenterV4Summary,
 } from '../../../hooks/v4';
 import { ActionCenterV4ListPage } from '../ActionCenterV4ListPage';
+import { emptySummary } from './testUtils/v4Mocks';
 
 function mockHook(value) {
   useActionCenterV4Items.mockReturnValue({
@@ -78,6 +82,8 @@ describe('ActionCenterV4ListPage', () => {
       error: null,
       refetch: vi.fn(),
     });
+    // M2-5.11.C — NarrativeBar : 5 compteurs à 0 par défaut (cf. v4Mocks).
+    useActionCenterV4Summary.mockReturnValue(emptySummary);
   });
 
   // Pas de `globals: true` dans vite.config → cleanup RTL explicite.

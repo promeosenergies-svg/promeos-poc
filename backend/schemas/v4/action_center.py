@@ -296,6 +296,38 @@ class ItemImpactResponse(BaseModel):
     has_data: bool
 
 
+class ActionCenterSummaryResponse(BaseModel):
+    """M2-5.11.C — Réponse de GET /api/v4/action-center/summary.
+
+    5 compteurs agrégés org-scopés alimentant la `NarrativeBar` Sol posée au
+    sommet des pages Référentiel + Pilotage (vue CFO « combien d'urgence,
+    combien de risque, combien de preuve »).
+
+    Définitions canoniques (toutes restreintes au scope `organisation_id`
+    courant via `_apply_scope`, fail-closed) :
+
+    - `count_p0` / `count_p1` : items actifs (lifecycle ≠ closed) au bracket
+      P0 / P1 (axe dérivé `priority_bracket`, doctrine v0.3 §4.2).
+    - `count_without_owner` : items actifs sans assignee. Le champ
+      `owner_id` existe sur le model (M2-4.2) mais l'endpoint d'assignation
+      arrive en M2-5.11.E ; ce compteur est utilisable dès maintenant pour
+      mesurer la dette d'attribution.
+    - `count_at_risk` : items actifs avec ≥ 1 blocker non-résolu
+      (`resolved_at IS NULL`). Le pan « in_progress > 14j » de la doctrine
+      est reporté M2-5.11.F (exige scan event_log, hors V1).
+    - `count_secured` : items actifs avec ≥ 1 evidence vérifiée
+      (`verified_at IS NOT NULL`) — preuve auditée disponible.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    count_p0: int = Field(..., ge=0)
+    count_p1: int = Field(..., ge=0)
+    count_without_owner: int = Field(..., ge=0)
+    count_at_risk: int = Field(..., ge=0)
+    count_secured: int = Field(..., ge=0)
+
+
 # ── Requests write (M2-4.4) ──────────────────────────────────────────
 #
 # Tous `extra="forbid"`. Les champs serveur-gérés / dérivés ne sont jamais

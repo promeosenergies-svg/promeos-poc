@@ -12,6 +12,7 @@ import { ItemsTable } from './components/ItemsTable';
 import { ItemDetailDrawer } from './components/ItemDetailDrawer';
 import { ListFilterBar } from './components/ListFilterBar';
 import { Masthead } from './components/Masthead';
+import { NarrativeBar } from './components/NarrativeBar';
 import { PilotageTabs } from './components/PilotageTabs';
 
 /**
@@ -105,6 +106,9 @@ export function ActionCenterV4ListPage() {
     <PageShell editorialHeader={<Masthead total={total} />}>
       {/* M2-5.10.D — Tabs Pilotage / Référentiel posés en tête de body. */}
       <PilotageTabs />
+
+      {/* M2-5.11.C — Synthèse 5 compteurs CFO (P0/P1/sans pilote/à risque/sécurisés). */}
+      <NarrativeBar />
 
       <ListFilterBar
         stateFilter={stateFilter}

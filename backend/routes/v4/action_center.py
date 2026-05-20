@@ -72,6 +72,7 @@ from schemas.v4.action_center import (
     ActionLinkResponse,
     BlockerCreate,
     BlockerResolveRequest,
+    ActionCenterSummaryResponse,
     EvidenceVerifyRequest,
     ItemImpactResponse,
     LifecycleTransitionRequest,
@@ -389,6 +390,28 @@ async def get_item_impact(
 # courte (pas une liste exhaustive — pour le full, l'UI renvoie au
 # référentiel). Aucun calcul métier : le repo applique scope + filtre +
 # tri SQL.
+
+
+@router.get(
+    "/summary",
+    response_model=ActionCenterSummaryResponse,
+    dependencies=[Depends(populate_org_context)],
+)
+@limiter.limit(QUOTA_READ_V4)
+async def get_action_center_summary(
+    request: Request,
+    db: Session = Depends(get_db),
+    _rbac=Depends(require_v4_role(Role.VIEWER, Role.USER, Role.ADMIN)),
+):
+    """M2-5.11.C — 5 compteurs agrégés org pour la NarrativeBar Sol.
+
+    `count_p0`, `count_p1`, `count_without_owner`, `count_at_risk`,
+    `count_secured` — tous restreints aux items actifs (lifecycle ≠ closed)
+    du scope org courant. Cinq `SELECT COUNT` org-scopés via repo (anti-leak
+    IS3 fail-closed). Cf. `ActionCenterSummaryResponse` pour les définitions
+    canoniques de chaque compteur.
+    """
+    return ActionCenterItemRepository(db).get_summary()
 
 
 @router.get(

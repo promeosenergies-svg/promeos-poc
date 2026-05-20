@@ -17,9 +17,11 @@ n'existe (Sprint M2-4 livre les endpoints). Le câblage route → repo = M2-4.
 
 from typing import Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, exists, func, select
 
+from models.v4.action_blockers import ActionBlocker
 from models.v4.action_center_items import ActionCenterItem
+from models.v4.evidences import Evidence
 from repositories.base_v4 import BaseRepositoryV4
 
 
@@ -73,6 +75,57 @@ class ActionCenterItemRepository(BaseRepositoryV4[ActionCenterItem]):
             .limit(limit)
         )
         return list(self.db.execute(stmt).scalars().all())
+
+    def get_summary(self) -> dict:
+        """M2-5.11.C — Stats agrégées org-scopées pour la NarrativeBar Sol.
+
+        Cinq compteurs sur le scope org courant (cf. doctrine
+        `ActionCenterSummaryResponse`) :
+
+        - `count_p0` / `count_p1` : items actifs (lifecycle ≠ closed) au
+          bracket P0/P1.
+        - `count_without_owner` : items actifs sans `owner_id`.
+        - `count_at_risk` : items actifs avec ≥ 1 blocker non-résolu
+          (sous-requête `EXISTS`, pas de jointure — évite la duplication
+          si plusieurs blockers par item).
+        - `count_secured` : items actifs avec ≥ 1 evidence vérifiée.
+
+        Cinq `SELECT COUNT` indépendants, tous org-scopés via
+        `_apply_scope` (fail-closed IS3) — la simplicité prime sur la
+        compactness à ce niveau de cardinalité (n ≤ quelques milliers).
+        """
+        active = self.model.lifecycle_state != "closed"
+
+        def _count(extra_clause) -> int:
+            stmt = self._apply_scope(select(func.count()).select_from(self.model)).where(active).where(extra_clause)
+            return self.db.execute(stmt).scalar() or 0
+
+        # Blocker actif = même org + lié à l'item courant + resolved_at NULL.
+        # Le filtre org sur la sous-requête est défensif (rarement déclencheur,
+        # mais évite tout risque de fuite si un blocker orphelin existait).
+        blocker_exists = exists().where(
+            and_(
+                ActionBlocker.item_id == self.model.id,
+                ActionBlocker.organisation_id == self.model.organisation_id,
+                ActionBlocker.resolved_at.is_(None),
+            )
+        )
+        # Evidence vérifiée = même item + même org + verified_at NOT NULL.
+        evidence_verified_exists = exists().where(
+            and_(
+                Evidence.action_item_id == self.model.id,
+                Evidence.organisation_id == self.model.organisation_id,
+                Evidence.verified_at.is_not(None),
+            )
+        )
+
+        return {
+            "count_p0": _count(self.model.priority_bracket == "P0"),
+            "count_p1": _count(self.model.priority_bracket == "P1"),
+            "count_without_owner": _count(self.model.owner_id.is_(None)),
+            "count_at_risk": _count(blocker_exists),
+            "count_secured": _count(evidence_verified_exists),
+        }
 
     def find_by_idempotency_key(self, key: str) -> Optional[ActionCenterItem]:
         """Cherche un item par `idempotency_key` dans le scope org courant.

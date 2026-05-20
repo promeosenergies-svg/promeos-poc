@@ -56,6 +56,20 @@ export const emptyItem = {
   refetch: vi.fn(),
 };
 
+/** Réponse vide standard du hook summary (5 compteurs à 0, M2-5.11.C). */
+export const emptySummary = {
+  data: {
+    count_p0: 0,
+    count_p1: 0,
+    count_without_owner: 0,
+    count_at_risk: 0,
+    count_secured: 0,
+  },
+  loading: false,
+  error: null,
+  refetch: vi.fn(),
+};
+
 /**
  * Applique les `mockReturnValue` par défaut sur les hooks V4 fournis.
  * Le caller passe les imports `useXxx` qu'il a mockés via `vi.mock`. Tous
@@ -70,6 +84,7 @@ export function setupV4HooksDefault({
   useActionCenterV4Blockers,
   useActionCenterV4Links,
   useActionCenterV4Impact,
+  useActionCenterV4Summary,
   usePilotageFilePrioritaire,
   usePilotageJournal,
 } = {}) {
@@ -82,6 +97,9 @@ export function setupV4HooksDefault({
   // Impact est loading par défaut (skeleton inoffensif dans la plupart des
   // tests qui n'auditent pas la section Impact).
   if (useActionCenterV4Impact) useActionCenterV4Impact.mockReturnValue(loadingImpact);
+  // Summary M2-5.11.C : 5 compteurs à 0 par défaut (NarrativeBar montre l'état
+  // vide sans crasher les tests qui ne ciblent pas la synthèse).
+  if (useActionCenterV4Summary) useActionCenterV4Summary.mockReturnValue(emptySummary);
   if (usePilotageFilePrioritaire) usePilotageFilePrioritaire.mockReturnValue(emptyList);
   if (usePilotageJournal) usePilotageJournal.mockReturnValue(emptyList);
 }

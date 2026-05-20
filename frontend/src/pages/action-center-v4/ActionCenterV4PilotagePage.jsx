@@ -9,6 +9,7 @@ import { usePilotageFilePrioritaire, useActionCenterV4Items } from '../../hooks/
 import { PILOTAGE_COPY } from './constants';
 import { ItemDetailDrawer } from './components/ItemDetailDrawer';
 import { Masthead } from './components/Masthead';
+import { NarrativeBar } from './components/NarrativeBar';
 import { PilotageTabs } from './components/PilotageTabs';
 import { PilotageViewToggle } from './components/PilotageViewToggle';
 import { PriorityQueueCard } from './components/PriorityQueueCard';
@@ -77,6 +78,9 @@ export function ActionCenterV4PilotagePage() {
     >
       <PilotageTabs />
       <PilotageViewToggle />
+
+      {/* M2-5.11.C — Synthèse 5 compteurs CFO posée au sommet du pilotage. */}
+      <NarrativeBar />
 
       {/* Header section File prioritaire — maquette §8.1 lignes 870-876. */}
       <div className="mb-3 flex items-baseline justify-between gap-2">
