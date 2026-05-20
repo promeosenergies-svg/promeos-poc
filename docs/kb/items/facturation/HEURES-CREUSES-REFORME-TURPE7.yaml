@@ -81,6 +81,7 @@ sources:
     label: "Délibération CRE 2025-78 du 13 mars 2025"
     section: "TURPE 7 HTA-BT — Heures Creuses"
     anchor: "#turpe7-hc"
+    excerpt_short: "[auto-fill] Réforme des plages Heures Creuses engagée en novembre 2025 par décision CRE (TURPE 7)."
 
   - doc_id: "BAROMETRE-FLEX-2026"
     label: "Baromètre des flexibilités de consommation d'électricité — Édition 2026"

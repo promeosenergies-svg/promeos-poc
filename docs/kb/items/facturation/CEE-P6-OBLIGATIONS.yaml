@@ -94,6 +94,7 @@ sources:
     label: "PROMEOS V113 — cee_pass_through sur EnergyContract"
     section: "Data model Vague 1 — Pass-through"
     anchor: "#v113-cee"
+    excerpt_short: "[auto-fill] Certificats d'Économie d'Énergie P6 : obligation 1050 TWh cumac/an (PPE3), coût pass-through pour les clients via fournisseur."
 
 updated_at: "2026-04-17"
 confidence: "high"

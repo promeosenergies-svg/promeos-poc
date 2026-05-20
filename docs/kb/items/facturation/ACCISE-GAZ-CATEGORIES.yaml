@@ -82,6 +82,7 @@ sources:
     label: "PROMEOS V113 — Enum AcciseCategoryGaz"
     section: "Data model Vague 1 — Gaz"
     anchor: "#v113-accise-gaz"
+    excerpt_short: "[auto-fill] Accise sur le gaz naturel (ex-TICGN) différenciée par usage (combustion, carburant, industrie cogénération)."
 
 updated_at: "2026-04-17"
 confidence: "high"

@@ -93,6 +93,7 @@ sources:
     label: "PROMEOS V112 — partition_windows"
     section: "Césure triple 01/08/2025 (TURPE + TVA + Accise)"
     anchor: "#v112-cesure"
+    excerpt_short: "[auto-fill] Passage TVA 20% généralisée sur l'électricité depuis le 1er août 2025."
 
 updated_at: "2026-04-17"
 confidence: "high"

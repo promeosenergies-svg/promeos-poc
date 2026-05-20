@@ -99,6 +99,7 @@ sources:
     label: "Observatoire National du Déploiement des BACS — GIMELEC"
     section: "Édition 2025"
     anchor: "#ondb-2025"
+    excerpt_short: "[auto-fill] Objectif de la filière (GIMELEC + Think Smartgrids) : équiper 100 000 bâtiments tertiaires de BACS d'ici 2030."
 
 updated_at: "2026-04-17"
 confidence: "high"

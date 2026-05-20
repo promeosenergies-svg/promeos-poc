@@ -69,6 +69,7 @@ sources:
     label: "Guide OPERAT 2026"
     section: "Année de référence et méthodes de calcul"
     anchor: "#anne-de-rfrence-et-mthodes-de-calcul"
+    excerpt_short: "[auto-fill] Les assujettis au Décret Tertiaire choisissent entre deux méthodes concurrentes : Crelat (valeur relative, réduction en % vs année de référence) ou Cabs (valeur absolue, seuil max…"
 
 updated_at: "2026-04-17"
 confidence: "high"

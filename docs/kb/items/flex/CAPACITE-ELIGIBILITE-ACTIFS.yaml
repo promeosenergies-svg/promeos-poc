@@ -89,11 +89,13 @@ sources:
     label: "Délibération CRE 2025-199 — Règles NEBCO"
     section: "Catégories d'actifs valorisables"
     anchor: "#nebco-categories"
+    excerpt_short: "[auto-fill] Actifs éligibles mécanisme capacité RTE 2026+."
 
   - doc_id: "RTE-CERTIFICATION-CAPACITE"
     label: "RTE — Règles de certification mécanisme de capacité"
     section: "Paramètres techniques"
     anchor: "#rte-certif"
+    excerpt_short: "[auto-fill] Actifs éligibles mécanisme capacité RTE 2026+."
 
 updated_at: "2026-04-17"
 confidence: "medium"

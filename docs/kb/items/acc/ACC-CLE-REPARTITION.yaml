@@ -107,6 +107,7 @@ sources:
     label: "Enedis — Spécifications techniques ACC"
     section: "Mise en œuvre clés de répartition"
     anchor: "#enedis-acc-specs"
+    excerpt_short: "[auto-fill] La clé de répartition définit comment l'énergie autoproduite est partagée entre les consommateurs participants à l'ACC."
 
 updated_at: "2026-04-17"
 confidence: "high"

@@ -74,6 +74,7 @@ sources:
     label: "Délibération CRE 2025-199 du 23 juillet 2025"
     section: "Règles NEBCO"
     anchor: "#regles-nebco"
+    excerpt_short: "[auto-fill] NEBCO mis en service le 1er septembre 2025, remplace NEBEF."
 
 updated_at: "2026-04-17"
 confidence: "high"

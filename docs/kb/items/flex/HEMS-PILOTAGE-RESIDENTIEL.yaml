@@ -102,6 +102,7 @@ sources:
     label: "IGNES/BVA — Évaluation multicritères pilotage connecté maison individuelle — juin 2025"
     section: "Étude CSTB"
     anchor: "#etude-ignes"
+    excerpt_short: "[auto-fill] Le HEMS (Home Energy Management System) centralise le pilotage multi-usages du logement."
 
 updated_at: "2026-04-17"
 confidence: "high"

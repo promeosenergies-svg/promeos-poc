@@ -104,6 +104,7 @@ sources:
     label: "Arrêté du 21 novembre 2019 modifié (21/02/2025)"
     section: "Modalités ACC et rôle PMO"
     anchor: "#arrete-acc"
+    excerpt_short: "[auto-fill] Toute opération d'Autoconsommation Collective (ACC) doit être organisée par une Personne Morale Organisatrice (PMO) obligatoire depuis 2017."
 
 updated_at: "2026-04-17"
 confidence: "high"
