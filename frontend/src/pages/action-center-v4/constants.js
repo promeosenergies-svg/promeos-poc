@@ -460,6 +460,37 @@ export const PILOTAGE_COPY = {
   tabReferentiel: 'Référentiel',
 };
 
+// ── M2-5.10.E — Pilotage / Journal org-wide (doctrine §8.2) ───────
+//
+// Page `/action-center-v4/pilotage/journal` — flux d'activité cross-items
+// des 7 derniers jours (timeline avec day-groups). Accessible via le
+// view toggle Décisions / Journal posé sur les pages Pilotage.
+//
+// MV3 livré : timeline 7j org-wide + day-groups Aujourd'hui/Hier/dates +
+// item title joint + actor pill. Hors scope (BACKLOG_M3) : filtres
+// event_type serveur, narrative bar agrégée 5 stats, export PDF,
+// drill-down acteur, fenêtres glissantes paramétrables UI.
+
+export const JOURNAL_COPY = {
+  pageTitle: 'Journal',
+  sectionTitle: "Flux d'activité",
+  sectionSub:
+    "Tous les événements de votre Centre d'action sur la fenêtre 7 jours, " +
+    'triés du plus récent au plus ancien.',
+  countSuffix: (n) => {
+    if (n === 0) return 'aucun événement';
+    if (n === 1) return '1 événement · 7 derniers jours';
+    return `${n} événements · 7 derniers jours`;
+  },
+  emptyTitle: 'Aucun événement récent',
+  emptyText:
+    'Aucune activité sur les 7 derniers jours. Les transitions, ajouts de preuve, ' +
+    "blocages et clôtures apparaîtront ici dès qu'ils auront lieu.",
+  errorTitle: 'Impossible de charger le journal',
+  viewToggleDecisions: 'Décisions',
+  viewToggleJournal: 'Journal',
+};
+
 // Layout audit-list maquette §8.4 lignes 614-637. Mapping acteur backend → UI :
 // `actor_role` peut valoir `system` (auto), `user` (humain), `null` (legacy).
 export const TIMELINE_ACTOR_COPY = {

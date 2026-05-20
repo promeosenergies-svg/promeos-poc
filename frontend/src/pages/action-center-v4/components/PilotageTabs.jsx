@@ -40,7 +40,9 @@ function tabStyle(active) {
 
 export function PilotageTabs() {
   const location = useLocation();
-  const isPilotage = location.pathname === '/action-center-v4/pilotage';
+  // Pilotage actif sur /pilotage ET sur /pilotage/journal (Journal est une
+  // sous-vue de Pilotage, cohérent maquette §8.2 lignes 595-599).
+  const isPilotage = location.pathname.startsWith('/action-center-v4/pilotage');
   const isReferentiel = location.pathname === '/action-center-v4';
 
   return (

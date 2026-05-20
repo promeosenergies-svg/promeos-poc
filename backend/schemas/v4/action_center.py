@@ -216,6 +216,48 @@ class ImpactDimension(BaseModel):
     source: Optional[str] = Field(None, max_length=120)
 
 
+class JournalEventResponse(BaseModel):
+    """M2-5.10.E — Event enrichi du titre de l'item parent (vue org-wide).
+
+    Calqué sur `ActionEventLogResponse` (sous-ressource item-scoped) avec en
+    plus `action_item_title` joint au repo — évite N+1 côté UI quand on
+    affiche la timeline cross-items du journal.
+
+    Discipline : on n'expose pas `event_payload` (IE7 versionné — détail
+    interne) ni `correlation_id` / `source_route` (peu pertinents pour la
+    vue user). L'UI dérive le label affiché depuis `event_type` (cf.
+    EVENT_TYPE_LABELS) et l'acteur via `actor_name` / `actor_role`.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    action_item_id: UUID
+    action_item_title: str
+    event_type: str
+    actor_type: str
+    actor_id: Optional[UUID] = None
+    actor_role: Optional[str] = None
+    actor_name: Optional[str] = None
+    occurred_at: datetime
+
+
+class PilotageJournalResponse(BaseModel):
+    """M2-5.10.E — Réponse de GET /api/v4/action-center/pilotage/journal.
+
+    Timeline org-wide des N derniers jours (maquette §8.2). `since_days`
+    est la fenêtre demandée (cap 30j MV3) ; `total` est le compte non
+    plafonné par `limit` (utile pour le badge filtre / narrative bar).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[JournalEventResponse]
+    total: int
+    since_days: int
+    limit: int
+
+
 class PilotageFilePrioritaireResponse(BaseModel):
     """M2-5.10.D — Réponse de GET /api/v4/action-center/pilotage/file-prioritaire.
 

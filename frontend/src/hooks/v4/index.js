@@ -17,6 +17,8 @@ export { useActionCenterV4Links } from './useActionCenterV4Links';
 export { useActionCenterV4Impact } from './useActionCenterV4Impact';
 // M2-5.10.D — File prioritaire pilotage (top N items P0/P1 actifs).
 export { usePilotageFilePrioritaire } from './usePilotageFilePrioritaire';
+// M2-5.10.E — Journal org-wide cross-items (fenêtre N jours).
+export { usePilotageJournal } from './usePilotageJournal';
 
 // Write hooks
 export { useCreateItem } from './useCreateItem';

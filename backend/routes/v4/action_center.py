@@ -76,6 +76,7 @@ from schemas.v4.action_center import (
     ItemImpactResponse,
     LifecycleTransitionRequest,
     PilotageFilePrioritaireResponse,
+    PilotageJournalResponse,
 )
 from services.v4.file_validation import validate_file_upload
 from services.v4.impact_service import build_item_impact
@@ -410,6 +411,61 @@ async def get_pilotage_file_prioritaire(
     """
     items = ActionCenterItemRepository(db).list_priority_queue(limit=limit)
     return {"items": items, "limit": limit}
+
+
+# ════════════════════════════════════════════════════════════════════
+# M2-5.10.E — Pilotage / Journal org-wide (doctrine §8.2)
+# ════════════════════════════════════════════════════════════════════
+#
+# Timeline cross-items des N derniers jours (fenêtre glissante 1-30j).
+# Le repo joint le titre de l'item parent pour éviter N+1 côté UI.
+# Pas de filtre `event_type` MV3 — l'UI groupe et filtre client-side
+# sur la fenêtre courante (taille bornée par `limit`).
+
+
+@router.get(
+    "/pilotage/journal",
+    response_model=PilotageJournalResponse,
+    dependencies=[Depends(populate_org_context)],
+)
+@limiter.limit(QUOTA_READ_V4)
+async def get_pilotage_journal(
+    request: Request,
+    since_days: int = Query(7, ge=1, le=30),
+    limit: int = Query(100, ge=1, le=200),
+    db: Session = Depends(get_db),
+    _rbac=Depends(require_v4_role(Role.VIEWER, Role.USER, Role.ADMIN)),
+):
+    """Journal org-wide cross-items, fenêtre `since_days` (M2-5.10.E).
+
+    Retourne les events des N derniers jours dans l'organisation courante,
+    enrichis du titre de l'item parent (action_item_title). Tri
+    `occurred_at DESC`. Org-scopé fail-closed via repo.
+
+    Caps : `since_days` 1-30, `limit` 1-200.
+    """
+    repo = ActionEventLogRepository(db)
+    rows, total = repo.list_org_journal(since_days=since_days, limit=limit)
+    # Hydrate `action_item_title` sur l'instance event (Pydantic from_attributes).
+    items = []
+    for event, title in rows:
+        # Construction explicite du dict pour exposer le champ joint
+        # `action_item_title` (Pydantic from_attributes ne le voit pas
+        # — c'est une colonne joinable, pas un attribut SQLAlchemy).
+        items.append(
+            {
+                "id": event.id,
+                "action_item_id": event.action_item_id,
+                "action_item_title": title,
+                "event_type": event.event_type,
+                "actor_type": event.actor_type,
+                "actor_id": event.actor_id,
+                "actor_role": event.actor_role,
+                "actor_name": event.actor_name,
+                "occurred_at": event.occurred_at,
+            }
+        )
+    return {"items": items, "total": total, "since_days": since_days, "limit": limit}
 
 
 # ════════════════════════════════════════════════════════════════════

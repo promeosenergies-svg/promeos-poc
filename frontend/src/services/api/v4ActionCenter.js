@@ -53,6 +53,13 @@ export function fetchPilotageFilePrioritaire({ limit = 5 } = {}) {
   return apiClientV4.get(`${BASE}/pilotage/file-prioritaire`, { params: { limit } });
 }
 
+// M2-5.10.E — Journal org-wide cross-items (fenêtre N jours).
+export function fetchPilotageJournal({ sinceDays = 7, limit = 100 } = {}) {
+  return apiClientV4.get(`${BASE}/pilotage/journal`, {
+    params: { since_days: sinceDays, limit },
+  });
+}
+
 // ── WRITE (mutations) ──────────────────────────────────────────
 
 export function createItem(payload, { idempotencyKey } = {}) {

@@ -9,6 +9,7 @@ import { PILOTAGE_COPY } from './constants';
 import { ItemDetailDrawer } from './components/ItemDetailDrawer';
 import { Masthead } from './components/Masthead';
 import { PilotageTabs } from './components/PilotageTabs';
+import { PilotageViewToggle } from './components/PilotageViewToggle';
 import { PriorityQueueCard } from './components/PriorityQueueCard';
 
 /**
@@ -58,6 +59,7 @@ export function ActionCenterV4PilotagePage() {
   return (
     <PageShell editorialHeader={<Masthead total={items.length} />}>
       <PilotageTabs />
+      <PilotageViewToggle />
 
       {/* Header section File prioritaire — maquette §8.1 lignes 870-876. */}
       <div className="mb-3 flex items-baseline justify-between gap-2">

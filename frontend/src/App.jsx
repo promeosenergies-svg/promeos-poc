@@ -89,6 +89,12 @@ const ActionCenterV4PilotagePage = lazy(() =>
     default: m.ActionCenterV4PilotagePage,
   }))
 );
+// M2-5.10.E — Page Pilotage / Journal (flux org-wide 7j, même flag).
+const ActionCenterV4JournalPage = lazy(() =>
+  import('./pages/action-center-v4/ActionCenterV4JournalPage').then((m) => ({
+    default: m.ActionCenterV4JournalPage,
+  }))
+);
 const FlexPage = lazy(() => import('./pages/FlexPage'));
 const CompliancePipelinePage = lazy(() => import('./pages/CompliancePipelinePage'));
 const SiteCompliancePage = lazy(() => import('./pages/SiteCompliancePage'));
@@ -338,6 +344,17 @@ function App() {
                                         element={
                                           <PageSuspense>
                                             <ActionCenterV4PilotagePage />
+                                          </PageSuspense>
+                                        }
+                                      />
+                                    )}{' '}
+                                    {/* M2-5.10.E — Pilotage / Journal org-wide. */}
+                                    {isActionCenterV4Enabled() && (
+                                      <Route
+                                        path="/action-center-v4/pilotage/journal"
+                                        element={
+                                          <PageSuspense>
+                                            <ActionCenterV4JournalPage />
                                           </PageSuspense>
                                         }
                                       />
