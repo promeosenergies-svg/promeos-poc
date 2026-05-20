@@ -128,4 +128,37 @@ describe('ListFilterBar', () => {
     );
     expect(screen.getByText(/page courante/i)).toBeInTheDocument();
   });
+
+  // ── M2-5.10.A.bis — chip-count par kind (audit UI Sol P1-1) ────────
+  test('renders the per-kind count on each chip when kindCounts is provided', () => {
+    setup({ kindCounts: { anomaly: 3, action: 5, decision: 1 } });
+    // Le compteur est rendu adjacent au label dans le bouton chip.
+    const anomalyBtn = screen.getByRole('button', { name: /filtrer par anomalie/i });
+    expect(anomalyBtn.textContent).toMatch(/3/);
+    const actionBtn = screen.getByRole('button', { name: /filtrer par action/i });
+    expect(actionBtn.textContent).toMatch(/5/);
+  });
+
+  test('renders the total count on "Tous les types" chip', () => {
+    setup({ kindCounts: { anomaly: 3, action: 5 } });
+    const allBtn = screen.getByRole('button', { name: /filtrer par tous les types/i });
+    expect(allBtn.textContent).toMatch(/8/);
+  });
+
+  test('hides the chip count when no kindCounts data is provided', () => {
+    setup();
+    const anomalyBtn = screen.getByRole('button', { name: /filtrer par anomalie/i });
+    // Pas de chiffre dans le bouton sans `kindCounts`.
+    expect(anomalyBtn.textContent).not.toMatch(/\d/);
+  });
+
+  // ── M2-5.10.A.bis — Réinitialiser promu chip 12px (audit CS P1-1) ──
+  test('the Réinitialiser button is rendered as a chip with rotate-ccw icon (sub-WCAG fix)', () => {
+    const { container } = setup({ stateFilter: 'triaged' });
+    const btn = screen.getByRole('button', { name: /réinitialiser les filtres/i });
+    // Au moins 12px de taille de police (audit CS — sub-WCAG 9.5px corrigé).
+    expect(btn.className).toMatch(/text-\[12px\]/);
+    // Icône lucide rotate-ccw rendue dans le bouton (svg enfant).
+    expect(container.querySelector('button[aria-label*="éinitialiser"] svg')).toBeTruthy();
+  });
 });

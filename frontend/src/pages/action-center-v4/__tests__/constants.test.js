@@ -4,6 +4,7 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+  COPY,
   LIFECYCLE_BADGE_VARIANTS,
   LIFECYCLE_LABELS,
   LIFECYCLE_ORDER,
@@ -157,5 +158,25 @@ describe('M2-5.10.A — Sol design tokens (fidélité doctrine v0.2)', () => {
     expect(SOL_COPY.filterAllKinds).toBeTruthy();
     expect(SOL_COPY.filterReset).toBeTruthy();
     expect(typeof SOL_COPY.kindChipAria).toBe('function');
+  });
+});
+
+describe('M2-5.10.A.bis — hotfix audit findings', () => {
+  test('MASTHEAD_COPY.itemsSuffix pluralises FR correctly', () => {
+    expect(MASTHEAD_COPY.itemsSuffix(1)).toBe('1 item');
+    expect(MASTHEAD_COPY.itemsSuffix(2)).toBe('2 items');
+    expect(MASTHEAD_COPY.itemsSuffix(147)).toBe('147 items');
+  });
+
+  test('COPY.columnDomain exposes the FR header label (fix code-reviewer P1-2)', () => {
+    expect(COPY.columnDomain).toBe('Domaine');
+  });
+
+  test('emptyFilteredTitle/Text reformulated for pagination clarity (fix CS P0-2)', () => {
+    // L'ancien texte « Aucune action pour ce filtre sur cette page » créait
+    // un faux négatif. Le nouveau doit expliciter la pagination et le reset.
+    expect(COPY.emptyFilteredTitle).toMatch(/aucun résultat/i);
+    expect(COPY.emptyFilteredText).toMatch(/page/i);
+    expect(COPY.emptyFilteredText).toMatch(/réinitialiser/i);
   });
 });

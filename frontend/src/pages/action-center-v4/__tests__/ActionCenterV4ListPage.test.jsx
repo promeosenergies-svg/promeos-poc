@@ -57,12 +57,14 @@ describe('ActionCenterV4ListPage', () => {
     expect(container.querySelector('.animate-pulse')).toBeTruthy();
   });
 
-  test('renders the page title and subtitle', () => {
+  test('renders the page title via the Sol masthead (no PageShell H1)', () => {
     mockHook({ data: { items: [], total: 0, offset: 0, limit: 20 } });
     render(<ActionCenterV4ListPage />);
-    // M2-5.10.A — « Centre d'action » apparaît 2× (PageShell title + masthead Sol).
-    expect(screen.getAllByText("Centre d'action").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText('Nouveau (V4) — Pilote')).toBeInTheDocument();
+    // M2-5.10.A.bis — le PageShell est monté en `editorialHeader` mode, le H1
+    // Tailwind par défaut est supprimé. Seul le masthead Sol porte le titre
+    // (1 occurrence). Le sous-titre PageShell « Nouveau (V4) — Pilote » a
+    // disparu (hors-doctrine §6.1, audit UI Sol).
+    expect(screen.getAllByText("Centre d'action").length).toBe(1);
   });
 
   // ── M2-5.10.A — masthead Sol au-dessus des filtres ────────────────
@@ -224,7 +226,8 @@ describe('ActionCenterV4ListPage', () => {
       target: { value: 'closed' },
     });
 
-    expect(screen.getByText(/aucune action pour ce filtre/i)).toBeInTheDocument();
+    // M2-5.10.A.bis — copy reformulée (audit CS P0-2 ambiguïté "page courante").
+    expect(screen.getByText(/aucun résultat sur cette page/i)).toBeInTheDocument();
     // Pagination reste visible (total serveur 50) → pas de cul-de-sac navigation.
     expect(screen.getByLabelText('Page suivante')).toBeInTheDocument();
   });

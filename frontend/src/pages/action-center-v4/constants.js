@@ -44,11 +44,17 @@ export const COPY = {
   columnPriority: 'Priorité',
   columnState: 'État',
   columnType: 'Type',
+  columnDomain: 'Domaine',
   columnUpdated: 'Mis à jour',
   emptyTitle: 'Aucune action à afficher',
   emptyText: 'Les actions de votre organisation apparaîtront ici dès leur création.',
-  emptyFilteredTitle: 'Aucune action pour ce filtre sur cette page',
-  emptyFilteredText: 'Essayez une autre page ou choisissez « Tous les états ».',
+  // M2-5.10.A.bis — copy reformulée : sans cette précision, un audit CS a
+  // démontré que l'utilisateur conclut « il n'y a aucune action » alors que
+  // d'autres pages contiennent des items du filtre.
+  emptyFilteredTitle: 'Aucun résultat sur cette page',
+  emptyFilteredText:
+    "D'autres actions correspondant à ce filtre peuvent exister sur les pages suivantes. " +
+    'Navigue vers la page suivante ou clique « Réinitialiser » pour étendre la vue.',
   errorTitle: 'Impossible de charger les actions',
 };
 
@@ -302,12 +308,17 @@ export const A11Y_COPY = {
 // Kanban) → dette tracée dans BACKLOG_M3.md.
 
 // Masthead italique + sous-titre + date « MAJ live » au-dessus des filtres.
+//
+// M2-5.10.A.bis — `subtitle` ne contient plus que le label statique ; le
+// nombre d'items « N items » est injecté dynamiquement par `Masthead.jsx`
+// depuis `total` du hook V4 (fidélité maquette §8.3 ligne 705).
 export const MASTHEAD_COPY = {
   // Titre court (le sous-titre détaille). « Référentiel » = onglet maquette
   // §8.3 actif (Pilotage est M2-5.10.D).
   title: "Centre d'action",
   subtitle: 'Référentiel complet',
   dateLive: 'MAJ live',
+  itemsSuffix: (n) => (n === 1 ? '1 item' : `${n} items`),
 };
 
 // Label MONO uppercase utilisé dans la cellule Classement (chip + table).

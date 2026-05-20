@@ -1,4 +1,4 @@
-import { A11Y_COPY, COPY, SOL_COPY } from '../constants';
+import { A11Y_COPY, COPY, PRIORITY_SOL_BG, SOL_COPY } from '../constants';
 import { DomainChip } from './DomainChip';
 import { KindCell } from './KindCell';
 import { LifecycleBadge } from './LifecycleBadge';
@@ -25,17 +25,13 @@ import { PriorityBadge } from './PriorityBadge';
  * Tailwind arbitrary values.
  */
 
-const PRIORITY_STRIP = {
-  P0: 'var(--sol-refuse-fg)',
-  P1: 'var(--sol-attention-fg)',
-  P2: 'var(--sol-calme-fg)',
-  P3: 'var(--sol-ink-400)',
-};
-
+// M2-5.10.A.bis — focus ring sur token Sol (le bleu Tailwind ring-blue-500
+// initial cassait la palette journal, anti-pattern doctrine §6.1 — audit
+// UI Sol). Strip vertical 3px = PRIORITY_SOL_BG (SoT unique constants.js).
 const ROW_CLASS =
   'transition cursor-pointer relative ' +
   'hover:bg-[color:var(--sol-bg-panel)] ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]';
 
 const TH_CLASS =
   'border-b px-3 py-2.5 text-left font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] ' +
@@ -93,7 +89,7 @@ export function ItemsTable({ items, onOpenItem }) {
                 color: 'var(--sol-ink-500)',
               }}
             >
-              Domaine
+              {COPY.columnDomain}
             </th>
             <th
               className={`${TH_CLASS} text-center`}
@@ -110,7 +106,7 @@ export function ItemsTable({ items, onOpenItem }) {
         <tbody>
           {items.map((item) => {
             const open = () => onOpenItem(item);
-            const strip = PRIORITY_STRIP[item.priority_bracket] || 'var(--sol-ink-300)';
+            const strip = PRIORITY_SOL_BG[item.priority_bracket] || 'var(--sol-ink-300)';
             return (
               <tr
                 key={item.id}
