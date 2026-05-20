@@ -1,3 +1,4 @@
+import { fmtEurShort } from '../../../utils/format';
 import { A11Y_COPY, COPY, PRIORITY_SOL_BG, SOL_COPY } from '../constants';
 import { DomainChip } from './DomainChip';
 import { KindCell } from './KindCell';
@@ -91,6 +92,19 @@ export function ItemsTable({ items, onOpenItem }) {
             >
               {COPY.columnDomain}
             </th>
+            {/* M2-5.11.D — colonne € (à risque 12m) — alignée droite, MONO
+                pour scan colonne CFO. La doctrine v0.3 §6.6 prescrit un
+                alignement à droite des montants pour lecture vertical. */}
+            <th
+              className={`${TH_CLASS} text-right`}
+              style={{
+                background: 'var(--sol-bg-panel)',
+                borderColor: 'var(--sol-rule)',
+                color: 'var(--sol-ink-500)',
+              }}
+            >
+              {COPY.columnAmount}
+            </th>
             <th
               className={`${TH_CLASS} text-center`}
               style={{
@@ -160,6 +174,27 @@ export function ItemsTable({ items, onOpenItem }) {
                   ) : (
                     <span style={{ color: 'var(--sol-ink-400)' }}>—</span>
                   )}
+                </td>
+                {/* M2-5.11.D — montant à risque 12m. `fmtEurShort` rend
+                    « 7,5 k€ » / « 1,2 M€ » / « — » si null. Couleur refuse
+                    (dérive émotionnelle) car c'est ce qui peut être perdu. */}
+                <td
+                  className={`${TD_CLASS} text-right whitespace-nowrap`}
+                  title={
+                    item.impact_at_risk_eur != null ? COPY.amountTooltip : COPY.amountTooltipMissing
+                  }
+                >
+                  <span
+                    className="font-mono text-[12.5px] font-medium"
+                    style={{
+                      color:
+                        item.impact_at_risk_eur != null
+                          ? 'var(--sol-refuse-fg)'
+                          : 'var(--sol-ink-400)',
+                    }}
+                  >
+                    {fmtEurShort(item.impact_at_risk_eur)}
+                  </span>
                 </td>
                 {/* Priorité — tag P0·92 centré. */}
                 <td className={`${TD_CLASS} text-center whitespace-nowrap`}>

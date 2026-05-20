@@ -46,6 +46,11 @@ export const COPY = {
   columnType: 'Type',
   columnDomain: 'Domaine',
   columnUpdated: 'Mis à jour',
+  // M2-5.11.D — colonne € (à risque 12m). Label court pour ne pas faire
+  // déborder l'en-tête, tooltip explicite pour la valeur et l'absence.
+  columnAmount: 'À risque 12m',
+  amountTooltip: 'Montant à risque sur 12 mois si l\'item n\'est pas traité (source : impact_payload.at_risk).',
+  amountTooltipMissing: "Impact non encore calculé pour cet item — apparaîtra dès qu'un montant sera estimé.",
   emptyTitle: 'Aucune action à afficher',
   emptyText: 'Les actions de votre organisation apparaîtront ici dès leur création.',
   // M2-5.10.A.bis — copy reformulée : sans cette précision, un audit CS a

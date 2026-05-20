@@ -71,13 +71,54 @@ describe('ItemsTable', () => {
     expect(onOpenItem).toHaveBeenCalledWith(sampleItems[0]);
   });
 
-  // ── M2-5.10.A — 5 colonnes maquette + masquage « Mis à jour » ─────
-  test('renders exactly 5 column headers (maquette §8.3)', () => {
+  // ── M2-5.10.A → M2-5.11.D — 6 colonnes (maquette §8.3 + colonne € CFO) ─
+  test('renders exactly 6 column headers (Classement / Item / État / Domaine / € / Priorité)', () => {
     const { container } = render(<ItemsTable items={sampleItems} onOpenItem={noop} />);
     const ths = container.querySelectorAll('thead th');
-    expect(ths.length).toBe(5);
+    // M2-5.11.D ajoute la colonne « À risque 12m » (BACKLOG_M3 CFO traité).
+    expect(ths.length).toBe(6);
     // « Mis à jour » a été retirée (drawer détail le porte).
     expect(container.querySelector('thead')).not.toHaveTextContent('Mis à jour');
+    // Colonne € présente.
+    expect(container.querySelector('thead')).toHaveTextContent(/à risque 12m/i);
+  });
+
+  // ── M2-5.11.D — rendu cellule € (montant si présent, « — » sinon) ────
+  test('renders the € amount when impact_at_risk_eur is set', () => {
+    const items = [
+      {
+        id: '€1',
+        title: 'Chiffré',
+        kind: 'anomaly',
+        priority_bracket: 'P0',
+        priority_score: 90,
+        lifecycle_state: 'new',
+        domain: 'energie',
+        impact_at_risk_eur: 7500,
+      },
+    ];
+    const { container } = render(<ItemsTable items={items} onOpenItem={noop} />);
+    // fmtEurShort(7500) → "7,5 k€". `\s` matche aussi U+00A0 (espace
+    // insécable produit par toLocaleString fr-FR sur certains builds ICU).
+    expect(container.textContent).toMatch(/7,5\s?k€/);
+  });
+
+  test('renders « — » when impact_at_risk_eur is null', () => {
+    const items = [
+      {
+        id: '€2',
+        title: 'Sans chiffre',
+        kind: 'action',
+        priority_bracket: 'P2',
+        priority_score: 50,
+        lifecycle_state: 'new',
+        domain: 'energie',
+        impact_at_risk_eur: null,
+      },
+    ];
+    const { container } = render(<ItemsTable items={items} onOpenItem={noop} />);
+    // Au moins un « — » présent dans le tableau (la cellule €).
+    expect(container.textContent).toContain('—');
   });
 });
 

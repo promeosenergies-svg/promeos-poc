@@ -62,6 +62,12 @@ class ActionCenterItemResponse(BaseModel):
     priority_bracket: PriorityBracket
     priority_score: float
     score_stale: bool
+    # M2-5.11.D — Valeur €/12m du quadrant « à risque » (lue depuis la
+    # `@property impact_at_risk_eur` du model, extraite de `impact_payload`).
+    # Permet à l'UI d'afficher le montant dans ItemsTable + PriorityQueueCard
+    # sans appel /impact unitaire (anti N+1). `None` si l'impact n'est pas
+    # encore calculé pour cet item — l'UI rend « — ».
+    impact_at_risk_eur: Optional[float] = None
     created_at: datetime
     updated_at: datetime
 

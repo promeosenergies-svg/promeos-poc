@@ -128,6 +128,32 @@ class ActionCenterItem(Base):
         onupdate=func.now(),
     )
 
+    @property
+    def impact_at_risk_eur(self) -> float | None:
+        """M2-5.11.D — Extrait la valeur €/12m du quadrant `at_risk` depuis
+        `impact_payload` (JSON). Exposé via `ActionCenterItemResponse` pour
+        permettre à l'UI (colonne € ItemsTable + libellé PriorityQueueCard)
+        d'afficher « ce que le CFO risque de perdre » sans drill-down.
+
+        Cohérent avec `impact_service.build_item_impact` : même clé
+        `impact_payload['at_risk']['value_eur']`, mêmes coercions
+        défensives (`None`, `""`, `"NaN"` → `None`).
+        """
+        raw = (self.impact_payload or {}).get("at_risk")
+        if not isinstance(raw, dict):
+            return None
+        value = raw.get("value_eur")
+        if value is None or value == "":
+            return None
+        try:
+            f = float(value)
+        except (TypeError, ValueError):
+            return None
+        # NaN guard (NaN != NaN) — cohérent _coerce_float impact_service.
+        if f != f:
+            return None
+        return f
+
     __table_args__ = (
         # 🛡️ D1 CARDINAL : 7 valeurs strictes (PAS 3)
         CheckConstraint(

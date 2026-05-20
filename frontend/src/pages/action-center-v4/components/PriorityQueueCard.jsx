@@ -1,4 +1,5 @@
-import { A11Y_COPY, PRIORITY_SOL_BG } from '../constants';
+import { fmtEurShort } from '../../../utils/format';
+import { A11Y_COPY, COPY, PRIORITY_SOL_BG } from '../constants';
 import { DomainChip } from './DomainChip';
 import { KindCell } from './KindCell';
 import { LifecycleBadge } from './LifecycleBadge';
@@ -68,6 +69,20 @@ export function PriorityQueueCard({ item, onOpenItem }) {
         >
           {item.title}
         </h3>
+        {/* M2-5.11.D — montant à risque 12m posé sous le titre (maquette
+            pilotage_decisions_v031.html ligne 917 `item-card-impact-value`).
+            Affiché uniquement quand un montant existe — pas de tiret bruit
+            quand l'impact n'est pas encore calculé (cohérent §6.6 doctrine
+            « pas de chiffre menteur »). */}
+        {item.impact_at_risk_eur != null && (
+          <div
+            className="mt-1 font-mono text-[12.5px] font-medium"
+            style={{ color: 'var(--sol-refuse-fg)' }}
+            title={COPY.amountTooltip}
+          >
+            {fmtEurShort(item.impact_at_risk_eur)}
+          </div>
+        )}
         {item.description && (
           <p
             className="mt-1 text-[12.5px] leading-[1.4]"

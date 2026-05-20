@@ -197,3 +197,119 @@ class TestSchemaStrict:
         """kind est requis (discriminant single-table) → 422 si absent."""
         r = client.post(ITEMS, headers=_h(user_token), json={"title": "Sans kind"})
         assert r.status_code == 422
+
+
+# ════════════════════════════════════════════════════════════════════
+# M2-5.11.D — impact_at_risk_eur exposé sur ActionCenterItemResponse
+# ════════════════════════════════════════════════════════════════════
+#
+# Le champ est lu via la @property sur le model, qui extrait
+# `impact_payload['at_risk']['value_eur']`. Permet à l'UI d'afficher le
+# € dans ItemsTable + PriorityQueueCard sans appel /impact unitaire.
+
+
+class TestImpactAtRiskEurExposed:
+    def test_get_by_id_returns_null_when_no_impact_payload(self, client, user_token):
+        """Item créé sans payload → impact_at_risk_eur = null."""
+        created = client.post(ITEMS, headers=_h(user_token), json=_payload("sans impact")).json()
+        body = client.get(f"{ITEMS}/{created['id']}", headers=_h(user_token)).json()
+        assert "impact_at_risk_eur" in body
+        assert body["impact_at_risk_eur"] is None
+
+    def test_get_by_id_returns_value_when_payload_has_at_risk(
+        self, app_client, user_token
+    ):
+        """Item avec `impact_payload.at_risk.value_eur` → exposé en float."""
+        from models.v4.action_center_items import ActionCenterItem
+        from uuid import uuid4
+
+        client, session_local = app_client
+        item_id = uuid4()
+        db = session_local()
+        try:
+            db.add(
+                ActionCenterItem(
+                    id=item_id,
+                    organisation_id=1,
+                    kind="anomaly",
+                    title="avec impact",
+                    priority_bracket="P0",
+                    priority_score=85.0,
+                    lifecycle_state="new",
+                    impact_payload={"at_risk": {"value_eur": 3400.0, "detail": "12m"}},
+                )
+            )
+            db.commit()
+        finally:
+            db.close()
+        body = client.get(f"{ITEMS}/{item_id}", headers=_h(user_token)).json()
+        assert body["impact_at_risk_eur"] == 3400.0
+
+    def test_get_by_id_returns_null_when_at_risk_value_missing(
+        self, app_client, user_token
+    ):
+        """Payload présent mais sans `value_eur` → null (jamais 0 menteur)."""
+        from models.v4.action_center_items import ActionCenterItem
+        from uuid import uuid4
+
+        client, session_local = app_client
+        item_id = uuid4()
+        db = session_local()
+        try:
+            db.add(
+                ActionCenterItem(
+                    id=item_id,
+                    organisation_id=1,
+                    kind="anomaly",
+                    title="payload partiel",
+                    priority_bracket="P2",
+                    priority_score=50.0,
+                    lifecycle_state="new",
+                    impact_payload={"estimated": {"value_eur": 1000}},  # at_risk absent
+                )
+            )
+            db.commit()
+        finally:
+            db.close()
+        body = client.get(f"{ITEMS}/{item_id}", headers=_h(user_token)).json()
+        assert body["impact_at_risk_eur"] is None
+
+    def test_list_exposes_impact_at_risk_eur_per_item(self, app_client, user_token):
+        """La liste paginée expose le champ sur chaque item — anti N+1."""
+        from models.v4.action_center_items import ActionCenterItem
+        from uuid import uuid4
+
+        client, session_local = app_client
+        db = session_local()
+        try:
+            db.add(
+                ActionCenterItem(
+                    id=uuid4(),
+                    organisation_id=1,
+                    kind="anomaly",
+                    title="A — chiffré",
+                    priority_bracket="P0",
+                    priority_score=90.0,
+                    lifecycle_state="new",
+                    impact_payload={"at_risk": {"value_eur": 7500}},
+                )
+            )
+            db.add(
+                ActionCenterItem(
+                    id=uuid4(),
+                    organisation_id=1,
+                    kind="action",
+                    title="B — sans chiffre",
+                    priority_bracket="P2",
+                    priority_score=45.0,
+                    lifecycle_state="new",
+                    impact_payload=None,
+                )
+            )
+            db.commit()
+        finally:
+            db.close()
+        body = client.get(ITEMS, headers=_h(user_token)).json()
+        values = {it["title"]: it.get("impact_at_risk_eur") for it in body["items"]}
+        assert values["A — chiffré"] == 7500.0
+        assert values["B — sans chiffre"] is None

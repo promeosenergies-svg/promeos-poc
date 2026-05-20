@@ -99,4 +99,23 @@ describe('PriorityQueueCard', () => {
     const card = screen.getByRole('button', { name: /ouvrir l'action/i });
     expect(card.className).not.toMatch(/opacity-60/);
   });
+
+  // ── M2-5.11.D — libellé € sous le titre (maquette pilotage v031 §917) ─
+  test('renders the € amount under the title when impact_at_risk_eur is set', () => {
+    const { container } = render(
+      <PriorityQueueCard item={{ ...sampleItem, impact_at_risk_eur: 3400 }} onOpenItem={vi.fn()} />
+    );
+    // fmtEurShort(3400) → "3,4 k€". `\s` matche aussi U+00A0 (espace
+    // insécable produit par toLocaleString fr-FR sur certains builds ICU).
+    expect(container.textContent).toMatch(/3,4\s?k€/);
+  });
+
+  test('hides the € block when impact_at_risk_eur is null (no menteur tiret)', () => {
+    const { container } = render(
+      <PriorityQueueCard item={{ ...sampleItem, impact_at_risk_eur: null }} onOpenItem={vi.fn()} />
+    );
+    // Aucune occurrence de " k€" ni " M€" ni " €" — la doctrine v0.3 §6.6
+    // refuse le « 0 € » ou « — € » menteur sur les cartes pilotage.
+    expect(container.textContent).not.toMatch(/k€|M€/);
+  });
 });
