@@ -73,9 +73,11 @@ from schemas.v4.action_center import (
     BlockerCreate,
     BlockerResolveRequest,
     EvidenceVerifyRequest,
+    ItemImpactResponse,
     LifecycleTransitionRequest,
 )
 from services.v4.file_validation import validate_file_upload
+from services.v4.impact_service import build_item_impact
 from services.v4.lifecycle_validator import validate_lifecycle_transition
 from services.v4.link_target_validator import verify_link_target
 
@@ -338,6 +340,43 @@ async def list_item_links(
     """Liste paginée des liens de l'item (vers d'autres modules), triée created_at DESC."""
     items, total = ActionLinkRepository(db).list_by_item_id(item_id, offset=offset, limit=limit)
     return {"items": items, "total": total, "offset": offset, "limit": limit}
+
+
+# ════════════════════════════════════════════════════════════════════
+# M2-5.10.C — Impact financier par item (4 quadrants doctrine §8.5)
+# ════════════════════════════════════════════════════════════════════
+#
+# Lecture seule MV3 : le service `build_item_impact` lit `impact_payload`
+# (JSONB) + `impact_dimension` (legacy) et construit la réponse 4 quadrants.
+# Aucun calcul dérivé (engine économique R1-R6 = sprint M3+). Doctrine
+# cardinale : pas de chiffre € sans source ni formule.
+
+
+@router.get(
+    "/items/{item_id}/impact",
+    response_model=ItemImpactResponse,
+    dependencies=[Depends(populate_org_context)],
+)
+@limiter.limit(QUOTA_READ_V4)
+async def get_item_impact(
+    request: Request,
+    item_id: uuid.UUID,
+    parent: ActionCenterItem = Depends(verify_parent_item_access),
+    _rbac=Depends(require_v4_role(Role.VIEWER, Role.USER, Role.ADMIN)),
+):
+    """Retourne les 4 quadrants d'impact financier de l'item (M2-5.10.C).
+
+    Quadrants : `estimated` (gain attendu), `at_risk` (pénalité non sécurisée),
+    `secured` (activable immédiatement), `realized` (gain constaté post-clôture).
+
+    Chaque quadrant a un `value_eur` (peut être `None` si donnée absente —
+    l'UI affiche « — » et pas « 0 € » menteur) + détail/formule/source.
+
+    404 ITEM_NOT_FOUND si l'item n'existe pas ou est cross-org (anti-leak,
+    cohérent IS3 — pas de fuite d'existence).
+    """
+    # `parent` est déjà l'item org-scopé chargé par `verify_parent_item_access`.
+    return build_item_impact(parent)
 
 
 # ════════════════════════════════════════════════════════════════════

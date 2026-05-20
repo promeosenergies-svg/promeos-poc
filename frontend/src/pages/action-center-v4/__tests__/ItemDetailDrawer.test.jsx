@@ -12,6 +12,8 @@ vi.mock('../../../hooks/v4', () => ({
   useActionCenterV4Evidences: vi.fn(),
   useActionCenterV4Blockers: vi.fn(),
   useActionCenterV4Links: vi.fn(),
+  // M2-5.10.C — ImpactSection est rendue dans le drawer entre ItemHeader et Tabs.
+  useActionCenterV4Impact: vi.fn(),
 }));
 
 import {
@@ -20,6 +22,7 @@ import {
   useActionCenterV4Evidences,
   useActionCenterV4Blockers,
   useActionCenterV4Links,
+  useActionCenterV4Impact,
 } from '../../../hooks/v4';
 import { ItemDetailDrawer } from '../components/ItemDetailDrawer';
 
@@ -49,6 +52,14 @@ beforeEach(() => {
   useActionCenterV4Evidences.mockReturnValue(emptyList);
   useActionCenterV4Blockers.mockReturnValue(emptyList);
   useActionCenterV4Links.mockReturnValue(emptyList);
+  // ImpactSection loading par défaut → skeleton (n'interfère pas avec les
+  // assertions sur tabs/titre/onglets).
+  useActionCenterV4Impact.mockReturnValue({
+    data: null,
+    loading: true,
+    error: null,
+    refetch: vi.fn(),
+  });
 });
 
 describe('ItemDetailDrawer', () => {

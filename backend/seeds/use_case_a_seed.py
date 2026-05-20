@@ -122,6 +122,23 @@ USE_CASE_A_SPECS: tuple[dict, ...] = (
         "owner": False,
         "created_at": _dt(2026, 5, 17, 9, 30),
         "updated_at": _dt(2026, 5, 17, 9, 30),
+        # M2-5.10.C — Impact 4 quadrants visible côté drawer Sol §8.5.
+        # Valeurs indicatives v1 (sources tracées) — sera remplacé M3+ par
+        # l'engine économique (priority_explanation + facturation 12 mois).
+        "impact_payload": {
+            "estimated": {
+                "value_eur": 3400,
+                "detail": "économie HP/HC si retour à la baseline ajustée DJU",
+                "formula": "18 % × 220 MWh × 86 €/MWh écart HP",
+                "source": "Modèle V4 indicatif · scénario retour baseline",
+            },
+            "at_risk": {
+                "value_eur": 8500,
+                "detail": "surcoût cumulé 12 mois si dérive non corrigée",
+                "formula": "écart Q3 × 4 trimestres glissants",
+                "source": "Estimation Bill Intelligence (R20)",
+            },
+        },
         "events": [
             {
                 "slug": "created",
@@ -152,6 +169,18 @@ USE_CASE_A_SPECS: tuple[dict, ...] = (
         "business_due_date": _dt(2026, 9, 30),
         "created_at": _dt(2026, 3, 1, 14, 0),
         "updated_at": _dt(2026, 5, 15, 10, 0),
+        "impact_payload": {
+            "at_risk": {
+                "value_eur": 7500,
+                "detail": "pénalité OPERAT si non-respect du dépôt 30/09/2026",
+                "formula": "15 €/m² × 500 m² (seuil sanction art. 5)",
+                "source": "Décret 2014-1393 art. 5",
+            },
+            "secured": {
+                "value_eur": None,
+                "detail": "à activer une fois la déclaration déposée OPERAT",
+            },
+        },
         "events": [
             {
                 "slug": "created",
@@ -570,8 +599,15 @@ def _seed_one_action(db: Session, org_id: int, spec: dict) -> dict[str, int]:
     item_id = _item_uuid(item_slug)
     counts = {"events": 0, "evidences": 0, "blockers": 0, "links": 0}
 
-    if db.get(ActionCenterItem, item_id) is not None:
-        return counts  # déjà seedé — skip action + enfants
+    existing = db.get(ActionCenterItem, item_id)
+    if existing is not None:
+        # M2-5.10.C — Patch idempotent : si `impact_payload` est arrivé dans
+        # le spec après le 1er seed, on complète la donnée manquante (sans
+        # toucher aux enfants — ils restent gérés par leur propre idempotence
+        # PK). N'écrase JAMAIS un payload déjà présent (cf. doctrine seed).
+        if existing.impact_payload is None and spec.get("impact_payload"):
+            existing.impact_payload = spec["impact_payload"]
+        return counts  # déjà seedé — skip enfants
 
     item = ActionCenterItem(
         id=item_id,
@@ -586,6 +622,7 @@ def _seed_one_action(db: Session, org_id: int, spec: dict) -> dict[str, int]:
         priority_score=spec["priority_score"],
         detected_at=spec["created_at"],
         business_due_date=spec.get("business_due_date"),
+        impact_payload=spec.get("impact_payload"),
         created_at=spec["created_at"],
         updated_at=spec["updated_at"],
     )
@@ -740,13 +777,17 @@ def seed_use_case_a_actions(db: Session, *, org_id: int = SEED_ORG_ID) -> UseCas
     created = skipped = 0
     totals = {"events": 0, "evidences": 0, "blockers": 0, "links": 0}
     for spec in USE_CASE_A_SPECS:
-        if db.get(ActionCenterItem, _item_uuid(spec["slug"])) is not None:
-            skipped += 1
-            continue
+        # Idempotence + patch impact_payload sont gérés dans _seed_one_action
+        # (M2-5.10.C — sans cela, le patch ne serait jamais atteint pour les
+        # items déjà présents en DB lors d'un re-seed).
+        already_existed = db.get(ActionCenterItem, _item_uuid(spec["slug"])) is not None
         counts = _seed_one_action(db, org_id, spec)
-        created += 1
-        for key, value in counts.items():
-            totals[key] += value
+        if already_existed:
+            skipped += 1
+        else:
+            created += 1
+            for key, value in counts.items():
+                totals[key] += value
 
     db.commit()
     return UseCaseASeedReport(

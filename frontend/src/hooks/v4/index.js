@@ -13,6 +13,8 @@ export { useActionCenterV4Events } from './useActionCenterV4Events';
 export { useActionCenterV4Evidences } from './useActionCenterV4Evidences';
 export { useActionCenterV4Blockers } from './useActionCenterV4Blockers';
 export { useActionCenterV4Links } from './useActionCenterV4Links';
+// M2-5.10.C — Impact financier 4 quadrants par item.
+export { useActionCenterV4Impact } from './useActionCenterV4Impact';
 
 // Write hooks
 export { useCreateItem } from './useCreateItem';

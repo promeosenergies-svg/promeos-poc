@@ -369,6 +369,65 @@ export const EMPTY_STATE_CTA_COPY = {
   addBlocker: 'Signaler le premier blocage',
 };
 
+// ── M2-5.10.C — Impact financier 4 quadrants (doctrine §8.5) ──────
+//
+// Section intégrée dans le drawer détail item, sous ItemHeader, au-dessus
+// des onglets. 4 cards Sol côte à côte (Estimé / À risque / Sécurisable /
+// Réalisé) avec valeur €, qualifier, source, formule.
+//
+// Cardinal doctrine v0.3 §8.5 : un chiffre € sans source/formule est un
+// chiffre menteur. Quand `value_eur === null`, la card affiche « — » (pas
+// « 0 € »).
+
+export const IMPACT_COPY = {
+  sectionTitle: 'Impact financier · 12 mois',
+  sectionPeriodBadge: '€ HT · 12 mois',
+  emptyTitle: 'Impact non encore calculé pour cet item',
+  emptyText:
+    "L'évaluation économique est en cours de spécification (BACKLOG_M3). " +
+    "Les 4 dimensions apparaîtront ici dès qu'elles seront exposées.",
+  errorTitle: "Impossible de charger l'impact financier",
+  noValueDash: '—',
+};
+
+// Mapping dimension → libellé FR + couleur Sol + tooltip définition.
+// Source maquette `centre_action_v4_detail_drawer_v02.html` lignes 428-454
+// et `centre_action_v4_impact_drawer.html` lignes 240-292.
+export const IMPACT_DIMENSIONS = {
+  estimated: {
+    label: 'Estimé',
+    accentColor: 'var(--sol-attention-fg)',
+    tooltip:
+      "Gain attendu si l'action est exécutée selon le scénario recommandé. " +
+      'Source backend (modèle V4 ou formule explicite).',
+  },
+  at_risk: {
+    label: 'À risque',
+    accentColor: 'var(--sol-refuse-fg)',
+    tooltip:
+      'Montant non sécurisé par une action démarrée ou une preuve validée. ' +
+      "Pénalité réglementaire ou perte potentielle si l'item n'est pas traité.",
+  },
+  secured: {
+    label: 'Sécurisable',
+    accentColor: 'var(--sol-calme-fg)',
+    tooltip:
+      'Activable immédiatement : action ready-to-start, preuves disponibles. ' +
+      "Aucun montant sécurisé tant que le scénario n'est pas démarré.",
+  },
+  realized: {
+    label: 'Réalisé',
+    accentColor: 'var(--sol-succes-fg)',
+    tooltip:
+      "Gain constaté après clôture de l'action avec preuves vérifiées. " +
+      "Aucun montant tant que l'action n'est pas clôturée.",
+  },
+};
+
+// Ordre de rendu (maquette §8.5) : risque + estimé prioritaires (haut),
+// sécurisable + réalisé en bas (état futur ou passé).
+export const IMPACT_DIMENSION_ORDER = ['estimated', 'at_risk', 'secured', 'realized'];
+
 // Layout audit-list maquette §8.4 lignes 614-637. Mapping acteur backend → UI :
 // `actor_role` peut valoir `system` (auto), `user` (humain), `null` (legacy).
 export const TIMELINE_ACTOR_COPY = {

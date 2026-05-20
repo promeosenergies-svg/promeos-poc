@@ -42,6 +42,12 @@ export function fetchItemLinks(itemId, { offset = 0, limit = 50 } = {}) {
   });
 }
 
+// M2-5.10.C — Impact financier 4 quadrants (doctrine §8.5).
+// Lecture seule MV3 ; engine de scoring économique = M3+.
+export function fetchItemImpact(itemId) {
+  return apiClientV4.get(`${BASE}/items/${itemId}/impact`);
+}
+
 // ── WRITE (mutations) ──────────────────────────────────────────
 
 export function createItem(payload, { idempotencyKey } = {}) {

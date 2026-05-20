@@ -16,6 +16,9 @@ vi.mock('../../../hooks/v4', () => ({
   useActionCenterV4Evidences: vi.fn(),
   useActionCenterV4Blockers: vi.fn(),
   useActionCenterV4Links: vi.fn(),
+  // M2-5.10.C — ImpactSection consomme useActionCenterV4Impact dès l'ouverture
+  // du drawer (section affichée entre ItemHeader et Tabs).
+  useActionCenterV4Impact: vi.fn(),
 }));
 
 import {
@@ -25,6 +28,7 @@ import {
   useActionCenterV4Evidences,
   useActionCenterV4Blockers,
   useActionCenterV4Links,
+  useActionCenterV4Impact,
 } from '../../../hooks/v4';
 import { ActionCenterV4ListPage } from '../ActionCenterV4ListPage';
 
@@ -59,6 +63,13 @@ describe('ActionCenterV4ListPage', () => {
     useActionCenterV4Evidences.mockReturnValue(emptyList);
     useActionCenterV4Blockers.mockReturnValue(emptyList);
     useActionCenterV4Links.mockReturnValue(emptyList);
+    // M2-5.10.C — ImpactSection se neutralise dès loading (skeleton inoffensif).
+    useActionCenterV4Impact.mockReturnValue({
+      data: null,
+      loading: true,
+      error: null,
+      refetch: vi.fn(),
+    });
   });
 
   // Pas de `globals: true` dans vite.config → cleanup RTL explicite.

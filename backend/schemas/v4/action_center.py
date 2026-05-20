@@ -187,6 +187,58 @@ class ActionLinkListResponse(BaseModel):
     limit: int
 
 
+# ── Impact financier (M2-5.10.C — maquette §8.5 / detail_drawer §8.4) ──
+#
+# 4 dimensions strictes par item (cf. maquette `centre_action_v4_detail_drawer
+# _v02.html` lignes 853-885) :
+#   - estimated   : gain attendu si l'action est exécutée selon le scénario reco
+#   - at_risk     : montant non sécurisé (pénalité, sanction) si non-traitement
+#   - secured     : montant prêt à activer (action démarrée, preuve disponible)
+#   - realized    : gain constaté après clôture avec preuves vérifiées
+#
+# MV3 : les valeurs sont lues depuis `ActionCenterItem.impact_payload` (JSONB)
+# si présentes — un futur engine de scoring économique (M3+) les calculera.
+# Côté UI, une dimension `null` est rendue « — » (pas « 0 € » qui mentirait).
+
+
+class ImpactDimension(BaseModel):
+    """Une dimension d'impact (Estimated / AtRisk / Secured / Realized).
+
+    `value_eur` peut être `None` : la dimension est rendue « — » côté UI
+    (cardinal : ne jamais afficher 0 € quand le montant est inconnu).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    value_eur: Optional[float] = None
+    detail: Optional[str] = Field(None, max_length=200)
+    formula: Optional[str] = Field(None, max_length=200)
+    source: Optional[str] = Field(None, max_length=120)
+
+
+class ItemImpactResponse(BaseModel):
+    """Réponse de GET /api/v4/action-center/items/{id}/impact.
+
+    Les 4 dimensions sont toujours présentes (UI rend des cards Sol fixes),
+    avec valeurs `null` si le payload backend ne les expose pas encore.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    item_id: UUID
+    period: str = Field("12m", max_length=10, description="Période d'évaluation (cohérent maquette '12 mois')")
+    estimated: ImpactDimension
+    at_risk: ImpactDimension
+    secured: ImpactDimension
+    realized: ImpactDimension
+    # `dimension` legacy : la dimension dominante actuellement enregistrée
+    # dans `impact_dimension` (un seul champ legacy, sera décommissionné M3+).
+    dominant_dimension: Optional[str] = Field(None, max_length=20)
+    # `has_data` : false si toutes les dimensions sont null → l'UI affiche un
+    # empty state explicite « Impact non encore calculé pour cet item ».
+    has_data: bool
+
+
 # ── Requests write (M2-4.4) ──────────────────────────────────────────
 #
 # Tous `extra="forbid"`. Les champs serveur-gérés / dérivés ne sont jamais

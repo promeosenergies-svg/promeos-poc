@@ -9,6 +9,7 @@ import { BlockersTab } from './BlockersTab';
 import { Breadcrumb } from './Breadcrumb';
 import { DrawerActions } from './DrawerActions';
 import { EvidencesTab } from './EvidencesTab';
+import { ImpactSection } from './ImpactSection';
 import { ItemClosedBanner } from './ItemClosedBanner';
 import { ItemHeader } from './ItemHeader';
 import { LinksTab } from './LinksTab';
@@ -122,6 +123,11 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
     >
       <ItemClosedBanner item={item} />
       <ItemHeader item={item} loading={itemLoading} error={itemError} />
+
+      {/* M2-5.10.C — Impact financier 4 quadrants (audit Jean-Marc CFO P0-1).
+          Section indépendante du fetch item : `useActionCenterV4Impact` est
+          appelé en interne. Reste cachée si l'itemId est absent. */}
+      {itemId && <ImpactSection itemId={itemId} />}
 
       <div className="mt-4">
         <Tabs tabs={TAB_LIST} active={activeTab} onChange={handleTabChange} />
