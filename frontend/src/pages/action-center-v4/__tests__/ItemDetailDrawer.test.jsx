@@ -123,4 +123,48 @@ describe('ItemDetailDrawer', () => {
     expect(screen.getByText(/aucune preuve/i)).toBeInTheDocument();
     expect(screen.queryByText(/aucun lien/i)).not.toBeInTheDocument();
   });
+
+  // ── M2-5.11.F — Breadcrumb dynamique avec kind + domain ─────────────
+  test('breadcrumb includes the kind label (M2-5.11.F dynamic segments)', () => {
+    // Item canonique avec kind valide (anomaly) + domain valide (facturation)
+    // — vérifie les labels FR rendus dans le breadcrumb du drawer.
+    useActionCenterV4Item.mockReturnValue({
+      data: {
+        id: 'y',
+        title: 'Audit SMÉ',
+        lifecycle_state: 'triaged',
+        domain: 'facturation',
+        kind: 'anomaly',
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<ItemDetailDrawer itemId="y" open onClose={() => {}} />);
+    const nav = screen.getByRole('navigation', { name: /fil d'ariane/i });
+    // KIND_LABELS.anomaly === 'Anomalie' ; DOMAIN_LABELS.facturation
+    // === 'Facturation' (constants.js).
+    expect(nav).toHaveTextContent(/anomalie/i);
+    expect(nav).toHaveTextContent(/facturation/i);
+  });
+
+  test('breadcrumb omits the domain segment when item.domain is null', () => {
+    useActionCenterV4Item.mockReturnValue({
+      data: {
+        id: 'z',
+        title: 'Sans domaine',
+        lifecycle_state: 'new',
+        domain: null,
+        kind: 'action',
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    const { container } = render(<ItemDetailDrawer itemId="z" open onClose={() => {}} />);
+    const nav = container.querySelector('nav[aria-label="Fil d\'Ariane"]');
+    expect(nav).toHaveTextContent(/action/i);
+    // 5 segments seulement (app + section + page + kind + current). 4 séparateurs.
+    expect(nav.querySelectorAll('[aria-hidden="true"]').length).toBe(4);
+  });
 });

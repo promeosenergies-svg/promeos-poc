@@ -3,7 +3,15 @@ import { useCallback, useEffect, useState } from 'react';
 import Tabs from '../../../ui/Tabs';
 
 import { useActionCenterV4Item } from '../../../hooks/v4';
-import { DRAWER_COPY, DRAWER_FOOTER_COPY, TAB_IDS, TAB_LABELS } from '../constants';
+import {
+  BREADCRUMB_DRAWER_COPY,
+  DRAWER_COPY,
+  DRAWER_FOOTER_COPY,
+  DOMAIN_LABELS,
+  KIND_LABELS,
+  TAB_IDS,
+  TAB_LABELS,
+} from '../constants';
 import { formatDateTimeFR } from '../utils/date';
 import { BlockersTab } from './BlockersTab';
 import { Breadcrumb } from './Breadcrumb';
@@ -85,6 +93,27 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
 
   if (!open || !itemId) return null;
 
+  // M2-5.11.F — Breadcrumb dynamique : 4-5 segments selon les données item
+  // disponibles. La hiérarchie reflète le contexte décisionnel : section >
+  // page > type d'item > domaine métier > « Détail » courant. Tant que l'item
+  // n'est pas chargé (loading/erreur), on reste sur la version statique.
+  const breadcrumbSegments = item
+    ? [
+        { label: BREADCRUMB_DRAWER_COPY.app, strong: true },
+        { label: BREADCRUMB_DRAWER_COPY.section },
+        { label: BREADCRUMB_DRAWER_COPY.page },
+        // KIND_LABELS[item.kind] : 7 valeurs strict CHECK (cardinal V4) —
+        // fallback défensif sur item.kind brut si label absent (audit
+        // resilience M2-5.8.B).
+        { label: KIND_LABELS[item.kind] || item.kind },
+        // DOMAIN_LABELS[item.domain] : 7 valeurs, optionnel (item.domain
+        // peut être NULL côté model). N'apparaît que si présent — pas de
+        // segment fantôme.
+        ...(item.domain ? [{ label: DOMAIN_LABELS[item.domain] || item.domain }] : []),
+        { label: BREADCRUMB_DRAWER_COPY.current, strong: true },
+      ]
+    : undefined;
+
   const footer = item ? (
     <div
       className="flex flex-wrap items-baseline gap-x-3 font-mono text-[9.5px] uppercase tracking-[0.06em]"
@@ -111,7 +140,7 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
       open={open}
       onClose={onClose}
       ariaLabel={DRAWER_COPY.drawerTitle}
-      breadcrumb={<Breadcrumb />}
+      breadcrumb={<Breadcrumb items={breadcrumbSegments} />}
       headerActions={
         <DrawerActions
           item={item}

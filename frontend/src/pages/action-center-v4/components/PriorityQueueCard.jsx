@@ -31,7 +31,11 @@ export function PriorityQueueCard({ item, onOpenItem }) {
   return (
     <article
       className={
-        'relative cursor-pointer rounded-[8px] border transition ' +
+        // M2-5.11.F : `min-h-[110px]` harmonise les hauteurs entre les
+        // cards avec / sans description / impact_at_risk_eur / pilote.
+        // Sans ça, la file alterne entre 60px et 100px → rythme cassé
+        // (audit polish M2-5.11.F).
+        'relative min-h-[110px] cursor-pointer rounded-[8px] border transition ' +
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]' +
         (isClosed ? ' opacity-60' : '')
       }

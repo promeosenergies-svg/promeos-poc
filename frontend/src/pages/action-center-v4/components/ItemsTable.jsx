@@ -162,14 +162,17 @@ export function ItemsTable({ items, onOpenItem }) {
                   <KindCell kind={item.kind} />
                 </td>
                 {/* Item — titre Display Fraunces + meta optionnelle (M3+ pour
-                    site/PRM/source). */}
-                <td className={TD_CLASS} style={{ minWidth: 320, maxWidth: 480 }}>
+                    site/PRM/source). M2-5.11.F : abaissé le minWidth de 320 →
+                    240 (les 7 colonnes M2-5.11.D/E saturent le viewport < 1400px
+                    sinon) + ajout `truncate` + tooltip natif sur dépassement. */}
+                <td className={TD_CLASS} style={{ minWidth: 240, maxWidth: 480 }}>
                   <div
-                    className="text-[14px] font-medium leading-tight tracking-[-0.005em]"
+                    className="truncate text-[14px] font-medium leading-tight tracking-[-0.005em]"
                     style={{
                       fontFamily: 'var(--sol-font-display)',
                       color: 'var(--sol-ink-900)',
                     }}
+                    title={item.title}
                   >
                     {item.title}
                   </div>
