@@ -60,8 +60,72 @@ describe('ActionCenterV4ListPage', () => {
   test('renders the page title and subtitle', () => {
     mockHook({ data: { items: [], total: 0, offset: 0, limit: 20 } });
     render(<ActionCenterV4ListPage />);
-    expect(screen.getByText("Centre d'action")).toBeInTheDocument();
+    // M2-5.10.A — « Centre d'action » apparaît 2× (PageShell title + masthead Sol).
+    expect(screen.getAllByText("Centre d'action").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText('Nouveau (V4) — Pilote')).toBeInTheDocument();
+  });
+
+  // ── M2-5.10.A — masthead Sol au-dessus des filtres ────────────────
+  test('renders the Sol masthead with subtitle and "MAJ live" tag', () => {
+    mockHook({ data: { items: [], total: 0, offset: 0, limit: 20 } });
+    render(<ActionCenterV4ListPage />);
+    expect(screen.getByText(/référentiel complet/i)).toBeInTheDocument();
+    expect(screen.getByText(/MAJ live/)).toBeInTheDocument();
+  });
+
+  // ── M2-5.10.A — filtre kind chips + composition AND avec lifecycle ──
+  test('filters items by kind via the Row 1 chips', () => {
+    mockHook({
+      data: {
+        items: [
+          { id: '1', title: 'A', kind: 'anomaly', lifecycle_state: 'new' },
+          { id: '2', title: 'B', kind: 'action', lifecycle_state: 'new' },
+        ],
+        total: 2,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    render(<ActionCenterV4ListPage />);
+    expect(screen.getByText('A')).toBeInTheDocument();
+    expect(screen.getByText('B')).toBeInTheDocument();
+
+    // Clic sur le chip « Anomalie » → seul A reste.
+    fireEvent.click(screen.getByRole('button', { name: /filtrer par anomalie/i }));
+    expect(screen.getByText('A')).toBeInTheDocument();
+    expect(screen.queryByText('B')).not.toBeInTheDocument();
+  });
+
+  test('the kind reset chip "Tous les types" clears the filter', () => {
+    mockHook({
+      data: {
+        items: [{ id: '1', title: 'A', kind: 'anomaly', lifecycle_state: 'new' }],
+        total: 1,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    render(<ActionCenterV4ListPage />);
+    fireEvent.click(screen.getByRole('button', { name: /filtrer par anomalie/i }));
+    fireEvent.click(screen.getByRole('button', { name: /filtrer par tous les types/i }));
+    expect(screen.getByText('A')).toBeInTheDocument();
+  });
+
+  test('the global "Réinitialiser" button clears both filters and returns to page 1', () => {
+    mockHook({
+      data: {
+        items: [{ id: '1', title: 'A', kind: 'anomaly', lifecycle_state: 'new' }],
+        total: 50,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    render(<ActionCenterV4ListPage />);
+    fireEvent.click(screen.getByRole('button', { name: /filtrer par anomalie/i }));
+    // Le bouton Réinitialiser ne s'affiche que filtre actif.
+    fireEvent.click(screen.getByRole('button', { name: /réinitialiser les filtres/i }));
+    // Plus de filtre actif → la note de scope n'est plus visible.
+    expect(screen.queryByText(/page courante/i)).not.toBeInTheDocument();
   });
 
   test('renders the empty state when there is no item', () => {

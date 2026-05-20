@@ -7,11 +7,18 @@ import {
   LIFECYCLE_BADGE_VARIANTS,
   LIFECYCLE_LABELS,
   LIFECYCLE_ORDER,
+  LIFECYCLE_SOL_VARIANTS,
   KIND_LABELS,
+  KIND_LABELS_UPPER,
+  KIND_SOL_VARIANTS,
   PRIORITY_LABELS,
   PRIORITY_BADGE_VARIANTS,
   PRIORITY_ORDER,
+  PRIORITY_SOL_BG,
   DOMAIN_LABELS,
+  DOMAIN_SOL_VARIANTS,
+  MASTHEAD_COPY,
+  SOL_COPY,
 } from '../constants';
 
 describe('M2-5.2 constants', () => {
@@ -94,5 +101,61 @@ describe('M2-5.9.bis constants', () => {
       expect(typeof label).toBe('string');
       expect(label.length).toBeGreaterThan(0);
     });
+  });
+});
+
+describe('M2-5.10.A — Sol design tokens (fidélité doctrine v0.2)', () => {
+  test('KIND_LABELS_UPPER covers the 7 backend kinds', () => {
+    expect(Object.keys(KIND_LABELS_UPPER).sort()).toEqual(Object.keys(KIND_LABELS).sort());
+  });
+
+  test('KIND_LABELS_UPPER values are all uppercase', () => {
+    Object.values(KIND_LABELS_UPPER).forEach((label) => {
+      expect(label).toBe(label.toUpperCase());
+    });
+  });
+
+  test('KIND_SOL_VARIANTS covers exactly the 7 kinds and exposes bg/border/color/borderStyle', () => {
+    expect(Object.keys(KIND_SOL_VARIANTS).sort()).toEqual(Object.keys(KIND_LABELS).sort());
+    Object.values(KIND_SOL_VARIANTS).forEach((v) => {
+      expect(v.bg).toMatch(/var\(--sol-/);
+      expect(v.border).toMatch(/var\(--sol-/);
+      expect(v.color).toMatch(/var\(--sol-/);
+      expect(['solid', 'dashed', 'dotted']).toContain(v.borderStyle);
+    });
+  });
+
+  test('signal is dashed and recommendation is dotted (signature visuelle doctrinale)', () => {
+    expect(KIND_SOL_VARIANTS.signal.borderStyle).toBe('dashed');
+    expect(KIND_SOL_VARIANTS.recommendation.borderStyle).toBe('dotted');
+  });
+
+  test('LIFECYCLE_SOL_VARIANTS covers exactly the 5 states', () => {
+    expect(Object.keys(LIFECYCLE_SOL_VARIANTS).sort()).toEqual(
+      Object.keys(LIFECYCLE_LABELS).sort()
+    );
+  });
+
+  test('DOMAIN_SOL_VARIANTS covers exactly the 7 domains', () => {
+    expect(Object.keys(DOMAIN_SOL_VARIANTS).sort()).toEqual(Object.keys(DOMAIN_LABELS).sort());
+  });
+
+  test('PRIORITY_SOL_BG covers the 4 brackets with Sol tokens', () => {
+    expect(Object.keys(PRIORITY_SOL_BG).sort()).toEqual(['P0', 'P1', 'P2', 'P3']);
+    Object.values(PRIORITY_SOL_BG).forEach((c) => expect(c).toMatch(/var\(--sol-/));
+  });
+
+  test('MASTHEAD_COPY exposes title + subtitle + dateLive', () => {
+    expect(MASTHEAD_COPY.title).toBeTruthy();
+    expect(MASTHEAD_COPY.subtitle).toBeTruthy();
+    expect(MASTHEAD_COPY.dateLive).toBeTruthy();
+  });
+
+  test('SOL_COPY exposes filter labels and reset ARIA', () => {
+    expect(SOL_COPY.filterLabelClassement).toBeTruthy();
+    expect(SOL_COPY.filterLabelPriorisation).toBeTruthy();
+    expect(SOL_COPY.filterAllKinds).toBeTruthy();
+    expect(SOL_COPY.filterReset).toBeTruthy();
+    expect(typeof SOL_COPY.kindChipAria).toBe('function');
   });
 });

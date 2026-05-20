@@ -1,18 +1,40 @@
-import Badge from '../../../ui/Badge';
-
-import { PRIORITY_LABELS, PRIORITY_BADGE_VARIANTS } from '../constants';
+import { PRIORITY_LABELS, PRIORITY_SOL_BG } from '../constants';
 
 /**
- * M2-5.8.B — Badge du `priority_bracket` d'un item V4 (P0-2 audit M2-5).
+ * M2-5.8.B / M2-5.10.A — Tag de priorité (maquette §8.3 lignes 523-536).
  *
- * Couleur mappée via les status Badge (crit/warn/info/neutral). Fallback :
- * la valeur brute du bracket si inconnue ; rien si bracket absent.
+ * Format pixel-perfect maquette : `P0 · 92` (bracket + score visible),
+ * pleins coloriés (texte clair sur fond). Le score est masqué si absent
+ * (item sans `priority_score` — défensif).
+ *
+ * Bracket absent → `null` (la cellule de tableau reste vide ; doctrine
+ * §13.5 : pas de placeholder factice pour donnée absente sur priorité).
  */
-export function PriorityBadge({ bracket }) {
+export function PriorityBadge({ bracket, score }) {
   if (!bracket) return null;
 
-  const variant = PRIORITY_BADGE_VARIANTS[bracket] || 'neutral';
+  const bg = PRIORITY_SOL_BG[bracket] || 'var(--sol-ink-400)';
   const label = PRIORITY_LABELS[bracket] || bracket;
+  // Score affichable si nombre fini ∈ [0, 100]. Round entier (doctrine
+  // tableau : 1 chiffre maquette suffit, fraction = bruit visuel).
+  const showScore =
+    typeof score === 'number' && Number.isFinite(score) && score >= 0 && score <= 100;
 
-  return <Badge status={variant}>{label}</Badge>;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-[3px] px-2 py-px font-mono text-[10px] font-bold tracking-[0.06em]"
+      style={{ background: bg, color: 'var(--sol-bg-paper)' }}
+      title={label}
+    >
+      <span>{bracket}</span>
+      {showScore && (
+        <>
+          <span aria-hidden="true" className="opacity-70">
+            ·
+          </span>
+          <span className="font-medium tracking-normal opacity-90">{Math.round(score)}</span>
+        </>
+      )}
+    </span>
+  );
 }

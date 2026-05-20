@@ -294,3 +294,148 @@ export const A11Y_COPY = {
   unknownKindLabel: 'Type inconnu',
   unknownDomainLabel: 'Domaine inconnu',
 };
+
+// ── M2-5.10.A — Fidélité doctrine Sol v0.2 (maquette referentiel) ──
+//
+// Restyle pixel-perfect des éléments déjà supportés backend. Hors-scope
+// (owner/deadline/impact/bulk/search/sort serveur, narrative bar, view-switch
+// Kanban) → dette tracée dans BACKLOG_M3.md.
+
+// Masthead italique + sous-titre + date « MAJ live » au-dessus des filtres.
+export const MASTHEAD_COPY = {
+  // Titre court (le sous-titre détaille). « Référentiel » = onglet maquette
+  // §8.3 actif (Pilotage est M2-5.10.D).
+  title: "Centre d'action",
+  subtitle: 'Référentiel complet',
+  dateLive: 'MAJ live',
+};
+
+// Label MONO uppercase utilisé dans la cellule Classement (chip + table).
+// Dérivation explicite : on garde `KIND_LABELS` (FR mixed-case) pour la
+// lecture et on UPPER-case à l'affichage. « Reco » dans la maquette est une
+// abréviation tolérée pour `recommendation`.
+export const KIND_LABELS_UPPER = {
+  anomaly: 'ANOMALIE',
+  action: 'ACTION',
+  decision: 'DÉCISION',
+  signal: 'SIGNAL',
+  evidence_request: 'PREUVE',
+  deadline: 'ÉCHÉANCE',
+  recommendation: 'RECO',
+};
+
+// 7 variantes Sol pour la cellule Classement (kind-icon + kind-label).
+// Source : maquette §8.3 lignes 435-454 (palette « journal en terrasse »).
+// `borderStyle` : 'dashed' pour signal, 'dotted' pour recommendation
+// (signature visuelle distinctive de chaque kind, cf. README maquettes).
+export const KIND_SOL_VARIANTS = {
+  anomaly: {
+    bg: 'var(--sol-refuse-bg)',
+    border: 'var(--sol-refuse-line)',
+    color: 'var(--sol-refuse-fg)',
+    borderStyle: 'solid',
+  },
+  action: {
+    bg: 'var(--sol-bg-paper)',
+    border: 'var(--sol-ink-300)',
+    color: 'var(--sol-ink-700)',
+    borderStyle: 'solid',
+  },
+  decision: {
+    bg: 'var(--sol-hch-bg)',
+    border: 'var(--sol-hch-fg)',
+    color: 'var(--sol-hch-fg)',
+    borderStyle: 'solid',
+  },
+  signal: {
+    bg: 'var(--sol-bg-panel)',
+    border: 'var(--sol-ink-300)',
+    color: 'var(--sol-ink-500)',
+    borderStyle: 'dashed',
+  },
+  evidence_request: {
+    bg: 'var(--sol-attention-bg)',
+    border: 'var(--sol-attention-line)',
+    color: 'var(--sol-attention-fg)',
+    borderStyle: 'solid',
+  },
+  deadline: {
+    bg: 'var(--sol-afaire-bg)',
+    border: 'var(--sol-afaire-line)',
+    color: 'var(--sol-afaire-fg)',
+    borderStyle: 'solid',
+  },
+  recommendation: {
+    bg: 'var(--sol-calme-bg)',
+    border: 'var(--sol-calme-fg)',
+    color: 'var(--sol-calme-fg)',
+    borderStyle: 'dotted',
+  },
+};
+
+// Lifecycle pill Sol (maquette §8.3 lignes 501-505) — couleurs émotionnelles.
+// `closed` (succès) ≠ `in_progress` (attention) ≠ `triaged` (hch). Le dot
+// pulse uniquement sur in_progress (pas implémenté ici — cosmétique pure).
+export const LIFECYCLE_SOL_VARIANTS = {
+  new: {
+    bg: 'var(--sol-bg-paper)',
+    border: 'var(--sol-ink-700)',
+    color: 'var(--sol-ink-700)',
+  },
+  triaged: {
+    bg: 'var(--sol-hch-bg)',
+    border: 'var(--sol-hch-fg)',
+    color: 'var(--sol-hch-fg)',
+  },
+  planned: {
+    bg: 'var(--sol-calme-bg)',
+    border: 'var(--sol-calme-fg)',
+    color: 'var(--sol-calme-fg)',
+  },
+  in_progress: {
+    bg: 'var(--sol-attention-bg)',
+    border: 'var(--sol-attention-fg)',
+    color: 'var(--sol-attention-fg)',
+  },
+  closed: {
+    bg: 'var(--sol-succes-bg)',
+    border: 'var(--sol-succes-fg)',
+    color: 'var(--sol-succes-fg)',
+  },
+};
+
+// 7 domaines BE → variantes Sol. La maquette ne couvre que 6 chip-style
+// (« conformite/facturation/achat/consommation/patrimoine/data ») ; on
+// dérive les 7 vraies clés BE (Domain enum) en mappant sur les tons les plus
+// proches sémantiquement. Doctrine §5 : MONO uppercase, fond clair.
+export const DOMAIN_SOL_VARIANTS = {
+  conformite: { bg: 'var(--sol-calme-bg)', color: 'var(--sol-calme-fg)' },
+  facturation: { bg: 'var(--sol-attention-bg)', color: 'var(--sol-attention-fg)' },
+  maintenance: { bg: 'var(--sol-afaire-bg)', color: 'var(--sol-afaire-fg)' },
+  optimisation: { bg: 'var(--sol-succes-bg)', color: 'var(--sol-succes-fg)' },
+  purchase: { bg: 'var(--sol-hch-bg)', color: 'var(--sol-hch-fg)' },
+  flexibilite: { bg: 'var(--sol-ink-100)', color: 'var(--sol-ink-700)' },
+  data_quality: { bg: 'var(--sol-bg-panel)', color: 'var(--sol-ink-500)' },
+};
+
+// Priorité Sol — tag plein (texte clair sur fond coloré) + strip vertical
+// 3px à gauche de chaque ligne (maquette §8.3 lignes 388-391 et 533-536).
+// Même palette : la strip et le tag partagent la couleur, signature de la
+// modulation R1-R6 (cf. doctrine §5.2).
+export const PRIORITY_SOL_BG = {
+  P0: 'var(--sol-refuse-fg)',
+  P1: 'var(--sol-attention-fg)',
+  P2: 'var(--sol-calme-fg)',
+  P3: 'var(--sol-ink-400)',
+};
+
+// Copy spécifique au restyle Sol — filtres Row 1 (Classement) + Row 2.
+export const SOL_COPY = {
+  filterLabelClassement: 'Classement',
+  filterLabelPriorisation: 'Priorisation',
+  filterAllKinds: 'Tous les types',
+  filterReset: 'Réinitialiser',
+  // ARIA — chip clickable kind ouvre/ferme le filtre.
+  kindChipAria: (label) => `Filtrer par ${label}`,
+  resetAria: 'Réinitialiser les filtres',
+};

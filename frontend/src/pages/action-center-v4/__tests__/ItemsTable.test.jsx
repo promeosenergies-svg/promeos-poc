@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 /**
- * M2-5.3.A / M2-5.8.B — Tests du composant ItemsTable (rendu jsdom).
+ * M2-5.3.A / M2-5.8.B / M2-5.10.A — Tests d'`ItemsTable` (rendu jsdom).
+ *
+ * Restyle Sol M2-5.10.A : 5 colonnes (Classement · Item · État · Domaine ·
+ * Priorité). La colonne « Mis à jour » est retirée (absente de la maquette
+ * §8.3) — la date reste dans le drawer détail. Le `kind` est rendu en MONO
+ * uppercase (ANOMALIE / ACTION / DÉCISION / SIGNAL / PREUVE / ÉCHÉANCE /
+ * RECO).
  */
 import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, test, vi } from 'vitest';
@@ -8,7 +14,6 @@ import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 
 import { ItemsTable } from '../components/ItemsTable';
 
-// Pas de `globals: true` dans vite.config → cleanup RTL explicite obligatoire.
 afterEach(cleanup);
 
 const noop = () => {};
@@ -19,19 +24,18 @@ const sampleItems = [
     title: 'Vérifier consommation HP/HC Q3',
     kind: 'anomaly',
     priority_bracket: 'P1',
+    priority_score: 73,
     lifecycle_state: 'triaged',
-    domain: 'energy',
-    updated_at: new Date().toISOString(),
+    domain: 'conformite',
   },
   {
     id: 'item-2',
     title: 'Déclaration OPERAT 2026',
     kind: 'deadline',
     priority_bracket: 'P2',
+    priority_score: 55,
     lifecycle_state: 'planned',
-    domain: 'compliance',
-    updated_at: null,
-    created_at: new Date(Date.now() - 86400000).toISOString(), // hier
+    domain: 'facturation',
   },
 ];
 
@@ -46,11 +50,6 @@ describe('ItemsTable', () => {
     render(<ItemsTable items={sampleItems} onOpenItem={noop} />);
     expect(screen.getByText('Trié')).toBeInTheDocument();
     expect(screen.getByText('Planifié')).toBeInTheDocument();
-  });
-
-  test('falls back to created_at when updated_at is null', () => {
-    render(<ItemsTable items={sampleItems} onOpenItem={noop} />);
-    expect(screen.getByText('hier')).toBeInTheDocument();
   });
 
   test('renders no body row for an empty array', () => {
@@ -71,6 +70,15 @@ describe('ItemsTable', () => {
     fireEvent.click(screen.getByText('Vérifier consommation HP/HC Q3').closest('tr'));
     expect(onOpenItem).toHaveBeenCalledWith(sampleItems[0]);
   });
+
+  // ── M2-5.10.A — 5 colonnes maquette + masquage « Mis à jour » ─────
+  test('renders exactly 5 column headers (maquette §8.3)', () => {
+    const { container } = render(<ItemsTable items={sampleItems} onOpenItem={noop} />);
+    const ths = container.querySelectorAll('thead th');
+    expect(ths.length).toBe(5);
+    // « Mis à jour » a été retirée (drawer détail le porte).
+    expect(container.querySelector('thead')).not.toHaveTextContent('Mis à jour');
+  });
 });
 
 describe('ItemsTable — a11y clavier + priorité + kind FR (M2-5.8.B)', () => {
@@ -80,9 +88,9 @@ describe('ItemsTable — a11y clavier + priorité + kind FR (M2-5.8.B)', () => {
       title: 'Vérifier HP/HC',
       kind: 'anomaly',
       priority_bracket: 'P0',
+      priority_score: 92,
       lifecycle_state: 'new',
       domain: 'optimisation',
-      updated_at: new Date().toISOString(),
     },
   ];
   const rowOf = (text) => screen.getByText(text).closest('tr');
@@ -129,24 +137,27 @@ describe('ItemsTable — a11y clavier + priorité + kind FR (M2-5.8.B)', () => {
     expect(rowOf('Vérifier HP/HC').className).toMatch(/focus-visible:ring/);
   });
 
-  test('renders the priority badge', () => {
+  test('renders the priority bracket and score (M2-5.10.A)', () => {
     render(<ItemsTable items={sample} onOpenItem={vi.fn()} />);
-    expect(screen.getByText('Critique')).toBeInTheDocument();
+    expect(screen.getByText('P0')).toBeInTheDocument();
+    expect(screen.getByText('92')).toBeInTheDocument();
   });
 
-  test('renders the kind in FR, not the raw backend value', () => {
+  test('renders the kind label in FR uppercase (M2-5.10.A)', () => {
     render(<ItemsTable items={sample} onOpenItem={vi.fn()} />);
-    expect(screen.getByText('Anomalie')).toBeInTheDocument();
+    // KindCell affiche le label MONO uppercase via KIND_LABELS_UPPER.
+    expect(screen.getByText('ANOMALIE')).toBeInTheDocument();
     expect(screen.queryByText('anomaly')).not.toBeInTheDocument();
   });
 
   test('renders the domain in FR, not the raw backend value (M2-5.9.bis)', () => {
     render(<ItemsTable items={sample} onOpenItem={vi.fn()} />);
+    // DomainChip rend la valeur en mixed-case via DOMAIN_LABELS (chip MONO).
     expect(screen.getByText('Optimisation énergétique')).toBeInTheDocument();
     expect(screen.queryByText('optimisation')).not.toBeInTheDocument();
   });
 
-  test('renders the FR label for all 7 backend kinds', () => {
+  test('renders the upper FR label for all 7 backend kinds (M2-5.10.A)', () => {
     const items = [
       'anomaly',
       'action',
@@ -161,21 +172,14 @@ describe('ItemsTable — a11y clavier + priorité + kind FR (M2-5.8.B)', () => {
       kind,
       priority_bracket: 'P2',
       lifecycle_state: 'new',
-      updated_at: new Date().toISOString(),
     }));
     render(<ItemsTable items={items} onOpenItem={vi.fn()} />);
-    [
-      'Anomalie',
-      'Action',
-      'Décision',
-      'Signal',
-      'Demande de preuve',
-      'Échéance',
-      'Recommandation',
-    ].forEach((label) => expect(screen.getByText(label)).toBeInTheDocument());
+    ['ANOMALIE', 'ACTION', 'DÉCISION', 'SIGNAL', 'PREUVE', 'ÉCHÉANCE', 'RECO'].forEach((label) =>
+      expect(screen.getByText(label)).toBeInTheDocument()
+    );
   });
 
-  test('falls back to "Type inconnu" for an unknown kind', () => {
+  test('falls back to "TYPE INCONNU" for an unknown kind (M2-5.10.A)', () => {
     const items = [
       {
         id: 'x',
@@ -183,10 +187,15 @@ describe('ItemsTable — a11y clavier + priorité + kind FR (M2-5.8.B)', () => {
         kind: 'invented_kind',
         priority_bracket: 'P2',
         lifecycle_state: 'new',
-        updated_at: new Date().toISOString(),
       },
     ];
     render(<ItemsTable items={items} onOpenItem={vi.fn()} />);
-    expect(screen.getByText('Type inconnu')).toBeInTheDocument();
+    expect(screen.getByText('TYPE INCONNU')).toBeInTheDocument();
+  });
+
+  // ── M2-5.10.A — strip vertical 3px couleur priorité (signature maquette) ──
+  test('the row carries data-priority for the left strip rendering', () => {
+    render(<ItemsTable items={sample} onOpenItem={vi.fn()} />);
+    expect(rowOf('Vérifier HP/HC')).toHaveAttribute('data-priority', 'P0');
   });
 });
