@@ -14,7 +14,10 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
+from middleware.env_guard import require_non_prod_env
 from middleware.rate_limit import check_rate_limit
+from middleware.rbac import require_v4_role
+from models.v4.enums import Role
 from services.iam_scope import check_site_access
 from models import (
     Site,
@@ -841,8 +844,17 @@ def list_emission_factors(
 
 
 @router.post("/emission-factors/seed")
-def seed_emission_factors(db: Session = Depends(get_db)):
-    """Seed default FR emission factor for demo."""
+def seed_emission_factors(
+    db: Session = Depends(get_db),
+    _rbac=Depends(require_v4_role(Role.ADMIN)),  # M2-3.B : admin-only (was no auth)
+    _env_guard: None = Depends(require_non_prod_env),  # M2-3.B : defense in depth
+):
+    """Seed default FR emission factor for demo.
+
+    🛡️ M2-3.B : double protection (audit Phase 1) :
+    1. require_v4_role(Role.ADMIN) — V4 RBAC wrapper (legacy dg_owner/dsi_admin → admin)
+    2. require_non_prod_env — bloque même un admin en production
+    """
     from models import EmissionFactor
 
     existing = db.query(EmissionFactor).filter_by(energy_type="electricity", region="FR").first()

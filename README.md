@@ -406,6 +406,21 @@ cd backend
 python scripts/seed_data.py
 ```
 
+### Seed V4 (Centre d'Action)
+
+Opt-in, separe du seed HELIOS legacy. Seede 3 `action_center_items` minimaux
+(un par etat : new / in_progress / closed) rattaches a une organisation
+existante. Detail : [`docs/seeds.md`](docs/seeds.md).
+
+```bash
+cd backend
+alembic upgrade m2s2v4               # prerequis : les 8 tables V4 doivent exister
+python -m seeds.v4_seed              # org HELIOS id=1 par defaut
+python -m seeds.v4_seed --org-id 2   # autre organisation
+```
+
+Idempotent : relancer la commande ne cree aucun doublon (PK UUID5 deterministes).
+
 ### Seed Knowledge Base (DB separee)
 
 ```bash

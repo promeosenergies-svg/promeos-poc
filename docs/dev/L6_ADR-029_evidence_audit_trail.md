@@ -1,6 +1,11 @@
 # ADR-029 · Evidence + audit trail Centre d'Action V4
 
-> **Status** : `Accepted`
+> ⚠️ **AVENANT A1 (2026-05-16)** : §2 `organisation_id` passe de UUID à Integer FK
+> `organisations(id)`. Voir [`docs/dev/ADR-025-029_A1_integer_fk.md`](ADR-025-029_A1_integer_fk.md)
+> (décidé par ADR-009 — résolution dette JWT/UUID, Sprint M2-4). Le présent ADR
+> reste la référence pour tout le reste du schéma evidence + audit trail.
+>
+> **Status** : `Accepted` (amendé A1 — cf. ci-dessus)
 > **Date** : 2026-05-14
 > **Deciders** : Amine (PROMEOS founder) + Claude (architecture co-pilot)
 > **Branch** : `claude/refonte-sol2`

@@ -82,6 +82,21 @@
   --sol-night-dot-hot: rgba(228, 173, 119, 0.85); /* anomaly indicator */
   --sol-night-fg-soft: rgba(255, 255, 255, 0.86); /* sub-titre hero */
   --sol-night-fg-meta: rgba(255, 255, 255, 0.62); /* meta footer hero */
+
+  /* ── M2-5.10.B.bis Centre d'Action V4 — drawer Sol tokens ─────────
+     Tokens dérivés isolés pour éviter les hex inline dans le code
+     (audit code-reviewer P1-2). `divider-on-dark` = trait fin clair
+     posé sur un fond ink-900 ; `shadow-dropdown` = ombre douce des
+     popovers et menus. */
+  --sol-divider-on-dark: rgba(255, 255, 255, 0.18);
+  --sol-shadow-dropdown: 0 8px 24px rgba(15, 23, 42, 0.12);
+
+  /* M2-5.10.bis clôture (audit code-reviewer P1-1) — overlays drawer V4 :
+     extraction des 2 rgba inline restants dans V4Drawer.jsx. `backdrop`
+     pour le fond modal-grade (opacité 45 %) et `shadow-drawer` pour
+     l'ombre portée gauche du panel droit. */
+  --sol-backdrop-overlay: rgba(15, 23, 42, 0.45);
+  --sol-shadow-drawer: -8px 0 24px rgba(15, 23, 42, 0.18);
 }
 
 /* ── Animations signature ── */

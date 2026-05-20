@@ -289,3 +289,30 @@ def require_platform_admin(
         )
 
     return payload
+
+
+def get_jwt_payload(
+    token: Optional[str] = Depends(oauth2_scheme),
+) -> Optional[dict]:
+    """JWT-only dependency: décode + valide signature/expiry. Pas de DB lookup, pas d'enforce role.
+
+    Sprint M2-3.B : conçu pour les wrappers RBAC V4 (`require_v4_role`) qui ont
+    besoin d'accéder au payload brut sans que `require_admin` enforce le rôle
+    `admin` au préalable (ce qui empêcherait de tester les autres rôles).
+
+    Convention identique à `require_admin` :
+    - return None si DEMO_MODE + pas de token (preserve existing demo UX)
+    - raise 401 si pas de token hors DEMO_MODE
+    - raise 401 si token invalide
+
+    Returns:
+        dict | None : payload JWT décodé, ou None en DEMO_MODE bypass.
+    """
+    if token is None:
+        if DEMO_MODE:
+            return None
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    try:
+        return decode_token(token)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
