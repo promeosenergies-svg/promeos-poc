@@ -43,7 +43,7 @@ describe('V114b UX 2-clicks guard-rails', () => {
   it('5. Créer action: QUICK_ACTIONS creer-action → /actions/new', () => {
     const qa = QUICK_ACTIONS.find((a) => a.key === 'creer-action');
     expect(qa).toBeDefined();
-    expect(qa.to).toBe('/actions/new');
+    expect(qa.to).toBe('/action-center-v4');
     expect(qa.keywords).toContain('créer');
   });
 

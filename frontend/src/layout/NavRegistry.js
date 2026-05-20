@@ -575,7 +575,13 @@ export const QUICK_ACTIONS = [
     key: 'creer-action',
     label: 'Créer une action',
     icon: Target,
-    to: '/actions/new',
+    // M2-5.11.J audit routes — le formulaire « Créer » legacy était porté
+    // par ActionsPage (autoCreate). La création V4 passera par POST
+    // /api/v4/action-center/items (sprint M2-6 — pas encore exposé en UI).
+    // En attendant on envoie sur le référentiel V4 où l'utilisateur voit
+    // les items existants ; le bouton "+ Nouvelle action" sera ajouté
+    // côté ActionCenterV4ListPage en M2-6.
+    to: '/action-center-v4',
     keywords: ['créer', 'action', 'nouvelle', 'tâche'],
   },
 ];
@@ -1166,7 +1172,8 @@ export const COMMAND_SHORTCUTS = [
     key: 'creer-action',
     label: 'Créer une action',
     icon: Target,
-    to: '/actions/new',
+    // M2-5.11.J audit routes — repoint V4 (cf. NavRegistry.js:578).
+    to: '/action-center-v4',
     shortcut: 'Ctrl+Shift+A',
     keywords: ['créer', 'action', 'nouvelle'],
   },

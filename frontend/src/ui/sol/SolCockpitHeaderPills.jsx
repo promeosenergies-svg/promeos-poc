@@ -34,7 +34,7 @@ export default function SolCockpitHeaderPills({
     if (onActionCenterClick) {
       onActionCenterClick();
     } else {
-      navigate('/actions');
+      navigate('/action-center-v4');
     }
   };
 

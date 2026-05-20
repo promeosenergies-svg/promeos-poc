@@ -660,7 +660,7 @@ export function computeHealthState({
   const primaryCta = hasCritical
     ? { label: 'Voir conformité', to: '/conformite' }
     : hasWarn
-      ? { label: "Plan d'action", to: '/actions' }
+      ? { label: "Plan d'action", to: '/action-center-v4' }
       : { label: 'Explorer', to: '/consommations/explorer' };
 
   // M2-5.11 audit routes — CTA dashboard repointé sur le hub V4 (refonte

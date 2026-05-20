@@ -114,6 +114,68 @@ describe('NarrativeBar', () => {
     expect(values).toEqual(['0', '0', '0', '0', '0']);
   });
 
+  // ── M2-5.11.J — Breakdown CFO sous « Sans pilote » ─────────────────
+  test('renders the P0/P1 breakdown under « Sans pilote » when both > 0', () => {
+    useActionCenterV4Summary.mockReturnValue({
+      data: {
+        count_p0: 3,
+        count_p1: 7,
+        count_without_owner: 5,
+        count_p0_without_owner: 2,
+        count_p1_without_owner: 3,
+        count_at_risk: 0,
+        count_secured: 0,
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<NarrativeBar />);
+    // « Sans pilote » porte la sous-ligne « 2 P0 · 3 P1 ».
+    const breakdowns = screen.getAllByTestId('stat-tile-breakdown').map((n) => n.textContent);
+    expect(breakdowns).toEqual(['2 P0 · 3 P1']);
+  });
+
+  test('renders only P1 breakdown when count_p0_without_owner = 0', () => {
+    useActionCenterV4Summary.mockReturnValue({
+      data: {
+        count_p0: 0,
+        count_p1: 4,
+        count_without_owner: 3,
+        count_p0_without_owner: 0,
+        count_p1_without_owner: 3,
+        count_at_risk: 0,
+        count_secured: 0,
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<NarrativeBar />);
+    const breakdowns = screen.getAllByTestId('stat-tile-breakdown').map((n) => n.textContent);
+    expect(breakdowns).toEqual(['3 P1']);
+  });
+
+  test('hides the breakdown when no P0/P1 are unassigned (anti-bruit)', () => {
+    useActionCenterV4Summary.mockReturnValue({
+      data: {
+        count_p0: 0,
+        count_p1: 0,
+        count_without_owner: 5, // que des P2/P3 sans pilote
+        count_p0_without_owner: 0,
+        count_p1_without_owner: 0,
+        count_at_risk: 0,
+        count_secured: 0,
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<NarrativeBar />);
+    // Aucune sous-ligne breakdown rendue.
+    expect(screen.queryAllByTestId('stat-tile-breakdown')).toHaveLength(0);
+  });
+
   test('returns null silently when data is missing without loading or error', () => {
     // Cas défensif : si jamais le hook renvoie data=null sans loading/error.
     useActionCenterV4Summary.mockReturnValue({

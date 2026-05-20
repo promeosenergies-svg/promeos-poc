@@ -131,7 +131,7 @@ export function computeBillingHealthState(summary, insights = []) {
 
   if (state.level === 'RED') {
     primaryCta = { label: 'Voir les anomalies critiques', to: '/bill-intel' };
-    secondaryCta = { label: "Plan d'action", to: '/actions' };
+    secondaryCta = { label: "Plan d'action", to: '/action-center-v4' };
   } else if (state.level === 'AMBER') {
     primaryCta = { label: 'Analyser les écarts', to: '/bill-intel' };
     secondaryCta = { label: 'Explorer la facturation', to: '/bill-intel' };

@@ -119,10 +119,17 @@ class ActionCenterItemRepository(BaseRepositoryV4[ActionCenterItem]):
             )
         )
 
+        # M2-5.11.J — breakdown by priority sur `count_without_owner` (audit
+        # CFO/Explore : "3 Sans pilote" ne dit pas si c'est urgent ou non →
+        # l'utilisateur ne peut pas trier l'action). Décomposition P0/P1
+        # uniquement : P2/P3 ne portent pas le même signal d'urgence.
+        without_owner = self.model.owner_id.is_(None)
         return {
             "count_p0": _count(self.model.priority_bracket == "P0"),
             "count_p1": _count(self.model.priority_bracket == "P1"),
-            "count_without_owner": _count(self.model.owner_id.is_(None)),
+            "count_without_owner": _count(without_owner),
+            "count_p0_without_owner": _count(and_(without_owner, self.model.priority_bracket == "P0")),
+            "count_p1_without_owner": _count(and_(without_owner, self.model.priority_bracket == "P1")),
             "count_at_risk": _count(blocker_exists),
             "count_secured": _count(evidence_verified_exists),
         }

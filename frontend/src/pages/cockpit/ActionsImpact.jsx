@@ -202,7 +202,7 @@ export default function ActionsImpact({ actions, loading }) {
           )}
         </span>
         <button
-          onClick={() => navigate('/actions')}
+          onClick={() => navigate('/action-center-v4')}
           className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 px-3 py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
         >
           Voir toutes les actions <ArrowRight size={12} />

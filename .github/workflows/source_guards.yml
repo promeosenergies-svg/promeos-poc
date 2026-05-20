@@ -16,7 +16,11 @@ jobs:
           python-version: "3.11"
 
       - name: Install test deps
-        run: pip install pytest pyyaml
+        # M2-5.11.J audit CI — `numpy` ajouté : certains source-guards
+        # importent transitivement services/electric_monitoring/kpi_engine
+        # → climate_engine.py qui dépend de numpy (qa-guardian audit
+        # dette pré-existante depuis claude/refonte-sol2 baseline).
+        run: pip install pytest pyyaml numpy
 
       - name: Run source-guards pytest suite
         run: pytest backend/tests/source_guards/ -v --tb=short

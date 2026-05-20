@@ -211,28 +211,46 @@ function App() {
                                         </PageSuspense>
                                       }
                                     />
+                                    {/* M2-5.11.J audit routes — la refonte Centre d'Action V4
+                                        remplace le « Plan d'actions » legacy (ActionsPage).
+                                        Doctrine §6.2 « pas de coexistence legacy/refonte » :
+                                        /actions et ses variantes redirigent vers le référentiel
+                                        V4. AnomaliesPage + ActionsPage = même intention =
+                                        chemin unique vers /action-center-v4/. */}
                                     <Route
                                       path="/actions"
                                       element={
-                                        <PageSuspense>
-                                          <ActionsPage />
-                                        </PageSuspense>
+                                        isActionCenterV4Enabled() ? (
+                                          <Navigate to="/action-center-v4" replace />
+                                        ) : (
+                                          <PageSuspense>
+                                            <ActionsPage />
+                                          </PageSuspense>
+                                        )
                                       }
                                     />
                                     <Route
                                       path="/actions/new"
                                       element={
-                                        <PageSuspense>
-                                          <ActionsPage autoCreate />
-                                        </PageSuspense>
+                                        isActionCenterV4Enabled() ? (
+                                          <Navigate to="/action-center-v4" replace />
+                                        ) : (
+                                          <PageSuspense>
+                                            <ActionsPage autoCreate />
+                                          </PageSuspense>
+                                        )
                                       }
                                     />
                                     <Route
                                       path="/actions/:actionId"
                                       element={
-                                        <PageSuspense>
-                                          <ActionsPage />
-                                        </PageSuspense>
+                                        isActionCenterV4Enabled() ? (
+                                          <Navigate to="/action-center-v4" replace />
+                                        ) : (
+                                          <PageSuspense>
+                                            <ActionsPage />
+                                          </PageSuspense>
+                                        )
                                       }
                                     />
                                     <Route
@@ -550,12 +568,23 @@ function App() {
                                         </PageSuspense>
                                       }
                                     />
+                                    {/* M2-5.11.J audit routes — Notifications absorbées par
+                                        le Journal V4 (cross-items + cross-event_types). Quand
+                                        le flag V4 est ON, /notifications redirige vers le
+                                        journal V4 ; sinon NotificationsPage legacy en kill-switch. */}
                                     <Route
                                       path="/notifications"
                                       element={
-                                        <PageSuspense>
-                                          <NotificationsPage />
-                                        </PageSuspense>
+                                        isActionCenterV4Enabled() ? (
+                                          <Navigate
+                                            to="/action-center-v4/pilotage/journal"
+                                            replace
+                                          />
+                                        ) : (
+                                          <PageSuspense>
+                                            <NotificationsPage />
+                                          </PageSuspense>
+                                        )
                                       }
                                     />{' '}
                                     <Route

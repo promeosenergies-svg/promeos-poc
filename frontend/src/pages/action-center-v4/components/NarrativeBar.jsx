@@ -49,6 +49,14 @@ export function NarrativeBar() {
       label: NARRATIVE_BAR_COPY.withoutOwnerLabel,
       tooltip: NARRATIVE_BAR_COPY.withoutOwnerTooltip,
       variant: NARRATIVE_BAR_VARIANTS.without_owner,
+      // M2-5.11.J — breakdown CFO : « 3 Sans pilote » ne dit pas si c'est
+      // urgent. La sous-ligne expose la décomposition P0/P1 (signal le plus
+      // actionnable). Affichée uniquement quand au moins 1 P0/P1 sans
+      // pilote — sinon ferme silencieusement (anti bruit doctrine §6.6).
+      breakdown:
+        (data.count_p0_without_owner ?? 0) + (data.count_p1_without_owner ?? 0) > 0
+          ? formatOwnerBreakdown(data.count_p0_without_owner ?? 0, data.count_p1_without_owner ?? 0)
+          : null,
     },
     {
       key: 'at_risk',
@@ -84,7 +92,7 @@ export function NarrativeBar() {
  * Tuile élémentaire (chiffre MONO + libellé court). Palette injectée via
  * `variant.bg` / `variant.accent` (cf. NARRATIVE_BAR_VARIANTS).
  */
-function StatTile({ value, label, tooltip, variant }) {
+function StatTile({ value, label, tooltip, variant, breakdown }) {
   return (
     <div
       role="listitem"
@@ -111,8 +119,34 @@ function StatTile({ value, label, tooltip, variant }) {
       >
         {label}
       </span>
+      {/* M2-5.11.J — sous-ligne breakdown CFO (P0/P1 sans pilote). MONO
+          italique petite pour rester sub-text vs le chiffre principal. */}
+      {breakdown && (
+        <span
+          className="font-mono text-[10px] italic tracking-[0.04em]"
+          style={{ color: 'var(--sol-ink-500)', fontFamily: 'var(--sol-font-mono)' }}
+          data-testid="stat-tile-breakdown"
+        >
+          {breakdown}
+        </span>
+      )}
     </div>
   );
+}
+
+/**
+ * M2-5.11.J — formate le breakdown P0/P1 sans pilote.
+ * Exemples :
+ *  - (2, 3) → "2 P0 · 3 P1"
+ *  - (0, 3) → "3 P1"
+ *  - (2, 0) → "2 P0"
+ *  - (0, 0) → null (consommateur teste avant d'appeler)
+ */
+function formatOwnerBreakdown(p0Count, p1Count) {
+  const parts = [];
+  if (p0Count > 0) parts.push(`${p0Count} P0`);
+  if (p1Count > 0) parts.push(`${p1Count} P1`);
+  return parts.join(' · ');
 }
 
 function NarrativeBarSkeleton() {

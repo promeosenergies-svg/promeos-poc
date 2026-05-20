@@ -44,8 +44,8 @@ describe('ActionsImpact — design system', () => {
     expect(src).not.toMatch(/toLocaleString.*EUR/);
   });
 
-  it('navigue vers /actions', () => {
-    expect(src).toMatch(/navigate\(['"]\/actions/);
+  it("navigue vers /action-center-v4 (M2-5.11.J — refonte V4 remplace Plan d'actions legacy)", () => {
+    expect(src).toMatch(/navigate\(['"]\/action-center-v4/);
   });
 });
 
