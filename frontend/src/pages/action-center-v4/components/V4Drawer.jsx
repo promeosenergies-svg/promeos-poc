@@ -76,10 +76,10 @@ export function V4Drawer({
       aria-modal="true"
       aria-label={ariaLabel}
     >
-      {/* Backdrop atténué — maquette opacity 0.45. */}
+      {/* Backdrop atténué — maquette opacity 0.45 (token Sol M2-5.10.bis). */}
       <div
         className="absolute inset-0 animate-[fadeIn_0.2s_ease-out]"
-        style={{ background: 'rgba(15, 23, 42, 0.45)' }}
+        style={{ background: 'var(--sol-backdrop-overlay)' }}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -94,7 +94,7 @@ export function V4Drawer({
           width: `${width}px`,
           background: 'var(--sol-bg-paper)',
           borderLeft: '1px solid var(--sol-rule)',
-          boxShadow: '-8px 0 24px rgba(15, 23, 42, 0.18)',
+          boxShadow: 'var(--sol-shadow-drawer)',
         }}
       >
         {/* Header sticky Sol — breadcrumb + close + headerActions (slot). */}

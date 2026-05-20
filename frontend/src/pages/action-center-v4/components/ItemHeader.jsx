@@ -70,10 +70,19 @@ function KindHeaderBadge({ kind }) {
 
 export function ItemHeader({ item, loading, error }) {
   if (loading) {
+    // M2-5.10.bis clôture (audit UI Sol P1-4) : skeleton sur tokens Sol pour
+    // cohérence avec les autres skeletons V4 (PilotagePage, JournalPage,
+    // ImpactSection — tous utilisent `--sol-bg-panel`).
     return (
       <header>
-        <div className="mb-3 h-7 w-2/3 animate-pulse rounded bg-gray-200" />
-        <div className="h-4 w-1/3 animate-pulse rounded bg-gray-200" />
+        <div
+          className="mb-3 h-7 w-2/3 animate-pulse rounded"
+          style={{ background: 'var(--sol-bg-panel)' }}
+        />
+        <div
+          className="h-4 w-1/3 animate-pulse rounded"
+          style={{ background: 'var(--sol-bg-panel)' }}
+        />
       </header>
     );
   }

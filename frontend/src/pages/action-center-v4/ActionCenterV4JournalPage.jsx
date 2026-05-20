@@ -52,7 +52,14 @@ export function ActionCenterV4JournalPage() {
   }, [refetch, refetchAll]);
 
   return (
-    <PageShell editorialHeader={<Masthead total={total} />}>
+    <PageShell
+      editorialHeader={
+        <Masthead
+          subtitle="Journal · flux d'activité"
+          countLabel={total > 0 ? JOURNAL_COPY.countSuffix(total) : null}
+        />
+      }
+    >
       <PilotageTabs />
       <PilotageViewToggle />
 

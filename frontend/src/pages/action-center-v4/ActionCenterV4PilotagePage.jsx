@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import PageShell from '../../ui/PageShell';
 import EmptyState from '../../ui/EmptyState';
@@ -57,7 +58,23 @@ export function ActionCenterV4PilotagePage() {
   }, [refetch, refetchAll]);
 
   return (
-    <PageShell editorialHeader={<Masthead total={items.length} />}>
+    <PageShell
+      editorialHeader={
+        <Masthead
+          subtitle={PILOTAGE_COPY.mastheadSubtitle}
+          // M2-5.10.bis clôture (audit P0-2) : compteur contextuel « N actions
+          // prioritaires » au lieu de simple « N items » (qui faisait croire
+          // au total org alors qu'on visualise un sous-ensemble P0/P1).
+          countLabel={
+            items.length === 0
+              ? null
+              : items.length === 1
+                ? '1 action prioritaire'
+                : `${items.length} actions prioritaires`
+          }
+        />
+      }
+    >
       <PilotageTabs />
       <PilotageViewToggle />
 
@@ -129,6 +146,24 @@ export function ActionCenterV4PilotagePage() {
           {items.map((item) => (
             <PriorityQueueCard key={item.id} item={item} onOpenItem={handleOpenItem} />
           ))}
+          {/* M2-5.10.bis clôture (audit CS P1-2) : pont vers le référentiel
+              pour éviter le faux 2-backlogs (« Pilotage = 5 / Référentiel = N »
+              sans lien). La constante `fileLinkToReferentiel` était définie
+              mais non rendue. */}
+          <div className="mt-3 text-right">
+            <Link
+              to="/action-center-v4"
+              className="font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]"
+              style={{
+                color: 'var(--sol-ink-700)',
+                borderBottom: '1px dotted var(--sol-ink-400)',
+                paddingBottom: '1px',
+                textDecoration: 'none',
+              }}
+            >
+              {PILOTAGE_COPY.fileLinkToReferentiel}
+            </Link>
+          </div>
         </div>
       )}
 

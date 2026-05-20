@@ -52,6 +52,17 @@ class TestImpactAuthAndIdor:
         assert r.status_code == 404
         assert r.json()["detail"]["code"] == "ITEM_NOT_FOUND"
 
+    def test_cross_org_item_returns_404_no_leak(self, client, user_token_org_2, seeded_item_org_1):
+        """M2-5.10.bis clôture (audit code-reviewer P1-2) — IDOR cross-org.
+
+        Org 2 ne doit jamais voir l'impact d'un item de l'org 1, et la
+        réponse doit être 404 ITEM_NOT_FOUND (pas 403 — pas de fuite
+        d'existence, cohérent IS3 anti-leak ADR-027).
+        """
+        r = client.get(f"{ITEMS}/{seeded_item_org_1}/impact", headers=_h(user_token_org_2))
+        assert r.status_code == 404
+        assert r.json()["detail"]["code"] == "ITEM_NOT_FOUND"
+
 
 # ════════════════════════════════════════════════════════════════════
 # Réponse structurée — 4 quadrants + has_data

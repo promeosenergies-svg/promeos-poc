@@ -7,12 +7,16 @@
 /**
  * Date relative courte : « aujourd'hui » / « hier » / « il y a 3 jours »
  * / « 12/05 » au-delà d'une semaine. « — » si date absente ou invalide.
+ *
+ * M2-5.10.bis clôture (audit code-reviewer P1-3) : `now` injectable
+ * pour tests déterministes (cohérent avec `daysSince` qui suit le même
+ * pattern).
  */
-export function formatRelativeDate(isoDate) {
+export function formatRelativeDate(isoDate, now = new Date()) {
   if (!isoDate) return '—';
   const date = new Date(isoDate);
   if (Number.isNaN(date.getTime())) return '—';
-  const diffDays = Math.floor((new Date() - date) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
 
   if (diffDays <= 0) return "aujourd'hui";
   if (diffDays === 1) return 'hier';

@@ -75,7 +75,8 @@ describe('LoginPage — bouton connexion démo (M2-5.8.A.bis)', () => {
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/auth/demo-login');
       expect(localStorage.getItem('promeos_token')).toBe('demo-jwt-xyz');
-      expect(window.location.assign).toHaveBeenCalledWith('/action-center-v4');
+      // M2-5.10.bis clôture — atterrissage Pilotage par défaut (audit CS/UX).
+      expect(window.location.assign).toHaveBeenCalledWith('/action-center-v4/pilotage');
     });
   });
 

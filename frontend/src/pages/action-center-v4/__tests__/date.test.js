@@ -11,6 +11,27 @@ describe('formatRelativeDate', () => {
     expect(formatRelativeDate(undefined)).toBe('—');
     expect(formatRelativeDate('not-a-date')).toBe('—');
   });
+
+  // ── M2-5.10.bis clôture — `now` injectable (cohérent daysSince) ─
+  test("returns « aujourd'hui » for same-day with injected now", () => {
+    const now = new Date('2026-05-20T10:00:00Z');
+    expect(formatRelativeDate('2026-05-20T09:00:00Z', now)).toBe("aujourd'hui");
+  });
+
+  test('returns « hier » for D-1 with injected now', () => {
+    const now = new Date('2026-05-20T10:00:00Z');
+    expect(formatRelativeDate('2026-05-19T10:00:00Z', now)).toBe('hier');
+  });
+
+  test('returns « il y a N jours » for 2-6 days with injected now', () => {
+    const now = new Date('2026-05-20T10:00:00Z');
+    expect(formatRelativeDate('2026-05-17T10:00:00Z', now)).toBe('il y a 3 jours');
+  });
+
+  test('returns « DD/MM » beyond 7 days with injected now', () => {
+    const now = new Date('2026-05-20T10:00:00Z');
+    expect(formatRelativeDate('2026-05-10T10:00:00Z', now)).toMatch(/^\d{2}\/\d{2}$/);
+  });
 });
 
 describe('formatDateTimeFR', () => {

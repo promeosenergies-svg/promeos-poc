@@ -14,10 +14,11 @@ import { formatDateTimeFR } from '../utils/date';
  */
 export function EventItem({ event, isFirst = false }) {
   const label = EVENT_TYPE_LABELS[event.event_type] || event.event_type;
-  // `system` strict (côté backend, `actor_role` est l'enum). Un utilisateur
-  // avec un actor_role custom (« admin », « manager »...) reste rendu en pill
-  // panel normale ; le fallback ultime (rien) → « Système ».
-  const isSystem = event.actor_role === 'system';
+  // M2-5.10.bis clôture (audit UI Sol P1-5) : harmonisation avec
+  // `JournalEventRow` sur le bon champ backend `actor_type` (enum 'user' |
+  // 'system'). `actor_role` (texte libre) servait avant — désormais réservé
+  // au label affiché côté user.
+  const isSystem = event.actor_type === 'system';
   const actorLabel = isSystem
     ? TIMELINE_ACTOR_COPY.systemLabel
     : event.actor_name || event.actor_role || TIMELINE_ACTOR_COPY.fallbackActor;

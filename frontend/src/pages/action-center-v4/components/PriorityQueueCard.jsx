@@ -5,8 +5,8 @@ import { LifecycleBadge } from './LifecycleBadge';
 import { PriorityBadge } from './PriorityBadge';
 
 /**
- * M2-5.10.D — Card d'un item dans la file prioritaire Pilotage (maquette §8.1
- * lignes 878-1180 — `item-card`).
+ * M2-5.10.D / .bis clôture — Card d'un item dans la file prioritaire Pilotage
+ * (maquette §8.1 lignes 878-1180 — `item-card`).
  *
  * Bloc papier + strip vertical 3px couleur priorité + status row Sol
  * (KindCell + PriorityBadge avec score + LifecycleBadge + DomainChip) +
@@ -15,14 +15,25 @@ import { PriorityBadge } from './PriorityBadge';
  * Réutilise les chips Sol restylés M2-5.10.A/B (SoT unique constants.js).
  * Pas de SLA pair, owner avatar, flags récurrence — backend manquant
  * (BACKLOG_M3). La maquette les prévoit mais sans data ils sont mensongers.
+ *
+ * M2-5.10.bis clôture (audit CS P1-3) : si l'item est `closed`, la card est
+ * visuellement opacifiée (60 %) pour signaler que toute action est en
+ * lecture seule — cohérent avec `ItemClosedBanner` posé à l'intérieur du
+ * drawer détail. Évite que des items closed apparaissent comme actifs
+ * dans la file prioritaire (transition asynchrone, refresh courte fenêtre).
  */
 export function PriorityQueueCard({ item, onOpenItem }) {
   const strip = PRIORITY_SOL_BG[item.priority_bracket] || 'var(--sol-ink-300)';
   const open = () => onOpenItem(item);
+  const isClosed = item.lifecycle_state === 'closed';
 
   return (
     <article
-      className="relative cursor-pointer rounded-[8px] border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]"
+      className={
+        'relative cursor-pointer rounded-[8px] border transition ' +
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]' +
+        (isClosed ? ' opacity-60' : '')
+      }
       style={{
         background: 'var(--sol-bg-paper)',
         borderColor: 'var(--sol-rule)',

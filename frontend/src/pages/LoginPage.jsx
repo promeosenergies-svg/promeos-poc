@@ -55,7 +55,10 @@ export default function LoginPage() {
       // Rechargement complet : AuthContext restaure la session via /auth/me
       // au mount. `login()` legacy prend (email, password), pas un payload —
       // le rechargement garde l'exception doctrine confinée à LoginPage.
-      window.location.assign('/action-center-v4');
+      // M2-5.10.bis clôture — atterrissage Pilotage (file prioritaire du jour)
+      // au lieu du Référentiel (liste froide). Audit CS/UX : Marie 3 min/matin
+      // gagne ~25s sur la découverte de ses 5 P0/P1.
+      window.location.assign('/action-center-v4/pilotage');
     } catch (err) {
       setError(err.response?.data?.detail?.message || 'Connexion démo indisponible');
       setDemoLoading(false);

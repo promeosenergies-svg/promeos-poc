@@ -84,4 +84,19 @@ describe('PriorityQueueCard', () => {
     render(<PriorityQueueCard item={{ ...sampleItem, description: null }} onOpenItem={vi.fn()} />);
     expect(screen.queryByText(/Anomalie HP\/HC/)).not.toBeInTheDocument();
   });
+
+  // ── M2-5.10.bis clôture — opacity-60 si lifecycle_state === closed ──
+  test('opacifies the card visually when the item is closed (audit CS P1-3)', () => {
+    render(
+      <PriorityQueueCard item={{ ...sampleItem, lifecycle_state: 'closed' }} onOpenItem={vi.fn()} />
+    );
+    const card = screen.getByRole('button', { name: /ouvrir l'action/i });
+    expect(card.className).toMatch(/opacity-60/);
+  });
+
+  test('keeps the card at full opacity for non-closed items', () => {
+    render(<PriorityQueueCard item={sampleItem} onOpenItem={vi.fn()} />);
+    const card = screen.getByRole('button', { name: /ouvrir l'action/i });
+    expect(card.className).not.toMatch(/opacity-60/);
+  });
 });

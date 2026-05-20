@@ -90,6 +90,13 @@
      popovers et menus. */
   --sol-divider-on-dark: rgba(255, 255, 255, 0.18);
   --sol-shadow-dropdown: 0 8px 24px rgba(15, 23, 42, 0.12);
+
+  /* M2-5.10.bis clôture (audit code-reviewer P1-1) — overlays drawer V4 :
+     extraction des 2 rgba inline restants dans V4Drawer.jsx. `backdrop`
+     pour le fond modal-grade (opacité 45 %) et `shadow-drawer` pour
+     l'ombre portée gauche du panel droit. */
+  --sol-backdrop-overlay: rgba(15, 23, 42, 0.45);
+  --sol-shadow-drawer: -8px 0 24px rgba(15, 23, 42, 0.18);
 }
 
 /* ── Animations signature ── */

@@ -44,4 +44,24 @@ describe('Masthead', () => {
     // juste que la date a été rendue (n'importe quelle date courante).
     expect(screen.getByText(/\d{4}/)).toBeInTheDocument();
   });
+
+  // ── M2-5.10.bis clôture — subtitle/countLabel dynamiques ─────────
+  test('renders a custom subtitle when provided', () => {
+    render(<Masthead total={0} subtitle="File prioritaire" />);
+    expect(screen.getByText(/file prioritaire/i)).toBeInTheDocument();
+    // Le fallback « Référentiel complet » ne doit plus apparaître.
+    expect(screen.queryByText(/référentiel complet/i)).not.toBeInTheDocument();
+  });
+
+  test('renders a custom countLabel when provided (overrides total suffix)', () => {
+    render(<Masthead total={5} countLabel="5 actions prioritaires" />);
+    expect(screen.getByText('5 actions prioritaires')).toBeInTheDocument();
+    // « 5 items » (suffix par défaut) ne doit pas apparaître.
+    expect(screen.queryByText('5 items')).not.toBeInTheDocument();
+  });
+
+  test('hides the count entirely when countLabel is null and total is 0', () => {
+    const { container } = render(<Masthead total={0} subtitle="Pilotage" />);
+    expect(container.textContent).not.toMatch(/items/i);
+  });
 });

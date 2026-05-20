@@ -1,18 +1,23 @@
 import { MASTHEAD_COPY } from '../constants';
 
 /**
- * M2-5.10.A / .bis — Masthead Sol éditorial (maquette §8.3 lignes 703-707).
+ * M2-5.10.A / .bis / M2-5.10.bis clôture — Masthead Sol éditorial (maquette §8.3
+ * lignes 703-707).
  *
- * Bandeau italique au-dessus des filtres : titre + sous-titre + date « MAJ
- * live ». Posé via la prop `editorialHeader` de `PageShell` pour court-
- * circuiter le H1 sans-serif Tailwind par défaut (audit M2-5.10.A — anti-
- * pattern doctrine Sol §6.1 « triptyque typographique brisé »).
+ * Bandeau italique au-dessus des filtres : titre + sous-titre contextuel +
+ * compteur explicite. Posé via la prop `editorialHeader` de `PageShell`
+ * pour court-circuiter le H1 sans-serif Tailwind par défaut (anti-pattern
+ * doctrine Sol §6.1 « triptyque typographique brisé »).
  *
- * `total` est injecté côté `ActionCenterV4ListPage` depuis le hook V4 — c'est
- * le compteur backend (pas un nombre d'items filtrés). Pluralisation gérée
- * par `MASTHEAD_COPY.itemsSuffix`.
+ * M2-5.10.bis clôture (audit cross-pages) : `subtitle` et `countLabel` sont
+ * désormais props pour permettre à chaque page (Référentiel, Pilotage,
+ * Journal) d'afficher son contexte propre. Sans ces props, fallback sur
+ * `MASTHEAD_COPY.subtitle` (« Référentiel complet ») et le suffixe
+ * pluralisé « N items » (compatibilité rétroactive Référentiel).
+ *
+ * `total` est injecté côté page (depuis le hook V4 ou la liste affichée).
  */
-export function Masthead({ total = 0, liveDate }) {
+export function Masthead({ total = 0, liveDate, subtitle, countLabel }) {
   // Si liveDate non fourni, fallback à la date courante (dériver inline plutôt
   // qu'en useMemo : la date n'est pas une dérivée props/state, et un useMemo
   // vide la fige au montage — leçon audit code-reviewer M2-5.10.A).
@@ -24,6 +29,13 @@ export function Masthead({ total = 0, liveDate }) {
       month: 'long',
       year: 'numeric',
     });
+
+  const renderedSubtitle = subtitle || MASTHEAD_COPY.subtitle;
+  // Fallback compteur : suffixe pluralisé « N items » (cohérent Référentiel
+  // historique). Si la page veut un libellé contextuel (« 5 actions
+  // prioritaires », « 38 événements 7j »), elle passe `countLabel`.
+  const renderedCount =
+    countLabel != null ? countLabel : total > 0 ? MASTHEAD_COPY.itemsSuffix(total) : null;
 
   return (
     <div
@@ -38,13 +50,12 @@ export function Masthead({ total = 0, liveDate }) {
           letterSpacing: '0.02em',
         }}
       >
-        <span className="font-semibold not-italic">{MASTHEAD_COPY.title}</span> ·{' '}
-        {MASTHEAD_COPY.subtitle}
-        {total > 0 && (
+        <span className="font-semibold not-italic">{MASTHEAD_COPY.title}</span> · {renderedSubtitle}
+        {renderedCount && (
           <>
             {' · '}
             <span className="not-italic" style={{ color: 'var(--sol-ink-500)' }}>
-              {MASTHEAD_COPY.itemsSuffix(total)}
+              {renderedCount}
             </span>
           </>
         )}
