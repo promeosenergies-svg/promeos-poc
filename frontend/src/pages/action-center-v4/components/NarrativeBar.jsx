@@ -81,8 +81,8 @@ export function NarrativeBar() {
       aria-label="Synthèse du Centre d'action"
       data-testid="narrative-bar"
     >
-      {tiles.map((tile) => (
-        <StatTile key={tile.key} {...tile} />
+      {tiles.map(({ key, ...tileProps }) => (
+        <StatTile key={key} {...tileProps} />
       ))}
     </div>
   );

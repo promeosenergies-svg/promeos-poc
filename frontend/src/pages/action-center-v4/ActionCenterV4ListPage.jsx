@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import PageShell from '../../ui/PageShell';
 import { SkeletonTable } from '../../ui/Skeleton';
@@ -7,7 +8,8 @@ import ErrorState from '../../ui/ErrorState';
 import Pagination from '../../ui/Pagination';
 
 import { useActionCenterV4Items } from '../../hooks/v4';
-import { COPY, PAGE_SIZE } from './constants';
+import { COPY, LIFECYCLE_ORDER, PAGE_SIZE } from './constants';
+import { KIND_LABELS } from './constants';
 import { ItemsTable } from './components/ItemsTable';
 import { ItemDetailDrawer } from './components/ItemDetailDrawer';
 import { ListFilterBar } from './components/ListFilterBar';
@@ -33,10 +35,39 @@ import { PilotageTabs } from './components/PilotageTabs';
  * démo HELIOS » est surfacé — la page n'a donc pas à gérer l'absence de
  * token elle-même.
  */
+/**
+ * M2-5.11.K — Validation stricte des params URL (CX +0.3 backlog).
+ *
+ * Évite qu'un deep link malicieux/copié injecte un état UI imprévu :
+ * - `state=xxx` doit être ∈ LIFECYCLE_ORDER, sinon ignoré.
+ * - `kind=xxx` doit être ∈ KIND_LABELS, sinon ignoré.
+ * - `page` doit être un entier ≥ 1, sinon page=1.
+ *
+ * Pas de calcul métier — juste un sanity check de l'input external.
+ */
+const VALID_KINDS = new Set(Object.keys(KIND_LABELS));
+const VALID_STATES = new Set(LIFECYCLE_ORDER);
+
+function parseFilterParams(searchParams) {
+  const rawState = searchParams.get('state');
+  const rawKind = searchParams.get('kind');
+  const rawPage = parseInt(searchParams.get('page') ?? '', 10);
+  return {
+    stateFilter: rawState && VALID_STATES.has(rawState) ? rawState : null,
+    kindFilter: rawKind && VALID_KINDS.has(rawKind) ? rawKind : null,
+    page: Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1,
+  };
+}
+
 export function ActionCenterV4ListPage() {
-  const [page, setPage] = useState(1);
-  const [stateFilter, setStateFilter] = useState(null);
-  const [kindFilter, setKindFilter] = useState(null);
+  // M2-5.11.K — état filtres + page persisté en query params (audit CX backlog
+  // « Filter state loss on cross-page navigation »). Le drawer + cross-page
+  // → retour conserve désormais les filtres ; un share-link reflète la vue.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { stateFilter, kindFilter, page } = parseFilterParams(searchParams);
+
+  // Le drawer reste en state local : pas besoin de persister l'item ouvert
+  // dans l'URL (UX bizarre au refresh — réouverture systématique non désirée).
   const [selectedItemId, setSelectedItemId] = useState(null);
 
   const { data, loading, error, refetch } = useActionCenterV4Items({
@@ -83,24 +114,57 @@ export function ActionCenterV4ListPage() {
     setSelectedItemId(null);
   }, []);
 
-  // M2-5.9.bis — changer un filtre repart en page 1 : filtrer depuis une
-  // page profonde laisserait une page vide trompeuse (EmptyState alors que
-  // d'autres pages contiennent des items du filtre).
-  const handleStateFilterChange = useCallback((value) => {
-    setStateFilter(value);
-    setPage(1);
-  }, []);
+  // M2-5.11.K — helper centralisé pour synchro URL ↔ state filtres. Tout
+  // changement remet page=1 (M2-5.9.bis : filtrer depuis une page profonde
+  // laisserait une page vide trompeuse). On passe `replace: true` pour ne
+  // pas polluer l'historique navigateur avec un entry par click chip.
+  const updateFilters = useCallback(
+    (next) => {
+      setSearchParams(
+        (prev) => {
+          const sp = new URLSearchParams(prev);
+          // `next === null` → suppression du param. `undefined` → no-op.
+          const apply = (key, value) => {
+            if (value === undefined) return;
+            if (value === null) sp.delete(key);
+            else sp.set(key, value);
+          };
+          apply('state', next.stateFilter);
+          apply('kind', next.kindFilter);
+          // Reset page sauf si explicitement modifié.
+          if (next.page !== undefined) {
+            if (next.page === 1) sp.delete('page');
+            else sp.set('page', String(next.page));
+          } else {
+            sp.delete('page');
+          }
+          return sp;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
-  const handleKindFilterChange = useCallback((value) => {
-    setKindFilter(value);
-    setPage(1);
-  }, []);
+  const handleStateFilterChange = useCallback(
+    (value) => updateFilters({ stateFilter: value || null }),
+    [updateFilters]
+  );
 
-  const handleReset = useCallback(() => {
-    setStateFilter(null);
-    setKindFilter(null);
-    setPage(1);
-  }, []);
+  const handleKindFilterChange = useCallback(
+    (value) => updateFilters({ kindFilter: value || null }),
+    [updateFilters]
+  );
+
+  const handleReset = useCallback(
+    () => updateFilters({ stateFilter: null, kindFilter: null }),
+    [updateFilters]
+  );
+
+  const handlePageChange = useCallback(
+    (nextPage) => updateFilters({ page: nextPage }),
+    [updateFilters]
+  );
 
   return (
     <PageShell editorialHeader={<Masthead total={total} />}>
@@ -138,7 +202,7 @@ export function ActionCenterV4ListPage() {
       )}
 
       {ready && total > 0 && (
-        <Pagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+        <Pagination page={page} pageSize={PAGE_SIZE} total={total} onChange={handlePageChange} />
       )}
 
       <ItemDetailDrawer

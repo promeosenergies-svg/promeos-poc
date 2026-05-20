@@ -67,20 +67,25 @@ export function ItemsTable({ items, onOpenItem }) {
             <th className={TH_CLASS} style={TH_STYLE}>
               {COPY.columnTitle}
             </th>
-            <th className={TH_CLASS} style={TH_STYLE}>
+            {/* M2-5.11.K responsive — Domaine + État masqués < md (768px) :
+                le titre + strip 3px + KindCell + Priorité suffisent en
+                mobile pour scanner et ouvrir un item. Détails complets via
+                le drawer (qui se posera en plein écran sur mobile en M3+). */}
+            <th className={`hidden md:table-cell ${TH_CLASS}`} style={TH_STYLE}>
               {COPY.columnState}
             </th>
-            <th className={TH_CLASS} style={TH_STYLE}>
+            <th className={`hidden lg:table-cell ${TH_CLASS}`} style={TH_STYLE}>
               {COPY.columnDomain}
             </th>
-            {/* M2-5.11.D — colonne € (à risque 12m) — alignée droite, MONO
-                pour scan colonne CFO. La doctrine v0.3 §6.6 prescrit un
-                alignement à droite des montants pour lecture vertical. */}
-            <th className={`${TH_CLASS} text-right`} style={TH_STYLE}>
+            {/* M2-5.11.D / .K — colonne € (à risque 12m) — alignée droite,
+                MONO pour scan colonne CFO. Masquée < lg (1024px) pour ne
+                pas saturer le scan tactile mobile. */}
+            <th className={`hidden lg:table-cell ${TH_CLASS} text-right`} style={TH_STYLE}>
               {COPY.columnAmount}
             </th>
-            {/* M2-5.11.E — colonne Pilote (owner_display_name) avant Priorité. */}
-            <th className={TH_CLASS} style={TH_STYLE}>
+            {/* M2-5.11.E / .K — colonne Pilote masquée < lg, accessible
+                dans le drawer (Assigner) sur les vues petites. */}
+            <th className={`hidden lg:table-cell ${TH_CLASS}`} style={TH_STYLE}>
               {COPY.columnOwner}
             </th>
             <th className={`${TH_CLASS} text-center`} style={TH_STYLE}>
@@ -137,16 +142,16 @@ export function ItemsTable({ items, onOpenItem }) {
                     {item.title}
                   </div>
                 </td>
-                {/* État — pill lifecycle Sol. */}
-                <td className={TD_CLASS}>
+                {/* État — pill lifecycle Sol. Masqué < md (mobile). */}
+                <td className={`hidden md:table-cell ${TD_CLASS}`}>
                   <LifecycleBadge state={item.lifecycle_state} />
                 </td>
-                {/* Domaine — chip MONO Sol, ou « — » si absent. */}
-                <td className={TD_CLASS}>
+                {/* Domaine — chip MONO Sol, ou « — » si absent. Masqué < lg. */}
+                <td className={`hidden lg:table-cell ${TD_CLASS}`}>
                   {item.domain ? (
                     <DomainChip domain={item.domain} />
                   ) : (
-                    <span style={{ color: 'var(--sol-ink-400)' }}>—</span>
+                    <span style={{ color: 'var(--sol-ink-500)' }}>—</span>
                   )}
                 </td>
                 {/* M2-5.11.D / .G — montant à risque 12m. `fmtEurShort` rend
@@ -158,7 +163,7 @@ export function ItemsTable({ items, onOpenItem }) {
                     l'œil suit. Null reste tiret mais en `--sol-ink-500`
                     (WCAG AA 5.2:1 vs ink-400 3.45:1). */}
                 <td
-                  className={`${TD_CLASS} text-right whitespace-nowrap`}
+                  className={`hidden lg:table-cell ${TD_CLASS} text-right whitespace-nowrap`}
                   title={
                     item.impact_at_risk_eur != null ? COPY.amountTooltip : COPY.amountTooltipMissing
                   }
@@ -180,7 +185,7 @@ export function ItemsTable({ items, onOpenItem }) {
                     Assigner vit dans le drawer (ouvrable via clic sur la
                     ligne) — pas d'action inline pour ne pas encombrer.
                     M2-5.11.G : ink-400 (3.45:1) → ink-500 (5.2:1) WCAG AA. */}
-                <td className={TD_CLASS}>
+                <td className={`hidden lg:table-cell ${TD_CLASS}`}>
                   {item.owner_display_name ? (
                     <span className="text-[12.5px]" style={{ color: 'var(--sol-ink-900)' }}>
                       {item.owner_display_name}
