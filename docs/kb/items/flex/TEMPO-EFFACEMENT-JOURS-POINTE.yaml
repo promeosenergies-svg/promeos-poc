@@ -17,6 +17,8 @@ tags:
     - multi
   granularity:
     - event
+  naf:
+    - multi
 
 scope: {}
 

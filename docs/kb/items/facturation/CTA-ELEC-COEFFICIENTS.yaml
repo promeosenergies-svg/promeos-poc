@@ -18,6 +18,8 @@ tags:
     - taxes
   granularity:
     - mensuel
+  naf:
+    - multi
 
 scope: {}
 

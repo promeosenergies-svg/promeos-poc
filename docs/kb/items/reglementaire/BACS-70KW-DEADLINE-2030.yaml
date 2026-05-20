@@ -17,6 +17,8 @@ tags:
     - bacs
   granularity:
     - event
+  naf:
+    - multi
 
 scope:
   hvac_kw_min: 70

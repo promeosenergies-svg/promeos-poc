@@ -18,6 +18,8 @@ tags:
     - loi_aper
   granularity:
     - event
+  naf:
+    - multi
 
 scope:
   parking_surface_m2_min: 1500

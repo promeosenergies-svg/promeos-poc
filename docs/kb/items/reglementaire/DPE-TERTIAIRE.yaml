@@ -19,6 +19,8 @@ tags:
     - multi
   granularity:
     - event
+  naf:
+    - multi
 
 scope:
   surface_m2_min: 500

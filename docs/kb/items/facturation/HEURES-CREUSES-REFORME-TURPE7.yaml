@@ -18,6 +18,8 @@ tags:
     - turpe
   granularity:
     - event
+  naf:
+    - multi
 
 scope: {}
 

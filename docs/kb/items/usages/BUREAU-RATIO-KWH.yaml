@@ -17,6 +17,8 @@ tags:
   reg: []
   granularity:
     - mensuel
+  naf:
+    - multi
 
 scope:
   building_type: ["bureau"]

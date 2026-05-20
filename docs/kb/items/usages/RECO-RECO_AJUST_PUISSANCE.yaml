@@ -13,6 +13,8 @@ tags:
   reg: []
   granularity:
   - event
+  naf:
+    - multi
 scope: {}
 content_md: '## Recommandation: Reco Ajust Puissance
 

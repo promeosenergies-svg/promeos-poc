@@ -17,6 +17,8 @@ tags:
   granularity:
   - horaire
   - journalier
+  naf:
+    - multi
 scope: {}
 content_md: '## Règle de Détection: Anom Weekend Eleve
 

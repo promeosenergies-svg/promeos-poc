@@ -19,6 +19,8 @@ tags:
     - acc
   granularity:
     - 30min
+  naf:
+    - multi
 
 scope: {}
 

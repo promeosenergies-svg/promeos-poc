@@ -17,6 +17,8 @@ tags:
     - decret_tertiaire
   granularity:
     - mensuel
+  naf:
+    - multi
 
 scope:
   surface_m2_min: 1000

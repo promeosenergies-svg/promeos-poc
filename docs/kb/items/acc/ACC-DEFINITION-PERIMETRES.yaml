@@ -19,6 +19,8 @@ tags:
     - acc
   granularity:
     - mensuel
+  naf:
+    - multi
 
 scope: {}
 

@@ -20,6 +20,8 @@ tags:
     - multi
   granularity:
     - 30min
+  naf:
+    - multi
 
 scope: {}
 

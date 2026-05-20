@@ -16,6 +16,8 @@ tags:
   granularity:
   - mensuel
   - horaire
+  naf:
+    - multi
 scope:
   archetype: BUREAU_STANDARD
   naf_codes:
