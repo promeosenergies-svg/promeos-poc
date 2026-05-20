@@ -68,6 +68,13 @@ class ActionCenterItemResponse(BaseModel):
     # sans appel /impact unitaire (anti N+1). `None` si l'impact n'est pas
     # encore calculé pour cet item — l'UI rend « — ».
     impact_at_risk_eur: Optional[float] = None
+    # M2-5.11.E — Pilote assigné (UUID anchored, libellé snapshot lu via
+    # PATCH /assign). Les deux sont `None` quand l'item n'est pas assigné.
+    # `owner_id` reste UUID isolé (cohérent pattern V4 — pas de FK strict
+    # vers `users` legacy Integer). `owner_display_name` = snapshot 120
+    # char rempli au moment de l'assignation, pas joint runtime.
+    owner_id: Optional[UUID] = None
+    owner_display_name: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -405,6 +412,25 @@ class BlockerResolveRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     resolution_comment: Optional[str] = Field(None, max_length=500)
+
+
+class AssignOwnerRequest(BaseModel):
+    """M2-5.11.E — Body PATCH /items/{id}/assign.
+
+    Deux modes :
+    - Assigner : `owner_id` UUID + `owner_display_name` requis (snapshot
+      libellé pilote, persisté sur la table — évite la jointure runtime).
+    - Désassigner : `owner_id = None` (`owner_display_name` ignoré, posé à
+      None côté model pour cohérence).
+
+    Audit event : un event `owner_changed` est écrit dans la même
+    transaction (atomicité — pattern lifecycle/resolve/verify).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    owner_id: Optional[UUID] = None
+    owner_display_name: Optional[str] = Field(None, max_length=120)
 
 
 class ActionLinkCreate(BaseModel):

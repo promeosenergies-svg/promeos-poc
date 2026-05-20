@@ -80,6 +80,13 @@ export function transitionLifecycle(itemId, payload) {
   return apiClientV4.patch(`${BASE}/items/${itemId}/lifecycle`, payload);
 }
 
+// M2-5.11.E — Assignation du pilote (owner_id + owner_display_name snapshot).
+// `payload.owner_id = null` désassigne ; `owner_display_name` ignoré dans ce
+// cas et systématiquement remis à null côté BE (pas de label fantôme).
+export function assignOwner(itemId, payload) {
+  return apiClientV4.patch(`${BASE}/items/${itemId}/assign`, payload);
+}
+
 export function uploadEvidence(itemId, file, { description } = {}) {
   const formData = new FormData();
   formData.append('file', file);

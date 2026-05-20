@@ -50,9 +50,10 @@ describe('DrawerActions', () => {
     expect(screen.getByRole('button', { name: /plus d'actions/i })).toBeInTheDocument();
   });
 
-  test('the Réassigner button is permanently disabled (M3+ owner endpoint)', () => {
+  // M2-5.11.E — l'endpoint /assign est livré, le bouton est désormais actif.
+  test('the Assigner button is enabled (M2-5.11.E — endpoint /assign livré)', () => {
     render(<DrawerActions item={item} />);
-    expect(screen.getByRole('button', { name: /assigner/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /assigner/i })).toBeEnabled();
   });
 
   test('the Transitionner button is enabled for a non-terminal item', () => {

@@ -49,8 +49,15 @@ export const COPY = {
   // M2-5.11.D — colonne € (à risque 12m). Label court pour ne pas faire
   // déborder l'en-tête, tooltip explicite pour la valeur et l'absence.
   columnAmount: 'À risque 12m',
-  amountTooltip: 'Montant à risque sur 12 mois si l\'item n\'est pas traité (source : impact_payload.at_risk).',
-  amountTooltipMissing: "Impact non encore calculé pour cet item — apparaîtra dès qu'un montant sera estimé.",
+  amountTooltip:
+    "Montant à risque sur 12 mois si l'item n'est pas traité (source : impact_payload.at_risk).",
+  amountTooltipMissing:
+    "Impact non encore calculé pour cet item — apparaîtra dès qu'un montant sera estimé.",
+  // M2-5.11.E — colonne Pilote. Compact ; le tooltip qualifie l'absence.
+  columnOwner: 'Pilote',
+  ownerUnassignedLabel: 'Non assigné',
+  ownerUnassignedTooltip:
+    "Aucun pilote assigné — cliquer sur l'item pour ouvrir le drawer et assigner.",
   emptyTitle: 'Aucune action à afficher',
   emptyText: 'Les actions de votre organisation apparaîtront ici dès leur création.',
   // M2-5.10.A.bis — copy reformulée : sans cette précision, un audit CS a
@@ -324,9 +331,12 @@ export const A11Y_COPY = {
 // (constante morte, audit code-reviewer P1-4).
 export const DRAWER_ACTIONS_COPY = {
   primaryHint: 'Action principale',
+  // M2-5.11.E — label dynamique : « Assigner » si aucun pilote, « Réassigner »
+  // si déjà un pilote. Le tooltip dynamique nomme le pilote actuel.
   secondaryLabel: 'Assigner',
-  // Réassigner = dette M3+ (endpoint PATCH /items/{id}/assign manquant).
-  secondaryDisabledHint: 'Disponible M3 — endpoint owner manquant',
+  secondaryReassignLabel: 'Réassigner',
+  secondaryTooltipUnassigned: 'Assigner un pilote à cet item',
+  secondaryTooltipAssigned: (name) => `Pilote actuel : ${name}. Cliquer pour réassigner.`,
   moreLabel: 'Plus',
   moreAriaLabel: "Plus d'actions",
   menuItemBlock: 'Signaler un blocage',
@@ -336,6 +346,33 @@ export const DRAWER_ACTIONS_COPY = {
   menuItemMerge: 'Fusionner',
   menuItemMergeReason: 'aucun doublon',
 };
+
+// M2-5.11.E — copy de la modal AssignOwner (drawer secondary button).
+export const ASSIGN_OWNER_COPY = {
+  modalTitle: 'Assigner un pilote',
+  fieldDisplayName: 'Pilote',
+  fieldDisplayNameHint: 'Nom court — apparaîtra dans la colonne et la carte.',
+  fieldOwnerId: 'Identifiant pilote (UUID)',
+  fieldOwnerIdHint: 'Identifiant utilisateur, copié depuis la liste des comptes.',
+  unassignButton: 'Désassigner',
+  unassignConfirmHint: "L'item ne sera plus rattaché à un pilote nommé.",
+  submitButton: 'Assigner',
+  submitLoading: 'Assignation en cours…',
+  submitReassignButton: 'Réassigner',
+  cancelButton: 'Annuler',
+  successAssignedToast: 'Pilote assigné',
+  successUnassignedToast: 'Pilote retiré',
+  errorTitle: "Impossible d'assigner le pilote",
+  validationDisplayNameRequired: 'Le nom du pilote est requis quand un identifiant est saisi.',
+  validationOwnerIdInvalid:
+    'Identifiant invalide — UUID attendu (ex. 12345678-1234-1234-1234-123456789012).',
+};
+
+// Validation UUID v4-ish (laxe : on accepte tous les UUID syntaxiquement
+// valides, pas seulement v4 — la doctrine V4 utilise uuid4 par défaut mais
+// rien n'empêche un opérateur de coller un v1/v5). Le BE valide stricte
+// Pydantic UUID.
+export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Verbes dynamiques par lifecycle_state (doctrine v0.3 §7.3) — portés par
 // `DrawerActions` sur le bouton primary. `closed` désactive le bouton (la

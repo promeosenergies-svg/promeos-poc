@@ -105,6 +105,17 @@ export function ItemsTable({ items, onOpenItem }) {
             >
               {COPY.columnAmount}
             </th>
+            {/* M2-5.11.E — colonne Pilote (owner_display_name) avant Priorité. */}
+            <th
+              className={TH_CLASS}
+              style={{
+                background: 'var(--sol-bg-panel)',
+                borderColor: 'var(--sol-rule)',
+                color: 'var(--sol-ink-500)',
+              }}
+            >
+              {COPY.columnOwner}
+            </th>
             <th
               className={`${TH_CLASS} text-center`}
               style={{
@@ -195,6 +206,29 @@ export function ItemsTable({ items, onOpenItem }) {
                   >
                     {fmtEurShort(item.impact_at_risk_eur)}
                   </span>
+                </td>
+                {/* M2-5.11.E — Pilote (snapshot display_name). Si pas
+                    assigné : libellé « Non assigné » ink-400 italique. Le
+                    bouton Assigner vit dans le drawer (ouvrable via clic
+                    sur la ligne) — pas d'action inline pour ne pas
+                    encombrer la colonne. */}
+                <td className={TD_CLASS}>
+                  {item.owner_display_name ? (
+                    <span className="text-[12.5px]" style={{ color: 'var(--sol-ink-900)' }}>
+                      {item.owner_display_name}
+                    </span>
+                  ) : (
+                    <span
+                      className="text-[12px] italic"
+                      style={{
+                        color: 'var(--sol-ink-400)',
+                        fontFamily: 'var(--sol-font-display)',
+                      }}
+                      title={COPY.ownerUnassignedTooltip}
+                    >
+                      {COPY.ownerUnassignedLabel}
+                    </span>
+                  )}
                 </td>
                 {/* Priorité — tag P0·92 centré. */}
                 <td className={`${TD_CLASS} text-center whitespace-nowrap`}>

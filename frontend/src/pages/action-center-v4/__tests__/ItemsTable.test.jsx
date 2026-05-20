@@ -71,16 +71,54 @@ describe('ItemsTable', () => {
     expect(onOpenItem).toHaveBeenCalledWith(sampleItems[0]);
   });
 
-  // ── M2-5.10.A → M2-5.11.D — 6 colonnes (maquette §8.3 + colonne € CFO) ─
-  test('renders exactly 6 column headers (Classement / Item / État / Domaine / € / Priorité)', () => {
+  // ── M2-5.10.A → M2-5.11.E — 7 colonnes (Classement / Item / État /
+  //    Domaine / € / Pilote / Priorité — BACKLOG_M3 CFO + owner traité) ─
+  test('renders exactly 7 column headers (Classement / Item / État / Domaine / € / Pilote / Priorité)', () => {
     const { container } = render(<ItemsTable items={sampleItems} onOpenItem={noop} />);
     const ths = container.querySelectorAll('thead th');
-    // M2-5.11.D ajoute la colonne « À risque 12m » (BACKLOG_M3 CFO traité).
-    expect(ths.length).toBe(6);
+    expect(ths.length).toBe(7);
     // « Mis à jour » a été retirée (drawer détail le porte).
     expect(container.querySelector('thead')).not.toHaveTextContent('Mis à jour');
-    // Colonne € présente.
+    // Colonne € (M2-5.11.D) + Pilote (M2-5.11.E) présentes.
     expect(container.querySelector('thead')).toHaveTextContent(/à risque 12m/i);
+    expect(container.querySelector('thead')).toHaveTextContent(/pilote/i);
+  });
+
+  // ── M2-5.11.E — colonne Pilote (owner_display_name) ───────────────────
+  test('renders the owner display name when item.owner_display_name is set', () => {
+    const items = [
+      {
+        id: 'own1',
+        title: 'Avec pilote',
+        kind: 'anomaly',
+        priority_bracket: 'P0',
+        priority_score: 90,
+        lifecycle_state: 'new',
+        domain: 'energie',
+        owner_id: '11111111-2222-3333-4444-555555555555',
+        owner_display_name: 'J. Martin',
+      },
+    ];
+    render(<ItemsTable items={items} onOpenItem={noop} />);
+    expect(screen.getByText('J. Martin')).toBeInTheDocument();
+  });
+
+  test('renders « Non assigné » when owner_display_name is null', () => {
+    const items = [
+      {
+        id: 'own2',
+        title: 'Sans pilote',
+        kind: 'action',
+        priority_bracket: 'P2',
+        priority_score: 50,
+        lifecycle_state: 'new',
+        domain: 'energie',
+        owner_id: null,
+        owner_display_name: null,
+      },
+    ];
+    render(<ItemsTable items={items} onOpenItem={noop} />);
+    expect(screen.getByText(/non assigné/i)).toBeInTheDocument();
   });
 
   // ── M2-5.11.D — rendu cellule € (montant si présent, « — » sinon) ────

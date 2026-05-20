@@ -3,6 +3,7 @@ import { Check, ChevronDown, FileUp, MoreHorizontal, Slash, UserPlus } from 'luc
 
 import { DRAWER_ACTIONS_COPY, LIFECYCLE_PRIMARY_ACTION_LABEL } from '../constants';
 import { isTerminalState } from '../utils/lifecycleTransitions';
+import { AssignOwnerModal } from './AssignOwnerModal';
 import { BlockerAddModal } from './BlockerAddModal';
 import { EvidenceUploadModal } from './EvidenceUploadModal';
 import { LifecycleTransitionModal } from './LifecycleTransitionModal';
@@ -59,6 +60,7 @@ export function DrawerActions({ item, onTransitionSuccess, onMutated }) {
   const [transitionOpen, setTransitionOpen] = useState(false);
   const [blockerOpen, setBlockerOpen] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -129,12 +131,20 @@ export function DrawerActions({ item, onTransitionSuccess, onMutated }) {
         </span>
       </button>
 
-      {/* Secondary — Assigner (dette M3+ endpoint owner). */}
+      {/* M2-5.11.E — Secondary : Assigner / Réassigner (endpoint /assign livré).
+          Label dynamique selon `item.owner_id` ; tooltip nomme le pilote actuel
+          quand l'item est déjà assigné. */}
       <button
         type="button"
-        disabled
-        title={DRAWER_ACTIONS_COPY.secondaryDisabledHint}
-        className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-[6px] border px-3 py-2 font-sans text-[12px] font-medium opacity-60"
+        onClick={() => setAssignOpen(true)}
+        title={
+          item.owner_id
+            ? DRAWER_ACTIONS_COPY.secondaryTooltipAssigned(
+                item.owner_display_name || DRAWER_ACTIONS_COPY.secondaryLabel
+              )
+            : DRAWER_ACTIONS_COPY.secondaryTooltipUnassigned
+        }
+        className="inline-flex items-center gap-1.5 rounded-[6px] border px-3 py-2 font-sans text-[12px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]"
         style={{
           background: 'var(--sol-bg-paper)',
           color: 'var(--sol-ink-900)',
@@ -142,7 +152,9 @@ export function DrawerActions({ item, onTransitionSuccess, onMutated }) {
         }}
       >
         <UserPlus size={11} aria-hidden="true" style={{ color: 'var(--sol-ink-500)' }} />
-        {DRAWER_ACTIONS_COPY.secondaryLabel}
+        {item.owner_id
+          ? DRAWER_ACTIONS_COPY.secondaryReassignLabel
+          : DRAWER_ACTIONS_COPY.secondaryLabel}
       </button>
 
       {/* More — Plus ▾ avec menu dropdown. */}
@@ -233,6 +245,15 @@ export function DrawerActions({ item, onTransitionSuccess, onMutated }) {
           open
           onClose={() => setEvidenceOpen(false)}
           itemId={item.id}
+          onSuccess={onMutated}
+        />
+      )}
+
+      {assignOpen && (
+        <AssignOwnerModal
+          open
+          onClose={() => setAssignOpen(false)}
+          item={item}
           onSuccess={onMutated}
         />
       )}

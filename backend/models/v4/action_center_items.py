@@ -70,6 +70,11 @@ class ActionCenterItem(Base):
     # ─── Owner ───
     owner_id = Column(UUID(as_uuid=True))
     owner_role = Column(String(40))
+    # M2-5.11.E : snapshot du libellé pilote (rempli au PATCH /assign).
+    # Pattern V4 « UUID isolé + snapshot label » identique à `actor_name`
+    # sur action_event_log — évite une jointure runtime sur la table legacy
+    # `users` (Integer id ≠ UUID owner_id).
+    owner_display_name = Column(String(120))
     assigned_at = Column(DateTime(timezone=True))
 
     # ─── Dates métier ───

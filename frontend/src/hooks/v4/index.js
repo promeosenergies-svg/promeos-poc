@@ -31,3 +31,5 @@ export { useVerifyEvidence } from './useVerifyEvidence';
 export { useAddBlocker } from './useAddBlocker';
 export { useResolveBlocker } from './useResolveBlocker';
 export { useCreateLink } from './useCreateLink';
+// M2-5.11.E — Assignation pilote (PATCH /items/{id}/assign).
+export { useAssignOwner } from './useAssignOwner';

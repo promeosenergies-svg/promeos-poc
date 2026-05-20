@@ -118,4 +118,22 @@ describe('PriorityQueueCard', () => {
     // refuse le « 0 € » ou « — € » menteur sur les cartes pilotage.
     expect(container.textContent).not.toMatch(/k€|M€/);
   });
+
+  // ── M2-5.11.E — libellé pilote sous le titre ──────────────────────────
+  test('renders the owner display name when item.owner_display_name is set', () => {
+    render(
+      <PriorityQueueCard
+        item={{ ...sampleItem, owner_display_name: 'M. Dupont' }}
+        onOpenItem={vi.fn()}
+      />
+    );
+    expect(screen.getByText('M. Dupont')).toBeInTheDocument();
+  });
+
+  test('renders « Non assigné » when owner_display_name is null', () => {
+    render(
+      <PriorityQueueCard item={{ ...sampleItem, owner_display_name: null }} onOpenItem={vi.fn()} />
+    );
+    expect(screen.getByText(/non assigné/i)).toBeInTheDocument();
+  });
 });

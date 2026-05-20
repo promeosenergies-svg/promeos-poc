@@ -83,6 +83,22 @@ export function PriorityQueueCard({ item, onOpenItem }) {
             {fmtEurShort(item.impact_at_risk_eur)}
           </div>
         )}
+        {/* M2-5.11.E — pilote sous le titre (à côté du €). Si non assigné,
+            on rend explicitement « Non assigné » ink-400 italique — c'est
+            une dette opérationnelle, pas un silence. */}
+        <div
+          className="mt-1 text-[12px]"
+          style={{
+            color: item.owner_display_name ? 'var(--sol-ink-700)' : 'var(--sol-ink-400)',
+            fontStyle: item.owner_display_name ? 'normal' : 'italic',
+            fontFamily: item.owner_display_name
+              ? 'var(--sol-font-body)'
+              : 'var(--sol-font-display)',
+          }}
+          title={item.owner_display_name ? undefined : COPY.ownerUnassignedTooltip}
+        >
+          {item.owner_display_name || COPY.ownerUnassignedLabel}
+        </div>
         {item.description && (
           <p
             className="mt-1 text-[12.5px] leading-[1.4]"

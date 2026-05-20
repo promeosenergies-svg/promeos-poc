@@ -73,6 +73,7 @@ from schemas.v4.action_center import (
     BlockerCreate,
     BlockerResolveRequest,
     ActionCenterSummaryResponse,
+    AssignOwnerRequest,
     EvidenceVerifyRequest,
     ItemImpactResponse,
     LifecycleTransitionRequest,
@@ -613,6 +614,69 @@ async def transition_item_lifecycle(
             "new_state": payload.new_state.value,
             "closure_reason": payload.closure_reason.value if payload.closure_reason else None,
             "comment": payload.comment,
+        },
+    )
+    db.commit()
+    db.refresh(updated)
+    return updated
+
+
+# ── PATCH /items/{id}/assign — assignation pilote (M2-5.11.E) ────────
+
+
+@router.patch(
+    "/items/{item_id}/assign",
+    response_model=ActionCenterItemResponse,
+    dependencies=[Depends(populate_org_context)],
+)
+@limiter.limit(QUOTA_WRITE_V4)
+async def assign_item_owner(
+    request: Request,
+    item_id: uuid.UUID,
+    payload: AssignOwnerRequest,
+    parent: ActionCenterItem = Depends(verify_parent_item_access),
+    db: Session = Depends(get_db),
+    auth=Depends(require_v4_role(Role.USER, Role.ADMIN)),
+):
+    """Assigne ou désassigne le pilote d'un item. Écrit un event `owner_changed`.
+
+    Modes :
+    - Assigner : `owner_id` UUID + `owner_display_name` requis (snapshot
+      libellé pilote persisté — évite la jointure runtime sur la table
+      legacy `users`).
+    - Désassigner : `owner_id = None` → on remet aussi `owner_display_name`
+      à None pour cohérence (pas de label fantôme).
+
+    No-op idempotent : si l'item est déjà assigné au même `owner_id` (et
+    qu'aucun changement de label n'est demandé), on renvoie 200 sans
+    écrire d'event ni toucher `assigned_at` (anti-spam audit trail).
+    """
+    old_owner_id = parent.owner_id
+    new_owner_id = payload.owner_id
+    new_display_name = payload.owner_display_name if new_owner_id is not None else None
+
+    # No-op : même owner_id ET même display_name → 200 sans event.
+    if old_owner_id == new_owner_id and parent.owner_display_name == new_display_name:
+        return parent
+
+    fields: dict = {
+        "owner_id": new_owner_id,
+        "owner_display_name": new_display_name,
+        # `assigned_at` capture l'horodatage de l'assignation/désassignation
+        # — utile pour la trajectoire de pilotage cumulée (BACKLOG_M3).
+        "assigned_at": datetime.now(UTC) if new_owner_id is not None else None,
+    }
+    updated = ActionCenterItemRepository(db).update(parent, **fields)
+
+    _write_v4_event(
+        db,
+        action_item_id=item_id,
+        event_type="owner_changed",
+        auth=auth,
+        payload={
+            "old_owner_id": str(old_owner_id) if old_owner_id else None,
+            "new_owner_id": str(new_owner_id) if new_owner_id else None,
+            "new_owner_display_name": new_display_name,
         },
     )
     db.commit()
