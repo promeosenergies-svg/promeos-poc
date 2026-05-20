@@ -1145,7 +1145,7 @@ function FileTraitementRow({ rank, item }) {
               </span>
             )}
             <Link
-              to={item.action_url || '/anomalies'}
+              to={item.action_url || '/action-center-v4/pilotage'}
               className="font-mono uppercase tracking-[0.05em] no-underline hover:underline inline-flex items-center gap-1"
               style={{ fontSize: 10, color: tone.fg, fontWeight: 500 }}
             >
@@ -1210,7 +1210,7 @@ function FileTraitementRow({ rank, item }) {
             Elle reproduit la cible "Traiter →" pour les utilisateurs qui
             scannent l'extrémité droite de la ligne avant la zone texte. */}
         <Link
-          to={item.action_url || '/anomalies'}
+          to={item.action_url || '/action-center-v4/pilotage'}
           aria-label={`Traiter : ${item.title}`}
           className="inline-flex items-center justify-center transition-opacity hover:opacity-100"
           style={{

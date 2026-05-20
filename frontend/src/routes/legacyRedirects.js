@@ -31,11 +31,18 @@ export const LEGACY_REDIRECTS = [
   ['/tableau-de-bord', '/cockpit/jour'],
 
   // ── Conformité & action-plan ──────────────────────────────────────────
-  ['/action-plan', '/anomalies'],
-  ['/plan-action', '/anomalies?tab=actions'],
-  ['/plan-actions', '/anomalies?tab=actions'],
+  // M2-5.11.L — bookmarks externes legacy repointés directement sur la
+  // refonte Centre d'Action V4 (au lieu de /anomalies qui re-redirige V4
+  // quand flag ON — anti double-hop). Voir audit routes M2-5.11.I+J+K.
+  ['/action-plan', '/action-center-v4/pilotage'],
+  ['/plan-action', '/action-center-v4/pilotage'],
+  ['/plan-actions', '/action-center-v4/pilotage'],
   ['/compliance', '/conformite'],
   ['/compliance/sites', '/conformite'],
+  // Sprint P0 Conformité (2026-05-20) — APER n'a plus de page dédiée
+  // (doctrine C1 : encart léger dans /conformite onglet Obligations).
+  // Préserve les bookmarks externes / liens dans la KB historique.
+  ['/conformite/aper', '/conformite?tab=obligations&filter=aper'],
 
   // ── Bill-intel & facturation ──────────────────────────────────────────
   ['/factures', '/bill-intel'],
@@ -59,7 +66,9 @@ export const LEGACY_REDIRECTS = [
   ['/imports', '/import'],
   ['/connexions', '/connectors'],
   ['/veille', '/watchers'],
-  ['/alertes', '/notifications'],
+  // M2-5.11.L — alertes pointe directement le Journal V4 (cross-items 7j)
+  // au lieu de /notifications qui re-redirige (anti double-hop).
+  ['/alertes', '/action-center-v4/pilotage/journal'],
 
   // ── Référentiels ──────────────────────────────────────────────────────
   ['/referentiels', '/kb'],
