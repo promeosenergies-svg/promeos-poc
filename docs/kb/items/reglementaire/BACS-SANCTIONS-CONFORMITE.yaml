@@ -1,0 +1,102 @@
+id: "BACS-SANCTIONS-CONFORMITE"
+type: "knowledge"
+domain: "reglementaire"
+title: "BACS — Sanctions et risques de non-conformité"
+summary: "Cadre des sanctions et risques associés à la non-conformité BACS (décret 2020-887 modifié 2023-259 + report 2025-1343). Pénalité administrative jusqu'à 300 €/jour de retard cumulable par site, charge de la preuve incombant au propriétaire, contrôle via inspection quinquennale, requalification possible si exemption TRI non-justifiée."
+
+tags:
+  energy:
+    - multi
+  segment:
+    - tertiaire_multisite
+    - collectivite
+    - bailleur
+    - industrie
+  asset:
+    - hvac
+  reg:
+    - bacs
+  granularity:
+    - event
+  naf:
+    - multi
+
+scope: null
+
+content_md: |
+  ## BACS — Sanctions & risques de non-conformité
+
+  ### Cadre légal
+  - Décret n°2020-887 du 20/07/2020 (fondateur, seuil 290 kW)
+  - Décret n°2023-259 du 07/04/2023 (seuil 70 kW, inspections obligatoires)
+  - Décret n°2025-1343 du 26/12/2025 (report 70 kW au 01/01/2030)
+  - CCH articles R.175-1 à R.175-6
+
+  ### Sanction administrative principale
+  | Élément | Valeur |
+  |---|---|
+  | Pénalité maximum | **300 € / jour** de retard de mise en conformité |
+  | Cumul multi-sites | **Oui** — pénalité par site non-conforme |
+  | Déclencheur | Audit / inspection révélant la non-conformité |
+  | Délai de mise en conformité | Négociable avec l'autorité de contrôle |
+
+  ### Charge de la preuve
+  La preuve de conformité incombe au **propriétaire / assujetti** (article R.175-4
+  CCH). Le défaut de production des éléments justificatifs (attestation
+  d'installation, rapport d'inspection quinquennal, étude TRI d'exemption)
+  équivaut à une non-conformité.
+
+  ### Cas d'exemption fragilisés
+  L'exemption pour TRI > 10 ans est subordonnée à une **étude justificative
+  spécialisée**. Une exemption appuyée sur des gains-types par défaut (15 %)
+  alors que le gain réel observé est inférieur (ex : 8 %) expose le site à une
+  requalification en non-conforme si un audit le détecte (TRI réel > 10 ans
+  remis en question).
+
+  ### Surface de risque opérationnel
+  - Audit OPERAT / contrôle inspecteur révèle l'absence de BACS sur un site
+    > seuil → classification immédiate non-conforme.
+  - Délai dépassé > 3 mois post-deadline (01/01/2025 pour > 290 kW ; 01/01/2030
+    pour > 70 kW post-report) → pénalité administrative effective.
+  - Système BACS installé mais sans rapport d'inspection quinquennal après 5 ans
+    de service → non-conformité administrative.
+
+  ### Articulation avec OPERAT
+  Une non-conformité BACS ne déclenche pas directement de sanction OPERAT, mais
+  fragilise les justifications de modulation d'objectif (les gains d'efficacité
+  attendus reposent souvent sur la mise en place du BACS).
+
+logic: null
+
+sources:
+  - doc_id: "DECRET-2020-887"
+    label: "Décret n°2020-887 du 20 juillet 2020 (fondateur BACS)"
+    section: "Article R.175-4 CCH — Sanctions et contrôles"
+    anchor: "#R175-4"
+    excerpt_short: "Obligation d'installer un système d'automatisation et de contrôle ; charge de la preuve de conformité au propriétaire."
+  - doc_id: "DECRET-2023-259"
+    label: "Décret n°2023-259 du 7 avril 2023 (extension 70 kW + inspections)"
+    section: "Modification R.175-1 à R.175-5-1"
+    anchor: "#R175-5-1"
+    excerpt_short: "Abaissement du seuil à 70 kW et instauration d'inspections quinquennales obligatoires."
+  - doc_id: "DECRET-2025-1343"
+    label: "Décret n°2025-1343 du 26 décembre 2025 (report 70 kW au 01/01/2030)"
+    section: "Modification R.175-2"
+    anchor: "#R175-2"
+    excerpt_short: "Report au 01/01/2030 du calendrier d'application du seuil 70 kW pour les bâtiments existants."
+  - doc_id: "BACS_COMPLET"
+    label: "Décret BACS — Synthèse PROMEOS complète (HTML ingéré)"
+    section: "Risque audit non-conformité"
+    anchor: "#risque-audit-non-conformite"
+    excerpt_short: "Pénalité administrative jusqu'à 300 €/jour de retard, cumul si multi-sites ; responsabilité propriétaire — preuve incombe à l'assujetti."
+
+updated_at: "2026-05-20"
+confidence: "high"
+status: "validated"
+priority: 1
+
+notes: |
+  Item issu de la curation des drafts BACS_COMPLET (BACS_COMPLET_19 + chunks
+  complémentaires), audit KB 2026-05-20 Task 2.
+  Cf [[feedback_verifier_derniers_decrets_sources]] pour la chaîne 2020-887 →
+  2023-259 → 2025-1343 (report 70 kW au 01/01/2030).
