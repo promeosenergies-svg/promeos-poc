@@ -83,6 +83,12 @@ const ActionCenterV4ListPage = lazy(() =>
     default: m.ActionCenterV4ListPage,
   }))
 );
+// M2-5.10.D — Page Pilotage / File prioritaire (sous le même feature flag).
+const ActionCenterV4PilotagePage = lazy(() =>
+  import('./pages/action-center-v4/ActionCenterV4PilotagePage').then((m) => ({
+    default: m.ActionCenterV4PilotagePage,
+  }))
+);
 const FlexPage = lazy(() => import('./pages/FlexPage'));
 const CompliancePipelinePage = lazy(() => import('./pages/CompliancePipelinePage'));
 const SiteCompliancePage = lazy(() => import('./pages/SiteCompliancePage'));
@@ -320,6 +326,18 @@ function App() {
                                         element={
                                           <PageSuspense>
                                             <ActionCenterV4ListPage />
+                                          </PageSuspense>
+                                        }
+                                      />
+                                    )}{' '}
+                                    {/* M2-5.10.D — Pilotage / File prioritaire (sous
+                                        le même feature flag). */}
+                                    {isActionCenterV4Enabled() && (
+                                      <Route
+                                        path="/action-center-v4/pilotage"
+                                        element={
+                                          <PageSuspense>
+                                            <ActionCenterV4PilotagePage />
                                           </PageSuspense>
                                         }
                                       />

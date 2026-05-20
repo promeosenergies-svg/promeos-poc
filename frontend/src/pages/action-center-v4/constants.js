@@ -428,6 +428,38 @@ export const IMPACT_DIMENSIONS = {
 // sécurisable + réalisé en bas (état futur ou passé).
 export const IMPACT_DIMENSION_ORDER = ['estimated', 'at_risk', 'secured', 'realized'];
 
+// ── M2-5.10.D — Pilotage / File prioritaire (doctrine §8.1) ───────
+//
+// Page `/action-center-v4/pilotage` — vue Resp. Énergie « ce matin » :
+// la file prioritaire (5 items P0/P1 triés priority_score DESC) avec
+// renvoi vers le drawer détail au clic.
+//
+// MV3 livré : 1 section « File prioritaire » + 1 onglet (Décisions). Hors
+// scope BACKLOG_M3 : narrative bar agrégée, escalation banner, quick
+// filters serveur, sections Jalons / À surveiller / Clôturé récemment,
+// view toggle Journal (= M2-5.10.E), SLA dates BE, vues Audit/Dense.
+
+export const PILOTAGE_COPY = {
+  pageTitle: 'Pilotage',
+  pageSubtitle: 'File prioritaire — décisions du jour',
+  // Masthead Sol (cohérent référentiel §8.3).
+  mastheadTitle: "Centre d'action",
+  mastheadSubtitle: 'Pilotage',
+  // Section file prioritaire.
+  fileSectionTitle: 'File prioritaire',
+  fileSectionSub: "Risques, décisions et actions nécessitant une intervention humaine aujourd'hui.",
+  fileLinkToReferentiel: 'Voir tout le référentiel ↗',
+  // Empty state — pas de P0/P1 actif aujourd'hui.
+  emptyTitle: "Aucune action prioritaire aujourd'hui",
+  emptyText:
+    'Aucun item P0/P1 actif sur le périmètre courant. Bonne nouvelle ! ' +
+    'Consultez le référentiel pour les autres actions en cours.',
+  errorTitle: 'Impossible de charger la file prioritaire',
+  // Tabs internes Pilotage / Référentiel.
+  tabPilotage: 'Pilotage',
+  tabReferentiel: 'Référentiel',
+};
+
 // Layout audit-list maquette §8.4 lignes 614-637. Mapping acteur backend → UI :
 // `actor_role` peut valoir `system` (auto), `user` (humain), `null` (legacy).
 export const TIMELINE_ACTOR_COPY = {

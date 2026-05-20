@@ -75,6 +75,7 @@ from schemas.v4.action_center import (
     EvidenceVerifyRequest,
     ItemImpactResponse,
     LifecycleTransitionRequest,
+    PilotageFilePrioritaireResponse,
 )
 from services.v4.file_validation import validate_file_upload
 from services.v4.impact_service import build_item_impact
@@ -377,6 +378,38 @@ async def get_item_impact(
     """
     # `parent` est déjà l'item org-scopé chargé par `verify_parent_item_access`.
     return build_item_impact(parent)
+
+
+# ════════════════════════════════════════════════════════════════════
+# M2-5.10.D — Pilotage / File prioritaire (doctrine §8.1)
+# ════════════════════════════════════════════════════════════════════
+#
+# Top N items P0/P1 actifs, triés priority_score DESC. File = cardinale
+# courte (pas une liste exhaustive — pour le full, l'UI renvoie au
+# référentiel). Aucun calcul métier : le repo applique scope + filtre +
+# tri SQL.
+
+
+@router.get(
+    "/pilotage/file-prioritaire",
+    response_model=PilotageFilePrioritaireResponse,
+    dependencies=[Depends(populate_org_context)],
+)
+@limiter.limit(QUOTA_READ_V4)
+async def get_pilotage_file_prioritaire(
+    request: Request,
+    limit: int = Query(5, ge=1, le=20),
+    db: Session = Depends(get_db),
+    _rbac=Depends(require_v4_role(Role.VIEWER, Role.USER, Role.ADMIN)),
+):
+    """File prioritaire pilotage : top N items P0/P1 actifs (M2-5.10.D).
+
+    Filtres : `priority_bracket IN ('P0', 'P1')` + `lifecycle_state != closed`.
+    Tri : `priority_score DESC, created_at ASC`. Pas de pagination (file
+    cardinale courte, limite max 20). Org-scopé fail-closed via repo.
+    """
+    items = ActionCenterItemRepository(db).list_priority_queue(limit=limit)
+    return {"items": items, "limit": limit}
 
 
 # ════════════════════════════════════════════════════════════════════

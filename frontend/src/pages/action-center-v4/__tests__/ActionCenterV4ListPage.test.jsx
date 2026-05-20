@@ -4,7 +4,15 @@
  */
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, render, screen, fireEvent } from '@testing-library/react';
+import { cleanup, render as rtlRender, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+
+// M2-5.10.D — la page Référentiel intègre `PilotageTabs` qui utilise
+// `useLocation` (react-router-dom) → tous les renders doivent être wrappés
+// dans un Router. Helper local pour ne pas répéter ça à chaque test.
+function render(ui, { route = '/action-center-v4' } = {}) {
+  return rtlRender(<MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>);
+}
 
 vi.mock('../../../hooks/v4', () => ({
   useActionCenterV4Items: vi.fn(),

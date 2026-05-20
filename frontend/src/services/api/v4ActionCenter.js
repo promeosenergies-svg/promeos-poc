@@ -48,6 +48,11 @@ export function fetchItemImpact(itemId) {
   return apiClientV4.get(`${BASE}/items/${itemId}/impact`);
 }
 
+// M2-5.10.D — File prioritaire pilotage (top N items P0/P1 actifs).
+export function fetchPilotageFilePrioritaire({ limit = 5 } = {}) {
+  return apiClientV4.get(`${BASE}/pilotage/file-prioritaire`, { params: { limit } });
+}
+
 // ── WRITE (mutations) ──────────────────────────────────────────
 
 export function createItem(payload, { idempotencyKey } = {}) {

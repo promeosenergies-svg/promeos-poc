@@ -216,6 +216,21 @@ class ImpactDimension(BaseModel):
     source: Optional[str] = Field(None, max_length=120)
 
 
+class PilotageFilePrioritaireResponse(BaseModel):
+    """M2-5.10.D — Réponse de GET /api/v4/action-center/pilotage/file-prioritaire.
+
+    Top N items P0/P1 actifs (lifecycle != closed), triés priority_score
+    DESC. `limit` est la taille demandée (≤ 20 — file cardinale, pas une
+    liste exhaustive). Pas de pagination : la file est par définition
+    courte. Pour la liste exhaustive, l'UI renvoie vers le référentiel.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[ActionCenterItemResponse]
+    limit: int
+
+
 class ItemImpactResponse(BaseModel):
     """Réponse de GET /api/v4/action-center/items/{id}/impact.
 

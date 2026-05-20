@@ -12,6 +12,7 @@ import { ItemsTable } from './components/ItemsTable';
 import { ItemDetailDrawer } from './components/ItemDetailDrawer';
 import { ListFilterBar } from './components/ListFilterBar';
 import { Masthead } from './components/Masthead';
+import { PilotageTabs } from './components/PilotageTabs';
 
 /**
  * M2-5.2 → M2-5.10.A.bis — Page liste du Centre d'Action V4 (`/action-center-v4`).
@@ -102,6 +103,9 @@ export function ActionCenterV4ListPage() {
 
   return (
     <PageShell editorialHeader={<Masthead total={total} />}>
+      {/* M2-5.10.D — Tabs Pilotage / Référentiel posés en tête de body. */}
+      <PilotageTabs />
+
       <ListFilterBar
         stateFilter={stateFilter}
         onStateFilterChange={handleStateFilterChange}

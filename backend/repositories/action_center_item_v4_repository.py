@@ -53,6 +53,27 @@ class ActionCenterItemRepository(BaseRepositoryV4[ActionCenterItem]):
         total = self.db.execute(stmt_count).scalar() or 0
         return items, total
 
+    def list_priority_queue(self, limit: int = 5) -> list[ActionCenterItem]:
+        """M2-5.10.D — File prioritaire pilotage : top N items P0/P1 actifs.
+
+        Filtres org-scopés (fail-closed) :
+        - `priority_bracket IN ('P0', 'P1')` — items urgents/élevés
+        - `lifecycle_state != 'closed'` — exclut le terminal
+        - tri `priority_score DESC, created_at ASC` (score le plus haut en
+          tête ; à score égal, le plus ancien remonte — anti-FIFO inversé)
+
+        Retourne directement la liste (pas de pagination — file = top N
+        cardinale, cf. maquette §8.1 « 5 items »).
+        """
+        stmt = (
+            self._apply_scope(select(self.model))
+            .where(self.model.priority_bracket.in_(("P0", "P1")))
+            .where(self.model.lifecycle_state != "closed")
+            .order_by(self.model.priority_score.desc(), self.model.created_at.asc())
+            .limit(limit)
+        )
+        return list(self.db.execute(stmt).scalars().all())
+
     def find_by_idempotency_key(self, key: str) -> Optional[ActionCenterItem]:
         """Cherche un item par `idempotency_key` dans le scope org courant.
 

@@ -15,6 +15,8 @@ export { useActionCenterV4Blockers } from './useActionCenterV4Blockers';
 export { useActionCenterV4Links } from './useActionCenterV4Links';
 // M2-5.10.C — Impact financier 4 quadrants par item.
 export { useActionCenterV4Impact } from './useActionCenterV4Impact';
+// M2-5.10.D — File prioritaire pilotage (top N items P0/P1 actifs).
+export { usePilotageFilePrioritaire } from './usePilotageFilePrioritaire';
 
 // Write hooks
 export { useCreateItem } from './useCreateItem';
