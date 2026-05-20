@@ -94,8 +94,8 @@ describe('Step 21 — CTA buttons', () => {
     expect(bannerSrc).toMatch(/ch.ances/);
   });
 
-  it('CTA navigates to /actions for red state', () => {
-    expect(bannerSrc).toContain("navigate('/actions')");
+  it('CTA navigates to /action-center-v4 for red state (M2-5.11.J refonte V4)', () => {
+    expect(bannerSrc).toContain("navigate('/action-center-v4')");
   });
 
   it('CTA navigates to execution tab for amber state', () => {

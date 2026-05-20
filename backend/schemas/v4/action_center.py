@@ -330,6 +330,12 @@ class ActionCenterSummaryResponse(BaseModel):
       est reporté M2-5.11.F (exige scan event_log, hors V1).
     - `count_secured` : items actifs avec ≥ 1 evidence vérifiée
       (`verified_at IS NOT NULL`) — preuve auditée disponible.
+
+    M2-5.11.J — breakdown de `count_without_owner` :
+    - `count_p0_without_owner` : items P0 actifs sans pilote (urgence non
+      adressée — signal CFO le plus actionnable).
+    - `count_p1_without_owner` : items P1 actifs sans pilote.
+    Les P2/P3 ne portent pas le même signal d'urgence — pas de breakdown.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -337,6 +343,8 @@ class ActionCenterSummaryResponse(BaseModel):
     count_p0: int = Field(..., ge=0)
     count_p1: int = Field(..., ge=0)
     count_without_owner: int = Field(..., ge=0)
+    count_p0_without_owner: int = Field(..., ge=0)
+    count_p1_without_owner: int = Field(..., ge=0)
     count_at_risk: int = Field(..., ge=0)
     count_secured: int = Field(..., ge=0)
 

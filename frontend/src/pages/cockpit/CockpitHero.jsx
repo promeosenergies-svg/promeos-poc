@@ -271,7 +271,7 @@ export default function CockpitHero({
         <div
           className="p-4 flex flex-col gap-1.5 cursor-pointer hover:bg-amber-50/30 transition-colors"
           data-testid="kpi-risque"
-          onClick={() => navigate('/actions')}
+          onClick={() => navigate('/action-center-v4')}
           role="button"
           tabIndex={0}
         >

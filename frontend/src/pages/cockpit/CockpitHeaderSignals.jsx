@@ -57,7 +57,7 @@ export default function CockpitHeaderSignals() {
       {/* Badge alertes */}
       {alertesCount != null && alertesCount > 0 && (
         <button
-          onClick={() => navigate('/notifications')}
+          onClick={() => navigate('/action-center-v4/pilotage/journal')}
           className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 text-red-700 font-medium border border-red-200 hover:bg-red-100 transition focus-visible:ring-2 focus-visible:ring-red-500"
           title={`${alertesCount} alerte${alertesCount > 1 ? 's' : ''} active${alertesCount > 1 ? 's' : ''}`}
         >

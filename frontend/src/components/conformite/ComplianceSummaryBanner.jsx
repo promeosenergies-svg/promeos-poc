@@ -122,7 +122,7 @@ export default function ComplianceSummaryBanner({
               size="sm"
               variant="secondary"
               onClick={() => {
-                navigate('/actions');
+                navigate('/action-center-v4');
               }}
               data-testid="cta-plan-action"
             >

@@ -43,7 +43,7 @@ export default function TabPuissance({ site }) {
     if (!siteId) return;
     createPowerAction(siteId, actionType)
       .then((data) => {
-        if (data?.status === 'created') navigate('/actions');
+        if (data?.status === 'created') navigate('/action-center-v4');
       })
       .catch(() => {});
   };
@@ -60,8 +60,8 @@ export default function TabPuissance({ site }) {
         priority: 3,
         idempotency_key: `flex:${siteId}:${usageCode}`,
       })
-        .then(() => navigate('/actions'))
-        .catch(() => navigate('/actions'));
+        .then(() => navigate('/action-center-v4'))
+        .catch(() => navigate('/action-center-v4'));
     },
     [siteId, site?.nom, navigate]
   );

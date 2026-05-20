@@ -195,6 +195,56 @@ class TestAssignEventPayload:
             assert payload["old_owner_id"] is None  # 1ère assignation
             assert payload["new_owner_id"] == owner_uuid
             assert payload["new_owner_display_name"] == "Audité"
+            # M2-5.11.J / PROMEOS-SEC-2026-003 — actor_user_id (INT JWT sub)
+            # retiré du event_payload. La traçabilité acteur passe par la
+            # colonne dédiée `actor_id` (UUID5) hors event_payload.
+            assert "actor_user_id" not in payload
+        finally:
+            db.close()
+
+    def test_event_payload_on_unassign_tracks_old_owner_clears_new(self, app_client, user_token):
+        """M2-5.11.J / PROMEOS-SEC-2026-005 — désassignation traçable.
+
+        Sans ce test, une régression silencieuse pourrait laisser
+        `old_owner_id` non tracé (audit trail incomplet) ou
+        `new_owner_display_name` fantôme (PII orpheline).
+        """
+        client, session_local = app_client
+        item_id = _create_item(session_local)
+        previous_owner = str(uuid4())
+        # 1) Assigner.
+        client.patch(
+            f"{ITEMS}/{item_id}/assign",
+            headers=_h(user_token),
+            json={"owner_id": previous_owner, "owner_display_name": "À retirer"},
+        )
+        # 2) Désassigner.
+        client.patch(
+            f"{ITEMS}/{item_id}/assign",
+            headers=_h(user_token),
+            json={"owner_id": None},
+        )
+        item_uuid = UUID(item_id)
+        db = session_local()
+        try:
+            # 2 events owner_changed : assign + unassign.
+            events = (
+                db.query(ActionEventLog)
+                .filter(
+                    ActionEventLog.action_item_id == item_uuid,
+                    ActionEventLog.event_type == "owner_changed",
+                )
+                .order_by(ActionEventLog.occurred_at.asc())
+                .all()
+            )
+            assert len(events) == 2
+            unassign_payload = events[1].event_payload
+            # Désassignation : ancien tracé, nouveaux purgés (RGPD + audit).
+            assert unassign_payload["old_owner_id"] == previous_owner
+            assert unassign_payload["new_owner_id"] is None
+            assert unassign_payload["new_owner_display_name"] is None
+            # SEC-003 garantie aussi sur unassign event.
+            assert "actor_user_id" not in unassign_payload
         finally:
             db.close()
 

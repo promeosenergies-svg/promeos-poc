@@ -97,7 +97,9 @@ describe('SolCockpitHeaderPills — contrat Phase 1.2', () => {
 
   it('utilise useNavigate par défaut si onActionCenterClick absent', () => {
     expect(PILLS_SRC).toMatch(/useNavigate/);
-    expect(PILLS_SRC).toMatch(/navigate\(['"]\/actions['"]\)/);
+    // M2-5.11.J — repointé sur la refonte Centre d'Action V4 (anti
+    // coexistence legacy /actions + refonte /action-center-v4).
+    expect(PILLS_SRC).toMatch(/navigate\(['"]\/action-center-v4['"]\)/);
   });
 
   it('rend la pill alertes uniquement si alertsCount > 0 (anti empty pill)', () => {

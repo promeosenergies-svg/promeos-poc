@@ -524,18 +524,24 @@ def _write_v4_event(
     auth: Optional[dict],
     payload: dict,
 ) -> None:
-    """Écrit un ActionEventLog (audit trail). Respecte `chk_actor_consistency`."""
+    """Écrit un ActionEventLog (audit trail). Respecte `chk_actor_consistency`.
+
+    M2-5.11.J / PROMEOS-SEC-2026-003 — l'INT legacy `auth['sub']` ne figure
+    plus dans `event_payload` (PII indirecte redondante avec le UUID5
+    `actor_id` déjà tracé sur la colonne dédiée du model). La corrélation
+    INT → UUID5 reste possible côté serveur via `_actor_uuid` si besoin
+    d'investigation forensique. Élimine l'exposition d'identifiants
+    internes dans un payload JSON conservé 3 ans (BUSINESS retention).
+    """
     actor_id = _actor_uuid(auth)
     role = (auth or {}).get("role")
-    body = dict(payload)
-    body["actor_user_id"] = (auth or {}).get("sub")
     ActionEventLogRepository(db).create(
         action_item_id=action_item_id,
         event_type=event_type,
         actor_type="user" if actor_id is not None else "system",
         actor_id=actor_id,
         actor_role=role[:20] if role else None,
-        event_payload=body,
+        event_payload=payload,
         correlation_id=uuid.uuid4(),
     )
 

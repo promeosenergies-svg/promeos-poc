@@ -414,7 +414,7 @@ describe('computeBillingHealthState — CTAs V2.2', () => {
     expect(state.primaryCta.to).toBe('/bill-intel');
     expect(state.secondaryCta).toBeDefined();
     expect(state.secondaryCta.label).toContain("Plan d'action");
-    expect(state.secondaryCta.to).toBe('/actions');
+    expect(state.secondaryCta.to).toBe('/action-center-v4');
   });
 
   it('AMBER → 2 stable CTAs (analyser + explorer)', () => {

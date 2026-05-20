@@ -56,12 +56,15 @@ export const emptyItem = {
   refetch: vi.fn(),
 };
 
-/** Réponse vide standard du hook summary (5 compteurs à 0, M2-5.11.C). */
+/** Réponse vide standard du hook summary (compteurs à 0, M2-5.11.C/J). */
 export const emptySummary = {
   data: {
     count_p0: 0,
     count_p1: 0,
     count_without_owner: 0,
+    // M2-5.11.J — breakdown CFO sur `count_without_owner`.
+    count_p0_without_owner: 0,
+    count_p1_without_owner: 0,
     count_at_risk: 0,
     count_secured: 0,
   },

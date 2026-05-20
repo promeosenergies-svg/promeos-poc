@@ -628,7 +628,11 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
               formula: KPI_FORMULAS.base_nuit,
               action:
                 interpBase.label !== 'OK'
-                  ? { label: 'Créer alerte talon', icon: Bell, to: '/notifications' }
+                  ? {
+                      label: 'Créer alerte talon',
+                      icon: Bell,
+                      to: '/action-center-v4/pilotage/journal',
+                    }
                   : null,
             },
             {
