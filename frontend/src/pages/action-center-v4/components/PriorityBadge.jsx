@@ -20,11 +20,16 @@ export function PriorityBadge({ bracket, score }) {
   const showScore =
     typeof score === 'number' && Number.isFinite(score) && score >= 0 && score <= 100;
 
+  // M2-5.11.H : tooltip enrichi avec le score (audit polish CS +0.1).
+  // Sans le score, « Critique » seul ne disait pas pourquoi le score 92 à
+  // côté est le score — lecteurs d'écran n'avaient pas le contexte.
+  const tooltip = showScore ? `${label} (score ${Math.round(score)} / 100)` : label;
+
   return (
     <span
       className="inline-flex items-center gap-1 rounded-[3px] px-2 py-px font-mono text-[10px] font-bold tracking-[0.06em]"
       style={{ background: bg, color: 'var(--sol-bg-paper)' }}
-      title={label}
+      title={tooltip}
     >
       <span>{bracket}</span>
       {showScore && (

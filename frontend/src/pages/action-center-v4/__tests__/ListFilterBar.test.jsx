@@ -115,7 +115,9 @@ describe('ListFilterBar', () => {
 
   test('the filter scope note appears only when a filter is active', () => {
     const { rerender } = setup();
-    expect(screen.queryByText(/page courante/i)).not.toBeInTheDocument();
+    // M2-5.11.H — copy reformulée : « 20 items de cette page » + « d'autres
+    // pages peuvent contenir des résultats » (audit CS clarté +0.15).
+    expect(screen.queryByText(/20 items de cette page/i)).not.toBeInTheDocument();
 
     rerender(
       <ListFilterBar
@@ -126,7 +128,7 @@ describe('ListFilterBar', () => {
         onReset={noop}
       />
     );
-    expect(screen.getByText(/page courante/i)).toBeInTheDocument();
+    expect(screen.getByText(/20 items de cette page/i)).toBeInTheDocument();
   });
 
   // ── M2-5.10.A.bis — chip-count par kind (audit UI Sol P1-1) ────────

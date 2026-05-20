@@ -136,12 +136,16 @@ export function AssignOwnerModal({ open, onClose, item, onSuccess }) {
           >
             {ASSIGN_OWNER_COPY.fieldDisplayName}
           </label>
+          {/* M2-5.11.H : `aria-describedby` lie l'input à son hint italique
+              en-dessous — les lecteurs d'écran annoncent maintenant la copy
+              guidance après le label (WCAG 2.1 AA / AAA bonus). */}
           <input
             id="assign-owner-display-name"
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             maxLength={120}
+            aria-describedby="assign-owner-display-name-hint"
             className="w-full rounded-[6px] border p-2 text-[13px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]"
             style={{
               background: 'var(--sol-bg-paper)',
@@ -151,6 +155,7 @@ export function AssignOwnerModal({ open, onClose, item, onSuccess }) {
             }}
           />
           <p
+            id="assign-owner-display-name-hint"
             className="mt-1 text-[11px] italic"
             style={{
               fontFamily: 'var(--sol-font-display)',
@@ -175,6 +180,7 @@ export function AssignOwnerModal({ open, onClose, item, onSuccess }) {
             value={ownerId}
             onChange={(e) => setOwnerId(e.target.value)}
             placeholder="12345678-1234-1234-1234-123456789012"
+            aria-describedby="assign-owner-id-hint"
             className="w-full rounded-[6px] border p-2 font-mono text-[12.5px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]"
             style={{
               background: 'var(--sol-bg-paper)',
@@ -183,6 +189,7 @@ export function AssignOwnerModal({ open, onClose, item, onSuccess }) {
             }}
           />
           <p
+            id="assign-owner-id-hint"
             className="mt-1 text-[11px] italic"
             style={{
               fontFamily: 'var(--sol-font-display)',

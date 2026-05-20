@@ -6,7 +6,8 @@
  * - États loading / error / data (visibles à l'utilisateur)
  * - Les 5 valeurs s'affichent dans l'ordre canonique
  * - Le bouton « Réessayer » appelle `refetch`
- * - L'a11y (`role="group"` + `aria-label`, role="alert" sur erreur)
+ * - L'a11y (`role="list"` + `aria-label` sur le groupe, `role="listitem"`
+ *   sur les tuiles, `role="alert"` sur erreur)
  */
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';

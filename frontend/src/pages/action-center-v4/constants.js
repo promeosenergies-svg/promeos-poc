@@ -39,7 +39,10 @@ export const COPY = {
   filterAllStates: 'Tous les états',
   // Filtre lifecycle client-side : il ne porte que sur la page courante
   // (le backend M2-4.2 GET /items n'accepte pas de paramètre ?state=).
-  filterScopeNote: 'Filtre appliqué à la page courante',
+  // M2-5.11.H : reformulé pour lever l'ambiguïté CS (« page courante »
+  // pouvait laisser croire à un filtre org-wide). Audit polish +0.15.
+  filterScopeNote:
+    "Ces filtres portent uniquement sur les 20 items de cette page — d'autres pages peuvent contenir des résultats.",
   columnTitle: 'Titre',
   columnPriority: 'Priorité',
   columnState: 'État',

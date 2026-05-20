@@ -241,12 +241,13 @@ describe('ActionCenterV4ListPage', () => {
       },
     });
     render(<ActionCenterV4ListPage />);
-    expect(screen.queryByText(/page courante/i)).not.toBeInTheDocument();
+    // M2-5.11.H — copy reformulée pour lever l'ambiguïté CS.
+    expect(screen.queryByText(/20 items de cette page/i)).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/état/i), {
       target: { value: 'triaged' },
     });
-    expect(screen.getByText(/page courante/i)).toBeInTheDocument();
+    expect(screen.getByText(/20 items de cette page/i)).toBeInTheDocument();
   });
 
   test('a filter that empties the page shows a distinct message and keeps pagination', () => {

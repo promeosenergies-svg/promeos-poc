@@ -7,7 +7,7 @@ import { NARRATIVE_BAR_COPY, NARRATIVE_BAR_VARIANTS } from '../constants';
  * Tuile horizontale posée sous le Masthead des pages Référentiel + Pilotage
  * (cf. audit ux/cfo 3.5/10 → cible 5.5/10). Cinq stats agrégées org
  * `GET /api/v4/action-center/summary` :
- * P0 actifs · P1 actifs · Sans pilote · À risque · Sécurisés.
+ * P0 actifs · P1 actifs · Sans pilote · Bloqués · Preuvés.
  *
  * États :
  * - loading : 5 squelettes pulsés (skeleton inoffensif, conserve la hauteur).
