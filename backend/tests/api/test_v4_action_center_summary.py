@@ -116,11 +116,14 @@ class TestSummaryAuth:
         r = client.get(URL, headers=_h(viewer_token))
         assert r.status_code == 200
         body = r.json()
-        # Shape canonique : 5 compteurs entiers ≥ 0.
+        # Shape canonique : 7 compteurs entiers ≥ 0 (5 originaux + breakdown
+        # count_p0/p1_without_owner ajoutés M2-5.11.J pour CFO actionability).
         assert set(body.keys()) == {
             "count_p0",
             "count_p1",
             "count_without_owner",
+            "count_p0_without_owner",
+            "count_p1_without_owner",
             "count_at_risk",
             "count_secured",
         }
@@ -133,10 +136,13 @@ class TestSummaryEmpty:
         r = client.get(URL, headers=_h(user_token))
         assert r.status_code == 200
         body = r.json()
+        # M2-5.11.J — 7 compteurs au lieu de 5 (breakdown P0/P1 sans pilote).
         assert body == {
             "count_p0": 0,
             "count_p1": 0,
             "count_without_owner": 0,
+            "count_p0_without_owner": 0,
+            "count_p1_without_owner": 0,
             "count_at_risk": 0,
             "count_secured": 0,
         }
@@ -192,6 +198,40 @@ class TestSummaryWithoutOwner:
         body = client.get(URL, headers=_h(user_token)).json()
         # Seul l'orphelin actif compte.
         assert body["count_without_owner"] == 1
+
+
+class TestSummaryBreakdownWithoutOwner:
+    """M2-5.11.J — breakdown CFO sur `count_without_owner` (P0 + P1)."""
+
+    def test_count_p0_without_owner_isolates_p0_unassigned(self, app_client, user_token):
+        client, session_local = app_client
+        # 1 P0 sans pilote (compté) + 1 P0 avec pilote (exclu) + 1 P1 sans
+        # pilote (exclu de count_p0_without_owner) + 1 closed sans pilote (exclu).
+        _add_item(session_local, priority_bracket="P0", owner_id=None, title="P0 orphelin")
+        _add_item(session_local, priority_bracket="P0", owner_id=uuid4(), title="P0 assigné")
+        _add_item(session_local, priority_bracket="P1", owner_id=None, title="P1 orphelin")
+        _add_item(
+            session_local,
+            priority_bracket="P0",
+            owner_id=None,
+            title="P0 orphelin fermé",
+            lifecycle_state="closed",
+            closed_at=datetime.now(UTC),
+        )
+        body = client.get(URL, headers=_h(user_token)).json()
+        assert body["count_p0_without_owner"] == 1
+        assert body["count_p1_without_owner"] == 1
+        # count_without_owner = total tous brackets (P0 + P1, exclut closed).
+        assert body["count_without_owner"] == 2
+
+    def test_breakdown_zero_when_all_assigned(self, app_client, user_token):
+        client, session_local = app_client
+        _add_item(session_local, priority_bracket="P0", owner_id=uuid4(), title="P0 assigné")
+        _add_item(session_local, priority_bracket="P1", owner_id=uuid4(), title="P1 assigné")
+        body = client.get(URL, headers=_h(user_token)).json()
+        assert body["count_p0_without_owner"] == 0
+        assert body["count_p1_without_owner"] == 0
+        assert body["count_without_owner"] == 0
 
 
 class TestSummaryAtRisk:
@@ -254,23 +294,25 @@ class TestSummarySecured:
 
 class TestSummaryOrgScoping:
     def test_cross_org_items_blockers_evidences_never_counted(self, app_client, user_token_org_2):
-        """M2-5.11.C — IDOR cross-org sur les 5 compteurs.
+        """M2-5.11.C/J — IDOR cross-org sur les 7 compteurs.
 
         Items + blockers + evidences org 1 → user_token_org_2 voit tout à 0
         (fail-closed via `_apply_scope` IS3 et filtre `organisation_id` sur
-        les sous-requêtes EXISTS).
+        les sous-requêtes EXISTS + les counts breakdown).
         """
         client, session_local = app_client
         # Org 1 : 1 P0 actif + 1 blocker non-résolu + 1 evidence vérifiée.
         item_id = _add_item(session_local, org_id=1, priority_bracket="P0", title="org-1")
         _add_blocker(session_local, item_id=item_id, org_id=1, resolved=False)
         _add_evidence(session_local, item_id=item_id, org_id=1, verified=True)
-        # Org 2 lit son /summary : tout doit être à 0.
+        # Org 2 lit son /summary : tout doit être à 0 (7 compteurs M2-5.11.J).
         body = client.get(URL, headers=_h(user_token_org_2)).json()
         assert body == {
             "count_p0": 0,
             "count_p1": 0,
             "count_without_owner": 0,
+            "count_p0_without_owner": 0,
+            "count_p1_without_owner": 0,
             "count_at_risk": 0,
             "count_secured": 0,
         }

@@ -12,31 +12,15 @@ PROMEOS = **système de contrôle énergétique B2B des patrimoines multi-sites*
 
 ## Centre d'Action V4 — refonte Mois 1-6 (lancée 13/05/2026)
 
-- **Doctrine source** : [`docs/doctrine/doctrine_v4_classement_priorisation.md`](docs/doctrine/doctrine_v4_classement_priorisation.md) (**v0.3** · avenant 2026-05-14 Q37-A+ closure_reasons révisés · cf. §11 historique versions)
-- **North star UX** : [`docs/maquettes/centre_action_v4/`](docs/maquettes/centre_action_v4/) (5 HTML figées — voir README index)
-- **L1 audit décisionnel** : [`docs/dev/L1_audit_centre_action_v4_decisional.md`](docs/dev/L1_audit_centre_action_v4_decisional.md) (86 verdicts binaires)
-- **ADR-025 Architecture V4** : [`docs/dev/L2_ADR-025_architecture_v4.md`](docs/dev/L2_ADR-025_architecture_v4.md) (status: **Accepted** · 8 tables · 20 indexes · 100 tests)
-- **ADR-026 Migration data legacy → V4** : [`docs/dev/L3_ADR-026_migration_data.md`](docs/dev/L3_ADR-026_migration_data.md) (status: **Accepted** · manuel de bascule sécurisé · 9 invariants I1-I9 · 7 arbitrages Q19-Q25 · 6 scripts · cutover Mois 4 + STOP GATE J+14)
-- **ADR-027 Sécurité org-scoping V4** : [`docs/dev/L4_ADR-027_securite_org_scoping.md`](docs/dev/L4_ADR-027_securite_org_scoping.md) (status: **Accepted** · manuel défensif · 11 invariants IS1-IS11 · 7 arbitrages Q26-Q32 · 8 menaces M1-M8 · IDOR matrix 288 cellules · 50 SG CI custom · CI gate Bandit+Semgrep+gitleaks+pip-audit · risque P0 sécu mitigé)
-- **ADR-028 Lifecycle states V4** : [`docs/dev/L5_ADR-028_lifecycle_states.md`](docs/dev/L5_ADR-028_lifecycle_states.md) (status: **Accepted** · manuel comportement item · 11 invariants IL1-IL11 · 7 arbitrages Q33-Q39 · state machine 5 états × 10 transitions strictes · 6 closure_reasons révisés (`merged_duplicate` + `resolved_via_recurrence`) · 56 tests planifiés · **avenant doctrinal v0.2 → v0.3 inclus dans ce commit**)
-- **ADR-029 Evidence + audit trail V4** : [`docs/dev/L6_ADR-029_evidence_audit_trail.md`](docs/dev/L6_ADR-029_evidence_audit_trail.md) (status: **Accepted** · manuel des preuves et de la traçabilité · 9 invariants IE1-IE9 · 7 arbitrages Q40-Q46 · 16 event_types × 3 catégories rétention RGPD · 16 schemas Pydantic v1 · 8 articles CNIL référencés · 40+ tests planifiés · **dernier ADR Mois 1 — clôture trilogie data**)
-- **L7 Data Dictionary V4** : [`docs/dev/L7_data_dictionary_v4.md`](docs/dev/L7_data_dictionary_v4.md) (status: **Accepted** · manuel de référence unique pour tout dev Mois 2+ · compilation pure des 5 ADR + doctrine v0.3 + L1 · 70 termes glossaire · 8 tables V4 + 20 indexes · 9 enums Python · 16 schemas Pydantic v1 · 49 invariants quick-reference (9 Q + 9 I + 11 IS + 11 IL + 9 IE) · 8 cardinaux Amine 🛡️ · 41 paires FR/EN · ~574 tests planifiés cumulés · auto-éval 40/30)
-- **L8 Plan suppression legacy Mois 5** : [`docs/dev/L8_plan_suppression_legacy.md`](docs/dev/L8_plan_suppression_legacy.md) (status: **Accepted** · procédure opérationnelle step-by-step à exécuter Mois 5 J+14 minimum · 18 tables legacy à DROP · ~1 667 LoC FE mortes · 9 models + 20 services + 51 endpoints backend · 173 rows data préservées Mois 4 J0 · 12 mois rétention RGPD CNIL · STOP GATE 8 critères binaires obligatoires · auto-éval 27/18 · ⚠️ irréversible après exécution)
-- **L9 Mois 2 backend pilot manual** : [`docs/dev/L9_mois2_backend_pilotage.md`](docs/dev/L9_mois2_backend_pilotage.md) (status: **Accepted** · **DERNIER LIVRABLE MOIS 1** · synthèse finale Mois 1 (9 livrables + 49 invariants + 46 arbitrages + 11 cardinaux non-rejouables) + sprint plan Mois 2 (8 sprints sur 4 semaines M2-1→M2-8) + 50 source-guards activation progressive + pyramide tests 100 min/574 cible + DoD binaire 20 critères go/no-go cutover Mois 4 + transition pratiques Mois 1 docs → Mois 2 code · auto-éval 22/20)
-- **🎯 MOIS 1 DOCS ONLY — COMPLET 10/10** ✅ (doctrine v0.3 + L1 + ADR-025 + ADR-026 + ADR-027 + ADR-028 + ADR-029 + L7 + L8 + L9). **Mois 2 backend READY TO START** : Sprint M2-1 Foundation infra J+1 à J+3 après merge `claude/refonte-sol2` → `main`.
-- **Arbitrages doctrinaux Q1-Q9** : Q1-A · Q2-α · Q3-C · Q4-A · Q5-B · Q6-A · Q7-A · Q8-C · Q9-B
-- **Arbitrages techniques Q10-Q18 (ADR-025)** : Q10-A_refined · Q11-A · Q12-A · Q13-B · Q14-A · Q15-C · Q16-A · Q17-C_refined · Q18-C_refined
-- **Arbitrages techniques Q19-Q25 (ADR-026)** : Q19-C · Q20-A · Q21-A · Q22-A · Q23-A · Q24-A · Q25-A + garde-fou cardinal **I9 backup hors Git · receipt sanitizé**
-- **Arbitrages techniques Q26-Q32 (ADR-027)** : Q26-C · Q27-B+ · Q28-D · Q29-D · Q30-A+ · Q31-B+ · Q32-B + garde-fou cardinal **IS11 pattern repository org-scopé obligatoire** (4 lignes de défense empilées : middleware + décorateur + repository + source-guards CI)
-- **Arbitrages techniques Q33-Q39 (ADR-028)** : Q33-B · Q34-A · Q35-A · Q36-C+ · Q37-A+ · Q38-B · Q39-B + garde-fous cardinaux **IL4 expired interdit P0/P1 conformité** · **IL5 merged_duplicate ≠ resolved_via_recurrence (Q9-B)** · **IL7 auto-close P0/P1 exige preuve ou justification**
-- **Arbitrages techniques Q40-Q46 (ADR-029)** : Q40-D · Q41-D · Q42-C+ · Q43-A+ · Q44-A+ · Q45-B · Q46-B+ + garde-fou cardinal **IE9 validation MIME par magic bytes** (anti-spoofing — 4 lignes de défense empilées : libmagic + whitelist + log mismatch + double-check signatures hardcodées) · IE4 matrice rétention RGPD alignée doctrine v0.3 (`merged_duplicate` 3 ans ≠ `resolved_via_recurrence` 5 ans) · IE5 purge triple garde-fou (feature flag + dry-run + trace `security_audit_log`)
-- **2 axes orthogonaux** : `kind` (7 valeurs intrinsèques) ≠ `priority` (calcul dérivé P0-P3 + 6 règles modulation R1-R6)
-- **Cardinaux data à migrer** : **173 rows** (`action_items` 35 + `bill_anomaly` 52 + `anomaly` KB 86) · 15 autres tables vides Sprint 13 dette pure
-- **Mois 1 série ADR complète (5/5)** : ADR-025 + ADR-026 + ADR-027 + ADR-028 + ADR-029 + 1 avenant doctrinal v0.3 · prochaines étapes L7 Data Dictionary V4 + glossaire · L8 Plan suppression legacy Mois 5 · L9 Prompt Mois 2 backend
-- **Mois 2** : backend cible socle (8 tables V4 + services PriorityScoring/Lifecycle/Impact)
-- **Mois 4** : cutover sec V4 (Q13-B) — feature flag global · backup triple artefact J-1 (binaire + SQL + JSON + checksums SHA256) · STOP GATE J+14 manuel
-- **Backup DB + export JSON/CSV obligatoire** hors Git avant suppression (Q2-α non négociable · receipt sanitizé in Git si commité)
-- Audit legacy de référence : [`docs/audits/AUDIT_CENTRE_ACTION_2026_05_13.md`](docs/audits/AUDIT_CENTRE_ACTION_2026_05_13.md)
+- **Doctrine source** : [`docs/doctrine/doctrine_v4_classement_priorisation.md`](docs/doctrine/doctrine_v4_classement_priorisation.md) (**v0.3** · avenant 2026-05-14 Q37-A+)
+- **North star UX** : [`docs/maquettes/centre_action_v4/`](docs/maquettes/centre_action_v4/) (5 HTML figées) · L1 audit : [`docs/dev/L1_audit_centre_action_v4_decisional.md`](docs/dev/L1_audit_centre_action_v4_decisional.md)
+- **Série ADR Mois 1 (5/5 Accepted)** : ADR-025 Architecture V4 (8 tables, 20 indexes) · ADR-026 Migration data legacy→V4 · ADR-027 Sécurité org-scoping (IS1-IS11, IDOR matrix 288 cellules, 50 SG CI) · ADR-028 Lifecycle states (5 états × 10 transitions, 6 closure_reasons) · ADR-029 Evidence + audit trail (16 event_types, rétention RGPD). Manuels : [`docs/dev/L2`](docs/dev/L2_ADR-025_architecture_v4.md)..[`L6`](docs/dev/L6_ADR-029_evidence_audit_trail.md)
+- **Compilation** : [`L7 Data Dictionary V4`](docs/dev/L7_data_dictionary_v4.md) (70 termes, 49 invariants quick-ref, 41 paires FR/EN) · [`L8 Plan suppression legacy Mois 5`](docs/dev/L8_plan_suppression_legacy.md) (⚠️ irréversible) · [`L9 Mois 2 backend pilot manual`](docs/dev/L9_mois2_backend_pilotage.md) (8 sprints M2-1→M2-8, 574 tests cible, DoD 20 critères)
+- **🎯 MOIS 1 DOCS COMPLET 10/10** ✅. Sprint M2-1 ready après merge `claude/refonte-sol2` → `main`
+- **46 arbitrages Q1-Q46** (cf. doctrine v0.3 + L9 §3) · garde-fous cardinaux : **IS11** repo org-scopé (4 lignes défense) · **IL4** expired interdit P0/P1 conformité · **IL5** merged_duplicate ≠ resolved_via_recurrence (Q9-B) · **IE9** MIME magic bytes anti-spoofing · **IE4** rétention RGPD alignée v0.3
+- **2 axes orthogonaux** : `kind` (7 valeurs intrinsèques) ≠ `priority` (dérivé P0-P3 + 6 règles R1-R6)
+- **Cutover Mois 4** : feature flag global · backup triple artefact J-1 (binaire + SQL + JSON + checksums) · STOP GATE J+14 · 173 rows à migrer (35 + 52 + 86) · Q2-α : backup hors Git non négociable
+- Audit legacy : [`docs/audits/AUDIT_CENTRE_ACTION_2026_05_13.md`](docs/audits/AUDIT_CENTRE_ACTION_2026_05_13.md)
 
 ## Workframe & boundaries
 
@@ -48,10 +32,7 @@ Référence stable des conventions stack + paths canoniques + modèles Claude pa
 
 ## Stack technique
 
-- Backend : Python 3.11 / FastAPI / SQLAlchemy / SQLite (PostgreSQL-ready)
-- Frontend : React 18 / Vite / Tailwind CSS v4 / Recharts / Lucide React
-- Tests : pytest (BE) / Vitest (FE) / Playwright (E2E)
-- Port backend : **8001** (pas 8000 ni 8080) · Port frontend : **5173** (proxy → 8001)
+Python 3.11 / FastAPI / SQLAlchemy / SQLite · React 18 / Vite / Tailwind v4 / Recharts · pytest + Vitest + Playwright. Ports : BE **8001** (pas 8000/8080), FE **5173** (proxy → 8001). Détails : [`docs/dev/conventions.md`](docs/dev/conventions.md).
 
 ## Règle d'or — ZERO calcul métier frontend
 

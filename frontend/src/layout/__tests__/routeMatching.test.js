@@ -34,6 +34,22 @@ describe('matchRouteToModule — exact matches', () => {
   it('/patrimoine → patrimoine', () => {
     expect(matchRouteToModule('/patrimoine').moduleId).toBe('patrimoine');
   });
+
+  // ── M2-5.11 — Centre d'Action V4 (3 routes mappées cockpit) ──
+  it('/action-center-v4 → cockpit (M2-5.11 refonte hub canonique)', () => {
+    expect(matchRouteToModule('/action-center-v4').moduleId).toBe('cockpit');
+    expect(ROUTE_MODULE_MAP['/action-center-v4']).toBe('cockpit');
+  });
+
+  it('/action-center-v4/pilotage → cockpit (file prioritaire)', () => {
+    expect(matchRouteToModule('/action-center-v4/pilotage').moduleId).toBe('cockpit');
+    expect(ROUTE_MODULE_MAP['/action-center-v4/pilotage']).toBe('cockpit');
+  });
+
+  it('/action-center-v4/pilotage/journal → cockpit (journal org-wide 7j)', () => {
+    expect(matchRouteToModule('/action-center-v4/pilotage/journal').moduleId).toBe('cockpit');
+    expect(ROUTE_MODULE_MAP['/action-center-v4/pilotage/journal']).toBe('cockpit');
+  });
 });
 
 /* ── Dynamic route patterns ── */

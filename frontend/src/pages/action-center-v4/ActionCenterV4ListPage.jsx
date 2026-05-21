@@ -8,8 +8,7 @@ import ErrorState from '../../ui/ErrorState';
 import Pagination from '../../ui/Pagination';
 
 import { useActionCenterV4Items } from '../../hooks/v4';
-import { COPY, LIFECYCLE_ORDER, PAGE_SIZE } from './constants';
-import { KIND_LABELS } from './constants';
+import { COPY, KIND_LABELS, LIFECYCLE_ORDER, PAGE_SIZE } from './constants';
 import { ItemsTable } from './components/ItemsTable';
 import { ItemDetailDrawer } from './components/ItemDetailDrawer';
 import { ListFilterBar } from './components/ListFilterBar';
