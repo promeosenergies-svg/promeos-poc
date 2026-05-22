@@ -1,0 +1,53 @@
+# .github/workflows/deploy-safety-gate.yml
+# M2-6.A.1 (PROMEOS-SEC-2026-001) — STOP gate sécu pré-déploiement
+#
+# Vérifie 2 garanties avant tout déploiement staging/prod :
+#   1. Le manifest cible définit PROMEOS_DEMO_MODE='false' (statique)
+#   2. L'endpoint /api/auth/demo-login/available renvoie {available:false} (live)
+#
+# Déclenché manuellement avant chaque deploy (workflow_dispatch). Bloque le
+# pipeline si l'une des 2 vérifs échoue. Runbook : docs/deploy/RUNBOOK_DEPLOY.md.
+
+name: Deploy Safety Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Environnement cible (staging|prod)'
+        required: true
+        type: choice
+        options:
+          - staging
+          - prod
+      backend_url:
+        description: 'URL backend cible (ex. https://staging-api.promeos.io)'
+        required: true
+        type: string
+
+jobs:
+  demo-mode-off-check:
+    name: DEMO_MODE off — manifest + live probe
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify manifest sets PROMEOS_DEMO_MODE=false
+        run: |
+          MANIFEST="docker-compose.${{ inputs.target_env }}.yml"
+          if [ ! -f "$MANIFEST" ]; then
+            echo "❌ Manifest $MANIFEST introuvable"
+            exit 1
+          fi
+          # Match `PROMEOS_DEMO_MODE: "false"` (quoted, recommandé) ou `=false`
+          if ! grep -Eq 'PROMEOS_DEMO_MODE[: =]+["'\'']?false["'\'']?' "$MANIFEST"; then
+            echo "❌ $MANIFEST ne force pas PROMEOS_DEMO_MODE=false"
+            echo "   Référence : PROMEOS-SEC-2026-001"
+            exit 1
+          fi
+          echo "✅ $MANIFEST force PROMEOS_DEMO_MODE=false"
+
+      - name: Live smoke test DEMO_MODE off
+        run: |
+          chmod +x scripts/smoke_demo_mode_off.sh
+          ./scripts/smoke_demo_mode_off.sh "${{ inputs.backend_url }}"
