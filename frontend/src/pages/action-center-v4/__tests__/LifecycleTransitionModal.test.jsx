@@ -206,4 +206,30 @@ describe('LifecycleTransitionModal', () => {
     });
     expect(screen.getByText(/transition en cours/i)).toBeInTheDocument();
   });
+
+  // ── M2-6.C.1-reduit (Q30=C) — variant warning câblé si newState='closed' ──
+
+  test('variant="default" par défaut (aucun newState sélectionné)', () => {
+    render(<LifecycleTransitionModal open onClose={() => {}} itemId="x" currentState="new" />);
+    const dialog = screen.getByTestId('v4-modal');
+    expect(dialog).toHaveAttribute('data-variant', 'default');
+  });
+
+  test('variant="warning" quand newState="closed" est sélectionné (Q30=C)', () => {
+    render(<LifecycleTransitionModal open onClose={() => {}} itemId="x" currentState="new" />);
+    fireEvent.change(screen.getByLabelText(/nouvel état/i), {
+      target: { value: 'closed' },
+    });
+    const dialog = screen.getByTestId('v4-modal');
+    expect(dialog).toHaveAttribute('data-variant', 'warning');
+  });
+
+  test('variant="default" si newState non-closed (triaged depuis "new")', () => {
+    render(<LifecycleTransitionModal open onClose={() => {}} itemId="x" currentState="new" />);
+    fireEvent.change(screen.getByLabelText(/nouvel état/i), {
+      target: { value: 'triaged' },
+    });
+    const dialog = screen.getByTestId('v4-modal');
+    expect(dialog).toHaveAttribute('data-variant', 'default');
+  });
 });

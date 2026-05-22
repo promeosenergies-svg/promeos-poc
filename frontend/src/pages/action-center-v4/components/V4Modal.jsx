@@ -14,8 +14,29 @@ import { X } from 'lucide-react';
  *
  * A11y : `role=dialog aria-modal`, focus trap Tab, Escape → close, lock
  * body scroll, focus restauré au close (next render du parent).
+ *
+ * M2-6.C.1-reduit — ajout prop `variant` (Q36=A) :
+ *   - `"default"` (fallback) : style standard Sol crème/brun (M2-5.11.A inchangé)
+ *   - `"warning"` : border-top ambre `--sol-attention-line` pour signaler une
+ *     action métier d'attention (ex. transition lifecycle vers `closed`). PAS
+ *     destructif (Q30=C — closed préserve les preuves), juste « confirmation
+ *     attentive » vs « danger irréversible ». Tokens existants `--sol-attention-*`
+ *     réutilisés (palette Sol §3.2), pas de nouveau token créé.
+ *
+ * Ajout aussi `testId` (Q37=A) pour assertions Playwright sur le `data-testid`
+ * + `data-variant` (assertion variant warning runtime).
  */
-export function V4Modal({ open, onClose, ariaLabel, title, children, footer, width = 480 }) {
+export function V4Modal({
+  open,
+  onClose,
+  ariaLabel,
+  title,
+  children,
+  footer,
+  width = 480,
+  variant = 'default',
+  testId = 'v4-modal',
+}) {
   const ref = useRef(null);
 
   // Lock body scroll + focus initial dans le modal.
@@ -65,12 +86,15 @@ export function V4Modal({ open, onClose, ariaLabel, title, children, footer, wid
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel || title}
+      data-testid={testId}
+      data-variant={variant}
     >
       <div
         className="absolute inset-0 animate-[fadeIn_0.2s_ease-out]"
         style={{ background: 'var(--sol-backdrop-overlay)' }}
         onClick={onClose}
         aria-hidden="true"
+        data-testid={`${testId}-backdrop`}
       />
 
       <div
@@ -82,6 +106,11 @@ export function V4Modal({ open, onClose, ariaLabel, title, children, footer, wid
           maxWidth: `${width}px`,
           background: 'var(--sol-bg-paper)',
           border: '1px solid var(--sol-rule)',
+          // M2-6.C.1-reduit — variant warning (Q30=C/Q36=A) : border-top 3px ambre
+          // `--sol-attention-line` pour signal attentif (vs destructif rouge).
+          // L'ajout 3px en haut compense visuellement la border 1px standard
+          // (la box-shadow `--sol-shadow-dropdown` absorbe le shift mineur).
+          ...(variant === 'warning' ? { borderTop: '3px solid var(--sol-attention-line)' } : {}),
           boxShadow: 'var(--sol-shadow-dropdown)',
         }}
       >

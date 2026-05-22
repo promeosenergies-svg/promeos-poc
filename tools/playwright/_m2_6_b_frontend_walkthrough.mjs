@@ -172,6 +172,77 @@ async function shoot(page, name) {
     }
     await shoot(page, '08-post-export-click');
 
+    // ── 9. M2-6.C.1-reduit — Modal LifecycleTransition variant warning (Q30=C) ──
+    console.log('\n9. LifecycleTransitionModal variant warning (M2-6.C.1-reduit)');
+    // Aller au référentiel + ouvrir le drawer du 1er item via clic ligne.
+    await page.goto(`${FE}/action-center-v4`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(600);
+    try {
+      // Cliquer la 1ère ligne → ouvre ItemDetailDrawer.
+      const firstRow = page.locator('tbody tr[role="button"]').first();
+      await firstRow.click({ timeout: 3_000 });
+      await page.waitForTimeout(500);
+
+      // Dans le drawer, trouver le bouton « Changer l'état ». Le libellé exact
+      // est dans constants.js (TRANSITION_COPY.openButton ou similaire).
+      const transitionBtn = page
+        .locator('button')
+        .filter({ hasText: /changer.{0,3}l[''‘]état|transitionner|nouvel.état/i })
+        .first();
+      await transitionBtn.click({ timeout: 3_000 });
+      await page.waitForTimeout(400);
+
+      // Modal V4Modal apparu — variant data-variant par défaut.
+      const modal = page.locator('[data-testid="v4-modal"]');
+      const modalVisible = await modal.isVisible({ timeout: 3_000 });
+      checks.modalLifecycleOpens = modalVisible;
+
+      const defaultVariant = modalVisible
+        ? await modal.getAttribute('data-variant')
+        : null;
+      checks.modalVariantDefaultInitially = defaultVariant === 'default';
+      console.log(`  ✓ Modal ouvert : ${modalVisible} | data-variant initial : ${defaultVariant}`);
+
+      // Sélectionner newState = "closed" → variant doit passer à "warning".
+      if (modalVisible) {
+        const select = modal.locator('select').first();
+        await select.selectOption({ value: 'closed' });
+        await page.waitForTimeout(200);
+        const warnVariant = await modal.getAttribute('data-variant');
+        checks.modalVariantWarningOnClosed = warnVariant === 'warning';
+        console.log(`  ✓ Après sélection "closed" : data-variant = ${warnVariant}`);
+
+        await shoot(page, '09-modal-warning-closed');
+
+        // a11y runtime : role=dialog + aria-modal=true
+        const role = await modal.getAttribute('role');
+        const ariaModal = await modal.getAttribute('aria-modal');
+        checks.modalA11yRoleDialog = role === 'dialog';
+        checks.modalA11yAriaModal = ariaModal === 'true';
+
+        // Escape doit fermer le modal (a11y runtime cardinal).
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        const stillOpen = await modal.isVisible().catch(() => false);
+        checks.modalEscapeCloses = !stillOpen;
+      } else {
+        checks.modalVariantWarningOnClosed = false;
+        checks.modalA11yRoleDialog = false;
+        checks.modalA11yAriaModal = false;
+        checks.modalEscapeCloses = false;
+      }
+    } catch (err) {
+      // UX trigger non trouvé — laisser tous les checks à false + reporter.
+      // Discipline transparence : pas de masquage.
+      console.warn(`  ⚠ Step 9 UX trigger non trouvé : ${err.message.slice(0, 120)}`);
+      checks.modalLifecycleOpens = false;
+      checks.modalVariantDefaultInitially = false;
+      checks.modalVariantWarningOnClosed = false;
+      checks.modalA11yRoleDialog = false;
+      checks.modalA11yAriaModal = false;
+      checks.modalEscapeCloses = false;
+    }
+
     // ── BILAN ──
     console.log('\n═══ BILAN WALKTHROUGH M2-6.B.frontend ═══');
     const passing = Object.entries(checks).filter(([, v]) => v).length;

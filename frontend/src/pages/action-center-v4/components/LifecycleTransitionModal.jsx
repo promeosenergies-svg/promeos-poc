@@ -91,6 +91,14 @@ export function LifecycleTransitionModal({ open, onClose, itemId, currentState, 
 
   const canSubmit = Boolean(newState) && (!requiresReason || Boolean(closureReason)) && !loading;
 
+  // M2-6.C.1-reduit (Q30=C) — variant warning sur transition vers `closed`.
+  // V4 LifecycleState ne contient pas `resolved` (qui est un closure_reason
+  // distinct, pas un state) → un seul state déclenche le variant warning.
+  // Sémantique : `closed` est métier sensible (clôture action) mais NON
+  // destructif (les preuves restent, l'historique aussi) — d'où ambre
+  // (`--sol-attention-line`) et pas rouge.
+  const modalVariant = newState === 'closed' ? 'warning' : 'default';
+
   if (availableTransitions.length === 0) {
     return (
       <V4Modal
@@ -115,6 +123,7 @@ export function LifecycleTransitionModal({ open, onClose, itemId, currentState, 
       open={open}
       onClose={handleClose}
       title={TRANSITION_COPY.modalTitle}
+      variant={modalVariant}
       footer={
         <>
           <SolButton variant="ghost" onClick={handleClose} disabled={loading}>
