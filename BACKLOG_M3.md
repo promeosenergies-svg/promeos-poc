@@ -297,30 +297,56 @@ de phase.
   § « Procédure ajustement budgets post-pilote ».
 - **DoD** : breach résorbé OU budget overridé documenté.
 
-### M3-BE-SQLITE-LOCK — BE :8001 hang après long usage session  🟢 P3 · ~1-2 j/h
+### M3-BE-SQLITE-LOCK-INVESTIGATION — Lock SQLite après long usage session  🟡 P1 · ~0.5-1 j/h
 
-- **Origine** : M2-6.C.1-reduit (commit `6af61f58`) — Playwright cold re-run
-  bloqué par BE `curl HTTP 000 timeout`. Process Python alive en `lsof` mais
-  hang sur requêtes HTTP (probable SQLite WAL lock + transaction longue
-  durée non commit / requête bloquée par un autre thread).
+- **Objet** : BE `python -m backend.main` devient hung (HTTP 000 timeout sur
+  `curl /api/v4/action-center/summary` ou `/api/health`) après une longue
+  session d'usage continu (>2-3h, ~12 commits enchaînés M2-6). Symptôme
+  observé empiriquement en clôture M2-6.C.1-reduit (commit `6af61f58`),
+  re-observé en validation pré-M2-6.C.2 (commit `8737d9b6`).
+- **Origine** : Session M2-6 enchaînée (commits `e6f90423` → `8737d9b6`,
+  ~12 commits avec backend reload uvicorn à chaque touch backend). Probable
+  cause racine : WAL mode SQLite désactivé OU connection pool SQLAlchemy
+  mal configuré OU transaction non-commitée bloquante (test seed → endpoint
+  write → autre thread).
 - **Symptômes observés** :
   - `curl http://127.0.0.1:8001/api/health` retourne `000` (timeout 10s)
-  - Process `python main.py` toujours dans `ps aux` + port :8001 occupé
+  - Process `python main.py` toujours visible dans `ps aux` + port :8001 occupé
   - Aucune erreur log récente, pas de crash apparent
-  - Restart manuel résout (`pkill -f "python.*main.py" && python main.py`)
-- **Plan M3+** :
-  1. Reproduire en local (session BE ouverte 4-8h avec trafic démo intermittent)
-  2. Activer SQLite WAL log + log slow queries SQLAlchemy
-  3. Identifier la requête bloquante (probablement transaction non-clôturée
-     par un test/seed ou un endpoint write avec retry interne)
-  4. Soit fix (close session explicite) soit watchdog uvicorn (restart si
-     no-response > 30s)
-- **Acceptation** : BE :8001 reste responsive après 8h d'usage mixte
-  (smoke curl + walkthrough Playwright + dev FE) sans restart manuel.
-- **Workaround MV3** : restart manuel BE en cas de hang (documenté ici).
-- **Refs** : M2-6.C.1-reduit bilan (validation Playwright différée par hang),
-  [`docs/deploy/RUNBOOK_OBSERVABILITY.md`](docs/deploy/RUNBOOK_OBSERVABILITY.md)
-  § « En cas d'incident — Cas 1 Latency spike soudain ».
+  - Restart manuel résout systématiquement (`kill -TERM <PID> && python main.py`)
+  - Tient au moins ~30 min post-restart sans hang (test pré-M2-6.C.2 OK)
+- **Risque pilote** : Pilote externe HELIOS/MERIDIAN à 2 mois. Un BE qui hang
+  sous charge prolongée = risque opérationnel direct sur le pilote.
+  **Priorité P1** (pas P0 — workaround restart fonctionnel ; pas P2/P3 — risque
+  confiance pilote pendant démo).
+- **Pistes d'investigation M3+** :
+  1. Vérifier `PRAGMA journal_mode=WAL` actif (vs `DELETE` par défaut SQLite —
+     WAL permet lecteurs concurrents pendant écriture)
+  2. Auditer transactions SQLAlchemy non-commitées (`session.commit()` manquants
+     dans seeds, tests, ou middleware error handlers)
+  3. Vérifier connection pool size + timeout
+     (`create_engine(pool_size=N, pool_timeout=T, pool_pre_ping=True)`)
+  4. Logger les queries actives au moment du hung (`echo=True` SQLAlchemy debug
+     puis `SELECT * FROM sqlite_master` pour identifier locks)
+  5. Considérer migration PostgreSQL (cf. ADR `DATABASE_URL` postgresql commenté
+     dans `backend/.env.example`) qui résout structurellement le single-writer
+     SQLite — déjà candidat M3+ pour scale pilote
+- **DoD** :
+  - Cause racine identifiée (WAL / pool / transaction non-commit)
+  - Fix implémenté (PRAGMA WAL, config pool, ou correction session leak)
+  - Test pytest qui reproduit le hung pré-fix + valide post-fix (long-running
+    fixture session continue + assert response time stable)
+  - BE stable sur session continue >4h sans restart manuel
+- **Workaround MV3** : restart manuel BE en cas de hang (`kill -TERM <PID>` +
+  relance `python main.py`). ~5 secondes interruption.
+- **Refs** :
+  - M2-6.C.1-reduit bilan (commit `6af61f58`, validation Playwright initialement
+    différée par hang BE)
+  - Pré-M2-6.C.2 validation (commit `<bumped>`, restart confirmé fonctionnel)
+  - [`docs/deploy/RUNBOOK_OBSERVABILITY.md`](docs/deploy/RUNBOOK_OBSERVABILITY.md)
+    § « En cas d'incident — Cas 1 Latency spike soudain »
+  - [`backend/.env.example`](backend/.env.example) (DATABASE_URL postgresql
+    commenté — résolution structurelle candidate)
 
 **Effort cumulé M2-6 → M3 : ~4-10 j/h** (5 items, fourchette large car
 M3-CFO-SEMANTIC dépend de l'arbitrage pilote et M3-BE-SQLITE-LOCK dépend
