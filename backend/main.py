@@ -179,6 +179,15 @@ app.add_middleware(
     expose_headers=["X-Request-Id", "X-Response-Time"],
 )
 
+# M2-6.A.3 — Perf metrics middleware (latency + payload + error rate par endpoint).
+# Enregistré APRÈS CORS = outermost wrapper (LIFO Starlette), capture latency
+# totale incluant auth + ORM + sérialisation. /health/* + /docs + /openapi.json
+# exclus pour anti-récursion. Exposé via GET /health/metrics + /health/alerts
+# (admin uniquement). Cf. docs/deploy/RUNBOOK_OBSERVABILITY.md.
+from middleware.perf_metrics import PerfMetricsMiddleware  # noqa: E402
+
+app.add_middleware(PerfMetricsMiddleware)
+
 # Enregistrer les routes
 app.include_router(sites_router)
 app.include_router(compteurs_router)
@@ -222,6 +231,10 @@ app.include_router(admin_users_router)  # IAM Admin (CRUD users, roles, scopes)
 from routes.admin_pii_purge import router as admin_pii_purge_router  # noqa: E402
 
 app.include_router(admin_pii_purge_router)  # M2-6.A.2 PII purge RGPD art. 17
+# M2-6.A.3 — Observability endpoints admin (GET /health/metrics + /health/alerts).
+from routes.health_metrics import router as health_metrics_router  # noqa: E402
+
+app.include_router(health_metrics_router)  # M2-6.A.3 perf budgets observabilité
 app.include_router(patrimoine_router)  # Patrimoine DIAMANT (staging, quality gate, activation)
 app.include_router(intake_router)  # Smart Intake DIAMANT (questions, answers, before/after)
 app.include_router(bacs_router)  # BACS Expert (Decret n°2020-887)
