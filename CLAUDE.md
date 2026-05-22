@@ -71,7 +71,7 @@ Les 5 agents Python `backend/ai_layer/agents/` sont runtime API production, **di
 
 ## Workflow méthodologique
 
-Phase 0 read-only (grep/find/cat) → STOP gate → phases numérotées → DoD → atomic commit → source-guard test. Zero modif sans bilan Phase 0 valide. Méthodes détaillées : [`docs/dev/methode_audit_avant_fix.md`](docs/dev/methode_audit_avant_fix.md) (audit avant fix) · [`docs/dev/methode_walkthrough_navigateur.md`](docs/dev/methode_walkthrough_navigateur.md) (walkthrough routing/auth).
+Phase 0 read-only (grep/find/cat) → STOP gate → phases numérotées → DoD → atomic commit → source-guard test. Zero modif sans bilan Phase 0 valide. Méthodes détaillées : [`docs/dev/methode_audit_avant_fix.md`](docs/dev/methode_audit_avant_fix.md) (audit avant fix) · [`docs/dev/methode_walkthrough_navigateur.md`](docs/dev/methode_walkthrough_navigateur.md) (walkthrough routing/auth) · [`docs/dev/methode_self_review_pr.md`](docs/dev/methode_self_review_pr.md) (self-review à froid avant merge / fin de phase).
 
 ## Fichiers critiques (audit avant modification)
 
