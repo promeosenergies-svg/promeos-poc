@@ -92,6 +92,11 @@ class ActionCenterItem(Base):
     impact_cumulative_eur = Column(Numeric(12, 2))
     impact_dimension = Column(String(20))
     impact_payload = Column(JSON)
+    # M2-6.B.backend — Impact € estimé simple pour mode CFO (NarrativeBar v3 +
+    # colonne € + export PDF). Distinct de `impact_current_period_eur` (mesure
+    # réelle) et de `impact_payload['estimated']['value_eur']` (drill-down JSON).
+    # NULL strict si pas de source documentée (discipline « pas de chiffre menteur »).
+    estimated_impact_euros = Column(Numeric(12, 2))
 
     # ─── Flags & Confiance ───
     next_best_action = Column(String(40))

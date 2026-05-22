@@ -124,6 +124,56 @@ class ActionCenterItemRepository(BaseRepositoryV4[ActionCenterItem]):
         # l'utilisateur ne peut pas trier l'action). Décomposition P0/P1
         # uniquement : P2/P3 ne portent pas le même signal d'urgence.
         without_owner = self.model.owner_id.is_(None)
+
+        # M2-6.B.backend — Agrégat impact € pour mode CFO (NarrativeBar v3 sums €
+        # + colonne € ItemsTable + export PDF). 4 champs additifs CFO :
+        #
+        # - `sums_eur_total` : somme COALESCE des `estimated_impact_euros` sur TOUS
+        #   les items de l'org (closed inclus). Sémantique « valeur livrée +
+        #   pipeline » — un item clos `resolved` représente une économie déjà
+        #   réalisée que le CFO doit voir dans le bilan total. NULL exclus (pas
+        #   0 menteur § doctrine).
+        # - `sums_eur_by_priority` : ventilation P0/P1/P2/P3 (CFO drill-down).
+        # - `items_with_impact_known` : nombre d'items PORTANT une valeur €
+        #   non-NULL. Numérateur indicateur transparence CFO.
+        # - `items_total` : total items de l'org (dénominateur indicateur,
+        #   cohérent avec la portée des sums).
+        #
+        # Discipline « pas de chiffre menteur » : un item NULL ne contribue ni
+        # à la somme (COALESCE) ni au compteur `_known`. Pas d'invention.
+        #
+        # NB : les compteurs ci-dessus (count_p0/p1/at_risk/secured) restent
+        # filtrés sur `active` (pilotent l'urgence opérationnelle), tandis que
+        # les sums € agrègent sur la portée totale (pilotent le bilan CFO).
+        # Cette dissociation est volontaire et documentée.
+
+        # Agrégat global SUM (closed inclus, NULL exclus via COALESCE → 0).
+        sums_total_stmt = self._apply_scope(select(func.coalesce(func.sum(self.model.estimated_impact_euros), 0)))
+        sums_eur_total = float(self.db.execute(sums_total_stmt).scalar() or 0)
+
+        # Ventilation SUM par priority_bracket (closed inclus, NULL exclus).
+        sums_by_priority_stmt = (
+            self._apply_scope(
+                select(
+                    self.model.priority_bracket,
+                    func.coalesce(func.sum(self.model.estimated_impact_euros), 0),
+                )
+            )
+            .where(self.model.estimated_impact_euros.is_not(None))
+            .group_by(self.model.priority_bracket)
+        )
+        sums_eur_by_priority = {
+            row[0]: float(row[1]) for row in self.db.execute(sums_by_priority_stmt).all() if row[0] is not None
+        }
+
+        # Compteurs complétude (transparence CFO, portée totale cohérente avec sums).
+        items_with_impact_known_stmt = self._apply_scope(select(func.count()).select_from(self.model)).where(
+            self.model.estimated_impact_euros.is_not(None)
+        )
+        items_with_impact_known = self.db.execute(items_with_impact_known_stmt).scalar() or 0
+        items_total_stmt = self._apply_scope(select(func.count()).select_from(self.model))
+        items_total = self.db.execute(items_total_stmt).scalar() or 0
+
         return {
             "count_p0": _count(self.model.priority_bracket == "P0"),
             "count_p1": _count(self.model.priority_bracket == "P1"),
@@ -132,6 +182,11 @@ class ActionCenterItemRepository(BaseRepositoryV4[ActionCenterItem]):
             "count_p1_without_owner": _count(and_(without_owner, self.model.priority_bracket == "P1")),
             "count_at_risk": _count(blocker_exists),
             "count_secured": _count(evidence_verified_exists),
+            # M2-6.B.backend — Champs CFO (extension additive).
+            "sums_eur_total": sums_eur_total,
+            "sums_eur_by_priority": sums_eur_by_priority,
+            "items_with_impact_known": items_with_impact_known,
+            "items_total": items_total,
         }
 
     def find_by_idempotency_key(self, key: str) -> Optional[ActionCenterItem]:

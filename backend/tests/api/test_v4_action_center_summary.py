@@ -116,9 +116,9 @@ class TestSummaryAuth:
         r = client.get(URL, headers=_h(viewer_token))
         assert r.status_code == 200
         body = r.json()
-        # Shape canonique : 7 compteurs entiers ≥ 0 (5 originaux + breakdown
-        # count_p0/p1_without_owner ajoutés M2-5.11.J pour CFO actionability).
+        # Shape canonique : 7 compteurs + 4 champs CFO (M2-6.B.backend).
         assert set(body.keys()) == {
+            # 7 compteurs (M2-5.11.J)
             "count_p0",
             "count_p1",
             "count_without_owner",
@@ -126,9 +126,27 @@ class TestSummaryAuth:
             "count_p1_without_owner",
             "count_at_risk",
             "count_secured",
+            # 4 champs CFO (M2-6.B.backend — agrégat impact €)
+            "sums_eur_total",
+            "sums_eur_by_priority",
+            "items_with_impact_known",
+            "items_total",
         }
-        for k, v in body.items():
-            assert isinstance(v, int) and v >= 0, f"{k}={v}"
+        # Counts entiers ≥ 0, sums floats ≥ 0, dict potentiellement vide.
+        for k in (
+            "count_p0",
+            "count_p1",
+            "count_without_owner",
+            "count_p0_without_owner",
+            "count_p1_without_owner",
+            "count_at_risk",
+            "count_secured",
+            "items_with_impact_known",
+            "items_total",
+        ):
+            assert isinstance(body[k], int) and body[k] >= 0, f"{k}={body[k]}"
+        assert isinstance(body["sums_eur_total"], (int, float)) and body["sums_eur_total"] >= 0
+        assert isinstance(body["sums_eur_by_priority"], dict)
 
 
 class TestSummaryEmpty:
@@ -136,7 +154,7 @@ class TestSummaryEmpty:
         r = client.get(URL, headers=_h(user_token))
         assert r.status_code == 200
         body = r.json()
-        # M2-5.11.J — 7 compteurs au lieu de 5 (breakdown P0/P1 sans pilote).
+        # M2-5.11.J + M2-6.B.backend — 7 counts + 4 champs CFO, tous à 0/vide.
         assert body == {
             "count_p0": 0,
             "count_p1": 0,
@@ -145,6 +163,10 @@ class TestSummaryEmpty:
             "count_p1_without_owner": 0,
             "count_at_risk": 0,
             "count_secured": 0,
+            "sums_eur_total": 0.0,
+            "sums_eur_by_priority": {},
+            "items_with_impact_known": 0,
+            "items_total": 0,
         }
 
 
@@ -305,7 +327,7 @@ class TestSummaryOrgScoping:
         item_id = _add_item(session_local, org_id=1, priority_bracket="P0", title="org-1")
         _add_blocker(session_local, item_id=item_id, org_id=1, resolved=False)
         _add_evidence(session_local, item_id=item_id, org_id=1, verified=True)
-        # Org 2 lit son /summary : tout doit être à 0 (7 compteurs M2-5.11.J).
+        # Org 2 lit son /summary : tout doit être à 0 (7 counts + 4 CFO).
         body = client.get(URL, headers=_h(user_token_org_2)).json()
         assert body == {
             "count_p0": 0,
@@ -315,4 +337,155 @@ class TestSummaryOrgScoping:
             "count_p1_without_owner": 0,
             "count_at_risk": 0,
             "count_secured": 0,
+            "sums_eur_total": 0.0,
+            "sums_eur_by_priority": {},
+            "items_with_impact_known": 0,
+            "items_total": 0,
         }
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# M2-6.B.backend — Agrégat impact € CFO (NarrativeBar v3 sommes €)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+def _add_item_with_impact(
+    session_local,
+    *,
+    impact_euros,
+    org_id: int = 1,
+    priority_bracket: str = "P1",
+    lifecycle_state: str = "new",
+    title: str = "T",
+):
+    """Helper : item avec `estimated_impact_euros` set. Si closed, pose
+    `closed_at + closure_reason` requis par chk_closure_consistency (IL10)."""
+    item_id = uuid4()
+    db = session_local()
+    try:
+        item = ActionCenterItem(
+            id=item_id,
+            organisation_id=org_id,
+            kind="anomaly",
+            title=title,
+            priority_bracket=priority_bracket,
+            priority_score=50.0,
+            lifecycle_state=lifecycle_state,
+            estimated_impact_euros=impact_euros,
+        )
+        if lifecycle_state == "closed":
+            item.closed_at = datetime.now(UTC)
+            item.closure_reason = "resolved"
+        db.add(item)
+        db.commit()
+    finally:
+        db.close()
+    return item_id
+
+
+class TestSummaryImpactSumsCfo:
+    def test_sum_aggregates_null_excluded(self, app_client, user_token):
+        """COALESCE NULL → 0 : items NULL ne contribuent ni au total ni au compteur."""
+        client, session_local = app_client
+        _add_item_with_impact(session_local, impact_euros=3200.00, priority_bracket="P0")
+        _add_item_with_impact(session_local, impact_euros=None, priority_bracket="P1")
+        _add_item_with_impact(session_local, impact_euros=7500.00, priority_bracket="P1")
+        body = client.get(URL, headers=_h(user_token)).json()
+        assert body["sums_eur_total"] == 10700.00  # 3200 + 7500 (NULL exclus)
+        assert body["items_with_impact_known"] == 2
+        assert body["items_total"] == 3
+        assert body["sums_eur_by_priority"] == {"P0": 3200.00, "P1": 7500.00}
+
+    def test_helios_use_case_a_total_47500(self, app_client, user_token):
+        """🎯 Assertion cardinale M2-6.B.backend — total agrégé HELIOS = 47 500 €.
+
+        Reproduit la distribution Use Case A : paris-hphc-q3 (3200) +
+        operat-2025 (7500) + renouvellement-contrat (35000) +
+        optim-hphc-marseille closed (1800) = 47 500.
+
+        IMPORTANT : `optim-hphc-marseille` est `closed` — la somme inclut les
+        items clos (sémantique « valeur livrée + pipeline » CFO). Cohérent
+        avec `items_total` qui compte aussi closed.
+        """
+        client, session_local = app_client
+        # 4 items chiffrés (distribution Use Case A réelle)
+        _add_item_with_impact(
+            session_local,
+            impact_euros=3200.00,
+            priority_bracket="P0",
+            lifecycle_state="new",
+            title="paris-hphc-q3",
+        )
+        _add_item_with_impact(
+            session_local,
+            impact_euros=7500.00,
+            priority_bracket="P1",
+            lifecycle_state="in_progress",
+            title="operat-2025",
+        )
+        _add_item_with_impact(
+            session_local,
+            impact_euros=35000.00,
+            priority_bracket="P2",
+            lifecycle_state="planned",
+            title="renouvellement-contrat",
+        )
+        _add_item_with_impact(
+            session_local,
+            impact_euros=1800.00,
+            priority_bracket="P3",
+            lifecycle_state="closed",
+            title="optim-hphc-marseille",
+        )
+        # 2 items NULL (audit-sme-nice + bacs-lyon — actifs ET closed)
+        _add_item_with_impact(
+            session_local,
+            impact_euros=None,
+            priority_bracket="P1",
+            lifecycle_state="triaged",
+            title="audit-sme-nice",
+        )
+        _add_item_with_impact(
+            session_local,
+            impact_euros=None,
+            priority_bracket="P3",
+            lifecycle_state="closed",
+            title="bacs-lyon",
+        )
+        body = client.get(URL, headers=_h(user_token)).json()
+        assert body["sums_eur_total"] == 47500.00  # 🎯 cardinal
+        assert body["items_with_impact_known"] == 4
+        assert body["items_total"] == 6
+        assert body["sums_eur_by_priority"] == {
+            "P0": 3200.00,
+            "P1": 7500.00,
+            "P2": 35000.00,
+            "P3": 1800.00,
+        }
+
+    def test_sum_includes_closed_items_cfo_semantics(self, app_client, user_token):
+        """Sémantique CFO : closed_resolved compte dans la somme (€ déjà livrés).
+
+        Distinct de count_p0/p1 qui filtrent active (pilotent l'urgence).
+        Dissociation volontaire documentée dans le repo.
+        """
+        client, session_local = app_client
+        _add_item_with_impact(
+            session_local,
+            impact_euros=10000.00,
+            lifecycle_state="closed",
+            priority_bracket="P1",
+        )
+        body = client.get(URL, headers=_h(user_token)).json()
+        assert body["sums_eur_total"] == 10000.00
+        assert body["items_with_impact_known"] == 1
+        # Mais count_p1 = 0 (closed exclu des counts d'urgence)
+        assert body["count_p1"] == 0
+
+    def test_sum_org_scoped(self, app_client, user_token_org_2):
+        """IDOR cross-org : sums € d'org 1 jamais visibles depuis org 2."""
+        client, session_local = app_client
+        _add_item_with_impact(session_local, impact_euros=99999.00, org_id=1)
+        body = client.get(URL, headers=_h(user_token_org_2)).json()
+        assert body["sums_eur_total"] == 0.0
+        assert body["items_with_impact_known"] == 0

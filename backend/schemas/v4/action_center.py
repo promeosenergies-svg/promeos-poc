@@ -348,6 +348,21 @@ class ActionCenterSummaryResponse(BaseModel):
     count_at_risk: int = Field(..., ge=0)
     count_secured: int = Field(..., ge=0)
 
+    # M2-6.B.backend — Agrégat impact € pour mode CFO (NarrativeBar v3 sommes €
+    # + colonne € ItemsTable + export PDF). Extension additive — le FE
+    # M2-5.11.J consume les 7 champs ci-dessus sans toucher aux nouveaux.
+    #
+    # - `sums_eur_total` : agrégat global EUR sur items actifs (NULL exclus).
+    # - `sums_eur_by_priority` : ventilation par bracket (P0/P1/P2/P3). Les
+    #   brackets sans items chiffrés sont absents (dict potentiellement partiel).
+    # - `items_with_impact_known` : nombre d'items actifs PORTANT une valeur €
+    #   non-NULL (numérateur indicateur transparence CFO).
+    # - `items_total` : total items actifs (dénominateur indicateur).
+    sums_eur_total: float = Field(..., ge=0)
+    sums_eur_by_priority: dict[str, float] = Field(default_factory=dict)
+    items_with_impact_known: int = Field(..., ge=0)
+    items_total: int = Field(..., ge=0)
+
 
 # ── Requests write (M2-4.4) ──────────────────────────────────────────
 #

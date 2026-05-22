@@ -122,6 +122,10 @@ USE_CASE_A_SPECS: tuple[dict, ...] = (
         "owner": False,
         "created_at": _dt(2026, 5, 17, 9, 30),
         "updated_at": _dt(2026, 5, 17, 9, 30),
+        # M2-6.B.backend — Impact € CFO (vs impact_payload JSON drill-down).
+        # 3 200 € = anomalie HP/HC × baseline conso × tarif Engie (source Bill
+        # Intelligence R20). Total cumul 47 500 € agrégé NarrativeBar v3.
+        "estimated_impact_euros": 3200.00,
         # M2-5.10.C — Impact 4 quadrants visible côté drawer Sol §8.5.
         # Valeurs indicatives v1 (sources tracées) — sera remplacé M3+ par
         # l'engine économique (priority_explanation + facturation 12 mois).
@@ -169,6 +173,10 @@ USE_CASE_A_SPECS: tuple[dict, ...] = (
         "business_due_date": _dt(2026, 9, 30),
         "created_at": _dt(2026, 3, 1, 14, 0),
         "updated_at": _dt(2026, 5, 15, 10, 0),
+        # M2-6.B.backend — Sanction max retard déclaration tertiaire (décret
+        # 2014-1393 art. 5 : 15 €/m² × 500 m² seuil = 7 500 €). Aligné sur
+        # impact_payload.at_risk.value_eur ci-dessous (single source of truth CFO).
+        "estimated_impact_euros": 7500.00,
         "impact_payload": {
             "at_risk": {
                 "value_eur": 7500,
@@ -347,6 +355,9 @@ USE_CASE_A_SPECS: tuple[dict, ...] = (
         "business_due_date": _dt(2026, 12, 31),
         "created_at": _dt(2026, 4, 1, 10, 0),
         "updated_at": _dt(2026, 4, 15, 11, 0),
+        # M2-6.B.backend — Écart fournisseur médian observé marché 2025-2026 sur
+        # 4,2 GWh annuel HELIOS (estimation conservatrice 0.83 c€/kWh × 4 200 MWh).
+        "estimated_impact_euros": 35000.00,
         "events": [
             {
                 "slug": "created",
@@ -391,6 +402,8 @@ USE_CASE_A_SPECS: tuple[dict, ...] = (
         "closed_at": _dt(2026, 3, 10, 8, 0),
         "created_at": _dt(2026, 2, 15, 8, 0),
         "updated_at": _dt(2026, 3, 10, 17, 0),
+        # M2-6.B.backend — Gain conso 7 % × 2 800 m² × tarif HC évité ≈ 1 800 €/an.
+        "estimated_impact_euros": 1800.00,
         "events": [
             {
                 "slug": "created",
@@ -607,6 +620,11 @@ def _seed_one_action(db: Session, org_id: int, spec: dict) -> dict[str, int]:
         # PK). N'écrase JAMAIS un payload déjà présent (cf. doctrine seed).
         if existing.impact_payload is None and spec.get("impact_payload"):
             existing.impact_payload = spec["impact_payload"]
+        # M2-6.B.backend — Patch idempotent identique pour `estimated_impact_euros`
+        # (colonne arrivée en m26b1impact). Re-seed sans reset alimente l'agrégat
+        # CFO sur les seeds existants. NULL strict si spec n'en porte pas (Q15).
+        if existing.estimated_impact_euros is None and spec.get("estimated_impact_euros") is not None:
+            existing.estimated_impact_euros = spec["estimated_impact_euros"]
         return counts  # déjà seedé — skip enfants
 
     item = ActionCenterItem(
@@ -623,6 +641,7 @@ def _seed_one_action(db: Session, org_id: int, spec: dict) -> dict[str, int]:
         detected_at=spec["created_at"],
         business_due_date=spec.get("business_due_date"),
         impact_payload=spec.get("impact_payload"),
+        estimated_impact_euros=spec.get("estimated_impact_euros"),
         created_at=spec["created_at"],
         updated_at=spec["updated_at"],
     )
