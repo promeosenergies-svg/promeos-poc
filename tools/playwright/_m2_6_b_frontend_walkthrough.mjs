@@ -131,6 +131,47 @@ async function shoot(page, name) {
     console.log(`  ✓ Données chargées : ${checks.dataAfterReload}`);
     await shoot(page, '06-post-reload');
 
+    // ── 7. M2-6.B.pdf — Click « Exporter COMEX » → download PDF ──────
+    console.log('\n7. Click « Exporter COMEX » → download PDF (M2-6.B.pdf)');
+    // Retour Pilotage (l'EditorialNarrativeBlock + bouton vivent là).
+    await page.goto(`${FE}/action-center-v4/pilotage`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(600);
+
+    const exportBtn = page.locator('[data-testid="cta-export-comex"]');
+    const exportBtnExists = (await exportBtn.count()) > 0;
+    const exportBtnEnabled = exportBtnExists
+      ? !(await exportBtn.first().isDisabled())
+      : false;
+    checks.exportComexButtonActive = exportBtnEnabled;
+    console.log(`  ✓ Bouton « Exporter COMEX » présent + enabled : ${exportBtnEnabled}`);
+
+    if (exportBtnEnabled) {
+      try {
+        const downloadPromise = page.waitForEvent('download', { timeout: 15_000 });
+        await exportBtn.first().click();
+        const download = await downloadPromise;
+        const filename = download.suggestedFilename();
+        const filenameOk = /^promeos_comex_.+\.pdf$/i.test(filename);
+        checks.exportComexFilenamePattern = filenameOk;
+        console.log(`  ✓ Download déclenché : ${filename} (pattern OK : ${filenameOk})`);
+
+        // Sauvegarder le PDF dans captures pour validation manuelle/visuelle.
+        const pdfPath = `${OUT}/07-export-${filename}`;
+        await download.saveAs(pdfPath);
+        checks.exportComexPdfSaved = true;
+        console.log(`  ✓ PDF sauvé : ${pdfPath}`);
+      } catch (err) {
+        console.log(`  ⚠ Download timeout/error : ${err.message.slice(0, 100)}`);
+        checks.exportComexFilenamePattern = false;
+        checks.exportComexPdfSaved = false;
+      }
+    } else {
+      // Le bouton est disabled — onExportComex handler probablement absent.
+      checks.exportComexFilenamePattern = false;
+      checks.exportComexPdfSaved = false;
+    }
+    await shoot(page, '08-post-export-click');
+
     // ── BILAN ──
     console.log('\n═══ BILAN WALKTHROUGH M2-6.B.frontend ═══');
     const passing = Object.entries(checks).filter(([, v]) => v).length;

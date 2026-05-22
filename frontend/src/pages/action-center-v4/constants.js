@@ -540,7 +540,11 @@ export const PILOTAGE_COPY = {
   ctaImpact: "Voir l'impact",
   ctaImpactDisabledHint: 'Drawer impact agrégé disponible en M2-6 (somme € BE)',
   ctaExport: 'Exporter COMEX',
+  // M2-6.B.pdf — ce hint reste utile si l'export devient indisponible (perm,
+  // erreur backend) — affiché si `onExportComex` n'est pas fourni au composant.
   ctaExportDisabledHint: 'Export PDF/CSV disponible en M2-6 (service BE)',
+  // M2-6.B.pdf — libellé pendant génération ReportLab (2-5s).
+  ctaExportLoading: 'Génération…',
 };
 
 // M2-5.12 — Mapping role legacy → libellé FR persona (cohérent

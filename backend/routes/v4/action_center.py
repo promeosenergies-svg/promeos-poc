@@ -84,6 +84,9 @@ from services.v4.file_validation import validate_file_upload
 from services.v4.impact_service import build_item_impact
 from services.v4.lifecycle_validator import validate_lifecycle_transition
 from services.v4.link_target_validator import verify_link_target
+from services.v4.pdf_export_service import PdfExportError, generate_comex_pdf
+import unicodedata
+from models.organisation import Organisation
 
 router = APIRouter(prefix="/api/v4/action-center", tags=["V4 Action Center"])
 
@@ -413,6 +416,70 @@ async def get_action_center_summary(
     canoniques de chaque compteur.
     """
     return ActionCenterItemRepository(db).get_summary()
+
+
+# ════════════════════════════════════════════════════════════════════
+# M2-6.B.pdf — Export PDF COMEX (active le CTA M2-5.12 disabled).
+# ════════════════════════════════════════════════════════════════════
+
+
+def _slugify_org(name: str) -> str:
+    """Slug ASCII-safe pour Content-Disposition filename (HÉLIOS → helios)."""
+    nfkd = unicodedata.normalize("NFKD", name or "org")
+    ascii_only = nfkd.encode("ASCII", "ignore").decode("ASCII")
+    return ascii_only.lower().replace(" ", "-").replace("/", "-").replace('"', "").strip("-")[:40] or "org"
+
+
+@router.post(
+    "/export/comex.pdf",
+    dependencies=[Depends(populate_org_context)],
+)
+@limiter.limit(QUOTA_READ_V4)
+async def export_comex_pdf(
+    request: Request,
+    db: Session = Depends(get_db),
+    _rbac=Depends(require_v4_role(Role.VIEWER, Role.USER, Role.ADMIN)),
+):
+    """M2-6.B.pdf — Génère le PDF COMEX pour l'org du caller.
+
+    Q20=C : header/footer Sol-fidèle, corps minimaliste.
+    Q21=B : phrase complétude + 4 cards Synthèse + table items détaillée.
+    Q23=A : format `47 500 €` strict (format_euros_full NBSP U+00A0).
+    Q24=A : « Voir l'impact » reste disabled M3+ (cf. EditorialNarrativeBlock).
+
+    Permissions : `populate_org_context` (tout user authentifié de l'org,
+    cohérent avec `/summary` — Marie peut exporter, pas seulement admin).
+
+    Returns :
+      `Response` avec `application/pdf` + `Content-Disposition: attachment`
+      + filename `promeos_comex_<org-slug>_<YYYYMMDD>.pdf`.
+    """
+    org_id = current_org_id()
+    org = db.query(Organisation).filter(Organisation.id == org_id).first()
+    org_name = org.nom if org and org.nom else f"Organisation {org_id}"
+
+    try:
+        pdf_bytes = generate_comex_pdf(db, org_id, org_name)
+    except PdfExportError as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "code": "PDF_GENERATION_FAILED",
+                "message": str(e),
+            },
+        )
+
+    date_str = datetime.now(UTC).strftime("%Y%m%d")
+    filename = f"promeos_comex_{_slugify_org(org_name)}_{date_str}.pdf"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(len(pdf_bytes)),
+        },
+    )
 
 
 @router.get(

@@ -7,6 +7,7 @@ import ErrorState from '../../ui/ErrorState';
 import { useAuth } from '../../contexts/AuthContext';
 
 import { usePilotageFilePrioritaire, useActionCenterV4Items } from '../../hooks/v4';
+import { exportComexPdf } from '../../services/api/v4ActionCenter';
 import { PILOTAGE_COPY, ROLE_LABELS_V4 } from './constants';
 import { EditorialNarrativeBlock } from './components/EditorialNarrativeBlock';
 import { ItemDetailDrawer } from './components/ItemDetailDrawer';
@@ -73,6 +74,53 @@ export function ActionCenterV4PilotagePage() {
     refetchAll();
   }, [refetch, refetchAll]);
 
+  // M2-6.B.pdf — handler export PDF COMEX. Active le CTA disabled depuis
+  // M2-5.12. Pattern download blob standard : fetch responseType=blob →
+  // createObjectURL → click programmatique → cleanup URL. Filename extrait
+  // du header `Content-Disposition` (exposé en CORS via main.py M2-6.B.pdf).
+  const [isExportingComex, setIsExportingComex] = useState(false);
+  const handleExportComex = useCallback(async () => {
+    if (isExportingComex) return;
+    setIsExportingComex(true);
+    try {
+      const response = await exportComexPdf();
+      const cd =
+        response.headers?.['content-disposition'] ||
+        response.headers?.['Content-Disposition'] ||
+        '';
+      const filenameMatch = cd.match(/filename="?([^";]+)"?/i);
+      const filename =
+        filenameMatch?.[1] ||
+        `promeos_comex_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.pdf`;
+
+      // `response.data` est déjà un Blob (axios responseType: 'blob').
+      const blob =
+        response.data instanceof Blob
+          ? response.data
+          : new Blob([response.data], { type: 'application/pdf' });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      // Toast/notification non disponible MV3 — log console + alert simple.
+      // M3+ : intégrer notification system (cf. AppShell toast pattern).
+      console.error('[ExportCOMEX] Échec génération PDF :', err);
+      // eslint-disable-next-line no-alert
+      alert(
+        'Erreur lors de la génération du PDF COMEX. ' +
+          (err?.promeos?.message || err?.message || 'Voir console pour détail.')
+      );
+    } finally {
+      setIsExportingComex(false);
+    }
+  }, [isExportingComex]);
+
   return (
     <PageShell
       editorialHeader={
@@ -99,8 +147,16 @@ export function ActionCenterV4PilotagePage() {
 
       {/* M2-5.12 — bloc éditorial narratif (eyebrow + phrase Fraunces + 3 CTAs).
           Données sourcées via useActionCenterV4Summary, réutilisé par
-          NarrativeBar plus bas (React déduplique si stable). */}
-      <EditorialNarrativeBlock orgName={org?.nom || 'Organisation'} sitesCount={5} />
+          NarrativeBar plus bas (React déduplique si stable).
+          M2-6.B.pdf — onExportComex câblé (ACTIVE le CTA Exporter COMEX).
+          Les 2 autres CTAs (Lancer le triage / Voir l'impact) restent disabled
+          MV3 (Q24=A) — pas de handler fourni → bouton reste disabled. */}
+      <EditorialNarrativeBlock
+        orgName={org?.nom || 'Organisation'}
+        sitesCount={5}
+        onExportComex={handleExportComex}
+        exportComexLoading={isExportingComex}
+      />
 
       {/* M2-5.11.C — Synthèse 5 compteurs CFO posée au sommet du pilotage. */}
       <NarrativeBar />

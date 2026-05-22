@@ -58,6 +58,14 @@ export function fetchPilotageFilePrioritaire({ limit = 5 } = {}) {
   return apiClientV4.get(`${BASE}/pilotage/file-prioritaire`, { params: { limit } });
 }
 
+// M2-6.B.pdf — Export PDF COMEX (active le CTA M2-5.12 disabled).
+// Renvoie la response axios avec `data` = Blob PDF + `headers` Content-Disposition
+// pour extraire le filename serveur (Content-Disposition est exposé en CORS via
+// `expose_headers` dans main.py — M2-6.B.pdf).
+export function exportComexPdf() {
+  return apiClientV4.post(`${BASE}/export/comex.pdf`, null, { responseType: 'blob' });
+}
+
 // M2-5.10.E — Journal org-wide cross-items (fenêtre N jours).
 export function fetchPilotageJournal({ sinceDays = 7, limit = 100 } = {}) {
   return apiClientV4.get(`${BASE}/pilotage/journal`, {

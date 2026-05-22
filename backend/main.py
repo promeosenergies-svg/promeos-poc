@@ -176,7 +176,10 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Request-Id", "X-Response-Time"],
+    # M2-6.B.pdf — Content-Disposition exposé pour que le FE puisse extraire
+    # le filename depuis la response blob (sinon le navigateur reçoit le header
+    # mais axios ne le voit pas en CORS strict).
+    expose_headers=["X-Request-Id", "X-Response-Time", "Content-Disposition"],
 )
 
 # M2-6.A.3 — Perf metrics middleware (latency + payload + error rate par endpoint).

@@ -36,6 +36,9 @@ export function EditorialNarrativeBlock({
   onLaunchTriage,
   onShowImpact,
   onExportComex,
+  // M2-6.B.pdf — état loading injecté par le parent pendant la génération
+  // PDF (2-5s ReportLab). Désactive le bouton et affiche un libellé transitoire.
+  exportComexLoading = false,
 }) {
   const { data, loading, error } = useActionCenterV4Summary();
 
@@ -212,10 +215,11 @@ export function EditorialNarrativeBlock({
         <SolButton
           variant="secondary"
           onClick={onExportComex}
-          disabled={!onExportComex}
+          disabled={!onExportComex || exportComexLoading}
           title={onExportComex ? undefined : PILOTAGE_COPY.ctaExportDisabledHint}
+          data-testid="cta-export-comex"
         >
-          {PILOTAGE_COPY.ctaExport}
+          {exportComexLoading ? PILOTAGE_COPY.ctaExportLoading : PILOTAGE_COPY.ctaExport}
         </SolButton>
       </div>
     </section>

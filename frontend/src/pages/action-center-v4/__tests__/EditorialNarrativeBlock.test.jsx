@@ -1,13 +1,15 @@
 // @vitest-environment jsdom
 /**
- * M2-6.B.frontend.bis — Tests EditorialNarrativeBlock complétude CFO.
+ * M2-6.B.frontend.bis + M2-6.B.pdf — Tests EditorialNarrativeBlock.
  *
- * Pin le format cardinal Q19=C : « X actions sur Y portent un impact estimé : Z k€ »
- * avec grammaire FR singulier/pluriel + total compact + transparence 0/N.
+ * Couverture :
+ *  - .bis : phrase complétude « X actions sur Y portent un impact estimé : Z k€ »
+ *    avec grammaire FR singulier/pluriel + total compact + transparence 0/N
+ *  - .pdf : bouton « Exporter COMEX » activation + état loading
  */
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 vi.mock('../../../hooks/v4', () => ({
   useActionCenterV4Summary: vi.fn(),
@@ -127,5 +129,48 @@ describe('EditorialNarrativeBlock — complétude CFO Q19=C', () => {
     });
     render(<EditorialNarrativeBlock orgName="ORG" sitesCount={1} />);
     expect(screen.queryByTestId('editorial-completude')).toBeNull();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// M2-6.B.pdf — Bouton « Exporter COMEX » activation + loading state
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('EditorialNarrativeBlock — bouton Exporter COMEX (M2-6.B.pdf)', () => {
+  test('bouton disabled si onExportComex non fourni (statu quo MV3)', () => {
+    mockSummary({ items_with_impact_known: 4, items_total: 9, sums_eur_total: 47500 });
+    render(<EditorialNarrativeBlock orgName="ORG" sitesCount={1} />);
+    const btn = screen.getByTestId('cta-export-comex');
+    expect(btn).toBeDisabled();
+    // Le tooltip explicatif est posé via attribut title=.
+    expect(btn).toHaveAttribute('title');
+  });
+
+  test('bouton actif et déclenche onExportComex au clic', () => {
+    mockSummary({ items_with_impact_known: 4, items_total: 9, sums_eur_total: 47500 });
+    const handler = vi.fn();
+    render(<EditorialNarrativeBlock orgName="ORG" sitesCount={1} onExportComex={handler} />);
+    const btn = screen.getByTestId('cta-export-comex');
+    expect(btn).not.toBeDisabled();
+    expect(btn).toHaveTextContent(/Exporter COMEX/i);
+    fireEvent.click(btn);
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  test('libellé bascule en "Génération…" + disabled quand exportComexLoading=true', () => {
+    mockSummary({ items_with_impact_known: 4, items_total: 9, sums_eur_total: 47500 });
+    const handler = vi.fn();
+    render(
+      <EditorialNarrativeBlock
+        orgName="ORG"
+        sitesCount={1}
+        onExportComex={handler}
+        exportComexLoading
+      />
+    );
+    const btn = screen.getByTestId('cta-export-comex');
+    expect(btn).toBeDisabled();
+    expect(btn).toHaveTextContent(/Génération/i);
+    expect(btn).not.toHaveTextContent(/^Exporter COMEX$/);
   });
 });
