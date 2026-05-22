@@ -526,10 +526,12 @@ export const PILOTAGE_COPY = {
   editorialNoBlockers: 'aucun blocage en cours',
   editorialDataQualityOK: 'qualité données OK',
   editorialDataQualityDegraded: 'qualité données dégradée',
-  // M2-6.B.frontend — Indicateur complétude CFO (Q18=A). Phrase scindée
-  // pour insérer le chiffre `X/Y` en MONO tabular-nums au milieu.
-  editorialCompletudePrefix: 'Impact estimé connu sur',
-  editorialCompletudeSuffix: 'actions.',
+  // M2-6.B.frontend.bis — Indicateur complétude CFO Q19=C closeur. Format
+  // « X actions sur Y portent un impact estimé : Z k€ » composé inline dans
+  // EditorialNarrativeBlock.jsx avec singulier/pluriel grammatical FR
+  // (Académie française : 0 et 1 → singulier ; ≥2 → pluriel). Les anciennes
+  // constantes `editorialCompletudePrefix`/`Suffix` (M2-6.B.frontend) sont
+  // retirées — incompatibles avec la phrase structurée.
   // 3 CTAs header — visibles en MV3 mais comportements M2-6+ (wizard de
   // triage par lot · drawer impact agrégé · export PDF). Tooltip explique
   // l'arrivée pour ne pas frustrer le user en attendant.

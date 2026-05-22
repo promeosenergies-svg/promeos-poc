@@ -58,10 +58,24 @@ async function shoot(page, name) {
 
     const completudeNode = page.locator('[data-testid="editorial-completude"]');
     const completudeText = (await completudeNode.textContent().catch(() => '')) || '';
-    checks.completudeRendered = /Impact estimé connu sur/i.test(completudeText);
-    checks.completudeRatio = /\d+\/\d+/.test(completudeText);
-    console.log(`  ✓ Complétude rendue : ${checks.completudeRendered}`);
-    console.log(`  ✓ Format X/Y trouvé : ${checks.completudeRatio} (texte: "${completudeText.trim().slice(0, 100)}")`);
+    // M2-6.B.frontend.bis — format Q19=C closeur :
+    // « X actions sur Y portent un impact estimé : Z k€ »
+    checks.completudeRendered = /portent un impact estim[eé]|porte un impact estim[eé]/i.test(
+      completudeText
+    );
+    checks.completudeRatio = /\d+\s*actions?\s*sur\s*\d+/i.test(completudeText);
+
+    // M2-6.B.frontend.bis — assertion supplémentaire : le total compact Z k€
+    // doit être présent (jamais recalcul FE — pin source-guard SG_AC_V4_MONEY_01).
+    const sumCompletudeNode = page.locator('[data-testid="editorial-completude-sum"]');
+    const sumCompletudeText =
+      (await sumCompletudeNode.textContent().catch(() => '')) || '';
+    // Accepte « 47,5 k€ » (NBSP U+202F ou espace régulier) ou « 0 € ».
+    checks.completudeSumCfo = /k€|\d\s?€/i.test(sumCompletudeText);
+
+    console.log(`  ✓ Complétude rendue       : ${checks.completudeRendered}`);
+    console.log(`  ✓ Format X actions sur Y  : ${checks.completudeRatio} (texte: "${completudeText.trim().slice(0, 120)}")`);
+    console.log(`  ✓ Total CFO Z présent     : ${checks.completudeSumCfo} (texte: "${sumCompletudeText.trim()}")`);
 
     // ── 3. NarrativeBar sum € compact ──────────────────────────────
     console.log('\n3. NarrativeBar Tuile Décisions sum € compact');

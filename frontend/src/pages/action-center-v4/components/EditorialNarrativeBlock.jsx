@@ -1,4 +1,5 @@
 import { useActionCenterV4Summary } from '../../../hooks/v4';
+import { formatEuros } from '../../../utils/money';
 import { PILOTAGE_COPY } from '../constants';
 import { SolButton } from './SolButton';
 
@@ -144,12 +145,17 @@ export function EditorialNarrativeBlock({
         </SolButton>
       </div>
 
-      {/* M2-6.B.frontend — Indicateur complétude CFO (Q18=A) « Impact estimé
-          connu sur X/Y actions ». Posé sous la phrase Fraunces principale,
-          AVANT les CTAs secondaires. Sobre (ink-500 + non-italic) pour ne
-          pas concurrencer le narratif. Transparence métier : on affiche
-          même si 0/N (Q15 « pas de chiffre menteur » → admettre la
-          couverture partielle est honnête). */}
+      {/* M2-6.B.frontend.bis — Indicateur complétude CFO (Q19=C closeur).
+          Format cardinal Amine : « X actions sur Y portent un impact estimé : Z k€ ».
+          Q19=C exigeait le total CFO (Z) en plus du ratio (X/Y) déjà livré
+          en M2-6.B.frontend ; le bilan initial a livré 50%, .bis ferme l'écart.
+          Sources :
+            - X = `items_with_impact_known` (numérateur transparence CFO)
+            - Y = `items_total` (dénominateur, all-lifecycle cf. doc sémantique)
+            - Z = `sums_eur_total` formaté compact (jamais recalcul FE — pin
+              source-guard SG_AC_V4_MONEY_01)
+          Grammaire FR stricte : 0 et 1 → singulier (« action » + « porte »),
+          ≥ 2 → pluriel (« actions » + « portent »). Académie française. */}
       {data.items_total != null && (
         <p
           className="mt-3 text-[12.5px] not-italic"
@@ -159,7 +165,6 @@ export function EditorialNarrativeBlock({
           }}
           data-testid="editorial-completude"
         >
-          {PILOTAGE_COPY.editorialCompletudePrefix}{' '}
           <span
             className="font-mono not-italic"
             style={{
@@ -167,9 +172,30 @@ export function EditorialNarrativeBlock({
               fontVariantNumeric: 'tabular-nums',
             }}
           >
-            {data.items_with_impact_known ?? 0}/{data.items_total}
+            {data.items_with_impact_known ?? 0}
           </span>{' '}
-          {PILOTAGE_COPY.editorialCompletudeSuffix}
+          {(data.items_with_impact_known ?? 0) >= 2 ? 'actions' : 'action'} sur{' '}
+          <span
+            className="font-mono not-italic"
+            style={{
+              color: 'var(--sol-ink-700)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {data.items_total}
+          </span>{' '}
+          {(data.items_with_impact_known ?? 0) >= 2 ? 'portent' : 'porte'} un impact estimé
+          {' : '}
+          <span
+            className="font-mono not-italic"
+            style={{
+              color: 'var(--sol-ink-700)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+            data-testid="editorial-completude-sum"
+          >
+            {formatEuros(data.sums_eur_total ?? 0, 'compact')}
+          </span>
         </p>
       )}
 
