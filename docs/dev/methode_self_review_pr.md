@@ -87,6 +87,77 @@ Adaptation :
 - ❌ « Self-review = inflation, on perd 24 h » — faux, ROI mesuré ≥ 1:7
   (cf. table).
 
+## Bilan global post sous-phase composée
+
+### Le constat empirique (M2-6.B clôture)
+
+À la clôture d'une sous-phase composée de plusieurs sous-sprints (exemple
+M2-6.A = 3 sprints sécu Cat 1, M2-6.B = 4 sprints CFO), il existe une
+**classe d'écarts inter-sprints** que ni la self-review `.bis` intra-sprint
+ni les audits 6 agents ne peuvent catcher.
+
+**Exemple cardinal** : à la clôture de M2-6.B (`9a7c8984`), le bilan global
+a détecté que **4 promesses `M3-*`** mentionnées dans les commit messages
+M2-6.A/B (`M3-PDF-WEASYPRINT-MIGRATION`, `M3-CFO-SEMANTIC-CONVERGENCE`,
+`M3-IMPACT-PERIOD-BASIS`, `M3-PERF-COCKPIT-JOUR-BASELINE-551MS`) étaient
+absentes du fichier `BACKLOG_M3.md`. Chaque sprint individuel avait
+l'intention louable (mention en commit message), mais l'exécution mécanique
+(modifier le fichier) avait été oubliée **4 fois consécutivement**.
+
+**Pourquoi** : ni `.bis` ni audits 6 agents ne vérifient la **cohérence
+multi-commits sur des fichiers longue durée** (BACKLOG_M3, doctrines,
+registres exceptions, index doc).
+
+### Règle permanente
+
+À la clôture de **toute sous-phase composée de ≥ 2 sous-sprints**, exécuter
+un **bilan global self-review** avant le sprint suivant. Le bilan doit
+explicitement vérifier les 6 axes :
+
+1. **Cohérence cumulée des diffs** — `git diff <start>..<HEAD> --stat`,
+   confirmer scope discipliné (zéro fichier hors périmètre attendu).
+2. **Reproductibilité walkthrough** — cold re-run Playwright pour valider
+   le comportement runtime à froid (post-restart).
+3. **Smoke E2E pilote complet** — parcours réel utilisateur bout-en-bout
+   sur l'instance live, assertion sur les valeurs cardinales du sprint.
+4. **Cohérence docs produit** — relecture des docs créées/modifiées
+   pendant la sous-phase (cohérence pitch, doctrine, plan M3+).
+5. **Cohérence backlog inter-sprints** — `git log <start>..<HEAD>` pour
+   les mentions `M3-*` / `BACKLOG-*`, vérifier que chaque mention existe
+   dans `BACKLOG_M3.md` ; idem pour les références doctrine `docs/dev/`.
+6. **État opérationnel pilote** — ports BE/FE actifs, branches, baselines
+   tests, captures Playwright.
+
+### Décision binaire post-bilan
+
+- **N/N OK** → GO sprint suivant.
+- **Find P0/P1 détecté** → mini-`.bis` global dédié AVANT sprint suivant
+  (pattern `.bis-<scope>` ex. `.bis-backlog`).
+- **Find P2/polish** → tracer backlog M3, GO sprint suivant.
+
+### Anti-pattern bilan global
+
+❌ « On va inclure le fix dans le premier sous-sprint suivant »
+
+Pollue le scope, dilue la discipline atomic, risque oubli si scope déborde.
+Le `.bis-<scope>` dédié vaut la friction administrative — c'est ce qui
+maintient le pattern atomic vivant.
+
+### ROI mesuré bilan global (M2-6.B `.bis-backlog`)
+
+| Étape                                        | Coût        |
+|----------------------------------------------|-------------|
+| Bilan global 6 checks (script automatisé)    | ~15 min     |
+| Détection find traçabilité (4 entrées)       | inclus      |
+| Fix `.bis-backlog` (4 entrées + doctrine)    | ~15 min     |
+| **Coût total**                               | **~30 min** |
+
+**Coût évité si non détecté** : **~1-3 mois** (perte traçabilité longue durée,
+retravail pilote pour reconstituer les décisions M3, perte de confiance dans
+`BACKLOG_M3.md` comme source de vérité).
+
+Ratio mesuré : **~1:50 à 1:100** sur écarts traçabilité longue durée.
+
 ## ROI mesuré (M2-5)
 
 | Self-review        | Finds | Sévérité max     | Coût (h) | Évité (h) |
@@ -101,11 +172,17 @@ Ratio moyen 1:7. Sur sécu seule (CWE-307 pilote payant), ratio ≥ 1:10.
 
 ## Lien avec les autres doctrines
 
-Les 3 fichiers `methode_*.md` forment un système triphasé :
+Les 3 fichiers `methode_*.md` portent un système **4 doctrines** (3 fichiers
+plus 1 section dédiée aux sous-phases composées) :
 
 - **`methode_audit_avant_fix.md`** — *avant* le code : vérifier les prémisses
   du prompt contre le code réel (Phase 0 read-only).
 - **`methode_walkthrough_navigateur.md`** — *pendant et après* chaque sprint :
   vérifier le comportement runtime (routing / auth / chaîne UI).
-- **`methode_self_review_pr.md`** — *à la fin* d'une phase : vérifier la
-  cohérence globale à froid (étapes 2 et 4 réutilisent le walkthrough).
+- **`methode_self_review_pr.md` section principale** — *à la fin* d'une
+  phase / d'une PR : vérifier la cohérence globale à froid (étapes 2 et 4
+  réutilisent le walkthrough).
+- **`methode_self_review_pr.md` § Bilan global post sous-phase composée**
+  (cette section, M2-6.B.bis-backlog) — *après* une sous-phase composée
+  ≥ 2 sous-sprints : vérifier la cohérence **multi-commits** (backlog,
+  doctrines, registres exceptions, index doc).

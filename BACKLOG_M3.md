@@ -207,3 +207,95 @@ M3-SEED-MIGRATION → M3-LINK-EVENT-DOCTRINE.
   `docs/sprints/M2-5_FRONTEND_PLAN.md` §13 lors d'un prochain passage doc.
 
 **Effort cumulé M2-5 → M3 : ~9-11 h** (8 items courts).
+
+---
+
+## 6. Items issus de M2-6 (sécu Cat 1 + CFO mode MV3)
+
+Tracés par le bilan global post-clôture M2-6.B (commit `9a7c8984` +
+`.bis-backlog`). Pattern doctrine : chaque commit M2-6 a mentionné une
+promesse `M3-*` dans son message ; ce bloc matérialise les 4 entrées
+promises et ferme l'écart inter-sprints détecté par la self-review fin
+de phase.
+
+### M3-PDF-WEASYPRINT-MIGRATION — Fidélité PDF Sol via HTML→PDF  🟢 P2 · ~1 j/h
+
+- **Origine** : M2-6.B.pdf (commit `9a7c8984`) — Phase 1 audit cardinal Q22=C.
+- **Contexte actuel** : WeasyPrint indisponible en MV3 (Cairo + Pango absents
+  de l'env brew), ReportLab 4.4.10 retenu en fallback. Le PDF actuel est
+  conforme Q20=C minimaliste mais ne porte pas la signature typo Fraunces +
+  tokens Sol exacts.
+- **Pré-requis** : installer Cairo + Pango + GDK-Pixbuf + shared-mime-info
+  sur env pilote/prod (`apt-get` Ubuntu / `brew` macOS), puis `pip install
+  weasyprint`.
+- **Acceptation** : `python -c "from weasyprint import HTML; HTML(string='<h1>x</h1>').write_pdf()"`
+  retourne bytes PDF valides ; `pdf_export_service.py` bascule branche
+  WeasyPrint et tests existants restent verts.
+- **Tests à pin** : `test_pdf_contains_total_47500_and_completude_phrase`
+  reste vert + nouveau `test_pdf_uses_weasyprint_when_available`.
+- **DoD** : install deps + adapter `pdf_export_service.py` pour réactiver
+  branche WeasyPrint + retirer le fallback ReportLab si non souhaité +
+  re-mesurer fidélité Sol vs ReportLab actuel.
+
+### M3-CFO-SEMANTIC-CONVERGENCE — Counts vs sums € périmètre unifié ?  🟢 P2 · 0-3 j/h
+
+- **Origine** : M2-6.B.backend (commit `992b5c79`) — Surprise #5 audit Phase 1.
+- **Contexte actuel** : Dissociation cardinale actée MV3 — `counts_*` filtrent
+  `lifecycle_state != closed` (urgence opérationnelle Marie), `sums_eur_*`
+  incluent TOUS items closed inclus (portfolio CFO Jean-Marc). Cette
+  dissociation peut surprendre un user habitué aux dashboards « tout-en-un ».
+- **Décision** : recueil retour pilote 2 mois HELIOS/MERIDIAN, arbitrer
+  post-pilote selon retour usage réel.
+- **3 options post-pilote** :
+  - **A — Convergence** (~0.5 j/h) : si pilote attend une sémantique unique,
+    fusionner counts/sums sur même périmètre. Modifier filtre repo
+    `ActionCenterItemRepository.get_summary()`.
+  - **B — Filtre UI** (~2-3 j/h) : toggle « Vue urgence » vs « Vue portfolio »
+    persisté en préférence user + tests E2E.
+  - **C — Statu quo** (0 j/h) : si pilote confirme la dissociation comme valeur
+    métier (probable — workflow CFO réel).
+- **Refs** : [`docs/produit/semantique_cfo_sums_counts.md`](docs/produit/semantique_cfo_sums_counts.md)
+  (doc cardinale pitch + dialogue Marie/Jean-Marc).
+- **DoD** : arbitrage Amine post-collecte feedback pilote, exécution de
+  l'option retenue + tests pin maintenus.
+
+### M3-IMPACT-PERIOD-BASIS — Schéma enrichi `impact_period` débloque «€/an»  🟢 P2 · ~1.5-2 j/h
+
+- **Origine** : M2-6.B.frontend (commit `470afd5c`) — Q16 audit Amine corrigé.
+- **Contexte actuel** : MV3 affiche `47 500 €` sans suffixe « €/an » car les
+  impacts seedés sont hétérogènes (anomalie facture trimestrielle / sanction
+  OPERAT one-shot / gain pluri-annuel contrat / optim annuel). Afficher
+  « €/an » sur les 4 mentirait sur 3.
+- **Travail** : enrichir le schéma `ActionCenterItem` :
+  - `impact_period: Enum["annuel", "mensuel", "one_shot", "duree_contrat"]`
+  - `impact_basis: Text` (justification métier sourcée — ex. « décret 2014-1393
+    art. 5 : 15 €/m² × seuil »)
+- **Conséquences UI** : suffixe période contextuel par item (`/an`, `/mois`,
+  « évité », etc.) côté colonne Référentiel + NarrativeBar. Format
+  `47 500 €/an` débloqué pour items annuels confirmés.
+- **Tests à pin** : nouveau `test_period_displayed_when_set` + maintien
+  `test_helios_use_case_a_total_47500` + `test_sum_includes_closed_items_cfo_semantics`.
+- **DoD** : migration Alembic 2 colonnes + seed Use Case A update + helper
+  format adapté côté FE (`formatEurosWithPeriod`) + tests verts.
+
+### M3-PERF-COCKPIT-JOUR-BASELINE-551MS — P95 breach observé live  🟢 P2 · ~0.5-2 j/h
+
+- **Origine** : M2-6.A.3 (commit `9158ef18`) — Smoke Cas 2 découverte live.
+- **Contexte actuel** : Endpoint `GET /api/cockpit/jour` mesuré **P95=551.89 ms**
+  en smoke M2-6.A.3 (> budget MV3 P95=500 ms). Breach non re-confirmable
+  post-restart (`uvicorn --reload` clear store in-memory — limitation MV3
+  documentée [`RUNBOOK_OBSERVABILITY.md`](docs/deploy/RUNBOOK_OBSERVABILITY.md)).
+- **Travail M3+** : collecte 7+ jours post-stabilisation pilote, re-confirmer
+  breach persistant ou résorbé. Si persistant :
+  1. Profiling endpoint (cProfile + SQLAlchemy `echo=True` slow queries log)
+  2. Identifier hot path (calculs lourds ? slow query ? N+1 ?)
+  3. Optimisation ciblée (index DB / cache résultat / refactor calcul)
+  4. Re-mesure post-fix via `/health/metrics` 7 jours
+- **Acceptation** : P95 `/api/cockpit/jour` retombe sous budget 500 ms OU
+  `ENDPOINT_OVERRIDES` ajusté à 700 ms si valeur de référence métier acceptée.
+- **Refs** : [`docs/deploy/RUNBOOK_OBSERVABILITY.md`](docs/deploy/RUNBOOK_OBSERVABILITY.md)
+  § « Procédure ajustement budgets post-pilote ».
+- **DoD** : breach résorbé OU budget overridé documenté.
+
+**Effort cumulé M2-6 → M3 : ~3-8 j/h** (4 items, fourchette large car
+M3-CFO-SEMANTIC dépend de l'arbitrage pilote).
