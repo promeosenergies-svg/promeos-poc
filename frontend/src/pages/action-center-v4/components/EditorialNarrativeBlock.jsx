@@ -144,6 +144,35 @@ export function EditorialNarrativeBlock({
         </SolButton>
       </div>
 
+      {/* M2-6.B.frontend — Indicateur complétude CFO (Q18=A) « Impact estimé
+          connu sur X/Y actions ». Posé sous la phrase Fraunces principale,
+          AVANT les CTAs secondaires. Sobre (ink-500 + non-italic) pour ne
+          pas concurrencer le narratif. Transparence métier : on affiche
+          même si 0/N (Q15 « pas de chiffre menteur » → admettre la
+          couverture partielle est honnête). */}
+      {data.items_total != null && (
+        <p
+          className="mt-3 text-[12.5px] not-italic"
+          style={{
+            color: 'var(--sol-ink-500)',
+            fontFamily: 'var(--sol-font-display)',
+          }}
+          data-testid="editorial-completude"
+        >
+          {PILOTAGE_COPY.editorialCompletudePrefix}{' '}
+          <span
+            className="font-mono not-italic"
+            style={{
+              color: 'var(--sol-ink-700)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {data.items_with_impact_known ?? 0}/{data.items_total}
+          </span>{' '}
+          {PILOTAGE_COPY.editorialCompletudeSuffix}
+        </p>
+      )}
+
       {/* CTAs secondaires bottom-right (alignés droite) */}
       <div className="mt-4 flex items-center justify-end gap-2">
         <SolButton

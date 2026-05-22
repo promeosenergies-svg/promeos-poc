@@ -1,4 +1,4 @@
-import { fmtEurShort } from '../../../utils/format';
+import { formatEurosColumn } from '../../../utils/money';
 import { A11Y_COPY, COPY, PRIORITY_SOL_BG, SOL_COPY } from '../constants';
 import { DomainChip } from './DomainChip';
 import { KindCell } from './KindCell';
@@ -154,30 +154,33 @@ export function ItemsTable({ items, onOpenItem }) {
                     <span style={{ color: 'var(--sol-ink-500)' }}>—</span>
                   )}
                 </td>
-                {/* M2-5.11.D / .G — montant à risque 12m. `fmtEurShort` rend
-                    « 7,5 k€ » / « 1,2 M€ » / « — » si null. M2-5.11.G : passé
-                    sur `--sol-ink-700` (au lieu de `--sol-refuse-fg`) car la
-                    saturation rouge sur les rows P0 cumulait strip + kind +
-                    badge + € (audit visuel — 4 teintes rouge sur 10cm).
-                    Le strip vertical 3px porte déjà la signature « dérive » ;
-                    l'œil suit. Null reste tiret mais en `--sol-ink-500`
-                    (WCAG AA 5.2:1 vs ink-400 3.45:1). */}
+                {/* M2-6.B.frontend — colonne « Impact estimé » (Q16). Source
+                    backend: `estimated_impact_euros` scalaire (vs ancien
+                    `impact_at_risk_eur` dérivé `impact_payload.at_risk` qui
+                    devient drill-down drawer ImpactSection M3+).
+                    `formatEurosColumn` bascule auto < 10k → full (« 3 200 € »)
+                    vs ≥ 10k → compact (« 35 k€ »). NULL → « — » (tiret
+                    cadratin). Couleur ink-700 si valeur, ink-500 si NULL
+                    (WCAG AA 5.2:1). Aligné droite + tabular-nums pour scan
+                    colonne CFO. */}
                 <td
                   className={`hidden lg:table-cell ${TD_CLASS} text-right whitespace-nowrap`}
                   title={
-                    item.impact_at_risk_eur != null ? COPY.amountTooltip : COPY.amountTooltipMissing
+                    item.estimated_impact_euros != null
+                      ? COPY.amountTooltip
+                      : COPY.amountTooltipMissing
                   }
                 >
                   <span
                     className="font-mono text-[12.5px] font-medium"
                     style={{
                       color:
-                        item.impact_at_risk_eur != null
+                        item.estimated_impact_euros != null
                           ? 'var(--sol-ink-700)'
                           : 'var(--sol-ink-500)',
                     }}
                   >
-                    {fmtEurShort(item.impact_at_risk_eur)}
+                    {formatEurosColumn(item.estimated_impact_euros)}
                   </span>
                 </td>
                 {/* M2-5.11.E / .G — Pilote (snapshot display_name). Si pas

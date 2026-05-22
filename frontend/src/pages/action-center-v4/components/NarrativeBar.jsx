@@ -1,4 +1,5 @@
 import { useActionCenterV4Summary } from '../../../hooks/v4';
+import { formatEuros } from '../../../utils/money';
 import { NARRATIVE_BAR_COPY, NARRATIVE_BAR_VARIANTS } from '../constants';
 
 /**
@@ -31,6 +32,13 @@ export function NarrativeBar() {
   // Décisions P0/P1 (combinée) · Sans responsable · Bloqués · Preuvés ·
   // SLA en retard (placeholder MV3). Le breakdown P0/P1 reste sous-ligne
   // de « Sans responsable » (CFO actionability M2-5.11.J préservée).
+  //
+  // M2-6.B.frontend — sums € sous tuile « Décisions P0/P1 » (Q16=B
+  // compact strict). Source : `sums_eur_by_priority.P0 + .P1` agrégés
+  // backend (jamais recalculés FE — cf. test contractuel).
+  // Tooltip cohérent colonne « Impact estimé » (même texte Q16).
+  const sumsByPriority = data.sums_eur_by_priority ?? {};
+  const sumP0P1 = (sumsByPriority.P0 ?? 0) + (sumsByPriority.P1 ?? 0);
   const tiles = [
     {
       key: 'decisions',
@@ -38,6 +46,10 @@ export function NarrativeBar() {
       label: NARRATIVE_BAR_COPY.decisionsLabel,
       tooltip: NARRATIVE_BAR_COPY.decisionsTooltip,
       variant: NARRATIVE_BAR_VARIANTS.decisions,
+      // sub-ligne sum € compact MV3 — affichée uniquement si > 0 (anti-bruit
+      // §6.6 : `0 €` parasiterait la lecture rapide CFO sur org vierge).
+      sumEur: sumP0P1 > 0 ? formatEuros(sumP0P1, 'compact') : null,
+      sumTooltip: NARRATIVE_BAR_COPY.sumImpactTooltip,
     },
     {
       key: 'without_owner',
@@ -98,7 +110,7 @@ export function NarrativeBar() {
  * Tuile élémentaire (chiffre MONO + libellé court). Palette injectée via
  * `variant.bg` / `variant.accent` (cf. NARRATIVE_BAR_VARIANTS).
  */
-function StatTile({ value, label, tooltip, variant, breakdown }) {
+function StatTile({ value, label, tooltip, variant, breakdown, sumEur, sumTooltip }) {
   return (
     <div
       role="listitem"
@@ -134,6 +146,24 @@ function StatTile({ value, label, tooltip, variant, breakdown }) {
           data-testid="stat-tile-breakdown"
         >
           {breakdown}
+        </span>
+      )}
+      {/* M2-6.B.frontend — sum € compact (Q16) sous tuile « Décisions P0/P1 ».
+          Style Sol sobre crème/brun (Q17=B) : ink-500 + border-top dashed
+          ink-300 pour signaler tooltip help. Pas de couleur gain/coût/sanction
+          (M3 classification sémantique). Source backend, jamais recalculée. */}
+      {sumEur && (
+        <span
+          className="mt-1 cursor-help border-t border-dashed pt-1 font-mono text-[11px] tracking-[0.04em]"
+          style={{
+            color: 'var(--sol-ink-500)',
+            borderColor: 'var(--sol-ink-300)',
+            fontFamily: 'var(--sol-font-mono)',
+          }}
+          title={sumTooltip}
+          data-testid="stat-tile-sum-eur"
+        >
+          {sumEur}
         </span>
       )}
     </div>

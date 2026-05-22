@@ -187,4 +187,79 @@ describe('NarrativeBar', () => {
     // Aucun rendu — pas de tuile, pas de placeholder, pas d'alerte.
     expect(container.firstChild).toBeNull();
   });
+
+  // ── M2-6.B.frontend — sum € compact sous tuile Décisions P0/P1 (Q16) ──
+
+  test('renders the P0/P1 sum € (compact) under Décisions tile from backend agg', () => {
+    useActionCenterV4Summary.mockReturnValue({
+      data: {
+        count_p0: 1,
+        count_p1: 3,
+        count_without_owner: 0,
+        count_p0_without_owner: 0,
+        count_p1_without_owner: 0,
+        count_at_risk: 0,
+        count_secured: 0,
+        // M2-6.B.backend agrégat — source unique CFO (jamais recalculé FE).
+        sums_eur_by_priority: { P0: 3200, P1: 44300, P2: 35000, P3: 1800 },
+        sums_eur_total: 84300,
+        items_with_impact_known: 4,
+        items_total: 9,
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<NarrativeBar />);
+    // 3200 + 44300 = 47500 → format compact "47,5 k€" (Q16 NarrativeBar compact).
+    const sumNode = screen.getByTestId('stat-tile-sum-eur');
+    expect(sumNode).toBeInTheDocument();
+    expect(sumNode.textContent).toMatch(/47,5\s?k€/);
+  });
+
+  test('hides the sum € sub-line when both P0+P1 = 0 (anti-bruit §6.6)', () => {
+    useActionCenterV4Summary.mockReturnValue({
+      data: {
+        count_p0: 0,
+        count_p1: 0,
+        count_without_owner: 5,
+        count_p0_without_owner: 0,
+        count_p1_without_owner: 0,
+        count_at_risk: 0,
+        count_secured: 0,
+        sums_eur_by_priority: { P0: 0, P1: 0 },
+        sums_eur_total: 0,
+        items_with_impact_known: 0,
+        items_total: 5,
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<NarrativeBar />);
+    // Aucune sous-ligne sum € (pas '0 €' parasite — Q16).
+    expect(screen.queryByTestId('stat-tile-sum-eur')).toBeNull();
+  });
+
+  test('hides the sum € sub-line when sums_eur_by_priority is undefined (rétro-compat pré-M2-6.B.backend)', () => {
+    // Garde rétro-compat : si le backend ne renvoie pas encore les champs CFO
+    // (mocks anciens, ou env sans la migration), la tuile décisions ne casse pas.
+    useActionCenterV4Summary.mockReturnValue({
+      data: {
+        count_p0: 1,
+        count_p1: 2,
+        count_without_owner: 0,
+        count_p0_without_owner: 0,
+        count_p1_without_owner: 0,
+        count_at_risk: 0,
+        count_secured: 0,
+        // sums_eur_by_priority absent volontairement
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<NarrativeBar />);
+    expect(screen.queryByTestId('stat-tile-sum-eur')).toBeNull();
+  });
 });

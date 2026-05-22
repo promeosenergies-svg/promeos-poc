@@ -49,13 +49,17 @@ export const COPY = {
   columnType: 'Type',
   columnDomain: 'Domaine',
   columnUpdated: 'Mis à jour',
-  // M2-5.11.D — colonne € (à risque 12m). Label court pour ne pas faire
-  // déborder l'en-tête, tooltip explicite pour la valeur et l'absence.
-  columnAmount: 'À risque 12m',
-  amountTooltip:
-    "Montant à risque sur 12 mois si l'item n'est pas traité (source : impact_payload.at_risk).",
+  // M2-6.B.frontend — colonne € « Impact estimé » (Q16=B audit Amine).
+  // Remplace l'ancien « À risque 12m » (impact_payload.at_risk.value_eur) par
+  // l'agrégat CFO simple `estimated_impact_euros` (champ scalaire seedé
+  // M2-6.B.backend). Sémantique CFO MV3 : montant indicatif unique vs
+  // drill-down 4 quadrants (reporté drawer ImpactSection M3+).
+  // PAS de suffixe « €/an » tant que `impact_period`/`impact_basis` absent
+  // de l'API (M3-IMPACT-PERIOD-BASIS tracé backlog).
+  columnAmount: 'Impact estimé',
+  amountTooltip: 'Montant indicatif issu du backend, hors éléments non estimés.',
   amountTooltipMissing:
-    "Impact non encore calculé pour cet item — apparaîtra dès qu'un montant sera estimé.",
+    "Impact non encore estimé pour cet item — apparaîtra dès qu'une source documentée sera disponible.",
   // M2-5.11.E — colonne Pilote. Compact ; le tooltip qualifie l'absence.
   columnOwner: 'Pilote',
   ownerUnassignedLabel: 'Non assigné',
@@ -522,6 +526,10 @@ export const PILOTAGE_COPY = {
   editorialNoBlockers: 'aucun blocage en cours',
   editorialDataQualityOK: 'qualité données OK',
   editorialDataQualityDegraded: 'qualité données dégradée',
+  // M2-6.B.frontend — Indicateur complétude CFO (Q18=A). Phrase scindée
+  // pour insérer le chiffre `X/Y` en MONO tabular-nums au milieu.
+  editorialCompletudePrefix: 'Impact estimé connu sur',
+  editorialCompletudeSuffix: 'actions.',
   // 3 CTAs header — visibles en MV3 mais comportements M2-6+ (wizard de
   // triage par lot · drawer impact agrégé · export PDF). Tooltip explique
   // l'arrivée pour ne pas frustrer le user en attendant.
@@ -596,6 +604,9 @@ export const NARRATIVE_BAR_COPY = {
     "Items actifs avec ≥ 1 preuve vérifiée — auditable à date. Ne confond pas avec « Sécurisable » de l'impact financier (qui mesure le potentiel activable).",
   slaOverdueTooltip:
     'Items actifs avec date limite SLA dépassée. Disponible M2-6 (champ sla_due_date à populer + endpoint /summary étendu).',
+  // M2-6.B.frontend — Tooltip sur sum € (sous-ligne tuile Décisions P0/P1).
+  // Cohérent ItemsTable colonne « Impact estimé » (même libellé Q16).
+  sumImpactTooltip: 'Montant indicatif issu du backend, hors éléments non estimés.',
   // États non-data (loading / error / no-data).
   loadingLabel: 'Synthèse en cours…',
   errorTitle: 'Impossible de charger la synthèse',

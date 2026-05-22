@@ -64,10 +64,14 @@ class ActionCenterItemResponse(BaseModel):
     score_stale: bool
     # M2-5.11.D — Valeur €/12m du quadrant « à risque » (lue depuis la
     # `@property impact_at_risk_eur` du model, extraite de `impact_payload`).
-    # Permet à l'UI d'afficher le montant dans ItemsTable + PriorityQueueCard
-    # sans appel /impact unitaire (anti N+1). `None` si l'impact n'est pas
-    # encore calculé pour cet item — l'UI rend « — ».
+    # Conservée pour rétro-compat drawer ImpactSection drill-down 4 quadrants.
+    # L'UI ItemsTable a basculé sur `estimated_impact_euros` (M2-6.B.frontend).
     impact_at_risk_eur: Optional[float] = None
+    # M2-6.B.backend — Impact € estimé scalaire (mode CFO MV3). Source de
+    # vérité simple pour ItemsTable colonne « Impact estimé » + NarrativeBar
+    # v3 sommes €. NULL strict si non documenté (Q15 discipline « pas de
+    # chiffre menteur »).
+    estimated_impact_euros: Optional[float] = None
     # M2-5.11.E — Pilote assigné (UUID anchored, libellé snapshot lu via
     # PATCH /assign). Les deux sont `None` quand l'item n'est pas assigné.
     # `owner_id` reste UUID isolé (cohérent pattern V4 — pas de FK strict

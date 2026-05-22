@@ -79,8 +79,10 @@ describe('ItemsTable', () => {
     expect(ths.length).toBe(7);
     // « Mis à jour » a été retirée (drawer détail le porte).
     expect(container.querySelector('thead')).not.toHaveTextContent('Mis à jour');
-    // Colonne € (M2-5.11.D) + Pilote (M2-5.11.E) présentes.
-    expect(container.querySelector('thead')).toHaveTextContent(/à risque 12m/i);
+    // Colonne € (M2-5.11.D → M2-6.B.frontend renommée « Impact estimé »,
+    // source `estimated_impact_euros` scalaire vs ancien `impact_at_risk_eur`)
+    // + Pilote (M2-5.11.E) présentes.
+    expect(container.querySelector('thead')).toHaveTextContent(/impact estimé/i);
     expect(container.querySelector('thead')).toHaveTextContent(/pilote/i);
   });
 
@@ -121,41 +123,60 @@ describe('ItemsTable', () => {
     expect(screen.getByText(/non assigné/i)).toBeInTheDocument();
   });
 
-  // ── M2-5.11.D — rendu cellule € (montant si présent, « — » sinon) ────
-  test('renders the € amount when impact_at_risk_eur is set', () => {
+  // ── M2-6.B.frontend — rendu cellule « Impact estimé » ──────────────
+  // (remplace ancien test sur `impact_at_risk_eur` — la colonne consomme
+  // désormais `estimated_impact_euros`, format `formatEurosColumn`)
+  test('renders the € amount in full mode when estimated_impact_euros < 10k', () => {
     const items = [
       {
         id: '€1',
-        title: 'Chiffré',
+        title: 'Vedette < 10k',
         kind: 'anomaly',
         priority_bracket: 'P0',
         priority_score: 90,
         lifecycle_state: 'new',
         domain: 'energie',
-        impact_at_risk_eur: 7500,
+        estimated_impact_euros: 7500,
       },
     ];
     const { container } = render(<ItemsTable items={items} onOpenItem={noop} />);
-    // fmtEurShort(7500) → "7,5 k€". `\s` matche aussi U+00A0 (espace
-    // insécable produit par toLocaleString fr-FR sur certains builds ICU).
-    expect(container.textContent).toMatch(/7,5\s?k€/);
+    // formatEurosColumn(7500) → "7 500 €" (full, sous seuil 10k).
+    // `\s` matche U+202F narrow no-break space (séparateur milliers FR).
+    expect(container.textContent).toMatch(/7\s?500\s?€/);
   });
 
-  test('renders « — » when impact_at_risk_eur is null', () => {
+  test('renders the € amount in compact mode when estimated_impact_euros >= 10k', () => {
     const items = [
       {
         id: '€2',
+        title: 'Renouvellement contrat',
+        kind: 'decision',
+        priority_bracket: 'P2',
+        priority_score: 54,
+        lifecycle_state: 'planned',
+        domain: 'purchase',
+        estimated_impact_euros: 35000,
+      },
+    ];
+    const { container } = render(<ItemsTable items={items} onOpenItem={noop} />);
+    // formatEurosColumn(35000) → "35 k€" (compact ≥ 10k).
+    expect(container.textContent).toMatch(/35\s?k€/);
+  });
+
+  test('renders « — » when estimated_impact_euros is null (NULL strict)', () => {
+    const items = [
+      {
+        id: '€3',
         title: 'Sans chiffre',
         kind: 'action',
         priority_bracket: 'P2',
         priority_score: 50,
         lifecycle_state: 'new',
         domain: 'energie',
-        impact_at_risk_eur: null,
+        estimated_impact_euros: null,
       },
     ];
     const { container } = render(<ItemsTable items={items} onOpenItem={noop} />);
-    // Au moins un « — » présent dans le tableau (la cellule €).
     expect(container.textContent).toContain('—');
   });
 });
