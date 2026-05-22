@@ -183,11 +183,18 @@ async function shoot(page, name) {
       await firstRow.click({ timeout: 3_000 });
       await page.waitForTimeout(500);
 
-      // Dans le drawer, trouver le bouton « Changer l'état ». Le libellé exact
-      // est dans constants.js (TRANSITION_COPY.openButton ou similaire).
+      // Dans le drawer, trouver le bouton « action principale » qui ouvre
+      // LifecycleTransitionModal. Le label varie selon `lifecycle_state`
+      // (cf. LIFECYCLE_PRIMARY_ACTION_LABEL dans constants.js) :
+      // - new       → « Qualifier »
+      // - triaged   → « Planifier »
+      // - planned   → « Démarrer »
+      // - in_progress → « Marquer comme fait »
+      // - closed    → « Rouvrir »
+      // M2-6.C.1-reduit.bis — regex Playwright simple (anti « Invalid flags »
+      // précédent — apostrophe '' U+2019 + backreferences cassaient le parse).
       const transitionBtn = page
-        .locator('button')
-        .filter({ hasText: /changer.{0,3}l[''‘]état|transitionner|nouvel.état/i })
+        .getByRole('button', { name: /Qualifier|Planifier|Démarrer|Marquer comme fait|Rouvrir/i })
         .first();
       await transitionBtn.click({ timeout: 3_000 });
       await page.waitForTimeout(400);
