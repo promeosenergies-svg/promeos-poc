@@ -20,6 +20,16 @@ vi.mock('../../../hooks/v4', () => ({
   useActionCenterV4Summary: vi.fn(),
 }));
 
+// M2-5.12 — la page consomme useAuth pour le persona du Masthead enrichi.
+// On mock pour éviter d'avoir à wrapper chaque test dans AuthProvider.
+vi.mock('../../../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 1, prenom: 'Sophie', nom: 'Marin', email: 'sophie@helios.fr' },
+    org: { id: 1, nom: 'Groupe HELIOS' },
+    role: 'energy_manager',
+  }),
+}));
+
 import {
   usePilotageFilePrioritaire,
   useActionCenterV4Items,

@@ -27,21 +27,17 @@ export function NarrativeBar() {
   if (error) return <NarrativeBarError message={error.message} onRetry={refetch} />;
   if (!data) return null;
 
-  // Cinq tuiles dans l'ordre canonique de lecture (urgence → preuve).
+  // M2-5.12 — 5 tuiles alignées sur la maquette Sophie Marin 2026-05-22 :
+  // Décisions P0/P1 (combinée) · Sans responsable · Bloqués · Preuvés ·
+  // SLA en retard (placeholder MV3). Le breakdown P0/P1 reste sous-ligne
+  // de « Sans responsable » (CFO actionability M2-5.11.J préservée).
   const tiles = [
     {
-      key: 'p0',
-      value: data.count_p0 ?? 0,
-      label: NARRATIVE_BAR_COPY.p0Label,
-      tooltip: NARRATIVE_BAR_COPY.p0Tooltip,
-      variant: NARRATIVE_BAR_VARIANTS.p0,
-    },
-    {
-      key: 'p1',
-      value: data.count_p1 ?? 0,
-      label: NARRATIVE_BAR_COPY.p1Label,
-      tooltip: NARRATIVE_BAR_COPY.p1Tooltip,
-      variant: NARRATIVE_BAR_VARIANTS.p1,
+      key: 'decisions',
+      value: (data.count_p0 ?? 0) + (data.count_p1 ?? 0),
+      label: NARRATIVE_BAR_COPY.decisionsLabel,
+      tooltip: NARRATIVE_BAR_COPY.decisionsTooltip,
+      variant: NARRATIVE_BAR_VARIANTS.decisions,
     },
     {
       key: 'without_owner',
@@ -49,10 +45,10 @@ export function NarrativeBar() {
       label: NARRATIVE_BAR_COPY.withoutOwnerLabel,
       tooltip: NARRATIVE_BAR_COPY.withoutOwnerTooltip,
       variant: NARRATIVE_BAR_VARIANTS.without_owner,
-      // M2-5.11.J — breakdown CFO : « 3 Sans pilote » ne dit pas si c'est
-      // urgent. La sous-ligne expose la décomposition P0/P1 (signal le plus
-      // actionnable). Affichée uniquement quand au moins 1 P0/P1 sans
-      // pilote — sinon ferme silencieusement (anti bruit doctrine §6.6).
+      // M2-5.11.J — breakdown CFO : « 3 Sans responsable » ne dit pas si
+      // c'est urgent. La sous-ligne expose la décomposition P0/P1 (signal
+      // le plus actionnable). Affichée uniquement quand au moins 1 P0/P1
+      // sans pilote — sinon ferme silencieusement (anti bruit §6.6).
       breakdown:
         (data.count_p0_without_owner ?? 0) + (data.count_p1_without_owner ?? 0) > 0
           ? formatOwnerBreakdown(data.count_p0_without_owner ?? 0, data.count_p1_without_owner ?? 0)
@@ -71,6 +67,16 @@ export function NarrativeBar() {
       label: NARRATIVE_BAR_COPY.securedLabel,
       tooltip: NARRATIVE_BAR_COPY.securedTooltip,
       variant: NARRATIVE_BAR_VARIANTS.secured,
+    },
+    {
+      // M2-5.12 — placeholder SLA en retard (maquette). MV3 affiche « — »
+      // ink-400, tooltip explique l'arrivée M2-6 (endpoint /summary étendu +
+      // seed sla_due_date populé). Doctrine §6.6 « pas de chiffre menteur ».
+      key: 'sla_overdue',
+      value: NARRATIVE_BAR_COPY.slaOverduePlaceholder,
+      label: NARRATIVE_BAR_COPY.slaOverdueLabel,
+      tooltip: NARRATIVE_BAR_COPY.slaOverdueTooltip,
+      variant: NARRATIVE_BAR_VARIANTS.sla_overdue,
     },
   ];
 
