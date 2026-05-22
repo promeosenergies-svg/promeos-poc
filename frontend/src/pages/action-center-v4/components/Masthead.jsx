@@ -1,23 +1,50 @@
+import { useEffect, useState } from 'react';
+
 import { MASTHEAD_COPY } from '../constants';
 
 /**
- * M2-5.10.A / .bis / M2-5.10.bis clôture — Masthead Sol éditorial (maquette §8.3
- * lignes 703-707).
+ * M2-5.10.A → M2-5.12 — Masthead Sol éditorial (maquette Sophie Marin
+ * 2026-05-22, mise à jour majeure du masthead §8.3 historique).
  *
- * Bandeau italique au-dessus des filtres : titre + sous-titre contextuel +
- * compteur explicite. Posé via la prop `editorialHeader` de `PageShell`
- * pour court-circuiter le H1 sans-serif Tailwind par défaut (anti-pattern
- * doctrine Sol §6.1 « triptyque typographique brisé »).
+ * Bandeau italique au-dessus des filtres : titre + persona (M2-5.12) +
+ * sous-titre contextuel + compteur explicite. À droite : date + heure live
+ * (M2-5.12) + tag MAJ LIVE. Posé via la prop `editorialHeader` de
+ * `PageShell` pour court-circuiter le H1 sans-serif Tailwind par défaut
+ * (anti-pattern doctrine Sol §6.1 « triptyque typographique brisé »).
  *
- * M2-5.10.bis clôture (audit cross-pages) : `subtitle` et `countLabel` sont
- * désormais props pour permettre à chaque page (Référentiel, Pilotage,
- * Journal) d'afficher son contexte propre. Sans ces props, fallback sur
- * `MASTHEAD_COPY.subtitle` (« Référentiel complet ») et le suffixe
- * pluralisé « N items » (compatibilité rétroactive Référentiel).
+ * Props :
+ *  - `total` (number) : compteur d'items (fallback suffixe « N items »)
+ *  - `subtitle` (string) : sous-titre contextuel (défaut « Référentiel complet »)
+ *  - `countLabel` (string) : libellé compteur contextuel (override `total`)
+ *  - `persona` (string) : « Sophie Marin · Resp. Énergie HELIOS » (M2-5.12)
+ *  - `liveDate` (string) : override date (sinon dérivée locale FR)
+ *  - `withLiveTime` (bool) : affiche HH:mm live avec setInterval 60s (M2-5.12)
  *
- * `total` est injecté côté page (depuis le hook V4 ou la liste affichée).
+ * Le compteur historique (« N actions prioritaires », « N items ») reste
+ * en suffixe du sous-titre quand `countLabel` est passé.
  */
-export function Masthead({ total = 0, liveDate, subtitle, countLabel }) {
+export function Masthead({
+  total = 0,
+  liveDate,
+  subtitle,
+  countLabel,
+  persona,
+  withLiveTime = false,
+}) {
+  // M2-5.12 — heure live (HH:mm). useState + setInterval 60s pour éviter le
+  // re-render de toute la page chaque seconde ; l'écran change à la minute.
+  // Si `withLiveTime=false`, le state reste à null et le render est skip.
+  const [liveTime, setLiveTime] = useState(() =>
+    withLiveTime ? formatLiveTime(new Date()) : null
+  );
+  useEffect(() => {
+    if (!withLiveTime) return undefined;
+    const tick = () => setLiveTime(formatLiveTime(new Date()));
+    tick(); // sync immédiatement au montage
+    const interval = setInterval(tick, 60_000);
+    return () => clearInterval(interval);
+  }, [withLiveTime]);
+
   // Si liveDate non fourni, fallback à la date courante (dériver inline plutôt
   // qu'en useMemo : la date n'est pas une dérivée props/state, et un useMemo
   // vide la fige au montage — leçon audit code-reviewer M2-5.10.A).
@@ -50,7 +77,13 @@ export function Masthead({ total = 0, liveDate, subtitle, countLabel }) {
           letterSpacing: '0.02em',
         }}
       >
-        <span className="font-semibold not-italic">{MASTHEAD_COPY.title}</span> · {renderedSubtitle}
+        <span className="font-semibold not-italic">{MASTHEAD_COPY.title}</span>
+        {/* M2-5.12 — Persona inséré entre titre et subtitle : « Sophie Marin ·
+            Resp. Énergie HELIOS » (maquette). Italique Fraunces hérité du
+            parent. Le séparateur reste « · » canonique grammaire Sol §5. */}
+        {persona && <> · {persona}</>}
+        {' · '}
+        {renderedSubtitle}
         {renderedCount && (
           <>
             {' · '}
@@ -63,9 +96,30 @@ export function Masthead({ total = 0, liveDate, subtitle, countLabel }) {
       <div
         className="font-mono text-[10.5px] uppercase tracking-[0.16em]"
         style={{ color: 'var(--sol-ink-500)' }}
+        // a11y : ne pas annoncer la minute live à chaque tick (anti-bruit
+        // lecteurs d'écran). `aria-live=off` explicite — seul le tag final
+        // "MAJ LIVE" est sémantique.
+        aria-live="off"
       >
-        {date} · {MASTHEAD_COPY.dateLive}
+        {date}
+        {liveTime && (
+          <>
+            {' · '}
+            <span style={{ color: 'var(--sol-ink-700)' }}>{liveTime}</span>
+          </>
+        )}
+        {' · '}
+        {MASTHEAD_COPY.dateLive}
       </div>
     </div>
   );
+}
+
+/**
+ * Formate l'heure live au format HH:mm en locale FR. Extrait pour
+ * testabilité (le composant lui-même est testé via Vitest jsdom, ce helper
+ * pur n'a besoin que d'un test unit simple).
+ */
+function formatLiveTime(date) {
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }

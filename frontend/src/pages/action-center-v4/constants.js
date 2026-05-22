@@ -503,6 +503,49 @@ export const PILOTAGE_COPY = {
   // Tabs internes Pilotage / Référentiel.
   tabPilotage: 'Pilotage',
   tabReferentiel: 'Référentiel',
+  // M2-5.12 — bloc éditorial narratif (maquette Sophie Marin 2026-05-22).
+  // Eyebrow status pill : dot vert + libellé MONO uppercase identifiant le
+  // périmètre tour de contrôle. Posé au-dessus de la phrase narrative.
+  eyebrowDot: '●',
+  eyebrowLabel: 'TOUR DE CONTRÔLE ÉNERGÉTIQUE',
+  eyebrowSeparator: '·',
+  // Phrase éditoriale dynamique (Fraunces italique ~28px). Sources :
+  // count_p0 + count_p1 pour "N décisions", count_at_risk pour "N blocages",
+  // qualité données pour le tag final. Sans calcul métier — composition.
+  editorialDecisionsSuffix: 'décisions à traiter',
+  editorialDecisionsTodaySuffix: " aujourd'hui",
+  editorialBlockersSuffix: 'blocages',
+  editorialNoBlockers: 'aucun blocage en cours',
+  editorialDataQualityOK: 'qualité données OK',
+  editorialDataQualityDegraded: 'qualité données dégradée',
+  // 3 CTAs header — visibles en MV3 mais comportements M2-6+ (wizard de
+  // triage par lot · drawer impact agrégé · export PDF). Tooltip explique
+  // l'arrivée pour ne pas frustrer le user en attendant.
+  ctaTriage: 'Lancer le triage',
+  ctaTriageDisabledHint: 'Wizard bulk-action disponible en M2-6 (sprint dédié)',
+  ctaImpact: "Voir l'impact",
+  ctaImpactDisabledHint: 'Drawer impact agrégé disponible en M2-6 (somme € BE)',
+  ctaExport: 'Exporter COMEX',
+  ctaExportDisabledHint: 'Export PDF/CSV disponible en M2-6 (service BE)',
+};
+
+// M2-5.12 — Mapping role legacy → libellé FR persona (cohérent
+// AppShell.jsx:51-62 + AdminUsersPage:9-21 + AdminAssignmentsPage:24-37).
+// Dupliqué localement plutôt qu'importé pour éviter une dépendance cyclique
+// vers layout/. Source de vérité : AppShell.jsx (audit code-reviewer M3+
+// extraction utils/roleLabels.js si > 3 duplications).
+export const ROLE_LABELS_V4 = {
+  dg_owner: 'DG / Propriétaire',
+  dsi_admin: 'DSI / Admin',
+  daf: 'DAF',
+  acheteur: 'Acheteur',
+  resp_conformite: 'Resp. Conformité',
+  energy_manager: 'Resp. Énergie',
+  resp_immobilier: 'Resp. Immobilier',
+  resp_site: 'Resp. Site',
+  prestataire: 'Prestataire',
+  auditeur: 'Auditeur',
+  pmo_acc: 'PMO / Acc.',
 };
 
 // ── M2-5.11.C — NarrativeBar Sol (5 compteurs CFO) ────────────────
@@ -518,30 +561,37 @@ export const PILOTAGE_COPY = {
 // et KIND_SOL_VARIANTS).
 
 export const NARRATIVE_BAR_COPY = {
-  // Labels affichés sous chaque chiffre (FR, ≤ 14 char chacun pour rester
-  // tenable en 5 colonnes desktop).
-  p0Label: 'P0 actifs',
-  p1Label: 'P1 actifs',
-  withoutOwnerLabel: 'Sans pilote',
+  // M2-5.12 — Labels affichés sous chaque chiffre (FR, ≤ 18 char chacun
+  // pour rester tenable en 5 colonnes desktop avec breakpoints lg+).
+  // Tuile 1 combine P0+P1 en "Décisions P0/P1" (maquette Sophie Marin
+  // 2026-05-22) — plus parlant CFO/Resp.Énergie que 2 tuiles séparées.
+  decisionsLabel: 'Décisions P0/P1',
+  // M2-5.12 : « Sans responsable » plutôt que « Sans pilote » (maquette).
+  // Reflète mieux le langage organisationnel (rôle hiérarchique vs métaphore
+  // aviation). Doctrine §5 grammaire éditoriale Sol — proche du terrain.
+  withoutOwnerLabel: 'Sans responsable',
   // M2-5.11.G : libellé « Bloqués » pour lever l'ambiguïté avec
   // `ImpactSection.at_risk` (qui mesure un montant € à perdre — différent
   // d'un item bloqué par une dépendance non résolue).
   atRiskLabel: 'Bloqués',
-  // M2-5.11.G : « Preuvés » plutôt que « Sécurisés » — `ImpactSection.secured`
-  // signifie « activable immédiatement » (potentiel), pas « gain figé ». Les
-  // deux sens cohabitent doctrine v0.3 ; le mot « Preuvés » dit factuellement
-  // ce que le compteur mesure : il y a une evidence vérifiée.
+  // M2-5.11.G : « Preuvés » plutôt que « Sécurisés ».
   securedLabel: 'Preuvés',
+  // M2-5.12 : 5e tuile SLA en retard (maquette). MV3 placeholder désactivé
+  // — exige que le seed populate `sla_due_date` + endpoint /summary étende
+  // `count_sla_overdue`. Affichée avec badge "Bientôt" pour matcher visuel.
+  slaOverdueLabel: 'SLA en retard',
+  slaOverduePlaceholder: '—',
   // Tooltips contextuels (title=) — explicitent la définition exacte du
   // compteur, accessibles à la souris et aux lecteurs d'écran.
-  p0Tooltip: 'Items P0 actifs (lifecycle ≠ clos) sur le périmètre courant.',
-  p1Tooltip: 'Items P1 actifs (lifecycle ≠ clos) sur le périmètre courant.',
+  decisionsTooltip: "Items P0 + P1 actifs (lifecycle ≠ clos) — décisions à arbitrer aujourd'hui.",
   withoutOwnerTooltip:
-    'Items actifs sans pilote assigné. Cliquer sur un item dans le tableau pour assigner via le drawer.',
+    'Items actifs sans responsable assigné. Cliquer sur un item dans le tableau pour assigner via le drawer.',
   atRiskTooltip:
-    "Items actifs avec ≥ 1 blocage non résolu — un dépendance externe (preuve, budget, tiers) attend résolution. Distinct du montant « à risque » de l'impact financier.",
+    "Items actifs avec ≥ 1 blocage non résolu — une dépendance externe (preuve, budget, tiers) attend résolution. Distinct du montant « à risque » de l'impact financier.",
   securedTooltip:
     "Items actifs avec ≥ 1 preuve vérifiée — auditable à date. Ne confond pas avec « Sécurisable » de l'impact financier (qui mesure le potentiel activable).",
+  slaOverdueTooltip:
+    'Items actifs avec date limite SLA dépassée. Disponible M2-6 (champ sla_due_date à populer + endpoint /summary étendu).',
   // États non-data (loading / error / no-data).
   loadingLabel: 'Synthèse en cours…',
   errorTitle: 'Impossible de charger la synthèse',
@@ -552,11 +602,18 @@ export const NARRATIVE_BAR_COPY = {
 // Sans pilote reste neutre ink-500 : ce n'est pas une dérive émotionnelle,
 // juste une dette opérationnelle.
 export const NARRATIVE_BAR_VARIANTS = {
+  // M2-5.12 — `decisions` combine P0+P1 (refuse-bg conservé : c'est le
+  // niveau d'urgence dominant). P0 + P1 séparés gardés pour compat tests
+  // historiques M2-5.11.A→L (peuvent disparaître après cleanup M2-6).
+  decisions: { bg: 'var(--sol-refuse-bg)', accent: 'var(--sol-refuse-fg)' },
   p0: { bg: 'var(--sol-refuse-bg)', accent: 'var(--sol-refuse-fg)' },
   p1: { bg: 'var(--sol-attention-bg)', accent: 'var(--sol-attention-fg)' },
   without_owner: { bg: 'var(--sol-bg-panel)', accent: 'var(--sol-ink-500)' },
   at_risk: { bg: 'var(--sol-refuse-bg)', accent: 'var(--sol-refuse-fg)' },
   secured: { bg: 'var(--sol-succes-bg)', accent: 'var(--sol-succes-fg)' },
+  // M2-5.12 — SLA en retard : refuse-bg (urgence) mais accent ink-500
+  // (désactivé MV3, pas de signal émotionnel tant que la donnée n'existe pas).
+  sla_overdue: { bg: 'var(--sol-bg-panel)', accent: 'var(--sol-ink-400)' },
 };
 
 // ── M2-5.10.E — Pilotage / Journal org-wide (doctrine §8.2) ───────

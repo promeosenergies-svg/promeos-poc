@@ -59,12 +59,14 @@ describe('NarrativeBar', () => {
     expect(refetch).toHaveBeenCalledTimes(1);
   });
 
-  test('renders all 5 tiles in canonical order when data is loaded', () => {
+  test('renders all 5 tiles in canonical order when data is loaded (M2-5.12 maquette)', () => {
     useActionCenterV4Summary.mockReturnValue({
       data: {
         count_p0: 3,
         count_p1: 7,
         count_without_owner: 12,
+        count_p0_without_owner: 0,
+        count_p1_without_owner: 0,
         count_at_risk: 2,
         count_secured: 9,
       },
@@ -73,27 +75,21 @@ describe('NarrativeBar', () => {
       refetch: vi.fn(),
     });
     render(<NarrativeBar />);
-    // M2-5.11.G — sémantique passée à role="list" (5 tuiles = liste de stats)
-    // pour les lecteurs d'écran ; group n'est valable que pour un groupe
-    // d'éléments interactifs (audit code-reviewer P2).
+    // M2-5.11.G — sémantique role="list" (5 tuiles = liste de stats).
     const list = screen.getByRole('list', { name: /synthèse du centre d'action/i });
     expect(list).toBeInTheDocument();
 
-    // Les 5 valeurs apparaissent dans l'ordre canonique du tableau ci-dessus.
+    // M2-5.12 — ordre canonique nouvelle maquette : Décisions P0/P1 (= 3+7=10)
+    // · Sans responsable (12) · Bloqués (2) · Preuvés (9) · SLA en retard (—).
     const values = screen.getAllByTestId('stat-tile-value').map((n) => n.textContent);
-    expect(values).toEqual(['3', '7', '12', '2', '9']);
+    expect(values).toEqual(['10', '12', '2', '9', '—']);
 
-    // Les libellés FR sont rendus en MAJUSCULE par la CSS (uppercase) mais le
-    // contenu DOM reste "P0 actifs" etc. — on vérifie le contenu DOM.
-    expect(screen.getByText(/p0 actifs/i)).toBeInTheDocument();
-    expect(screen.getByText(/p1 actifs/i)).toBeInTheDocument();
-    expect(screen.getByText(/sans pilote/i)).toBeInTheDocument();
-    // M2-5.11.G — libellé renommé « À risque » → « Bloqués » pour lever
-    // l'ambiguïté sémantique avec ImpactSection.at_risk (montant € perdable).
+    // M2-5.12 — libellés alignés maquette Sophie Marin 2026-05-22.
+    expect(screen.getByText(/décisions p0\/p1/i)).toBeInTheDocument();
+    expect(screen.getByText(/sans responsable/i)).toBeInTheDocument();
     expect(screen.getByText(/bloqués/i)).toBeInTheDocument();
-    // M2-5.11.G — libellé renommé « Sécurisés » → « Preuvés » pour lever
-    // l'ambiguïté sémantique avec ImpactSection.secured (activable potentiel).
     expect(screen.getByText(/preuvés/i)).toBeInTheDocument();
+    expect(screen.getByText(/sla en retard/i)).toBeInTheDocument();
   });
 
   test('renders zero values without crashing (empty org)', () => {
@@ -102,6 +98,8 @@ describe('NarrativeBar', () => {
         count_p0: 0,
         count_p1: 0,
         count_without_owner: 0,
+        count_p0_without_owner: 0,
+        count_p1_without_owner: 0,
         count_at_risk: 0,
         count_secured: 0,
       },
@@ -110,8 +108,9 @@ describe('NarrativeBar', () => {
       refetch: vi.fn(),
     });
     render(<NarrativeBar />);
+    // M2-5.12 — 4 zéros (Décisions/Sans responsable/Bloqués/Preuvés) + SLA placeholder.
     const values = screen.getAllByTestId('stat-tile-value').map((n) => n.textContent);
-    expect(values).toEqual(['0', '0', '0', '0', '0']);
+    expect(values).toEqual(['0', '0', '0', '0', '—']);
   });
 
   // ── M2-5.11.J — Breakdown CFO sous « Sans pilote » ─────────────────

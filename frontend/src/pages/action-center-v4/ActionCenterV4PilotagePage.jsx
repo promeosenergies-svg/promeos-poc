@@ -1,12 +1,14 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import PageShell from '../../ui/PageShell';
 import EmptyState from '../../ui/EmptyState';
 import ErrorState from '../../ui/ErrorState';
+import { useAuth } from '../../contexts/AuthContext';
 
 import { usePilotageFilePrioritaire, useActionCenterV4Items } from '../../hooks/v4';
-import { PILOTAGE_COPY } from './constants';
+import { PILOTAGE_COPY, ROLE_LABELS_V4 } from './constants';
+import { EditorialNarrativeBlock } from './components/EditorialNarrativeBlock';
 import { ItemDetailDrawer } from './components/ItemDetailDrawer';
 import { Masthead } from './components/Masthead';
 import { NarrativeBar } from './components/NarrativeBar';
@@ -33,6 +35,19 @@ import { PriorityQueueCard } from './components/PriorityQueueCard';
  */
 export function ActionCenterV4PilotagePage() {
   const [selectedItemId, setSelectedItemId] = useState(null);
+
+  // M2-5.12 — persona + org du user connecté pour le Masthead enrichi
+  // (maquette Sophie Marin 2026-05-22). useAuth est safe (l'app entière
+  // est sous RequireAuth, donc user et role sont garantis non-null).
+  const { user, org, role } = useAuth();
+  const persona = useMemo(() => {
+    if (!user) return null;
+    const fullName = [user.prenom, user.nom].filter(Boolean).join(' ').trim();
+    const roleLabel = ROLE_LABELS_V4[role] || role;
+    const orgShort = org?.nom?.replace(/^Groupe\s+/i, '') || '';
+    // « Sophie Marin · Resp. Énergie HELIOS »
+    return [fullName, [roleLabel, orgShort].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+  }, [user, role, org]);
 
   const { data, loading, error, refetch } = usePilotageFilePrioritaire({ limit: 5 });
   // Liste référentiel utilisée comme `onRefreshList` du drawer pour rester
@@ -73,11 +88,19 @@ export function ActionCenterV4PilotagePage() {
                 ? '1 action prioritaire'
                 : `${items.length} actions prioritaires`
           }
+          // M2-5.12 — persona + heure live (maquette Sophie Marin).
+          persona={persona}
+          withLiveTime
         />
       }
     >
       <PilotageTabs />
       <PilotageViewToggle />
+
+      {/* M2-5.12 — bloc éditorial narratif (eyebrow + phrase Fraunces + 3 CTAs).
+          Données sourcées via useActionCenterV4Summary, réutilisé par
+          NarrativeBar plus bas (React déduplique si stable). */}
+      <EditorialNarrativeBlock orgName={org?.nom || 'Organisation'} sitesCount={5} />
 
       {/* M2-5.11.C — Synthèse 5 compteurs CFO posée au sommet du pilotage. */}
       <NarrativeBar />
