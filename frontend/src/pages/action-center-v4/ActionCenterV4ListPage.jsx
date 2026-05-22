@@ -51,9 +51,14 @@ function parseFilterParams(searchParams) {
   const rawState = searchParams.get('state');
   const rawKind = searchParams.get('kind');
   const rawPage = parseInt(searchParams.get('page') ?? '', 10);
+  // M2-6.C.2 — filtre `without_owner` (Q32=A) déclenchable depuis la
+  // NarrativeBar tuile « Sans responsable ». Booléen strict — seul `true`
+  // active le filtre. URL share-link compatible (cohérent state/kind).
+  const rawWithoutOwner = searchParams.get('without_owner');
   return {
     stateFilter: rawState && VALID_STATES.has(rawState) ? rawState : null,
     kindFilter: rawKind && VALID_KINDS.has(rawKind) ? rawKind : null,
+    withoutOwner: rawWithoutOwner === 'true',
     page: Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1,
   };
 }
@@ -63,7 +68,7 @@ export function ActionCenterV4ListPage() {
   // « Filter state loss on cross-page navigation »). Le drawer + cross-page
   // → retour conserve désormais les filtres ; un share-link reflète la vue.
   const [searchParams, setSearchParams] = useSearchParams();
-  const { stateFilter, kindFilter, page } = parseFilterParams(searchParams);
+  const { stateFilter, kindFilter, withoutOwner, page } = parseFilterParams(searchParams);
 
   // Le drawer reste en state local : pas besoin de persister l'item ouvert
   // dans l'URL (UX bizarre au refresh — réouverture systématique non désirée).
@@ -86,9 +91,13 @@ export function ActionCenterV4ListPage() {
     return items.filter((item) => {
       if (stateFilter && item.lifecycle_state !== stateFilter) return false;
       if (kindFilter && item.kind !== kindFilter) return false;
+      // M2-6.C.2 — filtre « Sans responsable » (Q32=A). Sélection visuelle
+      // pure : item conservé si `owner_id` est NULL (cohérent doctrine
+      // anti-déduction — pas de fallback magique sur actor_name/created_by).
+      if (withoutOwner && item.owner_id) return false;
       return true;
     });
-  }, [items, stateFilter, kindFilter]);
+  }, [items, stateFilter, kindFilter, withoutOwner]);
 
   // M2-5.10.A.bis — counts par kind sur la page courante (sélection visuelle
   // pour les `chip-count` MONO maquette ligne 745-752). Limité à la page
@@ -130,6 +139,11 @@ export function ActionCenterV4ListPage() {
           };
           apply('state', next.stateFilter);
           apply('kind', next.kindFilter);
+          // M2-6.C.2 — `withoutOwner: true` → param URL 'true' ; false/null → suppression.
+          if (next.withoutOwner !== undefined) {
+            if (next.withoutOwner) sp.set('without_owner', 'true');
+            else sp.delete('without_owner');
+          }
           // Reset page sauf si explicitement modifié.
           if (next.page !== undefined) {
             if (next.page === 1) sp.delete('page');
@@ -156,7 +170,14 @@ export function ActionCenterV4ListPage() {
   );
 
   const handleReset = useCallback(
-    () => updateFilters({ stateFilter: null, kindFilter: null }),
+    () => updateFilters({ stateFilter: null, kindFilter: null, withoutOwner: false }),
+    [updateFilters]
+  );
+
+  // M2-6.C.2 — handler dédié pour effacer le filtre « Sans responsable »
+  // depuis le banner (sans toucher aux autres filtres actifs).
+  const handleClearWithoutOwner = useCallback(
+    () => updateFilters({ withoutOwner: false }),
     [updateFilters]
   );
 
@@ -181,6 +202,49 @@ export function ActionCenterV4ListPage() {
         kindCounts={kindCounts}
         onReset={handleReset}
       />
+
+      {/* M2-6.C.2 — Banner indicateur filtre « Sans responsable » actif (Q32=A).
+          Posé sous ListFilterBar pour que l'utilisateur voie le filtre actif
+          AVANT la table (anti-confusion « pourquoi seuls 3 items ? »). Bouton
+          × Sol-fidèle pour effacer sans toucher aux autres filtres. */}
+      {withoutOwner && (
+        <div
+          className="mb-3 flex items-center justify-between gap-3 rounded-[8px] border px-3 py-2 text-[12.5px]"
+          style={{
+            background: 'var(--sol-bg-panel)',
+            borderColor: 'var(--sol-rule)',
+            color: 'var(--sol-ink-700)',
+          }}
+          data-testid="filter-without-owner-banner"
+        >
+          <span>
+            <span
+              className="font-mono font-medium uppercase tracking-[0.06em]"
+              style={{ color: 'var(--sol-ink-500)' }}
+            >
+              Filtre actif :
+            </span>{' '}
+            <span style={{ color: 'var(--sol-ink-900)' }}>Items sans responsable</span>{' '}
+            <span style={{ color: 'var(--sol-ink-500)' }}>
+              ({filteredItems.length} {filteredItems.length > 1 ? 'résultats' : 'résultat'})
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={handleClearWithoutOwner}
+            aria-label="Effacer le filtre Sans responsable"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-[4px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]"
+            style={{
+              background: 'var(--sol-bg-paper)',
+              borderColor: 'var(--sol-rule)',
+              color: 'var(--sol-ink-500)',
+            }}
+            data-testid="filter-without-owner-clear"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {loading && <SkeletonTable rows={5} cols={5} />}
 

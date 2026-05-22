@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+
 import { useActionCenterV4Summary } from '../../../hooks/v4';
 import { formatEuros } from '../../../utils/money';
 import { NARRATIVE_BAR_COPY, NARRATIVE_BAR_VARIANTS } from '../constants';
@@ -23,6 +25,14 @@ import { NARRATIVE_BAR_COPY, NARRATIVE_BAR_VARIANTS } from '../constants';
  */
 export function NarrativeBar() {
   const { data, loading, error, refetch } = useActionCenterV4Summary();
+  // M2-6.C.2 — navigation cross-page Pilotage → Référentiel quand l'utilisateur
+  // clique sur la tuile « Sans responsable » (Q32=A). Réutilise le pattern
+  // URL filter établi M2-5.11.K (`?without_owner=true`) — pas de FilterContext
+  // global, l'URL est la source de vérité partagée.
+  const navigate = useNavigate();
+  const handleWithoutOwnerClick = () => {
+    navigate('/action-center-v4?without_owner=true');
+  };
 
   if (loading) return <NarrativeBarSkeleton />;
   if (error) return <NarrativeBarError message={error.message} onRetry={refetch} />;
@@ -65,6 +75,10 @@ export function NarrativeBar() {
         (data.count_p0_without_owner ?? 0) + (data.count_p1_without_owner ?? 0) > 0
           ? formatOwnerBreakdown(data.count_p0_without_owner ?? 0, data.count_p1_without_owner ?? 0)
           : null,
+      // M2-6.C.2 — tuile cliquable (Q32=A) : navigate vers Référentiel avec
+      // filtre `?without_owner=true`. Activé seulement si count > 0 (anti
+      // bruit § doctrine — cliquer un 0 mènerait à un Référentiel vide).
+      onClick: (data.count_without_owner ?? 0) > 0 ? handleWithoutOwnerClick : null,
     },
     {
       key: 'at_risk',
@@ -110,16 +124,28 @@ export function NarrativeBar() {
  * Tuile élémentaire (chiffre MONO + libellé court). Palette injectée via
  * `variant.bg` / `variant.accent` (cf. NARRATIVE_BAR_VARIANTS).
  */
-function StatTile({ value, label, tooltip, variant, breakdown, sumEur, sumTooltip }) {
+function StatTile({ value, label, tooltip, variant, breakdown, sumEur, sumTooltip, onClick }) {
+  // M2-6.C.2 — tuile interactive (Q32=A) si `onClick` fourni. Bascule sur
+  // <button> natif (a11y clavier + lecteurs d'écran). Préserve `role="listitem"`
+  // dans le parent (cf. NarrativeBar wrapper role="list" inchangé).
+  const isInteractive = typeof onClick === 'function';
+  const Element = isInteractive ? 'button' : 'div';
+  const interactiveClass = isInteractive
+    ? 'cursor-pointer transition-colors hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)] focus-visible:ring-offset-1'
+    : '';
+
   return (
-    <div
+    <Element
       role="listitem"
       title={tooltip}
-      className="flex flex-col items-start gap-0.5 rounded-[8px] border px-3 py-2.5"
+      type={isInteractive ? 'button' : undefined}
+      onClick={onClick || undefined}
+      className={`flex flex-col items-start gap-0.5 rounded-[8px] border px-3 py-2.5 text-left ${interactiveClass}`}
       style={{
         background: variant.bg,
         borderColor: 'var(--sol-rule)',
       }}
+      data-testid={isInteractive ? 'stat-tile-clickable' : undefined}
     >
       <span
         className="font-mono text-[22px] font-semibold leading-none"
@@ -166,7 +192,7 @@ function StatTile({ value, label, tooltip, variant, breakdown, sumEur, sumToolti
           {sumEur}
         </span>
       )}
-    </div>
+    </Element>
   );
 }
 

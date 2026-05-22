@@ -11,7 +11,8 @@
  */
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, render, screen, fireEvent } from '@testing-library/react';
+import { cleanup, render as rtlRender, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('../../../hooks/v4', () => ({
   useActionCenterV4Summary: vi.fn(),
@@ -19,6 +20,13 @@ vi.mock('../../../hooks/v4', () => ({
 
 import { useActionCenterV4Summary } from '../../../hooks/v4';
 import { NarrativeBar } from '../components/NarrativeBar';
+
+// M2-6.C.2 — wrapper Router pour `useNavigate()` dans la tuile « Sans
+// responsable » cliquable. MemoryRouter évite la dépendance window.location
+// en environnement jsdom + permet d'inspecter les navigations via test.
+function render(ui, { initialEntries = ['/'] } = {}) {
+  return rtlRender(<MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>);
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -153,6 +161,54 @@ describe('NarrativeBar', () => {
     render(<NarrativeBar />);
     const breakdowns = screen.getAllByTestId('stat-tile-breakdown').map((n) => n.textContent);
     expect(breakdowns).toEqual(['3 P1']);
+  });
+
+  // ── M2-6.C.2 — Tuile « Sans responsable » cliquable (Q32=A) ──────
+
+  test('M2-6.C.2 — tuile « Sans responsable » devient bouton cliquable si count > 0', () => {
+    useActionCenterV4Summary.mockReturnValue({
+      data: {
+        count_p0: 0,
+        count_p1: 0,
+        count_without_owner: 3,
+        count_p0_without_owner: 0,
+        count_p1_without_owner: 0,
+        count_at_risk: 0,
+        count_secured: 0,
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<NarrativeBar />);
+    // La tuile cliquable est rendue comme <button> (vs <div> pour les autres).
+    // Recherche par text « Sans responsable » + vérif tag/role.
+    const tuile = screen
+      .getByText(/sans responsable/i)
+      .closest('[data-testid="stat-tile-clickable"]');
+    expect(tuile).toBeInTheDocument();
+    expect(tuile?.tagName).toBe('BUTTON');
+    expect(tuile).toHaveAttribute('type', 'button');
+  });
+
+  test('M2-6.C.2 — tuile « Sans responsable » reste non-cliquable si count = 0 (anti-bruit)', () => {
+    useActionCenterV4Summary.mockReturnValue({
+      data: {
+        count_p0: 0,
+        count_p1: 0,
+        count_without_owner: 0, // pas d'item sans owner → tuile inerte
+        count_p0_without_owner: 0,
+        count_p1_without_owner: 0,
+        count_at_risk: 0,
+        count_secured: 0,
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<NarrativeBar />);
+    // Aucune tuile cliquable dans cet état.
+    expect(screen.queryByTestId('stat-tile-clickable')).toBeNull();
   });
 
   test('hides the breakdown when no P0/P1 are unassigned (anti-bruit)', () => {

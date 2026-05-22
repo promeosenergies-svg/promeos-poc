@@ -400,4 +400,95 @@ describe('ActionCenterV4ListPage', () => {
     // page=-99 invalide → fallback page=1 → offset=0.
     expect(useActionCenterV4Items).toHaveBeenCalledWith({ offset: 0, limit: 20 });
   });
+
+  // ── M2-6.C.2 — URL filter `without_owner` + banner (Q32=A) ────────
+
+  test('M2-6.C.2 — filtre URL ?without_owner=true exclut items avec owner_id', () => {
+    mockHook({
+      data: {
+        items: [
+          // Item avec owner — doit être exclu par le filtre
+          {
+            id: '1',
+            title: 'Avec owner',
+            lifecycle_state: 'new',
+            owner_id: 'aaaa-1111',
+            owner_display_name: 'Marie Leclerc',
+          },
+          // Item sans owner — doit rester visible
+          {
+            id: '2',
+            title: 'Sans owner',
+            lifecycle_state: 'new',
+            owner_id: null,
+            owner_display_name: null,
+          },
+        ],
+        total: 2,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    render(<ActionCenterV4ListPage />, {
+      route: '/action-center-v4?without_owner=true',
+    });
+    // Seul l'item sans owner est rendu dans la table filtrée.
+    expect(screen.queryByText('Avec owner')).not.toBeInTheDocument();
+    expect(screen.getByText('Sans owner')).toBeInTheDocument();
+  });
+
+  test('M2-6.C.2 — banner « Filtre actif » visible quand ?without_owner=true', () => {
+    mockHook({
+      data: {
+        items: [
+          { id: '1', title: 'Item A', lifecycle_state: 'new', owner_id: null },
+          { id: '2', title: 'Item B', lifecycle_state: 'new', owner_id: null },
+        ],
+        total: 2,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    render(<ActionCenterV4ListPage />, {
+      route: '/action-center-v4?without_owner=true',
+    });
+    const banner = screen.getByTestId('filter-without-owner-banner');
+    expect(banner).toBeInTheDocument();
+    expect(banner).toHaveTextContent(/items sans responsable/i);
+    // Compteur résultats au pluriel pour ≥ 2 items.
+    expect(banner).toHaveTextContent(/2\s*résultats/);
+    // Bouton effacer présent + aria-label.
+    const clearBtn = screen.getByTestId('filter-without-owner-clear');
+    expect(clearBtn).toHaveAttribute('aria-label', 'Effacer le filtre Sans responsable');
+  });
+
+  test('M2-6.C.2 — banner absent quand pas de filtre URL', () => {
+    mockHook({
+      data: {
+        items: [{ id: '1', title: 'A', lifecycle_state: 'new', owner_id: null }],
+        total: 1,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    render(<ActionCenterV4ListPage />, { route: '/action-center-v4' });
+    expect(screen.queryByTestId('filter-without-owner-banner')).toBeNull();
+  });
+
+  test('M2-6.C.2 — banner singulier « 1 résultat » si 1 seul item', () => {
+    mockHook({
+      data: {
+        items: [{ id: '1', title: 'Solo', lifecycle_state: 'new', owner_id: null }],
+        total: 1,
+        offset: 0,
+        limit: 20,
+      },
+    });
+    render(<ActionCenterV4ListPage />, {
+      route: '/action-center-v4?without_owner=true',
+    });
+    const banner = screen.getByTestId('filter-without-owner-banner');
+    expect(banner).toHaveTextContent(/1\s*résultat[^s]/);
+    expect(banner).not.toHaveTextContent(/résultats/);
+  });
 });

@@ -250,6 +250,68 @@ async function shoot(page, name) {
       checks.modalEscapeCloses = false;
     }
 
+    // ── 10. M2-6.C.2 — Tuile « Sans responsable » cliquable → filtre URL ──
+    console.log('\n10. Tuile « Sans responsable » cliquable + banner filtre (M2-6.C.2)');
+    try {
+      // Aller au Pilotage pour avoir la NarrativeBar avec count_without_owner.
+      await page.goto(`${FE}/action-center-v4/pilotage`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(600);
+
+      // La tuile cliquable est un <button data-testid="stat-tile-clickable">
+      // qui contient le label « Sans responsable ». On filtre par text pour
+      // cibler spécifiquement celle-là (pas une autre tuile cliquable future).
+      const tuileWithoutOwner = page
+        .locator('[data-testid="stat-tile-clickable"]')
+        .filter({ hasText: /sans responsable/i })
+        .first();
+      const tuileExists = (await tuileWithoutOwner.count()) > 0;
+      checks.withoutOwnerTuileClickable = tuileExists;
+
+      if (tuileExists) {
+        await tuileWithoutOwner.click({ timeout: 3_000 });
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(400);
+
+        // Navigation vers Référentiel avec ?without_owner=true
+        const url = page.url();
+        checks.withoutOwnerNavigatesReferentiel =
+          url.includes('/action-center-v4') &&
+          !url.includes('/pilotage') &&
+          url.includes('without_owner=true');
+
+        // Banner indicateur filtre actif visible.
+        const banner = page.locator('[data-testid="filter-without-owner-banner"]');
+        const bannerVisible = await banner.isVisible({ timeout: 2_000 }).catch(() => false);
+        checks.withoutOwnerBannerVisible = bannerVisible;
+
+        await shoot(page, '10-without-owner-filter-active');
+
+        // Effacer le filtre via le bouton ×.
+        if (bannerVisible) {
+          const clearBtn = page.locator('[data-testid="filter-without-owner-clear"]');
+          await clearBtn.click();
+          await page.waitForTimeout(300);
+          const bannerStillVisible = await banner
+            .isVisible()
+            .catch(() => false);
+          checks.withoutOwnerClearWorks = !bannerStillVisible;
+        } else {
+          checks.withoutOwnerClearWorks = false;
+        }
+      } else {
+        // Tuile non-cliquable (probablement count_without_owner = 0)
+        checks.withoutOwnerNavigatesReferentiel = false;
+        checks.withoutOwnerBannerVisible = false;
+        checks.withoutOwnerClearWorks = false;
+      }
+    } catch (err) {
+      console.warn(`  ⚠ Step 10 « Sans responsable » : ${err.message.slice(0, 120)}`);
+      checks.withoutOwnerTuileClickable = false;
+      checks.withoutOwnerNavigatesReferentiel = false;
+      checks.withoutOwnerBannerVisible = false;
+      checks.withoutOwnerClearWorks = false;
+    }
+
     // ── BILAN ──
     console.log('\n═══ BILAN WALKTHROUGH M2-6.B.frontend ═══');
     const passing = Object.entries(checks).filter(([, v]) => v).length;
