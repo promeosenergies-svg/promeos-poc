@@ -297,5 +297,31 @@ de phase.
   § « Procédure ajustement budgets post-pilote ».
 - **DoD** : breach résorbé OU budget overridé documenté.
 
-**Effort cumulé M2-6 → M3 : ~3-8 j/h** (4 items, fourchette large car
-M3-CFO-SEMANTIC dépend de l'arbitrage pilote).
+### M3-BE-SQLITE-LOCK — BE :8001 hang après long usage session  🟢 P3 · ~1-2 j/h
+
+- **Origine** : M2-6.C.1-reduit (commit `6af61f58`) — Playwright cold re-run
+  bloqué par BE `curl HTTP 000 timeout`. Process Python alive en `lsof` mais
+  hang sur requêtes HTTP (probable SQLite WAL lock + transaction longue
+  durée non commit / requête bloquée par un autre thread).
+- **Symptômes observés** :
+  - `curl http://127.0.0.1:8001/api/health` retourne `000` (timeout 10s)
+  - Process `python main.py` toujours dans `ps aux` + port :8001 occupé
+  - Aucune erreur log récente, pas de crash apparent
+  - Restart manuel résout (`pkill -f "python.*main.py" && python main.py`)
+- **Plan M3+** :
+  1. Reproduire en local (session BE ouverte 4-8h avec trafic démo intermittent)
+  2. Activer SQLite WAL log + log slow queries SQLAlchemy
+  3. Identifier la requête bloquante (probablement transaction non-clôturée
+     par un test/seed ou un endpoint write avec retry interne)
+  4. Soit fix (close session explicite) soit watchdog uvicorn (restart si
+     no-response > 30s)
+- **Acceptation** : BE :8001 reste responsive après 8h d'usage mixte
+  (smoke curl + walkthrough Playwright + dev FE) sans restart manuel.
+- **Workaround MV3** : restart manuel BE en cas de hang (documenté ici).
+- **Refs** : M2-6.C.1-reduit bilan (validation Playwright différée par hang),
+  [`docs/deploy/RUNBOOK_OBSERVABILITY.md`](docs/deploy/RUNBOOK_OBSERVABILITY.md)
+  § « En cas d'incident — Cas 1 Latency spike soudain ».
+
+**Effort cumulé M2-6 → M3 : ~4-10 j/h** (5 items, fourchette large car
+M3-CFO-SEMANTIC dépend de l'arbitrage pilote et M3-BE-SQLITE-LOCK dépend
+de la repro).
