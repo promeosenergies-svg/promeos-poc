@@ -513,8 +513,12 @@ export const PILOTAGE_COPY = {
   // count_p0 + count_p1 pour "N décisions", count_at_risk pour "N blocages",
   // qualité données pour le tag final. Sans calcul métier — composition.
   editorialDecisionsSuffix: 'décisions à traiter',
+  // M2-5.12 polish — singulier pour count ≤ 1 (français Académie : 0 et 1 prennent
+  // le singulier). Convention alignée Masthead `sitesCount > 1 ? 'SITES' : 'SITE'`.
+  editorialDecisionSuffixSingular: 'décision à traiter',
   editorialDecisionsTodaySuffix: " aujourd'hui",
   editorialBlockersSuffix: 'blocages',
+  editorialBlockerSuffixSingular: 'blocage',
   editorialNoBlockers: 'aucun blocage en cours',
   editorialDataQualityOK: 'qualité données OK',
   editorialDataQualityDegraded: 'qualité données dégradée',
