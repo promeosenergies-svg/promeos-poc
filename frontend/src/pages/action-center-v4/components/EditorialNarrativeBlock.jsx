@@ -95,7 +95,9 @@ export function EditorialNarrativeBlock({
           >
             {decisionsCount}
           </span>{' '}
-          {PILOTAGE_COPY.editorialDecisionsSuffix}
+          {decisionsCount > 1
+            ? PILOTAGE_COPY.editorialDecisionsSuffix
+            : PILOTAGE_COPY.editorialDecisionSuffixSingular}
           <span style={{ color: 'var(--sol-ink-700)' }}>
             {PILOTAGE_COPY.editorialDecisionsTodaySuffix}
           </span>
@@ -110,7 +112,9 @@ export function EditorialNarrativeBlock({
               >
                 {blockersCount}
               </span>{' '}
-              {PILOTAGE_COPY.editorialBlockersSuffix}
+              {blockersCount > 1
+                ? PILOTAGE_COPY.editorialBlockersSuffix
+                : PILOTAGE_COPY.editorialBlockerSuffixSingular}
             </>
           ) : (
             <span style={{ color: 'var(--sol-ink-700)' }}>{PILOTAGE_COPY.editorialNoBlockers}</span>
