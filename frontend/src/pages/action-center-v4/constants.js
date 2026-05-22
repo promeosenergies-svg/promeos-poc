@@ -669,7 +669,10 @@ export const JOURNAL_COPY = {
 };
 
 // Layout audit-list maquette §8.4 lignes 614-637. Mapping acteur backend → UI :
-// `actor_role` peut valoir `system` (auto), `user` (humain), `null` (legacy).
+// `actor_type` (enum 'system' | 'user') détermine la pill ; `actor_name` est
+// snapshoté côté write. Si absent → `fallbackActor` (générique). M2-6.C audit
+// RGPD : `actor_role` n'est plus utilisé comme fallback d'affichage (anti-
+// déduction §6.3 — un rôle organisationnel peut identifier une personne).
 export const TIMELINE_ACTOR_COPY = {
   systemLabel: 'PROMEOS',
   fallbackActor: 'Système',

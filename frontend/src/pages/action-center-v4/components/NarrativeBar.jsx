@@ -107,16 +107,23 @@ export function NarrativeBar() {
   ];
 
   return (
-    <div
-      className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-5"
-      role="list"
+    // M2-6.C audit a11y — `<ul>` + `<li>` natifs (rôle `list`/`listitem`
+    // implicites) au lieu de `role="list"` sur `<div>` + `role="listitem"`
+    // redéfini sur `<button>`. La spec ARIA interdit la redéfinition de rôle
+    // sur les éléments interactifs natifs (cf. WAI-ARIA 1.2 §5.4). `display:
+    // contents` sur `<li>` préserve la grille Tailwind 5 colonnes (le li
+    // devient transparent pour le layout, sans casser la sémantique).
+    <ul
+      className="mb-3 grid list-none grid-cols-2 gap-2 p-0 md:grid-cols-5"
       aria-label="Synthèse du Centre d'action"
       data-testid="narrative-bar"
     >
       {tiles.map(({ key, ...tileProps }) => (
-        <StatTile key={key} {...tileProps} />
+        <li key={key} className="contents">
+          <StatTile {...tileProps} />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
 
@@ -126,20 +133,26 @@ export function NarrativeBar() {
  */
 function StatTile({ value, label, tooltip, variant, breakdown, sumEur, sumTooltip, onClick }) {
   // M2-6.C.2 — tuile interactive (Q32=A) si `onClick` fourni. Bascule sur
-  // <button> natif (a11y clavier + lecteurs d'écran). Préserve `role="listitem"`
-  // dans le parent (cf. NarrativeBar wrapper role="list" inchangé).
+  // <button> natif (a11y clavier + lecteurs d'écran). Le rôle `listitem` est
+  // porté par le `<li>` parent (cf. NarrativeBar §audit a11y M2-6.C).
+  // M2-6.C audit a11y — `aria-label` explicite sur la variante interactive
+  // (CFO Marie sous lecteur d'écran : entend « Sans responsable : 3. Voir la
+  // liste filtrée. » au lieu du seul `title` natif souvent ignoré).
   const isInteractive = typeof onClick === 'function';
   const Element = isInteractive ? 'button' : 'div';
   const interactiveClass = isInteractive
     ? 'cursor-pointer transition-colors hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)] focus-visible:ring-offset-1'
     : '';
+  const interactiveAriaLabel = isInteractive
+    ? `${label} : ${value}. Voir la liste filtrée.`
+    : undefined;
 
   return (
     <Element
-      role="listitem"
       title={tooltip}
       type={isInteractive ? 'button' : undefined}
       onClick={onClick || undefined}
+      aria-label={interactiveAriaLabel}
       className={`flex flex-col items-start gap-0.5 rounded-[8px] border px-3 py-2.5 text-left ${interactiveClass}`}
       style={{
         background: variant.bg,
@@ -232,7 +245,24 @@ function NarrativeBarSkeleton() {
   );
 }
 
+/**
+ * M2-6.C audit sécu (CWE-209) — sanitization du message d'erreur serveur
+ * avant rendu. Risque mitigé : info disclosure (stack trace, chemin interne,
+ * tokens). React échappe déjà le HTML/JS, mais ne plafonne ni ne nettoie les
+ * caractères de contrôle. On strip les `\r\n\t` (préserve la lecture en une
+ * ligne) et on tronque à 200 caractères (un message UI utile dépasse rarement).
+ */
+function sanitizeErrorMessage(message) {
+  if (!message || typeof message !== 'string') return null;
+  // eslint-disable-next-line no-control-regex
+  const stripped = message.replace(/[\u0000-\u001F\u007F]/g, ' ');
+  const cleaned = stripped.replace(/\s{2,}/g, ' ').trim();
+  if (cleaned.length === 0) return null;
+  return cleaned.length > 200 ? `${cleaned.slice(0, 200)}…` : cleaned;
+}
+
 function NarrativeBarError({ message, onRetry }) {
+  const safeMessage = sanitizeErrorMessage(message);
   return (
     <div
       role="alert"
@@ -245,7 +275,7 @@ function NarrativeBarError({ message, onRetry }) {
     >
       <div className="flex-1 text-[12.5px]">
         <span className="font-medium">{NARRATIVE_BAR_COPY.errorTitle}</span>
-        {message ? <span className="ml-1 opacity-80">· {message}</span> : null}
+        {safeMessage ? <span className="ml-1 opacity-80">· {safeMessage}</span> : null}
       </div>
       <button
         type="button"

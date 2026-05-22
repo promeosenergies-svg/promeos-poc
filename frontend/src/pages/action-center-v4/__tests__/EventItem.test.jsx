@@ -32,13 +32,17 @@ describe('EventItem', () => {
     expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 
-  test('falls back to actor_role then to "Système"', () => {
-    const { rerender } = render(
-      <EventItem event={{ ...baseEvent, actor_role: 'admin', actor_name: null }} />
-    );
-    expect(screen.getByText('admin')).toBeInTheDocument();
+  // M2-6.C audit RGPD (CWE-359) — anti-déduction §6.3 : `actor_role` (texte
+  // libre technique) ne doit JAMAIS être rendu comme identité affichée. Si
+  // `actor_name` n'est pas snapshoté on retombe directement sur « Système ».
+  test('does NOT fall back to actor_role (RGPD anti-déduction); shows "Système" instead', () => {
+    render(<EventItem event={{ ...baseEvent, actor_role: 'admin', actor_name: null }} />);
+    expect(screen.queryByText('admin')).not.toBeInTheDocument();
+    expect(screen.getByText('Système')).toBeInTheDocument();
+  });
 
-    rerender(<EventItem event={{ ...baseEvent, actor_role: null, actor_name: null }} />);
+  test('falls back to "Système" when actor_name is null and actor_role is null', () => {
+    render(<EventItem event={{ ...baseEvent, actor_role: null, actor_name: null }} />);
     expect(screen.getByText('Système')).toBeInTheDocument();
   });
 

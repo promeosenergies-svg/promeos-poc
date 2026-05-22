@@ -61,7 +61,10 @@ describe('JournalEventRow', () => {
     expect(screen.queryByText('PROMEOS')).not.toBeInTheDocument();
   });
 
-  test('falls back to actor_role when actor_name is null for user', () => {
+  // M2-6.C audit RGPD (CWE-359) — anti-déduction §6.3 : `actor_role` (texte
+  // libre technique : 'energy_manager', 'admin') ne doit jamais servir de
+  // fallback d'affichage. Si `actor_name` n'est pas snapshoté → « Système ».
+  test('does NOT fall back to actor_role for user actor (RGPD anti-déduction)', () => {
     render(
       <JournalEventRow
         event={{
@@ -74,7 +77,8 @@ describe('JournalEventRow', () => {
         onOpenItem={vi.fn()}
       />
     );
-    expect(screen.getByText('energy_manager')).toBeInTheDocument();
+    expect(screen.queryByText('energy_manager')).not.toBeInTheDocument();
+    expect(screen.getByText('Système')).toBeInTheDocument();
   });
 
   test('falls back to raw event_type when unknown', () => {

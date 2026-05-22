@@ -16,12 +16,17 @@ export function EventItem({ event, isFirst = false }) {
   const label = EVENT_TYPE_LABELS[event.event_type] || event.event_type;
   // M2-5.10.bis clôture (audit UI Sol P1-5) : harmonisation avec
   // `JournalEventRow` sur le bon champ backend `actor_type` (enum 'user' |
-  // 'system'). `actor_role` (texte libre) servait avant — désormais réservé
-  // au label affiché côté user.
+  // 'system').
+  // M2-6.C audit RGPD (CWE-359) — anti-déduction : `actor_role` (texte libre
+  // technique : 'admin', 'energy_manager'…) ne doit plus servir de fallback
+  // d'affichage. Il pouvait laisser fuir une fonction organisationnelle quand
+  // l'identité réelle (`actor_name`) n'a pas été snapshotée — viole doctrine
+  // §6.3 « pas de déduction d'identité à partir du rôle ». Si `actor_name`
+  // est absent on retombe directement sur le label générique « Système ».
   const isSystem = event.actor_type === 'system';
   const actorLabel = isSystem
     ? TIMELINE_ACTOR_COPY.systemLabel
-    : event.actor_name || event.actor_role || TIMELINE_ACTOR_COPY.fallbackActor;
+    : event.actor_name || TIMELINE_ACTOR_COPY.fallbackActor;
 
   // Date découpée : jour gras + heure mono (signature audit-time maquette).
   const dt = event.occurred_at ? new Date(event.occurred_at) : null;

@@ -191,6 +191,119 @@ describe('NarrativeBar', () => {
     expect(tuile).toHaveAttribute('type', 'button');
   });
 
+  // ── M2-6.C audit a11y — aria-label + structure ul/li ────────────────
+
+  test("M2-6.C audit a11y — la tuile interactive porte un aria-label explicite (lecteur d'écran)", () => {
+    useActionCenterV4Summary.mockReturnValue({
+      data: {
+        count_p0: 0,
+        count_p1: 0,
+        count_without_owner: 3,
+        count_p0_without_owner: 0,
+        count_p1_without_owner: 0,
+        count_at_risk: 0,
+        count_secured: 0,
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    render(<NarrativeBar />);
+    // aria-label complet incluant label + value + action — le screen reader
+    // annonce « Sans responsable : 3. Voir la liste filtrée. » (CFO Marie).
+    const tuile = screen.getByRole('button', {
+      name: /sans responsable.*3.*voir la liste filtrée/i,
+    });
+    expect(tuile).toBeInTheDocument();
+    expect(tuile).toHaveAttribute('data-testid', 'stat-tile-clickable');
+  });
+
+  test("M2-6.C audit a11y — les tuiles non-interactives n'ont pas d'aria-label parasite", () => {
+    useActionCenterV4Summary.mockReturnValue({
+      data: {
+        count_p0: 1,
+        count_p1: 2,
+        count_without_owner: 0, // tuile inerte
+        count_p0_without_owner: 0,
+        count_p1_without_owner: 0,
+        count_at_risk: 0,
+        count_secured: 0,
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    const { container } = render(<NarrativeBar />);
+    // Aucun bouton dans la barre (la tuile « Sans responsable » est inerte ici).
+    expect(screen.queryByTestId('stat-tile-clickable')).toBeNull();
+    // Les tuiles non-interactives ne doivent pas porter d'aria-label (le texte
+    // visible suffit aux lecteurs d'écran via la sémantique listitem du parent).
+    const tiles = container.querySelectorAll('[data-testid="stat-tile-value"]');
+    tiles.forEach((valueNode) => {
+      const tile = valueNode.parentElement;
+      expect(tile).not.toHaveAttribute('aria-label');
+    });
+  });
+
+  test('M2-6.C audit a11y — structure sémantique ul + 5 li (rôle list/listitem natif)', () => {
+    useActionCenterV4Summary.mockReturnValue({
+      data: {
+        count_p0: 1,
+        count_p1: 2,
+        count_without_owner: 0,
+        count_p0_without_owner: 0,
+        count_p1_without_owner: 0,
+        count_at_risk: 0,
+        count_secured: 0,
+      },
+      loading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    const { container } = render(<NarrativeBar />);
+    // Le parent est un <ul> (rôle list implicite), pas un <div role="list">
+    // (la spec ARIA interdit role="listitem" sur <button> — § audit M2-6.C).
+    const ul = container.querySelector('ul[data-testid="narrative-bar"]');
+    expect(ul).toBeInTheDocument();
+    expect(ul?.tagName).toBe('UL');
+    // 5 enfants <li> directs (rôle listitem implicite).
+    const lis = ul?.querySelectorAll(':scope > li');
+    expect(lis?.length).toBe(5);
+  });
+
+  // ── M2-6.C audit sécu — sanitization message erreur (CWE-209) ─────
+
+  test("M2-6.C audit sécu — l'erreur strippe les caractères de contrôle (\\n, \\r, \\t)", () => {
+    useActionCenterV4Summary.mockReturnValue({
+      data: null,
+      loading: false,
+      // Simule un message serveur avec stack trace multi-ligne (CWE-209).
+      error: { code: 'INTERNAL', message: 'Server fault\n  at /app/api.py:42\r\n  in resolve_org' },
+      refetch: vi.fn(),
+    });
+    render(<NarrativeBar />);
+    const alert = screen.getByRole('alert');
+    // Les sauts de ligne sont collapsés en espace unique — pas de retour à
+    // la ligne brut qui casserait la barre + révèlerait la structure interne.
+    expect(alert.textContent).not.toMatch(/[\r\n\t]/);
+    expect(alert).toHaveTextContent(/server fault/i);
+  });
+
+  test("M2-6.C audit sécu — l'erreur tronque les messages > 200 caractères", () => {
+    const longMsg = 'A'.repeat(300);
+    useActionCenterV4Summary.mockReturnValue({
+      data: null,
+      loading: false,
+      error: { code: 'INTERNAL', message: longMsg },
+      refetch: vi.fn(),
+    });
+    render(<NarrativeBar />);
+    const alert = screen.getByRole('alert');
+    // 200 'A' + ellipse Unicode + autres copies de la barre (titre fixe).
+    expect(alert.textContent).toMatch(/A{200}…/);
+    expect(alert.textContent).not.toMatch(/A{201}/);
+  });
+
   test('M2-6.C.2 — tuile « Sans responsable » reste non-cliquable si count = 0 (anti-bruit)', () => {
     useActionCenterV4Summary.mockReturnValue({
       data: {

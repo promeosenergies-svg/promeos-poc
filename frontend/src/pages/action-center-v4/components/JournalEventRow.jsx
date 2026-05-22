@@ -15,10 +15,13 @@ import { formatDateTimeFR } from '../utils/date';
  */
 export function JournalEventRow({ event, isFirst = false, onOpenItem }) {
   const label = EVENT_TYPE_LABELS[event.event_type] || event.event_type;
+  // M2-6.C audit RGPD (CWE-359) — anti-déduction : `actor_role` (texte libre
+  // technique : 'admin', 'energy_manager'…) ne doit plus servir de fallback
+  // d'affichage. Cf. EventItem pour la justification doctrinale §6.3.
   const isSystem = event.actor_type === 'system';
   const actorLabel = isSystem
     ? TIMELINE_ACTOR_COPY.systemLabel
-    : event.actor_name || event.actor_role || TIMELINE_ACTOR_COPY.fallbackActor;
+    : event.actor_name || TIMELINE_ACTOR_COPY.fallbackActor;
 
   const dt = event.occurred_at ? new Date(event.occurred_at) : null;
   const timeStr = dt ? dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—';
