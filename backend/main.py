@@ -218,6 +218,10 @@ app.include_router(reports_router)  # Reports (audit PDF, audit JSON)
 app.include_router(notifications_router)  # Notifications & Alert Center V1
 app.include_router(auth_router)  # IAM Auth (login, me, refresh, logout, password, switch-org)
 app.include_router(admin_users_router)  # IAM Admin (CRUD users, roles, scopes)
+# M2-6.A.2 — RGPD article 17 purge PII (POST /api/admin/users/{id}/purge).
+from routes.admin_pii_purge import router as admin_pii_purge_router  # noqa: E402
+
+app.include_router(admin_pii_purge_router)  # M2-6.A.2 PII purge RGPD art. 17
 app.include_router(patrimoine_router)  # Patrimoine DIAMANT (staging, quality gate, activation)
 app.include_router(intake_router)  # Smart Intake DIAMANT (questions, answers, before/after)
 app.include_router(bacs_router)  # BACS Expert (Decret n°2020-887)

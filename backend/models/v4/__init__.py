@@ -25,9 +25,10 @@ from models.v4.action_links import ActionLink
 from models.v4.action_scenarios import ActionScenario
 from models.v4.duplicate_groups import DuplicateGroup
 from models.v4.evidences import Evidence
+from models.v4.purge_log import PurgeLog  # M2-6.A.2 — audit RGPD art. 30
 from models.v4.recurrence_groups import RecurrenceGroup
 
-# 8 V4 SQLAlchemy models — re-export pour migration Alembic + imports application
+# 8 V4 SQLAlchemy models + 1 audit (PurgeLog) — re-export migration Alembic + app
 __all__ = [
     "ActionBlocker",
     "ActionCenterItem",
@@ -36,5 +37,6 @@ __all__ = [
     "ActionScenario",
     "DuplicateGroup",
     "Evidence",
+    "PurgeLog",
     "RecurrenceGroup",
 ]
