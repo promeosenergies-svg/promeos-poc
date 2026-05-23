@@ -513,9 +513,12 @@ export default function ConformitePage() {
     }
   };
 
-  // Conformité P1 2026-05-23 — appelle l'endpoint sync qui crée 1 ActionCenterItem
-  // par règle DATA_MISSING manquante. Retourne summary {created, skipped_existing,
-  // skipped_resolved} et affiche un toast récap utilisateur.
+  // Conformité P1.5 2026-05-23 — handler sync qui garantit toujours un toast utilisateur.
+  // 3 chemins de retour utilisateur :
+  //   - succès : "X action(s) créée(s) dans votre centre d'action"
+  //   - rien à faire : "Aucune action à créer pour le moment"
+  //   - erreur : message FR exploitable mappé par code HTTP / payload backend
+  // Aucune branche silencieuse : même un network error ou un timeout déclenche un toast.
   const handleSyncRemediationActions = async () => {
     setSyncingActions(true);
     try {
@@ -523,27 +526,53 @@ export default function ConformitePage() {
         typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : null
       );
       const created = result?.summary?.created ?? 0;
-      const skippedExisting = result?.summary?.skipped_existing ?? 0;
-      const skippedResolved = result?.summary?.skipped_resolved ?? 0;
       if (created > 0) {
         toast(
           `${created} action${created > 1 ? 's' : ''} créée${created > 1 ? 's' : ''} dans votre centre d'action`,
           'success'
         );
-      } else if (skippedExisting > 0 || skippedResolved > 0) {
-        toast('Aucune nouvelle action à créer — votre périmètre est à jour', 'info');
+        // Recharger le bundle pour faire apparaître les nouvelles actions plan d'exécution.
+        loadData();
       } else {
-        toast('Aucune donnée manquante détectée pour ce périmètre', 'info');
+        toast('Aucune action à créer pour le moment', 'info');
       }
       track('conformite_sync_remediation_actions', {
         created,
-        skipped_existing: skippedExisting,
-        skipped_resolved: skippedResolved,
+        skipped_existing: result?.summary?.skipped_existing ?? 0,
+        skipped_resolved: result?.summary?.skipped_resolved ?? 0,
       });
     } catch (err) {
-      const code = err?.response?.data?.detail?.code;
-      const msg = err?.response?.data?.detail?.message;
-      toast(msg || `Erreur lors de la création des actions${code ? ` (${code})` : ''}`, 'error');
+      const status = err?.response?.status;
+      const detail = err?.response?.data?.detail;
+      const code = detail?.code;
+      const serverMsg = detail?.message;
+      // Mapping HTTP → message FR exploitable. Toujours afficher un toast (pas de branche
+      // silencieuse). Doctrine §3 (chantier 1) : "erreur : message FR exploitable".
+      let userMsg;
+      if (status === 401 || code === 'NO_ORG_CONTEXT' || code === 'UNAUTHORIZED') {
+        userMsg = 'Session expirée — veuillez vous reconnecter pour créer les actions';
+      } else if (status === 403) {
+        userMsg =
+          "Vous n'avez pas les droits pour créer les actions à traiter sur cette organisation";
+      } else if (status === 410) {
+        userMsg = 'Cette fonctionnalité a été retirée de cette version';
+      } else if (status === 400 && code === 'IDEMPOTENCY_KEY_INVALID') {
+        userMsg = "Erreur technique sur l'identifiant de requête — réessayez";
+      } else if (serverMsg) {
+        userMsg = serverMsg;
+      } else if (err?.code === 'ECONNABORTED' || err?.message?.toLowerCase().includes('timeout')) {
+        userMsg = 'Le serveur ne répond pas — vérifiez votre connexion puis réessayez';
+      } else if (!err?.response) {
+        userMsg = 'Erreur réseau — impossible de joindre le serveur';
+      } else {
+        userMsg = `Erreur lors de la création des actions (${status || 'inconnu'})`;
+      }
+      toast(userMsg, 'error');
+      // Dev-mode console pour debug rapide en cas de toast inattendu
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('[conformite_sync] error:', { status, code, detail, err });
+      }
     } finally {
       setSyncingActions(false);
     }
@@ -715,27 +744,32 @@ export default function ConformitePage() {
         />
       }
       actions={
-        <>
-          <Button variant="secondary" size="sm" onClick={handleRecompute} disabled={recomputing}>
-            <RefreshCw size={14} className={recomputing ? 'animate-spin' : ''} />
-            {recomputing ? 'Évaluation...' : 'Réévaluer'}
-          </Button>
-          {/* Conformité P1 2026-05-23 — bouton qui ferme la boucle CadreApplicable
-              DATA_MISSING → ActionCenterItem (1 clic, idempotent). */}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleSyncRemediationActions}
-            disabled={syncingActions}
-            title="Crée des actions à traiter pour chaque donnée manquante détectée par les règles réglementaires"
-          >
-            <ListChecks size={14} className={syncingActions ? 'animate-spin' : ''} />
-            {syncingActions ? 'Synchronisation...' : 'Créer les actions à traiter'}
-          </Button>
+        // Conformité P1.5 2026-05-23 — hiérarchie 3 niveaux pour lisibilité 1440px :
+        //   ghost (discret)  → "Réévaluer" + "Sync actions" (actions de maintenance)
+        //   séparateur visuel
+        //   primary (CTA)    → "Créer une action" (geste principal utilisateur)
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={handleRecompute} disabled={recomputing}>
+              <RefreshCw size={14} className={recomputing ? 'animate-spin' : ''} />
+              {recomputing ? 'Évaluation…' : 'Réévaluer'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSyncRemediationActions}
+              disabled={syncingActions}
+              title="Crée des actions à traiter pour chaque donnée manquante détectée par les règles réglementaires"
+            >
+              <ListChecks size={14} className={syncingActions ? 'animate-spin' : ''} />
+              {syncingActions ? 'Synchronisation…' : 'Créer les actions à traiter'}
+            </Button>
+          </div>
+          <span className="hidden sm:inline-block w-px h-5 bg-gray-200" aria-hidden="true" />
           <Button onClick={() => openActionDrawer({})}>
             <Plus size={16} /> Créer une action
           </Button>
-        </>
+        </div>
       }
     >
       {/* ── Préambule éditorial Sol §5 vue Conformité (S1.4 — ADR-001) ──

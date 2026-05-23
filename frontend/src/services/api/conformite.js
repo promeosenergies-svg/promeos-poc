@@ -69,21 +69,20 @@ export const getComplianceTimeline = () => api.get('/compliance/timeline').then(
 export const getComplianceScoreTrend = (params = {}) =>
   cachedGet('/compliance/score-trend', { params }).then((r) => r.data);
 
-// CEE Pipeline + M&V
-export const getSiteWorkPackages = (siteId) =>
-  api.get(`/compliance/sites/${siteId}/packages`).then((r) => r.data);
-export const createWorkPackage = (siteId, data) =>
-  api.post(`/compliance/sites/${siteId}/packages`, data).then((r) => r.data);
-export const createCeeDossier = (siteId, workPackageId) =>
-  api
-    .post(`/compliance/sites/${siteId}/cee/dossier`, null, {
-      params: { work_package_id: workPackageId },
-    })
-    .then((r) => r.data);
-export const advanceCeeStep = (dossierId, step) =>
-  api.patch(`/compliance/cee/dossier/${dossierId}/step`, { step }).then((r) => r.data);
-export const getMvSummary = (siteId) =>
-  api.get(`/compliance/sites/${siteId}/mv/summary`).then((r) => r.data);
+// ── CEE Pipeline + M&V — RETIRÉS P1.5 2026-05-23 ────────────────────────
+// Les endpoints backend correspondants retournent 410 Gone (cleanup C5 P1).
+// Ces stubs JS lèvent une erreur synchrone explicite si un futur appel les
+// référence — empêche de réintroduire un caller silencieusement raté.
+const _gone = (name) => () => {
+  throw new Error(
+    `[conformite/api] ${name}() retiré P1.5 — endpoint backend en 410 Gone (CEE Pipeline V69).`
+  );
+};
+export const getSiteWorkPackages = _gone('getSiteWorkPackages');
+export const createWorkPackage = _gone('createWorkPackage');
+export const createCeeDossier = _gone('createCeeDossier');
+export const advanceCeeStep = _gone('advanceCeeStep');
+export const getMvSummary = _gone('getMvSummary');
 
 // ── Watchers ──
 export const listWatchers = () => api.get('/watchers/list').then((r) => r.data);
@@ -200,10 +199,21 @@ export const getBacsAssessment = (siteId) =>
   api.get(`/regops/bacs/site/${siteId}`).then((r) => r.data);
 export const recomputeBacs = (siteId) =>
   api.post(`/regops/bacs/recompute/${siteId}`).then((r) => r.data);
-export const getBacsScoreExplain = (siteId) =>
-  api.get(`/regops/bacs/score_explain/${siteId}`).then((r) => r.data);
-export const getBacsDataQuality = (siteId) =>
-  api.get(`/regops/bacs/data_quality/${siteId}`).then((r) => r.data);
+// ── Doublons BACS retirés P1.5 — endpoints en 410 Gone ──────────────────
+// Remplacés côté backend par les versions génériques regops :
+//   GET /api/regops/score_explain?scope_type=site&scope_id=<id>
+//   GET /api/regops/data_quality?scope_type=site&scope_id=<id>
+// (déjà exposées via `getScoreExplain` / `getDataQuality` plus haut dans ce fichier).
+const _bacsGone = (name, replacement) => () => {
+  throw new Error(
+    `[conformite/api] ${name}() retiré P1.5 — utiliser ${replacement} (doublon BACS retiré C5 P1).`
+  );
+};
+export const getBacsScoreExplain = _bacsGone(
+  'getBacsScoreExplain',
+  'getScoreExplain("site", siteId)'
+);
+export const getBacsDataQuality = _bacsGone('getBacsDataQuality', 'getDataQuality("site", siteId)');
 export const createBacsAsset = (siteId, isTertiary = true, pcDate = null) =>
   api
     .post('/regops/bacs/asset', null, {
@@ -276,9 +286,12 @@ export const getSiteContractCoverage = (siteId) =>
 // Crée 1 ActionCenterItem par (reason_code, scope_id) manquant. Idempotent
 // par signature (org_id + kind + domain + title). Retourne :
 // `{ org_id, created: [...], skipped_existing: [...], skipped_resolved: [...], summary: {...}, computed_at }`.
+// P1.5 : timeout 20s pour garantir que le handler côté UI bascule en branche
+// erreur (toast FR) plutôt que de rester en spinner infini si le backend hang.
 export const syncConformiteRemediationActions = (idempotencyKey = null) =>
   api
     .post('/conformite/sync-remediation-actions', null, {
       headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+      timeout: 20000,
     })
     .then((r) => r.data);
