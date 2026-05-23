@@ -89,6 +89,8 @@ export const GLOSSARY = Object.freeze({
   EFA: 'Entité Fonctionnelle Assujettie — unité de déclaration OPERAT (>1 000 m² tertiaire). Assujettie aux jalons -40/-50/-60 %.',
   DPE: 'Diagnostic de Performance Énergétique — étiquette énergie/climat A→G obligatoire location/vente bâtiment.',
   SME: "Système de Management de l'Énergie — démarche ISO 50001, vaut audit réglementaire ETI.",
+  BEGES:
+    "Bilan d'Émissions de Gaz à Effet de Serre — obligation tous les 3 ans pour les entreprises > 500 salariés (250 outre-mer). Publié sur bilans-ges.ademe.fr (Décret 2022-982).",
   GTC: 'Gestion Technique Centralisée — système de pilotage centralisé multi-équipements (variante GTB Décret BACS).',
   COFRAC:
     "Comité Français d'Accréditation — accrédite les auditeurs énergétiques. Tout audit réglementaire ETI doit être COFRAC.",

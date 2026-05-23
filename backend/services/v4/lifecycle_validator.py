@@ -2,13 +2,19 @@
 
 Doctrine V4 : 5 états, 6 `ClosureReason` dont 3 user-facing (3 system-only
 refusées en 422). Matrice câblée en dur — toute évolution = commit code + tests.
+
+Conformité P0 2026-05-23 — ajout `validate_evidence_required_for_closure` :
+un item de `kind=EVIDENCE_REQUEST` OU de `domain=CONFORMITE` ne peut pas être
+clôturé en `RESOLVED` sans au moins une `Evidence` vérifiée (verified_at ≠ NULL).
+Empêche le bypass "résolu avec preuve" sans aucune preuve réelle.
 """
 
 from typing import Optional, Union
 
 from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
 
-from models.v4.enums import ClosureReason, LifecycleState
+from models.v4.enums import ClosureReason, Domain, Kind, LifecycleState
 
 # (état_courant, état_cible) → closure_reason requise (toujours user-facing si True).
 _ALLOWED_TRANSITIONS: dict[tuple[LifecycleState, LifecycleState], bool] = {
@@ -90,5 +96,79 @@ def validate_lifecycle_transition(
                     "User-facing values: resolved, dismissed, not_applicable. "
                     "System values are set automatically by background services."
                 ),
+            },
+        )
+
+
+# ─── Conformité P0 2026-05-23 — preuve requise pour clôture RESOLVED ────────
+
+
+def _item_requires_evidence(item) -> bool:
+    """Vrai si l'item exige une preuve vérifiée avant clôture RESOLVED.
+
+    Doctrine : un item est "preuve-dépendant" si :
+    - `kind == EVIDENCE_REQUEST` (par définition demande de preuve), OU
+    - `domain == CONFORMITE` (DT/BACS/APER/SMÉ/BEGES — exige une preuve
+      réglementaire opposable).
+
+    Pour les autres combinaisons, la clôture RESOLVED reste possible sans
+    preuve attachée (anomalie résolue par correction terrain, action
+    purement opérationnelle, etc.).
+    """
+    kind = getattr(item, "kind", None)
+    domain = getattr(item, "domain", None)
+    return kind == Kind.EVIDENCE_REQUEST.value or domain == Domain.CONFORMITE.value
+
+
+def validate_evidence_required_for_closure(
+    db: Session,
+    item,
+    closure_reason: Optional[ClosureReason],
+) -> None:
+    """Refuse une clôture RESOLVED sans preuve vérifiée si l'item l'exige.
+
+    Doctrine Conformité P0 2026-05-23 :
+    - Clôture `DISMISSED` ou `NOT_APPLICABLE` → toujours autorisée (l'item
+      n'est pas considéré comme "résolu avec preuve").
+    - Clôture `RESOLVED` sur un item preuve-dépendant (cf.
+      `_item_requires_evidence`) → exige au moins une `Evidence` avec
+      `verified_at IS NOT NULL` rattachée.
+
+    Lève `HTTPException(422)` avec code `CLOSURE_REQUIRES_EVIDENCE` + message
+    FR canonique si la preuve manque. Sinon retourne `None` (no-op).
+
+    Wiring : appelée par `routes/v4/action_center.py:transition_item_lifecycle`
+    juste après `validate_lifecycle_transition`.
+    """
+    if closure_reason != ClosureReason.RESOLVED:
+        return  # DISMISSED / NOT_APPLICABLE / autre = pas de check preuve
+
+    if not _item_requires_evidence(item):
+        return  # item non preuve-dépendant (ANOMALY hors conformite, etc.)
+
+    # Import local pour éviter dépendance circulaire models/services
+    from models.v4.evidences import Evidence
+
+    verified_evidence_exists = (
+        db.query(Evidence.id).filter(Evidence.action_item_id == item.id, Evidence.verified_at.isnot(None)).first()
+        is not None
+    )
+
+    if not verified_evidence_exists:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "CLOSURE_REQUIRES_EVIDENCE",
+                "message": (
+                    "Impossible de clôturer cet item en « résolu » sans preuve vérifiée. "
+                    "Cet item exige une preuve réglementaire opposable avant clôture."
+                ),
+                "hint": (
+                    "Téléversez une preuve via POST /items/{item_id}/evidences puis "
+                    "faites-la vérifier avant de retenter la clôture."
+                ),
+                "kind": getattr(item, "kind", None),
+                "domain": getattr(item, "domain", None),
+                "blocking": True,
             },
         )

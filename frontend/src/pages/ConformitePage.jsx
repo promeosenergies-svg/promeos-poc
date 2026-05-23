@@ -655,8 +655,9 @@ export default function ConformitePage() {
           italicHook={
             solBriefing?.italicHook || (
               <>
-                trajectoire 2030 — <Term acronyme="DT" />, <Term acronyme="BACS" />,{' '}
-                <Term acronyme="APER" />
+                trajectoire 2030 — <Term acronyme="DT" />, <Term acronyme="OPERAT" />,{' '}
+                <Term acronyme="BACS" />, <Term acronyme="APER" />, <Term acronyme="SME" />,{' '}
+                <Term acronyme="BEGES" />
               </>
             )
           }

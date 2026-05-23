@@ -107,35 +107,32 @@ class FindingPatch(BaseModel):
 # ========================================
 
 
-@router.post("/recompute")
-def recompute_compliance(
-    scope: str = Query(..., description="Scope: 'org', 'portfolio', or 'site'"),
-    id: int = Query(..., description="ID of the org, portfolio, or site"),
-    db: Session = Depends(get_db),
-):
-    """
-    POST /api/compliance/recompute?scope=org|portfolio|site&id=<id>
+@router.post(
+    "/recompute",
+    status_code=410,
+    deprecated=True,
+    summary="[GONE] Use POST /api/compliance/recompute-rules instead",
+)
+def recompute_compliance_gone():
+    """HTTP 410 — endpoint legacy supprimé Conformité P0 2026-05-23.
 
-    Recomputes compliance snapshots from obligations.
+    Aucun consumer frontend (`grep -rn '/compliance/recompute'` → zéro hit hors
+    `/recompute-rules` qui est l'endpoint canonique consommé par
+    `services/api/conformite.js:postRecomputeRules`).
+
+    Le scoring conformité est désormais recalculé via :
+    - `POST /api/compliance/recompute-rules` (déclencheur manuel UI)
+    - cascade automatique sur mutation site (`cascade_recompute_service`)
     """
-    try:
-        if scope == "site":
-            snapshot = recompute_site(db, site_id=id)
-            db.commit()
-            return {"status": "ok", "scope": "site", "site_id": id, "snapshot": snapshot}
-        elif scope == "portfolio":
-            result = recompute_portfolio(db, portefeuille_id=id)
-            return {"status": "ok", "scope": "portfolio", **result}
-        elif scope == "org":
-            result = recompute_organisation(db, organisation_id=id)
-            return {"status": "ok", "scope": "org", **result}
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid scope '{scope}'. Must be 'org', 'portfolio', or 'site'.",
-            )
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "code": "CONFORMITE_ROUTE_GONE",
+            "message": "Cette route est dépréciée. Utilisez le parcours Conformité.",
+            "replacement": "POST /api/compliance/recompute-rules",
+            "doc": "docs/audits/audit_brique_conformite_deep_readonly_2026_05_23.md",
+        },
+    )
 
 
 # ========================================

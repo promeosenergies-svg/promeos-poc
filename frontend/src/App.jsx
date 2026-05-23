@@ -52,7 +52,6 @@ const MonitoringPage = lazy(() => import('./pages/MonitoringPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
 const SegmentationPage = lazy(() => import('./pages/SegmentationPage'));
-// CompliancePage deprecated — /compliance root redirects to /conformite (V92)
 const ConsumptionDiagPage = lazy(() => import('./pages/ConsumptionDiagPage'));
 const BillIntelPage = lazy(() => import('./pages/BillIntelPage'));
 const BillingPage = lazy(() => import('./pages/BillingPage'));
@@ -65,14 +64,9 @@ const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
 const AdminRolesPage = lazy(() => import('./pages/AdminRolesPage'));
 const AdminAssignmentsPage = lazy(() => import('./pages/AdminAssignmentsPage'));
 const AdminAuditLogPage = lazy(() => import('./pages/AdminAuditLogPage'));
-// AdminKBMetricsPage : orphelin (import jamais consommé par aucune route ni
-// composant). Fichier physique conservé jusqu'au L8 plan suppression legacy
-// Mois 5. Retrait de l'import lazy → moins de chunks dans le bundle.
 const CxDashboardPage = lazy(() => import('./pages/admin/CxDashboardPage'));
 const EnedisPromotionHealthPage = lazy(() => import('./pages/EnedisPromotionHealthPage'));
 const ConsumptionExplorerPage = lazy(() => import('./pages/ConsumptionExplorerPage'));
-// EnergyCopilotPage — dead code, no active route (Sprint B P0-7)
-// const EnergyCopilotPage = lazy(() => import('./pages/EnergyCopilotPage'));
 const ConsumptionPortfolioPage = lazy(() => import('./pages/ConsumptionPortfolioPage'));
 const ActivationPage = lazy(() => import('./pages/ActivationPage'));
 const TertiaireDashboardPage = lazy(() => import('./pages/tertiaire/TertiaireDashboardPage'));
