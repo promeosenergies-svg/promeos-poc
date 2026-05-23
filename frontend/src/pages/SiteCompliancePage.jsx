@@ -25,21 +25,17 @@ import {
   ArrowRight,
   Package,
   Activity,
-  Hammer,
-  Banknote,
 } from 'lucide-react';
-import {
-  getSiteComplianceSummary,
-  getActionsList,
-  getSiteWorkPackages,
-  createWorkPackage,
-  getMvSummary,
-} from '../services/api';
+import { getSiteComplianceSummary, getActionsList } from '../services/api';
+// P1.5 2026-05-23 : `getSiteWorkPackages`, `createWorkPackage`, `getMvSummary` retirés
+// — leurs endpoints backend sont en 410 Gone (CEE Pipeline V69 + doublons BACS, C5 P1).
+// Les sections UI correspondantes sont remplacées par un EmptyState FR explicite.
 import { toPatrimoine, toConsoImport, toBillIntel, toCompliancePipeline } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
-import { fmtDateFR, fmtKwh } from '../utils/format';
+import EmptyState from '../ui/EmptyState';
+import { fmtDateFR } from '../utils/format';
 
 const REG_CONFIG = {
   tertiaire_operat: { label: 'Décret Tertiaire', icon: Building, color: 'bg-blue-600' },
@@ -68,11 +64,8 @@ const CTA_NAVIGATE = {
   billing: (siteId) => toBillIntel({ site_id: siteId }),
 };
 
-const SIZE_BADGE = {
-  S: { label: 'S', cls: 'bg-green-100 text-green-700' },
-  M: { label: 'M', cls: 'bg-amber-100 text-amber-700' },
-  L: { label: 'L', cls: 'bg-red-100 text-red-700' },
-};
+/* SIZE_BADGE retiré P1.5 — utilisé uniquement par la section Packages travaux
+   désormais remplacée par EmptyState. */
 
 /* CEE_STATUS_BADGE, CEE_STEPS, CEE_STEP_LABELS — masqué V1.2, prévu évolution future */
 
@@ -277,122 +270,44 @@ function PreuvesTab({ data }) {
 
 /* KanbanCee — masqué V1.2, prévu évolution future CEE */
 
-/* ── V69: Widget M&V ────────────────── */
-function MvWidget({ siteId }) {
-  const [mv, setMv] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getMvSummary(siteId)
-      .then(setMv)
-      .catch(() => setMv(null))
-      .finally(() => setLoading(false));
-  }, [siteId]);
-
-  if (loading) return <div className="bg-white rounded-lg shadow p-4 animate-pulse h-32" />;
-  if (!mv) return null;
-
-  const deltaColor =
-    mv.delta_pct > 10 ? 'text-red-600' : mv.delta_pct < -5 ? 'text-green-600' : 'text-gray-700';
-
+/* ── V69: Widget M&V — retiré P1.5 ──────────────────────────────────────
+   Endpoint backend `/api/compliance/sites/{site_id}/mv/summary` retourne
+   désormais 410 Gone (CEE Pipeline V69 jamais livré, cleanup C5). On affiche
+   un EmptyState FR explicite à la place pour préserver le wireframe historique
+   sans appel réseau silencieusement échoué. */
+function MvWidget() {
   return (
-    <div className="bg-white rounded-lg shadow p-4" data-section="mv-widget">
-      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-        <Activity size={16} className="text-indigo-500" />
-        M&V — Mesure & Vérification
-      </h4>
-      <div className="grid grid-cols-3 gap-3 mb-3">
-        <div className="text-center">
-          <p className="text-xs text-gray-500">Baseline</p>
-          <p className="text-sm font-bold text-gray-900">{fmtKwh(mv.baseline_kwh_month)}/m</p>
-        </div>
-        <div className="text-center">
-          <p className="text-xs text-gray-500">Actuel</p>
-          <p className="text-sm font-bold text-gray-900">{fmtKwh(mv.current_kwh_month)}/m</p>
-        </div>
-        <div className="text-center">
-          <p className="text-xs text-gray-500">Delta</p>
-          <p className={`text-sm font-bold ${deltaColor}`}>
-            {mv.delta_pct > 0 ? '+' : ''}
-            {mv.delta_pct}%
-          </p>
-        </div>
-      </div>
-      {mv.alerts.length > 0 && (
-        <div className="space-y-1.5">
-          {mv.alerts.map((a, i) => (
-            <div
-              key={i}
-              className={`flex items-center gap-2 p-2 rounded text-xs ${
-                a.severity === 'high' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
-              }`}
-            >
-              <AlertTriangle size={12} className="shrink-0" />
-              <span>{a.message}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      {mv.alerts.length === 0 && (
-        <p className="text-xs text-green-600 flex items-center gap-1">
-          <CheckCircle size={12} /> Pas d'alerte M&V.
-        </p>
-      )}
+    <div className="bg-white rounded-lg shadow" data-section="mv-widget">
+      <EmptyState
+        variant="unconfigured"
+        icon={Activity}
+        title="M&V indisponible dans cette version"
+        text="Le widget Mesure & Vérification CEE Pipeline V69 a été retiré. Cette fonctionnalité n'est plus maintenue."
+      />
     </div>
   );
 }
 
-/* ── Tab: Plan d'action V69 ────────────────── */
-function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast }) {
+/* ── Tab: Plan d'action V69 — packages retirés P1.5 ──────────────────────
+   `getSiteWorkPackages` + `createWorkPackage` appellent des endpoints en 410
+   (CEE Pipeline V69 jamais livré, cleanup C5 P1). On garde la liste des
+   actions issue de `getActionsList` (source_type=compliance) et on remplace
+   la section "Packages travaux" par un EmptyState FR.                       */
+function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast: _toast }) {
   const [actions, setActions] = useState([]);
-  const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showNewPkg, setShowNewPkg] = useState(false);
-  const [newPkg, setNewPkg] = useState({
-    label: '',
-    size: 'M',
-    capex_eur: '',
-    savings_eur_year: '',
-  });
-  const [creating, setCreating] = useState(false);
 
   const reload = useCallback(() => {
     setLoading(true);
-    Promise.all([
-      getActionsList({ site_id: siteId, source_type: 'compliance' }).catch(() => []),
-      getSiteWorkPackages(siteId).catch(() => []),
-    ])
-      .then(([acts, pkgs]) => {
-        setActions(Array.isArray(acts) ? acts : []);
-        setPackages(Array.isArray(pkgs) ? pkgs : []);
-      })
+    getActionsList({ site_id: siteId, source_type: 'compliance' })
+      .then((acts) => setActions(Array.isArray(acts) ? acts : []))
+      .catch(() => setActions([]))
       .finally(() => setLoading(false));
   }, [siteId]);
 
   useEffect(() => {
     reload();
   }, [reload]);
-
-  const handleCreatePackage = async () => {
-    if (!newPkg.label.trim()) return;
-    setCreating(true);
-    try {
-      await createWorkPackage(siteId, {
-        label: newPkg.label,
-        size: newPkg.size,
-        capex_eur: newPkg.capex_eur ? parseFloat(newPkg.capex_eur) : null,
-        savings_eur_year: newPkg.savings_eur_year ? parseFloat(newPkg.savings_eur_year) : null,
-      });
-      toast('Package créé', 'success');
-      setShowNewPkg(false);
-      setNewPkg({ label: '', size: 'M', capex_eur: '', savings_eur_year: '' });
-      reload();
-    } catch {
-      toast('Erreur lors de la création', 'error');
-    } finally {
-      setCreating(false);
-    }
-  };
 
   /* handleCreateDossier — masqué V1.2, prévu évolution future CEE */
 
@@ -405,114 +320,20 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
 
   return (
     <div className="space-y-4" data-section="tab-plan">
-      {/* V69: Work Packages S/M/L */}
-      <div className="bg-white rounded-lg shadow p-4" data-section="work-packages">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-            <Package size={16} className="text-indigo-500" />
-            Packages travaux ({packages.length})
-          </h3>
-          <button
-            onClick={() => setShowNewPkg(!showNewPkg)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition"
-            data-testid="cta-add-package"
-          >
-            <Plus size={14} /> Ajouter package
-          </button>
-        </div>
-
-        {/* New package form */}
-        {showNewPkg && (
-          <div className="border border-indigo-200 rounded-lg p-3 mb-3 bg-indigo-50 space-y-2">
-            <input
-              value={newPkg.label}
-              onChange={(e) => setNewPkg((p) => ({ ...p, label: e.target.value }))}
-              placeholder="Nom du lot (ex: Isolation combles)"
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded"
-              data-testid="pkg-label-input"
-            />
-            <div className="flex gap-2">
-              <select
-                value={newPkg.size}
-                onChange={(e) => setNewPkg((p) => ({ ...p, size: e.target.value }))}
-                className="px-2 py-1.5 text-sm border border-gray-300 rounded"
-                data-testid="pkg-size-select"
-              >
-                <option value="S">S (simple)</option>
-                <option value="M">M (moyen)</option>
-                <option value="L">L (complexe)</option>
-              </select>
-              <input
-                value={newPkg.capex_eur}
-                onChange={(e) => setNewPkg((p) => ({ ...p, capex_eur: e.target.value }))}
-                placeholder="CAPEX (EUR)"
-                type="number"
-                className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded"
-              />
-              <input
-                value={newPkg.savings_eur_year}
-                onChange={(e) => setNewPkg((p) => ({ ...p, savings_eur_year: e.target.value }))}
-                placeholder="Économies/an (EUR)"
-                type="number"
-                className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowNewPkg(false)}
-                className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleCreatePackage}
-                disabled={creating || !newPkg.label.trim()}
-                className="px-3 py-1 bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700 disabled:opacity-50"
-                data-testid="pkg-submit"
-              >
-                Créer
-              </button>
-            </div>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="animate-pulse space-y-2">
-            {[1, 2].map((i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded" />
-            ))}
-          </div>
-        ) : packages.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-4">Aucun package de travaux.</p>
-        ) : (
-          <div className="space-y-3">
-            {packages.map((wp) => (
-              <div key={wp.id} className="border border-gray-200 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge cfg={SIZE_BADGE[wp.size] || SIZE_BADGE.M} />
-                  <span className="text-sm font-medium text-gray-900 flex-1">{wp.label}</span>
-                </div>
-                <div className="flex gap-4 text-xs text-gray-500 mb-2">
-                  {wp.capex_eur != null && (
-                    <span className="flex items-center gap-1">
-                      <Banknote size={12} /> CAPEX: {wp.capex_eur.toLocaleString('fr-FR')} €
-                    </span>
-                  )}
-                  {wp.savings_eur_year != null && (
-                    <span className="flex items-center gap-1">
-                      <Hammer size={12} /> Éco: {wp.savings_eur_year.toLocaleString('fr-FR')} €/an
-                    </span>
-                  )}
-                  {wp.payback_years != null && <span>Payback: {wp.payback_years} ans</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* V69: Work Packages S/M/L — RETIRÉ P1.5 (endpoint backend en 410).
+          Le module CEE Pipeline V69 n'a jamais été livré ; on affiche un
+          EmptyState FR explicite plutôt qu'un appel réseau silencieusement raté. */}
+      <div className="bg-white rounded-lg shadow" data-section="work-packages">
+        <EmptyState
+          variant="unconfigured"
+          icon={Package}
+          title="Packages travaux indisponibles dans cette version"
+          text="Cette fonctionnalité (CEE Pipeline V69) a été retirée. Les actions de conformité restent gérables ci-dessous."
+        />
       </div>
 
-      {/* V69: Widget M&V */}
-      <MvWidget siteId={siteId} />
+      {/* V69: Widget M&V — également retiré P1.5 */}
+      <MvWidget />
 
       {/* Actions list (from V68) */}
       <div className="bg-white rounded-lg shadow p-4">

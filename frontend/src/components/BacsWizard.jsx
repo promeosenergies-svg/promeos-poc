@@ -21,7 +21,11 @@ import {
   Wind,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button } from '../ui';
-import { createBacsAsset, addCvcSystem, recomputeBacs, getBacsScoreExplain } from '../services/api';
+// P1.5 2026-05-23 : `getBacsScoreExplain` retiré — endpoint backend en 410 Gone
+// (doublon BACS, cleanup C5 P1). La trace Putile audit qui consommait cette
+// donnée a été retirée de StepResultat ; la pipeline scoring principale reste
+// 100 % fonctionnelle via `recomputeBacs`.
+import { createBacsAsset, addCvcSystem, recomputeBacs } from '../services/api';
 import { fmtNum, fmtPct } from '../utils/format';
 import { getComplianceScoreColor } from '../lib/constants';
 
@@ -360,7 +364,7 @@ function StepInventaire({ systems, setSystems, _putile, onNext, onPrev }) {
 
 // ── Phase 3: Resultat ──
 
-function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
+function StepResultat({ assessment, loading, onNext, onPrev }) {
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -504,17 +508,9 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
         </div>
       )}
 
-      {/* Putile trace */}
-      {scoreExplain?.putile?.trace && (
-        <details className="text-xs text-gray-500">
-          <summary className="cursor-pointer text-blue-600 hover:underline">
-            Trace Putile (audit)
-          </summary>
-          <pre className="mt-1 p-2 bg-gray-50 rounded text-xs whitespace-pre-wrap">
-            {scoreExplain.putile.trace.join('\n')}
-          </pre>
-        </details>
-      )}
+      {/* Trace Putile retirée P1.5 — endpoint /api/regops/bacs/score_explain/{id} en 410.
+          La trace d'audit interne consommait `scoreExplain.putile.trace` ; sans backend
+          actif, le bloc <details> serait silencieusement vide. */}
 
       <div className="flex justify-between pt-2">
         <Button variant="outline" onClick={onPrev}>
@@ -681,7 +677,7 @@ export default function BacsWizard({ siteId, onClose }) {
 
   // Phase 3 data
   const [assessment, setAssessment] = useState(null);
-  const [scoreExplain, setScoreExplain] = useState(null);
+  // scoreExplain retiré P1.5 — endpoint /api/regops/bacs/score_explain/{id} en 410
 
   // Phase 1 → 2: Create asset
   const handleEligNext = useCallback(async () => {
@@ -714,17 +710,9 @@ export default function BacsWizard({ siteId, onClose }) {
         }
       }
 
-      // Recompute
+      // Recompute (le score_explain a été retiré P1.5 — endpoint 410)
       const result = await recomputeBacs(siteId);
       setAssessment(result.assessment);
-
-      // Get score explain
-      try {
-        const explain = await getBacsScoreExplain(siteId);
-        setScoreExplain(explain);
-      } catch {
-        /* best-effort */
-      }
 
       setPhase(2);
     } catch (err) {
@@ -782,7 +770,6 @@ export default function BacsWizard({ siteId, onClose }) {
           {phase === 2 && (
             <StepResultat
               assessment={assessment}
-              scoreExplain={scoreExplain}
               loading={loading}
               onNext={() => setPhase(3)}
               onPrev={() => setPhase(1)}
