@@ -27,6 +27,7 @@ backend/.env
 
 # Database
 data/*.db
+data/*.bak*
 data/*.sqlite
 data/*.sqlite3
 data/raw/
@@ -77,6 +78,8 @@ e2e/UX_REVIEW_*/
 artifacts/playwright/
 artifacts/audits/
 artifacts/exports/
+tools/playwright/captures/
+*.mjs.bak
 
 # Runtime / local data
 backend/data/*.db
