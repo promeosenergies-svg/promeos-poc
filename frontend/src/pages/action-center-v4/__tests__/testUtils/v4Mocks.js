@@ -56,7 +56,11 @@ export const emptyItem = {
   refetch: vi.fn(),
 };
 
-/** Réponse vide standard du hook summary (compteurs à 0, M2-5.11.C/J). */
+/** Réponse vide standard du hook summary (compteurs à 0, M2-5.11.C/J).
+ * M2-6.C.P2-cleanup P2-5 — ajout des champs agrégés CFO (`sums_eur_*` +
+ * `items_*`) cohérents avec le schéma `/summary` réel (M2-6.B.backend). Sans
+ * eux, les composants qui accèdent à `summary.sums_eur_by_priority?.P0`
+ * crashent silencieusement sur le mock vide (`undefined` → NaN propagé). */
 export const emptySummary = {
   data: {
     count_p0: 0,
@@ -67,6 +71,11 @@ export const emptySummary = {
     count_p1_without_owner: 0,
     count_at_risk: 0,
     count_secured: 0,
+    // M2-6.B.backend — agrégat CFO source unique (jamais recalculé FE).
+    sums_eur_by_priority: { P0: 0, P1: 0, P2: 0, P3: 0 },
+    sums_eur_total: 0,
+    items_with_impact_known: 0,
+    items_total: 0,
   },
   loading: false,
   error: null,

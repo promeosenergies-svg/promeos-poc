@@ -26,6 +26,16 @@ import { X } from 'lucide-react';
  * Ajout aussi `testId` (Q37=A) pour assertions Playwright sur le `data-testid`
  * + `data-variant` (assertion variant warning runtime).
  */
+// M2-6.C.P2-cleanup P2-2 — ref-counter module-scoped pour empiler les modals
+// simultanés sans race condition mount/unmount. Le pattern naïf
+// `body.style.overflow = 'hidden'` puis `= prev` cassait si deux modals
+// s'ouvraient en succession rapide : le second snapshote `prev = 'hidden'`
+// (laissé par le premier), puis le premier se ferme et restaure '', et au
+// final le second close laisse 'hidden' bloqué pour toujours. Compteur global
+// + snapshot unique du style original (sur premier mount) résout proprement.
+let openModalsCount = 0;
+let bodyOverflowBeforeLock = '';
+
 export function V4Modal({
   open,
   onClose,
@@ -39,14 +49,20 @@ export function V4Modal({
 }) {
   const ref = useRef(null);
 
-  // Lock body scroll + focus initial dans le modal.
+  // Lock body scroll (ref-counted) + focus initial dans le modal.
   useEffect(() => {
     if (!open) return undefined;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    if (openModalsCount === 0) {
+      bodyOverflowBeforeLock = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+    }
+    openModalsCount += 1;
     requestAnimationFrame(() => ref.current?.focus());
     return () => {
-      document.body.style.overflow = prev;
+      openModalsCount -= 1;
+      if (openModalsCount === 0) {
+        document.body.style.overflow = bodyOverflowBeforeLock;
+      }
     };
   }, [open]);
 

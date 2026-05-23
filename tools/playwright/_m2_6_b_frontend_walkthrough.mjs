@@ -10,9 +10,17 @@
 //
 // 6 captures PNG horodatées dans tools/playwright/captures/m2_6_b_frontend/.
 import { mkdir } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
-const OUT = 'tools/playwright/captures/m2_6_b_frontend';
+// M2-6.C.P2-cleanup P2-4 — résolution absolue du chemin captures via
+// `fileURLToPath(import.meta.url)`. Le script est donc portable depuis
+// n'importe quel `cwd` (CI/CD ou exécution manuelle hors racine repo).
+// Préféré à `process.env.CLAUDE_PROJECT_DIR` : pas de dépendance env var,
+// fonctionne sans configuration supplémentaire.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const OUT = join(__dirname, 'captures', 'm2_6_b_frontend');
 const FE = 'http://127.0.0.1:5175';
 const DEMO_USER = 'm.leclerc@helios-energie.fr';
 const DEMO_PASS = 'promeos2024';

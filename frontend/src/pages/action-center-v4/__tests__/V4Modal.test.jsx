@@ -123,26 +123,38 @@ describe('V4Modal — wrapper structurel Sol (M2-5.11.A + M2-6.C.1-reduit)', () 
     expect(dialog).toHaveAttribute('data-variant', 'warning');
   });
 
+  // M2-6.C.P2-cleanup P2-3 — sélection sémantique du panel via
+  // `getByRole('dialog')` + filtre backdrop (`aria-hidden="true"`) au lieu du
+  // string-match `container.innerHTML` global (fragile aux changements de
+  // markup parent). On garde une regex sur l'attribut `style` de l'élément
+  // ciblé : jsdom ne résout pas les `var()` dans `toHaveStyle`, mais préserve
+  // intacte la chaîne inline écrite par React (assertion exacte, scope précis).
+  function modalPanel(dialog) {
+    return dialog.querySelector('div:not([aria-hidden="true"])');
+  }
+
   test('variant="warning" applique border-top ambre --sol-attention-line', () => {
-    const { container } = render(
+    render(
       <V4Modal open onClose={() => {}} title="Warning" variant="warning">
         Body
       </V4Modal>
     );
-    // L'élément avec border-top inline est le modal interne (pas le backdrop).
-    // jsdom sérialise les inline styles → on cherche la substring dans tout le DOM.
-    const html = container.innerHTML;
-    expect(html).toMatch(/border-top:\s*3px solid var\(--sol-attention-line\)/);
+    const panel = modalPanel(screen.getByRole('dialog'));
+    expect(panel?.getAttribute('style')).toMatch(
+      /border-top:\s*3px solid var\(--sol-attention-line\)/
+    );
   });
 
   test('variant="default" n\'applique PAS border-top warning', () => {
-    const { container } = render(
+    render(
       <V4Modal open onClose={() => {}} title="Default" variant="default">
         Body
       </V4Modal>
     );
-    const html = container.innerHTML;
-    expect(html).not.toMatch(/border-top:\s*3px solid var\(--sol-attention-line\)/);
+    const panel = modalPanel(screen.getByRole('dialog'));
+    expect(panel?.getAttribute('style')).not.toMatch(
+      /border-top:\s*3px solid var\(--sol-attention-line\)/
+    );
   });
 
   test('testId custom propage sur data-testid + backdrop', () => {

@@ -67,7 +67,13 @@ describe('ItemsTable', () => {
   test('clicking a row calls onOpenItem with the item', () => {
     const onOpenItem = vi.fn();
     render(<ItemsTable items={sampleItems} onOpenItem={onOpenItem} />);
-    fireEvent.click(screen.getByText('Vérifier consommation HP/HC Q3').closest('tr'));
+    // M2-6.C.P2-cleanup P2-6 — sélection par rôle a11y (le <tr> porte
+    // `role="button"` + aria-label `Ouvrir l'action : <title>`) au lieu de
+    // `.closest('tr')` couplé au markup table. Résiste à un refacto futur
+    // de structure (table → div role="grid", etc.).
+    fireEvent.click(
+      screen.getByRole('button', { name: /ouvrir l'action.*vérifier consommation hp\/hc q3/i })
+    );
     expect(onOpenItem).toHaveBeenCalledWith(sampleItems[0]);
   });
 
@@ -193,7 +199,11 @@ describe('ItemsTable — a11y clavier + priorité + kind FR (M2-5.8.B)', () => {
       domain: 'optimisation',
     },
   ];
-  const rowOf = (text) => screen.getByText(text).closest('tr');
+  // M2-6.C.P2-cleanup P2-6 — sélection par rôle a11y (le <tr> porte
+  // `role="button"` + aria-label `Ouvrir l'action : <title>`) au lieu de
+  // `.closest('tr')` couplé au markup table.
+  const rowOf = (title) =>
+    screen.getByRole('button', { name: new RegExp(`ouvrir l'action.*${title}`, 'i') });
 
   test('a clickable row is focusable (tabindex=0)', () => {
     render(<ItemsTable items={sample} onOpenItem={vi.fn()} />);

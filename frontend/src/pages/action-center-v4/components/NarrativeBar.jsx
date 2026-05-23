@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useActionCenterV4Summary } from '../../../hooks/v4';
@@ -30,9 +31,13 @@ export function NarrativeBar() {
   // URL filter établi M2-5.11.K (`?without_owner=true`) — pas de FilterContext
   // global, l'URL est la source de vérité partagée.
   const navigate = useNavigate();
-  const handleWithoutOwnerClick = () => {
+  // M2-6.C.P2-cleanup P2-1 — `useCallback` pour stabiliser la référence (sinon
+  // recréée à chaque rendu du parent NarrativeBar quand `summary` change → la
+  // prop `onClick` de StatTile change → re-render inutile de la tuile cible).
+  // `navigate` est lui-même stable (mémoïsé par react-router-dom).
+  const handleWithoutOwnerClick = useCallback(() => {
     navigate('/action-center-v4?without_owner=true');
-  };
+  }, [navigate]);
 
   if (loading) return <NarrativeBarSkeleton />;
   if (error) return <NarrativeBarError message={error.message} onRetry={refetch} />;
