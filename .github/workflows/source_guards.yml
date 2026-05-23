@@ -31,7 +31,12 @@ jobs:
           pip install -r backend/requirements.txt
 
       - name: Run source-guards pytest suite
-        run: pytest backend/tests/source_guards/ -v --tb=short
+        # P0-D hygiène 2026-05-23 — pytest doit tourner depuis `backend/` :
+        # certains source-guards lisent des fichiers de config via chemin
+        # relatif (ex: `regops/config/regs.yaml`) qui suppose le cwd backend/.
+        # Aligne sur le pattern local `cd backend && pytest tests/...`.
+        working-directory: backend
+        run: pytest tests/source_guards/ -v --tb=short
 
       - name: Verify agent definitions count (== 11)
         run: |
