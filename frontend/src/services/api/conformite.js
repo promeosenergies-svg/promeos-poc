@@ -259,3 +259,8 @@ export const rejectBacsExemption = (exemptionId, data = {}) =>
   api.post(`/regops/bacs/exemption/${exemptionId}/reject`, data).then((r) => r.data);
 export const deleteBacsExemption = (exemptionId) =>
   api.delete(`/regops/bacs/exemption/${exemptionId}`).then((r) => r.data);
+
+// ── Regulatory Applicability (ADR-024) ─────────────────────────────────────
+// P0-B 2026-05-23 : consommé par Patrimoine.jsx pour filtrer `?incomplete=<RULE>`.
+export const getRegulatoryApplicability = (params = {}) =>
+  api.get('/regulatory/applicability', { params }).then((r) => r.data);

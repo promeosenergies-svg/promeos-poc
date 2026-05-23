@@ -176,6 +176,7 @@ def list_organisations(
 @router.post("/organisations", status_code=201)
 def create_organisation(
     body: OrganisationCreate,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
@@ -187,7 +188,11 @@ def create_organisation(
     Phase F audit P0-3 fix code-reviewer : `_require_admin_access` strict
     DG_OWNER/DSI_ADMIN uniquement (avant ce fix, `_require_write_access` autorisait
     8 rôles à créer des organisations orphelines en DEMO_MODE).
+
+    P0-B 2026-05-23 : audit log `organisation.create` wired.
     """
+    from services.audit_log_service import log_patrimoine_change
+
     _require_admin_access(auth)
     org = Organisation(
         nom=body.nom,
@@ -196,6 +201,22 @@ def create_organisation(
         actif=True,
     )
     db.add(org)
+    db.flush()
+
+    headers = _audit_headers(request, auth)
+    log_patrimoine_change(
+        db,
+        user_id=headers["user_id"],
+        org_id=org.id,
+        entity_type="organisation",
+        entity_id=org.id,
+        action="organisation.create",
+        new_value={"nom": org.nom, "siren": org.siren, "type_client": org.type_client},
+        correlation_id=headers["correlation_id"],
+        ip_address=headers["ip_address"],
+        user_agent=headers["user_agent"],
+    )
+
     db.commit()
     db.refresh(org)
     return _org_to_dict(org)
@@ -377,7 +398,11 @@ def create_entite(
 
     `assert_org_owns_organisation` couvre cardinal-ment :
     organisation_id == scope_org_id ET organisation existe non-soft-deleted.
+
+    P0-B 2026-05-23 : audit log `entite_juridique.create` wired.
     """
+    from services.audit_log_service import log_patrimoine_change
+
     _require_write_access(auth)
     scope_org_id = resolve_org_id(request, auth, db)
     assert_org_owns_organisation(db, body.organisation_id, scope_org_id)
@@ -401,6 +426,27 @@ def create_entite(
         region_code=body.region_code,
     )
     db.add(entite)
+    db.flush()
+
+    headers = _audit_headers(request, auth)
+    log_patrimoine_change(
+        db,
+        user_id=headers["user_id"],
+        org_id=scope_org_id,
+        entity_type="entite_juridique",
+        entity_id=entite.id,
+        action="entite_juridique.create",
+        new_value={
+            "nom": entite.nom,
+            "siren": entite.siren,
+            "siret": entite.siret,
+            "organisation_id": entite.organisation_id,
+        },
+        correlation_id=headers["correlation_id"],
+        ip_address=headers["ip_address"],
+        user_agent=headers["user_agent"],
+    )
+
     db.commit()
     db.refresh(entite)
     return _entite_to_dict(entite)
@@ -547,7 +593,11 @@ def create_portefeuille(
     """Crée un portefeuille (org-scoping cardinal Phase E).
 
     L'EntiteJuridique parente DOIT appartenir au scope_org_id.
+
+    P0-B 2026-05-23 : audit log `portefeuille.create` wired.
     """
+    from services.audit_log_service import log_patrimoine_change
+
     _require_write_access(auth)
     scope_org_id = resolve_org_id(request, auth, db)
     assert_org_owns_entite(db, body.entite_juridique_id, scope_org_id)
@@ -557,6 +607,26 @@ def create_portefeuille(
         description=body.description,
     )
     db.add(pf)
+    db.flush()
+
+    headers = _audit_headers(request, auth)
+    log_patrimoine_change(
+        db,
+        user_id=headers["user_id"],
+        org_id=scope_org_id,
+        entity_type="portefeuille",
+        entity_id=pf.id,
+        action="portefeuille.create",
+        new_value={
+            "nom": pf.nom,
+            "entite_juridique_id": pf.entite_juridique_id,
+            "description": pf.description,
+        },
+        correlation_id=headers["correlation_id"],
+        ip_address=headers["ip_address"],
+        user_agent=headers["user_agent"],
+    )
+
     db.commit()
     db.refresh(pf)
     return _pf_to_dict(pf)
@@ -1160,7 +1230,11 @@ def create_batiment(
 
     Phase D-4 Tier 4 P0-2 fix audit code-reviewer : déclenche cascade BACS active
     (ADR-D-04) après commit pour recalculer Site.bacs_assujetti + bacs_puissance_cvc_totale_kw.
+
+    P0-B 2026-05-23 : audit log `batiment.create` wired.
     """
+    from services.audit_log_service import log_patrimoine_change
+
     _require_write_access(auth)
     scope_org_id = resolve_org_id(request, auth, db)
     site = assert_org_owns_site(db, body.site_id, scope_org_id)
@@ -1172,6 +1246,27 @@ def create_batiment(
         cvc_power_kw=body.cvc_power_kw,
     )
     db.add(bat)
+    db.flush()
+
+    headers = _audit_headers(request, auth)
+    log_patrimoine_change(
+        db,
+        user_id=headers["user_id"],
+        org_id=scope_org_id,
+        entity_type="batiment",
+        entity_id=bat.id,
+        action="batiment.create",
+        new_value={
+            "site_id": bat.site_id,
+            "nom": bat.nom,
+            "surface_m2": bat.surface_m2,
+            "cvc_power_kw": bat.cvc_power_kw,
+        },
+        correlation_id=headers["correlation_id"],
+        ip_address=headers["ip_address"],
+        user_agent=headers["user_agent"],
+    )
+
     db.commit()
     db.refresh(bat)
 

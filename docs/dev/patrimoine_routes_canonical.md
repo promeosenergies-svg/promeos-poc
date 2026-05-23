@@ -227,9 +227,113 @@ Le composant `frontend/src/components/QuickCreateSite.jsx` importe `quickCreateS
 
 ---
 
-## 8. Roadmap (hors P0-A)
+## 8. Roadmap (post P0-A/P0-B)
 
-- **P0-B** : audit log sur les 5 endpoints POST de création (organisations, entites, portefeuilles, batiments) — le pattern existe déjà côté `create_site_crud` et `quick_create_site_crud`.
+### Livré P0-B (2026-05-23)
+
+- ✅ **Audit log sur les 4 endpoints POST création** (organisations, entites, portefeuilles, batiments) — pattern uniforme avec `_audit_headers` + `log_patrimoine_change(action="<entity>.create")`. Verrouillé par source-guard AST `test_patrimoine_crud_post_audit_log_source_guards.py`.
+- ✅ **DATA_MISSING enrichi** : `RuleApplicability.to_dict()` auto-injecte `remediation_field`, `remediation_level`, `remediation_label_fr`, `remediation_hint_fr`, `cta_label_fr`, `affected_site_ids` quand `status == DATA_MISSING`. SoT : `backend/regulatory/remediation.py:REASON_CODE_TO_REMEDIATION`. Verrouillé par source-guard `test_data_missing_remediation_source_guards.py`.
+- ✅ **CadreApplicable interactif** : clic sur tuile DATA_MISSING ouvre un panneau interne listant les sites concernés + leur champ manquant + CTA `Compléter dans Patrimoine` qui navigue vers `/patrimoine?incomplete=<RULE>`.
+- ✅ **Patrimoine filtré** : URL `?incomplete=<RULE>` déclenche un bandeau FR + filtre la table sur les sites incomplets pour cette règle (fetch `/api/regulatory/applicability`).
+- ✅ **Onboarding consolidé** : `/onboarding` redirige désormais vers `/onboarding/sirene` (parcours canonique) au lieu de l'impasse `/cockpit/jour`. Décision produit dans §9.
+
+### Reste à faire (P1+)
+
 - **P1** : basculer en 410 les `GET /api/sites/{id}/stats|guardrails|compliance` une fois les équivalents `/api/patrimoine/...` livrés.
-- **P1** : enrichir `RuleApplicability.to_dict()` avec `remediation_field` pour drill-down DATA_MISSING UI (CadreApplicable).
+- **P1** : écran de saisie au niveau Organisation/EJ (champs effectif, CA, bilan, conso) — actuellement `IncompleteBanner` affiche "écran en préparation" pour les `remediation_level=organisation|entite_juridique`.
 - **P2** : unifier `Compteur` ↔ `Meter` (ADR-D-01) et `EnergyContract` ↔ `ContratCadre`.
+- **P2** : audit log sur POST création des sous-entités plus marginales (Compteur, DeliveryPoint) — pattern uniforme à étendre.
+
+---
+
+## 9. Onboarding patrimoine — entrées canoniques (P0-B 2026-05-23)
+
+> Décision produit applicable depuis 2026-05-23. Avant P0-B, 5 entry-points coexistaient sans hiérarchie claire et `/onboarding` redirigeait vers une impasse fonctionnelle.
+
+| Cas d'usage | Composant canonique | Accès |
+|---|---|---|
+| **Création initiale** (premier patrimoine, depuis zéro) | `pages/SireneOnboardingPage` | Route `/onboarding/sirene`. `/onboarding` redirige automatiquement ici. |
+| **Import massif** (CSV/Excel multi-sites) | `components/PatrimoineWizard` | Bouton "Importer" dans Patrimoine + empty-state "Importer CSV". |
+| **Création manuelle d'un site** (cas par cas) | `components/QuickCreateSite` | Bouton "Nouveau site" dans Patrimoine + empty-state "Nouveau site manuel". |
+| **Création détaillée 7 étapes** (option avancée) | `components/SiteCreationWizard` | Sous-composant interne de `QuickCreateSite` (option "Avancé"). **N'est plus une entrée principale.** |
+| **Édition incrémentale** | `components/DrawerEditSite` | Clic sur une ligne dans la table Patrimoine. |
+
+### Composants neutralisés
+
+- `pages/OnboardingPage` : **plus aucune route active**. Le fichier est conservé pour réutilisation Phase 4 (refonte premier pas COMEX) mais n'est ni importé, ni monté. Aucune URL ne le rend.
+
+### Empty-state Patrimoine = écran d'aiguillage
+
+Quand l'utilisateur arrive sur `/patrimoine` sans aucun site dans le scope, l'écran propose les 3 chemins canoniques en français :
+
+1. **Depuis Sirene (recommandé)** → `/onboarding/sirene`
+2. **Nouveau site manuel** → ouvre `QuickCreateSite`
+3. **Importer CSV** → ouvre `PatrimoineWizard`
+
+C'est l'aiguillage canonique. Aucun écran d'aiguillage séparé n'est nécessaire.
+
+### Source-guard
+
+`frontend/src/__tests__/onboarding_entrypoints.test.jsx` verrouille :
+- `/onboarding` redirige vers `/onboarding/sirene` (pas vers `/cockpit/jour`).
+- `OnboardingPage` n'est plus montée en route active.
+- `SiteCreationWizard` n'est pas attaché à une `<Route>` (sous-composant uniquement).
+- Patrimoine empty-state propose les 3 chemins FR.
+
+---
+
+## 10. DATA_MISSING — contrat de remédiation (P0-B)
+
+### Sortie API enrichie
+
+Toute entrée `RuleApplicability` avec `status="data_missing"` expose dans `to_dict()` :
+
+```json
+{
+  "rule_code": "DT",
+  "status": "data_missing",
+  "reason_code": "DT.DATA_MISSING.SURFACE",
+  "scope_level": "site",
+  "scope_id": 42,
+  "scope_label": "Site Paris 15e",
+  "missing_inputs": ["site.tertiaire_area_m2"],
+  "remediation_field": "site.tertiaire_area_m2",
+  "remediation_level": "site",
+  "remediation_label_fr": "Surface tertiaire",
+  "remediation_hint_fr": "Renseignez la surface tertiaire pour confirmer si le site est soumis au Décret Tertiaire.",
+  "cta_label_fr": "Compléter la surface",
+  "affected_site_ids": [42]
+}
+```
+
+### Bijection reason_code ↔ remediation
+
+| reason_code | remediation_field | level | label FR |
+|---|---|---|---|
+| `DT.DATA_MISSING.SURFACE` | `site.tertiaire_area_m2` | site | Surface tertiaire |
+| `DT.DATA_MISSING.USAGE` | `site.usage_principal` | site | Usage principal du site |
+| `BACS.DATA_MISSING.CVC_POWER` | `batiment.cvc_power_kw` | batiment | Puissance CVC |
+| `APER.DATA_MISSING.PARKING_AREA` | `site.parking_area_m2` | site | Surface de parking |
+| `APER.DATA_MISSING.ROOF_AREA` | `site.roof_area_m2` | site | Surface de toiture |
+| `SME.DATA_MISSING.EFFECTIF` | `organisation.effectif_total` | organisation | Effectif de l'organisation |
+| `SME.DATA_MISSING.CA` | `organisation.chiffre_affaires_eur` | organisation | Chiffre d'affaires |
+| `SME.DATA_MISSING.CONSO` | `entite_juridique.consommation_annuelle_moyenne_3y_gwh` | entite_juridique | Consommation moyenne 3 ans |
+| `BEGES.DATA_MISSING.EFFECTIF` | `organisation.effectif_total` | organisation | Effectif de l'organisation |
+
+SoT : `backend/regulatory/remediation.py`. Verrou : `test_data_missing_remediation_source_guards.py` impose qu'aucun code DATA_MISSING ne soit ajouté à `reason_codes.py` sans entrée correspondante ici.
+
+### Parcours UI Cockpit → Patrimoine
+
+```
+CadreApplicable (Cockpit Stratégique)
+  → clic sur tuile "DT · Données manquantes · 4 sites"
+  → ouvre panneau interne avec liste des 4 sites + champ manquant FR
+  → CTA "Compléter la surface"
+  → navigate('/patrimoine?incomplete=DT')
+
+Patrimoine.jsx
+  → bandeau FR "Sites à compléter pour le Décret Tertiaire — 4 sites"
+  → table filtrée sur les 4 sites concernés
+  → bouton "Effacer le filtre" pour revenir à la vue complète
+  → clic sur une ligne → DrawerEditSite (édition existante)
+```

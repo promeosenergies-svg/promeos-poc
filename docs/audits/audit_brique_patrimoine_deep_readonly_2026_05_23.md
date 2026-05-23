@@ -541,3 +541,123 @@ Source-guard AST `test_patrimoine_crud_audit_log_wiring_source_guards.py::test_n
 - [x] Aucune route concurrente — relocation propre, pas de doublon.
 - [x] Code mort supprimé (`backend/routes/patrimoine.py` 0 octets).
 
+---
+
+## 13. Correctifs P0-B réalisés (2026-05-23)
+
+> **Branche** : `claude/patrimoine-p0b-actionnable-onboarding`
+> **Doctrine** : rendre le patrimoine actionnable côté utilisateur, sans reconstruire par-dessus du legacy. Aucun nouvel écran. Aucune route concurrente. Tout texte en français clair, sans jargon non expliqué.
+
+### 13.1 Chantier 1 — Audit log sur POST création (complète P0-A)
+
+P0-A avait câblé PATCH/DELETE. P0-B complète avec les **4 POST manquants** dans `routes/patrimoine_crud.py` :
+
+- `POST /api/patrimoine/crud/organisations` → audit `organisation.create`
+- `POST /api/patrimoine/crud/entites` → audit `entite_juridique.create`
+- `POST /api/patrimoine/crud/portefeuilles` → audit `portefeuille.create`
+- `POST /api/patrimoine/crud/batiments` → audit `batiment.create`
+
+(Les POST `/sites` et `/sites/quick-create` étaient déjà couverts par P0-A.)
+
+**Pattern uniforme** : `log_patrimoine_change(action="<entity>.create", old_value=None, new_value=payload, correlation_id, ip, ua)`. **Source-guard AST** : `tests/source_guards/test_patrimoine_crud_post_audit_log_source_guards.py` verrouille la présence de l'appel sur chaque POST + interdit l'appel sur les GET.
+
+**Résultat** : aucune création patrimoine silencieuse possible. Patrimoine = entièrement audité.
+
+### 13.2 Chantier 2 — DATA_MISSING enrichi
+
+Nouveau fichier `backend/regulatory/remediation.py` — SoT du mapping `reason_code` → instructions de remédiation FR (5 champs).
+
+**`RuleApplicability.to_dict()` auto-enrichit** quand `status=DATA_MISSING` :
+
+```json
+{
+  "status": "data_missing",
+  "reason_code": "DT.DATA_MISSING.SURFACE",
+  "remediation_field": "site.tertiaire_area_m2",
+  "remediation_level": "site",
+  "remediation_label_fr": "Surface tertiaire",
+  "remediation_hint_fr": "Renseignez la surface tertiaire pour confirmer si le site est soumis au Décret Tertiaire.",
+  "cta_label_fr": "Compléter la surface",
+  "affected_site_ids": [42]
+}
+```
+
+**9 codes DATA_MISSING** mappés (DT/BACS/APER/SMÉ/BEGES). Aucune rule à modifier — l'enrichissement est central.
+
+**Source-guard** : `test_data_missing_remediation_source_guards.py` impose la bijection `reason_codes.REASON_CODES ↔ REASON_CODE_TO_REMEDIATION`. Toute ajout d'un nouveau code DATA_MISSING sans remediation FR fait échouer le build.
+
+### 13.3 Chantier 3 — CadreApplicable interactif
+
+`frontend/src/components/grammar/hub/CadreApplicable.jsx` refondu :
+
+- **Tuile DATA_MISSING cliquable** (autres tuiles non-cliquables sauf si `onRuleClick` custom fourni).
+- **Panneau interne `DataMissingPanel`** : titre règle, liste des sites concernés (label + champ FR + hint), bouton "Compléter dans Patrimoine".
+- **Navigation** : `navigate('/patrimoine?incomplete=<RULE>')` via `useNavigate` (fallback `window.location` hors RouterProvider).
+- Le label du CTA provient de `cta_label_fr` enrichi backend, sinon fallback "Compléter dans Patrimoine".
+
+**Aucun changement** dans `CockpitStrategique.jsx` — le composant `CadreApplicable` est consommé tel quel, le comportement interactif s'active automatiquement.
+
+### 13.4 Chantier 4 — Patrimoine filtré par donnée manquante
+
+`pages/Patrimoine.jsx` comprend désormais `?incomplete=<RULE>` :
+
+- **Bandeau FR** en haut de page : *"Sites à compléter pour le Décret Tertiaire — 4 sites"* + explication courte + bouton "Effacer le filtre".
+- **Filtre table** : fetch `/api/regulatory/applicability`, extraction des `scope_id` avec `status=data_missing` pour la règle, restriction de la table à ces sites.
+- Pour les données niveau organisation/EJ : bandeau affiche *"À compléter dans les informations de l'organisation (écran en préparation)"* — pas de filtre table.
+- Composant extrait dans `components/patrimoine/IncompleteBanner.jsx` pour testabilité isolée.
+- Service API ajouté : `getRegulatoryApplicability` dans `services/api/conformite.js`.
+
+### 13.5 Chantier 5 — Onboarding consolidé (sans refonte)
+
+`App.jsx` : **`/onboarding` redirige désormais vers `/onboarding/sirene`** (avant : impasse `/cockpit/jour`).
+
+**Hiérarchie canonique des entry-points** (cf. `docs/dev/patrimoine_routes_canonical.md §9`) :
+
+| Cas d'usage | Composant canonique |
+|---|---|
+| Création initiale | `SireneOnboardingPage` (route `/onboarding/sirene`) |
+| Import bulk CSV | `PatrimoineWizard` (depuis Patrimoine) |
+| Création manuelle | `QuickCreateSite` (drawer depuis Patrimoine) |
+| Édition incrémentale | `DrawerEditSite` (clic ligne) |
+| Détaillé 7 étapes | `SiteCreationWizard` (sous-composant interne de QuickCreate, plus d'entrée principale) |
+
+**`OnboardingPage` neutralisé** : fichier conservé pour réutilisation Phase 4, aucune route active ne le rend. **Aucun nouvel écran d'aiguillage créé** — l'empty-state de Patrimoine (3 boutons "Depuis Sirene / Nouveau site manuel / Importer CSV") joue déjà ce rôle.
+
+### 13.6 Tests P0-B
+
+| Fichier | Tests |
+|---|---|
+| `tests/test_patrimoine_crud_create_audit_log.py` | 5 (4 POST + 1 GET sans audit) |
+| `tests/source_guards/test_patrimoine_crud_post_audit_log_source_guards.py` | 2 (AST POST + AST GET-no-log) |
+| `tests/test_regulatory_remediation_fields.py` | 22 (mapping + bijection + to_dict enrichi + zero pollution autres statuts + scopes) |
+| `tests/source_guards/test_data_missing_remediation_source_guards.py` | 12 (bijection + structurel par code) |
+| `frontend/src/components/grammar/hub/__tests__/CadreApplicable.test.jsx` | 6 (clickable / non-clickable / CTA navigation / callback / fermeture) |
+| `frontend/src/components/patrimoine/__tests__/IncompleteBanner.test.jsx` | 7 (libellé FR / hint / org-level / clear / pluriel / 5 règles / no-anglais) |
+| `frontend/src/__tests__/onboarding_entrypoints.test.jsx` | 6 (redirect / pas vers cockpit/jour / OnboardingPage neutralisé / SiteCreationWizard sous-composant) |
+
+**Total P0-B : 60 tests verts** (41 BE + 19 FE). **Non-régression** : 288 tests patrimoine/regulatory baseline verts (mêmes 2 baselines pré-existantes désélectionnées).
+
+### 13.7 Impact sur les 5 risques majeurs initiaux
+
+| Risque P0 initial | Statut après P0-A + P0-B |
+|---|---|
+| 1. `CadreApplicable` DATA_MISSING non actionnable | ✅ **CORRIGÉ** — panneau interactif + navigation vers Patrimoine filtré |
+| 2. 5 entry-points création patrimoine concurrents | ✅ **CORRIGÉ** — `/onboarding` canonisé sur Sirène, `SiteCreationWizard` rétrogradé en sous-composant, `OnboardingPage` neutralisé, hiérarchie documentée |
+| 3. CRUD patrimoine sans audit trail | ✅ **CORRIGÉ** — POST + PATCH + DELETE tous wirés (15 endpoints), double source-guard AST (PATCH/DELETE en P0-A, POST en P0-B) |
+| 4. Bulk import sans cascade | ✅ **CORRIGÉ** — `batch_cascade_recompute_sites` idempotent (P0-A) |
+| 5. Doublons Compteur/Meter + 3 routers /sites | ⏳ **Partiel** — `/api/sites` legacy en 410 (P0-A), Compteur/Meter inchangé (ADR-D-01 hors P0) |
+
+### 13.8 Critères d'acceptation P0-B — checklist
+
+- [x] Tous les POST création patrimoine sont audités.
+- [x] Aucun DATA_MISSING sans `remediation_field` (verrou source-guard).
+- [x] `CadreApplicable` permet d'agir sur les données manquantes (panneau + CTA).
+- [x] Patrimoine comprend `?incomplete=<RULE>` (bandeau + filtre).
+- [x] `/onboarding` ne redirige plus vers `/cockpit/jour`.
+- [x] Parcours onboarding limités à 3 entry-points canoniques explicables.
+- [x] Aucun nouvel écran fantôme (composants créés : `IncompleteBanner.jsx` extrait + `remediation.py` SoT — pas d'écran).
+- [x] Aucun nouvel endpoint concurrent (BE : aucun ajout d'endpoint, juste enrichissement de payload + audit + relocation).
+- [x] Aucun jargon non expliqué dans les nouveaux textes FR (test pure-grep `IncompleteBanner.test.jsx` vérifie l'absence d'anglais résiduel).
+- [x] Tests nouveaux verts (60/60).
+- [x] Tests P0-A non régressés (24/24 toujours verts + 288 baseline).
+

@@ -635,17 +635,20 @@ function App() {
                                         </PageSuspense>
                                       }
                                     />
-                                    {/* 2026-05-09 — Sprint Grammaire v1 Phase 0.
-                                Audit Sol v1.1 : /onboarding rendait OnboardingPage
-                                avec une grammaire calquée sur Cockpit Stratégique
-                                (test 2 doctrinal "dirigeant non-sachant" en échec,
-                                score 1,5/10). Redirect vers /cockpit/jour le temps
-                                que Phase 4 livre un vrai wizard premier pas
-                                (kicker Atlas/Briefing, 3-5 étapes). Import
-                                OnboardingPage conservé pour réutilisation Phase 4. */}
+                                    {/* P0-B 2026-05-23 : `/onboarding` redirige vers le parcours
+                                canonique Sirène (création initiale du patrimoine).
+                                Précédemment : redirect vers `/cockpit/jour` qui était une
+                                impasse fonctionnelle — un utilisateur tapant `/onboarding`
+                                tombait sur le cockpit sans comprendre comment créer son
+                                patrimoine. Décision produit P0-B :
+                                  - parcours initial = SireneOnboardingPage (SIREN/SIRET)
+                                  - import bulk = PatrimoineWizard (déclenché depuis Patrimoine)
+                                  - création manuelle = QuickCreateSite drawer
+                                  - SiteCreationWizard masqué des entrées principales (legacy)
+                                Référence : docs/dev/patrimoine_routes_canonical.md §9. */}
                                     <Route
                                       path="/onboarding"
-                                      element={<Navigate to="/cockpit/jour" replace />}
+                                      element={<Navigate to="/onboarding/sirene" replace />}
                                     />
                                     <Route
                                       path="/onboarding/sirene"
