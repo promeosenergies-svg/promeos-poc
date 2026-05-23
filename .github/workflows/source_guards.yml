@@ -20,7 +20,13 @@ jobs:
         # importent transitivement services/electric_monitoring/kpi_engine
         # → climate_engine.py qui dépend de numpy (qa-guardian audit
         # dette pré-existante depuis claude/refonte-sol2 baseline).
-        run: pip install pytest pyyaml numpy
+        # P0-D hygiène 2026-05-23 — `sqlalchemy fastapi pydantic` ajoutés :
+        # test_consumption_source_guards.py importe transitivement
+        # services.electric_monitoring qui dépend de SQLAlchemy ORM, et
+        # plusieurs source-guards instancient FastAPI app pour AST checks
+        # (collecte échouait avec ModuleNotFoundError: sqlalchemy depuis
+        # le sprint M2-5.12, jamais corrigé avant aujourd'hui).
+        run: pip install pytest pyyaml numpy sqlalchemy fastapi pydantic
 
       - name: Run source-guards pytest suite
         run: pytest backend/tests/source_guards/ -v --tb=short

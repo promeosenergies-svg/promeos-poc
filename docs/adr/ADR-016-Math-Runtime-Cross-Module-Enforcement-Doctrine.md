@@ -214,7 +214,8 @@ Pattern formalisé Sprint C-7 + à reproduire Phase D :
 - `backend/tests/test_precommit_hooks_phase76.py` (15 tests)
   - **Hook 1** : block drop_table sans override + allow override comment + block drop_index/drop_constraint + **allow drops inside def downgrade()** + skip `.original-autogenerate` backups
   - **Hook 2** : block connection.py sans PRAGMA + allow event listener + skip autres fichiers
-  - **Hook 3** : block Phase 5.6 F3 erreur cardinale (3.15 × 1.2 / 8760 = 0.43) + allow correction (3150 × 1.2 / 8760 ≈ 0.4315) + tolerance 5% + Unicode × + virgule décimale FR
+  - **Hook 3** : block Phase 5.6 F3 erreur cardinale (3.15 × 1.2 / 8760 = 0.43) + allow correction (3150 × 1.2 / 8760 ≈ 0.4315) + tolerance 5% + Unicode × + virgule décimale FR <!-- math-check: skip -->
+    *(le marqueur `<!-- math-check: skip -->` ci-dessus est honoré par le hook pour permettre de citer la formule erronée sciemment, sinon le hook se mordrait la queue en scannant sa propre doc.)*
   - **Infrastructure** : `.pre-commit-config.yaml` racine + 3 hooks executables
 
 ### Validation runtime end-to-end

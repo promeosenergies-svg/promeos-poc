@@ -37,6 +37,13 @@ FORMULA_PATTERN = re.compile(
     r"(\d+(?:[.,]\d+)?)\s*[*×x]\s*(\d+(?:[.,]\d+)?)\s*/\s*(\d+(?:[.,]\d+)?)\s*=\s*(\d+(?:[.,]\d+)?)",
 )
 
+# Marqueur explicite pour skipper une ligne (auto-documentée).
+# Usage : ajouter `<!-- math-check: skip -->` sur la même ligne pour
+# documenter sciemment une formule erronée (ex : exemple d'anti-pattern
+# dans une ADR). Évite que le hook se mord la queue quand il scanne
+# sa propre documentation.
+SKIP_MARKER_PATTERN = re.compile(r"<!--\s*math-check:\s*skip\s*-->", re.IGNORECASE)
+
 TOLERANCE_PCT = 0.05  # 5%
 MIN_TOLERANCE_ABS = 1e-6  # éviter division-par-quasi-zéro
 
@@ -54,6 +61,7 @@ def check_file(filepath: Path) -> list[str]:
         return []
 
     violations: list[str] = []
+    lines = content.splitlines()
 
     for match in FORMULA_PATTERN.finditer(content):
         try:
@@ -67,11 +75,16 @@ def check_file(filepath: Path) -> list[str]:
         if c == 0:
             continue  # division par zéro non testable
 
+        # Skip si la ligne contient explicitement le marqueur `<!-- math-check: skip -->`.
+        line_no = content[: match.start()].count("\n") + 1
+        line_text = lines[line_no - 1] if 0 < line_no <= len(lines) else ""
+        if SKIP_MARKER_PATTERN.search(line_text):
+            continue
+
         actual = a * b / c
         tolerance = max(abs(expected) * TOLERANCE_PCT, MIN_TOLERANCE_ABS)
 
         if abs(actual - expected) > tolerance:
-            line_no = content[: match.start()].count("\n") + 1
             violations.append(
                 f"{filepath}:{line_no} — Formule incoherente :\n"
                 f"    Documente : {a} x {b} / {c} = {expected}\n"
