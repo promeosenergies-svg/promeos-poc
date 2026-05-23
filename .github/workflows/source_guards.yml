@@ -15,18 +15,20 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install test deps
-        # M2-5.11.J audit CI — `numpy` ajouté : certains source-guards
-        # importent transitivement services/electric_monitoring/kpi_engine
-        # → climate_engine.py qui dépend de numpy (qa-guardian audit
-        # dette pré-existante depuis claude/refonte-sol2 baseline).
-        # P0-D hygiène 2026-05-23 — `sqlalchemy fastapi pydantic` ajoutés :
-        # test_consumption_source_guards.py importe transitivement
-        # services.electric_monitoring qui dépend de SQLAlchemy ORM, et
-        # plusieurs source-guards instancient FastAPI app pour AST checks
-        # (collecte échouait avec ModuleNotFoundError: sqlalchemy depuis
-        # le sprint M2-5.12, jamais corrigé avant aujourd'hui).
-        run: pip install pytest pyyaml numpy sqlalchemy fastapi pydantic python-dotenv
+      - name: Install backend deps
+        # P0-D hygiène 2026-05-23 — remplacement de l'install case-by-case
+        # (pytest pyyaml numpy + sqlalchemy + fastapi + dotenv + bcrypt + ...)
+        # par requirements.txt complet. Raisons :
+        # 1. Les source-guards importent transitivement les services backend
+        #    qui pullent des deps en cascade (sqlalchemy → fastapi → bcrypt → ...).
+        # 2. L'approche cas-par-cas créait un whack-a-mole sans fin
+        #    (chaque ajout révélait une nouvelle dep manquante).
+        # 3. requirements.txt est la SoT de l'environnement runtime, source-guards
+        #    doivent tourner dans le même contexte que les tests classiques.
+        # Coût CI : ~30s en plus pour l'install (acceptable pour fiabilité).
+        run: |
+          pip install pytest
+          pip install -r backend/requirements.txt
 
       - name: Run source-guards pytest suite
         run: pytest backend/tests/source_guards/ -v --tb=short
