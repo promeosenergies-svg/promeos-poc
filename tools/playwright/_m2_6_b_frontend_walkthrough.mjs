@@ -320,6 +320,40 @@ async function shoot(page, name) {
       checks.withoutOwnerClearWorks = false;
     }
 
+    // ── 11. DrawerBreadcrumb patrimonial (M2-6.C.3 commit 4/4) ──
+    // Vérifie que le composant MV3-ready est silencieux quand le BE ne
+    // populate pas les snapshots patrimoniaux (cas actuel : aucun des champs
+    // organisation_name/site_name/building_name/meter_id n'est exposé par
+    // ActionCenterItemResponse). Activable dès M3-DRAWER-BREADCRUMB-PATRIMOINE-BE.
+    try {
+      await page.goto(`${FE}/action-center-v4`, { waitUntil: 'networkidle' });
+      // Cliquer sur la 1ère ligne table pour ouvrir le drawer.
+      const firstRow = page.locator('[role="button"][aria-label^="Ouvrir l\'action"]').first();
+      const rowVisible = await firstRow.isVisible({ timeout: 3000 });
+      if (rowVisible) {
+        await firstRow.click();
+        await page.waitForTimeout(800);
+        await shoot(page, '11-drawer-breadcrumb-mv3');
+        // Le breadcrumb patrimonial est ABSENT en MV3 (BE n'expose pas les
+        // snapshots) — comportement attendu doctrine §6.6 « pas de breadcrumb
+        // fantôme ». Si BE M3+ active les champs, ce check basculera à
+        // « visible avec ≥2 segments » sans changement Playwright.
+        const breadcrumb = page.locator('[data-testid="drawer-breadcrumb"]');
+        const breadcrumbVisible = await breadcrumb.isVisible({ timeout: 1500 }).catch(() => false);
+        checks.drawerBreadcrumbMv3Silent = breadcrumbVisible === false;
+        if (breadcrumbVisible) {
+          const segments = await breadcrumb.locator('[data-testid="drawer-breadcrumb-segment"]').count();
+          console.log(`  ℹ DrawerBreadcrumb visible (${segments} segments) — BE M3+ activé !`);
+          checks.drawerBreadcrumbHasSegments = segments >= 2;
+        }
+      } else {
+        checks.drawerBreadcrumbMv3Silent = false;
+      }
+    } catch (err) {
+      console.warn(`  ⚠ Step 11 DrawerBreadcrumb : ${err.message.slice(0, 120)}`);
+      checks.drawerBreadcrumbMv3Silent = false;
+    }
+
     // ── BILAN ──
     console.log('\n═══ BILAN WALKTHROUGH M2-6.B.frontend ═══');
     const passing = Object.entries(checks).filter(([, v]) => v).length;

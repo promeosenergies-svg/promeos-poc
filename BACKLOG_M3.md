@@ -348,6 +348,40 @@ de phase.
   - [`backend/.env.example`](backend/.env.example) (DATABASE_URL postgresql
     commenté — résolution structurelle candidate)
 
-**Effort cumulé M2-6 → M3 : ~4-10 j/h** (5 items, fourchette large car
+### M3-DRAWER-BREADCRUMB-PATRIMOINE-BE — Snapshots patrimoniaux pour DrawerBreadcrumb  🟢 P2 · ~1-1.5 j/h
+
+- **Objet** : `DrawerBreadcrumb` patrimonial (organisation › site › bâtiment ›
+  compteur) a été livré côté FE en M2-6.C.3 (commit 4/4) en mode MV3-ready :
+  composant complet + 6 tests, mais **silencieux** car le BE
+  `ActionCenterItemResponse` n'expose pas les snapshots de nom patrimoniaux
+  (uniquement `organisation_id` Integer).
+- **Origine** : M2-6.C.3 commit 4/4 (DrawerBreadcrumb) — STOP gate Phase 4.1
+  cardinal a confirmé l'absence des champs côté BE schema. Garde-fou Amine
+  immutable « aucun changement payload » a empêché l'extension dans M2-6.C.3
+  (à raison — c'est un changement structurel qui mérite son sprint M3+ dédié).
+- **Activation FE** : aucune (déjà prête). Dès que le BE expose les 4 champs,
+  le breadcrumb s'affiche automatiquement.
+- **Pistes BE M3+** :
+  1. Étendre `ActionCenterItemResponse` Pydantic avec 4 champs
+     optionnels snapshot : `organisation_name`, `site_name`, `building_name`,
+     `meter_id` (déjà supporté côté FE).
+  2. Source : pattern « UUID isolé + snapshot label » ADR-029 §3.4 (même que
+     `owner_id` + `owner_display_name` M2-5.11.E). Snapshot au POST/PATCH item.
+  3. Alternative : enrichir endpoint GET item par join runtime (plus coûteux,
+     préfère snapshots pour cohérence pattern V4).
+- **DoD** :
+  - 4 champs snapshot exposés (Pydantic schema + repo mapping)
+  - Seed `helios_use_case_a` populate ces 4 champs sur les 9 items
+  - DrawerBreadcrumb FE rend les segments sans modification (déjà prêt)
+  - Test Playwright étape 11 valide breadcrumb visible avec ≥2 segments
+  - Test contract BE schema : `assert organisation_name in response.json()`
+- **Refs** :
+  - M2-6.C.3 commit 4/4 (DrawerBreadcrumb FE livré silencieux MV3)
+  - [`DrawerBreadcrumb.jsx`](frontend/src/pages/action-center-v4/components/drawer/DrawerBreadcrumb.jsx) FE composant
+  - [`DrawerBreadcrumb.test.jsx`](frontend/src/pages/action-center-v4/__tests__/DrawerBreadcrumb.test.jsx) 6 tests
+  - ADR-029 §3.4 pattern UUID isolé + snapshot label
+  - Surprise #6 du prompt M2-6.C.3 (anticipée et matérialisée)
+
+**Effort cumulé M2-6 → M3 : ~5-12 j/h** (6 items, fourchette large car
 M3-CFO-SEMANTIC dépend de l'arbitrage pilote et M3-BE-SQLITE-LOCK dépend
 de la repro).

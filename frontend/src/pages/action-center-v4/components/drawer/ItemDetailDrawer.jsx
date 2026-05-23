@@ -16,6 +16,7 @@ import { formatDateTimeFR } from '../../utils/date';
 import { BlockersTab } from './BlockersTab';
 import { Breadcrumb } from './Breadcrumb';
 import { DrawerActions } from './DrawerActions';
+import { DrawerBreadcrumb } from './DrawerBreadcrumb';
 import { EvidencesTab } from './EvidencesTab';
 import { ImpactSection } from './ImpactSection';
 import { ItemClosedBanner } from './ItemClosedBanner';
@@ -151,6 +152,11 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
       footer={footer}
     >
       <ItemClosedBanner item={item} />
+      {/* M2-6.C.3 (commit 4/4) — DrawerBreadcrumb patrimonial sous le banner.
+          Mode MV3 silencieux : si le BE n'expose pas encore les snapshots
+          patrimoniaux (organisation_name / site_name / building_name / meter_id),
+          le composant retourne null sans bruit. Activable dès BE M3+ tracé. */}
+      <DrawerBreadcrumb item={item} />
       <ItemHeader item={item} loading={itemLoading} error={itemError} />
 
       {/* M2-5.10.C — Impact financier 4 quadrants (audit Jean-Marc CFO P0-1).
