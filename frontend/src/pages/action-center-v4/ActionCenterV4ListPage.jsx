@@ -9,12 +9,12 @@ import Pagination from '../../ui/Pagination';
 
 import { useActionCenterV4Items } from '../../hooks/v4';
 import { COPY, KIND_LABELS, LIFECYCLE_ORDER, PAGE_SIZE } from './constants';
-import { ItemsTable } from './components/ItemsTable';
-import { ItemDetailDrawer } from './components/ItemDetailDrawer';
-import { ListFilterBar } from './components/ListFilterBar';
-import { Masthead } from './components/Masthead';
-import { NarrativeBar } from './components/NarrativeBar';
-import { PilotageTabs } from './components/PilotageTabs';
+import { ItemsTable } from './components/items/ItemsTable';
+import { ItemDetailDrawer } from './components/drawer/ItemDetailDrawer';
+import { ListFilterBar } from './components/narrative/ListFilterBar';
+import { Masthead } from './components/narrative/Masthead';
+import { NarrativeBar } from './components/narrative/NarrativeBar';
+import { PilotageTabs } from './components/narrative/PilotageTabs';
 
 /**
  * M2-5.2 → M2-5.10.A.bis — Page liste du Centre d'Action V4 (`/action-center-v4`).

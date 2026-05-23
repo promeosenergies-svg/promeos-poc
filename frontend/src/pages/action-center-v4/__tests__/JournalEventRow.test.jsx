@@ -6,7 +6,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 
-import { JournalEventRow } from '../components/JournalEventRow';
+import { JournalEventRow } from '../components/narrative/JournalEventRow';
 
 afterEach(cleanup);
 

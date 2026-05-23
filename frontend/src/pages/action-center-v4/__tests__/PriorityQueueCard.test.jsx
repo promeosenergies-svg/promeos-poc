@@ -6,7 +6,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 
-import { PriorityQueueCard } from '../components/PriorityQueueCard';
+import { PriorityQueueCard } from '../components/narrative/PriorityQueueCard';
 
 afterEach(cleanup);
 

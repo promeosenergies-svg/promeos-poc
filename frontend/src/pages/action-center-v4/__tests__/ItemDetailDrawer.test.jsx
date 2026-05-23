@@ -24,7 +24,7 @@ import {
   useActionCenterV4Links,
   useActionCenterV4Impact,
 } from '../../../hooks/v4';
-import { ItemDetailDrawer } from '../components/ItemDetailDrawer';
+import { ItemDetailDrawer } from '../components/drawer/ItemDetailDrawer';
 
 const emptyList = {
   data: { items: [], total: 0 },

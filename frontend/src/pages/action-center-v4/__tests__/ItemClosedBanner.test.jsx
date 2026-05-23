@@ -6,7 +6,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, test } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 
-import { ItemClosedBanner } from '../components/ItemClosedBanner';
+import { ItemClosedBanner } from '../components/drawer/ItemClosedBanner';
 
 afterEach(cleanup);
 

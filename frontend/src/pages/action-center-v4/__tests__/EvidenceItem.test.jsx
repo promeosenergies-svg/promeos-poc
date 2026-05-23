@@ -11,7 +11,7 @@ vi.mock('../../../ui/ToastProvider', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
-import { EvidenceItem } from '../components/EvidenceItem';
+import { EvidenceItem } from '../components/drawer/EvidenceItem';
 
 afterEach(cleanup);
 

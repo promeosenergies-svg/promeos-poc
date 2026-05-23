@@ -16,7 +16,7 @@ vi.mock('../../../hooks/v4', () => ({
 }));
 
 import { useActionCenterV4Summary } from '../../../hooks/v4';
-import { EditorialNarrativeBlock } from '../components/EditorialNarrativeBlock';
+import { EditorialNarrativeBlock } from '../components/narrative/EditorialNarrativeBlock';
 import { setupHooksV4Mock } from './testUtils/v4Mocks';
 
 // M2-6.C.3 (commit 1/4) — pilote migration : `setupHooksV4Mock` centralisé

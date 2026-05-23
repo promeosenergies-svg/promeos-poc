@@ -20,7 +20,7 @@ import {
   useUploadEvidence,
   useVerifyEvidence,
 } from '../../../hooks/v4';
-import { EvidencesTab } from '../components/EvidencesTab';
+import { EvidencesTab } from '../components/drawer/EvidencesTab';
 
 const idleMutation = {
   execute: vi.fn(),

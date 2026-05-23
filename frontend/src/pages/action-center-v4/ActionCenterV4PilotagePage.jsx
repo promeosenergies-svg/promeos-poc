@@ -9,13 +9,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePilotageFilePrioritaire, useActionCenterV4Items } from '../../hooks/v4';
 import { exportComexPdf } from '../../services/api/v4ActionCenter';
 import { PILOTAGE_COPY, ROLE_LABELS_V4 } from './constants';
-import { EditorialNarrativeBlock } from './components/EditorialNarrativeBlock';
-import { ItemDetailDrawer } from './components/ItemDetailDrawer';
-import { Masthead } from './components/Masthead';
-import { NarrativeBar } from './components/NarrativeBar';
-import { PilotageTabs } from './components/PilotageTabs';
-import { PilotageViewToggle } from './components/PilotageViewToggle';
-import { PriorityQueueCard } from './components/PriorityQueueCard';
+import { EditorialNarrativeBlock } from './components/narrative/EditorialNarrativeBlock';
+import { ItemDetailDrawer } from './components/drawer/ItemDetailDrawer';
+import { Masthead } from './components/narrative/Masthead';
+import { NarrativeBar } from './components/narrative/NarrativeBar';
+import { PilotageTabs } from './components/narrative/PilotageTabs';
+import { PilotageViewToggle } from './components/narrative/PilotageViewToggle';
+import { PriorityQueueCard } from './components/narrative/PriorityQueueCard';
 
 /**
  * M2-5.10.D — Page Pilotage (`/action-center-v4/pilotage`) — vue Resp.

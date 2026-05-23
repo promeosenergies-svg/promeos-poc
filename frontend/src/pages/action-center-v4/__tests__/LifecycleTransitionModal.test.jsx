@@ -15,7 +15,7 @@ vi.mock('../../../ui/ToastProvider', () => ({
 
 import { useTransitionLifecycle } from '../../../hooks/v4';
 import { useToast } from '../../../ui/ToastProvider';
-import { LifecycleTransitionModal } from '../components/LifecycleTransitionModal';
+import { LifecycleTransitionModal } from '../components/modals/LifecycleTransitionModal';
 
 afterEach(cleanup);
 beforeEach(() => {

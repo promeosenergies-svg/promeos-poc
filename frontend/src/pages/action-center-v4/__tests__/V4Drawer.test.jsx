@@ -9,7 +9,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 
-import { V4Drawer } from '../components/V4Drawer';
+import { V4Drawer } from '../components/drawer/V4Drawer';
 
 afterEach(cleanup);
 

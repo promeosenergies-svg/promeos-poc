@@ -11,7 +11,7 @@ vi.mock('../../../hooks/v4', () => ({
 }));
 
 import { useActionCenterV4Impact } from '../../../hooks/v4';
-import { ImpactSection } from '../components/ImpactSection';
+import { ImpactSection } from '../components/drawer/ImpactSection';
 import { setupHooksV4Mock } from './testUtils/v4Mocks';
 
 afterEach(cleanup);

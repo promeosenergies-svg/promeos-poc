@@ -9,7 +9,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 
-import { ListFilterBar } from '../components/ListFilterBar';
+import { ListFilterBar } from '../components/narrative/ListFilterBar';
 
 afterEach(cleanup);
 

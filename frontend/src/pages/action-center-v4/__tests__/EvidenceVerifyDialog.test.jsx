@@ -15,7 +15,7 @@ vi.mock('../../../ui/ToastProvider', () => ({
 
 import { useVerifyEvidence } from '../../../hooks/v4';
 import { useToast } from '../../../ui/ToastProvider';
-import { EvidenceVerifyDialog } from '../components/EvidenceVerifyDialog';
+import { EvidenceVerifyDialog } from '../components/modals/EvidenceVerifyDialog';
 
 afterEach(cleanup);
 beforeEach(() => {

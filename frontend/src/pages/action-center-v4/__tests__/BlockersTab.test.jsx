@@ -16,7 +16,7 @@ vi.mock('../../../ui/ToastProvider', () => ({
 }));
 
 import { useActionCenterV4Blockers, useAddBlocker, useResolveBlocker } from '../../../hooks/v4';
-import { BlockersTab } from '../components/BlockersTab';
+import { BlockersTab } from '../components/drawer/BlockersTab';
 
 const idleMutation = {
   execute: vi.fn(),

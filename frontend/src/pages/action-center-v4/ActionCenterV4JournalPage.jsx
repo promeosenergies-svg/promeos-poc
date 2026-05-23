@@ -7,11 +7,11 @@ import ErrorState from '../../ui/ErrorState';
 import { useActionCenterV4Items, usePilotageJournal } from '../../hooks/v4';
 import { JOURNAL_COPY } from './constants';
 import { groupEventsByDay } from './utils/groupByDay';
-import { ItemDetailDrawer } from './components/ItemDetailDrawer';
-import { JournalEventRow } from './components/JournalEventRow';
-import { Masthead } from './components/Masthead';
-import { PilotageTabs } from './components/PilotageTabs';
-import { PilotageViewToggle } from './components/PilotageViewToggle';
+import { ItemDetailDrawer } from './components/drawer/ItemDetailDrawer';
+import { JournalEventRow } from './components/narrative/JournalEventRow';
+import { Masthead } from './components/narrative/Masthead';
+import { PilotageTabs } from './components/narrative/PilotageTabs';
+import { PilotageViewToggle } from './components/narrative/PilotageViewToggle';
 
 /**
  * M2-5.10.E — Page Pilotage / Journal (`/action-center-v4/pilotage/journal`).

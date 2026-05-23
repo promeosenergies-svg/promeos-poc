@@ -15,7 +15,7 @@ vi.mock('../../../ui/ToastProvider', () => ({
 
 import { useUploadEvidence } from '../../../hooks/v4';
 import { useToast } from '../../../ui/ToastProvider';
-import { EvidenceUploadModal } from '../components/EvidenceUploadModal';
+import { EvidenceUploadModal } from '../components/modals/EvidenceUploadModal';
 
 const pdfFile = () => new File(['x'], 'doc.pdf', { type: 'application/pdf' });
 

@@ -19,7 +19,7 @@ vi.mock('../../../hooks/v4', () => ({
 }));
 
 import { useActionCenterV4Summary } from '../../../hooks/v4';
-import { NarrativeBar } from '../components/NarrativeBar';
+import { NarrativeBar } from '../components/narrative/NarrativeBar';
 
 // M2-6.C.2 — wrapper Router pour `useNavigate()` dans la tuile « Sans
 // responsable » cliquable. MemoryRouter évite la dépendance window.location

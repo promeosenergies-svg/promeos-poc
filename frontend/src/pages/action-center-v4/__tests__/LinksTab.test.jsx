@@ -11,7 +11,7 @@ vi.mock('../../../hooks/v4', () => ({
 }));
 
 import { useActionCenterV4Links } from '../../../hooks/v4';
-import { LinksTab } from '../components/LinksTab';
+import { LinksTab } from '../components/drawer/LinksTab';
 
 afterEach(cleanup);
 beforeEach(() => {

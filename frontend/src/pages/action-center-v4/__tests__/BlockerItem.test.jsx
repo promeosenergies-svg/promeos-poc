@@ -11,7 +11,7 @@ vi.mock('../../../ui/ToastProvider', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
-import { BlockerItem } from '../components/BlockerItem';
+import { BlockerItem } from '../components/drawer/BlockerItem';
 
 afterEach(cleanup);
 

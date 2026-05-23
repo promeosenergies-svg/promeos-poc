@@ -22,7 +22,7 @@ vi.mock('../../../ui/ToastProvider', () => ({
 }));
 
 import { useAddBlocker, useTransitionLifecycle, useUploadEvidence } from '../../../hooks/v4';
-import { DrawerActions } from '../components/DrawerActions';
+import { DrawerActions } from '../components/drawer/DrawerActions';
 
 const idle = { execute: vi.fn(), loading: false, error: null, data: null, reset: vi.fn() };
 

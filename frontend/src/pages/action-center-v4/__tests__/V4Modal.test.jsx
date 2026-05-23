@@ -15,7 +15,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
-import { V4Modal } from '../components/V4Modal';
+import { V4Modal } from '../components/modals/V4Modal';
 
 afterEach(cleanup);
 

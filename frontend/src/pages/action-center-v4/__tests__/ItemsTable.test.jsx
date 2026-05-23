@@ -12,7 +12,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 
-import { ItemsTable } from '../components/ItemsTable';
+import { ItemsTable } from '../components/items/ItemsTable';
 
 afterEach(cleanup);
 

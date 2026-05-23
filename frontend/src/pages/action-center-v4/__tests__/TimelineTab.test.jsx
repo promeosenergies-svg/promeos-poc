@@ -11,7 +11,7 @@ vi.mock('../../../hooks/v4', () => ({
 }));
 
 import { useActionCenterV4Events } from '../../../hooks/v4';
-import { TimelineTab } from '../components/TimelineTab';
+import { TimelineTab } from '../components/drawer/TimelineTab';
 
 afterEach(cleanup);
 beforeEach(() => {

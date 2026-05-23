@@ -7,7 +7,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-import { PilotageViewToggle } from '../components/PilotageViewToggle';
+import { PilotageViewToggle } from '../components/narrative/PilotageViewToggle';
 
 afterEach(cleanup);
 

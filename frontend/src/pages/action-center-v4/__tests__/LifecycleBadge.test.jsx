@@ -6,7 +6,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, test } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 
-import { LifecycleBadge } from '../components/LifecycleBadge';
+import { LifecycleBadge } from '../components/items/LifecycleBadge';
 
 // Pas de `globals: true` dans vite.config → l'auto-cleanup de RTL ne
 // s'enregistre pas seul ; on le branche explicitement (anti-DOM accumulé).

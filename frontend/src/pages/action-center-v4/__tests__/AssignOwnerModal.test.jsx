@@ -15,7 +15,7 @@ vi.mock('../../../ui/ToastProvider', () => ({
 
 import { useAssignOwner } from '../../../hooks/v4';
 import { useToast } from '../../../ui/ToastProvider';
-import { AssignOwnerModal } from '../components/AssignOwnerModal';
+import { AssignOwnerModal } from '../components/modals/AssignOwnerModal';
 
 const UNASSIGNED_ITEM = {
   id: 'item-1',

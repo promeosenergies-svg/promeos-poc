@@ -15,7 +15,7 @@ vi.mock('../../../ui/ToastProvider', () => ({
 
 import { useAddBlocker } from '../../../hooks/v4';
 import { useToast } from '../../../ui/ToastProvider';
-import { BlockerAddModal } from '../components/BlockerAddModal';
+import { BlockerAddModal } from '../components/modals/BlockerAddModal';
 
 afterEach(cleanup);
 beforeEach(() => {
