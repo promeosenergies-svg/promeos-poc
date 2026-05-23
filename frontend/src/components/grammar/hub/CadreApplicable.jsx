@@ -8,10 +8,18 @@
  *   applicability     — dict { DT: [{...}], BACS: [...], ... } provenant
  *                       du backend (ADR-024 schema RuleApplicability.to_dict)
  *   maturity          — float [0..1] (rendu en %)
- *   onRuleClick       — callback optionnel (rule_code) → drawer reason_human
+ *   onRuleClick       — callback optionnel (rule_code) — appelé si fourni,
+ *                       sinon comportement par défaut P0-B : ouvre un panneau
+ *                       interne "Données à compléter" avec CTA vers
+ *                       /patrimoine?incomplete=<RULE>.
  *
- * Display-only.
+ * P0-B 2026-05-23 : interactif — clic sur une carte DATA_MISSING affiche
+ * un panneau listant les sites concernés + leur champ manquant + un CTA
+ * navigant vers la page Patrimoine filtrée.
  */
+
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const RULE_LABELS = {
   DT: { code: 'DT', label: 'Décret tertiaire' },
@@ -42,6 +50,35 @@ function summarizeRule(entries) {
 export default function CadreApplicable({ applicability = {}, maturity, onRuleClick }) {
   const rules = ['DT', 'BACS', 'APER', 'SME', 'BEGES'];
   const maturityPct = Math.round((maturity ?? 0) * 100);
+  const [openRule, setOpenRule] = useState(null);
+  // useNavigate peut être undefined hors RouterProvider (cas Storybook/test isolé) → fallback.
+  let navigate = null;
+  try {
+    navigate = useNavigate();
+  } catch (_e) {
+    navigate = null;
+  }
+
+  const handleTileClick = (rule, summary) => {
+    if (onRuleClick) {
+      onRuleClick(rule, summary);
+      return;
+    }
+    if (summary.status === 'data_missing') {
+      setOpenRule(rule);
+    }
+  };
+
+  const handleClose = () => setOpenRule(null);
+
+  const handleCtaNavigate = (rule) => {
+    handleClose();
+    if (navigate) {
+      navigate(`/patrimoine?incomplete=${rule}`);
+    } else if (typeof window !== 'undefined') {
+      window.location.assign(`/patrimoine?incomplete=${rule}`);
+    }
+  };
 
   return (
     <section
@@ -80,11 +117,12 @@ export default function CadreApplicable({ applicability = {}, maturity, onRuleCl
           const meta = RULE_LABELS[rule];
           const summary = summarizeRule(applicability[rule]);
           const tierClass = STATUS_TIER[summary.status] || 'unknown';
+          const isClickable = onRuleClick != null || summary.status === 'data_missing';
           return (
             <button
               type="button"
               key={rule}
-              onClick={onRuleClick ? () => onRuleClick(rule) : undefined}
+              onClick={isClickable ? () => handleTileClick(rule, summary) : undefined}
               className={`sol-cadre-rule sol-cadre-rule--${tierClass} rounded-md p-3 text-left transition`}
               style={{
                 background:
@@ -102,10 +140,11 @@ export default function CadreApplicable({ applicability = {}, maturity, onRuleCl
                 borderWidth: '1px',
                 borderStyle: 'solid',
                 opacity: tierClass === 'not_applicable' ? 0.55 : 1,
-                cursor: onRuleClick ? 'pointer' : 'default',
+                cursor: isClickable ? 'pointer' : 'default',
               }}
               data-rule={rule}
               data-status={summary.status}
+              data-actionable={isClickable ? 'true' : 'false'}
             >
               <span
                 style={{
@@ -145,6 +184,15 @@ export default function CadreApplicable({ applicability = {}, maturity, onRuleCl
           );
         })}
       </div>
+
+      {openRule && !onRuleClick && (
+        <DataMissingPanel
+          rule={openRule}
+          entries={(applicability[openRule] || []).filter((e) => e.status === 'data_missing')}
+          onClose={handleClose}
+          onCta={() => handleCtaNavigate(openRule)}
+        />
+      )}
     </section>
   );
 }
@@ -162,4 +210,142 @@ function labelForStatus(status, count) {
     default:
       return '—';
   }
+}
+
+/**
+ * Panneau "Données à compléter" — interne à CadreApplicable.
+ *
+ * Affiche : titre règle, liste des sites concernés avec leur champ manquant
+ * et explication courte FR, puis un seul CTA "Compléter dans Patrimoine"
+ * qui navigue vers `/patrimoine?incomplete=<RULE>`.
+ *
+ * Pas de nouvelle page créée — réutilise Patrimoine existante.
+ */
+function DataMissingPanel({ rule, entries, onClose, onCta }) {
+  const meta = RULE_LABELS[rule];
+  const ctaLabel =
+    entries.find((e) => e.cta_label_fr)?.cta_label_fr || 'Compléter dans Patrimoine';
+  return (
+    <div
+      role="dialog"
+      aria-label={`Données à compléter — ${meta.label}`}
+      data-component="CadreApplicable.DataMissingPanel"
+      data-rule={rule}
+      className="mt-4 rounded-md border p-4"
+      style={{
+        background: 'var(--sol-bg-paper, #FAF7F2)',
+        borderColor: 'var(--sol-attention, #C68A3D)',
+      }}
+    >
+      <header className="mb-3 flex items-center justify-between">
+        <h3
+          style={{
+            fontFamily: 'var(--sol-font-display, serif)',
+            fontSize: '15px',
+            color: 'var(--sol-ink-900, #1A1612)',
+            margin: 0,
+          }}
+        >
+          Données à compléter — {meta.label}
+        </h3>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fermer"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '14px',
+            color: 'var(--sol-ink-500, #7A6E5C)',
+          }}
+        >
+          ✕
+        </button>
+      </header>
+
+      {entries.length === 0 ? (
+        <p style={{ fontSize: '13px', color: 'var(--sol-ink-700, #3D362C)' }}>
+          Aucune donnée à compléter pour cette règle.
+        </p>
+      ) : (
+        <ul
+          style={{
+            listStyle: 'none',
+            padding: 0,
+            margin: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          {entries.map((e) => (
+            <li
+              key={`${e.scope_level}-${e.scope_id}-${e.reason_code}`}
+              data-scope-id={e.scope_id}
+              data-remediation-field={e.remediation_field}
+              style={{
+                background: 'var(--sol-bg-card, #FFFFFF)',
+                border: '1px solid var(--sol-ink-200, #E5DDD0)',
+                borderRadius: '6px',
+                padding: '10px 12px',
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: 'var(--sol-font-mono, monospace)',
+                  fontSize: '11px',
+                  color: 'var(--sol-ink-500, #7A6E5C)',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                {e.scope_label || `${e.scope_level} #${e.scope_id ?? '—'}`}
+              </div>
+              <div
+                style={{
+                  fontSize: '13.5px',
+                  color: 'var(--sol-ink-900, #1A1612)',
+                  marginTop: '2px',
+                  fontWeight: 600,
+                }}
+              >
+                {e.remediation_label_fr || 'Donnée manquante'}
+              </div>
+              {e.remediation_hint_fr && (
+                <p
+                  style={{
+                    fontSize: '12.5px',
+                    color: 'var(--sol-ink-700, #3D362C)',
+                    margin: '4px 0 0',
+                  }}
+                >
+                  {e.remediation_hint_fr}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-4 flex justify-end">
+        <button
+          type="button"
+          onClick={onCta}
+          data-action="cadre-applicable-cta-patrimoine"
+          style={{
+            background: 'var(--sol-attention, #C68A3D)',
+            color: '#FFFFFF',
+            border: 'none',
+            padding: '8px 14px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: 600,
+          }}
+        >
+          {ctaLabel}
+        </button>
+      </div>
+    </div>
+  );
 }

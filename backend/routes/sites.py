@@ -1,5 +1,17 @@
 """
-PROMEOS - Routes API pour les Sites
+PROMEOS - Routes API pour les Sites (LEGACY — en sunset).
+
+P0-A 2026-05-23 (`claude/patrimoine-p0a-clean-routes-audit-cascade`) :
+3 endpoints retournent désormais HTTP 410 Gone — frontend canonisé sur
+`/api/patrimoine/sites` (GET premium) et `/api/patrimoine/crud/sites/*`
+(POST/PATCH/DELETE + quick-create).
+
+Référence canonique : `docs/dev/patrimoine_routes_canonical.md`.
+
+Les endpoints `GET /api/sites/{site_id}/stats|guardrails|compliance` restent
+encore opérationnels (replacements non encore livrés côté `/api/patrimoine/`)
+mais sont marqués deprecated. Ils basculeront en 410 dans un futur sprint
+quand les équivalents premium seront en place.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -21,335 +33,76 @@ from models import (
     TypeObligation,
     not_deleted,
 )
-from routes.schemas import SiteResponse, SiteListResponse, SiteStats, SiteComplianceResponse, BatimentResponse
-from services.compliance_utils import compute_action_recommandee, _ACTION_TEMPLATES
+from routes.schemas import SiteResponse, SiteStats, SiteComplianceResponse
+from services.compliance_utils import _ACTION_TEMPLATES
 from services.error_catalog import business_error
 from middleware.auth import get_optional_auth, AuthContext
-from services.iam_scope import check_site_access, apply_scope_filter
-from services.scope_utils import resolve_org_id
-from pydantic import BaseModel, Field
-from typing import List, Optional
+from services.iam_scope import check_site_access
+from typing import Optional
 from sqlalchemy import func
 from datetime import datetime, timedelta
-from schemas.patrimoine_schemas import QuickCreateSiteRequest as StrictQuickCreateRequest
 
 router = APIRouter(prefix="/api/sites", tags=["Sites"])
 
 
-class SiteCreateRequest(BaseModel):
-    nom: str = Field(..., min_length=1, max_length=300)
-    type: Optional[str] = Field(None, max_length=50)
-    naf_code: Optional[str] = Field(None, max_length=10)
-    adresse: Optional[str] = Field(None, max_length=500)
-    code_postal: Optional[str] = Field(None, max_length=10)
-    ville: Optional[str] = Field(None, max_length=200)
-    surface_m2: Optional[float] = Field(None, ge=0, le=1e7)
+# ─────────────────────────────────────────────────────────────────────────────
+# HTTP 410 GONE — routes canonisées dans /api/patrimoine/*
+# ─────────────────────────────────────────────────────────────────────────────
 
 
-class QuickCreateRequest(BaseModel):
-    """Création rapide de site — 2 champs obligatoires, tout le reste auto-généré."""
+_GONE_MESSAGE = "Cette route est dépréciée. Utilisez le parcours Patrimoine."
 
-    nom: str = Field(..., min_length=1, max_length=300, description="Nom du site")
-    usage: Optional[str] = Field(None, max_length=50, description="Usage (bureau, commerce, etc.)")
-    adresse: Optional[str] = Field(None, max_length=500)
-    code_postal: Optional[str] = Field(None, max_length=10)
-    ville: Optional[str] = Field(None, max_length=200)
-    surface_m2: Optional[float] = Field(None, ge=0, le=1e7)
-    siret: Optional[str] = Field(None, max_length=14)
-    naf_code: Optional[str] = Field(None, max_length=10)
-    skip_duplicate_check: bool = Field(False, description="Forcer la creation meme si doublon detecte")
+_GONE_REPLACEMENTS = {
+    "post_quick_create": "POST /api/patrimoine/crud/sites/quick-create",
+    "post_create": "POST /api/patrimoine/crud/sites",
+    "get_list": "GET /api/patrimoine/sites",
+}
+
+
+def _raise_gone(replacement_key: str) -> None:
+    """Retourne HTTP 410 Gone avec un message standardisé FR + pointeur canonique."""
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "code": "PATRIMOINE_ROUTE_GONE",
+            "message": _GONE_MESSAGE,
+            "replacement": _GONE_REPLACEMENTS[replacement_key],
+            "doc": "docs/dev/patrimoine_routes_canonical.md",
+        },
+    )
 
 
 @router.post(
-    "/quick-create", status_code=201, deprecated=True, summary="[DEPRECATED] Use /api/patrimoine/sites/quick-create"
+    "/quick-create",
+    status_code=410,
+    deprecated=True,
+    summary="[GONE] Use /api/patrimoine/crud/sites/quick-create",
 )
-def quick_create_site(
-    body: StrictQuickCreateRequest,
-    request: Request,
-    db: Session = Depends(get_db),
-    auth: Optional[AuthContext] = Depends(get_optional_auth),
-):
-    """Création rapide d'un site B2B France.
-
-    Auto-crée la hiérarchie (Société + Entité juridique + Portefeuille)
-    si aucune n'existe. Auto-provisionne bâtiment + obligations + compliance.
-    Détecte les doublons par nom + code postal.
-    """
-    from services.onboarding_service import (
-        create_organisation_full,
-        create_site_from_data,
-        provision_site,
-    )
-
-    # ── 1. Résoudre ou créer l'organisation ────────────────────────────
-    org_id = None
-    auto_created = {}
-
-    # Essayer de résoudre l'org depuis le scope (header X-Org-Id)
-    try:
-        org_id = resolve_org_id(request, auth, db)
-    except Exception:
-        pass
-
-    if org_id is None:
-        # Chercher une org existante (cas : quick-create précédent sans scope)
-        existing_org = (
-            db.query(Organisation)
-            # Sprint C-8 Phase 8.3 — D-Audit-Phase7-Org-Actif-Idiomatic-001 P1 CR : .is_(True) idiomatique
-            .filter(Organisation.actif.is_(True), not_deleted(Organisation))
-            .first()
-        )
-        if existing_org:
-            org_id = existing_org.id
-        else:
-            # Aucune org → auto-créer "Mon entreprise"
-            result = create_organisation_full(
-                db=db,
-                org_nom="Mon entreprise",
-                org_siren="000000000",
-                org_type_client="tertiaire",
-                portefeuilles_data=[{"nom": "Principal"}],
-            )
-            org_id = result["organisation_id"]
-            auto_created["organisation"] = result["organisation_id"]
-            auto_created["entite_juridique"] = result["entite_juridique_id"]
-            auto_created["portefeuille"] = result["default_portefeuille_id"]
-            db.flush()
-
-    # ── 2. Trouver le portefeuille ─────────────────────────────────────
-    pf = (
-        db.query(Portefeuille)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .filter(EntiteJuridique.organisation_id == org_id, not_deleted(Portefeuille))
-        .first()
-    )
-    if not pf:
-        # Org existe mais pas de PF → en créer un
-        ej = (
-            db.query(EntiteJuridique)
-            .filter(EntiteJuridique.organisation_id == org_id, not_deleted(EntiteJuridique))
-            .first()
-        )
-        if not ej:
-            org = db.query(Organisation).filter(Organisation.id == org_id).first()
-            ej = EntiteJuridique(
-                organisation_id=org_id,
-                nom=org.nom if org else "Entité principale",
-                siren=org.siren if org and org.siren else "000000000",
-            )
-            db.add(ej)
-            db.flush()
-            auto_created["entite_juridique"] = ej.id
-        pf = Portefeuille(entite_juridique_id=ej.id, nom="Principal")
-        db.add(pf)
-        db.flush()
-        auto_created["portefeuille"] = pf.id
-
-    # ── 3. Anti-doublons (case-insensitive, 2 niveaux) ──────────────────
-    if not body.skip_duplicate_check:
-        nom_lower = func.lower(Site.nom)
-        body_nom_lower = body.nom.strip().lower()
-
-        # Niveau 1 : nom exact (CI) + même code postal → doublon fort
-        if body.code_postal:
-            exact = (
-                db.query(Site)
-                .filter(
-                    nom_lower == body_nom_lower,
-                    Site.code_postal == body.code_postal.strip(),
-                    not_deleted(Site),
-                )
-                .first()
-            )
-            if exact:
-                return {
-                    "status": "duplicate_detected",
-                    "level": "exact",
-                    "existing_site": {
-                        "id": exact.id,
-                        "nom": exact.nom,
-                        "ville": exact.ville,
-                        "code_postal": exact.code_postal,
-                    },
-                    "message": f'Un site "{exact.nom}" existe deja a {exact.ville or exact.code_postal}',
-                }
-
-        # Niveau 2 : nom exact (CI) + même ville → doublon probable
-        if body.ville:
-            similar = (
-                db.query(Site)
-                .filter(
-                    nom_lower == body_nom_lower,
-                    func.lower(Site.ville) == body.ville.strip().lower(),
-                    not_deleted(Site),
-                )
-                .first()
-            )
-            if similar:
-                return {
-                    "status": "duplicate_detected",
-                    "level": "similar",
-                    "existing_site": {
-                        "id": similar.id,
-                        "nom": similar.nom,
-                        "ville": similar.ville,
-                        "code_postal": similar.code_postal,
-                    },
-                    "message": f'Un site similaire "{similar.nom}" existe a {similar.ville}',
-                }
-
-    # ── 4. Créer le site + auto-provision ──────────────────────────────
-    site = create_site_from_data(
-        db=db,
-        portefeuille_id=pf.id,
-        nom=body.nom,
-        type_site=body.usage,
-        naf_code=body.naf_code,
-        adresse=body.adresse,
-        code_postal=body.code_postal,
-        ville=body.ville,
-        surface_m2=body.surface_m2,
-    )
-    if body.siret:
-        site.siret = body.siret
-    site.data_source = "manual"
-
-    prov = provision_site(db, site)
-
-    # Auto-evaluate compliance
-    from services.compliance_rules import evaluate_site as eval_rules
-
-    findings = eval_rules(db, site.id)
-
-    db.commit()
-
-    return {
-        "status": "created",
-        "site": {
-            "id": site.id,
-            "nom": site.nom,
-            "usage": site.type.value if site.type else None,
-            "adresse": site.adresse,
-            "code_postal": site.code_postal,
-            "ville": site.ville,
-            "surface_m2": site.surface_m2,
-            "actif": site.actif,
-        },
-        "auto_provisioned": {
-            "batiment_id": prov.get("batiment_id"),
-            "cvc_power_kw": prov.get("cvc_power_kw"),
-            "obligations": prov.get("obligations", 0),
-            "delivery_points": prov.get("delivery_points_created", 0),
-            "findings": len(findings),
-        },
-        "auto_created": auto_created,
-    }
+def quick_create_site_gone():
+    """HTTP 410 — endpoint relocalisé dans le namespace patrimoine canonique."""
+    _raise_gone("post_quick_create")
 
 
-@router.post("", deprecated=True, summary="[DEPRECATED] Use /api/patrimoine/sites")
-def create_site(
-    req: SiteCreateRequest,
-    request: Request,
-    db: Session = Depends(get_db),
-    auth: Optional[AuthContext] = Depends(get_optional_auth),
-):
-    """
-    Cree un site dans le premier portefeuille de l'organisation resolue.
-    Auto-provision: batiment + obligations + compliance recompute.
-    """
-    from models import Portefeuille, EntiteJuridique
-    from services.onboarding_service import create_site_from_data, provision_site
-
-    org_id = resolve_org_id(request, auth, db)
-    pf = (
-        db.query(Portefeuille)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-        .first()
-    )
-    if not pf:
-        raise HTTPException(status_code=400, detail="Aucun portefeuille pour cette organisation.")
-
-    site = create_site_from_data(
-        db=db,
-        portefeuille_id=pf.id,
-        nom=req.nom,
-        type_site=req.type,
-        naf_code=req.naf_code,
-        adresse=req.adresse,
-        code_postal=req.code_postal,
-        ville=req.ville,
-        surface_m2=req.surface_m2,
-    )
-    prov = provision_site(db, site)
-
-    # Auto-evaluate compliance rules
-    from services.compliance_rules import evaluate_site as eval_rules
-
-    findings = eval_rules(db, site.id)
-
-    db.commit()
-    return {
-        "id": site.id,
-        "nom": site.nom,
-        "type": site.type.value,
-        "findings_count": len(findings),
-        **prov,
-    }
+@router.post(
+    "",
+    status_code=410,
+    deprecated=True,
+    summary="[GONE] Use /api/patrimoine/crud/sites",
+)
+def create_site_gone():
+    """HTTP 410 — création canonisée sous /api/patrimoine/crud/sites."""
+    _raise_gone("post_create")
 
 
-@router.get("", response_model=SiteListResponse, deprecated=True, summary="[DEPRECATED] Use /api/patrimoine/sites")
-def get_sites(
-    request: Request,
-    skip: int = 0,
-    limit: int = 100,
-    org_id: Optional[int] = None,
-    ville: Optional[str] = None,
-    type: Optional[str] = None,
-    db: Session = Depends(get_db),
-    auth: Optional[AuthContext] = Depends(get_optional_auth),
-):
-    """
-    Liste les sites PROMEOS avec pagination et filtres.
-    Scope: org_id query param OR X-Org-Id header (header takes priority when both present).
-    """
-    query = not_deleted(db.query(Site), Site).options(
-        joinedload(Site.portefeuille).joinedload(Portefeuille.entite_juridique).joinedload(EntiteJuridique.organisation)
-    )
-
-    # DEMO_MODE-aware scope resolution (auth > org_id param > header > demo fallback > 401)
-    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
-
-    # Phase F.14 — audit user "scope bar 7 vs cockpit 5" : ce endpoint déprécié
-    # est encore consommé par frontend ScopeContext via getSites('/sites'). Il
-    # devait appliquer le filtre canonique `Site.is_demo == Organisation.is_demo`
-    # (cf services/scope_utils.sites_for_org_query F.4 commit ff2b3a4d) sinon
-    # les 2 sites "Site Test Phase 2" parasites pollueint sitesCount frontend.
-    query = (
-        query.join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-        .join(Organisation, Organisation.id == EntiteJuridique.organisation_id)
-        .filter(
-            EntiteJuridique.organisation_id == effective_org_id,
-            Site.is_demo == Organisation.is_demo,
-        )
-    )
-
-    # Site-level scope: restrict to accessible sites when auth has site_ids
-    if auth and auth.site_ids is not None:
-        query = query.filter(Site.id.in_(auth.site_ids))
-
-    # Additional filters
-    if ville:
-        query = query.filter(Site.ville.ilike(f"%{ville}%"))
-    if type:
-        query = query.filter(Site.type == type)
-
-    limit = min(limit, 500)  # cap pagination
-    total = query.count()
-    sites = query.offset(skip).limit(limit).all()
-
-    return {"total": total, "sites": sites}
+@router.get(
+    "",
+    status_code=410,
+    deprecated=True,
+    summary="[GONE] Use /api/patrimoine/sites",
+)
+def get_sites_gone():
+    """HTTP 410 — listing canonisé sous /api/patrimoine/sites (premium)."""
+    _raise_gone("get_list")
 
 
 @router.get(

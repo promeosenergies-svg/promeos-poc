@@ -52,6 +52,7 @@ import DrawerEditSite from '../components/DrawerEditSite';
 import DrawerAddCompteur from '../components/DrawerAddCompteur';
 import DrawerAddContrat from '../components/DrawerAddContrat';
 import SitesMap from '../components/patrimoine/SitesMap';
+import IncompleteBanner from '../components/patrimoine/IncompleteBanner';
 // V2 — composants retirés du flow principal (disponibles si besoin)
 // import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
 // import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
@@ -189,6 +190,8 @@ export default function Patrimoine() {
   const sortCol = sp.get('sort') || 'risque_eur';
   const sortDir = sp.get('dir') || 'desc';
   const activeView = sp.get('view') || '';
+  // P0-B 2026-05-23 — filtre "Données à compléter" depuis CadreApplicable (Cockpit).
+  const incompleteRule = sp.get('incomplete') || '';
 
   const [selected, setSelected] = useState(new Set());
   const { openActionDrawer } = useActionDrawer();
@@ -231,6 +234,44 @@ export default function Patrimoine() {
       setFavorites(new Set());
     }
   }, [favKey]);
+
+  // P0-B 2026-05-23 — sites incomplets pour la règle filtrée (?incomplete=<RULE>).
+  const [incompleteSiteIds, setIncompleteSiteIds] = useState(null); // null = pas de filtre actif
+  const [incompleteRemediation, setIncompleteRemediation] = useState(null); // hint FR pour bandeau
+  useEffect(() => {
+    if (!incompleteRule) {
+      setIncompleteSiteIds(null);
+      setIncompleteRemediation(null);
+      return;
+    }
+    let cancelled = false;
+    import('../services/api/conformite')
+      .then(({ getRegulatoryApplicability }) => getRegulatoryApplicability())
+      .then((data) => {
+        if (cancelled) return;
+        const entries = (data?.applicability?.[incompleteRule] || []).filter(
+          (e) => e.status === 'data_missing'
+        );
+        const ids = new Set(
+          entries
+            .filter((e) => e.scope_level === 'site' && e.scope_id != null)
+            .map((e) => e.scope_id)
+        );
+        setIncompleteSiteIds(ids);
+        const orgLevelEntry = entries.find(
+          (e) => e.scope_level === 'organisation' || e.scope_level === 'entite_juridique'
+        );
+        setIncompleteRemediation(entries[0] || orgLevelEntry || null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setIncompleteSiteIds(new Set());
+        setIncompleteRemediation(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [incompleteRule]);
 
   // V96 — Reconciliation badge per site
   const [reconMap, setReconMap] = useState({});
@@ -518,6 +559,13 @@ export default function Patrimoine() {
     }
     if (filterPortefeuille) r = r.filter((s) => String(s.portefeuille_id) === filterPortefeuille);
     if (filterAnomalies) r = r.filter((s) => (s.anomalies_count || 0) > 0);
+    // P0-B — filtre "données à compléter" pour une règle (ex : ?incomplete=DT).
+    // Si la règle est site-scopée : ne garde que les sites concernés.
+    // Si elle est org/EJ-scopée et qu'aucun site n'est listé : on ne filtre pas
+    // (le bandeau invitera à compléter au niveau organisation).
+    if (incompleteRule && incompleteSiteIds && incompleteSiteIds.size > 0) {
+      r = r.filter((s) => incompleteSiteIds.has(s.id));
+    }
     if (sortCol) {
       r.sort((a, b) => {
         const va = a[sortCol] ?? 0,
@@ -538,6 +586,8 @@ export default function Patrimoine() {
     filterAnomalies,
     sortCol,
     sortDir,
+    incompleteRule,
+    incompleteSiteIds,
   ]);
 
   const total = filtered.length;
@@ -775,6 +825,20 @@ export default function Patrimoine() {
           onRetry={solBriefingRefetch}
           omitHeader
           onNavigate={navigate}
+        />
+      )}
+      {/* P0-B 2026-05-23 — bandeau "données à compléter" piloté depuis CadreApplicable.
+          Apparaît quand l'URL contient ?incomplete=<RULE> (cf. CockpitStrategique). */}
+      {incompleteRule && (
+        <IncompleteBanner
+          rule={incompleteRule}
+          remediation={incompleteRemediation}
+          siteCount={incompleteSiteIds?.size ?? null}
+          onClear={() => {
+            const next = new URLSearchParams(sp);
+            next.delete('incomplete');
+            setSp(next);
+          }}
         />
       )}
       {/* ── Welcome empty state ── */}
@@ -2329,3 +2393,4 @@ function DrawerActionBtn({ icon: Icon, color, title, desc, onClick, primary }) {
     </button>
   );
 }
+

@@ -837,6 +837,155 @@ def cascade_recompute_on_change(
     return result
 
 
+def batch_cascade_recompute_sites(
+    db: Session,
+    *,
+    site_ids: list[int],
+    org_id: Optional[int],
+    user_id: Optional[int] = None,
+    correlation_id: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> dict:
+    """Recompute idempotent de la conformité sur N sites (P0-A 2026-05-23).
+
+    Pour chaque site :
+    - Si données amont présentes (surface, code_postal, …) → exécute les calculs
+      OPERAT/APER/intensité/compliance via les helpers privés du module,
+      compare au stockage actuel, ne persiste que les différences.
+    - Si données amont essentielles manquantes (surface notamment) → loggue un
+      audit `site.cascade_pending` pour signaler une conformité stale.
+
+    Idempotence : ré-exécuter la fonction sur les mêmes site_ids quand rien n'a
+    bougé en amont produit `status: up_to_date` (aucune écriture, aucun audit_log
+    superflu).
+
+    Wiring :
+    - POST `/api/import/sites` (bulk import)
+    - POST `/api/patrimoine/crud/sites/quick-create` (création individuelle)
+
+    Returns dict {processed, recomputed, pending_recompute, errors, sites: [...]}
+    """
+    from models import Site
+    from services.audit_log_service import log_patrimoine_change
+
+    summary = {
+        "processed": 0,
+        "recomputed": 0,
+        "pending_recompute": 0,
+        "up_to_date": 0,
+        "errors": 0,
+        "sites": [],
+    }
+
+    for site_id in site_ids:
+        summary["processed"] += 1
+        site = db.query(Site).filter(Site.id == site_id).first()
+        if not site:
+            summary["errors"] += 1
+            summary["sites"].append({"site_id": site_id, "status": "not_found"})
+            continue
+
+        # ── Garde amont : surface obligatoire pour recompute compliance/intensity ──
+        has_surface = bool(site.surface_m2 or site.tertiaire_area_m2)
+        if not has_surface:
+            log_patrimoine_change(
+                db,
+                user_id=user_id,
+                org_id=org_id,
+                entity_type="site",
+                entity_id=site.id,
+                action="site.cascade_pending",
+                detail={
+                    "reason": "missing_inputs",
+                    "missing": ["surface_m2 OR tertiaire_area_m2"],
+                },
+                correlation_id=correlation_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+            summary["pending_recompute"] += 1
+            summary["sites"].append(
+                {
+                    "site_id": site_id,
+                    "status": "pending_recompute",
+                    "missing": ["surface_m2|tertiaire_area_m2"],
+                }
+            )
+            continue
+
+        # ── Exécute tous les recomputes amont (helpers privés du module) ──
+        computed = {
+            "operat_zone_climatique": _resolve_zone(site),
+            "operat_palier_altitude": _resolve_palier(site),
+            "cabs_kwh_m2_an": _recompute_cabs(site, db),
+            "intensity_kwh_m2_total": _recompute_intensity_total(site),
+            "intensity_kwh_m2_tertiaire": _recompute_intensity_tertiaire(site),
+            "aper_assujetti": _resolve_aper_assujetti(site),
+            "aper_categorie_taille": _resolve_aper_taille(site),
+            "aper_deadline": _resolve_aper_deadline(site),
+        }
+
+        updated: dict = {}
+        for field_amont, new_value in computed.items():
+            if new_value is None and field_amont not in {"aper_assujetti"}:
+                # aper_assujetti = False est légitime, autres None = pas de recompute
+                continue
+            current = getattr(site, field_amont, None)
+            current_norm = current.value if hasattr(current, "value") else current
+            new_norm = new_value.value if hasattr(new_value, "value") else new_value
+            if current_norm != new_norm:
+                setattr(site, field_amont, new_value)
+                updated[field_amont] = {"before": current_norm, "after": new_norm}
+
+        # Compliance score : persisté en interne par sync_site_unified_score
+        try:
+            previous_compliance = site.compliance_score_composite
+            new_compliance = _recompute_compliance(site, db)
+            if new_compliance is not None and previous_compliance != new_compliance:
+                updated["compliance_score_composite"] = {
+                    "before": previous_compliance,
+                    "after": new_compliance,
+                }
+        except Exception as exc:  # noqa: BLE001 — résilience : conformité ne doit pas bloquer l'audit
+            _logger.warning("compliance recompute failed for site %s: %s", site_id, exc)
+            summary["errors"] += 1
+            summary["sites"].append({"site_id": site_id, "status": "compliance_error", "error": str(exc)})
+            continue
+
+        if updated:
+            db.flush()
+            log_patrimoine_change(
+                db,
+                user_id=user_id,
+                org_id=org_id,
+                entity_type="site",
+                entity_id=site.id,
+                action="site.cascade_recompute",
+                field_modified=",".join(updated.keys()) if len(updated) > 1 else next(iter(updated)),
+                old_value={k: v["before"] for k, v in updated.items()},
+                new_value={k: v["after"] for k, v in updated.items()},
+                correlation_id=correlation_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                detail=updated,
+            )
+            summary["recomputed"] += 1
+            summary["sites"].append(
+                {
+                    "site_id": site_id,
+                    "status": "recomputed",
+                    "fields_updated": list(updated.keys()),
+                }
+            )
+        else:
+            summary["up_to_date"] += 1
+            summary["sites"].append({"site_id": site_id, "status": "up_to_date"})
+
+    db.commit()
+    return summary
+
+
 def cascade_impact_preview(
     db: Session,
     entity: Any,

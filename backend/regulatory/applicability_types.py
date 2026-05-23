@@ -116,8 +116,16 @@ class RuleApplicability:
             )
 
     def to_dict(self) -> dict[str, Any]:
-        """Sérialisation JSON-ready pour le payload endpoint."""
-        return {
+        """Sérialisation JSON-ready pour le payload endpoint.
+
+        P0-B 2026-05-23 — enrichissement DATA_MISSING : si `status == DATA_MISSING`
+        et que `reason_code` est répertorié dans
+        `backend/regulatory/remediation.REASON_CODE_TO_REMEDIATION`, les champs
+        `remediation_field`, `remediation_level`, `remediation_label_fr`,
+        `remediation_hint_fr`, `cta_label_fr` et `affected_site_ids` sont
+        automatiquement ajoutés à la sortie. Les rules n'ont rien à modifier.
+        """
+        payload: dict[str, Any] = {
             "rule_code": self.rule_code.value,
             "rule_version": self.rule_version,
             "scope_level": self.scope_level,
@@ -134,3 +142,17 @@ class RuleApplicability:
             "deadline": self.deadline.isoformat() if self.deadline else None,
             "_audit": dict(self._audit),
         }
+
+        if self.status == ApplicabilityStatus.DATA_MISSING:
+            from regulatory.remediation import get_remediation
+
+            remediation = get_remediation(self.reason_code)
+            if remediation is not None:
+                payload.update(remediation)
+                # affected_site_ids : pour les règles site-scopées,
+                # `scope_id` est l'identifiant du site concerné.
+                payload["affected_site_ids"] = (
+                    [self.scope_id] if self.scope_level == "site" and self.scope_id is not None else []
+                )
+
+        return payload

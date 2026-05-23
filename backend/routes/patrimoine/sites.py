@@ -94,6 +94,40 @@ def site_delivery_points(
     ]
 
 
+@router.get("/sites/{site_id}/contract-coverage")
+def site_contract_coverage(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Vue agrégée de la couverture contractuelle d'un site (P0-C 2026-05-23).
+
+    Délègue à `services.contract_coverage_service.compute_site_contract_coverage`.
+    Org-scoping cardinal via `_load_site_with_org_check` (Phase E IDOR).
+
+    Réponse FR (labels utilisateurs prêts à afficher) :
+    - status ∈ {contrat_rattache, contrat_partiel, contrat_manquant,
+      contrat_expire, contrat_incoherent}
+    - delivery_points_active[].label_fr = "Point de livraison <énergie> — PRM/PDL/PCE <code>"
+    - contracts_active[].label_fr = "<Fournisseur> — <Énergie> (contrat n° <ref>)"
+    - actions[].label_fr = phrase d'action prête à afficher
+    - ready_for_billing / ready_for_purchase booléens
+
+    Consommé par :
+    - `SiteContractsSummary.jsx` (Site360 onglet contrats)
+    - `perimeter_check.py` (validation facture)
+    - `patrimoine_anomalies._rule_delivery_point_without_contract`
+    """
+    from services.contract_coverage_service import compute_site_contract_coverage
+
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
+
+    coverage = compute_site_contract_coverage(db, site_id=site_id, org_id=org_id)
+    return coverage.to_dict()
+
+
 # ========================================
 # KPIs (server-side aggregation)
 # ========================================

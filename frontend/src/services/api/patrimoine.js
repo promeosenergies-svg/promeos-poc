@@ -5,20 +5,23 @@
 import api, { cachedGet } from './core';
 
 // ── Sites ──
+// P0-A 2026-05-23 : routes canonisées sous /api/patrimoine/* (legacy /api/sites/* → 410).
+// Référence : docs/dev/patrimoine_routes_canonical.md
 export const getSites = async (params = {}) => {
-  const response = await cachedGet('/sites', { params });
+  const response = await cachedGet('/patrimoine/sites', { params });
   return response.data;
 };
 export const getSite = async (id) => {
-  const response = await api.get(`/sites/${id}`);
+  const response = await api.get(`/patrimoine/sites/${id}`);
   return response.data;
 };
 export const getSiteStats = async (id) => {
   const response = await api.get(`/sites/${id}/stats`);
   return response.data;
 };
-export const createSite = (data) => api.post('/sites', data).then((r) => r.data);
-export const quickCreateSite = (data) => api.post('/sites/quick-create', data).then((r) => r.data);
+export const createSite = (data) => api.post('/patrimoine/crud/sites', data).then((r) => r.data);
+export const quickCreateSite = (data) =>
+  api.post('/patrimoine/crud/sites/quick-create', data).then((r) => r.data);
 
 // ── Geocoding ──
 export const geocodeOneSite = async (siteId, force = false) => {
