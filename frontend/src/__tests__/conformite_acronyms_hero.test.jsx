@@ -37,7 +37,10 @@ describe('Conformité — acronymes hero (P0-4)', () => {
     // Le hero (lignes ~640-670 ConformitePage) ne doit pas contenir " DT, " ou similaires
     // sans <Term acronyme="...">. On vérifie que les 6 acronymes apparaissent UNIQUEMENT
     // via <Term acronyme="...">  dans le bloc italicHook.
-    const heroMatch = CONFORMITE_PAGE.match(/italicHook=\{[\s\S]{0,800}\)\}/);
+    // Bornage strict du bloc italicHook = jusqu'au prochain `subtitle=` (prop suivante
+    // du SolPageHeader), pour ne pas dépendre de la taille de la prop `actions=` ni
+    // d'éventuels boutons ajoutés en dessous (Conformité P1 2026-05-23).
+    const heroMatch = CONFORMITE_PAGE.match(/italicHook=\{[\s\S]+?subtitle=/);
     expect(heroMatch).not.toBeNull();
     const heroBlock = heroMatch[0];
     // Chaque acronyme doit apparaître via <Term acronyme="..."> dans le hero

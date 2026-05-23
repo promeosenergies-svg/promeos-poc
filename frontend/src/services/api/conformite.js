@@ -270,3 +270,15 @@ export const getRegulatoryApplicability = (params = {}) =>
 // Consommé par SiteContractsSummary.jsx + drawer Site360.
 export const getSiteContractCoverage = (siteId) =>
   api.get(`/patrimoine/sites/${siteId}/contract-coverage`).then((r) => r.data);
+
+// ── Conformité P1 — Sync Remediation Actions (2026-05-23) ────────────────
+// Ferme la boucle CadreApplicable DATA_MISSING → ActionCenterItem.
+// Crée 1 ActionCenterItem par (reason_code, scope_id) manquant. Idempotent
+// par signature (org_id + kind + domain + title). Retourne :
+// `{ org_id, created: [...], skipped_existing: [...], skipped_resolved: [...], summary: {...}, computed_at }`.
+export const syncConformiteRemediationActions = (idempotencyKey = null) =>
+  api
+    .post('/conformite/sync-remediation-actions', null, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+    })
+    .then((r) => r.data);

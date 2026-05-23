@@ -109,6 +109,10 @@ def _org_to_dict(org: Organisation) -> dict:
         "siren": org.siren,
         "actif": org.actif,
         "is_demo": org.is_demo,
+        # Conformité P1 2026-05-23 — exposés au FE pour formulaire SMÉ/BEGES.
+        "effectif_total": org.effectif_total,
+        "chiffre_affaires_eur": org.chiffre_affaires_eur,
+        "bilan_eur": org.bilan_eur,
     }
 
 
@@ -121,6 +125,10 @@ def _entite_to_dict(e: EntiteJuridique) -> dict:
         "siret": e.siret,
         "naf_code": e.naf_code,
         "region_code": e.region_code,
+        # Conformité P1 2026-05-23 — exposés au FE pour formulaire SMÉ.
+        "consommation_annuelle_moyenne_3y_gwh": e.consommation_annuelle_moyenne_3y_gwh,
+        "iso_50001_actif": e.iso_50001_actif,
+        "iso_50001_date_validite": e.iso_50001_date_validite.isoformat() if e.iso_50001_date_validite else None,
     }
 
 

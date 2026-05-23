@@ -880,7 +880,19 @@ async def verify_item_evidence(
         )
 
     now = datetime.now(UTC)
-    expires_at = payload.expires_at or (now + timedelta(days=90))
+    # Conformité P1 2026-05-23 — durée de validité par règle réglementaire
+    # (ISO 50001 = 3 ans, audit énergétique = 4 ans, OPERAT/APER = 1 an,
+    # défaut = 90j). Le client peut toujours override via payload.expires_at.
+    if payload.expires_at:
+        expires_at = payload.expires_at
+    else:
+        from services.v4.evidence_validity_service import compute_default_expires_at
+
+        parent_item = db.query(ActionCenterItem).filter(ActionCenterItem.id == evidence.action_item_id).first()
+        expires_at = compute_default_expires_at(
+            uploaded_at=now,
+            parent_item_title=parent_item.title if parent_item else None,
+        )
     verifier = _actor_uuid(auth)
     is_auto_verified = verifier is not None and evidence.uploaded_by == verifier
 
@@ -906,6 +918,90 @@ async def verify_item_evidence(
     db.commit()
     db.refresh(updated)
     return updated
+
+
+# ── GET /evidences/{id}/download — téléchargement preuve ──────────────
+
+
+@router.get(
+    "/evidences/{evidence_id}/download",
+    dependencies=[Depends(populate_org_context)],
+)
+@limiter.limit(QUOTA_READ_V4)
+async def download_evidence(
+    request: Request,
+    evidence_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _rbac=Depends(require_v4_role(Role.VIEWER, Role.USER, Role.ADMIN)),
+):
+    """Télécharge le fichier d'une evidence (Conformité P1 2026-05-23).
+
+    Org-scoping cardinal : le repository force `organisation_id = current_org_id()`
+    via `BaseRepositoryV4` — une evidence d'une autre org retourne 404 (anti-énumération).
+
+    Renvoie le binaire en streaming avec :
+    - `Content-Type` = `evidence.mime_type` (PDF/JPEG/PNG whitelist IE9)
+    - `Content-Disposition: attachment; filename="<original_filename>"`
+    """
+    import io as _io
+
+    from fastapi.responses import StreamingResponse
+
+    repo = ActionEvidenceRepository(db)
+    evidence = repo.get(evidence_id)
+    if evidence is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "EVIDENCE_NOT_FOUND",
+                "message": f"Preuve {evidence_id} introuvable.",
+                "hint": "Vérifiez l'identifiant ou votre périmètre d'accès.",
+            },
+        )
+    # Défense en profondeur : item parent doit appartenir à l'org (cohérent verify).
+    assert_parent_item_in_scope(db, evidence.action_item_id)
+
+    # Storage : pour P1, support `fs://` (Mois 2 ADR-029 §2.1). `s3://` viendra V4.1+.
+    storage_uri = evidence.storage_uri or ""
+    if storage_uri.startswith("fs://"):
+        fs_path = storage_uri.replace("fs://", "", 1)
+        # P1 minimal : protection path traversal basique (rejette ".." et chemins absolus suspects)
+        if ".." in fs_path:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "EVIDENCE_PATH_INVALID",
+                    "message": "Chemin de stockage de la preuve invalide (sécurité).",
+                },
+            )
+        try:
+            with open(fs_path, "rb") as fh:
+                content = fh.read()
+        except FileNotFoundError:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "code": "EVIDENCE_FILE_MISSING",
+                    "message": "Le fichier de la preuve est introuvable sur le serveur.",
+                    "hint": "Contactez l'administrateur — la preuve doit être ré-uploadée.",
+                },
+            )
+    else:
+        # storage_uri = "s3://..." ou autre → P1 ne supporte pas (P2)
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail={
+                "code": "EVIDENCE_STORAGE_NOT_SUPPORTED",
+                "message": ("Téléchargement non disponible pour ce type de stockage en P1. Support S3 prévu en P2."),
+            },
+        )
+
+    filename = evidence.original_filename or f"preuve-{evidence_id}.bin"
+    return StreamingResponse(
+        _io.BytesIO(content),
+        media_type=evidence.mime_type or "application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ── POST /items/{id}/blockers ────────────────────────────────────────
