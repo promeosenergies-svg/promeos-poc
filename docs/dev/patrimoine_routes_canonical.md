@@ -337,3 +337,135 @@ Patrimoine.jsx
   → bouton "Effacer le filtre" pour revenir à la vue complète
   → clic sur une ligne → DrawerEditSite (édition existante)
 ```
+
+---
+
+## 11. P0-C — Couverture contrat énergie des points de livraison (2026-05-23)
+
+### Règle produit
+
+> Un site ne peut pas être considéré **prêt facture / prêt achat / prêt audit**
+> si ses points de livraison actifs ne sont pas reliés à un contrat énergie
+> actif ou explicitement justifiés.
+
+### Terminologie UI canonique
+
+Toujours afficher **"Point de livraison"** en libellé principal, suivi du
+détail technique :
+
+| Énergie | Détail technique |
+|---|---|
+| Électricité | `PRM/PDL <code>` |
+| Gaz | `PCE <code>` |
+
+**Interdit** : afficher seulement `PRM` / `PCE` sans préfixe explicite. Le
+backend renvoie déjà le `label_fr` canonique (cf. `_dp_label_fr` dans
+`contract_coverage_service.py`).
+
+### Service SoT
+
+`backend/services/contract_coverage_service.py` →
+`compute_site_contract_coverage(db, site_id, org_id) -> SiteContractCoverage`.
+
+**Statuts cardinaux** (le plus dégradé domine) :
+
+| Statut | Sémantique |
+|---|---|
+| `contrat_rattache` | Tous les DP actifs ont au moins un contrat actif les couvrant, énergies cohérentes |
+| `contrat_partiel` | Au moins un DP actif sans contrat actif (couverture incomplète) |
+| `contrat_manquant` | DP actifs mais aucun contrat actif (jamais signé / tous expirés) |
+| `contrat_expire` | Site avec DP actifs et tous les contrats existants expirés |
+| `contrat_incoherent` | Mismatch énergie (élec ↔ PCE gaz) OU contrat liant un DP hors site |
+
+**Sortie API** :
+
+```json
+{
+  "site_id": 42,
+  "org_id": 1,
+  "status": "contrat_partiel",
+  "delivery_points_active": [
+    {
+      "id": 10,
+      "code": "14010101010101",
+      "energy_type": "elec",
+      "status": "active",
+      "label_fr": "Point de livraison électricité — PRM/PDL 14010101010101",
+      "covering_contract_ids": [100]
+    },
+    { "id": 11, "code": "GI222222", "energy_type": "gaz",
+      "label_fr": "Point de livraison gaz — PCE GI222222",
+      "covering_contract_ids": [] }
+  ],
+  "contracts_active": [
+    {
+      "id": 100,
+      "supplier_name": "EDF",
+      "energy_type": "elec",
+      "label_fr": "EDF — Électricité (contrat n° CTR-2025-001)",
+      "delivery_point_ids": [10],
+      "is_expired": false
+    }
+  ],
+  "uncovered_delivery_points": [...],
+  "expired_contracts": [],
+  "energy_mismatches": [],
+  "foreign_delivery_point_links": [],
+  "ready_for_billing": false,
+  "ready_for_purchase": false,
+  "actions": [
+    {
+      "code": "ATTACH_CONTRACT",
+      "label_fr": "Rattacher un contrat à Point de livraison gaz — PCE GI222222",
+      "target_type": "delivery_point",
+      "target_id": 11
+    }
+  ]
+}
+```
+
+### Endpoint canonique
+
+`GET /api/patrimoine/sites/{site_id}/contract-coverage` ([`backend/routes/patrimoine/sites.py:97`](../../backend/routes/patrimoine/sites.py)) — wrap léger autour de `compute_site_contract_coverage` avec org-scoping cardinal via `_load_site_with_org_check`. **Pas de route concurrente** : aucun endpoint n'agrégeait déjà cette info.
+
+### Anomalie patrimoine
+
+`_rule_delivery_point_without_contract` dans `backend/services/patrimoine_anomalies.py` (sévérité **HIGH**). Une anomalie par DP non couvert. Action : *"Rattacher un contrat"* → ouvre l'onglet contrats du site.
+
+### Perimeter check renforcé
+
+`backend/services/perimeter_check.py:check_perimeter` (P0-C) :
+- Si `contract_id=None` ET le site a au moins un DP actif → réponse `consistent=False`, `blocking=True`, `error_code="BILLING_CONTRACT_REQUIRED"`, message FR canonique : *"Impossible de fiabiliser cette facture : aucun contrat n'est rattaché au point de livraison."*
+- Si `contract_id=None` ET le site n'a aucun DP actif → toléré (rien à fiabiliser).
+- Sinon comportement préexistant (existence contrat / match site / couverture période).
+
+### UI
+
+`frontend/src/components/SiteContractsSummary.jsx` étendu :
+- **Bandeau de couverture** en haut avec badge selon `status` :
+  - `contrat_rattache` → vert *"Tous les points sont couverts"*
+  - `contrat_partiel` → orange *"Couverture partielle"* + liste des DP sans contrat
+  - `contrat_manquant` → rouge *"Aucun contrat rattaché"*
+  - `contrat_expire` → rouge *"Contrat expiré"*
+  - `contrat_incoherent` → rouge *"Incohérence énergie"* + message FR par mismatch
+- **Liste explicite des points couverts par contrat** (carte contrat → bullet list libellés FR canoniques).
+- **CTAs FR** : *"Rattacher un contrat"* (déclenche `onAttachContract` parent) / *"Corriger le rattachement"* (mismatch / foreign DP).
+
+Aucun écran nouveau — extension d'un composant existant déjà monté dans `Site360.jsx:75,2164`.
+
+### Réutilisation amont/aval
+
+- **Bill Intelligence** : `perimeter_check` retourne `error_code` et `blocking` standardisés — consommables par le pipeline d'ingestion factures pour bloquer ou flagger.
+- **Achat** : `ready_for_purchase` exposé par `compute_site_contract_coverage` — sera consommé par le module Achat (hors P0-C) pour filtrer les sites éligibles.
+- **Audit** : anomalie `DELIVERY_POINT_WITHOUT_CONTRACT` apparaît dans `compute_site_anomalies` qui alimente déjà la card "anomalies" de la table Patrimoine.
+
+### Tests verrous
+
+| Fichier | Tests |
+|---|---|
+| `tests/test_contract_coverage_service.py` | 12 (5 statuts cardinaux + multi-org + libellés FR + sérialisation JSON) |
+| `tests/test_patrimoine_anomalies_delivery_point_without_contract.py` | 5 (HIGH / couvert OK / 2 anomalies / DP inactif skip / site archivé skip) |
+| `tests/test_perimeter_check_requires_contract_when_delivery_points_active.py` | 6 (blocking + tolérance sans DP + contract OK + contract invalide + site inconnu + FR strict) |
+| `frontend/src/components/__tests__/SiteContractsSummary.test.jsx` | 7 (5 badges + CTA + liste DP par contrat) |
+
+Total **30 tests P0-C** verts. Baseline `test_perfect_score_no_anomalies` mise à jour pour intégrer la nouvelle règle (ajout d'un contrat couvrant le DP de la fixture "site parfait" — alignement avec la règle produit P0-C, pas régression).

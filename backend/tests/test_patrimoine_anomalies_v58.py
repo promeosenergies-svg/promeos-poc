@@ -501,7 +501,16 @@ class TestOrphansDetected:
 
 class TestCompletudeScore:
     def test_perfect_score_no_anomalies(self, db):
-        """Site complet → score 100."""
+        """Site complet → score 100.
+
+        P0-C 2026-05-23 : ajout d'un contrat actif couvrant le DP (sinon
+        la nouvelle règle DELIVERY_POINT_WITHOUT_CONTRACT abaisse le score).
+        """
+        from datetime import date, timedelta
+
+        from models import EnergyContract
+        from models.enums import BillingEnergyType
+        from models.patrimoine import ContractDeliveryPoint
         from services.patrimoine_anomalies import compute_site_anomalies
 
         _, _, site = _make_org_site(db, "Perfect")
@@ -528,6 +537,19 @@ class TestCompletudeScore:
             delivery_point_id=dp.id,
         )
         db.add(cpt)
+        db.flush()
+        # P0-C : contrat actif rattaché au DP pour score parfait
+        today = date.today()
+        ct = EnergyContract(
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            start_date=today - timedelta(days=30),
+            end_date=today + timedelta(days=365),
+        )
+        db.add(ct)
+        db.flush()
+        db.add(ContractDeliveryPoint(contract_id=ct.id, delivery_point_id=dp.id))
         db.commit()
 
         result = compute_site_anomalies(site.id, db)

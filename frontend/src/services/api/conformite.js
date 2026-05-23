@@ -264,3 +264,9 @@ export const deleteBacsExemption = (exemptionId) =>
 // P0-B 2026-05-23 : consommé par Patrimoine.jsx pour filtrer `?incomplete=<RULE>`.
 export const getRegulatoryApplicability = (params = {}) =>
   api.get('/regulatory/applicability', { params }).then((r) => r.data);
+
+// ── Contract Coverage (P0-C 2026-05-23) ────────────────────────────────────
+// Couverture contractuelle d'un site (points de livraison ↔ contrats).
+// Consommé par SiteContractsSummary.jsx + drawer Site360.
+export const getSiteContractCoverage = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/contract-coverage`).then((r) => r.data);

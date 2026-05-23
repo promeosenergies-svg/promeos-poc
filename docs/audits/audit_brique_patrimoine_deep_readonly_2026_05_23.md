@@ -661,3 +661,77 @@ Nouveau fichier `backend/regulatory/remediation.py` — SoT du mapping `reason_c
 - [x] Tests nouveaux verts (60/60).
 - [x] Tests P0-A non régressés (24/24 toujours verts + 288 baseline).
 
+---
+
+## 14. P0-C — Couverture contrat énergie des points de livraison (2026-05-23)
+
+> **Branche** : `claude/patrimoine-p0c-contract-coverage`
+> **Règle produit** : un site n'est pas prêt facture / achat / audit si ses points de livraison actifs ne sont pas reliés à un contrat énergie actif.
+> **Terminologie UI** : toujours afficher *"Point de livraison <énergie> — PRM/PDL <code>"* (élec) ou *"... — PCE <code>"* (gaz). Jamais PRM/PCE seuls.
+> **Référence canonique** : [`docs/dev/patrimoine_routes_canonical.md §11`](../dev/patrimoine_routes_canonical.md).
+
+### 14.1 Chantier 1 — `contract_coverage_service.py`
+
+Nouveau SoT [`backend/services/contract_coverage_service.py`](../../backend/services/contract_coverage_service.py) :
+
+- `compute_site_contract_coverage(db, site_id, org_id, *, today=None) -> SiteContractCoverage`
+- 5 statuts cardinaux : `contrat_rattache` / `contrat_partiel` / `contrat_manquant` / `contrat_expire` / `contrat_incoherent`
+- Dataclasses immuables : `DeliveryPointSummary`, `ContractSummary`, `EnergyMismatch`, `CoverageAction`, `SiteContractCoverage`
+- Libellés FR canoniques (`_dp_label_fr`, `_contract_label_fr`)
+- Flags `ready_for_billing` / `ready_for_purchase`
+- Actions typées (ATTACH_CONTRACT / RENEW_CONTRACT / FIX_ENERGY_MISMATCH / DETACH_FOREIGN_DP)
+- Réutilise sans dupliquer : `ContractDeliveryPoint`, `EnergyContract.delivery_points`, `DeliveryPoint`
+
+### 14.2 Chantier 2 — Endpoint canonique
+
+`GET /api/patrimoine/sites/{site_id}/contract-coverage` ajouté dans `backend/routes/patrimoine/sites.py`. Délégation pure au service, org-scoping cardinal. Aucun endpoint concurrent.
+
+### 14.3 Chantier 3 — Anomalie patrimoine
+
+`_rule_delivery_point_without_contract(site, db)` dans `backend/services/patrimoine_anomalies.py`. Sévérité **HIGH** (-15 score), une anomalie par DP non couvert, CTA *"Rattacher un contrat"* → `/sites/{id}?tab=contrats`. Délègue à `compute_site_contract_coverage`. Skip si site archivé.
+
+### 14.4 Chantier 4 — `perimeter_check` renforcé
+
+`backend/services/perimeter_check.py` : si `contract_id=None` ET le site a un DP actif → `consistent=False, blocking=True, error_code=BILLING_CONTRACT_REQUIRED` + message FR : *"Impossible de fiabiliser cette facture : aucun contrat n'est rattaché au point de livraison."* Si site sans DP : toléré.
+
+### 14.5 Chantier 5 — UI `SiteContractsSummary` étendue
+
+Composant déjà monté dans Site360 (aucun nouvel écran). Bandeau couverture avec 5 badges cardinaux FR + liste explicite des DP par contrat (libellés FR) + CTAs *"Rattacher un contrat"* / *"Corriger le rattachement"*. Service API ajouté `getSiteContractCoverage(siteId)`.
+
+### 14.6 Chantier 6 — Tests
+
+| Fichier | Tests | Type |
+|---|---|---|
+| `tests/test_contract_coverage_service.py` | 12 | Unit BE — 5 statuts + multi-org + libellés FR + JSON serializable |
+| `tests/test_patrimoine_anomalies_delivery_point_without_contract.py` | 5 | Unit BE — HIGH / couvert OK / 2 anomalies / DP inactif skip / site archivé skip |
+| `tests/test_perimeter_check_requires_contract_when_delivery_points_active.py` | 6 | Unit BE — blocking + tolérance sans DP + contract OK + invalide + site inconnu + FR strict |
+| `frontend/src/components/__tests__/SiteContractsSummary.test.jsx` | 7 | jsdom — 5 badges + CTA + liste DP par contrat |
+
+**Total P0-C : 30 tests verts** (23 BE + 7 FE).
+
+**Mise à jour fixture baseline** : `test_perfect_score_no_anomalies` intègre désormais un contrat actif couvrant le DP de la fixture "site parfait" — alignement avec la règle produit P0-C, pas régression.
+
+**Non-régression** : 254 patrimoine + 34 cascade = **288 baseline verts**. 27/27 FE P0-B+P0-C verts. P0-A 24/24 toujours verts.
+
+### 14.7 Impact règle produit
+
+| Critère "prêt …" | Avant P0-C | Après P0-C |
+|---|---|---|
+| Site prêt **facture** | Facture passait même sans contract_id | `perimeter_check` bloque avec `BILLING_CONTRACT_REQUIRED` si DP actifs |
+| Site prêt **achat** | Pas de signal | `ready_for_purchase` exposé par le service |
+| Site prêt **audit** | Anomalie absente | `DELIVERY_POINT_WITHOUT_CONTRACT` HIGH dans anomalies |
+| Couverture visible utilisateur | Count seulement | Badge cardinal + liste libellés FR par contrat |
+| UI multi-énergie | "PRM/PCE" sans contexte | "Point de livraison électricité — PRM/PDL …" / "... gaz — PCE ..." |
+
+### 14.8 Critères d'acceptation P0-C — checklist
+
+- [x] Un site affiche clairement ses contrats énergie (bandeau + liste DP par contrat).
+- [x] Chaque PRM/PDL/PCE actif est couvert, non couvert ou incohérent (5 statuts cardinaux).
+- [x] Une facture sans contrat lié ne peut pas être considérée fiable (`BILLING_CONTRACT_REQUIRED` + message FR).
+- [x] Bill Intelligence et Achat peuvent réutiliser le diagnostic (`error_code` + `blocking` + `ready_for_*`).
+- [x] Aucun endpoint concurrent.
+- [x] Aucun nouvel écran (extension `SiteContractsSummary` déjà monté).
+- [x] Aucun jargon non expliqué (test FR strict + `_dp_label_fr` SoT).
+- [x] Tests nouveaux verts (30/30).
+- [x] P0-A/P0-B non régressés (85 + 288 baseline).
+

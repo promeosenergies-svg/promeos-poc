@@ -307,6 +307,57 @@ def _rule_orphans_detected(
     )
 
 
+def _rule_delivery_point_without_contract(
+    site: Site,
+    db: Session,
+) -> List[Dict[str, Any]]:
+    """DELIVERY_POINT_WITHOUT_CONTRACT (P0-C 2026-05-23) : DP actif sans contrat couvrant.
+
+    Règle produit P0-C : *"Un site ne peut pas être considéré prêt facture/achat
+    /audit si ses points de livraison actifs ne sont pas reliés à un contrat
+    énergie actif"*.
+
+    Sévérité HIGH — bloque la fiabilité Bill Intelligence + Achat.
+    Délègue à `services.contract_coverage_service.compute_site_contract_coverage`
+    pour le calcul cardinal (zéro duplication de logique).
+
+    Une anomalie par DP non couvert (l'utilisateur peut traiter cas par cas).
+    """
+    if not site.actif:
+        return []
+    from services.contract_coverage_service import compute_site_contract_coverage
+
+    # org_id n'est pas requis pour le calcul (l'appelant a déjà validé
+    # le scope du site via assert_org_owns_site). On passe 0 par convention.
+    coverage = compute_site_contract_coverage(db=db, site_id=site.id, org_id=0)
+    anomalies: List[Dict[str, Any]] = []
+    for dp_summary in coverage.uncovered_delivery_points:
+        anomalies.append(
+            _anomaly(
+                code="DELIVERY_POINT_WITHOUT_CONTRACT",
+                severity="HIGH",
+                title_fr="Point de livraison sans contrat",
+                detail_fr=(
+                    f"{dp_summary.label_fr} est actif mais n'est rattaché à aucun "
+                    f"contrat énergie. La facturation ne peut pas être fiabilisée "
+                    f"sans contrat couvrant."
+                ),
+                evidence={
+                    "site_id": site.id,
+                    "delivery_point_id": dp_summary.id,
+                    "delivery_point_code": dp_summary.code,
+                    "delivery_point_energy": dp_summary.energy_type,
+                },
+                cta_label="Rattacher un contrat",
+                cta_to=f"/sites/{site.id}?tab=contrats",
+                fix_hint_fr=(
+                    "Ouvrez l'onglet contrats du site et créez ou rattachez un contrat couvrant ce point de livraison."
+                ),
+            )
+        )
+    return anomalies
+
+
 def _rule_tertiaire_surface_exceeds_total(site: Site) -> Optional[Dict[str, Any]]:
     """TERTIAIRE_SURFACE_EXCEEDS_TOTAL : surface tertiaire > surface totale (+5% tolérance)."""
     if not site.tertiaire_area_m2 or not site.surface_m2 or site.surface_m2 == 0:
@@ -395,6 +446,9 @@ def compute_site_anomalies(site_id: int, db: Session) -> Dict[str, Any]:
     r = _rule_orphans_detected(site, batiments, compteurs, delivery_points)
     if r:
         anomalies.append(r)
+
+    # P0-C 2026-05-23 — DP actif sans contrat énergie couvrant (HIGH).
+    anomalies.extend(_rule_delivery_point_without_contract(site, db))
 
     r = _rule_tertiaire_surface_exceeds_total(site)
     if r:
