@@ -82,7 +82,10 @@ from schemas.v4.action_center import (
 )
 from services.v4.file_validation import validate_file_upload
 from services.v4.impact_service import build_item_impact
-from services.v4.lifecycle_validator import validate_lifecycle_transition
+from services.v4.lifecycle_validator import (
+    validate_evidence_required_for_closure,
+    validate_lifecycle_transition,
+)
 from services.v4.link_target_validator import verify_link_target
 from services.v4.pdf_export_service import PdfExportError, generate_comex_pdf
 import unicodedata
@@ -669,6 +672,11 @@ async def transition_item_lifecycle(
     """
     old_state = parent.lifecycle_state
     validate_lifecycle_transition(old_state, payload.new_state, payload.closure_reason)
+
+    # Conformité P0 2026-05-23 : refuse RESOLVED sans preuve vérifiée si l'item
+    # est preuve-dépendant (kind=EVIDENCE_REQUEST ou domain=CONFORMITE).
+    if payload.new_state == LifecycleState.CLOSED:
+        validate_evidence_required_for_closure(db, parent, payload.closure_reason)
 
     # chk_closure_consistency : closed ⇒ closed_at + closure_reason NOT NULL.
     fields: dict = {"lifecycle_state": payload.new_state.value}

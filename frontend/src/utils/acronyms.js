@@ -219,6 +219,12 @@ export const ACRONYM_GLOSSARY = Object.freeze({
       "Démarche ISO 50001 — plan d'action énergétique pluriannuel + revue de direction + amélioration continue. Vaut audit énergétique réglementaire ETI.",
     source: 'ISO 50001 + Code Énergie L233-1',
   },
+  BEGES: {
+    long: "Bilan d'Émissions de Gaz à Effet de Serre",
+    meaning:
+      'Bilan obligatoire des émissions CO₂ scopes 1+2+3 pour les entreprises de plus de 500 salariés (250 en outre-mer). Publié tous les 3 ans sur la plateforme bilans-ges.ademe.fr (Décret 2022-982).',
+    source: 'Grenelle 2 art. 75 + Décret 2022-982',
+  },
   GTC: {
     long: 'Gestion Technique Centralisée',
     meaning:
