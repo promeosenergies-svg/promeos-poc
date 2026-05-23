@@ -22,13 +22,16 @@ describe('DrawerBreadcrumb', () => {
       organisation_name: 'GROUPE HELIOS',
       site_name: 'Paris — Bureaux',
       building_name: 'Bâtiment A',
-      meter_id: 'PRM-12345678',
+      meter_id: 'COMPTEUR-TEST-001', // M2-6.C.3 audit-fix P2 sécu — valeur fictive
+      // non-ambigüe (≠ format PDL Enedis 14
+      // chiffres). Doctrine RGPD HELIOS §6 : pas
+      // de PRM-style en repo (cf. M3 backlog).
     };
     render(<DrawerBreadcrumb item={item} />);
     expect(screen.getByText('GROUPE HELIOS')).toBeInTheDocument();
     expect(screen.getByText('Paris — Bureaux')).toBeInTheDocument();
     expect(screen.getByText('Bâtiment A')).toBeInTheDocument();
-    expect(screen.getByText('PRM-12345678')).toBeInTheDocument();
+    expect(screen.getByText('COMPTEUR-TEST-001')).toBeInTheDocument();
     const segments = screen.getAllByTestId('drawer-breadcrumb-segment');
     expect(segments).toHaveLength(4);
   });
@@ -38,11 +41,11 @@ describe('DrawerBreadcrumb', () => {
       organisation_name: 'GROUPE HELIOS',
       site_name: null,
       building_name: undefined,
-      meter_id: 'PRM-99',
+      meter_id: 'COMPTEUR-TEST-99',
     };
     render(<DrawerBreadcrumb item={item} />);
     expect(screen.getByText('GROUPE HELIOS')).toBeInTheDocument();
-    expect(screen.getByText('PRM-99')).toBeInTheDocument();
+    expect(screen.getByText('COMPTEUR-TEST-99')).toBeInTheDocument();
     expect(screen.queryByText(/undefined|null/)).not.toBeInTheDocument();
     const segments = screen.getAllByTestId('drawer-breadcrumb-segment');
     expect(segments).toHaveLength(2);

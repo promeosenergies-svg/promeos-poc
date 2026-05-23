@@ -369,12 +369,31 @@ de phase.
      `owner_id` + `owner_display_name` M2-5.11.E). Snapshot au POST/PATCH item.
   3. Alternative : enrichir endpoint GET item par join runtime (plus coûteux,
      préfère snapshots pour cohérence pattern V4).
+- **⚠ Sécu cardinale pré-activation (P1 audit M2-6.C.3)** :
+  Le format PDL Enedis (`PRM-XXXXXXXX`, 14 chiffres) est classé donnée
+  personnelle RGPD FR en contexte résidentiel + donnée sensible commerciale
+  B2B (identifie une installation précise). DrawerBreadcrumb actuel affiche
+  `meter_id` BRUT dans le DOM — récupérable par extensions navigateur, RUM
+  (Sentry/DataDog), captures partagées. Combiné à org+site+building, chaîne
+  d'identification complète (CWE-359 RGPD).
+  **AVANT activation BE M3+, implémenter une couche de masquage côté FE** :
+    a. Option A (simple) : afficher derniers 4 chiffres seulement
+       (`••••••5678` pour `PRM-12345678`)
+    b. Option B (référence) : remplacer par libellé fonctionnel
+       (`Compteur #<short-id>` non-PDL dérivé d'un hash stable)
+    c. Option C (CFO-friendly) : afficher uniquement nom site/bâtiment,
+       omettre `meter_id` du breadcrumb visuel
+  L'arbitrage A/B/C dépend de la valeur opérationnelle du compteur dans
+  le contexte UX (CFO Marie a-t-elle besoin de l'identifiant en clair ?).
 - **DoD** :
   - 4 champs snapshot exposés (Pydantic schema + repo mapping)
   - Seed `helios_use_case_a` populate ces 4 champs sur les 9 items
-  - DrawerBreadcrumb FE rend les segments sans modification (déjà prêt)
-  - Test Playwright étape 11 valide breadcrumb visible avec ≥2 segments
+  - **NOUVEAU** : DrawerBreadcrumb FE intègre couche de masquage `meter_id`
+    selon option A/B/C arbitrée (cf. P1 sécu ci-dessus)
   - Test contract BE schema : `assert organisation_name in response.json()`
+  - Test FE : assertion que le `meter_id` brut n'apparaît jamais dans le DOM
+    (uniquement la version masquée)
+  - Test Playwright étape 11 valide breadcrumb visible avec ≥2 segments
 - **Refs** :
   - M2-6.C.3 commit 4/4 (DrawerBreadcrumb FE livré silencieux MV3)
   - [`DrawerBreadcrumb.jsx`](frontend/src/pages/action-center-v4/components/drawer/DrawerBreadcrumb.jsx) FE composant
@@ -382,6 +401,36 @@ de phase.
   - ADR-029 §3.4 pattern UUID isolé + snapshot label
   - Surprise #6 du prompt M2-6.C.3 (anticipée et matérialisée)
 
-**Effort cumulé M2-6 → M3 : ~5-12 j/h** (6 items, fourchette large car
-M3-CFO-SEMANTIC dépend de l'arbitrage pilote et M3-BE-SQLITE-LOCK dépend
-de la repro).
+### M3-ROLE-LABELS-SOT-EXTRACTION — Extraire SoT mapping role→libellé FR  🟢 P2 · ~30 min
+
+- **Objet** : `ROLE_LABELS_V4` dans `constants/narrative.js` (M2-6.C.3 commit
+  2/4 split) est la **5ème copie** du même mapping rôle → libellé persona FR.
+  Les 4 autres copies vivent dans `AppShell.jsx`, `AdminRolesPage.jsx`,
+  `AdminAssignmentsPage.jsx`, `AdminUsersPage.jsx`. De plus, `energy_manager`
+  est traduit divergence : `'Responsable Énergie'` dans AppShell/Admin vs
+  `'Resp. Énergie'` dans `ROLE_LABELS_V4`. Le seuil documenté de 3 duplications
+  (cf. comment narrative.js:138) est dépassé.
+- **Origine** : Audit code-reviewer M2-6.C.3 P1 — la 5ème copie a été révélée
+  par le split constants.js. Les 4 premières existaient déjà avant (dette
+  pré-M2-6.C.3), mais leur visibilité a augmenté avec la nouvelle structure.
+- **Action** :
+  1. Créer `frontend/src/utils/roleLabels.js` exportant la SoT unique
+  2. Arbitrer `energy_manager` → un seul libellé (recommandation :
+     `'Responsable Énergie'` cohérent avec les 4 surfaces existantes ; ou
+     `'Resp. Énergie'` plus court si contrainte d'espace narrative)
+  3. Importer cette SoT dans les 5 surfaces (AppShell + 3 Admin + V4 NarrativeBar)
+  4. Supprimer `ROLE_LABELS_V4` de `constants/narrative.js`
+- **DoD** :
+  - 1 fichier `utils/roleLabels.js` exporte `ROLE_LABELS` unique
+  - 0 duplication du mapping role→libellé dans frontend/src/
+  - `energy_manager` traduit en une seule valeur cohérente
+  - Tests AppShell + Admin pages + NarrativeBar restent verts (alignement
+    libellé requis)
+- **Refs** :
+  - M2-6.C.3 commit 2/4 (split constants exposait la dette)
+  - [`narrative.js:138`](frontend/src/pages/action-center-v4/constants/narrative.js#L138) comment dette
+  - [`AppShell.jsx:51-62`](frontend/src/layout/AppShell.jsx#L51-L62) SoT de référence proposée
+
+**Effort cumulé M2-6 → M3 : ~5,5-12,5 j/h** (7 items, fourchette large car
+M3-CFO-SEMANTIC dépend de l'arbitrage pilote, M3-BE-SQLITE-LOCK dépend de
+la repro, M3-DRAWER-BREADCRUMB inclut désormais layer masquage PDL).
