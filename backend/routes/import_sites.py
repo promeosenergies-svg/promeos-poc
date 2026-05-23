@@ -170,6 +170,36 @@ async def import_sites_csv(
 
     db.commit()
 
+    # ── P0-A 2026-05-23 — cascade conformité post-import (idempotent) ──
+    # Avant ce fix : aucun cascade après bulk import → sites visibles mais
+    # conformité DT/BACS/APER stale, CadreApplicable affichait UNKNOWN
+    # sur les nouveaux sites jusqu'au prochain PATCH.
+    cascade_summary = None
+    if imported:
+        try:
+            from regops.services.cascade_recompute_service import batch_cascade_recompute_sites
+
+            cascade_summary = batch_cascade_recompute_sites(
+                db,
+                site_ids=[s["id"] for s in imported],
+                org_id=org_id,
+                user_id=getattr(auth, "user_id", None) if auth else None,
+                correlation_id=request.headers.get("X-Correlation-ID"),
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+            )
+        except Exception as exc:  # noqa: BLE001 — l'import a réussi, cascade signale en sortie
+            import logging
+
+            logging.getLogger(__name__).error(
+                "batch_cascade_recompute_sites failed after import: %s", exc, exc_info=True
+            )
+            cascade_summary = {
+                "status": "cascade_failed",
+                "error": str(exc),
+                "hint": "Sites importés OK mais conformité non recalculée. Relancer un PATCH ou attendre la prochaine synchronisation.",
+            }
+
     return {
         "status": "ok",
         "imported": len(imported),
@@ -177,4 +207,5 @@ async def import_sites_csv(
         "sites": imported,
         "error_details": errors,
         "warning": row_warning,
+        "cascade": cascade_summary,
     }
