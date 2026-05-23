@@ -62,30 +62,46 @@ def test_workflow_ci_yaml_present():
 
 
 def test_workflow_ci_points_to_correct_dir():
-    """Le workflow CI doit invoquer pytest sur backend/tests/source_guards/.
+    """Le workflow CI doit invoquer pytest sur les source-guards backend.
 
     Anti-régression R5 audit Phase B : avant ce fix, le workflow pointait
-    vers `tests/source_guards/` (sans préfixe backend/) qui n'existe pas
-    quand le workflow tourne depuis la racine du repo → `0 tests collected`
-    mais code de sortie 0 = succès factice.
+    vers `tests/source_guards/` (sans préfixe backend/ et sans cwd) qui
+    n'existe pas quand le workflow tourne depuis la racine du repo →
+    `0 tests collected` mais code de sortie 0 = succès factice.
+
+    P0-D hygiène 2026-05-23 — élargi pour accepter aussi le pattern
+    moderne `working-directory: backend` + `pytest tests/source_guards/`
+    (équivalent fonctionnel + plus propre pour résoudre les chemins relatifs
+    de configs YAML lues par certains source-guards).
     """
     content = _WORKFLOW_PATH.read_text(encoding="utf-8")
 
-    # Doit contenir l'invocation correcte
-    assert re.search(r"pytest\s+backend/tests/source_guards/", content), (
-        "Workflow CI ne pointe pas vers `backend/tests/source_guards/`. "
+    # Pattern 1 : invocation depuis le root avec préfixe backend/
+    pattern_root = re.search(r"pytest\s+backend/tests/source_guards/", content)
+
+    # Pattern 2 : invocation depuis backend/ via working-directory
+    pattern_cwd = re.search(
+        r"working-directory:\s*backend[\s\S]{0,500}pytest\s+tests/source_guards/",
+        content,
+    )
+
+    assert pattern_root or pattern_cwd, (
+        "Workflow CI ne pointe pas vers les source-guards backend. "
+        "Attendu : `pytest backend/tests/source_guards/` OU "
+        "`working-directory: backend` + `pytest tests/source_guards/`. "
         "Vérifier .github/workflows/source_guards.yml — étape "
         "`Run source-guards pytest suite`."
     )
 
-    # Anti-régression : ne doit PAS contenir l'ancien chemin sans préfixe
+    # Anti-régression : ne doit PAS contenir `pytest tests/source_guards/` sans
+    # working-directory: backend (= ancien pattern silencieux).
     obsolete_pattern = re.search(r"pytest\s+tests/source_guards/(?![\w-])", content)
-    if obsolete_pattern:
+    if obsolete_pattern and not pattern_cwd:
         # Tolérer si la ligne est commentée
         for line in content.splitlines():
             if obsolete_pattern.re.search(line) and not line.strip().startswith("#"):
                 pytest.fail(
                     f"Workflow CI contient encore l'ancien chemin "
-                    f"`pytest tests/source_guards/` (sans préfixe `backend/`). "
+                    f"`pytest tests/source_guards/` sans `working-directory: backend`. "
                     f"Ligne : {line.strip()}"
                 )
