@@ -431,6 +431,90 @@ de phase.
   - [`narrative.js:138`](frontend/src/pages/action-center-v4/constants/narrative.js#L138) comment dette
   - [`AppShell.jsx:51-62`](frontend/src/layout/AppShell.jsx#L51-L62) SoT de référence proposée
 
-**Effort cumulé M2-6 → M3 : ~5,5-12,5 j/h** (7 items, fourchette large car
+### M3-CLEANUP-NAMING-MICRO — Batch micro-cleanup audit 3-agents M2-6.C.3  🟢 P2 · ~2-3 h
+
+- **Objet** : 6 P2 résiduels listés par l'audit 3-agents code-reviewer post-
+  M2-6.C.3 (commit `07bfb3a8`). Tous légitimes mais non-bloquants pilote.
+  Non traités M2-6.C.3 (discipline atomic — sprint architecture + audit-fix
+  P1 seulement). Bundle de petits cleanup à grouper en sprint dédié M3+
+  pour ne pas polluer l'audit-global d'un sprint mêlé.
+- **Origine** : Audit code-reviewer post-M2-6.C.3 (commit `07bfb3a8`
+  mentionne explicitement le ticket comme bundle de regroupement).
+- **Liste exhaustive** :
+  1. `DrawerBreadcrumb.jsx` L48 — `key={index}` sur boucle segments (anti-
+     pattern React, faible risque MV3 car segments statiques). Remplacer
+     par `key={segment}` ou `key={`seg-${index}-${segment}`}`.
+  2. `NarrativeBar.jsx` L56 — addition `sumsByPriority.P0 + .P1` en
+     frontend. Borderline règle d'or « zéro calcul métier FE » : c'est
+     présenté comme affichage mais si définition « décisions » évolue
+     (ex. ajouter P2 à risque) le calcul FE dériverait silencieusement.
+     Demander BE d'exposer `sums_eur_decisions` (= P0+P1) dans
+     `ActionCenterSummaryResponse` à côté de `sums_eur_total`.
+  3. `ImpactSection.test.jsx` L22 — shadow-override `emptyImpact` local
+     (objet payload riche) vs `v4Mocks.js` (wrapper hook). Renommer la
+     fixture locale en `EMPTY_IMPACT_PAYLOAD` ou `noImpactPayload` pour
+     éliminer la confusion sémantique.
+  4. `v4Mocks.js` L91/L116 — naming incohérent `setupV4HooksDefault` vs
+     `setupHooksV4Mock`. Harmoniser en M3 vers `setupV4HooksDefault` +
+     `setupV4HooksMock` (même préfixe + même position du `V4`).
+  5. `components/narrative/ListFilterBar.jsx` — mal classé : `ListFilterBar`
+     filtre la table items (kind chips + lifecycle dropdown + reset), pas
+     un composant narratif. Déplacer vers `components/items/ListFilterBar.jsx`
+     (co-localisation avec ItemsTable, KindCell). 1 consommateur direct +
+     1 test à ajuster — risque faible.
+  6. `DrawerBreadcrumb.jsx` — composant jamais affiché en MV3 (BE n'expose
+     pas les champs patrimoniaux). Pattern doctrine §6.6 OK, mais charge
+     cognitive pour reviewer. Lien explicite vers `M3-DRAWER-BREADCRUMB-
+     PATRIMOINE-BE` déjà présent dans `ItemDetailDrawer` L155-158. Informatif.
+- **DoD** :
+  - 6 P2 traités en 1 commit atomique `chore(v4,cleanup): M3-CLEANUP-NAMING-
+    MICRO — batch 6 P2 audit M2-6.C.3`
+  - 0 régression baseline (Vitest 5289+2 maintenue)
+  - Aucun nouveau scope produit
+- **Refs** :
+  - Audit 3-agents post-M2-6.C.3 (commit `07bfb3a8`)
+  - Pattern P2-cleanup batch inauguré M2-6.C.P2-cleanup (commit `32c1a6cd`)
+
+### M3-DOC-METHODE-FAMILY — Capitaliser amendements doctrine post-M2-6  🟢 P2 · ~1-1,5 h
+
+- **Objet** : 4 amendements doctrine `docs/dev/methode_*.md` détectés par
+  l'audit-global M2-6 Check 4 (cohérence 4 doctrines). Non bloquants merge,
+  capitalisables post-merge en sprint dédié.
+- **Origine** : Audit-global pré-merge M2-6 (Check 4 verdict ⚠ P2). Mention
+  initiale `M3-DOC-METHODE-FAMILY` dans commit M2-6.0 (`e6f90423`) —
+  « Capitalisation doctrine self-review PR avant merge ».
+- **Amendements à apporter** :
+  1. `methode_audit_avant_fix.md` — capitaliser **5 occurrences Phase 1
+     audit M2-6** (ROI cumulé ~30-40h économisées). Section « Empirique
+     M2-6 » à ajouter avec les 5 cas validés : /summary backend, V4Modal
+     M2-6.C.1, owner_id M2-6.C.2, ROLE_LABELS split M2-6.C.3 commit 2/4,
+     DrawerBreadcrumb M2-6.C.3 commit 4/4.
+  2. `methode_self_review_pr.md` — capitaliser **5 occurrences `.bis`
+     immédiat M2-6** : M2-6.B.frontend.bis (47,5 k€), M2-6.B.bis-backlog
+     (traçabilité), M2-6.C.1-reduit.bis (Playwright), M2-6.C.3 audit-fix
+     batch (PRM + ROLE_LABELS), audit-global.bis-backlog (ce commit).
+  3. `methode_self_review_pr.md` — nouvelle section « Pattern MV3-ready
+     silencieux » (inauguré M2-6.C.3 commit 4/4 DrawerBreadcrumb).
+     Critères : composant FE complet + tests + Playwright, mais silencieux
+     tant que BE n'expose pas la donnée. Active automatiquement dès BE
+     M3+. Doctrine §6.6 anti-bruit respectée.
+  4. Nouvelle doctrine candidate `methode_audit_3_agents.md` — capitaliser
+     pattern **audit 3-agents post-livraison** (inauguré M2-6.C.2 +
+     reproduit M2-6.C.3). Lancement parallèle code-reviewer + security +
+     qa-guardian, convergence verdict, matrice décision (GO / batch fix
+     P1 / STOP). Inclut le format synthèse cumulée et la matrice 5.3.
+- **DoD** :
+  - 3 fichiers `methode_*.md` amendés + 1 nouveau fichier
+  - Cross-références entre les 4 doctrines (actuellement
+    `methode_walkthrough_navigateur.md` n'en a aucune)
+  - Index `docs/dev/README.md` ou équivalent à jour si applicable
+- **Refs** :
+  - Audit-global M2-6 Check 4 (ce commit)
+  - M2-6.0 commit `e6f90423` (mention initiale M3-DOC-METHODE-FAMILY)
+  - M2-6.B.bis-backlog commit `f3307069` (section "Bilan global post sous-
+    phase composée" capitalisée — base de la doctrine famille)
+
+**Effort cumulé M2-6 → M3 : ~9-17 j/h** (9 items, fourchette large car
 M3-CFO-SEMANTIC dépend de l'arbitrage pilote, M3-BE-SQLITE-LOCK dépend de
-la repro, M3-DRAWER-BREADCRUMB inclut désormais layer masquage PDL).
+la repro, M3-DRAWER-BREADCRUMB inclut désormais layer masquage PDL,
+M3-CLEANUP-NAMING-MICRO + M3-DOC-METHODE-FAMILY ajoutés par audit-global).
