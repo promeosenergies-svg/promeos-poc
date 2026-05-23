@@ -12,6 +12,7 @@ vi.mock('../../../hooks/v4', () => ({
 
 import { useActionCenterV4Impact } from '../../../hooks/v4';
 import { ImpactSection } from '../components/ImpactSection';
+import { setupHooksV4Mock } from './testUtils/v4Mocks';
 
 afterEach(cleanup);
 beforeEach(() => {
@@ -51,24 +52,19 @@ const richImpact = {
 };
 
 describe('ImpactSection', () => {
+  // M2-6.C.3 (commit 1/4) pilote — `setupHooksV4Mock` pour les 2 premiers
+  // tests skeleton/error. Validation pattern avant migration globale M3+.
   test('renders a skeleton while loading', () => {
-    useActionCenterV4Impact.mockReturnValue({
-      data: null,
-      loading: true,
-      error: null,
-      refetch: vi.fn(),
-    });
+    setupHooksV4Mock({ useActionCenterV4Impact }, { impact: null, impactState: { loading: true } });
     const { container } = render(<ImpactSection itemId="x" />);
     expect(container.querySelector('.animate-pulse')).toBeTruthy();
   });
 
   test('renders an error banner on error', () => {
-    useActionCenterV4Impact.mockReturnValue({
-      data: null,
-      loading: false,
-      error: { message: 'fail' },
-      refetch: vi.fn(),
-    });
+    setupHooksV4Mock(
+      { useActionCenterV4Impact },
+      { impact: null, impactState: { error: { message: 'fail' } } }
+    );
     render(<ImpactSection itemId="x" />);
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByText(/impossible de charger l'impact/i)).toBeInTheDocument();

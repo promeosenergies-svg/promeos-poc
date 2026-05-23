@@ -17,7 +17,13 @@ vi.mock('../../../hooks/v4', () => ({
 
 import { useActionCenterV4Summary } from '../../../hooks/v4';
 import { EditorialNarrativeBlock } from '../components/EditorialNarrativeBlock';
+import { setupHooksV4Mock } from './testUtils/v4Mocks';
 
+// M2-6.C.3 (commit 1/4) — pilote migration : `setupHooksV4Mock` centralisé
+// remplace le helper local `mockSummary`. BASE_DATA (les 7 compteurs CFO
+// inchangés sur tous les tests de ce fichier) reste local — c'est un défaut
+// métier propre à EditorialNarrativeBlock (vs default émission `emptySummary`
+// utilisé par les autres tests qui ne veulent pas surcharger).
 const BASE_DATA = {
   count_p0: 1,
   count_p1: 3,
@@ -29,12 +35,7 @@ const BASE_DATA = {
 };
 
 function mockSummary(overrides) {
-  useActionCenterV4Summary.mockReturnValue({
-    data: { ...BASE_DATA, ...overrides },
-    loading: false,
-    error: null,
-    refetch: vi.fn(),
-  });
+  setupHooksV4Mock({ useActionCenterV4Summary }, { summary: { ...BASE_DATA, ...overrides } });
 }
 
 beforeEach(() => {
@@ -110,12 +111,12 @@ describe('EditorialNarrativeBlock — complétude CFO Q19=C', () => {
   });
 
   test('ne rend rien quand le hook charge (skeleton compact)', () => {
-    useActionCenterV4Summary.mockReturnValue({
-      data: null,
-      loading: true,
-      error: null,
-      refetch: vi.fn(),
-    });
+    // M2-6.C.3 pilote : état loading via `summaryState` (la propriété
+    // `summary` reste à null par sa valeur explicite — pas de défaut).
+    setupHooksV4Mock(
+      { useActionCenterV4Summary },
+      { summary: null, summaryState: { loading: true } }
+    );
     render(<EditorialNarrativeBlock orgName="ORG" sitesCount={1} />);
     // En loading le composant rend EditorialSkeleton (aria-busy) — pas le testid completude.
     expect(screen.queryByTestId('editorial-completude')).toBeNull();

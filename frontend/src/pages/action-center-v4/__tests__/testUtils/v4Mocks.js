@@ -115,3 +115,56 @@ export function setupV4HooksDefault({
   if (usePilotageFilePrioritaire) usePilotageFilePrioritaire.mockReturnValue(emptyList);
   if (usePilotageJournal) usePilotageJournal.mockReturnValue(emptyList);
 }
+
+/**
+ * M2-6.C.3 (commit 1/4) — variante paramétrée per-test avec overrides.
+ *
+ * `setupV4HooksDefault` ne fait qu'appliquer des defaults. Beaucoup de tests
+ * ont besoin d'injecter des données métier custom (summary HELIOS riche,
+ * impact rich, etc.) — d'où la prolifération de helpers locaux `mockSummary`
+ * dupliqués dans plusieurs fichiers. Cette variante évite la duplication :
+ *
+ *     setupHooksV4Mock(
+ *       { useActionCenterV4Summary, useActionCenterV4Impact },
+ *       {
+ *         summary: { items_total: 9, sums_eur_total: 47500, ... },
+ *         impact: { has_data: true, estimated: {...}, ... },
+ *       }
+ *     );
+ *
+ * - `overrides.<hookKey>` absent → fallback sur le default existant (emptyXxx)
+ * - `overrides.<hookKey>` fourni → wrappé dans `{ data, loading:false, error:null, refetch }`
+ * - `overrides.<hookKey>State` permet de surcharger loading/error finement
+ *
+ * Comme `setupV4HooksDefault`, on passe l'objet `hooks` mocké en argument
+ * (contrainte Vitest hoisting — `vi.mock(...)` reste en tête du fichier test).
+ */
+export function setupHooksV4Mock(hooks = {}, overrides = {}) {
+  const wrap = (key, defaultValue) => {
+    const data = overrides[key];
+    const state = overrides[`${key}State`] || {};
+    if (data === undefined) return defaultValue;
+    return { data, loading: false, error: null, refetch: vi.fn(), ...state };
+  };
+
+  if (hooks.useActionCenterV4Items)
+    hooks.useActionCenterV4Items.mockReturnValue(wrap('items', emptyList));
+  if (hooks.useActionCenterV4Item)
+    hooks.useActionCenterV4Item.mockReturnValue(wrap('item', emptyItem));
+  if (hooks.useActionCenterV4Events)
+    hooks.useActionCenterV4Events.mockReturnValue(wrap('events', emptyList));
+  if (hooks.useActionCenterV4Evidences)
+    hooks.useActionCenterV4Evidences.mockReturnValue(wrap('evidences', emptyList));
+  if (hooks.useActionCenterV4Blockers)
+    hooks.useActionCenterV4Blockers.mockReturnValue(wrap('blockers', emptyList));
+  if (hooks.useActionCenterV4Links)
+    hooks.useActionCenterV4Links.mockReturnValue(wrap('links', emptyList));
+  if (hooks.useActionCenterV4Impact)
+    hooks.useActionCenterV4Impact.mockReturnValue(wrap('impact', loadingImpact));
+  if (hooks.useActionCenterV4Summary)
+    hooks.useActionCenterV4Summary.mockReturnValue(wrap('summary', emptySummary));
+  if (hooks.usePilotageFilePrioritaire)
+    hooks.usePilotageFilePrioritaire.mockReturnValue(wrap('filePrioritaire', emptyList));
+  if (hooks.usePilotageJournal)
+    hooks.usePilotageJournal.mockReturnValue(wrap('journal', emptyList));
+}
