@@ -15,15 +15,28 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install test deps
-        # M2-5.11.J audit CI — `numpy` ajouté : certains source-guards
-        # importent transitivement services/electric_monitoring/kpi_engine
-        # → climate_engine.py qui dépend de numpy (qa-guardian audit
-        # dette pré-existante depuis claude/refonte-sol2 baseline).
-        run: pip install pytest pyyaml numpy
+      - name: Install backend deps
+        # P0-D hygiène 2026-05-23 — remplacement de l'install case-by-case
+        # (pytest pyyaml numpy + sqlalchemy + fastapi + dotenv + bcrypt + ...)
+        # par requirements.txt complet. Raisons :
+        # 1. Les source-guards importent transitivement les services backend
+        #    qui pullent des deps en cascade (sqlalchemy → fastapi → bcrypt → ...).
+        # 2. L'approche cas-par-cas créait un whack-a-mole sans fin
+        #    (chaque ajout révélait une nouvelle dep manquante).
+        # 3. requirements.txt est la SoT de l'environnement runtime, source-guards
+        #    doivent tourner dans le même contexte que les tests classiques.
+        # Coût CI : ~30s en plus pour l'install (acceptable pour fiabilité).
+        run: |
+          pip install pytest
+          pip install -r backend/requirements.txt
 
       - name: Run source-guards pytest suite
-        run: pytest backend/tests/source_guards/ -v --tb=short
+        # P0-D hygiène 2026-05-23 — pytest doit tourner depuis `backend/` :
+        # certains source-guards lisent des fichiers de config via chemin
+        # relatif (ex: `regops/config/regs.yaml`) qui suppose le cwd backend/.
+        # Aligne sur le pattern local `cd backend && pytest tests/...`.
+        working-directory: backend
+        run: pytest tests/source_guards/ -v --tb=short
 
       - name: Verify agent definitions count (== 11)
         run: |

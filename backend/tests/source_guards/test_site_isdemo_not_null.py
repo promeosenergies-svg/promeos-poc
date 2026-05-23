@@ -21,10 +21,21 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
+import pytest
 from sqlalchemy import inspect, text
 
 from database import SessionLocal, engine
 from models.site import Site
+
+
+# P0-D hygiène 2026-05-23 — skip runtime DB checks si la table `sites` n'existe
+# pas (cas CI fresh sans seed). Les checks structurels (model SQLAlchemy + colonne
+# nullable=False) restent actifs car ils n'ont pas besoin d'une DB peuplée.
+_DB_HAS_SITES_TABLE = inspect(engine).has_table("sites")
+_SKIP_REASON_FRESH_DB = (
+    "Table `sites` absente — DB fresh (CI sans seed). "
+    "Test runtime DB skippé ; les checks structurels model/schéma restent actifs."
+)
 
 
 def test_site_isdemo_column_not_nullable():
@@ -44,6 +55,7 @@ def test_site_isdemo_column_has_server_default_false():
     )
 
 
+@pytest.mark.skipif(not _DB_HAS_SITES_TABLE, reason=_SKIP_REASON_FRESH_DB)
 def test_site_isdemo_db_no_null_rows():
     """Aucune ligne sites en DB ne doit avoir is_demo IS NULL.
 
@@ -63,6 +75,7 @@ def test_site_isdemo_db_no_null_rows():
         db.close()
 
 
+@pytest.mark.skipif(not _DB_HAS_SITES_TABLE, reason=_SKIP_REASON_FRESH_DB)
 def test_site_isdemo_db_column_not_nullable():
     """La colonne `sites.is_demo` doit être déclarée NOT NULL au niveau DB.
 
