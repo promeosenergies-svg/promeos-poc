@@ -1702,6 +1702,73 @@ def build_dp_category_cache(db: Session, site_ids: list[int]) -> dict[int, tuple
     return cache
 
 
+# ─── Helper upsert idempotent (Bill Intel P1.5 C2 — 2026-05-24) ────────────
+# Avant P1.5 : tous les détecteurs faisaient `db.add(rN)` aveuglément, ce qui
+# violait `UniqueConstraint(invoice_id, code)` au re-run audit-all → HTTP 500.
+# Désormais : upsert propre, jamais d'IntegrityError.
+# Doctrine : "Si anomalie déjà existante : update ou skip propre."
+#   - Anomalie existante OUVERTE (`resolved_at IS NULL`) → update champs métier
+#   - Anomalie existante RÉSOLUE → skip (respect du travail utilisateur)
+#   - Sinon → add nouvelle
+
+
+def _upsert_anomaly(db: Session, new_anomaly: BillAnomaly) -> tuple[str, BillAnomaly]:
+    """Idempotent INSERT or UPDATE pour BillAnomaly (P1.5 C2).
+
+    Retourne `(status, persisted_anomaly)` où status ∈ {"created", "updated",
+    "skipped_resolved"}.
+
+    Champs préservés sur update (travail utilisateur) :
+    - `resolved_at`, `resolution_note` (clôture/note opérateur)
+    - `id`, `created_at` (identité + traçabilité)
+
+    Champs rafraîchis sur update (re-détection automatique) :
+    - `severity`, `actual_value`, `threshold_value`, `details_json`
+    - `is_monetizable`, `non_monetizable_reason`
+    - `detected_at` (= maintenant)
+    """
+    existing = (
+        db.query(BillAnomaly)
+        .filter(
+            BillAnomaly.invoice_id == new_anomaly.invoice_id,
+            BillAnomaly.code == new_anomaly.code,
+            BillAnomaly.deleted_at.is_(None),
+        )
+        .first()
+    )
+    if existing is None:
+        db.add(new_anomaly)
+        return ("created", new_anomaly)
+
+    # Anomalie déjà clôturée par opérateur → on respecte la résolution
+    if existing.resolved_at is not None:
+        return ("skipped_resolved", existing)
+
+    # Anomalie ouverte → update champs métier (rafraîchissement détection)
+    from datetime import datetime, timezone
+
+    existing.severity = new_anomaly.severity
+    existing.actual_value = new_anomaly.actual_value
+    existing.threshold_value = new_anomaly.threshold_value
+    existing.details_json = new_anomaly.details_json
+    if new_anomaly.is_monetizable is not None:
+        existing.is_monetizable = new_anomaly.is_monetizable
+    if new_anomaly.non_monetizable_reason is not None:
+        existing.non_monetizable_reason = new_anomaly.non_monetizable_reason
+    existing.detected_at = datetime.now(timezone.utc)
+    return ("updated", existing)
+
+
+def _add_or_update(db: Session, detected: BillAnomaly | None, counters: dict, anomalies: list[BillAnomaly]) -> None:
+    """Wrapper qui factorise la branche `if detected: upsert + append + count`."""
+    if detected is None:
+        return
+    status, persisted = _upsert_anomaly(db, detected)
+    counters[status] = counters.get(status, 0) + 1
+    if status != "skipped_resolved":
+        anomalies.append(persisted)
+
+
 def detect_anomalies_for_invoice(
     invoice: EnergyInvoice,
     db: Session,
@@ -1709,6 +1776,7 @@ def detect_anomalies_for_invoice(
     dp_category_cache: Optional[dict] = None,
     prev_invoice_cache: Optional[dict[int, list[EnergyInvoice]]] = None,
     contract_cache: Optional[dict[int, EnergyContract]] = None,
+    counters: Optional[dict] = None,
 ) -> list[BillAnomaly]:
     """Pipeline détection complète sur 1 invoice.
 
@@ -1729,8 +1797,19 @@ def detect_anomalies_for_invoice(
     Python-side O(N) à 1 traversal + 6 dict lookups O(1).
 
     Retour : liste anomalies ajoutées à la session (caller responsable du commit).
+
+    P1.5 C2 (2026-05-24) : tous les détecteurs passent par `_add_or_update` qui
+    fait un UPSERT idempotent au lieu d'un `db.add()` aveugle. Empêche les
+    HTTP 500 sur re-run audit-all (`UniqueConstraint(invoice_id, code)`).
+
+    Si `counters` est fourni, le pipeline le rempli avec :
+    `{"created": N, "updated": M, "skipped_resolved": P}`. Le caller peut
+    propager ces compteurs au message FR final ("Y anomalies mises à jour,
+    Z déjà connues").
     """
     anomalies: list[BillAnomaly] = []
+    if counters is None:
+        counters = {}
 
     # Phase L11.3 — pré-partition unique propagée à 6 détecteurs (audit P1
     # cumul L8/L9/L10 finding 8 efficiency).
@@ -1738,121 +1817,122 @@ def detect_anomalies_for_invoice(
 
     # R19 : 0 ou 1 anomaly
     try:
-        r19 = detect_r19_vnu_dormant(invoice, db)
-        if r19:
-            db.add(r19)
-            anomalies.append(r19)
+        _add_or_update(db, detect_r19_vnu_dormant(invoice, db), counters, anomalies)
     except Exception as e:
         _logger.error(f"R19 detector failed for invoice {invoice.id}: {e}")
 
     # R20 : 0..N anomalies (1 par poste tarifaire)
     try:
-        r20_list = detect_r20_capacity_variance(invoice, db)
-        for r20 in r20_list:
-            db.add(r20)
-            anomalies.append(r20)
+        for r20 in detect_r20_capacity_variance(invoice, db):
+            _add_or_update(db, r20, counters, anomalies)
     except Exception as e:
         _logger.error(f"R20 detector failed for invoice {invoice.id}: {e}")
 
     # R23 : 0..N anomalies (1 par période doublée) — Phase H cardinal CFO
     try:
-        r23_list = detect_r23_turpe_double(invoice, db, lines_by_type=lines_by_type)
-        for r23 in r23_list:
-            db.add(r23)
-            anomalies.append(r23)
+        for r23 in detect_r23_turpe_double(invoice, db, lines_by_type=lines_by_type):
+            _add_or_update(db, r23, counters, anomalies)
     except Exception as e:
         _logger.error(f"R23 detector failed for invoice {invoice.id}: {e}")
 
     # R21 : 0 ou 1 — Phase H CFO CTA mauvais calcul
     try:
-        r21 = detect_r21_cta_mismatch(invoice, db, lines_by_type=lines_by_type)
-        if r21:
-            db.add(r21)
-            anomalies.append(r21)
+        _add_or_update(
+            db,
+            detect_r21_cta_mismatch(invoice, db, lines_by_type=lines_by_type),
+            counters,
+            anomalies,
+        )
     except Exception as e:
         _logger.error(f"R21 detector failed for invoice {invoice.id}: {e}")
 
     # R22 : 0 ou 1 — Phase I CFO accise erronée (cache K2 propagé Phase K audit fix)
     try:
-        r22 = detect_r22_accise_mismatch(invoice, db, dp_category_cache=dp_category_cache, lines_by_type=lines_by_type)
-        if r22:
-            db.add(r22)
-            anomalies.append(r22)
+        _add_or_update(
+            db,
+            detect_r22_accise_mismatch(invoice, db, dp_category_cache=dp_category_cache, lines_by_type=lines_by_type),
+            counters,
+            anomalies,
+        )
     except Exception as e:
         _logger.error(f"R22 detector failed for invoice {invoice.id}: {e}")
 
     # R24 : 0 ou 1 — Phase I CFO TVA mauvais taux
     try:
-        r24 = detect_r24_tva_rate_mismatch(invoice, db, lines_by_type=lines_by_type)
-        if r24:
-            db.add(r24)
-            anomalies.append(r24)
+        _add_or_update(
+            db,
+            detect_r24_tva_rate_mismatch(invoice, db, lines_by_type=lines_by_type),
+            counters,
+            anomalies,
+        )
     except Exception as e:
         _logger.error(f"R24 detector failed for invoice {invoice.id}: {e}")
 
     # R25 : 0 ou 1 — Phase L CFO abonnement divergent contrat
     try:
-        r25 = detect_r25_subscription_mismatch(invoice, db, contract_cache=contract_cache)
-        if r25:
-            db.add(r25)
-            anomalies.append(r25)
+        _add_or_update(
+            db,
+            detect_r25_subscription_mismatch(invoice, db, contract_cache=contract_cache),
+            counters,
+            anomalies,
+        )
     except Exception as e:
         _logger.error(f"R25 detector failed for invoice {invoice.id}: {e}")
 
     # R26 : 0 ou 1 — Phase L2 CFO sanity check total vs lignes
     try:
-        r26 = detect_r26_total_vs_lines_inconsistency(invoice, db)
-        if r26:
-            db.add(r26)
-            anomalies.append(r26)
+        _add_or_update(db, detect_r26_total_vs_lines_inconsistency(invoice, db), counters, anomalies)
     except Exception as e:
         _logger.error(f"R26 detector failed for invoice {invoice.id}: {e}")
 
     # R27 : 0 ou 1 — Phase L3 CFO cross-validation conso facturée vs compteur (anti-fraude)
     try:
-        r27 = detect_r27_consumption_meter_drift(invoice, db)
-        if r27:
-            db.add(r27)
-            anomalies.append(r27)
+        _add_or_update(db, detect_r27_consumption_meter_drift(invoice, db), counters, anomalies)
     except Exception as e:
         _logger.error(f"R27 detector failed for invoice {invoice.id}: {e}")
 
     # R28 : 0 ou 1 — Phase L4 CFO prix unitaire énergie facturé divergent contrat
     try:
-        r28 = detect_r28_energy_unit_price_drift(
-            invoice, db, lines_by_type=lines_by_type, contract_cache=contract_cache
+        _add_or_update(
+            db,
+            detect_r28_energy_unit_price_drift(invoice, db, lines_by_type=lines_by_type, contract_cache=contract_cache),
+            counters,
+            anomalies,
         )
-        if r28:
-            db.add(r28)
-            anomalies.append(r28)
     except Exception as e:
         _logger.error(f"R28 detector failed for invoice {invoice.id}: {e}")
 
     # R29 : 0 ou 1 — Phase L5 CFO chevauchement/trou période facturation (anti-double-billing)
     # Phase L7.3 P0 — propage prev_invoice_cache pour éviter SELECT par-invoice en mode batch
     try:
-        r29 = detect_r29_period_overlap_or_gap(invoice, db, prev_invoice_cache=prev_invoice_cache)
-        if r29:
-            db.add(r29)
-            anomalies.append(r29)
+        _add_or_update(
+            db,
+            detect_r29_period_overlap_or_gap(invoice, db, prev_invoice_cache=prev_invoice_cache),
+            counters,
+            anomalies,
+        )
     except Exception as e:
         _logger.error(f"R29 detector failed for invoice {invoice.id}: {e}")
 
     # R30 : 0 ou 1 — Phase L6 CFO période facturée hors fenêtre contractuelle
     try:
-        r30 = detect_r30_invoice_period_outside_contract_window(invoice, db, contract_cache=contract_cache)
-        if r30:
-            db.add(r30)
-            anomalies.append(r30)
+        _add_or_update(
+            db,
+            detect_r30_invoice_period_outside_contract_window(invoice, db, contract_cache=contract_cache),
+            counters,
+            anomalies,
+        )
     except Exception as e:
         _logger.error(f"R30 detector failed for invoice {invoice.id}: {e}")
 
     # R31 : 0 ou 1 — Phase L9 CFO doublons accise/CSPE/TICFE post-renommage 2022
     try:
-        r31 = detect_r31_accise_double(invoice, db, lines_by_type=lines_by_type)
-        if r31:
-            db.add(r31)
-            anomalies.append(r31)
+        _add_or_update(
+            db,
+            detect_r31_accise_double(invoice, db, lines_by_type=lines_by_type),
+            counters,
+            anomalies,
+        )
     except Exception as e:
         _logger.error(f"R31 detector failed for invoice {invoice.id}: {e}")
 

@@ -1075,9 +1075,12 @@ def audit_invoice_full(db: Session, invoice_id: int) -> Dict[str, Any]:
     # Phase L18.1 audit fix : utilise `logger` module-level (ligne 18) au lieu
     # de `logging.getLogger(__name__)` inline ; import `detect_anomalies_for_invoice`
     # déplacé en module-level (ligne ~30, vérification grep absence circular).
+    # P1.5 C2 (2026-05-24) : propage `counters` pour récupérer le détail
+    # created/updated/skipped_resolved (idempotence audit-all).
     bill_anomalies_r19_r31 = []
+    counters: dict = {"created": 0, "updated": 0, "skipped_resolved": 0}
     try:
-        bill_anomalies_r19_r31 = detect_anomalies_for_invoice(invoice, db)
+        bill_anomalies_r19_r31 = detect_anomalies_for_invoice(invoice, db, counters=counters)
     except Exception as e:
         logger.error(
             "Pipeline R19→R31 failed for invoice %s: %s — legacy pipeline unaffected",
@@ -1095,6 +1098,10 @@ def audit_invoice_full(db: Session, invoice_id: int) -> Dict[str, Any]:
         # Phase L17.1 — exposition R19→R31 dans la réponse audit
         "bill_anomalies_r19_r31_count": len(bill_anomalies_r19_r31),
         "bill_anomalies_r19_r31_codes": [a.code for a in bill_anomalies_r19_r31],
+        # P1.5 C2 — compteurs upsert pour message FR doctriné
+        "bill_anomalies_created": counters.get("created", 0),
+        "bill_anomalies_updated": counters.get("updated", 0),
+        "bill_anomalies_skipped_resolved": counters.get("skipped_resolved", 0),
     }
 
 

@@ -865,6 +865,10 @@ def audit_all_invoices(
     invoices = _org_sites_query(db, EnergyInvoice, effective_org_id).all()
     results = []
     reconcile_results = []
+    # P1.5 C2 (2026-05-24) — agrégation upsert pour message FR doctriné
+    total_created = 0
+    total_updated = 0
+    total_skipped_resolved = 0
     for inv in invoices:
         r = audit_invoice_full(db, inv.id)
         results.append(
@@ -872,19 +876,39 @@ def audit_all_invoices(
                 "invoice_id": inv.id,
                 "invoice_number": inv.invoice_number,
                 "anomalies_count": r.get("anomalies_count", 0),
+                "bill_anomalies_created": r.get("bill_anomalies_created", 0),
+                "bill_anomalies_updated": r.get("bill_anomalies_updated", 0),
+                "bill_anomalies_skipped_resolved": r.get("bill_anomalies_skipped_resolved", 0),
             }
         )
+        total_created += r.get("bill_anomalies_created", 0)
+        total_updated += r.get("bill_anomalies_updated", 0)
+        total_skipped_resolved += r.get("bill_anomalies_skipped_resolved", 0)
         # Auto-reconciliation compteur/facture (Step 9 B3)
         if inv.period_start and inv.period_end:
             rc = auto_reconcile_after_import(db, inv.site_id, inv.period_start, inv.period_end)
             if rc:
                 reconcile_results.append(rc)
-    if reconcile_results:
-        db.commit()
+    # P1.5 C2 — commit explicite pour persister tous les upserts du pipeline
+    # (avant : commit conditionnel uniquement si reconcile_results → anomalies
+    # potentiellement perdues si invoice sans reconcile).
+    db.commit()
+    fr_message = (
+        f"Audit terminé : {len(results)} facture{'s' if len(results) > 1 else ''} analysée"
+        f"{'s' if len(results) > 1 else ''}, "
+        f"{total_created} anomalie{'s' if total_created > 1 else ''} créée"
+        f"{'s' if total_created > 1 else ''}, "
+        f"{total_updated} mise{'s' if total_updated > 1 else ''} à jour, "
+        f"{total_skipped_resolved} déjà résolue{'s' if total_skipped_resolved > 1 else ''}."
+    )
     return {
         "status": "ok",
         "audited": len(results),
         "total_anomalies": sum(r["anomalies_count"] for r in results),
+        "bill_anomalies_created": total_created,
+        "bill_anomalies_updated": total_updated,
+        "bill_anomalies_skipped_resolved": total_skipped_resolved,
+        "message_fr": fr_message,
         "results": results,
         "reconciliation": reconcile_results,
     }
