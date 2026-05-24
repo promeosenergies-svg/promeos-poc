@@ -36,7 +36,9 @@ export const BILLING_INSIGHT_TYPE_LABELS = Object.freeze({
   price_drift: 'Le prix unitaire dérive depuis plusieurs mois',
   ttc_coherence: 'Le total TTC ne se reconstitue pas',
   contract_expiry: 'Votre contrat est arrivé à échéance',
-  reseau_mismatch: "L'acheminement réseau dépasse le tarif TURPE attendu",
+  // P1 C7 (2026-05-24) : label énergie-agnostique — élec = TURPE, gaz = ATRD/ATRT.
+  // L'énergie réelle est précisée dans le détail de l'anomalie (drawer).
+  reseau_mismatch: "L'acheminement réseau dépasse le tarif attendu",
   taxes_mismatch: "Les taxes dépassent l'accise et la CTA en vigueur",
   reconciliation_mismatch: 'Écart compteur / facture détecté',
 });

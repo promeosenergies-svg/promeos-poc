@@ -2,8 +2,17 @@
 Détection des pics de puissance et calcul CMDPS par poste.
 
 Règles : dépassement = par poste horaire (HPH/HCH/HPE/HCE/Pointe séparément).
-Coût = dépassement_kw × 12.65 €/kW × pas_h (tarif TURPE 7 canonique).
+Coût CMDPS BT >36 kVA = dépassement_kw × 12,41 €/h × pas_h (HT, TURPE 7).
 CMDPS = dépassement quadratique par poste (source Enedis F12 v1.14.2 §7.6.7).
+
+Source CMDPS : CRE délibération 2025-78 (brochure tarifaire TURPE 7 HTA-BT p.15),
+applicable depuis le 1er août 2025 pour 4 ans (Z = IPC + X (−0,35%) + k (±3%)).
+Constante centralisée dans `services/billing_engine/catalog.py::TURPE_CMDPS_C4`.
+
+Audit Phase 0-bis Bill Intelligence (2026-05-24) — divergence corrigée P1 :
+ancienne valeur 12,65 non sourcée (probable confusion TURPE 6 avant 01/08/2025)
+remplacée par 12,41 doctriné CRE 2025-78. Cf. audit_brique_bill_intelligence
+_deep_readonly_2026_05_23.md §14.2.
 """
 
 import math
@@ -12,10 +21,13 @@ from datetime import date, datetime
 from sqlalchemy.orm import Session
 
 from models.power import PowerContract, PowerReading
+from services.billing_engine.catalog import TURPE7_RATES
 from services.power.power_profile_service import get_active_contract
 from utils.datetime_utils import to_exclusive_next_day_dt, to_start_of_day_dt
 
-TARIF_DEPASSEMENT_EUR_KW = 12.65  # TURPE 7 canonique
+# CMDPS BT >36 kVA (segment C4) — source de vérité unique : catalog.py
+# Le catalog cite explicitement la brochure CRE 2025-78 p.15 = 12,41 €·h HT.
+TARIF_DEPASSEMENT_EUR_KW = TURPE7_RATES["TURPE_CMDPS_C4"]["rate"]
 
 
 def detect_peaks(

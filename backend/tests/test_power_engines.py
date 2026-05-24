@@ -34,13 +34,27 @@ def test_peak_detection_returns_result():
         db.close()
 
 
-def test_peak_cost_uses_12_65():
-    """Coût dépassement = 10 kW × 12.65 × 0.5h = 63.25 €."""
+def test_peak_cost_uses_cre_2025_78_cmdps_rate():
+    """CMDPS BT >36 kVA = 12,41 €·h HT (CRE 2025-78 brochure TURPE 7 p.15).
+
+    Audit Phase 0-bis Bill Intelligence (2026-05-24, C0) : ancienne valeur
+    12,65 €·h non sourcée corrigée. Désormais la constante est centralisée
+    dans `services/billing_engine/catalog.py::TURPE7_RATES['TURPE_CMDPS_C4']`
+    pour garantir traçabilité (rate + unit + source + valid_from + tva_rate).
+
+    Exemple : dépassement 10 kW pendant 30 min = 10 × 12,41 × 0,5 = 62,05 €.
+    """
+    from services.billing_engine.catalog import TURPE7_RATES
     from services.power.peak_detection_engine import TARIF_DEPASSEMENT_EUR_KW
 
-    assert TARIF_DEPASSEMENT_EUR_KW == 12.65
+    assert TARIF_DEPASSEMENT_EUR_KW == 12.41, "CMDPS BT>36 doit être aligné sur CRE 2025-78 (12,41 €·h HT)"
+    assert TURPE7_RATES["TURPE_CMDPS_C4"]["rate"] == 12.41
+    assert TURPE7_RATES["TURPE_CMDPS_C4"]["unit"] == "EUR/h"
+    assert "CRE TURPE 7" in TURPE7_RATES["TURPE_CMDPS_C4"]["source"]
+    assert TURPE7_RATES["TURPE_CMDPS_C4"]["valid_from"] == "2025-02-01"
+
     cost = 10.0 * TARIF_DEPASSEMENT_EUR_KW * 0.5
-    assert abs(cost - 63.25) < 0.01
+    assert abs(cost - 62.05) < 0.01
 
 
 def test_ps_compared_per_poste():

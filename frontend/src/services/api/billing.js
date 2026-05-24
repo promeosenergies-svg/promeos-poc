@@ -17,9 +17,19 @@ export const getInvoiceShadowBreakdown = (invoiceId) =>
 export const getBillingInvoices = (params = {}) =>
   api.get('/billing/invoices', { params }).then((r) => r.data);
 export const getSiteBilling = (siteId) => api.get(`/billing/site/${siteId}`).then((r) => r.data);
-export const getBillingRules = () => api.get('/billing/rules').then((r) => r.data);
-export const auditInvoice = (invoiceId) =>
-  api.post(`/billing/audit/${invoiceId}`).then((r) => r.data);
+// ── Bill Intelligence P1 C5 (2026-05-24) — exports dead code → stubs Error ──
+// L'audit Bill Intel a identifié plusieurs API exports jamais consommés.
+// On les remplace par des stubs qui jettent une Error JS explicite si un
+// futur dev les réimporte — empêche toute réintroduction silencieuse.
+// Pattern identique à services/api/conformite.js (C3 P1.5 conformité).
+const _billingDead =
+  (name, replacement = null) =>
+  () => {
+    const tail = replacement ? ` — utiliser ${replacement} à la place` : '';
+    throw new Error(`[billing/api] ${name}() retiré P1 C5${tail}.`);
+  };
+export const getBillingRules = _billingDead('getBillingRules');
+export const auditInvoice = _billingDead('auditInvoice', 'auditAllInvoices()');
 export const auditAllInvoices = () => api.post('/billing/audit-all').then((r) => r.data);
 export const seedBillingDemo = () => api.post('/billing/seed-demo').then((r) => r.data);
 export const importInvoicesCsv = (file) => {
@@ -31,14 +41,12 @@ export const importInvoicesCsv = (file) => {
     })
     .then((r) => r.data);
 };
-export const patchBillingInsight = (insightId, data) =>
-  api.patch(`/billing/insights/${insightId}`, data).then((r) => r.data);
+export const patchBillingInsight = _billingDead('patchBillingInsight', 'resolveBillingInsight()');
 export const resolveBillingInsight = (insightId, notes = null) =>
   api
     .post(`/billing/insights/${insightId}/resolve`, null, { params: notes ? { notes } : {} })
     .then((r) => r.data);
-export const getImportBatches = (params = {}) =>
-  api.get('/billing/import/batches', { params }).then((r) => r.data);
+export const getImportBatches = _billingDead('getImportBatches');
 
 // PDF import + action creation + billing anomalies
 export const importInvoicesPdf = (siteId, file) => {
@@ -74,8 +82,7 @@ export const getCoverageSummary = (params = {}) =>
   api.get('/billing/coverage-summary', { params }).then((r) => r.data);
 export const getMissingPeriods = (params = {}) =>
   api.get('/billing/missing-periods', { params }).then((r) => r.data);
-export const getNormalizedInvoices = (params = {}) =>
-  api.get('/billing/invoices/normalized', { params }).then((r) => r.data);
+export const getNormalizedInvoices = _billingDead('getNormalizedInvoices', 'getBillingInvoices()');
 export const getBillingCompareMonthly = (params = {}) =>
   api.get('/billing/compare-monthly', { params }).then((r) => r.data);
 
@@ -106,3 +113,15 @@ export const getPortfolioReconciliationCsv = (params = {}) =>
 // V98: Guidance Layer
 export const getReconciliationEvidenceSummary = (siteId) =>
   api.get(`/patrimoine/sites/${siteId}/reconciliation/evidence/summary`).then((r) => r.data);
+
+// ── Bill Intelligence P1 C4 (2026-05-24) — Sync anomalies → ActionCenter ──
+// Ferme la boucle anomalie facture → action de litige.
+// Idempotent par signature (org_id, kind, domain, title). Timeout 20s pour
+// éviter spinner infini (pattern conformité P1.5).
+export const syncBillingActionsFromAnomalies = (idempotencyKey = null) =>
+  api
+    .post('/billing/sync-actions-from-anomalies', null, {
+      params: idempotencyKey ? { idempotency_key: idempotencyKey } : {},
+      timeout: 20000,
+    })
+    .then((r) => r.data);

@@ -837,8 +837,31 @@ def audit_all_invoices(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Audit all imported invoices (scoped to org)."""
-    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    """Audit all imported invoices (scoped to org).
+
+    Bill Intelligence P1 C3 (2026-05-24) : ne retourne plus jamais HTTP 500
+    en cas d'absence de contexte org — bascule en 401 NO_ORG_CONTEXT FR
+    (pattern conformité P1 sync-remediation-actions).
+    """
+    import uuid as _uuid
+
+    try:
+        effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    except HTTPException as exc:
+        # Reformatage doctriné FR (aligné conformite_sync.py P1)
+        correlation = request.headers.get("X-Correlation-ID") or _uuid.uuid4().hex[:8]
+        if exc.status_code in (401, 403):
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "code": "NO_ORG_CONTEXT",
+                    "message": "Aucun contexte organisation — authentification requise pour auditer les factures.",
+                    "hint": "Fournir un JWT valide portant un claim org_id, ou se connecter via /login.",
+                    "correlation_id": correlation,
+                },
+            ) from exc
+        raise
+
     invoices = _org_sites_query(db, EnergyInvoice, effective_org_id).all()
     results = []
     reconcile_results = []
