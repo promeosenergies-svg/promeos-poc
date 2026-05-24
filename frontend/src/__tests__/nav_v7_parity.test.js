@@ -100,16 +100,18 @@ describe('Nav V7 — Structure', () => {
   // Phase 17.bis.B : Flex Intelligence ajouté module Énergie ;
   // Phase 17.bis.C : Décret Tertiaire / OPERAT promu module Conformité ;
   // Phase 1.C P0.3 : Centre d'action exposé en panel Accueil → 15 → 16 items.
-  it("16 items visible in normal mode (+ Centre d'action Phase 1.C P0.3)", () => {
+  // Cleanup sidebar Conformité (2026-05-24) : retrait des 2 sous-items DT/APER
+  // de la sidebar (hub unique /conformite + chips internes) → 16 → 14 items.
+  it('14 items visible in normal mode (cleanup sidebar Conformité)', () => {
     const mainSections = NAV_SECTIONS.filter((s) => !s.expertOnly);
     const items = mainSections.flatMap((s) => getVisibleItems(s.items, false));
-    expect(items).toHaveLength(16);
+    expect(items).toHaveLength(14);
   });
 
   it('same count in expert mode (no expertOnly items left)', () => {
     const mainSections = NAV_SECTIONS.filter((s) => !s.expertOnly);
     const items = mainSections.flatMap((s) => getVisibleItems(s.items, true));
-    expect(items).toHaveLength(16);
+    expect(items).toHaveLength(14);
   });
 
   it('zero expertOnly items in main modules (tabs merged into parent pages)', () => {

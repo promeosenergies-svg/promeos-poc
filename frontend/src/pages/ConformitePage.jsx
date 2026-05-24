@@ -61,14 +61,29 @@ import {
   getAuditSmeAssessment,
 } from '../services/api';
 
-// V7 — regulation filter map (URL ?regulation=) → list of obligation codes to match
+// V7 — regulation filter map (URL ?regulation=) → list of obligation codes to match.
+// Cleanup sidebar Conformité (2026-05-24) — étendu à `beges` car la chip
+// réglementaire interne « SMÉ / BEGES » couvre les deux obligations Loi 2025-391.
 const REGULATION_FILTER_MAP = {
   dt: ['decret_tertiaire_operat', 'decret_tertiaire', 'dt'],
   bacs: ['bacs'],
   aper: ['aper'],
-  'audit-sme': ['audit_sme', 'audit_energetique'],
+  'audit-sme': ['audit_sme', 'audit_energetique', 'beges', 'bilan_ges'],
 };
 const ALLOWED_REGULATION_FILTERS = Object.keys(REGULATION_FILTER_MAP);
+
+// Cleanup sidebar Conformité (2026-05-24) — chips réglementaires internes.
+// Ordre fixé (Vue d'ensemble en tête + 4 obligations dans l'ordre de la
+// trajectoire DAF / Marie : DT/OPERAT annuel, BACS 2030, APER, SMÉ/BEGES
+// 11/10/2026). Aucun nouveau menu : navigation par `?regulation=` URL param
+// déjà câblé (regulationFilter + sortedObligations). Doctrine §6.2 hub unique.
+const REGULATION_CHIPS = [
+  { key: null, label: "Vue d'ensemble" },
+  { key: 'dt', label: 'Décret Tertiaire / OPERAT' },
+  { key: 'bacs', label: 'BACS' },
+  { key: 'aper', label: 'APER' },
+  { key: 'audit-sme', label: 'SMÉ / BEGES' },
+];
 
 // Extracted sub-components
 import { DevApiBadge, DevScopeBadge } from '../components/conformite/DevBadges';
@@ -809,6 +824,62 @@ export default function ConformitePage() {
         today={timeline?.today}
         loading={timelineLoading}
       />
+
+      {/* Cleanup sidebar Conformité (2026-05-24) — Chips réglementaires
+          internes. Remplacent les sous-items sidebar « Décret Tertiaire /
+          OPERAT » et « Solarisation (APER) » retirés de NavRegistry. Hub
+          unique /conformite (doctrine §6.2), navigation par `?regulation=`
+          déjà câblé (regulationFilter + sortedObligations). Aucun nouveau
+          menu : c'est une barre de filtres inline, pas un second tab strip. */}
+      <div
+        className="mt-3 mb-2 flex flex-wrap items-center gap-2"
+        data-testid="regulation-chips-bar"
+        role="tablist"
+        aria-label="Sections réglementaires"
+      >
+        <span className="mr-1 text-[11px] font-medium uppercase tracking-wider text-gray-500">
+          Sections
+        </span>
+        {REGULATION_CHIPS.map((chip) => {
+          const isActive = (regulationFilter || null) === chip.key;
+          const count = chip.key
+            ? obligations.filter((o) => {
+                const allowed = REGULATION_FILTER_MAP[chip.key] || [];
+                return allowed.some((c) => (o.code || '').toLowerCase().includes(c.toLowerCase()));
+              }).length
+            : obligations.length;
+          return (
+            <button
+              key={chip.key || 'all'}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              data-testid={`regulation-chip-${chip.key || 'all'}`}
+              onClick={() => {
+                const next = new URLSearchParams(searchParams);
+                if (chip.key) next.set('regulation', chip.key);
+                else next.delete('regulation');
+                setSearchParams(next, { replace: true });
+                track('conformite_regulation_chip', { regulation: chip.key || 'all' });
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+                isActive
+                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-emerald-200 hover:text-emerald-700'
+              }`}
+            >
+              {chip.label}
+              {count > 0 && (
+                <span
+                  className={`font-mono text-[10px] ${isActive ? 'text-emerald-600' : 'text-gray-400'}`}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Cockpit Tabs */}
       <div ref={tabsRef} />

@@ -141,20 +141,30 @@ describe('NAV_SECTIONS V7', () => {
     }
   });
 
-  // Phase 17.bis.C : Décret Tertiaire / OPERAT promu en item sidebar
-  // (module Conformité) → 2 items → 3 items.
-  it('conformite section exists with 3 items (parent + Décret Tertiaire + APER)', () => {
+  // Cleanup sidebar Conformité (2026-05-24) : /conformite redevient le hub
+  // unique. Les sous-items Décret Tertiaire / OPERAT et Solarisation (APER)
+  // sont retirés de la sidebar — ils existent désormais comme chips
+  // réglementaires internes à /conformite (?regulation=dt|aper). Doctrine
+  // §6.2 hub unique : la section ne contient plus qu'un seul item.
+  it('conformite section exists with exactly 1 item (hub unique)', () => {
     const conformite = NAV_SECTIONS.find((s) => s.module === 'conformite');
     expect(conformite).toBeDefined();
-    expect(conformite.items).toHaveLength(3);
+    expect(conformite.items).toHaveLength(1);
   });
 
-  it('conformite section contains Conformité, Décret Tertiaire et APER', () => {
+  it('conformite section contains only Conformité hub (no DT/APER sub-items)', () => {
     const conformite = NAV_SECTIONS.find((s) => s.module === 'conformite');
     const labels = conformite.items.map((i) => i.label);
     expect(labels).toContain('Conformité');
-    expect(labels).toContain('Décret Tertiaire / OPERAT');
-    expect(labels).toContain('Solarisation (APER)');
+    expect(labels).not.toContain('Décret Tertiaire / OPERAT');
+    expect(labels).not.toContain('Solarisation (APER)');
+  });
+
+  it('no conformite sidebar item points to /conformite/tertiaire or /conformite/aper', () => {
+    const conformite = NAV_SECTIONS.find((s) => s.module === 'conformite');
+    const tos = conformite.items.map((i) => i.to);
+    expect(tos).not.toContain('/conformite/tertiaire');
+    expect(tos).not.toContain('/conformite/aper');
   });
 
   // Phase 1.D — P0.1 : Bill Intelligence promu de l'item enfoui dans
@@ -204,23 +214,64 @@ describe('NAV_SECTIONS V7', () => {
   });
 });
 
+/* ── Cleanup sidebar Conformité (2026-05-24) ── */
+describe('Cleanup sidebar Conformité — deep-link discoverability', () => {
+  // Sidebar Conformité ne contient plus que /conformite (hub unique). Les
+  // routes /conformite/tertiaire et /conformite/aper restent accessibles en
+  // deep-link et doivent rester indexées dans CommandPalette via HIDDEN_PAGES
+  // pour discoverability ⌘K (anti-pattern §6.2 : pas de page invisible
+  // sans porte d'entrée).
+  it('HIDDEN_PAGES contains /conformite/tertiaire (deep-link only)', async () => {
+    const { HIDDEN_PAGES } = await import('../NavRegistry');
+    const dt = HIDDEN_PAGES.find((p) => p.to === '/conformite/tertiaire');
+    expect(dt).toBeDefined();
+    expect(dt.hidden).toBe(true);
+    expect(dt.reason).toMatch(/deep-link/);
+  });
+
+  it('HIDDEN_PAGES contains /conformite/aper (deep-link only)', async () => {
+    const { HIDDEN_PAGES } = await import('../NavRegistry');
+    const aper = HIDDEN_PAGES.find((p) => p.to === '/conformite/aper');
+    expect(aper).toBeDefined();
+    expect(aper.hidden).toBe(true);
+    expect(aper.reason).toMatch(/deep-link/);
+  });
+
+  it('ROUTE_MODULE_MAP keeps /conformite/tertiaire and /conformite/aper deep-links', () => {
+    // Les routes doivent rester accessibles : retirer de la sidebar ≠ retirer
+    // les routes. Garantit que la nav module fonctionne pour ces deep-links.
+    expect(ROUTE_MODULE_MAP['/conformite/tertiaire']).toBe('conformite');
+    expect(ROUTE_MODULE_MAP['/conformite/aper']).toBe('conformite');
+  });
+
+  it('parent /conformite item keywords cover DT, BACS, APER, SMÉ, BEGES for search', () => {
+    // La sidebar ayant fusionné les sous-items en chips internes, la search
+    // palette ⌘K doit pouvoir résoudre les acronymes vers /conformite (hub
+    // unique) — keywords étendus au moment du cleanup.
+    const confo = NAV_SECTIONS.find((s) => s.module === 'conformite');
+    const parent = confo.items.find((i) => i.to === '/conformite');
+    for (const kw of ['tertiaire', 'operat', 'bacs', 'aper', 'sme', 'beges']) {
+      expect(parent.keywords).toContain(kw);
+    }
+  });
+});
+
 /* ── Expert filtering (item level) ── */
 describe('Expert filtering V7', () => {
-  // Phase 17.bis.B + 17.bis.C : Flex Intelligence ajouté module Énergie +
-  // Décret Tertiaire/OPERAT promu module Conformité → 13 → 15 items.
-  // Phase 1.C P0.3 : Centre d'action exposé en panel Accueil → 15 → 16 items.
-  it("normal mode: 16 visible items (+ Centre d'action Phase 1.C P0.3)", () => {
+  // Cleanup sidebar Conformité (2026-05-24) : retrait des 2 sous-items
+  // DT/APER de la sidebar (hub unique /conformite) → 16 → 14 items.
+  it('normal mode: 14 visible items (cleanup sidebar Conformité)', () => {
     const normal = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, false)
     );
-    expect(normal).toHaveLength(16);
+    expect(normal).toHaveLength(14);
   });
 
-  it('expert mode: same 16 items (no expertOnly items left)', () => {
+  it('expert mode: same 14 items (no expertOnly items left)', () => {
     const expert = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, true)
     );
-    expect(expert).toHaveLength(16);
+    expect(expert).toHaveLength(14);
   });
 
   it('zero expert-only items (all tabs merged into parent pages)', () => {
