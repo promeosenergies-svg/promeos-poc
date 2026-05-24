@@ -1067,16 +1067,24 @@ def list_insights(
         action_map = {a.source_id: a.id for a in actions}
 
     # P1.5: Resolve supplier name for each insight via invoice → contract
+    # P2-B C4: aussi resolve energy_type pour badge énergie côté FE.
     supplier_map = {}
+    energy_type_map: dict = {}
     invoice_ids = [i.invoice_id for i in insights if i.invoice_id]
     if invoice_ids:
         inv_rows = (
-            db.query(EnergyInvoice.id, EnergyContract.supplier_name)
+            db.query(
+                EnergyInvoice.id,
+                EnergyContract.supplier_name,
+                EnergyContract.energy_type,
+            )
             .outerjoin(EnergyContract, EnergyInvoice.contract_id == EnergyContract.id)
             .filter(EnergyInvoice.id.in_(invoice_ids))
             .all()
         )
         supplier_map = {r[0]: r[1] for r in inv_rows if r[1]}
+        # P2-B C4 — map invoice_id → energy_type (élec/gaz) pour badge FE
+        energy_type_map = {r[0]: (r[2].value if r[2] else None) for r in inv_rows if r[2] is not None}
 
     return {
         "insights": [
@@ -1093,6 +1101,8 @@ def list_insights(
                 "notes": i.notes,
                 "action_id": action_map.get(str(i.id)),
                 "supplier": supplier_map.get(i.invoice_id),
+                # P2-B C4 — énergie pour badge dans liste anomalies FE
+                "energy_type": energy_type_map.get(i.invoice_id),
             }
             for i in insights
         ],
@@ -1176,6 +1186,17 @@ def get_insight_detail(
         if inv.contract_id:
             inv_contract = db.query(EnergyContract).filter(EnergyContract.id == inv.contract_id).first()
         p_s, p_e = inv.period_start, inv.period_end
+        # P2-B C2 (2026-05-24) — exposer plus de champs métier au drawer :
+        # énergie, contrat (id + numéro/dates), code règle source de l'insight.
+        # Doctrine "DAF comprend l'anomalie sans ouvrir 4 écrans".
+        energy_type_str = None
+        if inv_contract and inv_contract.energy_type:
+            energy_type_str = inv_contract.energy_type.value
+        contract_label = None
+        if inv_contract:
+            # Préférence : numéro contrat / sinon id + dates
+            contract_label = getattr(inv_contract, "contract_number", None) or f"#{inv_contract.id}"
+
         invoice_ident = {
             "invoice_number": inv.invoice_number,
             "period_start": str(p_s) if p_s else None,
@@ -1187,6 +1208,16 @@ def get_insight_detail(
             "puissance_kva": getattr(inv_contract, "subscribed_power_kva", None) if inv_contract else None,
             "kwh_total": inv.energy_kwh,
             "site_name": getattr(inv_site, "nom", None) or getattr(inv_site, "name", None) if inv_site else None,
+            # P2-B C2 — champs ajoutés pour drawer enrichi
+            "energy_type": energy_type_str,
+            "contract_id": inv_contract.id if inv_contract else None,
+            "contract_label": contract_label,
+            "contract_start": str(getattr(inv_contract, "start_date", None))
+            if inv_contract and inv_contract.start_date
+            else None,
+            "contract_end": str(getattr(inv_contract, "end_date", None))
+            if inv_contract and inv_contract.end_date
+            else None,
         }
 
     return {

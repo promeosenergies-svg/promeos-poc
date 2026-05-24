@@ -13,6 +13,7 @@ import {
   TAB_LABELS,
 } from '../../constants';
 import { formatDateTimeFR } from '../../utils/date';
+import { BillingAnomalyBackLink } from './BillingAnomalyBackLink';
 import { BlockersTab } from './BlockersTab';
 import { Breadcrumb } from './Breadcrumb';
 import { DrawerActions } from './DrawerActions';
@@ -158,6 +159,12 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
           le composant retourne null sans bruit. Activable dès BE M3+ tracé. */}
       <DrawerBreadcrumb item={item} />
       <ItemHeader item={item} loading={itemLoading} error={itemError} />
+
+      {/* P2-B C3 (2026-05-24) — Lien retour vers l'anomalie source si
+          domain=facturation + description contient EXTERNAL_REF:billing_anomaly:<id>.
+          Permet de fermer la boucle Anomalie → Action de litige → retour à
+          l'Anomalie sans navigation manuelle. Aucun nouveau menu. */}
+      <BillingAnomalyBackLink item={item} />
 
       {/* M2-5.10.C — Impact financier 4 quadrants (audit Jean-Marc CFO P0-1).
           Section indépendante du fetch item : `useActionCenterV4Impact` est

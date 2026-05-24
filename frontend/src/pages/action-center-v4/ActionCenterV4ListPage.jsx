@@ -8,7 +8,7 @@ import ErrorState from '../../ui/ErrorState';
 import Pagination from '../../ui/Pagination';
 
 import { useActionCenterV4Items } from '../../hooks/v4';
-import { COPY, KIND_LABELS, LIFECYCLE_ORDER, PAGE_SIZE } from './constants';
+import { COPY, DOMAIN_LABELS, KIND_LABELS, LIFECYCLE_ORDER, PAGE_SIZE } from './constants';
 import { ItemsTable } from './components/items/ItemsTable';
 import { ItemDetailDrawer } from './components/drawer/ItemDetailDrawer';
 import { ListFilterBar } from './components/narrative/ListFilterBar';
@@ -46,10 +46,15 @@ import { PilotageTabs } from './components/narrative/PilotageTabs';
  */
 const VALID_KINDS = new Set(Object.keys(KIND_LABELS));
 const VALID_STATES = new Set(LIFECYCLE_ORDER);
+// P2-B C1 (2026-05-24) — filtre domain (audit Bill Intelligence : actions
+// facturation créées par sync étaient invisibles dans la masse). Whitelist
+// stricte alignée sur DOMAIN_LABELS (7 valeurs canoniques Domain enum BE).
+const VALID_DOMAINS = new Set(Object.keys(DOMAIN_LABELS));
 
 function parseFilterParams(searchParams) {
   const rawState = searchParams.get('state');
   const rawKind = searchParams.get('kind');
+  const rawDomain = searchParams.get('domain');
   const rawPage = parseInt(searchParams.get('page') ?? '', 10);
   // M2-6.C.2 — filtre `without_owner` (Q32=A) déclenchable depuis la
   // NarrativeBar tuile « Sans responsable ». Booléen strict — seul `true`
@@ -58,6 +63,7 @@ function parseFilterParams(searchParams) {
   return {
     stateFilter: rawState && VALID_STATES.has(rawState) ? rawState : null,
     kindFilter: rawKind && VALID_KINDS.has(rawKind) ? rawKind : null,
+    domainFilter: rawDomain && VALID_DOMAINS.has(rawDomain) ? rawDomain : null,
     withoutOwner: rawWithoutOwner === 'true',
     page: Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1,
   };
@@ -68,7 +74,8 @@ export function ActionCenterV4ListPage() {
   // « Filter state loss on cross-page navigation »). Le drawer + cross-page
   // → retour conserve désormais les filtres ; un share-link reflète la vue.
   const [searchParams, setSearchParams] = useSearchParams();
-  const { stateFilter, kindFilter, withoutOwner, page } = parseFilterParams(searchParams);
+  const { stateFilter, kindFilter, domainFilter, withoutOwner, page } =
+    parseFilterParams(searchParams);
 
   // Le drawer reste en state local : pas besoin de persister l'item ouvert
   // dans l'URL (UX bizarre au refresh — réouverture systématique non désirée).
@@ -91,13 +98,17 @@ export function ActionCenterV4ListPage() {
     return items.filter((item) => {
       if (stateFilter && item.lifecycle_state !== stateFilter) return false;
       if (kindFilter && item.kind !== kindFilter) return false;
+      // P2-B C1 (2026-05-24) — filtre domain (Facturation, Conformité, etc.).
+      // Permet au DAF de retrouver ses actions de litige facture créées par
+      // `POST /api/billing/sync-actions-from-anomalies` (P1 C4).
+      if (domainFilter && item.domain !== domainFilter) return false;
       // M2-6.C.2 — filtre « Sans responsable » (Q32=A). Sélection visuelle
       // pure : item conservé si `owner_id` est NULL (cohérent doctrine
       // anti-déduction — pas de fallback magique sur actor_name/created_by).
       if (withoutOwner && item.owner_id) return false;
       return true;
     });
-  }, [items, stateFilter, kindFilter, withoutOwner]);
+  }, [items, stateFilter, kindFilter, domainFilter, withoutOwner]);
 
   // M2-5.10.A.bis — counts par kind sur la page courante (sélection visuelle
   // pour les `chip-count` MONO maquette ligne 745-752). Limité à la page
@@ -139,6 +150,8 @@ export function ActionCenterV4ListPage() {
           };
           apply('state', next.stateFilter);
           apply('kind', next.kindFilter);
+          // P2-B C1 — propagation du filtre domain dans l'URL (share-link compat).
+          apply('domain', next.domainFilter);
           // M2-6.C.2 — `withoutOwner: true` → param URL 'true' ; false/null → suppression.
           if (next.withoutOwner !== undefined) {
             if (next.withoutOwner) sp.set('without_owner', 'true');
@@ -169,8 +182,20 @@ export function ActionCenterV4ListPage() {
     [updateFilters]
   );
 
+  // P2-B C1 (2026-05-24) — handler dédié filtre domain (pattern identique).
+  const handleDomainFilterChange = useCallback(
+    (value) => updateFilters({ domainFilter: value || null }),
+    [updateFilters]
+  );
+
   const handleReset = useCallback(
-    () => updateFilters({ stateFilter: null, kindFilter: null, withoutOwner: false }),
+    () =>
+      updateFilters({
+        stateFilter: null,
+        kindFilter: null,
+        domainFilter: null,
+        withoutOwner: false,
+      }),
     [updateFilters]
   );
 
@@ -199,6 +224,8 @@ export function ActionCenterV4ListPage() {
         onStateFilterChange={handleStateFilterChange}
         kindFilter={kindFilter}
         onKindFilterChange={handleKindFilterChange}
+        domainFilter={domainFilter}
+        onDomainFilterChange={handleDomainFilterChange}
         kindCounts={kindCounts}
         onReset={handleReset}
       />

@@ -162,6 +162,7 @@ def sync_actions_from_anomalies(
     )
 
     created: list[dict] = []
+    updated: list[dict] = []  # P2-B C5
     skipped_existing: list[dict] = []
     skipped_resolved_user: list[dict] = []
     skipped_non_actionable: list[dict] = []
@@ -190,6 +191,40 @@ def sync_actions_from_anomalies(
             if existing.lifecycle_state == LifecycleState.CLOSED.value:
                 # L'utilisateur a clos l'item — jamais re-créer
                 skipped_resolved_user.append({"anomaly_id": anomaly.id, "lifecycle_state": existing.lifecycle_state})
+                continue
+
+            # P2-B C5 (2026-05-24) — Update si montant a changé.
+            # Doctrine : "Si une anomalie devient valorisable après audit,
+            # l'action doit être créée OU mise à jour (montant, description)."
+            # Une anomalie 'devient valorisable' = is_monetizable a basculé
+            # False→True (gérée par le check is_monetizable=False ci-dessus —
+            # si on est arrivé ici, elle est désormais valorisable). Si l'action
+            # existait avant (créée à priori comme stub) on la met à jour.
+            # Plus simplement : on rafraîchit description + priority si le
+            # montant détecté a évolué (>5% delta ou changement de severity).
+            new_description = _make_description(anomaly, invoice)
+            new_bracket = _SEVERITY_TO_BRACKET.get(anomaly.severity, "P2")
+            new_score = _SEVERITY_TO_SCORE.get(anomaly.severity, 50.0)
+
+            changed_fields = []
+            if existing.description != new_description:
+                existing.description = new_description
+                changed_fields.append("description")
+            if existing.priority_bracket != new_bracket:
+                existing.priority_bracket = new_bracket
+                changed_fields.append("priority_bracket")
+            if existing.priority_score != new_score:
+                existing.priority_score = new_score
+                changed_fields.append("priority_score")
+
+            if changed_fields:
+                updated.append(
+                    {
+                        "id": str(existing.id),
+                        "anomaly_id": anomaly.id,
+                        "fields_changed": changed_fields,
+                    }
+                )
             else:
                 skipped_existing.append({"anomaly_id": anomaly.id, "lifecycle_state": existing.lifecycle_state})
             continue
@@ -226,6 +261,7 @@ def sync_actions_from_anomalies(
     return {
         "org_id": org_id,
         "created": created,
+        "updated": updated,  # P2-B C5 — actions dont montant/desc/priorité ont été rafraîchis
         "skipped_existing": skipped_existing,
         "skipped_resolved_user": skipped_resolved_user,
         "skipped_non_actionable": skipped_non_actionable,
@@ -233,6 +269,7 @@ def sync_actions_from_anomalies(
         "summary": {
             "total_anomalies_seen": total,
             "created": len(created),
+            "updated": len(updated),  # P2-B C5
             "skipped_existing": len(skipped_existing),
             "skipped_resolved_user": len(skipped_resolved_user),
             "skipped_non_actionable": len(skipped_non_actionable),

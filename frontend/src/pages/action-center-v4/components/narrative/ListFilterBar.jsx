@@ -1,6 +1,13 @@
 import { RotateCcw } from 'lucide-react';
 
-import { COPY, KIND_LABELS, LIFECYCLE_LABELS, LIFECYCLE_ORDER, SOL_COPY } from '../../constants';
+import {
+  COPY,
+  DOMAIN_LABELS,
+  KIND_LABELS,
+  LIFECYCLE_LABELS,
+  LIFECYCLE_ORDER,
+  SOL_COPY,
+} from '../../constants';
 
 /**
  * M2-5.2 / M2-5.10.A / .bis — Filtres du référentiel (maquette §8.3 lignes 740-783).
@@ -138,15 +145,88 @@ function StateChipDropdown({ value, onChange }) {
   );
 }
 
+/**
+ * P2-B C1 (2026-05-24) — Dropdown domain (pattern identique à StateChipDropdown).
+ * Permet au DAF de retrouver ses actions de litige facture (Facturation),
+ * conformité, etc., créées par les sync backend (P1 C4 + conformité P1).
+ * Aucun nouveau menu — extension du FilterBar existant.
+ */
+function DomainChipDropdown({ value, onChange }) {
+  // Ordre déterministe (FR alphabétique pour lecture DAF).
+  const domainOrder = [
+    'conformite',
+    'facturation',
+    'purchase',
+    'optimisation',
+    'flexibilite',
+    'maintenance',
+    'data_quality',
+  ];
+  return (
+    <span
+      className="relative inline-flex items-center"
+      style={{
+        background: 'var(--sol-bg-paper)',
+        color: 'var(--sol-ink-700)',
+        border: '1px solid var(--sol-ink-300)',
+        borderRadius: '9999px',
+        paddingLeft: '10px',
+        paddingRight: '26px',
+      }}
+    >
+      <span
+        className="pr-1.5 font-sans text-[12px] font-medium"
+        style={{ color: 'var(--sol-ink-700)' }}
+      >
+        Domaine
+      </span>
+      <select
+        aria-label="Filtrer par domaine"
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value || null)}
+        className={
+          'cursor-pointer appearance-none border-none bg-transparent py-1 ' +
+          'font-sans text-[12px] font-medium outline-none ' +
+          'focus-visible:outline-none focus-visible:ring-2 ' +
+          'focus-visible:ring-[color:var(--sol-ink-900)] rounded-full'
+        }
+        style={{ color: 'var(--sol-ink-900)' }}
+      >
+        <option value="">Tous les domaines</option>
+        {domainOrder.map((d) => (
+          <option key={d} value={d}>
+            {DOMAIN_LABELS[d]}
+          </option>
+        ))}
+      </select>
+      <svg
+        className="pointer-events-none absolute right-2 h-2.5 w-2.5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        aria-hidden="true"
+        style={{ color: 'var(--sol-ink-500)' }}
+      >
+        <polyline points="6 9 12 15 18 9" />
+      </svg>
+    </span>
+  );
+}
+
 export function ListFilterBar({
   stateFilter,
   onStateFilterChange,
   kindFilter,
   onKindFilterChange,
+  // P2-B C1 (2026-05-24) — filtre domain optionnel (rétro-compat : props absentes
+  // = comportement identique pré-P2-B, sans dropdown affiché).
+  domainFilter,
+  onDomainFilterChange,
   kindCounts = {},
   onReset,
 }) {
-  const isFilterActive = Boolean(stateFilter) || Boolean(kindFilter);
+  const isFilterActive = Boolean(stateFilter) || Boolean(kindFilter) || Boolean(domainFilter);
   // Total page courante = somme des counts par kind (utilisé sur le chip
   // « Tous les types »).
   const totalPage = Object.values(kindCounts).reduce((s, n) => s + n, 0);
@@ -201,6 +281,11 @@ export function ListFilterBar({
         </span>
 
         <StateChipDropdown value={stateFilter} onChange={onStateFilterChange} />
+
+        {/* P2-B C1 (2026-05-24) — dropdown Domaine si handler fourni (rétro-compat) */}
+        {onDomainFilterChange && (
+          <DomainChipDropdown value={domainFilter} onChange={onDomainFilterChange} />
+        )}
 
         {isFilterActive && (
           <button
