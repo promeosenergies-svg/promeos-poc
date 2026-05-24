@@ -88,11 +88,9 @@ const TYPE_LABELS = {
       Le total <Explain term="ttc">TTC</Explain> ne se reconstitue pas
     </>
   ),
-  reseau_mismatch: (
-    <>
-      L'acheminement réseau dépasse le tarif <Explain term="turpe">TURPE</Explain> attendu
-    </>
-  ),
+  // P2-A F7 (2026-05-24) — label énergie-agnostique côté liste anomalies.
+  // L'énergie réelle est précisée dans le drawer (`getBreakdownRows`).
+  reseau_mismatch: <>L'acheminement réseau dépasse le tarif attendu</>,
   taxes_mismatch: (
     <>
       Les taxes dépassent l'<Explain term="accise">accise</Explain> et la{' '}
@@ -151,12 +149,23 @@ const CAUSE_LABELS = {
   ),
   price_drift: (m) =>
     `Le prix unitaire a dérivé de ${fmtNum(m.drift_pct, 1) === '—' ? '?' : fmtNum(m.drift_pct, 1)}% par rapport à la période précédente.`,
-  reseau_mismatch: (m) => (
-    <>
-      L&apos;écart réseau/<Explain term="turpe">TURPE</Explain> ({fmt(m.delta_reseau)} €) dépasse le
-      seuil de 10%.
-    </>
-  ),
+  // P2-A F7 (2026-05-24) — wording énergie-aware pour la cause de l'écart réseau.
+  reseau_mismatch: (m) => {
+    const isGaz = (m.energy_type || '').toUpperCase() === 'GAZ';
+    const refLabel = isGaz ? (
+      <>
+        <Explain term="atrd">ATRD</Explain> + <Explain term="atrt">ATRT</Explain>
+      </>
+    ) : (
+      <Explain term="turpe">TURPE</Explain>
+    );
+    return (
+      <>
+        L&apos;écart {isGaz ? 'acheminement' : 'réseau'}/{refLabel} ({fmt(m.delta_reseau)} €)
+        dépasse le seuil de 10%.
+      </>
+    );
+  },
   taxes_mismatch: (m) => (
     <>
       L&apos;écart taxes/<Explain term="accise">accise</Explain> ({fmt(m.delta_taxes)} €) dépasse le
@@ -173,29 +182,41 @@ const CAUSE_LABELS = {
 };
 
 function getBreakdownRows(energyType) {
+  // P2-A F7 (2026-05-24) — labels énergie-aware corrigés :
+  // - Élec : "Réseau (TURPE)" + "Accise électricité (CSPE/TICFE)"
+  // - Gaz  : "Acheminement (ATRD + ATRT)" + "Accise gaz (TICGN)"
+  // Bug racine doctrinal : afficher "TURPE" sur une facture gaz décrédibilise
+  // tout le moteur de vérification (TURPE = élec uniquement, CRE 2025-78).
   const et = (energyType || '').toUpperCase();
-  const taxLabel =
-    et === 'ELEC' ? (
-      <>
-        <Explain term="accise">Accise</Explain> électricité
-      </>
-    ) : et === 'GAZ' ? (
-      <>
-        <Explain term="accise">Accise</Explain> gaz (TICGN)
-      </>
-    ) : (
-      'Taxes & contributions'
-    );
+  const isGaz = et === 'GAZ';
+
+  const taxLabel = isGaz ? (
+    <>
+      <Explain term="accise">Accise</Explain> gaz (TICGN)
+    </>
+  ) : et === 'ELEC' ? (
+    <>
+      <Explain term="accise">Accise</Explain> électricité (CSPE/TICFE)
+    </>
+  ) : (
+    'Taxes & contributions'
+  );
+
+  const fournitureLabel = isGaz ? 'Gaz (fourniture)' : 'Énergie (fourniture)';
+
+  const reseauLabel = isGaz ? (
+    <>
+      Acheminement (<Explain term="atrd">ATRD</Explain> + <Explain term="atrt">ATRT</Explain>)
+    </>
+  ) : (
+    <>
+      Réseau (<Explain term="turpe">TURPE</Explain>)
+    </>
+  );
+
   return [
-    { key: 'fourniture', label: 'Énergie (fourniture)' },
-    {
-      key: 'reseau',
-      label: (
-        <>
-          Réseau (<Explain term="turpe">TURPE</Explain>)
-        </>
-      ),
-    },
+    { key: 'fourniture', label: fournitureLabel },
+    { key: 'reseau', label: reseauLabel },
     { key: 'taxes', label: taxLabel },
     { key: 'tva', label: <Explain term="tva">TVA</Explain> },
   ];
@@ -283,7 +304,7 @@ function ReconstitutionBanner({ breakdown }) {
   const confidence = breakdown.confidence;
   const confidence_label = breakdown.confidence_label;
   const confidence_rationale = breakdown.confidence_rationale;
-  if (!label && !confidence_label) return null;
+  if (!label && !confidence_label && breakdown.is_reliable !== false) return null;
 
   const reconColor =
     breakdown.reconstitution_status === 'complete'
@@ -294,15 +315,38 @@ function ReconstitutionBanner({ breakdown }) {
   const confStatus = CONFIDENCE_STATUS_MAP[confidence] || 'neutral';
   const confDisplay = confidence_label || confidence || '—';
 
+  // P2-A F1+F8 (2026-05-24) — bannière "non fiable" si shadow_billing_v2 a
+  // calculé en mode dégradé (sans contrat / sans prix de référence).
+  // Doctrine "facture sans contrat = non fiable" — le DAF doit le voir EN CLAIR.
+  const unreliable = breakdown.is_reliable === false;
+  const reliabilityReason = breakdown.reliability_reason;
+
   return (
-    <div
-      className={`flex items-center gap-2 px-3 py-2 bg-${reconColor}-50 border border-${reconColor}-200 rounded-lg`}
-    >
-      <Info size={14} className={`text-${reconColor}-500`} />
-      <span className="text-xs text-gray-700">{label || 'Reconstitution'}</span>
-      <Badge status={confStatus} title={confidence_rationale || `Confiance : ${confDisplay}`}>
-        {confDisplay}
-      </Badge>
+    <div className="space-y-2">
+      {unreliable && (
+        <div className="flex items-start gap-2 px-3 py-2 bg-red-50 border border-red-300 rounded-lg">
+          <Info size={14} className="text-red-600 mt-0.5 shrink-0" />
+          <div className="text-xs text-red-800">
+            <p className="font-semibold mb-0.5">Reconstitution non fiable</p>
+            <p>
+              {reliabilityReason ||
+                'Cette facture ne peut pas être recalculée de manière opposable. ' +
+                  'Ne pas utiliser ce breakdown comme preuve auprès du fournisseur.'}
+            </p>
+          </div>
+        </div>
+      )}
+      {(label || confidence_label) && (
+        <div
+          className={`flex items-center gap-2 px-3 py-2 bg-${reconColor}-50 border border-${reconColor}-200 rounded-lg`}
+        >
+          <Info size={14} className={`text-${reconColor}-500`} />
+          <span className="text-xs text-gray-700">{label || 'Reconstitution'}</span>
+          <Badge status={confStatus} title={confidence_rationale || `Confiance : ${confDisplay}`}>
+            {confDisplay}
+          </Badge>
+        </div>
+      )}
     </div>
   );
 }

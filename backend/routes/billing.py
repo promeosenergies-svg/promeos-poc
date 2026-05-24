@@ -144,6 +144,9 @@ class BillingSummaryResponse(BaseModel):
     insights_by_severity: dict
     invoices_with_anomalies: int
     invoices_clean: int
+    # P2-A F2 (2026-05-24) — métadonnées KPI doctrinales
+    # (période analysée, périmètre, unités HT/TTC, source des calculs).
+    kpi_metadata: Optional[dict] = None
 
 
 class ContractListResponse(BaseModel):
@@ -991,6 +994,24 @@ def billing_summary(
 
     loss_rounded = round(total_loss, 2)
 
+    # P2-A F2 (2026-05-24) — métadonnées KPI doctrinales (période/scope/unit/source).
+    # Doctrine "Aucun KPI sans source, formule, unité, période, périmètre."
+    period_starts = [i.period_start for i in invoices if i.period_start]
+    period_ends = [i.period_end for i in invoices if i.period_end]
+    kpi_metadata = {
+        "period_analyzed": {
+            "start": min(period_starts).isoformat() if period_starts else None,
+            "end": max(period_ends).isoformat() if period_ends else None,
+        },
+        "scope": "site" if site_id else "org",
+        "total_eur_unit": "TTC",
+        "total_estimated_loss_eur_unit": "TTC",
+        "total_estimated_loss_eur_source": (
+            "Σ BillingInsight.estimated_loss_eur (issus de shadow_billing_v2 delta_ttc)"
+        ),
+        "computed_at": datetime.now().isoformat(),
+    }
+
     return {
         "total_invoices": len(invoices),
         "total_eur": round(total_eur, 2),
@@ -1003,6 +1024,7 @@ def billing_summary(
         "insights_by_severity": by_severity,
         "invoices_with_anomalies": len([i for i in invoices if i.status == BillingInvoiceStatus.ANOMALY]),
         "invoices_clean": len([i for i in invoices if i.status == BillingInvoiceStatus.AUDITED]),
+        "kpi_metadata": kpi_metadata,
     }
 
 
@@ -1104,8 +1126,13 @@ def get_insight_detail(
 
     metrics = json.loads(insight.metrics_json or "{}")
 
-    # Recalcul V2 à la demande si breakdown absent (metrics peut être {} ou None-like)
-    if metrics.get("expected_ttc") is None and metrics.get("expected_fourniture_ht") is None:
+    # Recalcul V2 à la demande si breakdown absent OU si les métadonnées P2-A
+    # `is_reliable`/`reliability_reason` ne sont pas encore présentes (cas
+    # insights legacy persistés avant P2-A 2026-05-24).
+    needs_recalc = (
+        metrics.get("expected_ttc") is None and metrics.get("expected_fourniture_ht") is None
+    ) or "is_reliable" not in metrics
+    if needs_recalc:
         try:
             from services.billing_shadow_v2 import shadow_billing_v2
 

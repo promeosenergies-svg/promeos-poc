@@ -907,11 +907,17 @@ export default function BillIntelPage() {
               value={summary.total_insights}
               color="red"
             />
+            {/* P2-A F5 (2026-05-24) — renommage doctrinal :
+                "Pertes estimées" était ambigu (gain potentiel ou surcoût ?).
+                Nouveau libellé "Surfacturations à contester" exprime sans
+                ambiguïté qu'il s'agit d'un montant à récupérer auprès du
+                fournisseur via une action de litige. */}
             <SummaryCard
               icon={TrendingUp}
-              label="Pertes estimées"
-              value={fmtEur(activeLoss)}
+              label="Surfacturations à contester"
+              value={`${fmtEur(activeLoss)} TTC`}
               color="orange"
+              title="Somme des écarts shadow billing TTC sur factures encore ouvertes — montants à récupérer via réclamation fournisseur."
             />
           </div>
           {/* Step 15: Billing KPI messages */}
@@ -1487,11 +1493,13 @@ const SUMMARY_TONE = {
   orange: { bg: 'var(--sol-afaire-bg)', fg: 'var(--sol-afaire-fg)' },
 };
 
-function SummaryCard({ icon: Icon, label, value, color }) {
+function SummaryCard({ icon: Icon, label, value, color, title }) {
+  // P2-A F5 (2026-05-24) — `title` accepté pour exposer la doctrine KPI
+  // (source/formule/unité/période) en tooltip natif HTML sans casser le rendu.
   const tone = SUMMARY_TONE[color] || SUMMARY_TONE.indigo;
   return (
     <Card>
-      <CardBody style={{ background: tone.bg }}>
+      <CardBody style={{ background: tone.bg }} title={title}>
         <div className="flex items-center gap-2 mb-1">
           <Icon size={16} style={{ color: tone.fg, opacity: 0.75 }} />
           <p className="text-xs font-medium" style={{ color: 'var(--sol-ink-500)' }}>
