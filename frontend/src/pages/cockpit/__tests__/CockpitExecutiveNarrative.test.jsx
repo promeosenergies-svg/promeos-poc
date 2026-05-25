@@ -85,21 +85,41 @@ const samplePriorities = [
     id: 'billing_439',
     label_fr: 'Surfacturation à contester (2149 €)',
     why_fr: 'Montant à contester',
+    source_fr: 'BillingInsight (insight le plus coûteux)',
+    action_recommandee_fr: 'Ouvrir la facture, vérifier le poste contesté, déclencher un litige.',
     impact: { value: 2148.64, unit: '€' },
     deadline: { iso: null, days_remaining: null },
     perimetre_fr: 'Site #3',
     cta: { label_fr: 'Voir la facture', link: '/bill-intel?insight=439' },
     priority_rank: 1,
+    category: 'billing',
   },
   {
     id: 'compliance_next',
     label_fr: 'Échéance conformité : OPERAT 2026',
     why_fr: 'Risque réglementaire',
+    source_fr: 'compliance.timeline.next_deadline',
+    action_recommandee_fr:
+      'Préparer la déclaration ou les pièces justificatives avant la deadline.',
     impact: { value: 42, unit: 'jours restants' },
     deadline: { iso: '2026-07-01', days_remaining: 42 },
     perimetre_fr: 'org',
     cta: { label_fr: "Voir l'obligation", link: '/conformite' },
     priority_rank: 2,
+    category: 'regulatory_urgent',
+  },
+  {
+    id: 'evidence_xyz',
+    label_fr: 'Preuve manquante : Audit énergétique 2024',
+    why_fr: 'Preuve manquante bloquante',
+    source_fr: 'ActionBlocker.blocker_type=waiting_evidence',
+    action_recommandee_fr: 'Téléverser le rapport ADEME signé.',
+    impact: { value: 80, unit: 'score' },
+    deadline: { iso: null, days_remaining: null },
+    perimetre_fr: 'CONFORMITE',
+    cta: { label_fr: "Ouvrir l'action", link: '/centre-action?item=xyz' },
+    priority_rank: 3,
+    category: 'evidence_missing',
   },
 ];
 
@@ -145,7 +165,7 @@ describe('CockpitExecutiveNarrative — 3 blocs', () => {
   });
 });
 
-describe('CockpitExecutiveNarrative — Top 3 priorités', () => {
+describe('CockpitExecutiveNarrative — Top priorités', () => {
   it('rend chaque priorité avec rang + why + impact + CTA', () => {
     renderWithRouter(
       <CockpitExecutiveNarrative
@@ -155,7 +175,7 @@ describe('CockpitExecutiveNarrative — Top 3 priorités', () => {
     );
     expect(screen.getByTestId('exec-priority-1')).toBeInTheDocument();
     expect(screen.getByTestId('exec-priority-2')).toBeInTheDocument();
-    expect(screen.queryByTestId('exec-priority-3')).toBeNull();
+    expect(screen.getByTestId('exec-priority-3')).toBeInTheDocument();
 
     const p1 = screen.getByTestId('exec-priority-1');
     expect(p1).toHaveTextContent('Montant à contester');
@@ -173,10 +193,9 @@ describe('CockpitExecutiveNarrative — Top 3 priorités', () => {
         topPriorities={samplePriorities}
       />
     );
-    const cta1 = screen.getByTestId('exec-priority-1-cta');
-    const cta2 = screen.getByTestId('exec-priority-2-cta');
     const allowed = ['/bill-intel', '/conformite', '/patrimoine', '/centre-action'];
-    for (const cta of [cta1, cta2]) {
+    for (const rank of [1, 2, 3]) {
+      const cta = screen.getByTestId(`exec-priority-${rank}-cta`);
       const href = cta.getAttribute('href');
       expect(
         allowed.some((route) => href.startsWith(route)),
@@ -195,8 +214,19 @@ describe('CockpitExecutiveNarrative — Top 3 priorités', () => {
     const p2 = screen.getByTestId('exec-priority-2');
     expect(p2).toHaveTextContent('dans 42 j');
   });
+});
 
-  it('wording « 1 priorité détectée » quand une seule priorité (anti-Top 3 trompeur)', () => {
+describe('CockpitExecutiveNarrative — wording dynamique 0/1/2-3 (Cockpit P1.5)', () => {
+  it('0 priorité → message rassurant « Aucune priorité critique détectée »', () => {
+    renderWithRouter(
+      <CockpitExecutiveNarrative executiveSummary={sampleSummary} topPriorities={[]} />
+    );
+    const empty = screen.getByTestId('exec-top-priorities-empty');
+    expect(empty).toHaveTextContent("Aucune priorité critique détectée aujourd'hui");
+    expect(screen.queryByTestId('exec-top-priorities')).toBeNull();
+  });
+
+  it('1 priorité → « 1 priorité détectée — à traiter maintenant » (pas de Top 1)', () => {
     renderWithRouter(
       <CockpitExecutiveNarrative
         executiveSummary={sampleSummary}
@@ -206,9 +236,10 @@ describe('CockpitExecutiveNarrative — Top 3 priorités', () => {
     const header = screen.getByTestId('exec-top-priorities');
     expect(header).toHaveTextContent('1 priorité détectée — à traiter maintenant');
     expect(header).not.toHaveTextContent(/Top\s+1/i);
+    expect(screen.queryByTestId('exec-top-priorities-empty')).toBeNull();
   });
 
-  it('wording « Top N priorités » quand N ≥ 2', () => {
+  it('3 priorités → « 3 priorités à traiter en premier » (brief Lead Product)', () => {
     renderWithRouter(
       <CockpitExecutiveNarrative
         executiveSummary={sampleSummary}
@@ -216,7 +247,72 @@ describe('CockpitExecutiveNarrative — Top 3 priorités', () => {
       />
     );
     const header = screen.getByTestId('exec-top-priorities');
-    expect(header).toHaveTextContent('Top 2 priorités — à traiter maintenant');
+    expect(header).toHaveTextContent('3 priorités à traiter en premier');
+    expect(header).not.toHaveTextContent(/Top\s+3/i);
+  });
+
+  it('2 priorités → « 2 priorités à traiter en premier »', () => {
+    renderWithRouter(
+      <CockpitExecutiveNarrative
+        executiveSummary={sampleSummary}
+        topPriorities={samplePriorities.slice(0, 2)}
+      />
+    );
+    const header = screen.getByTestId('exec-top-priorities');
+    expect(header).toHaveTextContent('2 priorités à traiter en premier');
+  });
+});
+
+describe('CockpitExecutiveNarrative — bloc « Pourquoi cette priorité ? » (Cockpit P1.5)', () => {
+  it('chaque priorité expose un bloc expandable avec source/impact/échéance/périmètre/action', () => {
+    renderWithRouter(
+      <CockpitExecutiveNarrative
+        executiveSummary={sampleSummary}
+        topPriorities={samplePriorities}
+      />
+    );
+    for (const rank of [1, 2, 3]) {
+      const why = screen.getByTestId(`exec-priority-${rank}-why`);
+      expect(why).toHaveTextContent('Pourquoi cette priorité ?');
+      expect(why).toHaveTextContent(/Source/);
+      expect(why).toHaveTextContent(/Impact/);
+      expect(why).toHaveTextContent(/Échéance/);
+      expect(why).toHaveTextContent(/Périmètre/);
+      expect(why).toHaveTextContent(/Action recommandée/);
+    }
+  });
+
+  it('CTA /centre-action pour priorité evidence_missing (4e catégorie P1.5)', () => {
+    renderWithRouter(
+      <CockpitExecutiveNarrative
+        executiveSummary={sampleSummary}
+        topPriorities={samplePriorities}
+      />
+    );
+    const cta3 = screen.getByTestId('exec-priority-3-cta');
+    expect(cta3).toHaveAttribute('href', expect.stringContaining('/centre-action'));
+  });
+
+  it('CTA /conformite pour priorité regulatory_urgent', () => {
+    renderWithRouter(
+      <CockpitExecutiveNarrative
+        executiveSummary={sampleSummary}
+        topPriorities={samplePriorities}
+      />
+    );
+    const cta2 = screen.getByTestId('exec-priority-2-cta');
+    expect(cta2).toHaveAttribute('href', '/conformite');
+  });
+
+  it('CTA /bill-intel pour priorité billing', () => {
+    renderWithRouter(
+      <CockpitExecutiveNarrative
+        executiveSummary={sampleSummary}
+        topPriorities={samplePriorities}
+      />
+    );
+    const cta1 = screen.getByTestId('exec-priority-1-cta');
+    expect(cta1.getAttribute('href')).toMatch(/^\/bill-intel/);
   });
 });
 

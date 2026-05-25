@@ -56,18 +56,41 @@ def _kpi(*, id_, label_fr, value, unit, source, formula, period, scope, sub=None
     return out
 
 
-def _priority(*, id_, label_fr, why_fr, impact_value, impact_unit, deadline_iso,
-              days_remaining, perimetre_fr, cta_label_fr, cta_link, priority_rank):
-    """Format une priorité (Top 3) avec tous les champs DAF."""
+def _priority(
+    *,
+    id_,
+    label_fr,
+    why_fr,
+    impact_value,
+    impact_unit,
+    deadline_iso,
+    days_remaining,
+    perimetre_fr,
+    cta_label_fr,
+    cta_link,
+    priority_rank,
+    source_fr,
+    action_recommandee_fr,
+    category,
+):
+    """Format une priorité (Top 3) avec tous les champs DAF.
+
+    Cockpit P1.5 (2026-05-25) — ajout source_fr + action_recommandee_fr (Phase
+    « Pourquoi cette priorité ? ») + category (clé interne d'ordonnancement
+    canonique : 5 catégories préservées pour tri stable côté service).
+    """
     return {
         "id": id_,
         "label_fr": label_fr,
         "why_fr": why_fr,
+        "source_fr": source_fr,
+        "action_recommandee_fr": action_recommandee_fr,
         "impact": {"value": impact_value, "unit": impact_unit},
         "deadline": {"iso": deadline_iso, "days_remaining": days_remaining},
         "perimetre_fr": perimetre_fr,
         "cta": {"label_fr": cta_label_fr, "link": cta_link},
         "priority_rank": priority_rank,
+        "category": category,
     }
 
 
@@ -242,6 +265,8 @@ def _top_billing_priority(db: Session, site_ids: list[int]) -> Optional[dict]:
         id_=f"billing_{top.id}",
         label_fr=f"Surfacturation à contester ({round(top.estimated_loss_eur)} €)",
         why_fr="Montant à contester",
+        source_fr="BillingInsight (insight le plus coûteux, status open/ack)",
+        action_recommandee_fr="Ouvrir la facture, vérifier le poste contesté, déclencher un litige fournisseur si confirmé.",
         impact_value=round(float(top.estimated_loss_eur), 2),
         impact_unit="€",
         deadline_iso=None,
@@ -250,6 +275,7 @@ def _top_billing_priority(db: Session, site_ids: list[int]) -> Optional[dict]:
         cta_label_fr="Voir la facture",
         cta_link=f"/bill-intel?insight={top.id}",
         priority_rank=1,
+        category="billing",
     )
 
 
@@ -264,6 +290,8 @@ def _top_compliance_priority(db: Session, org_id: int) -> Optional[dict]:
         id_=f"compliance_{next_dl.get('id', 'next')}",
         label_fr=f"Échéance conformité : {label}",
         why_fr="Risque réglementaire",
+        source_fr="compliance.timeline.next_deadline (frise réglementaire ADR-024)",
+        action_recommandee_fr="Préparer la déclaration ou les pièces justificatives avant la deadline ; assigner un pilote.",
         impact_value=days,
         impact_unit="jours restants",
         deadline_iso=next_dl.get("deadline"),
@@ -272,6 +300,7 @@ def _top_compliance_priority(db: Session, org_id: int) -> Optional[dict]:
         cta_label_fr="Voir l'obligation",
         cta_link="/conformite",
         priority_rank=2,
+        category="regulatory_urgent" if days < 30 else "regulatory",
     )
 
 
@@ -285,9 +314,7 @@ def _top_patrimoine_priority(db: Session, org_id: int) -> Optional[dict]:
         data_missing = 0
         worst_rule = None
         for rule_code, entries in (app or {}).items():
-            missing = sum(
-                1 for e in entries if getattr(e, "status", None) == ApplicabilityStatus.DATA_MISSING
-            )
+            missing = sum(1 for e in entries if getattr(e, "status", None) == ApplicabilityStatus.DATA_MISSING)
             if missing > data_missing:
                 data_missing = missing
                 worst_rule = rule_code
@@ -296,7 +323,9 @@ def _top_patrimoine_priority(db: Session, org_id: int) -> Optional[dict]:
         return _priority(
             id_=f"patrimoine_{worst_rule}",
             label_fr=f"Données manquantes ({data_missing} site(s)) — {worst_rule}",
-            why_fr="Donnée manquante",
+            why_fr="Donnée patrimoine bloquante",
+            source_fr=f"applicability_service.compute_applicability (status=DATA_MISSING sur {worst_rule})",
+            action_recommandee_fr="Compléter la fiche patrimoine du site (surface, énergie, usage) pour débloquer l'évaluation réglementaire.",
             impact_value=data_missing,
             impact_unit="sites",
             deadline_iso=None,
@@ -305,35 +334,145 @@ def _top_patrimoine_priority(db: Session, org_id: int) -> Optional[dict]:
             cta_label_fr="Compléter les données",
             cta_link=f"/patrimoine?incomplete={worst_rule}",
             priority_rank=3,
+            category="patrimoine",
         )
     except Exception:
         return None
 
 
-def compute_top_priorities(db: Session, org_id: int) -> list[dict]:
-    """Agrège Top 3 priorités cross-briques (au plus 3 entrées).
+def _top_evidence_priority(db: Session, org_id: int) -> Optional[dict]:
+    """Action ouverte bloquée par un blocker waiting_evidence (preuve manquante).
 
-    Stratégie : 1 priorité Billing (plus gros €) + 1 conformité (deadline)
-    + 1 patrimoine (data manquante). Si une catégorie est vide, on ne
-    « remplit pas » la place pour éviter du bruit (vrai signal > N entrées).
+    Cockpit P1.5 (2026-05-25) — 4e catégorie de priorité : si un item
+    ActionCenter est bloqué côté evidence, on remonte le signal pour que
+    le pilote sache exactement quelle pièce produire.
+    """
+    try:
+        from models.v4.action_blockers import ActionBlocker
+
+        row = (
+            db.query(ActionCenterItem, ActionBlocker)
+            .join(ActionBlocker, ActionBlocker.item_id == ActionCenterItem.id)
+            .filter(
+                ActionCenterItem.organisation_id == org_id,
+                ActionCenterItem.lifecycle_state != LifecycleState.CLOSED.value,
+                ActionBlocker.blocker_type == "waiting_evidence",
+                ActionBlocker.resolved_at.is_(None),
+            )
+            .order_by(ActionCenterItem.priority_score.desc().nulls_last())
+            .first()
+        )
+        if not row:
+            return None
+        item, blocker = row
+        return _priority(
+            id_=f"evidence_{item.id}",
+            label_fr=f"Preuve manquante : {item.title}",
+            why_fr="Preuve manquante bloquante",
+            source_fr="ActionBlocker.blocker_type='waiting_evidence' (ADR-029 evidence audit trail)",
+            action_recommandee_fr=(
+                blocker.justification or "Produire ou téléverser la pièce justificative pour débloquer l'action."
+            ),
+            impact_value=item.priority_score or 0,
+            impact_unit="score",
+            deadline_iso=None,
+            days_remaining=None,
+            perimetre_fr=item.domain or "org",
+            cta_label_fr="Ouvrir l'action",
+            cta_link=f"/centre-action?item={item.id}",
+            priority_rank=4,
+            category="evidence_missing",
+        )
+    except Exception:
+        return None
+
+
+def _top_contract_priority(db: Session, site_ids: list[int]) -> Optional[dict]:
+    """Contrat énergie à surveiller : end_date < 90 jours.
+
+    Cockpit P1.5 (2026-05-25) — 5e catégorie : alerte DAF sur un contrat
+    qui arrive à échéance pour préparer la renégociation/renouvellement.
+    """
+    if not site_ids:
+        return None
+    today = date.today()
+    horizon = today.toordinal() + 90
+    contract = (
+        db.query(EnergyContract)
+        .filter(
+            EnergyContract.site_id.in_(site_ids),
+            EnergyContract.end_date.isnot(None),
+            EnergyContract.end_date >= today,
+        )
+        .order_by(EnergyContract.end_date.asc())
+        .first()
+    )
+    if not contract or contract.end_date.toordinal() > horizon:
+        return None
+    days = (contract.end_date - today).days
+    return _priority(
+        id_=f"contract_{contract.id}",
+        label_fr=f"Contrat énergie à renouveler ({contract.supplier_name or 'fournisseur'})",
+        why_fr="Contrat à surveiller",
+        source_fr="EnergyContract.end_date (horizon 90 j)",
+        action_recommandee_fr="Lancer la consultation marché et préparer la renégociation avant échéance.",
+        impact_value=days,
+        impact_unit="jours restants",
+        deadline_iso=contract.end_date.isoformat(),
+        days_remaining=days,
+        perimetre_fr=f"Site #{contract.site_id}",
+        cta_label_fr="Voir le contrat",
+        cta_link=f"/bill-intel?contract={contract.id}",
+        priority_rank=5,
+        category="contract",
+    )
+
+
+# Ordre canonique Cockpit P1.5 (2026-05-25) — brief Lead Product :
+#   1. risque réglementaire urgent  (deadline < 30 j)
+#   2. montant facture à contester
+#   3. preuve manquante bloquante
+#   4. donnée patrimoine bloquante
+#   5. contrat énergie à surveiller
+# « regulatory » (non urgent) tombe après contract pour ne pas bumper un
+# DT 2030 à la place d'une surfact immédiate.
+_CATEGORY_ORDER = {
+    "regulatory_urgent": 0,
+    "billing": 1,
+    "evidence_missing": 2,
+    "patrimoine": 3,
+    "contract": 4,
+    "regulatory": 5,
+}
+
+
+def compute_top_priorities(db: Session, org_id: int) -> list[dict]:
+    """Agrège Top 3 priorités cross-briques selon l'ordre canonique P1.5.
+
+    5 catégories collectées (billing, compliance, evidence, patrimoine,
+    contract). Tri par `_CATEGORY_ORDER` puis cap à 3. Si une catégorie
+    est vide, on ne « remplit pas » — vrai signal > N entrées vides.
     """
     if not org_id:
         return []
     site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
-    priorities: list[dict] = []
-    p_billing = _top_billing_priority(db, site_ids)
-    if p_billing:
-        priorities.append(p_billing)
-    p_compliance = _top_compliance_priority(db, org_id)
-    if p_compliance:
-        priorities.append(p_compliance)
-    p_patrimoine = _top_patrimoine_priority(db, org_id)
-    if p_patrimoine:
-        priorities.append(p_patrimoine)
-    # Renumérote rank pour rester séquentiel 1-N
-    for idx, p in enumerate(priorities, start=1):
+    candidates: list[dict] = []
+    for builder in (
+        lambda: _top_billing_priority(db, site_ids),
+        lambda: _top_compliance_priority(db, org_id),
+        lambda: _top_evidence_priority(db, org_id),
+        lambda: _top_patrimoine_priority(db, org_id),
+        lambda: _top_contract_priority(db, site_ids),
+    ):
+        p = builder()
+        if p:
+            candidates.append(p)
+
+    candidates.sort(key=lambda p: _CATEGORY_ORDER.get(p.get("category"), 9))
+    top = candidates[:3]
+    for idx, p in enumerate(top, start=1):
         p["priority_rank"] = idx
-    return priorities[:3]
+    return top
 
 
 # ─── Entrée publique combinée ────────────────────────────────────────

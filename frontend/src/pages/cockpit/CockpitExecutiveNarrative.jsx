@@ -107,7 +107,17 @@ function KpiBlock({ kpi }) {
 }
 
 function PriorityCard({ priority }) {
-  const { label_fr, why_fr, impact, deadline, perimetre_fr, cta, priority_rank } = priority;
+  const {
+    label_fr,
+    why_fr,
+    source_fr,
+    action_recommandee_fr,
+    impact,
+    deadline,
+    perimetre_fr,
+    cta,
+    priority_rank,
+  } = priority;
   const impactDisplay =
     impact?.unit === '€'
       ? formatEuros(impact.value)
@@ -144,6 +154,44 @@ function PriorityCard({ priority }) {
           </span>
         )}
       </div>
+
+      {/* Cockpit P1.5 (2026-05-25) — Bloc « Pourquoi cette priorité ? »
+          expandable : expose source + impact + échéance + périmètre +
+          action recommandée. Collapsed par défaut pour ne pas alourdir
+          la carte tant que le DAF veut juste scanner les rangs. */}
+      {(source_fr || action_recommandee_fr) && (
+        <details
+          className="text-[11px] text-gray-600 mt-1 border-t border-gray-100 pt-2"
+          data-testid={`exec-priority-${priority_rank}-why`}
+        >
+          <summary className="cursor-pointer select-none font-medium text-gray-700 hover:text-gray-900">
+            Pourquoi cette priorité ?
+          </summary>
+          <dl className="mt-2 grid grid-cols-[110px_1fr] gap-y-1 gap-x-2">
+            {source_fr && (
+              <>
+                <dt className="text-gray-500">Source</dt>
+                <dd className="text-gray-800">{source_fr}</dd>
+              </>
+            )}
+            <dt className="text-gray-500">Impact</dt>
+            <dd className="text-gray-800">{impactDisplay}</dd>
+            <dt className="text-gray-500">Échéance</dt>
+            <dd className="text-gray-800">{deadlineDisplay || 'Non datée'}</dd>
+            <dt className="text-gray-500">Périmètre</dt>
+            <dd className="text-gray-800">{perimetre_fr}</dd>
+            {action_recommandee_fr && (
+              <>
+                <dt className="text-gray-500">Action recommandée</dt>
+                <dd className="text-gray-800">
+                  <SolNarrativeText text={action_recommandee_fr} />
+                </dd>
+              </>
+            )}
+          </dl>
+        </details>
+      )}
+
       {cta?.link && (
         <Link
           to={cta.link}
@@ -205,18 +253,47 @@ export default function CockpitExecutiveNarrative({ executiveSummary, topPriorit
         </div>
       )}
 
-      {/* Bloc 2 — Top priorités (wording dynamique : « 1 priorité détectée »
-          si une seule, « Top N priorités » sinon — évite l'effet « Top 3 »
-          trompeur quand le service n'a remonté qu'une priorité). */}
+      {/* Bloc 2 — Top priorités (wording dynamique selon 0/1/2-3) :
+          - 0 priorité  → message rassurant « Aucune priorité critique »
+          - 1 priorité  → « 1 priorité détectée — à traiter maintenant »
+          - 2-3 priorités → « N priorités à traiter en premier »
+          Évite l'effet « Top 3 » trompeur ET le bloc vide qui inquiète. */}
+      {priorities.length === 0 && kpis.length > 0 && (
+        <div data-testid="exec-top-priorities-empty">
+          <h3 className="mb-2 text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <AlertTriangle size={16} className="text-gray-300" aria-hidden="true" />
+            Priorités du jour
+          </h3>
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-4 text-sm text-emerald-900">
+            Aucune priorité critique détectée aujourd'hui.
+            <p className="mt-1 text-xs text-emerald-800/80">
+              Continuez à surveiller les KPIs ci-dessus — un nouveau signal cross-brique remontera
+              ici dès qu'il sera détecté.
+            </p>
+          </div>
+        </div>
+      )}
+
       {priorities.length > 0 && (
         <div data-testid="exec-top-priorities">
           <h3 className="mb-2 text-sm font-semibold text-gray-700 flex items-center gap-2">
             <AlertTriangle size={16} className="text-amber-600" aria-hidden="true" />
             {priorities.length === 1
               ? '1 priorité détectée — à traiter maintenant'
-              : `Top ${priorities.length} priorités — à traiter maintenant`}
+              : `${priorities.length} priorités à traiter en premier`}
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* Cockpit P1.5 (2026-05-25) — grille adaptative selon N pour
+              éviter une colonne vide (visuel « trou ») quand N < 3.
+              Tailwind JIT requiert classes statiques → on conditionne. */}
+          <div
+            className={
+              priorities.length === 1
+                ? 'grid grid-cols-1 gap-3'
+                : priorities.length === 2
+                  ? 'grid grid-cols-1 sm:grid-cols-2 gap-3'
+                  : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'
+            }
+          >
             {priorities.map((p) => (
               <PriorityCard key={p.id} priority={p} />
             ))}
