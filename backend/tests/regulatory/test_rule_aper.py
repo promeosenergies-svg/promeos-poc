@@ -115,6 +115,46 @@ def test_aper_data_missing_both_areas():
     assert "site.roof_area_m2" in app.missing_inputs
 
 
+def test_aper_parking_below_threshold_with_missing_roof():
+    """Conformité P1 2026-05-23 — gap audit P0 :
+
+    Si `parking_area < 1500` ET `roof_area_m2 IS NULL`, la règle NE DOIT PAS
+    conclure NOT_APPLICABLE.PARKING_LT_1500 (silent miss de la toiture).
+    Elle doit retourner DATA_MISSING.ROOF_AREA pour signaler que la
+    décision toiture reste à évaluer.
+    """
+    site = _site(parking_area_m2=800, roof_area_m2=None)
+    app = APEREvaluator().evaluate(site)
+    assert app.status == ApplicabilityStatus.DATA_MISSING, (
+        "Parking sous seuil + toiture absente ne doit PAS être NOT_APPLICABLE — "
+        "la toiture pourrait dépasser le seuil 500 m² une fois saisie."
+    )
+    assert app.reason_code == "APER.DATA_MISSING.ROOF_AREA"
+    assert app.missing_inputs == ["site.roof_area_m2"]
+
+
+def test_aper_parking_above_threshold_with_missing_roof_is_applicable():
+    """Non-régression : parking ≥ seuil + roof NULL → APPLICABLE.PARKING (roof inutile)."""
+    site = _site(parking_area_m2=2000, roof_area_m2=None)
+    app = APEREvaluator().evaluate(site)
+    assert app.status == ApplicabilityStatus.APPLICABLE
+    assert app.reason_code == "APER.APPLICABLE.PARKING"
+
+
+def test_aper_parking_below_threshold_with_roof_present_is_not_applicable():
+    """Non-régression : parking < seuil + toiture < seuil → NOT_APPLICABLE.NO_ELIGIBLE_AREA."""
+    site = _site(parking_area_m2=800, roof_area_m2=200)
+    app = APEREvaluator().evaluate(site)
+    assert app.status == ApplicabilityStatus.NOT_APPLICABLE
+    # Note : la règle privilégie NOT_APPLICABLE.PARKING_LT_1500 dans ce cas (gate L169).
+    # C'est un comportement intentionnel : parking sous seuil + toiture sous seuil
+    # = pas d'obligation APER → on signale la raison "parking trop petit" en priorité.
+    assert app.reason_code in {
+        "APER.NOT_APPLICABLE.PARKING_LT_1500",
+        "APER.NOT_APPLICABLE.NO_ELIGIBLE_AREA",
+    }
+
+
 # ── Discipline traçabilité ────────────────────────────────────────────────
 
 

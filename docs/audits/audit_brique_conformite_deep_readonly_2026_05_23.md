@@ -403,3 +403,65 @@ POST /api/regulatory/{org_id}/sync-remediation-actions
 ---
 
 *Audit clôturé le 2026-05-23 sur `claude/refonte-sol2 @ 7fe284f5`. Mode READ-ONLY strict respecté — aucune modification de code. Tous les chiffres et `file:ligne` cités sont vérifiés sur la branche cible (les agents READ-ONLY ont travaillé sur `claude/ci-hygiene-pre-existing-debt`, dont le diff vs refonte-sol2 est vide sur les périmètres audités). Sources réglementaires : JORF Légifrance + ADEME + ministère Transition écologique.*
+
+---
+
+## 13. Correctifs P1 réalisés (2026-05-23, post-PR #293)
+
+Sprint **Conformité P1** livré sur `claude/conformite-p1` après mergesage de la
+fondation P0 (PR #293, commit `79a3d2a1`). 6 chantiers ciblés sur les 3 risques
+majeurs identifiés en §12 :
+
+### Risque 1 — Boucle CadreApplicable → ActionCenterItem ✅ Fermée
+- **C1** — `POST /api/conformite/sync-remediation-actions` (`backend/routes/conformite_sync.py`).
+  Crée 1 `ActionCenterItem` par `(reason_code, scope_id)` `DATA_MISSING`. Idempotent
+  par signature `(org_id, kind, domain, title)`. NOT_APPLICABLE jamais reconverti.
+  Closed items jamais re-créés. Audit `ActionEventLog.event_payload.source="regulatory_rule"`.
+- **C2** — Bouton "Créer les actions à traiter" dans header `/conformite` (à côté
+  de "Réévaluer"). Toast récap `{created, skipped_existing, skipped_resolved}`.
+
+### Risque 2 — Lifecycle Evidence trop laxiste ✅ Durci
+- **C6 — validity service** — `services/v4/evidence_validity_service.py` remplace le
+  hardcoded `expires_at = uploaded_at + 90j` par une heuristique par règle :
+  DT/OPERAT/APER = 1 an, BACS = 3 ans, SMÉ ISO 50001 = 3 ans, SMÉ audit énergétique
+  = 4 ans (Loi 2025-391), BEGES = 3 ans, défaut = 90 j.
+- **C6 — download endpoint** — `GET /api/v4/action-center/evidences/{id}/download`
+  ferme le gap UX "preuve déposée mais non re-téléchargeable" : cross-org → 404
+  (anti-énumération), path traversal → 403, S3 non implémenté → 501, fichier
+  disparu → 404 `EVIDENCE_FILE_MISSING`.
+
+### Risque 3 — Dette routes mortes ✅ Allégée
+- **C5 — CEE Pipeline V69** — 6 endpoints (`/api/conformite/cee/*`) remplacés par
+  `410 Gone` avec message FR + lien doc.
+- **C5 — doublons BACS** — 2 endpoints (`/api/regops/bacs/score_explain/{site_id}` +
+  `/data_quality/{site_id}`) → `410 Gone` pointant vers les versions génériques
+  `/api/regops/score_explain?scope_type=site&scope_id=<id>`.
+
+### Couvertures complémentaires
+- **C4 — APER gate** — 3 nouveaux tests vérouillant `parking < 1500 + roof NULL →
+  DATA_MISSING.ROOF_AREA` (auparavant gap croisé silencieux NOT_APPLICABLE).
+- **C3 — UI Org/EJ minimal SMÉ/BEGES** — formulaire pliable dans `/conformite`
+  (composant `SmeBegesProfileCard`) avec 5 champs nécessaires aux gates SMÉ
+  (Loi 2025-391) et BEGES (Décret 2022-982) : `effectif_total`, `chiffre_affaires_eur`,
+  `bilan_eur`, `consommation_annuelle_moyenne_3y_gwh`, `iso_50001_actif`+`date_validite`.
+  Schemas `OrganisationUpdate`/`EntiteJuridiqueUpdate` étendus, serializers
+  `_org_to_dict`/`_entite_to_dict` exposent les champs.
+
+### Bilan tests P1
+63 tests backend verts (14 APER + 9 cleanup + 7 sync + 19 validity + 6 download +
+8 SMÉ/BEGES). FE : composant `SmeBegesProfileCard` + bouton header + API client.
+
+### Re-notation post-P1
+| Axe | P0 | P1 | Verdict |
+|---|---|---|---|
+| Distinction NOT_APPLICABLE vs DATA_MISSING | 7/10 | **9/10** | ✅ Gap APER comblé |
+| Workflow Evidence (legacy + V4) | 5/10 | **8/10** | ✅ Validity par règle + download endpoint |
+| Actions conformité (`ActionCenterItem`) | 5/10 | **8/10** | ✅ Boucle automatique fermée |
+| Routes/pages mortes | 4/10 | **7/10** | ✅ 8 endpoints CEE+BACS retirés (410 Gone) |
+
+**Note globale brique Conformité : 6,5 / 10 → 8 / 10 post-P1.** Reste P2 :
+suppression définitive `CompliancePage.jsx` (legacy front), 9 pages orphelines
+identifiées en §10, et migration des 35 EvidenceLegacy vers la table V4.
+
+**Doctrine respectée** : `/conformite` hub unique ; pas de menu ACC/PMO/Flex/PartnerHub
+créé ; pas de migration DDL (Alembic neutre) ; FE strict display-only.

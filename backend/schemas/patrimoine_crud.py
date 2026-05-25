@@ -41,6 +41,12 @@ class OrganisationUpdate(BaseModel):
     nom: Optional[str] = Field(None, min_length=1, max_length=200)
     type_client: Optional[str] = None
     siren: Optional[str] = None
+    # Conformité P1 2026-05-23 — données entreprise pour gates SMÉ/BEGES.
+    # Doctrine Audit SMÉ Loi 2025-391 art. 8 : seuil consolidé groupe = 2 critères /3.
+    # Doctrine BEGES Décret 2022-982 : >500 ETP métropole.
+    effectif_total: Optional[int] = Field(None, ge=0, description="Effectif total groupe consolidé (gate BEGES/SMÉ)")
+    chiffre_affaires_eur: Optional[float] = Field(None, ge=0, description="CA EUR groupe consolidé (gate SMÉ)")
+    bilan_eur: Optional[float] = Field(None, ge=0, description="Bilan EUR groupe consolidé (gate SMÉ)")
 
 
 # ── Entité Juridique ─────────────────────────────────────────────────────────
@@ -77,6 +83,14 @@ class EntiteJuridiqueUpdate(BaseModel):
     siret: Optional[str] = None
     naf_code: Optional[str] = None
     region_code: Optional[str] = None
+    # Conformité P1 2026-05-23 — données EJ pour gates SMÉ + suivi ISO 50001.
+    # `consommation_annuelle_moyenne_3y_gwh` = moyenne triennale (Audit SMÉ : >2.75 GWh assujetti).
+    # `iso_50001_actif` + `iso_50001_date_validite` = exemption Audit SMÉ (DDADUE 2025-391 art. 8).
+    consommation_annuelle_moyenne_3y_gwh: Optional[float] = Field(
+        None, ge=0, description="Consommation moyenne 3 ans GWh (gate Audit SMÉ)"
+    )
+    iso_50001_actif: Optional[bool] = Field(None, description="Certification ISO 50001 (SMÉ) active")
+    iso_50001_date_validite: Optional[date] = Field(None, description="Date validité certificat ISO 50001")
 
 
 # ── Portefeuille ─────────────────────────────────────────────────────────────

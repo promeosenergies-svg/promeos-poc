@@ -123,63 +123,39 @@ def recompute_bacs(site_id: int, request: Request, db: Session = Depends(get_db)
     }
 
 
-# ── Score explain ──
+# ── Score explain / Data quality — GONE (Conformité P1 2026-05-23) ──
+# Audit Conformité P0 §10.4 + P1 cleanup §C5 : doublons des versions génériques
+# `/api/regops/score_explain?scope_type=site&scope_id=<id>` et
+# `/api/regops/data_quality?scope_type=site&scope_id=<id>` qui sont la SoT.
+# Zéro caller frontend (vérifié par grep exhaustif). Suppression douce par 410.
 
 
-@router.get("/score_explain/{site_id}")
-def get_score_explain(site_id: int, request: Request, db: Session = Depends(get_db), auth=Depends(get_optional_auth)):
-    """Putile steps + threshold + TRI + penalties breakdown."""
-    _verify_site_access(db, site_id, request, auth)
-    asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
-    if not asset:
-        raise HTTPException(status_code=404, detail="No BacsAsset for this site")
-
-    systems = db.query(BacsCvcSystem).filter(BacsCvcSystem.asset_id == asset.id).all()
-    putile_result = compute_putile(systems)
-
-    assessment = (
-        db.query(BacsAssessment)
-        .filter(BacsAssessment.asset_id == asset.id)
-        .order_by(BacsAssessment.assessed_at.desc())
-        .first()
+def _bacs_endpoint_gone(replacement: str):
+    """Handler 410 pour les doublons bacs/* migrés vers regops/* générique."""
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "code": "CONFORMITE_BACS_DUPLICATE_GONE",
+            "message": (
+                "Cette route est dépréciée. Utilisez la version générique regops "
+                "qui couvre tous les frameworks (DT/BACS/APER/SMÉ/BEGES)."
+            ),
+            "replacement": replacement,
+            "doc": "docs/audits/audit_brique_conformite_deep_readonly_2026_05_23.md",
+        },
     )
 
-    return {
-        "site_id": site_id,
-        "putile": putile_result,
-        "assessment_summary": {
-            "is_obligated": assessment.is_obligated if assessment else None,
-            "threshold": assessment.threshold_applied if assessment else None,
-            "deadline": assessment.deadline_date.isoformat() if assessment and assessment.deadline_date else None,
-            "tri_years": assessment.tri_years if assessment else None,
-            "tri_exemption": assessment.tri_exemption_possible if assessment else None,
-            "compliance_score": assessment.compliance_score if assessment else None,
-            "confidence_score": assessment.confidence_score if assessment else None,
-        },
-        "evidence_trace": json.loads(assessment.evidence_json) if assessment and assessment.evidence_json else {},
-    }
+
+@router.get("/score_explain/{site_id}", status_code=410, deprecated=True)
+def get_score_explain_gone(site_id: int):
+    """HTTP 410 — doublon de /api/regops/score_explain?scope_type=site&scope_id=<id>."""
+    _bacs_endpoint_gone("GET /api/regops/score_explain?scope_type=site&scope_id=<id>")
 
 
-# ── Data quality ──
-
-
-@router.get("/data_quality/{site_id}")
-def get_bacs_data_quality(
-    site_id: int, request: Request, db: Session = Depends(get_db), auth=Depends(get_optional_auth)
-):
-    """BACS-specific DQ gate: BLOCKED / WARNING / OK."""
-    _verify_site_access(db, site_id, request, auth)
-    asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
-    if not asset:
-        return {
-            "site_id": site_id,
-            "gate_status": "BLOCKED",
-            "missing_critical": [{"field": "bacs_asset", "impact": "No BACS asset configured"}],
-            "missing_important": [],
-        }
-
-    systems = db.query(BacsCvcSystem).filter(BacsCvcSystem.asset_id == asset.id).all()
-    return _compute_bacs_dq(asset, systems)
+@router.get("/data_quality/{site_id}", status_code=410, deprecated=True)
+def get_bacs_data_quality_gone(site_id: int):
+    """HTTP 410 — doublon de /api/regops/data_quality?scope_type=site&scope_id=<id>."""
+    _bacs_endpoint_gone("GET /api/regops/data_quality?scope_type=site&scope_id=<id>")
 
 
 # ── Asset CRUD ──

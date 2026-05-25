@@ -164,10 +164,38 @@ Pendant la phase intermédiaire :
 
 ## 8. Critères d'acceptation P1 (rappel pour le sprint suivant)
 
-- [ ] Endpoint `POST /api/conformite/sync-remediation-actions` exposé.
-- [ ] Header `Idempotency-Key` obligatoire ; 2e requête identique retourne la 1re réponse.
-- [ ] Org-scoping via `resolve_org_id`.
-- [ ] Tests : création initiale + idempotency + nouvelle DATA_MISSING + multi-org.
-- [ ] Audit trail `item_created_from_rule` écrit pour chaque création.
-- [ ] Doc UI : où l'admin peut déclencher la synchronisation (un bouton dans `/conformite` action header, sans nouveau menu).
-- [ ] Aucun nouvel écran, aucun nouveau menu, aucune nouvelle brique.
+- [x] Endpoint `POST /api/conformite/sync-remediation-actions` exposé.
+- [x] Header `Idempotency-Key` validé UUID (400 `IDEMPOTENCY_KEY_INVALID` sinon) ;
+      idempotence métier par signature `(org_id, kind, domain, title)` côté serveur.
+- [x] Org-scoping via `populate_org_context` (V4) + `require_v4_role(USER, ADMIN)`.
+- [x] Tests : création initiale + replay idempotent + NOT_APPLICABLE = 0 + Idempotency-Key
+      invalide + item clos non re-créé + audit event log (`tests/test_conformite_sync_remediation_actions.py` — 7 tests).
+- [x] Audit trail écrit pour chaque création : `ActionEventLog(event_type=created,
+      event_payload.source="regulatory_rule", rule_code, reason_code, scope_level,
+      remediation_field)`. Le whitelist `EventType` (16 valeurs strictes) ne permet pas
+      d'ajouter `item_created_from_rule` sans migration DDL — on encode l'origine
+      réglementaire dans `event_payload.source` à la place.
+- [x] UI : bouton "Créer les actions à traiter" dans le header `/conformite` (à côté
+      de "Réévaluer"). Toast récap `{created, skipped_existing, skipped_resolved}`.
+- [x] Aucun nouvel écran, aucun nouveau menu, aucune nouvelle brique.
+
+---
+
+## 9. Conformité P1 — closure 2026-05-23
+
+Sprint Conformité P1 livré sur `claude/conformite-p1` :
+
+| Chantier | Livrables | Tests verts |
+|---|---|---|
+| **C1** — Endpoint sync | `backend/routes/conformite_sync.py` + `main.py` include | 7 |
+| **C2** — UI bouton synchroniser | `ConformitePage.jsx` (header actions) + `services/api/conformite.js::syncConformiteRemediationActions` | n/a (E2E manuel) |
+| **C3** — UI Org/EJ minimal SMÉ/BEGES | `components/conformite/SmeBegesProfileCard.jsx` + extension schemas `OrganisationUpdate`/`EntiteJuridiqueUpdate` + serializers `_org_to_dict`/`_entite_to_dict` | 8 |
+| **C4** — APER gate roof manquant | `tests/regulatory/test_rule_aper.py` (3 nouveaux tests : parking < seuil + roof NULL → DATA_MISSING.ROOF_AREA) | 14 (3 nouveaux) |
+| **C5** — Cleanup legacy | 6 endpoints CEE Pipeline V69 → 410 Gone + 2 doublons BACS regops → 410 Gone (`compliance.py`, `bacs.py`) | 9 |
+| **C6** — Evidence P1 | `services/v4/evidence_validity_service.py` (validité par règle : DT 1 an, BACS 3 ans, SMÉ ISO 50001 3 ans, audit énergétique 4 ans, BEGES 3 ans, défaut 90 j) + `GET /evidences/{id}/download` dans `routes/v4/action_center.py` | 25 (19 validity + 6 download) |
+| **Total** | — | **63 tests backend** |
+
+**Doctrine respectée** : `/conformite` reste le hub unique. Aucun menu ACC / PMO /
+Flex / Partner Hub créé. Tous les boutons et formulaires sont des sections de
+`/conformite`. Aucune route `/acc`. Frontend strict display-only + appels REST
+(zero business logic). Aucune migration DDL nécessaire (Alembic neutre).

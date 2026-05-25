@@ -121,6 +121,7 @@ from routes.digest import router as digest_router
 
 # Sprint C-1 Phase 6 — Cascade recompute preview (matrice v1 §8.4)
 from routes.cascade import router as cascade_router
+from routes.conformite_sync import router as conformite_sync_router  # Conformité P1 2026-05-23
 
 # Sprint C-2 Phase 1.4 — Site production-ready status (matrice v1 §9.2)
 from routes.site_readiness import router as site_readiness_router
@@ -207,6 +208,7 @@ app.include_router(events_router)  # Sprint α-fin Phase 1.A — /api/v1/events/
 app.include_router(users_router)  # Sprint α-push Phase 2.C — /api/v1/users/me/notification-preferences
 app.include_router(digest_router)  # Sprint α-push Phase 2.D — /api/v1/digest/dispatch
 app.include_router(cascade_router)  # Sprint C-1 Phase 6 — /api/v1/sites/{id}/cascade-impact
+app.include_router(conformite_sync_router)  # Conformité P1 2026-05-23 — /api/conformite/sync-remediation-actions
 app.include_router(site_readiness_router)  # Sprint C-2 Phase 1.4 — /api/v1/sites/{id}/production-ready-status
 app.include_router(site_portefeuille_router)  # Sprint C-2 Phase 2 — /api/v1/sites/{id}/portefeuille (PATCH + history)
 app.include_router(ai_router)

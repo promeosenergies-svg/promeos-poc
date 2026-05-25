@@ -522,142 +522,66 @@ def portfolio_compliance_summary(
 # ========================================
 
 
-class WorkPackageCreate(BaseModel):
-    label: str
-    size: str = "M"
-    capex_eur: Optional[float] = None
-    savings_eur_year: Optional[float] = None
-    payback_years: Optional[float] = None
-    complexity: Optional[str] = "medium"
-    fiche_ref: Optional[str] = None
-    description: Optional[str] = None
+# ========================================
+# CEE Pipeline V69 — GONE (Conformité P1 2026-05-23)
+# ========================================
+# Audit Conformité P0 §10.1 + P1 cleanup §C5 : 6 endpoints V69 jamais consommés
+# par le frontend (vérifié par grep exhaustif), jamais livrés en production.
+# Suppression douce via HTTP 410 (anti-régression : si un caller surgit, il
+# reçoit un message FR explicite plutôt qu'une 404 silencieuse).
+#
+# Si CEE Pipeline est relancé un jour, recoder from scratch avec design review.
 
 
-@router.get("/sites/{site_id}/packages")
-def list_work_packages(
-    site_id: int,
-    db: Session = Depends(get_db),
-):
-    """
-    GET /api/compliance/sites/{site_id}/packages
-
-    V69: List all work packages (S/M/L) for a site with CEE dossier status.
-    """
-    return get_site_work_packages(db, site_id)
-
-
-@router.post("/sites/{site_id}/packages")
-def create_work_package(
-    site_id: int,
-    data: WorkPackageCreate,
-    db: Session = Depends(get_db),
-):
-    """
-    POST /api/compliance/sites/{site_id}/packages
-
-    V69: Create a new work package for a site.
-    """
-    try:
-        size = WorkPackageSize(data.size)
-    except ValueError:
-        raise HTTPException(status_code=400, detail=f"Invalid size: {data.size}. Must be S, M, or L.")
-
-    wp = WorkPackage(
-        site_id=site_id,
-        label=data.label,
-        size=size,
-        capex_eur=data.capex_eur,
-        savings_eur_year=data.savings_eur_year,
-        payback_years=data.payback_years,
-        complexity=data.complexity,
-        cee_status=CeeStatus.A_QUALIFIER,
-        fiche_ref=data.fiche_ref,
-        description=data.description,
+def _cee_pipeline_gone():
+    """Handler 410 partagé pour les 6 endpoints CEE Pipeline V69 morts."""
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "code": "CONFORMITE_CEE_PIPELINE_GONE",
+            "message": (
+                "Cette route CEE Pipeline est dépréciée. Le module n'a jamais été livré et n'est plus maintenu."
+            ),
+            "hint": "Contactez l'équipe produit si vous avez besoin du suivi CEE.",
+            "doc": "docs/audits/audit_brique_conformite_deep_readonly_2026_05_23.md",
+        },
     )
-    db.add(wp)
-    db.commit()
-    db.refresh(wp)
-
-    return {
-        "id": wp.id,
-        "site_id": wp.site_id,
-        "label": wp.label,
-        "size": wp.size.value,
-        "cee_status": wp.cee_status.value,
-    }
 
 
-@router.post("/sites/{site_id}/cee/dossier")
-def create_cee_dossier_endpoint(
-    site_id: int,
-    work_package_id: int = Query(...),
-    db: Session = Depends(get_db),
-):
-    """
-    POST /api/compliance/sites/{site_id}/cee/dossier?work_package_id=
-
-    V69: Create a CEE dossier from a work package.
-    Auto-creates evidence items + Action Center items.
-    """
-    try:
-        return create_cee_dossier(db, site_id, work_package_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+@router.get("/sites/{site_id}/packages", status_code=410, deprecated=True)
+def list_work_packages_gone(site_id: int):
+    """HTTP 410 — V69 CEE Pipeline jamais livré."""
+    _cee_pipeline_gone()
 
 
-class CeeStepAdvance(BaseModel):
-    step: str
+@router.post("/sites/{site_id}/packages", status_code=410, deprecated=True)
+def create_work_package_gone(site_id: int):
+    """HTTP 410 — V69 CEE Pipeline jamais livré."""
+    _cee_pipeline_gone()
 
 
-@router.patch("/cee/dossier/{dossier_id}/step")
-def advance_cee_step_endpoint(
-    dossier_id: int,
-    data: CeeStepAdvance,
-    db: Session = Depends(get_db),
-):
-    """
-    PATCH /api/compliance/cee/dossier/{dossier_id}/step
-
-    V69: Advance CEE dossier to next kanban step.
-    Updates corresponding Action Center items.
-    """
-    try:
-        return advance_cee_step(db, dossier_id, data.step)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+@router.post("/sites/{site_id}/cee/dossier", status_code=410, deprecated=True)
+def create_cee_dossier_gone(site_id: int):
+    """HTTP 410 — V69 CEE Pipeline jamais livré."""
+    _cee_pipeline_gone()
 
 
-@router.get("/sites/{site_id}/mv/summary")
-def mv_summary_endpoint(
-    site_id: int,
-    db: Session = Depends(get_db),
-):
-    """
-    GET /api/compliance/sites/{site_id}/mv/summary
-
-    V69: M&V summary — baseline, current, delta, alerts.
-    """
-    try:
-        return compute_mv_summary(db, site_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+@router.patch("/cee/dossier/{dossier_id}/step", status_code=410, deprecated=True)
+def advance_cee_step_gone(dossier_id: int):
+    """HTTP 410 — V69 CEE Pipeline jamais livré."""
+    _cee_pipeline_gone()
 
 
-@router.post("/cee/dossier/{dossier_id}/compute")
-def compute_cee_amount_endpoint(
-    dossier_id: int,
-    db: Session = Depends(get_db),
-):
-    """
-    POST /api/compliance/cee/dossier/{dossier_id}/compute
+@router.get("/sites/{site_id}/mv/summary", status_code=410, deprecated=True)
+def mv_summary_gone(site_id: int):
+    """HTTP 410 — V69 CEE Pipeline jamais livré (M&V hors scope)."""
+    _cee_pipeline_gone()
 
-    (Re)compute kWhc cumac for a CEE dossier.
-    Uses: fiche_ref × surface × zone_climatique × durée_vie.
-    """
-    try:
-        return compute_dossier_cee_amount(db, dossier_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/cee/dossier/{dossier_id}/compute", status_code=410, deprecated=True)
+def compute_cee_amount_gone(dossier_id: int):
+    """HTTP 410 — V69 CEE Pipeline jamais livré."""
+    _cee_pipeline_gone()
 
 
 # ========================================

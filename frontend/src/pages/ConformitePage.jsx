@@ -7,7 +7,15 @@
  */
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, Plus, RotateCcw, RefreshCw, Coins, ShoppingCart } from 'lucide-react';
+import {
+  ShieldCheck,
+  Plus,
+  RotateCcw,
+  RefreshCw,
+  Coins,
+  ShoppingCart,
+  ListChecks,
+} from 'lucide-react';
 import { toUsages } from '../services/routes';
 import { Button, PageShell, ActiveFiltersBar, Explain } from '../ui';
 // Phase 1.3 — primitifs grammaire Sol v1.1 (Term + DecisionEvidenceCard) démo sur /conformite
@@ -59,6 +67,7 @@ import {
   getComplianceTimeline,
   getSegmentationProfile,
   getAuditSmeAssessment,
+  syncConformiteRemediationActions,
 } from '../services/api';
 
 // V7 — regulation filter map (URL ?regulation=) → list of obligation codes to match.
@@ -91,6 +100,7 @@ import FindingAuditDrawer from '../components/conformite/FindingAuditDrawer';
 import ComplianceSummaryBanner from '../components/conformite/ComplianceSummaryBanner';
 import ComplianceScoreHeader from '../components/conformite/ComplianceScoreHeader';
 import AuditSmeCard from '../components/conformite/AuditSmeCard';
+import SmeBegesProfileCard from '../components/conformite/SmeBegesProfileCard';
 import {
   buildScopeParams,
   parseBundleError,
@@ -148,6 +158,10 @@ export default function ConformitePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [recomputing, setRecomputing] = useState(false);
+  // Conformité P1 2026-05-23 — bouton "Créer les actions à traiter" : appelle
+  // `POST /api/conformite/sync-remediation-actions` qui ferme la boucle
+  // CadreApplicable DATA_MISSING → ActionCenterItem. Idempotent côté backend.
+  const [syncingActions, setSyncingActions] = useState(false);
   const [summary, setSummary] = useState(null);
   const [sitesData, setSitesData] = useState([]);
   const [auditFindingId, setAuditFindingId] = useState(null);
@@ -514,6 +528,42 @@ export default function ConformitePage() {
     }
   };
 
+  // Conformité P1 2026-05-23 — appelle l'endpoint sync qui crée 1 ActionCenterItem
+  // par règle DATA_MISSING manquante. Retourne summary {created, skipped_existing,
+  // skipped_resolved} et affiche un toast récap utilisateur.
+  const handleSyncRemediationActions = async () => {
+    setSyncingActions(true);
+    try {
+      const result = await syncConformiteRemediationActions(
+        typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : null
+      );
+      const created = result?.summary?.created ?? 0;
+      const skippedExisting = result?.summary?.skipped_existing ?? 0;
+      const skippedResolved = result?.summary?.skipped_resolved ?? 0;
+      if (created > 0) {
+        toast(
+          `${created} action${created > 1 ? 's' : ''} créée${created > 1 ? 's' : ''} dans votre centre d'action`,
+          'success'
+        );
+      } else if (skippedExisting > 0 || skippedResolved > 0) {
+        toast('Aucune nouvelle action à créer — votre périmètre est à jour', 'info');
+      } else {
+        toast('Aucune donnée manquante détectée pour ce périmètre', 'info');
+      }
+      track('conformite_sync_remediation_actions', {
+        created,
+        skipped_existing: skippedExisting,
+        skipped_resolved: skippedResolved,
+      });
+    } catch (err) {
+      const code = err?.response?.data?.detail?.code;
+      const msg = err?.response?.data?.detail?.message;
+      toast(msg || `Erreur lors de la création des actions${code ? ` (${code})` : ''}`, 'error');
+    } finally {
+      setSyncingActions(false);
+    }
+  };
+
   const handleWorkflowAction = async (findingId, newStatus) => {
     try {
       await patchComplianceFinding(findingId, { status: newStatus });
@@ -685,6 +735,18 @@ export default function ConformitePage() {
             <RefreshCw size={14} className={recomputing ? 'animate-spin' : ''} />
             {recomputing ? 'Évaluation...' : 'Réévaluer'}
           </Button>
+          {/* Conformité P1 2026-05-23 — bouton qui ferme la boucle CadreApplicable
+              DATA_MISSING → ActionCenterItem (1 clic, idempotent). */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleSyncRemediationActions}
+            disabled={syncingActions}
+            title="Crée des actions à traiter pour chaque donnée manquante détectée par les règles réglementaires"
+          >
+            <ListChecks size={14} className={syncingActions ? 'animate-spin' : ''} />
+            {syncingActions ? 'Synchronisation...' : 'Créer les actions à traiter'}
+          </Button>
           <Button onClick={() => openActionDrawer({})}>
             <Plus size={16} /> Créer une action
           </Button>
@@ -762,6 +824,11 @@ export default function ConformitePage() {
           navigate={navigate}
         />
       )}
+
+      {/* Conformité P1 2026-05-23 — saisie des données entreprise pour gates
+          SMÉ (Loi 2025-391) et BEGES (Décret 2022-982). Pliable par défaut
+          pour ne pas alourdir la vue. */}
+      {org && <SmeBegesProfileCard org={org} onUpdated={loadData} />}
 
       {/* Empty state when no obligations found */}
       {!summary && emptyReason === 'NO_SITES' && (
