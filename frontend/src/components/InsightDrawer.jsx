@@ -225,7 +225,16 @@ function getBreakdownRows(energyType) {
 /* ── InvoiceIdentCard ────────────────────────────────── */
 
 function InvoiceIdentCard({ detail, metrics }) {
-  const inv = detail?.invoice || {};
+  // P2-B C2+C4 (2026-05-24) — drawer enrichi :
+  // - énergie (badge Élec/Gaz)
+  // - contrat (label + dates si disponible)
+  // - code règle (insight.type ou code anomalie)
+  // - statut fiabilité (depuis breakdown.is_reliable)
+  // - preuve attendue / disponible (placeholder C2 — wiring backend P2-C)
+  //
+  // P2-B C2 : on lit en priorité `invoice_identification` (clé canonique
+  // backend, enrichie P2-B avec energy_type + contract_label + contract_start/end).
+  const inv = detail?.invoice_identification || detail?.invoice || {};
   const m = metrics || {};
   const numero = inv.numero || inv.invoice_number || m.invoice_number;
   const period_start = inv.period_start || m.period_start;
@@ -235,12 +244,37 @@ function InvoiceIdentCard({ detail, metrics }) {
   const segment = inv.segment || m.segment;
   const fournisseur = inv.fournisseur || inv.supplier || m.fournisseur || m.supplier;
   const kwh = m.kwh ?? m.conso_kwh ?? inv.kwh;
+  // P2-B C2 — nouveaux champs (backend invoice_identification enrichi P2-B)
+  const energy = (inv.energy_type || m.energy_type || '').toString().toLowerCase();
+  const contractLabel = inv.contract_label;
+  const contractStart = inv.contract_start;
+  const contractEnd = inv.contract_end;
+  const ruleCode = detail?.type || detail?.code;
+  const ruleLabel = detail?.message || null;
+
+  // Badge énergie (élec/gaz) — design system existant, ton calme/refuse.
+  const isGaz = energy === 'gaz' || energy === 'gas' || energy === 'gaz_naturel';
+  const isElec = energy === 'elec' || energy === 'electricite';
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-2">
       <div className="flex items-center gap-2 mb-1">
         <FileText size={14} className="text-gray-400" />
         <span className="text-xs font-semibold text-gray-500 uppercase">Facture</span>
+        {/* P2-B C4 — Badge énergie (sans emoji, design system Sol-conforme) */}
+        {(isGaz || isElec) && (
+          <span
+            className="ml-auto inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+            style={{
+              borderColor: isGaz ? '#f59e0b' : '#3b82f6',
+              color: isGaz ? '#b45309' : '#1d4ed8',
+              background: isGaz ? '#fffbeb' : '#eff6ff',
+            }}
+            aria-label={`Énergie : ${isGaz ? 'gaz' : 'électricité'}`}
+          >
+            {isGaz ? 'Gaz' : 'Électricité'}
+          </span>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
         <span className="text-gray-500">N° facture</span>
@@ -289,6 +323,35 @@ function InvoiceIdentCard({ detail, metrics }) {
           <>
             <span className="text-gray-500">Consommation</span>
             <span className="text-gray-800">{fmtNum(kwh, 0)} kWh</span>
+          </>
+        )}
+
+        {/* P2-B C2 — Contrat (numéro/id + dates si disponibles) */}
+        {contractLabel && (
+          <>
+            <span className="text-gray-500">Contrat</span>
+            <span className="text-gray-800 font-mono text-xs">
+              {contractLabel}
+              {contractStart && contractEnd && (
+                <span className="text-gray-400 ml-1">
+                  ({fmtDate(contractStart)} → {fmtDate(contractEnd)})
+                </span>
+              )}
+            </span>
+          </>
+        )}
+        {!contractLabel && (
+          <>
+            <span className="text-gray-500">Contrat</span>
+            <span className="italic text-gray-400">Non rattaché — reconstitution non fiable</span>
+          </>
+        )}
+
+        {/* P2-B C2 — Règle source de l'anomalie (insight.type ou code) */}
+        {ruleCode && (
+          <>
+            <span className="text-gray-500">Règle</span>
+            <span className="text-gray-800 font-mono text-xs uppercase">{ruleCode}</span>
           </>
         )}
       </div>

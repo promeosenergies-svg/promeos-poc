@@ -1137,6 +1137,29 @@ export default function BillIntelPage() {
                         <Badge status={SEVERITY_BADGE[insight.severity] || 'neutral'}>
                           {SEVERITY_LABELS[insight.severity] || insight.severity}
                         </Badge>
+                        {/* P2-B C4 (2026-05-24) — Badge énergie dans liste anomalies.
+                            insight.energy_type vient soit du backend (P2-A propagé via insight),
+                            soit dérivé de insight.metrics ou null. Affichage discret. */}
+                        {(() => {
+                          const energy = (insight.energy_type || '').toString().toLowerCase();
+                          const isGaz =
+                            energy === 'gaz' || energy === 'gas' || energy === 'gaz_naturel';
+                          const isElec = energy === 'elec' || energy === 'electricite';
+                          if (!isGaz && !isElec) return null;
+                          return (
+                            <span
+                              className="inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                              style={{
+                                borderColor: isGaz ? '#f59e0b' : '#3b82f6',
+                                color: isGaz ? '#b45309' : '#1d4ed8',
+                                background: isGaz ? '#fffbeb' : '#eff6ff',
+                              }}
+                              aria-label={`Énergie : ${isGaz ? 'gaz' : 'électricité'}`}
+                            >
+                              {isGaz ? 'Gaz' : 'Élec'}
+                            </span>
+                          );
+                        })()}
                         {insight.supplier && (
                           <span className="text-xs text-zinc-500">{insight.supplier}</span>
                         )}
