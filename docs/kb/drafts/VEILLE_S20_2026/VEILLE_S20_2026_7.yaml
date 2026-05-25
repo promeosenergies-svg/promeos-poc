@@ -1,0 +1,54 @@
+id: VEILLE_S20_2026_7
+type: knowledge
+domain: flex
+title: "Flexibilité — baromètre RTE 2026 et dynamique NEBCO"
+summary: "Le baromètre RTE des flexibilités (avril 2026) relève une consommation électrique française stable (~450 TWh), une électrification qui ne progresse pas, et une amplitude de consommation résiduelle de 14 GW — la flexibilité demandée se déplace du lissage des pointes hivernales vers l'absorption des surplus de mi-journée. Les sites inscrits au mécanisme NEBCO sont passés de 230 000 à 708 000 entre septembre 2025 et janvier 2026."
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - industrie
+  asset:
+    - hvac
+  reg: []
+  granularity:
+    - event
+scope: null
+content_md: |
+  ## Flexibilité — baromètre RTE 2026 & NEBCO
+
+  ### Faits
+  Baromètre RTE des flexibilités (avril 2026) :
+  - Consommation électrique française **stable ~450 TWh** (l'électrification
+    n'a pas progressé depuis la crise 2022-2023).
+  - La flexibilité demandée se déplace du **lissage des pointes hivernales**
+    vers **l'absorption des surplus de mi-journée**.
+  - Amplitude de la **consommation résiduelle : 14 GW**.
+
+  Mécanisme NEBCO :
+  - Nombre de sites inscrits : **230 000 → 708 000** entre septembre 2025 et
+    janvier 2026 (×3 en ~4 mois).
+
+  ### Analyse
+  Les programmes d'effacement et de capacité (aFRR, mFRR) deviennent cruciaux.
+  Les agrégateurs B2B élargissent leur portefeuille (tertiaire, industrie légère)
+  et investissent dans le pilotage temps réel.
+
+  ### Implication PROMEOS
+  Confirme la dynamique structurelle de la flexibilité (cohérent baromètre flex
+  et étude Endesa déjà en KB mémoire). Le NEBCO ×3 valide le potentiel du
+  Cockpit Flex / Pilotage côté inscription + suivi des revenus, en partenariat
+  agrégateur (modèle Option B+C, sans opérer l'effacement directement).
+logic: null
+sources:
+  - doc_id: VEILLE_S20_2026
+    label: "Baromètre des flexibilités RTE 2026 (via pv-magazine France)"
+    section: "2.4 Agrégateurs de flexibilité, effacement, capacités"
+    anchor: "#barometre-rte-nebco"
+    excerpt_short: "Conso FR stable ~450 TWh, amplitude résiduelle 14 GW ; sites NEBCO 230 000 → 708 000 (sept 2025 → janv 2026)."
+updated_at: "2026-05-19"
+confidence: medium
+status: draft
+priority: 2
+notes: "NEBCO 708 000 cohérent avec la veille flex existante (barometre_flex_2026)."

@@ -1,0 +1,58 @@
+id: VEILLE_S20_2026_0
+type: knowledge
+domain: reglementaire
+title: "Veille énergie — semaine 20 2026 (10-16 mai) — synthèse"
+summary: "Synthèse veille marché énergie B2B France/UE, semaine du 10 au 16 mai 2026. Semaine cadrée par 4 décisions CRE du 11/05 (baisse PRVG gaz, expérimentation TRV dynamique, nouvelles règles service système tension, raccordement Port-la-Nouvelle), l'élargissement RE2020 effectif 1/05, et des signaux marché extrêmes (spot record -498 €/MWh, modulation nucléaire ×7,6 depuis 2019)."
+tags:
+  energy:
+    - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity:
+    - event
+scope: null
+content_md: |
+  ## Veille énergie — semaine 20 2026 (10 au 16 mai)
+
+  Période couverte : 10/05/2026 → 16/05/2026. Consolidation de 2 rapports
+  hebdomadaires (focus France/CRE + focus global/géopolitique).
+
+  ### Fil conducteur de la semaine
+  La CRE cadre réglementairement la **flexibilité de la demande** : le même
+  jour (11/05) elle annonce la baisse du prix repère gaz, lance l'expérimentation
+  des tarifs dynamiques, et valide la nouvelle rémunération du service système
+  tension. En parallèle le marché spot bat un record négatif (-498 €/MWh) et la
+  modulation nucléaire française a été multipliée par 7,6 depuis 2019.
+
+  ### Index des drafts S20
+  - `VEILLE_S20_2026_1` — Baisse du prix repère gaz (PRVG) -4,8 % au 1/06/2026
+  - `VEILLE_S20_2026_2` — Expérimentation CRE des tarifs dynamiques (TRV)
+  - `VEILLE_S20_2026_3` — Nouvelles règles service système tension RTE
+  - `VEILLE_S20_2026_4` — Extension du champ d'application de la RE2020
+  - `VEILLE_S20_2026_5` — Appels d'offres ENR (PPE2 éolien, offshore 10 GW, PV)
+  - `VEILLE_S20_2026_6` — Marché élec : prix négatifs record + modulation nucléaire
+  - `VEILLE_S20_2026_7` — Flexibilité : baromètre RTE + dynamique NEBCO
+  - `VEILLE_S20_2026_8` — Gaz & géopolitique : stockage UE, GNL, détroit d'Ormuz
+
+  ### Implications PROMEOS (transverses)
+  - Cohérent avec la priorité absolue Flex/Pilotage (doctrine simple + différenciant).
+  - Wedge facture + conformité : RE2020 élargie ouvre un nouveau périmètre tertiaire ;
+    la baisse du PRVG impacte les offres gaz indexées.
+  - Filtrer les idées-features des rapports via la doctrine v1.3 (PROMEOS n'est pas
+    un EMS vertical ni un agrégateur).
+logic: null
+sources:
+  - doc_id: VEILLE_S20_2026
+    label: "Rapports hebdomadaires énergie — semaine 10-16 mai 2026 (2 PDF consolidés)"
+    section: "Executive summary"
+    anchor: "#executive-summary"
+    excerpt_short: "Synthèse des événements marché énergie et régulation impactant le B2B France/UE, semaine du 10 au 16 mai 2026."
+updated_at: "2026-05-19"
+confidence: medium
+status: draft
+priority: 2
+notes: |
+  Index de la veille S20 2026. 9 drafts.
+  Trou d'ingestion : semaine S19 (04-10/05/2026) non couverte.
+  Ingestion manuelle (pymupdf indisponible) — drafts à réviser/upgrader.

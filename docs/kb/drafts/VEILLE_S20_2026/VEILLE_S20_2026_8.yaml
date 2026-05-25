@@ -1,0 +1,51 @@
+id: VEILLE_S20_2026_8
+type: knowledge
+domain: facturation
+title: "Gaz & géopolitique — stockage UE bas, dépendance GNL, détroit d'Ormuz"
+summary: "Tensions persistantes sur le gaz et le pétrole : stockages de gaz européens à ~30 % début mai 2026, objectif 80 % pré-hiver jugé improbable (Equinor) ; RWE appelle à une réserve stratégique de gaz (cavernes allemandes à 28,05 % le 12/05). La dépendance UE au GNL américain monte (2/3 en 2026, 80 % en 2028). Exportations pétrolières irakiennes via Ormuz divisées par dix."
+tags:
+  energy:
+    - gaz
+  segment:
+    - industrie
+  asset: []
+  reg: []
+  granularity:
+    - event
+scope: null
+content_md: |
+  ## Gaz & géopolitique — stockage, GNL, Ormuz
+
+  ### Faits — stockage gaz
+  - Stockages de gaz européens **~30 %** début mai 2026 ; objectif **80 %**
+    pré-hiver jugé **improbable** (directeur financier Equinor).
+  - RWE appelle à une **réserve stratégique de gaz** pilotée par l'État :
+    cavernes allemandes remplies à **28,05 %** au 12/05 (vs 35,71 % en 2025,
+    68,68 % en 2024) — les prix élevés rendent le stockage peu attractif.
+
+  ### Faits — GNL & pétrole
+  - Importations GNL UE depuis les USA : **2/3 en 2026, 80 % en 2028** (IEEFA).
+    GNL importé UE triplé 2021-2025 = 281 Md€ (dont 131,5 Md€ US). GNL russe
+    T1 2026 = 6,7 Md€. Risque de surcapacité de terminaux d'ici 2030.
+  - Part du gaz russe dans l'UE ramenée à **12 %**.
+  - Exportations de pétrole irakien via le **détroit d'Ormuz** : **93 → 10
+    Mbbl/mois** en avril 2026 (guerre au Moyen-Orient).
+  - Brent 14/05 ~105,72 $/b, WTI 101,17 $/b ; +3-4 % le 15/05.
+
+  ### Implication PROMEOS
+  Volatilité durable du prix du gaz → pour les clients fortement exposés
+  (agroalimentaire, chimie), recommander couverture moyen terme et clauses
+  d'indexation/force majeure. Argument pour la sobriété gaz et l'électrification
+  des usages. Veille marché (module Achat), pas de calcul produit direct.
+logic: null
+sources:
+  - doc_id: VEILLE_S20_2026
+    label: "Reuters — RWE strategic gas reserves / Equinor 80% storage target ; Connaissance des Énergies — GNL, exports Ormuz (13-16/05/2026)"
+    section: "3 / 4 / 13 — Gaz & géopolitique"
+    anchor: "#gaz-geopolitique"
+    excerpt_short: "Stockages gaz UE ~30 %, cavernes DE 28,05 % ; GNL UE 2/3 US 2026 ; exports pétrole irakien Ormuz 93→10 Mbbl/mois."
+updated_at: "2026-05-19"
+confidence: medium
+status: draft
+priority: 3
+notes: "Veille géopolitique. Cohérent avec les hebdos précédents (Hormuz, GNL)."
