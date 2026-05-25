@@ -111,10 +111,13 @@ export const CONFIDENCE_LABELS = {
   low: 'Faible',
 };
 
+// P2-A simplification (2026-05-25) — micro-copy actionnable.
+// « Données limitées » seul est anxiogène : on dit clairement ce qu'il faut
+// faire (« compléter pour fiabiliser le score »). Idem « partielles ».
 export const CONFIDENCE_DATA_LABELS = {
   high: 'Données fiables',
-  medium: 'Données partielles',
-  low: 'Données limitées',
+  medium: 'Données partielles — score à fiabiliser',
+  low: 'Données à compléter pour fiabiliser le score',
 };
 
 // ─── Types d'action ─────────────────────────────────────────────────────
