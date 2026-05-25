@@ -54,7 +54,6 @@ import {
   Calculator,
   Upload,
   BarChart3,
-  Sun,
   Cpu,
   Building,
   SearchCheck,
@@ -695,11 +694,19 @@ export const NAV_SECTIONS = [
     expertOnly: false,
     order: 2,
     items: [
+      // Cleanup sidebar Conformité (2026-05-24) — /conformite redevient
+      // le hub unique. Les sous-items « Décret Tertiaire / OPERAT » et
+      // « Solarisation (APER) » sont retirés de la sidebar : ils existent
+      // désormais comme chips réglementaires internes à /conformite
+      // (paramètre `?regulation=dt|bacs|aper|audit-sme` déjà câblé dans
+      // ConformitePage). Les routes /conformite/tertiaire et /conformite/aper
+      // restent accessibles en deep-link (cf. ROUTE_MODULE_MAP + App.jsx)
+      // et indexées dans la CommandPalette via HIDDEN_PAGES + QUICK_ACTIONS.
       {
         to: '/conformite',
         icon: ShieldCheck,
         label: 'Conformité',
-        desc: 'DT, BACS, Audit SMÉ — score & obligations',
+        desc: 'DT, BACS, APER, Audit SMÉ — score & obligations',
         keywords: [
           'compliance',
           'reglementation',
@@ -716,25 +723,15 @@ export const NAV_SECTIONS = [
           'audit',
           'sme',
           'energetique',
+          'aper',
+          'solaire',
+          'parking',
+          'toiture',
+          'photovoltaique',
+          'beges',
+          'jalons',
+          'mutualisation',
         ],
-      },
-      {
-        // Phase 17.bis.C — promotion Tertiaire/OPERAT en item sidebar
-        // (était hidden, accessible uniquement via Quick Action ou breadcrumb).
-        // Persona Marie DAF tertiaire : c'est la page principale de son funnel
-        // (déclaration OPERAT annuelle + jalons -40 % / -50 % / -60 %).
-        to: '/conformite/tertiaire',
-        icon: Building2,
-        label: 'Décret Tertiaire / OPERAT',
-        desc: 'EFA, jalons 2030/2040/2050, simulation mutualisation',
-        keywords: ['tertiaire', 'operat', 'dt', 'efa', 'jalons', 'mutualisation'],
-      },
-      {
-        to: '/conformite/aper',
-        icon: Sun,
-        label: 'Solarisation (APER)',
-        desc: 'Obligations ENR parkings & toitures',
-        keywords: ['aper', 'solaire', 'parking', 'toiture', 'photovoltaique', 'pvgis'],
       },
     ],
   },
@@ -1094,8 +1091,34 @@ export const ROUTE_SECTION_MAP = Object.fromEntries(
  * signalé audit Phase 17 cumulée). La route est désormais item visible
  * dans NAV_SECTIONS module Conformité (Phase 17.bis.C). Conserver dans
  * HIDDEN_PAGES créait un doublon CommandPalette via ALL_MAIN_ITEMS.
+ *
+ * Cleanup sidebar Conformité (2026-05-24) — /conformite/tertiaire et
+ * /conformite/aper redeviennent hidden pages : la sidebar ne montre plus
+ * que /conformite (hub unique). Les chips réglementaires internes à la
+ * page (?regulation=dt|aper|...) sont le canal canonique pour ces vues.
+ * On garde les deep-links dans HIDDEN_PAGES → recherche ⌘K conservée.
  */
 export const HIDDEN_PAGES = [
+  {
+    to: '/conformite/tertiaire',
+    icon: Building2,
+    label: 'Décret Tertiaire / OPERAT (deep-link)',
+    keywords: ['tertiaire', 'operat', 'dt', 'efa', 'jalons', 'mutualisation'],
+    section: 'Conformité',
+    hidden: true,
+    reason:
+      'deep-link-only : page EFA / wizard OPERAT accessible via /conformite/tertiaire pour bookmarks + Quick Action « Export OPERAT ». Plus exposée sidebar — la navigation passe par les chips réglementaires de /conformite (?regulation=dt) doctrine §6.2 (hub unique).',
+  },
+  {
+    to: '/conformite/aper',
+    icon: ShieldCheck,
+    label: 'Solarisation (APER) (deep-link)',
+    keywords: ['aper', 'solaire', 'parking', 'toiture', 'photovoltaique', 'pvgis'],
+    section: 'Conformité',
+    hidden: true,
+    reason:
+      'deep-link-only : page APER (parkings/toitures) accessible en deep-link. Plus exposée sidebar — navigation par chip réglementaire /conformite?regulation=aper.',
+  },
   {
     to: '/kb',
     icon: BookOpen,
