@@ -15,6 +15,7 @@ import {
   importInvoicesPdf,
   getSites,
   getInsightDetail,
+  syncBillingActionsFromAnomalies,
 } from '../services/api';
 import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState, Explain } from '../ui';
 // Sprint 2 Vague B ét6' — labels FR centralisés (label_registries cross-vue).
@@ -54,6 +55,7 @@ import {
   CheckCircle2,
   CalendarRange,
   ArrowRight,
+  ListChecks,
   Download,
 } from 'lucide-react';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -186,6 +188,9 @@ export default function BillIntelPage() {
   const [loadError, setLoadError] = useState(null);
   const [auditing, setAuditing] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  // Bill Intelligence P1 C4 (2026-05-24) — bouton "Créer les actions de litige facture".
+  // Appelle POST /api/billing/sync-actions-from-anomalies, idempotent.
+  const [syncingActions, setSyncingActions] = useState(false);
   const [insightFilter, setInsightFilter] = useState(
     searchParams.get('filter') === 'anomalies' ? 'open' : 'all'
   );
@@ -383,6 +388,59 @@ export default function BillIntelPage() {
       toast("Erreur lors de l'audit", 'error');
     }
     setAuditing(false);
+  }
+
+  // Bill Intelligence P1 C4 (2026-05-24) — ferme la boucle anomalie → action.
+  // Toast garanti dans toutes les branches (pattern conformité P1.5).
+  async function handleSyncBillingActions() {
+    setSyncingActions(true);
+    try {
+      const result = await syncBillingActionsFromAnomalies(
+        typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : null
+      );
+      const created = result?.summary?.created ?? 0;
+      if (created > 0) {
+        toast(
+          `${created} action${created > 1 ? 's' : ''} de litige facture créée${created > 1 ? 's' : ''} dans votre centre d'action`,
+          'success'
+        );
+      } else {
+        toast('Aucune action facture à créer pour le moment', 'info');
+      }
+      track('billing_sync_actions_from_anomalies', { created });
+    } catch (err) {
+      const status = err?.response?.status;
+      const detail = err?.response?.data?.detail;
+      const code = detail?.code;
+      const serverMsg = detail?.message;
+      let userMsg;
+      if (status === 401 || code === 'NO_ORG_CONTEXT') {
+        userMsg = 'Session expirée — veuillez vous reconnecter pour créer les actions facture';
+      } else if (status === 403) {
+        userMsg =
+          "Vous n'avez pas les droits pour créer les actions facture sur cette organisation";
+      } else if (status === 400 && code === 'IDEMPOTENCY_KEY_INVALID') {
+        userMsg = "Erreur technique sur l'identifiant de requête — réessayez";
+      } else if (serverMsg) {
+        userMsg = serverMsg;
+      } else if (
+        err?.code === 'ECONNABORTED' ||
+        err?.message?.toLowerCase?.().includes('timeout')
+      ) {
+        userMsg = 'Le serveur ne répond pas — vérifiez votre connexion puis réessayez';
+      } else if (!err?.response) {
+        userMsg = 'Erreur réseau — impossible de joindre le serveur';
+      } else {
+        userMsg = `Erreur lors de la création des actions facture (${status || 'inconnu'})`;
+      }
+      toast(userMsg, 'error');
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('[billing_sync_actions] error:', { status, code, detail, err });
+      }
+    } finally {
+      setSyncingActions(false);
+    }
   }
 
   function handleCsvClick() {
@@ -590,6 +648,20 @@ export default function BillIntelPage() {
                 <Play size={14} /> {auditing ? 'Audit...' : 'Auditer tout'}
               </Button>
             </Tooltip>
+          )}
+          {/* Bill Intelligence P1 C4 (2026-05-24) — bouton discret ghost qui ferme
+              la boucle anomalie facture → action de litige. Idempotent côté backend. */}
+          {hasData && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSyncBillingActions}
+              disabled={syncingActions}
+              title="Crée un item dans le Centre d'Action pour chaque anomalie facture ouverte et chiffrable"
+            >
+              <ListChecks size={14} className={syncingActions ? 'animate-spin' : ''} />
+              {syncingActions ? 'Synchronisation…' : 'Créer les actions de litige facture'}
+            </Button>
           )}
           {!hasData && isExpert && (
             <Button onClick={handleSeedDemo} disabled={seeding}>

@@ -14,12 +14,31 @@ Sémantique distincte du modèle Anomaly KB Phase 1-4 (consommation vs facturati
 Adaptations Phase 5.1.0 (post-diagnostic) :
 - FK invoice_id → energy_invoices.id (modèle EnergyInvoice, pas Facture)
 - Pas de relation directe DeliveryPoint (JOIN via Site → Meter pour R20)
+
+Audit Bill Intelligence Phase 0-bis (2026-05-24, chantier C1) :
+- Ajout `is_monetizable` (Boolean, default True) + `non_monetizable_reason` (Text)
+- Validation runtime via SQLAlchemy event listener `before_insert` / `before_update` :
+  une anomalie valorisable (`is_monetizable=True`) doit avoir `actual_value` non NULL.
+- Migration `p38_bill_anomaly_monetizable.py` (anti-DROP, idempotent).
 """
 
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, JSON, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    JSON,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    event,
+)
 from sqlalchemy.orm import relationship
 
 from .base import Base, SoftDeleteMixin, TimestampMixin
@@ -89,10 +108,72 @@ class BillAnomaly(Base, TimestampMixin, SoftDeleteMixin):
         comment="Contexte détection (montants VNU, période, contrat, etc.)",
     )
 
+    # Phase 0-bis Bill Intelligence — chantier C1 (2026-05-24)
+    is_monetizable = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="1",
+        comment="True → impact financier chiffrable, actual_value requis. "
+        "False → anomalie informative (R017 PDL manquant, etc.), actual_value libre.",
+    )
+    non_monetizable_reason = Column(
+        Text,
+        nullable=True,
+        comment="Justification obligatoire si is_monetizable=False (FR clair).",
+    )
+
     # Relation cardinale
     invoice = relationship("EnergyInvoice", backref="bill_anomalies")
 
     def __repr__(self) -> str:
         return (
-            f"<BillAnomaly(id={self.id}, invoice_id={self.invoice_id}, code='{self.code}', severity='{self.severity}')>"
+            f"<BillAnomaly(id={self.id}, invoice_id={self.invoice_id}, "
+            f"code='{self.code}', severity='{self.severity}', monetizable={self.is_monetizable})>"
         )
+
+
+class BillAnomalyValidationError(ValueError):
+    """Levée si une anomalie viole l'invariant doctrinal (cf. C1 Phase 0-bis).
+
+    Une anomalie valorisable DOIT avoir `actual_value` non NULL.
+    Une anomalie non valorisable DOIT avoir `non_monetizable_reason` non NULL.
+    """
+
+
+def _validate_bill_anomaly_invariant(mapper, connection, target: "BillAnomaly") -> None:
+    """Listener SQLAlchemy : empêche les anomalies incomplètes côté financier.
+
+    Doctrine Bill Intelligence P1 C1 (2026-05-24) :
+    > Aucune anomalie facture sans : source, montant ou justification "non
+    > valorisable", période, facture, site, PDL/contrat, preuve ou preuve
+    > attendue, action possible ou statut non actionnable explicite.
+
+    Bloque l'INSERT/UPDATE si :
+    - `is_monetizable=True` (default) ET `actual_value IS NULL` → anomalie
+      valorisable sans montant fiable, refusée (sinon KPI loss faux silencieusement).
+    - `is_monetizable=False` ET `non_monetizable_reason` vide → on exige une
+      raison explicite pour pouvoir l'auditer / l'afficher au DAF.
+
+    Note défense : au moment de `before_insert`, le default Python n'est pas
+    forcément appliqué sur le target → on traite `None` comme `True` (le default).
+    """
+    # `None` au moment de l'insert = sera défaulté à True par le serveur — on traite comme valorisable
+    monetizable = True if target.is_monetizable is None else bool(target.is_monetizable)
+
+    if monetizable and target.actual_value is None:
+        raise BillAnomalyValidationError(
+            f"BillAnomaly code={target.code!r} : is_monetizable=True (défaut) exige "
+            f"`actual_value` non NULL. Si l'impact n'est pas chiffrable, "
+            f"marquer is_monetizable=False + renseigner non_monetizable_reason."
+        )
+    if not monetizable and not (target.non_monetizable_reason or "").strip():
+        raise BillAnomalyValidationError(
+            f"BillAnomaly code={target.code!r} : is_monetizable=False exige "
+            f"`non_monetizable_reason` (FR clair, ex : 'Données contractuelles "
+            f"manquantes pour chiffrer l'impact')."
+        )
+
+
+event.listen(BillAnomaly, "before_insert", _validate_bill_anomaly_invariant)
+event.listen(BillAnomaly, "before_update", _validate_bill_anomaly_invariant)

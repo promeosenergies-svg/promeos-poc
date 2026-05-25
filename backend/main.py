@@ -223,6 +223,14 @@ app.include_router(consumption_diag_router)  # Diagnostic consommation V1
 app.include_router(site_config_router)  # Site config (schedule, tariff)
 app.include_router(billing_router)  # Bill Intelligence V2 (CSV import, shadow billing, anomaly engine)
 app.include_router(bill_intelligence_router)  # Sprint C-5 P5.1 — anomaly detection R19+R20 (ADR-013)
+# Bill Intelligence P1 C2 (2026-05-24) — preuves documentaires anomalies (Evidence pattern)
+from routes.bill_anomaly_evidence import router as bill_anomaly_evidence_router  # noqa: E402
+
+app.include_router(bill_anomaly_evidence_router)
+# Bill Intelligence P1 C4 (2026-05-24) — sync anomalies → ActionCenter (litige)
+from routes.billing_sync import router as billing_sync_router  # noqa: E402
+
+app.include_router(billing_sync_router)
 app.include_router(rgpd_consent_router)  # Sprint C-7 P7.3 — PATCH endpoints RGPD consentement (ADR-019)
 app.include_router(purchase_router)  # Achat Energie V1 (scenarios fixe/indexe/spot)
 app.include_router(actions_router)  # Action Hub V1 (unified actions from all briques)

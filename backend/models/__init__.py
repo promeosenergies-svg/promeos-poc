@@ -152,6 +152,9 @@ from .billing_models import (
 # Bill Intelligence — anomaly detection (Sprint C-5 Phase 5.1, ADR-013)
 from .bill_anomaly import BillAnomaly
 
+# Bill Intelligence P1 C2 (2026-05-24) — preuves rattachées aux anomalies
+from .bill_anomaly_evidence import BillAnomalyEvidence
+
 # Achat Energie
 from .purchase_models import (
     PurchaseAssumptionSet,

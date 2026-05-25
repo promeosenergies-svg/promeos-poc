@@ -102,7 +102,8 @@ export default function BillingVentilationCard({ siteId }) {
             <Tooltip content={<CustomTooltip />} />
             <Legend iconSize={10} wrapperStyle={{ fontSize: 10 }} />
             <Bar dataKey="fourniture" stackId="a" fill="#3b82f6" name="Fourniture" />
-            <Bar dataKey="reseau" stackId="a" fill="#f59e0b" name="Reseau (TURPE)" />
+            {/* P1 C7 (2026-05-24) : label énergie-agnostique — le chart agrège élec (TURPE) + gaz (ATRD/ATRT) */}
+            <Bar dataKey="reseau" stackId="a" fill="#f59e0b" name="Réseau (acheminement)" />
             <Bar dataKey="taxes" stackId="a" fill="#ef4444" name="Taxes" />
             <Bar dataKey="abo" stackId="a" fill="#8b5cf6" name="Abonnement" radius={[0, 4, 4, 0]} />
           </BarChart>
