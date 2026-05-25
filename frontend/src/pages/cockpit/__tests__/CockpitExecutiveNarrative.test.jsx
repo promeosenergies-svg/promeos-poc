@@ -126,7 +126,7 @@ describe('CockpitExecutiveNarrative — 3 blocs', () => {
     );
     expect(screen.getByTestId('exec-kpi-score_conformite-value')).toHaveTextContent('36,2 /100');
     expect(screen.getByTestId('exec-kpi-risque_financier_a_contester-value')).toHaveTextContent(
-      /19[\s ]?809\s?€/
+      /19\s?809\s?€/
     );
     expect(screen.getByTestId('exec-kpi-prochaine_echeance-value')).toHaveTextContent('42 j');
     expect(screen.getByTestId('exec-kpi-actions_ouvertes-value')).toHaveTextContent('58');
@@ -159,7 +159,7 @@ describe('CockpitExecutiveNarrative — Top 3 priorités', () => {
 
     const p1 = screen.getByTestId('exec-priority-1');
     expect(p1).toHaveTextContent('Montant à contester');
-    expect(p1).toHaveTextContent(/2[\s ]?149\s?€/);
+    expect(p1).toHaveTextContent(/2\s?149\s?€/);
 
     const cta1 = screen.getByTestId('exec-priority-1-cta');
     expect(cta1).toHaveAttribute('href', '/bill-intel?insight=439');
