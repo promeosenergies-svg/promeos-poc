@@ -38,6 +38,7 @@ from middleware.auth import AuthContext, get_optional_auth
 from models import EnergyInvoice, EntiteJuridique, Portefeuille, Site
 from models.bill_anomaly import BillAnomaly
 from models.v4.action_center_items import ActionCenterItem
+from models.v4.action_links import ActionLink
 from models.v4.enums import Domain, Kind, LifecycleState
 from services.scope_utils import resolve_org_id
 
@@ -77,18 +78,72 @@ def _make_description(anomaly: BillAnomaly, invoice: EnergyInvoice) -> str:
     )
 
 
-def _find_existing_item(db: Session, org_id: int, title: str) -> Optional[ActionCenterItem]:
-    """Recherche idempotente par signature (org_id, kind, domain, title)."""
+def _make_external_ref(anomaly: BillAnomaly) -> str:
+    """Action Center V4 P0 fix (2026-05-25) — signature stable cross-brique
+    pour idempotence DB (audit deep §5.3). Pattern : `billing_anomaly:{id}`.
+    Garanti unique via index UNIQUE partial (organisation_id, external_ref)
+    cf. action_center_items.py:idx_aci_external_ref."""
+    return f"billing_anomaly:{anomaly.id}"
+
+
+def _make_source_url(anomaly: BillAnomaly) -> str:
+    """URL canonique de retour vers la source (audit deep §6 P0-4).
+    Consommée par le drawer V4 LinksTab pour rendre le bouton « Voir la
+    source » sans parser la description."""
+    return f"/bill-intel?anomaly={anomaly.id}"
+
+
+def _find_existing_item(db: Session, org_id: int, external_ref: str) -> Optional[ActionCenterItem]:
+    """Recherche idempotente par external_ref (signature DB indexée UNIQUE
+    par org). Remplace l'ancienne signature title-based vulnérable en race
+    condition (audit deep §5.3 P0-3, 2026-05-25)."""
     return (
         db.query(ActionCenterItem)
         .filter(
             ActionCenterItem.organisation_id == org_id,
-            ActionCenterItem.kind == Kind.ANOMALY.value,
-            ActionCenterItem.domain == Domain.FACTURATION.value,
-            ActionCenterItem.title == title,
+            ActionCenterItem.external_ref == external_ref,
         )
         .first()
     )
+
+
+def _anomaly_target_uuid(anomaly_id: int) -> uuid.UUID:
+    """Action Center V4 P0 fix (2026-05-25) — `ActionLink.target_id` est typé
+    UUID alors que `BillAnomaly.id` est un Integer legacy. On dérive un UUID
+    déterministe v5 depuis l'integer pour préserver l'idempotence (même
+    anomaly_id ⇒ même UUID), tout en respectant le contrat du modèle."""
+    return uuid.uuid5(uuid.NAMESPACE_URL, f"promeos:billing_anomaly:{anomaly_id}")
+
+
+def _ensure_action_link(db: Session, org_id: int, item_id, anomaly_id: int) -> bool:
+    """Action Center V4 P0 fix (2026-05-25) — peuple ActionLink si absente
+    pour permettre le drawer LinksTab « Voir la source » sans parser la
+    description (audit deep §6 P0-4). Idempotent : ne re-crée pas si déjà
+    présent."""
+    target_uuid = _anomaly_target_uuid(anomaly_id)
+    existing = (
+        db.query(ActionLink)
+        .filter(
+            ActionLink.organisation_id == org_id,
+            ActionLink.item_id == item_id,
+            ActionLink.target_module == "billing",
+            ActionLink.target_id == target_uuid,
+        )
+        .first()
+    )
+    if existing is not None:
+        return False
+    db.add(
+        ActionLink(
+            organisation_id=org_id,
+            item_id=item_id,
+            link_type="source",
+            target_module="billing",
+            target_id=target_uuid,
+            relation="caused_by",
+        )
+    )
+    return True
 
 
 @router.post("/sync-actions-from-anomalies")
@@ -185,11 +240,17 @@ def sync_actions_from_anomalies(
             continue
 
         title = _make_title(anomaly)
-        existing = _find_existing_item(db, org_id, title)
+        # Action Center V4 P0 fix (2026-05-25) — lookup par external_ref
+        # (indexed UNIQUE par org) au lieu de title-based. Garantit zéro
+        # doublon DB même en race condition (audit deep §5.3 P0-3).
+        external_ref = _make_external_ref(anomaly)
+        source_url = _make_source_url(anomaly)
+        existing = _find_existing_item(db, org_id, external_ref)
 
         if existing is not None:
             if existing.lifecycle_state == LifecycleState.CLOSED.value:
-                # L'utilisateur a clos l'item — jamais re-créer
+                # L'utilisateur a clos l'item — jamais re-créer (préservé par
+                # closure_reason + closed_at + chk_closure_consistency).
                 skipped_resolved_user.append({"anomaly_id": anomaly.id, "lifecycle_state": existing.lifecycle_state})
                 continue
 
@@ -217,6 +278,20 @@ def sync_actions_from_anomalies(
                 existing.priority_score = new_score
                 changed_fields.append("priority_score")
 
+            # Backfill external_ref + source_url si absents (items legacy
+            # créés avant l'audit P0 ; la migration p0fix_acref parse déjà
+            # les patterns description mais on garantit ici la cohérence).
+            if not existing.external_ref:
+                existing.external_ref = external_ref
+                changed_fields.append("external_ref")
+            if not existing.source_url:
+                existing.source_url = source_url
+                changed_fields.append("source_url")
+
+            # Action Center V4 P0 fix (2026-05-25) — peuple ActionLink si
+            # absente (audit §6 P0-4). Idempotent : ne re-crée pas.
+            _ensure_action_link(db, org_id, existing.id, anomaly.id)
+
             if changed_fields:
                 updated.append(
                     {
@@ -242,9 +317,15 @@ def sync_actions_from_anomalies(
             lifecycle_state=LifecycleState.NEW.value,
             priority_bracket=bracket,
             priority_score=score,
+            external_ref=external_ref,
+            source_url=source_url,
         )
         db.add(item)
         db.flush()
+        # Action Center V4 P0 fix (2026-05-25) — peuple ActionLink à la
+        # création (audit §6 P0-4) pour qu'un EM/Auditeur puisse revenir
+        # à l'anomalie source depuis le drawer LinksTab.
+        _ensure_action_link(db, org_id, item.id, anomaly.id)
         created.append(
             {
                 "id": str(item.id),
@@ -252,6 +333,8 @@ def sync_actions_from_anomalies(
                 "anomaly_id": anomaly.id,
                 "invoice_id": invoice.id,
                 "priority_bracket": bracket,
+                "external_ref": external_ref,
+                "source_url": source_url,
             }
         )
 

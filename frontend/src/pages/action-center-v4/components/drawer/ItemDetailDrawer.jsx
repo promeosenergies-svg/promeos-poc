@@ -18,10 +18,12 @@ import { BlockersTab } from './BlockersTab';
 import { Breadcrumb } from './Breadcrumb';
 import { DrawerActions } from './DrawerActions';
 import { DrawerBreadcrumb } from './DrawerBreadcrumb';
+import { DrawerErrorBoundary } from './DrawerErrorBoundary';
 import { EvidencesTab } from './EvidencesTab';
 import { ImpactSection } from './ImpactSection';
 import { ItemClosedBanner } from './ItemClosedBanner';
 import { ItemHeader } from '../items/ItemHeader';
+import { ItemNotFoundState } from './ItemNotFoundState';
 import { LinksTab } from './LinksTab';
 import { TimelineTab } from './TimelineTab';
 import { V4Drawer } from './V4Drawer';
@@ -95,6 +97,28 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
 
   if (!open || !itemId) return null;
 
+  // Action Center V4 P0 fix (2026-05-25) — fallback FR explicite quand
+  // l'item est inaccessible : 404 backend (item supprimé / cross-org) ou
+  // erreur réseau. Avant ce garde, le drawer affichait un panneau blanc
+  // sans message (audit deep §3.3 P0-2). On distingue 2 variantes pour
+  // le copy : not_found (404) vs network_error (autre status / fetch fail).
+  if (!itemLoading && (itemError || item === null)) {
+    const status = itemError?.status ?? itemError?.response?.status;
+    const variant = status === 404 || status === 403 ? 'not_found' : 'network_error';
+    return (
+      <V4Drawer
+        open={open}
+        onClose={onClose}
+        ariaLabel={DRAWER_COPY.drawerTitle}
+        breadcrumb={null}
+        headerActions={null}
+        footer={null}
+      >
+        <ItemNotFoundState variant={variant} onClose={onClose} onRetry={refetchItem} />
+      </V4Drawer>
+    );
+  }
+
   // M2-5.11.F — Breadcrumb dynamique : 4-5 segments selon les données item
   // disponibles. La hiérarchie reflète le contexte décisionnel : section >
   // page > type d'item > domaine métier > « Détail » courant. Tant que l'item
@@ -152,51 +176,57 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
       }
       footer={footer}
     >
-      <ItemClosedBanner item={item} />
-      {/* M2-6.C.3 (commit 4/4) — DrawerBreadcrumb patrimonial sous le banner.
+      {/* Action Center V4 P0 fix (2026-05-25) — error boundary local
+          autour du body du drawer : toute exception runtime React (mutation
+          imprévue, payload incomplet) sera capturée et rendra le fallback
+          variant=unexpected au lieu de crasher le hub parent (audit §3.3). */}
+      <DrawerErrorBoundary onClose={onClose}>
+        <ItemClosedBanner item={item} />
+        {/* M2-6.C.3 (commit 4/4) — DrawerBreadcrumb patrimonial sous le banner.
           Mode MV3 silencieux : si le BE n'expose pas encore les snapshots
           patrimoniaux (organisation_name / site_name / building_name / meter_id),
           le composant retourne null sans bruit. Activable dès BE M3+ tracé. */}
-      <DrawerBreadcrumb item={item} />
-      <ItemHeader item={item} loading={itemLoading} error={itemError} />
+        <DrawerBreadcrumb item={item} />
+        <ItemHeader item={item} loading={itemLoading} error={itemError} />
 
-      {/* P2-B C3 (2026-05-24) — Lien retour vers l'anomalie source si
+        {/* P2-B C3 (2026-05-24) — Lien retour vers l'anomalie source si
           domain=facturation + description contient EXTERNAL_REF:billing_anomaly:<id>.
           Permet de fermer la boucle Anomalie → Action de litige → retour à
           l'Anomalie sans navigation manuelle. Aucun nouveau menu. */}
-      <BillingAnomalyBackLink item={item} />
+        <BillingAnomalyBackLink item={item} />
 
-      {/* M2-5.10.C — Impact financier 4 quadrants (audit Jean-Marc CFO P0-1).
+        {/* M2-5.10.C — Impact financier 4 quadrants (audit Jean-Marc CFO P0-1).
           Section indépendante du fetch item : `useActionCenterV4Impact` est
           appelé en interne. Reste cachée si l'itemId est absent. */}
-      {itemId && <ImpactSection itemId={itemId} />}
+        {itemId && <ImpactSection itemId={itemId} />}
 
-      <div className="mt-4">
-        <Tabs tabs={TAB_LIST} active={activeTab} onChange={handleTabChange} />
-      </div>
+        <div className="mt-4">
+          <Tabs tabs={TAB_LIST} active={activeTab} onChange={handleTabChange} />
+        </div>
 
-      <div className="mt-4">
-        {activeTab === TAB_IDS.timeline && loadedTabs.has(TAB_IDS.timeline) && (
-          <TimelineTab key={refreshKey} itemId={itemId} />
-        )}
-        {activeTab === TAB_IDS.evidences && loadedTabs.has(TAB_IDS.evidences) && (
-          <EvidencesTab
-            itemId={itemId}
-            itemClosed={item?.lifecycle_state === 'closed'}
-            onEvidenceMutated={handleMutated}
-          />
-        )}
-        {activeTab === TAB_IDS.blockers && loadedTabs.has(TAB_IDS.blockers) && (
-          <BlockersTab
-            itemId={itemId}
-            itemClosed={item?.lifecycle_state === 'closed'}
-            onBlockerMutated={handleMutated}
-          />
-        )}
-        {activeTab === TAB_IDS.links && loadedTabs.has(TAB_IDS.links) && (
-          <LinksTab itemId={itemId} />
-        )}
-      </div>
+        <div className="mt-4">
+          {activeTab === TAB_IDS.timeline && loadedTabs.has(TAB_IDS.timeline) && (
+            <TimelineTab key={refreshKey} itemId={itemId} />
+          )}
+          {activeTab === TAB_IDS.evidences && loadedTabs.has(TAB_IDS.evidences) && (
+            <EvidencesTab
+              itemId={itemId}
+              itemClosed={item?.lifecycle_state === 'closed'}
+              onEvidenceMutated={handleMutated}
+            />
+          )}
+          {activeTab === TAB_IDS.blockers && loadedTabs.has(TAB_IDS.blockers) && (
+            <BlockersTab
+              itemId={itemId}
+              itemClosed={item?.lifecycle_state === 'closed'}
+              onBlockerMutated={handleMutated}
+            />
+          )}
+          {activeTab === TAB_IDS.links && loadedTabs.has(TAB_IDS.links) && (
+            <LinksTab itemId={itemId} sourceUrl={item?.source_url} />
+          )}
+        </div>
+      </DrawerErrorBoundary>
     </V4Drawer>
   );
 }

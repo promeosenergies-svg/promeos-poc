@@ -129,6 +129,17 @@ class ActionCenterItem(Base):
     idempotency_key = Column(String(36))
     idempotency_payload_hash = Column(String(64))
 
+    # ─── External ref (Action Center V4 P0 fix, 2026-05-25) ───
+    # external_ref : signature stable cross-brique pour idempotence des syncs
+    # (billing_anomaly:{id}, conformite_rule:{rule_code}:site:{id}, …). Index
+    # UNIQUE partiel par org garantit qu'un re-run de sync ne crée jamais de
+    # doublon, même en race condition (audit deep §5.3 P0-3).
+    # source_url  : URL canonique de retour vers la source (/bill-intel?…,
+    # /conformite?…). Lu par le drawer V4 LinksTab pour rendre le bouton
+    # « Voir la source » sans parser la description (audit deep §6 P0-4).
+    external_ref = Column(String(120))
+    source_url = Column(String(500))
+
     # ─── Timestamps ───
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(
@@ -261,5 +272,18 @@ class ActionCenterItem(Base):
             unique=True,
             sqlite_where=text("idempotency_key IS NOT NULL"),
             postgresql_where=text("idempotency_key IS NOT NULL"),
+        ),
+        # Action Center V4 P0 fix (2026-05-25) — unicité external_ref PAR org.
+        # Garantit zéro doublon Billing/Conformité sync au niveau DB (vs
+        # signature title-based applicative, fragile en race condition).
+        # Partiel : seules les lignes avec external_ref sont indexées (les
+        # POST /items utilisateur sans sync n'ont pas d'external_ref).
+        Index(
+            "idx_aci_external_ref",
+            "organisation_id",
+            "external_ref",
+            unique=True,
+            sqlite_where=text("external_ref IS NOT NULL"),
+            postgresql_where=text("external_ref IS NOT NULL"),
         ),
     )

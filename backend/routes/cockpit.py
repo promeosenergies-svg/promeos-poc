@@ -41,6 +41,8 @@ def _gone_cockpit_p0_2026_05_25(endpoint_name: str, alternative: str = "") -> No
         "sprint": "claude/cockpit-p0-cleanup-and-billing-kpi",
     }
     raise HTTPException(status_code=410, detail=detail)
+
+
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Literal, Optional
@@ -940,9 +942,7 @@ def get_cockpit_facts_alerts(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """[DEPRECATED 2026-05-25] Alertes cockpit — orphelin post Cockpit.jsx."""
-    _gone_cockpit_p0_2026_05_25(
-        "/cockpit/_facts.alerts", alternative="/api/action-center-v4/items"
-    )
+    _gone_cockpit_p0_2026_05_25("/cockpit/_facts.alerts", alternative="/api/action-center-v4/items")
     org_id = resolve_org_id(request, auth, db)
     site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
 
@@ -991,9 +991,7 @@ def get_cockpit_cdc(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """[DEPRECATED 2026-05-25] Courbe charge J-1 — orphelin post Cockpit.jsx."""
-    _gone_cockpit_p0_2026_05_25(
-        "/cockpit/cdc", alternative="/api/cockpit/_facts (hourly_breakdown)"
-    )
+    _gone_cockpit_p0_2026_05_25("/cockpit/cdc", alternative="/api/cockpit/_facts (hourly_breakdown)")
     from models.energy_models import Meter
     from services.ems.cdc_service import query_cdc
 
@@ -1119,6 +1117,25 @@ def get_cockpit_priorities(
             return float(BACS_PENALTY_EUR)
         return None
 
+    # Cockpit P0 fix Action Center V4 (2026-05-25) — interdit de pointer vers
+    # /anomalies (page legacy gated OFF en V4 ON, clic = 404 utilisateur).
+    # Mapping vers les hubs canoniques par domain : conformite / bill-intel /
+    # patrimoine, fallback /centre-action. Source : audit deep §6 P0-1.
+    _HUB_FALLBACK = "/centre-action"
+    _DOMAIN_ROUTE = {
+        "compliance": "/conformite",
+        "conformite": "/conformite",
+        "billing": "/bill-intel",
+        "facturation": "/bill-intel",
+        "patrimoine": "/patrimoine",
+    }
+
+    def _safe_action_url(domain: str, site_id) -> str:
+        base = _DOMAIN_ROUTE.get((domain or "").lower())
+        if not base:
+            return _HUB_FALLBACK
+        return f"{base}?site={site_id}" if site_id else base
+
     try:
         from services.action_center_service import get_action_center_issues
 
@@ -1131,7 +1148,7 @@ def get_cockpit_priorities(
                         "title": issue.get("title", issue.get("issue_label", "")),
                         "urgency": sev,
                         "domain": issue.get("domain", ""),
-                        "action_url": f"/anomalies?issue={issue.get('issue_id', '')}",
+                        "action_url": _safe_action_url(issue.get("domain"), issue.get("site_id")),
                         "category_label": "Conformité",
                         "impact_value_eur": _heuristic_impact_eur(issue),
                         "impact_value_mwh_year": None,
@@ -1184,13 +1201,11 @@ def get_cockpit_priorities(
                     "title": item.issue_label,
                     "urgency": item.priority or "high",
                     "domain": item.domain,
-                    # Audit Phase 3.0 P0 (CX 09/05) : ancien `/action-center?action={id}`
-                    # était un cul-de-sac car /action-center → Navigate replace vers
-                    # /anomalies (App.jsx) sans préserver le query string. L'utilisateur
-                    # cliquait "Voir l'action" sur une DecisionEvidenceCard et atterrissait
-                    # sur /anomalies brut sans contexte. La route /actions/:actionId
-                    # existe (App.jsx:191) et accepte un id direct.
-                    "action_url": f"/actions/{item.id}",
+                    # Cockpit P0 fix Action Center V4 (2026-05-25) — la route
+                    # /actions/:actionId est gated OFF en V4 ON (redirige vers
+                    # /action-center-v4) et l'item legacy ActionPlanItem n'a
+                    # pas son équivalent V4 — fallback hub V4 garanti.
+                    "action_url": _HUB_FALLBACK,
                     "category_label": category_label,
                     "impact_value_eur": getattr(item, "estimated_loss_eur", None),
                     "impact_value_mwh_year": getattr(item, "estimated_savings_mwh", None),
@@ -1427,9 +1442,7 @@ def get_cockpit_levers(
             "lever_result": LeverResult.to_dict()
         }
     """
-    _gone_cockpit_p0_2026_05_25(
-        "/cockpit/levers", alternative="/api/action-center-v4/items + /api/billing/insights"
-    )
+    _gone_cockpit_p0_2026_05_25("/cockpit/levers", alternative="/api/action-center-v4/items + /api/billing/insights")
     from services.lever_engine_service import compute_actionable_levers
     from models.enums import InsightStatus
 
@@ -1599,9 +1612,7 @@ def get_cockpit_essentials(
     Réponse historique :
         DashboardEssentials.to_dict() — structure agrégée complète
     """
-    _gone_cockpit_p0_2026_05_25(
-        "/cockpit/essentials", alternative="/api/cockpit/strategique"
-    )
+    _gone_cockpit_p0_2026_05_25("/cockpit/essentials", alternative="/api/cockpit/strategique")
     from services.dashboard_essentials_service import build_dashboard_essentials
 
     org_id = resolve_org_id(request, auth, db)
@@ -1675,9 +1686,7 @@ def get_cockpit_essentials_health(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """[DEPRECATED 2026-05-25] Health state — orphelin post Cockpit.jsx."""
-    _gone_cockpit_p0_2026_05_25(
-        "/cockpit/essentials/health", alternative="/api/cockpit/strategique"
-    )
+    _gone_cockpit_p0_2026_05_25("/cockpit/essentials/health", alternative="/api/cockpit/strategique")
     from services.dashboard_essentials_service import (
         build_watchlist,
         check_consistency,
@@ -1815,9 +1824,7 @@ def get_cockpit_data_activation(
     Remplacé par /api/patrimoine/sites (champ data_completeness) +
     chips réglementaires sur /conformite.
     """
-    _gone_cockpit_p0_2026_05_25(
-        "/cockpit/data_activation", alternative="/api/patrimoine/sites"
-    )
+    _gone_cockpit_p0_2026_05_25("/cockpit/data_activation", alternative="/api/patrimoine/sites")
     from services.data_activation_service import build_activation_checklist
 
     org_id = resolve_org_id(request, auth, db)
