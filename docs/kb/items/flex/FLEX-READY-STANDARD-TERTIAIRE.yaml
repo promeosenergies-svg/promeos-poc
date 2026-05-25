@@ -18,6 +18,8 @@ tags:
     - multi
   granularity:
     - 30min
+  naf:
+    - multi
 
 scope: {}
 
@@ -94,7 +96,9 @@ sources:
     label: "Think Smartgrids — Flex Ready®"
     section: "Cadre de référence"
     anchor: "#flex-ready-standard"
+    excerpt_short: "[auto-fill] Standard porté par Think Smartgrids + GIMELEC, basé sur la norme NF EN IEC 62746-4."
 
 updated_at: "2026-04-17"
 confidence: "high"
+status: "validated"
 priority: 2

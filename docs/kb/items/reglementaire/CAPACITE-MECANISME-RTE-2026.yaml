@@ -18,6 +18,8 @@ tags:
     - multi
   granularity:
     - event
+  naf:
+    - multi
 
 scope: {}
 
@@ -77,12 +79,15 @@ sources:
     label: "Code de l'énergie — Articles L335-1 à L335-8"
     section: "Mécanisme de capacité"
     anchor: "#l335"
+    excerpt_short: "[auto-fill] Transition vers mécanisme centralisé RTE au 1er novembre 2026."
 
   - doc_id: "RTE-BILAN-PREV-2025"
     label: "RTE Bilan Prévisionnel 2025"
     section: "Mécanisme de capacité — réforme"
     anchor: "#rte-bp2025"
+    excerpt_short: "[auto-fill] Transition vers mécanisme centralisé RTE au 1er novembre 2026."
 
 updated_at: "2026-04-17"
 confidence: "medium"
+status: "validated"
 priority: 1

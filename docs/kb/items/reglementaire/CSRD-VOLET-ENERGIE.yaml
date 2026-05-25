@@ -17,6 +17,8 @@ tags:
     - multi
   granularity:
     - mensuel
+  naf:
+    - multi
 
 scope: {}
 
@@ -107,6 +109,7 @@ sources:
     label: "Ordonnance n°2023-1142 du 6 décembre 2023 (transposition française CSRD)"
     section: "Code de commerce Art. L233-28-4"
     anchor: "#ord-2023-1142"
+    excerpt_short: "[auto-fill] Corporate Sustainability Reporting Directive (UE 2022/2464) transposée en France par ordonnance 2023-1142."
 
   - doc_id: "EFRAG-ESRS-E1"
     label: "EFRAG ESRS E1 — Climate change"
@@ -116,4 +119,5 @@ sources:
 
 updated_at: "2026-04-17"
 confidence: "high"
+status: "validated"
 priority: 1

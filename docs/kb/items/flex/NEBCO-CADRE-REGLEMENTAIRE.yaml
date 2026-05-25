@@ -17,6 +17,8 @@ tags:
     - multi
   granularity:
     - 30min
+  naf:
+    - multi
 
 scope: {}
 
@@ -76,4 +78,5 @@ sources:
 
 updated_at: "2026-04-17"
 confidence: "high"
+status: "validated"
 priority: 2

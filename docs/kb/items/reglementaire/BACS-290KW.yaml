@@ -17,6 +17,8 @@ tags:
     - bacs
   granularity:
     - event
+  naf:
+    - multi
 
 scope:
   hvac_kw_min: 290
@@ -75,4 +77,5 @@ sources:
 
 updated_at: "2026-02-09"
 confidence: "high"
+status: "validated"
 priority: 1
