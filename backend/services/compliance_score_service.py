@@ -70,6 +70,39 @@ FRAMEWORK_WEIGHTS: dict[str, float] = _scoring_cfg.get(
     },
 )
 
+# ── Labels FR canoniques des frameworks (SoT backend) ──────────────────────
+# Hotfix 2026-05-24 — ComplianceScoreHeader.jsx fallback "APER" cassait
+# l'affichage de audit_sme, iso_50001, solar_toiture (tous étiquetés "APER"
+# côté FE). Doctrine §8.1 « zero business logic frontend » : le label
+# code→FR est métier réglementaire, il doit venir du backend.
+#
+# Mapping exhaustif des frameworks V2 adaptatif (cf. _compute_v2_adaptive)
+# + BEGES (futur, déjà acronyme PROMEOS reconnu).
+# Fallback : code brut (formatFrameworkCode côté FE) pour tout framework
+# qui apparaîtrait avant son ajout ici — JAMAIS de fallback métier faux.
+FRAMEWORK_LABELS_FR: dict[str, str] = {
+    "tertiaire_operat": "Décret Tertiaire",
+    "bacs": "BACS",
+    "aper": "APER",
+    "audit_sme": "Audit SMÉ",
+    "iso_50001": "ISO 50001",
+    "solar_toiture": "Solarisation toiture",
+    "beges": "BEGES",
+}
+
+
+def get_framework_label_fr(framework_code: str) -> str:
+    """Retourne le label FR d'un framework réglementaire.
+
+    Doctrine §8.1 : le label code→FR est métier réglementaire, exposé
+    par le backend pour éviter tout mapping métier côté FE.
+
+    Si le code n'est pas dans FRAMEWORK_LABELS_FR, retourne le code brut
+    (jamais de fallback métier comme "APER" qui tromperait le DAF).
+    """
+    return FRAMEWORK_LABELS_FR.get(framework_code, framework_code)
+
+
 # ── Pénalité findings critiques ─────────────────────────────────────────────
 _crit_cfg = _scoring_cfg.get("critical_penalty", {})
 MAX_CRITICAL_PENALTY: float = float(_crit_cfg.get("max_pts", 20.0))
@@ -101,9 +134,12 @@ class ComplianceScoreResult:
     formula: str = "Moyenne pondérée (Tertiaire 45% + BACS 30% + APER 25%) − pénalité findings critiques (max −20 pts)"
 
     def to_dict(self) -> dict:
+        # Hotfix 2026-05-24 — enrichir chaque entrée breakdown avec label_fr
+        # depuis FRAMEWORK_LABELS_FR (SoT backend). Le FE consomme directement
+        # fw.label_fr et n'a plus aucun mapping métier réglementaire.
         return {
             "score": self.score,
-            "breakdown": [asdict(f) for f in self.breakdown],
+            "breakdown": [{**asdict(f), "label_fr": get_framework_label_fr(f.framework)} for f in self.breakdown],
             "critical_penalty": self.critical_penalty,
             "confidence": self.confidence,
             "frameworks_evaluated": self.frameworks_evaluated,
@@ -394,6 +430,13 @@ def compute_portfolio_compliance(db: Session, org_id: int) -> dict:
 
     breakdown_avg = {fw: round(fw_sums[fw] / fw_counts[fw], 1) for fw in fw_sums if fw_counts.get(fw, 0) > 0}
 
+    # Hotfix 2026-05-24 — ajout `breakdown_avg_labeled` liste typée avec
+    # label_fr. Le FE consomme cette liste pour rendre chaque framework.
+    # `breakdown_avg` (dict legacy) est conservé pour rétro-compatibilité.
+    breakdown_avg_labeled = [
+        {"framework": fw, "label_fr": get_framework_label_fr(fw), "score": breakdown_avg[fw]} for fw in breakdown_avg
+    ]
+
     high_conf = sum(1 for _, r in results if r.confidence == "high")
 
     return {
@@ -404,6 +447,7 @@ def compute_portfolio_compliance(db: Session, org_id: int) -> dict:
         "high_confidence_count": high_conf,
         "worst_sites": worst_sites,
         "breakdown_avg": breakdown_avg,
+        "breakdown_avg_labeled": breakdown_avg_labeled,
     }
 
 

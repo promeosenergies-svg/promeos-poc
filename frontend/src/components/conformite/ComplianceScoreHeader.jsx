@@ -1,5 +1,18 @@
 /**
  * ComplianceScoreHeader — Unified compliance score display with breakdown bars.
+ *
+ * Hotfix 2026-05-24 — Bug cardinal corrigé : le mapping ternaire
+ *   fw.framework === 'tertiaire_operat' ? 'Décret Tertiaire'
+ *   : fw.framework === 'bacs' ? 'BACS'
+ *   : 'APER'
+ * étiquetait audit_sme, iso_50001, solar_toiture, beges comme "APER" → 3
+ * lignes APER visibles côté DAF alors qu'il n'y a qu'une obligation APER.
+ *
+ * Doctrine §8.1 « zero business logic frontend » : le label code→FR est
+ * métier réglementaire, fourni par le backend via `label_fr`
+ * (FRAMEWORK_LABELS_FR dans compliance_score_service.py). Fallback FE =
+ * `formatFrameworkCode(fw.framework)` (code brut humanisé) — JAMAIS un
+ * label métier faux.
  */
 import { getComplianceScoreColor, COMPLIANCE_SCORE_THRESHOLDS } from '../../lib/constants';
 import { CONFIDENCE_DATA_LABELS } from '../../domain/compliance/complianceLabels.fr';
@@ -10,6 +23,18 @@ import {
 import NonApplicableLabel from '../NonApplicableLabel';
 import { Explain } from '../../ui';
 import SolAcronym from '../../ui/sol/SolAcronym';
+
+/**
+ * Fallback purement présentation : transforme un code framework brut
+ * (ex: `solar_toiture`) en label humainement lisible (`Solar toiture`)
+ * sans aucune connaissance métier. Utilisé UNIQUEMENT si le backend
+ * n'a pas fourni `label_fr` — ne doit jamais retourner un label métier
+ * existant (DT/BACS/APER/SMÉ/...) sous peine de tromper le lecteur.
+ */
+function formatFrameworkCode(code) {
+  if (!code || typeof code !== 'string') return '—';
+  return code.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
   if (!complianceScore) return null;
@@ -88,21 +113,22 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
             </>
           )}
         </div>
-        {/* Breakdown bars */}
+        {/* Breakdown bars — site detail (breakdown[]) ou portfolio
+            (breakdown_avg_labeled[]). Les deux exposent `label_fr` depuis
+            le backend (FRAMEWORK_LABELS_FR). Fallback FE =
+            formatFrameworkCode (jamais un label métier faux). */}
         <div className="flex-1 space-y-2">
           {(complianceScore.breakdown || []).map((fw) => {
-            const fwCode =
-              fw.framework === 'tertiaire_operat'
-                ? 'Décret Tertiaire'
-                : fw.framework === 'bacs'
-                  ? 'BACS'
-                  : 'APER';
+            const fwLabel = fw.label_fr || formatFrameworkCode(fw.framework);
             const weightPct = fw.weight != null ? `${Math.round(fw.weight * 100)}%` : '';
             const isAvailable = fw.available !== false && fw.source !== 'default';
             return (
               <div key={fw.framework} className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 w-36 truncate">
-                  <SolAcronym code={fwCode} />
+                <span
+                  className="text-xs text-gray-500 w-36 truncate"
+                  data-testid={`framework-label-${fw.framework}`}
+                >
+                  <SolAcronym code={fwLabel} />
                   {weightPct && isAvailable ? ` (${weightPct})` : ''}
                 </span>
                 {isAvailable ? (
@@ -125,27 +151,38 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
               </div>
             );
           })}
-          {/* Fallback: show breakdown_avg from portfolio if no breakdown */}
+          {/* Portfolio scope : utilise breakdown_avg_labeled (liste typée
+              avec label_fr). Fallback sur l'ancien breakdown_avg (dict)
+              uniquement si le BE n'a pas encore migré — sans mapping métier
+              FE, on rend formatFrameworkCode(code) pour les codes inconnus. */}
           {!complianceScore.breakdown &&
-            complianceScore.breakdown_avg &&
-            Object.entries(complianceScore.breakdown_avg).map(([fw, score]) => {
-              const fwCode =
-                fw === 'tertiaire_operat' ? 'Décret Tertiaire' : fw === 'bacs' ? 'BACS' : 'APER';
+            (
+              complianceScore.breakdown_avg_labeled ||
+              Object.entries(complianceScore.breakdown_avg || {}).map(([framework, score]) => ({
+                framework,
+                label_fr: null,
+                score,
+              }))
+            ).map((fw) => {
+              const fwLabel = fw.label_fr || formatFrameworkCode(fw.framework);
               return (
-                <div key={fw} className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 w-36 truncate">
-                    <SolAcronym code={fwCode} />
+                <div key={fw.framework} className="flex items-center gap-2">
+                  <span
+                    className="text-xs text-gray-500 w-36 truncate"
+                    data-testid={`framework-label-${fw.framework}`}
+                  >
+                    <SolAcronym code={fwLabel} />
                   </span>
                   <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${score >= COMPLIANCE_SCORE_THRESHOLDS.ok ? 'bg-green-500' : score >= COMPLIANCE_SCORE_THRESHOLDS.warn ? 'bg-amber-500' : 'bg-red-500'}`}
-                      style={{ width: `${Math.min(100, score)}%` }}
+                      className={`h-full rounded-full ${fw.score >= COMPLIANCE_SCORE_THRESHOLDS.ok ? 'bg-green-500' : fw.score >= COMPLIANCE_SCORE_THRESHOLDS.warn ? 'bg-amber-500' : 'bg-red-500'}`}
+                      style={{ width: `${Math.min(100, fw.score)}%` }}
                     />
                   </div>
                   <span
-                    className={`text-xs font-semibold w-10 text-right ${getComplianceScoreColor(score)}`}
+                    className={`text-xs font-semibold w-10 text-right ${getComplianceScoreColor(fw.score)}`}
                   >
-                    {Math.round(score)}
+                    {Math.round(fw.score)}
                   </span>
                 </div>
               );
