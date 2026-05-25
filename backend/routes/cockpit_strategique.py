@@ -148,4 +148,22 @@ def get_cockpit_strategique(
         _logger.warning("[strategique] billing_kpis fetch failed: %s", e)
         payload["billing_kpis"] = {"kpis": [], "links": {}, "_error": str(e)}
 
+    # 7. Cockpit P1 (2026-05-25) — Executive Narrative pour DAF/DG en 30s :
+    # executive_summary (5 chiffres clés : score / surfact / échéance /
+    # actions / sites) + top_priorities (max 3 cross-briques avec impact
+    # + échéance + CTA unique). Doctrine §8.1 : tous les KPIs ont
+    # source/formula/unit/period/scope. Doctrine §6.2 : chaque CTA pointe
+    # vers une page existante (/conformite, /bill-intel, /centre-action,
+    # /patrimoine). Fallback gracieux : bloc vide si service échoue.
+    try:
+        from services.executive_narrative_service import compute_executive_narrative
+
+        narrative = compute_executive_narrative(db, org_id)
+        payload["executive_summary"] = narrative["executive_summary"]
+        payload["top_priorities"] = narrative["top_priorities"]
+    except Exception as e:
+        _logger.warning("[strategique] executive_narrative fetch failed: %s", e)
+        payload["executive_summary"] = {"kpis": [], "_error": str(e)}
+        payload["top_priorities"] = []
+
     return payload
