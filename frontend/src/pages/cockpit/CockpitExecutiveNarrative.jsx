@@ -109,10 +109,11 @@ function KpiBlock({ kpi }) {
 function PriorityCard({ priority }) {
   const { label_fr, why_fr, impact, deadline, perimetre_fr, cta, priority_rank } = priority;
   const impactDisplay =
-    impact?.unit === '€' ? formatEuros(impact.value) : `${impact?.value ?? '—'} ${impact?.unit ?? ''}`;
-  const deadlineDisplay = deadline?.days_remaining != null
-    ? `dans ${deadline.days_remaining} j`
-    : null;
+    impact?.unit === '€'
+      ? formatEuros(impact.value)
+      : `${impact?.value ?? '—'} ${impact?.unit ?? ''}`;
+  const deadlineDisplay =
+    deadline?.days_remaining != null ? `dans ${deadline.days_remaining} j` : null;
 
   return (
     <div
@@ -158,9 +159,15 @@ function PriorityCard({ priority }) {
 }
 
 const WHY_MICROCOPY = [
-  { label: 'Risque réglementaire', desc: 'Échéance ou non-conformité avec impact financier potentiel.' },
+  {
+    label: 'Risque réglementaire',
+    desc: 'Échéance ou non-conformité avec impact financier potentiel.',
+  },
   { label: 'Montant à contester', desc: 'Surfacturation détectée — gain immédiat possible.' },
-  { label: 'Donnée manquante', desc: 'Information bloquante pour évaluer un site ou une obligation.' },
+  {
+    label: 'Donnée manquante',
+    desc: 'Information bloquante pour évaluer un site ou une obligation.',
+  },
   { label: 'Action en attente', desc: 'Tâche assignée à un pilote, non clôturée.' },
 ];
 
@@ -198,12 +205,16 @@ export default function CockpitExecutiveNarrative({ executiveSummary, topPriorit
         </div>
       )}
 
-      {/* Bloc 2 — Top 3 priorités */}
+      {/* Bloc 2 — Top priorités (wording dynamique : « 1 priorité détectée »
+          si une seule, « Top N priorités » sinon — évite l'effet « Top 3 »
+          trompeur quand le service n'a remonté qu'une priorité). */}
       {priorities.length > 0 && (
         <div data-testid="exec-top-priorities">
           <h3 className="mb-2 text-sm font-semibold text-gray-700 flex items-center gap-2">
             <AlertTriangle size={16} className="text-amber-600" aria-hidden="true" />
-            Top {priorities.length} priorité{priorities.length > 1 ? 's' : ''} — à traiter maintenant
+            {priorities.length === 1
+              ? '1 priorité détectée — à traiter maintenant'
+              : `Top ${priorities.length} priorités — à traiter maintenant`}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {priorities.map((p) => (
