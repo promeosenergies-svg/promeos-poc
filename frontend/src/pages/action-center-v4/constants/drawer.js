@@ -44,6 +44,20 @@ export const DRAWER_COPY = {
   timelineErrorTitle: "Impossible de charger l'historique",
   tabPlaceholderTitle: 'Disponible prochainement',
   tabPlaceholderText: 'Cet onglet sera activé au sprint suivant.',
+  // Action Center V4 P0 fix (2026-05-25) — drawer résilient pour les 4 états
+  // d'erreur identifiés par l'audit deep (item supprimé / cross-org / 404 /
+  // network / payload incomplet). Copy FR clair + CTA de retour vers le hub.
+  notFoundTitle: "Cette action n'est plus disponible",
+  notFoundText:
+    "Elle a peut-être été clôturée, supprimée ou déplacée. Vous pouvez retrouver l'historique complet dans le Centre d'Action.",
+  networkErrorTitle: 'Impossible de charger cette action',
+  networkErrorText:
+    "Une erreur réseau s'est produite. Vérifiez votre connexion et réessayez, ou retournez au Centre d'Action.",
+  unexpectedErrorTitle: 'Erreur inattendue',
+  unexpectedErrorText:
+    "Cette action n'a pas pu être affichée. L'équipe a été notifiée. Vous pouvez retourner au Centre d'Action.",
+  returnToHubCta: "Retour au Centre d'Action",
+  retryCta: 'Réessayer',
 };
 
 // ── M2-5.3.B — Onglets Preuves / Blocages / Liens ──────────────

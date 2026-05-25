@@ -64,6 +64,12 @@ class ActionItemDraft:
     scope_id: Optional[int]
     remediation_field: Optional[str]  # ex "site.tertiaire_area_m2"
     cta_label_fr: str  # ex "Compléter la surface"
+    # Action Center V4 P0 fix (2026-05-25) — source_url canonique pointant
+    # vers la page hub /conformite filtrée sur la règle. Sera persisté dans
+    # `ActionCenterItem.source_url` quand le P1 endpoint sera livré pour
+    # permettre au drawer V4 de rendre « Voir la source » sans parser
+    # description (audit deep §6 P0-4, contrat figé ici pour P1).
+    source_url: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -149,6 +155,18 @@ def _external_ref(entry: RuleApplicability) -> str:
     return f"{entry.rule_code.value}:{entry.scope_level}:{entry.scope_id or 0}:{entry.reason_code}"
 
 
+def _source_url(entry: RuleApplicability) -> str:
+    """Action Center V4 P0 fix (2026-05-25) — URL canonique de retour vers
+    la source côté hub /conformite. Permet au drawer V4 d'afficher
+    « Voir la source » → page Conformité filtrée sur la règle (audit deep
+    §6 P0-4). Si un scope_id site existe, on l'inclut pour préciser le
+    périmètre ; sinon on retombe sur la page règle générique."""
+    rule = entry.rule_code.value
+    if entry.scope_level == "site" and entry.scope_id:
+        return f"/conformite?regulation={rule}&site={entry.scope_id}"
+    return f"/conformite?regulation={rule}"
+
+
 # ─── API publique ───────────────────────────────────────────────────────────
 
 
@@ -224,6 +242,7 @@ def plan_remediation_actions_for_org(
                 scope_id=entry.scope_id,
                 remediation_field=remediation.get("remediation_field"),
                 cta_label_fr=remediation.get("cta_label_fr") or "Compléter",
+                source_url=_source_url(entry),
             )
             items.append(draft)
             by_rule[rule_code.value] = by_rule.get(rule_code.value, 0) + 1

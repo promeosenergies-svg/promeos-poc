@@ -79,6 +79,13 @@ class ActionCenterItemResponse(BaseModel):
     # char rempli au moment de l'assignation, pas joint runtime.
     owner_id: Optional[UUID] = None
     owner_display_name: Optional[str] = None
+    # Action Center V4 P0 fix (2026-05-25) — expose external_ref + source_url
+    # pour permettre au drawer FE de rendre le bouton « Voir la source »
+    # canonique sans parser la description (audit deep §6 P0-4). Le service
+    # billing_sync (et bientôt conformite_sync) peuple ces champs au moment
+    # de la création de l'item depuis une brique émettrice.
+    external_ref: Optional[str] = None
+    source_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
