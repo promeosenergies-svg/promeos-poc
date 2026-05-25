@@ -195,6 +195,29 @@ describe('CockpitExecutiveNarrative — Top 3 priorités', () => {
     const p2 = screen.getByTestId('exec-priority-2');
     expect(p2).toHaveTextContent('dans 42 j');
   });
+
+  it('wording « 1 priorité détectée » quand une seule priorité (anti-Top 3 trompeur)', () => {
+    renderWithRouter(
+      <CockpitExecutiveNarrative
+        executiveSummary={sampleSummary}
+        topPriorities={[samplePriorities[0]]}
+      />
+    );
+    const header = screen.getByTestId('exec-top-priorities');
+    expect(header).toHaveTextContent('1 priorité détectée — à traiter maintenant');
+    expect(header).not.toHaveTextContent(/Top\s+1/i);
+  });
+
+  it('wording « Top N priorités » quand N ≥ 2', () => {
+    renderWithRouter(
+      <CockpitExecutiveNarrative
+        executiveSummary={sampleSummary}
+        topPriorities={samplePriorities}
+      />
+    );
+    const header = screen.getByTestId('exec-top-priorities');
+    expect(header).toHaveTextContent('Top 2 priorités — à traiter maintenant');
+  });
 });
 
 describe('CockpitExecutiveNarrative — fallback gracieux', () => {
