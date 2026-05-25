@@ -19,8 +19,9 @@ function readSrc(dir, file) {
 // ── P0: Skeleton loading on 8 pages ──────────────────────────────────────
 
 describe('P0 — Skeleton loading components', () => {
+  // 'Cockpit.jsx' retiré (P0 cleanup cockpit #303) : CockpitStrategique
+  // utilise PageState (primitif hub L11) au lieu de SkeletonKpi/Table.
   const pages = [
-    'Cockpit.jsx',
     'Dashboard.jsx',
     'ConformitePage.jsx',
     'Site360.jsx',
@@ -42,8 +43,9 @@ describe('P0 — Skeleton loading components', () => {
 // ── P0: ErrorState on 8 pages ────────────────────────────────────────────
 
 describe('P0 — ErrorState on all pages', () => {
+  // 'Cockpit.jsx' retiré (P0 cleanup cockpit #303) : CockpitStrategique
+  // utilise PageState pour les erreurs au lieu de ErrorState.
   const pages = [
-    'Cockpit.jsx',
     'Dashboard.jsx',
     'ConformitePage.jsx',
     'Site360.jsx',

@@ -60,10 +60,12 @@ describe('ErrorState component', () => {
 });
 
 describe('Key pages handle async states', () => {
+  // Cockpit retiré (#303) : CockpitStrategique a son propre PageState
+  // (primitif hub L11) testé en source-guard cockpit_p0_cleanup.
   const criticalPages = [
-    { name: 'Cockpit', file: 'Cockpit.jsx' },
     { name: 'Patrimoine', file: 'Patrimoine.jsx' },
     { name: 'BillIntelPage', file: 'BillIntelPage.jsx' },
+    { name: 'CockpitStrategique', file: 'CockpitStrategique.jsx' },
   ];
 
   criticalPages.forEach(({ name, file }) => {
@@ -76,14 +78,12 @@ describe('Key pages handle async states', () => {
         src.includes('Chargement') ||
         src.includes('skeleton') ||
         src.includes('Skeleton') ||
-        src.includes('animate-pulse');
+        src.includes('animate-pulse') ||
+        src.includes('PageState'); // hub L11 primitive (CockpitStrategique)
       expect(hasLoading).toBe(true);
     });
   });
 
-  it('Dashboard handles empty/loading', () => {
-    // Dashboard is at cockpit or root
-    const src = read(pages('Cockpit.jsx'));
-    expect(src).toMatch(/loading|isLoading|Chargement/);
-  });
+  // « Dashboard handles empty/loading » retiré (#303) : remplacé par
+  // CockpitStrategique ci-dessus.
 });

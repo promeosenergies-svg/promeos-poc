@@ -178,7 +178,8 @@ describe('E. Migration AnomaliesPage', () => {
  * attrapée par ces source-guards.
  */
 const REMAINING_PAGES = [
-  ['pages/Cockpit.jsx', 'Cockpit'],
+  // Cockpit retiré (#303) : CockpitStrategique utilise SolHeroPremiumNight
+  // + HubPageFooter (primitifs hub L11) au lieu de SolBriefingHead/Footer.
   ['pages/CommandCenter.jsx', 'CommandCenter'],
   ['pages/ConformitePage.jsx', 'ConformitePage'],
   ['pages/Patrimoine.jsx', 'Patrimoine'],

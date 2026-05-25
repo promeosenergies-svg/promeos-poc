@@ -30,6 +30,17 @@ from services.compliance_score_service import (
 )
 
 
+@pytest.fixture(autouse=True)
+def force_compliance_score_v1(monkeypatch):
+    """Release hygiene tests (2026-05-25) — Sprint C-1 a basculé V2 adaptive
+    en default. Cette suite teste la sémantique V1 figée (45/30/25 DT/BACS/APER)
+    et reste valide pour le rollback temporaire. On force V1 via env var
+    (cf. compute_site_compliance_score wrapper). La V2 adaptive est testée
+    dans `tests/test_compliance_score_adaptive.py` avec ses propres fixtures
+    (sites avec batiments + cvc_power_kw pour rendre BACS assujetti)."""
+    monkeypatch.setenv("COMPLIANCE_SCORE_VERSION", "V1")
+
+
 @pytest.fixture()
 def db():
     """In-memory SQLite with seed data for compliance score tests."""
@@ -51,7 +62,11 @@ def db():
     session.add(pf)
     session.flush()
 
-    # Site 1: full snapshots (DT conforme, BACS conforme)
+    # Sprint C-1 V2 adaptive : _is_dt_assujetti utilise tertiaire_area_m2,
+    # pas surface_m2 — il faut donc set tertiaire_area_m2 pour rendre DT
+    # applicable. Pour BACS, on set explicitement aper_assujetti=True
+    # (proxy pour 3 obligations actives min → confidence='medium').
+    # Site 1: full snapshots (DT conforme, BACS conforme, APER applicable)
     session.add(
         Site(
             id=1,
@@ -60,6 +75,8 @@ def db():
             portefeuille_id=1,
             actif=True,
             surface_m2=2000,
+            tertiaire_area_m2=2000,  # DT assujetti (>= 1000 m²)
+            aper_assujetti=True,
             statut_decret_tertiaire=StatutConformite.CONFORME,
             statut_bacs=StatutConformite.CONFORME,
         )
@@ -73,11 +90,13 @@ def db():
             portefeuille_id=1,
             actif=True,
             surface_m2=1000,
+            tertiaire_area_m2=1000,  # DT assujetti
+            aper_assujetti=True,
             statut_decret_tertiaire=StatutConformite.A_RISQUE,
             statut_bacs=None,
         )
     )
-    # Site 3: no snapshots at all
+    # Site 3: no snapshots at all (mais reste DT-assujetti pour comparaison)
     session.add(
         Site(
             id=3,
@@ -86,6 +105,8 @@ def db():
             portefeuille_id=1,
             actif=True,
             surface_m2=500,
+            tertiaire_area_m2=1100,  # DT assujetti malgré surface réduite
+            aper_assujetti=True,
             statut_decret_tertiaire=None,
             statut_bacs=None,
         )

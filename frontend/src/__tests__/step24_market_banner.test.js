@@ -106,27 +106,9 @@ describe('C. PurchasePage integration', () => {
 });
 
 // ── D. Cockpit integration ──────────────────────────────────────────────────
-
-describe('D. Cockpit compact market info', () => {
-  const src = readSrc('pages', 'Cockpit.jsx');
-
-  it('has market reference', () => {
-    expect(
-      src.includes('market') ||
-        src.includes('marché') ||
-        src.includes('EUR/MWh') ||
-        src.includes('spot')
-    ).toBe(true);
-  });
-
-  it('imports market or executive V2 data (V1+ refactor)', () => {
-    expect(
-      src.includes('MarketContextCompact') ||
-        src.includes('getMarketContext') ||
-        src.includes('useExecutiveV2')
-    ).toBe(true);
-  });
-});
+// Retiré #303 P0 cleanup cockpit : Cockpit.jsx supprimé. Le contexte marché
+// est désormais consommé via les hooks dédiés (useCockpitSignals dans
+// CockpitPilotage, payload Strategique) — pas plus dans le composant page.
 
 // ── E. kpiMessaging file ────────────────────────────────────────────────────
 

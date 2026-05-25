@@ -113,8 +113,9 @@ describe('D. Navigation — expert-only filtering', () => {
 // ── E. Pages critiques — sections expert ────────────────────────────────────
 
 describe('E. Pages critiques — isExpert conditionnel', () => {
+  // Cockpit.jsx retiré (#303) : CockpitStrategique utilise persona contextes
+  // (PersonaContext) au lieu de isExpert pour gérer le mode dirigeant/expert.
   const CRITICAL_PAGES = [
-    { file: 'pages/Cockpit.jsx', name: 'Cockpit' },
     // Patrimoine V2 : conso toujours visible (plus de gate isExpert)
     { file: 'pages/ConformitePage.jsx', name: 'ConformitePage' },
     { file: 'pages/BillIntelPage.jsx', name: 'BillIntelPage' },
@@ -164,12 +165,9 @@ describe('F. Adoption — expert mode utilisé largement', () => {
 // ── G. Pas de régression — mode simple fonctionnel ──────────────────────────
 
 describe('G. Mode simple — contenu de base toujours présent', () => {
-  it('Cockpit a du contenu hors isExpert', () => {
-    const src = readSrc('pages/Cockpit.jsx');
-    // Page has content outside of isExpert blocks
-    expect(src).toContain('PageShell');
-    expect(src).toContain('Card');
-  });
+  // « Cockpit a du contenu hors isExpert » retiré (#303 Cockpit.jsx supprimé).
+  // CockpitStrategique a son propre test source-guard cockpit_p0_cleanup
+  // qui vérifie la composition pure des primitifs hub L11.
 
   it('BillIntelPage a du contenu hors isExpert', () => {
     const src = readSrc('pages/BillIntelPage.jsx');
