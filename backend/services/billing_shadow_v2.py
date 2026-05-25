@@ -500,6 +500,27 @@ def shadow_billing_v2(invoice, lines: list, contract, db=None, tax_profile=None)
     # ── Calc version tag (V112) ──────────────────────────────────────
     calc_version = "v2_parameter_store"
 
+    # ── P2-A F1 (2026-05-24) : fiabilité du calcul ───────────────────
+    # Doctrine "facture sans contrat = non fiable" (P1 Règle 1).
+    # Avant : shadow_billing_v2 calculait quand même avec un prix par défaut
+    # (DEFAULT_PRICE_ELEC/GAZ) sans avertir l'utilisateur que c'est une
+    # reconstitution hypothétique. Un DAF voyait le breakdown comme si c'était
+    # un calcul fiable opposable au fournisseur. P0 produit.
+    # Après : on expose `is_reliable` + `reliability_reason` pour que le FE
+    # puisse badger clairement "non fiable" (cf. ShadowBreakdownCard).
+    is_reliable = bool(contract and has_contract_price)
+    reliability_reason = None
+    if not contract:
+        reliability_reason = (
+            "Aucun contrat rattaché à cette facture — reconstitution basée sur le prix "
+            "par défaut. Importez le contrat pour fiabiliser le calcul."
+        )
+    elif not has_contract_price:
+        reliability_reason = (
+            "Contrat trouvé mais sans prix de référence — reconstitution basée sur le prix "
+            "par défaut. Compléter `price_ref_eur_per_kwh` sur le contrat."
+        )
+
     # ── Backward-compatible flat fields + structured breakdown ───────
     return {
         # Flat fields (backward compat for R13/R14)
@@ -529,6 +550,12 @@ def shadow_billing_v2(invoice, lines: list, contract, db=None, tax_profile=None)
         "price_source": price_source,
         "tariff_source": tariff_source,
         "calc_version": calc_version,
+        # P2-A F1 — fiabilité du calcul (doctrine "sans contrat = non fiable")
+        "is_reliable": is_reliable,
+        "reliability_reason": reliability_reason,
+        # P2-A F2 — période analysée explicite (DAF doit savoir sur quoi le calcul porte)
+        "period_start": invoice.period_start.isoformat() if invoice.period_start else None,
+        "period_end": invoice.period_end.isoformat() if invoice.period_end else None,
         # Structured (new)
         "components": components,
         "totals": totals,

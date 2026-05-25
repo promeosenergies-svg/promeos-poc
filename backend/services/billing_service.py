@@ -1088,9 +1088,20 @@ def audit_invoice_full(db: Session, invoice_id: int) -> Dict[str, Any]:
             e,
         )
 
+    # P2-A F4 (2026-05-24) — énergie explicite dans la réponse audit
+    # (avant : implicite via shadow["energy_type"], DAF devait creuser)
+    energy_type = None
+    if contract:
+        energy_type = contract.energy_type.value if contract.energy_type else None
+    elif shadow and shadow.get("energy_type"):
+        energy_type = shadow.get("energy_type")
+
     return {
         "invoice_id": invoice.id,
         "invoice_number": invoice.invoice_number,
+        "energy_type": energy_type,  # P2-A F4 — élec / gaz explicite
+        "period_start": invoice.period_start.isoformat() if invoice.period_start else None,
+        "period_end": invoice.period_end.isoformat() if invoice.period_end else None,
         "shadow": shadow,
         "anomalies_count": len(anomalies),
         "anomalies": anomalies,
@@ -1212,6 +1223,14 @@ def get_billing_summary(db: Session, org_id: Optional[int] = None) -> Dict[str, 
     for i in insights:
         by_severity[i.severity] = by_severity.get(i.severity, 0) + 1
 
+    # P2-A F2 (2026-05-24) — KPIs avec source / formule / unité / période / périmètre.
+    # Doctrine "Aucun KPI sans source, formule, unité, période, périmètre."
+    # Avant : DAF voyait `total_loss_eur: 12345.67` sans contexte → décision fragile.
+    period_starts = [i.period_start for i in invoices if i.period_start]
+    period_ends = [i.period_end for i in invoices if i.period_end]
+    period_min = min(period_starts).isoformat() if period_starts else None
+    period_max = max(period_ends).isoformat() if period_ends else None
+
     return {
         "total_invoices": len(invoices),
         "total_eur": round(total_eur, 2),
@@ -1223,6 +1242,15 @@ def get_billing_summary(db: Session, org_id: Optional[int] = None) -> Dict[str, 
         "insights_by_severity": by_severity,
         "invoices_with_anomalies": len([i for i in invoices if i.status == BillingInvoiceStatus.ANOMALY]),
         "invoices_clean": len([i for i in invoices if i.status == BillingInvoiceStatus.AUDITED]),
+        # P2-A F2 — métadonnées KPI doctrinales
+        "kpi_metadata": {
+            "period_analyzed": {"start": period_min, "end": period_max},
+            "scope": "org" if org_id else "all_organisations",
+            "total_eur_unit": "TTC",  # EnergyInvoice.total_eur est TTC par convention
+            "total_estimated_loss_eur_unit": "TTC",  # somme des delta_ttc shadow_v2
+            "total_estimated_loss_eur_source": "Σ BillingInsight.estimated_loss_eur (issus de shadow_billing_v2 delta_ttc)",
+            "computed_at": datetime.now().isoformat(),
+        },
     }
 
 
