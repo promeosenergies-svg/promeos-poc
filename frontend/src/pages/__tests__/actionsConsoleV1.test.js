@@ -99,10 +99,9 @@ describe('A · Route Registry helpers', () => {
 // B. No hardcoded /actions URLs in key pages
 // ============================================================
 describe('B · Zero hardcoded /actions URL in navigate()', () => {
-  const PAGES_TO_CHECK = [
-    ['pages', 'Cockpit.jsx'],
-    ['pages', 'CommandCenter.jsx'],
-  ];
+  // Cockpit.jsx retiré (#303) : CockpitStrategique consomme payload backend
+  // (HubKpiCard) — pas de navigate('/actions') inline. CommandCenter conservé.
+  const PAGES_TO_CHECK = [['pages', 'CommandCenter.jsx']];
 
   PAGES_TO_CHECK.forEach(([...pathParts]) => {
     const fileName = pathParts[pathParts.length - 1];

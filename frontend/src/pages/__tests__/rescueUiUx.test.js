@@ -121,16 +121,9 @@ describe('P0-4: Centralized formatters', () => {
 // ── P0-6: French microcopy — accent fixes ───────────────────────────────
 
 describe('P0-6: French accent correctness', () => {
-  it('DataQualityWidget uses "Qualité des données"', () => {
-    const code = src('pages/cockpit/DataQualityWidget.jsx');
-    expect(code).toContain('Qualité des données');
-    expect(code).not.toContain('Qualite des donnees');
-  });
-
-  it('DataQualityWidget uses "Voir le détail"', () => {
-    const code = src('pages/cockpit/DataQualityWidget.jsx');
-    expect(code).toContain('Voir le détail');
-  });
+  // « DataQualityWidget » retiré (#303) : composant supprimé (orphelin).
+  // La qualité des données est désormais visible via les chips
+  // réglementaires Conformité + bandeau « Données partielles ».
 
   it('PurchasePage uses "Budget de référence" (not "Budget baseline")', () => {
     const code = src('pages/PurchasePage.jsx');

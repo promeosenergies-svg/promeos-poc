@@ -27,9 +27,15 @@ describe('A. Tax labels — no CSPE/TICGN on ELEC', () => {
     expect(drawer).toMatch(/Accise.*gaz.*TICGN/s);
   });
 
-  it('taxes_mismatch label says "accise" not "CSPE"', () => {
-    expect(drawer).toMatch(/taxes_mismatch.*accise|accise.*taxes_mismatch/s);
-    expect(drawer).not.toMatch(/taxes_mismatch.*CSPE/s);
+  it('taxes_mismatch label says "accise" not standalone "CSPE"', () => {
+    // P2-A simplification : le label affiché utilise « accise » et
+    // précise entre parenthèses (CSPE/TICFE) pour l'électricité, (TICGN)
+    // pour le gaz. La regex doit être scoped au bloc taxes_mismatch
+    // immédiat (≤300 chars), pas cross-fichier (sinon faux positif sur
+    // la fonction _renderTaxRow qui mentionne légitimement CSPE/TICFE).
+    expect(drawer).toMatch(/taxes_mismatch[\s\S]{0,300}accise/);
+    // Anti-régression : pas de label "CSPE/TICGN" hardcodé (énergie-blind).
+    expect(drawer).not.toMatch(/CSPE\/TICGN/);
   });
 
   it('CAUSE_LABELS taxes_mismatch uses "accise"', () => {

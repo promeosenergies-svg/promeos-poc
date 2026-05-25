@@ -32,6 +32,11 @@ import { logger } from '../services/logger';
 // dans CockpitStrategique (audit deep cockpit §3.4 P1-1). Le composant
 // rend `payload.billing_kpis` (SoT backend, doctrine §8.1).
 import CockpitBillingKpis from './cockpit/CockpitBillingKpis';
+// Cockpit P1 (2026-05-25) — Executive Narrative DAF/DG 30 secondes :
+// payload.executive_summary (5 KPIs) + payload.top_priorities (max 3
+// actions cross-briques avec impact + échéance + CTA unique). SoT
+// backend (services/cockpit_executive_narrative_service.py).
+import CockpitExecutiveNarrative from './cockpit/CockpitExecutiveNarrative';
 // P0 cleanup cockpit (2026-05-25) — Wrap automatique des acronymes
 // réglementaires (DT, OPERAT, BACS, APER, SMÉ, BEGES, GTB, GTC) dans
 // les libellés hero/title/sub via `<SolAcronym>` (tooltip glossary).
@@ -106,6 +111,15 @@ export default function CockpitStrategique() {
           }
           meta={payload.hero?.meta}
           primaryCta={renderHeroPrimaryCta(payload.hero)}
+        />
+
+        {/* Cockpit P1 (2026-05-25) — Synthèse exécutive DAF/DG en 30s :
+            5 chiffres clés + Top 3 priorités cross-briques + micro-copy
+            "Pourquoi c'est important". Placé immédiatement sous le hero
+            pour rester above-the-fold sur écran 1080p. */}
+        <CockpitExecutiveNarrative
+          executiveSummary={payload.executive_summary}
+          topPriorities={payload.top_priorities}
         />
 
         <CadreApplicable

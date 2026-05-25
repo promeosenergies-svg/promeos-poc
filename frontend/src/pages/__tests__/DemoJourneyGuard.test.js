@@ -61,25 +61,8 @@ describe('Demo journey — no "EUR" currency label (use € sign)', () => {
     expect(src).not.toMatch(/['"`]\s*[^'"`]*\bEUR\b/);
   });
 
-  it('Cockpit: no EUR', () => {
-    const src = readPage('Cockpit.jsx');
-    expect(src).not.toMatch(/['"`]\s*[^'"`]*\bEUR\b/);
-  });
-
-  it('TopSitesCard: no EUR', () => {
-    const src = readPage('cockpit/TopSitesCard.jsx');
-    expect(src).not.toMatch(/\bEUR\b/);
-  });
-});
-
-describe('Demo journey — Cockpit loading skeleton', () => {
-  const src = readPage('Cockpit.jsx');
-
-  it('imports SkeletonCard for loading state', () => {
-    expect(src).toContain('SkeletonCard');
-  });
-
-  it('imports SkeletonTable for loading state', () => {
-    expect(src).toContain('SkeletonTable');
-  });
+  // « Cockpit no EUR » + « TopSitesCard no EUR » + « Cockpit loading skeleton »
+  // retirés (#303) : Cockpit.jsx + cockpit/TopSitesCard.jsx supprimés.
+  // CockpitStrategique formate les EUR via Intl.NumberFormat fr-FR (HubKpiCard)
+  // — pattern testé dans cockpit_p0_cleanup_2026_05_25 source-guard.
 });

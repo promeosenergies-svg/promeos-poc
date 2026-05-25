@@ -25,20 +25,9 @@ function readSrc(rel) {
 }
 
 // ─── Intégration 1 : CockpitDecision.jsx ────────────────────────────────────
-
-describe('Phase 3.5 — Intégration #1 CockpitDecision DT pénalité', () => {
-  const src = readSrc('pages/CockpitDecision.jsx');
-
-  it('importe TraceTooltip', () => {
-    expect(src).toMatch(/import\s+TraceTooltip\s+from\s+['"]\.\.\/ui\/TraceTooltip['"]/);
-  });
-
-  it('wrap "Pénalité légale" avec termId COMPLIANCE_DT_PENALTY_EUR', () => {
-    expect(src).toMatch(
-      /<TraceTooltip\s+termId="COMPLIANCE_DT_PENALTY_EUR">[\s\n]*Pénalité légale/
-    );
-  });
-});
+// Suite retirée (#303 P0 cleanup cockpit) : CockpitDecision.jsx supprimé.
+// La pénalité légale est désormais portée par CadreApplicable (panel
+// DataMissingPanel) + payload.kpis backend Strategique.
 
 // ─── Intégration 2 : Patrimoine.jsx ─────────────────────────────────────────
 
@@ -71,18 +60,10 @@ describe('Phase 3.5 — Intégration #3 RegOps Score de Conformité', () => {
 });
 
 // ─── Intégration 4 : Cockpit.jsx ────────────────────────────────────────────
-
-describe('Phase 3.5 — Intégration #4 Cockpit poids readiness conformité', () => {
-  const src = readSrc('pages/Cockpit.jsx');
-
-  it('importe TraceTooltip', () => {
-    expect(src).toMatch(/import\s+TraceTooltip\s+from\s+['"]\.\.\/ui\/TraceTooltip['"]/);
-  });
-
-  it('wrap pourcentage poids avec termId READINESS_WEIGHT_CONFORMITY_PCT', () => {
-    expect(src).toMatch(/<TraceTooltip\s+termId="READINESS_WEIGHT_CONFORMITY_PCT">/);
-  });
-});
+// Suite retirée (#303) : Cockpit.jsx supprimé. Le poids readiness conformité
+// n'est plus rendu dans la nouvelle Synthèse Stratégique (qui consomme
+// payload.kpis backend). À recréer si exposition explicite des poids
+// readiness redevient utile (à voir Cockpit P1+).
 
 // ─── Intégration 5 : ObligationsTab.jsx (3 TraceTooltip pondérations RegOps) ─
 
