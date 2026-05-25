@@ -283,8 +283,7 @@ class TestTopPriorities:
         for p in priorities:
             link = p["cta"]["link"]
             assert any(
-                link.startswith(route)
-                for route in ("/bill-intel", "/conformite", "/patrimoine", "/centre-action")
+                link.startswith(route) for route in ("/bill-intel", "/conformite", "/patrimoine", "/centre-action")
             ), f"CTA link {link} ne pointe pas vers une page hub canonique (doctrine §6.2)"
 
 
@@ -304,3 +303,54 @@ class TestEdgeCases:
         # avg_score 0 ou non calculable → value None + sub "non_applicable"
         assert score["value"] is None
         assert "non_applicable" in (score.get("sub_label_fr") or "")
+
+
+# ─── 5. Cockpit P1.5 polish — Pourquoi cette priorité + ordering ────────
+
+
+class TestP15PriorityPolish:
+    def test_chaque_priorite_expose_source_et_action_recommandee(self, db):
+        # Le bloc « Pourquoi cette priorité ? » a besoin de source_fr +
+        # action_recommandee_fr sur chaque priorité retournée.
+        org, _ = _seed(db, n_sites=1, insights_open=1, loss_per_insight=500.0)
+        priorities = compute_top_priorities(db, org.id)
+        assert priorities, "Le seed doit produire au moins 1 priorité billing"
+        for p in priorities:
+            assert "source_fr" in p and p["source_fr"], f"source_fr manquant : {p}"
+            assert "action_recommandee_fr" in p and p["action_recommandee_fr"], f"action_recommandee_fr manquant : {p}"
+            assert "category" in p and p["category"], f"category manquant : {p}"
+            assert "perimetre_fr" in p and p["perimetre_fr"], f"perimetre_fr manquant : {p}"
+
+    def test_ordering_canonique_reglementaire_urgent_avant_billing(self, db):
+        # Quand on a billing + compliance urgent simultanément, le compliance
+        # urgent (deadline < 30 j) doit ranker avant billing.
+        from unittest.mock import patch
+        import services.executive_narrative_service as svc
+
+        org, _ = _seed(db, n_sites=1, insights_open=1, loss_per_insight=999.0)
+        fake_deadline = {"id": "DT", "label": "OPERAT 2026", "days_remaining": 12, "deadline": "2026-06-06"}
+        with patch.object(svc, "_compute_next_deadline", return_value=fake_deadline):
+            priorities = compute_top_priorities(db, org.id)
+        cats = [p["category"] for p in priorities]
+        assert cats[0] == "regulatory_urgent", f"Le compliance urgent (<30j) doit ranker en 1er, got {cats}"
+        assert priorities[0]["priority_rank"] == 1
+
+    def test_ordering_canonique_billing_avant_patrimoine(self, db):
+        # Sans compliance, billing (€) doit ranker avant patrimoine.
+        from unittest.mock import patch
+        import services.executive_narrative_service as svc
+
+        org, _ = _seed(db, n_sites=2, insights_open=1, loss_per_insight=500.0)
+        with patch.object(svc, "_compute_next_deadline", return_value=None):
+            priorities = compute_top_priorities(db, org.id)
+        cats = [p["category"] for p in priorities]
+        if "billing" in cats and "patrimoine" in cats:
+            assert cats.index("billing") < cats.index("patrimoine"), f"Billing doit ranker avant patrimoine, got {cats}"
+
+    def test_priorites_cap_strict_3_meme_si_5_categories_remplies(self, db):
+        # Même si on a 1 candidate par catégorie (5 au total), max 3 sortent.
+        org, _ = _seed(db, n_sites=2, insights_open=1, actions_open=3, loss_per_insight=100.0)
+        priorities = compute_top_priorities(db, org.id)
+        assert len(priorities) <= 3
+        ranks = [p["priority_rank"] for p in priorities]
+        assert ranks == list(range(1, len(ranks) + 1)), f"Ranks doivent être séquentiels 1..N, got {ranks}"
