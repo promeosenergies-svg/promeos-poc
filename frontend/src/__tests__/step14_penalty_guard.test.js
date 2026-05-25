@@ -44,17 +44,22 @@ describe('Step 14 — ObligationsTab penalty display', () => {
   });
 });
 
-describe('Step 14 — Cockpit penalty exposure', () => {
-  // fmtEur et "Exposition totale" retirés dans Cockpit V3 (exposition inline via RiskBadge)
+describe('Step 14 — Cockpit penalty exposure (migré post #303)', () => {
+  // #303 P0 cleanup cockpit : Cockpit.jsx supprimé. La pénalité est désormais
+  // remontée via /api/cockpit/strategique → payload.billing_kpis (cf. PR #303)
+  // — backend (compute_billing_kpis_cockpit) + frontend (CockpitBillingKpis).
+  // L'expose total_penalty_exposure_eur n'est plus une exposure cockpit mais
+  // un signal Bill Intelligence dans payload.billing_kpis.surfacturations_a_contester.
 
-  it('Cockpit stores totalPenaltyExposure', () => {
-    const src = fs.readFileSync('src/pages/Cockpit.jsx', 'utf8');
-    expect(src).toContain('totalPenaltyExposure');
+  it('CockpitBillingKpis affiche surfacturations à contester (depuis BE)', () => {
+    const src = fs.readFileSync('src/pages/cockpit/CockpitBillingKpis.jsx', 'utf8');
+    expect(src).toContain('surfacturations_a_contester');
   });
 
-  it('Cockpit reads total_penalty_exposure_eur from timeline', () => {
-    const src = fs.readFileSync('src/pages/Cockpit.jsx', 'utf8');
-    expect(src).toContain('total_penalty_exposure_eur');
+  it('billing_kpis_cockpit_service expose estimated_loss_eur (somme insights)', () => {
+    const src = fs.readFileSync('../backend/services/billing_kpis_cockpit_service.py', 'utf8');
+    expect(src).toContain('estimated_loss_eur');
+    expect(src).toContain('surfacturations_a_contester');
   });
 });
 

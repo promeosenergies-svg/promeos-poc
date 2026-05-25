@@ -140,7 +140,9 @@ describe('P3-5: ConformitePage passes impact EUR to drawer', () => {
 describe('P3-7: Unified openActionDrawer across all key modules', () => {
   const modules = [
     { name: 'PurchasePage', path: 'pages/PurchasePage.jsx' },
-    { name: 'Cockpit', path: 'pages/Cockpit.jsx' },
+    // Cockpit retiré (#303) : la nouvelle CockpitStrategique consomme
+    // payload backend (action-center-v4 + bill-intel via /cockpit/strategique
+    // billing_kpis), pas useActionDrawer direct.
     { name: 'NotificationsPage', path: 'pages/NotificationsPage.jsx' },
     { name: 'ConformitePage', path: 'pages/ConformitePage.jsx' },
     { name: 'AnomaliesPage', path: 'pages/AnomaliesPage.jsx' },

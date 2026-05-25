@@ -93,35 +93,10 @@ describe('Patrimoine — centralized constants', () => {
 });
 
 // ── Guard: Cockpit uses centralized constants ───────────────────────────────
-
-describe('Cockpit — centralized constants', () => {
-  const src = readSrc(pagesDir, 'Cockpit.jsx');
-
-  it('imports from lib/constants', () => {
-    expect(src).toContain("from '../lib/constants'");
-  });
-
-  it('no "EUR" in display labels', () => {
-    const lines = src.split('\n');
-    for (const line of lines) {
-      // Skip comments
-      if (line.trim().startsWith('//') || line.trim().startsWith('*')) continue;
-      expect(line).not.toMatch(/}\s*EUR/);
-    }
-  });
-
-  it('weight display uses readinessWeights from RegulatoryConstantsContext (no hardcoded "poids : 30%")', () => {
-    // Phase L31.2 audit fix P1 — Cockpit.jsx consomme désormais
-    // useRegulatoryConstants().constants.readiness_weights via la variable
-    // locale `readinessWeights` au lieu de l'import statique READINESS_WEIGHTS.
-    expect(src).not.toMatch(/poids : 30%/);
-    expect(src).not.toMatch(/poids : 40%/);
-    expect(src).toContain('useRegulatoryConstants');
-    expect(src).toContain('readinessWeights.data');
-    expect(src).toContain('readinessWeights.conformity');
-    expect(src).toContain('readinessWeights.actions');
-  });
-});
+// Suite retirée (#303 P0 cleanup cockpit) : Cockpit.jsx supprimé.
+// La nouvelle page CockpitStrategique consomme payload backend
+// (compute_billing_kpis_cockpit_service) — pas de constantes hardcodées
+// côté FE (doctrine §8.1).
 
 // ── Guard: CommandCenter uses centralized getRiskStatus ─────────────────────
 

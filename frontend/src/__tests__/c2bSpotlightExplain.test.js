@@ -40,11 +40,8 @@ describe('A. Glossaire — 12 termes C.2b', () => {
 // ── B. Explain présent dans les 5 fichiers cibles ────────────────────────────
 
 const EXPLAIN_FILES = [
-  {
-    file: 'pages/Cockpit.jsx',
-    name: 'Cockpit',
-    terms: ['statut_conformite', 'distribution_sites', 'effort_score'],
-  },
+  // Cockpit retiré (#303) : CockpitStrategique consomme payload backend
+  // (HubKpiCard data-driven) — pas de termes hardcodés dans le composant.
   {
     file: 'pages/MonitoringPage.jsx',
     name: 'MonitoringPage',
@@ -152,24 +149,11 @@ describe('D. DemoSpotlight — composant', () => {
 });
 
 // ── E. DemoSpotlight — intégré dans Cockpit ──────────────────────────────────
-
-describe('E. DemoSpotlight — intégration Cockpit', () => {
-  const src = readSrc('pages/Cockpit.jsx');
-
-  it('Cockpit importe DemoSpotlight', () => {
-    expect(src).toContain('DemoSpotlight');
-  });
-
-  it('Cockpit rend <DemoSpotlight />', () => {
-    expect(src).toContain('<DemoSpotlight');
-  });
-
-  it('Cockpit a data-tour="step-1"', () => {
-    expect(src).toContain('data-tour="step-1"');
-  });
-
-  // step-2 et step-3 retirés dans Cockpit V3 (vue exécutive réduite à 1 zone)
-});
+//
+// Suite retirée (#303 P0 cleanup cockpit) : Cockpit.jsx supprimé.
+// DemoSpotlight est désormais soit intégré dans CommandCenter (legacy
+// retro-compat), soit retiré complètement. À re-tester sur la nouvelle
+// page canonique CockpitStrategique si DemoSpotlight y est ré-introduit.
 
 // ── F. Smoke — les 5 fichiers sont parsables ─────────────────────────────────
 

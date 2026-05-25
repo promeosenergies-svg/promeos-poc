@@ -127,27 +127,10 @@ describe('EvidenceDrawer barrel export', () => {
 // Le contrat `evidence-open-*` + `HelpCircle` + `onEvidence` + `EVIDENCE_KPIS`
 // sera vérifié sur les futurs <KpiTriptyqueEnergetique> et
 // <KpiTriptyqueHybride> en Phase 2.1 (cf docs/maquettes/cockpit-sol2/).
-describe('Cockpit EvidenceDrawer integration', () => {
-  const cockpitSrc = readSrc('pages/Cockpit.jsx');
-
-  it('Cockpit.jsx imports EvidenceDrawer', () => {
-    expect(cockpitSrc).toContain('EvidenceDrawer');
-  });
-
-  it('Cockpit.jsx imports evidence fixtures', () => {
-    expect(cockpitSrc).toContain('evidenceConformite');
-    expect(cockpitSrc).toContain('evidenceRisque');
-  });
-
-  it('Cockpit.jsx renders EvidenceDrawer with evidenceOpen state', () => {
-    expect(cockpitSrc).toContain('evidenceOpen');
-    expect(cockpitSrc).toContain('evidenceMap');
-  });
-
-  // Phase 0.2 (sprint Cockpit dual sol2) : ExecutiveKpiRow décommissionné.
-  // Le contrat aria-label « Pourquoi ce chiffre » sera vérifié sur les
-  // futurs <KpiTriptyqueEnergetique> et <KpiTriptyqueHybride> (Phase 2.1).
-});
+// Suite retirée (#303 P0 cleanup cockpit) : Cockpit.jsx supprimé.
+// EvidenceDrawer reste couvert par les autres suites (ConsumptionExplorer,
+// Patrimoine, ConformitePage). À recréer pour CockpitStrategique si
+// l'evidence-drawer y est ré-intégrée (Cockpit P1+).
 
 // ── 6) Explorer integration ────────────────────────────────────────────────
 describe('ConsumptionExplorer EvidenceDrawer integration', () => {

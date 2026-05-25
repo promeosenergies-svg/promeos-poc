@@ -414,8 +414,9 @@ describe('FR demo-ready — forbidden strings in key pages', () => {
     expect(src).toMatch(/À planifier/);
   });
 
-  it('CompliancePage uses "Réévaluer" not "Re-evaluer"', () => {
-    const src = readPage('CompliancePage.jsx');
+  it('ConformitePage uses "Réévaluer" not "Re-evaluer"', () => {
+    // Typo legacy : le fichier est ConformitePage.jsx (pas CompliancePage.jsx).
+    const src = readPage('ConformitePage.jsx');
     expect(src).not.toMatch(/Re-evaluer/);
   });
 

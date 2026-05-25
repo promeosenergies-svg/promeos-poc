@@ -232,18 +232,9 @@ describe('D. usePageBriefing — exposition events', () => {
 });
 
 // ── E. Cockpit — pilote opt-in SolBriefingHead useEventStream ───────
-
-describe('E. Cockpit page-pilote opt-in useEventStream (P0-2)', () => {
-  const src = readSrc('pages/Cockpit.jsx');
-
-  it('passe useEventStream à SolBriefingHead (switch week-cards → events)', () => {
-    expect(src).toMatch(/<SolBriefingHead[^>]*useEventStream/);
-  });
-
-  it("n'importe plus SolEventStream directement (factorisé via HOC ét12d)", () => {
-    expect(src).not.toMatch(/import\s*{\s*SolEventStream\s*}\s*from/);
-  });
-});
+// Suite retirée (#303) : Cockpit.jsx supprimé. SolEventStream est désormais
+// consommé par CommandCenter ou par les pages /jour /strategique via leurs
+// propres payloads (events depuis /api/v1/events/upcoming).
 
 // ── F. SolBriefingHead — switch SolWeekCards ↔ SolEventStream ───────
 

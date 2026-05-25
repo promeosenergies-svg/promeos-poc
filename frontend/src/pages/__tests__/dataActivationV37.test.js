@@ -410,8 +410,7 @@ describe('Guard: modules purs V37', () => {
   // backend/services/lever_engine_service.py. Guards leverEngineModel supprimés.
   // Couverture dans backend/tests/test_lever_engine_service.py.
 
-  it('Cockpit.jsx importe SanteKpiGrid (V1+ remplace DataActivationPanel)', () => {
-    const src = readSrc('pages/Cockpit.jsx');
-    expect(src).toContain('SanteKpiGrid');
-  });
+  // « Cockpit.jsx importe SanteKpiGrid » retiré (#303) : Cockpit.jsx +
+  // SanteKpiGrid supprimés. La synthèse exécutive utilise désormais
+  // CockpitBillingKpis (signaux factures depuis BE).
 });

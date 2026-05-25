@@ -129,11 +129,9 @@ describe('Deep links', () => {
 });
 
 describe('Migration verification', () => {
-  test('Cockpit imports RiskBadge', async () => {
-    const fs = await import('fs');
-    const content = fs.readFileSync('src/pages/Cockpit.jsx', 'utf-8');
-    expect(content).toContain('RiskBadge');
-  });
+  // « Cockpit imports RiskBadge » retiré (#303 Cockpit.jsx supprimé).
+  // CockpitStrategique consomme `payload.kpis[]` data-driven (HubKpiCard)
+  // — pas de RiskBadge direct, le risque est dans `payload.kpis` côté BE.
 
   test('Patrimoine imports RiskBadge', async () => {
     const fs = await import('fs');
@@ -176,7 +174,8 @@ describe('Conformite convergence', () => {
 describe('Cross-page convergence', () => {
   test('RiskBadge adopted on 3+ pages', async () => {
     const fs = await import('fs');
-    const pages = ['Cockpit', 'Patrimoine', 'ConformitePage'];
+    // Cockpit retiré (#303 supprimé) ; Site360 ajouté à la liste.
+    const pages = ['Site360', 'Patrimoine', 'ConformitePage', 'PurchasePage', 'ActionCenterPage'];
     let count = 0;
     for (const page of pages) {
       try {
@@ -208,16 +207,15 @@ describe('Cross-page convergence', () => {
     // Facturation -> Achat
     const bill = fs.readFileSync('src/pages/BillIntelPage.jsx', 'utf-8');
     expect(bill).toContain('/achat');
-    // Cockpit -> Conformité
-    const cock = fs.readFileSync('src/pages/Cockpit.jsx', 'utf-8');
-    expect(cock).toContain('/conformite');
+    // Cockpit -> Conformité — via CadreApplicable drill-down /conformite?regulation=
+    // (cf. #303 P0 cleanup cockpit). On vérifie le composant qui porte le lien.
+    const cadre = fs.readFileSync('src/components/grammar/hub/CadreApplicable.jsx', 'utf-8');
+    expect(cadre).toContain('/conformite?regulation=');
   });
 
-  test('Timestamp visible on Cockpit', async () => {
-    const fs = await import('fs');
-    const content = fs.readFileSync('src/pages/Cockpit.jsx', 'utf-8');
-    expect(content).toContain('Dernière analyse');
-  });
+  // « Timestamp visible on Cockpit » retiré (#303 Cockpit.jsx supprimé).
+  // La fraîcheur est désormais portée par HubPageFooter dans CockpitStrategique
+  // (`payload.footer.last_updated`) — testé en source-guard cockpit_p0_cleanup.
 
   test('Freshness available on Site360', async () => {
     const fs = await import('fs');
@@ -256,7 +254,11 @@ describe('V3.1 finition', () => {
     const fs = await import('fs');
     // Check in layout or cockpit
     let found = false;
-    for (const f of ['src/layout/NavRail.jsx', 'src/pages/Cockpit.jsx', 'src/layout/Sidebar.jsx']) {
+    for (const f of [
+      'src/layout/NavRail.jsx',
+      'src/pages/CockpitStrategique.jsx',
+      'src/layout/Sidebar.jsx',
+    ]) {
       try {
         const content = fs.readFileSync(f, 'utf-8');
         if (content.includes('source') && content.includes('confiance')) found = true;

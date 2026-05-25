@@ -211,8 +211,9 @@ describe('Batch C — AdminAssignmentsPage accents', () => {
   });
 });
 
-describe('Batch C — CompliancePage accents', () => {
-  const src = read('CompliancePage.jsx');
+describe('Batch C — ConformitePage accents', () => {
+  // Typo legacy CompliancePage → ConformitePage (vrai nom du fichier).
+  const src = read('ConformitePage.jsx');
   it('Conformité réglementaire / Décret avec accents', () => {
     expect(src).not.toMatch(/Conformite reglementaire/);
     expect(src).not.toMatch(/Evaluation multi/);

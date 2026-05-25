@@ -144,8 +144,18 @@ class TestBundleEndpoint:
         data = r.json()
         assert data["scope"]["org_id"] == 1  # Nexity is first
 
-    def test_empty_reason_no_sites(self, client):
-        """GET /bundle?org_id=999 with no sites returns NO_SITES."""
+    def test_empty_reason_no_sites(self, client, db_session):
+        """GET /bundle?org_id=<existing_empty> with no sites returns NO_SITES.
+
+        Sprint sécurité L35 (audit IDOR multitenant) : `org_id` inexistant
+        retourne 403 (org not found / inactive). Le test crée maintenant une
+        org RÉELLE mais sans sites pour valider le code NO_SITES légitime.
+        """
+        from models import Organisation
+
+        empty_org = Organisation(id=999, nom="Org Vide Test", siren="999000999", actif=True)
+        db_session.add(empty_org)
+        db_session.commit()
         r = client.get("/api/compliance/bundle", params={"org_id": 999})
         assert r.status_code == 200
         data = r.json()
@@ -171,8 +181,17 @@ class TestBundleEndpoint:
         assert isinstance(data["trace_id"], str)
         assert len(data["trace_id"]) > 0
 
-    def test_bundle_no_sites_trace_id(self, client):
-        """Empty bundle (no sites) also has trace_id."""
+    def test_bundle_no_sites_trace_id(self, client, db_session):
+        """Empty bundle (no sites) also has trace_id.
+
+        Sprint L35 : org_id 999 doit exister en DB (sinon 403). On crée
+        l'org vide spécifiquement pour ce test.
+        """
+        from models import Organisation
+
+        if not db_session.query(Organisation).filter_by(id=999).first():
+            db_session.add(Organisation(id=999, nom="Org Vide Test", siren="999000999", actif=True))
+            db_session.commit()
         r = client.get("/api/compliance/bundle", params={"org_id": 999})
         assert r.status_code == 200
         data = r.json()
