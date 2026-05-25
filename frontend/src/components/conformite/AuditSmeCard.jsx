@@ -30,7 +30,9 @@ const STATUT_CONFIG = {
   },
   A_REALISER: {
     icon: AlertTriangle,
-    label: 'A realiser',
+    // P2-A simplification (2026-05-25) — « A realiser » sans accent est
+    // anxiogène et ambigu. « Action requise » est actionnable et explicite.
+    label: 'Action requise',
     bg: 'bg-amber-50',
     border: 'border-amber-200',
     text: 'text-amber-700',
@@ -46,7 +48,7 @@ const STATUT_CONFIG = {
   },
   NON_CONCERNE: {
     icon: Shield,
-    label: 'Non concerne',
+    label: 'Non concerné',
     bg: 'bg-gray-50',
     border: 'border-gray-200',
     text: 'text-gray-500',
@@ -54,7 +56,7 @@ const STATUT_CONFIG = {
   },
   NON_DETERMINE: {
     icon: Shield,
-    label: 'Non determine',
+    label: 'Non déterminé',
     bg: 'bg-gray-50',
     border: 'border-gray-200',
     text: 'text-gray-500',

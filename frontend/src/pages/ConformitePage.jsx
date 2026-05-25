@@ -37,7 +37,11 @@ import { useScope } from '../contexts/ScopeContext';
 import { useDemo } from '../contexts/DemoContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
-import { RiskBadge } from '../lib/risk/normalizeRisk';
+// P2-A simplification (2026-05-25) — RiskBadge retiré : la carte 4 de
+// ConformiteSyntheseCompacte affiche le risque financier sourcé via
+// timeline.total_penalty_exposure_eur (SoT backend). Import gardé commenté
+// pour rétro-compat éventuelle Cockpit (autres pages consomment encore).
+// import { RiskBadge } from '../lib/risk/normalizeRisk';
 import EmptyState from '../ui/EmptyState';
 import ErrorState from '../ui/ErrorState';
 import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
@@ -87,6 +91,8 @@ const REGULATION_CHIPS = [
 
 // Extracted sub-components
 import { DevApiBadge, DevScopeBadge } from '../components/conformite/DevBadges';
+// P2-A simplification visuelle (2026-05-25) — synthèse compacte 4 cartes ATF.
+import ConformiteSyntheseCompacte from '../components/conformite/ConformiteSyntheseCompacte';
 import FindingAuditDrawer from '../components/conformite/FindingAuditDrawer';
 import ComplianceSummaryBanner from '../components/conformite/ComplianceSummaryBanner';
 import ComplianceScoreHeader from '../components/conformite/ComplianceScoreHeader';
@@ -345,7 +351,7 @@ export default function ConformitePage() {
         non_conformes: 0,
         a_risque: 0,
         conformes: 0,
-        total_impact_eur: 0,
+        total_impact_eur: null,
       };
     // Use unified compliance score (59/100) instead of pct_ok (0%) to avoid contradiction
     // Sprint C-2 Phase 4.5b — quand confidence='non_applicable' (Phase 5 wrapper Sprint C-1),
@@ -357,6 +363,15 @@ export default function ConformitePage() {
       : complianceScore
         ? Math.round(complianceScore.score ?? complianceScore.avg_score ?? 0)
         : summary.pct_ok || 0;
+    // P2-A simplification (2026-05-25) — pénalité unifiée depuis la SoT backend
+    // (`/api/compliance/timeline.total_penalty_exposure_eur`). Avant : hardcoded
+    // à 0 alors que les vraies pénalités s'affichaient ailleurs (RegulatoryTimeline
+    // event tooltip) → DAF voyait 0 € ici et 45 k€ là. `null` distinct de `0` :
+    // null signifie "à qualifier" (consumers affichent libellé dédié).
+    const exposureFromTimeline =
+      typeof timeline?.total_penalty_exposure_eur === 'number'
+        ? timeline.total_penalty_exposure_eur
+        : null;
     return {
       pct: unifiedPct,
       pct_confidence: complianceScore?.confidence ?? null,
@@ -364,10 +379,10 @@ export default function ConformitePage() {
       non_conformes: summary.sites_nok || 0,
       a_risque: summary.sites_unknown || 0,
       conformes: summary.sites_ok || 0,
-      total_impact_eur: 0,
+      total_impact_eur: exposureFromTimeline,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [summary, obligations, complianceScore, scopedSites]);
+  }, [summary, obligations, complianceScore, scopedSites, timeline]);
 
   const bacsV2Summary = useMemo(() => computeBacsV2Summary(bundle?.bacs_v2), [bundle]);
 
@@ -691,66 +706,92 @@ export default function ConformitePage() {
         </>
       }
     >
-      {/* ── Préambule éditorial Sol §5 vue Conformité (S1.4 — ADR-001) ──
-          Échéancier réglementaire vivant : Audit SMÉ 11/10/2026, OPERAT
-          annuel 30/09, BACS 2030, APER. Audit Navigation fin S1 : Conformité
-          reçoit 5/8 CTAs week-cards des autres pages — destination la plus
-          sollicitée du parcours utilisateur. */}
-      {/* Sprint 2 Vague B ét8'-bis — factorisation grammaire §5 via SolBriefingHead. */}
-      <SolBriefingHead
-        briefing={solBriefing}
-        error={solBriefingError}
-        onRetry={solBriefingRefetch}
-        omitHeader
-        onNavigate={navigate}
+      {/* P2-A simplification (2026-05-25) — Synthèse compacte ATF (4 cartes :
+          Score · Échéance · Actions · Preuves manquantes). Doctrine §6.2 hub
+          unique : pas un nouveau menu, juste une vue lisible en 30 s pour
+          DAF/DG. Le reste de la page reste accessible plus bas pour les
+          personas experts (RegOps, Auditeur, Energy Manager). */}
+      <ConformiteSyntheseCompacte
+        score={score}
+        nextDeadline={timeline?.next_deadline || null}
+        actionsCount={actionableFindings.length}
+        proofsMissingCount={
+          obligations.filter((o) => o.statut !== 'conforme' && !(proofFiles[o.id]?.length > 0))
+            .length
+        }
+        sitesEvalues={scopedSites?.length || 0}
+        sitesPerimetre={sitesCount || 0}
+        onOpenTab={switchToTab}
       />
-      {/* Freshness — dernière évaluation + fallback */}
-      {bundle?.meta?.generated_at ? (
-        <span className="text-xs text-gray-400 ml-2">
-          Dernière évaluation :{' '}
-          {new Date(bundle.meta.generated_at).toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          })}
-        </span>
-      ) : (
-        <span className="text-xs text-gray-400 ml-2">Évaluation en attente</span>
-      )}
 
-      {/* Expert-only badges — dev environment only */}
-      {isExpert && import.meta.env.DEV && (
-        <div className="flex items-center gap-2 -mt-1 mb-1">
-          <DevApiBadge />
-          <DevScopeBadge
-            scope={{ orgId: org?.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }}
-            scopedSites={scopedSites}
+      {/* ── Préambule éditorial Sol §5 vue Conformité — replié par défaut
+          (P2-A simplification). Le contenu reste accessible pour les personas
+          experts (Customer Success, Auditeur) qui veulent le narratif complet. */}
+      <details className="mb-3 rounded-lg border border-gray-100 bg-gray-50/40">
+        <summary className="cursor-pointer select-none p-3 text-sm font-medium text-gray-700">
+          Contexte éditorial et fraîcheur des données
+        </summary>
+        <div className="border-t border-gray-100 p-3">
+          <SolBriefingHead
+            briefing={solBriefing}
+            error={solBriefingError}
+            onRetry={solBriefingRefetch}
+            omitHeader
+            onNavigate={navigate}
           />
-          {bundle?.meta?.generated_at && (
-            <span className="text-[10px] font-mono text-gray-400">
-              <Explain term="report_pct">Synthèse</Explain> :{' '}
-              {new Date(bundle.meta.generated_at).toLocaleTimeString('fr-FR')}
+          {/* Freshness — dernière évaluation + fallback */}
+          {bundle?.meta?.generated_at ? (
+            <span className="text-xs text-gray-400 ml-2">
+              Dernière évaluation :{' '}
+              {new Date(bundle.meta.generated_at).toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
             </span>
+          ) : (
+            <span className="text-xs text-gray-400 ml-2">Évaluation en attente</span>
           )}
+
+          {/* Expert-only badges — dev environment only */}
+          {isExpert && import.meta.env.DEV && (
+            <div className="flex items-center gap-2 mt-2">
+              <DevApiBadge />
+              <DevScopeBadge
+                scope={{
+                  orgId: org?.id,
+                  portefeuilleId: scope.portefeuilleId,
+                  siteId: scope.siteId,
+                }}
+                scopedSites={scopedSites}
+              />
+              {bundle?.meta?.generated_at && (
+                <span className="text-[10px] font-mono text-gray-400">
+                  <Explain term="report_pct">Synthèse</Explain> :{' '}
+                  {new Date(bundle.meta.generated_at).toLocaleTimeString('fr-FR')}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Health Summary (compact) — expert only to reduce visual overload */}
+          {isExpert && complianceHealth && (
+            <HealthSummary healthState={complianceHealth} onNavigate={navigate} compact />
+          )}
+
+          {/* Cross-module CTA — transforme la nav passive en funnel */}
+          <div className="my-3">
+            <CrossModuleCTA
+              icon={ShoppingCart}
+              title="Arbitrer vos contrats énergie"
+              desc="Comparer scénarios d'achat alignés avec vos obligations"
+              to="/achat-energie"
+              label="Scénarios"
+              tint="violet"
+            />
+          </div>
         </div>
-      )}
-
-      {/* Health Summary (compact) — expert only to reduce visual overload */}
-      {isExpert && complianceHealth && (
-        <HealthSummary healthState={complianceHealth} onNavigate={navigate} compact />
-      )}
-
-      {/* Cross-module CTA — transforme la nav passive en funnel */}
-      <div className="my-4">
-        <CrossModuleCTA
-          icon={ShoppingCart}
-          title="Arbitrer vos contrats énergie"
-          desc="Comparer scénarios d'achat alignés avec vos obligations"
-          to="/achat-energie"
-          label="Scénarios"
-          tint="violet"
-        />
-      </div>
+      </details>
 
       {/* Step 21: Compliance Summary Banner — messages actionnables */}
       {summary && (
@@ -781,13 +822,10 @@ export default function ConformitePage() {
         />
       )}
 
-      {/* Risk summary badge — risque financier global */}
-      {score.total_impact_eur > 0 && (
-        <div className="flex items-center gap-2 mb-2" data-testid="conformite-risk-badge">
-          <span className="text-sm text-gray-600">Risque financier global :</span>
-          <RiskBadge riskEur={score.total_impact_eur} size="sm" />
-        </div>
-      )}
+      {/* P2-A simplification (2026-05-25) — le badge "Risque financier global"
+          historique est remplacé par la carte 4 de ConformiteSyntheseCompacte
+          (synthèse ATF). Le RiskBadge n'est plus rendu ici pour éviter la
+          duplication visuelle (le DAF voyait 0 € au-dessus et 45 k€ en bas). */}
 
       {/* Phase 3.0 P1 (audit CX 09/05) : DEC démo retirée de ConformitePage.
           Anti-pattern §6.4 : la card guardée DEMO_MODE disparaissait en
@@ -818,12 +856,26 @@ export default function ConformitePage() {
         </div>
       )}
 
-      {/* Step 13: Frise reglementaire */}
-      <RegulatoryTimeline
-        events={timeline?.events || []}
-        today={timeline?.today}
-        loading={timelineLoading}
-      />
+      {/* Step 13: Frise réglementaire — P2-A simplification (2026-05-25) :
+          repliée par défaut (anti-anxiogène, le DAF a déjà la "Prochaine
+          échéance" dans la synthèse ATF). Les personas experts (Auditeur,
+          RegOps) gardent l'accès à la frise complète en 1 clic. */}
+      <details className="mb-3 rounded-lg border border-gray-100 bg-gray-50/40">
+        <summary
+          className="cursor-pointer select-none p-3 text-sm font-medium text-gray-700"
+          data-testid="frise-reglementaire-summary"
+        >
+          Frise réglementaire complète ({(timeline?.events || []).length} échéance
+          {(timeline?.events || []).length > 1 ? 's' : ''})
+        </summary>
+        <div className="border-t border-gray-100 p-3">
+          <RegulatoryTimeline
+            events={timeline?.events || []}
+            today={timeline?.today}
+            loading={timelineLoading}
+          />
+        </div>
+      </details>
 
       {/* Cleanup sidebar Conformité (2026-05-24) — Chips réglementaires
           internes. Remplacent les sous-items sidebar « Décret Tertiaire /
