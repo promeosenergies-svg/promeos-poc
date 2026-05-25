@@ -100,7 +100,9 @@ describe('CadreApplicable interactif', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('tile APPLICABLE est non-actionable par défaut', () => {
+  it('tile APPLICABLE est actionable depuis P0 cleanup cockpit (2026-05-25) — drill-down /conformite', () => {
+    // P0 cleanup cockpit : applicable + unknown sont maintenant cliquables
+    // (drill-down vers /conformite?regulation=X), pas seulement data_missing.
     const applicability = {
       DT: [
         {
@@ -116,7 +118,7 @@ describe('CadreApplicable interactif', () => {
     };
     renderWithRouter(<CadreApplicable applicability={applicability} maturity={0.8} />);
     const dtTile = screen.getByRole('button', { name: /Décret tertiaire/i });
-    expect(dtTile.getAttribute('data-actionable')).toBe('false');
+    expect(dtTile.getAttribute('data-actionable')).toBe('true');
   });
 
   it('CTA navigue vers /patrimoine?incomplete=<RULE>', () => {

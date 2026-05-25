@@ -28,6 +28,15 @@ import { useFilter } from '../contexts/FilterContext';
 import { usePersona } from '../contexts/PersonaContext';
 import { getCockpitStrategique } from '../services/api';
 import { logger } from '../services/logger';
+// P0 cleanup cockpit (2026-05-25) — Signaux Bill Intelligence remontés
+// dans CockpitStrategique (audit deep cockpit §3.4 P1-1). Le composant
+// rend `payload.billing_kpis` (SoT backend, doctrine §8.1).
+import CockpitBillingKpis from './cockpit/CockpitBillingKpis';
+// P0 cleanup cockpit (2026-05-25) — Wrap automatique des acronymes
+// réglementaires (DT, OPERAT, BACS, APER, SMÉ, BEGES, GTB, GTC) dans
+// les libellés hero/title/sub via `<SolAcronym>` (tooltip glossary).
+// Persona DG/DAF non-expert : décroche dès la 3e ligne sans définition.
+import SolNarrativeText from '../ui/sol/SolNarrativeText';
 
 const TAG = '[CockpitStrategique]';
 
@@ -79,10 +88,22 @@ export default function CockpitStrategique() {
       <StrategicModeBanner mode={mode} />
 
       <HubPage pillar="strategique">
+        {/* P0 cleanup cockpit (2026-05-25) — eyebrow + sub wrappés
+            SolNarrativeText pour glosser DT/OPERAT/BACS/APER/SMÉ/BEGES.
+            title : renderHeroTitle conservé (gère title_em italique +
+            ne contient typiquement pas d'acronyme métier nu). */}
         <SolHeroPremiumNight
-          eyebrow={payload.hero?.kicker}
+          eyebrow={
+            payload.hero?.kicker ? (
+              <SolNarrativeText text={payload.hero.kicker} />
+            ) : null
+          }
           title={renderHeroTitle(payload.hero)}
-          sub={payload.hero?.sub_constat}
+          sub={
+            payload.hero?.sub_constat ? (
+              <SolNarrativeText text={payload.hero.sub_constat} />
+            ) : null
+          }
           meta={payload.hero?.meta}
           primaryCta={renderHeroPrimaryCta(payload.hero)}
         />
@@ -99,6 +120,13 @@ export default function CockpitStrategique() {
         </HubPage.KpiTriptych>
 
         <HubPage.ChartPair>{(payload.charts || []).map((c) => renderChart(c))}</HubPage.ChartPair>
+
+        {/* P0 cleanup cockpit (2026-05-25) — Bill Intelligence intégré
+            dans la Synthèse Stratégique : surfacturations à contester,
+            anomalies factures par énergie, actions Centre d'Action
+            Facturation. Drill-down vers /bill-intel et
+            /centre-action?domain=facturation. */}
+        <CockpitBillingKpis billingKpis={payload.billing_kpis} />
 
         {payload.dossier_p1 && <DossierP1 {...payload.dossier_p1} />}
 

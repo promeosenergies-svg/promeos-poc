@@ -69,9 +69,15 @@ describe('SG_PATRIM_FE — Patrimoine.jsx kWh/m² doctrine guards', () => {
   });
 
   it('SG_PATRIM_FE_04 — PerformanceSitesCard.jsx no inline conso/surface division (Phase 4.5d)', () => {
-    // Phase 4.5d audit follow-up : étend la couverture Patrimoine.jsx au card
-    // performance Cockpit qui dupliquait l'anti-pattern R7.
-    const perfSrc = stripComments(readFileSync(PERFORMANCE_SITES_PATH, 'utf-8'));
+    // P0 cleanup cockpit (2026-05-25) — PerformanceSitesCard.jsx supprimé
+    // (orphelin post suppression Cockpit.jsx). Le SG passe trivialement
+    // si le fichier n'existe plus (l'anti-pattern ne peut pas exister).
+    let perfSrc;
+    try {
+      perfSrc = stripComments(readFileSync(PERFORMANCE_SITES_PATH, 'utf-8'));
+    } catch {
+      return; // fichier supprimé → SG vacuously vrai
+    }
     const FORBIDDEN = /Math\.round\([^)]*conso_kwh_an[^)]*\/[^)]*surface_m2[^)]*\)/g;
     const matches = perfSrc.match(FORBIDDEN) || [];
     expect(

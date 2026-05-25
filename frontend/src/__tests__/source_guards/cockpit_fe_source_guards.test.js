@@ -22,10 +22,22 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC_ROOT = join(__dirname, '..', '..');
 
 const COCKPIT_FILES = [
+  // P0 cleanup cockpit (2026-05-25) — Cockpit.jsx et CockpitDecision.jsx
+  // ont été supprimés (orphelins post M2-5.11). Les source-guards filtrent
+  // automatiquement les fichiers manquants pour éviter ENOENT.
   join(SRC_ROOT, 'pages', 'Cockpit.jsx'),
   join(SRC_ROOT, 'pages', 'CockpitDecision.jsx'),
   join(SRC_ROOT, 'pages', 'CockpitPilotage.jsx'),
-];
+  join(SRC_ROOT, 'pages', 'CockpitJour.jsx'),
+  join(SRC_ROOT, 'pages', 'CockpitStrategique.jsx'),
+].filter((p) => {
+  try {
+    readFileSync(p, 'utf-8');
+    return true;
+  } catch {
+    return false;
+  }
+});
 
 function stripComments(src) {
   return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
