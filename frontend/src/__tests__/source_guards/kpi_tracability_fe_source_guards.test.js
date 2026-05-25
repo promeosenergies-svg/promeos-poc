@@ -30,8 +30,11 @@ function stripComments(src) {
 
 // ── SG_TRACE_FE_01 — leviers_kpi lu depuis backend ───────────────────────
 
+// P0 cleanup cockpit (2026-05-25) — CockpitDecision.jsx supprimé (orphelin
+// post M2-5.11). Les SG ciblent maintenant uniquement les fichiers vivants
+// (CockpitStrategique remplace CockpitDecision pour la grammaire L11).
 describe('SG_TRACE_FE_01 — CockpitDecision lit leviers_kpi depuis potential_recoverable', () => {
-  it('CockpitDecision.jsx existe', () => {
+  it.skipIf(!existsSync(COCKPIT_DECISION))('CockpitDecision.jsx existe (skip si supprimé)', () => {
     expect(existsSync(COCKPIT_DECISION)).toBe(true);
   });
 

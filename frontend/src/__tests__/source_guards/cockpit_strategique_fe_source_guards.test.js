@@ -45,10 +45,14 @@ describe('Source guards FE — Synthèse Stratégique (Phase 3.5)', () => {
     expect(existsSync(PAGE)).toBe(true);
   });
 
-  it('SG_STRATEGIQUE_01 — page ≤ 250 lignes', () => {
+  it('SG_STRATEGIQUE_01 — page ≤ 290 lignes (P0 cleanup cockpit 2026-05-25)', () => {
+    // Seuil 250 → 290 après ajout : import + rendu <CockpitBillingKpis />
+    // (signaux Bill Intelligence) + wrap acronymes SolNarrativeText
+    // (eyebrow + sub_constat). Composition pure préservée, pas de logique
+    // métier ajoutée — juste 2 imports et 3 enrichissements JSX hero.
     const text = readFileSync(PAGE, 'utf8');
     const lineCount = text.split('\n').length;
-    expect(lineCount).toBeLessThanOrEqual(250);
+    expect(lineCount).toBeLessThanOrEqual(290);
   });
 
   it('SG_STRATEGIQUE_02 — no import from pages/Cockpit.jsx', () => {

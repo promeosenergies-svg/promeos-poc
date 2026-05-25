@@ -132,4 +132,20 @@ def get_cockpit_strategique(
     if fallback_reason:
         payload["_audit"]["_fallback_reason"] = fallback_reason
 
+    # 6. P0 cleanup cockpit (2026-05-25) — KPIs Bill Intelligence pour
+    # remonter les signaux facturation dans CockpitStrategique (Cockpit P0
+    # audit deep §3.4 P1-1) : surfacturations à contester, anomalies
+    # ouvertes, anomalies par énergie, actions facturation ouvertes.
+    # Chaque KPI expose source/formule/unité/période/périmètre. Le FE rend
+    # `payload.billing_kpis` sans recalcul (doctrine §8.1).
+    try:
+        from services.billing_kpis_cockpit_service import compute_billing_kpis_cockpit
+
+        payload["billing_kpis"] = compute_billing_kpis_cockpit(db, org_id)
+    except Exception as e:
+        # Fallback gracieux : si le service Billing échoue, on n'affiche pas
+        # le bloc côté FE plutôt que de casser tout le payload Strategique.
+        _logger.warning("[strategique] billing_kpis fetch failed: %s", e)
+        payload["billing_kpis"] = {"kpis": [], "links": {}, "_error": str(e)}
+
     return payload

@@ -1,13 +1,33 @@
 """
 PROMEOS - Cockpit Executive V2
-Endpoint unique /api/cockpit/executive-v2 : hero impact + 4 KPIs santé + actions triées.
+
+P0 cleanup cockpit (2026-05-25) — /executive-v2 et /top-contributors retournent
+désormais 410 Gone FR (orphelins post-suppression Cockpit.jsx). Remplacés par
+/api/cockpit/strategique (KPIs unifiés Sol L11).
 """
 
 import logging
 from datetime import date, timedelta
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
+
+
+# P0 cleanup cockpit (2026-05-25) — helper 410 Gone FR partagé avec cockpit.py.
+def _gone_cockpit_p0_2026_05_25(endpoint_name: str, alternative: str = "") -> None:
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "code": "ENDPOINT_GONE",
+            "message": (
+                f"L'endpoint {endpoint_name} est supprimé depuis le sprint P0 "
+                f"cleanup cockpit (2026-05-25). Il alimentait des composants "
+                f"frontend désormais retirés (Cockpit.jsx, CockpitDecision.jsx)."
+            ),
+            "alternative": alternative or None,
+            "sprint": "claude/cockpit-p0-cleanup-and-billing-kpi",
+        },
+    )
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -53,7 +73,10 @@ def get_executive_v2(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Vue exécutive V1+ : hero impact + 4 KPIs santé + actions triées."""
+    """[DEPRECATED 2026-05-25] Vue exécutive V1+ — orphelin post Cockpit.jsx."""
+    _gone_cockpit_p0_2026_05_25(
+        "/cockpit/executive-v2", alternative="/api/cockpit/strategique"
+    )
     effective_org_id = resolve_org_id(request, auth, db)
     org = db.query(Organisation).filter(Organisation.id == effective_org_id).first()
     if not org:
@@ -333,13 +356,10 @@ def get_top_contributors(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """
-    Top N sites contributeurs Pareto sur l'impact financier total.
-
-    Drill-down du HeroImpactBar : sites classés par contribution € décroissante
-    avec breakdown (conformite_eur, factures_eur, optimisation_eur) et flag
-    de certitude (certain/probable/potentiel).
-    """
+    """[DEPRECATED 2026-05-25] Top contributeurs Pareto — orphelin post HeroImpactBar."""
+    _gone_cockpit_p0_2026_05_25(
+        "/cockpit/top-contributors", alternative="/api/cockpit/strategique"
+    )
     effective_org_id = resolve_org_id(request, auth, db)
     sites = _sites_for_org(db, effective_org_id).all()
     if not sites:

@@ -1,12 +1,46 @@
 """
 PROMEOS - Routes API Cockpit & Portefeuilles
-Endpoints pour le cockpit exécutif et la gestion des portefeuilles
+Endpoints pour le cockpit exécutif et la gestion des portefeuilles.
+
+P0 cleanup cockpit (2026-05-25) — 12 endpoints orphelins retournent désormais
+410 Gone FR :
+- /cockpit/benchmark · /cockpit/conso-month · /cockpit/co2
+- /cockpit/_facts.scope · /cockpit/_facts.alerts · /cockpit/cdc
+- /cockpit/levers · /cockpit/impact_decision
+- /cockpit/essentials · /cockpit/essentials/health · /cockpit/essentials/watchlist
+- /cockpit/data_activation
+- /cockpit/executive-v2 · /cockpit/top-contributors (cockpit_v2.py)
+
+Endpoints VIVANTS conservés : /cockpit, /cockpit/trajectory, /cockpit/priorities,
+/cockpit/jour, /cockpit/strategique, /cockpit/_facts.
 """
 
 from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
+
+
+# P0 cleanup cockpit (2026-05-25) — helper pour standardiser les 410 Gone FR.
+def _gone_cockpit_p0_2026_05_25(endpoint_name: str, alternative: str = "") -> None:
+    """Raise HTTPException 410 avec message FR clair pour endpoints cockpit
+    orphelins post-suppression Cockpit.jsx + CockpitDecision.jsx.
+
+    Args:
+        endpoint_name: nom court de l'endpoint pour le log (ex: "/cockpit/co2")
+        alternative: endpoint alternatif à utiliser, si applicable
+    """
+    detail = {
+        "code": "ENDPOINT_GONE",
+        "message": (
+            f"L'endpoint {endpoint_name} est supprimé depuis le sprint P0 cleanup "
+            f"cockpit (2026-05-25). Il alimentait des composants frontend "
+            f"désormais retirés (Cockpit.jsx, CockpitDecision.jsx)."
+        ),
+        "alternative": alternative or None,
+        "sprint": "claude/cockpit-p0-cleanup-and-billing-kpi",
+    }
+    raise HTTPException(status_code=410, detail=detail)
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Literal, Optional
@@ -471,8 +505,12 @@ def get_benchmark(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
-    [V110] Positionnement des sites par rapport aux benchmarks ADEME (kWh/m²/an).
+    [DEPRECATED 2026-05-25] Positionnement ADEME des sites — endpoint orphelin
+    après suppression de Cockpit.jsx. Cf. /api/cockpit (KPIs unifiés).
     """
+    _gone_cockpit_p0_2026_05_25("/cockpit/benchmark", alternative="/api/cockpit")
+    # Code historique conservé en aval (unreachable) pour audit / restauration
+    # potentielle si un consommateur réapparaît.
     from config.patrimoine_assumptions import BENCHMARK_ADEME_KWH_M2_AN
     from models import not_deleted
 
@@ -792,7 +830,8 @@ def get_cockpit_conso_month(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Consommation du mois courant — source ConsumptionTarget.actual_kwh."""
+    """[DEPRECATED 2026-05-25] Conso mois courant — orphelin post Cockpit.jsx."""
+    _gone_cockpit_p0_2026_05_25("/cockpit/conso-month", alternative="/api/cockpit")
     from datetime import datetime as _dt
     from models.consumption_target import ConsumptionTarget
 
@@ -851,9 +890,8 @@ def get_co2(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """
-    [V110] Empreinte CO₂ portfolio — facteurs ADEME Base Carbone 2024.
-    """
+    """[DEPRECATED 2026-05-25] CO₂ portfolio — orphelin post Cockpit.jsx."""
+    _gone_cockpit_p0_2026_05_25("/cockpit/co2")
     from services.co2_service import compute_portfolio_co2
 
     effective_org_id = resolve_org_id(request, auth, db)
@@ -869,11 +907,8 @@ def get_cockpit_facts_scope(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """
-    GET /api/cockpit/_facts.scope
-    Périmètre organisationnel du scope courant : org_id, org_name, site_count,
-    portefeuille_count. Utilisé par le frontend pour afficher le scope actif.
-    """
+    """[DEPRECATED 2026-05-25] Scope cockpit — orphelin, info dans /cockpit."""
+    _gone_cockpit_p0_2026_05_25("/cockpit/_facts.scope", alternative="/api/cockpit")
     org_id = resolve_org_id(request, auth, db)
     org = db.query(Organisation).filter(Organisation.id == org_id).first()
     if not org:
@@ -904,11 +939,10 @@ def get_cockpit_facts_alerts(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """
-    GET /api/cockpit/_facts.alerts
-    Agrégation alertes + issues action center pour le scope courant.
-    Retourne {count, top:[{id, title, priority, domain}]} (top 5 critiques).
-    """
+    """[DEPRECATED 2026-05-25] Alertes cockpit — orphelin post Cockpit.jsx."""
+    _gone_cockpit_p0_2026_05_25(
+        "/cockpit/_facts.alerts", alternative="/api/action-center-v4/items"
+    )
     org_id = resolve_org_id(request, auth, db)
     site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
 
@@ -956,12 +990,10 @@ def get_cockpit_cdc(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """
-    GET /api/cockpit/cdc?period=j_minus_1
-    Courbe de charge J-1 du compteur principal du scope.
-    Délègue à cdc_service.query_cdc. Retourne hp_kwh[], hc_kwh[],
-    puissance_souscrite_kva, puissance_max_kva.
-    """
+    """[DEPRECATED 2026-05-25] Courbe charge J-1 — orphelin post Cockpit.jsx."""
+    _gone_cockpit_p0_2026_05_25(
+        "/cockpit/cdc", alternative="/api/cockpit/_facts (hourly_breakdown)"
+    )
     from models.energy_models import Meter
     from services.ems.cdc_service import query_cdc
 
@@ -1385,19 +1417,19 @@ def get_cockpit_levers(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """
-    GET /api/cockpit/levers
+    """[DEPRECATED 2026-05-25] Leviers actionables — orphelin post Cockpit.jsx.
 
-    Phase 1.4.c — Moteur de leviers actionables (migration ex-`models/leverEngineModel.js`).
+    Remplacé par Centre d'Action V4 (file prioritaire + actions) +
+    Bill Intelligence (anomalies factures avec actions sync).
 
-    Agrège les leviers conformité + facturation + optimisation + achat d'énergie
-    à partir des données scope. Tri par impact_eur desc (null en dernier).
-
-    Réponse :
+    Réponse historique :
         {
             "lever_result": LeverResult.to_dict()
         }
     """
+    _gone_cockpit_p0_2026_05_25(
+        "/cockpit/levers", alternative="/api/action-center-v4/items + /api/billing/insights"
+    )
     from services.lever_engine_service import compute_actionable_levers
     from models.enums import InsightStatus
 
@@ -1476,21 +1508,14 @@ def get_cockpit_impact_decision(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
+    """[DEPRECATED 2026-05-25] Impact & Décision — orphelin post Cockpit.jsx.
+
+    Remplacé par CockpitStrategique payload (KPIs unifiés) + Centre d'Action V4.
     """
-    GET /api/cockpit/impact_decision
-
-    Phase 1.4.b — Endpoint Impact & Décision (migration ex-`models/impactDecisionModel.js`).
-
-    Calcule les 3 KPIs Impact & Décision déterministes (risque conformité,
-    surcoût facture, opportunité optimisation) + recommandation prioritaire
-    rule-based à partir des données scope + billing.
-
-    Réponse :
-        {
-            "impact": ImpactKpis (3 valeurs + 3 drapeaux available),
-            "recommendation": Recommendation (key/titre/bullets/cta/cta_path)
-        }
-    """
+    _gone_cockpit_p0_2026_05_25(
+        "/cockpit/impact_decision",
+        alternative="/api/cockpit/strategique + /api/action-center-v4/items",
+    )
     from services.impact_decision_service import compute_impact_kpis, compute_recommendation
 
     org_id = resolve_org_id(request, auth, db)
@@ -1566,19 +1591,17 @@ def get_cockpit_essentials(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """
-    GET /api/cockpit/essentials
+    """[DEPRECATED 2026-05-25] Dashboard Essentials — orphelin post Cockpit.jsx.
 
-    Phase 1.4.d — Dashboard Essentials (migration ex-`models/dashboardEssentials.js`).
+    Migration Phase 1.4.d.bis vers ConformitePage.jsx + CockpitStrategique
+    finalisée. Endpoint conservé en 410 Gone pour audit.
 
-    Agrège tous les modèles dashboard (watchlist, briefing, topSites, opportunities,
-    todayActions, executiveSummary, executiveKpis, healthState) depuis les données
-    scope. Source of Truth backend posée en 1.4.d — migration des 4 pages frontend
-    (Cockpit, ConformitePage, CommandCenter, billingHealthModel) différée à Phase 1.4.d.bis.
-
-    Réponse :
+    Réponse historique :
         DashboardEssentials.to_dict() — structure agrégée complète
     """
+    _gone_cockpit_p0_2026_05_25(
+        "/cockpit/essentials", alternative="/api/cockpit/strategique"
+    )
     from services.dashboard_essentials_service import build_dashboard_essentials
 
     org_id = resolve_org_id(request, auth, db)
@@ -1651,14 +1674,10 @@ def get_cockpit_essentials_health(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """
-    GET /api/cockpit/essentials/health
-
-    Sous-endpoint HealthState uniquement — consommé par billingHealthModel.js
-    et ConformitePage.jsx (Phase 1.4.d.bis migration différée).
-
-    Retourne HealthState.to_dict()
-    """
+    """[DEPRECATED 2026-05-25] Health state — orphelin post Cockpit.jsx."""
+    _gone_cockpit_p0_2026_05_25(
+        "/cockpit/essentials/health", alternative="/api/cockpit/strategique"
+    )
     from services.dashboard_essentials_service import (
         build_watchlist,
         check_consistency,
@@ -1737,14 +1756,11 @@ def get_cockpit_essentials_watchlist(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """
-    GET /api/cockpit/essentials/watchlist
-
-    Sous-endpoint Watchlist uniquement — consommé par ConformitePage.jsx
-    (Phase 1.4.d.bis migration différée).
-
-    Retourne { watchlist: WatchItem[] }
-    """
+    """[DEPRECATED 2026-05-25] Watchlist cockpit — orphelin post Cockpit.jsx."""
+    _gone_cockpit_p0_2026_05_25(
+        "/cockpit/essentials/watchlist",
+        alternative="/api/v1/events/upcoming",
+    )
     from services.dashboard_essentials_service import build_watchlist
 
     org_id = resolve_org_id(request, auth, db)
@@ -1794,18 +1810,14 @@ def get_cockpit_data_activation(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
+    """[DEPRECATED 2026-05-25] Data activation — orphelin post Cockpit.jsx.
+
+    Remplacé par /api/patrimoine/sites (champ data_completeness) +
+    chips réglementaires sur /conformite.
     """
-    GET /api/cockpit/data_activation
-
-    Phase 1.4.e — Endpoint Data Activation (migration ex-`models/dataActivationModel.js`).
-
-    Retourne la checklist d'activation des 5 dimensions canoniques
-    (patrimoine, conformité, consommation, facturation, achat) +
-    agrégats (activated_count, overall_coverage, next_action).
-
-    Org-scoping via resolve_org_id (CLAUDE.md règle #2). Délègue à
-    services/data_activation_service.build_activation_checklist().
-    """
+    _gone_cockpit_p0_2026_05_25(
+        "/cockpit/data_activation", alternative="/api/patrimoine/sites"
+    )
     from services.data_activation_service import build_activation_checklist
 
     org_id = resolve_org_id(request, auth, db)

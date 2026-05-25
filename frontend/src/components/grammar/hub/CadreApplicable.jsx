@@ -29,6 +29,18 @@ const RULE_LABELS = {
   BEGES: { code: 'BEGES', label: 'Bilan GES réglementaire' },
 };
 
+// P0 cleanup cockpit (2026-05-25) — Mapping code Cockpit → param chip
+// /conformite. Aligné avec ConformitePage.REGULATION_CHIPS (post PR #300).
+// SMÉ et BEGES sont groupés sous le chip 'audit-sme' qui couvre les codes
+// audit_sme + audit_energetique + beges + bilan_ges.
+const CONFORMITE_REGULATION_PARAM = {
+  DT: 'dt',
+  BACS: 'bacs',
+  APER: 'aper',
+  SME: 'audit-sme',
+  BEGES: 'audit-sme',
+};
+
 const STATUS_TIER = {
   applicable: 'applicable',
   not_applicable: 'not_applicable',
@@ -66,6 +78,20 @@ export default function CadreApplicable({ applicability = {}, maturity, onRuleCl
     }
     if (summary.status === 'data_missing') {
       setOpenRule(rule);
+      return;
+    }
+    // P0 cleanup cockpit (2026-05-25) — Si applicable / unknown, drill-down
+    // vers /conformite filtré sur la règle (chip réglementaire pré-sélectionnée).
+    // Aligne avec ConformitePage P2-A simplification + cleanup sidebar #300.
+    if (summary.status === 'applicable' || summary.status === 'unknown') {
+      const param = CONFORMITE_REGULATION_PARAM[rule];
+      if (!param) return;
+      const target = `/conformite?regulation=${param}`;
+      if (navigate) {
+        navigate(target);
+      } else if (typeof window !== 'undefined') {
+        window.location.assign(target);
+      }
     }
   };
 
@@ -117,7 +143,15 @@ export default function CadreApplicable({ applicability = {}, maturity, onRuleCl
           const meta = RULE_LABELS[rule];
           const summary = summarizeRule(applicability[rule]);
           const tierClass = STATUS_TIER[summary.status] || 'unknown';
-          const isClickable = onRuleClick != null || summary.status === 'data_missing';
+          // P0 cleanup cockpit (2026-05-25) — Toutes les règles deviennent
+          // cliquables (sauf not_applicable). applicable/unknown drill-down
+          // vers /conformite?regulation=X, data_missing ouvre le panneau
+          // interne avec CTA vers /patrimoine?incomplete=X.
+          const isClickable =
+            onRuleClick != null ||
+            summary.status === 'data_missing' ||
+            summary.status === 'applicable' ||
+            summary.status === 'unknown';
           return (
             <button
               type="button"
