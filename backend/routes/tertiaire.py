@@ -862,6 +862,9 @@ class ConsumptionDeclareRequest(BaseModel):
     kwh_reseau: Optional[float] = None
     is_reference: bool = False
     source: Optional[str] = None
+    # S1 #324 Chantier 2 : flag explicite pour batiment neuf dont la 1ere
+    # annee pleine d'exploitation depasse 2022 (Article 3.I arrete 10/04/2020).
+    is_first_full_year_of_operation: bool = False
 
 
 @router.post("/efa/{efa_id}/consumption/declare")
@@ -872,7 +875,13 @@ def declare_efa_consumption(
     db: Session = Depends(get_db),
     auth=Depends(get_optional_auth),
 ):
-    """Declare ou met a jour la consommation annuelle d'une EFA."""
+    """Declare ou met a jour la consommation annuelle d'une EFA.
+
+    Validation annee de reference (S1 #324) : si is_reference=True, l'annee
+    doit etre dans [2010, 2022] (Article 3.I arrete 10/04/2020) sauf si
+    is_first_full_year_of_operation=True (batiment neuf legitime).
+    Rejet 400 avec message FR doctrine si la regle est violee.
+    """
     from services.operat_trajectory import declare_consumption
     from services.actor_resolver import resolve_actor
 
@@ -893,11 +902,14 @@ def declare_efa_consumption(
             kwh_reseau=body.kwh_reseau,
             is_reference=body.is_reference,
             source=body.source,
+            is_first_full_year_of_operation=body.is_first_full_year_of_operation,
         )
         db.commit()
         return result
     except ValueError as e:
-        raise HTTPException(400, str(e))
+        # 422 (Unprocessable Entity) plus precis pour validation reglementaire
+        # qu'un 400 generique. Message FR doctrine, hint cross-check Legifrance.
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @router.get("/efa/{efa_id}/targets/validate")

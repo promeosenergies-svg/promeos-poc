@@ -5,10 +5,16 @@ Calcul d'intensité énergétique finale et primaire par site et portefeuille.
 Intensité finale  = kWh_final / surface_m2
 Intensité primaire = kWh_final × coeff_EP / surface_m2
 
-Coefficients EP (énergie primaire) depuis janvier 2026 — RE2020 :
-  - Électricité : 1.9 (anciennement 2.3)
+Coefficients EP (énergie primaire) depuis janvier 2026 — RE2020 / DPE 2026+ :
+  - Électricité : 1.9 (anciennement 2.3 jusqu'au 31/12/2025)
   - Gaz : 1.0
   - Chaleur réseau : 1.0 (valeur par défaut — dépend du mix local)
+
+ATTENTION — séparation OPERAT / RE2020 (S1 cleanup #324, 2026-05-27) :
+  Pour les calculs OPERAT / DEET Article 16 (changement de source énergétique)
+  utiliser EXCLUSIVEMENT `config.operat_constants.EP_COEFFICIENTS_OPERAT`
+  (élec = 2,3). Le coefficient EP=1,9 ci-dessous est valable pour RE2020 /
+  DPE 2026+ uniquement. Mélanger silencieusement les 2 valeurs est un bug.
 """
 
 import logging

@@ -4,8 +4,17 @@ PROMEOS — Simulateur de modulation Decret Tertiaire.
 Principe : un site peut demander un ajustement de son objectif s'il justifie
 de contraintes techniques, architecturales ou de disproportion economique.
 
-Deadline depot OPERAT : 30 septembre 2026.
+Deadline depot OPERAT : 30 septembre 2027 (cf. operat_constants).
 Source : Decret n2019-771, art. 3 + Arrete du 10 avril 2020 (cas de modulation).
+
+S1 #324 Chantier 3 (2026-05-27) — TRI par typologie :
+  Le test de disproportion economique se fait par typologie de travaux selon
+  Article 11.I de l'arrete 10/04/2020 modifie :
+    - STRUCTURAL_ENVELOPE : 30 ans (renovation de l'enveloppe)
+    - ENERGY_EQUIPMENT    : 15 ans (renouvellement equipements energetiques)
+    - OPTIMIZATION_SYSTEM : 10 ans (systemes d'optimisation et d'exploitation)
+  Un TRI global agrege est conserve pour compat retrocompat avec l'UI
+  existante, mais la DECISION de disproportion utilise les seuils typologiques.
 """
 
 import logging
@@ -14,6 +23,11 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from config.operat_constants import (
+    OPERAT_TRI_TYPOLOGIES,
+    get_operat_tri_threshold,
+)
+
 logger = logging.getLogger("promeos.tertiaire.modulation")
 
 # Facteur prudence : les gains par action ne s'additionnent pas toujours
@@ -21,6 +35,11 @@ INTERACTION_FACTOR = 0.85
 
 # Jalon par defaut
 DEFAULT_REDUCTION_PCT = 0.40  # -40% pour 2030
+
+# Typologie par defaut quand l'utilisateur ne la declare pas explicitement.
+# UNKNOWN signifie "pas de decision typologique automatique" — l'action ne
+# sera pas comptee dans la decomposition par typologie (fail-closed prudent).
+TYPOLOGY_DEFAULT = "UNKNOWN"
 
 
 @dataclass
@@ -31,6 +50,9 @@ class ModulationAction:
     economie_annuelle_eur: float
     duree_vie_ans: int
     tri_ans: float = 0.0  # calcule automatiquement
+    # S1 #324 Chantier 3 — typologie travaux (Article 11.I).
+    # Valeurs : STRUCTURAL_ENVELOPE | ENERGY_EQUIPMENT | OPTIMIZATION_SYSTEM | UNKNOWN.
+    typologie: str = TYPOLOGY_DEFAULT
 
 
 @dataclass
@@ -57,6 +79,12 @@ class ModulationResult:
     criteres_manquants: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     actions_detail: list[dict] = field(default_factory=list)
+    # S1 #324 Chantier 3 — analyse disproportion economique par typologie
+    # (Article 11.I arrete 10/04/2020). tri_moyen_ans est conserve pour
+    # compat UI mais la decision de disproportion utilise tri_par_typologie.
+    tri_par_typologie: list[dict] = field(default_factory=list)
+    disproportion_globale: bool = False
+    disproportion_explication: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -108,6 +136,16 @@ def simulate_modulation(
             eco_eur = a.get("economie_annuelle_eur", 0)
             cout = a.get("cout_eur", 0)
             tri = round(cout / eco_eur, 1) if eco_eur > 0 else 999
+            typologie_raw = a.get("typologie", TYPOLOGY_DEFAULT)
+            # Normalise et valide la typologie : UNKNOWN si non reconnue
+            # (fail-closed prudent pour ne pas inventer une typologie OPERAT).
+            typologie = typologie_raw if typologie_raw in OPERAT_TRI_TYPOLOGIES else TYPOLOGY_DEFAULT
+            if typologie_raw not in OPERAT_TRI_TYPOLOGIES and typologie_raw != TYPOLOGY_DEFAULT:
+                warnings.append(
+                    f"Action '{a.get('label', '')}' : typologie '{typologie_raw}' inconnue. "
+                    f"Typologies OPERAT Art. 11.I : {list(OPERAT_TRI_TYPOLOGIES.keys())}. "
+                    f"Typologie ignoree (non comptee dans la decomposition)."
+                )
             action = ModulationAction(
                 label=a.get("label", ""),
                 cout_eur=cout,
@@ -115,10 +153,19 @@ def simulate_modulation(
                 economie_annuelle_eur=eco_eur,
                 duree_vie_ans=a.get("duree_vie_ans", 0),
                 tri_ans=tri,
+                typologie=typologie,
             )
             all_actions.append(action)
-            if tri > 15:
-                warnings.append(f"Action '{action.label}' : TRI = {tri} ans > 15 ans")
+            # S1 #324 Chantier 3 : warning typologique (au lieu du seuil 15 ans
+            # generique applique a tout). Seuil specifique par typologie.
+            if typologie in OPERAT_TRI_TYPOLOGIES:
+                seuil = get_operat_tri_threshold(typologie)
+                if tri > seuil:
+                    warnings.append(
+                        f"Action '{action.label}' (typologie {typologie}) : "
+                        f"TRI = {tri} ans > seuil disproportion {seuil} ans "
+                        f"(Article 11.I arrete 10/04/2020)."
+                    )
 
     # Economies avec facteur interaction
     eco_brute = sum(a.economie_annuelle_kwh for a in all_actions)
@@ -129,6 +176,57 @@ def simulate_modulation(
         if any(a.economie_annuelle_eur > 0 for a in all_actions)
         else 0
     )
+
+    # S1 #324 Chantier 3 — TRI par typologie (Article 11.I).
+    # Decomposition : un TRI agrege par typologie + decision disproportion
+    # par typologie + decision globale.
+    tri_par_typologie = []
+    disproportion_globale = False
+    disproportion_lignes = []
+    for typologie_key, meta in OPERAT_TRI_TYPOLOGIES.items():
+        actions_typo = [a for a in all_actions if a.typologie == typologie_key]
+        if not actions_typo:
+            continue
+        cout_typo = sum(a.cout_eur for a in actions_typo)
+        eco_typo = sum(a.economie_annuelle_eur for a in actions_typo)
+        tri_typo = round(cout_typo / eco_typo, 1) if eco_typo > 0 else None
+        seuil_typo = int(meta["tri_threshold_years"])
+        is_disproportionate = tri_typo is not None and tri_typo > seuil_typo
+        if is_disproportionate:
+            disproportion_globale = True
+            disproportion_lignes.append(f"{meta['label_fr']} : TRI {tri_typo} ans > {seuil_typo} ans")
+        tri_par_typologie.append(
+            {
+                "typologie": typologie_key,
+                "label_fr": meta["label_fr"],
+                "tri_ans": tri_typo,
+                "seuil_disproportion_ans": seuil_typo,
+                "is_disproportionate": is_disproportionate,
+                "source": meta["source"],
+                "source_url": meta["source_url"],
+                "actions_count": len(actions_typo),
+                "cout_eur_typo": round(cout_typo),
+                "economie_annuelle_eur_typo": round(eco_typo),
+            }
+        )
+
+    # Explication FR globale (lecture pure, pas de jargon).
+    if disproportion_globale:
+        disproportion_explication = "Disproportion economique invocable sur : " + " ; ".join(disproportion_lignes) + "."
+    elif tri_par_typologie:
+        disproportion_explication = (
+            "Aucune disproportion economique typologique detectee (Article 11.I arrete 10/04/2020)."
+        )
+    else:
+        # Aucune action typologisee — on ne se prononce pas (anti-fallback).
+        actions_unknown = sum(1 for a in all_actions if a.typologie == TYPOLOGY_DEFAULT)
+        if actions_unknown > 0:
+            warnings.append(
+                f"{actions_unknown} action(s) sans typologie OPERAT declaree : "
+                f"le test de disproportion par typologie ne peut pas etre realise. "
+                f"Declarer 'typologie' parmi {list(OPERAT_TRI_TYPOLOGIES.keys())}."
+            )
+        disproportion_explication = "Decision de disproportion non calculable (aucune action typologisee)."
 
     conso_apres = round(conso_actuelle - eco_ajustee)
 
@@ -202,6 +300,10 @@ def simulate_modulation(
         criteres_manquants=criteres_manquants,
         warnings=warnings,
         actions_detail=[asdict(a) for a in all_actions],
+        # S1 #324 Chantier 3 — TRI par typologie + decision disproportion.
+        tri_par_typologie=tri_par_typologie,
+        disproportion_globale=disproportion_globale,
+        disproportion_explication=disproportion_explication,
     )
 
     logger.info(

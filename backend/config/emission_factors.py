@@ -1,6 +1,14 @@
 """
-PROMEOS — Facteurs d'emission CO2e par vecteur energetique.
-SOURCE UNIQUE pour tout le codebase. Tous les services doivent importer depuis ici.
+PROMEOS — Facteurs d'emission CO2e par vecteur energetique (ADEME).
+Source unique ADEME pour Bilan GES, CSRD scope 2 location-based, comptabilite
+carbone produit. Tous les services qui font du reporting carbone non-OPERAT
+doivent importer depuis ici.
+
+ATTENTION — separation OPERAT / ADEME (S1 cleanup #324, 2026-05-27) :
+  Pour les calculs OPERAT / DEET (Decret Tertiaire) utiliser EXCLUSIVEMENT
+  `config.operat_constants.EMISSION_FACTORS_OPERAT` (0.064 kgCO2/kWh elec).
+  L'arrete 10/04/2020 Annexe VII impose ses propres facteurs. Melanger
+  silencieusement ADEME et OPERAT est un bug.
 
 Valeurs officielles :
   ADEME Base Empreinte V23.6 (juillet 2025)
