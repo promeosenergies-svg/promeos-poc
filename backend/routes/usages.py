@@ -651,3 +651,40 @@ def api_power_optimization(
     if result is None:
         raise HTTPException(404, "Site non trouvé")
     return result
+
+
+# ── Usage Steering P0 truth-contract (2026-05-27) ──────────────────────
+# Pilotage des usages — endpoint dédié alimentant le 4ᵉ onglet futur de
+# /usages (brief C3). Contrat figé : insights + opportunities +
+# action_candidates + data_quality + metadata. Aucun nouveau menu, aucun
+# /usage-steering : le FE consommera ce payload depuis ALL_TABS interne
+# de UsagesDashboardPage.
+@router.get("/pilotage-summary")
+def api_pilotage_summary(
+    request: Request,
+    entity_id: Optional[int] = Query(None),
+    portefeuille_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
+    archetype_code: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Payload Pilotage des usages — alimente le 4ᵉ onglet futur de /usages.
+
+    Retourne un contrat structuré (insights / opportunities / action_candidates /
+    data_quality / metadata) avec contrat de vérité sur chaque chiffre. Chaque
+    action_candidate expose `external_ref = pilotage:{insight_type}:site:{id}`
+    + `source_url = /usages?tab=pilotage&site={id}` pour idempotence Centre
+    d'Action V4 et back-link drawer (doctrine §6.2 + §8.1).
+    """
+    from services.pilotage_summary_service import compute_pilotage_summary
+
+    org_id = resolve_org_id(request, auth, db)
+    return compute_pilotage_summary(
+        db,
+        org_id,
+        entity_id=entity_id,
+        portefeuille_id=portefeuille_id,
+        site_id=site_id,
+        archetype_code=archetype_code,
+    )

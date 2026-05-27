@@ -11,8 +11,16 @@ export default function PowerOptimizationCard({ data }) {
   const opt = data.optimization;
   const decomp = data.peak_decomposition || [];
 
-  const utilizationPct = Math.min(cs.utilization_pct, 100);
-  const isOverloaded = cs.actual_peak_kw > cs.subscribed_power_kva;
+  // Usage Steering P0 truth-contract (2026-05-27, brief C2) — lecture
+  // pure des champs BE qui exposent utilization clampé [0,100] et statut
+  // overflow / underflow / normal / unknown. Avant : Math.min(cs.util,100)
+  // + (subscribed/actual)*100 côté FE → violation doctrine §8.1.
+  // overflowLeftPct reste un calc d'affichage géométrique pur (offset CSS
+  // d'une barre de jauge) — pas un calcul métier, conservé.
+  const utilizationPct = cs.utilization_pct_safe ?? Math.min(cs.utilization_pct || 0, 100);
+  const overflowStatus =
+    cs.overflow_status || (cs.actual_peak_kw > cs.subscribed_power_kva ? 'overflow' : 'normal');
+  const isOverloaded = overflowStatus === 'overflow';
   const overflowLeftPct =
     cs.actual_peak_kw > 0 ? (cs.subscribed_power_kva / cs.actual_peak_kw) * 100 : 0;
 

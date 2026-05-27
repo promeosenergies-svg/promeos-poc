@@ -21,13 +21,20 @@ export default function KpiStrip({ dashboard, scopeLevel, sitesCount, totalSurfa
   const { summary, baselines, billing_links } = dashboard;
   const totalKwh = summary?.total_kwh || 0;
   const totalEur = summary?.total_eur || 0;
-  const ipe = totalSurface > 0 ? Math.round(totalKwh / totalSurface) : 0;
-  const surplusKwh = baselines?.reduce((s, b) => s + (b.ecart_kwh > 0 ? b.ecart_kwh : 0), 0) || 0;
+  // Usage Steering P0 truth-contract (2026-05-27, brief C2) — lecture
+  // pure des champs BE qui exposent IPE et surplus € avec contrat de
+  // vérité (source/formule/unité/période/confiance dans truth_contract).
+  // Avant : Math.round(totalKwh / totalSurface) + Math.round(surplusKwh
+  // × priceRef) côté FE → violation doctrine §8.1. Fallback visible "—"
+  // si champ manquant (jamais fallback silencieux).
+  const ipe = summary?.ipe_kwh_m2 ?? null;
+  const surplusKwh = summary?.surplus_kwh ?? null;
+  const surplusEur = summary?.surplus_eur ?? null;
   const priceRef = billing_links?.price_ref?.value || 0;
-  const surplusEur = Math.round(surplusKwh * priceRef);
   const degradCount = baselines?.filter((b) => b.trend === 'degradation').length || 0;
 
   const sitesLabel = scopeLevel === 'site' ? '' : `${sitesCount} sites · `;
+  const ipeDisplay = ipe == null ? '—' : `${ipe} kWh/m²`;
 
   return (
     <div className="px-7 py-4 grid grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -35,7 +42,7 @@ export default function KpiStrip({ dashboard, scopeLevel, sitesCount, totalSurfa
         label="Conso totale"
         value={fmt(Math.round(totalKwh / 1000))}
         unit="MWh/an"
-        sub={`${sitesLabel}${fmt(totalSurface)} m² · ${ipe} kWh/m²`}
+        sub={`${sitesLabel}${fmt(totalSurface)} m² · ${ipeDisplay}`}
         accent={ACCENTS[0]}
       />
       <KpiCard
@@ -47,10 +54,10 @@ export default function KpiStrip({ dashboard, scopeLevel, sitesCount, totalSurfa
       />
       <KpiCard
         label="Surconsommation vs N-1"
-        value={surplusKwh > 0 ? `+${fmt(Math.round(surplusKwh / 1000))}` : '0'}
+        value={surplusKwh && surplusKwh > 0 ? `+${fmt(Math.round(surplusKwh / 1000))}` : '0'}
         unit="MWh"
         sub={
-          surplusKwh > 0
+          surplusEur && surplusEur > 0
             ? `+${fmt(surplusEur)} €/an · ${degradCount} en dégradation`
             : 'Aucune surconsommation'
         }

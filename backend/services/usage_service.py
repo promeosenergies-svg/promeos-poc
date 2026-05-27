@@ -1246,12 +1246,29 @@ def get_portfolio_usage_comparison(db: Session, org_id: int, *, archetype_code: 
         type_site = (s.type.value if hasattr(s.type, "value") else str(s.type)) if s.type else "bureau"
         benchmarks = {"bureau": 170, "hotel": 280, "enseignement": 110, "entrepot": 120, "commerce": 200}
 
+        # Usage Steering P0 truth-contract (2026-05-27, brief C1) — ratio
+        # vs référence ADEME exposé côté BE pour supprimer le calcul FE
+        # HeatmapCard.jsx:80 `(val/ademeRef-1)*100` (violation doctrine §8.1).
+        ratio_vs_ademe_by_usage = {}
+        for label, val in ipe_by_usage.items():
+            ademe_ref = _ADEME_REF_BY_USAGE.get(label)
+            if ademe_ref and val:
+                try:
+                    ratio_vs_ademe_by_usage[label] = round((val / ademe_ref - 1) * 100, 1)
+                except (TypeError, ZeroDivisionError):
+                    ratio_vs_ademe_by_usage[label] = None
+            else:
+                ratio_vs_ademe_by_usage[label] = None
+
         site_results.append(
             {
                 "site_id": s.id,
                 "site_name": s.nom,
                 "surface_m2": surface,
                 "ipe_by_usage": ipe_by_usage,
+                # Usage Steering P0 truth-contract — ratio_vs_ademe_pct par usage
+                # (FE rend ces valeurs sans recalcul, lecture pure).
+                "ratio_vs_ademe_pct_by_usage": ratio_vs_ademe_by_usage,
                 "ipe_total": round(total_kwh / surface, 1) if surface > 0 else 0,
                 "benchmark_ademe": benchmarks.get(type_site, 170),
             }
@@ -1263,6 +1280,25 @@ def get_portfolio_usage_comparison(db: Session, org_id: int, *, archetype_code: 
         "usages": sorted(all_usage_labels),
         "sites": site_results,
         "ademe_ref_by_usage": _ADEME_REF_BY_USAGE,
+        # Usage Steering P0 truth-contract (2026-05-27) — contrat de vérité
+        # explicite : source/unité/formule/période/confiance pour les chiffres
+        # critiques que le FE rend. Doctrine §8.1 « pas de chiffre menteur ».
+        "truth_contract": {
+            "ipe_total": {
+                "unit": "kWh/m²/an",
+                "source": "Meter readings (total_kwh) ÷ Site.surface_m2",
+                "period": "12 derniers mois glissants",
+                "formula_ref": "ipe = Σ(MeterReading.value_kwh) / surface_m2",
+                "confidence": "high",
+            },
+            "ratio_vs_ademe_pct": {
+                "unit": "%",
+                "source": "_ADEME_REF_BY_USAGE (benchmark sectoriel ADEME)",
+                "period": "12 derniers mois glissants",
+                "formula_ref": "ratio = (ipe_site_usage / ademe_ref_usage - 1) × 100",
+                "confidence": "medium",
+            },
+        },
     }
 
 
@@ -1584,6 +1620,12 @@ def get_scoped_usages_dashboard(
             "total_eur": round(total_eur, 0),
             "total_surface_m2": round(total_surface),
             "ipe_kwh_m2": ipe,
+            # Usage Steering P0 truth-contract (2026-05-27, brief C1) —
+            # expose price_source au top-level pour que le FE n'ait pas à
+            # piocher dans billing_links (et qu'aucun chiffre € ne soit
+            # affiché sans traçabilité prix). Doctrine §8.1 + brief
+            # « chaque chiffre doit avoir source/formule/unité/période/confiance ».
+            "price_source": "moyenne_sites",
             "readiness_score": None,
             "readiness_level": None,
             "active_drifts_count": 0,
@@ -1594,6 +1636,35 @@ def get_scoped_usages_dashboard(
             "surplus_kwh": round(surplus_kwh),
             "surplus_eur": round(surplus_kwh * avg_price),
             "sites_degrading": degrading,
+        },
+        # Usage Steering P0 truth-contract — métadonnées contrat de vérité
+        # exposées au top-level pour que le FE puisse documenter chaque KPI
+        # sans recalculer (rendu drawer « Pourquoi ce chiffre ? » futur).
+        "truth_contract": {
+            "ipe_kwh_m2": {
+                "unit": "kWh/m²/an",
+                "source": "scoped_dashboard.summary",
+                "source_detail": f"Σ(MeterReading.value_kwh) / Σ(Site.surface_m2) sur {len(site_ids) if 'site_ids' in dir() else 'N'} site(s)",
+                "period": "12 derniers mois glissants",
+                "formula_ref": "ipe = total_kwh / total_surface_m2",
+                "confidence": "high" if total_surface > 0 else "low",
+            },
+            "surplus_eur": {
+                "unit": "€/an",
+                "source": "moyenne_sites (avg_price × surplus_kwh)",
+                "source_detail": f"avg_price = {round(avg_price, 4)} €/kWh (moyenne pondérée sites)",
+                "period": "snapshot",
+                "formula_ref": "surplus_eur = surplus_kwh × avg_price",
+                "confidence": "medium",
+            },
+            "total_eur": {
+                "unit": "€/an",
+                "source": "cost_by_period_service (price_ref)",
+                "source_detail": "Cumul coûts ventilés HPH/HCH/HPB/HCB",
+                "period": "snapshot",
+                "formula_ref": "Σ usages × prix_période",
+                "confidence": "medium",
+            },
         },
         "per_site_summary": per_site,
     }
