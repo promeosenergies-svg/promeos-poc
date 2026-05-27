@@ -27,7 +27,12 @@ Object.assign(LABELS, {
   status: 'Statut',
   login: 'Connexion',
   explorer: 'Explorer',
-  portfolio: 'Regroupement',
+  // Énergie P0b visual credibility (2026-05-27, brief C2) — alignement
+  // rail (« Portefeuille » dans ConsommationsPage tabs) / breadcrumb /
+  // H1 ConsumptionPortfolioPage (« Portefeuille Consommation »). Avant,
+  // le breadcrumb affichait « Regroupement » pour /consommations/portfolio
+  // → désynchronisation avec le rail et le titre de page.
+  portfolio: 'Portefeuille',
   wizard: 'Assistant',
   tertiaire: 'Tertiaire / OPERAT',
   efa: 'EFA',

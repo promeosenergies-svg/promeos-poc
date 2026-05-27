@@ -4,6 +4,10 @@
  * Orchestrateur : fetch centralisé via scoped endpoints.
  */
 import React, { useEffect, useState, useMemo, useRef } from 'react';
+// Énergie P0b visual credibility (2026-05-27, brief C5) — icônes lucide
+// remplacent les emojis 📈 📊 🔌 🖨 dans les labels onglets + boutons
+// export (ne respectaient pas la charte corporate Sol § Premium Night).
+import { TrendingUp, BarChart2, Plug, Printer, FileSpreadsheet } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import {
   getScopedUsagesDashboard,
@@ -32,9 +36,9 @@ import FlexBubbleChart from '../components/usages/FlexBubbleChart';
 import FooterLinks from '../components/usages/FooterLinks';
 
 const ALL_TABS = [
-  { id: 'timeline', label: '📈 Évolution' },
-  { id: 'baseline', label: '📊 Baseline' },
-  { id: 'comptage', label: '🔌 Comptage' },
+  { id: 'timeline', label: 'Évolution', icon: TrendingUp },
+  { id: 'baseline', label: 'Baseline', icon: BarChart2 },
+  { id: 'comptage', label: 'Comptage', icon: Plug },
 ];
 
 export default function UsagesDashboardPage() {
@@ -367,15 +371,17 @@ function Header({ score, level, details, recommendations, onExportExcel }) {
         )}
         <button
           onClick={onExportExcel}
-          className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium hover:border-blue-400 hover:text-blue-600 transition print:hidden"
+          className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium hover:border-blue-400 hover:text-blue-600 transition print:hidden inline-flex items-center gap-1.5"
         >
-          📊 Excel
+          <FileSpreadsheet size={13} aria-hidden="true" />
+          Excel
         </button>
         <button
           onClick={() => window.print()}
-          className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium hover:border-blue-400 hover:text-blue-600 transition print:hidden"
+          className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium hover:border-blue-400 hover:text-blue-600 transition print:hidden inline-flex items-center gap-1.5"
         >
-          🖨 PDF
+          <Printer size={13} aria-hidden="true" />
+          PDF
         </button>
       </div>
     </div>
