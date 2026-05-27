@@ -400,6 +400,25 @@ export const getScopedUsageTimeline = ({
     },
   }).then((r) => r.data);
 
+// Usage Steering P1 (2026-05-27) — alimente le 4ᵉ onglet « Pilotage des
+// usages » dans /usages. Payload figé en P0 #317 : { insights[],
+// opportunities[], action_candidates[], data_quality{}, metadata{} }.
+export const getPilotageSummary = ({ entityId, portefeuilleId, siteId, archetypeCode } = {}) =>
+  cachedGet('/usages/pilotage-summary', {
+    params: {
+      entity_id: entityId || undefined,
+      portefeuille_id: portefeuilleId || undefined,
+      site_id: siteId || undefined,
+      archetype_code: archetypeCode || undefined,
+    },
+  }).then((r) => r.data);
+
+// Usage Steering P1 (2026-05-27) — POST sync action_candidate vers
+// ActionCenterItem V4 (idempotent via external_ref + UNIQUE index #311).
+// Réponse : 201 créé / 200 existant / 409 si CLOSED (jamais ressuscité).
+export const syncPilotageAction = (actionCandidate) =>
+  api.post('/usages/pilotage/sync-action', actionCandidate).then((r) => r.data);
+
 export const getScopeTree = () => cachedGet('/patrimoine/scope-tree').then((r) => r.data);
 
 // ── SIRENE Lookup ──

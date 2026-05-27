@@ -91,9 +91,12 @@ export default function FlexBubbleChart({ data }) {
               }}
             />
             <Scatter data={chartData}>
-              {chartData.map((entry) => (
+              {/* Usage Steering P1 (2026-05-27, brief C0) — clé composite
+                  stable pour éviter duplicate-key warning Recharts quand 2
+                  entrées portent le même name (seed HELIOS sites homonymes). */}
+              {chartData.map((entry, idx) => (
                 <Cell
-                  key={entry.name}
+                  key={entry.site_id ?? entry.id ?? `bubble-${idx}-${entry.name}`}
                   fill={revenueColor(entry.revenue)}
                   fillOpacity={0.7}
                   stroke={revenueColor(entry.revenue)}
