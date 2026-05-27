@@ -77,7 +77,13 @@ export default function HeatmapCard({ data, currentSiteId }) {
             {usages.map((u) => {
               const val = s.ipe_by_usage[u];
               const ademeRef = data.ademe_ref_by_usage?.[u];
-              const ratioNum = ademeRef && val ? Math.round((val / ademeRef - 1) * 100) : null;
+              // Usage Steering P0 truth-contract (2026-05-27, brief C2) —
+              // lecture pure : le ratio vs ADEME est désormais calculé BE
+              // (services/usage_service.py:get_portfolio_usage_comparison)
+              // et exposé dans sites[].ratio_vs_ademe_pct_by_usage. Avant :
+              // Math.round((val / ademeRef - 1) × 100) côté FE (violation
+              // doctrine §8.1). Fallback visible "—" si champ absent.
+              const ratioNum = s.ratio_vs_ademe_pct_by_usage?.[u] ?? null;
               const style = cellStyle(val, maxByUsage[u]);
               return (
                 <div
@@ -88,7 +94,7 @@ export default function HeatmapCard({ data, currentSiteId }) {
                     color: style.color,
                   }}
                   title={
-                    val && ademeRef
+                    val && ademeRef && ratioNum != null
                       ? `${s.site_name} : ${u} = ${fmt(val)} kWh/m² (Réf. ADEME : ${ademeRef} kWh/m²) → ${ratioNum > 0 ? '+' : ''}${ratioNum}%`
                       : `${s.site_name} : ${u} = ${val ? fmt(val) : '—'} kWh/m²`
                   }

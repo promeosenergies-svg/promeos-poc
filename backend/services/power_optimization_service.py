@@ -133,6 +133,24 @@ def optimize_subscribed_power(db: Session, site_id: int) -> dict | None:
         for p in top_peaks[:5]
     ]
 
+    # Usage Steering P0 truth-contract (2026-05-27, brief C1) — bornage
+    # utilization_pct sur [0, 100] et statut overflow exposés côté BE
+    # pour supprimer le calcul FE PowerOptimizationCard.jsx:14-17
+    # (violation doctrine §8.1). Le FE rend ces valeurs sans recalcul.
+    try:
+        utilization_pct_safe = max(0.0, min(100.0, float(utilization or 0)))
+    except (TypeError, ValueError):
+        utilization_pct_safe = 0.0
+    if current_ps and peak_kw:
+        if peak_kw > float(current_ps):
+            overflow_status = "overflow"  # pic réel > puissance souscrite (CMDPS)
+        elif peak_kw < float(current_ps) * 0.6:
+            overflow_status = "underflow"  # PS surdimensionnée
+        else:
+            overflow_status = "normal"
+    else:
+        overflow_status = "unknown"
+
     return {
         "site_id": site_id,
         "site_name": site.nom,
@@ -143,6 +161,8 @@ def optimize_subscribed_power(db: Session, site_id: int) -> dict | None:
             "peak_hour": peak_ts.hour if peak_ts else None,
             "peak_weekday": _weekday_fr(peak_ts) if peak_ts else None,
             "utilization_pct": utilization,
+            "utilization_pct_safe": round(utilization_pct_safe, 1),
+            "overflow_status": overflow_status,
             "margin_kw": margin_kw,
             "annual_cost_turpe_fixe_eur": annual_cost,
             "tariff_option": tariff_option,
@@ -162,6 +182,25 @@ def optimize_subscribed_power(db: Session, site_id: int) -> dict | None:
         "monthly_peak_profile": monthly_peaks,
         "n_days_above_recommended_ps": n_days_above,
         "top_peaks": top_peaks_formatted,
+        # Usage Steering P0 truth-contract — métadonnées pour le rendu FE.
+        "truth_contract": {
+            "utilization_pct_safe": {
+                "unit": "%",
+                "source": "MeterReading peak vs Site.subscribed_power_kva",
+                "period": "12 derniers mois glissants",
+                "formula_ref": "min(100, max(0, peak_kw / subscribed_kva × 100))",
+                "confidence": "high" if current_ps else "low",
+            },
+            "overflow_status": {
+                "unit": "enum",
+                "source": "peak_kw vs subscribed_power_kva",
+                "period": "12 derniers mois glissants",
+                "formula_ref": (
+                    "overflow if peak > PS ; underflow if peak < PS × 0.6 ; normal sinon ; unknown si PS absente"
+                ),
+                "confidence": "high" if current_ps and peak_kw else "low",
+            },
+        },
     }
 
 
