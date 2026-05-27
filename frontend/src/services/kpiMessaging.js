@@ -350,7 +350,7 @@ const HANDLERS = {
       simple: 'Consommation excessive hors horaires. Économies possibles.',
       expert: `${pct}% hors-horaires. Programmation défaillante ou équipements non coupés.`,
       severity: 'crit',
-      action: { label: 'Voir les usages', path: '/usages-horaires' },
+      action: { label: 'Voir les usages', path: '/usages' },
     };
   },
 

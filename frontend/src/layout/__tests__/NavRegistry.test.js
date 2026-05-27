@@ -193,7 +193,7 @@ describe('NAV_SECTIONS V7', () => {
 
   it('usages is visible in normal mode (not expertOnly)', () => {
     const energie = NAV_SECTIONS.find((s) => s.module === 'energie');
-    const usages = energie.items.find((i) => i.label === 'Répartition par usage');
+    const usages = energie.items.find((i) => i.label === 'Usages énergétiques');
     expect(usages).toBeDefined();
     expect(usages.expertOnly).toBeFalsy();
   });
@@ -381,10 +381,11 @@ describe('Vocabulary V7', () => {
     expect(parent.keywords).toContain('gtb');
   });
 
-  it('Usages is labeled "Répartition par usage"', () => {
+  it('Usages is labeled "Usages énergétiques" (#313 P1 cleanup 2026-05-27)', () => {
     const energie = NAV_SECTIONS.find((s) => s.module === 'energie');
-    const usages = energie.items.find((i) => i.label === 'Répartition par usage');
+    const usages = energie.items.find((i) => i.label === 'Usages énergétiques');
     expect(usages).toBeDefined();
+    expect(usages.to).toBe('/usages');
   });
 
   it('Performance is labeled "Performance énergétique"', () => {

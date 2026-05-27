@@ -276,14 +276,54 @@ async def upload_consumption_data(
 
 
 @router.get("/import/jobs", response_model=List[ImportJobResponse])
-def list_import_jobs(meter_id: Optional[str] = None, db: Session = Depends(get_db)):
-    """List import jobs"""
+def list_import_jobs(
+    meter_id: Optional[str] = None,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Liste les jobs d'import récents, org-scopés (IS11).
+
+    Énergie P1 cleanup #313 (2026-05-27) — audit IDOR :
+    avant fix l'endpoint retournait TOUS les jobs de l'instance (cross-org
+    leak des nom de fichiers, plages temporelles, volumes importés). Après
+    fix : filtré sur les site_id accessibles via `auth.site_ids`. En mode
+    démo (auth=None) le comportement legacy est préservé (no-op filter).
+
+    Sécurité :
+    - Auth scoped → seuls les jobs dont `site_id` ∈ scope sont visibles,
+      ou ceux dont le meter parent est dans le scope (job.site_id = NULL
+      mais job.meter_id pointe vers un meter de l'org).
+    - Jobs « orphelins » (site_id NULL ET meter_id NULL) : invisibles aux
+      utilisateurs scopés (fail-closed), visibles en démo.
+    - Cross-org meter_id filter → 404 fail-closed (pas d'énumération).
+    """
     query = db.query(DataImportJob).order_by(DataImportJob.created_at.desc())
 
     if meter_id:
         meter = db.query(Meter).filter_by(meter_id=meter_id).first()
-        if meter:
-            query = query.filter_by(meter_id=meter.id)
+        if not meter:
+            raise HTTPException(status_code=404, detail=f"Meter '{meter_id}' introuvable")
+        # Fail-closed sur cross-org meter_id : 404 plutôt que 403 pour
+        # éviter l'énumeration des meter_id valides cross-org.
+        if auth is not None and auth.site_ids is not None and meter.site_id not in auth.site_ids:
+            raise HTTPException(status_code=404, detail=f"Meter '{meter_id}' introuvable")
+        query = query.filter_by(meter_id=meter.id)
+
+    # Scope par site_ids accessibles (no-op si auth=None / démo).
+    if auth is not None and auth.site_ids is not None:
+        accessible = list(auth.site_ids)
+        # Job visible si :
+        #  (a) job.site_id ∈ scope, OU
+        #  (b) job.site_id IS NULL ET job.meter parent ∈ scope.
+        # Les jobs orphelins (site_id NULL + meter_id NULL) sont exclus.
+        from sqlalchemy import or_, and_
+
+        query = query.outerjoin(Meter, DataImportJob.meter_id == Meter.id).filter(
+            or_(
+                DataImportJob.site_id.in_(accessible),
+                and_(DataImportJob.site_id.is_(None), Meter.site_id.in_(accessible)),
+            )
+        )
 
     jobs = query.limit(50).all()
 
