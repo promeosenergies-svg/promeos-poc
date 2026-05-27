@@ -773,16 +773,11 @@ export const NAV_SECTIONS = [
         desc: 'Détection anomalies & gisements',
         keywords: ['diagnostic', 'anomalies', 'analyse'],
       },
-      {
-        // Phase 17.bis.B — Flex Intelligence rattaché au module Énergie
-        // (était orpheline nav après S1.10 — accessible via deep-link uniquement).
-        // Différenciant produit majeur (NEBCO + AOFD + capacité RTE).
-        to: '/flex',
-        icon: Zap,
-        label: 'Flex Intelligence',
-        desc: 'Effacement industriel — NEBCO, AOFD, mécanisme capacité',
-        keywords: ['flex', 'effacement', 'nebco', 'aofd', 'capacite', 'rte', 'agregateur'],
-      },
+      // Énergie P0a cleanup (2026-05-27, audit menu Énergie §1 + brief
+      // « Aucun Flex visible client ») — Flex Intelligence retirée de la
+      // sidebar publique. La route /flex reste vivante (FlexPage) pour
+      // accès Energy Manager via ⌘K search + HIDDEN_PAGES ci-dessous.
+      // Ne pas réintroduire sans revoir le positionnement produit Sol.
     ],
   },
 
@@ -1158,6 +1153,21 @@ export const HIDDEN_PAGES = [
     hidden: true,
     reason:
       'doublon-sub-page : variante détaillée de /usages (item visible Énergie). Exposer les deux créerait un doublon pathologique anti-pattern §6.2 — keep hidden, reachable via search ou drill-down /usages.',
+  },
+  {
+    // Énergie P0a cleanup (2026-05-27, audit menu Énergie §1) — Flex
+    // Intelligence retirée de la sidebar publique mais conservée
+    // accessible via ⌘K search + deep-link /flex. Contrainte brief
+    // « Aucun Flex visible client » : NEBCO/AOFD/capacité RTE
+    // = positionnement produit Energy Manager interne, pas vitrine DAF.
+    to: '/flex',
+    icon: Zap,
+    label: 'Flex Intelligence (deep-link)',
+    keywords: ['flex', 'effacement', 'nebco', 'aofd', 'capacite', 'rte', 'agregateur'],
+    section: 'Énergie',
+    hidden: true,
+    reason:
+      'deep-link-only : Flex Intelligence reste accessible Energy Manager via ⌘K et bookmarks /flex, mais retirée de la sidebar publique (brief P0a « Aucun Flex visible client »). Promotion future seulement après revue positionnement produit Sol.',
   },
   {
     to: '/compliance/pipeline',
