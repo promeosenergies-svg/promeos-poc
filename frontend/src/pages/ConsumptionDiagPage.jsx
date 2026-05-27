@@ -14,6 +14,10 @@ import {
   Tooltip as RTooltip,
   ResponsiveContainer,
 } from 'recharts';
+// Énergie P0b visual credibility (2026-05-27, brief C5) — icônes lucide
+// remplacent les emojis utilisés dans LEVER_ICONS (rendus en label visible
+// dans la liste des leviers flex/conso).
+import { Thermometer, Plug, Snowflake, Zap as ZapIcon } from 'lucide-react';
 import {
   getConsumptionInsights,
   runConsumptionDiagnose,
@@ -401,7 +405,9 @@ function DrawerRow({ label, children }) {
 
 // ---- Flex Tab ----
 
-const LEVER_ICONS = { hvac: '🌡️', irve: '🔌', froid: '❄️' };
+// Énergie P0b visual credibility (2026-05-27, brief C5) — emojis remplacés
+// par icônes lucide-react pour respecter la charte corporate Sol.
+const LEVER_ICONS = { hvac: Thermometer, irve: Plug, froid: Snowflake };
 const LEVER_COLORS = {
   hvac: 'border-orange-200 bg-orange-50',
   irve: 'border-blue-200 bg-blue-50',
@@ -476,7 +482,12 @@ function FlexTab({ siteId }) {
           className={`p-3 rounded-lg border ${LEVER_COLORS[lever.id] || 'border-gray-200 bg-gray-50'}`}
         >
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-base">{LEVER_ICONS[lever.id] || '⚡'}</span>
+            {/* Énergie P0b visual credibility (2026-05-27, brief C5) — icône
+                lucide composant (fallback Zap si lever non répertorié). */}
+            {(() => {
+              const Icon = LEVER_ICONS[lever.id] || ZapIcon;
+              return <Icon size={16} className="text-gray-600" aria-hidden="true" />;
+            })()}
             <span className="text-sm font-semibold text-gray-800">{lever.label}</span>
             <span
               className={`ml-auto text-xs font-bold ${
@@ -1090,34 +1101,71 @@ export default function ConsumptionDiagPage() {
           </div>
         </>
       ) : !summary || filteredInsights.length === 0 ? (
-        // Sprint 1.8bis P0-4 (audit UX P0-2 + CX P0-2 + Densité P1) :
-        // EmptyState compact + préambule Sol garanti (déjà rendu plus haut
-        // via SolNarrative). Pas de plein écran §6.1 — instructions inline
-        // sobres, vocabulaire CFO (« données démo » → « jeu de données
-        // d'essai »).
-        <EmptyState
-          icon={Zap}
-          title="Aucun gisement détecté"
-          text="Lancez le diagnostic sur votre patrimoine pour identifier les leviers d'économies."
-          actions={
-            <div className="flex gap-3 justify-center">
-              <Button variant="secondary" onClick={handleSeedDemo} disabled={seeding}>
-                Charger un jeu d'essai
-              </Button>
-              <Button onClick={handleDiagnose} disabled={diagnosing}>
-                Lancer le diagnostic
-              </Button>
-            </div>
-          }
-        />
+        // Énergie P0b visual credibility (2026-05-27, brief C3) — distingue
+        // 3 cas pour éviter le « 0 anomalie / 0 € / 0 € » anti-confiance :
+        //   1. summary === null         → pas encore analysé
+        //   2. analyse OK sans anomalie → 0 insight ET 0 site_with_insights
+        //   3. données insuffisantes    → only data_gap insights présents
+        // (cas 3 ne déclenche pas cet EmptyState car filteredInsights > 0,
+        // il est plutôt signalé par un banner inline plus haut dans la page.)
+        (() => {
+          const everAnalyzed = !!summary;
+          const ranWithoutAnomalies = everAnalyzed && (summary?.total_insights ?? 0) === 0;
+          const title = ranWithoutAnomalies
+            ? 'Aucune anomalie détectée sur la période'
+            : 'Aucun gisement détecté';
+          const text = ranWithoutAnomalies
+            ? "L'analyse n'a remonté aucun écart significatif sur ce périmètre. Relancez l'analyse après nouvelle donnée."
+            : "Lancez le diagnostic sur votre patrimoine pour identifier les leviers d'économies.";
+          const primaryLabel = ranWithoutAnomalies ? "Relancer l'analyse" : 'Lancer le diagnostic';
+          return (
+            <EmptyState
+              icon={Zap}
+              title={title}
+              text={text}
+              actions={
+                <div className="flex gap-3 justify-center">
+                  {!everAnalyzed && (
+                    <Button variant="secondary" onClick={handleSeedDemo} disabled={seeding}>
+                      Charger un jeu d'essai
+                    </Button>
+                  )}
+                  <Button
+                    onClick={handleDiagnose}
+                    disabled={diagnosing}
+                    data-testid="diagnostic-empty-cta"
+                  >
+                    {primaryLabel}
+                  </Button>
+                </div>
+              }
+            />
+          );
+        })()
       ) : (
         <>
           {/* Sprint 1.8bis P0-2 (audit UX P0-1 + Visual P0 + Densité P0) :
               card « À retenir » supprimée — dupliquait sémantiquement les
               3 KPIs hero SolNarrative (Leviers / Gisement / Économies)
               + cassait la hiérarchie 36px Stripe-grade avec text-lg
-              (~18px) coloré bg-blue-700/red-600/emerald-600. SolNarrative
-              KPIs servent désormais de SoT unique above-the-fold. */}
+              (~18px) coloré bg-blue-700/red-600/emerald-être avec text-lg. */}
+
+          {/* Énergie P0b visual credibility (2026-05-27, brief C3, 3ᵉ cas) —
+              banner inline « données insuffisantes » : signalé quand tous les
+              insights remontés sont des data_gap (= pas une vraie économie,
+              juste un manque de données). Évite l'effet « j'ai 8 anomalies »
+              alors que ce sont 8 trous de mesure. */}
+          {filteredInsights.length > 0 && filteredInsights.every((i) => i.type === 'data_gap') && (
+            <div
+              className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+              data-testid="diagnostic-data-gap-banner"
+              role="status"
+            >
+              <strong>Données insuffisantes :</strong> les écarts détectés concernent uniquement des
+              lacunes de données. Complétez la collecte (compteurs, CDC) pour permettre un
+              diagnostic réel.
+            </div>
+          )}
 
           <DiagHeader
             insights={filteredInsights}

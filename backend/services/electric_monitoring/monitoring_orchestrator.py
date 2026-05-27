@@ -251,14 +251,24 @@ class MonitoringOrchestrator:
         """Save monitoring snapshot to DB."""
         from models import MonitoringSnapshot
 
+        # Énergie P0b visual credibility (2026-05-27, brief C1) — borne les
+        # scores Monitoring sur [0, 100]. Avant, un score 108 pouvait
+        # persister (formule data_quality permettait > 100 via pénalité
+        # cumulative) et s'afficher tel quel côté FE (anti-confiance DAF).
+        def _clamp_score(raw):
+            try:
+                return max(0, min(100, round(float(raw or 0))))
+            except (TypeError, ValueError):
+                return 0
+
         snapshot = MonitoringSnapshot(
             site_id=meter.site_id,
             meter_id=meter.id,
             period_start=period_start,
             period_end=period_end,
             kpis_json=kpis,
-            data_quality_score=quality.get("quality_score", 0),
-            risk_power_score=power_risk.get("risk_score", 0),
+            data_quality_score=_clamp_score(quality.get("quality_score", 0)),
+            risk_power_score=_clamp_score(power_risk.get("risk_score", 0)),
             data_quality_details_json=quality,
             risk_power_details_json=power_risk,
             engine_version=ENGINE_VERSION,

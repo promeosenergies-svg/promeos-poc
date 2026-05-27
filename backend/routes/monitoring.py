@@ -36,6 +36,20 @@ from services.error_catalog import business_error
 router = APIRouter(prefix="/api/monitoring", tags=["Monitoring"])
 
 
+# Énergie P0b visual credibility (2026-05-27, brief C1) — helper de clamp
+# défensif pour les snapshots Monitoring. Garantit que `data_quality_score`
+# et `risk_power_score` exposés au FE restent dans [0, 100], même si un
+# snapshot legacy a persisté un score > 100 avant le fix orchestrator.
+def _clamp_monitoring_score(raw):
+    """Clamp un score Monitoring sur [0, 100] avec tolérance None / cast."""
+    if raw is None:
+        return None
+    try:
+        return max(0, min(100, round(float(raw))))
+    except (TypeError, ValueError):
+        return 0
+
+
 # --- Pydantic models ---
 
 
@@ -191,8 +205,11 @@ def get_monitoring_kpis(
         "meter_id": snapshot.meter_id,
         "period": f"{snapshot.period_start.date()} - {snapshot.period_end.date()}",
         "kpis": snapshot.kpis_json or {},
-        "data_quality_score": snapshot.data_quality_score,
-        "risk_power_score": snapshot.risk_power_score,
+        # Énergie P0b visual credibility (2026-05-27, brief C1) — defense-in-
+        # depth : clamp à la lecture pour les snapshots legacy persistés avant
+        # le fix orchestrator. Garantit 0 ≤ score ≤ 100 côté payload.
+        "data_quality_score": _clamp_monitoring_score(snapshot.data_quality_score),
+        "risk_power_score": _clamp_monitoring_score(snapshot.risk_power_score),
         "data_quality_details": snapshot.data_quality_details_json or {},
         "risk_power_details": snapshot.risk_power_details_json or {},
         "climate": climate_data,
@@ -310,8 +327,9 @@ def get_monitoring_kpis_compare(
             "snapshot_id": compare_snapshot.id,
             "period": f"{compare_snapshot.period_start.date()} - {compare_snapshot.period_end.date()}",
             "kpis": compare_snapshot.kpis_json or {},
-            "data_quality_score": compare_snapshot.data_quality_score,
-            "risk_power_score": compare_snapshot.risk_power_score,
+            # Énergie P0b visual credibility (2026-05-27, brief C1) — clamp.
+            "data_quality_score": _clamp_monitoring_score(compare_snapshot.data_quality_score),
+            "risk_power_score": _clamp_monitoring_score(compare_snapshot.risk_power_score),
             "impact": compare_impact,
             "created_at": compare_snapshot.created_at.isoformat(),
         },
@@ -383,8 +401,9 @@ def list_snapshots(
             "site_id": s.site_id,
             "meter_id": s.meter_id,
             "period": f"{s.period_start.date()} - {s.period_end.date()}",
-            "data_quality_score": s.data_quality_score,
-            "risk_power_score": s.risk_power_score,
+            # Énergie P0b visual credibility (2026-05-27, brief C1) — clamp.
+            "data_quality_score": _clamp_monitoring_score(s.data_quality_score),
+            "risk_power_score": _clamp_monitoring_score(s.risk_power_score),
             "engine_version": s.engine_version,
             "created_at": s.created_at.isoformat(),
         }

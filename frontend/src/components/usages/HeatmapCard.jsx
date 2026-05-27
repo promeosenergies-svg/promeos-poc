@@ -48,8 +48,16 @@ export default function HeatmapCard({ data, currentSiteId }) {
         style={{ gridTemplateColumns: `minmax(110px, auto) repeat(${usages.length + 1}, 1fr)` }}
       >
         <div />
+        {/* Énergie P0b visual credibility (2026-05-27, brief C4) — préfixe
+            « head- » pour éviter le conflit de clé avec la rangée « Réf.
+            ADEME » plus bas (mêmes valeurs `usages`, même parent grid →
+            React warning « duplicate key »). */}
         {usages.map((u) => (
-          <div key={u} className="text-center font-semibold text-gray-400 py-1.5" title={u}>
+          <div
+            key={`head-${u}`}
+            className="text-center font-semibold text-gray-400 py-1.5"
+            title={u}
+          >
             {USAGE_ABBREVS[u] || u.slice(0, 7)}
           </div>
         ))}
@@ -105,7 +113,10 @@ export default function HeatmapCard({ data, currentSiteId }) {
         {/* Ref ADEME */}
         <div className="py-1.5 text-[9px] text-gray-400">Réf. ADEME</div>
         {usages.map((u) => (
-          <div key={u} className="text-center py-1.5 text-[9px] text-gray-400 italic">
+          // Énergie P0b visual credibility (2026-05-27, brief C4) — préfixe
+          // « ademe- » pour éviter le doublon de clé avec la rangée header
+          // plus haut (parent grid commun).
+          <div key={`ademe-${u}`} className="text-center py-1.5 text-[9px] text-gray-400 italic">
             {data.ademe_ref_by_usage?.[u] || '—'}
           </div>
         ))}

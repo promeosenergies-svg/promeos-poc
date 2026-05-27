@@ -1,10 +1,16 @@
 /**
  * PROMEOS — Consommations Layout Page
- * Wrapper with tabs (Explorer | Portefeuille | Import & Analyse | Mémobox)
+ * Wrapper with tabs (Portefeuille | Explorer | Import & Analyse)
  * and nested sub-routes via <Outlet />.
+ *
+ * Énergie P0b visual credibility (2026-05-27, brief C6) — onglet
+ * « Memobox » retiré du wrapper. Il pointait vers /kb (route Admin)
+ * ce qui créait un saut de contexte cross-module et cassait la
+ * cohérence du wrapper « Consommations → vues énergétiques ». /kb
+ * reste accessible via module admin NavRegistry + ⌘K search.
  */
 import { NavLink, Outlet } from 'react-router-dom';
-import { BarChart3, Upload, Database, Zap, Building2 } from 'lucide-react';
+import { BarChart3, Upload, Zap, Building2 } from 'lucide-react';
 import { PageShell } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 
@@ -12,7 +18,6 @@ const TABS = [
   { to: '/consommations/portfolio', label: 'Portefeuille', icon: Building2 },
   { to: '/consommations/explorer', label: 'Explorer', icon: BarChart3 },
   { to: '/consommations/import', label: 'Import', icon: Upload },
-  { to: '/kb', label: 'Memobox', icon: Database },
 ];
 
 export default function ConsommationsPage() {
