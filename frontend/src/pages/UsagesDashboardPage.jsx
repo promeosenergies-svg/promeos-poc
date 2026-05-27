@@ -3,11 +3,14 @@
  * Layout 2 colonnes + scope switcher multi-niveaux + 3 onglets.
  * Orchestrateur : fetch centralisé via scoped endpoints.
  */
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 // Énergie P0b visual credibility (2026-05-27, brief C5) — icônes lucide
 // remplacent les emojis 📈 📊 🔌 🖨 dans les labels onglets + boutons
 // export (ne respectaient pas la charte corporate Sol § Premium Night).
-import { TrendingUp, BarChart2, Plug, Printer, FileSpreadsheet } from 'lucide-react';
+// Usage Steering P1 (2026-05-27) — icône Sliders pour onglet « Pilotage
+// des usages » (4ᵉ tab interne, brief C1).
+import { TrendingUp, BarChart2, Plug, Printer, FileSpreadsheet, Sliders } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useScope } from '../contexts/ScopeContext';
 import {
   getScopedUsagesDashboard,
@@ -34,15 +37,28 @@ import PowerOptimizationCard from '../components/usages/PowerOptimizationCard';
 import CdcSimulationCard from '../components/usages/CdcSimulationCard';
 import FlexBubbleChart from '../components/usages/FlexBubbleChart';
 import FooterLinks from '../components/usages/FooterLinks';
+// Usage Steering P1 (2026-05-27, brief C1) — 4ᵉ onglet « Pilotage des
+// usages » dans /usages. PAS de nouveau menu, PAS de /usage-steering.
+import PilotageTab from '../components/usages/PilotageTab';
 
 const ALL_TABS = [
   { id: 'timeline', label: 'Évolution', icon: TrendingUp },
   { id: 'baseline', label: 'Baseline', icon: BarChart2 },
   { id: 'comptage', label: 'Comptage', icon: Plug },
+  // Usage Steering P1 — onglet pilotage interne (brief C1) ; consomme
+  // /api/usages/pilotage-summary + sync vers Centre d'Action V4.
+  { id: 'pilotage', label: 'Pilotage des usages', icon: Sliders },
 ];
 
 export default function UsagesDashboardPage() {
   const { selectedSiteId, scopedSites, scope } = useScope();
+  // Usage Steering P1 (2026-05-27, brief C1) — état URL pour deep-link
+  // /usages?tab=pilotage (depuis Centre d'Action V4 source_url).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  const validInitialTab = ['timeline', 'baseline', 'comptage', 'pilotage'].includes(tabFromUrl)
+    ? tabFromUrl
+    : 'timeline';
   const [data, setData] = useState(null);
   const [timeline, setTimeline] = useState(null);
   const [portfolio, setPortfolio] = useState(null);
@@ -53,9 +69,24 @@ export default function UsagesDashboardPage() {
   const [flexPortfolio, setFlexPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('timeline');
+  const [activeTab, setActiveTab] = useState(validInitialTab);
   const [scopeLevel, setScopeLevel] = useState(selectedSiteId ? 'site' : 'org');
   const [archetypeFilter, setArchetypeFilter] = useState(null);
+
+  // Usage Steering P1 — sync activeTab → URL (sans replace si même valeur).
+  const handleTabChange = useCallback(
+    (nextTab) => {
+      setActiveTab(nextTab);
+      const params = new URLSearchParams(searchParams);
+      if (nextTab === 'timeline') {
+        params.delete('tab');
+      } else {
+        params.set('tab', nextTab);
+      }
+      setSearchParams(params, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
 
   const _fetchId = useRef(0);
   const siteId = selectedSiteId;
@@ -266,7 +297,7 @@ export default function UsagesDashboardPage() {
       <div className="px-7 pb-4 grid grid-cols-1 lg:grid-cols-[5fr_3fr] gap-3.5">
         {/* Colonne gauche : onglets */}
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <TabBar active={activeTab} onChange={setActiveTab} tabs={visibleTabs} />
+          <TabBar active={activeTab} onChange={handleTabChange} tabs={visibleTabs} />
           {activeTab === 'timeline' && (
             <TimelineTab data={timeline} siteId={scopeLevel === 'site' ? siteId : null} />
           )}
@@ -277,6 +308,18 @@ export default function UsagesDashboardPage() {
             />
           )}
           {activeTab === 'comptage' && !isMultiSite && <ComptageTab data={data?.metering_plan} />}
+          {/* Usage Steering P1 (2026-05-27, brief C2) — 4ᵉ onglet interne.
+              Consomme /api/usages/pilotage-summary + sync vers ActionCenter V4. */}
+          {activeTab === 'pilotage' && (
+            <PilotageTab
+              scope={{
+                entityId: scope?.entityId,
+                portefeuilleId: scope?.portefeuilleId,
+                siteId: scopeLevel === 'site' ? siteId : null,
+                archetypeCode: archetypeFilter,
+              }}
+            />
+          )}
         </div>
 
         {/* Colonne droite : heatmap IPE */}

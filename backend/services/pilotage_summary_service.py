@@ -211,30 +211,65 @@ def _build_action_candidates(insights: list[dict]) -> list[dict]:
     poussée vers Centre d'Action V4 (P1 endpoint sync à venir).
 
     Pattern external_ref documenté §C3 brief :
-      pilotage:{insight_type}:site:{id}
+      pilotage:{insight_type}:site:{id}[:date_pic]
+
+    Usage Steering P1 (2026-05-27, brief C5 « external_ref unique ») :
+    déduplication stricte par external_ref. Si plusieurs insights du même
+    type sur le même site sont remontés (cas data_gap récurrents), on
+    agrège en 1 action_candidate (somme impact_eur, garde la plus haute
+    severity et la confiance la plus prudente). Cohérent avec l'index
+    UNIQUE `idx_aci_external_ref` côté Centre d'Action V4 (#311).
     """
-    candidates: list[dict] = []
+    by_ref: dict[str, dict] = {}
+    severity_rank = {"critical": 3, "high": 2, "medium": 1, "low": 0}
+    confidence_rank = {"low": 0, "medium": 1, "high": 2}
+
     for ins in insights:
         site_id = ins["site_id"]
         itype = ins["insight_type"]
         suffix = None
         if itype == "pointe" and ins.get("period_start"):
-            suffix = ins["period_start"][:10]  # date pour distinguer pics
-        candidates.append(
-            {
+            suffix = ins["period_start"][:10]
+        ext_ref = _external_ref(itype, site_id, suffix)
+
+        if ext_ref not in by_ref:
+            by_ref[ext_ref] = {
                 "insight_type": itype,
                 "site_id": site_id,
-                "usage_id": None,  # P1 si disponible via insight.usage_id
-                "external_ref": _external_ref(itype, site_id, suffix),
+                "usage_id": None,
+                "external_ref": ext_ref,
                 "source_url": _source_url(site_id),
                 "label_fr": ins["title"],
                 "recommended_action_fr": _recommended_action(itype),
-                "impact_eur": ins.get("estimated_loss_eur"),
-                "severity": ins.get("severity"),
+                "impact_eur": ins.get("estimated_loss_eur") or 0.0,
+                "severity": ins.get("severity") or "medium",
                 "confidence": ins["confidence"],
+                "_count": 1,
             }
-        )
-    return candidates
+        else:
+            agg = by_ref[ext_ref]
+            agg["_count"] += 1
+            # Somme impact (None safe)
+            inc = ins.get("estimated_loss_eur") or 0.0
+            agg["impact_eur"] = (agg["impact_eur"] or 0.0) + inc
+            # Garde severity la plus haute
+            if severity_rank.get(ins.get("severity", "low"), 0) > severity_rank.get(agg["severity"], 0):
+                agg["severity"] = ins["severity"]
+            # Garde confiance la plus prudente (= la plus basse)
+            if confidence_rank.get(ins["confidence"], 2) < confidence_rank.get(agg["confidence"], 2):
+                agg["confidence"] = ins["confidence"]
+
+    # Si plusieurs insights agrégés, ajuste le label_fr pour indiquer le compte.
+    out = []
+    for c in by_ref.values():
+        if c.get("_count", 1) > 1:
+            c["label_fr"] = f"{c['label_fr']} ({c['_count']} occurrences)"
+        c.pop("_count", None)
+        # Force impact_eur None si 0 (cohérence « pas de chiffre menteur »)
+        if c["impact_eur"] in (0, 0.0):
+            c["impact_eur"] = None
+        out.append(c)
+    return out
 
 
 def _recommended_action(insight_type: str) -> str:

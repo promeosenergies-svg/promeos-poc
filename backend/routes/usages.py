@@ -688,3 +688,157 @@ def api_pilotage_summary(
         site_id=site_id,
         archetype_code=archetype_code,
     )
+
+
+# Usage Steering P1 (2026-05-27, brief C3) — endpoint POST pour synchroniser
+# une `action_candidate` du payload pilotage-summary vers ActionCenterItem V4.
+# Idempotent strict : external_ref pattern `pilotage:{insight_type}:site:{id}`
+# + index UNIQUE `idx_aci_external_ref` (#311) garantit zéro doublon DB. Si
+# l'item existe déjà et est CLOSED, on ne le ressuscite pas (préserve
+# closure utilisateur, brief « action clôturée non ressuscitée »).
+@router.post("/pilotage/sync-action")
+def api_pilotage_sync_action(
+    request: Request,
+    payload: dict,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Crée (ou retourne l'existant) un ActionCenterItem V4 depuis une
+    action_candidate du payload pilotage-summary.
+
+    Payload attendu (sous-ensemble action_candidate) :
+      {
+        "insight_type": "hors_horaires|base_load|pointe|derive|data_gap|...",
+        "site_id": 42,
+        "external_ref": "pilotage:hors_horaires:site:42",
+        "source_url": "/usages?tab=pilotage&site=42",
+        "label_fr": "...",
+        "recommended_action_fr": "...",
+        "impact_eur": 1234.0,        // optionnel
+        "severity": "high|medium|low"
+      }
+
+    Réponse :
+      201 si créé, 200 si idempotent (existait déjà OPEN),
+      409 si clôturé (jamais ressuscité — brief P1 C3).
+    """
+    import uuid as _uuid
+    from fastapi.responses import JSONResponse
+    from models.v4.action_center_items import ActionCenterItem
+    from models.v4.action_links import ActionLink
+    from models.v4.enums import Domain, Kind, LifecycleState
+
+    org_id = resolve_org_id(request, auth, db)
+
+    # Validation minimale du payload
+    insight_type = payload.get("insight_type")
+    site_id = payload.get("site_id")
+    external_ref = payload.get("external_ref")
+    if not insight_type or not site_id or not external_ref:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "VALIDATION_ERROR",
+                "message": "Payload incomplet — insight_type, site_id, external_ref obligatoires.",
+                "hint": "Consommer /api/usages/pilotage-summary pour obtenir un action_candidate complet.",
+            },
+        )
+
+    # Garantie pattern external_ref (anti-collision avec autres briques).
+    if not external_ref.startswith("pilotage:"):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "EXTERNAL_REF_INVALID",
+                "message": "external_ref doit utiliser le pattern `pilotage:{type}:site:{id}`.",
+            },
+        )
+
+    # Lookup idempotent par external_ref (index UNIQUE PARTIAL #311).
+    existing = (
+        db.query(ActionCenterItem)
+        .filter(
+            ActionCenterItem.organisation_id == org_id,
+            ActionCenterItem.external_ref == external_ref,
+        )
+        .first()
+    )
+    if existing is not None:
+        # Brief P1 C3 : action clôturée non ressuscitée.
+        if existing.lifecycle_state == LifecycleState.CLOSED.value:
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "code": "ACTION_CLOSED",
+                    "message": "Cette action a été clôturée. Réouvrir manuellement via Centre d'Action V4 si nécessaire.",
+                    "item_id": str(existing.id),
+                    "external_ref": external_ref,
+                    "lifecycle_state": existing.lifecycle_state,
+                },
+            )
+        return {
+            "created": False,
+            "item_id": str(existing.id),
+            "external_ref": external_ref,
+            "lifecycle_state": existing.lifecycle_state,
+            "source_url": existing.source_url,
+        }
+
+    # Création nouvelle action — domain ENERGIE-équivalent : on utilise
+    # `optimisation` (enum Domain canonique, cf. audit deep #310 §1.1).
+    severity = (payload.get("severity") or "medium").lower()
+    bracket = {"critical": "P0", "high": "P1", "medium": "P2", "low": "P3"}.get(severity, "P2")
+    score = {"P0": 90.0, "P1": 70.0, "P2": 50.0, "P3": 30.0}[bracket]
+    label_fr = payload.get("label_fr") or f"Pilotage {insight_type} — site {site_id}"
+    action_fr = payload.get("recommended_action_fr") or "Examiner le signal et planifier une action."
+    source_url = payload.get("source_url") or f"/usages?tab=pilotage&site={site_id}"
+    impact_eur = payload.get("impact_eur")
+
+    item = ActionCenterItem(
+        id=_uuid.uuid4(),
+        organisation_id=org_id,
+        kind=Kind.RECOMMENDATION.value,
+        domain=Domain.OPTIMISATION.value,
+        title=label_fr[:255],
+        description=(
+            f"Source : Pilotage des usages — insight `{insight_type}` sur site #{site_id}.\n\n"
+            f"Action recommandée : {action_fr}"
+        ),
+        lifecycle_state=LifecycleState.NEW.value,
+        priority_bracket=bracket,
+        priority_score=score,
+        external_ref=external_ref,
+        source_url=source_url,
+        estimated_impact_euros=impact_eur,
+    )
+    db.add(item)
+    db.flush()
+
+    # ActionLink (back-link drawer V4 « Voir la source »).
+    db.add(
+        ActionLink(
+            organisation_id=org_id,
+            item_id=item.id,
+            link_type="source",
+            target_module="energie",
+            target_id=_uuid.uuid5(
+                _uuid.NAMESPACE_URL,
+                f"promeos:pilotage_usages:{insight_type}:site:{site_id}",
+            ),
+            relation="caused_by",
+        )
+    )
+    db.commit()
+
+    return JSONResponse(
+        status_code=201,
+        content={
+            "created": True,
+            "item_id": str(item.id),
+            "external_ref": external_ref,
+            "source_url": source_url,
+            "domain": Domain.OPTIMISATION.value,
+            "kind": Kind.RECOMMENDATION.value,
+            "priority_bracket": bracket,
+        },
+    )

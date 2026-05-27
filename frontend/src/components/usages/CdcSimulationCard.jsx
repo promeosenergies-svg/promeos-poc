@@ -32,9 +32,13 @@ export default function CdcSimulationCard({ data }) {
           </tr>
         </thead>
         <tbody>
-          {data.strategies.map((s) => (
+          {data.strategies.map((s, idx) => (
+            // Usage Steering P1 (2026-05-27, brief C0) — clé composite
+            // stable (s.id si exposé par le BE, sinon `strategy-{idx}-{name}`)
+            // pour éviter duplicate-key warning Recharts si 2 stratégies
+            // portent le même nom.
             <tr
-              key={s.name}
+              key={s.id ?? `strategy-${idx}-${s.name}`}
               className={`border-b border-gray-50 ${
                 s.name === reco.strategy ? 'bg-green-50/50' : ''
               }`}

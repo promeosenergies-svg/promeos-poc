@@ -11,15 +11,15 @@ export default function PowerOptimizationCard({ data }) {
   const opt = data.optimization;
   const decomp = data.peak_decomposition || [];
 
-  // Usage Steering P0 truth-contract (2026-05-27, brief C2) — lecture
-  // pure des champs BE qui exposent utilization clampé [0,100] et statut
-  // overflow / underflow / normal / unknown. Avant : Math.min(cs.util,100)
-  // + (subscribed/actual)*100 côté FE → violation doctrine §8.1.
+  // Usage Steering P1 (2026-05-27, brief C0) — fallback Math.min retiré.
+  // Le BE garantit utilization_pct_safe + overflow_status (truth_contract
+  // exposé par /api/usages/power-optimization, brief P0 #317). Si BE ne
+  // les renvoie pas (vieux client), on lit null → affichage "—" plutôt
+  // que recalcul métier silencieux côté FE.
   // overflowLeftPct reste un calc d'affichage géométrique pur (offset CSS
   // d'une barre de jauge) — pas un calcul métier, conservé.
-  const utilizationPct = cs.utilization_pct_safe ?? Math.min(cs.utilization_pct || 0, 100);
-  const overflowStatus =
-    cs.overflow_status || (cs.actual_peak_kw > cs.subscribed_power_kva ? 'overflow' : 'normal');
+  const utilizationPct = cs.utilization_pct_safe ?? null;
+  const overflowStatus = cs.overflow_status ?? 'unknown';
   const isOverloaded = overflowStatus === 'overflow';
   const overflowLeftPct =
     cs.actual_peak_kw > 0 ? (cs.subscribed_power_kva / cs.actual_peak_kw) * 100 : 0;
@@ -117,7 +117,8 @@ export default function PowerOptimizationCard({ data }) {
       {(!opt || opt.net_savings_eur <= 0) && !isOverloaded && (
         <div className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600">
           PS correctement dimensionnée. Marge : {fmt(cs.margin_kw)} kW (
-          {(100 - cs.utilization_pct).toFixed(0)}%)
+          {/* P1 lecture pure utilization_pct_safe (BE garantit clamp). */}
+          {utilizationPct != null ? (100 - utilizationPct).toFixed(0) : '—'}%)
         </div>
       )}
     </div>
