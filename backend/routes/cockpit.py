@@ -86,6 +86,27 @@ from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 router = APIRouter(prefix="/api", tags=["Cockpit"])
 
 
+# Énergie P0a cleanup (2026-05-27, audit menu Énergie §5.2 + brief P0a C3) —
+# /api/cockpit/pilotage devient 410 Gone FR : la page FE /cockpit/pilotage
+# a été remplacée par un redirect vers /cockpit/jour ; aucun appel BE résiduel
+# n'est attendu. Réponse FR claire avec alternatives canoniques.
+@router.get(
+    "/cockpit/pilotage",
+    responses={410: {"description": "Endpoint retiré — utiliser /cockpit/jour ou /cockpit/strategique"}},
+)
+def cockpit_pilotage_gone():
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "code": "ENDPOINT_GONE",
+            "message": "Cette route historique a été retirée.",
+            "replacement": "/api/cockpit/jour ou /api/cockpit/strategique",
+            "hint": "Utilisez le cockpit exécutif ou le Centre d'Action V4.",
+            "sprint": "claude/energie-p0a-navigation-cleanup",
+        },
+    )
+
+
 # Phase 3.4-bis Correctif #3 — `_sites_for_org` factorisé dans
 # `services/scope_utils.sites_for_org_query` (couvre les 5 clones historiques).
 # Alias local conservé pour compatibilité des 13 callsites internes.

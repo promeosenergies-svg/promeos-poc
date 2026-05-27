@@ -23,10 +23,16 @@ import { isActionCenterV4Enabled } from './featureFlags';
 // Lazy-loaded pages — code-split per route
 const CommandCenter = lazy(() => import('./pages/CommandCenter'));
 // Sprint Grammaire v1.2 / Phase 3.4 — Hub Page L11 « Briefing du jour ».
+// Énergie P0a cleanup (2026-05-27) — CockpitPilotage lazy import retiré :
+// la route /cockpit/pilotage redirige désormais vers /cockpit/jour (cf. App.jsx
+// route plus bas). Le fichier pages/CockpitPilotage.jsx reste sur disque (L8
+// Mois 5 suppression) mais n'est plus chargé. Source-guard
+// test_no_cockpit_pilotage_active_link garantit qu'aucun lien actif ne pointe
+// vers /cockpit/pilotage.
 // CockpitPilotage est conservé pour les routes legacy d'accès direct mais la
 // route canonique /cockpit/jour pointe désormais vers la composition pure L11.
 const CockpitJour = lazy(() => import('./pages/CockpitJour'));
-const CockpitPilotage = lazy(() => import('./pages/CockpitPilotage'));
+// const CockpitPilotage = lazy(() => import('./pages/CockpitPilotage')); // Énergie P0a cleanup 2026-05-27 — route redirigée vers /cockpit/jour
 // M2-5.11 audit routes — CockpitDecision et Cockpit imports lazy retirés
 // (orphelins : jamais routés, remplacés par CockpitStrategique et CockpitJour
 // depuis Phase 3.5 Vague D.5). Fichiers physiques conservés jusqu'au L8
@@ -323,13 +329,17 @@ function App() {
                                         </PageSuspense>
                                       }
                                     />
+                                    {/* Énergie P0a cleanup (2026-05-27, audit menu Énergie §5
+                                        D1 doublon) — /cockpit/pilotage (CockpitPilotage 1722 l
+                                        legacy) décommissionné : route remplacée par redirect
+                                        canonique vers /cockpit/jour (briefing Energy Manager
+                                        L11). Pilotage opérationnel canonique = /action-center-
+                                        v4/pilotage (V4 file prioritaire). L'endpoint BE
+                                        /api/cockpit/pilotage est passé en 410 Gone FR dans le
+                                        même sprint pour cohérence. */}
                                     <Route
                                       path="/cockpit/pilotage"
-                                      element={
-                                        <PageSuspense>
-                                          <CockpitPilotage />
-                                        </PageSuspense>
-                                      }
+                                      element={<Navigate to="/cockpit/jour" replace />}
                                     />
                                     {/* Phase 3.5 Vague D.5 — Synthèse Stratégique data-driven from scratch
                                         (ADR-023 + ADR-024). Legacy CockpitDecision accessible via ?legacy=1. */}
