@@ -79,7 +79,12 @@ const TertiaireDashboardPage = lazy(() => import('./pages/tertiaire/TertiaireDas
 const TertiaireWizardPage = lazy(() => import('./pages/tertiaire/TertiaireWizardPage'));
 const TertiaireEfaDetailPage = lazy(() => import('./pages/tertiaire/TertiaireEfaDetailPage'));
 const TertiaireAnomaliesPage = lazy(() => import('./pages/tertiaire/TertiaireAnomaliesPage'));
-const ConsumptionContextPage = lazy(() => import('./pages/ConsumptionContextPage'));
+// Usage Steering P2 cleanup (2026-05-27, brief C1) — lazy import retiré :
+// la route /usages-horaires redirige désormais vers /usages (cf. plus bas).
+// pages/ConsumptionContextPage.jsx reste sur disque (L8 Mois 5 cleanup
+// formelle) mais n'est plus chargé par Vite. Source-guard vérifie
+// l'absence d'usage actif.
+// const ConsumptionContextPage = lazy(() => import('./pages/ConsumptionContextPage'));
 const AnomaliesPage = lazy(() => import('./pages/AnomaliesPage'));
 // M2-5.2 — Centre d'Action V4 (derrière feature flag VITE_FEATURE_ACTION_CENTER_V4).
 const ActionCenterV4ListPage = lazy(() =>
@@ -516,13 +521,15 @@ function App() {
                                         </PageSuspense>
                                       }
                                     />
+                                    {/* Usage Steering P2 cleanup (2026-05-27, brief C1) —
+                                        /usages-horaires fusionné dans /usages. La page legacy
+                                        ConsumptionContextPage (181 l) restait orpheline en
+                                        HIDDEN_PAGES « doublon-sub-page » depuis audit menu
+                                        Énergie #313. Redirect propre vers la route canonique
+                                        /usages — préserve les deep-links sans casser. */}
                                     <Route
                                       path="/usages-horaires"
-                                      element={
-                                        <PageSuspense>
-                                          <ConsumptionContextPage />
-                                        </PageSuspense>
-                                      }
+                                      element={<Navigate to="/usages" replace />}
                                     />
                                     <Route
                                       path="/bill-intel"
