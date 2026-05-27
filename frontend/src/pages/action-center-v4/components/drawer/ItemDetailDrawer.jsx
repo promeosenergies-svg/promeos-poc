@@ -14,6 +14,9 @@ import {
 } from '../../constants';
 import { formatDateTimeFR } from '../../utils/date';
 import { BillingAnomalyBackLink } from './BillingAnomalyBackLink';
+// Usage Steering P1.5 (2026-05-27) — back-link pilotage des usages
+// (équivalent BillingAnomalyBackLink pour domain=optimisation).
+import { PilotageSourceBackLink } from './PilotageSourceBackLink';
 import { BlockersTab } from './BlockersTab';
 import { Breadcrumb } from './Breadcrumb';
 import { DrawerActions } from './DrawerActions';
@@ -194,6 +197,12 @@ export function ItemDetailDrawer({ itemId, open, onClose, onRefreshList }) {
           Permet de fermer la boucle Anomalie → Action de litige → retour à
           l'Anomalie sans navigation manuelle. Aucun nouveau menu. */}
         <BillingAnomalyBackLink item={item} />
+        {/* Usage Steering P1.5 (2026-05-27) — Lien retour vers le 4ᵉ tab
+          Pilotage des usages si domain=optimisation + external_ref pattern
+          `pilotage:{type}:site:{id}`. Ferme la boucle Pilotage → Action →
+          retour source. Aucun nouveau menu (re-navigue vers /usages?tab=
+          pilotage&site=X). */}
+        <PilotageSourceBackLink item={item} />
 
         {/* M2-5.10.C — Impact financier 4 quadrants (audit Jean-Marc CFO P0-1).
           Section indépendante du fetch item : `useActionCenterV4Impact` est

@@ -51,14 +51,30 @@ const ALL_TABS = [
 ];
 
 export default function UsagesDashboardPage() {
-  const { selectedSiteId, scopedSites, scope } = useScope();
+  const { selectedSiteId, scopedSites, scope, setSite } = useScope();
   // Usage Steering P1 (2026-05-27, brief C1) — état URL pour deep-link
   // /usages?tab=pilotage (depuis Centre d'Action V4 source_url).
+  // Usage Steering P1.5 (2026-05-27, brief C3) — `?site=X` mis en évidence
+  // au retour depuis le drawer V4 PilotageSourceBackLink. ScopeBar
+  // bascule automatiquement sur le site cible.
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
+  const siteFromUrl = searchParams.get('site');
   const validInitialTab = ['timeline', 'baseline', 'comptage', 'pilotage'].includes(tabFromUrl)
     ? tabFromUrl
     : 'timeline';
+
+  // Usage Steering P1.5 brief C3 — au mount (ou changement param), si un
+  // site est passé en URL et diffère du scope courant, on bascule. Évite
+  // une boucle : check stricte avant setSite (pas de re-render infini).
+  useEffect(() => {
+    if (!siteFromUrl) return;
+    const targetSiteId = Number(siteFromUrl);
+    if (Number.isFinite(targetSiteId) && targetSiteId !== selectedSiteId) {
+      setSite(targetSiteId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [siteFromUrl]);
   const [data, setData] = useState(null);
   const [timeline, setTimeline] = useState(null);
   const [portfolio, setPortfolio] = useState(null);
