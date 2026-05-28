@@ -1,18 +1,46 @@
 """
 PROMEOS — Simulateur de mutualisation Decret Tertiaire.
 
-Principe : un proprietaire avec N sites peut compenser les sites en retard
-avec les sites en avance. L'objectif est evalue au niveau portefeuille.
+Principe : un assujetti avec N sites peut compenser les sites en retard
+avec les sites en avance. La verification de l'atteinte des objectifs
+est evaluee au niveau du « groupe de structures » constitue.
 
-STATUT REGLEMENTAIRE (2026) :
-- La mutualisation est reconnue dans le texte (Art. L111-10-3 code construction)
-- MAIS la fonctionnalite n'est PAS encore disponible dans OPERAT
-- Les modalites d'application ne sont pas encore stabilisees
-- Source : Advizeo 2026 — "Fonctionnalite non disponible a ce stade dans OPERAT"
+STATUT REGLEMENTAIRE (au 2026-05-28, verifie Legifrance) :
+- La mutualisation patrimoniale est explicitement prevue par l'Article
+  R.174-31 du Code de la construction et de l'habitation (modalite
+  d'application de l'Article L.111-10-3, fondement legal trajectoire).
+- L'Article 14 de l'arrete du 10 avril 2020 modifie precise les
+  modalites de mutualisation : constitution d'un « groupe de structures »
+  saisi via la plateforme OPERAT, avec validation du representant legal
+  de chaque entite fonctionnelle integree au perimetre. Donnees attendues :
+  Table 1B de l'Annexe IV de l'arrete.
+- Regles d'unicite (Art. 14) : une entite fonctionnelle ne peut
+  appartenir qu'a UN seul groupe ; les consommations economisees ne
+  peuvent etre redistribuees qu'UNE seule fois.
+- L'arrete du 1er aout 2025 (NOR ATDL2430864A) apporte les precisions
+  sur la mutualisation multi-sites et l'attestation numerique OPERAT
+  (obligatoire apres 1er juillet 2026).
+- A la date du sprint, le module OPERAT « Mutualisation des resultats
+  a l'echelle d'un patrimoine » est en cours de deploiement progressif
+  par l'ADEME. Tant qu'il n'est pas pleinement operationnel, chaque
+  site reste a declarer individuellement et la compensation est
+  constatee lors du controle decennal (echeances 2030/2040/2050).
+- PROMEOS anticipe le calcul de la position consolidee pour preparer
+  la trajectoire patrimoniale en amont du depot, en s'appuyant sur les
+  regles d'unicite citees plus haut.
 
-PROMEOS est le premier outil a anticiper la mutualisation avant qu'OPERAT ne la supporte.
+Sources officielles uniquement (Legifrance) :
+- Article L.111-10-3 du Code de la construction et de l'habitation —
+  fondement legal de l'obligation de reduction.
+- Article R.174-31 du meme code — modalite d'application mutualisation.
+- Decret n°2019-771 du 23/07/2019 — calcul objectif au niveau patrimoine.
+- Arrete du 10 avril 2020 modifie, Article 14 — modalites mutualisation
+  via OPERAT + groupes de structures + Table 1B Annexe IV.
+- Arrete du 1er aout 2025 — precisions mutualisation 2026+.
 
-Source : Decret n2019-771, art. 3 / Art. L111-10-3 code construction.
+Aucune reference a un editeur tiers n'est exposee dans les messages
+rendus a l'utilisateur (doctrine PROMEOS : zero mention concurrent UI,
+cf. feedback_promeos_zero_concurrent_ui).
 """
 
 import logging
@@ -28,10 +56,15 @@ from config.emission_factors import BASE_PENALTY_EURO
 from services.operat_trajectory import TARGETS as _OT_TARGETS
 
 DISCLAIMER_MUTUALISATION = (
-    "Simulation uniquement — La fonctionnalite de mutualisation n'est pas encore "
-    "disponible dans OPERAT (2026). PROMEOS anticipe cette fonctionnalite pour vous "
-    "permettre de preparer votre strategie patrimoniale. "
-    "Source : Advizeo 2026 / Art. L111-10-3 code construction."
+    "Simulation patrimoniale — le module OPERAT « Mutualisation des "
+    "résultats à l'échelle d'un patrimoine » est en cours de déploiement "
+    "progressif. En attendant, chaque entité fonctionnelle (EFA) reste "
+    "à déclarer individuellement et la compensation est constatée lors "
+    "du contrôle décennal. PROMEOS calcule la position consolidée pour "
+    "préparer votre groupe de structures avant dépôt OPERAT. "
+    "Sources : Art. R.174-31 du Code de la construction et de "
+    "l'habitation et Article 14 de l'arrêté du 10 avril 2020 modifié "
+    "(constitution du groupe de structures + Table 1B de l'Annexe IV)."
 )
 
 # Conversion : operat_trajectory stocke le *reste* (0.60 = garder 60% = -40%)

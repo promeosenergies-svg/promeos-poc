@@ -197,3 +197,20 @@ class ActionCenterItemRepository(BaseRepositoryV4[ActionCenterItem]):
         """
         stmt = self._apply_scope(select(self.model).where(self.model.idempotency_key == key))
         return self.db.execute(stmt).scalar_one_or_none()
+
+    def find_by_external_ref(self, external_ref: str) -> Optional[ActionCenterItem]:
+        """S2 simplicité (2026-05-28) — cherche un item par `external_ref`
+        dans le scope org courant.
+
+        `external_ref` est la signature stable cross-brique exposée par les
+        sync services (`conformite:{rule}:{site_id}`, etc.) et indexée
+        UNIQUE par org (`idx_aci_external_ref`, model __table_args__). Cette
+        méthode sert l'upsert idempotent côté endpoint NextBestAction :
+        re-cliquer « Créer l'action » sur la même règle / le même site ne
+        crée jamais de doublon — on retombe sur l'item existant.
+
+        Retourne None si la signature est inconnue (ou cross-org →
+        `_apply_scope` filtre fail-closed).
+        """
+        stmt = self._apply_scope(select(self.model).where(self.model.external_ref == external_ref))
+        return self.db.execute(stmt).scalar_one_or_none()

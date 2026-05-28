@@ -132,13 +132,33 @@ export const ACTION_TYPE_LABELS = {
 };
 
 // ─── Onglets cockpit ────────────────────────────────────────────────────
+//
+// S2 simplicité métier (2026-05-28) — tabs dynamiques par persona :
+// - Mode normal (DAF/DG) : 3 tabs métier essentiels. Le « Plan d'exécution »
+//   est retiré du strip parce qu'il recoupe à la fois la NextBestAction
+//   (1-clic) et le hub Centre d'Action V4 (qui reste la SoT lifecycle).
+// - Mode expert (RegOps/Auditeur) : 4 tabs (le tab Exécution reste visible
+//   pour parcourir finding-par-finding sans passer par /action-center-v4).
+// Doctrine §6.2 hub unique : aucun nouveau menu, juste une tab de moins
+// pour le persona qui n'agit pas finding-par-finding.
 
-export const COCKPIT_TABS = [
+export const COCKPIT_TABS_NORMAL = [
+  { id: 'obligations', label: 'Obligations' },
+  { id: 'donnees', label: 'Données & Qualité' },
+  { id: 'preuves', label: 'Preuves & Rapports' },
+];
+
+export const COCKPIT_TABS_EXPERT = [
   { id: 'obligations', label: 'Obligations' },
   { id: 'donnees', label: 'Données & Qualité' },
   { id: 'execution', label: "Plan d'exécution" },
   { id: 'preuves', label: 'Preuves & Rapports' },
 ];
+
+// Rétro-compat : l'ancienne const reste exportée (consommée par les tests
+// ConformiteSyntheseCompacte + d'autres routes). Pointe sur la liste expert
+// qui couvre tous les ids historiques — aucun consumer ne perd un id.
+export const COCKPIT_TABS = COCKPIT_TABS_EXPERT;
 
 // ─── États vides ────────────────────────────────────────────────────────
 

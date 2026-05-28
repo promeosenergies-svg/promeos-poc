@@ -64,6 +64,7 @@ from schemas.v4.action_center import (
     ActionCenterItemListResponse,
     ActionCenterItemResponse,
     ActionCenterItemUpdate,
+    ActionCenterItemUpsertByExternalRef,
     ActionEventLogListResponse,
     ActionEvidenceListResponse,
     ActionEvidenceResponse,
@@ -183,6 +184,83 @@ async def create_action_center_item(
         score_stale=True,
         idempotency_key=idempotency_key,
         idempotency_payload_hash=payload_hash,
+    )
+    db.commit()
+    return item
+
+
+# ════════════════════════════════════════════════════════════════════
+# POST /items/upsert-by-external-ref — NBA 1-clic idempotent (S2)
+# ════════════════════════════════════════════════════════════════════
+
+
+@router.post(
+    "/items/upsert-by-external-ref",
+    response_model=ActionCenterItemResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(populate_org_context)],
+)
+@limiter.limit(QUOTA_WRITE_V4)
+async def upsert_action_center_item_by_external_ref(
+    request: Request,
+    payload: ActionCenterItemUpsertByExternalRef,
+    response: Response,
+    db: Session = Depends(get_db),
+    _rbac=Depends(require_v4_role(Role.USER, Role.ADMIN)),
+):
+    """S2 simplicité (2026-05-28) — Crée OU ouvre un ActionCenterItem
+    pour une signature `external_ref` donnée.
+
+    Sémantique (NextBestAction 1-clic des briques métier) :
+    - Signature INCONNUE dans l'org courante → CREATE (201). `external_ref`
+      et `source_url` sont persistés pour idempotence cross-brique.
+    - Signature CONNUE, item NON clos (lifecycle ≠ closed) → renvoie
+      l'item existant (200, pas 201). « Re-cliquer le bouton ouvre l'action
+      existante ».
+    - Signature CONNUE, item CLOS (lifecycle = closed) → 409
+      `EXTERNAL_REF_CLOSED`. La doctrine S2 interdit la résurrection d'une
+      action clôturée : si la règle redevient applicable, le sync service
+      doit poser une nouvelle signature (ex suffixe `:reopened:<date>`)
+      pour signer la nouvelle instance.
+
+    `organisation_id` est forcé par le repo (defense in depth). Pas de
+    header `Idempotency-Key` requis : l'idempotence est portée par
+    `external_ref` lui-même (indexé UNIQUE partiel par org).
+    """
+    repo = ActionCenterItemRepository(db)
+    existing = repo.find_by_external_ref(payload.external_ref)
+    if existing is not None:
+        if existing.lifecycle_state == LifecycleState.CLOSED.value:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "code": "EXTERNAL_REF_CLOSED",
+                    "message": (
+                        "An ActionCenterItem with this external_ref already "
+                        "exists and is closed — closed items are not resurrected."
+                    ),
+                    "hint": (
+                        "If the rule fires again, the upstream sync service "
+                        "must mint a new external_ref (ex: suffix ':reopened:"
+                        "<iso-date>') to sign the new instance."
+                    ),
+                },
+            )
+        # Réouverture sûre : item existant et non clos → on renvoie le même
+        # item (lifecycle préservé). Le FE ouvre alors le drawer V4 dessus.
+        response.status_code = status.HTTP_200_OK
+        return existing
+
+    item = repo.create(
+        kind=payload.kind,
+        title=payload.title,
+        description=payload.description,
+        domain=payload.domain,
+        external_ref=payload.external_ref,
+        source_url=payload.source_url,
+        priority_bracket=_PLACEHOLDER_PRIORITY_BRACKET,
+        priority_score=_PLACEHOLDER_PRIORITY_SCORE,
+        score_stale=True,
     )
     db.commit()
     return item

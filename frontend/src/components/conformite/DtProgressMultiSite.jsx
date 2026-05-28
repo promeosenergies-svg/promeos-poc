@@ -20,7 +20,18 @@ const STATUS_CONFIG = {
 };
 
 function ProgressBar({ reductionPct, cible = 40 }) {
-  if (reductionPct == null) return <div className="h-2 w-full bg-gray-100 rounded" />;
+  // S2 hotfix (2026-05-28) — `reductionPct == null` ⇒ aucune mesure
+  // exploitable (cf. backend `_compute_site_dt_progress` qui force
+  // null quand `total_act = 0`). On rend une barre grise sans libellé
+  // chiffré pour ne pas afficher de pseudo-performance trompeuse.
+  if (reductionPct == null) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-2 bg-gray-100 rounded" />
+        <span className="text-xs font-medium text-gray-400 tabular-nums">—</span>
+      </div>
+    );
+  }
   const pct = Math.max(0, Math.min(100, (reductionPct / cible) * 100));
   const ok = reductionPct >= cible;
   return (
@@ -31,6 +42,11 @@ function ProgressBar({ reductionPct, cible = 40 }) {
           style={{ width: `${pct}%` }}
         />
       </div>
+      {/* `reductionPct` est calculé backend comme « pourcentage de
+          réduction vs référence » (positif = on a baissé). On affiche
+          donc « -X% » quand reduction>0 (baisse de conso) et « +X% »
+          quand reduction<0 (hausse de conso). »-100%« signifie « j'ai
+          réduit ma conso de 100% » = très loin au-delà de la cible. */}
       <span
         className={`text-xs font-medium tabular-nums ${ok ? 'text-green-700' : 'text-red-600'}`}
       >
@@ -151,10 +167,16 @@ export default function DtProgressMultiSite({ orgId }) {
                     </span>
                   </td>
                   <td className="px-2 py-2.5">
+                    {/* S2 hotfix (2026-05-28) — la flèche pointait vers
+                        /conformite/tertiaire SANS contexte site → toutes
+                        les lignes ouvraient la même page, donnant l'illusion
+                        d'une CTA inactive. On passe désormais le site_id
+                        en query param pour scoper le détail. */}
                     <button
-                      onClick={() => navigate(`/conformite/tertiaire`)}
+                      onClick={() => navigate(`/conformite/tertiaire?site_id=${site.site_id}`)}
                       className="text-gray-400 hover:text-gray-700"
-                      title="Détail"
+                      title={`Voir le détail Décret Tertiaire — ${site.site_nom}`}
+                      aria-label={`Voir le détail Décret Tertiaire pour ${site.site_nom}`}
                     >
                       <ArrowRight size={14} />
                     </button>
