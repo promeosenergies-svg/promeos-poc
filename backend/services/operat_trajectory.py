@@ -71,20 +71,63 @@ def declare_consumption(
     kwh_reseau: Optional[float] = None,
     is_reference: bool = False,
     source: Optional[str] = None,
+    is_first_full_year_of_operation: bool = False,
 ) -> dict:
     """Declare ou met a jour la consommation annuelle d'une EFA.
 
     Si is_reference=True, verrouille cette annee comme reference sur l'EFA.
     Contrainte : une seule annee de reference par EFA.
+
+    Validation annee de reference (S1 #324, brief Chantier 2) :
+      - Article 3.I arrete 10/04/2020 modifie : annee dans [2010, 2022].
+      - Cas particulier `is_first_full_year_of_operation=True` (batiment neuf) :
+        annee peut depasser 2022 mais ne peut pas etre future.
+      - Cas autre annee (telemetrie/historique non-reference) : plage large
+        [2010, current_year+1] pour preserver la saisie de conso post-reference.
+      - Pas de fallback silencieux : tout rejet renvoie un message FR clair.
     """
+    from config.operat_constants import (
+        OPERAT_REFERENCE_YEAR_MAX,
+        OPERAT_REFERENCE_YEAR_MIN,
+        OPERAT_REFERENCE_YEAR_DEADLINE_LABEL,
+        is_valid_operat_reference_year,
+    )
+    from datetime import date
+
     efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id).first()
     if not efa:
         raise ValueError(f"EFA {efa_id} introuvable")
 
     if kwh_total < 0:
         raise ValueError("kwh_total ne peut pas etre negatif")
-    if year < 2000 or year > 2060:
-        raise ValueError(f"Annee {year} hors plage valide (2000-2060)")
+
+    current_year = date.today().year
+
+    if is_reference:
+        # Validation stricte annee de reference (Article 3.I).
+        if not is_valid_operat_reference_year(year, is_first_full_year=is_first_full_year_of_operation):
+            if is_first_full_year_of_operation:
+                raise ValueError(
+                    f"L'annee de reference {year} n'est pas valide : la premiere annee "
+                    f"pleine d'exploitation doit etre comprise entre {OPERAT_REFERENCE_YEAR_MIN} "
+                    f"et l'annee courante ({current_year}). Cf. Article 3.I de l'arrete 10/04/2020."
+                )
+            raise ValueError(
+                f"L'annee de reference {year} doit etre comprise dans la periode "
+                f"autorisee pour OPERAT ({OPERAT_REFERENCE_YEAR_MIN}-{OPERAT_REFERENCE_YEAR_MAX}, "
+                f"Article 3.I de l'arrete 10/04/2020). Pour un batiment neuf dont la 1ere "
+                f"annee pleine d'exploitation est posterieure, declarer explicitement "
+                f"is_first_full_year_of_operation=True. A defaut de declaration avant le "
+                f"{OPERAT_REFERENCE_YEAR_DEADLINE_LABEL}, OPERAT applique la 1ere annee "
+                f"pleine d'exploitation par defaut."
+            )
+    else:
+        # Conso non-reference : plage large (historique + projection +1).
+        if year < OPERAT_REFERENCE_YEAR_MIN or year > current_year + 1:
+            raise ValueError(
+                f"Annee {year} hors plage valide pour OPERAT "
+                f"({OPERAT_REFERENCE_YEAR_MIN}-{current_year + 1} pour conso non-reference)."
+            )
 
     # Verifier unicite annee de reference
     if is_reference:
