@@ -128,7 +128,10 @@ describe('S2 · D — Banner unifié 3 états, anti-doublon', () => {
   const banner = readSrc('components', 'conformite', 'ComplianceSummaryBanner.jsx');
 
   it('banner ne re-rend ni RiskBadge, ni top3, ni executive-summary', () => {
-    expect(banner).not.toContain('RiskBadge');
+    // On cible l'IMPORT et l'USAGE JSX, pas la mention dans le docstring
+    // (le header explique justement pourquoi ces blocs ont été retirés).
+    expect(banner).not.toMatch(/import\s+\{[^}]*RiskBadge[^}]*\}/);
+    expect(banner).not.toMatch(/<RiskBadge\b/);
     expect(banner).not.toContain('top3-urgences');
     expect(banner).not.toContain('executive-summary');
   });

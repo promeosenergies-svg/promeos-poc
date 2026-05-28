@@ -4,15 +4,31 @@ PROMEOS — Simulateur de mutualisation Decret Tertiaire.
 Principe : un proprietaire avec N sites peut compenser les sites en retard
 avec les sites en avance. L'objectif est evalue au niveau portefeuille.
 
-STATUT REGLEMENTAIRE (2026) :
-- La mutualisation est reconnue dans le texte (Art. L111-10-3 code construction)
-- MAIS la fonctionnalite n'est PAS encore disponible dans OPERAT
-- Les modalites d'application ne sont pas encore stabilisees
-- Source : Advizeo 2026 — "Fonctionnalite non disponible a ce stade dans OPERAT"
+STATUT REGLEMENTAIRE (au 2026-05-28) :
+- La mutualisation patrimoniale est explicitement prevue par l'Article
+  L111-10-3 du Code de la construction et de l'habitation, modifie par
+  la loi 2018-1021 (loi ELAN) et son decret d'application 2019-771.
+- L'arrete du 10 avril 2020 modifie (Articles 8 et 12) precise les
+  modalites de declaration au niveau patrimoine et de constatation
+  collective de l'atteinte des objectifs.
+- A la date de ce sprint, la FONCTIONNALITE OPERAT de declaration
+  mutualisee n'est pas operationnelle dans la plateforme : un
+  proprietaire qui souhaite mutualiser doit toujours declarer site par
+  site, puis appliquer la compensation patrimoniale lors du controle.
+- PROMEOS anticipe le calcul de la position consolidee pour preparer
+  la trajectoire patrimoniale en amont du depot.
 
-PROMEOS est le premier outil a anticiper la mutualisation avant qu'OPERAT ne la supporte.
+Sources officielles uniquement :
+- Article L111-10-3 du Code de la construction et de l'habitation
+  (Légifrance) — fondement legal de la trajectoire patrimoniale.
+- Decret n2019-771 du 23 juillet 2019, articles 3 et 4 — modalites
+  de calcul de l'objectif au niveau patrimoine.
+- Arrete du 10 avril 2020 modifie, articles 8 et 12 — declaration
+  consolidee et constatation de l'atteinte au niveau patrimoine.
 
-Source : Decret n2019-771, art. 3 / Art. L111-10-3 code construction.
+Aucune reference a un editeur tiers n'est exposee dans les messages
+rendus a l'utilisateur (doctrine PROMEOS : zero mention concurrent
+dans l'UI).
 """
 
 import logging
@@ -28,10 +44,13 @@ from config.emission_factors import BASE_PENALTY_EURO
 from services.operat_trajectory import TARGETS as _OT_TARGETS
 
 DISCLAIMER_MUTUALISATION = (
-    "Simulation uniquement — La fonctionnalite de mutualisation n'est pas encore "
-    "disponible dans OPERAT (2026). PROMEOS anticipe cette fonctionnalite pour vous "
-    "permettre de preparer votre strategie patrimoniale. "
-    "Source : Advizeo 2026 / Art. L111-10-3 code construction."
+    "Simulation patrimoniale — la déclaration mutualisée au niveau OPERAT "
+    "n'est pas encore opérationnelle en 2026 ; chaque site reste à "
+    "déclarer individuellement et la compensation patrimoniale est "
+    "constatée lors du contrôle. PROMEOS calcule la position consolidée "
+    "pour préparer votre trajectoire avant dépôt. "
+    "Sources : Art. L111-10-3 du Code de la construction et de l'habitation "
+    "et arrêté du 10 avril 2020 modifié (Art. 8 et 12, déclaration au niveau patrimoine)."
 )
 
 # Conversion : operat_trajectory stocke le *reste* (0.60 = garder 60% = -40%)

@@ -49,7 +49,10 @@ describe('Step 21 — Anti-doublon S2', () => {
   });
 
   it('banner n’importe plus RiskBadge (déjà carte 4 de la synthèse)', () => {
-    expect(bannerSrc).not.toContain('RiskBadge');
+    // On cible l'import + l'usage JSX — la mention dans le docstring
+    // (qui explique le retrait) est volontairement conservée.
+    expect(bannerSrc).not.toMatch(/import\s+\{[^}]*RiskBadge[^}]*\}/);
+    expect(bannerSrc).not.toMatch(/<RiskBadge\b/);
   });
 
   it('banner ne rend plus le bloc « Top urgences » (déjà dans ObligationsTab)', () => {
