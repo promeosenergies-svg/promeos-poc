@@ -34,7 +34,12 @@ Object.assign(LABELS, {
   // → désynchronisation avec le rail et le titre de page.
   portfolio: 'Portefeuille',
   wizard: 'Assistant',
-  tertiaire: 'Tertiaire / OPERAT',
+  // S2 hotfix (2026-05-28) — le libellé « Tertiaire / OPERAT » contenait
+  // un slash qui, à cause du wrapping CSS, apparaissait coupé en deux
+  // lignes (« Tertiaire » puis « / OPERAT ») et donnait l'illusion d'une
+  // sous-route « /OPERAT » qui n'existe pas. Libellé unifié en référence
+  // canonique réglementaire (Décret n°2019-771).
+  tertiaire: 'Décret Tertiaire',
   efa: 'EFA',
   new: 'Nouveau',
   // Aliases for redirect paths

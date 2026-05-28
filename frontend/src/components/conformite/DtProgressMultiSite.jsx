@@ -151,10 +151,16 @@ export default function DtProgressMultiSite({ orgId }) {
                     </span>
                   </td>
                   <td className="px-2 py-2.5">
+                    {/* S2 hotfix (2026-05-28) — la flèche pointait vers
+                        /conformite/tertiaire SANS contexte site → toutes
+                        les lignes ouvraient la même page, donnant l'illusion
+                        d'une CTA inactive. On passe désormais le site_id
+                        en query param pour scoper le détail. */}
                     <button
-                      onClick={() => navigate(`/conformite/tertiaire`)}
+                      onClick={() => navigate(`/conformite/tertiaire?site_id=${site.site_id}`)}
                       className="text-gray-400 hover:text-gray-700"
-                      title="Détail"
+                      title={`Voir le détail Décret Tertiaire — ${site.site_nom}`}
+                      aria-label={`Voir le détail Décret Tertiaire pour ${site.site_nom}`}
                     >
                       <ArrowRight size={14} />
                     </button>

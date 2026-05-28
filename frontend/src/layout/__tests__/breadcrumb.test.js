@@ -11,8 +11,8 @@ describe('resolveBreadcrumbLabel — static segments', () => {
     expect(resolveBreadcrumbLabel('conformite', null)).toBe('Conformité');
   });
 
-  it('tertiaire → Tertiaire / OPERAT', () => {
-    expect(resolveBreadcrumbLabel('tertiaire', 'conformite')).toBe('Tertiaire / OPERAT');
+  it("tertiaire → Décret Tertiaire (S2 2026-05-28 — slash retiré pour éviter l'illusion d'une sous-route /OPERAT au wrap)", () => {
+    expect(resolveBreadcrumbLabel('tertiaire', 'conformite')).toBe('Décret Tertiaire');
   });
 
   it('sites → Site', () => {
