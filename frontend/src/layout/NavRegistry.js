@@ -106,6 +106,10 @@ export const ROUTE_MODULE_MAP = {
   '/consommations/portfolio': 'energie',
   '/diagnostic-conso': 'energie',
   '/usages': 'energie',
+  // Usage Steering P2 cleanup (2026-05-27) — /usages-horaires conserve
+  // son mapping module=energie pour que le breadcrumb fonctionne pendant
+  // la redirect côté router (transition fluide ; cible /usages est
+  // également energie, donc même module rail).
   '/usages-horaires': 'energie',
   '/monitoring': 'energie',
   // Phase 17.bis.B — Flex Intelligence rattachée au module Énergie
@@ -1144,16 +1148,11 @@ export const HIDDEN_PAGES = [
     reason:
       'setup-technique : configuration des connecteurs Enedis/GRDF/CSV. Accédée via /admin (rôle admin) ou onboarding. Pas de slot rail justifié — usage one-shot par admin.',
   },
-  {
-    to: '/usages-horaires',
-    icon: Activity,
-    label: 'Usages & Horaires',
-    keywords: ['usages', 'horaires', 'profil', 'heatmap', 'comportement'],
-    section: 'Énergie',
-    hidden: true,
-    reason:
-      'doublon-sub-page : variante détaillée de /usages (item visible Énergie). Exposer les deux créerait un doublon pathologique anti-pattern §6.2 — keep hidden, reachable via search ou drill-down /usages.',
-  },
+  // Usage Steering P2 cleanup (2026-05-27, brief C1) — /usages-horaires
+  // entry retirée de HIDDEN_PAGES : la route redirige désormais vers
+  // /usages (cf. App.jsx Route Navigate replace). Plus de raison de
+  // l'exposer via ⌘K search puisqu'elle n'a plus de page propre.
+  // Les bookmarks /usages-horaires arriveront sur /usages canonique.
   {
     // Énergie P0a cleanup (2026-05-27, audit menu Énergie §1) — Flex
     // Intelligence retirée de la sidebar publique mais conservée

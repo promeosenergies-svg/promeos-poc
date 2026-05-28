@@ -13,126 +13,17 @@
  *   - Pas de jargon Flex / NEBCO / AOFD en surface client.
  */
 import { useEffect, useState, useCallback } from 'react';
-import {
-  AlertCircle,
-  ArrowRight,
-  CheckCircle2,
-  Database,
-  ExternalLink,
-  Loader2,
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { CheckCircle2, Database } from 'lucide-react';
 
 import { getPilotageSummary, syncPilotageAction } from '../../services/api/energy';
 import { useToast } from '../../ui/ToastProvider';
-
-const fmt = (n) =>
-  n == null ? '—' : Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 0 });
-
-// Brief : libellés FR clairs sans jargon Flex (NEBCO / AOFD bannis surface
-// client). Les types techniques BE sont mappés vers du langage métier.
-const INSIGHT_LABEL = {
-  hors_horaires: 'Consommation hors horaires',
-  base_load: 'Talon de nuit / week-end',
-  pointe: 'Pic de puissance',
-  derive: 'Dérive de consommation',
-  data_gap: 'Lacune de données',
-};
-
-const CONFIDENCE_BADGE = {
-  high: { label: 'Fiable', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  medium: { label: 'À confirmer', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
-  low: { label: 'À fiabiliser', bg: 'bg-gray-100 text-gray-600 border-gray-200' },
-};
-
-function ConfidenceBadge({ value }) {
-  const cfg = CONFIDENCE_BADGE[value] || CONFIDENCE_BADGE.low;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border ${cfg.bg}`}
-      data-testid="pilotage-card-confidence"
-    >
-      {cfg.label}
-    </span>
-  );
-}
-
-function PilotageCard({ action, onCreate, busyExternalRef, lastResult }) {
-  const isBusy = busyExternalRef === action.external_ref;
-  const result = lastResult && lastResult.external_ref === action.external_ref ? lastResult : null;
-  const insightLabel = INSIGHT_LABEL[action.insight_type] || action.insight_type;
-  // Impact € fiable seulement si BE l'a estimé ; sinon affichage `—`
-  // (brief « pas de chiffre menteur »).
-  const impactDisplay = action.impact_eur != null ? `${fmt(action.impact_eur)} €/an` : '—';
-
-  return (
-    <article
-      className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col gap-2"
-      data-testid={`pilotage-card-${action.external_ref}`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-            {insightLabel}
-          </p>
-          <p className="mt-0.5 text-sm font-medium text-gray-900">{action.label_fr}</p>
-        </div>
-        <ConfidenceBadge value={action.confidence} />
-      </div>
-
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-gray-700">
-        <dt className="text-gray-500">Site</dt>
-        <dd className="font-medium">#{action.site_id}</dd>
-        <dt className="text-gray-500">Impact estimé</dt>
-        <dd className="font-medium">{impactDisplay}</dd>
-      </dl>
-
-      <p className="text-xs text-gray-600 leading-relaxed">
-        <span className="font-medium text-gray-800">Action recommandée :</span>{' '}
-        {action.recommended_action_fr}
-      </p>
-
-      {result && result.status === 'created' && (
-        <p className="text-xs text-emerald-700 inline-flex items-center gap-1">
-          <CheckCircle2 size={12} /> Action créée dans le Centre d'Action.
-        </p>
-      )}
-      {result && result.status === 'existing' && (
-        <p className="text-xs text-amber-700 inline-flex items-center gap-1">
-          <CheckCircle2 size={12} /> Cette action existe déjà (idempotente).
-        </p>
-      )}
-      {result && result.status === 'closed' && (
-        <p className="text-xs text-gray-600 inline-flex items-center gap-1">
-          <AlertCircle size={12} /> Action clôturée — non recréée.
-        </p>
-      )}
-
-      <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-        <button
-          type="button"
-          onClick={() => onCreate(action)}
-          disabled={isBusy}
-          className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:bg-gray-300"
-          data-testid={`pilotage-card-cta-${action.external_ref}`}
-        >
-          {isBusy ? (
-            <Loader2 size={12} className="animate-spin" />
-          ) : (
-            <ArrowRight size={12} aria-hidden="true" />
-          )}
-          Créer l'action
-        </button>
-        <Link
-          to={action.source_url}
-          className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 hover:text-gray-800"
-        >
-          <ExternalLink size={11} /> Voir la source
-        </Link>
-      </div>
-    </article>
-  );
-}
+// Usage Steering P2 cleanup (2026-05-27, brief C2) — renderer générique
+// extrait de PilotageCard (P1 #318) vers UsageSignalCard.jsx. Permet
+// réutilisation cross-composant (futur Heatmap drill-down, drawer, etc.)
+// sans dupliquer la sémantique d'affichage. INSIGHT_LABEL_FR exporté
+// comme source unique de vérité (utilisé aussi par PilotageSourceBackLink
+// drawer V4 — voir P1.5 #320).
+import UsageSignalCard from './UsageSignalCard';
 
 function ExpertDetails({ summary }) {
   const meta = summary?.metadata;
@@ -297,10 +188,10 @@ export default function PilotageTab({ scope }) {
       ) : top3.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {top3.map((action) => (
-            <PilotageCard
+            <UsageSignalCard
               key={action.external_ref}
-              action={action}
-              onCreate={handleCreate}
+              signal={action}
+              onCreateAction={handleCreate}
               busyExternalRef={busyRef}
               lastResult={lastResult}
             />
