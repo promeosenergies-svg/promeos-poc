@@ -18,8 +18,12 @@
  *  - Achat visible en mode normal (plus expertOnly)
  *  - Usages visible en mode normal (sorti de HIDDEN_PAGES)
  *  - Vocabulaire : Cockpit→Accueil, BACS→Pilotage bâtiment, APER→Solarisation (APER),
- *    Performance→Performance énergétique, Usages→Répartition par usage,
+ *    Performance→Performance énergétique, Usages→Usages énergétiques,
  *    Stratégies d'achat→Scénarios d'achat, Assistant→Simulateur d'achat
+ *
+ * Énergie P1 cleanup #313 (2026-05-27) : « Répartition par usage » renommé
+ * « Usages énergétiques » pour aligner le rail sur le h1 page et le
+ * vocabulaire client (terme plus explicite, moins jargon de plan comptage).
  *  - Actions & Suivi + Notifications retirés (déplacés dans Centre d'actions header)
  */
 import {
@@ -766,9 +770,17 @@ export const NAV_SECTIONS = [
       {
         to: '/usages',
         icon: PieChart,
-        label: 'Répartition par usage',
+        label: 'Usages énergétiques',
         desc: 'Ventilation CVC, éclairage, process',
-        keywords: ['usages', 'energetiques', 'plan comptage', 'readiness', 'ues', 'baseline'],
+        keywords: [
+          'usages',
+          'energetiques',
+          'plan comptage',
+          'readiness',
+          'ues',
+          'baseline',
+          'repartition',
+        ],
       },
       {
         to: '/diagnostic-conso',

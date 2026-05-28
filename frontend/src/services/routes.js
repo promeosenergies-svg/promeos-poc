@@ -205,19 +205,10 @@ export function toUsages(opts = {}) {
   return `/usages${qs ? '?' + qs : ''}`;
 }
 
-/**
- * Usages & Horaires — contexte consommation, profil, anomalies.
- * @param {object} opts
- * @param {number|string} [opts.site_id]
- * @param {string} [opts.tab] — 'profile' | 'horaires'
- */
-export function toUsagesHoraires(opts = {}) {
-  const p = new URLSearchParams();
-  if (opts.site_id) p.set('site_id', String(opts.site_id));
-  if (opts.tab) p.set('tab', opts.tab);
-  const qs = p.toString();
-  return `/usages-horaires${qs ? '?' + qs : ''}`;
-}
+// Énergie P1 cleanup #313 (2026-05-27) : helper toUsagesHoraires() retiré.
+// /usages-horaires a été fusionné dans /usages depuis P2 #321 (redirect
+// propre). 0 caller actif dans frontend/src/. Toute navigation usages doit
+// passer par toUsages() ci-dessus (route canonique).
 
 /**
  * Conformité — vue portefeuille avec filtres tab et site.

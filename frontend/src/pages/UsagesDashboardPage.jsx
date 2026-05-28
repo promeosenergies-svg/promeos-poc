@@ -388,7 +388,7 @@ function Header({ score, level, details, recommendations, onExportExcel }) {
 
   return (
     <div className="px-7 py-5 flex justify-between items-center border-b border-gray-200 bg-white">
-      <h1 className="text-lg font-bold tracking-tight">Usages Énergétiques</h1>
+      <h1 className="text-lg font-bold tracking-tight">Usages énergétiques</h1>
       <div className="flex items-center gap-2">
         {score != null && (
           <div className="relative">
