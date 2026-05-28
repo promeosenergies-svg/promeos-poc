@@ -185,6 +185,55 @@ export const getMutualisation = (orgId, jalon = 2030) =>
 export const simulateModulation = (body) =>
   api.post(`${TERT_BASE}/modulation-simulation`, body).then((r) => r.data);
 
+// ── Sprint S3 — Groupes de structures (Article 14 arrêté 10/04/2020 modifié) ──
+const MUTU_BASE = `${TERT_BASE}/mutualisation`;
+
+/**
+ * Liste les groupes de structures de l'organisation (actifs par défaut).
+ * @param {number} orgId
+ * @param {boolean} includeArchived
+ */
+export const listGroupeStructures = (orgId, includeArchived = false) =>
+  api
+    .get(`${MUTU_BASE}/groups`, {
+      params: { org_id: orgId, include_archived: includeArchived },
+    })
+    .then((r) => r.data);
+
+export const createGroupeStructures = (payload) =>
+  api.post(`${MUTU_BASE}/groups`, payload).then((r) => r.data);
+
+export const getGroupeStructures = (groupId, orgId) =>
+  api.get(`${MUTU_BASE}/groups/${groupId}`, { params: { org_id: orgId } }).then((r) => r.data);
+
+export const addGroupeStructuresMember = (groupId, orgId, payload) =>
+  api
+    .post(`${MUTU_BASE}/groups/${groupId}/members`, payload, { params: { org_id: orgId } })
+    .then((r) => r.data);
+
+export const removeGroupeStructuresMember = (groupId, efaId, orgId) =>
+  api.delete(`${MUTU_BASE}/groups/${groupId}/members/${efaId}`, { params: { org_id: orgId } });
+
+export const updateRepresentantLegal = (groupId, efaId, orgId, payload) =>
+  api
+    .patch(`${MUTU_BASE}/groups/${groupId}/members/${efaId}/rl`, payload, {
+      params: { org_id: orgId },
+    })
+    .then((r) => r.data);
+
+export const archiveGroupeStructures = (groupId, orgId) =>
+  api
+    .post(`${MUTU_BASE}/groups/${groupId}/archive`, null, { params: { org_id: orgId } })
+    .then((r) => r.data);
+
+/**
+ * URL canonique de l'export Table 1B Annexe IV (CSV).
+ * Le composant rend un lien `<a>` direct pour permettre le download natif
+ * (axios + blob = friction inutile pour un fichier minimal).
+ */
+export const buildExportTable1bUrl = (groupId, orgId) =>
+  `/api${TERT_BASE}/mutualisation/groups/${groupId}/export-table-1b?org_id=${orgId}`;
+
 // ── DT Progress — Progression Décret Tertiaire ──
 export const getSiteDtProgress = (siteId, annee = null) =>
   api

@@ -40,6 +40,9 @@ from .dev_tools import router as dev_tools_router
 from .flex import router as flex_router
 from .flex import flex_foundation_router
 from .tertiaire import router as tertiaire_router
+
+# Sprint S3 (2026-05-28) — Mutualisation P0 juridique (Art. 14 + R.174-31)
+from .tertiaire_mutualisation import router as tertiaire_mutualisation_router
 from .portfolio import router as portfolio_router
 from .consumption_context import router as consumption_context_router
 from .contracts_radar import router as contracts_radar_router
@@ -115,6 +118,7 @@ __all__ = [
     "flex_router",
     "flex_foundation_router",
     "tertiaire_router",
+    "tertiaire_mutualisation_router",
     "portfolio_router",
     "consumption_context_router",
     "contracts_radar_router",
