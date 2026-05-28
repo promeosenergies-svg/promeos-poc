@@ -1195,6 +1195,13 @@ def _compute_site_dt_progress(db: Session, site_id: int, annee: int, *, site=Non
         }
 
     # Agreger les trajectoires via operat_trajectory (SoT avec DJU)
+    # S2 hotfix (2026-05-28) — `on_track` doit pouvoir valoir None
+    # quand l'EFA n'est pas évaluable (final_status != on_track && != off_track,
+    # ou consommation actuelle absente/null/zero artefact seed). Avant : tout
+    # `final_status` non-`on_track` était transformé en `False`, ce qui faisait
+    # remonter le statut « En retard » alors que la donnée n'existait simplement
+    # pas — UX trompeuse (site avec mesure 2026 indisponible passait pour
+    # non-conforme). Mapping désormais ternaire.
     efa_results = []
     for efa in efas:
         try:
@@ -1206,9 +1213,24 @@ def _compute_site_dt_progress(db: Session, site_id: int, annee: int, *, site=Non
             norm_kwh = current.get("normalized_kwh")
             effective_kwh = norm_kwh or current_kwh
 
+            # Mesure absente : pas de consommation actuelle exploitable
+            # (None ou 0). 0 strict est traité comme "pas de mesure" :
+            # une vraie consommation nulle sur 12 mois est physiquement
+            # improbable en tertiaire et trahit en pratique un seed
+            # incomplet ou une remontée non-disponible.
+            measurement_missing = effective_kwh is None or effective_kwh == 0
+
             reduction = None
-            if baseline_kwh and baseline_kwh > 0 and effective_kwh is not None:
+            if baseline_kwh and baseline_kwh > 0 and not measurement_missing:
                 reduction = round((1 - effective_kwh / baseline_kwh) * 100, 1)
+
+            final_status = r.get("final_status")
+            if measurement_missing or final_status not in ("on_track", "off_track"):
+                on_track_val: Optional[bool] = None
+                status_val = "not_evaluable"
+            else:
+                on_track_val = final_status == "on_track"
+                status_val = final_status
 
             efa_results.append(
                 {
@@ -1218,8 +1240,8 @@ def _compute_site_dt_progress(db: Session, site_id: int, annee: int, *, site=Non
                     "conso_actuelle_kwh": current_kwh,
                     "conso_normalisee_kwh": norm_kwh,
                     "reduction_pct": reduction,
-                    "on_track": r.get("final_status") == "on_track",
-                    "status": r.get("final_status", "not_evaluable"),
+                    "on_track": on_track_val,
+                    "status": status_val,
                     "is_dju_applied": r.get("is_normalized", False),
                 }
             )
@@ -1244,8 +1266,22 @@ def _compute_site_dt_progress(db: Session, site_id: int, annee: int, *, site=Non
     total_act = sum(r["conso_actuelle_kwh"] or 0 for r in efa_results)
     total_norm = sum(r["conso_normalisee_kwh"] or 0 for r in efa_results if r["conso_normalisee_kwh"])
     is_dju = any(r["is_dju_applied"] for r in efa_results)
-    reduction_agg = round((1 - total_act / total_ref) * 100, 1) if total_ref > 0 else None
-    on_track_all = all(r["on_track"] for r in efa_results if r["on_track"] is not None)
+    # S2 hotfix (2026-05-28) — `total_act == 0` est un artefact (aucune
+    # mesure remontée), pas une « réduction de 100 % ». On expose
+    # `reduction_pct = None` au lieu de 100, évitant la barre verte +
+    # libellé contradictoire « -100 % / En retard ».
+    if total_ref > 0 and total_act > 0:
+        reduction_agg = round((1 - total_act / total_ref) * 100, 1)
+    else:
+        reduction_agg = None
+    # On_track agrégé : tristate strict. Si AUCUNE EFA évaluable (toutes
+    # `on_track is None`), on remonte None (la doctrine UI mappe sur
+    # « Sans données » au lieu d'« En retard »).
+    evaluable = [r["on_track"] for r in efa_results if r["on_track"] is not None]
+    if evaluable:
+        on_track_all = all(evaluable)
+    else:
+        on_track_all = None
 
     # Prochain jalon
     prochain_jalon = None
