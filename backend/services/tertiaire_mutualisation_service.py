@@ -1,34 +1,46 @@
 """
 PROMEOS — Simulateur de mutualisation Decret Tertiaire.
 
-Principe : un proprietaire avec N sites peut compenser les sites en retard
-avec les sites en avance. L'objectif est evalue au niveau portefeuille.
+Principe : un assujetti avec N sites peut compenser les sites en retard
+avec les sites en avance. La verification de l'atteinte des objectifs
+est evaluee au niveau du « groupe de structures » constitue.
 
-STATUT REGLEMENTAIRE (au 2026-05-28) :
+STATUT REGLEMENTAIRE (au 2026-05-28, verifie Legifrance) :
 - La mutualisation patrimoniale est explicitement prevue par l'Article
-  L111-10-3 du Code de la construction et de l'habitation, modifie par
-  la loi 2018-1021 (loi ELAN) et son decret d'application 2019-771.
-- L'arrete du 10 avril 2020 modifie (Articles 8 et 12) precise les
-  modalites de declaration au niveau patrimoine et de constatation
-  collective de l'atteinte des objectifs.
-- A la date de ce sprint, la FONCTIONNALITE OPERAT de declaration
-  mutualisee n'est pas operationnelle dans la plateforme : un
-  proprietaire qui souhaite mutualiser doit toujours declarer site par
-  site, puis appliquer la compensation patrimoniale lors du controle.
+  R.174-31 du Code de la construction et de l'habitation (modalite
+  d'application de l'Article L.111-10-3, fondement legal trajectoire).
+- L'Article 14 de l'arrete du 10 avril 2020 modifie precise les
+  modalites de mutualisation : constitution d'un « groupe de structures »
+  saisi via la plateforme OPERAT, avec validation du representant legal
+  de chaque entite fonctionnelle integree au perimetre. Donnees attendues :
+  Table 1B de l'Annexe IV de l'arrete.
+- Regles d'unicite (Art. 14) : une entite fonctionnelle ne peut
+  appartenir qu'a UN seul groupe ; les consommations economisees ne
+  peuvent etre redistribuees qu'UNE seule fois.
+- L'arrete du 1er aout 2025 (NOR ATDL2430864A) apporte les precisions
+  sur la mutualisation multi-sites et l'attestation numerique OPERAT
+  (obligatoire apres 1er juillet 2026).
+- A la date du sprint, le module OPERAT « Mutualisation des resultats
+  a l'echelle d'un patrimoine » est en cours de deploiement progressif
+  par l'ADEME. Tant qu'il n'est pas pleinement operationnel, chaque
+  site reste a declarer individuellement et la compensation est
+  constatee lors du controle decennal (echeances 2030/2040/2050).
 - PROMEOS anticipe le calcul de la position consolidee pour preparer
-  la trajectoire patrimoniale en amont du depot.
+  la trajectoire patrimoniale en amont du depot, en s'appuyant sur les
+  regles d'unicite citees plus haut.
 
-Sources officielles uniquement :
-- Article L111-10-3 du Code de la construction et de l'habitation
-  (Légifrance) — fondement legal de la trajectoire patrimoniale.
-- Decret n2019-771 du 23 juillet 2019, articles 3 et 4 — modalites
-  de calcul de l'objectif au niveau patrimoine.
-- Arrete du 10 avril 2020 modifie, articles 8 et 12 — declaration
-  consolidee et constatation de l'atteinte au niveau patrimoine.
+Sources officielles uniquement (Legifrance) :
+- Article L.111-10-3 du Code de la construction et de l'habitation —
+  fondement legal de l'obligation de reduction.
+- Article R.174-31 du meme code — modalite d'application mutualisation.
+- Decret n°2019-771 du 23/07/2019 — calcul objectif au niveau patrimoine.
+- Arrete du 10 avril 2020 modifie, Article 14 — modalites mutualisation
+  via OPERAT + groupes de structures + Table 1B Annexe IV.
+- Arrete du 1er aout 2025 — precisions mutualisation 2026+.
 
 Aucune reference a un editeur tiers n'est exposee dans les messages
-rendus a l'utilisateur (doctrine PROMEOS : zero mention concurrent
-dans l'UI).
+rendus a l'utilisateur (doctrine PROMEOS : zero mention concurrent UI,
+cf. feedback_promeos_zero_concurrent_ui).
 """
 
 import logging
@@ -44,13 +56,15 @@ from config.emission_factors import BASE_PENALTY_EURO
 from services.operat_trajectory import TARGETS as _OT_TARGETS
 
 DISCLAIMER_MUTUALISATION = (
-    "Simulation patrimoniale — la déclaration mutualisée au niveau OPERAT "
-    "n'est pas encore opérationnelle en 2026 ; chaque site reste à "
-    "déclarer individuellement et la compensation patrimoniale est "
-    "constatée lors du contrôle. PROMEOS calcule la position consolidée "
-    "pour préparer votre trajectoire avant dépôt. "
-    "Sources : Art. L111-10-3 du Code de la construction et de l'habitation "
-    "et arrêté du 10 avril 2020 modifié (Art. 8 et 12, déclaration au niveau patrimoine)."
+    "Simulation patrimoniale — le module OPERAT « Mutualisation des "
+    "résultats à l'échelle d'un patrimoine » est en cours de déploiement "
+    "progressif. En attendant, chaque entité fonctionnelle (EFA) reste "
+    "à déclarer individuellement et la compensation est constatée lors "
+    "du contrôle décennal. PROMEOS calcule la position consolidée pour "
+    "préparer votre groupe de structures avant dépôt OPERAT. "
+    "Sources : Art. R.174-31 du Code de la construction et de "
+    "l'habitation et Article 14 de l'arrêté du 10 avril 2020 modifié "
+    "(constitution du groupe de structures + Table 1B de l'Annexe IV)."
 )
 
 # Conversion : operat_trajectory stocke le *reste* (0.60 = garder 60% = -40%)
