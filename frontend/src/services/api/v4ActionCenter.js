@@ -80,6 +80,23 @@ export function createItem(payload, { idempotencyKey } = {}) {
   return apiClientV4.post(`${BASE}/items`, payload, { headers });
 }
 
+/**
+ * S2 simplicité (2026-05-28) — NextBestAction 1-clic des briques métier.
+ *
+ * Upsert idempotent par `external_ref` (signature stable cross-brique) :
+ * - signature inconnue → CREATE (201)
+ * - signature connue, item non clos → renvoie l'item existant (200)
+ * - signature connue, item CLOS → 409 EXTERNAL_REF_CLOSED (la doctrine
+ *   interdit la résurrection)
+ *
+ * Le payload reste minimal (kind/title/description/domain/external_ref/
+ * source_url) — `organisation_id` est forcé par le repo côté BE et
+ * `priority_*` reste dérivée (axe scoring R1-R6).
+ */
+export function upsertItemByExternalRef(payload) {
+  return apiClientV4.post(`${BASE}/items/upsert-by-external-ref`, payload);
+}
+
 export function updateItem(itemId, payload) {
   return apiClientV4.patch(`${BASE}/items/${itemId}`, payload);
 }

@@ -44,6 +44,35 @@ class ActionCenterItemCreate(BaseModel):
     domain: Optional[str] = Field(None, max_length=30)
 
 
+class ActionCenterItemUpsertByExternalRef(BaseModel):
+    """S2 simplicité (2026-05-28) — body de POST
+    /api/v4/action-center/items/upsert-by-external-ref.
+
+    Endpoint dédié à la boucle « NextBestAction 1-clic » des briques
+    métier (Conformité, Billing, Pilotage). Diffère de POST /items :
+    - `external_ref` requis (signature stable cross-brique). Pattern par
+      brique, ex Conformité : `conformite:{rule}:{site_id}`.
+    - `source_url` requis (URL canonique du retour à la source).
+    - Sémantique upsert idempotent : on cherche par `external_ref` AVANT
+      de créer ; si la signature existe et que l'item n'est PAS clos,
+      on renvoie l'item existant (200, pas 201). Si l'item EXISTE et est
+      CLOSED, on renvoie 409 — la doctrine S2 interdit la résurrection
+      d'une action clôturée.
+
+    `priority_*` / `lifecycle_state` toujours absents (axe dérivé, server-
+    set). `organisation_id` toujours forcé par le repo (defense in depth).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Kind
+    title: str = Field(..., min_length=3, max_length=255)
+    description: Optional[str] = Field(None, max_length=4000)
+    domain: Optional[str] = Field(None, max_length=30)
+    external_ref: str = Field(..., min_length=3, max_length=120)
+    source_url: str = Field(..., min_length=1, max_length=500)
+
+
 # ── Responses ────────────────────────────────────────────────────────
 
 

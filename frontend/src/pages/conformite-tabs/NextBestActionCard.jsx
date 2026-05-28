@@ -1,8 +1,17 @@
 /**
- * NextBestActionCard — Hero card showing the single most important action.
- * Placed at top of ConformitePage, before tabs.
+ * NextBestActionCard — Hero card de la prochaine action prioritaire.
+ *
+ * S2 simplicité (2026-05-28) — 1-clic CTA unique « Créer l'action » :
+ * délègue au parent (ConformitePage) qui mappe NBA → external_ref
+ * stable + payload upsert. La carte ne porte plus 2 CTAs concurrents :
+ * - si l'action peut être créée (cible upsert disponible), CTA primaire
+ *   « Créer l'action » + un lien discret « Voir le contexte ».
+ * - sinon (cas NBA navigation pure type Données/Preuves), on retombe
+ *   sur le CTA historique avec son label.
+ *
+ * Doctrine §6.2 hub unique : aucun nouvel écran, aucun nouveau menu.
  */
-import { Database, Clock, FileText, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Database, Clock, FileText, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Card, CardBody, Badge, Button } from '../../ui';
 
 const SEVERITY_STYLE = {
@@ -21,11 +30,21 @@ const ICON_MAP = {
   CheckCircle2,
 };
 
-export default function NextBestActionCard({ action, onAction }) {
+export default function NextBestActionCard({
+  action,
+  onAction,
+  // S2 — quand `actionablePayload` est fourni, la carte affiche un CTA
+  // unique « Créer l'action » qui appelle `onCreateAction` (upsert NBA
+  // idempotent côté parent). Sinon, on retombe sur `onAction(ctaAction)`.
+  actionablePayload = null,
+  onCreateAction,
+  pending = false,
+}) {
   if (!action) return null;
 
   const style = SEVERITY_STYLE[action.severity] || SEVERITY_STYLE.medium;
   const Icon = ICON_MAP[action.icon] || AlertTriangle;
+  const canUpsert = !!(actionablePayload && onCreateAction);
 
   return (
     <div data-testid="next-best-action" className="mb-4">
@@ -50,9 +69,21 @@ export default function NextBestActionCard({ action, onAction }) {
               </div>
               <p className="text-sm text-gray-600">{action.description}</p>
             </div>
-            <Button data-testid="nba-cta" size="sm" onClick={() => onAction(action.ctaAction)}>
-              {action.ctaLabel}
-            </Button>
+            {canUpsert ? (
+              <Button
+                data-testid="nba-cta-create-action"
+                size="sm"
+                disabled={pending}
+                onClick={() => onCreateAction(actionablePayload)}
+              >
+                {pending && <Loader2 size={14} className="animate-spin mr-1" />}
+                Créer l'action
+              </Button>
+            ) : (
+              <Button data-testid="nba-cta" size="sm" onClick={() => onAction(action.ctaAction)}>
+                {action.ctaLabel}
+              </Button>
+            )}
           </div>
         </CardBody>
       </Card>

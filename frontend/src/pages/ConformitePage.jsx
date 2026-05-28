@@ -53,7 +53,12 @@ import HealthSummary from '../components/HealthSummary';
 import CrossModuleCTA from '../components/CrossModuleCTA';
 import DossierPrintView from '../components/DossierPrintView';
 import RegulatoryTimeline from '../components/compliance/RegulatoryTimeline';
-import { REG_LABELS, STATUT_LABELS, COCKPIT_TABS } from '../domain/compliance/complianceLabels.fr';
+import {
+  REG_LABELS,
+  STATUT_LABELS,
+  COCKPIT_TABS_NORMAL,
+  COCKPIT_TABS_EXPERT,
+} from '../domain/compliance/complianceLabels.fr';
 import {
   getComplianceBundle,
   patchComplianceFinding,
@@ -64,6 +69,10 @@ import {
   getSegmentationProfile,
   getAuditSmeAssessment,
 } from '../services/api';
+// S2 simplicité (2026-05-28) — NBA 1-clic via upsert idempotent par
+// external_ref. Wrapper FE du POST /api/v4/action-center/items/upsert-by-
+// external-ref ajouté en sprint S2 (cf. v4ActionCenter.js).
+import { upsertItemByExternalRef } from '../services/api/v4ActionCenter';
 
 // V7 — regulation filter map (URL ?regulation=) → list of obligation codes to match.
 // Cleanup sidebar Conformité (2026-05-24) — étendu à `beges` car la chip
@@ -168,6 +177,30 @@ export default function ConformitePage() {
     searchParams.get('tab') ||
     (initialView === 'exposure_components' ? 'execution' : 'obligations');
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  // S2 simplicité métier — tabs dynamiques par persona.
+  // En mode normal, `execution` n'est plus dans le strip — un deep-link
+  // historique (?tab=execution ou view=exposure_components) bascule sur le
+  // hub Centre d'Action V4 qui porte la SoT lifecycle. En mode expert, tous
+  // les ids restent supportés.
+  const cockpitTabs = isExpert ? COCKPIT_TABS_EXPERT : COCKPIT_TABS_NORMAL;
+  const tabIsAllowed = cockpitTabs.some((t) => t.id === activeTab);
+  useEffect(() => {
+    if (!tabIsAllowed && activeTab === 'execution') {
+      // Persona non expert qui arrive sur ?tab=execution → redirect canonique
+      // vers /action-center-v4 filtré conformité (hub unique, aucun écran
+      // fantôme). On nettoie le tab=execution dans l'URL au passage.
+      const next = new URLSearchParams(searchParams);
+      next.delete('tab');
+      next.delete('view');
+      setSearchParams(next, { replace: true });
+      setActiveTab('obligations');
+      navigate('/action-center-v4?domain=conformite');
+    } else if (!tabIsAllowed) {
+      setActiveTab('obligations');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabIsAllowed]);
   const rawRegulationFilter = searchParams.get('regulation');
   const regulationFilter = ALLOWED_REGULATION_FILTERS.includes(rawRegulationFilter)
     ? rawRegulationFilter
@@ -507,6 +540,90 @@ export default function ConformitePage() {
     [navigate, openActionDrawer, nextBestAction, switchToTab]
   );
 
+  // ── S2 simplicité (2026-05-28) — NextBestAction 1-clic upsert idempotent ──
+  //
+  // Quand la NBA correspond à une cible « action exécutable » (constat
+  // réglementaire actionnable ou échéance proche sur une obligation
+  // précise), on calcule un `external_ref` stable + un `source_url`
+  // canonique, et on délègue à l'endpoint upsert. Re-cliquer ne crée pas
+  // de doublon ; cliquer sur une signature déjà CLOSED ne ressuscite pas.
+  //
+  // Pour les NBA navigation pure (compléter données, joindre preuves),
+  // pas de payload upsert → la carte garde son CTA historique.
+  const [nbaPending, setNbaPending] = useState(false);
+
+  const nbaUpsertPayload = useMemo(() => {
+    if (!nextBestAction) return null;
+    const siteId = scopedSites?.[0]?.id || 0;
+    if (nextBestAction.id?.startsWith('nba-deadline-')) {
+      const code = nextBestAction.id.replace('nba-deadline-', '') || 'deadline';
+      const obligation = obligations.find((o) => o.code === code);
+      return {
+        kind: 'deadline',
+        title: nextBestAction.title.slice(0, 240),
+        description: nextBestAction.description || null,
+        domain: 'conformite',
+        external_ref: `conformite:${code}:${siteId}`,
+        source_url: `/conformite?regulation=${obligation?.code || code}`,
+      };
+    }
+    if (nextBestAction.id === 'nba-findings' && actionableFindings.length > 0) {
+      const top = actionableFindings[0];
+      return {
+        kind: 'action',
+        title: nextBestAction.title.slice(0, 240),
+        description: nextBestAction.description || null,
+        domain: 'conformite',
+        external_ref: `conformite:${top.rule_id || top.regulation}:${top.site_id || siteId}`,
+        source_url: `/conformite?regulation=${top.regulation || top.rule_id}`,
+      };
+    }
+    return null;
+  }, [nextBestAction, scopedSites, obligations, actionableFindings]);
+
+  const handleNbaCreateAction = useCallback(
+    async (payload) => {
+      if (!payload || nbaPending) return;
+      setNbaPending(true);
+      try {
+        const res = await upsertItemByExternalRef(payload);
+        const item = res?.data || res;
+        const wasExisting = res?.status === 200;
+        track('nba_upsert', {
+          external_ref: payload.external_ref,
+          status: wasExisting ? 'existing' : 'created',
+          item_id: item?.id,
+        });
+        toast(
+          wasExisting
+            ? 'Action déjà existante — ouverte.'
+            : "Action créée. Bouclée au Centre d'Action.",
+          wasExisting ? 'info' : 'success'
+        );
+        // Hub unique : on bascule l'utilisateur vers /action-center-v4
+        // filtré sur l'item créé/rouvert (boucle Conformité → Centre
+        // d'Action V4 livrée par la chaîne #311 → #320).
+        if (item?.id) navigate(`/action-center-v4?item=${item.id}`);
+        else navigate('/action-center-v4?domain=conformite');
+      } catch (err) {
+        const code = err?.response?.data?.detail?.code;
+        if (code === 'EXTERNAL_REF_CLOSED') {
+          toast(
+            'Cette action a déjà été clôturée — elle ne peut pas être ressuscitée. Si la règle redevient applicable, un nouveau cycle sera créé.',
+            'warning'
+          );
+          track('nba_upsert_closed', { external_ref: payload.external_ref });
+        } else {
+          toast('Erreur création action — réessayez', 'error');
+          track('nba_upsert_error', { external_ref: payload.external_ref, code });
+        }
+      } finally {
+        setNbaPending(false);
+      }
+    },
+    [nbaPending, toast, navigate]
+  );
+
   const handleStepClick = useCallback(
     (step) => {
       if (step.ctaTarget?.tab) switchToTab(step.ctaTarget.tab);
@@ -793,16 +910,12 @@ export default function ConformitePage() {
         </div>
       </details>
 
-      {/* Step 21: Compliance Summary Banner — messages actionnables */}
-      {summary && (
-        <ComplianceSummaryBanner
-          score={score}
-          obligations={obligations}
-          timeline={timeline}
-          isExpert={isExpert}
-          navigate={navigate}
-        />
-      )}
+      {/* S2 simplicité (2026-05-28) — Banner unifié 3 états (vert / orange
+          / rouge). Dédoublonné : Top 3 urgences retiré (déjà rendu par
+          ObligationsTab), résumé exécutif retiré (déjà dans la synthèse
+          compacte), RiskBadge retiré (déjà carte 4 de la synthèse). Un
+          seul CTA primaire par état. */}
+      {summary && <ComplianceSummaryBanner score={score} timeline={timeline} navigate={navigate} />}
 
       {/* Empty state when no obligations found */}
       {!summary && emptyReason === 'NO_SITES' && (
@@ -841,9 +954,19 @@ export default function ConformitePage() {
         <GuidedModeBandeau steps={guidedSteps} onStepClick={handleStepClick} />
       )}
 
-      {/* Next Best Action hero card */}
+      {/* Next Best Action hero card — S2 simplicité : CTA unique « Créer
+          l'action » quand la NBA pointe une cible actionable (deadline /
+          findings). Sinon (data blocker, missing proofs), la carte garde
+          son CTA navigation historique. Idempotence portée par
+          `external_ref` côté BE → re-cliquer n'invente pas de doublon. */}
       {nextBestAction && nextBestAction.id !== 'nba-all-good' && (
-        <NextBestActionCard action={nextBestAction} onAction={handleNbaAction} />
+        <NextBestActionCard
+          action={nextBestAction}
+          onAction={handleNbaAction}
+          actionablePayload={nbaUpsertPayload}
+          onCreateAction={handleNbaCreateAction}
+          pending={nbaPending}
+        />
       )}
 
       {/* A.2: Unified compliance score header */}
@@ -933,10 +1056,13 @@ export default function ConformitePage() {
         })}
       </div>
 
-      {/* Cockpit Tabs */}
+      {/* Cockpit Tabs — S2 simplicité : strip dynamique par persona
+          (3 tabs normal / 4 tabs expert). Le tab Exécution n'apparaît
+          qu'en mode expert ; le persona normal a déjà la NBA 1-clic +
+          le redirect deep-link vers /action-center-v4. */}
       <div ref={tabsRef} />
       <Tabs
-        tabs={COCKPIT_TABS}
+        tabs={cockpitTabs}
         active={activeTab}
         onChange={(tab) => {
           setActiveTab(tab);
