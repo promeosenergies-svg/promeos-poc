@@ -258,20 +258,23 @@ describe('Cleanup sidebar Conformité — deep-link discoverability', () => {
 
 /* ── Expert filtering (item level) ── */
 describe('Expert filtering V7', () => {
-  // Cleanup sidebar Conformité (2026-05-24) : retrait des 2 sous-items
-  // DT/APER de la sidebar (hub unique /conformite) → 16 → 14 items.
-  it('normal mode: 14 visible items (cleanup sidebar Conformité)', () => {
+  // Cleanup sidebar Conformité (2026-05-24, PR #300) : retrait des 2
+  // sous-items DT/APER de la sidebar (hub unique /conformite) → 16 → 14.
+  // Cleanup navigation pré-usage steering (2026-05-27, PR #314) : Flex
+  // Intelligence déclassé en deep-link (sortie du rail visible) → 14 → 13.
+  // → maintenance 2026-05-29 : test aligné sur la valeur effective post-#314.
+  it('normal mode: 13 visible items (post déclassement Flex Intelligence #314)', () => {
     const normal = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, false)
     );
-    expect(normal).toHaveLength(14);
+    expect(normal).toHaveLength(13);
   });
 
-  it('expert mode: same 14 items (no expertOnly items left)', () => {
+  it('expert mode: same 13 items (no expertOnly items left)', () => {
     const expert = NAV_SECTIONS.filter((s) => !s.expertOnly).flatMap((s) =>
       getVisibleItems(s.items, true)
     );
-    expect(expert).toHaveLength(14);
+    expect(expert).toHaveLength(13);
   });
 
   it('zero expert-only items (all tabs merged into parent pages)', () => {
