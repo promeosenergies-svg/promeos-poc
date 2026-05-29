@@ -36,18 +36,12 @@ from services.error_catalog import business_error
 router = APIRouter(prefix="/api/monitoring", tags=["Monitoring"])
 
 
-# Énergie P0b visual credibility (2026-05-27, brief C1) — helper de clamp
-# défensif pour les snapshots Monitoring. Garantit que `data_quality_score`
-# et `risk_power_score` exposés au FE restent dans [0, 100], même si un
-# snapshot legacy a persisté un score > 100 avant le fix orchestrator.
-def _clamp_monitoring_score(raw):
-    """Clamp un score Monitoring sur [0, 100] avec tolérance None / cast."""
-    if raw is None:
-        return None
-    try:
-        return max(0, min(100, round(float(raw))))
-    except (TypeError, ValueError):
-        return 0
+# Énergie P0b visual credibility (2026-05-27, brief C1) + P0.S1a (2026-05-29) —
+# helper de clamp défensif pour les snapshots Monitoring. Garantit que
+# `data_quality_score` et `risk_power_score` exposés au FE restent dans
+# [0, 100], même si un snapshot legacy a persisté un score > 100 avant le
+# fix orchestrator. Délégation à l'utilitaire canonique partagé.
+from services.electric_monitoring.score_utils import clamp_score_0_100 as _clamp_monitoring_score  # noqa: E402
 
 
 # --- Pydantic models ---

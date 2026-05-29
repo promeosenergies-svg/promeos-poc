@@ -251,15 +251,17 @@ class MonitoringOrchestrator:
         """Save monitoring snapshot to DB."""
         from models import MonitoringSnapshot
 
-        # Énergie P0b visual credibility (2026-05-27, brief C1) — borne les
-        # scores Monitoring sur [0, 100]. Avant, un score 108 pouvait
-        # persister (formule data_quality permettait > 100 via pénalité
-        # cumulative) et s'afficher tel quel côté FE (anti-confiance DAF).
+        # Énergie P0b visual credibility (2026-05-27, brief C1) + P0.S1a
+        # (2026-05-29) — borne les scores Monitoring sur [0, 100]. Avant, un
+        # score 108 pouvait persister (formule data_quality permettait > 100
+        # via pénalité cumulative) et s'afficher tel quel côté FE (anti-
+        # confiance DAF). Délégation à l'utilitaire canonique partagé.
+        from services.electric_monitoring.score_utils import clamp_score_0_100
+
         def _clamp_score(raw):
-            try:
-                return max(0, min(100, round(float(raw or 0))))
-            except (TypeError, ValueError):
-                return 0
+            # Compat orchestrator : préserve le comportement legacy
+            # (None → 0) pour ne pas régresser sur snapshots existants.
+            return clamp_score_0_100(raw, preserve_none=False)
 
         snapshot = MonitoringSnapshot(
             site_id=meter.site_id,

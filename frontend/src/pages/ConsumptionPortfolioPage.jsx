@@ -322,9 +322,14 @@ export default function ConsumptionPortfolioPage() {
       )}
 
       {/* ═══ PILOTAGE HEADER ═══ */}
+      {/* Sprint Énergie P0.S1a (2026-05-29, brief P0 #5) — promotion h2 → h1
+          pour rétablir hiérarchie a11y (la page n'avait pas de h1 explicite,
+          le breadcrumb pointait sur "Portefeuille" mais aucun titre de niveau
+          1 n'ancrait la page côté lecteur d'écran). Reprend libellé aligné
+          NavRegistry + breadcrumb LABELS.portfolio = "Portefeuille". */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Portefeuille Consommation</h2>
+          <h1 className="text-xl font-bold text-gray-900">Portefeuille Consommation</h1>
           <p className="text-sm text-gray-500">
             Vous pilotez {cov?.sites_total ?? '—'} sites sur la période du {fmtDate(dates.from)} au{' '}
             {fmtDate(dates.to)}

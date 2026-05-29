@@ -638,8 +638,14 @@ export default function ConsumptionExplorerPage() {
   return (
     <div className="space-y-3">
       {/* Page header + scope badge + cross-nav — compact single row (#90) */}
+      {/* Sprint Énergie P0.S1a (2026-05-29, brief P0 #5) — hiérarchie h1
+          rehaussée text-base → text-xl pour respecter la table d'autorité
+          typographique (h1 = principal de page, pas un sous-titre). Avant,
+          la h1 « Explorateur de consommation » était rendue en `text-base
+          font-semibold` (16px) — visuellement inférieure aux h2 de panels
+          internes (text-lg font-bold = 18px), inversion de hiérarchie. */}
       <div className="flex items-center gap-3 flex-wrap">
-        <h1 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+        <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <BarChart3 size={18} className="text-blue-600" />
           Explorateur de consommation
         </h1>
