@@ -113,40 +113,77 @@ FORBIDDEN_PATTERNS: list[tuple[re.Pattern, str]] = [
 # + (cf. docs/audits/audit_menu_energie_monitoring_conso_2026_05_29.md
 # §11 P0 #4-8 + plan refonte P0).
 WHITELIST: dict[str, str] = {
-    # Dettes héritées identifiées par audit 2026-05-29 §9 (violations doctrine
-    # « zero calcul frontend »). Cleanup P0.S1b prévu :
-    #   - P0.5 CO₂ frontend → emissions_service backend
-    #   - P0.4 heatmap synthétique → demo_seed backend
-    #   - P0.6 quartiles Q1/Q3 → consumption_granularity_service backend
-    #   - P0.7 score fraîcheur → data_freshness_service backend
-    #   - P0.8 computeInsights → consumption_diagnostic backend
+    # Ratchet baseline post-P0.S1b (2026-05-29). État après migrations :
+    #
+    #   ✓ P0.5 CO₂ frontend → migré vers helper utils/co2.js (whitelisté
+    #     par regex spéciale : helper canonique, conversion d'unité pure).
+    #     OverviewRow.jsx 100 % nettoyé → RETIRÉ de la whitelist.
+    #
+    #   ✓ P0.6 quartiles Q1/Q3 → SoT backend
+    #     consumption_granularity_service.compute_quantiles disponible
+    #     (cf. test_consumption_quantiles.py 23 cas verts). Migration FE
+    #     MonitoringPage.jsx:1306-1308 prévue P0.S1c.
+    #
+    #   ✓ P0.7 score fraîcheur → SoT backend
+    #     data_freshness_service.compute_meter_freshness disponible
+    #     (cf. test_data_freshness_service.py 13 cas verts). Migration FE
+    #     MonitoringPage.jsx:202-217 prévue P0.S1c.
+    #
+    #   ⏳ P0.4 heatmap synthétique → ConsumptionDiagPage.jsx
+    #     `generateComparisonChart` SUPPRIMÉ + placeholder visible
+    #     (cf. tests Diag « no Math.sin » verts). Mais l'export
+    #     `generateComparisonChart` reste référencé dans le bloc
+    #     commentaire DELETED pour traçabilité — donc la whitelist
+    #     Diag est conservée pour cette session, à retirer post-cleanup
+    #     du bloc commentaire P0.S1c (audit P0 #4).
+    #
+    #   ⏳ P0.8 computeInsights → reste en frontend (consumption/
+    #     insightRules.js + ConsumptionExplorerPage.jsx:883). Migration
+    #     vers consumption_diagnostic.insights planifiée P0.S1c (lourd
+    #     refactor — règles déterministes talon/WE/pic à formaliser).
+    #
     "frontend/src/pages/ConsumptionDiagPage.jsx": (
-        "P0.S1b ratchet : violations connues — CO₂ frontend l.225 + heatmap "
-        "sinusoïdale l.132-152 + agrégation totalCo2eKg l.247. Migration "
-        "vers emissions_service + demo_seed backend prévue P0.S1b "
-        "(audit P0 #4-5, brief sprint correction)."
+        "P0.S1c ratchet : bloc commentaire historique DELETED contient "
+        "encore les patterns sin/cos pour traçabilité du fix (cf. "
+        "commentaire l.126+ « DELETED generateComparisonChart »). "
+        "À retirer du commentaire en P0.S1c quand l'historique sera "
+        "documenté dans le CHANGELOG."
     ),
     "frontend/src/pages/MonitoringPage.jsx": (
-        "P0.S1b ratchet : violations connues — quartiles Q1/Q3 l.1306-1308 + "
-        "score fraîcheur computeConfidence l.202-211 + reduce wasteAlerts. "
-        "Migration vers consumption_granularity_service.compute_quantiles + "
-        "data_freshness_service backend prévue P0.S1b (audit P0 #6-7)."
+        "P0.S1c ratchet : quartiles Q1/Q3 frontend _filterOutliers "
+        "l.1304-1313 + score fraîcheur computeConfidence l.199-217 + "
+        "reduce wasteAlerts. SoT backend déjà disponible "
+        "(compute_quantiles + data_freshness_service). Migration FE "
+        "planifiée P0.S1c — risque haut (3 231 LoC, tests Playwright "
+        "indispensables avant refactor)."
     ),
     "frontend/src/pages/ConsumptionExplorerPage.jsx": (
-        "P0.S1b ratchet : violations connues — CO₂ frontend l.384 + appel "
-        "computeInsights l.883 (règles d'anomalie déterministes). Migration "
-        "vers emissions_service + consumption_diagnostic.insights backend "
-        "prévue P0.S1b (audit P0 #5, #8)."
-    ),
-    "frontend/src/pages/consumption/OverviewRow.jsx": (
-        "P0.S1b ratchet : CO₂ frontend l.43 — sous-composant Overview "
-        "consommé par Explorer. Migration corrélée à ConsumptionExplorerPage "
-        "(emissions_service backend) en P0.S1b."
+        "P0.S1c ratchet : appel computeInsights l.883 (règles "
+        "d'anomalie déterministes). CO₂ frontend MIGRÉ vers "
+        "kwhToCo2Kg (utils/co2.js). Reste à migrer computeInsights "
+        "vers consumption_diagnostic.insights backend P0.S1c."
     ),
     "frontend/src/pages/consumption/insightRules.js": (
-        "P0.S1b ratchet : fonction computeInsights l.17 — règles d'anomalie "
-        "métier frontend. À supprimer après migration consumption_diagnostic."
-        "insights backend (audit P0 #8). Fichier candidat à DELETE en P0.S1b."
+        "P0.S1c ratchet : fonction computeInsights — règles d'anomalie "
+        "métier frontend. À supprimer après migration "
+        "consumption_diagnostic.insights backend P0.S1c. Fichier "
+        "candidat à DELETE (cf. audit P0 #8)."
+    ),
+    # frontend/src/pages/consumption/OverviewRow.jsx — RETIRÉ post-P0.S1b
+    # (toutes violations CO₂ migrées vers kwhToCo2Kg, plus aucune
+    # violation détectée par les patterns du guard).
+}
+
+
+# Modules helpers explicitement autorisés à faire la multiplication
+# `kwh * factor` (conversion d'unité pure, pas calcul métier). Voir
+# documentation in-file pour chaque entrée.
+HELPER_WHITELIST: dict[str, str] = {
+    "frontend/src/utils/co2.js": (
+        "Helper canonique P0.S1b — module dédié conversion kWh → "
+        "kgCO₂eq via facteur ADEME V23.6 fourni par backend. Unique "
+        "point autorisé pour la multiplication `kwh * facteur_CO2` "
+        "côté frontend. Documentation doctrine dans le fichier."
     ),
 }
 
@@ -163,7 +200,7 @@ def _energy_page_files() -> list[Path]:
 def _check_file(path: Path) -> list[tuple[int, str, str]]:
     """Retourne les violations détectées : [(line_no, label, snippet)]."""
     rel = path.relative_to(REPO_ROOT).as_posix()
-    if rel in WHITELIST:
+    if rel in WHITELIST or rel in HELPER_WHITELIST:
         return []
     try:
         content = path.read_text(encoding="utf-8")
