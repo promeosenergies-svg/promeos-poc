@@ -11,6 +11,9 @@ import { Zap, Euro, TrendingUp, Leaf, Activity, Moon, HelpCircle, Building2 } fr
 import { TrustBadge as _TrustBadge } from '../ui';
 import { useElecCo2Factor } from '../contexts/EmissionFactorsContext';
 import { fmtNum, fmtKwh } from '../utils/format';
+// Sprint Énergie P0.S1b (2026-05-29) — helper canonique unique pour
+// conversion kWh → kgCO₂eq. Facteur ADEME V23.6 fourni par backend.
+import { kwhToCo2Kg } from '../utils/co2';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { getKpiLabel } from '../shared/kpiLabels';
 
@@ -136,7 +139,8 @@ export default function ConsoKpiHeader({
   const eurPerM2Label = eurPerM2Year != null ? fmtNum(eurPerM2Year, 1, '€/m²/an') : '—';
 
   // --- CO2e (facteur via EmissionFactorsContext, source unique ADEME) ---
-  const co2Kg = totalKwh != null ? Math.round(totalKwh * co2Factor) : null;
+  // P0.S1b : conversion via helper canonique utils/co2.kwhToCo2Kg.
+  const co2Kg = kwhToCo2Kg(totalKwh, co2Factor);
   const co2Label =
     co2Kg != null
       ? co2Kg >= 1000

@@ -44,6 +44,9 @@ import useExplorerMode from './consumption/useExplorerMode';
 import PortfolioPanel from './consumption/PortfolioPanel';
 import { MAX_SITES, nonApplicableTabs } from './consumption/types';
 import { useElecCo2Factor } from '../contexts/EmissionFactorsContext';
+// Sprint Énergie P0.S1b (2026-05-29) — helper canonique unique pour
+// conversion kWh → kgCO₂eq. Facteur ADEME V23.6 fourni par backend.
+import { kwhToCo2Kg } from '../utils/co2';
 import TimeseriesPanel from './consumption/TimeseriesPanel';
 import SignaturePanel from './consumption/SignaturePanel';
 import { fmtCo2, fmtKwh } from '../utils/format';
@@ -381,7 +384,8 @@ export default function ConsumptionExplorerPage() {
     const totalKwh = hphc?.total_kwh ?? motor.primaryTunnel?.total_kwh ?? null;
     const kwhStr = totalKwh != null ? fmtKwh(totalKwh) : null;
     // Facteur CO₂ via EmissionFactorsContext (source unique backend/config/emission_factors.py)
-    const co2Kg = totalKwh != null ? Math.round(totalKwh * co2Factor) : null;
+    // P0.S1b : conversion via helper canonique utils/co2.kwhToCo2Kg.
+    const co2Kg = kwhToCo2Kg(totalKwh, co2Factor);
     const co2Str = co2Kg != null ? fmtCo2(co2Kg) : null;
     return {
       'conso-kwh-total': evidenceKwhTotal(scopeLabel, periodStr, kwhStr),
