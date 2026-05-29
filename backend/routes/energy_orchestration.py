@@ -24,16 +24,24 @@ from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import AuthContext, get_optional_auth
 from schemas.energy_orchestration import (
+    EnergyCostContractResponse,
     EnergyLoadCurveResponse,
     EnergySynthesisResponse,
     EnergyWeekProfileResponse,
 )
+from services.energy_orchestration.cost_vs_contract import (
+    CostVsContractError,
+    build_cost_vs_contract,
+)
 from services.energy_orchestration.errors import (
     CODE_COMPARE_INVALID,
+    CODE_CONTRACT_NOT_FOUND,
+    CODE_DATA_INSUFFICIENT,
     CODE_GRANULARITY_TOO_FINE,
     CODE_GRANULARITY_UNKNOWN,
     CODE_PERIOD_INVALID,
     CODE_RANGE_INVALID,
+    CODE_SCENARIO_INVALID,
     CODE_SCOPE_INVALID,
     energy_error,
 )
@@ -234,4 +242,74 @@ def get_energy_week_profile(
             message=exc.message,
             hint=exc.hint,
             request=request,
+        ) from exc
+
+
+# ── GET /api/energy/cost-vs-contract ───────────────────────────────────
+
+
+@router.get("/cost-vs-contract", response_model=EnergyCostContractResponse)
+def get_energy_cost_vs_contract(
+    request: Request,
+    scope: str = Query("site", description="site | meter"),
+    scope_id: Optional[int] = Query(None, description="site_id ou meter_id"),
+    period: str = Query("12m", description="7d | 30d | 90d | 12m | ytd"),
+    scenarios: Optional[str] = Query(
+        None,
+        description="Liste CSV des scénarios (ex: fixed,indexed). Défaut : tous.",
+    ),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Vue Coût & contrat — relie consommation réelle au contrat actif,
+    décompose le prix (fourniture / TURPE / taxes / capacité) et simule
+    4 scénarios contractuels (Fixe / Indexé / Mixte / THS).
+
+    Doctrine : aucune économie présentée comme certaine.
+    Toute hypothèse est documentée dans `assumptions` + `provenance`.
+    """
+    if period not in ("7d", "30d", "90d", "12m", "ytd"):
+        raise energy_error(
+            code=CODE_PERIOD_INVALID,
+            message=f"period='{period}' invalide",
+            hint="valeurs autorisées : 7d | 30d | 90d | 12m | ytd",
+            request=request,
+        )
+
+    requested = None
+    if scenarios:
+        requested = [s.strip() for s in scenarios.split(",") if s.strip()]
+
+    resolved_org_id = _resolve_org_id(request, auth, org_id)
+
+    try:
+        return build_cost_vs_contract(
+            db,
+            scope_kind=scope,
+            scope_id=scope_id,
+            org_id=resolved_org_id,
+            period_label=period,
+            scenarios=requested,
+        )
+    except CostVsContractError as exc:
+        msg = exc.message.lower()
+        if "scope_id" in msg:
+            code = "ENERGY_SCOPE_ID_REQUIRED"
+        elif "scope_kind" in msg or "non supporté" in msg:
+            code = CODE_SCOPE_INVALID
+        elif "scénarios" in msg or "scenarios" in msg:
+            code = CODE_SCENARIO_INVALID
+        elif "contrat" in msg or "contract" in msg:
+            code = CODE_CONTRACT_NOT_FOUND
+        elif "insuffisant" in msg or "données" in msg:
+            code = CODE_DATA_INSUFFICIENT
+        else:
+            code = CODE_SCOPE_INVALID
+        raise energy_error(
+            code=code,
+            message=exc.message,
+            hint=exc.hint,
+            request=request,
+            status_code=getattr(exc, "http_code", 400),
         ) from exc

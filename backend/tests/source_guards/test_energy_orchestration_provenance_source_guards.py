@@ -158,20 +158,15 @@ class TestLoadCurveServiceContract:
 
 
 class TestEndpointsNotYetCreated:
-    """Brief P1.S2b INTERDIT : /cost-vs-contract et /market-exposure réservés P1.S2c/d.
+    """Brief P1.S2c INTERDIT : /market-exposure réservé P1.S2d.
 
-    /week-profile est désormais livré P1.S2b — autorisé.
+    /week-profile (P1.S2b) et /cost-vs-contract (P1.S2c) sont livrés.
     """
-
-    def test_no_cost_vs_contract_endpoint_yet(self):
-        router_file = REPO_ROOT / "backend" / "routes" / "energy_orchestration.py"
-        content = router_file.read_text(encoding="utf-8")
-        assert "/cost-vs-contract" not in content, "Endpoint /cost-vs-contract interdit dans P1.S2b (planifié P1.S2c)"
 
     def test_no_market_exposure_endpoint_yet(self):
         router_file = REPO_ROOT / "backend" / "routes" / "energy_orchestration.py"
         content = router_file.read_text(encoding="utf-8")
-        assert "/market-exposure" not in content, "Endpoint /market-exposure interdit dans P1.S2b (planifié P1.S2d)"
+        assert "/market-exposure" not in content, "Endpoint /market-exposure interdit dans P1.S2c (planifié P1.S2d)"
 
     def test_week_profile_endpoint_present(self):
         """P1.S2b — /week-profile est livré."""
@@ -179,6 +174,30 @@ class TestEndpointsNotYetCreated:
         content = router_file.read_text(encoding="utf-8")
         assert "/week-profile" in content
         assert "build_week_profile" in content
+
+    def test_cost_vs_contract_endpoint_present(self):
+        """P1.S2c — /cost-vs-contract est livré."""
+        router_file = REPO_ROOT / "backend" / "routes" / "energy_orchestration.py"
+        content = router_file.read_text(encoding="utf-8")
+        assert "/cost-vs-contract" in content
+        assert "build_cost_vs_contract" in content
+
+
+class TestCostVsContractContract:
+    """Le service cost_vs_contract respecte les invariants doctrine."""
+
+    def test_default_scenarios_are_4(self):
+        from services.energy_orchestration.cost_vs_contract import DEFAULT_SCENARIOS
+
+        assert set(DEFAULT_SCENARIOS) == {"fixed", "indexed", "mixed", "ths"}
+
+    def test_recommendation_warning_immutable_default(self):
+        """Doctrine : warning par défaut « Simulation indicative »."""
+        from schemas.energy_orchestration import EnergyContractRecommendation
+
+        default = EnergyContractRecommendation.model_fields["warning"].default
+        assert default.lower().startswith("simulation indicative")
+        assert "promesse" in default.lower()
 
 
 class TestRouterRegistration:

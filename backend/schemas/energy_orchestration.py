@@ -203,6 +203,105 @@ class EnergyWeekProfileResponse(BaseModel):
     empty_state: Optional[str] = None
 
 
+# ── /api/energy/cost-vs-contract ───────────────────────────────────────
+
+
+ContractType = Literal["fixed", "indexed", "mixed", "ths", "unknown"]
+RiskLevel = Literal["faible", "modéré", "élevé"]
+ScenarioStatus = Literal["current", "simulation"]
+PriceComponentKey = Literal["supply", "network", "taxes", "capacity", "other"]
+
+
+class EnergyContractSummary(BaseModel):
+    """Résumé du contrat actif d'un site (ContratCadre v2 + Annexe)."""
+
+    contract_id: Optional[str] = None
+    supplier_name: Optional[str] = None
+    contract_type: ContractType = "unknown"
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    subscribed_power_kva: Optional[float] = None
+    provenance: EnergyProvenance
+
+
+class EnergyPriceComponent(BaseModel):
+    """Une composante de prix de la facture (fourniture / TURPE / taxes / capacité)."""
+
+    key: PriceComponentKey
+    label: str
+    amount_eur: Optional[float] = None
+    price_eur_mwh: Optional[float] = None
+    share_pct: Optional[float] = Field(None, ge=0.0, le=100.0)
+    provenance: EnergyProvenance
+
+
+class EnergyContractScenario(BaseModel):
+    """Un scénario contractuel simulé (cdc_contract_simulator)."""
+
+    key: str = Field(..., description="ex: fixed_12m, indexed_spot, mixed_50_50, ths")
+    label: str
+    estimated_cost_eur: Optional[float] = None
+    weighted_price_eur_mwh: Optional[float] = None
+    risk_level: RiskLevel = "modéré"
+    status: ScenarioStatus = "simulation"
+    delta_vs_current_eur: Optional[float] = Field(
+        None, description="Différentiel coût annuel vs contrat actuel (signe négatif = économie)"
+    )
+    provenance: EnergyProvenance
+    assumptions: list[str] = Field(default_factory=list)
+
+
+class EnergyContractRecommendation(BaseModel):
+    """Recommandation contractuelle non-engageante issue de la simulation.
+
+    Doctrine : `warning` OBLIGATOIRE — toute reco PROMEOS est indicative,
+    aucune économie n'est promise comme certaine.
+    """
+
+    recommended_scenario: Optional[str] = Field(None, description="Clé du scénario recommandé (cf. scenarios[].key)")
+    message: str
+    confidence: float = Field(0.0, ge=0.0, le=1.0)
+    warning: str = "Simulation indicative — ne constitue pas une promesse d'économie."
+    provenance: EnergyProvenance
+
+
+class EnergyCostAssumptions(BaseModel):
+    """Hypothèses globales utilisées dans la simulation coût/contrat."""
+
+    spot_price_source: Optional[str] = None
+    spot_year_reference: Optional[int] = None
+    turpe_version: Optional[str] = None
+    fallback_price_used: bool = False
+    notes: list[str] = Field(default_factory=list)
+
+
+class EnergyCostContractKpis(BaseModel):
+    """KPI agrégés Coût & contrat."""
+
+    total_cost_eur: Optional[EnergyKpi] = None
+    consumption_kwh: Optional[EnergyKpi] = None
+    weighted_price_eur_mwh: Optional[EnergyKpi] = None
+    supply_cost_eur: Optional[EnergyKpi] = None
+    network_cost_eur: Optional[EnergyKpi] = None
+    taxes_cost_eur: Optional[EnergyKpi] = None
+
+
+class EnergyCostContractResponse(BaseModel):
+    """Payload réponse `/api/energy/cost-vs-contract`."""
+
+    scope: EnergyScope
+    period: EnergyPeriod
+    active_contract: Optional[EnergyContractSummary] = None
+    kpis: EnergyCostContractKpis = Field(default_factory=EnergyCostContractKpis)
+    price_decomposition: list[EnergyPriceComponent] = Field(default_factory=list)
+    scenarios: list[EnergyContractScenario] = Field(default_factory=list)
+    recommendation: Optional[EnergyContractRecommendation] = None
+    assumptions: EnergyCostAssumptions = Field(default_factory=EnergyCostAssumptions)
+    warnings: list[str] = Field(default_factory=list)
+    empty_state: Optional[str] = None
+    provenance: EnergyProvenance
+
+
 # ── Erreurs standardisées /api/energy/* ────────────────────────────────
 
 
