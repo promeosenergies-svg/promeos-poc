@@ -234,6 +234,38 @@ export const archiveGroupeStructures = (groupId, orgId) =>
 export const buildExportTable1bUrl = (groupId, orgId) =>
   `/api${TERT_BASE}/mutualisation/groups/${groupId}/export-table-1b?org_id=${orgId}`;
 
+// Sprint S4 (2026-05-29) — endpoints avancés mutualisation.
+
+/**
+ * URL de l'export Table 1B Annexe IV au format PDF.
+ * Le PDF inclut un hash SHA256 d'opposabilité (recalculable au contrôle ADEME).
+ */
+export const buildExportTable1bPdfUrl = (groupId, orgId) =>
+  `/api${TERT_BASE}/mutualisation/groups/${groupId}/export-table-1b.pdf?org_id=${orgId}`;
+
+/**
+ * Crée (ou retourne l'existante) une action « Demander validation RL »
+ * dans le Centre d'Action V4, signée par `external_ref` idempotent.
+ */
+export const requestRlValidation = (groupId, efaId, orgId) =>
+  api
+    .post(`${MUTU_BASE}/groups/${groupId}/members/${efaId}/request-validation`, null, {
+      params: { org_id: orgId },
+    })
+    .then((r) => r.data);
+
+/**
+ * Renvoie la prochaine échéance ADEME + statut opposabilité du groupe
+ * + action recommandée FR. Source : Art. R.174-31 CCH (vérification au
+ * 31/12/2031, 2041, 2051 au plus tard).
+ */
+export const getMutualisationDeadlineStatus = (groupId, orgId) =>
+  api
+    .get(`${MUTU_BASE}/groups/${groupId}/deadline-status`, {
+      params: { org_id: orgId },
+    })
+    .then((r) => r.data);
+
 // ── DT Progress — Progression Décret Tertiaire ──
 export const getSiteDtProgress = (siteId, annee = null) =>
   api

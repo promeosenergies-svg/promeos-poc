@@ -22,8 +22,12 @@ describe('S3 · MutualisationSection — bloc groupe de structures', () => {
     expect(ui).toContain('listGroupeStructures');
   });
 
-  it('expose un bouton « Exporter Table 1B » conditionnel', () => {
-    expect(ui).toContain('Exporter Table 1B');
+  it("expose des boutons d'export Table 1B conditionnels (S4 décliné CSV + PDF)", () => {
+    // S4 (2026-05-29) — le bouton unique « Exporter Table 1B » a été
+    // décliné en CSV + PDF. La sémantique reste identique : un seul
+    // groupe de CTA primaires conditionnel sur allRlOk.
+    expect(ui).toContain('CSV Table 1B');
+    expect(ui).toContain('PDF Table 1B');
     expect(ui).toContain('Export indisponible');
   });
 
