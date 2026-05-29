@@ -79,6 +79,10 @@ import SolPageHeader from '../ui/sol/SolPageHeader';
 import SolNarrative from '../ui/sol/SolNarrative';
 // Sprint 2 Vague B ét8' — HOC SolBriefingHead/Footer factorise grammaire §5.
 import SolBriefingHead from '../ui/sol/SolBriefingHead';
+// Sprint Énergie P1.S3b (2026-05-29) — Synthèse Énergie 30s branchée sur
+// /api/energy/synthesis. Composant autonome avec 10 KPI canoniques +
+// narrative + provenance, sans calcul métier frontend.
+import MonitoringSynthesisStrip from '../ui/energy/MonitoringSynthesisStrip';
 import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 // Sprint 2 Vague B ét6' — labels FR centralisés (label_registries cross-vue).
@@ -2152,6 +2156,17 @@ export default function MonitoringPage() {
         onRetry={solBriefingRefetch}
         omitHeader
         onNavigate={navigate}
+      />
+
+      {/* Sprint Énergie P1.S3b (2026-05-29) — Synthèse Énergie 30s branchée
+          sur /api/energy/synthesis. Affiche 10 KPI canoniques (consumption,
+          coût, CO₂, peak, prix pondéré, qualité données, couverture sites,
+          alertes/actions ouvertes, impact financier estimé) + narrative
+          backend + provenance complète. Doctrine zéro calcul métier FE. */}
+      <MonitoringSynthesisStrip
+        scope={{ kind: siteId ? 'site' : 'org', id: siteId, org_id: org?.id }}
+        period="30d"
+        compare="none"
       />
 
       {error && <ErrorState message={error} onRetry={loadAll} />}
