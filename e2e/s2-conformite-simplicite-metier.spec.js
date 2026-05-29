@@ -7,20 +7,15 @@
  *   10. NextBestAction crée/ouvre action idempotente · CLOSED non ressuscité
  *   11. Golden path : 0 console error · 0 network 4xx/5xx
  *
+ * Sprint infra-stabilisation 2026-05-29 — login retiré : auth est posée
+ * une fois pour toutes par `auth.setup.spec.js` (project `setup` dans
+ * playwright.config.js). Élimine le flake rate-limit observé pré-merge.
+ *
  * Pré-requis : backend :8001 + frontend :5173 démarrés + demo data seeded.
  */
 import { test, expect } from '@playwright/test';
 
 const TIMEOUT = 15_000;
-
-/** Login helper — credentials du superuser demo (cf. orchestrator._create_superuser). */
-async function login(page) {
-  await page.goto('/login');
-  await page.fill('input[type="email"]', 'promeos@promeos.io');
-  await page.fill('input[type="password"]', 'promeos2024');
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: TIMEOUT });
-}
 
 /** Collecteur d'erreurs console + network 4xx/5xx (golden path). */
 function attachHardeningProbes(page) {
@@ -41,9 +36,8 @@ function attachHardeningProbes(page) {
 }
 
 test.describe('S2 — Conformité simplicité métier', () => {
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-  });
+  // Sprint infra-stabilisation 2026-05-29 — plus de beforeEach login :
+  // chaque page hérite du storageState produit par auth.setup.spec.js.
 
   // ── Item 8 — Tabs dynamiques par persona ─────────────────────────
 
