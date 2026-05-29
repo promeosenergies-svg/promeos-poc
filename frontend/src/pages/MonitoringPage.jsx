@@ -193,6 +193,21 @@ export function kpiStatus(value, thresholds, invert = false) {
 
 /**
  * Compute confidence level for a KPI.
+ *
+ * Sprint Énergie P0.S1c (2026-05-29, brief P2) — la suppression initiale
+ * a été annulée : `computeConfidence` est encore consommée à 2 endroits
+ * dans MonitoringPage (climateConf, qualityConf, useMemo lignes ~1892-1908).
+ * La fonction est conservée TEMPORAIREMENT en attendant la migration
+ * complète vers le payload backend (cf. data_freshness_service
+ * disponible P0.S1b + endpoint /api/energy/synthesis prévu P1.S2 qui
+ * exposera `confidence_score` + `confidence_level` pré-calculés).
+ *
+ * Ce helper consomme uniquement des valeurs déjà calculées par le
+ * backend (r² climate, n_points, coverage_pct data quality) — ce ne
+ * sont pas des règles métier mais une combinaison cosmétique d'affichage
+ * pour les badges UI. Whitelisté explicitement dans le source-guard
+ * `test_frontend_no_business_calc_source_guards.py` jusqu'à P1.S2.
+ *
  * @param {object} opts - { r2, nPoints, coveragePct, reason }
  * @returns {{ level: 'low'|'medium'|'high', pct: number, reason: string }}
  */
@@ -1301,14 +1316,22 @@ function OffHoursDrawer({
   );
 }
 
-function _filterOutliers(points) {
-  if (points.length < 5) return points;
-  const vals = points.map((p) => p.kwh).sort((a, b) => a - b);
-  const q1 = vals[Math.floor(vals.length * 0.25)];
-  const q3 = vals[Math.floor(vals.length * 0.75)];
-  const iqr = q3 - q1;
-  const upper = q3 + 3 * iqr;
-  const lower = q1 - 3 * iqr;
+// Sprint Énergie P0.S1c (2026-05-29, brief P1) — _filterOutliers ne
+// calcule plus Q1/Q3 côté frontend. Les bornes sont fournies par le
+// backend dans `climate.outlier_bounds` (cf. routes/monitoring.py:163+,
+// SoT canonique services/consumption_granularity_service.compute_quantiles).
+// Cette fonction reste un FILTRE D'AFFICHAGE pur : applique les bornes
+// reçues pour ne pas écraser le scatter chart avec des outliers visuels.
+//
+// Si le backend ne fournit pas `outlier_bounds` (compat données legacy
+// ou erreur côté serveur), on retourne tous les points (pas de fallback
+// FE qui re-calculerait — doctrine zéro calcul métier).
+function _filterOutliers(points, outlierBounds) {
+  if (!points || points.length < 5) return points;
+  if (!outlierBounds || outlierBounds.lower == null || outlierBounds.upper == null) {
+    return points;
+  }
+  const { lower, upper } = outlierBounds;
   return points.filter((p) => p.kwh >= lower && p.kwh <= upper);
 }
 
@@ -1325,7 +1348,8 @@ function ClimateScatter({ climate }) {
     );
   }
 
-  const filtered = _filterOutliers(climate.scatter);
+  // P0.S1c — `outlier_bounds` fourni par backend (compute_quantiles SoT).
+  const filtered = _filterOutliers(climate.scatter, climate?.outlier_bounds);
   const removed = climate.scatter.length - filtered.length;
 
   return (

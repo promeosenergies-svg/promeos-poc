@@ -166,6 +166,49 @@ def get_monitoring_kpis(
                 else:
                     readings = [{"timestamp": r.timestamp, "value_kwh": r.value_kwh} for r in readings_orm]
                     climate_data = ClimateEngine().compute(readings, weather)
+                    # Sprint Énergie P0.S1c (2026-05-29, brief P1) — pré-calcul
+                    # backend des bornes outliers pour ClimateScatter UI. Le
+                    # frontend `MonitoringPage:_filterOutliers` faisait
+                    # `Math.floor(length * 0.25)` côté JS (violation doctrine).
+                    # On expose désormais `outlier_bounds: {lower, upper}` +
+                    # `quantiles: {q1, median, q3}` pré-calculés via le SoT
+                    # canonique `consumption_granularity_service.compute_quantiles`
+                    # (interpolation linéaire numpy-compat). Le FE n'a plus qu'à
+                    # appliquer un filter pur (p.kwh >= lower && p.kwh <= upper)
+                    # qui est une comparaison d'affichage, pas un calcul métier.
+                    try:
+                        scatter = climate_data.get("scatter") or []
+                        if scatter and len(scatter) >= 5:
+                            from services.consumption_granularity_service import compute_quantiles
+
+                            kwh_values = [p.get("kwh") for p in scatter if p.get("kwh") is not None]
+                            qs = compute_quantiles(kwh_values, qs=[0.25, 0.5, 0.75])
+                            q1 = qs.get("p25")
+                            q3 = qs.get("p75")
+                            iqr = qs.get("iqr") or 0.0
+                            climate_data["quantiles"] = {
+                                "q1": q1,
+                                "median": qs.get("p50"),
+                                "q3": q3,
+                                "iqr": iqr,
+                                "n": qs.get("n"),
+                            }
+                            if q1 is not None and q3 is not None:
+                                climate_data["outlier_bounds"] = {
+                                    "lower": round(q1 - 3 * iqr, 6),
+                                    "upper": round(q3 + 3 * iqr, 6),
+                                    "method": "tukey_3xIQR",
+                                }
+                                climate_data["provenance"] = {
+                                    "source": "MeterReading via ClimateEngine",
+                                    "formula": "linear interpolation percentile (Tukey 3·IQR)",
+                                    "period": (f"{snapshot.period_start.date()} → {snapshot.period_end.date()}"),
+                                    "service": "consumption_granularity_service.compute_quantiles",
+                                    "n_points": len(kwh_values),
+                                }
+                    except Exception:  # noqa: BLE001 — sécurité défensive payload
+                        # Pas de blocage du payload principal si bornes échouent.
+                        pass
     except Exception as e:
         climate_data = {"reason": "computation_error", "scatter": [], "fit_line": [], "error_detail": str(e)[:200]}
 

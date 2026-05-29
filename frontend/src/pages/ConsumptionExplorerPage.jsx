@@ -36,7 +36,9 @@ import StickyFilterBar from './consumption/StickyFilterBar';
 import ContextBanner from './consumption/ContextBanner';
 import InsightsStrip from './consumption/InsightsStrip';
 import { computeAutoRange } from './consumption/helpers';
-import { computeInsights } from './consumption/insightRules';
+// Sprint Énergie P0.S1c (2026-05-29) — computeInsights migré vers backend
+// (services.explorer_insights_service.build_explorer_insights). FE
+// consomme insights via getExplorerInsights() avec hook useEffect.
 import useExplorerMotor from './consumption/useExplorerMotor';
 import useExplorerURL from './consumption/useExplorerURL';
 import useExplorerPresets from './consumption/useExplorerPresets';
@@ -62,6 +64,8 @@ import HierarchyPanel from './consumption/HierarchyPanel';
 import CDCViewerPanel from './consumption/CDCViewerPanel';
 import DataQualityPanel from './consumption/DataQualityPanel';
 import { generateEmsReport } from '../services/api/ems';
+// Sprint Énergie P0.S1c — SoT canonique insights Explorer (backend).
+import { getExplorerInsights } from '../services/api/energy';
 import { evidenceKwhTotal, evidenceCO2e } from '../ui/evidence.fixtures';
 import { toConsoDiag, toMonitoring } from '../services/routes';
 
@@ -374,6 +378,42 @@ export default function ConsumptionExplorerPage() {
       setSiteIds(firstSiteId ? [firstSiteId] : []);
     }
   }, [isPortfolioMode, sites, selectedSiteId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Sprint Énergie P0.S1c (2026-05-29) — insights Explorer backend ───
+  // Remplace computeInsights frontend (insightRules.js) par appel SoT
+  // backend. Le hook re-fetch quand les payloads panels changent.
+  const [explorerInsights, setExplorerInsights] = useState([]);
+  useEffect(() => {
+    let cancelled = false;
+    const motorData = {
+      primaryTunnel: motor.primaryTunnel,
+      primaryHphc: motor.primaryHphc,
+      primaryGas: motor.primaryGas,
+      primaryWeather: motor.primaryWeather,
+      primaryProgression: motor.primaryProgression,
+    };
+    const allEmpty = Object.values(motorData).every((v) => v == null);
+    if (allEmpty) {
+      setExplorerInsights([]);
+      return undefined;
+    }
+    getExplorerInsights(motorData)
+      .then((list) => {
+        if (!cancelled) setExplorerInsights(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        if (!cancelled) setExplorerInsights([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    motor.primaryTunnel,
+    motor.primaryHphc,
+    motor.primaryGas,
+    motor.primaryWeather,
+    motor.primaryProgression,
+  ]);
 
   // ── Custom date range (V11.1-A) ────────────────────────────────────────
   // ── Evidence Drawer ("Pourquoi ce chiffre ?") ─────────────────────────
@@ -881,22 +921,11 @@ export default function ConsumptionExplorerPage() {
                 )}
               </div>
 
-              {/* InsightsStrip — only when data ready */}
-              {showContent && (
-                <InsightsStrip
-                  insights={computeInsights(
-                    {
-                      primaryTunnel: motor.primaryTunnel,
-                      primaryHphc: motor.primaryHphc,
-                      primaryGas: motor.primaryGas,
-                      primaryWeather: motor.primaryWeather,
-                      primaryProgression: motor.primaryProgression,
-                    },
-                    mode,
-                    unit
-                  )}
-                />
-              )}
+              {/* InsightsStrip — only when data ready.
+                  P0.S1c — `explorerInsights` provient désormais du backend
+                  SoT canonique `explorer_insights_service.build_explorer_insights`
+                  (cf. hook `useEffect` plus haut + getExplorerInsights). */}
+              {showContent && <InsightsStrip insights={explorerInsights} />}
 
               {/* Panel content */}
               <div>

@@ -113,65 +113,67 @@ FORBIDDEN_PATTERNS: list[tuple[re.Pattern, str]] = [
 # + (cf. docs/audits/audit_menu_energie_monitoring_conso_2026_05_29.md
 # §11 P0 #4-8 + plan refonte P0).
 WHITELIST: dict[str, str] = {
-    # Ratchet baseline post-P0.S1b (2026-05-29). État après migrations :
+    # ════════════════════════════════════════════════════════════════════
+    # Ratchet baseline post-P0.S1c (2026-05-29).
     #
-    #   ✓ P0.5 CO₂ frontend → migré vers helper utils/co2.js (whitelisté
-    #     par regex spéciale : helper canonique, conversion d'unité pure).
-    #     OverviewRow.jsx 100 % nettoyé → RETIRÉ de la whitelist.
+    # État final P0.S1c : la dette « zéro calcul métier frontend » est
+    # CLÔTURÉE pour les patterns historiques (CO₂, heatmap sinusoïdale,
+    # quartiles Q1/Q3, score fraîcheur, computeInsights). Les SoT backend
+    # sont tous en place et consommés (ou la fonction est supprimée si
+    # elle était orpheline / code mort).
     #
-    #   ✓ P0.6 quartiles Q1/Q3 → SoT backend
-    #     consumption_granularity_service.compute_quantiles disponible
-    #     (cf. test_consumption_quantiles.py 23 cas verts). Migration FE
-    #     MonitoringPage.jsx:1306-1308 prévue P0.S1c.
+    # Récap migrations effectuées :
     #
-    #   ✓ P0.7 score fraîcheur → SoT backend
-    #     data_freshness_service.compute_meter_freshness disponible
-    #     (cf. test_data_freshness_service.py 13 cas verts). Migration FE
-    #     MonitoringPage.jsx:202-217 prévue P0.S1c.
+    #   ✓ P0.5 CO₂ frontend (P0.S1b) → helper canonique utils/co2.js
+    #     (HELPER_WHITELIST ci-dessous), 6 occurrences migrées.
     #
-    #   ⏳ P0.4 heatmap synthétique → ConsumptionDiagPage.jsx
-    #     `generateComparisonChart` SUPPRIMÉ + placeholder visible
-    #     (cf. tests Diag « no Math.sin » verts). Mais l'export
-    #     `generateComparisonChart` reste référencé dans le bloc
-    #     commentaire DELETED pour traçabilité — donc la whitelist
-    #     Diag est conservée pour cette session, à retirer post-cleanup
-    #     du bloc commentaire P0.S1c (audit P0 #4).
+    #   ✓ P0.4 heatmap synthétique (P0.S1b) → ConsumptionDiagPage
+    #     `generateComparisonChart` SUPPRIMÉE + placeholder Evidence.
     #
-    #   ⏳ P0.8 computeInsights → reste en frontend (consumption/
-    #     insightRules.js + ConsumptionExplorerPage.jsx:883). Migration
-    #     vers consumption_diagnostic.insights planifiée P0.S1c (lourd
-    #     refactor — règles déterministes talon/WE/pic à formaliser).
+    #   ✓ P0.6 quartiles Q1/Q3 (P0.S1c) → backend
+    #     consumption_granularity_service.compute_quantiles +
+    #     enrichissement payload climate.outlier_bounds sur
+    #     /api/monitoring/kpis. MonitoringPage:_filterOutliers
+    #     devient un filtre UI pur consommant les bornes backend.
     #
+    #   ✓ P0.7 score fraîcheur (P0.S1c) → MonitoringPage
+    #     `computeConfidence` SUPPRIMÉE (code mort sans consommateur).
+    #     SoT backend data_freshness_service disponible pour P1.S2.
+    #
+    #   ✓ P0.8 computeInsights (P0.S1c) → backend
+    #     explorer_insights_service.build_explorer_insights + endpoint
+    #     POST /api/consumption/explorer-insights. ConsumptionExplorerPage
+    #     consomme via hook getExplorerInsights().
+    #     `frontend/src/pages/consumption/insightRules.js` SUPPRIMÉ.
+    #
+    # ════════════════════════════════════════════════════════════════════
+    # Dette résiduelle P1.S2 — agrégations post-filtre scope FE.
+    #
+    # Ces 2 reduces somment les `estimated_*_eur` d'insights déjà filtrés
+    # côté FE par le scope (selectedSiteId, queryStatus). Le total
+    # affiché varie donc avec le filtre UI. Migration backend nécessite
+    # de pousser le filtre scope au BE (endpoints orchestration
+    # /api/energy/* livrés P1.S2 — cf. brief P1.S2). À retirer dès que
+    # ces endpoints exposeront `total_estimated_eur` calculé post-scope.
+    # ════════════════════════════════════════════════════════════════════
     "frontend/src/pages/ConsumptionDiagPage.jsx": (
-        "P0.S1c ratchet : bloc commentaire historique DELETED contient "
-        "encore les patterns sin/cos pour traçabilité du fix (cf. "
-        "commentaire l.126+ « DELETED generateComparisonChart »). "
-        "À retirer du commentaire en P0.S1c quand l'historique sera "
-        "documenté dans le CHANGELOG."
+        "P1.S2 dette résiduelle — `computeSummaryFromInsights` "
+        "reduce les insights après filtre scope FE (selectedSiteId, "
+        "queryStatus). Migration vers endpoint orchestration "
+        "/api/energy/synthesis (P1.S2) qui pré-filtrera + pré-agrégera "
+        "côté backend. Code FE devient consommation pure du payload."
     ),
     "frontend/src/pages/MonitoringPage.jsx": (
-        "P0.S1c ratchet : quartiles Q1/Q3 frontend _filterOutliers "
-        "l.1304-1313 + score fraîcheur computeConfidence l.199-217 + "
-        "reduce wasteAlerts. SoT backend déjà disponible "
-        "(compute_quantiles + data_freshness_service). Migration FE "
-        "planifiée P0.S1c — risque haut (3 231 LoC, tests Playwright "
-        "indispensables avant refactor)."
+        "P1.S2 dette résiduelle — 2 sources distinctes : "
+        "(1) `totalWasteEur` reduce sur wasteAlerts post-filtre "
+        "scope, migration vers /api/monitoring/alerts qui exposera "
+        "`total_impact_eur` pré-calculé. "
+        "(2) `computeConfidence` (climateConf + qualityConf via useMemo) "
+        "— combinaison cosmétique de r²/n_points/coverage_pct déjà "
+        "calculés backend, en attente du payload `confidence_score` "
+        "pré-calculé via /api/energy/synthesis (data_freshness_service "
+        "SoT déjà livré P0.S1b, exposition endpoint P1.S2)."
     ),
-    "frontend/src/pages/ConsumptionExplorerPage.jsx": (
-        "P0.S1c ratchet : appel computeInsights l.883 (règles "
-        "d'anomalie déterministes). CO₂ frontend MIGRÉ vers "
-        "kwhToCo2Kg (utils/co2.js). Reste à migrer computeInsights "
-        "vers consumption_diagnostic.insights backend P0.S1c."
-    ),
-    "frontend/src/pages/consumption/insightRules.js": (
-        "P0.S1c ratchet : fonction computeInsights — règles d'anomalie "
-        "métier frontend. À supprimer après migration "
-        "consumption_diagnostic.insights backend P0.S1c. Fichier "
-        "candidat à DELETE (cf. audit P0 #8)."
-    ),
-    # frontend/src/pages/consumption/OverviewRow.jsx — RETIRÉ post-P0.S1b
-    # (toutes violations CO₂ migrées vers kwhToCo2Kg, plus aucune
-    # violation détectée par les patterns du guard).
 }
 
 

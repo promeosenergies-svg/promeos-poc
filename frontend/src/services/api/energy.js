@@ -496,3 +496,18 @@ export const getTopRecommendation = (siteId) =>
 
 // ── EMS Tier 1 — re-exports ──
 export { getEmsHierarchy, getEmsCdc, getEmsDataQuality, generateEmsReport } from './ems';
+
+// Sprint Énergie P0.S1c (2026-05-29) — endpoint SoT canonique
+// build_explorer_insights (remplace insightRules.js frontend).
+// Cf. backend/services/explorer_insights_service.py (28 tests verts).
+export const getExplorerInsights = async (motorData) => {
+  const payload = {
+    primaryTunnel: motorData?.primaryTunnel ?? null,
+    primaryHphc: motorData?.primaryHphc ?? null,
+    primaryGas: motorData?.primaryGas ?? null,
+    primaryWeather: motorData?.primaryWeather ?? null,
+    primaryProgression: motorData?.primaryProgression ?? null,
+  };
+  const response = await api.post('/consumption/explorer-insights', payload);
+  return response.data?.insights ?? [];
+};

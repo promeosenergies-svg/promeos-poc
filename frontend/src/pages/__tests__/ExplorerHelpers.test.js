@@ -1,7 +1,15 @@
 /**
- * PROMEOS — Tests for Explorer WoW helpers + insightRules
- * Covers: aggregateSeries, convertUnit, colorForSite, interpretClimateSensitivity,
- *         computeInsights (6 rules)
+ * PROMEOS — Tests for Explorer WoW helpers.
+ *
+ * Couvre : aggregateSeries, convertUnit, colorForSite,
+ * interpretClimateSensitivity.
+ *
+ * Sprint Énergie P0.S1c (2026-05-29) — tests `computeInsights` retirés :
+ * la fonction et le module `consumption/insightRules.js` ont été
+ * supprimés. Migration vers backend SoT canonique
+ * `services.explorer_insights_service.build_explorer_insights`
+ * (cf. backend/tests/services/test_explorer_insights_service.py — 28
+ * cas verts couvrant les 6 règles + tri sévérité + provenance).
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -10,7 +18,6 @@ import {
   colorForSite,
   interpretClimateSensitivity,
 } from '../consumption/helpers';
-import { computeInsights } from '../consumption/insightRules';
 
 // ── aggregateSeries ───────────────────────────────────────────────────────
 
@@ -147,82 +154,8 @@ describe('interpretClimateSensitivity', () => {
   });
 });
 
-// ── computeInsights ────────────────────────────────────────────────────────
-
-describe('computeInsights', () => {
-  it('empty data => no insights', () => {
-    expect(computeInsights({}, 'agrege', 'kwh')).toEqual([]);
-  });
-
-  it('ruleOutsideBandHigh: outside_pct > 15 => warn', () => {
-    const insights = computeInsights({ primaryTunnel: { outside_pct: 25, confidence: 'high' } });
-    expect(insights.find((i) => i.id === 'outside_band_high')).toBeTruthy();
-    expect(insights.find((i) => i.id === 'outside_band_high').severity).toBe('warn');
-  });
-
-  it('ruleOutsideBandHigh: outside_pct > 30 => crit', () => {
-    const insights = computeInsights({ primaryTunnel: { outside_pct: 35, confidence: 'high' } });
-    expect(insights.find((i) => i.id === 'outside_band_high').severity).toBe('crit');
-  });
-
-  it('ruleOutsideBandHigh: outside_pct <= 15 => no insight', () => {
-    const insights = computeInsights({ primaryTunnel: { outside_pct: 10, confidence: 'high' } });
-    expect(insights.find((i) => i.id === 'outside_band_high')).toBeUndefined();
-  });
-
-  it('ruleBaseLoadDrift: base_drift_pct > 10 => warn', () => {
-    const insights = computeInsights({
-      primaryWeather: { drift: { base_drift_pct: 15 }, alerts: [] },
-    });
-    expect(insights.find((i) => i.id === 'base_load_drift')).toBeTruthy();
-  });
-
-  it('ruleBaseLoadDrift: drift < 10 => no insight', () => {
-    const insights = computeInsights({
-      primaryWeather: { drift: { base_drift_pct: 5 }, alerts: [] },
-    });
-    expect(insights.find((i) => i.id === 'base_load_drift')).toBeUndefined();
-  });
-
-  it('ruleHpRatioHigh: hp_ratio > 0.7 => info', () => {
-    const insights = computeInsights({ primaryHphc: { hp_ratio: 0.75, confidence: 'high' } });
-    expect(insights.find((i) => i.id === 'hp_ratio_high')).toBeTruthy();
-    expect(insights.find((i) => i.id === 'hp_ratio_high').severity).toBe('info');
-  });
-
-  it('ruleTargetOverBudget: progress > 110 => warn', () => {
-    const insights = computeInsights({
-      primaryProgression: { progress_pct: 120, run_rate_kwh: 5000 },
-    });
-    expect(insights.find((i) => i.id === 'target_over_budget')).toBeTruthy();
-  });
-
-  it('ruleGasLeakSuspect: probable_leak alert => crit', () => {
-    const insights = computeInsights({
-      primaryWeather: { alerts: [{ type: 'probable_leak', message: 'test' }], drift: null },
-    });
-    expect(insights.find((i) => i.id === 'gas_leak_suspect').severity).toBe('crit');
-  });
-
-  it('ruleLowConfidence: any panel has low confidence => info', () => {
-    const insights = computeInsights({ primaryTunnel: { outside_pct: 5, confidence: 'low' } });
-    expect(insights.find((i) => i.id === 'low_confidence')).toBeTruthy();
-    expect(insights.find((i) => i.id === 'low_confidence').severity).toBe('info');
-  });
-
-  it('insights sorted: crit before warn before info', () => {
-    const insights = computeInsights({
-      primaryTunnel: { outside_pct: 35, confidence: 'low' }, // crit + info
-    });
-    const severities = insights.map((i) => i.severity);
-    const critIdx = severities.indexOf('crit');
-    const infoIdx = severities.indexOf('info');
-    if (critIdx >= 0 && infoIdx >= 0) {
-      expect(critIdx).toBeLessThan(infoIdx);
-    }
-  });
-
-  it('no crash on null/undefined fields', () => {
-    expect(() => computeInsights({ primaryTunnel: null, primaryHphc: undefined })).not.toThrow();
-  });
-});
+// ── Sprint Énergie P0.S1c (2026-05-29) ─────────────────────────────────────
+// Tests `computeInsights` retirés : la fonction a été migrée vers backend
+// (services.explorer_insights_service.build_explorer_insights, cf.
+// backend/tests/services/test_explorer_insights_service.py 28 cas verts).
+// Le fichier consumption/insightRules.js a été supprimé.

@@ -955,3 +955,41 @@ def gas_weather_normalized(
     sd = datetime.combine(start_date, datetime.min.time()) if start_date else None
     ed = datetime.combine(end_date, datetime.max.time()) if end_date else None
     return compute_weather_normalized(db, site_id, days=days, start_date=sd, end_date=ed)
+
+
+# =============================================
+# Sprint Énergie P0.S1c — Explorer Insights (build_explorer_insights)
+# =============================================
+# Remplace `frontend/src/pages/consumption/insightRules.js:computeInsights`
+# qui codait 6 règles déterministes côté frontend (seuils 15%, 10%, 0.7,
+# 110% en JS — violation doctrine « zéro calcul métier frontend »).
+# Le FE poste les payloads panels déjà calculés par les autres endpoints
+# (tunnel, hphc, gas, weather, progression) et reçoit la liste d'insights
+# triée par sévérité avec provenance complète.
+
+
+class ExplorerInsightsRequest(BaseModel):
+    """Payload entrée pour build_explorer_insights — un dict par panel."""
+
+    primaryTunnel: Optional[dict] = None
+    primaryHphc: Optional[dict] = None
+    primaryGas: Optional[dict] = None
+    primaryWeather: Optional[dict] = None
+    primaryProgression: Optional[dict] = None
+
+
+@router.post("/explorer-insights")
+def explorer_insights(payload: ExplorerInsightsRequest):
+    """SoT canonique des règles d'insight Explorer.
+
+    Délègue à `services.explorer_insights_service.build_explorer_insights`
+    (cf. tests/services/test_explorer_insights_service.py 28 cas verts).
+
+    Retourne `{insights: [...]}` avec tri par sévérité (crit en tête) et
+    provenance complète (source, formula, threshold, doctrine_ref).
+    """
+    from services.explorer_insights_service import build_explorer_insights
+
+    motor_data = payload.model_dump(exclude_none=True)
+    insights = build_explorer_insights(motor_data)
+    return {"insights": insights}
