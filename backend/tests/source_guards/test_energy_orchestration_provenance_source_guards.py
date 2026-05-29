@@ -157,30 +157,59 @@ class TestLoadCurveServiceContract:
             validate_granularity_for_period("plouf", 7)
 
 
-class TestEndpointsNotYetCreated:
-    """Brief P1.S2c INTERDIT : /market-exposure réservé P1.S2d.
+class TestEndpointsLivrés:
+    """Brief P1.S2d — les 5 endpoints d'orchestration sont tous livrés."""
 
-    /week-profile (P1.S2b) et /cost-vs-contract (P1.S2c) sont livrés.
-    """
-
-    def test_no_market_exposure_endpoint_yet(self):
+    def test_synthesis_endpoint_present(self):
         router_file = REPO_ROOT / "backend" / "routes" / "energy_orchestration.py"
         content = router_file.read_text(encoding="utf-8")
-        assert "/market-exposure" not in content, "Endpoint /market-exposure interdit dans P1.S2c (planifié P1.S2d)"
+        assert "/synthesis" in content and "build_synthesis" in content
+
+    def test_loadcurve_endpoint_present(self):
+        router_file = REPO_ROOT / "backend" / "routes" / "energy_orchestration.py"
+        content = router_file.read_text(encoding="utf-8")
+        assert "/loadcurve" in content and "build_loadcurve" in content
 
     def test_week_profile_endpoint_present(self):
-        """P1.S2b — /week-profile est livré."""
         router_file = REPO_ROOT / "backend" / "routes" / "energy_orchestration.py"
         content = router_file.read_text(encoding="utf-8")
-        assert "/week-profile" in content
-        assert "build_week_profile" in content
+        assert "/week-profile" in content and "build_week_profile" in content
 
     def test_cost_vs_contract_endpoint_present(self):
-        """P1.S2c — /cost-vs-contract est livré."""
         router_file = REPO_ROOT / "backend" / "routes" / "energy_orchestration.py"
         content = router_file.read_text(encoding="utf-8")
-        assert "/cost-vs-contract" in content
-        assert "build_cost_vs_contract" in content
+        assert "/cost-vs-contract" in content and "build_cost_vs_contract" in content
+
+    def test_market_exposure_endpoint_present(self):
+        """P1.S2d — /market-exposure est livré (dernier endpoint d'orchestration)."""
+        router_file = REPO_ROOT / "backend" / "routes" / "energy_orchestration.py"
+        content = router_file.read_text(encoding="utf-8")
+        assert "/market-exposure" in content and "build_market_exposure" in content
+
+
+class TestMarketExposureInvariants:
+    """Le service market_exposure respecte les invariants doctrine."""
+
+    def test_uses_canonical_mkt_price_model(self):
+        """Doctrine source-guard market_price_canonical — MktPrice only."""
+        svc_file = REPO_ROOT / "backend" / "services" / "energy_orchestration" / "market_exposure.py"
+        content = svc_file.read_text(encoding="utf-8")
+        assert "from models.market_models import MktPrice" in content
+        assert "from models.market_price" not in content
+
+    def test_simulation_warning_immutable_default(self):
+        """Doctrine : warning par défaut « Simulation indicative »."""
+        from schemas.energy_orchestration import EnergyDisplacementSimulation
+
+        default = EnergyDisplacementSimulation.model_fields["warning"].default
+        assert default.lower().startswith("simulation indicative")
+        assert "promesse" in default.lower()
+
+    def test_exposure_score_uses_canonical_clamp(self):
+        """Score exposition borné via helper canonique."""
+        svc_file = REPO_ROOT / "backend" / "services" / "energy_orchestration" / "market_exposure.py"
+        content = svc_file.read_text(encoding="utf-8")
+        assert "clamp_score_0_100" in content
 
 
 class TestCostVsContractContract:

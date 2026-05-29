@@ -302,6 +302,117 @@ class EnergyCostContractResponse(BaseModel):
     provenance: EnergyProvenance
 
 
+# ── /api/energy/market-exposure ────────────────────────────────────────
+
+
+MarketType = Literal["day_ahead", "intraday", "future_baseload", "future_peakload"]
+MarketZone = Literal["FR", "DE_LU", "BE", "ES", "NL", "GB", "CH", "IT_NORTH"]
+ExposureScoreState = Literal["sain", "vigilance", "critique", "inactif"]
+FavorableHourReason = Literal["prix bas", "prix négatif", "heure solaire"]
+
+
+class EnergyMarketContext(BaseModel):
+    """Contexte marché du payload (type, zone, source)."""
+
+    type: MarketType = "day_ahead"
+    zone: MarketZone = "FR"
+    source: str = Field(..., description="Source données prix (ex: 'MktPrice canonique')")
+    price_unit: str = "€/MWh"
+    provenance: EnergyProvenance
+
+
+class EnergyMarketExposurePoint(BaseModel):
+    """Un point de la série superposée consommation × prix spot."""
+
+    timestamp: datetime
+    kwh: Optional[float] = None
+    kw_avg: Optional[float] = None
+    spot_price_eur_mwh: Optional[float] = None
+    spot_cost_eur: Optional[float] = None
+    is_top_expensive_hour: bool = False
+    is_negative_price: bool = False
+    quality_status: Literal["measured", "estimated", "missing", "corrected"] = "measured"
+
+
+class EnergyExpensiveHour(BaseModel):
+    """Une heure parmi les top 10% les plus coûteuses."""
+
+    timestamp: datetime
+    spot_price_eur_mwh: float
+    kwh: float
+    cost_eur: float
+    rank: int = Field(..., ge=1, description="1 = la plus coûteuse")
+    recommended_action: str
+    provenance: EnergyProvenance
+
+
+class EnergyFavorableHour(BaseModel):
+    """Une heure favorable au déplacement (prix bas / négatif / solaire)."""
+
+    timestamp: datetime
+    spot_price_eur_mwh: float
+    kwh: Optional[float] = None
+    reason: FavorableHourReason
+    provenance: EnergyProvenance
+
+
+class EnergyBaseloadComparison(BaseModel):
+    """Comparaison profil réel vs ruban baseload théorique."""
+
+    real_profile_cost_eur: Optional[float] = None
+    baseload_cost_eur: Optional[float] = None
+    delta_eur: Optional[float] = Field(
+        None, description="real_profile_cost_eur - baseload_cost_eur (>0 = profil plus coûteux)"
+    )
+    delta_eur_mwh: Optional[float] = None
+    formula: str = "comparaison coût spot pondéré réel vs consommation plate équivalente"
+    provenance: EnergyProvenance
+
+
+class EnergyDisplacementSimulation(BaseModel):
+    """Simulation indicative d'un déplacement de charge.
+
+    Doctrine : `warning` obligatoire — toute simulation est indicative,
+    aucune économie n'est promise comme certaine.
+    """
+
+    label: str = "Déplacement indicatif"
+    flexible_share_pct: float = Field(20.0, ge=0.0, le=100.0)
+    estimated_delta_eur: Optional[float] = None
+    warning: str = "Simulation indicative — ne constitue pas une promesse d'économie."
+    provenance: EnergyProvenance
+
+
+class EnergyMarketExposureKpis(BaseModel):
+    """KPI agrégés marché & exposition."""
+
+    spot_cost_theoretical_eur: Optional[EnergyKpi] = None
+    spot_avg_simple_eur_mwh: Optional[EnergyKpi] = None
+    spot_avg_weighted_eur_mwh: Optional[EnergyKpi] = None
+    baseload_cost_eur: Optional[EnergyKpi] = None
+    delta_vs_baseload_eur: Optional[EnergyKpi] = None
+    top_10pct_expensive_hours_cost_pct: Optional[EnergyKpi] = None
+    negative_price_consumption_pct: Optional[EnergyKpi] = None
+    exposure_score: Optional[EnergyKpi] = None
+
+
+class EnergyMarketExposureResponse(BaseModel):
+    """Payload réponse `/api/energy/market-exposure`."""
+
+    scope: EnergyScope
+    period: EnergyPeriod
+    market: EnergyMarketContext
+    kpis: EnergyMarketExposureKpis = Field(default_factory=EnergyMarketExposureKpis)
+    series: list[EnergyMarketExposurePoint] = Field(default_factory=list)
+    top_expensive_hours: list[EnergyExpensiveHour] = Field(default_factory=list)
+    favorable_hours: list[EnergyFavorableHour] = Field(default_factory=list)
+    baseload_comparison: Optional[EnergyBaseloadComparison] = None
+    simulation: Optional[EnergyDisplacementSimulation] = None
+    warnings: list[str] = Field(default_factory=list)
+    empty_state: Optional[str] = None
+    provenance: EnergyProvenance
+
+
 # ── Erreurs standardisées /api/energy/* ────────────────────────────────
 
 

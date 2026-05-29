@@ -302,15 +302,16 @@ class TestEnergyErrorStandard:
 # ── 9. Pas d'endpoint market-exposure ──────────────────────────────────
 
 
-class TestMarketExposureNotYetCreated:
-    """Brief P1.S2c INTERDIT : pas de /market-exposure dans cette PR."""
+class TestMarketExposureLivréP1S2d:
+    """P1.S2d — /market-exposure est désormais livré."""
 
-    def test_no_market_exposure_endpoint(self):
+    def test_market_exposure_endpoint_present(self):
         from pathlib import Path
 
         router_file = Path(__file__).resolve().parents[2] / "routes" / "energy_orchestration.py"
         content = router_file.read_text(encoding="utf-8")
-        assert "/market-exposure" not in content, "Endpoint /market-exposure interdit dans P1.S2c (planifié P1.S2d)"
+        assert "/market-exposure" in content
+        assert "build_market_exposure" in content
 
 
 # ── 10. Pas de promesse d'économie ferme ───────────────────────────────

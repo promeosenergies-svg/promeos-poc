@@ -26,6 +26,7 @@ from middleware.auth import AuthContext, get_optional_auth
 from schemas.energy_orchestration import (
     EnergyCostContractResponse,
     EnergyLoadCurveResponse,
+    EnergyMarketExposureResponse,
     EnergySynthesisResponse,
     EnergyWeekProfileResponse,
 )
@@ -39,11 +40,17 @@ from services.energy_orchestration.errors import (
     CODE_DATA_INSUFFICIENT,
     CODE_GRANULARITY_TOO_FINE,
     CODE_GRANULARITY_UNKNOWN,
+    CODE_MARKET_UNKNOWN,
     CODE_PERIOD_INVALID,
     CODE_RANGE_INVALID,
     CODE_SCENARIO_INVALID,
     CODE_SCOPE_INVALID,
+    CODE_ZONE_UNKNOWN,
     energy_error,
+)
+from services.energy_orchestration.market_exposure import (
+    MarketExposureError,
+    build_market_exposure,
 )
 from services.energy_orchestration.loadcurve import (
     LoadCurveError,
@@ -302,6 +309,77 @@ def get_energy_cost_vs_contract(
             code = CODE_SCENARIO_INVALID
         elif "contrat" in msg or "contract" in msg:
             code = CODE_CONTRACT_NOT_FOUND
+        elif "insuffisant" in msg or "données" in msg:
+            code = CODE_DATA_INSUFFICIENT
+        else:
+            code = CODE_SCOPE_INVALID
+        raise energy_error(
+            code=code,
+            message=exc.message,
+            hint=exc.hint,
+            request=request,
+            status_code=getattr(exc, "http_code", 400),
+        ) from exc
+
+
+# ── GET /api/energy/market-exposure ────────────────────────────────────
+
+
+@router.get("/market-exposure", response_model=EnergyMarketExposureResponse)
+def get_energy_market_exposure(
+    request: Request,
+    scope: str = Query("site", description="site | meter"),
+    scope_id: Optional[int] = Query(None, description="site_id ou meter_id"),
+    period: str = Query("12m", description="7d | 30d | 90d | 12m | ytd"),
+    market: str = Query("day_ahead", description="day_ahead | intraday | future_baseload | future_peakload"),
+    zone: str = Query("FR", description="FR | DE_LU | BE | ES | NL | GB | CH | IT_NORTH"),
+    baseload: bool = Query(True, description="Calculer baseload_comparison"),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Vue Marché & exposition — superposition consommation × spot,
+    coût théorique, prix pondéré, top heures chères, prix négatifs,
+    comparaison ruban baseload + score d'exposition borné [0, 100].
+
+    Doctrine :
+    - aucune économie certaine — simulation toujours indicative ;
+    - modèle MktPrice canonique (mkt_prices) uniquement, jamais le
+      modèle legacy `market_prices` (cf. source-guard
+      market_price_canonical) ;
+    - timezone Europe/Paris stricte.
+    """
+    if period not in ("7d", "30d", "90d", "12m", "ytd"):
+        raise energy_error(
+            code=CODE_PERIOD_INVALID,
+            message=f"period='{period}' invalide",
+            hint="valeurs autorisées : 7d | 30d | 90d | 12m | ytd",
+            request=request,
+        )
+
+    resolved_org_id = _resolve_org_id(request, auth, org_id)
+
+    try:
+        return build_market_exposure(
+            db,
+            scope_kind=scope,
+            scope_id=scope_id,
+            org_id=resolved_org_id,
+            period_label=period,
+            market=market,
+            zone=zone,
+            baseload=baseload,
+        )
+    except MarketExposureError as exc:
+        msg = exc.message.lower()
+        if "scope_id" in msg:
+            code = "ENERGY_SCOPE_ID_REQUIRED"
+        elif "scope_kind" in msg or "non supporté" in msg:
+            code = CODE_SCOPE_INVALID
+        elif "market" in msg and "inconnu" in msg:
+            code = CODE_MARKET_UNKNOWN
+        elif "zone" in msg and "inconnue" in msg:
+            code = CODE_ZONE_UNKNOWN
         elif "insuffisant" in msg or "données" in msg:
             code = CODE_DATA_INSUFFICIENT
         else:
