@@ -163,3 +163,57 @@ class EnergyLoadCurveResponse(BaseModel):
     provenance: EnergyProvenance
     warnings: list[str] = Field(default_factory=list)
     empty_state: Optional[str] = None
+
+
+# ── /api/energy/week-profile ───────────────────────────────────────────
+
+
+CellStatus = Literal["normal", "vigilance", "critique", "missing"]
+
+
+class WeekProfileCell(BaseModel):
+    """Une cellule de la heatmap semaine type (7 × 24)."""
+
+    day_of_week: int = Field(..., ge=0, le=6, description="0=Lun, 6=Dim")
+    hour: int = Field(..., ge=0, le=23)
+    kwh: Optional[float] = None
+    kw_avg: Optional[float] = None
+    status: CellStatus = "missing"
+    quality_status: Literal["measured", "estimated", "missing"] = "measured"
+
+
+class WeekProfileKpis(BaseModel):
+    """KPI agrégés de la semaine type."""
+
+    highest_day: Optional[EnergyKpi] = None
+    highest_hour: Optional[EnergyKpi] = None
+    night_baseload_kw: Optional[EnergyKpi] = None
+    weekend_consumption_pct: Optional[EnergyKpi] = None
+
+
+class EnergyWeekProfileResponse(BaseModel):
+    """Payload réponse pour vue Semaine type — heatmap 7×24."""
+
+    scope: EnergyScope
+    period: EnergyPeriod
+    matrix: list[WeekProfileCell] = Field(default_factory=list)
+    kpis: WeekProfileKpis = Field(default_factory=WeekProfileKpis)
+    provenance: EnergyProvenance
+    warnings: list[str] = Field(default_factory=list)
+    empty_state: Optional[str] = None
+
+
+# ── Erreurs standardisées /api/energy/* ────────────────────────────────
+
+
+class EnergyErrorPayload(BaseModel):
+    """Erreur standardisée pour endpoints /api/energy/*.
+
+    Sprint P1.S2b — uniformise code + message + hint + correlation_id
+    (cf. middleware energy_orchestration ou UUID généré côté handler).
+    """
+
+    code: str = Field(..., description="Code erreur stable (ex: ENERGY_GRANULARITY_TOO_FINE)")
+    message: str
+    hint: Optional[str] = None
+    correlation_id: str = Field(..., description="UUID corrélation pour logs / support")

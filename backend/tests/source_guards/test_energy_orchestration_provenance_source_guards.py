@@ -158,14 +158,27 @@ class TestLoadCurveServiceContract:
 
 
 class TestEndpointsNotYetCreated:
-    """Brief P1.S2a INTERDIT : pas d'endpoint week-profile/cost/market dans cette PR."""
+    """Brief P1.S2b INTERDIT : /cost-vs-contract et /market-exposure réservés P1.S2c/d.
 
-    def test_no_week_profile_endpoint_yet(self):
+    /week-profile est désormais livré P1.S2b — autorisé.
+    """
+
+    def test_no_cost_vs_contract_endpoint_yet(self):
         router_file = REPO_ROOT / "backend" / "routes" / "energy_orchestration.py"
         content = router_file.read_text(encoding="utf-8")
-        assert "/week-profile" not in content, "Endpoint /week-profile interdit dans P1.S2a (planifié P1.S2b)"
-        assert "/cost-vs-contract" not in content, "Endpoint /cost-vs-contract interdit dans P1.S2a (planifié P1.S2c)"
-        assert "/market-exposure" not in content, "Endpoint /market-exposure interdit dans P1.S2a (planifié P1.S2d)"
+        assert "/cost-vs-contract" not in content, "Endpoint /cost-vs-contract interdit dans P1.S2b (planifié P1.S2c)"
+
+    def test_no_market_exposure_endpoint_yet(self):
+        router_file = REPO_ROOT / "backend" / "routes" / "energy_orchestration.py"
+        content = router_file.read_text(encoding="utf-8")
+        assert "/market-exposure" not in content, "Endpoint /market-exposure interdit dans P1.S2b (planifié P1.S2d)"
+
+    def test_week_profile_endpoint_present(self):
+        """P1.S2b — /week-profile est livré."""
+        router_file = REPO_ROOT / "backend" / "routes" / "energy_orchestration.py"
+        content = router_file.read_text(encoding="utf-8")
+        assert "/week-profile" in content
+        assert "build_week_profile" in content
 
 
 class TestRouterRegistration:

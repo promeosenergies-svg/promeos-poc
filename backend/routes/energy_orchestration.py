@@ -26,12 +26,26 @@ from middleware.auth import AuthContext, get_optional_auth
 from schemas.energy_orchestration import (
     EnergyLoadCurveResponse,
     EnergySynthesisResponse,
+    EnergyWeekProfileResponse,
+)
+from services.energy_orchestration.errors import (
+    CODE_COMPARE_INVALID,
+    CODE_GRANULARITY_TOO_FINE,
+    CODE_GRANULARITY_UNKNOWN,
+    CODE_PERIOD_INVALID,
+    CODE_RANGE_INVALID,
+    CODE_SCOPE_INVALID,
+    energy_error,
 )
 from services.energy_orchestration.loadcurve import (
     LoadCurveError,
     build_loadcurve,
 )
 from services.energy_orchestration.synthesis import build_synthesis
+from services.energy_orchestration.week_profile import (
+    WeekProfileError,
+    build_week_profile,
+)
 
 
 router = APIRouter(prefix="/api/energy", tags=["Energy Orchestration"])
@@ -71,19 +85,25 @@ def get_energy_synthesis(
     data_freshness_service + Insights/Actions backend (impact agrégé).
     """
     if scope not in ("org", "portfolio", "site"):
-        raise HTTPException(
-            status_code=400,
-            detail=f"scope='{scope}' invalide (attendu: org|portfolio|site)",
+        raise energy_error(
+            code=CODE_SCOPE_INVALID,
+            message=f"scope='{scope}' invalide",
+            hint="valeurs autorisées : org | portfolio | site",
+            request=request,
         )
     if period not in ("7d", "30d", "90d", "12m", "ytd"):
-        raise HTTPException(
-            status_code=400,
-            detail=f"period='{period}' invalide (attendu: 7d|30d|90d|12m|ytd)",
+        raise energy_error(
+            code=CODE_PERIOD_INVALID,
+            message=f"period='{period}' invalide",
+            hint="valeurs autorisées : 7d | 30d | 90d | 12m | ytd",
+            request=request,
         )
     if compare not in ("none", "n-1", "baseline", "contract"):
-        raise HTTPException(
-            status_code=400,
-            detail=f"compare='{compare}' invalide (attendu: none|n-1|baseline|contract)",
+        raise energy_error(
+            code=CODE_COMPARE_INVALID,
+            message=f"compare='{compare}' invalide",
+            hint="valeurs autorisées : none | n-1 | baseline | contract",
+            request=request,
         )
 
     resolved_org_id = _resolve_org_id(request, auth, org_id)
@@ -123,14 +143,18 @@ def get_energy_loadcurve(
     - day+  : larges périodes autorisées
     """
     if scope not in ("org", "portfolio", "site", "meter"):
-        raise HTTPException(
-            status_code=400,
-            detail=f"scope='{scope}' invalide (attendu: org|portfolio|site|meter)",
+        raise energy_error(
+            code=CODE_SCOPE_INVALID,
+            message=f"scope='{scope}' invalide",
+            hint="valeurs autorisées : org | portfolio | site | meter",
+            request=request,
         )
     if compare not in ("none", "n-1", "baseline"):
-        raise HTTPException(
-            status_code=400,
-            detail=f"compare='{compare}' invalide",
+        raise energy_error(
+            code=CODE_COMPARE_INVALID,
+            message=f"compare='{compare}' invalide",
+            hint="valeurs autorisées : none | n-1 | baseline",
+            request=request,
         )
 
     resolved_org_id = _resolve_org_id(request, auth, org_id)
@@ -147,7 +171,67 @@ def get_energy_loadcurve(
             compare=compare,
         )
     except LoadCurveError as exc:
-        detail = exc.message
-        if exc.hint:
-            detail = f"{detail} — hint: {exc.hint}"
-        raise HTTPException(status_code=400, detail=detail) from exc
+        # Sprint P1.S2b — code stable selon nature de l'erreur
+        # (granularity_too_fine vs range_invalid vs unknown).
+        msg = exc.message.lower()
+        if "refusée" in msg or "granul" in msg and "(max" in exc.message:
+            code = CODE_GRANULARITY_TOO_FINE
+        elif "inconnue" in msg or "granularity '" in msg:
+            code = CODE_GRANULARITY_UNKNOWN
+        else:
+            code = CODE_RANGE_INVALID
+        raise energy_error(
+            code=code,
+            message=exc.message,
+            hint=exc.hint,
+            request=request,
+        ) from exc
+
+
+# ── GET /api/energy/week-profile ───────────────────────────────────────
+
+
+@router.get("/week-profile", response_model=EnergyWeekProfileResponse)
+def get_energy_week_profile(
+    request: Request,
+    scope: str = Query("site", description="site | meter"),
+    scope_id: Optional[int] = Query(None, description="site_id ou meter_id"),
+    days: int = Query(90, ge=7, le=365 * 2, description="fenêtre d'agrégation"),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Vue Semaine type — heatmap 7×24 + 4 KPI + provenance.
+
+    Composer :
+    - consumption_granularity_service (agrégation Σ MeterReading par
+      weekday × hour)
+    - data_freshness_service (qualité)
+    - compute_quantiles (statut cellule via Tukey 3·IQR)
+    """
+    resolved_org_id = _resolve_org_id(request, auth, org_id)
+
+    try:
+        return build_week_profile(
+            db,
+            scope_kind=scope,
+            scope_id=scope_id,
+            org_id=resolved_org_id,
+            days=days,
+        )
+    except WeekProfileError as exc:
+        msg = exc.message.lower()
+        if "scope_id" in msg:
+            code = "ENERGY_SCOPE_ID_REQUIRED"
+        elif "scope_kind" in msg or "non supporté" in msg:
+            code = CODE_SCOPE_INVALID
+        elif "insuffisant" in msg:
+            code = "ENERGY_DAYS_INSUFFICIENT"
+        else:
+            code = CODE_RANGE_INVALID
+        raise energy_error(
+            code=code,
+            message=exc.message,
+            hint=exc.hint,
+            request=request,
+        ) from exc

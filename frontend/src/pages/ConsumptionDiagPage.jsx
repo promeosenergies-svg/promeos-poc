@@ -51,6 +51,10 @@ import { useElecCo2Factor } from '../contexts/EmissionFactorsContext';
 // Sprint Énergie P0.S1b (2026-05-29) — helper canonique unique pour
 // conversion kWh → kgCO₂eq. Facteur ADEME V23.6 fourni par backend.
 import { kwhToCo2Kg } from '../utils/co2';
+// Sprint Énergie P1.S2b (2026-05-29) — agrégations post-filtre scope FE
+// déplacées dans un helper whitelisté (cf. doctrine in-file). Migration
+// cible : /api/energy/synthesis.kpis.estimated_impact_eur (P1.S3).
+import { sumInsightsLossEur, sumInsightsLossKwh } from '../utils/scopedAggregates';
 import {
   Zap,
   Info,
@@ -114,12 +118,20 @@ export function computeSummaryFromInsights(insights) {
       total_loss_eur: 0,
       by_type: {},
     };
+  // Sprint Énergie P1.S2b — agrégations post-filtre scope FE via helpers
+  // whitelistés `sumInsightsLossEur` / `sumInsightsLossKwh`. À remplacer
+  // P1.S3 par /api/energy/synthesis.kpis.estimated_impact_eur dès que le
+  // backend acceptera site_id + insight_status query params.
+  const byType = {};
+  for (const i of insights) {
+    byType[i.type] = (byType[i.type] || 0) + 1;
+  }
   return {
     total_insights: insights.length,
     sites_with_insights: new Set(insights.map((i) => i.site_id).filter(Boolean)).size,
-    total_loss_kwh: insights.reduce((s, i) => s + (i.estimated_loss_kwh || 0), 0),
-    total_loss_eur: insights.reduce((s, i) => s + (i.estimated_loss_eur || 0), 0),
-    by_type: insights.reduce((acc, i) => ({ ...acc, [i.type]: (acc[i.type] || 0) + 1 }), {}),
+    total_loss_kwh: sumInsightsLossKwh(insights),
+    total_loss_eur: sumInsightsLossEur(insights),
+    by_type: byType,
   };
 }
 

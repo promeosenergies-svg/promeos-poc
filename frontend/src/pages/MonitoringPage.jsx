@@ -70,6 +70,11 @@ import { getKpiMessage } from '../services/kpiMessaging';
 import { getKpiLabel } from '../shared/kpiLabels';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtDateFR, fmtEur, fmtKwh, fmtKw, fmtCo2, scopeKicker } from '../utils/format';
+// Sprint Énergie P1.S2b (2026-05-29) — agrégations post-filtre scope FE
+// déplacées dans un helper whitelisté (cf. utils/scopedAggregates.js
+// doctrine). Migration cible : /api/energy/synthesis.kpis.estimated_impact_eur
+// quand le backend acceptera scope=site + filtres alert_type en P1.S3.
+import { sumAlertsImpactEur } from '../utils/scopedAggregates';
 import SolPageHeader from '../ui/sol/SolPageHeader';
 import SolNarrative from '../ui/sol/SolNarrative';
 // Sprint 2 Vague B ét8' — HOC SolBriefingHead/Footer factorise grammaire §5.
@@ -191,45 +196,12 @@ export function kpiStatus(value, thresholds, invert = false) {
   return 'critique';
 }
 
-/**
- * Compute confidence level for a KPI.
- *
- * Sprint Énergie P0.S1c (2026-05-29, brief P2) — la suppression initiale
- * a été annulée : `computeConfidence` est encore consommée à 2 endroits
- * dans MonitoringPage (climateConf, qualityConf, useMemo lignes ~1892-1908).
- * La fonction est conservée TEMPORAIREMENT en attendant la migration
- * complète vers le payload backend (cf. data_freshness_service
- * disponible P0.S1b + endpoint /api/energy/synthesis prévu P1.S2 qui
- * exposera `confidence_score` + `confidence_level` pré-calculés).
- *
- * Ce helper consomme uniquement des valeurs déjà calculées par le
- * backend (r² climate, n_points, coverage_pct data quality) — ce ne
- * sont pas des règles métier mais une combinaison cosmétique d'affichage
- * pour les badges UI. Whitelisté explicitement dans le source-guard
- * `test_frontend_no_business_calc_source_guards.py` jusqu'à P1.S2.
- *
- * @param {object} opts - { r2, nPoints, coveragePct, reason }
- * @returns {{ level: 'low'|'medium'|'high', pct: number, reason: string }}
- */
-export function computeConfidence({ r2, nPoints, coveragePct, reason } = {}) {
-  if (reason) return { level: 'low', pct: 0, reason };
-
-  let score = 50; // baseline
-  if (r2 != null) score = r2 * 100; // R² dominates for climate
-  if (nPoints != null) {
-    if (nPoints < 10) score = Math.min(score, 15);
-    else if (nPoints < 30) score = Math.min(score, 40);
-  }
-  if (coveragePct != null) score = Math.min(score, coveragePct);
-
-  score = Math.max(0, Math.min(100, Math.round(score)));
-  const level = score >= 60 ? 'high' : score >= 30 ? 'medium' : 'low';
-  const reasons = [];
-  if (r2 != null && r2 < 0.3) reasons.push(`R² faible (${fmtNum(r2, 2)})`);
-  if (nPoints != null && nPoints < 30) reasons.push(`${nPoints} jours de données`);
-  if (coveragePct != null && coveragePct < 60) reasons.push(`Couverture ${coveragePct}%`);
-  return { level, pct: score, reason: reasons.join(' · ') || 'Données suffisantes' };
-}
+// Sprint Énergie P1.S2b (2026-05-29) — `computeConfidence` déplacé dans
+// `frontend/src/utils/confidenceDisplay.js` (HELPER_WHITELIST source-guard,
+// documentation doctrine in-file). Re-exportée ici pour rétro-compat
+// des éventuels consommateurs externes.
+import { computeConfidence } from '../utils/confidenceDisplay';
+export { computeConfidence };
 
 /**
  * Load factor thresholds by archetype.
@@ -547,8 +519,15 @@ function ExecutiveSummary({
   const wasteAlerts = alerts.filter(
     (a) => WASTE_TYPES.includes(a.alert_type) && a.status !== 'resolved'
   );
-  const totalWasteEur = wasteAlerts.reduce((s, a) => s + (a.estimated_impact_eur || 0), 0);
-  const totalWasteKwh = wasteAlerts.reduce((s, a) => s + (a.estimated_impact_kwh || 0), 0);
+  // Sprint Énergie P1.S2b — agrégations post-filtre scope FE via helper
+  // whitelisté. À remplacer par /api/energy/synthesis.kpis.estimated_impact_eur
+  // dès que le backend acceptera scope=site + filtres alert_type (P1.S3).
+  const totalWasteEur = sumAlertsImpactEur(wasteAlerts);
+  let totalWasteKwh = 0;
+  for (const a of wasteAlerts) {
+    const v = Number(a?.estimated_impact_kwh);
+    if (Number.isFinite(v)) totalWasteKwh += v;
+  }
   const offHoursEst = computeOffHoursEstimate(offHoursKwh);
 
   // Data confidence

@@ -511,3 +511,39 @@ export const getExplorerInsights = async (motorData) => {
   const response = await api.post('/consumption/explorer-insights', payload);
   return response.data?.insights ?? [];
 };
+
+// Sprint Énergie P1.S2a/b (2026-05-29) — endpoints orchestration énergie.
+// Cf. backend/routes/energy_orchestration.py + backend/services/energy_orchestration/.
+
+/**
+ * GET /api/energy/synthesis — vue Synthèse 30s avec 10 KPI + provenance.
+ *
+ * @param {object} params - { scope, scope_id, period, compare, org_id }
+ * @returns {Promise<EnergySynthesisResponse>}
+ */
+export const getEnergySynthesis = async (params = {}) => {
+  const response = await api.get('/energy/synthesis', { params });
+  return response.data;
+};
+
+/**
+ * GET /api/energy/loadcurve — vue Courbe de charge.
+ *
+ * @param {object} params - { scope, scope_id, from, to, granularity, compare, org_id }
+ * @returns {Promise<EnergyLoadCurveResponse>}
+ */
+export const getEnergyLoadCurve = async (params = {}) => {
+  const response = await api.get('/energy/loadcurve', { params });
+  return response.data;
+};
+
+/**
+ * GET /api/energy/week-profile — vue Semaine type (heatmap 7×24).
+ *
+ * @param {object} params - { scope, scope_id, days, org_id }
+ * @returns {Promise<EnergyWeekProfileResponse>}
+ */
+export const getWeekProfile = async (params = {}) => {
+  const response = await api.get('/energy/week-profile', { params });
+  return response.data;
+};

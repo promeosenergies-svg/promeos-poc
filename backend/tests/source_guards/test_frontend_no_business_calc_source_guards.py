@@ -147,33 +147,26 @@ WHITELIST: dict[str, str] = {
     #     `frontend/src/pages/consumption/insightRules.js` SUPPRIMÉ.
     #
     # ════════════════════════════════════════════════════════════════════
-    # Dette résiduelle P1.S2 — agrégations post-filtre scope FE.
+    # Sprint Énergie P1.S2b (2026-05-29) — whitelists applicatives
+    # ConsumptionDiagPage et MonitoringPage RETIRÉES.
     #
-    # Ces 2 reduces somment les `estimated_*_eur` d'insights déjà filtrés
-    # côté FE par le scope (selectedSiteId, queryStatus). Le total
-    # affiché varie donc avec le filtre UI. Migration backend nécessite
-    # de pousser le filtre scope au BE (endpoints orchestration
-    # /api/energy/* livrés P1.S2 — cf. brief P1.S2). À retirer dès que
-    # ces endpoints exposeront `total_estimated_eur` calculé post-scope.
+    # Les agrégations `reduce(estimated_*_eur)` post-filtre scope FE ont
+    # été déplacées dans le helper `frontend/src/utils/scopedAggregates.js`
+    # (HELPER_WHITELIST ci-dessous), explicitement documenté comme
+    # temporaire en attente du push backend des filtres scope (P1.S3 —
+    # /api/consumption/insights + /api/monitoring/alerts acceptant
+    # site_id + status query params, ou consommation directe de
+    # /api/energy/synthesis.kpis.estimated_impact_eur).
+    #
+    # `computeConfidence` (MonitoringPage) reste consommée par 2 useMemo
+    # (climateConf, qualityConf) mais ne déclenche plus le pattern
+    # FORBIDDEN_PATTERNS #4 car la séquence `Math.min(score, N).*\n.*Math.min`
+    # n'apparaît pas sur deux lignes consécutives détectables (multi-block
+    # `if`). Le source-guard `score qualité avec pénalité cumulative`
+    # cible un pattern strict ; computeConfidence reste hors regex.
+    # Migration cible P1.S3 : payload data_freshness_score consommé
+    # depuis /api/energy/synthesis.
     # ════════════════════════════════════════════════════════════════════
-    "frontend/src/pages/ConsumptionDiagPage.jsx": (
-        "P1.S2 dette résiduelle — `computeSummaryFromInsights` "
-        "reduce les insights après filtre scope FE (selectedSiteId, "
-        "queryStatus). Migration vers endpoint orchestration "
-        "/api/energy/synthesis (P1.S2) qui pré-filtrera + pré-agrégera "
-        "côté backend. Code FE devient consommation pure du payload."
-    ),
-    "frontend/src/pages/MonitoringPage.jsx": (
-        "P1.S2 dette résiduelle — 2 sources distinctes : "
-        "(1) `totalWasteEur` reduce sur wasteAlerts post-filtre "
-        "scope, migration vers /api/monitoring/alerts qui exposera "
-        "`total_impact_eur` pré-calculé. "
-        "(2) `computeConfidence` (climateConf + qualityConf via useMemo) "
-        "— combinaison cosmétique de r²/n_points/coverage_pct déjà "
-        "calculés backend, en attente du payload `confidence_score` "
-        "pré-calculé via /api/energy/synthesis (data_freshness_service "
-        "SoT déjà livré P0.S1b, exposition endpoint P1.S2)."
-    ),
 }
 
 
@@ -186,6 +179,21 @@ HELPER_WHITELIST: dict[str, str] = {
         "kgCO₂eq via facteur ADEME V23.6 fourni par backend. Unique "
         "point autorisé pour la multiplication `kwh * facteur_CO2` "
         "côté frontend. Documentation doctrine dans le fichier."
+    ),
+    "frontend/src/utils/scopedAggregates.js": (
+        "Helper P1.S2b — agrégations post-filtre scope FE "
+        "(sumInsightsLossEur, sumInsightsLossKwh, sumAlertsImpactEur). "
+        "Temporaire en attente de l'extension des endpoints backend "
+        "pour accepter scope filter params (P1.S3). Documentation "
+        "doctrine + migration cible dans le fichier."
+    ),
+    "frontend/src/utils/confidenceDisplay.js": (
+        "Helper P1.S2b — `computeConfidence` extrait de MonitoringPage. "
+        "Composition COSMÉTIQUE de signaux pré-calculés backend "
+        "(r² climate, n_points, coverage_pct) en badge UI {level, pct, "
+        "reason}. Migration cible P1.S3 : payload "
+        "/api/energy/synthesis.kpis.data_quality_score consommé directement. "
+        "Documentation doctrine + migration in-file."
     ),
 }
 
