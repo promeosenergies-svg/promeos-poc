@@ -54,6 +54,12 @@ from services.tertiaire_groupe_structures_service import (
     set_representant_legal_status,
 )
 
+# Sprint S4 (2026-05-29) — PDF Table 1B + deadline status.
+from services.tertiaire_mutualisation_pdf import (
+    MutualisationPdfError,
+    generate_table_1b_pdf,
+)
+
 router = APIRouter(prefix="/api/tertiaire/mutualisation", tags=["Tertiaire / Mutualisation"])
 
 
@@ -468,3 +474,211 @@ def export_table_1b(
             "Content-Disposition": f'attachment; filename="{filename}"',
         },
     )
+
+
+# ─── S4 — Export PDF Table 1B Annexe IV ────────────────────────────────
+
+
+@router.get("/groups/{group_id}/export-table-1b.pdf")
+def export_table_1b_pdf(
+    group_id: int,
+    org_id: int = Query(..., gt=0),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Sprint S4 — Export PDF du groupe au format Table 1B Annexe IV.
+
+    Mêmes garde-fous que l'export CSV (refus si I2 violé). En plus, le
+    PDF inclut un hash SHA256 d'opposabilité du contenu (recalculable
+    par un contrôleur ADEME à partir des données déposées).
+    """
+    org_id = get_effective_org_id(auth, org_id)
+    g = _load_groupe(db, group_id, org_id)
+    try:
+        ensure_groupe_exportable(g)
+    except MutualisationViolation as e:
+        raise _violation_to_http(e)
+    try:
+        pdf_bytes, export_hash = generate_table_1b_pdf(db, g)
+    except MutualisationPdfError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "PDF_RENDER_ERROR", "message": str(e)},
+        )
+    filename = f"groupe-structures-{g.id}-table-1b-{datetime.now(timezone.utc).strftime('%Y%m%d')}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Export-Hash": export_hash,
+        },
+    )
+
+
+# ─── S4 — Demande de validation représentant légal via Centre d'Action ──
+
+
+@router.post("/groups/{group_id}/members/{efa_id}/request-validation")
+def request_rl_validation(
+    group_id: int,
+    efa_id: int,
+    org_id: int = Query(..., gt=0),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Sprint S4 — Crée une action « Demander validation représentant légal »
+    dans le Centre d'Action V4 pour cette EFA membre.
+
+    Réutilise le endpoint upsert-by-external-ref livré S2 (idempotent
+    + CLOSED non ressuscité). Si la demande existe déjà, on renvoie
+    l'action existante (pas de doublon).
+
+    Pour S4 : pas d'envoi d'email réel — le canal canonique est le
+    Centre d'Action V4. L'envoi email Brevo pourra être branché en S5+
+    via le service `email_provider.py`.
+    """
+    org_id = get_effective_org_id(auth, org_id)
+    g = _load_groupe(db, group_id, org_id)
+    m = _load_membre(db, g, efa_id)
+    if m.representant_legal_status == "validated":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "RL_ALREADY_VALIDATED",
+                "message": "Le représentant légal a déjà validé cette EFA.",
+            },
+        )
+    efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id).first()
+    efa_nom = getattr(efa, "nom", f"EFA #{efa_id}")
+
+    # Délégation upsert NBA (Sprint S2) — idempotent par external_ref.
+    from middleware.org_context import reset_org_context, set_org_context
+    from repositories.action_center_item_v4_repository import (
+        ActionCenterItemRepository,
+    )
+
+    external_ref = f"conformite:rl_validation:{efa_id}:{group_id}"
+    source_url = f"/conformite?regulation=dt&mutualisation_group={group_id}"
+    org_token = set_org_context(org_id)
+    repo = ActionCenterItemRepository(db)
+    try:
+        existing = repo.find_by_external_ref(external_ref)
+        if existing is not None:
+            if existing.lifecycle_state == "closed":
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "code": "EXTERNAL_REF_CLOSED",
+                        "message": (
+                            "Une demande de validation RL antérieure a été clôturée "
+                            "pour cette EFA — elle ne peut être ressuscitée. Si la "
+                            "demande doit être relancée, archivez puis recréez le "
+                            "groupe pour signer une nouvelle instance."
+                        ),
+                    },
+                )
+            return {
+                "id": str(existing.id),
+                "external_ref": existing.external_ref,
+                "kind": existing.kind,
+                "status": "existing",
+            }
+        item = repo.create(
+            kind="action",
+            title=f"Demander validation représentant légal — {efa_nom}",
+            description=(
+                f"Le groupe « {g.nom} » nécessite la validation du représentant "
+                f"légal de l'EFA « {efa_nom} » pour devenir opposable au contrôle "
+                "décennal ADEME (Art. 14 §1 al.2 de l'arrêté 10/04/2020 modifié)."
+            ),
+            domain="conformite",
+            external_ref=external_ref,
+            source_url=source_url,
+            priority_bracket="P2",
+            priority_score=50.0,
+            score_stale=True,
+        )
+        db.commit()
+        return {
+            "id": str(item.id),
+            "external_ref": item.external_ref,
+            "kind": item.kind,
+            "status": "created",
+        }
+    finally:
+        reset_org_context(org_token)
+
+
+# ─── S4 — Statut échéance contrôle ADEME (R.174-31) ────────────────────
+
+
+# Échéances cardinales R.174-31 : vérification ADEME au 31/12 de l'année
+# qui suit chaque jalon (cross-check Légifrance livré S3, Phase 0 §4).
+_DEADLINES = [
+    {"jalon": 2030, "deadline": "2031-12-31"},
+    {"jalon": 2040, "deadline": "2041-12-31"},
+    {"jalon": 2050, "deadline": "2051-12-31"},
+]
+
+
+@router.get("/groups/{group_id}/deadline-status")
+def get_deadline_status(
+    group_id: int,
+    org_id: int = Query(..., gt=0),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Sprint S4 — Renvoie la prochaine échéance ADEME + statut du groupe
+    + action recommandée.
+
+    Source : Article R.174-31 du Code de la construction et de l'habitation
+    (vérification au 31/12/2031, 2041, 2051 au plus tard) — confirmé
+    Phase 0 cross-check S3.
+    """
+    org_id = get_effective_org_id(auth, org_id)
+    g = _load_groupe(db, group_id, org_id)
+    now = datetime.now(timezone.utc)
+    next_d = None
+    for d in _DEADLINES:
+        deadline_dt = datetime.fromisoformat(d["deadline"] + "T23:59:59+00:00")
+        if deadline_dt > now:
+            next_d = {**d, "days_remaining": (deadline_dt - now).days}
+            break
+
+    actives = [m for m in g.membres if m.deleted_at is None]
+    rl_validated = sum(1 for m in actives if m.representant_legal_status == "validated")
+    opposable = bool(actives) and rl_validated == len(actives) and g.status != "archived"
+
+    # Action recommandée FR claire (priorité forte > faible).
+    if g.status == "archived":
+        action = "Groupe archivé — créez un nouveau groupe pour préparer la prochaine échéance."
+    elif not actives:
+        action = "Ajoutez au moins une EFA au groupe avant l'échéance."
+    elif rl_validated < len(actives):
+        missing = len(actives) - rl_validated
+        action = (
+            f"Collectez {missing} validation(s) représentant légal manquante(s) "
+            "(Art. 14 §1 al.2) — sans solidarité opposable, le groupe ne pourra "
+            "pas être déposé."
+        )
+    elif next_d and next_d["days_remaining"] < 365:
+        action = (
+            f"Échéance ADEME dans {next_d['days_remaining']} jours — préparez "
+            "le dépôt OPERAT dès l'ouverture du module mutualisation."
+        )
+    else:
+        action = "Groupe opposable — surveillez l'ouverture du module OPERAT mutualisation ADEME."
+
+    return {
+        "group_id": g.id,
+        "group_status": g.status,
+        "n_members_active": len(actives),
+        "n_rl_validated": rl_validated,
+        "opposable": opposable,
+        "next_deadline": next_d,
+        "action_recommandee_fr": action,
+        "source_reglementaire": (
+            "Article R.174-31 CCH (vérification ADEME au 31/12/2031, 2041, 2051) + Article 14 arrêté 10/04/2020 modifié"
+        ),
+    }

@@ -94,8 +94,15 @@ def test_ui_expose_warning_juridique(ui_src: str) -> None:
 
 
 def test_ui_expose_bouton_export_conditionnel(ui_src: str) -> None:
-    """Bouton « Exporter Table 1B » doit exister + variante désactivée."""
-    assert "Exporter Table 1B" in ui_src
+    """Boutons CSV + PDF Table 1B doivent exister + variante désactivée.
+
+    Sprint S4 (2026-05-29) : le bouton unique « Exporter Table 1B » a été
+    décliné en CSV + PDF (le PDF inclut le hash SHA256 opposable). La
+    sémantique reste identique : un seul CTA primaire conditionnel selon
+    `allRlOk`.
+    """
+    assert "CSV Table 1B" in ui_src
+    assert "PDF Table 1B" in ui_src
     assert "Export indisponible" in ui_src
 
 

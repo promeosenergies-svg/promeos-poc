@@ -197,6 +197,11 @@ def set_representant_legal_status(
     """Met à jour le statut RL pour une EFA membre.
 
     Accepte 'validated' ou 'rejected'. 'pending' = état initial à la création.
+
+    Sprint S4 (2026-05-29) — si new_status='validated', calcule un
+    `validation_token_hash` SHA256 du payload (group_id, efa_id,
+    validator_user_id, validated_at_iso). Ce hash sert d'identifiant
+    opposable au contrôle ADEME ultérieur (Art. 14 §1 al.2 — solidarité).
     """
     if new_status not in RL_STATUSES:
         raise MutualisationViolation(
@@ -210,9 +215,19 @@ def set_representant_legal_status(
         )
     membre.representant_legal_status = new_status
     if new_status == "validated":
-        membre.representant_legal_validated_at = datetime.now(timezone.utc)
+        validated_at = datetime.now(timezone.utc)
+        membre.representant_legal_validated_at = validated_at
+        # S4 — Hash opposable. Pas de secret-key (déterministe et public),
+        # sa valeur d'audit vient de la reproductibilité par le contrôleur
+        # à partir des données stockées.
+        import hashlib
+
+        payload = f"{membre.group_id}|{membre.efa_id}|{validator_user_id or ''}|{validated_at.isoformat()}"
+        membre.validation_token_hash = hashlib.sha256(payload.encode("utf-8")).hexdigest()
     else:
+        # rejected → reset timestamp + hash
         membre.representant_legal_validated_at = None
+        membre.validation_token_hash = None
     membre.validator_user_id = validator_user_id
     membre.validation_note = validation_note
     db.flush()

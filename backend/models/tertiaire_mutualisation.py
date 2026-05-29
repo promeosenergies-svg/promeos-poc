@@ -174,6 +174,16 @@ class GroupeStructuresMembre(Base, TimestampMixin):
         nullable=True,
         comment="Motif validation/rejet (RL OK, refus pour cause X, etc.)",
     )
+    # Sprint S4 (2026-05-29) — Hash SHA256 du payload de validation
+    # (group_id + efa_id + validator_user_id + timestamp UTC) calculé au
+    # moment où RL passe à 'validated'. Permet à un contrôleur ADEME de
+    # vérifier l'absence d'altération a posteriori (Art. 14 §1 al.2
+    # — solidarité opposable).
+    validation_token_hash = Column(
+        String(64),
+        nullable=True,
+        comment="SHA256 hex du payload de validation (opposabilité S4)",
+    )
 
     # Soft-delete pour préserver l'historique en cas de retrait d'une
     # EFA du groupe (audit trail mutualisation).

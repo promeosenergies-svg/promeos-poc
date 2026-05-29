@@ -22,10 +22,19 @@ import {
   AlertTriangle,
   Download,
   FileText,
+  CalendarClock,
+  Send,
 } from 'lucide-react';
 import { Card, CardBody, Badge, KpiCard } from '../../ui';
 import { EvidenceDrawer as GenericEvidenceDrawer } from '../../ui';
-import { getMutualisation, listGroupeStructures, buildExportTable1bUrl } from '../../services/api';
+import {
+  getMutualisation,
+  listGroupeStructures,
+  buildExportTable1bUrl,
+  buildExportTable1bPdfUrl,
+  requestRlValidation,
+  getMutualisationDeadlineStatus,
+} from '../../services/api';
 import { fmtEur, fmtKwh } from '../../utils/format';
 import Explain from '../../ui/Explain';
 import { buildMutualisationEvidence } from '../../pages/tertiaire/tertiaireEvidence';
@@ -42,6 +51,42 @@ const GROUPE_STATUS_LABEL = {
   validated: { label: 'Validé · opposable', tone: 'emerald', opposable: true },
   archived: { label: 'Archivé', tone: 'gray', opposable: false },
 };
+
+/**
+ * S4 — Sous-bloc échéance ADEME (R.174-31) pour un groupe.
+ * Affiche prochaine échéance + jours restants + action recommandée FR.
+ * Source réglementaire intégrée à la réponse backend.
+ */
+function GroupeDeadlineBanner({ groupId, orgId }) {
+  const [deadline, setDeadline] = useState(null);
+  useEffect(() => {
+    if (!groupId || !orgId) return;
+    let stale = false;
+    getMutualisationDeadlineStatus(groupId, orgId)
+      .then((d) => {
+        if (!stale) setDeadline(d);
+      })
+      .catch(() => {
+        if (!stale) setDeadline(null);
+      });
+    return () => {
+      stale = true;
+    };
+  }, [groupId, orgId]);
+  if (!deadline || !deadline.next_deadline) return null;
+  const days = deadline.next_deadline.days_remaining;
+  const isUrgent = days != null && days < 365;
+  return (
+    <p
+      className={`text-[11px] mt-1 flex items-center gap-1 ${isUrgent ? 'text-amber-700' : 'text-gray-500'}`}
+      data-testid={`groupe-deadline-${groupId}`}
+    >
+      <CalendarClock size={11} />
+      Vérification ADEME au {deadline.next_deadline.deadline} (jalon {deadline.next_deadline.jalon},
+      dans {days} jours) — {deadline.action_recommandee_fr}
+    </p>
+  );
+}
 
 export default function MutualisationSection({ orgId }) {
   const [data, setData] = useState(null);
@@ -179,17 +224,68 @@ export default function MutualisationSection({ orgId }) {
                         chaque EFA avant le contrôle décennal (Art. 14 §1 al.2).
                       </p>
                     )}
+                    {/* S4 — bandeau échéance ADEME (R.174-31). */}
+                    <GroupeDeadlineBanner groupId={g.id} orgId={orgId} />
+                    {/* S4 — CTA « Demander validation » par EFA pending. */}
+                    {(g.membres || [])
+                      .filter((m) => !m.deleted_at && m.representant_legal_status === 'pending')
+                      .slice(0, 5)
+                      .map((m) => (
+                        <button
+                          key={m.efa_id}
+                          type="button"
+                          onClick={() => {
+                            requestRlValidation(g.id, m.efa_id, orgId)
+                              .then(() =>
+                                window.alert(
+                                  `Demande de validation RL créée dans le Centre d'Action V4 pour l'EFA #${m.efa_id}.`
+                                )
+                              )
+                              .catch((err) => {
+                                const code = err?.response?.data?.detail?.code;
+                                const msg = err?.response?.data?.detail?.message;
+                                if (code === 'RL_ALREADY_VALIDATED') {
+                                  window.alert('Cette EFA a déjà reçu la validation RL.');
+                                } else if (code === 'EXTERNAL_REF_CLOSED') {
+                                  window.alert(
+                                    'Une demande antérieure a été clôturée — archivez puis recréez le groupe pour relancer.'
+                                  );
+                                } else {
+                                  window.alert(msg || 'Erreur lors de la demande de validation.');
+                                }
+                              });
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] mt-1 text-blue-700 hover:text-blue-900"
+                          data-testid={`groupe-request-rl-${g.id}-${m.efa_id}`}
+                          title="Créer une action « Demander validation représentant légal » dans le Centre d'Action V4"
+                        >
+                          <Send size={11} />
+                          Demander validation RL pour l'EFA #{m.efa_id}
+                        </button>
+                      ))}
                   </div>
                   {allRlOk && cfg.opposable ? (
-                    <a
-                      href={buildExportTable1bUrl(g.id, orgId)}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-900 px-2 py-1 rounded border border-emerald-200 bg-white shrink-0"
-                      data-testid={`groupe-export-${g.id}`}
-                      title="Télécharger l'export Table 1B Annexe IV (CSV)"
-                    >
-                      <Download size={12} />
-                      Exporter Table 1B
-                    </a>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <a
+                        href={buildExportTable1bUrl(g.id, orgId)}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-900 px-2 py-1 rounded border border-emerald-200 bg-white"
+                        data-testid={`groupe-export-${g.id}`}
+                        title="Télécharger l'export Table 1B Annexe IV (CSV)"
+                      >
+                        <Download size={12} />
+                        CSV Table 1B
+                      </a>
+                      {/* S4 (2026-05-29) — export PDF + hash opposabilité. */}
+                      <a
+                        href={buildExportTable1bPdfUrl(g.id, orgId)}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-900 px-2 py-1 rounded border border-emerald-200 bg-white"
+                        data-testid={`groupe-export-pdf-${g.id}`}
+                        title="Télécharger l'export Table 1B au format PDF (avec hash SHA256 opposable)"
+                      >
+                        <Download size={12} />
+                        PDF Table 1B
+                      </a>
+                    </div>
                   ) : (
                     <span
                       className="inline-flex items-center gap-1 text-xs text-gray-400 px-2 py-1 rounded border border-gray-200 shrink-0"
