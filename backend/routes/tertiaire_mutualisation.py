@@ -519,10 +519,14 @@ def export_table_1b_pdf(
 # ─── S4 — Demande de validation représentant légal via Centre d'Action ──
 
 
-@router.post("/groups/{group_id}/members/{efa_id}/request-validation")
+@router.post(
+    "/groups/{group_id}/members/{efa_id}/request-validation",
+    status_code=status.HTTP_201_CREATED,
+)
 def request_rl_validation(
     group_id: int,
     efa_id: int,
+    response: Response,
     org_id: int = Query(..., gt=0),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
@@ -537,6 +541,11 @@ def request_rl_validation(
     Pour S4 : pas d'envoi d'email réel — le canal canonique est le
     Centre d'Action V4. L'envoi email Brevo pourra être branché en S5+
     via le service `email_provider.py`.
+
+    Sprint S4.1 hotfix (2026-05-29) : HTTP code aligné REST strict
+    - 201 Created si nouvelle action créée
+    - 200 OK si action existante retournée (idempotent)
+    - 409 sur RL_ALREADY_VALIDATED ou EXTERNAL_REF_CLOSED
     """
     org_id = get_effective_org_id(auth, org_id)
     g = _load_groupe(db, group_id, org_id)
@@ -578,6 +587,8 @@ def request_rl_validation(
                         ),
                     },
                 )
+            # S4.1 — idempotent : action existante → bascule 201→200.
+            response.status_code = status.HTTP_200_OK
             return {
                 "id": str(existing.id),
                 "external_ref": existing.external_ref,
