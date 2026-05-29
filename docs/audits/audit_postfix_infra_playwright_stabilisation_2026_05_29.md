@@ -140,7 +140,7 @@ npx playwright test golden-paths.spec.js --reporter=list --workers=1
 
 ### Run #1 (post-stack-restart fresh)
 
-```
+```text
 ✓ [setup] authenticate as promeos demo user (539 ms)
 ✓ /conformite rend sans erreur (697 ms)
 ✓ /usages?tab=pilotage rend sans erreur (660 ms)
@@ -156,7 +156,7 @@ npx playwright test golden-paths.spec.js --reporter=list --workers=1
 
 ### Run #2 (immédiat après #1)
 
-```
+```text
 ✓ [setup] authenticate as promeos demo user (373 ms)
 ✓ /conformite rend sans erreur (691 ms)
 ✓ /usages?tab=pilotage rend sans erreur (669 ms)
@@ -192,7 +192,81 @@ Aucune. Les changements sont strictement test infrastructure :
 
 ---
 
-## 7. Limitations connues
+## 7. Opérations & restart backend dev
+
+Pendant cette session, le backend a freezé 2 fois (PIDs 35303 puis 5745)
+après que les golden paths aient lancé `networkidle` sur 4 routes
+consécutives, saturant le pool de connexions uvicorn. La cause produit
+n'est pas avérée — `networkidle` ouvre des connexions tant qu'il y a
+*n'importe quel* fetch en cours côté FE (polling, websocket, image en
+streaming), ce qui peut indéfiniment retarder le « idle » sur un hub
+riche comme `/conformite`.
+
+### Décision retenue
+- Remplacer `networkidle` par `domcontentloaded` + settle 500 ms dans
+  les golden paths (déjà fait dans `golden-paths.spec.js`).
+- **NE PAS** désactiver `networkidle` ailleurs : certaines specs
+  legacy en ont besoin (capture screenshots, attente vraie pleine
+  charge). Le risque ne s'est manifesté que sur la combinaison
+  4 routes × workers=1 × hub /conformite riche.
+
+### État BE actuel (vérifié post-validation)
+
+| Paramètre | Valeur |
+|---|---|
+| PID | **6429** (worker 6431) |
+| Process | `python main.py` (venv `.venv` Python 3.11) |
+| `/api/health` | **HTTP 200 en 31 ms** |
+| Stabilité | Validé : 9/9 Playwright en 9.6 s sur cette même instance |
+
+### Recommandation restart
+
+Ne PAS redémarrer le backend par défaut entre les runs. Le restart est
+uniquement justifié quand un de ces signaux apparaît :
+
+1. **`curl --max-time 5 /api/health` timeout** (exit code 28, HTTP=000).
+   C'est le test canonique « le worker uvicorn ne répond plus ».
+2. **`/api/auth/login` retourne timeout** alors que `/api/health`
+   répond rapidement — indique un blocage spécifique au middleware
+   slowapi rate-limiter qu'un restart libère.
+3. **Suite Playwright qui échoue avec « Request context disposed »
+   ou « ERR_CONNECTION_REFUSED »** au démarrage du `setup` project,
+   après plusieurs runs consécutifs intensifs.
+
+### Procédure restart manuelle (à utiliser en dernier recours)
+
+```bash
+# 1. Stop propre
+kill <PID>
+
+# 2. Vérifier que le process s'arrête (max 3s)
+sleep 3
+lsof -i :8001
+
+# 3. Fallback si encore vivant
+kill -9 <PID>
+
+# 4. Restart dans .venv (Python 3.11)
+cd ~/projects/promeos-poc/backend
+source .venv/bin/activate
+nohup python main.py > /tmp/promeos-be.log 2>&1 &
+
+# 5. Attendre que /api/health réponde 200
+until curl -s -o /dev/null --max-time 2 -w "%{http_code}\n" \
+  http://127.0.0.1:8001/api/health | grep -q "^200"; do sleep 2; done
+```
+
+### Hors scope ce sprint (P2 suggéré)
+
+Pour les runs intensifs futurs, créer `scripts/restart_backend_dev.sh`
+qui encapsule cette séquence avec un argument `--auto` (kill graceful
+puis -9 si nécessaire + restart + wait health). Pas livré dans S3
+infra-stabilisation car non nécessaire aujourd'hui — la suite Playwright
+tient en < 1 min sans restart.
+
+---
+
+## 8. Limitations connues
 
 - **TTL token JWT** : ~25-30 min. Suite Playwright qui dépasserait cette
   durée verrait des 401 en cours de run. Aujourd'hui le smoke complet
