@@ -1,21 +1,56 @@
 /**
- * PROMEOS — Section Mutualisation DT (Phase 3)
- * Affiche la simulation de mutualisation inter-sites pour un portefeuille.
- * Consomme GET /api/tertiaire/mutualisation (zero calcul metier frontend).
+ * PROMEOS — Section Mutualisation DT (Phase 3 · enrichi S3 P0 juridique 2026-05-28).
+ *
+ * Affiche la simulation de mutualisation inter-sites + le bloc « Groupe
+ * de structures » (Art. 14 arrêté 10/04/2020 modifié, R.174-31 + L.174-1
+ * CCH). Consomme :
+ *   - GET /api/tertiaire/mutualisation (simulation, déjà existant)
+ *   - GET /api/tertiaire/mutualisation/groups (Sprint S3)
+ *
+ * Doctrine §8.1 zero business logic FE — toutes les règles I1-I5 sont
+ * portées backend (cf. tertiaire_groupe_structures_service.py). Le FE
+ * affiche le statut et propose les CTA conditionnels.
  */
 import { useState, useEffect } from 'react';
-import { BarChart3, TrendingDown, TrendingUp, Loader2, Info } from 'lucide-react';
+import {
+  BarChart3,
+  TrendingDown,
+  TrendingUp,
+  Loader2,
+  Info,
+  ShieldCheck,
+  AlertTriangle,
+  Download,
+  FileText,
+} from 'lucide-react';
 import { Card, CardBody, Badge, KpiCard } from '../../ui';
 import { EvidenceDrawer as GenericEvidenceDrawer } from '../../ui';
-import { getMutualisation } from '../../services/api';
+import { getMutualisation, listGroupeStructures, buildExportTable1bUrl } from '../../services/api';
 import { fmtEur, fmtKwh } from '../../utils/format';
 import Explain from '../../ui/Explain';
 import { buildMutualisationEvidence } from '../../pages/tertiaire/tertiaireEvidence';
+
+// S3 — libellés FR canoniques pour le lifecycle du groupe de structures.
+// (Source : doctrine S3, cf. crosscheck_legifrance_mutualisation_art14.)
+const GROUPE_STATUS_LABEL = {
+  draft: { label: 'Brouillon', tone: 'gray', opposable: false },
+  pending_validation: {
+    label: 'En attente validation représentant légal',
+    tone: 'amber',
+    opposable: false,
+  },
+  validated: { label: 'Validé · opposable', tone: 'emerald', opposable: true },
+  archived: { label: 'Archivé', tone: 'gray', opposable: false },
+};
 
 export default function MutualisationSection({ orgId }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+
+  // S3 — Groupes de structures (Art. 14)
+  const [groupes, setGroupes] = useState([]);
+  const [groupesLoading, setGroupesLoading] = useState(true);
 
   useEffect(() => {
     if (!orgId) return;
@@ -24,6 +59,15 @@ export default function MutualisationSection({ orgId }) {
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false));
+  }, [orgId]);
+
+  useEffect(() => {
+    if (!orgId) return;
+    setGroupesLoading(true);
+    listGroupeStructures(orgId)
+      .then((g) => setGroupes(Array.isArray(g) ? g : []))
+      .catch(() => setGroupes([]))
+      .finally(() => setGroupesLoading(false));
   }, [orgId]);
 
   if (loading) {
@@ -65,6 +109,102 @@ export default function MutualisationSection({ orgId }) {
           {data.disclaimer ||
             "Simulation uniquement — La fonctionnalité de mutualisation n'est pas encore disponible dans OPERAT (2026). PROMEOS anticipe cette fonctionnalité pour préparer votre stratégie patrimoniale."}
         </span>
+      </div>
+
+      {/* S3 — Bloc « Groupe de structures » (Art. 14 §1) */}
+      <div data-testid="groupe-structures-bloc" className="border border-gray-200 rounded-lg p-3">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+            <ShieldCheck size={14} className="text-gray-500" />
+            Groupe de structures
+          </h4>
+          <span className="text-[10px] text-gray-400">
+            Module OPERAT mutualisation : préparation du dossier
+          </span>
+        </div>
+
+        {groupesLoading ? (
+          <p className="text-xs text-gray-400">Chargement des groupes…</p>
+        ) : groupes.length === 0 ? (
+          <div className="text-xs text-gray-500">
+            <p>
+              Aucun groupe de structures constitué pour le moment. Pour rendre la mutualisation
+              opposable au contrôle décennal, créez un groupe et collectez la validation du
+              représentant légal de chaque EFA membre.
+            </p>
+            <p className="text-[10px] text-gray-400 mt-1">
+              Source : Article 14 §1 al.2 de l'arrêté du 10 avril 2020 modifié — l'intégration d'une
+              EFA dans le périmètre nécessite la validation de son représentant légal.
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {groupes.map((g) => {
+              const cfg = GROUPE_STATUS_LABEL[g.status] || GROUPE_STATUS_LABEL.draft;
+              const memberCount = (g.membres || []).filter((m) => !m.deleted_at).length;
+              const rlValidatedCount = (g.membres || []).filter(
+                (m) => !m.deleted_at && m.representant_legal_status === 'validated'
+              ).length;
+              const allRlOk = memberCount > 0 && rlValidatedCount === memberCount;
+              return (
+                <li
+                  key={g.id}
+                  className="flex items-start gap-3 p-2 bg-gray-50 rounded border border-gray-100"
+                  data-testid={`groupe-structures-row-${g.id}`}
+                >
+                  <FileText size={14} className="text-gray-400 mt-1 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-gray-800 truncate">{g.nom}</span>
+                      <Badge
+                        status={
+                          cfg.tone === 'emerald' ? 'ok' : cfg.tone === 'amber' ? 'warn' : 'info'
+                        }
+                        size="xs"
+                      >
+                        {cfg.label}
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      {memberCount} EFA · {rlValidatedCount}/{memberCount} validation(s)
+                      représentant légal
+                    </p>
+                    {!cfg.opposable && memberCount > 0 && (
+                      <p
+                        className="text-[11px] text-amber-700 mt-1 flex items-center gap-1"
+                        data-testid={`groupe-warning-${g.id}`}
+                      >
+                        <AlertTriangle size={11} />
+                        Groupe non opposable — collectez la validation du représentant légal de
+                        chaque EFA avant le contrôle décennal (Art. 14 §1 al.2).
+                      </p>
+                    )}
+                  </div>
+                  {allRlOk && cfg.opposable ? (
+                    <a
+                      href={buildExportTable1bUrl(g.id, orgId)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-900 px-2 py-1 rounded border border-emerald-200 bg-white shrink-0"
+                      data-testid={`groupe-export-${g.id}`}
+                      title="Télécharger l'export Table 1B Annexe IV (CSV)"
+                    >
+                      <Download size={12} />
+                      Exporter Table 1B
+                    </a>
+                  ) : (
+                    <span
+                      className="inline-flex items-center gap-1 text-xs text-gray-400 px-2 py-1 rounded border border-gray-200 shrink-0"
+                      data-testid={`groupe-export-disabled-${g.id}`}
+                      title="Export disponible une fois toutes les validations RL collectées"
+                    >
+                      <Download size={12} />
+                      Export indisponible
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
       {/* KPIs */}

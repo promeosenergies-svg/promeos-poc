@@ -61,6 +61,7 @@ from routes import (
     flex_router,
     flex_foundation_router,
     tertiaire_router,
+    tertiaire_mutualisation_router,
     portfolio_router,
     consumption_context_router,
     contracts_radar_router,
@@ -261,6 +262,9 @@ app.include_router(analytics_router)  # Analytics: usage disaggregation (CDC -> 
 if os.environ.get("PROMEOS_ENV") != "production":
     app.include_router(dev_tools_router)  # Dev Tools (reset_db)
 app.include_router(tertiaire_router)  # Tertiaire / OPERAT V39 (EFA, controls, precheck, export)
+# Sprint S3 (2026-05-28) — Mutualisation P0 juridique : groupe de structures
+# + validation représentant légal + ledger redistribution + export Table 1B.
+app.include_router(tertiaire_mutualisation_router)
 app.include_router(portfolio_router)  # Portfolio Consumption (multi-site B2B view)
 app.include_router(consumption_context_router)  # Consumption Context V0 (usages & horaires)
 app.include_router(

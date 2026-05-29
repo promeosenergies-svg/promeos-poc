@@ -228,6 +228,17 @@ from .tertiaire import (
     TertiaireDataQualityIssue,
     TertiaireEfaConsumption,
 )
+
+# Sprint S3 (2026-05-28) — Mutualisation P0 juridique : groupe de
+# structures + appartenance EFA + journal redistribution.
+# Cf. docs/audits/crosscheck_legifrance_mutualisation_art14_2026_05_28.md
+from .tertiaire_mutualisation import (
+    GROUPE_STATUSES,
+    RL_STATUSES,
+    GroupeStructures,
+    GroupeStructuresMembre,
+    MutualisationLedger,
+)
 from .compliance_event_log import ComplianceEventLog
 from .operat_export_manifest import OperatExportManifest
 from .bacs_regulatory import BacsFunctionalRequirement, BacsExploitationStatus, BacsProofDocument, BacsExemption
@@ -558,6 +569,12 @@ __all__ = [
     "PerimeterEventType",
     "DataQualityIssueSeverity",
     "DataQualityIssueStatus",
+    # Sprint S3 mutualisation P0 juridique
+    "GROUPE_STATUSES",
+    "RL_STATUSES",
+    "GroupeStructures",
+    "GroupeStructuresMembre",
+    "MutualisationLedger",
     # V69: CEE Pipeline + M&V
     "WorkPackage",
     "CeeDossier",
