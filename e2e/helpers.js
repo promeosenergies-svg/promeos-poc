@@ -17,6 +17,13 @@ export const DEMO_USER = {
   password: 'promeos2024',
 };
 
+// Sprint infra-stabilisation 2026-05-29 — storageState partagé.
+// Path géré par auth.setup.spec.js, consommé par playwright.config.js.
+// Le fichier est gitignored via e2e/.gitignore (ne JAMAIS committer).
+export const AUTH_STORAGE_PATH = path.join(__dirname, '.auth', 'promeos-user.json');
+// Clé canonique du token côté frontend (AuthContext.jsx).
+export const STORAGE_KEY_TOKEN = 'promeos_token';
+
 // Viewports for multi-width testing
 export const VIEWPORTS = {
   desktop: { width: 1440, height: 900 },

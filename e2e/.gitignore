@@ -1,0 +1,10 @@
+# PROMEOS — gitignore Playwright e2e
+#
+# Sprint infra-stabilisation 2026-05-29 : `.auth/` héberge le storageState
+# produit par auth.setup.spec.js (login one-shot). Contient un JWT vivant —
+# NE JAMAIS le committer.
+
+.auth/
+test-results/
+playwright-report/
+.playwright/
