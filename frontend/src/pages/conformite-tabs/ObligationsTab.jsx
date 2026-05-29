@@ -405,7 +405,6 @@ function ObligationCard({
   proofFiles,
   onAuditFinding,
   bacsV2Summary,
-  onNavigateIntake,
   isExpert,
   profileEntry,
 }) {
@@ -567,7 +566,7 @@ function ObligationCard({
           </div>
         )}
 
-        {obligation.code === 'bacs' && !bacsV2Summary && onNavigateIntake && (
+        {obligation.code === 'bacs' && !bacsV2Summary && (
           <div className="mt-2 p-3 bg-blue-50 rounded-lg flex items-center gap-3">
             <AlertTriangle size={16} className="text-blue-600 shrink-0" />
             <div className="flex-1">
@@ -576,7 +575,14 @@ function ObligationCard({
                 Complétez les données pour déterminer l'applicabilité et l'échéance.
               </p>
             </div>
-            <Button size="sm" variant="secondary" onClick={onNavigateIntake}>
+            {/* chasse-bugs 2026-05-29 — module Intake non livré, CTA désactivé
+                (cf. docs/audits/chasse_bugs_conformite_2026_05_29.md) */}
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled
+              title="Module Intake en préparation — bientôt disponible"
+            >
               Compléter données BACS
             </Button>
           </div>
@@ -990,7 +996,6 @@ export default function ObligationsTab({
   isExpert,
   setDossierSource,
   profileTags,
-  onNavigateIntake: _onNavigateIntake,
 }) {
   return (
     <>
@@ -1168,13 +1173,6 @@ export default function ObligationsTab({
               proofFiles={proofFiles}
               onAuditFinding={setAuditFindingId}
               bacsV2Summary={obligation.code === 'bacs' ? bacsV2Summary : null}
-              onNavigateIntake={
-                obligation.code === 'bacs'
-                  ? () => {
-                      navigate(`/intake/${scopedSites[0]?.id}`);
-                    }
-                  : null
-              }
               isExpert={isExpert}
               profileEntry={profileTags?.get(obligation.id || obligation.code)}
             />

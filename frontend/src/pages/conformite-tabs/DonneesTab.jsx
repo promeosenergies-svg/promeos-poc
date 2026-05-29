@@ -342,14 +342,14 @@ export default function DonneesTab({ scopedSites, intakeQuestions, navigate, don
                     + {intakeQuestions.length - 5} autres questions
                   </p>
                 )}
+                {/* chasse-bugs 2026-05-29 — module Intake non livré, CTA désactivé
+                    (cf. docs/audits/chasse_bugs_conformite_2026_05_29.md) */}
                 <Button
                   variant="secondary"
                   size="sm"
                   className="mt-3"
-                  onClick={() => {
-                    navigate(`/intake/${scopedSites[0]?.id}`);
-                    track('conformite_goto_intake');
-                  }}
+                  disabled
+                  title="Module Intake en préparation — bientôt disponible"
                 >
                   Compléter le questionnaire
                 </Button>

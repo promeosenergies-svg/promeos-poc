@@ -1119,14 +1119,6 @@ export default function ConformitePage() {
           isExpert={isExpert}
           setDossierSource={setDossierSource}
           profileTags={profileTags}
-          onNavigateIntake={
-            scopedSites[0]
-              ? () => {
-                  navigate(`/intake/${scopedSites[0].id}`);
-                  track('bacs_complete_data');
-                }
-              : undefined
-          }
         />
       )}
 
